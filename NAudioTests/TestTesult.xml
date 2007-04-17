@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!--This file represents the results of running a test suite-->
+<test-results name="D:\Users\Mark\Documents\Code\CodePlex\NAudio\NAudio\NAudioTests\NAudioTests.nunit" total="1" failures="0" not-run="0" date="2007-04-06" time="17:20:37">
+  <environment nunit-version="2.4.0.2" clr-version="2.0.50727.312" os-version="Microsoft Windows NT 6.0.6000.0" platform="Win32NT" cwd="D:\Users\Mark\Documents\Code\CodePlex\NAudio\NAudio\NAudioTests" machine-name="MARK-VISTA" user="Mark" user-domain="Mark-Vista" />
+  <culture-info current-culture="en-GB" current-uiculture="en-US" />
+  <test-suite name="D:\Users\Mark\Documents\Code\CodePlex\NAudio\NAudio\NAudioTests\NAudioTests.nunit" success="True" time="0.086" asserts="0">
+    <results>
+      <test-suite name="D:\Users\Mark\Documents\Code\CodePlex\NAudio\NAudio\NAudioTests\bin\Debug\NAudioTests.dll" success="True" time="0.083" asserts="0">
+        <results>
+          <test-suite name="NAudioTests" success="True" time="0.081" asserts="0">
+            <results>
+              <test-suite name="MidiEventCollectionTest" success="True" time="0.054" asserts="0">
+                <results>
+                  <test-case name="NAudioTests.MidiEventCollectionTest.TestType1" executed="True" success="True" time="0.048" asserts="6" />
+                </results>
+              </test-suite>
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+    </results>
+  </test-suite>
+</test-results>

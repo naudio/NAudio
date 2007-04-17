@@ -1,0 +1,222 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>MIDI File Splitter</title>
+</head>
+<body>
+    <h2>
+        MIDI File Splitter</h2>
+    <p>
+        MIDI File Splitter is a simple utility designed to split a MIDI file up into multiple
+        sections based on its markers. It was designed to be used for splitting up the Session
+        Drummer and Pattern Brush MIDI files included with <a href="http://www.cakewalk.com">
+            Cakewalk's SONAR</a> into individual patterns so that they can be dragged and
+        dropped easily one at a time into SONAR's track view.</p>
+    <img src="http://i63.photobucket.com/albums/h146/markheath/mfs_0_5.png"
+        alt="MIDI File Splitter Screenshot" />
+    <p>
+        Splitting the files is as simple as selecting the files you want to split in Windows
+        Explorer and dragging them into the rectangular area at the top of the MIDI File
+        Splitter window (alternatively you can click the "Load" button). By default, a new
+        folder will be created to contain each marker's file, with each file being named
+        after the marker. You can also choose for the files not to be placed in a subfolder,
+        or to all go to a specified custom folder (this will default to your desktop).</p>
+    <p>
+        MIDI File Splitter has a detailed output window that shows you exactly what files
+        it is creating, and reports any errors it encounters (look for messages in Red).
+        MIDI File Splitter will never overwrite an existing file, but you can ask it to
+        generate a new unique filename if the file it is trying to create already exists.</p>
+    <p>
+        MIDI File Splitter is beta software and may contain some bugs. Please do check that
+        the output files it creates are what you expected. If you encounter any bugs, or
+        have any feature requests, please report them to <a href="mailto:software@wordandspirit.co.uk">
+            software@wordandspirit.co.uk</a>.</p>
+    <h2>
+        Download</h2>
+    <p>
+        A link to the latest version of MIDI File Splitter can be found <a href="http://www.codeplex.com/naudio">
+            here</a>.</p>
+    <h2>
+        Installation and Requirements</h2>
+    <p>
+        MIDI File Splitter requires the .NET framework version 2.0 to be installed. You
+        can download this <a href="http://msdn.microsoft.com/netframework/downloads/updates/default.aspx">
+            here</a>. Once you have the .NET framework installed on your PC, all you need
+        to do is download and run the installer.</p>
+    <h2>
+        Options</h2>
+    <img src="http://i63.photobucket.com/albums/h146/markheath/midi_file_splitter_options_0_04.png"
+        alt="Options screen" />
+    <p>
+        The options dialog allows you to customise the behaviour of MIDI File Splitter.</p>
+    <ul>
+        <li><b>Output Folder Settings</b>
+            <ul>
+                <li>Use these settings to customise where the created MIDI files are placed. If you
+                    are planning to drag and drop lots of MIDI files at once, you will probably want
+                    one of the options that creates subfolders to help you organize your MIDI file collection.</li>
+                <li><i>Same Folder</i> - This will put the created MIDI files in the same folder as
+                    the source MIDI file.</li>
+                <li><i>Create a new Subfolder</i> - This will create a new subfolder in the same location
+                    as the input MIDI file, with the same name as the input MIDI file. </li>
+                <li><i>Custom Folder</i> - This will put all created MIDI files into a user specified
+                    folder</li>
+                <li><i>Custom Folder plus subfolder</i> - This will put all created MIDI files in a
+                    subfolder under the specified custom folder. The subfolder will be given the same
+                    name as the input MIDI file.</li>
+                <li><i>Browse</i> - Click browse to select the folder you want MIDI files to be placed
+                    into</li>
+            </ul>
+        </li>
+        <li><b>Output File Settings</b>
+            <ul>
+                <li><i>Create Unique Filename</i> - Sometimes there are two markers with the same name.
+                    Select this option to ensure that both get exported. MIDI File Splitter will add
+                    a number in brackets to the end of the filename. (note: after 100 attempts, MIDI
+                    File Splitter will give up trying to create a unique filename)</li>
+                <li><i>MIDI File Type</i> - If you plan to use this with SONAR 5 or earlier, select
+                    type 1 so that clips are named properly when they are dragged in. In SONAR 6, type
+                    0 files will also be named correctly, so you have a choice, although SONAR can create
+                    multiple tracks when dragging in a type 0 file if its note events are not on MIDI
+                    channel 1.</li>
+            </ul>
+        </li>
+        <li><b>Note Durations</b>
+            <ul>
+                <li><i>Do not modify</i> - The default setting. Note durations will not be modified.</li>
+                <li><i>Truncate to before next marker </i>- Ensures that no notes end on or after the
+                    next marker. This is so that programs such as EZdrummer do not interpret them as
+                    lasting a measure longer than they do. (Note that if a note starts exactly one tick
+                    before the end marker, then it will be given a duration of 1, not zero.)</li>
+                <li><i>Set all to fixed length</i> - allows you to change the durations of all notes
+                    to a set length. Only really useful for drum patterns, where you might want all
+                    notes to have a duration of 1.</li>
+            </ul>
+        </li>
+        <li><b>MIDI Event Channel Settings</b>
+            <ul>
+                <li><i>Do not modify</i> - The default setting. MIDI event channels will not be modified.</li>
+                <li><i>Set all to same channel</i> - Puts all notes on the same MIDI channel (can be
+                    1 to 16). Note that by convention, in MIDI, drums are on channel 10.</li>
+            </ul>
+        </li>
+        <li><b>MIDI File Compatibility</b>
+            <ul>
+                <li><i>Allow orphaned note events</i> - Turn this on if you have some MIDI files which
+                    have Note Ons without corresponding note Offs, or note offs that don't belong to
+                    a note on. These should not be present in a well-formed MIDI file, but some commercial
+                    MIDI files have this problem.</li>
+                <li><i>Treat text events as markers</i> - Turn this on if you have some MIDI files which
+                    have MIDI Text events instead of MIDI Marker events. The MIDI will be split at text
+                    events.</li>
+            </ul>
+        </li>
+    </ul>
+    <h2>
+        Notes</h2>
+    <ul>
+        <li>Is designed to work with MIDI type 1 files. (Type 0 will probably work OK as well)</li>
+        <li>Will not split files that have no markers (to avoid people calling it on its own
+            output)</li>
+        <li>Will always put note-off messages in the same file as their note-on even if they
+            fall after the next marker</li>
+        <li>Will insert the latest tempo, key signature and time signature, allowing splitting
+            of files whose tempos, key signatures and time signatures change.</li>
+        <li>Track 1 will be given the marker name as a track name so that the clip is given
+            this name when it is dropped into the track view in SONAR (even works when dragging
+            from EZdrummer in SONAR 5).</li>
+        <li>Copes correctly with clips whose first event does not fall exactly on the marker</li>
+        <li>Has been tested with Session Drummer and Pattern Brush MIDI files</li>
+        <li>EZdrummer will play a measure of silence after some of these patterns. Use the truncate
+            feature, or set note lengths to something short to fix this problem.</li>
+    </ul>
+    <h2>
+        Using SONAR patterns in EZdrummer</h2>
+    <p>
+        Here is a step by step guide on how to make use of the Session Drummer and Pattern
+        Brush patterns in <a href="http://www.ezdrummer.com/index.asp">EZdrummer</a>.</p>
+    <ol>
+        <li>Select one of the output options in MIDI File Splitter that will create files in
+            subfolders</li>
+        <li>You may also want to select to set all MIDI note durations to 1, and all MIDI events
+            to channel 1 to improve compatibility between EZdrummer and SONAR.</li>
+        <li>In Windows Explorer, browse to the Session Drummer's Drum Styles folder. (On my
+            computer this is: <i>C:\Program Files\Cakewalk\Shared MIDI Plugins</i>)</li>
+        <li>Select all the files and drag them into MIDI File Splitter</li>
+        <li>Take all the created folders of MIDI files and put them into the EZdrummer <i>My
+            Midi Files</i> folder, perhaps under another subdirectory called "Session Drummer".
+            (e.g. <i>C:\Program Files\Toontrack\EZDrummer\Midi\MY MIDIFILES\Session Drummer</i>)</li>
+        <li>Now browse to the Pattern Brush Patterns folder (On my computer this is <i>C:\Program
+            Files\Cakewalk\SONAR 5 Studio Edition\Pattern Brush Patterns</i>)</li>
+        <li>Select all and drag them into MIDI File Splitter</li>
+        <li>Again take all the created folders and put them into EZdrummer's My MIDI files folder,
+            under a different subdirectory. (e.g <i>C:\Program Files\Toontrack\EZDrummer\Midi\MY
+                MIDIFILES\Pattern Brush</i>)</li>
+    </ol>
+    <img src="http://i63.photobucket.com/albums/h146/markheath/ezdrummer_patterns.png"
+        alt="Patterns in EZDrummer" />
+    <h2>
+        Version History</h2>
+    <p>
+        New versions of MIDI File Splitter can be found at <a href="http://www.codeplex.com/naudio">
+            http://www.codeplex.com/naudio</a>.</p>
+    <ul>
+        <li>v0.01 - 4 Oct 2006
+            <ul>
+                <li>First public beta release</li>
+            </ul>
+        </li>
+        <li>v0.02 - 5 Oct 2006
+            <ul>
+                <li>Note durations can be truncated or set to a fixed value</li>
+                <li>Customisable MIDI channel number</li>
+                <li>Threading for better UI responsiveness</li>
+                <li>Settings are now saved between sessions</li>
+                <li>Now has an options dialog and an about box</li>
+            </ul>
+        </li>
+        <li>v0.03 - 7 Oct 2006
+            <ul>
+                <li>Support for some more MIDI meta events (SMPTE offset, Program Name, Device Name)</li>
+                <li>Allows processing of files with uppercase extensions</li>
+                <li>Better handling of export of final marker</li>
+                <li>Better support of input files with more than two tracks</li>
+                <li>Will insert a start marker if not present</li>
+                <li>Will only export a MIDI file if notes were found between markers</li>
+                <li>Output MIDI will have no markers in it, meaning that we can split files with only
+                    1 marker without risking running on our own output</li>
+                <li>Option to allow orphaned note events to be ignored (note on without note off, note
+                    off without note on)</li>
+            </ul>
+        </li>
+        <li>v0.04 - 11 Oct 2006
+            <ul>
+                <li>Copes with some problematic marker names</li>
+                <li>Better handling of converting type 0 input into type 1</li>
+                <li>Removed possibility of two end markers on the same track</li>
+                <li>All tracks in type 1 file have the same track name which is the marker name (previously
+                    the first track's name was left unchanged).</li>
+                <li>Option to save as MIDI type 0</li>
+                <li>Option to treat text events as markers</li>
+            </ul>
+        </li>
+        <li>v0.5 - 7 Nov 2006
+            <ul>
+                <li>Now has an installer</li>
+                <li>Removed some unnecessary debug assert dialogs</li>
+            </ul>
+        </li>
+        <li>v0.6 - 16 Mar 2007
+            <ul>
+            <li>Now hosted on CodePlex</li>
+            </ul>
+        </li>
+        <li>v0.7 - t.b.a.
+            <ul>
+            <li>Fixed a sysex writing bug</li>
+            <li>Better preserving of event ordering</li>
+            </ul>
+        </li>
+        
+    </ul>
+</body>
+</html>

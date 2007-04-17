@@ -1,0 +1,76 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Rules>
+	<GeneralSettings>
+		<FilenameRegex>^[A-Z]\@</FilenameRegex>
+		<ContextDepth>3</ContextDepth>
+		<ContextSeparator> - </ContextSeparator>
+	</GeneralSettings>
+	<Rule>
+		<SearchString>^[0-9A-Z]+\@[0-9][0-9]\.</SearchString>
+		<Replacement></Replacement>
+	</Rule>
+	<Rule>
+		<SearchString>^[0-9A-Z]+\@</SearchString>
+		<Replacement></Replacement>		
+	</Rule>
+	<Rule>
+		<SearchString>_</SearchString>
+		<Replacement> </Replacement>
+	</Rule>
+	<Rule>
+		<SearchString>#</SearchString>
+		<Replacement>/</Replacement>		
+	</Rule>
+	<Rule>
+		<SearchString>GROOVE </SearchString>
+		<Replacement>G</Replacement>
+	</Rule>
+	<Rule>
+		<SearchString>FILL </SearchString>
+		<Replacement>F</Replacement>
+	</Rule>
+	<Rule>
+		<SearchString>Fill </SearchString>
+		<Replacement>F</Replacement>
+	</Rule>
+	<Rule>
+		<SearchString>POP/ROCK</SearchString>
+		<Replacement>P/R</Replacement>
+	</Rule>
+	<Rule>
+		<SearchString>FUNK/ROCK</SearchString>
+		<Replacement>F/R</Replacement>
+	</Rule>
+	<Rule>
+		<SearchString>BALLAD</SearchString>
+		<Replacement>BLD</Replacement>
+	</Rule>
+	<Rule>
+		<SearchString>^FILLS</SearchString>
+		<Replacement></Replacement>
+	</Rule>
+	<Rule>
+		<SearchString>FILLS</SearchString>
+		<Replacement>F</Replacement>
+	</Rule>
+	<Rule>
+		<SearchString>MOTOWN</SearchString>
+		<Replacement>MTN</Replacement>
+	</Rule>
+	<Rule>
+		<SearchString>SIDESTICK</SearchString>
+		<Replacement>STK</Replacement>
+	</Rule>
+	<Rule>
+		<SearchString>EZX COCKTAIL</SearchString>
+		<Replacement>Cocktail</Replacement>
+	</Rule>
+	<Rule>
+		<SearchString>SAMBA</SearchString>
+		<Replacement></Replacement>
+	</Rule>
+	<Rule>
+		<SearchString>BAIAO</SearchString>
+		<Replacement></Replacement>
+	</Rule>
+</Rules>

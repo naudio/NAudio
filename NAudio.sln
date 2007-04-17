@@ -1,0 +1,71 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual C# Express 2005
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NAudio", "NAudio\NAudio.csproj", "{DA4F02E3-0B5E-42CD-B8D9-5583FA51D66E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MidiFileConverter", "MidiFileConverter\MidiFileConverter.csproj", "{5B5897BD-A423-4AF8-8A59-1C1372ED77DB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MixDiff", "MixDiff\MixDiff.csproj", "{1293DD10-378A-4370-AEE2-AA1E9E87039B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MidiFileSplitter", "MidiFileSplitter\MidiFileSplitter.csproj", "{2FF094D5-DA7D-49E5-BC5B-89CB7A5712EB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NAudioTests", "NAudioTests\NAudioTests.csproj", "{5080281A-F9A1-403F-85C7-0DFF6839B07B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NAudioDemo", "NAudioDemo\NAudioDemo.csproj", "{C37A547B-F31E-45FB-870A-CFA704D06152}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DA4F02E3-0B5E-42CD-B8D9-5583FA51D66E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DA4F02E3-0B5E-42CD-B8D9-5583FA51D66E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DA4F02E3-0B5E-42CD-B8D9-5583FA51D66E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DA4F02E3-0B5E-42CD-B8D9-5583FA51D66E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5B5897BD-A423-4AF8-8A59-1C1372ED77DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5B5897BD-A423-4AF8-8A59-1C1372ED77DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5B5897BD-A423-4AF8-8A59-1C1372ED77DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5B5897BD-A423-4AF8-8A59-1C1372ED77DB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1293DD10-378A-4370-AEE2-AA1E9E87039B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1293DD10-378A-4370-AEE2-AA1E9E87039B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1293DD10-378A-4370-AEE2-AA1E9E87039B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1293DD10-378A-4370-AEE2-AA1E9E87039B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2FF094D5-DA7D-49E5-BC5B-89CB7A5712EB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2FF094D5-DA7D-49E5-BC5B-89CB7A5712EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2FF094D5-DA7D-49E5-BC5B-89CB7A5712EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2FF094D5-DA7D-49E5-BC5B-89CB7A5712EB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5080281A-F9A1-403F-85C7-0DFF6839B07B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5080281A-F9A1-403F-85C7-0DFF6839B07B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5080281A-F9A1-403F-85C7-0DFF6839B07B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5080281A-F9A1-403F-85C7-0DFF6839B07B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C37A547B-F31E-45FB-870A-CFA704D06152}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C37A547B-F31E-45FB-870A-CFA704D06152}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C37A547B-F31E-45FB-870A-CFA704D06152}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C37A547B-F31E-45FB-870A-CFA704D06152}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(TeamFoundationVersionControl) = preSolution
+		SccNumberOfProjects = 6
+		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccTeamFoundationServer = https://tfs03.codeplex.com/
+		SccLocalPath0 = .
+		SccProjectUniqueName1 = NAudio\\NAudio.csproj
+		SccProjectName1 = NAudio
+		SccLocalPath1 = NAudio
+		SccProjectUniqueName2 = MidiFileConverter\\MidiFileConverter.csproj
+		SccProjectName2 = MidiFileConverter
+		SccLocalPath2 = MidiFileConverter
+		SccProjectUniqueName3 = MixDiff\\MixDiff.csproj
+		SccProjectName3 = MixDiff
+		SccLocalPath3 = MixDiff
+		SccProjectUniqueName4 = MidiFileSplitter\\MidiFileSplitter.csproj
+		SccProjectName4 = MidiFileSplitter
+		SccLocalPath4 = MidiFileSplitter
+		SccProjectUniqueName5 = NAudioTests\\NAudioTests.csproj
+		SccProjectName5 = NAudioTests
+		SccLocalPath5 = NAudioTests
+	EndGlobalSection
+EndGlobal

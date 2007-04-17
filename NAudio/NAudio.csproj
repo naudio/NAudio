@@ -1,0 +1,304 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{DA4F02E3-0B5E-42CD-B8D9-5583FA51D66E}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>NAudio</RootNamespace>
+    <AssemblyName>NAudio</AssemblyName>
+    <SccProjectName>SAK</SccProjectName>
+    <SccLocalPath>SAK</SccLocalPath>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccProvider>SAK</SccProvider>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DocumentationFile>bin\Debug\NAudio.XML</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Daw\MeasuresBeatsTicks.cs" />
+    <Compile Include="Daw\TempoMap.cs" />
+    <Compile Include="Dsp\BiQuadFilter.cs" />
+    <Compile Include="Dsp\Complex.cs" />
+    <Compile Include="Dsp\EnvelopeDetector.cs" />
+    <Compile Include="Dsp\FastFourierTransform.cs" />
+    <Compile Include="Dsp\ImpulseResponseConvolution.cs" />
+    <Compile Include="Dsp\ShiftBuffer.cs" />
+    <Compile Include="Dsp\SimpleCompressor.cs" />
+    <Compile Include="Dsp\SimpleGate.cs" />
+    <Compile Include="Effects\Delay.cs" />
+    <Compile Include="FileFormats\Map\CakewalkDrumMapping.cs" />
+    <Compile Include="FileFormats\Map\CakewalkMapFile.cs" />
+    <Compile Include="FileFormats\Map\MapBlockHeader.cs" />
+    <Compile Include="FileFormats\Mp3\Id3v2Tag.cs" />
+    <Compile Include="FileFormats\Mp3\Mp3Frame.cs" />
+    <Compile Include="FileFormats\Mp3\XingHeader.cs" />
+    <Compile Include="FileFormats\Ogg\OggEncoder.cs" />
+    <Compile Include="FileFormats\Ogg\OggInterop.cs" />
+    <Compile Include="FileFormats\Sfz\SfzFileReader.cs" />
+    <Compile Include="FileFormats\SoundFont\Generator.cs" />
+    <Compile Include="FileFormats\SoundFont\GeneratorBuilder.cs" />
+    <Compile Include="FileFormats\SoundFont\GeneratorEnum.cs" />
+    <Compile Include="FileFormats\SoundFont\InfoChunk.cs" />
+    <Compile Include="FileFormats\SoundFont\Instrument.cs" />
+    <Compile Include="FileFormats\SoundFont\InstrumentBuilder.cs" />
+    <Compile Include="FileFormats\SoundFont\Modulator.cs" />
+    <Compile Include="FileFormats\SoundFont\ModulatorBuilder.cs" />
+    <Compile Include="FileFormats\SoundFont\ModulatorType.cs" />
+    <Compile Include="FileFormats\SoundFont\Preset.cs" />
+    <Compile Include="FileFormats\SoundFont\PresetBuilder.cs" />
+    <Compile Include="FileFormats\SoundFont\PresetsChunk.cs" />
+    <Compile Include="FileFormats\SoundFont\RiffChunk.cs" />
+    <Compile Include="FileFormats\SoundFont\SampleDataChunk.cs" />
+    <Compile Include="FileFormats\SoundFont\SampleHeader.cs" />
+    <Compile Include="FileFormats\SoundFont\SampleHeaderBuilder.cs" />
+    <Compile Include="FileFormats\SoundFont\SampleMode.cs" />
+    <Compile Include="FileFormats\SoundFont\SFSampleLink.cs" />
+    <Compile Include="FileFormats\SoundFont\SFVersion.cs" />
+    <Compile Include="FileFormats\SoundFont\SFVersionBuilder.cs" />
+    <Compile Include="FileFormats\SoundFont\SoundFont.cs" />
+    <Compile Include="FileFormats\SoundFont\StructureBuilder.cs" />
+    <Compile Include="FileFormats\SoundFont\Zone.cs" />
+    <Compile Include="FileFormats\SoundFont\ZoneBuilder.cs" />
+    <Compile Include="Gui\Arranger.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Gui\Fader.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Gui\Graph\Graph.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Gui\LcdPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Gui\PanSlider.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Gui\Pot.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Gui\Pot.designer.cs">
+      <DependentUpon>Pot.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Gui\TrackView\AudioClip.cs" />
+    <Compile Include="Gui\TrackView\Clip.cs" />
+    <Compile Include="Gui\TrackView\TimeLine.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Gui\TrackView\TimeLine.designer.cs">
+      <DependentUpon>TimeLine.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Gui\TrackView\Track.cs" />
+    <Compile Include="Gui\TrackView\TrackHeader.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Gui\TrackView\TrackHeader.designer.cs">
+      <DependentUpon>TrackHeader.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Gui\TrackView\TrackView.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Gui\TrackView\TrackView.Designer.cs">
+      <DependentUpon>TrackView.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Gui\VolumeSlider.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Gui\WaveViewer.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Midi\ChannelAfterTouchEvent.cs" />
+    <Compile Include="Midi\ControlChangeEvent.cs" />
+    <Compile Include="Midi\KeySignatureEvent.cs" />
+    <Compile Include="Midi\MetaEvent.cs" />
+    <Compile Include="Midi\MetaEventType.cs" />
+    <Compile Include="Midi\MidiCommandCode.cs" />
+    <Compile Include="Midi\MidiController.cs" />
+    <Compile Include="Midi\MidiEvent.cs" />
+    <Compile Include="Midi\MidiEventCollection.cs" />
+    <Compile Include="Midi\MidiEventComparer.cs" />
+    <Compile Include="Midi\MidiFile.cs" />
+    <Compile Include="Midi\MidiIn.cs" />
+    <Compile Include="Midi\MidiInCapabilities.cs" />
+    <Compile Include="Midi\MidiInterop.cs" />
+    <Compile Include="Midi\MidiMessage.cs" />
+    <Compile Include="Midi\MidiOut.cs" />
+    <Compile Include="Midi\MidiOutCapabilities.cs" />
+    <Compile Include="Midi\MidiOutTechnology.cs" />
+    <Compile Include="Midi\NoteEvent.cs" />
+    <Compile Include="Midi\NoteOnEvent.cs" />
+    <Compile Include="Midi\PatchChangeEvent.cs" />
+    <Compile Include="Midi\PitchWheelChangeEvent.cs" />
+    <Compile Include="Midi\SmpteOffsetEvent.cs" />
+    <Compile Include="Midi\SysexEvent.cs" />
+    <Compile Include="Midi\TempoEvent.cs" />
+    <Compile Include="Midi\TextEvent.cs" />
+    <Compile Include="Midi\TimeSignatureEvent.cs" />
+    <Compile Include="Midi\TrackSequenceNumberEvent.cs" />
+    <Compile Include="Mixer\BooleanMixerControl.cs" />
+    <Compile Include="Mixer\CustomMixerControl.cs" />
+    <Compile Include="Mixer\ListTextMixerControl.cs" />
+    <Compile Include="Mixer\Mixer.cs" />
+    <Compile Include="Mixer\MixerControl.cs" />
+    <Compile Include="Mixer\MixerControlType.cs" />
+    <Compile Include="Mixer\MixerDestination.cs" />
+    <Compile Include="Mixer\MixerInterop.cs" />
+    <Compile Include="Mixer\MixerSource.cs" />
+    <Compile Include="Mixer\SignedMixerControl.cs" />
+    <Compile Include="Mixer\UnsignedMixerControl.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utils\AboutForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Utils\AboutForm.designer.cs">
+      <DependentUpon>AboutForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Utils\ByteEncoding.cs" />
+    <Compile Include="Utils\Decibels.cs" />
+    <Compile Include="Utils\FileAssociations.cs" />
+    <Compile Include="Utils\MergeSort.cs" />
+    <Compile Include="Utils\ProgressEventArgs.cs" />
+    <Compile Include="Utils\ProgressLog.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Utils\ProgressLog.designer.cs">
+      <DependentUpon>ProgressLog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Wave\Compression\AcmDriver.cs" />
+    <Compile Include="Wave\Compression\AcmDriverDetails.cs" />
+    <Compile Include="Wave\Compression\AcmDriverDetailsSupportFlags.cs" />
+    <Compile Include="Wave\Compression\AcmDriverEnumFlags.cs" />
+    <Compile Include="Wave\Compression\AcmFormatSuggestFlags.cs" />
+    <Compile Include="Wave\Compression\AcmInterop.cs" />
+    <Compile Include="Wave\Compression\AcmMetrics.cs" />
+    <Compile Include="Wave\Compression\AcmStream.cs" />
+    <Compile Include="Wave\Compression\AcmStreamConvertFlags.cs" />
+    <Compile Include="Wave\Compression\AcmStreamHeader.cs" />
+    <Compile Include="Wave\Compression\AcmStreamHeaderStatusFlags.cs" />
+    <Compile Include="Wave\Compression\AcmStreamHeaderStruct.cs" />
+    <Compile Include="Wave\Compression\AcmStreamOpenFlags.cs" />
+    <Compile Include="Wave\Compression\AcmStreamSizeFlags.cs" />
+    <Compile Include="Wave\Compression\WaveFilter.cs" />
+    <Compile Include="Wave\MmeInterop\Manufacturers.cs" />
+    <Compile Include="Wave\MmeInterop\MmException.cs" />
+    <Compile Include="Wave\MmeInterop\MmResult.cs" />
+    <Compile Include="Wave\MmeInterop\WaveHeader.cs" />
+    <Compile Include="Wave\MmeInterop\WaveHeaderFlags.cs" />
+    <Compile Include="Wave\MmeInterop\WaveInterop.cs" />
+    <Compile Include="Wave\MmeInterop\WaveOutCapabilities.cs" />
+    <Compile Include="Wave\MmeInterop\WaveOutSupport.cs" />
+    <Compile Include="Wave\WaveFormats\Mp3WaveFormat.cs" />
+    <Compile Include="Wave\WaveFormats\OggWaveFormat.cs" />
+    <Compile Include="Wave\WaveFormats\WaveFormat.cs" />
+    <Compile Include="Wave\WaveFormats\WaveFormatEncoding.cs" />
+    <Compile Include="Wave\WaveOutputs\DirectSoundOut.cs" />
+    <Compile Include="Wave\WaveOutputs\IWavePlayer.cs" />
+    <Compile Include="Wave\WaveOutputs\WaveFileWriter.cs" />
+    <Compile Include="Wave\WaveOutputs\WaveOut.cs" />
+    <Compile Include="Wave\WaveOutputs\WaveOutThreadSafe.cs" />
+    <Compile Include="Wave\WaveStreams\Mp3FileReader.cs" />
+    <Compile Include="Wave\WaveStreams\RiffChunk.cs" />
+    <Compile Include="Wave\WaveStreams\SimpleCompressorStream.cs" />
+    <Compile Include="Wave\WaveStreams\Wave32To16Stream.cs" />
+    <Compile Include="Wave\WaveStreams\WaveChannel32.cs" />
+    <Compile Include="Wave\WaveStreams\WaveFileReader.cs" />
+    <Compile Include="Wave\WaveStreams\WaveFormatConversionStream.cs" />
+    <Compile Include="Wave\WaveStreams\WaveInBuffer.cs" />
+    <Compile Include="Wave\WaveStreams\WaveInStream.cs" />
+    <Compile Include="Wave\WaveStreams\WaveMixerStream32.cs" />
+    <Compile Include="Wave\WaveStreams\WaveOffsetStream.cs" />
+    <Compile Include="Wave\WaveStreams\WaveOutBuffer.cs" />
+    <Compile Include="Wave\WaveStreams\WaveStream.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Gui\Arranger.resx">
+      <DependentUpon>Arranger.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Gui\Fader.resx">
+      <DependentUpon>Fader.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Gui\Graph\Graph.resx">
+      <DependentUpon>Graph.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Gui\LcdPanel.resx">
+      <DependentUpon>LcdPanel.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Gui\PanSlider.resx">
+      <DependentUpon>PanSlider.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Gui\Pot.resx">
+      <DependentUpon>Pot.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Gui\TrackView\TimeLine.resx">
+      <DependentUpon>TimeLine.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Gui\TrackView\TrackHeader.resx">
+      <DependentUpon>TrackHeader.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Gui\VolumeSlider.resx">
+      <DependentUpon>VolumeSlider.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Gui\WaveViewer.resx">
+      <DependentUpon>WaveViewer.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Utils\AboutForm.resx">
+      <DependentUpon>AboutForm.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Utils\ProgressLog.resx">
+      <DependentUpon>ProgressLog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Changes.xml" />
+    <None Include="Readme.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

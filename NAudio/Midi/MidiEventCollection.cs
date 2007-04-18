@@ -139,6 +139,9 @@ namespace NAudio.Midi
             {
                 if (midiFileType != value)
                 {
+                    // set MIDI file type before calling flatten or explode functions
+                    midiFileType = value;                    
+                                        
                     if (value == 0)
                     {
                         FlattenToOneTrack();
@@ -147,7 +150,6 @@ namespace NAudio.Midi
                     {
                         ExplodeToManyTracks();
                     }
-                    midiFileType = value;
                 }
             }
         }

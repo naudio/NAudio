@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual C# Express 2005
+# Visual Studio 2005
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NAudio", "NAudio\NAudio.csproj", "{DA4F02E3-0B5E-42CD-B8D9-5583FA51D66E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MidiFileConverter", "MidiFileConverter\MidiFileConverter.csproj", "{5B5897BD-A423-4AF8-8A59-1C1372ED77DB}"
@@ -46,26 +46,5 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccNumberOfProjects = 6
-		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
-		SccTeamFoundationServer = https://tfs03.codeplex.com/
-		SccLocalPath0 = .
-		SccProjectUniqueName1 = NAudio\\NAudio.csproj
-		SccProjectName1 = NAudio
-		SccLocalPath1 = NAudio
-		SccProjectUniqueName2 = MidiFileConverter\\MidiFileConverter.csproj
-		SccProjectName2 = MidiFileConverter
-		SccLocalPath2 = MidiFileConverter
-		SccProjectUniqueName3 = MixDiff\\MixDiff.csproj
-		SccProjectName3 = MixDiff
-		SccLocalPath3 = MixDiff
-		SccProjectUniqueName4 = MidiFileSplitter\\MidiFileSplitter.csproj
-		SccProjectName4 = MidiFileSplitter
-		SccLocalPath4 = MidiFileSplitter
-		SccProjectUniqueName5 = NAudioTests\\NAudioTests.csproj
-		SccProjectName5 = NAudioTests
-		SccLocalPath5 = NAudioTests
 	EndGlobalSection
 EndGlobal

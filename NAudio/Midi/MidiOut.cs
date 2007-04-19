@@ -11,6 +11,7 @@ namespace NAudio.Midi
 	{
 		private IntPtr hMidiOut = IntPtr.Zero;
 		private bool disposed = false;
+        MidiInterop.MidiOutCallback callback;
 
 		/// <summary>
 		/// Gets the number of MIDI devices available in the system
@@ -22,6 +23,18 @@ namespace NAudio.Midi
 				return MidiInterop.midiOutGetNumDevs();
 			}
 		}
+
+        /// <summary>
+        /// Gets the MIDI Out device info
+        /// </summary>
+        public static MidiOutCapabilities DeviceInfo(int midiOutDeviceNumber)
+        {
+            MidiOutCapabilities caps = new MidiOutCapabilities();
+            int structSize = Marshal.SizeOf(caps);
+            MmException.Try(MidiInterop.midiOutGetDevCaps(midiOutDeviceNumber, out caps, structSize), "midiOutGetDevCaps");
+            return caps;
+        }
+
 		
 		/// <summary>
 		/// Opens a specified MIDI out device
@@ -29,9 +42,8 @@ namespace NAudio.Midi
 		/// <param name="deviceNo">The device number</param>
 		public MidiOut(int deviceNo) 
 		{
-			// TODO: callback function
-			MmException.Try(MidiInterop.midiOutOpen(out hMidiOut,deviceNo,0,0,MidiInterop.CALLBACK_NULL),"midiOutOpen");
-			// TODO: check for error
+            this.callback = new MidiInterop.MidiOutCallback(Callback);
+            MmException.Try(MidiInterop.midiOutOpen(out hMidiOut, deviceNo, callback, 0, MidiInterop.CALLBACK_FUNCTION), "midiOutOpen");
 		}
 		
 		/// <summary>
@@ -47,6 +59,7 @@ namespace NAudio.Midi
 		/// </summary>
 		public void Dispose() 
 		{
+            GC.KeepAlive(callback);
 			Dispose(true);
 			GC.SuppressFinalize(this);
 		}
@@ -78,19 +91,6 @@ namespace NAudio.Midi
 		}
 
 		/// <summary>
-		/// Gets the MIDI out device capabilities
-		/// </summary>
-		public MidiOutCapabilities Capabilities 
-		{
-			get 
-			{
-				MidiOutCapabilities caps = new MidiOutCapabilities();
-				MmException.Try(MidiInterop.midiOutGetDevCaps(hMidiOut,out caps,Marshal.SizeOf(caps)),"midiOutGetDevCaps");
-				return caps;
-			}
-		}
-
-		/// <summary>
 		/// Sends a MIDI out message
 		/// </summary>
 		/// <param name="message">Message</param>
@@ -105,9 +105,9 @@ namespace NAudio.Midi
 		/// Sends a MIDI message to the MIDI out device
 		/// </summary>
 		/// <param name="message">The message to send</param>
-		public void Send(MidiMessage message) 
+		public void Send(int message) 
 		{
-			MmException.Try(MidiInterop.midiOutShortMsg(hMidiOut,message.RawData),"midiOutShortMsg");
+			MmException.Try(MidiInterop.midiOutShortMsg(hMidiOut,message),"midiOutShortMsg");
 		}
 		
 		/// <summary>
@@ -123,6 +123,11 @@ namespace NAudio.Midi
 			}
 			disposed = true;         
 		}
+
+        private void Callback(IntPtr midiInHandle, MidiInterop.MidiOutMessage message, IntPtr userData, IntPtr messageParameter1, IntPtr messageParameter2)
+        {
+        }
+        
 
 		/// <summary>
 		/// Cleanup

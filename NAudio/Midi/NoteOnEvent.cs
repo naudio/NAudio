@@ -34,8 +34,8 @@ namespace NAudio.Midi
             this.OffEvent = new NoteEvent(absoluteTime,channel,MidiCommandCode.NoteOff,
                 noteNumber,0);
             NoteLength = duration;
-        }
-		
+        }		
+
 		/// <summary>
 		/// The associated Note off event
 		/// </summary>

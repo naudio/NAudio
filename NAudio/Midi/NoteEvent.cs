@@ -38,7 +38,15 @@ namespace NAudio.Midi
         }
 		
 		private static readonly string[] NoteNames = new string[] { "C","C#","D","D#","E","F","F#","G","G#","A","A#","B" };
-		
+
+        /// <summary>
+        /// <see cref="MidiEvent.GetAsShortMessage" />
+        /// </summary>
+        public override int GetAsShortMessage()
+        {
+            return base.GetAsShortMessage() + (noteNumber << 8) + (velocity << 16);
+        }
+
 		/// <summary>
 		/// The MIDI note number
 		/// </summary>

@@ -58,6 +58,7 @@ namespace NAudio.Midi
         }
 
         public delegate void MidiInCallback(IntPtr midiInHandle, MidiInMessage message, IntPtr userData, IntPtr messageParameter1, IntPtr messageParameter2);
+        public delegate void MidiOutCallback(IntPtr midiInHandle, MidiOutMessage message, IntPtr userData, IntPtr messageParameter1, IntPtr messageParameter2);
 
 
 		[DllImport("winmm.dll")]
@@ -117,8 +118,8 @@ namespace NAudio.Midi
 		[DllImport("winmm.dll")]
         public static extern MmResult midiOutClose(IntPtr hMidiOut);
 
-		[DllImport("winmm.dll")]
-        public static extern MmResult midiOutGetDevCaps(IntPtr uDeviceID, out MidiOutCapabilities caps, int uSize);
+		[DllImport("winmm.dll", CharSet = CharSet.Auto)]
+        public static extern MmResult midiOutGetDevCaps(int deviceNumber, out MidiOutCapabilities caps, int uSize);
 
 		[DllImport("winmm.dll")]
         public static extern MmResult midiOutGetErrorText(IntPtr err, string lpText, int uSize);
@@ -139,7 +140,7 @@ namespace NAudio.Midi
         public static extern MmResult midiOutMessage(IntPtr hMidiOut, int msg, int dw1, int dw2);
 
 		[DllImport("winmm.dll")]
-        public static extern MmResult midiOutOpen(out IntPtr lphMidiOut, int uDeviceID, int dwCallback, int dwInstance, int dwFlags);
+        public static extern MmResult midiOutOpen(out IntPtr lphMidiOut, int uDeviceID, MidiOutCallback dwCallback, int dwInstance, int dwFlags);
 
 		[DllImport("winmm.dll")]
         public static extern MmResult midiOutPrepareHeader(IntPtr hMidiOut, [MarshalAs(UnmanagedType.Struct)] ref MIDIHDR lpMidiOutHdr, int uSize);

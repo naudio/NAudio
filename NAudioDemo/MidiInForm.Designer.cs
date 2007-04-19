@@ -28,12 +28,18 @@ namespace NAudioDemo
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.comboBoxMidiInDevices = new System.Windows.Forms.ComboBox();
             this.labelDevice = new System.Windows.Forms.Label();
             this.buttonMonitor = new System.Windows.Forms.Button();
             this.checkBoxFilterAutoSensing = new System.Windows.Forms.CheckBox();
             this.progressLog1 = new NAudio.Utils.ProgressLog();
             this.buttonClearLog = new System.Windows.Forms.Button();
+            this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.checkBoxMidiOutMessages = new System.Windows.Forms.CheckBox();
+            this.comboBoxMidiOutDevices = new System.Windows.Forms.ComboBox();
+            this.timer1 = new System.Windows.Forms.Timer(this.components);
+            this.groupBox1.SuspendLayout();
             this.SuspendLayout();
             // 
             // comboBoxMidiInDevices
@@ -83,7 +89,7 @@ namespace NAudioDemo
             this.progressLog1.Location = new System.Drawing.Point(12, 70);
             this.progressLog1.Name = "progressLog1";
             this.progressLog1.Padding = new System.Windows.Forms.Padding(1);
-            this.progressLog1.Size = new System.Drawing.Size(486, 267);
+            this.progressLog1.Size = new System.Drawing.Size(486, 258);
             this.progressLog1.TabIndex = 3;
             // 
             // buttonClearLog
@@ -96,11 +102,50 @@ namespace NAudioDemo
             this.buttonClearLog.UseVisualStyleBackColor = true;
             this.buttonClearLog.Click += new System.EventHandler(this.buttonClearLog_Click);
             // 
+            // groupBox1
+            // 
+            this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.groupBox1.Controls.Add(this.checkBoxMidiOutMessages);
+            this.groupBox1.Controls.Add(this.comboBoxMidiOutDevices);
+            this.groupBox1.Location = new System.Drawing.Point(13, 343);
+            this.groupBox1.Name = "groupBox1";
+            this.groupBox1.Size = new System.Drawing.Size(484, 45);
+            this.groupBox1.TabIndex = 6;
+            this.groupBox1.TabStop = false;
+            this.groupBox1.Text = "MIDI Out";
+            // 
+            // checkBoxMidiOutMessages
+            // 
+            this.checkBoxMidiOutMessages.AutoSize = true;
+            this.checkBoxMidiOutMessages.Location = new System.Drawing.Point(6, 19);
+            this.checkBoxMidiOutMessages.Name = "checkBoxMidiOutMessages";
+            this.checkBoxMidiOutMessages.Size = new System.Drawing.Size(172, 17);
+            this.checkBoxMidiOutMessages.TabIndex = 0;
+            this.checkBoxMidiOutMessages.Text = "Send Test MIDI Out Messages";
+            this.checkBoxMidiOutMessages.UseVisualStyleBackColor = true;
+            // 
+            // comboBoxMidiOutDevices
+            // 
+            this.comboBoxMidiOutDevices.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboBoxMidiOutDevices.FormattingEnabled = true;
+            this.comboBoxMidiOutDevices.Location = new System.Drawing.Point(196, 17);
+            this.comboBoxMidiOutDevices.Name = "comboBoxMidiOutDevices";
+            this.comboBoxMidiOutDevices.Size = new System.Drawing.Size(178, 21);
+            this.comboBoxMidiOutDevices.TabIndex = 0;
+            // 
+            // timer1
+            // 
+            this.timer1.Enabled = true;
+            this.timer1.Interval = 1000;
+            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
+            // 
             // MidiInForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(510, 349);
+            this.ClientSize = new System.Drawing.Size(510, 399);
+            this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.buttonClearLog);
             this.Controls.Add(this.checkBoxFilterAutoSensing);
             this.Controls.Add(this.progressLog1);
@@ -111,6 +156,8 @@ namespace NAudioDemo
             this.Text = "MIDI In Sample";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.MidiInForm_FormClosed);
             this.Load += new System.EventHandler(this.MidiInForm_Load);
+            this.groupBox1.ResumeLayout(false);
+            this.groupBox1.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -124,5 +171,9 @@ namespace NAudioDemo
         private NAudio.Utils.ProgressLog progressLog1;
         private System.Windows.Forms.CheckBox checkBoxFilterAutoSensing;
         private System.Windows.Forms.Button buttonClearLog;
+        private System.Windows.Forms.GroupBox groupBox1;
+        private System.Windows.Forms.CheckBox checkBoxMidiOutMessages;
+        private System.Windows.Forms.ComboBox comboBoxMidiOutDevices;
+        private System.Windows.Forms.Timer timer1;
     }
 }

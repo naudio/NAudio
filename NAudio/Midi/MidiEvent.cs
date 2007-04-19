@@ -15,6 +15,12 @@ namespace NAudio.Midi
 		private int deltaTime;
 		private long absoluteTime;
 
+        /// <summary>
+        /// Creates a MidiEvent from a raw message received using
+        /// the MME MIDI In APIs
+        /// </summary>
+        /// <param name="rawMessage">The short MIDI message</param>
+        /// <returns>A new MIDI Event</returns>
         public static MidiEvent FromRawMessage(int rawMessage)
         {
             long absoluteTime = 0;
@@ -153,6 +159,17 @@ namespace NAudio.Midi
 			me.commandCode = commandCode;
 			return me;
 		}
+
+        /// <summary>
+        /// Converts this MIDI event to a short message (32 bit integer) that
+        /// can be sent by the Windows MIDI out short message APIs
+        /// Cannot be implemented for all MIDI messages
+        /// </summary>
+        /// <returns>A short message</returns>
+        public virtual int GetAsShortMessage()
+        {
+            return (channel - 1) + (int)commandCode;
+        }
 
         /// <summary>
         /// Default constructor

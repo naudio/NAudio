@@ -6,7 +6,8 @@ namespace NAudio.Midi
 	/// <summary>
 	/// class representing the capabilities of a MIDI out device
 	/// </summary>
-	public class MidiOutCapabilities 
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]    
+    public struct MidiOutCapabilities 
 	{
         Int16 manufacturerId;
         Int16 productId;

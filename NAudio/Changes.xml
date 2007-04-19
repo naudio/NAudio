@@ -678,10 +678,16 @@
 		<desc>New MidiIn, MidiInCapabilities classes</desc>
 		<desc>Added a new NAudioDemo for testing / demonstrating use of NAudio APIs</desc>
 	</change>
-  <change>
-    <version>1.0.111.0</version>
-    <date>18 Apr 2007</date>
-    <desc>More MidiEventCollection automated tests</desc>
-    <desc>Fixes to MidiEventCollection</desc>
-  </change>
+	<change>
+		<version>1.0.111.0</version>
+		<date>18 Apr 2007</date>
+		<desc>More MidiEventCollection automated tests</desc>
+		<desc>Fixes to MidiEventCollection</desc>
+	</change>
+	<change>
+		<version>1.0.112.0</version>
+		<date>19 Apr 2007</date>
+		<desc>Some improvements to MIDI out interop</desc>
+		<desc>Test application can now send test MIDI out messages</desc>
+	</change>
 </changes>

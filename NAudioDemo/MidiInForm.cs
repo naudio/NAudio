@@ -12,7 +12,10 @@ namespace NAudioDemo
     public partial class MidiInForm : Form
     {
         MidiIn midiIn;
+        MidiOut midiOut;
         bool monitoring;
+        List<MidiEvent> events;
+        int midiOutIndex;
 
         public MidiInForm()
         {
@@ -29,6 +32,27 @@ namespace NAudioDemo
             {
                 comboBoxMidiInDevices.SelectedIndex = 0;
             }
+            for (int device = 0; device < MidiOut.NumberOfDevices; device++)
+            {
+                comboBoxMidiOutDevices.Items.Add(MidiOut.DeviceInfo(device).ProductName);
+            }
+            if (comboBoxMidiOutDevices.Items.Count > 0)
+            {
+                comboBoxMidiOutDevices.SelectedIndex = 0;
+            }
+            events = new List<MidiEvent>();
+            for (int note = 50; note < 62; note++)
+            {
+                AddNoteEvent(note);
+            }
+        }
+
+        private void AddNoteEvent(int noteNumber)
+        {
+            int channel = 2;
+            NoteOnEvent noteOnEvent = new NoteOnEvent(0, channel, noteNumber, 100, 50);
+            events.Add(noteOnEvent);
+            events.Add(noteOnEvent.OffEvent);
         }
 
         private void buttonMonitor_Click(object sender, EventArgs e)
@@ -87,17 +111,46 @@ namespace NAudioDemo
 
         private void MidiInForm_FormClosed(object sender, FormClosedEventArgs e)
         {
+            timer1.Enabled = false;
             StopMonitoring();
             if (midiIn != null)
             {
                 midiIn.Dispose();
-                midiIn.Close();
+                midiIn = null;
+            }
+            if (midiOut != null)
+            {
+                midiOut.Dispose();
+                midiOut = null;
             }
         }
 
         private void buttonClearLog_Click(object sender, EventArgs e)
         {
             progressLog1.ClearLog();
+        }
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            if (checkBoxMidiOutMessages.Checked)
+            {
+                SendNextMidiOutMessage();
+            }
+        }
+
+        private void SendNextMidiOutMessage()
+        {
+            if (midiOut == null)
+            {
+                midiOut = new MidiOut(comboBoxMidiOutDevices.SelectedIndex);
+            }
+            MidiEvent eventToSend = events[midiOutIndex++];
+            midiOut.Send(eventToSend.GetAsShortMessage());
+            progressLog1.LogMessage(Color.Green, String.Format("Sent {0}", eventToSend));
+            if (midiOutIndex >= events.Count)
+            {
+                midiOutIndex = 0;
+            }
         }
     }
 }

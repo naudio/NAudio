@@ -690,4 +690,9 @@
 		<desc>Some improvements to MIDI out interop</desc>
 		<desc>Test application can now send test MIDI out messages</desc>
 	</change>
+  <change>
+    <version>1.0.113.0</version>
+    <date>26 Apr 2007</date>
+    <desc>Allow invalid NoteOff velocities to be read from a MIDI file</desc>
+  </change>
 </changes>

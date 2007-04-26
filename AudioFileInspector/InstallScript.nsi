@@ -1,4 +1,4 @@
-; MIDI File Splitter install script
+; Audio File Inspector install script
 ; originally based on example2 that comes with nsis
 ;
 ; This script is based on example1.nsi, but it remember the directory, 
@@ -11,19 +11,18 @@
 !insertmacro VersionCompare
  
 !include LogicLib.nsh
-RequestExecutionLevel highest
 
-!define VERSION "0.6"
-!define FULLVERSION "0.6.8.0"
-!define PRODUCT_NAME "MIDI File Splitter"
-!define EXECUTABLE_NAME "MIDIFileSplitter.exe"
+!define VERSION "0.1"
+!define FULLVERSION "0.1.1.0"
+!define PRODUCT_NAME "Audio File Inspector"
+!define EXECUTABLE_NAME "AudioFileInspector.exe"
 
 ; The name of the installer
-Name "${PRODUCT_NAME}"
+Name "Audio File Inspector"
 
 ; The file to write
-; OutFile "${PRODUCT_NAME} v${VERSION} Install.exe"
-OutFile "midi_file_splitter_0_6_install.exe"
+;OutFile "${PRODUCT_NAME} v${VERSION} Install.exe"
+OutFile "audio_file_inspector_0_1_install.exe"
 
 ; The default installation directory
 InstallDir "$PROGRAMFILES\Mark Heath\${PRODUCT_NAME}"
@@ -32,12 +31,12 @@ InstallDir "$PROGRAMFILES\Mark Heath\${PRODUCT_NAME}"
 ; overwrite the old one automatically)
 InstallDirRegKey HKLM "Software\${PRODUCT_NAME}" "Install_Dir"
 
-VIAddVersionKey /LANG=1033-English "ProductName" "${PRODUCT_NAME}"
-VIAddVersionKey /LANG=1033-English "Comments" ""
-VIAddVersionKey /LANG=1033-English "CompanyName" "Mark Heath"
-VIAddVersionKey /LANG=1033-English "LegalCopyright" "© 2007 Mark Heath"
-VIAddVersionKey /LANG=1033-English "FileDescription" "${PRODUCT_NAME} Installer"
-VIAddVersionKey /LANG=1033-English "FileVersion" "${VERSION}"
+VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductName" "${PRODUCT_NAME}"
+VIAddVersionKey /LANG=${LANG_ENGLISH} "Comments" ""
+VIAddVersionKey /LANG=${LANG_ENGLISH} "CompanyName" "Mark Heath"
+VIAddVersionKey /LANG=${LANG_ENGLISH} "LegalCopyright" "© 2006 Mark Heath"
+VIAddVersionKey /LANG=${LANG_ENGLISH} "FileDescription" "${PRODUCT_NAME} Installer"
+VIAddVersionKey /LANG=${LANG_ENGLISH} "FileVersion" "${VERSION}"
 VIProductVersion "${FULLVERSION}"
 
 
@@ -100,8 +99,9 @@ Section "Program Files (required)"
   
   ; Put file there
   File "${EXECUTABLE_NAME}"
-  File "${EXECUTABLE_NAME}.config"
+  ; File "${EXECUTABLE_NAME}.config"
   File "NAudio.dll"
+  File "audio_file_inspector.html"
   
   ; Write the installation path into the registry
   WriteRegStr HKLM "SOFTWARE\${PRODUCT_NAME}" "Install_Dir" "$INSTDIR"
@@ -113,6 +113,8 @@ Section "Program Files (required)"
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "NoRepair" 1
   WriteUninstaller "uninstall.exe"
   
+  ExecWait '"$INSTDIR\${EXECUTABLE_NAME}" -install' $0
+  DetailPrint "Associating File Types returned $0"
 SectionEnd
 
 ; Optional section (can be disabled by the user)
@@ -128,8 +130,9 @@ SectionEnd
 
 ; Uninstaller
 
-Section "Uninstall"
-  
+Section "Uninstall"  
+  ExecWait '"$INSTDIR\${EXECUTABLE_NAME}" -uninstall' $0
+  DetailPrint "Removing Explorer Context Action returned $0"
   ; Remove registry keys
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
   DeleteRegKey HKLM "SOFTWARE\${PRODUCT_NAME}"
@@ -139,6 +142,7 @@ Section "Uninstall"
   Delete "$INSTDIR\${EXECUTABLE_NAME}"
   Delete "$INSTDIR\${EXECUTABLE_NAME}.config"
   Delete "$INSTDIR\NAudio.dll"
+  Delete "$INSTDIR\audio_file_inspector.html"
 
   ; Remove shortcuts, if any
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\*.*"

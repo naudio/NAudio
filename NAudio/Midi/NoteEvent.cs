@@ -9,8 +9,8 @@ namespace NAudio.Midi
 	/// </summary>
 	public class NoteEvent : MidiEvent 
 	{
-		private byte noteNumber;
-		private byte velocity;
+		private int noteNumber;
+		private int velocity;
 		
 		/// <summary>
 		/// Reads a NoteEvent from a stream of MIDI data
@@ -18,8 +18,14 @@ namespace NAudio.Midi
 		/// <param name="br">Binary Reader for the stream</param>
 		public NoteEvent(BinaryReader br) 
 		{
-			NoteNumber = br.ReadByte();			
-			Velocity = br.ReadByte();
+			NoteNumber = br.ReadByte();	
+			velocity = br.ReadByte();
+            // it seems it is possible for cubase
+            // to output some notes with a NoteOff velocity > 127
+            if (velocity > 127)
+            {
+                velocity = 127;
+            }
 		}
 		
         /// <summary>
@@ -62,7 +68,7 @@ namespace NAudio.Midi
                 {
                     throw new ArgumentOutOfRangeException("Note number must be in the range 0-127");
                 }
-                noteNumber = (byte)value;
+                noteNumber = value;
             }
 		}
  
@@ -81,7 +87,7 @@ namespace NAudio.Midi
                 {
                     throw new ArgumentOutOfRangeException("Velocity must be in the range 0-127");
                 }
-                velocity = (byte)value;
+                velocity = value;
             }
  		}
 
@@ -165,7 +171,7 @@ namespace NAudio.Midi
 			return String.Format("{0} {1} Vel:{2}",
 				base.ToString(),
 				this.NoteName,
-				this.velocity);
+				this.Velocity);
 		}
 
         /// <summary>
@@ -174,8 +180,8 @@ namespace NAudio.Midi
         public override void Export(ref long absoluteTime, BinaryWriter writer)
         {
             base.Export(ref absoluteTime, writer);
-            writer.Write(noteNumber);
-            writer.Write(velocity);			
+            writer.Write((byte)noteNumber);
+            writer.Write((byte)velocity);			
         }
 	}
 }

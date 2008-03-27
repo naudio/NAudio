@@ -20,5 +20,11 @@ namespace NAudioDemo
             MidiInForm midiInForm = new MidiInForm();
             midiInForm.ShowDialog();
         }
+
+        private void buttonWavPlayback_Click(object sender, EventArgs e)
+        {
+            AudioPlaybackForm audioPlaybackForm = new AudioPlaybackForm();
+            audioPlaybackForm.ShowDialog();
+        }
     }
 }

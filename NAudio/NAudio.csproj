@@ -2,7 +2,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.50727</ProductVersion>
+    <ProductVersion>9.0.21022</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{DA4F02E3-0B5E-42CD-B8D9-5583FA51D66E}</ProjectGuid>
     <OutputType>Library</OutputType>
@@ -44,6 +44,14 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="BlueWave.Interop.Asio, Version=1.0.0.0, Culture=neutral, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Lib\ASIO\BlueWave.Interop.Asio.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.DirectX.DirectSound, Version=1.0.2902.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Lib\Managed DirectX\Microsoft.DirectX.DirectSound.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
@@ -227,6 +235,7 @@
     <Compile Include="Wave\WaveFormats\OggWaveFormat.cs" />
     <Compile Include="Wave\WaveFormats\WaveFormat.cs" />
     <Compile Include="Wave\WaveFormats\WaveFormatEncoding.cs" />
+    <Compile Include="Wave\WaveOutputs\AsioOut.cs" />
     <Compile Include="Wave\WaveOutputs\DirectSoundOut.cs" />
     <Compile Include="Wave\WaveOutputs\IWavePlayer.cs" />
     <Compile Include="Wave\WaveOutputs\WaveFileWriter.cs" />

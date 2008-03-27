@@ -1,7 +1,7 @@
-#if DIRECT_X
 using System;
 using System.Windows.Forms;
 using Microsoft.DirectX.DirectSound;
+using System.Diagnostics;
 
 namespace NAudio.Wave
 {
@@ -55,12 +55,13 @@ namespace NAudio.Wave
             bufferDescription.GlobalFocus = true;
             bufferDescription.ControlPan = true;
             bufferDescription.ControlEffects = false;
+            
 
             this.waveStream = waveStream;
             //waveFormatStream.Position = 46;
             buffer = new SecondaryBuffer(bufferDescription, device);
             bufferSize = buffer.Caps.BufferBytes;
-
+            
             timer = new System.Timers.Timer(desiredLatency / 2);
             timer.Enabled = false;
             timer.Elapsed += new System.Timers.ElapsedEventHandler(OnTimerElapsed);
@@ -124,10 +125,12 @@ namespace NAudio.Wave
 
         private void Feed(int bytes)
         {
-            // limit latency to some milliseconds
+            Debug.Assert(bytes >= 0);
+            bytes -= bytes % waveStream.BlockAlign;
 
-            //int toCopy = Math.Min(bytes, MsToBytes(desiredLatency));
-            int toCopy = readSize; //(bytes < readSize / 2) ? readSize / 2 : readSize;
+            // limit latency to some milliseconds
+            int toCopy = Math.Min(bytes, MsToBytes(desiredLatency));
+            //int toCopy = readSize; //(bytes < readSize / 2) ? readSize / 2 : readSize;
 
             //Console.WriteLine("Feed {0} {1}",bytes,toCopy);
 
@@ -183,7 +186,7 @@ namespace NAudio.Wave
                 if (leftToPlay < 0)
                     leftToPlay += bufferSize;
                 if (leftToPlay < readSize)
-                    Feed(0);
+                    Feed(readSize - leftToPlay);
                 else
                     Console.WriteLine("Still a buffer full left {0}", leftToPlay);
             }
@@ -293,25 +296,9 @@ namespace NAudio.Wave
             Play();
         }
 
-        /// <summary>
-        /// Rewind to start
-        /// </summary>
-        public void Rewind()
-        {
-            // TODO
-        }
 
-        /// <summary>
-        /// Skip specified number of seconds
-        /// </summary>
-        /// <param name="seconds"></param>
-        public void Skip(int seconds)
-        {
-            // TODO
-        }
 
 
     }
 
 }
-#endif

@@ -98,8 +98,8 @@ namespace NAudio.Wave
         /// <param name="autoStop">Automatically stop when all inputs have been read</param>
         /// <exception cref="ArgumentException">Thrown if the input streams are not 32 bit floating point,
         /// or if they have different formats to each other</exception>
-        public WaveMixerStream32(WaveStream[] inputStreams, bool autoStop)
-            : base()
+        public WaveMixerStream32(IEnumerable<WaveStream> inputStreams, bool autoStop)
+            : this()
         {
             this.autoStop = autoStop;
             

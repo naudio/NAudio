@@ -705,4 +705,9 @@
     <desc>Updated the NAudioDemo project to do some audio playback</desc>
     <desc>Added Rob Philpot's managed ASIO wrapper (http://www.codeproject.com/KB/mcpp/Asio.Net.aspx)</desc>
   </change>
+  <change>
+    <version>1.1.115.0</version>
+    <date>17 May 2008</date>
+    <desc>Updated to latest version of Rob Philpot's managed ASIO wrapper (http://www.codeproject.com/KB/mcpp/Asio.Net.aspx)</desc>
+  </change>
 </changes>

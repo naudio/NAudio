@@ -26,7 +26,7 @@ namespace NAudio.Wave
         {
             driver = AsioDriver.SelectDriver(
                 AsioDriver.InstalledDrivers[device]);            
-            driver.CreateBuffers();
+            driver.CreateBuffers(false);
         }
 
         /// <summary>
@@ -107,8 +107,8 @@ namespace NAudio.Wave
 
             for (int index = 0; index < leftOutput.BufferSize && readIndex < read; index++)
             {
-                double left = 0.0;
-                double right  = 0.0;
+                float left = 0.0f;
+                float right = 0.0f;
                 if (sourceStream.WaveFormat.BitsPerSample == 16)
                 {
                     left = BitConverter.ToInt16(buffer, readIndex) / 32768.0f;

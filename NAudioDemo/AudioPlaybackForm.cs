@@ -57,6 +57,12 @@ namespace NAudioDemo
                 inputs.Add(reader);
             }
 
+            if (inputs.Count == 0)
+            {
+                MessageBox.Show("No WAV files found to play in the input folder");
+                return;
+            }
+
             WaveMixerStream32 mixer = new WaveMixerStream32(inputs, false);
             Wave32To16Stream mixdown = new Wave32To16Stream(mixer);
             waveOut.Init(mixdown);

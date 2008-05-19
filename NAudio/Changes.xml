@@ -710,4 +710,10 @@
     <date>17 May 2008</date>
     <desc>Updated to latest version of Rob Philpot's managed ASIO wrapper (http://www.codeproject.com/KB/mcpp/Asio.Net.aspx)</desc>
   </change>
+  <change>
+    <version>1.1.116.0</version>
+    <date>19 May 2008</date>
+    <desc>Made some very small beginnings to WASAPI support</desc>
+    <desc>Added a couple of unit tests for AcmDriver</desc>
+  </change>
 </changes>

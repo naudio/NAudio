@@ -208,6 +208,7 @@
     <Compile Include="Utils\ProgressLog.designer.cs">
       <DependentUpon>ProgressLog.cs</DependentUpon>
     </Compile>
+    <Compile Include="WASAPI\Interfaces\IAudioClient.cs" />
     <Compile Include="Wave\Compression\AcmDriver.cs" />
     <Compile Include="Wave\Compression\AcmDriverDetails.cs" />
     <Compile Include="Wave\Compression\AcmDriverDetailsSupportFlags.cs" />

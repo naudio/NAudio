@@ -13,10 +13,10 @@ namespace NAudio.Wave
         private int driverId;
 
         /// <summary>
-        /// Helper function to determine whether
+        /// Helper function to determine whether a particular codec is installed
         /// </summary>
-        /// <param name="shortName"></param>
-        /// <returns></returns>
+        /// <param name="shortName">The short name of the function</param>
+        /// <returns>Whether the codec is installed</returns>
         public static bool IsCodecInstalled(string shortName)
         {
             foreach (AcmDriver driver in AcmDriver.EnumerateAcmDrivers())

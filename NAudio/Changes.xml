@@ -716,4 +716,10 @@
     <desc>Made some very small beginnings to WASAPI support</desc>
     <desc>Added a couple of unit tests for AcmDriver</desc>
   </change>
+  <change>
+    <version>1.1.117.0</version>
+    <date>20 May 2008</date>
+    <desc>Added some WASAPI interfaces (mainly MMDevice API)</desc>
+  </change>
+
 </changes>

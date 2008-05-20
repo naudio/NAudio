@@ -208,7 +208,19 @@
     <Compile Include="Utils\ProgressLog.designer.cs">
       <DependentUpon>ProgressLog.cs</DependentUpon>
     </Compile>
+    <Compile Include="WASAPI\Interfaces\ClsCtx.cs" />
+    <Compile Include="WASAPI\Interfaces\DataFlow.cs" />
     <Compile Include="WASAPI\Interfaces\IAudioClient.cs" />
+    <Compile Include="WASAPI\Interfaces\IMMDevice.cs" />
+    <Compile Include="WASAPI\Interfaces\IMMDeviceCollection.cs" />
+    <Compile Include="WASAPI\Interfaces\IMMDeviceEnumerator.cs" />
+    <Compile Include="WASAPI\Interfaces\IMMNotificationClient.cs" />
+    <Compile Include="WASAPI\Interfaces\IPropertyStore.cs" />
+    <Compile Include="WASAPI\Interfaces\MMDeviceEnumeratorComObject.cs" />
+    <Compile Include="WASAPI\Interfaces\PropertyKey.cs" />
+    <Compile Include="WASAPI\Interfaces\PropVariant.cs" />
+    <Compile Include="WASAPI\Interfaces\Role.cs" />
+    <Compile Include="WASAPI\MMDeviceEnumerator.cs" />
     <Compile Include="Wave\Compression\AcmDriver.cs" />
     <Compile Include="Wave\Compression\AcmDriverDetails.cs" />
     <Compile Include="Wave\Compression\AcmDriverDetailsSupportFlags.cs" />

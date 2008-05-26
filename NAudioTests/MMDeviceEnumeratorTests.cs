@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
-using NAudio.WASAPI;
+using NAudio.CoreAudioApi;
 
 namespace NAudioTests
 {
@@ -15,6 +15,19 @@ namespace NAudioTests
             if (Environment.OSVersion.Version.Major >= 6)
             {
                 MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
+            }
+        }
+
+        [Test]       
+        public void CanEnumerateDevicesInVista()
+        {
+            if (Environment.OSVersion.Version.Major >= 6)
+            {
+                MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
+                foreach (MMDevice devices in enumerator.EnumerateAudioEndPoints(DataFlow.All,DeviceState.All))
+                {
+                    Console.WriteLine(devices);
+                }
             }
         }
 

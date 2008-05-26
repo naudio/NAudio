@@ -59,6 +59,18 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CoreAudioApi\AudioEndpointVolumeCallback.cs" />
+    <Compile Include="CoreAudioApi\AudioEndpointVolumeChannel.cs" />
+    <Compile Include="CoreAudioApi\AudioEndpointVolumeChannels.cs" />
+    <Compile Include="CoreAudioApi\AudioEndpointVolumeNotificationDelegate.cs" />
+    <Compile Include="CoreAudioApi\AudioEndpointVolumeStepInformation.cs" />
+    <Compile Include="CoreAudioApi\AudioEndpointVolumeVolumeRange.cs" />
+    <Compile Include="CoreAudioApi\AudioMeterInformationChannels.cs" />
+    <Compile Include="CoreAudioApi\AudioVolumeNotificationData.cs" />
+    <Compile Include="CoreAudioApi\Interfaces\AudioVolumeNotificationDataStruct.cs" />
+    <Compile Include="CoreAudioApi\Interfaces\IAudioEndpointVolumeCallback.cs" />
+    <Compile Include="CoreAudioApi\MMDeviceCollection.cs" />
+    <Compile Include="CoreAudioApi\PropertyKeys.cs" />
     <Compile Include="Daw\MeasuresBeatsTicks.cs" />
     <Compile Include="Daw\TempoMap.cs" />
     <Compile Include="Dsp\BiQuadFilter.cs" />
@@ -208,19 +220,31 @@
     <Compile Include="Utils\ProgressLog.designer.cs">
       <DependentUpon>ProgressLog.cs</DependentUpon>
     </Compile>
-    <Compile Include="WASAPI\Interfaces\ClsCtx.cs" />
-    <Compile Include="WASAPI\Interfaces\DataFlow.cs" />
-    <Compile Include="WASAPI\Interfaces\IAudioClient.cs" />
-    <Compile Include="WASAPI\Interfaces\IMMDevice.cs" />
-    <Compile Include="WASAPI\Interfaces\IMMDeviceCollection.cs" />
-    <Compile Include="WASAPI\Interfaces\IMMDeviceEnumerator.cs" />
-    <Compile Include="WASAPI\Interfaces\IMMNotificationClient.cs" />
-    <Compile Include="WASAPI\Interfaces\IPropertyStore.cs" />
-    <Compile Include="WASAPI\Interfaces\MMDeviceEnumeratorComObject.cs" />
-    <Compile Include="WASAPI\Interfaces\PropertyKey.cs" />
-    <Compile Include="WASAPI\Interfaces\PropVariant.cs" />
-    <Compile Include="WASAPI\Interfaces\Role.cs" />
-    <Compile Include="WASAPI\MMDeviceEnumerator.cs" />
+    <Compile Include="CoreAudioApi\AudioEndpointVolume.cs" />
+    <Compile Include="CoreAudioApi\AudioMeterInformation.cs" />
+    <Compile Include="CoreAudioApi\DeviceState.cs" />
+    <Compile Include="CoreAudioApi\EEndpointHardwareSupport.cs" />
+    <Compile Include="CoreAudioApi\Interfaces\Blob.cs" />
+    <Compile Include="CoreAudioApi\Interfaces\ClsCtx.cs" />
+    <Compile Include="CoreAudioApi\DataFlow.cs" />
+    <Compile Include="CoreAudioApi\Interfaces\IAudioClient.cs" />
+    <Compile Include="CoreAudioApi\Interfaces\IAudioEndpointVolume.cs" />
+    <Compile Include="CoreAudioApi\Interfaces\IAudioMeterInformation.cs" />
+    <Compile Include="CoreAudioApi\Interfaces\IMMDevice.cs" />
+    <Compile Include="CoreAudioApi\Interfaces\IMMDeviceCollection.cs" />
+    <Compile Include="CoreAudioApi\Interfaces\IMMDeviceEnumerator.cs" />
+    <Compile Include="CoreAudioApi\Interfaces\IMMEndpoint.cs" />
+    <Compile Include="CoreAudioApi\Interfaces\IMMNotificationClient.cs" />
+    <Compile Include="CoreAudioApi\Interfaces\IPropertyStore.cs" />
+    <Compile Include="CoreAudioApi\Interfaces\MMDeviceEnumeratorComObject.cs" />
+    <Compile Include="CoreAudioApi\Interfaces\StorageAccessMode.cs" />
+    <Compile Include="CoreAudioApi\PropertyKey.cs" />
+    <Compile Include="CoreAudioApi\PropVariant.cs" />
+    <Compile Include="CoreAudioApi\Role.cs" />
+    <Compile Include="CoreAudioApi\MMDevice.cs" />
+    <Compile Include="CoreAudioApi\MMDeviceEnumerator.cs" />
+    <Compile Include="CoreAudioApi\PropertyStore.cs" />
+    <Compile Include="CoreAudioApi\PropertyStoreProperty.cs" />
     <Compile Include="Wave\Compression\AcmDriver.cs" />
     <Compile Include="Wave\Compression\AcmDriverDetails.cs" />
     <Compile Include="Wave\Compression\AcmDriverDetailsSupportFlags.cs" />

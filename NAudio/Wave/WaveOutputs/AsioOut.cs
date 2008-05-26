@@ -143,16 +143,25 @@ namespace NAudio.Wave
             }
         }
 
+        /// <summary>
+        /// Is the ASIO device playing
+        /// </summary>
         public bool IsPlaying
         {
             get { return playing; }
         }
 
+        /// <summary>
+        /// Are we in a paused state?
+        /// </summary>
         public bool IsPaused
         {
             get { return paused; }
         }
 
+        /// <summary>
+        /// Sets the volume (1.0 is unity gain)
+        /// </summary>
         public float Volume
         {
             get
@@ -166,6 +175,9 @@ namespace NAudio.Wave
             }
         }
 
+        /// <summary>
+        /// Pan setting - 0.0 is central (not supported by ASIO Out currently)
+        /// </summary>
         public float Pan
         {
             get
@@ -174,11 +186,14 @@ namespace NAudio.Wave
             }
             set
             {
-                if (value != 1.0f)
+                if (value != 0.0f)
                     throw new InvalidOperationException();
             }
         }
 
+        /// <summary>
+        /// Dispose
+        /// </summary>
         public void Dispose()
         {
             driver.Stop();

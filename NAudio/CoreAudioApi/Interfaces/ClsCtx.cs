@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace NAudio.WASAPI.Interfaces
+namespace NAudio.CoreAudioApi.Interfaces
 {
     /// <summary>
     /// is defined in WTypes.h
@@ -31,6 +31,9 @@ namespace NAudio.WASAPI.Interfaces
 	    ACTIVATE_32_BIT_SERVER	= 0x40000,
 	    ACTIVATE_64_BIT_SERVER	= 0x80000,
 	    ENABLE_CLOAKING	= 0x100000,
-	    PS_DLL	= unchecked ( (int) 0x80000000 )
+	    PS_DLL	= unchecked ( (int) 0x80000000 ),
+        INPROC = INPROC_SERVER | INPROC_HANDLER,
+        SERVER = INPROC_SERVER | LOCAL_SERVER | REMOTE_SERVER,
+        ALL = SERVER | INPROC_HANDLER
     }
 }

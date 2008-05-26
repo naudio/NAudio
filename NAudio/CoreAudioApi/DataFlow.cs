@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace NAudio.WASAPI.Interfaces
+namespace NAudio.CoreAudioApi
 {
-    enum DataFlow
+    public enum DataFlow
     {
         Render,
         Capture,

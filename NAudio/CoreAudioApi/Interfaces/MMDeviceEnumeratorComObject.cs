@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Runtime.InteropServices;
 
-namespace NAudio.WASAPI.Interfaces
+namespace NAudio.CoreAudioApi.Interfaces
 {
     /// <summary>
     /// implements IMMDeviceEnumerator

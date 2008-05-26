@@ -4,7 +4,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using NAudio.Wave;
 
-namespace NAudio.WASAPI.Interfaces
+namespace NAudio.CoreAudioApi.Interfaces
 {
     /// <summary>
     /// n.b. WORK IN PROGRESS - this code will do nothing but crash at the moment

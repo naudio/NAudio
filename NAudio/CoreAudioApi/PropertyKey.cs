@@ -2,14 +2,14 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace NAudio.WASAPI.Interfaces
+namespace NAudio.CoreAudioApi
 {
     /// <summary>
     /// PROPERTYKEY is defined in wtypes.h
     /// </summary>
-    class PropertyKey
+    public struct PropertyKey
     {
-        Guid formatId;
-        int propertyId;
+        public Guid formatId;
+        public int propertyId;
     }
 }

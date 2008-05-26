@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Runtime.InteropServices;
 
-namespace NAudio.WASAPI.Interfaces
+namespace NAudio.CoreAudioApi.Interfaces
 {
     /// <summary>
     /// is defined in propsys.h
@@ -14,8 +14,8 @@ namespace NAudio.WASAPI.Interfaces
     {
         int GetCount(out int propCount);
         int GetAt(int property, out PropertyKey key);
-        int GetValue(PropertyKey key, out PropVariant value);
-        int SetValue(PropertyKey key, PropVariant value);
+        int GetValue(ref PropertyKey key, out PropVariant value);
+        int SetValue(ref PropertyKey key, ref PropVariant value);
         int Commit();
     }
 }

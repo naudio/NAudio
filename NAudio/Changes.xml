@@ -721,5 +721,17 @@
     <date>20 May 2008</date>
     <desc>Added some WASAPI interfaces (mainly MMDevice API)</desc>
   </change>
-
+  <change>
+    <version>1.1.118.0</version>
+    <date>24 May 2008</date>
+    <desc>Added WASAPI interface IMMEndpoint</desc>
+    <desc>begun MMDevice implementation</desc>
+    <desc>Decided to make use of some code from Ray Molenkamp to speed WASAPI implementation</desc>
+  </change>
+  <change>
+    <version>1.1.119.0</version>
+    <date>26 May 2008</date>
+    <desc>Borrowing lots more from Ray Molenkamp</desc>
+    <desc>Renamed WASAPI namespace to CoreAudioApi</desc>
+  </change>
 </changes>

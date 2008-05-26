@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace NAudio.WASAPI.Interfaces
+namespace NAudio.CoreAudioApi
 {
-    enum Role
+    public enum Role
     {
         Console,
 	    Multimedia,

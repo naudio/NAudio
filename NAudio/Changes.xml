@@ -734,4 +734,9 @@
     <desc>Borrowing lots more from Ray Molenkamp</desc>
     <desc>Renamed WASAPI namespace to CoreAudioApi</desc>
   </change>
+  <change>
+    <version>1.2.120.0</version>
+    <date>27 May 2008</date>
+    <desc>More work on WASAPI interfaces (IAudioClient, IAudioRenderClient)</desc>
+  </change>
 </changes>

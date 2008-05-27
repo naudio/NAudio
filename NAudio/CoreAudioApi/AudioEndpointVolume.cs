@@ -34,12 +34,12 @@ namespace NAudio.CoreAudioApi
         private IAudioEndpointVolume _AudioEndPointVolume;
         private AudioEndpointVolumeChannels _Channels;
         private AudioEndpointVolumeStepInformation _StepInformation;
-        private AudioEndPointVolumeVolumeRange _VolumeRange;
+        private AudioEndpointVolumeVolumeRange _VolumeRange;
         private EEndpointHardwareSupport _HardwareSupport;
         private AudioEndpointVolumeCallback _CallBack;
         public event AudioEndpointVolumeNotificationDelegate OnVolumeNotification;
 
-        public AudioEndPointVolumeVolumeRange VolumeRange
+        public AudioEndpointVolumeVolumeRange VolumeRange
         {
             get
             {
@@ -123,7 +123,7 @@ namespace NAudio.CoreAudioApi
             _StepInformation = new AudioEndpointVolumeStepInformation(_AudioEndPointVolume);
             Marshal.ThrowExceptionForHR(_AudioEndPointVolume.QueryHardwareSupport(out HardwareSupp));
             _HardwareSupport = (EEndpointHardwareSupport)HardwareSupp;
-            _VolumeRange = new AudioEndPointVolumeVolumeRange(_AudioEndPointVolume);
+            _VolumeRange = new AudioEndpointVolumeVolumeRange(_AudioEndPointVolume);
             _CallBack = new AudioEndpointVolumeCallback(this);
             Marshal.ThrowExceptionForHR(_AudioEndPointVolume.RegisterControlChangeNotify(_CallBack));
         }

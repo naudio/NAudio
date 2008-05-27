@@ -7,7 +7,7 @@ using NAudio.Wave;
 namespace NAudio.CoreAudioApi.Interfaces
 {
     /// <summary>
-    /// n.b. WORK IN PROGRESS - this code will do nothing but crash at the moment
+    /// n.b. WORK IN PROGRESS - this code will probably do nothing but crash at the moment
     /// </summary>
     [Guid("1CB9AD4C-DBFA-4c32-B178-C2F568A703B2"), 
         InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
@@ -15,12 +15,11 @@ namespace NAudio.CoreAudioApi.Interfaces
     {
         int GetBufferSize(out int bufferSize);
         int GetCurrentPadding(out int currentPadding);
-        // REFERENCE_TIME is 64 bit int
+        // REFERENCE_TIME is 64 bit int        
         int GetDevicePeriod(out long defaultDevicePeriod, out long minimumDevicePeriod);
         // the address of a pointer which will be set to point to a WAVEFORMATEX structure
         int GetMixFormat(IntPtr deviceFormatPointer);
-
-        void GetService(Guid interfaceId, IntPtr interfacePointer);
+        int GetService(Guid interfaceId, [MarshalAs(UnmanagedType.IUnknown)] out object interfacePointer);
         int GetStreamLatency(out long streamLatency);
         int Initialize(AudioClientShareMode shareMode,
             AudioClientStreamFlags StreamFlags,

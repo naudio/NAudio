@@ -19,6 +19,7 @@
      misrepresented as being the original source code.
   3. This notice may not be removed or altered from any source distribution.
 */
+// modified for NAudio
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -27,18 +28,21 @@ using System.Runtime.InteropServices;
 
 namespace NAudio.CoreAudioApi
 {
-    public class AudioEndPointVolumeVolumeRange
+    /// <summary>
+    /// Audio Endpoint Volume Volume Range
+    /// </summary>
+    public class AudioEndpointVolumeVolumeRange
     {
         float _VolumeMindB;
         float _VolumeMaxdB;
         float _VolumeIncrementdB;
 
-        internal AudioEndPointVolumeVolumeRange(IAudioEndpointVolume parent)
+        internal AudioEndpointVolumeVolumeRange(IAudioEndpointVolume parent)
         {
             Marshal.ThrowExceptionForHR(parent.GetVolumeRange(out _VolumeMindB,out _VolumeMaxdB,out _VolumeIncrementdB));
         }
 
-        public float MindB
+        public float MinDecibels
         {
             get
             {
@@ -46,7 +50,7 @@ namespace NAudio.CoreAudioApi
             }
         }
 
-        public float MaxdB
+        public float MaxDecibels
         {
             get
             {
@@ -54,7 +58,7 @@ namespace NAudio.CoreAudioApi
             }
         }
 
-        public float IncrementdB
+        public float IncrementDecibels
         {
             get
             {

@@ -69,6 +69,7 @@
     <Compile Include="CoreAudioApi\AudioVolumeNotificationData.cs" />
     <Compile Include="CoreAudioApi\Interfaces\AudioVolumeNotificationDataStruct.cs" />
     <Compile Include="CoreAudioApi\Interfaces\IAudioEndpointVolumeCallback.cs" />
+    <Compile Include="CoreAudioApi\Interfaces\IAudioRenderClient.cs" />
     <Compile Include="CoreAudioApi\MMDeviceCollection.cs" />
     <Compile Include="CoreAudioApi\PropertyKeys.cs" />
     <Compile Include="Daw\MeasuresBeatsTicks.cs" />

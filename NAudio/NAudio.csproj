@@ -60,6 +60,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CoreAudioApi\AudioClient.cs" />
+    <Compile Include="CoreAudioApi\AudioClientBufferFlags.cs" />
+    <Compile Include="CoreAudioApi\AudioClientShareMode.cs" />
+    <Compile Include="CoreAudioApi\AudioClientStreamFlags.cs" />
     <Compile Include="CoreAudioApi\AudioEndpointVolumeCallback.cs" />
     <Compile Include="CoreAudioApi\AudioEndpointVolumeChannel.cs" />
     <Compile Include="CoreAudioApi\AudioEndpointVolumeChannels.cs" />
@@ -67,8 +70,10 @@
     <Compile Include="CoreAudioApi\AudioEndpointVolumeStepInformation.cs" />
     <Compile Include="CoreAudioApi\AudioEndpointVolumeVolumeRange.cs" />
     <Compile Include="CoreAudioApi\AudioMeterInformationChannels.cs" />
+    <Compile Include="CoreAudioApi\AudioRenderClient.cs" />
     <Compile Include="CoreAudioApi\AudioVolumeNotificationData.cs" />
     <Compile Include="CoreAudioApi\Interfaces\AudioVolumeNotificationDataStruct.cs" />
+    <Compile Include="CoreAudioApi\Interfaces\ErrorCodes.cs" />
     <Compile Include="CoreAudioApi\Interfaces\IAudioCaptureClient.cs" />
     <Compile Include="CoreAudioApi\Interfaces\IAudioEndpointVolumeCallback.cs" />
     <Compile Include="CoreAudioApi\Interfaces\IAudioRenderClient.cs" />
@@ -215,6 +220,7 @@
     <Compile Include="Utils\ByteEncoding.cs" />
     <Compile Include="Utils\Decibels.cs" />
     <Compile Include="Utils\FileAssociations.cs" />
+    <Compile Include="Utils\HResult.cs" />
     <Compile Include="Utils\MergeSort.cs" />
     <Compile Include="Utils\ProgressEventArgs.cs" />
     <Compile Include="Utils\ProgressLog.cs">
@@ -275,6 +281,7 @@
     <Compile Include="Wave\WaveFormats\OggWaveFormat.cs" />
     <Compile Include="Wave\WaveFormats\WaveFormat.cs" />
     <Compile Include="Wave\WaveFormats\WaveFormatEncoding.cs" />
+    <Compile Include="Wave\WaveFormats\WaveFormatExtensible.cs" />
     <Compile Include="Wave\WaveOutputs\AsioOut.cs" />
     <Compile Include="Wave\WaveOutputs\DirectSoundOut.cs" />
     <Compile Include="Wave\WaveOutputs\IWavePlayer.cs" />

@@ -54,6 +54,8 @@ namespace NAudioTests
             }
         }
 
+
+
         [Test]
         public void ThrowsNotSupportedExceptionInXP()
         {

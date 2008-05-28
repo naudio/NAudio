@@ -44,6 +44,9 @@ namespace NAudio.CoreAudioApi
 
         }
 
+        /// <summary>
+        /// Peak Values
+        /// </summary>
         public AudioMeterInformationChannels PeakValues
         {
             get
@@ -52,6 +55,9 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Hardware Support
+        /// </summary>
         public EEndpointHardwareSupport HardwareSupport
         {
             get
@@ -60,6 +66,9 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Master Peak Value
+        /// </summary>
         public float MasterPeakValue
         {
             get

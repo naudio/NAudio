@@ -130,15 +130,16 @@ namespace NAudio.Wave
 		/// <returns>String describing the wave format</returns>
 		public override string ToString()
 		{
-			if(this.waveFormatTag != WaveFormatEncoding.Pcm)
-			{
-				return this.waveFormatTag.ToString();
-			}
-			else
-			{
-				return String.Format("{0} bit PCM: {1}kHz {2}",
-					bitsPerSample,sampleRate/1000,channels == 1 ? "Mono" : "Stereo");
-			}
+            switch (this.waveFormatTag)
+            {
+                case WaveFormatEncoding.Pcm:
+                case WaveFormatEncoding.WAVE_FORMAT_EXTENSIBLE:
+                    // extensible just has some extra bits after the PCM header
+                    return String.Format("{0} bit PCM: {1}kHz {2} channels",
+                        bitsPerSample, sampleRate / 1000, channels);
+                default:
+                    return this.waveFormatTag.ToString();
+            }
 		}
 
 		/// <summary>

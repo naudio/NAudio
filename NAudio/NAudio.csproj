@@ -59,6 +59,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CoreAudioApi\AudioClient.cs" />
     <Compile Include="CoreAudioApi\AudioEndpointVolumeCallback.cs" />
     <Compile Include="CoreAudioApi\AudioEndpointVolumeChannel.cs" />
     <Compile Include="CoreAudioApi\AudioEndpointVolumeChannels.cs" />
@@ -68,6 +69,7 @@
     <Compile Include="CoreAudioApi\AudioMeterInformationChannels.cs" />
     <Compile Include="CoreAudioApi\AudioVolumeNotificationData.cs" />
     <Compile Include="CoreAudioApi\Interfaces\AudioVolumeNotificationDataStruct.cs" />
+    <Compile Include="CoreAudioApi\Interfaces\IAudioCaptureClient.cs" />
     <Compile Include="CoreAudioApi\Interfaces\IAudioEndpointVolumeCallback.cs" />
     <Compile Include="CoreAudioApi\Interfaces\IAudioRenderClient.cs" />
     <Compile Include="CoreAudioApi\MMDeviceCollection.cs" />

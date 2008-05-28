@@ -18,7 +18,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         // REFERENCE_TIME is 64 bit int        
         int GetDevicePeriod(out long defaultDevicePeriod, out long minimumDevicePeriod);
         // the address of a pointer which will be set to point to a WAVEFORMATEX structure
-        int GetMixFormat(IntPtr deviceFormatPointer);
+        int GetMixFormat(out IntPtr deviceFormatPointer);
         int GetService(Guid interfaceId, [MarshalAs(UnmanagedType.IUnknown)] out object interfacePointer);
         int GetStreamLatency(out long streamLatency);
         int Initialize(AudioClientShareMode shareMode,

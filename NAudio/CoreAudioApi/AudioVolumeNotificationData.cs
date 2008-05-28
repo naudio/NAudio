@@ -25,6 +25,9 @@ using System.Text;
 
 namespace NAudio.CoreAudioApi
 {
+    /// <summary>
+    /// Audio Volume Notification Data
+    /// </summary>
     public class AudioVolumeNotificationData
     {
         private Guid _EventContext;
@@ -33,6 +36,9 @@ namespace NAudio.CoreAudioApi
         private int _Channels;
         private float[] _ChannelVolume;
 
+        /// <summary>
+        /// Event Context
+        /// </summary>
         public Guid EventContext
         {
             get
@@ -41,6 +47,9 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Muted
+        /// </summary>
         public bool Muted
         {
             get
@@ -49,6 +58,9 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Master Volume
+        /// </summary>
         public float MasterVolume
         {
             get
@@ -56,6 +68,10 @@ namespace NAudio.CoreAudioApi
                 return _MasterVolume;
             }
         }
+
+        /// <summary>
+        /// Channels
+        /// </summary>
         public int Channels
         {
             get
@@ -64,6 +80,9 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Channel Volume
+        /// </summary>
         public float[] ChannelVolume
         {
             get
@@ -71,6 +90,14 @@ namespace NAudio.CoreAudioApi
                 return _ChannelVolume;
             }
         }
+
+        /// <summary>
+        /// Audio Volume Notification Data
+        /// </summary>
+        /// <param name="eventContext"></param>
+        /// <param name="muted"></param>
+        /// <param name="masterVolume"></param>
+        /// <param name="channelVolume"></param>
         public AudioVolumeNotificationData(Guid eventContext, bool muted, float masterVolume, float[] channelVolume)
         {
             _EventContext = eventContext;

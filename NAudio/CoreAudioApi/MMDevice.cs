@@ -90,6 +90,9 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Audio Meter Information
+        /// </summary>
         public AudioMeterInformation AudioMeterInformation
         {
             get

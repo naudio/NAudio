@@ -42,6 +42,9 @@ namespace NAudio.CoreAudioApi
             Marshal.ThrowExceptionForHR(parent.GetVolumeRange(out _VolumeMindB,out _VolumeMaxdB,out _VolumeIncrementdB));
         }
 
+        /// <summary>
+        /// Minimum Decibels
+        /// </summary>
         public float MinDecibels
         {
             get
@@ -50,6 +53,9 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Maximum Decibels
+        /// </summary>
         public float MaxDecibels
         {
             get
@@ -58,6 +64,9 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Increment Decibels
+        /// </summary>
         public float IncrementDecibels
         {
             get

@@ -37,8 +37,15 @@ namespace NAudio.CoreAudioApi
         private AudioEndpointVolumeVolumeRange _VolumeRange;
         private EEndpointHardwareSupport _HardwareSupport;
         private AudioEndpointVolumeCallback _CallBack;
+
+        /// <summary>
+        /// On Volume Notification
+        /// </summary>
         public event AudioEndpointVolumeNotificationDelegate OnVolumeNotification;
 
+        /// <summary>
+        /// Volume Range
+        /// </summary>
         public AudioEndpointVolumeVolumeRange VolumeRange
         {
             get
@@ -46,6 +53,10 @@ namespace NAudio.CoreAudioApi
                 return _VolumeRange;
             }
         }
+
+        /// <summary>
+        /// Hardware Support
+        /// </summary>
         public EEndpointHardwareSupport HardwareSupport
         {
             get
@@ -93,6 +104,10 @@ namespace NAudio.CoreAudioApi
                 Marshal.ThrowExceptionForHR(_AudioEndPointVolume.SetMasterVolumeLevelScalar(value, Guid.Empty));
             }
         }
+
+        /// <summary>
+        /// Mute
+        /// </summary>
         public bool Mute
         {
             get
@@ -137,6 +152,9 @@ namespace NAudio.CoreAudioApi
         }
         #region IDisposable Members
 
+        /// <summary>
+        /// Dispose
+        /// </summary>
         public void Dispose()
         {
             if (_CallBack != null)
@@ -144,8 +162,13 @@ namespace NAudio.CoreAudioApi
                 Marshal.ThrowExceptionForHR(_AudioEndPointVolume.UnregisterControlChangeNotify(_CallBack));
                 _CallBack = null;
             }
-        }
+            GC.SuppressFinalize(this);
 
+        }
+        
+        /// <summary>
+        /// Finalizer
+        /// </summary>
         ~AudioEndpointVolume()
         {
             Dispose();

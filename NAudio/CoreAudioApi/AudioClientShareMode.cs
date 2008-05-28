@@ -5,17 +5,17 @@ using System.Text;
 namespace NAudio.CoreAudioApi
 {
     /// <summary>
-    /// PROPERTYKEY is defined in wtypes.h
+    /// AUDCLNT_SHAREMODE
     /// </summary>
-    public struct PropertyKey
+    public enum AudioClientShareMode
     {
         /// <summary>
-        /// Format ID
+        /// AUDCLNT_SHAREMODE_SHARED,
         /// </summary>
-        public Guid formatId;
+        Shared,
         /// <summary>
-        /// Property ID
+        /// AUDCLNT_SHAREMODE_EXCLUSIVE
         /// </summary>
-        public int propertyId;
+        Exclusive,
     }
 }

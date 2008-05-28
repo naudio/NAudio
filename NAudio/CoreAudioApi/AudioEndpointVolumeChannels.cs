@@ -28,10 +28,17 @@ using System.Runtime.InteropServices;
 
 namespace NAudio.CoreAudioApi
 {
+    /// <summary>
+    /// Audio Endpoint Volume Channels
+    /// </summary>
     public class AudioEndpointVolumeChannels
     {
         IAudioEndpointVolume _AudioEndPointVolume;
         AudioEndpointVolumeChannel[] _Channels;
+
+        /// <summary>
+        /// Channel Count
+        /// </summary>
         public int Count
         {
             get
@@ -42,6 +49,9 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Indexer - get a specific channel
+        /// </summary>
         public AudioEndpointVolumeChannel this[int index]
         {
             get

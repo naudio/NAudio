@@ -43,6 +43,18 @@ namespace NAudioTests
         }
 
         [Test]
+        public void CanActivateDefaultAudioEndpoint()
+        {
+            if (Environment.OSVersion.Version.Major >= 6)
+            {
+                MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
+                MMDevice defaultAudioEndpoint = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Console);
+                AudioClient audioClient = defaultAudioEndpoint.AudioClient;
+                Assert.IsNotNull(audioClient);
+            }
+        }
+
+        [Test]
         public void ThrowsNotSupportedExceptionInXP()
         {
             if (Environment.OSVersion.Version.Major < 6)

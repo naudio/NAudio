@@ -31,43 +31,64 @@ namespace NAudio.CoreAudioApi
     public class MMDevice
     {
         #region Variables
-        private IMMDevice _RealDevice;
+        private IMMDevice deviceInterface;
         private PropertyStore _PropertyStore;
         private AudioMeterInformation _AudioMeterInformation;
         private AudioEndpointVolume _AudioEndpointVolume;
+        private AudioClient audioClient;
 
         #endregion
 
         #region Guids
         private static Guid IID_IAudioMeterInformation = new Guid("C02216F6-8C67-4B5B-9D00-D008E73E0064");
         private static Guid IID_IAudioEndpointVolume = new Guid("5CDF2C82-841E-4546-9722-0CF74078229A");
+        private static Guid IID_IAudioClient = new Guid("1CB9AD4C-DBFA-4c32-B178-C2F568A703B2");
         #endregion
 
         #region Init
         private void GetPropertyInformation()
         {
             IPropertyStore propstore;
-            Marshal.ThrowExceptionForHR(_RealDevice.OpenPropertyStore(StorageAccessMode.Read, out propstore));
+            Marshal.ThrowExceptionForHR(deviceInterface.OpenPropertyStore(StorageAccessMode.Read, out propstore));
             _PropertyStore = new PropertyStore(propstore);
+        }
+
+        private void GetAudioClientInterface()
+        {
+            object result;
+            Marshal.ThrowExceptionForHR(deviceInterface.Activate(ref IID_IAudioClient, ClsCtx.ALL, IntPtr.Zero, out result));
+            audioClient = new AudioClient(result as IAudioClient);
         }
 
         private void GetAudioMeterInformation()
         {
             object result;
-            Marshal.ThrowExceptionForHR(_RealDevice.Activate(ref IID_IAudioMeterInformation, ClsCtx.ALL, IntPtr.Zero, out result));
+            Marshal.ThrowExceptionForHR(deviceInterface.Activate(ref IID_IAudioMeterInformation, ClsCtx.ALL, IntPtr.Zero, out result));
             _AudioMeterInformation = new AudioMeterInformation(result as IAudioMeterInformation);
         }
 
         private void GetAudioEndpointVolume()
         {
             object result;
-            Marshal.ThrowExceptionForHR(_RealDevice.Activate(ref IID_IAudioEndpointVolume, ClsCtx.ALL, IntPtr.Zero, out result));
+            Marshal.ThrowExceptionForHR(deviceInterface.Activate(ref IID_IAudioEndpointVolume, ClsCtx.ALL, IntPtr.Zero, out result));
             _AudioEndpointVolume = new AudioEndpointVolume(result as IAudioEndpointVolume);
         }
 
         #endregion
 
         #region Properties
+
+        public AudioClient AudioClient
+        {
+            get
+            {
+                if (audioClient == null)
+                {
+                    GetAudioClientInterface();
+                }
+                return audioClient;
+            }
+        }
 
         public AudioMeterInformation AudioMeterInformation
         {
@@ -122,7 +143,7 @@ namespace NAudio.CoreAudioApi
             get
             {
                 string Result;
-                Marshal.ThrowExceptionForHR(_RealDevice.GetId(out Result));
+                Marshal.ThrowExceptionForHR(deviceInterface.GetId(out Result));
                 return Result;
             }
         }
@@ -132,7 +153,7 @@ namespace NAudio.CoreAudioApi
             get
             {
                 DataFlow Result;
-                IMMEndpoint ep = _RealDevice as IMMEndpoint;
+                IMMEndpoint ep = deviceInterface as IMMEndpoint;
                 ep.GetDataFlow(out Result);
                 return Result;
             }
@@ -143,7 +164,7 @@ namespace NAudio.CoreAudioApi
             get
             {
                 DeviceState Result;
-                Marshal.ThrowExceptionForHR(_RealDevice.GetState(out Result));
+                Marshal.ThrowExceptionForHR(deviceInterface.GetState(out Result));
                 return Result;
 
             }
@@ -153,7 +174,7 @@ namespace NAudio.CoreAudioApi
         #region Constructor
         internal MMDevice(IMMDevice realDevice)
         {
-            _RealDevice = realDevice;
+            deviceInterface = realDevice;
         }
         #endregion
 

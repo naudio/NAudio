@@ -739,4 +739,9 @@
     <date>27 May 2008</date>
     <desc>More work on WASAPI interfaces (IAudioClient, IAudioRenderClient)</desc>
   </change>
+  <change>
+    <version>1.2.121.0</version>
+    <date>28 May 2008</date>
+    <desc>WASAPI interface - IAudioCaptureClient</desc>
+  </change>
 </changes>

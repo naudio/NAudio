@@ -14,8 +14,7 @@ namespace NAudio.Wave
     {
         AsioDriver driver;
         WaveStream sourceStream;
-        bool playing;
-        bool paused;
+        PlaybackState playbackState;
         byte[] buffer;
 
         /// <summary>
@@ -42,8 +41,11 @@ namespace NAudio.Wave
         /// </summary>
         public void Play()
         {
-            playing = true;
-            driver.Start();
+            if (playbackState != PlaybackState.Playing)
+            {
+                playbackState = PlaybackState.Playing;
+                driver.Start();
+            }
         }
 
         /// <summary>
@@ -51,7 +53,7 @@ namespace NAudio.Wave
         /// </summary>
         public void Stop()
         {
-            playing = false;
+            playbackState = PlaybackState.Stopped;
             driver.Stop();
         }
 
@@ -60,17 +62,8 @@ namespace NAudio.Wave
         /// </summary>
         public void Pause()
         {
-            paused = true;
+            playbackState = PlaybackState.Paused;            
             driver.Stop();
-        }
-
-        /// <summary>
-        /// Resumes playback
-        /// </summary>
-        public void Resume()
-        {
-            paused = false;
-            driver.Start();
         }
 
         /// <summary>
@@ -144,19 +137,11 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// Is the ASIO device playing
+        /// Playback State
         /// </summary>
-        public bool IsPlaying
+        public PlaybackState PlaybackState
         {
-            get { return playing; }
-        }
-
-        /// <summary>
-        /// Are we in a paused state?
-        /// </summary>
-        public bool IsPaused
-        {
-            get { return paused; }
+            get { return playbackState; }
         }
 
         /// <summary>
@@ -171,22 +156,6 @@ namespace NAudio.Wave
             set
             {                
                 if(value != 1.0f)
-                    throw new InvalidOperationException();
-            }
-        }
-
-        /// <summary>
-        /// Pan setting - 0.0 is central (not supported by ASIO Out currently)
-        /// </summary>
-        public float Pan
-        {
-            get
-            {
-                return 0.0f;
-            }
-            set
-            {
-                if (value != 0.0f)
                     throw new InvalidOperationException();
             }
         }

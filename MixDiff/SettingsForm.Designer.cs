@@ -48,6 +48,7 @@ namespace MarkHeath.AudioUtils
             // 
             // comboBoxOutputDevice
             // 
+            this.comboBoxOutputDevice.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.comboBoxOutputDevice.FormattingEnabled = true;
             this.comboBoxOutputDevice.Location = new System.Drawing.Point(121, 10);
             this.comboBoxOutputDevice.Name = "comboBoxOutputDevice";

@@ -106,11 +106,11 @@ namespace NAudioDemo
             comboBoxLatency.SelectedIndex = 5;
         }
 
-        private void buttonStop_Click(object sender, EventArgs e)
+        private void buttonPause_Click(object sender, EventArgs e)
         {
             if (waveOut != null)
             {
-                if (waveOut.IsPlaying)
+                if (waveOut.PlaybackState == PlaybackState.Playing)
                 {
                     waveOut.Stop();
                     buttonPause.Text = "Resume";

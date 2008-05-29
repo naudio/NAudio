@@ -12,7 +12,7 @@ namespace NAudio.Wave
     {
         private SecondaryBuffer buffer = null;
         private Device device = null;
-        private bool paused;
+        private PlaybackState playbackState;
         private WaveStream waveStream;
 
         private int bufferSize;
@@ -190,23 +190,6 @@ namespace NAudio.Wave
                 else
                     Console.WriteLine("Still a buffer full left {0}", leftToPlay);
             }
-
-
-        }
-
-        /// <summary>
-        /// Pan, from -1.0 to 1.0
-        /// </summary>
-        public float Pan
-        {
-            get
-            {
-                return buffer.Pan / 10000.0f;
-            }
-            set
-            {
-                buffer.Pan = (int)(value * 10000.0f);
-            }
         }
 
         /// <summary>
@@ -226,25 +209,11 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// Whether we are still playing audio
+        /// Playback State
         /// </summary>
-        public bool IsPlaying
+        public PlaybackState PlaybackState
         {
-            get
-            {
-                return buffer.Status.Playing;
-            }
-        }
-
-        /// <summary>
-        /// True if paused
-        /// </summary>
-        public bool IsPaused
-        {
-            get
-            {
-                return paused;
-            }
+            get { return playbackState; }
         }
 
         /// <summary>
@@ -252,16 +221,19 @@ namespace NAudio.Wave
         /// </summary>
         public void Play()
         {
-            if (!paused)
+            if (playbackState != PlaybackState.Playing)
             {
-                buffer.SetCurrentPosition(0);
-                nextWrite = 0;
-                Feed(bufferSize);
-                Feed(bufferSize);
+                if (PlaybackState == PlaybackState.Stopped)
+                {
+                    buffer.SetCurrentPosition(0);
+                    nextWrite = 0;
+                    Feed(bufferSize);
+                    Feed(bufferSize);
+                }
+                playbackState = PlaybackState.Playing;
+                timer.Enabled = true;
+                buffer.Play(0, BufferPlayFlags.Looping);
             }
-            paused = false;
-            timer.Enabled = true;
-            buffer.Play(0, BufferPlayFlags.Looping);
         }
 
         /// <summary>
@@ -269,7 +241,7 @@ namespace NAudio.Wave
         /// </summary>
         public void Stop()
         {
-            paused = false;
+            playbackState = PlaybackState.Stopped;
             if (timer != null)
                 timer.Enabled = false;
             if (buffer != null)
@@ -281,24 +253,11 @@ namespace NAudio.Wave
         /// </summary>
         public void Pause()
         {
-            paused = true;
+            playbackState = PlaybackState.Paused;
             if (timer != null)
                 timer.Enabled = false;
             if (buffer != null)
                 buffer.Stop();
         }
-
-        /// <summary>
-        /// Resume playback
-        /// </summary>
-        public void Resume()
-        {
-            Play();
-        }
-
-
-
-
     }
-
 }

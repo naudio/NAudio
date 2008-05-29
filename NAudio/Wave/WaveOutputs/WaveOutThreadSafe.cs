@@ -17,12 +17,10 @@ namespace NAudio.Wave
         private WaveOutBuffer[] buffers;
         private WaveStream waveStream;
         private int numBuffers;
-        private volatile bool playing;
-        private volatile bool paused;
+        private PlaybackState playbackState;
         private WaveInterop.WaveOutCallback callback;
         private int devNumber;
         private int desiredLatency;
-        private float pan = 0;
         private float volume = 1;
         private bool buffersQueued;
         private Thread waveOutThread;
@@ -161,8 +159,7 @@ namespace NAudio.Wave
             MmException.Try(WaveInterop.waveOutOpen(out hWaveOut, devNumber, waveStream.WaveFormat, callback, 0, WaveInterop.CallbackFunction), "waveOutOpen");
 
             buffers = new WaveOutBuffer[numBuffers];
-            playing = false;
-            paused = false;
+            playbackState = PlaybackState.Stopped;
             object waveOutLock = new object();
             for (int n = 0; n < numBuffers; n++)
             {
@@ -175,9 +172,9 @@ namespace NAudio.Wave
         /// </summary>
         public void Play()
         {
-            if (!IsPlaying)
+            if (playbackState != PlaybackState.Playing)
             {
-                playing = true;
+                playbackState = PlaybackState.Playing;
             
                 if(Thread.CurrentThread.ManagedThreadId != waveOutThread.ManagedThreadId)
                 {
@@ -221,7 +218,7 @@ namespace NAudio.Wave
             MmResult result = WaveInterop.waveOutPause(hWaveOut);
             if (result != MmResult.NoError)
                 throw new MmException(result, "waveOutPause");
-            paused = true;
+            playbackState = PlaybackState.Paused;
         }
 
         /// <summary>
@@ -242,7 +239,7 @@ namespace NAudio.Wave
             MmResult result = WaveInterop.waveOutRestart(hWaveOut);
             if (result != MmResult.NoError)
                 throw new MmException(result, "waveOutRestart");
-            paused = false;
+            playbackState = PlaybackState.Playing;
         }
 
         private void Exit()
@@ -279,8 +276,7 @@ namespace NAudio.Wave
                 return;
             }
 
-            playing = false;
-            paused = false;
+            playbackState = PlaybackState.Stopped;
             buffersQueued = false;
             MmResult result = WaveInterop.waveOutReset(hWaveOut);
             if (result != MmResult.NoError)
@@ -288,42 +284,13 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// Returns true if the audio is currently paused
+        /// Playback State
         /// </summary>
-        public bool IsPaused
+        public PlaybackState PlaybackState
         {
-            get
-            {
-                return paused;
-            }
+            get { return playbackState; }
         }
 
-        /// <summary>
-        /// Returns true if the audio is currently playing
-        /// </summary>
-        public bool IsPlaying
-        {
-            get
-            {
-                return playing && !paused;
-            }
-        }
-
-        /// <summary>
-        /// Pan / Balance for this device -1.0 to 1.0
-        /// </summary>
-        public float Pan
-        {
-            get
-            {
-                return pan;
-            }
-            set
-            {
-                pan = value;
-                Volume = Volume;
-            }
-        }
 
         /// <summary>
         /// Volume for this device 1.0 is full scale
@@ -337,12 +304,8 @@ namespace NAudio.Wave
             set
             {
                 volume = value;
-                float left = volume * (1 - pan);
-                float right = volume * (1 + pan);
-                if (left > 1.0) left = 1.0f;
-                if (right > 1.0) right = 1.0f;
-                if (left < 0.0) left = 0.0f;
-                if (right < 0.0) right = 0.0f;
+                float left = volume;
+                float right = volume;
                 int stereoVolume = (int)(left * 0xFFFF) + ((int)(right * 0xFFFF) << 16);
                 lock (actionQueue)
                 {
@@ -416,10 +379,12 @@ namespace NAudio.Wave
 
         private void OnBufferDone(WaveOutBuffer buffer)
         {
-            if (playing)
+            if (playbackState == PlaybackState.Playing)
             {
-                playing = buffer.OnDone();
-                // TODO: could signal end of file reached
+                if (!buffer.OnDone())
+                {
+                    playbackState = PlaybackState.Stopped;
+                }
             }
         }
     }

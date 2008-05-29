@@ -65,7 +65,6 @@ using System.Runtime.InteropServices;
 // Keyboard support
 // Options form to allow selection of WaveOut device
 // update WaveOut to allow Init to be called multiple times
-// update WaveOut with an enum for playback state - Playing|Paused|Stopped
 // fix the negative time thing
 // repositioning drag bar
 // status bar

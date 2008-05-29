@@ -61,6 +61,11 @@ namespace NAudio.CoreAudioApi
             return new MMDevice(_Device);
         }
 
+        /// <summary>
+        /// Get device by ID
+        /// </summary>
+        /// <param name="ID">Device ID</param>
+        /// <returns>Device</returns>
         public MMDevice GetDevice(string ID)
         {
             IMMDevice _Device = null;

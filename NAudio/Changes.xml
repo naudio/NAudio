@@ -754,4 +754,13 @@
     <date>29 May 2008</date>
     <desc>AudioClient IsFormatSupported - it appears WASAPI does not do sample rate conversion for you</desc>
   </change>
+  <change>
+    <version>1.2.124.0</version>
+    <date>29 May 2008</date>
+    <desc>Begun work on WasapiOut</desc>
+    <desc>Removed Resume from IWavePlayer</desc>
+    <desc>Removed Pan from IWavePlayer</desc>
+    <desc>PlaybackState instead of IsPlaying and IsPaused on IWavePlayer</desc>
+    <desc>WaveOut implementation simplified</desc>
+  </change>
 </changes>

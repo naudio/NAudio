@@ -285,6 +285,8 @@
     <Compile Include="Wave\WaveOutputs\AsioOut.cs" />
     <Compile Include="Wave\WaveOutputs\DirectSoundOut.cs" />
     <Compile Include="Wave\WaveOutputs\IWavePlayer.cs" />
+    <Compile Include="Wave\WaveOutputs\PlaybackState.cs" />
+    <Compile Include="Wave\WaveOutputs\WasapiOut.cs" />
     <Compile Include="Wave\WaveOutputs\WaveFileWriter.cs" />
     <Compile Include="Wave\WaveOutputs\WaveOut.cs" />
     <Compile Include="Wave\WaveOutputs\WaveOutThreadSafe.cs" />

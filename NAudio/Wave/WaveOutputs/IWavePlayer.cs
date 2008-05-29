@@ -23,38 +23,20 @@ namespace NAudio.Wave
         void Pause();
 
         /// <summary>
-        /// Resume Playback following pause
-        /// </summary>
-        void Resume();
-
-        /// <summary>
         /// Initialise playback
         /// </summary>
         /// <param name="waveStream">The wavestream to be played</param>
         void Init(WaveStream waveStream);
 
         /// <summary>
-        /// Indicates whether device is playing
-        /// n.b. With some combinations of waveStream input, IsPlaying
-        /// will continue to return true even after 
-        /// waveStream.Position > waveStream.Length
+        /// Current playback state
         /// </summary>
-        bool IsPlaying { get; }
+        PlaybackState PlaybackState { get; }
 
         /// <summary>
-        /// Indicates whether device is paused
-        /// </summary>
-        bool IsPaused { get; }
-
-        /// <summary>
-        /// The volume. 1.0 is full scale
+        /// The volume 1.0 is full scale
         /// </summary>
         float Volume { get; set; }
-
-        /// <summary>
-        /// Pan / Balance from -1.0 to 1.0
-        /// </summary>
-        float Pan { get; set; }
 
     }
 }

@@ -175,7 +175,7 @@ namespace MarkHeath.AudioUtils
             this.toolStripButtonShuffle.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.toolStripButtonShuffle.Name = "toolStripButtonShuffle";
             this.toolStripButtonShuffle.Size = new System.Drawing.Size(23, 22);
-            this.toolStripButtonShuffle.Text = "toolStripButton1";
+            this.toolStripButtonShuffle.Text = "Shuffle";
             this.toolStripButtonShuffle.Click += new System.EventHandler(this.toolStripButtonShuffle_Click);
             // 
             // toolStripSeparator1
@@ -186,13 +186,13 @@ namespace MarkHeath.AudioUtils
             // toolStripLabel1
             // 
             this.toolStripLabel1.Name = "toolStripLabel1";
-            this.toolStripLabel1.Size = new System.Drawing.Size(48, 22);
+            this.toolStripLabel1.Size = new System.Drawing.Size(53, 22);
             this.toolStripLabel1.Text = "Position:";
             // 
             // toolStripLabelPosition
             // 
             this.toolStripLabelPosition.Name = "toolStripLabelPosition";
-            this.toolStripLabelPosition.Size = new System.Drawing.Size(73, 22);
+            this.toolStripLabelPosition.Size = new System.Drawing.Size(70, 22);
             this.toolStripLabelPosition.Text = "00:00:00.000";
             this.toolStripLabelPosition.ToolTipText = "Position";
             // 
@@ -204,13 +204,13 @@ namespace MarkHeath.AudioUtils
             // toolStripLabel2
             // 
             this.toolStripLabel2.Name = "toolStripLabel2";
-            this.toolStripLabel2.Size = new System.Drawing.Size(44, 22);
+            this.toolStripLabel2.Size = new System.Drawing.Size(47, 22);
             this.toolStripLabel2.Text = "Length:";
             // 
             // toolStripLabelLength
             // 
             this.toolStripLabelLength.Name = "toolStripLabelLength";
-            this.toolStripLabelLength.Size = new System.Drawing.Size(51, 22);
+            this.toolStripLabelLength.Size = new System.Drawing.Size(49, 22);
             this.toolStripLabelLength.Text = "00:00:00";
             // 
             // toolStripSeparator3
@@ -237,26 +237,26 @@ namespace MarkHeath.AudioUtils
             this.clearToolStripMenuItem,
             this.propertiesToolStripMenuItem});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(147, 70);
+            this.contextMenuStrip1.Size = new System.Drawing.Size(137, 70);
             // 
             // selectFileToolStripMenuItem
             // 
             this.selectFileToolStripMenuItem.Name = "selectFileToolStripMenuItem";
-            this.selectFileToolStripMenuItem.Size = new System.Drawing.Size(146, 22);
+            this.selectFileToolStripMenuItem.Size = new System.Drawing.Size(136, 22);
             this.selectFileToolStripMenuItem.Text = "&Select File...";
             this.selectFileToolStripMenuItem.Click += new System.EventHandler(this.selectFileToolStripMenuItem_Click);
             // 
             // clearToolStripMenuItem
             // 
             this.clearToolStripMenuItem.Name = "clearToolStripMenuItem";
-            this.clearToolStripMenuItem.Size = new System.Drawing.Size(146, 22);
+            this.clearToolStripMenuItem.Size = new System.Drawing.Size(136, 22);
             this.clearToolStripMenuItem.Text = "&Clear";
             this.clearToolStripMenuItem.Click += new System.EventHandler(this.clearToolStripMenuItem_Click);
             // 
             // propertiesToolStripMenuItem
             // 
             this.propertiesToolStripMenuItem.Name = "propertiesToolStripMenuItem";
-            this.propertiesToolStripMenuItem.Size = new System.Drawing.Size(146, 22);
+            this.propertiesToolStripMenuItem.Size = new System.Drawing.Size(136, 22);
             this.propertiesToolStripMenuItem.Text = "&Properties...";
             this.propertiesToolStripMenuItem.Click += new System.EventHandler(this.propertiesToolStripMenuItem_Click);
             // 
@@ -320,27 +320,27 @@ namespace MarkHeath.AudioUtils
             this.saveComparisonToolStripMenuItem,
             this.exitToolStripMenuItem});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
-            this.fileToolStripMenuItem.Size = new System.Drawing.Size(35, 20);
+            this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
             this.fileToolStripMenuItem.Text = "&File";
             // 
             // openSavedComparisonToolStripMenuItem
             // 
             this.openSavedComparisonToolStripMenuItem.Name = "openSavedComparisonToolStripMenuItem";
-            this.openSavedComparisonToolStripMenuItem.Size = new System.Drawing.Size(182, 22);
+            this.openSavedComparisonToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.openSavedComparisonToolStripMenuItem.Text = "Open Comparison...";
             this.openSavedComparisonToolStripMenuItem.Click += new System.EventHandler(this.openSavedComparisonToolStripMenuItem_Click);
             // 
             // saveComparisonToolStripMenuItem
             // 
             this.saveComparisonToolStripMenuItem.Name = "saveComparisonToolStripMenuItem";
-            this.saveComparisonToolStripMenuItem.Size = new System.Drawing.Size(182, 22);
+            this.saveComparisonToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.saveComparisonToolStripMenuItem.Text = "Save Comparison...";
             this.saveComparisonToolStripMenuItem.Click += new System.EventHandler(this.saveComparisonToolStripMenuItem_Click);
             // 
             // exitToolStripMenuItem
             // 
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            this.exitToolStripMenuItem.Size = new System.Drawing.Size(182, 22);
+            this.exitToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.exitToolStripMenuItem.Text = "E&xit";
             this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
             // 
@@ -350,7 +350,7 @@ namespace MarkHeath.AudioUtils
             this.compareModeToolStripMenuItem,
             this.settingsToolStripMenuItem});
             this.optionsToolStripMenuItem.Name = "optionsToolStripMenuItem";
-            this.optionsToolStripMenuItem.Size = new System.Drawing.Size(56, 20);
+            this.optionsToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
             this.optionsToolStripMenuItem.Text = "&Options";
             // 
             // compareModeToolStripMenuItem
@@ -368,21 +368,21 @@ namespace MarkHeath.AudioUtils
             this.currentPositionToolStripMenuItem1.Checked = true;
             this.currentPositionToolStripMenuItem1.CheckState = System.Windows.Forms.CheckState.Checked;
             this.currentPositionToolStripMenuItem1.Name = "currentPositionToolStripMenuItem1";
-            this.currentPositionToolStripMenuItem1.Size = new System.Drawing.Size(162, 22);
+            this.currentPositionToolStripMenuItem1.Size = new System.Drawing.Size(160, 22);
             this.currentPositionToolStripMenuItem1.Text = "&Current Position";
             this.currentPositionToolStripMenuItem1.Click += new System.EventHandler(this.currentPositionToolStripMenuItem1_Click);
             // 
             // skipBackToolStripMenuItem1
             // 
             this.skipBackToolStripMenuItem1.Name = "skipBackToolStripMenuItem1";
-            this.skipBackToolStripMenuItem1.Size = new System.Drawing.Size(162, 22);
+            this.skipBackToolStripMenuItem1.Size = new System.Drawing.Size(160, 22);
             this.skipBackToolStripMenuItem1.Text = "&Skip Back";
             this.skipBackToolStripMenuItem1.Click += new System.EventHandler(this.skipBackToolStripMenuItem1_Click);
             // 
             // restartToolStripMenuItem1
             // 
             this.restartToolStripMenuItem1.Name = "restartToolStripMenuItem1";
-            this.restartToolStripMenuItem1.Size = new System.Drawing.Size(162, 22);
+            this.restartToolStripMenuItem1.Size = new System.Drawing.Size(160, 22);
             this.restartToolStripMenuItem1.Text = "&Restart";
             this.restartToolStripMenuItem1.Click += new System.EventHandler(this.restartToolStripMenuItem1_Click);
             // 
@@ -399,20 +399,20 @@ namespace MarkHeath.AudioUtils
             this.contentsToolStripMenuItem,
             this.aboutToolStripMenuItem});
             this.helpToolStripMenuItem.Name = "helpToolStripMenuItem";
-            this.helpToolStripMenuItem.Size = new System.Drawing.Size(40, 20);
+            this.helpToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
             this.helpToolStripMenuItem.Text = "&Help";
             // 
             // contentsToolStripMenuItem
             // 
             this.contentsToolStripMenuItem.Name = "contentsToolStripMenuItem";
-            this.contentsToolStripMenuItem.Size = new System.Drawing.Size(129, 22);
+            this.contentsToolStripMenuItem.Size = new System.Drawing.Size(122, 22);
             this.contentsToolStripMenuItem.Text = "&Contents";
             this.contentsToolStripMenuItem.Click += new System.EventHandler(this.contentsToolStripMenuItem_Click);
             // 
             // aboutToolStripMenuItem
             // 
             this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
-            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(129, 22);
+            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(122, 22);
             this.aboutToolStripMenuItem.Text = "&About";
             this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
             // 

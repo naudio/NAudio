@@ -6,6 +6,9 @@ using System.Runtime.InteropServices;
 
 namespace NAudio.CoreAudioApi
 {
+    /// <summary>
+    /// Audio Render Client
+    /// </summary>
     public class AudioRenderClient
     {
         IAudioRenderClient audioRenderClientInterface;
@@ -15,6 +18,11 @@ namespace NAudio.CoreAudioApi
             this.audioRenderClientInterface = audioRenderClientInterface;
         }
 
+        /// <summary>
+        /// Gets a pointer to the buffer
+        /// </summary>
+        /// <param name="numFramesRequested">Number of frames requested</param>
+        /// <returns>Pointer to the buffer</returns>
         public IntPtr GetBuffer(int numFramesRequested)
         {
             IntPtr bufferPointer;
@@ -22,6 +30,11 @@ namespace NAudio.CoreAudioApi
             return bufferPointer;
         }
 
+        /// <summary>
+        /// Release buffer
+        /// </summary>
+        /// <param name="numFramesWritten">Number of frames written</param>
+        /// <param name="bufferFlags">Buffer flags</param>
         public void ReleaseBuffer(int numFramesWritten,AudioClientBufferFlags bufferFlags)
         {
             Marshal.ThrowExceptionForHR(audioRenderClientInterface.ReleaseBuffer(numFramesWritten, bufferFlags));

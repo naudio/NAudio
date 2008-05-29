@@ -49,7 +49,7 @@ namespace NAudio.CoreAudioApi
             AudioClientStreamFlags streamFlags,
             long bufferDuration,
             long periodicity,
-            WaveFormatExtensible waveFormat,
+            WaveFormat waveFormat,
             Guid audioSessionGuid)
         {
             Marshal.ThrowExceptionForHR(audioClientInterface.Initialize(shareMode,streamFlags,bufferDuration,periodicity,waveFormat, ref audioSessionGuid));
@@ -138,38 +138,76 @@ namespace NAudio.CoreAudioApi
         /// <param name="shareMode">Share Mode</param>
         /// <param name="desiredFormat">Desired Format</param>
         /// <returns></returns>
-        public WaveFormat IsFormatSupported(AudioClientShareMode shareMode,
+        public bool IsFormatSupported(AudioClientShareMode shareMode,
             WaveFormat desiredFormat)
         {
             IntPtr closestMatchPointer = IntPtr.Zero;
-            int hresult = audioClientInterface.IsFormatSupported(shareMode,desiredFormat,out closestMatchPointer);
-            // S_OK is 0, S_FALSE = 1
-            if (hresult == 0)
+            int hresult;
+            try
             {
-                // directly supported
-                return desiredFormat;
-            }
-            if (hresult == 1)
-            {
-                // a closest match should be supplied
-                if (closestMatchPointer == IntPtr.Zero)
+                hresult = audioClientInterface.IsFormatSupported(shareMode, desiredFormat, out closestMatchPointer);
+                // S_OK is 0, S_FALSE = 1
+                if (hresult == 0)
                 {
-                    // shouldn't happen
-                    return null;
+                    // directly supported
+                    return true;
                 }
-                WaveFormatExtensible closestMatchFormat = new WaveFormatExtensible(44100, 32, 2);
-                Marshal.PtrToStructure(closestMatchPointer, closestMatchFormat);
-                Marshal.FreeCoTaskMem(closestMatchPointer);
-                return closestMatchFormat;
+                if (hresult == 1)
+                {
+                    // a closest match should be supplied
+                    if (closestMatchPointer == IntPtr.Zero)
+                    {
+                        // shouldn't happen
+                        throw new NotSupportedException("Not supported but no closest match");
+                    }
+                    // This is how to get the closest match...
+                    //WaveFormatExtensible closestMatchFormat = new WaveFormatExtensible(44100, 32, 2);
+                    //Marshal.PtrToStructure(closestMatchPointer, closestMatchFormat);
+                    Marshal.FreeCoTaskMem(closestMatchPointer);
+                    //return closestMatchFormat;
+                    return false;
+                }
+            }
+            catch (COMException ce)
+            {
+                if (ce.ErrorCode == (int)AudioClientErrors.UnsupportedFormat)
+                {
+                    return false;
+                }
+                throw;
             }
             throw new NotSupportedException("Unknown hresult " + hresult.ToString());
         }
 
+        /// <summary>
+        /// Starts the audio stream
+        /// </summary>
+        public void Start()
+        {
+            audioClientInterface.Start();
+        }
+
+        /// <summary>
+        /// Stops the audio stream.
+        /// </summary>
+        public void Stop()
+        {
+            audioClientInterface.Stop();
+        }
+
+        /// <summary>
+        /// Resets the audio stream
+        /// Reset is a control method that the client calls to reset a stopped audio stream. 
+        /// Resetting the stream flushes all pending data and resets the audio clock stream 
+        /// position to 0. This method fails if it is called on a stream that is not stopped
+        /// </summary>
+        public void Reset()
+        {
+            audioClientInterface.Reset();
+        }
+
         // TODO:
-        // int GetStreamLatency(out long streamLatency);
-        // int Start();
-        // int Stop();
-        // int Reset();
+        // int GetStreamLatency(out long streamLatency);        
         // int SetEventHandle(IntPtr eventHandle);
 
     }

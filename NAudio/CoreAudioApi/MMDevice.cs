@@ -28,6 +28,9 @@ using System.Runtime.InteropServices;
 
 namespace NAudio.CoreAudioApi
 {
+    /// <summary>
+    /// MM Device
+    /// </summary>
     public class MMDevice
     {
         #region Variables
@@ -78,6 +81,9 @@ namespace NAudio.CoreAudioApi
 
         #region Properties
 
+        /// <summary>
+        /// Audio Client
+        /// </summary>
         public AudioClient AudioClient
         {
             get
@@ -104,6 +110,9 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Audio Endpoint Volume
+        /// </summary>
         public AudioEndpointVolume AudioEndpointVolume
         {
             get

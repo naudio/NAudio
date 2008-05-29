@@ -283,8 +283,8 @@ namespace NAudio.Wave
 		WAVE_FORMAT_SOUNDSPACE_MUSICOMPRESS	= 0x1500, // AT&T Labs, Inc. 
 		/// <summary></summary>
 		WAVE_FORMAT_DVM                     = 0x2000, // FAST Multimedia AG 
-		/// <summary></summary>
-		WAVE_FORMAT_EXTENSIBLE              = 0xFFFE, // Microsoft 
+        /// <summary>WAVE_FORMAT_EXTENSIBLE</summary>
+		Extensible              = 0xFFFE, // Microsoft 
 		/// <summary></summary>
 		WAVE_FORMAT_DEVELOPMENT				= 0xFFFF,
 

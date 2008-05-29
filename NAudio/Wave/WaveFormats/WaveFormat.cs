@@ -133,7 +133,7 @@ namespace NAudio.Wave
             switch (this.waveFormatTag)
             {
                 case WaveFormatEncoding.Pcm:
-                case WaveFormatEncoding.WAVE_FORMAT_EXTENSIBLE:
+                case WaveFormatEncoding.Extensible:
                     // extensible just has some extra bits after the PCM header
                     return String.Format("{0} bit PCM: {1}kHz {2} channels",
                         bitsPerSample, sampleRate / 1000, channels);

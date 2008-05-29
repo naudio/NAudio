@@ -746,7 +746,12 @@
   </change>
   <change>
     <version>1.2.122.0</version>
-    <date>29 May 2008</date>
+    <date>28 May 2008</date>
     <desc>More WASAPI work - AudioClient, WaveFormatExtensible, AudioRenderClient</desc>
+  </change>
+    <change>
+    <version>1.2.123.0</version>
+    <date>29 May 2008</date>
+    <desc>AudioClient IsFormatSupported - it appears WASAPI does not do sample rate conversion for you</desc>
   </change>
 </changes>

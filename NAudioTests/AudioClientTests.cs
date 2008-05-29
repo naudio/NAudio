@@ -57,16 +57,80 @@ namespace NAudioTests
         }
 
         [Test]
-        public void CanRequestIfFormatIsSupported()
+        public void DefaultFormatIsSupported()
         {
-            WaveFormatExtensible closestMatch;
-            closestMatch = GetAudioClient().IsFormatSupported(AudioClientShareMode.Shared,
-                new WaveFormatExtensible(44100, 16, 2));
-            Assert.IsNotNull(closestMatch, "Closest Match");
-            Assert.AreEqual(closestMatch.SampleRate, 44100);
-            Assert.AreEqual(closestMatch.BitsPerSample, 32);
-            Assert.AreEqual(closestMatch.Channels, 2);
+            AudioClient client = GetAudioClient();
+            WaveFormatExtensible defaultFormat = client.MixFormat;
+            CheckFormatSupported(client, defaultFormat);
         }
+
+        [Test]
+        public void CanRequestIfFormatIsSupportedExtensible44100()
+        {
+            WaveFormatExtensible desiredFormat = new WaveFormatExtensible(44100, 32, 2);
+            Console.Write(desiredFormat);
+            CheckFormatSupported(GetAudioClient(), desiredFormat);
+        }
+
+        [Test]
+        public void CanRequestIfFormatIsSupportedExtensible48000()
+        {
+            WaveFormatExtensible desiredFormat = new WaveFormatExtensible(48000, 32, 2);
+            Console.Write(desiredFormat);
+            CheckFormatSupported(GetAudioClient(), desiredFormat);
+        }
+
+        [Test]
+        public void CanRequestIfFormatIsSupportedExtensible48000_16bit()
+        {
+            WaveFormatExtensible desiredFormat = new WaveFormatExtensible(48000, 16, 2);
+            Console.Write(desiredFormat);
+            CheckFormatSupported(GetAudioClient(), desiredFormat);
+        }
+
+
+        [Test]
+        public void CanRequestIfFormatIsSupportedPCMStereo()
+        {
+            CheckFormatSupported(GetAudioClient(), new WaveFormat(44100, 16, 2));
+        }
+
+        [Test]
+        public void CanRequestIfFormatIsSupported8KHzMono()
+        {
+            CheckFormatSupported(GetAudioClient(), new WaveFormat(8000, 16, 1));
+        }
+
+        [Test]
+        public void CanRequest48kHz16BitStereo()
+        {
+            CheckFormatSupported(GetAudioClient(), new WaveFormat(48000, 16, 2));
+        }
+
+        [Test]
+        public void CanRequest48kHz16BitMono()
+        {
+            CheckFormatSupported(GetAudioClient(), new WaveFormat(48000, 16, 1));
+        }
+
+
+        [Test]
+        public void CanRequestIfFormatIsSupportedIeee()
+        {
+            CheckFormatSupported(GetAudioClient(), WaveFormat.CreateIeeeFloatWaveFormat(44100, 2));
+        }
+
+        private void CheckFormatSupported(AudioClient audioClient, WaveFormat waveFormat)
+        {
+            WaveFormat closestMatch;
+            closestMatch = GetAudioClient().IsFormatSupported(AudioClientShareMode.Shared,
+                waveFormat);
+            Assert.IsNotNull(closestMatch, "Closest Match");
+            Assert.AreEqual(closestMatch.SampleRate, waveFormat.SampleRate, "Sample Rate");
+            Assert.AreEqual(closestMatch.BitsPerSample, waveFormat.BitsPerSample, "BitsPerSample");
+            Assert.AreEqual(closestMatch.Channels, waveFormat.Channels, "Channels");
+        }
+
 
         private AudioClient InitializeClient()
         {

@@ -5,12 +5,17 @@ using NAudio.Utils;
 
 namespace NAudio.CoreAudioApi.Interfaces
 {
-    enum AudioClientErrors : uint
+    enum AudioClientErrors
     {
         /// <summary>
         /// AUDCLNT_E_NOT_INITIALIZED
         /// </summary>
-        NotInitialized = 0x88890001,
+        NotInitialized = unchecked((int)0x88890001),
+        /// <summary>
+        /// AUDCLNT_E_UNSUPPORTED_FORMAT
+        /// </summary>
+        UnsupportedFormat = unchecked((int)0x88890008),
+
         
     }
 

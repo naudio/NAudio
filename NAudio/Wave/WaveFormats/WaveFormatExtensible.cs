@@ -16,9 +16,13 @@ namespace NAudio.Wave
         int dwChannelMask; // which channels are present in stream
         Guid subFormat;
 
+        /// <summary>
+        /// Creates a new WaveFormatExtensible for PCM or IEEE
+        /// </summary>
         public WaveFormatExtensible(int rate, int bits, int channels)
             : base(rate, bits, channels)
         {
+            waveFormatTag = WaveFormatEncoding.Extensible;
             extraSize = 22;
             wValidBitsPerSample = (short) bits;
             for (int n = 0; n < channels; n++)
@@ -38,13 +42,17 @@ namespace NAudio.Wave
 
         }
 
+        /// <summary>
+        /// String representation
+        /// </summary>
         public override string ToString()
         {
-            return String.Format("{0} wBitsPerSample:{1} dwChannelMask:{2} subFormat:{3}",
+            return String.Format("{0} wBitsPerSample:{1} dwChannelMask:{2} subFormat:{3} extraSize:{4}",
                 base.ToString(),
                 wValidBitsPerSample,
                 dwChannelMask,
-                subFormat);
+                subFormat,
+                extraSize);
         }
     }
 }

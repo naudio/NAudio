@@ -132,17 +132,37 @@ namespace NAudio.CoreAudioApi
             }
         }
 
-        public WaveFormatExtensible IsFormatSupported(AudioClientShareMode shareMode,
-            WaveFormatExtensible desiredFormat)
+        /// <summary>
+        /// Determines if the specified mode is supported
+        /// </summary>
+        /// <param name="shareMode">Share Mode</param>
+        /// <param name="desiredFormat">Desired Format</param>
+        /// <returns></returns>
+        public WaveFormat IsFormatSupported(AudioClientShareMode shareMode,
+            WaveFormat desiredFormat)
         {
-            IntPtr closestMatchPointer;
-            Marshal.ThrowExceptionForHR(audioClientInterface.IsFormatSupported(shareMode,desiredFormat,out closestMatchPointer));
-            if (closestMatchPointer == IntPtr.Zero)
-                return null;
-            WaveFormatExtensible closestMatchFormat = new WaveFormatExtensible(44100,32,2);
-            Marshal.PtrToStructure(closestMatchPointer, closestMatchFormat);
-            Marshal.FreeCoTaskMem(closestMatchPointer);
-            return closestMatchFormat;
+            IntPtr closestMatchPointer = IntPtr.Zero;
+            int hresult = audioClientInterface.IsFormatSupported(shareMode,desiredFormat,out closestMatchPointer);
+            // S_OK is 0, S_FALSE = 1
+            if (hresult == 0)
+            {
+                // directly supported
+                return desiredFormat;
+            }
+            if (hresult == 1)
+            {
+                // a closest match should be supplied
+                if (closestMatchPointer == IntPtr.Zero)
+                {
+                    // shouldn't happen
+                    return null;
+                }
+                WaveFormatExtensible closestMatchFormat = new WaveFormatExtensible(44100, 32, 2);
+                Marshal.PtrToStructure(closestMatchPointer, closestMatchFormat);
+                Marshal.FreeCoTaskMem(closestMatchPointer);
+                return closestMatchFormat;
+            }
+            throw new NotSupportedException("Unknown hresult " + hresult.ToString());
         }
 
         // TODO:

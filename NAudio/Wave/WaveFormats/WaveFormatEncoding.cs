@@ -222,8 +222,16 @@ namespace NAudio.Wave
 		/// <summary></summary>
 		WAVE_FORMAT_TUBGSM					= 0x0155, // Ring Zero Systems, Inc. 
 		/// <summary></summary>
-		WAVE_FORMAT_MSAUDIO1				= 0x0160, // Microsoft Corporation 
-		/// <summary></summary>
+		WAVE_FORMAT_MSAUDIO1				= 0x0160, // Microsoft Corporation 		
+        /// <summary>
+        /// WAVE_FORMAT_WMAUDIO2, Microsoft Corporation
+        /// </summary>
+        WAVE_FORMAT_WMAUDIO2                = 0x0161,
+        /// <summary>
+        /// WAVE_FORMAT_WMAUDIO3, Microsoft Corporation
+        /// </summary>
+        WAVE_FORMAT_WMAUDIO3                = 0x0162,
+        /// <summary></summary>
 		WAVE_FORMAT_UNISYS_NAP_ADPCM		= 0x0170, // Unisys Corp. 
 		/// <summary></summary>
 		WAVE_FORMAT_UNISYS_NAP_ULAW			= 0x0171, // Unisys Corp. 

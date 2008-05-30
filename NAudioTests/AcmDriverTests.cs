@@ -18,7 +18,7 @@ namespace NAudioTests
             {
                 Assert.GreaterOrEqual(driver.DriverId, 0);
                 Assert.IsTrue(!String.IsNullOrEmpty(driver.ShortName));
-                //Console.WriteLine(driver.ShortName);
+                Console.WriteLine(driver.LongName);
             }
         }
 
@@ -32,6 +32,12 @@ namespace NAudioTests
         public void FindsStandardCodec()
         {
             Assert.IsTrue(AcmDriver.IsCodecInstalled("MS-ADPCM"));
+        }
+
+        [Test]
+        public void HasFindByShortNameMethod()
+        {
+            AcmDriver driver = AcmDriver.FindByShortName("WM-AUDIO");
         }
     }
 }

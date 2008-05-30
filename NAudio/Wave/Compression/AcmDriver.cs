@@ -30,6 +30,23 @@ namespace NAudio.Wave
         }
 
         /// <summary>
+        /// Finds a Driver by its short name
+        /// </summary>
+        /// <param name="shortName">Short Name</param>
+        /// <returns>The driver, or null if not found</returns>
+        public static AcmDriver FindByShortName(string shortName)
+        {
+            foreach (AcmDriver driver in AcmDriver.EnumerateAcmDrivers())
+            {
+                if (driver.ShortName == shortName)
+                {
+                    return driver;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
         /// Gets a list of the ACM Drivers installed
         /// </summary>
         public static AcmDriver[] EnumerateAcmDrivers()
@@ -72,6 +89,17 @@ namespace NAudio.Wave
         }
 
         /// <summary>
+        /// The full name of this driver
+        /// </summary>
+        public string LongName
+        {
+            get
+            {
+                return details.szLongName;
+            }
+        }
+
+        /// <summary>
         /// The driver ID
         /// </summary>
         public int DriverId
@@ -82,6 +110,10 @@ namespace NAudio.Wave
             }
         }
 
+        public override string ToString()
+        {            
+            return LongName;
+        }
     }
 
 }

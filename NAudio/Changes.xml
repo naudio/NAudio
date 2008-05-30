@@ -763,4 +763,10 @@
     <desc>PlaybackState instead of IsPlaying and IsPaused on IWavePlayer</desc>
     <desc>WaveOut implementation simplified</desc>
   </change>
+  <change>
+    <version>1.2.125.0</version>
+    <version>30 May 2008</version>
+    <version>AcmDriver enhancements</version>
+    <version>WMA Wave Format</version>
+  </change>
 </changes>

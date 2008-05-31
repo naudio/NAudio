@@ -81,6 +81,12 @@
     <Compile Include="CoreAudioApi\PropertyKeys.cs" />
     <Compile Include="Daw\MeasuresBeatsTicks.cs" />
     <Compile Include="Daw\TempoMap.cs" />
+    <Compile Include="Dmo\DmoEnumerator.cs" />
+    <Compile Include="Dmo\DmoEnumFlags.cs" />
+    <Compile Include="Dmo\DmoGuids.cs" />
+    <Compile Include="Dmo\DmoInterop.cs" />
+    <Compile Include="Dmo\DmoPartialMediaType.cs" />
+    <Compile Include="Dmo\IWMResamplerProps.cs" />
     <Compile Include="Dsp\BiQuadFilter.cs" />
     <Compile Include="Dsp\Complex.cs" />
     <Compile Include="Dsp\EnvelopeDetector.cs" />
@@ -304,6 +310,19 @@
     <Compile Include="Wave\WaveStreams\WaveOffsetStream.cs" />
     <Compile Include="Wave\WaveStreams\WaveOutBuffer.cs" />
     <Compile Include="Wave\WaveStreams\WaveStream.cs" />
+    <Compile Include="Dmo\DmoInputDataBufferFlags.cs" />
+    <Compile Include="Dmo\DmoInputStatusFlags.cs" />
+    <Compile Include="Dmo\DmoMediaType.cs" />
+    <Compile Include="Dmo\DmoOutputDataBuffer.cs" />
+    <Compile Include="Dmo\DmoOutputDataBufferFlags.cs" />
+    <Compile Include="Dmo\DmoProcessOutputFlags.cs" />
+    <Compile Include="Dmo\DmoSetTypeFlags.cs" />
+    <Compile Include="Dmo\IEnumDmo.cs" />
+    <Compile Include="Dmo\IMediaBuffer.cs" />
+    <Compile Include="Dmo\IMediaObject.cs" />
+    <Compile Include="Dmo\InputStreamInfoFlags.cs" />
+    <Compile Include="Dmo\OutputStreamInfoFlags.cs" />
+    <Compile Include="Dmo\ResamplerMediaObject.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Gui\Arranger.resx">

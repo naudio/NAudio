@@ -52,6 +52,7 @@
   <ItemGroup>
     <Compile Include="AcmDriverTests.cs" />
     <Compile Include="AudioClientTests.cs" />
+    <Compile Include="DmoTests.cs" />
     <Compile Include="MidiEventCollectionTest.cs" />
     <Compile Include="MMDeviceEnumeratorTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

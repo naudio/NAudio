@@ -774,4 +774,8 @@
     <version>31 May 2008</version>
     <version>WASAPI out working! but need a solution for SRC</version>
   </change>
+  <change>
+    <version>1.2.127.0</version>
+    <version>Lots of DMO interop written (DirectX media objects)</version>
+  </change>
 </changes>

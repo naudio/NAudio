@@ -60,7 +60,7 @@ namespace NAudioTests
         public void DefaultFormatIsSupported()
         {
             AudioClient client = GetAudioClient();
-            WaveFormatExtensible defaultFormat = client.MixFormat;
+            WaveFormat defaultFormat = client.MixFormat;
             CheckFormatSupported(client, defaultFormat);
         }
 
@@ -150,7 +150,7 @@ namespace NAudioTests
         private AudioClient InitializeClient()
         {
             AudioClient audioClient = GetAudioClient();
-            WaveFormatExtensible waveFormat = audioClient.MixFormat;
+            WaveFormat waveFormat = audioClient.MixFormat;
             long refTimesPerSecond = 10000000;
             audioClient.Initialize(AudioClientShareMode.Shared,
                 AudioClientStreamFlags.None,

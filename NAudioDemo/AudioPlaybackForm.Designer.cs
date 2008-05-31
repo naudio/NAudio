@@ -40,6 +40,7 @@
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.label1 = new System.Windows.Forms.Label();
             this.buttonInputFolder = new System.Windows.Forms.Button();
+            this.radioButtonWasapi = new System.Windows.Forms.RadioButton();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -145,10 +146,11 @@
             this.groupBox1.Controls.Add(this.comboBoxLatency);
             this.groupBox1.Controls.Add(this.radioButtonWaveOutWindow);
             this.groupBox1.Controls.Add(this.radioButtonDirectSound);
+            this.groupBox1.Controls.Add(this.radioButtonWasapi);
             this.groupBox1.Controls.Add(this.radioButtonAsio);
             this.groupBox1.Location = new System.Drawing.Point(12, 11);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(211, 129);
+            this.groupBox1.Size = new System.Drawing.Size(211, 143);
             this.groupBox1.TabIndex = 13;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Output Driver";
@@ -171,6 +173,17 @@
             this.buttonInputFolder.Text = "Input Folder";
             this.buttonInputFolder.UseVisualStyleBackColor = true;
             this.buttonInputFolder.Click += new System.EventHandler(this.buttonInputFolder_Click);
+            // 
+            // radioButtonWasapi
+            // 
+            this.radioButtonWasapi.AutoSize = true;
+            this.radioButtonWasapi.Location = new System.Drawing.Point(6, 113);
+            this.radioButtonWasapi.Name = "radioButtonWasapi";
+            this.radioButtonWasapi.Size = new System.Drawing.Size(67, 17);
+            this.radioButtonWasapi.TabIndex = 9;
+            this.radioButtonWasapi.TabStop = true;
+            this.radioButtonWasapi.Text = "WASAPI";
+            this.radioButtonWasapi.UseVisualStyleBackColor = true;
             // 
             // AudioPlaybackForm
             // 
@@ -206,5 +219,6 @@
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Button buttonInputFolder;
+        private System.Windows.Forms.RadioButton radioButtonWasapi;
     }
 }

@@ -13,6 +13,7 @@ namespace NAudio.CoreAudioApi
     public class AudioClient
     {
         IAudioClient audioClientInterface;
+        WaveFormat mixFormat;
         
         internal AudioClient(IAudioClient audioClientInterface)
         {
@@ -23,16 +24,24 @@ namespace NAudio.CoreAudioApi
         /// Mix Format,
         /// Can be called before initialize
         /// </summary>
-        public WaveFormatExtensible MixFormat
+        public WaveFormat MixFormat
         {
             get
             {
-                IntPtr waveFormatPointer;
-                Marshal.ThrowExceptionForHR(audioClientInterface.GetMixFormat(out waveFormatPointer));
-                WaveFormatExtensible waveFormat = new WaveFormatExtensible(44100,32,2);
-                Marshal.PtrToStructure(waveFormatPointer, waveFormat);
-                Marshal.FreeCoTaskMem(waveFormatPointer);
-                return waveFormat;
+                if(mixFormat == null)
+                {
+                    IntPtr waveFormatPointer;
+                    Marshal.ThrowExceptionForHR(audioClientInterface.GetMixFormat(out waveFormatPointer));
+                    WaveFormatExtensible waveFormat = new WaveFormatExtensible(44100,32,2);
+                    Marshal.PtrToStructure(waveFormatPointer, waveFormat);
+                    Marshal.FreeCoTaskMem(waveFormatPointer);
+                    mixFormat = waveFormat;
+                    return waveFormat;
+                }
+                else
+                {
+                    return mixFormat;
+                }
             }
         }
 
@@ -53,6 +62,8 @@ namespace NAudio.CoreAudioApi
             Guid audioSessionGuid)
         {
             Marshal.ThrowExceptionForHR(audioClientInterface.Initialize(shareMode,streamFlags,bufferDuration,periodicity,waveFormat, ref audioSessionGuid));
+            // may have changed the mix format so reset it
+            mixFormat = null;
         }
 
         /// <summary>

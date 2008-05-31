@@ -8,6 +8,7 @@ using System.Windows.Forms;
 using NAudio.Wave;
 using System.IO;
 using NAudioDemo.Properties;
+using NAudio.CoreAudioApi;
 
 namespace NAudioDemo
 {
@@ -46,9 +47,13 @@ namespace NAudioDemo
             {
                 waveOut = new DirectSoundOut(this, 300);
             }
-            else
+            else if (radioButtonAsio.Checked)
             {
                 waveOut = new AsioOut(0);
+            }
+            else
+            {
+                waveOut = new WasapiOut(AudioClientShareMode.Shared, latency);
             }
 
             foreach (string wavFile in Directory.GetFiles(folder, "*.wav"))
@@ -64,8 +69,8 @@ namespace NAudioDemo
             }
 
             WaveMixerStream32 mixer = new WaveMixerStream32(inputs, false);
-            Wave32To16Stream mixdown = new Wave32To16Stream(mixer);
-            waveOut.Init(mixdown);
+            //Wave32To16Stream mixdown = new Wave32To16Stream(mixer);
+            waveOut.Init(mixer);
             waveOut.Volume = volumeSlider1.Volume;
             waveOut.Play();
         }

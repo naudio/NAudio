@@ -73,6 +73,9 @@ namespace NAudio.CoreAudioApi
             return new MMDevice(_Device);
         }
 
+        /// <summary>
+        /// Creates a new MM Device Enumerator
+        /// </summary>
         public MMDeviceEnumerator()
         {
             if (System.Environment.OSVersion.Version.Major < 6)

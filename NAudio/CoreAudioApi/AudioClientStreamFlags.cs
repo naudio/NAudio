@@ -10,6 +10,9 @@ namespace NAudio.CoreAudioApi
     [Flags]
     public enum AudioClientStreamFlags
     {
+        /// <summary>
+        /// None
+        /// </summary>
         None,
         /// <summary>
         /// AUDCLNT_STREAMFLAGS_CROSSPROCESS

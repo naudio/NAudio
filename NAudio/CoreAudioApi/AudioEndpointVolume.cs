@@ -28,7 +28,9 @@ using System.Runtime.InteropServices;
 
 namespace NAudio.CoreAudioApi
 {
-
+    /// <summary>
+    /// Audio Endpoint Volume
+    /// </summary>
     public class AudioEndpointVolume : IDisposable
     {
         private IAudioEndpointVolume _AudioEndPointVolume;
@@ -64,6 +66,10 @@ namespace NAudio.CoreAudioApi
                 return _HardwareSupport;
             }
         }
+
+        /// <summary>
+        /// Step Information
+        /// </summary>
         public AudioEndpointVolumeStepInformation StepInformation
         {
             get
@@ -71,6 +77,10 @@ namespace NAudio.CoreAudioApi
                 return _StepInformation;
             }
         }
+
+        /// <summary>
+        /// Channels
+        /// </summary>
         public AudioEndpointVolumeChannels Channels
         {
             get
@@ -78,6 +88,10 @@ namespace NAudio.CoreAudioApi
                 return _Channels;
             }
         }
+
+        /// <summary>
+        /// Master Volume Level
+        /// </summary>
         public float MasterVolumeLevel
         {
             get
@@ -91,6 +105,10 @@ namespace NAudio.CoreAudioApi
                 Marshal.ThrowExceptionForHR(_AudioEndPointVolume.SetMasterVolumeLevel(value, Guid.Empty));
             }
         }
+
+        /// <summary>
+        /// Master Volume Level Scalar
+        /// </summary>
         public float MasterVolumeLevelScalar
         {
             get
@@ -121,14 +139,27 @@ namespace NAudio.CoreAudioApi
                 Marshal.ThrowExceptionForHR(_AudioEndPointVolume.SetMute(value, Guid.Empty));
             }
         }
+
+        /// <summary>
+        /// Volume Step Up
+        /// </summary>
         public void VolumeStepUp()
         {
             Marshal.ThrowExceptionForHR(_AudioEndPointVolume.VolumeStepUp(Guid.Empty));
         }
+
+        /// <summary>
+        /// Volume Step Down
+        /// </summary>
         public void VolumeStepDown()
         {
             Marshal.ThrowExceptionForHR(_AudioEndPointVolume.VolumeStepDown(Guid.Empty));
         }
+
+        /// <summary>
+        /// Creates a new Audio endpoint volume
+        /// </summary>
+        /// <param name="realEndpointVolume">IAudioEndpointVolume COM interface</param>
         internal AudioEndpointVolume(IAudioEndpointVolume realEndpointVolume)
         {
             uint HardwareSupp;

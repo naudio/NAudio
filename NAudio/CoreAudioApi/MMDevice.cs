@@ -124,6 +124,9 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Properties
+        /// </summary>
         public PropertyStore Properties
         {
             get
@@ -134,12 +137,17 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Friendly name
+        /// </summary>
         public string FriendlyName
         {
             get
             {
                 if (_PropertyStore == null)
+                {
                     GetPropertyInformation();
+                }
                 if (_PropertyStore.Contains(PropertyKeys.PKEY_DeviceInterface_FriendlyName))
                 {
                     return (string)_PropertyStore[PropertyKeys.PKEY_DeviceInterface_FriendlyName].Value;
@@ -150,6 +158,9 @@ namespace NAudio.CoreAudioApi
         }
 
 
+        /// <summary>
+        /// Device ID
+        /// </summary>
         public string ID
         {
             get
@@ -160,6 +171,9 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Data Flow
+        /// </summary>
         public DataFlow DataFlow
         {
             get
@@ -171,6 +185,9 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Device State
+        /// </summary>
         public DeviceState State
         {
             get
@@ -190,6 +207,9 @@ namespace NAudio.CoreAudioApi
         }
         #endregion
 
+        /// <summary>
+        /// To string
+        /// </summary>
         public override string ToString()
         {
             return FriendlyName;

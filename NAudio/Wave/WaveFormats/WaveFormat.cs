@@ -259,6 +259,18 @@ namespace NAudio.Wave
 			}
 		}
 
+        /// <summary>
+        /// Returns the number of extra bytes used by this waveformat. Often 0,
+        /// except for compressed formats which store extra data after the WAVEFORMATEX header
+        /// </summary>
+        public int ExtraSize
+        {
+            get
+            {
+                return extraSize;
+            }
+        }
+
         
 	}
 }

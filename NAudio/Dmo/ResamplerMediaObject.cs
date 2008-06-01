@@ -21,12 +21,18 @@ namespace NAudio.Dmo
     {
     }
 
+    /// <summary>
+    /// Resampler
+    /// </summary>
     public class Resampler
     {
         MediaObject mediaObject;
         IPropertyStore propertyStoreInterface;
         IWMResamplerProps resamplerPropsInterface;
 
+        /// <summary>
+        /// Creates a new Resampler based on the DMO Resampler
+        /// </summary>
         public Resampler()
         {
             ResamplerMediaObject mediaComObject = new ResamplerMediaObject();
@@ -35,6 +41,9 @@ namespace NAudio.Dmo
             resamplerPropsInterface = (IWMResamplerProps)mediaComObject;
         }
 
+        /// <summary>
+        /// Media Object
+        /// </summary>
         public MediaObject MediaObject
         {
             get

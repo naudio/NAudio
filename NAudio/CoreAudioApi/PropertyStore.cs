@@ -19,7 +19,7 @@
      misrepresented as being the original source code.
   3. This notice may not be removed or altered from any source distribution.
 */
-/// this version modified for NAudio from Ray Molenkamp's original
+// this version modified for NAudio from Ray Molenkamp's original
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -35,6 +35,9 @@ namespace NAudio.CoreAudioApi
     {
         private IPropertyStore storeInterface;
 
+        /// <summary>
+        /// Property Count
+        /// </summary>
         public int Count
         {
             get
@@ -45,6 +48,11 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Gets property by index
+        /// </summary>
+        /// <param name="index">Property index</param>
+        /// <returns>The property</returns>
         public PropertyStoreProperty this[int index]
         {
             get
@@ -56,6 +64,11 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Contains property guid
+        /// </summary>
+        /// <param name="guid">Looks for a specific Guid</param>
+        /// <returns>True if found</returns>
         public bool Contains(Guid guid)
         {
             for (int i = 0; i < Count; i++)
@@ -69,6 +82,11 @@ namespace NAudio.CoreAudioApi
             return false;
         }
 
+        /// <summary>
+        /// Indexer by guid
+        /// </summary>
+        /// <param name="guid">Property guid</param>
+        /// <returns>Property or null if not found</returns>
         public PropertyStoreProperty this[Guid guid]
         {
             get
@@ -87,6 +105,11 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Gets property key at sepecified index
+        /// </summary>
+        /// <param name="index">Index</param>
+        /// <returns>Property key</returns>
         public PropertyKey Get(int index)
         {
             PropertyKey key;
@@ -94,6 +117,11 @@ namespace NAudio.CoreAudioApi
             return key;
         }
 
+        /// <summary>
+        /// Gets property value at specified index
+        /// </summary>
+        /// <param name="index">Index</param>
+        /// <returns>Property value</returns>
         public PropVariant GetValue(int index)
         {
             PropVariant result;
@@ -102,6 +130,10 @@ namespace NAudio.CoreAudioApi
             return result;
         }
 
+        /// <summary>
+        /// Creates a new property store
+        /// </summary>
+        /// <param name="store">IPropertyStore COM interface</param>
         internal PropertyStore(IPropertyStore store)
         {
             this.storeInterface = store;

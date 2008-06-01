@@ -30,7 +30,7 @@ namespace NAudio.Dmo
         
         int GetOutputCurrentType(int outputStreamIndex, out DmoMediaType mediaType);
         
-        int GetInputSizeInfo(int inputStreamIndex, out int size, out int maxLookahed, out int alignment);
+        int GetInputSizeInfo(int inputStreamIndex, out int size, out int maxLookahead, out int alignment);
         
         int GetOutputSizeInfo(int outputStreamIndex, out int size, out int alignment);
         

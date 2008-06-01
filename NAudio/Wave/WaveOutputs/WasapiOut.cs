@@ -22,6 +22,11 @@ namespace NAudio.Wave
         byte[] readBuffer;
         PlaybackState playbackState;
 
+        /// <summary>
+        /// WASAPI Out using default audio endpoint
+        /// </summary>
+        /// <param name="shareMode">ShareMode - shared or exclusive</param>
+        /// <param name="latency">Desired latency in milliseconds</param>
         public WasapiOut(AudioClientShareMode shareMode, int latency) :
             this(GetDefaultAudioEndpoint(), shareMode, latency)
         {
@@ -33,6 +38,12 @@ namespace NAudio.Wave
             return enumerator.GetDefaultAudioEndpoint(DataFlow.Render,Role.Console);
         }
 
+        /// <summary>
+        /// Creates a new WASAPI Output
+        /// </summary>
+        /// <param name="device">Device to use</param>
+        /// <param name="shareMode"></param>
+        /// <param name="latency"></param>
         public WasapiOut(MMDevice device, AudioClientShareMode shareMode, int latency)
         {
             this.audioClient = device.AudioClient;
@@ -94,12 +105,18 @@ namespace NAudio.Wave
             }
         }
 
+        /// <summary>
+        /// Stop playback and flush buffers
+        /// </summary>
         public void Stop()
         {
             playbackState = PlaybackState.Stopped;
             // TODO: block on playback thread actually stopping
         }
 
+        /// <summary>
+        /// Stop playback without flushing buffers
+        /// </summary>
         public void Pause()
         {
             if (playbackState == PlaybackState.Playing)
@@ -109,6 +126,10 @@ namespace NAudio.Wave
             
         }
 
+        /// <summary>
+        /// Initialize for playing the specified wave stream
+        /// </summary>
+        /// <param name="waveStream">Wavestream to play</param>
         public void Init(WaveStream waveStream)
         {
             long latencyRefTimes = latencyMilliseconds * 10000;
@@ -145,6 +166,9 @@ namespace NAudio.Wave
             get { return playbackState; }
         }
 
+        /// <summary>
+        /// Volume
+        /// </summary>
         public float Volume
         {
             get
@@ -164,9 +188,16 @@ namespace NAudio.Wave
 
         #region IDisposable Members
 
+        /// <summary>
+        /// Dispose
+        /// </summary>
         public void Dispose()
         {
             Stop();
+            // allow GC to release the COM object when it runs
+            audioClient = null;
+            renderClient = null;
+
         }
 
         #endregion

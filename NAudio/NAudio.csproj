@@ -81,12 +81,16 @@
     <Compile Include="CoreAudioApi\PropertyKeys.cs" />
     <Compile Include="Daw\MeasuresBeatsTicks.cs" />
     <Compile Include="Daw\TempoMap.cs" />
+    <Compile Include="Dmo\AudioMediaSubtypes.cs" />
     <Compile Include="Dmo\DmoEnumerator.cs" />
     <Compile Include="Dmo\DmoEnumFlags.cs" />
     <Compile Include="Dmo\DmoGuids.cs" />
+    <Compile Include="Dmo\DmoHResults.cs" />
     <Compile Include="Dmo\DmoInterop.cs" />
     <Compile Include="Dmo\DmoPartialMediaType.cs" />
     <Compile Include="Dmo\IWMResamplerProps.cs" />
+    <Compile Include="Dmo\MediaObject.cs" />
+    <Compile Include="Dmo\MediaTypes.cs" />
     <Compile Include="Dsp\BiQuadFilter.cs" />
     <Compile Include="Dsp\Complex.cs" />
     <Compile Include="Dsp\EnvelopeDetector.cs" />

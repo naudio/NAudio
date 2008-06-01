@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Runtime.InteropServices;
+using NAudio.CoreAudioApi.Interfaces;
+using NAudio.Utils;
 
 namespace NAudio.Dmo
 {
@@ -17,5 +19,29 @@ namespace NAudio.Dmo
     [ComImport, Guid("f447b69e-1884-4a7e-8055-346f74d6edb3")]
     class ResamplerMediaObject
     {
+    }
+
+    public class Resampler
+    {
+        MediaObject mediaObject;
+        IPropertyStore propertyStoreInterface;
+        IWMResamplerProps resamplerPropsInterface;
+
+        public Resampler()
+        {
+            ResamplerMediaObject mediaComObject = new ResamplerMediaObject();
+            mediaObject = new MediaObject((IMediaObject)mediaComObject);
+            propertyStoreInterface = (IPropertyStore)mediaComObject;
+            resamplerPropsInterface = (IWMResamplerProps)mediaComObject;
+        }
+
+        public MediaObject MediaObject
+        {
+            get
+            {
+                return mediaObject;
+            }
+        }
+
     }
 }

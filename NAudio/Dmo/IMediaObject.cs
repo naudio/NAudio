@@ -20,7 +20,7 @@ namespace NAudio.Dmo
         
         int GetInputType(int inputStreamIndex, int typeIndex, out DmoMediaType mediaType);
         
-        int GetOutputType(int outputStreamIndex, int typeIndex, out DmoMediaType mediatType);
+        int GetOutputType(int outputStreamIndex, int typeIndex, out DmoMediaType mediaType);
         
         int SetInputType(int inputStreamIndex, [In] ref DmoMediaType mediaType, DmoSetTypeFlags flags);
         

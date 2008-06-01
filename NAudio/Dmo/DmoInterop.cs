@@ -17,5 +17,12 @@ namespace NAudio.Dmo
             [In] DmoPartialMediaType[] outTypesArray,
             out IEnumDmo enumDmo);
 
+        [DllImport("msdmo.dll")]
+        public static extern int MoFreeMediaType(
+            [In] ref DmoMediaType mediaType);
+
+        [DllImport("msdmo.dll")]
+        public static extern int MoInitMediaType(
+            [In,Out] ref DmoMediaType mediaType, int formatBlockBytes);
     }
 }

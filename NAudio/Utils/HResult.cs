@@ -6,6 +6,8 @@ namespace NAudio.Utils
 {
     public static class HResult
     {
+        public const int S_OK = 0;
+        public const int S_FALSE = 1;
         public static int MAKE_HRESULT(int sev, int fac, int code)
         {
             return (int) (((uint)sev) << 31 | ((uint)fac) << 16 | ((uint)code));

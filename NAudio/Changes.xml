@@ -778,4 +778,8 @@
     <version>1.2.127.0</version>
     <version>Lots of DMO interop written (DirectX media objects)</version>
   </change>
+  <change>
+    <version>1.2.128.0</version>
+    <version>Lots more DMO interop - Resampler DMO</version>
+  </change>
 </changes>

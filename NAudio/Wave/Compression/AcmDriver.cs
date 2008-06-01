@@ -110,6 +110,9 @@ namespace NAudio.Wave
             }
         }
 
+        /// <summary>
+        /// ToString
+        /// </summary>        
         public override string ToString()
         {            
             return LongName;

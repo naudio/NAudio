@@ -28,6 +28,9 @@ using System.Runtime.InteropServices;
 
 namespace NAudio.CoreAudioApi
 {
+    /// <summary>
+    /// Audio Endpoint Volume Channel
+    /// </summary>
     public class AudioEndpointVolumeChannel
     {
         private uint _Channel;
@@ -39,6 +42,9 @@ namespace NAudio.CoreAudioApi
             _AudioEndpointVolume = parent;
         }
 
+        /// <summary>
+        /// Volume Level
+        /// </summary>
         public float VolumeLevel
         {
             get
@@ -53,6 +59,9 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Volume Level Scalar
+        /// </summary>
         public float VolumeLevelScalar
         {
             get

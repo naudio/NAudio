@@ -90,6 +90,7 @@
     <Compile Include="Dmo\DmoPartialMediaType.cs" />
     <Compile Include="Dmo\IWMResamplerProps.cs" />
     <Compile Include="Dmo\MediaObject.cs" />
+    <Compile Include="Dmo\MediaObjectSizeInfo.cs" />
     <Compile Include="Dmo\MediaTypes.cs" />
     <Compile Include="Dsp\BiQuadFilter.cs" />
     <Compile Include="Dsp\Complex.cs" />

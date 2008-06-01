@@ -76,45 +76,87 @@ namespace NAudioTests
         }
 
         [Test]
-        public void ResamplerSupports16BitPCM41000()
+        public void ResamplerSupports16BitPCM41000Input()
         {
             WaveFormat waveFormat = new WaveFormat(44100, 16, 2);
-            Assert.IsTrue(ResamplerSupports(waveFormat));
+            Assert.IsTrue(IsResamplerInputFormatSupported(waveFormat));
         }
 
         [Test]
-        public void ResamplerSupports16BitPCM8000()
+        public void ResamplerSupports16BitPCM8000Input()
         {
             WaveFormat waveFormat = new WaveFormat(8000, 16, 2);
-            Assert.IsTrue(ResamplerSupports(waveFormat));
+            Assert.IsTrue(IsResamplerInputFormatSupported(waveFormat));
         }
 
         [Test]
-        public void ResamplerSupportsIEEE44100()
+        public void ResamplerSupportsIEEE44100Input()
         {
             WaveFormat waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(44100,2);
-            Assert.IsTrue(ResamplerSupports(waveFormat));
+            Assert.IsTrue(IsResamplerInputFormatSupported(waveFormat));
         }
 
         [Test]
-        public void ResamplerSupportsIEEE8000()
+        public void ResamplerSupportsIEEE8000Input()
         {
             WaveFormat waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(8000, 2);
-            Assert.IsTrue(ResamplerSupports(waveFormat));
+            Assert.IsTrue(IsResamplerInputFormatSupported(waveFormat));
         }
 
+        [Test]
+        public void ResamplerSupports8000To44100IEEE()
+        {
+            WaveFormat inputFormat = WaveFormat.CreateIeeeFloatWaveFormat(8000, 2);
+            WaveFormat outputFormat = WaveFormat.CreateIeeeFloatWaveFormat(44100, 2);
+            Assert.IsTrue(IsResamplerConversionSupported(inputFormat, outputFormat));
+        }
 
-        private bool ResamplerSupports(WaveFormat waveFormat)
+        [Test]
+        public void ResamplerSupports41000To48000IEEE()
+        {
+            WaveFormat inputFormat = WaveFormat.CreateIeeeFloatWaveFormat(44100, 2);
+            WaveFormat outputFormat = WaveFormat.CreateIeeeFloatWaveFormat(48000, 2);
+            Assert.IsTrue(IsResamplerConversionSupported(inputFormat, outputFormat));
+        }
+
+        [Test]
+        public void ResamplerSupportsPCMToIEEE()
+        {
+            WaveFormat inputFormat = new WaveFormat(44100,16,2);
+            WaveFormat outputFormat = WaveFormat.CreateIeeeFloatWaveFormat(48000, 2);
+            Assert.IsTrue(IsResamplerConversionSupported(inputFormat, outputFormat));
+        }
+
+        [Test]
+        public void ResamplerCanGetInputAndOutputBufferSizes()
         {
             Resampler resampler = new Resampler();
-            DmoMediaType mediaType = new DmoMediaType();
-            int waveFormatExSize = 18;
-            DmoInterop.MoInitMediaType(ref mediaType, waveFormatExSize);
-            mediaType.SetWaveFormat(waveFormat);
-            bool supported = resampler.MediaObject.SupportsInputType(0, mediaType);
-            DmoInterop.MoFreeMediaType(ref mediaType);
-            return supported;
+            resampler.MediaObject.SetInputWaveFormat(0,WaveFormat.CreateIeeeFloatWaveFormat(44100, 2));
+            resampler.MediaObject.SetOutputWaveFormat(0,WaveFormat.CreateIeeeFloatWaveFormat(48000, 2));
+            MediaObjectSizeInfo inputSizeInfo = resampler.MediaObject.GetInputSizeInfo(0);
+            Assert.IsNotNull(inputSizeInfo, "Input Size Info");
+            Console.WriteLine(inputSizeInfo.ToString());
+            MediaObjectSizeInfo outputSizeInfo = resampler.MediaObject.GetOutputSizeInfo(0);
+            Assert.IsNotNull(outputSizeInfo, "Output Size Info");
+            Console.WriteLine(outputSizeInfo.ToString());
         }
+
+
+        #region Helper Functions
+        private bool IsResamplerInputFormatSupported(WaveFormat waveFormat)
+        {
+            Resampler resampler = new Resampler();
+            return resampler.MediaObject.SupportsInputWaveFormat(0, waveFormat);
+        }
+
+        private bool IsResamplerConversionSupported(WaveFormat from, WaveFormat to)
+        {
+            Resampler resampler = new Resampler();
+            // need to set an input format before we can ask for an output format to 
+            resampler.MediaObject.SetInputWaveFormat(0, from);
+            return resampler.MediaObject.SupportsOutputWaveFormat(0, to);
+        }
+        #endregion
     }
 }
 

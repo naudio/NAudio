@@ -27,10 +27,16 @@ using System.Runtime.InteropServices;
 
 namespace NAudio.CoreAudioApi
 {
+    /// <summary>
+    /// Audio Meter Information Channels
+    /// </summary>
     public class AudioMeterInformationChannels
     {
         IAudioMeterInformation _AudioMeterInformation;
 
+        /// <summary>
+        /// Metering Channel Count
+        /// </summary>
         public int Count
         {
             get
@@ -41,6 +47,11 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Get Peak value
+        /// </summary>
+        /// <param name="index">Channel index</param>
+        /// <returns>Peak value</returns>
         public float this[int index]
         {
             get

@@ -22,21 +22,33 @@ namespace NAudio.Dmo
         int cbFormat;
         IntPtr pbFormat; 
         
+        /// <summary>
+        /// Major type
+        /// </summary>
         public Guid MajorType
         {
             get { return majortype; }
         }
 
+        /// <summary>
+        /// Major type name
+        /// </summary>
         public string MajorTypeName
         {
             get { return MediaTypes.GetMediaTypeName(majortype); }
         }
 
+        /// <summary>
+        /// Subtype
+        /// </summary>
         public Guid SubType
         {
             get { return subtype; }
         }
 
+        /// <summary>
+        /// Subtype name
+        /// </summary>
         public string SubTypeName
         {
             get
@@ -49,21 +61,33 @@ namespace NAudio.Dmo
             }
         }
 
+        /// <summary>
+        /// Fixed size samples
+        /// </summary>
         public bool FixedSizeSamples
         {
             get { return bFixedSizeSamples; }
         }
 
+        /// <summary>
+        /// Sample size
+        /// </summary>
         public int SampleSize
         {
             get { return lSampleSize; }
         }
 
+        /// <summary>
+        /// Format type
+        /// </summary>
         public Guid FormatType
         {
             get { return formattype; }
         }
 
+        /// <summary>
+        /// Format type name
+        /// </summary>
         public string FormatTypeName
         {
             get
@@ -87,10 +111,13 @@ namespace NAudio.Dmo
             }
         }
 
+        /// <summary>
+        /// Gets the structure as a Wave format (if it is one)
+        /// </summary>        
         public WaveFormat GetWaveFormat()
         {
             if (formattype == DmoMediaTypeGuids.FORMAT_WaveFormatEx)
-            {
+            {                
                 WaveFormat waveFormat = new WaveFormat();
                 Marshal.PtrToStructure(pbFormat, waveFormat);
                 return waveFormat;
@@ -101,13 +128,16 @@ namespace NAudio.Dmo
             }
         }
 
+        /// <summary>
+        /// Sets this object up to point to a wave format
+        /// </summary>
+        /// <param name="waveFormat">Wave format structure</param>
         public void SetWaveFormat(WaveFormat waveFormat)
         {
             majortype = MediaTypes.MEDIATYPE_Audio;
             // TODO: support WAVEFORMATEXTENSIBLE and reject invalid
             subtype = waveFormat.Encoding == WaveFormatEncoding.Pcm ? AudioMediaSubtypes.MEDIASUBTYPE_PCM :
                 AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT;
-
 
             formattype = DmoMediaTypeGuids.FORMAT_WaveFormatEx;
             if (cbFormat < 18)

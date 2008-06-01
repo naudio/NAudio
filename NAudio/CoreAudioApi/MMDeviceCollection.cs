@@ -28,10 +28,16 @@ using NAudio.CoreAudioApi.Interfaces;
 
 namespace NAudio.CoreAudioApi
 {
+    /// <summary>
+    /// Multimedia Device Collection
+    /// </summary>
     public class MMDeviceCollection : IEnumerable<MMDevice>
     {
         private IMMDeviceCollection _MMDeviceCollection;
 
+        /// <summary>
+        /// Device count
+        /// </summary>
         public int Count
         {
             get
@@ -42,6 +48,11 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Get device by index
+        /// </summary>
+        /// <param name="index">Device index</param>
+        /// <returns>Device at the specified index</returns>
         public MMDevice this[int index]
         {
             get
@@ -59,6 +70,10 @@ namespace NAudio.CoreAudioApi
 
         #region IEnumerable<MMDevice> Members
 
+        /// <summary>
+        /// Get Enumerator
+        /// </summary>
+        /// <returns>Device enumerator</returns>
         public IEnumerator<MMDevice> GetEnumerator()
         {            
             for (int index = 0; index < Count; index++)

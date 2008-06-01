@@ -27,6 +27,9 @@ using System.Runtime.InteropServices;
 
 namespace NAudio.CoreAudioApi
 {
+    /// <summary>
+    /// Audio Endpoint Volume Step Information
+    /// </summary>
     public class AudioEndpointVolumeStepInformation
     {
         private uint _Step;
@@ -36,6 +39,9 @@ namespace NAudio.CoreAudioApi
             Marshal.ThrowExceptionForHR(parent.GetVolumeStepInfo(out _Step, out _StepCount));
         }
 
+        /// <summary>
+        /// Step
+        /// </summary>
         public uint Step
         {
             get
@@ -44,6 +50,9 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// StepCount
+        /// </summary>
         public uint StepCount
         {
             get

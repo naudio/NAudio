@@ -27,6 +27,9 @@ using NAudio.CoreAudioApi.Interfaces;
 
 namespace NAudio.CoreAudioApi
 {
+    /// <summary>
+    /// Audio Meter Information
+    /// </summary>
     public class AudioMeterInformation
     {
         private IAudioMeterInformation _AudioMeterInformation;

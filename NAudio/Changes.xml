@@ -781,5 +781,8 @@
   <change>
     <version>1.2.128.0</version>
     <version>Lots more DMO interop - Resampler DMO</version>
+    <version>Media Object can set input and output WaveFormat</version>
+    <version>Getting caught back up with XML documentation</version>
+    <version>Media Object can get input and output buffer sizes</version>
   </change>
 </changes>

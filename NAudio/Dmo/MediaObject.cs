@@ -364,7 +364,7 @@ namespace NAudio.Dmo
         public void ProcessInput(int inputStreamIndex, IMediaBuffer mediaBuffer, DmoInputDataBufferFlags flags,
             long timestamp, long duration)
         {
-            mediaObject.ProcessInput(inputStreamIndex, mediaBuffer, flags, timestamp, duration);
+            Marshal.ThrowExceptionForHR(mediaObject.ProcessInput(inputStreamIndex, mediaBuffer, flags, timestamp, duration));
         }
 
         /// <summary>
@@ -376,9 +376,36 @@ namespace NAudio.Dmo
         public void ProcessOutput(DmoProcessOutputFlags flags, int outputBufferCount, DmoOutputDataBuffer[] outputBuffers)
         {
             int reserved;
-            mediaObject.ProcessOutput(flags, outputBufferCount, outputBuffers, out reserved);
+            Marshal.ThrowExceptionForHR(mediaObject.ProcessOutput(flags, outputBufferCount, outputBuffers, out reserved));
         }
         #endregion
+
+        public void AllocateStreamingResources()
+        {
+            mediaObject.AllocateStreamingResources();
+        }
+
+        public void FreeStreamingResources()
+        {
+            mediaObject.FreeStreamingResources();
+        }
+
+        public long GetInputMaxLatency(int inputStreamIndex)
+        {
+            long maxLatency;
+            mediaObject.GetInputMaxLatency(inputStreamIndex, out maxLatency);
+            return maxLatency;
+        }
+
+        public void Flush()
+        {
+            mediaObject.Flush();
+        }
+
+        public void Discontinuity(int inputStreamIndex)
+        {
+            mediaObject.Discontinuity(inputStreamIndex);
+        }
 
         // TODO: there are still several IMediaObject functions to be wrapped
     }

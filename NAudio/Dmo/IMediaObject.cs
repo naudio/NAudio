@@ -53,7 +53,9 @@ namespace NAudio.Dmo
         int ProcessInput(int inputStreamIndex, [In] IMediaBuffer mediaBuffer, DmoInputDataBufferFlags flags,
             long referenceTimeTimestamp, long referenceTimeDuration);
         
-        int ProcessOutput(DmoProcessOutputFlags flags, int outputBufferCount, DmoOutputDataBuffer[] outputBuffers,
+        int ProcessOutput(DmoProcessOutputFlags flags, 
+            int outputBufferCount,
+            [In, Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 1)] DmoOutputDataBuffer[] outputBuffers,
             out int statusReserved);
         
         int Lock(bool acquireLock);

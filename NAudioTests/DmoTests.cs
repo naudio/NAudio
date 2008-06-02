@@ -5,6 +5,7 @@ using NUnit.Framework;
 using NAudio.Dmo;
 using System.Runtime.InteropServices;
 using NAudio.Wave;
+using System.Diagnostics;
 
 namespace NAudioTests
 {
@@ -149,16 +150,49 @@ namespace NAudioTests
             resampler.MediaObject.SetOutputWaveFormat(0, WaveFormat.CreateIeeeFloatWaveFormat(48000, 2));
             using (MediaBuffer buffer = new MediaBuffer(44100 * 2 * 4))
             {
-                // ideas to get this working
-                // 1. setting buffer length first - didn't help
-                // 1. Marshal.GetComInterfaceForObject - didn't work IMediaBuffer needed to be com visible
-                // 2. GCHandle.Alloc( pinned
-                // 3. explicit interface - didn't help
-                // 4. Expose MediaBuffer as a COM object in its own right - 
-                buffer.SetLength(8000);                
+                buffer.Length = 8000;                
                 resampler.MediaObject.ProcessInput(0, buffer, DmoInputDataBufferFlags.None, 0, 0);
             }
-            
+        }
+
+        [Test]
+        public void ResamplerCanCallProcessOutput()
+        {
+            Resampler resampler = new Resampler();
+            WaveFormat inputFormat = WaveFormat.CreateIeeeFloatWaveFormat(44100, 2);
+            WaveFormat outputFormat = WaveFormat.CreateIeeeFloatWaveFormat(48000, 2);
+            resampler.MediaObject.SetInputWaveFormat(0, inputFormat);
+            resampler.MediaObject.SetOutputWaveFormat(0, outputFormat);
+            resampler.MediaObject.AllocateStreamingResources();
+            using (MediaBuffer inputBuffer = new MediaBuffer(inputFormat.AverageBytesPerSecond))
+            {
+                inputBuffer.Length = inputFormat.AverageBytesPerSecond / 10;
+                Debug.WriteLine(String.Format("Input Length {0}", inputBuffer.Length));
+                resampler.MediaObject.ProcessInput(0, inputBuffer, DmoInputDataBufferFlags.None, 0, 0);
+                Debug.WriteLine(String.Format("Input Length {0}", inputBuffer.Length));
+                Debug.WriteLine(String.Format("Input Lookahead {0}", resampler.MediaObject.GetInputSizeInfo(0).MaxLookahead));
+                //Debug.WriteLine(String.Format("Input Max Latency {0}", resampler.MediaObject.GetInputMaxLatency(0)));
+                using (DmoOutputDataBuffer outputBuffer = new DmoOutputDataBuffer(outputFormat.AverageBytesPerSecond))
+                {
+                    // one buffer for each output stream
+                    resampler.MediaObject.ProcessOutput(DmoProcessOutputFlags.None, 1, new DmoOutputDataBuffer[] { outputBuffer });
+                    Debug.WriteLine(String.Format("Converted length: {0}", outputBuffer.Length));
+                    Debug.WriteLine(String.Format("Converted flags: {0}", outputBuffer.StatusFlags));
+                    //Assert.AreEqual((int)(inputBuffer.Length * 48000.0 / inputFormat.SampleRate), outputBuffer.Length, "Converted buffer length");
+                }
+
+                using (DmoOutputDataBuffer outputBuffer = new DmoOutputDataBuffer(48000 * 2 * 4))
+                {
+                    // one buffer for each output stream
+                    resampler.MediaObject.ProcessOutput(DmoProcessOutputFlags.None, 1, new DmoOutputDataBuffer[] { outputBuffer });
+                    Debug.WriteLine(String.Format("Converted length: {0}", outputBuffer.Length));
+                    Debug.WriteLine(String.Format("Converted flags: {0}", outputBuffer.StatusFlags));
+                    //Assert.AreEqual((int)(inputBuffer.Length * 48000.0 / inputFormat.SampleRate), outputBuffer.Length, "Converted buffer length");
+                }
+
+                
+            }
+            resampler.MediaObject.FreeStreamingResources();
         }
 
         #region Helper Functions

@@ -29,6 +29,7 @@ namespace NAudio.Wave
             waveStream = new FileStream(waveFile, FileMode.Open, FileAccess.Read);
             ReadWaveHeader(waveStream, out waveFormat, out dataPosition, out dataChunkLength, chunks);
             //dataPosition = waveStream.Position;
+            Position = 0;
         }
 
         /// <summary>

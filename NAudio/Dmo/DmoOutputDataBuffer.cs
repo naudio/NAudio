@@ -1,18 +1,46 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Runtime.InteropServices;
 
 namespace NAudio.Dmo
 {
     /// <summary>
     /// DMO Output Data Buffer
     /// </summary>
-    public struct DmoOutputDataBuffer
+    [StructLayout(LayoutKind.Sequential, Pack=8)]
+    public struct DmoOutputDataBuffer : IDisposable
     {
+        [MarshalAs(UnmanagedType.Interface)]
         IMediaBuffer pBuffer;
         DmoOutputDataBufferFlags dwStatus;
         long rtTimestamp;
         long referenceTimeDuration;
+
+        /// <summary>
+        /// Creates a new DMO Output Data Buffer structure
+        /// </summary>
+        /// <param name="maxBufferSize">Maximum buffer size</param>
+        public DmoOutputDataBuffer(int maxBufferSize)
+        {
+            pBuffer = new MediaBuffer(maxBufferSize);
+            dwStatus = DmoOutputDataBufferFlags.None;
+            rtTimestamp = 0;
+            referenceTimeDuration = 0;
+        }
+
+        /// <summary>
+        /// Dispose
+        /// </summary>
+        public void Dispose()
+        {
+            if (pBuffer != null)
+            {
+                ((MediaBuffer)pBuffer).Dispose();
+                pBuffer = null;
+                GC.SuppressFinalize(this);
+            }
+        }
 
         /// <summary>
         /// Media Buffer
@@ -21,6 +49,14 @@ namespace NAudio.Dmo
         {
             get { return pBuffer; }
             internal set { pBuffer = value; }
+        }
+
+        /// <summary>
+        /// Length of data in buffer
+        /// </summary>
+        public int Length
+        {
+            get { return ((MediaBuffer)pBuffer).Length; }
         }
 
         /// <summary>
@@ -48,6 +84,11 @@ namespace NAudio.Dmo
         {
             get { return referenceTimeDuration; }
             internal set { referenceTimeDuration = value; }
+        }
+
+        public void RetrieveData(byte[] data, int offset)
+        {
+            ((MediaBuffer)pBuffer).RetrieveData(data, offset);
         }
     }
 }

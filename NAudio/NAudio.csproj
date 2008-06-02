@@ -304,6 +304,7 @@
     <Compile Include="Wave\WaveOutputs\WaveOut.cs" />
     <Compile Include="Wave\WaveOutputs\WaveOutThreadSafe.cs" />
     <Compile Include="Wave\WaveStreams\Mp3FileReader.cs" />
+    <Compile Include="Wave\WaveStreams\ResamplerDmoStream.cs" />
     <Compile Include="Wave\WaveStreams\RiffChunk.cs" />
     <Compile Include="Wave\WaveStreams\SimpleCompressorStream.cs" />
     <Compile Include="Wave\WaveStreams\Wave32To16Stream.cs" />

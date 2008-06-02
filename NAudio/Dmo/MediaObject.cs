@@ -353,17 +353,31 @@ namespace NAudio.Dmo
         #endregion
 
         #region Buffer Processing
-        /*public void ProcessInput(int inputStreamIndex, IMediaBuffer mediaBuffer, DmoInputDataBufferFlags flags,
+        /// <summary>
+        /// Process Input
+        /// </summary>
+        /// <param name="inputStreamIndex">Input Stream index</param>
+        /// <param name="mediaBuffer">Media Buffer</param>
+        /// <param name="flags">Flags</param>
+        /// <param name="timestamp">Timestamp</param>
+        /// <param name="duration">Duration</param>
+        public void ProcessInput(int inputStreamIndex, IMediaBuffer mediaBuffer, DmoInputDataBufferFlags flags,
             long timestamp, long duration)
         {
             mediaObject.ProcessInput(inputStreamIndex, mediaBuffer, flags, timestamp, duration);
         }
 
+        /// <summary>
+        /// Process Output
+        /// </summary>
+        /// <param name="flags">Flags</param>
+        /// <param name="outputBufferCount">Output buffer count</param>
+        /// <param name="outputBuffers">Output buffers</param>
         public void ProcessOutput(DmoProcessOutputFlags flags, int outputBufferCount, DmoOutputDataBuffer[] outputBuffers)
         {
             int reserved;
-            mediaObject.ProcessOutput(flags, outputBufferCount, outputBuffers, reserved);
-        }*/
+            mediaObject.ProcessOutput(flags, outputBufferCount, outputBuffers, out reserved);
+        }
         #endregion
 
         // TODO: there are still several IMediaObject functions to be wrapped

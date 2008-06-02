@@ -4,10 +4,19 @@ using System.Text;
 
 namespace NAudio.Dmo
 {
+    /// <summary>
+    /// DMO Process Output Flags
+    /// </summary>
     [Flags]
-    enum DmoProcessOutputFlags
+    public enum DmoProcessOutputFlags
     {
+        /// <summary>
+        /// None
+        /// </summary>
         None,
-        DMO_PROCESS_OUTPUT_DISCARD_WHEN_NO_BUFFER = 0x00000001
+        /// <summary>
+        /// DMO_PROCESS_OUTPUT_DISCARD_WHEN_NO_BUFFER
+        /// </summary>
+        DiscardWhenNoBuffer = 0x00000001
     }
 }

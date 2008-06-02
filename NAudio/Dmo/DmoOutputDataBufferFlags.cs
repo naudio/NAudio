@@ -4,13 +4,31 @@ using System.Text;
 
 namespace NAudio.Dmo
 {
+    /// <summary>
+    /// DMO Output Data Buffer Flags
+    /// </summary>
     [Flags]
-    enum DmoOutputDataBufferFlags
+    public enum DmoOutputDataBufferFlags
     {
+        /// <summary>
+        /// None
+        /// </summary>
         None,
-        DMO_OUTPUT_DATA_BUFFERF_SYNCPOINT = 0x00000001,
-        DMO_OUTPUT_DATA_BUFFERF_TIME = 0x00000002,
-        DMO_OUTPUT_DATA_BUFFERF_TIMELENGTH = 0x00000004,
-        DMO_OUTPUT_DATA_BUFFERF_INCOMPLETE = 0x01000000
+        /// <summary>
+        /// DMO_OUTPUT_DATA_BUFFERF_SYNCPOINT
+        /// </summary>
+        SyncPoint = 0x00000001,
+        /// <summary>
+        /// DMO_OUTPUT_DATA_BUFFERF_TIME
+        /// </summary>
+        Time = 0x00000002,
+        /// <summary>
+        /// DMO_OUTPUT_DATA_BUFFERF_TIMELENGTH
+        /// </summary>
+        TimeLength = 0x00000004,
+        /// <summary>
+        /// DMO_OUTPUT_DATA_BUFFERF_INCOMPLETE
+        /// </summary>
+        Incomplete = 0x01000000
     }
 }

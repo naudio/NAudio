@@ -8,7 +8,9 @@ namespace NAudio.Dmo
     /// <summary>
     /// defined in mediaobj.h
     /// </summary>
-    [Guid("d8ad0f58-5494-4102-97c5-ec798e59bcf4"),
+    [ComImport,
+    System.Security.SuppressUnmanagedCodeSecurity,
+    Guid("d8ad0f58-5494-4102-97c5-ec798e59bcf4"),
     InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     interface IMediaObject
     {
@@ -47,7 +49,7 @@ namespace NAudio.Dmo
         int FreeStreamingResources();
         
         int GetInputStatus(int inputStreamIndex, out DmoInputStatusFlags flags);
-        
+
         int ProcessInput(int inputStreamIndex, [In] IMediaBuffer mediaBuffer, DmoInputDataBufferFlags flags,
             long referenceTimeTimestamp, long referenceTimeDuration);
         

@@ -141,6 +141,25 @@ namespace NAudioTests
             Console.WriteLine(outputSizeInfo.ToString());
         }
 
+        [Test]
+        public void ResamplerCanCallProcessInput()
+        {
+            Resampler resampler = new Resampler();
+            resampler.MediaObject.SetInputWaveFormat(0, WaveFormat.CreateIeeeFloatWaveFormat(44100, 2));
+            resampler.MediaObject.SetOutputWaveFormat(0, WaveFormat.CreateIeeeFloatWaveFormat(48000, 2));
+            using (MediaBuffer buffer = new MediaBuffer(44100 * 2 * 4))
+            {
+                // ideas to get this working
+                // 1. setting buffer length first - didn't help
+                // 1. Marshal.GetComInterfaceForObject - didn't work IMediaBuffer needed to be com visible
+                // 2. GCHandle.Alloc( pinned
+                // 3. explicit interface - didn't help
+                // 4. Expose MediaBuffer as a COM object in its own right - 
+                buffer.SetLength(8000);                
+                resampler.MediaObject.ProcessInput(0, buffer, DmoInputDataBufferFlags.None, 0, 0);
+            }
+            
+        }
 
         #region Helper Functions
         private bool IsResamplerInputFormatSupported(WaveFormat waveFormat)

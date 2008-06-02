@@ -18,6 +18,10 @@ namespace NAudio.Utils
         /// </summary>
         public const int S_FALSE = 1;
         /// <summary>
+        /// E_INVALIDARG (from winerror.h)
+        /// </summary>
+        public const int E_INVALIDARG = unchecked((int)0x80000003);
+        /// <summary>
         /// MAKE_HRESULT macro
         /// </summary>
         public static int MAKE_HRESULT(int sev, int fac, int code)

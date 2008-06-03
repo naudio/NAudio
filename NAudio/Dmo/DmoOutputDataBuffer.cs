@@ -86,9 +86,26 @@ namespace NAudio.Dmo
             internal set { referenceTimeDuration = value; }
         }
 
+        /// <summary>
+        /// Retrives the data in this buffer
+        /// </summary>
+        /// <param name="data">Buffer to receive data</param>
+        /// <param name="offset">Offset into buffer</param>
         public void RetrieveData(byte[] data, int offset)
         {
             ((MediaBuffer)pBuffer).RetrieveData(data, offset);
+        }
+
+        /// <summary>
+        /// Is more data available
+        /// If true, ProcessOuput should be called again
+        /// </summary>
+        public bool MoreDataAvailable
+        {
+            get
+            {
+                return (StatusFlags & DmoOutputDataBufferFlags.Incomplete) == DmoOutputDataBufferFlags.Incomplete;
+            }
         }
     }
 }

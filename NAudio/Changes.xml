@@ -795,5 +795,9 @@
     <desc>IMediaBuffer ProcessOutput also working, but Resampler not outputting expected number of bytes</desc>
     <desc>ResamplerDmoStream created</desc>
   </change>
-
+  <change>
+    <version>1.3.130.0</version>
+    <date>3 June 2008</date>
+    <desc>ResamplerDmoStream bugfixes</desc>
+  </change>
 </changes>

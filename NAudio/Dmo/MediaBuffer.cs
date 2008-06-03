@@ -120,12 +120,22 @@ namespace NAudio.Dmo
             }
         }
 
+        /// <summary>
+        /// Loads data into this buffer
+        /// </summary>
+        /// <param name="data">Data to load</param>
+        /// <param name="bytes">Number of bytes to load</param>
         public void LoadData(byte[] data, int bytes)
         {
             this.Length = bytes;
             Marshal.Copy(data, 0, buffer, bytes);
         }
 
+        /// <summary>
+        /// Retrieves the data in the output buffer
+        /// </summary>
+        /// <param name="data">buffer to retrieve into</param>
+        /// <param name="offset">offset within that buffer</param>
         public void RetrieveData(byte[] data, int offset)
         {
             Marshal.Copy(buffer, data, offset, Length);

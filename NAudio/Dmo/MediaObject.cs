@@ -274,19 +274,20 @@ namespace NAudio.Dmo
         /// </summary>
         private bool SetOutputType(int outputStreamIndex, DmoMediaType mediaType, DmoSetTypeFlags flags)
         {
-            try
+            int hresult = mediaObject.SetOutputType(outputStreamIndex, ref mediaType, flags);
+            if (hresult == (int)DmoHResults.DMO_E_TYPE_NOT_ACCEPTED)
             {
-                mediaObject.SetOutputType(outputStreamIndex, ref mediaType, flags);
+                return false;
             }
-            catch (COMException e)
+            else if (hresult == HResult.S_OK)
             {
-                if (e.ErrorCode == (int)DmoHResults.DMO_E_TYPE_NOT_ACCEPTED)
-                {
-                    return false;
-                }
-                throw;
+                return true;
             }
-            return true;
+            else
+            {
+                Marshal.ThrowExceptionForHR(hresult);
+                return false;
+            }
         }
 
         /// <summary>
@@ -333,7 +334,7 @@ namespace NAudio.Dmo
             int size;
             int maxLookahead;
             int alignment;
-            mediaObject.GetInputSizeInfo(inputStreamIndex, out size, out maxLookahead, out alignment);
+            Marshal.ThrowExceptionForHR(mediaObject.GetInputSizeInfo(inputStreamIndex, out size, out maxLookahead, out alignment));
             return new MediaObjectSizeInfo(size, maxLookahead, alignment);
         }
 
@@ -346,7 +347,7 @@ namespace NAudio.Dmo
         {
             int size;
             int alignment;
-            mediaObject.GetOutputSizeInfo(outputStreamIndex, out size, out alignment);
+            Marshal.ThrowExceptionForHR(mediaObject.GetOutputSizeInfo(outputStreamIndex, out size, out alignment));
             return new MediaObjectSizeInfo(size, 0, alignment);
         }
 
@@ -380,31 +381,61 @@ namespace NAudio.Dmo
         }
         #endregion
 
+        /// <summary>
+        /// Gives the DMO a chance to allocate any resources needed for streaming
+        /// </summary>
         public void AllocateStreamingResources()
         {
-            mediaObject.AllocateStreamingResources();
+            Marshal.ThrowExceptionForHR(mediaObject.AllocateStreamingResources());
         }
 
+        /// <summary>
+        /// Tells the DMO to free any resources needed for streaming
+        /// </summary>
         public void FreeStreamingResources()
         {
-            mediaObject.FreeStreamingResources();
+            Marshal.ThrowExceptionForHR(mediaObject.FreeStreamingResources());
         }
 
+        /// <summary>
+        /// Gets maximum input latency
+        /// </summary>
+        /// <param name="inputStreamIndex">input stream index</param>
+        /// <returns>Maximum input latency as a ref-time</returns>
         public long GetInputMaxLatency(int inputStreamIndex)
         {
             long maxLatency;
-            mediaObject.GetInputMaxLatency(inputStreamIndex, out maxLatency);
+            Marshal.ThrowExceptionForHR(mediaObject.GetInputMaxLatency(inputStreamIndex, out maxLatency));
             return maxLatency;
         }
 
+        /// <summary>
+        /// Flushes all buffered data
+        /// </summary>
         public void Flush()
         {
-            mediaObject.Flush();
+            Marshal.ThrowExceptionForHR(mediaObject.Flush());
         }
 
+        /// <summary>
+        /// Report a discontinuity on the specified input stream
+        /// </summary>
+        /// <param name="inputStreamIndex">Input Stream index</param>
         public void Discontinuity(int inputStreamIndex)
         {
-            mediaObject.Discontinuity(inputStreamIndex);
+            Marshal.ThrowExceptionForHR(mediaObject.Discontinuity(inputStreamIndex));
+        }
+
+        /// <summary>
+        /// Is this input stream accepting data?
+        /// </summary>
+        /// <param name="inputStreamIndex">Input Stream index</param>
+        /// <returns>true if accepting data</returns>
+        public bool IsAcceptingData(int inputStreamIndex)
+        {
+            DmoInputStatusFlags flags;
+            Marshal.ThrowExceptionForHR(mediaObject.GetInputStatus(inputStreamIndex, out flags));
+            return (flags & DmoInputStatusFlags.DMO_INPUT_STATUSF_ACCEPT_DATA) == DmoInputStatusFlags.DMO_INPUT_STATUSF_ACCEPT_DATA;
         }
 
         // TODO: there are still several IMediaObject functions to be wrapped

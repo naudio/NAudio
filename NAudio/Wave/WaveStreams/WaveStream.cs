@@ -35,7 +35,7 @@ namespace NAudio.Wave
         public override bool CanWrite { get { return false; } }
 
         /// <summary>
-        /// Flush does not need to do anythin
+        /// Flush does not need to do anything
         /// See <see cref="Stream.Flush"/>
         /// </summary>
         public override void Flush() { }

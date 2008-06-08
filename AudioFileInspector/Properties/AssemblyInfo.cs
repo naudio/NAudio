@@ -29,8 +29,8 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("0.1.4.0")]
-[assembly: AssemblyFileVersion("0.1.4.0")]
+[assembly: AssemblyVersion("0.1.5.0")]
+[assembly: AssemblyFileVersion("0.1.5.0")]
 
 // build 1 - 1 Nov 2006
 // initial version - moved out of WavePlayer
@@ -49,6 +49,8 @@ using System.Runtime.InteropServices;
 // build 4 - 26 Apr 2007
 // Updated to work with latest code in CodePlex
 // Beginnings of a find feature
+// build 5 - 8 Jun 2008
+// Shows length of Wave file as a TimeSpan as well as bytes
 
 // TODO list
 // help file

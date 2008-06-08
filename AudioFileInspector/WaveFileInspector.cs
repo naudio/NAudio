@@ -26,7 +26,7 @@ namespace AudioFileInspector
             {
 
                 stringBuilder.AppendFormat("{0}\r\n", wf.WaveFormat);
-                stringBuilder.AppendFormat("Length: {0}\r\n", wf.Length);
+                stringBuilder.AppendFormat("Length: {0} bytes: {1} \r\n", wf.Length, wf.TotalTime);
                 foreach (RiffChunk chunk in wf.ExtraChunks)
                 {
                     stringBuilder.AppendFormat("Chunk: {0}, length {1}\r\n", chunk.IdentifierAsString, chunk.Length);

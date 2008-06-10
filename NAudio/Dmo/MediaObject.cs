@@ -434,7 +434,8 @@ namespace NAudio.Dmo
         public bool IsAcceptingData(int inputStreamIndex)
         {
             DmoInputStatusFlags flags;
-            Marshal.ThrowExceptionForHR(mediaObject.GetInputStatus(inputStreamIndex, out flags));
+            int hresult = mediaObject.GetInputStatus(inputStreamIndex, out flags);
+            Marshal.ThrowExceptionForHR(hresult);
             return (flags & DmoInputStatusFlags.DMO_INPUT_STATUSF_ACCEPT_DATA) == DmoInputStatusFlags.DMO_INPUT_STATUSF_ACCEPT_DATA;
         }
 

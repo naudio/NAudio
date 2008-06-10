@@ -799,5 +799,11 @@
     <version>1.3.130.0</version>
     <date>3 June 2008</date>
     <desc>ResamplerDmoStream bugfixes</desc>
+    <date>10 June 2008</date>
+    <desc>Wasapi output stream uses ResamplerDmoStream (but needs app to be MTAThread to work atm)</desc>
+    <desc>Audio Client using PreserveSig</desc>
+    <desc>More reliable Wasapi out</desc>
+    <desc>NAudio demo plays a file now rather than mixing a whole folder together</desc>
+    <desc></desc>
   </change>
 </changes>

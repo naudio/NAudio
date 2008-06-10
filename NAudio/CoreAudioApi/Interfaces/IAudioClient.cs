@@ -14,6 +14,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     internal interface IAudioClient
     {
+        [PreserveSig]
         int Initialize(AudioClientShareMode shareMode,
             AudioClientStreamFlags StreamFlags,
             long hnsBufferDuration, // REFERENCE_TIME
@@ -30,6 +31,7 @@ namespace NAudio.CoreAudioApi.Interfaces
 
         int GetCurrentPadding(out int currentPadding);
 
+        [PreserveSig]
         int IsFormatSupported(
             AudioClientShareMode shareMode,
             [In] WaveFormat pFormat,

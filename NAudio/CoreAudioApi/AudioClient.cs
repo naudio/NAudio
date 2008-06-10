@@ -61,7 +61,8 @@ namespace NAudio.CoreAudioApi
             WaveFormat waveFormat,
             Guid audioSessionGuid)
         {
-            Marshal.ThrowExceptionForHR(audioClientInterface.Initialize(shareMode,streamFlags,bufferDuration,periodicity,waveFormat, ref audioSessionGuid));
+            int hresult = audioClientInterface.Initialize(shareMode, streamFlags, bufferDuration, periodicity, waveFormat, ref audioSessionGuid);
+            Marshal.ThrowExceptionForHR(hresult);
             // may have changed the mix format so reset it
             mixFormat = null;
         }
@@ -153,40 +154,37 @@ namespace NAudio.CoreAudioApi
             WaveFormat desiredFormat)
         {
             IntPtr closestMatchPointer = IntPtr.Zero;
-            int hresult;
-            try
+            int hresult = audioClientInterface.IsFormatSupported(shareMode, desiredFormat, out closestMatchPointer);
+            // S_OK is 0, S_FALSE = 1
+            if (hresult == 0)
             {
-                hresult = audioClientInterface.IsFormatSupported(shareMode, desiredFormat, out closestMatchPointer);
-                // S_OK is 0, S_FALSE = 1
-                if (hresult == 0)
-                {
-                    // directly supported
-                    return true;
-                }
-                if (hresult == 1)
-                {
-                    // a closest match should be supplied
-                    if (closestMatchPointer == IntPtr.Zero)
-                    {
-                        // shouldn't happen
-                        throw new NotSupportedException("Not supported but no closest match");
-                    }
-                    // This is how to get the closest match...
-                    //WaveFormatExtensible closestMatchFormat = new WaveFormatExtensible(44100, 32, 2);
-                    //Marshal.PtrToStructure(closestMatchPointer, closestMatchFormat);
-                    Marshal.FreeCoTaskMem(closestMatchPointer);
-                    //return closestMatchFormat;
-                    return false;
-                }
+                // directly supported
+                return true;
             }
-            catch (COMException ce)
+            if (hresult == 1)
             {
-                if (ce.ErrorCode == (int)AudioClientErrors.UnsupportedFormat)
+                // a closest match should be supplied
+                if (closestMatchPointer == IntPtr.Zero)
                 {
-                    return false;
+                    // shouldn't happen
+                    throw new NotSupportedException("Not supported but no closest match");
                 }
-                throw;
+                // This is how to get the closest match...
+                //WaveFormatExtensible closestMatchFormat = new WaveFormatExtensible(44100, 32, 2);
+                //Marshal.PtrToStructure(closestMatchPointer, closestMatchFormat);
+                Marshal.FreeCoTaskMem(closestMatchPointer);
+                //return closestMatchFormat;
+                return false;
             }
+            else if (hresult == (int)AudioClientErrors.UnsupportedFormat)
+            {
+                return false;
+            }
+            else
+            {
+                Marshal.ThrowExceptionForHR(hresult);
+            }
+            // shouldn't get here
             throw new NotSupportedException("Unknown hresult " + hresult.ToString());
         }
 

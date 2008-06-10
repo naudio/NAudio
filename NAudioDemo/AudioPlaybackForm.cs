@@ -16,20 +16,20 @@ namespace NAudioDemo
     {
         IWavePlayer waveOut;
         List<WaveStream> inputs = new List<WaveStream>();
-        string folder;
+        string fileName = "C:\\Users\\Mark\\Recording\\REAPER\\ideas-converted.wav";
 
         public AudioPlaybackForm()
         {            
-            folder = Settings.Default.AudioFolder;
+            //folder = Settings.Default.AudioFolder;
             InitializeComponent();
         }
 
             
         private void buttonPlay_Click(object sender, EventArgs e)
         {
-            if (String.IsNullOrEmpty(folder))
+            if (String.IsNullOrEmpty(fileName))
             {
-                buttonInputFolder_Click(sender, e);
+                buttonLoad_Click(sender, e);
                 return;
             }
 
@@ -56,12 +56,16 @@ namespace NAudioDemo
                 waveOut = new WasapiOut(AudioClientShareMode.Shared, latency);
             }
 
+            /*
             foreach (string wavFile in Directory.GetFiles(folder, "*.wav"))
             {
                 WaveStream reader = new WaveChannel32(new LoopStream(new WaveFileReader(wavFile)));
                 inputs.Add(reader);
-            }
+            }*/
 
+            WaveStream reader = new WaveChannel32(new WaveFileReader(fileName));
+            inputs.Add(reader);
+            
             if (inputs.Count == 0)
             {
                 MessageBox.Show("No WAV files found to play in the input folder");
@@ -150,9 +154,9 @@ namespace NAudioDemo
 
         }
 
-        private void buttonInputFolder_Click(object sender, EventArgs e)
+        private void buttonLoad_Click(object sender, EventArgs e)
         {
-            FolderBrowserDialog folderDialog = new FolderBrowserDialog();
+            /*FolderBrowserDialog folderDialog = new FolderBrowserDialog();
             folderDialog.Description = "Select WAV File Folder";
             folderDialog.SelectedPath = folder;
             if (folderDialog.ShowDialog() == DialogResult.OK)
@@ -160,6 +164,13 @@ namespace NAudioDemo
                 folder = folderDialog.SelectedPath;
                 Settings.Default.AudioFolder = folder;
                 Settings.Default.Save();
+            }*/
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.Filter = "WAV files (*.wav)|*.wav|All Files (*.*)|*.*";
+            openFileDialog.FilterIndex = 1;
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                fileName = openFileDialog.FileName;
             }
         }
     }

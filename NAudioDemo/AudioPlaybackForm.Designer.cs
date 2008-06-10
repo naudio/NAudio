@@ -35,12 +35,12 @@
             this.buttonPause = new System.Windows.Forms.Button();
             this.buttonPlay = new System.Windows.Forms.Button();
             this.radioButtonAsio = new System.Windows.Forms.RadioButton();
-            this.volumeSlider1 = new NAudio.Gui.VolumeSlider();
             this.buttonControlPanel = new System.Windows.Forms.Button();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.label1 = new System.Windows.Forms.Label();
-            this.buttonInputFolder = new System.Windows.Forms.Button();
             this.radioButtonWasapi = new System.Windows.Forms.RadioButton();
+            this.buttonLoad = new System.Windows.Forms.Button();
+            this.volumeSlider1 = new NAudio.Gui.VolumeSlider();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -118,16 +118,6 @@
             this.radioButtonAsio.Text = "ASIO";
             this.radioButtonAsio.UseVisualStyleBackColor = true;
             // 
-            // volumeSlider1
-            // 
-            this.volumeSlider1.Location = new System.Drawing.Point(405, 238);
-            this.volumeSlider1.Name = "volumeSlider1";
-            this.volumeSlider1.Size = new System.Drawing.Size(96, 16);
-            this.volumeSlider1.TabIndex = 11;
-            this.volumeSlider1.Volume = 1F;
-            this.volumeSlider1.Load += new System.EventHandler(this.volumeSlider1_Load);
-            this.volumeSlider1.VolumeChanged += new System.EventHandler(this.volumeSlider1_VolumeChanged);
-            // 
             // buttonControlPanel
             // 
             this.buttonControlPanel.Location = new System.Drawing.Point(70, 87);
@@ -164,16 +154,6 @@
             this.label1.TabIndex = 13;
             this.label1.Text = "ms";
             // 
-            // buttonInputFolder
-            // 
-            this.buttonInputFolder.Location = new System.Drawing.Point(249, 30);
-            this.buttonInputFolder.Name = "buttonInputFolder";
-            this.buttonInputFolder.Size = new System.Drawing.Size(75, 23);
-            this.buttonInputFolder.TabIndex = 14;
-            this.buttonInputFolder.Text = "Input Folder";
-            this.buttonInputFolder.UseVisualStyleBackColor = true;
-            this.buttonInputFolder.Click += new System.EventHandler(this.buttonInputFolder_Click);
-            // 
             // radioButtonWasapi
             // 
             this.radioButtonWasapi.AutoSize = true;
@@ -185,17 +165,38 @@
             this.radioButtonWasapi.Text = "WASAPI";
             this.radioButtonWasapi.UseVisualStyleBackColor = true;
             // 
+            // buttonLoad
+            // 
+            this.buttonLoad.Location = new System.Drawing.Point(249, 30);
+            this.buttonLoad.Name = "buttonLoad";
+            this.buttonLoad.Size = new System.Drawing.Size(75, 23);
+            this.buttonLoad.TabIndex = 14;
+            this.buttonLoad.Text = "Load";
+            this.buttonLoad.UseVisualStyleBackColor = true;
+            this.buttonLoad.Click += new System.EventHandler(this.buttonLoad_Click);
+            // 
+            // volumeSlider1
+            // 
+            this.volumeSlider1.Location = new System.Drawing.Point(229, 79);
+            this.volumeSlider1.Name = "volumeSlider1";
+            this.volumeSlider1.Size = new System.Drawing.Size(96, 16);
+            this.volumeSlider1.TabIndex = 11;
+            this.volumeSlider1.Volume = 1F;
+            this.volumeSlider1.Load += new System.EventHandler(this.volumeSlider1_Load);
+            this.volumeSlider1.VolumeChanged += new System.EventHandler(this.volumeSlider1_VolumeChanged);
+            // 
             // AudioPlaybackForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(513, 266);
-            this.Controls.Add(this.buttonInputFolder);
+            this.Controls.Add(this.buttonLoad);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.volumeSlider1);
             this.Controls.Add(this.buttonPause);
             this.Controls.Add(this.buttonPlay);
             this.Name = "AudioPlaybackForm";
+            this.ShowInTaskbar = false;
             this.Text = "AudioPlaybackForm";
             this.Load += new System.EventHandler(this.Form1_Load);
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
@@ -218,7 +219,7 @@
         private System.Windows.Forms.Button buttonControlPanel;
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.Button buttonInputFolder;
         private System.Windows.Forms.RadioButton radioButtonWasapi;
+        private System.Windows.Forms.Button buttonLoad;
     }
 }

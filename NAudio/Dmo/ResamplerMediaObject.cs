@@ -17,7 +17,7 @@ namespace NAudio.Dmo
     /// Can resample PCM or IEEE
     /// </summary>
     [ComImport, Guid("f447b69e-1884-4a7e-8055-346f74d6edb3")]
-    class ResamplerMediaObject
+    class ResamplerMediaComObject
     {
     }
 
@@ -35,7 +35,7 @@ namespace NAudio.Dmo
         /// </summary>
         public Resampler()
         {
-            ResamplerMediaObject mediaComObject = new ResamplerMediaObject();
+            ResamplerMediaComObject mediaComObject = new ResamplerMediaComObject();
             mediaObject = new MediaObject((IMediaObject)mediaComObject);
             propertyStoreInterface = (IPropertyStore)mediaComObject;
             resamplerPropsInterface = (IWMResamplerProps)mediaComObject;

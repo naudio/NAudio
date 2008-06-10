@@ -21,6 +21,7 @@ namespace NAudio.Wave
         int bytesPerFrame;
         byte[] readBuffer;
         PlaybackState playbackState;
+        Thread playThread;
 
         /// <summary>
         /// WASAPI Out using default audio endpoint
@@ -51,7 +52,7 @@ namespace NAudio.Wave
             this.latencyMilliseconds = latency;
         }
 
-        private void PlayThread(object state)
+        private void PlayThread()
         {
             // fill a whole buffer
             bufferFrameCount = audioClient.BufferSize;
@@ -61,15 +62,17 @@ namespace NAudio.Wave
 
             audioClient.Start();
 
-            while(playbackState == PlaybackState.Playing)
+            while(playbackState != PlaybackState.Stopped)
             {                 
                 // Sleep for half the buffer duration.
                 Thread.Sleep(latencyMilliseconds/2);
-
-                // See how much buffer space is available.
-                int numFramesPadding = audioClient.CurrentPadding;       
-                int numFramesAvailable = bufferFrameCount - numFramesPadding;
-                FillBuffer(numFramesAvailable);
+                if (playbackState == PlaybackState.Playing)
+                {
+                    // See how much buffer space is available.
+                    int numFramesPadding = audioClient.CurrentPadding;
+                    int numFramesAvailable = bufferFrameCount - numFramesPadding;
+                    FillBuffer(numFramesAvailable);
+                }
             }
             Thread.Sleep(latencyMilliseconds / 2);
             audioClient.Stop();
@@ -88,7 +91,8 @@ namespace NAudio.Wave
                 playbackState = PlaybackState.Stopped;
             }
             Marshal.Copy(readBuffer,0,buffer,read);
-            renderClient.ReleaseBuffer(frameCount,AudioClientBufferFlags.None);
+            int actualFrameCount = read / bytesPerFrame;
+            renderClient.ReleaseBuffer(actualFrameCount,AudioClientBufferFlags.None);
         }
 
         #region IWavePlayer Members
@@ -100,8 +104,13 @@ namespace NAudio.Wave
         {
             if (playbackState != PlaybackState.Playing)
             {
+                if (playbackState == PlaybackState.Stopped)
+                {
+                    playThread = new Thread(new ThreadStart(PlayThread));
+                    playThread.Start();                    
+                }
+
                 playbackState = PlaybackState.Playing;
-                ThreadPool.QueueUserWorkItem(new WaitCallback(PlayThread));
             }
         }
 
@@ -110,8 +119,12 @@ namespace NAudio.Wave
         /// </summary>
         public void Stop()
         {
-            playbackState = PlaybackState.Stopped;
-            // TODO: block on playback thread actually stopping
+            if (playbackState != PlaybackState.Stopped)
+            {
+                playbackState = PlaybackState.Stopped;
+                playThread.Join();
+                playThread = null;
+            }
         }
 
         /// <summary>
@@ -145,8 +158,8 @@ namespace NAudio.Wave
                 {
                     throw new NotSupportedException("Can't find a supported format to use");
                 }
-                this.sourceStream = new WaveFormatConversionStream(
-                    correctSampleRateFormat, waveStream);
+                this.sourceStream = new ResamplerDmoStream(waveStream,
+                    correctSampleRateFormat);
             }
             else
             {
@@ -154,7 +167,7 @@ namespace NAudio.Wave
             }
 
             audioClient.Initialize(shareMode, AudioClientStreamFlags.None, latencyRefTimes, latencyRefTimes,
-                waveStream.WaveFormat, Guid.Empty);
+                sourceStream.WaveFormat, Guid.Empty);
             renderClient = audioClient.AudioRenderClient;
         }
 

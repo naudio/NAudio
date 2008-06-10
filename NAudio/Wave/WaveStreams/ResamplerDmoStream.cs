@@ -42,6 +42,8 @@ namespace NAudio.Wave
             position = InputToOutputPosition(inputStream.Position);
             inputMediaBuffer = new MediaBuffer(inputStream.WaveFormat.AverageBytesPerSecond);
             outputBuffer = new DmoOutputDataBuffer(outputFormat.AverageBytesPerSecond);
+
+            bool test = resampler.MediaObject.IsAcceptingData(0);
         }
 
         /// <summary>

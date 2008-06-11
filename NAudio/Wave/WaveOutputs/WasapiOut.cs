@@ -71,7 +71,10 @@ namespace NAudio.Wave
                     // See how much buffer space is available.
                     int numFramesPadding = audioClient.CurrentPadding;
                     int numFramesAvailable = bufferFrameCount - numFramesPadding;
-                    FillBuffer(numFramesAvailable);
+                    if (numFramesAvailable > 0)
+                    {
+                        FillBuffer(numFramesAvailable);
+                    }                    
                 }
             }
             Thread.Sleep(latencyMilliseconds / 2);

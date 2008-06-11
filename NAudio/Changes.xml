@@ -796,14 +796,23 @@
     <desc>ResamplerDmoStream created</desc>
   </change>
   <change>
-    <version>1.3.130.0</version>
+    <version>1.2.130.0</version>
     <date>3 June 2008</date>
     <desc>ResamplerDmoStream bugfixes</desc>
+  </change>
+  <change>
+    <version>1.2.131.0</version>    
     <date>10 June 2008</date>
     <desc>Wasapi output stream uses ResamplerDmoStream (but needs app to be MTAThread to work atm)</desc>
     <desc>Audio Client using PreserveSig</desc>
     <desc>More reliable Wasapi out</desc>
     <desc>NAudio demo plays a file now rather than mixing a whole folder together</desc>
     <desc></desc>
+  </change>
+  <change>
+    <version>1.2.132.0</version>
+    <date>11 June 2008</date>
+    <desc>Added Alexandre Mutel's Native DirectSound class</desc>
+    <desc>Added a bug fix to WasapiOut PlayThread (thanks Alexandre)</desc>
   </change>
 </changes>

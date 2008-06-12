@@ -143,7 +143,7 @@ namespace NAudio.CoreAudioApi
         }
 
         /// <summary>
-        /// Determines whether if the specified mode is supported
+        /// Determines whether if the specified output format is supported
         /// </summary>
         /// <param name="shareMode">The share mode.</param>
         /// <param name="desiredFormat">The desired format.</param>
@@ -158,7 +158,7 @@ namespace NAudio.CoreAudioApi
         }
 
         /// <summary>
-        /// Determines if the specified mode is supported
+        /// Determines if the specified output format is supported
         /// </summary>
         /// <param name="shareMode">Share Mode</param>
         /// <param name="desiredFormat">Desired Format</param>

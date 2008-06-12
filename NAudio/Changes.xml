@@ -815,4 +815,14 @@
     <desc>Added Alexandre Mutel's Native DirectSound class</desc>
     <desc>Added a bug fix to WasapiOut PlayThread (thanks Alexandre)</desc>
   </change>
+  <change>
+    <version>1.2.133.0</version>
+    <author>Alexandre Mutel</author>
+    <desc>TODO</desc>    
+  </change>
+  <change>
+    <version>1.2.134.0</version>
+    <author>Mark Heath</author>
+    <desc>Fix to get WASAPI out working with DMO resampler again (still needs MTA)</desc>
+  </change>
 </changes>

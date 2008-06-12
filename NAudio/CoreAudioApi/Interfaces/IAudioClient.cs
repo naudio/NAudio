@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Runtime.InteropServices;
 using NAudio.Wave;
 
@@ -35,7 +33,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         int IsFormatSupported(
             AudioClientShareMode shareMode,
             [In] WaveFormat pFormat,
-            out IntPtr closestMatchPointer);
+            [Out, MarshalAs(UnmanagedType.LPStruct)] out WaveFormatExtensible closestMatch);
 
         int GetMixFormat(out IntPtr deviceFormatPointer);
 

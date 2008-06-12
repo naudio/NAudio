@@ -150,19 +150,18 @@ namespace NAudio.Wave
         {
             long latencyRefTimes = latencyMilliseconds * 10000;
 
-            if (!audioClient.IsFormatSupported(shareMode, waveStream.WaveFormat))
+            WaveFormatExtensible closestSampleRateFormat;
+            if (!audioClient.IsFormatSupported(shareMode, waveStream.WaveFormat, out closestSampleRateFormat))
             {
-                // for now, assume that WASAPI is working with IEEE floating point
-                WaveFormat correctSampleRateFormat = 
-                    WaveFormat.CreateIeeeFloatWaveFormat(
-                        audioClient.MixFormat.SampleRate,
-                        audioClient.MixFormat.Channels);
-                if (!audioClient.IsFormatSupported(shareMode, correctSampleRateFormat))
+                // Use closesSampleRateFormat (in sharedMode, it equals usualy to the audioClient.MixFormat)
+                // See documentation : http://msdn.microsoft.com/en-us/library/ms678737(VS.85).aspx 
+                // They say : "In shared mode, the audio engine always supports the mix format"
+                // The MixFormat is more likely to be a WaveFormatExtensible.
+                if ( closestSampleRateFormat == null)
                 {
                     throw new NotSupportedException("Can't find a supported format to use");
                 }
-                this.sourceStream = new ResamplerDmoStream(waveStream,
-                    correctSampleRateFormat);
+                this.sourceStream = new ResamplerDmoStream(waveStream, closestSampleRateFormat);
             }
             else
             {

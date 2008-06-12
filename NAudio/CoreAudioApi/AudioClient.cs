@@ -170,6 +170,7 @@ namespace NAudio.CoreAudioApi
             WaveFormat desiredFormat, out WaveFormatExtensible closestMatchFormat )
         {
             int hresult = audioClientInterface.IsFormatSupported(shareMode, desiredFormat, out closestMatchFormat);
+
             // S_OK is 0, S_FALSE = 1
             if (hresult == 0)
             {

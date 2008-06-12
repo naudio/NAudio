@@ -54,6 +54,14 @@ namespace NAudio.Wave
             get { return outputFormat; }
         }
 
+        /// <summary>
+        /// Input Stream
+        /// </summary>
+        public WaveStream InputStream
+        {
+            get { return inputStream; }
+        }
+
         private long InputToOutputPosition(long inputPosition)
         {
             double ratio = (double)outputFormat.AverageBytesPerSecond

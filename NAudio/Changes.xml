@@ -823,6 +823,7 @@
   <change>
     <version>1.2.134.0</version>
     <author>Mark Heath</author>
-    <desc>Fix to get WASAPI out working with DMO resampler again (still needs MTA)</desc>
+    <desc>Fix to get WASAPI out working with DMO resampler again</desc>
+    <desc>Fix to get WASAPI working with DMO resampler without needing MTA Thread (woohoo!)</desc>
   </change>
 </changes>

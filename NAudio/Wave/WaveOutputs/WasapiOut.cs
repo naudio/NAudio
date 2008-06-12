@@ -150,6 +150,8 @@ namespace NAudio.Wave
         {
             long latencyRefTimes = latencyMilliseconds * 10000;
 
+            // first attempt uses the WaveFormat from the WaveStream
+            WaveFormat outputFormat;
             WaveFormatExtensible closestSampleRateFormat;
             if (!audioClient.IsFormatSupported(shareMode, waveStream.WaveFormat, out closestSampleRateFormat))
             {
@@ -157,11 +159,23 @@ namespace NAudio.Wave
                 // See documentation : http://msdn.microsoft.com/en-us/library/ms678737(VS.85).aspx 
                 // They say : "In shared mode, the audio engine always supports the mix format"
                 // The MixFormat is more likely to be a WaveFormatExtensible.
-                if ( closestSampleRateFormat == null)
+                if (closestSampleRateFormat == null)
                 {
-                    throw new NotSupportedException("Can't find a supported format to use");
+                    WaveFormat correctSampleRateFormat = WaveFormat.CreateIeeeFloatWaveFormat(
+                        audioClient.MixFormat.SampleRate,
+                        audioClient.MixFormat.Channels);
+
+                    if (!audioClient.IsFormatSupported(shareMode, correctSampleRateFormat))
+                    {
+                        throw new NotSupportedException("Can't find a supported format to use");
+                    }
+                    outputFormat = correctSampleRateFormat;
                 }
-                this.sourceStream = new ResamplerDmoStream(waveStream, closestSampleRateFormat);
+                else
+                {
+                    outputFormat = closestSampleRateFormat;
+                }
+                this.sourceStream = new ResamplerDmoStream(waveStream, outputFormat);
             }
             else
             {

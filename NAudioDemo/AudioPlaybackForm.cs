@@ -16,52 +16,39 @@ namespace NAudioDemo
     {
         IWavePlayer waveOut;
         List<WaveStream> inputs = new List<WaveStream>();
-        string fileName = "C:\\Users\\Mark\\Recording\\REAPER\\ideas-converted.wav";
+        string fileName = null;
 
         public AudioPlaybackForm()
         {            
-            //folder = Settings.Default.AudioFolder;
             InitializeComponent();
         }
-
             
         private void buttonPlay_Click(object sender, EventArgs e)
         {
+            if (waveOut != null)
+            {
+                if (waveOut.PlaybackState == PlaybackState.Playing)
+                {
+                    return;
+                }
+                else if (waveOut.PlaybackState == PlaybackState.Paused)
+                {
+                    waveOut.Play();
+                    groupBoxDriverModel.Enabled = false;
+                    return;
+                }
+            }
+            
+            // we are in a stopped state
+            // TODO: only re-initialise if necessary
+
             if (String.IsNullOrEmpty(fileName))
             {
                 buttonLoad_Click(sender, e);
                 return;
             }
 
-            CloseWaveOut();
-            int latency = (int)comboBoxLatency.SelectedItem;
-            if (radioButtonWaveOut.Checked)
-            {
-                waveOut = new WaveOut(0, latency, null);
-            }
-            else if (radioButtonWaveOutWindow.Checked)
-            {
-                waveOut = new WaveOut(0, latency, this);
-            }
-            else if (radioButtonDirectSound.Checked)
-            {
-                waveOut = new DirectSoundOut(this, 300);
-            }
-            else if (radioButtonAsio.Checked)
-            {
-                waveOut = new AsioOut(0);
-            }
-            else
-            {
-                waveOut = new WasapiOut(AudioClientShareMode.Shared, latency);
-            }
-
-            /*
-            foreach (string wavFile in Directory.GetFiles(folder, "*.wav"))
-            {
-                WaveStream reader = new WaveChannel32(new LoopStream(new WaveFileReader(wavFile)));
-                inputs.Add(reader);
-            }*/
+            CreateWaveOut();
 
             WaveStream reader = new WaveChannel32(new WaveFileReader(fileName));
             inputs.Add(reader);
@@ -76,7 +63,34 @@ namespace NAudioDemo
             //Wave32To16Stream mixdown = new Wave32To16Stream(mixer);
             waveOut.Init(mixer);
             waveOut.Volume = volumeSlider1.Volume;
+            groupBoxDriverModel.Enabled = false;
             waveOut.Play();
+        }
+
+        private void CreateWaveOut()
+        {
+            CloseWaveOut();
+            int latency = (int)comboBoxLatency.SelectedItem;
+            if (radioButtonWaveOut.Checked)
+            {
+                waveOut = new WaveOut(0, latency, null);
+            }
+            else if (radioButtonWaveOutWindow.Checked)
+            {
+                waveOut = new WaveOut(0, latency, this);
+            }
+            else if (radioButtonDirectSound.Checked)
+            {
+                waveOut = new DirectSoundOut(this, latency);
+            }
+            else if (radioButtonAsio.Checked)
+            {
+                waveOut = new AsioOut(0);
+            }
+            else
+            {
+                waveOut = new WasapiOut(AudioClientShareMode.Shared, latency);
+            }
         }
 
         private void CloseWaveOut()
@@ -121,13 +135,7 @@ namespace NAudioDemo
             {
                 if (waveOut.PlaybackState == PlaybackState.Playing)
                 {
-                    waveOut.Stop();
-                    buttonPause.Text = "Resume";
-                }
-                else
-                {
-                    waveOut.Play();
-                    buttonPause.Text = "Pause";
+                    waveOut.Pause();
                 }
             }
         }
@@ -149,11 +157,6 @@ namespace NAudioDemo
             }
         }
 
-        private void volumeSlider1_Load(object sender, EventArgs e)
-        {
-
-        }
-
         private void buttonLoad_Click(object sender, EventArgs e)
         {
             /*FolderBrowserDialog folderDialog = new FolderBrowserDialog();
@@ -173,5 +176,15 @@ namespace NAudioDemo
                 fileName = openFileDialog.FileName;
             }
         }
+
+        private void buttonStop_Click(object sender, EventArgs e)
+        {
+            if (waveOut != null)
+            {
+                waveOut.Stop();
+                groupBoxDriverModel.Enabled = true;
+            }
+        }
+
     }
 }

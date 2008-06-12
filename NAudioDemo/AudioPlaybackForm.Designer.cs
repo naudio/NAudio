@@ -32,16 +32,19 @@
             this.radioButtonDirectSound = new System.Windows.Forms.RadioButton();
             this.radioButtonWaveOutWindow = new System.Windows.Forms.RadioButton();
             this.radioButtonWaveOut = new System.Windows.Forms.RadioButton();
-            this.buttonPause = new System.Windows.Forms.Button();
-            this.buttonPlay = new System.Windows.Forms.Button();
             this.radioButtonAsio = new System.Windows.Forms.RadioButton();
             this.buttonControlPanel = new System.Windows.Forms.Button();
-            this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.groupBoxDriverModel = new System.Windows.Forms.GroupBox();
             this.label1 = new System.Windows.Forms.Label();
             this.radioButtonWasapi = new System.Windows.Forms.RadioButton();
             this.buttonLoad = new System.Windows.Forms.Button();
             this.volumeSlider1 = new NAudio.Gui.VolumeSlider();
-            this.groupBox1.SuspendLayout();
+            this.toolStrip1 = new System.Windows.Forms.ToolStrip();
+            this.buttonPlay = new System.Windows.Forms.ToolStripButton();
+            this.buttonPause = new System.Windows.Forms.ToolStripButton();
+            this.buttonStop = new System.Windows.Forms.ToolStripButton();
+            this.groupBoxDriverModel.SuspendLayout();
+            this.toolStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
             // comboBoxLatency
@@ -87,26 +90,6 @@
             this.radioButtonWaveOut.Text = "WaveOut";
             this.radioButtonWaveOut.UseVisualStyleBackColor = true;
             // 
-            // buttonPause
-            // 
-            this.buttonPause.Location = new System.Drawing.Point(93, 231);
-            this.buttonPause.Name = "buttonPause";
-            this.buttonPause.Size = new System.Drawing.Size(75, 23);
-            this.buttonPause.TabIndex = 5;
-            this.buttonPause.Text = "Pause";
-            this.buttonPause.UseVisualStyleBackColor = true;
-            this.buttonPause.Click += new System.EventHandler(this.buttonPause_Click);
-            // 
-            // buttonPlay
-            // 
-            this.buttonPlay.Location = new System.Drawing.Point(12, 231);
-            this.buttonPlay.Name = "buttonPlay";
-            this.buttonPlay.Size = new System.Drawing.Size(75, 23);
-            this.buttonPlay.TabIndex = 6;
-            this.buttonPlay.Text = "Play";
-            this.buttonPlay.UseVisualStyleBackColor = true;
-            this.buttonPlay.Click += new System.EventHandler(this.buttonPlay_Click);
-            // 
             // radioButtonAsio
             // 
             this.radioButtonAsio.AutoSize = true;
@@ -128,22 +111,22 @@
             this.buttonControlPanel.UseVisualStyleBackColor = true;
             this.buttonControlPanel.Click += new System.EventHandler(this.buttonControlPanel_Click);
             // 
-            // groupBox1
+            // groupBoxDriverModel
             // 
-            this.groupBox1.Controls.Add(this.label1);
-            this.groupBox1.Controls.Add(this.radioButtonWaveOut);
-            this.groupBox1.Controls.Add(this.buttonControlPanel);
-            this.groupBox1.Controls.Add(this.comboBoxLatency);
-            this.groupBox1.Controls.Add(this.radioButtonWaveOutWindow);
-            this.groupBox1.Controls.Add(this.radioButtonDirectSound);
-            this.groupBox1.Controls.Add(this.radioButtonWasapi);
-            this.groupBox1.Controls.Add(this.radioButtonAsio);
-            this.groupBox1.Location = new System.Drawing.Point(12, 11);
-            this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(211, 143);
-            this.groupBox1.TabIndex = 13;
-            this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "Output Driver";
+            this.groupBoxDriverModel.Controls.Add(this.label1);
+            this.groupBoxDriverModel.Controls.Add(this.radioButtonWaveOut);
+            this.groupBoxDriverModel.Controls.Add(this.buttonControlPanel);
+            this.groupBoxDriverModel.Controls.Add(this.comboBoxLatency);
+            this.groupBoxDriverModel.Controls.Add(this.radioButtonWaveOutWindow);
+            this.groupBoxDriverModel.Controls.Add(this.radioButtonDirectSound);
+            this.groupBoxDriverModel.Controls.Add(this.radioButtonWasapi);
+            this.groupBoxDriverModel.Controls.Add(this.radioButtonAsio);
+            this.groupBoxDriverModel.Location = new System.Drawing.Point(12, 30);
+            this.groupBoxDriverModel.Name = "groupBoxDriverModel";
+            this.groupBoxDriverModel.Size = new System.Drawing.Size(211, 143);
+            this.groupBoxDriverModel.TabIndex = 13;
+            this.groupBoxDriverModel.TabStop = false;
+            this.groupBoxDriverModel.Text = "Output Driver";
             // 
             // label1
             // 
@@ -159,10 +142,10 @@
             this.radioButtonWasapi.AutoSize = true;
             this.radioButtonWasapi.Location = new System.Drawing.Point(6, 113);
             this.radioButtonWasapi.Name = "radioButtonWasapi";
-            this.radioButtonWasapi.Size = new System.Drawing.Size(67, 17);
+            this.radioButtonWasapi.Size = new System.Drawing.Size(134, 17);
             this.radioButtonWasapi.TabIndex = 9;
             this.radioButtonWasapi.TabStop = true;
-            this.radioButtonWasapi.Text = "WASAPI";
+            this.radioButtonWasapi.Text = "WASAPI Shared Mode";
             this.radioButtonWasapi.UseVisualStyleBackColor = true;
             // 
             // buttonLoad
@@ -182,27 +165,70 @@
             this.volumeSlider1.Size = new System.Drawing.Size(96, 16);
             this.volumeSlider1.TabIndex = 11;
             this.volumeSlider1.Volume = 1F;
-            this.volumeSlider1.Load += new System.EventHandler(this.volumeSlider1_Load);
             this.volumeSlider1.VolumeChanged += new System.EventHandler(this.volumeSlider1_VolumeChanged);
+            // 
+            // toolStrip1
+            // 
+            this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.buttonPlay,
+            this.buttonPause,
+            this.buttonStop});
+            this.toolStrip1.Location = new System.Drawing.Point(0, 0);
+            this.toolStrip1.Name = "toolStrip1";
+            this.toolStrip1.Size = new System.Drawing.Size(513, 25);
+            this.toolStrip1.TabIndex = 15;
+            this.toolStrip1.Text = "toolStrip1";
+            // 
+            // buttonPlay
+            // 
+            this.buttonPlay.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.buttonPlay.Image = global::NAudioDemo.Images.Play;
+            this.buttonPlay.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.buttonPlay.Name = "buttonPlay";
+            this.buttonPlay.Size = new System.Drawing.Size(23, 22);
+            this.buttonPlay.Text = "Play";
+            this.buttonPlay.Click += new System.EventHandler(this.buttonPlay_Click);
+            // 
+            // buttonPause
+            // 
+            this.buttonPause.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.buttonPause.Image = global::NAudioDemo.Images.Pause;
+            this.buttonPause.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.buttonPause.Name = "buttonPause";
+            this.buttonPause.Size = new System.Drawing.Size(23, 22);
+            this.buttonPause.Text = "Pause";
+            this.buttonPause.Click += new System.EventHandler(this.buttonPause_Click);
+            // 
+            // buttonStop
+            // 
+            this.buttonStop.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.buttonStop.Image = global::NAudioDemo.Images.Stop;
+            this.buttonStop.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.buttonStop.Name = "buttonStop";
+            this.buttonStop.Size = new System.Drawing.Size(23, 22);
+            this.buttonStop.Text = "Stop";
+            this.buttonStop.Click += new System.EventHandler(this.buttonStop_Click);
             // 
             // AudioPlaybackForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(513, 266);
+            this.Controls.Add(this.toolStrip1);
             this.Controls.Add(this.buttonLoad);
-            this.Controls.Add(this.groupBox1);
+            this.Controls.Add(this.groupBoxDriverModel);
             this.Controls.Add(this.volumeSlider1);
-            this.Controls.Add(this.buttonPause);
-            this.Controls.Add(this.buttonPlay);
             this.Name = "AudioPlaybackForm";
             this.ShowInTaskbar = false;
             this.Text = "AudioPlaybackForm";
             this.Load += new System.EventHandler(this.Form1_Load);
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
-            this.groupBox1.ResumeLayout(false);
-            this.groupBox1.PerformLayout();
+            this.groupBoxDriverModel.ResumeLayout(false);
+            this.groupBoxDriverModel.PerformLayout();
+            this.toolStrip1.ResumeLayout(false);
+            this.toolStrip1.PerformLayout();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -212,14 +238,16 @@
         private System.Windows.Forms.RadioButton radioButtonDirectSound;
         private System.Windows.Forms.RadioButton radioButtonWaveOutWindow;
         private System.Windows.Forms.RadioButton radioButtonWaveOut;
-        private System.Windows.Forms.Button buttonPause;
-        private System.Windows.Forms.Button buttonPlay;
         private NAudio.Gui.VolumeSlider volumeSlider1;
         private System.Windows.Forms.RadioButton radioButtonAsio;
         private System.Windows.Forms.Button buttonControlPanel;
-        private System.Windows.Forms.GroupBox groupBox1;
+        private System.Windows.Forms.GroupBox groupBoxDriverModel;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.RadioButton radioButtonWasapi;
         private System.Windows.Forms.Button buttonLoad;
+        private System.Windows.Forms.ToolStrip toolStrip1;
+        private System.Windows.Forms.ToolStripButton buttonPlay;
+        private System.Windows.Forms.ToolStripButton buttonPause;
+        private System.Windows.Forms.ToolStripButton buttonStop;
     }
 }

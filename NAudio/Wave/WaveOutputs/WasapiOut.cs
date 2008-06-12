@@ -22,6 +22,10 @@ namespace NAudio.Wave
         byte[] readBuffer;
         PlaybackState playbackState;
         Thread playThread;
+        
+        WaveFormat outputFormat;
+        bool dmoResamplerNeeded;
+            
 
         /// <summary>
         /// WASAPI Out using default audio endpoint
@@ -54,34 +58,53 @@ namespace NAudio.Wave
 
         private void PlayThread()
         {
-            // fill a whole buffer
-            bufferFrameCount = audioClient.BufferSize;
-            bytesPerFrame = audioClient.MixFormat.Channels * audioClient.MixFormat.BitsPerSample / 8;
-            readBuffer = new byte[bufferFrameCount * bytesPerFrame];
-            FillBuffer(bufferFrameCount);
-
-            audioClient.Start();
-
-            while(playbackState != PlaybackState.Stopped)
-            {                 
-                // Sleep for half the buffer duration.
-                Thread.Sleep(latencyMilliseconds/2);
-                if (playbackState == PlaybackState.Playing)
+            ResamplerDmoStream resamplerDmoStream = null;
+            try
+            {
+                if (this.dmoResamplerNeeded)
                 {
-                    // See how much buffer space is available.
-                    int numFramesPadding = audioClient.CurrentPadding;
-                    int numFramesAvailable = bufferFrameCount - numFramesPadding;
-                    if (numFramesAvailable > 0)
+                    resamplerDmoStream = new ResamplerDmoStream(sourceStream, outputFormat);
+                    this.sourceStream = resamplerDmoStream;
+                }
+
+                // fill a whole buffer
+                bufferFrameCount = audioClient.BufferSize;
+                bytesPerFrame = audioClient.MixFormat.Channels * audioClient.MixFormat.BitsPerSample / 8;
+                readBuffer = new byte[bufferFrameCount * bytesPerFrame];
+                FillBuffer(bufferFrameCount);
+
+                audioClient.Start();
+
+                while (playbackState != PlaybackState.Stopped)
+                {
+                    // Sleep for half the buffer duration.
+                    Thread.Sleep(latencyMilliseconds / 2);
+                    if (playbackState == PlaybackState.Playing)
                     {
-                        FillBuffer(numFramesAvailable);
-                    }                    
+                        // See how much buffer space is available.
+                        int numFramesPadding = audioClient.CurrentPadding;
+                        int numFramesAvailable = bufferFrameCount - numFramesPadding;
+                        if (numFramesAvailable > 0)
+                        {
+                            FillBuffer(numFramesAvailable);
+                        }
+                    }
+                }
+                Thread.Sleep(latencyMilliseconds / 2);
+                audioClient.Stop();
+                if (playbackState == PlaybackState.Stopped)
+                {
+                    audioClient.Reset();
                 }
             }
-            Thread.Sleep(latencyMilliseconds / 2);
-            audioClient.Stop();
-            if (playbackState == PlaybackState.Stopped)
+            finally
             {
-                audioClient.Reset();
+
+                if (resamplerDmoStream != null)
+                {
+                    sourceStream = resamplerDmoStream.InputStream;
+                    resamplerDmoStream.Dispose();
+                }
             }
         }
 
@@ -149,11 +172,10 @@ namespace NAudio.Wave
         public void Init(WaveStream waveStream)
         {
             long latencyRefTimes = latencyMilliseconds * 10000;
-
+            outputFormat = waveStream.WaveFormat;
             // first attempt uses the WaveFormat from the WaveStream
-            WaveFormat outputFormat;
             WaveFormatExtensible closestSampleRateFormat;
-            if (!audioClient.IsFormatSupported(shareMode, waveStream.WaveFormat, out closestSampleRateFormat))
+            if (!audioClient.IsFormatSupported(shareMode, outputFormat, out closestSampleRateFormat))
             {
                 // Use closesSampleRateFormat (in sharedMode, it equals usualy to the audioClient.MixFormat)
                 // See documentation : http://msdn.microsoft.com/en-us/library/ms678737(VS.85).aspx 
@@ -175,15 +197,21 @@ namespace NAudio.Wave
                 {
                     outputFormat = closestSampleRateFormat;
                 }
-                this.sourceStream = new ResamplerDmoStream(waveStream, outputFormat);
+
+                // just check that we can make it.
+                using (new ResamplerDmoStream(waveStream, outputFormat))
+                {
+                }
+                this.dmoResamplerNeeded = true;
             }
             else
             {
-                this.sourceStream = waveStream;
+                dmoResamplerNeeded = false;
             }
+            this.sourceStream = waveStream;
 
             audioClient.Initialize(shareMode, AudioClientStreamFlags.None, latencyRefTimes, latencyRefTimes,
-                sourceStream.WaveFormat, Guid.Empty);
+                outputFormat, Guid.Empty);
             renderClient = audioClient.AudioRenderClient;
         }
 

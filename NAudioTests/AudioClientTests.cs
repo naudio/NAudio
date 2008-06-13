@@ -18,28 +18,34 @@ namespace NAudioTests
         }
 
         [Test]
-        public void CanInitialize()
+        public void CanInitializeInSharedMode()
         {
-            InitializeClient();        
+            InitializeClient(AudioClientShareMode.Shared);        
+        }
+
+        [Test]
+        public void CanInitializeInExclusiveMode()
+        {
+            InitializeClient(AudioClientShareMode.Exclusive);
         }
 
         [Test]
         public void CanGetAudioRenderClient()
         {
-            Assert.IsNotNull(InitializeClient().AudioRenderClient);
+            Assert.IsNotNull(InitializeClient(AudioClientShareMode.Shared).AudioRenderClient);
         }
 
 
         [Test]
         public void CanGetBufferSize()
         {
-            Console.WriteLine("Buffer Size: {0}", InitializeClient().BufferSize);
+            Console.WriteLine("Buffer Size: {0}", InitializeClient(AudioClientShareMode.Shared).BufferSize);
         }
 
         [Test]
         public void CanGetCurrentPadding()
         {
-            Console.WriteLine("CurrentPadding: {0}", InitializeClient().CurrentPadding);
+            Console.WriteLine("CurrentPadding: {0}", InitializeClient(AudioClientShareMode.Shared).CurrentPadding);
         }
 
         [Test]
@@ -57,27 +63,45 @@ namespace NAudioTests
         }
 
         [Test]
-        public void DefaultFormatIsSupported()
+        public void DefaultFormatIsSupportedInSharedMode()
         {
             AudioClient client = GetAudioClient();
             WaveFormat defaultFormat = client.MixFormat;
-            CheckFormatSupported(client, defaultFormat);
+            Assert.IsTrue(client.IsFormatSupported(AudioClientShareMode.Shared, defaultFormat), "Is Format Supported");
         }
 
         [Test]
-        public void CanRequestIfFormatIsSupportedExtensible44100()
+        public void DefaultFormatIsSupportedInExclusiveMode()
+        {
+            AudioClient client = GetAudioClient();
+            WaveFormat defaultFormat = client.MixFormat;
+            Assert.IsTrue(client.IsFormatSupported(AudioClientShareMode.Exclusive, defaultFormat), "Is Format Supported");
+        }
+
+
+        [Test]
+        public void CanRequestIfFormatIsSupportedExtensible44100SharedMode()
         {
             WaveFormatExtensible desiredFormat = new WaveFormatExtensible(44100, 32, 2);
             Console.Write(desiredFormat);
-            CheckFormatSupported(GetAudioClient(), desiredFormat);
+            GetAudioClient().IsFormatSupported(AudioClientShareMode.Shared, desiredFormat);
         }
+
+        [Test]
+        public void CanRequestIfFormatIsSupportedExtensible44100ExclusiveMode()
+        {
+            WaveFormatExtensible desiredFormat = new WaveFormatExtensible(44100, 32, 2);
+            Console.Write(desiredFormat);
+            GetAudioClient().IsFormatSupported(AudioClientShareMode.Exclusive, desiredFormat);
+        }
+
 
         [Test]
         public void CanRequestIfFormatIsSupportedExtensible48000()
         {
             WaveFormatExtensible desiredFormat = new WaveFormatExtensible(48000, 32, 2);
             Console.Write(desiredFormat);
-            CheckFormatSupported(GetAudioClient(), desiredFormat);
+            GetAudioClient().IsFormatSupported(AudioClientShareMode.Shared, desiredFormat);
         }
 
         [Test]
@@ -85,7 +109,7 @@ namespace NAudioTests
         {
             WaveFormatExtensible desiredFormat = new WaveFormatExtensible(48000, 16, 2);
             Console.Write(desiredFormat);
-            CheckFormatSupported(GetAudioClient(), desiredFormat);
+            GetAudioClient().IsFormatSupported(AudioClientShareMode.Shared, desiredFormat);
         }
 
         
@@ -94,37 +118,40 @@ namespace NAudioTests
         [Test]
         public void CanRequestIfFormatIsSupportedPCMStereo()
         {
-            CheckFormatSupported(GetAudioClient(), new WaveFormat(44100, 16, 2));
+            GetAudioClient().IsFormatSupported(AudioClientShareMode.Shared, new WaveFormat(44100, 16, 2));
         }
 
         [Test]
         public void CanRequestIfFormatIsSupported8KHzMono()
         {
-            CheckFormatSupported(GetAudioClient(), new WaveFormat(8000, 16, 1));
+            GetAudioClient().IsFormatSupported(AudioClientShareMode.Shared, new WaveFormat(8000, 16, 1));
         }
 
         [Test]
         public void CanRequest48kHz16BitStereo()
         {
-            CheckFormatSupported(GetAudioClient(), new WaveFormat(48000, 16, 2));
+            GetAudioClient().IsFormatSupported(AudioClientShareMode.Shared, new WaveFormat(48000, 16, 2));
+
         }
 
         [Test]
         public void CanRequest48kHz16BitMono()
         {
-            CheckFormatSupported(GetAudioClient(), new WaveFormat(48000, 16, 1));
+
+            GetAudioClient().IsFormatSupported(AudioClientShareMode.Shared, new WaveFormat(48000, 16, 1));
+
         }
 
         [Test]
         public void CanRequestIfFormatIsSupportedIeee()
         {
-            CheckFormatSupported(GetAudioClient(), WaveFormat.CreateIeeeFloatWaveFormat(44100, 2));
+            GetAudioClient().IsFormatSupported(AudioClientShareMode.Shared, WaveFormat.CreateIeeeFloatWaveFormat(44100, 2));
         }
 
         [Test]
         public void CanPopulateABuffer()
         {
-            AudioClient audioClient = InitializeClient();
+            AudioClient audioClient = InitializeClient(AudioClientShareMode.Shared);
             AudioRenderClient renderClient = audioClient.AudioRenderClient;
             int bufferFrameCount = audioClient.BufferSize;
             IntPtr buffer = renderClient.GetBuffer(bufferFrameCount);
@@ -134,25 +161,12 @@ namespace NAudioTests
 
         }
 
-
-        private void CheckFormatSupported(AudioClient audioClient, WaveFormat waveFormat)
-        {
-            //WaveFormat closestMatch;
-            bool isSupported = GetAudioClient().IsFormatSupported(AudioClientShareMode.Shared,
-                waveFormat);
-            //Assert.IsNotNull(closestMatch, "Closest Match");
-            //Assert.AreEqual(closestMatch.SampleRate, waveFormat.SampleRate, "Sample Rate");
-            //Assert.AreEqual(closestMatch.BitsPerSample, waveFormat.BitsPerSample, "BitsPerSample");
-            //Assert.AreEqual(closestMatch.Channels, waveFormat.Channels, "Channels");
-        }
-
-
-        private AudioClient InitializeClient()
+        private AudioClient InitializeClient(AudioClientShareMode shareMode)
         {
             AudioClient audioClient = GetAudioClient();
             WaveFormat waveFormat = audioClient.MixFormat;
             long refTimesPerSecond = 10000000;
-            audioClient.Initialize(AudioClientShareMode.Shared,
+            audioClient.Initialize(shareMode,
                 AudioClientStreamFlags.None,
                 refTimesPerSecond,
                 0,

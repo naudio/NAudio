@@ -812,13 +812,14 @@
   <change>
     <version>1.2.132.0</version>
     <date>11 June 2008</date>
+    <author>Mark Heath</author>
     <desc>Added Alexandre Mutel's Native DirectSound class</desc>
     <desc>Added a bug fix to WasapiOut PlayThread (thanks Alexandre)</desc>
   </change>
   <change>
     <version>1.2.133.0</version>
     <author>Alexandre Mutel</author>
-    <desc>TODO</desc>    
+    <desc>WASAPI Out fixes</desc>    
   </change>
   <change>
     <version>1.2.134.0</version>
@@ -826,5 +827,13 @@
     <desc>Fix to get WASAPI out working with DMO resampler again</desc>
     <desc>Fix to get WASAPI working with DMO resampler without needing MTA Thread (woohoo!)</desc>
     <desc>Improvements to NAudioDemo Audio Playback Form</desc>
+  </change>
+  <change>
+    <version>1.2.135.0</version>
+    <author>Mark Heath</author>
+    <desc>More unit tests for AudioClient</desc>
+    <desc>Added option for WASAPI exclusive mode to NAudio Demo (not working yet)</desc>
+    <desc>NAudioDemo can play MP3 files (not at low latency though)</desc>
+    <desc>Position bar in NAudioDemo</desc>
   </change>
 </changes>

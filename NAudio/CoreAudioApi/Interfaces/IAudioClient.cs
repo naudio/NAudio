@@ -33,8 +33,8 @@ namespace NAudio.CoreAudioApi.Interfaces
         int IsFormatSupported(
             AudioClientShareMode shareMode,
             [In] WaveFormat pFormat,
-            [Out, MarshalAs(UnmanagedType.LPStruct)] out WaveFormatExtensible closestMatch);
-
+            [Out, MarshalAs(UnmanagedType.LPStruct)] out WaveFormatExtensible closestMatchFormat);
+        
         int GetMixFormat(out IntPtr deviceFormatPointer);
 
         // REFERENCE_TIME is 64 bit int        

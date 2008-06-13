@@ -183,9 +183,10 @@ namespace NAudio.Wave
                 // The MixFormat is more likely to be a WaveFormatExtensible.
                 if (closestSampleRateFormat == null)
                 {
-                    WaveFormat correctSampleRateFormat = WaveFormat.CreateIeeeFloatWaveFormat(
+                    WaveFormat correctSampleRateFormat = audioClient.MixFormat;
+                        /*WaveFormat.CreateIeeeFloatWaveFormat(
                         audioClient.MixFormat.SampleRate,
-                        audioClient.MixFormat.Channels);
+                        audioClient.MixFormat.Channels);*/
 
                     if (!audioClient.IsFormatSupported(shareMode, correctSampleRateFormat))
                     {

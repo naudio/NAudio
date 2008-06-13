@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.comboBoxLatency = new System.Windows.Forms.ComboBox();
             this.radioButtonDirectSound = new System.Windows.Forms.RadioButton();
             this.radioButtonWaveOutWindow = new System.Windows.Forms.RadioButton();
@@ -36,15 +37,20 @@
             this.buttonControlPanel = new System.Windows.Forms.Button();
             this.groupBoxDriverModel = new System.Windows.Forms.GroupBox();
             this.label1 = new System.Windows.Forms.Label();
+            this.radioButtonDirectSoundNative = new System.Windows.Forms.RadioButton();
+            this.radioButtonWasapiExclusive = new System.Windows.Forms.RadioButton();
             this.radioButtonWasapi = new System.Windows.Forms.RadioButton();
             this.buttonLoad = new System.Windows.Forms.Button();
-            this.volumeSlider1 = new NAudio.Gui.VolumeSlider();
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
             this.buttonPlay = new System.Windows.Forms.ToolStripButton();
             this.buttonPause = new System.Windows.Forms.ToolStripButton();
             this.buttonStop = new System.Windows.Forms.ToolStripButton();
+            this.volumeSlider1 = new NAudio.Gui.VolumeSlider();
+            this.trackBarPosition = new System.Windows.Forms.TrackBar();
+            this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.groupBoxDriverModel.SuspendLayout();
             this.toolStrip1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.trackBarPosition)).BeginInit();
             this.SuspendLayout();
             // 
             // comboBoxLatency
@@ -93,7 +99,7 @@
             // radioButtonAsio
             // 
             this.radioButtonAsio.AutoSize = true;
-            this.radioButtonAsio.Location = new System.Drawing.Point(6, 90);
+            this.radioButtonAsio.Location = new System.Drawing.Point(6, 158);
             this.radioButtonAsio.Name = "radioButtonAsio";
             this.radioButtonAsio.Size = new System.Drawing.Size(50, 17);
             this.radioButtonAsio.TabIndex = 9;
@@ -103,7 +109,7 @@
             // 
             // buttonControlPanel
             // 
-            this.buttonControlPanel.Location = new System.Drawing.Point(70, 87);
+            this.buttonControlPanel.Location = new System.Drawing.Point(71, 158);
             this.buttonControlPanel.Name = "buttonControlPanel";
             this.buttonControlPanel.Size = new System.Drawing.Size(135, 23);
             this.buttonControlPanel.TabIndex = 12;
@@ -118,12 +124,14 @@
             this.groupBoxDriverModel.Controls.Add(this.buttonControlPanel);
             this.groupBoxDriverModel.Controls.Add(this.comboBoxLatency);
             this.groupBoxDriverModel.Controls.Add(this.radioButtonWaveOutWindow);
+            this.groupBoxDriverModel.Controls.Add(this.radioButtonDirectSoundNative);
             this.groupBoxDriverModel.Controls.Add(this.radioButtonDirectSound);
+            this.groupBoxDriverModel.Controls.Add(this.radioButtonWasapiExclusive);
             this.groupBoxDriverModel.Controls.Add(this.radioButtonWasapi);
             this.groupBoxDriverModel.Controls.Add(this.radioButtonAsio);
             this.groupBoxDriverModel.Location = new System.Drawing.Point(12, 30);
             this.groupBoxDriverModel.Name = "groupBoxDriverModel";
-            this.groupBoxDriverModel.Size = new System.Drawing.Size(211, 143);
+            this.groupBoxDriverModel.Size = new System.Drawing.Size(211, 187);
             this.groupBoxDriverModel.TabIndex = 13;
             this.groupBoxDriverModel.TabStop = false;
             this.groupBoxDriverModel.Text = "Output Driver";
@@ -136,6 +144,28 @@
             this.label1.Size = new System.Drawing.Size(20, 13);
             this.label1.TabIndex = 13;
             this.label1.Text = "ms";
+            // 
+            // radioButtonDirectSoundNative
+            // 
+            this.radioButtonDirectSoundNative.AutoSize = true;
+            this.radioButtonDirectSoundNative.Location = new System.Drawing.Point(6, 90);
+            this.radioButtonDirectSoundNative.Name = "radioButtonDirectSoundNative";
+            this.radioButtonDirectSoundNative.Size = new System.Drawing.Size(118, 17);
+            this.radioButtonDirectSoundNative.TabIndex = 9;
+            this.radioButtonDirectSoundNative.TabStop = true;
+            this.radioButtonDirectSoundNative.Text = "DirectSound Native";
+            this.radioButtonDirectSoundNative.UseVisualStyleBackColor = true;
+            // 
+            // radioButtonWasapiExclusive
+            // 
+            this.radioButtonWasapiExclusive.AutoSize = true;
+            this.radioButtonWasapiExclusive.Location = new System.Drawing.Point(6, 135);
+            this.radioButtonWasapiExclusive.Name = "radioButtonWasapiExclusive";
+            this.radioButtonWasapiExclusive.Size = new System.Drawing.Size(145, 17);
+            this.radioButtonWasapiExclusive.TabIndex = 9;
+            this.radioButtonWasapiExclusive.TabStop = true;
+            this.radioButtonWasapiExclusive.Text = "WASAPI Exclusive Mode";
+            this.radioButtonWasapiExclusive.UseVisualStyleBackColor = true;
             // 
             // radioButtonWasapi
             // 
@@ -157,15 +187,6 @@
             this.buttonLoad.Text = "Load";
             this.buttonLoad.UseVisualStyleBackColor = true;
             this.buttonLoad.Click += new System.EventHandler(this.buttonLoad_Click);
-            // 
-            // volumeSlider1
-            // 
-            this.volumeSlider1.Location = new System.Drawing.Point(229, 79);
-            this.volumeSlider1.Name = "volumeSlider1";
-            this.volumeSlider1.Size = new System.Drawing.Size(96, 16);
-            this.volumeSlider1.TabIndex = 11;
-            this.volumeSlider1.Volume = 1F;
-            this.volumeSlider1.VolumeChanged += new System.EventHandler(this.volumeSlider1_VolumeChanged);
             // 
             // toolStrip1
             // 
@@ -209,11 +230,35 @@
             this.buttonStop.Text = "Stop";
             this.buttonStop.Click += new System.EventHandler(this.buttonStop_Click);
             // 
+            // volumeSlider1
+            // 
+            this.volumeSlider1.Location = new System.Drawing.Point(229, 79);
+            this.volumeSlider1.Name = "volumeSlider1";
+            this.volumeSlider1.Size = new System.Drawing.Size(96, 16);
+            this.volumeSlider1.TabIndex = 11;
+            this.volumeSlider1.Volume = 1F;
+            this.volumeSlider1.VolumeChanged += new System.EventHandler(this.volumeSlider1_VolumeChanged);
+            // 
+            // trackBarPosition
+            // 
+            this.trackBarPosition.Location = new System.Drawing.Point(12, 223);
+            this.trackBarPosition.Name = "trackBarPosition";
+            this.trackBarPosition.Size = new System.Drawing.Size(489, 45);
+            this.trackBarPosition.TabIndex = 16;
+            this.trackBarPosition.Scroll += new System.EventHandler(this.trackBarPosition_Scroll);
+            // 
+            // timer1
+            // 
+            this.timer1.Enabled = true;
+            this.timer1.Interval = 500;
+            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
+            // 
             // AudioPlaybackForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(513, 266);
+            this.Controls.Add(this.trackBarPosition);
             this.Controls.Add(this.toolStrip1);
             this.Controls.Add(this.buttonLoad);
             this.Controls.Add(this.groupBoxDriverModel);
@@ -227,6 +272,7 @@
             this.groupBoxDriverModel.PerformLayout();
             this.toolStrip1.ResumeLayout(false);
             this.toolStrip1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.trackBarPosition)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -249,5 +295,9 @@
         private System.Windows.Forms.ToolStripButton buttonPlay;
         private System.Windows.Forms.ToolStripButton buttonPause;
         private System.Windows.Forms.ToolStripButton buttonStop;
+        private System.Windows.Forms.RadioButton radioButtonDirectSoundNative;
+        private System.Windows.Forms.RadioButton radioButtonWasapiExclusive;
+        private System.Windows.Forms.TrackBar trackBarPosition;
+        private System.Windows.Forms.Timer timer1;
     }
 }

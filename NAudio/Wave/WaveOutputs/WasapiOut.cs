@@ -73,8 +73,10 @@ namespace NAudio.Wave
                 }
 
                 // fill a whole buffer
+                //bufferFrameCount = audioClient.BufferSize;
+                //bytesPerFrame = audioClient.MixFormat.Channels * audioClient.MixFormat.BitsPerSample / 8;
                 bufferFrameCount = audioClient.BufferSize;
-                bytesPerFrame = audioClient.MixFormat.Channels * audioClient.MixFormat.BitsPerSample / 8;
+                bytesPerFrame = outputFormat.Channels * outputFormat.BitsPerSample / 8;
                 readBuffer = new byte[bufferFrameCount * bytesPerFrame];
                 FillBuffer(bufferFrameCount);
 
@@ -195,7 +197,40 @@ namespace NAudio.Wave
 
                     if (!audioClient.IsFormatSupported(shareMode, correctSampleRateFormat))
                     {
-                        throw new NotSupportedException("Can't find a supported format to use");
+                        // Iterate from Worst to Best Format
+                        WaveFormatExtensible[] bestToWorstFormats = {
+                                                                          new WaveFormatExtensible(
+                                                                              outputFormat.SampleRate, 32,
+                                                                              outputFormat.Channels),
+                                                                          new WaveFormatExtensible(
+                                                                              outputFormat.SampleRate, 24,
+                                                                              outputFormat.Channels),
+                                                                          new WaveFormatExtensible(
+                                                                              outputFormat.SampleRate, 16,
+                                                                              outputFormat.Channels)
+                                                                      };
+
+                        // Check from best Format to worst format ( Float32, Int24, Int16 )
+                        for (int i = 0; i < bestToWorstFormats.Length; i++ )
+                        {
+                            correctSampleRateFormat = bestToWorstFormats[i];
+                            if ( audioClient.IsFormatSupported(shareMode, correctSampleRateFormat) )
+                            {
+                                break;
+                            }
+                            correctSampleRateFormat = null;
+                        }
+
+                        // If still null, then test on the PCM16, 2 channels
+                        if (correctSampleRateFormat == null)
+                        {
+                            // Last Last Last Chance (Thanks WASAPI)
+                            correctSampleRateFormat = new WaveFormatExtensible(outputFormat.SampleRate, 16, 2);
+                            if (!audioClient.IsFormatSupported(shareMode, correctSampleRateFormat))
+                            {
+                                throw new NotSupportedException("Can't find a supported format to use");
+                            }
+                        }
                     }
                     outputFormat = correctSampleRateFormat;
                 }
@@ -216,7 +251,7 @@ namespace NAudio.Wave
             }
             this.sourceStream = waveStream;
 
-            audioClient.Initialize(shareMode, AudioClientStreamFlags.None, latencyRefTimes, latencyRefTimes,
+            audioClient.Initialize(shareMode, AudioClientStreamFlags.None, latencyRefTimes, 0,
                 outputFormat, Guid.Empty);
             renderClient = audioClient.AudioRenderClient;
         }

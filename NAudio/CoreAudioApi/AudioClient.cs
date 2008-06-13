@@ -157,33 +157,41 @@ namespace NAudio.CoreAudioApi
             return IsFormatSupported(shareMode, desiredFormat, out closestMatchFormat);
         }
 
+
+
         /// <summary>
-        /// Determines if the specified output format is supported
+        /// Determines if the specified output format is supported in shared mode
         /// </summary>
-        /// <param name="shareMode">Share Mode</param>
         /// <param name="desiredFormat">Desired Format</param>
         /// <param name="closestMatchFormat">Output The closest match format.</param>
         /// <returns>
         /// 	<c>true</c> if [is format supported] [the specified share mode]; otherwise, <c>false</c>.
         /// </returns>
-        public bool IsFormatSupported(AudioClientShareMode shareMode,
-            WaveFormat desiredFormat, out WaveFormatExtensible closestMatchFormat )
+        public bool IsFormatSupported(AudioClientShareMode shareMode, WaveFormat desiredFormat, out WaveFormatExtensible closestMatchFormat)
         {
             int hresult = audioClientInterface.IsFormatSupported(shareMode, desiredFormat, out closestMatchFormat);
-
             // S_OK is 0, S_FALSE = 1
             if (hresult == 0)
             {
                 // directly supported
                 return true;
-            } 
-            if (hresult == 1 || hresult == (int)AudioClientErrors.UnsupportedFormat)
+            }
+            if (hresult == 1)
             {
                 return false;
             }
-            Marshal.ThrowExceptionForHR(hresult);
-            return false; // Should never be reached
+            else if (hresult == (int)AudioClientErrors.UnsupportedFormat)
+            {
+                return false;
+            }
+            else
+            {
+                Marshal.ThrowExceptionForHR(hresult);
+            }
+            // shouldn't get here
+            throw new NotSupportedException("Unknown hresult " + hresult.ToString());
         }
+
 
         /// <summary>
         /// Starts the audio stream

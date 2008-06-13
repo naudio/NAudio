@@ -17,6 +17,7 @@ namespace NAudioDemo
         IWavePlayer waveOut;
         List<WaveStream> inputs = new List<WaveStream>();
         string fileName = null;
+        WaveStream mainOutputStream;
 
         public AudioPlaybackForm()
         {            
@@ -50,7 +51,9 @@ namespace NAudioDemo
 
             CreateWaveOut();
 
-            WaveStream reader = new WaveChannel32(new WaveFileReader(fileName));
+            WaveStream reader = CreateInputStream(fileName);
+            trackBarPosition.Maximum = (int) reader.TotalTime.TotalSeconds;
+            trackBarPosition.TickFrequency = trackBarPosition.Maximum / 30;
             inputs.Add(reader);
             
             if (inputs.Count == 0)
@@ -61,10 +64,27 @@ namespace NAudioDemo
 
             WaveMixerStream32 mixer = new WaveMixerStream32(inputs, false);
             //Wave32To16Stream mixdown = new Wave32To16Stream(mixer);
+            mainOutputStream = mixer;
             waveOut.Init(mixer);
             waveOut.Volume = volumeSlider1.Volume;
             groupBoxDriverModel.Enabled = false;
             waveOut.Play();
+        }
+
+        private WaveStream CreateInputStream(string fileName)
+        {
+            if (fileName.EndsWith(".wav"))
+            {
+                return new WaveChannel32(new WaveFileReader(fileName));
+            }
+            else if (fileName.EndsWith(".mp3"))
+            {                
+                return new WaveChannel32(WaveFormatConversionStream.CreatePcmStream(new Mp3FileReader(fileName)));
+            }
+            else
+            {
+                throw new InvalidOperationException("Unsupported extension");
+            }
         }
 
         private void CreateWaveOut()
@@ -83,9 +103,17 @@ namespace NAudioDemo
             {
                 waveOut = new DirectSoundOut(this, latency);
             }
+            else if (radioButtonDirectSoundNative.Checked)
+            {
+                waveOut = new NativeDirectSoundOut(latency);
+            }
             else if (radioButtonAsio.Checked)
             {
                 waveOut = new AsioOut(0);
+            }
+            else if (radioButtonWasapiExclusive.Checked)
+            {
+                waveOut = new WasapiOut(AudioClientShareMode.Exclusive, latency);
             }
             else
             {
@@ -169,7 +197,7 @@ namespace NAudioDemo
                 Settings.Default.Save();
             }*/
             OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "WAV files (*.wav)|*.wav|All Files (*.*)|*.*";
+            openFileDialog.Filter = "WAV files (*.wav)|*.wav|MP3 Files (*.mp3)|*.mp3|All Files (*.*)|*.*";
             openFileDialog.FilterIndex = 1;
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
@@ -183,6 +211,22 @@ namespace NAudioDemo
             {
                 waveOut.Stop();
                 groupBoxDriverModel.Enabled = true;
+            }
+        }
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            if (waveOut != null)
+            {
+                trackBarPosition.Value = (int)mainOutputStream.CurrentTime.TotalSeconds;
+            }
+        }
+
+        private void trackBarPosition_Scroll(object sender, EventArgs e)
+        {
+            if (waveOut != null)
+            {
+                mainOutputStream.CurrentTime = TimeSpan.FromSeconds(trackBarPosition.Value);
             }
         }
 

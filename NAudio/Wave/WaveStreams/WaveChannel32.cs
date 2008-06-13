@@ -102,6 +102,20 @@ namespace NAudio.Wave
             }
         }
 
+        byte[] sourceBuffer;
+
+        /// <summary>
+        /// Helper function to avoid creating a new buffer every read
+        /// </summary>
+        byte[] GetSourceBuffer(int bytesRequired)
+        {
+            if (sourceBuffer == null || sourceBuffer.Length < bytesRequired)
+            {
+                sourceBuffer = new byte[Math.Min(sourceStream.WaveFormat.AverageBytesPerSecond,bytesRequired)];
+            }
+            return sourceBuffer;
+        }
+
         /// <summary>
         /// Reads bytes from this wave stream
         /// </summary>
@@ -124,7 +138,7 @@ namespace NAudio.Wave
                 if (sourceStream.WaveFormat.Channels == 1)
                 {
                     int sourceBytesRequired = (numBytes - bytesWritten) / 4;
-                    byte[] sourceBuffer = new byte[sourceBytesRequired];
+                    byte[] sourceBuffer = GetSourceBuffer(sourceBytesRequired);
                     int read = sourceStream.Read(sourceBuffer, 0, sourceBytesRequired);
                     MonoToStereo(destBuffer, offset + bytesWritten, sourceBuffer, read);
                     bytesWritten += (read * 4);
@@ -132,7 +146,7 @@ namespace NAudio.Wave
                 else
                 {
                     int sourceBytesRequired = (numBytes - bytesWritten) / 2;
-                    byte[] sourceBuffer = new byte[sourceBytesRequired];
+                    byte[] sourceBuffer = GetSourceBuffer(sourceBytesRequired);
                     int read = sourceStream.Read(sourceBuffer, 0, sourceBytesRequired);
                     AdjustVolume(destBuffer, offset + bytesWritten, sourceBuffer, read);
                     bytesWritten += (read * 2);
@@ -156,6 +170,7 @@ namespace NAudio.Wave
                 float* pfDestBuffer = (float*)pDestBuffer;
                 short* psSourceBuffer = (short*)pSourceBuffer;
 
+                // TODO:implement better panning laws. This one has 50% volume in middle
                 float leftVolume = (volume * (1 - pan) / 2.0f) / 32768f;
                 float rightVolume = (volume * (pan + 1) / 2.0f) / 32768f;
                 int samplesRead = bytesRead / 2;

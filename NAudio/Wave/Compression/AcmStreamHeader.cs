@@ -52,7 +52,7 @@ namespace NAudio.Wave
             }
         }
 
-        public int Convert(int bytesToConvert)
+        public int Convert(int bytesToConvert, out int sourceBytesConverted)
         {
             Prepare();
             try
@@ -63,13 +63,7 @@ namespace NAudio.Wave
                 MmException.Try(AcmInterop.acmStreamConvert(streamHandle, streamHeader, flags), "acmStreamConvert");
                 firstTime = false;
                 System.Diagnostics.Debug.Assert(streamHeader.destBufferLength == destBuffer.Length, "Codecs should not change dest buffer length");
-
-                if (streamHeader.sourceBufferLengthUsed != bytesToConvert)
-                {
-                    // TODO: a more appropriate exception type
-                    throw new MmException(MmResult.NotSupported, "AcmStreamHeader.Convert didn't convert everything");
-                }
-                int bytesConverted = streamHeader.destBufferLengthUsed;
+                sourceBytesConverted = streamHeader.sourceBufferLengthUsed;
             }
             finally
             {

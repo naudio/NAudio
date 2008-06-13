@@ -831,9 +831,12 @@
   <change>
     <version>1.2.135.0</version>
     <author>Mark Heath</author>
+    <date>13 Jun 2008</date>
     <desc>More unit tests for AudioClient</desc>
     <desc>Added option for WASAPI exclusive mode to NAudio Demo (not working yet)</desc>
     <desc>NAudioDemo can play MP3 files (not at low latency though)</desc>
     <desc>Position bar in NAudioDemo</desc>
+    <desc>Performance enhancements to WaveChannel32</desc>
+    <desc>MP3 playback less choppy</desc>
   </change>
 </changes>

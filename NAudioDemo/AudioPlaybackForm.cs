@@ -49,7 +49,15 @@ namespace NAudioDemo
                 return;
             }
 
-            CreateWaveOut();
+            try
+            {
+                CreateWaveOut();
+            }
+            catch (Exception driverCreateException)
+            {
+                MessageBox.Show(String.Format("{0}", driverCreateException.Message));
+                return;
+            }
 
             WaveStream reader = CreateInputStream(fileName);
             trackBarPosition.Maximum = (int) reader.TotalTime.TotalSeconds;
@@ -62,10 +70,10 @@ namespace NAudioDemo
                 return;
             }
 
-            WaveMixerStream32 mixer = new WaveMixerStream32(inputs, false);
+            //WaveMixerStream32 mixer = new WaveMixerStream32(inputs, false);
             //Wave32To16Stream mixdown = new Wave32To16Stream(mixer);
-            mainOutputStream = mixer;
-            waveOut.Init(mixer);
+            mainOutputStream = inputs[0];
+            waveOut.Init(mainOutputStream);
             waveOut.Volume = volumeSlider1.Volume;
             groupBoxDriverModel.Enabled = false;
             waveOut.Play();

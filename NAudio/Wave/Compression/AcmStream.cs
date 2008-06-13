@@ -13,6 +13,7 @@ namespace NAudio.Wave
         private IntPtr streamHandle;
         private IntPtr driverHandle;
         private AcmStreamHeader streamHeader;
+        private WaveFormat sourceFormat;
 
         /// <summary>
         /// Creates a new ACM stream to convert one format to another. Note that
@@ -22,16 +23,35 @@ namespace NAudio.Wave
         /// <param name="destFormat">The destination audio format</param>
         public AcmStream(WaveFormat sourceFormat, WaveFormat destFormat)
         {
-            int sourceBufferSize = sourceFormat.AverageBytesPerSecond;
-            sourceBufferSize -= (sourceBufferSize % sourceFormat.BlockAlign);
-            MmException.Try(AcmInterop.acmStreamOpen(out streamHandle, IntPtr.Zero, sourceFormat, destFormat, null, 0, 0, AcmStreamOpenFlags.NonRealTime), "acmStreamOpen");
-            streamHeader = new AcmStreamHeader(streamHandle, sourceBufferSize, SourceToDest(sourceBufferSize));
-            driverHandle = IntPtr.Zero;
+            try
+            {
+                streamHandle = IntPtr.Zero;
+                this.sourceFormat = sourceFormat;
+                int sourceBufferSize = Math.Max(16384, sourceFormat.AverageBytesPerSecond);
+                sourceBufferSize -= (sourceBufferSize % sourceFormat.BlockAlign);
+                MmException.Try(AcmInterop.acmStreamOpen(out streamHandle, IntPtr.Zero, sourceFormat, destFormat, null, 0, 0, AcmStreamOpenFlags.NonRealTime), "acmStreamOpen");
+                streamHeader = new AcmStreamHeader(streamHandle, sourceBufferSize, SourceToDest(sourceBufferSize));
+                driverHandle = IntPtr.Zero;
+            }
+            catch
+            {
+                // suppress the finalise and clean up resources
+                Dispose();
+                throw;
+            }
         }
 
+        /// <summary>
+        /// Creates a new ACM stream to convert one format to another, using a 
+        /// specified driver identified and wave filter
+        /// </summary>
+        /// <param name="driverId">the driver identifier</param>
+        /// <param name="sourceFormat">the source format</param>
+        /// <param name="waveFilter">the wave filter</param>
         public AcmStream(int driverId, WaveFormat sourceFormat, WaveFilter waveFilter)
         {
-            int sourceBufferSize = sourceFormat.AverageBytesPerSecond;
+            int sourceBufferSize = Math.Max(16384, sourceFormat.AverageBytesPerSecond);
+            this.sourceFormat = sourceFormat;
             sourceBufferSize -= (sourceBufferSize % sourceFormat.BlockAlign);
             MmException.Try(AcmInterop.acmDriverOpen(out driverHandle, driverId, 0), "acmDriverOpen");
             MmException.Try(AcmInterop.acmStreamOpen(out streamHandle, driverHandle,
@@ -109,10 +129,34 @@ namespace NAudio.Wave
         /// </summary>
         /// <param name="bytesToConvert">The number of bytes in the SourceBuffer
         /// that need to be converted</param>
+        /// <param name="sourceBytesConverted">The number of source bytes actually converted</param>
+        /// <returns>The number of converted bytes in the DestinationBuffer</returns>
+        public int Convert(int bytesToConvert, out int sourceBytesConverted)
+        {
+            if (bytesToConvert % sourceFormat.BlockAlign != 0)
+            {
+                System.Diagnostics.Debug.WriteLine(String.Format("NOT A WHOLE NUMBER OF BLOCKS", bytesToConvert));
+                bytesToConvert -= (bytesToConvert % sourceFormat.BlockAlign);
+            }
+
+            return streamHeader.Convert(bytesToConvert, out sourceBytesConverted);
+        }
+
+        /// <summary>
+        /// Converts the contents of the SourceBuffer into the DestinationBuffer
+        /// </summary>
+        /// <param name="bytesToConvert">The number of bytes in the SourceBuffer
+        /// that need to be converted</param>
         /// <returns>The number of converted bytes in the DestinationBuffer</returns>
         public int Convert(int bytesToConvert)
         {
-            return streamHeader.Convert(bytesToConvert);
+            int sourceBytesConverted;
+            int destBytes = Convert(bytesToConvert, out sourceBytesConverted);
+            if (sourceBytesConverted != bytesToConvert)
+            {
+                throw new MmException(MmResult.NotSupported, "AcmStreamHeader.Convert didn't convert everything");
+            }
+            return destBytes;
         }
 
         /* Relevant only for async conversion streams

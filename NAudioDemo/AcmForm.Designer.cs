@@ -32,12 +32,12 @@
             this.label1 = new System.Windows.Forms.Label();
             this.buttonEncode = new System.Windows.Forms.Button();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.checkBoxAutoLaunchEncodedFile = new System.Windows.Forms.CheckBox();
             this.radioButton5 = new System.Windows.Forms.RadioButton();
             this.radioButtonGsm610 = new System.Windows.Forms.RadioButton();
             this.radioButtonAdpcm = new System.Windows.Forms.RadioButton();
             this.radioButtonALaw = new System.Windows.Forms.RadioButton();
             this.radioButtonMuLaw = new System.Windows.Forms.RadioButton();
-            this.checkBoxAutoLaunchEncodedFile = new System.Windows.Forms.CheckBox();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -50,6 +50,8 @@
             this.listBoxAcmDrivers.Name = "listBoxAcmDrivers";
             this.listBoxAcmDrivers.Size = new System.Drawing.Size(358, 95);
             this.listBoxAcmDrivers.TabIndex = 0;
+            this.listBoxAcmDrivers.SelectedIndexChanged += new System.EventHandler(this.listBoxAcmDrivers_SelectedIndexChanged);
+            this.listBoxAcmDrivers.DoubleClick += new System.EventHandler(this.listBoxAcmDrivers_DoubleClick);
             // 
             // label1
             // 
@@ -85,6 +87,16 @@
             this.groupBox1.TabIndex = 3;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Encode";
+            // 
+            // checkBoxAutoLaunchEncodedFile
+            // 
+            this.checkBoxAutoLaunchEncodedFile.AutoSize = true;
+            this.checkBoxAutoLaunchEncodedFile.Location = new System.Drawing.Point(6, 163);
+            this.checkBoxAutoLaunchEncodedFile.Name = "checkBoxAutoLaunchEncodedFile";
+            this.checkBoxAutoLaunchEncodedFile.Size = new System.Drawing.Size(152, 17);
+            this.checkBoxAutoLaunchEncodedFile.TabIndex = 5;
+            this.checkBoxAutoLaunchEncodedFile.Text = "Auto-Launch Encoded File";
+            this.checkBoxAutoLaunchEncodedFile.UseVisualStyleBackColor = true;
             // 
             // radioButton5
             // 
@@ -140,16 +152,6 @@
             this.radioButtonMuLaw.TabStop = true;
             this.radioButtonMuLaw.Text = "Mu-Law";
             this.radioButtonMuLaw.UseVisualStyleBackColor = true;
-            // 
-            // checkBoxAutoLaunchEncodedFile
-            // 
-            this.checkBoxAutoLaunchEncodedFile.AutoSize = true;
-            this.checkBoxAutoLaunchEncodedFile.Location = new System.Drawing.Point(6, 163);
-            this.checkBoxAutoLaunchEncodedFile.Name = "checkBoxAutoLaunchEncodedFile";
-            this.checkBoxAutoLaunchEncodedFile.Size = new System.Drawing.Size(152, 17);
-            this.checkBoxAutoLaunchEncodedFile.TabIndex = 5;
-            this.checkBoxAutoLaunchEncodedFile.Text = "Auto-Launch Encoded File";
-            this.checkBoxAutoLaunchEncodedFile.UseVisualStyleBackColor = true;
             // 
             // AcmForm
             // 

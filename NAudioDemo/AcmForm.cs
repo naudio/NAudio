@@ -115,5 +115,17 @@ namespace NAudioDemo
             }
             return null;
         }
+
+        private void listBoxAcmDrivers_DoubleClick(object sender, EventArgs e)
+        {
+            AcmDriver driver = listBoxAcmDrivers.SelectedItem as AcmDriver;
+            AcmDriverDetailsForm driverDetailsForm = new AcmDriverDetailsForm(driver);
+            driverDetailsForm.ShowDialog();
+        }
+
+        private void listBoxAcmDrivers_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
     }
 }

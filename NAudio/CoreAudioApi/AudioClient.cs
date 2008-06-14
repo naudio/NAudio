@@ -233,6 +233,9 @@ namespace NAudio.CoreAudioApi
 
         #region IDisposable Members
 
+        /// <summary>
+        /// Dispose
+        /// </summary>
         public void Dispose()
         {
             if (audioClientInterface != null)

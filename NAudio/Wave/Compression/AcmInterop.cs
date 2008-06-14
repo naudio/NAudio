@@ -11,6 +11,27 @@ namespace NAudio.Wave
     {
         public delegate bool AcmDriverEnumCallback(int hAcmDriverId, int instance, AcmDriverDetailsSupportFlags flags);
 
+        public delegate bool AcmFormatEnumCallback(int hAcmDriverId, ref AcmFormatDetails formatDetails, IntPtr dwInstance, AcmDriverDetailsSupportFlags flags);
+
+        public delegate bool AcmFormatTagEnumCallback(int hAcmDriverId, ref AcmFormatTagDetails formatTagDetails, IntPtr dwInstance, AcmDriverDetailsSupportFlags flags);
+
+        // not done:
+        // acmDriverAdd
+        // acmDriverID
+        // acmDriverMessage
+        // acmDriverRemove
+        // acmFilterChoose
+        // acmFilterChooseHookProc
+        // acmFilterDetails
+        // acmFilterEnum -acmFilterEnumCallback
+        // acmFilterTagDetails
+        // acmFilterTagEnum
+        // acmFormatChoose
+        // acmFormatDetails        
+        // acmFormatTagDetails
+        // acmGetVersion
+        // acmStreamMessage
+
         [DllImport("Msacm32.dll")]
         public static extern MmResult acmDriverClose(IntPtr hAcmDriver, int closeFlags);
         [DllImport("Msacm32.dll")]
@@ -20,9 +41,13 @@ namespace NAudio.Wave
         [DllImport("Msacm32.dll")]
         public static extern MmResult acmDriverOpen(out IntPtr pAcmDriver, int hAcmDriverId, int openFlags);
         [DllImport("Msacm32.dll")]
-        public static extern MmResult acmMetrics(IntPtr hAcmObject, AcmMetrics metric, out int output);
+        public static extern MmResult acmFormatEnum(IntPtr hAcmDriver, ref AcmFormatDetails formatDetails, AcmFormatEnumCallback callback, IntPtr instance, AcmFormatEnumFlags flags);
         [DllImport("Msacm32.dll")]
         public static extern MmResult acmFormatSuggest(IntPtr hAcmDriver, WaveFormat sourceFormat, WaveFormat destFormat, int sizeDestFormat, AcmFormatSuggestFlags suggestFlags);
+        [DllImport("Msacm32.dll")]
+        public static extern MmResult acmFormatTagEnum(IntPtr hAcmDriver, ref AcmFormatTagDetails formatTagDetails, AcmFormatTagEnumCallback callback, IntPtr instance, int reserved);
+        [DllImport("Msacm32.dll")]
+        public static extern MmResult acmMetrics(IntPtr hAcmObject, AcmMetrics metric, out int output);
         [DllImport("Msacm32.dll")]
         public static extern MmResult acmStreamOpen(out IntPtr hAcmStream, IntPtr hAcmDriver, WaveFormat sourceFormat, WaveFormat destFormat, WaveFilter waveFilter, int callback, int instance, AcmStreamOpenFlags openFlags);
         [DllImport("Msacm32.dll")]

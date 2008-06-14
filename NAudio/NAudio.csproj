@@ -270,7 +270,12 @@
     <Compile Include="Wave\Compression\AcmDriverDetails.cs" />
     <Compile Include="Wave\Compression\AcmDriverDetailsSupportFlags.cs" />
     <Compile Include="Wave\Compression\AcmDriverEnumFlags.cs" />
+    <Compile Include="Wave\Compression\AcmFormat.cs" />
+    <Compile Include="Wave\Compression\AcmFormatDetails.cs" />
+    <Compile Include="Wave\Compression\AcmFormatEnumFlags.cs" />
     <Compile Include="Wave\Compression\AcmFormatSuggestFlags.cs" />
+    <Compile Include="Wave\Compression\AcmFormatTag.cs" />
+    <Compile Include="Wave\Compression\AcmFormatTagDetails.cs" />
     <Compile Include="Wave\Compression\AcmInterop.cs" />
     <Compile Include="Wave\Compression\AcmMetrics.cs" />
     <Compile Include="Wave\Compression\AcmStream.cs" />

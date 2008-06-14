@@ -30,13 +30,14 @@ namespace NAudioDemo
         {
             this.buttonMidiIn = new System.Windows.Forms.Button();
             this.buttonWavPlayback = new System.Windows.Forms.Button();
+            this.buttonAcmFormatConversion = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // buttonMidiIn
             // 
             this.buttonMidiIn.Location = new System.Drawing.Point(12, 12);
             this.buttonMidiIn.Name = "buttonMidiIn";
-            this.buttonMidiIn.Size = new System.Drawing.Size(121, 23);
+            this.buttonMidiIn.Size = new System.Drawing.Size(156, 23);
             this.buttonMidiIn.TabIndex = 0;
             this.buttonMidiIn.Text = "MIDI In";
             this.buttonMidiIn.UseVisualStyleBackColor = true;
@@ -46,17 +47,28 @@ namespace NAudioDemo
             // 
             this.buttonWavPlayback.Location = new System.Drawing.Point(12, 42);
             this.buttonWavPlayback.Name = "buttonWavPlayback";
-            this.buttonWavPlayback.Size = new System.Drawing.Size(121, 23);
+            this.buttonWavPlayback.Size = new System.Drawing.Size(156, 23);
             this.buttonWavPlayback.TabIndex = 1;
             this.buttonWavPlayback.Text = "WAV Playback";
             this.buttonWavPlayback.UseVisualStyleBackColor = true;
             this.buttonWavPlayback.Click += new System.EventHandler(this.buttonWavPlayback_Click);
+            // 
+            // buttonAcmFormatConversion
+            // 
+            this.buttonAcmFormatConversion.Location = new System.Drawing.Point(12, 71);
+            this.buttonAcmFormatConversion.Name = "buttonAcmFormatConversion";
+            this.buttonAcmFormatConversion.Size = new System.Drawing.Size(156, 23);
+            this.buttonAcmFormatConversion.TabIndex = 1;
+            this.buttonAcmFormatConversion.Text = "ACM Format Conversion";
+            this.buttonAcmFormatConversion.UseVisualStyleBackColor = true;
+            this.buttonAcmFormatConversion.Click += new System.EventHandler(this.buttonAcmFormatConversion_Click);
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(284, 264);
+            this.Controls.Add(this.buttonAcmFormatConversion);
             this.Controls.Add(this.buttonWavPlayback);
             this.Controls.Add(this.buttonMidiIn);
             this.Name = "MainForm";
@@ -69,6 +81,7 @@ namespace NAudioDemo
 
         private System.Windows.Forms.Button buttonMidiIn;
         private System.Windows.Forms.Button buttonWavPlayback;
+        private System.Windows.Forms.Button buttonAcmFormatConversion;
     }
 }
 

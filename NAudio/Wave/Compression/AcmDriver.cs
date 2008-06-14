@@ -49,11 +49,11 @@ namespace NAudio.Wave
         /// <summary>
         /// Gets a list of the ACM Drivers installed
         /// </summary>
-        public static AcmDriver[] EnumerateAcmDrivers()
+        public static IEnumerable<AcmDriver> EnumerateAcmDrivers()
         {
             drivers = new List<AcmDriver>();
             AcmInterop.acmDriverEnum(new AcmInterop.AcmDriverEnumCallback(DriverEnumCallback), 0, 0);
-            return drivers.ToArray();
+            return drivers;
         }
 
         /// <summary>

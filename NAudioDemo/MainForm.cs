@@ -26,5 +26,11 @@ namespace NAudioDemo
             AudioPlaybackForm audioPlaybackForm = new AudioPlaybackForm();
             audioPlaybackForm.ShowDialog();
         }
+
+        private void buttonAcmFormatConversion_Click(object sender, EventArgs e)
+        {
+            AcmForm acmForm = new AcmForm();
+            acmForm.ShowDialog();
+        }
     }
 }

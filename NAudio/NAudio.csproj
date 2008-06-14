@@ -292,6 +292,7 @@
     <Compile Include="Wave\WaveFormats\Mp3WaveFormat.cs" />
     <Compile Include="Wave\WaveFormats\OggWaveFormat.cs" />
     <Compile Include="Wave\WaveFormats\WaveFormat.cs" />
+    <Compile Include="Wave\WaveFormats\WaveFormatAdpcm.cs" />
     <Compile Include="Wave\WaveFormats\WaveFormatEncoding.cs" />
     <Compile Include="Wave\WaveFormats\WaveFormatExtensible.cs" />
     <Compile Include="Wave\WaveFormats\WmaWaveFormat.cs" />

@@ -8,10 +8,11 @@ namespace NAudio.CoreAudioApi
     /// <summary>
     /// Windows Vista CoreAudio AudioClient
     /// </summary>
-    public class AudioClient
+    public class AudioClient : IDisposable
     {
         IAudioClient audioClientInterface;
         WaveFormat mixFormat;
+        AudioRenderClient audioRenderClient;
         
         internal AudioClient(IAudioClient audioClientInterface)
         {
@@ -122,12 +123,12 @@ namespace NAudio.CoreAudioApi
         // TODO: GetService:
         // IID_IAudioCaptureClient
         // IID_IAudioClock
-        // IID_IAudioRenderClient
         // IID_IAudioSessionControl
         // IID_IAudioStreamVolume
         // IID_IChannelAudioVolume
         // IID_ISimpleAudioVolume
 
+        
         /// <summary>
         /// Gets the AudioRenderClient service
         /// </summary>
@@ -135,10 +136,14 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                object audioRenderClientInterface;
-                Guid audioRenderClientGuid = new Guid("F294ACFC-3146-4483-A7BF-ADDCA7C260E2");
-                Marshal.ThrowExceptionForHR(audioClientInterface.GetService(ref audioRenderClientGuid, out audioRenderClientInterface));
-                return new AudioRenderClient((IAudioRenderClient)audioRenderClientInterface);
+                if (audioRenderClient == null)
+                {
+                    object audioRenderClientInterface;
+                    Guid audioRenderClientGuid = new Guid("F294ACFC-3146-4483-A7BF-ADDCA7C260E2");
+                    Marshal.ThrowExceptionForHR(audioClientInterface.GetService(ref audioRenderClientGuid, out audioRenderClientInterface));
+                    audioRenderClient = new AudioRenderClient((IAudioRenderClient)audioRenderClientInterface);
+                }
+                return audioRenderClient;
             }
         }
 
@@ -162,6 +167,7 @@ namespace NAudio.CoreAudioApi
         /// <summary>
         /// Determines if the specified output format is supported in shared mode
         /// </summary>
+        /// <param name="shareMode">Share Mode</param>
         /// <param name="desiredFormat">Desired Format</param>
         /// <param name="closestMatchFormat">Output The closest match format.</param>
         /// <returns>
@@ -224,5 +230,24 @@ namespace NAudio.CoreAudioApi
         // int GetStreamLatency(out long streamLatency);        
         // int SetEventHandle(IntPtr eventHandle);
 
+
+        #region IDisposable Members
+
+        public void Dispose()
+        {
+            if (audioClientInterface != null)
+            {
+                if (audioRenderClient != null)
+                {
+                    audioRenderClient.Dispose();
+                    audioRenderClient = null;
+                }
+                Marshal.ReleaseComObject(audioClientInterface);
+                audioClientInterface = null;
+                GC.SuppressFinalize(this);
+            }
+        }
+
+        #endregion
     }
 }

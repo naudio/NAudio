@@ -9,7 +9,7 @@ namespace NAudio.CoreAudioApi
     /// <summary>
     /// Audio Render Client
     /// </summary>
-    public class AudioRenderClient
+    public class AudioRenderClient : IDisposable
     {
         IAudioRenderClient audioRenderClientInterface;
 
@@ -39,5 +39,24 @@ namespace NAudio.CoreAudioApi
         {
             Marshal.ThrowExceptionForHR(audioRenderClientInterface.ReleaseBuffer(numFramesWritten, bufferFlags));
         }
+
+        #region IDisposable Members
+
+        /// <summary>
+        /// Release the COM object
+        /// </summary>
+        public void Dispose()
+        {
+            if (audioRenderClientInterface != null)
+            {
+                // althugh GC would do this for us, we want it done now
+                // to let us reopen WASAPI
+                Marshal.ReleaseComObject(audioRenderClientInterface);
+                audioRenderClientInterface = null;
+                GC.SuppressFinalize(this);
+            }
+        }
+
+        #endregion
     }
 }

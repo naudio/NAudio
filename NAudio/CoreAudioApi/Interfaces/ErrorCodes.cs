@@ -15,7 +15,10 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// AUDCLNT_E_UNSUPPORTED_FORMAT
         /// </summary>
         UnsupportedFormat = unchecked((int)0x88890008),
-
+        /// <summary>
+        /// AUDCLNT_E_DEVICE_IN_USE
+        /// </summary>
+        DeviceInUse = unchecked((int)0x8889000A),
         
     }
 

@@ -45,7 +45,7 @@ namespace NAudioDemo
 
             if (String.IsNullOrEmpty(fileName))
             {
-                buttonLoad_Click(sender, e);
+                toolStripButtonOpenFile_Click(sender, e);
                 return;
             }
 
@@ -193,26 +193,6 @@ namespace NAudioDemo
             }
         }
 
-        private void buttonLoad_Click(object sender, EventArgs e)
-        {
-            /*FolderBrowserDialog folderDialog = new FolderBrowserDialog();
-            folderDialog.Description = "Select WAV File Folder";
-            folderDialog.SelectedPath = folder;
-            if (folderDialog.ShowDialog() == DialogResult.OK)
-            {
-                folder = folderDialog.SelectedPath;
-                Settings.Default.AudioFolder = folder;
-                Settings.Default.Save();
-            }*/
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "WAV files (*.wav)|*.wav|MP3 Files (*.mp3)|*.mp3|All Files (*.*)|*.*";
-            openFileDialog.FilterIndex = 1;
-            if (openFileDialog.ShowDialog() == DialogResult.OK)
-            {
-                fileName = openFileDialog.FileName;
-            }
-        }
-
         private void buttonStop_Click(object sender, EventArgs e)
         {
             if (waveOut != null)
@@ -235,6 +215,17 @@ namespace NAudioDemo
             if (waveOut != null)
             {
                 mainOutputStream.CurrentTime = TimeSpan.FromSeconds(trackBarPosition.Value);
+            }
+        }
+
+        private void toolStripButtonOpenFile_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.Filter = "WAV files (*.wav)|*.wav|MP3 Files (*.mp3)|*.mp3|All Files (*.*)|*.*";
+            openFileDialog.FilterIndex = 1;
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                fileName = openFileDialog.FileName;
             }
         }
 

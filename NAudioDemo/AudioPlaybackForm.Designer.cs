@@ -40,8 +40,8 @@
             this.radioButtonDirectSoundNative = new System.Windows.Forms.RadioButton();
             this.radioButtonWasapiExclusive = new System.Windows.Forms.RadioButton();
             this.radioButtonWasapi = new System.Windows.Forms.RadioButton();
-            this.buttonLoad = new System.Windows.Forms.Button();
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
+            this.toolStripButtonOpenFile = new System.Windows.Forms.ToolStripButton();
             this.buttonPlay = new System.Windows.Forms.ToolStripButton();
             this.buttonPause = new System.Windows.Forms.ToolStripButton();
             this.buttonStop = new System.Windows.Forms.ToolStripButton();
@@ -178,19 +178,10 @@
             this.radioButtonWasapi.Text = "WASAPI Shared Mode";
             this.radioButtonWasapi.UseVisualStyleBackColor = true;
             // 
-            // buttonLoad
-            // 
-            this.buttonLoad.Location = new System.Drawing.Point(249, 30);
-            this.buttonLoad.Name = "buttonLoad";
-            this.buttonLoad.Size = new System.Drawing.Size(75, 23);
-            this.buttonLoad.TabIndex = 14;
-            this.buttonLoad.Text = "Load";
-            this.buttonLoad.UseVisualStyleBackColor = true;
-            this.buttonLoad.Click += new System.EventHandler(this.buttonLoad_Click);
-            // 
             // toolStrip1
             // 
             this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.toolStripButtonOpenFile,
             this.buttonPlay,
             this.buttonPause,
             this.buttonStop});
@@ -199,6 +190,16 @@
             this.toolStrip1.Size = new System.Drawing.Size(513, 25);
             this.toolStrip1.TabIndex = 15;
             this.toolStrip1.Text = "toolStrip1";
+            // 
+            // toolStripButtonOpenFile
+            // 
+            this.toolStripButtonOpenFile.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.toolStripButtonOpenFile.Image = global::NAudioDemo.Images.Open;
+            this.toolStripButtonOpenFile.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolStripButtonOpenFile.Name = "toolStripButtonOpenFile";
+            this.toolStripButtonOpenFile.Size = new System.Drawing.Size(23, 22);
+            this.toolStripButtonOpenFile.Text = "Open File";
+            this.toolStripButtonOpenFile.Click += new System.EventHandler(this.toolStripButtonOpenFile_Click);
             // 
             // buttonPlay
             // 
@@ -260,7 +261,6 @@
             this.ClientSize = new System.Drawing.Size(513, 266);
             this.Controls.Add(this.trackBarPosition);
             this.Controls.Add(this.toolStrip1);
-            this.Controls.Add(this.buttonLoad);
             this.Controls.Add(this.groupBoxDriverModel);
             this.Controls.Add(this.volumeSlider1);
             this.Name = "AudioPlaybackForm";
@@ -290,7 +290,6 @@
         private System.Windows.Forms.GroupBox groupBoxDriverModel;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.RadioButton radioButtonWasapi;
-        private System.Windows.Forms.Button buttonLoad;
         private System.Windows.Forms.ToolStrip toolStrip1;
         private System.Windows.Forms.ToolStripButton buttonPlay;
         private System.Windows.Forms.ToolStripButton buttonPause;
@@ -299,5 +298,6 @@
         private System.Windows.Forms.RadioButton radioButtonWasapiExclusive;
         private System.Windows.Forms.TrackBar trackBarPosition;
         private System.Windows.Forms.Timer timer1;
+        private System.Windows.Forms.ToolStripButton toolStripButtonOpenFile;
     }
 }

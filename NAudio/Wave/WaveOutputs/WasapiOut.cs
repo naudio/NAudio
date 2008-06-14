@@ -199,16 +199,16 @@ namespace NAudio.Wave
                     {
                         // Iterate from Worst to Best Format
                         WaveFormatExtensible[] bestToWorstFormats = {
-                                                                          new WaveFormatExtensible(
-                                                                              outputFormat.SampleRate, 32,
-                                                                              outputFormat.Channels),
-                                                                          new WaveFormatExtensible(
-                                                                              outputFormat.SampleRate, 24,
-                                                                              outputFormat.Channels),
-                                                                          new WaveFormatExtensible(
-                                                                              outputFormat.SampleRate, 16,
-                                                                              outputFormat.Channels)
-                                                                      };
+                                  new WaveFormatExtensible(
+                                      outputFormat.SampleRate, 32,
+                                      outputFormat.Channels),
+                                  new WaveFormatExtensible(
+                                      outputFormat.SampleRate, 24,
+                                      outputFormat.Channels),
+                                  new WaveFormatExtensible(
+                                      outputFormat.SampleRate, 16,
+                                      outputFormat.Channels),
+                              };
 
                         // Check from best Format to worst format ( Float32, Int24, Int16 )
                         for (int i = 0; i < bestToWorstFormats.Length; i++ )
@@ -291,10 +291,14 @@ namespace NAudio.Wave
         /// </summary>
         public void Dispose()
         {
-            Stop();
-            // allow GC to release the COM object when it runs
-            audioClient = null;
-            renderClient = null;
+            if (audioClient != null)
+            {
+                Stop();
+
+                audioClient.Dispose();
+                audioClient = null;
+                renderClient = null;
+            }
 
         }
 

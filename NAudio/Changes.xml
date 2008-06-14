@@ -839,4 +839,11 @@
     <desc>Performance enhancements to WaveChannel32</desc>
     <desc>MP3 playback less choppy</desc>
   </change>
+  <change>
+    <version>1.2.136.0</version>
+    <author>Mark Heath</author>
+    <date>14 Jun 2008</date>
+    <desc>WASAPI Exclusive mode working (thanks Alexandre)</desc>
+    <desc>Proper closing of WASAPI allowing us immediate re-open</desc>
+  </change>
 </changes>

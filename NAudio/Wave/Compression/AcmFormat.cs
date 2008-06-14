@@ -11,10 +11,14 @@ namespace NAudio.Wave
     public class AcmFormat
     {
         AcmFormatDetails formatDetails;
-
+        WaveFormat waveFormat; 
         internal AcmFormat(AcmFormatDetails formatDetails)
         {
             this.formatDetails = formatDetails;
+            //WaveFormat waveFormat = new WaveFormat();
+            waveFormat = (WaveFormat)Marshal.PtrToStructure(formatDetails.waveFormatPointer, typeof(WaveFormat));
+            //Marshal.PtrToStructure(formatDetails.waveFormatPointer, waveFormat);
+
         }
 
         /// <summary>
@@ -46,8 +50,6 @@ namespace NAudio.Wave
         {
             get 
             {
-                WaveFormat waveFormat = new WaveFormat();
-                Marshal.PtrToStructure(formatDetails.waveFormatPointer, waveFormat);
                 return waveFormat; 
             }
         }

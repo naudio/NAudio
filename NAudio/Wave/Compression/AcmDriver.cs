@@ -177,7 +177,10 @@ namespace NAudio.Wave
         /// </summary>
         public void Open()
         {
-            MmException.Try(AcmInterop.acmDriverOpen(out driverHandle, DriverId, 0),"acmDriverOpen");
+            if (driverHandle == IntPtr.Zero)
+            {
+                MmException.Try(AcmInterop.acmDriverOpen(out driverHandle, DriverId, 0), "acmDriverOpen");
+            }
         }
 
         /// <summary>
@@ -188,6 +191,7 @@ namespace NAudio.Wave
             if(driverHandle != IntPtr.Zero)
             {
                 MmException.Try(AcmInterop.acmDriverClose(driverHandle, 0),"acmDriverClose");
+                driverHandle = IntPtr.Zero;
             }
         }
 

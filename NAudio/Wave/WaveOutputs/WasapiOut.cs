@@ -19,6 +19,8 @@ namespace NAudio.Wave
         int latencyMilliseconds;
         int bufferFrameCount;
         int bytesPerFrame;
+        bool isUsingEventSync;
+        EventWaitHandle frameEventWaitHandle;
         byte[] readBuffer;
         PlaybackState playbackState;
         Thread playThread;
@@ -33,10 +35,38 @@ namespace NAudio.Wave
         /// <param name="shareMode">ShareMode - shared or exclusive</param>
         /// <param name="latency">Desired latency in milliseconds</param>
         public WasapiOut(AudioClientShareMode shareMode, int latency) :
-            this(GetDefaultAudioEndpoint(), shareMode, latency)
+            this(GetDefaultAudioEndpoint(), shareMode, true, latency)
         {
 
         }
+
+        /// <summary>
+        /// WASAPI Out using default audio endpoint
+        /// </summary>
+        /// <param name="shareMode">ShareMode - shared or exclusive</param>
+        /// <param name="useEventSync">true if sync is done with event. false use sleep.</param>
+        /// <param name="latency">Desired latency in milliseconds</param>
+        public WasapiOut(AudioClientShareMode shareMode, bool useEventSync, int latency) :
+            this(GetDefaultAudioEndpoint(), shareMode, useEventSync, latency)
+        {
+
+        }
+
+        /// <summary>
+        /// Creates a new WASAPI Output
+        /// </summary>
+        /// <param name="device">Device to use</param>
+        /// <param name="shareMode"></param>
+        /// <param name="useEventSync">true if sync is done with event. false use sleep.</param>
+        /// <param name="latency"></param>
+        public WasapiOut(MMDevice device, AudioClientShareMode shareMode, bool useEventSync, int latency)
+        {
+            this.audioClient = device.AudioClient;
+            this.shareMode = shareMode;
+            this.isUsingEventSync = useEventSync;
+            this.latencyMilliseconds = latency;
+        }
+
 
         static MMDevice GetDefaultAudioEndpoint()
         {
@@ -45,20 +75,7 @@ namespace NAudio.Wave
                 throw new NotSupportedException("WASAPI supported only on Windows Vista and above");
             }
             MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
-            return enumerator.GetDefaultAudioEndpoint(DataFlow.Render,Role.Console);
-        }
-
-        /// <summary>
-        /// Creates a new WASAPI Output
-        /// </summary>
-        /// <param name="device">Device to use</param>
-        /// <param name="shareMode"></param>
-        /// <param name="latency"></param>
-        public WasapiOut(MMDevice device, AudioClientShareMode shareMode, int latency)
-        {
-            this.audioClient = device.AudioClient;
-            this.shareMode = shareMode;
-            this.latencyMilliseconds = latency;
+            return enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Console);
         }
 
         private void PlayThread()
@@ -80,16 +97,32 @@ namespace NAudio.Wave
                 readBuffer = new byte[bufferFrameCount * bytesPerFrame];
                 FillBuffer(bufferFrameCount);
 
+                // Create WaitHandle for sync
+                WaitHandle[] waitHandles = new WaitHandle[] { frameEventWaitHandle };
+
                 audioClient.Start();
 
                 while (playbackState != PlaybackState.Stopped)
                 {
-                    // Sleep for half the buffer duration.
-                    Thread.Sleep(latencyMilliseconds / 2);
-                    if (playbackState == PlaybackState.Playing)
+                    // If using Event Sync, Wait for notification from AudioClient or Sleep half latency
+                    int indexHandle = 0;
+                    if ( isUsingEventSync ) {
+                        indexHandle = WaitHandle.WaitAny(waitHandles, 3 * latencyMilliseconds, false);
+                    } else {
+                        Thread.Sleep(latencyMilliseconds / 2);
+                    }
+
+                    // If still playing and notification is ok
+                    if (playbackState == PlaybackState.Playing && indexHandle != WaitHandle.WaitTimeout)
                     {
                         // See how much buffer space is available.
-                        int numFramesPadding = audioClient.CurrentPadding;
+                        int numFramesPadding = 0;
+                        if ( isUsingEventSync) {
+                            // In exclusive mode, always ask the max = bufferFrameCount = audioClient.BufferSize
+                            numFramesPadding = (shareMode == AudioClientShareMode.Shared) ? audioClient.CurrentPadding : 0;
+                        } else {
+                            numFramesPadding = audioClient.CurrentPadding;
+                        }
                         int numFramesAvailable = bufferFrameCount - numFramesPadding;
                         if (numFramesAvailable > 0)
                         {
@@ -251,8 +284,38 @@ namespace NAudio.Wave
             }
             this.sourceStream = waveStream;
 
-            audioClient.Initialize(shareMode, AudioClientStreamFlags.None, latencyRefTimes, 0,
-                outputFormat, Guid.Empty);
+            // If using EventSync, setup is specific with shareMode
+            if (isUsingEventSync)
+            {
+                // Init Shared or Exclusive
+                if (shareMode == AudioClientShareMode.Shared)
+                {
+                    // With EventCallBack and Shared, both latencies must be set to 0
+                    audioClient.Initialize(shareMode, AudioClientStreamFlags.EventCallback, 0, 0,
+                        outputFormat, Guid.Empty);
+
+                    // Get back the effective latency from AudioClient
+                    latencyMilliseconds = (int)(audioClient.StreamLatency / 10000);
+                }
+                else
+                {
+                    // With EventCallBack and Exclusive, both latencies must equals
+                    audioClient.Initialize(shareMode, AudioClientStreamFlags.EventCallback, latencyRefTimes, latencyRefTimes,
+                                        outputFormat, Guid.Empty);
+                }
+
+                // Create the Wait Event Handle
+                frameEventWaitHandle = new EventWaitHandle(false, EventResetMode.AutoReset);
+                audioClient.SetEventHandle(frameEventWaitHandle);
+            }
+            else
+            {
+                // Normal setup for both sharedMode
+                audioClient.Initialize(shareMode, AudioClientStreamFlags.None, latencyRefTimes, 0,
+                                    outputFormat, Guid.Empty);
+            }
+
+            // Get the RenderClient
             renderClient = audioClient.AudioRenderClient;
         }
 

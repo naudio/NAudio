@@ -25,7 +25,8 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// </summary>
         int GetBufferSize(out uint bufferSize);
 
-        int GetStreamLatency(out long streamLatency);
+        [return: MarshalAs(UnmanagedType.I8)]
+        long GetStreamLatency();
 
         int GetCurrentPadding(out int currentPadding);
 

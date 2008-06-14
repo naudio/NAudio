@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using NAudio.CoreAudioApi.Interfaces;
 using System.Runtime.InteropServices;
 using NAudio.Wave;
@@ -76,6 +77,17 @@ namespace NAudio.CoreAudioApi
                 uint bufferSize;                
                 Marshal.ThrowExceptionForHR(audioClientInterface.GetBufferSize(out bufferSize));
                 return (int) bufferSize;
+            }
+        }
+
+        /// <summary>
+        /// Gets the stream latency (must initialize first)
+        /// </summary>
+        public long StreamLatency
+        {
+            get
+            {
+                return audioClientInterface.GetStreamLatency();
             }
         }
 
@@ -216,6 +228,15 @@ namespace NAudio.CoreAudioApi
         }
 
         /// <summary>
+        /// Set the Event Handle for buffer synchro.
+        /// </summary>
+        /// <param name="eventWaitHandle">The Wait Handle to setup</param>
+        public void SetEventHandle(EventWaitHandle eventWaitHandle) 
+        {
+            audioClientInterface.SetEventHandle(eventWaitHandle.SafeWaitHandle.DangerousGetHandle());
+        }
+
+        /// <summary>
         /// Resets the audio stream
         /// Reset is a control method that the client calls to reset a stopped audio stream. 
         /// Resetting the stream flushes all pending data and resets the audio clock stream 
@@ -233,9 +254,6 @@ namespace NAudio.CoreAudioApi
 
         #region IDisposable Members
 
-        /// <summary>
-        /// Dispose
-        /// </summary>
         public void Dispose()
         {
             if (audioClientInterface != null)

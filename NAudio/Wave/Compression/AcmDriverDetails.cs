@@ -9,27 +9,75 @@ namespace NAudio.Wave
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
     struct AcmDriverDetails
     {
-        public int cbStruct;
+        /// <summary>
+        /// DWORD cbStruct
+        /// </summary>
+        public int structureSize;
+        /// <summary>
+        /// FOURCC fccType
+        /// </summary>
         public UInt32 fccType;
+        /// <summary>
+        /// FOURCC fccComp
+        /// </summary>
         public UInt32 fccComp;
-        public UInt16 wMid;
-        public UInt16 wPid;
-        public UInt32 vdwACM;
-        public UInt32 vdwDriver;
-        public UInt32 fdwSupport;
-        public UInt32 cFormatTags;
-        public UInt32 cFilterTags;
+        /// <summary>
+        /// WORD   wMid; 
+        /// </summary>
+        public UInt16 manufacturerId;
+        /// <summary>
+        /// WORD wPid
+        /// </summary>
+        public UInt16 productId;
+        /// <summary>
+        /// DWORD vdwACM
+        /// </summary>
+        public UInt32 acmVersion;
+        /// <summary>
+        /// DWORD vdwDriver
+        /// </summary>
+        public UInt32 driverVersion;
+        /// <summary>
+        /// DWORD  fdwSupport;
+        /// </summary>
+        public AcmDriverDetailsSupportFlags supportFlags;
+        /// <summary>
+        /// DWORD cFormatTags
+        /// </summary>
+        public int formatTagsCount;
+        /// <summary>
+        /// DWORD cFilterTags
+        /// </summary>
+        public int filterTagsCount;
+        /// <summary>
+        /// HICON hicon
+        /// </summary>
         public IntPtr hicon;
+        /// <summary>
+        /// TCHAR  szShortName[ACMDRIVERDETAILS_SHORTNAME_CHARS]; 
+        /// </summary>
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = ShortNameChars)]
-        public string szShortName;
+        public string shortName;
+        /// <summary>
+        /// TCHAR  szLongName[ACMDRIVERDETAILS_LONGNAME_CHARS];
+        /// </summary>
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = LongNameChars)]
-        public string szLongName;
+        public string longName;
+        /// <summary>
+        /// TCHAR  szCopyright[ACMDRIVERDETAILS_COPYRIGHT_CHARS]; 
+        /// </summary>
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = CopyrightChars)]
-        public string szCopyright;
+        public string copyright;
+        /// <summary>
+        /// TCHAR  szLicensing[ACMDRIVERDETAILS_LICENSING_CHARS]; 
+        /// </summary>
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = LicensingChars)]
-        public string szLicensing;
+        public string licensing;
+        /// <summary>
+        /// TCHAR  szFeatures[ACMDRIVERDETAILS_FEATURES_CHARS];
+        /// </summary>
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = FeaturesChars)]
-        public string szFeatures;
+        public string features;
 
         /// <summary>
         /// ACMDRIVERDETAILS_SHORTNAME_CHARS

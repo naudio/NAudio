@@ -845,5 +845,9 @@
     <date>14 Jun 2008</date>
     <desc>WASAPI Exclusive mode working (thanks Alexandre)</desc>
     <desc>Proper closing of WASAPI allowing us immediate re-open</desc>
+    <desc>NAudioDemo has some ACM encoding demos (mu-law, a-law working so far)</desc>
+    <desc>Added interop for AcmFormatEnum</desc>
+    <desc>Added interop for AcmFormatTagEnum</desc>
+    <desc>AudioDriver can now enumerate all tags and formats</desc>
   </change>
 </changes>

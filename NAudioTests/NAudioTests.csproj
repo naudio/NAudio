@@ -50,7 +50,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AcmDriverTests.cs" />
+    <Compile Include="Acm\AcmDriverTests.cs" />
     <Compile Include="AudioClientTests.cs" />
     <Compile Include="DmoTests.cs" />
     <Compile Include="MidiEventCollectionTest.cs" />

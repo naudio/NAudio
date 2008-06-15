@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Runtime.InteropServices;
 
-namespace NAudio.Wave
+namespace NAudio.Wave.Compression
 {
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
     struct AcmFormatTagDetails
@@ -35,7 +35,7 @@ namespace NAudio.Wave
         /// <summary>
         /// TCHAR szFormatTag[ACMFORMATTAGDETAILS_FORMATTAG_CHARS]; 
         /// </summary>
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = FormatDescriptionChars)]
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = FormatTagDescriptionChars)]
         public string formatDescription;
 
 
@@ -43,7 +43,7 @@ namespace NAudio.Wave
         /// <summary>
         /// ACMFORMATTAGDETAILS_FORMATTAG_CHARS
         /// </summary>
-        const int FormatDescriptionChars = 48;
+        public const int FormatTagDescriptionChars = 48;
 
     }
 }

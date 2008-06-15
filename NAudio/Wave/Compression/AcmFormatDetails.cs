@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Runtime.InteropServices;
 
-namespace NAudio.Wave
+namespace NAudio.Wave.Compression
 {
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
     struct AcmFormatDetails
@@ -41,6 +41,6 @@ namespace NAudio.Wave
         /// <summary>
         /// ACMFORMATDETAILS_FORMAT_CHARS
         /// </summary>
-        const int FormatDescriptionChars = 128;
+        public const int FormatDescriptionChars = 128;
     }
 }

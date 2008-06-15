@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 using NAudio.Wave;
+using NAudio.Wave.Compression;
 
 namespace NAudioDemo
 {
@@ -126,6 +127,22 @@ namespace NAudioDemo
         private void listBoxAcmDrivers_SelectedIndexChanged(object sender, EventArgs e)
         {
 
+        }
+
+        private void buttonChooseFormat_Click(object sender, EventArgs e)
+        {
+            WaveFormat selectedFormat;
+            string selectedFormatDescription;
+            string selectedFormatTagDescription;
+            if(AcmDriver.ShowFormatChooseDialog(this.Handle,"Choose a WaveFormat",AcmFormatEnumFlags.None,
+                null,out selectedFormat,
+                out selectedFormatDescription, out selectedFormatTagDescription))
+            {
+                MessageBox.Show(String.Format("{0}\r\n{1}\r\n{2}",                    
+                    selectedFormatDescription,
+                    selectedFormatTagDescription,
+                    selectedFormat));
+            }
         }
     }
 }

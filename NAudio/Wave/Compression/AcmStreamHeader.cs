@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace NAudio.Wave
+namespace NAudio.Wave.Compression
 {
     class AcmStreamHeader : IDisposable
     {

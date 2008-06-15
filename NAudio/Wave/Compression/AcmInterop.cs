@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using System.Runtime.InteropServices;
 
-namespace NAudio.Wave
+namespace NAudio.Wave.Compression
 {
     /// <summary>
     /// Interop definitions for Windows ACM (Audio Compression Manager) API
@@ -15,6 +15,15 @@ namespace NAudio.Wave
 
         public delegate bool AcmFormatTagEnumCallback(int hAcmDriverId, ref AcmFormatTagDetails formatTagDetails, IntPtr dwInstance, AcmDriverDetailsSupportFlags flags);
 
+        /// <summary>
+        /// UINT ACMFORMATCHOOSEHOOKPROC acmFormatChooseHookProc(
+        ///   HWND hwnd,     
+        ///   UINT uMsg,     
+        ///   WPARAM wParam, 
+        ///   LPARAM lParam  
+        /// </summary>        
+        public delegate bool AcmFormatChooseHookProc(IntPtr windowHandle, int message, int wParam, int lParam);
+
         // not done:
         // acmDriverAdd
         // acmDriverID
@@ -26,7 +35,6 @@ namespace NAudio.Wave
         // acmFilterEnum -acmFilterEnumCallback
         // acmFilterTagDetails
         // acmFilterTagEnum
-        // acmFormatChoose
         // acmFormatDetails        
         // acmFormatTagDetails
         // acmGetVersion
@@ -40,6 +48,8 @@ namespace NAudio.Wave
         public static extern MmResult acmDriverDetails(int hAcmDriver, ref AcmDriverDetails driverDetails, int reserved);
         [DllImport("Msacm32.dll")]
         public static extern MmResult acmDriverOpen(out IntPtr pAcmDriver, int hAcmDriverId, int openFlags);
+        [DllImport("Msacm32.dll")]
+        public static extern MmResult acmFormatChoose(ref AcmFormatChoose formatChoose);
         [DllImport("Msacm32.dll")]
         public static extern MmResult acmFormatEnum(IntPtr hAcmDriver, ref AcmFormatDetails formatDetails, AcmFormatEnumCallback callback, IntPtr instance, AcmFormatEnumFlags flags);
         [DllImport("Msacm32.dll")]

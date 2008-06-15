@@ -271,6 +271,8 @@
     <Compile Include="Wave\Compression\AcmDriverDetailsSupportFlags.cs" />
     <Compile Include="Wave\Compression\AcmDriverEnumFlags.cs" />
     <Compile Include="Wave\Compression\AcmFormat.cs" />
+    <Compile Include="Wave\Compression\AcmFormatChoose.cs" />
+    <Compile Include="Wave\Compression\AcmFormatChooseStyleFlags.cs" />
     <Compile Include="Wave\Compression\AcmFormatDetails.cs" />
     <Compile Include="Wave\Compression\AcmFormatEnumFlags.cs" />
     <Compile Include="Wave\Compression\AcmFormatSuggestFlags.cs" />

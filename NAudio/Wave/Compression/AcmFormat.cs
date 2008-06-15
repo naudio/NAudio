@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Runtime.InteropServices;
 
-namespace NAudio.Wave
+namespace NAudio.Wave.Compression
 {
     /// <summary>
     /// ACM Format
@@ -15,10 +15,7 @@ namespace NAudio.Wave
         internal AcmFormat(AcmFormatDetails formatDetails)
         {
             this.formatDetails = formatDetails;
-            //WaveFormat waveFormat = new WaveFormat();
             waveFormat = (WaveFormat)Marshal.PtrToStructure(formatDetails.waveFormatPointer, typeof(WaveFormat));
-            //Marshal.PtrToStructure(formatDetails.waveFormatPointer, waveFormat);
-
         }
 
         /// <summary>

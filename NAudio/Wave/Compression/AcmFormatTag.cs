@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace NAudio.Wave
+namespace NAudio.Wave.Compression
 {
     /// <summary>
     /// ACM Format Tag
@@ -40,6 +40,9 @@ namespace NAudio.Wave
             get { return formatTagDetails.formatSize; }
         }
 
+        /// <summary>
+        /// Support Flags
+        /// </summary>
         public AcmDriverDetailsSupportFlags SupportFlags
         {
             get { return formatTagDetails.supportFlags; }

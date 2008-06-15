@@ -140,8 +140,15 @@ namespace NAudio.Wave
                     }
                     break;
             }
-            return waveFormat;
-            
+            return waveFormat;            
+        }
+
+        public static IntPtr MarshalToPtr(WaveFormat format)
+        {
+            int formatSize = Marshal.SizeOf(format);
+            IntPtr formatPointer = Marshal.AllocHGlobal(formatSize);
+            Marshal.StructureToPtr(format, formatPointer, false);
+            return formatPointer;
         }
 
 		/// <summary>

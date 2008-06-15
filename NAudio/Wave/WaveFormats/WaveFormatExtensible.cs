@@ -50,6 +50,10 @@ namespace NAudio.Wave
 
         }
 
+        /// <summary>
+        /// Serialize
+        /// </summary>
+        /// <param name="writer"></param>
         public override void Serialize(System.IO.BinaryWriter writer)
         {
             base.Serialize(writer);

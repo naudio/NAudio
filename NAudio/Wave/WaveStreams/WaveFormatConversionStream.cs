@@ -130,12 +130,13 @@ namespace NAudio.Wave
                 // temporary fix for alignment problems
                 // TODO: a better solution is to save any extra we convert for the next read
 
-                if (DestToSource(SourceToDest(sourceBytes)) != sourceBytes)
+                /* MRH: ignore this for now - need to check ramifications
+                 * if (DestToSource(SourceToDest(sourceBytes)) != sourceBytes)
                 {
                     if (bytesRead == 0)
                         throw new ApplicationException("Not a one-to-one conversion");
                     break;
-                }
+                }*/
 
                 int sourceBytesRead = sourceStream.Read(conversionStream.SourceBuffer, 0, sourceBytes);
                 if (sourceBytesRead == 0)
@@ -155,7 +156,15 @@ namespace NAudio.Wave
                     silenceBytes = SourceToDest(sourceStream.BlockAlign);
                 }
 
-                int bytesConverted = conversionStream.Convert(sourceBytesRead);
+                int sourceBytesConverted = 0;
+                int bytesConverted = conversionStream.Convert(sourceBytesRead, out sourceBytesConverted);
+                if (sourceBytesConverted < sourceBytesRead)
+                {
+                    // MRH: would normally throw an exception here
+                    // back up - is this the right thing to do, not sure
+                    sourceStream.Position -= (sourceBytesRead - sourceBytesConverted);
+                }
+
                 if (bytesConverted > 0)
                 {
                     position += bytesConverted;

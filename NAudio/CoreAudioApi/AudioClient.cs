@@ -247,13 +247,11 @@ namespace NAudio.CoreAudioApi
             audioClientInterface.Reset();
         }
 
-        // TODO:
-        // int GetStreamLatency(out long streamLatency);        
-        // int SetEventHandle(IntPtr eventHandle);
-
-
         #region IDisposable Members
 
+        /// <summary>
+        /// Dispose
+        /// </summary>
         public void Dispose()
         {
             if (audioClientInterface != null)

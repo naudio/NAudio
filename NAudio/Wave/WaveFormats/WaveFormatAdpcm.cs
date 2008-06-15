@@ -17,12 +17,19 @@ namespace NAudio.Wave
         // 7 pairs of coefficients
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 14)]
         int[] coefficients;
-        
+
+        /// <summary>
+        /// Empty constructor needed for marshalling from a pointer
+        /// </summary>
+        WaveFormatAdpcm() : this(8000,1)
+        {
+        }
+
         /// <summary>
         /// Microsoft ADPCM  
         /// </summary>
-        /// <param name="sampleRate"></param>
-        /// <param name="channels"></param>
+        /// <param name="sampleRate">Sample Rate</param>
+        /// <param name="channels">Channels</param>
         public WaveFormatAdpcm(int sampleRate, int channels) :
             base(sampleRate,0,channels)
         {
@@ -77,7 +84,15 @@ namespace NAudio.Wave
             {
                 writer.Write(coefficient);
             }
+        }
 
+        /// <summary>
+        /// String Description of this WaveFormat
+        /// </summary>
+        public override string ToString()
+        {
+            return String.Format("Microsoft ADPCM {0} Hz {1} channels {2} bits per sample {3} samples per block",
+                this.SampleRate, this.channels, this.bitsPerSample, this.samplesPerBlock);
         }
     }
 }

@@ -5,7 +5,7 @@ using System.Data;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
-using NAudio.Wave;
+using NAudio.Wave.Compression;
 
 namespace NAudioDemo
 {

@@ -38,6 +38,7 @@
             this.radioButtonAdpcm = new System.Windows.Forms.RadioButton();
             this.radioButtonALaw = new System.Windows.Forms.RadioButton();
             this.radioButtonMuLaw = new System.Windows.Forms.RadioButton();
+            this.buttonChooseFormat = new System.Windows.Forms.Button();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -153,11 +154,22 @@
             this.radioButtonMuLaw.Text = "Mu-Law";
             this.radioButtonMuLaw.UseVisualStyleBackColor = true;
             // 
+            // buttonChooseFormat
+            // 
+            this.buttonChooseFormat.Location = new System.Drawing.Point(256, 129);
+            this.buttonChooseFormat.Name = "buttonChooseFormat";
+            this.buttonChooseFormat.Size = new System.Drawing.Size(114, 23);
+            this.buttonChooseFormat.TabIndex = 4;
+            this.buttonChooseFormat.Text = "Choose Format...";
+            this.buttonChooseFormat.UseVisualStyleBackColor = true;
+            this.buttonChooseFormat.Click += new System.EventHandler(this.buttonChooseFormat_Click);
+            // 
             // AcmForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(382, 325);
+            this.Controls.Add(this.buttonChooseFormat);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.listBoxAcmDrivers);
@@ -183,5 +195,6 @@
         private System.Windows.Forms.RadioButton radioButtonALaw;
         private System.Windows.Forms.RadioButton radioButtonMuLaw;
         private System.Windows.Forms.CheckBox checkBoxAutoLaunchEncodedFile;
+        private System.Windows.Forms.Button buttonChooseFormat;
     }
 }

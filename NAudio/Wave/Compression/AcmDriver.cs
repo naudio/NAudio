@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
-namespace NAudio.Wave
+namespace NAudio.Wave.Compression
 {
     /// <summary>
     /// Represents an installed ACM Driver
@@ -31,6 +31,85 @@ namespace NAudio.Wave
                 }
             }
             return false;
+        }
+
+        /// <summary>
+        /// Show Format Choose Dialog
+        /// </summary>
+        /// <param name="ownerWindowHandle">Owner window handle, can be null</param>
+        /// <param name="windowTitle">Window title</param>
+        /// <param name="enumFlags">Enumeration flags. None to get everything</param>
+        /// <param name="enumFormat">Enumeration format. Only needed with certain enumeration flags</param>
+        /// <param name="selectedFormat">The selected format</param>
+        /// <param name="selectedFormatDescription">Textual description of the selected format</param>
+        /// <param name="selectedFormatTagDescription">Textual description of the selected format tag</param>
+        /// <returns>True if a format was selected</returns>
+        public static bool ShowFormatChooseDialog(
+            IntPtr ownerWindowHandle,
+            string windowTitle,
+            AcmFormatEnumFlags enumFlags,
+            WaveFormat enumFormat,
+            out WaveFormat selectedFormat,
+            out string selectedFormatDescription,
+            out string selectedFormatTagDescription)
+        {
+            AcmFormatChoose formatChoose = new AcmFormatChoose();
+            formatChoose.structureSize = Marshal.SizeOf(formatChoose);
+            formatChoose.styleFlags = AcmFormatChooseStyleFlags.None;
+            formatChoose.ownerWindowHandle = ownerWindowHandle;
+            int maxFormatSize = 200; // guess
+            formatChoose.selectedWaveFormatPointer = Marshal.AllocHGlobal(maxFormatSize);
+            formatChoose.selectedWaveFormatByteSize = maxFormatSize;
+            formatChoose.title = windowTitle;
+            formatChoose.name = null;
+            formatChoose.formatEnumFlags = enumFlags;//AcmFormatEnumFlags.None;
+            formatChoose.waveFormatEnumPointer = IntPtr.Zero;
+            if (enumFormat != null)
+            {
+                IntPtr enumPointer = Marshal.AllocHGlobal(Marshal.SizeOf(enumFormat));
+                Marshal.StructureToPtr(enumFormat,enumPointer,false);
+                formatChoose.waveFormatEnumPointer = enumPointer;
+            }
+            formatChoose.instanceHandle = IntPtr.Zero;
+            formatChoose.templateName = null;
+
+            MmResult result = AcmInterop.acmFormatChoose(ref formatChoose);
+            selectedFormat = null;
+            selectedFormatDescription = null;
+            selectedFormatTagDescription = null;
+            if (result == MmResult.NoError)
+            {
+                selectedFormat = (WaveFormat)Marshal.PtrToStructure(formatChoose.selectedWaveFormatPointer, typeof(WaveFormat));
+                // TODO: deal with extra bytes for other format types
+                if (selectedFormat.Encoding == WaveFormatEncoding.Adpcm)
+                {
+                    selectedFormat = (WaveFormatAdpcm)Marshal.PtrToStructure(formatChoose.selectedWaveFormatPointer, typeof(WaveFormatAdpcm));
+                }
+                selectedFormatDescription = formatChoose.formatDescription;
+                selectedFormatTagDescription = formatChoose.formatTagDescription;
+            }            
+            
+            Marshal.FreeHGlobal(formatChoose.waveFormatEnumPointer);
+            Marshal.FreeHGlobal(formatChoose.selectedWaveFormatPointer);
+            if(result != MmResult.AcmCancelled && result != MmResult.NoError)
+            {                
+                throw new MmException(result, "acmFormatChoose");
+            }
+            return result == MmResult.NoError;
+            
+        }
+
+        /// <summary>
+        /// Gets the maximum size needed to store a WaveFormat for ACM interop functions
+        /// </summary>
+        public int MaxFormatSize
+        {
+            get
+            {
+                int maxFormatSize = 0;
+                MmException.Try(AcmInterop.acmMetrics(driverHandle, AcmMetrics.MaxSizeFormat, out maxFormatSize), "acmMetrics");
+                return maxFormatSize;
+            }
         }
 
         /// <summary>
@@ -158,10 +237,8 @@ namespace NAudio.Wave
             }
             tempFormatsList = new List<AcmFormat>();
             AcmFormatDetails formatDetails = new AcmFormatDetails();
-            int maxFormatSize = 0;
-            MmException.Try(AcmInterop.acmMetrics(driverHandle, AcmMetrics.MaxSizeFormat, out maxFormatSize),"acmMetrics");
             formatDetails.structSize = Marshal.SizeOf(formatDetails);
-            formatDetails.waveFormatByteSize = maxFormatSize; // formatTag.FormatSize doesn't work;
+            formatDetails.waveFormatByteSize = MaxFormatSize; // formatTag.FormatSize doesn't work;
             formatDetails.waveFormatPointer = Marshal.AllocHGlobal(formatDetails.waveFormatByteSize);
             formatDetails.formatTag = (int)formatTag.FormatTag; // (int)WaveFormatEncoding.Unknown
             MmResult result = AcmInterop.acmFormatEnum(driverHandle, 
@@ -209,6 +286,9 @@ namespace NAudio.Wave
 
         #region IDisposable Members
 
+        /// <summary>
+        /// Dispose
+        /// </summary>
         public void Dispose()
         {
             if (driverHandle != IntPtr.Zero)

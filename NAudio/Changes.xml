@@ -850,4 +850,13 @@
     <desc>Added interop for AcmFormatTagEnum</desc>
     <desc>AudioDriver can now enumerate all tags and formats</desc>
   </change>
+  <change>
+    <version>1.2.137.0</version>
+    <author>Mark Heath</author>
+    <date>15 Jun 2008</date>
+    <desc>Alexandre Mutel added WASAPI event model playback</desc>
+    <desc>NAudioDemo has better selection of output driver settings</desc>
+    <desc>Added interop for AcmFormatChoose</desc>
+    <desc>Moved ACM interop into NAudio.Wave.Compression namespace</desc>
+  </change>
 </changes>

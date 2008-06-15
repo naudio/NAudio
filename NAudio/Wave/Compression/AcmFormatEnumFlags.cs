@@ -2,10 +2,13 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace NAudio.Wave
+namespace NAudio.Wave.Compression
 {
+    /// <summary>
+    /// Format Enumeration Flags
+    /// </summary>
     [Flags]
-    enum AcmFormatEnumFlags
+    public enum AcmFormatEnumFlags
     {
         /// <summary>
         /// None

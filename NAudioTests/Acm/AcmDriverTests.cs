@@ -4,6 +4,7 @@ using System.Text;
 using NAudio.Wave;
 using NUnit.Framework;
 using System.Diagnostics;
+using NAudio.Wave.Compression;
 
 namespace NAudioTests.Acm
 {

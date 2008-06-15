@@ -1,6 +1,6 @@
 using System;
 
-namespace NAudio.Wave
+namespace NAudio.Wave.Compression
 {
     /// <summary>
     /// Flags indicating what support a particular ACM driver has

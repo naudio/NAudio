@@ -32,8 +32,9 @@ namespace NAudio.CoreAudioApi
                 {
                     IntPtr waveFormatPointer;
                     Marshal.ThrowExceptionForHR(audioClientInterface.GetMixFormat(out waveFormatPointer));
-                    WaveFormatExtensible waveFormat = new WaveFormatExtensible(44100,32,2);
-                    Marshal.PtrToStructure(waveFormatPointer, waveFormat);
+                    //WaveFormatExtensible waveFormat = new WaveFormatExtensible(44100,32,2);
+                    //Marshal.PtrToStructure(waveFormatPointer, waveFormat);
+                    WaveFormat waveFormat = WaveFormat.MarshalFromPtr(waveFormatPointer);
                     Marshal.FreeCoTaskMem(waveFormatPointer);
                     mixFormat = waveFormat;
                     return waveFormat;

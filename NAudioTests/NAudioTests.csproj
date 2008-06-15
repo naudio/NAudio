@@ -47,10 +47,13 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Acm\AcmDriverTests.cs" />
+    <Compile Include="Acm\WaveFormatConversionStreamTests.cs" />
     <Compile Include="AudioClientTests.cs" />
     <Compile Include="DmoTests.cs" />
     <Compile Include="MidiEventCollectionTest.cs" />

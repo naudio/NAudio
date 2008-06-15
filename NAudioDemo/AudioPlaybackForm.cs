@@ -101,31 +101,31 @@ namespace NAudioDemo
             int latency = (int)comboBoxLatency.SelectedItem;
             if (radioButtonWaveOut.Checked)
             {
-                waveOut = new WaveOut(0, latency, null);
-            }
-            else if (radioButtonWaveOutWindow.Checked)
-            {
-                waveOut = new WaveOut(0, latency, this);
+                waveOut = new WaveOut(0, latency, checkBoxWaveOutWindow.Checked ? this : null);
             }
             else if (radioButtonDirectSound.Checked)
             {
-                waveOut = new DirectSoundOut(this, latency);
-            }
-            else if (radioButtonDirectSoundNative.Checked)
-            {
-                waveOut = new NativeDirectSoundOut(latency);
+                if (checkBoxDirectSoundNative.Checked)
+                {
+                    waveOut = new NativeDirectSoundOut(latency);
+                }
+                else
+                {
+                    waveOut = new DirectSoundOut(this, latency);
+                }
             }
             else if (radioButtonAsio.Checked)
             {
                 waveOut = new AsioOut(0);
             }
-            else if (radioButtonWasapiExclusive.Checked)
-            {
-                waveOut = new WasapiOut(AudioClientShareMode.Exclusive, latency);
-            }
             else
             {
-                waveOut = new WasapiOut(AudioClientShareMode.Shared, latency);
+                waveOut = new WasapiOut(
+                    checkBoxWasapiExclusiveMode.Checked ?
+                        AudioClientShareMode.Exclusive :
+                        AudioClientShareMode.Shared,
+                    checkBoxWasapiEventCallback.Checked,
+                    latency);
             }
         }
 

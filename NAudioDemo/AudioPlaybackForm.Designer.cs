@@ -31,23 +31,25 @@
             this.components = new System.ComponentModel.Container();
             this.comboBoxLatency = new System.Windows.Forms.ComboBox();
             this.radioButtonDirectSound = new System.Windows.Forms.RadioButton();
-            this.radioButtonWaveOutWindow = new System.Windows.Forms.RadioButton();
             this.radioButtonWaveOut = new System.Windows.Forms.RadioButton();
             this.radioButtonAsio = new System.Windows.Forms.RadioButton();
             this.buttonControlPanel = new System.Windows.Forms.Button();
             this.groupBoxDriverModel = new System.Windows.Forms.GroupBox();
             this.label1 = new System.Windows.Forms.Label();
-            this.radioButtonDirectSoundNative = new System.Windows.Forms.RadioButton();
-            this.radioButtonWasapiExclusive = new System.Windows.Forms.RadioButton();
             this.radioButtonWasapi = new System.Windows.Forms.RadioButton();
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
             this.toolStripButtonOpenFile = new System.Windows.Forms.ToolStripButton();
             this.buttonPlay = new System.Windows.Forms.ToolStripButton();
             this.buttonPause = new System.Windows.Forms.ToolStripButton();
             this.buttonStop = new System.Windows.Forms.ToolStripButton();
-            this.volumeSlider1 = new NAudio.Gui.VolumeSlider();
             this.trackBarPosition = new System.Windows.Forms.TrackBar();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
+            this.volumeSlider1 = new NAudio.Gui.VolumeSlider();
+            this.checkBoxWaveOutWindow = new System.Windows.Forms.CheckBox();
+            this.checkBoxDirectSoundNative = new System.Windows.Forms.CheckBox();
+            this.checkBoxWasapiExclusiveMode = new System.Windows.Forms.CheckBox();
+            this.checkBoxWasapiEventCallback = new System.Windows.Forms.CheckBox();
+            this.label2 = new System.Windows.Forms.Label();
             this.groupBoxDriverModel.SuspendLayout();
             this.toolStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.trackBarPosition)).BeginInit();
@@ -57,7 +59,7 @@
             // 
             this.comboBoxLatency.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.comboBoxLatency.FormattingEnabled = true;
-            this.comboBoxLatency.Location = new System.Drawing.Point(105, 18);
+            this.comboBoxLatency.Location = new System.Drawing.Point(302, 25);
             this.comboBoxLatency.Name = "comboBoxLatency";
             this.comboBoxLatency.Size = new System.Drawing.Size(75, 21);
             this.comboBoxLatency.TabIndex = 10;
@@ -65,24 +67,13 @@
             // radioButtonDirectSound
             // 
             this.radioButtonDirectSound.AutoSize = true;
-            this.radioButtonDirectSound.Location = new System.Drawing.Point(6, 67);
+            this.radioButtonDirectSound.Location = new System.Drawing.Point(6, 62);
             this.radioButtonDirectSound.Name = "radioButtonDirectSound";
             this.radioButtonDirectSound.Size = new System.Drawing.Size(84, 17);
             this.radioButtonDirectSound.TabIndex = 9;
             this.radioButtonDirectSound.TabStop = true;
             this.radioButtonDirectSound.Text = "DirectSound";
             this.radioButtonDirectSound.UseVisualStyleBackColor = true;
-            // 
-            // radioButtonWaveOutWindow
-            // 
-            this.radioButtonWaveOutWindow.AutoSize = true;
-            this.radioButtonWaveOutWindow.Location = new System.Drawing.Point(6, 43);
-            this.radioButtonWaveOutWindow.Name = "radioButtonWaveOutWindow";
-            this.radioButtonWaveOutWindow.Size = new System.Drawing.Size(113, 17);
-            this.radioButtonWaveOutWindow.TabIndex = 8;
-            this.radioButtonWaveOutWindow.TabStop = true;
-            this.radioButtonWaveOutWindow.Text = "WaveOut Window";
-            this.radioButtonWaveOutWindow.UseVisualStyleBackColor = true;
             // 
             // radioButtonWaveOut
             // 
@@ -99,7 +90,7 @@
             // radioButtonAsio
             // 
             this.radioButtonAsio.AutoSize = true;
-            this.radioButtonAsio.Location = new System.Drawing.Point(6, 158);
+            this.radioButtonAsio.Location = new System.Drawing.Point(6, 181);
             this.radioButtonAsio.Name = "radioButtonAsio";
             this.radioButtonAsio.Size = new System.Drawing.Size(50, 17);
             this.radioButtonAsio.TabIndex = 9;
@@ -109,7 +100,7 @@
             // 
             // buttonControlPanel
             // 
-            this.buttonControlPanel.Location = new System.Drawing.Point(71, 158);
+            this.buttonControlPanel.Location = new System.Drawing.Point(25, 204);
             this.buttonControlPanel.Name = "buttonControlPanel";
             this.buttonControlPanel.Size = new System.Drawing.Size(135, 23);
             this.buttonControlPanel.TabIndex = 12;
@@ -119,19 +110,18 @@
             // 
             // groupBoxDriverModel
             // 
-            this.groupBoxDriverModel.Controls.Add(this.label1);
+            this.groupBoxDriverModel.Controls.Add(this.checkBoxWasapiEventCallback);
+            this.groupBoxDriverModel.Controls.Add(this.checkBoxWasapiExclusiveMode);
+            this.groupBoxDriverModel.Controls.Add(this.checkBoxDirectSoundNative);
+            this.groupBoxDriverModel.Controls.Add(this.checkBoxWaveOutWindow);
             this.groupBoxDriverModel.Controls.Add(this.radioButtonWaveOut);
             this.groupBoxDriverModel.Controls.Add(this.buttonControlPanel);
-            this.groupBoxDriverModel.Controls.Add(this.comboBoxLatency);
-            this.groupBoxDriverModel.Controls.Add(this.radioButtonWaveOutWindow);
-            this.groupBoxDriverModel.Controls.Add(this.radioButtonDirectSoundNative);
             this.groupBoxDriverModel.Controls.Add(this.radioButtonDirectSound);
-            this.groupBoxDriverModel.Controls.Add(this.radioButtonWasapiExclusive);
             this.groupBoxDriverModel.Controls.Add(this.radioButtonWasapi);
             this.groupBoxDriverModel.Controls.Add(this.radioButtonAsio);
             this.groupBoxDriverModel.Location = new System.Drawing.Point(12, 30);
             this.groupBoxDriverModel.Name = "groupBoxDriverModel";
-            this.groupBoxDriverModel.Size = new System.Drawing.Size(211, 187);
+            this.groupBoxDriverModel.Size = new System.Drawing.Size(174, 235);
             this.groupBoxDriverModel.TabIndex = 13;
             this.groupBoxDriverModel.TabStop = false;
             this.groupBoxDriverModel.Text = "Output Driver";
@@ -139,43 +129,21 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(186, 21);
+            this.label1.Location = new System.Drawing.Point(383, 28);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(20, 13);
             this.label1.TabIndex = 13;
             this.label1.Text = "ms";
             // 
-            // radioButtonDirectSoundNative
-            // 
-            this.radioButtonDirectSoundNative.AutoSize = true;
-            this.radioButtonDirectSoundNative.Location = new System.Drawing.Point(6, 90);
-            this.radioButtonDirectSoundNative.Name = "radioButtonDirectSoundNative";
-            this.radioButtonDirectSoundNative.Size = new System.Drawing.Size(118, 17);
-            this.radioButtonDirectSoundNative.TabIndex = 9;
-            this.radioButtonDirectSoundNative.TabStop = true;
-            this.radioButtonDirectSoundNative.Text = "DirectSound Native";
-            this.radioButtonDirectSoundNative.UseVisualStyleBackColor = true;
-            // 
-            // radioButtonWasapiExclusive
-            // 
-            this.radioButtonWasapiExclusive.AutoSize = true;
-            this.radioButtonWasapiExclusive.Location = new System.Drawing.Point(6, 135);
-            this.radioButtonWasapiExclusive.Name = "radioButtonWasapiExclusive";
-            this.radioButtonWasapiExclusive.Size = new System.Drawing.Size(145, 17);
-            this.radioButtonWasapiExclusive.TabIndex = 9;
-            this.radioButtonWasapiExclusive.TabStop = true;
-            this.radioButtonWasapiExclusive.Text = "WASAPI Exclusive Mode";
-            this.radioButtonWasapiExclusive.UseVisualStyleBackColor = true;
-            // 
             // radioButtonWasapi
             // 
             this.radioButtonWasapi.AutoSize = true;
-            this.radioButtonWasapi.Location = new System.Drawing.Point(6, 113);
+            this.radioButtonWasapi.Location = new System.Drawing.Point(6, 112);
             this.radioButtonWasapi.Name = "radioButtonWasapi";
-            this.radioButtonWasapi.Size = new System.Drawing.Size(134, 17);
+            this.radioButtonWasapi.Size = new System.Drawing.Size(67, 17);
             this.radioButtonWasapi.TabIndex = 9;
             this.radioButtonWasapi.TabStop = true;
-            this.radioButtonWasapi.Text = "WASAPI Shared Mode";
+            this.radioButtonWasapi.Text = "WASAPI";
             this.radioButtonWasapi.UseVisualStyleBackColor = true;
             // 
             // toolStrip1
@@ -231,18 +199,9 @@
             this.buttonStop.Text = "Stop";
             this.buttonStop.Click += new System.EventHandler(this.buttonStop_Click);
             // 
-            // volumeSlider1
-            // 
-            this.volumeSlider1.Location = new System.Drawing.Point(229, 79);
-            this.volumeSlider1.Name = "volumeSlider1";
-            this.volumeSlider1.Size = new System.Drawing.Size(96, 16);
-            this.volumeSlider1.TabIndex = 11;
-            this.volumeSlider1.Volume = 1F;
-            this.volumeSlider1.VolumeChanged += new System.EventHandler(this.volumeSlider1_VolumeChanged);
-            // 
             // trackBarPosition
             // 
-            this.trackBarPosition.Location = new System.Drawing.Point(12, 223);
+            this.trackBarPosition.Location = new System.Drawing.Point(12, 271);
             this.trackBarPosition.Name = "trackBarPosition";
             this.trackBarPosition.Size = new System.Drawing.Size(489, 45);
             this.trackBarPosition.TabIndex = 16;
@@ -254,14 +213,75 @@
             this.timer1.Interval = 500;
             this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
             // 
+            // volumeSlider1
+            // 
+            this.volumeSlider1.Location = new System.Drawing.Point(302, 52);
+            this.volumeSlider1.Name = "volumeSlider1";
+            this.volumeSlider1.Size = new System.Drawing.Size(96, 16);
+            this.volumeSlider1.TabIndex = 11;
+            this.volumeSlider1.Volume = 1F;
+            this.volumeSlider1.VolumeChanged += new System.EventHandler(this.volumeSlider1_VolumeChanged);
+            // 
+            // checkBoxWaveOutWindow
+            // 
+            this.checkBoxWaveOutWindow.AutoSize = true;
+            this.checkBoxWaveOutWindow.Location = new System.Drawing.Point(25, 39);
+            this.checkBoxWaveOutWindow.Name = "checkBoxWaveOutWindow";
+            this.checkBoxWaveOutWindow.Size = new System.Drawing.Size(126, 17);
+            this.checkBoxWaveOutWindow.TabIndex = 13;
+            this.checkBoxWaveOutWindow.Text = "Callback via Window";
+            this.checkBoxWaveOutWindow.UseVisualStyleBackColor = true;
+            // 
+            // checkBoxDirectSoundNative
+            // 
+            this.checkBoxDirectSoundNative.AutoSize = true;
+            this.checkBoxDirectSoundNative.Location = new System.Drawing.Point(25, 85);
+            this.checkBoxDirectSoundNative.Name = "checkBoxDirectSoundNative";
+            this.checkBoxDirectSoundNative.Size = new System.Drawing.Size(86, 17);
+            this.checkBoxDirectSoundNative.TabIndex = 14;
+            this.checkBoxDirectSoundNative.Text = "COM Interop";
+            this.checkBoxDirectSoundNative.UseVisualStyleBackColor = true;
+            // 
+            // checkBoxWasapiExclusiveMode
+            // 
+            this.checkBoxWasapiExclusiveMode.AutoSize = true;
+            this.checkBoxWasapiExclusiveMode.Location = new System.Drawing.Point(25, 135);
+            this.checkBoxWasapiExclusiveMode.Name = "checkBoxWasapiExclusiveMode";
+            this.checkBoxWasapiExclusiveMode.Size = new System.Drawing.Size(101, 17);
+            this.checkBoxWasapiExclusiveMode.TabIndex = 14;
+            this.checkBoxWasapiExclusiveMode.Text = "Exclusive Mode";
+            this.checkBoxWasapiExclusiveMode.UseVisualStyleBackColor = true;
+            // 
+            // checkBoxWasapiEventCallback
+            // 
+            this.checkBoxWasapiEventCallback.AutoSize = true;
+            this.checkBoxWasapiEventCallback.Location = new System.Drawing.Point(25, 158);
+            this.checkBoxWasapiEventCallback.Name = "checkBoxWasapiEventCallback";
+            this.checkBoxWasapiEventCallback.Size = new System.Drawing.Size(98, 17);
+            this.checkBoxWasapiEventCallback.TabIndex = 14;
+            this.checkBoxWasapiEventCallback.Text = "Event Callback";
+            this.checkBoxWasapiEventCallback.UseVisualStyleBackColor = true;
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(193, 28);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(103, 13);
+            this.label2.TabIndex = 17;
+            this.label2.Text = "Requested Latency:";
+            // 
             // AudioPlaybackForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(513, 266);
+            this.ClientSize = new System.Drawing.Size(513, 328);
+            this.Controls.Add(this.label2);
+            this.Controls.Add(this.label1);
             this.Controls.Add(this.trackBarPosition);
             this.Controls.Add(this.toolStrip1);
             this.Controls.Add(this.groupBoxDriverModel);
+            this.Controls.Add(this.comboBoxLatency);
             this.Controls.Add(this.volumeSlider1);
             this.Name = "AudioPlaybackForm";
             this.ShowInTaskbar = false;
@@ -282,7 +302,6 @@
 
         private System.Windows.Forms.ComboBox comboBoxLatency;
         private System.Windows.Forms.RadioButton radioButtonDirectSound;
-        private System.Windows.Forms.RadioButton radioButtonWaveOutWindow;
         private System.Windows.Forms.RadioButton radioButtonWaveOut;
         private NAudio.Gui.VolumeSlider volumeSlider1;
         private System.Windows.Forms.RadioButton radioButtonAsio;
@@ -294,10 +313,13 @@
         private System.Windows.Forms.ToolStripButton buttonPlay;
         private System.Windows.Forms.ToolStripButton buttonPause;
         private System.Windows.Forms.ToolStripButton buttonStop;
-        private System.Windows.Forms.RadioButton radioButtonDirectSoundNative;
-        private System.Windows.Forms.RadioButton radioButtonWasapiExclusive;
         private System.Windows.Forms.TrackBar trackBarPosition;
         private System.Windows.Forms.Timer timer1;
         private System.Windows.Forms.ToolStripButton toolStripButtonOpenFile;
+        private System.Windows.Forms.CheckBox checkBoxWaveOutWindow;
+        private System.Windows.Forms.CheckBox checkBoxWasapiEventCallback;
+        private System.Windows.Forms.CheckBox checkBoxWasapiExclusiveMode;
+        private System.Windows.Forms.CheckBox checkBoxDirectSoundNative;
+        private System.Windows.Forms.Label label2;
     }
 }

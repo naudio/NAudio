@@ -302,6 +302,7 @@
     <Compile Include="Wave\WaveFormats\WaveFormatAdpcm.cs" />
     <Compile Include="Wave\WaveFormats\WaveFormatEncoding.cs" />
     <Compile Include="Wave\WaveFormats\WaveFormatExtensible.cs" />
+    <Compile Include="Wave\WaveFormats\WaveFormatExtraData.cs" />
     <Compile Include="Wave\WaveFormats\WmaWaveFormat.cs" />
     <Compile Include="Wave\WaveOutputs\AsioOut.cs" />
     <Compile Include="Wave\WaveOutputs\DirectSoundOut.cs" />

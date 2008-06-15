@@ -79,7 +79,7 @@ namespace NAudio.Wave.Compression
             selectedFormatTagDescription = null;
             if (result == MmResult.NoError)
             {
-                selectedFormat = (WaveFormat)Marshal.PtrToStructure(formatChoose.selectedWaveFormatPointer, typeof(WaveFormat));
+                selectedFormat = (WaveFormatExtraData)Marshal.PtrToStructure(formatChoose.selectedWaveFormatPointer, typeof(WaveFormatExtraData));
                 // TODO: deal with extra bytes for other format types
                 if (selectedFormat.Encoding == WaveFormatEncoding.Adpcm)
                 {

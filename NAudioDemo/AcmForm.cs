@@ -29,7 +29,7 @@ namespace NAudioDemo
         {
             try
             {
-                ConvertFile();
+                EncodeFile();
             }
             catch (Exception e)
             {
@@ -37,8 +37,34 @@ namespace NAudioDemo
             }
         }
 
+        private void buttonDecode_Click(object sender, EventArgs args)
+        {
+            try
+            {
+                DecodeFile();
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message, "Error Decoding", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
         private WaveFormat GetTargetFormat(WaveFormat inputFormat)
         {
+            WaveFormat outputFormat;
+            string formatDescription;
+            string formatTagDescription;
+            AcmDriver.ShowFormatChooseDialog(
+                this.Handle,
+                "Select Compressed Format:",
+                AcmFormatEnumFlags.Convert,
+                inputFormat,
+                out outputFormat,
+                out formatDescription,
+                out formatTagDescription);
+            return outputFormat;
+        
+            /*
             if (radioButtonMuLaw.Checked)
             {
                 return WaveFormat.CreateCustomFormat(
@@ -71,17 +97,27 @@ namespace NAudioDemo
                 return new WaveFormatAdpcm(8000, 1);
             }
             throw new NotImplementedException("Not implemented yet!");
+             */
         }
 
-        private void ConvertFile()
+        private void EncodeFile()
         {
-            string inputFileName = GetInputFileName();
+            string inputFileName = GetInputFileName("Select PCM WAV File to Encode");
             if (inputFileName == null)
                 return;
             using (WaveFileReader reader = new WaveFileReader(inputFileName))
             {
+                if (reader.WaveFormat.Encoding != WaveFormatEncoding.Pcm)
+                {
+                    MessageBox.Show("Please select a PCM WAV file to encode");
+                    return;
+                }
                 WaveFormat targetFormat = GetTargetFormat(reader.WaveFormat);
-                string outputFileName = GetOutputFileName();
+                if (targetFormat == null)
+                {
+                    return;
+                }
+                string outputFileName = GetOutputFileName("Select Ouput File Name");
                 if (outputFileName == null)
                 {
                     return;
@@ -94,11 +130,45 @@ namespace NAudioDemo
                 }
             }
         }
+        private void DecodeFile()
+        {
+            string inputFileName = GetInputFileName("Select a compressed WAV File to decode");
+            if (inputFileName == null)
+                return;
+            using (WaveFileReader reader = new WaveFileReader(inputFileName))
+            {
+                if (reader.WaveFormat.Encoding == WaveFormatEncoding.Pcm)
+                {
+                    MessageBox.Show("Please select a compressed WAV file to decode");
+                    return;
+                }
+                WaveFormat targetFormat = GetTargetFormat(reader.WaveFormat);
+                if (targetFormat == null)
+                {
+                    return;
+                }
 
-        private string GetInputFileName()
+                string outputFileName = GetOutputFileName("Select Ouput File Name");
+                if (outputFileName == null)
+                {
+                    return;
+                }
+                WaveStream convertedStream = new WaveFormatConversionStream(targetFormat, reader);
+                WaveFileWriter.CreateWaveFile(outputFileName, convertedStream);
+                if (checkBoxAutoLaunchEncodedFile.Checked)
+                {
+                    System.Diagnostics.Process.Start(outputFileName);
+                }
+            }
+        }
+
+
+
+        private string GetInputFileName(string title)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog();
             openFileDialog.Filter = "WAV File (*.wav)|*.wav";
+            openFileDialog.Title = title;
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
                 return openFileDialog.FileName;
@@ -106,10 +176,11 @@ namespace NAudioDemo
             return null;
         }
 
-        private string GetOutputFileName()
+        private string GetOutputFileName(string title)
         {
             SaveFileDialog saveFileDialog = new SaveFileDialog();
             saveFileDialog.Filter = "WAV File (*.wav)|*.wav";
+            saveFileDialog.Title = title;
             if (saveFileDialog.ShowDialog() == DialogResult.OK)
             {
                 return saveFileDialog.FileName;
@@ -143,6 +214,15 @@ namespace NAudioDemo
                     selectedFormatTagDescription,
                     selectedFormat));
             }
+        }
+
+        private void buttonDisplayFormatInfo_Click(object sender, EventArgs e)
+        {
+            if (listBoxAcmDrivers.SelectedItem == null)
+            {
+                listBoxAcmDrivers.SelectedIndex = 0;
+            }
+            listBoxAcmDrivers_DoubleClick(sender, e);
         }
     }
 }

@@ -119,7 +119,7 @@ namespace NAudio.Wave
                 }
                 
                 // read any extra data
-                br.ReadBytes(extraSize);
+                // br.ReadBytes(extraSize);
 
             }
 		}

@@ -37,13 +37,13 @@ namespace NAudio.Wave
         /// Creates a WaveFormat with custom members
         /// </summary>
         /// <param name="tag">The encoding</param>
-        /// <param name="channels">Number of channels</param>
         /// <param name="sampleRate">Sample Rate</param>
+        /// <param name="channels">Number of channels</param>
         /// <param name="averageBytesPerSecond">Average Bytes Per Second</param>
         /// <param name="blockAlign">Block Align</param>
         /// <param name="bitsPerSample">Bits Per Sample</param>
         /// <returns></returns>
-        public static WaveFormat CreateCustomFormat(WaveFormatEncoding tag, int channels, int sampleRate, int averageBytesPerSecond, int blockAlign, int bitsPerSample)
+        public static WaveFormat CreateCustomFormat(WaveFormatEncoding tag, int sampleRate, int channels, int averageBytesPerSecond, int blockAlign, int bitsPerSample)
         {
             WaveFormat waveFormat = new WaveFormat();
             waveFormat.waveFormatTag = tag;
@@ -54,6 +54,28 @@ namespace NAudio.Wave
             waveFormat.bitsPerSample = (short)bitsPerSample;
             waveFormat.extraSize = 0;
             return waveFormat;
+        }
+
+        /// <summary>
+        /// Creates an A-law wave format
+        /// </summary>
+        /// <param name="sampleRate">Sample Rate</param>
+        /// <param name="channels">Number of Channels</param>
+        /// <returns>Wave Format</returns>
+        public static WaveFormat CreateALawFormat(int sampleRate, int channels)
+        {
+            return CreateCustomFormat(WaveFormatEncoding.ALaw, sampleRate, channels, sampleRate * channels, 1, 8);
+        }
+
+        /// <summary>
+        /// Creates a Mu-law wave format
+        /// </summary>
+        /// <param name="sampleRate">Sample Rate</param>
+        /// <param name="channels">Number of Channels</param>
+        /// <returns>Wave Format</returns>
+        public static WaveFormat CreateMuLawFormat(int sampleRate, int channels)
+        {
+            return CreateCustomFormat(WaveFormatEncoding.MuLaw, sampleRate, channels, sampleRate * channels, 1, 8);
         }
 
 		/// <summary>
@@ -109,7 +131,7 @@ namespace NAudio.Wave
                     waveFormat = (WaveFormatExtensible)Marshal.PtrToStructure(pointer, typeof(WaveFormatExtensible));
                     break;
                 case WaveFormatEncoding.Adpcm:
-                    waveFormat = (WaveFormatAdpcm)Marshal.PtrToStructure(pointer, typeof(WaveFormatAdpcm));
+                    waveFormat = (AdpcmWaveFormat)Marshal.PtrToStructure(pointer, typeof(AdpcmWaveFormat));
                     break;
                 default:
                     if (waveFormat.ExtraSize > 0)

@@ -296,10 +296,11 @@
     <Compile Include="Wave\MmeInterop\WaveInterop.cs" />
     <Compile Include="Wave\MmeInterop\WaveOutCapabilities.cs" />
     <Compile Include="Wave\MmeInterop\WaveOutSupport.cs" />
+    <Compile Include="Wave\WaveFormats\ImaAdpcmWaveFormat.cs" />
     <Compile Include="Wave\WaveFormats\Mp3WaveFormat.cs" />
     <Compile Include="Wave\WaveFormats\OggWaveFormat.cs" />
     <Compile Include="Wave\WaveFormats\WaveFormat.cs" />
-    <Compile Include="Wave\WaveFormats\WaveFormatAdpcm.cs" />
+    <Compile Include="Wave\WaveFormats\AdpcmWaveFormat.cs" />
     <Compile Include="Wave\WaveFormats\WaveFormatEncoding.cs" />
     <Compile Include="Wave\WaveFormats\WaveFormatExtensible.cs" />
     <Compile Include="Wave\WaveFormats\WaveFormatExtraData.cs" />

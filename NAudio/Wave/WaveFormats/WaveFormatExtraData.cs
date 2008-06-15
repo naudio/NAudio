@@ -28,5 +28,14 @@ namespace NAudio.Wave
                 reader.Read(extraData,0, extraSize);
             }
         }
+
+        public override void Serialize(BinaryWriter writer)
+        {
+            base.Serialize(writer);
+            if (extraSize > 0)
+            {
+                writer.Write(extraData, 0, extraSize);
+            }
+        }
     }
 }

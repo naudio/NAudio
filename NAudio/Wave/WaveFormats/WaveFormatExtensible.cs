@@ -50,6 +50,15 @@ namespace NAudio.Wave
 
         }
 
+        public override void Serialize(System.IO.BinaryWriter writer)
+        {
+            base.Serialize(writer);
+            writer.Write(wValidBitsPerSample);
+            writer.Write(dwChannelMask);
+            byte[] guid = subFormat.ToByteArray();
+            writer.Write(guid, 0, guid.Length);
+        }
+
         /// <summary>
         /// String representation
         /// </summary>

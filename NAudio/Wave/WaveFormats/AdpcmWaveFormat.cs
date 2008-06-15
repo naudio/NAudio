@@ -9,20 +9,44 @@ namespace NAudio.Wave
     /// Microsoft ADPCM
     /// See http://icculus.org/SDL_sound/downloads/external_documentation/wavecomp.htm
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 2)]
-    public class WaveFormatAdpcm : WaveFormat
+    [StructLayout(LayoutKind.Sequential, Pack=2)]
+    public class AdpcmWaveFormat : WaveFormat
     {
         short samplesPerBlock;
         short numCoeff;
         // 7 pairs of coefficients
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 14)]
-        int[] coefficients;
+        short[] coefficients;
 
         /// <summary>
         /// Empty constructor needed for marshalling from a pointer
         /// </summary>
-        WaveFormatAdpcm() : this(8000,1)
+        AdpcmWaveFormat() : this(8000,1)
         {
+        }
+
+        /// <summary>
+        /// Samples per block
+        /// </summary>
+        public int SamplesPerBlock
+        {
+            get { return samplesPerBlock; }
+        }
+
+        /// <summary>
+        /// Number of coefficients
+        /// </summary>
+        public int NumCoefficients
+        {
+            get { return numCoeff; }
+        }
+
+        /// <summary>
+        /// Coefficients
+        /// </summary>
+        public short[] Coefficients
+        {
+            get { return coefficients; }
         }
 
         /// <summary>
@@ -30,7 +54,7 @@ namespace NAudio.Wave
         /// </summary>
         /// <param name="sampleRate">Sample Rate</param>
         /// <param name="channels">Channels</param>
-        public WaveFormatAdpcm(int sampleRate, int channels) :
+        public AdpcmWaveFormat(int sampleRate, int channels) :
             base(sampleRate,0,channels)
         {
             this.waveFormatTag = WaveFormatEncoding.Adpcm;
@@ -61,7 +85,7 @@ namespace NAudio.Wave
 
 
             numCoeff = 7;
-            coefficients = new int[14] {
+            coefficients = new short[14] {
                 256,0,512,-256,0,0,192,64,240,0,460,-208,392,-232
             };
             // convert to 8.8 fixed point format?

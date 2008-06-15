@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
 using NAudio.Wave;
+using NAudio.Wave.Compression;
+using System.Diagnostics;
 
 namespace NAudioTests.Acm
 {
@@ -16,11 +18,7 @@ namespace NAudioTests.Acm
             int sampleRate = 8000;
             CanCreateConversionStream(
                 new WaveFormat(sampleRate, 16, channels),
-                WaveFormat.CreateCustomFormat(WaveFormatEncoding.MuLaw,
-                    channels,
-                    sampleRate,
-                    sampleRate * channels,
-                    1, 8));
+                WaveFormat.CreateCustomFormat(WaveFormatEncoding.MuLaw, sampleRate, channels, sampleRate * channels, 1, 8));
         }
 
         [Test]
@@ -30,11 +28,7 @@ namespace NAudioTests.Acm
             int sampleRate = 8000;
             CanCreateConversionStream(
                 new WaveFormat(sampleRate, 16, channels),
-                WaveFormat.CreateCustomFormat(WaveFormatEncoding.ALaw,
-                    channels,
-                    sampleRate,
-                    sampleRate * channels,
-                    1, 8));
+                WaveFormat.CreateCustomFormat(WaveFormatEncoding.ALaw, sampleRate, channels, sampleRate * channels, 1, 8));
         }
 
         [Test]
@@ -43,11 +37,7 @@ namespace NAudioTests.Acm
             int channels = 1;
             int sampleRate = 8000;
             CanCreateConversionStream(
-                WaveFormat.CreateCustomFormat(WaveFormatEncoding.ALaw,
-                    channels,
-                    sampleRate,
-                    sampleRate * channels,
-                    1, 8),
+                WaveFormat.CreateCustomFormat(WaveFormatEncoding.ALaw, sampleRate, channels, sampleRate * channels, 1, 8),
                 new WaveFormat(sampleRate, 16, channels));
         }
 
@@ -57,11 +47,7 @@ namespace NAudioTests.Acm
             int channels = 1;
             int sampleRate = 8000;
             CanCreateConversionStream(
-                WaveFormat.CreateCustomFormat(WaveFormatEncoding.MuLaw,
-                    channels,
-                    sampleRate,
-                    sampleRate * channels,
-                    1, 8),
+                WaveFormat.CreateCustomFormat(WaveFormatEncoding.MuLaw, sampleRate, channels, sampleRate * channels, 1, 8),
                 new WaveFormat(sampleRate, 16, channels));
         }
 
@@ -71,7 +57,7 @@ namespace NAudioTests.Acm
             int channels = 1;
             int sampleRate = 8000;
             CanCreateConversionStream(
-                new WaveFormatAdpcm(8000,1),
+                new AdpcmWaveFormat(8000,1),
                 new WaveFormat(sampleRate, 16, channels));
         }
 
@@ -79,8 +65,26 @@ namespace NAudioTests.Acm
         public void CanConvertAdpcmToSuggestedPcm()
         {
             using(WaveStream stream = WaveFormatConversionStream.CreatePcmStream(
-                new NullWaveStream(new WaveFormatAdpcm(8000, 1))))
+                new NullWaveStream(new AdpcmWaveFormat(8000, 1))))
                 {
+            }
+        }
+
+        [Test]
+        public void CanConvertALawToSuggestedPcm()
+        {
+            using (WaveStream stream = WaveFormatConversionStream.CreatePcmStream(
+                new NullWaveStream(WaveFormat.CreateALawFormat(8000,1))))
+            {
+            }
+        }
+
+        [Test]
+        public void CanConvertMuLawToSuggestedPcm()
+        {
+            using (WaveStream stream = WaveFormatConversionStream.CreatePcmStream(
+                new NullWaveStream(WaveFormat.CreateMuLawFormat(8000, 1))))
+            {
             }
         }
 
@@ -91,7 +95,35 @@ namespace NAudioTests.Acm
             int sampleRate = 8000;
             CanCreateConversionStream(
                 new WaveFormat(sampleRate, 16, channels),
-                new WaveFormatAdpcm(8000, 1));
+                new AdpcmWaveFormat(8000, 1));
+        }
+
+        [Test]
+        public void CanConvertImeAdpcmToPcm()
+        {
+            AcmDriver driver = AcmDriver.FindByShortName("Microsoft IMA ADPCM");
+            driver.Open();
+            try
+            {
+                foreach (AcmFormatTag formatTag in driver.FormatTags)
+                {
+                    foreach (AcmFormat format in driver.GetFormats(formatTag))
+                    {
+                        if (format.FormatTag == WaveFormatEncoding.DviAdpcm ||
+                            format.FormatTag == WaveFormatEncoding.ImaAdpcm)
+                        {
+                            // see if we can convert it to 16 bit PCM
+                            Debug.WriteLine(String.Format("Converting {0} to PCM", format.WaveFormat));
+                            CanCreateConversionStream(format.WaveFormat,
+                                new WaveFormat(format.WaveFormat.SampleRate, 16, format.WaveFormat.Channels));
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                driver.Close();
+            }
         }
 
         private void CanCreateConversionStream(WaveFormat inputFormat, WaveFormat outputFormat)

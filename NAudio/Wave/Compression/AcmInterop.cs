@@ -52,12 +52,27 @@ namespace NAudio.Wave.Compression
         public static extern MmResult acmFormatChoose(ref AcmFormatChoose formatChoose);
         [DllImport("Msacm32.dll")]
         public static extern MmResult acmFormatEnum(IntPtr hAcmDriver, ref AcmFormatDetails formatDetails, AcmFormatEnumCallback callback, IntPtr instance, AcmFormatEnumFlags flags);
+        /// <summary>
+        /// MMRESULT acmFormatSuggest(
+        /// HACMDRIVER had,          
+        /// LPWAVEFORMATEX pwfxSrc,  
+        /// LPWAVEFORMATEX pwfxDst,  
+        /// DWORD cbwfxDst,          
+        /// DWORD fdwSuggest);
+        /// </summary>
         [DllImport("Msacm32.dll")]
-        public static extern MmResult acmFormatSuggest(IntPtr hAcmDriver, WaveFormat sourceFormat, WaveFormat destFormat, int sizeDestFormat, AcmFormatSuggestFlags suggestFlags);
+        public static extern MmResult acmFormatSuggest(
+            IntPtr hAcmDriver, 
+            WaveFormat sourceFormat,
+            WaveFormat destFormat, 
+            int sizeDestFormat, 
+            AcmFormatSuggestFlags suggestFlags);
+        
         [DllImport("Msacm32.dll")]
         public static extern MmResult acmFormatTagEnum(IntPtr hAcmDriver, ref AcmFormatTagDetails formatTagDetails, AcmFormatTagEnumCallback callback, IntPtr instance, int reserved);
         [DllImport("Msacm32.dll")]
         public static extern MmResult acmMetrics(IntPtr hAcmObject, AcmMetrics metric, out int output);
+        
         /// <summary>
         /// MMRESULT acmStreamOpen(
         ///   LPHACMSTREAM    phas,       
@@ -79,6 +94,7 @@ namespace NAudio.Wave.Compression
             int callback, 
             int instance, 
             AcmStreamOpenFlags openFlags);
+        
         [DllImport("Msacm32.dll")]
         public static extern MmResult acmStreamClose(IntPtr hAcmStream, int closeFlags);
         [DllImport("Msacm32.dll")]

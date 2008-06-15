@@ -15,7 +15,7 @@ namespace NAudio.Wave.Compression
         internal AcmFormat(AcmFormatDetails formatDetails)
         {
             this.formatDetails = formatDetails;
-            waveFormat = (WaveFormat)Marshal.PtrToStructure(formatDetails.waveFormatPointer, typeof(WaveFormat));
+            waveFormat = WaveFormat.MarshalFromPtr(formatDetails.waveFormatPointer);
         }
 
         /// <summary>

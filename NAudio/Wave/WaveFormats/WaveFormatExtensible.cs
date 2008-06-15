@@ -18,6 +18,13 @@ namespace NAudio.Wave
         Guid subFormat;
 
         /// <summary>
+        /// Parameterless constructor for marshalling
+        /// </summary>
+        WaveFormatExtensible()
+        {
+        }
+
+        /// <summary>
         /// Creates a new WaveFormatExtensible for PCM or IEEE
         /// </summary>
         public WaveFormatExtensible(int rate, int bits, int channels)

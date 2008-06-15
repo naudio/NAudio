@@ -90,6 +90,38 @@ namespace NAudio.Wave
             return wf;
         }
 
+        /// <summary>
+        /// Helper function to retrieve a WaveFormat structure from a pointer
+        /// </summary>
+        /// <param name="pointer">WaveFormat structure</param>
+        /// <returns></returns>
+        public static WaveFormat MarshalFromPtr(IntPtr pointer)
+        {
+            WaveFormat waveFormat = (WaveFormat)Marshal.PtrToStructure(pointer, typeof(WaveFormat));
+            switch (waveFormat.Encoding)
+            {
+                case WaveFormatEncoding.Pcm:
+                    // can't rely on extra size even being there for PCM so blank it to avoid reading
+                    // corrupt data
+                    waveFormat.extraSize = 0;
+                    break;
+                case WaveFormatEncoding.Extensible:
+                    waveFormat = (WaveFormatExtensible)Marshal.PtrToStructure(pointer, typeof(WaveFormatExtensible));
+                    break;
+                case WaveFormatEncoding.Adpcm:
+                    waveFormat = (WaveFormatAdpcm)Marshal.PtrToStructure(pointer, typeof(WaveFormatAdpcm));
+                    break;
+                default:
+                    if (waveFormat.ExtraSize > 0)
+                    {
+                        waveFormat = (WaveFormatExtraData)Marshal.PtrToStructure(pointer, typeof(WaveFormatExtraData));
+                    }
+                    break;
+            }
+            return waveFormat;
+            
+        }
+
 		/// <summary>
 		/// Reads a new WaveFormat object from a stream
 		/// </summary>

@@ -88,11 +88,6 @@ namespace NAudio.Wave
             coefficients = new short[14] {
                 256,0,512,-256,0,0,192,64,240,0,460,-208,392,-232
             };
-            // convert to 8.8 fixed point format?
-            /*for (int n = 0; n < coefficients.Length; n++)
-            {
-                coefficients[n] *= 256;
-            }*/
         }
 
         /// <summary>
@@ -104,7 +99,7 @@ namespace NAudio.Wave
             base.Serialize(writer);
             writer.Write(samplesPerBlock);
             writer.Write(numCoeff);
-            foreach (int coefficient in coefficients)
+            foreach (short coefficient in coefficients)
             {
                 writer.Write(coefficient);
             }

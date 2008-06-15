@@ -122,9 +122,11 @@ namespace NAudioDemo
                 {
                     return;
                 }
-                WaveStream convertedStream = new WaveFormatConversionStream(targetFormat, reader);                
-                WaveFileWriter.CreateWaveFile(outputFileName, convertedStream);
-                if (checkBoxAutoLaunchEncodedFile.Checked)
+                using (WaveStream convertedStream = new WaveFormatConversionStream(targetFormat, reader))
+                {
+                    WaveFileWriter.CreateWaveFile(outputFileName, convertedStream);
+                }
+                if (checkBoxAutoLaunchConvertedFile.Checked)
                 {
                     System.Diagnostics.Process.Start(outputFileName);
                 }
@@ -148,14 +150,16 @@ namespace NAudioDemo
                     return;
                 }
 
-                string outputFileName = GetOutputFileName("Select Ouput File Name");
+                string outputFileName = GetOutputFileName("Select Output File Name");
                 if (outputFileName == null)
                 {
                     return;
                 }
-                WaveStream convertedStream = new WaveFormatConversionStream(targetFormat, reader);
-                WaveFileWriter.CreateWaveFile(outputFileName, convertedStream);
-                if (checkBoxAutoLaunchEncodedFile.Checked)
+                using (WaveStream convertedStream = new WaveFormatConversionStream(targetFormat, reader))
+                {
+                    WaveFileWriter.CreateWaveFile(outputFileName, convertedStream);
+                }
+                if (checkBoxAutoLaunchConvertedFile.Checked)
                 {
                     System.Diagnostics.Process.Start(outputFileName);
                 }

@@ -31,7 +31,7 @@
             this.listBoxAcmDrivers = new System.Windows.Forms.ListBox();
             this.label1 = new System.Windows.Forms.Label();
             this.buttonEncode = new System.Windows.Forms.Button();
-            this.checkBoxAutoLaunchEncodedFile = new System.Windows.Forms.CheckBox();
+            this.checkBoxAutoLaunchConvertedFile = new System.Windows.Forms.CheckBox();
             this.buttonChooseFormat = new System.Windows.Forms.Button();
             this.buttonDisplayFormatInfo = new System.Windows.Forms.Button();
             this.buttonDecode = new System.Windows.Forms.Button();
@@ -68,15 +68,15 @@
             this.buttonEncode.UseVisualStyleBackColor = true;
             this.buttonEncode.Click += new System.EventHandler(this.buttonEncode_Click);
             // 
-            // checkBoxAutoLaunchEncodedFile
+            // checkBoxAutoLaunchConvertedFile
             // 
-            this.checkBoxAutoLaunchEncodedFile.AutoSize = true;
-            this.checkBoxAutoLaunchEncodedFile.Location = new System.Drawing.Point(142, 177);
-            this.checkBoxAutoLaunchEncodedFile.Name = "checkBoxAutoLaunchEncodedFile";
-            this.checkBoxAutoLaunchEncodedFile.Size = new System.Drawing.Size(152, 17);
-            this.checkBoxAutoLaunchEncodedFile.TabIndex = 5;
-            this.checkBoxAutoLaunchEncodedFile.Text = "Auto-Launch Encoded File";
-            this.checkBoxAutoLaunchEncodedFile.UseVisualStyleBackColor = true;
+            this.checkBoxAutoLaunchConvertedFile.AutoSize = true;
+            this.checkBoxAutoLaunchConvertedFile.Location = new System.Drawing.Point(142, 177);
+            this.checkBoxAutoLaunchConvertedFile.Name = "checkBoxAutoLaunchConvertedFile";
+            this.checkBoxAutoLaunchConvertedFile.Size = new System.Drawing.Size(158, 17);
+            this.checkBoxAutoLaunchConvertedFile.TabIndex = 5;
+            this.checkBoxAutoLaunchConvertedFile.Text = "Auto-Launch Converted File";
+            this.checkBoxAutoLaunchConvertedFile.UseVisualStyleBackColor = true;
             // 
             // buttonChooseFormat
             // 
@@ -114,7 +114,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(382, 325);
             this.Controls.Add(this.buttonDisplayFormatInfo);
-            this.Controls.Add(this.checkBoxAutoLaunchEncodedFile);
+            this.Controls.Add(this.checkBoxAutoLaunchConvertedFile);
             this.Controls.Add(this.buttonChooseFormat);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.listBoxAcmDrivers);
@@ -133,7 +133,7 @@
         private System.Windows.Forms.ListBox listBoxAcmDrivers;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Button buttonEncode;
-        private System.Windows.Forms.CheckBox checkBoxAutoLaunchEncodedFile;
+        private System.Windows.Forms.CheckBox checkBoxAutoLaunchConvertedFile;
         private System.Windows.Forms.Button buttonChooseFormat;
         private System.Windows.Forms.Button buttonDisplayFormatInfo;
         private System.Windows.Forms.Button buttonDecode;

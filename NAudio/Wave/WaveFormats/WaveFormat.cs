@@ -83,6 +83,10 @@ namespace NAudio.Wave
 		/// </summary>
 		public WaveFormat(int rate, int bits, int channels)
 		{
+            if (channels < 1)
+            {
+                throw new ArgumentOutOfRangeException("Channels must be 1 or greater", "channels");
+            }
 			// minimum 16 bytes, sometimes 18 for PCM
 			this.waveFormatTag = WaveFormatEncoding.Pcm;
 			this.channels = (short)channels;
@@ -147,7 +151,7 @@ namespace NAudio.Wave
         {
             int formatSize = Marshal.SizeOf(format);
             IntPtr formatPointer = Marshal.AllocHGlobal(formatSize);
-            Marshal.StructureToPtr(format, formatPointer, false);
+            Marshal.StructureToPtr(format, formatPointer, false);            
             return formatPointer;
         }
 

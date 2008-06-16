@@ -24,18 +24,19 @@ namespace NAudio.Dmo
     /// <summary>
     /// Resampler
     /// </summary>
-    public class Resampler
+    public class Resampler : IDisposable
     {
         MediaObject mediaObject;
         IPropertyStore propertyStoreInterface;
         IWMResamplerProps resamplerPropsInterface;
+        ResamplerMediaComObject mediaComObject;
 
         /// <summary>
         /// Creates a new Resampler based on the DMO Resampler
         /// </summary>
         public Resampler()
         {
-            ResamplerMediaComObject mediaComObject = new ResamplerMediaComObject();
+            mediaComObject = new ResamplerMediaComObject();
             mediaObject = new MediaObject((IMediaObject)mediaComObject);
             propertyStoreInterface = (IPropertyStore)mediaComObject;
             resamplerPropsInterface = (IWMResamplerProps)mediaComObject;
@@ -52,5 +53,38 @@ namespace NAudio.Dmo
             }
         }
 
+
+        #region IDisposable Members
+
+        /// <summary>
+        /// Dispose code - experimental at the moment
+        /// Was added trying to track down why Resampler crashes NUnit
+        /// This code not currently being called by ResamplerDmoStream
+        /// </summary>
+        public void Dispose()
+        {
+            if(propertyStoreInterface != null)
+            {
+                Marshal.ReleaseComObject(propertyStoreInterface);
+                propertyStoreInterface = null;
+            }
+            if(resamplerPropsInterface != null)
+            {
+                Marshal.ReleaseComObject(resamplerPropsInterface);
+                resamplerPropsInterface = null;
+            }
+            if (mediaObject != null)
+            {
+                mediaObject.Dispose();
+                mediaObject = null;
+            }
+            if (mediaComObject != null)
+            {
+                Marshal.ReleaseComObject(mediaComObject);
+                mediaComObject = null;
+            }
+        }
+
+        #endregion
     }
 }

@@ -10,7 +10,7 @@ namespace NAudio.Dmo
     /// <summary>
     /// Media Object
     /// </summary>
-    public class MediaObject
+    public class MediaObject : IDisposable
     {
         IMediaObject mediaObject;
         int inputStreams;
@@ -232,7 +232,7 @@ namespace NAudio.Dmo
         private DmoMediaType CreateDmoMediaTypeForWaveFormat(WaveFormat waveFormat)
         {
             DmoMediaType mediaType = new DmoMediaType();
-            int waveFormatExSize = 18 + waveFormat.ExtraSize;
+            int waveFormatExSize = Marshal.SizeOf(waveFormat);  // 18 + waveFormat.ExtraSize;
             DmoInterop.MoInitMediaType(ref mediaType, waveFormatExSize);
             mediaType.SetWaveFormat(waveFormat);
             return mediaType;
@@ -440,5 +440,22 @@ namespace NAudio.Dmo
         }
 
         // TODO: there are still several IMediaObject functions to be wrapped
+
+        #region IDisposable Members
+
+        /// <summary>
+        /// Experimental code, not currently being called
+        /// Not sure if it is necessary anyway
+        /// </summary>
+        public void Dispose()
+        {
+            if (mediaObject != null)
+            {
+                Marshal.ReleaseComObject(mediaObject);
+                mediaObject = null;
+            }
+        }
+
+        #endregion
     }
 }

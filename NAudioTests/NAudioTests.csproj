@@ -60,6 +60,7 @@
     <Compile Include="MMDeviceEnumeratorTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ResamplerDmoStreamTests.cs" />
+    <Compile Include="Utils\NullWaveStream.cs" />
     <Compile Include="WaveFormats\AdpcmWaveFormatTests.cs" />
   </ItemGroup>
   <ItemGroup>

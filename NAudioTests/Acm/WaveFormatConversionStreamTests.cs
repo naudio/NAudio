@@ -5,6 +5,8 @@ using NUnit.Framework;
 using NAudio.Wave;
 using NAudio.Wave.Compression;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
+using NAudioTests.Utils;
 
 namespace NAudioTests.Acm
 {
@@ -65,7 +67,7 @@ namespace NAudioTests.Acm
         public void CanConvertAdpcmToSuggestedPcm()
         {
             using(WaveStream stream = WaveFormatConversionStream.CreatePcmStream(
-                new NullWaveStream(new AdpcmWaveFormat(8000, 1))))
+                new NullWaveStream(new AdpcmWaveFormat(8000, 1),1000)))
                 {
             }
         }
@@ -74,7 +76,7 @@ namespace NAudioTests.Acm
         public void CanConvertALawToSuggestedPcm()
         {
             using (WaveStream stream = WaveFormatConversionStream.CreatePcmStream(
-                new NullWaveStream(WaveFormat.CreateALawFormat(8000,1))))
+                new NullWaveStream(WaveFormat.CreateALawFormat(8000,1),1000)))
             {
             }
         }
@@ -83,7 +85,7 @@ namespace NAudioTests.Acm
         public void CanConvertMuLawToSuggestedPcm()
         {
             using (WaveStream stream = WaveFormatConversionStream.CreatePcmStream(
-                new NullWaveStream(WaveFormat.CreateMuLawFormat(8000, 1))))
+                new NullWaveStream(WaveFormat.CreateMuLawFormat(8000, 1), 1000)))
             {
             }
         }
@@ -129,49 +131,12 @@ namespace NAudioTests.Acm
         private void CanCreateConversionStream(WaveFormat inputFormat, WaveFormat outputFormat)
         {
             using (WaveFormatConversionStream stream = new WaveFormatConversionStream(
-                inputFormat, new NullWaveStream(outputFormat)))
+                inputFormat, new NullWaveStream(outputFormat, 10000)))
             {
             }
         }
     }
 
-    class NullWaveStream : WaveStream
-    {
-        WaveFormat format;
-        long position = 0;
-        public NullWaveStream(WaveFormat format)
-        {
-            this.format = format;
-        }
 
-        public override WaveFormat WaveFormat
-        {
-            get { return format; }
-        }
-
-        public override long Length
-        {
-            get { return 0; }
-        }
-
-        public override long Position
-        {
-            get
-            {
-                return position;
-            }
-            set
-            {
-                position = value;
-            }
-        }
-
-        public override int Read(byte[] buffer, int offset, int count)
-        {
-            Array.Clear(buffer, offset, count);
-            position += count;
-            return count;
-        }
-    }
 }
 

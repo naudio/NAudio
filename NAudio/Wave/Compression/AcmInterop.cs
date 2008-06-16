@@ -62,8 +62,10 @@ namespace NAudio.Wave.Compression
         /// </summary>
         [DllImport("Msacm32.dll")]
         public static extern MmResult acmFormatSuggest(
-            IntPtr hAcmDriver, 
+            IntPtr hAcmDriver,
+            [In, MarshalAs(UnmanagedType.CustomMarshaler, MarshalType = "NAudio.Wave.WaveFormatCustomMarshaler")] 
             WaveFormat sourceFormat,
+            [In, Out, MarshalAs(UnmanagedType.CustomMarshaler, MarshalType = "NAudio.Wave.WaveFormatCustomMarshaler")] 
             WaveFormat destFormat, 
             int sizeDestFormat, 
             AcmFormatSuggestFlags suggestFlags);
@@ -96,8 +98,10 @@ namespace NAudio.Wave.Compression
         public static extern MmResult acmStreamOpen(
             out IntPtr hAcmStream, 
             IntPtr hAcmDriver, 
-            [In] WaveFormat sourceFormat, 
-            [In] WaveFormat destFormat, 
+            [In, MarshalAs(UnmanagedType.CustomMarshaler, MarshalType = "NAudio.Wave.WaveFormatCustomMarshaler")] 
+            WaveFormat sourceFormat,
+            [In, MarshalAs(UnmanagedType.CustomMarshaler, MarshalType = "NAudio.Wave.WaveFormatCustomMarshaler")] 
+            WaveFormat destFormat, 
             [In] WaveFilter waveFilter, 
             int callback, 
             int instance, 

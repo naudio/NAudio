@@ -60,8 +60,10 @@ namespace NAudio.Wave
                 throw new FormatException("Not a WAVE file - no fmt header");
             }
             format = new WaveFormatExtraData(br);
+            
             Int32 dataChunkID = WaveInterop.mmioStringToFOURCC("data", 0);
             dataChunkLength = 0;
+            
             while (stream.Position < stream.Length)
             {
                 Int32 chunkIdentifier = br.ReadInt32();                

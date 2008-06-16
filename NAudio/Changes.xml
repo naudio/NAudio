@@ -859,4 +859,12 @@
     <desc>Added interop for AcmFormatChoose</desc>
     <desc>Moved ACM interop into NAudio.Wave.Compression namespace</desc>
   </change>
+  <change>
+    <version>1.2.138.0</version>
+    <author>Mark Heath</author>
+    <date>16 Jun 2008</date>
+    <desc>Added a Custom Marshaller for WaveFormat (not used everywhere yet)</desc>
+    <desc>Fixed some marshalling bugs in ResamplerDMOStream caused by WaveFileReader using WaveFormatExtraData</desc>
+    <desc>Got majority of unit tests working (things had slipped a little!)</desc>    
+  </change>
 </changes>

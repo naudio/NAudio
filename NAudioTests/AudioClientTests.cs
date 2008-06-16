@@ -26,7 +26,17 @@ namespace NAudioTests
         [Test]
         public void CanInitializeInExclusiveMode()
         {
-            InitializeClient(AudioClientShareMode.Exclusive);
+            using (AudioClient audioClient = GetAudioClient())
+            {
+                WaveFormat waveFormat = new WaveFormat(44100, 16, 2); //audioClient.MixFormat;
+                long refTimesPerSecond = 10000000;
+                audioClient.Initialize(AudioClientShareMode.Exclusive,
+                    AudioClientStreamFlags.None,
+                    refTimesPerSecond / 10,
+                    0,
+                    waveFormat,
+                    Guid.Empty);
+            }
         }
 
         [Test]
@@ -111,9 +121,6 @@ namespace NAudioTests
             Console.Write(desiredFormat);
             GetAudioClient().IsFormatSupported(AudioClientShareMode.Shared, desiredFormat);
         }
-
-        
-
 
         [Test]
         public void CanRequestIfFormatIsSupportedPCMStereo()

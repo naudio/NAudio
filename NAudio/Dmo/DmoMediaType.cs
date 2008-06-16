@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using NAudio.Wave;
 using System.Runtime.InteropServices;
+using System.Diagnostics;
 
 namespace NAudio.Dmo
 {
@@ -118,9 +119,7 @@ namespace NAudio.Dmo
         {
             if (formattype == DmoMediaTypeGuids.FORMAT_WaveFormatEx)
             {                
-                WaveFormat waveFormat = new WaveFormat();
-                Marshal.PtrToStructure(pbFormat, waveFormat);
-                return waveFormat;
+                return WaveFormat.MarshalFromPtr(pbFormat);
             }
             else
             {
@@ -142,6 +141,7 @@ namespace NAudio.Dmo
             formattype = DmoMediaTypeGuids.FORMAT_WaveFormatEx;
             if (cbFormat < 18)
                 throw new InvalidOperationException("Not enough memory assigned for a WaveFormat structure");
+            Debug.Assert(cbFormat >= Marshal.SizeOf(waveFormat),"Not enough space");
             Marshal.StructureToPtr(waveFormat, pbFormat, false);
         }
     }

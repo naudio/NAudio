@@ -9,6 +9,7 @@ namespace NAudio.Dmo
     /// IMediaBuffer Interface
     /// </summary>
     [ComImport,
+    System.Security.SuppressUnmanagedCodeSecurity,
     Guid("59eff8b9-938c-4a26-82f2-95cb84cdc837"),
     InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     public interface IMediaBuffer

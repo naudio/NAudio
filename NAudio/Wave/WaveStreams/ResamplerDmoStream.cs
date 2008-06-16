@@ -32,18 +32,17 @@ namespace NAudio.Wave
             {
                 throw new ArgumentException("Unsupported Input Stream format", "inputStream");
             }
+
             resampler.MediaObject.SetInputWaveFormat(0, inputStream.WaveFormat);
             if (!resampler.MediaObject.SupportsOutputWaveFormat(0, outputFormat))
             {
                 throw new ArgumentException("Unsupported Output Stream format", "outputStream");
-            }            
-
-            resampler.MediaObject.SetOutputWaveFormat(0, outputFormat);
+            }
+         
+            resampler.MediaObject.SetOutputWaveFormat(0, outputFormat);            
             position = InputToOutputPosition(inputStream.Position);
             inputMediaBuffer = new MediaBuffer(inputStream.WaveFormat.AverageBytesPerSecond);
             outputBuffer = new DmoOutputDataBuffer(outputFormat.AverageBytesPerSecond);
-
-            bool test = resampler.MediaObject.IsAcceptingData(0);
         }
 
         /// <summary>
@@ -181,6 +180,11 @@ namespace NAudio.Wave
                 inputMediaBuffer = null;
             }
             outputBuffer.Dispose();
+            if (resampler != null)
+            {
+                //resampler.Dispose(); s
+                resampler = null;
+            }
             base.Dispose(disposing);
         }
     }

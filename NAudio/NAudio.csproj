@@ -301,6 +301,7 @@
     <Compile Include="Wave\WaveFormats\OggWaveFormat.cs" />
     <Compile Include="Wave\WaveFormats\WaveFormat.cs" />
     <Compile Include="Wave\WaveFormats\AdpcmWaveFormat.cs" />
+    <Compile Include="Wave\WaveFormats\WaveFormatCustomMarshaler.cs" />
     <Compile Include="Wave\WaveFormats\WaveFormatEncoding.cs" />
     <Compile Include="Wave\WaveFormats\WaveFormatExtensible.cs" />
     <Compile Include="Wave\WaveFormats\WaveFormatExtraData.cs" />

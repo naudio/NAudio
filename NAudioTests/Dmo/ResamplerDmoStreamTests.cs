@@ -6,7 +6,7 @@ using NAudio.Wave;
 using System.Diagnostics;
 using NAudioTests.Utils;
 
-namespace NAudioTests
+namespace NAudioTests.Dmo
 {
     [TestFixture]
     public class ResamplerDmoStreamTests

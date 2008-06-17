@@ -4,7 +4,7 @@ using System.Text;
 using NUnit.Framework;
 using NAudio.CoreAudioApi;
 
-namespace NAudioTests
+namespace NAudioTests.Wasapi
 {
     [TestFixture]
     public class MMDeviceEnumeratorTests

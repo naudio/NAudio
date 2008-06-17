@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 using NAudio.Wave;
 using System.Diagnostics;
 
-namespace NAudioTests
+namespace NAudioTests.Dmo
 {
     [TestFixture]
     public class DmoTests

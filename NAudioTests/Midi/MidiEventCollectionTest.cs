@@ -4,7 +4,7 @@ using System.Text;
 using NUnit.Framework;
 using NAudio.Midi;
 
-namespace NAudioTests
+namespace NAudioTests.Midi
 {
     [TestFixture]
     public class MidiEventCollectionTest

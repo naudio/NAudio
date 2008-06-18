@@ -199,6 +199,7 @@ namespace NAudioDemo
             {
                 waveOut.Stop();
                 groupBoxDriverModel.Enabled = true;
+                trackBarPosition.Value = 0;
             }
         }
 
@@ -206,7 +207,14 @@ namespace NAudioDemo
         {
             if (waveOut != null)
             {
-                trackBarPosition.Value = (int)mainOutputStream.CurrentTime.TotalSeconds;
+                if (mainOutputStream.Position >= mainOutputStream.Length)
+                {
+                    buttonStop_Click(sender, e);
+                }
+                else
+                {
+                    trackBarPosition.Value = (int)mainOutputStream.CurrentTime.TotalSeconds;
+                }
             }
         }
 
@@ -214,6 +222,7 @@ namespace NAudioDemo
         {
             if (waveOut != null)
             {
+                
                 mainOutputStream.CurrentTime = TimeSpan.FromSeconds(trackBarPosition.Value);
             }
         }

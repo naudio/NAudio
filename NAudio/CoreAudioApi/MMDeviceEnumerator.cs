@@ -19,6 +19,7 @@
      misrepresented as being the original source code.
   3. This notice may not be removed or altered from any source distribution.
 */
+// updated for use in NAudio
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -33,7 +34,7 @@ namespace NAudio.CoreAudioApi
     /// </summary>
     public class MMDeviceEnumerator
     {
-        private IMMDeviceEnumerator _realEnumerator = new MMDeviceEnumeratorComObject() as IMMDeviceEnumerator;
+        private IMMDeviceEnumerator _realEnumerator;
 
         /// <summary>
         /// Enumerate Audio Endpoints
@@ -82,6 +83,7 @@ namespace NAudio.CoreAudioApi
             {
                 throw new NotSupportedException("This functionality is only supported on Windows Vista or newer.");
             }
+            _realEnumerator = new MMDeviceEnumeratorComObject() as IMMDeviceEnumerator;
         }
     }
 }

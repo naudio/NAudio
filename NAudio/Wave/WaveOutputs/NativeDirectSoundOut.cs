@@ -62,17 +62,18 @@ namespace NAudio.Wave
         /// </summary>
         public void Play()
         {
-            if (playbackState != PlaybackState.Playing)
+            if (playbackState == PlaybackState.Stopped)
             {
-                if (PlaybackState == PlaybackState.Stopped)
-                {
-                    secondaryBuffer.SetCurrentPosition(0);
-                    nextSamplesWriteIndex = 0;
-                    Feed(samplesTotalSize);
-                }
-                playbackState = PlaybackState.Playing;
-                secondaryBuffer.Play(0, 0, DirectSoundPlayFlags.DSBPLAY_LOOPING);
+                // -------------------------------------------------------------------------------------
+                // Thread that process samples
+                // -------------------------------------------------------------------------------------
+                notifyThread = new Thread(processSamples);
+                // put this back to highest when we are confident we don't have any bugs in the thread proc
+                notifyThread.Priority = ThreadPriority.Normal;
+                notifyThread.IsBackground = true;
+                notifyThread.Start();
             }
+            playbackState = PlaybackState.Playing;
         }
 
         /// <summary>
@@ -81,8 +82,11 @@ namespace NAudio.Wave
         public void Stop()
         {
             playbackState = PlaybackState.Stopped;
-            if (secondaryBuffer != null)
-                secondaryBuffer.Stop();
+            if (notifyThread != null)
+            {
+                notifyThread.Join();
+                notifyThread = null;
+            }
         }
 
         /// <summary>
@@ -101,7 +105,10 @@ namespace NAudio.Wave
         {
             waveStream = waveStreamArg;
             waveFormat = waveStream.WaveFormat;
+        }
 
+        private void InitialiseDirectSound()
+        {
             // Open DirectSound
             DirectSoundCreate(IntPtr.Zero, out directSound, IntPtr.Zero);
 
@@ -189,14 +196,6 @@ namespace NAudio.Wave
             notifies[2].hEventNotify = endEventWaitHandle.SafeWaitHandle.DangerousGetHandle();
 
             notify.SetNotificationPositions(3, notifies);
-
-            // -------------------------------------------------------------------------------------
-            // Thread that process samples
-            // -------------------------------------------------------------------------------------
-            notifyThread = new Thread(processSamples);
-            notifyThread.Priority = ThreadPriority.Highest;
-            notifyThread.IsBackground = true;
-            notifyThread.Start();
         }
 
         /// <summary>
@@ -216,12 +215,13 @@ namespace NAudio.Wave
         {
             get
             {
-                return 1 + (secondaryBuffer.GetVolume()) / 10000.0f;
+                return 1.0f;
+                //return 1 + (secondaryBuffer.GetVolume()) / 10000.0f;
             }
             set
             {
-                int intVol = (int)((value - 1) * 10000.0f);
-                secondaryBuffer.SetVolume(intVol);
+                //int intVol = (int)((value - 1) * 10000.0f);
+                //secondaryBuffer.SetVolume(intVol);
             }
         }
 
@@ -230,16 +230,7 @@ namespace NAudio.Wave
         /// </summary>
         public void Dispose()
         {
-            if (secondaryBuffer != null)
-            {
-                secondaryBuffer.Stop();
-                secondaryBuffer = null;
-            }
-            if (primarySoundBuffer != null)
-            {
-                primarySoundBuffer.Stop();
-                primarySoundBuffer = null;
-            }
+            Stop();
             GC.SuppressFinalize(this);
         }
 
@@ -271,9 +262,20 @@ namespace NAudio.Wave
         /// </summary>
         private void processSamples()
         {
+            InitialiseDirectSound();
+
+            if (PlaybackState == PlaybackState.Stopped)
+            {
+                secondaryBuffer.SetCurrentPosition(0);
+                nextSamplesWriteIndex = 0;
+                Feed(samplesTotalSize);
+            }
+            playbackState = PlaybackState.Playing;
+            secondaryBuffer.Play(0, 0, DirectSoundPlayFlags.DSBPLAY_LOOPING);
+
             WaitHandle[] waitHandles = new WaitHandle[] { frameEventWaitHandle1, frameEventWaitHandle2, endEventWaitHandle };
 
-            while (true)
+            while (PlaybackState != PlaybackState.Stopped)
             {
                 // Wait for signals on frameEventWaitHandle1 (Position 0), frameEventWaitHandle2 (Position 1/2)
                 int indexHandle = WaitHandle.WaitAny(waitHandles, 3 * desiredLatency, false);
@@ -294,6 +296,18 @@ namespace NAudio.Wave
                     }
                 }
             }
+
+            if (secondaryBuffer != null)
+            {
+                secondaryBuffer.Stop();
+                secondaryBuffer = null;
+            }
+            if (primarySoundBuffer != null)
+            {
+                primarySoundBuffer.Stop();
+                primarySoundBuffer = null;
+            }
+
         }
 
 

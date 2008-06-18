@@ -867,4 +867,12 @@
     <desc>Fixed some marshalling bugs in ResamplerDMOStream caused by WaveFileReader using WaveFormatExtraData</desc>
     <desc>Got majority of unit tests working (things had slipped a little!)</desc>    
   </change>
+  <change>
+    <version>1.2.139.0</version>
+    <author>Mark Heath</author>
+    <date>18 Jun 2008</date>
+    <desc>NativeDirectSound working in STAThread mode</desc>
+    <desc>NAudioDemo stops playback at end of file</desc>
+    <desc>Unit Test reorganization</desc>
+  </change>
 </changes>

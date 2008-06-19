@@ -81,18 +81,23 @@ namespace NAudioDemo
 
         private WaveStream CreateInputStream(string fileName)
         {
+            WaveChannel32 inputStream;
             if (fileName.EndsWith(".wav"))
             {
-                return new WaveChannel32(new WaveFileReader(fileName));
+                inputStream = new WaveChannel32(new WaveFileReader(fileName));
             }
             else if (fileName.EndsWith(".mp3"))
             {                
-                return new WaveChannel32(WaveFormatConversionStream.CreatePcmStream(new Mp3FileReader(fileName)));
+                inputStream = new WaveChannel32(WaveFormatConversionStream.CreatePcmStream(new Mp3FileReader(fileName)));
             }
             else
             {
                 throw new InvalidOperationException("Unsupported extension");
             }
+            // we are not going into a mixer so we don't need to zero pad
+            // this helps us with playing back MP3s (until we can do a block align reduction stream)
+            inputStream.PadWithZeroes = false;
+            return inputStream;
         }
 
         private void CreateWaveOut()
@@ -178,9 +183,9 @@ namespace NAudioDemo
 
         private void volumeSlider1_VolumeChanged(object sender, EventArgs e)
         {
-            if (waveOut != null)
+            if (mainOutputStream != null)
             {
-                waveOut.Volume = volumeSlider1.Volume;
+                ((WaveChannel32)mainOutputStream).Volume = volumeSlider1.Volume;
             }
         }
 
@@ -236,6 +241,11 @@ namespace NAudioDemo
             {
                 fileName = openFileDialog.FileName;
             }
+        }
+
+        private void volumeSlider1_Load(object sender, EventArgs e)
+        {
+
         }
 
     }

@@ -314,9 +314,10 @@ namespace NAudio.Wave
         /// <summary>
         /// Feeds the SecondaryBuffer with the WaveStream
         /// </summary>
-        /// <param name="toCopy">number of bytes to feed</param>
-        private void Feed(int toCopy)
+        /// <param name="bytesToCopy">number of bytes to feed</param>
+        private void Feed(int bytesToCopy)
         {
+            int bytesRead = bytesToCopy;
             // Restore the buffer if lost
             if (IsBufferLost())
             {
@@ -331,7 +332,7 @@ namespace NAudio.Wave
             else
             {
                 // Read data from stream (Should this be inserted between the lock / unlock?)
-                waveStream.Read(samples, 0, toCopy);
+                bytesRead = waveStream.Read(samples, 0, bytesToCopy);
             }
 
             // Lock a portion of the SecondaryBuffer (starting from 0 or 1/2 the buffer)
@@ -339,7 +340,7 @@ namespace NAudio.Wave
             int nbSamples1;
             IntPtr wavBuffer2;
             int nbSamples2;
-            secondaryBuffer.Lock(nextSamplesWriteIndex, (uint)toCopy,
+            secondaryBuffer.Lock(nextSamplesWriteIndex, (uint)bytesRead,  // (uint)bytesToCopy,
                                  out wavBuffer1, out nbSamples1,
                                  out wavBuffer2, out nbSamples2,
                                  DirectSoundBufferLockFlag.None);

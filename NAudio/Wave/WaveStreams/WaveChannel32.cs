@@ -27,6 +27,7 @@ namespace NAudio.Wave
         /// <param name="pan">pan control (-1 to 1)</param>
         public WaveChannel32(WaveStream sourceStream, float volume, float pan)
         {
+            PadWithZeroes = true;
             if (sourceStream.WaveFormat.Encoding != WaveFormatEncoding.Pcm)
                 throw new ApplicationException("Only PCM supported");
             if (sourceStream.WaveFormat.BitsPerSample != 16)
@@ -153,11 +154,19 @@ namespace NAudio.Wave
                 }
             }
             // 3. Fill out with zeroes
-            for (int n = bytesWritten; n < numBytes; n++)
-                destBuffer[offset + n] = 0;
-            position += numBytes;
+            if (PadWithZeroes && bytesWritten < numBytes)
+            {
+                Array.Clear(destBuffer, offset + bytesWritten, numBytes - bytesWritten);
+                bytesWritten = numBytes;
+            }
+            position += bytesWritten;
             return numBytes;
         }
+
+        /// <summary>
+        /// If true, Read always returns the number of bytes requested
+        /// </summary>
+        public bool PadWithZeroes { get; set; }
 
         /// <summary>
         /// Converts Mono to stereo, adjusting volume and pan

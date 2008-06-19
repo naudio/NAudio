@@ -875,4 +875,12 @@
     <desc>NAudioDemo stops playback at end of file</desc>
     <desc>Unit Test reorganization</desc>
   </change>
+  <change>
+    <version>1.2.140.0</version>
+    <author>Mark Heath</author>
+    <date>19 Jun 2008</date>
+    <desc>WaveStream32 has option not to pad reads out to full length</desc>
+    <desc>NAudioDemo sets volume on WaveStream rather than WaveOut</desc>
+    
+  </change>
 </changes>

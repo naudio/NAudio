@@ -35,8 +35,12 @@
             this.radioButtonAsio = new System.Windows.Forms.RadioButton();
             this.buttonControlPanel = new System.Windows.Forms.Button();
             this.groupBoxDriverModel = new System.Windows.Forms.GroupBox();
-            this.label1 = new System.Windows.Forms.Label();
+            this.checkBoxWasapiEventCallback = new System.Windows.Forms.CheckBox();
+            this.checkBoxWasapiExclusiveMode = new System.Windows.Forms.CheckBox();
+            this.checkBoxDirectSoundNative = new System.Windows.Forms.CheckBox();
+            this.checkBoxWaveOutWindow = new System.Windows.Forms.CheckBox();
             this.radioButtonWasapi = new System.Windows.Forms.RadioButton();
+            this.label1 = new System.Windows.Forms.Label();
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
             this.toolStripButtonOpenFile = new System.Windows.Forms.ToolStripButton();
             this.buttonPlay = new System.Windows.Forms.ToolStripButton();
@@ -45,10 +49,6 @@
             this.trackBarPosition = new System.Windows.Forms.TrackBar();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.volumeSlider1 = new NAudio.Gui.VolumeSlider();
-            this.checkBoxWaveOutWindow = new System.Windows.Forms.CheckBox();
-            this.checkBoxDirectSoundNative = new System.Windows.Forms.CheckBox();
-            this.checkBoxWasapiExclusiveMode = new System.Windows.Forms.CheckBox();
-            this.checkBoxWasapiEventCallback = new System.Windows.Forms.CheckBox();
             this.label2 = new System.Windows.Forms.Label();
             this.groupBoxDriverModel.SuspendLayout();
             this.toolStrip1.SuspendLayout();
@@ -126,14 +126,45 @@
             this.groupBoxDriverModel.TabStop = false;
             this.groupBoxDriverModel.Text = "Output Driver";
             // 
-            // label1
+            // checkBoxWasapiEventCallback
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(383, 28);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(20, 13);
-            this.label1.TabIndex = 13;
-            this.label1.Text = "ms";
+            this.checkBoxWasapiEventCallback.AutoSize = true;
+            this.checkBoxWasapiEventCallback.Location = new System.Drawing.Point(25, 158);
+            this.checkBoxWasapiEventCallback.Name = "checkBoxWasapiEventCallback";
+            this.checkBoxWasapiEventCallback.Size = new System.Drawing.Size(98, 17);
+            this.checkBoxWasapiEventCallback.TabIndex = 14;
+            this.checkBoxWasapiEventCallback.Text = "Event Callback";
+            this.checkBoxWasapiEventCallback.UseVisualStyleBackColor = true;
+            // 
+            // checkBoxWasapiExclusiveMode
+            // 
+            this.checkBoxWasapiExclusiveMode.AutoSize = true;
+            this.checkBoxWasapiExclusiveMode.Location = new System.Drawing.Point(25, 135);
+            this.checkBoxWasapiExclusiveMode.Name = "checkBoxWasapiExclusiveMode";
+            this.checkBoxWasapiExclusiveMode.Size = new System.Drawing.Size(101, 17);
+            this.checkBoxWasapiExclusiveMode.TabIndex = 14;
+            this.checkBoxWasapiExclusiveMode.Text = "Exclusive Mode";
+            this.checkBoxWasapiExclusiveMode.UseVisualStyleBackColor = true;
+            // 
+            // checkBoxDirectSoundNative
+            // 
+            this.checkBoxDirectSoundNative.AutoSize = true;
+            this.checkBoxDirectSoundNative.Location = new System.Drawing.Point(25, 85);
+            this.checkBoxDirectSoundNative.Name = "checkBoxDirectSoundNative";
+            this.checkBoxDirectSoundNative.Size = new System.Drawing.Size(86, 17);
+            this.checkBoxDirectSoundNative.TabIndex = 14;
+            this.checkBoxDirectSoundNative.Text = "COM Interop";
+            this.checkBoxDirectSoundNative.UseVisualStyleBackColor = true;
+            // 
+            // checkBoxWaveOutWindow
+            // 
+            this.checkBoxWaveOutWindow.AutoSize = true;
+            this.checkBoxWaveOutWindow.Location = new System.Drawing.Point(25, 39);
+            this.checkBoxWaveOutWindow.Name = "checkBoxWaveOutWindow";
+            this.checkBoxWaveOutWindow.Size = new System.Drawing.Size(126, 17);
+            this.checkBoxWaveOutWindow.TabIndex = 13;
+            this.checkBoxWaveOutWindow.Text = "Callback via Window";
+            this.checkBoxWaveOutWindow.UseVisualStyleBackColor = true;
             // 
             // radioButtonWasapi
             // 
@@ -145,6 +176,15 @@
             this.radioButtonWasapi.TabStop = true;
             this.radioButtonWasapi.Text = "WASAPI";
             this.radioButtonWasapi.UseVisualStyleBackColor = true;
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(383, 28);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(20, 13);
+            this.label1.TabIndex = 13;
+            this.label1.Text = "ms";
             // 
             // toolStrip1
             // 
@@ -220,47 +260,8 @@
             this.volumeSlider1.Size = new System.Drawing.Size(96, 16);
             this.volumeSlider1.TabIndex = 11;
             this.volumeSlider1.Volume = 1F;
+            this.volumeSlider1.Load += new System.EventHandler(this.volumeSlider1_Load);
             this.volumeSlider1.VolumeChanged += new System.EventHandler(this.volumeSlider1_VolumeChanged);
-            // 
-            // checkBoxWaveOutWindow
-            // 
-            this.checkBoxWaveOutWindow.AutoSize = true;
-            this.checkBoxWaveOutWindow.Location = new System.Drawing.Point(25, 39);
-            this.checkBoxWaveOutWindow.Name = "checkBoxWaveOutWindow";
-            this.checkBoxWaveOutWindow.Size = new System.Drawing.Size(126, 17);
-            this.checkBoxWaveOutWindow.TabIndex = 13;
-            this.checkBoxWaveOutWindow.Text = "Callback via Window";
-            this.checkBoxWaveOutWindow.UseVisualStyleBackColor = true;
-            // 
-            // checkBoxDirectSoundNative
-            // 
-            this.checkBoxDirectSoundNative.AutoSize = true;
-            this.checkBoxDirectSoundNative.Location = new System.Drawing.Point(25, 85);
-            this.checkBoxDirectSoundNative.Name = "checkBoxDirectSoundNative";
-            this.checkBoxDirectSoundNative.Size = new System.Drawing.Size(86, 17);
-            this.checkBoxDirectSoundNative.TabIndex = 14;
-            this.checkBoxDirectSoundNative.Text = "COM Interop";
-            this.checkBoxDirectSoundNative.UseVisualStyleBackColor = true;
-            // 
-            // checkBoxWasapiExclusiveMode
-            // 
-            this.checkBoxWasapiExclusiveMode.AutoSize = true;
-            this.checkBoxWasapiExclusiveMode.Location = new System.Drawing.Point(25, 135);
-            this.checkBoxWasapiExclusiveMode.Name = "checkBoxWasapiExclusiveMode";
-            this.checkBoxWasapiExclusiveMode.Size = new System.Drawing.Size(101, 17);
-            this.checkBoxWasapiExclusiveMode.TabIndex = 14;
-            this.checkBoxWasapiExclusiveMode.Text = "Exclusive Mode";
-            this.checkBoxWasapiExclusiveMode.UseVisualStyleBackColor = true;
-            // 
-            // checkBoxWasapiEventCallback
-            // 
-            this.checkBoxWasapiEventCallback.AutoSize = true;
-            this.checkBoxWasapiEventCallback.Location = new System.Drawing.Point(25, 158);
-            this.checkBoxWasapiEventCallback.Name = "checkBoxWasapiEventCallback";
-            this.checkBoxWasapiEventCallback.Size = new System.Drawing.Size(98, 17);
-            this.checkBoxWasapiEventCallback.TabIndex = 14;
-            this.checkBoxWasapiEventCallback.Text = "Event Callback";
-            this.checkBoxWasapiEventCallback.UseVisualStyleBackColor = true;
             // 
             // label2
             // 

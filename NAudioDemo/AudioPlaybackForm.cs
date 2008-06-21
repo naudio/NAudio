@@ -61,6 +61,8 @@ namespace NAudioDemo
 
             WaveStream reader = CreateInputStream(fileName);
             trackBarPosition.Maximum = (int) reader.TotalTime.TotalSeconds;
+            labelTotalTime.Text = String.Format("{0:00}:{1:00}", (int)reader.TotalTime.TotalMinutes,
+                reader.TotalTime.Seconds);
             trackBarPosition.TickFrequency = trackBarPosition.Maximum / 30;
             inputs.Add(reader);
             
@@ -218,7 +220,10 @@ namespace NAudioDemo
                 }
                 else
                 {
-                    trackBarPosition.Value = (int)mainOutputStream.CurrentTime.TotalSeconds;
+                    TimeSpan currentTime = mainOutputStream.CurrentTime;
+                    trackBarPosition.Value = (int)currentTime.TotalSeconds;
+                    labelCurrentTime.Text = String.Format("{0:00}:{1:00}", (int)currentTime.TotalMinutes,
+                        currentTime.Seconds);
                 }
             }
         }

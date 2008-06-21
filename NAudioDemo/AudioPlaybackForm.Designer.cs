@@ -50,6 +50,10 @@
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.volumeSlider1 = new NAudio.Gui.VolumeSlider();
             this.label2 = new System.Windows.Forms.Label();
+            this.toolStripLabel1 = new System.Windows.Forms.ToolStripLabel();
+            this.labelCurrentTime = new System.Windows.Forms.ToolStripLabel();
+            this.toolStripLabel3 = new System.Windows.Forms.ToolStripLabel();
+            this.labelTotalTime = new System.Windows.Forms.ToolStripLabel();
             this.groupBoxDriverModel.SuspendLayout();
             this.toolStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.trackBarPosition)).BeginInit();
@@ -192,7 +196,11 @@
             this.toolStripButtonOpenFile,
             this.buttonPlay,
             this.buttonPause,
-            this.buttonStop});
+            this.buttonStop,
+            this.toolStripLabel1,
+            this.labelCurrentTime,
+            this.toolStripLabel3,
+            this.labelTotalTime});
             this.toolStrip1.Location = new System.Drawing.Point(0, 0);
             this.toolStrip1.Name = "toolStrip1";
             this.toolStrip1.Size = new System.Drawing.Size(513, 25);
@@ -272,6 +280,30 @@
             this.label2.TabIndex = 17;
             this.label2.Text = "Requested Latency:";
             // 
+            // toolStripLabel1
+            // 
+            this.toolStripLabel1.Name = "toolStripLabel1";
+            this.toolStripLabel1.Size = new System.Drawing.Size(80, 22);
+            this.toolStripLabel1.Text = "Current Time:";
+            // 
+            // labelCurrentTime
+            // 
+            this.labelCurrentTime.Name = "labelCurrentTime";
+            this.labelCurrentTime.Size = new System.Drawing.Size(34, 22);
+            this.labelCurrentTime.Text = "00:00";
+            // 
+            // toolStripLabel3
+            // 
+            this.toolStripLabel3.Name = "toolStripLabel3";
+            this.toolStripLabel3.Size = new System.Drawing.Size(67, 22);
+            this.toolStripLabel3.Text = "Total Time:";
+            // 
+            // labelTotalTime
+            // 
+            this.labelTotalTime.Name = "labelTotalTime";
+            this.labelTotalTime.Size = new System.Drawing.Size(34, 22);
+            this.labelTotalTime.Text = "00:00";
+            // 
             // AudioPlaybackForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -322,5 +354,9 @@
         private System.Windows.Forms.CheckBox checkBoxWasapiExclusiveMode;
         private System.Windows.Forms.CheckBox checkBoxDirectSoundNative;
         private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.ToolStripLabel toolStripLabel1;
+        private System.Windows.Forms.ToolStripLabel labelCurrentTime;
+        private System.Windows.Forms.ToolStripLabel toolStripLabel3;
+        private System.Windows.Forms.ToolStripLabel labelTotalTime;
     }
 }

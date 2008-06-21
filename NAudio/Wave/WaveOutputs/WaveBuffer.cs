@@ -7,7 +7,8 @@ namespace NAudio.Wave
     /// WaveBuffer class use to store wave datas. Data can be manipulated with arrays
     /// (<see cref="ByteBuffer"/>,<see cref="FloatBuffer"/>,<see cref="ShortBuffer"/>,<see cref="IntBuffer"/> ) that are pointing to the
     /// same memory buffer. Use the associated Count property based on the type of buffer to get the number of 
-    /// data in the buffer. 
+    /// data in the buffer.
+    /// Implicit casting is now supported to float[], byte[], int[], short[].
     /// You must not use Length on returned arrays.
     /// 
     /// NOT YET USED.
@@ -16,7 +17,7 @@ namespace NAudio.Wave
     public class WaveBuffer
     {
         [FieldOffset(0)]
-        private int numberOfBytes;
+        public int numberOfBytes;
         [FieldOffset(4)]
         private byte[] byteBuffer;
         [FieldOffset(4)]
@@ -37,6 +38,69 @@ namespace NAudio.Wave
             // Allocating the byteBuffer is co-allocating the floatBuffer and the intBuffer
             byteBuffer = new byte[sizeToAllocateInBytes];
             numberOfBytes = 0;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="WaveBuffer"/> class binded to a specific byte buffer.
+        /// </summary>
+        /// <param name="bufferToBoundTo">A byte buffer to bound the WaveBuffer to.</param>
+        public WaveBuffer(byte[] bufferToBoundTo)
+        {
+            BindTo(bufferToBoundTo);
+        }
+
+        /// <summary>
+        /// Binds this WaveBuffer instance to a specific byte buffer.
+        /// </summary>
+        /// <param name="bufferToBoundTo">A byte buffer to bound the WaveBuffer to.</param>
+        public void BindTo(byte[] bufferToBoundTo)
+        {   
+            if ( (bufferToBoundTo.Length % 4) != 0 )
+            {
+                throw new ArgumentException("The byte buffer to bound must be 4 bytes aligned");
+            }
+            byteBuffer = bufferToBoundTo;
+            numberOfBytes = 0;
+        }
+
+        /// <summary>
+        /// Performs an implicit conversion from <see cref="NAudio.Wave.WaveBuffer"/> to <see cref="System.Byte[]"/>.
+        /// </summary>
+        /// <param name="waveBuffer">The wave buffer.</param>
+        /// <returns>The result of the conversion.</returns>
+        public static implicit operator byte[](WaveBuffer waveBuffer)
+        {
+            return waveBuffer.byteBuffer;
+        }
+
+        /// <summary>
+        /// Performs an implicit conversion from <see cref="NAudio.Wave.WaveBuffer"/> to <see cref="System.Single[]"/>.
+        /// </summary>
+        /// <param name="waveBuffer">The wave buffer.</param>
+        /// <returns>The result of the conversion.</returns>
+        public static implicit operator float[](WaveBuffer waveBuffer)
+        {
+            return waveBuffer.floatBuffer;
+        }
+
+        /// <summary>
+        /// Performs an implicit conversion from <see cref="NAudio.Wave.WaveBuffer"/> to <see cref="System.Int32[]"/>.
+        /// </summary>
+        /// <param name="waveBuffer">The wave buffer.</param>
+        /// <returns>The result of the conversion.</returns>
+        public static implicit operator int[](WaveBuffer waveBuffer)
+        {
+            return waveBuffer.intBuffer;
+        }
+
+        /// <summary>
+        /// Performs an implicit conversion from <see cref="NAudio.Wave.WaveBuffer"/> to <see cref="System.Int16[]"/>.
+        /// </summary>
+        /// <param name="waveBuffer">The wave buffer.</param>
+        /// <returns>The result of the conversion.</returns>
+        public static implicit operator short[](WaveBuffer waveBuffer)
+        {
+            return waveBuffer.shortBuffer;
         }
 
         /// <summary>

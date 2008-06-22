@@ -46,14 +46,16 @@
             this.buttonPlay = new System.Windows.Forms.ToolStripButton();
             this.buttonPause = new System.Windows.Forms.ToolStripButton();
             this.buttonStop = new System.Windows.Forms.ToolStripButton();
-            this.trackBarPosition = new System.Windows.Forms.TrackBar();
-            this.timer1 = new System.Windows.Forms.Timer(this.components);
-            this.volumeSlider1 = new NAudio.Gui.VolumeSlider();
-            this.label2 = new System.Windows.Forms.Label();
             this.toolStripLabel1 = new System.Windows.Forms.ToolStripLabel();
             this.labelCurrentTime = new System.Windows.Forms.ToolStripLabel();
             this.toolStripLabel3 = new System.Windows.Forms.ToolStripLabel();
             this.labelTotalTime = new System.Windows.Forms.ToolStripLabel();
+            this.trackBarPosition = new System.Windows.Forms.TrackBar();
+            this.timer1 = new System.Windows.Forms.Timer(this.components);
+            this.volumeSlider1 = new NAudio.Gui.VolumeSlider();
+            this.label2 = new System.Windows.Forms.Label();
+            this.labelAsioSelectDriver = new System.Windows.Forms.Label();
+            this.comboBoxAsioDriver = new System.Windows.Forms.ComboBox();
             this.groupBoxDriverModel.SuspendLayout();
             this.toolStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.trackBarPosition)).BeginInit();
@@ -63,7 +65,7 @@
             // 
             this.comboBoxLatency.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.comboBoxLatency.FormattingEnabled = true;
-            this.comboBoxLatency.Location = new System.Drawing.Point(302, 25);
+            this.comboBoxLatency.Location = new System.Drawing.Point(362, 27);
             this.comboBoxLatency.Name = "comboBoxLatency";
             this.comboBoxLatency.Size = new System.Drawing.Size(75, 21);
             this.comboBoxLatency.TabIndex = 10;
@@ -104,7 +106,7 @@
             // 
             // buttonControlPanel
             // 
-            this.buttonControlPanel.Location = new System.Drawing.Point(25, 204);
+            this.buttonControlPanel.Location = new System.Drawing.Point(25, 229);
             this.buttonControlPanel.Name = "buttonControlPanel";
             this.buttonControlPanel.Size = new System.Drawing.Size(135, 23);
             this.buttonControlPanel.TabIndex = 12;
@@ -114,6 +116,8 @@
             // 
             // groupBoxDriverModel
             // 
+            this.groupBoxDriverModel.Controls.Add(this.comboBoxAsioDriver);
+            this.groupBoxDriverModel.Controls.Add(this.labelAsioSelectDriver);
             this.groupBoxDriverModel.Controls.Add(this.checkBoxWasapiEventCallback);
             this.groupBoxDriverModel.Controls.Add(this.checkBoxWasapiExclusiveMode);
             this.groupBoxDriverModel.Controls.Add(this.checkBoxDirectSoundNative);
@@ -125,7 +129,7 @@
             this.groupBoxDriverModel.Controls.Add(this.radioButtonAsio);
             this.groupBoxDriverModel.Location = new System.Drawing.Point(12, 30);
             this.groupBoxDriverModel.Name = "groupBoxDriverModel";
-            this.groupBoxDriverModel.Size = new System.Drawing.Size(174, 235);
+            this.groupBoxDriverModel.Size = new System.Drawing.Size(235, 259);
             this.groupBoxDriverModel.TabIndex = 13;
             this.groupBoxDriverModel.TabStop = false;
             this.groupBoxDriverModel.Text = "Output Driver";
@@ -247,39 +251,6 @@
             this.buttonStop.Text = "Stop";
             this.buttonStop.Click += new System.EventHandler(this.buttonStop_Click);
             // 
-            // trackBarPosition
-            // 
-            this.trackBarPosition.Location = new System.Drawing.Point(12, 271);
-            this.trackBarPosition.Name = "trackBarPosition";
-            this.trackBarPosition.Size = new System.Drawing.Size(489, 45);
-            this.trackBarPosition.TabIndex = 16;
-            this.trackBarPosition.Scroll += new System.EventHandler(this.trackBarPosition_Scroll);
-            // 
-            // timer1
-            // 
-            this.timer1.Enabled = true;
-            this.timer1.Interval = 500;
-            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
-            // 
-            // volumeSlider1
-            // 
-            this.volumeSlider1.Location = new System.Drawing.Point(302, 52);
-            this.volumeSlider1.Name = "volumeSlider1";
-            this.volumeSlider1.Size = new System.Drawing.Size(96, 16);
-            this.volumeSlider1.TabIndex = 11;
-            this.volumeSlider1.Volume = 1F;
-            this.volumeSlider1.Load += new System.EventHandler(this.volumeSlider1_Load);
-            this.volumeSlider1.VolumeChanged += new System.EventHandler(this.volumeSlider1_VolumeChanged);
-            // 
-            // label2
-            // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(193, 28);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(103, 13);
-            this.label2.TabIndex = 17;
-            this.label2.Text = "Requested Latency:";
-            // 
             // toolStripLabel1
             // 
             this.toolStripLabel1.Name = "toolStripLabel1";
@@ -304,11 +275,61 @@
             this.labelTotalTime.Size = new System.Drawing.Size(34, 22);
             this.labelTotalTime.Text = "00:00";
             // 
+            // trackBarPosition
+            // 
+            this.trackBarPosition.Location = new System.Drawing.Point(12, 295);
+            this.trackBarPosition.Name = "trackBarPosition";
+            this.trackBarPosition.Size = new System.Drawing.Size(489, 45);
+            this.trackBarPosition.TabIndex = 16;
+            this.trackBarPosition.Scroll += new System.EventHandler(this.trackBarPosition_Scroll);
+            // 
+            // timer1
+            // 
+            this.timer1.Enabled = true;
+            this.timer1.Interval = 500;
+            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
+            // 
+            // volumeSlider1
+            // 
+            this.volumeSlider1.Location = new System.Drawing.Point(362, 54);
+            this.volumeSlider1.Name = "volumeSlider1";
+            this.volumeSlider1.Size = new System.Drawing.Size(96, 16);
+            this.volumeSlider1.TabIndex = 11;
+            this.volumeSlider1.Volume = 1F;
+            this.volumeSlider1.Load += new System.EventHandler(this.volumeSlider1_Load);
+            this.volumeSlider1.VolumeChanged += new System.EventHandler(this.volumeSlider1_VolumeChanged);
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(253, 30);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(103, 13);
+            this.label2.TabIndex = 17;
+            this.label2.Text = "Requested Latency:";
+            // 
+            // labelAsioSelectDriver
+            // 
+            this.labelAsioSelectDriver.AutoSize = true;
+            this.labelAsioSelectDriver.Location = new System.Drawing.Point(25, 205);
+            this.labelAsioSelectDriver.Name = "labelAsioSelectDriver";
+            this.labelAsioSelectDriver.Size = new System.Drawing.Size(74, 13);
+            this.labelAsioSelectDriver.TabIndex = 15;
+            this.labelAsioSelectDriver.Text = "Select Driver :";
+            // 
+            // comboBoxAsioDriver
+            // 
+            this.comboBoxAsioDriver.FormattingEnabled = true;
+            this.comboBoxAsioDriver.Location = new System.Drawing.Point(105, 202);
+            this.comboBoxAsioDriver.Name = "comboBoxAsioDriver";
+            this.comboBoxAsioDriver.Size = new System.Drawing.Size(124, 21);
+            this.comboBoxAsioDriver.TabIndex = 16;
+            // 
             // AudioPlaybackForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(513, 328);
+            this.ClientSize = new System.Drawing.Size(513, 352);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.trackBarPosition);
@@ -358,5 +379,7 @@
         private System.Windows.Forms.ToolStripLabel labelCurrentTime;
         private System.Windows.Forms.ToolStripLabel toolStripLabel3;
         private System.Windows.Forms.ToolStripLabel labelTotalTime;
+        private System.Windows.Forms.ComboBox comboBoxAsioDriver;
+        private System.Windows.Forms.Label labelAsioSelectDriver;
     }
 }

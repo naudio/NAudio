@@ -1,13 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
 using NAudio.Wave;
-using System.IO;
-using NAudioDemo.Properties;
 using NAudio.CoreAudioApi;
 
 namespace NAudioDemo
@@ -22,6 +16,24 @@ namespace NAudioDemo
         public AudioPlaybackForm()
         {            
             InitializeComponent();
+
+            // Disable ASIO if no drivers are available
+            if ( ! AsioOut.isSupported() )
+            {
+                radioButtonAsio.Enabled = false;
+                buttonControlPanel.Enabled = false;
+                comboBoxAsioDriver.Enabled = false;
+            } else
+            {
+                // Just fill the comboBox AsioDriver with available driver names
+                String[] asioDriverNames = AsioOut.GetDriverNames();
+                foreach (string driverName in asioDriverNames)
+                {
+                    comboBoxAsioDriver.Items.Add(driverName);
+                }
+                comboBoxAsioDriver.SelectedIndex = 0;
+            }
+
         }
             
         private void buttonPlay_Click(object sender, EventArgs e)
@@ -123,7 +135,7 @@ namespace NAudioDemo
             }
             else if (radioButtonAsio.Checked)
             {
-                waveOut = new AsioOut(0);
+                waveOut = new AsioOut((String)comboBoxAsioDriver.SelectedItem);
             }
             else
             {
@@ -255,3 +267,4 @@ namespace NAudioDemo
 
     }
 }
+

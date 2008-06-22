@@ -50,8 +50,18 @@ namespace NAudio.Wave.Asio
             set
             {
                 error = value;
-                Data["ASIOError"] = Enum.GetName(typeof(ASIOError), value);
+                Data["ASIOError"] = error;
             }
+        }
+
+        /// <summary>
+        /// Gets the name of the error.
+        /// </summary>
+        /// <param name="error">The error.</param>
+        /// <returns>the name of the error</returns>
+        static public String getErrorName(ASIOError error)
+        {
+            return Enum.GetName(typeof(ASIOError), error);            
         }
     }
 

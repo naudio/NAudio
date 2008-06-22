@@ -20,6 +20,6 @@ namespace NAudio.Wave
         /// </summary>
         /// <param name="buffer">The buffer to fill of wave data.</param>
         /// <returns>the number of bytes written to the buffer.</returns>
-        int Read(WaveBuffer buffer);
+        int Read(IWaveBuffer buffer);
     }
 }

@@ -880,7 +880,19 @@
     <author>Mark Heath</author>
     <date>19 Jun 2008</date>
     <desc>WaveStream32 has option not to pad reads out to full length</desc>
-    <desc>NAudioDemo sets volume on WaveStream rather than WaveOut</desc>
-    
+    <desc>NAudioDemo sets volume on WaveStream rather than WaveOut</desc>    
   </change>
+  <change>
+    <version>1.2.141.0</version>
+    <author>Alexandre Mutel</author>
+    <date>22 Jun 2008</date>
+    <desc>Managed ASIO Output implementation</desc>
+  </change>
+  <change>
+    <version>1.2.142.0</version>
+    <author>Mark Heath</author>
+    <date>22 Jun 2008</date>
+    <desc>NAudioDemo has basic event-driven recording demo</desc>
+  </change>
+
 </changes>

@@ -1,31 +1,99 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using BlueWave.Interop.Asio;
-using System.Diagnostics;
+using NAudio.Wave.Asio;
 
 namespace NAudio.Wave
 {
     /// <summary>
-    /// Make's use of Rob Philpot's managed ASIO wrapper
-    /// http://www.codeproject.com/KB/mcpp/Asio.Net.aspx
+    /// ASIO Out Player. New implementation using an internal C# binding.
+    /// 
+    /// This implementation is only supporting Short16Bit and Float32Bit formats and is optimized 
+    /// for 2 outputs channels .
+    /// SampleRate is supported only if ASIODriver is supporting it (TODO: Add a resampler otherwhise).
+    ///     
+    /// This implementation is probably the first ASIODriver binding fully implemented in C#!
+    /// 
+    /// Original Contributor: Mark Heath 
+    /// New Contributor to C# binding : Alexandre Mutel - email: alexandre_mutel at yahoo.fr
     /// </summary>
     public class AsioOut : IWavePlayer
     {
-        AsioDriver driver;
+        ASIODriverExt driver;
         WaveStream sourceStream;
+        private WaveFormat waveFormat;
         PlaybackState playbackState;
-        byte[] buffer;
+        private int nbSamples;
+        private byte[] buffer;
+        private SampleConvertor convertor;
+
+        private delegate void SampleConvertor(IntPtr inputBuffer, IntPtr[] asioOutputBuffers);
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AsioOut"/> class with the first 
+        /// available ASIO Driver.
+        /// </summary>
+        public AsioOut()
+            : this(0)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AsioOut"/> class with the driver name.
+        /// </summary>
+        /// <param name="driverName">Name of the device.</param>
+        public AsioOut(String driverName)
+        {
+            initFromName(driverName);
+        }
 
         /// <summary>
         /// Opens an ASIO output device
         /// </summary>
-        /// <param name="device">Device number (zero based)</param>
-        public AsioOut(int device)
+        /// <param name="driverIndex">Device number (zero based)</param>
+        public AsioOut(int driverIndex)
         {
-            driver = AsioDriver.SelectDriver(
-                AsioDriver.InstalledDrivers[device]);            
-            driver.CreateBuffers(false);
+            String[] names = GetDriverNames();
+            if (names.Length == 0)
+            {
+                throw new ArgumentException("There is no ASIO Driver installed on your system");
+            }
+            if (driverIndex < 0 || driverIndex > names.Length)
+            {
+                throw new ArgumentException(String.Format("Invalid device number. Must be in the range [0,{0}]", names.Length));
+            }
+            initFromName(names[driverIndex]);
+        }
+
+        /// <summary>
+        /// Gets the names of the installed ASIO Driver.
+        /// </summary>
+        /// <returns>an array of driver names</returns>
+        public static String[] GetDriverNames()
+        {
+            return ASIODriver.GetASIODriverNames();
+        }
+
+        /// <summary>
+        /// Determines whether ASIO is supported.
+        /// </summary>
+        /// <returns>
+        /// 	<c>true</c> if ASIO is supported; otherwise, <c>false</c>.
+        /// </returns>
+        public static bool isSupported()
+        {
+            return GetDriverNames().Length > 0;
+        }
+
+        /// <summary>
+        /// Inits the driver from the asio driver name.
+        /// </summary>
+        /// <param name="driverName">Name of the driver.</param>
+        private void initFromName(String driverName)
+        {
+            // Get the basic driver
+            ASIODriver basicDriver = ASIODriver.GetASIODriverByName(driverName);
+
+            // Instantiate the extended driver
+            driver = new ASIODriverExt(basicDriver);
         }
 
         /// <summary>
@@ -33,7 +101,7 @@ namespace NAudio.Wave
         /// </summary>
         public void ShowControlPanel()
         {
-            driver.ShowControlPanel();            
+            driver.ShowControlPanel();
         }
 
         /// <summary>
@@ -62,7 +130,7 @@ namespace NAudio.Wave
         /// </summary>
         public void Pause()
         {
-            playbackState = PlaybackState.Paused;            
+            playbackState = PlaybackState.Paused;
             driver.Stop();
         }
 
@@ -73,66 +141,92 @@ namespace NAudio.Wave
         public void Init(WaveStream waveStream)
         {
             sourceStream = waveStream;
-            Debug.Assert(driver.SampleRate == waveStream.WaveFormat.SampleRate,"Sample rates must match");            
-            driver.BufferUpdate += new EventHandler(driver_BufferUpdate);
-            // make a buffer big enough to read enough from the sourceStream to fill the ASIO buffers
-            buffer = new byte[driver.OutputChannels[0].BufferSize * 
-                sourceStream.WaveFormat.Channels * 
-                sourceStream.WaveFormat.BitsPerSample / 8];
+            waveFormat = waveStream.WaveFormat;
 
+            // Select the correct sample convertor from WaveFormat -> ASIOFormat
+            SelectConvertor();
+
+            if (!driver.IsSampleRateSupported(waveFormat.SampleRate))
+            {
+                throw new ArgumentException("SampleRate is not supported. TODO, implement Resampler");
+            }
+            if (driver.Capabilities.SampleRate != waveFormat.SampleRate)
+            {
+                driver.SetSampleRate(waveFormat.SampleRate);
+            }
+
+            // Plug the callback
+            driver.FillBufferCalback = driver_BufferUpdate;
+
+            // Used Prefered size of ASIO Buffer
+            nbSamples = driver.CreateBuffers(waveFormat.Channels, false);
+
+            // make a buffer big enough to read enough from the sourceStream to fill the ASIO buffers
+            buffer = new byte[nbSamples * waveFormat.Channels * waveFormat.BitsPerSample / 8];
         }
 
-        void  driver_BufferUpdate(object sender, EventArgs e)
+        /// <summary>
+        /// Selects the convertor from WaveFormat -> ASIOFormat.
+        /// </summary>
+        private void SelectConvertor()
         {
- 	        // AsioDriver driver = sender as AsioDriver;
+            // TODO : IMPLEMENTS OTHER CONVERTOR TYPES
+            if (driver.Capabilities.OutputChannelInfos[0].type != ASIOSampleType.ASIOSTInt32LSB)
+            {
+                throw new ArgumentException(
+                    String.Format("ASIO Buffer Type {0} is not yet supported. ASIO Int32 buffer is only supported.",
+                                  Enum.GetName(typeof(ASIOSampleType), driver.Capabilities.OutputChannelInfos[0].type)));
+            }
 
-            // get the input channel and the stereo output channels
-            Channel input = driver.InputChannels[0];
-            Channel rightOutput = driver.OutputChannels[0];
-            Channel leftOutput = driver.OutputChannels[1];
+            switch (waveFormat.BitsPerSample)
+            {
+                case 16:
+                    if (waveFormat.Channels == 2)
+                    {
+                        convertor = ConvertorShortToInt2Channels;
+                    }
+                    else
+                    {
+                        convertor = ConvertorShortToIntGeneric;
+                    }
+                    break;
+                case 32:
+                    if (waveFormat.Channels == 2)
+                    {
+                        convertor = ConvertorFloatToInt2Channels;
+                    }
+                    else
+                    {
+                        convertor = ConvertorFloatToIntGeneric;
+                    }
+                    break;
+                default:
+                    throw new ArgumentException(String.Format("WaveFormat BitsPerSample {0} is not yet supported", waveFormat.BitsPerSample));
+            }
+        }
 
+
+        /// <summary>
+        /// driver buffer update callback to fill the wave buffer.
+        /// </summary>
+        /// <param name="bufferChannels">The buffer channels.</param>
+        void driver_BufferUpdate(IntPtr[] bufferChannels)
+        {
+            // AsioDriver driver = sender as AsioDriver;
             int read = sourceStream.Read(buffer, 0, buffer.Length);
             if (read < buffer.Length)
             {
                 // we have stopped
             }
-            int readIndex = 0;
 
-            for (int index = 0; index < leftOutput.BufferSize && readIndex < read; index++)
+            // Call the convertor
+            unsafe
             {
-                float left = 0.0f;
-                float right = 0.0f;
-                if (sourceStream.WaveFormat.BitsPerSample == 16)
+                // TODO : check if it's better to lock the buffer at initialization?
+                fixed (void* pBuffer = &buffer[0])
                 {
-                    left = BitConverter.ToInt16(buffer, readIndex) / 32768.0f;
-                    readIndex += 2;
-                    if (sourceStream.WaveFormat.Channels == 1)
-                    {
-                        right = left;
-                    }
-                    else
-                    {
-                        right = BitConverter.ToInt16(buffer, readIndex) / 32768.0f;
-                        readIndex += 2;
-                    }
+                    convertor(new IntPtr(pBuffer), bufferChannels);
                 }
-                else if (sourceStream.WaveFormat.BitsPerSample == 32)
-                {
-                    left = BitConverter.ToSingle(buffer, readIndex);
-                    readIndex += 4;
-                    if (sourceStream.WaveFormat.Channels == 1)
-                    {
-                        right = left;
-                    }
-                    else
-                    {
-                        right = BitConverter.ToSingle(buffer, readIndex);
-                        readIndex += 4;
-                    }
-                }
-
-                leftOutput[index] = left;
-                rightOutput[index] = right;
             }
         }
 
@@ -154,8 +248,8 @@ namespace NAudio.Wave
                 return 1.0f;
             }
             set
-            {                
-                if(value != 1.0f)
+            {
+                if (value != 1.0f)
                     throw new InvalidOperationException();
             }
         }
@@ -166,7 +260,120 @@ namespace NAudio.Wave
         public void Dispose()
         {
             driver.Stop();
+            driver.Release();
         }
 
+        #region Sample Convertors from WaveFormat to ASIOFormat
+
+        /// <summary>
+        /// Optimized convertor for 2 channels SHORT
+        /// </summary>
+        private void ConvertorShortToInt2Channels(IntPtr inputBuffer, IntPtr[] asioOutputBuffers)
+        {
+            unsafe
+            {
+                short* inputSamples = (short*)inputBuffer;
+                // Use a trick (short instead of int to avoid any convertion from 16Bit to 32Bit)
+                short* leftSamples = (short*)asioOutputBuffers[0];
+                short* rightSamples = (short*)asioOutputBuffers[1];
+
+                // Point to upper 16 bits of the 32Bits.
+                leftSamples++;
+                rightSamples++;
+                for (int i = 0; i < nbSamples; i++)
+                {
+                    *leftSamples = inputSamples[0];
+                    *rightSamples = inputSamples[1];
+                    // Go to next sample
+                    inputSamples += 2;
+                    // Add 4 Bytes
+                    leftSamples += 2;
+                    rightSamples += 2;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Generic convertor for SHORT
+        /// </summary>
+        private void ConvertorShortToIntGeneric(IntPtr inputBuffer, IntPtr[] asioOutputBuffers)
+        {
+            unsafe
+            {
+                int channels = waveFormat.Channels;
+                short* inputSamples = (short*)inputBuffer;
+                // Use a trick (short instead of int to avoid any convertion from 16Bit to 32Bit)
+                short*[] samples = new short*[channels];
+                for (int i = 0; i < channels; i++)
+                {
+                    samples[i] = (short*)asioOutputBuffers[i];
+                    // Point to upper 16 bits of the 32Bits.
+                    samples[i]++;
+                }
+
+                for (int i = 0; i < nbSamples; i++)
+                {
+                    for (int j = 0; j < channels; j++)
+                    {
+                        *samples[i] = *inputSamples++;
+                        samples[i] += 2;
+                    }
+                }
+            }
+        }
+
+        private static int clampToInt(double sampleValue)
+        {
+            sampleValue = (sampleValue < -1.0) ? -1.0 : (sampleValue > 1.0) ? 1.0 : sampleValue;
+            return (int)(sampleValue * 2147483647.0);
+        }
+
+        /// <summary>
+        /// Optimized convertor for 2 channels FLOAT
+        /// </summary>
+        private void ConvertorFloatToInt2Channels(IntPtr inputBuffer, IntPtr[] asioOutputBuffers)
+        {
+            unsafe
+            {
+                float* inputSamples = (float*)inputBuffer;
+                // Use a trick (short instead of int to avoid any convertion from 16Bit to 32Bit)
+                int* leftSamples = (int*)asioOutputBuffers[0];
+                int* rightSamples = (int*)asioOutputBuffers[1];
+
+                for (int i = 0; i < nbSamples; i++)
+                {
+                    *leftSamples++ = clampToInt(inputSamples[0]);
+                    *rightSamples++ = clampToInt(inputSamples[1]);
+                    inputSamples += 2;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Generic convertor SHORT
+        /// </summary>
+        private void ConvertorFloatToIntGeneric(IntPtr inputBuffer, IntPtr[] asioOutputBuffers)
+        {
+            unsafe
+            {
+                int channels = waveFormat.Channels;
+                float* inputSamples = (float*)inputBuffer;
+                // Use a trick (short instead of int to avoid any convertion from 16Bit to 32Bit)
+                float*[] samples = new float*[channels];
+                for (int i = 0; i < channels; i++)
+                {
+                    samples[i] = (float*)asioOutputBuffers[i];
+                }
+
+                for (int i = 0; i < nbSamples; i++)
+                {
+                    for (int j = 0; j < channels; j++)
+                    {
+                        *samples[i]++ = clampToInt(*inputSamples++);
+                    }
+                }
+            }
+        }
+        #endregion
     }
 }

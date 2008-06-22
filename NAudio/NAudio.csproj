@@ -44,10 +44,6 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="BlueWave.Interop.Asio, Version=1.0.0.0, Culture=neutral, processorArchitecture=x86">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Lib\ASIO\BlueWave.Interop.Asio.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.DirectX.DirectSound, Version=1.0.2902.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Lib\Managed DirectX\Microsoft.DirectX.DirectSound.dll</HintPath>
@@ -266,6 +262,9 @@
     <Compile Include="CoreAudioApi\MMDeviceEnumerator.cs" />
     <Compile Include="CoreAudioApi\PropertyStore.cs" />
     <Compile Include="CoreAudioApi\PropertyStoreProperty.cs" />
+    <Compile Include="Wave\Asio\ASIODriver.cs" />
+    <Compile Include="Wave\Asio\ASIODriverExt.cs" />
+    <Compile Include="Wave\Asio\ASIOStructures.cs" />
     <Compile Include="Wave\Compression\AcmDriver.cs" />
     <Compile Include="Wave\Compression\AcmDriverDetails.cs" />
     <Compile Include="Wave\Compression\AcmDriverDetailsSupportFlags.cs" />
@@ -309,9 +308,11 @@
     <Compile Include="Wave\WaveOutputs\AsioOut.cs" />
     <Compile Include="Wave\WaveOutputs\DirectSoundOut.cs" />
     <Compile Include="Wave\WaveOutputs\IWavePlayer.cs" />
+    <Compile Include="Wave\WaveOutputs\IWaveProvider.cs" />
     <Compile Include="Wave\WaveOutputs\NativeDirectSoundOut.cs" />
     <Compile Include="Wave\WaveOutputs\PlaybackState.cs" />
     <Compile Include="Wave\WaveOutputs\WasapiOut.cs" />
+    <Compile Include="Wave\WaveOutputs\WaveBuffer.cs" />
     <Compile Include="Wave\WaveOutputs\WaveFileWriter.cs" />
     <Compile Include="Wave\WaveOutputs\WaveOut.cs" />
     <Compile Include="Wave\WaveOutputs\WaveOutThreadSafe.cs" />

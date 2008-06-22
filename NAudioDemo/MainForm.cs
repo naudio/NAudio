@@ -18,19 +18,25 @@ namespace NAudioDemo
         private void buttonMidiIn_Click(object sender, EventArgs e)
         {
             MidiInForm midiInForm = new MidiInForm();
-            midiInForm.ShowDialog();
+            midiInForm.ShowDialog(this);
         }
 
         private void buttonWavPlayback_Click(object sender, EventArgs e)
         {
             AudioPlaybackForm audioPlaybackForm = new AudioPlaybackForm();
-            audioPlaybackForm.ShowDialog();
+            audioPlaybackForm.ShowDialog(this);
         }
 
         private void buttonAcmFormatConversion_Click(object sender, EventArgs e)
         {
             AcmForm acmForm = new AcmForm();
-            acmForm.ShowDialog();
+            acmForm.ShowDialog(this);
+        }
+
+        private void buttonRecording_Click(object sender, EventArgs e)
+        {
+            RecordingForm recordingForm = new RecordingForm();
+            recordingForm.ShowDialog(this);
         }
     }
 }

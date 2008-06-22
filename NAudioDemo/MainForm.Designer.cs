@@ -31,6 +31,7 @@ namespace NAudioDemo
             this.buttonMidiIn = new System.Windows.Forms.Button();
             this.buttonWavPlayback = new System.Windows.Forms.Button();
             this.buttonAcmFormatConversion = new System.Windows.Forms.Button();
+            this.buttonRecording = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // buttonMidiIn
@@ -63,11 +64,22 @@ namespace NAudioDemo
             this.buttonAcmFormatConversion.UseVisualStyleBackColor = true;
             this.buttonAcmFormatConversion.Click += new System.EventHandler(this.buttonAcmFormatConversion_Click);
             // 
+            // buttonRecording
+            // 
+            this.buttonRecording.Location = new System.Drawing.Point(12, 100);
+            this.buttonRecording.Name = "buttonRecording";
+            this.buttonRecording.Size = new System.Drawing.Size(156, 23);
+            this.buttonRecording.TabIndex = 1;
+            this.buttonRecording.Text = "WAV Recording";
+            this.buttonRecording.UseVisualStyleBackColor = true;
+            this.buttonRecording.Click += new System.EventHandler(this.buttonRecording_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(284, 264);
+            this.Controls.Add(this.buttonRecording);
             this.Controls.Add(this.buttonAcmFormatConversion);
             this.Controls.Add(this.buttonWavPlayback);
             this.Controls.Add(this.buttonMidiIn);
@@ -82,6 +94,7 @@ namespace NAudioDemo
         private System.Windows.Forms.Button buttonMidiIn;
         private System.Windows.Forms.Button buttonWavPlayback;
         private System.Windows.Forms.Button buttonAcmFormatConversion;
+        private System.Windows.Forms.Button buttonRecording;
     }
 }
 

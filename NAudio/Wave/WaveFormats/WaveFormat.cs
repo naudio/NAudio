@@ -34,6 +34,22 @@ namespace NAudio.Wave
 		}
 
         /// <summary>
+        /// Gets the size of a wave buffer equivalent to the latency in milliseconds.
+        /// </summary>
+        /// <param name="milliseconds">The milliseconds.</param>
+        /// <returns></returns>
+        public int ConvertLatencyToByteSize(int milliseconds)
+        {
+            int bytes = (int) ((AverageBytesPerSecond/1000.0)*milliseconds);
+            if ((bytes%BlockAlign) != 0)
+            {
+                // Return the upper BlockAligned
+                bytes = bytes + BlockAlign - (bytes % BlockAlign);
+            }
+            return bytes;
+        }
+
+	    /// <summary>
         /// Creates a WaveFormat with custom members
         /// </summary>
         /// <param name="tag">The encoding</param>

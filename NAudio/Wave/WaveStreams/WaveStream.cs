@@ -7,12 +7,24 @@ namespace NAudio.Wave
     /// <summary>
     /// Base class for all WaveStream classes. Derives from stream.
     /// </summary>
-    public abstract class WaveStream : Stream
+    public abstract class WaveStream : Stream, IWaveProvider
     {
         /// <summary>
         /// Retrieves the WaveFormat for this stream
         /// </summary>
         public abstract WaveFormat WaveFormat { get; }
+
+        /// <summary>
+        /// Fill the specified buffer with wave data.
+        /// </summary>
+        /// <param name="buffer">The buffer to fill of wave data.</param>
+        /// <returns>
+        /// the number of bytes written to the buffer.
+        /// </returns>
+        public int Read(IWaveBuffer buffer)
+        {
+            return Read(buffer.ByteBuffer, 0, buffer.ByteBufferCount);
+        }
 
         // base class includes long Position get; set
         // base class includes long Length get
@@ -81,8 +93,7 @@ namespace NAudio.Wave
         /// <returns>Number of bytes to read</returns>
         public virtual int GetReadSize(int milliseconds)
         {
-            int bytes = (int)((this.WaveFormat.AverageBytesPerSecond / 1000.0) * milliseconds);
-            return bytes - (bytes % BlockAlign);
+            return WaveFormat.ConvertLatencyToByteSize(milliseconds);
         }
 
         /// <summary>

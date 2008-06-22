@@ -111,7 +111,7 @@ namespace NAudio.Wave.Asio
         /// </summary>
         public void start()
         {
-            handleException(asioDriverVTable.start(pASIOComObject));
+            handleException(asioDriverVTable.start(pASIOComObject),"start");
         }
 
         /// <summary>
@@ -119,7 +119,7 @@ namespace NAudio.Wave.Asio
         /// </summary>
         public void stop()
         {
-            handleException(asioDriverVTable.stop(pASIOComObject));
+            handleException(asioDriverVTable.stop(pASIOComObject),"stop");
         }
 
         /// <summary>
@@ -129,7 +129,7 @@ namespace NAudio.Wave.Asio
         /// <param name="numOutputChannels">The num output channels.</param>
         public void getChannels(out int numInputChannels, out int numOutputChannels)
         {
-            handleException(asioDriverVTable.getChannels(pASIOComObject, out numInputChannels, out numOutputChannels));
+            handleException(asioDriverVTable.getChannels(pASIOComObject, out numInputChannels, out numOutputChannels), "getChannels");
         }
 
         /// <summary>
@@ -139,7 +139,7 @@ namespace NAudio.Wave.Asio
         /// <param name="outputLatency">The output latency.</param>
         public void getLatencies(out int inputLatency, out int outputLatency)
         {
-            handleException(asioDriverVTable.getLatencies(pASIOComObject, out inputLatency, out outputLatency));
+            handleException(asioDriverVTable.getLatencies(pASIOComObject, out inputLatency, out outputLatency), "getLatencies");
         }
 
         /// <summary>
@@ -151,7 +151,7 @@ namespace NAudio.Wave.Asio
         /// <param name="granularity">The granularity.</param>
         public void getBufferSize(out int minSize, out int maxSize, out int preferredSize, out int granularity)
         {
-            handleException(asioDriverVTable.getBufferSize(pASIOComObject, out minSize, out maxSize, out preferredSize, out granularity));
+            handleException(asioDriverVTable.getBufferSize(pASIOComObject, out minSize, out maxSize, out preferredSize, out granularity), "getBufferSize");
         }
 
         /// <summary>
@@ -172,7 +172,7 @@ namespace NAudio.Wave.Asio
             {
                 return true;
             }
-            handleException(error);
+            handleException(error, "canSampleRate");
             return false;
         }
 
@@ -183,7 +183,7 @@ namespace NAudio.Wave.Asio
         public double getSampleRate()
         {
             double sampleRate;
-            handleException(asioDriverVTable.getSampleRate(pASIOComObject, out sampleRate));
+            handleException(asioDriverVTable.getSampleRate(pASIOComObject, out sampleRate), "getSampleRate");
             return sampleRate;
         }
 
@@ -193,7 +193,7 @@ namespace NAudio.Wave.Asio
         /// <param name="sampleRate">The sample rate.</param>
         public void setSampleRate(double sampleRate)
         {
-            handleException(asioDriverVTable.setSampleRate(pASIOComObject, sampleRate));
+            handleException(asioDriverVTable.setSampleRate(pASIOComObject, sampleRate), "setSampleRate");
         }
 
         /// <summary>
@@ -203,7 +203,7 @@ namespace NAudio.Wave.Asio
         /// <param name="numSources">The num sources.</param>
         public void getClockSources(out long clocks, int numSources)
         {
-            handleException(asioDriverVTable.getClockSources(pASIOComObject, out clocks,numSources));
+            handleException(asioDriverVTable.getClockSources(pASIOComObject, out clocks,numSources), "getClockSources");
         }
 
         /// <summary>
@@ -212,7 +212,7 @@ namespace NAudio.Wave.Asio
         /// <param name="reference">The reference.</param>
         public void setClockSource(int reference)
         {
-            handleException(asioDriverVTable.setClockSource(pASIOComObject, reference));
+            handleException(asioDriverVTable.setClockSource(pASIOComObject, reference), "setClockSources");
         }
 
         /// <summary>
@@ -222,7 +222,7 @@ namespace NAudio.Wave.Asio
         /// <param name="timeStamp">The time stamp.</param>
         public void getSamplePosition(out long samplePos, ref ASIO64Bit timeStamp)
         {
-            handleException(asioDriverVTable.getSamplePosition(pASIOComObject, out samplePos, ref timeStamp));
+            handleException(asioDriverVTable.getSamplePosition(pASIOComObject, out samplePos, ref timeStamp), "getSamplePosition");
         }
 
         /// <summary>
@@ -234,7 +234,7 @@ namespace NAudio.Wave.Asio
         public ASIOChannelInfo getChannelInfo(int channelNumber, bool trueForInputInfo)
         {
             ASIOChannelInfo info = new ASIOChannelInfo {channel = channelNumber, isInput = trueForInputInfo};
-            handleException(asioDriverVTable.getChannelInfo(pASIOComObject, ref info));
+            handleException(asioDriverVTable.getChannelInfo(pASIOComObject, ref info), "getChannelInfo");
             return info;
         }
 
@@ -247,7 +247,7 @@ namespace NAudio.Wave.Asio
         /// <param name="callbacks">The callbacks.</param>
         public void createBuffers(IntPtr bufferInfos, int numChannels, int bufferSize, ref ASIOCallbacks callbacks)
         {
-            handleException(asioDriverVTable.createBuffers(pASIOComObject, bufferInfos, numChannels, bufferSize, ref callbacks));
+            handleException(asioDriverVTable.createBuffers(pASIOComObject, bufferInfos, numChannels, bufferSize, ref callbacks), "createBuffers");
         }
 
         /// <summary>
@@ -255,7 +255,7 @@ namespace NAudio.Wave.Asio
         /// </summary>
         public void disposeBuffers()
         {
-            handleException(asioDriverVTable.disposeBuffers(pASIOComObject));
+            handleException(asioDriverVTable.disposeBuffers(pASIOComObject),"disposeBuffers");
         }
 
         /// <summary>
@@ -263,7 +263,7 @@ namespace NAudio.Wave.Asio
         /// </summary>
         public void controlPanel()
         {
-            handleException(asioDriverVTable.controlPanel(pASIOComObject));
+            handleException(asioDriverVTable.controlPanel(pASIOComObject), "controlPanel");
         }
 
         /// <summary>
@@ -273,7 +273,7 @@ namespace NAudio.Wave.Asio
         /// <param name="opt">The opt.</param>
         public void future(int selector, IntPtr opt)
         {
-            handleException(asioDriverVTable.future(pASIOComObject, selector, opt));
+            handleException(asioDriverVTable.future(pASIOComObject, selector, opt), "future");
         }
 
         /// <summary>
@@ -288,7 +288,7 @@ namespace NAudio.Wave.Asio
         /// <summary>
         /// Releases this instance.
         /// </summary>
-        public void Release()
+        public void ReleaseComASIODriver()
         {
             Marshal.Release(pASIOComObject);
         }
@@ -297,11 +297,11 @@ namespace NAudio.Wave.Asio
         /// Handles the exception. Throws an exception based on the error.
         /// </summary>
         /// <param name="error">The error to check.</param>
-        private void handleException(ASIOError error)
+        private void handleException(ASIOError error, String methodName)
         {
             if (error != ASIOError.ASE_OK && error != ASIOError.ASE_SUCCESS)
             {
-                ASIOException asioException = new ASIOException();
+                ASIOException asioException = new ASIOException(String.Format("Error code [{0}] while calling ASIO method <{1}>", ASIOException.getErrorName(error), methodName));
                 asioException.Error = error;
                 throw asioException;
             }

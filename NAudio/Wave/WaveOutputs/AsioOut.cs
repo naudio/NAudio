@@ -260,7 +260,7 @@ namespace NAudio.Wave
         public void Dispose()
         {
             driver.Stop();
-            driver.Release();
+            driver.ReleaseDriver();
         }
 
         #region Sample Convertors from WaveFormat to ASIOFormat

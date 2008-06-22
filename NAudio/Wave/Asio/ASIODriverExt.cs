@@ -110,9 +110,17 @@ namespace NAudio.Wave.Asio
         /// <summary>
         /// Releases this instance.
         /// </summary>
-        public void Release()
+        public void ReleaseDriver()
         {
-            driver.Release();
+            try
+            {
+                driver.stop();
+                driver.disposeBuffers();
+            } catch (Exception ex)
+            {
+                Console.Out.WriteLine(ex.ToString());
+            }
+            driver.ReleaseComASIODriver();
         }
 
         /// <summary>

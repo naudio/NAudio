@@ -93,7 +93,14 @@ namespace NAudio.Wave
         /// <returns>Number of bytes to read</returns>
         public virtual int GetReadSize(int milliseconds)
         {
-            return WaveFormat.ConvertLatencyToByteSize(milliseconds);
+            int bytes = (int)((WaveFormat.AverageBytesPerSecond / 1000.0) * milliseconds);
+            if ((bytes % BlockAlign) != 0)
+            {
+                // Return the upper BlockAligned
+                bytes = bytes + BlockAlign - (bytes % BlockAlign);
+            }
+            return bytes;
+            //return WaveFormat.ConvertLatencyToByteSize(milliseconds);
         }
 
         /// <summary>

@@ -88,7 +88,7 @@ namespace NAudioDemo
             //Wave32To16Stream mixdown = new Wave32To16Stream(mixer);
             mainOutputStream = inputs[0];
             waveOut.Init(mainOutputStream);
-            waveOut.Volume = volumeSlider1.Volume;
+            //waveOut.Volume = volumeSlider1.Volume; - not doing Volume on IWavePlayer any more
             groupBoxDriverModel.Enabled = false;
             waveOut.Play();
         }

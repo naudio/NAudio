@@ -28,7 +28,7 @@ namespace NAudio.Wave
         private int bytesOffset = -1;
         private Mp3Frame frame;
 
-        private int ReadBigEndian(byte[] buffer, int offset)
+        private static int ReadBigEndian(byte[] buffer, int offset)
         {
             int x;
             // big endian extract
@@ -52,15 +52,12 @@ namespace NAudio.Wave
             }
         }
 
-        /// <summary>
-        /// Sees if a frame contains a Xing header
-        /// </summary>
-        /// <param name="frame"></param>
-        public XingHeader(Mp3Frame frame)
+        public static XingHeader LoadXingHeader(Mp3Frame frame)
         {
-            this.frame = frame;
+            XingHeader xingHeader = new XingHeader();
+            xingHeader.frame = frame;
             int offset = 0;
-            
+
             if (frame.MpegVersion == MpegVersion.Version1)
             {
                 if (frame.ChannelMode != ChannelMode.Mono)
@@ -77,7 +74,8 @@ namespace NAudio.Wave
             }
             else
             {
-                throw new FormatException("Unsupported MPEG Version");
+                return null;
+                // throw new FormatException("Unsupported MPEG Version");
             }
 
             if ((frame.RawData[offset + 0] == 'X') &&
@@ -85,12 +83,12 @@ namespace NAudio.Wave
                 (frame.RawData[offset + 2] == 'n') &&
                 (frame.RawData[offset + 3] == 'g'))
             {
-                startOffset = offset;
-                offset += 4;             
+                xingHeader.startOffset = offset;
+                offset += 4;
             }
             else
             {
-                throw new FormatException("Not a Xing header");
+                return null;
             }
 
             XingHeaderOptions flags = (XingHeaderOptions)ReadBigEndian(frame.RawData, offset);
@@ -98,25 +96,34 @@ namespace NAudio.Wave
 
             if ((flags & XingHeaderOptions.Frames) != 0)
             {
-                framesOffset = offset;
+                xingHeader.framesOffset = offset;
                 offset += 4;
             }
             if ((flags & XingHeaderOptions.Bytes) != 0)
             {
-                bytesOffset = offset;
+                xingHeader.bytesOffset = offset;
                 offset += 4;
             }
             if ((flags & XingHeaderOptions.Toc) != 0)
             {
-                tocOffset = offset;
+                xingHeader.tocOffset = offset;
                 offset += 100;
             }
             if ((flags & XingHeaderOptions.VbrScale) != 0)
             {
-                vbrScale = ReadBigEndian(frame.RawData, offset);
+                xingHeader.vbrScale = ReadBigEndian(frame.RawData, offset);
                 offset += 4;
             }
-            endOffset = offset;
+            xingHeader.endOffset = offset;
+            return xingHeader;
+        }
+
+        /// <summary>
+        /// Sees if a frame contains a Xing header
+        /// </summary>
+        /// <param name="frame"></param>
+        private XingHeader()
+        {
         }
 
         /// <summary>

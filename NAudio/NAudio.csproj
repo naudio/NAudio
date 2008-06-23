@@ -226,6 +226,7 @@
       <DependentUpon>AboutForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Utils\ByteEncoding.cs" />
+    <Compile Include="Utils\CircularBuffer.cs" />
     <Compile Include="Utils\Decibels.cs" />
     <Compile Include="Utils\FileAssociations.cs" />
     <Compile Include="Utils\HResult.cs" />
@@ -317,6 +318,7 @@
     <Compile Include="Wave\WaveOutputs\WaveFileWriter.cs" />
     <Compile Include="Wave\WaveOutputs\WaveOut.cs" />
     <Compile Include="Wave\WaveOutputs\WaveOutThreadSafe.cs" />
+    <Compile Include="Wave\WaveStreams\BlockAlignReductionStream.cs" />
     <Compile Include="Wave\WaveStreams\Mp3FileReader.cs" />
     <Compile Include="Wave\WaveStreams\ResamplerDmoStream.cs" />
     <Compile Include="Wave\WaveStreams\RiffChunk.cs" />

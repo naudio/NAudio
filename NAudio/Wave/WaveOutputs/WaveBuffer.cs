@@ -64,7 +64,7 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// Performs an implicit conversion from <see cref="NAudio.Wave.WaveBuffer"/> to <see cref="System.Byte[]"/>.
+        /// Performs an implicit conversion from <see cref="NAudio.Wave.WaveBuffer"/> to <see cref="System.Byte"/>.
         /// </summary>
         /// <param name="waveBuffer">The wave buffer.</param>
         /// <returns>The result of the conversion.</returns>
@@ -74,7 +74,7 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// Performs an implicit conversion from <see cref="NAudio.Wave.WaveBuffer"/> to <see cref="System.Single[]"/>.
+        /// Performs an implicit conversion from <see cref="NAudio.Wave.WaveBuffer"/> to <see cref="System.Single"/>.
         /// </summary>
         /// <param name="waveBuffer">The wave buffer.</param>
         /// <returns>The result of the conversion.</returns>
@@ -84,7 +84,7 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// Performs an implicit conversion from <see cref="NAudio.Wave.WaveBuffer"/> to <see cref="System.Int32[]"/>.
+        /// Performs an implicit conversion from <see cref="NAudio.Wave.WaveBuffer"/> to <see cref="System.Int32"/>.
         /// </summary>
         /// <param name="waveBuffer">The wave buffer.</param>
         /// <returns>The result of the conversion.</returns>
@@ -94,7 +94,7 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// Performs an implicit conversion from <see cref="NAudio.Wave.WaveBuffer"/> to <see cref="System.Int16[]"/>.
+        /// Performs an implicit conversion from <see cref="NAudio.Wave.WaveBuffer"/> to <see cref="System.Int16"/>.
         /// </summary>
         /// <param name="waveBuffer">The wave buffer.</param>
         /// <returns>The result of the conversion.</returns>

@@ -163,6 +163,11 @@ namespace NAudio.Wave
             return waveFormat;            
         }
 
+        /// <summary>
+        /// Helper function to marshal WaveFormat to an IntPtr
+        /// </summary>
+        /// <param name="format">WaveFormat</param>
+        /// <returns>IntPtr to WaveFormat structure (needs to be freed by callee)</returns>
         public static IntPtr MarshalToPtr(WaveFormat format)
         {
             int formatSize = Marshal.SizeOf(format);

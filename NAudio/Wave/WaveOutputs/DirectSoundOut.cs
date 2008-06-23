@@ -30,7 +30,7 @@ namespace NAudio.Wave
         {
             this.desiredLatency = desiredLatency;
             device = new Device();
-            device.SetCooperativeLevel(owner, CooperativeLevel.Normal); //CooperativeLevel.Priority);
+            device.SetCooperativeLevel(owner, CooperativeLevel.Normal); //CooperativeLevel.Priority);            
         }
 
         /// <summary>
@@ -56,7 +56,6 @@ namespace NAudio.Wave
             bufferDescription.ControlPan = true;
             bufferDescription.ControlEffects = false;
             
-
             this.waveStream = waveStream;
             //waveFormatStream.Position = 46;
             buffer = new SecondaryBuffer(bufferDescription, device);
@@ -66,6 +65,7 @@ namespace NAudio.Wave
             timer.Enabled = false;
             timer.Elapsed += new System.Timers.ElapsedEventHandler(OnTimerElapsed);
 
+            Volume = 0.1f;
 
         }
 

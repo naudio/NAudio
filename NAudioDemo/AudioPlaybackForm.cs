@@ -58,6 +58,9 @@ namespace NAudioDemo
             if (String.IsNullOrEmpty(fileName))
             {
                 toolStripButtonOpenFile_Click(sender, e);
+            }
+            if (String.IsNullOrEmpty(fileName))
+            {
                 return;
             }
 
@@ -103,7 +106,10 @@ namespace NAudioDemo
             }
             else if (fileName.EndsWith(".mp3"))
             {                
-                inputStream = new WaveChannel32(WaveFormatConversionStream.CreatePcmStream(new Mp3FileReader(fileName)));
+                WaveStream mp3Reader = new Mp3FileReader(fileName);
+                WaveStream pcmStream = WaveFormatConversionStream.CreatePcmStream(mp3Reader);
+                WaveStream blockAlignedStream = new BlockAlignReductionStream(pcmStream);
+                inputStream = new WaveChannel32(blockAlignedStream);
             }
             else
             {
@@ -253,7 +259,7 @@ namespace NAudioDemo
         private void toolStripButtonOpenFile_Click(object sender, EventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "WAV files (*.wav)|*.wav|MP3 Files (*.mp3)|*.mp3|All Files (*.*)|*.*";
+            openFileDialog.Filter = "All Supported Files (*.wav, *.mp3)|*.wav;*.mp3|All Files (*.*)|*.*";
             openFileDialog.FilterIndex = 1;
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {

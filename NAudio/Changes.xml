@@ -894,5 +894,13 @@
     <date>22 Jun 2008</date>
     <desc>NAudioDemo has basic event-driven recording demo</desc>
   </change>
-
+  <change>
+    <version>1.2.143.0</version>
+    <author>Mark Heath</author>
+    <date>23 Jun 2008</date>
+    <desc>Fix to MP3 smooth playback</desc>
+    <desc>A circular buffer class</desc>
+    <desc>A block alignment reduction stream</desc>
+    <desc>Xing header detection without throwing exceptions</desc>
+  </change>
 </changes>

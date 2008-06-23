@@ -33,14 +33,7 @@ namespace NAudio.Wave
             sampleRate = mp3Frame.SampleRate;
             frameLengthInBytes = mp3Frame.FrameLength;
             bitRate = mp3Frame.BitRate;
-            try
-            {
-                xingHeader = new XingHeader(mp3Frame);
-            }
-            catch (FormatException)
-            {
-                // OK, no Xing header
-            }
+            xingHeader = XingHeader.LoadXingHeader(mp3Frame);
 
 
             this.length = mp3Stream.Length - dataStartPosition;

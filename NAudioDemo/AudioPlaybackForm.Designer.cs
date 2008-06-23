@@ -54,9 +54,9 @@
             this.labelTotalTime = new System.Windows.Forms.ToolStripLabel();
             this.trackBarPosition = new System.Windows.Forms.TrackBar();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
-            this.volumeSlider1 = new NAudio.Gui.VolumeSlider();
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
+            this.volumeSlider1 = new NAudio.Gui.VolumeSlider();
             this.groupBoxDriverModel.SuspendLayout();
             this.toolStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.trackBarPosition)).BeginInit();
@@ -308,16 +308,6 @@
             this.timer1.Interval = 500;
             this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
             // 
-            // volumeSlider1
-            // 
-            this.volumeSlider1.Location = new System.Drawing.Point(362, 54);
-            this.volumeSlider1.Name = "volumeSlider1";
-            this.volumeSlider1.Size = new System.Drawing.Size(96, 16);
-            this.volumeSlider1.TabIndex = 11;
-            this.volumeSlider1.Volume = 1F;
-            this.volumeSlider1.Load += new System.EventHandler(this.volumeSlider1_Load);
-            this.volumeSlider1.VolumeChanged += new System.EventHandler(this.volumeSlider1_VolumeChanged);
-            // 
             // label2
             // 
             this.label2.AutoSize = true;
@@ -335,6 +325,16 @@
             this.label3.Size = new System.Drawing.Size(45, 13);
             this.label3.TabIndex = 17;
             this.label3.Text = "Volume:";
+            // 
+            // volumeSlider1
+            // 
+            this.volumeSlider1.Location = new System.Drawing.Point(362, 54);
+            this.volumeSlider1.Name = "volumeSlider1";
+            this.volumeSlider1.Size = new System.Drawing.Size(96, 16);
+            this.volumeSlider1.TabIndex = 11;
+            this.volumeSlider1.Volume = 1F;
+            this.volumeSlider1.Load += new System.EventHandler(this.volumeSlider1_Load);
+            this.volumeSlider1.VolumeChanged += new System.EventHandler(this.volumeSlider1_VolumeChanged);
             // 
             // AudioPlaybackForm
             // 

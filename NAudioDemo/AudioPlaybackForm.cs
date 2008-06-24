@@ -9,7 +9,6 @@ namespace NAudioDemo
     public partial class AudioPlaybackForm : Form
     {
         IWavePlayer waveOut;
-        List<WaveStream> inputs = new List<WaveStream>();
         string fileName = null;
         WaveStream mainOutputStream;
 
@@ -74,23 +73,22 @@ namespace NAudioDemo
                 return;
             }
 
-            WaveStream reader = CreateInputStream(fileName);
-            trackBarPosition.Maximum = (int) reader.TotalTime.TotalSeconds;
-            labelTotalTime.Text = String.Format("{0:00}:{1:00}", (int)reader.TotalTime.TotalMinutes,
-                reader.TotalTime.Seconds);
+            mainOutputStream = CreateInputStream(fileName);
+            trackBarPosition.Maximum = (int)mainOutputStream.TotalTime.TotalSeconds;
+            labelTotalTime.Text = String.Format("{0:00}:{1:00}", (int)mainOutputStream.TotalTime.TotalMinutes,
+                mainOutputStream.TotalTime.Seconds);
             trackBarPosition.TickFrequency = trackBarPosition.Maximum / 30;
-            inputs.Add(reader);
-            
-            if (inputs.Count == 0)
+
+            try
             {
-                MessageBox.Show("No WAV files found to play in the input folder");
+                waveOut.Init(mainOutputStream);
+            }
+            catch (Exception initException)
+            {
+                MessageBox.Show(String.Format("{0}", initException.Message), "Error Initializing Output");
                 return;
             }
 
-            //WaveMixerStream32 mixer = new WaveMixerStream32(inputs, false);
-            //Wave32To16Stream mixdown = new Wave32To16Stream(mixer);
-            mainOutputStream = inputs[0];
-            waveOut.Init(mainOutputStream);
             // not doing Volume on IWavePlayer any more
             ((WaveChannel32)mainOutputStream).Volume = volumeSlider1.Volume; 
             groupBoxDriverModel.Enabled = false;
@@ -131,18 +129,12 @@ namespace NAudioDemo
             }
             else if (radioButtonDirectSound.Checked)
             {
-                if (checkBoxDirectSoundNative.Checked)
-                {
-                    waveOut = new NativeDirectSoundOut(latency);
-                }
-                else
-                {
-                    waveOut = new DirectSoundOut(this, latency);
-                }
+                waveOut = new NativeDirectSoundOut(latency);
             }
             else if (radioButtonAsio.Checked)
             {
                 waveOut = new AsioOut((String)comboBoxAsioDriver.SelectedItem);
+                buttonControlPanel.Enabled = true;
             }
             else
             {
@@ -157,15 +149,16 @@ namespace NAudioDemo
 
         private void CloseWaveOut()
         {
+            buttonControlPanel.Enabled = false;
             if (waveOut != null)
             {
                 waveOut.Stop();
             }
-            foreach (WaveStream input in inputs)
+            if (mainOutputStream != null)
             {
-                input.Dispose();
+                mainOutputStream.Close();
+                mainOutputStream = null;
             }
-            inputs.Clear();
             if (waveOut != null)
             {
                 waveOut.Dispose();
@@ -189,6 +182,7 @@ namespace NAudioDemo
             comboBoxLatency.Items.Add(400);
             comboBoxLatency.Items.Add(500);
             comboBoxLatency.SelectedIndex = 5;
+            buttonControlPanel.Enabled = false;
         }
 
         private void buttonPause_Click(object sender, EventArgs e)

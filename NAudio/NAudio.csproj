@@ -265,6 +265,7 @@
     <Compile Include="CoreAudioApi\PropertyStoreProperty.cs" />
     <Compile Include="Wave\Asio\ASIODriver.cs" />
     <Compile Include="Wave\Asio\ASIODriverExt.cs" />
+    <Compile Include="Wave\Asio\ASIOSampleConvertor.cs" />
     <Compile Include="Wave\Asio\ASIOStructures.cs" />
     <Compile Include="Wave\Compression\AcmDriver.cs" />
     <Compile Include="Wave\Compression\AcmDriverDetails.cs" />

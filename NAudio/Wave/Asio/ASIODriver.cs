@@ -117,9 +117,9 @@ namespace NAudio.Wave.Asio
         /// <summary>
         /// Stops this instance.
         /// </summary>
-        public void stop()
+        public ASIOError stop()
         {
-            handleException(asioDriverVTable.stop(pASIOComObject),"stop");
+            return asioDriverVTable.stop(pASIOComObject);
         }
 
         /// <summary>
@@ -253,9 +253,9 @@ namespace NAudio.Wave.Asio
         /// <summary>
         /// Disposes the buffers.
         /// </summary>
-        public void disposeBuffers()
+        public ASIOError disposeBuffers()
         {
-            handleException(asioDriverVTable.disposeBuffers(pASIOComObject),"disposeBuffers");
+            return asioDriverVTable.disposeBuffers(pASIOComObject);
         }
 
         /// <summary>

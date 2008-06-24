@@ -114,7 +114,6 @@ namespace NAudio.Wave.Asio
         {
             try
             {
-                driver.stop();
                 driver.disposeBuffers();
             } catch (Exception ex)
             {
@@ -181,17 +180,28 @@ namespace NAudio.Wave.Asio
 
             // each channel needs a buffer info
             nbOutputChannels = nbOutputChannelsArg;
-            outputBufferInfos = new ASIOBufferInfo[nbOutputChannelsArg];
+            // Ask for maximum of output channels even if we use only the nbOutputChannelsArg
+            int nbTotalChannels = capability.NbInputChannels + capability.NbOutputChannels;
+            outputBufferInfos = new ASIOBufferInfo[nbTotalChannels];
             currentBuffers = new IntPtr[nbOutputChannelsArg];
 
             // and do the same for output channels
             // ONLY work on output channels (just put isInput = true for InputChannel)
-            for (int index = 0; index < nbOutputChannelsArg; index++)
+            int totalIndex = 0;
+            for (int index = 0; index < capability.NbInputChannels; index++, totalIndex++)
             {
-                outputBufferInfos[index].isInput = false;
-                outputBufferInfos[index].channelNum = index;
-                outputBufferInfos[index].pBuffer0 = IntPtr.Zero;
-                outputBufferInfos[index].pBuffer1 = IntPtr.Zero;
+                outputBufferInfos[totalIndex].isInput = true;
+                outputBufferInfos[totalIndex].channelNum = index;
+                outputBufferInfos[totalIndex].pBuffer0 = IntPtr.Zero;
+                outputBufferInfos[totalIndex].pBuffer1 = IntPtr.Zero;
+            }
+
+            for (int index = 0; index < capability.NbOutputChannels; index++, totalIndex++)
+            {
+                outputBufferInfos[totalIndex].isInput = false;
+                outputBufferInfos[totalIndex].channelNum = index;
+                outputBufferInfos[totalIndex].pBuffer0 = IntPtr.Zero;
+                outputBufferInfos[totalIndex].pBuffer1 = IntPtr.Zero;
             }
 
             if (useMaxBufferSize)
@@ -212,7 +222,7 @@ namespace NAudio.Wave.Asio
                     IntPtr pOutputBufferInfos = new IntPtr(infos);
 
                     // Create the ASIO Buffers with the callbacks
-                    driver.createBuffers(pOutputBufferInfos, nbOutputChannelsArg, bufferSize, ref callbacks);
+                    driver.createBuffers(pOutputBufferInfos, nbTotalChannels, bufferSize, ref callbacks);
                 }
             }
 
@@ -267,13 +277,13 @@ namespace NAudio.Wave.Asio
         private void BufferSwitchCallBack(int doubleBufferIndex, bool directProcess)
         {
             for (int i = 0; i < nbOutputChannels; i++)
-                currentBuffers[i] = outputBufferInfos[i].Buffer(doubleBufferIndex);
+                currentBuffers[i] = outputBufferInfos[i + capability.NbInputChannels].Buffer(doubleBufferIndex);
 
             if (fillBufferCalback != null)
                 fillBufferCalback(currentBuffers);
 
             if (isOutputReadySupport)
-				driver.outputReady();            
+                driver.outputReady();            
         }
 
         /// <summary>
@@ -314,9 +324,11 @@ namespace NAudio.Wave.Asio
                         case ASIOMessageSelector.kAsioLatenciesChanged:
                             return 0;
                         case ASIOMessageSelector.kAsioSupportsTimeInfo:
-                            return 1;
+//                            return 1; DON'T SUPPORT FOR NOW. NEED MORE TESTING.
+                            return 0;
                         case ASIOMessageSelector.kAsioSupportsTimeCode:
-                            return 1;
+//                            return 1; DON'T SUPPORT FOR NOW. NEED MORE TESTING.
+                            return 0;
                     }
                     break;
                 case ASIOMessageSelector.kAsioEngineVersion:

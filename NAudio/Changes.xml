@@ -903,4 +903,10 @@
     <desc>A block alignment reduction stream</desc>
     <desc>Xing header detection without throwing exceptions</desc>
   </change>
+  <change>
+    <version>1.2.144.0</version>
+    <author>Mark Heath</author>
+    <date>26 June 2008</date>
+    <desc>Improved error handling on NAudioDemo</desc>
+  </change>
 </changes>

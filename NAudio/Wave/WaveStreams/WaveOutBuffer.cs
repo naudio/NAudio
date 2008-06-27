@@ -11,12 +11,12 @@ namespace NAudio.Wave
     {
         private WaveHeader header;
         private Int32 bufferSize; // allocated bytes, may not be the same as bytes read
-        private byte[] buffer;
+        private WaveBuffer buffer;
         private GCHandle hBuffer;
         private IntPtr hWaveOut;
         private GCHandle hHeader; // we need to pin the header structure
         private GCHandle hThis; // for the user callback
-        private WaveStream waveStream;
+        private IWaveProvider waveStream;
         private object waveOutLock;
 
         /// <summary>
@@ -26,11 +26,11 @@ namespace NAudio.Wave
         /// <param name="bufferSize">Buffer size in bytes</param>
         /// <param name="bufferFillStream">Stream to provide more data</param>
         /// <param name="waveOutLock">Lock to protect WaveOut API's from being called on >1 thread</param>
-        public WaveOutBuffer(IntPtr hWaveOut, Int32 bufferSize, WaveStream bufferFillStream, object waveOutLock)
+        public WaveOutBuffer(IntPtr hWaveOut, Int32 bufferSize, IWaveProvider bufferFillStream, object waveOutLock)
         {
             this.bufferSize = bufferSize;
-            this.buffer = new byte[bufferSize];
-            this.hBuffer = GCHandle.Alloc(buffer, GCHandleType.Pinned);
+            this.buffer = new WaveBuffer(bufferSize);
+            this.hBuffer = GCHandle.Alloc(buffer.ByteBuffer, GCHandleType.Pinned);
             this.hWaveOut = hWaveOut;
             this.waveStream = bufferFillStream;
             this.waveOutLock = waveOutLock;
@@ -102,7 +102,8 @@ namespace NAudio.Wave
             int bytes;
             lock (waveStream)
             {
-                bytes = waveStream.Read(buffer, 0, buffer.Length);
+                buffer.ByteBufferCount = buffer.ByteBuffer.Length;
+                bytes = waveStream.Read(buffer);
             }
             if (bytes == 0)
             {
@@ -110,9 +111,9 @@ namespace NAudio.Wave
             }
             else
             {
-                for (int n = bytes; n < buffer.Length; n++)
+                for (int n = bytes; n < buffer.ByteBufferCount; n++)
                 {
-                    buffer[n] = 0;
+                    buffer.ByteBuffer[n] = 0;
                 }
             }
             WriteToWaveOut();

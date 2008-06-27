@@ -20,8 +20,8 @@ namespace NAudio.Wave
         private int samplesFrameSize;
         private int nextSamplesWriteIndex;
         private int desiredLatency;
-        private byte[] samples;
-        private WaveStream waveStream = null;
+        private WaveBuffer samples;
+        private IWaveProvider waveStream = null;
         private IDirectSound directSound = null;
         private IDirectSoundBuffer primarySoundBuffer = null;
         private IDirectSoundBuffer secondaryBuffer = null;
@@ -100,11 +100,11 @@ namespace NAudio.Wave
         /// <summary>
         /// Initialise playback
         /// </summary>
-        /// <param name="waveStreamArg">The wavestream to be played</param>
-        public void Init(WaveStream waveStreamArg)
+        /// <param name="waveProvider">The waveprovider to be played</param>
+        public void Init(IWaveProvider waveProvider)
         {
-            waveStream = waveStreamArg;
-            waveFormat = waveStream.WaveFormat;
+            this.waveStream = waveProvider;
+            this.waveFormat = waveProvider.WaveFormat;
         }
 
         private void InitialiseDirectSound()
@@ -169,7 +169,7 @@ namespace NAudio.Wave
 
             nextSamplesWriteIndex = 0;
             samplesTotalSize = dsbCaps.dwBufferBytes;
-            samples = new byte[samplesTotalSize];
+            samples = new WaveBuffer(samplesTotalSize);
             System.Diagnostics.Debug.Assert(samplesTotalSize == (2 * samplesFrameSize), "Invalid SamplesTotalSize vs SamplesFrameSize");
 
             // -------------------------------------------------------------------------------------
@@ -327,12 +327,13 @@ namespace NAudio.Wave
             // Clear the bufferSamples if in Paused
             if (playbackState == PlaybackState.Paused)
             {
-                Array.Clear(samples, 0, samples.Length);
+                samples.Clear();                
             }
             else
             {
                 // Read data from stream (Should this be inserted between the lock / unlock?)
-                bytesRead = waveStream.Read(samples, 0, bytesToCopy);
+                samples.ByteBufferCount = bytesToCopy;
+                bytesRead = waveStream.Read(samples);
             }
 
             // Lock a portion of the SecondaryBuffer (starting from 0 or 1/2 the buffer)
@@ -348,10 +349,10 @@ namespace NAudio.Wave
             // Copy back to the SecondaryBuffer
             if (wavBuffer1 != IntPtr.Zero)
             {
-                Marshal.Copy(samples, 0, wavBuffer1, nbSamples1);
+                Marshal.Copy(samples.ByteBuffer, 0, wavBuffer1, nbSamples1);
                 if (wavBuffer2 != IntPtr.Zero)
                 {
-                    Marshal.Copy(samples, 0, wavBuffer1, nbSamples1);
+                    Marshal.Copy(samples.ByteBuffer, 0, wavBuffer1, nbSamples1);
                 }
             }
 

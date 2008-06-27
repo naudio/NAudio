@@ -25,8 +25,8 @@ namespace NAudio.Wave
         /// <summary>
         /// Initialise playback
         /// </summary>
-        /// <param name="waveStream">The wavestream to be played</param>
-        void Init(WaveStream waveStream);
+        /// <param name="waveProvider">The waveprovider to be played</param>
+        void Init(IWaveProvider waveProvider);
 
         /// <summary>
         /// Current playback state

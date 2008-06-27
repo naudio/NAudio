@@ -11,6 +11,7 @@ namespace NAudio.Wave
     /// </summary>
     public class ResamplerDmoStream : WaveStream
     {
+        IWaveProvider inputProvider;
         WaveStream inputStream;
         WaveFormat outputFormat;
         Resampler resampler;
@@ -21,11 +22,12 @@ namespace NAudio.Wave
         /// <summary>
         /// WaveStream to resample using the DMO Resampler
         /// </summary>
-        /// <param name="inputStream">Input Stream</param>
+        /// <param name="inputProvider">Input Stream</param>
         /// <param name="outputFormat">Desired Output Format</param>
-        public ResamplerDmoStream(WaveStream inputStream, WaveFormat outputFormat)
+        public ResamplerDmoStream(IWaveProvider inputProvider, WaveFormat outputFormat)
         {
-            this.inputStream = inputStream;
+            this.inputProvider = inputProvider;
+            this.inputStream = inputProvider as WaveStream;
             this.outputFormat = outputFormat;
             this.resampler = new Resampler();
             if (!resampler.MediaObject.SupportsInputWaveFormat(0, inputStream.WaveFormat))
@@ -39,9 +41,12 @@ namespace NAudio.Wave
                 throw new ArgumentException("Unsupported Output Stream format", "outputStream");
             }
          
-            resampler.MediaObject.SetOutputWaveFormat(0, outputFormat);            
-            position = InputToOutputPosition(inputStream.Position);
-            inputMediaBuffer = new MediaBuffer(inputStream.WaveFormat.AverageBytesPerSecond);
+            resampler.MediaObject.SetOutputWaveFormat(0, outputFormat);
+            if (inputStream != null)
+            {
+                position = InputToOutputPosition(inputStream.Position);
+            }
+            inputMediaBuffer = new MediaBuffer(inputProvider.WaveFormat.AverageBytesPerSecond);
             outputBuffer = new DmoOutputDataBuffer(outputFormat.AverageBytesPerSecond);
         }
 

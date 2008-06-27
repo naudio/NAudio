@@ -15,13 +15,13 @@ namespace NAudio.Wave
         AudioClient audioClient;
         AudioClientShareMode shareMode;
         AudioRenderClient renderClient;
-        WaveStream sourceStream;
+        IWaveProvider sourceStream;
         int latencyMilliseconds;
         int bufferFrameCount;
         int bytesPerFrame;
         bool isUsingEventSync;
         EventWaitHandle frameEventWaitHandle;
-        byte[] readBuffer;
+        WaveBuffer readBuffer;
         PlaybackState playbackState;
         Thread playThread;
         
@@ -94,7 +94,7 @@ namespace NAudio.Wave
                 //bytesPerFrame = audioClient.MixFormat.Channels * audioClient.MixFormat.BitsPerSample / 8;
                 bufferFrameCount = audioClient.BufferSize;
                 bytesPerFrame = outputFormat.Channels * outputFormat.BitsPerSample / 8;
-                readBuffer = new byte[bufferFrameCount * bytesPerFrame];
+                readBuffer = new WaveBuffer(bufferFrameCount * bytesPerFrame);
                 FillBuffer(bufferFrameCount);
 
                 // Create WaitHandle for sync
@@ -151,12 +151,13 @@ namespace NAudio.Wave
         private void FillBuffer(int frameCount)
         {
             IntPtr buffer = renderClient.GetBuffer(frameCount);
-            int read = sourceStream.Read(readBuffer,0,frameCount * bytesPerFrame);
+            readBuffer.ByteBufferCount = frameCount * bytesPerFrame;
+            int read = sourceStream.Read(readBuffer);
             if (read == 0)
             {
                 playbackState = PlaybackState.Stopped;
             }
-            Marshal.Copy(readBuffer,0,buffer,read);
+            Marshal.Copy(readBuffer.ByteBuffer,0,buffer,read);
             int actualFrameCount = read / bytesPerFrame;
             renderClient.ReleaseBuffer(actualFrameCount,AudioClientBufferFlags.None);
         }
@@ -208,8 +209,8 @@ namespace NAudio.Wave
         /// <summary>
         /// Initialize for playing the specified wave stream
         /// </summary>
-        /// <param name="waveStream">Wavestream to play</param>
-        public void Init(WaveStream waveStream)
+        /// <param name="waveStream">IWaveProvider to play</param>
+        public void Init(IWaveProvider waveStream)
         {
             long latencyRefTimes = latencyMilliseconds * 10000;
             outputFormat = waveStream.WaveFormat;

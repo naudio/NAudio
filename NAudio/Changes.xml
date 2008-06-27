@@ -909,4 +909,10 @@
     <date>26 June 2008</date>
     <desc>Improved error handling on NAudioDemo</desc>
   </change>
+  <change>
+    <version>1.3.1.0</version>
+    <author>Mark Heath</author>
+    <date>27 June 2008</date>
+    <desc>IWavePlayer using IWaveProvider and WaveBuffer (initial port)</desc>    
+  </change>
 </changes>

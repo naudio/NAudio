@@ -11,7 +11,7 @@ namespace NAudio.Wave
     {
         private IntPtr hWaveOut;
         private WaveOutBuffer[] buffers;
-        private WaveStream waveStream;
+        private IWaveProvider waveStream;
         private int numBuffers;
         private PlaybackState playbackState;
         private WaveInterop.WaveOutCallback callback;
@@ -74,11 +74,11 @@ namespace NAudio.Wave
         /// <summary>
         /// Initialises the WaveOut device
         /// </summary>
-        /// <param name="waveStream">WaveStream to play</param>
-        public void Init(WaveStream waveStream)
+        /// <param name="waveProvider">WaveProvider to play</param>
+        public void Init(IWaveProvider waveProvider)
         {
-            this.waveStream = waveStream;
-            int bufferSize = waveStream.GetReadSize((desiredLatency + 2) / 3);
+            this.waveStream = waveProvider;
+            int bufferSize = waveProvider.WaveFormat.ConvertLatencyToByteSize((desiredLatency + 2) / 3); //waveStream.GetReadSize((desiredLatency + 2) / 3);
             this.numBuffers = 3;
 
             MmResult result;

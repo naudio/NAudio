@@ -15,7 +15,7 @@ namespace NAudio.Wave
     {
         private IntPtr hWaveOut;
         private WaveOutBuffer[] buffers;
-        private WaveStream waveStream;
+        private IWaveProvider waveStream;
         private int numBuffers;
         private PlaybackState playbackState;
         private WaveInterop.WaveOutCallback callback;
@@ -140,7 +140,7 @@ namespace NAudio.Wave
         /// Initialises the WaveOut device
         /// </summary>
         /// <param name="waveStream">WaveStream to play</param>
-        public void Init(WaveStream waveStream)
+        public void Init(IWaveProvider waveProvider)
         {
             if(Thread.CurrentThread.ManagedThreadId != waveOutThread.ManagedThreadId)
             {
@@ -152,8 +152,8 @@ namespace NAudio.Wave
                 return;
             }
 
-            this.waveStream = waveStream;
-            int bufferSize = waveStream.GetReadSize((desiredLatency + 2) / 3);
+            this.waveStream = waveProvider;
+            int bufferSize = waveProvider.WaveFormat.ConvertLatencyToByteSize(desiredLatency);  //waveStream.GetReadSize((desiredLatency + 2) / 3);
             this.numBuffers = 3;
 
             MmException.Try(WaveInterop.waveOutOpen(out hWaveOut, devNumber, waveStream.WaveFormat, callback, 0, WaveInterop.CallbackFunction), "waveOutOpen");

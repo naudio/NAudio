@@ -18,11 +18,11 @@ namespace NAudio.Wave
     public class AsioOut : IWavePlayer
     {
         ASIODriverExt driver;
-        WaveStream sourceStream;
+        IWaveProvider sourceStream;
         private WaveFormat waveFormat;
         PlaybackState playbackState;
         private int nbSamples;
-        private byte[] buffer;
+        private WaveBuffer waveBuffer;
         private ASIOSampleConvertor.SampleConvertor convertor;
 
 
@@ -161,11 +161,11 @@ namespace NAudio.Wave
         /// <summary>
         /// Initialises to play
         /// </summary>
-        /// <param name="waveStream"></param>
-        public void Init(WaveStream waveStream)
+        /// <param name="waveProvider"></param>
+        public void Init(IWaveProvider waveProvider)
         {
-            sourceStream = waveStream;
-            waveFormat = waveStream.WaveFormat;
+            sourceStream = waveProvider;
+            waveFormat = waveProvider.WaveFormat;
 
             // Select the correct sample convertor from WaveFormat -> ASIOFormat
             convertor = ASIOSampleConvertor.SelectSampleConvertor(waveFormat, driver.Capabilities.OutputChannelInfos[0].type);
@@ -186,7 +186,7 @@ namespace NAudio.Wave
             nbSamples = driver.CreateBuffers(waveFormat.Channels, false);
 
             // make a buffer big enough to read enough from the sourceStream to fill the ASIO buffers
-            buffer = new byte[nbSamples * waveFormat.Channels * waveFormat.BitsPerSample / 8];
+            waveBuffer = new WaveBuffer(nbSamples * waveFormat.Channels * waveFormat.BitsPerSample / 8);
         }
 
         /// <summary>
@@ -196,8 +196,10 @@ namespace NAudio.Wave
         void driver_BufferUpdate(IntPtr[] bufferChannels)
         {
             // AsioDriver driver = sender as AsioDriver;
-            int read = sourceStream.Read(buffer, 0, buffer.Length);
-            if (read < buffer.Length)
+
+            waveBuffer.ByteBufferCount = waveBuffer.MaxSize;
+            int read = sourceStream.Read(waveBuffer);
+            if (read < waveBuffer.MaxSize)
             {
                 // we have stopped
             }
@@ -205,8 +207,9 @@ namespace NAudio.Wave
             // Call the convertor
             unsafe
             {
+                
                 // TODO : check if it's better to lock the buffer at initialization?
-                fixed (void* pBuffer = &buffer[0])
+                fixed (void* pBuffer = &waveBuffer.ByteBuffer[0])
                 {
                     convertor(new IntPtr(pBuffer), bufferChannels, waveFormat.Channels, nbSamples);
                 }

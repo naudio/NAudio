@@ -224,6 +224,7 @@ namespace NAudio.Wave
             get { return playbackState; }
         }
 
+
         /// <summary>
         /// Sets the volume (1.0 is unity gain)
         /// </summary>

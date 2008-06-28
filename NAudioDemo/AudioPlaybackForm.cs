@@ -129,7 +129,7 @@ namespace NAudioDemo
             }
             else if (radioButtonDirectSound.Checked)
             {
-                waveOut = new NativeDirectSoundOut(latency);
+                waveOut = new DirectSoundOut(latency);
             }
             else if (radioButtonAsio.Checked)
             {

@@ -7,12 +7,10 @@ namespace NAudio.Wave
 {
     /// <summary>
     /// NativeDirectSoundOut using DirectSound COM interop.
-    /// WARNING, This class is working only if application is running in MTAThread mode.
-    /// TODO: Change code to support STAThread. Need some rework and transfer all COM code to a single thread.
     /// TODO: Add better exception/error handling 
     /// Contact author: Alexandre Mutel - alexandre_mutel at yahoo.fr
     /// </summary>
-    public class NativeDirectSoundOut : IWavePlayer
+    public class DirectSoundOut : IWavePlayer
     {
         private PlaybackState playbackState;
         private WaveFormat waveFormat;
@@ -31,28 +29,28 @@ namespace NAudio.Wave
         private Thread notifyThread;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="NativeDirectSoundOut"/> class.
+        /// Initializes a new instance of the <see cref="DirectSoundOut"/> class.
         /// </summary>
-        public NativeDirectSoundOut()
+        public DirectSoundOut()
             : this(40)
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="NativeDirectSoundOut"/> class.
+        /// Initializes a new instance of the <see cref="DirectSoundOut"/> class.
         /// (40ms seems to work under Vista).
         /// </summary>
         /// <param name="latency">The latency.</param>
-        public NativeDirectSoundOut(int latency)
+        public DirectSoundOut(int latency)
         {
             desiredLatency = latency;
         }
 
         /// <summary>
         /// Releases unmanaged resources and performs other cleanup operations before the
-        /// <see cref="NativeDirectSoundOut"/> is reclaimed by garbage collection.
+        /// <see cref="DirectSoundOut"/> is reclaimed by garbage collection.
         /// </summary>
-        ~NativeDirectSoundOut()
+        ~DirectSoundOut()
         {
             Dispose();
         }

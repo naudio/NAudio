@@ -311,7 +311,7 @@
     <Compile Include="Wave\WaveOutputs\IWaveBuffer.cs" />
     <Compile Include="Wave\WaveOutputs\IWavePlayer.cs" />
     <Compile Include="Wave\WaveOutputs\IWaveProvider.cs" />
-    <Compile Include="Wave\WaveOutputs\NativeDirectSoundOut.cs" />
+    <Compile Include="Wave\WaveOutputs\DirectSoundOut.cs" />
     <Compile Include="Wave\WaveOutputs\PlaybackState.cs" />
     <Compile Include="Wave\WaveOutputs\WasapiOut.cs" />
     <Compile Include="Wave\WaveOutputs\WaveBuffer.cs" />

@@ -63,7 +63,7 @@ namespace NAudio.Midi
         public PatchChangeEvent(long absoluteTime, int channel, int patchNumber)
             : base(absoluteTime,channel,MidiCommandCode.PatchChange)
         {
-            this.Patch = patch;
+            this.Patch = patchNumber;
         }
 
         /// <summary>

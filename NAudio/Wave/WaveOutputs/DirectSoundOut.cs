@@ -446,8 +446,7 @@ namespace NAudio.Wave
         [StructLayout(LayoutKind.Sequential, Pack = 2)]
         internal struct DirectSoundBufferPositionNotify
         {
-            [MarshalAs(UnmanagedType.I4)]
-            public uint dwOffset;
+            public UInt32 dwOffset;
             public IntPtr hEventNotify;
         }
 
@@ -538,8 +537,7 @@ namespace NAudio.Wave
          SuppressUnmanagedCodeSecurity]
         internal interface IDirectSoundNotify
         {
-            void SetNotificationPositions(int dwPositionNotifies, [In, MarshalAs(UnmanagedType.LPArray)] DirectSoundBufferPositionNotify[] pcPositionNotifies);
-            //            void SetNotificationPositions(int dwPositionNotifies, IntPtr pcPositionNotifies);
+            void SetNotificationPositions(UInt32 dwPositionNotifies, [In, MarshalAs(UnmanagedType.LPArray)] DirectSoundBufferPositionNotify[] pcPositionNotifies);
         }
 
         /// <summary>

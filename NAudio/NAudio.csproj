@@ -2,7 +2,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.21022</ProductVersion>
+    <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{DA4F02E3-0B5E-42CD-B8D9-5583FA51D66E}</ProjectGuid>
     <OutputType>Library</OutputType>
@@ -173,8 +173,20 @@
     <Compile Include="Gui\TrackView\TrackView.Designer.cs">
       <DependentUpon>TrackView.cs</DependentUpon>
     </Compile>
+    <Compile Include="Gui\VolumeMeter.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Gui\VolumeMeter.Designer.cs">
+      <DependentUpon>VolumeMeter.cs</DependentUpon>
+    </Compile>
     <Compile Include="Gui\VolumeSlider.cs">
       <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Gui\WaveformPainter.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Gui\WaveformPainter.Designer.cs">
+      <DependentUpon>WaveformPainter.cs</DependentUpon>
     </Compile>
     <Compile Include="Gui\WaveViewer.cs">
       <SubType>UserControl</SubType>

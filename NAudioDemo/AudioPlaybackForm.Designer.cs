@@ -55,7 +55,11 @@
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
+            this.waveformPainter1 = new NAudio.Gui.WaveformPainter();
+            this.volumeMeter2 = new NAudio.Gui.VolumeMeter();
+            this.volumeMeter1 = new NAudio.Gui.VolumeMeter();
             this.volumeSlider1 = new NAudio.Gui.VolumeSlider();
+            this.waveformPainter2 = new NAudio.Gui.WaveformPainter();
             this.groupBoxDriverModel.SuspendLayout();
             this.toolStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.trackBarPosition)).BeginInit();
@@ -135,6 +139,7 @@
             // 
             // comboBoxAsioDriver
             // 
+            this.comboBoxAsioDriver.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.comboBoxAsioDriver.FormattingEnabled = true;
             this.comboBoxAsioDriver.Location = new System.Drawing.Point(105, 175);
             this.comboBoxAsioDriver.Name = "comboBoxAsioDriver";
@@ -199,7 +204,6 @@
             this.label1.Size = new System.Drawing.Size(20, 13);
             this.label1.TabIndex = 13;
             this.label1.Text = "ms";
-            this.label1.Click += new System.EventHandler(this.label1_Click);
             // 
             // toolStrip1
             // 
@@ -314,6 +318,40 @@
             this.label3.TabIndex = 17;
             this.label3.Text = "Volume:";
             // 
+            // waveformPainter1
+            // 
+            this.waveformPainter1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(192)))));
+            this.waveformPainter1.ForeColor = System.Drawing.Color.SaddleBrown;
+            this.waveformPainter1.Location = new System.Drawing.Point(256, 141);
+            this.waveformPainter1.Name = "waveformPainter1";
+            this.waveformPainter1.Size = new System.Drawing.Size(245, 60);
+            this.waveformPainter1.TabIndex = 19;
+            this.waveformPainter1.Text = "waveformPainter1";
+            // 
+            // volumeMeter2
+            // 
+            this.volumeMeter2.Amplitude = 0F;
+            this.volumeMeter2.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(192)))), ((int)(((byte)(0)))));
+            this.volumeMeter2.Location = new System.Drawing.Point(487, 30);
+            this.volumeMeter2.MaxDb = 3F;
+            this.volumeMeter2.MinDb = -60F;
+            this.volumeMeter2.Name = "volumeMeter2";
+            this.volumeMeter2.Size = new System.Drawing.Size(14, 102);
+            this.volumeMeter2.TabIndex = 18;
+            this.volumeMeter2.Text = "volumeMeter1";
+            // 
+            // volumeMeter1
+            // 
+            this.volumeMeter1.Amplitude = 0F;
+            this.volumeMeter1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(192)))), ((int)(((byte)(0)))));
+            this.volumeMeter1.Location = new System.Drawing.Point(469, 30);
+            this.volumeMeter1.MaxDb = 3F;
+            this.volumeMeter1.MinDb = -60F;
+            this.volumeMeter1.Name = "volumeMeter1";
+            this.volumeMeter1.Size = new System.Drawing.Size(14, 102);
+            this.volumeMeter1.TabIndex = 18;
+            this.volumeMeter1.Text = "volumeMeter1";
+            // 
             // volumeSlider1
             // 
             this.volumeSlider1.Location = new System.Drawing.Point(362, 54);
@@ -321,14 +359,27 @@
             this.volumeSlider1.Size = new System.Drawing.Size(96, 16);
             this.volumeSlider1.TabIndex = 11;
             this.volumeSlider1.Volume = 1F;
-            this.volumeSlider1.Load += new System.EventHandler(this.volumeSlider1_Load);
             this.volumeSlider1.VolumeChanged += new System.EventHandler(this.volumeSlider1_VolumeChanged);
+            // 
+            // waveformPainter2
+            // 
+            this.waveformPainter2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(192)))));
+            this.waveformPainter2.ForeColor = System.Drawing.Color.SaddleBrown;
+            this.waveformPainter2.Location = new System.Drawing.Point(256, 205);
+            this.waveformPainter2.Name = "waveformPainter2";
+            this.waveformPainter2.Size = new System.Drawing.Size(245, 60);
+            this.waveformPainter2.TabIndex = 19;
+            this.waveformPainter2.Text = "waveformPainter1";
             // 
             // AudioPlaybackForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(513, 328);
+            this.Controls.Add(this.waveformPainter2);
+            this.Controls.Add(this.waveformPainter1);
+            this.Controls.Add(this.volumeMeter2);
+            this.Controls.Add(this.volumeMeter1);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
@@ -381,5 +432,9 @@
         private System.Windows.Forms.ComboBox comboBoxAsioDriver;
         private System.Windows.Forms.Label labelAsioSelectDriver;
         private System.Windows.Forms.Label label3;
+        private NAudio.Gui.VolumeMeter volumeMeter1;
+        private NAudio.Gui.VolumeMeter volumeMeter2;
+        private NAudio.Gui.WaveformPainter waveformPainter1;
+        private NAudio.Gui.WaveformPainter waveformPainter2;
     }
 }

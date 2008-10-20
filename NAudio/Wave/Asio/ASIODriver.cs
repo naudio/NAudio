@@ -16,11 +16,20 @@ namespace NAudio.Wave.Asio
     internal class ASIODriver
     {
         IntPtr pASIOComObject;
+        IntPtr pinnedcallbacks;
         private ASIODriverVTable asioDriverVTable;
+        //GCHandle hThis;
 
         private ASIODriver()
         {
+            // MRH experimental code
+            //hThis = GCHandle.Alloc(this, GCHandleType.Pinned);
         }
+
+        /*~ASIODriver()
+        {
+            hThis.Free();
+        }*/
 
         /// <summary>
         /// Gets the ASIO driver names installed.
@@ -247,6 +256,9 @@ namespace NAudio.Wave.Asio
         /// <param name="callbacks">The callbacks.</param>
         public void createBuffers(IntPtr bufferInfos, int numChannels, int bufferSize, ref ASIOCallbacks callbacks)
         {
+            // next two lines suggested by droidi on codeplex issue tracker
+            pinnedcallbacks = Marshal.AllocHGlobal(Marshal.SizeOf(callbacks));
+            Marshal.StructureToPtr(callbacks, pinnedcallbacks, false);
             handleException(asioDriverVTable.createBuffers(pASIOComObject, bufferInfos, numChannels, bufferSize, ref callbacks), "createBuffers");
         }
 
@@ -255,7 +267,9 @@ namespace NAudio.Wave.Asio
         /// </summary>
         public ASIOError disposeBuffers()
         {
-            return asioDriverVTable.disposeBuffers(pASIOComObject);
+            ASIOError result = asioDriverVTable.disposeBuffers(pASIOComObject);
+            Marshal.FreeHGlobal(pinnedcallbacks);
+            return result;
         }
 
         /// <summary>

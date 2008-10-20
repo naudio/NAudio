@@ -11,6 +11,7 @@ namespace NAudioDemo
         IWavePlayer waveOut;
         string fileName = null;
         WaveStream mainOutputStream;
+        WaveChannel32 volumeStream;
 
         public AudioPlaybackForm()
         {            
@@ -22,7 +23,8 @@ namespace NAudioDemo
                 radioButtonAsio.Enabled = false;
                 buttonControlPanel.Enabled = false;
                 comboBoxAsioDriver.Enabled = false;
-            } else
+            } 
+            else
             {
                 // Just fill the comboBox AsioDriver with available driver names
                 String[] asioDriverNames = AsioOut.GetDriverNames();
@@ -90,7 +92,7 @@ namespace NAudioDemo
             }
 
             // not doing Volume on IWavePlayer any more
-            ((WaveChannel32)mainOutputStream).Volume = volumeSlider1.Volume; 
+            volumeStream.Volume = volumeSlider1.Volume; 
             groupBoxDriverModel.Enabled = false;
             waveOut.Play();
         }
@@ -101,6 +103,7 @@ namespace NAudioDemo
             if (fileName.EndsWith(".wav"))
             {
                 inputStream = new WaveChannel32(new WaveFileReader(fileName));
+
             }
             else if (fileName.EndsWith(".mp3"))
             {                
@@ -114,9 +117,24 @@ namespace NAudioDemo
                 throw new InvalidOperationException("Unsupported extension");
             }
             // we are not going into a mixer so we don't need to zero pad
-            // this helps us with playing back MP3s (until we can do a block align reduction stream)
-            inputStream.PadWithZeroes = false;
-            return inputStream;
+            //((WaveChannel32)inputStream).PadWithZeroes = false;
+            volumeStream = inputStream;
+            var meteringStream = new MeteringStream(inputStream, inputStream.WaveFormat.SampleRate / 10);
+            meteringStream.StreamVolume += new EventHandler<StreamVolumeEventArgs>(meteringStream_StreamVolume);
+            
+            return meteringStream;
+        }
+
+        void meteringStream_StreamVolume(object sender, StreamVolumeEventArgs e)
+        {
+            volumeMeter1.Amplitude = e.MaxSampleValues[0];
+            waveformPainter1.AddMax(e.MaxSampleValues[0]);
+            if (e.MaxSampleValues.Length > 1)
+            {
+                volumeMeter2.Amplitude = e.MaxSampleValues[1];
+                waveformPainter2.AddMax(e.MaxSampleValues[1]);
+            }
+
         }
 
         private void CreateWaveOut()
@@ -156,6 +174,10 @@ namespace NAudioDemo
             }
             if (mainOutputStream != null)
             {
+                // this one really closes the file and ACM conversion
+                volumeStream.Close();
+                volumeStream = null;
+                // this one does the metering stream
                 mainOutputStream.Close();
                 mainOutputStream = null;
             }
@@ -200,7 +222,7 @@ namespace NAudioDemo
         {
             if (mainOutputStream != null)
             {
-                ((WaveChannel32)mainOutputStream).Volume = volumeSlider1.Volume;
+                volumeStream.Volume = volumeSlider1.Volume;
             }
         }
 
@@ -259,16 +281,6 @@ namespace NAudioDemo
             {
                 fileName = openFileDialog.FileName;
             }
-        }
-
-        private void volumeSlider1_Load(object sender, EventArgs e)
-        {
-
-        }
-
-        private void label1_Click(object sender, EventArgs e)
-        {
-
         }
 
     }

@@ -921,4 +921,14 @@
     <date>28 June 2008</date>
     <desc>NativeDirectSoundOut now becomes DirectSoundOut as Managed Direct X is retired</desc>
   </change>
+  <change>
+    <version>1.3.3.0</version>
+    <author>Mark Heath</author>
+    <date>20 Oct 2008</date>
+    <desc>Some possible bugfixes to ASIO</desc>
+    <desc>MeteringStream</desc>
+    <desc>VolumeMeter</desc>
+    <desc>WaveFormPainter</desc>
+  </change>
+
 </changes>

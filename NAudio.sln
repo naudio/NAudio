@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NAudioDemo", "NAudioDemo\NA
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AudioFileInspector", "AudioFileInspector\AudioFileInspector.csproj", "{D29C1659-635C-497B-847E-FE9A5A69ED03}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NAudio.WindowsMediaFormat", "NAudio.WindowsMediaFormat\NAudio.WindowsMediaFormat.csproj", "{1868FC77-FD6F-4881-9CF5-DE7451806BFA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,6 +45,10 @@ Global
 		{D29C1659-635C-497B-847E-FE9A5A69ED03}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D29C1659-635C-497B-847E-FE9A5A69ED03}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D29C1659-635C-497B-847E-FE9A5A69ED03}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1868FC77-FD6F-4881-9CF5-DE7451806BFA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1868FC77-FD6F-4881-9CF5-DE7451806BFA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1868FC77-FD6F-4881-9CF5-DE7451806BFA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1868FC77-FD6F-4881-9CF5-DE7451806BFA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

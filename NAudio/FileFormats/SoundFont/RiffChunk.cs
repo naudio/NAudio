@@ -37,7 +37,6 @@ namespace NAudio.SoundFont
 		/// just reads a chunk ID at the current position
 		/// </summary>
 		/// <returns>chunk ID</returns>
- 
 		public string ReadChunkID() 
 		{
 			byte []cid = riffFile.ReadBytes(4);

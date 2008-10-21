@@ -179,9 +179,11 @@ namespace NAudio.Wave
                 float* pfDestBuffer = (float*)pDestBuffer;
                 short* psSourceBuffer = (short*)pSourceBuffer;
 
-                // TODO:implement better panning laws. This one has 50% volume in middle
-                float leftVolume = (volume * (1 - pan) / 2.0f) / 32768f;
-                float rightVolume = (volume * (pan + 1) / 2.0f) / 32768f;
+                // implement better panning laws. 
+                float leftVolume = (pan <= 0) ? volume : (volume * (1 - pan) / 2.0f);
+                float rightVolume = (pan >= 0) ? volume : (volume * (pan + 1) / 2.0f);
+                leftVolume = leftVolume / 32768f;
+                rightVolume = rightVolume / 32768f;
                 int samplesRead = bytesRead / 2;
                 for (int n = 0; n < samplesRead; n++)
                 {
@@ -202,8 +204,14 @@ namespace NAudio.Wave
                 float* pfDestBuffer = (float*)pDestBuffer;
                 short* psSourceBuffer = (short*)pSourceBuffer;
 
-                float leftVolume = (volume * (1 - pan) / 2.0f) / 32768f;
-                float rightVolume = (volume * (pan + 1) / 2.0f) / 32768f;
+                // implement better panning laws. 
+                float leftVolume = (pan <= 0) ? volume : (volume * (1 - pan) / 2.0f);
+                float rightVolume = (pan >= 0) ? volume : (volume * (pan + 1) / 2.0f);
+
+                leftVolume = leftVolume / 32768f;
+                rightVolume = rightVolume / 32768f;
+                //float leftVolume = (volume * (1 - pan) / 2.0f) / 32768f;
+                //float rightVolume = (volume * (pan + 1) / 2.0f) / 32768f;
 
                 int samplesRead = bytesRead / 2;
                 for (int n = 0; n < samplesRead; n += 2)

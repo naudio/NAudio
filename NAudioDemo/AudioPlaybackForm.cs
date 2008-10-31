@@ -102,8 +102,19 @@ namespace NAudioDemo
             WaveChannel32 inputStream;
             if (fileName.EndsWith(".wav"))
             {
-                inputStream = new WaveChannel32(new WaveFileReader(fileName));
-
+                WaveStream readerStream = new WaveFileReader(fileName);
+                if (readerStream.WaveFormat.Encoding != WaveFormatEncoding.Pcm)
+                {
+                    readerStream = WaveFormatConversionStream.CreatePcmStream(readerStream);
+                    readerStream = new BlockAlignReductionStream(readerStream);
+                }
+                if (readerStream.WaveFormat.BitsPerSample != 16)
+                {
+                    var format = new WaveFormat(readerStream.WaveFormat.SampleRate,
+                        16, readerStream.WaveFormat.Channels);
+                    readerStream = new WaveFormatConversionStream(format, readerStream);
+                }
+                inputStream = new WaveChannel32(readerStream);
             }
             else if (fileName.EndsWith(".mp3"))
             {                

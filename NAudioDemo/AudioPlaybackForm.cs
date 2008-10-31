@@ -143,7 +143,7 @@ namespace NAudioDemo
             int latency = (int)comboBoxLatency.SelectedItem;
             if (radioButtonWaveOut.Checked)
             {
-                waveOut = new WaveOut(0, latency, checkBoxWaveOutWindow.Checked ? this : null);
+                waveOut = new WaveOut(0, latency, checkBoxWaveOutWindow.Checked ? this.Handle : IntPtr.Zero);
             }
             else if (radioButtonDirectSound.Checked)
             {

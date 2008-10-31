@@ -11,7 +11,8 @@ namespace NAudio.Wave
     public class WaveFileReader : WaveStream
     {
         private WaveFormat waveFormat;
-        private FileStream waveStream;
+        private Stream waveStream;
+        private bool ownInput;
         private long dataPosition;
         private int dataChunkLength;
         private List<RiffChunk> chunks = new List<RiffChunk>();
@@ -24,11 +25,20 @@ namespace NAudio.Wave
         /// this class, email it to the nAudio project and we will probably
         /// fix this reader to support it
         /// </remarks>
-        public WaveFileReader(String waveFile)
+        public WaveFileReader(String waveFile) :
+            this(File.OpenRead(waveFile))
         {
-            waveStream = new FileStream(waveFile, FileMode.Open, FileAccess.Read);
+            ownInput = true;
+        }
+
+        /// <summary>
+        /// Creates a Wave File Reader based on an input stream
+        /// </summary>
+        /// <param name="inputStream">The input stream containing a WAV file including header</param>
+        public WaveFileReader(Stream inputStream)
+        {
+            this.waveStream = inputStream;
             ReadWaveHeader(waveStream, out waveFormat, out dataPosition, out dataChunkLength, chunks);
-            //dataPosition = waveStream.Position;
             Position = 0;
         }
 
@@ -119,7 +129,11 @@ namespace NAudio.Wave
                 // Release managed resources.
                 if (waveStream != null)
                 {
-                    waveStream.Close();
+                    // only dispose our source if we created it
+                    if (ownInput)
+                    {
+                        waveStream.Close();
+                    }
                     waveStream = null;
                 }
             }
@@ -280,6 +294,4 @@ namespace NAudio.Wave
             return samples;
         }
     }
-
-
 }

@@ -163,8 +163,8 @@ namespace NAudio.Wave
                     inputStream.Position += count;
                 }
             }
-            position += bytesRead;
-            return bytesRead;
+            position += count;
+            return count;
         }
 
         /// <summary>

@@ -160,7 +160,7 @@ namespace NAudio.Wave
                 bytesWritten = numBytes;
             }
             position += bytesWritten;
-            return numBytes;
+            return bytesWritten;
         }
 
         /// <summary>

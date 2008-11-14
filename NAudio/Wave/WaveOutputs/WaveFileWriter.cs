@@ -207,25 +207,33 @@ namespace NAudio.Wave
             {
                 if (outStream != null)
                 {
-                    if (!overwriting)
+                    try
                     {
-                        // in overwrite mode, we will not change the length set at the start
-                        // irrespective of whether we actually wrote less or more
-                        outStream.Flush();
-                        BinaryWriter w = new BinaryWriter(outStream, System.Text.Encoding.ASCII);
-                        w.Seek(4, SeekOrigin.Begin);
-                        w.Write((int)(outStream.Length - 8));
-                        if (format.Encoding != WaveFormatEncoding.Pcm)
-                        {
-                            w.Seek((int)factSampleCountPos, SeekOrigin.Begin);
-                            w.Write((int)((dataChunkSize * 8) / format.BitsPerSample));
-                        }
-                        w.Seek((int)dataSizePos, SeekOrigin.Begin);
-                        w.Write((int)(dataChunkSize));
-                    }
 
-                    outStream.Close(); // will close the underlying base stream
-                    outStream = null;
+                        if (!overwriting)
+                        {
+                            // in overwrite mode, we will not change the length set at the start
+                            // irrespective of whether we actually wrote less or more
+                            outStream.Flush();
+                            BinaryWriter w = new BinaryWriter(outStream, System.Text.Encoding.ASCII);
+                            w.Seek(4, SeekOrigin.Begin);
+                            w.Write((int)(outStream.Length - 8));
+                            if (format.Encoding != WaveFormatEncoding.Pcm)
+                            {
+                                w.Seek((int)factSampleCountPos, SeekOrigin.Begin);
+                                w.Write((int)((dataChunkSize * 8) / format.BitsPerSample));
+                            }
+                            w.Seek((int)dataSizePos, SeekOrigin.Begin);
+                            w.Write((int)(dataChunkSize));
+                        }
+                    }
+                    finally
+                    {
+                        // in a finally block as we don't want the FileStream to run its disposer in
+                        // the GC thread if the code above caused an IOException (e.g. due to disk full)
+                        outStream.Close(); // will close the underlying base stream
+                        outStream = null;
+                    }
                 }
             }
         }

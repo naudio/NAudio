@@ -60,7 +60,7 @@ namespace NAudio.Wave
         /// can cause lockups or crashes with some drivers</param>
         [Obsolete]
         public WaveOut(int devNumber, int desiredLatency, System.Windows.Forms.Control parentWindow)
-            : this(devNumber, desiredLatency, parentWindow == null ? IntPtr.Zero : parentWindow.Handle)
+            : this(devNumber, desiredLatency, parentWindow != null)
         {
 
         }
@@ -72,21 +72,21 @@ namespace NAudio.Wave
         /// This must be between 0 and <see>DeviceCount</see> - 1.</param>
         /// <param name="desiredLatency">The number of milliseconds of audio to read before 
         /// streaming to the audio device. This will be broken into 3 buffers</param>
-        /// <param name="windowHandle">If this parameter is non-zero, the Wave Out Messages
-        /// will be sent to the message loop of the supplied window handle. This is considered a
-        /// safer way to use the waveOut functionality. If this parameter is null, we use a
+        /// <param name="windowCallback">If this parameter is true, the Wave Out Messages
+        /// will be sent to the message loop of a Windows form. This is considered a
+        /// safer way to use the waveOut functionality. If this parameter is false, we use a
         /// lock to ensure that no two threads can call WaveOut functions at the same time, which
         /// can cause lockups or crashes with some drivers</param>
-        public WaveOut(int devNumber, int desiredLatency, IntPtr windowHandle)
+        public WaveOut(int devNumber, int desiredLatency, bool windowCallback)
         {
             this.devNumber = devNumber;
             this.desiredLatency = desiredLatency;
             this.callback = new WaveInterop.WaveOutCallback(Callback);
             this.waveOutLock = new object();
-            if (windowHandle != IntPtr.Zero)
+            if (windowCallback)
             {
                 waveOutWindow = new WaveOutWindow(callback);
-                waveOutWindow.AssignHandle(windowHandle);
+                //waveOutWindow.AssignHandle(windowHandle);
             }
         }
 
@@ -122,7 +122,7 @@ namespace NAudio.Wave
             }
         }
 
-        private class WaveOutWindow : System.Windows.Forms.NativeWindow
+        private class WaveOutWindow : System.Windows.Forms.Form
         {
             private WaveInterop.WaveOutCallback waveOutCallback;
 
@@ -295,7 +295,7 @@ namespace NAudio.Wave
                 }
                 if (waveOutWindow != null)
                 {
-                    waveOutWindow.ReleaseHandle();
+                    //waveOutWindow.ReleaseHandle();
                     waveOutWindow = null;
                 }
             }

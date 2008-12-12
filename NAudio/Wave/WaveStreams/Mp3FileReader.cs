@@ -10,7 +10,7 @@ namespace NAudio.Wave
     public class Mp3FileReader : WaveStream
     {
         private WaveFormat waveFormat;
-		private FileStream mp3Stream;
+		private Stream mp3Stream;
         private long length;
         private long dataStartPosition;
         private int frameLengthInBytes;
@@ -18,14 +18,26 @@ namespace NAudio.Wave
         private Id3v2Tag id3v2Tag;
         private XingHeader xingHeader;
         private byte[] id3v1Tag;
+        private bool ownInputStream;
 
 		/// <summary>Supports opening a MP3 file</summary>
-        public Mp3FileReader(String mp3FileName) 
+        public Mp3FileReader(string mp3FileName) 
+            : this(File.OpenRead(mp3FileName))
 		{
+            ownInputStream = true;
+		}
+
+        /// <summary>
+        /// Opens MP3 from a stream rather than a file
+        /// Will not dispose of this stream itself
+        /// </summary>
+        /// <param name="inputStream"></param>
+        public Mp3FileReader(Stream inputStream)
+        {
             int sampleRate;
             int bitRate;
-            
-            mp3Stream = new FileStream(mp3FileName, FileMode.Open, FileAccess.Read);
+
+            mp3Stream = inputStream;
             id3v2Tag = Id3v2Tag.ReadTag(mp3Stream);
 
             dataStartPosition = mp3Stream.Position;
@@ -34,7 +46,6 @@ namespace NAudio.Wave
             frameLengthInBytes = mp3Frame.FrameLength;
             bitRate = mp3Frame.BitRate;
             xingHeader = XingHeader.LoadXingHeader(mp3Frame);
-
 
             this.length = mp3Stream.Length - dataStartPosition;
 
@@ -47,13 +58,12 @@ namespace NAudio.Wave
                 id3v1Tag = tag;
                 this.length -= 128;
             }
-            
-            
+
             mp3Stream.Position = dataStartPosition;
-            
+
             // TODO: choose more appropriately
-            waveFormat = new Mp3WaveFormat(sampleRate,2,frameLengthInBytes,bitRate);
-		}
+            waveFormat = new Mp3WaveFormat(sampleRate, 2, frameLengthInBytes, bitRate);
+        }
 
         /// <summary>
         /// ID3v2 tag if present
@@ -190,7 +200,10 @@ namespace NAudio.Wave
             {
                 if (mp3Stream != null)
                 {
-                    mp3Stream.Dispose();
+                    if (ownInputStream)
+                    {
+                        mp3Stream.Dispose();
+                    }
                     mp3Stream = null;
                 }
             }

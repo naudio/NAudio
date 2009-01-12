@@ -343,7 +343,7 @@ namespace NAudio.Midi
             {
                 throw new ArgumentOutOfRangeException("value", value.ToString(), "Cannot write a negative Var Int");
             }
-            if (value > 0x0FFFFF)
+            if (value > 0x0FFFFFFF)
             {                
                 throw new ArgumentOutOfRangeException("value", value.ToString(), "Maximum allowed Var Int is 0x0FFFFFFF");
             }

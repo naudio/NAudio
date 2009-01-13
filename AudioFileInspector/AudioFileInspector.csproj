@@ -2,7 +2,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.20706</ProductVersion>
+    <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{D29C1659-635C-497B-847E-FE9A5A69ED03}</ProjectGuid>
     <OutputType>WinExe</OutputType>
@@ -22,6 +22,7 @@
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
     <OldToolsVersion>2.0</OldToolsVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -42,6 +43,13 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.Composition, Version=2008.11.24.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Lib\MEF\System.ComponentModel.Composition.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
     <Reference Include="System.Data" />
     <Reference Include="System.Deployment" />
     <Reference Include="System.Drawing" />
@@ -55,7 +63,7 @@
     <Compile Include="AudioFileInspectorForm.Designer.cs">
       <DependentUpon>AudioFileInspectorForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="CakewalkMapInspector.cs" />
+    <Compile Include="FileInspectors\CakewalkMapInspector.cs" />
     <Compile Include="FindForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -63,7 +71,7 @@
       <DependentUpon>FindForm.cs</DependentUpon>
     </Compile>
     <Compile Include="IAudioFileInspector.cs" />
-    <Compile Include="MidiFileInspector.cs" />
+    <Compile Include="FileInspectors\MidiFileInspector.cs" />
     <Compile Include="OptionsForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -106,8 +114,8 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="SoundFontInspector.cs" />
-    <Compile Include="WaveFileInspector.cs" />
+    <Compile Include="FileInspectors\SoundFontInspector.cs" />
+    <Compile Include="FileInspectors\WaveFileInspector.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\nAudio\nAudio.csproj">

@@ -2,10 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using NAudio.Midi;
+using System.ComponentModel.Composition;
 
 namespace AudioFileInspector
 {
-    class MidiFileInspector : IAudioFileInspector
+    [Export(typeof(IAudioFileInspector))]
+    public class MidiFileInspector : IAudioFileInspector
     {
         #region IAudioFileInspector Members
 

@@ -11,9 +11,9 @@ namespace AudioFileInspector
 {
     partial class OptionsForm : Form
     {
-        List<IAudioFileInspector> inspectors;
+        IEnumerable<IAudioFileInspector> inspectors;
 
-        public OptionsForm(List<IAudioFileInspector> inspectors)
+        public OptionsForm(IEnumerable<IAudioFileInspector> inspectors)
         {
             InitializeComponent();
             this.inspectors = inspectors;
@@ -52,7 +52,7 @@ namespace AudioFileInspector
             }
         }
 
-        public static void Disassociate(List<IAudioFileInspector> inspectors)
+        public static void Disassociate(IEnumerable<IAudioFileInspector> inspectors)
         {
             foreach (IAudioFileInspector inspector in inspectors)
             {
@@ -67,7 +67,7 @@ namespace AudioFileInspector
             }
         }
 
-        public static void Associate(List<IAudioFileInspector> inspectors)
+        public static void Associate(IEnumerable<IAudioFileInspector> inspectors)
         {
             foreach (IAudioFileInspector inspector in inspectors)
             {

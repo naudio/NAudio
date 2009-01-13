@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Text;
 using NAudio.Wave;
 using System.Diagnostics;
+using System.ComponentModel.Composition;
 
 namespace AudioFileInspector
 {
-    class WaveFileInspector : IAudioFileInspector
+    [Export(typeof(IAudioFileInspector))]
+    public class WaveFileInspector : IAudioFileInspector
     {
         #region IAudioFileInspector Members
 

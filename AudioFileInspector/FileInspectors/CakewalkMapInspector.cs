@@ -2,10 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using NAudio.FileFormats.Map;
+using System.ComponentModel.Composition;
 
 namespace AudioFileInspector
 {
-    class CakewalkMapInspector : IAudioFileInspector
+    [Export(typeof(IAudioFileInspector))]
+    public class CakewalkMapInspector : IAudioFileInspector
     {
         #region IAudioFileInspector Members
 

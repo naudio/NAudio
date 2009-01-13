@@ -6,25 +6,25 @@ using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 using System.IO;
+using System.ComponentModel.Composition;
 
 namespace AudioFileInspector
 {
-    partial class AudioFileInspectorForm : Form
+    [Export(typeof(AudioFileInspectorForm))]
+    public partial class AudioFileInspectorForm : Form
     {
-        List<IAudioFileInspector> inspectors;
+        [Import]
+        public ICollection<IAudioFileInspector> Inspectors { get; set; }
         string filterString;
         int filterIndex;
-        string[] args;
         string currentFile;
         FindForm findForm;
 
-        public AudioFileInspectorForm(List<IAudioFileInspector> inspectors, string[] args)
+        public string[] CommandLineArguments { get; set; }
+
+        public AudioFileInspectorForm()
         {
             InitializeComponent();
-            this.inspectors = inspectors;
-            CreateFilterString();
-            this.args = args;
-
         }
 
         private void DescribeFile(string fileName)
@@ -36,7 +36,7 @@ namespace AudioFileInspector
             {
                 string extension = System.IO.Path.GetExtension(fileName).ToLower();
                 bool described = false;
-                foreach (IAudioFileInspector inspector in inspectors)
+                foreach (IAudioFileInspector inspector in Inspectors)
                 {
                     if (extension == inspector.FileExtension)
                     {
@@ -59,16 +59,16 @@ namespace AudioFileInspector
         private void CreateFilterString()
         {
             StringBuilder stringBuilder = new StringBuilder();
-            if (inspectors.Count > 0)
+            if (Inspectors.Count > 0)
             {
                 stringBuilder.Append("All Supported Files|");
-                foreach (IAudioFileInspector inspector in inspectors)
+                foreach (IAudioFileInspector inspector in Inspectors)
                 {
                     stringBuilder.AppendFormat("*{0};", inspector.FileExtension);
                 }
                 stringBuilder.Length--;
                 stringBuilder.Append("|");
-                foreach (IAudioFileInspector inspector in inspectors)
+                foreach (IAudioFileInspector inspector in Inspectors)
                 {
                     stringBuilder.AppendFormat("{0}|*{1}|", inspector.FileTypeDescription, inspector.FileExtension);
                 }
@@ -107,15 +107,16 @@ namespace AudioFileInspector
 
         private void AudioFileInspectorForm_Load(object sender, EventArgs e)
         {
-            if (args.Length > 0)
+            CreateFilterString();
+            if (CommandLineArguments != null && CommandLineArguments.Length > 0)
             {
-                DescribeFile(args[0]);
+                DescribeFile(CommandLineArguments[0]);
             }
         }
 
         private void optionsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            OptionsForm optionsForm = new OptionsForm(inspectors);
+            OptionsForm optionsForm = new OptionsForm(Inspectors);
             optionsForm.ShowDialog();
 
         }

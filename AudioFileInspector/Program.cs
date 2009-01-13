@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
+using System.ComponentModel.Composition;
 
 namespace AudioFileInspector
 {
@@ -14,12 +15,17 @@ namespace AudioFileInspector
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-
-            List<IAudioFileInspector> inspectors = new List<IAudioFileInspector>();
+            
+            var catalog = new AttributedAssemblyPartCatalog(System.Reflection.Assembly.GetExecutingAssembly());            
+            var container = new CompositionContainer(catalog);
+            container.Compose();
+            var inspectors = container.GetExportedObjects<IAudioFileInspector>();
+            
+            /*List<IAudioFileInspector> inspectors = new List<IAudioFileInspector>();
             inspectors.Add(new WaveFileInspector());
             inspectors.Add(new MidiFileInspector());
             inspectors.Add(new SoundFontInspector());
-            inspectors.Add(new CakewalkMapInspector());
+            inspectors.Add(new CakewalkMapInspector());*/
 
             if (args.Length > 0)
             {
@@ -55,7 +61,9 @@ namespace AudioFileInspector
                     return 0;
                 }
             }
-            Application.Run(new AudioFileInspectorForm(inspectors,args));
+            var mainForm = container.GetExportedObject<AudioFileInspectorForm>();
+            mainForm.CommandLineArguments = args;
+            Application.Run(mainForm);
             return 0;
         }
     }

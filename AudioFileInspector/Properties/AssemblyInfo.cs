@@ -29,8 +29,8 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("0.1.5.0")]
-[assembly: AssemblyFileVersion("0.1.5.0")]
+[assembly: AssemblyVersion("0.1.6.0")]
+[assembly: AssemblyFileVersion("0.1.6.0")]
 
 // build 1 - 1 Nov 2006
 // initial version - moved out of WavePlayer
@@ -51,6 +51,8 @@ using System.Runtime.InteropServices;
 // Beginnings of a find feature
 // build 5 - 8 Jun 2008
 // Shows length of Wave file as a TimeSpan as well as bytes
+// build 6 - 13 Jan 2009
+// can report on strc chunks in ACID wav files
 
 // TODO list
 // help file

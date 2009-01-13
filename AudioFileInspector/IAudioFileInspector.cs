@@ -4,7 +4,7 @@ using System.Text;
 
 namespace AudioFileInspector
 {
-    interface IAudioFileInspector
+    public interface IAudioFileInspector
     {
         string FileExtension { get; }
         string FileTypeDescription { get; }

@@ -13,8 +13,8 @@ namespace AudioFileInspector
     [Export(typeof(AudioFileInspectorForm))]
     public partial class AudioFileInspectorForm : Form
     {
-        [Import]
-        public ICollection<IAudioFileInspector> Inspectors { get; set; }
+        
+        public ICollection<IAudioFileInspector> Inspectors { get; private set; }
         string filterString;
         int filterIndex;
         string currentFile;
@@ -22,9 +22,11 @@ namespace AudioFileInspector
 
         public string[] CommandLineArguments { get; set; }
 
-        public AudioFileInspectorForm()
+        [ImportingConstructor]
+        public AudioFileInspectorForm(ICollection<IAudioFileInspector> inspectors)
         {
             InitializeComponent();
+            this.Inspectors = inspectors;
         }
 
         private void DescribeFile(string fileName)

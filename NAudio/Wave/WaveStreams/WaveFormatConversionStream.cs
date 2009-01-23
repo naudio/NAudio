@@ -149,8 +149,6 @@ namespace NAudio.Wave
                     // we have been returned something that cannot be converted - a partial
                     // buffer. We will increase the size we supposedly read, and zero out
                     // the end.
-                    // this is fine for Inform, as sourceStream is AudioDownloaderStream
-                    // which will only return non-block-aligned sizes on the final chunk
                     sourceBytesRead -= (sourceBytesRead % sourceStream.BlockAlign);
                     sourceBytesRead += sourceStream.BlockAlign;
                     silenceBytes = SourceToDest(sourceStream.BlockAlign);
@@ -168,8 +166,12 @@ namespace NAudio.Wave
                 if (bytesConverted > 0)
                 {
                     position += bytesConverted;
-                    Array.Copy(conversionStream.DestBuffer, 0, array, bytesRead, bytesConverted);
-                    bytesRead += bytesConverted;
+                    int availableSpace = array.Length - bytesRead - offset;
+                    int toCopy = Math.Min(bytesConverted, availableSpace);
+                    //System.Diagnostics.Debug.Assert(toCopy == bytesConverted);
+                    // TODO: save leftovers
+                    Array.Copy(conversionStream.DestBuffer, 0, array, bytesRead + offset, toCopy);
+                    bytesRead += toCopy;
                     if (silenceBytes > 0)
                     {
                         // clear out the final bit

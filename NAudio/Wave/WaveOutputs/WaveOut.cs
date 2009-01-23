@@ -317,9 +317,9 @@ namespace NAudio.Wave
         {
             if (uMsg == WaveInterop.WaveOutMessage.Done)
             {
-                // check that we're not here through pressing stop
                 GCHandle hBuffer = (GCHandle)wavhdr.userData;
                 WaveOutBuffer buffer = (WaveOutBuffer)hBuffer.Target;
+                // check that we're not here through pressing stop
                 if (PlaybackState == PlaybackState.Playing)
                 {
                     if(!buffer.OnDone())

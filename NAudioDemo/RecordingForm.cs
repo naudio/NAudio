@@ -12,7 +12,7 @@ namespace NAudioDemo
 {
     public partial class RecordingForm : Form
     {
-        WaveInStream waveInStream;
+        WaveIn waveInStream;
         WaveFileWriter writer;
         string outputFilename;
 
@@ -33,10 +33,9 @@ namespace NAudioDemo
                 {
                     return;
                 }
-                WaveFormat recordingFormat = new WaveFormat(8000, 16, 1);
-                writer = new WaveFileWriter(outputFilename,recordingFormat);
+                waveInStream = new WaveIn(8000, 1);                
+                writer = new WaveFileWriter(outputFilename, waveInStream.WaveFormat);
 
-                waveInStream = new WaveInStream(0, recordingFormat, this);
                 waveInStream.DataAvailable += new EventHandler<WaveInEventArgs>(waveInStream_DataAvailable);
                 waveInStream.StartRecording();
                 buttonStartRecording.Enabled = false;                                

@@ -1,18 +1,18 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Runtime.InteropServices;
 
 namespace NAudio.Wave
 {
     /// <summary>
-    /// A class to allow recording from WaveIn
+    /// Allows recording using the Windows waveIn APIs
+    /// Events are raised as recorded buffers are made available
     /// </summary>
-    public class WaveInStream : WaveStream
+    public class WaveIn
     {
         private IntPtr waveInHandle;
         private WaveFormat waveFormat;
-        private long length;
-        private long position;
         private volatile bool recording;
         private WaveInBuffer[] buffers;
         private int numBuffers;
@@ -30,30 +30,47 @@ namespace NAudio.Wave
         public event EventHandler RecordingStopped;
 
         /// <summary>
-        /// Creates a new Wave input stream
+        /// Prepares a wave input device for recording with the most typical options
+        /// The default input device will be used, bit depth will default to 16, and 
+        /// a Window handle will be used for callbacks
+        /// </summary>
+        /// <param name="sampleRate">Recording sample rate (e.g. 8000, 22050, 44100)</param>
+        /// <param name="channels">Number of channels (1 for mono, 2 for stereo)</param>
+        public WaveIn(int sampleRate, int channels)
+            : this(0, sampleRate, 16, channels, true)
+        {
+        }
+
+        /// <summary>
+        /// Prepares a Wave input device for recording
         /// </summary>
         /// <param name="deviceNumber">The device to open - 0 is default</param>
-        /// <param name="desiredFormat">The PCM format to record in</param>
-        /// <param name="callbackWindow">If this parameter is non-null, the Wave In Messages
-        /// will be sent to the message loop of the supplied control. This is considered a
-        /// safer way to use the waveIn functionality</param>
-        public WaveInStream(int deviceNumber, WaveFormat desiredFormat, System.Windows.Forms.Control callbackWindow)
+        /// <param name="sampleRate">Recording sample rate (e.g. 8000, 22050, 44100)</param>
+        /// <param name="bitDepth">Recording bit depth (typically 16)</param>
+        /// <param name="channels">Number of channels (1 for mono, 2 for stereo)</param>
+        /// <param name="callbackWindow">If true, a window handle will be used for callbacks</param>
+        public WaveIn(int deviceNumber, int sampleRate, int bitDepth, int channels, bool callbackWindow)
         {
-            this.waveFormat = desiredFormat;
+            this.waveFormat = new WaveFormat(sampleRate, bitDepth, channels);
             callback = new WaveInterop.WaveInCallback(Callback);
-            if (callbackWindow == null)
+            if (!callbackWindow)
             {
-                MmException.Try(WaveInterop.waveInOpen(out waveInHandle, deviceNumber, desiredFormat, callback, 0, WaveInterop.CallbackFunction), "waveInOpen");
+                MmException.Try(WaveInterop.waveInOpen(out waveInHandle, deviceNumber, waveFormat, callback, 0, WaveInterop.CallbackFunction), "waveInOpen");
             }
             else
             {
                 waveInWindow = new WaveInWindow(callback);
-                MmException.Try(WaveInterop.waveInOpenWindow(out waveInHandle, deviceNumber, desiredFormat, callbackWindow.Handle, 0, WaveInterop.CallbackWindow), "waveInOpen");
-                waveInWindow.AssignHandle(callbackWindow.Handle);
+                MmException.Try(WaveInterop.waveInOpenWindow(out waveInHandle, deviceNumber, waveFormat, waveInWindow.Handle, 0, WaveInterop.CallbackWindow), "waveInOpen");
+                //waveInWindow.AssignHandle(callbackWindow.Handle);
             }
 
+            CreateBuffers();
+        }
+
+        private void CreateBuffers()
+        {
             // Default to three buffers of 100ms each
-            int bufferSize = desiredFormat.AverageBytesPerSecond / 10;
+            int bufferSize = waveFormat.AverageBytesPerSecond / 10;
             numBuffers = 3;
 
             buffers = new WaveInBuffer[numBuffers];
@@ -73,7 +90,6 @@ namespace NAudio.Wave
                 GCHandle hBuffer = (GCHandle)waveHeader.userData;
                 WaveInBuffer buffer = (WaveInBuffer)hBuffer.Target;
 
-                length += buffer.BytesRecorded;
                 if (DataAvailable != null)
                 {
                     DataAvailable(this, new WaveInEventArgs(buffer.Data, buffer.BytesRecorded));
@@ -93,37 +109,12 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// number of bytes received in this recording session
-        /// </summary>
-        public override long Length
-        {
-            get { return length; }
-        }
-
-        /// <summary>
-        /// Current position in the stream. For future use
-        /// </summary>
-        public override long Position
-        {
-            get
-            {
-                return position;
-            }
-            set
-            {
-                throw new Exception("You can't reposition a WaveIn stream.");
-            }
-        }
-
-        /// <summary>
         /// Start recording
         /// </summary>
         public void StartRecording()
         {
             if (recording)
                 throw new InvalidOperationException("Already recording");
-            length = 0;
-            position = 0;
             MmException.Try(WaveInterop.waveInStart(waveInHandle), "waveInStart");
             recording = true;
         }
@@ -133,8 +124,6 @@ namespace NAudio.Wave
         /// </summary>
         public void StopRecording()
         {
-            //if (!recording)
-            //    throw new InvalidOperationException("Not recording");
             recording = false;
             MmException.Try(WaveInterop.waveInStop(waveInHandle), "waveInStop");
             //MmException.Try(WaveInterop.waveInReset(waveInHandle), "waveInReset");           
@@ -143,7 +132,7 @@ namespace NAudio.Wave
         /// <summary>
         /// WaveFormat we are recording in
         /// </summary>
-        public override WaveFormat WaveFormat
+        public WaveFormat WaveFormat
         {
             get { return waveFormat; }
         }
@@ -151,7 +140,7 @@ namespace NAudio.Wave
         /// <summary>
         /// Dispose pattern
         /// </summary>
-        protected override void Dispose(bool disposing)
+        protected virtual void Dispose(bool disposing)
         {
             if (disposing)
             {
@@ -169,53 +158,20 @@ namespace NAudio.Wave
                 waveInHandle = IntPtr.Zero;
                 if (waveInWindow != null)
                 {
-                    waveInWindow.ReleaseHandle();
+                    waveInWindow.Dispose();
+                    //waveInWindow.ReleaseHandle();
                     waveInWindow = null;
                 }
             }
-
-            base.Dispose(disposing);
         }
 
         /// <summary>
-        /// Reads from this stream. For future use.
+        /// Dispose method
         /// </summary>
-        public override int Read(byte[] buffer, int offset, int count)
+        public void Dispose()
         {
-            // TODO: basic reading support
-            // use a queue of buffers. Dropout if queue.Count = numBuffers
-            throw new Exception("The method or operation is not implemented.");
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
-
-        private class WaveInWindow : System.Windows.Forms.NativeWindow
-        {
-            private WaveInterop.WaveInCallback waveInCallback;
-
-            public WaveInWindow(WaveInterop.WaveInCallback waveInCallback)
-            {
-                this.waveInCallback = waveInCallback;
-            }
-
-            protected override void WndProc(ref System.Windows.Forms.Message m)
-            {
-                if (m.Msg == (int)WaveInterop.WaveInMessage.Data)
-                {
-                    IntPtr hOutputDevice = m.WParam;
-                    WaveHeader waveHeader = new WaveHeader();
-                    Marshal.PtrToStructure(m.LParam, waveHeader);
-                    waveInCallback(hOutputDevice, WaveInterop.WaveInMessage.Data, 0, waveHeader, 0);
-                }
-                else if (m.Msg == (int)WaveInterop.WaveInMessage.Open)
-                {
-                    waveInCallback(m.WParam, WaveInterop.WaveInMessage.Open, 0, null, 0);
-                }
-                else if (m.Msg == (int)WaveInterop.WaveInMessage.Close)
-                {
-                    waveInCallback(m.WParam, WaveInterop.WaveInMessage.Close, 0, null, 0);
-                }
-                base.WndProc(ref m);
-            }
-        }
-
     }
 }

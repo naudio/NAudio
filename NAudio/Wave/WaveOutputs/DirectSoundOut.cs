@@ -12,10 +12,7 @@ namespace NAudio.Wave
     /// </summary>
     public class DirectSoundOut : IWavePlayer
     {
-        // (Gee) This event has NOT been added to the IWavePlayer interface
-        //       This is so existing classes based on this interface are not broken in the build
-        //       Should consider adding this and implementing it where appropriate
-        public event EventHandler TrackFinished = null;
+        public event EventHandler PlaybackStopped;
 
         private PlaybackState playbackState;
         private WaveFormat waveFormat;
@@ -386,9 +383,9 @@ namespace NAudio.Wave
                 }
 
                 // Fire playback stopped event
-                if (TrackFinished != null)
+                if (PlaybackStopped != null)
                 {
-                    TrackFinished(null, EventArgs.Empty);
+                    PlaybackStopped(this, EventArgs.Empty);
                 }
             }
         }

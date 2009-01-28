@@ -27,7 +27,8 @@ namespace NAudio.Wave
         
         WaveFormat outputFormat;
         bool dmoResamplerNeeded;
-            
+        
+        public event EventHandler PlaybackStopped;
 
         /// <summary>
         /// WASAPI Out using default audio endpoint
@@ -139,12 +140,20 @@ namespace NAudio.Wave
             }
             finally
             {
-
                 if (resamplerDmoStream != null)
                 {
                     sourceStream = resamplerDmoStream.InputStream;
                     resamplerDmoStream.Dispose();
                 }
+                RaisePlaybackStopped();
+            }
+        }
+
+        private void RaisePlaybackStopped()
+        {
+            if (PlaybackStopped != null)
+            {
+                PlaybackStopped(this, EventArgs.Empty);
             }
         }
 

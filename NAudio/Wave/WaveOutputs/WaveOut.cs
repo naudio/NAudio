@@ -21,6 +21,10 @@ namespace NAudio.Wave
         private WaveOutWindow waveOutWindow;
         private object waveOutLock;
 
+        /// <summary>
+        /// Indicates playback has stopped automatically
+        /// </summary>
+        public event EventHandler PlaybackStopped;
 
         /// <summary>
         /// Retrieves the capabilities of a waveOut device
@@ -290,10 +294,19 @@ namespace NAudio.Wave
                     if(!buffer.OnDone())
                     {
                         playbackState = PlaybackState.Stopped;
+                        RaisePlaybackStoppedEvent();
                     }
                 }
 
                 // n.b. this was wrapped in an exception handler, but bug should be fixed now
+            }
+        }
+
+        private void RaisePlaybackStoppedEvent()
+        {
+            if (PlaybackStopped != null)
+            {
+                PlaybackStopped(this, EventArgs.Empty);
             }
         }
     }

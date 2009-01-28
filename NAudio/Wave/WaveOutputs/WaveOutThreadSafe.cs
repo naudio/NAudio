@@ -26,6 +26,7 @@ namespace NAudio.Wave
         private Thread waveOutThread;
         private Queue<WaveOutAction> actionQueue;
         private AutoResetEvent workAvailable;
+        public event EventHandler PlaybackStopped;
 
         /// <summary>
         /// Retrieves the capabilities of a waveOut device
@@ -384,7 +385,16 @@ namespace NAudio.Wave
                 if (!buffer.OnDone())
                 {
                     playbackState = PlaybackState.Stopped;
+                    RaisePlaybackStopped();
                 }
+            }
+        }
+
+        private void RaisePlaybackStopped()
+        {
+            if (PlaybackStopped != null)
+            {
+                PlaybackStopped(this, EventArgs.Empty);
             }
         }
     }

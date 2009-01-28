@@ -25,6 +25,7 @@ namespace NAudio.Wave
         private WaveBuffer waveBuffer;
         private ASIOSampleConvertor.SampleConvertor convertor;
 
+        public event EventHandler PlaybackStopped;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AsioOut"/> class with the first 
@@ -238,6 +239,14 @@ namespace NAudio.Wave
             {
                 if (value != 1.0f)
                     throw new InvalidOperationException();
+            }
+        }
+
+        private void RaisePlaybackStopped()
+        {
+            if (PlaybackStopped != null)
+            {
+                PlaybackStopped(this, EventArgs.Empty);
             }
         }
     }

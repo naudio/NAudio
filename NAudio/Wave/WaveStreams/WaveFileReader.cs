@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace NAudio.Wave 
 {
@@ -73,8 +74,11 @@ namespace NAudio.Wave
             
             Int32 dataChunkID = WaveInterop.mmioStringToFOURCC("data", 0);
             dataChunkLength = 0;
+
+            // sometimes a file has more data than is specified after the RIFF header
+            long stopPosition = Math.Min(fileSize + 8, stream.Length);
             
-            while (stream.Position < stream.Length)
+            while (stream.Position < stopPosition)
             {
                 Int32 chunkIdentifier = br.ReadInt32();                
                 Int32 chunkLength = br.ReadInt32();

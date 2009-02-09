@@ -51,6 +51,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CoreAudioApi\AudioCaptureClient.cs" />
     <Compile Include="CoreAudioApi\AudioClient.cs" />
     <Compile Include="CoreAudioApi\AudioClientBufferFlags.cs" />
     <Compile Include="CoreAudioApi\AudioClientShareMode.cs" />

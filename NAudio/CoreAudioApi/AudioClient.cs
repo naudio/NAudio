@@ -14,7 +14,8 @@ namespace NAudio.CoreAudioApi
         IAudioClient audioClientInterface;
         WaveFormat mixFormat;
         AudioRenderClient audioRenderClient;
-        
+        AudioCaptureClient audioCaptureClient;
+
         internal AudioClient(IAudioClient audioClientInterface)
         {
             this.audioClientInterface = audioClientInterface;
@@ -161,6 +162,24 @@ namespace NAudio.CoreAudioApi
         }
 
         /// <summary>
+        /// Gets the AudioCaptureClient service
+        /// </summary>
+        public AudioCaptureClient AudioCaptureClient
+        {
+            get
+            {
+                if (audioCaptureClient == null)
+                {
+                    object audioCaptureClientInterface;
+                    Guid audioCaptureClientGuid = new Guid("c8adbd64-e71e-48a0-a4de-185c395cd317");
+                    Marshal.ThrowExceptionForHR(audioClientInterface.GetService(ref audioCaptureClientGuid, out audioCaptureClientInterface));
+                    audioCaptureClient = new AudioCaptureClient((IAudioCaptureClient)audioCaptureClientInterface);
+                }
+                return audioCaptureClient;
+            }
+        }
+
+        /// <summary>
         /// Determines whether if the specified output format is supported
         /// </summary>
         /// <param name="shareMode">The share mode.</param>
@@ -261,6 +280,11 @@ namespace NAudio.CoreAudioApi
                 {
                     audioRenderClient.Dispose();
                     audioRenderClient = null;
+                }
+                if (audioCaptureClient != null)
+                {
+                    audioCaptureClient.Dispose();
+                    audioCaptureClient = null;
                 }
                 Marshal.ReleaseComObject(audioClientInterface);
                 audioClientInterface = null;

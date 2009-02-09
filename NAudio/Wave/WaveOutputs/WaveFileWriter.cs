@@ -8,7 +8,7 @@ namespace NAudio.Wave
     /// </summary>
     public class WaveFileWriter : IDisposable
     {
-        private FileStream outStream;
+        private Stream outStream;
         private long dataSizePos;
         private long factSampleCountPos;
         private int dataChunkSize = 0;
@@ -37,6 +37,45 @@ namespace NAudio.Wave
         }
 
         /// <summary>
+        /// WaveFileWriter that actually writes to a stream
+        /// </summary>
+        /// <param name="outStream">Stream to be written to</param>
+        /// <param name="format">Wave format to use</param>
+        public WaveFileWriter(Stream outStream, WaveFormat format)
+        {
+            this.outStream = outStream;    
+            BinaryWriter w = new BinaryWriter(outStream, System.Text.Encoding.ASCII);
+            w.Write(System.Text.Encoding.ASCII.GetBytes("RIFF"));
+            w.Write((int)0); // placeholder
+            w.Write(System.Text.Encoding.ASCII.GetBytes("WAVEfmt "));
+            this.format = format;
+
+            format.Serialize(w);
+
+            CreateFactChunk(outStream, format, w);
+
+            WriteDataChunkHeader(outStream, w);
+        }
+
+        private void WriteDataChunkHeader(Stream outStream, BinaryWriter w)
+        {
+            w.Write(System.Text.Encoding.ASCII.GetBytes("data"));
+            dataSizePos = outStream.Position;
+            w.Write((int)0); // placeholder
+        }
+
+        private void CreateFactChunk(Stream outStream, WaveFormat format, BinaryWriter w)
+        {
+            if (format.Encoding != WaveFormatEncoding.Pcm)
+            {
+                w.Write(System.Text.Encoding.ASCII.GetBytes("fact"));
+                w.Write((int)4);
+                factSampleCountPos = outStream.Position;
+                w.Write((int)0); // number of samples
+            }
+        }
+
+        /// <summary>
         /// Creates a new WaveFileWriter, simply overwriting the samples on an existing file
         /// </summary>
         /// <param name="filename">The filename</param>
@@ -57,28 +96,9 @@ namespace NAudio.Wave
         /// <param name="filename">The filename to write to</param>
         /// <param name="format">The Wave Format of the output data</param>
         public WaveFileWriter(string filename, WaveFormat format)
+            : this(new FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.Read), format)
         {
             this.filename = filename;
-            outStream = new FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.Read);
-            BinaryWriter w = new BinaryWriter(outStream, System.Text.Encoding.ASCII);
-            w.Write(System.Text.Encoding.ASCII.GetBytes("RIFF"));
-            w.Write((int)0);
-            w.Write(System.Text.Encoding.ASCII.GetBytes("WAVEfmt "));
-            this.format = format;
-
-            format.Serialize(w);
-
-            if (format.Encoding != WaveFormatEncoding.Pcm)
-            {
-                w.Write(System.Text.Encoding.ASCII.GetBytes("fact"));
-                w.Write((int)4);
-                factSampleCountPos = outStream.Position;
-                w.Write((int)0); // number of samples
-            }
-
-            w.Write(System.Text.Encoding.ASCII.GetBytes("data"));
-            dataSizePos = outStream.Position;
-            w.Write((int)0);
         }
 
         /// <summary>
@@ -209,7 +229,6 @@ namespace NAudio.Wave
                 {
                     try
                     {
-
                         if (!overwriting)
                         {
                             // in overwrite mode, we will not change the length set at the start

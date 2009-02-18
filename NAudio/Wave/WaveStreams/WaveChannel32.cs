@@ -8,7 +8,7 @@ namespace NAudio.Wave
     /// It's output is always stereo
     /// The input stream can be panned
     /// </summary>
-    public class WaveChannel32 : WaveStream
+    public class WaveChannel32 : WaveStream, ISampleNotifier
     {
         private WaveStream sourceStream;
         private readonly WaveFormat waveFormat;
@@ -190,6 +190,7 @@ namespace NAudio.Wave
                     pfDestBuffer[n * 2] = psSourceBuffer[n] * leftVolume;
                     pfDestBuffer[n * 2 + 1] = psSourceBuffer[n] * rightVolume;
                 }
+                RaiseSample(leftVolume, rightVolume);
             }
         }
 
@@ -219,6 +220,7 @@ namespace NAudio.Wave
                     pfDestBuffer[n] = psSourceBuffer[n] * leftVolume;
                     pfDestBuffer[n + 1] = psSourceBuffer[n + 1] * rightVolume;
                 }
+                RaiseSample(leftVolume, rightVolume);
             }
         }
 
@@ -299,6 +301,34 @@ namespace NAudio.Wave
                 System.Diagnostics.Debug.Assert(false, "WaveChannel32 was not Disposed");
             }
             base.Dispose(disposing);
+        }
+
+        /// <summary>
+        /// Block
+        /// </summary>
+        public event EventHandler Block;
+
+        private void RaiseBlock()
+        {
+            var handler = Block;
+            if (handler != null)
+            {
+                handler(this, EventArgs.Empty);
+            }
+        }
+
+        /// <summary>
+        /// Sample
+        /// </summary>
+        public event EventHandler<SampleEventArgs> Sample;
+
+        private void RaiseSample(float left, float right)
+        {
+            var handler = Sample;
+            if (handler != null)
+            {
+                handler(this, new SampleEventArgs(left, right));
+            }
         }
     }
 }

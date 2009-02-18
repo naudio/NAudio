@@ -4,15 +4,42 @@ using System.Text;
 
 namespace NAudio.Wave
 {
-    public class ISampleNotifier
+    /// <summary>
+    /// An interface for WaveStreams which can report notification of individual samples
+    /// </summary>
+    public interface ISampleNotifier
     {
-        public event EventHandler Block;
-        public event EventHandler<SampleEventArgs> Sample;
+        /// <summary>
+        /// About to start processing a block of samples
+        /// </summary>
+        event EventHandler Block;
+        /// <summary>
+        /// A sample has been detected
+        /// </summary>
+        event EventHandler<SampleEventArgs> Sample;
     }
 
+    /// <summary>
+    /// Sample event arguments
+    /// </summary>
     public class SampleEventArgs : EventArgs
     {
-        public float left;
-        public float right;
+        /// <summary>
+        /// Left sample
+        /// </summary>
+        public float Left { get; set; }
+        /// <summary>
+        /// Right sample
+        /// </summary>
+        public float Right { get; set; }
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        public SampleEventArgs(float left, float right)
+        {
+            this.Left = left;
+            this.Right = right;
+        }
     }
 }

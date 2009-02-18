@@ -189,8 +189,8 @@ namespace NAudio.Wave
                 {
                     pfDestBuffer[n * 2] = psSourceBuffer[n] * leftVolume;
                     pfDestBuffer[n * 2 + 1] = psSourceBuffer[n] * rightVolume;
+                    if (Sample != null) RaiseSample(pfDestBuffer[n * 2], pfDestBuffer[n * 2 + 1]);
                 }
-                RaiseSample(leftVolume, rightVolume);
             }
         }
 
@@ -219,8 +219,8 @@ namespace NAudio.Wave
                 {
                     pfDestBuffer[n] = psSourceBuffer[n] * leftVolume;
                     pfDestBuffer[n + 1] = psSourceBuffer[n + 1] * rightVolume;
+                    if (Sample != null) RaiseSample(pfDestBuffer[n], pfDestBuffer[n + 1]);
                 }
-                RaiseSample(leftVolume, rightVolume);
             }
         }
 
@@ -322,13 +322,17 @@ namespace NAudio.Wave
         /// </summary>
         public event EventHandler<SampleEventArgs> Sample;
 
+        // reuse the same object every time to avoid making lots of work for the garbage collector
+        private SampleEventArgs sampleEventArgs = new SampleEventArgs(0,0);
+
+        /// <summary>
+        /// Raise the sample event (no check for null because it has already been done)
+        /// </summary>
         private void RaiseSample(float left, float right)
         {
-            var handler = Sample;
-            if (handler != null)
-            {
-                handler(this, new SampleEventArgs(left, right));
-            }
+            sampleEventArgs.Left = left;
+            sampleEventArgs.Right = right;
+            Sample(this, sampleEventArgs);
         }
     }
 }

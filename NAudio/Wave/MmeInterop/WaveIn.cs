@@ -42,6 +42,30 @@ namespace NAudio.Wave
         }
 
         /// <summary>
+        /// Returns the number of Wave In devices available in the system
+        /// </summary>
+        public static int DeviceCount
+        {
+            get
+            {
+                return WaveInterop.waveInGetNumDevs();
+            }
+        }
+
+        /// <summary>
+        /// Retrieves the capabilities of a waveIn device
+        /// </summary>
+        /// <param name="devNumber">Device to test</param>
+        /// <returns>The WaveIn device capabilities</returns>
+        public static WaveInCapabilities GetCapabilities(int devNumber)
+        {
+            WaveInCapabilities caps = new WaveInCapabilities();
+            int structSize = Marshal.SizeOf(caps);
+            MmException.Try(WaveInterop.waveInGetDevCaps(devNumber, out caps, structSize), "waveInGetDevCaps");
+            return caps;
+        }
+
+        /// <summary>
         /// Prepares a Wave input device for recording
         /// </summary>
         /// <param name="deviceNumber">The device to open - 0 is default</param>

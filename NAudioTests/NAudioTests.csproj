@@ -63,6 +63,7 @@
     <Compile Include="Wasapi\AudioClientTests.cs" />
     <Compile Include="Wasapi\MMDeviceEnumeratorTests.cs" />
     <Compile Include="WaveFormats\AdpcmWaveFormatTests.cs" />
+    <Compile Include="WaveIn\WaveInDevicesTests.cs" />
     <Compile Include="WaveStreams\BlockAlignmentReductionStreamTests.cs" />
     <Compile Include="WaveStreams\CircularBufferTests.cs" />
     <Compile Include="WindowsMedia\WindowsMediaTests.cs" />

@@ -304,6 +304,7 @@
     <Compile Include="Wave\MmeInterop\WaveHeader.cs" />
     <Compile Include="Wave\MmeInterop\WaveHeaderFlags.cs" />
     <Compile Include="Wave\MmeInterop\WaveIn.cs" />
+    <Compile Include="Wave\MmeInterop\WaveInCapabilities.cs" />
     <Compile Include="Wave\MmeInterop\WaveInEventArgs.cs" />
     <Compile Include="Wave\MmeInterop\WaveInterop.cs" />
     <Compile Include="Wave\MmeInterop\WaveInWindow.cs">

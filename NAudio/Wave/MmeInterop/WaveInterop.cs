@@ -89,6 +89,8 @@ namespace NAudio.Wave
 
         [DllImport("winmm.dll")]
         public static extern Int32 waveInGetNumDevs();
+        [DllImport("winmm.dll", CharSet = CharSet.Auto)]
+        public static extern MmResult waveInGetDevCaps(int deviceID, out WaveInCapabilities waveInCaps, int waveInCapsSize);
         [DllImport("winmm.dll")]
         public static extern MmResult waveInAddBuffer(IntPtr hWaveIn, WaveHeader pwh, int cbwh);
         [DllImport("winmm.dll")]

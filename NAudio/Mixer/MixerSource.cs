@@ -11,7 +11,7 @@ namespace NAudio.Mixer
 	public class MixerSource 
 	{
 		private MixerInterop.MIXERLINE mixerLine;
-		private int nMixer;
+        private IntPtr mixerHandle;
 		private int nDestination;
 		private int nSource;
 		
@@ -21,14 +21,14 @@ namespace NAudio.Mixer
 		/// <param name="nMixer">Mixer ID</param>
 		/// <param name="nDestination">Destination ID</param>
 		/// <param name="nSource">Source ID</param>
-		public MixerSource(int nMixer,int nDestination,int nSource) 
+        public MixerSource(IntPtr mixerHandle, int nDestination, int nSource) 
 		{
 			mixerLine = new MixerInterop.MIXERLINE();
 			mixerLine.cbStruct = Marshal.SizeOf(mixerLine);
 			mixerLine.dwDestination = nDestination;
 			mixerLine.dwSource = nSource;
-			MmException.Try(MixerInterop.mixerGetLineInfo(nMixer, ref mixerLine, MixerInterop.MIXER_GETLINEINFOF_SOURCE),"mixerGetLineInfo");
-			this.nMixer = nMixer;
+            MmException.Try(MixerInterop.mixerGetLineInfo(mixerHandle, ref mixerLine, MixerInterop.MIXER_GETLINEINFOF_SOURCE), "mixerGetLineInfo");
+            this.mixerHandle = mixerHandle;
 			this.nDestination = nDestination;
 			this.nSource = nSource;
 		}
@@ -76,8 +76,8 @@ namespace NAudio.Mixer
 			if(nControl < 0 || nControl >= ControlsCount) 
 			{
 				throw new ArgumentOutOfRangeException("nControl");
-			}			
-			return MixerControl.GetMixerControl(nMixer,(int) mixerLine.dwLineID,nControl,Channels);
+			}
+            return MixerControl.GetMixerControl(mixerHandle, (int)mixerLine.dwLineID, nControl, Channels);
 		}
 		
 		/// <summary>
@@ -98,33 +98,33 @@ namespace NAudio.Mixer
 		{
 			get 
 			{
-				switch(mixerLine.dwComponentType) 
-				{
-				case MixerInterop.MIXERLINE_COMPONENTTYPE_SRC_UNDEFINED:
-					return "Undefined";
-				case MixerInterop.MIXERLINE_COMPONENTTYPE_SRC_DIGITAL:
-					return "Digital";
-				case MixerInterop.MIXERLINE_COMPONENTTYPE_SRC_LINE:
-					return "Line Level";
-				case MixerInterop.MIXERLINE_COMPONENTTYPE_SRC_MICROPHONE:
-					return "Microphone";
-				case MixerInterop.MIXERLINE_COMPONENTTYPE_SRC_SYNTHESIZER:
-					return "Synthesizer";
-				case MixerInterop.MIXERLINE_COMPONENTTYPE_SRC_COMPACTDISC:
-					return "Compact Disk";
-				case MixerInterop.MIXERLINE_COMPONENTTYPE_SRC_TELEPHONE:
-					return "Telephone";
-				case MixerInterop.MIXERLINE_COMPONENTTYPE_SRC_PCSPEAKER:
-					return "PC Speaker";
-				case MixerInterop.MIXERLINE_COMPONENTTYPE_SRC_WAVEOUT:
-					return "Wave Out";
-				case MixerInterop.MIXERLINE_COMPONENTTYPE_SRC_AUXILIARY:
-					return "Auxiliary";
-				case MixerInterop.MIXERLINE_COMPONENTTYPE_SRC_ANALOG:
-					return "Analog";
-				default:
-					return "Invalid";
-				}
+                switch (mixerLine.dwComponentType)
+                {
+                    case MixerInterop.MIXERLINE_COMPONENTTYPE.MIXERLINE_COMPONENTTYPE_SRC_UNDEFINED:
+                        return "Undefined";
+                    case MixerInterop.MIXERLINE_COMPONENTTYPE.MIXERLINE_COMPONENTTYPE_SRC_DIGITAL:
+                        return "Digital";
+                    case MixerInterop.MIXERLINE_COMPONENTTYPE.MIXERLINE_COMPONENTTYPE_SRC_LINE:
+                        return "Line Level";
+                    case MixerInterop.MIXERLINE_COMPONENTTYPE.MIXERLINE_COMPONENTTYPE_SRC_MICROPHONE:
+                        return "Microphone";
+                    case MixerInterop.MIXERLINE_COMPONENTTYPE.MIXERLINE_COMPONENTTYPE_SRC_SYNTHESIZER:
+                        return "Synthesizer";
+                    case MixerInterop.MIXERLINE_COMPONENTTYPE.MIXERLINE_COMPONENTTYPE_SRC_COMPACTDISC:
+                        return "Compact Disk";
+                    case MixerInterop.MIXERLINE_COMPONENTTYPE.MIXERLINE_COMPONENTTYPE_SRC_TELEPHONE:
+                        return "Telephone";
+                    case MixerInterop.MIXERLINE_COMPONENTTYPE.MIXERLINE_COMPONENTTYPE_SRC_PCSPEAKER:
+                        return "PC Speaker";
+                    case MixerInterop.MIXERLINE_COMPONENTTYPE.MIXERLINE_COMPONENTTYPE_SRC_WAVEOUT:
+                        return "Wave Out";
+                    case MixerInterop.MIXERLINE_COMPONENTTYPE.MIXERLINE_COMPONENTTYPE_SRC_AUXILIARY:
+                        return "Auxiliary";
+                    case MixerInterop.MIXERLINE_COMPONENTTYPE.MIXERLINE_COMPONENTTYPE_SRC_ANALOG:
+                        return "Analog";
+                    default:
+                        return "Invalid";
+                }
 			}				
 		}		
 	}

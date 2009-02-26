@@ -12,6 +12,9 @@ namespace NAudio.Wave
     /// </summary>
     public class DirectSoundOut : IWavePlayer
     {
+        /// <summary>
+        /// Playback Stopped
+        /// </summary>
         public event EventHandler PlaybackStopped;
 
         private PlaybackState playbackState;

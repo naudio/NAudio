@@ -9,10 +9,10 @@ namespace NAudio.Mixer
 	/// </summary>
 	public class CustomMixerControl : MixerControl 
 	{
-		internal CustomMixerControl(MixerInterop.MIXERCONTROL mixerControl,int nMixer,int nChannels) 
+        internal CustomMixerControl(MixerInterop.MIXERCONTROL mixerControl, IntPtr mixerHandle, int nChannels) 
 		{
 			this.mixerControl = mixerControl;
-			this.nMixer = nMixer;
+            this.mixerHandle = mixerHandle;
 			this.nChannels = nChannels;
 			this.mixerControlDetails = new MixerInterop.MIXERCONTROLDETAILS();			
 			GetControlDetails();

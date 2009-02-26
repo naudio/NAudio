@@ -101,38 +101,6 @@ namespace NAudio.Mixer
 
 	class MixerInterop 
 	{
-	
-
-
-		public const UInt32 MIXERLINE_COMPONENTTYPE_DST_FIRST       = 0x00000000;
-		public const UInt32 MIXERLINE_COMPONENTTYPE_DST_UNDEFINED   = (MIXERLINE_COMPONENTTYPE_DST_FIRST + 0);
-		public const UInt32 MIXERLINE_COMPONENTTYPE_DST_DIGITAL     = (MIXERLINE_COMPONENTTYPE_DST_FIRST + 1);
-		public const UInt32 MIXERLINE_COMPONENTTYPE_DST_LINE        = (MIXERLINE_COMPONENTTYPE_DST_FIRST + 2);
-		public const UInt32 MIXERLINE_COMPONENTTYPE_DST_MONITOR     = (MIXERLINE_COMPONENTTYPE_DST_FIRST + 3);
-		public const UInt32 MIXERLINE_COMPONENTTYPE_DST_SPEAKERS    = (MIXERLINE_COMPONENTTYPE_DST_FIRST + 4);
-		public const UInt32 MIXERLINE_COMPONENTTYPE_DST_HEADPHONES  = (MIXERLINE_COMPONENTTYPE_DST_FIRST + 5);
-		public const UInt32 MIXERLINE_COMPONENTTYPE_DST_TELEPHONE   = (MIXERLINE_COMPONENTTYPE_DST_FIRST + 6);
-		public const UInt32 MIXERLINE_COMPONENTTYPE_DST_WAVEIN      = (MIXERLINE_COMPONENTTYPE_DST_FIRST + 7);
-		public const UInt32 MIXERLINE_COMPONENTTYPE_DST_VOICEIN     = (MIXERLINE_COMPONENTTYPE_DST_FIRST + 8);
-		public const UInt32 MIXERLINE_COMPONENTTYPE_DST_LAST        = (MIXERLINE_COMPONENTTYPE_DST_FIRST + 8);
-		
-		public const UInt32 MIXERLINE_COMPONENTTYPE_SRC_FIRST       = 0x00001000;
-		public const UInt32 MIXERLINE_COMPONENTTYPE_SRC_UNDEFINED   = (MIXERLINE_COMPONENTTYPE_SRC_FIRST + 0);
-		public const UInt32 MIXERLINE_COMPONENTTYPE_SRC_DIGITAL     = (MIXERLINE_COMPONENTTYPE_SRC_FIRST + 1);
-		public const UInt32 MIXERLINE_COMPONENTTYPE_SRC_LINE        = (MIXERLINE_COMPONENTTYPE_SRC_FIRST + 2);
-		public const UInt32 MIXERLINE_COMPONENTTYPE_SRC_MICROPHONE  = (MIXERLINE_COMPONENTTYPE_SRC_FIRST + 3);
-		public const UInt32 MIXERLINE_COMPONENTTYPE_SRC_SYNTHESIZER = (MIXERLINE_COMPONENTTYPE_SRC_FIRST + 4);
-		public const UInt32 MIXERLINE_COMPONENTTYPE_SRC_COMPACTDISC = (MIXERLINE_COMPONENTTYPE_SRC_FIRST + 5);
-		public const UInt32 MIXERLINE_COMPONENTTYPE_SRC_TELEPHONE   = (MIXERLINE_COMPONENTTYPE_SRC_FIRST + 6);
-		public const UInt32 MIXERLINE_COMPONENTTYPE_SRC_PCSPEAKER   = (MIXERLINE_COMPONENTTYPE_SRC_FIRST + 7);
-		public const UInt32 MIXERLINE_COMPONENTTYPE_SRC_WAVEOUT     = (MIXERLINE_COMPONENTTYPE_SRC_FIRST + 8);
-		public const UInt32 MIXERLINE_COMPONENTTYPE_SRC_AUXILIARY   = (MIXERLINE_COMPONENTTYPE_SRC_FIRST + 9);
-		public const UInt32 MIXERLINE_COMPONENTTYPE_SRC_ANALOG      = (MIXERLINE_COMPONENTTYPE_SRC_FIRST + 10);
-		public const UInt32 MIXERLINE_COMPONENTTYPE_SRC_LAST        = (MIXERLINE_COMPONENTTYPE_SRC_FIRST + 10);
-		
-
-
-
 		public const UInt32 MIXER_GETLINEINFOF_DESTINATION      	= 0x00000000;
 		public const UInt32 MIXER_GETLINEINFOF_SOURCE           	= 0x00000001;
 		public const UInt32 MIXER_GETLINEINFOF_LINEID           	= 0x00000002;
@@ -140,13 +108,9 @@ namespace NAudio.Mixer
 		public const UInt32 MIXER_GETLINEINFOF_TARGETTYPE       	= 0x00000004;
 		public const UInt32 MIXER_GETLINEINFOF_QUERYMASK        	= 0x0000000F;
 
-
-
 		public const UInt32 MIXERCONTROL_CONTROLF_UNIFORM   		= 0x00000001;
 		public const UInt32 MIXERCONTROL_CONTROLF_MULTIPLE  		= 0x00000002;
 		public const UInt32 MIXERCONTROL_CONTROLF_DISABLED  		= 0x80000000;
-
-
 		
 		public const Int32 MAXPNAMELEN = 32;
 		public const Int32 MIXER_SHORT_NAME_CHARS = 16;
@@ -156,31 +120,31 @@ namespace NAudio.Mixer
 		public static extern Int32 mixerGetNumDevs();
 		
 		[DllImport("winmm.dll", CharSet=CharSet.Ansi)]
-		public static extern MmResult mixerOpen(ref Int32 hMixer, UInt32 dwCallback, UInt32 dwInstance, UInt32 dwOpenFlags);
+        public static extern MmResult mixerOpen(out IntPtr hMixer, int uMxId, IntPtr dwCallback, IntPtr dwInstance, UInt32 dwOpenFlags);
 		
 		[DllImport("winmm.dll", CharSet=CharSet.Ansi)]
-		public static extern MmResult mixerClose(UInt32 hMixer);
+        public static extern MmResult mixerClose(IntPtr hMixer);
 
 		[DllImport("winmm.dll", CharSet=CharSet.Ansi)]
-        public static extern MmResult mixerGetControlDetails(Int32 hMixer, ref MIXERCONTROLDETAILS mixerControlDetails, MixerFlags dwDetailsFlags);
+        public static extern MmResult mixerGetControlDetails(IntPtr hMixer, ref MIXERCONTROLDETAILS mixerControlDetails, MixerFlags dwDetailsFlags);
 
 		[DllImport("winmm.dll", CharSet=CharSet.Ansi)]
-		public static extern MmResult mixerGetDevCaps(Int32 nMixerID, ref MIXERCAPS mixerCaps, Int32 mixerCapsSize);
+        public static extern MmResult mixerGetDevCaps(IntPtr nMixerID, ref MIXERCAPS mixerCaps, Int32 mixerCapsSize);
 
 		[DllImport("winmm.dll", CharSet=CharSet.Ansi)]
-		public static extern MmResult mixerGetID(Int32 hMixer, ref UInt32 mixerID, UInt32 dwMixerIDFlags);
+        public static extern MmResult mixerGetID(IntPtr hMixer, ref UInt32 mixerID, UInt32 dwMixerIDFlags);
 
 		[DllImport("winmm.dll", CharSet=CharSet.Ansi)]
-		public static extern MmResult mixerGetLineControls(Int32 hMixer, ref MIXERLINECONTROLS mixerLineControls, MixerFlags dwControlFlags);
+        public static extern MmResult mixerGetLineControls(IntPtr hMixer, ref MIXERLINECONTROLS mixerLineControls, MixerFlags dwControlFlags);
 		
 		[DllImport("winmm.dll", CharSet=CharSet.Ansi)]
-		public static extern MmResult mixerGetLineInfo(Int32 hMixer, ref MIXERLINE mixerLine, UInt32 dwInfoFlags);
+        public static extern MmResult mixerGetLineInfo(IntPtr hMixer, ref MIXERLINE mixerLine, UInt32 dwInfoFlags);
 
 		[DllImport("winmm.dll", CharSet=CharSet.Ansi)]
-		public static extern MmResult mixerMessage(Int32 hMixer, UInt32 nMessage, UInt32 dwParam1, UInt32 dwParam2);
+        public static extern MmResult mixerMessage(IntPtr hMixer, UInt32 nMessage, UInt32 dwParam1, UInt32 dwParam2);
 
 		[DllImport("winmm.dll", CharSet=CharSet.Ansi)]
-		public static extern MmResult mixerSetControlDetails(Int32 hMixer, ref MIXERCONTROLDETAILS mixerControlDetails, MixerFlags dwDetailsFlags);
+        public static extern MmResult mixerSetControlDetails(IntPtr hMixer, ref MIXERCONTROLDETAILS mixerControlDetails, MixerFlags dwDetailsFlags);
 
 		[StructLayout(LayoutKind.Sequential, CharSet=CharSet.Auto)]
 		public struct MIXERCONTROLDETAILS 
@@ -216,16 +180,123 @@ namespace NAudio.Mixer
 			public IntPtr pamxctrl; // see MSDN "Structs Sample"
 		}
 
+        /// <summary>
+        /// Mixer Line Flags
+        /// </summary>
+        [Flags]
+        public enum MIXERLINE_LINEF
+        {
+            /// <summary>
+            /// Audio line is active. An active line indicates that a signal is probably passing through the line.
+            /// </summary>
+            MIXERLINE_LINEF_ACTIVE = 1,
+
+            /// <summary>
+            /// Audio line is disconnected. A disconnected line's associated controls can still be modified, but the changes have no effect until the line is connected.
+            /// </summary>
+            MIXERLINE_LINEF_DISCONNECTED = 0x8000,
+
+            /// <summary>
+            /// Audio line is an audio source line associated with a single audio destination line. If this flag is not set, this line is an audio destination line associated with zero or more audio source lines.
+            /// </summary>
+            MIXERLINE_LINEF_SOURCE = (unchecked ((int)0x80000000))
+        }
+
+        public enum MIXERLINE_COMPONENTTYPE
+        {
+            /// <summary>
+            /// Audio line is a digital destination (for example, digital input to a DAT or CD audio device).
+            /// </summary>
+            MIXERLINE_COMPONENTTYPE_DST_DIGITAL = 1,
+            /// <summary>
+            /// Audio line is an adjustable (gain and/or attenuation) destination intended to drive headphones. Most audio cards use the same audio destination line for speakers and headphones, in which case the mixer device simply uses the MIXERLINE_COMPONENTTYPE_DST_SPEAKERS type.
+            /// </summary>
+            MIXERLINE_COMPONENTTYPE_DST_HEADPHONES = 5,
+            /// <summary>
+            /// Audio line is a line level destination (for example, line level input from a CD audio device) that will be the final recording source for the analog-to-digital converter (ADC). Because most audio cards for personal computers provide some sort of gain for the recording audio source line, the mixer device will use the MIXERLINE_COMPONENTTYPE_DST_WAVEIN type.
+            /// </summary>
+            MIXERLINE_COMPONENTTYPE_DST_LINE = 2,
+            /// <summary>
+            /// Audio line is a destination used for a monitor.
+            /// </summary>
+            MIXERLINE_COMPONENTTYPE_DST_MONITOR = 3,
+            /// <summary>
+            /// Audio line is an adjustable (gain and/or attenuation) destination intended to drive speakers. This is the typical component type for the audio output of audio cards for personal computers.
+            /// </summary>
+            MIXERLINE_COMPONENTTYPE_DST_SPEAKERS = 4,
+            /// <summary>
+            /// Audio line is a destination that will be routed to a telephone line.
+            /// </summary>
+            MIXERLINE_COMPONENTTYPE_DST_TELEPHONE = 6,
+            /// <summary>
+            /// Audio line is a destination that cannot be defined by one of the standard component types. A mixer device is required to use this component type for line component types that have not been defined by Microsoft Corporation.
+            /// </summary>
+            MIXERLINE_COMPONENTTYPE_DST_UNDEFINED = 0,
+            /// <summary>
+            /// Audio line is a destination that will be the final recording source for voice input. This component type is exactly like MIXERLINE_COMPONENTTYPE_DST_WAVEIN but is intended specifically for settings used during voice recording/recognition. Support for this line is optional for a mixer device. Many mixer devices provide only MIXERLINE_COMPONENTTYPE_DST_WAVEIN.
+            /// </summary>
+            MIXERLINE_COMPONENTTYPE_DST_VOICEIN = 8,
+            /// <summary>
+            /// Audio line is a destination that will be the final recording source for the waveform-audio input (ADC). This line typically provides some sort of gain or attenuation. This is the typical component type for the recording line of most audio cards for personal computers.
+            /// </summary>
+            MIXERLINE_COMPONENTTYPE_DST_WAVEIN = 7,
+                        
+            /// <summary>
+            /// Audio line is an analog source (for example, analog output from a video-cassette tape).
+            /// </summary>
+            MIXERLINE_COMPONENTTYPE_SRC_ANALOG = 0x100A,
+            /// <summary>
+            /// Audio line is a source originating from the auxiliary audio line. This line type is intended as a source with gain or attenuation that can be routed to the MIXERLINE_COMPONENTTYPE_DST_SPEAKERS destination and/or recorded from the MIXERLINE_COMPONENTTYPE_DST_WAVEIN destination.
+            /// </summary>
+            MIXERLINE_COMPONENTTYPE_SRC_AUXILIARY = 0x1009,
+            /// <summary>
+            /// Audio line is a source originating from the output of an internal audio CD. This component type is provided for audio cards that provide an audio source line intended to be connected to an audio CD (or CD-ROM playing an audio CD).
+            /// </summary>
+            MIXERLINE_COMPONENTTYPE_SRC_COMPACTDISC = 0x1005,
+            /// <summary>
+            /// Audio line is a digital source (for example, digital output from a DAT or audio CD).
+            /// </summary>
+            MIXERLINE_COMPONENTTYPE_SRC_DIGITAL = 0x1001,
+            /// <summary>
+            /// Audio line is a line-level source (for example, line-level input from an external stereo) that can be used as an optional recording source. Because most audio cards for personal computers provide some sort of gain for the recording source line, the mixer device will use the MIXERLINE_COMPONENTTYPE_SRC_AUXILIARY type.
+            /// </summary>
+            MIXERLINE_COMPONENTTYPE_SRC_LINE = 0x1002,
+            /// <summary>
+            /// Audio line is a microphone recording source. Most audio cards for personal computers provide at least two types of recording sources: an auxiliary audio line and microphone input. A microphone audio line typically provides some sort of gain. Audio cards that use a single input for use with a microphone or auxiliary audio line should use the MIXERLINE_COMPONENTTYPE_SRC_MICROPHONE component type.
+            /// </summary>
+            MIXERLINE_COMPONENTTYPE_SRC_MICROPHONE = 0x1003,
+            /// <summary>
+            /// Audio line is a source originating from personal computer speaker. Several audio cards for personal computers provide the ability to mix what would typically be played on the internal speaker with the output of an audio card. Some audio cards support the ability to use this output as a recording source.
+            /// </summary>
+            MIXERLINE_COMPONENTTYPE_SRC_PCSPEAKER = 0x1007,
+            /// <summary>
+            /// Audio line is a source originating from the output of an internal synthesizer. Most audio cards for personal computers provide some sort of MIDI synthesizer (for example, an Adlib®-compatible or OPL/3 FM synthesizer).
+            /// </summary>
+            MIXERLINE_COMPONENTTYPE_SRC_SYNTHESIZER = 0x1004,
+            /// <summary>
+            /// Audio line is a source originating from an incoming telephone line.
+            /// </summary>
+            MIXERLINE_COMPONENTTYPE_SRC_TELEPHONE = 0x1006,
+            /// <summary>
+            /// Audio line is a source that cannot be defined by one of the standard component types. A mixer device is required to use this component type for line component types that have not been defined by Microsoft Corporation.
+            /// </summary>
+            MIXERLINE_COMPONENTTYPE_SRC_UNDEFINED = 0x1000,
+            /// <summary>
+            /// Audio line is a source originating from the waveform-audio output digital-to-analog converter (DAC). Most audio cards for personal computers provide this component type as a source to the MIXERLINE_COMPONENTTYPE_DST_SPEAKERS destination. Some cards also allow this source to be routed to the MIXERLINE_COMPONENTTYPE_DST_WAVEIN destination.
+            /// </summary>
+            MIXERLINE_COMPONENTTYPE_SRC_WAVEOUT = 0x1008,
+        }
+
 		[StructLayout(LayoutKind.Sequential, CharSet=CharSet.Ansi)]
 		public struct MIXERLINE 
 		{
 			public Int32 cbStruct; 
 			public Int32 dwDestination; 
 			public Int32 dwSource; 
-			public UInt32 dwLineID; 
-			public UInt32 fdwLine; 
-			public UInt32 dwUser; 
-			public UInt32 dwComponentType; 
+			public Int32 dwLineID;
+            public MIXERLINE_LINEF fdwLine; 
+			public UInt32 dwUser;
+            public MIXERLINE_COMPONENTTYPE dwComponentType; 
 			public Int32 cChannels; 
 			public Int32 cConnections; 
 			public Int32 cControls; 

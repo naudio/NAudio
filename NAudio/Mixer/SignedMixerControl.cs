@@ -12,10 +12,10 @@ namespace NAudio.Mixer
 	{
 		private MixerInterop.MIXERCONTROLDETAILS_SIGNED signedDetails;
 	
-		internal SignedMixerControl(MixerInterop.MIXERCONTROL mixerControl,int nMixer,int nChannels) 
+		internal SignedMixerControl(MixerInterop.MIXERCONTROL mixerControl,IntPtr mixerHandle,int nChannels) 
 		{
 			this.mixerControl = mixerControl;
-			this.nMixer = nMixer;
+            this.mixerHandle = mixerHandle;
 			this.nChannels = nChannels;
 			this.mixerControlDetails = new MixerInterop.MIXERCONTROLDETAILS();
 			GetControlDetails();
@@ -44,7 +44,7 @@ namespace NAudio.Mixer
 				//GetControlDetails();
 				signedDetails.lValue = value;
 				// TODO: pin memory
-                MmException.Try(MixerInterop.mixerSetControlDetails(nMixer, ref mixerControlDetails, MixerFlags.Value | MixerFlags.MixerHandle), "mixerSetControlDetails");
+                MmException.Try(MixerInterop.mixerSetControlDetails(mixerHandle, ref mixerControlDetails, MixerFlags.Value | MixerFlags.MixerHandle), "mixerSetControlDetails");
 			}
 		}
 		

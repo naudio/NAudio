@@ -13,9 +13,9 @@ namespace NAudio.Mixer
 		internal MixerInterop.MIXERCONTROL mixerControl;
 		internal MixerInterop.MIXERCONTROLDETAILS mixerControlDetails;
 		/// <summary>
-		/// Mixer ID
+		/// Mixer Handle
 		/// </summary>
-		protected int nMixer;
+        protected IntPtr mixerHandle;
 		/// <summary>
 		/// Number of Channels
 		/// </summary>
@@ -24,12 +24,12 @@ namespace NAudio.Mixer
 		/// <summary>
 		/// Gets a specified Mixer Control
 		/// </summary>
-		/// <param name="nMixer">Mixer ID</param>
+        /// <param name="mixerHandle">Mixer Handle</param>
 		/// <param name="nLineID">Line ID</param>
 		/// <param name="nControl">Control ID</param>
 		/// <param name="nChannels">Number of Channels</param>
 		/// <returns></returns>
-		public static MixerControl GetMixerControl(int nMixer, int nLineID, int nControl, int nChannels) 
+        public static MixerControl GetMixerControl(IntPtr mixerHandle, int nLineID, int nControl, int nChannels) 
 		{
 			MixerInterop.MIXERLINECONTROLS mlc = new MixerInterop.MIXERLINECONTROLS();
 			MixerInterop.MIXERCONTROL mc = new MixerInterop.MIXERCONTROL();
@@ -44,7 +44,7 @@ namespace NAudio.Mixer
 			mlc.cbmxctrl = Marshal.SizeOf(mc);
 			mlc.pamxctrl = pMixerControl;
 			mlc.dwLineID = nLineID;
-            MmResult err = MixerInterop.mixerGetLineControls(nMixer, ref mlc, MixerFlags.OneById | MixerFlags.Mixer);
+            MmResult err = MixerInterop.mixerGetLineControls(mixerHandle, ref mlc, MixerFlags.OneById | MixerFlags.Mixer);
 			if(err != MmResult.NoError) {
 				Marshal.FreeCoTaskMem(pMixerControl);
 				throw new MmException(err,"mixerGetLineControls");
@@ -56,23 +56,23 @@ namespace NAudio.Mixer
 			
 			if(MixerControl.IsControlBoolean(mc.dwControlType)) 
 			{
-				return new BooleanMixerControl(mc,nMixer,nChannels);
+                return new BooleanMixerControl(mc, mixerHandle, nChannels);
 			}
 			else if(MixerControl.IsControlSigned(mc.dwControlType)) 
 			{
-				return new SignedMixerControl(mc,nMixer,nChannels);
+                return new SignedMixerControl(mc, mixerHandle, nChannels);
 			}
 			else if(MixerControl.IsControlUnsigned(mc.dwControlType)) 
 			{
-				return new UnsignedMixerControl(mc,nMixer,nChannels);
+                return new UnsignedMixerControl(mc, mixerHandle, nChannels);
 			}
 			else if(MixerControl.IsControlListText(mc.dwControlType)) 
 			{
-				return new ListTextMixerControl(mc,nMixer,nChannels);
+                return new ListTextMixerControl(mc, mixerHandle, nChannels);
 			}
 			else if(MixerControl.IsControlCustom(mc.dwControlType)) 
 			{
-				return new CustomMixerControl(mc,nMixer,nChannels);
+                return new CustomMixerControl(mc, mixerHandle, nChannels);
 			}
 			else 
 			{
@@ -141,7 +141,7 @@ namespace NAudio.Mixer
       		// To copy stuff in:
       		// Marshal.StructureToPtr( theStruct, buffer, false );
 			mixerControlDetails.paDetails = buffer;
-            MmResult err = MixerInterop.mixerGetControlDetails(nMixer, ref mixerControlDetails, MixerFlags.Value | MixerFlags.Mixer);
+            MmResult err = MixerInterop.mixerGetControlDetails(mixerHandle, ref mixerControlDetails, MixerFlags.Value | MixerFlags.Mixer);
 			// let the derived classes get the details before we free the handle			
 			if(err == MmResult.NoError) 
 			{

@@ -10,11 +10,11 @@ namespace NAudio.Mixer
 	public class BooleanMixerControl : MixerControl 
 	{
 		private MixerInterop.MIXERCONTROLDETAILS_BOOLEAN boolDetails;
-		
-		internal BooleanMixerControl(MixerInterop.MIXERCONTROL mixerControl,int nMixer,int nChannels) 
+
+        internal BooleanMixerControl(MixerInterop.MIXERCONTROL mixerControl, IntPtr mixerHandle, int nChannels) 
 		{
 			this.mixerControl = mixerControl;
-			this.nMixer = nMixer;
+            this.mixerHandle = mixerHandle;
 			this.nChannels = nChannels;
 			this.mixerControlDetails = new MixerInterop.MIXERCONTROLDETAILS();
 			
@@ -47,7 +47,7 @@ namespace NAudio.Mixer
 				//MixerInterop.MIXERCONTROLDETAILS_BOOLEAN boolDetails = (MixerInterop.MIXERCONTROLDETAILS_BOOLEAN) Marshal.PtrToStructure(mixerControlDetails.paDetails,typeof(MixerInterop.MIXERCONTROLDETAILS_BOOLEAN));
 				//boolDetails.fValue = (value) ? 1 : 0;
 				// TODO: pin the memory
-                MmException.Try(MixerInterop.mixerSetControlDetails(nMixer, ref mixerControlDetails, MixerFlags.Value | MixerFlags.MixerHandle), "mixerSetControlDetails");
+                MmException.Try(MixerInterop.mixerSetControlDetails(mixerHandle, ref mixerControlDetails, MixerFlags.Value | MixerFlags.MixerHandle), "mixerSetControlDetails");
 			}
 		}		
 	}

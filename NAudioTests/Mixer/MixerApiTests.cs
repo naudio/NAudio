@@ -23,6 +23,13 @@ namespace NAudioTests
             }
         }
 
+        [Test]
+        public void CanFindDefaultWaveIn()
+        {
+            MixerLine waveIn = MixerLine.ForWaveIn(0);
+            Debug.WriteLine(String.Format("{0} {1}",waveIn.Name, waveIn.TypeDescription));
+        }
+
         private static void ExploreMixerDevice(int deviceIndex)
         {
             Mixer mixer = new Mixer(deviceIndex);
@@ -53,7 +60,7 @@ namespace NAudioTests
                 try
                 {
                     var control = destination.GetControl(controlIndex);
-                    Debug.WriteLine(String.Format("CONTROL: {0}",control.Name));
+                    Debug.WriteLine(String.Format("CONTROL: {0} {1}", control.Name, control.ControlType));
                 }
                 catch (MmException me)
                 {
@@ -65,14 +72,14 @@ namespace NAudioTests
         private static void ExploreMixerSource(MixerLine destinationLine, int sourceIndex)
         {
             var sourceLine = destinationLine.GetSource(sourceIndex);
-            int controls = destinationLine.ControlsCount;
+            int controls = sourceLine.ControlsCount;
             Debug.WriteLine(String.Format("Source {0}: {1}",
                 sourceIndex, sourceLine));
 
             for (int controlIndex = 0; controlIndex < controls; controlIndex++)
             {
-                // seems to have a problem
-                //var control = sourceLine.GetControl(controlId);
+                var control = sourceLine.GetControl(controlIndex);
+                Debug.WriteLine(String.Format("CONTROL: {0} {1}", control.Name, control.ControlType));
             }
         }
     }

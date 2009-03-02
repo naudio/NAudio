@@ -108,6 +108,21 @@ namespace NAudio.Mixer
 		public const UInt32 MIXER_GETLINEINFOF_TARGETTYPE       	= 0x00000004;
 		public const UInt32 MIXER_GETLINEINFOF_QUERYMASK        	= 0x0000000F;
 
+        public const UInt32 MIXER_OBJECTF_HANDLE=0x80000000;
+        public const UInt32 MIXER_OBJECTF_MIXER=0;
+        public const UInt32 MIXER_OBJECTF_HMIXER=(MIXER_OBJECTF_HANDLE|MIXER_OBJECTF_MIXER);
+        public const UInt32 MIXER_OBJECTF_WAVEOUT=0x10000000;
+        public const UInt32 MIXER_OBJECTF_HWAVEOUT=(MIXER_OBJECTF_HANDLE|MIXER_OBJECTF_WAVEOUT);
+        public const UInt32 MIXER_OBJECTF_WAVEIN=0x20000000;
+        public const UInt32 MIXER_OBJECTF_HWAVEIN = (MIXER_OBJECTF_HANDLE | MIXER_OBJECTF_WAVEIN);
+        public const UInt32 MIXER_OBJECTF_MIDIOUT = 0x30000000;
+        public const UInt32 MIXER_OBJECTF_HMIDIOUT = (MIXER_OBJECTF_HANDLE | MIXER_OBJECTF_MIDIOUT);
+        public const UInt32 MIXER_OBJECTF_MIDIIN = 0x40000000;
+        public const UInt32 MIXER_OBJECTF_HMIDIIN = (MIXER_OBJECTF_HANDLE | MIXER_OBJECTF_MIDIIN);
+        public const UInt32 MIXER_OBJECTF_AUX = 0x50000000;
+
+
+
 		public const UInt32 MIXERCONTROL_CONTROLF_UNIFORM   		= 0x00000001;
 		public const UInt32 MIXERCONTROL_CONTROLF_MULTIPLE  		= 0x00000002;
 		public const UInt32 MIXERCONTROL_CONTROLF_DISABLED  		= 0x80000000;
@@ -187,17 +202,21 @@ namespace NAudio.Mixer
         public enum MIXERLINE_LINEF
         {
             /// <summary>
-            /// Audio line is active. An active line indicates that a signal is probably passing through the line.
+            /// Audio line is active. An active line indicates that a signal is probably passing 
+            /// through the line.
             /// </summary>
             MIXERLINE_LINEF_ACTIVE = 1,
 
             /// <summary>
-            /// Audio line is disconnected. A disconnected line's associated controls can still be modified, but the changes have no effect until the line is connected.
+            /// Audio line is disconnected. A disconnected line's associated controls can still be 
+            /// modified, but the changes have no effect until the line is connected.
             /// </summary>
             MIXERLINE_LINEF_DISCONNECTED = 0x8000,
 
             /// <summary>
-            /// Audio line is an audio source line associated with a single audio destination line. If this flag is not set, this line is an audio destination line associated with zero or more audio source lines.
+            /// Audio line is an audio source line associated with a single audio destination line. 
+            /// If this flag is not set, this line is an audio destination line associated with zero 
+            /// or more audio source lines.
             /// </summary>
             MIXERLINE_LINEF_SOURCE = (unchecked ((int)0x80000000))
         }

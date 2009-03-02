@@ -2,6 +2,7 @@
 using System;
 using System.Runtime.InteropServices;
 using NAudio.Wave;
+using System.Collections.Generic;
 
 namespace NAudio.Mixer 
 {
@@ -47,7 +48,27 @@ namespace NAudio.Mixer
 			this.nDestination = nDestination;
 			this.nSource = nSource;
 		}
-		
+
+        private MixerLine()
+        {
+        }
+
+        /// <summary>
+        /// Creates a new Mixer Source
+        /// </summary>
+        /// <param name="mixerHandle">Mixer Handle</param>
+        /// <param name="nDestination">Destination ID</param>
+        /// <param name="nSource">Source ID</param>
+        public static MixerLine ForWaveIn(int waveInDevice)
+        {
+            MixerLine ml = new MixerLine();
+            ml.mixerLine = new MixerInterop.MIXERLINE();
+            ml.mixerLine.cbStruct = Marshal.SizeOf(ml.mixerLine);
+            ml.mixerLine.dwComponentType = MixerInterop.MIXERLINE_COMPONENTTYPE.MIXERLINE_COMPONENTTYPE_DST_WAVEIN;
+            MmException.Try(MixerInterop.mixerGetLineInfo((IntPtr)waveInDevice, ref ml.mixerLine, MixerInterop.MIXER_OBJECTF_WAVEIN | MixerInterop.MIXER_GETLINEINFOF_COMPONENTTYPE), "mixerGetLineInfo");
+            return ml;
+        }
+
 		/// <summary>
 		/// Mixer Line Name
 		/// </summary>
@@ -170,7 +191,41 @@ namespace NAudio.Mixer
 				return mixerLine.cControls;
 			}
 		}
-		
+
+        /// <summary>
+        /// Is this destination active
+        /// </summary>
+        public bool IsActive
+        {
+            get
+            {
+                return (mixerLine.fdwLine & MixerInterop.MIXERLINE_LINEF.MIXERLINE_LINEF_ACTIVE) != 0;
+            }
+        }
+
+        /// <summary>
+        /// Is this destination disconnected
+        /// </summary>
+        public bool IsDisconnected
+        {
+            get
+            {
+                return (mixerLine.fdwLine & MixerInterop.MIXERLINE_LINEF.MIXERLINE_LINEF_DISCONNECTED) != 0;
+            }
+        }
+
+        /// <summary>
+        /// Is this destination a source
+        /// </summary>
+        public bool IsSource
+        {
+            get
+            {
+                return (mixerLine.fdwLine & MixerInterop.MIXERLINE_LINEF.MIXERLINE_LINEF_SOURCE) != 0;
+            }
+        }
+
+
 		/// <summary>
 		/// Gets the specified source
 		/// </summary>
@@ -194,6 +249,17 @@ namespace NAudio.Mixer
 			}
             return MixerControl.GetMixerControl(mixerHandle, mixerLine.dwLineID, controlIndex+1, Channels);
 		}
+
+        public IEnumerable<MixerControl> Controls
+        {
+            get
+            {
+                for (int control = 0; control < ControlsCount; control++)
+                {
+                    yield return GetControl(control);
+                }
+            }
+        }
 
         /// <summary>
         /// Describes this Mixer Line (for diagnostic purposes)

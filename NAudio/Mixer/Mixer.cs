@@ -1,5 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Collections.Generic;
+using NAudio.Wave;
 
 namespace NAudio.Mixer
 {
@@ -84,5 +86,33 @@ namespace NAudio.Mixer
 			}
 			return new MixerLine(mixerHandle, destination);
 		}
+
+        /// <summary>
+        /// A way to enumerate the destinations
+        /// </summary>
+        public IEnumerable<MixerLine> Destinations
+        {
+            get
+            {
+                for (int destination = 0; destination < DestinationCount; destination++)
+                {
+                    yield return GetDestination(destination);
+                }
+            }
+        }
+
+        /// <summary>
+        /// A way to enumerate all available devices
+        /// </summary>
+        public static IEnumerable<Mixer> Mixers
+        {
+            get
+            {
+                for (int device = 0; device < Mixer.NumberOfDevices; device++)
+                {
+                    yield return new Mixer(device);
+                }
+            }
+        }
 	}
 }

@@ -27,7 +27,26 @@ namespace NAudioTests
         public void CanFindDefaultWaveIn()
         {
             MixerLine waveIn = MixerLine.ForWaveIn(0);
-            Debug.WriteLine(String.Format("{0} {1}",waveIn.Name, waveIn.TypeDescription));
+            Debug.WriteLine(String.Format("{0} {1} (Source: {2})", waveIn.Name, waveIn.TypeDescription, waveIn.IsSource));
+            foreach (MixerLine source in waveIn.Sources)
+            {
+                Debug.WriteLine(String.Format("{0} {1} (Source: {2})", source.Name, source.TypeDescription, source.IsSource));
+                if (source.ComponentType == MixerLineComponentType.SourceMicrophone)
+                {
+                    Debug.WriteLine(String.Format("Found the microphone: {0}", source.Name));
+                    foreach (MixerControl control in source.Controls)
+                    {
+                        if (control.ControlType == MixerControlType.Volume)
+                        {
+                            Debug.WriteLine("Volume Found");
+                            UnsignedMixerControl smc = (UnsignedMixerControl)control;
+                            Debug.WriteLine(String.Format("Value: {0} ({1}-{2})", smc.Value, smc.MinValue, smc.MaxValue));
+
+                        }
+                    }
+                }
+            }
+
         }
 
         private static void ExploreMixerDevice(int deviceIndex)

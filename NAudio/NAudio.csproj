@@ -226,7 +226,7 @@
     <Compile Include="Mixer\MixerControlType.cs" />
     <Compile Include="Mixer\MixerDestination.cs" />
     <Compile Include="Mixer\MixerInterop.cs" />
-    <Compile Include="Mixer\MixerSource.cs" />
+    <Compile Include="Mixer\MixerLineComponentType.cs" />
     <Compile Include="Mixer\SignedMixerControl.cs" />
     <Compile Include="Mixer\UnsignedMixerControl.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

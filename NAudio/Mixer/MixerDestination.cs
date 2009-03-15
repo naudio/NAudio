@@ -15,6 +15,7 @@ namespace NAudio.Mixer
         private IntPtr mixerHandle;
 		private int nDestination;
         private int nSource;
+        private int mixerFlags;
 		
 		/// <summary>
 		/// Creates a new mixer destination
@@ -37,16 +38,17 @@ namespace NAudio.Mixer
         /// <param name="mixerHandle">Mixer Handle</param>
 		/// <param name="nDestination">Destination ID</param>
 		/// <param name="nSource">Source ID</param>
-        public MixerLine(IntPtr mixerHandle, int nDestination, int nSource) 
+        public MixerLine(IntPtr mixerHandle, int nDestination, int nSource, int mixerFlags) 
 		{
 			mixerLine = new MixerInterop.MIXERLINE();
 			mixerLine.cbStruct = Marshal.SizeOf(mixerLine);
 			mixerLine.dwDestination = nDestination;
 			mixerLine.dwSource = nSource;
-            MmException.Try(MixerInterop.mixerGetLineInfo(mixerHandle, ref mixerLine, MixerInterop.MIXER_GETLINEINFOF_SOURCE), "mixerGetLineInfo");
+            this.mixerFlags = mixerFlags;
+            MmException.Try(MixerInterop.mixerGetLineInfo(mixerHandle, ref mixerLine, mixerFlags | MixerInterop.MIXER_GETLINEINFOF_SOURCE), "mixerGetLineInfo");
             this.mixerHandle = mixerHandle;
 			this.nDestination = nDestination;
-			this.nSource = nSource;
+			this.nSource = nSource;            
 		}
 
         private MixerLine()
@@ -56,16 +58,15 @@ namespace NAudio.Mixer
         /// <summary>
         /// Creates a new Mixer Source
         /// </summary>
-        /// <param name="mixerHandle">Mixer Handle</param>
-        /// <param name="nDestination">Destination ID</param>
-        /// <param name="nSource">Source ID</param>
+        /// <param name="waveInDevice">Wave In Device</param>
         public static MixerLine ForWaveIn(int waveInDevice)
         {
             MixerLine ml = new MixerLine();
             ml.mixerLine = new MixerInterop.MIXERLINE();
             ml.mixerLine.cbStruct = Marshal.SizeOf(ml.mixerLine);
-            ml.mixerLine.dwComponentType = MixerInterop.MIXERLINE_COMPONENTTYPE.MIXERLINE_COMPONENTTYPE_DST_WAVEIN;
+            ml.mixerLine.dwComponentType = MixerLineComponentType.DestinationWaveIn;
             MmException.Try(MixerInterop.mixerGetLineInfo((IntPtr)waveInDevice, ref ml.mixerLine, MixerInterop.MIXER_OBJECTF_WAVEIN | MixerInterop.MIXER_GETLINEINFOF_COMPONENTTYPE), "mixerGetLineInfo");
+            ml.mixerHandle = (IntPtr)waveInDevice;
             return ml;
         }
 
@@ -102,6 +103,17 @@ namespace NAudio.Mixer
             }
         }
 
+        /// <summary>
+        /// Component Type
+        /// </summary>
+        public MixerLineComponentType ComponentType
+        {
+            get
+            {
+                return mixerLine.dwComponentType;
+            }
+        }
+
 		/// <summary>
 		/// Mixer destination type description
 		/// </summary>
@@ -112,49 +124,49 @@ namespace NAudio.Mixer
                 switch (mixerLine.dwComponentType)
                 {
                     // destinations
-                    case MixerInterop.MIXERLINE_COMPONENTTYPE.MIXERLINE_COMPONENTTYPE_DST_UNDEFINED:
-                        return "Undefined";
-                    case MixerInterop.MIXERLINE_COMPONENTTYPE.MIXERLINE_COMPONENTTYPE_DST_DIGITAL:
-                        return "Digital";
-                    case MixerInterop.MIXERLINE_COMPONENTTYPE.MIXERLINE_COMPONENTTYPE_DST_LINE:
-                        return "Line Level";
-                    case MixerInterop.MIXERLINE_COMPONENTTYPE.MIXERLINE_COMPONENTTYPE_DST_MONITOR:
-                        return "Monitor";
-                    case MixerInterop.MIXERLINE_COMPONENTTYPE.MIXERLINE_COMPONENTTYPE_DST_SPEAKERS:
-                        return "Speakers";
-                    case MixerInterop.MIXERLINE_COMPONENTTYPE.MIXERLINE_COMPONENTTYPE_DST_HEADPHONES:
-                        return "Headphones";
-                    case MixerInterop.MIXERLINE_COMPONENTTYPE.MIXERLINE_COMPONENTTYPE_DST_TELEPHONE:
-                        return "Telephone";
-                    case MixerInterop.MIXERLINE_COMPONENTTYPE.MIXERLINE_COMPONENTTYPE_DST_WAVEIN:
-                        return "Wave Input";
-                    case MixerInterop.MIXERLINE_COMPONENTTYPE.MIXERLINE_COMPONENTTYPE_DST_VOICEIN:
-                        return "Voice Recognition";
+                    case MixerLineComponentType.DestinationUndefined:
+                        return "Undefined Destination";
+                    case MixerLineComponentType.DestinationDigital:
+                        return "Digital Destination";
+                    case MixerLineComponentType.DestinationLine:
+                        return "Line Level Destination";
+                    case MixerLineComponentType.DestinationMonitor:
+                        return "Monitor Destination";
+                    case MixerLineComponentType.DestinationSpeakers:
+                        return "Speakers Destination";
+                    case MixerLineComponentType.DestinationHeadphones:
+                        return "Headphones Destination";
+                    case MixerLineComponentType.DestinationTelephone:
+                        return "Telephone Destination";
+                    case MixerLineComponentType.DestinationWaveIn:
+                        return "Wave Input Destination";
+                    case MixerLineComponentType.DestinationVoiceIn:
+                        return "Voice Recognition Destination";
                     // sources
-                    case MixerInterop.MIXERLINE_COMPONENTTYPE.MIXERLINE_COMPONENTTYPE_SRC_UNDEFINED:
-                        return "Undefined";
-                    case MixerInterop.MIXERLINE_COMPONENTTYPE.MIXERLINE_COMPONENTTYPE_SRC_DIGITAL:
-                        return "Digital";
-                    case MixerInterop.MIXERLINE_COMPONENTTYPE.MIXERLINE_COMPONENTTYPE_SRC_LINE:
-                        return "Line Level";
-                    case MixerInterop.MIXERLINE_COMPONENTTYPE.MIXERLINE_COMPONENTTYPE_SRC_MICROPHONE:
-                        return "Microphone";
-                    case MixerInterop.MIXERLINE_COMPONENTTYPE.MIXERLINE_COMPONENTTYPE_SRC_SYNTHESIZER:
-                        return "Synthesizer";
-                    case MixerInterop.MIXERLINE_COMPONENTTYPE.MIXERLINE_COMPONENTTYPE_SRC_COMPACTDISC:
-                        return "Compact Disk";
-                    case MixerInterop.MIXERLINE_COMPONENTTYPE.MIXERLINE_COMPONENTTYPE_SRC_TELEPHONE:
-                        return "Telephone";
-                    case MixerInterop.MIXERLINE_COMPONENTTYPE.MIXERLINE_COMPONENTTYPE_SRC_PCSPEAKER:
-                        return "PC Speaker";
-                    case MixerInterop.MIXERLINE_COMPONENTTYPE.MIXERLINE_COMPONENTTYPE_SRC_WAVEOUT:
-                        return "Wave Out";
-                    case MixerInterop.MIXERLINE_COMPONENTTYPE.MIXERLINE_COMPONENTTYPE_SRC_AUXILIARY:
-                        return "Auxiliary";
-                    case MixerInterop.MIXERLINE_COMPONENTTYPE.MIXERLINE_COMPONENTTYPE_SRC_ANALOG:
-                        return "Analog";
+                    case MixerLineComponentType.SourceUndefined:
+                        return "Undefined Source";
+                    case MixerLineComponentType.SourceDigital:
+                        return "Digital Source";
+                    case MixerLineComponentType.SourceLine:
+                        return "Line Level Source";
+                    case MixerLineComponentType.SourceMicrophone:
+                        return "Microphone Source";
+                    case MixerLineComponentType.SourceSynthesizer:
+                        return "Synthesizer Source";
+                    case MixerLineComponentType.SourceCompactDisc:
+                        return "Compact Disk Source";
+                    case MixerLineComponentType.SourceTelephone:
+                        return "Telephone Source";
+                    case MixerLineComponentType.SourcePcSpeaker:
+                        return "PC Speaker Source";
+                    case MixerLineComponentType.SourceWaveOut:
+                        return "Wave Out Source";
+                    case MixerLineComponentType.SourceAuxiliary:
+                        return "Auxiliary Source";
+                    case MixerLineComponentType.SourceAnalog:
+                        return "Analog Source";
                     default:
-                        return "Invalid";
+                        return "Invalid Component Type";
                 }
 			}				
 		}
@@ -235,7 +247,7 @@ namespace NAudio.Mixer
 			{
 				throw new ArgumentOutOfRangeException("nSource");
 			}
-            return new MixerLine(mixerHandle, nDestination, nSource);			
+            return new MixerLine(mixerHandle, nDestination, nSource, this.mixerFlags);			
 		}
 
 		/// <summary>
@@ -250,6 +262,9 @@ namespace NAudio.Mixer
             return MixerControl.GetMixerControl(mixerHandle, mixerLine.dwLineID, controlIndex+1, Channels);
 		}
 
+        /// <summary>
+        /// Enumerator for the controls on this Mixer Limne
+        /// </summary>
         public IEnumerable<MixerControl> Controls
         {
             get
@@ -257,6 +272,20 @@ namespace NAudio.Mixer
                 for (int control = 0; control < ControlsCount; control++)
                 {
                     yield return GetControl(control);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Enumerator for the sources on this Mixer Limne
+        /// </summary>
+        public IEnumerable<MixerLine> Sources
+        {
+            get
+            {
+                for (int source = 0; source < SourceCount; source++)
+                {
+                    yield return GetSource(source);
                 }
             }
         }

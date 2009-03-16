@@ -27,10 +27,13 @@ namespace NAudioTests
         public void CanFindDefaultWaveIn()
         {
             MixerLine waveIn = MixerLine.ForWaveIn(0);
-            Debug.WriteLine(String.Format("{0} {1} (Source: {2})", waveIn.Name, waveIn.TypeDescription, waveIn.IsSource));
+            Debug.WriteLine(String.Format("{0} {1} (Source: {2}, Target: {3})", 
+                waveIn.Name, waveIn.TypeDescription, waveIn.IsSource, waveIn.TargetName));
+
             foreach (MixerLine source in waveIn.Sources)
             {
-                Debug.WriteLine(String.Format("{0} {1} (Source: {2})", source.Name, source.TypeDescription, source.IsSource));
+                Debug.WriteLine(String.Format("{0} {1} (Source: {2}, Target: {3})", 
+                    source.Name, source.TypeDescription, source.IsSource, source.TargetName));
                 if (source.ComponentType == MixerLineComponentType.SourceMicrophone)
                 {
                     Debug.WriteLine(String.Format("Found the microphone: {0}", source.Name));
@@ -38,10 +41,7 @@ namespace NAudioTests
                     {
                         if (control.ControlType == MixerControlType.Volume)
                         {
-                            Debug.WriteLine("Volume Found");
-                            UnsignedMixerControl smc = (UnsignedMixerControl)control;
-                            Debug.WriteLine(String.Format("Value: {0} ({1}-{2})", smc.Value, smc.MinValue, smc.MaxValue));
-
+                            Debug.WriteLine(String.Format("Volume Found: {0}", control));
                         }
                     }
                 }
@@ -68,23 +68,23 @@ namespace NAudioTests
             Debug.WriteLine(String.Format("Destination {0}: {1}", 
                 destinationIndex, destination));
             int channels = destination.Channels;
-            int sources = destination.SourceCount;            
-            for (int sourceIndex = 0; sourceIndex < sources; sourceIndex++)
-            {
-                ExploreMixerSource(destination, sourceIndex);
-            }
             int controls = destination.ControlsCount;
             for (int controlIndex = 0; controlIndex < controls; controlIndex++)
             {
                 try
                 {
                     var control = destination.GetControl(controlIndex);
-                    Debug.WriteLine(String.Format("CONTROL: {0} {1}", control.Name, control.ControlType));
+                    Debug.WriteLine(String.Format("CONTROL: {0}", control));
                 }
                 catch (MmException me)
                 {
                     Debug.WriteLine(String.Format("MmException: {0}", me.Message));
                 }
+            }
+            int sources = destination.SourceCount;
+            for (int sourceIndex = 0; sourceIndex < sources; sourceIndex++)
+            {
+                ExploreMixerSource(destination, sourceIndex);
             }
         }
 

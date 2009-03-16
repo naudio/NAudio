@@ -28,8 +28,9 @@ namespace NAudio.Mixer
 		/// <param name="nLineID">Line ID</param>
 		/// <param name="nControl">Control ID</param>
 		/// <param name="nChannels">Number of Channels</param>
+        /// <param name="mixerFlags">Flags to use (indicates the meaning of mixerHandle)</param>
 		/// <returns></returns>
-        public static MixerControl GetMixerControl(IntPtr mixerHandle, int nLineID, int nControl, int nChannels) 
+        public static MixerControl GetMixerControl(IntPtr mixerHandle, int nLineID, int nControl, int nChannels, MixerFlags mixerFlags) 
 		{
 			MixerInterop.MIXERLINECONTROLS mlc = new MixerInterop.MIXERLINECONTROLS();
 			MixerInterop.MIXERCONTROL mc = new MixerInterop.MIXERCONTROL();
@@ -44,7 +45,7 @@ namespace NAudio.Mixer
 			mlc.cbmxctrl = Marshal.SizeOf(mc);
 			mlc.pamxctrl = pMixerControl;
 			mlc.dwLineID = nLineID;
-            MmResult err = MixerInterop.mixerGetLineControls(mixerHandle, ref mlc, MixerFlags.OneById | MixerFlags.Mixer);
+            MmResult err = MixerInterop.mixerGetLineControls(mixerHandle, ref mlc, MixerFlags.OneById | mixerFlags);
 			if(err != MmResult.NoError) {
 				Marshal.FreeCoTaskMem(pMixerControl);
 				throw new MmException(err,"mixerGetLineControls");
@@ -322,7 +323,13 @@ namespace NAudio.Mixer
 				return MixerControl.IsControlCustom(mixerControl.dwControlType);
 			}
 		}
-		
 
+        /// <summary>
+        /// String representation for debug purposes
+        /// </summary>
+        public override string ToString()
+        {
+            return String.Format("{0} {1}", Name, ControlType);
+        }
 	}
 }

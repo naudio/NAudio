@@ -26,6 +26,10 @@ namespace NAudio.Wave
         private Thread waveOutThread;
         private Queue<WaveOutAction> actionQueue;
         private AutoResetEvent workAvailable;
+        
+        /// <summary>
+        /// Playback stopped
+        /// </summary>
         public event EventHandler PlaybackStopped;
 
         /// <summary>

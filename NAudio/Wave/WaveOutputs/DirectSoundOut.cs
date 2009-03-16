@@ -369,7 +369,7 @@ namespace NAudio.Wave
                     }
                 }
             }
-            catch (Exception error)
+            catch (Exception)
             {
                 // Do nothing!
             }

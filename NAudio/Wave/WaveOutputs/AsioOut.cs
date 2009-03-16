@@ -25,6 +25,9 @@ namespace NAudio.Wave
         private WaveBuffer waveBuffer;
         private ASIOSampleConvertor.SampleConvertor convertor;
 
+        /// <summary>
+        /// Playback Stopped
+        /// </summary>
         public event EventHandler PlaybackStopped;
 
         /// <summary>

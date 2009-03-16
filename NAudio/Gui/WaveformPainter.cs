@@ -8,6 +8,9 @@ using System.Windows.Forms;
 
 namespace NAudio.Gui
 {
+    /// <summary>
+    /// Windows Forms control for painting audio waveforms
+    /// </summary>
     public partial class WaveformPainter : Control
     {
         Pen foregroundPen;
@@ -15,6 +18,9 @@ namespace NAudio.Gui
         int maxSamples;
         int insertPos;
 
+        /// <summary>
+        /// Constructs a new instance of the WaveFormPainter class
+        /// </summary>
         public WaveformPainter()
         {
             this.SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint |
@@ -24,18 +30,29 @@ namespace NAudio.Gui
             OnResize(EventArgs.Empty);
         }
 
+        /// <summary>
+        /// On Resize
+        /// </summary>
         protected override void OnResize(EventArgs e)
         {
             maxSamples = this.Width;
             base.OnResize(e);
         }
 
+        /// <summary>
+        /// On ForeColor Changed
+        /// </summary>
+        /// <param name="e"></param>
         protected override void OnForeColorChanged(EventArgs e)
         {
             foregroundPen = new Pen(ForeColor);
             base.OnForeColorChanged(e);
         }
 
+        /// <summary>
+        /// Add Max Value
+        /// </summary>
+        /// <param name="maxSample"></param>
         public void AddMax(float maxSample)
         {
             if (samples.Count <= maxSamples)
@@ -52,6 +69,9 @@ namespace NAudio.Gui
             this.Invalidate();
         }
 
+        /// <summary>
+        /// On Paint
+        /// </summary>
         protected override void OnPaint(PaintEventArgs pe)
         {
             base.OnPaint(pe);

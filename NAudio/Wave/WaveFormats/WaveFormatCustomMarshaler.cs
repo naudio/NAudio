@@ -26,11 +26,18 @@ namespace NAudio.Wave
             return marshaler;
         }
 
+        /// <summary>
+        /// Clean up managed data
+        /// </summary>
         public void CleanUpManagedData(object ManagedObj)
         {
             
         }
 
+        /// <summary>
+        /// Clean up native data
+        /// </summary>
+        /// <param name="pNativeData"></param>
         public void CleanUpNativeData(IntPtr pNativeData)
         {
             Marshal.FreeHGlobal(pNativeData);

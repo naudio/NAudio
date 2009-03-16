@@ -4,6 +4,9 @@ using System.Text;
 
 namespace NAudio.Mixer
 {
+    /// <summary>
+    /// Mixer Line Component type enumeration
+    /// </summary>
     public enum MixerLineComponentType
     {
         /// <summary>

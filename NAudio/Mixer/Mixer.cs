@@ -76,15 +76,15 @@ namespace NAudio.Mixer
 		}
 		
 		/// <summary>Retrieve the specified MixerDestination object</summary>
-		/// <param name="destination">The ID of the destination to use.
+        /// <param name="destinationIndex">The ID of the destination to use.
 		/// Should be between 0 and DestinationCount - 1</param>
-		public MixerLine GetDestination(int destination) 
+		public MixerLine GetDestination(int destinationIndex) 
 		{
-			if(destination < 0 || destination >= DestinationCount) 
+			if(destinationIndex < 0 || destinationIndex >= DestinationCount) 
 			{
-				throw new ArgumentOutOfRangeException("destination");
+                throw new ArgumentOutOfRangeException("destinationIndex");
 			}
-			return new MixerLine(mixerHandle, destination);
+			return new MixerLine(mixerHandle, destinationIndex);
 		}
 
         /// <summary>

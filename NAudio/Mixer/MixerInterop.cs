@@ -7,123 +7,12 @@ using NAudio.Wave;
 // TODO: Create enums for flags parameters
 namespace NAudio.Mixer
 {
-    [Flags]
-    enum MixerFlags
-    {
 
-        #region Objects
-        /// <summary>
-        /// MIXER_OBJECTF_HANDLE 	= 0x80000000;
-        /// </summary>
-        Handle = unchecked ( (int) 0x80000000 ),
-        /// <summary>
-        /// MIXER_OBJECTF_MIXER 	= 0x00000000;
-        /// </summary>
-        Mixer = 0,
-        /// <summary>
-        /// MIXER_OBJECTF_HMIXER
-        /// </summary>
-		MixerHandle = Mixer | Handle,
-        /// <summary>
-        /// MIXER_OBJECTF_WAVEOUT
-        /// </summary>
-        WaveOut = 0x10000000,
-        /// <summary>
-        /// MIXER_OBJECTF_HWAVEOUT
-        /// </summary>
-        WaveOutHandle = WaveOut | Handle,
-        /// <summary>
-        /// MIXER_OBJECTF_WAVEIN
-        /// </summary>
-        WaveIn = 0x20000000,
-        /// <summary>
-        /// MIXER_OBJECTF_HWAVEIN
-        /// </summary>
-        WaveInHandle = WaveIn | Handle,
-        /// <summary>
-        /// MIXER_OBJECTF_MIDIOUT
-        /// </summary>
-        MidiOut = 0x30000000,
-        /// <summary>
-        /// MIXER_OBJECTF_HMIDIOUT
-        /// </summary>
-        MidiOutHandle = MidiOut | Handle,
-        /// <summary>
-        /// MIXER_OBJECTF_MIDIIN
-        /// </summary>
-        MidiIn = 0x40000000,
-        /// <summary>
-        /// MIXER_OBJECTF_HMIDIIN
-        /// </summary>
-        MidiInHandle = MidiIn | Handle,
-        /// <summary>
-        /// MIXER_OBJECTF_AUX
-        /// </summary>
-		Aux = 0x50000000,
-        #endregion
-
-        #region Get/Set control details
-        /// <summary>
-        /// MIXER_GETCONTROLDETAILSF_VALUE      	= 0x00000000;
-        /// MIXER_SETCONTROLDETAILSF_VALUE      	= 0x00000000;
-        /// </summary>
-        Value = 0,
-        /// <summary>
-        /// MIXER_GETCONTROLDETAILSF_LISTTEXT   	= 0x00000001;
-        /// MIXER_SETCONTROLDETAILSF_LISTTEXT   	= 0x00000001;
-        /// </summary>
-        ListText = 1,
-        /// <summary>
-        /// MIXER_GETCONTROLDETAILSF_QUERYMASK  	= 0x0000000F;
-        /// MIXER_SETCONTROLDETAILSF_QUERYMASK  	= 0x0000000F;
-        /// MIXER_GETLINECONTROLSF_QUERYMASK    	= 0x0000000F;
-        /// </summary>
-        QueryMask = 0xF,
-        #endregion
-
-        #region get line controls
-        /// <summary>
-        /// MIXER_GETLINECONTROLSF_ALL          	= 0x00000000;
-        /// </summary>
-        All = 0,
-        /// <summary>
-        /// MIXER_GETLINECONTROLSF_ONEBYID      	= 0x00000001;
-        /// </summary>
-		OneById = 1,
-        /// <summary>
-        /// MIXER_GETLINECONTROLSF_ONEBYTYPE    	= 0x00000002;
-        /// </summary>
-		OneByType = 2,		
-        #endregion
-
-    }
 
 
 	class MixerInterop 
 	{
-		public const int MIXER_GETLINEINFOF_DESTINATION      	= 0x00000000;
-		public const int MIXER_GETLINEINFOF_SOURCE           	= 0x00000001;
-		public const int MIXER_GETLINEINFOF_LINEID           	= 0x00000002;
-		public const int MIXER_GETLINEINFOF_COMPONENTTYPE    	= 0x00000003;
-		public const int MIXER_GETLINEINFOF_TARGETTYPE       	= 0x00000004;
-		public const int MIXER_GETLINEINFOF_QUERYMASK        	= 0x0000000F;
-
-        public const int MIXER_OBJECTF_HANDLE = unchecked((int)0x80000000);
-        public const int MIXER_OBJECTF_MIXER = 0;
-        public const int MIXER_OBJECTF_HMIXER = (MIXER_OBJECTF_HANDLE | MIXER_OBJECTF_MIXER);
-        public const int MIXER_OBJECTF_WAVEOUT = 0x10000000;
-        public const int MIXER_OBJECTF_HWAVEOUT = (MIXER_OBJECTF_HANDLE | MIXER_OBJECTF_WAVEOUT);
-        public const int MIXER_OBJECTF_WAVEIN = 0x20000000;
-        public const int MIXER_OBJECTF_HWAVEIN = (MIXER_OBJECTF_HANDLE | MIXER_OBJECTF_WAVEIN);
-        public const int MIXER_OBJECTF_MIDIOUT = 0x30000000;
-        public const int MIXER_OBJECTF_HMIDIOUT = (MIXER_OBJECTF_HANDLE | MIXER_OBJECTF_MIDIOUT);
-        public const int MIXER_OBJECTF_MIDIIN = 0x40000000;
-        public const int MIXER_OBJECTF_HMIDIIN = (MIXER_OBJECTF_HANDLE | MIXER_OBJECTF_MIDIIN);
-        public const int MIXER_OBJECTF_AUX = 0x50000000;
-
-
-
-		public const UInt32 MIXERCONTROL_CONTROLF_UNIFORM   		= 0x00000001;
+        public const UInt32 MIXERCONTROL_CONTROLF_UNIFORM   		= 0x00000001;
 		public const UInt32 MIXERCONTROL_CONTROLF_MULTIPLE  		= 0x00000002;
 		public const UInt32 MIXERCONTROL_CONTROLF_DISABLED  		= 0x80000000;
 		
@@ -153,7 +42,7 @@ namespace NAudio.Mixer
         public static extern MmResult mixerGetLineControls(IntPtr hMixer, ref MIXERLINECONTROLS mixerLineControls, MixerFlags dwControlFlags);
 		
 		[DllImport("winmm.dll", CharSet=CharSet.Ansi)]
-        public static extern MmResult mixerGetLineInfo(IntPtr hMixer, ref MIXERLINE mixerLine, int dwInfoFlags);
+        public static extern MmResult mixerGetLineInfo(IntPtr hMixer, ref MIXERLINE mixerLine, MixerFlags dwInfoFlags);
 
 		[DllImport("winmm.dll", CharSet=CharSet.Ansi)]
         public static extern MmResult mixerMessage(IntPtr hMixer, UInt32 nMessage, UInt32 dwParam1, UInt32 dwParam2);
@@ -220,8 +109,6 @@ namespace NAudio.Mixer
             /// </summary>
             MIXERLINE_LINEF_SOURCE = (unchecked ((int)0x80000000))
         }
-
-
 
 		[StructLayout(LayoutKind.Sequential, CharSet=CharSet.Ansi)]
 		public struct MIXERLINE 

@@ -16,6 +16,9 @@ namespace NAudio.Wave
     [StructLayout(LayoutKind.Explicit, Pack = 2)]
     public class WaveBuffer : IWaveBuffer
     {
+        /// <summary>
+        /// Number of Bytes
+        /// </summary>
         [FieldOffset(0)]
         public int numberOfBytes;
         [FieldOffset(4)]

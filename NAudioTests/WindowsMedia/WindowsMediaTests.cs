@@ -70,7 +70,7 @@ namespace NAudioTests.WindowsMedia
             ushort streamNum;
             uint hresult = reader.GetNextSample(0, out buffer, out sampleTime, out duration, out flags, out outputNum, out streamNum);
             Assert.AreEqual(0, hresult);
-            byte[] theBuffer;
+            //byte[] theBuffer;
             //buffer.GetBuffer(out theBuffer);
 
 

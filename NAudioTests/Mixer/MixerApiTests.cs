@@ -26,27 +26,30 @@ namespace NAudioTests
         [Test]
         public void CanFindDefaultWaveIn()
         {
-            MixerLine waveIn = MixerLine.ForWaveIn(0);
-            Debug.WriteLine(String.Format("{0} {1} (Source: {2}, Target: {3})", 
-                waveIn.Name, waveIn.TypeDescription, waveIn.IsSource, waveIn.TargetName));
-
-            foreach (MixerLine source in waveIn.Sources)
+            int defaultWaveInMixerId = MixerLine.GetMixerIdForWaveIn(0);
+            Mixer mixer = new Mixer(defaultWaveInMixerId);
+            foreach (MixerLine destination in mixer.Destinations)
             {
-                Debug.WriteLine(String.Format("{0} {1} (Source: {2}, Target: {3})", 
-                    source.Name, source.TypeDescription, source.IsSource, source.TargetName));
-                if (source.ComponentType == MixerLineComponentType.SourceMicrophone)
+                Debug.WriteLine(String.Format("{0} {1} (Source: {2}, Target: {3})",
+                    destination.Name, destination.TypeDescription, destination.IsSource, destination.TargetName));
+
+                foreach (MixerLine source in destination.Sources)
                 {
-                    Debug.WriteLine(String.Format("Found the microphone: {0}", source.Name));
-                    foreach (MixerControl control in source.Controls)
+                    Debug.WriteLine(String.Format("{0} {1} (Source: {2}, Target: {3})",
+                        source.Name, source.TypeDescription, source.IsSource, source.TargetName));
+                    if (source.ComponentType == MixerLineComponentType.SourceMicrophone)
                     {
-                        if (control.ControlType == MixerControlType.Volume)
+                        Debug.WriteLine(String.Format("Found the microphone: {0}", source.Name));
+                        foreach (MixerControl control in source.Controls)
                         {
-                            Debug.WriteLine(String.Format("Volume Found: {0}", control));
+                            if (control.ControlType == MixerControlType.Volume)
+                            {
+                                Debug.WriteLine(String.Format("Volume Found: {0}", control));
+                            }
                         }
                     }
                 }
             }
-
         }
 
         private static void ExploreMixerDevice(int deviceIndex)
@@ -68,18 +71,9 @@ namespace NAudioTests
             Debug.WriteLine(String.Format("Destination {0}: {1}", 
                 destinationIndex, destination));
             int channels = destination.Channels;
-            int controls = destination.ControlsCount;
-            for (int controlIndex = 0; controlIndex < controls; controlIndex++)
+            foreach (MixerControl control in destination.Controls)
             {
-                try
-                {
-                    var control = destination.GetControl(controlIndex);
-                    Debug.WriteLine(String.Format("CONTROL: {0}", control));
-                }
-                catch (MmException me)
-                {
-                    Debug.WriteLine(String.Format("MmException: {0}", me.Message));
-                }
+                Debug.WriteLine(String.Format("CONTROL: {0}", control));
             }
             int sources = destination.SourceCount;
             for (int sourceIndex = 0; sourceIndex < sources; sourceIndex++)
@@ -91,14 +85,11 @@ namespace NAudioTests
         private static void ExploreMixerSource(MixerLine destinationLine, int sourceIndex)
         {
             var sourceLine = destinationLine.GetSource(sourceIndex);
-            int controls = sourceLine.ControlsCount;
             Debug.WriteLine(String.Format("Source {0}: {1}",
                 sourceIndex, sourceLine));
-
-            for (int controlIndex = 0; controlIndex < controls; controlIndex++)
+            foreach (MixerControl control in sourceLine.Controls)
             {
-                var control = sourceLine.GetControl(controlIndex);
-                Debug.WriteLine(String.Format("CONTROL: {0} {1}", control.Name, control.ControlType));
+                Debug.WriteLine(String.Format("CONTROL: {0}", control));
             }
         }
     }

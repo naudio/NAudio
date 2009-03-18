@@ -2,6 +2,7 @@
 using System;
 using System.Runtime.InteropServices;
 using NAudio.Wave;
+using System.Collections.Generic;
 
 namespace NAudio.Mixer
 {	
@@ -20,28 +21,58 @@ namespace NAudio.Mixer
 		/// Number of Channels
 		/// </summary>
 		protected int nChannels;
-		
+
+        public static IList<MixerControl> GetMixerControls(IntPtr mixerHandle, MixerLine mixerLine, MixerFlags mixerHandleType)
+        {
+            List<MixerControl> controls = new List<MixerControl>();
+            int mixerControlSize = Marshal.SizeOf(typeof(MixerInterop.MIXERCONTROL));
+            MixerInterop.MIXERLINECONTROLS mlc = new MixerInterop.MIXERLINECONTROLS();			
+            IntPtr pmc = Marshal.AllocHGlobal(mixerControlSize * mixerLine.ControlsCount);
+            mlc.cbStruct = Marshal.SizeOf(mlc);
+            mlc.dwLineID = mixerLine.LineId;
+            mlc.cControls = mixerLine.ControlsCount;
+            mlc.pamxctrl = pmc;
+            mlc.cbmxctrl = Marshal.SizeOf(typeof(MixerInterop.MIXERCONTROL));
+
+            MmResult err = MixerInterop.mixerGetLineControls(mixerHandle, ref mlc, MixerFlags.All | mixerHandleType);
+            if (err != MmResult.NoError)
+            {
+                Marshal.FreeHGlobal(pmc);
+                throw new MmException(err, "mixerGetLineControls");
+            }
+            for (int i = 0; i < mlc.cControls; i++)
+            {
+                Int64 address =  pmc.ToInt64() +  mixerControlSize * i;
+                
+                MixerInterop.MIXERCONTROL mc = (MixerInterop.MIXERCONTROL)Marshal.PtrToStructure((IntPtr)address, typeof(MixerInterop.MIXERCONTROL));
+                MixerControl mixerControl = MixerControl.GetMixerControl(mixerHandle, mixerLine.LineId, mc.dwControlID, mixerLine.Channels, mixerHandleType);
+                
+                controls.Add(mixerControl);
+            }
+            return controls;
+        }
+
 		/// <summary>
 		/// Gets a specified Mixer Control
 		/// </summary>
         /// <param name="mixerHandle">Mixer Handle</param>
 		/// <param name="nLineID">Line ID</param>
-		/// <param name="nControl">Control ID</param>
+		/// <param name="controlId">Control ID</param>
 		/// <param name="nChannels">Number of Channels</param>
         /// <param name="mixerFlags">Flags to use (indicates the meaning of mixerHandle)</param>
 		/// <returns></returns>
-        public static MixerControl GetMixerControl(IntPtr mixerHandle, int nLineID, int nControl, int nChannels, MixerFlags mixerFlags) 
+        public static MixerControl GetMixerControl(IntPtr mixerHandle, int nLineID, int controlId, int nChannels, MixerFlags mixerFlags) 
 		{
 			MixerInterop.MIXERLINECONTROLS mlc = new MixerInterop.MIXERLINECONTROLS();
 			MixerInterop.MIXERCONTROL mc = new MixerInterop.MIXERCONTROL();
 			
 			// set up the pointer to a structure
 			IntPtr pMixerControl = Marshal.AllocCoTaskMem(Marshal.SizeOf(mc));
-			Marshal.StructureToPtr(mc, pMixerControl, false);      
+			//Marshal.StructureToPtr(mc, pMixerControl, false);      
 			
 			mlc.cbStruct = Marshal.SizeOf(mlc);
 			mlc.cControls = 1;
-			mlc.dwControlID = nControl;
+			mlc.dwControlID = controlId;
 			mlc.cbmxctrl = Marshal.SizeOf(mc);
 			mlc.pamxctrl = pMixerControl;
 			mlc.dwLineID = nLineID;

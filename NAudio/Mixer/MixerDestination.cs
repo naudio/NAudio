@@ -60,18 +60,11 @@ namespace NAudio.Mixer
         /// Creates a new Mixer Source
         /// </summary>
         /// <param name="waveInDevice">Wave In Device</param>
-        public static MixerLine ForWaveIn(int waveInDevice)
+        public static int GetMixerIdForWaveIn(int waveInDevice)
         {
-            MixerFlags flags = MixerFlags.WaveIn | MixerFlags.GetLineInfoOfComponentType;
-            MixerLine ml = new MixerLine();
-            ml.mixerLine = new MixerInterop.MIXERLINE();
-            ml.mixerLine.cbStruct = Marshal.SizeOf(ml.mixerLine);
-            ml.mixerLine.dwComponentType = MixerLineComponentType.SourceMicrophone;
-            //ml.mixerLine.dwComponentType = MixerLineComponentType.DestinationWaveIn;
-            MmException.Try(MixerInterop.mixerGetLineInfo((IntPtr)waveInDevice, ref ml.mixerLine, flags), "mixerGetLineInfo");
-            ml.mixerHandle = (IntPtr)waveInDevice;
-            ml.mixerHandleType = MixerFlags.WaveIn;
-            return ml;
+            int mixerId = -1;
+            MmException.Try(MixerInterop.mixerGetID((IntPtr)waveInDevice, out mixerId, MixerFlags.WaveIn), "mixerGetID");
+            return mixerId;
         }
 
 		/// <summary>
@@ -254,6 +247,7 @@ namespace NAudio.Mixer
             return new MixerLine(mixerHandle, destinationIndex, sourceIndex, this.mixerHandleType);			
 		}
 
+        /**
 		/// <summary>
 		/// Gets the specified control
 		/// </summary>
@@ -264,7 +258,7 @@ namespace NAudio.Mixer
                 throw new ArgumentOutOfRangeException("controlIndex");
 			}
             return MixerControl.GetMixerControl(mixerHandle, mixerLine.dwLineID, controlIndex+1, Channels, mixerHandleType);
-		}
+		}**/
 
         /// <summary>
         /// Enumerator for the controls on this Mixer Limne
@@ -273,10 +267,12 @@ namespace NAudio.Mixer
         {
             get
             {
+                /*
                 for (int control = 0; control < ControlsCount; control++)
                 {
                     yield return GetControl(control);
-                }
+                }*/
+                return MixerControl.GetMixerControls(this.mixerHandle, this, this.mixerHandleType);
             }
         }
 

@@ -36,7 +36,7 @@ namespace NAudio.Mixer
         public static extern MmResult mixerGetDevCaps(IntPtr nMixerID, ref MIXERCAPS mixerCaps, Int32 mixerCapsSize);
 
 		[DllImport("winmm.dll", CharSet=CharSet.Ansi)]
-        public static extern MmResult mixerGetID(IntPtr hMixer, ref UInt32 mixerID, UInt32 dwMixerIDFlags);
+        public static extern MmResult mixerGetID(IntPtr hMixer, out Int32 mixerID, MixerFlags dwMixerIDFlags);
 
 		[DllImport("winmm.dll", CharSet=CharSet.Ansi)]
         public static extern MmResult mixerGetLineControls(IntPtr hMixer, ref MIXERLINECONTROLS mixerLineControls, MixerFlags dwControlFlags);
@@ -54,7 +54,7 @@ namespace NAudio.Mixer
 		public struct MIXERCONTROLDETAILS 
 		{
 			public Int32 cbStruct; // size of the MIXERCONTROLDETAILS structure
-			public UInt32 dwControlID; 
+			public Int32 dwControlID; 
 			public Int32 cChannels; // Number of channels on which to get or set control properties
 			public UInt32 cMultipleItems; // Union with HWND hwndOwner
 			public Int32 cbDetails; // Size of the paDetails Member
@@ -79,7 +79,7 @@ namespace NAudio.Mixer
 			public Int32 cbStruct; // size of the MIXERLINECONTROLS structure
 			public Int32 dwLineID; // Line identifier for which controls are being queried
 			public Int32 dwControlID; // union with UInt32 dwControlType
-			public UInt32 cControls; 
+			public Int32 cControls; 
 			public Int32 cbmxctrl; 
 			public IntPtr pamxctrl; // see MSDN "Structs Sample"
 		}
@@ -209,7 +209,7 @@ namespace NAudio.Mixer
 		public struct MIXERCONTROL 
 		{ 
 			public UInt32 cbStruct;
-			public UInt32 dwControlID; 
+			public Int32 dwControlID; 
 			public MixerControlType dwControlType; 
 			public UInt32 fdwControl; 
 			public UInt32 cMultipleItems; 

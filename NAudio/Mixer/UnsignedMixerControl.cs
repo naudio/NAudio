@@ -12,10 +12,11 @@ namespace NAudio.Mixer
 	{
 		private MixerInterop.MIXERCONTROLDETAILS_UNSIGNED unsignedDetails;
 		
-		internal UnsignedMixerControl(MixerInterop.MIXERCONTROL mixerControl,IntPtr mixerHandle,int nChannels) 
+		internal UnsignedMixerControl(MixerInterop.MIXERCONTROL mixerControl,IntPtr mixerHandle, MixerFlags mixerHandleType, int nChannels) 
 		{
 			this.mixerControl = mixerControl;
             this.mixerHandle = mixerHandle;
+            this.mixerHandleType = mixerHandleType;
 			this.nChannels = nChannels;
 			this.mixerControlDetails = new MixerInterop.MIXERCONTROLDETAILS();
 			GetControlDetails();
@@ -43,7 +44,7 @@ namespace NAudio.Mixer
 			{
 				unsignedDetails.dwValue = value;
 				// TODO: pin
-                MmException.Try(MixerInterop.mixerSetControlDetails(mixerHandle, ref mixerControlDetails, MixerFlags.Value | MixerFlags.MixerHandle), "mixerSetControlDetails");
+                MmException.Try(MixerInterop.mixerSetControlDetails(mixerHandle, ref mixerControlDetails, MixerFlags.Value | mixerHandleType), "mixerSetControlDetails");
 			}
 		}
 		
@@ -77,6 +78,10 @@ namespace NAudio.Mixer
             get
             {
                 return 100.0 * (Value - MinValue) / (double)(MaxValue - MinValue);
+            }
+            set
+            {
+                Value = (uint)(MinValue + (Percent / 100.0) * (MaxValue - MinValue));
             }
         }
 

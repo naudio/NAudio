@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Runtime.InteropServices;
+using NAudio.Mixer;
 
 namespace NAudio.Wave
 {
@@ -42,30 +43,6 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// Returns the number of Wave In devices available in the system
-        /// </summary>
-        public static int DeviceCount
-        {
-            get
-            {
-                return WaveInterop.waveInGetNumDevs();
-            }
-        }
-
-        /// <summary>
-        /// Retrieves the capabilities of a waveIn device
-        /// </summary>
-        /// <param name="devNumber">Device to test</param>
-        /// <returns>The WaveIn device capabilities</returns>
-        public static WaveInCapabilities GetCapabilities(int devNumber)
-        {
-            WaveInCapabilities caps = new WaveInCapabilities();
-            int structSize = Marshal.SizeOf(caps);
-            MmException.Try(WaveInterop.waveInGetDevCaps(devNumber, out caps, structSize), "waveInGetDevCaps");
-            return caps;
-        }
-
-        /// <summary>
         /// Prepares a Wave input device for recording
         /// </summary>
         /// <param name="deviceNumber">The device to open - 0 is default</param>
@@ -89,6 +66,30 @@ namespace NAudio.Wave
             }
 
             CreateBuffers();
+        }
+
+        /// <summary>
+        /// Returns the number of Wave In devices available in the system
+        /// </summary>
+        public static int DeviceCount
+        {
+            get
+            {
+                return WaveInterop.waveInGetNumDevs();
+            }
+        }
+
+        /// <summary>
+        /// Retrieves the capabilities of a waveIn device
+        /// </summary>
+        /// <param name="devNumber">Device to test</param>
+        /// <returns>The WaveIn device capabilities</returns>
+        public static WaveInCapabilities GetCapabilities(int devNumber)
+        {
+            WaveInCapabilities caps = new WaveInCapabilities();
+            int structSize = Marshal.SizeOf(caps);
+            MmException.Try(WaveInterop.waveInGetDevCaps(devNumber, out caps, structSize), "waveInGetDevCaps");
+            return caps;
         }
 
         private void CreateBuffers()
@@ -187,6 +188,40 @@ namespace NAudio.Wave
                     waveInWindow = null;
                 }
             }
+        }
+
+        public double MicrophoneLevel
+        {
+            get
+            {
+                MixerLine mixerLine = new MixerLine(this.waveInHandle, 0, MixerFlags.WaveInHandle);
+                SignedMixerControl volume = (SignedMixerControl)FindMicrophoneSourceVolume(mixerLine);
+                return volume.Percent;
+            }
+            set
+            {
+                MixerLine mixerLine = new MixerLine(this.waveInHandle, 0, MixerFlags.WaveInHandle);
+                UnsignedMixerControl volume = (UnsignedMixerControl)FindMicrophoneSourceVolume(mixerLine);
+                volume.Percent = value;
+            }
+        }
+
+        private MixerControl FindMicrophoneSourceVolume(MixerLine mixerLine)
+        {
+            foreach (MixerLine source in mixerLine.Sources)
+            {
+                if (source.ComponentType == MixerLineComponentType.SourceMicrophone)
+                {
+                    foreach (MixerControl control in source.Controls)
+                    {
+                        if (control.ControlType == MixerControlType.Volume)
+                        {
+                            return control;
+                        }
+                    }
+                }
+            }
+            throw new InvalidOperationException("Could not find the microphone volume");
         }
 
         /// <summary>

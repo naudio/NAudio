@@ -11,6 +11,7 @@ namespace NAudio.Mixer
 		private MixerInterop.MIXERCAPS caps;
 		private int mixerIndex;
         private IntPtr mixerHandle;
+        private MixerFlags mixerHandleType;
 		
 		/// <summary>The number of mixer devices available</summary>	
 		public static int NumberOfDevices 
@@ -32,11 +33,11 @@ namespace NAudio.Mixer
 			}
 			caps = new MixerInterop.MIXERCAPS();
 			MmException.Try(MixerInterop.mixerGetDevCaps((IntPtr)mixerIndex,ref caps,Marshal.SizeOf(caps)),"mixerGetDevCaps");
-			this.mixerIndex = mixerIndex;
+            this.mixerHandle = (IntPtr)mixerIndex;
+            this.mixerHandleType = MixerFlags.Mixer;
 			
 			// TODO: optionally support really opening the mixer device
             //MmException.Try(MixerInterop.mixerOpen(out mixerHandle, mixerIndex, IntPtr.Zero, IntPtr.Zero, 0), "mixerOpen");
-            this.mixerHandle = (IntPtr)mixerIndex;
 		}
 
 		/// <summary>The number of destinations this mixer supports</summary>
@@ -84,7 +85,7 @@ namespace NAudio.Mixer
 			{
                 throw new ArgumentOutOfRangeException("destinationIndex");
 			}
-			return new MixerLine(mixerHandle, destinationIndex);
+			return new MixerLine(mixerHandle, destinationIndex, mixerHandleType);
 		}
 
         /// <summary>

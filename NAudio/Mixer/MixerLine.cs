@@ -16,19 +16,20 @@ namespace NAudio.Mixer
 		private int destinationIndex;
         private int sourceIndex;
         private MixerFlags mixerHandleType;
-		
+
 		/// <summary>
 		/// Creates a new mixer destination
 		/// </summary>
         /// <param name="mixerHandle">Mixer Handle</param>
         /// <param name="destinationIndex">Destination Index</param>
-        public MixerLine(IntPtr mixerHandle, int destinationIndex) 
+        public MixerLine(IntPtr mixerHandle, int destinationIndex, MixerFlags mixerHandleType) 
 		{
 			mixerLine = new MixerInterop.MIXERLINE();			
 			mixerLine.cbStruct = Marshal.SizeOf(mixerLine);
 			mixerLine.dwDestination = destinationIndex;
-            MmException.Try(MixerInterop.mixerGetLineInfo(mixerHandle, ref mixerLine, MixerFlags.GetLineInfoOfDestination), "mixerGetLineInfo");
+            MmException.Try(MixerInterop.mixerGetLineInfo(mixerHandle, ref mixerLine, mixerHandleType | MixerFlags.GetLineInfoOfDestination), "mixerGetLineInfo");
             this.mixerHandle = mixerHandle;
+            this.mixerHandleType = mixerHandleType;
 			this.destinationIndex = destinationIndex;            
 		}
 

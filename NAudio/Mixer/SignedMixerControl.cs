@@ -82,7 +82,7 @@ namespace NAudio.Mixer
             }
             set
             {
-                Value = (int)(MinValue + (Percent / 100.0) * (MaxValue - MinValue));
+                Value = (int)(MinValue + (value / 100.0) * (MaxValue - MinValue));
             }
         }
 

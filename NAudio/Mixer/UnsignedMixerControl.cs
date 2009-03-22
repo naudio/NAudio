@@ -43,8 +43,8 @@ namespace NAudio.Mixer
 			set 
 			{
 				unsignedDetails.dwValue = value;
-				// TODO: pin
-                MmException.Try(MixerInterop.mixerSetControlDetails(mixerHandle, ref mixerControlDetails, MixerFlags.Value | mixerHandleType), "mixerSetControlDetails");
+                Marshal.StructureToPtr(unsignedDetails, mixerControlDetails.paDetails, false);
+				MmException.Try(MixerInterop.mixerSetControlDetails(mixerHandle, ref mixerControlDetails, MixerFlags.Value | mixerHandleType), "mixerSetControlDetails");
 			}
 		}
 		
@@ -81,7 +81,7 @@ namespace NAudio.Mixer
             }
             set
             {
-                Value = (uint)(MinValue + (Percent / 100.0) * (MaxValue - MinValue));
+                Value = (uint)(MinValue + (value / 100.0) * (MaxValue - MinValue));
             }
         }
 

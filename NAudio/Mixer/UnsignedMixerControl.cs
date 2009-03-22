@@ -43,8 +43,10 @@ namespace NAudio.Mixer
 			set 
 			{
 				unsignedDetails.dwValue = value;
+                mixerControlDetails.paDetails = Marshal.AllocHGlobal(Marshal.SizeOf(unsignedDetails));
                 Marshal.StructureToPtr(unsignedDetails, mixerControlDetails.paDetails, false);
 				MmException.Try(MixerInterop.mixerSetControlDetails(mixerHandle, ref mixerControlDetails, MixerFlags.Value | mixerHandleType), "mixerSetControlDetails");
+                Marshal.FreeHGlobal(mixerControlDetails.paDetails);
 			}
 		}
 		

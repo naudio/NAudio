@@ -10,7 +10,7 @@ namespace NAudio.Wave
     /// Allows recording using the Windows waveIn APIs
     /// Events are raised as recorded buffers are made available
     /// </summary>
-    public class WaveIn
+    public class WaveIn : IDisposable
     {
         private IntPtr waveInHandle;
         private WaveFormat waveFormat;
@@ -195,7 +195,7 @@ namespace NAudio.Wave
             get
             {
                 MixerLine mixerLine = new MixerLine(this.waveInHandle, 0, MixerFlags.WaveInHandle);
-                SignedMixerControl volume = (SignedMixerControl)FindMicrophoneSourceVolume(mixerLine);
+                UnsignedMixerControl volume = (UnsignedMixerControl)FindMicrophoneSourceVolume(mixerLine);
                 return volume.Percent;
             }
             set

@@ -42,10 +42,11 @@ namespace NAudio.Mixer
 			}
 			set 
 			{
-				//GetControlDetails();
-				signedDetails.lValue = value;
-				// TODO: pin memory
+				signedDetails.lValue = value;                
+                mixerControlDetails.paDetails = Marshal.AllocHGlobal(Marshal.SizeOf(signedDetails));
+                Marshal.StructureToPtr(signedDetails, mixerControlDetails.paDetails, false);
                 MmException.Try(MixerInterop.mixerSetControlDetails(mixerHandle, ref mixerControlDetails, MixerFlags.Value | mixerHandleType), "mixerSetControlDetails");
+                Marshal.FreeHGlobal(mixerControlDetails.paDetails);
 			}
 		}
 		

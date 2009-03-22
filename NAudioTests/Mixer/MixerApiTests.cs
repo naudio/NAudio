@@ -45,6 +45,17 @@ namespace NAudioTests
                             if (control.ControlType == MixerControlType.Volume)
                             {
                                 Debug.WriteLine(String.Format("Volume Found: {0}", control));
+                                UnsignedMixerControl umc = (UnsignedMixerControl)control;
+                                uint originalValue = umc.Value;
+                                umc.Value = umc.MinValue;
+                                Assert.AreEqual(umc.MinValue, umc.Value, "Set Minimum Correctly");
+                                umc.Value = umc.MaxValue;
+                                Assert.AreEqual(umc.MaxValue, umc.Value, "Set Maximum Correctly");
+                                umc.Value = umc.MaxValue / 2;
+                                Assert.AreEqual(umc.MaxValue/2, umc.Value, "Set MidPoint Correctly");
+                                umc.Value = originalValue;
+                                Assert.AreEqual(originalValue, umc.Value, "Set Original Correctly");
+                                
                             }
                         }
                     }

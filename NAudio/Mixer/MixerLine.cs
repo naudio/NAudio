@@ -13,8 +13,6 @@ namespace NAudio.Mixer
 	{
 		private MixerInterop.MIXERLINE mixerLine;
         private IntPtr mixerHandle;
-		private int destinationIndex;
-        private int sourceIndex;
         private MixerFlags mixerHandleType;
 
 		/// <summary>
@@ -22,40 +20,34 @@ namespace NAudio.Mixer
 		/// </summary>
         /// <param name="mixerHandle">Mixer Handle</param>
         /// <param name="destinationIndex">Destination Index</param>
+        /// <param name="mixerHandleType">Mixer Handle Type</param>
         public MixerLine(IntPtr mixerHandle, int destinationIndex, MixerFlags mixerHandleType) 
 		{
-			mixerLine = new MixerInterop.MIXERLINE();			
+            this.mixerHandle = mixerHandle;
+            this.mixerHandleType = mixerHandleType;
+            mixerLine = new MixerInterop.MIXERLINE();			
 			mixerLine.cbStruct = Marshal.SizeOf(mixerLine);
 			mixerLine.dwDestination = destinationIndex;
             MmException.Try(MixerInterop.mixerGetLineInfo(mixerHandle, ref mixerLine, mixerHandleType | MixerFlags.GetLineInfoOfDestination), "mixerGetLineInfo");
-            this.mixerHandle = mixerHandle;
-            this.mixerHandleType = mixerHandleType;
-			this.destinationIndex = destinationIndex;            
 		}
 
         /// <summary>
-		/// Creates a new Mixer Source
+		/// Creates a new Mixer Source For a Specified Source
 		/// </summary>
         /// <param name="mixerHandle">Mixer Handle</param>
-		/// <param name="nDestination">Destination ID</param>
-		/// <param name="nSource">Source ID</param>
+        /// <param name="destinationIndex">Destination Index</param>
+        /// <param name="sourceIndex">Source Index</param>
         /// <param name="mixerHandleType">Flag indicating the meaning of mixerHandle</param>
-        public MixerLine(IntPtr mixerHandle, int nDestination, int nSource, MixerFlags mixerHandleType) 
+        public MixerLine(IntPtr mixerHandle, int destinationIndex, int sourceIndex, MixerFlags mixerHandleType) 
 		{
-			mixerLine = new MixerInterop.MIXERLINE();
-			mixerLine.cbStruct = Marshal.SizeOf(mixerLine);
-			mixerLine.dwDestination = nDestination;
-			mixerLine.dwSource = nSource;
-            this.mixerHandleType = mixerHandleType;
-            MmException.Try(MixerInterop.mixerGetLineInfo(mixerHandle, ref mixerLine, mixerHandleType | MixerFlags.GetLineInfoOfSource), "mixerGetLineInfo");
             this.mixerHandle = mixerHandle;
-			this.destinationIndex = nDestination;
-			this.sourceIndex = nSource;            
+            this.mixerHandleType = mixerHandleType;
+            mixerLine = new MixerInterop.MIXERLINE();
+			mixerLine.cbStruct = Marshal.SizeOf(mixerLine);
+			mixerLine.dwDestination = destinationIndex;
+            mixerLine.dwSource = sourceIndex;
+            MmException.Try(MixerInterop.mixerGetLineInfo(mixerHandle, ref mixerLine, mixerHandleType | MixerFlags.GetLineInfoOfSource), "mixerGetLineInfo");
 		}
-
-        private MixerLine()
-        {
-        }
 
         /// <summary>
         /// Creates a new Mixer Source
@@ -235,7 +227,6 @@ namespace NAudio.Mixer
             }
         }
 
-
 		/// <summary>
 		/// Gets the specified source
 		/// </summary>
@@ -243,23 +234,10 @@ namespace NAudio.Mixer
 		{
 			if(sourceIndex < 0 || sourceIndex >= SourceCount) 
 			{
-				throw new ArgumentOutOfRangeException("nSource");
+                throw new ArgumentOutOfRangeException("sourceIndex");
 			}
-            return new MixerLine(mixerHandle, destinationIndex, sourceIndex, this.mixerHandleType);			
+            return new MixerLine(mixerHandle, mixerLine.dwDestination, sourceIndex, this.mixerHandleType);			
 		}
-
-        /**
-		/// <summary>
-		/// Gets the specified control
-		/// </summary>
-		public MixerControl GetControl(int controlIndex) 
-		{
-			if(controlIndex < 0 || controlIndex >= ControlsCount) 
-			{
-                throw new ArgumentOutOfRangeException("controlIndex");
-			}
-            return MixerControl.GetMixerControl(mixerHandle, mixerLine.dwLineID, controlIndex+1, Channels, mixerHandleType);
-		}**/
 
         /// <summary>
         /// Enumerator for the controls on this Mixer Limne
@@ -268,11 +246,6 @@ namespace NAudio.Mixer
         {
             get
             {
-                /*
-                for (int control = 0; control < ControlsCount; control++)
-                {
-                    yield return GetControl(control);
-                }*/
                 return MixerControl.GetMixerControls(this.mixerHandle, this, this.mixerHandleType);
             }
         }

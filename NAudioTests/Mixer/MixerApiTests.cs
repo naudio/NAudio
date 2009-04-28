@@ -5,6 +5,7 @@ using NUnit.Framework;
 using NAudio.Mixer;
 using System.Diagnostics;
 using NAudio;
+using NAudio.Wave;
 
 namespace NAudioTests
 {
@@ -54,12 +55,21 @@ namespace NAudioTests
                                 umc.Value = umc.MaxValue / 2;
                                 Assert.AreEqual(umc.MaxValue/2, umc.Value, "Set MidPoint Correctly");
                                 umc.Value = originalValue;
-                                Assert.AreEqual(originalValue, umc.Value, "Set Original Correctly");
-                                
+                                Assert.AreEqual(originalValue, umc.Value, "Set Original Correctly");                                
                             }
                         }
                     }
                 }
+            }
+        }
+
+        [Test]
+        public void CanGetMicrophoneVolume()
+        {
+            using (WaveIn waveIn = new WaveIn(8000, 1))
+            {
+                double level = waveIn.MicrophoneLevel;
+                Debug.WriteLine(String.Format("Mic Level {0}", level));
             }
         }
 

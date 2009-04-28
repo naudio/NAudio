@@ -194,6 +194,7 @@ namespace NAudio.Wave
         {
             get
             {
+                // TODO use mixerGetID instead to see if this helps with XP
                 MixerLine mixerLine = new MixerLine(this.waveInHandle, 0, MixerFlags.WaveInHandle);
                 UnsignedMixerControl volume = (UnsignedMixerControl)FindMicrophoneSourceVolume(mixerLine);
                 return volume.Percent;

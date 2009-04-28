@@ -36,29 +36,32 @@ namespace NAudio.Mixer
         public static IList<MixerControl> GetMixerControls(IntPtr mixerHandle, MixerLine mixerLine, MixerFlags mixerHandleType)
         {
             List<MixerControl> controls = new List<MixerControl>();
-            int mixerControlSize = Marshal.SizeOf(typeof(MixerInterop.MIXERCONTROL));
-            MixerInterop.MIXERLINECONTROLS mlc = new MixerInterop.MIXERLINECONTROLS();			
-            IntPtr pmc = Marshal.AllocHGlobal(mixerControlSize * mixerLine.ControlsCount);
-            mlc.cbStruct = Marshal.SizeOf(mlc);
-            mlc.dwLineID = mixerLine.LineId;
-            mlc.cControls = mixerLine.ControlsCount;
-            mlc.pamxctrl = pmc;
-            mlc.cbmxctrl = Marshal.SizeOf(typeof(MixerInterop.MIXERCONTROL));
+            if (mixerLine.ControlsCount > 0)
+            {
+                int mixerControlSize = Marshal.SizeOf(typeof(MixerInterop.MIXERCONTROL));
+                MixerInterop.MIXERLINECONTROLS mlc = new MixerInterop.MIXERLINECONTROLS();
+                IntPtr pmc = Marshal.AllocHGlobal(mixerControlSize * mixerLine.ControlsCount);
+                mlc.cbStruct = Marshal.SizeOf(mlc);
+                mlc.dwLineID = mixerLine.LineId;
+                mlc.cControls = mixerLine.ControlsCount;
+                mlc.pamxctrl = pmc;
+                mlc.cbmxctrl = Marshal.SizeOf(typeof(MixerInterop.MIXERCONTROL));
 
-            MmResult err = MixerInterop.mixerGetLineControls(mixerHandle, ref mlc, MixerFlags.All | mixerHandleType);
-            if (err != MmResult.NoError)
-            {
-                Marshal.FreeHGlobal(pmc);
-                throw new MmException(err, "mixerGetLineControls");
-            }
-            for (int i = 0; i < mlc.cControls; i++)
-            {
-                Int64 address =  pmc.ToInt64() +  mixerControlSize * i;
-                
-                MixerInterop.MIXERCONTROL mc = (MixerInterop.MIXERCONTROL)Marshal.PtrToStructure((IntPtr)address, typeof(MixerInterop.MIXERCONTROL));
-                MixerControl mixerControl = MixerControl.GetMixerControl(mixerHandle, mixerLine.LineId, mc.dwControlID, mixerLine.Channels, mixerHandleType);
-                
-                controls.Add(mixerControl);
+                MmResult err = MixerInterop.mixerGetLineControls(mixerHandle, ref mlc, MixerFlags.All | mixerHandleType);
+                if (err != MmResult.NoError)
+                {
+                    Marshal.FreeHGlobal(pmc);
+                    throw new MmException(err, "mixerGetLineControls");
+                }
+                for (int i = 0; i < mlc.cControls; i++)
+                {
+                    Int64 address = pmc.ToInt64() + mixerControlSize * i;
+
+                    MixerInterop.MIXERCONTROL mc = (MixerInterop.MIXERCONTROL)Marshal.PtrToStructure((IntPtr)address, typeof(MixerInterop.MIXERCONTROL));
+                    MixerControl mixerControl = MixerControl.GetMixerControl(mixerHandle, mixerLine.LineId, mc.dwControlID, mixerLine.Channels, mixerHandleType);
+
+                    controls.Add(mixerControl);
+                }
             }
             return controls;
         }
@@ -120,9 +123,7 @@ namespace NAudio.Mixer
 			else 
 			{
 				throw new ApplicationException(String.Format("Unknown mixer control type {0}",mc.dwControlType));
-			}
-			
-			
+			}					
 		}
 		
 		/// <summary>

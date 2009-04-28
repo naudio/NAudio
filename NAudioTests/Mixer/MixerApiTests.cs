@@ -31,31 +31,34 @@ namespace NAudioTests
             Mixer mixer = new Mixer(defaultWaveInMixerId);
             foreach (MixerLine destination in mixer.Destinations)
             {
-                Debug.WriteLine(String.Format("{0} {1} (Source: {2}, Target: {3})",
-                    destination.Name, destination.TypeDescription, destination.IsSource, destination.TargetName));
+                Debug.WriteLine(String.Format("DESTINATION: {0} {1} (Type: {2}, Target: {3})",
+                    destination.Name, destination.TypeDescription, destination.ComponentType, destination.TargetName));
 
-                foreach (MixerLine source in destination.Sources)
+                if (destination.ComponentType == MixerLineComponentType.DestinationWaveIn)
                 {
-                    Debug.WriteLine(String.Format("{0} {1} (Source: {2}, Target: {3})",
-                        source.Name, source.TypeDescription, source.IsSource, source.TargetName));
-                    if (source.ComponentType == MixerLineComponentType.SourceMicrophone)
+                    foreach (MixerLine source in destination.Sources)
                     {
-                        Debug.WriteLine(String.Format("Found the microphone: {0}", source.Name));
-                        foreach (MixerControl control in source.Controls)
+                        Debug.WriteLine(String.Format("{0} {1} (Source: {2}, Target: {3})",
+                            source.Name, source.TypeDescription, source.IsSource, source.TargetName));
+                        if (source.ComponentType == MixerLineComponentType.SourceMicrophone)
                         {
-                            if (control.ControlType == MixerControlType.Volume)
+                            Debug.WriteLine(String.Format("Found the microphone: {0}", source.Name));
+                            foreach (MixerControl control in source.Controls)
                             {
-                                Debug.WriteLine(String.Format("Volume Found: {0}", control));
-                                UnsignedMixerControl umc = (UnsignedMixerControl)control;
-                                uint originalValue = umc.Value;
-                                umc.Value = umc.MinValue;
-                                Assert.AreEqual(umc.MinValue, umc.Value, "Set Minimum Correctly");
-                                umc.Value = umc.MaxValue;
-                                Assert.AreEqual(umc.MaxValue, umc.Value, "Set Maximum Correctly");
-                                umc.Value = umc.MaxValue / 2;
-                                Assert.AreEqual(umc.MaxValue/2, umc.Value, "Set MidPoint Correctly");
-                                umc.Value = originalValue;
-                                Assert.AreEqual(originalValue, umc.Value, "Set Original Correctly");                                
+                                if (control.ControlType == MixerControlType.Volume)
+                                {
+                                    Debug.WriteLine(String.Format("Volume Found: {0}", control));
+                                    UnsignedMixerControl umc = (UnsignedMixerControl)control;
+                                    uint originalValue = umc.Value;
+                                    umc.Value = umc.MinValue;
+                                    Assert.AreEqual(umc.MinValue, umc.Value, "Set Minimum Correctly");
+                                    umc.Value = umc.MaxValue;
+                                    Assert.AreEqual(umc.MaxValue, umc.Value, "Set Maximum Correctly");
+                                    umc.Value = umc.MaxValue / 2;
+                                    Assert.AreEqual(umc.MaxValue / 2, umc.Value, "Set MidPoint Correctly");
+                                    umc.Value = originalValue;
+                                    Assert.AreEqual(originalValue, umc.Value, "Set Original Correctly");
+                                }
                             }
                         }
                     }

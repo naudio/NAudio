@@ -10,7 +10,7 @@ namespace NAudio.Mixer
 	/// </summary>
 	public class UnsignedMixerControl : MixerControl 
 	{
-		private MixerInterop.MIXERCONTROLDETAILS_UNSIGNED unsignedDetails;
+		private MixerInterop.MIXERCONTROLDETAILS_UNSIGNED[] unsignedDetails;
 		
 		internal UnsignedMixerControl(MixerInterop.MIXERCONTROL mixerControl,IntPtr mixerHandle, MixerFlags mixerHandleType, int nChannels) 
 		{
@@ -25,10 +25,14 @@ namespace NAudio.Mixer
 		/// <summary>
 		/// Gets the details for this control
 		/// </summary>
-		protected override void GetDetails(IntPtr pDetails) 
-		{
-			unsignedDetails = (MixerInterop.MIXERCONTROLDETAILS_UNSIGNED) Marshal.PtrToStructure(mixerControlDetails.paDetails,typeof(MixerInterop.MIXERCONTROLDETAILS_UNSIGNED));
-		}
+        protected override void GetDetails(IntPtr pDetails)
+        {
+            unsignedDetails = new MixerInterop.MIXERCONTROLDETAILS_UNSIGNED[nChannels];
+            for (int channel = 0; channel < nChannels; channel++)
+            {
+                unsignedDetails[channel] = (MixerInterop.MIXERCONTROLDETAILS_UNSIGNED)Marshal.PtrToStructure(mixerControlDetails.paDetails, typeof(MixerInterop.MIXERCONTROLDETAILS_UNSIGNED));
+            }
+        }
 
 		/// <summary>
 		/// The control value
@@ -38,13 +42,19 @@ namespace NAudio.Mixer
 			get 
 			{
 				GetControlDetails();
-				return unsignedDetails.dwValue;
+				return unsignedDetails[0].dwValue;
 			}
 			set 
 			{
-				unsignedDetails.dwValue = value;
-                mixerControlDetails.paDetails = Marshal.AllocHGlobal(Marshal.SizeOf(unsignedDetails));
-                Marshal.StructureToPtr(unsignedDetails, mixerControlDetails.paDetails, false);
+                int structSize = Marshal.SizeOf(unsignedDetails[0]);
+
+                mixerControlDetails.paDetails = Marshal.AllocHGlobal(structSize * nChannels);
+                for (int channel = 0; channel < nChannels; channel++)
+                {
+                    unsignedDetails[channel].dwValue = value;
+                    long pointer = mixerControlDetails.paDetails.ToInt64() + (structSize * channel);                    
+                    Marshal.StructureToPtr(unsignedDetails[channel], (IntPtr)pointer, false);
+                }
 				MmException.Try(MixerInterop.mixerSetControlDetails(mixerHandle, ref mixerControlDetails, MixerFlags.Value | mixerHandleType), "mixerSetControlDetails");
                 Marshal.FreeHGlobal(mixerControlDetails.paDetails);
 			}

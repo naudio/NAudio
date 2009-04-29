@@ -9,7 +9,6 @@ namespace NAudio.Mixer
 	public class Mixer 
 	{
 		private MixerInterop.MIXERCAPS caps;
-		private int mixerIndex;
         private IntPtr mixerHandle;
         private MixerFlags mixerHandleType;
 		

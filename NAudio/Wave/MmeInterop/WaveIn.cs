@@ -171,6 +171,8 @@ namespace NAudio.Wave
             {
                 if (recording)
                     StopRecording();
+                // Some drivers need the reset to properly release buffers
+                WaveInterop.waveInReset(waveInHandle);
                 if (buffers != null)
                 {
                     for (int n = 0; n < numBuffers; n++)

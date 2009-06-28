@@ -311,6 +311,7 @@ namespace NAudio.Wave.Asio
         /// Handles the exception. Throws an exception based on the error.
         /// </summary>
         /// <param name="error">The error to check.</param>
+        /// <param name="methodName">Method name</param>
         private void handleException(ASIOError error, String methodName)
         {
             if (error != ASIOError.ASE_OK && error != ASIOError.ASE_SUCCESS)

@@ -69,7 +69,7 @@ namespace NAudioTests
         [Test]
         public void CanGetMicrophoneVolume()
         {
-            using (WaveIn waveIn = new WaveIn(8000, 1))
+            using (WaveIn waveIn = new WaveIn())
             {
                 double level = waveIn.MicrophoneLevel;
                 Debug.WriteLine(String.Format("Mic Level {0}", level));

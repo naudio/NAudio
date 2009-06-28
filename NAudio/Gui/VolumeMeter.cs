@@ -30,6 +30,9 @@ namespace NAudio.Gui
             OnForeColorChanged(EventArgs.Empty);
         }
 
+        /// <summary>
+        /// On Fore Color Changed
+        /// </summary>
         protected override void OnForeColorChanged(EventArgs e)
         {
             foregroundBrush = new SolidBrush(ForeColor);

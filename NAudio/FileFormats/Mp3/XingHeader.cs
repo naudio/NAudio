@@ -52,6 +52,11 @@ namespace NAudio.Wave
             }
         }
 
+        /// <summary>
+        /// Load Xing Header
+        /// </summary>
+        /// <param name="frame">Frame</param>
+        /// <returns>Xing Header</returns>
         public static XingHeader LoadXingHeader(Mp3Frame frame)
         {
             XingHeader xingHeader = new XingHeader();
@@ -121,7 +126,6 @@ namespace NAudio.Wave
         /// <summary>
         /// Sees if a frame contains a Xing header
         /// </summary>
-        /// <param name="frame"></param>
         private XingHeader()
         {
         }

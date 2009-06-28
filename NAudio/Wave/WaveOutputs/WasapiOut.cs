@@ -28,6 +28,9 @@ namespace NAudio.Wave
         WaveFormat outputFormat;
         bool dmoResamplerNeeded;
         
+        /// <summary>
+        /// Playback Stopped
+        /// </summary>
         public event EventHandler PlaybackStopped;
 
         /// <summary>

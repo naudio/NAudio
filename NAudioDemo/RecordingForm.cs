@@ -7,23 +7,42 @@ using System.Text;
 using System.Windows.Forms;
 using NAudio.Wave;
 using System.Diagnostics;
+using NAudio.CoreAudioApi;
+using System.Collections.ObjectModel;
 
 namespace NAudioDemo
 {
     public partial class RecordingForm : Form
     {
-        WaveIn waveInStream;
+        IWaveIn waveIn;
         WaveFileWriter writer;
         string outputFilename;
 
         public RecordingForm()
         {
             InitializeComponent();
+            LoadWasapiDevicesCombo();
+        }
+
+        private void LoadWasapiDevicesCombo()
+        {
+            MMDeviceEnumerator deviceEnum = new MMDeviceEnumerator();
+            MMDeviceCollection deviceCol = deviceEnum.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active);
+
+            Collection<MMDevice> devices = new Collection<MMDevice>();
+
+            foreach (MMDevice device in deviceCol)
+            {
+                devices.Add(device);
+            }
+
+            this.comboDevices.DataSource = devices;
+            this.comboDevices.DisplayMember = "FriendlyName";
         }
 
         private void buttonStartRecording_Click(object sender, EventArgs e)
         {
-            if (waveInStream == null)
+            if (waveIn == null)
             {
                 if(outputFilename == null)
                 {
@@ -33,47 +52,80 @@ namespace NAudioDemo
                 {
                     return;
                 }
-                waveInStream = new WaveIn(8000, 1);                
-                writer = new WaveFileWriter(outputFilename, waveInStream.WaveFormat);
+                if (radioButtonWaveIn.Checked)
+                {
+                    waveIn = new WaveIn();
+                    waveIn.WaveFormat = new WaveFormat(8000, 1);
+                }
+                else
+                {
+                    waveIn = new WasapiCapture((MMDevice)comboDevices.SelectedItem);
+                    // go with the default format as WASAPI doesn't support SRC
+                }
+                
+                writer = new WaveFileWriter(outputFilename, waveIn.WaveFormat);
 
-                waveInStream.DataAvailable += new EventHandler<WaveInEventArgs>(waveInStream_DataAvailable);
-                waveInStream.StartRecording();
+                waveIn.DataAvailable += new EventHandler<WaveInEventArgs>(waveInStream_DataAvailable);
+                waveIn.RecordingStopped += new EventHandler(waveIn_RecordingStopped);
+                waveIn.StartRecording();
                 buttonStartRecording.Enabled = false;                                
+            }
+        }
+
+        void waveIn_RecordingStopped(object sender, EventArgs e)
+        {
+            if (this.InvokeRequired)
+            {
+                this.BeginInvoke(new EventHandler(waveIn_RecordingStopped), sender, e);
+            }
+            else
+            {
+                waveIn.Dispose();
+                waveIn = null;
+                writer.Close();
+                writer = null;
+                buttonStartRecording.Enabled = true;
+                progressBar1.Value = 0;
+                if (checkBoxAutoPlay.Checked)
+                {
+                    Process.Start(outputFilename);
+                }
             }
         }
 
         void waveInStream_DataAvailable(object sender, WaveInEventArgs e)
         {
-            writer.WriteData(e.Buffer, 0, e.BytesRecorded);
-            int secondsRecorded = (int) (writer.Length / writer.WaveFormat.AverageBytesPerSecond);
-            if (secondsRecorded >= 30)
+            if (this.InvokeRequired)
             {
-                StopRecording();
+                //Debug.WriteLine("Data Available");
+                this.BeginInvoke(new EventHandler<WaveInEventArgs>(waveInStream_DataAvailable), sender, e);
             }
             else
             {
-                progressBar1.Value = secondsRecorded;                
+                //Debug.WriteLine("Flushing Data Available");
+                writer.WriteData(e.Buffer, 0, e.BytesRecorded);
+                int secondsRecorded = (int)(writer.Length / writer.WaveFormat.AverageBytesPerSecond);
+                if (secondsRecorded >= 30)
+                {
+                    StopRecording();
+                }
+                else
+                {
+                    progressBar1.Value = secondsRecorded;
+                }
             }
         }
 
         void StopRecording()
         {
-            waveInStream.StopRecording();
-            waveInStream.Dispose();
-            waveInStream = null;
-            writer.Close();
-            writer = null;
-            buttonStartRecording.Enabled = true;
-            progressBar1.Value = 0;
-            if (checkBoxAutoPlay.Checked)
-            {
-                Process.Start(outputFilename);
-            }
+            Debug.WriteLine("StopRecording");
+            waveIn.StopRecording();
+
         }
 
         private void buttonStopRecording_Click(object sender, EventArgs e)
         {
-            if (waveInStream != null)
+            if (waveIn != null)
             {
                 StopRecording();
             }

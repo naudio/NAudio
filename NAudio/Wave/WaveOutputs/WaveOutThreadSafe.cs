@@ -144,7 +144,7 @@ namespace NAudio.Wave
         /// <summary>
         /// Initialises the WaveOut device
         /// </summary>
-        /// <param name="waveStream">WaveStream to play</param>
+        /// <param name="waveProvider">Wave provider to play</param>
         public void Init(IWaveProvider waveProvider)
         {
             if(Thread.CurrentThread.ManagedThreadId != waveOutThread.ManagedThreadId)

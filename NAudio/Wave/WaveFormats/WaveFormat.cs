@@ -32,6 +32,17 @@ namespace NAudio.Wave
 		{
 
 		}
+        
+        /// <summary>
+        /// Creates a new 16 bit wave format with the specified sample
+        /// rate and channel count
+        /// </summary>
+        /// <param name="sampleRate">Sample Rate</param>
+        /// <param name="channels">Number of channels</param>
+        public WaveFormat(int sampleRate, int channels)
+            : this(sampleRate, 16, channels)
+        {
+        }
 
         /// <summary>
         /// Gets the size of a wave buffer equivalent to the latency in milliseconds.

@@ -38,6 +38,7 @@ namespace NAudio.CoreAudioApi
         /// Gets a pointer to the buffer
         /// </summary>
         /// <param name="numFramesToRead">Number of frames to read</param>
+        /// <param name="bufferFlags">Buffer flags</param>
         /// <returns>Pointer to the buffer</returns>
         public IntPtr GetBuffer(
             out int numFramesToRead,

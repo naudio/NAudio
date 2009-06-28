@@ -74,6 +74,7 @@
     <Compile Include="CoreAudioApi\Interfaces\IAudioRenderClient.cs" />
     <Compile Include="CoreAudioApi\MMDeviceCollection.cs" />
     <Compile Include="CoreAudioApi\PropertyKeys.cs" />
+    <Compile Include="CoreAudioApi\WasapiCapture.cs" />
     <Compile Include="Daw\MeasuresBeatsTicks.cs" />
     <Compile Include="Daw\TempoMap.cs" />
     <Compile Include="Dmo\AudioMediaSubtypes.cs" />
@@ -328,6 +329,7 @@
     <Compile Include="Wave\WaveFormats\WaveFormatExtensible.cs" />
     <Compile Include="Wave\WaveFormats\WaveFormatExtraData.cs" />
     <Compile Include="Wave\WaveFormats\WmaWaveFormat.cs" />
+    <Compile Include="Wave\WaveInputs\IWaveIn.cs" />
     <Compile Include="Wave\WaveOutputs\AsioOut.cs" />
     <Compile Include="Wave\WaveOutputs\IWaveBuffer.cs" />
     <Compile Include="Wave\WaveOutputs\IWavePlayer.cs" />

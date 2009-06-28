@@ -43,16 +43,25 @@ namespace NAudio.Wave
             Marshal.FreeHGlobal(pNativeData);
         }
 
+        /// <summary>
+        /// Get native data size
+        /// </summary>        
         public int GetNativeDataSize()
         {
             throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// Marshal managed to native
+        /// </summary>
         public IntPtr MarshalManagedToNative(object ManagedObj)
         {
             return WaveFormat.MarshalToPtr((WaveFormat)ManagedObj);            
         }
 
+        /// <summary>
+        /// Marshal Native to Managed
+        /// </summary>
         public object MarshalNativeToManaged(IntPtr pNativeData)
         {
             return WaveFormat.MarshalFromPtr(pNativeData);

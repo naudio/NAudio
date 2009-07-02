@@ -4,6 +4,7 @@ using System.Text;
 using NAudio.CoreAudioApi;
 using System.Threading;
 using System.Runtime.InteropServices;
+using System.Diagnostics;
 
 namespace NAudio.Wave
 {
@@ -22,7 +23,7 @@ namespace NAudio.Wave
         bool isUsingEventSync;
         EventWaitHandle frameEventWaitHandle;
         WaveBuffer readBuffer;
-        PlaybackState playbackState;
+        volatile PlaybackState playbackState;
         Thread playThread;
         
         WaveFormat outputFormat;
@@ -94,8 +95,6 @@ namespace NAudio.Wave
                 }
 
                 // fill a whole buffer
-                //bufferFrameCount = audioClient.BufferSize;
-                //bytesPerFrame = audioClient.MixFormat.Channels * audioClient.MixFormat.BitsPerSample / 8;
                 bufferFrameCount = audioClient.BufferSize;
                 bytesPerFrame = outputFormat.Channels * outputFormat.BitsPerSample / 8;
                 readBuffer = new WaveBuffer(bufferFrameCount * bytesPerFrame);
@@ -110,9 +109,12 @@ namespace NAudio.Wave
                 {
                     // If using Event Sync, Wait for notification from AudioClient or Sleep half latency
                     int indexHandle = 0;
-                    if ( isUsingEventSync ) {
+                    if (isUsingEventSync)
+                    {
                         indexHandle = WaitHandle.WaitAny(waitHandles, 3 * latencyMilliseconds, false);
-                    } else {
+                    }
+                    else
+                    {
                         Thread.Sleep(latencyMilliseconds / 2);
                     }
 
@@ -121,10 +123,13 @@ namespace NAudio.Wave
                     {
                         // See how much buffer space is available.
                         int numFramesPadding = 0;
-                        if ( isUsingEventSync) {
+                        if (isUsingEventSync)
+                        {
                             // In exclusive mode, always ask the max = bufferFrameCount = audioClient.BufferSize
                             numFramesPadding = (shareMode == AudioClientShareMode.Shared) ? audioClient.CurrentPadding : 0;
-                        } else {
+                        }
+                        else
+                        {
                             numFramesPadding = audioClient.CurrentPadding;
                         }
                         int numFramesAvailable = bufferFrameCount - numFramesPadding;
@@ -171,6 +176,10 @@ namespace NAudio.Wave
             }
             Marshal.Copy(readBuffer.ByteBuffer,0,buffer,read);
             int actualFrameCount = read / bytesPerFrame;
+            /*if (actualFrameCount != frameCount)
+            {
+                Debug.WriteLine(String.Format("WASAPI wanted {0} frames, supplied {1}", frameCount, actualFrameCount ));
+            }*/
             renderClient.ReleaseBuffer(actualFrameCount,AudioClientBufferFlags.None);
         }
 

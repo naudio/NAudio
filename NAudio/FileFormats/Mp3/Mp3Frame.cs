@@ -104,6 +104,10 @@ namespace NAudio.Wave
             // try for a header
             long headerStartPosition = input.Position;
             byte[] headerBytes = reader.ReadBytes(4);
+
+            // Added -jam to play wrapped mp3 files via RIFF
+            headerBytes = CheckForRiff(input, reader, headerBytes);
+
             if ((headerBytes[0] == 0xFF) && ((headerBytes[1] & 0xE0) == 0xE0))
             {
                 // TODO: could do with a bitstream class here
@@ -156,6 +160,31 @@ namespace NAudio.Wave
 
             rawData = reader.ReadBytes(frameLengthInBytes);
 
+        }
+
+        private static byte[] CheckForRiff(Stream input, BinaryReader reader, byte[] headerBytes)
+        {
+            if ((headerBytes[0] == 'R') &&
+                (headerBytes[1] == 'I') &&
+                (headerBytes[2] == 'F') &&
+                (headerBytes[3] == 'F'))
+            {
+                // Backup 4 bytes
+                input.Position -= 4;
+
+                // Now start parsing
+                WaveFormat format;
+                long dataChunkPosition;
+                int dataChunkLenght;
+                var chunks = new List<RiffChunk>();
+
+                WaveFileReader.ReadWaveHeader(input, out format, out dataChunkPosition, out dataChunkLenght, chunks);
+               
+                // Now read the actual mp3 header
+                input.Position = dataChunkPosition;
+                headerBytes = reader.ReadBytes(4);
+            }
+            return headerBytes;
         }
 
         /// <summary>

@@ -209,39 +209,19 @@ namespace NAudio.Wave
         /// <summary>
         /// Microphone Level
         /// </summary>
-        public double MicrophoneLevel
+        public MixerLine GetMixerLine()
         {
-            get
+            // TODO use mixerGetID instead to see if this helps with XP
+            MixerLine mixerLine;
+            if (waveInHandle != IntPtr.Zero)
             {
-                // TODO use mixerGetID instead to see if this helps with XP
-                MixerLine mixerLine = new MixerLine(this.waveInHandle, 0, MixerFlags.WaveInHandle);
-                UnsignedMixerControl volume = (UnsignedMixerControl)FindMicrophoneSourceVolume(mixerLine);
-                return volume.Percent;
+                mixerLine = new MixerLine(this.waveInHandle, 0, MixerFlags.WaveInHandle);
             }
-            set
+            else
             {
-                MixerLine mixerLine = new MixerLine(this.waveInHandle, 0, MixerFlags.WaveInHandle);
-                UnsignedMixerControl volume = (UnsignedMixerControl)FindMicrophoneSourceVolume(mixerLine);
-                volume.Percent = value;
+                mixerLine = new MixerLine((IntPtr)DeviceNumber, 0, MixerFlags.WaveIn);
             }
-        }
-
-        private MixerControl FindMicrophoneSourceVolume(MixerLine mixerLine)
-        {
-            foreach (MixerLine source in mixerLine.Sources)
-            {
-                if (source.ComponentType == MixerLineComponentType.SourceMicrophone)
-                {
-                    foreach (MixerControl control in source.Controls)
-                    {
-                        if (control.ControlType == MixerControlType.Volume)
-                        {
-                            return control;
-                        }
-                    }
-                }
-            }
-            throw new InvalidOperationException("Could not find the microphone volume");
+            return mixerLine;
         }
 
         /// <summary>

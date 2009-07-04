@@ -1,0 +1,15 @@
+﻿<UserControl x:Class="NAudioWpfDemo.WaveFormControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    >
+    <UserControl.Foreground>
+        <LinearGradientBrush Opacity="1">
+            <GradientStop Color="#FF004000" Offset="0" />
+            <GradientStop Color="#FF00EF00" Offset="0.5" />
+            <GradientStop Color="#FF004000" Offset="1" />
+        </LinearGradientBrush>
+    </UserControl.Foreground>
+    <Canvas x:Name="mainCanvas">
+            
+    </Canvas>
+</UserControl>

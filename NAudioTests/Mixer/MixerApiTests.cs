@@ -67,12 +67,12 @@ namespace NAudioTests
         }
 
         [Test]
-        public void CanGetMicrophoneVolume()
+        public void CanGetWaveInMixerLine()
         {
             using (WaveIn waveIn = new WaveIn())
             {
-                double level = waveIn.MicrophoneLevel;
-                Debug.WriteLine(String.Format("Mic Level {0}", level));
+                MixerLine line = waveIn.GetMixerLine();                
+                //Debug.WriteLine(String.Format("Mic Level {0}", level));
             }
         }
 

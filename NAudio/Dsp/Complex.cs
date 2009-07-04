@@ -12,10 +12,10 @@ namespace NAudio.Dsp
         /// <summary>
         /// Real Part
         /// </summary>
-        public double X;
+        public float X;
         /// <summary>
         /// Imaginary Part
         /// </summary>
-        public double Y;
+        public float Y;
     }
 }

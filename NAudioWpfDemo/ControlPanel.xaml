@@ -1,0 +1,18 @@
+﻿<UserControl x:Class="NAudioWpfDemo.ControlPanel"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Height="Auto" Width="Auto">
+    <Grid Margin="5">
+        <StackPanel Orientation="Horizontal" >
+        <Button Command="{Binding CaptureCommand}" Margin="2" ToolTip="Record">
+            <Ellipse Fill="Red" Width="15" Height="15" Margin="3"/>
+        </Button>
+        <Button Command="{Binding StopCommand}" Margin="2" ToolTip="Stop">
+            <Rectangle Fill="DarkBlue" Width="15" Height="15" Margin="3" RadiusX="2" RadiusY="2"/>
+        </Button>
+            <Button Command="{Binding PlayFileCommand}" Margin="2" ToolTip="Play">
+                <Path Fill="DarkGreen" Margin="3" Width="15" Height="15" Data="M 0,0 L 1,1 L 0,2 Z" Stretch="Fill" StrokeLineJoin="Round"/>
+            </Button>
+        </StackPanel>
+    </Grid>
+</UserControl>

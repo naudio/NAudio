@@ -14,7 +14,7 @@ namespace NAudio.Dsp
         public static void FFT(bool forward, int m, Complex[] data)
 		{
             int n, i, i1, j, k, i2, l, l1, l2;
-            double c1, c2, tx, ty, t1, t2, u1, u2, z;
+            float c1, c2, tx, ty, t1, t2, u1, u2, z;
 
             // Calculate the number of points
             n = 1;
@@ -46,15 +46,15 @@ namespace NAudio.Dsp
             }
 
             // Compute the FFT 
-            c1 = -1.0;
-            c2 = 0.0;
+            c1 = -1.0f;
+            c2 = 0.0f;
             l2 = 1;
             for (l = 0; l < m; l++)
             {
                 l1 = l2;
                 l2 <<= 1;
-                u1 = 1.0;
-                u2 = 0.0;
+                u1 = 1.0f;
+                u2 = 0.0f;
                 for (j = 0; j < l1; j++)
                 {
                     for (i = j; i < n; i += l2)
@@ -71,10 +71,10 @@ namespace NAudio.Dsp
                     u2 = u1 * c2 + u2 * c1;
                     u1 = z;
                 }
-                c2 = Math.Sqrt((1.0 - c1) / 2.0);
+                c2 = (float)Math.Sqrt((1.0f - c1) / 2.0f);
                 if (forward)
                     c2 = -c2;
-                c1 = Math.Sqrt((1.0 + c1) / 2.0);
+                c1 = (float)Math.Sqrt((1.0f + c1) / 2.0f);
             }
 
             // Scaling for forward transform 
@@ -87,6 +87,5 @@ namespace NAudio.Dsp
                 }
             }
         }
-
 	}
 }

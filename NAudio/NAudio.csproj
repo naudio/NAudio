@@ -338,6 +338,8 @@
     <Compile Include="Wave\WaveOutputs\PlaybackState.cs" />
     <Compile Include="Wave\WaveOutputs\WasapiOut.cs" />
     <Compile Include="Wave\WaveOutputs\WaveBuffer.cs" />
+    <Compile Include="Wave\MmeInterop\WaveCallbackInfo.cs" />
+    <Compile Include="Wave\MmeInterop\WaveCallbackStrategy.cs" />
     <Compile Include="Wave\WaveOutputs\WaveFileWriter.cs" />
     <Compile Include="Wave\WaveOutputs\WaveOut.cs" />
     <Compile Include="Wave\WaveOutputs\WaveOutThreadSafe.cs" />

@@ -12,13 +12,12 @@ namespace NAudio.Wave
         private IntPtr hWaveOut;
         private WaveOutBuffer[] buffers;
         private IWaveProvider waveStream;
-        private int numBuffers;
+        
         private PlaybackState playbackState;
         private WaveInterop.WaveOutCallback callback;
-        private int devNumber;
-        private int desiredLatency;
+        
         private float volume = 1;
-        private WaveOutWindow waveOutWindow;
+        private WaveCallbackInfo callbackInfo;
         private object waveOutLock;
 
         /// <summary>
@@ -51,20 +50,40 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// Opens a WaveOut device
+        /// Gets or sets the desired latency in milliseconds
+        /// Should be set before a call to Init
         /// </summary>
-        /// <param name="devNumber">This is the device number to open. 
-        /// This must be between 0 and <see>DeviceCount</see> - 1.</param>
-        /// <param name="desiredLatency">The number of milliseconds of audio to read before 
-        /// streaming to the audio device. This will be broken into 3 buffers</param>
-        /// <param name="parentWindow">If this parameter is non-null, the Wave Out Messages
-        /// will be sent to the message loop of the supplied control. This is considered a
-        /// safer way to use the waveOut functionality. If this parameter is null, we use a
-        /// lock to ensure that no two threads can call WaveOut functions at the same time, which
-        /// can cause lockups or crashes with some drivers</param>
-        [Obsolete]
-        public WaveOut(int devNumber, int desiredLatency, System.Windows.Forms.Control parentWindow)
-            : this(devNumber, desiredLatency, parentWindow != null)
+        public int DesiredLatency { get; set; }
+
+        /// <summary>
+        /// Gets or sets the number of buffers used
+        /// Should be set before a call to Init
+        /// </summary>
+        public int NumberOfBuffers { get; set; }
+
+        /// <summary>
+        /// Gets or sets the device number
+        /// Should be set before a call to Init
+        /// This must be between 0 and <see>DeviceCount</see> - 1.
+        /// </summary>
+        public int DeviceNumber { get; set; }
+
+
+        /// <summary>
+        /// Creates a default WaveOut device
+        /// WARNING: only use this constructor on a GUI thread
+        /// </summary>
+        public WaveOut()
+            : this(WaveCallbackInfo.NewWindow())
+        {
+        }
+
+        /// <summary>
+        /// Creates a WaveOut device using the specified window handle for callbacks
+        /// </summary>
+        /// <param name="windowHandle">A valid window handle</param>
+        public WaveOut(IntPtr windowHandle)
+            : this(WaveCallbackInfo.ExistingWindow(windowHandle))
         {
 
         }
@@ -72,26 +91,17 @@ namespace NAudio.Wave
         /// <summary>
         /// Opens a WaveOut device
         /// </summary>
-        /// <param name="devNumber">This is the device number to open. 
-        /// This must be between 0 and <see>DeviceCount</see> - 1.</param>
-        /// <param name="desiredLatency">The number of milliseconds of audio to read before 
-        /// streaming to the audio device. This will be broken into 3 buffers</param>
-        /// <param name="windowCallback">If this parameter is true, the Wave Out Messages
-        /// will be sent to the message loop of a Windows form. This is considered a
-        /// safer way to use the waveOut functionality. If this parameter is false, we use a
-        /// lock to ensure that no two threads can call WaveOut functions at the same time, which
-        /// can cause lockups or crashes with some drivers</param>
-        public WaveOut(int devNumber, int desiredLatency, bool windowCallback)
+        public WaveOut(WaveCallbackInfo callbackInfo)
         {
-            this.devNumber = devNumber;
-            this.desiredLatency = desiredLatency;
+            // set default values up
+            this.DeviceNumber = 0;
+            this.DesiredLatency = 300;
+            this.NumberOfBuffers = 3;
+
             this.callback = new WaveInterop.WaveOutCallback(Callback);
             this.waveOutLock = new object();
-            if (windowCallback)
-            {
-                waveOutWindow = new WaveOutWindow(callback);
-                //waveOutWindow.AssignHandle(windowHandle);
-            }
+            this.callbackInfo = callbackInfo;
+            callbackInfo.Connect(this.callback);
         }
 
         /// <summary>
@@ -101,26 +111,18 @@ namespace NAudio.Wave
         public void Init(IWaveProvider waveProvider)
         {
             this.waveStream = waveProvider;
-            int bufferSize = waveProvider.WaveFormat.ConvertLatencyToByteSize((desiredLatency + 2) / 3); //waveStream.GetReadSize((desiredLatency + 2) / 3);
-            this.numBuffers = 3;
+            int bufferSize = waveProvider.WaveFormat.ConvertLatencyToByteSize((DesiredLatency + NumberOfBuffers - 1) / NumberOfBuffers);            
 
             MmResult result;
             lock (waveOutLock)
             {
-                if (waveOutWindow == null)
-                {
-                    result = WaveInterop.waveOutOpen(out hWaveOut, devNumber, waveStream.WaveFormat, callback, 0, WaveInterop.CallbackFunction);
-                }
-                else
-                {
-                    result = WaveInterop.waveOutOpenWindow(out hWaveOut, devNumber, waveStream.WaveFormat, waveOutWindow.Handle, 0, WaveInterop.CallbackWindow);
-                }
+                result = callbackInfo.WaveOutOpen(out hWaveOut, DeviceNumber, waveStream.WaveFormat, callback);
             }
-            MmException.Try(result,"waveOutOpen");
+            MmException.Try(result, "waveOutOpen");
 
-            buffers = new WaveOutBuffer[numBuffers];
+            buffers = new WaveOutBuffer[NumberOfBuffers];
             playbackState = PlaybackState.Stopped;
-            for (int n = 0; n < numBuffers; n++)
+            for (int n = 0; n < NumberOfBuffers; n++)
             {
                 buffers[n] = new WaveOutBuffer(hWaveOut, bufferSize, waveStream, waveOutLock);
             }
@@ -135,7 +137,7 @@ namespace NAudio.Wave
             {                
                 if (playbackState == PlaybackState.Stopped)
                 {
-                    for (int n = 0; n < numBuffers; n++)
+                    for (int n = 0; n < NumberOfBuffers; n++)
                     {
                         System.Diagnostics.Debug.Assert(buffers[n].InQueue == false, "Adding a buffer that was already queued on play");
                         if (!buffers[n].OnDone())
@@ -146,7 +148,6 @@ namespace NAudio.Wave
                 }
                 Resume();
                 playbackState = PlaybackState.Playing;
-
             }
         }
 
@@ -155,14 +156,19 @@ namespace NAudio.Wave
         /// </summary>
         public void Pause()
         {
-            MmResult result;
-            lock (waveOutLock)
+            if (playbackState == PlaybackState.Playing)
             {
-                result = WaveInterop.waveOutPause(hWaveOut);
+                MmResult result;
+                lock (waveOutLock)
+                {
+                    result = WaveInterop.waveOutPause(hWaveOut);
+                }
+                if (result != MmResult.NoError)
+                {
+                    throw new MmException(result, "waveOutPause");
+                }
+                playbackState = PlaybackState.Paused;
             }
-            if (result != MmResult.NoError)
-                throw new MmException(result, "waveOutPause");
-            playbackState = PlaybackState.Paused;
         }
 
         /// <summary>
@@ -170,14 +176,19 @@ namespace NAudio.Wave
         /// </summary>
         public void Resume()
         {
-            MmResult result;
-            lock (waveOutLock)
+            if (playbackState == PlaybackState.Paused)
             {
-                result = WaveInterop.waveOutRestart(hWaveOut);
+                MmResult result;
+                lock (waveOutLock)
+                {
+                    result = WaveInterop.waveOutRestart(hWaveOut);
+                }
+                if (result != MmResult.NoError)
+                {
+                    throw new MmException(result, "waveOutRestart");
+                }
+                playbackState = PlaybackState.Playing;
             }
-            if (result != MmResult.NoError)
-                throw new MmException(result, "waveOutRestart");
-            playbackState = PlaybackState.Playing;
         }
 
         /// <summary>
@@ -185,14 +196,19 @@ namespace NAudio.Wave
         /// </summary>
         public void Stop()
         {
-            playbackState = PlaybackState.Stopped;
-            MmResult result;
-            lock (waveOutLock)
+            if (playbackState != PlaybackState.Stopped)
             {
-                result = WaveInterop.waveOutReset(hWaveOut);
-            }
-            if (result != MmResult.NoError)
-                throw new MmException(result, "waveOutReset");
+                MmResult result;
+                lock (waveOutLock)
+                {
+                    result = WaveInterop.waveOutReset(hWaveOut);
+                }
+                if (result != MmResult.NoError)
+                {
+                    throw new MmException(result, "waveOutReset");
+                }
+                playbackState = PlaybackState.Stopped;
+            } 
         }
 
         /// <summary>
@@ -226,9 +242,7 @@ namespace NAudio.Wave
                 }
                 MmException.Try(result,"waveOutSetVolume");
             }
-
         }
-
 
         #region Dispose Pattern
 
@@ -248,25 +262,29 @@ namespace NAudio.Wave
         protected void Dispose(bool disposing)
         {
             Stop();
+
+            if (disposing)
+            {
+                if (buffers != null)
+                {
+                    for (int n = 0; n < buffers.Length; n++)
+                    {
+                        if (buffers[n] != null)
+                        {
+                            buffers[n].Dispose();
+                        }
+                    }
+                    buffers = null;
+                }
+            }
+
             lock (waveOutLock)
             {
                 WaveInterop.waveOutClose(hWaveOut);
             }
             if (disposing)
             {
-                if (buffers != null)
-                {
-                    for (int n = 0; n < numBuffers; n++)
-                    {
-                        buffers[n].Dispose();
-                    }
-                    buffers = null;
-                }
-                if (waveOutWindow != null)
-                {
-                    //waveOutWindow.ReleaseHandle();
-                    waveOutWindow = null;
-                }
+                callbackInfo.Disconnect();
             }
         }
 

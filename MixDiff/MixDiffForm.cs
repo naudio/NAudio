@@ -163,7 +163,7 @@ namespace MarkHeath.AudioUtils
                 }
                 if (wavePlayer == null)
                 {
-                    wavePlayer = new WaveOut(-1, 300, true);
+                    wavePlayer = new WaveOut();
                     wavePlayer.Init(mixer);                
                 }
                 wavePlayer.Play();

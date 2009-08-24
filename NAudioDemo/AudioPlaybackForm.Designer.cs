@@ -178,6 +178,8 @@
             // checkBoxWaveOutWindow
             // 
             this.checkBoxWaveOutWindow.AutoSize = true;
+            this.checkBoxWaveOutWindow.Checked = true;
+            this.checkBoxWaveOutWindow.CheckState = System.Windows.Forms.CheckState.Checked;
             this.checkBoxWaveOutWindow.Location = new System.Drawing.Point(25, 39);
             this.checkBoxWaveOutWindow.Name = "checkBoxWaveOutWindow";
             this.checkBoxWaveOutWindow.Size = new System.Drawing.Size(126, 17);
@@ -265,25 +267,25 @@
             // toolStripLabel1
             // 
             this.toolStripLabel1.Name = "toolStripLabel1";
-            this.toolStripLabel1.Size = new System.Drawing.Size(80, 22);
+            this.toolStripLabel1.Size = new System.Drawing.Size(73, 22);
             this.toolStripLabel1.Text = "Current Time:";
             // 
             // labelCurrentTime
             // 
             this.labelCurrentTime.Name = "labelCurrentTime";
-            this.labelCurrentTime.Size = new System.Drawing.Size(34, 22);
+            this.labelCurrentTime.Size = new System.Drawing.Size(35, 22);
             this.labelCurrentTime.Text = "00:00";
             // 
             // toolStripLabel3
             // 
             this.toolStripLabel3.Name = "toolStripLabel3";
-            this.toolStripLabel3.Size = new System.Drawing.Size(67, 22);
+            this.toolStripLabel3.Size = new System.Drawing.Size(60, 22);
             this.toolStripLabel3.Text = "Total Time:";
             // 
             // labelTotalTime
             // 
             this.labelTotalTime.Name = "labelTotalTime";
-            this.labelTotalTime.Size = new System.Drawing.Size(34, 22);
+            this.labelTotalTime.Size = new System.Drawing.Size(35, 22);
             this.labelTotalTime.Text = "00:00";
             // 
             // trackBarPosition

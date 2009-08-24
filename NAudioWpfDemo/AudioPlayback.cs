@@ -104,7 +104,7 @@ namespace NAudioWpfDemo
 
         private void CreateDevice()
         {
-            playbackDevice = new WaveOut(0, 250, true);
+            playbackDevice = new WaveOut();
         }
 
         public void Play()

@@ -14,30 +14,30 @@ namespace NAudio.Dmo
         /// Get audio effect names
         /// </summary>
         /// <returns>Audio effect names</returns>
-        public static IEnumerable<string> GetAudioEffectNames()
+        public static IEnumerable<DmoDescriptor> GetAudioEffectNames()
         {
-            return GetNames(DmoGuids.DMOCATEGORY_AUDIO_EFFECT);
+            return GetDmos(DmoGuids.DMOCATEGORY_AUDIO_EFFECT);
         }
 
         /// <summary>
         /// Get audio encoder names
         /// </summary>
         /// <returns>Audio encoder names</returns>
-        public static IEnumerable<string> GetAudioEncoderNames()
+        public static IEnumerable<DmoDescriptor> GetAudioEncoderNames()
         {
-            return GetNames(DmoGuids.DMOCATEGORY_AUDIO_ENCODER);
+            return GetDmos(DmoGuids.DMOCATEGORY_AUDIO_ENCODER);
         }
 
         /// <summary>
         /// Get audio decoder names
         /// </summary>
         /// <returns>Audio decoder names</returns>
-        public static IEnumerable<string> GetAudioDecoderNames()
+        public static IEnumerable<DmoDescriptor> GetAudioDecoderNames()
         {
-            return GetNames(DmoGuids.DMOCATEGORY_AUDIO_DECODER);
+            return GetDmos(DmoGuids.DMOCATEGORY_AUDIO_DECODER);
         }
         
-        private static IEnumerable<string> GetNames(Guid category)
+        private static IEnumerable<DmoDescriptor> GetDmos(Guid category)
         {
             IEnumDmo enumDmo;
             int hresult = DmoInterop.DMOEnum(ref category, DmoEnumFlags.None, 0, null, 0, null, out enumDmo);
@@ -53,7 +53,7 @@ namespace NAudio.Dmo
                 {
                     string name = Marshal.PtrToStringUni(namePointer);
                     Marshal.FreeCoTaskMem(namePointer);
-                    yield return name;
+                    yield return new DmoDescriptor(name, guid);
                 }
             } while (itemsFetched > 0);
         }

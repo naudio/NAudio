@@ -24,5 +24,12 @@ namespace NAudio.Dmo
         [DllImport("msdmo.dll")]
         public static extern int MoInitMediaType(
             [In,Out] ref DmoMediaType mediaType, int formatBlockBytes);
+
+        [DllImport("msdmo.dll")]
+        public static extern int DMOGetName([In] ref Guid clsidDMO,
+            // preallocate 80 characters
+            [Out] StringBuilder name);
+
+
     }
 }

@@ -56,6 +56,7 @@
     <Compile Include="Acm\WaveFormatConversionStreamTests.cs" />
     <Compile Include="Dmo\DmoTests.cs" />
     <Compile Include="Dmo\ResamplerDmoStreamTests.cs" />
+    <Compile Include="Dmo\ResamplerDmoTests.cs" />
     <Compile Include="Midi\MidiEventCollectionTest.cs" />
     <Compile Include="Mixer\MixerApiTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -14,13 +14,16 @@ namespace NAudioWpfDemo
         int captureSeconds;
         AudioGraph audioGraph;
         IWaveFormRenderer waveFormRenderer;
+        SpectrumAnalyser analyzer;
 
-        public ControlPanelViewModel(IWaveFormRenderer waveFormRenderer)
+        public ControlPanelViewModel(IWaveFormRenderer waveFormRenderer, SpectrumAnalyser analyzer)
         {
             this.waveFormRenderer = waveFormRenderer;
+            this.analyzer = analyzer;
             this.audioGraph = new AudioGraph();
             audioGraph.CaptureComplete += new EventHandler(audioGraph_CaptureComplete);
             audioGraph.MaximumCalculated += new EventHandler<MaxSampleEventArgs>(audioGraph_MaximumCalculated);
+            audioGraph.FftCalculated += new EventHandler<FftEventArgs>(audioGraph_FftCalculated);
             this.captureSeconds = 10;
             this.NotificationsPerSecond = 100;
 
@@ -39,6 +42,11 @@ namespace NAudioWpfDemo
             StopCommand = new RelayCommand(
                         () => this.Stop(),
                         () => true);
+        }
+
+        void audioGraph_FftCalculated(object sender, FftEventArgs e)
+        {
+            analyzer.Update(e.Result);
         }
 
         void audioGraph_MaximumCalculated(object sender, MaxSampleEventArgs e)

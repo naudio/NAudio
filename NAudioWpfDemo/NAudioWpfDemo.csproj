@@ -76,6 +76,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="SpectrumAnalyser.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="WaveFormControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -124,6 +128,9 @@
     </Compile>
     <Compile Include="RelayCommand.cs" />
     <Compile Include="SampleAggregator.cs" />
+    <Compile Include="SpectrumAnalyser.xaml.cs">
+      <DependentUpon>SpectrumAnalyser.xaml</DependentUpon>
+    </Compile>
     <Compile Include="WaveFormControl.xaml.cs">
       <DependentUpon>WaveFormControl.xaml</DependentUpon>
     </Compile>

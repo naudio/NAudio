@@ -27,6 +27,12 @@ namespace NAudioWpfDemo
             remove { aggregator.MaximumCalculated -= value; }
         }
 
+        public event EventHandler<FftEventArgs> FftCalculated
+        {
+            add { aggregator.FftCalculated += value; }
+            remove { aggregator.FftCalculated -= value; }
+        }
+
         public AudioGraph()
         {
             playback = new AudioPlayback();
@@ -35,6 +41,7 @@ namespace NAudioWpfDemo
             capture.OnSample += OnSample;
             aggregator = new SampleAggregator();
             aggregator.NotificationCount = 100;
+            aggregator.PerformFFT = true;
         }
 
         void OnSample(object sender, SampleEventArgs e)

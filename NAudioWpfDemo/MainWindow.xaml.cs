@@ -12,7 +12,7 @@ namespace NAudioWpfDemo
         {
             InitializeComponent();
             this.Closing += new System.ComponentModel.CancelEventHandler(MainWindow_Closing);
-            viewModel = new ControlPanelViewModel(this.waveForm);
+            viewModel = new ControlPanelViewModel(this.waveForm, this.analyzer);
             this.controlPanel.DataContext = viewModel;
         }
 

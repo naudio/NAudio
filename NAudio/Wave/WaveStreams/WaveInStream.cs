@@ -7,6 +7,7 @@ namespace NAudio.Wave
     /// <summary>
     /// A class to allow recording from WaveIn
     /// </summary>
+    [Obsolete("Use WaveIn instead")]
     public class WaveInStream : WaveStream
     {
         private IntPtr waveInHandle;

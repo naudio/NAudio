@@ -65,7 +65,7 @@ namespace NAudioDemo
                 
                 writer = new WaveFileWriter(outputFilename, waveIn.WaveFormat);
 
-                waveIn.DataAvailable += new EventHandler<WaveInEventArgs>(waveInStream_DataAvailable);
+                waveIn.DataAvailable += new EventHandler<WaveInEventArgs>(waveIn_DataAvailable);
                 waveIn.RecordingStopped += new EventHandler(waveIn_RecordingStopped);
                 waveIn.StartRecording();
                 buttonStartRecording.Enabled = false;                                
@@ -93,12 +93,12 @@ namespace NAudioDemo
             }
         }
 
-        void waveInStream_DataAvailable(object sender, WaveInEventArgs e)
+        void waveIn_DataAvailable(object sender, WaveInEventArgs e)
         {
             if (this.InvokeRequired)
             {
                 //Debug.WriteLine("Data Available");
-                this.BeginInvoke(new EventHandler<WaveInEventArgs>(waveInStream_DataAvailable), sender, e);
+                this.BeginInvoke(new EventHandler<WaveInEventArgs>(waveIn_DataAvailable), sender, e);
             }
             else
             {

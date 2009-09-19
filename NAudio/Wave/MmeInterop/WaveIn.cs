@@ -15,8 +15,8 @@ namespace NAudio.Wave
         private IntPtr waveInHandle;
         private volatile bool recording;
         private WaveInBuffer[] buffers;
-        private WaveInterop.WaveInCallback callback;
-        private WaveInWindow waveInWindow;
+        private WaveInterop.WaveCallback callback;
+        private WaveCallbackInfo callbackInfo;
 
         /// <summary>
         /// Indicates recorded data is available 
@@ -32,12 +32,33 @@ namespace NAudio.Wave
         /// Prepares a Wave input device for recording
         /// </summary>
         public WaveIn()
+            : this(WaveCallbackInfo.NewWindow())
+        {
+
+        }
+
+        /// <summary>
+        /// Creates a WaveIn device using the specified window handle for callbacks
+        /// </summary>
+        /// <param name="windowHandle">A valid window handle</param>
+        public WaveIn(IntPtr windowHandle)
+            : this(WaveCallbackInfo.ExistingWindow(windowHandle))
+        {
+
+        }
+
+        /// <summary>
+        /// Prepares a Wave input device for recording
+        /// </summary>
+        public WaveIn(WaveCallbackInfo callbackInfo)
         {
             this.DeviceNumber = 0;
-            this.WaveFormat = new WaveFormat(8000,16,1);
+            this.WaveFormat = new WaveFormat(8000, 16, 1);
             this.BufferMillisconds = 100;
             this.NumberOfBuffers = 3;
-            this.CallbackWindow = true;
+            this.callback = new WaveInterop.WaveCallback(Callback);
+            this.callbackInfo = callbackInfo;
+            callbackInfo.Connect(this.callback);
         }
 
         /// <summary>
@@ -79,12 +100,6 @@ namespace NAudio.Wave
         /// </summary>
         public int DeviceNumber { get; set; }
 
-        /// <summary>
-        /// If true, uses a window for callbacks (should only be set true on a GUI thread)
-        /// otherwise uses function callbacks
-        /// </summary>
-        public bool CallbackWindow { get; set; }
-
         private void CreateBuffers()
         {
             // Default to three buffers of 100ms each
@@ -100,9 +115,9 @@ namespace NAudio.Wave
         /// <summary>
         /// Called when we get a new buffer of recorded data
         /// </summary>
-        private void Callback(IntPtr waveInHandle, WaveInterop.WaveInMessage message, int userData, WaveHeader waveHeader, int reserved)
+        private void Callback(IntPtr waveInHandle, WaveInterop.WaveMessage message, int userData, WaveHeader waveHeader, int reserved)
         {
-            if (message == WaveInterop.WaveInMessage.Data)
+            if (message == WaveInterop.WaveMessage.WaveInData)
             {
                 GCHandle hBuffer = (GCHandle)waveHeader.userData;
                 WaveInBuffer buffer = (WaveInBuffer)hBuffer.Target;
@@ -128,20 +143,11 @@ namespace NAudio.Wave
         private void OpenWaveInDevice()
         {
             CloseWaveInDevice();
-            callback = new WaveInterop.WaveInCallback(Callback);
-            if (!CallbackWindow)
-            {
-                MmException.Try(WaveInterop.waveInOpen(out waveInHandle, DeviceNumber, WaveFormat, callback, 0, WaveInterop.CallbackFunction), "waveInOpen");
-            }
-            else
-            {
-                waveInWindow = new WaveInWindow(callback);
-                MmException.Try(WaveInterop.waveInOpenWindow(out waveInHandle, DeviceNumber, WaveFormat, waveInWindow.Handle, 0, WaveInterop.CallbackWindow), "waveInOpen");
-                //waveInWindow.AssignHandle(callbackWindow.Handle);
-            }
+            MmResult result;
+            result = callbackInfo.WaveInOpen(out waveInHandle, DeviceNumber, WaveFormat, callback);
+            MmException.Try(result, "waveInOpen");
             CreateBuffers();
         }
-
 
         /// <summary>
         /// Start recording
@@ -181,6 +187,11 @@ namespace NAudio.Wave
                 if (recording)
                     StopRecording();                
                 CloseWaveInDevice();
+                if (callbackInfo != null)
+                {
+                    callbackInfo.Disconnect();
+                    callbackInfo = null;
+                }
             }
         }
 
@@ -198,12 +209,7 @@ namespace NAudio.Wave
             }
             WaveInterop.waveInClose(waveInHandle);
             waveInHandle = IntPtr.Zero;
-            if (waveInWindow != null)
-            {
-                waveInWindow.Dispose();
-                //waveInWindow.ReleaseHandle();
-                waveInWindow = null;
-            }
+
         }
 
         /// <summary>

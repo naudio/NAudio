@@ -936,4 +936,11 @@
     <date>12 Jan 2009</date>
     <desc>Can write larger Var Ints in MIDI files</desc>
   </change>
+  <change>
+    <version>1.3.5.0</version>
+    <author>Mark Heath</author>
+    <date>19 Sep 2009</date>
+    <desc>Many changes not listed here, see checkin history</desc>
+    <desc>WaveIn callback options brought into line with WaveOut</desc>
+  </change>
 </changes>

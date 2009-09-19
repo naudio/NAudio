@@ -18,7 +18,7 @@ namespace NAudio.Wave
         private IWaveProvider waveStream;
         private int numBuffers;
         private PlaybackState playbackState;
-        private WaveInterop.WaveOutCallback callback;
+        private WaveInterop.WaveCallback callback;
         private int devNumber;
         private int desiredLatency;
         private float volume = 1;
@@ -67,7 +67,7 @@ namespace NAudio.Wave
         {
             this.devNumber = devNumber;
             this.desiredLatency = desiredLatency;
-            this.callback = new WaveInterop.WaveOutCallback(Callback);
+            this.callback = new WaveInterop.WaveCallback(Callback);
             actionQueue = new Queue<WaveOutAction>();
             workAvailable = new AutoResetEvent(false);
             waveOutThread = new Thread(new ThreadStart(ThreadProc));
@@ -364,9 +364,9 @@ namespace NAudio.Wave
         #endregion
 
         // made non-static so that playing can be stopped here
-        private void Callback(IntPtr hWaveOut, WaveInterop.WaveOutMessage uMsg, Int32 dwUser, WaveHeader wavhdr, int dwReserved)
+        private void Callback(IntPtr hWaveOut, WaveInterop.WaveMessage uMsg, Int32 dwUser, WaveHeader wavhdr, int dwReserved)
         {
-            if (uMsg == WaveInterop.WaveOutMessage.Done)
+            if (uMsg == WaveInterop.WaveMessage.WaveOutDone)
             {
                 // check that we're not here through pressing stop
                 GCHandle hBuffer = (GCHandle)wavhdr.userData;

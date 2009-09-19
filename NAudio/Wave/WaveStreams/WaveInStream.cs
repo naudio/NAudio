@@ -17,8 +17,8 @@ namespace NAudio.Wave
         private volatile bool recording;
         private WaveInBuffer[] buffers;
         private int numBuffers;
-        private WaveInterop.WaveInCallback callback;
-        private WaveInWindow waveInWindow;
+        private WaveInterop.WaveCallback callback;
+        private WaveWindowNative waveInWindow;
 
         /// <summary>
         /// Indicates recorded data is available 
@@ -41,14 +41,14 @@ namespace NAudio.Wave
         public WaveInStream(int deviceNumber, WaveFormat desiredFormat, System.Windows.Forms.Control callbackWindow)
         {
             this.waveFormat = desiredFormat;
-            callback = new WaveInterop.WaveInCallback(Callback);
+            callback = new WaveInterop.WaveCallback(Callback);
             if (callbackWindow == null)
             {
                 MmException.Try(WaveInterop.waveInOpen(out waveInHandle, deviceNumber, desiredFormat, callback, 0, WaveInterop.CallbackFunction), "waveInOpen");
             }
             else
             {
-                waveInWindow = new WaveInWindow(callback);
+                waveInWindow = new WaveWindowNative(callback);
                 MmException.Try(WaveInterop.waveInOpenWindow(out waveInHandle, deviceNumber, desiredFormat, callbackWindow.Handle, 0, WaveInterop.CallbackWindow), "waveInOpen");
                 waveInWindow.AssignHandle(callbackWindow.Handle);
             }
@@ -67,9 +67,9 @@ namespace NAudio.Wave
         /// <summary>
         /// Called when we get a new buffer of recorded data
         /// </summary>
-        private void Callback(IntPtr waveInHandle, WaveInterop.WaveInMessage message, int userData, WaveHeader waveHeader, int reserved)
+        private void Callback(IntPtr waveInHandle, WaveInterop.WaveMessage message, int userData, WaveHeader waveHeader, int reserved)
         {
-            if (message == WaveInterop.WaveInMessage.Data)
+            if (message == WaveInterop.WaveMessage.WaveInData)
             {
                 GCHandle hBuffer = (GCHandle)waveHeader.userData;
                 WaveInBuffer buffer = (WaveInBuffer)hBuffer.Target;
@@ -187,36 +187,5 @@ namespace NAudio.Wave
             // use a queue of buffers. Dropout if queue.Count = numBuffers
             throw new Exception("The method or operation is not implemented.");
         }
-
-        private class WaveInWindow : System.Windows.Forms.NativeWindow
-        {
-            private WaveInterop.WaveInCallback waveInCallback;
-
-            public WaveInWindow(WaveInterop.WaveInCallback waveInCallback)
-            {
-                this.waveInCallback = waveInCallback;
-            }
-
-            protected override void WndProc(ref System.Windows.Forms.Message m)
-            {
-                if (m.Msg == (int)WaveInterop.WaveInMessage.Data)
-                {
-                    IntPtr hOutputDevice = m.WParam;
-                    WaveHeader waveHeader = new WaveHeader();
-                    Marshal.PtrToStructure(m.LParam, waveHeader);
-                    waveInCallback(hOutputDevice, WaveInterop.WaveInMessage.Data, 0, waveHeader, 0);
-                }
-                else if (m.Msg == (int)WaveInterop.WaveInMessage.Open)
-                {
-                    waveInCallback(m.WParam, WaveInterop.WaveInMessage.Open, 0, null, 0);
-                }
-                else if (m.Msg == (int)WaveInterop.WaveInMessage.Close)
-                {
-                    waveInCallback(m.WParam, WaveInterop.WaveInMessage.Close, 0, null, 0);
-                }
-                base.WndProc(ref m);
-            }
-        }
-
     }
 }

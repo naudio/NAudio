@@ -26,8 +26,7 @@ namespace NAudioTests
                 Assert.IsNotNull(capabilities, "Null capabilities");
                 //Assert.That(capabilities.Channels >= 1, "At least one channel"); - seem to get -1 a lot
                 Assert.That(!String.IsNullOrEmpty(capabilities.ProductName), "Needs a name");
-            }
-            
+            }            
         }
     }
 }

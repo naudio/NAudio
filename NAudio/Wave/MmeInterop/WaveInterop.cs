@@ -19,41 +19,37 @@ namespace NAudio.Wave
         //public const int TIME_BYTES = 0x0004;  // current byte offset 
 
 
-        public enum WaveInMessage
+        public enum WaveMessage
         {
             /// <summary>
             /// WIM_OPEN
             /// </summary>
-            Open = 0x3BE,
+            WaveInOpen = 0x3BE,
             /// <summary>
             /// WIM_CLOSE
             /// </summary>
-            Close = 0x3BF,
+            WaveInClose = 0x3BF,
             /// <summary>
             /// WIM_DATA
             /// </summary>
-            Data = 0x3C0
-        }
+            WaveInData = 0x3C0,
 
-        public enum WaveOutMessage
-        {
             /// <summary>
             /// WOM_CLOSE
             /// </summary>
-            Close = 0x3BC,
+            WaveOutClose = 0x3BC,
             /// <summary>
             /// WOM_DONE
             /// </summary>
-            Done = 0x3BD,
+            WaveOutDone = 0x3BD,
             /// <summary>
             /// WOM_OPEN
             /// </summary>
-            Open = 0x3BB
+            WaveOutOpen = 0x3BB
         }
 
         // use the userdata as a reference
-        public delegate void WaveOutCallback(IntPtr hWaveOut, WaveOutMessage uMsg, Int32 dwUser, WaveHeader wavhdr, int dwReserved);
-        public delegate void WaveInCallback(IntPtr waveInHandle, WaveInMessage message, int userData, WaveHeader waveHeader, int reserved);
+        public delegate void WaveCallback(IntPtr hWaveOut, WaveMessage message, Int32 dwUser, WaveHeader wavhdr, int dwReserved);
 
         [DllImport("winmm.dll")]
         public static extern Int32 mmioStringToFOURCC([MarshalAs(UnmanagedType.LPStr)] String s, int flags);
@@ -67,7 +63,7 @@ namespace NAudio.Wave
         [DllImport("winmm.dll")]
         public static extern MmResult waveOutWrite(IntPtr hWaveOut, WaveHeader lpWaveOutHdr, int uSize);
         [DllImport("winmm.dll")]
-        public static extern MmResult waveOutOpen(out IntPtr hWaveOut, int uDeviceID, WaveFormat lpFormat, WaveOutCallback dwCallback, int dwInstance, int dwFlags);
+        public static extern MmResult waveOutOpen(out IntPtr hWaveOut, int uDeviceID, WaveFormat lpFormat, WaveCallback dwCallback, int dwInstance, int dwFlags);
         [DllImport("winmm.dll", EntryPoint = "waveOutOpen")]
         public static extern MmResult waveOutOpenWindow(out IntPtr hWaveOut, int uDeviceID, WaveFormat lpFormat, IntPtr callbackWindowHandle, int dwInstance, int dwFlags);
         [DllImport("winmm.dll")]
@@ -96,7 +92,7 @@ namespace NAudio.Wave
         [DllImport("winmm.dll")]
         public static extern MmResult waveInClose(IntPtr hWaveIn);
         [DllImport("winmm.dll")]
-        public static extern MmResult waveInOpen(out IntPtr hWaveIn, int uDeviceID, WaveFormat lpFormat, WaveInCallback dwCallback, int dwInstance, int dwFlags);
+        public static extern MmResult waveInOpen(out IntPtr hWaveIn, int uDeviceID, WaveFormat lpFormat, WaveCallback dwCallback, int dwInstance, int dwFlags);
         [DllImport("winmm.dll", EntryPoint = "waveInOpen")]
         public static extern MmResult waveInOpenWindow(out IntPtr hWaveIn, int uDeviceID, WaveFormat lpFormat, IntPtr callbackWindowHandle, int dwInstance, int dwFlags);
         [DllImport("winmm.dll")]

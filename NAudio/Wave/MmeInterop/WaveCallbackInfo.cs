@@ -18,8 +18,8 @@ namespace NAudio.Wave
         /// </summary>
         public IntPtr Handle { get; private set; }
 
-        private WaveOutWindow waveOutWindow;
-        private WaveOutWindowNative waveOutWindowNative;
+        private WaveWindow waveOutWindow;
+        private WaveWindowNative waveOutWindowNative;
 
         /// <summary>
         /// Sets up a new WaveCallbackInfo for function callbacks
@@ -57,22 +57,22 @@ namespace NAudio.Wave
             this.Handle = handle;
         }
 
-        internal void Connect(WaveInterop.WaveOutCallback callback)
+        internal void Connect(WaveInterop.WaveCallback callback)
         {
             if (Strategy == WaveCallbackStrategy.NewWindow)
             {
-                waveOutWindow = new WaveOutWindow(callback);
+                waveOutWindow = new WaveWindow(callback);
                 waveOutWindow.CreateControl();
                 this.Handle = waveOutWindow.Handle;
             }
             else if (Strategy == WaveCallbackStrategy.ExistingWindow)
             {
-                waveOutWindowNative = new WaveOutWindowNative(callback);
+                waveOutWindowNative = new WaveWindowNative(callback);
                 waveOutWindowNative.AssignHandle(this.Handle);
             }
         }
 
-        internal MmResult WaveOutOpen(out IntPtr waveOutHandle, int deviceNumber, WaveFormat waveFormat, WaveInterop.WaveOutCallback callback)
+        internal MmResult WaveOutOpen(out IntPtr waveOutHandle, int deviceNumber, WaveFormat waveFormat, WaveInterop.WaveCallback callback)
         {
             MmResult result;
             if (Strategy == WaveCallbackStrategy.FunctionCallback)
@@ -82,6 +82,20 @@ namespace NAudio.Wave
             else
             {
                 result = WaveInterop.waveOutOpenWindow(out waveOutHandle, deviceNumber, waveFormat, this.Handle, 0, WaveInterop.CallbackWindow);
+            }
+            return result;
+        }
+
+        internal MmResult WaveInOpen(out IntPtr waveInHandle, int deviceNumber, WaveFormat waveFormat, WaveInterop.WaveCallback callback)
+        {
+            MmResult result;
+            if (Strategy == WaveCallbackStrategy.FunctionCallback)
+            {        
+                result = WaveInterop.waveInOpen(out waveInHandle, deviceNumber, waveFormat, callback, 0, WaveInterop.CallbackFunction);
+            }
+            else
+            {
+                result = WaveInterop.waveInOpenWindow(out waveInHandle, deviceNumber, waveFormat, this.Handle, 0, WaveInterop.CallbackWindow);
             }
             return result;
         }

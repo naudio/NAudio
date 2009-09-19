@@ -314,12 +314,9 @@
     <Compile Include="Wave\MmeInterop\WaveInCapabilities.cs" />
     <Compile Include="Wave\MmeInterop\WaveInEventArgs.cs" />
     <Compile Include="Wave\MmeInterop\WaveInterop.cs" />
-    <Compile Include="Wave\MmeInterop\WaveInWindow.cs">
-      <SubType>Form</SubType>
-    </Compile>
     <Compile Include="Wave\MmeInterop\WaveOutCapabilities.cs" />
     <Compile Include="Wave\MmeInterop\WaveOutSupport.cs" />
-    <Compile Include="Wave\MmeInterop\WaveOutWindow.cs">
+    <Compile Include="Wave\MmeInterop\WaveWindow.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Wave\WaveFormats\ImaAdpcmWaveFormat.cs" />

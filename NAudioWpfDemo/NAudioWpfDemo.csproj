@@ -134,6 +134,7 @@
     <Compile Include="WaveFormControl.xaml.cs">
       <DependentUpon>WaveFormControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="WaveformVisual.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>

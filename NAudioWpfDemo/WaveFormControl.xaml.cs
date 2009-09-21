@@ -55,12 +55,12 @@ namespace NAudioWpfDemo
             }
         }
 
-        public void AddValue(float value, float value2)
+        public void AddValue(float maxValue, float minValue)
         {
             int pixelWidth = (int)ActualWidth;
             if (pixelWidth > 0)
             {
-                Line line = CreateLine(value);
+                Line line = CreateLine(maxValue, minValue);
 
                 if (renderPosition > ActualWidth)
                 {
@@ -74,7 +74,7 @@ namespace NAudioWpfDemo
             }
         }
 
-        private Line CreateLine(float value)
+        private Line CreateLine(float maxValue, float minValue)
         {
             Line line;
             if (renderPosition >= lines.Count)
@@ -90,8 +90,8 @@ namespace NAudioWpfDemo
             line.Stroke = this.Foreground;
             line.X1 = renderPosition;
             line.X2 = renderPosition;
-            line.Y1 = yTranslate + -value * yScale;
-            line.Y2 = yTranslate + value * yScale;
+            line.Y1 = yTranslate + minValue * yScale;
+            line.Y2 = yTranslate + maxValue * yScale;
             renderPosition++;
             line.Visibility = Visibility.Visible;
             return line;

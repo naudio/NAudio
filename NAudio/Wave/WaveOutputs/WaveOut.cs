@@ -133,19 +133,20 @@ namespace NAudio.Wave
         /// </summary>
         public void Play()
         {
-            if (playbackState != PlaybackState.Playing)
-            {                
-                if (playbackState == PlaybackState.Stopped)
+            if (playbackState == PlaybackState.Stopped)
+            {
+                playbackState = PlaybackState.Playing;
+                for (int n = 0; n < NumberOfBuffers; n++)
                 {
-                    for (int n = 0; n < NumberOfBuffers; n++)
+                    System.Diagnostics.Debug.Assert(buffers[n].InQueue == false, "Adding a buffer that was already queued on play");
+                    if (!buffers[n].OnDone())
                     {
-                        System.Diagnostics.Debug.Assert(buffers[n].InQueue == false, "Adding a buffer that was already queued on play");
-                        if (!buffers[n].OnDone())
-                        {
-                            playbackState = PlaybackState.Stopped;
-                        }
-                    }                    
+                        playbackState = PlaybackState.Stopped;
+                    }
                 }
+            }
+            else if (playbackState == PlaybackState.Paused)
+            {
                 Resume();
                 playbackState = PlaybackState.Playing;
             }

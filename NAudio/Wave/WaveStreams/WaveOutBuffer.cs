@@ -11,7 +11,7 @@ namespace NAudio.Wave
     {
         private WaveHeader header;
         private Int32 bufferSize; // allocated bytes, may not be the same as bytes read
-        private WaveBuffer buffer;
+        private byte[] buffer;
         private GCHandle hBuffer;
         private IntPtr hWaveOut;
         private GCHandle hHeader; // we need to pin the header structure
@@ -29,8 +29,8 @@ namespace NAudio.Wave
         public WaveOutBuffer(IntPtr hWaveOut, Int32 bufferSize, IWaveProvider bufferFillStream, object waveOutLock)
         {
             this.bufferSize = bufferSize;
-            this.buffer = new WaveBuffer(bufferSize);
-            this.hBuffer = GCHandle.Alloc(buffer.ByteBuffer, GCHandleType.Pinned);
+            this.buffer = new byte[bufferSize];
+            this.hBuffer = GCHandle.Alloc(buffer, GCHandleType.Pinned);
             this.hWaveOut = hWaveOut;
             this.waveStream = bufferFillStream;
             this.waveOutLock = waveOutLock;
@@ -102,18 +102,17 @@ namespace NAudio.Wave
             int bytes;
             lock (waveStream)
             {
-                buffer.ByteBufferCount = buffer.ByteBuffer.Length;
-                bytes = waveStream.Read(buffer);
+                bytes = waveStream.Read(buffer, 0, buffer.Length);
             }
             if (bytes == 0)
             {
                 return false;
             }
             else
-            {
-                for (int n = bytes; n < buffer.ByteBufferCount; n++)
+            {                
+                for (int n = bytes; n < buffer.Length; n++)
                 {
-                    buffer.ByteBuffer[n] = 0;
+                    buffer[n] = 0;
                 }
             }
             WriteToWaveOut();

@@ -14,18 +14,6 @@ namespace NAudio.Wave
         /// </summary>
         public abstract WaveFormat WaveFormat { get; }
 
-        /// <summary>
-        /// Fill the specified buffer with wave data.
-        /// </summary>
-        /// <param name="buffer">The buffer to fill of wave data.</param>
-        /// <returns>
-        /// the number of bytes written to the buffer.
-        /// </returns>
-        public int Read(IWaveBuffer buffer)
-        {
-            return Read(buffer.ByteBuffer, 0, buffer.ByteBufferCount);
-        }
-
         // base class includes long Position get; set
         // base class includes long Length get
         // base class includes Read

@@ -22,7 +22,7 @@ namespace NAudio.Wave
         int bytesPerFrame;
         bool isUsingEventSync;
         EventWaitHandle frameEventWaitHandle;
-        WaveBuffer readBuffer;
+        byte[] readBuffer;
         volatile PlaybackState playbackState;
         Thread playThread;
         
@@ -97,7 +97,7 @@ namespace NAudio.Wave
                 // fill a whole buffer
                 bufferFrameCount = audioClient.BufferSize;
                 bytesPerFrame = outputFormat.Channels * outputFormat.BitsPerSample / 8;
-                readBuffer = new WaveBuffer(bufferFrameCount * bytesPerFrame);
+                readBuffer = new byte[bufferFrameCount * bytesPerFrame];
                 FillBuffer(bufferFrameCount);
 
                 // Create WaitHandle for sync
@@ -168,13 +168,13 @@ namespace NAudio.Wave
         private void FillBuffer(int frameCount)
         {
             IntPtr buffer = renderClient.GetBuffer(frameCount);
-            readBuffer.ByteBufferCount = frameCount * bytesPerFrame;
-            int read = sourceStream.Read(readBuffer);
+            int readLength = frameCount * bytesPerFrame;
+            int read = sourceStream.Read(readBuffer, 0, readLength);
             if (read == 0)
             {
                 playbackState = PlaybackState.Stopped;
             }
-            Marshal.Copy(readBuffer.ByteBuffer,0,buffer,read);
+            Marshal.Copy(readBuffer,0,buffer,read);
             int actualFrameCount = read / bytesPerFrame;
             /*if (actualFrameCount != frameCount)
             {

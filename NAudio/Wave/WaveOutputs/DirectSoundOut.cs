@@ -23,7 +23,7 @@ namespace NAudio.Wave
         private int samplesFrameSize;
         private int nextSamplesWriteIndex;
         private int desiredLatency;
-        private WaveBuffer samples;
+        private byte[] samples;
         private IWaveProvider waveStream = null;
         private IDirectSound directSound = null;
         private IDirectSoundBuffer primarySoundBuffer = null;
@@ -200,7 +200,7 @@ namespace NAudio.Wave
 
                         nextSamplesWriteIndex = 0;
                         samplesTotalSize = dsbCaps.dwBufferBytes;
-                        samples = new WaveBuffer(samplesTotalSize);
+                        samples = new byte[samplesTotalSize];
                         System.Diagnostics.Debug.Assert(samplesTotalSize == (2 * samplesFrameSize), "Invalid SamplesTotalSize vs SamplesFrameSize");
 
                         // -------------------------------------------------------------------------------------
@@ -432,17 +432,16 @@ namespace NAudio.Wave
             // Clear the bufferSamples if in Paused
             if (playbackState == PlaybackState.Paused)
             {
-                samples.Clear();
+                Array.Clear(samples,0,samples.Length);
             }
             else
             {
                 // Read data from stream (Should this be inserted between the lock / unlock?)
-                samples.ByteBufferCount = bytesToCopy;
-                bytesRead = waveStream.Read(samples);
+                bytesRead = waveStream.Read(samples, 0, bytesToCopy);
 
                 if (bytesRead == 0)
                 {
-                    samples.Clear();
+                    Array.Clear(samples, 0, samples.Length);
                     return 0;
                 }
             }
@@ -460,10 +459,10 @@ namespace NAudio.Wave
             // Copy back to the SecondaryBuffer
             if (wavBuffer1 != IntPtr.Zero)
             {
-                Marshal.Copy(samples.ByteBuffer, 0, wavBuffer1, nbSamples1);
+                Marshal.Copy(samples, 0, wavBuffer1, nbSamples1);
                 if (wavBuffer2 != IntPtr.Zero)
                 {
-                    Marshal.Copy(samples.ByteBuffer, 0, wavBuffer1, nbSamples1);
+                    Marshal.Copy(samples, 0, wavBuffer1, nbSamples1);
                 }
             }
 

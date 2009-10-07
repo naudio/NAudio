@@ -22,7 +22,7 @@ namespace NAudio.Wave
         private WaveFormat waveFormat;
         PlaybackState playbackState;
         private int nbSamples;
-        private WaveBuffer waveBuffer;
+        private byte[] waveBuffer;
         private ASIOSampleConvertor.SampleConvertor convertor;
 
         /// <summary>
@@ -190,7 +190,7 @@ namespace NAudio.Wave
             nbSamples = driver.CreateBuffers(waveFormat.Channels, false);
 
             // make a buffer big enough to read enough from the sourceStream to fill the ASIO buffers
-            waveBuffer = new WaveBuffer(nbSamples * waveFormat.Channels * waveFormat.BitsPerSample / 8);
+            waveBuffer = new byte[nbSamples * waveFormat.Channels * waveFormat.BitsPerSample / 8];
         }
 
         /// <summary>
@@ -201,19 +201,18 @@ namespace NAudio.Wave
         {
             // AsioDriver driver = sender as AsioDriver;
 
-            waveBuffer.ByteBufferCount = waveBuffer.MaxSize;
-            int read = sourceStream.Read(waveBuffer);
-            if (read < waveBuffer.MaxSize)
+            
+            int read = sourceStream.Read(waveBuffer,0,waveBuffer.Length);
+            if (read < waveBuffer.Length)
             {
                 // we have stopped
             }
 
             // Call the convertor
             unsafe
-            {
-                
+            {                
                 // TODO : check if it's better to lock the buffer at initialization?
-                fixed (void* pBuffer = &waveBuffer.ByteBuffer[0])
+                fixed (void* pBuffer = &waveBuffer[0])
                 {
                     convertor(new IntPtr(pBuffer), bufferChannels, waveFormat.Channels, nbSamples);
                 }

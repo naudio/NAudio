@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace NAudio.Wave.WaveProviders
+namespace NAudio.Wave
 {
     /// <summary>
     /// Base class for creating a 16 bit wave provider

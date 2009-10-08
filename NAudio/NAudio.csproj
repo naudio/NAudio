@@ -345,6 +345,7 @@
     <Compile Include="Wave\WaveOutputs\WaveOutThreadSafe.cs" />
     <Compile Include="Wave\WaveProviders\WaveProvider16.cs" />
     <Compile Include="Wave\WaveProviders\WaveProvider32.cs" />
+    <Compile Include="Wave\WaveProviders\WaveRecorder.cs" />
     <Compile Include="Wave\WaveStreams\BlockAlignReductionStream.cs" />
     <Compile Include="Wave\WaveStreams\ISampleNotifier.cs" />
     <Compile Include="Wave\WaveStreams\Mp3FileReader.cs" />

@@ -54,6 +54,7 @@ namespace NAudio.Wave
         public static void ReadWaveHeader(Stream stream, out WaveFormat format, out long dataChunkPosition, out int dataChunkLength, List<RiffChunk> chunks)        
         {
             dataChunkPosition = -1;
+            format = null;
             BinaryReader br = new BinaryReader(stream);
             if (br.ReadInt32() != WaveInterop.mmioStringToFOURCC("RIFF", 0))
             {
@@ -64,15 +65,9 @@ namespace NAudio.Wave
             {
                 throw new FormatException("Not a WAVE file - no WAVE header");
             }
-
-            // now we expect the format chunk
-            if (br.ReadInt32() != WaveInterop.mmioStringToFOURCC("fmt ", 0))
-            {
-                throw new FormatException("Not a WAVE file - no fmt header");
-            }
-            format = new WaveFormatExtraData(br);
-            
-            Int32 dataChunkID = WaveInterop.mmioStringToFOURCC("data", 0);
+                        
+            int dataChunkID = WaveInterop.mmioStringToFOURCC("data", 0);
+            int formatChunkId = WaveInterop.mmioStringToFOURCC("fmt ", 0);
             dataChunkLength = 0;
 
             // sometimes a file has more data than is specified after the RIFF header
@@ -87,17 +82,30 @@ namespace NAudio.Wave
                 {
                     dataChunkPosition = stream.Position;
                     dataChunkLength = chunkLength;
+                    stream.Position += chunkLength;
                 }
+                else if (chunkIdentifier == formatChunkId)
+                {
+                    format = WaveFormat.FromFormatChunk(br, chunkLength);
+                }            
                 else
                 {
                     if (chunks != null)
                     {
                         chunks.Add(new RiffChunk(chunkIdentifier, chunkLength, stream.Position));
                     }
-                }
-                stream.Position += chunkLength;
+                    stream.Position += chunkLength;
+                }                
             }
-            
+
+            if (format == null)
+            {
+                throw new FormatException("Invalid WAV file - No fmt chunk found");
+            }
+            if (dataChunkPosition == -1)
+            {
+                throw new FormatException("Invalid WAV file - No data chunk found");
+            }
         }
 
         /// <summary>

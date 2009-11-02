@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Diagnostics;
 
 namespace NAudio.Wave
 {
@@ -187,38 +188,50 @@ namespace NAudio.Wave
             return formatPointer;
         }
 
+        /// <summary>
+        /// Reads in a WaveFormat (with extra data) from a fmt chunk (chunk identifier and
+        /// length should already have been read)
+        /// </summary>
+        /// <param name="br">Binary reader</param>
+        /// <param name="formatChunkLength">Format chunk length</param>
+        /// <returns>A WaveFormatExtraData</returns>
+        public static WaveFormat FromFormatChunk(BinaryReader br, int formatChunkLength)
+        {
+            WaveFormatExtraData waveFormat = new WaveFormatExtraData();
+            waveFormat.ReadWaveFormat(br, formatChunkLength);
+            waveFormat.ReadExtraData(br);
+            return waveFormat;
+        }
+
+        private void ReadWaveFormat(BinaryReader br, int formatChunkLength)
+        {
+            if (formatChunkLength < 16)
+                throw new ApplicationException("Invalid WaveFormat Structure");
+            this.waveFormatTag = (WaveFormatEncoding)br.ReadUInt16();
+            this.channels = br.ReadInt16();
+            this.sampleRate = br.ReadInt32();
+            this.averageBytesPerSecond = br.ReadInt32();
+            this.blockAlign = br.ReadInt16();
+            this.bitsPerSample = br.ReadInt16();
+            if (formatChunkLength > 16)
+            {
+                this.extraSize = br.ReadInt16();
+                if (this.extraSize > formatChunkLength - 18)
+                {
+                    Debug.WriteLine("Format chunk mismatch");
+                    this.extraSize = (short)(formatChunkLength - 18);
+                }
+            }
+        }
+
 		/// <summary>
 		/// Reads a new WaveFormat object from a stream
 		/// </summary>
 		/// <param name="br">A binary reader that wraps the stream</param>
 		public WaveFormat(BinaryReader br)
 		{
-			int formatChunkLength = br.ReadInt32();
-			if(formatChunkLength < 16)
-				throw new ApplicationException("Invalid WaveFormat Structure");
-			this.waveFormatTag = (WaveFormatEncoding) br.ReadUInt16();
-			this.channels = br.ReadInt16();
-			this.sampleRate = br.ReadInt32();				
-			this.averageBytesPerSecond = br.ReadInt32();
-			this.blockAlign = br.ReadInt16();
-			this.bitsPerSample = br.ReadInt16();
-            if (formatChunkLength > 16)
-            {
-                
-                this.extraSize = br.ReadInt16();
-                if (this.extraSize > formatChunkLength - 18)
-                {
-                    Console.WriteLine("Format chunk mismatch");
-                    //RRL GSM exhibits this bug. Don't throw an exception
-                    //throw new ApplicationException("Format chunk length mismatch");
-
-                    this.extraSize = (short) (formatChunkLength - 18);
-                }
-                
-                // read any extra data
-                // br.ReadBytes(extraSize);
-
-            }
+            int formatChunkLength = br.ReadInt32();
+            this.ReadWaveFormat(br, formatChunkLength);
 		}
 
 		/// <summary>

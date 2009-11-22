@@ -54,7 +54,7 @@ namespace NAudio.Wave
         {
             this.DeviceNumber = 0;
             this.WaveFormat = new WaveFormat(8000, 16, 1);
-            this.BufferMillisconds = 100;
+            this.BufferMilliseconds = 100;
             this.NumberOfBuffers = 3;
             this.callback = new WaveInterop.WaveCallback(Callback);
             this.callbackInfo = callbackInfo;
@@ -88,7 +88,7 @@ namespace NAudio.Wave
         /// <summary>
         /// Milliseconds for the buffer. Recommended value is 100ms
         /// </summary>
-        public int BufferMillisconds { get; set; }
+        public int BufferMilliseconds { get; set; }
 
         /// <summary>
         /// Number of Buffers to use (usually 2 or 3)
@@ -103,7 +103,7 @@ namespace NAudio.Wave
         private void CreateBuffers()
         {
             // Default to three buffers of 100ms each
-            int bufferSize = BufferMillisconds * WaveFormat.AverageBytesPerSecond / 1000;
+            int bufferSize = BufferMilliseconds * WaveFormat.AverageBytesPerSecond / 1000;
 
             buffers = new WaveInBuffer[NumberOfBuffers];
             for (int n = 0; n < buffers.Length; n++)

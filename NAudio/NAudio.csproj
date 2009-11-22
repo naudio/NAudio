@@ -331,6 +331,7 @@
     <Compile Include="Wave\WaveFormats\WmaWaveFormat.cs" />
     <Compile Include="Wave\WaveInputs\IWaveIn.cs" />
     <Compile Include="Wave\WaveOutputs\AsioOut.cs" />
+    <Compile Include="Wave\WaveOutputs\CueWaveFileWriter.cs" />
     <Compile Include="Wave\WaveOutputs\IWaveBuffer.cs" />
     <Compile Include="Wave\WaveOutputs\IWavePlayer.cs" />
     <Compile Include="Wave\WaveOutputs\IWaveProvider.cs" />
@@ -347,6 +348,8 @@
     <Compile Include="Wave\WaveProviders\WaveProvider32.cs" />
     <Compile Include="Wave\WaveProviders\WaveRecorder.cs" />
     <Compile Include="Wave\WaveStreams\BlockAlignReductionStream.cs" />
+    <Compile Include="Wave\WaveStreams\CueList.cs" />
+    <Compile Include="Wave\WaveStreams\CueWaveFileReader.cs" />
     <Compile Include="Wave\WaveStreams\ISampleNotifier.cs" />
     <Compile Include="Wave\WaveStreams\Mp3FileReader.cs" />
     <Compile Include="Wave\WaveStreams\ResamplerDmoStream.cs" />

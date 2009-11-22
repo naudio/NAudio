@@ -182,13 +182,25 @@ namespace NAudio.Wave
             }
         }
 
-        /*public long SampleCount
+        /// <summary>
+        /// Number of Samples (if possible to calculate)
+        /// </summary>
+        public long SampleCount
         {
             get
             {
-                return dataChunkLength / BlockAlign;
+                if (waveFormat.Encoding == WaveFormatEncoding.Pcm ||
+                    waveFormat.Encoding == WaveFormatEncoding.Extensible ||
+                    waveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
+                {
+                    return dataChunkLength / BlockAlign;
+                }
+                else
+                {
+                    throw new FormatException("Sample count is calculated only for the standard encodings");
+                }
             }
-        }*/
+        }
 
         /// <summary>
         /// Position in the wave file
@@ -228,33 +240,63 @@ namespace NAudio.Wave
         }
         
         /// <summary>
-        /// Attempts to read a float from a 16 bit stream
+        /// Attempts to read a sample into a float
         /// </summary>
-        public bool TryReadFloat(ref float sampleValue)
+        public bool TryReadFloat(out float sampleValue)
         {
-            if (waveFormat.BitsPerSample != 16)
-                throw new InvalidOperationException("Only 16 bit audio supported");
-            byte[] buffer = new byte[2];
-            int read = waveStream.Read(buffer, 0, 2);
-            if (read < 2)
-                return false;
-            sampleValue = BitConverter.ToInt16(buffer, 0) / 32768.0f;
-            return true;
-        }
-
-        /// <summary>
-        /// Attempts to read a double from a 16 bit stream
-        /// </summary>
-        public bool TryReadDouble(ref double sampleValue)
-        {
-            if (waveFormat.BitsPerSample != 16)
-                throw new InvalidOperationException("Only 16 bit audio supported");
-            byte[] buffer = new byte[2];
-            int read = waveStream.Read(buffer, 0, 2);
-            if (read < 2)
-                return false;
-            sampleValue = BitConverter.ToInt16(buffer, 0) / 32768.0;
-            return true;
+            sampleValue = 0.0f;
+            // 16 bit PCM data
+            if (waveFormat.BitsPerSample == 16)
+            {
+                byte[] value = new byte[2];
+                int read = Read(value, 0, 2);
+                if (read < 2)
+                    return false;
+                sampleValue = (float)BitConverter.ToInt16(value, 0) / 32768f;
+                return true;
+            }
+            // 24 bit PCM data
+            else if (waveFormat.BitsPerSample == 24)
+            {
+                byte[] value = new byte[4];
+                int read = Read(value, 0, 3);
+                if (read < 3)
+                    return false;
+                if (value[2] > 0x7f)
+                {
+                    value[3] = 0xff;
+                }
+                else
+                {
+                    value[3] = 0x00;
+                }
+                sampleValue = (float)BitConverter.ToInt32(value, 0) / (float)(0x800000);
+                return true;
+            }
+            // 32 bit PCM data
+            if (waveFormat.BitsPerSample == 32 && waveFormat.Encoding == WaveFormatEncoding.Extensible)
+            {
+                byte[] value = new byte[4];
+                int read = Read(value, 0, 4);
+                if (read < 4)
+                    return false;
+                sampleValue = (float)BitConverter.ToInt32(value, 0) / ((float)(Int32.MaxValue) + 1f);
+                return true;
+            }
+            // IEEE float data
+            if (waveFormat.BitsPerSample == 32 && waveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
+            {
+                byte[] value = new byte[4];
+                int read = Read(value, 0, 4);
+                if (read < 4)
+                    return false;
+                sampleValue = BitConverter.ToSingle(value, 0);
+                return true;
+            }
+            else
+            {
+                throw new ApplicationException("Only 16, 24 or 32 bit PCM or IEEE float audio data supported");
+            }
         }
 
         // for the benefit of oggencoder we divide by 32768.0f;
@@ -264,44 +306,25 @@ namespace NAudio.Wave
         /// <param name="buffer">buffer</param>
         /// <param name="samples">number of samples to read</param>
         /// <returns></returns>
+        [Obsolete]
         public int Read(float[][] buffer, int samples)
         {
             BinaryReader br = new BinaryReader(waveStream);
-            if (waveFormat.BitsPerSample != 16)
-                throw new ApplicationException("Only 16 bit audio supported");
+
             for (int sample = 0; sample < samples; sample++)
             {
                 for (int channel = 0; channel < waveFormat.Channels; channel++)
                 {
                     if (waveStream.Position < waveStream.Length)
-                        buffer[channel][sample] = (float)br.ReadInt16() / 32768.0f;
+                    {
+                        float sampleValue;
+                        TryReadFloat(out sampleValue);
+                        buffer[channel][sample] = sampleValue;
+                    }
                     else
+                    {
                         return 0;
-                }
-            }
-            return samples;
-        }
-
-
-        /// <summary>
-        /// Reads multi-channel 16 bit audio into buffers of doubles
-        /// </summary>
-        /// <param name="buffer">Buffer for audio</param>
-        /// <param name="samples">number of samples to read</param>
-        /// <returns>number of samples read</returns>
-        public int Read(double[][] buffer, int samples)
-        {
-            BinaryReader br = new BinaryReader(waveStream); 
-            if (waveFormat.BitsPerSample != 16)
-                throw new ApplicationException("Only 16 bit audio supported");
-            for (int sample = 0; sample < samples; sample++)
-            {
-                for (int channel = 0; channel < waveFormat.Channels; channel++)
-                {
-                    if (waveStream.Position < waveStream.Length)
-                        buffer[channel][sample] = br.ReadInt16() / 32768.0;
-                    else
-                        return sample;
+                    }
                 }
             }
             return samples;

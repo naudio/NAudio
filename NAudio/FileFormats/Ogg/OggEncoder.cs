@@ -8,6 +8,7 @@ namespace NAudio.Ogg
 	/// <summary>
 	/// Provides access to the unmanaged ogg encoder DLL
 	/// </summary>
+    [Obsolete("Don't expect this class to stay in NAudio, it has not been used for many years")]
 	public class OggEncoder : IDisposable
 	{
 		private const int READ = 1024;

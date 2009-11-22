@@ -10,15 +10,15 @@ namespace NAudio.Dmo
     /// </summary>
     struct MediaParamInfo
     {
-        MediaParamType mpType;
-        MediaParamCurveType mopCaps;
-        float mpdMinValue; // MP_DATA is a float
-        float mpdMaxValue;
-        float mpdNeutralValue;
+        public MediaParamType mpType;
+        public MediaParamCurveType mopCaps;
+        public float mpdMinValue; // MP_DATA is a float
+        public float mpdMaxValue;
+        public float mpdNeutralValue;
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]        
-        string szUnitText;
+        public string szUnitText;
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-        string szLabel; 
+        public string szLabel; 
     }
 
     /// <summary>

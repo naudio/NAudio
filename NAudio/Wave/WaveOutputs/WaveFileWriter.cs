@@ -9,6 +9,7 @@ namespace NAudio.Wave
     public class WaveFileWriter : IDisposable
     {
         private Stream outStream;
+        private BinaryWriter writer;
         private long dataSizePos;
         private long factSampleCountPos;
         private int dataChunkSize = 0;
@@ -44,45 +45,29 @@ namespace NAudio.Wave
         public WaveFileWriter(Stream outStream, WaveFormat format)
         {
             this.outStream = outStream;    
-            BinaryWriter w = new BinaryWriter(outStream, System.Text.Encoding.ASCII);
-            w.Write(System.Text.Encoding.ASCII.GetBytes("RIFF"));
-            w.Write((int)0); // placeholder
-            w.Write(System.Text.Encoding.ASCII.GetBytes("WAVEfmt "));
+            this.writer = new BinaryWriter(outStream, System.Text.Encoding.ASCII);
+            this.writer.Write(System.Text.Encoding.ASCII.GetBytes("RIFF"));
+            this.writer.Write((int)0); // placeholder
+            this.writer.Write(System.Text.Encoding.ASCII.GetBytes("WAVEfmt "));
             this.format = format;
 
-            format.Serialize(w);
+            format.Serialize(this.writer);
 
-            CreateFactChunk(outStream, format, w);
+            CreateFactChunk();
 
-            WriteDataChunkHeader(outStream, w);
-        }
-
-        private void WriteDataChunkHeader(Stream outStream, BinaryWriter w)
-        {
-            w.Write(System.Text.Encoding.ASCII.GetBytes("data"));
-            dataSizePos = outStream.Position;
-            w.Write((int)0); // placeholder
-        }
-
-        private void CreateFactChunk(Stream outStream, WaveFormat format, BinaryWriter w)
-        {
-            if (format.Encoding != WaveFormatEncoding.Pcm)
-            {
-                w.Write(System.Text.Encoding.ASCII.GetBytes("fact"));
-                w.Write((int)4);
-                factSampleCountPos = outStream.Position;
-                w.Write((int)0); // number of samples
-            }
+            WriteDataChunkHeader();
         }
 
         /// <summary>
         /// Creates a new WaveFileWriter, simply overwriting the samples on an existing file
         /// </summary>
         /// <param name="filename">The filename</param>
+        [Obsolete("Not planning to keep supporting this, should create derived WaveFileWriter for this type of behaviour if needed")]
         public WaveFileWriter(string filename)
         {
             this.filename = filename;
-            outStream = new FileStream(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.Read);
+            this.outStream = new FileStream(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.Read);
+            this.writer = new BinaryWriter(outStream);
             int dataChunkLength; // 
             long dataChunkPosition;
             WaveFileReader.ReadWaveHeader(outStream, out format, out dataChunkPosition, out dataChunkLength, null);
@@ -100,6 +85,26 @@ namespace NAudio.Wave
         {
             this.filename = filename;
         }
+
+        private void WriteDataChunkHeader()
+        {
+            this.writer.Write(System.Text.Encoding.ASCII.GetBytes("data"));
+            dataSizePos = this.outStream.Position;
+            this.writer.Write((int)0); // placeholder
+        }
+
+        private void CreateFactChunk()
+        {
+            if (this.format.Encoding != WaveFormatEncoding.Pcm)
+            {
+                this.writer.Write(System.Text.Encoding.ASCII.GetBytes("fact"));
+                this.writer.Write((int)4);
+                factSampleCountPos = this.outStream.Position;
+                this.writer.Write((int)0); // number of samples
+            }
+        }
+
+
 
         /// <summary>
         /// The wave file name
@@ -135,7 +140,7 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// Writes bytes to the WaveFile
+        /// Writes bytes to the WaveFile (assumes they are already in the correct format)
         /// </summary>
         /// <param name="data">the buffer containing the wave data</param>
         /// <param name="offset">the offset from which to start writing</param>
@@ -146,6 +151,40 @@ namespace NAudio.Wave
             dataChunkSize += count;
         }
 
+        private byte[] value24 = new byte[3]; // keep this around to save us creating it every time
+        
+        /// <summary>
+        /// Writes a single sample to the Wave file
+        /// </summary>
+        /// <param name="sample">the sample to write (assumed floating point with 1.0f as max value)</param>
+        public void WriteSample(float sample)
+        {
+            if (WaveFormat.BitsPerSample == 16)
+            {
+                writer.Write((Int16)(Int16.MaxValue * sample));
+            }
+            else if (WaveFormat.BitsPerSample == 24)
+            {
+                var value = BitConverter.GetBytes((Int32)(Int32.MaxValue * sample));
+                value24[0] = value[1];
+                value24[1] = value[2];
+                value24[2] = value[3];
+                writer.Write(value24);
+            }
+            else if (WaveFormat.BitsPerSample == 32 && WaveFormat.Encoding == WaveFormatEncoding.Extensible)
+            {
+                writer.Write(UInt16.MaxValue * (Int32)sample);
+            }
+            else if (WaveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
+            {
+                writer.Write(sample);
+            }
+            else
+            {
+                throw new ApplicationException("Only 16, 24 or 32 bit PCM or IEEE float audio data supported");
+            }
+        }
+
         /// <summary>
         /// Writes 16 bit samples to the Wave file
         /// </summary>
@@ -154,40 +193,112 @@ namespace NAudio.Wave
         /// <param name="count">The number of 16 bit samples to write</param>
         public void WriteData(short[] data, int offset, int count)
         {
-            BinaryWriter w = new BinaryWriter(outStream);
-            for (int n = 0; n < count; n++)
-                w.Write(data[n + offset]);
-            dataChunkSize += (count * 2);
+            // 16 bit PCM data
+            if (WaveFormat.BitsPerSample == 16)
+            {                
+                for (int sample = 0; sample < count; sample++)
+                {
+                    writer.Write(data[sample + offset]);
+                }
+            }
+            // 24 bit PCM data
+            else if (WaveFormat.BitsPerSample == 24)
+            {
+                byte[] value;
+                for (int sample = 0; sample < count; sample++)
+                {
+                    value = BitConverter.GetBytes(UInt16.MaxValue * (Int32)data[sample + offset]);
+                    value24[0] = value[1];
+                    value24[1] = value[2];
+                    value24[2] = value[3];
+                    writer.Write(value24);
+                }
+            }
+            // 32 bit PCM data
+            else if (WaveFormat.BitsPerSample == 32 && WaveFormat.Encoding == WaveFormatEncoding.Extensible)
+            {
+                for (int sample = 0; sample < count; sample++)
+                {
+                    writer.Write(UInt16.MaxValue * (Int32)data[sample + offset]);
+                }
+            }
+            // IEEE float data
+            else if (WaveFormat.BitsPerSample == 32 && WaveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
+            {
+                for (int sample = 0; sample < count; sample++)
+                {
+                    writer.Write((float)data[sample + offset] / (float)(Int16.MaxValue + 1));
+                }
+            }
+            else
+            {
+                throw new ApplicationException("Only 16, 24 or 32 bit PCM or IEEE float audio data supported");
+            }
         }
 
         /// <summary>
-        /// Writes 16 bit samples to the Wave file
+        /// Writes float samples to the Wave file
         /// </summary>
         /// <param name="data">The buffer containing the wave data</param>
         /// <param name="offset">The offset from which to start writing</param>
-        /// <param name="count">The number of 16 bit samples to write</param>
-        public void WriteData16(float[][] data, int offset, int count)
+        /// <param name="count">The number of float samples to write</param>
+        [Obsolete("Use the WriteSample method instead")]
+        public void WriteData(float[][] data, int offset, int count)
         {
-            BinaryWriter w = new BinaryWriter(outStream);
-            for (int n = 0; n < count; n++)
-                for (int c = 0; c < data.Length; c++)
-                    w.Write((short)(32768.0f * data[c][n + offset]));
-            dataChunkSize += (count * 2);
-        }
-
-        /// <summary>
-        /// Writes 16 bit samples to the Wave file
-        /// </summary>
-        /// <param name="data">The buffer containing the wave data</param>
-        /// <param name="offset">The offset from which to start writing</param>
-        /// <param name="count">The number of 16 bit samples to write</param>
-        public void WriteData16(double[][] data, int offset, int count)
-        {
-            BinaryWriter w = new BinaryWriter(outStream);
-            for (int n = 0; n < count; n++)
-                for (int c = 0; c < data.Length; c++)
-                    w.Write((short)(32768.0 * data[c][n + offset]));
-            dataChunkSize += (count * 2);
+            // 16 bit PCM data
+            if (WaveFormat.BitsPerSample == 16)
+            {
+                for (int sample = 0; sample < count; sample++)
+                {
+                    for (int channel = 0; channel < WaveFormat.Channels; channel++)
+                    {
+                        writer.Write((Int16)(Int16.MaxValue * data[channel][sample + offset]));
+                    }
+                }
+            }
+            // 24 bit PCM data
+            else if (WaveFormat.BitsPerSample == 24)
+            {
+                byte[] value;
+                byte[] value24 = new byte[3];
+                for (int sample = 0; sample < count; sample++)
+                {
+                    for (int channel = 0; channel < WaveFormat.Channels; channel++)
+                    {
+                        value = BitConverter.GetBytes((Int32)(Int32.MaxValue * data[channel][sample + offset]));
+                        value24[0] = value[1];
+                        value24[1] = value[2];
+                        value24[2] = value[3];
+                        writer.Write(value24);
+                    }
+                }
+            }
+            // 32 bit PCM data
+            else if (WaveFormat.BitsPerSample == 32 && WaveFormat.Encoding == WaveFormatEncoding.Extensible)
+            {
+                for (int sample = 0; sample < count; sample++)
+                {
+                    for (int channel = 0; channel < WaveFormat.Channels; channel++)
+                    {
+                        writer.Write((Int32)(Int32.MaxValue * data[channel][sample + offset]));
+                    }
+                }
+            }
+            // IEEE float data
+            else if (WaveFormat.BitsPerSample == 32 && WaveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
+            {
+                for (int sample = 0; sample < count; sample++)
+                {
+                    for (int channel = 0; channel < WaveFormat.Channels; channel++)
+                    {
+                        writer.Write(data[channel][sample + offset]);
+                    }
+                }
+            }
+            else
+            {
+                throw new ApplicationException("Only 16, 24 or 32 bit PCM or IEEE float audio data supported");
+            }
         }
 
         /// <summary>
@@ -231,19 +342,7 @@ namespace NAudio.Wave
                     {
                         if (!overwriting)
                         {
-                            // in overwrite mode, we will not change the length set at the start
-                            // irrespective of whether we actually wrote less or more
-                            outStream.Flush();
-                            BinaryWriter w = new BinaryWriter(outStream, System.Text.Encoding.ASCII);
-                            w.Seek(4, SeekOrigin.Begin);
-                            w.Write((int)(outStream.Length - 8));
-                            if (format.Encoding != WaveFormatEncoding.Pcm)
-                            {
-                                w.Seek((int)factSampleCountPos, SeekOrigin.Begin);
-                                w.Write((int)((dataChunkSize * 8) / format.BitsPerSample));
-                            }
-                            w.Seek((int)dataSizePos, SeekOrigin.Begin);
-                            w.Write((int)(dataChunkSize));
+                            UpdateHeader(writer);
                         }
                     }
                     finally
@@ -256,6 +355,27 @@ namespace NAudio.Wave
                 }
             }
         }
+
+        /// <summary>
+        /// Updates the header with file size information
+        /// </summary>
+        protected virtual void UpdateHeader(BinaryWriter writer)
+        {
+            // in overwrite mode, we will not change the length set at the start
+            // irrespective of whether we actually wrote less or more
+            outStream.Flush();
+            writer.Seek(4, SeekOrigin.Begin);
+            writer.Write((int)(outStream.Length - 8));
+            if (format.Encoding != WaveFormatEncoding.Pcm)
+            {
+                writer.Seek((int)factSampleCountPos, SeekOrigin.Begin);
+                writer.Write((int)((dataChunkSize * 8) / format.BitsPerSample));
+            }
+            writer.Seek((int)dataSizePos, SeekOrigin.Begin);
+            writer.Write((int)(dataChunkSize));
+        }
+
+
 
         /// <summary>
         /// Finaliser - should only be called if the user forgot to close this WaveFileWriter

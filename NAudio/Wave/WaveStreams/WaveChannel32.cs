@@ -112,7 +112,7 @@ namespace NAudio.Wave
         {
             if (sourceBuffer == null || sourceBuffer.Length < bytesRequired)
             {
-                sourceBuffer = new byte[Math.Min(sourceStream.WaveFormat.AverageBytesPerSecond,bytesRequired)];
+                sourceBuffer = new byte[bytesRequired];
             }
             return sourceBuffer;
         }

@@ -152,7 +152,7 @@ namespace NAudio.Wave
                 if (inputStream.HasData(count))
                 {
                     int readFromThisStream = inputStream.Read(readBuffer, 0, count);
-                    System.Diagnostics.Debug.Assert(readFromThisStream == count, "A mixer input stream did not provide the requested amount of data");
+                    // don't worry if input stream returns less than we requested - may indicate we have got to the end
                     bytesRead = Math.Max(bytesRead, readFromThisStream);
                     if (readFromThisStream > 0)
                         Sum32BitAudio(buffer, offset, readBuffer, readFromThisStream);

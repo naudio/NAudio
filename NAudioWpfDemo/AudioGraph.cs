@@ -17,8 +17,8 @@ namespace NAudioWpfDemo
 
         public event EventHandler CaptureComplete
         {
-            add { capture.CaptureStopped += value; }
-            remove { capture.CaptureStopped -= value; }
+            add { capture.CaptureComplete += value; }
+            remove { capture.CaptureComplete -= value; }
         }
 
         public event EventHandler<MaxSampleEventArgs> MaximumCalculated

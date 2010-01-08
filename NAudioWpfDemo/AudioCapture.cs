@@ -23,7 +23,7 @@ namespace NAudioWpfDemo
         public int CaptureSeconds { get; set; }
 
         public event EventHandler<SampleEventArgs> OnSample;
-        public event EventHandler CaptureStopped;
+        public event EventHandler CaptureComplete;
 
         public void Capture(WaveFormat captureFormat)
         {
@@ -86,10 +86,10 @@ namespace NAudioWpfDemo
                 }
             }
 
-            // close the recording if necessary
+            // stop the recording if necessary
             if (maxCaptureBytes != 0 && recordedStream.Length >= maxCaptureBytes)
             {
-                CloseRecording();
+                Stop();
             }
         }
 
@@ -97,7 +97,7 @@ namespace NAudioWpfDemo
         {
             if (captureDevice != null)
             {
-                captureDevice.StopRecording();                
+                captureDevice.StopRecording();
             }
 
             if (writer != null)
@@ -114,6 +114,8 @@ namespace NAudioWpfDemo
         {
             IsCapturing = false;
             CloseRecording();
+            captureDevice.Dispose();
+            captureDevice = null;
         }
 
         public void Stop()
@@ -126,9 +128,9 @@ namespace NAudioWpfDemo
 
         private void RaiseCaptureStopped()
         {
-            if (CaptureStopped != null)
+            if (CaptureComplete != null)
             {
-                CaptureStopped(this, EventArgs.Empty);
+                CaptureComplete(this, EventArgs.Empty);
             }
         }
 

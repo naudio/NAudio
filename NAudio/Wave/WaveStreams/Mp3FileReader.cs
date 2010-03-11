@@ -61,8 +61,7 @@ namespace NAudio.Wave
 
             mp3Stream.Position = dataStartPosition;
 
-            // TODO: choose more appropriately
-            waveFormat = new Mp3WaveFormat(sampleRate, 2, frameLengthInBytes, bitRate);
+            waveFormat = new Mp3WaveFormat(sampleRate, mp3Frame.ChannelMode == ChannelMode.Mono ? 1 : 2, frameLengthInBytes, bitRate);
         }
 
         /// <summary>

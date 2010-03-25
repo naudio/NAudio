@@ -5,6 +5,7 @@ namespace NAudio.Wave.Compression
 {
     /// <summary>
     /// Interop structure for ACM driver details (ACMDRIVERDETAILS)
+    /// http://msdn.microsoft.com/en-us/library/dd742889%28VS.85%29.aspx
     /// </summary>
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
     struct AcmDriverDetails

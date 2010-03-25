@@ -4,7 +4,8 @@ using System.Runtime.InteropServices;
 namespace NAudio.Wave
 {
     /// <summary>
-    /// WaveHeader interop structure
+    /// WaveHeader interop structure (WAVEHDR)
+    /// http://msdn.microsoft.com/en-us/library/dd743837%28VS.85%29.aspx
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
     class WaveHeader
@@ -24,6 +25,6 @@ namespace NAudio.Wave
         /// <summary>PWaveHdr, reserved for driver (lpNext)</summary>
         public IntPtr next;
         /// <summary>reserved for driver</summary>
-        public int reserved;
+        public IntPtr reserved;
     }
 }

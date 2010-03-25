@@ -41,7 +41,7 @@ namespace NAudio.Wave
         {
             WaveOutCapabilities caps = new WaveOutCapabilities();
             int structSize = Marshal.SizeOf(caps);
-            MmException.Try(WaveInterop.waveOutGetDevCaps(devNumber, out caps, structSize), "waveOutGetDevCaps");
+            MmException.Try(WaveInterop.waveOutGetDevCaps((IntPtr)devNumber, out caps, structSize), "waveOutGetDevCaps");
             return caps;
         }
 
@@ -161,7 +161,7 @@ namespace NAudio.Wave
             int bufferSize = waveProvider.WaveFormat.ConvertLatencyToByteSize(desiredLatency);  //waveStream.GetReadSize((desiredLatency + 2) / 3);
             this.numBuffers = 3;
 
-            MmException.Try(WaveInterop.waveOutOpen(out hWaveOut, devNumber, waveStream.WaveFormat, callback, 0, WaveInterop.CallbackFunction), "waveOutOpen");
+            MmException.Try(WaveInterop.waveOutOpen(out hWaveOut, (IntPtr)devNumber, waveStream.WaveFormat, callback, IntPtr.Zero, WaveInterop.CallbackFunction), "waveOutOpen");
 
             buffers = new WaveOutBuffer[numBuffers];
             playbackState = PlaybackState.Stopped;
@@ -364,7 +364,7 @@ namespace NAudio.Wave
         #endregion
 
         // made non-static so that playing can be stopped here
-        private void Callback(IntPtr hWaveOut, WaveInterop.WaveMessage uMsg, Int32 dwUser, WaveHeader wavhdr, int dwReserved)
+        private void Callback(IntPtr hWaveOut, WaveInterop.WaveMessage uMsg, IntPtr dwUser, WaveHeader wavhdr, IntPtr dwReserved)
         {
             if (uMsg == WaveInterop.WaveMessage.WaveOutDone)
             {

@@ -42,7 +42,7 @@ namespace NAudio.Midi
 		public MidiIn(int deviceNo) 
 		{
             this.callback = new MidiInterop.MidiInCallback(Callback);
-			MmException.Try(MidiInterop.midiInOpen(out hMidiIn,deviceNo,this.callback,0,MidiInterop.CALLBACK_FUNCTION),"midiInOpen");
+			MmException.Try(MidiInterop.midiInOpen(out hMidiIn, (IntPtr) deviceNo,this.callback,IntPtr.Zero,MidiInterop.CALLBACK_FUNCTION),"midiInOpen");
 		}
 		
 		/// <summary>
@@ -134,7 +134,7 @@ namespace NAudio.Midi
 		{
             MidiInCapabilities caps = new MidiInCapabilities();
             int structSize = Marshal.SizeOf(caps);
-			MmException.Try(MidiInterop.midiInGetDevCaps(midiInDeviceNumber,out caps,structSize),"midiInGetDevCaps");
+			MmException.Try(MidiInterop.midiInGetDevCaps((IntPtr)midiInDeviceNumber,out caps,structSize),"midiInGetDevCaps");
 			return caps;
 		}
 

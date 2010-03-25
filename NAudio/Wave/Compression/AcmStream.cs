@@ -29,7 +29,7 @@ namespace NAudio.Wave.Compression
                 this.sourceFormat = sourceFormat;
                 int sourceBufferSize = Math.Max(16384, sourceFormat.AverageBytesPerSecond);
                 sourceBufferSize -= (sourceBufferSize % sourceFormat.BlockAlign);
-                MmException.Try(AcmInterop.acmStreamOpen(out streamHandle, IntPtr.Zero, sourceFormat, destFormat, null, 0, 0, AcmStreamOpenFlags.NonRealTime), "acmStreamOpen");
+                MmException.Try(AcmInterop.acmStreamOpen(out streamHandle, IntPtr.Zero, sourceFormat, destFormat, null, IntPtr.Zero, IntPtr.Zero, AcmStreamOpenFlags.NonRealTime), "acmStreamOpen");
                 
                 // horrible stuff due to wierd Marshalling issues
                 /*
@@ -58,14 +58,14 @@ namespace NAudio.Wave.Compression
         /// <param name="driverId">the driver identifier</param>
         /// <param name="sourceFormat">the source format</param>
         /// <param name="waveFilter">the wave filter</param>
-        public AcmStream(int driverId, WaveFormat sourceFormat, WaveFilter waveFilter)
+        public AcmStream(IntPtr driverId, WaveFormat sourceFormat, WaveFilter waveFilter)
         {
             int sourceBufferSize = Math.Max(16384, sourceFormat.AverageBytesPerSecond);
             this.sourceFormat = sourceFormat;
             sourceBufferSize -= (sourceBufferSize % sourceFormat.BlockAlign);
             MmException.Try(AcmInterop.acmDriverOpen(out driverHandle, driverId, 0), "acmDriverOpen");
             MmException.Try(AcmInterop.acmStreamOpen(out streamHandle, driverHandle,
-                          sourceFormat, sourceFormat, waveFilter, 0, 0, AcmStreamOpenFlags.NonRealTime), "acmStreamOpen");
+                          sourceFormat, sourceFormat, waveFilter, IntPtr.Zero, IntPtr.Zero, AcmStreamOpenFlags.NonRealTime), "acmStreamOpen");
             streamHeader = new AcmStreamHeader(streamHandle, sourceBufferSize, SourceToDest(sourceBufferSize));
         }
 

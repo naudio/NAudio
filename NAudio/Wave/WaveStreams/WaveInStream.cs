@@ -44,12 +44,12 @@ namespace NAudio.Wave
             callback = new WaveInterop.WaveCallback(Callback);
             if (callbackWindow == null)
             {
-                MmException.Try(WaveInterop.waveInOpen(out waveInHandle, deviceNumber, desiredFormat, callback, 0, WaveInterop.CallbackFunction), "waveInOpen");
+                MmException.Try(WaveInterop.waveInOpen(out waveInHandle, (IntPtr)deviceNumber, desiredFormat, callback, IntPtr.Zero, WaveInterop.CallbackFunction), "waveInOpen");
             }
             else
             {
                 waveInWindow = new WaveWindowNative(callback);
-                MmException.Try(WaveInterop.waveInOpenWindow(out waveInHandle, deviceNumber, desiredFormat, callbackWindow.Handle, 0, WaveInterop.CallbackWindow), "waveInOpen");
+                MmException.Try(WaveInterop.waveInOpenWindow(out waveInHandle, (IntPtr)deviceNumber, desiredFormat, callbackWindow.Handle, IntPtr.Zero, WaveInterop.CallbackWindow), "waveInOpen");
                 waveInWindow.AssignHandle(callbackWindow.Handle);
             }
 
@@ -67,7 +67,7 @@ namespace NAudio.Wave
         /// <summary>
         /// Called when we get a new buffer of recorded data
         /// </summary>
-        private void Callback(IntPtr waveInHandle, WaveInterop.WaveMessage message, int userData, WaveHeader waveHeader, int reserved)
+        private void Callback(IntPtr waveInHandle, WaveInterop.WaveMessage message, IntPtr userData, WaveHeader waveHeader, IntPtr reserved)
         {
             if (message == WaveInterop.WaveMessage.WaveInData)
             {

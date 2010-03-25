@@ -31,7 +31,7 @@ namespace NAudio.Midi
         {
             MidiOutCapabilities caps = new MidiOutCapabilities();
             int structSize = Marshal.SizeOf(caps);
-            MmException.Try(MidiInterop.midiOutGetDevCaps(midiOutDeviceNumber, out caps, structSize), "midiOutGetDevCaps");
+            MmException.Try(MidiInterop.midiOutGetDevCaps((IntPtr)midiOutDeviceNumber, out caps, structSize), "midiOutGetDevCaps");
             return caps;
         }
 
@@ -43,7 +43,7 @@ namespace NAudio.Midi
 		public MidiOut(int deviceNo) 
 		{
             this.callback = new MidiInterop.MidiOutCallback(Callback);
-            MmException.Try(MidiInterop.midiOutOpen(out hMidiOut, deviceNo, callback, 0, MidiInterop.CALLBACK_FUNCTION), "midiOutOpen");
+            MmException.Try(MidiInterop.midiOutOpen(out hMidiOut, (IntPtr)deviceNo, callback, IntPtr.Zero, MidiInterop.CALLBACK_FUNCTION), "midiOutOpen");
 		}
 		
 		/// <summary>
@@ -98,7 +98,7 @@ namespace NAudio.Midi
 		/// <param name="param2">Parameter 2</param>
 		public void SendDriverMessage(int message, int param1, int param2) 
 		{
-			MmException.Try(MidiInterop.midiOutMessage(hMidiOut,message,param1,param2),"midiOutMessage");
+			MmException.Try(MidiInterop.midiOutMessage(hMidiOut,message,(IntPtr)param1,(IntPtr)param2),"midiOutMessage");
 		}
 
 		/// <summary>

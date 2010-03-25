@@ -149,15 +149,15 @@ namespace NAudio.Mixer
 			
 			if((mixerControl.fdwControl & MixerInterop.MIXERCONTROL_CONTROLF_MULTIPLE) != 0) 
 			{
-				mixerControlDetails.cMultipleItems = mixerControl.cMultipleItems;
+				mixerControlDetails.hwndOwner = (IntPtr)mixerControl.cMultipleItems;
 			}
 			else if(IsCustom) 
 			{
-				mixerControlDetails.cMultipleItems = 0; // TODO: special cases
+				mixerControlDetails.hwndOwner = IntPtr.Zero; // TODO: special cases
 			}
 			else 
 			{
-				mixerControlDetails.cMultipleItems = 0;
+                mixerControlDetails.hwndOwner = IntPtr.Zero;
 			}
 			
 			if(IsBoolean) 

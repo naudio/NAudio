@@ -7,6 +7,7 @@ namespace NAudio.Wave.Compression
 {
     /// <summary>
     /// ACMFORMATCHOOSE
+    /// http://msdn.microsoft.com/en-us/library/dd742911%28VS.85%29.aspx
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
     struct AcmFormatChoose
@@ -77,7 +78,7 @@ namespace NAudio.Wave.Compression
         /// <summary>
         /// LPARAM lCustData; 
         /// </summary>
-        public int customData;
+        public IntPtr customData;
         /// <summary>
         /// ACMFORMATCHOOSEHOOKPROC pfnHook; 
         /// </summary>

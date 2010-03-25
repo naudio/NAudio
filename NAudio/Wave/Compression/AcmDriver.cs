@@ -11,7 +11,7 @@ namespace NAudio.Wave.Compression
     {
         private static List<AcmDriver> drivers;
         private AcmDriverDetails details;
-        private int driverId;
+        private IntPtr driverId;
         private IntPtr driverHandle;
         private List<AcmFormatTag> formatTags;
         private List<AcmFormat> tempFormatsList; // used by enumerator
@@ -130,14 +130,14 @@ namespace NAudio.Wave.Compression
         public static IEnumerable<AcmDriver> EnumerateAcmDrivers()
         {
             drivers = new List<AcmDriver>();
-            MmException.Try(AcmInterop.acmDriverEnum(new AcmInterop.AcmDriverEnumCallback(DriverEnumCallback), 0, 0), "acmDriverEnum");
+            MmException.Try(AcmInterop.acmDriverEnum(new AcmInterop.AcmDriverEnumCallback(DriverEnumCallback), IntPtr.Zero, 0), "acmDriverEnum");
             return drivers;
         }
 
         /// <summary>
         /// The callback for acmDriverEnum
         /// </summary>
-        private static bool DriverEnumCallback(int hAcmDriver, int dwInstance, AcmDriverDetailsSupportFlags flags)
+        private static bool DriverEnumCallback(IntPtr hAcmDriver, IntPtr dwInstance, AcmDriverDetailsSupportFlags flags)
         {
             drivers.Add(new AcmDriver(hAcmDriver));
             return true;
@@ -147,7 +147,7 @@ namespace NAudio.Wave.Compression
         /// Creates a new ACM Driver object
         /// </summary>
         /// <param name="hAcmDriver">Driver handle</param>
-        private AcmDriver(int hAcmDriver)
+        private AcmDriver(IntPtr hAcmDriver)
         {
             driverId = hAcmDriver;
             details = new AcmDriverDetails();
@@ -180,7 +180,7 @@ namespace NAudio.Wave.Compression
         /// <summary>
         /// The driver ID
         /// </summary>
-        public int DriverId
+        public IntPtr DriverId
         {
             get
             {
@@ -267,13 +267,13 @@ namespace NAudio.Wave.Compression
             }
         }
 
-        private bool AcmFormatTagEnumCallback(int hAcmDriverId, ref AcmFormatTagDetails formatTagDetails, IntPtr dwInstance, AcmDriverDetailsSupportFlags flags)
+        private bool AcmFormatTagEnumCallback(IntPtr hAcmDriverId, ref AcmFormatTagDetails formatTagDetails, IntPtr dwInstance, AcmDriverDetailsSupportFlags flags)
         {
             formatTags.Add(new AcmFormatTag(formatTagDetails));
             return true;
         }
 
-        private bool AcmFormatEnumCallback(int hAcmDriverId, ref AcmFormatDetails formatDetails, IntPtr dwInstance, AcmDriverDetailsSupportFlags flags)
+        private bool AcmFormatEnumCallback(IntPtr hAcmDriverId, ref AcmFormatDetails formatDetails, IntPtr dwInstance, AcmDriverDetailsSupportFlags flags)
         {
             tempFormatsList.Add(new AcmFormat(formatDetails));
             return true;

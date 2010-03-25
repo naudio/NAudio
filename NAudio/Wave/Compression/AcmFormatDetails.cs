@@ -5,6 +5,10 @@ using System.Runtime.InteropServices;
 
 namespace NAudio.Wave.Compression
 {
+    /// <summary>
+    /// ACMFORMATDETAILS
+    /// http://msdn.microsoft.com/en-us/library/dd742913%28VS.85%29.aspx
+    /// </summary>
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
     struct AcmFormatDetails
     {

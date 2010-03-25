@@ -13,7 +13,7 @@ namespace NAudio.Wave
         private WaveOutBuffer[] buffers;
         private IWaveProvider waveStream;
         
-        private PlaybackState playbackState;
+        private volatile PlaybackState playbackState;
         private WaveInterop.WaveCallback callback;
         
         private float volume = 1;
@@ -34,7 +34,7 @@ namespace NAudio.Wave
         {
             WaveOutCapabilities caps = new WaveOutCapabilities();
             int structSize = Marshal.SizeOf(caps);
-            MmException.Try(WaveInterop.waveOutGetDevCaps(devNumber, out caps, structSize), "waveOutGetDevCaps");
+            MmException.Try(WaveInterop.waveOutGetDevCaps((IntPtr)devNumber, out caps, structSize), "waveOutGetDevCaps");
             return caps;
         }
 
@@ -200,6 +200,8 @@ namespace NAudio.Wave
             if (playbackState != PlaybackState.Stopped)
             {
                 MmResult result;
+                playbackState = PlaybackState.Stopped; // set this here to avoid a problem with some drivers whereby 
+                // in the call to waveOutReset they don't return until an OnDone is called
                 lock (waveOutLock)
                 {
                     result = WaveInterop.waveOutReset(hWaveOut);
@@ -208,8 +210,7 @@ namespace NAudio.Wave
                 {
                     throw new MmException(result, "waveOutReset");
                 }
-                playbackState = PlaybackState.Stopped;
-            } 
+            }
         }
 
         /// <summary>
@@ -301,7 +302,7 @@ namespace NAudio.Wave
         #endregion
 
         // made non-static so that playing can be stopped here
-        private void Callback(IntPtr hWaveOut, WaveInterop.WaveMessage uMsg, Int32 dwUser, WaveHeader wavhdr, int dwReserved)
+        private void Callback(IntPtr hWaveOut, WaveInterop.WaveMessage uMsg, IntPtr dwInstance, WaveHeader wavhdr, IntPtr dwReserved)
         {
             if (uMsg == WaveInterop.WaveMessage.WaveOutDone)
             {

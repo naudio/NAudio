@@ -21,7 +21,15 @@ namespace NAudioDemo
         public RecordingForm()
         {
             InitializeComponent();
-            LoadWasapiDevicesCombo();
+            if (System.Environment.OSVersion.Version.Major >= 6)
+            {
+                LoadWasapiDevicesCombo();
+            }
+            else
+            {
+                radioButtonWasapi.Enabled = false;
+                comboDevices.Enabled = false;
+            }
         }
 
         private void LoadWasapiDevicesCombo()

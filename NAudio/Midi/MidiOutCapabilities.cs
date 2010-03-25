@@ -1,14 +1,15 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace NAudio.Midi 
+namespace NAudio.Midi
 {
-	/// <summary>
-	/// class representing the capabilities of a MIDI out device
-	/// </summary>
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]    
-    public struct MidiOutCapabilities 
-	{
+    /// <summary>
+    /// class representing the capabilities of a MIDI out device
+    /// MIDIOUTCAPS: http://msdn.microsoft.com/en-us/library/dd798467%28VS.85%29.aspx
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+    public struct MidiOutCapabilities
+    {
         Int16 manufacturerId;
         Int16 productId;
         int driverVersion;
@@ -20,8 +21,7 @@ namespace NAudio.Midi
         UInt16 wChannelMask;
         MidiOutCapabilityFlags dwSupport;
 
-        const int MaxProductNameLength = 32; 				// max product name length (including NULL)
-
+        const int MaxProductNameLength = 32; // max product name length (including NULL)
 
         [Flags]
         enum MidiOutCapabilityFlags
@@ -46,136 +46,136 @@ namespace NAudio.Midi
             Stream = 8,
         }
 
-		/// <summary>
-		/// Gets the manufacturer of this device
-		/// </summary>
-		public Manufacturers Manufacturer
-		{
-			get 
-			{
-				return (Manufacturers) manufacturerId;
-			}
-		}
-		
-		/// <summary>
-		/// Gets the product identifier (manufacturer specific)
-		/// </summary>
-		public short ProductId 
-		{
-			get 
-			{
-				return productId;
-			}
-		}
-		
-		/// <summary>
-		/// Gets the product name
-		/// </summary>
-		public String ProductName 
-		{
-			get 
-			{
-				return productName;
-			}
-		}
+        /// <summary>
+        /// Gets the manufacturer of this device
+        /// </summary>
+        public Manufacturers Manufacturer
+        {
+            get
+            {
+                return (Manufacturers)manufacturerId;
+            }
+        }
 
-		/// <summary>
-		/// Returns the number of supported voices
-		/// </summary>
-		public int Voices 
-		{
-			get 
-			{
-				return wVoices;
-			}
-		}
-		
-		/// <summary>
-		/// Gets the polyphony of the device
-		/// </summary>
-		public int Notes 
-		{ 
-			get 
-			{
-				return wNotes;
-			}
-		}
-		
-		/// <summary>
-		/// Returns true if the device supports all channels
-		/// </summary>
-		public bool SupportsAllChannels 
-		{
-			get 
-			{
-				return wChannelMask == 0xFFFF;
-			}
-		}
-		
-		/// <summary>
-		/// Queries whether a particular channel is supported
-		/// </summary>
-		/// <param name="channel">Channel number to test</param>
-		/// <returns>True if the channel is supported</returns>
-		public bool SupportsChannel(int channel) 
-		{
-			return (wChannelMask & (1 << (channel - 1))) > 0;
-		}
-		
-		/// <summary>
-		/// Returns true if the device supports patch caching
-		/// </summary>
-		public bool SupportsPatchCaching 
-		{
-			get 
-			{
+        /// <summary>
+        /// Gets the product identifier (manufacturer specific)
+        /// </summary>
+        public short ProductId
+        {
+            get
+            {
+                return productId;
+            }
+        }
+
+        /// <summary>
+        /// Gets the product name
+        /// </summary>
+        public String ProductName
+        {
+            get
+            {
+                return productName;
+            }
+        }
+
+        /// <summary>
+        /// Returns the number of supported voices
+        /// </summary>
+        public int Voices
+        {
+            get
+            {
+                return wVoices;
+            }
+        }
+
+        /// <summary>
+        /// Gets the polyphony of the device
+        /// </summary>
+        public int Notes
+        {
+            get
+            {
+                return wNotes;
+            }
+        }
+
+        /// <summary>
+        /// Returns true if the device supports all channels
+        /// </summary>
+        public bool SupportsAllChannels
+        {
+            get
+            {
+                return wChannelMask == 0xFFFF;
+            }
+        }
+
+        /// <summary>
+        /// Queries whether a particular channel is supported
+        /// </summary>
+        /// <param name="channel">Channel number to test</param>
+        /// <returns>True if the channel is supported</returns>
+        public bool SupportsChannel(int channel)
+        {
+            return (wChannelMask & (1 << (channel - 1))) > 0;
+        }
+
+        /// <summary>
+        /// Returns true if the device supports patch caching
+        /// </summary>
+        public bool SupportsPatchCaching
+        {
+            get
+            {
                 return (dwSupport & MidiOutCapabilityFlags.PatchCaching) != 0;
-			}
-		}
+            }
+        }
 
-		/// <summary>
-		/// Returns true if the device supports separate left and right volume
-		/// </summary>
-		public bool SupportsSeparateLeftAndRightVolume 
-		{
-			get 
-			{
+        /// <summary>
+        /// Returns true if the device supports separate left and right volume
+        /// </summary>
+        public bool SupportsSeparateLeftAndRightVolume
+        {
+            get
+            {
                 return (dwSupport & MidiOutCapabilityFlags.LeftRightVolume) != 0;
-			}
-		}
+            }
+        }
 
-		/// <summary>
-		/// Returns true if the device supports MIDI stream out
-		/// </summary>
-		public bool SupportsMidiStreamOut 
-		{
-			get 
-			{
+        /// <summary>
+        /// Returns true if the device supports MIDI stream out
+        /// </summary>
+        public bool SupportsMidiStreamOut
+        {
+            get
+            {
                 return (dwSupport & MidiOutCapabilityFlags.Stream) != 0;
-			}
-		}
+            }
+        }
 
-		/// <summary>
-		/// Returns true if the device supports volume control
-		/// </summary>
-		public bool SupportsVolumeControl 
-		{
-			get 
-			{
+        /// <summary>
+        /// Returns true if the device supports volume control
+        /// </summary>
+        public bool SupportsVolumeControl
+        {
+            get
+            {
                 return (dwSupport & MidiOutCapabilityFlags.Volume) != 0;
-			}
-		}
- 
-		/// <summary>
-		/// Returns the type of technology used by this MIDI out device
-		/// </summary>
-		public MidiOutTechnology Technology 
-		{
-			get 
-			{
-				return (MidiOutTechnology) wTechnology;
-			}
-		}
-	
-	}
+            }
+        }
+
+        /// <summary>
+        /// Returns the type of technology used by this MIDI out device
+        /// </summary>
+        public MidiOutTechnology Technology
+        {
+            get
+            {
+                return (MidiOutTechnology)wTechnology;
+            }
+        }
+
+    }
 }

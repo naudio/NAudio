@@ -26,13 +26,13 @@ namespace NAudio.Wave
                     IntPtr hOutputDevice = m.WParam;
                     WaveHeader waveHeader = new WaveHeader();
                     Marshal.PtrToStructure(m.LParam, waveHeader);
-                    waveCallback(hOutputDevice, message, 0, waveHeader, 0);
+                    waveCallback(hOutputDevice, message, IntPtr.Zero, waveHeader, IntPtr.Zero);
                     break;
                 case WaveInterop.WaveMessage.WaveOutOpen:
                 case WaveInterop.WaveMessage.WaveOutClose:
                 case WaveInterop.WaveMessage.WaveInClose:
                 case WaveInterop.WaveMessage.WaveInOpen:
-                    waveCallback(m.WParam, message, 0, null, 0);
+                    waveCallback(m.WParam, message, IntPtr.Zero, null, IntPtr.Zero);
                     break;
                 default:
                     base.WndProc(ref m);
@@ -61,13 +61,13 @@ namespace NAudio.Wave
                     IntPtr hOutputDevice = m.WParam;
                     WaveHeader waveHeader = new WaveHeader();
                     Marshal.PtrToStructure(m.LParam, waveHeader);
-                    waveCallback(hOutputDevice, message, 0, waveHeader, 0);
+                    waveCallback(hOutputDevice, message, IntPtr.Zero, waveHeader, IntPtr.Zero);
                     break;
                 case WaveInterop.WaveMessage.WaveOutOpen:
                 case WaveInterop.WaveMessage.WaveOutClose:
                 case WaveInterop.WaveMessage.WaveInClose:
                 case WaveInterop.WaveMessage.WaveInOpen:
-                    waveCallback(m.WParam, message, 0, null, 0);
+                    waveCallback(m.WParam, message, IntPtr.Zero, null, IntPtr.Zero);
                     break;
                 default:
                     base.WndProc(ref m);

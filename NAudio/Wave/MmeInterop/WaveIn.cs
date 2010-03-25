@@ -81,7 +81,7 @@ namespace NAudio.Wave
         {
             WaveInCapabilities caps = new WaveInCapabilities();
             int structSize = Marshal.SizeOf(caps);
-            MmException.Try(WaveInterop.waveInGetDevCaps(devNumber, out caps, structSize), "waveInGetDevCaps");
+            MmException.Try(WaveInterop.waveInGetDevCaps((IntPtr)devNumber, out caps, structSize), "waveInGetDevCaps");
             return caps;
         }
 
@@ -115,7 +115,7 @@ namespace NAudio.Wave
         /// <summary>
         /// Called when we get a new buffer of recorded data
         /// </summary>
-        private void Callback(IntPtr waveInHandle, WaveInterop.WaveMessage message, int userData, WaveHeader waveHeader, int reserved)
+        private void Callback(IntPtr waveInHandle, WaveInterop.WaveMessage message, IntPtr userData, WaveHeader waveHeader, IntPtr reserved)
         {
             if (message == WaveInterop.WaveMessage.WaveInData)
             {

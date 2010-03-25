@@ -77,11 +77,11 @@ namespace NAudio.Wave
             MmResult result;
             if (Strategy == WaveCallbackStrategy.FunctionCallback)
             {
-                result = WaveInterop.waveOutOpen(out waveOutHandle, deviceNumber, waveFormat, callback, 0, WaveInterop.CallbackFunction);
+                result = WaveInterop.waveOutOpen(out waveOutHandle, (IntPtr)deviceNumber, waveFormat, callback, IntPtr.Zero, WaveInterop.CallbackFunction);
             }
             else
             {
-                result = WaveInterop.waveOutOpenWindow(out waveOutHandle, deviceNumber, waveFormat, this.Handle, 0, WaveInterop.CallbackWindow);
+                result = WaveInterop.waveOutOpenWindow(out waveOutHandle, (IntPtr)deviceNumber, waveFormat, this.Handle, IntPtr.Zero, WaveInterop.CallbackWindow);
             }
             return result;
         }
@@ -91,11 +91,11 @@ namespace NAudio.Wave
             MmResult result;
             if (Strategy == WaveCallbackStrategy.FunctionCallback)
             {        
-                result = WaveInterop.waveInOpen(out waveInHandle, deviceNumber, waveFormat, callback, 0, WaveInterop.CallbackFunction);
+                result = WaveInterop.waveInOpen(out waveInHandle, (IntPtr)deviceNumber, waveFormat, callback, IntPtr.Zero, WaveInterop.CallbackFunction);
             }
             else
             {
-                result = WaveInterop.waveInOpenWindow(out waveInHandle, deviceNumber, waveFormat, this.Handle, 0, WaveInterop.CallbackWindow);
+                result = WaveInterop.waveInOpenWindow(out waveInHandle, (IntPtr)deviceNumber, waveFormat, this.Handle, IntPtr.Zero, WaveInterop.CallbackWindow);
             }
             return result;
         }

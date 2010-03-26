@@ -29,7 +29,7 @@ namespace NAudio.Wave.Compression
 
         private void Prepare()
         {
-            streamHeader.cbStruct = 84;// 21 int sized params;
+            streamHeader.cbStruct = Marshal.SizeOf(streamHeader);
             streamHeader.sourceBufferLength = sourceBuffer.Length;
             streamHeader.sourceBufferPointer = hSourceBuffer.AddrOfPinnedObject();
             streamHeader.destBufferLength = destBuffer.Length;

@@ -8,8 +8,8 @@ namespace NAudio.Wave.Compression
     /// Interop structure for ACM stream headers.
     /// ACMSTREAMHEADER 
     /// http://msdn.microsoft.com/en-us/library/dd742926%28VS.85%29.aspx
-    /// </summary>
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+    /// </summary>    
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Size = 128)] // explicit size to make it work for x64
     class AcmStreamHeaderStruct
     {
         public int cbStruct;
@@ -24,13 +24,10 @@ namespace NAudio.Wave.Compression
         public int destBufferLengthUsed = 0;
         public IntPtr destUserData;
 
-        [MarshalAs(UnmanagedType.ByValArray,SizeConst=10)]
-        public int[] reserved;
-
-        /* not entirely sure this will work for x64 - take our chances for now and hope the C# marshalling code pins this array
-        // have 10 members rather than an array just in case
-        // the ACM driver uses this and the garbage collector moves it
-        public int reserved0;
+        // 10 reserved values follow this, we don't need to declare them
+        // since we have set the struct size explicitly and don't
+        // need to access them in client code (thanks Brian)
+        /*public int reserved0;
         public int reserved1;
         public int reserved2;
         public int reserved3;

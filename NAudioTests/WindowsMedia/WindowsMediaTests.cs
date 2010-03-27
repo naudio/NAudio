@@ -4,12 +4,15 @@ using System.Text;
 using NUnit.Framework;
 using NAudio.WindowsMediaFormat;
 using System.Runtime.InteropServices;
+using System.IO;
 
 namespace NAudioTests.WindowsMedia
 {
     [TestFixture]
     public class WindowsMediaTests
     {
+        private string testWmaFile = @"C:\Documents and Settings\All Users\Documents\My Music\Sample Music\New Stories (Highway Blues).wma";
+
         [Test]
         public void CanCreateSyncReader()
         {
@@ -87,13 +90,17 @@ namespace NAudioTests.WindowsMedia
             Assert.IsFalse(String.IsNullOrEmpty(name));*/
         }
 
-        private static IWMSyncReader OpenWmaFile()
+        private IWMSyncReader OpenWmaFile()
         {
+            if(!File.Exists(testWmaFile))
+            {
+                Assert.Ignore("Test WMA File Not Found");
+            }
             IWMSyncReader reader;
             uint hresult = Functions.WMCreateSyncReader(IntPtr.Zero, WMT_RIGHTS.None, out reader);
             Assert.AreEqual(0, hresult);
             Assert.IsNotNull(reader);
-            hresult = reader.Open(@"C:\Documents and Settings\All Users\Documents\My Music\Sample Music\New Stories (Highway Blues).wma");
+            hresult = reader.Open(testWmaFile);
             Assert.AreEqual(0, hresult);
             return reader;
         }

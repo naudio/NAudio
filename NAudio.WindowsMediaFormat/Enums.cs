@@ -391,7 +391,7 @@ namespace NAudio.WindowsMediaFormat
         WMT_Transport_Type_Reliable = 1
     }
 
-    enum WMT_VERSION
+    public enum WMT_VERSION
     {
         WMT_VER_4_0 = 0x00040000,
         WMT_VER_7_0 = 0x00070000,

@@ -21,5 +21,11 @@ namespace NAudio.WindowsMediaFormat
             [In] WMT_RIGHTS dwRights,
             [Out] out IWMSyncReader ppSyncReader);
 
+        [DllImport("WMVCore.dll", EntryPoint = "WMCreateWriter", SetLastError = true,
+             CharSet = CharSet.Unicode, ExactSpelling = true,
+             CallingConvention = CallingConvention.StdCall)]
+        public static extern uint WMCreateWriter(
+            [In] IntPtr pUnkReserved, // must be set to null
+            [Out] out IWMWriter ppWriter);
     }
 }

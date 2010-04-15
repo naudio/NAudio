@@ -15,7 +15,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         
         int OpenPropertyStore(StorageAccessMode stgmAccess, out IPropertyStore properties);
         
-        int GetId(out string id);
+        int GetId([MarshalAs(UnmanagedType.LPWStr)] out string id);
         
         int GetState(out DeviceState state);
     }

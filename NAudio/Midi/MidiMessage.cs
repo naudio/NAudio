@@ -64,6 +64,18 @@ namespace NAudio.Midi
 			return new MidiMessage((int) MidiCommandCode.PatchChange + channel,patch,0);
 		}
 
+        /// <summary>
+        /// Creates a Control Change message
+        /// </summary>
+        /// <param name="controller">The controller number to change</param>
+        /// <param name="value">The value to set the controller to</param>
+        /// <param name="channel">The MIDI channel number</param>
+        /// <returns>A new MidiMessageObject</returns>
+        public static MidiMessage ChangeControl(int controller, int value, int channel)
+        {
+            return new MidiMessage((int)MidiCommandCode.ControlChange + channel, controller, value);
+        }
+
 		/// <summary>
 		/// Returns the raw MIDI message data
 		/// </summary>

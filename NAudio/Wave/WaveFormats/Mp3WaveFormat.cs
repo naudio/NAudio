@@ -22,11 +22,11 @@ namespace NAudio.Wave
         /// <summary>
         /// Creates a new MP3 WaveFormat
         /// </summary>
-        public Mp3WaveFormat(int sampleRate, int channels, int blockSize, int bitRate)
+        public Mp3WaveFormat(int sampleRate, int channels, int blockSize, double bitRate)
         {
             waveFormatTag = WaveFormatEncoding.MpegLayer3;
             this.channels = (short)channels;
-            this.averageBytesPerSecond = bitRate * (1024 / 8);  // not really used but must be one of 64, 96, 112, 128, 160kbps
+            this.averageBytesPerSecond = (int)(bitRate * (1000.0 / 8.0) + 0.5);
             this.bitsPerSample = 0; // must be zero
             this.blockAlign = 1; // must be 1
             this.sampleRate = sampleRate;
@@ -37,6 +37,15 @@ namespace NAudio.Wave
             this.blockSize = (ushort)blockSize;
             this.framesPerBlock = 1;
             this.codecDelay = 0;
+        }
+
+
+        /// <summary>
+        /// Creates a new MP3 WaveFormat
+        /// </summary>
+        public Mp3WaveFormat(int sampleRate, int channels, int blockSize, int bitRate)
+            : this(sampleRate,channels,blockSize,(double) bitRate)
+        {
         }
 
         public override int BlockAlign

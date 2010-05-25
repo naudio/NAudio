@@ -124,7 +124,7 @@ namespace NAudio.Wave
         /// <summary>
         /// The current position in the stream in Time format
         /// </summary>
-        public TimeSpan CurrentTime
+        public virtual TimeSpan CurrentTime
         {
             get
             {
@@ -139,7 +139,7 @@ namespace NAudio.Wave
         /// <summary>
         /// Total length in real-time of the stream (may be an estimate for compressed files)
         /// </summary>
-        public TimeSpan TotalTime
+        public virtual TimeSpan TotalTime
         {
             get
             {

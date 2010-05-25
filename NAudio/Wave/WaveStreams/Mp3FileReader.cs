@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 
 namespace NAudio.Wave
 {
@@ -20,6 +21,10 @@ namespace NAudio.Wave
         private byte[] id3v1Tag;
         private bool ownInputStream;
 
+        private List<long> tableOfContents;
+
+        private int sampleRate;
+
 		/// <summary>Supports opening a MP3 file</summary>
         public Mp3FileReader(string mp3FileName) 
             : this(File.OpenRead(mp3FileName))
@@ -34,8 +39,9 @@ namespace NAudio.Wave
         /// <param name="inputStream"></param>
         public Mp3FileReader(Stream inputStream)
         {
-            int sampleRate;
-            int bitRate;
+
+            // Calculated as a double to minimize rounding errors
+            double bitRate;
 
             mp3Stream = inputStream;
             id3v2Tag = Id3v2Tag.ReadTag(mp3Stream);
@@ -46,6 +52,8 @@ namespace NAudio.Wave
             frameLengthInBytes = mp3Frame.FrameLength;
             bitRate = mp3Frame.BitRate;
             xingHeader = XingHeader.LoadXingHeader(mp3Frame);
+            // If the header exists, we can skip over it when decoding the rest of the file
+            if (xingHeader != null) dataStartPosition = mp3Stream.Position;
 
             this.length = mp3Stream.Length - dataStartPosition;
 
@@ -61,7 +69,49 @@ namespace NAudio.Wave
 
             mp3Stream.Position = dataStartPosition;
 
+            // Just a guess at how many entries we'll need so the internal array need not resize very much
+            // 400 bytes per frame is probably a good enough approximation.
+            tableOfContents = new List<long>((int)(length/400));
+            do
+            {
+                tableOfContents.Add(mp3Stream.Position);
+            } while (ReadNextFrame(false) != null);
+
+            // Note that the very last entry is actually the position after the final frame, so the real
+            // frame count is toc.Count - 1.
+ 
+            // File length, in milliseconds:
+            double milliseconds = TotalMilliseconds();
+
+            // [Bit rate in Kilobits/sec] = [Length in kbits] / [time in seconds] 
+            //                            = [Length in bits ] / [time in milliseconds]
+            
+            // Note: in audio, 1 kilobit = 1000 bits.
+            bitRate = (length * 8.0 / milliseconds);
+
+            mp3Stream.Position = dataStartPosition;
+
             waveFormat = new Mp3WaveFormat(sampleRate, mp3Frame.ChannelMode == ChannelMode.Mono ? 1 : 2, frameLengthInBytes, bitRate);
+        }
+
+        /// <summary>
+        /// Gets the total length of this file in milliseconds.
+        /// </summary>
+        private double TotalMilliseconds()
+        {
+            // [Frame Count] * [Samples per Frame = 1152 ] / Sampling Rate = time in seconds
+            // Multiply by 1000 for ms.
+            // Calculated as a double to avoid possible overflow after the first three multiplications.
+            double milliseconds = 1000.0 * FrameCount() * 1152.0 / sampleRate;
+            return milliseconds;
+        }
+
+        /// <summary>
+        /// Returns the number of frames in this file.
+        /// </summary>
+        private int FrameCount()
+        {
+            return (tableOfContents.Count - 1);
         }
 
         /// <summary>
@@ -92,9 +142,18 @@ namespace NAudio.Wave
         /// <returns>Next mp3 frame, or null if EOF</returns>
         public Mp3Frame ReadNextFrame()
         {
+            return ReadNextFrame(true);
+        }
+
+        /// <summary>
+        /// Reads the next mp3 frame
+        /// </summary>
+        /// <returns>Next mp3 frame, or null if EOF</returns>
+        public Mp3Frame ReadNextFrame(bool readData)
+        {
             if (Position < Length)
             {
-                return new Mp3Frame(mp3Stream);
+                return new Mp3Frame(mp3Stream, readData);
             }
             return null;
         }
@@ -134,11 +193,57 @@ namespace NAudio.Wave
             {
                 lock (this)
                 {
-                    value = Math.Min(value, Length);
-                    // make sure we don't get out of sync
-                    value -= (value % waveFormat.BlockAlign);
-                    mp3Stream.Position = value + dataStartPosition;
+                    value = Math.Max(Math.Min(value, Length), 0);
+                    value += dataStartPosition;
+
+                    // Find the index of the next prior frame in the TOC.
+                    int index = tableOfContents.BinarySearch(value);
+
+                    // If index is negative, that means the exact offset isn't in the TOC
+                    // Do a bitwise complement to get the next larger offset, and subtract 1 to get the next smaller
+                    // Limit the result to >= 0 (though it should be unnecessary)
+                    if (index < 0)
+                        index = Math.Max(~index - 1, 0);
+
+                    mp3Stream.Position = tableOfContents[index];
+
                 }
+            }
+        }
+
+
+        /// <summary>
+        /// <see cref="WaveStream.CurrentTime"/>
+        /// </summary>
+        public override TimeSpan CurrentTime
+        {
+            get
+            {
+                int index = tableOfContents.BinarySearch(Position);
+                if (index < 0) index = ~index;
+
+                // Again we use a double to avoid possible overflow issues
+                return TimeSpan.FromMilliseconds(index * 1152.0 * 1000.0 / sampleRate);
+            }
+            set
+            {
+                double milliseconds = value.TotalMilliseconds;
+                int frame = (int)(sampleRate * milliseconds / 1000.0 / 1152.0);
+
+                frame = Math.Max(Math.Min(frame, FrameCount()), 0);
+                mp3Stream.Position = tableOfContents[frame];
+            }
+        }
+
+        
+        /// <summary>
+        /// <see cref="WaveStream.TotalTime"/>
+        /// </summary>
+        public override TimeSpan TotalTime
+        {
+            get
+            {
+                return TimeSpan.FromMilliseconds(TotalMilliseconds());
             }
         }
 
@@ -147,6 +252,7 @@ namespace NAudio.Wave
         /// </summary>        
         public override int Read(byte[] sampleBuffer, int offset, int numBytes)
         {
+            // Since BlockAlign = 1, this if statement has no purpose.
             if (numBytes % waveFormat.BlockAlign != 0)
                 //throw new ApplicationException("Must read complete blocks");
                 numBytes -= (numBytes % waveFormat.BlockAlign);
@@ -158,14 +264,29 @@ namespace NAudio.Wave
         /// </summary>
         public override int GetReadSize(int milliseconds)
         {
-            // TODO! AverageBytesPerSecond is complete guesswork at the moment
-            int bytes = (this.WaveFormat.AverageBytesPerSecond / 1000) * milliseconds;
+            double framesD = (double)sampleRate * milliseconds / 1000.0 / 1152.0;
+            int frames = (int)Math.Ceiling(framesD);
+
+            // Locate the current frame
+            long position = Math.Max(Math.Min(Position, Length), 0);
+            position += dataStartPosition;
+
+            // Find the index of the next prior frame in the TOC.
+            int index = tableOfContents.BinarySearch(position);
+            if (index < 0)
+                index = Math.Max(~index - 1, 0); // this line can only happen if we're currently not frame aligned
+
+            int indexEnd = Math.Min(index + frames, FrameCount());
+
+            return (int)(tableOfContents[indexEnd] - tableOfContents[index]);
+            /* TODO! AverageBytesPerSecond is complete guesswork at the moment
+            int bytes = (this.WaveFormat.AverageBytesPerSecond / 900) * milliseconds;
             if (bytes % BlockAlign != 0)
             {
                 bytes = bytes / BlockAlign;
                 bytes = (bytes + 1) * BlockAlign;
             }
-            return bytes;
+            return bytes;*/
         }
 
         /// <summary>
@@ -175,7 +296,7 @@ namespace NAudio.Wave
         {
             get
             {
-                return frameLengthInBytes; //Mp3WaveFormat.BlockSize;
+                return 1;//frameLengthInBytes; //Mp3WaveFormat.BlockSize;
             }
         }
 

@@ -99,6 +99,14 @@ namespace NAudio.Wave
         /// <remarks>http://mpgedit.org/mpgedit/mpeg_format/mpeghdr.htm 
         /// has some good info</remarks>
         public Mp3Frame(Stream input)
+            : this(input, true)
+        { }
+
+
+        /// <summary>Reads an MP3Frame from a stream</summary>
+        /// <remarks>http://mpgedit.org/mpgedit/mpeg_format/mpeghdr.htm 
+        /// has some good info</remarks>
+        public Mp3Frame(Stream input, bool readData)
         {
             BinaryReader reader = new BinaryReader(input);
             // try for a header
@@ -158,7 +166,8 @@ namespace NAudio.Wave
             long dataStartPosition = input.Position;
             input.Position = headerStartPosition;
 
-            rawData = reader.ReadBytes(frameLengthInBytes);
+            if (readData) rawData = reader.ReadBytes(frameLengthInBytes);
+            else input.Seek(frameLengthInBytes, SeekOrigin.Current);
 
         }
 

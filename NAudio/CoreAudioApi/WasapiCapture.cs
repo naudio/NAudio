@@ -184,7 +184,14 @@ namespace NAudio.CoreAudioApi
 
                 int bytesAvailable = framesAvailable * bytesPerFrame;
 
-                //Debug.WriteLine(string.Format("got buffer: {0} frames", framesAvailable));
+                // apparently it is sometimes possible to read more frames than we were expecting?
+                // fix suggested by Michael Feld:
+                int spaceRemaining = Math.Max(0, recordBuffer.Length - recordBufferOffset);
+                if (spaceRemaining < bytesAvailable && recordBufferOffset > 0)
+                {
+                    if (DataAvailable != null) DataAvailable(this, new WaveInEventArgs(recordBuffer, recordBufferOffset));
+                    recordBufferOffset = 0;
+                }
 
                 // if not silence...
                 if ((flags & AudioClientBufferFlags.Silent) != AudioClientBufferFlags.Silent)

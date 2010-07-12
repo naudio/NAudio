@@ -69,6 +69,7 @@
     <Compile Include="WaveStreams\BlockAlignmentReductionStreamTests.cs" />
     <Compile Include="WaveStreams\CircularBufferTests.cs" />
     <Compile Include="WaveStreams\WaveChannel32Tests.cs" />
+    <Compile Include="WaveStreams\WaveFileReaderTests.cs" />
     <Compile Include="WindowsMedia\WindowsMediaTests.cs" />
   </ItemGroup>
   <ItemGroup>

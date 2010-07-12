@@ -74,7 +74,7 @@ namespace NAudio.Wave
             long stopPosition = Math.Min(fileSize + 8, stream.Length);
             
             // this -8 is so we can be sure that there are at least 8 bytes for a chunk id and length
-            while (stream.Position < stopPosition - 8)
+            while (stream.Position <= stopPosition - 8)
             {
                 Int32 chunkIdentifier = br.ReadInt32();                
                 Int32 chunkLength = br.ReadInt32();

@@ -216,6 +216,7 @@
     <Compile Include="Midi\NoteOnEvent.cs" />
     <Compile Include="Midi\PatchChangeEvent.cs" />
     <Compile Include="Midi\PitchWheelChangeEvent.cs" />
+    <Compile Include="Midi\SequencerSpecificEvent.cs" />
     <Compile Include="Midi\SmpteOffsetEvent.cs" />
     <Compile Include="Midi\SysexEvent.cs" />
     <Compile Include="Midi\TempoEvent.cs" />

@@ -86,11 +86,7 @@ namespace NAudio.Midi
                 me = new KeySignatureEvent(br, length);
 				break;
 			case MetaEventType.SequencerSpecific: // Sequencer specific information
-				me.data = br.ReadBytes(length);
-                if (me.data.Length != length)
-                {
-                    throw new FormatException("Failed to read metaevent's data fully");
-                }
+                me = new SequencerSpecificEvent(br, length);
 				break;
             case MetaEventType.SmpteOffset:
                 me = new SmpteOffsetEvent(br, length);
@@ -109,7 +105,7 @@ namespace NAudio.Midi
 			
 			return me;
 		}
-		
+
 		/// <summary>
 		/// Describes this Meta event
 		/// </summary>

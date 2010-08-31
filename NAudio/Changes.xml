@@ -943,4 +943,11 @@
     <desc>Many changes not listed here, see checkin history</desc>
     <desc>WaveIn callback options brought into line with WaveOut</desc>
   </change>
+  <change>
+    <version>1.3.11.0</version>
+    <author>Mark Heath</author>
+    <date>30 Aug 2010</date>
+    <desc>Many changes not listed here, see checkin history</desc>
+    <desc>Sequencer-specific event added</desc>
+  </change>
 </changes>

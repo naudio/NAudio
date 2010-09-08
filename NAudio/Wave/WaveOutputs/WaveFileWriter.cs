@@ -162,6 +162,7 @@ namespace NAudio.Wave
             if (WaveFormat.BitsPerSample == 16)
             {
                 writer.Write((Int16)(Int16.MaxValue * sample));
+                dataChunkSize += 2;
             }
             else if (WaveFormat.BitsPerSample == 24)
             {
@@ -170,14 +171,17 @@ namespace NAudio.Wave
                 value24[1] = value[2];
                 value24[2] = value[3];
                 writer.Write(value24);
+                dataChunkSize += 3;
             }
             else if (WaveFormat.BitsPerSample == 32 && WaveFormat.Encoding == WaveFormatEncoding.Extensible)
             {
                 writer.Write(UInt16.MaxValue * (Int32)sample);
+                dataChunkSize += 4;
             }
             else if (WaveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
             {
                 writer.Write(sample);
+                dataChunkSize += 4;
             }
             else
             {
@@ -200,6 +204,7 @@ namespace NAudio.Wave
                 {
                     writer.Write(data[sample + offset]);
                 }
+                dataChunkSize += (count * 2);
             }
             // 24 bit PCM data
             else if (WaveFormat.BitsPerSample == 24)
@@ -213,6 +218,7 @@ namespace NAudio.Wave
                     value24[2] = value[3];
                     writer.Write(value24);
                 }
+                dataChunkSize += (count * 3);
             }
             // 32 bit PCM data
             else if (WaveFormat.BitsPerSample == 32 && WaveFormat.Encoding == WaveFormatEncoding.Extensible)
@@ -221,6 +227,7 @@ namespace NAudio.Wave
                 {
                     writer.Write(UInt16.MaxValue * (Int32)data[sample + offset]);
                 }
+                dataChunkSize += (count * 4);
             }
             // IEEE float data
             else if (WaveFormat.BitsPerSample == 32 && WaveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
@@ -229,6 +236,7 @@ namespace NAudio.Wave
                 {
                     writer.Write((float)data[sample + offset] / (float)(Int16.MaxValue + 1));
                 }
+                dataChunkSize += (count * 4);
             }
             else
             {

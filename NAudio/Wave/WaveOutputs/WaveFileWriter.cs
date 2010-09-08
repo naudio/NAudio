@@ -261,6 +261,7 @@ namespace NAudio.Wave
                     for (int channel = 0; channel < WaveFormat.Channels; channel++)
                     {
                         writer.Write((Int16)(Int16.MaxValue * data[channel][sample + offset]));
+                        dataChunkSize += 2;
                     }
                 }
             }
@@ -278,6 +279,7 @@ namespace NAudio.Wave
                         value24[1] = value[2];
                         value24[2] = value[3];
                         writer.Write(value24);
+                        dataChunkSize += 3;
                     }
                 }
             }
@@ -289,6 +291,7 @@ namespace NAudio.Wave
                     for (int channel = 0; channel < WaveFormat.Channels; channel++)
                     {
                         writer.Write((Int32)(Int32.MaxValue * data[channel][sample + offset]));
+                        dataChunkSize += 4;
                     }
                 }
             }
@@ -300,6 +303,7 @@ namespace NAudio.Wave
                     for (int channel = 0; channel < WaveFormat.Channels; channel++)
                     {
                         writer.Write(data[channel][sample + offset]);
+                        dataChunkSize += 4;
                     }
                 }
             }

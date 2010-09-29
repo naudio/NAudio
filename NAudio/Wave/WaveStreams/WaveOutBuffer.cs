@@ -109,7 +109,7 @@ namespace NAudio.Wave
                 return false;
             }
             else
-            {                
+            {
                 for (int n = bytes; n < buffer.Length; n++)
                 {
                     buffer[n] = 0;

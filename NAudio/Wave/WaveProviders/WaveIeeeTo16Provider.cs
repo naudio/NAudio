@@ -59,7 +59,7 @@ namespace NAudio.Wave
             WaveBuffer sourceWaveBuffer = new WaveBuffer(sourceBuffer);
             WaveBuffer destWaveBuffer = new WaveBuffer(destBuffer);
 
-            int sourceSamples = sourceBytesRead * 2;
+            int sourceSamples = sourceBytesRead / 4;
             int destOffset = offset / 2;
             for (int sample = 0; sample < sourceSamples; sample++)
             {
@@ -73,7 +73,7 @@ namespace NAudio.Wave
                 destWaveBuffer.ShortBuffer[destOffset++] = (short)(sample32 * 32767);
             }
 
-            return sourceSamples * 4;
+            return sourceSamples * 2;
         }
 
         /// <summary>

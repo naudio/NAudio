@@ -75,7 +75,16 @@ namespace NAudioDemo
                 return;
             }
 
-            mainOutputStream = CreateInputStream(fileName);
+            try
+            {
+                mainOutputStream = CreateInputStream(fileName);
+            }
+            catch (Exception createException)
+            {
+                MessageBox.Show(String.Format("{0}", createException.Message), "Error Loading File");
+                return;
+            }
+
             trackBarPosition.Maximum = (int)mainOutputStream.TotalTime.TotalSeconds;
             labelTotalTime.Text = String.Format("{0:00}:{1:00}", (int)mainOutputStream.TotalTime.TotalMinutes,
                 mainOutputStream.TotalTime.Seconds);
@@ -262,7 +271,7 @@ namespace NAudioDemo
 
         private void timer1_Tick(object sender, EventArgs e)
         {
-            if (waveOut != null)
+            if (waveOut != null && mainOutputStream != null)
             {
                 if (mainOutputStream.Position >= mainOutputStream.Length)
                 {

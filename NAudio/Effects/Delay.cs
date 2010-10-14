@@ -79,17 +79,7 @@ namespace NAudio.Wave
 		public override int Read(byte[] buffer, int offset, int length) 
 		{
 			throw new NotSupportedException("Delay.Read");
-		}
-		
-		/// <summary>
-		/// Gets the recommended read size
-		/// </summary>
-		/// <param name="milliseconds">Number of milliseconds of audio to read</param>
-		/// <returns>Recommended number of bytes to read</returns>
-		public override int GetReadSize(int milliseconds)
-		{
-			return inStream.GetReadSize(milliseconds);
-		}
+		}	
 
 		/// <summary>
 		/// Block alignment for this stream

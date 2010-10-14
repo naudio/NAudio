@@ -217,22 +217,6 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// Gets the read size
-        /// </summary>
-        /// <param name="milliseconds">Number of milliseconds to read for</param>
-        /// <returns>Number of bytes to read</returns>
-        public override int GetReadSize(int milliseconds)
-        {
-            int sourceBytes = sourceStream.GetReadSize(milliseconds);
-            if (sourceBytes % sourceStream.BlockAlign != 0)
-            {
-                sourceBytes = sourceBytes / sourceStream.BlockAlign;
-                sourceBytes = (sourceBytes + 1) * sourceStream.BlockAlign;
-            }
-            return SourceToDest(sourceBytes);
-        }
-
-        /// <summary>
         /// Gets the block alignment for this stream
         /// </summary>
         public override int BlockAlign

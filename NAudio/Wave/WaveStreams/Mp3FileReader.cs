@@ -156,7 +156,7 @@ namespace NAudio.Wave
         /// <returns>Next mp3 frame, or null if EOF</returns>
         public Mp3Frame ReadNextFrame(bool readData)
         {
-            if (Position < Length)
+            if (Position + frameLengthInBytes <= Length)
             {
                 return new Mp3Frame(mp3Stream, readData);
             }
@@ -211,11 +211,9 @@ namespace NAudio.Wave
                         index = Math.Max(~index - 1, 0);
 
                     mp3Stream.Position = tableOfContents[index];
-
                 }
             }
         }
-
 
         /// <summary>
         /// <see cref="WaveStream.CurrentTime"/>

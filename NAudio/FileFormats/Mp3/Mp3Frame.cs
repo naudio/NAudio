@@ -128,7 +128,7 @@ namespace NAudio.Wave
 
             while (!IsValidHeader(headerBytes))
             {
-                headerStartPosition++;
+                //headerStartPosition++;
                 byte extra = reader.ReadByte(); // n.b can throw an end of stream exception
                 // shift down by one and try again
                 headerBytes[0] = headerBytes[1];

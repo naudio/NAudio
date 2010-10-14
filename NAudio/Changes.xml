@@ -959,4 +959,11 @@
     <desc>Added Wave16ToIeeeProvider</desc>
     <desc>Added WaveInProvider</desc>
   </change>
+  <change>
+    <version>1.3.13.0</version>
+    <author>Mark Heath</author>
+    <date>14 Oct 2010</date>
+    <desc>Retired WaveStream.GetReadSize - not reliable, too difficult to implement, hardly used</desc>
+    <desc>Cleanup on MP3 File Reader</desc>
+  </change>
 </changes>

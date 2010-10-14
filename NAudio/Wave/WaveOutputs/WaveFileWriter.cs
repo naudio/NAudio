@@ -26,7 +26,7 @@ namespace NAudio.Wave
         {
             using (WaveFileWriter writer = new WaveFileWriter(filename, stream.WaveFormat))
             {
-                byte[] buffer = new byte[stream.GetReadSize(4000)];
+                byte[] buffer = new byte[stream.WaveFormat.SampleRate * stream.WaveFormat.Channels * 16];
                 while (true)
                 {
                     int bytesRead = stream.Read(buffer, 0, buffer.Length);

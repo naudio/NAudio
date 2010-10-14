@@ -39,7 +39,6 @@ namespace NAudio.Wave
         /// <param name="inputStream"></param>
         public Mp3FileReader(Stream inputStream)
         {
-
             // Calculated as a double to minimize rounding errors
             double bitRate;
 
@@ -69,16 +68,7 @@ namespace NAudio.Wave
 
             mp3Stream.Position = dataStartPosition;
 
-            // Just a guess at how many entries we'll need so the internal array need not resize very much
-            // 400 bytes per frame is probably a good enough approximation.
-            tableOfContents = new List<long>((int)(length/400));
-            do
-            {
-                tableOfContents.Add(mp3Stream.Position);
-            } while (ReadNextFrame(false) != null);
-
-            // Note that the very last entry is actually the position after the final frame, so the real
-            // frame count is toc.Count - 1.
+            CreateTableOfContents();
  
             // File length, in milliseconds:
             double milliseconds = TotalMilliseconds();
@@ -92,6 +82,27 @@ namespace NAudio.Wave
             mp3Stream.Position = dataStartPosition;
 
             waveFormat = new Mp3WaveFormat(sampleRate, mp3Frame.ChannelMode == ChannelMode.Mono ? 1 : 2, frameLengthInBytes, bitRate);
+        }
+
+        private void CreateTableOfContents()
+        {
+            try
+            {
+                // Just a guess at how many entries we'll need so the internal array need not resize very much
+                // 400 bytes per frame is probably a good enough approximation.
+                tableOfContents = new List<long>((int)(length / 400));
+                do
+                {
+                    tableOfContents.Add(mp3Stream.Position);
+                } while (ReadNextFrame(false) != null);
+            }
+            catch (EndOfStreamException)
+            {
+                // not necessarily a problem
+            }
+
+            // Note that the very last entry is actually the position after the final frame, so the real
+            // frame count is toc.Count - 1.
         }
 
         /// <summary>
@@ -119,10 +130,7 @@ namespace NAudio.Wave
         /// </summary>
         public Id3v2Tag Id3v2Tag
         {
-            get
-            {
-                return id3v2Tag;
-            }
+            get { return id3v2Tag; }
         }
 
         /// <summary>
@@ -130,10 +138,7 @@ namespace NAudio.Wave
         /// </summary>
         public byte[] Id3v1Tag
         {
-            get
-            {
-                return id3v1Tag;
-            }
+            get { return id3v1Tag; }
         }
 
         /// <summary>
@@ -252,41 +257,12 @@ namespace NAudio.Wave
         /// </summary>        
         public override int Read(byte[] sampleBuffer, int offset, int numBytes)
         {
-            // Since BlockAlign = 1, this if statement has no purpose.
+            // MP3 block align is the frame size
             if (numBytes % waveFormat.BlockAlign != 0)
-                //throw new ApplicationException("Must read complete blocks");
-                numBytes -= (numBytes % waveFormat.BlockAlign);
-            return mp3Stream.Read(sampleBuffer, offset, numBytes);
-        }
-
-        /// <summary>
-        /// <see cref="WaveStream.GetReadSize"/>
-        /// </summary>
-        public override int GetReadSize(int milliseconds)
-        {
-            double framesD = (double)sampleRate * milliseconds / 1000.0 / 1152.0;
-            int frames = (int)Math.Ceiling(framesD);
-
-            // Locate the current frame
-            long position = Math.Max(Math.Min(Position, Length), 0);
-            position += dataStartPosition;
-
-            // Find the index of the next prior frame in the TOC.
-            int index = tableOfContents.BinarySearch(position);
-            if (index < 0)
-                index = Math.Max(~index - 1, 0); // this line can only happen if we're currently not frame aligned
-
-            int indexEnd = Math.Min(index + frames, FrameCount());
-
-            return (int)(tableOfContents[indexEnd] - tableOfContents[index]);
-            /* TODO! AverageBytesPerSecond is complete guesswork at the moment
-            int bytes = (this.WaveFormat.AverageBytesPerSecond / 900) * milliseconds;
-            if (bytes % BlockAlign != 0)
             {
-                bytes = bytes / BlockAlign;
-                bytes = (bytes + 1) * BlockAlign;
+                numBytes -= (numBytes % waveFormat.BlockAlign);
             }
-            return bytes;*/
+            return mp3Stream.Read(sampleBuffer, offset, numBytes);
         }
 
         /// <summary>
@@ -294,10 +270,7 @@ namespace NAudio.Wave
         /// </summary>
         public override int BlockAlign
         {
-            get
-            {
-                return 1;//frameLengthInBytes; //Mp3WaveFormat.BlockSize;
-            }
+            get { return 1; } 
         }
 
         /// <summary>
@@ -305,10 +278,7 @@ namespace NAudio.Wave
         /// </summary>
         public XingHeader XingHeader
         {
-            get
-            {
-                return xingHeader;
-            }
+            get { return xingHeader; }
         }
 
         /// <summary>

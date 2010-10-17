@@ -222,8 +222,8 @@ namespace NAudio.Wave
                 bool privateBit = (headerBytes[2] & 0x01) == 0x01;
                 channelMode = (ChannelMode)((headerBytes[3] & 0xC0) >> 6);
                 int channelExtension = (headerBytes[3] & 0x30) >> 4;
-                bool copyright = (headerBytes[3] & 0x08) == 0x80;
-                bool original = (headerBytes[3] & 0x04) == 0x80;
+                bool copyright = (headerBytes[3] & 0x08) == 0x08;
+                bool original = (headerBytes[3] & 0x04) == 0x04;
                 int emphasis = (headerBytes[3] & 0x03);
 
                 int nPadding = padding ? 1 : 0;

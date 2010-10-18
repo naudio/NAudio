@@ -27,20 +27,12 @@ namespace NAudio.Wave.Compression
             {
                 streamHandle = IntPtr.Zero;
                 this.sourceFormat = sourceFormat;
-                int sourceBufferSize = Math.Max(16384, sourceFormat.AverageBytesPerSecond);
+                int sourceBufferSize = Math.Max(65536, sourceFormat.AverageBytesPerSecond);
                 sourceBufferSize -= (sourceBufferSize % sourceFormat.BlockAlign);
                 MmException.Try(AcmInterop.acmStreamOpen(out streamHandle, IntPtr.Zero, sourceFormat, destFormat, null, IntPtr.Zero, IntPtr.Zero, AcmStreamOpenFlags.NonRealTime), "acmStreamOpen");
-                
-                // horrible stuff due to wierd Marshalling issues
-                /*
-                IntPtr sourceFormatPointer = WaveFormat.MarshalToPtr(sourceFormat);
-                IntPtr destFormatPointer = WaveFormat.MarshalToPtr(destFormat);
-                MmResult result = AcmInterop.acmStreamOpen2(out streamHandle, IntPtr.Zero, sourceFormatPointer, destFormatPointer, null, 0, 0, AcmStreamOpenFlags.NonRealTime);
-                Marshal.FreeHGlobal(sourceFormatPointer);
-                Marshal.FreeHGlobal(destFormatPointer);
-                MmException.Try(result, "acmStreamOpen");*/
 
-                streamHeader = new AcmStreamHeader(streamHandle, sourceBufferSize, SourceToDest(sourceBufferSize));
+                int destBufferSize = SourceToDest(sourceBufferSize);
+                streamHeader = new AcmStreamHeader(streamHandle, sourceBufferSize, destBufferSize);
                 driverHandle = IntPtr.Zero;
             }
             catch
@@ -80,7 +72,7 @@ namespace NAudio.Wave.Compression
             if (source == 0) // zero is an invalid parameter to acmStreamSize
                 return 0;
             int convertedBytes;
-            MmException.Try(AcmInterop.acmStreamSize(streamHandle, (int)source, out convertedBytes, AcmStreamSizeFlags.Source), "acmStreamSize");
+            MmException.Try(AcmInterop.acmStreamSize(streamHandle, source, out convertedBytes, AcmStreamSizeFlags.Source), "acmStreamSize");
             return convertedBytes;
         }
 
@@ -94,7 +86,7 @@ namespace NAudio.Wave.Compression
             if (dest == 0) // zero is an invalid parameter to acmStreamSize
                 return 0;
             int convertedBytes;
-            MmException.Try(AcmInterop.acmStreamSize(streamHandle, (int)dest, out convertedBytes, AcmStreamSizeFlags.Destination), "acmStreamSize");
+            MmException.Try(AcmInterop.acmStreamSize(streamHandle, dest, out convertedBytes, AcmStreamSizeFlags.Destination), "acmStreamSize");
             return convertedBytes;
         }
 

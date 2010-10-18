@@ -79,11 +79,34 @@ namespace NAudio.Wave
     /// </summary>
     public class Mp3Frame
     {
-        private static readonly int[] bitRatesLayer1Version1 = new int[] { 0, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416, 448 };
-        private static readonly int[] bitRatesLayer1Version2 = new int[] { 0, 32, 48, 56, 64, 80, 96, 112, 128, 144, 160, 176, 192, 224, 256 };
-        private static readonly int[] bitRatesLayer2Version1 = new int[] { 0, 32, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384 };
-        private static readonly int[] bitRatesLayer3Version1 = new int[] { 0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320 };
-        private static readonly int[] bitRatesLayer3Version2 = new int[] { 0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160 };
+        private static readonly int[,,] bitRates = new int[,,] {
+            {
+                // MPEG Version 1
+                { 0, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416, 448 }, // Layer 1
+                { 0, 32, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384 }, // Layer 2
+                { 0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320 }, // Layer 3
+            },
+            {
+                // MPEG Version 2 & 2.5
+                { 0, 32, 48, 56, 64, 80, 96, 112, 128, 144, 160, 176, 192, 224, 256 }, // Layer 1
+                { 0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160 }, // Layer 2 
+                { 0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160 }, // Layer 3 (same as layer 2)
+            }
+        };
+
+        private static readonly int[,] samplesPerFrame = new int[,] {
+	        {	// MPEG Version 1
+		        384,	// Layer1
+		        1152,	// Layer2	
+		        1152	// Layer3
+	        },
+	        {	// MPEG Version 2 & 2.5
+		        384,	// Layer1
+		        1152,	// Layer2
+		        576		// Layer3
+	        }	
+        };
+        
         private static readonly int[] sampleRatesVersion1 = new int[] { 44100, 48000, 32000 };
         private static readonly int[] sampleRatesVersion2 = new int[] { 22050, 24000, 16000 };
         private static readonly int[] sampleRatesVersion25 = new int[] { 11025, 12000, 8000 };
@@ -96,13 +119,13 @@ namespace NAudio.Wave
         private byte[] rawData;
         private MpegVersion mpegVersion;
         private MpegLayer layer;
-        private ChannelMode channelMode;
-        // not sure what the max frame length is, but 2MB should be plenty
-        private const int MaxFrameLength = 2 * 1024 * 1024;
+        private ChannelMode channelMode;        
+        private const int MaxFrameLength = 16 * 1024;
 
         /// <summary>Reads an MP3Frame from a stream</summary>
-        /// <remarks>http://mpgedit.org/mpgedit/mpeg_format/mpeghdr.htm 
-        /// has some good info</remarks>
+        /// <remarks>http://mpgedit.org/mpgedit/mpeg_format/mpeghdr.htm has some good info
+        /// also see http://www.codeproject.com/KB/audio-video/mpegaudioinfo.aspx
+        /// </remarks>
         public Mp3Frame(Stream input)
             : this(input, true)
         { }
@@ -165,11 +188,12 @@ namespace NAudio.Wave
                 }
 
                 layer = (MpegLayer)((headerBytes[1] & 0x06) >> 1);
-                if (layer != MpegLayer.Layer3)
+                
+                if (layer == MpegLayer.Reserved)
                 {
-                    //throw new FormatException("Not an MP3");
-                    //return false;
+                    return false;
                 }
+                int layerIndex = this.layer == MpegLayer.Layer1 ? 0 : this.layer == MpegLayer.Layer2 ? 1: 2;
                 crcPresent = (headerBytes[1] & 0x01) == 0x00;
                 int bitRateIndex = (headerBytes[2] & 0xF0) >> 4;
                 if (bitRateIndex == 15)
@@ -177,31 +201,8 @@ namespace NAudio.Wave
                     // invalid index
                     return false;
                 }
-                if (this.layer == MpegLayer.Layer1 && this.mpegVersion == Wave.MpegVersion.Version1)
-                {
-                    bitRate = bitRatesLayer1Version1[bitRateIndex];
-                }
-                else if (this.layer == MpegLayer.Layer1 && this.mpegVersion == Wave.MpegVersion.Version2)
-                {
-                    bitRate = bitRatesLayer1Version2[bitRateIndex];
-                }
-                else if (this.layer == MpegLayer.Layer3 && this.mpegVersion == Wave.MpegVersion.Version1)
-                {
-                    bitRate = bitRatesLayer3Version1[bitRateIndex];                    
-                }
-                else if (((this.layer == MpegLayer.Layer2) || (this.layer == MpegLayer.Layer3)) && this.mpegVersion == Wave.MpegVersion.Version2)
-                {
-                    bitRate = bitRatesLayer3Version2[bitRateIndex];
-                }
-                else if (this.layer == MpegLayer.Layer2 && this.mpegVersion == Wave.MpegVersion.Version1)
-                {
-                    bitRate = bitRatesLayer2Version1[bitRateIndex];
-                }
-                else
-                {
-                    // not supported yet
-                    return false;
-                }
+                int versionIndex = this.mpegVersion == Wave.MpegVersion.Version1 ? 0 : 1;
+                this.bitRate = bitRates[versionIndex, layerIndex, bitRateIndex] * 1000;
                 if (bitRate == 0)
                 {
                     return false;
@@ -227,13 +228,15 @@ namespace NAudio.Wave
                 int emphasis = (headerBytes[3] & 0x03);
 
                 int nPadding = padding ? 1 : 0;
+
+                int coefficient = samplesPerFrame[versionIndex, layerIndex] / 8;
                 if (this.layer == MpegLayer.Layer1)
                 {
-                    this.frameLengthInBytes = (12000 * bitRate / sampleRate + nPadding) * 4;
+                    this.frameLengthInBytes = (coefficient * bitRate / sampleRate + nPadding) * 4;
                 }
                 else
                 {
-                    frameLengthInBytes = (144 * 1000 * bitRate) / sampleRate + nPadding;
+                    frameLengthInBytes = (coefficient * bitRate) / sampleRate + nPadding;
                 }
                 
                 if (this.frameLengthInBytes > MaxFrameLength)

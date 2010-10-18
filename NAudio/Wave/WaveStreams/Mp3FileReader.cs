@@ -71,17 +71,17 @@ namespace NAudio.Wave
             CreateTableOfContents();
  
             // File length, in milliseconds:
-            double milliseconds = TotalMilliseconds();
+            double seconds = TotalMilliseconds() / 1000.0;
 
             // [Bit rate in Kilobits/sec] = [Length in kbits] / [time in seconds] 
             //                            = [Length in bits ] / [time in milliseconds]
             
             // Note: in audio, 1 kilobit = 1000 bits.
-            bitRate = (length * 8.0 / milliseconds);
+            bitRate = (length * 8.0 / seconds);
 
             mp3Stream.Position = dataStartPosition;
 
-            waveFormat = new Mp3WaveFormat(sampleRate, mp3Frame.ChannelMode == ChannelMode.Mono ? 1 : 2, frameLengthInBytes, bitRate);
+            waveFormat = new Mp3WaveFormat(sampleRate, mp3Frame.ChannelMode == ChannelMode.Mono ? 1 : 2, frameLengthInBytes, (int)bitRate);
         }
 
         private void CreateTableOfContents()

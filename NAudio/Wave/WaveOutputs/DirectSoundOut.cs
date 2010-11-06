@@ -23,6 +23,7 @@ namespace NAudio.Wave
         private int samplesFrameSize;
         private int nextSamplesWriteIndex;
         private int desiredLatency;
+        private IntPtr device;
         private byte[] samples;
         private IWaveProvider waveStream = null;
         private IDirectSound directSound = null;
@@ -41,7 +42,23 @@ namespace NAudio.Wave
         /// Initializes a new instance of the <see cref="DirectSoundOut"/> class.
         /// </summary>
         public DirectSoundOut()
-            : this(40)
+            : this(IntPtr.Zero)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DirectSoundOut"/> class.
+        /// </summary>
+        public DirectSoundOut(IntPtr device)
+            : this(device, 40)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DirectSoundOut"/> class.
+        /// </summary>
+        public DirectSoundOut(int latency)
+            : this(IntPtr.Zero, latency)
         {
         }
 
@@ -50,8 +67,9 @@ namespace NAudio.Wave
         /// (40ms seems to work under Vista).
         /// </summary>
         /// <param name="latency">The latency.</param>
-        public DirectSoundOut(int latency)
+        public DirectSoundOut(IntPtr device, int latency)
         {
+            this.device = device;
             desiredLatency = latency;
         }
 
@@ -139,7 +157,7 @@ namespace NAudio.Wave
                 lock (this.m_LockObject)
                 {
                     directSound = null;
-                    DirectSoundCreate(IntPtr.Zero, out directSound, IntPtr.Zero);
+                    DirectSoundCreate(device, out directSound, IntPtr.Zero);
 
                     if (directSound != null)
                     {
@@ -432,7 +450,7 @@ namespace NAudio.Wave
             // Clear the bufferSamples if in Paused
             if (playbackState == PlaybackState.Paused)
             {
-                Array.Clear(samples,0,samples.Length);
+                Array.Clear(samples, 0, samples.Length);
             }
             else
             {

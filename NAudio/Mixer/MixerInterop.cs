@@ -23,7 +23,7 @@ namespace NAudio.Mixer
 
         // http://msdn.microsoft.com/en-us/library/dd757308%28VS.85%29.aspx
         [DllImport("winmm.dll", CharSet = CharSet.Ansi)]
-        public static extern MmResult mixerOpen(out IntPtr hMixer, int uMxId, IntPtr dwCallback, IntPtr dwInstance, UInt32 dwOpenFlags);
+        public static extern MmResult mixerOpen(out IntPtr hMixer, int uMxId, IntPtr dwCallback, IntPtr dwInstance, MixerFlags dwOpenFlags);
 
         // http://msdn.microsoft.com/en-us/library/dd757292%28VS.85%29.aspx
         [DllImport("winmm.dll", CharSet = CharSet.Ansi)]
@@ -58,7 +58,7 @@ namespace NAudio.Mixer
         public static extern MmResult mixerSetControlDetails(IntPtr hMixer, ref MIXERCONTROLDETAILS mixerControlDetails, MixerFlags dwDetailsFlags);
 
         // http://msdn.microsoft.com/en-us/library/dd757294%28VS.85%29.aspx
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto, Pack = 1)]
         public struct MIXERCONTROLDETAILS
         {
             public Int32 cbStruct; // size of the MIXERCONTROLDETAILS structure
@@ -70,7 +70,7 @@ namespace NAudio.Mixer
         }
 
         // http://msdn.microsoft.com/en-us/library/dd757291%28VS.85%29.aspx
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
         public struct MIXERCAPS
         {
             public UInt16 wMid;
@@ -83,7 +83,7 @@ namespace NAudio.Mixer
         }
 
         // http://msdn.microsoft.com/en-us/library/dd757306%28VS.85%29.aspx
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
         public struct MIXERLINECONTROLS
         {
             public Int32 cbStruct; // size of the MIXERLINECONTROLS structure
@@ -121,7 +121,7 @@ namespace NAudio.Mixer
         }
 
         // http://msdn.microsoft.com/en-us/library/dd757305%28VS.85%29.aspx
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
         public struct MIXERLINE
         {
             public Int32 cbStruct;
@@ -129,7 +129,7 @@ namespace NAudio.Mixer
             public Int32 dwSource;
             public Int32 dwLineID;
             public MIXERLINE_LINEF fdwLine;
-            public UInt32 dwUser;
+            public IntPtr dwUser;
             public MixerLineComponentType dwComponentType;
             public Int32 cChannels;
             public Int32 cConnections;
@@ -152,7 +152,7 @@ namespace NAudio.Mixer
         /// <summary>
         /// BOUNDS structure
         /// </summary>
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
         public struct Bounds
         {
             /// <summary>
@@ -184,7 +184,7 @@ namespace NAudio.Mixer
         /// <summary>
         /// METRICS structure
         /// </summary>
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
         public struct Metrics
         {
             /// <summary>
@@ -217,7 +217,7 @@ namespace NAudio.Mixer
         /// MIXERCONTROL struct
         /// http://msdn.microsoft.com/en-us/library/dd757293%28VS.85%29.aspx
         /// </summary>
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
         public struct MIXERCONTROL
         {
             public UInt32 cbStruct;
@@ -248,7 +248,7 @@ namespace NAudio.Mixer
         }
 
         // http://msdn.microsoft.com/en-us/library/dd757296%28VS.85%29.aspx
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
         public struct MIXERCONTROLDETAILS_LISTTEXT
         {
             public UInt32 dwParam1;

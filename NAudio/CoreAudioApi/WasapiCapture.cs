@@ -143,27 +143,16 @@ namespace NAudio.CoreAudioApi
                     Thread.Sleep(sleepMilliseconds);
                     ReadNextPacket(capture);
                 }
-
+            }
+            finally
+            {
                 client.Stop();
 
                 if (RecordingStopped != null)
                 {
                     RecordingStopped(this, EventArgs.Empty);
                 }
-            }
-            finally
-            {
-                if (capture != null)
-                {
-                    capture.Dispose();
-                }
-                if (client != null)
-                {
-                    client.Dispose();
-                }
-
-                client = null;
-                capture = null;
+                // don't dispose - the AudioClient only gets disposed when WasapiCapture is disposed
             }
 
             System.Diagnostics.Debug.WriteLine("stop wasapi");
@@ -218,6 +207,11 @@ namespace NAudio.CoreAudioApi
         public void Dispose()
         {
             StopRecording();
+            if (audioClient != null)
+            {
+                audioClient.Dispose();
+                audioClient = null;
+            }
         }
     }
 }

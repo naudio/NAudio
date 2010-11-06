@@ -38,7 +38,6 @@ namespace NAudio.CoreAudioApi
         private PropertyStore _PropertyStore;
         private AudioMeterInformation _AudioMeterInformation;
         private AudioEndpointVolume _AudioEndpointVolume;
-        private AudioClient audioClient;
 
         #endregion
 
@@ -56,11 +55,11 @@ namespace NAudio.CoreAudioApi
             _PropertyStore = new PropertyStore(propstore);
         }
 
-        private void GetAudioClientInterface()
+        private AudioClient GetAudioClient()
         {
             object result;
             Marshal.ThrowExceptionForHR(deviceInterface.Activate(ref IID_IAudioClient, ClsCtx.ALL, IntPtr.Zero, out result));
-            audioClient = new AudioClient(result as IAudioClient);
+            return new AudioClient(result as IAudioClient);
         }
 
         private void GetAudioMeterInformation()
@@ -88,11 +87,9 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                if (audioClient == null)
-                {
-                    GetAudioClientInterface();
-                }
-                return audioClient;
+                // now makes a new one each call to allow caller to manage when to dispose
+                // n.b. should probably not be a property anymore
+                return GetAudioClient();
             }
         }
 
@@ -195,7 +192,6 @@ namespace NAudio.CoreAudioApi
                 DeviceState Result;
                 Marshal.ThrowExceptionForHR(deviceInterface.GetState(out Result));
                 return Result;
-
             }
         }
         #endregion

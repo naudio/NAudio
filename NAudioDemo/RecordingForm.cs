@@ -76,7 +76,7 @@ namespace NAudioDemo
                 waveIn.DataAvailable += new EventHandler<WaveInEventArgs>(waveIn_DataAvailable);
                 waveIn.RecordingStopped += new EventHandler(waveIn_RecordingStopped);
                 waveIn.StartRecording();
-                buttonStartRecording.Enabled = false;                                
+                buttonStartRecording.Enabled = false;
             }
         }
 
@@ -128,7 +128,6 @@ namespace NAudioDemo
         {
             Debug.WriteLine("StopRecording");
             waveIn.StopRecording();
-
         }
 
         private void buttonStopRecording_Click(object sender, EventArgs e)

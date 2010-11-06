@@ -4,33 +4,33 @@ using System.Text;
 
 namespace NAudio.Midi 
 {
-	/// <summary>
-	/// Represents a MIDI control change event
-	/// </summary>
-	public class ControlChangeEvent : MidiEvent 
-	{
-		private MidiController controller;
-		private byte controllerValue;
+    /// <summary>
+    /// Represents a MIDI control change event
+    /// </summary>
+    public class ControlChangeEvent : MidiEvent 
+    {
+        private MidiController controller;
+        private byte controllerValue;
 
-		/// <summary>
-		/// Reads a control change event from a MIDI stream
-		/// </summary>
-		/// <param name="br">Binary reader on the MIDI stream</param>
-		public ControlChangeEvent(BinaryReader br) 
-		{
-			byte c = br.ReadByte();
-			controllerValue = br.ReadByte();
-			if((c & 0x80) != 0) 
-			{
+        /// <summary>
+        /// Reads a control change event from a MIDI stream
+        /// </summary>
+        /// <param name="br">Binary reader on the MIDI stream</param>
+        public ControlChangeEvent(BinaryReader br) 
+        {
+            byte c = br.ReadByte();
+            controllerValue = br.ReadByte();
+            if((c & 0x80) != 0) 
+            {
                 // TODO: might be a follow-on
-				throw new ApplicationException("Invalid controller");
-			}
-			controller = (MidiController) c;
-			if((controllerValue & 0x80) != 0) 
-			{
-				throw new ApplicationException(String.Format("Invalid controllerValue {0} for controller {1}, Pos 0x{2:X}",controllerValue,controller,br.BaseStream.Position));
-			}
-		}
+                throw new ApplicationException("Invalid controller");
+            }
+            controller = (MidiController) c;
+            if((controllerValue & 0x80) != 0) 
+            {
+                throw new ApplicationException(String.Format("Invalid controllerValue {0} for controller {1}, Pos 0x{2:X}",controllerValue,controller,br.BaseStream.Position));
+            }
+        }
 
         /// <summary>
         /// Creates a control change event
@@ -45,19 +45,26 @@ namespace NAudio.Midi
             this.Controller = controller;
             this.ControllerValue = controllerValue;
         }
-		
-		/// <summary>
-		/// Describes this control change event
-		/// </summary>
-		/// <returns>A string describing this event</returns>
-		public override string ToString() 
-		{
-			return String.Format("{0} Controller {1} Value {2}",
-				base.ToString(),
-				this.controller,
-				this.controllerValue);
-		}
+        
+        /// <summary>
+        /// Describes this control change event
+        /// </summary>
+        /// <returns>A string describing this event</returns>
+        public override string ToString() 
+        {
+            return String.Format("{0} Controller {1} Value {2}",
+                base.ToString(),
+                this.controller,
+                this.controllerValue);
+        }
 
+        /// <summary>
+        /// <see cref="MidiEvent.GetAsShortMessage" />
+        /// </summary>
+        public override int GetAsShortMessage()
+        {
+            return base.GetAsShortMessage() + (controllerValue << 8);
+        }
 
         /// <summary>
         /// Calls base class export first, then exports the data 
@@ -108,5 +115,5 @@ namespace NAudio.Midi
                 controllerValue = (byte) value;
             }
         }
-	}
+    }
 }

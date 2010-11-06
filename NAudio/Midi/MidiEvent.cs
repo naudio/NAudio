@@ -4,16 +4,16 @@ using System.Text;
 
 namespace NAudio.Midi 
 {
-	/// <summary>
-	/// Represents an individual MIDI event
-	/// </summary>
-	public class MidiEvent 
-	{
-		/// <summary>The MIDI command code</summary>
-		private MidiCommandCode commandCode;
-		private int channel;
-		private int deltaTime;
-		private long absoluteTime;
+    /// <summary>
+    /// Represents an individual MIDI event
+    /// </summary>
+    public class MidiEvent 
+    {
+        /// <summary>The MIDI command code</summary>
+        private MidiCommandCode commandCode;
+        private int channel;
+        private int deltaTime;
+        private long absoluteTime;
 
         /// <summary>
         /// Creates a MidiEvent from a raw message received using
@@ -84,81 +84,81 @@ namespace NAudio.Midi
 
         }
 
-		/// <summary>
-		/// Constructs a MidiEvent from a BinaryStream
-		/// </summary>
-		/// <param name="br">The binary stream of MIDI data</param>
-		/// <param name="previous">The previous MIDI event (pass null for first event)</param>
-		/// <returns>A new MidiEvent</returns>
-		public static MidiEvent ReadNextEvent(BinaryReader br, MidiEvent previous) 
-		{
-			int deltaTime = MidiEvent.ReadVarInt(br);
-			MidiCommandCode commandCode;
-			int channel = 1;
-			byte b = br.ReadByte();
-			if((b & 0x80) == 0) 
-			{
-				// a running command - command & channel are same as previous
-				commandCode = previous.CommandCode;
-				channel = previous.Channel;
-				br.BaseStream.Position--; // need to push this back
-			}
-			else 
-			{
-				if((b & 0xF0) == 0xF0) 
-				{
+        /// <summary>
+        /// Constructs a MidiEvent from a BinaryStream
+        /// </summary>
+        /// <param name="br">The binary stream of MIDI data</param>
+        /// <param name="previous">The previous MIDI event (pass null for first event)</param>
+        /// <returns>A new MidiEvent</returns>
+        public static MidiEvent ReadNextEvent(BinaryReader br, MidiEvent previous) 
+        {
+            int deltaTime = MidiEvent.ReadVarInt(br);
+            MidiCommandCode commandCode;
+            int channel = 1;
+            byte b = br.ReadByte();
+            if((b & 0x80) == 0) 
+            {
+                // a running command - command & channel are same as previous
+                commandCode = previous.CommandCode;
+                channel = previous.Channel;
+                br.BaseStream.Position--; // need to push this back
+            }
+            else 
+            {
+                if((b & 0xF0) == 0xF0) 
+                {
                     // both bytes are used for command code in this case
-					commandCode = (MidiCommandCode) b;
-				}
-				else 
-				{
-				    commandCode = (MidiCommandCode) (b & 0xF0);
-				    channel = (b & 0x0F) + 1;
-				}
-			}
-			
-			MidiEvent me;
-			switch(commandCode) 
-			{
-			case MidiCommandCode.NoteOn:
-				me = new NoteOnEvent(br);
-				break;					
-			case MidiCommandCode.NoteOff:
-			case MidiCommandCode.KeyAfterTouch:
-				me = new NoteEvent(br);
-				break;					
-			case MidiCommandCode.ControlChange:
-				me = new ControlChangeEvent(br);
-				break;
-			case MidiCommandCode.PatchChange:
-				me = new PatchChangeEvent(br);
-				break;
-			case MidiCommandCode.ChannelAfterTouch:
-				me = new ChannelAfterTouchEvent(br);
-				break;
-			case MidiCommandCode.PitchWheelChange:
-				me = new PitchWheelChangeEvent(br);
-				break;
-			case MidiCommandCode.TimingClock:			
-			case MidiCommandCode.StartSequence:
-			case MidiCommandCode.ContinueSequence:
-			case MidiCommandCode.StopSequence:
-				me = new MidiEvent();
-				break;
-			case MidiCommandCode.Sysex:
-				me = SysexEvent.ReadSysexEvent(br);
-				break;
-			case MidiCommandCode.MetaEvent:
-				me = MetaEvent.ReadMetaEvent(br);
-				break;
-			default:
-				throw new FormatException(String.Format("Unsupported MIDI Command Code {0:X2}",(byte) commandCode));
-			}
-			me.channel = channel;
-			me.deltaTime = deltaTime;
-			me.commandCode = commandCode;
-			return me;
-		}
+                    commandCode = (MidiCommandCode) b;
+                }
+                else 
+                {
+                    commandCode = (MidiCommandCode) (b & 0xF0);
+                    channel = (b & 0x0F) + 1;
+                }
+            }
+            
+            MidiEvent me;
+            switch(commandCode) 
+            {
+            case MidiCommandCode.NoteOn:
+                me = new NoteOnEvent(br);
+                break;					
+            case MidiCommandCode.NoteOff:
+            case MidiCommandCode.KeyAfterTouch:
+                me = new NoteEvent(br);
+                break;					
+            case MidiCommandCode.ControlChange:
+                me = new ControlChangeEvent(br);
+                break;
+            case MidiCommandCode.PatchChange:
+                me = new PatchChangeEvent(br);
+                break;
+            case MidiCommandCode.ChannelAfterTouch:
+                me = new ChannelAfterTouchEvent(br);
+                break;
+            case MidiCommandCode.PitchWheelChange:
+                me = new PitchWheelChangeEvent(br);
+                break;
+            case MidiCommandCode.TimingClock:			
+            case MidiCommandCode.StartSequence:
+            case MidiCommandCode.ContinueSequence:
+            case MidiCommandCode.StopSequence:
+                me = new MidiEvent();
+                break;
+            case MidiCommandCode.Sysex:
+                me = SysexEvent.ReadSysexEvent(br);
+                break;
+            case MidiCommandCode.MetaEvent:
+                me = MetaEvent.ReadMetaEvent(br);
+                break;
+            default:
+                throw new FormatException(String.Format("Unsupported MIDI Command Code {0:X2}",(byte) commandCode));
+            }
+            me.channel = channel;
+            me.deltaTime = deltaTime;
+            me.commandCode = commandCode;
+            return me;
+        }
 
         /// <summary>
         /// Converts this MIDI event to a short message (32 bit integer) that
@@ -191,15 +191,15 @@ namespace NAudio.Midi
             this.commandCode = commandCode;
         }
 
-		/// <summary>
-		/// The MIDI Channel Number for this event
-		/// </summary>
-		public virtual int Channel 
-		{
-			get 
-			{
-				return channel;
-			}
+        /// <summary>
+        /// The MIDI Channel Number for this event
+        /// </summary>
+        public virtual int Channel 
+        {
+            get 
+            {
+                return channel;
+            }
             set
             {
                 if ((value < 1) || (value > 16))
@@ -209,44 +209,44 @@ namespace NAudio.Midi
                 }
                 channel = value;
             }
-		}
-		
-		/// <summary>
-		/// The Delta time for this event
-		/// </summary>
-		public int DeltaTime 
-		{
-			get 
-			{
-				return deltaTime;
-			}
-		}
-		
-		/// <summary>
-		/// The absolute time for this event
-		/// </summary>
-		public long AbsoluteTime 
-		{
-			get 
-			{
-				return absoluteTime;
-			}
-			set 
-			{
-				absoluteTime = value;
-			}
-		}
-		
-		/// <summary>
-		/// The command code for this event
-		/// </summary>
-		public MidiCommandCode CommandCode 
-		{
-			get 
-			{
-				return commandCode;
-			}
-		}
+        }
+        
+        /// <summary>
+        /// The Delta time for this event
+        /// </summary>
+        public int DeltaTime 
+        {
+            get 
+            {
+                return deltaTime;
+            }
+        }
+        
+        /// <summary>
+        /// The absolute time for this event
+        /// </summary>
+        public long AbsoluteTime 
+        {
+            get 
+            {
+                return absoluteTime;
+            }
+            set 
+            {
+                absoluteTime = value;
+            }
+        }
+        
+        /// <summary>
+        /// The command code for this event
+        /// </summary>
+        public MidiCommandCode CommandCode 
+        {
+            get 
+            {
+                return commandCode;
+            }
+        }
 
         /// <summary>
         /// Whether this is a note off event
@@ -297,40 +297,40 @@ namespace NAudio.Midi
             return false;
         }
 
-		
-		/// <summary>
-		/// Displays a summary of the MIDI event
-		/// </summary>
-		/// <returns>A string containing a brief description of this MIDI event</returns>
-		public override string ToString() 
-		{
+        
+        /// <summary>
+        /// Displays a summary of the MIDI event
+        /// </summary>
+        /// <returns>A string containing a brief description of this MIDI event</returns>
+        public override string ToString() 
+        {
             if(commandCode >= MidiCommandCode.Sysex)
-			    return String.Format("{0} {1}",absoluteTime,commandCode);
+                return String.Format("{0} {1}",absoluteTime,commandCode);
             else
                 return String.Format("{0} {1} Ch: {2}", absoluteTime, commandCode, channel);
         }
-		
-		/// <summary>
-		/// Utility function that can read a variable length integer from a binary stream
-		/// </summary>
-		/// <param name="br">The binary stream</param>
-		/// <returns>The integer read</returns>
-		public static int ReadVarInt(BinaryReader br) 
-		{
-			int value = 0;
-			byte b;
-			for(int n = 0; n < 4; n++) 
-			{
-				b = br.ReadByte();
-				value <<= 7;
-				value += (b & 0x7F);
-				if((b & 0x80) == 0) 
-				{
-					return value;
-				}
-			}
-			throw new FormatException("Invalid Var Int");
-		}
+        
+        /// <summary>
+        /// Utility function that can read a variable length integer from a binary stream
+        /// </summary>
+        /// <param name="br">The binary stream</param>
+        /// <returns>The integer read</returns>
+        public static int ReadVarInt(BinaryReader br) 
+        {
+            int value = 0;
+            byte b;
+            for(int n = 0; n < 4; n++) 
+            {
+                b = br.ReadByte();
+                value <<= 7;
+                value += (b & 0x7F);
+                if((b & 0x80) == 0) 
+                {
+                    return value;
+                }
+            }
+            throw new FormatException("Invalid Var Int");
+        }
 
         /// <summary>
         /// Writes a variable length integer to a binary stream
@@ -388,5 +388,5 @@ namespace NAudio.Midi
             }
             writer.Write((byte)output);
         }
-	}
+    }
 }

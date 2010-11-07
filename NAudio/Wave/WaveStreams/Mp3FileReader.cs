@@ -39,6 +39,10 @@ namespace NAudio.Wave
         private int bytesPerSample;
 
         private Mp3FrameDecompressor decompressor;
+        
+        private byte[] decompressBuffer;
+        private int decompressBufferOffset;
+        private int decompressLeftovers;
 
         private object repositionLock = new object();
 
@@ -84,7 +88,6 @@ namespace NAudio.Wave
             }
 
             mp3Stream.Position = dataStartPosition;
-            
 
             CreateTableOfContents();
             this.tocIndex = 0;
@@ -101,6 +104,9 @@ namespace NAudio.Wave
             decompressor = new Mp3FrameDecompressor(mp3WaveFormat);
             this.waveFormat = decompressor.OutputFormat;
             this.bytesPerSample = (decompressor.OutputFormat.BitsPerSample) / 8 * decompressor.OutputFormat.Channels;
+            // no MP3 frames have more than 1152 samples in them
+            // some MP3s I seem to get double
+            this.decompressBuffer = new byte[1152 * bytesPerSample * 2];
         }
 
         private void CreateTableOfContents()
@@ -199,10 +205,7 @@ namespace NAudio.Wave
         /// </summary>
         public override WaveFormat WaveFormat
         {
-            get 
-            { 
-                return waveFormat; 
-            }
+            get { return waveFormat; }
         }
 
         /// <summary>
@@ -218,7 +221,7 @@ namespace NAudio.Wave
                 }
                 else
                 {
-                    return tableOfContents[tocIndex].SamplePosition * this.bytesPerSample;
+                    return (tableOfContents[tocIndex].SamplePosition * this.bytesPerSample) + decompressBufferOffset;
                 }
             }
             set
@@ -239,77 +242,58 @@ namespace NAudio.Wave
                         }
                     }
                     mp3Stream.Position = mp3Index.FilePosition;
-                }
-            }
-        }
-
-        /**
-        /// <summary>
-        /// <see cref="WaveStream.CurrentTime"/>
-        /// </summary>
-        public override TimeSpan CurrentTime
-        {
-            get
-            {
-                if (tocIndex >= tableOfContents.Count)
-                {
-                    return TotalTime;
-                }
-                var mp3Index = tableOfContents[tocIndex];
-                return TimeSpan.FromSeconds((double)mp3Index.SamplePosition / sampleRate);
-            }
-            set
-            {
-                lock (repositionLock)
-                {
-                    int samplePosition = (int)(value.TotalSeconds * sampleRate);
-                    Mp3Index mp3Index = null;
-                    int foundIndex = 0;
-                    for (int index = 0; index < tableOfContents.Count; index++)
-                    {
-                        if (tableOfContents[index].SamplePosition >= samplePosition)
-                        {
-                            mp3Index = tableOfContents[index];
-                            foundIndex = index;
-                            break;
-                        }
-                    }
-                    if (mp3Index != null)
-                    {
-                        mp3Stream.Position = mp3Index.FilePosition;
-                        this.tocIndex = foundIndex;
-                    }
+                    decompressBufferOffset = 0;
+                    decompressLeftovers = 0;
                 }
             }
         }
 
         /// <summary>
-        /// <see cref="WaveStream.TotalTime"/>
-        /// </summary>
-        public override TimeSpan TotalTime
-        {
-            get
-            {
-                return TimeSpan.FromSeconds(TotalSeconds());
-            }
-        }**/
-
-        /// <summary>
-        /// <see cref="Stream.Read"/>
+        /// Reads decompressed PCM data from our MP3 file.
         /// </summary>
         public override int Read(byte[] sampleBuffer, int offset, int numBytes)
         {
             int bytesRead = 0;
             lock (repositionLock)
             {
-                while (bytesRead <= numBytes)
+                if (decompressLeftovers != 0)
+                {
+                    int toCopy = Math.Min(decompressLeftovers, numBytes);
+                    Array.Copy(decompressBuffer, decompressBufferOffset, sampleBuffer, offset, toCopy);
+                    decompressLeftovers -= toCopy;
+                    if (decompressLeftovers == 0)
+                    {
+                        decompressBufferOffset = 0;
+                    }
+                    else
+                    {
+                        decompressBufferOffset += toCopy;
+                    }
+                    bytesRead += toCopy;
+                    offset += toCopy;
+                }
+
+                while (bytesRead < numBytes)
                 {
                     Mp3Frame frame = ReadNextFrame();
                     if (frame != null)
                     {
-                        int decompressed = decompressor.DecompressFrame(frame, sampleBuffer, offset);
-                        offset += decompressed;
-                        bytesRead += decompressed;
+                        int decompressed = decompressor.DecompressFrame(frame, decompressBuffer, 0);
+                        int toCopy = Math.Min(decompressed, numBytes - bytesRead);
+                        Array.Copy(decompressBuffer, 0, sampleBuffer, offset, toCopy);
+                        if (toCopy < decompressed)
+                        {
+                            decompressBufferOffset = toCopy;
+                            decompressLeftovers = decompressed - toCopy;
+                        }
+                        else
+                        {
+                            // no lefovers
+                            decompressBufferOffset = 0;
+                            decompressLeftovers = 0;
+                        }
+                        offset += toCopy;
+                        bytesRead += toCopy;
                     }
                     else
                     {
@@ -317,8 +301,7 @@ namespace NAudio.Wave
                     }
                 }
             }
-            // TODO: must fix this!
-            //Debug.Assert(bytesRead < numBytes);
+            Debug.Assert(bytesRead <= numBytes, "MP3 File Reader read too much");
             return bytesRead;
         }
 

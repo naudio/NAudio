@@ -95,16 +95,16 @@ namespace NAudio.Wave
         };
 
         private static readonly int[,] samplesPerFrame = new int[,] {
-	        {	// MPEG Version 1
-		        384,	// Layer1
-		        1152,	// Layer2	
-		        1152	// Layer3
-	        },
-	        {	// MPEG Version 2 & 2.5
-		        384,	// Layer1
-		        1152,	// Layer2
-		        576		// Layer3
-	        }	
+            {   // MPEG Version 1
+                384,    // Layer1
+                1152,   // Layer2
+                1152    // Layer3
+            },
+            {   // MPEG Version 2 & 2.5
+                384,    // Layer1
+                1152,   // Layer2
+                576     // Layer3
+            }
         };
         
         private static readonly int[] sampleRatesVersion1 = new int[] { 44100, 48000, 32000 };
@@ -119,8 +119,9 @@ namespace NAudio.Wave
         private byte[] rawData;
         private MpegVersion mpegVersion;
         private MpegLayer layer;
-        private ChannelMode channelMode;        
+        private ChannelMode channelMode;
         private const int MaxFrameLength = 16 * 1024;
+        private int samplesInFrame; // number of samples in this frame
 
         /// <summary>Reads an MP3Frame from a stream</summary>
         /// <remarks>http://mpgedit.org/mpgedit/mpeg_format/mpeghdr.htm has some good info
@@ -229,7 +230,8 @@ namespace NAudio.Wave
 
                 int nPadding = padding ? 1 : 0;
 
-                int coefficient = samplesPerFrame[versionIndex, layerIndex] / 8;
+                this.samplesInFrame = samplesPerFrame[versionIndex, layerIndex];
+                int coefficient = this.samplesInFrame / 8;
                 if (this.layer == MpegLayer.Layer1)
                 {
                     this.frameLengthInBytes = (coefficient * bitRate / sampleRate + nPadding) * 4;
@@ -242,7 +244,7 @@ namespace NAudio.Wave
                 if (this.frameLengthInBytes > MaxFrameLength)
                 {
                     return false;
-                }                
+                }
                 return true;
             }
             return false;
@@ -261,7 +263,7 @@ namespace NAudio.Wave
                 // Now start parsing
                 WaveFormat format;
                 long dataChunkPosition;
-                int dataChunkLength;                
+                int dataChunkLength;
 
                 WaveFileReader.ReadWaveHeader(input, out format, out dataChunkPosition, out dataChunkLength, null);
                
@@ -334,5 +336,12 @@ namespace NAudio.Wave
             get { return channelMode; }
         }
 
+        /// <summary>
+        /// The number of samples in this frame
+        /// </summary>
+        public int SampleCount
+        {
+            get { return samplesInFrame; }
+        }
     }
 }

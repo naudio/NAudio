@@ -48,24 +48,11 @@ namespace NAudio.Wave
 
             this.extraSize = Mp3WaveFormatExtraBytes;
             this.id = Mp3WaveFormatId.Mpeg;
-            this.flags = Mp3WaveFormatFlags.PaddingOff;
+            this.flags = Mp3WaveFormatFlags.PaddingIso;
             this.blockSize = (ushort)blockSize;
             this.framesPerBlock = 1;
             this.codecDelay = 0;
         }
-
-        /// <summary>
-        /// Block alignment (the size of the first frame in bytes)
-        /// n.b. not all subsequent frames will necessarily be the same size
-        /// </summary>
-        public override int BlockAlign
-        {
-            get
-            {
-                return blockSize;
-            }
-        }
-
     }
 
     /// <summary>

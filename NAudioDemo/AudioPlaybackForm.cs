@@ -129,8 +129,8 @@ namespace NAudioDemo
             {                
                 WaveStream mp3Reader = new Mp3FileReader(fileName);
                 //WaveStream pcmStream = WaveFormatConversionStream.CreatePcmStream(mp3Reader);
-                WaveStream blockAlignedStream = new BlockAlignReductionStream(mp3Reader);
-                inputStream = new WaveChannel32(blockAlignedStream);
+                //WaveStream blockAlignedStream = new BlockAlignReductionStream(mp3Reader);
+                inputStream = new WaveChannel32(mp3Reader);
             }
             else
             {

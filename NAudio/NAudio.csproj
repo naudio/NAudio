@@ -125,6 +125,7 @@
     <Compile Include="FileFormats\Map\MapBlockHeader.cs" />
     <Compile Include="FileFormats\Mp3\Id3v2Tag.cs" />
     <Compile Include="FileFormats\Mp3\Mp3Frame.cs" />
+    <Compile Include="FileFormats\Mp3\Mp3FrameDecompressor.cs" />
     <Compile Include="FileFormats\Mp3\XingHeader.cs" />
     <Compile Include="FileFormats\Ogg\OggEncoder.cs" />
     <Compile Include="FileFormats\Ogg\OggInterop.cs" />

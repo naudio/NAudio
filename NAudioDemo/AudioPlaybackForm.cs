@@ -128,8 +128,8 @@ namespace NAudioDemo
             else if (fileName.EndsWith(".mp3"))
             {                
                 WaveStream mp3Reader = new Mp3FileReader(fileName);
-                WaveStream pcmStream = WaveFormatConversionStream.CreatePcmStream(mp3Reader);
-                WaveStream blockAlignedStream = new BlockAlignReductionStream(pcmStream);
+                //WaveStream pcmStream = WaveFormatConversionStream.CreatePcmStream(mp3Reader);
+                WaveStream blockAlignedStream = new BlockAlignReductionStream(mp3Reader);
                 inputStream = new WaveChannel32(blockAlignedStream);
             }
             else
@@ -273,13 +273,13 @@ namespace NAudioDemo
         {
             if (waveOut != null && mainOutputStream != null)
             {
+                TimeSpan currentTime = mainOutputStream.CurrentTime;
                 if (mainOutputStream.Position >= mainOutputStream.Length)
                 {
                     buttonStop_Click(sender, e);
                 }
                 else
                 {
-                    TimeSpan currentTime = mainOutputStream.CurrentTime;
                     trackBarPosition.Value = (int)currentTime.TotalSeconds;
                     labelCurrentTime.Text = String.Format("{0:00}:{1:00}", (int)currentTime.TotalMinutes,
                         currentTime.Seconds);

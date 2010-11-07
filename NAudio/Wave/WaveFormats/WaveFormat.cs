@@ -5,34 +5,34 @@ using System.Diagnostics;
 
 namespace NAudio.Wave
 {
-	/// <summary>
-	/// Represents a Wave file format
-	/// </summary>
-	[StructLayout(LayoutKind.Sequential, CharSet=CharSet.Ansi, Pack=2)]
-	public class WaveFormat
-	{
-		/// <summary>format type</summary>
-		protected WaveFormatEncoding waveFormatTag;
-		/// <summary>number of channels</summary>
-		protected short channels;
-		/// <summary>sample rate</summary>
-		protected int sampleRate;
-		/// <summary>for buffer estimation</summary>
-		protected int averageBytesPerSecond;
-		/// <summary>block size of data</summary>
-		protected short blockAlign;
-		/// <summary>number of bits per sample of mono data</summary>
-		protected short bitsPerSample;
+    /// <summary>
+    /// Represents a Wave file format
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Ansi, Pack=2)]
+    public class WaveFormat
+    {
+        /// <summary>format type</summary>
+        protected WaveFormatEncoding waveFormatTag;
+        /// <summary>number of channels</summary>
+        protected short channels;
+        /// <summary>sample rate</summary>
+        protected int sampleRate;
+        /// <summary>for buffer estimation</summary>
+        protected int averageBytesPerSecond;
+        /// <summary>block size of data</summary>
+        protected short blockAlign;
+        /// <summary>number of bits per sample of mono data</summary>
+        protected short bitsPerSample;
         /// <summary>number of following bytes</summary>
         protected short extraSize;
 
-		/// <summary>
-		/// Creates a new PCM 44.1Khz stereo 16 bit format
-		/// </summary>
-		public WaveFormat() : this(44100,16,2)
-		{
+        /// <summary>
+        /// Creates a new PCM 44.1Khz stereo 16 bit format
+        /// </summary>
+        public WaveFormat() : this(44100,16,2)
+        {
 
-		}
+        }
         
         /// <summary>
         /// Creates a new 16 bit wave format with the specified sample
@@ -61,7 +61,7 @@ namespace NAudio.Wave
             return bytes;
         }
 
-	    /// <summary>
+        /// <summary>
         /// Creates a WaveFormat with custom members
         /// </summary>
         /// <param name="tag">The encoding</param>
@@ -106,25 +106,25 @@ namespace NAudio.Wave
             return CreateCustomFormat(WaveFormatEncoding.MuLaw, sampleRate, channels, sampleRate * channels, 1, 8);
         }
 
-		/// <summary>
-		/// Creates a new PCM format with the specified sample rate, bit depth and channels
-		/// </summary>
-		public WaveFormat(int rate, int bits, int channels)
-		{
+        /// <summary>
+        /// Creates a new PCM format with the specified sample rate, bit depth and channels
+        /// </summary>
+        public WaveFormat(int rate, int bits, int channels)
+        {
             if (channels < 1)
             {
                 throw new ArgumentOutOfRangeException("Channels must be 1 or greater", "channels");
             }
-			// minimum 16 bytes, sometimes 18 for PCM
-			this.waveFormatTag = WaveFormatEncoding.Pcm;
-			this.channels = (short)channels;
-			this.sampleRate = rate;
-			this.bitsPerSample = (short)bits;
-			this.extraSize = 0;
-	               
-			this.blockAlign = (short)(channels * (bits / 8));
-			this.averageBytesPerSecond = this.sampleRate * this.blockAlign;
-		}
+            // minimum 16 bytes, sometimes 18 for PCM
+            this.waveFormatTag = WaveFormatEncoding.Pcm;
+            this.channels = (short)channels;
+            this.sampleRate = rate;
+            this.bitsPerSample = (short)bits;
+            this.extraSize = 0;
+                   
+            this.blockAlign = (short)(channels * (bits / 8));
+            this.averageBytesPerSecond = this.sampleRate * this.blockAlign;
+        }
 
         /// <summary>
         /// Creates a new 32 bit IEEE floating point wave format
@@ -224,22 +224,22 @@ namespace NAudio.Wave
             }
         }
 
-		/// <summary>
-		/// Reads a new WaveFormat object from a stream
-		/// </summary>
-		/// <param name="br">A binary reader that wraps the stream</param>
-		public WaveFormat(BinaryReader br)
-		{
+        /// <summary>
+        /// Reads a new WaveFormat object from a stream
+        /// </summary>
+        /// <param name="br">A binary reader that wraps the stream</param>
+        public WaveFormat(BinaryReader br)
+        {
             int formatChunkLength = br.ReadInt32();
             this.ReadWaveFormat(br, formatChunkLength);
-		}
+        }
 
-		/// <summary>
-		/// Reports this WaveFormat as a string
-		/// </summary>
-		/// <returns>String describing the wave format</returns>
-		public override string ToString()
-		{
+        /// <summary>
+        /// Reports this WaveFormat as a string
+        /// </summary>
+        /// <returns>String describing the wave format</returns>
+        public override string ToString()
+        {
             switch (this.waveFormatTag)
             {
                 case WaveFormatEncoding.Pcm:
@@ -250,52 +250,52 @@ namespace NAudio.Wave
                 default:
                     return this.waveFormatTag.ToString();
             }
-		}
+        }
 
-		/// <summary>
-		/// Compares with another WaveFormat object
-		/// </summary>
-		/// <param name="obj">Object to compare to</param>
-		/// <returns>True if the objects are the same</returns>
-		public override bool Equals(object obj)
-		{
-			WaveFormat other = obj as WaveFormat;
-			if(other != null)
-			{
-				return waveFormatTag == other.waveFormatTag &&
-					channels == other.channels &&
-					sampleRate == other.sampleRate &&
-					averageBytesPerSecond == other.averageBytesPerSecond &&
-					blockAlign == other.blockAlign &&
-					bitsPerSample == other.bitsPerSample;
-			}
-			return false;
-		}
+        /// <summary>
+        /// Compares with another WaveFormat object
+        /// </summary>
+        /// <param name="obj">Object to compare to</param>
+        /// <returns>True if the objects are the same</returns>
+        public override bool Equals(object obj)
+        {
+            WaveFormat other = obj as WaveFormat;
+            if(other != null)
+            {
+                return waveFormatTag == other.waveFormatTag &&
+                    channels == other.channels &&
+                    sampleRate == other.sampleRate &&
+                    averageBytesPerSecond == other.averageBytesPerSecond &&
+                    blockAlign == other.blockAlign &&
+                    bitsPerSample == other.bitsPerSample;
+            }
+            return false;
+        }
 
-		/// <summary>
-		/// Provides a Hashcode for this WaveFormat
-		/// </summary>
-		/// <returns>A hashcode</returns>
-		public override int GetHashCode()
-		{
-			return (int) waveFormatTag ^ 
-				(int) channels ^ 
-				sampleRate ^ 
-				averageBytesPerSecond ^ 
-				(int) blockAlign ^ 
-				(int) bitsPerSample;
-		}
+        /// <summary>
+        /// Provides a Hashcode for this WaveFormat
+        /// </summary>
+        /// <returns>A hashcode</returns>
+        public override int GetHashCode()
+        {
+            return (int) waveFormatTag ^ 
+                (int) channels ^ 
+                sampleRate ^ 
+                averageBytesPerSecond ^ 
+                (int) blockAlign ^ 
+                (int) bitsPerSample;
+        }
 
-		/// <summary>
-		/// Returns the encoding type used
-		/// </summary>
-		public WaveFormatEncoding Encoding
-		{
-			get	
-			{
-				return waveFormatTag;
-			}
-		}
+        /// <summary>
+        /// Returns the encoding type used
+        /// </summary>
+        public WaveFormatEncoding Encoding
+        {
+            get	
+            {
+                return waveFormatTag;
+            }
+        }
 
         /// <summary>
         /// Writes this WaveFormat object to a stream
@@ -313,61 +313,61 @@ namespace NAudio.Wave
             writer.Write((short)extraSize);
         }
 
-		/// <summary>
-		/// Returns the number of channels (1=mono,2=stereo etc)
-		/// </summary>
-		public int Channels
-		{
-			get
-			{
-				return channels;
-			}
-		}
+        /// <summary>
+        /// Returns the number of channels (1=mono,2=stereo etc)
+        /// </summary>
+        public int Channels
+        {
+            get
+            {
+                return channels;
+            }
+        }
 
-		/// <summary>
-		/// Returns the sample rate (samples per second)
-		/// </summary>
-		public int SampleRate
-		{
-			get
-			{
-				return sampleRate;
-			}
-		}
+        /// <summary>
+        /// Returns the sample rate (samples per second)
+        /// </summary>
+        public int SampleRate
+        {
+            get
+            {
+                return sampleRate;
+            }
+        }
 
-		/// <summary>
-		/// Returns the average number of bytes used per second
-		/// </summary>
-		public int AverageBytesPerSecond
-		{
-			get
-			{
-				return averageBytesPerSecond;
-			}
-		}
+        /// <summary>
+        /// Returns the average number of bytes used per second
+        /// </summary>
+        public int AverageBytesPerSecond
+        {
+            get
+            {
+                return averageBytesPerSecond;
+            }
+        }
 
-		/// <summary>
-		/// Returns the block alignment
-		/// </summary>
-		public virtual int BlockAlign
-		{
-			get
-			{
-				return blockAlign;
-			}
-		}
+        /// <summary>
+        /// Returns the block alignment
+        /// </summary>
+        public virtual int BlockAlign
+        {
+            get
+            {
+                return blockAlign;
+            }
+        }
 
-		/// <summary>
-		/// Returns the number of bits per sample (usually 16 or 32, sometimes 24 or 8)
-		/// Can be 0 for some codecs
-		/// </summary>
-		public int BitsPerSample
-		{
-			get
-			{
-				return bitsPerSample;
-			}
-		}
+        /// <summary>
+        /// Returns the number of bits per sample (usually 16 or 32, sometimes 24 or 8)
+        /// Can be 0 for some codecs
+        /// </summary>
+        public int BitsPerSample
+        {
+            get
+            {
+                return bitsPerSample;
+            }
+        }
 
         /// <summary>
         /// Returns the number of extra bytes used by this waveformat. Often 0,
@@ -382,5 +382,5 @@ namespace NAudio.Wave
         }
 
         
-	}
+    }
 }

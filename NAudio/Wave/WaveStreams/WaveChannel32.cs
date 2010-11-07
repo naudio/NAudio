@@ -41,10 +41,19 @@ namespace NAudio.Wave
             this.volume = volume;
             this.pan = pan;
             sourceBytesPerSample = sourceStream.WaveFormat.Channels * sourceStream.WaveFormat.BitsPerSample / 8;
-            
-            long sourceSamples = sourceStream.Length / sourceBytesPerSample;
-            length = sourceSamples * destBytesPerSample; // output is stereo
+
+            length = SourceToDest(sourceStream.Length);
             position = 0;
+        }
+
+        private long SourceToDest(long sourceBytes)
+        {
+            return (sourceBytes / sourceBytesPerSample) * destBytesPerSample;
+        }
+
+        private long DestToSource(long destBytes)
+        {
+            return (destBytes / destBytesPerSample) * sourceBytesPerSample;
         }
 
         /// <summary>
@@ -64,7 +73,7 @@ namespace NAudio.Wave
         {
             get
             {
-                return sourceStream.BlockAlign * (destBytesPerSample / sourceBytesPerSample);
+                return (int)SourceToDest(sourceStream.BlockAlign);
             }
         }
 
@@ -95,10 +104,15 @@ namespace NAudio.Wave
                     // make sure we don't get out of sync
                     value -= (value % BlockAlign);
                     if (value < 0)
+                    {
                         sourceStream.Position = 0;
-                    else 
-                        sourceStream.Position = (value / destBytesPerSample) * sourceBytesPerSample;
-                    position = value;
+                    }
+                    else
+                    {
+                        sourceStream.Position = DestToSource(value);
+                    }
+                    // source stream may not have accepted the reposition we gave it
+                    position = SourceToDest(sourceStream.Position);
                 }
             }
         }

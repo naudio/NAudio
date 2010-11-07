@@ -69,9 +69,9 @@ namespace NAudioWpfDemo
         {
             WaveChannel32 inputStream;
             WaveStream mp3Reader = new Mp3FileReader(fileName);
-            WaveStream pcmStream = WaveFormatConversionStream.CreatePcmStream(mp3Reader);
-            WaveStream blockAlignedStream = new BlockAlignReductionStream(pcmStream);
-            inputStream = new WaveChannel32(blockAlignedStream);
+            //WaveStream pcmStream = WaveFormatConversionStream.CreatePcmStream(mp3Reader);
+            //WaveStream blockAlignedStream = new BlockAlignReductionStream(pcmStream);
+            inputStream = new WaveChannel32(mp3Reader);
             return inputStream;
         }
 

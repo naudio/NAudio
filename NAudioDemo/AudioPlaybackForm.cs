@@ -35,6 +35,14 @@ namespace NAudioDemo
                 comboBoxAsioDriver.SelectedIndex = 0;
             }
 
+            if (Environment.OSVersion.Version.Major < 6)
+            {
+                // WASAPI supported only on Windows Vista and above
+                radioButtonWasapi.Enabled = false;
+                checkBoxWasapiEventCallback.Enabled = false;
+                checkBoxWasapiExclusiveMode.Enabled = false;
+            }
+
         }
             
         private void buttonPlay_Click(object sender, EventArgs e)

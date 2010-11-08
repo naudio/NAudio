@@ -229,7 +229,6 @@ namespace NAudio.Wave
                 lock (repositionLock)
                 {
                     value = Math.Max(Math.Min(value, Length), 0);
-                    //value += dataStartPosition;
                     var samplePosition = value / this.bytesPerSample;
                     Mp3Index mp3Index = null;
                     for (int index = 0; index < tableOfContents.Count; index++)
@@ -241,9 +240,18 @@ namespace NAudio.Wave
                             break;
                         }
                     }
-                    mp3Stream.Position = mp3Index.FilePosition;
+                    if (mp3Index != null)
+                    {
+                        // perform the reposition
+                        mp3Stream.Position = mp3Index.FilePosition;
+                    }
+                    else
+                    {
+                        // we are repositioning to the end of the data
+                        mp3Stream.Position = mp3DataLength + dataStartPosition;
+                    }
                     decompressBufferOffset = 0;
-                    decompressLeftovers = 0;
+                    decompressLeftovers = 0;                    
                 }
             }
         }

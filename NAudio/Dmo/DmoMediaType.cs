@@ -134,14 +134,26 @@ namespace NAudio.Dmo
         public void SetWaveFormat(WaveFormat waveFormat)
         {
             majortype = MediaTypes.MEDIATYPE_Audio;
-            // TODO: support WAVEFORMATEXTENSIBLE and reject invalid
-            subtype = waveFormat.Encoding == WaveFormatEncoding.Pcm ? AudioMediaSubtypes.MEDIASUBTYPE_PCM :
-                AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT;
-
+            switch (waveFormat.Encoding)
+            {
+                case WaveFormatEncoding.Pcm:
+                    subtype = AudioMediaSubtypes.MEDIASUBTYPE_PCM;
+                    bFixedSizeSamples = true;
+                    break;
+                case WaveFormatEncoding.IeeeFloat:
+                    subtype = AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT;
+                    bFixedSizeSamples = true;
+                    break;
+                case WaveFormatEncoding.MpegLayer3:
+                    subtype = AudioMediaSubtypes.WMMEDIASUBTYPE_MP3;
+                    break;
+                default:
+                    throw new ArgumentException("Not a supported encoding");
+            }
             formattype = DmoMediaTypeGuids.FORMAT_WaveFormatEx;
-            if (cbFormat < 18)
+            if (cbFormat < Marshal.SizeOf(waveFormat))
                 throw new InvalidOperationException("Not enough memory assigned for a WaveFormat structure");
-            Debug.Assert(cbFormat >= Marshal.SizeOf(waveFormat),"Not enough space");
+            //Debug.Assert(cbFormat >= ,"Not enough space");
             Marshal.StructureToPtr(waveFormat, pbFormat, false);
         }
     }

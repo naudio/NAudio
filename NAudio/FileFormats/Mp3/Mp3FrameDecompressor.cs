@@ -5,14 +5,14 @@ using NAudio.Wave;
 using NAudio.Wave.Compression;
 using System.Diagnostics;
 
-namespace NAudio.FileFormats.Mp3
+namespace NAudio.Wave
 {
-    class Mp3FrameDecompressor : IDisposable
+    class AcmMp3FrameDecompressor : IDisposable, IMp3FrameDecompressor
     {
         private AcmStream conversionStream;
         private WaveFormat pcmFormat;
 
-        public Mp3FrameDecompressor(WaveFormat sourceFormat)
+        public AcmMp3FrameDecompressor(WaveFormat sourceFormat)
         {
             this.pcmFormat = AcmStream.SuggestPcmFormat(sourceFormat);
             conversionStream = new AcmStream(sourceFormat, pcmFormat);

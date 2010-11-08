@@ -26,6 +26,11 @@ namespace NAudio.Wave
         private long dataStartPosition;
         private int frameLengthInBytes;
 
+        /// <summary>
+        /// The MP3 wave format (n.b. NOT the output format of this stream - see the WaveFormat property)
+        /// </summary>
+        public Mp3WaveFormat Mp3WaveFormat { get; private set; }
+
         private Id3v2Tag id3v2Tag;
         private XingHeader xingHeader;
         private byte[] id3v1Tag;
@@ -38,7 +43,7 @@ namespace NAudio.Wave
         private int totalSamples;
         private int bytesPerSample;
 
-        private Mp3FrameDecompressor decompressor;
+        private IMp3FrameDecompressor decompressor;
         
         private byte[] decompressBuffer;
         private int decompressBufferOffset;
@@ -100,8 +105,8 @@ namespace NAudio.Wave
 
             mp3Stream.Position = dataStartPosition;
 
-            var mp3WaveFormat = new Mp3WaveFormat(sampleRate, mp3Frame.ChannelMode == ChannelMode.Mono ? 1 : 2, frameLengthInBytes, (int)bitRate);
-            decompressor = new Mp3FrameDecompressor(mp3WaveFormat);
+            this.Mp3WaveFormat = new Mp3WaveFormat(sampleRate, mp3Frame.ChannelMode == ChannelMode.Mono ? 1 : 2, frameLengthInBytes, (int)bitRate);
+            decompressor = new AcmMp3FrameDecompressor(this.Mp3WaveFormat); // new DmoMp3FrameDecompressor(this.Mp3WaveFormat); 
             this.waveFormat = decompressor.OutputFormat;
             this.bytesPerSample = (decompressor.OutputFormat.BitsPerSample) / 8 * decompressor.OutputFormat.Channels;
             // no MP3 frames have more than 1152 samples in them

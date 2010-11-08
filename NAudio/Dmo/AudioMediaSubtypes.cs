@@ -18,7 +18,8 @@ namespace NAudio.Dmo
         public static readonly Guid MEDIASUBTYPE_DOLBY_AC3_SPDIF = new Guid("00000092-0000-0010-8000-00aa00389b71"); // Dolby AC3 over SPDIF.  
         public static readonly Guid MEDIASUBTYPE_RAW_SPORT = new Guid("00000240-0000-0010-8000-00aa00389b71"); // Equivalent to MEDIASUBTYPE_DOLBY_AC3_SPDIF. 
         public static readonly Guid MEDIASUBTYPE_SPDIF_TAG_241h = new Guid("00000241-0000-0010-8000-00aa00389b71"); // Equivalent to MEDIASUBTYPE_DOLBY_AC3_SPDIF. 
-
+        //http://msdn.microsoft.com/en-us/library/dd757532%28VS.85%29.aspx
+        public static readonly Guid WMMEDIASUBTYPE_MP3 = new Guid("00000055-0000-0010-8000-00AA00389B71");
         // others?
         public static readonly Guid MEDIASUBTYPE_WAVE = new Guid("e436eb8b-524f-11ce-9f53-0020af0ba770");
         public static readonly Guid MEDIASUBTYPE_AU = new Guid("e436eb8c-524f-11ce-9f53-0020af0ba770");
@@ -38,6 +39,7 @@ namespace NAudio.Dmo
             MEDIASUBTYPE_DOLBY_AC3_SPDIF,
             MEDIASUBTYPE_RAW_SPORT,
             MEDIASUBTYPE_SPDIF_TAG_241h,
+            WMMEDIASUBTYPE_MP3,
         };
 
         public static readonly string[] AudioSubTypeNames = new string[]
@@ -54,6 +56,7 @@ namespace NAudio.Dmo
             "DOLBY_AC3_SPDIF",
             "RAW_SPORT",
             "SPDIF_TAG_241h",
+            "MP3"
         };
         public static string GetAudioSubtypeName(Guid subType)
         {

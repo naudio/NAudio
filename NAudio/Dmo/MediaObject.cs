@@ -4,6 +4,7 @@ using System.Text;
 using NAudio.Utils;
 using System.Runtime.InteropServices;
 using NAudio.Wave;
+using System.Diagnostics;
 
 namespace NAudio.Dmo
 {
@@ -112,6 +113,36 @@ namespace NAudio.Dmo
             return null;
         }
 
+         /// <summary>
+        /// retrieves the media type that was set for an output stream, if any
+        /// </summary>
+        /// <param name="outputStreamIndex">Output stream index</param>
+        /// <returns>DMO Media Type or null if no more available</returns>
+        public DmoMediaType GetOutputCurrentType(int outputStreamIndex)
+        {
+            DmoMediaType mediaType;
+            int hresult = mediaObject.GetOutputCurrentType(outputStreamIndex, out mediaType);
+            if (hresult == HResult.S_OK)
+            {
+                // this frees the format (if present)
+                // we should therefore come up with a way of marshaling the format
+                // into a completely managed structure
+                DmoInterop.MoFreeMediaType(ref mediaType);
+                return mediaType;
+            }
+            else
+            {
+                if (hresult == (int)DmoHResults.DMO_E_TYPE_NOT_SET)
+                {
+                    throw new InvalidOperationException("Media type was not set.");
+                }
+                else
+                {
+                    throw Marshal.GetExceptionForHR(hresult);
+                }
+            }
+        }
+
         /// <summary>
         /// Enumerates the supported input types
         /// </summary>
@@ -165,20 +196,21 @@ namespace NAudio.Dmo
         /// <param name="inputStreamIndex">Input stream index</param>
         /// <param name="mediaType">Media type</param>
         /// <param name="flags">Flags (can be used to test rather than set)</param>
-        /// <returns>true if successful</returns>
         private bool SetInputType(int inputStreamIndex, DmoMediaType mediaType, DmoSetTypeFlags flags)
         {
-            try
+            int hResult = mediaObject.SetInputType(inputStreamIndex, ref mediaType, flags);
+            if (hResult != HResult.S_OK)
             {
-                mediaObject.SetInputType(inputStreamIndex, ref mediaType, flags);
-            }
-            catch (COMException e)
-            {
-                if (e.ErrorCode == (int)DmoHResults.DMO_E_TYPE_NOT_ACCEPTED)
+                if (hResult == (int)DmoHResults.DMO_E_INVALIDSTREAMINDEX)
                 {
-                    return false;
+                    throw new ArgumentException("Invalid stream index");
                 }
-                throw;
+                if (hResult == (int)DmoHResults.DMO_E_TYPE_NOT_ACCEPTED)
+                {
+                    Debug.WriteLine("Media type was not accepted");
+                }
+
+                return false;
             }
             return true;
         }
@@ -285,8 +317,7 @@ namespace NAudio.Dmo
             }
             else
             {
-                Marshal.ThrowExceptionForHR(hresult);
-                return false;
+                throw Marshal.GetExceptionForHR(hresult);
             }
         }
 

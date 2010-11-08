@@ -8,15 +8,19 @@ using System.Diagnostics;
 namespace NAudio.FileFormats.Mp3
 {
     /// <summary>
-    /// MP3 Frame Compressor using the Windows Media MP3 Decoder DMO object
+    /// MP3 Frame decompressor using the Windows Media MP3 Decoder DMO object
     /// </summary>
-    public class DmoMp3FrameDecompressor : IDisposable
+    public class DmoMp3FrameDecompressor : IDisposable, IMp3FrameDecompressor
     {
         private WindowsMediaMp3Decoder mp3Decoder;
         private WaveFormat pcmFormat;
         private MediaBuffer inputMediaBuffer;
         private DmoOutputDataBuffer outputBuffer;
 
+        /// <summary>
+        /// Initializes a new instance of the DMO MP3 Frame decompressor
+        /// </summary>
+        /// <param name="sourceFormat"></param>
         public DmoMp3FrameDecompressor(WaveFormat sourceFormat)
         {
             this.mp3Decoder = new WindowsMediaMp3Decoder();
@@ -25,13 +29,14 @@ namespace NAudio.FileFormats.Mp3
                 throw new ArgumentException("Unsupported input format");
             }
             mp3Decoder.MediaObject.SetInputWaveFormat(0, sourceFormat);
+            pcmFormat = new WaveFormat(sourceFormat.SampleRate, sourceFormat.Channels); // 16 bit
+            if (!mp3Decoder.MediaObject.SupportsOutputWaveFormat(0, pcmFormat))
+            {
+                throw new ArgumentException(String.Format("Unsupported output format {0}", pcmFormat));
+            }
+            mp3Decoder.MediaObject.SetOutputWaveFormat(0, pcmFormat);
 
-            // TODO: find out if it auto-calculates the output type without us needing to
-            // set output type directly
-            DmoMediaType? outputType = mp3Decoder.MediaObject.GetOutputType(0, 0);
-
-            this.pcmFormat = outputType.Value.GetWaveFormat();
-
+            // a second is more than enough to decompress a frame at a time
             inputMediaBuffer = new MediaBuffer(sourceFormat.AverageBytesPerSecond);
             outputBuffer = new DmoOutputDataBuffer(pcmFormat.AverageBytesPerSecond);
         }
@@ -41,6 +46,9 @@ namespace NAudio.FileFormats.Mp3
         /// </summary>
         public WaveFormat OutputFormat { get { return pcmFormat; } }
 
+        /// <summary>
+        /// Decompress a single frame of MP3
+        /// </summary>
         public int DecompressFrame(Mp3Frame frame, byte[] dest, int destOffset)
         {
             // 1. copy into our DMO's input buffer
@@ -68,6 +76,9 @@ namespace NAudio.FileFormats.Mp3
             return outputBuffer.Length;
         }
 
+        /// <summary>
+        /// Dispose of this obejct and clean up resources
+        /// </summary>
         public void Dispose()
         {
             if (inputMediaBuffer != null)

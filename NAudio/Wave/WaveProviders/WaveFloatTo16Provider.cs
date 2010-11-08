@@ -8,7 +8,7 @@ namespace NAudio.Wave
     /// <summary>
     /// Converts IEEE float to 16 bit PCM, optionally clipping and adjusting volume along the way
     /// </summary>
-    public class WaveIeeeTo16Provider : IWaveProvider
+    public class WaveFloatTo16Provider : IWaveProvider
     {
         private IWaveProvider sourceProvider;
         private readonly WaveFormat waveFormat;
@@ -16,10 +16,10 @@ namespace NAudio.Wave
         private byte[] sourceBuffer;
 
         /// <summary>
-        /// Creates a new Wave16toIeeeProvider
+        /// Creates a new WaveFloatTo16Provider
         /// </summary>
         /// <param name="sourceProvider">the source provider</param>
-        public WaveIeeeTo16Provider(IWaveProvider sourceProvider)
+        public WaveFloatTo16Provider(IWaveProvider sourceProvider)
         {
             if (sourceProvider.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
                 throw new ApplicationException("Only PCM supported");

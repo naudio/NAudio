@@ -123,6 +123,7 @@
     <Compile Include="FileFormats\Map\MapBlockHeader.cs" />
     <Compile Include="FileFormats\Mp3\DmoMp3FrameDecompressor.cs" />
     <Compile Include="FileFormats\Mp3\Id3v2Tag.cs" />
+    <Compile Include="FileFormats\Mp3\IMp3FrameDecompressor.cs" />
     <Compile Include="FileFormats\Mp3\Mp3Frame.cs" />
     <Compile Include="FileFormats\Mp3\Mp3FrameDecompressor.cs" />
     <Compile Include="FileFormats\Mp3\XingHeader.cs" />

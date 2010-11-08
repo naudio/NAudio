@@ -113,7 +113,7 @@ namespace NAudio.Wave
 
         private int bitRate;
         private bool crcPresent;
-        private short crc;
+        //private short crc;
         private int sampleRate;
         private int frameLengthInBytes;
         private byte[] rawData;

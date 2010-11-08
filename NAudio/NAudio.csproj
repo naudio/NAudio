@@ -109,6 +109,7 @@
     <Compile Include="Dmo\MediaObjectSizeInfo.cs" />
     <Compile Include="Dmo\MediaParamInfo.cs" />
     <Compile Include="Dmo\MediaTypes.cs" />
+    <Compile Include="Dmo\WindowsMediaMp3Decoder.cs" />
     <Compile Include="Dsp\BiQuadFilter.cs" />
     <Compile Include="Dsp\Complex.cs" />
     <Compile Include="Dsp\EnvelopeDetector.cs" />
@@ -120,6 +121,7 @@
     <Compile Include="FileFormats\Map\CakewalkDrumMapping.cs" />
     <Compile Include="FileFormats\Map\CakewalkMapFile.cs" />
     <Compile Include="FileFormats\Map\MapBlockHeader.cs" />
+    <Compile Include="FileFormats\Mp3\DmoMp3FrameDecompressor.cs" />
     <Compile Include="FileFormats\Mp3\Id3v2Tag.cs" />
     <Compile Include="FileFormats\Mp3\Mp3Frame.cs" />
     <Compile Include="FileFormats\Mp3\Mp3FrameDecompressor.cs" />

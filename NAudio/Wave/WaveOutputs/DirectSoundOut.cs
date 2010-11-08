@@ -67,6 +67,7 @@ namespace NAudio.Wave
         /// (40ms seems to work under Vista).
         /// </summary>
         /// <param name="latency">The latency.</param>
+        /// <param name="device">Selected device</param>
         public DirectSoundOut(IntPtr device, int latency)
         {
             this.device = device;

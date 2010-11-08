@@ -73,6 +73,7 @@
   <ItemGroup>
     <Compile Include="Acm\AcmDriverTests.cs" />
     <Compile Include="Acm\WaveFormatConversionStreamTests.cs" />
+    <Compile Include="Dmo\DmoMp3FrameDecompressorTests.cs" />
     <Compile Include="Dmo\DmoTests.cs" />
     <Compile Include="Dmo\ResamplerDmoStreamTests.cs" />
     <Compile Include="Dmo\ResamplerDmoTests.cs" />

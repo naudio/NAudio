@@ -359,8 +359,8 @@
     <Compile Include="Wave\WaveOutputs\WaveOut.cs" />
     <Compile Include="Wave\WaveOutputs\WaveOutThreadSafe.cs" />
     <Compile Include="Wave\WaveProviders\BufferedWaveProvider.cs" />
-    <Compile Include="Wave\WaveProviders\WaveIeeeTo16Provider.cs" />
-    <Compile Include="Wave\WaveProviders\Wave16toIeeeProvider.cs" />
+    <Compile Include="Wave\WaveProviders\WaveFloatTo16Provider.cs" />
+    <Compile Include="Wave\WaveProviders\Wave16ToFloatProvider.cs" />
     <Compile Include="Wave\WaveProviders\WaveInProvider.cs" />
     <Compile Include="Wave\WaveProviders\WaveProvider16.cs" />
     <Compile Include="Wave\WaveProviders\WaveProvider32.cs" />

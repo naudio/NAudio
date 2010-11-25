@@ -371,6 +371,7 @@
     <Compile Include="Wave\WaveStreams\CueWaveFileReader.cs" />
     <Compile Include="Wave\WaveStreams\ISampleNotifier.cs" />
     <Compile Include="Wave\WaveStreams\Mp3FileReader.cs" />
+    <Compile Include="Wave\WaveStreams\RawSourceWaveStream.cs" />
     <Compile Include="Wave\WaveStreams\ResamplerDmoStream.cs" />
     <Compile Include="Wave\WaveStreams\RiffChunk.cs" />
     <Compile Include="Wave\WaveStreams\SimpleCompressorStream.cs" />

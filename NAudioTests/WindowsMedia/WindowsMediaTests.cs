@@ -16,9 +16,7 @@ namespace NAudioTests.WindowsMedia
         [Test]
         public void CanCreateSyncReader()
         {
-            IWMSyncReader reader;
-            uint hresult = Functions.WMCreateSyncReader(IntPtr.Zero, WMT_RIGHTS.None, out reader);
-            Assert.AreEqual(0, hresult);
+            var reader = WM.CreateSyncReader(WMT_RIGHTS.WMT_RIGHT_NO_DRM);
             Assert.IsNotNull(reader);
             Marshal.ReleaseComObject(reader);            
         }
@@ -27,8 +25,7 @@ namespace NAudioTests.WindowsMedia
         public void CanOpenWmaFile()
         {
             IWMSyncReader reader = OpenWmaFile();
-            uint hresult = reader.Close();
-            Assert.AreEqual(0, hresult);
+            reader.Close();
             Marshal.ReleaseComObject(reader);
         }
 
@@ -37,12 +34,10 @@ namespace NAudioTests.WindowsMedia
         {
             IWMSyncReader reader = OpenWmaFile();
             uint outputs;
-            uint hresult = reader.GetOutputCount(out outputs);
-            Assert.AreEqual(0, hresult);
+            reader.GetOutputCount(out outputs);
             Assert.AreEqual(1, outputs, "Output Count");           
 
-            hresult = reader.Close();
-            Assert.AreEqual(0, hresult);
+            reader.Close();
             Marshal.ReleaseComObject(reader);
 
         }
@@ -52,12 +47,10 @@ namespace NAudioTests.WindowsMedia
         {
             IWMSyncReader reader = OpenWmaFile();
             IWMOutputMediaProps props;
-            uint hresult = reader.GetOutputFormat(0,0,out props);
-            Assert.AreEqual(0, hresult);
+            reader.GetOutputFormat(0,0,out props);
             Assert.IsNotNull(props);
 
-            hresult = reader.Close();
-            Assert.AreEqual(0, hresult);
+            reader.Close();
             Marshal.ReleaseComObject(reader);
         }
 
@@ -66,19 +59,17 @@ namespace NAudioTests.WindowsMedia
         {
             IWMSyncReader reader = OpenWmaFile();
             INSSBuffer buffer;
-            long sampleTime;
-            long duration;
+            ulong sampleTime;
+            ulong duration;
             uint flags;
             uint outputNum;
             ushort streamNum;
-            uint hresult = reader.GetNextSample(0, out buffer, out sampleTime, out duration, out flags, out outputNum, out streamNum);
-            Assert.AreEqual(0, hresult);
+            reader.GetNextSample(0, out buffer, out sampleTime, out duration, out flags, out outputNum, out streamNum);
             //byte[] theBuffer;
             //buffer.GetBuffer(out theBuffer);
 
 
-            hresult = reader.Close();
-            Assert.AreEqual(0, hresult);
+            reader.Close();
             Marshal.ReleaseComObject(reader);
 
             /*
@@ -96,12 +87,9 @@ namespace NAudioTests.WindowsMedia
             {
                 Assert.Ignore("Test WMA File Not Found");
             }
-            IWMSyncReader reader;
-            uint hresult = Functions.WMCreateSyncReader(IntPtr.Zero, WMT_RIGHTS.None, out reader);
-            Assert.AreEqual(0, hresult);
+            IWMSyncReader reader = WM.CreateSyncReader(WMT_RIGHTS.WMT_RIGHT_NO_DRM);
             Assert.IsNotNull(reader);
-            hresult = reader.Open(testWmaFile);
-            Assert.AreEqual(0, hresult);
+            reader.Open(testWmaFile);            
             return reader;
         }
     }

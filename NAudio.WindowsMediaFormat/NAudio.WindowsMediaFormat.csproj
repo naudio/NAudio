@@ -59,6 +59,7 @@
   <ItemGroup>
     <Compile Include="Interop\ProfilesTypes\IWMProfile3.cs" />
     <Compile Include="Interop\Enums.cs" />
+    <Compile Include="Interop\WmProfile.cs" />
     <Compile Include="WmaFileReader.cs" />
     <Compile Include="Interop\WmaStream.cs" />
     <Compile Include="Interop\WMFFunctions.cs" />
@@ -140,6 +141,7 @@
     <Compile Include="Interop\WriterTypes\WMT_BUFFER_SEGMENT.cs" />
     <Compile Include="Interop\WriterTypes\WMT_FILESINK_DATA_UNIT.cs" />
     <Compile Include="Interop\WriterTypes\WMT_PAYLOAD_FRAGMENT.cs" />
+    <Compile Include="Interop\WmaWriter.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

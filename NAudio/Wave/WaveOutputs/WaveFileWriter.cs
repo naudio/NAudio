@@ -380,14 +380,16 @@ namespace NAudio.Wave
             writer.Write((int)(outStream.Length - 8));
             if (format.Encoding != WaveFormatEncoding.Pcm)
             {
-                writer.Seek((int)factSampleCountPos, SeekOrigin.Begin);
-                writer.Write((int)((dataChunkSize * 8) / format.BitsPerSample));
+                int bitsPerSample = (format.BitsPerSample * format.Channels);
+                if (bitsPerSample != 0)
+                {
+                    writer.Seek((int)factSampleCountPos, SeekOrigin.Begin);
+                    writer.Write((int)((dataChunkSize * 8) / bitsPerSample));
+                }
             }
             writer.Seek((int)dataSizePos, SeekOrigin.Begin);
             writer.Write((int)(dataChunkSize));
         }
-
-
 
         /// <summary>
         /// Finaliser - should only be called if the user forgot to close this WaveFileWriter

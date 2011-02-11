@@ -89,6 +89,8 @@
     <Compile Include="WaveIn\WaveInDevicesTests.cs" />
     <Compile Include="WaveStreams\BlockAlignmentReductionStreamTests.cs" />
     <Compile Include="WaveStreams\CircularBufferTests.cs" />
+    <Compile Include="WaveStreams\MonoToStereoProvider16Tests.cs" />
+    <Compile Include="WaveStreams\StereoToMonoProvider16Tests.cs" />
     <Compile Include="WaveStreams\WaveChannel32Tests.cs" />
     <Compile Include="WaveStreams\WaveFileReaderTests.cs" />
     <Compile Include="WindowsMedia\WindowsMediaTests.cs" />

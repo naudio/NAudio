@@ -360,6 +360,8 @@
     <Compile Include="Wave\WaveOutputs\WaveOut.cs" />
     <Compile Include="Wave\WaveOutputs\WaveOutThreadSafe.cs" />
     <Compile Include="Wave\WaveProviders\BufferedWaveProvider.cs" />
+    <Compile Include="Wave\WaveProviders\StereoToMonoProvider16.cs" />
+    <Compile Include="Wave\WaveProviders\MonoToStereoProvider16.cs" />
     <Compile Include="Wave\WaveProviders\WaveFloatTo16Provider.cs" />
     <Compile Include="Wave\WaveProviders\Wave16ToFloatProvider.cs" />
     <Compile Include="Wave\WaveProviders\WaveInProvider.cs" />

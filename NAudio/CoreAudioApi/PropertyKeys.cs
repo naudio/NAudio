@@ -66,6 +66,9 @@ namespace NAudio.CoreAudioApi
         /// PKEY_AudioEngine_DeviceFormat 
         /// </summary>
         public static readonly Guid PKEY_AudioEngine_DeviceFormat = new Guid(0xf19f064d, 0x82c, 0x4e27, 0xbc, 0x73, 0x68, 0x82, 0xa1, 0xbb, 0x8e, 0x4c);
-
+        /// <summary>
+        /// PKEY _Devie_FriendlyName
+        /// </summary>
+        public static readonly Guid PKEY_Device_FriendlyName = new Guid(0x026e516e, 0xb814, 0x414b, 0x83, 0xcd, 0x85, 0x6d, 0x6f, 0xef, 0x48, 0x22);
     }
 }

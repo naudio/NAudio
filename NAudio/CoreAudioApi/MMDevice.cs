@@ -135,7 +135,7 @@ namespace NAudio.CoreAudioApi
         }
 
         /// <summary>
-        /// Friendly name
+        /// Friendly name for the endpoint
         /// </summary>
         public string FriendlyName
         {
@@ -154,6 +154,27 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+       /// <summary>
+       /// Friendly name of device
+       /// </summary>
+        public string DeviceFriendlyName
+        {
+            get
+            {
+                if (_PropertyStore == null)
+                {
+                    GetPropertyInformation();
+                }
+                if (_PropertyStore.Contains(PropertyKeys.PKEY_Device_FriendlyName))
+                {
+                    return (string)_PropertyStore[PropertyKeys.PKEY_Device_FriendlyName].Value;
+                }
+                else
+                {
+                    return "Unknown";
+                }
+            }
+        }
 
         /// <summary>
         /// Device ID

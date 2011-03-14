@@ -15,7 +15,7 @@ namespace NAudio.Wave
     {
         private IntPtr hWaveOut;
         private WaveOutBuffer[] buffers;
-        private IWaveProvider waveStream;
+        private IWaveProvider waveProvider;
         private int numBuffers;
         private PlaybackState playbackState;
         private WaveInterop.WaveCallback callback;
@@ -98,7 +98,7 @@ namespace NAudio.Wave
                             switch (waveOutAction.Function)
                             {
                                 case WaveOutFunction.Init:
-                                    Init((WaveStream)waveOutAction.Data);
+                                    Init((IWaveProvider)waveOutAction.Data);
                                     break;
                                 case WaveOutFunction.Play:
                                     Play();
@@ -151,29 +151,29 @@ namespace NAudio.Wave
             {
                 lock(actionQueue)
                 {
-                    actionQueue.Enqueue(new WaveOutAction(WaveOutFunction.Init,waveStream));
+                    actionQueue.Enqueue(new WaveOutAction(WaveOutFunction.Init,waveProvider));
                     workAvailable.Set();
                 }
                 return;
             }
 
-            this.waveStream = waveProvider;
-            int bufferSize = waveProvider.WaveFormat.ConvertLatencyToByteSize(desiredLatency);  //waveStream.GetReadSize((desiredLatency + 2) / 3);
+            this.waveProvider = waveProvider;
+            int bufferSize = waveProvider.WaveFormat.ConvertLatencyToByteSize(desiredLatency);
             this.numBuffers = 3;
 
-            MmException.Try(WaveInterop.waveOutOpen(out hWaveOut, (IntPtr)devNumber, waveStream.WaveFormat, callback, IntPtr.Zero, WaveInterop.CallbackFunction), "waveOutOpen");
+            MmException.Try(WaveInterop.waveOutOpen(out hWaveOut, (IntPtr)devNumber, waveProvider.WaveFormat, callback, IntPtr.Zero, WaveInterop.CallbackFunction), "waveOutOpen");
 
             buffers = new WaveOutBuffer[numBuffers];
             playbackState = PlaybackState.Stopped;
             object waveOutLock = new object();
             for (int n = 0; n < numBuffers; n++)
             {
-                buffers[n] = new WaveOutBuffer(hWaveOut, bufferSize, waveStream, waveOutLock);
+                buffers[n] = new WaveOutBuffer(hWaveOut, bufferSize, waveProvider, waveOutLock);
             }
         }
 
         /// <summary>
-        /// Start playing the audio from the WaveStream
+        /// Start playing the audio from the WaveProvider
         /// </summary>
         public void Play()
         {

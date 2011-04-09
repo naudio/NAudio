@@ -33,6 +33,12 @@ namespace NAudio.Wave
         public int MaxQueuedBuffers { get; set; }
 
         /// <summary>
+        /// If true, when we get too many buffers, start throwing away the oldest ones,
+        /// if false, throws an exception whene queue is full
+        /// </summary>
+        public bool DiscardOnBufferOverflow { get; set; }
+
+        /// <summary>
         /// Gets the WaveFormat
         /// </summary>
         public WaveFormat WaveFormat
@@ -51,7 +57,15 @@ namespace NAudio.Wave
             {
                 if (this.queue.Count >= this.MaxQueuedBuffers)
                 {
-                    throw new InvalidOperationException("Too many queued buffers");
+                    if (DiscardOnBufferOverflow)
+                    {
+                        // throw away the first buffer in the queue
+                        this.queue.Dequeue();
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException("Too many queued buffers");
+                    }
                 }
                 this.queue.Enqueue(new AudioBuffer(nbuffer));
             }

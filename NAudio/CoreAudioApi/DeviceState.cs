@@ -19,7 +19,8 @@
      misrepresented as being the original source code.
   3. This notice may not be removed or altered from any source distribution.
 */
-// adapted for NAudio
+// adapted for NAudio,
+// updated to be in line with http://msdn.microsoft.com/en-us/library/dd370823%28v=vs.85%29.aspx
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -37,16 +38,20 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         Active = 0x00000001,
         /// <summary>
-        /// DEVICE_STATE_UNPLUGGED
+        /// DEVICE_STATE_DISABLED
         /// </summary>
-        Unplugged = 0x00000002,
+        Disabled = 0x00000002,
         /// <summary>
         /// DEVICE_STATE_NOTPRESENT 
         /// </summary>
         NotPresent = 0x00000004,
         /// <summary>
+        /// DEVICE_STATE_UNPLUGGED
+        /// </summary>
+        Unplugged = 0x00000008,
+        /// <summary>
         /// DEVICE_STATEMASK_ALL
         /// </summary>
-        All = 0x00000007
+        All = 0x0000000F
     }
 }

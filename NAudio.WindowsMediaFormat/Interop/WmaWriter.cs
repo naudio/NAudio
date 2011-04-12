@@ -33,6 +33,13 @@ namespace NAudio.WindowsMediaFormat
         private Stream m_outputStream;
         private WaveFormat m_inputFormat;
 
+
+        public WmaWriter(Stream output, WaveFormat inputFormat, CodecFormat codecFormat)
+            : this(output,inputFormat,codecFormat.GetProfile())
+        {
+
+        }
+
         /// <summary>
         /// Create the writer indicating Metadata information
         /// </summary>

@@ -57,6 +57,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Interop\CodecFormat.cs" />
+    <Compile Include="Interop\Codec.cs" />
+    <Compile Include="Interop\CommonTypes\IWMCodecInfo.cs" />
+    <Compile Include="Interop\CommonTypes\IWMCodecInfo2.cs" />
+    <Compile Include="Interop\CommonTypes\IWMCodecInfo3 .cs" />
     <Compile Include="Interop\ProfilesTypes\IWMProfile3.cs" />
     <Compile Include="Interop\Enums.cs" />
     <Compile Include="Interop\WmProfile.cs" />

@@ -47,7 +47,7 @@ namespace NAudio.WindowsMediaFormat
                                                      WMT_RIGHTS dwRights,
                                                      [Out, MarshalAs(UnmanagedType.Interface)] out IWMSyncReader ppSyncReader);
 
-        [DllImport("WMVCore.dll", EntryPoint = "WMCreateSyncReader", SetLastError = true,
+        [DllImport("WMVCore.dll", EntryPoint = "WMCreateProfileManager", SetLastError = true,
            CharSet = CharSet.Unicode, ExactSpelling = true,
            CallingConvention = CallingConvention.StdCall)]
         private static extern int WMCreateProfileManager([Out, MarshalAs(UnmanagedType.Interface)] out IWMProfileManager ppProfileManager);
@@ -298,8 +298,10 @@ namespace NAudio.WindowsMediaFormat
         {
             get
             {
+                //This is probably a bad idea. Multi threads using the same COM object usually causes problems.
                 if (m_ProfileManager == null)
                 {
+                   
                     m_ProfileManager = CreateProfileManager();
                     IWMProfileManager2 pm2 = (IWMProfileManager2)m_ProfileManager;
                     pm2.SetSystemProfileVersion(WMT_VERSION.WMT_VER_9_0);

@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using NAudio.Wave.SampleProviders;
 
 namespace NAudio.Wave
 {
@@ -18,6 +20,7 @@ namespace NAudio.Wave
         private volatile float volume;
         private volatile float pan;
         private long position;
+        private ISampleProvider sampleProvider;
 
         /// <summary>
         /// Creates a new WaveChannel32
@@ -28,11 +31,32 @@ namespace NAudio.Wave
         public WaveChannel32(WaveStream sourceStream, float volume, float pan)
         {
             PadWithZeroes = true;
-            if (sourceStream.WaveFormat.Encoding != WaveFormatEncoding.Pcm)
-                throw new ApplicationException("Only PCM supported");
-            if (sourceStream.WaveFormat.BitsPerSample != 16)
-                throw new ApplicationException("Only 16 bit audio supported");
-            
+
+            var providers = new ISampleProvider[] 
+            {
+                new Mono8SampleProvider(),
+                new Stereo8SampleProvider(),
+                new Mono16SampleProvider(),
+                new Stereo16SampleProvider(),
+                new Mono24SampleProvider(),
+                new Stereo24SampleProvider(),
+                new MonoFloatSampleProvider(),
+                new StereoFloatSampleProvider(),
+            };
+            foreach (var provider in providers)
+            {
+                if (provider.Supports(sourceStream.WaveFormat))
+                {
+                    this.sampleProvider = provider;
+                    break;
+                }                    
+            }
+
+            if (this.sampleProvider == null)
+            {
+                throw new ApplicationException("Unsupported sourceStream format");
+            }
+         
             // always outputs stereo 32 bit
             waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sourceStream.WaveFormat.SampleRate, 2);
             destBytesPerSample = 8; // includes stereo factoring
@@ -117,19 +141,6 @@ namespace NAudio.Wave
             }
         }
 
-        byte[] sourceBuffer;
-
-        /// <summary>
-        /// Helper function to avoid creating a new buffer every read
-        /// </summary>
-        byte[] GetSourceBuffer(int bytesRequired)
-        {
-            if (sourceBuffer == null || sourceBuffer.Length < bytesRequired)
-            {
-                sourceBuffer = new byte[bytesRequired];
-            }
-            return sourceBuffer;
-        }
 
         /// <summary>
         /// Reads bytes from this wave stream
@@ -141,6 +152,8 @@ namespace NAudio.Wave
         public override int Read(byte[] destBuffer, int offset, int numBytes)
         {
             int bytesWritten = 0;
+            WaveBuffer destWaveBuffer = new WaveBuffer(destBuffer);
+                
             // 1. fill with silence
             if (position < 0)
             {
@@ -150,21 +163,19 @@ namespace NAudio.Wave
             }
             if (bytesWritten < numBytes)
             {
-                if (sourceStream.WaveFormat.Channels == 1)
+                this.sampleProvider.LoadNextChunk(sourceStream, (numBytes - bytesWritten) / 8);
+                float left, right;
+                while (this.sampleProvider.GetNextSample(out left, out right) && bytesWritten < numBytes)
                 {
-                    int sourceBytesRequired = (numBytes - bytesWritten) / 4;
-                    byte[] sourceBuffer = GetSourceBuffer(sourceBytesRequired);
-                    int read = sourceStream.Read(sourceBuffer, 0, sourceBytesRequired);
-                    MonoToStereo(destBuffer, offset + bytesWritten, sourceBuffer, read);
-                    bytesWritten += (read * 4);
-                }
-                else
-                {
-                    int sourceBytesRequired = (numBytes - bytesWritten) / 2;
-                    byte[] sourceBuffer = GetSourceBuffer(sourceBytesRequired);
-                    int read = sourceStream.Read(sourceBuffer, 0, sourceBytesRequired);
-                    AdjustVolume(destBuffer, offset + bytesWritten, sourceBuffer, read);
-                    bytesWritten += (read * 2);
+                    // implement better panning laws. 
+                    left = (pan <= 0) ? left : (left * (1 - pan) / 2.0f);
+                    right = (pan >= 0) ? right : (right * (pan + 1) / 2.0f);
+                    left *= volume;
+                    right *= volume;
+                    destWaveBuffer.FloatBuffer[bytesWritten / 4] = left;
+                    destWaveBuffer.FloatBuffer[(bytesWritten / 4) + 1] = right;
+                    bytesWritten += 8;
+                    if (Sample != null) RaiseSample(left, right);
                 }
             }
             // 3. Fill out with zeroes
@@ -181,62 +192,7 @@ namespace NAudio.Wave
         /// If true, Read always returns the number of bytes requested
         /// </summary>
         public bool PadWithZeroes { get; set; }
-
-        /// <summary>
-        /// Converts Mono to stereo, adjusting volume and pan
-        /// </summary>
-        private unsafe void MonoToStereo(byte[] destBuffer, int offset, byte[] sourceBuffer, int bytesRead)
-        {
-            fixed (byte* pDestBuffer = &destBuffer[offset],
-                pSourceBuffer = &sourceBuffer[0])
-            {
-                float* pfDestBuffer = (float*)pDestBuffer;
-                short* psSourceBuffer = (short*)pSourceBuffer;
-
-                // implement better panning laws. 
-                float leftVolume = (pan <= 0) ? volume : (volume * (1 - pan) / 2.0f);
-                float rightVolume = (pan >= 0) ? volume : (volume * (pan + 1) / 2.0f);
-                leftVolume = leftVolume / 32768f;
-                rightVolume = rightVolume / 32768f;
-                int samplesRead = bytesRead / 2;
-                for (int n = 0; n < samplesRead; n++)
-                {
-                    pfDestBuffer[n * 2] = psSourceBuffer[n] * leftVolume;
-                    pfDestBuffer[n * 2 + 1] = psSourceBuffer[n] * rightVolume;
-                    if (Sample != null) RaiseSample(pfDestBuffer[n * 2], pfDestBuffer[n * 2 + 1]);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Converts stereo to stereo
-        /// </summary>
-        private unsafe void AdjustVolume(byte[] destBuffer, int offset, byte[] sourceBuffer, int bytesRead)
-        {
-            fixed (byte* pDestBuffer = &destBuffer[offset],
-                pSourceBuffer = &sourceBuffer[0])
-            {
-                float* pfDestBuffer = (float*)pDestBuffer;
-                short* psSourceBuffer = (short*)pSourceBuffer;
-
-                // implement better panning laws. 
-                float leftVolume = (pan <= 0) ? volume : (volume * (1 - pan) / 2.0f);
-                float rightVolume = (pan >= 0) ? volume : (volume * (pan + 1) / 2.0f);
-
-                leftVolume = leftVolume / 32768f;
-                rightVolume = rightVolume / 32768f;
-                //float leftVolume = (volume * (1 - pan) / 2.0f) / 32768f;
-                //float rightVolume = (volume * (pan + 1) / 2.0f) / 32768f;
-
-                int samplesRead = bytesRead / 2;
-                for (int n = 0; n < samplesRead; n += 2)
-                {
-                    pfDestBuffer[n] = psSourceBuffer[n] * leftVolume;
-                    pfDestBuffer[n + 1] = psSourceBuffer[n + 1] * rightVolume;
-                    if (Sample != null) RaiseSample(pfDestBuffer[n], pfDestBuffer[n + 1]);
-                }
-            }
-        }
+      
 
         /// <summary>
         /// <see cref="WaveStream.WaveFormat"/>
@@ -254,14 +210,8 @@ namespace NAudio.Wave
         /// </summary>
         public float Volume
         {
-            get
-            {
-                return volume;
-            }
-            set
-            {
-                volume = value;
-            }
+            get { return volume; }
+            set { volume = value; }
         }
 
         /// <summary>
@@ -269,14 +219,8 @@ namespace NAudio.Wave
         /// </summary>
         public float Pan
         {
-            get
-            {
-                return pan;
-            }
-            set
-            {
-                pan = value;
-            }
+            get { return pan; }
+            set { pan = value; }
         }
 
         /// <summary>

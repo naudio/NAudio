@@ -19,10 +19,19 @@ namespace NAudioDemo
 
             InitialiseWaveOutControls();
 
+            InitialiseDirectSoundControls();
+
             InitialiseAsioControls();
 
             InitialiseWasapiControls();
 
+        }
+
+        private void InitialiseDirectSoundControls()
+        {
+            comboBoxDirectSound.DisplayMember = "Description";
+            comboBoxDirectSound.ValueMember = "Guid";
+            comboBoxDirectSound.DataSource = DirectSoundOut.Devices;            
         }
 
         private void InitialiseWaveOutControls()
@@ -197,7 +206,7 @@ namespace NAudioDemo
             }
             else if (radioButtonDirectSound.Checked)
             {
-                waveOut = new DirectSoundOut(latency);
+                waveOut = new DirectSoundOut((Guid)comboBoxDirectSound.SelectedValue, latency);
             }
             else if (radioButtonAsio.Checked)
             {

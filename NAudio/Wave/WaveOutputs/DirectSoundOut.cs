@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Threading;
+using System.Collections.Generic;
 
 namespace NAudio.Wave
 {
@@ -23,7 +24,7 @@ namespace NAudio.Wave
         private int samplesFrameSize;
         private int nextSamplesWriteIndex;
         private int desiredLatency;
-        private IntPtr device;
+        private Guid device;
         private byte[] samples;
         private IWaveProvider waveStream = null;
         private IDirectSound directSound = null;
@@ -37,19 +38,55 @@ namespace NAudio.Wave
         // Used purely for locking
         private Object m_LockObject = new Object();
 
+        /// <summary>
+        /// Gets the DirectSound output devices in the system
+        /// </summary>
+        public static IEnumerable<DirectSoundDeviceInfo> Devices 
+        {
+            get {
+                devices = new List<DirectSoundDeviceInfo>();
+                DirectSoundEnumerate(new DSEnumCallback(EnumCallback), IntPtr.Zero);
+                return devices;
+            }
+        }
+
+        private static List<DirectSoundDeviceInfo> devices;
+
+        private static bool EnumCallback(IntPtr lpGuid, IntPtr lpcstrDescription, IntPtr lpcstrModule, IntPtr lpContext)
+        {
+            var device = new DirectSoundDeviceInfo();
+            if (lpGuid == IntPtr.Zero)
+            {
+                device.Guid = Guid.Empty;
+            }
+            else
+            {
+                byte[] guidBytes = new byte[16];
+                Marshal.Copy(lpGuid, guidBytes, 0, 16);
+                device.Guid = new Guid(guidBytes);
+            }
+            device.Description =  Marshal.PtrToStringAnsi(lpcstrDescription);
+            if (lpcstrModule != null)
+            {
+                device.ModuleName = Marshal.PtrToStringAnsi(lpcstrModule);
+            }
+            devices.Add(device);
+            return true;
+        }
+
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DirectSoundOut"/> class.
         /// </summary>
         public DirectSoundOut()
-            : this(IntPtr.Zero)
+            : this(DSDEVID_DefaultPlayback)
         {
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DirectSoundOut"/> class.
         /// </summary>
-        public DirectSoundOut(IntPtr device)
+        public DirectSoundOut(Guid device)
             : this(device, 40)
         {
         }
@@ -58,7 +95,7 @@ namespace NAudio.Wave
         /// Initializes a new instance of the <see cref="DirectSoundOut"/> class.
         /// </summary>
         public DirectSoundOut(int latency)
-            : this(IntPtr.Zero, latency)
+            : this(DSDEVID_DefaultPlayback, latency)
         {
         }
 
@@ -68,8 +105,12 @@ namespace NAudio.Wave
         /// </summary>
         /// <param name="latency">The latency.</param>
         /// <param name="device">Selected device</param>
-        public DirectSoundOut(IntPtr device, int latency)
+        public DirectSoundOut(Guid device, int latency)
         {
+            if (device == Guid.Empty)
+            {
+                device = DSDEVID_DefaultPlayback;
+            }
             this.device = device;
             desiredLatency = latency;
         }
@@ -158,7 +199,7 @@ namespace NAudio.Wave
                 lock (this.m_LockObject)
                 {
                     directSound = null;
-                    DirectSoundCreate(device, out directSound, IntPtr.Zero);
+                    DirectSoundCreate(ref device, out directSound, IntPtr.Zero);
 
                     if (directSound != null)
                     {
@@ -680,7 +721,47 @@ namespace NAudio.Wave
         /// <param name="directSound">The direct sound.</param>
         /// <param name="pUnkOuter">The p unk outer.</param>
         [DllImport("dsound.dll", EntryPoint = "DirectSoundCreate", SetLastError = true, CharSet = CharSet.Unicode, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
-        static extern void DirectSoundCreate(IntPtr GUID, [Out, MarshalAs(UnmanagedType.Interface)] out IDirectSound directSound, IntPtr pUnkOuter);
+        static extern void DirectSoundCreate(ref Guid GUID, [Out, MarshalAs(UnmanagedType.Interface)] out IDirectSound directSound, IntPtr pUnkOuter);
+
+
+        /// <summary>
+        /// DirectSound default playback device GUID 
+        /// </summary>
+        public static readonly Guid DSDEVID_DefaultPlayback = new Guid("DEF00000-9C6D-47ED-AAF1-4DDA8F2B5C03");
+        
+        /// <summary>
+        /// DirectSound default capture device GUID
+        /// </summary>
+        public static readonly Guid DSDEVID_DefaultCapture = new Guid("DEF00001-9C6D-47ED-AAF1-4DDA8F2B5C03");
+
+        /// <summary>
+        /// DirectSound default device for voice playback
+        /// </summary>
+        public static readonly Guid DSDEVID_DefaultVoicePlayback = new Guid("DEF00002-9C6D-47ED-AAF1-4DDA8F2B5C03");
+
+        /// <summary>
+        /// DirectSound default device for voice capture
+        /// </summary>
+        public static readonly Guid DSDEVID_DefaultVoiceCapture = new Guid("DEF00003-9C6D-47ED-AAF1-4DDA8F2B5C03");
+
+        /// <summary>
+        /// The DSEnumCallback function is an application-defined callback function that enumerates the DirectSound drivers. 
+        /// The system calls this function in response to the application's call to the DirectSoundEnumerate or DirectSoundCaptureEnumerate function.
+        /// </summary>
+        /// <param name="lpGuid">Address of the GUID that identifies the device being enumerated, or NULL for the primary device. This value can be passed to the DirectSoundCreate8 or DirectSoundCaptureCreate8 function to create a device object for that driver. </param>
+        /// <param name="lpcstrDescription">Address of a null-terminated string that provides a textual description of the DirectSound device. </param>
+        /// <param name="lpcstrModule">Address of a null-terminated string that specifies the module name of the DirectSound driver corresponding to this device. </param>
+        /// <param name="lpContext">Address of application-defined data. This is the pointer passed to DirectSoundEnumerate or DirectSoundCaptureEnumerate as the lpContext parameter. </param>
+        /// <returns>Returns TRUE to continue enumerating drivers, or FALSE to stop.</returns>
+        delegate bool DSEnumCallback(IntPtr lpGuid, IntPtr lpcstrDescription, IntPtr lpcstrModule, IntPtr lpContext);
+
+        /// <summary>
+        /// The DirectSoundEnumerate function enumerates the DirectSound drivers installed in the system.
+        /// </summary>
+        /// <param name="lpDSEnumCallback">callback function</param>
+        /// <param name="lpContext">User context</param>
+        [DllImport("dsound.dll", EntryPoint = "DirectSoundEnumerateA", SetLastError = true, CharSet = CharSet.Unicode, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+        static extern void DirectSoundEnumerate(DSEnumCallback lpDSEnumCallback, IntPtr lpContext);
 
         /// <summary>
         /// Gets the HANDLE of the desktop window.
@@ -690,4 +771,24 @@ namespace NAudio.Wave
         private static extern IntPtr GetDesktopWindow();
         #endregion
     }
+
+    /// <summary>
+    /// Class for enumerating DirectSound devices
+    /// </summary>
+    public class DirectSoundDeviceInfo
+    {
+        /// <summary>
+        /// The device identifier
+        /// </summary>
+        public Guid Guid { get; set; }
+        /// <summary>
+        /// Device description
+        /// </summary>
+        public string Description { get; set; }
+        /// <summary>
+        /// Device module name
+        /// </summary>
+        public string ModuleName { get; set; }
+    }
+
 }

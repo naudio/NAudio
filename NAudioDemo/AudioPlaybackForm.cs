@@ -17,13 +17,47 @@ namespace NAudioDemo
         {            
             InitializeComponent();
 
+            InitialiseWaveOutControls();
+
+            InitialiseAsioControls();
+
+            InitialiseWasapiControls();
+
+        }
+
+        private void InitialiseWaveOutControls()
+        {
+            for(int deviceId = 0; deviceId < WaveOut.DeviceCount; deviceId++)
+            {
+                var capabilities = WaveOut.GetCapabilities(deviceId);
+                comboBoxWaveOutDevice.Items.Add(String.Format("Device {0} ({1})", deviceId, capabilities.ProductName));
+            }
+            if (comboBoxWaveOutDevice.Items.Count > 0)
+            {
+                comboBoxWaveOutDevice.SelectedIndex = 0;
+            }
+        }
+
+        private void InitialiseWasapiControls()
+        {
+            if (Environment.OSVersion.Version.Major < 6)
+            {
+                // WASAPI supported only on Windows Vista and above
+                radioButtonWasapi.Enabled = false;
+                checkBoxWasapiEventCallback.Enabled = false;
+                checkBoxWasapiExclusiveMode.Enabled = false;
+            }
+        }
+
+        private void InitialiseAsioControls()
+        {
             // Disable ASIO if no drivers are available
-            if ( ! AsioOut.isSupported() )
+            if (!AsioOut.isSupported())
             {
                 radioButtonAsio.Enabled = false;
                 buttonControlPanel.Enabled = false;
                 comboBoxAsioDriver.Enabled = false;
-            } 
+            }
             else
             {
                 // Just fill the comboBox AsioDriver with available driver names
@@ -34,15 +68,6 @@ namespace NAudioDemo
                 }
                 comboBoxAsioDriver.SelectedIndex = 0;
             }
-
-            if (Environment.OSVersion.Version.Major < 6)
-            {
-                // WASAPI supported only on Windows Vista and above
-                radioButtonWasapi.Enabled = false;
-                checkBoxWasapiEventCallback.Enabled = false;
-                checkBoxWasapiExclusiveMode.Enabled = false;
-            }
-
         }
             
         private void buttonPlay_Click(object sender, EventArgs e)
@@ -166,6 +191,7 @@ namespace NAudioDemo
                 WaveCallbackInfo callbackInfo = checkBoxWaveOutWindow.Checked ? 
                     WaveCallbackInfo.NewWindow() : WaveCallbackInfo.FunctionCallback();
                 WaveOut outputDevice = new WaveOut(callbackInfo);
+                outputDevice.DeviceNumber = comboBoxWaveOutDevice.SelectedIndex;
                 outputDevice.DesiredLatency = latency;
                 waveOut = outputDevice;
             }

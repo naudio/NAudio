@@ -60,6 +60,7 @@
             this.volumeMeter1 = new NAudio.Gui.VolumeMeter();
             this.volumeSlider1 = new NAudio.Gui.VolumeSlider();
             this.waveformPainter2 = new NAudio.Gui.WaveformPainter();
+            this.comboBoxWaveOutDevice = new System.Windows.Forms.ComboBox();
             this.groupBoxDriverModel.SuspendLayout();
             this.toolStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.trackBarPosition)).BeginInit();
@@ -67,9 +68,10 @@
             // 
             // comboBoxLatency
             // 
+            this.comboBoxLatency.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.comboBoxLatency.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.comboBoxLatency.FormattingEnabled = true;
-            this.comboBoxLatency.Location = new System.Drawing.Point(362, 27);
+            this.comboBoxLatency.Location = new System.Drawing.Point(442, 27);
             this.comboBoxLatency.Name = "comboBoxLatency";
             this.comboBoxLatency.Size = new System.Drawing.Size(75, 21);
             this.comboBoxLatency.TabIndex = 10;
@@ -77,7 +79,7 @@
             // radioButtonDirectSound
             // 
             this.radioButtonDirectSound.AutoSize = true;
-            this.radioButtonDirectSound.Location = new System.Drawing.Point(6, 62);
+            this.radioButtonDirectSound.Location = new System.Drawing.Point(6, 85);
             this.radioButtonDirectSound.Name = "radioButtonDirectSound";
             this.radioButtonDirectSound.Size = new System.Drawing.Size(84, 17);
             this.radioButtonDirectSound.TabIndex = 9;
@@ -100,7 +102,7 @@
             // radioButtonAsio
             // 
             this.radioButtonAsio.AutoSize = true;
-            this.radioButtonAsio.Location = new System.Drawing.Point(6, 154);
+            this.radioButtonAsio.Location = new System.Drawing.Point(6, 177);
             this.radioButtonAsio.Name = "radioButtonAsio";
             this.radioButtonAsio.Size = new System.Drawing.Size(50, 17);
             this.radioButtonAsio.TabIndex = 9;
@@ -110,7 +112,7 @@
             // 
             // buttonControlPanel
             // 
-            this.buttonControlPanel.Location = new System.Drawing.Point(25, 202);
+            this.buttonControlPanel.Location = new System.Drawing.Point(25, 225);
             this.buttonControlPanel.Name = "buttonControlPanel";
             this.buttonControlPanel.Size = new System.Drawing.Size(135, 23);
             this.buttonControlPanel.TabIndex = 12;
@@ -120,6 +122,7 @@
             // 
             // groupBoxDriverModel
             // 
+            this.groupBoxDriverModel.Controls.Add(this.comboBoxWaveOutDevice);
             this.groupBoxDriverModel.Controls.Add(this.comboBoxAsioDriver);
             this.groupBoxDriverModel.Controls.Add(this.labelAsioSelectDriver);
             this.groupBoxDriverModel.Controls.Add(this.checkBoxWasapiEventCallback);
@@ -132,7 +135,7 @@
             this.groupBoxDriverModel.Controls.Add(this.radioButtonAsio);
             this.groupBoxDriverModel.Location = new System.Drawing.Point(12, 30);
             this.groupBoxDriverModel.Name = "groupBoxDriverModel";
-            this.groupBoxDriverModel.Size = new System.Drawing.Size(235, 239);
+            this.groupBoxDriverModel.Size = new System.Drawing.Size(263, 256);
             this.groupBoxDriverModel.TabIndex = 13;
             this.groupBoxDriverModel.TabStop = false;
             this.groupBoxDriverModel.Text = "Output Driver";
@@ -141,7 +144,7 @@
             // 
             this.comboBoxAsioDriver.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.comboBoxAsioDriver.FormattingEnabled = true;
-            this.comboBoxAsioDriver.Location = new System.Drawing.Point(105, 175);
+            this.comboBoxAsioDriver.Location = new System.Drawing.Point(105, 198);
             this.comboBoxAsioDriver.Name = "comboBoxAsioDriver";
             this.comboBoxAsioDriver.Size = new System.Drawing.Size(124, 21);
             this.comboBoxAsioDriver.TabIndex = 16;
@@ -149,7 +152,7 @@
             // labelAsioSelectDriver
             // 
             this.labelAsioSelectDriver.AutoSize = true;
-            this.labelAsioSelectDriver.Location = new System.Drawing.Point(25, 178);
+            this.labelAsioSelectDriver.Location = new System.Drawing.Point(25, 201);
             this.labelAsioSelectDriver.Name = "labelAsioSelectDriver";
             this.labelAsioSelectDriver.Size = new System.Drawing.Size(74, 13);
             this.labelAsioSelectDriver.TabIndex = 15;
@@ -158,7 +161,7 @@
             // checkBoxWasapiEventCallback
             // 
             this.checkBoxWasapiEventCallback.AutoSize = true;
-            this.checkBoxWasapiEventCallback.Location = new System.Drawing.Point(25, 131);
+            this.checkBoxWasapiEventCallback.Location = new System.Drawing.Point(25, 154);
             this.checkBoxWasapiEventCallback.Name = "checkBoxWasapiEventCallback";
             this.checkBoxWasapiEventCallback.Size = new System.Drawing.Size(98, 17);
             this.checkBoxWasapiEventCallback.TabIndex = 14;
@@ -168,7 +171,7 @@
             // checkBoxWasapiExclusiveMode
             // 
             this.checkBoxWasapiExclusiveMode.AutoSize = true;
-            this.checkBoxWasapiExclusiveMode.Location = new System.Drawing.Point(25, 108);
+            this.checkBoxWasapiExclusiveMode.Location = new System.Drawing.Point(25, 131);
             this.checkBoxWasapiExclusiveMode.Name = "checkBoxWasapiExclusiveMode";
             this.checkBoxWasapiExclusiveMode.Size = new System.Drawing.Size(101, 17);
             this.checkBoxWasapiExclusiveMode.TabIndex = 14;
@@ -180,7 +183,7 @@
             this.checkBoxWaveOutWindow.AutoSize = true;
             this.checkBoxWaveOutWindow.Checked = true;
             this.checkBoxWaveOutWindow.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBoxWaveOutWindow.Location = new System.Drawing.Point(25, 39);
+            this.checkBoxWaveOutWindow.Location = new System.Drawing.Point(25, 42);
             this.checkBoxWaveOutWindow.Name = "checkBoxWaveOutWindow";
             this.checkBoxWaveOutWindow.Size = new System.Drawing.Size(126, 17);
             this.checkBoxWaveOutWindow.TabIndex = 13;
@@ -190,7 +193,7 @@
             // radioButtonWasapi
             // 
             this.radioButtonWasapi.AutoSize = true;
-            this.radioButtonWasapi.Location = new System.Drawing.Point(6, 85);
+            this.radioButtonWasapi.Location = new System.Drawing.Point(6, 108);
             this.radioButtonWasapi.Name = "radioButtonWasapi";
             this.radioButtonWasapi.Size = new System.Drawing.Size(67, 17);
             this.radioButtonWasapi.TabIndex = 9;
@@ -200,8 +203,9 @@
             // 
             // label1
             // 
+            this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(443, 30);
+            this.label1.Location = new System.Drawing.Point(523, 30);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(20, 13);
             this.label1.TabIndex = 13;
@@ -220,7 +224,7 @@
             this.labelTotalTime});
             this.toolStrip1.Location = new System.Drawing.Point(0, 0);
             this.toolStrip1.Name = "toolStrip1";
-            this.toolStrip1.Size = new System.Drawing.Size(513, 25);
+            this.toolStrip1.Size = new System.Drawing.Size(591, 25);
             this.toolStrip1.TabIndex = 15;
             this.toolStrip1.Text = "toolStrip1";
             // 
@@ -290,9 +294,11 @@
             // 
             // trackBarPosition
             // 
-            this.trackBarPosition.Location = new System.Drawing.Point(18, 275);
+            this.trackBarPosition.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.trackBarPosition.Location = new System.Drawing.Point(18, 292);
             this.trackBarPosition.Name = "trackBarPosition";
-            this.trackBarPosition.Size = new System.Drawing.Size(489, 45);
+            this.trackBarPosition.Size = new System.Drawing.Size(569, 45);
             this.trackBarPosition.TabIndex = 16;
             this.trackBarPosition.Scroll += new System.EventHandler(this.trackBarPosition_Scroll);
             // 
@@ -304,8 +310,9 @@
             // 
             // label2
             // 
+            this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(253, 30);
+            this.label2.Location = new System.Drawing.Point(333, 30);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(103, 13);
             this.label2.TabIndex = 17;
@@ -313,8 +320,9 @@
             // 
             // label3
             // 
+            this.label3.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(253, 57);
+            this.label3.Location = new System.Drawing.Point(333, 57);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(45, 13);
             this.label3.TabIndex = 17;
@@ -322,19 +330,22 @@
             // 
             // waveformPainter1
             // 
+            this.waveformPainter1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.waveformPainter1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(192)))));
             this.waveformPainter1.ForeColor = System.Drawing.Color.SaddleBrown;
-            this.waveformPainter1.Location = new System.Drawing.Point(256, 141);
+            this.waveformPainter1.Location = new System.Drawing.Point(281, 141);
             this.waveformPainter1.Name = "waveformPainter1";
-            this.waveformPainter1.Size = new System.Drawing.Size(245, 60);
+            this.waveformPainter1.Size = new System.Drawing.Size(300, 60);
             this.waveformPainter1.TabIndex = 19;
             this.waveformPainter1.Text = "waveformPainter1";
             // 
             // volumeMeter2
             // 
             this.volumeMeter2.Amplitude = 0F;
+            this.volumeMeter2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.volumeMeter2.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(192)))), ((int)(((byte)(0)))));
-            this.volumeMeter2.Location = new System.Drawing.Point(487, 30);
+            this.volumeMeter2.Location = new System.Drawing.Point(567, 30);
             this.volumeMeter2.MaxDb = 3F;
             this.volumeMeter2.MinDb = -60F;
             this.volumeMeter2.Name = "volumeMeter2";
@@ -345,8 +356,9 @@
             // volumeMeter1
             // 
             this.volumeMeter1.Amplitude = 0F;
+            this.volumeMeter1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.volumeMeter1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(192)))), ((int)(((byte)(0)))));
-            this.volumeMeter1.Location = new System.Drawing.Point(469, 30);
+            this.volumeMeter1.Location = new System.Drawing.Point(549, 30);
             this.volumeMeter1.MaxDb = 3F;
             this.volumeMeter1.MinDb = -60F;
             this.volumeMeter1.Name = "volumeMeter1";
@@ -356,7 +368,8 @@
             // 
             // volumeSlider1
             // 
-            this.volumeSlider1.Location = new System.Drawing.Point(362, 54);
+            this.volumeSlider1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.volumeSlider1.Location = new System.Drawing.Point(442, 54);
             this.volumeSlider1.Name = "volumeSlider1";
             this.volumeSlider1.Size = new System.Drawing.Size(96, 16);
             this.volumeSlider1.TabIndex = 11;
@@ -365,19 +378,30 @@
             // 
             // waveformPainter2
             // 
+            this.waveformPainter2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.waveformPainter2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(192)))));
             this.waveformPainter2.ForeColor = System.Drawing.Color.SaddleBrown;
-            this.waveformPainter2.Location = new System.Drawing.Point(256, 205);
+            this.waveformPainter2.Location = new System.Drawing.Point(281, 205);
             this.waveformPainter2.Name = "waveformPainter2";
-            this.waveformPainter2.Size = new System.Drawing.Size(245, 60);
+            this.waveformPainter2.Size = new System.Drawing.Size(300, 60);
             this.waveformPainter2.TabIndex = 19;
             this.waveformPainter2.Text = "waveformPainter1";
+            // 
+            // comboBoxWaveOutDevice
+            // 
+            this.comboBoxWaveOutDevice.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboBoxWaveOutDevice.FormattingEnabled = true;
+            this.comboBoxWaveOutDevice.Location = new System.Drawing.Point(25, 58);
+            this.comboBoxWaveOutDevice.Name = "comboBoxWaveOutDevice";
+            this.comboBoxWaveOutDevice.Size = new System.Drawing.Size(232, 21);
+            this.comboBoxWaveOutDevice.TabIndex = 17;
             // 
             // AudioPlaybackForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(513, 328);
+            this.ClientSize = new System.Drawing.Size(591, 349);
             this.Controls.Add(this.waveformPainter2);
             this.Controls.Add(this.waveformPainter1);
             this.Controls.Add(this.volumeMeter2);
@@ -393,8 +417,8 @@
             this.Name = "AudioPlaybackForm";
             this.ShowInTaskbar = false;
             this.Text = "AudioPlaybackForm";
-            this.Load += new System.EventHandler(this.Form1_Load);
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
+            this.Load += new System.EventHandler(this.Form1_Load);
             this.groupBoxDriverModel.ResumeLayout(false);
             this.groupBoxDriverModel.PerformLayout();
             this.toolStrip1.ResumeLayout(false);
@@ -438,5 +462,6 @@
         private NAudio.Gui.VolumeMeter volumeMeter2;
         private NAudio.Gui.WaveformPainter waveformPainter1;
         private NAudio.Gui.WaveformPainter waveformPainter2;
+        private System.Windows.Forms.ComboBox comboBoxWaveOutDevice;
     }
 }

@@ -120,24 +120,16 @@ namespace NAudioDemo
             if (fileName.EndsWith(".wav"))
             {
                 WaveStream readerStream = new WaveFileReader(fileName);
-                if (readerStream.WaveFormat.Encoding != WaveFormatEncoding.Pcm)
+                if (readerStream.WaveFormat.Encoding != WaveFormatEncoding.Pcm && readerStream.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
                 {
                     readerStream = WaveFormatConversionStream.CreatePcmStream(readerStream);
                     readerStream = new BlockAlignReductionStream(readerStream);
-                }
-                if (readerStream.WaveFormat.BitsPerSample != 16)
-                {
-                    var format = new WaveFormat(readerStream.WaveFormat.SampleRate,
-                        16, readerStream.WaveFormat.Channels);
-                    readerStream = new WaveFormatConversionStream(format, readerStream);
                 }
                 inputStream = new WaveChannel32(readerStream);
             }
             else if (fileName.EndsWith(".mp3"))
             {                
                 WaveStream mp3Reader = new Mp3FileReader(fileName);
-                //WaveStream pcmStream = WaveFormatConversionStream.CreatePcmStream(mp3Reader);
-                //WaveStream blockAlignedStream = new BlockAlignReductionStream(mp3Reader);
                 inputStream = new WaveChannel32(mp3Reader);
             }
             else

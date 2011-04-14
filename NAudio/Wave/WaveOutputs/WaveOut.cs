@@ -96,7 +96,7 @@ namespace NAudio.Wave
             // set default values up
             this.DeviceNumber = 0;
             this.DesiredLatency = 300;
-            this.NumberOfBuffers = 3;
+            this.NumberOfBuffers = 2;
 
             this.callback = new WaveInterop.WaveCallback(Callback);
             this.waveOutLock = new object();

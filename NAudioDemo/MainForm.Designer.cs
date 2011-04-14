@@ -50,7 +50,7 @@ namespace NAudioDemo
             this.buttonWavPlayback.Name = "buttonWavPlayback";
             this.buttonWavPlayback.Size = new System.Drawing.Size(156, 23);
             this.buttonWavPlayback.TabIndex = 1;
-            this.buttonWavPlayback.Text = "WAV Playback";
+            this.buttonWavPlayback.Text = "WAV / MP3 Playback";
             this.buttonWavPlayback.UseVisualStyleBackColor = true;
             this.buttonWavPlayback.Click += new System.EventHandler(this.buttonWavPlayback_Click);
             // 

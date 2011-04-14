@@ -16,22 +16,17 @@ namespace NAudioDemo
         public AudioPlaybackForm()
         {            
             InitializeComponent();
-
             InitialiseWaveOutControls();
-
             InitialiseDirectSoundControls();
-
             InitialiseAsioControls();
-
             InitialiseWasapiControls();
-
         }
 
         private void InitialiseDirectSoundControls()
         {
             comboBoxDirectSound.DisplayMember = "Description";
             comboBoxDirectSound.ValueMember = "Guid";
-            comboBoxDirectSound.DataSource = DirectSoundOut.Devices;            
+            comboBoxDirectSound.DataSource = DirectSoundOut.Devices;
         }
 
         private void InitialiseWaveOutControls()
@@ -54,8 +49,31 @@ namespace NAudioDemo
                 // WASAPI supported only on Windows Vista and above
                 radioButtonWasapi.Enabled = false;
                 checkBoxWasapiEventCallback.Enabled = false;
+                comboBoxWaspai.Enabled = false;
                 checkBoxWasapiExclusiveMode.Enabled = false;
             }
+            else
+            {
+                var enumerator = new MMDeviceEnumerator();
+                var endPoints = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
+                var comboItems = new List<WasapiDeviceComboItem>();
+                foreach(var endPoint in endPoints)
+                {
+                    var comboItem = new WasapiDeviceComboItem();
+                    comboItem.Description = string.Format("{0} ({1})", endPoint.FriendlyName, endPoint.DeviceFriendlyName);
+                    comboItem.Device = endPoint;
+                    comboItems.Add(comboItem);
+                }
+                comboBoxWaspai.DisplayMember = "Description";
+                comboBoxWaspai.ValueMember = "Device";
+                comboBoxWaspai.DataSource = comboItems;
+            }
+        }
+
+        class WasapiDeviceComboItem
+        {
+            public string Description { get; set; }
+            public MMDevice Device { get; set; }
         }
 
         private void InitialiseAsioControls()
@@ -216,6 +234,7 @@ namespace NAudioDemo
             else
             {
                 waveOut = new WasapiOut(
+                    (MMDevice)comboBoxWaspai.SelectedValue,
                     checkBoxWasapiExclusiveMode.Checked ?
                         AudioClientShareMode.Exclusive :
                         AudioClientShareMode.Shared,

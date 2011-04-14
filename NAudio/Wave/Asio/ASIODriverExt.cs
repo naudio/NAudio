@@ -63,7 +63,10 @@ namespace NAudio.Wave.Asio
         {
             this.driver = driver;
 
-            driver.init(IntPtr.Zero);
+            if (!driver.init(IntPtr.Zero))
+            {
+                throw new ApplicationException(driver.getErrorMessage());
+            }
 
             callbacks = new ASIOCallbacks();
             callbacks.pasioMessage = AsioMessageCallBack;

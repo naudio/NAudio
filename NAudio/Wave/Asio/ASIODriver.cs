@@ -18,18 +18,10 @@ namespace NAudio.Wave.Asio
         IntPtr pASIOComObject;
         IntPtr pinnedcallbacks;
         private ASIODriverVTable asioDriverVTable;
-        //GCHandle hThis;
 
         private ASIODriver()
         {
-            // MRH experimental code
-            //hThis = GCHandle.Alloc(this, GCHandleType.Pinned);
         }
-
-        /*~ASIODriver()
-        {
-            hThis.Free();
-        }*/
 
         /// <summary>
         /// Gets the ASIO driver names installed.
@@ -82,7 +74,8 @@ namespace NAudio.Wave.Asio
         /// <returns></returns>
         public bool init(IntPtr sysHandle)
         {
-            return asioDriverVTable.init(pASIOComObject, sysHandle);
+            int ret = asioDriverVTable.init(pASIOComObject, sysHandle);
+            return ret == 1;
         }
 
         /// <summary>
@@ -259,7 +252,7 @@ namespace NAudio.Wave.Asio
             // next two lines suggested by droidi on codeplex issue tracker
             pinnedcallbacks = Marshal.AllocHGlobal(Marshal.SizeOf(callbacks));
             Marshal.StructureToPtr(callbacks, pinnedcallbacks, false);
-            handleException(asioDriverVTable.createBuffers(pASIOComObject, bufferInfos, numChannels, bufferSize, ref callbacks), "createBuffers");
+            handleException(asioDriverVTable.createBuffers(pASIOComObject, bufferInfos, numChannels, bufferSize, pinnedcallbacks), "createBuffers");
         }
 
         /// <summary>
@@ -316,7 +309,7 @@ namespace NAudio.Wave.Asio
         {
             if (error != ASIOError.ASE_OK && error != ASIOError.ASE_SUCCESS)
             {
-                ASIOException asioException = new ASIOException(String.Format("Error code [{0}] while calling ASIO method <{1}>", ASIOException.getErrorName(error), methodName));
+                ASIOException asioException = new ASIOException(String.Format("Error code [{0}] while calling ASIO method <{1}>, {2}", ASIOException.getErrorName(error), methodName, this.getErrorMessage()));
                 asioException.Error = error;
                 throw asioException;
             }
@@ -373,7 +366,7 @@ namespace NAudio.Wave.Asio
         {
             //3  virtual ASIOBool init(void *sysHandle) = 0;
             [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
-            public delegate bool ASIOInit(IntPtr _pUnknown, IntPtr sysHandle);
+            public delegate int ASIOInit(IntPtr _pUnknown, IntPtr sysHandle);
             public ASIOInit init = null;
             //4  virtual void getDriverName(char *name) = 0;
             [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
@@ -438,7 +431,7 @@ namespace NAudio.Wave.Asio
             //19 virtual ASIOError createBuffers(ASIOBufferInfo *bufferInfos, long numChannels, long bufferSize, ASIOCallbacks *callbacks) = 0;
             [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
             //            public delegate ASIOError ASIOcreateBuffers(IntPtr _pUnknown, ref ASIOBufferInfo[] bufferInfos, int numChannels, int bufferSize, ref ASIOCallbacks callbacks);
-            public delegate ASIOError ASIOcreateBuffers(IntPtr _pUnknown, IntPtr bufferInfos, int numChannels, int bufferSize, ref ASIOCallbacks callbacks);
+            public delegate ASIOError ASIOcreateBuffers(IntPtr _pUnknown, IntPtr bufferInfos, int numChannels, int bufferSize, IntPtr callbacks);
             public ASIOcreateBuffers createBuffers = null;
             //20 virtual ASIOError disposeBuffers() = 0;
             [UnmanagedFunctionPointer(CallingConvention.ThisCall)]

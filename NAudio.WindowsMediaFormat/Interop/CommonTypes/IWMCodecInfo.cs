@@ -11,20 +11,18 @@ InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     public interface IWMCodecInfo
     {
         void GetCodecInfoCount(
-            [In] ref Guid guidType,
-            [Out] out uint pcCodecs);
+            [In, MarshalAs(UnmanagedType.LPStruct)] Guid guidType,
+            [Out] out int pcCodecs);
 
         void GetCodecFormatCount(
-            [In] ref Guid guidType,
-            [In] uint dwCodecIndex,
-            [Out] out uint pcFormat);
+            [In, MarshalAs(UnmanagedType.LPStruct)] Guid guidType,
+            [In] int dwCodecIndex,
+            [Out] out int pcFormat);
 
         void GetCodecFormat(
-            [In] ref Guid guidType,
-            [In] uint dwCodecIndex,
-            [In] uint dwFormatIndex,
-            [Out, MarshalAs(UnmanagedType.Interface)] out IWMStreamConfig
-    ppIStreamConfig);
-    };
-
+            [In, MarshalAs(UnmanagedType.LPStruct)] Guid guidType,
+            [In] int dwCodecIndex,
+            [In] int dwFormatIndex,
+            [Out, MarshalAs(UnmanagedType.Interface)] out IWMStreamConfig ppIStreamConfig);
+    }
 }

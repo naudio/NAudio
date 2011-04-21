@@ -23,10 +23,10 @@ namespace NAudio.WindowsMediaFormat
             }
         }
 
-        public uint Index {get; private set;}
-        public CodecFormat[] CodecFormats {get; private set;}
+        public int Index {get; private set;}
+        public CodecFormat[] CodecFormats { get; private set;}
 
-        public Codec(IWMCodecInfo2 codecInfo, uint index, Guid mediaType)
+        public Codec(IWMCodecInfo2 codecInfo, int index, Guid mediaType)
         {
             CodecInformation = codecInfo;
             Index = index;
@@ -44,10 +44,10 @@ namespace NAudio.WindowsMediaFormat
             
             IWMCodecInfo2 codecInfo = (IWMCodecInfo2)WM.CreateProfileManager();
 
-            uint count;
-            codecInfo.GetCodecInfoCount(ref mediaType, out count);
+            int count;
+            codecInfo.GetCodecInfoCount(mediaType, out count);
             var list = new Codec[count];
-            for (uint i = 0; i < count; i++)
+            for (int i = 0; i < count; i++)
                 list[i] = new Codec(codecInfo,i,mediaType);
 
             return list;

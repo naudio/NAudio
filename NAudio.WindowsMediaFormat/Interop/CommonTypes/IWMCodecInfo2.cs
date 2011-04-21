@@ -15,13 +15,13 @@ namespace NAudio.WindowsMediaFormat
 
         new void GetCodecInfoCount(
             [In, MarshalAs(UnmanagedType.LPStruct)] Guid guidType,
-            out int pcCodecs
+            [Out] out int pcCodecs
             );
 
         new void GetCodecFormatCount(
             [In, MarshalAs(UnmanagedType.LPStruct)] Guid guidType,
             [In] int dwCodecIndex,
-            out int pcFormat
+            [Out] out int pcFormat
             );
 
         new void GetCodecFormat(
@@ -35,7 +35,7 @@ namespace NAudio.WindowsMediaFormat
 
         void GetCodecName(
             [In, MarshalAs(UnmanagedType.LPStruct)] Guid guidType,
-            [In] uint dwCodecIndex,
+            [In] int dwCodecIndex,
             [Out] StringBuilder wszName,
             ref int pcchName
             );

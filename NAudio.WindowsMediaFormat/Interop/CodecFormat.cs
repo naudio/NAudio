@@ -55,14 +55,14 @@ namespace NAudio.WindowsMediaFormat
             var codecInfo = codec.CodecInformation;
 
             Guid mediaType = codec.MediaType;
-            uint formatCount;
-            codecInfo.GetCodecFormatCount(ref mediaType, codec.Index, out formatCount);
+            int formatCount;
+            codecInfo.GetCodecFormatCount(mediaType, codec.Index, out formatCount);
 
             var formats = new CodecFormat[formatCount];
-            for (uint i = 0; i < formatCount; i++)
+            for (int i = 0; i < formatCount; i++)
             {
                 IWMStreamConfig config;
-                codecInfo.GetCodecFormat(ref mediaType , codec.Index,  i, out config);
+                codecInfo.GetCodecFormat(mediaType , codec.Index,  i, out config);
                 WMStreamConfig stream = new WMStreamConfig(config);
                 formats[i] = new CodecFormat(codec, stream, (int)i);
             }

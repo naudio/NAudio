@@ -30,7 +30,7 @@ namespace NAudio.Wave
         public int Read(byte[] buffer, int offset, int count)
         {
             int bytesRead = source.Read(buffer, offset, count);
-            writer.WriteData(buffer, offset, bytesRead);
+            writer.Write(buffer, offset, bytesRead);
             return bytesRead;
         }
 

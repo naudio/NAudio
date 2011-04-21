@@ -111,7 +111,7 @@ namespace NAudioDemo
             else
             {
                 //Debug.WriteLine("Flushing Data Available");
-                writer.WriteData(e.Buffer, 0, e.BytesRecorded);
+                writer.Write(e.Buffer, 0, e.BytesRecorded);
                 int secondsRecorded = (int)(writer.Length / writer.WaveFormat.AverageBytesPerSecond);
                 if (secondsRecorded >= 30)
                 {

@@ -1,16 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.IO;
 
-namespace NAudioWpfDemo
+namespace NAudio.Utils
 {
-    class IgnoreDisposeStream : Stream
+    /// <summary>
+    /// Pass-through stream that ignores Dispose
+    /// Useful for dealing with MemoryStreams that you want to re-use
+    /// </summary>
+    public class IgnoreDisposeStream : Stream
     {
+        /// <summary>
+        /// The source stream all other methods fall through to
+        /// </summary>
         public Stream SourceStream { get; private set; }
+
+        /// <summary>
+        /// If true the Dispose will be ignored, if false, will pass through to the SourceStream
+        /// Set to true by default
+        /// </summary>
         public bool IgnoreDispose { get; set; }
 
+        /// <summary>
+        /// Creates a new IgnoreDisposeStream
+        /// </summary>
+        /// <param name="sourceStream">The source stream</param>
         public IgnoreDisposeStream(Stream sourceStream)
         {
             SourceStream = sourceStream;

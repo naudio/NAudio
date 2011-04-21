@@ -144,7 +144,6 @@
     <Compile Include="PolygonWaveFormControl.xaml.cs">
       <DependentUpon>PolygonWaveFormControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="IgnoreDisposeStream.cs" />
     <Compile Include="IWaveFormRenderer.cs" />
     <Compile Include="PolylineWaveFormControl.xaml.cs">
       <DependentUpon>PolylineWaveFormControl.xaml</DependentUpon>

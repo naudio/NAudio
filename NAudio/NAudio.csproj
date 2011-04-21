@@ -127,8 +127,6 @@
     <Compile Include="FileFormats\Mp3\Mp3Frame.cs" />
     <Compile Include="FileFormats\Mp3\Mp3FrameDecompressor.cs" />
     <Compile Include="FileFormats\Mp3\XingHeader.cs" />
-    <Compile Include="FileFormats\Ogg\OggEncoder.cs" />
-    <Compile Include="FileFormats\Ogg\OggInterop.cs" />
     <Compile Include="FileFormats\Sfz\SfzFileReader.cs" />
     <Compile Include="FileFormats\SoundFont\Generator.cs" />
     <Compile Include="FileFormats\SoundFont\GeneratorBuilder.cs" />
@@ -261,6 +259,7 @@
     <Compile Include="Utils\Decibels.cs" />
     <Compile Include="Utils\FileAssociations.cs" />
     <Compile Include="Utils\HResult.cs" />
+    <Compile Include="Utils\IgnoreDisposeStream.cs" />
     <Compile Include="Utils\MergeSort.cs" />
     <Compile Include="Utils\ProgressEventArgs.cs" />
     <Compile Include="Utils\ProgressLog.cs">
@@ -391,7 +390,6 @@
     <Compile Include="Wave\WaveStreams\WaveFileReader.cs" />
     <Compile Include="Wave\WaveStreams\WaveFormatConversionStream.cs" />
     <Compile Include="Wave\WaveStreams\WaveInBuffer.cs" />
-    <Compile Include="Wave\WaveStreams\WaveInStream.cs" />
     <Compile Include="Wave\WaveStreams\WaveMixerStream32.cs" />
     <Compile Include="Wave\WaveStreams\WaveOffsetStream.cs" />
     <Compile Include="Wave\WaveStreams\WaveOutBuffer.cs" />

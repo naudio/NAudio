@@ -232,10 +232,14 @@ namespace NAudio.Wave
         public override int Read(byte[] array, int offset, int count)
         {
             if (count % waveFormat.BlockAlign != 0)
-                throw new ApplicationException("Must read complete blocks");
+            {
+                throw new ApplicationException(String.Format("Must read complete blocks: requested {0}, block align is {1}",count,this.WaveFormat.BlockAlign));
+            }
             // sometimes there is more junk at the end of the file past the data chunk
             if (Position + count > dataChunkLength)
+            {
                 count = dataChunkLength - (int)Position;
+            }
             return waveStream.Read(array, offset, count);
         }
         
@@ -297,37 +301,6 @@ namespace NAudio.Wave
             {
                 throw new ApplicationException("Only 16, 24 or 32 bit PCM or IEEE float audio data supported");
             }
-        }
-
-        // for the benefit of oggencoder we divide by 32768.0f;
-        /// <summary>
-        /// Reads floats into arrays of channels
-        /// </summary>
-        /// <param name="buffer">buffer</param>
-        /// <param name="samples">number of samples to read</param>
-        /// <returns></returns>
-        [Obsolete]
-        public int Read(float[][] buffer, int samples)
-        {
-            BinaryReader br = new BinaryReader(waveStream);
-
-            for (int sample = 0; sample < samples; sample++)
-            {
-                for (int channel = 0; channel < waveFormat.Channels; channel++)
-                {
-                    if (waveStream.Position < waveStream.Length)
-                    {
-                        float sampleValue;
-                        TryReadFloat(out sampleValue);
-                        buffer[channel][sample] = sampleValue;
-                    }
-                    else
-                    {
-                        return 0;
-                    }
-                }
-            }
-            return samples;
         }
     }
 }

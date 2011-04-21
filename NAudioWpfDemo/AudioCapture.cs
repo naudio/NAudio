@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using NAudio.Wave;
 using System.IO;
+using NAudio.Utils;
 
 namespace NAudioWpfDemo
 {
@@ -71,7 +72,7 @@ namespace NAudioWpfDemo
             }
             // first save the audio
             byte[] buffer = e.Buffer;
-            writer.WriteData(buffer, 0, e.BytesRecorded);
+            writer.Write(buffer, 0, e.BytesRecorded);
 
             // now report each sample if necessary
             for (int index = 0; index < e.BytesRecorded; index += 2)

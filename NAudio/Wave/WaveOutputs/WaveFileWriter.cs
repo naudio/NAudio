@@ -17,18 +17,20 @@ namespace NAudio.Wave
         private string filename;
 
         /// <summary>
-        /// Creates a Wave file by reading all the data from a WaveStream
+        /// Creates a Wave file by reading all the data from a WaveProvider
+        /// BEWARE: the WaveProvider MUST return 0 from its Read method when it is finished,
+        /// or the Wave File will grow indefinitely.
         /// </summary>
         /// <param name="filename">The filename to use</param>
-        /// <param name="stream">The source WaveStream</param>
-        public static void CreateWaveFile(string filename, WaveStream stream)
+        /// <param name="sourceProvider">The source WaveProvider</param>
+        public static void CreateWaveFile(string filename, IWaveProvider sourceProvider)
         {
-            using (WaveFileWriter writer = new WaveFileWriter(filename, stream.WaveFormat))
+            using (WaveFileWriter writer = new WaveFileWriter(filename, sourceProvider.WaveFormat))
             {
-                byte[] buffer = new byte[stream.WaveFormat.SampleRate * stream.WaveFormat.Channels * 16];
+                byte[] buffer = new byte[sourceProvider.WaveFormat.AverageBytesPerSecond * 4];
                 while (true)
                 {
-                    int bytesRead = stream.Read(buffer, 0, buffer.Length);
+                    int bytesRead = sourceProvider.Read(buffer, 0, buffer.Length);
                     if (bytesRead == 0)
                         break;
                     writer.Write(buffer, 0, bytesRead);
@@ -231,19 +233,47 @@ namespace NAudio.Wave
         }
 
         /// <summary>
+        /// Writes 32 bit floating point samples to the Wave file
+        /// They will be converted to the appropriate bit depth depending on the WaveFormat of the WAV file
+        /// </summary>
+        /// <param name="samples">The buffer containing the floating point samples</param>
+        /// <param name="offset">The offset from which to start writing</param>
+        /// <param name="count">The number of floating point samples to write</param>
+        public void WriteSamples(float[] samples, int offset, int count)
+        {
+            for (int n = 0; n < count; n++)
+            {
+                WriteSample(samples[offset + n]);
+            }
+        }
+
+        /// <summary>
         /// Writes 16 bit samples to the Wave file
         /// </summary>
-        /// <param name="data">The buffer containing the wave data</param>
+        /// <param name="samples">The buffer containing the 16 bit samples</param>
         /// <param name="offset">The offset from which to start writing</param>
         /// <param name="count">The number of 16 bit samples to write</param>
-        public void WriteData(short[] data, int offset, int count)
+        [Obsolete("Use WriteSamples instead")]
+        public void WriteData(short[] samples, int offset, int count)
+        {
+            WriteSamples(samples, offset, count);
+        }
+
+
+        /// <summary>
+        /// Writes 16 bit samples to the Wave file
+        /// </summary>
+        /// <param name="samples">The buffer containing the 16 bit samples</param>
+        /// <param name="offset">The offset from which to start writing</param>
+        /// <param name="count">The number of 16 bit samples to write</param>
+        public void WriteSamples(short[] samples, int offset, int count)
         {
             // 16 bit PCM data
             if (WaveFormat.BitsPerSample == 16)
             {                
                 for (int sample = 0; sample < count; sample++)
                 {
-                    writer.Write(data[sample + offset]);
+                    writer.Write(samples[sample + offset]);
                 }
                 dataChunkSize += (count * 2);
             }
@@ -253,7 +283,7 @@ namespace NAudio.Wave
                 byte[] value;
                 for (int sample = 0; sample < count; sample++)
                 {
-                    value = BitConverter.GetBytes(UInt16.MaxValue * (Int32)data[sample + offset]);
+                    value = BitConverter.GetBytes(UInt16.MaxValue * (Int32)samples[sample + offset]);
                     value24[0] = value[1];
                     value24[1] = value[2];
                     value24[2] = value[3];
@@ -266,7 +296,7 @@ namespace NAudio.Wave
             {
                 for (int sample = 0; sample < count; sample++)
                 {
-                    writer.Write(UInt16.MaxValue * (Int32)data[sample + offset]);
+                    writer.Write(UInt16.MaxValue * (Int32)samples[sample + offset]);
                 }
                 dataChunkSize += (count * 4);
             }
@@ -275,7 +305,7 @@ namespace NAudio.Wave
             {
                 for (int sample = 0; sample < count; sample++)
                 {
-                    writer.Write((float)data[sample + offset] / (float)(Int16.MaxValue + 1));
+                    writer.Write((float)samples[sample + offset] / (float)(Int16.MaxValue + 1));
                 }
                 dataChunkSize += (count * 4);
             }

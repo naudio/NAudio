@@ -92,5 +92,18 @@ namespace NAudioTests.WindowsMedia
             reader.Open(testWmaFile);            
             return reader;
         }
+
+        [Test]
+        public void CanQueryAllCodecs()
+        {
+            foreach (var codec in Codec.GetCodecs(MediaTypes.WMMEDIATYPE_Audio))
+            {
+                Console.WriteLine(codec.Name);
+                foreach (var format in codec.CodecFormats)
+                {
+                    Console.WriteLine(format.Description);
+                }
+            }
+        }
     }
 }

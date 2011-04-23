@@ -376,6 +376,7 @@
     <Compile Include="Wave\WaveProviders\WaveProvider16.cs" />
     <Compile Include="Wave\WaveProviders\WaveProvider32.cs" />
     <Compile Include="Wave\WaveProviders\WaveRecorder.cs" />
+    <Compile Include="Wave\WaveStreams\AiffFileReader.cs" />
     <Compile Include="Wave\WaveStreams\BlockAlignReductionStream.cs" />
     <Compile Include="Wave\WaveStreams\CueList.cs" />
     <Compile Include="Wave\WaveStreams\CueWaveFileReader.cs" />

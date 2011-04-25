@@ -6,8 +6,9 @@ using System.Diagnostics;
 
 namespace NAudio.Wave 
 {
-    /// <summary>A read-only stream of WAVE data based on a wave file
-    /// with an associated WaveFormat
+    /// <summary>This class supports the reading of WAV files,
+    /// providing a repositionable WaveStream that returns the raw data
+    /// contained in the WAV file
     /// </summary>
     public class WaveFileReader : WaveStream
     {
@@ -23,7 +24,7 @@ namespace NAudio.Wave
         /// support the basic WAV file format which actually covers the vast
         /// majority of WAV files out there. For more WAV file format information
         /// visit www.wotsit.org. If you have a WAV file that can't be read by
-        /// this class, email it to the nAudio project and we will probably
+        /// this class, email it to the NAudio project and we will probably
         /// fix this reader to support it
         /// </remarks>
         public WaveFileReader(String waveFile) :
@@ -76,7 +77,7 @@ namespace NAudio.Wave
             // this -8 is so we can be sure that there are at least 8 bytes for a chunk id and length
             while (stream.Position <= stopPosition - 8)
             {
-                Int32 chunkIdentifier = br.ReadInt32();                
+                Int32 chunkIdentifier = br.ReadInt32();
                 Int32 chunkLength = br.ReadInt32();
                 if (chunkIdentifier == dataChunkID)
                 {
@@ -87,7 +88,7 @@ namespace NAudio.Wave
                 else if (chunkIdentifier == formatChunkId)
                 {
                     format = WaveFormat.FromFormatChunk(br, chunkLength);
-                }            
+                }
                 else
                 {
                     if (chunks != null)
@@ -172,6 +173,8 @@ namespace NAudio.Wave
         }
 
         /// <summary>
+        /// This is the length of audio data contained in this WAV file, in bytes
+        /// (i.e. the byte length of the data chunk, not the length of the WAV file itself)
         /// <see cref="WaveStream.WaveFormat"/>
         /// </summary>
         public override long Length
@@ -184,6 +187,9 @@ namespace NAudio.Wave
 
         /// <summary>
         /// Number of Samples (if possible to calculate)
+        /// This currently does not take into account number of channels, so
+        /// divide again by number of channels if you want the number of 
+        /// audio 'frames'
         /// </summary>
         public long SampleCount
         {
@@ -197,13 +203,14 @@ namespace NAudio.Wave
                 }
                 else
                 {
-                    throw new FormatException("Sample count is calculated only for the standard encodings");
+                    // n.b. if there is a fact chunk, you can use that to get the number of samples
+                    throw new InvalidOperationException("Sample count is calculated only for the standard encodings");
                 }
             }
         }
 
         /// <summary>
-        /// Position in the wave file
+        /// Position in the WAV data chunk.
         /// <see cref="Stream.Position"/>
         /// </summary>
         public override long Position
@@ -224,7 +231,6 @@ namespace NAudio.Wave
             }
         }
 
-
         /// <summary>
         /// Reads bytes from the Wave File
         /// <see cref="Stream.Read"/>
@@ -233,7 +239,7 @@ namespace NAudio.Wave
         {
             if (count % waveFormat.BlockAlign != 0)
             {
-                throw new ApplicationException(String.Format("Must read complete blocks: requested {0}, block align is {1}",count,this.WaveFormat.BlockAlign));
+                throw new ArgumentException(String.Format("Must read complete blocks: requested {0}, block align is {1}",count,this.WaveFormat.BlockAlign));
             }
             // sometimes there is more junk at the end of the file past the data chunk
             if (Position + count > dataChunkLength)
@@ -244,8 +250,10 @@ namespace NAudio.Wave
         }
         
         /// <summary>
-        /// Attempts to read a sample into a float
+        /// Attempts to read a sample into a float. n.b. only applicable for uncompressed formats
+        /// Will normalise the value read into the range -1.0f to 1.0f if it comes from a PCM encoding
         /// </summary>
+        /// <returns>False if the end of the WAV data chunk was reached</returns>
         public bool TryReadFloat(out float sampleValue)
         {
             sampleValue = 0.0f;

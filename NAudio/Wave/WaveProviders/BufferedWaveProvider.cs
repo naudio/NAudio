@@ -39,6 +39,11 @@ namespace NAudio.Wave
         public bool DiscardOnBufferOverflow { get; set; }
 
         /// <summary>
+        /// The number of queued buffers
+        /// </summary>
+        public int QueuedBuffers { get { lock (queue) return queue.Count; } }
+
+        /// <summary>
         /// Gets the WaveFormat
         /// </summary>
         public WaveFormat WaveFormat
@@ -92,9 +97,10 @@ namespace NAudio.Wave
 
                 if (audioBuffer == null) 
                 {
+                    Array.Clear(buffer, offset, required);
                     // Return a zero filled buffer
-                    for (int n = 0; n < required; n++)
-                        buffer[offset + n] = 0;
+                    /*for (int n = 0; n < required; n++)
+                        buffer[offset + n] = 0;*/
                     read += required;
                 } 
                 else 

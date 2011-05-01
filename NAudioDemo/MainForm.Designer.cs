@@ -32,6 +32,7 @@ namespace NAudioDemo
             this.buttonWavPlayback = new System.Windows.Forms.Button();
             this.buttonAcmFormatConversion = new System.Windows.Forms.Button();
             this.buttonRecording = new System.Windows.Forms.Button();
+            this.buttonMP3Streaming = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // buttonMidiIn
@@ -74,11 +75,22 @@ namespace NAudioDemo
             this.buttonRecording.UseVisualStyleBackColor = true;
             this.buttonRecording.Click += new System.EventHandler(this.buttonRecording_Click);
             // 
+            // buttonMP3Streaming
+            // 
+            this.buttonMP3Streaming.Location = new System.Drawing.Point(12, 129);
+            this.buttonMP3Streaming.Name = "buttonMP3Streaming";
+            this.buttonMP3Streaming.Size = new System.Drawing.Size(156, 23);
+            this.buttonMP3Streaming.TabIndex = 2;
+            this.buttonMP3Streaming.Text = "MP3 Streaming";
+            this.buttonMP3Streaming.UseVisualStyleBackColor = true;
+            this.buttonMP3Streaming.Click += new System.EventHandler(this.buttonMP3Streaming_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(284, 264);
+            this.Controls.Add(this.buttonMP3Streaming);
             this.Controls.Add(this.buttonRecording);
             this.Controls.Add(this.buttonAcmFormatConversion);
             this.Controls.Add(this.buttonWavPlayback);
@@ -95,6 +107,7 @@ namespace NAudioDemo
         private System.Windows.Forms.Button buttonWavPlayback;
         private System.Windows.Forms.Button buttonAcmFormatConversion;
         private System.Windows.Forms.Button buttonRecording;
+        private System.Windows.Forms.Button buttonMP3Streaming;
     }
 }
 

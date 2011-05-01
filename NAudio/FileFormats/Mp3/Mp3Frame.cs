@@ -140,7 +140,7 @@ namespace NAudio.Wave
         {
             BinaryReader reader = new BinaryReader(input);
             // try for a header
-            long headerStartPosition = input.Position;
+            //long headerStartPosition = input.Position;
             byte[] headerBytes = reader.ReadBytes(4);
             if (headerBytes.Length < 4)
             {

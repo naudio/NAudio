@@ -98,6 +98,12 @@
     <Compile Include="MidiInForm.Designer.cs">
       <DependentUpon>MidiInForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="MP3StreamingForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="MP3StreamingForm.Designer.cs">
+      <DependentUpon>MP3StreamingForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="AcmDriverDetailsForm.resx">
@@ -125,6 +131,9 @@
       <SubType>Designer</SubType>
       <DependentUpon>MidiInForm.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="MP3StreamingForm.resx">
+      <DependentUpon>MP3StreamingForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
@@ -149,6 +158,7 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <Compile Include="ReadFullyStream.cs" />
     <Compile Include="RecordingForm.cs">
       <SubType>Form</SubType>
     </Compile>

@@ -38,5 +38,11 @@ namespace NAudioDemo
             RecordingForm recordingForm = new RecordingForm();
             recordingForm.ShowDialog(this);
         }
+
+        private void buttonMP3Streaming_Click(object sender, EventArgs e)
+        {
+            MP3StreamingForm form = new MP3StreamingForm();
+            form.ShowDialog(this);
+        }
     }
 }

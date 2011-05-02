@@ -32,21 +32,33 @@ namespace NAudio.Utils
             IgnoreDispose = true;
         }
 
+        /// <summary>
+        /// Can Read
+        /// </summary>
         public override bool CanRead
         {
             get { return SourceStream.CanRead; }
         }
 
+        /// <summary>
+        /// Can Seek
+        /// </summary>
         public override bool CanSeek
         {
             get { return SourceStream.CanSeek; }
         }
 
+        /// <summary>
+        /// Can Write
+        /// </summary>
         public override bool CanWrite
         {
             get { return SourceStream.CanWrite; }
         }
 
+        /// <summary>
+        /// Flush
+        /// </summary>
         public override void Flush()
         {
             SourceStream.Flush();

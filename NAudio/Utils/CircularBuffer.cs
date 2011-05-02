@@ -10,10 +10,11 @@ namespace NAudio.Utils
     /// </summary>
     public class CircularBuffer
     {
-        byte[] buffer;
-        int writePosition;
-        int readPosition;
-        int byteCount;
+        private byte[] buffer;
+        private int writePosition;
+        private int readPosition;
+        private int byteCount;
+        private object lockObject;
 
         /// <summary>
         /// Create a new circular buffer
@@ -22,6 +23,7 @@ namespace NAudio.Utils
         public CircularBuffer(int size)
         {
             buffer = new byte[size];
+            lockObject = new object();
         }
 
         /// <summary>
@@ -30,28 +32,34 @@ namespace NAudio.Utils
         /// <param name="data">Data to write</param>
         /// <param name="offset">Offset into data</param>
         /// <param name="count">Number of bytes to write</param>
-        public void Write(byte[] data, int offset, int count)
+        /// <returns>number of bytes written</returns>
+        public int Write(byte[] data, int offset, int count)
         {
-            int bytesWritten = 0;
-            if (count > buffer.Length - byteCount)
+            lock (lockObject)
             {
-                throw new ArgumentException("Not enough space in buffer");
+                int bytesWritten = 0;
+                if (count > buffer.Length - this.byteCount)
+                {
+                    count = buffer.Length - this.byteCount;
+                    //throw new ArgumentException("Not enough space in buffer");
+                }
+                // write to end
+                int writeToEnd = Math.Min(buffer.Length - writePosition, count);
+                Array.Copy(data, offset, buffer, writePosition, writeToEnd);
+                writePosition += writeToEnd;
+                writePosition %= buffer.Length;
+                bytesWritten += writeToEnd;
+                if (bytesWritten < count)
+                {
+                    Debug.Assert(writePosition == 0);
+                    // must have wrapped round. Write to start
+                    Array.Copy(data, offset + bytesWritten, buffer, writePosition, count - bytesWritten);
+                    writePosition += (count - bytesWritten);
+                    bytesWritten = count;
+                }
+                this.byteCount += bytesWritten;
+                return bytesWritten;
             }
-            // write to end
-            int writeToEnd = Math.Min(buffer.Length - writePosition, count);
-            Array.Copy(data, offset, buffer, writePosition, writeToEnd);
-            writePosition += writeToEnd;
-            writePosition %= buffer.Length;
-            bytesWritten += writeToEnd;
-            if (bytesWritten < count)
-            {
-                Debug.Assert(writePosition == 0);
-                // must have wrapped round. Write to start
-                Array.Copy(data, offset + bytesWritten, buffer, writePosition, count - bytesWritten);
-                writePosition += (count - bytesWritten);
-                bytesWritten = count;
-            }
-            byteCount += bytesWritten;
         }
 
         /// <summary>
@@ -63,30 +71,32 @@ namespace NAudio.Utils
         /// <returns>Number of bytes actually read</returns>
         public int Read(byte[] data, int offset, int count)
         {
-            if (count > byteCount)
+            lock (lockObject)
             {
-                count = byteCount;
+                if (count > byteCount)
+                {
+                    count = byteCount;
+                }
+                int bytesRead = 0;
+                int readToEnd = Math.Min(buffer.Length - readPosition, count);
+                Array.Copy(buffer, readPosition, data, offset, readToEnd);
+                bytesRead += readToEnd;
+                readPosition += readToEnd;
+                readPosition %= buffer.Length;
+
+                if (bytesRead < count)
+                {
+                    // must have wrapped round. Read from start
+                    Debug.Assert(readPosition == 0);
+                    Array.Copy(buffer, readPosition, data, offset + bytesRead, count - bytesRead);
+                    readPosition += (count - bytesRead);
+                    bytesRead = count;
+                }
+
+                byteCount -= bytesRead;
+                Debug.Assert(byteCount >= 0);
+                return bytesRead;
             }
-            int bytesRead = 0;
-            int readToEnd = Math.Min(buffer.Length - readPosition, count);
-            Array.Copy(buffer, readPosition, data, offset, readToEnd);
-            bytesRead += readToEnd;
-            readPosition += readToEnd;
-            readPosition %= buffer.Length;
-
-            if (bytesRead < count)
-            {
-                // must have wrapped round. Read from start
-                Debug.Assert(readPosition == 0);
-                Array.Copy(buffer, readPosition, data, offset + bytesRead, count - bytesRead);
-                readPosition += (count - bytesRead);
-                bytesRead = count;
-            }
-
-            byteCount -= bytesRead;
-            Debug.Assert(byteCount >= 0);
-            return bytesRead;
-
         }
 
         /// <summary>
@@ -98,11 +108,11 @@ namespace NAudio.Utils
         }
 
         /// <summary>
-        /// Number of valid bytes currently in the circular buffer
+        /// Number of bytes currently stored in the circular buffer
         /// </summary>
         public int Count
         {
-            get { return byteCount; }
+            get { return this.byteCount; }
         }
 
         /// <summary>

@@ -49,14 +49,15 @@ namespace NAudioDemo
                             WaveFormat waveFormat = new Mp3WaveFormat(frame.SampleRate, frame.ChannelMode == ChannelMode.Mono ? 1 : 2, frame.FrameLength, frame.BitRate);
                             decompressor = new AcmMp3FrameDecompressor(waveFormat);
                             this.bufferedWaveProvider = new BufferedWaveProvider(decompressor.OutputFormat);
-                            this.bufferedWaveProvider.MaxQueuedBuffers = 250;
+                            this.bufferedWaveProvider.BufferDuration = TimeSpan.FromSeconds(20); // allow us to get well ahead of ourselves
+                            //this.bufferedWaveProvider.BufferedDuration = 250;
                         }
                         int decompressed = decompressor.DecompressFrame(frame, buffer, 0);
                         //Debug.WriteLine(String.Format("Decompressed a frame {0}", decompressed));
                         bufferedWaveProvider.AddSamples(buffer, 0, decompressed);
-                        if (bufferedWaveProvider.QueuedBuffers >= bufferedWaveProvider.MaxQueuedBuffers - 5)
+                        if (bufferedWaveProvider.BufferLength - bufferedWaveProvider.BufferedBytes < bufferedWaveProvider.WaveFormat.AverageBytesPerSecond/4)
                         {
-                            Debug.WriteLine("Max Queued Buffers, taking a break");
+                            Debug.WriteLine("Buffer getting full, taking a break");
                             Thread.Sleep(500);
                         }
                     } while (playing);
@@ -108,17 +109,19 @@ namespace NAudioDemo
                 {
                     this.waveOut = new WaveOut();
                     waveOut.Init(bufferedWaveProvider);
+                    progressBarBuffer.Maximum = bufferedWaveProvider.BufferLength;
                 }
                 else if (bufferedWaveProvider != null)
                 {
+                    progressBarBuffer.Value = bufferedWaveProvider.BufferedBytes;
                     // make it stutter less if we 
-                    int queued = bufferedWaveProvider.QueuedBuffers;
-                    if (queued < 100 && waveOut.PlaybackState == PlaybackState.Playing)
+                    var bufferedSeconds = bufferedWaveProvider.BufferedDuration.TotalSeconds;
+                    if (bufferedSeconds < 0.5 && waveOut.PlaybackState == PlaybackState.Playing)
                     {
                         Debug.WriteLine("Not enough queued data, pausing");
                         waveOut.Pause();
                     }
-                    else if (queued > 200 && waveOut.PlaybackState != PlaybackState.Playing)
+                    else if (bufferedSeconds > 4 && waveOut.PlaybackState != PlaybackState.Playing)
                     {
                         Debug.WriteLine("Buffered enough, playing");
                         waveOut.Play();

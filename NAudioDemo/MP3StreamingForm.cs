@@ -32,12 +32,37 @@ namespace NAudioDemo
         BufferedWaveProvider bufferedWaveProvider;
         IWavePlayer waveOut;
         volatile StreamingPlaybackState playbackState;
+        volatile bool fullyDownloaded;
+
+        delegate void ShowErrorDelegate(string message);
+
+        private void ShowError(string message)
+        {
+            if (this.InvokeRequired)
+            {
+                this.BeginInvoke(new ShowErrorDelegate(ShowError), message);
+            }
+            else
+            {
+                MessageBox.Show(message);
+            }
+        }
 
         private void StreamMP3(object state)
         {
+            this.fullyDownloaded = false;
             string url = (string)state;
             HttpWebRequest req = (HttpWebRequest)WebRequest.Create(url);
-            HttpWebResponse resp = (HttpWebResponse)req.GetResponse();
+            HttpWebResponse resp = null;
+            try
+            { 
+                resp = (HttpWebResponse)req.GetResponse();
+            }
+            catch(WebException e)
+            {
+                ShowError(e.Message);
+                return;
+            }
             byte[] buffer = new byte[16384 * 2];
 
             IMp3FrameDecompressor decompressor = null;
@@ -55,7 +80,17 @@ namespace NAudioDemo
                         }
                         else
                         {
-                            Mp3Frame frame = new Mp3Frame(readFullyStream, true);
+                            Mp3Frame frame = null;
+                            try
+                            {
+                                frame = new Mp3Frame(readFullyStream, true);
+                            }
+                            catch (EndOfStreamException e)
+                            {
+                                this.fullyDownloaded = true;
+                                // reached the end of the MP3 file / stream
+                                break;
+                            }
                             if (decompressor == null)
                             {
                                 // don't think these details matter too much - just help ACM select the right codec
@@ -108,12 +143,15 @@ namespace NAudioDemo
             if (playbackState != StreamingPlaybackState.Stopped)
             {
                 this.playbackState = StreamingPlaybackState.Stopped;
-                waveOut.Stop();
-                waveOut.Dispose();
-                waveOut = null;
+                if (waveOut != null)
+                { 
+                    waveOut.Stop();
+                    waveOut.Dispose();
+                    waveOut = null;
+                }
                 timer1.Enabled = false;
                 // n.b. streaming thread may not yet have exited
-                Thread.Sleep(1000);
+                Thread.Sleep(500);
                 ShowBufferState(0);
             }
         }
@@ -143,7 +181,7 @@ namespace NAudioDemo
                     var bufferedSeconds = bufferedWaveProvider.BufferedDuration.TotalSeconds;
                     ShowBufferState(bufferedSeconds);
                     // make it stutter less if we buffer up a decent amount before playing
-                    if (bufferedSeconds < 0.5 && this.playbackState == StreamingPlaybackState.Playing)
+                    if (bufferedSeconds < 0.5 && this.playbackState == StreamingPlaybackState.Playing && !this.fullyDownloaded)
                     {
                         this.playbackState = StreamingPlaybackState.Buffering;
                         waveOut.Pause();
@@ -154,6 +192,11 @@ namespace NAudioDemo
                         waveOut.Play();
                         Debug.WriteLine(String.Format("Started playing, waveOut.PlaybackState={0}", waveOut.PlaybackState));
                         this.playbackState = StreamingPlaybackState.Playing;
+                    }
+                    else if (this.fullyDownloaded && bufferedSeconds == 0)
+                    {
+                        Debug.WriteLine("Reached end of stream");
+                        StopPlayback();
                     }
                 }
             }

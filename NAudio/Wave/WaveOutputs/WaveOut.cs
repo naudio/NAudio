@@ -157,11 +157,11 @@ namespace NAudio.Wave
                             playbackState = PlaybackState.Stopped;
                             break;
                         }
-                        Debug.WriteLine(String.Format("Resume from Pause: Buffer [{0}] requeued", n));
+                        //Debug.WriteLine(String.Format("Resume from Pause: Buffer [{0}] requeued", n));
                     }
                     else
                     {
-                        Debug.WriteLine(String.Format("Resume from Pause: Buffer [{0}] already queued", n));
+                        //Debug.WriteLine(String.Format("Resume from Pause: Buffer [{0}] already queued", n));
                     }
                 }
                 Resume();

@@ -76,7 +76,7 @@ namespace NAudioDemo
                 {
                     readAheadOffset = 0;
                     readAheadLength = sourceStream.Read(readAheadBuffer, 0, readAheadBuffer.Length);
-                    Debug.WriteLine(String.Format("Read {0} bytes (requested {1})", readAheadLength, readAheadBuffer.Length));
+                    //Debug.WriteLine(String.Format("Read {0} bytes (requested {1})", readAheadLength, readAheadBuffer.Length));
                     if (readAheadLength == 0)
                     {
                         break;

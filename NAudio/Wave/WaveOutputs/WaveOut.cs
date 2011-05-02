@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Diagnostics;
 
 namespace NAudio.Wave 
 {
@@ -147,6 +148,22 @@ namespace NAudio.Wave
             }
             else if (playbackState == PlaybackState.Paused)
             {
+                for (int n = 0; n < NumberOfBuffers; n++)
+                {
+                    if (!buffers[n].InQueue)
+                    {
+                        if (!buffers[n].OnDone())
+                        {
+                            playbackState = PlaybackState.Stopped;
+                            break;
+                        }
+                        Debug.WriteLine(String.Format("Resume from Pause: Buffer [{0}] requeued", n));
+                    }
+                    else
+                    {
+                        Debug.WriteLine(String.Format("Resume from Pause: Buffer [{0}] already queued", n));
+                    }
+                }
                 Resume();
                 playbackState = PlaybackState.Playing;
             }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
+using System.ComponentModel.Composition.Hosting;
 
 namespace NAudioDemo
 {
@@ -15,7 +16,11 @@ namespace NAudioDemo
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new MainForm());
+
+            var catalog = new AssemblyCatalog(System.Reflection.Assembly.GetExecutingAssembly());
+            var container = new CompositionContainer(catalog);
+            var mainForm = container.GetExportedValue<MainForm>();
+            Application.Run(mainForm);
         }
     }
 }

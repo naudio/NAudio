@@ -9,16 +9,17 @@ using NAudio.Wave;
 using System.Diagnostics;
 using NAudio.CoreAudioApi;
 using System.Collections.ObjectModel;
+using System.ComponentModel.Composition;
 
 namespace NAudioDemo
 {
-    public partial class RecordingForm : Form
+    public partial class RecordingPanel : UserControl
     {
         IWaveIn waveIn;
         WaveFileWriter writer;
         string outputFilename;
 
-        public RecordingForm()
+        public RecordingPanel()
         {
             InitializeComponent();
             if (System.Environment.OSVersion.Version.Major >= 6)
@@ -29,7 +30,7 @@ namespace NAudioDemo
             {
                 radioButtonWasapi.Enabled = false;
                 comboDevices.Enabled = false;
-            }
+            }            
         }
 
         private void LoadWasapiDevicesCombo()
@@ -148,6 +149,20 @@ namespace NAudioDemo
             {
                 outputFilename = saveFileDialog.FileName;
             }
+        }
+    }
+
+    [Export(typeof(INAudioDemoPlugin))]
+    public class RecordingPanelPlugin : INAudioDemoPlugin
+    {
+        public string Name
+        {
+            get { return "WAV Recording"; }
+        }
+
+        public Control CreatePanel()
+        {
+            return new RecordingPanel();
         }
     }
 }

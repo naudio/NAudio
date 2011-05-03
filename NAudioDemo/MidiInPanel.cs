@@ -6,10 +6,11 @@ using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 using NAudio.Midi;
+using System.ComponentModel.Composition;
 
 namespace NAudioDemo
 {
-    public partial class MidiInForm : Form
+    public partial class MidiInPanel : UserControl
     {
         MidiIn midiIn;
         MidiOut midiOut;
@@ -17,7 +18,7 @@ namespace NAudioDemo
         List<MidiEvent> events;
         int midiOutIndex;
 
-        public MidiInForm()
+        public MidiInPanel()
         {
             InitializeComponent();
         }
@@ -109,7 +110,7 @@ namespace NAudioDemo
                 e.Timestamp, e.RawMessage, e.MidiEvent));
         }
 
-        private void MidiInForm_FormClosed(object sender, FormClosedEventArgs e)
+        private void MidiInPanel_Disposed(object sender, EventArgs e)
         {
             timer1.Enabled = false;
             StopMonitoring();
@@ -151,6 +152,20 @@ namespace NAudioDemo
             {
                 midiOutIndex = 0;
             }
+        }
+    }
+    
+    [Export(typeof(INAudioDemoPlugin))]
+    public class MidiInPanelPlugin : INAudioDemoPlugin
+    {
+        public string Name
+        {
+            get { return "MIDI In"; }
+        }
+
+        public Control CreatePanel()
+        {
+            return new MidiInPanel();
         }
     }
 }

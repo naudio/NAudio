@@ -1,6 +1,6 @@
 ﻿namespace NAudioDemo
 {
-    partial class AcmForm
+    partial class AcmPanel
     {
         /// <summary>
         /// Required designer variable.

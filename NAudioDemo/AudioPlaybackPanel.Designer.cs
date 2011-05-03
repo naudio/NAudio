@@ -1,6 +1,6 @@
 ﻿namespace NAudioDemo
 {
-    partial class AudioPlaybackForm
+    partial class AudioPlaybackPanel
     {
         /// <summary>
         /// Required designer variable.
@@ -426,9 +426,8 @@
             this.Controls.Add(this.comboBoxLatency);
             this.Controls.Add(this.volumeSlider1);
             this.Name = "AudioPlaybackForm";
-            this.ShowInTaskbar = false;
             this.Text = "AudioPlaybackForm";
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
+            this.Disposed += this.AudioPlaybackPanel_Disposed;
             this.Load += new System.EventHandler(this.Form1_Load);
             this.groupBoxDriverModel.ResumeLayout(false);
             this.groupBoxDriverModel.PerformLayout();

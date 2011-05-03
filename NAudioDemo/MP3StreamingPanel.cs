@@ -11,10 +11,11 @@ using System.Threading;
 using System.Net.Sockets;
 using System.IO;
 using System.Diagnostics;
+using System.ComponentModel.Composition;
 
 namespace NAudioDemo
 {
-    public partial class MP3StreamingForm : Form
+    public partial class MP3StreamingPanel : UserControl
     {
         enum StreamingPlaybackState
         {
@@ -24,15 +25,17 @@ namespace NAudioDemo
             Paused
         }
 
-        public MP3StreamingForm()
+        public MP3StreamingPanel()
         {
             InitializeComponent();
+            this.Disposed += this.MP3StreamingPanel_Disposing;
         }
 
-        BufferedWaveProvider bufferedWaveProvider;
-        IWavePlayer waveOut;
-        volatile StreamingPlaybackState playbackState;
-        volatile bool fullyDownloaded;
+        private BufferedWaveProvider bufferedWaveProvider;
+        private IWavePlayer waveOut;
+        private volatile StreamingPlaybackState playbackState;
+        private volatile bool fullyDownloaded;
+        private HttpWebRequest webRequest;
 
         delegate void ShowErrorDelegate(string message);
 
@@ -52,11 +55,11 @@ namespace NAudioDemo
         {
             this.fullyDownloaded = false;
             string url = (string)state;
-            HttpWebRequest req = (HttpWebRequest)WebRequest.Create(url);
+            webRequest = (HttpWebRequest)WebRequest.Create(url);
             HttpWebResponse resp = null;
             try
-            { 
-                resp = (HttpWebResponse)req.GetResponse();
+            {
+                resp = (HttpWebResponse)webRequest.GetResponse();
             }
             catch(WebException e)
             {
@@ -85,10 +88,15 @@ namespace NAudioDemo
                             {
                                 frame = new Mp3Frame(readFullyStream, true);
                             }
-                            catch (EndOfStreamException e)
+                            catch (EndOfStreamException)
                             {
                                 this.fullyDownloaded = true;
                                 // reached the end of the MP3 file / stream
+                                break;
+                            }
+                            catch (WebException)
+                            {
+                                // probably we have aborted download from the GUI thread
                                 break;
                             }
                             if (decompressor == null)
@@ -142,6 +150,10 @@ namespace NAudioDemo
         {
             if (playbackState != StreamingPlaybackState.Stopped)
             {
+                if (!fullyDownloaded)
+                {
+                    webRequest.Abort();
+                }
                 this.playbackState = StreamingPlaybackState.Stopped;
                 if (waveOut != null)
                 { 
@@ -161,8 +173,6 @@ namespace NAudioDemo
             labelBuffered.Text = String.Format("{0:0.0}s", totalSeconds);
             progressBarBuffer.Value = (int)(totalSeconds * 1000);
         }
-
-
 
         private void timer1_Tick(object sender, EventArgs e)
         {
@@ -208,7 +218,7 @@ namespace NAudioDemo
             //return new DirectSoundOut();
         }
 
-        private void MP3StreamingForm_FormClosing(object sender, FormClosingEventArgs e)
+        private void MP3StreamingPanel_Disposing(object sender, EventArgs e)
         {
             StopPlayback();
         }
@@ -231,6 +241,20 @@ namespace NAudioDemo
         private void waveOut_PlaybackStopped(object sender, EventArgs e)
         {
             Debug.WriteLine("Playback Stopped");
+        }
+    }
+
+    [Export(typeof(INAudioDemoPlugin))]
+    public class MP3StreamingPanelPlugin : INAudioDemoPlugin
+    {
+        public string Name
+        {
+            get { return "MP3 Streaming"; }
+        }
+
+        public Control CreatePanel()
+        {
+            return new MP3StreamingPanel();
         }
     }
 }

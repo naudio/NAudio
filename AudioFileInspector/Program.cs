@@ -20,7 +20,6 @@ namespace AudioFileInspector
 
             var catalog = new AssemblyCatalog(System.Reflection.Assembly.GetExecutingAssembly());            
             var container = new CompositionContainer(catalog);
-            //container.Compose(batch);
             var inspectors = container.GetExportedValues<IAudioFileInspector>();
             
             /*List<IAudioFileInspector> inspectors = new List<IAudioFileInspector>();

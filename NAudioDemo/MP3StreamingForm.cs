@@ -63,7 +63,7 @@ namespace NAudioDemo
                 ShowError(e.Message);
                 return;
             }
-            byte[] buffer = new byte[16384 * 2];
+            byte[] buffer = new byte[16384 * 4]; // needs to be big enough to hold a decompressed frame
 
             IMp3FrameDecompressor decompressor = null;
             try

@@ -1,7 +1,9 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Windows.Forms;
 using System.ComponentModel.Composition;
+using System.ComponentModel.Composition.Hosting;
 
 namespace AudioFileInspector
 {
@@ -15,11 +17,11 @@ namespace AudioFileInspector
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            
-            var catalog = new AttributedAssemblyPartCatalog(System.Reflection.Assembly.GetExecutingAssembly());            
+
+            var catalog = new AssemblyCatalog(System.Reflection.Assembly.GetExecutingAssembly());            
             var container = new CompositionContainer(catalog);
-            container.Compose();
-            var inspectors = container.GetExportedObjects<IAudioFileInspector>();
+            //container.Compose(batch);
+            var inspectors = container.GetExportedValues<IAudioFileInspector>();
             
             /*List<IAudioFileInspector> inspectors = new List<IAudioFileInspector>();
             inspectors.Add(new WaveFileInspector());
@@ -34,7 +36,7 @@ namespace AudioFileInspector
                     try
                     {
                         OptionsForm.Associate(inspectors);
-                        Console.WriteLine("Created {0} file associations", inspectors.Count); 
+                        Console.WriteLine("Created {0} file associations", inspectors.Count()); 
                     }
                     catch (Exception e)
                     {
@@ -50,7 +52,7 @@ namespace AudioFileInspector
                     try
                     {
                         OptionsForm.Disassociate(inspectors);
-                        Console.WriteLine("Removed {0} file associations", inspectors.Count);
+                        Console.WriteLine("Removed {0} file associations", inspectors.Count());
                     }
                     catch (Exception e)
                     {
@@ -61,7 +63,7 @@ namespace AudioFileInspector
                     return 0;
                 }
             }
-            var mainForm = container.GetExportedObject<AudioFileInspectorForm>();
+            var mainForm = container.GetExportedValue<AudioFileInspectorForm>();
             mainForm.CommandLineArguments = args;
             Application.Run(mainForm);
             return 0;

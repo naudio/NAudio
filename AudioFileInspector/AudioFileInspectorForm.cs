@@ -23,10 +23,10 @@ namespace AudioFileInspector
         public string[] CommandLineArguments { get; set; }
 
         [ImportingConstructor]
-        public AudioFileInspectorForm(ICollection<IAudioFileInspector> inspectors)
+        public AudioFileInspectorForm([ImportMany(typeof(IAudioFileInspector))] IEnumerable<IAudioFileInspector> inspectors)
         {
             InitializeComponent();
-            this.Inspectors = inspectors;
+            this.Inspectors = new List<IAudioFileInspector>(inspectors);
         }
 
         private void DescribeFile(string fileName)

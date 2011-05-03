@@ -25,7 +25,7 @@ namespace AudioFileInspector
             StringBuilder stringBuilder = new StringBuilder();
             using (Mp3FileReader reader = new Mp3FileReader(fileName))
             {
-                Mp3WaveFormat wf = (Mp3WaveFormat)reader.WaveFormat;
+                Mp3WaveFormat wf = reader.Mp3WaveFormat;
                 stringBuilder.AppendFormat("MP3 File WaveFormat: {0} {1}Hz {2} channels {3} bits per sample\r\n",
                     wf.Encoding, wf.SampleRate,
                     wf.Channels, wf.BitsPerSample);

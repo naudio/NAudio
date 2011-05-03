@@ -22,12 +22,6 @@ namespace AudioFileInspector
             var container = new CompositionContainer(catalog);
             var inspectors = container.GetExportedValues<IAudioFileInspector>();
             
-            /*List<IAudioFileInspector> inspectors = new List<IAudioFileInspector>();
-            inspectors.Add(new WaveFileInspector());
-            inspectors.Add(new MidiFileInspector());
-            inspectors.Add(new SoundFontInspector());
-            inspectors.Add(new CakewalkMapInspector());*/
-
             if (args.Length > 0)
             {
                 if (args[0] == "-install")

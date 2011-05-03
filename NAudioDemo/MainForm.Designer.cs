@@ -28,73 +28,61 @@ namespace NAudioDemo
         /// </summary>
         private void InitializeComponent()
         {
-            this.buttonMidiIn = new System.Windows.Forms.Button();
-            this.buttonWavPlayback = new System.Windows.Forms.Button();
-            this.buttonAcmFormatConversion = new System.Windows.Forms.Button();
-            this.buttonRecording = new System.Windows.Forms.Button();
-            this.buttonMP3Streaming = new System.Windows.Forms.Button();
+            this.listBoxDemos = new System.Windows.Forms.ListBox();
+            this.buttonLoadDemo = new System.Windows.Forms.Button();
+            this.panelDemo = new System.Windows.Forms.Panel();
+            this.label1 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
-            // buttonMidiIn
+            // listBoxDemos
             // 
-            this.buttonMidiIn.Location = new System.Drawing.Point(12, 12);
-            this.buttonMidiIn.Name = "buttonMidiIn";
-            this.buttonMidiIn.Size = new System.Drawing.Size(156, 23);
-            this.buttonMidiIn.TabIndex = 0;
-            this.buttonMidiIn.Text = "MIDI In";
-            this.buttonMidiIn.UseVisualStyleBackColor = true;
-            this.buttonMidiIn.Click += new System.EventHandler(this.buttonMidiIn_Click);
+            this.listBoxDemos.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+            this.listBoxDemos.FormattingEnabled = true;
+            this.listBoxDemos.Location = new System.Drawing.Point(12, 51);
+            this.listBoxDemos.Name = "listBoxDemos";
+            this.listBoxDemos.Size = new System.Drawing.Size(120, 329);
+            this.listBoxDemos.TabIndex = 3;
+            this.listBoxDemos.DoubleClick += new System.EventHandler(this.listBoxDemos_DoubleClick);
             // 
-            // buttonWavPlayback
+            // buttonLoadDemo
             // 
-            this.buttonWavPlayback.Location = new System.Drawing.Point(12, 42);
-            this.buttonWavPlayback.Name = "buttonWavPlayback";
-            this.buttonWavPlayback.Size = new System.Drawing.Size(156, 23);
-            this.buttonWavPlayback.TabIndex = 1;
-            this.buttonWavPlayback.Text = "WAV / MP3 Playback";
-            this.buttonWavPlayback.UseVisualStyleBackColor = true;
-            this.buttonWavPlayback.Click += new System.EventHandler(this.buttonWavPlayback_Click);
+            this.buttonLoadDemo.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.buttonLoadDemo.Location = new System.Drawing.Point(13, 397);
+            this.buttonLoadDemo.Name = "buttonLoadDemo";
+            this.buttonLoadDemo.Size = new System.Drawing.Size(75, 23);
+            this.buttonLoadDemo.TabIndex = 4;
+            this.buttonLoadDemo.Text = "Load";
+            this.buttonLoadDemo.UseVisualStyleBackColor = true;
+            this.buttonLoadDemo.Click += new System.EventHandler(this.buttonLoadDemo_Click);
             // 
-            // buttonAcmFormatConversion
+            // panelDemo
             // 
-            this.buttonAcmFormatConversion.Location = new System.Drawing.Point(12, 71);
-            this.buttonAcmFormatConversion.Name = "buttonAcmFormatConversion";
-            this.buttonAcmFormatConversion.Size = new System.Drawing.Size(156, 23);
-            this.buttonAcmFormatConversion.TabIndex = 1;
-            this.buttonAcmFormatConversion.Text = "ACM Format Conversion";
-            this.buttonAcmFormatConversion.UseVisualStyleBackColor = true;
-            this.buttonAcmFormatConversion.Click += new System.EventHandler(this.buttonAcmFormatConversion_Click);
+            this.panelDemo.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.panelDemo.Location = new System.Drawing.Point(139, 14);
+            this.panelDemo.Name = "panelDemo";
+            this.panelDemo.Size = new System.Drawing.Size(681, 405);
+            this.panelDemo.TabIndex = 5;
             // 
-            // buttonRecording
+            // label1
             // 
-            this.buttonRecording.Location = new System.Drawing.Point(12, 100);
-            this.buttonRecording.Name = "buttonRecording";
-            this.buttonRecording.Size = new System.Drawing.Size(156, 23);
-            this.buttonRecording.TabIndex = 1;
-            this.buttonRecording.Text = "WAV Recording";
-            this.buttonRecording.UseVisualStyleBackColor = true;
-            this.buttonRecording.Click += new System.EventHandler(this.buttonRecording_Click);
-            // 
-            // buttonMP3Streaming
-            // 
-            this.buttonMP3Streaming.Location = new System.Drawing.Point(12, 129);
-            this.buttonMP3Streaming.Name = "buttonMP3Streaming";
-            this.buttonMP3Streaming.Size = new System.Drawing.Size(156, 23);
-            this.buttonMP3Streaming.TabIndex = 2;
-            this.buttonMP3Streaming.Text = "MP3 Streaming";
-            this.buttonMP3Streaming.UseVisualStyleBackColor = true;
-            this.buttonMP3Streaming.Click += new System.EventHandler(this.buttonMP3Streaming_Click);
+            this.label1.Location = new System.Drawing.Point(13, 14);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(100, 35);
+            this.label1.TabIndex = 6;
+            this.label1.Text = "Select a demo, and click Load";
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(284, 264);
-            this.Controls.Add(this.buttonMP3Streaming);
-            this.Controls.Add(this.buttonRecording);
-            this.Controls.Add(this.buttonAcmFormatConversion);
-            this.Controls.Add(this.buttonWavPlayback);
-            this.Controls.Add(this.buttonMidiIn);
+            this.ClientSize = new System.Drawing.Size(829, 432);
+            this.Controls.Add(this.label1);
+            this.Controls.Add(this.panelDemo);
+            this.Controls.Add(this.buttonLoadDemo);
+            this.Controls.Add(this.listBoxDemos);
             this.Name = "MainForm";
             this.Text = "NAudio Demo";
             this.ResumeLayout(false);
@@ -103,11 +91,11 @@ namespace NAudioDemo
 
         #endregion
 
-        private System.Windows.Forms.Button buttonMidiIn;
-        private System.Windows.Forms.Button buttonWavPlayback;
-        private System.Windows.Forms.Button buttonAcmFormatConversion;
-        private System.Windows.Forms.Button buttonRecording;
-        private System.Windows.Forms.Button buttonMP3Streaming;
+        private System.Windows.Forms.ListBox listBoxDemos;
+        private System.Windows.Forms.Button buttonLoadDemo;
+        private System.Windows.Forms.Panel panelDemo;
+        private System.Windows.Forms.Label label1;
+
     }
 }
 

@@ -5,44 +5,47 @@ using System.Data;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
+using System.ComponentModel.Composition;
 
 namespace NAudioDemo
 {
+    [Export]
     public partial class MainForm : Form
     {
-        public MainForm()
+        [ImportingConstructor]
+        public MainForm([ImportMany] IEnumerable<INAudioDemoPlugin> demos)
         {
             InitializeComponent();
+            listBoxDemos.DisplayMember = "Name";
+            foreach (var demo in demos)
+            {
+                listBoxDemos.Items.Add(demo);
+            }
         }
 
-        private void buttonMidiIn_Click(object sender, EventArgs e)
+        private INAudioDemoPlugin currentPlugin;
+
+        private void buttonLoadDemo_Click(object sender, EventArgs e)
         {
-            MidiInForm midiInForm = new MidiInForm();
-            midiInForm.ShowDialog(this);
+            var plugin = (INAudioDemoPlugin)listBoxDemos.SelectedItem;
+            if (plugin != currentPlugin)
+            {
+                this.currentPlugin = plugin;
+                if (panelDemo.Controls.Count > 0)
+                {
+                    panelDemo.Controls[0].Dispose();
+                    panelDemo.Controls.Clear();
+                    GC.Collect();
+                }
+                var control = plugin.CreatePanel();
+                control.Dock = DockStyle.Fill;
+                panelDemo.Controls.Add(control);
+            }
         }
 
-        private void buttonWavPlayback_Click(object sender, EventArgs e)
+        private void listBoxDemos_DoubleClick(object sender, EventArgs e)
         {
-            AudioPlaybackForm audioPlaybackForm = new AudioPlaybackForm();
-            audioPlaybackForm.ShowDialog(this);
-        }
-
-        private void buttonAcmFormatConversion_Click(object sender, EventArgs e)
-        {
-            AcmForm acmForm = new AcmForm();
-            acmForm.ShowDialog(this);
-        }
-
-        private void buttonRecording_Click(object sender, EventArgs e)
-        {
-            RecordingForm recordingForm = new RecordingForm();
-            recordingForm.ShowDialog(this);
-        }
-
-        private void buttonMP3Streaming_Click(object sender, EventArgs e)
-        {
-            MP3StreamingForm form = new MP3StreamingForm();
-            form.ShowDialog(this);
+            buttonLoadDemo_Click(sender, e);
         }
     }
 }

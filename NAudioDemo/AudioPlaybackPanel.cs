@@ -3,17 +3,18 @@ using System.Collections.Generic;
 using System.Windows.Forms;
 using NAudio.Wave;
 using NAudio.CoreAudioApi;
+using System.ComponentModel.Composition;
 
 namespace NAudioDemo
 {
-    public partial class AudioPlaybackForm : Form
+    public partial class AudioPlaybackPanel : UserControl
     {
         IWavePlayer waveOut;
         string fileName = null;
         WaveStream mainOutputStream;
         WaveChannel32 volumeStream;
 
-        public AudioPlaybackForm()
+        public AudioPlaybackPanel()
         {            
             InitializeComponent();
             InitialiseWaveOutControls();
@@ -266,7 +267,7 @@ namespace NAudioDemo
             }
         }
 
-        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        private void AudioPlaybackPanel_Disposed(object sender, EventArgs e)
         {
             CloseWaveOut();            
         }
@@ -360,7 +361,20 @@ namespace NAudioDemo
                 fileName = openFileDialog.FileName;
             }
         }
+    }
 
+    [Export(typeof(INAudioDemoPlugin))]
+    public class AudioPlaybackPanelPlugin : INAudioDemoPlugin
+    {
+        public string Name
+        {
+            get { return "WAV / MP3 Playback"; }
+        }
+
+        public Control CreatePanel()
+        {
+            return new AudioPlaybackPanel();
+        }
     }
 }
 

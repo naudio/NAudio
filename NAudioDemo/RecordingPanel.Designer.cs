@@ -1,6 +1,6 @@
 ﻿namespace NAudioDemo
 {
-    partial class RecordingForm
+    partial class RecordingPanel
     {
         /// <summary>
         /// Required designer variable.
@@ -28,7 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(RecordingForm));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(RecordingPanel));
             this.buttonStartRecording = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
             this.buttonStopRecording = new System.Windows.Forms.Button();
@@ -156,7 +156,6 @@
             this.Controls.Add(this.buttonStopRecording);
             this.Controls.Add(this.buttonStartRecording);
             this.Name = "RecordingForm";
-            this.ShowInTaskbar = false;
             this.Text = "RecordingForm";
             this.ResumeLayout(false);
             this.PerformLayout();

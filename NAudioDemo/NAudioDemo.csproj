@@ -15,7 +15,7 @@
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
     <OldToolsVersion>3.5</OldToolsVersion>
-    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -31,6 +31,7 @@
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -54,6 +55,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.Composition">
+      <HintPath>..\Lib\MEF\System.ComponentModel.Composition.dll</HintPath>
+    </Reference>
     <Reference Include="System.Data" />
     <Reference Include="System.Deployment" />
     <Reference Include="System.Drawing" />
@@ -67,23 +71,24 @@
     <Compile Include="AcmDriverDetailsForm.Designer.cs">
       <DependentUpon>AcmDriverDetailsForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="AcmForm.cs">
-      <SubType>Form</SubType>
+    <Compile Include="AcmPanel.cs">
+      <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="AcmForm.Designer.cs">
-      <DependentUpon>AcmForm.cs</DependentUpon>
+    <Compile Include="AcmPanel.Designer.cs">
+      <DependentUpon>AcmPanel.cs</DependentUpon>
     </Compile>
-    <Compile Include="AudioPlaybackForm.cs">
-      <SubType>Form</SubType>
+    <Compile Include="AudioPlaybackPanel.cs">
+      <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="AudioPlaybackForm.Designer.cs">
-      <DependentUpon>AudioPlaybackForm.cs</DependentUpon>
+    <Compile Include="AudioPlaybackPanel.Designer.cs">
+      <DependentUpon>AudioPlaybackPanel.cs</DependentUpon>
     </Compile>
     <Compile Include="Images.Designer.cs">
       <DependentUpon>Images.resx</DependentUpon>
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
     </Compile>
+    <Compile Include="INAudioDemoPlugin.cs" />
     <Compile Include="LoopStream.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
@@ -92,17 +97,17 @@
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
     <Compile Include="MeteringStream.cs" />
-    <Compile Include="MidiInForm.cs">
-      <SubType>Form</SubType>
+    <Compile Include="MidiInPanel.cs">
+      <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="MidiInForm.Designer.cs">
-      <DependentUpon>MidiInForm.cs</DependentUpon>
+    <Compile Include="MidiInPanel.Designer.cs">
+      <DependentUpon>MidiInPanel.cs</DependentUpon>
     </Compile>
-    <Compile Include="MP3StreamingForm.cs">
-      <SubType>Form</SubType>
+    <Compile Include="MP3StreamingPanel.cs">
+      <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="MP3StreamingForm.Designer.cs">
-      <DependentUpon>MP3StreamingForm.cs</DependentUpon>
+    <Compile Include="MP3StreamingPanel.Designer.cs">
+      <DependentUpon>MP3StreamingPanel.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -110,12 +115,12 @@
       <DependentUpon>AcmDriverDetailsForm.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
-    <EmbeddedResource Include="AcmForm.resx">
-      <DependentUpon>AcmForm.cs</DependentUpon>
+    <EmbeddedResource Include="AcmPanel.resx">
+      <DependentUpon>AcmPanel.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
-    <EmbeddedResource Include="AudioPlaybackForm.resx">
-      <DependentUpon>AudioPlaybackForm.cs</DependentUpon>
+    <EmbeddedResource Include="AudioPlaybackPanel.resx">
+      <DependentUpon>AudioPlaybackPanel.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Images.resx">
@@ -127,20 +132,20 @@
       <SubType>Designer</SubType>
       <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="MidiInForm.resx">
+    <EmbeddedResource Include="MidiInPanel.resx">
       <SubType>Designer</SubType>
-      <DependentUpon>MidiInForm.cs</DependentUpon>
+      <DependentUpon>MidiInPanel.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="MP3StreamingForm.resx">
-      <DependentUpon>MP3StreamingForm.cs</DependentUpon>
+    <EmbeddedResource Include="MP3StreamingPanel.resx">
+      <DependentUpon>MP3StreamingPanel.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
     </EmbeddedResource>
-    <EmbeddedResource Include="RecordingForm.resx">
-      <DependentUpon>RecordingForm.cs</DependentUpon>
+    <EmbeddedResource Include="RecordingPanel.resx">
+      <DependentUpon>RecordingPanel.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
     <Compile Include="Properties\Resources.Designer.cs">
@@ -159,11 +164,11 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
     <Compile Include="ReadFullyStream.cs" />
-    <Compile Include="RecordingForm.cs">
-      <SubType>Form</SubType>
+    <Compile Include="RecordingPanel.cs">
+      <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="RecordingForm.Designer.cs">
-      <DependentUpon>RecordingForm.cs</DependentUpon>
+    <Compile Include="RecordingPanel.Designer.cs">
+      <DependentUpon>RecordingPanel.cs</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>

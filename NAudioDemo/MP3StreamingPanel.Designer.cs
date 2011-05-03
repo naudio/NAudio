@@ -1,6 +1,6 @@
 ﻿namespace NAudioDemo
 {
-    partial class MP3StreamingForm
+    partial class MP3StreamingPanel
     {
         /// <summary>
         /// Required designer variable.
@@ -137,7 +137,6 @@
             this.Controls.Add(this.buttonPlay);
             this.Name = "MP3StreamingForm";
             this.Text = "MP3 Streaming";
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MP3StreamingForm_FormClosing);
             this.ResumeLayout(false);
             this.PerformLayout();
 

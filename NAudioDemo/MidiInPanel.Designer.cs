@@ -1,6 +1,6 @@
 namespace NAudioDemo
 {
-    partial class MidiInForm
+    partial class MidiInPanel
     {
         /// <summary>
         /// Required designer variable.
@@ -154,7 +154,7 @@ namespace NAudioDemo
             this.Controls.Add(this.comboBoxMidiInDevices);
             this.Name = "MidiInForm";
             this.Text = "MIDI In Sample";
-            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.MidiInForm_FormClosed);
+            this.Disposed += this.MidiInPanel_Disposed;
             this.Load += new System.EventHandler(this.MidiInForm_Load);
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();

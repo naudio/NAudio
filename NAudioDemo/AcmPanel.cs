@@ -7,12 +7,13 @@ using System.Text;
 using System.Windows.Forms;
 using NAudio.Wave;
 using NAudio.Wave.Compression;
+using System.ComponentModel.Composition;
 
 namespace NAudioDemo
 {
-    public partial class AcmForm : Form
+    public partial class AcmPanel : UserControl
     {
-        public AcmForm()
+        public AcmPanel()
         {
             InitializeComponent();
         }
@@ -227,6 +228,21 @@ namespace NAudioDemo
                 listBoxAcmDrivers.SelectedIndex = 0;
             }
             listBoxAcmDrivers_DoubleClick(sender, e);
+        }
+    }
+
+
+    [Export(typeof(INAudioDemoPlugin))]
+    public class AcmPanelPlugin : INAudioDemoPlugin
+    {
+        public string Name
+        {
+            get { return "ACM Format Conversion"; }
+        }
+
+        public Control CreatePanel()
+        {
+            return new AcmPanel();
         }
     }
 }

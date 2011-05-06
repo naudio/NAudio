@@ -58,7 +58,7 @@ namespace NAudio.Wave
         /// </summary>
         public int BufferedBytes
         {
-            get { return buffer.Count; }
+            get { if (buffer == null) return 0; return buffer.Count; }
         }
 
         /// <summary>

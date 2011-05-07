@@ -29,7 +29,8 @@ namespace NAudioTests.Mp3
         public void CanParseValidMp3Frame()
         {
             MemoryStream ms = new MemoryStream(constructValidMp3Frame());
-            Mp3Frame frame = new Mp3Frame(ms);
+            Mp3Frame frame = Mp3Frame.LoadFromStream(ms);
+            Assert.IsNotNull(frame);
         }
 
         [TestCase(0)]
@@ -40,7 +41,8 @@ namespace NAudioTests.Mp3
         public void FailsToParseInvalidFrame(int length)
         {
             MemoryStream ms = new MemoryStream(new byte[length]);
-            Assert.Throws<EndOfStreamException>(() => { Mp3Frame frame = new Mp3Frame(ms); });
+            Mp3Frame frame = Mp3Frame.LoadFromStream(ms);
+            Assert.IsNull(frame);
         }
 
         [TestCase(1)]
@@ -52,8 +54,9 @@ namespace NAudioTests.Mp3
             byte[] validMp3Frame = constructValidMp3Frame();
             byte[] offsetBuffer = new byte[offset + validMp3Frame.Length];
             Array.Copy(validMp3Frame, 0, offsetBuffer, offset, validMp3Frame.Length);
-            MemoryStream ms = new MemoryStream(validMp3Frame);
-            Mp3Frame frame = new Mp3Frame(ms);
+            MemoryStream ms = new MemoryStream(offsetBuffer);
+            Mp3Frame frame = Mp3Frame.LoadFromStream(ms);
+            Assert.IsNotNull(frame);
         }
     }
 }

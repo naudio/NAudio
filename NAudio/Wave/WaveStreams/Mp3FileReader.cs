@@ -72,7 +72,7 @@ namespace NAudio.Wave
             id3v2Tag = Id3v2Tag.ReadTag(mp3Stream);
 
             dataStartPosition = mp3Stream.Position;
-            Mp3Frame mp3Frame = new Mp3Frame(mp3Stream);
+            Mp3Frame mp3Frame = Mp3Frame.LoadFromStream(mp3Stream);
             sampleRate = mp3Frame.SampleRate;
             frameLengthInBytes = mp3Frame.FrameLength;
             bitRate = mp3Frame.BitRate;
@@ -181,17 +181,21 @@ namespace NAudio.Wave
         /// Reads the next mp3 frame
         /// </summary>
         /// <returns>Next mp3 frame, or null if EOF</returns>
-        public Mp3Frame ReadNextFrame(bool readData)
+        private Mp3Frame ReadNextFrame(bool readData)
         {
             Mp3Frame frame = null;
             try
             {
-                frame = new Mp3Frame(mp3Stream, readData);
-                tocIndex++;
+                frame = Mp3Frame.LoadFromStream(mp3Stream, readData);
+                if (frame != null)
+                {
+                    tocIndex++;
+                }
             }
             catch (EndOfStreamException)
             {
-                // not a problem
+                // suppress for now - it means we unexpectedly got to the end of the stream
+                // half way through
             }
             return frame;
         }

@@ -5,74 +5,6 @@ using System.IO;
 
 namespace NAudio.Wave
 {
-    /// <summary>
-    /// MPEG Layer flags
-    /// </summary>
-    public enum MpegLayer
-    {
-        /// <summary>
-        /// Reserved
-        /// </summary>
-        Reserved,
-        /// <summary>
-        /// Layer 3
-        /// </summary>
-        Layer3,
-        /// <summary>
-        /// Layer 2
-        /// </summary>
-        Layer2,
-        /// <summary>
-        /// Layer 1
-        /// </summary>
-        Layer1
-    }
-
-    /// <summary>
-    /// MPEG Version Flags
-    /// </summary>
-    public enum MpegVersion
-    {
-        /// <summary>
-        /// Version 2.5
-        /// </summary>
-        Version25,
-        /// <summary>
-        /// Reserved
-        /// </summary>
-        Reserved,
-        /// <summary>
-        /// Version 2
-        /// </summary>
-        Version2,
-        /// <summary>
-        /// Version 1
-        /// </summary>
-        Version1
-    }
-
-    /// <summary>
-    /// Channel Mode
-    /// </summary>
-    public enum ChannelMode
-    {
-        /// <summary>
-        /// Stereo
-        /// </summary>
-        Stereo,
-        /// <summary>
-        /// Joint Stereo
-        /// </summary>
-        JointStereo,
-        /// <summary>
-        /// Dual Channel
-        /// </summary>
-        DualChannel,
-        /// <summary>
-        /// Mono
-        /// </summary>
-        Mono
-    }
 
     /// <summary>
     /// Represents an MP3 Frame
@@ -113,11 +45,7 @@ namespace NAudio.Wave
 
         private bool crcPresent;
         //private short crc;
-        private int sampleRate;
-        private int frameLengthInBytes;
-        private ChannelMode channelMode;
         private const int MaxFrameLength = 16 * 1024;
-        private int samplesInFrame; // number of samples in this frame
 
         /// <summary>
         /// Reads an MP3 frame from a stream
@@ -161,10 +89,10 @@ namespace NAudio.Wave
             if (this.crcPresent)
                 this.crc = reader.ReadInt16();*/
 
-            int bytesRequired = frame.frameLengthInBytes - 4;
+            int bytesRequired = frame.FrameLength - 4;
             if (readData)
             {
-                frame.RawData = new byte[frame.frameLengthInBytes];
+                frame.RawData = new byte[frame.FrameLength];
                 Array.Copy(headerBytes, frame.RawData, 4);
                 bytesRead = input.Read(frame.RawData, 4, bytesRequired);
                 if (bytesRead < bytesRequired)
@@ -176,6 +104,7 @@ namespace NAudio.Wave
             }
             else
             {
+                // n.b. readData should not be false if input stream does not support seeking
                 input.Position += bytesRequired;
             }
 
@@ -235,21 +164,21 @@ namespace NAudio.Wave
 
                 if (frame.MpegVersion == MpegVersion.Version1)
                 {
-                    frame.sampleRate = sampleRatesVersion1[sampleFrequencyIndex];
+                    frame.SampleRate = sampleRatesVersion1[sampleFrequencyIndex];
                 }
                 else if (frame.MpegVersion == MpegVersion.Version2)
                 {
-                    frame.sampleRate = sampleRatesVersion2[sampleFrequencyIndex];
+                    frame.SampleRate = sampleRatesVersion2[sampleFrequencyIndex];
                 }
                 else
                 {
                     // mpegVersion == MpegVersion.Version25
-                    frame.sampleRate = sampleRatesVersion25[sampleFrequencyIndex];
+                    frame.SampleRate = sampleRatesVersion25[sampleFrequencyIndex];
                 }
 
                 bool padding = (headerBytes[2] & 0x02) == 0x02;
                 bool privateBit = (headerBytes[2] & 0x01) == 0x01;
-                frame.channelMode = (ChannelMode)((headerBytes[3] & 0xC0) >> 6);
+                frame.ChannelMode = (ChannelMode)((headerBytes[3] & 0xC0) >> 6);
                 int channelExtension = (headerBytes[3] & 0x30) >> 4;
                 bool copyright = (headerBytes[3] & 0x08) == 0x08;
                 bool original = (headerBytes[3] & 0x04) == 0x04;
@@ -257,18 +186,18 @@ namespace NAudio.Wave
 
                 int nPadding = padding ? 1 : 0;
 
-                frame.samplesInFrame = samplesPerFrame[versionIndex, layerIndex];
-                int coefficient = frame.samplesInFrame / 8;
+                frame.SampleCount = samplesPerFrame[versionIndex, layerIndex];
+                int coefficient = frame.SampleCount / 8;
                 if (frame.MpegLayer == MpegLayer.Layer1)
                 {
-                    frame.frameLengthInBytes = (coefficient * frame.BitRate / frame.sampleRate + nPadding) * 4;
+                    frame.FrameLength = (coefficient * frame.BitRate / frame.SampleRate + nPadding) * 4;
                 }
                 else
                 {
-                    frame.frameLengthInBytes = (coefficient * frame.BitRate) / frame.sampleRate + nPadding;
+                    frame.FrameLength = (coefficient * frame.BitRate) / frame.SampleRate + nPadding;
                 }
                 
-                if (frame.frameLengthInBytes > MaxFrameLength)
+                if (frame.FrameLength > MaxFrameLength)
                 {
                     return false;
                 }
@@ -280,18 +209,12 @@ namespace NAudio.Wave
         /// <summary>
         /// Sample rate of this frame
         /// </summary>
-        public int SampleRate
-        {
-            get { return sampleRate; }
-        }
+        public int SampleRate { get; private set; }
 
         /// <summary>
         /// Frame length in bytes
         /// </summary>
-        public int FrameLength
-        {
-            get { return frameLengthInBytes; }
-        }
+        public int FrameLength { get; private set; }
 
         /// <summary>
         /// Bit Rate
@@ -316,17 +239,11 @@ namespace NAudio.Wave
         /// <summary>
         /// Channel Mode
         /// </summary>
-        public ChannelMode ChannelMode
-        {
-            get { return channelMode; }
-        }
+        public ChannelMode ChannelMode { get; private set; }
 
         /// <summary>
         /// The number of samples in this frame
         /// </summary>
-        public int SampleCount
-        {
-            get { return samplesInFrame; }
-        }
+        public int SampleCount { get; private set; }
     }
 }

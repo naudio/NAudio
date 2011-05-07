@@ -49,7 +49,7 @@ namespace NAudio.Utils
         }
 
         /// <summary>
-        /// Can Write
+        /// Can write to the underlying stream
         /// </summary>
         public override bool CanWrite
         {
@@ -57,18 +57,24 @@ namespace NAudio.Utils
         }
 
         /// <summary>
-        /// Flush
+        /// Flushes the underlying stream
         /// </summary>
         public override void Flush()
         {
             SourceStream.Flush();
         }
 
+        /// <summary>
+        /// Gets the length of the underlying stream
+        /// </summary>
         public override long Length
         {
             get { return SourceStream.Length; }
         }
 
+        /// <summary>
+        /// Gets or sets the position of the underlying stream
+        /// </summary>
         public override long Position
         {
             get
@@ -81,26 +87,42 @@ namespace NAudio.Utils
             }
         }
 
+        /// <summary>
+        /// Reads from the underlying stream
+        /// </summary>
         public override int Read(byte[] buffer, int offset, int count)
         {
             return SourceStream.Read(buffer, offset, count);
         }
 
+        /// <summary>
+        /// Seeks on the underlying stream
+        /// </summary>
         public override long Seek(long offset, SeekOrigin origin)
         {
             return SourceStream.Seek(offset, origin);
         }
 
+        /// <summary>
+        /// Sets the length of the underlying stream
+        /// </summary>
         public override void SetLength(long value)
         {
             SourceStream.SetLength(value);
         }
 
+        /// <summary>
+        /// Writes to the underlying stream
+        /// </summary>
         public override void Write(byte[] buffer, int offset, int count)
         {
             SourceStream.Write(buffer, offset, count);
         }
 
+        /// <summary>
+        /// Dispose - by default (IgnoreDispose = true) will do nothing,
+        /// leaving the underlying stream undisposed
+        /// </summary>
         protected override void Dispose(bool disposing)
         {
             if (!IgnoreDispose)

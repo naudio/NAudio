@@ -72,12 +72,27 @@ namespace NAudio.Wave
         #endregion
 
         #region AiffChunk
+        /// <summary>
+        /// AIFF Chunk
+        /// </summary>
         public struct AiffChunk
         {
+            /// <summary>
+            /// Chunk Name
+            /// </summary>
             public string chunkName;
+            /// <summary>
+            /// Chunk Length
+            /// </summary>
             public uint chunkLength;
+            /// <summary>
+            /// Chunk start
+            /// </summary>
             public uint chunkStart;
 
+            /// <summary>
+            /// Creates a new AIFF Chunk
+            /// </summary>
             public AiffChunk(uint start, string name, uint length)
             {
                 chunkStart = start;

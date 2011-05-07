@@ -183,13 +183,17 @@ namespace NAudio.Wave
         /// <returns>Next mp3 frame, or null if EOF</returns>
         public Mp3Frame ReadNextFrame(bool readData)
         {
-            if (mp3Stream.Position + frameLengthInBytes <= mp3DataLength + dataStartPosition)
+            Mp3Frame frame = null;
+            try
             {
-                var frame = new Mp3Frame(mp3Stream, readData);
+                frame = new Mp3Frame(mp3Stream, readData);
                 tocIndex++;
-                return frame;
             }
-            return null;
+            catch (EndOfStreamException)
+            {
+                // not a problem
+            }
+            return frame;
         }
 
         /// <summary>

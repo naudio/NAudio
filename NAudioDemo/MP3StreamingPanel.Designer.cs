@@ -38,6 +38,8 @@
             this.buttonPause = new System.Windows.Forms.Button();
             this.buttonStop = new System.Windows.Forms.Button();
             this.labelBuffered = new System.Windows.Forms.Label();
+            this.labelVolume = new System.Windows.Forms.Label();
+            this.volumeSlider1 = new NAudio.Gui.VolumeSlider();
             this.SuspendLayout();
             // 
             // buttonPlay
@@ -122,11 +124,29 @@
             this.labelBuffered.TabIndex = 7;
             this.labelBuffered.Text = "0.0s";
             // 
-            // MP3StreamingForm
+            // labelVolume
+            // 
+            this.labelVolume.AutoSize = true;
+            this.labelVolume.Location = new System.Drawing.Point(12, 73);
+            this.labelVolume.Name = "labelVolume";
+            this.labelVolume.Size = new System.Drawing.Size(45, 13);
+            this.labelVolume.TabIndex = 8;
+            this.labelVolume.Text = "Volume:";
+            // 
+            // volumeSlider1
+            // 
+            this.volumeSlider1.Location = new System.Drawing.Point(97, 69);
+            this.volumeSlider1.Name = "volumeSlider1";
+            this.volumeSlider1.Size = new System.Drawing.Size(109, 19);
+            this.volumeSlider1.TabIndex = 9;
+            this.volumeSlider1.Volume = 1F;
+            // 
+            // MP3StreamingPanel
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(337, 133);
+            this.Controls.Add(this.volumeSlider1);
+            this.Controls.Add(this.labelVolume);
             this.Controls.Add(this.labelBuffered);
             this.Controls.Add(this.buttonStop);
             this.Controls.Add(this.buttonPause);
@@ -135,8 +155,8 @@
             this.Controls.Add(this.label1);
             this.Controls.Add(this.textBoxStreamingUrl);
             this.Controls.Add(this.buttonPlay);
-            this.Name = "MP3StreamingForm";
-            this.Text = "MP3 Streaming";
+            this.Name = "MP3StreamingPanel";
+            this.Size = new System.Drawing.Size(337, 133);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -153,5 +173,7 @@
         private System.Windows.Forms.Button buttonPause;
         private System.Windows.Forms.Button buttonStop;
         private System.Windows.Forms.Label labelBuffered;
+        private System.Windows.Forms.Label labelVolume;
+        private NAudio.Gui.VolumeSlider volumeSlider1;
     }
 }

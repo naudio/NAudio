@@ -28,7 +28,16 @@ namespace NAudioDemo
         public MP3StreamingPanel()
         {
             InitializeComponent();
+            this.volumeSlider1.VolumeChanged += new EventHandler(volumeSlider1_VolumeChanged);
             this.Disposed += this.MP3StreamingPanel_Disposing;
+        }
+
+        void volumeSlider1_VolumeChanged(object sender, EventArgs e)
+        {
+            if (this.volumeProvider != null)
+            {
+                this.volumeProvider.Volume = this.volumeSlider1.Volume;
+            }
         }
 
         private BufferedWaveProvider bufferedWaveProvider;
@@ -36,6 +45,7 @@ namespace NAudioDemo
         private volatile StreamingPlaybackState playbackState;
         private volatile bool fullyDownloaded;
         private HttpWebRequest webRequest;
+        private VolumeWaveProvider16 volumeProvider;
 
         delegate void ShowErrorDelegate(string message);
 
@@ -86,7 +96,7 @@ namespace NAudioDemo
                             Mp3Frame frame = null;
                             try
                             {
-                                frame = new Mp3Frame(readFullyStream, true);
+                                frame = Mp3Frame.LoadFromStream(readFullyStream);
                             }
                             catch (EndOfStreamException)
                             {
@@ -183,7 +193,9 @@ namespace NAudioDemo
                     Debug.WriteLine("Creating WaveOut Device");
                     this.waveOut = CreateWaveOut(); 
                     waveOut.PlaybackStopped += new EventHandler(waveOut_PlaybackStopped);
-                    waveOut.Init(bufferedWaveProvider);
+                    this.volumeProvider = new VolumeWaveProvider16(bufferedWaveProvider);
+                    this.volumeProvider.Volume = this.volumeSlider1.Volume;
+                    waveOut.Init(volumeProvider);
                     progressBarBuffer.Maximum = (int)bufferedWaveProvider.BufferDuration.TotalMilliseconds;
                 }
                 else if (bufferedWaveProvider != null)
@@ -209,6 +221,7 @@ namespace NAudioDemo
                         StopPlayback();
                     }
                 }
+
             }
         }
 

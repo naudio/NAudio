@@ -124,6 +124,7 @@ namespace NAudio.Gui
         /// <summary>
         /// The volume for this control
         /// </summary>
+        [DefaultValue(1.0f)]
         public float Volume
         {
             get

@@ -72,6 +72,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Codecs\ALawDecoder.cs" />
+    <Compile Include="Codecs\ALawEncoder.cs" />
+    <Compile Include="Codecs\MuLawDecoder.cs" />
+    <Compile Include="Codecs\MuLawEncoder.cs" />
     <Compile Include="CoreAudioApi\AudioCaptureClient.cs" />
     <Compile Include="CoreAudioApi\AudioClient.cs" />
     <Compile Include="CoreAudioApi\AudioClientBufferFlags.cs" />

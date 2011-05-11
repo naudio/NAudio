@@ -79,13 +79,18 @@ namespace NAudio.Wave
 
         private void CreateFactChunk()
         {
-            if (this.format.Encoding != WaveFormatEncoding.Pcm)
+            if (HasFactChunk())
             {
                 this.writer.Write(System.Text.Encoding.ASCII.GetBytes("fact"));
                 this.writer.Write((int)4);
                 factSampleCountPos = this.outStream.Position;
                 this.writer.Write((int)0); // number of samples
             }
+        }
+
+        private bool HasFactChunk()
+        {
+            return this.format.Encoding != WaveFormatEncoding.Pcm && this.format.BitsPerSample != 0;
         }
 
         /// <summary>
@@ -375,7 +380,7 @@ namespace NAudio.Wave
 
         private void UpdateFactChunk(BinaryWriter writer)
         {
-            if (format.Encoding != WaveFormatEncoding.Pcm)
+            if (HasFactChunk())
             {
                 int bitsPerSample = (format.BitsPerSample * format.Channels);
                 if (bitsPerSample != 0)

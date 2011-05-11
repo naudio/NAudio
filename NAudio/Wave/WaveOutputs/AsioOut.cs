@@ -17,14 +17,15 @@ namespace NAudio.Wave
     /// </summary>
     public class AsioOut : IWavePlayer
     {
-        ASIODriverExt driver;
-        IWaveProvider sourceStream;
+        private ASIODriverExt driver;
+        private IWaveProvider sourceStream;
         private WaveFormat waveFormat;
-        PlaybackState playbackState;
+        private PlaybackState playbackState;
         private int nbSamples;
         private byte[] waveBuffer;
         private ASIOSampleConvertor.SampleConvertor convertor;
         private string driverName;
+        private int channelOffset;
 
         /// <summary>
         /// Playback Stopped
@@ -124,6 +125,7 @@ namespace NAudio.Wave
 
             // Instantiate the extended driver
             driver = new ASIODriverExt(basicDriver);
+            this.channelOffset = 0;
         }
 
         /// <summary>
@@ -194,6 +196,7 @@ namespace NAudio.Wave
 
             // Used Prefered size of ASIO Buffer
             nbSamples = driver.CreateBuffers(waveFormat.Channels, false);
+            driver.SetChannelOffset(channelOffset); // will throw an exception if channel offset is too high
 
             // make a buffer big enough to read enough from the sourceStream to fill the ASIO buffers            
             waveBuffer = new byte[nbSamples * waveFormat.Channels * waveFormat.BitsPerSample / 8];
@@ -242,7 +245,21 @@ namespace NAudio.Wave
         }
 
         /// <summary>
+        /// By default the first channel on the input WaveProvider is sent to the first ASIO output.
+        /// This option sends it to the specified channel number.
+        /// Warning: make sure you don't set it higher than the number of available output channels - 
+        /// the number of source channels.
+        /// n.b. Future NAudio may modify this
+        /// </summary>
+        public int ChannelOffset
+        {
+            get { return this.channelOffset; }
+            set { this.channelOffset = value; }
+        }
+
+        /// <summary>
         /// Sets the volume (1.0 is unity gain)
+        /// Not supported for ASIO Out. Set the volume on the input stream instead
         /// </summary>
         public float Volume
         {
@@ -253,7 +270,9 @@ namespace NAudio.Wave
             set
             {
                 if (value != 1.0f)
-                    throw new InvalidOperationException();
+                {
+                    throw new InvalidOperationException("AsioOut does not support setting the device volume");
+                }
             }
         }
 

@@ -53,7 +53,7 @@ namespace NAudio.Codecs
         /// <summary>
         /// Converts an a-law encoded byte to a 16 bit linear sample
         /// </summary>
-        /// <param name="muLaw">a-law encoded byte</param>
+        /// <param name="aLaw">a-law encoded byte</param>
         /// <returns>Linear sample</returns>
         public static short ALawToLinearSample(byte aLaw)
         {

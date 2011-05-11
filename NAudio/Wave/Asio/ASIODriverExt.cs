@@ -84,7 +84,7 @@ namespace NAudio.Wave.Asio
         /// <param name="channelOffset">Channel offset</param>
         public void SetChannelOffset(int channelOffset)
         {
-            if (this.channelOffset + nbOutputChannels <= Capabilities.NbOutputChannels)
+            if (channelOffset + nbOutputChannels <= Capabilities.NbOutputChannels)
             {
                 this.channelOffset = channelOffset;
             }

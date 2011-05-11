@@ -115,6 +115,12 @@
     <Compile Include="MP3StreamingPanel.Designer.cs">
       <DependentUpon>MP3StreamingPanel.cs</DependentUpon>
     </Compile>
+    <Compile Include="NetworkChatPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="NetworkChatPanel.Designer.cs">
+      <DependentUpon>NetworkChatPanel.cs</DependentUpon>
+    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="VolumeWaveProvider16.cs" />
@@ -148,6 +154,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="MP3StreamingPanel.resx">
       <DependentUpon>MP3StreamingPanel.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="NetworkChatPanel.resx">
+      <DependentUpon>NetworkChatPanel.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>

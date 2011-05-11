@@ -14,7 +14,7 @@ namespace NAudio.Wave
     /// </summary>
     public class BufferedWaveProvider : IWaveProvider
     {
-        private CircularBuffer buffer;
+        private CircularBuffer circularBuffer;
         private WaveFormat waveFormat;
 
         /// <summary>
@@ -58,7 +58,7 @@ namespace NAudio.Wave
         /// </summary>
         public int BufferedBytes
         {
-            get { if (buffer == null) return 0; return buffer.Count; }
+            get { if (circularBuffer == null) return 0; return circularBuffer.Count; }
         }
 
         /// <summary>
@@ -83,12 +83,12 @@ namespace NAudio.Wave
         public void AddSamples(byte[] buffer, int offset, int count)
         {
             // create buffer here to allow user to customise buffer length
-            if (this.buffer == null)
+            if (this.circularBuffer == null)
             { 
-                this.buffer = new CircularBuffer(this.BufferLength);
+                this.circularBuffer = new CircularBuffer(this.BufferLength);
             }
 
-            int written  = this.buffer.Write(buffer, offset, count);
+            int written  = this.circularBuffer.Write(buffer, offset, count);
             if (written < count)
             {
                 throw new InvalidOperationException("Buffer full");
@@ -101,7 +101,11 @@ namespace NAudio.Wave
         /// </summary>
         public int Read(byte[] buffer, int offset, int count) 
         {
-            int read = this.buffer.Read(buffer, offset, count);
+            int read = 0;
+            if (this.circularBuffer != null) // not yet created
+            { 
+                read = this.circularBuffer.Read(buffer, offset, count);
+            }
             if (read < count)
             {
                 // zero the end of the buffer

@@ -53,6 +53,7 @@ namespace NAudio.Wave.Asio
         private int nbOutputChannels;
         private ASIOFillBufferCalback fillBufferCalback;
         private int bufferSize;
+        private int channelOffset;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ASIODriverExt"/> class based on an already
@@ -76,6 +77,22 @@ namespace NAudio.Wave.Asio
 
             BuildCapabilities();
         }
+
+        /// <summary>
+        /// Allows adjustment of which is the first output channel we write to
+        /// </summary>
+        /// <param name="channelOffset">Channel offset</param>
+        public void SetChannelOffset(int channelOffset)
+        {
+            if (this.channelOffset + nbOutputChannels <= Capabilities.NbOutputChannels)
+            {
+                this.channelOffset = channelOffset;
+            }
+            else
+            {
+                throw new ArgumentException("Invalid channel offset");
+            }
+       }
 
         /// <summary>
         /// Gets the driver used.
@@ -280,7 +297,7 @@ namespace NAudio.Wave.Asio
         private void BufferSwitchCallBack(int doubleBufferIndex, bool directProcess)
         {
             for (int i = 0; i < nbOutputChannels; i++)
-                currentBuffers[i] = outputBufferInfos[i + capability.NbInputChannels].Buffer(doubleBufferIndex);
+                currentBuffers[i] = outputBufferInfos[i + channelOffset + capability.NbInputChannels].Buffer(doubleBufferIndex);
 
             if (fillBufferCalback != null)
                 fillBufferCalback(currentBuffers);

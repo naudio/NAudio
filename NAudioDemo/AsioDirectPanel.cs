@@ -72,10 +72,19 @@ namespace NAudioDemo
             }
         }
 
+        private int GetUserSpecifiedChannelOffset()
+        {
+            int channelOffset = 0;
+            int.TryParse(textBoxChannelOffset.Text, out channelOffset);
+            return channelOffset;
+        }
+
         private void Play()
         {
             // allow change device
-            if (this.asioOut != null && this.asioOut.DriverName != comboBoxAsioDevice.Text)
+            if (this.asioOut != null && 
+                (this.asioOut.DriverName != comboBoxAsioDevice.Text || 
+                this.asioOut.ChannelOffset != GetUserSpecifiedChannelOffset()))
             {
                 this.asioOut.Dispose();
                 this.asioOut = null;
@@ -86,7 +95,8 @@ namespace NAudioDemo
             {
                 this.asioOut = new AsioOut(comboBoxAsioDevice.Text);
                 this.asioOut.PlaybackStopped += new EventHandler(asioOut_PlaybackStopped);
-                this.asioOut.Init(this.reader);
+                this.asioOut.ChannelOffset = GetUserSpecifiedChannelOffset();
+                this.asioOut.Init(this.reader);                
             }
             
             this.reader.Position = 0;

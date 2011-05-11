@@ -34,6 +34,8 @@
             this.buttonPlay = new System.Windows.Forms.Button();
             this.buttonStop = new System.Windows.Forms.Button();
             this.comboBoxAsioDevice = new System.Windows.Forms.ComboBox();
+            this.textBoxChannelOffset = new System.Windows.Forms.TextBox();
+            this.label2 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // label1
@@ -85,10 +87,29 @@
             this.comboBoxAsioDevice.Size = new System.Drawing.Size(285, 21);
             this.comboBoxAsioDevice.TabIndex = 3;
             // 
+            // textBoxChannelOffset
+            // 
+            this.textBoxChannelOffset.Location = new System.Drawing.Point(100, 75);
+            this.textBoxChannelOffset.Name = "textBoxChannelOffset";
+            this.textBoxChannelOffset.Size = new System.Drawing.Size(46, 20);
+            this.textBoxChannelOffset.TabIndex = 4;
+            this.textBoxChannelOffset.Text = "0";
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(14, 78);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(80, 13);
+            this.label2.TabIndex = 5;
+            this.label2.Text = "Channel Offset:";
+            // 
             // AsioDirectPanel
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.label2);
+            this.Controls.Add(this.textBoxChannelOffset);
             this.Controls.Add(this.comboBoxAsioDevice);
             this.Controls.Add(this.buttonStop);
             this.Controls.Add(this.buttonPlay);
@@ -97,6 +118,7 @@
             this.Name = "AsioDirectPanel";
             this.Size = new System.Drawing.Size(568, 150);
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -107,5 +129,7 @@
         private System.Windows.Forms.Button buttonPlay;
         private System.Windows.Forms.Button buttonStop;
         private System.Windows.Forms.ComboBox comboBoxAsioDevice;
+        private System.Windows.Forms.TextBox textBoxChannelOffset;
+        private System.Windows.Forms.Label label2;
     }
 }

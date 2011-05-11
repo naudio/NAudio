@@ -109,8 +109,8 @@ namespace NAudio.Wave.Asio
                 {
                     for (int j = 0; j < nbChannels; j++)
                     {
-                        *samples[i] = *inputSamples++;
-                        samples[i] += 2;
+                        *samples[j] = *inputSamples++;
+                        samples[j] += 2;
                     }
                 }
             }
@@ -125,7 +125,6 @@ namespace NAudio.Wave.Asio
             unsafe
             {
                 float* inputSamples = (float*)inputInterleavedBuffer;
-                // Use a trick (short instead of int to avoid any convertion from 16Bit to 32Bit)
                 int* leftSamples = (int*)asioOutputBuffers[0];
                 int* rightSamples = (int*)asioOutputBuffers[1];
 
@@ -146,7 +145,6 @@ namespace NAudio.Wave.Asio
             unsafe
             {
                 float* inputSamples = (float*)inputInterleavedBuffer;
-                // Use a trick (short instead of int to avoid any convertion from 16Bit to 32Bit)
                 float*[] samples = new float*[nbChannels];
                 for (int i = 0; i < nbChannels; i++)
                 {
@@ -157,7 +155,7 @@ namespace NAudio.Wave.Asio
                 {
                     for (int j = 0; j < nbChannels; j++)
                     {
-                        *samples[i]++ = clampToInt(*inputSamples++);
+                        *samples[j]++ = clampToInt(*inputSamples++);
                     }
                 }
             }
@@ -196,12 +194,16 @@ namespace NAudio.Wave.Asio
                 short* inputSamples = (short*)inputInterleavedBuffer;
                 // Use a trick (short instead of int to avoid any convertion from 16Bit to 32Bit)
                 short*[] samples = new short*[nbChannels];
+                for (int i = 0; i < nbChannels; i++)
+                {
+                    samples[i] = (short*)asioOutputBuffers[i];
+                }
 
                 for (int i = 0; i < nbSamples; i++)
                 {
                     for (int j = 0; j < nbChannels; j++)
                     {
-                        *(samples[i]++) = *inputSamples++;
+                        *(samples[j]++) = *inputSamples++;
                     }
                 }
             }
@@ -248,7 +250,7 @@ namespace NAudio.Wave.Asio
                 {
                     for (int j = 0; j < nbChannels; j++)
                     {
-                        *(samples[i]++) = clampToShort(*inputSamples++);
+                        *(samples[j]++) = clampToShort(*inputSamples++);
                     }
                 }
             }

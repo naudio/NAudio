@@ -77,6 +77,12 @@
     <Compile Include="AcmPanel.Designer.cs">
       <DependentUpon>AcmPanel.cs</DependentUpon>
     </Compile>
+    <Compile Include="AsioDirectPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="AsioDirectPanel.Designer.cs">
+      <DependentUpon>AsioDirectPanel.cs</DependentUpon>
+    </Compile>
     <Compile Include="AudioPlaybackPanel.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -119,6 +125,9 @@
     <EmbeddedResource Include="AcmPanel.resx">
       <DependentUpon>AcmPanel.cs</DependentUpon>
       <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="AsioDirectPanel.resx">
+      <DependentUpon>AsioDirectPanel.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="AudioPlaybackPanel.resx">
       <DependentUpon>AudioPlaybackPanel.cs</DependentUpon>

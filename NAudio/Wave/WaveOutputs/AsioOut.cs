@@ -24,6 +24,7 @@ namespace NAudio.Wave
         private int nbSamples;
         private byte[] waveBuffer;
         private ASIOSampleConvertor.SampleConvertor convertor;
+        private string driverName;
 
         /// <summary>
         /// Playback Stopped
@@ -63,7 +64,8 @@ namespace NAudio.Wave
             {
                 throw new ArgumentException(String.Format("Invalid device number. Must be in the range [0,{0}]", names.Length));
             }
-            initFromName(names[driverIndex]);
+            this.driverName = names[driverIndex];
+            initFromName(this.driverName);
         }
 
         /// <summary>
@@ -165,9 +167,13 @@ namespace NAudio.Wave
         /// <summary>
         /// Initialises to play
         /// </summary>
-        /// <param name="waveProvider"></param>
+        /// <param name="waveProvider">Source wave provider</param>
         public void Init(IWaveProvider waveProvider)
         {
+            if (this.sourceStream != null)
+            {
+                throw new InvalidOperationException("Already initialised this instance of AsioOut - dispose and create a new one");
+            }
             sourceStream = waveProvider;
             waveFormat = waveProvider.WaveFormat;
 
@@ -189,7 +195,7 @@ namespace NAudio.Wave
             // Used Prefered size of ASIO Buffer
             nbSamples = driver.CreateBuffers(waveFormat.Channels, false);
 
-            // make a buffer big enough to read enough from the sourceStream to fill the ASIO buffers
+            // make a buffer big enough to read enough from the sourceStream to fill the ASIO buffers            
             waveBuffer = new byte[nbSamples * waveFormat.Channels * waveFormat.BitsPerSample / 8];
         }
 
@@ -227,6 +233,13 @@ namespace NAudio.Wave
             get { return playbackState; }
         }
 
+        /// <summary>
+        /// Driver Name
+        /// </summary>
+        public string DriverName
+        {
+            get { return this.driverName; }
+        }
 
         /// <summary>
         /// Sets the volume (1.0 is unity gain)

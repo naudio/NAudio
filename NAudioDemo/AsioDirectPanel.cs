@@ -94,18 +94,13 @@ namespace NAudioDemo
             if (this.asioOut == null)
             {
                 this.asioOut = new AsioOut(comboBoxAsioDevice.Text);
-                this.asioOut.PlaybackStopped += new EventHandler(asioOut_PlaybackStopped);
                 this.asioOut.ChannelOffset = GetUserSpecifiedChannelOffset();
                 this.asioOut.Init(this.reader);                
             }
             
             this.reader.Position = 0;
             this.asioOut.Play();
-            SetButtonStates();
-        }
-
-        void asioOut_PlaybackStopped(object sender, EventArgs e)
-        {
+            this.timer1.Enabled = true;
             SetButtonStates();
         }
 
@@ -117,8 +112,22 @@ namespace NAudioDemo
 
         private void buttonStop_Click(object sender, EventArgs e)
         {
+            Stop();
+        }
+
+        private void Stop()
+        {
             this.asioOut.Stop();
+            this.timer1.Enabled = false;
             SetButtonStates();
+        }
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            if (asioOut != null && asioOut.PlaybackState == PlaybackState.Playing && reader.Position >= reader.Length)
+            {
+                Stop();
+            }
         }        
     }
 

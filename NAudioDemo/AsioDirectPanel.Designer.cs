@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(AsioDirectPanel));
             this.label1 = new System.Windows.Forms.Label();
             this.buttonSelectFile = new System.Windows.Forms.Button();
@@ -36,6 +37,7 @@
             this.comboBoxAsioDevice = new System.Windows.Forms.ComboBox();
             this.textBoxChannelOffset = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
+            this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.SuspendLayout();
             // 
             // label1
@@ -104,6 +106,11 @@
             this.label2.TabIndex = 5;
             this.label2.Text = "Channel Offset:";
             // 
+            // timer1
+            // 
+            this.timer1.Interval = 250;
+            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
+            // 
             // AsioDirectPanel
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -131,5 +138,6 @@
         private System.Windows.Forms.ComboBox comboBoxAsioDevice;
         private System.Windows.Forms.TextBox textBoxChannelOffset;
         private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.Timer timer1;
     }
 }

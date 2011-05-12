@@ -165,6 +165,9 @@ namespace NAudio.Wave
                 case WaveFormatEncoding.Adpcm:
                     waveFormat = (AdpcmWaveFormat)Marshal.PtrToStructure(pointer, typeof(AdpcmWaveFormat));
                     break;
+                case WaveFormatEncoding.Gsm610:
+                    waveFormat = (Gsm610WaveFormat)Marshal.PtrToStructure(pointer, typeof(Gsm610WaveFormat));
+                    break;
                 default:
                     if (waveFormat.ExtraSize > 0)
                     {

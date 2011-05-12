@@ -48,8 +48,8 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// If true, when we get too many buffers, start throwing away the oldest ones,
-        /// if false, throws an exception whene queue is full
+        /// If true, when the buffer is full, start throwing away data
+        /// if false, AddSamples will throw an exception when buffer is full
         /// </summary>
         public bool DiscardOnBufferOverflow { get; set; }
 
@@ -89,7 +89,7 @@ namespace NAudio.Wave
             }
 
             int written  = this.circularBuffer.Write(buffer, offset, count);
-            if (written < count)
+            if (written < count && !DiscardOnBufferOverflow)
             {
                 throw new InvalidOperationException("Buffer full");
             }

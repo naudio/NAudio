@@ -353,6 +353,7 @@
     <Compile Include="Wave\WaveFormats\ImaAdpcmWaveFormat.cs" />
     <Compile Include="Wave\WaveFormats\Mp3WaveFormat.cs" />
     <Compile Include="Wave\WaveFormats\OggWaveFormat.cs" />
+    <Compile Include="Wave\WaveFormats\TrueSpeechWaveFormat.cs" />
     <Compile Include="Wave\WaveFormats\WaveFormat.cs" />
     <Compile Include="Wave\WaveFormats\AdpcmWaveFormat.cs" />
     <Compile Include="Wave\WaveFormats\WaveFormatCustomMarshaler.cs" />

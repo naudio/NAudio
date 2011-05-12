@@ -3,4 +3,8 @@ obj
 </Value></Property><Property><Name>svn:ignore</Name><Value>NAudio.suo
 obj
 Release-1.4
+</Value></Property><Property><Name>svn:ignore</Name><Value>NAudio.suo
+obj
+Release-1.4
+*.docstates
 </Value></Property></Properties></ItemProperties>

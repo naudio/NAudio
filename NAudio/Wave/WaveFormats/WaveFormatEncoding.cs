@@ -54,7 +54,7 @@ namespace NAudio.Wave
 		/// <summary>WAVE_FORMAT_SONARC Speech Compression</summary>
 		SonarC								= 0x0021,
 		/// <summary>WAVE_FORMAT_DSPGROUP_TRUESPEECH DSP Group, Inc </summary>
-		DspGroupTruespeech					= 0x0022, 
+		DspGroupTrueSpeech					= 0x0022, 
 		/// <summary>WAVE_FORMAT_ECHOSC1 Echo Speech Corporation</summary>
 		EchoSpeechCorporation1				= 0x0023,
 		/// <summary>WAVE_FORMAT_AUDIOFILE_AF36, Virtual Music, Inc.</summary>

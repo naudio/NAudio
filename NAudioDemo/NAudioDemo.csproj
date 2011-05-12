@@ -120,6 +120,7 @@
     <Compile Include="NetworkChatDemo\NetworkChatPanel.Designer.cs">
       <DependentUpon>NetworkChatPanel.cs</DependentUpon>
     </Compile>
+    <Compile Include="NetworkChatDemo\TrueSpeechChatCodec.cs" />
     <Compile Include="NetworkChatDemo\UncompressedPcmChatCodec.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

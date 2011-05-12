@@ -43,6 +43,8 @@ namespace NAudioDemo.NetworkChatDemo
         {
             var codecs = new INetworkChatCodec[] { 
                 new UncompressedPcmChatCodec(),
+                new MuLawChatCodec(),
+                new ALawChatCodec(),
                 new Gsm610ChatCodec(),
             };
             this.comboBoxCodecs.DisplayMember = "Name";

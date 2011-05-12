@@ -8,7 +8,7 @@ namespace NAudio.Wave.Compression
     /// AcmStream encapsulates an Audio Compression Manager Stream
     /// used to convert audio from one format to another
     /// </summary>
-    class AcmStream : IDisposable
+    public class AcmStream : IDisposable
     {
         private IntPtr streamHandle;
         private IntPtr driverHandle;
@@ -148,7 +148,7 @@ namespace NAudio.Wave.Compression
         {
             if (bytesToConvert % sourceFormat.BlockAlign != 0)
             {
-                System.Diagnostics.Debug.WriteLine(String.Format("NOT A WHOLE NUMBER OF BLOCKS", bytesToConvert));
+                System.Diagnostics.Debug.WriteLine(String.Format("Not a whole number of blocks: {0} ({1})", bytesToConvert, sourceFormat.BlockAlign));
                 bytesToConvert -= (bytesToConvert % sourceFormat.BlockAlign);
             }
 

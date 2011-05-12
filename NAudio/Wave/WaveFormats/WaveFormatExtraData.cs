@@ -28,6 +28,9 @@ namespace NAudio.Wave
         {
         }
 
+        /// <summary>
+        /// Reads this structure from a BinaryReader
+        /// </summary>
         public WaveFormatExtraData(BinaryReader reader)
             : base(reader)
         {
@@ -42,6 +45,9 @@ namespace NAudio.Wave
             }
         }
 
+        /// <summary>
+        /// Writes this structure to a BinaryWriter
+        /// </summary>
         public override void Serialize(BinaryWriter writer)
         {
             base.Serialize(writer);

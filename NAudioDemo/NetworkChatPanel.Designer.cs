@@ -31,7 +31,7 @@
             this.textBoxIPAddress = new System.Windows.Forms.TextBox();
             this.textBoxPort = new System.Windows.Forms.TextBox();
             this.comboBoxInputDevices = new System.Windows.Forms.ComboBox();
-            this.comboBox2 = new System.Windows.Forms.ComboBox();
+            this.comboBoxCodecs = new System.Windows.Forms.ComboBox();
             this.buttonStartStreaming = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
@@ -61,16 +61,17 @@
             this.comboBoxInputDevices.FormattingEnabled = true;
             this.comboBoxInputDevices.Location = new System.Drawing.Point(80, 59);
             this.comboBoxInputDevices.Name = "comboBoxInputDevices";
-            this.comboBoxInputDevices.Size = new System.Drawing.Size(157, 21);
+            this.comboBoxInputDevices.Size = new System.Drawing.Size(242, 21);
             this.comboBoxInputDevices.TabIndex = 2;
             // 
-            // comboBox2
+            // comboBoxCodecs
             // 
-            this.comboBox2.FormattingEnabled = true;
-            this.comboBox2.Location = new System.Drawing.Point(80, 86);
-            this.comboBox2.Name = "comboBox2";
-            this.comboBox2.Size = new System.Drawing.Size(157, 21);
-            this.comboBox2.TabIndex = 3;
+            this.comboBoxCodecs.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboBoxCodecs.FormattingEnabled = true;
+            this.comboBoxCodecs.Location = new System.Drawing.Point(80, 86);
+            this.comboBoxCodecs.Name = "comboBoxCodecs";
+            this.comboBoxCodecs.Size = new System.Drawing.Size(242, 21);
+            this.comboBoxCodecs.TabIndex = 3;
             // 
             // buttonStartStreaming
             // 
@@ -127,7 +128,7 @@
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.buttonStartStreaming);
-            this.Controls.Add(this.comboBox2);
+            this.Controls.Add(this.comboBoxCodecs);
             this.Controls.Add(this.comboBoxInputDevices);
             this.Controls.Add(this.textBoxPort);
             this.Controls.Add(this.textBoxIPAddress);
@@ -143,7 +144,7 @@
         private System.Windows.Forms.TextBox textBoxIPAddress;
         private System.Windows.Forms.TextBox textBoxPort;
         private System.Windows.Forms.ComboBox comboBoxInputDevices;
-        private System.Windows.Forms.ComboBox comboBox2;
+        private System.Windows.Forms.ComboBox comboBoxCodecs;
         private System.Windows.Forms.Button buttonStartStreaming;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label2;

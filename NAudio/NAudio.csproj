@@ -349,6 +349,7 @@
     <Compile Include="Wave\SampleProviders\Stereo24SampleProvider.cs" />
     <Compile Include="Wave\SampleProviders\Stereo8SampleProvider.cs" />
     <Compile Include="Wave\SampleProviders\StereoFloatSampleProvider.cs" />
+    <Compile Include="Wave\WaveFormats\Gsm610WaveFormat.cs" />
     <Compile Include="Wave\WaveFormats\ImaAdpcmWaveFormat.cs" />
     <Compile Include="Wave\WaveFormats\Mp3WaveFormat.cs" />
     <Compile Include="Wave\WaveFormats\OggWaveFormat.cs" />

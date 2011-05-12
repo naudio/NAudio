@@ -47,10 +47,11 @@ namespace NAudioDemo.NetworkChatDemo
                 new ALawChatCodec(),
                 new TrueSpeechChatCodec(),
                 new Gsm610ChatCodec(),
-                new MicrosoftAdpcmChatCodec()
+                new MicrosoftAdpcmChatCodec(),
+                new G722ChatCodec()
             };
 
-            var sorted = from codec in codecs orderby codec.BitsPerSecond descending select codec;
+            var sorted = from codec in codecs orderby codec.BitsPerSecond ascending select codec;
             
             foreach(var codec in sorted)
             {
@@ -168,7 +169,7 @@ namespace NAudioDemo.NetworkChatDemo
                     waveProvider.AddSamples(decoded, 0, decoded.Length);
                 }
             }
-            catch (SocketException se)
+            catch (SocketException)
             {
                 // usually not a problem - just means we have disconnected
             }

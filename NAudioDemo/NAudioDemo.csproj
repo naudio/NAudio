@@ -111,6 +111,7 @@
     </Compile>
     <Compile Include="NetworkChatDemo\AcmChatCodec.cs" />
     <Compile Include="NetworkChatDemo\ALawChatCodec.cs" />
+    <Compile Include="NetworkChatDemo\G722ChatCodec.cs" />
     <Compile Include="NetworkChatDemo\Gsm610ChatCodec.cs" />
     <Compile Include="NetworkChatDemo\INetworkChatCodec.cs" />
     <Compile Include="NetworkChatDemo\MicrosoftAdpcmChatCodec.cs" />

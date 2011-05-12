@@ -54,6 +54,9 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="NSpeex">
+      <HintPath>..\Lib\NSpeex\NSpeex.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition">
       <HintPath>..\Lib\MEF\System.ComponentModel.Composition.dll</HintPath>
@@ -122,6 +125,7 @@
     <Compile Include="NetworkChatDemo\NetworkChatPanel.Designer.cs">
       <DependentUpon>NetworkChatPanel.cs</DependentUpon>
     </Compile>
+    <Compile Include="NetworkChatDemo\SpeexChatCodec.cs" />
     <Compile Include="NetworkChatDemo\TrueSpeechChatCodec.cs" />
     <Compile Include="NetworkChatDemo\UncompressedPcmChatCodec.cs" />
     <Compile Include="Program.cs" />

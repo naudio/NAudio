@@ -48,7 +48,8 @@ namespace NAudioDemo.NetworkChatDemo
                 new TrueSpeechChatCodec(),
                 new Gsm610ChatCodec(),
                 new MicrosoftAdpcmChatCodec(),
-                new G722ChatCodec()
+                new G722ChatCodec(),
+                // new SpeexChatCodec(), - still work in progress
             };
 
             var sorted = from codec in codecs orderby codec.BitsPerSecond ascending select codec;

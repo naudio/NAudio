@@ -113,6 +113,7 @@
     <Compile Include="NetworkChatDemo\ALawChatCodec.cs" />
     <Compile Include="NetworkChatDemo\Gsm610ChatCodec.cs" />
     <Compile Include="NetworkChatDemo\INetworkChatCodec.cs" />
+    <Compile Include="NetworkChatDemo\MicrosoftAdpcmChatCodec.cs" />
     <Compile Include="NetworkChatDemo\MuLawChatCodec.cs" />
     <Compile Include="NetworkChatDemo\NetworkChatPanel.cs">
       <SubType>UserControl</SubType>

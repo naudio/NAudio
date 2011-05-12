@@ -1,4 +1,4 @@
-﻿namespace NAudioDemo
+﻿namespace NAudioDemo.NetworkChatDemo
 {
     partial class NetworkChatPanel
     {

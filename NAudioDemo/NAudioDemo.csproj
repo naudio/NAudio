@@ -65,22 +65,22 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AcmPanel.cs">
+    <Compile Include="AcmDemo\AcmPanel.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="AcmPanel.Designer.cs">
+    <Compile Include="AcmDemo\AcmPanel.Designer.cs">
       <DependentUpon>AcmPanel.cs</DependentUpon>
     </Compile>
-    <Compile Include="AsioDirectPanel.cs">
+    <Compile Include="AsioDirectDemo\AsioDirectPanel.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="AsioDirectPanel.Designer.cs">
+    <Compile Include="AsioDirectDemo\AsioDirectPanel.Designer.cs">
       <DependentUpon>AsioDirectPanel.cs</DependentUpon>
     </Compile>
-    <Compile Include="AudioPlaybackPanel.cs">
+    <Compile Include="AudioPlaybackDemo\AudioPlaybackPanel.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="AudioPlaybackPanel.Designer.cs">
+    <Compile Include="AudioPlaybackDemo\AudioPlaybackPanel.Designer.cs">
       <DependentUpon>AudioPlaybackPanel.cs</DependentUpon>
     </Compile>
     <Compile Include="Images.Designer.cs">
@@ -96,36 +96,40 @@
     <Compile Include="MainForm.Designer.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="MeteringStream.cs" />
-    <Compile Include="MidiInPanel.cs">
+    <Compile Include="AudioPlaybackDemo\MeteringStream.cs" />
+    <Compile Include="MidiInDemo\MidiInPanel.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="MidiInPanel.Designer.cs">
+    <Compile Include="MidiInDemo\MidiInPanel.Designer.cs">
       <DependentUpon>MidiInPanel.cs</DependentUpon>
     </Compile>
-    <Compile Include="MP3StreamingPanel.cs">
+    <Compile Include="Mp3StreamingDemo\MP3StreamingPanel.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="MP3StreamingPanel.Designer.cs">
+    <Compile Include="Mp3StreamingDemo\MP3StreamingPanel.Designer.cs">
       <DependentUpon>MP3StreamingPanel.cs</DependentUpon>
     </Compile>
-    <Compile Include="NetworkChatPanel.cs">
+    <Compile Include="NetworkChatDemo\AcmChatCodec.cs" />
+    <Compile Include="NetworkChatDemo\Gsm610ChatCodec.cs" />
+    <Compile Include="NetworkChatDemo\INetworkChatCodec.cs" />
+    <Compile Include="NetworkChatDemo\NetworkChatPanel.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="NetworkChatPanel.Designer.cs">
+    <Compile Include="NetworkChatDemo\NetworkChatPanel.Designer.cs">
       <DependentUpon>NetworkChatPanel.cs</DependentUpon>
     </Compile>
+    <Compile Include="NetworkChatDemo\UncompressedPcmChatCodec.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="VolumeWaveProvider16.cs" />
-    <EmbeddedResource Include="AcmPanel.resx">
+    <Compile Include="Mp3StreamingDemo\VolumeWaveProvider16.cs" />
+    <EmbeddedResource Include="AcmDemo\AcmPanel.resx">
       <DependentUpon>AcmPanel.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
-    <EmbeddedResource Include="AsioDirectPanel.resx">
+    <EmbeddedResource Include="AsioDirectDemo\AsioDirectPanel.resx">
       <DependentUpon>AsioDirectPanel.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="AudioPlaybackPanel.resx">
+    <EmbeddedResource Include="AudioPlaybackDemo\AudioPlaybackPanel.resx">
       <DependentUpon>AudioPlaybackPanel.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
@@ -138,14 +142,14 @@
       <SubType>Designer</SubType>
       <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="MidiInPanel.resx">
+    <EmbeddedResource Include="MidiInDemo\MidiInPanel.resx">
       <SubType>Designer</SubType>
       <DependentUpon>MidiInPanel.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="MP3StreamingPanel.resx">
+    <EmbeddedResource Include="Mp3StreamingDemo\MP3StreamingPanel.resx">
       <DependentUpon>MP3StreamingPanel.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="NetworkChatPanel.resx">
+    <EmbeddedResource Include="NetworkChatDemo\NetworkChatPanel.resx">
       <DependentUpon>NetworkChatPanel.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
@@ -153,7 +157,7 @@
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
     </EmbeddedResource>
-    <EmbeddedResource Include="RecordingPanel.resx">
+    <EmbeddedResource Include="RecordingDemo\RecordingPanel.resx">
       <DependentUpon>RecordingPanel.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
@@ -172,11 +176,11 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="ReadFullyStream.cs" />
-    <Compile Include="RecordingPanel.cs">
+    <Compile Include="Mp3StreamingDemo\ReadFullyStream.cs" />
+    <Compile Include="RecordingDemo\RecordingPanel.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="RecordingPanel.Designer.cs">
+    <Compile Include="RecordingDemo\RecordingPanel.Designer.cs">
       <DependentUpon>RecordingPanel.cs</DependentUpon>
     </Compile>
   </ItemGroup>

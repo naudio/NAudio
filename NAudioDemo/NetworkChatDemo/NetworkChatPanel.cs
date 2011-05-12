@@ -47,13 +47,27 @@ namespace NAudioDemo.NetworkChatDemo
                 new ALawChatCodec(),
                 new TrueSpeechChatCodec(),
                 new Gsm610ChatCodec(),
+                new MicrosoftAdpcmChatCodec()
             };
-            this.comboBoxCodecs.DisplayMember = "Name";
-            foreach(var codec in codecs)
+
+            var sorted = from codec in codecs orderby codec.BitsPerSecond descending select codec;
+            
+            foreach(var codec in sorted)
             {
-                this.comboBoxCodecs.Items.Add(codec);
+                string text = String.Format("{0} ({1:0.0})", codec.Name, codec.BitsPerSecond / 1000.0);
+                this.comboBoxCodecs.Items.Add(new CodecComboItem() { Text=text, Codec=codec });
             }
             this.comboBoxCodecs.SelectedIndex = 0;
+        }
+
+        class CodecComboItem
+        {
+            public string Text { get; set; }
+            public INetworkChatCodec Codec { get; set; }
+            public override string ToString()
+            {
+                return Text;
+            }
         }
 
         private void PopulateInputDevicesCombo()
@@ -75,7 +89,7 @@ namespace NAudioDemo.NetworkChatDemo
             {
                 IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(textBoxIPAddress.Text), int.Parse(textBoxPort.Text));
                 int inputDeviceNumber = comboBoxInputDevices.SelectedIndex;                
-                this.codec = (INetworkChatCodec)comboBoxCodecs.SelectedItem;
+                this.codec = ((CodecComboItem)comboBoxCodecs.SelectedItem).Codec;
                 Connect(endPoint, inputDeviceNumber,codec);
                 buttonStartStreaming.Text = "Disconnect";
             }

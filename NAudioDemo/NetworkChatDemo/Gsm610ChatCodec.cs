@@ -13,6 +13,6 @@ namespace NAudioDemo.NetworkChatDemo
         {
         }
 
-        public override string Name { get { return "GSM 6.10 (13kbps)"; } }
+        public override string Name { get { return "GSM 6.10"; } }
     }
 }

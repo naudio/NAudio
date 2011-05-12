@@ -16,7 +16,7 @@ namespace NAudioDemo.NetworkChatDemo
 
         public override string Name
         {
-            get { return "DSP Group TrueSpeech (8.5kbps)"; }
+            get { return "DSP Group TrueSpeech"; }
         }
 
     }

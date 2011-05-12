@@ -16,7 +16,7 @@ namespace NAudioDemo.NetworkChatDemo
 
         public override string Name
         {
-            get { return "ACM G.711 a-law (64kbps)"; }
+            get { return "ACM G.711 a-law"; }
         }
     }
 
@@ -25,7 +25,12 @@ namespace NAudioDemo.NetworkChatDemo
     {
         public string Name
         {
-            get { return "G.711 a-law (64kbps)"; }
+            get { return "G.711 a-law"; }
+        }
+
+        public int BitsPerSecond
+        {
+            get { return RecordFormat.SampleRate * 8; }
         }
 
         public WaveFormat RecordFormat

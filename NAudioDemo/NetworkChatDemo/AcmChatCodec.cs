@@ -67,6 +67,14 @@ namespace NAudioDemo.NetworkChatDemo
 
         public abstract string Name { get; }
 
+        public int BitsPerSecond
+        {
+            get
+            {
+                return this.encodeFormat.AverageBytesPerSecond * 8;
+            }
+        }
+
         public void Dispose()
         {
             if (encodeStream != null)

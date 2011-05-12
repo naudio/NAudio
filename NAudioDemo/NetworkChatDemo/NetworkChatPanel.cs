@@ -14,7 +14,7 @@ using System.ComponentModel.Composition;
 using NAudio.Wave.Compression;
 using System.Diagnostics;
 
-namespace NAudioDemo
+namespace NAudioDemo.NetworkChatDemo
 {
     public partial class NetworkChatPanel : UserControl
     {
@@ -42,7 +42,7 @@ namespace NAudioDemo
         private void PopulateCodecsCombo()
         {
             var codecs = new INetworkChatCodec[] { 
-                new PlainPcmChatCodec(),
+                new UncompressedPcmChatCodec(),
                 new Gsm610ChatCodec(),
             };
             this.comboBoxCodecs.DisplayMember = "Name";
@@ -176,112 +176,5 @@ namespace NAudioDemo
         {
             return new NetworkChatPanel();
         }
-    }
-
-    interface INetworkChatCodec : IDisposable
-    {
-        string Name { get; }
-        WaveFormat RecordFormat { get; }
-        byte[] Encode(byte[] data, int offset, int length);
-        byte[] Decode(byte[] data);
-    }
-
-    class PlainPcmChatCodec : INetworkChatCodec
-    {
-        public PlainPcmChatCodec()
-        {
-            this.RecordFormat = new WaveFormat(8000, 16, 1);
-        }
-        public string Name { get { return "PCM 8kHz 16 bit uncompressed (128kbps)"; } }
-        public WaveFormat RecordFormat { get; private set; }
-        public byte[] Encode(byte[] data, int offset, int length) 
-        {
-            byte[] encoded = new byte[length];
-            Array.Copy(data, offset, encoded, 0, length);
-            return encoded; 
-        }
-        public byte[] Decode(byte[] data) { return data; }
-        public void Dispose() { }
-    }
-
-    abstract class AcmChatCodec : INetworkChatCodec
-    {
-        private WaveFormat encodeFormat;
-        private AcmStream encodeStream;
-        private AcmStream decodeStream;
-        private int decodeSourceBytesLeftovers;
-        private int encodeSourceBytesLeftovers;
-
-        public AcmChatCodec(WaveFormat recordFormat, WaveFormat encodeFormat)
-        {
-            this.RecordFormat = recordFormat;
-            this.encodeFormat = encodeFormat;
-        }
-
-        public WaveFormat RecordFormat { get; private set; }
-
-        public byte[] Encode(byte[] data, int offset, int length)
-        {
-            if (this.encodeStream == null)
-            {
-                this.encodeStream = new AcmStream(this.RecordFormat, this.encodeFormat);            
-            }
-            Debug.WriteLine(String.Format("Encoding {0} + {1} bytes",length,encodeSourceBytesLeftovers));                
-            return Convert(encodeStream, data, offset, length, ref encodeSourceBytesLeftovers);
-        }
-
-        public byte[] Decode(byte[] data)
-        {
-            if (this.decodeStream == null)
-            {
-                this.decodeStream = new AcmStream(this.encodeFormat, this.RecordFormat);
-            }
-            Debug.WriteLine(String.Format("Decoding {0} + {1} bytes", data.Length, decodeSourceBytesLeftovers));
-            return Convert(decodeStream, data, 0, data.Length, ref decodeSourceBytesLeftovers);
-        }
-
-        private static byte[] Convert(AcmStream conversionStream, byte[] data, int offset, int length, ref int sourceBytesLeftovers)
-        {
-            int bytesInSourceBuffer = length + sourceBytesLeftovers;
-            Array.Copy(data, offset, conversionStream.SourceBuffer, sourceBytesLeftovers, length);
-            int sourceBytesConverted;
-            int bytesConverted = conversionStream.Convert(bytesInSourceBuffer, out sourceBytesConverted);
-            sourceBytesLeftovers = bytesInSourceBuffer - sourceBytesConverted;
-            if (sourceBytesLeftovers > 0)
-            {
-                Debug.WriteLine(String.Format("Asked for {0}, converted {1}", bytesInSourceBuffer, sourceBytesConverted));
-                // shift the leftovers down
-                Array.Copy(conversionStream.SourceBuffer, sourceBytesConverted, conversionStream.SourceBuffer, 0, sourceBytesLeftovers);
-            }
-            byte[] encoded = new byte[bytesConverted];
-            Array.Copy(conversionStream.DestBuffer, 0, encoded, 0, bytesConverted);
-            return encoded;
-        }
-
-        public abstract string Name { get; }
-
-        public void Dispose()
-        {
-            if (encodeStream != null) 
-            {
-                encodeStream.Dispose();
-                encodeStream = null;
-            }
-            if (decodeStream != null)
-            {
-                decodeStream.Dispose();
-                decodeStream = null;
-            }
-        }
-    }
-
-    class Gsm610ChatCodec : AcmChatCodec
-    {
-        public Gsm610ChatCodec()
-            : base(new WaveFormat(8000, 16, 1),new Gsm610WaveFormat())
-        {
-        }
-
-        public override string Name { get { return "GSM 6.10 (13kbps)"; } }       
     }
 }

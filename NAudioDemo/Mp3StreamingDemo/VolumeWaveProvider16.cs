@@ -6,8 +6,15 @@ using NAudio.Wave;
 
 namespace NAudioDemo
 {
+    /// <summary>
+    /// Helper class allowing us to modify the volume of a 16 bit stream.
+    /// Warning - no clipping protection, so do not amplify
+    /// </summary>
     class VolumeWaveProvider16 : IWaveProvider
     {
+        /// <summary>
+        /// Gets or sets volume. 1.0 is full scale.
+        /// </summary>
         public float Volume { get; set; }
         private IWaveProvider sourceProvider;
 

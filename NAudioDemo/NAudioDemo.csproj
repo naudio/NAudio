@@ -65,12 +65,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AcmDriverDetailsForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="AcmDriverDetailsForm.Designer.cs">
-      <DependentUpon>AcmDriverDetailsForm.cs</DependentUpon>
-    </Compile>
     <Compile Include="AcmPanel.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -124,10 +118,6 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="VolumeWaveProvider16.cs" />
-    <EmbeddedResource Include="AcmDriverDetailsForm.resx">
-      <DependentUpon>AcmDriverDetailsForm.cs</DependentUpon>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
     <EmbeddedResource Include="AcmPanel.resx">
       <DependentUpon>AcmPanel.cs</DependentUpon>
       <SubType>Designer</SubType>

@@ -230,11 +230,11 @@ namespace NAudio.Wave
         /// <summary>
         /// Initialize for playing the specified wave stream
         /// </summary>
-        /// <param name="waveStream">IWaveProvider to play</param>
-        public void Init(IWaveProvider waveStream)
+        /// <param name="waveProvider">IWaveProvider to play</param>
+        public void Init(IWaveProvider waveProvider)
         {
             long latencyRefTimes = latencyMilliseconds * 10000;
-            outputFormat = waveStream.WaveFormat;
+            outputFormat = waveProvider.WaveFormat;
             // first attempt uses the WaveFormat from the WaveStream
             WaveFormatExtensible closestSampleRateFormat;
             if (!audioClient.IsFormatSupported(shareMode, outputFormat, out closestSampleRateFormat))
@@ -295,7 +295,7 @@ namespace NAudio.Wave
                 }
 
                 // just check that we can make it.
-                using (new ResamplerDmoStream(waveStream, outputFormat))
+                using (new ResamplerDmoStream(waveProvider, outputFormat))
                 {
                 }
                 this.dmoResamplerNeeded = true;
@@ -304,7 +304,7 @@ namespace NAudio.Wave
             {
                 dmoResamplerNeeded = false;
             }
-            this.sourceStream = waveStream;
+            this.sourceStream = waveProvider;
 
             // If using EventSync, setup is specific with shareMode
             if (isUsingEventSync)

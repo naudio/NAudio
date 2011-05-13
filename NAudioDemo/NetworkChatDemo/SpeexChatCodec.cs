@@ -48,11 +48,11 @@ namespace NAudioDemo.NetworkChatDemo
             return encoded;
         }
 
-        public byte[] Decode(byte[] data)
+        public byte[] Decode(byte[] data, int offset, int length)
         {
-            byte[] outputBufferTemp = new byte[data.Length * 16]; // easily big enough
+            byte[] outputBufferTemp = new byte[length * 16]; // easily big enough
             WaveBuffer wb = new WaveBuffer(outputBufferTemp);
-            int samplesWritten = decoder.Decode(data, 0, data.Length, wb.ShortBuffer, 0, false);
+            int samplesWritten = decoder.Decode(data, offset, length, wb.ShortBuffer, 0, false);
             int bytesWritten = samplesWritten * 2;
             byte[] decoded = new byte[bytesWritten];
             Array.Copy(outputBufferTemp, 0, decoded, 0, bytesWritten);
@@ -63,5 +63,7 @@ namespace NAudioDemo.NetworkChatDemo
         {
             // nothing to do
         }
+
+        public bool IsAvailable { get { return true; } }
     }
 }

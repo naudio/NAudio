@@ -6,12 +6,8 @@ using System.IO;
 
 namespace NAudio.Wave
 {
-      /*WaveFormat: DspGroupTruespeech 8000Hz Channels: 1 Bits: 1 Block Align: 32, AverageBytesPerSecond: 1067 (8.5 kbps), Extra Size: 32
-      Extra Bytes:
-      01 00 F0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 */    
-
     /// <summary>
-    /// GSM 610
+    /// DSP Group TrueSpeech
     /// </summary>
     [StructLayout(LayoutKind.Sequential, Pack = 2)]
     public class TrueSpeechWaveFormat : WaveFormat

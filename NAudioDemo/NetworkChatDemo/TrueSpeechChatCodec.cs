@@ -7,6 +7,11 @@ using System.ComponentModel.Composition;
 
 namespace NAudioDemo.NetworkChatDemo
 {
+    /// <summary>
+    /// DSP Group TrueSpeech codec, using ACM
+    /// n.b. Windows XP came with a TrueSpeech codec built in
+    /// - looks like Windows 7 doesn't
+    /// </summary>
     [Export(typeof(INetworkChatCodec))]
     class TrueSpeechChatCodec : AcmChatCodec
     {

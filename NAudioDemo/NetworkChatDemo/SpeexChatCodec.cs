@@ -9,31 +9,61 @@ using System.Diagnostics;
 
 namespace NAudioDemo.NetworkChatDemo
 {
-    [Export(typeof(INetworkChatCodec))] //- don't export yet, still a work in progress
+    [Export(typeof(INetworkChatCodec))]
+    class NarrowBandSpeexCodec : SpeexChatCodec
+    {
+        public NarrowBandSpeexCodec() : 
+            base(BandMode.Narrow, 8000, "Speex Narrow Band")
+        {
+        
+        }
+    }
+
+    [Export(typeof(INetworkChatCodec))]
+    class WideBandSpeexCodec : SpeexChatCodec
+    {
+        public WideBandSpeexCodec() : 
+            base(BandMode.Wide, 16000, "Speex Wide Band (16kHz)")
+        {
+
+        }
+    }
+
+    [Export(typeof(INetworkChatCodec))]
+    class UltraWideBandSpeexCodec : SpeexChatCodec
+    {
+        public UltraWideBandSpeexCodec() :
+            base(BandMode.UltraWide, 32000, "Speex Ultra Wide Band (32kHz)")
+        {
+
+        }
+    }
+
     class SpeexChatCodec : INetworkChatCodec
     {
         private WaveFormat recordingFormat;
         private SpeexDecoder decoder;
         private SpeexEncoder encoder;
         private WaveBuffer encoderInputBuffer;
+        private string description;
 
-        public SpeexChatCodec()
+        public SpeexChatCodec(BandMode bandMode, int sampleRate, string description)
         {
-            this.decoder = new SpeexDecoder(BandMode.Narrow);
-            this.encoder = new SpeexEncoder(BandMode.Narrow);
-            this.recordingFormat = new WaveFormat(8000, 16, 1);
+            this.decoder = new SpeexDecoder(bandMode);
+            this.encoder = new SpeexEncoder(bandMode);
+            this.recordingFormat = new WaveFormat(sampleRate, 16, 1);
+            this.description = description;
             this.encoderInputBuffer = new WaveBuffer(this.recordingFormat.AverageBytesPerSecond); // more than enough
         }
 
         public string Name
         {
-            get { return "Speex Narrow Band"; }
+            get { return description; }
         }
 
         public int BitsPerSecond
         {
-            // don't know yet
-            get { return 8000; }
+            get { return -1; }
         }
 
         public WaveFormat RecordFormat

@@ -48,7 +48,8 @@ namespace NAudioDemo.NetworkChatDemo
             
             foreach(var codec in sorted)
             {
-                string text = String.Format("{0} ({1:0.#}kbps)", codec.Name, codec.BitsPerSecond / 1000.0);
+                string bitRate = codec.BitsPerSecond == -1 ? "VBR" : String.Format("{0:0.#}kbps", codec.BitsPerSecond / 1000.0);
+                string text = String.Format("{0} ({1})", codec.Name, bitRate);
                 this.comboBoxCodecs.Items.Add(new CodecComboItem() { Text=text, Codec=codec });
             }
             this.comboBoxCodecs.SelectedIndex = 0;

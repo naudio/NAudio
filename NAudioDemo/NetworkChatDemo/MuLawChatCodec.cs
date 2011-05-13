@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using NAudio.Wave;
 using NAudio.Codecs;
+using System.ComponentModel.Composition;
 
 namespace NAudioDemo.NetworkChatDemo
 {
@@ -19,8 +20,9 @@ namespace NAudioDemo.NetworkChatDemo
             get { return "ACM G.711 mu-law"; }
         }
     }
-    
 
+
+    [Export(typeof(INetworkChatCodec))]
     class MuLawChatCodec : INetworkChatCodec
     {
         public string Name

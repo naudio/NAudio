@@ -6,7 +6,7 @@ using NAudio.Wave;
 
 namespace NAudioDemo.NetworkChatDemo
 {
-    interface INetworkChatCodec : IDisposable
+    public interface INetworkChatCodec : IDisposable
     {
         string Name { get; }
         int BitsPerSecond { get; }

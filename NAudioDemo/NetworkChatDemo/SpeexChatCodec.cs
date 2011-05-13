@@ -4,9 +4,11 @@ using System.Linq;
 using System.Text;
 using NAudio.Wave;
 using NSpeex;
+using System.ComponentModel.Composition;
 
 namespace NAudioDemo.NetworkChatDemo
 {
+    // [Export(typeof(INetworkChatCodec))] - don't export yet, still a work in progress
     class SpeexChatCodec : INetworkChatCodec
     {
         private WaveFormat recordingFormat;

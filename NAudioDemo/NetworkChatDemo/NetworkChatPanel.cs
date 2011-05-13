@@ -26,11 +26,11 @@ namespace NAudioDemo.NetworkChatDemo
         private INetworkChatCodec codec;
         private volatile bool connected;
 
-        public NetworkChatPanel()
+        public NetworkChatPanel(IEnumerable<INetworkChatCodec> codecs)
         {
             InitializeComponent();
             PopulateInputDevicesCombo();
-            PopulateCodecsCombo();
+            PopulateCodecsCombo(codecs);
             this.Disposed += new EventHandler(NetworkChatPanel_Disposed);
         }
 
@@ -39,19 +39,8 @@ namespace NAudioDemo.NetworkChatDemo
             Disconnect();
         }
 
-        private void PopulateCodecsCombo()
+        private void PopulateCodecsCombo(IEnumerable<INetworkChatCodec> codecs)
         {
-            var codecs = new INetworkChatCodec[] { 
-                new UncompressedPcmChatCodec(),
-                new MuLawChatCodec(),
-                new ALawChatCodec(),
-                new TrueSpeechChatCodec(),
-                new Gsm610ChatCodec(),
-                new MicrosoftAdpcmChatCodec(),
-                new G722ChatCodec(),
-                // new SpeexChatCodec(), - still work in progress
-            };
-
             var sorted = from codec in codecs orderby codec.BitsPerSecond ascending select codec;
             
             foreach(var codec in sorted)
@@ -191,9 +180,12 @@ namespace NAudioDemo.NetworkChatDemo
             get { return "Network Chat"; }
         }
 
+        [ImportMany(typeof(INetworkChatCodec))]
+        public IEnumerable<INetworkChatCodec> Codecs { get; set; }
+
         public Control CreatePanel()
         {
-            return new NetworkChatPanel();
+            return new NetworkChatPanel(Codecs);
         }
     }
 }

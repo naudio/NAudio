@@ -41,7 +41,10 @@ namespace NAudioDemo.NetworkChatDemo
 
         private void PopulateCodecsCombo(IEnumerable<INetworkChatCodec> codecs)
         {
-            var sorted = from codec in codecs orderby codec.BitsPerSecond ascending select codec;
+            var sorted = from codec in codecs 
+                         where codec.IsAvailable
+                         orderby codec.BitsPerSecond ascending 
+                         select codec;
             
             foreach(var codec in sorted)
             {
@@ -155,7 +158,7 @@ namespace NAudioDemo.NetworkChatDemo
                 while (connected)
                 {
                     byte[] b = this.udpListener.Receive(ref endPoint);
-                    byte[] decoded = listenerThreadState.Codec.Decode(b);
+                    byte[] decoded = listenerThreadState.Codec.Decode(b, 0, b.Length);
                     waveProvider.AddSamples(decoded, 0, decoded.Length);
                 }
             }

@@ -5,6 +5,7 @@ using System.Text;
 using NAudio.Wave;
 using NAudio.Wave.Compression;
 using System.Diagnostics;
+using NAudio;
 
 namespace NAudioDemo.NetworkChatDemo
 {
@@ -37,14 +38,14 @@ namespace NAudioDemo.NetworkChatDemo
             return Convert(encodeStream, data, offset, length, ref encodeSourceBytesLeftovers);
         }
 
-        public byte[] Decode(byte[] data)
+        public byte[] Decode(byte[] data, int offset, int length)
         {
             if (this.decodeStream == null)
             {
                 this.decodeStream = new AcmStream(this.encodeFormat, this.RecordFormat);
             }
             //Debug.WriteLine(String.Format("Decoding {0} + {1} bytes", data.Length, decodeSourceBytesLeftovers));
-            return Convert(decodeStream, data, 0, data.Length, ref decodeSourceBytesLeftovers);
+            return Convert(decodeStream, data, offset, length, ref decodeSourceBytesLeftovers);
         }
 
         private static byte[] Convert(AcmStream conversionStream, byte[] data, int offset, int length, ref int sourceBytesLeftovers)
@@ -86,6 +87,25 @@ namespace NAudioDemo.NetworkChatDemo
             {
                 decodeStream.Dispose();
                 decodeStream = null;
+            }
+        }
+
+        public bool IsAvailable
+        {
+            get
+            {
+                // determine if this codec is installed on this PC
+                bool available = true;
+                try
+                {
+                    using (var tempEncoder = new AcmStream(this.RecordFormat, this.encodeFormat)) { }
+                    using (var tempDecoder = new AcmStream(this.encodeFormat, this.RecordFormat)) { }
+                }
+                catch (MmException e)
+                {
+                    available = false;
+                }
+                return available;
             }
         }
     }

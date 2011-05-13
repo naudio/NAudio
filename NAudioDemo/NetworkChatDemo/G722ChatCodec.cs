@@ -44,7 +44,10 @@ namespace NAudioDemo.NetworkChatDemo
 
         public byte[] Encode(byte[] data, int offset, int length)
         {
-            Debug.Assert(offset == 0, "not yet implemented offsets");
+            if (offset != 0)
+            {
+                throw new ArgumentException("G722 does not yet support non-zero offsets");
+            }
             WaveBuffer wb = new WaveBuffer(data);
             int encodedLength = length / 4;
             byte[] outputBuffer = new byte[encodedLength];
@@ -53,12 +56,16 @@ namespace NAudioDemo.NetworkChatDemo
             return outputBuffer;
         }
 
-        public byte[] Decode(byte[] data)
+        public byte[] Decode(byte[] data, int offset, int length)
         {
-            int decodedLength = data.Length * 4;
+            if (offset != 0)
+            {
+                throw new ArgumentException("G722 does not yet support non-zero offsets");
+            }
+            int decodedLength = length * 4;
             byte[] outputBuffer = new byte[decodedLength];
             WaveBuffer wb = new WaveBuffer(outputBuffer);
-            int decoded = this.codec.Decode(this.decoderState, wb.ShortBuffer, data, data.Length);
+            int decoded = this.codec.Decode(this.decoderState, wb.ShortBuffer, data, length);
             Debug.Assert(decodedLength == decoded * 2);  // because decoded is a number of samples
             return outputBuffer;
         }
@@ -67,5 +74,7 @@ namespace NAudioDemo.NetworkChatDemo
         {
             // nothing to do
         }
+
+        public bool IsAvailable { get { return true; } }
     }
 }

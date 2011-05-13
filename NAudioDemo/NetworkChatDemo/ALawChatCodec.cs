@@ -51,13 +51,13 @@ namespace NAudioDemo.NetworkChatDemo
             return encoded;
         }
 
-        public byte[] Decode(byte[] data)
+        public byte[] Decode(byte[] data, int offset, int length)
         {
-            byte[] decoded = new byte[data.Length * 2];
+            byte[] decoded = new byte[length * 2];
             int outIndex = 0;
-            for (int n = 0; n < data.Length; n++)
+            for (int n = 0; n < length; n++)
             {
-                short decodedSample = ALawDecoder.ALawToLinearSample(data[n]);
+                short decodedSample = ALawDecoder.ALawToLinearSample(data[n + offset]);
                 decoded[outIndex++] = (byte)(decodedSample & 0xFF);
                 decoded[outIndex++] = (byte)(decodedSample >> 8);
             }
@@ -68,5 +68,7 @@ namespace NAudioDemo.NetworkChatDemo
         {
             // nothing to do
         }
+
+        public bool IsAvailable { get { return true; } }
     }
 }

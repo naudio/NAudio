@@ -10,10 +10,11 @@ namespace NAudio.Wave
     /// and allows adjusting of volume
     /// (The eventual successor to WaveChannel32)
     /// </summary>
-    public class WaveChannelFloat : WaveProvider32
+    public class WaveChannelFloat : WaveProvider32, ISampleNotifier
     {
-        private IWaveProviderFloat sourceProviderFloat;
-        private float volume;
+        private VolumeWaveProviderFloat volumeProvider;
+        // try not to give the garbage collector anything to deal with when playing live audio
+        private SampleEventArgs sampleArgs = new SampleEventArgs(0,0);
 
         /// <summary>
         /// Initialises a new instance of WaveChannelFloat
@@ -21,9 +22,8 @@ namespace NAudio.Wave
         /// <param name="sourceProvider">Source provider, must be PCM or IEEE</param>
         public WaveChannelFloat(IWaveProvider sourceProvider)
         {
-            this.volume = 1.0f;
             this.SetWaveFormat(sourceProvider.WaveFormat.SampleRate, 2);
-
+            IWaveProviderFloat sourceProviderFloat;
             if (sourceProvider.WaveFormat.Encoding == WaveFormatEncoding.Pcm)
             {
                 // go to float
@@ -39,6 +39,10 @@ namespace NAudio.Wave
                 {
                     sourceProviderFloat = new Pcm24BitToWaveProviderFloat(sourceProvider);
                 }
+                else
+                {
+                    throw new InvalidOperationException("Unsupported operation");
+                }
             }
             else if (sourceProvider.WaveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
             {
@@ -52,6 +56,7 @@ namespace NAudio.Wave
             {
                 sourceProviderFloat = new MonoToStereoProviderFloat(sourceProviderFloat);
             }
+            this.volumeProvider = new VolumeWaveProviderFloat(sourceProviderFloat);
         }
 
         /// <summary>
@@ -63,12 +68,16 @@ namespace NAudio.Wave
         /// <returns>Number of samples read</returns>
         public override int Read(float[] buffer, int offset, int sampleCount)
         {
-            int samplesRead = sourceProviderFloat.Read(buffer, offset, sampleCount);
-            if (volume != 1f)
+            int samplesRead = volumeProvider.Read(buffer, offset, sampleCount);
+            if (Sample != null)
             {
-                for (int n = 0; n < sampleCount; n++)
+                int channels = this.WaveFormat.Channels;
+
+                for (int n = 0; n < sampleCount; n+=channels)
                 {
-                    buffer[offset + n] *= volume;
+                    sampleArgs.Left = buffer[offset + n];
+                    sampleArgs.Right = channels > 1 ? buffer[offset + n + 1] : sampleArgs.Left;
+                    Sample(this, sampleArgs);
                 }
             }
             return samplesRead;
@@ -79,14 +88,13 @@ namespace NAudio.Wave
         /// </summary>
         public float Volume
         {
-            get
-            {
-                return volume;
-            }
-            set
-            {
-                volume = value;
-            }
+            get { return volumeProvider.Volume; }
+            set { volumeProvider.Volume = value; }
         }
+
+        /// <summary>
+        /// Sample notifier
+        /// </summary>
+        public event EventHandler<SampleEventArgs> Sample;
     }
 }

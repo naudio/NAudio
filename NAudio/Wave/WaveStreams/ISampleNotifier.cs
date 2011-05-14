@@ -10,10 +10,6 @@ namespace NAudio.Wave
     public interface ISampleNotifier
     {
         /// <summary>
-        /// About to start processing a block of samples
-        /// </summary>
-        event EventHandler Block;
-        /// <summary>
         /// A sample has been detected
         /// </summary>
         event EventHandler<SampleEventArgs> Sample;

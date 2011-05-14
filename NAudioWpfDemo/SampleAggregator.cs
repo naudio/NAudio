@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Diagnostics;
 using NAudio.Dsp;
 
 namespace NAudioWpfDemo
 {
-    class SampleAggregator
+    public class SampleAggregator
     {
         // volume
         public event EventHandler<MaxSampleEventArgs> MaximumCalculated;
@@ -15,18 +14,33 @@ namespace NAudioWpfDemo
         private float minValue;
         public int NotificationCount { get; set; }
         int count;
-        
+
         // FFT
         public event EventHandler<FftEventArgs> FftCalculated;
-        public bool PerformFFT { get; set; }        
-        private Complex[] fftBuffer = new Complex[1024];
+        public bool PerformFFT { get; set; }
+        private Complex[] fftBuffer;
         private FftEventArgs fftArgs;
         private int fftPos;
+        private int fftLength;
+        private int m;
 
-        public SampleAggregator()
+        public SampleAggregator(int fftLength = 1024)
         {
-            fftArgs = new FftEventArgs(fftBuffer);
+            if (!IsPowerOfTwo(fftLength))
+            {
+                throw new ArgumentException("FFT Length must be a power of two");
+            }
+            this.m = Math.Log(fftLength, 2.0); // (int)(Math.Log(fftLength) / Math.Log(2.0) + 0.5);
+            this.fftLength = fftLength;
+            this.fftBuffer = new Complex[fftLength];
+            this.fftArgs = new FftEventArgs(fftBuffer);
         }
+
+        bool IsPowerOfTwo(int x)
+        {
+            return (x & (x - 1)) == 0;
+        }
+
 
         public void Reset()
         {
@@ -45,7 +59,7 @@ namespace NAudioWpfDemo
                 {
                     fftPos = 0;
                     // 1024 = 2^10
-                    FastFourierTransform.FFT(true, 10, fftBuffer);
+                    FastFourierTransform.FFT(true, m, fftBuffer);
                     FftCalculated(this, fftArgs);
                 }
             }
@@ -60,7 +74,7 @@ namespace NAudioWpfDemo
                     MaximumCalculated(this, new MaxSampleEventArgs(minValue, maxValue));
                 }
                 Reset();
-            }            
+            }
         }
     }
 
@@ -86,4 +100,3 @@ namespace NAudioWpfDemo
         public Complex[] Result { get; private set; }
     }
 }
-

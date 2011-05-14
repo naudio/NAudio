@@ -51,6 +51,11 @@ namespace NAudio.Wave
         }
 
         /// <summary>
+        /// SubFormat (may be one of AudioMediaSubtypes)
+        /// </summary>
+        public Guid SubFormat { get { return subFormat; } }
+
+        /// <summary>
         /// Serialize
         /// </summary>
         /// <param name="writer"></param>

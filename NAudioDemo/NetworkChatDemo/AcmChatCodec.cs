@@ -101,7 +101,7 @@ namespace NAudioDemo.NetworkChatDemo
                     using (var tempEncoder = new AcmStream(this.RecordFormat, this.encodeFormat)) { }
                     using (var tempDecoder = new AcmStream(this.encodeFormat, this.RecordFormat)) { }
                 }
-                catch (MmException e)
+                catch (MmException)
                 {
                     available = false;
                 }

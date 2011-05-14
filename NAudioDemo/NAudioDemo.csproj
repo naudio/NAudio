@@ -54,6 +54,9 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.ComponentModel.Composition.Initialization.Desktop">
+      <HintPath>..\Lib\MEF\Microsoft.ComponentModel.Composition.Initialization.Desktop.dll</HintPath>
+    </Reference>
     <Reference Include="NSpeex">
       <HintPath>..\Lib\NSpeex\NSpeex.dll</HintPath>
     </Reference>
@@ -80,11 +83,40 @@
     <Compile Include="AsioDirectDemo\AsioDirectPanel.Designer.cs">
       <DependentUpon>AsioDirectPanel.cs</DependentUpon>
     </Compile>
+    <Compile Include="AudioPlaybackDemo\AsioOutPlugin.cs" />
+    <Compile Include="AudioPlaybackDemo\AsioOutSettingsPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="AudioPlaybackDemo\AsioOutSettingsPanel.Designer.cs">
+      <DependentUpon>AsioOutSettingsPanel.cs</DependentUpon>
+    </Compile>
     <Compile Include="AudioPlaybackDemo\AudioPlaybackPanel.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="AudioPlaybackDemo\AudioPlaybackPanel.Designer.cs">
       <DependentUpon>AudioPlaybackPanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="AudioPlaybackDemo\DirectSoundOutSettingsPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="AudioPlaybackDemo\DirectSoundOutSettingsPanel.Designer.cs">
+      <DependentUpon>DirectSoundOutSettingsPanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="AudioPlaybackDemo\DirectSoundOutPlugin.cs" />
+    <Compile Include="AudioPlaybackDemo\IOutputDevicePlugin.cs" />
+    <Compile Include="AudioPlaybackDemo\WasapiOutPlugin.cs" />
+    <Compile Include="AudioPlaybackDemo\WasapiOutSettingsPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="AudioPlaybackDemo\WasapiOutSettingsPanel.Designer.cs">
+      <DependentUpon>WasapiOutSettingsPanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="AudioPlaybackDemo\WaveOutPlugin.cs" />
+    <Compile Include="AudioPlaybackDemo\WaveOutSettingsPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="AudioPlaybackDemo\WaveOutSettingsPanel.Designer.cs">
+      <DependentUpon>WaveOutSettingsPanel.cs</DependentUpon>
     </Compile>
     <Compile Include="Images.Designer.cs">
       <DependentUpon>Images.resx</DependentUpon>
@@ -138,9 +170,21 @@
     <EmbeddedResource Include="AsioDirectDemo\AsioDirectPanel.resx">
       <DependentUpon>AsioDirectPanel.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="AudioPlaybackDemo\AsioOutSettingsPanel.resx">
+      <DependentUpon>AsioOutSettingsPanel.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="AudioPlaybackDemo\AudioPlaybackPanel.resx">
       <DependentUpon>AudioPlaybackPanel.cs</DependentUpon>
       <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="AudioPlaybackDemo\DirectSoundOutSettingsPanel.resx">
+      <DependentUpon>DirectSoundOutSettingsPanel.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="AudioPlaybackDemo\WasapiOutSettingsPanel.resx">
+      <DependentUpon>WasapiOutSettingsPanel.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="AudioPlaybackDemo\WaveOutSettingsPanel.resx">
+      <DependentUpon>WaveOutSettingsPanel.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Images.resx">
       <Generator>ResXFileCodeGenerator</Generator>

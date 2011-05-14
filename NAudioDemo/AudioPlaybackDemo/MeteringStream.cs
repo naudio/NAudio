@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using NAudio.Wave;
 
-namespace NAudioDemo
+namespace NAudioDemo.AudioPlaybackDemo
 {
     /// <summary>
     /// basic metering stream

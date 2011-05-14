@@ -83,7 +83,7 @@ namespace NAudioDemo.NetworkChatDemo
             if (!connected)
             {
                 IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(textBoxIPAddress.Text), int.Parse(textBoxPort.Text));
-                int inputDeviceNumber = comboBoxInputDevices.SelectedIndex;                
+                int inputDeviceNumber = comboBoxInputDevices.SelectedIndex;
                 this.codec = ((CodecComboItem)comboBoxCodecs.SelectedItem).Codec;
                 Connect(endPoint, inputDeviceNumber,codec);
                 buttonStartStreaming.Text = "Disconnect";

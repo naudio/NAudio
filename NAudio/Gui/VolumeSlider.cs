@@ -16,7 +16,7 @@ namespace NAudio.Gui
         /// Required designer variable.
         /// </summary>
         private System.ComponentModel.Container components = null;
-        private float volume;
+        private float volume = 1.0f;
         private float MinDb = -48;
         /// <summary>
         /// Volume changed event

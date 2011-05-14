@@ -30,7 +30,7 @@ namespace NAudioWpfDemo
             {
                 throw new ArgumentException("FFT Length must be a power of two");
             }
-            this.m = Math.Log(fftLength, 2.0); // (int)(Math.Log(fftLength) / Math.Log(2.0) + 0.5);
+            this.m = (int)Math.Log(fftLength, 2.0); // (int)(Math.Log(fftLength) / Math.Log(2.0) + 0.5);
             this.fftLength = fftLength;
             this.fftBuffer = new Complex[fftLength];
             this.fftArgs = new FftEventArgs(fftBuffer);

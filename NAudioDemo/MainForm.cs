@@ -31,21 +31,31 @@ namespace NAudioDemo
             if (plugin != currentPlugin)
             {
                 this.currentPlugin = plugin;
-                if (panelDemo.Controls.Count > 0)
-                {
-                    panelDemo.Controls[0].Dispose();
-                    panelDemo.Controls.Clear();
-                    GC.Collect();
-                }
+                DisposeCurrentDemo();
                 var control = plugin.CreatePanel();
                 control.Dock = DockStyle.Fill;
                 panelDemo.Controls.Add(control);
             }
         }
 
+        private void DisposeCurrentDemo()
+        {
+            if (panelDemo.Controls.Count > 0)
+            {
+                panelDemo.Controls[0].Dispose();
+                panelDemo.Controls.Clear();
+                GC.Collect();
+            }
+        }
+
         private void listBoxDemos_DoubleClick(object sender, EventArgs e)
         {
             buttonLoadDemo_Click(sender, e);
+        }
+
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            DisposeCurrentDemo();
         }
     }
 }

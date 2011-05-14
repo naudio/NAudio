@@ -85,6 +85,7 @@ namespace NAudioDemo
             this.Controls.Add(this.listBoxDemos);
             this.Name = "MainForm";
             this.Text = "NAudio Demo";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
             this.ResumeLayout(false);
 
         }

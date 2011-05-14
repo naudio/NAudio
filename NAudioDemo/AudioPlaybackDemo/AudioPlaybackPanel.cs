@@ -5,99 +5,54 @@ using NAudio.Wave;
 using NAudio.CoreAudioApi;
 using System.ComponentModel.Composition;
 
-namespace NAudioDemo
+namespace NAudioDemo.AudioPlaybackDemo
 {
+    [Export]
     public partial class AudioPlaybackPanel : UserControl
     {
-        IWavePlayer waveOut;
-        string fileName = null;
-        WaveStream mainOutputStream;
-        WaveChannel32 volumeStream;
+        private IWavePlayer waveOut;
+        private string fileName = null;
+        private WaveStream mainOutputStream;
+        private WaveChannel32 volumeStream;
 
-        public AudioPlaybackPanel()
-        {            
+        [ImportingConstructor]
+        public AudioPlaybackPanel([ImportMany]IEnumerable<IOutputDevicePlugin> outputDevicePlugins)
+        {
             InitializeComponent();
-            InitialiseWaveOutControls();
-            InitialiseDirectSoundControls();
-            InitialiseAsioControls();
-            InitialiseWasapiControls();
+            LoadOutputDevicePlugins(outputDevicePlugins);
         }
 
-        private void InitialiseDirectSoundControls()
+        private void LoadOutputDevicePlugins(IEnumerable<IOutputDevicePlugin> outputDevicePlugins)
         {
-            comboBoxDirectSound.DisplayMember = "Description";
-            comboBoxDirectSound.ValueMember = "Guid";
-            comboBoxDirectSound.DataSource = DirectSoundOut.Devices;
-        }
-
-        private void InitialiseWaveOutControls()
-        {
-            for(int deviceId = 0; deviceId < WaveOut.DeviceCount; deviceId++)
+            comboBoxOutputDevice.DisplayMember = "Name";
+            comboBoxOutputDevice.SelectedIndexChanged += new EventHandler(comboBoxOutputDevice_SelectedIndexChanged);
+            foreach (var outputDevicePlugin in outputDevicePlugins)
             {
-                var capabilities = WaveOut.GetCapabilities(deviceId);
-                comboBoxWaveOutDevice.Items.Add(String.Format("Device {0} ({1})", deviceId, capabilities.ProductName));
+                comboBoxOutputDevice.Items.Add(outputDevicePlugin);
             }
-            if (comboBoxWaveOutDevice.Items.Count > 0)
-            {
-                comboBoxWaveOutDevice.SelectedIndex = 0;
-            }
+            comboBoxOutputDevice.SelectedIndex = 0;
         }
 
-        private void InitialiseWasapiControls()
+        void comboBoxOutputDevice_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (Environment.OSVersion.Version.Major < 6)
+            panelOutputDeviceSettings.Controls.Clear();
+            Control settingsPanel;
+            if (SelectedOutputDevicePlugin.IsAvailable)
             {
-                // WASAPI supported only on Windows Vista and above
-                radioButtonWasapi.Enabled = false;
-                checkBoxWasapiEventCallback.Enabled = false;
-                comboBoxWaspai.Enabled = false;
-                checkBoxWasapiExclusiveMode.Enabled = false;
+                settingsPanel = SelectedOutputDevicePlugin.CreateSettingsPanel();
             }
             else
             {
-                var enumerator = new MMDeviceEnumerator();
-                var endPoints = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
-                var comboItems = new List<WasapiDeviceComboItem>();
-                foreach(var endPoint in endPoints)
-                {
-                    var comboItem = new WasapiDeviceComboItem();
-                    comboItem.Description = string.Format("{0} ({1})", endPoint.FriendlyName, endPoint.DeviceFriendlyName);
-                    comboItem.Device = endPoint;
-                    comboItems.Add(comboItem);
-                }
-                comboBoxWaspai.DisplayMember = "Description";
-                comboBoxWaspai.ValueMember = "Device";
-                comboBoxWaspai.DataSource = comboItems;
+                settingsPanel = new Label() { Text = "This output device is unavailable on your system" };
             }
+            panelOutputDeviceSettings.Controls.Add(settingsPanel);
         }
 
-        class WasapiDeviceComboItem
+        private IOutputDevicePlugin SelectedOutputDevicePlugin
         {
-            public string Description { get; set; }
-            public MMDevice Device { get; set; }
+            get { return (IOutputDevicePlugin)comboBoxOutputDevice.SelectedItem; }
         }
 
-        private void InitialiseAsioControls()
-        {
-            // Disable ASIO if no drivers are available
-            if (!AsioOut.isSupported())
-            {
-                radioButtonAsio.Enabled = false;
-                buttonControlPanel.Enabled = false;
-                comboBoxAsioDriver.Enabled = false;
-            }
-            else
-            {
-                // Just fill the comboBox AsioDriver with available driver names
-                String[] asioDriverNames = AsioOut.GetDriverNames();
-                foreach (string driverName in asioDriverNames)
-                {
-                    comboBoxAsioDriver.Items.Add(driverName);
-                }
-                comboBoxAsioDriver.SelectedIndex = 0;
-            }
-        }
-            
         private void buttonPlay_Click(object sender, EventArgs e)
         {
             if (waveOut != null)
@@ -181,7 +136,7 @@ namespace NAudioDemo
                 inputStream = new WaveChannel32(readerStream);
             }
             else if (fileName.EndsWith(".mp3"))
-            {                
+            {
                 WaveStream mp3Reader = new Mp3FileReader(fileName);
                 inputStream = new WaveChannel32(mp3Reader);
             }
@@ -207,46 +162,17 @@ namespace NAudioDemo
                 volumeMeter2.Amplitude = e.MaxSampleValues[1];
                 waveformPainter2.AddMax(e.MaxSampleValues[1]);
             }
-
         }
 
         private void CreateWaveOut()
         {
             CloseWaveOut();
             int latency = (int)comboBoxLatency.SelectedItem;
-            if (radioButtonWaveOut.Checked)
-            {
-                WaveCallbackInfo callbackInfo = checkBoxWaveOutWindow.Checked ? 
-                    WaveCallbackInfo.NewWindow() : WaveCallbackInfo.FunctionCallback();
-                WaveOut outputDevice = new WaveOut(callbackInfo);
-                outputDevice.DeviceNumber = comboBoxWaveOutDevice.SelectedIndex;
-                outputDevice.DesiredLatency = latency;
-                waveOut = outputDevice;
-            }
-            else if (radioButtonDirectSound.Checked)
-            {
-                waveOut = new DirectSoundOut((Guid)comboBoxDirectSound.SelectedValue, latency);
-            }
-            else if (radioButtonAsio.Checked)
-            {
-                waveOut = new AsioOut((String)comboBoxAsioDriver.SelectedItem);
-                buttonControlPanel.Enabled = true;
-            }
-            else
-            {
-                waveOut = new WasapiOut(
-                    (MMDevice)comboBoxWaspai.SelectedValue,
-                    checkBoxWasapiExclusiveMode.Checked ?
-                        AudioClientShareMode.Exclusive :
-                        AudioClientShareMode.Shared,
-                    checkBoxWasapiEventCallback.Checked,
-                    latency);
-            }
+            this.waveOut = SelectedOutputDevicePlugin.CreateDevice(latency);
         }
 
         private void CloseWaveOut()
         {
-            buttonControlPanel.Enabled = false;
             if (waveOut != null)
             {
                 waveOut.Stop();
@@ -267,11 +193,6 @@ namespace NAudioDemo
             }
         }
 
-        private void AudioPlaybackPanel_Disposed(object sender, EventArgs e)
-        {
-            CloseWaveOut();            
-        }
-
         private void Form1_Load(object sender, EventArgs e)
         {
             comboBoxLatency.Items.Add(25);
@@ -283,7 +204,6 @@ namespace NAudioDemo
             comboBoxLatency.Items.Add(400);
             comboBoxLatency.Items.Add(500);
             comboBoxLatency.SelectedIndex = 5;
-            buttonControlPanel.Enabled = false;
         }
 
         private void buttonPause_Click(object sender, EventArgs e)
@@ -302,15 +222,6 @@ namespace NAudioDemo
             if (mainOutputStream != null)
             {
                 volumeStream.Volume = volumeSlider1.Volume;
-            }
-        }
-
-        private void buttonControlPanel_Click(object sender, EventArgs e)
-        {
-            AsioOut asio = waveOut as AsioOut;
-            if (asio != null)
-            {
-                asio.ShowControlPanel();
             }
         }
 
@@ -371,9 +282,15 @@ namespace NAudioDemo
             get { return "WAV / MP3 Playback"; }
         }
 
+        // using ExportFactory<T> rather than Lazy<T> allowing us to create 
+        // a new one each time
+        // had to download a special MEF extension to allow this in .NET 3.5
+        [Import]
+        public ExportFactory<AudioPlaybackPanel> PanelFactory { get; set; }
+
         public Control CreatePanel()
         {
-            return new AudioPlaybackPanel();
+            return PanelFactory.CreateExport().Value; //new AudioPlaybackPanel();
         }
     }
 }

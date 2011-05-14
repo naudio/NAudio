@@ -9,7 +9,7 @@ namespace NAudioWpfDemo
     class AudioPlayback : IDisposable
     {
         private IWavePlayer playbackDevice;
-        private WaveChannel32 inputStream;
+        private WaveStream fileStream;
         
         public event EventHandler<SampleEventArgs> OnSample;
         
@@ -27,34 +27,37 @@ namespace NAudioWpfDemo
 
         private void CloseFile()
         {
-            if (inputStream != null)
+            if (fileStream != null)
             {
-                inputStream.Dispose();
-                inputStream = null;
+                fileStream.Dispose();
+                fileStream = null;
             }
         }
 
         private void OpenFile(string fileName)
         {
-            CreateInputStream(fileName);
+            var inputStream = CreateInputStream(fileName);
             playbackDevice.Init(inputStream);
         }
 
-        private void CreateInputStream(string fileName)
+        private WaveChannelFloat CreateInputStream(string fileName)
         {
+
             if (fileName.EndsWith(".wav"))
             {
-                inputStream = OpenWavStream(fileName);
+                fileStream = OpenWavStream(fileName);
             }
             else if (fileName.EndsWith(".mp3"))
             {
-                inputStream = OpenMp3Stream(fileName);
+                fileStream = new Mp3FileReader(fileName);
             }
             else
             {
                 throw new InvalidOperationException("Unsupported extension");
             }
+            var inputStream = new WaveChannelFloat(fileStream);
             inputStream.Sample += new EventHandler<SampleEventArgs>(inputStream_Sample);
+            return inputStream;
         }
 
         void inputStream_Sample(object sender, SampleEventArgs e)
@@ -65,33 +68,15 @@ namespace NAudioWpfDemo
             }
         }
 
-        private static WaveChannel32 OpenMp3Stream(string fileName)
+        private static WaveStream OpenWavStream(string fileName)
         {
-            WaveChannel32 inputStream;
-            WaveStream mp3Reader = new Mp3FileReader(fileName);
-            //WaveStream pcmStream = WaveFormatConversionStream.CreatePcmStream(mp3Reader);
-            //WaveStream blockAlignedStream = new BlockAlignReductionStream(pcmStream);
-            inputStream = new WaveChannel32(mp3Reader);
-            return inputStream;
-        }
-
-        private static WaveChannel32 OpenWavStream(string fileName)
-        {
-            WaveChannel32 inputStream;
             WaveStream readerStream = new WaveFileReader(fileName);
             if (readerStream.WaveFormat.Encoding != WaveFormatEncoding.Pcm)
             {
                 readerStream = WaveFormatConversionStream.CreatePcmStream(readerStream);
                 readerStream = new BlockAlignReductionStream(readerStream);
             }
-            if (readerStream.WaveFormat.BitsPerSample != 16)
-            {
-                var format = new WaveFormat(readerStream.WaveFormat.SampleRate,
-                    16, readerStream.WaveFormat.Channels);
-                readerStream = new WaveFormatConversionStream(format, readerStream);
-            }
-            inputStream = new WaveChannel32(readerStream);
-            return inputStream;
+            return readerStream;
         }
 
         private void EnsureDeviceCreated()
@@ -109,7 +94,7 @@ namespace NAudioWpfDemo
 
         public void Play()
         {
-            if (playbackDevice != null && inputStream != null && playbackDevice.PlaybackState != PlaybackState.Playing)
+            if (playbackDevice != null && fileStream != null && playbackDevice.PlaybackState != PlaybackState.Playing)
             {
                 playbackDevice.Play();
             }

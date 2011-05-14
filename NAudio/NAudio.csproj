@@ -378,7 +378,9 @@
     <Compile Include="Wave\WaveOutputs\WaveFileWriter.cs" />
     <Compile Include="Wave\WaveOutputs\WaveOut.cs" />
     <Compile Include="Wave\WaveOutputs\WaveOutThreadSafe.cs" />
+    <Compile Include="Wave\WaveProviderFloat\VolumeWaveProviderFloat.cs" />
     <Compile Include="Wave\WaveProviderFloat\WaveProviderFloatConverterBase.cs" />
+    <Compile Include="Wave\WaveProviderFloat\WaveProviderFloatToWaveProvider.cs" />
     <Compile Include="Wave\WaveProviders\BufferedWaveProvider.cs" />
     <Compile Include="Wave\WaveProviderFloat\MonoToStereoProvider.cs" />
     <Compile Include="Wave\WaveProviders\StereoToMonoProvider16.cs" />

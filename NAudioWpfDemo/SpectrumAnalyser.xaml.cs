@@ -20,8 +20,15 @@ namespace NAudioWpfDemo
     /// </summary>
     public partial class SpectrumAnalyser : UserControl
     {
+        enum DrawMode
+        {
+            Polyline,
+            Bars,
+        }
+
         private double yScale = 1000;
         private double xScale = 200;
+
         public SpectrumAnalyser()
         {
             InitializeComponent();
@@ -32,7 +39,7 @@ namespace NAudioWpfDemo
             for (int n = 0; n < fftResults.Length / 2; n++)
             {
                 double intensity = Math.Sqrt(fftResults[n].X * fftResults[n].X + fftResults[n].Y * fftResults[n].Y);
-                double yPos = intensity * yScale;
+                double yPos = 150 - intensity * yScale;
                 //double decibels = 10 * Math.Log10(fftResults[n].X * fftResults[n].X + fftResults[n].Y * fftResults[n].Y);
                 //double yPos = decibels * -1.0;
                 
@@ -57,7 +64,7 @@ namespace NAudioWpfDemo
         private double CalculateXPos(int bin)
         {
             if (bin == 0) return 0;
-            return Math.Log10(bin) * xScale;
+            return bin * 5; // Math.Log10(bin) * xScale;
         }
     }
 }

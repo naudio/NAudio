@@ -262,20 +262,6 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// Block
-        /// </summary>
-        public event EventHandler Block;
-
-        private void RaiseBlock()
-        {
-            var handler = Block;
-            if (handler != null)
-            {
-                handler(this, EventArgs.Empty);
-            }
-        }
-
-        /// <summary>
         /// Sample
         /// </summary>
         public event EventHandler<SampleEventArgs> Sample;

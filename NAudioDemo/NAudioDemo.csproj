@@ -83,6 +83,7 @@
     <Compile Include="AsioDirectDemo\AsioDirectPanel.Designer.cs">
       <DependentUpon>AsioDirectPanel.cs</DependentUpon>
     </Compile>
+    <Compile Include="AudioPlaybackDemo\AiffInputFilePlugin.cs" />
     <Compile Include="AudioPlaybackDemo\AsioOutPlugin.cs" />
     <Compile Include="AudioPlaybackDemo\AsioOutSettingsPanel.cs">
       <SubType>UserControl</SubType>
@@ -96,6 +97,7 @@
     <Compile Include="AudioPlaybackDemo\AudioPlaybackPanel.Designer.cs">
       <DependentUpon>AudioPlaybackPanel.cs</DependentUpon>
     </Compile>
+    <Compile Include="AudioPlaybackDemo\AudioPlaybackPanelPlugin.cs" />
     <Compile Include="AudioPlaybackDemo\DirectSoundOutSettingsPanel.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -103,7 +105,9 @@
       <DependentUpon>DirectSoundOutSettingsPanel.cs</DependentUpon>
     </Compile>
     <Compile Include="AudioPlaybackDemo\DirectSoundOutPlugin.cs" />
+    <Compile Include="AudioPlaybackDemo\IInputFileFormatPlugin.cs" />
     <Compile Include="AudioPlaybackDemo\IOutputDevicePlugin.cs" />
+    <Compile Include="AudioPlaybackDemo\Mp3InputFilePlugin.cs" />
     <Compile Include="AudioPlaybackDemo\WasapiOutPlugin.cs" />
     <Compile Include="AudioPlaybackDemo\WasapiOutSettingsPanel.cs">
       <SubType>UserControl</SubType>
@@ -111,6 +115,7 @@
     <Compile Include="AudioPlaybackDemo\WasapiOutSettingsPanel.Designer.cs">
       <DependentUpon>WasapiOutSettingsPanel.cs</DependentUpon>
     </Compile>
+    <Compile Include="AudioPlaybackDemo\WaveInputFilePlugin.cs" />
     <Compile Include="AudioPlaybackDemo\WaveOutPlugin.cs" />
     <Compile Include="AudioPlaybackDemo\WaveOutSettingsPanel.cs">
       <SubType>UserControl</SubType>

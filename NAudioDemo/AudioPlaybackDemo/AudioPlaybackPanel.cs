@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.Composition;
+using System.Linq;
 using System.Windows.Forms;
 using NAudio.Wave;
-using NAudio.CoreAudioApi;
-using System.ComponentModel.Composition;
 
 namespace NAudioDemo.AudioPlaybackDemo
 {
@@ -21,6 +21,9 @@ namespace NAudioDemo.AudioPlaybackDemo
             InitializeComponent();
             LoadOutputDevicePlugins(outputDevicePlugins);
         }
+
+        [ImportMany(typeof(IInputFileFormatPlugin))]
+        public IEnumerable<IInputFileFormatPlugin> InputFileFormats { get; set; }
 
         private void LoadOutputDevicePlugins(IEnumerable<IOutputDevicePlugin> outputDevicePlugins)
         {
@@ -122,28 +125,20 @@ namespace NAudioDemo.AudioPlaybackDemo
             waveOut.Play();
         }
 
+        private IInputFileFormatPlugin GetPluginForFile(string fileName)
+        {
+            return (from f in this.InputFileFormats where fileName.EndsWith(f.Extension) select f).FirstOrDefault();
+        }
+
         private WaveStream CreateInputStream(string fileName)
         {
             WaveChannel32 inputStream;
-            if (fileName.EndsWith(".wav"))
+            var plugin = GetPluginForFile(fileName);
+            if(plugin == null)
             {
-                WaveStream readerStream = new WaveFileReader(fileName);
-                if (readerStream.WaveFormat.Encoding != WaveFormatEncoding.Pcm && readerStream.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
-                {
-                    readerStream = WaveFormatConversionStream.CreatePcmStream(readerStream);
-                    readerStream = new BlockAlignReductionStream(readerStream);
-                }
-                inputStream = new WaveChannel32(readerStream);
+                throw new InvalidOperationException("Unsupported file extension");
             }
-            else if (fileName.EndsWith(".mp3"))
-            {
-                WaveStream mp3Reader = new Mp3FileReader(fileName);
-                inputStream = new WaveChannel32(mp3Reader);
-            }
-            else
-            {
-                throw new InvalidOperationException("Unsupported extension");
-            }
+            inputStream = new WaveChannel32(plugin.CreateWaveStream(fileName));
             // we are not going into a mixer so we don't need to zero pad
             //((WaveChannel32)inputStream).PadWithZeroes = false;
             volumeStream = inputStream;
@@ -265,32 +260,13 @@ namespace NAudioDemo.AudioPlaybackDemo
         private void toolStripButtonOpenFile_Click(object sender, EventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "All Supported Files (*.wav, *.mp3)|*.wav;*.mp3|All Files (*.*)|*.*";
+            string allExtensions = string.Join(";", (from f in InputFileFormats select "*" + f.Extension).ToArray());
+            openFileDialog.Filter = String.Format("All Supported Files|{0}|All Files (*.*)|*.*", allExtensions);
             openFileDialog.FilterIndex = 1;
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
                 fileName = openFileDialog.FileName;
             }
-        }
-    }
-
-    [Export(typeof(INAudioDemoPlugin))]
-    public class AudioPlaybackPanelPlugin : INAudioDemoPlugin
-    {
-        public string Name
-        {
-            get { return "WAV / MP3 Playback"; }
-        }
-
-        // using ExportFactory<T> rather than Lazy<T> allowing us to create 
-        // a new one each time
-        // had to download a special MEF extension to allow this in .NET 3.5
-        [Import]
-        public ExportFactory<AudioPlaybackPanel> PanelFactory { get; set; }
-
-        public Control CreatePanel()
-        {
-            return PanelFactory.CreateExport().Value; //new AudioPlaybackPanel();
         }
     }
 }

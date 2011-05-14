@@ -133,24 +133,32 @@ namespace NAudio.Dmo
         /// <param name="waveFormat">Wave format structure</param>
         public void SetWaveFormat(WaveFormat waveFormat)
         {
-            majortype = MediaTypes.MEDIATYPE_Audio;
-            switch (waveFormat.Encoding)
+            this.majortype = MediaTypes.MEDIATYPE_Audio;
+            
+            WaveFormatExtensible wfe = waveFormat as WaveFormatExtensible;
+            if (wfe != null)
             {
-                case WaveFormatEncoding.Pcm:
-                    subtype = AudioMediaSubtypes.MEDIASUBTYPE_PCM;
-                    bFixedSizeSamples = true;
-                    break;
-                case WaveFormatEncoding.IeeeFloat:
-                    subtype = AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT;
-                    bFixedSizeSamples = true;
-                    break;
-                case WaveFormatEncoding.MpegLayer3:
-                    subtype = AudioMediaSubtypes.WMMEDIASUBTYPE_MP3;
-                    break;
-                default:
-                    throw new ArgumentException("Not a supported encoding");
+                this.subtype = wfe.SubFormat;
             }
-            formattype = DmoMediaTypeGuids.FORMAT_WaveFormatEx;
+            else
+            {
+                switch (waveFormat.Encoding)
+                {
+                    case WaveFormatEncoding.Pcm:
+                        subtype = AudioMediaSubtypes.MEDIASUBTYPE_PCM;
+                        break;
+                    case WaveFormatEncoding.IeeeFloat:
+                        subtype = AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT;
+                        break;
+                    case WaveFormatEncoding.MpegLayer3:
+                        subtype = AudioMediaSubtypes.WMMEDIASUBTYPE_MP3;
+                        break;
+                    default:
+                        throw new ArgumentException(String.Format("Not a supported encoding {0}", waveFormat.Encoding));
+                }
+            }
+            this.bFixedSizeSamples = (this.SubType == AudioMediaSubtypes.MEDIASUBTYPE_PCM || this.SubType == AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT);
+            this.formattype = DmoMediaTypeGuids.FORMAT_WaveFormatEx;
             if (cbFormat < Marshal.SizeOf(waveFormat))
                 throw new InvalidOperationException("Not enough memory assigned for a WaveFormat structure");
             //Debug.Assert(cbFormat >= ,"Not enough space");

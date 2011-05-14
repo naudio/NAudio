@@ -9,73 +9,54 @@ namespace NAudioDemo.AudioPlaybackDemo
     /// basic metering stream
     /// n.b. does not close its source stream
     /// </summary>
-    public class MeteringStream : WaveStream
+    public class MeteringStream : WaveProvider32
     {
-        public WaveStream SourceStream { get; private set; }
+        public IWaveProviderFloat SourceProvider { get; private set; }
         public int SamplesPerNotification { get; set; }
 
         float[] maxSamples;
         int sampleCount;
+        private int channels;
 
         public event EventHandler<StreamVolumeEventArgs> StreamVolume;
 
-        public MeteringStream(WaveStream sourceStream) :
-            this(sourceStream, sourceStream.WaveFormat.SampleRate / 10)
+        public MeteringStream(IWaveProviderFloat sourceProvider) :
+            this(sourceProvider, sourceProvider.WaveFormat.SampleRate / 10)
         {
         }
 
-        public MeteringStream(WaveStream sourceStream, int samplesPerNotification)
+        public MeteringStream(IWaveProviderFloat sourceProvider, int samplesPerNotification)
         {
-            SourceStream = sourceStream;
-            if (sourceStream.WaveFormat.BitsPerSample != 32)
-                throw new ArgumentException("Metering Stream expects 32 bit floating point audio", "sourceStream");
-            maxSamples = new float[sourceStream.WaveFormat.Channels];
+            this.SourceProvider = sourceProvider;
+            this.SetWaveFormat(this.SourceProvider.WaveFormat.SampleRate, this.SourceProvider.WaveFormat.Channels);
+            this.channels = SourceProvider.WaveFormat.Channels;
+            maxSamples = new float[channels];
             this.SamplesPerNotification = samplesPerNotification;
         }
 
-        public override WaveFormat WaveFormat
+        public override int Read(float[] buffer, int offset, int count)
         {
-            get { return SourceStream.WaveFormat; }
+            int samplesRead = SourceProvider.Read(buffer, offset, count);
+            ProcessData(buffer, offset, samplesRead);
+            return samplesRead;
         }
 
-        public override long Length
+        private void ProcessData(float[] buffer, int offset, int count)
         {
-            get { return SourceStream.Length; }
-        }
-
-        public override long Position
-        {
-            get { return SourceStream.Position; }
-            set { SourceStream.Position = value; }
-        }
-
-        public override int Read(byte[] buffer, int offset, int count)
-        {           
-            int bytesRead = SourceStream.Read(buffer, offset, count);
-            ProcessData(buffer, offset, bytesRead);
-            return bytesRead;
-        }
-
-        private void ProcessData(byte[] buffer, int offset, int count)
-        {
-            int index = 0;
-            while ( index < count)
+            for (int index = 0; index < count; index += channels)
             {
-                for (int channel = 0; channel < maxSamples.Length; channel++)
+                for (int channel = 0; channel < channels; channel++)
                 {
-                    float sampleValue = Math.Abs(BitConverter.ToSingle(buffer, offset + index));
-                    maxSamples[channel] = Math.Max(maxSamples[channel],sampleValue);
-                    index += 4;
+                    float sampleValue = Math.Abs(buffer[offset + index + channel]);
+                    maxSamples[channel] = Math.Max(maxSamples[channel], sampleValue);
                 }
                 sampleCount++;
-                if(sampleCount >= SamplesPerNotification)
+                if (sampleCount >= SamplesPerNotification)
                 {
                     RaiseStreamVolumeNotification();
                     sampleCount = 0;
-                    Array.Clear(maxSamples, 0, maxSamples.Length);
-                    
+                    maxSamples = new float[channels];
                 }
-                
             }
         }
 
@@ -83,7 +64,7 @@ namespace NAudioDemo.AudioPlaybackDemo
         {
             if (StreamVolume != null)
             {
-                StreamVolume(this, new StreamVolumeEventArgs() { MaxSampleValues = (float[])maxSamples.Clone() });
+                StreamVolume(this, new StreamVolumeEventArgs() { MaxSampleValues = maxSamples });
             }
         }
     }

@@ -12,8 +12,9 @@ namespace NAudioDemo.AudioPlaybackDemo
     {
         private IWavePlayer waveOut;
         private string fileName = null;
-        private WaveStream mainOutputStream;
-        private WaveChannel32 volumeStream;
+        private WaveChannelFloat volumeStream;
+        private WaveStream fileWaveStream;
+        
 
         [ImportingConstructor]
         public AudioPlaybackPanel([ImportMany]IEnumerable<IOutputDevicePlugin> outputDevicePlugins)
@@ -96,7 +97,7 @@ namespace NAudioDemo.AudioPlaybackDemo
 
             try
             {
-                mainOutputStream = CreateInputStream(fileName);
+                this.volumeStream = CreateInputStream(fileName);
             }
             catch (Exception createException)
             {
@@ -104,14 +105,17 @@ namespace NAudioDemo.AudioPlaybackDemo
                 return;
             }
 
-            trackBarPosition.Maximum = (int)mainOutputStream.TotalTime.TotalSeconds;
-            labelTotalTime.Text = String.Format("{0:00}:{1:00}", (int)mainOutputStream.TotalTime.TotalMinutes,
-                mainOutputStream.TotalTime.Seconds);
+            var meteringStream = new MeteringStream(volumeStream, volumeStream.WaveFormat.SampleRate / 10);
+            meteringStream.StreamVolume += new EventHandler<StreamVolumeEventArgs>(meteringStream_StreamVolume);
+
+            trackBarPosition.Maximum = (int)fileWaveStream.TotalTime.TotalSeconds;
+            labelTotalTime.Text = String.Format("{0:00}:{1:00}", (int)fileWaveStream.TotalTime.TotalMinutes,
+                fileWaveStream.TotalTime.Seconds);
             trackBarPosition.TickFrequency = trackBarPosition.Maximum / 30;
 
             try
             {
-                waveOut.Init(mainOutputStream);
+                waveOut.Init(meteringStream);
             }
             catch (Exception initException)
             {
@@ -130,22 +134,15 @@ namespace NAudioDemo.AudioPlaybackDemo
             return (from f in this.InputFileFormats where fileName.EndsWith(f.Extension) select f).FirstOrDefault();
         }
 
-        private WaveStream CreateInputStream(string fileName)
+        private WaveChannelFloat CreateInputStream(string fileName)
         {
-            WaveChannel32 inputStream;
             var plugin = GetPluginForFile(fileName);
             if(plugin == null)
             {
                 throw new InvalidOperationException("Unsupported file extension");
             }
-            inputStream = new WaveChannel32(plugin.CreateWaveStream(fileName));
-            // we are not going into a mixer so we don't need to zero pad
-            //((WaveChannel32)inputStream).PadWithZeroes = false;
-            volumeStream = inputStream;
-            var meteringStream = new MeteringStream(inputStream, inputStream.WaveFormat.SampleRate / 10);
-            meteringStream.StreamVolume += new EventHandler<StreamVolumeEventArgs>(meteringStream_StreamVolume);
-            
-            return meteringStream;
+            this.fileWaveStream = plugin.CreateWaveStream(fileName);
+            return new WaveChannelFloat(this.fileWaveStream);
         }
 
         void meteringStream_StreamVolume(object sender, StreamVolumeEventArgs e)
@@ -172,14 +169,12 @@ namespace NAudioDemo.AudioPlaybackDemo
             {
                 waveOut.Stop();
             }
-            if (mainOutputStream != null)
+            if (fileWaveStream != null)
             {
                 // this one really closes the file and ACM conversion
-                volumeStream.Close();
+                fileWaveStream.Dispose();
                 volumeStream = null;
-                // this one does the metering stream
-                mainOutputStream.Close();
-                mainOutputStream = null;
+                this.volumeStream = null;
             }
             if (waveOut != null)
             {
@@ -214,7 +209,7 @@ namespace NAudioDemo.AudioPlaybackDemo
 
         private void volumeSlider1_VolumeChanged(object sender, EventArgs e)
         {
-            if (mainOutputStream != null)
+            if (volumeStream != null)
             {
                 volumeStream.Volume = volumeSlider1.Volume;
             }
@@ -232,10 +227,10 @@ namespace NAudioDemo.AudioPlaybackDemo
 
         private void timer1_Tick(object sender, EventArgs e)
         {
-            if (waveOut != null && mainOutputStream != null)
+            if (waveOut != null && fileWaveStream != null)
             {
-                TimeSpan currentTime = mainOutputStream.CurrentTime;
-                if (mainOutputStream.Position >= mainOutputStream.Length)
+                TimeSpan currentTime = fileWaveStream.CurrentTime;
+                if (fileWaveStream.Position >= fileWaveStream.Length)
                 {
                     buttonStop_Click(sender, e);
                 }
@@ -252,8 +247,7 @@ namespace NAudioDemo.AudioPlaybackDemo
         {
             if (waveOut != null)
             {
-                
-                mainOutputStream.CurrentTime = TimeSpan.FromSeconds(trackBarPosition.Value);
+                fileWaveStream.CurrentTime = TimeSpan.FromSeconds(trackBarPosition.Value);
             }
         }
 

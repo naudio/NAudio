@@ -369,6 +369,7 @@
     <Compile Include="Wave\WaveOutputs\IWavePlayer.cs" />
     <Compile Include="Wave\WaveOutputs\IWaveProvider.cs" />
     <Compile Include="Wave\WaveOutputs\DirectSoundOut.cs" />
+    <Compile Include="Wave\WaveOutputs\IWaveProviderFloat.cs" />
     <Compile Include="Wave\WaveOutputs\PlaybackState.cs" />
     <Compile Include="Wave\WaveOutputs\WasapiOut.cs" />
     <Compile Include="Wave\WaveOutputs\WaveBuffer.cs" />
@@ -377,7 +378,9 @@
     <Compile Include="Wave\WaveOutputs\WaveFileWriter.cs" />
     <Compile Include="Wave\WaveOutputs\WaveOut.cs" />
     <Compile Include="Wave\WaveOutputs\WaveOutThreadSafe.cs" />
+    <Compile Include="Wave\WaveProviderFloat\WaveProviderFloatConverterBase.cs" />
     <Compile Include="Wave\WaveProviders\BufferedWaveProvider.cs" />
+    <Compile Include="Wave\WaveProviderFloat\MonoToStereoProvider.cs" />
     <Compile Include="Wave\WaveProviders\StereoToMonoProvider16.cs" />
     <Compile Include="Wave\WaveProviders\MonoToStereoProvider16.cs" />
     <Compile Include="Wave\WaveProviders\WaveFloatTo16Provider.cs" />
@@ -385,6 +388,7 @@
     <Compile Include="Wave\WaveProviders\WaveInProvider.cs" />
     <Compile Include="Wave\WaveProviders\WaveProvider16.cs" />
     <Compile Include="Wave\WaveProviders\WaveProvider32.cs" />
+    <Compile Include="Wave\WaveProviderFloat\WaveProviderToWaveProviderFloat.cs" />
     <Compile Include="Wave\WaveProviders\WaveRecorder.cs" />
     <Compile Include="Wave\WaveStreams\AiffFileReader.cs" />
     <Compile Include="Wave\WaveStreams\BlockAlignReductionStream.cs" />
@@ -392,12 +396,16 @@
     <Compile Include="Wave\WaveStreams\CueWaveFileReader.cs" />
     <Compile Include="Wave\WaveStreams\ISampleNotifier.cs" />
     <Compile Include="Wave\WaveStreams\Mp3FileReader.cs" />
+    <Compile Include="Wave\WaveProviderFloat\Pcm16BitToWaveProviderFloat.cs" />
+    <Compile Include="Wave\WaveProviderFloat\Pcm24BitToWaveProviderFloat.cs" />
+    <Compile Include="Wave\WaveProviderFloat\Pcm8BitToWaveProviderFloat.cs" />
     <Compile Include="Wave\WaveStreams\RawSourceWaveStream.cs" />
     <Compile Include="Wave\WaveStreams\ResamplerDmoStream.cs" />
     <Compile Include="Wave\WaveStreams\RiffChunk.cs" />
     <Compile Include="Wave\WaveStreams\SimpleCompressorStream.cs" />
     <Compile Include="Wave\WaveStreams\Wave32To16Stream.cs" />
     <Compile Include="Wave\WaveStreams\WaveChannel32.cs" />
+    <Compile Include="Wave\WaveProviderFloat\WaveChannelFloat.cs" />
     <Compile Include="Wave\WaveStreams\WaveFileReader.cs" />
     <Compile Include="Wave\WaveStreams\WaveFormatConversionStream.cs" />
     <Compile Include="Wave\WaveStreams\WaveInBuffer.cs" />

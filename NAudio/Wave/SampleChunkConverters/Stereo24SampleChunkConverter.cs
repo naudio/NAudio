@@ -4,34 +4,36 @@ using System.Text;
 
 namespace NAudio.Wave.SampleProviders
 {
-    class StereoFloatSampleProvider : ISampleProvider
+    class Stereo24SampleChunkConverter : ISampleChunkConverter
     {
-        int sourceSample;
+        int offset;
         byte[] sourceBuffer;
-        WaveBuffer sourceWaveBuffer;
-        int sourceSamples;
+        int sourceBytes;
 
         public bool Supports(WaveFormat waveFormat)
         {
-            return waveFormat.Encoding == WaveFormatEncoding.IeeeFloat &&
+            return waveFormat.Encoding == WaveFormatEncoding.Pcm &&
+                waveFormat.BitsPerSample == 24 &&
                 waveFormat.Channels == 2;
         }
 
+
         public void LoadNextChunk(IWaveProvider source, int samplePairsRequired)
         {
-            int sourceBytesRequired = samplePairsRequired * 8;
+            int sourceBytesRequired = samplePairsRequired * 6;
             sourceBuffer = GetSourceBuffer(sourceBytesRequired);
-            sourceWaveBuffer = new WaveBuffer(sourceBuffer);
-            sourceSamples = source.Read(sourceBuffer, 0, sourceBytesRequired) / 4;
-            sourceSample = 0;
+            sourceBytes = source.Read(sourceBuffer, 0, sourceBytesRequired);
+            offset = 0;
         }
 
         public bool GetNextSample(out float sampleLeft, out float sampleRight)
         {
-            if (sourceSample < sourceSamples)
+            if (offset < sourceBytes)
             {
-                sampleLeft = sourceWaveBuffer.FloatBuffer[sourceSample++];
-                sampleRight = sourceWaveBuffer.FloatBuffer[sourceSample++];
+                sampleLeft = (((sbyte)sourceBuffer[offset + 2] << 16) | (sourceBuffer[offset + 1] << 8) | sourceBuffer[offset]) / 8388608f;
+                offset += 3;
+                sampleRight = (((sbyte)sourceBuffer[offset + 2] << 16) | (sourceBuffer[offset + 1] << 8) | sourceBuffer[offset]) / 8388608f;
+                offset += 3;
                 return true;
             }
             else

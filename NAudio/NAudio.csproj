@@ -341,15 +341,15 @@
     <Compile Include="Wave\MmeInterop\WaveWindow.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Wave\SampleProviders\ISampleProvider.cs" />
-    <Compile Include="Wave\SampleProviders\Mono16SampleProvider.cs" />
-    <Compile Include="Wave\SampleProviders\Mono24SampleProvider.cs" />
-    <Compile Include="Wave\SampleProviders\Mono8SampleProvider.cs" />
-    <Compile Include="Wave\SampleProviders\MonoFloatSampleProvider.cs" />
-    <Compile Include="Wave\SampleProviders\Stereo16SampleProvider.cs" />
-    <Compile Include="Wave\SampleProviders\Stereo24SampleProvider.cs" />
-    <Compile Include="Wave\SampleProviders\Stereo8SampleProvider.cs" />
-    <Compile Include="Wave\SampleProviders\StereoFloatSampleProvider.cs" />
+    <Compile Include="Wave\SampleChunkConverters\ISampleChunkConverter.cs" />
+    <Compile Include="Wave\SampleChunkConverters\Mono16SampleChunkConverter.cs" />
+    <Compile Include="Wave\SampleChunkConverters\Mono24SampleChunkConverter.cs" />
+    <Compile Include="Wave\SampleChunkConverters\Mono8SampleChunkConverter.cs" />
+    <Compile Include="Wave\SampleChunkConverters\MonoFloatSampleChunkConverter.cs" />
+    <Compile Include="Wave\SampleChunkConverters\Stereo16SampleChunkConverter.cs" />
+    <Compile Include="Wave\SampleChunkConverters\Stereo24SampleChunkConverter.cs" />
+    <Compile Include="Wave\SampleChunkConverters\Stereo8SampleChunkConverter.cs" />
+    <Compile Include="Wave\SampleChunkConverters\StereoFloatSampleChunkConverter.cs" />
     <Compile Include="Wave\WaveFormats\Gsm610WaveFormat.cs" />
     <Compile Include="Wave\WaveFormats\ImaAdpcmWaveFormat.cs" />
     <Compile Include="Wave\WaveFormats\Mp3WaveFormat.cs" />

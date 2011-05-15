@@ -4,34 +4,34 @@ using System.Text;
 
 namespace NAudio.Wave.SampleProviders
 {
-    class MonoFloatSampleProvider : ISampleProvider
+    class Stereo8SampleChunkConverter : ISampleChunkConverter
     {
-        int sourceSample;
+        int offset;
         byte[] sourceBuffer;
-        WaveBuffer sourceWaveBuffer;
-        int sourceSamples;
+        int sourceBytes;
 
         public bool Supports(WaveFormat waveFormat)
         {
-            return waveFormat.Encoding == WaveFormatEncoding.IeeeFloat &&
-                waveFormat.Channels == 1;
+            return waveFormat.Encoding == WaveFormatEncoding.Pcm &&
+                waveFormat.BitsPerSample == 8 &&
+                waveFormat.Channels == 2;
         }
+
 
         public void LoadNextChunk(IWaveProvider source, int samplePairsRequired)
         {
-            int sourceBytesRequired = samplePairsRequired * 4;
+            int sourceBytesRequired = samplePairsRequired * 2;
             sourceBuffer = GetSourceBuffer(sourceBytesRequired);
-            sourceWaveBuffer = new WaveBuffer(sourceBuffer);
-            sourceSamples = source.Read(sourceBuffer, 0, sourceBytesRequired) / 4;
-            sourceSample = 0;
+            sourceBytes = source.Read(sourceBuffer, 0, sourceBytesRequired);
+            offset = 0;
         }
 
         public bool GetNextSample(out float sampleLeft, out float sampleRight)
         {
-            if (sourceSample < sourceSamples)
+            if (offset < sourceBytes)
             {
-                sampleLeft = sourceWaveBuffer.FloatBuffer[sourceSample++];
-                sampleRight = sampleLeft;
+                sampleLeft = sourceBuffer[offset++] / 256f;
+                sampleRight = sourceBuffer[offset++] / 256f;
                 return true;
             }
             else

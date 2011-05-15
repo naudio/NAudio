@@ -4,7 +4,7 @@ using System.Text;
 
 namespace NAudio.Wave.SampleProviders
 {
-    class Mono16SampleProvider : ISampleProvider
+    class StereoFloatSampleChunkConverter : ISampleChunkConverter
     {
         int sourceSample;
         byte[] sourceBuffer;
@@ -13,26 +13,25 @@ namespace NAudio.Wave.SampleProviders
 
         public bool Supports(WaveFormat waveFormat)
         {
-            return waveFormat.Encoding == WaveFormatEncoding.Pcm &&
-                waveFormat.BitsPerSample == 16 &&
-                waveFormat.Channels == 1;
+            return waveFormat.Encoding == WaveFormatEncoding.IeeeFloat &&
+                waveFormat.Channels == 2;
         }
 
         public void LoadNextChunk(IWaveProvider source, int samplePairsRequired)
         {
-            int sourceBytesRequired = samplePairsRequired * 2;
-            sourceSample = 0;
+            int sourceBytesRequired = samplePairsRequired * 8;
             sourceBuffer = GetSourceBuffer(sourceBytesRequired);
             sourceWaveBuffer = new WaveBuffer(sourceBuffer);
-            sourceSamples = source.Read(sourceBuffer, 0, sourceBytesRequired) / 2;
+            sourceSamples = source.Read(sourceBuffer, 0, sourceBytesRequired) / 4;
+            sourceSample = 0;
         }
 
         public bool GetNextSample(out float sampleLeft, out float sampleRight)
         {
             if (sourceSample < sourceSamples)
             {
-                sampleLeft = sourceWaveBuffer.ShortBuffer[sourceSample++] / 32768.0f;
-                sampleRight = sampleLeft;
+                sampleLeft = sourceWaveBuffer.FloatBuffer[sourceSample++];
+                sampleRight = sourceWaveBuffer.FloatBuffer[sourceSample++];
                 return true;
             }
             else

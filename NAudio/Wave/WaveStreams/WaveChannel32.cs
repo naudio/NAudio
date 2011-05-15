@@ -20,7 +20,7 @@ namespace NAudio.Wave
         private volatile float volume;
         private volatile float pan;
         private long position;
-        private ISampleProvider sampleProvider;
+        private ISampleChunkConverter sampleProvider;
 
         /// <summary>
         /// Creates a new WaveChannel32
@@ -32,16 +32,16 @@ namespace NAudio.Wave
         {
             PadWithZeroes = true;
 
-            var providers = new ISampleProvider[] 
+            var providers = new ISampleChunkConverter[] 
             {
-                new Mono8SampleProvider(),
-                new Stereo8SampleProvider(),
-                new Mono16SampleProvider(),
-                new Stereo16SampleProvider(),
-                new Mono24SampleProvider(),
-                new Stereo24SampleProvider(),
-                new MonoFloatSampleProvider(),
-                new StereoFloatSampleProvider(),
+                new Mono8SampleChunkConverter(),
+                new Stereo8SampleChunkConverter(),
+                new Mono16SampleChunkConverter(),
+                new Stereo16SampleChunkConverter(),
+                new Mono24SampleChunkConverter(),
+                new Stereo24SampleChunkConverter(),
+                new MonoFloatSampleChunkConverter(),
+                new StereoFloatSampleChunkConverter(),
             };
             foreach (var provider in providers)
             {

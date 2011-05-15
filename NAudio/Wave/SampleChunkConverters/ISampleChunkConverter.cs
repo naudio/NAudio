@@ -9,7 +9,7 @@ namespace NAudio.Wave.SampleProviders
     /// Still a bit ugly, hence internal at the moment - and might even make these into
     /// bit depth converting WaveProviders
     /// </summary>
-    interface ISampleProvider
+    interface ISampleChunkConverter
     {
         bool Supports(WaveFormat format);
         void LoadNextChunk(IWaveProvider sourceProvider, int samplePairsRequired);

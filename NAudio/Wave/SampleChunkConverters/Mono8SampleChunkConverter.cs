@@ -4,7 +4,7 @@ using System.Text;
 
 namespace NAudio.Wave.SampleProviders
 {
-    class Stereo8SampleProvider : ISampleProvider
+    class Mono8SampleChunkConverter : ISampleChunkConverter
     {
         int offset;
         byte[] sourceBuffer;
@@ -14,13 +14,12 @@ namespace NAudio.Wave.SampleProviders
         {
             return waveFormat.Encoding == WaveFormatEncoding.Pcm &&
                 waveFormat.BitsPerSample == 8 &&
-                waveFormat.Channels == 2;
+                waveFormat.Channels == 1;
         }
-
 
         public void LoadNextChunk(IWaveProvider source, int samplePairsRequired)
         {
-            int sourceBytesRequired = samplePairsRequired * 2;
+            int sourceBytesRequired = samplePairsRequired;
             sourceBuffer = GetSourceBuffer(sourceBytesRequired);
             sourceBytes = source.Read(sourceBuffer, 0, sourceBytesRequired);
             offset = 0;
@@ -30,8 +29,9 @@ namespace NAudio.Wave.SampleProviders
         {
             if (offset < sourceBytes)
             {
-                sampleLeft = sourceBuffer[offset++] / 256f;
-                sampleRight = sourceBuffer[offset++] / 256f;
+                sampleLeft = sourceBuffer[offset] / 256f;
+                offset++;
+                sampleRight = sampleLeft;
                 return true;
             }
             else

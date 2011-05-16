@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace NAudio.Wave
+namespace NAudio.Wave.SampleProviders
 {
     /// <summary>
     /// Helper class turning an already 32 bit floating point IWaveProvider

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace NAudio.Wave
+namespace NAudio.Wave.SampleProviders
 {
     /// <summary>
     /// Converts an IWaveProvider containing 8 bit PCM to an

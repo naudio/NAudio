@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace NAudio.Wave
+namespace NAudio.Wave.SampleProviders
 {
     /// <summary>
     /// No nonsense mono to stereo provider, no volume adjustment,

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace NAudio.Wave
+namespace NAudio.Wave.SampleProviders
 {
     /// <summary>
     /// Helper base class for classes converting to ISampleProvider

@@ -37,10 +37,10 @@ namespace NAudioWpfDemo
         private void OpenFile(string fileName)
         {
             var inputStream = CreateInputStream(fileName);
-            playbackDevice.Init(inputStream);
+            playbackDevice.Init(new SampleToWaveProvider(inputStream));
         }
 
-        private WaveChannelFloat CreateInputStream(string fileName)
+        private ISampleProvider CreateInputStream(string fileName)
         {
 
             if (fileName.EndsWith(".wav"))
@@ -55,9 +55,10 @@ namespace NAudioWpfDemo
             {
                 throw new InvalidOperationException("Unsupported extension");
             }
-            var inputStream = new WaveChannelFloat(fileStream);
-            inputStream.Sample += new EventHandler<SampleEventArgs>(inputStream_Sample);
-            return inputStream;
+            var inputStream = new SampleChannel(fileStream);
+            var sampleStream = new NotifyingSampleProvider(inputStream);
+            sampleStream.Sample += new EventHandler<SampleEventArgs>(inputStream_Sample);
+            return sampleStream;
         }
 
         void inputStream_Sample(object sender, SampleEventArgs e)

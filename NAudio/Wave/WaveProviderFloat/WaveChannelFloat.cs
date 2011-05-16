@@ -6,61 +6,62 @@ namespace NAudio.Wave
 {
     /// <summary>
     /// Utility class that takes an IWaveProvider input at any bit depth
-    /// and exposes it as an IWaveProviderFloat. Turns mono inputs into stereo,
+    /// and exposes it as an ISampleProvider. Turns mono inputs into stereo,
     /// and allows adjusting of volume
     /// (The eventual successor to WaveChannel32)
     /// </summary>
-    public class WaveChannelFloat : WaveProvider32, ISampleNotifier
+    public class SampleChannel : WaveProvider32
     {
-        private VolumeWaveProviderFloat volumeProvider;
-        // try not to give the garbage collector anything to deal with when playing live audio
-        private SampleEventArgs sampleArgs = new SampleEventArgs(0,0);
+        private VolumeSampleProvider volumeProvider;
+        private MeteringSampleProvider preVolumeMeter;
 
         /// <summary>
-        /// Initialises a new instance of WaveChannelFloat
+        /// Initialises a new instance of SampleChannel
         /// </summary>
-        /// <param name="sourceProvider">Source provider, must be PCM or IEEE</param>
-        public WaveChannelFloat(IWaveProvider sourceProvider)
+        /// <param name="waveProvider">Source wave provider, must be PCM or IEEE</param>
+        public SampleChannel(IWaveProvider waveProvider)
         {
-            this.SetWaveFormat(sourceProvider.WaveFormat.SampleRate, 2);
-            IWaveProviderFloat sourceProviderFloat;
-            if (sourceProvider.WaveFormat.Encoding == WaveFormatEncoding.Pcm)
+            this.SetWaveFormat(waveProvider.WaveFormat.SampleRate, 2);
+            ISampleProvider sampleProvider;
+            if (waveProvider.WaveFormat.Encoding == WaveFormatEncoding.Pcm)
             {
                 // go to float
-                if (sourceProvider.WaveFormat.BitsPerSample == 8)
+                if (waveProvider.WaveFormat.BitsPerSample == 8)
                 {
-                    sourceProviderFloat = new Pcm8BitToWaveProviderFloat(sourceProvider);
+                    sampleProvider = new Pcm8BitToSampleProvider(waveProvider);
                 }
-                else if (sourceProvider.WaveFormat.BitsPerSample == 16)
+                else if (waveProvider.WaveFormat.BitsPerSample == 16)
                 {
-                    sourceProviderFloat = new Pcm16BitToWaveProviderFloat(sourceProvider);
+                    sampleProvider = new Pcm16BitToSampleProvider(waveProvider);
                 }
-                else if (sourceProvider.WaveFormat.BitsPerSample == 24)
+                else if (waveProvider.WaveFormat.BitsPerSample == 24)
                 {
-                    sourceProviderFloat = new Pcm24BitToWaveProviderFloat(sourceProvider);
+                    sampleProvider = new Pcm24BitToSampleProvider(waveProvider);
                 }
                 else
                 {
                     throw new InvalidOperationException("Unsupported operation");
                 }
             }
-            else if (sourceProvider.WaveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
+            else if (waveProvider.WaveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
             {
-                sourceProviderFloat = new WaveProviderToWaveProviderFloat(sourceProvider);
+                sampleProvider = new WaveToSampleProvider(waveProvider);
             }
             else
             {
                 throw new ArgumentException("Unsupported source encoding");
             }
-            if (sourceProviderFloat.WaveFormat.Channels == 1)
+            if (sampleProvider.WaveFormat.Channels == 1)
             {
-                sourceProviderFloat = new MonoToStereoProviderFloat(sourceProviderFloat);
+                sampleProvider = new MonoToStereoSampleProvider(sampleProvider);
             }
-            this.volumeProvider = new VolumeWaveProviderFloat(sourceProviderFloat);
+            // let's put the meter before the volume (useful for drawing waveforms)
+            this.preVolumeMeter = new MeteringSampleProvider(sampleProvider);
+            this.volumeProvider = new VolumeSampleProvider(preVolumeMeter);
         }
 
         /// <summary>
-        /// Reads samples from this wave provider
+        /// Reads samples from this sample provider
         /// </summary>
         /// <param name="buffer">Sample buffer</param>
         /// <param name="offset">Offset into sample buffer</param>
@@ -68,19 +69,7 @@ namespace NAudio.Wave
         /// <returns>Number of samples read</returns>
         public override int Read(float[] buffer, int offset, int sampleCount)
         {
-            int samplesRead = volumeProvider.Read(buffer, offset, sampleCount);
-            if (Sample != null)
-            {
-                int channels = this.WaveFormat.Channels;
-
-                for (int n = 0; n < sampleCount; n+=channels)
-                {
-                    sampleArgs.Left = buffer[offset + n];
-                    sampleArgs.Right = channels > 1 ? buffer[offset + n + 1] : sampleArgs.Left;
-                    Sample(this, sampleArgs);
-                }
-            }
-            return samplesRead;
+            return volumeProvider.Read(buffer, offset, sampleCount);
         }
 
         /// <summary>
@@ -93,8 +82,13 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// Sample notifier
+        /// Raised periodically to inform the user of the max volume
+        /// (before the volume meter)
         /// </summary>
-        public event EventHandler<SampleEventArgs> Sample;
+        public event EventHandler<StreamVolumeEventArgs> PreVolumeMeter
+        {
+            add { this.preVolumeMeter.StreamVolume += value; }
+            remove { this.preVolumeMeter.StreamVolume -= value; }
+        }
     }
 }

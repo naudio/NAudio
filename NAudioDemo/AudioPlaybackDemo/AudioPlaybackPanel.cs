@@ -12,9 +12,8 @@ namespace NAudioDemo.AudioPlaybackDemo
     {
         private IWavePlayer waveOut;
         private string fileName = null;
-        private WaveChannelFloat volumeStream;
         private WaveStream fileWaveStream;
-        
+        private Action<float> setVolumeDelegate;
 
         [ImportingConstructor]
         public AudioPlaybackPanel([ImportMany]IEnumerable<IOutputDevicePlugin> outputDevicePlugins)
@@ -101,9 +100,10 @@ namespace NAudioDemo.AudioPlaybackDemo
                 return;
             }
 
+            ISampleProvider sampleProvider = null;
             try
             {
-                this.volumeStream = CreateInputStream(fileName);
+                sampleProvider = CreateInputStream(fileName);
             }
             catch (Exception createException)
             {
@@ -111,8 +111,6 @@ namespace NAudioDemo.AudioPlaybackDemo
                 return;
             }
 
-            var meteringStream = new MeteringStream(volumeStream, volumeStream.WaveFormat.SampleRate / 10);
-            meteringStream.StreamVolume += new EventHandler<StreamVolumeEventArgs>(meteringStream_StreamVolume);
 
             trackBarPosition.Maximum = (int)fileWaveStream.TotalTime.TotalSeconds;
             labelTotalTime.Text = String.Format("{0:00}:{1:00}", (int)fileWaveStream.TotalTime.TotalMinutes,
@@ -121,7 +119,7 @@ namespace NAudioDemo.AudioPlaybackDemo
 
             try
             {
-                waveOut.Init(meteringStream);
+                waveOut.Init(new SampleToWaveProvider(sampleProvider));
             }
             catch (Exception initException)
             {
@@ -129,8 +127,7 @@ namespace NAudioDemo.AudioPlaybackDemo
                 return;
             }
 
-            // not doing Volume on IWavePlayer any more
-            volumeStream.Volume = volumeSlider1.Volume; 
+            setVolumeDelegate(volumeSlider1.Volume); 
             groupBoxDriverModel.Enabled = false;
             waveOut.Play();
         }
@@ -140,7 +137,7 @@ namespace NAudioDemo.AudioPlaybackDemo
             return (from f in this.InputFileFormats where fileName.EndsWith(f.Extension) select f).FirstOrDefault();
         }
 
-        private WaveChannelFloat CreateInputStream(string fileName)
+        private ISampleProvider CreateInputStream(string fileName)
         {
             var plugin = GetPluginForFile(fileName);
             if(plugin == null)
@@ -148,18 +145,28 @@ namespace NAudioDemo.AudioPlaybackDemo
                 throw new InvalidOperationException("Unsupported file extension");
             }
             this.fileWaveStream = plugin.CreateWaveStream(fileName);
-            return new WaveChannelFloat(this.fileWaveStream);
+            var waveChannel =  new SampleChannel(this.fileWaveStream);
+            this.setVolumeDelegate = (vol) => waveChannel.Volume = vol;
+            waveChannel.PreVolumeMeter += OnPreVolumeMeter;
+            
+            var postVolumeMeter = new MeteringSampleProvider(waveChannel);
+            postVolumeMeter.StreamVolume += OnPostVolumeMeter;
+
+            return postVolumeMeter;
         }
 
-        void meteringStream_StreamVolume(object sender, StreamVolumeEventArgs e)
+        void OnPreVolumeMeter(object sender, StreamVolumeEventArgs e)
         {
-            volumeMeter1.Amplitude = e.MaxSampleValues[0];
+            // we know it is stereo
             waveformPainter1.AddMax(e.MaxSampleValues[0]);
-            if (e.MaxSampleValues.Length > 1)
-            {
-                volumeMeter2.Amplitude = e.MaxSampleValues[1];
-                waveformPainter2.AddMax(e.MaxSampleValues[1]);
-            }
+            waveformPainter2.AddMax(e.MaxSampleValues[1]);
+        }
+
+        void OnPostVolumeMeter(object sender, StreamVolumeEventArgs e)
+        {
+            // we know it is stereo
+            volumeMeter1.Amplitude = e.MaxSampleValues[0];
+            volumeMeter2.Amplitude = e.MaxSampleValues[1];
         }
 
         private void CreateWaveOut()
@@ -179,8 +186,7 @@ namespace NAudioDemo.AudioPlaybackDemo
             {
                 // this one really closes the file and ACM conversion
                 fileWaveStream.Dispose();
-                volumeStream = null;
-                this.volumeStream = null;
+                this.setVolumeDelegate = null;
             }
             if (waveOut != null)
             {
@@ -215,9 +221,9 @@ namespace NAudioDemo.AudioPlaybackDemo
 
         private void volumeSlider1_VolumeChanged(object sender, EventArgs e)
         {
-            if (volumeStream != null)
+            if (setVolumeDelegate != null)
             {
-                volumeStream.Volume = volumeSlider1.Volume;
+                setVolumeDelegate(volumeSlider1.Volume);
             }
         }
 
@@ -227,7 +233,6 @@ namespace NAudioDemo.AudioPlaybackDemo
             {
                 waveOut.Stop();
                 groupBoxDriverModel.Enabled = true;
-                //fileWaveStream.Position = 0;
             }
         }
 

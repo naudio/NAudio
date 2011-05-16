@@ -136,7 +136,6 @@
     <Compile Include="MainForm.Designer.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="AudioPlaybackDemo\MeteringStream.cs" />
     <Compile Include="MidiInDemo\MidiInPanel.cs">
       <SubType>UserControl</SubType>
     </Compile>

@@ -6,21 +6,21 @@ namespace NAudio.Wave
 {
     /// <summary>
     /// Converts an IWaveProvider containing 8 bit PCM to an
-    /// IWaveProviderFloat
+    /// ISampleProvider
     /// </summary>
-    public class Pcm8BitToWaveProviderFloat : WaveProviderFloatConverterBase
+    public class Pcm8BitToSampleProvider : SampleProviderConverterBase
     {
         /// <summary>
-        /// Initialises a new instance of Pcm8BitToWaveProviderFloat
+        /// Initialises a new instance of Pcm8BitToSampleProvider
         /// </summary>
         /// <param name="source">Source wave provider</param>
-        public Pcm8BitToWaveProviderFloat(IWaveProvider source) :
+        public Pcm8BitToSampleProvider(IWaveProvider source) :
             base(source)
         {
         }
 
         /// <summary>
-        /// Reads samples from this wave provider
+        /// Reads samples from this sample provider
         /// </summary>
         /// <param name="buffer">Sample buffer</param>
         /// <param name="offset">Offset into sample buffer</param>

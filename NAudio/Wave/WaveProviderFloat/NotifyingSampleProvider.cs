@@ -5,21 +5,23 @@ using System.Text;
 namespace NAudio.Wave
 {
     /// <summary>
-    /// Very simple sample provider supporting adjustable gain
+    /// Simple class that raises an event on every sample
     /// </summary>
-    public class VolumeSampleProvider : ISampleProvider
+    public class NotifyingSampleProvider : ISampleProvider, ISampleNotifier
     {
         private ISampleProvider source;
-        private float volume;
+        // try not to give the garbage collector anything to deal with when playing live audio
+        private SampleEventArgs sampleArgs = new SampleEventArgs(0, 0);
+        private int channels;
 
         /// <summary>
-        /// Initializes a new instance of VolumeSampleProvider
+        /// Initializes a new instance of NotifyingSampleProvider
         /// </summary>
         /// <param name="source">Source Sample Provider</param>
-        public VolumeSampleProvider(ISampleProvider source)
+        public NotifyingSampleProvider(ISampleProvider source)
         {
             this.source = source;
-            this.volume = 1.0f;
+            this.channels = this.WaveFormat.Channels;
         }
 
         /// <summary>
@@ -40,23 +42,21 @@ namespace NAudio.Wave
         public int Read(float[] buffer, int offset, int sampleCount)
         {
             int samplesRead = source.Read(buffer, offset, sampleCount);
-            if (volume != 1f)
+            if (Sample != null)
             {
-                for (int n = 0; n < sampleCount; n++)
+                for (int n = 0; n < sampleCount; n += channels)
                 {
-                    buffer[offset + n] *= volume;
+                    sampleArgs.Left = buffer[offset + n];
+                    sampleArgs.Right = channels > 1 ? buffer[offset + n + 1] : sampleArgs.Left;
+                    Sample(this, sampleArgs);
                 }
             }
             return samplesRead;
         }
 
         /// <summary>
-        /// Allows adjusting the volume, 1.0f = full volume
+        /// Sample notifier
         /// </summary>
-        public float Volume
-        {
-            get { return volume; }
-            set { volume = value; }
-        }
+        public event EventHandler<SampleEventArgs> Sample;
     }
 }

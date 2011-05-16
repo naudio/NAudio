@@ -5,9 +5,9 @@ using System.Text;
 namespace NAudio.Wave
 {
     /// <summary>
-    /// Helper base class for classes converting to WaveProviderFloat
+    /// Helper base class for classes converting to ISampleProvider
     /// </summary>
-    public abstract class WaveProviderFloatConverterBase : IWaveProviderFloat
+    public abstract class SampleProviderConverterBase : ISampleProvider
     {
         /// <summary>
         /// Source Wave Provider
@@ -21,10 +21,10 @@ namespace NAudio.Wave
         protected byte[] sourceBuffer;
 
         /// <summary>
-        /// Initialises a new instance of WaveProviderFloatConverterBase
+        /// Initialises a new instance of SampleProviderConverterBase
         /// </summary>
         /// <param name="source">Source Wave provider</param>
-        public WaveProviderFloatConverterBase(IWaveProvider source)
+        public SampleProviderConverterBase(IWaveProvider source)
         {
             this.source = source;
             this.waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(source.WaveFormat.SampleRate, source.WaveFormat.Channels);

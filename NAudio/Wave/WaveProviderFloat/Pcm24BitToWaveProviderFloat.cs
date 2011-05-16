@@ -6,22 +6,22 @@ namespace NAudio.Wave
 {
     /// <summary>
     /// Converts an IWaveProvider containing 24 bit PCM to an
-    /// IWaveProviderFloat
+    /// ISampleProvider
     /// </summary>
-    public class Pcm24BitToWaveProviderFloat : WaveProviderFloatConverterBase
+    public class Pcm24BitToSampleProvider : SampleProviderConverterBase
     {
         /// <summary>
-        /// Initialises a new instance of Pcm24BitToWaveProviderFloat
+        /// Initialises a new instance of Pcm24BitToSampleProvider
         /// </summary>
         /// <param name="source">Source Wave Provider</param>
-        public Pcm24BitToWaveProviderFloat(IWaveProvider source)
+        public Pcm24BitToSampleProvider(IWaveProvider source)
             : base(source)
         {
             
         }
 
         /// <summary>
-        /// Reads floating point samples from this wave provider
+        /// Reads floating point samples from this sample provider
         /// </summary>
         /// <param name="buffer">sample buffer</param>
         /// <param name="offset">offset within sample buffer to write to</param>

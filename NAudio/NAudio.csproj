@@ -378,6 +378,8 @@
     <Compile Include="Wave\WaveOutputs\WaveFileWriter.cs" />
     <Compile Include="Wave\WaveOutputs\WaveOut.cs" />
     <Compile Include="Wave\WaveOutputs\WaveOutThreadSafe.cs" />
+    <Compile Include="Wave\WaveProviderFloat\MeteringSampleProvider.cs" />
+    <Compile Include="Wave\WaveProviderFloat\NotifyingSampleProvider.cs" />
     <Compile Include="Wave\WaveProviderFloat\VolumeWaveProviderFloat.cs" />
     <Compile Include="Wave\WaveProviderFloat\WaveProviderFloatConverterBase.cs" />
     <Compile Include="Wave\WaveProviderFloat\WaveProviderFloatToWaveProvider.cs" />

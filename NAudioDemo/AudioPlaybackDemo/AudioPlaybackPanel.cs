@@ -47,7 +47,7 @@ namespace NAudioDemo.AudioPlaybackDemo
             }
             else
             {
-                settingsPanel = new Label() { Text = "This output device is unavailable on your system" };
+                settingsPanel = new Label() { Text = "This output device is unavailable on your system", Dock=DockStyle.Fill };
             }
             panelOutputDeviceSettings.Controls.Add(settingsPanel);
         }
@@ -59,6 +59,12 @@ namespace NAudioDemo.AudioPlaybackDemo
 
         private void buttonPlay_Click(object sender, EventArgs e)
         {
+            if (!SelectedOutputDevicePlugin.IsAvailable)
+            {
+                MessageBox.Show("The selected output driver is not available on this system");
+                return;
+            }
+
             if (waveOut != null)
             {
                 if (waveOut.PlaybackState == PlaybackState.Playing)
@@ -221,7 +227,7 @@ namespace NAudioDemo.AudioPlaybackDemo
             {
                 waveOut.Stop();
                 groupBoxDriverModel.Enabled = true;
-                trackBarPosition.Value = 0;
+                //fileWaveStream.Position = 0;
             }
         }
 
@@ -229,7 +235,7 @@ namespace NAudioDemo.AudioPlaybackDemo
         {
             if (waveOut != null && fileWaveStream != null)
             {
-                TimeSpan currentTime = fileWaveStream.CurrentTime;
+                TimeSpan currentTime = (waveOut.PlaybackState == PlaybackState.Stopped) ? TimeSpan.Zero : fileWaveStream.CurrentTime;
                 if (fileWaveStream.Position >= fileWaveStream.Length)
                 {
                     buttonStop_Click(sender, e);
@@ -240,6 +246,10 @@ namespace NAudioDemo.AudioPlaybackDemo
                     labelCurrentTime.Text = String.Format("{0:00}:{1:00}", (int)currentTime.TotalMinutes,
                         currentTime.Seconds);
                 }
+            }
+            else
+            {
+                trackBarPosition.Value = 0;
             }
         }
 

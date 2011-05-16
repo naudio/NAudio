@@ -351,6 +351,7 @@
     <Compile Include="Wave\SampleChunkConverters\Stereo24SampleChunkConverter.cs" />
     <Compile Include="Wave\SampleChunkConverters\Stereo8SampleChunkConverter.cs" />
     <Compile Include="Wave\SampleChunkConverters\StereoFloatSampleChunkConverter.cs" />
+    <Compile Include="Wave\SampleProviders\MixingSampleProvider.cs" />
     <Compile Include="Wave\SampleProviders\PanningSampleProvider.cs" />
     <Compile Include="Wave\WaveFormats\Gsm610WaveFormat.cs" />
     <Compile Include="Wave\WaveFormats\ImaAdpcmWaveFormat.cs" />

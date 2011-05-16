@@ -34,6 +34,7 @@ namespace NAudio.Wave
         private EventWaitHandle frameEventWaitHandle2;
         private EventWaitHandle endEventWaitHandle;
         private Thread notifyThread;
+        private SynchronizationContext syncContext;
 
         // Used purely for locking
         private Object m_LockObject = new Object();
@@ -112,7 +113,8 @@ namespace NAudio.Wave
                 device = DSDEVID_DefaultPlayback;
             }
             this.device = device;
-            desiredLatency = latency;
+            this.desiredLatency = latency;
+            this.syncContext = SynchronizationContext.Current;
         }
 
         /// <summary>
@@ -448,7 +450,14 @@ namespace NAudio.Wave
                 // Fire playback stopped event
                 if (PlaybackStopped != null)
                 {
-                    PlaybackStopped(this, EventArgs.Empty);
+                    if (this.syncContext == null)
+                    {
+                        PlaybackStopped(this, EventArgs.Empty);
+                    }
+                    else
+                    {
+                        syncContext.Post(state => PlaybackStopped(this, EventArgs.Empty), null);
+                    }
                 }
             }
         }

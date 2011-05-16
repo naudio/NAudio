@@ -31,7 +31,7 @@ namespace NAudio.Wave.Asio
     /// <summary>
     /// Callback used by the ASIODriverExt to get wave data
     /// </summary>
-    internal delegate void ASIOFillBufferCalback(IntPtr[] bufferChannels);
+    internal delegate void ASIOFillBufferCallback(IntPtr[] bufferChannels);
 
     /// <summary>
     /// ASIODriverExt is a simplified version of the ASIODriver. It provides an easier
@@ -51,7 +51,7 @@ namespace NAudio.Wave.Asio
         private bool isOutputReadySupport;
         private IntPtr[] currentBuffers;
         private int nbOutputChannels;
-        private ASIOFillBufferCalback fillBufferCalback;
+        private ASIOFillBufferCallback fillBufferCallback;
         private int bufferSize;
         private int channelOffset;
 
@@ -166,13 +166,13 @@ namespace NAudio.Wave.Asio
         }
 
         /// <summary>
-        /// Gets or sets the fill buffer calback.
+        /// Gets or sets the fill buffer callback.
         /// </summary>
-        /// <value>The fill buffer calback.</value>
-        public ASIOFillBufferCalback FillBufferCalback
+        /// <value>The fill buffer callback.</value>
+        public ASIOFillBufferCallback FillBufferCallback
         {
-            get { return fillBufferCalback; }
-            set { fillBufferCalback = value; }
+            get { return fillBufferCallback; }
+            set { fillBufferCallback = value; }
         }
 
         /// <summary>
@@ -299,8 +299,8 @@ namespace NAudio.Wave.Asio
             for (int i = 0; i < nbOutputChannels; i++)
                 currentBuffers[i] = outputBufferInfos[i + channelOffset + capability.NbInputChannels].Buffer(doubleBufferIndex);
 
-            if (fillBufferCalback != null)
-                fillBufferCalback(currentBuffers);
+            if (fillBufferCallback != null)
+                fillBufferCallback(currentBuffers);
 
             if (isOutputReadySupport)
                 driver.outputReady();            

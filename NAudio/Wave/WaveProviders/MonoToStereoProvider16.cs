@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using NAudio.Utils;
 
 namespace NAudio.Wave
 {
@@ -61,7 +62,7 @@ namespace NAudio.Wave
         public int Read(byte[] buffer, int offset, int count)
         {            
             int sourceBytesRequired = count / 2;
-            EnsureBuffer(sourceBytesRequired);
+            this.sourceBuffer = BufferHelpers.Ensure(this.sourceBuffer, sourceBytesRequired);
             WaveBuffer sourceWaveBuffer = new WaveBuffer(sourceBuffer);
             WaveBuffer destWaveBuffer = new WaveBuffer(buffer);
 
@@ -77,12 +78,5 @@ namespace NAudio.Wave
             return samplesRead * 4;
         }
 
-        private void EnsureBuffer(int sourceBytesRequired)
-        {
-            if (this.sourceBuffer == null || this.sourceBuffer.Length < sourceBytesRequired)
-            {
-                this.sourceBuffer = new byte[sourceBytesRequired];
-            }
-        }
     }
 }

@@ -6,6 +6,8 @@ namespace NAudio.Wave
 {
     /// <summary>
     /// Base class for creating a 32 bit floating point wave provider
+    /// Can also be used as a base class for an ISampleProvider that can 
+    /// be plugged straight into anything requiring an IWaveProvider
     /// </summary>
     public abstract class WaveProvider32 : IWaveProvider, ISampleProvider
     {

@@ -262,6 +262,7 @@
     <Compile Include="Mixer\SignedMixerControl.cs" />
     <Compile Include="Mixer\UnsignedMixerControl.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utils\BufferHelpers.cs" />
     <Compile Include="Utils\ByteEncoding.cs" />
     <Compile Include="Utils\CircularBuffer.cs" />
     <Compile Include="Utils\Decibels.cs" />
@@ -350,6 +351,7 @@
     <Compile Include="Wave\SampleChunkConverters\Stereo24SampleChunkConverter.cs" />
     <Compile Include="Wave\SampleChunkConverters\Stereo8SampleChunkConverter.cs" />
     <Compile Include="Wave\SampleChunkConverters\StereoFloatSampleChunkConverter.cs" />
+    <Compile Include="Wave\SampleProviders\PanningSampleProvider.cs" />
     <Compile Include="Wave\WaveFormats\Gsm610WaveFormat.cs" />
     <Compile Include="Wave\WaveFormats\ImaAdpcmWaveFormat.cs" />
     <Compile Include="Wave\WaveFormats\Mp3WaveFormat.cs" />

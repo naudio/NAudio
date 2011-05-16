@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using NAudio.Utils;
 
 namespace NAudio.Wave.SampleProviders
 {
@@ -53,10 +54,7 @@ namespace NAudio.Wave.SampleProviders
         /// <param name="sourceBytesRequired">Bytes required</param>
         protected void EnsureSourceBuffer(int sourceBytesRequired)
         {
-            if (sourceBuffer == null || sourceBuffer.Length < sourceBytesRequired)
-            {
-                sourceBuffer = new byte[sourceBytesRequired];
-            }
+            this.sourceBuffer = BufferHelpers.Ensure(this.sourceBuffer, sourceBytesRequired);
         }
     }
 }

@@ -5,18 +5,18 @@ using System.Text;
 namespace NAudio.Wave
 {
     /// <summary>
-    /// Helper class for when you need to convert back to a WaveProvider from
-    /// a WaveProviderFloat. Keeps it as IEEE float
+    /// Helper class for when you need to convert back to an IWaveProvider from
+    /// an ISampleProvider. Keeps it as IEEE float
     /// </summary>
-    public class WaveProviderFloatToWaveProvider : IWaveProvider
+    public class SampleToWaveProvider : IWaveProvider
     {
-        private IWaveProviderFloat source;
+        private ISampleProvider source;
 
         /// <summary>
         /// Initializes a new instance of the WaveProviderFloatToWaveProvider class
         /// </summary>
         /// <param name="source">Source wave provider</param>
-        public WaveProviderFloatToWaveProvider(IWaveProviderFloat source)
+        public SampleToWaveProvider(ISampleProvider source)
         {
             if (source.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
             {

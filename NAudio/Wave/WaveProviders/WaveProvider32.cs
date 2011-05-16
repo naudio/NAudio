@@ -7,7 +7,7 @@ namespace NAudio.Wave
     /// <summary>
     /// Base class for creating a 32 bit floating point wave provider
     /// </summary>
-    public abstract class WaveProvider32 : IWaveProvider, IWaveProviderFloat
+    public abstract class WaveProvider32 : IWaveProvider, ISampleProvider
     {
         private WaveFormat waveFormat;
 

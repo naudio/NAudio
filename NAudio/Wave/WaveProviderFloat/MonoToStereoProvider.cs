@@ -8,17 +8,17 @@ namespace NAudio.Wave
     /// No nonsense mono to stereo provider, no volume adjustment,
     /// just copies input to left and right. 
     /// </summary>
-    public class MonoToStereoProviderFloat : IWaveProviderFloat
+    public class MonoToStereoSampleProvider : ISampleProvider
     {
-        private IWaveProviderFloat source;
+        private ISampleProvider source;
         private WaveFormat waveFormat;
         private float[] sourceBuffer;
 
         /// <summary>
-        /// Initializes a new instance of MonoToStereoProviderFloat
+        /// Initializes a new instance of MonoToStereoSampleProvider
         /// </summary>
-        /// <param name="source"></param>
-        public MonoToStereoProviderFloat(IWaveProviderFloat source)
+        /// <param name="source">Source sample provider</param>
+        public MonoToStereoSampleProvider(ISampleProvider source)
         {
             if (source.WaveFormat.Channels != 1)
             {

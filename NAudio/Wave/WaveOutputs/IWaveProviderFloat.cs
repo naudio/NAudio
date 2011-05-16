@@ -8,10 +8,10 @@ namespace NAudio.Wave
     /// Like IWaveProvider, but makes it much simpler to put together a 32 bit floating
     /// point mixing engine
     /// </summary>
-    public interface IWaveProviderFloat
+    public interface ISampleProvider
     {
         /// <summary>
-        /// Gets the WaveFormat of this WaveProvider.
+        /// Gets the WaveFormat of this Sample Provider.
         /// </summary>
         /// <value>The wave format.</value>
         WaveFormat WaveFormat { get; }

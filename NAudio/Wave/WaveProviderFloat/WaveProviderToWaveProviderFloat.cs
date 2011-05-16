@@ -6,15 +6,15 @@ namespace NAudio.Wave
 {
     /// <summary>
     /// Helper class turning an already 32 bit floating point IWaveProvider
-    /// into an IWaveProviderFloat - hopefully not needed for most applications
+    /// into an ISampleProvider - hopefully not needed for most applications
     /// </summary>
-    public class WaveProviderToWaveProviderFloat : WaveProviderFloatConverterBase
+    public class WaveToSampleProvider : SampleProviderConverterBase
     {
         /// <summary>
-        /// Initializes a new instance of the WaveProviderToWaveProviderFloat class
+        /// Initializes a new instance of the WaveToSampleProvider class
         /// </summary>
         /// <param name="source">Source wave provider, must be IEEE float</param>
-        public WaveProviderToWaveProviderFloat(IWaveProvider source)
+        public WaveToSampleProvider(IWaveProvider source)
             : base(source)
         {
             if (source.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)

@@ -13,21 +13,21 @@ namespace NAudio.Wave
     /// </summary>
     public class WasapiOut : IWavePlayer
     {
-        AudioClient audioClient;
-        AudioClientShareMode shareMode;
-        AudioRenderClient renderClient;
-        IWaveProvider sourceStream;
-        int latencyMilliseconds;
-        int bufferFrameCount;
-        int bytesPerFrame;
-        bool isUsingEventSync;
-        EventWaitHandle frameEventWaitHandle;
-        byte[] readBuffer;
-        volatile PlaybackState playbackState;
-        Thread playThread;
-        
-        WaveFormat outputFormat;
-        bool dmoResamplerNeeded;
+        private AudioClient audioClient;
+        private AudioClientShareMode shareMode;
+        private AudioRenderClient renderClient;
+        private IWaveProvider sourceStream;
+        private int latencyMilliseconds;
+        private int bufferFrameCount;
+        private int bytesPerFrame;
+        private bool isUsingEventSync;
+        private EventWaitHandle frameEventWaitHandle;
+        private byte[] readBuffer;
+        private volatile PlaybackState playbackState;
+        private Thread playThread;
+        private WaveFormat outputFormat;
+        private bool dmoResamplerNeeded;
+        private SynchronizationContext syncContext;
         
         /// <summary>
         /// Playback Stopped
@@ -70,8 +70,8 @@ namespace NAudio.Wave
             this.shareMode = shareMode;
             this.isUsingEventSync = useEventSync;
             this.latencyMilliseconds = latency;
+            this.syncContext = SynchronizationContext.Current;
         }
-
 
         static MMDevice GetDefaultAudioEndpoint()
         {
@@ -161,7 +161,14 @@ namespace NAudio.Wave
         {
             if (PlaybackStopped != null)
             {
-                PlaybackStopped(this, EventArgs.Empty);
+                if (syncContext != null)
+                {
+                    syncContext.Post((s) => { PlaybackStopped(this, EventArgs.Empty); }, null);
+                }
+                else
+                {
+                    PlaybackStopped(this, EventArgs.Empty);
+                }
             }
         }
 

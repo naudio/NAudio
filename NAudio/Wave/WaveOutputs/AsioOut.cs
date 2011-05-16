@@ -1,5 +1,6 @@
 ﻿using System;
 using NAudio.Wave.Asio;
+using System.Threading;
 
 namespace NAudio.Wave
 {
@@ -26,6 +27,7 @@ namespace NAudio.Wave
         private ASIOSampleConvertor.SampleConvertor convertor;
         private string driverName;
         private int channelOffset;
+        private SynchronizationContext syncContext;
 
         /// <summary>
         /// Playback Stopped
@@ -47,6 +49,7 @@ namespace NAudio.Wave
         /// <param name="driverName">Name of the device.</param>
         public AsioOut(String driverName)
         {
+            this.syncContext = SynchronizationContext.Current;
             initFromName(driverName);
         }
 
@@ -56,6 +59,7 @@ namespace NAudio.Wave
         /// <param name="driverIndex">Device number (zero based)</param>
         public AsioOut(int driverIndex)
         {
+            this.syncContext = SynchronizationContext.Current; 
             String[] names = GetDriverNames();
             if (names.Length == 0)
             {
@@ -155,6 +159,7 @@ namespace NAudio.Wave
         {
             playbackState = PlaybackState.Stopped;
             driver.Stop();
+            RaisePlaybackStopped();
         }
 
         /// <summary>
@@ -192,7 +197,7 @@ namespace NAudio.Wave
             }
 
             // Plug the callback
-            driver.FillBufferCalback = driver_BufferUpdate;
+            driver.FillBufferCallback = driver_BufferUpdate;
 
             // Used Prefered size of ASIO Buffer
             nbSamples = driver.CreateBuffers(waveFormat.Channels, false);
@@ -225,6 +230,11 @@ namespace NAudio.Wave
                 {
                     convertor(new IntPtr(pBuffer), bufferChannels, waveFormat.Channels, nbSamples);
                 }
+            }
+
+            if (read == 0)
+            {
+                Stop();
             }
         }
 
@@ -280,7 +290,14 @@ namespace NAudio.Wave
         {
             if (PlaybackStopped != null)
             {
-                PlaybackStopped(this, EventArgs.Empty);
+                if (this.syncContext == null)
+                {
+                    PlaybackStopped(this, EventArgs.Empty);
+                }
+                else
+                {
+                    this.syncContext.Post(state => PlaybackStopped(this, EventArgs.Empty), null);
+                }
             }
         }
     }

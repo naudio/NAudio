@@ -11,6 +11,7 @@ namespace NAudio.Wave
     /// <summary>
     /// Represents a wave out device
     /// </summary>
+    [Obsolete("this was an experimental class, never properly completed")]
     public class WaveOutThreadSafe : IWavePlayer
     {
         private IntPtr hWaveOut;

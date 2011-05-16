@@ -12,14 +12,13 @@ namespace NAudio.Wave
     {
         private IntPtr hWaveOut;
         private WaveOutBuffer[] buffers;
-        private IWaveProvider waveStream;
-        
+        private IWaveProvider waveStream;        
         private volatile PlaybackState playbackState;
-        private WaveInterop.WaveCallback callback;
-        
+        private WaveInterop.WaveCallback callback;        
         private float volume = 1;
         private WaveCallbackInfo callbackInfo;
         private object waveOutLock;
+        private int queuedBuffers;
 
         /// <summary>
         /// Indicates playback has stopped automatically
@@ -137,35 +136,38 @@ namespace NAudio.Wave
             if (playbackState == PlaybackState.Stopped)
             {
                 playbackState = PlaybackState.Playing;
-                for (int n = 0; n < NumberOfBuffers; n++)
-                {
-                    System.Diagnostics.Debug.Assert(buffers[n].InQueue == false, "Adding a buffer that was already queued on play");
-                    if (!buffers[n].OnDone())
-                    {
-                        playbackState = PlaybackState.Stopped;
-                    }
-                }
+                Debug.Assert(queuedBuffers == 0, "Buffers already queued on play");
+                EnqueueBuffers();
             }
             else if (playbackState == PlaybackState.Paused)
             {
-                for (int n = 0; n < NumberOfBuffers; n++)
-                {
-                    if (!buffers[n].InQueue)
-                    {
-                        if (!buffers[n].OnDone())
-                        {
-                            playbackState = PlaybackState.Stopped;
-                            break;
-                        }
-                        //Debug.WriteLine(String.Format("Resume from Pause: Buffer [{0}] requeued", n));
-                    }
-                    else
-                    {
-                        //Debug.WriteLine(String.Format("Resume from Pause: Buffer [{0}] already queued", n));
-                    }
-                }
+                EnqueueBuffers();
                 Resume();
                 playbackState = PlaybackState.Playing;
+            }
+        }
+
+        private void EnqueueBuffers()
+        {
+            for (int n = 0; n < NumberOfBuffers; n++)
+            {
+                if (!buffers[n].InQueue)
+                {
+                    if (buffers[n].OnDone())
+                    {
+                        queuedBuffers++;
+                    }
+                    else
+                    {                        
+                        playbackState = PlaybackState.Stopped;
+                        break;
+                    }
+                    //Debug.WriteLine(String.Format("Resume from Pause: Buffer [{0}] requeued", n));
+                }
+                else
+                {
+                    //Debug.WriteLine(String.Format("Resume from Pause: Buffer [{0}] already queued", n));
+                }
             }
         }
 
@@ -325,14 +327,22 @@ namespace NAudio.Wave
             {
                 GCHandle hBuffer = (GCHandle)wavhdr.userData;
                 WaveOutBuffer buffer = (WaveOutBuffer)hBuffer.Target;
+                queuedBuffers--;
                 // check that we're not here through pressing stop
                 if (PlaybackState == PlaybackState.Playing)
                 {
-                    if(!buffer.OnDone())
+                    if (buffer.OnDone())
+                    {
+                        queuedBuffers++;
+                    }
+                    else
                     {
                         playbackState = PlaybackState.Stopped;
-                        RaisePlaybackStoppedEvent();
                     }
+                }
+                if (queuedBuffers == 0)
+                {
+                    RaisePlaybackStoppedEvent();
                 }
 
                 // n.b. this was wrapped in an exception handler, but bug should be fixed now

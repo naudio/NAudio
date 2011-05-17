@@ -61,7 +61,7 @@ namespace NAudioWpfDemo
                 //double intensity = Math.Sqrt(fftResults[n].X * fftResults[n].X + fftResults[n].Y * fftResults[n].Y);
                 //double yPos = this.ActualHeight - intensity * yScale;
 
-                // log scale just doesn't seem to get it right
+                // can also try 5 * without the sqrt seems to give decent results
                 double intensityDB = 10 * Math.Log(Math.Sqrt(fftResults[n].X * fftResults[n].X + fftResults[n].Y * fftResults[n].Y));
                 double minDB = -96;
                 if (intensityDB < minDB) intensityDB = minDB;

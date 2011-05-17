@@ -26,23 +26,49 @@ namespace NAudioWpfDemo
             Bars,
         }
 
-        private double yScale = 1000;
         private double xScale = 200;
+        private int bins = 512; // guess a 1024 size FFT, bins is half FFT size
 
         public SpectrumAnalyser()
         {
             InitializeComponent();
+            CalculateXScale();
+            this.SizeChanged += new SizeChangedEventHandler(SpectrumAnalyser_SizeChanged);
+        }
+
+        void SpectrumAnalyser_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            CalculateXScale();            
+        }
+
+        private void CalculateXScale()
+        {
+            this.xScale = this.ActualWidth / bins;
         }
 
         public void Update(Complex[] fftResults)
         {
+            if (fftResults.Length / 2 != bins)
+            {
+                this.bins = fftResults.Length / 2;
+                CalculateXScale();
+            }
+            
+            this.xScale = this.ActualWidth / bins;
             for (int n = 0; n < fftResults.Length / 2; n++)
             {
-                double intensity = Math.Sqrt(fftResults[n].X * fftResults[n].X + fftResults[n].Y * fftResults[n].Y);
-                double yPos = 150 - intensity * yScale;
-                //double decibels = 10 * Math.Log10(fftResults[n].X * fftResults[n].X + fftResults[n].Y * fftResults[n].Y);
-                //double yPos = decibels * -1.0;
-                
+                //double yScale = 1000
+                //double intensity = Math.Sqrt(fftResults[n].X * fftResults[n].X + fftResults[n].Y * fftResults[n].Y);
+                //double yPos = this.ActualHeight - intensity * yScale;
+
+                // log scale just doesn't seem to get it right
+                double intensityDB = 10 * Math.Log(Math.Sqrt(fftResults[n].X * fftResults[n].X + fftResults[n].Y * fftResults[n].Y));
+                double minDB = -96;
+                if (intensityDB < minDB) intensityDB = minDB;
+                double percent = intensityDB / minDB;
+                // we want 0dB to be at the top (i.e. yPos = 0)
+                double yPos = percent * this.ActualHeight;
+
                 
                 AddResult(n, yPos);
             }
@@ -64,7 +90,7 @@ namespace NAudioWpfDemo
         private double CalculateXPos(int bin)
         {
             if (bin == 0) return 0;
-            return bin * 5; // Math.Log10(bin) * xScale;
+            return bin * xScale; // Math.Log10(bin) * xScale;
         }
     }
 }

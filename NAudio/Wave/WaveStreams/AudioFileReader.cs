@@ -117,5 +117,19 @@ namespace NAudio.Wave
             get { return sampleChannel.Volume; }
             set { sampleChannel.Volume = value; } 
         }
+
+        /// <summary>
+        /// Disposes this AudioFileReader
+        /// </summary>
+        /// <param name="disposing">True if called from Dispose</param>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                this.readerStream.Dispose();
+                this.readerStream = null;
+            }
+            base.Dispose(disposing);
+        }
     }
 }

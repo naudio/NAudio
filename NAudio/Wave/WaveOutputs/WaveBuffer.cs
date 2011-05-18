@@ -58,10 +58,11 @@ namespace NAudio.Wave
         /// <param name="bufferToBoundTo">A byte buffer to bound the WaveBuffer to.</param>
         public void BindTo(byte[] bufferToBoundTo)
         {   
-            if ( (bufferToBoundTo.Length % 4) != 0 )
+            /* WaveBuffer assumes the caller knows what they are doing. We will let this pass
+             * if ( (bufferToBoundTo.Length % 4) != 0 )
             {
                 throw new ArgumentException("The byte buffer to bound must be 4 bytes aligned");
-            }
+            }*/
             byteBuffer = bufferToBoundTo;
             numberOfBytes = 0;
         }

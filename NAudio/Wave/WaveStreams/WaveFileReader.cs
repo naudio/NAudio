@@ -91,12 +91,21 @@ namespace NAudio.Wave
                 }
                 else
                 {
+                    // check for invalid chunk length
+                    if (chunkLength < 0 || chunkLength > stream.Length - stream.Position)
+                    {
+                        Debug.Assert(false, String.Format("Invalid chunk length {0}, pos: {1}. length: {2}",
+                            chunkLength, stream.Position, stream.Length));
+                        // an exception will be thrown further down if we haven't got a format and data chunk yet,
+                        // otherwise we will tolerate this file despite it having corrupt data at the end
+                        break;
+                    }
                     if (chunks != null)
                     {
                         chunks.Add(new RiffChunk(chunkIdentifier, chunkLength, stream.Position));
                     }
                     stream.Position += chunkLength;
-                }                
+                }
             }
 
             if (format == null)

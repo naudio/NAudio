@@ -165,6 +165,8 @@ namespace NAudio.Wave
             {
                 this.sampleProvider.LoadNextChunk(sourceStream, (numBytes - bytesWritten) / 8);
                 float left, right;
+                
+                int outIndex = (offset / 4) + bytesWritten / 4;
                 while (this.sampleProvider.GetNextSample(out left, out right) && bytesWritten < numBytes)
                 {
                     // implement better panning laws. 
@@ -172,8 +174,8 @@ namespace NAudio.Wave
                     right = (pan >= 0) ? right : (right * (pan + 1) / 2.0f);
                     left *= volume;
                     right *= volume;
-                    destWaveBuffer.FloatBuffer[bytesWritten / 4] = left;
-                    destWaveBuffer.FloatBuffer[(bytesWritten / 4) + 1] = right;
+                    destWaveBuffer.FloatBuffer[outIndex++] = left;
+                    destWaveBuffer.FloatBuffer[outIndex++] = right;
                     bytesWritten += 8;
                     if (Sample != null) RaiseSample(left, right);
                 }

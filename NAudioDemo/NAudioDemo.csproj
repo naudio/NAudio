@@ -164,13 +164,13 @@
     <Compile Include="NetworkChatDemo\SpeexChatCodec.cs" />
     <Compile Include="NetworkChatDemo\TrueSpeechChatCodec.cs" />
     <Compile Include="NetworkChatDemo\UncompressedPcmChatCodec.cs" />
-    <Compile Include="PlaybackStoppedExperiment\PlaybackStoppedExperimentPanel.cs">
+    <Compile Include="SimplePlaybackDemo\SimplePlaybackPanel.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="PlaybackStoppedExperiment\PlaybackStoppedExperimentPanel.Designer.cs">
-      <DependentUpon>PlaybackStoppedExperimentPanel.cs</DependentUpon>
+    <Compile Include="SimplePlaybackDemo\SimplePlaybackPanel.Designer.cs">
+      <DependentUpon>SimplePlaybackPanel.cs</DependentUpon>
     </Compile>
-    <Compile Include="PlaybackStoppedExperiment\PlaybackStoppedExperimentPlugin.cs" />
+    <Compile Include="SimplePlaybackDemo\SimplePlaybackPlugin.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Mp3StreamingDemo\VolumeWaveProvider16.cs" />
@@ -216,8 +216,8 @@
     <EmbeddedResource Include="NetworkChatDemo\NetworkChatPanel.resx">
       <DependentUpon>NetworkChatPanel.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="PlaybackStoppedExperiment\PlaybackStoppedExperimentPanel.resx">
-      <DependentUpon>PlaybackStoppedExperimentPanel.cs</DependentUpon>
+    <EmbeddedResource Include="SimplePlaybackDemo\SimplePlaybackPanel.resx">
+      <DependentUpon>SimplePlaybackPanel.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>

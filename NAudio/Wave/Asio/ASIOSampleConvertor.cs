@@ -51,7 +51,6 @@ namespace NAudio.Wave.Asio
                     {
                         case 16:
                             throw new ArgumentException("Not a supported conversion");
-                            break;
                         case 32:
                             convertor = ConverterFloatTo24LSBGeneric;
                             break;
@@ -62,7 +61,6 @@ namespace NAudio.Wave.Asio
                     {
                         case 16:
                             throw new ArgumentException("Not a supported conversion");
-                            break;
                         case 32:
                             convertor = ConverterFloatToFloatGeneric;
                             break;

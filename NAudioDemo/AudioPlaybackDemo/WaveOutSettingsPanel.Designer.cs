@@ -29,38 +29,46 @@
         private void InitializeComponent()
         {
             this.comboBoxWaveOutDevice = new System.Windows.Forms.ComboBox();
-            this.checkBoxWaveOutWindow = new System.Windows.Forms.CheckBox();
+            this.comboBoxCallback = new System.Windows.Forms.ComboBox();
+            this.label1 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // comboBoxWaveOutDevice
             // 
             this.comboBoxWaveOutDevice.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.comboBoxWaveOutDevice.FormattingEnabled = true;
-            this.comboBoxWaveOutDevice.Location = new System.Drawing.Point(3, 22);
+            this.comboBoxWaveOutDevice.Location = new System.Drawing.Point(7, 34);
             this.comboBoxWaveOutDevice.Name = "comboBoxWaveOutDevice";
             this.comboBoxWaveOutDevice.Size = new System.Drawing.Size(232, 21);
             this.comboBoxWaveOutDevice.TabIndex = 19;
             // 
-            // checkBoxWaveOutWindow
+            // comboBoxCallback
             // 
-            this.checkBoxWaveOutWindow.AutoSize = true;
-            this.checkBoxWaveOutWindow.Checked = true;
-            this.checkBoxWaveOutWindow.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBoxWaveOutWindow.Location = new System.Drawing.Point(3, 6);
-            this.checkBoxWaveOutWindow.Name = "checkBoxWaveOutWindow";
-            this.checkBoxWaveOutWindow.Size = new System.Drawing.Size(126, 17);
-            this.checkBoxWaveOutWindow.TabIndex = 18;
-            this.checkBoxWaveOutWindow.Text = "Callback via Window";
-            this.checkBoxWaveOutWindow.UseVisualStyleBackColor = true;
+            this.comboBoxCallback.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboBoxCallback.FormattingEnabled = true;
+            this.comboBoxCallback.Location = new System.Drawing.Point(118, 7);
+            this.comboBoxCallback.Name = "comboBoxCallback";
+            this.comboBoxCallback.Size = new System.Drawing.Size(121, 21);
+            this.comboBoxCallback.TabIndex = 20;
             // 
-            // WaveOutSettings
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(4, 10);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(108, 13);
+            this.label1.TabIndex = 21;
+            this.label1.Text = "Callback Mechanism:";
+            // 
+            // WaveOutSettingsPanel
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.label1);
+            this.Controls.Add(this.comboBoxCallback);
             this.Controls.Add(this.comboBoxWaveOutDevice);
-            this.Controls.Add(this.checkBoxWaveOutWindow);
-            this.Name = "WaveOutSettings";
-            this.Size = new System.Drawing.Size(253, 54);
+            this.Name = "WaveOutSettingsPanel";
+            this.Size = new System.Drawing.Size(253, 76);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -69,6 +77,7 @@
         #endregion
 
         private System.Windows.Forms.ComboBox comboBoxWaveOutDevice;
-        private System.Windows.Forms.CheckBox checkBoxWaveOutWindow;
+        private System.Windows.Forms.ComboBox comboBoxCallback;
+        private System.Windows.Forms.Label label1;
     }
 }

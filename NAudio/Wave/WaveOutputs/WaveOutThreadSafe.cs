@@ -162,7 +162,7 @@ namespace NAudio.Wave
             int bufferSize = waveProvider.WaveFormat.ConvertLatencyToByteSize(desiredLatency);
             this.numBuffers = 3;
 
-            MmException.Try(WaveInterop.waveOutOpen(out hWaveOut, (IntPtr)devNumber, waveProvider.WaveFormat, callback, IntPtr.Zero, WaveInterop.CallbackFunction), "waveOutOpen");
+            MmException.Try(WaveInterop.waveOutOpen(out hWaveOut, (IntPtr)devNumber, waveProvider.WaveFormat, callback, IntPtr.Zero, WaveInterop.WaveInOutOpenFlags.CallbackFunction), "waveOutOpen");
 
             buffers = new WaveOutBuffer[numBuffers];
             playbackState = PlaybackState.Stopped;

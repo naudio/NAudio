@@ -8,11 +8,39 @@ namespace NAudio.Wave
     /// </summary>
     class WaveInterop
     {
-        public const int CallbackNull = 0x00000000;    // no callback
-        public const int CallbackWindow = 0x00010000;    // dwCallback is a HWND 
-        public const int CallbackThread = 0x00020000; // callback is a thread ID 
-        public const int CallbackFunction = 0x00030000;    // dwCallback is a FARPROC 
-        public const int CallbackEvent = 0x00030000;    // dwCallback is an EVENT handle 
+        [Flags]
+        public enum WaveInOutOpenFlags
+        {
+            /// <summary>
+            /// CALLBACK_NULL
+            /// No callback
+            /// </summary>
+            CallbackNull = 0,
+            /// <summary>
+            /// CALLBACK_FUNCTION
+            /// dwCallback is a FARPROC 
+            /// </summary>
+            CallbackFunction = 0x30000,
+            /// <summary>
+            /// CALLBACK_EVENT
+            /// dwCallback is an EVENT handle 
+            /// </summary>
+            CallbackEvent = 0x50000,
+            /// <summary>
+            /// CALLBACK_WINDOW
+            /// dwCallback is a HWND 
+            /// </summary>
+            CallbackWindow = 0x10000,
+            /// <summary>
+            /// CALLBACK_THREAD
+            /// callback is a thread ID 
+            /// </summary>
+            CallbackThread = 0x20000,
+            /*
+            WAVE_FORMAT_QUERY = 1,
+            WAVE_MAPPED = 4,
+            WAVE_FORMAT_DIRECT = 8*/
+        }
 
         //public const int TIME_MS = 0x0001;  // time in milliseconds 
         //public const int TIME_SAMPLES = 0x0002;  // number of wave samples 
@@ -66,9 +94,9 @@ namespace NAudio.Wave
         
         // http://msdn.microsoft.com/en-us/library/dd743866%28VS.85%29.aspx
         [DllImport("winmm.dll")]
-        public static extern MmResult waveOutOpen(out IntPtr hWaveOut, IntPtr uDeviceID, WaveFormat lpFormat, WaveCallback dwCallback, IntPtr dwInstance, int dwFlags);
+        public static extern MmResult waveOutOpen(out IntPtr hWaveOut, IntPtr uDeviceID, WaveFormat lpFormat, WaveCallback dwCallback, IntPtr dwInstance, WaveInOutOpenFlags dwFlags);
         [DllImport("winmm.dll", EntryPoint = "waveOutOpen")]
-        public static extern MmResult waveOutOpenWindow(out IntPtr hWaveOut, IntPtr uDeviceID, WaveFormat lpFormat, IntPtr callbackWindowHandle, IntPtr dwInstance, int dwFlags);
+        public static extern MmResult waveOutOpenWindow(out IntPtr hWaveOut, IntPtr uDeviceID, WaveFormat lpFormat, IntPtr callbackWindowHandle, IntPtr dwInstance, WaveInOutOpenFlags dwFlags);
         
         [DllImport("winmm.dll")]
         public static extern MmResult waveOutReset(IntPtr hWaveOut);
@@ -110,9 +138,9 @@ namespace NAudio.Wave
         
         // http://msdn.microsoft.com/en-us/library/dd743847%28VS.85%29.aspx
         [DllImport("winmm.dll")]
-        public static extern MmResult waveInOpen(out IntPtr hWaveIn, IntPtr uDeviceID, WaveFormat lpFormat, WaveCallback dwCallback, IntPtr dwInstance, int dwFlags);
+        public static extern MmResult waveInOpen(out IntPtr hWaveIn, IntPtr uDeviceID, WaveFormat lpFormat, WaveCallback dwCallback, IntPtr dwInstance, WaveInOutOpenFlags dwFlags);
         [DllImport("winmm.dll", EntryPoint = "waveInOpen")]
-        public static extern MmResult waveInOpenWindow(out IntPtr hWaveIn, IntPtr uDeviceID, WaveFormat lpFormat, IntPtr callbackWindowHandle, IntPtr dwInstance, int dwFlags);
+        public static extern MmResult waveInOpenWindow(out IntPtr hWaveIn, IntPtr uDeviceID, WaveFormat lpFormat, IntPtr callbackWindowHandle, IntPtr dwInstance, WaveInOutOpenFlags dwFlags);
 
         // http://msdn.microsoft.com/en-us/library/dd743848%28VS.85%29.aspx
         [DllImport("winmm.dll")]

@@ -12,13 +12,27 @@ namespace NAudioDemo.AudioPlaybackDemo
 {
     public partial class WaveOutSettingsPanel : UserControl
     {
+        
+
         public WaveOutSettingsPanel()
         {
             InitializeComponent();
-            InitialiseWaveOutControls();
+            InitialiseDeviceCombo();
+            InitialiseStrategyCombo();
         }
 
-        private void InitialiseWaveOutControls()
+        class CallbackComboItem
+        {
+            public CallbackComboItem(string text, WaveCallbackStrategy strategy)
+            {
+                this.Text = text;
+                this.Strategy = strategy;
+            }
+            public string Text { get; private set; }
+            public WaveCallbackStrategy Strategy { get; private set; }
+        }
+
+        private void InitialiseDeviceCombo()
         {
             for (int deviceId = 0; deviceId < WaveOut.DeviceCount; deviceId++)
             {
@@ -31,8 +45,18 @@ namespace NAudioDemo.AudioPlaybackDemo
             }
         }
 
+        private void InitialiseStrategyCombo()
+        {
+            comboBoxCallback.DisplayMember = "Text";
+            comboBoxCallback.ValueMember = "Strategy";
+            comboBoxCallback.Items.Add(new CallbackComboItem("Window", WaveCallbackStrategy.NewWindow));
+            comboBoxCallback.Items.Add(new CallbackComboItem("Function", WaveCallbackStrategy.FunctionCallback));
+            comboBoxCallback.Items.Add(new CallbackComboItem("Event", WaveCallbackStrategy.Event));
+            comboBoxCallback.SelectedIndex = 0;
+        }
+
         public int SelectedDeviceNumber { get { return comboBoxWaveOutDevice.SelectedIndex; } }
 
-        public bool UseWindowCallbacks { get { return checkBoxWaveOutWindow.Checked; } }
+        public WaveCallbackStrategy CallbackStrategy { get { return ((CallbackComboItem)comboBoxCallback.SelectedItem).Strategy; } }
     }
 }

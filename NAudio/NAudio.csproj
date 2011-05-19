@@ -51,7 +51,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DocumentationFile>bin\Debug\NAudio.XML</DocumentationFile>
     <PlatformTarget>x86</PlatformTarget>
-    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet>NAudio.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -380,6 +380,7 @@
     <Compile Include="Wave\MmeInterop\WaveCallbackStrategy.cs" />
     <Compile Include="Wave\WaveOutputs\WaveFileWriter.cs" />
     <Compile Include="Wave\WaveOutputs\WaveOut.cs" />
+    <Compile Include="Wave\WaveOutputs\WaveOutEvent.cs" />
     <Compile Include="Wave\WaveOutputs\WaveOutThreadSafe.cs" />
     <Compile Include="Wave\SampleProviders\MeteringSampleProvider.cs" />
     <Compile Include="Wave\SampleProviders\NotifyingSampleProvider.cs" />

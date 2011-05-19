@@ -23,6 +23,7 @@ namespace NAudioDemo.SimplePlaybackDemo
             EnableButtons(false);
             comboBoxOutputDriver.Items.Add("WaveOut");
             comboBoxOutputDriver.Items.Add("WaveOut Function Callbacks");
+            comboBoxOutputDriver.Items.Add("WaveOut Event Callbacks");
             comboBoxOutputDriver.SelectedIndex = 0;
         }
 
@@ -65,6 +66,8 @@ namespace NAudioDemo.SimplePlaybackDemo
         {
             switch (comboBoxOutputDriver.SelectedIndex)
             {
+                case 2:
+                    return new WaveOutEvent();
                 case 1:
                     return new WaveOut(WaveCallbackInfo.FunctionCallback());
                 case 0:

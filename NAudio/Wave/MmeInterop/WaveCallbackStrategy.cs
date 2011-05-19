@@ -20,6 +20,10 @@ namespace NAudio.Wave
         /// <summary>
         /// Use an existing window handle
         /// </summary>
-        ExistingWindow
+        ExistingWindow,
+        /// <summary>
+        /// Use an event handle
+        /// </summary>
+        Event,
     }
 }

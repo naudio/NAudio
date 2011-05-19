@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.label1 = new System.Windows.Forms.Label();
             this.buttonPlay = new System.Windows.Forms.Button();
             this.buttonStop = new System.Windows.Forms.Button();
@@ -35,6 +36,9 @@
             this.label2 = new System.Windows.Forms.Label();
             this.volumeSlider1 = new NAudio.Gui.VolumeSlider();
             this.buttonOpen = new System.Windows.Forms.Button();
+            this.labelNowTime = new System.Windows.Forms.Label();
+            this.labelTotalTime = new System.Windows.Forms.Label();
+            this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.SuspendLayout();
             // 
             // label1
@@ -103,10 +107,30 @@
             this.buttonOpen.UseVisualStyleBackColor = true;
             this.buttonOpen.Click += new System.EventHandler(this.buttonOpen_Click);
             // 
+            // labelNowTime
+            // 
+            this.labelNowTime.AutoSize = true;
+            this.labelNowTime.Location = new System.Drawing.Point(436, 40);
+            this.labelNowTime.Name = "labelNowTime";
+            this.labelNowTime.Size = new System.Drawing.Size(34, 13);
+            this.labelNowTime.TabIndex = 6;
+            this.labelNowTime.Text = "00:00";
+            // 
+            // labelTotalTime
+            // 
+            this.labelTotalTime.AutoSize = true;
+            this.labelTotalTime.Location = new System.Drawing.Point(476, 40);
+            this.labelTotalTime.Name = "labelTotalTime";
+            this.labelTotalTime.Size = new System.Drawing.Size(34, 13);
+            this.labelTotalTime.TabIndex = 6;
+            this.labelTotalTime.Text = "00:00";
+            // 
             // SimplePlaybackPanel
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.labelTotalTime);
+            this.Controls.Add(this.labelNowTime);
             this.Controls.Add(this.volumeSlider1);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.comboBoxOutputDriver);
@@ -130,5 +154,8 @@
         private System.Windows.Forms.Label label2;
         private NAudio.Gui.VolumeSlider volumeSlider1;
         private System.Windows.Forms.Button buttonOpen;
+        private System.Windows.Forms.Label labelNowTime;
+        private System.Windows.Forms.Label labelTotalTime;
+        private System.Windows.Forms.Timer timer1;
     }
 }

@@ -7,8 +7,7 @@ using System.Windows.Forms;
 
 namespace NAudioDemo.SimplePlaybackDemo
 {
-    // not ready for public consumption yet
-    //[Export(typeof(INAudioDemoPlugin))]
+    [Export(typeof(INAudioDemoPlugin))]
     class SimplePlaybackPlugin : INAudioDemoPlugin
     {
         public string Name

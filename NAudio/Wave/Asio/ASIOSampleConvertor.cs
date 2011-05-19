@@ -57,6 +57,18 @@ namespace NAudio.Wave.Asio
                             break;
                     }
                     break;
+                case ASIOSampleType.ASIOSTFloat32LSB:
+                    switch (waveFormat.BitsPerSample)
+                    {
+                        case 16:
+                            throw new ArgumentException("Not a supported conversion");
+                            break;
+                        case 32:
+                            convertor = ConverterFloatToFloatGeneric;
+                            break;
+                    }
+                    break;
+
                 default:
                     throw new ArgumentException(
                         String.Format("ASIO Buffer Type {0} is not yet supported.",
@@ -285,6 +297,30 @@ namespace NAudio.Wave.Asio
                         *(samples[j]++) = (byte)(sample24);
                         *(samples[j]++) = (byte)(sample24 >> 8);
                         *(samples[j]++) = (byte)(sample24 >> 16);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Generic convertor for float
+        /// </summary>
+        public static void ConverterFloatToFloatGeneric(IntPtr inputInterleavedBuffer, IntPtr[] asioOutputBuffers, int nbChannels, int nbSamples)
+        {
+            unsafe
+            {
+                float* inputSamples = (float*)inputInterleavedBuffer;
+                float*[] samples = new float*[nbChannels];
+                for (int i = 0; i < nbChannels; i++)
+                {
+                    samples[i] = (float*)asioOutputBuffers[i];
+                }
+
+                for (int i = 0; i < nbSamples; i++)
+                {
+                    for (int j = 0; j < nbChannels; j++)
+                    {
+                        *(samples[j]++) = *inputSamples++;
                     }
                 }
             }

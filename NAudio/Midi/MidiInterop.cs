@@ -254,8 +254,8 @@ namespace NAudio.Midi
         [StructLayout(LayoutKind.Sequential)]
         public struct MIDIHDR
         {
-            public string lpData;
-            public int dwBufferLength;
+            public IntPtr lpData; // LPSTR
+            public int dwBufferLength; //
             public int dwBytesRecorded;
             public IntPtr dwUser;
             public int dwFlags;
@@ -263,7 +263,7 @@ namespace NAudio.Midi
             public IntPtr reserved;
             public int dwOffset;
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-            public int[] dwReserved;
+            public IntPtr[] dwReserved;
         }
 
         [StructLayout(LayoutKind.Sequential)]

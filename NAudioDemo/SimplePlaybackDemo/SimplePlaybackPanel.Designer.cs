@@ -31,6 +31,10 @@
             this.label1 = new System.Windows.Forms.Label();
             this.buttonPlay = new System.Windows.Forms.Button();
             this.buttonStop = new System.Windows.Forms.Button();
+            this.comboBoxOutputDriver = new System.Windows.Forms.ComboBox();
+            this.label2 = new System.Windows.Forms.Label();
+            this.volumeSlider1 = new NAudio.Gui.VolumeSlider();
+            this.buttonOpen = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // label1
@@ -45,7 +49,7 @@
             // 
             // buttonPlay
             // 
-            this.buttonPlay.Location = new System.Drawing.Point(7, 31);
+            this.buttonPlay.Location = new System.Drawing.Point(91, 31);
             this.buttonPlay.Name = "buttonPlay";
             this.buttonPlay.Size = new System.Drawing.Size(75, 23);
             this.buttonPlay.TabIndex = 1;
@@ -55,7 +59,7 @@
             // 
             // buttonStop
             // 
-            this.buttonStop.Location = new System.Drawing.Point(89, 30);
+            this.buttonStop.Location = new System.Drawing.Point(173, 30);
             this.buttonStop.Name = "buttonStop";
             this.buttonStop.Size = new System.Drawing.Size(75, 23);
             this.buttonStop.TabIndex = 2;
@@ -63,11 +67,51 @@
             this.buttonStop.UseVisualStyleBackColor = true;
             this.buttonStop.Click += new System.EventHandler(this.buttonStop_Click);
             // 
+            // comboBoxOutputDriver
+            // 
+            this.comboBoxOutputDriver.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboBoxOutputDriver.FormattingEnabled = true;
+            this.comboBoxOutputDriver.Location = new System.Drawing.Point(128, 80);
+            this.comboBoxOutputDriver.Name = "comboBoxOutputDriver";
+            this.comboBoxOutputDriver.Size = new System.Drawing.Size(227, 21);
+            this.comboBoxOutputDriver.TabIndex = 3;
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(7, 83);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(104, 13);
+            this.label2.TabIndex = 4;
+            this.label2.Text = "For Debug Purposes";
+            // 
+            // volumeSlider1
+            // 
+            this.volumeSlider1.Location = new System.Drawing.Point(307, 37);
+            this.volumeSlider1.Name = "volumeSlider1";
+            this.volumeSlider1.Size = new System.Drawing.Size(96, 16);
+            this.volumeSlider1.TabIndex = 5;
+            this.volumeSlider1.VolumeChanged += new System.EventHandler(this.volumeSlider1_VolumeChanged);
+            // 
+            // buttonOpen
+            // 
+            this.buttonOpen.Location = new System.Drawing.Point(10, 31);
+            this.buttonOpen.Name = "buttonOpen";
+            this.buttonOpen.Size = new System.Drawing.Size(75, 23);
+            this.buttonOpen.TabIndex = 1;
+            this.buttonOpen.Text = "Open";
+            this.buttonOpen.UseVisualStyleBackColor = true;
+            this.buttonOpen.Click += new System.EventHandler(this.buttonOpen_Click);
+            // 
             // SimplePlaybackPanel
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.volumeSlider1);
+            this.Controls.Add(this.label2);
+            this.Controls.Add(this.comboBoxOutputDriver);
             this.Controls.Add(this.buttonStop);
+            this.Controls.Add(this.buttonOpen);
             this.Controls.Add(this.buttonPlay);
             this.Controls.Add(this.label1);
             this.Name = "SimplePlaybackPanel";
@@ -82,5 +126,9 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Button buttonPlay;
         private System.Windows.Forms.Button buttonStop;
+        private System.Windows.Forms.ComboBox comboBoxOutputDriver;
+        private System.Windows.Forms.Label label2;
+        private NAudio.Gui.VolumeSlider volumeSlider1;
+        private System.Windows.Forms.Button buttonOpen;
     }
 }

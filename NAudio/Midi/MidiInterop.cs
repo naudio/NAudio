@@ -255,15 +255,15 @@ namespace NAudio.Midi
         public struct MIDIHDR
         {
             public IntPtr lpData; // LPSTR
-            public int dwBufferLength; //
-            public int dwBytesRecorded;
-            public IntPtr dwUser;
-            public int dwFlags;
-            public IntPtr lpNext;
-            public IntPtr reserved;
-            public int dwOffset;
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-            public IntPtr[] dwReserved;
+            public int dwBufferLength; // DWORD
+            public int dwBytesRecorded; // DWORD
+            public IntPtr dwUser; // DWORD_PTR
+            public int dwFlags; // DWORD
+            public IntPtr lpNext; // struct mididhdr_tag *
+            public IntPtr reserved; // DWORD_PTR
+            public int dwOffset; // DWORD
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)] 
+            public IntPtr[] dwReserved; // DWORD_PTR dwReserved[4]
         }
 
         [StructLayout(LayoutKind.Sequential)]

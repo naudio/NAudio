@@ -19,6 +19,10 @@ namespace NAudio.Wave
         private string fileName;
         private WaveStream readerStream; // the waveStream which we will use for all positioning
         private SampleChannel sampleChannel; // sample provider that gives us most stuff we need
+        private int destBytesPerSample;
+        private int sourceBytesPerSample;
+        private long length;
+        private object lockObject;
 
         /// <summary>
         /// Initializes a new instance of AudioFileReader
@@ -28,7 +32,11 @@ namespace NAudio.Wave
         {
             this.fileName = fileName;
             CreateReaderStream(fileName);
+            this.sourceBytesPerSample = (readerStream.WaveFormat.BitsPerSample / 8) * readerStream.WaveFormat.Channels;
+            this.destBytesPerSample = 8; // stereo float
             this.sampleChannel = new SampleChannel(readerStream);
+            this.length = SourceToDest(readerStream.Length);
+            this.lockObject = new object();
         }
 
         /// <summary>
@@ -66,20 +74,20 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// Length of this stream
+        /// Length of this stream (in bytes)
         /// </summary>
         public override long Length
         {
-            get { return readerStream.Length; }
+            get { return this.length; }
         }
 
         /// <summary>
-        /// Position of this stream
+        /// Position of this stream (in bytes)
         /// </summary>
         public override long Position
         {
-            get { return readerStream.Position; }
-            set { readerStream.Position = value; }
+            get { return SourceToDest(readerStream.Position); }
+            set { lock (lockObject) { readerStream.Position = DestToSource(value); }  }
         }
 
         /// <summary>
@@ -106,7 +114,10 @@ namespace NAudio.Wave
         /// <returns>Number of samples read</returns>
         public int Read(float[] buffer, int offset, int count)
         {
-            return this.sampleChannel.Read(buffer, offset, count);
+            lock (lockObject)
+            {
+                return this.sampleChannel.Read(buffer, offset, count);
+            }
         }
 
         /// <summary>
@@ -116,6 +127,22 @@ namespace NAudio.Wave
         {
             get { return sampleChannel.Volume; }
             set { sampleChannel.Volume = value; } 
+        }
+
+        /// <summary>
+        /// Helper to convert source to dest bytes
+        /// </summary>
+        private long SourceToDest(long sourceBytes)
+        {
+            return destBytesPerSample * (sourceBytes / sourceBytesPerSample);
+        }
+
+        /// <summary>
+        /// Helper to convert dest to source bytes
+        /// </summary>
+        private long DestToSource(long destBytes)
+        {
+            return sourceBytesPerSample * (destBytes / destBytesPerSample);
         }
 
         /// <summary>

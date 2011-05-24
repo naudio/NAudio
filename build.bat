@@ -1,0 +1,1 @@
+MSBuild NAudio.proj %*

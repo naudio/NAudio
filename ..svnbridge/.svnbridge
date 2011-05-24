@@ -1,14 +1,6 @@
-﻿<?xml version="1.0" encoding="utf-8"?><ItemProperties xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema"><Properties><Property><Name>svn:ignore</Name><Value>NAudio.suo
-obj
-</Value></Property><Property><Name>svn:ignore</Name><Value>NAudio.suo
-obj
-Release-1.4
-</Value></Property><Property><Name>svn:ignore</Name><Value>NAudio.suo
-obj
-Release-1.4
-*.docstates
-</Value></Property><Property><Name>svn:ignore</Name><Value>obj
-Release-1.4
+﻿<?xml version="1.0" encoding="utf-8"?><ItemProperties xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema"><Properties><Property><Name>svn:ignore</Name><Value>*.docstates
 *.suo
-*.docstates
+Release-1.4
+TestResult.xml
+obj
 </Value></Property></Properties></ItemProperties>

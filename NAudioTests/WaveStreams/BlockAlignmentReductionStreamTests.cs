@@ -8,6 +8,7 @@ using NAudio.Wave;
 namespace NAudioTests.WaveStreams
 {
     [TestFixture]
+    [Category("UnitTest")]
     public class BlockAlignmentReductionStreamTests
     {
         [Test]

@@ -6,6 +6,7 @@ using NUnit.Framework;
 namespace NAudioTests.WaveStreams
 {
     [TestFixture]
+    [Category("UnitTest")]
     public class WaveFileReaderTests
     {
         [Test]

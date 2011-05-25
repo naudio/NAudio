@@ -8,6 +8,7 @@ using NAudio.Wave;
 namespace NAudioTests.Mp3
 {
     [TestFixture]
+    [Category("UnitTest")]
     public class Mp3FrameTests
     {
         private const int crcNotPresent = 1;

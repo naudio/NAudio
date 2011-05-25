@@ -4,23 +4,25 @@ using System.Text;
 using NUnit.Framework;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
+using System.Diagnostics;
 
 namespace NAudioTests.Wasapi
 {
     [TestFixture]
+    [Category("IntegrationTest")]
     public class AudioClientTests
     {
         [Test]
         public void CanGetMixFormat()
         {
             // don't need to initialize before asking for MixFormat
-            Console.WriteLine("Mix Format: {0}", GetAudioClient().MixFormat);
+            Debug.WriteLine(String.Format("Mix Format: {0}", GetAudioClient().MixFormat));
         }
 
         [Test]
         public void CanInitializeInSharedMode()
         {
-            InitializeClient(AudioClientShareMode.Shared);        
+            InitializeClient(AudioClientShareMode.Shared);
         }
 
         [Test]
@@ -49,27 +51,27 @@ namespace NAudioTests.Wasapi
         [Test]
         public void CanGetBufferSize()
         {
-            Console.WriteLine("Buffer Size: {0}", InitializeClient(AudioClientShareMode.Shared).BufferSize);
+            Debug.WriteLine(String.Format("Buffer Size: {0}", InitializeClient(AudioClientShareMode.Shared).BufferSize));
         }
 
         [Test]
         public void CanGetCurrentPadding()
         {
-            Console.WriteLine("CurrentPadding: {0}", InitializeClient(AudioClientShareMode.Shared).CurrentPadding);
+            Debug.WriteLine(String.Format("CurrentPadding: {0}", InitializeClient(AudioClientShareMode.Shared).CurrentPadding));
         }
 
         [Test]
         public void CanGetDefaultDevicePeriod()
         {
             // should not need initialization
-            Console.WriteLine("DefaultDevicePeriod: {0}", GetAudioClient().DefaultDevicePeriod);
+            Debug.WriteLine(String.Format("DefaultDevicePeriod: {0}", GetAudioClient().DefaultDevicePeriod));
         }
 
         [Test]
         public void CanGetMinimumDevicePeriod()
         {
             // should not need initialization
-            Console.WriteLine("MinimumDevicePeriod: {0}", GetAudioClient().MinimumDevicePeriod);
+            Debug.WriteLine(String.Format("MinimumDevicePeriod: {0}", GetAudioClient().MinimumDevicePeriod));
         }
 
         [Test]
@@ -95,7 +97,7 @@ namespace NAudioTests.Wasapi
         public void CanRequestIfFormatIsSupportedExtensible44100SharedMode()
         {
             WaveFormatExtensible desiredFormat = new WaveFormatExtensible(44100, 32, 2);
-            Console.Write(desiredFormat);
+            Debug.WriteLine(desiredFormat);
             GetAudioClient().IsFormatSupported(AudioClientShareMode.Shared, desiredFormat);
         }
 
@@ -103,16 +105,15 @@ namespace NAudioTests.Wasapi
         public void CanRequestIfFormatIsSupportedExtensible44100ExclusiveMode()
         {
             WaveFormatExtensible desiredFormat = new WaveFormatExtensible(44100, 32, 2);
-            Console.Write(desiredFormat);
+            Debug.WriteLine(desiredFormat);
             GetAudioClient().IsFormatSupported(AudioClientShareMode.Exclusive, desiredFormat);
         }
-
 
         [Test]
         public void CanRequestIfFormatIsSupportedExtensible48000()
         {
             WaveFormatExtensible desiredFormat = new WaveFormatExtensible(48000, 32, 2);
-            Console.Write(desiredFormat);
+            Debug.WriteLine(desiredFormat);
             GetAudioClient().IsFormatSupported(AudioClientShareMode.Shared, desiredFormat);
         }
 
@@ -120,7 +121,7 @@ namespace NAudioTests.Wasapi
         public void CanRequestIfFormatIsSupportedExtensible48000_16bit()
         {
             WaveFormatExtensible desiredFormat = new WaveFormatExtensible(48000, 16, 2);
-            Console.Write(desiredFormat);
+            Debug.WriteLine(desiredFormat);
             GetAudioClient().IsFormatSupported(AudioClientShareMode.Shared, desiredFormat);
         }
 
@@ -146,9 +147,7 @@ namespace NAudioTests.Wasapi
         [Test]
         public void CanRequest48kHz16BitMono()
         {
-
             GetAudioClient().IsFormatSupported(AudioClientShareMode.Shared, new WaveFormat(48000, 16, 1));
-
         }
 
         [Test]

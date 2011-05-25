@@ -9,6 +9,7 @@ using NAudio.Wave.Compression;
 namespace NAudioTests.Acm
 {
     [TestFixture]
+    [Category("IntegrationTest")]
     public class AcmDriverTests
     {
         [Test]
@@ -20,7 +21,7 @@ namespace NAudioTests.Acm
             {
                 Assert.GreaterOrEqual((int)driver.DriverId, 0);
                 Assert.IsTrue(!String.IsNullOrEmpty(driver.ShortName));
-                Console.WriteLine(driver.LongName);
+                Debug.WriteLine(driver.LongName);
             }
         }
 

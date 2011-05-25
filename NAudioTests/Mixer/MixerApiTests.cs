@@ -10,6 +10,7 @@ using NAudio.Wave;
 namespace NAudioTests
 {
     [TestFixture]
+    [Category("IntegrationTest")]
     public class MixerApiTests
     {
         [Test]

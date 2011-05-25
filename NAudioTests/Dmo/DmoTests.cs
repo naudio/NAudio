@@ -13,40 +13,38 @@ namespace NAudioTests.Dmo
     public class DmoTests
     {
         [Test]
+        [Category("IntegrationTest")]
         public void CanEnumerateAudioEffects()
         {
-            Console.WriteLine("Audio Effects:");
+            Debug.WriteLine("Audio Effects:");
             foreach (var dmo in DmoEnumerator.GetAudioEffectNames())
             {
-                Console.WriteLine(string.Format("{0} {1}", dmo.Name, dmo.Clsid));
+                Debug.WriteLine(string.Format("{0} {1}", dmo.Name, dmo.Clsid));
                 var mediaObject = Activator.CreateInstance(Type.GetTypeFromCLSID(dmo.Clsid));
-
             }
         }
 
         [Test]
+        [Category("IntegrationTest")]
         public void CanEnumerateAudioEncoders()
         {
-            Console.WriteLine("Audio Encoders:");
+            Debug.WriteLine("Audio Encoders:");
             foreach (var dmo in DmoEnumerator.GetAudioEncoderNames())
             {
-                Console.WriteLine(string.Format("{0} {1}", dmo.Name, dmo.Clsid));
+                Debug.WriteLine(string.Format("{0} {1}", dmo.Name, dmo.Clsid));
             }
         }
 
         [Test]
+        [Category("IntegrationTest")]
         public void CanEnumerateAudioDecoders()
         {
-            Console.WriteLine("Audio Decoders:");
+            Debug.WriteLine("Audio Decoders:");
             foreach (var dmo in DmoEnumerator.GetAudioDecoderNames())
             {
-                Console.WriteLine(string.Format("{0} {1}", dmo.Name, dmo.Clsid));
+                Debug.WriteLine(string.Format("{0} {1}", dmo.Name, dmo.Clsid));
             }
         }
-
-
-
-
     }
 }
 

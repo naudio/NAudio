@@ -12,6 +12,7 @@ namespace NAudioTests.Dmo
     public class ResamplerDmoStreamTests
     {
         [Test]
+        [Category("IntegrationTest")]
         public void CanCreateResamplerStream()
         {
             //using (WaveFileReader reader = new WaveFileReader("C:\\Users\\Mark\\Recording\\REAPER\\ideas-2008-05-17.wav"))
@@ -27,6 +28,7 @@ namespace NAudioTests.Dmo
         }
 
         [Test]
+        [Category("IntegrationTest")]
         public void CanReadABlockFromResamplerStream()
         {
             //using (WaveFileReader reader = new WaveFileReader("C:\\Users\\Mark\\Recording\\REAPER\\ideas-2008-05-17.wav"))
@@ -45,6 +47,7 @@ namespace NAudioTests.Dmo
         }
 
         [Test]
+        [Category("IntegrationTest")]
         public void CanResampleAWholeStreamToIEEE()
         {
             WaveFormat inputFormat = new WaveFormat(44100, 16, 2);
@@ -53,6 +56,7 @@ namespace NAudioTests.Dmo
         }
 
         [Test]
+        [Category("IntegrationTest")]
         public void CanResampleAWholeStreamTo48000PCM()
         {
             WaveFormat inputFormat = new WaveFormat(44100, 16, 2);
@@ -62,6 +66,7 @@ namespace NAudioTests.Dmo
 
 
         [Test]
+        [Category("IntegrationTest")]
         public void CanResampleAWholeStreamTo44100IEEE()
         {
             WaveFormat inputFormat = new WaveFormat(48000, 16, 2);
@@ -70,6 +75,7 @@ namespace NAudioTests.Dmo
         }
 
         [Test]
+        [Category("IntegrationTest")]
         public void CanResampleAWholeStreamTo44100PCM()
         {
             WaveFormat inputFormat = new WaveFormat(48000, 16, 2);

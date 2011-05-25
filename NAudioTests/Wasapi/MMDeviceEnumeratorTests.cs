@@ -3,87 +3,79 @@ using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
 using NAudio.CoreAudioApi;
+using System.Diagnostics;
 
 namespace NAudioTests.Wasapi
 {
     [TestFixture]
+    [Category("IntegrationTest")]
     public class MMDeviceEnumeratorTests
     {
+        private static void RequireVista()
+        {
+            if (Environment.OSVersion.Version.Major < 6)
+            {
+                Assert.Ignore("This test requires Windows Vista or newer");
+            }
+        }
+
         [Test]
         public void CanCreateMMDeviceEnumeratorInVista()
         {
-            if (Environment.OSVersion.Version.Major >= 6)
-            {
-                MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
-            }
+            RequireVista();
+            MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
         }
 
-        [Test]       
+        [Test]
         public void CanEnumerateDevicesInVista()
         {
-            if (Environment.OSVersion.Version.Major >= 6)
+            RequireVista();
+            MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
+            foreach (MMDevice devices in enumerator.EnumerateAudioEndPoints(DataFlow.All,DeviceState.All))
             {
-                MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
-                foreach (MMDevice devices in enumerator.EnumerateAudioEndPoints(DataFlow.All,DeviceState.All))
-                {
-                    Console.WriteLine(devices);
-                }
+                Debug.WriteLine(devices);
             }
         }
 
-        [Test]       
+        [Test]
         public void CanEnumerateCaptureDevices()
         {
-            if (Environment.OSVersion.Version.Major >= 6)
+            RequireVista();
+            MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
+            foreach (MMDevice device in enumerator.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.All))
             {
-                MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
-                foreach (MMDevice device in enumerator.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.All))
-                {
-                    Console.WriteLine("{0}, {1}", device.FriendlyName, device.State);
-                }
+                Debug.WriteLine(String.Format("{0}, {1}", device.FriendlyName, device.State));
             }
         }
 
         [Test]
         public void CanGetDefaultAudioEndpoint()
         {
-            if (Environment.OSVersion.Version.Major >= 6)
-            {
-                MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
-                MMDevice defaultAudioEndpoint = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Console);
-                Assert.IsNotNull(defaultAudioEndpoint);
-            }            
+            RequireVista();
+            MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
+            MMDevice defaultAudioEndpoint = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Console);
+            Assert.IsNotNull(defaultAudioEndpoint);
         }
 
         [Test]
         public void CanActivateDefaultAudioEndpoint()
         {
-            if (Environment.OSVersion.Version.Major >= 6)
-            {
-                MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
-                MMDevice defaultAudioEndpoint = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Console);
-                AudioClient audioClient = defaultAudioEndpoint.AudioClient;
-                Assert.IsNotNull(audioClient);
-            }
+            RequireVista();
+            MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
+            MMDevice defaultAudioEndpoint = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Console);
+            AudioClient audioClient = defaultAudioEndpoint.AudioClient;
+            Assert.IsNotNull(audioClient);
         }
-
-
 
         [Test]
         public void ThrowsNotSupportedExceptionInXP()
         {
-            if (Environment.OSVersion.Version.Major < 6)
+
+            if (Environment.OSVersion.Version.Major >= 6)
             {
-                try
-                {
-                    MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
-                    Assert.Fail("Should have thrown an exception");
-                }
-                catch (NotSupportedException)
-                {
-                    
-                }
+                Assert.Ignore("This test requires Windows XP");
             }
-        } 
+            Assert.Throws<NotSupportedException>(() => new MMDeviceEnumerator());
+        }
     }
 }

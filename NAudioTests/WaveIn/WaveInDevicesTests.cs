@@ -7,6 +7,7 @@ using NAudio.Wave;
 namespace NAudioTests
 {
     [TestFixture]
+    [Category("IntegrationTest")]
     public class WaveInDevicesTests
     {
         [Test]

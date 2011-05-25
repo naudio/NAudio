@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
 using NAudio.Wave;
+using System.Diagnostics;
 
 namespace NAudioTests.DirectSound
 {
@@ -10,11 +11,12 @@ namespace NAudioTests.DirectSound
     public class DirectSoundTests
     {
         [Test]
+        [Category("IntegrationTest")]
         public void CanEnumerateDevices()
         {
             foreach(var device in DirectSoundOut.Devices)
             {
-                Console.WriteLine("{0} {1} {2}", device.Description, device.ModuleName, device.Guid);
+                Debug.WriteLine(String.Format("{0} {1} {2}", device.Description, device.ModuleName, device.Guid));
             }
         }
     }

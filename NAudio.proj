@@ -3,6 +3,7 @@
 
    <PropertyGroup>
       <NUnitToolPath>C:\Program Files\NUnit 2.5.10\bin\net-2.0</NUnitToolPath>
+      <BuildFolder>BuildArtefacts\</BuildFolder>
    </PropertyGroup>
 
    <!-- Default target just does a debug build -->
@@ -23,11 +24,64 @@
       <MSBuild Projects="NAudio.sln" Targets="Build" Properties="Configuration=Release"/>
    </Target>
 
-   <Target Name="Release" DependsOnTargets="Clean;ReleaseBuild">
+   <Target Name="Release" DependsOnTargets="Clean;DebugBuild;Test;ReleaseBuild">
    </Target>
 
    <Target Name="Clean">
       <MSBuild Projects="NAudio.sln" Targets="Clean" Properties="Configuration=Debug"/>
       <MSBuild Projects="NAudio.sln" Targets="Clean" Properties="Configuration=Release"/>
+      <RemoveDir Directories="$(BuildFolder)" />
+      <CallTarget Targets="MakeBuildFolder" />
+    </Target>
+
+   <Target Name="MakeBuildFolder">
+      <MakeDir Directories="$(BuildFolder)"/>
    </Target>
+
+   <ItemGroup>
+       <ZipSourceFiles Include="NAudio\**\*.*" Exclude="**\bin\**;**\obj\**;**\.svn\**;**\*.zip" />
+   </ItemGroup>
+
+   <ItemGroup>
+       <ZipLibraryFiles Include="NAudio\bin\Release\NAudio.dll" />
+       <ZipLibraryFiles Include="NAudio\bin\Release\NAudio.xml" />
+       <ZipLibraryFiles Include="NAudio.WindowsMediaFormat\bin\Release\NAudio.WindowsMediaFormat.dll" />
+       <ZipLibraryFiles Include="license.txt" />
+   </ItemGroup>
+
+   <ItemGroup>
+      <ZipDemoFiles Include="AudioFileInspector\bin\Debug\*.*" Exclude="**\*.pdb;**\*.vshost.*" />
+      <ZipDemoFiles Include="NAudioDemo\bin\Debug\*.*" Exclude="**\*.pdb;**\*.vshost.*" />
+      <!-- MixDiff and MidiFileConverter probably not in a state to include as official demos -->
+      <!--<ZipDemoFiles Include="MixDiff\bin\Debug\*.*" Exclude="**\*.pdb;**\*.vshost.*" />-->
+      <!--<ZipDemoFiles Include="MidiFileConverter\bin\Debug\*.*" Exclude="**\*.pdb;**\*.vshost.*" />-->
+      <ZipDemoFiles Include="NAudioDemoWpf\bin\Debug\*.*" Exclude="**\*.pdb;**\*.vshost.*" />
+   </ItemGroup>
+   
+   <Target Name="ZipAll" DependsOnTargets="ZipLib;ZipSource;ZipDemo">
+      
+   </Target>
+   
+   <Target Name="ZipLib" DependsOnTargets="MakeBuildFolder">
+       <Zip Files="@(ZipLibraryFiles)" 
+           Flatten="true"
+           ZipFileName="$(BuildFolder)NAudio-Release.zip" />
+   </Target>
+   
+   <!-- for now, the source zip is just the NAudio code, might need to do a project reorganize to make it
+   easier to do the entire solution -->
+   <Target Name="ZipSource">
+      <!-- <Message Text="@(ZipSourceFiles)" /> -->
+      <Zip Files="@(ZipSourceFiles)" 
+           WorkingDirectory="NAudio"
+           ZipFileName="$(BuildFolder)NAudio-Source.zip" />
+   </Target>
+
+   <Target Name="ZipDemo">
+      <Message Text="@(ZipDemoFiles)" />
+      <Zip Files="@(ZipDemoFiles)" 
+           Flatten="true"
+           ZipFileName="$(BuildFolder)NAudio-Demo-Apps.zip" />
+      </Target>
+   
 </Project>

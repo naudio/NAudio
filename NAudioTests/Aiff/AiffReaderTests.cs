@@ -4,6 +4,7 @@ using System.Text;
 using NUnit.Framework;
 using System.IO;
 using NAudio.Wave;
+using System.Diagnostics;
 
 namespace NAudioTests.Aiff
 {
@@ -11,19 +12,23 @@ namespace NAudioTests.Aiff
     public class AiffReaderTests
     {
         [Test]
+        [Category("IntegrationTest")]
         public void ConvertAiffToWav()
         {
             string testFolder = @"C:\Users\Mark\Recording\sfz\UOI Trumpet";
+            if (!Directory.Exists(testFolder))
+            {
+                Assert.Ignore("{0} not found", testFolder);
+            }
+
             foreach (string file in Directory.GetFiles(testFolder, "*.aiff"))
             {
                 string baseName=  Path.GetFileNameWithoutExtension(file);
                 string wavFile = Path.Combine(testFolder, baseName + ".wav");
                 string aiffFile = Path.Combine(testFolder, file);
-                Console.WriteLine("Converting {0} to wav", aiffFile);
+                Debug.WriteLine(String.Format("Converting {0} to wav", aiffFile));
                 ConvertAiffToWav(aiffFile, wavFile);
             }
-
-
         }
 
         private static void ConvertAiffToWav(string aiffFile, string wavFile)

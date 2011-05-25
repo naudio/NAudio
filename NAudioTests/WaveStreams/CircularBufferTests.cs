@@ -7,6 +7,7 @@ using NAudio.Utils;
 namespace NAudioTests.WaveStreams
 {
     [TestFixture]
+    [Category("UnitTest")]
     public class CircularBufferTests
     {
         [Test]
@@ -95,7 +96,7 @@ namespace NAudioTests.WaveStreams
             // read wraps round
             read = circularBuffer.Read(buffer, 0, 75);
             Assert.AreEqual(50, read, "Bytes Read 2");
-            Assert.AreEqual(0, circularBuffer.Count, "Final Count");                        
+            Assert.AreEqual(0, circularBuffer.Count, "Final Count");
         }
 
         [Test]

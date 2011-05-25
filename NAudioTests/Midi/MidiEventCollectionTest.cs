@@ -7,6 +7,7 @@ using NAudio.Midi;
 namespace NAudioTests.Midi
 {
     [TestFixture]
+    [Category("UnitTest")]
     public class MidiEventCollectionTest
     {
         [Test]

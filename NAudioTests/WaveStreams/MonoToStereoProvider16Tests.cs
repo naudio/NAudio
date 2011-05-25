@@ -7,6 +7,7 @@ using NAudio.Wave;
 namespace NAudioTests.WaveStreams
 {
     [TestFixture]
+    [Category("UnitTest")]
     public class MonoToStereoProvider16Tests
     {
         [Test]

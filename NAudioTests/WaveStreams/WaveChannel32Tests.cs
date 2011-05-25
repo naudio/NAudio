@@ -12,6 +12,7 @@ namespace NAudioTests.WaveStreams
     public class WaveChannel32Tests
     {
         [Test]
+        [Category("IntegrationTest")]
         public void CanCreateWavFileFromWaveChannel32()
         {
             string inFile = @"F:\Recording\wav\pcm\16bit mono 8kHz.wav";

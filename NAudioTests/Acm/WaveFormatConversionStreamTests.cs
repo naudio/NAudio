@@ -11,6 +11,7 @@ using NAudioTests.Utils;
 namespace NAudioTests.Acm
 {
     [TestFixture]
+    [Category("IntegrationTest")]
     public class WaveFormatConversionStreamTests
     {
         [Test]

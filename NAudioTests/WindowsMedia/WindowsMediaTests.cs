@@ -5,10 +5,12 @@ using NUnit.Framework;
 using NAudio.WindowsMediaFormat;
 using System.Runtime.InteropServices;
 using System.IO;
+using System.Diagnostics;
 
 namespace NAudioTests.WindowsMedia
 {
     [TestFixture]
+    [Category("IntegrationTest")]
     public class WindowsMediaTests
     {
         private string testWmaFile = @"C:\Documents and Settings\All Users\Documents\My Music\Sample Music\New Stories (Highway Blues).wma";
@@ -89,7 +91,7 @@ namespace NAudioTests.WindowsMedia
             }
             IWMSyncReader reader = WM.CreateSyncReader(WMT_RIGHTS.WMT_RIGHT_NO_DRM);
             Assert.IsNotNull(reader);
-            reader.Open(testWmaFile);            
+            reader.Open(testWmaFile);
             return reader;
         }
 
@@ -98,10 +100,10 @@ namespace NAudioTests.WindowsMedia
         {
             foreach (var codec in Codec.GetCodecs(MediaTypes.WMMEDIATYPE_Audio))
             {
-                Console.WriteLine(codec.Name);
+                Debug.WriteLine(codec.Name);
                 foreach (var format in codec.CodecFormats)
                 {
-                    Console.WriteLine(format.Description);
+                    Debug.WriteLine(format.Description);
                 }
             }
         }

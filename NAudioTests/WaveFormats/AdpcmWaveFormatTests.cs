@@ -8,6 +8,7 @@ using NAudio.Wave;
 namespace NAudioTests.WaveFormats
 {
     [TestFixture]
+    [Category("UnitTest")]
     public class AdpcmWaveFormatTests
     {
         [Test]

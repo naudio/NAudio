@@ -10,6 +10,7 @@ using NAudioTests.Utils;
 namespace NAudioTests.WaveStreams
 {
     [TestFixture]
+    [Category("UnitTest")]
     public class WaveFileWriterTests
     {
         [Test]

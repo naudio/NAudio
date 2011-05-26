@@ -7,12 +7,19 @@ using NAudio.Wave;
 using NAudio.Dmo;
 using System.Diagnostics;
 using System.IO;
+using NAudioTests.Utils;
 
 namespace NAudioTests.Dmo
 {
     [TestFixture]
     public class DmoMp3FrameDecompressorTests
     {
+        [SetUp]
+        public void SetUp()
+        {
+            OSUtils.RequireVista();
+        }
+
         [Test]
         [Category("IntegrationTest")]
         public void CanCreateDmoMp3FrameDecompressor()

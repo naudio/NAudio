@@ -11,6 +11,12 @@ namespace NAudioTests.Dmo
     [TestFixture]
     public class ResamplerDmoStreamTests
     {
+        [SetUp]
+        public void SetUp()
+        {
+            OSUtils.RequireVista();
+        }
+
         [Test]
         [Category("IntegrationTest")]
         public void CanCreateResamplerStream()

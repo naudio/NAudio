@@ -5,12 +5,19 @@ using NUnit.Framework;
 using NAudio.Dmo;
 using NAudio.Wave;
 using System.Diagnostics;
+using NAudioTests.Utils;
 
 namespace NAudioTests.Dmo
 {
     [TestFixture]
     public class ResamplerDmoTests
     {
+        [SetUp]
+        public void SetUp()
+        {
+            OSUtils.RequireVista();            
+        }
+
         [Test]
         [Category("IntegrationTest")]
         public void CanCreateResamplerMediaObject()

@@ -38,17 +38,21 @@
       <MakeDir Directories="$(BuildFolder)"/>
    </Target>
    
+   <PropertyGroup>
+    <ExcludePattern>**\bin\**;**\obj\**;**\.svn\**</ExcludePattern>
+   </PropertyGroup>  
+   
    <!-- specifies what we are including the the source code zip to go on CodePlex -->
    <ItemGroup>
-       <ZipSourceFiles Include="AudioFileInspector\**\*.*" Exclude="**\bin\**;**\obj\**;**\.svn\**" />
-       <ZipSourceFiles Include="MidiFileConvertor\**\*.*" Exclude="**\bin\**;**\obj\**;**\.svn\**" />
+       <ZipSourceFiles Include="AudioFileInspector\**\*.*" Exclude="$(ExcludePattern)" />
+       <ZipSourceFiles Include="MidiFileConvertor\**\*.*" Exclude="$(ExcludePattern)" />
        <ZipSourceFiles Include="Lib\**" Exclude="**\.svn\**" />
-       <ZipSourceFiles Include="MixDiff\**\*.*" Exclude="**\bin\**;**\obj\**;**\.svn\**" />
-       <ZipSourceFiles Include="NAudio\**\*.*" Exclude="**\bin\**;**\obj\**;**\.svn\**" />
-       <ZipSourceFiles Include="NAudio.WindowsMediaFormat\**\*.*" Exclude="**\bin\**;**\obj\**;**\.svn\**" />
-       <ZipSourceFiles Include="NAudioDemo\**\*.*" Exclude="**\bin\**;**\obj\**;**\.svn\**" />
-       <ZipSourceFiles Include="NAudioWpfDemo\**\*.*" Exclude="**\bin\**;**\obj\**;**\.svn\**" />
-       <ZipSourceFiles Include="NAudioTests\**\*.*" Exclude="**\bin\**;**\obj\**;**\.svn\**" />
+       <ZipSourceFiles Include="MixDiff\**\*.*" Exclude="$(ExcludePattern)" />
+       <ZipSourceFiles Include="NAudio\**\*.*" Exclude="$(ExcludePattern)" />
+       <ZipSourceFiles Include="NAudio.WindowsMediaFormat\**\*.*" Exclude="$(ExcludePattern)" />
+       <ZipSourceFiles Include="NAudioDemo\**\*.*" Exclude="$(ExcludePattern)" />
+       <ZipSourceFiles Include="NAudioWpfDemo\**\*.*" Exclude="$(ExcludePattern)" />
+       <ZipSourceFiles Include="NAudioTests\**\*.*" Exclude="$(ExcludePattern)" />
        <ZipSourceFiles Include="NAudio.sln" />
        <ZipSourceFiles Include="license.txt" />
        <ZipSourceFiles Include="build.bat" />
@@ -82,7 +86,7 @@
    </Target>
    
    <Target Name="Temp">
-      <Message Text="@(SourceExcludePattern)" />
+      <Message Text="@(ZipSourceFiles)" />
    </Target>
    
    <!-- for now, the source zip is just the NAudio code, might need to do a project reorganize to make it

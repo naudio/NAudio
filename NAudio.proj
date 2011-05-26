@@ -2,7 +2,7 @@
    <Import Project="$(MSBuildExtensionsPath)\MSBuildCommunityTasks\MSBuild.Community.Tasks.Targets"/>
 
    <PropertyGroup>
-      <NUnitToolPath>C:\Program Files\NUnit 2.5.10\bin\net-2.0</NUnitToolPath>
+      <NUnitToolPath>packages\NUnit.2.5.10.11092\tools</NUnitToolPath>
       <BuildFolder>BuildArtefacts\</BuildFolder>
    </PropertyGroup>
 

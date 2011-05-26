@@ -4,6 +4,7 @@ using System.Text;
 using NUnit.Framework;
 using NAudio.CoreAudioApi;
 using System.Diagnostics;
+using NAudioTests.Utils;
 
 namespace NAudioTests.Wasapi
 {
@@ -11,25 +12,17 @@ namespace NAudioTests.Wasapi
     [Category("IntegrationTest")]
     public class MMDeviceEnumeratorTests
     {
-        private static void RequireVista()
-        {
-            if (Environment.OSVersion.Version.Major < 6)
-            {
-                Assert.Ignore("This test requires Windows Vista or newer");
-            }
-        }
-
         [Test]
         public void CanCreateMMDeviceEnumeratorInVista()
         {
-            RequireVista();
+            OSUtils.RequireVista();
             MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
         }
 
         [Test]
         public void CanEnumerateDevicesInVista()
         {
-            RequireVista();
+            OSUtils.RequireVista();
             MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
             foreach (MMDevice devices in enumerator.EnumerateAudioEndPoints(DataFlow.All,DeviceState.All))
             {
@@ -40,7 +33,7 @@ namespace NAudioTests.Wasapi
         [Test]
         public void CanEnumerateCaptureDevices()
         {
-            RequireVista();
+            OSUtils.RequireVista();
             MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
             foreach (MMDevice device in enumerator.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.All))
             {
@@ -51,7 +44,7 @@ namespace NAudioTests.Wasapi
         [Test]
         public void CanGetDefaultAudioEndpoint()
         {
-            RequireVista();
+            OSUtils.RequireVista();
             MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
             MMDevice defaultAudioEndpoint = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Console);
             Assert.IsNotNull(defaultAudioEndpoint);
@@ -60,7 +53,7 @@ namespace NAudioTests.Wasapi
         [Test]
         public void CanActivateDefaultAudioEndpoint()
         {
-            RequireVista();
+            OSUtils.RequireVista();
             MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
             MMDevice defaultAudioEndpoint = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Console);
             AudioClient audioClient = defaultAudioEndpoint.AudioClient;
@@ -70,11 +63,7 @@ namespace NAudioTests.Wasapi
         [Test]
         public void ThrowsNotSupportedExceptionInXP()
         {
-
-            if (Environment.OSVersion.Version.Major >= 6)
-            {
-                Assert.Ignore("This test requires Windows XP");
-            }
+            OSUtils.RequireXP();
             Assert.Throws<NotSupportedException>(() => new MMDeviceEnumerator());
         }
     }

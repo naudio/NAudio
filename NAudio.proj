@@ -38,6 +38,10 @@
       <MakeDir Directories="$(BuildFolder)"/>
    </Target>
    
+   <Target Name="NuGet" DependsOnTargets="ReleaseBuild">
+      <exec Command="Tools\NuGet Pack NAudio.nuspec -OutputDirectory $(BuildFolder)" />
+   </Target>
+   
    <PropertyGroup>
     <ExcludePattern>**\bin\**;**\obj\**;**\.svn\**</ExcludePattern>
    </PropertyGroup>  

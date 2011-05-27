@@ -2,14 +2,16 @@ using System.Collections.Generic;
 using System.IO;
 using NAudio.Wave;
 using NUnit.Framework;
+using System.Diagnostics;
+using System;
 
 namespace NAudioTests.WaveStreams
 {
     [TestFixture]
-    [Category("UnitTest")]
     public class WaveFileReaderTests
     {
         [Test]
+        [Category("UnitTest")]
         public void TestEmptyFile()
         {
             // arrange
@@ -46,6 +48,34 @@ namespace NAudioTests.WaveStreams
                 Assert.AreEqual(46, dataChunkPosition);
                 Assert.AreEqual(0, dataChunkLength);
                 Assert.AreEqual(0, chunks.Count);
+            }
+        }
+
+        [Test]
+        [Category("IntegrationTest")]
+        public void CanLoadAndReadVariousProblemWavFiles()
+        {
+            string testDataFolder = @"C:\Users\Mark\Downloads\NAudio";
+            if (!Directory.Exists(testDataFolder))
+            {
+                Assert.Ignore("{0} not found", testDataFolder);
+            }
+            foreach (string file in Directory.GetFiles(testDataFolder, "*.wav"))
+            {
+                string wavFile = Path.Combine(testDataFolder, file);
+                Debug.WriteLine(String.Format("Opening {0}", wavFile));
+                using (var reader = new WaveFileReader(wavFile))
+                {
+                    byte[] buffer = new byte[reader.WaveFormat.AverageBytesPerSecond];
+                    int bytesRead;
+                    int total = 0;
+                    do
+                    {
+                        bytesRead = reader.Read(buffer, 0, buffer.Length);
+                        total += bytesRead;
+                    } while (bytesRead > 0);
+                    Debug.WriteLine(String.Format("Read {0} bytes", total));
+                }
             }
         }
     }

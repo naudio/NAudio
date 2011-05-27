@@ -2,22 +2,23 @@ using System;
 using System.IO;
 using System.Text;
 
-namespace NAudio.Midi 
+namespace NAudio.Midi
 {
-	/// <summary>
-	/// Represents a MIDI note on event
-	/// </summary>
-	public class NoteOnEvent : NoteEvent 
-	{
-		private NoteEvent offEvent;
-		
-		/// <summary>
-		/// Reads a new Note On event from a stream of MIDI data
-		/// </summary>
-		/// <param name="br">Binary reader on the MIDI data stream</param>
-		public NoteOnEvent(BinaryReader br) : base(br) 
-		{
-		}
+    /// <summary>
+    /// Represents a MIDI note on event
+    /// </summary>
+    public class NoteOnEvent : NoteEvent
+    {
+        private NoteEvent offEvent;
+
+        /// <summary>
+        /// Reads a new Note On event from a stream of MIDI data
+        /// </summary>
+        /// <param name="br">Binary reader on the MIDI data stream</param>
+        public NoteOnEvent(BinaryReader br)
+            : base(br)
+        {
+        }
 
         /// <summary>
         /// Creates a NoteOn event with specified parameters
@@ -29,25 +30,25 @@ namespace NAudio.Midi
         /// <param name="duration">MIDI note duration</param>
         public NoteOnEvent(long absoluteTime, int channel, int noteNumber,
             int velocity, int duration)
-            : base(absoluteTime, channel, MidiCommandCode.NoteOn,noteNumber,velocity)
+            : base(absoluteTime, channel, MidiCommandCode.NoteOn, noteNumber, velocity)
         {
-            this.OffEvent = new NoteEvent(absoluteTime,channel,MidiCommandCode.NoteOff,
-                noteNumber,0);
+            this.OffEvent = new NoteEvent(absoluteTime, channel, MidiCommandCode.NoteOff,
+                noteNumber, 0);
             NoteLength = duration;
-        }		
+        }
 
-		/// <summary>
-		/// The associated Note off event
-		/// </summary>
-		public NoteEvent OffEvent 
-		{
-			get 
-			{
-				return offEvent;
-			}
-			set 
-			{
-				if(!MidiEvent.IsNoteOff(value))
+        /// <summary>
+        /// The associated Note off event
+        /// </summary>
+        public NoteEvent OffEvent
+        {
+            get
+            {
+                return offEvent;
+            }
+            set
+            {
+                if (!MidiEvent.IsNoteOff(value))
                 {
                     throw new ArgumentException("OffEvent must be a valid MIDI note off event");
                 }
@@ -60,9 +61,9 @@ namespace NAudio.Midi
                     throw new ArgumentException("Note Off Event must be for the same channel");
                 }
                 offEvent = value;
-                
-			}
-		}
+
+            }
+        }
 
         /// <summary>
         /// Get or set the Note Number, updating the off event at the same time
@@ -101,19 +102,19 @@ namespace NAudio.Midi
                 }
             }
         }
-		
-		/// <summary>
-		/// The duration of this note
-		/// </summary>
-		/// <remarks>
-		/// There must be a note off event
-		/// </remarks>
-		public int NoteLength 
-		{
-			get 
-			{
-				return (int) (offEvent.AbsoluteTime - this.AbsoluteTime);
-			}
+
+        /// <summary>
+        /// The duration of this note
+        /// </summary>
+        /// <remarks>
+        /// There must be a note off event
+        /// </remarks>
+        public int NoteLength
+        {
+            get
+            {
+                return (int)(offEvent.AbsoluteTime - this.AbsoluteTime);
+            }
             set
             {
                 if (value < 0)
@@ -122,7 +123,7 @@ namespace NAudio.Midi
                 }
                 offEvent.AbsoluteTime = this.AbsoluteTime + value;
             }
-		}
+        }
 
         /// <summary>
         /// Calls base class export first, then exports the data 
@@ -138,7 +139,7 @@ namespace NAudio.Midi
             }
             return String.Format("{0} Len: {1}",
                 base.ToString(),
-                (this.OffEvent == null) ? "?" :  this.NoteLength.ToString());
+                (this.OffEvent == null) ? "?" : this.NoteLength.ToString());
         }
-	}
+    }
 }

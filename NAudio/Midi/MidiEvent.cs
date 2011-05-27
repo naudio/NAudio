@@ -122,11 +122,11 @@ namespace NAudio.Midi
             {
             case MidiCommandCode.NoteOn:
                 me = new NoteOnEvent(br);
-                break;					
+                break;
             case MidiCommandCode.NoteOff:
             case MidiCommandCode.KeyAfterTouch:
                 me = new NoteEvent(br);
-                break;					
+                break;
             case MidiCommandCode.ControlChange:
                 me = new ControlChangeEvent(br);
                 break;
@@ -139,7 +139,7 @@ namespace NAudio.Midi
             case MidiCommandCode.PitchWheelChange:
                 me = new PitchWheelChangeEvent(br);
                 break;
-            case MidiCommandCode.TimingClock:			
+            case MidiCommandCode.TimingClock:
             case MidiCommandCode.StartSequence:
             case MidiCommandCode.ContinueSequence:
             case MidiCommandCode.StopSequence:
@@ -192,7 +192,7 @@ namespace NAudio.Midi
         }
 
         /// <summary>
-        /// The MIDI Channel Number for this event
+        /// The MIDI Channel Number for this event (1-16)
         /// </summary>
         public virtual int Channel 
         {

@@ -135,7 +135,7 @@ namespace NAudioDemo.AudioPlaybackDemo
 
         private IInputFileFormatPlugin GetPluginForFile(string fileName)
         {
-            return (from f in this.InputFileFormats where fileName.EndsWith(f.Extension) select f).FirstOrDefault();
+            return (from f in this.InputFileFormats where fileName.EndsWith(f.Extension, StringComparison.OrdinalIgnoreCase) select f).FirstOrDefault();
         }
 
         private ISampleProvider CreateInputStream(string fileName)

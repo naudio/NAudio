@@ -219,7 +219,7 @@ namespace NAudio.Wave
             if (formatChunkLength > 16)
             {
                 this.extraSize = br.ReadInt16();
-                if (this.extraSize > formatChunkLength - 18)
+                if (this.extraSize != formatChunkLength - 18)
                 {
                     Debug.WriteLine("Format chunk mismatch");
                     this.extraSize = (short)(formatChunkLength - 18);

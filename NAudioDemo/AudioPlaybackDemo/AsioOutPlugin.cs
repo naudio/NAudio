@@ -26,12 +26,17 @@ namespace NAudioDemo.AudioPlaybackDemo
 
         public string Name
         {
-            get { return "ASIO"; }
+            get { return "AsioOut"; }
         }
 
         public bool IsAvailable
         {
             get { return AsioOut.isSupported(); }
+        }
+
+        public int Priority
+        {
+            get { return 4; }
         }
     }
 }

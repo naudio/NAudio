@@ -32,13 +32,18 @@ namespace NAudioDemo.AudioPlaybackDemo
 
         public string Name
         {
-            get { return "WASAPI"; }
+            get { return "WasapiOut"; }
         }
 
         public bool IsAvailable
         {
             // supported on Vista and above
             get { return Environment.OSVersion.Version.Major >= 6; }
+        }
+
+        public int Priority
+        {
+            get { return 3; }
         }
     }
 }

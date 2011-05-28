@@ -13,5 +13,6 @@ namespace NAudioDemo.AudioPlaybackDemo
         UserControl CreateSettingsPanel();
         string Name { get; }
         bool IsAvailable { get; }
+        int Priority { get; }
     }
 }

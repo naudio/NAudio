@@ -45,12 +45,17 @@ namespace NAudioDemo.AudioPlaybackDemo
 
         public string Name
         {
-            get { return "waveOut"; }
+            get { return "WaveOut"; }
         }
 
         public bool IsAvailable
         {
             get { return WaveOut.DeviceCount > 0; }
+        }
+
+        public int Priority
+        {
+            get { return 1; } 
         }
     }
 }

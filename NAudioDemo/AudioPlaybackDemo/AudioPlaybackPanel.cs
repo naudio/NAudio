@@ -30,7 +30,7 @@ namespace NAudioDemo.AudioPlaybackDemo
         {
             comboBoxOutputDevice.DisplayMember = "Name";
             comboBoxOutputDevice.SelectedIndexChanged += new EventHandler(comboBoxOutputDevice_SelectedIndexChanged);
-            foreach (var outputDevicePlugin in outputDevicePlugins)
+            foreach (var outputDevicePlugin in outputDevicePlugins.OrderBy(p => p.Priority))
             {
                 comboBoxOutputDevice.Items.Add(outputDevicePlugin);
             }

@@ -61,7 +61,6 @@ namespace NAudio.Wave
     [Flags]
     public enum Mp3WaveFormatFlags
     {
-
         /// <summary>
         /// MPEGLAYER3_FLAG_PADDING_ISO
         /// </summary>

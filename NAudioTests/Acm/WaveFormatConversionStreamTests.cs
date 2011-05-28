@@ -34,6 +34,20 @@ namespace NAudioTests.Acm
                 WaveFormat.CreateCustomFormat(WaveFormatEncoding.ALaw, sampleRate, channels, sampleRate * channels, 1, 8));
         }
 
+        /* Windows does not provide an ACM MP3 encoder, but this test could be run
+         * if you install a different ACM MP3 encoder to see if the MP3 Wave Format
+         * NAudio creates is sufficient (possibly it will have its own custom metadata
+         * in the WaveFormat extra byts).
+        [Test]
+        public void CanConvertPcmToMp3()
+        {
+            int channels = 2;
+            int sampleRate = 44100;
+            CanCreateConversionStream(
+                new WaveFormat(sampleRate, 16, channels),
+                new Mp3WaveFormat(sampleRate, channels, 0, 128000/8)); 
+        }*/
+
         [Test]
         public void CanConvertALawToPcm()
         {
@@ -131,9 +145,20 @@ namespace NAudioTests.Acm
 
         private void CanCreateConversionStream(WaveFormat inputFormat, WaveFormat outputFormat)
         {
+            WaveStream inputStream = new NullWaveStream(inputFormat, 10000);
             using (WaveFormatConversionStream stream = new WaveFormatConversionStream(
-                inputFormat, new NullWaveStream(outputFormat, 10000)))
+                outputFormat, inputStream))
             {
+                byte[] buffer = new byte[stream.WaveFormat.AverageBytesPerSecond];
+                int totalRead = 0;
+                int bytesRead;
+                do
+                {
+                    bytesRead = stream.Read(buffer, 0, buffer.Length);
+                    totalRead += bytesRead;
+                } while (bytesRead > 0);
+                Debug.WriteLine(String.Format("Converted {0}", totalRead));
+                Assert.AreEqual(inputStream.Length, inputStream.Position);
             }
         }
     }

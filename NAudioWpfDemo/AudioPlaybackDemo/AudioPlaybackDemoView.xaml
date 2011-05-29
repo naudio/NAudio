@@ -14,6 +14,16 @@
         </Grid.RowDefinitions>
         <local:PolygonWaveFormControl x:Name="waveForm"/>
         <local:SpectrumAnalyser x:Name="analyzer" Grid.Row="1"/>
-        <local:ControlPanel x:Name="controlPanel" Grid.Row="2" />
+        <StackPanel Orientation="Horizontal" Grid.Row="2">
+            <Button Command="{Binding CaptureCommand}" Margin="2" ToolTip="Record">
+                <Ellipse Fill="Red" Width="15" Height="15" Margin="3"/>
+            </Button>
+            <Button Command="{Binding StopCommand}" Margin="2" ToolTip="Stop">
+                <Rectangle Fill="DarkBlue" Width="15" Height="15" Margin="3" RadiusX="2" RadiusY="2"/>
+            </Button>
+            <Button Command="{Binding PlayFileCommand}" Margin="2" ToolTip="Play">
+                <Path Fill="DarkGreen" Margin="3" Width="15" Height="15" Data="M 0,0 L 1,1 L 0,2 Z" Stretch="Fill" StrokeLineJoin="Round"/>
+            </Button>
+        </StackPanel>
     </Grid>
 </UserControl>

@@ -2,17 +2,17 @@ using System;
 
 namespace NAudio.Dsp
 {
-	/// <summary>
-	/// Summary description for FastFourierTransform.
-	/// </summary>
-	public class FastFourierTransform
-	{
-		/// <summary>
-		/// This computes an in-place complex-to-complex FFT 
-		/// x and y are the real and imaginary arrays of 2^m points.
-		/// </summary>
+    /// <summary>
+    /// Summary description for FastFourierTransform.
+    /// </summary>
+    public class FastFourierTransform
+    {
+        /// <summary>
+        /// This computes an in-place complex-to-complex FFT 
+        /// x and y are the real and imaginary arrays of 2^m points.
+        /// </summary>
         public static void FFT(bool forward, int m, Complex[] data)
-		{
+        {
             int n, i, i1, j, k, i2, l, l1, l2;
             float c1, c2, tx, ty, t1, t2, u1, u2, z;
 
@@ -87,5 +87,5 @@ namespace NAudio.Dsp
                 }
             }
         }
-	}
+    }
 }

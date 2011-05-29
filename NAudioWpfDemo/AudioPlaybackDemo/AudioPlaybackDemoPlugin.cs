@@ -8,10 +8,10 @@ using System.ComponentModel.Composition;
 namespace NAudioWpfDemo
 {
     [Export(typeof(IModule))]
-    class AudioPlaybackDemo : IModule
+    class AudioPlaybackDemoPlugin : IModule
     {
         AudioPlaybackDemoView view;
-        ControlPanelViewModel viewModel;
+        AudioPlaybackViewModel viewModel;
 
         public string Name
         {
@@ -26,8 +26,8 @@ namespace NAudioWpfDemo
         private void CreateView()
         {
             view = new AudioPlaybackDemoView();
-            this.viewModel = new ControlPanelViewModel(view.waveForm, view.analyzer);
-            view.controlPanel.DataContext = viewModel;
+            this.viewModel = new AudioPlaybackViewModel(view.waveForm, view.analyzer);
+            view.DataContext = viewModel;
         }
 
         public void Deactivate()

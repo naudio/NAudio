@@ -10,14 +10,14 @@ using NAudio.Wave;
 
 namespace NAudioWpfDemo
 {
-    class ControlPanelViewModel : INotifyPropertyChanged, IDisposable
+    class AudioPlaybackViewModel : INotifyPropertyChanged, IDisposable
     {
         int captureSeconds;
         AudioGraph audioGraph;
         IWaveFormRenderer waveFormRenderer;
         SpectrumAnalyser analyzer;
 
-        public ControlPanelViewModel(IWaveFormRenderer waveFormRenderer, SpectrumAnalyser analyzer)
+        public AudioPlaybackViewModel(IWaveFormRenderer waveFormRenderer, SpectrumAnalyser analyzer)
         {
             this.waveFormRenderer = waveFormRenderer;
             this.analyzer = analyzer;

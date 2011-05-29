@@ -34,12 +34,6 @@ namespace NAudioWpfDemo
             CaptureCommand = new RelayCommand(
                         () => this.Capture(),
                         () => true);
-            PlayCapturedAudioCommand = new RelayCommand(
-                        () => this.PlayCapturedAudio(),
-                        () => this.HasCapturedAudio());
-            SaveCapturedAudioCommand = new RelayCommand(
-                        () => this.SaveCapturedAudio(),
-                        () => this.HasCapturedAudio());
             StopCommand = new RelayCommand(
                         () => this.Stop(),
                         () => true);
@@ -62,8 +56,6 @@ namespace NAudioWpfDemo
 
         public ICommand PlayFileCommand { get; private set; }
         public ICommand CaptureCommand { get; private set; }
-        public ICommand PlayCapturedAudioCommand { get; private set; }
-        public ICommand SaveCapturedAudioCommand { get; private set; }
         public ICommand StopCommand { get; private set; }
 
         private void PlayFile()
@@ -87,28 +79,6 @@ namespace NAudioWpfDemo
             catch (Exception e)
             {
                 MessageBox.Show(e.ToString());
-            }
-        }
-
-        private void PlayCapturedAudio()
-        {
-            audioGraph.PlayCapturedAudio();
-        }
-
-        private bool HasCapturedAudio()
-        {
-            return audioGraph.HasCapturedAudio;
-        }
-
-        private void SaveCapturedAudio()
-        {
-            SaveFileDialog saveFileDialog = new SaveFileDialog();
-            saveFileDialog.DefaultExt = ".wav";
-            saveFileDialog.Filter = "WAVE File (*.wav)|*.wav";
-            bool? result = saveFileDialog.ShowDialog();
-            if (result.HasValue && result.Value)
-            {
-                audioGraph.SaveRecordedAudio(saveFileDialog.FileName);
             }
         }
 

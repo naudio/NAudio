@@ -82,16 +82,6 @@ namespace NAudioWpfDemo
             CancelCurrentOperation();
         }
 
-        public void SaveRecordedAudio(string fileName)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void PlayCapturedAudio()
-        {
-            throw new NotImplementedException();
-        }
-
         public void StartCapture(int captureSeconds)
         {
             aggregator.NotificationCount = 200;

@@ -95,6 +95,14 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="DrumMachineDemo\DrumMachineDemoView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="DrumMachineDemo\DrumPatternEditor.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="PolygonWaveFormControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -137,6 +145,17 @@
     <Compile Include="AudioPlaybackDemo\IVisualizationPlugin.cs" />
     <Compile Include="AudioPlaybackDemo\PolygonWaveFormVisualization.cs" />
     <Compile Include="AudioPlaybackDemo\SpectrumAnalyzerVisualization.cs" />
+    <Compile Include="DrumMachineDemo\DrumMachineDemoPlugin.cs" />
+    <Compile Include="DrumMachineDemo\DrumMachineDemoView.xaml.cs">
+      <DependentUpon>DrumMachineDemoView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="DrumMachineDemo\DrumMachineDemoViewModel.cs" />
+    <Compile Include="DrumMachineDemo\DrumPatternEditor.xaml.cs">
+      <DependentUpon>DrumPatternEditor.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="DrumMachineDemo\MusicSampleProvider.cs" />
+    <Compile Include="DrumMachineDemo\PatternSequencer.cs" />
+    <Compile Include="DrumMachineDemo\SampleSource.cs" />
     <Compile Include="IModule.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>

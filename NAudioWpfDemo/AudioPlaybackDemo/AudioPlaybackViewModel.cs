@@ -14,31 +14,43 @@ namespace NAudioWpfDemo
     class AudioPlaybackViewModel : INotifyPropertyChanged, IDisposable
     {
         private int captureSeconds;
-        private AudioGraph audioGraph;
+        private AudioPlayback audioPlayback;
         private List<IVisualizationPlugin> visualizations;
         private IVisualizationPlugin selectedVisualization;
+        private string selectedFile;
+
+        public ICommand OpenFileCommand { get; private set; }
+        public ICommand PlayCommand { get; private set; }
+        public ICommand PauseCommand { get; private set; }
+        public ICommand StopCommand { get; private set; }
 
         public AudioPlaybackViewModel(IEnumerable<IVisualizationPlugin> visualizations)
         {
             this.visualizations = new List<IVisualizationPlugin>(visualizations);
             this.selectedVisualization = this.visualizations.FirstOrDefault();
 
-            this.audioGraph = new AudioGraph();
-            audioGraph.CaptureComplete += new EventHandler(audioGraph_CaptureComplete);
-            audioGraph.MaximumCalculated += new EventHandler<MaxSampleEventArgs>(audioGraph_MaximumCalculated);
-            audioGraph.FftCalculated += new EventHandler<FftEventArgs>(audioGraph_FftCalculated);
+            this.audioPlayback = new AudioPlayback();
+            audioPlayback.MaximumCalculated += new EventHandler<MaxSampleEventArgs>(audioGraph_MaximumCalculated);
+            audioPlayback.FftCalculated += new EventHandler<FftEventArgs>(audioGraph_FftCalculated);
             this.captureSeconds = 10;
-            this.NotificationsPerSecond = 100;
 
-            PlayFileCommand = new RelayCommand(
-                        () => this.PlayFile(),
+            PlayCommand = new RelayCommand(
+                        () => this.Play(),
                         () => true);
-            CaptureCommand = new RelayCommand(
-                        () => this.Capture(),
+            OpenFileCommand = new RelayCommand(
+                        () => this.OpenFile(),
                         () => true);
             StopCommand = new RelayCommand(
                         () => this.Stop(),
                         () => true);
+            PauseCommand = new RelayCommand(
+                        () => this.Pause(),
+                        () => true);
+        }
+
+        private void Pause()
+        {
+            audioPlayback.Pause();
         }
 
         public IList<IVisualizationPlugin> Visualizations { get { return this.visualizations; } }
@@ -84,42 +96,33 @@ namespace NAudioWpfDemo
             }
         }
 
-        void audioGraph_CaptureComplete(object sender, EventArgs e)
-        {
-            CommandManager.InvalidateRequerySuggested();
-        }
-
-        public ICommand PlayFileCommand { get; private set; }
-        public ICommand CaptureCommand { get; private set; }
-        public ICommand StopCommand { get; private set; }
-
-        private void PlayFile()
+        private void OpenFile()
         {
             OpenFileDialog openFileDialog = new OpenFileDialog();
             openFileDialog.Filter = "All Supported Files (*.wav;*.mp3)|*.wav;*.mp3|All Files (*.*)|*.*";
             bool? result = openFileDialog.ShowDialog();
             if (result.HasValue && result.Value)
             {
-                string file = openFileDialog.FileName;
-                audioGraph.PlayFile(file);
+                this.selectedFile = openFileDialog.FileName;
+                audioPlayback.Load(this.selectedFile);
             }
         }
 
-        private void Capture()
+        private void Play()
         {
-            try
+            if (this.selectedFile == null)
             {
-                audioGraph.StartCapture(CaptureSeconds);
+                OpenFile();
             }
-            catch (Exception e)
+            if (this.selectedFile != null)
             {
-                MessageBox.Show(e.ToString());
+                audioPlayback.Play();
             }
         }
 
         private void Stop()
         {
-            audioGraph.Stop();
+            audioPlayback.Stop();
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -132,42 +135,9 @@ namespace NAudioWpfDemo
             }
         }
 
-
-        public int CaptureSeconds
-        {
-            get
-            {
-                return captureSeconds;
-            }
-            set
-            {
-                if (captureSeconds != value)
-                {
-                    captureSeconds = value;
-                    RaisePropertyChangedEvent("CaptureSeconds");
-                }
-            }
-        }
-
-        public int NotificationsPerSecond
-        {
-            get
-            {
-                return audioGraph.NotificationsPerSecond;
-            }
-            set
-            {
-                if (NotificationsPerSecond != value)
-                {
-                    audioGraph.NotificationsPerSecond = value;
-                    RaisePropertyChangedEvent("NotificationsPerSecond");
-                }
-            }
-        }
-
         public void Dispose()
         {
-            audioGraph.Dispose();
+            audioPlayback.Dispose();
         }
     }
 }

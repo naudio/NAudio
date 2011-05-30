@@ -11,18 +11,32 @@ namespace NAudioWpfDemo
     {
         private IWavePlayer playbackDevice;
         private WaveStream fileStream;
-        
-        public event EventHandler<SampleEventArgs> OnSample;
-        
+        private SampleAggregator aggregator;
+
+        public event EventHandler<FftEventArgs> FftCalculated
+        {
+            add { aggregator.FftCalculated += value; }
+            remove { aggregator.FftCalculated -= value; }
+        }
+
+        public event EventHandler<MaxSampleEventArgs> MaximumCalculated
+        {
+            add { aggregator.MaximumCalculated += value; }
+            remove { aggregator.MaximumCalculated -= value; }
+        }
+
         public AudioPlayback()
         {
+            aggregator = new SampleAggregator();
+            aggregator.NotificationCount = 882;
+            aggregator.PerformFFT = true;
         }
 
         public void Load(string fileName)
         {
-            Stop();            
-            EnsureDeviceCreated();
+            Stop();
             CloseFile();
+            EnsureDeviceCreated();
             OpenFile(fileName);
         }
 
@@ -43,7 +57,6 @@ namespace NAudioWpfDemo
 
         private ISampleProvider CreateInputStream(string fileName)
         {
-
             if (fileName.EndsWith(".wav"))
             {
                 fileStream = OpenWavStream(fileName);
@@ -58,16 +71,8 @@ namespace NAudioWpfDemo
             }
             var inputStream = new SampleChannel(fileStream);
             var sampleStream = new NotifyingSampleProvider(inputStream);
-            sampleStream.Sample += new EventHandler<SampleEventArgs>(inputStream_Sample);
+            sampleStream.Sample += (s, e) => aggregator.Add(e.Left);
             return sampleStream;
-        }
-
-        void inputStream_Sample(object sender, SampleEventArgs e)
-        {
-            if (OnSample != null)
-            {
-                OnSample(this, e);
-            }
         }
 
         private static WaveStream OpenWavStream(string fileName)
@@ -102,18 +107,27 @@ namespace NAudioWpfDemo
             }
         }
 
+        public void Pause()
+        {
+            if (playbackDevice != null)
+            {
+                playbackDevice.Pause();
+            }
+        }
+
         public void Stop()
         {
             if (playbackDevice != null)
             {
                 playbackDevice.Stop();
+                fileStream.Position = 0;
             }
-            CloseFile();
         }
 
         public void Dispose()
         {
             Stop();
+            CloseFile();
             if (playbackDevice != null)
             {
                 playbackDevice.Dispose();

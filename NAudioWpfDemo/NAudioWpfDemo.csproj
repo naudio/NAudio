@@ -133,6 +133,7 @@
     <Compile Include="AudioPlaybackDemo\AudioPlaybackDemoView.xaml.cs">
       <DependentUpon>AudioPlaybackDemoView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="AudioPlaybackDemo\PolylineWaveFormVisualization.cs" />
     <Compile Include="AudioPlaybackDemo\IVisualizationPlugin.cs" />
     <Compile Include="AudioPlaybackDemo\PolygonWaveFormVisualization.cs" />
     <Compile Include="AudioPlaybackDemo\SpectrumAnalyzerVisualization.cs" />
@@ -143,8 +144,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AudioPlaybackDemo\AudioCapture.cs" />
-    <Compile Include="AudioPlaybackDemo\AudioGraph.cs" />
     <Compile Include="AudioPlaybackDemo\AudioPlayback.cs" />
     <Compile Include="AudioPlaybackDemo\AudioPlaybackViewModel.cs" />
     <Compile Include="MainWindowViewModel.cs" />

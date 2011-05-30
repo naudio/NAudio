@@ -87,5 +87,16 @@ namespace NAudio.Dsp
                 }
             }
         }
+        
+        /// <summary>
+        /// Applies a Hamming Window
+        /// </summary>
+        /// <param name="n">Index into frame</param>
+        /// <param name="frameSize">Frame size (e.g. 1024)</param>
+        /// <returns>Multiplier for Hamming window</returns>
+        public static double HammingWindow(int n, int frameSize)
+        {
+            return 0.54 - 0.46 * Math.Cos((2 * Math.PI * n) / (frameSize - 1));
+        }
     }
 }

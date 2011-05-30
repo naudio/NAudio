@@ -13,7 +13,6 @@ namespace NAudioWpfDemo
 {
     class AudioPlaybackViewModel : INotifyPropertyChanged, IDisposable
     {
-        private int captureSeconds;
         private AudioPlayback audioPlayback;
         private List<IVisualizationPlugin> visualizations;
         private IVisualizationPlugin selectedVisualization;
@@ -32,7 +31,6 @@ namespace NAudioWpfDemo
             this.audioPlayback = new AudioPlayback();
             audioPlayback.MaximumCalculated += new EventHandler<MaxSampleEventArgs>(audioGraph_MaximumCalculated);
             audioPlayback.FftCalculated += new EventHandler<FftEventArgs>(audioGraph_FftCalculated);
-            this.captureSeconds = 10;
 
             PlayCommand = new RelayCommand(
                         () => this.Play(),

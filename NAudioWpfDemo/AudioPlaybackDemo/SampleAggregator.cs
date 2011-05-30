@@ -52,7 +52,7 @@ namespace NAudioWpfDemo
         {
             if (PerformFFT && FftCalculated != null)
             {
-                fftBuffer[fftPos].X = value;
+                fftBuffer[fftPos].X = (float)(value * FastFourierTransform.HammingWindow(fftPos, fftBuffer.Length));
                 fftBuffer[fftPos].Y = 0;
                 fftPos++;
                 if (fftPos >= fftBuffer.Length)

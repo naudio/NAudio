@@ -135,8 +135,6 @@ namespace NAudioWpfDemo
             }
         }
 
-        public double RecordVolume { get; set; }
-
         #region IDisposable Members
 
         public void Dispose()

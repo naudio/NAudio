@@ -133,6 +133,9 @@
     <Compile Include="AudioPlaybackDemo\AudioPlaybackDemoView.xaml.cs">
       <DependentUpon>AudioPlaybackDemoView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="AudioPlaybackDemo\IVisualizationPlugin.cs" />
+    <Compile Include="AudioPlaybackDemo\PolygonWaveFormVisualization.cs" />
+    <Compile Include="AudioPlaybackDemo\SpectrumAnalyzerVisualization.cs" />
     <Compile Include="IModule.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>

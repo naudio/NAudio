@@ -4,14 +4,22 @@ using System.Linq;
 using System.Text;
 using System.Windows.Controls;
 using System.ComponentModel.Composition;
+using NAudioWpfDemo.AudioPlaybackDemo;
 
 namespace NAudioWpfDemo
 {
     [Export(typeof(IModule))]
     class AudioPlaybackDemoPlugin : IModule
     {
-        AudioPlaybackDemoView view;
-        AudioPlaybackViewModel viewModel;
+        private AudioPlaybackDemoView view;
+        private AudioPlaybackViewModel viewModel;
+        private IEnumerable<IVisualizationPlugin> visualizations;
+
+        [ImportingConstructor]
+        public AudioPlaybackDemoPlugin([ImportMany(typeof(IVisualizationPlugin))] IEnumerable<IVisualizationPlugin> visualizations)
+        {
+            this.visualizations = visualizations;
+        }
 
         public string Name
         {
@@ -26,7 +34,7 @@ namespace NAudioWpfDemo
         private void CreateView()
         {
             view = new AudioPlaybackDemoView();
-            this.viewModel = new AudioPlaybackViewModel(view.waveForm, view.analyzer);
+            this.viewModel = new AudioPlaybackViewModel(visualizations);
             view.DataContext = viewModel;
         }
 

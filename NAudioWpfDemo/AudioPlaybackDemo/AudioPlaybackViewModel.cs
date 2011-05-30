@@ -7,20 +7,22 @@ using System.Windows.Input;
 using Microsoft.Win32;
 using System.Windows;
 using NAudio.Wave;
+using NAudioWpfDemo.AudioPlaybackDemo;
 
 namespace NAudioWpfDemo
 {
     class AudioPlaybackViewModel : INotifyPropertyChanged, IDisposable
     {
-        int captureSeconds;
-        AudioGraph audioGraph;
-        IWaveFormRenderer waveFormRenderer;
-        SpectrumAnalyser analyzer;
+        private int captureSeconds;
+        private AudioGraph audioGraph;
+        private List<IVisualizationPlugin> visualizations;
+        private IVisualizationPlugin selectedVisualization;
 
-        public AudioPlaybackViewModel(IWaveFormRenderer waveFormRenderer, SpectrumAnalyser analyzer)
+        public AudioPlaybackViewModel(IEnumerable<IVisualizationPlugin> visualizations)
         {
-            this.waveFormRenderer = waveFormRenderer;
-            this.analyzer = analyzer;
+            this.visualizations = new List<IVisualizationPlugin>(visualizations);
+            this.selectedVisualization = this.visualizations.FirstOrDefault();
+
             this.audioGraph = new AudioGraph();
             audioGraph.CaptureComplete += new EventHandler(audioGraph_CaptureComplete);
             audioGraph.MaximumCalculated += new EventHandler<MaxSampleEventArgs>(audioGraph_MaximumCalculated);
@@ -39,14 +41,47 @@ namespace NAudioWpfDemo
                         () => true);
         }
 
+        public IList<IVisualizationPlugin> Visualizations { get { return this.visualizations; } }
+
+        public IVisualizationPlugin SelectedVisualization
+        {
+            get
+            {
+                return this.selectedVisualization;
+            }
+            set
+            {
+                if (this.selectedVisualization != value)
+                {
+                    this.selectedVisualization = value;
+                    RaisePropertyChangedEvent("SelectedVisualization");
+                    RaisePropertyChangedEvent("Visualization");
+                }
+            }
+        }
+
+        public object Visualization
+        {
+            get
+            {
+                return this.selectedVisualization.Content;
+            }
+        }
+
         void audioGraph_FftCalculated(object sender, FftEventArgs e)
         {
-            analyzer.Update(e.Result);
+            if (this.SelectedVisualization != null)
+            {
+                this.SelectedVisualization.OnFftCalculated(e.Result);
+            }
         }
 
         void audioGraph_MaximumCalculated(object sender, MaxSampleEventArgs e)
         {
-            waveFormRenderer.AddValue(e.MaxSample, e.MinSample);
+            if (this.SelectedVisualization != null)
+            {
+                this.SelectedVisualization.OnMaxCalculated(e.MinSample, e.MaxSample);
+            }
         }
 
         void audioGraph_CaptureComplete(object sender, EventArgs e)
@@ -110,22 +145,6 @@ namespace NAudioWpfDemo
                 {
                     captureSeconds = value;
                     RaisePropertyChangedEvent("CaptureSeconds");
-                }
-            }
-        }
-
-        public double RecordVolume
-        {
-            get
-            {
-                return audioGraph.RecordVolume;
-            }
-            set
-            {
-                if (audioGraph.RecordVolume != value)
-                {
-                    audioGraph.RecordVolume = value;
-                    RaisePropertyChangedEvent("RecordVolume");
                 }
             }
         }

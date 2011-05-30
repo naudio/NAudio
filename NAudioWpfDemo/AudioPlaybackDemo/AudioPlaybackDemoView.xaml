@@ -8,12 +8,15 @@
              d:DesignHeight="300" d:DesignWidth="300">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="2*" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="2*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <local:PolygonWaveFormControl x:Name="waveForm"/>
-        <local:SpectrumAnalyser x:Name="analyzer" Grid.Row="1"/>
+        <StackPanel Orientation="Horizontal">
+            <Label>Select Visualization: </Label>
+            <ComboBox ItemsSource="{Binding Visualizations}" DisplayMemberPath="Name" SelectedItem="{Binding SelectedVisualization, Mode=TwoWay}" Width="200" />
+        </StackPanel>
+        <ContentPresenter Content="{Binding Visualization}" Grid.Row="1" />
         <StackPanel Orientation="Horizontal" Grid.Row="2">
             <Button Command="{Binding CaptureCommand}" Margin="2" ToolTip="Record">
                 <Ellipse Fill="Red" Width="15" Height="15" Margin="3"/>

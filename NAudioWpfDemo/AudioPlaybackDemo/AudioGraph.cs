@@ -55,12 +55,6 @@ namespace NAudioWpfDemo
             set { aggregator.NotificationCount = value; }
         }
 
-        public double RecordVolume
-        {
-            get { return capture.RecordVolume; }
-            set { capture.RecordVolume = value; }
-        }
-
         public bool HasCapturedAudio { get; private set; }
 
         public void PlayFile(string fileName)

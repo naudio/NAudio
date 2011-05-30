@@ -19,12 +19,9 @@ namespace NAudioWpfDemo
     /// </summary>
     public partial class AudioPlaybackDemoView : UserControl
     {
-        AudioPlaybackViewModel viewModel;
-
         public AudioPlaybackDemoView()
         {
             InitializeComponent();
-
         }
     }
 }

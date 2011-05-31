@@ -150,6 +150,7 @@
       <DependentUpon>DrumMachineDemoView.xaml</DependentUpon>
     </Compile>
     <Compile Include="DrumMachineDemo\DrumMachineDemoViewModel.cs" />
+    <Compile Include="DrumMachineDemo\DrumPattern.cs" />
     <Compile Include="DrumMachineDemo\DrumPatternEditor.xaml.cs">
       <DependentUpon>DrumPatternEditor.xaml</DependentUpon>
     </Compile>

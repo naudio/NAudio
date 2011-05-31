@@ -21,18 +21,21 @@ namespace NAudioWpfDemo.DrumMachineDemo
         private const int KickDrumNote = 36;
         private const int SnareDrumNote = 38;
         private const int ClosedHatsNote = 42;
+        private const int OpenHatsNote = 46;
 
-        public PatternSequencer()
+        public PatternSequencer(DrumPattern pattern)
         {
-            SampleSource kickSample = SampleSource.CreateFromWaveFile(@"E:\Recording\sfz\SL Acoustic Kit Sample Set\AcousticKit\Kicks\Kick 01.wav");
-            SampleSource snareSample = SampleSource.CreateFromWaveFile(@"E:\Recording\sfz\SL Acoustic Kit Sample Set\AcousticKit\Snares\Snare 01.wav");
-            SampleSource closedHatsSample = SampleSource.CreateFromWaveFile(@"E:\Recording\sfz\SL Acoustic Kit Sample Set\AcousticKit\Hi Hat Cymbals\Hi Hat Closed Edge 01.wav");
-            SampleSource openHatsSample = SampleSource.CreateFromWaveFile(@"E:\Recording\sfz\SL Acoustic Kit Sample Set\AcousticKit\Hi Hat Cymbals\Hi Hat Open 01a.wav");
+            string folder = @"c:\Users\Mark\recording\";
+            SampleSource kickSample = SampleSource.CreateFromWaveFile(folder + @"sfz\SL Acoustic Kit Sample Set\AcousticKit\Kicks\Kick 01.wav");
+            SampleSource snareSample = SampleSource.CreateFromWaveFile(folder + @"sfz\SL Acoustic Kit Sample Set\AcousticKit\Snares\Snare 01.wav");
+            SampleSource closedHatsSample = SampleSource.CreateFromWaveFile(folder + @"sfz\SL Acoustic Kit Sample Set\AcousticKit\Hi Hat Cymbals\Hi Hat Closed Edge 01.wav");
+            SampleSource openHatsSample = SampleSource.CreateFromWaveFile(folder + @"sfz\SL Acoustic Kit Sample Set\AcousticKit\Hi Hat Cymbals\Hi Hat Open 01a.wav");
             sampleSources = new Dictionary<int, SampleSource>();
+            
             sampleSources.Add(KickDrumNote, kickSample);
             sampleSources.Add(SnareDrumNote, snareSample);
             sampleSources.Add(ClosedHatsNote, closedHatsSample);
-            sampleSources.Add(46, openHatsSample);
+            sampleSources.Add(OpenHatsNote, openHatsSample);
 
             int tempo = 100;
             int sampleRate = openHatsSample.SampleWaveFormat.SampleRate;
@@ -45,18 +48,22 @@ namespace NAudioWpfDemo.DrumMachineDemo
             // absolute time is measured in sample frames
             int channel = 1;
             drumBeats = new List<NoteOnEvent>();
-            drumBeats.Add(new NoteOnEvent(0, channel, KickDrumNote, 127, 0));
-            drumBeats.Add(new NoteOnEvent(samplesPerBeat, channel, SnareDrumNote, 127, 0));
-            drumBeats.Add(new NoteOnEvent(samplesPerBeat * 2, channel, KickDrumNote, 127, 0));
-            drumBeats.Add(new NoteOnEvent(samplesPerBeat * 3, channel, SnareDrumNote, 127, 0));
-
-            for (int n = 0; n < 16; n++)
+            int[] midiNoteNumbers = { KickDrumNote, SnareDrumNote, ClosedHatsNote, OpenHatsNote };
+            for (int step = 0; step < pattern.Steps; step++)
             {
-                drumBeats.Add(new NoteOnEvent(samplesPer16th * n, channel, ClosedHatsNote, 127, 0));
+                for (int note = 0; note < pattern.Notes; note++)
+                {
+                    var velocity = pattern[note,step];
+                    if (velocity > 0)
+                    {
+                        var noteOn = new NoteOnEvent(samplesPer16th * step, channel, midiNoteNumbers[note], velocity, 0);
+                        drumBeats.Add(noteOn);
+                    }
+                }
             }
-            drumBeats.Sort((x, y) => x.AbsoluteTime.CompareTo(y.AbsoluteTime));
+            //drumBeats.Sort((x, y) => x.AbsoluteTime.CompareTo(y.AbsoluteTime));
 
-            this.patternLength = samplesPerBeat * 4;
+            this.patternLength = samplesPer16th * pattern.Steps;
             this.waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(44100, 2);
             mixer = new MixingSampleProvider(waveFormat);
         }

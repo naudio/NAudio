@@ -11,8 +11,11 @@ namespace NAudioWpfDemo.DrumMachineDemo
     class DrumMachineDemoViewModel : IDisposable
     {
         private IWavePlayer waveOut;
-        public DrumMachineDemoViewModel()
+        private DrumPattern pattern;
+
+        public DrumMachineDemoViewModel(DrumPattern pattern)
         {
+            this.pattern = pattern;
             PlayCommand = new RelayCommand(
                () => this.Play(),
                () => true);
@@ -23,7 +26,7 @@ namespace NAudioWpfDemo.DrumMachineDemo
         private void Play()
         {
             waveOut = new WaveOut();
-            ISampleProvider sp = new PatternSequencer();
+            ISampleProvider sp = new PatternSequencer(pattern);
             IWaveProvider wp = new SampleToWaveProvider(sp);
             waveOut.Init(wp);
             waveOut.Play();

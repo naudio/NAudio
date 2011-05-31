@@ -108,8 +108,10 @@ namespace NAudio.Wave.SampleProviders
             this.sourceBuffer = BufferHelpers.Ensure(this.sourceBuffer, count);
             lock (sources)
             {
-                foreach (var source in sources)
+                int index = sources.Count - 1;
+                while (index >= 0)
                 {
+                    var source = sources[index];
                     int samplesRead = source.Read(this.sourceBuffer, 0, count);
                     int outIndex = offset;
                     for (int n = 0; n < samplesRead; n++)
@@ -124,6 +126,11 @@ namespace NAudio.Wave.SampleProviders
                         }
                     }
                     outputSamples = Math.Max(samplesRead, outputSamples);
+                    if (samplesRead == 0)
+                    {
+                        sources.RemoveAt(index);
+                    }
+                    index--;
                 }
             }
             return outputSamples;

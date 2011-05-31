@@ -11,6 +11,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using NAudio.Midi;
 
 namespace NAudioWpfDemo.DrumMachineDemo
 {
@@ -19,13 +20,27 @@ namespace NAudioWpfDemo.DrumMachineDemo
     /// </summary>
     public partial class DrumPatternEditor : UserControl
     {
+        private DrumPattern pattern;
+        private double gridSquareWidth = 20;
+
         public DrumPatternEditor()
         {
-            double gridSquareWidth = 20;
             InitializeComponent();
-            for (int n = 0; n < 16; n++)
+            this.pattern = new DrumPattern(4, 16);
+            DrawPattern();
+        }
+
+        public DrumPattern DrumPattern
+        {
+            get { return pattern; }
+        }
+
+        private void DrawPattern()
+        {
+            
+            for (int step = 0; step < pattern.Steps; step++)
             {
-                for (int j = 0; j < 4; j++)
+                for (int note = 0; note < pattern.Notes; note++)
                 {
                     Rectangle r = new Rectangle();
                     r.Stroke = Brushes.Black;
@@ -33,21 +48,32 @@ namespace NAudioWpfDemo.DrumMachineDemo
                     r.StrokeThickness = 1;
                     r.Width = gridSquareWidth;
                     r.Height = gridSquareWidth;
-                    r.SetValue(Canvas.LeftProperty, n * gridSquareWidth);
-                    r.SetValue(Canvas.TopProperty, j * gridSquareWidth);
+                    r.SetValue(Canvas.LeftProperty, step * gridSquareWidth);
+                    r.SetValue(Canvas.TopProperty, note * gridSquareWidth);
                     r.MouseLeftButtonUp += r_MouseLeftButtonUp;
+                    //r.IsHitTestVisible = false;
                     r.Tag = false;
                     drumGridCanvas.Children.Add(r);
                 }
             }
+            //drumGridCanvas.MouseLeftButtonDown += r_MouseLeftButtonUp;
+
         }
 
         void r_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            Rectangle r = (Rectangle)sender;
+            /*Rectangle r = (Rectangle)sender;
             bool isChecked = (bool)r.Tag;
             r.Tag = !isChecked;
-            r.Fill = new SolidColorBrush(isChecked ? Colors.White : Colors.Red);
+            r.Fill = new SolidColorBrush(isChecked ? Colors.White : Colors.Red);*/
+            var p = e.GetPosition(drumGridCanvas);
+            int step = (int)(p.X / gridSquareWidth);
+            int note = (int)(p.Y / gridSquareWidth);
+            pattern[note, step] = pattern[note, step] == 0 ? (byte)127 : (byte)0;
+            Rectangle r = (Rectangle)sender;
+            r.Fill = pattern[note, step] == 0 ? Brushes.White : Brushes.Red;
         }
     }
+
+
 }

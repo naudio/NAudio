@@ -46,6 +46,17 @@ namespace NAudioWpfDemo.DrumMachineDemo
             // we'll use MIDI events since they are convenient
             // for now, channel, note number, velocity mean nothing
             // absolute time is measured in sample frames
+            CreateDrumBeats(pattern, samplesPer16th);
+            pattern.PatternChanged += (s, e) => CreateDrumBeats(pattern, samplesPer16th);
+            //drumBeats.Sort((x, y) => x.AbsoluteTime.CompareTo(y.AbsoluteTime));
+
+            this.patternLength = samplesPer16th * pattern.Steps;
+            this.waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(44100, 2);
+            mixer = new MixingSampleProvider(waveFormat);
+        }
+
+        private void CreateDrumBeats(DrumPattern pattern, int samplesPer16th)
+        {
             int channel = 1;
             drumBeats = new List<NoteOnEvent>();
             int[] midiNoteNumbers = { KickDrumNote, SnareDrumNote, ClosedHatsNote, OpenHatsNote };
@@ -53,7 +64,7 @@ namespace NAudioWpfDemo.DrumMachineDemo
             {
                 for (int note = 0; note < pattern.Notes; note++)
                 {
-                    var velocity = pattern[note,step];
+                    var velocity = pattern[note, step];
                     if (velocity > 0)
                     {
                         var noteOn = new NoteOnEvent(samplesPer16th * step, channel, midiNoteNumbers[note], velocity, 0);
@@ -61,11 +72,16 @@ namespace NAudioWpfDemo.DrumMachineDemo
                     }
                 }
             }
-            //drumBeats.Sort((x, y) => x.AbsoluteTime.CompareTo(y.AbsoluteTime));
-
-            this.patternLength = samplesPer16th * pattern.Steps;
-            this.waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(44100, 2);
-            mixer = new MixingSampleProvider(waveFormat);
+            // sync back to the right place in the pattern
+            patternIndex = 0;
+            for (int i = 0; i < drumBeats.Count; i++)
+            {
+                if (drumBeats[i].AbsoluteTime >= position)
+                {
+                    patternIndex = i;
+                    break;
+                }
+            }
         }
 
         public WaveFormat WaveFormat
@@ -78,9 +94,9 @@ namespace NAudioWpfDemo.DrumMachineDemo
             bool finished = false;
             do
             {
-                var note = GetNextEvent();
+                var note = NextEvent;
 
-                if (note.AbsoluteTime >= position && note.AbsoluteTime < position + count)
+                if (note != null && note.AbsoluteTime >= position && note.AbsoluteTime < position + count)
                 {
                     MusicSampleProvider sp = new MusicSampleProvider(sampleSources[note.NoteNumber]);
                     sp.DelayBy = (int)(note.AbsoluteTime - position);
@@ -111,9 +127,13 @@ namespace NAudioWpfDemo.DrumMachineDemo
             patternIndex = patternIndex % drumBeats.Count;
         }
 
-        private NoteOnEvent GetNextEvent()
+        private NoteOnEvent NextEvent
         {
-            return drumBeats[patternIndex];
+            get
+            {
+                if (drumBeats.Count == 0) return null;
+                return drumBeats[patternIndex];
+            }
         }
     }
 }

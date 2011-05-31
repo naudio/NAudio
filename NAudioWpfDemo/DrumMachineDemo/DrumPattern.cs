@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.ComponentModel;
 
 namespace NAudioWpfDemo.DrumMachineDemo
 {
@@ -27,9 +28,15 @@ namespace NAudioWpfDemo.DrumMachineDemo
                 if (hits[note, step] != value)
                 {
                     hits[note, step] = value;
+                    if (PatternChanged != null)
+                    {
+                        PatternChanged(this, EventArgs.Empty);
+                    }
                 }
             }
         }
+
+        public event EventHandler PatternChanged;
     }
 
 }

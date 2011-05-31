@@ -7,12 +7,13 @@
              d:DesignHeight="300" d:DesignWidth="300" xmlns:my="clr-namespace:NAudioWpfDemo.DrumMachineDemo">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="38*" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="262*" />
         </Grid.RowDefinitions>
         <my:DrumPatternEditor Grid.Row="1" HorizontalAlignment="Left" Margin="20" x:Name="drumPatternEditor1" VerticalAlignment="Top" />
         <StackPanel Orientation="Horizontal">
-            <Button Content="Play" Command="{Binding PlayCommand}" Height="23" Margin="6" Width="75" />
+            <Button Content="Play" Command="{Binding PlayCommand}" Margin="6" Width="75" />
+            <Button Content="Stop" Command="{Binding StopCommand}" Margin="6" Width="75" />
         </StackPanel>
     </Grid>
 </UserControl>

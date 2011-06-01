@@ -6,7 +6,7 @@ using System.ComponentModel.Composition;
 
 namespace NAudioWpfDemo.DrumMachineDemo
 {
-    // HIDE FROM VIEW - STILL A WORK IN PROGRESS [Export(typeof(IModule))]
+    [Export(typeof(IModule))]
     class DrumMachineDemoPlugin : IModule
     {
         private DrumMachineDemoView view;
@@ -23,7 +23,7 @@ namespace NAudioWpfDemo.DrumMachineDemo
                 if (view == null)
                 {
                     view = new DrumMachineDemoView();
-                    viewModel = new DrumMachineDemoViewModel();
+                    viewModel = new DrumMachineDemoViewModel(view.drumPatternEditor1.DrumPattern);
                     view.DataContext = viewModel;
                 }
                 return view;

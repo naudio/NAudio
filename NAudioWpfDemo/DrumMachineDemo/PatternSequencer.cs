@@ -25,11 +25,10 @@ namespace NAudioWpfDemo.DrumMachineDemo
 
         public PatternSequencer(DrumPattern pattern)
         {
-            string folder = @"c:\Users\Mark\recording\";
-            SampleSource kickSample = SampleSource.CreateFromWaveFile(folder + @"sfz\SL Acoustic Kit Sample Set\AcousticKit\Kicks\Kick 01.wav");
-            SampleSource snareSample = SampleSource.CreateFromWaveFile(folder + @"sfz\SL Acoustic Kit Sample Set\AcousticKit\Snares\Snare 01.wav");
-            SampleSource closedHatsSample = SampleSource.CreateFromWaveFile(folder + @"sfz\SL Acoustic Kit Sample Set\AcousticKit\Hi Hat Cymbals\Hi Hat Closed Edge 01.wav");
-            SampleSource openHatsSample = SampleSource.CreateFromWaveFile(folder + @"sfz\SL Acoustic Kit Sample Set\AcousticKit\Hi Hat Cymbals\Hi Hat Open 01a.wav");
+            SampleSource kickSample = SampleSource.CreateFromWaveFile("Samples\\kick-trimmed.wav");
+            SampleSource snareSample = SampleSource.CreateFromWaveFile("Samples\\snare-trimmed.wav");
+            SampleSource closedHatsSample = SampleSource.CreateFromWaveFile("Samples\\closed-hat-trimmed.wav");
+            SampleSource openHatsSample = SampleSource.CreateFromWaveFile("Samples\\open-hat-trimmed.wav");
             sampleSources = new Dictionary<int, SampleSource>();
             
             sampleSources.Add(KickDrumNote, kickSample);

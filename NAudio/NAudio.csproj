@@ -332,6 +332,7 @@
     <Compile Include="Wave\MmeInterop\Manufacturers.cs" />
     <Compile Include="Wave\MmeInterop\MmException.cs" />
     <Compile Include="Wave\MmeInterop\MmResult.cs" />
+    <Compile Include="Wave\MmeInterop\MmTime.cs" />
     <Compile Include="Wave\MmeInterop\WaveHeader.cs" />
     <Compile Include="Wave\MmeInterop\WaveHeaderFlags.cs" />
     <Compile Include="Wave\MmeInterop\WaveIn.cs" />

@@ -108,9 +108,8 @@ namespace NAudio.Wave
         public static extern MmResult waveOutRestart(IntPtr hWaveOut);
 
         // http://msdn.microsoft.com/en-us/library/dd743863%28VS.85%29.aspx
-        // TODO: review this - don't think second parameter is correct
-        [DllImport("winmm.dll")] 
-        public static extern MmResult waveOutGetPosition(IntPtr hWaveOut, out int lpInfo, int uSize);
+        [DllImport("winmm.dll")]
+        public static extern MmResult waveOutGetPosition(IntPtr hWaveOut, out MmTime mmTime, int uSize);
 
         // http://msdn.microsoft.com/en-us/library/dd743874%28VS.85%29.aspx
         [DllImport("winmm.dll")]

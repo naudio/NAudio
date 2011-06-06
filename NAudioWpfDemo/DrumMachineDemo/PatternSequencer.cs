@@ -91,6 +91,7 @@ namespace NAudioWpfDemo.DrumMachineDemo
         public int Read(float[] buffer, int offset, int count)
         {
             bool finished = false;
+            int initialIndex = patternIndex;
             do
             {
                 var note = NextEvent;
@@ -105,7 +106,12 @@ namespace NAudioWpfDemo.DrumMachineDemo
                         mixerInput = new MonoToStereoSampleProvider(mixerInput);
                     }
                     mixer.AddMixerInput(mixerInput);
-                    MoveToNextNote();
+                    patternIndex++;
+                    patternIndex = patternIndex % drumBeats.Count;
+                    if (patternIndex == initialIndex)
+                    {
+                        finished = true;
+                    }                    
                 }
                 else
                 {
@@ -115,6 +121,11 @@ namespace NAudioWpfDemo.DrumMachineDemo
 
             // now we just need to read from the mixer
             var samplesRead = mixer.Read(buffer, offset, count);
+            if (samplesRead < count)
+            {
+                Array.Clear(buffer, offset + samplesRead, count - samplesRead);
+                samplesRead = count;
+            }
             position += samplesRead;
             position = position % patternLength; // loop indefinitely
             return samplesRead;

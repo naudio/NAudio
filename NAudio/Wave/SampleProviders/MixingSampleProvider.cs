@@ -13,6 +13,7 @@ namespace NAudio.Wave.SampleProviders
         private List<ISampleProvider> sources;
         private WaveFormat waveFormat;
         private float[] sourceBuffer;
+        private const int maxInputs = 1024; // protect ourselves against doing something silly
 
         /// <summary>
         /// Creates a new MixingSampleProvider, with no inputs, but a specified WaveFormat
@@ -48,6 +49,10 @@ namespace NAudio.Wave.SampleProviders
             // the same time as a Read, rather than two AddMixerInput calls at the same time
             lock (sources)
             {
+                if (this.sources.Count >= maxInputs)
+                {
+                    throw new InvalidOperationException("Too many mixer inputs");
+                }
                 this.sources.Add(mixerInput);
             }
             if (this.waveFormat == null)

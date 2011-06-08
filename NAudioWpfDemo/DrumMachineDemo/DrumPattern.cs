@@ -38,5 +38,4 @@ namespace NAudioWpfDemo.DrumMachineDemo
 
         public event EventHandler PatternChanged;
     }
-
 }

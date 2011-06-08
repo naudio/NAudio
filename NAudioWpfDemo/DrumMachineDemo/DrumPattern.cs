@@ -9,16 +9,21 @@ namespace NAudioWpfDemo.DrumMachineDemo
     public class DrumPattern
     {
         private byte[,] hits;
-
-        public DrumPattern(int notes, int steps)
+        private List<string> noteNames;
+        
+        public DrumPattern(IEnumerable<string> notes, int steps)
         {
-            this.Notes = notes;
+            this.noteNames = new List<string>(notes);
             this.Steps = steps;
-            hits = new byte[notes, steps];
+            hits = new byte[Notes, steps];
         }
 
         public int Steps { get; private set; }
-        public int Notes { get; private set; }
+        
+        public int Notes 
+        {
+            get { return noteNames.Count; }
+        }
 
         public byte this[int note, int step]
         {
@@ -37,5 +42,7 @@ namespace NAudioWpfDemo.DrumMachineDemo
         }
 
         public event EventHandler PatternChanged;
+
+        public IList<string> NoteNames { get { return this.noteNames.AsReadOnly(); } }
     }
 }

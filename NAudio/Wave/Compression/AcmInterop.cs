@@ -59,7 +59,7 @@ namespace NAudio.Wave.Compression
         public static extern MmResult acmDriverOpen(out IntPtr pAcmDriver, IntPtr hAcmDriverId, int openFlags);
 
         // http://msdn.microsoft.com/en-us/library/dd742909%28VS.85%29.aspx
-        [DllImport("Msacm32.dll")]
+        [DllImport("Msacm32.dll", EntryPoint = "acmFormatChooseW")]
         public static extern MmResult acmFormatChoose(ref AcmFormatChoose formatChoose);
 
         // http://msdn.microsoft.com/en-us/library/dd742914%28VS.85%29.aspx

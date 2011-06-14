@@ -9,7 +9,7 @@ namespace NAudio.Wave.Compression
     /// ACMFORMATCHOOSE
     /// http://msdn.microsoft.com/en-us/library/dd742911%28VS.85%29.aspx
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 4, CharSet = CharSet.Auto)]
     struct AcmFormatChoose
     {
         /// <summary>
@@ -35,7 +35,7 @@ namespace NAudio.Wave.Compression
         /// <summary>
         /// LPCTSTR pszTitle; 
         /// </summary>
-        [MarshalAs(UnmanagedType.LPStr)]
+        [MarshalAs(UnmanagedType.LPTStr)]
         public string title; 
         /// <summary>
         /// TCHAR szFormatTag[ACMFORMATTAGDETAILS_FORMATTAG_CHARS]; 

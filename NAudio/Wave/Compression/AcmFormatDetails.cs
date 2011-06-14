@@ -9,7 +9,7 @@ namespace NAudio.Wave.Compression
     /// ACMFORMATDETAILS
     /// http://msdn.microsoft.com/en-us/library/dd742913%28VS.85%29.aspx
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack=4)]
     struct AcmFormatDetails
     {
         /// <summary>

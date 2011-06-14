@@ -21,6 +21,8 @@ namespace NAudioDemo
             {
                 listBoxDemos.Items.Add(demo);
             }
+
+            this.Text = this.Text + ((System.Runtime.InteropServices.Marshal.SizeOf(IntPtr.Zero) == 8) ? " (x64)" : " (x86)");
         }
 
         private INAudioDemoPlugin currentPlugin;

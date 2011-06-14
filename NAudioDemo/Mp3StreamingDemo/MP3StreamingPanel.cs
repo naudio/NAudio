@@ -73,7 +73,10 @@ namespace NAudioDemo
             }
             catch(WebException e)
             {
-                ShowError(e.Message);
+                if (e.Status != WebExceptionStatus.RequestCanceled)
+                {
+                    ShowError(e.Message);
+                }
                 return;
             }
             byte[] buffer = new byte[16384 * 4]; // needs to be big enough to hold a decompressed frame

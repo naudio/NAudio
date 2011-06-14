@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Security;
 using System.Threading;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace NAudio.Wave
 {
@@ -136,7 +137,7 @@ namespace NAudio.Wave
                 // -------------------------------------------------------------------------------------
                 // Thread that process samples
                 // -------------------------------------------------------------------------------------
-                notifyThread = new Thread(new ThreadStart(processSamples));
+                notifyThread = new Thread(new ThreadStart(PlaybackThreadFunc));
                 // put this back to highest when we are confident we don't have any bugs in the thread proc
                 notifyThread.Priority = ThreadPriority.Normal;
                 notifyThread.IsBackground = true;
@@ -193,108 +194,101 @@ namespace NAudio.Wave
             this.waveFormat = waveProvider.WaveFormat;
         }
 
-        private void InitialiseDirectSound()
+        private void InitializeDirectSound()
         {
-            try
+            // Open DirectSound
+            lock (this.m_LockObject)
             {
-                // Open DirectSound
-                lock (this.m_LockObject)
+                directSound = null;
+                DirectSoundCreate(ref device, out directSound, IntPtr.Zero);
+
+                if (directSound != null)
                 {
-                    directSound = null;
-                    DirectSoundCreate(ref device, out directSound, IntPtr.Zero);
+                    // Set Cooperative Level to PRIORITY (priority level can call the SetFormat and Compact methods)
+                    directSound.SetCooperativeLevel(GetDesktopWindow(), DirectSoundCooperativeLevel.DSSCL_PRIORITY);
 
-                    if (directSound != null)
-                    {
-                        // Set Cooperative Level to PRIORITY (priority level can call the SetFormat and Compact methods)
-                        directSound.SetCooperativeLevel(GetDesktopWindow(), DirectSoundCooperativeLevel.DSSCL_PRIORITY);
+                    // -------------------------------------------------------------------------------------
+                    // Create PrimaryBuffer
+                    // -------------------------------------------------------------------------------------
 
-                        // -------------------------------------------------------------------------------------
-                        // Create PrimaryBuffer
-                        // -------------------------------------------------------------------------------------
+                    // Fill BufferDescription for PrimaryBuffer
+                    BufferDescription bufferDesc = new BufferDescription();
+                    bufferDesc.dwSize = Marshal.SizeOf(bufferDesc);
+                    bufferDesc.dwBufferBytes = 0;
+                    bufferDesc.dwFlags = DirectSoundBufferCaps.DSBCAPS_PRIMARYBUFFER;
+                    bufferDesc.dwReserved = 0;
+                    bufferDesc.lpwfxFormat = IntPtr.Zero;
+                    bufferDesc.guidAlgo = Guid.Empty;
 
-                        // Fill BufferDescription for PrimaryBuffer
-                        BufferDescription bufferDesc = new BufferDescription();
-                        bufferDesc.dwSize = Marshal.SizeOf(bufferDesc);
-                        bufferDesc.dwBufferBytes = 0;
-                        bufferDesc.dwFlags = DirectSoundBufferCaps.DSBCAPS_PRIMARYBUFFER;
-                        bufferDesc.dwReserved = 0;
-                        bufferDesc.lpwfxFormat = IntPtr.Zero;
-                        bufferDesc.guidAlgo = Guid.Empty;
+                    object soundBufferObj;
+                    // Create PrimaryBuffer
+                    directSound.CreateSoundBuffer(bufferDesc, out soundBufferObj, IntPtr.Zero);
+                    primarySoundBuffer = (IDirectSoundBuffer)soundBufferObj;
 
-                        object soundBufferObj;
-                        // Create PrimaryBuffer
-                        directSound.CreateSoundBuffer(bufferDesc, out soundBufferObj, IntPtr.Zero);
-                        primarySoundBuffer = (IDirectSoundBuffer)soundBufferObj;
+                    // Play & Loop on the PrimarySound Buffer 
+                    primarySoundBuffer.Play(0, 0, DirectSoundPlayFlags.DSBPLAY_LOOPING);
 
-                        // Play & Loop on the PrimarySound Buffer 
-                        primarySoundBuffer.Play(0, 0, DirectSoundPlayFlags.DSBPLAY_LOOPING);
+                    // -------------------------------------------------------------------------------------
+                    // Create SecondaryBuffer
+                    // -------------------------------------------------------------------------------------
 
-                        // -------------------------------------------------------------------------------------
-                        // Create SecondaryBuffer
-                        // -------------------------------------------------------------------------------------
+                    // A frame of samples equals to Desired Latency
+                    samplesFrameSize = MsToBytes(desiredLatency);
 
-                        // A frame of samples equals to Desired Latency
-                        samplesFrameSize = MsToBytes(desiredLatency);
+                    // Fill BufferDescription for SecondaryBuffer
+                    BufferDescription bufferDesc2 = new BufferDescription();
+                    bufferDesc2.dwSize = Marshal.SizeOf(bufferDesc2);
+                    bufferDesc2.dwBufferBytes = (uint)(samplesFrameSize * 2);
+                    bufferDesc2.dwFlags = DirectSoundBufferCaps.DSBCAPS_GETCURRENTPOSITION2
+                        | DirectSoundBufferCaps.DSBCAPS_CTRLPOSITIONNOTIFY
+                        | DirectSoundBufferCaps.DSBCAPS_GLOBALFOCUS
+                        | DirectSoundBufferCaps.DSBCAPS_CTRLVOLUME
+                        | DirectSoundBufferCaps.DSBCAPS_STICKYFOCUS;
+                    bufferDesc2.dwReserved = 0;
+                    GCHandle handleOnWaveFormat = GCHandle.Alloc(waveFormat, GCHandleType.Pinned); // Ptr to waveFormat
+                    bufferDesc2.lpwfxFormat = handleOnWaveFormat.AddrOfPinnedObject(); // set Ptr to waveFormat
+                    bufferDesc2.guidAlgo = Guid.Empty;
 
-                        // Fill BufferDescription for SecondaryBuffer
-                        BufferDescription bufferDesc2 = new BufferDescription();
-                        bufferDesc2.dwSize = Marshal.SizeOf(bufferDesc2);
-                        bufferDesc2.dwBufferBytes = (uint)(samplesFrameSize * 2);
-                        bufferDesc2.dwFlags = DirectSoundBufferCaps.DSBCAPS_GETCURRENTPOSITION2
-                            | DirectSoundBufferCaps.DSBCAPS_CTRLPOSITIONNOTIFY
-                            | DirectSoundBufferCaps.DSBCAPS_GLOBALFOCUS
-                            | DirectSoundBufferCaps.DSBCAPS_CTRLVOLUME
-                            | DirectSoundBufferCaps.DSBCAPS_STICKYFOCUS;
-                        bufferDesc2.dwReserved = 0;
-                        GCHandle handleOnWaveFormat = GCHandle.Alloc(waveFormat, GCHandleType.Pinned); // Ptr to waveFormat
-                        bufferDesc2.lpwfxFormat = handleOnWaveFormat.AddrOfPinnedObject(); // set Ptr to waveFormat
-                        bufferDesc2.guidAlgo = Guid.Empty;
+                    // Create SecondaryBuffer
+                    directSound.CreateSoundBuffer(bufferDesc2, out soundBufferObj, IntPtr.Zero);
+                    secondaryBuffer = (IDirectSoundBuffer)soundBufferObj;
+                    handleOnWaveFormat.Free();
 
-                        // Create SecondaryBuffer
-                        directSound.CreateSoundBuffer(bufferDesc2, out soundBufferObj, IntPtr.Zero);
-                        secondaryBuffer = (IDirectSoundBuffer)soundBufferObj;
-                        handleOnWaveFormat.Free();
+                    // Get effective SecondaryBuffer size
+                    BufferCaps dsbCaps = new BufferCaps();
+                    dsbCaps.dwSize = Marshal.SizeOf(dsbCaps);
+                    secondaryBuffer.GetCaps(dsbCaps);
 
-                        // Get effective SecondaryBuffer size
-                        BufferCaps dsbCaps = new BufferCaps();
-                        dsbCaps.dwSize = Marshal.SizeOf(dsbCaps);
-                        secondaryBuffer.GetCaps(dsbCaps);
+                    nextSamplesWriteIndex = 0;
+                    samplesTotalSize = dsbCaps.dwBufferBytes;
+                    samples = new byte[samplesTotalSize];
+                    System.Diagnostics.Debug.Assert(samplesTotalSize == (2 * samplesFrameSize), "Invalid SamplesTotalSize vs SamplesFrameSize");
 
-                        nextSamplesWriteIndex = 0;
-                        samplesTotalSize = dsbCaps.dwBufferBytes;
-                        samples = new byte[samplesTotalSize];
-                        System.Diagnostics.Debug.Assert(samplesTotalSize == (2 * samplesFrameSize), "Invalid SamplesTotalSize vs SamplesFrameSize");
+                    // -------------------------------------------------------------------------------------
+                    // Create double buffering notification.
+                    // Use DirectSoundNotify at Position [0, 1/2] and Stop Position (0xFFFFFFFF)
+                    // -------------------------------------------------------------------------------------
+                    IDirectSoundNotify notify = (IDirectSoundNotify)soundBufferObj;
 
-                        // -------------------------------------------------------------------------------------
-                        // Create double buffering notification.
-                        // Use DirectSoundNotify at Position [0, 1/2] and Stop Position (0xFFFFFFFF)
-                        // -------------------------------------------------------------------------------------
-                        IDirectSoundNotify notify = (IDirectSoundNotify)soundBufferObj;
+                    frameEventWaitHandle1 = new EventWaitHandle(false, EventResetMode.AutoReset);
+                    frameEventWaitHandle2 = new EventWaitHandle(false, EventResetMode.AutoReset);
+                    endEventWaitHandle = new EventWaitHandle(false, EventResetMode.AutoReset);
 
-                        frameEventWaitHandle1 = new EventWaitHandle(false, EventResetMode.AutoReset);
-                        frameEventWaitHandle2 = new EventWaitHandle(false, EventResetMode.AutoReset);
-                        endEventWaitHandle = new EventWaitHandle(false, EventResetMode.AutoReset);
+                    DirectSoundBufferPositionNotify[] notifies = new DirectSoundBufferPositionNotify[3];
+                    notifies[0] = new DirectSoundBufferPositionNotify();
+                    notifies[0].dwOffset = 0;
+                    notifies[0].hEventNotify = frameEventWaitHandle1.SafeWaitHandle.DangerousGetHandle();
 
-                        DirectSoundBufferPositionNotify[] notifies = new DirectSoundBufferPositionNotify[3];
-                        notifies[0] = new DirectSoundBufferPositionNotify();
-                        notifies[0].dwOffset = 0;
-                        notifies[0].hEventNotify = frameEventWaitHandle1.SafeWaitHandle.DangerousGetHandle();
+                    notifies[1] = new DirectSoundBufferPositionNotify();
+                    notifies[1].dwOffset = (uint)samplesFrameSize;
+                    notifies[1].hEventNotify = frameEventWaitHandle2.SafeWaitHandle.DangerousGetHandle();
 
-                        notifies[1] = new DirectSoundBufferPositionNotify();
-                        notifies[1].dwOffset = (uint)samplesFrameSize;
-                        notifies[1].hEventNotify = frameEventWaitHandle2.SafeWaitHandle.DangerousGetHandle();
+                    notifies[2] = new DirectSoundBufferPositionNotify();
+                    notifies[2].dwOffset = 0xFFFFFFFF;
+                    notifies[2].hEventNotify = endEventWaitHandle.SafeWaitHandle.DangerousGetHandle();
 
-                        notifies[2] = new DirectSoundBufferPositionNotify();
-                        notifies[2].dwOffset = 0xFFFFFFFF;
-                        notifies[2].hEventNotify = endEventWaitHandle.SafeWaitHandle.DangerousGetHandle();
-
-                        notify.SetNotificationPositions(3, notifies);
-                    }
+                    notify.SetNotificationPositions(3, notifies);
                 }
-            }
-            catch (Exception error)
-            {
-                throw error;
             }
         }
 
@@ -320,6 +314,10 @@ namespace NAudio.Wave
             }
             set
             {
+                if (value != 1.0f)
+                {
+                    throw new InvalidOperationException("Setting volume not supported on DirectSoundOut, adjust the volume on your WaveProvider instead");
+                }
                 //int intVol = (int)((value - 1) * 10000.0f);
                 //secondaryBuffer.SetVolume(intVol);
             }
@@ -360,15 +358,16 @@ namespace NAudio.Wave
         /// <summary>
         /// Processes the samples in a separate thread.
         /// </summary>
-        private void processSamples()
+        private void PlaybackThreadFunc()
         {
             // Used to determine if playback is halted
             bool lPlaybackHalted = false;
 
+            InitializeDirectSound();
+
             // Incase the thread is killed
             try
             {
-                InitialiseDirectSound();
                 int lResult = 1;
 
                 if (PlaybackState == PlaybackState.Stopped)
@@ -431,9 +430,10 @@ namespace NAudio.Wave
                     }
                 }
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                // Do nothing!
+                // Do nothing (except report error)
+                Debug.WriteLine(e.ToString());
             }
             finally
             {
@@ -626,7 +626,7 @@ namespace NAudio.Wave
             DSBCAPS_LOCDEFER = 0x00040000
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 2)]
+        [StructLayout(LayoutKind.Sequential)]
         internal struct DirectSoundBufferPositionNotify
         {
             public UInt32 dwOffset;

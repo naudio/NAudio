@@ -11,13 +11,13 @@ namespace NAudio.Wave
     /// </summary>
     public class ResamplerDmoStream : WaveStream
     {
-        IWaveProvider inputProvider;
-        WaveStream inputStream;
-        WaveFormat outputFormat;
-        Resampler resampler;
-        long position;
-        MediaBuffer inputMediaBuffer;
-        DmoOutputDataBuffer outputBuffer;
+        private readonly IWaveProvider inputProvider;
+        private readonly WaveStream inputStream;
+        private readonly WaveFormat outputFormat;
+        private DmoOutputDataBuffer outputBuffer;
+        private Resampler resampler;
+        private MediaBuffer inputMediaBuffer;
+        private long position;
 
         /// <summary>
         /// WaveStream to resample using the DMO Resampler
@@ -30,12 +30,12 @@ namespace NAudio.Wave
             this.inputStream = inputProvider as WaveStream;
             this.outputFormat = outputFormat;
             this.resampler = new Resampler();
-            if (!resampler.MediaObject.SupportsInputWaveFormat(0, inputStream.WaveFormat))
+            if (!resampler.MediaObject.SupportsInputWaveFormat(0, inputProvider.WaveFormat))
             {
                 throw new ArgumentException("Unsupported Input Stream format", "inputStream");
             }
 
-            resampler.MediaObject.SetInputWaveFormat(0, inputStream.WaveFormat);
+            resampler.MediaObject.SetInputWaveFormat(0, inputProvider.WaveFormat);
             if (!resampler.MediaObject.SupportsOutputWaveFormat(0, outputFormat))
             {
                 throw new ArgumentException("Unsupported Output Stream format", "outputStream");
@@ -46,8 +46,8 @@ namespace NAudio.Wave
             {
                 position = InputToOutputPosition(inputStream.Position);
             }
-            inputMediaBuffer = new MediaBuffer(inputProvider.WaveFormat.AverageBytesPerSecond);
-            outputBuffer = new DmoOutputDataBuffer(outputFormat.AverageBytesPerSecond);
+            this.inputMediaBuffer = new MediaBuffer(inputProvider.WaveFormat.AverageBytesPerSecond);
+            this.outputBuffer = new DmoOutputDataBuffer(outputFormat.AverageBytesPerSecond);
         }
 
         /// <summary>
@@ -58,18 +58,10 @@ namespace NAudio.Wave
             get { return outputFormat; }
         }
 
-        /// <summary>
-        /// Input Stream
-        /// </summary>
-        public WaveStream InputStream
-        {
-            get { return inputStream; }
-        }
-
         private long InputToOutputPosition(long inputPosition)
         {
             double ratio = (double)outputFormat.AverageBytesPerSecond
-                / inputStream.WaveFormat.AverageBytesPerSecond;
+                / inputProvider.WaveFormat.AverageBytesPerSecond;
             long outputPosition = (long)(inputPosition * ratio);
             if (outputPosition % outputFormat.BlockAlign != 0)
             {
@@ -81,11 +73,11 @@ namespace NAudio.Wave
         private long OutputToInputPosition(long outputPosition)
         {
             double ratio = (double)outputFormat.AverageBytesPerSecond
-                / inputStream.WaveFormat.AverageBytesPerSecond;
+                / inputProvider.WaveFormat.AverageBytesPerSecond;
             long inputPosition = (long)(outputPosition / ratio);
-            if (inputPosition % inputStream.WaveFormat.BlockAlign != 0)
+            if (inputPosition % inputProvider.WaveFormat.BlockAlign != 0)
             {
-                inputPosition -= inputPosition % inputStream.WaveFormat.BlockAlign;
+                inputPosition -= inputPosition % inputProvider.WaveFormat.BlockAlign;
             }
             return inputPosition;
         }
@@ -95,7 +87,14 @@ namespace NAudio.Wave
         /// </summary>
         public override long Length
         {
-            get { return InputToOutputPosition(inputStream.Length); }
+            get 
+            {
+                if (this.inputStream == null)
+                {
+                    throw new InvalidOperationException("Cannot report length if the input was an IWaveProvider");
+                }
+                return InputToOutputPosition(inputStream.Length); 
+            }
         }
 
         /// <summary>
@@ -109,6 +108,10 @@ namespace NAudio.Wave
             }
             set
             {
+                if (this.inputStream == null)
+                {
+                    throw new InvalidOperationException("Cannot set position if the input was not a WaveStream");
+                }                
                 inputStream.Position = OutputToInputPosition(value);
                 position = InputToOutputPosition(inputStream.Position);
                 resampler.MediaObject.Discontinuity(0);
@@ -133,10 +136,10 @@ namespace NAudio.Wave
                     // 1. Read from the input stream 
                     int inputBytesRequired = (int)OutputToInputPosition(count - outputBytesProvided);
                     byte[] inputByteArray = new byte[inputBytesRequired];
-                    int inputBytesRead = inputStream.Read(inputByteArray, 0, inputBytesRequired);
+                    int inputBytesRead = inputProvider.Read(inputByteArray, 0, inputBytesRequired);
                     if (inputBytesRead == 0)
                     {
-                        Debug.WriteLine("ResamplerDmoStream.Read: No input data available");
+                        //Debug.WriteLine("ResamplerDmoStream.Read: No input data available");
                         break;
                     }
                     // 2. copy into our DMO's input buffer

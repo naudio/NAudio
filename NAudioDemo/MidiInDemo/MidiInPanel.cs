@@ -70,6 +70,11 @@ namespace NAudioDemo
 
         private void StartMonitoring()
         {
+            if (comboBoxMidiInDevices.Items.Count == 0)
+            {
+                MessageBox.Show("No MIDI input devices available");
+                return;
+            }
             if (midiIn == null)
             {
                 midiIn = new MidiIn(comboBoxMidiInDevices.SelectedIndex);
@@ -80,7 +85,6 @@ namespace NAudioDemo
             monitoring = true;
             buttonMonitor.Text = "Stop";
             comboBoxMidiInDevices.Enabled = false;
-
         }
 
         void midiIn_ErrorReceived(object sender, MidiInMessageEventArgs e)

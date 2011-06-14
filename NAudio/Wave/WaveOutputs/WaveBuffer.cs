@@ -11,7 +11,7 @@ namespace NAudio.Wave
     /// Implicit casting is now supported to float[], byte[], int[], short[].
     /// You must not use Length on returned arrays.
     /// 
-    /// NOT YET USED.
+    /// n.b. FieldOffset is 8 now to allow it to work natively on 64 bit
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Pack = 2)]
     public class WaveBuffer : IWaveBuffer
@@ -21,13 +21,13 @@ namespace NAudio.Wave
         /// </summary>
         [FieldOffset(0)]
         public int numberOfBytes;
-        [FieldOffset(4)]
+        [FieldOffset(8)]
         private byte[] byteBuffer;
-        [FieldOffset(4)]
+        [FieldOffset(8)]
         private float[] floatBuffer;
-        [FieldOffset(4)]
+        [FieldOffset(8)]
         private short[] shortBuffer;
-        [FieldOffset(4)]
+        [FieldOffset(8)]
         private int[] intBuffer;
 
         /// <summary>

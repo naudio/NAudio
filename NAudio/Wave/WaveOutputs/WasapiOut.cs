@@ -16,7 +16,7 @@ namespace NAudio.Wave
         private AudioClient audioClient;
         private AudioClientShareMode shareMode;
         private AudioRenderClient renderClient;
-        private IWaveProvider sourceStream;
+        private IWaveProvider sourceProvider;
         private int latencyMilliseconds;
         private int bufferFrameCount;
         private int bytesPerFrame;
@@ -86,19 +86,20 @@ namespace NAudio.Wave
         private void PlayThread()
         {
             ResamplerDmoStream resamplerDmoStream = null;
+            IWaveProvider playbackProvider = this.sourceProvider;
             try
             {
                 if (this.dmoResamplerNeeded)
                 {
-                    resamplerDmoStream = new ResamplerDmoStream(sourceStream, outputFormat);
-                    this.sourceStream = resamplerDmoStream;
+                    resamplerDmoStream = new ResamplerDmoStream(sourceProvider, outputFormat);
+                    playbackProvider = resamplerDmoStream;
                 }
 
                 // fill a whole buffer
                 bufferFrameCount = audioClient.BufferSize;
                 bytesPerFrame = outputFormat.Channels * outputFormat.BitsPerSample / 8;
                 readBuffer = new byte[bufferFrameCount * bytesPerFrame];
-                FillBuffer(bufferFrameCount);
+                FillBuffer(playbackProvider, bufferFrameCount);
 
                 // Create WaitHandle for sync
                 WaitHandle[] waitHandles = new WaitHandle[] { frameEventWaitHandle };
@@ -135,7 +136,7 @@ namespace NAudio.Wave
                         int numFramesAvailable = bufferFrameCount - numFramesPadding;
                         if (numFramesAvailable > 0)
                         {
-                            FillBuffer(numFramesAvailable);
+                            FillBuffer(playbackProvider, numFramesAvailable);
                         }
                     }
                 }
@@ -150,7 +151,6 @@ namespace NAudio.Wave
             {
                 if (resamplerDmoStream != null)
                 {
-                    sourceStream = resamplerDmoStream.InputStream;
                     resamplerDmoStream.Dispose();
                 }
                 RaisePlaybackStopped();
@@ -172,11 +172,11 @@ namespace NAudio.Wave
             }
         }
 
-        private void FillBuffer(int frameCount)
+        private void FillBuffer(IWaveProvider playbackProvider, int frameCount)
         {
             IntPtr buffer = renderClient.GetBuffer(frameCount);
             int readLength = frameCount * bytesPerFrame;
-            int read = sourceStream.Read(readBuffer, 0, readLength);
+            int read = playbackProvider.Read(readBuffer, 0, readLength);
             if (read == 0)
             {
                 playbackState = PlaybackState.Stopped;
@@ -187,7 +187,7 @@ namespace NAudio.Wave
             {
                 Debug.WriteLine(String.Format("WASAPI wanted {0} frames, supplied {1}", frameCount, actualFrameCount ));
             }*/
-            renderClient.ReleaseBuffer(actualFrameCount,AudioClientBufferFlags.None);
+            renderClient.ReleaseBuffer(actualFrameCount, AudioClientBufferFlags.None);
         }
 
         #region IWavePlayer Members
@@ -311,7 +311,7 @@ namespace NAudio.Wave
             {
                 dmoResamplerNeeded = false;
             }
-            this.sourceStream = waveProvider;
+            this.sourceProvider = waveProvider;
 
             // If using EventSync, setup is specific with shareMode
             if (isUsingEventSync)

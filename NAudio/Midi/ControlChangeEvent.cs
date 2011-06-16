@@ -63,7 +63,8 @@ namespace NAudio.Midi
         /// </summary>
         public override int GetAsShortMessage()
         {
-            return base.GetAsShortMessage() + (controllerValue << 8);
+            byte c = (byte)controller;
+            return base.GetAsShortMessage() + (c << 8) + (controllerValue << 16);
         }
 
         /// <summary>

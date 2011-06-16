@@ -55,6 +55,11 @@ namespace NAudio.Gui
         /// <param name="maxSample"></param>
         public void AddMax(float maxSample)
         {
+            if (maxSamples == 0)
+            {
+                // sometimes when you minimise, max samples can be set to 0
+                return;
+            }
             if (samples.Count <= maxSamples)
             {
                 samples.Add(maxSample);

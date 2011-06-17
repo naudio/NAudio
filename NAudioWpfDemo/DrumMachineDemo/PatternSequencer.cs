@@ -17,6 +17,7 @@ namespace NAudioWpfDemo.DrumMachineDemo
         private List<SampleSource> sampleSources;
         private int samplesPerStep;
         private DrumPattern pattern;
+        private int tempo;        
 
         public PatternSequencer(DrumPattern pattern)
         {
@@ -32,15 +33,29 @@ namespace NAudioWpfDemo.DrumMachineDemo
             sampleSources.Add(closedHatsSample);
             sampleSources.Add(openHatsSample);
 
-            int tempo = 100;
             int sampleRate = openHatsSample.SampleWaveFormat.SampleRate;
-            int channels = 2;
-            int samplesPerBeat = channels * (sampleRate * 60) / tempo;
-            this.samplesPerStep = samplesPerBeat / 4;
+            int channels = 2; // always stereo for now
+            this.waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channels);
 
-            this.patternLength = samplesPerStep * pattern.Steps;
-            this.waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, 2);
+            this.Tempo = 100;
+
             mixer = new MixingSampleProvider(waveFormat);
+        }
+
+        public int Tempo
+        {
+            get
+            {
+                return this.tempo;
+            }
+            set
+            {
+                this.tempo = value;
+                int samplesPerBeat = this.WaveFormat.Channels * (this.WaveFormat.SampleRate * 60) / tempo;
+                this.samplesPerStep = samplesPerBeat / 4;
+                this.patternLength = samplesPerStep * pattern.Steps;
+                position = position % patternLength;
+            }
         }
 
         public WaveFormat WaveFormat
@@ -60,8 +75,9 @@ namespace NAudioWpfDemo.DrumMachineDemo
 
         public int Read(float[] buffer, int offset, int count)
         {
+            // find which steps start in this buffer
             int startStep = GetStepFromPosition(position);
-            int endStep = GetStepFromPosition(position);
+            int endStep = GetStepFromPosition(position+count-1);
             
             for (int step = startStep; step <= endStep; step++)
             {
@@ -71,7 +87,9 @@ namespace NAudioWpfDemo.DrumMachineDemo
                     if (velocity > 0)
                     {
                         MusicSampleProvider sp = new MusicSampleProvider(sampleSources[note]);
-                        sp.DelayBy = (int)(GetPositionForStep(step) - position);
+                        int delayBy = (int)(GetPositionForStep(step) - position);
+                        if (delayBy < 0) delayBy += (int)patternLength;
+                        sp.DelayBy = delayBy;
                         ISampleProvider mixerInput = sp;
                         if (mixerInput.WaveFormat.Channels == 1)
                         {

@@ -23,7 +23,14 @@ namespace NAudioWpfDemo.DrumMachineDemo
         public int DelayBy
         {
             get { return delayBy; }
-            set { delayBy = value; }
+            set 
+            { 
+                if (value < 0)
+                {
+                    throw new ArgumentException("Cannot delay by negative number of samples");
+                }
+                delayBy = value; 
+            }
         }
 
         public WaveFormat WaveFormat
@@ -60,6 +67,5 @@ namespace NAudioWpfDemo.DrumMachineDemo
                 return (position - delayBy) + sampleSource.StartIndex;
             }
         }
-
     }
 }

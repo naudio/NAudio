@@ -29,6 +29,13 @@ namespace NAudioWpfDemo.DrumMachineDemo
             InitializeComponent();
             var notes = new string[] { "Kick", "Snare", "Closed Hats", "Open Hats" };
             this.pattern = new DrumPattern(notes, 16);
+            // auto-setup with a simple example beat
+            this.pattern[0, 0] = this.pattern[0, 8] = 127;
+            this.pattern[1, 4] = this.pattern[1, 12] = 127;
+            for (int n = 0; n < pattern.Steps; n++)
+            {
+                this.pattern[2, n] = 127;            
+            }
             DrawNoteNames();        
             DrawPattern(namesColumnWidth);
             DrawGridLines(namesColumnWidth);
@@ -87,7 +94,7 @@ namespace NAudioWpfDemo.DrumMachineDemo
                 for (int note = 0; note < pattern.Notes; note++)
                 {
                     Rectangle r = new Rectangle();
-                    r.Fill = Brushes.White; // fill it or we won't get mouse-clicks
+                    r.Fill = GetFillBrush(note, step);
                     r.Width = gridSquareWidth;
                     r.Height = gridSquareWidth;
                     r.SetValue(Canvas.LeftProperty, startX + step * gridSquareWidth);
@@ -107,7 +114,12 @@ namespace NAudioWpfDemo.DrumMachineDemo
             PatternIndex p = (PatternIndex)r.Tag;
             
             pattern[p.Note, p.Step] = pattern[p.Note, p.Step] == 0 ? (byte)127 : (byte)0;
-            r.Fill = pattern[p.Note, p.Step] == 0 ? Brushes.White : Brushes.LightSalmon;
+            r.Fill = GetFillBrush(p.Note, p.Step);
+        }
+
+        private SolidColorBrush GetFillBrush(int note, int step)
+        {
+            return pattern[note, step] == 0 ? Brushes.White : Brushes.LightSalmon;
         }
 
         class PatternIndex

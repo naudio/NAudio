@@ -5,19 +5,23 @@ using System.Text;
 using System.Windows.Input;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
+using System.ComponentModel;
 
 namespace NAudioWpfDemo.DrumMachineDemo
 {
-    class DrumMachineDemoViewModel : IDisposable
+    class DrumMachineDemoViewModel : IDisposable, INotifyPropertyChanged
     {
         private IWavePlayer waveOut;
         private DrumPattern pattern;
+        private PatternSequencer patternSequencer;
+        private int tempo;
         public ICommand PlayCommand { get; private set; }
         public ICommand StopCommand { get; private set; }
 
         public DrumMachineDemoViewModel(DrumPattern pattern)
         {
             this.pattern = pattern;
+            this.tempo = 100;
             PlayCommand = new RelayCommand(
                () => this.Play(),
                () => true);
@@ -33,8 +37,9 @@ namespace NAudioWpfDemo.DrumMachineDemo
                 Stop();
             }
             waveOut = new WaveOut();
-            ISampleProvider sp = new PatternSequencer(pattern);
-            IWaveProvider wp = new SampleToWaveProvider(sp);
+            this.patternSequencer = new PatternSequencer(pattern);
+            this.patternSequencer.Tempo = tempo;
+            IWaveProvider wp = new SampleToWaveProvider(patternSequencer);
             waveOut.Init(wp);
             waveOut.Play();
         }
@@ -43,6 +48,7 @@ namespace NAudioWpfDemo.DrumMachineDemo
         {
             if (waveOut != null)
             {
+                this.patternSequencer = null;
                 waveOut.Dispose();
                 waveOut = null;
             }
@@ -50,11 +56,37 @@ namespace NAudioWpfDemo.DrumMachineDemo
 
         public void Dispose()
         {
-            if (waveOut != null)
+            Stop();
+        }
+
+        public int Tempo
+        {
+            get
             {
-                waveOut.Dispose();
-                waveOut = null;
+                return tempo;
+            }
+            set
+            {
+                if (tempo != value)
+                {
+                    this.tempo = value;
+                    if (this.patternSequencer != null)
+                    {
+                        this.patternSequencer.Tempo = value;
+                    }
+                    RaisePropertyChanged("Tempo");
+                }
             }
         }
+
+        private void RaisePropertyChanged(string propertyName)
+        {
+            if (this.PropertyChanged != null)
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
     }
 }

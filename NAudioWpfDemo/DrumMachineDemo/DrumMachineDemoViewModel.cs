@@ -13,7 +13,7 @@ namespace NAudioWpfDemo.DrumMachineDemo
     {
         private IWavePlayer waveOut;
         private DrumPattern pattern;
-        private PatternSequencer patternSequencer;
+        private DrumPatternSampleProvider patternSequencer;
         private int tempo;
         public ICommand PlayCommand { get; private set; }
         public ICommand StopCommand { get; private set; }
@@ -37,7 +37,7 @@ namespace NAudioWpfDemo.DrumMachineDemo
                 Stop();
             }
             waveOut = new WaveOut();
-            this.patternSequencer = new PatternSequencer(pattern);
+            this.patternSequencer = new DrumPatternSampleProvider(pattern);
             this.patternSequencer.Tempo = tempo;
             IWaveProvider wp = new SampleToWaveProvider(patternSequencer);
             waveOut.Init(wp);

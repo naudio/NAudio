@@ -2,44 +2,23 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using NAudio.Wave;
-using NAudio.Midi;
+using System.Diagnostics;
 using NAudio.Wave.SampleProviders;
 
 namespace NAudioWpfDemo.DrumMachineDemo
 {
-    class PatternSequencer : ISampleProvider
+    class PatternSequencer
     {
-        private long position;
-        private long patternLength;
-        private MixingSampleProvider mixer;
-        private WaveFormat waveFormat;
-        private List<SampleSource> sampleSources;
+        private readonly DrumPattern drumPattern;
+        private readonly DrumKit drumKit;
+        private int tempo;
         private int samplesPerStep;
-        private DrumPattern pattern;
-        private int tempo;        
 
-        public PatternSequencer(DrumPattern pattern)
+        public PatternSequencer(DrumPattern drumPattern, DrumKit kit)
         {
-            this.pattern = pattern;
-            SampleSource kickSample = SampleSource.CreateFromWaveFile("Samples\\kick-trimmed.wav");
-            SampleSource snareSample = SampleSource.CreateFromWaveFile("Samples\\snare-trimmed.wav");
-            SampleSource closedHatsSample = SampleSource.CreateFromWaveFile("Samples\\closed-hat-trimmed.wav");
-            SampleSource openHatsSample = SampleSource.CreateFromWaveFile("Samples\\open-hat-trimmed.wav");
-            sampleSources = new List<SampleSource>();
-            
-            sampleSources.Add(kickSample);
-            sampleSources.Add(snareSample);
-            sampleSources.Add(closedHatsSample);
-            sampleSources.Add(openHatsSample);
-
-            int sampleRate = openHatsSample.SampleWaveFormat.SampleRate;
-            int channels = 2; // always stereo for now
-            this.waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channels);
-
-            this.Tempo = 100;
-
-            mixer = new MixingSampleProvider(waveFormat);
+            this.drumKit = kit;
+            this.drumPattern = drumPattern;
+            this.Tempo = 120;
         }
 
         public int Tempo
@@ -51,65 +30,43 @@ namespace NAudioWpfDemo.DrumMachineDemo
             set
             {
                 this.tempo = value;
-                int samplesPerBeat = this.WaveFormat.Channels * (this.WaveFormat.SampleRate * 60) / tempo;
+                int samplesPerBeat = (this.drumKit.WaveFormat.Channels * this.drumKit.WaveFormat.SampleRate * 60) / tempo;
                 this.samplesPerStep = samplesPerBeat / 4;
-                this.patternLength = samplesPerStep * pattern.Steps;
-                position = position % patternLength;
             }
         }
 
-        public WaveFormat WaveFormat
-        {
-            get { return waveFormat; }
-        }
+        private int currentStep = 0;
+        private double patternPosition = 0;
 
-        private int GetPositionForStep(int step)
+        public IList<MusicSampleProvider> GetNextMixerInputs(int sampleCount)
         {
-            return step * samplesPerStep;
-        }
-
-        private int GetStepFromPosition(long position)
-        {
-            return (int)(position / samplesPerStep) % pattern.Steps;
-        }
-
-        public int Read(float[] buffer, int offset, int count)
-        {
-            // find which steps start in this buffer
-            int startStep = GetStepFromPosition(position);
-            int endStep = GetStepFromPosition(position+count-1);
-            
-            for (int step = startStep; step <= endStep; step++)
+            List<MusicSampleProvider> mixerInputs = new List<MusicSampleProvider>();
+            int samplePos = 0;           
+            while (samplePos < sampleCount)
             {
-                for (int note = 0; note < pattern.Notes; note++)
+                for (int note = 0; note < drumPattern.Notes; note++)
                 {
-                    byte velocity = pattern[note, step];
-                    if (velocity > 0)
+                    if (drumPattern[note, currentStep] != 0)
                     {
-                        MusicSampleProvider sp = new MusicSampleProvider(sampleSources[note]);
-                        int delayBy = (int)(GetPositionForStep(step) - position);
-                        if (delayBy < 0) delayBy += (int)patternLength;
-                        sp.DelayBy = delayBy;
-                        ISampleProvider mixerInput = sp;
-                        if (mixerInput.WaveFormat.Channels == 1)
-                        {
-                            mixerInput = new MonoToStereoSampleProvider(mixerInput);
-                        }
-                        mixer.AddMixerInput(mixerInput);
+                        var sampleProvider = drumKit.GetSampleProvider(note);
+                        Debug.WriteLine("beat at step {0}, patternPostion={1}", currentStep, patternPosition);
+                        double offsetFromCurrent = (currentStep - patternPosition);
+                        if (offsetFromCurrent < 0) offsetFromCurrent += drumPattern.Steps;
+                        sampleProvider.DelayBy = (int)(this.samplesPerStep * offsetFromCurrent);
+                        mixerInputs.Add(sampleProvider);
                     }
                 }
-            }
 
-            // now we just need to read from the mixer
-            var samplesRead = mixer.Read(buffer, offset, count);
-            if (samplesRead < count)
-            {
-                Array.Clear(buffer, offset + samplesRead, count - samplesRead);
-                samplesRead = count;
+                samplePos += samplesPerStep;
+                currentStep++;
+                currentStep = currentStep % drumPattern.Steps;
             }
-            position += samplesRead;
-            position = position % patternLength; // loop indefinitely
-            return samplesRead;
+            this.patternPosition += ((double)sampleCount / samplesPerStep);
+            if (this.patternPosition > drumPattern.Steps)
+            {
+                this.patternPosition -= drumPattern.Steps;
+            }
+            return mixerInputs;
         }
     }
 }

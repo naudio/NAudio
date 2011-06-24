@@ -41,7 +41,7 @@ namespace NAudio.Midi
         public PitchWheelChangeEvent(long absoluteTime, int channel, int pitchWheel)
             : base(absoluteTime, channel, MidiCommandCode.PitchWheelChange)
         {
-            Pitch = pitch;
+            Pitch = pitchWheel;
         }
 		
 		/// <summary>
@@ -73,7 +73,15 @@ namespace NAudio.Midi
                 }
                 pitch = value;
             }
+        }
 
+        /// <summary>
+        /// Gets a short message
+        /// </summary>
+        /// <returns>Integer to sent as short message</returns>
+        public override int GetAsShortMessage()
+        {
+            return base.GetAsShortMessage() + ((pitch & 0x7f) << 8) + (((pitch >> 7) & 0x7f) << 16);
         }
 
         /// <summary>
@@ -85,7 +93,7 @@ namespace NAudio.Midi
         {
             base.Export(ref absoluteTime, writer);
             writer.Write((byte)(pitch & 0x7f));
-            writer.Write((byte)((pitch >> 7)& 0x7f));
+            writer.Write((byte)((pitch >> 7) & 0x7f));
         }
 	}
 }

@@ -97,6 +97,15 @@ namespace NAudio.Midi
         }
 
         /// <summary>
+        /// Gets as a short message for sending with the midiOutShortMsg API
+        /// </summary>
+        /// <returns>short message</returns>
+        public override int GetAsShortMessage()
+        {
+            return base.GetAsShortMessage() + (this.patch << 8);
+        }
+
+        /// <summary>
         /// Calls base class export first, then exports the data 
         /// specific to this event
         /// <seealso cref="MidiEvent.Export">MidiEvent.Export</seealso>

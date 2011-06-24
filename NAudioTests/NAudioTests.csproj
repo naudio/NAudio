@@ -85,6 +85,7 @@
     <Compile Include="Dmo\ResamplerDmoStreamTests.cs" />
     <Compile Include="Dmo\ResamplerDmoTests.cs" />
     <Compile Include="Midi\MidiEventCollectionTest.cs" />
+    <Compile Include="Midi\PitchWheelChangeEventTests.cs" />
     <Compile Include="Mixer\MixerApiTests.cs" />
     <Compile Include="Mp3\Mp3FileReaderTests.cs" />
     <Compile Include="Mp3\Mp3FrameTests.cs" />

@@ -448,15 +448,16 @@ namespace NAudio.Wave
                 }
 
                 // Fire playback stopped event
-                if (PlaybackStopped != null)
+                EventHandler handler = PlaybackStopped;
+                if (handler != null)
                 {
                     if (this.syncContext == null)
                     {
-                        PlaybackStopped(this, EventArgs.Empty);
+                        handler(this, EventArgs.Empty);
                     }
                     else
                     {
-                        syncContext.Post(state => PlaybackStopped(this, EventArgs.Empty), null);
+                        syncContext.Post(state => handler(this, EventArgs.Empty), null);
                     }
                 }
             }

@@ -159,15 +159,16 @@ namespace NAudio.Wave
 
         private void RaisePlaybackStopped()
         {
-            if (PlaybackStopped != null)
+            EventHandler handler = PlaybackStopped;
+            if (handler != null)
             {
-                if (syncContext != null)
+                if (this.syncContext == null)
                 {
-                    syncContext.Post((s) => { PlaybackStopped(this, EventArgs.Empty); }, null);
+                    handler(this, EventArgs.Empty);
                 }
                 else
                 {
-                    PlaybackStopped(this, EventArgs.Empty);
+                    syncContext.Post(state => handler(this, EventArgs.Empty), null);
                 }
             }
         }

@@ -1,0 +1,6 @@
+syntax: glob
+bin/
+obj/
+Packages/
+TestResult.xml
+BuildArtefacts/

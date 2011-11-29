@@ -71,12 +71,12 @@
    </ItemGroup>
 
    <ItemGroup>
-      <ZipDemoFiles Include="AudioFileInspector\bin\Debug\*.*" Exclude="**\*.pdb;**\*.vshost.*" />
       <ZipDemoFiles Include="NAudioDemo\bin\Debug\*.*" Exclude="**\*.pdb;**\*.vshost.*" />
+      <ZipDemoFiles Include="AudioFileInspector\bin\Debug\*.*" Exclude="**\*.pdb;**\*.vshost.*" />
+      <ZipDemoFiles Include="NAudioWpfDemo\bin\Debug\**\*.*" Exclude="**\*.pdb;**\*.vshost.*" />
       <!-- MixDiff and MidiFileConverter probably not in a state to include as official demos -->
       <!--<ZipDemoFiles Include="MixDiff\bin\Debug\*.*" Exclude="**\*.pdb;**\*.vshost.*" />-->
       <!--<ZipDemoFiles Include="MidiFileConverter\bin\Debug\*.*" Exclude="**\*.pdb;**\*.vshost.*" />-->
-      <ZipDemoFiles Include="NAudioWpfDemo\bin\Debug\*.*" Exclude="**\*.pdb;**\*.vshost.*" />
    </ItemGroup>
    
    <Target Name="ZipAll" DependsOnTargets="ZipLib;ZipSource;ZipDemo">
@@ -106,7 +106,6 @@
    <Target Name="ZipDemo">
       <Message Text="@(ZipDemoFiles)" />
       <Zip Files="@(ZipDemoFiles)" 
-           Flatten="true"
            ZipFileName="$(BuildFolder)NAudio-Demo-Apps.zip" />
       </Target>
    

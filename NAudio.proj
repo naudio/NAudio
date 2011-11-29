@@ -38,7 +38,7 @@
       <MakeDir Directories="$(BuildFolder)"/>
    </Target>
    
-   <Target Name="NuGet" DependsOnTargets="ReleaseBuild">
+   <Target Name="NuGet" DependsOnTargets="MakeBuildFolder;ReleaseBuild">
       <exec Command="Tools\NuGet Pack NAudio.nuspec -OutputDirectory $(BuildFolder)" />
    </Target>
    

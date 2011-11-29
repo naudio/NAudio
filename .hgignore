@@ -4,3 +4,4 @@ obj/
 Packages/
 TestResult.xml
 BuildArtefacts/
+*.suo

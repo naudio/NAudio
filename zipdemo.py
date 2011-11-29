@@ -1,5 +1,11 @@
 import zipfile
 import os
+import sys
+
+outfile = "BuildArtefacts\\NAudio-Demo-Apps.zip"
+if len(sys.argv) > 1:
+    outfile = sys.argv[1]
+print "creating " + outfile
 
 folders = ['AudioFileInspector','NAudioDemo','NAudioWpfDemo']
 files = {}
@@ -13,7 +19,7 @@ for folder in folders:
         if not exclude(filename):
             files[filename] = fullpath + filename
 
-zip = zipfile.ZipFile("BuildArtefacts\\test.zip", "w")
+zip = zipfile.ZipFile(outfile, "w")
 
 for filename, fullpath in files.iteritems():
     if os.path.isdir(fullpath):

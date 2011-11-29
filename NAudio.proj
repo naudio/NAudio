@@ -103,10 +103,8 @@
            ZipFileName="$(BuildFolder)NAudio-Source.zip" />
    </Target>
 
-   <Target Name="ZipDemo">
-      <Message Text="@(ZipDemoFiles)" />
-      <Zip Files="@(ZipDemoFiles)" 
-           ZipFileName="$(BuildFolder)NAudio-Demo-Apps.zip" />
-      </Target>
-   
+   <Target Name="ZipDemo" DependsOnTargets="MakeBuildFolder">
+      <Message Text="Creating DemoZip (using IronPython)" />
+      <Exec Command="ipy zipdemo.py $(BuildFolder)NAudio-Demo-Apps.zip" />
+   </Target>
 </Project>

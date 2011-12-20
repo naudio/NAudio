@@ -25,8 +25,8 @@ for filename, fullpath in files.iteritems():
     if os.path.isdir(fullpath):
         #print fullpath + " is a folder"
         for subfile in os.listdir(fullpath):
-            zip.write(fullpath + "\\" + subfile, filename + "\\" + subfile)
+            zip.write(fullpath + "\\" + subfile, filename + "\\" + subfile, zipfile.ZIP_DEFLATED)
     else:
-        zip.write(fullpath, filename)
+        zip.write(fullpath, filename, zipfile.ZIP_DEFLATED)
 
 zip.close()

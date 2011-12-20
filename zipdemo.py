@@ -11,7 +11,7 @@ folders = ['AudioFileInspector','NAudioDemo','NAudioWpfDemo']
 files = {}
 
 def exclude(filename):
-    return filename.endswith('.pdb') or ('nunit' in filename)
+    return filename.endswith('.pdb') #or ('nunit' in filename)
 
 for folder in folders:
     fullpath = folder + "\\bin\\debug\\"

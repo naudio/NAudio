@@ -22,7 +22,7 @@ namespace NAudio.Mixer
         /// <summary>
         /// MIXER_OBJECTF_HMIXER
         /// </summary>
-		MixerHandle = Mixer | Handle,
+        MixerHandle = Mixer | Handle,
         /// <summary>
         /// MIXER_OBJECTF_WAVEOUT
         /// </summary>
@@ -58,7 +58,7 @@ namespace NAudio.Mixer
         /// <summary>
         /// MIXER_OBJECTF_AUX
         /// </summary>
-		Aux = 0x50000000,
+        Aux = 0x50000000,
         #endregion
 
         #region Get/Set control details
@@ -88,11 +88,11 @@ namespace NAudio.Mixer
         /// <summary>
         /// MIXER_GETLINECONTROLSF_ONEBYID      	= 0x00000001;
         /// </summary>
-		OneById = 1,
+        OneById = 1,
         /// <summary>
         /// MIXER_GETLINECONTROLSF_ONEBYTYPE    	= 0x00000002;
         /// </summary>
-		OneByType = 2,		
+        OneByType = 2,		
         #endregion
 
         /// <summary>
@@ -106,7 +106,7 @@ namespace NAudio.Mixer
         /// <summary>
         /// MIXER_GETLINEINFOF_LINEID           	= 0x00000002;
         /// </summary>
-		GetLineInfoOfLineId = 2,
+        GetLineInfoOfLineId = 2,
         /// <summary>
         /// MIXER_GETLINEINFOF_COMPONENTTYPE    	= 0x00000003;
         /// </summary>
@@ -114,10 +114,10 @@ namespace NAudio.Mixer
         /// <summary>
         /// MIXER_GETLINEINFOF_TARGETTYPE       	= 0x00000004;
         /// </summary>
-		GetLineInfoOfTargetType = 4,
-		/// <summary>
-		/// MIXER_GETLINEINFOF_QUERYMASK        	= 0x0000000F;
-		/// </summary>
+        GetLineInfoOfTargetType = 4,
+        /// <summary>
+        /// MIXER_GETLINEINFOF_QUERYMASK        	= 0x0000000F;
+        /// </summary>
         GetLineInfoOfQueryMask = 0xF,
     }
 }

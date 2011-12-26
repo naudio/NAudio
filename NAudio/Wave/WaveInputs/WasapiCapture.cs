@@ -6,6 +6,7 @@ using System.Threading;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
+// for consistency this should be in NAudio.Wave namespace, but left as it is for backwards compatibility
 namespace NAudio.CoreAudioApi
 {
     /// <summary>
@@ -21,6 +22,7 @@ namespace NAudio.CoreAudioApi
         private Thread captureThread;
         private AudioClient audioClient;
         private int bytesPerFrame;
+        private WaveFormat waveFormat;
 
         /// <summary>
         /// Indicates recorded data is available 
@@ -47,13 +49,17 @@ namespace NAudio.CoreAudioApi
         public WasapiCapture(MMDevice captureDevice)
         {
             this.audioClient = captureDevice.AudioClient;
-            WaveFormat = audioClient.MixFormat;
+            this.waveFormat = audioClient.MixFormat;
         }
 
         /// <summary>
         /// Recording wave format
         /// </summary>
-        public WaveFormat WaveFormat { get; set; }
+        public virtual WaveFormat WaveFormat 
+        {
+            get { return this.waveFormat; }
+            set { this.waveFormat = value; }
+        }
 
         /// <summary>
         /// Gets the default audio capture device
@@ -73,18 +79,28 @@ namespace NAudio.CoreAudioApi
             {
                 throw new ArgumentException("Unsupported Wave Format");
             }
+            
+            var streamFlags = GetAudioClientStreamFlags();
 
             audioClient.Initialize(AudioClientShareMode.Shared,
-                AudioClientStreamFlags.None,
+                streamFlags,
                 requestedDuration,
                 0,
-                WaveFormat,
+                this.waveFormat,
                 Guid.Empty);
 
             int bufferFrameCount = audioClient.BufferSize;
-            bytesPerFrame = WaveFormat.Channels * WaveFormat.BitsPerSample / 8;
-            recordBuffer = new byte[bufferFrameCount * bytesPerFrame];
-            Debug.WriteLine(string.Format("record buffer size = {0}", recordBuffer.Length));
+            this.bytesPerFrame = this.waveFormat.Channels * this.waveFormat.BitsPerSample / 8;
+            this.recordBuffer = new byte[bufferFrameCount * bytesPerFrame];
+            Debug.WriteLine(string.Format("record buffer size = {0}", this.recordBuffer.Length));
+        }
+
+        /// <summary>
+        /// To allow overrides to specify different flags (e.g. loopback)
+        /// </summary>
+        protected virtual AudioClientStreamFlags GetAudioClientStreamFlags()
+        {
+            return AudioClientStreamFlags.None;
         }
 
         /// <summary>

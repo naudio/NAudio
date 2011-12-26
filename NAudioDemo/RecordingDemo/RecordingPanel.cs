@@ -29,7 +29,8 @@ namespace NAudioDemo
             else
             {
                 radioButtonWasapi.Enabled = false;
-                comboDevices.Enabled = false;
+                comboWasapiDevices.Enabled = false;
+                radioButtonWasapiLoopback.Enabled = false;
             }            
         }
 
@@ -45,8 +46,8 @@ namespace NAudioDemo
                 devices.Add(device);
             }
 
-            this.comboDevices.DataSource = devices;
-            this.comboDevices.DisplayMember = "FriendlyName";
+            this.comboWasapiDevices.DataSource = devices;
+            this.comboWasapiDevices.DisplayMember = "FriendlyName";
         }
 
         private void buttonStartRecording_Click(object sender, EventArgs e)
@@ -66,10 +67,16 @@ namespace NAudioDemo
                     waveIn = new WaveIn();
                     waveIn.WaveFormat = new WaveFormat(8000, 1);
                 }
+                else if (radioButtonWasapi.Checked)
+                {
+                    // can't set WaveFormat as WASAPI doesn't support SRC
+                    var device = (MMDevice)comboWasapiDevices.SelectedItem;
+                    waveIn = new WasapiCapture(device);                    
+                }
                 else
                 {
-                    waveIn = new WasapiCapture((MMDevice)comboDevices.SelectedItem);
-                    // go with the default format as WASAPI doesn't support SRC
+                    // can't set WaveFormat as WASAPI doesn't support SRC
+                    waveIn = new WasapiLoopbackCapture();
                 }
                 
                 writer = new WaveFileWriter(outputFilename, waveIn.WaveFormat);
@@ -149,6 +156,11 @@ namespace NAudioDemo
             {
                 outputFilename = saveFileDialog.FileName;
             }
+        }
+
+        private void RecordingPanel_Load(object sender, EventArgs e)
+        {
+
         }
     }
 

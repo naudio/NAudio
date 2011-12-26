@@ -38,12 +38,13 @@
             this.label2 = new System.Windows.Forms.Label();
             this.radioButtonWaveIn = new System.Windows.Forms.RadioButton();
             this.radioButtonWasapi = new System.Windows.Forms.RadioButton();
-            this.comboDevices = new System.Windows.Forms.ComboBox();
+            this.comboWasapiDevices = new System.Windows.Forms.ComboBox();
+            this.radioButtonWasapiLoopback = new System.Windows.Forms.RadioButton();
             this.SuspendLayout();
             // 
             // buttonStartRecording
             // 
-            this.buttonStartRecording.Location = new System.Drawing.Point(12, 127);
+            this.buttonStartRecording.Location = new System.Drawing.Point(12, 149);
             this.buttonStartRecording.Name = "buttonStartRecording";
             this.buttonStartRecording.Size = new System.Drawing.Size(105, 23);
             this.buttonStartRecording.TabIndex = 0;
@@ -61,7 +62,7 @@
             // 
             // buttonStopRecording
             // 
-            this.buttonStopRecording.Location = new System.Drawing.Point(123, 127);
+            this.buttonStopRecording.Location = new System.Drawing.Point(123, 149);
             this.buttonStopRecording.Name = "buttonStopRecording";
             this.buttonStopRecording.Size = new System.Drawing.Size(105, 23);
             this.buttonStopRecording.TabIndex = 0;
@@ -74,7 +75,7 @@
             this.checkBoxAutoPlay.AutoSize = true;
             this.checkBoxAutoPlay.Checked = true;
             this.checkBoxAutoPlay.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBoxAutoPlay.Location = new System.Drawing.Point(12, 156);
+            this.checkBoxAutoPlay.Location = new System.Drawing.Point(234, 153);
             this.checkBoxAutoPlay.Name = "checkBoxAutoPlay";
             this.checkBoxAutoPlay.Size = new System.Drawing.Size(107, 17);
             this.checkBoxAutoPlay.TabIndex = 2;
@@ -83,7 +84,7 @@
             // 
             // buttonSelectOutputFile
             // 
-            this.buttonSelectOutputFile.Location = new System.Drawing.Point(12, 179);
+            this.buttonSelectOutputFile.Location = new System.Drawing.Point(12, 178);
             this.buttonSelectOutputFile.Name = "buttonSelectOutputFile";
             this.buttonSelectOutputFile.Size = new System.Drawing.Size(118, 23);
             this.buttonSelectOutputFile.TabIndex = 3;
@@ -102,7 +103,7 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(12, 209);
+            this.label2.Location = new System.Drawing.Point(14, 209);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(103, 13);
             this.label2.TabIndex = 5;
@@ -131,21 +132,32 @@
             this.radioButtonWasapi.Text = "WASAPI";
             this.radioButtonWasapi.UseVisualStyleBackColor = true;
             // 
-            // comboDevices
+            // comboWasapiDevices
             // 
-            this.comboDevices.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.comboDevices.FormattingEnabled = true;
-            this.comboDevices.Location = new System.Drawing.Point(123, 85);
-            this.comboDevices.Name = "comboDevices";
-            this.comboDevices.Size = new System.Drawing.Size(121, 21);
-            this.comboDevices.TabIndex = 7;
+            this.comboWasapiDevices.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboWasapiDevices.FormattingEnabled = true;
+            this.comboWasapiDevices.Location = new System.Drawing.Point(165, 82);
+            this.comboWasapiDevices.Name = "comboWasapiDevices";
+            this.comboWasapiDevices.Size = new System.Drawing.Size(121, 21);
+            this.comboWasapiDevices.TabIndex = 7;
             // 
-            // RecordingForm
+            // radioButtonWasapiLoopback
+            // 
+            this.radioButtonWasapiLoopback.AutoSize = true;
+            this.radioButtonWasapiLoopback.Location = new System.Drawing.Point(30, 109);
+            this.radioButtonWasapiLoopback.Name = "radioButtonWasapiLoopback";
+            this.radioButtonWasapiLoopback.Size = new System.Drawing.Size(118, 17);
+            this.radioButtonWasapiLoopback.TabIndex = 6;
+            this.radioButtonWasapiLoopback.TabStop = true;
+            this.radioButtonWasapiLoopback.Text = "WASAPI Loopback";
+            this.radioButtonWasapiLoopback.UseVisualStyleBackColor = true;
+            // 
+            // RecordingPanel
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(420, 264);
-            this.Controls.Add(this.comboDevices);
+            this.Controls.Add(this.comboWasapiDevices);
+            this.Controls.Add(this.radioButtonWasapiLoopback);
             this.Controls.Add(this.radioButtonWasapi);
             this.Controls.Add(this.radioButtonWaveIn);
             this.Controls.Add(this.label2);
@@ -155,8 +167,9 @@
             this.Controls.Add(this.label1);
             this.Controls.Add(this.buttonStopRecording);
             this.Controls.Add(this.buttonStartRecording);
-            this.Name = "RecordingForm";
-            this.Text = "RecordingForm";
+            this.Name = "RecordingPanel";
+            this.Size = new System.Drawing.Size(420, 288);
+            this.Load += new System.EventHandler(this.RecordingPanel_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -173,6 +186,7 @@
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.RadioButton radioButtonWaveIn;
         private System.Windows.Forms.RadioButton radioButtonWasapi;
-        private System.Windows.Forms.ComboBox comboDevices;
+        private System.Windows.Forms.ComboBox comboWasapiDevices;
+        private System.Windows.Forms.RadioButton radioButtonWasapiLoopback;
     }
 }

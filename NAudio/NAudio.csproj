@@ -99,7 +99,7 @@
     <Compile Include="CoreAudioApi\Interfaces\IAudioRenderClient.cs" />
     <Compile Include="CoreAudioApi\MMDeviceCollection.cs" />
     <Compile Include="CoreAudioApi\PropertyKeys.cs" />
-    <Compile Include="CoreAudioApi\WasapiCapture.cs" />
+    <Compile Include="Wave\WaveInputs\WasapiCapture.cs" />
     <Compile Include="Dmo\AudioMediaSubtypes.cs" />
     <Compile Include="Dmo\DmoDescriptor.cs" />
     <Compile Include="Dmo\DmoEnumerator.cs" />
@@ -335,7 +335,8 @@
     <Compile Include="Wave\MmeInterop\MmTime.cs" />
     <Compile Include="Wave\MmeInterop\WaveHeader.cs" />
     <Compile Include="Wave\MmeInterop\WaveHeaderFlags.cs" />
-    <Compile Include="Wave\MmeInterop\WaveIn.cs" />
+    <Compile Include="Wave\WaveInputs\WasapiLoopbackCapture.cs" />
+    <Compile Include="Wave\WaveInputs\WaveIn.cs" />
     <Compile Include="Wave\MmeInterop\WaveInCapabilities.cs" />
     <Compile Include="Wave\MmeInterop\WaveInEventArgs.cs" />
     <Compile Include="Wave\MmeInterop\WaveInterop.cs" />

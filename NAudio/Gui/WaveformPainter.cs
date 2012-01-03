@@ -64,7 +64,7 @@ namespace NAudio.Gui
             {
                 samples.Add(maxSample);
             }
-            else
+            else if (insertPos < maxSamples)
             {
                 samples[insertPos] = maxSample;
             }

@@ -147,12 +147,6 @@
     <Compile Include="FileInspectors\WaveFileInspector.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\nAudio\nAudio.csproj">
-      <Project>{9CABA8DA-CCF0-4808-9AA7-75F269DB2D7C}</Project>
-      <Name>nAudio</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="audio_file_inspector.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -173,6 +167,12 @@
       <ProductName>Windows Installer 3.1</ProductName>
       <Install>true</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NAudio\NAudio.csproj">
+      <Project>{DA4F02E3-0B5E-42CD-B8D9-5583FA51D66E}</Project>
+      <Name>NAudio</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

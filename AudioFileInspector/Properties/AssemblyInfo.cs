@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Mark Heath")]
 [assembly: AssemblyProduct("Audio File Inspector")]
-[assembly: AssemblyCopyright("Copyright © Mark Heath 2006")]
+[assembly: AssemblyCopyright("Copyright © Mark Heath 2012")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -29,8 +29,8 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("0.1.6.0")]
-[assembly: AssemblyFileVersion("0.1.6.0")]
+[assembly: AssemblyVersion("0.1.7.0")]
+[assembly: AssemblyFileVersion("0.1.7.0")]
 
 // build 1 - 1 Nov 2006
 // initial version - moved out of WavePlayer
@@ -53,6 +53,8 @@ using System.Runtime.InteropServices;
 // Shows length of Wave file as a TimeSpan as well as bytes
 // build 6 - 13 Jan 2009
 // can report on strc chunks in ACID wav files
+// build 7 - 13 Jan 2012
+// better MBT calculation for MIDI files
 
 // TODO list
 // help file

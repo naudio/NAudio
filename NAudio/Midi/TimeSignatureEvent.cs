@@ -4,32 +4,32 @@ using System.Text;
 
 namespace NAudio.Midi 
 {
-	/// <summary>
-	/// Represents a MIDI time signature event
-	/// </summary>
-	public class TimeSignatureEvent : MetaEvent 
-	{
-		private byte numerator;
-		private byte denominator;
-		private byte ticksInMetronomeClick;
-		private byte no32ndNotesInQuarterNote;
-		
-		/// <summary>
-		/// Reads a new time signature event from a MIDI stream
-		/// </summary>
-		/// <param name="br">The MIDI stream</param>
-		/// <param name="length">The data length</param>
-		public TimeSignatureEvent(BinaryReader br,int length) 
-		{
-			if(length != 4) 
-			{
+    /// <summary>
+    /// Represents a MIDI time signature event
+    /// </summary>
+    public class TimeSignatureEvent : MetaEvent 
+    {
+        private byte numerator;
+        private byte denominator;
+        private byte ticksInMetronomeClick;
+        private byte no32ndNotesInQuarterNote;
+        
+        /// <summary>
+        /// Reads a new time signature event from a MIDI stream
+        /// </summary>
+        /// <param name="br">The MIDI stream</param>
+        /// <param name="length">The data length</param>
+        public TimeSignatureEvent(BinaryReader br,int length) 
+        {
+            if(length != 4) 
+            {
                 throw new FormatException(String.Format("Invalid time signature length: Got {0}, expected 4", length));
-			}
-			numerator = br.ReadByte();
-			denominator = br.ReadByte(); //2=quarter, 3=eigth etc
-			ticksInMetronomeClick = br.ReadByte();
-			no32ndNotesInQuarterNote = br.ReadByte();
-		}
+            }
+            numerator = br.ReadByte();
+            denominator = br.ReadByte(); //2=quarter, 3=eigth etc
+            ticksInMetronomeClick = br.ReadByte();
+            no32ndNotesInQuarterNote = br.ReadByte();
+        }
 
         /// <summary>
         /// Creates a new TimeSignatureEvent
@@ -52,6 +52,7 @@ namespace NAudio.Midi
         /// <summary>
         /// Creates a new time signature event with the specified parameters
         /// </summary>
+        [Obsolete("Use the constructor that has absolute time first")]
         public TimeSignatureEvent(int numerator, int denominator, int ticksInMetronomeClick, int no32ndNotesInQuarterNote, long absoluteTime)
             : base(MetaEventType.TimeSignature, 4, absoluteTime)
         {
@@ -62,7 +63,7 @@ namespace NAudio.Midi
         }
 
         /// <summary>
-        /// Numerator
+        /// Numerator (number of beats in a bar)
         /// </summary>
         public int Numerator
         {
@@ -70,7 +71,8 @@ namespace NAudio.Midi
         }
 
         /// <summary>
-        /// Denominator
+        /// Denominator (Beat unit),
+        /// 1 means 2, 2 means 4 (crochet), 3 means 8 (quaver), 4 means 16 and 5 means 32
         /// </summary>
         public int Denominator
         {
@@ -93,45 +95,45 @@ namespace NAudio.Midi
             get { return no32ndNotesInQuarterNote; }
         }
 
-		/// <summary>
-		/// The time signature
-		/// </summary>
-		public string TimeSignature 
-		{
-			get 
-			{
-				string den = String.Format("Unknown ({0})",denominator);
-				switch(denominator) 
-				{
-				case 1:
-					den = "2";
-					break;
-				case 2:
-					den = "4";
-					break;
-				case 3:
-					den = "8";
-					break;
-				case 4:
-					den = "16";
-					break;
-				case 5:
-					den = "32";
-					break;
-				}
-				return String.Format("{0}/{1}",numerator,den);
-			}
-		}
-		
-		/// <summary>
-		/// Describes this time signature event
-		/// </summary>
-		/// <returns>A string describing this event</returns>
-		public override string ToString() 
-		{
-			return String.Format("{0} {1} TicksInClick:{2} 32ndsInQuarterNote:{3}",
-				base.ToString(),TimeSignature,ticksInMetronomeClick,no32ndNotesInQuarterNote);
-		}
+        /// <summary>
+        /// The time signature
+        /// </summary>
+        public string TimeSignature 
+        {
+            get 
+            {
+                string den = String.Format("Unknown ({0})",denominator);
+                switch(denominator) 
+                {
+                case 1:
+                    den = "2";
+                    break;
+                case 2:
+                    den = "4";
+                    break;
+                case 3:
+                    den = "8";
+                    break;
+                case 4:
+                    den = "16";
+                    break;
+                case 5:
+                    den = "32";
+                    break;
+                }
+                return String.Format("{0}/{1}",numerator,den);
+            }
+        }
+        
+        /// <summary>
+        /// Describes this time signature event
+        /// </summary>
+        /// <returns>A string describing this event</returns>
+        public override string ToString() 
+        {
+            return String.Format("{0} {1} TicksInClick:{2} 32ndsInQuarterNote:{3}",
+                base.ToString(),TimeSignature,ticksInMetronomeClick,no32ndNotesInQuarterNote);
+        }
 
         /// <summary>
         /// Calls base class export first, then exports the data 
@@ -146,5 +148,5 @@ namespace NAudio.Midi
             writer.Write(ticksInMetronomeClick);
             writer.Write(no32ndNotesInQuarterNote);
         }
-	}
+    }
 }

@@ -1,0 +1,186 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{1868FC77-FD6F-4881-9CF5-DE7451806BFA}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>NAudio.WindowsMediaFormat</RootNamespace>
+    <AssemblyName>NAudio.WindowsMediaFormat</AssemblyName>
+    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <OldToolsVersion>3.5</OldToolsVersion>
+    <UpgradeBackupLocation />
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Interop\CodecFormat.cs" />
+    <Compile Include="Interop\Codec.cs" />
+    <Compile Include="Interop\CommonTypes\IWMCodecInfo.cs" />
+    <Compile Include="Interop\CommonTypes\IWMCodecInfo2.cs" />
+    <Compile Include="Interop\CommonTypes\IWMCodecInfo3 .cs" />
+    <Compile Include="Interop\ProfilesTypes\IWMProfile3.cs" />
+    <Compile Include="Interop\Enums.cs" />
+    <Compile Include="Interop\WmProfile.cs" />
+    <Compile Include="WmaFileReader.cs" />
+    <Compile Include="Interop\WmaStream.cs" />
+    <Compile Include="Interop\WMFFunctions.cs" />
+    <Compile Include="Interop\BufferTypes\INSSBuffer.cs" />
+    <Compile Include="Interop\BufferTypes\INSSBuffer2.cs" />
+    <Compile Include="Interop\BufferTypes\INSSBuffer3.cs" />
+    <Compile Include="Interop\BufferTypes\INSSBuffer4.cs" />
+    <Compile Include="Interop\CommonTypes\IWMBandwidthSharing.cs" />
+    <Compile Include="Interop\CommonTypes\IWMHeaderInfo.cs" />
+    <Compile Include="Interop\CommonTypes\IWMHeaderInfo2.cs" />
+    <Compile Include="Interop\CommonTypes\IWMHeaderInfo3.cs" />
+    <Compile Include="Interop\CommonTypes\IWMInputMediaProps.cs" />
+    <Compile Include="Interop\CommonTypes\IWMMediaProps.cs" />
+    <Compile Include="Interop\CommonTypes\IWMOutputMediaProps.cs" />
+    <Compile Include="Interop\CommonTypes\IWMMetadataEditor.cs" />
+    <Compile Include="Interop\CommonTypes\IWMMutualExclusion.cs" />
+    <Compile Include="Interop\CommonTypes\IWMMutualExclusion2.cs" />
+    <Compile Include="Interop\CommonTypes\IWMMetadataEditor2.cs" />
+    <Compile Include="Interop\CommonTypes\IWMIndexer.cs" />
+    <Compile Include="Interop\CommonTypes\IWMIndexer2.cs" />
+    <Compile Include="Interop\MediaTypes.cs" />
+    <Compile Include="Interop\NSSBuffer.cs" />
+    <Compile Include="Interop\ProfilesTypes\IWMProfile.cs" />
+    <Compile Include="Interop\ProfilesTypes\IWMProfileManager.cs" />
+    <Compile Include="Interop\ProfilesTypes\IWMProfileManager2.cs" />
+    <Compile Include="Interop\ProfilesTypes\IWMProfile2.cs" />
+    <Compile Include="Interop\ProfilesTypes\IWMProfileManagerLanguage.cs" />
+    <Compile Include="Interop\ReaderTypes\IWMReader.cs" />
+    <Compile Include="Interop\ReaderTypes\IWMReaderAllocatorEx.cs" />
+    <Compile Include="Interop\ReaderTypes\IWMReaderCallback.cs" />
+    <Compile Include="Interop\BufferTypes\IWMSBufferAllocator.cs" />
+    <Compile Include="Interop\CommonTypes\IWMStatusCallback.cs" />
+    <Compile Include="Interop\CommonTypes\IWMStreamList.cs" />
+    <Compile Include="Interop\CommonTypes\IWMStreamPrioritization.cs" />
+    <Compile Include="Interop\ProfilesTypes\IWMStreamConfig.cs" />
+    <Compile Include="Interop\ProfilesTypes\IWMStreamConfig2.cs" />
+    <Compile Include="Interop\ProfilesTypes\IWMStreamConfig3.cs" />
+    <Compile Include="Interop\ReaderTypes\IWMSyncReader.cs" />
+    <Compile Include="Interop\CommonTypes\IWMVideoMediaProps.cs" />
+    <Compile Include="Interop\ReaderTypes\IWMSyncReader2.cs" />
+    <Compile Include="Interop\ReaderTypes\IWMReaderAdvanced.cs" />
+    <Compile Include="Interop\ReaderTypes\IWMReaderAdvanced2.cs" />
+    <Compile Include="Interop\ReaderTypes\IWMReaderAdvanced3.cs" />
+    <Compile Include="Interop\ReaderTypes\IWMReaderAdvanced4.cs" />
+    <Compile Include="Interop\WMHeaderInfo.cs" />
+    <Compile Include="Interop\WMStreamConfig.cs" />
+    <Compile Include="Interop\WriterTypes\IWMWriterSink.cs" />
+    <Compile Include="Interop\WriterTypes\IWMWriterFileSink.cs" />
+    <Compile Include="Interop\WriterTypes\IWMWriterFileSink2.cs" />
+    <Compile Include="Interop\WriterTypes\IWMWriterFileSink3.cs" />
+    <Compile Include="Interop\WriterTypes\IWMWriterNetworkSink.cs" />
+    <Compile Include="Interop\WriterTypes\IWMWriterPushSink.cs" />
+    <Compile Include="Interop\WriterTypes\IWMWriter.cs" />
+    <Compile Include="Interop\WriterTypes\IWMWriterAdvanced.cs" />
+    <Compile Include="Interop\WriterTypes\IWMWriterAdvanced2.cs" />
+    <Compile Include="Interop\WriterTypes\IWMWriterAdvanced3.cs" />
+    <Compile Include="Interop\WriterTypes\IWMWriterPreprocess.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Interop\CommonTypes\WMT_ATTR_DATATYPE.cs" />
+    <Compile Include="Interop\CommonTypes\WMT_STREAM_SELECTION.cs" />
+    <Compile Include="Interop\CommonTypes\WMT_VERSION.cs" />
+    <Compile Include="Interop\CommonTypes\WMT_STORAGE_FORMAT.cs" />
+    <Compile Include="Interop\CommonTypes\WMT_TRANSPORT_TYPE.cs" />
+    <Compile Include="Interop\CommonTypes\WMT_STATUS.cs" />
+    <Compile Include="Interop\CommonTypes\WMT_PLAY_MODE.cs" />
+    <Compile Include="Interop\CommonTypes\WMT_OFFSET_FORMAT.cs" />
+    <Compile Include="Interop\CommonTypes\WMT_CODEC_INFO_TYPE.cs" />
+    <Compile Include="Interop\CommonTypes\WMT_RIGHTS.cs" />
+    <Compile Include="Interop\CommonTypes\WMT_INDEXER_TYPE.cs" />
+    <Compile Include="Interop\CommonTypes\WMT_INDEX_TYPE.cs" />
+    <Compile Include="Interop\CommonTypes\WMT_NET_PROTOCOL.cs" />
+    <Compile Include="Interop\CommonTypes\WMT_TIMECODE_EXTENSION_DATA.cs" />
+    <Compile Include="Interop\CommonTypes\WM_STREAM_PRIORITY_RECORD.cs" />
+    <Compile Include="Interop\CommonTypes\WM_MEDIA_TYPE.cs" />
+    <Compile Include="Interop\ReaderTypes\WM_READER_CLIENTINFO.cs" />
+    <Compile Include="Interop\ReaderTypes\WM_READER_STATISTICS.cs" />
+    <Compile Include="Interop\WriterTypes\WM_WRITER_STATISTICS.cs" />
+    <Compile Include="Interop\WriterTypes\WM_WRITER_STATISTICS_EX.cs" />
+    <Compile Include="Interop\WriterTypes\WMT_BUFFER_SEGMENT.cs" />
+    <Compile Include="Interop\WriterTypes\WMT_FILESINK_DATA_UNIT.cs" />
+    <Compile Include="Interop\WriterTypes\WMT_PAYLOAD_FRAGMENT.cs" />
+    <Compile Include="Interop\WmaWriter.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
+      <Visible>False</Visible>
+      <ProductName>Windows Installer 3.1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NAudio\NAudio.csproj">
+      <Project>{DA4F02E3-0B5E-42CD-B8D9-5583FA51D66E}</Project>
+      <Name>NAudio</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

@@ -99,6 +99,7 @@
     <Compile Include="CoreAudioApi\Interfaces\IAudioRenderClient.cs" />
     <Compile Include="CoreAudioApi\MMDeviceCollection.cs" />
     <Compile Include="CoreAudioApi\PropertyKeys.cs" />
+    <Compile Include="Wave\SampleProviders\MultiplexingSampleProvider.cs" />
     <Compile Include="Wave\WaveInputs\WasapiCapture.cs" />
     <Compile Include="Dmo\AudioMediaSubtypes.cs" />
     <Compile Include="Dmo\DmoDescriptor.cs" />
@@ -392,6 +393,7 @@
     <Compile Include="Wave\SampleProviders\SampleToWaveProvider.cs" />
     <Compile Include="Wave\WaveProviders\BufferedWaveProvider.cs" />
     <Compile Include="Wave\SampleProviders\MonoToStereoSampleProvider.cs" />
+    <Compile Include="Wave\WaveProviders\MultiplexingWaveProvider.cs" />
     <Compile Include="Wave\WaveProviders\StereoToMonoProvider16.cs" />
     <Compile Include="Wave\WaveProviders\MonoToStereoProvider16.cs" />
     <Compile Include="Wave\WaveProviders\WaveFloatTo16Provider.cs" />

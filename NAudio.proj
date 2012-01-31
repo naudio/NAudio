@@ -49,7 +49,7 @@
    <!-- specifies what we are including the the source code zip to go on CodePlex -->
    <ItemGroup>
        <ZipSourceFiles Include="AudioFileInspector\**\*.*" Exclude="$(ExcludePattern)" />
-       <ZipSourceFiles Include="MidiFileConvertor\**\*.*" Exclude="$(ExcludePattern)" />
+       <ZipSourceFiles Include="MidiFileConverter\**\*.*" Exclude="$(ExcludePattern)" />
        <ZipSourceFiles Include="Lib\**" Exclude="**\.svn\**" />
        <ZipSourceFiles Include="MixDiff\**\*.*" Exclude="$(ExcludePattern)" />
        <ZipSourceFiles Include="NAudio\**\*.*" Exclude="$(ExcludePattern)" />

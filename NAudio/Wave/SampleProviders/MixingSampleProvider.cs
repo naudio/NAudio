@@ -21,6 +21,10 @@ namespace NAudio.Wave.SampleProviders
         /// <param name="waveFormat">The WaveFormat of this mixer. All inputs must be in this format</param>
         public MixingSampleProvider(WaveFormat waveFormat)
         {
+            if (waveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
+            {
+                throw new ArgumentException("Mixer wave format must be IEEE float");
+            }
             this.sources = new List<ISampleProvider>();
             this.waveFormat = waveFormat;
         }
@@ -37,6 +41,16 @@ namespace NAudio.Wave.SampleProviders
             {
                 AddMixerInput(source);
             }
+        }
+
+        /// <summary>
+        /// Adds a WaveProvider as a Mixer input.
+        /// Must be PCM or IEEE float already
+        /// </summary>
+        /// <param name="mixerInput">IWaveProvider mixer input</param>
+        public void AddMixerInput(IWaveProvider mixerInput)
+        {
+            AddMixerInput(SampleProviderConverters.ConvertWaveProviderIntoSampleProvider(mixerInput));
         }
 
         /// <summary>

@@ -24,35 +24,7 @@ namespace NAudio.Wave.SampleProviders
         /// <param name="waveProvider">Source wave provider, must be PCM or IEEE</param>
         public SampleChannel(IWaveProvider waveProvider)
         {
-            ISampleProvider sampleProvider;
-            if (waveProvider.WaveFormat.Encoding == WaveFormatEncoding.Pcm)
-            {
-                // go to float
-                if (waveProvider.WaveFormat.BitsPerSample == 8)
-                {
-                    sampleProvider = new Pcm8BitToSampleProvider(waveProvider);
-                }
-                else if (waveProvider.WaveFormat.BitsPerSample == 16)
-                {
-                    sampleProvider = new Pcm16BitToSampleProvider(waveProvider);
-                }
-                else if (waveProvider.WaveFormat.BitsPerSample == 24)
-                {
-                    sampleProvider = new Pcm24BitToSampleProvider(waveProvider);
-                }
-                else
-                {
-                    throw new InvalidOperationException("Unsupported operation");
-                }
-            }
-            else if (waveProvider.WaveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
-            {
-                sampleProvider = new WaveToSampleProvider(waveProvider);
-            }
-            else
-            {
-                throw new ArgumentException("Unsupported source encoding");
-            }
+            ISampleProvider sampleProvider = SampleProviderConverters.ConvertWaveProviderIntoSampleProvider(waveProvider);            
             if (sampleProvider.WaveFormat.Channels == 1)
             {
                 sampleProvider = new MonoToStereoSampleProvider(sampleProvider);

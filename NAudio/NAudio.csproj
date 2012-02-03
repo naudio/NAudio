@@ -100,6 +100,7 @@
     <Compile Include="CoreAudioApi\MMDeviceCollection.cs" />
     <Compile Include="CoreAudioApi\PropertyKeys.cs" />
     <Compile Include="Wave\SampleProviders\MultiplexingSampleProvider.cs" />
+    <Compile Include="Wave\SampleProviders\SampleProviderConverters.cs" />
     <Compile Include="Wave\WaveInputs\WasapiCapture.cs" />
     <Compile Include="Dmo\AudioMediaSubtypes.cs" />
     <Compile Include="Dmo\DmoDescriptor.cs" />

@@ -4,6 +4,7 @@ using NAudio.Wave;
 using NUnit.Framework;
 using System.Diagnostics;
 using System;
+using NAudio.FileFormats.Wav;
 
 namespace NAudioTests.WaveStreams
 {
@@ -33,20 +34,18 @@ namespace NAudioTests.WaveStreams
             using (var inputStream = new MemoryStream(fileContents))
             {
                 // act
-                WaveFormat wv;
-                long dataChunkPosition;
-                int dataChunkLength;
                 var chunks = new List<RiffChunk>();
-                WaveFileReader.ReadWaveHeader(inputStream, out wv, out dataChunkPosition, out dataChunkLength, chunks);
+                var chunkReader = new WaveFileChunkReader();
+                chunkReader.ReadWaveHeader(inputStream);
 
                 // assert
-                Assert.AreEqual(16000, wv.AverageBytesPerSecond);
-                Assert.AreEqual(8, wv.BitsPerSample);
-                Assert.AreEqual(2, wv.Channels);
-                Assert.AreEqual(8000, wv.SampleRate);
+                Assert.AreEqual(16000, chunkReader.WaveFormat.AverageBytesPerSecond);
+                Assert.AreEqual(8, chunkReader.WaveFormat.BitsPerSample);
+                Assert.AreEqual(2, chunkReader.WaveFormat.Channels);
+                Assert.AreEqual(8000, chunkReader.WaveFormat.SampleRate);
 
-                Assert.AreEqual(46, dataChunkPosition);
-                Assert.AreEqual(0, dataChunkLength);
+                Assert.AreEqual(46, chunkReader.DataChunkPosition);
+                Assert.AreEqual(0, chunkReader.DataChunkLength);
                 Assert.AreEqual(0, chunks.Count);
             }
         }

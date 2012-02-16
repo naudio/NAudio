@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using NAudio.Wave;
+using NAudio.Utils;
 using System.Diagnostics;
 using System.ComponentModel.Composition;
 
@@ -53,20 +54,66 @@ namespace AudioFileInspector
                 case "strc":
                     DescribeStrc(stringBuilder, data);
                     break;
+                case "bext":
+                    DescribeBext(stringBuilder, data);
+                    break;
+                case "iXML":
+                    stringBuilder.Append(UTF8Encoding.UTF8.GetString(data));
+                    break;
                 default:
                     {
-                        int n = 0;
-                        foreach (byte b in data)
+                        if (ByteArrayExtensions.IsEntirelyNull(data))
                         {
-                            stringBuilder.AppendFormat("{0:X2} ", b);
-                            if (++n % 8 == 0)
-                                stringBuilder.Append("\r\n");
+                            stringBuilder.AppendFormat("{0} null bytes\r\n", data.Length);
                         }
-                        stringBuilder.Append("\r\n");
+                        else
+                        {
+                            stringBuilder.AppendFormat("{0}\r\n", ByteArrayExtensions.DescribeAsHex(data," ",32));
+                        }
                     }
                     break;
             }
         }
+
+        private static void DescribeBext(StringBuilder sb, byte[] data)
+        {
+            int offset = 0;
+            sb.AppendFormat("Description: {0}\r\n", ByteArrayExtensions.DecodeAsString(data, 0, 256, ASCIIEncoding.ASCII));
+            offset += 256;
+            sb.AppendFormat("Originator: {0}\r\n", ByteArrayExtensions.DecodeAsString(data, offset, 32, ASCIIEncoding.ASCII));
+            offset += 32;
+            sb.AppendFormat("Originator Reference: {0}\r\n", ByteArrayExtensions.DecodeAsString(data, offset, 32, ASCIIEncoding.ASCII));
+            offset += 32;
+            sb.AppendFormat("Origination Date: {0}\r\n", ByteArrayExtensions.DecodeAsString(data, offset, 10, ASCIIEncoding.ASCII));
+            offset += 10;
+            sb.AppendFormat("Origination Time: {0}\r\n", ByteArrayExtensions.DecodeAsString(data, offset, 8, ASCIIEncoding.ASCII));
+            offset += 8;
+            sb.AppendFormat("Time Reference Low: {0}\r\n", BitConverter.ToUInt32(data, offset));
+            offset += 4;
+            sb.AppendFormat("Time Reference High: {0}\r\n", BitConverter.ToUInt32(data, offset));
+            offset += 4;
+            sb.AppendFormat("Version: {0}\r\n", BitConverter.ToUInt16(data, offset));
+            offset += 2;
+            //byte[] smpteumid = 64 bytes;
+            offset += 64;
+            sb.AppendFormat("Loudness Value: {0}\r\n", BitConverter.ToUInt16(data, offset));
+            offset += 2;
+            sb.AppendFormat("Loudness Range: {0}\r\n", BitConverter.ToUInt16(data, offset));
+            offset += 2;
+            sb.AppendFormat("Max True Peak Level: {0}\r\n", BitConverter.ToUInt16(data, offset));
+            offset += 2;
+            sb.AppendFormat("Max Momentary Loudness: {0}\r\n", BitConverter.ToUInt16(data, offset));
+            offset += 2;
+            sb.AppendFormat("Max short term loudness: {0}\r\n", BitConverter.ToUInt16(data, offset));
+            offset += 2;
+            //byte[] reserved = 180 bytes;
+            offset += 180;
+            sb.AppendFormat("Coding History: {0}\r\n", ByteArrayExtensions.DecodeAsString(data, offset, data.Length-offset, ASCIIEncoding.ASCII));
+            
+        }
+
+
+
 
         private static void DescribeStrc(StringBuilder stringBuilder, byte[] data)
         {

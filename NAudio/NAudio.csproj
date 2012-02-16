@@ -99,6 +99,7 @@
     <Compile Include="CoreAudioApi\Interfaces\IAudioRenderClient.cs" />
     <Compile Include="CoreAudioApi\MMDeviceCollection.cs" />
     <Compile Include="CoreAudioApi\PropertyKeys.cs" />
+    <Compile Include="Utils\ByteArrayExtensions.cs" />
     <Compile Include="Wave\SampleProviders\MultiplexingSampleProvider.cs" />
     <Compile Include="Wave\SampleProviders\SampleProviderConverters.cs" />
     <Compile Include="Wave\WaveInputs\WasapiCapture.cs" />

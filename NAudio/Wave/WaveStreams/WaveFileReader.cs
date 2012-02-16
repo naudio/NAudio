@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using System.Collections.Generic;
 using System.Diagnostics;
+using NAudio.FileFormats.Wav;
 
 namespace NAudio.Wave 
 {
@@ -16,7 +17,7 @@ namespace NAudio.Wave
         private Stream waveStream;
         private bool ownInput;
         private long dataPosition;
-        private int dataChunkLength;
+        private long dataChunkLength;
         private List<RiffChunk> chunks = new List<RiffChunk>();
 
         /// <summary>Supports opening a WAV file</summary>
@@ -40,82 +41,13 @@ namespace NAudio.Wave
         public WaveFileReader(Stream inputStream)
         {
             this.waveStream = inputStream;
-            ReadWaveHeader(waveStream, out waveFormat, out dataPosition, out dataChunkLength, chunks);
+            var chunkReader = new WaveFileChunkReader();
+            chunkReader.ReadWaveHeader(inputStream);
+            this.waveFormat = chunkReader.WaveFormat;
+            this.dataPosition = chunkReader.DataChunkPosition;
+            this.dataChunkLength = chunkReader.DataChunkLength;
+            this.chunks = chunkReader.RiffChunks;            
             Position = 0;
-        }
-
-        /// <summary>
-        /// Reads the header part of a WAV file from a stream
-        /// </summary>
-        /// <param name="stream">The stream, positioned at the start of audio data</param>
-        /// <param name="format">The format found</param>
-        /// <param name="dataChunkPosition">The position of the data chunk</param>
-        /// <param name="dataChunkLength">The length of the data chunk</param>
-        /// <param name="chunks">Additional chunks found</param>
-        public static void ReadWaveHeader(Stream stream, out WaveFormat format, out long dataChunkPosition, out int dataChunkLength, List<RiffChunk> chunks)        
-        {
-            dataChunkPosition = -1;
-            format = null;
-            BinaryReader br = new BinaryReader(stream);
-            if (br.ReadInt32() != WaveInterop.mmioStringToFOURCC("RIFF", 0))
-            {
-                throw new FormatException("Not a WAVE file - no RIFF header");
-            }
-            uint fileSize = br.ReadUInt32(); // read the file size (minus 8 bytes)
-            if (br.ReadInt32() != WaveInterop.mmioStringToFOURCC("WAVE", 0))
-            {
-                throw new FormatException("Not a WAVE file - no WAVE header");
-            }
-                        
-            int dataChunkID = WaveInterop.mmioStringToFOURCC("data", 0);
-            int formatChunkId = WaveInterop.mmioStringToFOURCC("fmt ", 0);
-            dataChunkLength = 0;
-
-            // sometimes a file has more data than is specified after the RIFF header
-            long stopPosition = Math.Min(fileSize + 8, stream.Length);
-            
-            // this -8 is so we can be sure that there are at least 8 bytes for a chunk id and length
-            while (stream.Position <= stopPosition - 8)
-            {
-                Int32 chunkIdentifier = br.ReadInt32();
-                Int32 chunkLength = br.ReadInt32();
-                if (chunkIdentifier == dataChunkID)
-                {
-                    dataChunkPosition = stream.Position;
-                    dataChunkLength = chunkLength;
-                    stream.Position += chunkLength;
-                }
-                else if (chunkIdentifier == formatChunkId)
-                {
-                    format = WaveFormat.FromFormatChunk(br, chunkLength);
-                }
-                else
-                {
-                    // check for invalid chunk length
-                    if (chunkLength < 0 || chunkLength > stream.Length - stream.Position)
-                    {
-                        Debug.Assert(false, String.Format("Invalid chunk length {0}, pos: {1}. length: {2}",
-                            chunkLength, stream.Position, stream.Length));
-                        // an exception will be thrown further down if we haven't got a format and data chunk yet,
-                        // otherwise we will tolerate this file despite it having corrupt data at the end
-                        break;
-                    }
-                    if (chunks != null)
-                    {
-                        chunks.Add(new RiffChunk(chunkIdentifier, chunkLength, stream.Position));
-                    }
-                    stream.Position += chunkLength;
-                }
-            }
-
-            if (format == null)
-            {
-                throw new FormatException("Invalid WAV file - No fmt chunk found");
-            }
-            if (dataChunkPosition == -1)
-            {
-                throw new FormatException("Invalid WAV file - No data chunk found");
-            }
         }
 
         /// <summary>
@@ -253,7 +185,7 @@ namespace NAudio.Wave
             // sometimes there is more junk at the end of the file past the data chunk
             if (Position + count > dataChunkLength)
             {
-                count = dataChunkLength - (int)Position;
+                count = (int)(dataChunkLength - Position);
             }
             return waveStream.Read(array, offset, count);
         }

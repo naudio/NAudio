@@ -51,5 +51,34 @@ namespace NAudio.Utils
             }
             return encoding.GetString(buffer, offset, length);
         }
+
+        /// <summary>
+        /// Concatenates the given arrays into a single array.
+        /// </summary>
+        /// <param name="byteArrays">The arrays to concatenate</param>
+        /// <returns>The concatenated resulting array.</returns>
+        public static byte[] Concat(params byte[][] byteArrays)
+        {
+            int size = 0;
+            foreach (byte[] btArray in byteArrays)
+            {
+                size += btArray.Length;
+            }
+
+            if (size <= 0)
+            {
+                return new byte[0];
+            }
+
+            byte[] result = new byte[size];
+            int idx = 0;
+            foreach (byte[] btArray in byteArrays)
+            {
+                Array.Copy(btArray, 0, result, idx, btArray.Length);
+                idx += btArray.Length;
+            }
+
+            return result;
+        }
     }
 }

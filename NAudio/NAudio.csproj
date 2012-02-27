@@ -101,6 +101,7 @@
     <Compile Include="CoreAudioApi\PropertyKeys.cs" />
     <Compile Include="FileFormats\Wav\WaveFileChunkReader.cs" />
     <Compile Include="Utils\ByteArrayExtensions.cs" />
+    <Compile Include="Wave\SampleProviders\FadeInOutSampleProvider.cs" />
     <Compile Include="Wave\SampleProviders\MultiplexingSampleProvider.cs" />
     <Compile Include="Wave\SampleProviders\SampleProviderConverters.cs" />
     <Compile Include="Wave\WaveInputs\WasapiCapture.cs" />

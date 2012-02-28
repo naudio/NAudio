@@ -123,6 +123,7 @@
     <Compile Include="AudioPlaybackDemo\WaveOutSettingsPanel.Designer.cs">
       <DependentUpon>WaveOutSettingsPanel.cs</DependentUpon>
     </Compile>
+    <Compile Include="FadeInOutDemo\FadeInOutPlugin.cs" />
     <Compile Include="Images.Designer.cs">
       <DependentUpon>Images.resx</DependentUpon>
       <AutoGen>True</AutoGen>
@@ -164,6 +165,12 @@
     <Compile Include="NetworkChatDemo\SpeexChatCodec.cs" />
     <Compile Include="NetworkChatDemo\TrueSpeechChatCodec.cs" />
     <Compile Include="NetworkChatDemo\UncompressedPcmChatCodec.cs" />
+    <Compile Include="FadeInOutDemo\FadeInOutPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="FadeInOutDemo\FadeInOutPanel.Designer.cs">
+      <DependentUpon>FadeInOutPanel.cs</DependentUpon>
+    </Compile>
     <Compile Include="SimplePlaybackDemo\SimplePlaybackPanel.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -216,8 +223,8 @@
     <EmbeddedResource Include="NetworkChatDemo\NetworkChatPanel.resx">
       <DependentUpon>NetworkChatPanel.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="SimplePlaybackDemo\SimplePlaybackPanel.resx">
-      <DependentUpon>SimplePlaybackPanel.cs</DependentUpon>
+    <EmbeddedResource Include="FadeInOutDemo\FadeInOutPanel.resx">
+      <DependentUpon>FadeInOutPanel.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
@@ -233,6 +240,9 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
+    <EmbeddedResource Include="SimplePlaybackDemo\SimplePlaybackPanel.resx">
+      <DependentUpon>SimplePlaybackPanel.cs</DependentUpon>
+    </EmbeddedResource>
     <None Include="app.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

@@ -27,10 +27,11 @@ namespace NAudio.Wave.SampleProviders
         /// Creates a new FadeInOutSampleProvider
         /// </summary>
         /// <param name="source">The source stream with the audio to be faded in or out</param>
-        public FadeInOutSampleProvider(ISampleProvider source)
+        /// <param name="initiallySilent">If true, we start faded out</param>
+        public FadeInOutSampleProvider(ISampleProvider source, bool initiallySilent = false)
         {
             this.source = source;
-            this.fadeState = FadeState.FullVolume;
+            this.fadeState = initiallySilent ? FadeState.Silence : FadeState.FullVolume;
         }
 
         /// <summary>

@@ -113,5 +113,13 @@ namespace NAudio.Wave
             }
             return count;
         }
+
+        /// <summary>
+        /// Discards all audio from the buffer
+        /// </summary>
+        public void ClearBuffer()
+        {
+            this.circularBuffer.Reset();
+        }
     }
 }

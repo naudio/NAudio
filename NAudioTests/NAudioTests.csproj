@@ -111,6 +111,8 @@
     <Compile Include="WaveStreams\MultiplexingWaveProviderTests.cs" />
     <Compile Include="WaveStreams\StereoToMonoProvider16Tests.cs" />
     <Compile Include="WaveStreams\TestSampleProvider.cs" />
+    <Compile Include="WaveStreams\TestWaveProvider.cs" />
+    <Compile Include="WaveStreams\VolumeWaveProvider16Tests.cs" />
     <Compile Include="WaveStreams\WaveChannel32Tests.cs" />
     <Compile Include="WaveStreams\WaveFileReaderTests.cs" />
     <Compile Include="WaveStreams\WaveFileWriterTests.cs" />

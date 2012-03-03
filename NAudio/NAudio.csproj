@@ -104,6 +104,7 @@
     <Compile Include="Wave\SampleProviders\FadeInOutSampleProvider.cs" />
     <Compile Include="Wave\SampleProviders\MultiplexingSampleProvider.cs" />
     <Compile Include="Wave\SampleProviders\SampleProviderConverters.cs" />
+    <Compile Include="Wave\SampleProviders\SampleToWaveProvider16.cs" />
     <Compile Include="Wave\WaveInputs\WasapiCapture.cs" />
     <Compile Include="Dmo\AudioMediaSubtypes.cs" />
     <Compile Include="Dmo\DmoDescriptor.cs" />

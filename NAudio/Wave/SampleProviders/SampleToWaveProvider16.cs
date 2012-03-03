@@ -1,25 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using NAudio.Wave;
 
-namespace NAudio.Wave
+namespace NAudio.Wave.SampleProviders
 {
     /// <summary>
-    /// Converts IEEE float to 16 bit PCM, optionally clipping and adjusting volume along the way
+    /// Converts a sample provider to 16 bit PCM, optionally clipping and adjusting volume along the way
     /// </summary>
-    public class WaveFloatTo16Provider : IWaveProvider
+    public class SampleToWaveProvider16 : IWaveProvider
     {
-        private IWaveProvider sourceProvider;
+        private ISampleProvider sourceProvider;
         private readonly WaveFormat waveFormat;
         private volatile float volume;
-        private byte[] sourceBuffer;
+        private float[] sourceBuffer;
 
         /// <summary>
-        /// Creates a new WaveFloatTo16Provider
+        /// Creates a new SampleToWaveProvider16
         /// </summary>
         /// <param name="sourceProvider">the source provider</param>
-        public WaveFloatTo16Provider(IWaveProvider sourceProvider)
+        public SampleToWaveProvider16(ISampleProvider sourceProvider)
         {
             if (sourceProvider.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
                 throw new ApplicationException("Only PCM supported");
@@ -35,11 +34,11 @@ namespace NAudio.Wave
         /// <summary>
         /// Helper function to avoid creating a new buffer every read
         /// </summary>
-        byte[] GetSourceBuffer(int bytesRequired)
+        float[] GetSourceBuffer(int samplesRequired)
         {
-            if (this.sourceBuffer == null || this.sourceBuffer.Length < bytesRequired)
+            if (this.sourceBuffer == null || this.sourceBuffer.Length < samplesRequired)
             {
-                this.sourceBuffer = new byte[bytesRequired];
+                this.sourceBuffer = new float[samplesRequired];
             }
             return sourceBuffer;
         }
@@ -53,18 +52,16 @@ namespace NAudio.Wave
         /// <returns>Number of bytes read.</returns>
         public int Read(byte[] destBuffer, int offset, int numBytes)
         {
-            int sourceBytesRequired = numBytes * 2;
-            byte[] sourceBuffer = GetSourceBuffer(sourceBytesRequired);
-            int sourceBytesRead = sourceProvider.Read(sourceBuffer, 0, sourceBytesRequired);
-            WaveBuffer sourceWaveBuffer = new WaveBuffer(sourceBuffer);
+            int samplesRequired = numBytes / 2;
+            float[] sourceBuffer = GetSourceBuffer(samplesRequired);
+            int sourceSamples = sourceProvider.Read(sourceBuffer, 0, samplesRequired);
             WaveBuffer destWaveBuffer = new WaveBuffer(destBuffer);
 
-            int sourceSamples = sourceBytesRead / 4;
             int destOffset = offset / 2;
             for (int sample = 0; sample < sourceSamples; sample++)
             {
                 // adjust volume
-                float sample32 = sourceWaveBuffer.FloatBuffer[sample] * volume;
+                float sample32 = sourceBuffer[sample] * volume;
                 // clip
                 if (sample32 > 1.0f)
                     sample32 = 1.0f;

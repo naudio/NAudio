@@ -400,6 +400,7 @@
     <Compile Include="Wave\WaveProviders\MultiplexingWaveProvider.cs" />
     <Compile Include="Wave\WaveProviders\StereoToMonoProvider16.cs" />
     <Compile Include="Wave\WaveProviders\MonoToStereoProvider16.cs" />
+    <Compile Include="Wave\WaveProviders\VolumeWaveProvider16.cs" />
     <Compile Include="Wave\WaveProviders\WaveFloatTo16Provider.cs" />
     <Compile Include="Wave\WaveProviders\Wave16ToFloatProvider.cs" />
     <Compile Include="Wave\WaveProviders\WaveInProvider.cs" />

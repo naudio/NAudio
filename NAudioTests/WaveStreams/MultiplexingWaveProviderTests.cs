@@ -59,32 +59,6 @@ namespace NAudioTests.WaveStreams
             Assert.AreEqual(expectedOutputWaveFormat, mp.WaveFormat);
         }
 
-        class TestWaveProvider : IWaveProvider
-        {
-            private int length;
-
-            public TestWaveProvider(WaveFormat format, int lengthInBytes = Int32.MaxValue)
-            {
-                this.WaveFormat = format;
-                this.length = lengthInBytes;
-            }
-
-            public int Read(byte[] buffer, int offset, int count)
-            {
-                int n = 0;
-                while (n < count && Position < length)
-                {
-                    buffer[n + offset] = (byte)Position;
-                    n++; Position++;
-                }
-                return n;
-            }
-
-            public WaveFormat WaveFormat { get; set; }
-
-            public int Position { get; set; }
-        }
-
         [Test]
         public void OneInOneOutShouldCopyInReadMethod()
         {

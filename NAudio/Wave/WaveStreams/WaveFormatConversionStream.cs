@@ -41,10 +41,37 @@ namespace NAudio.Wave
             this.targetFormat = targetFormat;
 
             conversionStream = new AcmStream(sourceStream.WaveFormat, targetFormat);
-            // work out how many bytes the entire input stream will convert to
-            length = SourceToDest((int)sourceStream.Length);
-            blockAlign = SourceToDest(sourceStream.BlockAlign);
+            try
+            {
+                // work out how many bytes the entire input stream will convert to
+                length = SourceToDest((int)sourceStream.Length);
+                GetBlockAlign(targetFormat, sourceStream);
+            }
+            catch
+            {
+                Dispose();
+                throw;
+            }
             position = 0;
+
+        }
+
+        private void GetBlockAlign(WaveFormat targetFormat, WaveStream sourceStream)
+        {
+            try
+            {
+                // how many destination bytes does one block of the source turn into?
+                blockAlign = SourceToDest(sourceStream.BlockAlign);
+            }
+            catch (MmException mme)
+            {
+                if (mme.Result != MmResult.AcmNotPossible)
+                {
+                    throw;
+                }
+                // just use block align of target format
+                blockAlign = targetFormat.BlockAlign;
+            }
         }
 
         /// <summary>

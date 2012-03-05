@@ -72,7 +72,8 @@ namespace NAudio.Wave.Compression
             if (source == 0) // zero is an invalid parameter to acmStreamSize
                 return 0;
             int convertedBytes;
-            MmException.Try(AcmInterop.acmStreamSize(streamHandle, source, out convertedBytes, AcmStreamSizeFlags.Source), "acmStreamSize");
+            var mmResult = AcmInterop.acmStreamSize(streamHandle, source, out convertedBytes, AcmStreamSizeFlags.Source);
+            MmException.Try(mmResult, "acmStreamSize");
             return convertedBytes;
         }
 

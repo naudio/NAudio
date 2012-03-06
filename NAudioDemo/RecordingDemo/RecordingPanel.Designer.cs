@@ -40,11 +40,12 @@
             this.radioButtonWasapi = new System.Windows.Forms.RadioButton();
             this.comboWasapiDevices = new System.Windows.Forms.ComboBox();
             this.radioButtonWasapiLoopback = new System.Windows.Forms.RadioButton();
+            this.radioButtonWaveInEvent = new System.Windows.Forms.RadioButton();
             this.SuspendLayout();
             // 
             // buttonStartRecording
             // 
-            this.buttonStartRecording.Location = new System.Drawing.Point(12, 149);
+            this.buttonStartRecording.Location = new System.Drawing.Point(15, 171);
             this.buttonStartRecording.Name = "buttonStartRecording";
             this.buttonStartRecording.Size = new System.Drawing.Size(105, 23);
             this.buttonStartRecording.TabIndex = 0;
@@ -62,7 +63,7 @@
             // 
             // buttonStopRecording
             // 
-            this.buttonStopRecording.Location = new System.Drawing.Point(123, 149);
+            this.buttonStopRecording.Location = new System.Drawing.Point(126, 171);
             this.buttonStopRecording.Name = "buttonStopRecording";
             this.buttonStopRecording.Size = new System.Drawing.Size(105, 23);
             this.buttonStopRecording.TabIndex = 0;
@@ -75,7 +76,7 @@
             this.checkBoxAutoPlay.AutoSize = true;
             this.checkBoxAutoPlay.Checked = true;
             this.checkBoxAutoPlay.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBoxAutoPlay.Location = new System.Drawing.Point(234, 153);
+            this.checkBoxAutoPlay.Location = new System.Drawing.Point(237, 175);
             this.checkBoxAutoPlay.Name = "checkBoxAutoPlay";
             this.checkBoxAutoPlay.Size = new System.Drawing.Size(107, 17);
             this.checkBoxAutoPlay.TabIndex = 2;
@@ -84,7 +85,7 @@
             // 
             // buttonSelectOutputFile
             // 
-            this.buttonSelectOutputFile.Location = new System.Drawing.Point(12, 178);
+            this.buttonSelectOutputFile.Location = new System.Drawing.Point(15, 200);
             this.buttonSelectOutputFile.Name = "buttonSelectOutputFile";
             this.buttonSelectOutputFile.Size = new System.Drawing.Size(118, 23);
             this.buttonSelectOutputFile.TabIndex = 3;
@@ -94,7 +95,7 @@
             // 
             // progressBar1
             // 
-            this.progressBar1.Location = new System.Drawing.Point(12, 225);
+            this.progressBar1.Location = new System.Drawing.Point(15, 247);
             this.progressBar1.Maximum = 30;
             this.progressBar1.Name = "progressBar1";
             this.progressBar1.Size = new System.Drawing.Size(257, 23);
@@ -103,7 +104,7 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(14, 209);
+            this.label2.Location = new System.Drawing.Point(17, 231);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(103, 13);
             this.label2.TabIndex = 5;
@@ -117,18 +118,16 @@
             this.radioButtonWaveIn.Name = "radioButtonWaveIn";
             this.radioButtonWaveIn.Size = new System.Drawing.Size(60, 17);
             this.radioButtonWaveIn.TabIndex = 6;
-            this.radioButtonWaveIn.TabStop = true;
             this.radioButtonWaveIn.Text = "waveIn";
             this.radioButtonWaveIn.UseVisualStyleBackColor = true;
             // 
             // radioButtonWasapi
             // 
             this.radioButtonWasapi.AutoSize = true;
-            this.radioButtonWasapi.Location = new System.Drawing.Point(30, 86);
+            this.radioButtonWasapi.Location = new System.Drawing.Point(30, 109);
             this.radioButtonWasapi.Name = "radioButtonWasapi";
             this.radioButtonWasapi.Size = new System.Drawing.Size(67, 17);
             this.radioButtonWasapi.TabIndex = 6;
-            this.radioButtonWasapi.TabStop = true;
             this.radioButtonWasapi.Text = "WASAPI";
             this.radioButtonWasapi.UseVisualStyleBackColor = true;
             // 
@@ -136,7 +135,7 @@
             // 
             this.comboWasapiDevices.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.comboWasapiDevices.FormattingEnabled = true;
-            this.comboWasapiDevices.Location = new System.Drawing.Point(165, 82);
+            this.comboWasapiDevices.Location = new System.Drawing.Point(165, 105);
             this.comboWasapiDevices.Name = "comboWasapiDevices";
             this.comboWasapiDevices.Size = new System.Drawing.Size(121, 21);
             this.comboWasapiDevices.TabIndex = 7;
@@ -144,13 +143,22 @@
             // radioButtonWasapiLoopback
             // 
             this.radioButtonWasapiLoopback.AutoSize = true;
-            this.radioButtonWasapiLoopback.Location = new System.Drawing.Point(30, 109);
+            this.radioButtonWasapiLoopback.Location = new System.Drawing.Point(30, 132);
             this.radioButtonWasapiLoopback.Name = "radioButtonWasapiLoopback";
             this.radioButtonWasapiLoopback.Size = new System.Drawing.Size(118, 17);
             this.radioButtonWasapiLoopback.TabIndex = 6;
-            this.radioButtonWasapiLoopback.TabStop = true;
             this.radioButtonWasapiLoopback.Text = "WASAPI Loopback";
             this.radioButtonWasapiLoopback.UseVisualStyleBackColor = true;
+            // 
+            // radioButtonWaveInEvent
+            // 
+            this.radioButtonWaveInEvent.AutoSize = true;
+            this.radioButtonWaveInEvent.Location = new System.Drawing.Point(30, 86);
+            this.radioButtonWaveInEvent.Name = "radioButtonWaveInEvent";
+            this.radioButtonWaveInEvent.Size = new System.Drawing.Size(140, 17);
+            this.radioButtonWaveInEvent.TabIndex = 6;
+            this.radioButtonWaveInEvent.Text = "waveIn Event Callbacks";
+            this.radioButtonWaveInEvent.UseVisualStyleBackColor = true;
             // 
             // RecordingPanel
             // 
@@ -159,6 +167,7 @@
             this.Controls.Add(this.comboWasapiDevices);
             this.Controls.Add(this.radioButtonWasapiLoopback);
             this.Controls.Add(this.radioButtonWasapi);
+            this.Controls.Add(this.radioButtonWaveInEvent);
             this.Controls.Add(this.radioButtonWaveIn);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.progressBar1);
@@ -188,5 +197,6 @@
         private System.Windows.Forms.RadioButton radioButtonWasapi;
         private System.Windows.Forms.ComboBox comboWasapiDevices;
         private System.Windows.Forms.RadioButton radioButtonWasapiLoopback;
+        private System.Windows.Forms.RadioButton radioButtonWaveInEvent;
     }
 }

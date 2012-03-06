@@ -34,14 +34,15 @@ namespace NAudio.FileFormats.Wav
             BinaryReader br = new BinaryReader(stream);
             ReadRiffHeader(br);
             this.riffSize = br.ReadUInt32(); // read the file size (minus 8 bytes)
-            if (isRf64)
-            {
-                ReadDs64Chunk(br);
-            }
 
             if (br.ReadInt32() != WaveInterop.mmioStringToFOURCC("WAVE", 0))
             {
                 throw new FormatException("Not a WAVE file - no WAVE header");
+            }
+
+            if (isRf64)
+            {
+                ReadDs64Chunk(br);
             }
 
             int dataChunkID = WaveInterop.mmioStringToFOURCC("data", 0);
@@ -107,6 +108,10 @@ namespace NAudio.FileFormats.Wav
         {
             int ds64ChunkId = WaveInterop.mmioStringToFOURCC("ds64", 0);
             int chunkId = reader.ReadInt32();
+            if (chunkId != ds64ChunkId)
+            {
+                throw new FormatException("Invalid RF64 WAV file - No ds64 chunk found");
+            }
             int chunkSize = reader.ReadInt32();
             this.riffSize = reader.ReadInt64();
             this.dataChunkLength = reader.ReadInt64();

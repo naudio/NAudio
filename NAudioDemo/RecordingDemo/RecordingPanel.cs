@@ -31,7 +31,7 @@ namespace NAudioDemo
                 radioButtonWasapi.Enabled = false;
                 comboWasapiDevices.Enabled = false;
                 radioButtonWasapiLoopback.Enabled = false;
-            }            
+            }
         }
 
         private void LoadWasapiDevicesCombo()
@@ -67,11 +67,16 @@ namespace NAudioDemo
                     waveIn = new WaveIn();
                     waveIn.WaveFormat = new WaveFormat(8000, 1);
                 }
+                else if (radioButtonWaveInEvent.Checked)
+                {
+                    waveIn = new WaveInEvent();
+                    waveIn.WaveFormat = new WaveFormat(8000, 1);
+                }
                 else if (radioButtonWasapi.Checked)
                 {
                     // can't set WaveFormat as WASAPI doesn't support SRC
                     var device = (MMDevice)comboWasapiDevices.SelectedItem;
-                    waveIn = new WasapiCapture(device);                    
+                    waveIn = new WasapiCapture(device);
                 }
                 else
                 {

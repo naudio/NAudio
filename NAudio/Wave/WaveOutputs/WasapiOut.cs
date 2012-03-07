@@ -32,7 +32,7 @@ namespace NAudio.Wave
         /// <summary>
         /// Playback Stopped
         /// </summary>
-        public event EventHandler PlaybackStopped;
+        public event EventHandler<StoppedEventArgs> PlaybackStopped;
 
         /// <summary>
         /// WASAPI Out using default audio endpoint
@@ -87,6 +87,7 @@ namespace NAudio.Wave
         {
             ResamplerDmoStream resamplerDmoStream = null;
             IWaveProvider playbackProvider = this.sourceProvider;
+            Exception exception = null;
             try
             {
                 if (this.dmoResamplerNeeded)
@@ -147,28 +148,32 @@ namespace NAudio.Wave
                     audioClient.Reset();
                 }
             }
+            catch (Exception e)
+            {
+                exception = e;
+            }
             finally
             {
                 if (resamplerDmoStream != null)
                 {
                     resamplerDmoStream.Dispose();
                 }
-                RaisePlaybackStopped();
+                RaisePlaybackStopped(exception);
             }
         }
 
-        private void RaisePlaybackStopped()
+        private void RaisePlaybackStopped(Exception e)
         {
-            EventHandler handler = PlaybackStopped;
+            var handler = PlaybackStopped;
             if (handler != null)
             {
                 if (this.syncContext == null)
                 {
-                    handler(this, EventArgs.Empty);
+                    handler(this, new StoppedEventArgs(e));
                 }
                 else
                 {
-                    syncContext.Post(state => handler(this, EventArgs.Empty), null);
+                    syncContext.Post(state => handler(this, new StoppedEventArgs(e)), null);
                 }
             }
         }

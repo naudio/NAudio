@@ -378,6 +378,7 @@
     <Compile Include="Wave\WaveInputs\IWaveIn.cs" />
     <Compile Include="Wave\WaveOutputs\AsioOut.cs" />
     <Compile Include="Wave\WaveOutputs\CueWaveFileWriter.cs" />
+    <Compile Include="Wave\WaveOutputs\StoppedEventArgs.cs" />
     <Compile Include="Wave\WaveOutputs\IWaveBuffer.cs" />
     <Compile Include="Wave\WaveOutputs\IWavePlayer.cs" />
     <Compile Include="Wave\WaveOutputs\IWaveProvider.cs" />
@@ -391,7 +392,6 @@
     <Compile Include="Wave\WaveOutputs\WaveFileWriter.cs" />
     <Compile Include="Wave\WaveOutputs\WaveOut.cs" />
     <Compile Include="Wave\WaveOutputs\WaveOutEvent.cs" />
-    <Compile Include="Wave\WaveOutputs\WaveOutThreadSafe.cs" />
     <Compile Include="Wave\SampleProviders\MeteringSampleProvider.cs" />
     <Compile Include="Wave\SampleProviders\NotifyingSampleProvider.cs" />
     <Compile Include="Wave\SampleProviders\VolumeSampleProvider.cs" />

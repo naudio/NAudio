@@ -87,17 +87,17 @@ namespace NAudioDemo
                 writer = new WaveFileWriter(outputFilename, waveIn.WaveFormat);
 
                 waveIn.DataAvailable += new EventHandler<WaveInEventArgs>(waveIn_DataAvailable);
-                waveIn.RecordingStopped += new EventHandler(waveIn_RecordingStopped);
+                waveIn.RecordingStopped += waveIn_RecordingStopped;
                 waveIn.StartRecording();
                 buttonStartRecording.Enabled = false;
             }
         }
 
-        void waveIn_RecordingStopped(object sender, EventArgs e)
+        void waveIn_RecordingStopped(object sender, StoppedEventArgs e)
         {
             if (this.InvokeRequired)
             {
-                this.BeginInvoke(new EventHandler(waveIn_RecordingStopped), sender, e);
+                this.BeginInvoke(new EventHandler<StoppedEventArgs>(waveIn_RecordingStopped), sender, e);
             }
             else
             {
@@ -107,6 +107,10 @@ namespace NAudioDemo
                 writer = null;
                 buttonStartRecording.Enabled = true;
                 progressBar1.Value = 0;
+                if (e.Exception != null)
+                {
+                    MessageBox.Show(String.Format("A problem was encountered during recording {0}", e.Exception.Message));
+                }
                 if (checkBoxAutoPlay.Checked)
                 {
                     Process.Start(outputFilename);

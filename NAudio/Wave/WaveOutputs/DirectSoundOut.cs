@@ -17,7 +17,7 @@ namespace NAudio.Wave
         /// <summary>
         /// Playback Stopped
         /// </summary>
-        public event EventHandler PlaybackStopped;
+        public event EventHandler<StoppedEventArgs> PlaybackStopped;
 
         private PlaybackState playbackState;
         private WaveFormat waveFormat;
@@ -363,11 +363,11 @@ namespace NAudio.Wave
             // Used to determine if playback is halted
             bool lPlaybackHalted = false;
 
-            InitializeDirectSound();
-
+            Exception exception = null;
             // Incase the thread is killed
             try
             {
+                InitializeDirectSound();
                 int lResult = 1;
 
                 if (PlaybackState == PlaybackState.Stopped)
@@ -434,6 +434,7 @@ namespace NAudio.Wave
             {
                 // Do nothing (except report error)
                 Debug.WriteLine(e.ToString());
+                exception = e;
             }
             finally
             {
@@ -448,17 +449,22 @@ namespace NAudio.Wave
                 }
 
                 // Fire playback stopped event
-                EventHandler handler = PlaybackStopped;
-                if (handler != null)
+                RaisePlaybackStopped(exception);
+            }
+        }
+
+        private void RaisePlaybackStopped(Exception e)
+        {
+            var handler = PlaybackStopped;
+            if (handler != null)
+            {
+                if (this.syncContext == null)
                 {
-                    if (this.syncContext == null)
-                    {
-                        handler(this, EventArgs.Empty);
-                    }
-                    else
-                    {
-                        syncContext.Post(state => handler(this, EventArgs.Empty), null);
-                    }
+                    handler(this, new StoppedEventArgs(e));
+                }
+                else
+                {
+                    syncContext.Post(state => handler(this, new StoppedEventArgs(e)), null);
                 }
             }
         }

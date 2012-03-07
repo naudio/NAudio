@@ -32,7 +32,7 @@ namespace NAudio.Wave
         /// <summary>
         /// Playback Stopped
         /// </summary>
-        public event EventHandler PlaybackStopped;
+        public event EventHandler<StoppedEventArgs> PlaybackStopped;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AsioOut"/> class with the first 
@@ -159,7 +159,7 @@ namespace NAudio.Wave
         {
             playbackState = PlaybackState.Stopped;
             driver.Stop();
-            RaisePlaybackStopped();
+            RaisePlaybackStopped(null);
         }
 
         /// <summary>
@@ -286,18 +286,18 @@ namespace NAudio.Wave
             }
         }
 
-        private void RaisePlaybackStopped()
+        private void RaisePlaybackStopped(Exception e)
         {
-            EventHandler handler = PlaybackStopped;
+            var handler = PlaybackStopped;
             if (handler != null)
             {
                 if (this.syncContext == null)
                 {
-                    handler(this, EventArgs.Empty);
+                    handler(this, new StoppedEventArgs(e));
                 }
                 else
                 {
-                    this.syncContext.Post(state => handler(this, EventArgs.Empty), null);
+                    this.syncContext.Post(state => handler(this, new StoppedEventArgs(e)), null);
                 }
             }
         }

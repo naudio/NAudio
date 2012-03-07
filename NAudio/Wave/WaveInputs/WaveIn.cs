@@ -26,7 +26,7 @@ namespace NAudio.Wave
         /// <summary>
         /// Indicates that all recorded data has now been received.
         /// </summary>
-        public event EventHandler RecordingStopped;
+        public event EventHandler<StoppedEventArgs> RecordingStopped;
 
         /// <summary>
         /// Prepares a Wave input device for recording
@@ -121,22 +121,37 @@ namespace NAudio.Wave
             {
                 GCHandle hBuffer = (GCHandle)waveHeader.userData;
                 WaveInBuffer buffer = (WaveInBuffer)hBuffer.Target;
-
+                Exception exception = null;
                 if (DataAvailable != null)
                 {
                     DataAvailable(this, new WaveInEventArgs(buffer.Data, buffer.BytesRecorded));
                 }
                 if (recording)
                 {
-                    buffer.Reuse();
-                }
-                else
-                {
-                    if (RecordingStopped != null)
+                    try
                     {
-                        RecordingStopped(this, EventArgs.Empty);
+                        buffer.Reuse();
+                    }
+                    catch (Exception e)
+                    {
+                        recording = false;
+                        exception = e;
                     }
                 }
+                
+                if (!recording)
+                {
+                    RaiseRecordingStopped(exception);
+                }
+            }
+        }
+
+        private void RaiseRecordingStopped(Exception e)
+        {
+            var handler = RecordingStopped;
+            if (handler != null)
+            {
+                handler(this, new StoppedEventArgs(e));
             }
         }
 

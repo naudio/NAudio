@@ -25,7 +25,7 @@ namespace NAudio.Wave
         /// <summary>
         /// Indicates playback has stopped automatically
         /// </summary>
-        public event EventHandler PlaybackStopped;
+        public event EventHandler<StoppedEventArgs> PlaybackStopped;
 
         /// <summary>
         /// Retrieves the capabilities of a waveOut device
@@ -242,7 +242,7 @@ namespace NAudio.Wave
                 // we know playback has definitely stopped now, so raise callback
                 if (callbackInfo.Strategy == WaveCallbackStrategy.FunctionCallback)
                 {
-                    RaisePlaybackStoppedEvent();
+                    RaisePlaybackStoppedEvent(null);
                 }
             }
         }
@@ -364,6 +364,7 @@ namespace NAudio.Wave
                 GCHandle hBuffer = (GCHandle)wavhdr.userData;
                 WaveOutBuffer buffer = (WaveOutBuffer)hBuffer.Target;
                 Interlocked.Decrement(ref queuedBuffers);
+                Exception exception = null;
                 // check that we're not here through pressing stop
                 if (PlaybackState == PlaybackState.Playing)
                 {
@@ -374,9 +375,17 @@ namespace NAudio.Wave
                     // thread while a WaveOutWrite is in progress
                     lock (waveOutLock) 
                     {
-                        if (buffer.OnDone())
+                        try
                         {
-                            Interlocked.Increment(ref queuedBuffers);
+                            if (buffer.OnDone())
+                            {
+                                Interlocked.Increment(ref queuedBuffers);
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            // one likely cause is soundcard being unplugged
+                            exception = e;
                         }
                     }
                 }
@@ -391,26 +400,24 @@ namespace NAudio.Wave
                     }
                     else
                     {
-                        RaisePlaybackStoppedEvent();
+                        RaisePlaybackStoppedEvent(exception);
                     }
                 }
-
-                // n.b. this was wrapped in an exception handler, but bug should be fixed now
             }
         }
 
-        private void RaisePlaybackStoppedEvent()
+        private void RaisePlaybackStoppedEvent(Exception e)
         {
-            EventHandler handler = PlaybackStopped;
+            var handler = PlaybackStopped;
             if (handler != null)
             {
                 if (this.syncContext == null)
                 {
-                    handler(this, EventArgs.Empty);
+                    handler(this, new StoppedEventArgs(e));
                 }
                 else
                 {
-                    this.syncContext.Post(state => handler(this, EventArgs.Empty), null);
+                    this.syncContext.Post(state => handler(this, new StoppedEventArgs(e)), null);
                 }
             }
         }

@@ -19,7 +19,7 @@ namespace NAudio.Wave
 
         /// <summary>
         /// Pause Playback
-        /// </summary>        
+        /// </summary>
         void Pause();
 
         /// <summary>
@@ -41,8 +41,8 @@ namespace NAudio.Wave
 
         /// <summary>
         /// Indicates that playback has gone into a stopped state due to 
-        /// reaching the end of the input stream
+        /// reaching the end of the input stream or an error has been encountered during playback
         /// </summary>
-        event EventHandler PlaybackStopped;
+        event EventHandler<StoppedEventArgs> PlaybackStopped;
     }
 }

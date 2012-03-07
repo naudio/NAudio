@@ -32,6 +32,6 @@ namespace NAudio.Wave
         /// <summary>
         /// Indicates that all recorded data has now been received.
         /// </summary>
-        event EventHandler RecordingStopped;
+        event EventHandler<StoppedEventArgs> RecordingStopped;
     }
 }

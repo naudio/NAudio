@@ -84,7 +84,7 @@ namespace NAudioDemo.SimplePlaybackDemo
             this.file = new AudioFileReader(filename);
             this.file.Volume = volumeSlider1.Volume;
             this.wavePlayer.Init(file);
-            this.wavePlayer.PlaybackStopped += new EventHandler(wavePlayer_PlaybackStopped);
+            this.wavePlayer.PlaybackStopped += wavePlayer_PlaybackStopped;
             this.wavePlayer.Play();
             EnableButtons(true);
             timer1.Enabled = true; // timer for updating current time label
@@ -111,7 +111,7 @@ namespace NAudioDemo.SimplePlaybackDemo
             buttonOpen.Enabled = !playing;
         }
 
-        void wavePlayer_PlaybackStopped(object sender, EventArgs e)
+        void wavePlayer_PlaybackStopped(object sender, StoppedEventArgs e)
         {
             // we want to be always on the GUI thread and be able to change GUI components
             Debug.Assert(!this.InvokeRequired, "PlaybackStopped on wrong thread");
@@ -120,6 +120,10 @@ namespace NAudioDemo.SimplePlaybackDemo
             EnableButtons(false);
             timer1.Enabled = false;
             labelNowTime.Text = "00:00";
+            if (e.Exception != null)
+            {
+                MessageBox.Show(String.Format("Playback Stopped due to an error {0}", e.Exception.Message));
+            }
         }
 
         private void CleanUp()

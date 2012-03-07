@@ -32,7 +32,7 @@ namespace NAudio.CoreAudioApi
         /// <summary>
         /// Indicates that all recorded data has now been received.
         /// </summary>
-        public event EventHandler RecordingStopped;
+        public event EventHandler<StoppedEventArgs> RecordingStopped;
 
         /// <summary>
         /// Initialises a new instance of the WASAPI capture class
@@ -140,38 +140,52 @@ namespace NAudio.CoreAudioApi
 
         private void CaptureThread(AudioClient client)
         {
-            Debug.WriteLine(client.BufferSize);
-            int bufferFrameCount = audioClient.BufferSize;
-            
-            // Calculate the actual duration of the allocated buffer.
-            long actualDuration = (long)((double)REFTIMES_PER_SEC *
-                             bufferFrameCount / WaveFormat.SampleRate);
-            int sleepMilliseconds = (int)(actualDuration / REFTIMES_PER_MILLISEC / 2);
-            
-            AudioCaptureClient capture = client.AudioCaptureClient;
-            client.Start();
-
+            Exception exception = null;
             try
             {
-                Debug.WriteLine(string.Format("sleep: {0} ms", sleepMilliseconds));
-                while (!this.stop)
-                {
-                    Thread.Sleep(sleepMilliseconds);
-                    ReadNextPacket(capture);
-                }
+                DoRecording(client);
+            }
+            catch (Exception e)
+            {
+                exception = e;
             }
             finally
             {
                 client.Stop();
-
-                if (RecordingStopped != null)
-                {
-                    RecordingStopped(this, EventArgs.Empty);
-                }
                 // don't dispose - the AudioClient only gets disposed when WasapiCapture is disposed
             }
 
+            RaiseRecordingStopped(exception);
             System.Diagnostics.Debug.WriteLine("stop wasapi");
+        }
+
+        private void DoRecording(AudioClient client)
+        {
+            Debug.WriteLine(client.BufferSize);
+            int bufferFrameCount = audioClient.BufferSize;
+
+            // Calculate the actual duration of the allocated buffer.
+            long actualDuration = (long)((double)REFTIMES_PER_SEC *
+                             bufferFrameCount / WaveFormat.SampleRate);
+            int sleepMilliseconds = (int)(actualDuration / REFTIMES_PER_MILLISEC / 2);
+
+            AudioCaptureClient capture = client.AudioCaptureClient;
+            client.Start();
+            Debug.WriteLine(string.Format("sleep: {0} ms", sleepMilliseconds));
+            while (!this.stop)
+            {
+                Thread.Sleep(sleepMilliseconds);
+                ReadNextPacket(capture);
+            }
+        }
+
+        private void RaiseRecordingStopped(Exception exception)
+        {
+            var handler = RecordingStopped;
+            if (handler != null)
+            {
+                handler(this, new StoppedEventArgs(exception));
+            }
         }
 
         private void ReadNextPacket(AudioCaptureClient capture)

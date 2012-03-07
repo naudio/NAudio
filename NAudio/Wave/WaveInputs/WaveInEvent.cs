@@ -28,7 +28,7 @@ namespace NAudio.Wave
         /// <summary>
         /// Indicates that all recorded data has now been received.
         /// </summary>
-        public event EventHandler RecordingStopped;
+        public event EventHandler<StoppedEventArgs> RecordingStopped;
 
         /// <summary>
         /// Prepares a Wave input device for recording
@@ -118,6 +118,24 @@ namespace NAudio.Wave
 
         private void RecordThread()
         {
+            Exception exception = null;
+            try
+            {
+                DoRecording();
+            }
+            catch (Exception e)
+            {
+                exception = e;
+            }
+            finally
+            {
+                recording = false;
+                RaiseRecordingStoppedEvent(exception);
+            }
+        }
+
+        private void DoRecording()
+        {
             while (recording)
             {
                 if (callbackEvent.WaitOne())
@@ -139,21 +157,20 @@ namespace NAudio.Wave
                     }
                 }
             }
-            RaiseRecordingStoppedEvent();
         }
 
-        private void RaiseRecordingStoppedEvent()
+        private void RaiseRecordingStoppedEvent(Exception e)
         {
-            EventHandler handler = RecordingStopped;
+            var handler = RecordingStopped;
             if (handler != null)
             {
                 if (this.syncContext == null)
                 {
-                    handler(this, EventArgs.Empty);
+                    handler(this, new StoppedEventArgs(e));
                 }
                 else
                 {
-                    this.syncContext.Post(state => handler(this, EventArgs.Empty), null);
+                    this.syncContext.Post(state => handler(this, new StoppedEventArgs(e)), null);
                 }
             }
         }

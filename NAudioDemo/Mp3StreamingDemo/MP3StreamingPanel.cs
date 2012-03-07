@@ -195,7 +195,7 @@ namespace NAudioDemo
                 {
                     Debug.WriteLine("Creating WaveOut Device");
                     this.waveOut = CreateWaveOut(); 
-                    waveOut.PlaybackStopped += new EventHandler(waveOut_PlaybackStopped);
+                    waveOut.PlaybackStopped += waveOut_PlaybackStopped;
                     this.volumeProvider = new VolumeWaveProvider16(bufferedWaveProvider);
                     this.volumeProvider.Volume = this.volumeSlider1.Volume;
                     waveOut.Init(volumeProvider);
@@ -254,9 +254,13 @@ namespace NAudioDemo
             StopPlayback();
         }
 
-        private void waveOut_PlaybackStopped(object sender, EventArgs e)
+        private void waveOut_PlaybackStopped(object sender, StoppedEventArgs e)
         {
             Debug.WriteLine("Playback Stopped");
+            if (e.Exception != null)
+            {
+                MessageBox.Show(String.Format("Playback Error {0}", e.Exception.Message));
+            }
         }
     }
 

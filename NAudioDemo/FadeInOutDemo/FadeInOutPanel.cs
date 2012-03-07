@@ -78,7 +78,7 @@ namespace NAudioDemo.FadeInOutDemo
             this.fadeInOut = new FadeInOutSampleProvider(file);
             this.file.Volume = volumeSlider1.Volume;
             this.wavePlayer.Init(new SampleToWaveProvider(fadeInOut));
-            this.wavePlayer.PlaybackStopped += new EventHandler(wavePlayer_PlaybackStopped);
+            this.wavePlayer.PlaybackStopped += wavePlayer_PlaybackStopped;
             this.wavePlayer.Play();
             EnableButtons(true);
             timer1.Enabled = true; // timer for updating current time label
@@ -93,7 +93,7 @@ namespace NAudioDemo.FadeInOutDemo
             buttonBeginFadeOut.Enabled = playing;
         }
 
-        void wavePlayer_PlaybackStopped(object sender, EventArgs e)
+        void wavePlayer_PlaybackStopped(object sender, StoppedEventArgs e)
         {
             // we want to be always on the GUI thread and be able to change GUI components
             Debug.Assert(!this.InvokeRequired, "PlaybackStopped on wrong thread");

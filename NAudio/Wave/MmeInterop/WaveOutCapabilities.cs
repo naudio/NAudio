@@ -94,6 +94,7 @@ namespace NAudio.Wave
     /// <summary>
     /// Supported wave formats for WaveOutCapabilities
     /// </summary>
+    [Flags]
     public enum SupportedWaveFormat
     {
         /// <summary>

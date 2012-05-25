@@ -104,6 +104,10 @@ namespace NAudio.Wave
         {
             // Default to three buffers of 100ms each
             int bufferSize = BufferMilliseconds * WaveFormat.AverageBytesPerSecond / 1000;
+            if (bufferSize % WaveFormat.BlockAlign != 0)
+            {
+                bufferSize -= bufferSize % WaveFormat.BlockAlign;
+            }
 
             buffers = new WaveInBuffer[NumberOfBuffers];
             for (int n = 0; n < buffers.Length; n++)

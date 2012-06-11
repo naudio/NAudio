@@ -44,7 +44,7 @@ namespace NAudio.Wave.SampleProviders
             int samplesRead = source.Read(buffer, offset, sampleCount);
             if (Sample != null)
             {
-                for (int n = 0; n < sampleCount; n += channels)
+                for (int n = 0; n < samplesRead; n += channels)
                 {
                     sampleArgs.Left = buffer[offset + n];
                     sampleArgs.Right = channels > 1 ? buffer[offset + n + 1] : sampleArgs.Left;

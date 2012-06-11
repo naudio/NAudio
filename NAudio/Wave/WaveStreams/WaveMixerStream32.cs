@@ -10,11 +10,12 @@ namespace NAudio.Wave
     /// </summary>
     public class WaveMixerStream32 : WaveStream
     {
-        private List<WaveStream> inputStreams;
+        private readonly List<WaveStream> inputStreams;
+        private readonly object inputsLock;
         private WaveFormat waveFormat;
         private long length;
         private long position;
-        private int bytesPerSample;
+        private readonly int bytesPerSample;
         private bool autoStop;
 
         /// <summary>
@@ -26,6 +27,26 @@ namespace NAudio.Wave
             this.waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(44100, 2);
             this.bytesPerSample = 4;
             this.inputStreams = new List<WaveStream>();
+            this.inputsLock = new object();
+        }
+
+        /// <summary>
+        /// Creates a new 32 bit WaveMixerStream
+        /// </summary>
+        /// <param name="inputStreams">An Array of WaveStreams - must all have the same format.
+        /// Use WaveChannel is designed for this purpose.</param>
+        /// <param name="autoStop">Automatically stop when all inputs have been read</param>
+        /// <exception cref="ArgumentException">Thrown if the input streams are not 32 bit floating point,
+        /// or if they have different formats to each other</exception>
+        public WaveMixerStream32(IEnumerable<WaveStream> inputStreams, bool autoStop)
+            : this()
+        {
+            this.autoStop = autoStop;
+
+            foreach (WaveStream inputStream in inputStreams)
+            {
+                AddInputStream(inputStream);
+            }
         }
 
         /// <summary>
@@ -49,10 +70,10 @@ namespace NAudio.Wave
             else
             {
                 if (!waveStream.WaveFormat.Equals(waveFormat))
-                    throw new ArgumentException("All incoming channels must have the same format", "inputStreams.WaveFormat");                
+                    throw new ArgumentException("All incoming channels must have the same format", "inputStreams.WaveFormat");
             }
 
-            lock (this)
+            lock (inputsLock)
             {
                 this.inputStreams.Add(waveStream);
                 this.length = Math.Max(this.length, waveStream.Length);
@@ -67,7 +88,7 @@ namespace NAudio.Wave
         /// <param name="waveStream">waveStream to remove</param>
         public void RemoveInputStream(WaveStream waveStream)
         {
-            lock (this)
+            lock (inputsLock)
             {
                 if (this.inputStreams.Remove(waveStream))
                 {
@@ -87,26 +108,6 @@ namespace NAudio.Wave
         public int InputCount
         {
             get { return this.inputStreams.Count; }
-        }
-
-
-        /// <summary>
-        /// Creates a new 32 bit WaveMixerStream
-        /// </summary>
-        /// <param name="inputStreams">An Array of WaveStreams - must all have the same format.
-        /// Use WaveChannel is designed for this purpose.</param>
-        /// <param name="autoStop">Automatically stop when all inputs have been read</param>
-        /// <exception cref="ArgumentException">Thrown if the input streams are not 32 bit floating point,
-        /// or if they have different formats to each other</exception>
-        public WaveMixerStream32(IEnumerable<WaveStream> inputStreams, bool autoStop)
-            : this()
-        {
-            this.autoStop = autoStop;
-            
-            foreach (WaveStream inputStream in inputStreams)
-            {
-                AddInputStream(inputStream);
-            }
         }
 
         /// <summary>
@@ -147,20 +148,23 @@ namespace NAudio.Wave
 
             // sum the channels in
             byte[] readBuffer = new byte[count];
-            foreach (WaveStream inputStream in inputStreams) 
+            lock (inputsLock)
             {
-                if (inputStream.HasData(count))
+                foreach (WaveStream inputStream in inputStreams)
                 {
-                    int readFromThisStream = inputStream.Read(readBuffer, 0, count);
-                    // don't worry if input stream returns less than we requested - may indicate we have got to the end
-                    bytesRead = Math.Max(bytesRead, readFromThisStream);
-                    if (readFromThisStream > 0)
-                        Sum32BitAudio(buffer, offset, readBuffer, readFromThisStream);
-                }
-                else
-                {
-                    bytesRead = Math.Max(bytesRead, count);
-                    inputStream.Position += count;
+                    if (inputStream.HasData(count))
+                    {
+                        int readFromThisStream = inputStream.Read(readBuffer, 0, count);
+                        // don't worry if input stream returns less than we requested - may indicate we have got to the end
+                        bytesRead = Math.Max(bytesRead, readFromThisStream);
+                        if (readFromThisStream > 0)
+                            Sum32BitAudio(buffer, offset, readBuffer, readFromThisStream);
+                    }
+                    else
+                    {
+                        bytesRead = Math.Max(bytesRead, count);
+                        inputStream.Position += count;
+                    }
                 }
             }
             position += count;
@@ -221,7 +225,7 @@ namespace NAudio.Wave
             }
             set
             {
-                lock (this)
+                lock (inputsLock)
                 {
                     value = Math.Min(value, Length);
                     foreach (WaveStream inputStream in inputStreams)
@@ -251,13 +255,12 @@ namespace NAudio.Wave
         {
             if (disposing)
             {
-                if (inputStreams != null)
+                lock (inputsLock)
                 {
                     foreach (WaveStream inputStream in inputStreams)
                     {
                         inputStream.Dispose();
                     }
-                    inputStreams = null;
                 }
             }
             else

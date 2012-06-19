@@ -10,7 +10,7 @@ namespace NAudio.Wave
     class Mp3Index
     {
         public long FilePosition { get; set; }
-        public int SamplePosition { get; set; }
+        public long SamplePosition { get; set; }
         public int SampleCount { get; set; }
         public int ByteCount { get; set; }
     }
@@ -40,7 +40,7 @@ namespace NAudio.Wave
         private int tocIndex;
 
         private int sampleRate;
-        private int totalSamples;
+        private long totalSamples;
         private int bytesPerSample;
 
         private IMp3FrameDecompressor decompressor;

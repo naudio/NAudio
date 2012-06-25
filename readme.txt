@@ -6,17 +6,21 @@ THANKS
 The following list includes some of the people who have contributed in various ways to NAudio, such as code contributions,
 bug fixes, documentation, helping out on the forums and even donations. I haven't finished compiling this list yet, so
 if your name should be on it but isn't please let me know and I will include it. Also, some people I only know by their forum
-id, so if you want me to put your full name here, plase also get in touch.
+id, so if you want me to put your full name here, please also get in touch.
 
 in alphabetical order:
 Alexandre Mutel
+AmandaTarafaMas
 balistof
 ChunkWare Music Software
 CKing
+DaMacc
 Giawa
 Idael Cardaso 
 kg6ypi
+Lustild
 Michael Feld 
+Michael J
 Nikolaos Georgiou
 Pygmy
 Ray Molenkamp
@@ -27,6 +31,7 @@ Ted Murphy
 Thefiloe
 Tobias Fleming
 Tony Cabello
+topher3683
 Ville Koskinen
 Yuval Naveh
 Zsb

@@ -121,6 +121,9 @@ namespace NAudio.Wave
 
         private void DoPlayback()
         {
+            if (this.buffers == null || this.waveStream == null)
+                return;
+
             TimeSpan waitTime = TimeSpan.FromSeconds((double)this.buffers[0].BufferSize / (this.waveStream.WaveFormat.AverageBytesPerSecond * 2));
             while (playbackState != PlaybackState.Stopped)
             {

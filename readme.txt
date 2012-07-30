@@ -13,6 +13,7 @@ Alexandre Mutel
 AmandaTarafaMas
 Brandon Hansen (kg6ypi)
 balistof
+biermeester
 ChunkWare Music Software
 CKing
 DaMacc

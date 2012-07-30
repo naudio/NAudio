@@ -2,7 +2,7 @@
   LICENSE
   -------
   Copyright (C) 2007 Ray Molenkamp
-
+  
   This source code is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
   arising from the use of this source code or the software it produces.
@@ -18,6 +18,9 @@
   2. Altered source versions must be plainly marked as such, and must not be
      misrepresented as being the original source code.
   3. This notice may not be removed or altered from any source distribution.
+ 
+  (Modified for NAudio by Mark Heath)
+  
 */
 using System;
 using System.Collections.Generic;
@@ -30,7 +33,7 @@ namespace NAudio.CoreAudioApi.Interfaces
      InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     internal interface IAudioEndpointVolumeCallback
     {
-        int OnNotify(IntPtr pNotifyData);
+        void OnNotify(IntPtr pNotifyData);
     };
 
 }

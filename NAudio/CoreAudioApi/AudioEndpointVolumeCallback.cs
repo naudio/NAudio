@@ -18,7 +18,10 @@
   2. Altered source versions must be plainly marked as such, and must not be
      misrepresented as being the original source code.
   3. This notice may not be removed or altered from any source distribution.
-*/
+
+   (Modified for NAudio by Mark Heath)
+
+ */
 
 using System;
 using System.Collections.Generic;
@@ -32,7 +35,7 @@ namespace NAudio.CoreAudioApi
     // it is implemented in this class because implementing it on AudioEndpointVolume 
     // (where the functionality is really wanted, would cause the OnNotify function 
     // to show up in the public API. 
-    internal class AudioEndpointVolumeCallback : IAudioEndpointVolumeCallback    
+    internal class AudioEndpointVolumeCallback : IAudioEndpointVolumeCallback
     {
         private AudioEndpointVolume _Parent;
         
@@ -41,7 +44,7 @@ namespace NAudio.CoreAudioApi
             _Parent = parent;
         }
         
-        public int OnNotify(IntPtr NotifyData)
+        public void OnNotify(IntPtr NotifyData)
         {
             //Since AUDIO_VOLUME_NOTIFICATION_DATA is dynamic in length based on the
             //number of audio channels available we cannot just call PtrToStructure 
@@ -67,7 +70,6 @@ namespace NAudio.CoreAudioApi
             //Create combined structure and Fire Event in parent class.
             AudioVolumeNotificationData NotificationData = new AudioVolumeNotificationData(data.guidEventContext, data.bMuted, data.fMasterVolume, voldata);
             _Parent.FireNotification(NotificationData);
-            return 0; //S_OK
         }
     }
 }

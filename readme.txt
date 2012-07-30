@@ -11,13 +11,13 @@ id, so if you want me to put your full name here, please also get in touch.
 in alphabetical order:
 Alexandre Mutel
 AmandaTarafaMas
+Brandon Hansen (kg6ypi)
 balistof
 ChunkWare Music Software
 CKing
 DaMacc
 Giawa
 Idael Cardaso 
-kg6ypi
 Lustild
 Michael Feld 
 Michael J

@@ -112,9 +112,9 @@ namespace NAudio.Wave
         /// </summary>
         public void StartRecording()
         {
-            OpenWaveInDevice();
             if (recording)
-                throw new InvalidOperationException("Already recording");
+                throw new InvalidOperationException("Already recording"); 
+            OpenWaveInDevice();
             MmException.Try(WaveInterop.waveInStart(waveInHandle), "waveInStart");
             recording = true;
             ThreadPool.QueueUserWorkItem((state) => RecordThread(), null);

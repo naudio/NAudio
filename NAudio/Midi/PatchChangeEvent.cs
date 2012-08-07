@@ -79,7 +79,7 @@ namespace NAudio.Midi
             {
                 if (value < 0 || value > 127)
                 {
-                    throw new ArgumentOutOfRangeException("Patch number must be in the range 0-127");
+                    throw new ArgumentOutOfRangeException("value", "Patch number must be in the range 0-127");
                 }
                 patch = (byte)value;
             }

@@ -1,17 +1,15 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Runtime.InteropServices;
 
 namespace NAudio.Midi
 {
-	/// <summary>
-	/// Represents a MIDI in device
-	/// </summary>
-	public class MidiIn : IDisposable 
-	{
-		private IntPtr hMidiIn = IntPtr.Zero;
-		private bool disposed = false;
+    /// <summary>
+    /// Represents a MIDI in device
+    /// </summary>
+    public class MidiIn : IDisposable 
+    {
+        private IntPtr hMidiIn = IntPtr.Zero;
+        private bool disposed = false;
         private MidiInterop.MidiInCallback callback;
 
         /// <summary>
@@ -24,44 +22,44 @@ namespace NAudio.Midi
         /// </summary>
         public event EventHandler<MidiInMessageEventArgs> ErrorReceived;
 
-		/// <summary>
-		/// Gets the number of MIDI input devices available in the system
-		/// </summary>
-		public static int NumberOfDevices 
-		{
-			get 
-			{
-				return MidiInterop.midiInGetNumDevs();
-			}
-		}
-		
-		/// <summary>
-		/// Opens a specified MIDI in device
-		/// </summary>
-		/// <param name="deviceNo">The device number</param>
-		public MidiIn(int deviceNo) 
-		{
+        /// <summary>
+        /// Gets the number of MIDI input devices available in the system
+        /// </summary>
+        public static int NumberOfDevices 
+        {
+            get 
+            {
+                return MidiInterop.midiInGetNumDevs();
+            }
+        }
+        
+        /// <summary>
+        /// Opens a specified MIDI in device
+        /// </summary>
+        /// <param name="deviceNo">The device number</param>
+        public MidiIn(int deviceNo) 
+        {
             this.callback = new MidiInterop.MidiInCallback(Callback);
-			MmException.Try(MidiInterop.midiInOpen(out hMidiIn, (IntPtr) deviceNo,this.callback,IntPtr.Zero,MidiInterop.CALLBACK_FUNCTION),"midiInOpen");
-		}
-		
-		/// <summary>
-		/// Closes this MIDI in device
-		/// </summary>
-		public void Close() 
-		{
-			Dispose();
-		}
+            MmException.Try(MidiInterop.midiInOpen(out hMidiIn, (IntPtr) deviceNo,this.callback,IntPtr.Zero,MidiInterop.CALLBACK_FUNCTION),"midiInOpen");
+        }
+        
+        /// <summary>
+        /// Closes this MIDI in device
+        /// </summary>
+        public void Close() 
+        {
+            Dispose();
+        }
 
-		/// <summary>
-		/// Closes this MIDI in device
-		/// </summary>
-		public void Dispose() 
-		{
+        /// <summary>
+        /// Closes this MIDI in device
+        /// </summary>
+        public void Dispose() 
+        {
             GC.KeepAlive(callback);
-			Dispose(true);
-			GC.SuppressFinalize(this);
-		}
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
 
         /// <summary>
         /// Start the MIDI in device
@@ -127,100 +125,38 @@ namespace NAudio.Midi
             }
         }
 
-		/// <summary>
-		/// Gets the MIDI in device info
-		/// </summary>
-		public static MidiInCapabilities DeviceInfo(int midiInDeviceNumber)
-		{
+        /// <summary>
+        /// Gets the MIDI in device info
+        /// </summary>
+        public static MidiInCapabilities DeviceInfo(int midiInDeviceNumber)
+        {
             MidiInCapabilities caps = new MidiInCapabilities();
             int structSize = Marshal.SizeOf(caps);
-			MmException.Try(MidiInterop.midiInGetDevCaps((IntPtr)midiInDeviceNumber,out caps,structSize),"midiInGetDevCaps");
-			return caps;
-		}
-
-		/// <summary>
-		/// Closes the MIDI out device
-		/// </summary>
-		/// <param name="disposing">True if called from Dispose</param>
-		protected virtual void Dispose(bool disposing) 
-		{
-			if(!this.disposed) 
-			{
-				//if(disposing) Components.Dispose();
-				MidiInterop.midiInClose(hMidiIn);
-			}
-			disposed = true;         
-		}
-
-		/// <summary>
-		/// Cleanup
-		/// </summary>
-		~MidiIn()
-		{
-			System.Diagnostics.Debug.Assert(false,"MIDI In was not finalised");
-			Dispose(false);
-		}	
-	}
-
-    /// <summary>
-    /// MIDI In Message Information
-    /// </summary>
-    public class MidiInMessageEventArgs : EventArgs
-    {
-        int message;
-        MidiEvent midiEvent;
-        int timestamp;
-
-        /// <summary>
-        /// Create a new MIDI In Message EventArgs
-        /// </summary>
-        /// <param name="message"></param>
-        /// <param name="timestamp"></param>
-        public MidiInMessageEventArgs(int message, int timestamp)
-        {
-            this.message = message;
-            this.timestamp = timestamp;
-            try
-            {
-                this.midiEvent = MidiEvent.FromRawMessage(message);
-            }
-            catch (Exception)
-            {
-                // don't worry too much - might be an invalid message
-            }
+            MmException.Try(MidiInterop.midiInGetDevCaps((IntPtr)midiInDeviceNumber,out caps,structSize),"midiInGetDevCaps");
+            return caps;
         }
 
         /// <summary>
-        /// The Raw message received from the MIDI In API
+        /// Closes the MIDI out device
         /// </summary>
-        public int RawMessage
+        /// <param name="disposing">True if called from Dispose</param>
+        protected virtual void Dispose(bool disposing) 
         {
-            get
+            if(!this.disposed) 
             {
-                return message;
+                //if(disposing) Components.Dispose();
+                MidiInterop.midiInClose(hMidiIn);
             }
+            disposed = true;
         }
 
         /// <summary>
-        /// The raw message interpreted as a MidiEvent
+        /// Cleanup
         /// </summary>
-        public MidiEvent MidiEvent
+        ~MidiIn()
         {
-            get
-            {
-                return midiEvent;
-            }
-        }
-
-        /// <summary>
-        /// The timestamp in milliseconds for this message
-        /// </summary>
-        public int Timestamp
-        {
-            get
-            {
-                return timestamp;
-            }
+            System.Diagnostics.Debug.Assert(false,"MIDI In was not finalised");
+            Dispose(false);
         }
     }
 }

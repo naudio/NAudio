@@ -59,7 +59,7 @@ namespace NAudio.Midi
             sb.Append(" ");
             foreach (var b in data)
             {
-                sb.AppendFormat("{0:X2} ", b);            
+                sb.AppendFormat("{0:X2} ", b);
             }
             sb.Length--;
             return sb.ToString();

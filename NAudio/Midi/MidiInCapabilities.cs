@@ -35,37 +35,37 @@ namespace NAudio.Midi
 
         private const int MaxProductNameLength = 32;
 
-		/// <summary>
-		/// Gets the manufacturer of this device
-		/// </summary>
-		public Manufacturers Manufacturer
-		{
-			get 
-			{
+        /// <summary>
+        /// Gets the manufacturer of this device
+        /// </summary>
+        public Manufacturers Manufacturer
+        {
+            get 
+            {
                 return (Manufacturers)manufacturerId;
-			}
-		}
-		
-		/// <summary>
-		/// Gets the product identifier (manufacturer specific)
-		/// </summary>
-		public int ProductId 
-		{
-			get 
-			{
+            }
+        }
+        
+        /// <summary>
+        /// Gets the product identifier (manufacturer specific)
+        /// </summary>
+        public int ProductId 
+        {
+            get 
+            {
                 return productId;
-			}
-		}
-		
-		/// <summary>
-		/// Gets the product name
-		/// </summary>
-		public string ProductName 
-		{
-			get 
-			{
+            }
+        }
+        
+        /// <summary>
+        /// Gets the product name
+        /// </summary>
+        public string ProductName 
+        {
+            get 
+            {
                 return productName;
-			}
-		}
+            }
+        }
     }
 }

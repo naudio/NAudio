@@ -4,26 +4,26 @@ using System.Text;
 
 namespace NAudio.Midi 
 {
-	/// <summary>
-	/// Represents a MIDI tempo event
-	/// </summary>
-	public class TempoEvent : MetaEvent 
-	{
-		private int microsecondsPerQuarterNote;
-		
-		/// <summary>
-		/// Reads a new tempo event from a MIDI stream
-		/// </summary>
-		/// <param name="br">The MIDI stream</param>
-		/// <param name="length">the data length</param>
-		public TempoEvent(BinaryReader br,int length) 
-		{
-			if(length != 3) 
-			{
-				throw new FormatException("Invalid tempo length");
-			}
-			microsecondsPerQuarterNote = (br.ReadByte() << 16) + (br.ReadByte() << 8) + br.ReadByte();
-		}
+    /// <summary>
+    /// Represents a MIDI tempo event
+    /// </summary>
+    public class TempoEvent : MetaEvent 
+    {
+        private int microsecondsPerQuarterNote;
+        
+        /// <summary>
+        /// Reads a new tempo event from a MIDI stream
+        /// </summary>
+        /// <param name="br">The MIDI stream</param>
+        /// <param name="length">the data length</param>
+        public TempoEvent(BinaryReader br,int length) 
+        {
+            if(length != 3) 
+            {
+                throw new FormatException("Invalid tempo length");
+            }
+            microsecondsPerQuarterNote = (br.ReadByte() << 16) + (br.ReadByte() << 8) + br.ReadByte();
+        }
 
         /// <summary>
         /// Creates a new tempo event with specified settings
@@ -35,18 +35,18 @@ namespace NAudio.Midi
         {
             this.microsecondsPerQuarterNote = microsecondsPerQuarterNote;
         }
-		
-		/// <summary>
-		/// Describes this tempo event
-		/// </summary>
-		/// <returns>String describing the tempo event</returns>
-		public override string ToString() 
-		{
-			return String.Format("{0} {2}bpm ({1})",
+        
+        /// <summary>
+        /// Describes this tempo event
+        /// </summary>
+        /// <returns>String describing the tempo event</returns>
+        public override string ToString() 
+        {
+            return String.Format("{0} {2}bpm ({1})",
                 base.ToString(),
                 microsecondsPerQuarterNote,
                 (60000000 / microsecondsPerQuarterNote));
-		}
+        }
 
         /// <summary>
         /// Microseconds per quarter note
@@ -82,5 +82,5 @@ namespace NAudio.Midi
             writer.Write((byte) ((microsecondsPerQuarterNote >> 8) & 0xFF));
             writer.Write((byte) (microsecondsPerQuarterNote & 0xFF));
         }
-	}
+    }
 }

@@ -4,5 +4,8 @@ obj/
 Packages/
 TestResult.xml
 BuildArtefacts/
+_ReSharper.*/
 *.suo
+*.ncrunchsolution
 *.ncrunchsolution.user
+*.ncrunchproject

@@ -140,7 +140,7 @@ namespace NAudio.Midi
                 if (midiFileType != value)
                 {
                     // set MIDI file type before calling flatten or explode functions
-                    midiFileType = value;                    
+                    midiFileType = value;
                                         
                     if (value == 0)
                     {
@@ -190,7 +190,7 @@ namespace NAudio.Midi
                             trackEvents[midiEvent.Channel].Add(midiEvent);
                             break;
                         default:
-                            EnsureTracks(1);                
+                            EnsureTracks(1);
                             trackEvents[0].Add(midiEvent);
                             break;
                     }
@@ -254,7 +254,7 @@ namespace NAudio.Midi
         /// </summary>
         public void PrepareForExport()
         {
-            MidiEventComparer comparer = new MidiEventComparer();
+            var comparer = new MidiEventComparer();
             // 1. sort each track
             foreach (List<MidiEvent> list in trackEvents)
             {
@@ -272,7 +272,7 @@ namespace NAudio.Midi
                     {
                         index++;
                     }
-                }                
+                }
             }
 
             int track = 0;

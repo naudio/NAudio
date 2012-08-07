@@ -3,25 +3,26 @@ using System.IO;
 
 namespace NAudio.Midi
 {
-	/// <summary>
-	/// Represents a MIDI Channel AfterTouch Event.
-	/// </summary>
-	public class ChannelAfterTouchEvent : MidiEvent 
-	{
+    /// <summary>
+    /// Represents a MIDI Channel AfterTouch Event.
+    /// </summary>
+    public class ChannelAfterTouchEvent : MidiEvent
+    {
         private byte afterTouchPressure;
-		/// <summary>
-		/// Creates a new ChannelAfterTouchEvent from raw MIDI data
-		/// </summary>
-		/// <param name="br">A binary reader</param>
-		public ChannelAfterTouchEvent(BinaryReader br) 
-		{
-			afterTouchPressure = br.ReadByte();
-            if ((afterTouchPressure & 0x80) != 0) 
-			{
-                // TODO: might be a follow-on				
+
+        /// <summary>
+        /// Creates a new ChannelAfterTouchEvent from raw MIDI data
+        /// </summary>
+        /// <param name="br">A binary reader</param>
+        public ChannelAfterTouchEvent(BinaryReader br)
+        {
+            afterTouchPressure = br.ReadByte();
+            if ((afterTouchPressure & 0x80) != 0)
+            {
+                // TODO: might be a follow-on
                 throw new FormatException("Invalid afterTouchPressure");
-			}
-		}
+            }
+        }
 
         /// <summary>
         /// Creates a new Channel After-Touch Event
@@ -30,7 +31,7 @@ namespace NAudio.Midi
         /// <param name="channel">Channel</param>
         /// <param name="afterTouchPressure">After-touch pressure</param>
         public ChannelAfterTouchEvent(long absoluteTime, int channel, int afterTouchPressure)
-            : base(absoluteTime,channel,MidiCommandCode.ChannelAfterTouch)
+            : base(absoluteTime, channel, MidiCommandCode.ChannelAfterTouch)
         {
             AfterTouchPressure = afterTouchPressure;
         }
@@ -51,19 +52,15 @@ namespace NAudio.Midi
         /// </summary>
         public int AfterTouchPressure
         {
-            get
-            {
-                return afterTouchPressure;
-            }
+            get { return afterTouchPressure; }
             set
             {
                 if (value < 0 || value > 127)
                 {
-                    throw new ArgumentOutOfRangeException("After touch pressure must be in the range 0-127");
+                    throw new ArgumentOutOfRangeException("value", "After touch pressure must be in the range 0-127");
                 }
-                afterTouchPressure = (byte)value;
+                afterTouchPressure = (byte) value;
             }
         }
-
-	}
+    }
 }

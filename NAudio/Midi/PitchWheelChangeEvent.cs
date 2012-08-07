@@ -4,33 +4,33 @@ using System.Text;
 
 namespace NAudio.Midi 
 {
-	/// <summary>
-	/// Represents a MIDI pitch wheel change event
-	/// </summary>
-	public class PitchWheelChangeEvent : MidiEvent 
-	{
-		private int pitch;
-		
-		/// <summary>
-		/// Reads a pitch wheel change event from a MIDI stream
-		/// </summary>
-		/// <param name="br">The MIDI stream to read from</param>
-		public PitchWheelChangeEvent(BinaryReader br) 
-		{
-			byte b1 = br.ReadByte();
-			byte b2 = br.ReadByte();
-			if((b1 & 0x80) != 0) 
-			{
+    /// <summary>
+    /// Represents a MIDI pitch wheel change event
+    /// </summary>
+    public class PitchWheelChangeEvent : MidiEvent 
+    {
+        private int pitch;
+        
+        /// <summary>
+        /// Reads a pitch wheel change event from a MIDI stream
+        /// </summary>
+        /// <param name="br">The MIDI stream to read from</param>
+        public PitchWheelChangeEvent(BinaryReader br) 
+        {
+            byte b1 = br.ReadByte();
+            byte b2 = br.ReadByte();
+            if((b1 & 0x80) != 0) 
+            {
                 // TODO: might be a follow-on				
-				throw new FormatException("Invalid pitchwheelchange byte 1");
-			}
-			if((b2 & 0x80) != 0) 
-			{
-				throw new FormatException("Invalid pitchwheelchange byte 2");
-			}
-			
-			pitch = b1 + (b2 << 7); // 0x2000 is normal
-		}
+                throw new FormatException("Invalid pitchwheelchange byte 1");
+            }
+            if((b2 & 0x80) != 0) 
+            {
+                throw new FormatException("Invalid pitchwheelchange byte 2");
+            }
+            
+            pitch = b1 + (b2 << 7); // 0x2000 is normal
+        }
 
         /// <summary>
         /// Creates a new pitch wheel change event
@@ -43,18 +43,18 @@ namespace NAudio.Midi
         {
             Pitch = pitchWheel;
         }
-		
-		/// <summary>
-		/// Describes this pitch wheel change event
-		/// </summary>
-		/// <returns>String describing this pitch wheel change event</returns>
-		public override string ToString() 
-		{
-			return String.Format("{0} Pitch {1} ({2})",
-				base.ToString(),
-				this.pitch,
-				this.pitch - 0x2000);
-		}
+        
+        /// <summary>
+        /// Describes this pitch wheel change event
+        /// </summary>
+        /// <returns>String describing this pitch wheel change event</returns>
+        public override string ToString() 
+        {
+            return String.Format("{0} Pitch {1} ({2})",
+                base.ToString(),
+                this.pitch,
+                this.pitch - 0x2000);
+        }
 
         /// <summary>
         /// Pitch Wheel Value 0 is minimum, 0x2000 (8192) is default, 0x4000 (16384) is maximum
@@ -69,7 +69,7 @@ namespace NAudio.Midi
             {
                 if (value < 0 || value > 0x4000)
                 {
-                    throw new ArgumentOutOfRangeException("Pitch value must be in the range 0 - 0x4000");
+                    throw new ArgumentOutOfRangeException("value", "Pitch value must be in the range 0 - 0x4000");
                 }
                 pitch = value;
             }
@@ -95,5 +95,5 @@ namespace NAudio.Midi
             writer.Write((byte)(pitch & 0x7f));
             writer.Write((byte)((pitch >> 7) & 0x7f));
         }
-	}
+    }
 }

@@ -4,23 +4,23 @@ using System.Text;
 
 namespace NAudio.Midi 
 {
-	/// <summary>
-	/// Represents a MIDI text event
-	/// </summary>
-	public class TextEvent : MetaEvent 
-	{
-		private string text;
-		
-		/// <summary>
-		/// Reads a new text event from a MIDI stream
-		/// </summary>
-		/// <param name="br">The MIDI stream</param>
-		/// <param name="length">The data length</param>
-		public TextEvent(BinaryReader br,int length) 
-		{
+    /// <summary>
+    /// Represents a MIDI text event
+    /// </summary>
+    public class TextEvent : MetaEvent 
+    {
+        private string text;
+        
+        /// <summary>
+        /// Reads a new text event from a MIDI stream
+        /// </summary>
+        /// <param name="br">The MIDI stream</param>
+        /// <param name="length">The data length</param>
+        public TextEvent(BinaryReader br,int length) 
+        {
             Encoding byteEncoding = NAudio.Utils.ByteEncoding.Instance;
             text = byteEncoding.GetString(br.ReadBytes(length));
-		}
+        }
 
         /// <summary>
         /// Creates a new TextEvent
@@ -48,17 +48,17 @@ namespace NAudio.Midi
             {
                 text = value;
                 metaDataLength = text.Length;
-            }            
+            }
         }
-				
-		/// <summary>
-		/// Describes this MIDI text event
-		/// </summary>
-		/// <returns>A string describing this event</returns>
-		public override string ToString() 
-		{
-			return String.Format("{0} {1}",base.ToString(),text);
-		}
+
+        /// <summary>
+        /// Describes this MIDI text event
+        /// </summary>
+        /// <returns>A string describing this event</returns>
+        public override string ToString() 
+        {
+            return String.Format("{0} {1}",base.ToString(),text);
+        }
 
         /// <summary>
         /// Calls base class export first, then exports the data 
@@ -72,5 +72,5 @@ namespace NAudio.Midi
             byte[] encoded = byteEncoding.GetBytes(text);
             writer.Write(encoded);
         }
-	}
+    }
 }

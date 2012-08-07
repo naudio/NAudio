@@ -66,7 +66,7 @@ namespace NAudio.Midi
             {
                 if (value < 0 || value > 127)
                 {
-                    throw new ArgumentOutOfRangeException("Note number must be in the range 0-127");
+                    throw new ArgumentOutOfRangeException("value", "Note number must be in the range 0-127");
                 }
                 noteNumber = value;
             }
@@ -85,7 +85,7 @@ namespace NAudio.Midi
             {
                 if (value < 0 || value > 127)
                 {
-                    throw new ArgumentOutOfRangeException("Velocity must be in the range 0-127");
+                    throw new ArgumentOutOfRangeException("value", "Velocity must be in the range 0-127");
                 }
                 velocity = value;
             }

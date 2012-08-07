@@ -7,5 +7,5 @@ BuildArtefacts/
 _ReSharper.*/
 *.suo
 *.ncrunchsolution
-*.ncrunchsolution.user
+*.user
 *.ncrunchproject

@@ -204,7 +204,7 @@ namespace NAudio.Midi
             {
                 if ((value < 1) || (value > 16))
                 {
-                    throw new ArgumentOutOfRangeException("Channel",value,
+                    throw new ArgumentOutOfRangeException("value", value,
                         String.Format("Channel must be 1-16 (Got {0})",value));
                 }
                 channel = value;
@@ -341,11 +341,11 @@ namespace NAudio.Midi
         {
             if (value < 0)
             {
-                throw new ArgumentOutOfRangeException("value", value.ToString(), "Cannot write a negative Var Int");
+                throw new ArgumentOutOfRangeException("value", value, "Cannot write a negative Var Int");
             }
             if (value > 0x0FFFFFFF)
-            {                
-                throw new ArgumentOutOfRangeException("value", value.ToString(), "Maximum allowed Var Int is 0x0FFFFFFF");
+            {
+                throw new ArgumentOutOfRangeException("value", value, "Maximum allowed Var Int is 0x0FFFFFFF");
             }
 
             int n = 0;

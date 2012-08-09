@@ -60,7 +60,7 @@ namespace NAudio.Gui
                     throw new ArgumentOutOfRangeException("Minimum must be less than maximum");
                 minimum = value;
                 if (Value < minimum)
-                    Value = minimum;                
+                    Value = minimum;
             }
         }
 

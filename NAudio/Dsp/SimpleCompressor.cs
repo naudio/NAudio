@@ -9,12 +9,12 @@ namespace NAudio.Dsp
     class SimpleCompressor : AttRelEnvelope
     {
         // transfer function
-	    private double threshdB;		// threshold (dB)
-	    private double ratio;			// ratio (compression: < 1 ; expansion: > 1)
+        private double threshdB;		// threshold (dB)
+        private double ratio;			// ratio (compression: < 1 ; expansion: > 1)
         private double makeUpGain;
 
-	    // runtime variables
-	    private double envdB;			// over-threshold envelope (dB)
+        // runtime variables
+        private double envdB;			// over-threshold envelope (dB)
 
         public SimpleCompressor(double attackTime, double releaseTime, double sampleRate)
             : base(attackTime, releaseTime, sampleRate)
@@ -57,54 +57,50 @@ namespace NAudio.Dsp
         {
             this.envdB = DC_OFFSET;
         }
-	
+    
         // // compressor runtime process
-	    public void Process(ref double in1, ref double in2)
+        public void Process(ref double in1, ref double in2)
         {
-        	// sidechain
+            // sidechain
 
             // rectify input
-	        double rect1 = Math.Abs( in1 );	// n.b. was fabs
-	        double rect2 = Math.Abs( in2 ); // n.b. was fabs
+            double rect1 = Math.Abs( in1 );	// n.b. was fabs
+            double rect2 = Math.Abs( in2 ); // n.b. was fabs
 
-	        // if desired, one could use another EnvelopeDetector to smooth
-	        // the rectified signal.
+            // if desired, one could use another EnvelopeDetector to smooth
+            // the rectified signal.
 
-        	double link = Math.Max( rect1, rect2 );	// link channels with greater of 2
+            double link = Math.Max( rect1, rect2 );	// link channels with greater of 2
 
-	        link += DC_OFFSET;					// add DC offset to avoid log( 0 )
-	        double keydB = Decibels.LinearToDecibels( link );		// convert linear -> dB
+            link += DC_OFFSET;					// add DC offset to avoid log( 0 )
+            double keydB = Decibels.LinearToDecibels( link );		// convert linear -> dB
 
-	        // threshold
-	        double overdB = keydB - threshdB;	// delta over threshold
-	        if ( overdB < 0.0 )
-		        overdB = 0.0;
+            // threshold
+            double overdB = keydB - threshdB;	// delta over threshold
+            if ( overdB < 0.0 )
+                overdB = 0.0;
 
-	        // attack/release
+            // attack/release
 
-	        overdB += DC_OFFSET;					// add DC offset to avoid denormal
+            overdB += DC_OFFSET;					// add DC offset to avoid denormal
 
-	        Run( overdB, ref envdB );	// run attack/release envelope
+            Run( overdB, ref envdB );	// run attack/release envelope
 
-	        overdB = envdB - DC_OFFSET;			// subtract DC offset
+            overdB = envdB - DC_OFFSET;			// subtract DC offset
 
-	        // Regarding the DC offset: In this case, since the offset is added before 
-	        // the attack/release processes, the envelope will never fall below the offset,
-	        // thereby avoiding denormals. However, to prevent the offset from causing
-	        // constant gain reduction, we must subtract it from the envelope, yielding
-	        // a minimum value of 0dB.
+            // Regarding the DC offset: In this case, since the offset is added before 
+            // the attack/release processes, the envelope will never fall below the offset,
+            // thereby avoiding denormals. However, to prevent the offset from causing
+            // constant gain reduction, we must subtract it from the envelope, yielding
+            // a minimum value of 0dB.
     
-	        // transfer function
+            // transfer function
             double gr = overdB * (ratio - 1.0);	// gain reduction (dB)
             gr = Decibels.DecibelsToLinear(gr) * Decibels.DecibelsToLinear(makeUpGain); // convert dB -> linear
 
-	        // output gain
-	        in1 *= gr;	// apply gain reduction to input
-	        in2 *= gr;
+            // output gain
+            in1 *= gr;	// apply gain reduction to input
+            in2 *= gr;
         }
     }
 }
-
-        
-
-

@@ -18,11 +18,11 @@ namespace NAudio.Dsp
 
         public EnvelopeDetector( double ms, double sampleRate )
         {
-	        System.Diagnostics.Debug.Assert( sampleRate > 0.0 );
-	        System.Diagnostics.Debug.Assert( ms > 0.0 );
-	        this.sampleRate = sampleRate;
-	        this.ms = ms;
-	        setCoef();
+            System.Diagnostics.Debug.Assert( sampleRate > 0.0 );
+            System.Diagnostics.Debug.Assert( ms > 0.0 );
+            this.sampleRate = sampleRate;
+            this.ms = ms;
+            setCoef();
         }
 
         public double TimeConstant
@@ -33,13 +33,11 @@ namespace NAudio.Dsp
             }
             set 
             {
-	            System.Diagnostics.Debug.Assert( value > 0.0 );
-	            this.ms = value;
-	            setCoef();
+                System.Diagnostics.Debug.Assert( value > 0.0 );
+                this.ms = value;
+                setCoef();
             }
-        
         }
-
 
         public double SampleRate
         {
@@ -49,16 +47,16 @@ namespace NAudio.Dsp
             }
             set
             {
-	            System.Diagnostics.Debug.Assert( value > 0.0 );
-	            this.sampleRate = value;
-	            setCoef();
+                System.Diagnostics.Debug.Assert( value > 0.0 );
+                this.sampleRate = value;
+                setCoef();
             }
         }
 
         public void run( double inValue, ref double state )
         {
             state = inValue + coeff * (state - inValue);
-	    }
+        }
 
         private void setCoef()
         {
@@ -70,8 +68,6 @@ namespace NAudio.Dsp
     {
         // DC offset to prevent denormal
         protected const double DC_OFFSET = 1.0E-25;
-
-
         
         private EnvelopeDetector attack;
         private EnvelopeDetector release;
@@ -103,14 +99,13 @@ namespace NAudio.Dsp
         public void Run(double inValue, ref double state)
         {
             // assumes that:
-		    // positive delta = attack
-		    // negative delta = release
-		    // good for linear & log values
-		    if ( inValue > state )
-			    attack.run( inValue, ref state );	// attack
-		    else
-			    release.run( inValue, ref state );	// release
+            // positive delta = attack
+            // negative delta = release
+            // good for linear & log values
+            if ( inValue > state )
+                attack.run( inValue, ref state );   // attack
+            else
+                release.run( inValue, ref state );  // release
         }
-        
     }
 }

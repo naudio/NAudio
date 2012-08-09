@@ -169,9 +169,6 @@
     <Compile Include="FileFormats\SoundFont\StructureBuilder.cs" />
     <Compile Include="FileFormats\SoundFont\Zone.cs" />
     <Compile Include="FileFormats\SoundFont\ZoneBuilder.cs" />
-    <Compile Include="Gui\Arranger.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
     <Compile Include="Gui\Fader.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -189,27 +186,6 @@
     </Compile>
     <Compile Include="Gui\Pot.designer.cs">
       <DependentUpon>Pot.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Gui\TrackView\AudioClip.cs" />
-    <Compile Include="Gui\TrackView\Clip.cs" />
-    <Compile Include="Gui\TrackView\TimeLine.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Gui\TrackView\TimeLine.designer.cs">
-      <DependentUpon>TimeLine.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Gui\TrackView\Track.cs" />
-    <Compile Include="Gui\TrackView\TrackHeader.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Gui\TrackView\TrackHeader.designer.cs">
-      <DependentUpon>TrackHeader.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Gui\TrackView\TrackView.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Gui\TrackView\TrackView.Designer.cs">
-      <DependentUpon>TrackView.cs</DependentUpon>
     </Compile>
     <Compile Include="Gui\VolumeMeter.cs">
       <SubType>Component</SubType>
@@ -451,10 +427,6 @@
     <Compile Include="Dmo\ResamplerMediaObject.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Gui\Arranger.resx">
-      <DependentUpon>Arranger.cs</DependentUpon>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
     <EmbeddedResource Include="Gui\Fader.resx">
       <DependentUpon>Fader.cs</DependentUpon>
       <SubType>Designer</SubType>
@@ -473,14 +445,6 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Gui\Pot.resx">
       <DependentUpon>Pot.cs</DependentUpon>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Gui\TrackView\TimeLine.resx">
-      <DependentUpon>TimeLine.cs</DependentUpon>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Gui\TrackView\TrackHeader.resx">
-      <DependentUpon>TrackHeader.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Gui\VolumeSlider.resx">

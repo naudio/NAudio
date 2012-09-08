@@ -10,9 +10,9 @@ namespace NAudioWpfDemo.DrumMachineDemo
 {
     class DrumPatternSampleProvider : ISampleProvider
     {
-        private MixingSampleProvider mixer;
-        private WaveFormat waveFormat;
-        private PatternSequencer sequencer;
+        private readonly MixingSampleProvider mixer;
+        private readonly WaveFormat waveFormat;
+        private readonly PatternSequencer sequencer;
 
         public DrumPatternSampleProvider(DrumPattern pattern)
         {
@@ -41,19 +41,16 @@ namespace NAudioWpfDemo.DrumMachineDemo
 
         public int Read(float[] buffer, int offset, int count)
         {
-
             foreach (var mixerInput in sequencer.GetNextMixerInputs(count))
             {
-                //mixerInput = new MonoToStereoSampleProvider(mixerInput);
                 mixer.AddMixerInput(mixerInput);
             }
 
             // now we just need to read from the mixer
             var samplesRead = mixer.Read(buffer, offset, count);
-            if (samplesRead < count)
+            while (samplesRead < count)
             {
-                Array.Clear(buffer, offset + samplesRead, count - samplesRead);
-                samplesRead = count;
+                buffer[samplesRead++] = 0;
             }
             return samplesRead;
         }

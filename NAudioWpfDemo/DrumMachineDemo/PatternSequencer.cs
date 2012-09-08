@@ -29,12 +29,15 @@ namespace NAudioWpfDemo.DrumMachineDemo
             }
             set
             {
-                this.tempo = value;
-                int samplesPerBeat = (this.drumKit.WaveFormat.Channels * this.drumKit.WaveFormat.SampleRate * 60) / tempo;
-                this.samplesPerStep = samplesPerBeat / 4;
+                if (this.tempo != value)
+                { 
+                    this.tempo = value;
+                    this.newTempo = true;
+                }
             }
         }
 
+        private bool newTempo;
         private int currentStep = 0;
         private double patternPosition = 0;
 
@@ -44,6 +47,13 @@ namespace NAudioWpfDemo.DrumMachineDemo
             int samplePos = 0;           
             while (samplePos < sampleCount)
             {
+                if (currentStep == 0 && newTempo)
+                {
+                    int samplesPerBeat = (this.drumKit.WaveFormat.Channels * this.drumKit.WaveFormat.SampleRate * 60) / tempo;
+                    this.samplesPerStep = samplesPerBeat / 4;
+                    newTempo = false;
+                }
+
                 for (int note = 0; note < drumPattern.Notes; note++)
                 {
                     if (drumPattern[note, currentStep] != 0)
@@ -60,6 +70,7 @@ namespace NAudioWpfDemo.DrumMachineDemo
                 samplePos += samplesPerStep;
                 currentStep++;
                 currentStep = currentStep % drumPattern.Steps;
+
             }
             this.patternPosition += ((double)sampleCount / samplesPerStep);
             if (this.patternPosition > drumPattern.Steps)

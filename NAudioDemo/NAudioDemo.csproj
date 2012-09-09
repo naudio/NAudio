@@ -83,6 +83,12 @@
     <Compile Include="AsioDirectDemo\AsioDirectPanel.Designer.cs">
       <DependentUpon>AsioDirectPanel.cs</DependentUpon>
     </Compile>
+    <Compile Include="AsioRecordingDemo\AsioRecordingPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="AsioRecordingDemo\AsioRecordingPanel.Designer.cs">
+      <DependentUpon>AsioRecordingPanel.cs</DependentUpon>
+    </Compile>
     <Compile Include="AudioPlaybackDemo\AiffInputFilePlugin.cs" />
     <Compile Include="AudioPlaybackDemo\AsioOutPlugin.cs" />
     <Compile Include="AudioPlaybackDemo\AsioOutSettingsPanel.cs">
@@ -186,6 +192,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="AsioDirectDemo\AsioDirectPanel.resx">
       <DependentUpon>AsioDirectPanel.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="AsioRecordingDemo\AsioRecordingPanel.resx">
+      <DependentUpon>AsioRecordingPanel.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="AudioPlaybackDemo\AsioOutSettingsPanel.resx">
       <DependentUpon>AsioOutSettingsPanel.cs</DependentUpon>

@@ -102,6 +102,8 @@
     <Compile Include="FileFormats\Wav\WaveFileChunkReader.cs" />
     <Compile Include="Midi\MidiInMessageEventArgs.cs" />
     <Compile Include="Utils\ByteArrayExtensions.cs" />
+    <Compile Include="Wave\Asio\AsioDriverCapability.cs" />
+    <Compile Include="Wave\Asio\AsioSampleType.cs" />
     <Compile Include="Wave\SampleProviders\FadeInOutSampleProvider.cs" />
     <Compile Include="Wave\SampleProviders\MultiplexingSampleProvider.cs" />
     <Compile Include="Wave\SampleProviders\SampleProviderConverters.cs" />
@@ -353,6 +355,7 @@
     <Compile Include="Wave\WaveFormats\WaveFormatExtraData.cs" />
     <Compile Include="Wave\WaveFormats\WmaWaveFormat.cs" />
     <Compile Include="Wave\WaveInputs\IWaveIn.cs" />
+    <Compile Include="Wave\WaveOutputs\AsioAudioAvailableEventArgs.cs" />
     <Compile Include="Wave\WaveOutputs\AsioOut.cs" />
     <Compile Include="Wave\WaveOutputs\CueWaveFileWriter.cs" />
     <Compile Include="Wave\WaveOutputs\StoppedEventArgs.cs" />

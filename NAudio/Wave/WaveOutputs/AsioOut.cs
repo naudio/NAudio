@@ -1,6 +1,7 @@
 ﻿using System;
 using NAudio.Wave.Asio;
 using System.Threading;
+using NAudio.Wave.WaveOutputs;
 
 namespace NAudio.Wave
 {
@@ -20,19 +21,23 @@ namespace NAudio.Wave
     {
         private ASIODriverExt driver;
         private IWaveProvider sourceStream;
-        private WaveFormat waveFormat;
         private PlaybackState playbackState;
         private int nbSamples;
         private byte[] waveBuffer;
         private ASIOSampleConvertor.SampleConvertor convertor;
         private string driverName;
-        private int channelOffset;
+
         private SynchronizationContext syncContext;
 
         /// <summary>
         /// Playback Stopped
         /// </summary>
         public event EventHandler<StoppedEventArgs> PlaybackStopped;
+
+        /// <summary>
+        /// When recording, fires whenever recorded audio is available
+        /// </summary>
+        public event EventHandler<AsioAudioAvailableEventArgs> AudioAvailable;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AsioOut"/> class with the first 
@@ -111,7 +116,7 @@ namespace NAudio.Wave
         /// Determines whether ASIO is supported.
         /// </summary>
         /// <returns>
-        /// 	<c>true</c> if ASIO is supported; otherwise, <c>false</c>.
+        ///     <c>true</c> if ASIO is supported; otherwise, <c>false</c>.
         /// </returns>
         public static bool isSupported()
         {
@@ -129,7 +134,7 @@ namespace NAudio.Wave
 
             // Instantiate the extended driver
             driver = new ASIODriverExt(basicDriver);
-            this.channelOffset = 0;
+            this.ChannelOffset = 0;
         }
 
         /// <summary>
@@ -177,64 +182,100 @@ namespace NAudio.Wave
         /// <param name="waveProvider">Source wave provider</param>
         public void Init(IWaveProvider waveProvider)
         {
+            this.InitRecordAndPlayback(waveProvider, 0, -1);
+        }
+
+        /// <summary>
+        /// Initialises to play, with optional recording
+        /// </summary>
+        /// <param name="waveProvider">Source wave provider - set to null for record only</param>
+        /// <param name="recordChannels">Number of channels to record</param>
+        /// <param name="recordOnlySampleRate">Specify sample rate here if only recording, ignored otherwise</param>
+        public void InitRecordAndPlayback(IWaveProvider waveProvider, int recordChannels, int recordOnlySampleRate)
+        {
             if (this.sourceStream != null)
             {
                 throw new InvalidOperationException("Already initialised this instance of AsioOut - dispose and create a new one");
             }
-            sourceStream = waveProvider;
-            waveFormat = waveProvider.WaveFormat;
+            int desiredSampleRate = waveProvider != null ? waveProvider.WaveFormat.SampleRate : recordOnlySampleRate;
 
-            // Select the correct sample convertor from WaveFormat -> ASIOFormat
-            convertor = ASIOSampleConvertor.SelectSampleConvertor(waveFormat, driver.Capabilities.OutputChannelInfos[0].type);
-
-            if (!driver.IsSampleRateSupported(waveFormat.SampleRate))
+            if (waveProvider != null)
             {
-                throw new ArgumentException("SampleRate is not supported. TODO, implement Resampler");
+                sourceStream = waveProvider;
+
+                this.NumberOfOutputChannels = waveProvider.WaveFormat.Channels;
+
+                // Select the correct sample convertor from WaveFormat -> ASIOFormat
+                convertor = ASIOSampleConvertor.SelectSampleConvertor(waveProvider.WaveFormat, driver.Capabilities.OutputChannelInfos[0].type);
             }
-            if (driver.Capabilities.SampleRate != waveFormat.SampleRate)
+            else
             {
-                driver.SetSampleRate(waveFormat.SampleRate);
+                this.NumberOfOutputChannels = 0;
+            }
+
+
+            if (!driver.IsSampleRateSupported(desiredSampleRate))
+            {
+                throw new ArgumentException("SampleRate is not supported");
+            }
+            if (driver.Capabilities.SampleRate != desiredSampleRate)
+            {
+                driver.SetSampleRate(desiredSampleRate);
             }
 
             // Plug the callback
             driver.FillBufferCallback = driver_BufferUpdate;
 
+            this.NumberOfInputChannels = recordChannels;
             // Used Prefered size of ASIO Buffer
-            nbSamples = driver.CreateBuffers(waveFormat.Channels, false);
-            driver.SetChannelOffset(channelOffset); // will throw an exception if channel offset is too high
+            nbSamples = driver.CreateBuffers(NumberOfOutputChannels, NumberOfInputChannels, false);
+            driver.SetChannelOffset(ChannelOffset, InputChannelOffset); // will throw an exception if channel offset is too high
 
-            // make a buffer big enough to read enough from the sourceStream to fill the ASIO buffers            
-            waveBuffer = new byte[nbSamples * waveFormat.Channels * waveFormat.BitsPerSample / 8];
+            if (waveProvider != null)
+            {
+                // make a buffer big enough to read enough from the sourceStream to fill the ASIO buffers
+                waveBuffer = new byte[nbSamples * NumberOfOutputChannels * waveProvider.WaveFormat.BitsPerSample / 8];
+            }
         }
 
         /// <summary>
         /// driver buffer update callback to fill the wave buffer.
         /// </summary>
-        /// <param name="bufferChannels">The buffer channels.</param>
-        void driver_BufferUpdate(IntPtr[] bufferChannels)
+        /// <param name="inputChannels">The input channels.</param>
+        /// <param name="outputChannels">The output channels.</param>
+        void driver_BufferUpdate(IntPtr[] inputChannels, IntPtr[] outputChannels)
         {
-            // AsioDriver driver = sender as AsioDriver;
-
-            
-            int read = sourceStream.Read(waveBuffer,0,waveBuffer.Length);
-            if (read < waveBuffer.Length)
+            if (this.NumberOfInputChannels > 0)
             {
-                // we have stopped
-            }
-
-            // Call the convertor
-            unsafe
-            {                
-                // TODO : check if it's better to lock the buffer at initialization?
-                fixed (void* pBuffer = &waveBuffer[0])
+                var audioAvailable = AudioAvailable;
+                if (audioAvailable != null)
                 {
-                    convertor(new IntPtr(pBuffer), bufferChannels, waveFormat.Channels, nbSamples);
+                    audioAvailable(this, new AsioAudioAvailableEventArgs(inputChannels, nbSamples, driver.Capabilities.InputChannelInfos[0].type));
                 }
             }
 
-            if (read == 0)
+            if (this.NumberOfOutputChannels > 0)
             {
-                Stop();
+                int read = sourceStream.Read(waveBuffer, 0, waveBuffer.Length);
+                if (read < waveBuffer.Length)
+                {
+                    // we have stopped
+                }
+
+                // Call the convertor
+                unsafe
+                {
+                    // TODO : check if it's better to lock the buffer at initialization?
+                    fixed (void* pBuffer = &waveBuffer[0])
+                    {
+                        convertor(new IntPtr(pBuffer), outputChannels, NumberOfOutputChannels, nbSamples);
+                    }
+                }
+
+                if (read == 0)
+                {
+                    Stop();
+                }
             }
         }
 
@@ -255,22 +296,35 @@ namespace NAudio.Wave
         }
 
         /// <summary>
+        /// The number of output channels we are currently using for playback
+        /// </summary>
+        public int NumberOfOutputChannels { get; private set; }
+
+        /// <summary>
+        /// The number of input channels we are currently recording from
+        /// </summary>
+        public int NumberOfInputChannels { get; private set; }
+
+        /// <summary>
         /// By default the first channel on the input WaveProvider is sent to the first ASIO output.
         /// This option sends it to the specified channel number.
         /// Warning: make sure you don't set it higher than the number of available output channels - 
         /// the number of source channels.
         /// n.b. Future NAudio may modify this
         /// </summary>
-        public int ChannelOffset
-        {
-            get { return this.channelOffset; }
-            set { this.channelOffset = value; }
-        }
+        public int ChannelOffset { get; set; }
+
+        /// <summary>
+        /// Input channel offset (used when recording), allowing you to choose to record from just one
+        /// specific input rather than them all
+        /// </summary>
+        public int InputChannelOffset { get; set; }
 
         /// <summary>
         /// Sets the volume (1.0 is unity gain)
         /// Not supported for ASIO Out. Set the volume on the input stream instead
         /// </summary>
+        [Obsolete("this function will be removed in a future NAudio as ASIO does not support setting the volume on the device")]
         public float Volume
         {
             get
@@ -300,6 +354,106 @@ namespace NAudio.Wave
                     this.syncContext.Post(state => handler(this, new StoppedEventArgs(e)), null);
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// Raised when ASIO data has been recorded.
+    /// It is important to handle this as quickly as possible as it is in the buffer callback
+    /// </summary>
+    public class AsioAudioAvailableEventArgs : EventArgs
+    {
+        /// <summary>
+        /// Initialises a new instance of AsioAudioAvailableEventArgs
+        /// </summary>
+        /// <param name="inputBuffers">Pointers to the ASIO buffers for each channel</param>
+        /// <param name="samplesPerBuffer">Number of samples in each buffer</param>
+        /// <param name="asioSampleType">Audio format within each buffer</param>
+        public AsioAudioAvailableEventArgs(IntPtr[] inputBuffers, int samplesPerBuffer, AsioSampleType asioSampleType)
+        {
+            this.InputBuffers = inputBuffers;
+            this.SamplesPerBuffer = samplesPerBuffer;
+            this.AsioSampleType = asioSampleType;
+        }
+
+        /// <summary>
+        /// Pointer to a buffer per input channel
+        /// </summary>
+        public IntPtr[] InputBuffers { get; private set; }
+
+        /// <summary>
+        /// Number of samples in each buffer
+        /// </summary>
+        public int SamplesPerBuffer { get; private set; }
+
+        /// <summary>
+        /// Audio format within each buffer
+        /// Most commonly this will be one of, Int32LSB, Int16LSB, Int24LSB or Float32LSB
+        /// </summary>
+        public AsioSampleType AsioSampleType { get; private set; }
+
+        
+        /// <summary>
+        /// Converts all the recorded audio into a buffer of 32 bit floating point samples, interleaved by channel
+        /// </summary>
+        /// <returns>The samples as 32 bit floating point, interleaved</returns>
+        public float[] GetAsInterleavedSamples()
+        {
+            int channels = InputBuffers.Length;
+            float[] samples = new float[SamplesPerBuffer * channels];
+            int index = 0;
+            unsafe
+            {
+                if (AsioSampleType == Asio.AsioSampleType.Int32LSB)
+                {
+                    for (int n = 0; n < SamplesPerBuffer; n++)
+                    {
+                        for (int ch = 0; ch < channels; ch++)
+                        {
+                            samples[index++] = *((int*)InputBuffers[ch] + n) / (float)Int32.MaxValue;
+                        }
+                    }
+                }
+                else if (AsioSampleType == Asio.AsioSampleType.Int16LSB)
+                {
+                    for (int n = 0; n < SamplesPerBuffer; n++)
+                    {
+                        for (int ch = 0; ch < channels; ch++)
+                        {
+                            samples[index++] = *((short*)InputBuffers[ch] + n) / (float)Int16.MaxValue;
+                        }
+                    }
+                }
+                else if (AsioSampleType == Asio.AsioSampleType.Int24LSB)
+                {
+                    for (int n = 0; n < SamplesPerBuffer; n++)
+                    {
+                        for (int ch = 0; ch < channels; ch++)
+                        {
+                            byte *pSample = ((byte*)InputBuffers[ch] + n * 3);
+
+                            //int sample = *pSample + *(pSample+1) << 8 + (sbyte)*(pSample+2) << 16;
+                            int sample = pSample[0] | (pSample[1] << 8) | ((sbyte)pSample[2] << 16);
+                            samples[index++] = sample / 8388608.0f;
+                        }
+                    }
+                }
+                else if (AsioSampleType == Asio.AsioSampleType.Float32LSB)
+                {
+                    for (int n = 0; n < SamplesPerBuffer; n++)
+                    {
+                        for (int ch = 0; ch < channels; ch++)
+                        {
+                            samples[index++] = *((float*)InputBuffers[ch] + n);
+                        }
+                    }
+                }
+                else
+                {
+                    throw new NotImplementedException(String.Format("ASIO Sample Type {0} not supported", AsioSampleType));
+                }
+            }
+            return samples;
         }
     }
 }

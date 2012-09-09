@@ -16,7 +16,7 @@ namespace NAudio.Wave.Asio
         /// <param name="waveFormat">The wave format.</param>
         /// <param name="asioType">The type.</param>
         /// <returns></returns>
-        public static SampleConvertor SelectSampleConvertor(WaveFormat waveFormat, ASIOSampleType asioType)
+        public static SampleConvertor SelectSampleConvertor(WaveFormat waveFormat, AsioSampleType asioType)
         {
             SampleConvertor convertor = null;
             bool is2Channels = waveFormat.Channels == 2;
@@ -24,7 +24,7 @@ namespace NAudio.Wave.Asio
             // TODO : IMPLEMENTS OTHER CONVERTOR TYPES
             switch (asioType)
             {
-                case ASIOSampleType.ASIOSTInt32LSB:
+                case AsioSampleType.Int32LSB:
                     switch (waveFormat.BitsPerSample)
                     {
                         case 16:
@@ -35,7 +35,7 @@ namespace NAudio.Wave.Asio
                             break;
                     }
                     break;
-                case ASIOSampleType.ASIOSTInt16LSB:
+                case AsioSampleType.Int16LSB:
                     switch (waveFormat.BitsPerSample)
                     {
                         case 16:
@@ -46,7 +46,7 @@ namespace NAudio.Wave.Asio
                             break;
                     }
                     break;
-                case ASIOSampleType.ASIOSTInt24LSB:                    
+                case AsioSampleType.Int24LSB:
                     switch (waveFormat.BitsPerSample)
                     {
                         case 16:
@@ -56,7 +56,7 @@ namespace NAudio.Wave.Asio
                             break;
                     }
                     break;
-                case ASIOSampleType.ASIOSTFloat32LSB:
+                case AsioSampleType.Float32LSB:
                     switch (waveFormat.BitsPerSample)
                     {
                         case 16:
@@ -70,7 +70,7 @@ namespace NAudio.Wave.Asio
                 default:
                     throw new ArgumentException(
                         String.Format("ASIO Buffer Type {0} is not yet supported.",
-                                      Enum.GetName(typeof(ASIOSampleType), asioType)));
+                                      Enum.GetName(typeof(AsioSampleType), asioType)));
             }
             return convertor;
         }
@@ -131,7 +131,6 @@ namespace NAudio.Wave.Asio
                 }
             }
         }
-
 
         /// <summary>
         /// Optimized convertor for 2 channels FLOAT
@@ -224,7 +223,6 @@ namespace NAudio.Wave.Asio
                 }
             }
         }
-
 
         /// <summary>
         /// Optimized convertor for 2 channels FLOAT

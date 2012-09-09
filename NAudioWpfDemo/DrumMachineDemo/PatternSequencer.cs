@@ -44,14 +44,24 @@ namespace NAudioWpfDemo.DrumMachineDemo
         public IList<MusicSampleProvider> GetNextMixerInputs(int sampleCount)
         {
             List<MusicSampleProvider> mixerInputs = new List<MusicSampleProvider>();
-            int samplePos = 0;           
+            int samplePos = 0;
+            if (newTempo)
+            {
+                int samplesPerBeat = (this.drumKit.WaveFormat.Channels * this.drumKit.WaveFormat.SampleRate * 60) / tempo;
+                this.samplesPerStep = samplesPerBeat / 4;
+                //patternPosition = 0;
+                newTempo = false;
+            }
+
             while (samplePos < sampleCount)
             {
-                if (currentStep == 0 && newTempo)
+                double offsetFromCurrent = (currentStep - patternPosition);
+                if (offsetFromCurrent < 0) offsetFromCurrent += drumPattern.Steps;
+                int delayForThisStep = (int)(this.samplesPerStep * offsetFromCurrent);
+                if (delayForThisStep >= sampleCount)
                 {
-                    int samplesPerBeat = (this.drumKit.WaveFormat.Channels * this.drumKit.WaveFormat.SampleRate * 60) / tempo;
-                    this.samplesPerStep = samplesPerBeat / 4;
-                    newTempo = false;
+                    // don't queue up any samples beyond the requested time range
+                    break;
                 }
 
                 for (int note = 0; note < drumPattern.Notes; note++)
@@ -59,10 +69,8 @@ namespace NAudioWpfDemo.DrumMachineDemo
                     if (drumPattern[note, currentStep] != 0)
                     {
                         var sampleProvider = drumKit.GetSampleProvider(note);
-                        Debug.WriteLine("beat at step {0}, patternPostion={1}", currentStep, patternPosition);
-                        double offsetFromCurrent = (currentStep - patternPosition);
-                        if (offsetFromCurrent < 0) offsetFromCurrent += drumPattern.Steps;
-                        sampleProvider.DelayBy = (int)(this.samplesPerStep * offsetFromCurrent);
+                        sampleProvider.DelayBy = delayForThisStep;
+                        Debug.WriteLine("beat at step {0}, patternPostion={1}, delayBy {2}", currentStep, patternPosition, delayForThisStep);
                         mixerInputs.Add(sampleProvider);
                     }
                 }

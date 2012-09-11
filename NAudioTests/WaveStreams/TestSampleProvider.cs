@@ -10,10 +10,10 @@ namespace NAudioTests.WaveStreams
     {
         private int length;
 
-        public TestSampleProvider(int sampleRate, int channels, int lengthInBytes = Int32.MaxValue)
+        public TestSampleProvider(int sampleRate, int channels, int length = Int32.MaxValue)
         {
             this.WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channels);
-            this.length = lengthInBytes;
+            this.length = length;
         }
 
         public int Read(float[] buffer, int offset, int count)

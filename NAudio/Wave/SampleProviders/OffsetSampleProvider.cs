@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace NAudio.Wave.SampleProviders
 {
@@ -13,30 +11,93 @@ namespace NAudio.Wave.SampleProviders
     /// </summary>
     public class OffsetSampleProvider : ISampleProvider
     {
-        private readonly ISampleProvider sourceProvider;
+        private readonly ISampleProvider _sourceProvider;
+        private int _phase; // 0 = not started yet, 1 = delay, 2 = skip, 3 = take, 4 = lead_out, 5 = end
+        private int _phasePos;
+        private int _delayBySamples;
+        private int _skipOverSamples;
+        private int _takeSamples;
+        private int _leadOutSamples;
 
         /// <summary>
         /// Number of samples of silence to insert before playing source
         /// </summary>
-        public int DelayBySamples { get; set; }
+        public int DelayBySamples
+        {
+            get { return _delayBySamples; }
+            set
+            {
+                if (_phase != 0)
+                { 
+                    throw new InvalidOperationException("Can't set DelayBySamples after calling Read");
+                }
+                if (value % WaveFormat.Channels != 0)
+                {
+                    throw new ArgumentException("DelayBySamples must be a multiple of WaveFormat.Channels");
+                }
+                _delayBySamples = value;
+            }
+        }
 
         /// <summary>
         /// Number of samples in source to discard
         /// </summary>
-        public int SkipOverSamples { get; set; }
+        public int SkipOverSamples
+        {
+            get { return _skipOverSamples; }
+            set
+            {
+                if (_phase != 0)
+                {
+                    throw new InvalidOperationException("Can't set SkipOverSamples after calling Read");
+                }
+                if (value % WaveFormat.Channels != 0)
+                {
+                    throw new ArgumentException("SkipOverSamples must be a multiple of WaveFormat.Channels");
+                }
+                _skipOverSamples = value;
+            }
+        }
 
         /// <summary>
         /// Number of samples to read from source (if 0, then read it all)
         /// </summary>
-        public int TakeSamples { get; set; }
+        public int TakeSamples
+        {
+            get { return _takeSamples; }
+            set
+            {
+                if (_phase != 0)
+                {
+                    throw new InvalidOperationException("Can't set TakeSamples after calling Read");
+                }
+                if (value % WaveFormat.Channels != 0)
+                {
+                    throw new ArgumentException("TakeSamples must be a multiple of WaveFormat.Channels");
+                }
+                _takeSamples = value;
+            }
+        }
 
         /// <summary>
         /// Number of samples of silence to insert after playing source
         /// </summary>
-        public int LeadOutSamples { get; set; }
-
-        private int phase; // 0 = delay, 1 = skip, 2 = take, 3 = lead_out, 4 = end
-        private int phasePos;
+        public int LeadOutSamples
+        {
+            get { return _leadOutSamples; }
+            set
+            {
+                if (_phase != 0)
+                {
+                    throw new InvalidOperationException("Can't set LeadOutSamples after calling Read");
+                }
+                if (value % WaveFormat.Channels != 0)
+                {
+                    throw new ArgumentException("LeadOutSamples must be a multiple of WaveFormat.Channels");
+                }
+                _leadOutSamples = value;
+            }
+        }
 
         /// <summary>
         /// Creates a new instance of offsetSampleProvider
@@ -44,7 +105,7 @@ namespace NAudio.Wave.SampleProviders
         /// <param name="sourceProvider">The Source Sample Provider to read from</param>
         public OffsetSampleProvider(ISampleProvider sourceProvider)
         {
-            this.sourceProvider = sourceProvider;
+            _sourceProvider = sourceProvider;
         }
 
         /// <summary>
@@ -52,7 +113,7 @@ namespace NAudio.Wave.SampleProviders
         /// </summary>
         public WaveFormat WaveFormat
         {
-            get { return this.sourceProvider.WaveFormat; }
+            get { return _sourceProvider.WaveFormat; }
         }
 
         /// <summary>
@@ -65,23 +126,29 @@ namespace NAudio.Wave.SampleProviders
         public int Read(float[] buffer, int offset, int count)
         {
             int samplesRead = 0;
-            if (phase == 0) // delay
+
+            if (_phase == 0) // not started yet
             {
-                int delaySamples = Math.Min(count, DelayBySamples - phasePos);
+                _phase++;
+            }
+
+            if (_phase == 1) // delay
+            {
+                int delaySamples = Math.Min(count, DelayBySamples - _phasePos);
                 for (int n = 0; n < delaySamples; n++)
                 {
                     buffer[offset + n] = 0;
                 }
-                phasePos += delaySamples;
+                _phasePos += delaySamples;
                 samplesRead += delaySamples;
-                if (phasePos >= DelayBySamples)
+                if (_phasePos >= DelayBySamples)
                 {
-                    phase++;
-                    phasePos = 0;
+                    _phase++;
+                    _phasePos = 0;
                 }
             }
 
-            if (phase == 1) // skip
+            if (_phase == 2) // skip
             {
                 if (SkipOverSamples > 0)
                 {
@@ -91,7 +158,7 @@ namespace NAudio.Wave.SampleProviders
                     while (samplesSkipped < SkipOverSamples)
                     {
                         int samplesRequired = Math.Min(SkipOverSamples - samplesSkipped, skipBuffer.Length);
-                        var read = sourceProvider.Read(skipBuffer, 0, samplesRequired);
+                        var read = _sourceProvider.Read(skipBuffer, 0, samplesRequired);
                         if (read == 0) // source has ended while still in skip
                         {
                             break;
@@ -99,38 +166,38 @@ namespace NAudio.Wave.SampleProviders
                         samplesSkipped += read;
                     }
                 }
-                phase++;
-                phasePos = 0;
+                _phase++;
+                _phasePos = 0;
             }
 
-            if (phase == 2) // take
+            if (_phase == 3) // take
             {
                 int samplesRequired = count - samplesRead;
                 if (TakeSamples != 0)
-                    samplesRequired = Math.Min(samplesRequired, TakeSamples - phasePos);
-                int read = sourceProvider.Read(buffer, offset + samplesRead, samplesRequired);
-                phasePos += read;
+                    samplesRequired = Math.Min(samplesRequired, TakeSamples - _phasePos);
+                int read = _sourceProvider.Read(buffer, offset + samplesRead, samplesRequired);
+                _phasePos += read;
                 samplesRead += read;
                 if (read < samplesRequired)
                 {
-                    phase++;
-                    phasePos = 0;
+                    _phase++;
+                    _phasePos = 0;
                 }
             }
 
-            if (phase == 3) // lead out
+            if (_phase == 4) // lead out
             {
-                int samplesRequired = Math.Min(count - samplesRead, LeadOutSamples - phasePos);
+                int samplesRequired = Math.Min(count - samplesRead, LeadOutSamples - _phasePos);
                 for (int n = 0; n < samplesRequired; n++)
                 {
                     buffer[offset + samplesRead + n] = 0;
                 }
-                phasePos += samplesRequired;
+                _phasePos += samplesRequired;
                 samplesRead += samplesRequired;
-                if (phasePos >= LeadOutSamples)
+                if (_phasePos >= LeadOutSamples)
                 {
-                    phase = 4;
-                    phasePos = 0;
+                    _phase = 4;
+                    _phasePos = 0;
                 }
             }
 

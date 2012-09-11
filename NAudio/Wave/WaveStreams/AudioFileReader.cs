@@ -34,7 +34,7 @@ namespace NAudio.Wave
             CreateReaderStream(fileName);
             this.sourceBytesPerSample = (readerStream.WaveFormat.BitsPerSample / 8) * readerStream.WaveFormat.Channels;
             this.destBytesPerSample = 8; // stereo float
-            this.sampleChannel = new SampleChannel(readerStream);
+            this.sampleChannel = new SampleChannel(readerStream, false);
             this.length = SourceToDest(readerStream.Length);
             this.lockObject = new object();
         }

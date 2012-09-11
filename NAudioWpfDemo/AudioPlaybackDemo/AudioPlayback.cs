@@ -69,7 +69,7 @@ namespace NAudioWpfDemo
             {
                 throw new InvalidOperationException("Unsupported extension");
             }
-            var inputStream = new SampleChannel(fileStream);
+            var inputStream = new SampleChannel(fileStream, true);
             var sampleStream = new NotifyingSampleProvider(inputStream);
             sampleStream.Sample += (s, e) => aggregator.Add(e.Left);
             return sampleStream;

@@ -6,7 +6,7 @@ namespace NAudio.Wave.SampleProviders
 {
     /// <summary>
     /// Utility class that takes an IWaveProvider input at any bit depth
-    /// and exposes it as an ISampleProvider. Turns mono inputs into stereo,
+    /// and exposes it as an ISampleProvider. Can turn mono inputs into stereo,
     /// and allows adjusting of volume
     /// (The eventual successor to WaveChannel32)
     /// This class also serves as an example of how you can link together several simple 
@@ -23,9 +23,20 @@ namespace NAudio.Wave.SampleProviders
         /// </summary>
         /// <param name="waveProvider">Source wave provider, must be PCM or IEEE</param>
         public SampleChannel(IWaveProvider waveProvider)
+            : this(waveProvider, false)
         {
-            ISampleProvider sampleProvider = SampleProviderConverters.ConvertWaveProviderIntoSampleProvider(waveProvider);            
-            if (sampleProvider.WaveFormat.Channels == 1)
+
+        }
+
+        /// <summary>
+        /// Initialises a new instance of SampleChannel
+        /// </summary>
+        /// <param name="waveProvider">Source wave provider, must be PCM or IEEE</param>
+        /// <param name="forceStereo">force mono inputs to become stereo</param>
+        public SampleChannel(IWaveProvider waveProvider, bool forceStereo)
+        {
+            ISampleProvider sampleProvider = SampleProviderConverters.ConvertWaveProviderIntoSampleProvider(waveProvider);
+            if (sampleProvider.WaveFormat.Channels == 1 && forceStereo)
             {
                 sampleProvider = new MonoToStereoSampleProvider(sampleProvider);
             }

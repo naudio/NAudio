@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using NAudio.Utils;
 
 namespace NAudio.Wave
 {
@@ -79,16 +80,7 @@ namespace NAudio.Wave
         /// <summary>
         /// persistent temporary buffer to prevent creating work for garbage collector
         /// </summary>
-        private byte[] tempBuffer;
-
-        private byte[] GetBuffer(int size)
-        {
-            if (tempBuffer == null || tempBuffer.Length < size)
-            {
-                tempBuffer = new byte[Math.Max(size, this.WaveFormat.AverageBytesPerSecond)];
-            }
-            return tempBuffer;
-        }
+        private byte[] inputBuffer;
 
         /// <summary>
         /// Reads data from this WaveProvider
@@ -108,7 +100,7 @@ namespace NAudio.Wave
             {
                 int inputBytesPerFrame = bytesPerSample * input.WaveFormat.Channels;
                 int bytesRequired = sampleFramesRequested * inputBytesPerFrame;
-                byte[] inputBuffer = GetBuffer(bytesRequired);
+                this.inputBuffer = BufferHelpers.Ensure(this.inputBuffer, bytesRequired);
                 int bytesRead = input.Read(inputBuffer, 0, bytesRequired);
                 sampleFramesRead = Math.Max(sampleFramesRead, bytesRead / inputBytesPerFrame);
 

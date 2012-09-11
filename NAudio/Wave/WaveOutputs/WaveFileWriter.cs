@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using NAudio.Wave.SampleProviders;
 
 namespace NAudio.Wave
 {
@@ -15,6 +16,17 @@ namespace NAudio.Wave
         private int dataChunkSize = 0;
         private WaveFormat format;
         private string filename;
+
+        /// <summary>
+        /// Creates a 16 bit Wave File from an ISampleProvider
+        /// BEWARE: the source provider must not return data indefinitely
+        /// </summary>
+        /// <param name="filename">The filename to write to</param>
+        /// <param name="sourceProvider">The source sample provider</param>
+        public static void CreateWaveFile16(string filename, ISampleProvider sourceProvider)
+        {
+            CreateWaveFile(filename, new SampleToWaveProvider16(sourceProvider));
+        }
 
         /// <summary>
         /// Creates a Wave file by reading all the data from a WaveProvider

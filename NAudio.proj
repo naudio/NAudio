@@ -38,7 +38,7 @@
       <MakeDir Directories="$(BuildFolder)"/>
    </Target>
    
-   <Target Name="NuGet" DependsOnTargets="MakeBuildFolder;DebugBuild">
+   <Target Name="NuGet" DependsOnTargets="MakeBuildFolder;ReleaseBuild">
       <exec Command="Tools\NuGet Pack NAudio.nuspec -OutputDirectory $(BuildFolder)" />
    </Target>
    
@@ -64,10 +64,11 @@
    </ItemGroup>
 
    <ItemGroup>
-       <ZipLibraryFiles Include="NAudio\bin\Debug\NAudio.dll" />
-       <ZipLibraryFiles Include="NAudio\bin\Debug\NAudio.xml" />
-       <ZipLibraryFiles Include="NAudio.WindowsMediaFormat\bin\Debug\NAudio.WindowsMediaFormat.dll" />
+       <ZipLibraryFiles Include="NAudio\bin\Release\NAudio.dll" />
+       <ZipLibraryFiles Include="NAudio\bin\Release\NAudio.xml" />
+       <ZipLibraryFiles Include="NAudio.WindowsMediaFormat\bin\Release\NAudio.WindowsMediaFormat.dll" />
        <ZipLibraryFiles Include="license.txt" />
+       <ZipLibraryFiles Include="readme.txt" />
    </ItemGroup>
 
    <ItemGroup>

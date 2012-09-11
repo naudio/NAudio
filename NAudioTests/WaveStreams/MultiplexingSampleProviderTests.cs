@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using NAudioTests.Utils;
 using NUnit.Framework;
 using NAudio.Wave.SampleProviders;
 using NAudio.Wave;
@@ -66,9 +67,8 @@ namespace NAudioTests.WaveStreams
             var input1 = new TestSampleProvider(32000, 1);
             float[] expected = new float[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
             var mp = new MultiplexingSampleProvider(new ISampleProvider[] { input1 }, 1);
-            EnsureReadsExpected(mp, expected);
+            mp.AssertReadsExpected(expected);
         }
-
 
         [Test]
         public void OneInTwoOutShouldConvertMonoToStereo()
@@ -76,15 +76,7 @@ namespace NAudioTests.WaveStreams
             var input1 = new TestSampleProvider(32000, 1);
             float[] expected = new float[] { 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9 };
             var mp = new MultiplexingSampleProvider(new ISampleProvider[] { input1 }, 2);
-            EnsureReadsExpected(mp, expected);
-        }
-
-        private void EnsureReadsExpected(MultiplexingSampleProvider mp, float[] expected)
-        {
-            float[] buffer = new float[expected.Length];
-            var read = mp.Read(buffer, 0, expected.Length);
-            Assert.AreEqual(expected.Length, read);
-            Assert.AreEqual(expected, buffer);
+            mp.AssertReadsExpected(expected);
         }
 
         [Test]
@@ -93,7 +85,7 @@ namespace NAudioTests.WaveStreams
             var input1 = new TestSampleProvider(32000, 2);
             float[] expected = new float[] { 0, 2, 4, 6, 8, 10, 12, 14, 16, 18 };
             var mp = new MultiplexingSampleProvider(new ISampleProvider[] { input1 }, 1);
-            EnsureReadsExpected(mp, expected);
+            mp.AssertReadsExpected(expected);
         }
 
         [Test]
@@ -103,7 +95,7 @@ namespace NAudioTests.WaveStreams
             float[] expected = new float[] { 1, 3, 5, 7, 9, 11, 13, 15, 17, 19 };
             var mp = new MultiplexingSampleProvider(new ISampleProvider[] { input1 }, 1);
             mp.ConnectInputToOutput(1, 0);
-            EnsureReadsExpected(mp, expected);
+            mp.AssertReadsExpected(expected);
         }
 
         [Test]
@@ -112,7 +104,6 @@ namespace NAudioTests.WaveStreams
             var input1 = new TestSampleProvider(32000, 2);
             float[] expected = new float[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 };
             var mp = new MultiplexingSampleProvider(new ISampleProvider[] { input1 }, 2);
-            EnsureReadsExpected(mp, expected);
         }
 
         [Test]
@@ -122,7 +113,7 @@ namespace NAudioTests.WaveStreams
             var input2 = new TestSampleProvider(32000, 1) { Position = 100 };
             float[] expected = new float[] { 0, 100, 1, 101, 2, 102, 3, 103, 4, 104, 5, 105 };
             var mp = new MultiplexingSampleProvider(new ISampleProvider[] { input1, input2 }, 2);
-            EnsureReadsExpected(mp, expected);
+            mp.AssertReadsExpected(expected);
         }
 
         [Test]
@@ -133,7 +124,7 @@ namespace NAudioTests.WaveStreams
             var mp = new MultiplexingSampleProvider(new ISampleProvider[] { input1 }, 2);
             mp.ConnectInputToOutput(0, 1);
             mp.ConnectInputToOutput(1, 0);
-            EnsureReadsExpected(mp, expected);
+            mp.AssertReadsExpected(expected);
         }
 
         [Test]
@@ -203,7 +194,7 @@ namespace NAudioTests.WaveStreams
             var input2 = new TestSampleProvider(32000, 1);
             float[] expected = new float[] { 0, 0, 0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7 };
             var mp = new MultiplexingSampleProvider(new ISampleProvider[] { input1, input2 }, 2);
-            EnsureReadsExpected(mp, expected);
+            mp.AssertReadsExpected(expected);
         }
 
         [Test]

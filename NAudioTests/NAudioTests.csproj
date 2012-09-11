@@ -100,6 +100,7 @@
     <Compile Include="Utils\BlockAlignedWaveStream.cs" />
     <Compile Include="Utils\NullWaveStream.cs" />
     <Compile Include="Utils\OSUtils.cs" />
+    <Compile Include="Utils\SampleProviderTestHelpers.cs" />
     <Compile Include="Wasapi\AudioClientTests.cs" />
     <Compile Include="Wasapi\MMDeviceEnumeratorTests.cs" />
     <Compile Include="WaveFormats\AdpcmWaveFormatTests.cs" />
@@ -110,6 +111,7 @@
     <Compile Include="WaveStreams\MonoToStereoProvider16Tests.cs" />
     <Compile Include="WaveStreams\MultiplexingSampleProviderTests.cs" />
     <Compile Include="WaveStreams\MultiplexingWaveProviderTests.cs" />
+    <Compile Include="WaveStreams\OffsetSampleProviderTests.cs" />
     <Compile Include="WaveStreams\StereoToMonoProvider16Tests.cs" />
     <Compile Include="WaveStreams\TestSampleProvider.cs" />
     <Compile Include="WaveStreams\TestWaveProvider.cs" />

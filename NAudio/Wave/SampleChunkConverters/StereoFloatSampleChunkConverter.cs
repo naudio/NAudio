@@ -1,15 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using NAudio.Utils;
 
 namespace NAudio.Wave.SampleProviders
 {
     class StereoFloatSampleChunkConverter : ISampleChunkConverter
     {
-        int sourceSample;
-        byte[] sourceBuffer;
-        WaveBuffer sourceWaveBuffer;
-        int sourceSamples;
+        private int sourceSample;
+        private byte[] sourceBuffer;
+        private WaveBuffer sourceWaveBuffer;
+        private int sourceSamples;
 
         public bool Supports(WaveFormat waveFormat)
         {
@@ -20,7 +21,7 @@ namespace NAudio.Wave.SampleProviders
         public void LoadNextChunk(IWaveProvider source, int samplePairsRequired)
         {
             int sourceBytesRequired = samplePairsRequired * 8;
-            sourceBuffer = GetSourceBuffer(sourceBytesRequired);
+            sourceBuffer = BufferHelpers.Ensure(sourceBuffer, sourceBytesRequired);
             sourceWaveBuffer = new WaveBuffer(sourceBuffer);
             sourceSamples = source.Read(sourceBuffer, 0, sourceBytesRequired) / 4;
             sourceSample = 0;
@@ -40,18 +41,6 @@ namespace NAudio.Wave.SampleProviders
                 sampleRight = 0.0f;
                 return false;
             }
-        }
-
-        /// <summary>
-        /// Helper function to avoid creating a new buffer every read
-        /// </summary>
-        byte[] GetSourceBuffer(int bytesRequired)
-        {
-            if (sourceBuffer == null || sourceBuffer.Length < bytesRequired)
-            {
-                sourceBuffer = new byte[bytesRequired];
-            }
-            return sourceBuffer;
         }
     }
 }

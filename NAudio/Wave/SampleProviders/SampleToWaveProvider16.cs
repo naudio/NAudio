@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using NAudio.Utils;
 
 namespace NAudio.Wave.SampleProviders
 {
@@ -32,18 +33,6 @@ namespace NAudio.Wave.SampleProviders
         }
 
         /// <summary>
-        /// Helper function to avoid creating a new buffer every read
-        /// </summary>
-        float[] GetSourceBuffer(int samplesRequired)
-        {
-            if (this.sourceBuffer == null || this.sourceBuffer.Length < samplesRequired)
-            {
-                this.sourceBuffer = new float[samplesRequired];
-            }
-            return sourceBuffer;
-        }
-
-        /// <summary>
         /// Reads bytes from this wave stream
         /// </summary>
         /// <param name="destBuffer">The destination buffer</param>
@@ -53,7 +42,7 @@ namespace NAudio.Wave.SampleProviders
         public int Read(byte[] destBuffer, int offset, int numBytes)
         {
             int samplesRequired = numBytes / 2;
-            float[] sourceBuffer = GetSourceBuffer(samplesRequired);
+            this.sourceBuffer = BufferHelpers.Ensure(sourceBuffer, samplesRequired);
             int sourceSamples = sourceProvider.Read(sourceBuffer, 0, samplesRequired);
             WaveBuffer destWaveBuffer = new WaveBuffer(destBuffer);
 

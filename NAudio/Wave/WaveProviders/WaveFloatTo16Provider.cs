@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using NAudio.Wave;
+using NAudio.Utils;
 
 namespace NAudio.Wave
 {
@@ -33,18 +34,6 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// Helper function to avoid creating a new buffer every read
-        /// </summary>
-        byte[] GetSourceBuffer(int bytesRequired)
-        {
-            if (this.sourceBuffer == null || this.sourceBuffer.Length < bytesRequired)
-            {
-                this.sourceBuffer = new byte[bytesRequired];
-            }
-            return sourceBuffer;
-        }
-
-        /// <summary>
         /// Reads bytes from this wave stream
         /// </summary>
         /// <param name="destBuffer">The destination buffer</param>
@@ -54,7 +43,7 @@ namespace NAudio.Wave
         public int Read(byte[] destBuffer, int offset, int numBytes)
         {
             int sourceBytesRequired = numBytes * 2;
-            byte[] sourceBuffer = GetSourceBuffer(sourceBytesRequired);
+            sourceBuffer = BufferHelpers.Ensure(sourceBuffer, sourceBytesRequired);
             int sourceBytesRead = sourceProvider.Read(sourceBuffer, 0, sourceBytesRequired);
             WaveBuffer sourceWaveBuffer = new WaveBuffer(sourceBuffer);
             WaveBuffer destWaveBuffer = new WaveBuffer(destBuffer);

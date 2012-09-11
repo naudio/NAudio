@@ -76,7 +76,7 @@ namespace NAudio.Wave.SampleProviders
         {
             if (tempBuffer == null || tempBuffer.Length < size)
             {
-                tempBuffer = new float[Math.Max(size, this.WaveFormat.AverageBytesPerSecond) / 4];
+                tempBuffer = new float[size];
             }
             return tempBuffer;
         }

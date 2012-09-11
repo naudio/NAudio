@@ -135,7 +135,7 @@ namespace NAudio.Wave
         public override int Read(byte[] buffer, int offset, int count)
         {
             lock (this)
-            {                
+            {
                 // 1. attempt to fill the circular buffer with enough data to meet our request
                 while (BufferEndPosition < position + count)
                 {

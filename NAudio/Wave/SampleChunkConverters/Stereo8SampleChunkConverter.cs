@@ -1,14 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using NAudio.Utils;
 
 namespace NAudio.Wave.SampleProviders
 {
     class Stereo8SampleChunkConverter : ISampleChunkConverter
     {
-        int offset;
-        byte[] sourceBuffer;
-        int sourceBytes;
+        private int offset;
+        private byte[] sourceBuffer;
+        private int sourceBytes;
 
         public bool Supports(WaveFormat waveFormat)
         {
@@ -17,11 +18,10 @@ namespace NAudio.Wave.SampleProviders
                 waveFormat.Channels == 2;
         }
 
-
         public void LoadNextChunk(IWaveProvider source, int samplePairsRequired)
         {
             int sourceBytesRequired = samplePairsRequired * 2;
-            sourceBuffer = GetSourceBuffer(sourceBytesRequired);
+            sourceBuffer = BufferHelpers.Ensure(sourceBuffer, sourceBytesRequired);
             sourceBytes = source.Read(sourceBuffer, 0, sourceBytesRequired);
             offset = 0;
         }
@@ -40,18 +40,6 @@ namespace NAudio.Wave.SampleProviders
                 sampleRight = 0.0f;
                 return false;
             }
-        }
-
-        /// <summary>
-        /// Helper function to avoid creating a new buffer every read
-        /// </summary>
-        byte[] GetSourceBuffer(int bytesRequired)
-        {
-            if (sourceBuffer == null || sourceBuffer.Length < bytesRequired)
-            {
-                sourceBuffer = new byte[bytesRequired];
-            }
-            return sourceBuffer;
         }
     }
 }

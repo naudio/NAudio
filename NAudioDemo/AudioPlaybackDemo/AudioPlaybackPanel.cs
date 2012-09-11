@@ -146,7 +146,7 @@ namespace NAudioDemo.AudioPlaybackDemo
                 throw new InvalidOperationException("Unsupported file extension");
             }
             this.fileWaveStream = plugin.CreateWaveStream(fileName);
-            var waveChannel =  new SampleChannel(this.fileWaveStream);
+            var waveChannel =  new SampleChannel(this.fileWaveStream, true);
             this.setVolumeDelegate = (vol) => waveChannel.Volume = vol;
             waveChannel.PreVolumeMeter += OnPreVolumeMeter;
             

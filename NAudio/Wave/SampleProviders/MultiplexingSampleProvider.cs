@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using NAudio.Utils;
 
 namespace NAudio.Wave.SampleProviders
 {
@@ -70,16 +71,7 @@ namespace NAudio.Wave.SampleProviders
         /// <summary>
         /// persistent temporary buffer to prevent creating work for garbage collector
         /// </summary>
-        private float[] tempBuffer;
-
-        private float[] GetBuffer(int size)
-        {
-            if (tempBuffer == null || tempBuffer.Length < size)
-            {
-                tempBuffer = new float[size];
-            }
-            return tempBuffer;
-        }
+        private float[] inputBuffer;
 
         /// <summary>
         /// Reads samples from this sample provider
@@ -97,7 +89,7 @@ namespace NAudio.Wave.SampleProviders
             foreach (var input in inputs)
             {
                 int samplesRequired = sampleFramesRequested * input.WaveFormat.Channels;
-                float[] inputBuffer = GetBuffer(samplesRequired);
+                this.inputBuffer = BufferHelpers.Ensure(this.inputBuffer, samplesRequired);
                 int samplesRead = input.Read(inputBuffer, 0, samplesRequired);
                 sampleFramesRead = Math.Max(sampleFramesRead, samplesRead / input.WaveFormat.Channels);
 

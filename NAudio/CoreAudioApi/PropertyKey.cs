@@ -17,5 +17,14 @@ namespace NAudio.CoreAudioApi
         /// Property ID
         /// </summary>
         public int propertyId;
+        /// <summary>
+        /// <param name="formatId"></param>
+        /// <param name="propertyId"></param>
+        /// </summary>
+        public PropertyKey(Guid formatId, int propertyId)
+        {
+            this.formatId = formatId;
+            this.propertyId = propertyId;
+        }
     }
 }

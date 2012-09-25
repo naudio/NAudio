@@ -145,9 +145,9 @@ namespace NAudio.CoreAudioApi
                 {
                     GetPropertyInformation();
                 }
-                if (_PropertyStore.Contains(PropertyKeys.PKEY_DeviceInterface_FriendlyName))
+                if (_PropertyStore.Contains(PropertyKeys.PKEY_Device_FriendlyName))
                 {
-                    return (string)_PropertyStore[PropertyKeys.PKEY_DeviceInterface_FriendlyName].Value;
+                    return (string)_PropertyStore[PropertyKeys.PKEY_Device_FriendlyName].Value;
                 }
                 else
                     return "Unknown";
@@ -165,9 +165,9 @@ namespace NAudio.CoreAudioApi
                 {
                     GetPropertyInformation();
                 }
-                if (_PropertyStore.Contains(PropertyKeys.PKEY_Device_FriendlyName))
+                if (_PropertyStore.Contains(PropertyKeys.PKEY_DeviceInterface_FriendlyName))
                 {
-                    return (string)_PropertyStore[PropertyKeys.PKEY_Device_FriendlyName].Value;
+                    return (string)_PropertyStore[PropertyKeys.PKEY_DeviceInterface_FriendlyName].Value;
                 }
                 else
                 {

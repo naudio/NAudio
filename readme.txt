@@ -17,6 +17,7 @@ biermeester
 ChunkWare Music Software
 CKing
 DaMacc
+eejake52
 Giawa
 Hfuy
 Idael Cardaso 
@@ -30,6 +31,7 @@ Pygmy
 Ray Molenkamp
 Robert Bristow-Johnson
 Scott Fleischman 
+Sirish Bajpai
 Steve Underwood
 Ted Murphy
 Thefiloe

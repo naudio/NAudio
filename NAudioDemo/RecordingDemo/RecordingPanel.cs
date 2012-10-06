@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Text;
+using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 using NAudio.Wave;
 using System.Diagnostics;
@@ -15,14 +12,16 @@ namespace NAudioDemo
 {
     public partial class RecordingPanel : UserControl
     {
-        IWaveIn waveIn;
-        WaveFileWriter writer;
-        string outputFilename;
+        private IWaveIn waveIn;
+        private WaveFileWriter writer;
+        private string outputFilename;
+        private readonly string outputFolder;
 
         public RecordingPanel()
         {
             InitializeComponent();
-            if (System.Environment.OSVersion.Version.Major >= 6)
+            Disposed += OnRecordingPanelDisposed;
+            if (Environment.OSVersion.Version.Major >= 6)
             {
                 LoadWasapiDevicesCombo();
             }
@@ -32,36 +31,29 @@ namespace NAudioDemo
                 comboWasapiDevices.Enabled = false;
                 radioButtonWasapiLoopback.Enabled = false;
             }
+            outputFolder = Path.Combine(Path.GetTempPath(), "NAudioDemo");
+            Directory.CreateDirectory(outputFolder);
+        }
+
+        void OnRecordingPanelDisposed(object sender, EventArgs e)
+        {
+            Cleanup();
         }
 
         private void LoadWasapiDevicesCombo()
         {
-            MMDeviceEnumerator deviceEnum = new MMDeviceEnumerator();
-            MMDeviceCollection deviceCol = deviceEnum.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active);
+            var deviceEnum = new MMDeviceEnumerator();
+            var devices = deviceEnum.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active).ToList();
 
-            Collection<MMDevice> devices = new Collection<MMDevice>();
-
-            foreach (MMDevice device in deviceCol)
-            {
-                devices.Add(device);
-            }
-
-            this.comboWasapiDevices.DataSource = devices;
-            this.comboWasapiDevices.DisplayMember = "FriendlyName";
+            comboWasapiDevices.DataSource = devices;
+            comboWasapiDevices.DisplayMember = "FriendlyName";
         }
 
-        private void buttonStartRecording_Click(object sender, EventArgs e)
+        private void OnButtonStartRecordingClick(object sender, EventArgs e)
         {
             if (waveIn == null)
             {
-                if(outputFilename == null)
-                {
-                    buttonSelectOutputFile_Click(sender, e);
-                }
-                if(outputFilename == null)
-                {
-                    return;
-                }
+                outputFilename = String.Format("NAudioDemo {0:yyy-mm-dd HH-mm-ss}.wav", DateTime.Now);
                 if (radioButtonWaveIn.Checked)
                 {
                     waveIn = new WaveIn();
@@ -84,50 +76,56 @@ namespace NAudioDemo
                     waveIn = new WasapiLoopbackCapture();
                 }
                 
-                writer = new WaveFileWriter(outputFilename, waveIn.WaveFormat);
+                writer = new WaveFileWriter(Path.Combine(outputFolder, outputFilename), waveIn.WaveFormat);
 
-                waveIn.DataAvailable += waveIn_DataAvailable;
-                waveIn.RecordingStopped += waveIn_RecordingStopped;
+                waveIn.DataAvailable += OnDataAvailable;
+                waveIn.RecordingStopped += OnRecordingStopped;
                 waveIn.StartRecording();
                 buttonStartRecording.Enabled = false;
             }
         }
 
-        void waveIn_RecordingStopped(object sender, StoppedEventArgs e)
+        void OnRecordingStopped(object sender, StoppedEventArgs e)
         {
             if (this.InvokeRequired)
             {
-                this.BeginInvoke(new EventHandler<StoppedEventArgs>(waveIn_RecordingStopped), sender, e);
+                this.BeginInvoke(new EventHandler<StoppedEventArgs>(OnRecordingStopped), sender, e);
             }
             else
             {
-                if (waveIn != null) // working around problem with double raising of RecordingStopped
+                Cleanup();
+                buttonStartRecording.Enabled = true;
+                progressBar1.Value = 0;
+                if (e.Exception != null)
                 {
-                    //waveIn.Dispose();
-                    waveIn = null;
-                    writer.Close();
-                    writer = null;
-                    buttonStartRecording.Enabled = true;
-                    progressBar1.Value = 0;
-                    if (e.Exception != null)
-                    {
-                        MessageBox.Show(String.Format("A problem was encountered during recording {0}",
-                                                      e.Exception.Message));
-                    }
-                    if (checkBoxAutoPlay.Checked)
-                    {
-                        Process.Start(outputFilename);
-                    }
+                    MessageBox.Show(String.Format("A problem was encountered during recording {0}",
+                                                  e.Exception.Message));
                 }
+                int newItemIndex = listBoxRecordings.Items.Add(outputFilename);
+                listBoxRecordings.SelectedIndex = newItemIndex;
             }
         }
 
-        void waveIn_DataAvailable(object sender, WaveInEventArgs e)
+        private void Cleanup()
+        {
+            if (waveIn != null) // working around problem with double raising of RecordingStopped
+            {
+                waveIn.Dispose();
+                waveIn = null;
+            }
+            if (writer != null)
+            {
+                writer.Close();
+                writer = null;
+            }
+        }
+
+        void OnDataAvailable(object sender, WaveInEventArgs e)
         {
             if (this.InvokeRequired)
             {
                 //Debug.WriteLine("Data Available");
-                this.BeginInvoke(new EventHandler<WaveInEventArgs>(waveIn_DataAvailable), sender, e);
+                this.BeginInvoke(new EventHandler<WaveInEventArgs>(OnDataAvailable), sender, e);
             }
             else
             {
@@ -151,7 +149,7 @@ namespace NAudioDemo
             waveIn.StopRecording();
         }
 
-        private void buttonStopRecording_Click(object sender, EventArgs e)
+        private void OnButtonStopRecordingClick(object sender, EventArgs e)
         {
             if (waveIn != null)
             {
@@ -159,16 +157,37 @@ namespace NAudioDemo
             }
         }
 
-        private void buttonSelectOutputFile_Click(object sender, EventArgs e)
+        private void OnButtonPlayClick(object sender, EventArgs e)
         {
-            SaveFileDialog saveFileDialog = new SaveFileDialog();
-            saveFileDialog.Title = "Select output file:";
-            saveFileDialog.Filter = "WAV Files (*.wav)|*.wav";
-            saveFileDialog.FileName = outputFilename;
-            if (saveFileDialog.ShowDialog() == DialogResult.OK)
+            if (listBoxRecordings.SelectedItem != null)
             {
-                outputFilename = saveFileDialog.FileName;
+                Process.Start(Path.Combine(outputFolder, (string)listBoxRecordings.SelectedItem));
             }
+        }
+
+        private void OnButtonDeleteClick(object sender, EventArgs e)
+        {
+            if (listBoxRecordings.SelectedItem != null)
+            {
+                try
+                {
+                    File.Delete(Path.Combine(outputFolder, (string)listBoxRecordings.SelectedItem));
+                    listBoxRecordings.Items.Remove(listBoxRecordings.SelectedItem);
+                    if (listBoxRecordings.Items.Count > 0)
+                    {
+                        listBoxRecordings.SelectedIndex = 0;
+                    }
+                }
+                catch (Exception)
+                {
+                    MessageBox.Show("Could not delete recording");
+                }
+            }
+        }
+
+        private void OnOpenFolderClick(object sender, EventArgs e)
+        {
+            Process.Start(outputFolder);
         }
     }
 

@@ -23,6 +23,7 @@ namespace NAudio.CoreAudioApi
         private AudioClient audioClient;
         private int bytesPerFrame;
         private WaveFormat waveFormat;
+        private bool initialized;
 
         /// <summary>
         /// Indicates recorded data is available 
@@ -73,6 +74,9 @@ namespace NAudio.CoreAudioApi
 
         private void InitializeCaptureDevice()
         {
+            if (initialized)
+                return;
+
             long requestedDuration = REFTIMES_PER_MILLISEC * 100;
 
             if (!audioClient.IsFormatSupported(AudioClientShareMode.Shared, WaveFormat))
@@ -93,6 +97,8 @@ namespace NAudio.CoreAudioApi
             this.bytesPerFrame = this.waveFormat.Channels * this.waveFormat.BitsPerSample / 8;
             this.recordBuffer = new byte[bufferFrameCount * bytesPerFrame];
             Debug.WriteLine(string.Format("record buffer size = {0}", this.recordBuffer.Length));
+
+            initialized = true;
         }
 
         /// <summary>

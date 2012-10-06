@@ -16,18 +16,17 @@ namespace NAudio.Wave
         private long length;
         private long position;
         private readonly int bytesPerSample;
-        private bool autoStop;
 
         /// <summary>
         /// Creates a new 32 bit WaveMixerStream
         /// </summary>
         public WaveMixerStream32()
         {
-            this.autoStop = true;
-            this.waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(44100, 2);
-            this.bytesPerSample = 4;
-            this.inputStreams = new List<WaveStream>();
-            this.inputsLock = new object();
+            AutoStop = true;
+            waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(44100, 2);
+            bytesPerSample = 4;
+            inputStreams = new List<WaveStream>();
+            inputsLock = new object();
         }
 
         /// <summary>
@@ -41,9 +40,9 @@ namespace NAudio.Wave
         public WaveMixerStream32(IEnumerable<WaveStream> inputStreams, bool autoStop)
             : this()
         {
-            this.autoStop = autoStop;
+            AutoStop = autoStop;
 
-            foreach (WaveStream inputStream in inputStreams)
+            foreach (var inputStream in inputStreams)
             {
                 AddInputStream(inputStream);
             }
@@ -56,9 +55,9 @@ namespace NAudio.Wave
         public void AddInputStream(WaveStream waveStream)
         {
             if (waveStream.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
-                throw new ArgumentException("Must be IEEE floating point", "waveStream.WaveFormat");
+                throw new ArgumentException("Must be IEEE floating point", "waveStream");
             if (waveStream.WaveFormat.BitsPerSample != 32)
-                throw new ArgumentException("Only 32 bit audio currently supported", "waveStream.WaveFormat");
+                throw new ArgumentException("Only 32 bit audio currently supported", "waveStream");
 
             if (inputStreams.Count == 0)
             {
@@ -70,7 +69,7 @@ namespace NAudio.Wave
             else
             {
                 if (!waveStream.WaveFormat.Equals(waveFormat))
-                    throw new ArgumentException("All incoming channels must have the same format", "inputStreams.WaveFormat");
+                    throw new ArgumentException("All incoming channels must have the same format", "waveStream");
             }
 
             lock (inputsLock)
@@ -78,7 +77,7 @@ namespace NAudio.Wave
                 this.inputStreams.Add(waveStream);
                 this.length = Math.Max(this.length, waveStream.Length);
                 // get to the right point in this input file
-                this.Position = Position;
+                waveStream.Position = Position;
             }
         }
 
@@ -90,14 +89,15 @@ namespace NAudio.Wave
         {
             lock (inputsLock)
             {
-                if (this.inputStreams.Remove(waveStream))
+                if (inputStreams.Remove(waveStream))
                 {
                     // recalculate the length
-                    this.length = 0;
-                    foreach (WaveStream inputStream in inputStreams)
+                    long newLength = 0;
+                    foreach (var inputStream in inputStreams)
                     {
-                        this.length = Math.Max(this.length, waveStream.Length);
+                        newLength = Math.Max(length, inputStream.Length);
                     }
+                    length = newLength;
                 }
             }
         }
@@ -107,17 +107,13 @@ namespace NAudio.Wave
         /// </summary>
         public int InputCount
         {
-            get { return this.inputStreams.Count; }
+            get { return inputStreams.Count; }
         }
 
         /// <summary>
         /// Automatically stop when all inputs have been read
         /// </summary>
-        public bool AutoStop
-        {
-            get { return autoStop; }
-            set { autoStop = value; }
-        }
+        public bool AutoStop { get; set; }
 
         /// <summary>
         /// Reads bytes from this wave stream
@@ -129,7 +125,7 @@ namespace NAudio.Wave
         /// <exception cref="ArgumentException">Thrown if an invalid number of bytes requested</exception>
         public override int Read(byte[] buffer, int offset, int count)
         {
-            if (autoStop)
+            if (AutoStop)
             {
                 if (position + count > length)
                     count = (int)(length - position);
@@ -147,10 +143,10 @@ namespace NAudio.Wave
             int bytesRead = 0;
 
             // sum the channels in
-            byte[] readBuffer = new byte[count];
+            var readBuffer = new byte[count];
             lock (inputsLock)
             {
-                foreach (WaveStream inputStream in inputStreams)
+                foreach (var inputStream in inputStreams)
                 {
                     if (inputStream.HasData(count))
                     {

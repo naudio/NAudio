@@ -269,6 +269,24 @@ namespace NAudio.Wave
         }
 
         /// <summary>
+        /// Gets the current position from the wave output device.
+        /// </summary>
+        public TimeSpan PlaybackPosition
+        {
+            get
+            {
+                // bytes played in this stream
+                var pos = GetPosition();
+
+                // samples played in this stream
+                pos /= this.waveStream.WaveFormat.BitsPerSample * this.waveStream.WaveFormat.Channels;
+
+                // ms played in this stream
+                return TimeSpan.FromMilliseconds(pos * 1000.0 / this.waveStream.WaveFormat.SampleRate);
+            }
+        }
+
+        /// <summary>
         /// Playback State
         /// </summary>
         public PlaybackState PlaybackState

@@ -280,6 +280,41 @@ namespace NAudio.Wave
         }
 
         /// <summary>
+        /// Gets the current position in bytes from the wave output device.
+        /// (n.b. this is not the same thing as the position within your reader
+        /// stream)
+        /// </summary>
+        /// <returns>Position in bytes</returns>
+        public long GetPosition()
+        {
+            throw new NotSupportedException("Get the driver latency and calculate the position directly.");
+        }
+
+        /// <summary>
+        /// Gets the current position from the wave output device.
+        /// </summary>
+        public TimeSpan PlaybackPosition
+        {
+            get
+            {
+                throw new NotSupportedException("Get the driver latency and calculate the position directly.");
+            }
+        }
+
+        /// <summary>
+        /// Gets the latency (in ms) of the playback driver
+        /// </summary>
+        public int PlaybackLatency
+        {
+            get
+            {
+                int latency, temp;
+                driver.Driver.getLatencies(out temp, out latency);
+                return latency;
+            }
+        }
+
+        /// <summary>
         /// Playback State
         /// </summary>
         public PlaybackState PlaybackState

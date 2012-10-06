@@ -15,6 +15,7 @@ namespace NAudio.CoreAudioApi
         WaveFormat mixFormat;
         AudioRenderClient audioRenderClient;
         AudioCaptureClient audioCaptureClient;
+        AudioClockClient audioClockClient;
 
         internal AudioClient(IAudioClient audioClientInterface)
         {
@@ -136,12 +137,29 @@ namespace NAudio.CoreAudioApi
 
         // TODO: GetService:
         // IID_IAudioCaptureClient
-        // IID_IAudioClock
         // IID_IAudioSessionControl
         // IID_IAudioStreamVolume
         // IID_IChannelAudioVolume
         // IID_ISimpleAudioVolume
 
+        // IID_IAudioClock
+        /// <summary>
+        /// Gets the AudioClockClient service
+        /// </summary>
+        public AudioClockClient AudioClockClient
+        {
+            get
+            {
+                if (audioClockClient == null)
+                {
+                    object audioClockClientInterface;
+                    Guid audioClockClientGuid = new Guid("6f49ff73-6727-49AC-A008-D98CF5E70048");
+                    Marshal.ThrowExceptionForHR(audioClientInterface.GetService(ref audioClockClientGuid, out audioClockClientInterface));
+                    audioClockClient = new AudioClockClient((IAudioClock)audioClockClientInterface);
+                }
+                return audioClockClient;
+            }
+        }
         
         /// <summary>
         /// Gets the AudioRenderClient service
@@ -276,6 +294,11 @@ namespace NAudio.CoreAudioApi
         {
             if (audioClientInterface != null)
             {
+                if (audioClockClient != null)
+                {
+                    audioClockClient.Dispose();
+                    audioClockClient = null;
+                }
                 if (audioRenderClient != null)
                 {
                     audioRenderClient.Dispose();

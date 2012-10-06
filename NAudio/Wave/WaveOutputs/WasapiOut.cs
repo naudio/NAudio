@@ -196,6 +196,39 @@ namespace NAudio.Wave
             renderClient.ReleaseBuffer(actualFrameCount, AudioClientBufferFlags.None);
         }
 
+        /// <summary>
+        /// Gets the current position in bytes from the wave output device.
+        /// (n.b. this is not the same thing as the position within your reader
+        /// stream)
+        /// </summary>
+        /// <returns>Position in bytes</returns>
+        public long GetPosition()
+        {
+            if (playbackState == Wave.PlaybackState.Stopped)
+            {
+                return 0;
+            }
+            return (long)audioClient.AudioClockClient.AdjustedPosition;
+        }
+
+        /// <summary>
+        /// Gets the current position from the wave output device.
+        /// </summary>
+        public TimeSpan PlaybackPosition
+        {
+            get
+            {
+                // bytes played in this stream
+                var pos = GetPosition();
+
+                // samples played in this stream
+                pos /= bytesPerFrame;
+
+                // ms played in this stream
+                return TimeSpan.FromMilliseconds(pos * 1000.0 / outputFormat.SampleRate);
+            }
+        }
+
         #region IWavePlayer Members
 
         /// <summary>

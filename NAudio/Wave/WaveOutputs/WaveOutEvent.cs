@@ -215,6 +215,45 @@ namespace NAudio.Wave
         }
 
         /// <summary>
+        /// Gets the current position in bytes from the wave output device.
+        /// (n.b. this is not the same thing as the position within your reader
+        /// stream - it calls directly into waveOutGetPosition)
+        /// </summary>
+        /// <returns>Position in bytes</returns>
+        public long GetPosition()
+        {
+            lock (waveOutLock)
+            {
+                MmTime mmTime = new MmTime();
+                mmTime.wType = MmTime.TIME_BYTES; // request results in bytes, TODO: perhaps make this a little more flexible and support the other types?
+                MmException.Try(WaveInterop.waveOutGetPosition(hWaveOut, out mmTime, Marshal.SizeOf(mmTime)), "waveOutGetPosition");
+
+                if (mmTime.wType != MmTime.TIME_BYTES)
+                    throw new Exception(string.Format("waveOutGetPosition: wType -> Expected {0}, Received {1}", MmTime.TIME_BYTES, mmTime.wType));
+
+                return mmTime.cb;
+            }
+        }
+
+        /// <summary>
+        /// Gets the current position from the wave output device.
+        /// </summary>
+        public TimeSpan PlaybackPosition
+        {
+            get
+            {
+                // bytes played in this stream
+                var pos = GetPosition();
+
+                // samples played in this stream
+                pos /= this.waveStream.WaveFormat.BitsPerSample / 8 * this.waveStream.WaveFormat.Channels;
+
+                // ms played in this stream
+                return TimeSpan.FromMilliseconds(pos * 1000.0 / this.waveStream.WaveFormat.SampleRate);
+            }
+        }
+
+        /// <summary>
         /// Playback State
         /// </summary>
         public PlaybackState PlaybackState

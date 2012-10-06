@@ -44,5 +44,18 @@ namespace NAudio.Wave
         /// reaching the end of the input stream or an error has been encountered during playback
         /// </summary>
         event EventHandler<StoppedEventArgs> PlaybackStopped;
+
+        /// <summary>
+        /// Gets the current position in bytes from the wave output device.
+        /// (n.b. this is not the same thing as the position within your reader
+        /// stream)
+        /// </summary>
+        /// <returns>Position in bytes</returns>
+        long GetPosition();
+
+        /// <summary>
+        /// Gets the current position from the wave output device.
+        /// </summary>
+        TimeSpan PlaybackPosition { get; }
     }
 }

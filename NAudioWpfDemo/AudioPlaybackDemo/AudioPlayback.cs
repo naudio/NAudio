@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Windows;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 
@@ -11,7 +9,7 @@ namespace NAudioWpfDemo
     {
         private IWavePlayer playbackDevice;
         private WaveStream fileStream;
-        private SampleAggregator aggregator;
+        private readonly SampleAggregator aggregator;
 
         public event EventHandler<FftEventArgs> FftCalculated
         {
@@ -51,8 +49,16 @@ namespace NAudioWpfDemo
 
         private void OpenFile(string fileName)
         {
-            var inputStream = CreateInputStream(fileName);
-            playbackDevice.Init(new SampleToWaveProvider(inputStream));
+            try
+            {
+                var inputStream = CreateInputStream(fileName);
+                playbackDevice.Init(new SampleToWaveProvider(inputStream));
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message, "Problem opening file");
+                CloseFile();
+            }
         }
 
         private ISampleProvider CreateInputStream(string fileName)
@@ -96,8 +102,7 @@ namespace NAudioWpfDemo
 
         private void CreateDevice()
         {
-            playbackDevice = new WaveOut() {DesiredLatency = 200};
-
+            playbackDevice = new WaveOut {DesiredLatency = 200};
         }
 
         public void Play()
@@ -121,6 +126,9 @@ namespace NAudioWpfDemo
             if (playbackDevice != null)
             {
                 playbackDevice.Stop();
+            }
+            if (fileStream != null)
+            {
                 fileStream.Position = 0;
             }
         }

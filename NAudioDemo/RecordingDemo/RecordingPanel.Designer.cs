@@ -178,7 +178,6 @@
             this.Controls.Add(this.buttonStartRecording);
             this.Name = "RecordingPanel";
             this.Size = new System.Drawing.Size(420, 288);
-            this.Load += new System.EventHandler(this.RecordingPanel_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
 

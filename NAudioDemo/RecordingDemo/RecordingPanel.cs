@@ -86,7 +86,7 @@ namespace NAudioDemo
                 
                 writer = new WaveFileWriter(outputFilename, waveIn.WaveFormat);
 
-                waveIn.DataAvailable += new EventHandler<WaveInEventArgs>(waveIn_DataAvailable);
+                waveIn.DataAvailable += waveIn_DataAvailable;
                 waveIn.RecordingStopped += waveIn_RecordingStopped;
                 waveIn.StartRecording();
                 buttonStartRecording.Enabled = false;
@@ -101,19 +101,23 @@ namespace NAudioDemo
             }
             else
             {
-                waveIn.Dispose();
-                waveIn = null;
-                writer.Close();
-                writer = null;
-                buttonStartRecording.Enabled = true;
-                progressBar1.Value = 0;
-                if (e.Exception != null)
+                if (waveIn != null) // working around problem with double raising of RecordingStopped
                 {
-                    MessageBox.Show(String.Format("A problem was encountered during recording {0}", e.Exception.Message));
-                }
-                if (checkBoxAutoPlay.Checked)
-                {
-                    Process.Start(outputFilename);
+                    //waveIn.Dispose();
+                    waveIn = null;
+                    writer.Close();
+                    writer = null;
+                    buttonStartRecording.Enabled = true;
+                    progressBar1.Value = 0;
+                    if (e.Exception != null)
+                    {
+                        MessageBox.Show(String.Format("A problem was encountered during recording {0}",
+                                                      e.Exception.Message));
+                    }
+                    if (checkBoxAutoPlay.Checked)
+                    {
+                        Process.Start(outputFilename);
+                    }
                 }
             }
         }
@@ -165,11 +169,6 @@ namespace NAudioDemo
             {
                 outputFilename = saveFileDialog.FileName;
             }
-        }
-
-        private void RecordingPanel_Load(object sender, EventArgs e)
-        {
-
         }
     }
 

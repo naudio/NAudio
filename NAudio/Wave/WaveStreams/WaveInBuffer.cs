@@ -38,7 +38,7 @@ namespace NAudio.Wave
             header.userData = (IntPtr)hThis;
 
             MmException.Try(WaveInterop.waveInPrepareHeader(waveInHandle, header, Marshal.SizeOf(header)), "waveInPrepareHeader");
-            MmException.Try(WaveInterop.waveInAddBuffer(waveInHandle, header, Marshal.SizeOf(header)), "waveInAddBuffer");
+            //MmException.Try(WaveInterop.waveInAddBuffer(waveInHandle, header, Marshal.SizeOf(header)), "waveInAddBuffer");
         }
 
         /// <summary>
@@ -121,6 +121,17 @@ namespace NAudio.Wave
             }
         }
 
+
+        /// <summary>
+        /// Indicates whether the InQueue flag is set on this buffer
+        /// </summary>
+        public bool InQueue
+        {
+            get
+            {
+                return (header.flags & WaveHeaderFlags.InQueue) == WaveHeaderFlags.InQueue;
+            }
+        }
 
         /// <summary>
         /// Number of bytes recorded

@@ -130,7 +130,7 @@
             this.toolStripButtonOpenFile.Name = "toolStripButtonOpenFile";
             this.toolStripButtonOpenFile.Size = new System.Drawing.Size(23, 22);
             this.toolStripButtonOpenFile.Text = "Open File";
-            this.toolStripButtonOpenFile.Click += new System.EventHandler(this.toolStripButtonOpenFile_Click);
+            this.toolStripButtonOpenFile.Click += new System.EventHandler(this.OnOpenFileClick);
             // 
             // buttonPlay
             // 

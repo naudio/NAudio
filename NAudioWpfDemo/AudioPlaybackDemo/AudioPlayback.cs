@@ -96,7 +96,8 @@ namespace NAudioWpfDemo
 
         private void CreateDevice()
         {
-            playbackDevice = new WaveOut();
+            playbackDevice = new WaveOut() {DesiredLatency = 200};
+
         }
 
         public void Play()

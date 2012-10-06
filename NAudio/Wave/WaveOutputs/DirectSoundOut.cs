@@ -426,6 +426,9 @@ namespace NAudio.Wave
                             StopPlayback();
                             lPlaybackHalted = true;
                             lContinuePlayback = false;
+                            // report this as an error in the Playback Stopped
+                            // seems to happen when device is unplugged
+                            throw new Exception("DirectSound buffer timeout");
                         }
                     }
                 }

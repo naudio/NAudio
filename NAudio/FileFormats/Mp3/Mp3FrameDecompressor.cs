@@ -68,6 +68,9 @@ namespace NAudio.Wave
             }
         }
 
+        /// <summary>
+        /// Finalizer ensuring that resources get released properly
+        /// </summary>
         ~AcmMp3FrameDecompressor()
         {
             System.Diagnostics.Debug.Assert(false, "AcmMp3FrameDecompressor Dispose was not called");

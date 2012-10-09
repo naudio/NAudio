@@ -60,8 +60,20 @@ namespace NAudio.Wave
         /// Opens MP3 from a stream rather than a file
         /// Will not dispose of this stream itself
         /// </summary>
-        /// <param name="inputStream"></param>
+        /// <param name="inputStream">The incoming stream containing MP3 data</param>
         public Mp3FileReader(Stream inputStream)
+            : this (inputStream, CreateAcmFrameDecompressor)
+        {
+            
+        }
+        
+        /// <summary>
+        /// Opens MP3 from a stream rather than a file
+        /// Will not dispose of this stream itself
+        /// </summary>
+        /// <param name="inputStream">The incoming stream containing MP3 data</param>
+        /// <param name="frameDecompressorBuilder">Factory method to build a frame decompressor</param>
+        public Mp3FileReader(Stream inputStream, FrameDecompressorBuilder frameDecompressorBuilder)
         {
             // Calculated as a double to minimize rounding errors
 
@@ -107,12 +119,30 @@ namespace NAudio.Wave
 
             // now we know the real bitrate we can create an accurate 
             this.Mp3WaveFormat = new Mp3WaveFormat(sampleRate, mp3Frame.ChannelMode == ChannelMode.Mono ? 1 : 2, frameLengthInBytes, (int)bitRate);
-            decompressor = new AcmMp3FrameDecompressor(this.Mp3WaveFormat); // new DmoMp3FrameDecompressor(this.Mp3WaveFormat); 
+            decompressor = frameDecompressorBuilder(Mp3WaveFormat); 
             this.waveFormat = decompressor.OutputFormat;
             this.bytesPerSample = (decompressor.OutputFormat.BitsPerSample) / 8 * decompressor.OutputFormat.Channels;
             // no MP3 frames have more than 1152 samples in them
             // some MP3s I seem to get double
             this.decompressBuffer = new byte[1152 * bytesPerSample * 2];
+        }
+
+        /// <summary>
+        /// Function that can create an MP3 Frame decompressor
+        /// </summary>
+        /// <param name="mp3Format">A WaveFormat object describing the MP3 file format</param>
+        /// <returns>An MP3 Frame decompressor</returns>
+        public delegate IMp3FrameDecompressor FrameDecompressorBuilder(WaveFormat mp3Format);
+
+        /// <summary>
+        /// Creates an ACM MP3 Frame decompressor. This is the default with NAudio
+        /// </summary>
+        /// <param name="mp3Format">A WaveFormat object based </param>
+        /// <returns></returns>
+        public static IMp3FrameDecompressor CreateAcmFrameDecompressor(WaveFormat mp3Format)
+        {
+            // new DmoMp3FrameDecompressor(this.Mp3WaveFormat); 
+            return new AcmMp3FrameDecompressor(mp3Format);
         }
 
         private void CreateTableOfContents()

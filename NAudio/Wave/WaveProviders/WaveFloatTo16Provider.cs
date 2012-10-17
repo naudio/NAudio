@@ -11,7 +11,7 @@ namespace NAudio.Wave
     /// </summary>
     public class WaveFloatTo16Provider : IWaveProvider
     {
-        private IWaveProvider sourceProvider;
+        private readonly IWaveProvider sourceProvider;
         private readonly WaveFormat waveFormat;
         private volatile float volume;
         private byte[] sourceBuffer;
@@ -23,9 +23,9 @@ namespace NAudio.Wave
         public WaveFloatTo16Provider(IWaveProvider sourceProvider)
         {
             if (sourceProvider.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
-                throw new ApplicationException("Only PCM supported");
+                throw new ArgumentException("Input wave provider must be IEEE float", "sourceProvider");
             if (sourceProvider.WaveFormat.BitsPerSample != 32)
-                throw new ApplicationException("Only 32 bit audio supported");
+                throw new ArgumentException("Input wave provider must be 32 bit", "sourceProvider");
 
             waveFormat = new WaveFormat(sourceProvider.WaveFormat.SampleRate, 16, sourceProvider.WaveFormat.Channels);
 

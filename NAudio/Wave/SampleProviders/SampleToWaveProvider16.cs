@@ -22,9 +22,9 @@ namespace NAudio.Wave.SampleProviders
         public SampleToWaveProvider16(ISampleProvider sourceProvider)
         {
             if (sourceProvider.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
-                throw new ApplicationException("Only PCM supported");
+                throw new ArgumentException("Input source provider must be IEEE float", "sourceProvider");
             if (sourceProvider.WaveFormat.BitsPerSample != 32)
-                throw new ApplicationException("Only 32 bit audio supported");
+                throw new ArgumentException("Input source provider must be 32 bit", "sourceProvider");
 
             waveFormat = new WaveFormat(sourceProvider.WaveFormat.SampleRate, 16, sourceProvider.WaveFormat.Channels);
 

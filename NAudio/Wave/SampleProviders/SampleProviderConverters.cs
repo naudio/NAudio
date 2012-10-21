@@ -33,6 +33,10 @@ namespace NAudio.Wave.SampleProviders
                 {
                     sampleProvider = new Pcm24BitToSampleProvider(waveProvider);
                 }
+                else if (waveProvider.WaveFormat.BitsPerSample == 32)
+                {
+                    sampleProvider = new Pcm32BitToSampleProvider(waveProvider);
+                }
                 else
                 {
                     throw new InvalidOperationException("Unsupported operation");
@@ -40,7 +44,10 @@ namespace NAudio.Wave.SampleProviders
             }
             else if (waveProvider.WaveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
             {
-                sampleProvider = new WaveToSampleProvider(waveProvider);
+                if (waveProvider.WaveFormat.BitsPerSample == 64)
+                    sampleProvider = new WaveToSampleProvider64(waveProvider);
+                else
+                    sampleProvider = new WaveToSampleProvider(waveProvider);
             }
             else
             {

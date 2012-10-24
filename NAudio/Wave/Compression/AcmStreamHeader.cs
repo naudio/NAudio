@@ -52,6 +52,11 @@ namespace NAudio.Wave.Compression
             }
         }
 
+        public void Reposition()
+        {
+            firstTime = true;
+        }
+
         public int Convert(int bytesToConvert, out int sourceBytesConverted)
         {
             Prepare();

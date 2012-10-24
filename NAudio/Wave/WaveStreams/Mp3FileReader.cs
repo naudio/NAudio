@@ -46,12 +46,22 @@ namespace NAudio.Wave
         private readonly byte[] decompressBuffer;
         private int decompressBufferOffset;
         private int decompressLeftovers;
+        private bool repositionedFlag;
 
         private readonly object repositionLock = new object();
 
         /// <summary>Supports opening a MP3 file</summary>
         public Mp3FileReader(string mp3FileName) 
             : this(File.OpenRead(mp3FileName))
+        {
+            ownInputStream = true;
+        }
+
+        /// <summary>Supports opening a MP3 file</summary>
+        /// <param name="mp3FileName">MP3 File name</param>
+        /// <param name="frameDecompressorBuilder">Factory method to build a frame decompressor</param>
+        public Mp3FileReader(string mp3FileName, FrameDecompressorBuilder frameDecompressorBuilder)
+            : this(File.OpenRead(mp3FileName), frameDecompressorBuilder)
         {
             ownInputStream = true;
         }
@@ -319,6 +329,7 @@ namespace NAudio.Wave
                     }
                     decompressBufferOffset = 0;
                     decompressLeftovers = 0;
+                    repositionedFlag = true;
                 }
             }
         }
@@ -353,7 +364,13 @@ namespace NAudio.Wave
                     Mp3Frame frame = ReadNextFrame();
                     if (frame != null)
                     {
+                        if (repositionedFlag)
+                        {
+                            decompressor.Reset();
+                            repositionedFlag = false;
+                        }
                         int decompressed = decompressor.DecompressFrame(frame, decompressBuffer, 0);
+                        
                         int toCopy = Math.Min(decompressed, numBytes - bytesRead);
                         Array.Copy(decompressBuffer, 0, sampleBuffer, offset, toCopy);
                         if (toCopy < decompressed)

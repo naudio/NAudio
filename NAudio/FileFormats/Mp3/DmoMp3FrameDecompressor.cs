@@ -10,12 +10,13 @@ namespace NAudio.FileFormats.Mp3
     /// <summary>
     /// MP3 Frame decompressor using the Windows Media MP3 Decoder DMO object
     /// </summary>
-    public class DmoMp3FrameDecompressor : IDisposable, IMp3FrameDecompressor
+    public class DmoMp3FrameDecompressor : IMp3FrameDecompressor
     {
         private WindowsMediaMp3Decoder mp3Decoder;
         private WaveFormat pcmFormat;
         private MediaBuffer inputMediaBuffer;
         private DmoOutputDataBuffer outputBuffer;
+        private bool reposition;
 
         /// <summary>
         /// Initializes a new instance of the DMO MP3 Frame decompressor
@@ -54,6 +55,12 @@ namespace NAudio.FileFormats.Mp3
             // 1. copy into our DMO's input buffer
             inputMediaBuffer.LoadData(frame.RawData, frame.FrameLength);
 
+            if (reposition)
+            {
+                mp3Decoder.MediaObject.Flush();
+                reposition = false;
+            }
+
             // 2. Give the input buffer to the DMO to process
             mp3Decoder.MediaObject.ProcessInput(0, inputMediaBuffer, DmoInputDataBufferFlags.None, 0, 0);
 
@@ -61,7 +68,7 @@ namespace NAudio.FileFormats.Mp3
             outputBuffer.StatusFlags = DmoOutputDataBufferFlags.None;
 
             // 3. Now ask the DMO for some output data
-            mp3Decoder.MediaObject.ProcessOutput(DmoProcessOutputFlags.None, 1, new DmoOutputDataBuffer[] { outputBuffer });
+            mp3Decoder.MediaObject.ProcessOutput(DmoProcessOutputFlags.None, 1, new[] { outputBuffer });
 
             if (outputBuffer.Length == 0)
             {
@@ -74,6 +81,14 @@ namespace NAudio.FileFormats.Mp3
             Debug.Assert(!outputBuffer.MoreDataAvailable, "have not implemented more data available yet");
             
             return outputBuffer.Length;
+        }
+
+        /// <summary>
+        /// Alerts us that a reposition has occured so the MP3 decoder needs to reset its state
+        /// </summary>
+        public void Reset()
+        {
+            reposition = true;
         }
 
         /// <summary>

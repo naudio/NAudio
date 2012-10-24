@@ -19,6 +19,11 @@ namespace NAudio.Wave
         int DecompressFrame(Mp3Frame frame, byte[] dest, int destOffset);
 
         /// <summary>
+        /// Tell the decoder that we have repositioned
+        /// </summary>
+        void Reset();
+
+        /// <summary>
         /// PCM format that we are converting into
         /// </summary>
         WaveFormat OutputFormat { get; }

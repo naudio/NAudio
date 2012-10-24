@@ -139,6 +139,14 @@ namespace NAudio.Wave.Compression
         }
 
         /// <summary>
+        /// Report that we have repositioned in the source stream
+        /// </summary>
+        public void Reposition()
+        {
+            streamHeader.Reposition();
+        }
+
+        /// <summary>
         /// Converts the contents of the SourceBuffer into the DestinationBuffer
         /// </summary>
         /// <param name="bytesToConvert">The number of bytes in the SourceBuffer

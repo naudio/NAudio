@@ -6,7 +6,7 @@ namespace NAudio.Wave
     /// <summary>
     /// MP3 Frame Decompressor using ACM
     /// </summary>
-    public class AcmMp3FrameDecompressor : IDisposable, IMp3FrameDecompressor
+    public class AcmMp3FrameDecompressor : IMp3FrameDecompressor
     {
         private readonly AcmStream conversionStream;
         private readonly WaveFormat pcmFormat;
@@ -52,6 +52,11 @@ namespace NAudio.Wave
             return converted;
         }
 
+        public void Reset()
+        {
+            conversionStream.Reposition();
+        }
+
         /// <summary>
         /// Disposes of this MP3 frame decompressor
         /// </summary>
@@ -60,10 +65,7 @@ namespace NAudio.Wave
             if (!disposed)
             {
                 disposed = true;
-                if (this.conversionStream != null)
-                {
-                    this.conversionStream.Dispose();
-                }
+                conversionStream.Dispose();
                 GC.SuppressFinalize(this);
             }
         }

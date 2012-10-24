@@ -34,11 +34,12 @@
             this.buttonStop = new System.Windows.Forms.Button();
             this.comboBoxOutputDriver = new System.Windows.Forms.ComboBox();
             this.label2 = new System.Windows.Forms.Label();
-            this.volumeSlider1 = new NAudio.Gui.VolumeSlider();
             this.buttonOpen = new System.Windows.Forms.Button();
             this.labelNowTime = new System.Windows.Forms.Label();
             this.labelTotalTime = new System.Windows.Forms.Label();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
+            this.button1 = new System.Windows.Forms.Button();
+            this.volumeSlider1 = new NAudio.Gui.VolumeSlider();
             this.SuspendLayout();
             // 
             // label1
@@ -89,14 +90,6 @@
             this.label2.TabIndex = 4;
             this.label2.Text = "For Debug Purposes";
             // 
-            // volumeSlider1
-            // 
-            this.volumeSlider1.Location = new System.Drawing.Point(307, 37);
-            this.volumeSlider1.Name = "volumeSlider1";
-            this.volumeSlider1.Size = new System.Drawing.Size(96, 16);
-            this.volumeSlider1.TabIndex = 5;
-            this.volumeSlider1.VolumeChanged += new System.EventHandler(this.volumeSlider1_VolumeChanged);
-            // 
             // buttonOpen
             // 
             this.buttonOpen.Location = new System.Drawing.Point(10, 31);
@@ -125,10 +118,29 @@
             this.labelTotalTime.TabIndex = 6;
             this.labelTotalTime.Text = "00:00";
             // 
+            // button1
+            // 
+            this.button1.Location = new System.Drawing.Point(10, 123);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(101, 23);
+            this.button1.TabIndex = 7;
+            this.button1.Text = "MP3 Reposition";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.OnMp3RepositionTestClick);
+            // 
+            // volumeSlider1
+            // 
+            this.volumeSlider1.Location = new System.Drawing.Point(307, 37);
+            this.volumeSlider1.Name = "volumeSlider1";
+            this.volumeSlider1.Size = new System.Drawing.Size(96, 16);
+            this.volumeSlider1.TabIndex = 5;
+            this.volumeSlider1.VolumeChanged += new System.EventHandler(this.volumeSlider1_VolumeChanged);
+            // 
             // SimplePlaybackPanel
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.button1);
             this.Controls.Add(this.labelTotalTime);
             this.Controls.Add(this.labelNowTime);
             this.Controls.Add(this.volumeSlider1);
@@ -157,5 +169,6 @@
         private System.Windows.Forms.Label labelNowTime;
         private System.Windows.Forms.Label labelTotalTime;
         private System.Windows.Forms.Timer timer1;
+        private System.Windows.Forms.Button button1;
     }
 }

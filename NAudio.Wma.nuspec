@@ -1,20 +1,22 @@
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
-    <id>NAudio</id>
-    <version>1.5.7-beta</version>
-    <authors>Mark Heath</authors>
+    <id>NAudio.Wma</id>
+    <version>0.9.0-beta</version>
+    <authors>Mark Heath, Yuval Naveh</authors>
     <owners>Mark Heath</owners>
     <licenseUrl>http://naudio.codeplex.com/license</licenseUrl>
     <projectUrl>http://naudio.codeplex.com/</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>NAudio, an audio library for .NET</description>
+    <description>WMA Extension for NAudio</description>
     <summary />
-    <tags>C# .NET audio sound</tags>
+    <tags>C# .NET audio sound WMA</tags>
+    <dependencies>
+        <dependency id="NAudio" version="1.5" />
+    </dependencies>
   </metadata>
   <files>
-    <file src="NAudio\bin\Release\NAudio.dll" target="lib\net20" /> 
-    <file src="NAudio\bin\Release\NAudio.xml" target="lib\net20" /> 
+    <file src="NAudio.WindowsMediaFormat\bin\Release\NAudio.WindowsMediaFormat.dll" target="lib\net20" /> 
     <file src="license.txt" />
     <file src="readme.txt" />
   </files>

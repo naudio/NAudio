@@ -52,6 +52,9 @@ namespace NAudio.Wave
             return converted;
         }
 
+        /// <summary>
+        /// Resets the MP3 Frame Decompressor after a reposition operation
+        /// </summary>
         public void Reset()
         {
             conversionStream.Reposition();

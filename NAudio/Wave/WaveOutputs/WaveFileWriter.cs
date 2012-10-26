@@ -37,14 +37,23 @@ namespace NAudio.Wave
         /// <param name="sourceProvider">The source WaveProvider</param>
         public static void CreateWaveFile(string filename, IWaveProvider sourceProvider)
         {
-            using (WaveFileWriter writer = new WaveFileWriter(filename, sourceProvider.WaveFormat))
+            using (var writer = new WaveFileWriter(filename, sourceProvider.WaveFormat))
             {
-                byte[] buffer = new byte[sourceProvider.WaveFormat.AverageBytesPerSecond * 4];
+                long outputLength = 0;
+                var buffer = new byte[sourceProvider.WaveFormat.AverageBytesPerSecond * 4];
                 while (true)
                 {
                     int bytesRead = sourceProvider.Read(buffer, 0, buffer.Length);
                     if (bytesRead == 0)
+                    {
+                        // end of source provider
                         break;
+                    }
+                    outputLength += bytesRead;
+                    if (outputLength > Int32.MaxValue)
+                    {
+                        throw new InvalidOperationException("WAV File cannot be greater than 2GB. Check that sourceProvider is not an endless stream.");
+                    }
                     writer.Write(buffer, 0, bytesRead);
                 }
             }

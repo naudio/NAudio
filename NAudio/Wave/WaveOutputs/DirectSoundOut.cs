@@ -192,14 +192,17 @@ namespace NAudio.Wave
         /// <returns>Position in bytes</returns>
         public long GetPosition()
         {
-            if (playbackState == Wave.PlaybackState.Stopped)
+            if (playbackState != Wave.PlaybackState.Stopped)
             {
-                return 0;
+                var sbuf = secondaryBuffer;
+                if (sbuf != null)
+                {
+                    uint currentPlayCursor, currentWriteCursor;
+                    sbuf.GetCurrentPosition(out currentPlayCursor, out currentWriteCursor);
+                    return currentPlayCursor + bytesPlayed;
+                }
             }
-
-            uint currentPlayCursor, currentWriteCursor;
-            secondaryBuffer.GetCurrentPosition(out currentPlayCursor, out currentWriteCursor);
-            return currentPlayCursor + bytesPlayed;
+            return 0;
         }
 
         /// <summary>
@@ -453,6 +456,7 @@ namespace NAudio.Wave
                                     // we're at the beginning of the buffer...
                                     if (firstBufferStarted)
                                     {
+                                        // because this notification is based on the *playback" cursor, this should be reasonably accurate
                                         bytesPlayed += samplesFrameSize * 2;
                                     }
                                 }

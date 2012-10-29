@@ -109,8 +109,10 @@
     <Compile Include="Wave\SampleProviders\FadeInOutSampleProvider.cs" />
     <Compile Include="Wave\SampleProviders\MultiplexingSampleProvider.cs" />
     <Compile Include="Wave\SampleProviders\OffsetSampleProvider.cs" />
+    <Compile Include="Wave\SampleProviders\Pcm32BitToSampleProvider.cs" />
     <Compile Include="Wave\SampleProviders\SampleProviderConverters.cs" />
     <Compile Include="Wave\SampleProviders\SampleToWaveProvider16.cs" />
+    <Compile Include="Wave\SampleProviders\WaveToSampleProvider64.cs" />
     <Compile Include="Wave\WaveInputs\WaveInEvent.cs" />
     <Compile Include="Wave\WaveInputs\WasapiCapture.cs" />
     <Compile Include="Dmo\AudioMediaSubtypes.cs" />

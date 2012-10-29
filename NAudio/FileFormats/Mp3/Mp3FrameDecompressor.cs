@@ -1,19 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NAudio.Wave;
 using NAudio.Wave.Compression;
-using System.Diagnostics;
 
 namespace NAudio.Wave
 {
     /// <summary>
     /// MP3 Frame Decompressor using ACM
     /// </summary>
-    public class AcmMp3FrameDecompressor : IDisposable, IMp3FrameDecompressor
+    public class AcmMp3FrameDecompressor : IMp3FrameDecompressor
     {
-        private AcmStream conversionStream;
-        private WaveFormat pcmFormat;
+        private readonly AcmStream conversionStream;
+        private readonly WaveFormat pcmFormat;
+        private bool disposed;
 
         /// <summary>
         /// Creates a new ACM frame decompressor
@@ -39,6 +36,10 @@ namespace NAudio.Wave
         /// <returns>Bytes written into destination buffer</returns>
         public int DecompressFrame(Mp3Frame frame, byte[] dest, int destOffset)
         {
+            if (frame == null)
+            {
+                throw new ArgumentNullException("frame", "You must provide a non-null Mp3Frame to decompress");
+            }
             Array.Copy(frame.RawData, conversionStream.SourceBuffer, frame.FrameLength);
             int sourceBytesConverted = 0;
             int converted = conversionStream.Convert(frame.FrameLength, out sourceBytesConverted);
@@ -52,15 +53,33 @@ namespace NAudio.Wave
         }
 
         /// <summary>
+        /// Resets the MP3 Frame Decompressor after a reposition operation
+        /// </summary>
+        public void Reset()
+        {
+            conversionStream.Reposition();
+        }
+
+        /// <summary>
         /// Disposes of this MP3 frame decompressor
         /// </summary>
         public void Dispose()
         {
-            if (this.conversionStream != null)
+            if (!disposed)
             {
-                this.conversionStream.Dispose();
-                this.conversionStream = null;
+                disposed = true;
+                conversionStream.Dispose();
+                GC.SuppressFinalize(this);
             }
+        }
+
+        /// <summary>
+        /// Finalizer ensuring that resources get released properly
+        /// </summary>
+        ~AcmMp3FrameDecompressor()
+        {
+            System.Diagnostics.Debug.Assert(false, "AcmMp3FrameDecompressor Dispose was not called");
+            Dispose();
         }
     }
 }

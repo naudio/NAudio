@@ -6,6 +6,7 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
+using NAudio.FileFormats.Mp3;
 using NAudio.Wave;
 using System.Diagnostics;
 
@@ -56,25 +57,24 @@ namespace NAudioDemo.SimplePlaybackDemo
 
         private void buttonPlay_Click(object sender, EventArgs e)
         {
-            if (SelectInputFile())
+            if (fileName == null) fileName = SelectInputFile();
+            if (fileName != null)
             {
                 BeginPlayback(fileName);
             }
         }
 
-        private bool SelectInputFile()
+        private static string SelectInputFile()
         {
-            if (fileName == null)
-            {
-                OpenFileDialog ofd = new OpenFileDialog();
-                ofd.Filter = "Audio Files|*.mp3;*.wav;*.aiff";
+            var ofd = new OpenFileDialog();
+            ofd.Filter = "Audio Files|*.mp3;*.wav;*.aiff";
 
-                if (ofd.ShowDialog() == DialogResult.OK)
-                {
-                    this.fileName = ofd.FileName;
-                }
+            if (ofd.ShowDialog() == DialogResult.OK)
+            {
+                return ofd.FileName;
             }
-            return fileName != null;
+
+            return null;
         }
 
         private void BeginPlayback(string filename)
@@ -156,7 +156,28 @@ namespace NAudioDemo.SimplePlaybackDemo
 
         private void buttonOpen_Click(object sender, EventArgs e)
         {
-            SelectInputFile();
+            fileName = SelectInputFile();
+        }
+
+        private void OnMp3RepositionTestClick(object sender, EventArgs e)
+        {
+            var filename = SelectInputFile();
+            if (filename == null) return;
+            var wo = new WaveOut();
+            var af = new AudioFileReader(filename);
+            wo.Init(af);
+            var f = new Form();
+            var b = new Button() { Text = "Play" };
+            b.Click += (s, a) => wo.Play();
+            var b2 = new Button() { Text = "Stop", Left = b.Right };
+            b2.Click += (s, a) => wo.Stop();
+            var b3 = new Button { Text = "Rewind", Left = b2.Right };
+            b3.Click += (s, a) => af.Position = 0;
+            f.FormClosed += (s, a) => { wo.Dispose(); af.Dispose(); };
+            f.Controls.Add(b);
+            f.Controls.Add(b2);
+            f.Controls.Add(b3);
+            f.ShowDialog(this);
         }
     }
 }

@@ -15,7 +15,7 @@ namespace NAudioTests.Aiff
         [Category("IntegrationTest")]
         public void ConvertAiffToWav()
         {
-            string testFolder = @"C:\Users\Mark\Recording\sfz\UOI Trumpet";
+            string testFolder = @"C:\Users\Mark\Downloads\NAudio";
             if (!Directory.Exists(testFolder))
             {
                 Assert.Ignore("{0} not found", testFolder);
@@ -33,9 +33,9 @@ namespace NAudioTests.Aiff
 
         private static void ConvertAiffToWav(string aiffFile, string wavFile)
         {
-            using (AiffFileReader reader = new AiffFileReader(aiffFile))
+            using (var reader = new AiffFileReader(aiffFile))
             {
-                using (WaveFileWriter writer = new WaveFileWriter(wavFile, reader.WaveFormat))
+                using (var writer = new WaveFileWriter(wavFile, reader.WaveFormat))
                 {
                     byte[] buffer = new byte[4096];
                     int bytesRead = 0;

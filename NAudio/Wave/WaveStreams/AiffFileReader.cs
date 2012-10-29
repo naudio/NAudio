@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Text;
 using System.Collections.Generic;
 using System.Diagnostics;
 
@@ -12,118 +11,17 @@ namespace NAudio.Wave
     /// </summary>
     public class AiffFileReader : WaveStream
     {
-        #region Endian Helpers
-        private static uint ConvertLong(byte[] buffer)
-        {
-            if (buffer.Length != 4) throw new ArgumentException("Incorrect length");
-            return (uint)((buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3]);
-        }
-
-        private static short ConvertShort(byte[] buffer)
-        {
-            if (buffer.Length != 2) throw new ArgumentException("Incorrect length or short.");
-            return (short)((buffer[0] << 8) | buffer[1]);
-        }
-        #endregion
-
-        #region IEEE 80-bit Extended
-        private static double UnsignedToFloat(ulong u)
-        {
-            return (((double)((long)(u - 2147483647L - 1))) + 2147483648.0);
-        }
-
-        private static double ldexp(double x, int exp)
-        {
-            return x * Math.Pow(2, exp);
-        }
-
-        private static double ConvertExtended(byte[] bytes)
-        {
-            if (bytes.Length != 10) throw new ArgumentException("Incorrect length or short.");
-            double f;
-            int expon;
-            uint hiMant, loMant;
-
-            expon = ((bytes[0] & 0x7F) << 8) | bytes[1];
-            hiMant = (uint)((bytes[2] << 24) | (bytes[3] << 16) | (bytes[4] << 8) | bytes[5]);
-            loMant = (uint)((bytes[6] << 24) | (bytes[7] << 16) | (bytes[8] << 8) | bytes[9]);
-
-            if (expon == 0 && hiMant == 0 && loMant == 0)
-            {
-                f = 0;
-            }
-            else
-            {
-                if (expon == 0x7FFF)    /* Infinity or NaN */
-                {
-                    f = double.NaN;
-                }
-                else
-                {
-                    expon -= 16383;
-                    f = ldexp(UnsignedToFloat(hiMant), expon -= 31);
-                    f += ldexp(UnsignedToFloat(loMant), expon -= 32);
-                }
-            }
-
-            if ((bytes[0] & 0x80) == 0x80) return -f;
-            else return f;
-        }
-        #endregion
-
-        #region AiffChunk
-        /// <summary>
-        /// AIFF Chunk
-        /// </summary>
-        public struct AiffChunk
-        {
-            /// <summary>
-            /// Chunk Name
-            /// </summary>
-            public string chunkName;
-            /// <summary>
-            /// Chunk Length
-            /// </summary>
-            public uint chunkLength;
-            /// <summary>
-            /// Chunk start
-            /// </summary>
-            public uint chunkStart;
-
-            /// <summary>
-            /// Creates a new AIFF Chunk
-            /// </summary>
-            public AiffChunk(uint start, string name, uint length)
-            {
-                chunkStart = start;
-                chunkName = name;
-                chunkLength = length;
-            }
-        }
-
-        private static AiffChunk ReadChunkHeader(BinaryReader br)
-        {
-            AiffChunk chunk = new AiffChunk((uint)br.BaseStream.Position, ReadChunkName(br), ConvertLong(br.ReadBytes(4)));
-            return chunk;
-        }
-
-        private static string ReadChunkName(BinaryReader br)
-        {
-            return new string(br.ReadChars(4));
-        }
-        #endregion
-
-        private NAudio.Wave.WaveFormat waveFormat;
+        private readonly WaveFormat waveFormat;
+        private readonly bool ownInput;
+        private readonly long dataPosition;
+        private readonly int dataChunkLength;
+        private readonly List<AiffChunk> chunks = new List<AiffChunk>();
         private Stream waveStream;
-        private bool ownInput;
-        private long dataPosition;
-        private int dataChunkLength;
-        private List<AiffChunk> chunks = new List<AiffChunk>();
 
         /// <summary>Supports opening a AIF file</summary>
         /// <remarks>The AIF is of similar nastiness to the WAV format.
         /// This supports basic reading of uncompressed PCM AIF files,
-        /// with 16, 24 and 32 bit PCM data.
+        /// with 8, 16, 24 and 32 bit PCM data.
         /// </remarks>
         public AiffFileReader(String aiffFile) :
             this(File.OpenRead(aiffFile))
@@ -155,15 +53,16 @@ namespace NAudio.Wave
             dataChunkPosition = -1;
             format = null;
             BinaryReader br = new BinaryReader(stream);
-
+            
             if (ReadChunkName(br) != "FORM")
             {
                 throw new FormatException("Not an AIFF file - no FORM header.");
             }
-            uint fileSize = ConvertLong(br.ReadBytes(4));
-            if (ReadChunkName(br) != "AIFF")
+            uint fileSize = ConvertInt(br.ReadBytes(4));
+            string formType = ReadChunkName(br);
+            if (formType != "AIFC" && formType != "AIFF")
             {
-                throw new FormatException("Not an AIFF file - no AIFF header.");
+                throw new FormatException("Not an AIFF file - no AIFF/AIFC header.");
             }
 
             dataChunkLength = 0;
@@ -171,25 +70,32 @@ namespace NAudio.Wave
             while (br.BaseStream.Position < br.BaseStream.Length)
             {
                 AiffChunk nextChunk = ReadChunkHeader(br);
-                if (nextChunk.chunkName == "COMM")
+                if (nextChunk.ChunkName == "COMM")
                 {
                     short numChannels = ConvertShort(br.ReadBytes(2));
-                    uint numSampleFrames = ConvertLong(br.ReadBytes(4));
+                    uint numSampleFrames = ConvertInt(br.ReadBytes(4));
                     short sampleSize = ConvertShort(br.ReadBytes(2));
                     double sampleRate = ConvertExtended(br.ReadBytes(10));
 
-                    format = new NAudio.Wave.WaveFormat((int)sampleRate, (int)sampleSize, (int)numChannels);
+                    format = new WaveFormat((int)sampleRate, (int)sampleSize, (int)numChannels);
 
-                    br.ReadBytes((int)nextChunk.chunkLength - 18);
+                    if (nextChunk.ChunkLength > 18 && formType == "AIFC")
+                    {   
+                        // In an AIFC file, the compression format is tacked on to the COMM chunk
+                        string compress = new string(br.ReadChars(4)).ToLower();
+                        if (compress != "none") throw new FormatException("Compressed AIFC is not supported.");
+                        br.ReadBytes((int)nextChunk.ChunkLength - 22);
+                    }
+                    else br.ReadBytes((int)nextChunk.ChunkLength - 18);
                 }
-                else if (nextChunk.chunkName == "SSND")
+                else if (nextChunk.ChunkName == "SSND")
                 {
-                    uint offset = ConvertLong(br.ReadBytes(4));
-                    uint blockSize = ConvertLong(br.ReadBytes(4));
-                    dataChunkPosition = nextChunk.chunkStart + 16 + offset;
-                    dataChunkLength = (int)nextChunk.chunkLength - 8;
+                    uint offset = ConvertInt(br.ReadBytes(4));
+                    uint blockSize = ConvertInt(br.ReadBytes(4));
+                    dataChunkPosition = nextChunk.ChunkStart + 16 + offset;
+                    dataChunkLength = (int)nextChunk.ChunkLength - 8;
 
-                    br.ReadBytes((int)nextChunk.chunkLength - 8);
+                    br.ReadBytes((int)nextChunk.ChunkLength - 8);
                 }
                 else
                 {
@@ -197,11 +103,10 @@ namespace NAudio.Wave
                     {
                         chunks.Add(nextChunk);
                     }
-                    br.ReadBytes((int)nextChunk.chunkLength);
+                    br.ReadBytes((int)nextChunk.ChunkLength);
                 }
 
-                if (nextChunk.chunkName == "\0\0\0\0") break;
-                //Console.WriteLine("Read chunk {0} with length {1}", nextChunk.chunkName, nextChunk.chunkLength);
+                if (nextChunk.ChunkName == "\0\0\0\0") break;
             }
 
             if (format == null)
@@ -245,7 +150,7 @@ namespace NAudio.Wave
         /// <summary>
         /// <see cref="WaveStream.WaveFormat"/>
         /// </summary>
-        public override WaveFormat WaveFormat
+        public override NAudio.Wave.WaveFormat WaveFormat
         {
             get
             {
@@ -271,9 +176,9 @@ namespace NAudio.Wave
         {
             get
             {
-                if (waveFormat.Encoding == NAudio.Wave.WaveFormatEncoding.Pcm ||
-                    waveFormat.Encoding == NAudio.Wave.WaveFormatEncoding.Extensible ||
-                    waveFormat.Encoding == NAudio.Wave.WaveFormatEncoding.IeeeFloat)
+                if (waveFormat.Encoding == WaveFormatEncoding.Pcm ||
+                    waveFormat.Encoding == WaveFormatEncoding.Extensible ||
+                    waveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
                 {
                     return dataChunkLength / BlockAlign;
                 }
@@ -330,7 +235,11 @@ namespace NAudio.Wave
             int bytesPerSample = WaveFormat.BitsPerSample / 8;
             for (int i = 0; i < length; i += bytesPerSample)
             {
-                if (WaveFormat.BitsPerSample == 16)
+                if (WaveFormat.BitsPerSample == 8)
+                {
+                    array[i] = buffer[i];
+                }
+                else if (WaveFormat.BitsPerSample == 16)
                 {
                     array[i + 0] = buffer[i + 1];
                     array[i + 1] = buffer[i];
@@ -348,12 +257,113 @@ namespace NAudio.Wave
                     array[i + 2] = buffer[i + 1];
                     array[i + 3] = buffer[i + 0];
                 }
-                else throw new Exception("Unsupported PCM format.");
+                else throw new FormatException("Unsupported PCM format.");
             }
 
             return length;
         }
+
+        #region Endian Helpers
+        private static uint ConvertInt(byte[] buffer)
+        {
+            if (buffer.Length != 4) throw new Exception("Incorrect length for long.");
+            return (uint)((buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3]);
+        }
+
+        private static short ConvertShort(byte[] buffer)
+        {
+            if (buffer.Length != 2) throw new Exception("Incorrect length for int.");
+            return (short)((buffer[0] << 8) | buffer[1]);
+        }
+        #endregion
+
+        #region IEEE 80-bit Extended
+        private static double UnsignedToFloat(ulong u)
+        {
+            return (((double)((long)(u - 2147483647L - 1))) + 2147483648.0);
+        }
+
+        private static double ldexp(double x, int exp)
+        {
+            return x * Math.Pow(2, exp);
+        }
+
+        private static double ConvertExtended(byte[] bytes)
+        {
+            if (bytes.Length != 10) throw new Exception("Incorrect length for IEEE extended.");
+            double f;
+            int expon;
+            uint hiMant, loMant;
+
+            expon = ((bytes[0] & 0x7F) << 8) | bytes[1];
+            hiMant = (uint)((bytes[2] << 24) | (bytes[3] << 16) | (bytes[4] << 8) | bytes[5]);
+            loMant = (uint)((bytes[6] << 24) | (bytes[7] << 16) | (bytes[8] << 8) | bytes[9]);
+
+            if (expon == 0 && hiMant == 0 && loMant == 0)
+            {
+                f = 0;
+            }
+            else
+            {
+                if (expon == 0x7FFF)    /* Infinity or NaN */
+                {
+                    f = double.NaN;
+                }
+                else
+                {
+                    expon -= 16383;
+                    f = ldexp(UnsignedToFloat(hiMant), expon -= 31);
+                    f += ldexp(UnsignedToFloat(loMant), expon -= 32);
+                }
+            }
+
+            if ((bytes[0] & 0x80) == 0x80) return -f;
+            else return f;
+        }
+        #endregion
+
+        #region AiffChunk
+        /// <summary>
+        /// AIFF Chunk
+        /// </summary>
+        public struct AiffChunk
+        {
+            /// <summary>
+            /// Chunk Name
+            /// </summary>
+            public string ChunkName;
+
+            /// <summary>
+            /// Chunk Length
+            /// </summary>
+            public uint ChunkLength;
+
+            /// <summary>
+            /// Chunk start
+            /// </summary>
+            public uint ChunkStart;
+
+            /// <summary>
+            /// Creates a new AIFF Chunk
+            /// </summary>
+            public AiffChunk(uint start, string name, uint length)
+            {
+                ChunkStart = start;
+                ChunkName = name;
+                ChunkLength = length + (uint)(length % 2 == 1 ? 1 : 0);
+            }
+        }
+
+        private static AiffChunk ReadChunkHeader(BinaryReader br)
+        {
+            var chunk = new AiffChunk((uint)br.BaseStream.Position, ReadChunkName(br), ConvertInt(br.ReadBytes(4)));
+            return chunk;
+        }
+
+        private static string ReadChunkName(BinaryReader br)
+        {
+            return new string(br.ReadChars(4));
+        }
+        #endregion
     }
 }
-
-

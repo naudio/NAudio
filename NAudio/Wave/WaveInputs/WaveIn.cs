@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Runtime.InteropServices;
+using System.Threading;
 using NAudio.Mixer;
 
 namespace NAudio.Wave
@@ -17,7 +18,8 @@ namespace NAudio.Wave
         private WaveInBuffer[] buffers;
         private WaveInterop.WaveCallback callback;
         private WaveCallbackInfo callbackInfo;
-
+        private SynchronizationContext syncContext;
+        private int lastReturnedBufferIndex;
         /// <summary>
         /// Indicates recorded data is available 
         /// </summary>
@@ -52,6 +54,12 @@ namespace NAudio.Wave
         /// </summary>
         public WaveIn(WaveCallbackInfo callbackInfo)
         {
+            syncContext = SynchronizationContext.Current;
+            if ((callbackInfo.Strategy == WaveCallbackStrategy.NewWindow || callbackInfo.Strategy == WaveCallbackStrategy.ExistingWindow) &&
+                syncContext == null)
+            {
+                throw new InvalidOperationException("Use WaveInEvent to record on a background thread");
+            }
             this.DeviceNumber = 0;
             this.WaveFormat = new WaveFormat(8000, 16, 1);
             this.BufferMilliseconds = 100;
@@ -123,15 +131,13 @@ namespace NAudio.Wave
         {
             if (message == WaveInterop.WaveMessage.WaveInData)
             {
-                GCHandle hBuffer = (GCHandle)waveHeader.userData;
-                WaveInBuffer buffer = (WaveInBuffer)hBuffer.Target;
-                Exception exception = null;
-                if (DataAvailable != null)
-                {
-                    DataAvailable(this, new WaveInEventArgs(buffer.Data, buffer.BytesRecorded));
-                }
+                var hBuffer = (GCHandle)waveHeader.userData;
+                var buffer = (WaveInBuffer)hBuffer.Target;
+
                 if (recording)
                 {
+                    lastReturnedBufferIndex = Array.IndexOf(buffers, buffer);
+                    RaiseDataAvailable(buffer);
                     try
                     {
                         buffer.Reuse();
@@ -139,14 +145,19 @@ namespace NAudio.Wave
                     catch (Exception e)
                     {
                         recording = false;
-                        exception = e;
+                        RaiseRecordingStopped(e);
                     }
                 }
                 
-                if (!recording)
-                {
-                    RaiseRecordingStopped(exception);
-                }
+            }
+        }
+
+        private void RaiseDataAvailable(WaveInBuffer buffer)
+        {
+            var handler = DataAvailable;
+            if (handler != null)
+            {
+                handler(this, new WaveInEventArgs(buffer.Data, buffer.BytesRecorded));
             }
         }
 
@@ -155,15 +166,21 @@ namespace NAudio.Wave
             var handler = RecordingStopped;
             if (handler != null)
             {
-                handler(this, new StoppedEventArgs(e));
+                if (this.syncContext == null)
+                {
+                    handler(this, new StoppedEventArgs(e));
+                }
+                else
+                {
+                    this.syncContext.Post(state => handler(this, new StoppedEventArgs(e)), null);
+                }
             }
         }
 
         private void OpenWaveInDevice()
         {
             CloseWaveInDevice();
-            MmResult result;
-            result = callbackInfo.WaveInOpen(out waveInHandle, DeviceNumber, WaveFormat, callback);
+            MmResult result = callbackInfo.WaveInOpen(out waveInHandle, DeviceNumber, WaveFormat, callback);
             MmException.Try(result, "waveInOpen");
             CreateBuffers();
         }
@@ -173,11 +190,25 @@ namespace NAudio.Wave
         /// </summary>
         public void StartRecording()
         {
-            OpenWaveInDevice();
             if (recording)
+            {
                 throw new InvalidOperationException("Already recording");
+            }
+            OpenWaveInDevice();
+            EnqueueBuffers();
             MmException.Try(WaveInterop.waveInStart(waveInHandle), "waveInStart");
             recording = true;
+        }
+
+        private void EnqueueBuffers()
+        {
+            foreach (var buffer in buffers)
+            {
+                if (!buffer.InQueue)
+                {
+                    buffer.Reuse();
+                }
+            }
         }
 
         /// <summary>
@@ -185,8 +216,22 @@ namespace NAudio.Wave
         /// </summary>
         public void StopRecording()
         {
-            recording = false;
-            MmException.Try(WaveInterop.waveInStop(waveInHandle), "waveInStop");
+            if (recording)
+            {
+                recording = false;
+                MmException.Try(WaveInterop.waveInStop(waveInHandle), "waveInStop");
+                // report the last buffers, sometimes more than one, so taking care to report them in the right order
+                for (int n = 0; n < buffers.Length; n++)
+                {
+                    int index = (n + lastReturnedBufferIndex + 1)%buffers.Length;
+                    var buffer = buffers[index];
+                    if (buffer.Done)
+                    {
+                        RaiseDataAvailable(buffer);
+                    }
+                }
+                RaiseRecordingStopped(null);
+            }
             //MmException.Try(WaveInterop.waveInReset(waveInHandle), "waveInReset");      
             // Don't actually close yet so we get the last buffer
         }
@@ -204,7 +249,7 @@ namespace NAudio.Wave
             if (disposing)
             {
                 if (recording)
-                    StopRecording();                
+                    StopRecording();
                 CloseWaveInDevice();
                 if (callbackInfo != null)
                 {

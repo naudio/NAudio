@@ -84,7 +84,7 @@ namespace NAudioDemo.AudioPlaybackDemo
 
             if (String.IsNullOrEmpty(fileName))
             {
-                toolStripButtonOpenFile_Click(sender, e);
+                OnOpenFileClick(sender, e);
             }
             if (String.IsNullOrEmpty(fileName))
             {
@@ -175,6 +175,16 @@ namespace NAudioDemo.AudioPlaybackDemo
             CloseWaveOut();
             int latency = (int)comboBoxLatency.SelectedItem;
             this.waveOut = SelectedOutputDevicePlugin.CreateDevice(latency);
+            this.waveOut.PlaybackStopped += OnPlaybackStopped;
+        }
+
+        void OnPlaybackStopped(object sender, StoppedEventArgs e)
+        {
+            groupBoxDriverModel.Enabled = true;
+            if (e.Exception != null)
+            {
+                MessageBox.Show(e.Exception.Message, "Playback Device Error");
+            }
         }
 
         private void CloseWaveOut()
@@ -233,7 +243,6 @@ namespace NAudioDemo.AudioPlaybackDemo
             if (waveOut != null)
             {
                 waveOut.Stop();
-                groupBoxDriverModel.Enabled = true;
             }
         }
 
@@ -242,16 +251,9 @@ namespace NAudioDemo.AudioPlaybackDemo
             if (waveOut != null && fileWaveStream != null)
             {
                 TimeSpan currentTime = (waveOut.PlaybackState == PlaybackState.Stopped) ? TimeSpan.Zero : fileWaveStream.CurrentTime;
-                if (fileWaveStream.Position >= fileWaveStream.Length)
-                {
-                    buttonStop_Click(sender, e);
-                }
-                else
-                {
-                    trackBarPosition.Value = (int)currentTime.TotalSeconds;
-                    labelCurrentTime.Text = String.Format("{0:00}:{1:00}", (int)currentTime.TotalMinutes,
-                        currentTime.Seconds);
-                }
+                trackBarPosition.Value = (int)currentTime.TotalSeconds;
+                labelCurrentTime.Text = String.Format("{0:00}:{1:00}", (int)currentTime.TotalMinutes,
+                    currentTime.Seconds);
             }
             else
             {
@@ -267,9 +269,9 @@ namespace NAudioDemo.AudioPlaybackDemo
             }
         }
 
-        private void toolStripButtonOpenFile_Click(object sender, EventArgs e)
+        private void OnOpenFileClick(object sender, EventArgs e)
         {
-            OpenFileDialog openFileDialog = new OpenFileDialog();
+            var openFileDialog = new OpenFileDialog();
             string allExtensions = string.Join(";", (from f in InputFileFormats select "*" + f.Extension).ToArray());
             openFileDialog.Filter = String.Format("All Supported Files|{0}|All Files (*.*)|*.*", allExtensions);
             openFileDialog.FilterIndex = 1;

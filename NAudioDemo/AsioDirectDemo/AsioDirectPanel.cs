@@ -13,7 +13,7 @@ namespace NAudioDemo
 {
     public partial class AsioDirectPanel : UserControl
     {
-        private WaveFileReader reader;
+        private AudioFileReader reader;
         private AsioOut asioOut;        
 
         public AsioDirectPanel()
@@ -52,11 +52,11 @@ namespace NAudioDemo
         private void buttonSelectFile_Click(object sender, EventArgs e)
         {
             Cleanup();
-            OpenFileDialog ofd = new OpenFileDialog();
-            ofd.Filter = "WAV files|*.wav";
+            var ofd = new OpenFileDialog();
+            ofd.Filter = "Audio files|*.wav;*.mp3";
             if (ofd.ShowDialog() == DialogResult.OK)
             {
-                this.reader = new WaveFileReader(ofd.FileName);
+                this.reader = new AudioFileReader(ofd.FileName);
             }
         }
 
@@ -95,7 +95,7 @@ namespace NAudioDemo
             {
                 this.asioOut = new AsioOut(comboBoxAsioDevice.Text);
                 this.asioOut.ChannelOffset = GetUserSpecifiedChannelOffset();
-                this.asioOut.Init(this.reader);                
+                this.asioOut.Init(this.reader);
             }
             
             this.reader.Position = 0;

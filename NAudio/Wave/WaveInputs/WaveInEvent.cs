@@ -140,6 +140,13 @@ namespace NAudio.Wave
 
         private void DoRecording()
         {
+            foreach (var buffer in buffers)
+            {
+                if (!buffer.InQueue)
+                {
+                    buffer.Reuse();
+                }
+            }
             while (recording)
             {
                 if (callbackEvent.WaitOne())

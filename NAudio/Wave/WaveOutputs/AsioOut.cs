@@ -55,7 +55,7 @@ namespace NAudio.Wave
         public AsioOut(String driverName)
         {
             this.syncContext = SynchronizationContext.Current;
-            initFromName(driverName);
+            InitFromName(driverName);
         }
 
         /// <summary>
@@ -75,7 +75,7 @@ namespace NAudio.Wave
                 throw new ArgumentException(String.Format("Invalid device number. Must be in the range [0,{0}]", names.Length));
             }
             this.driverName = names[driverIndex];
-            initFromName(this.driverName);
+            InitFromName(this.driverName);
         }
 
         /// <summary>
@@ -127,7 +127,7 @@ namespace NAudio.Wave
         /// Inits the driver from the asio driver name.
         /// </summary>
         /// <param name="driverName">Name of the driver.</param>
-        private void initFromName(String driverName)
+        private void InitFromName(String driverName)
         {
             // Get the basic driver
             ASIODriver basicDriver = ASIODriver.GetASIODriverByName(driverName);
@@ -332,13 +332,25 @@ namespace NAudio.Wave
 
         /// <summary>
         /// The number of output channels we are currently using for playback
+        /// (Must be less than or equal to DriverOutputChannelCount)
         /// </summary>
         public int NumberOfOutputChannels { get; private set; }
 
         /// <summary>
         /// The number of input channels we are currently recording from
+        /// (Must be less than or equal to DriverInputChannelCount)
         /// </summary>
         public int NumberOfInputChannels { get; private set; }
+
+        /// <summary>
+        /// The maximum number of input channels this ASIO driver supports
+        /// </summary>
+        public int DriverInputChannelCount { get { return driver.Capabilities.NbInputChannels; } }
+        
+        /// <summary>
+        /// The maximum number of output channels this ASIO driver supports
+        /// </summary>
+        public int DriverOutputChannelCount { get { return driver.Capabilities.NbOutputChannels; } }
 
         /// <summary>
         /// By default the first channel on the input WaveProvider is sent to the first ASIO output.

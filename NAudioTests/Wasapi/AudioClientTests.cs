@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using NUnit.Framework;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
@@ -173,8 +174,31 @@ namespace NAudioTests.Wasapi
             // TODO put some stuff in
             // will tell it it has a silent buffer
             renderClient.ReleaseBuffer(bufferFrameCount, AudioClientBufferFlags.Silent);
-
         }
+
+        [Test, MaxTime(2000)]
+        public void CanCaptureDefaultDeviceInDefaultFormatUsingWasapiCapture()
+        {
+            using (var wasapiClient = new WasapiCapture())
+            {
+                wasapiClient.StartRecording();
+                Thread.Sleep(1000);
+                wasapiClient.StopRecording();
+            }
+        }
+ 
+        [Test, MaxTime(3000)]
+        public void CanReuseWasapiCapture()
+        {
+            using (var wasapiClient = new WasapiCapture())
+            {
+                wasapiClient.StartRecording();
+                Thread.Sleep(1000);
+                wasapiClient.StopRecording();
+                Thread.Sleep(1000);
+                wasapiClient.StartRecording();
+            }
+        } 
 
         private AudioClient InitializeClient(AudioClientShareMode shareMode)
         {

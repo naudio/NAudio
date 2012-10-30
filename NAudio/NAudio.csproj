@@ -104,8 +104,10 @@
     <Compile Include="FileFormats\Wav\WaveFileChunkReader.cs" />
     <Compile Include="Midi\MidiInMessageEventArgs.cs" />
     <Compile Include="Utils\ByteArrayExtensions.cs" />
+    <Compile Include="Utils\WavePositionExtensions.cs" />
     <Compile Include="Wave\Asio\AsioDriverCapability.cs" />
     <Compile Include="Wave\Asio\AsioSampleType.cs" />
+    <Compile Include="Wave\IWavePosition.cs" />
     <Compile Include="Wave\SampleProviders\FadeInOutSampleProvider.cs" />
     <Compile Include="Wave\SampleProviders\MultiplexingSampleProvider.cs" />
     <Compile Include="Wave\SampleProviders\OffsetSampleProvider.cs" />

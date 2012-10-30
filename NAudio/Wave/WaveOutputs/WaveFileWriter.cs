@@ -7,7 +7,7 @@ namespace NAudio.Wave
     /// <summary>
     /// This class writes WAV data to a .wav file on disk
     /// </summary>
-    public class WaveFileWriter : Stream
+    public class WaveFileWriter : Stream, IWavePosition
     {
         private Stream outStream;
         private BinaryWriter writer;
@@ -347,6 +347,23 @@ namespace NAudio.Wave
         public override void Flush()
         {
             writer.Flush();
+        }
+
+        /// <summary>
+        /// Gets the current position in bytes from the hardware.
+        /// </summary>
+        /// <returns>Position in bytes</returns>
+        public long GetPosition()
+        {
+            return dataChunkSize;
+        }
+
+        /// <summary>
+        /// Gets a <see cref="WaveFormat"/> instance indicating the format the hardware is using.
+        /// </summary>
+        public WaveFormat RawWaveFormat
+        {
+            get { return this.format; }
         }
 
         #region IDisposable Members

@@ -10,7 +10,7 @@ namespace NAudio.Wave
     /// <summary>
     /// Alternative WaveOut class, making use of the Event callback
     /// </summary>
-    public class WaveOutEvent : IWavePlayer
+    public class WaveOutEvent : IWavePlayer, IWavePosition
     {
         private IntPtr hWaveOut; // WaveOut handle
         private WaveOutBuffer[] buffers;
@@ -236,21 +236,11 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// Gets the current position from the wave output device.
+        /// Gets a <see cref="WaveFormat"/> instance indicating the format the hardware is using.
         /// </summary>
-        public TimeSpan PlaybackPosition
+        public WaveFormat RawWaveFormat
         {
-            get
-            {
-                // bytes played in this stream
-                var pos = GetPosition();
-
-                // samples played in this stream
-                pos /= this.waveStream.WaveFormat.BitsPerSample / 8 * this.waveStream.WaveFormat.Channels;
-
-                // ms played in this stream
-                return TimeSpan.FromMilliseconds(pos * 1000.0 / this.waveStream.WaveFormat.SampleRate);
-            }
+            get { return this.waveStream.WaveFormat; }
         }
 
         /// <summary>

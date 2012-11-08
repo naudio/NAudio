@@ -1,0 +1,307 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>MIDI File Converter</title>
+</head>
+<body>
+    <h1>MIDI File Converter</h1>
+	<p>
+		MIDI File Converter is a utility designed to convert the MIDI file library
+		included with Toontrack's <a href="http://www.ezdrummer.com">EZdrummer</a> virtual
+		instrument from MIDI type 0 to MIDI type 1, with a customisable name as the track
+		1 name. This has the advantage that users of Cakewalk's <a href="http://www.cakewalk.com">
+			SONAR
+		</a> will find that the MIDI clips created when they drag and drop into
+		the track pane are given a meaningful default name. It also supports the option
+		to leave the files as type 0 and simply change the track name, which is supported
+		by SONAR 6 and above.
+	</p>
+
+	<p>This utility has now been expanded to alter other MIDI files
+        that you might be using with EZD to adjust their end time markers so that they loop
+        correctly with EZdrummer's built in loop browser. (EZD version 1.0.3 introduced
+        some problems in this area).</p>
+    <h2>
+        Download</h2>
+    <p>
+        A link to the latest version of MIDI File converter can be found <a href="http://www.codeplex.com/naudio">
+            here</a>.</p>
+    <h2>
+        Installation and Requirements</h2>
+    <p>
+        MIDI File Converter requires the .NET framework version 2.0 to be installed.
+        You can download this <a href="http://msdn.microsoft.com/netframework/downloads/updates/default.aspx">
+            here</a>. Once you have done this you can run the installer (or download the zip archive,
+            decompress it and run <b>MIDI File Converter.exe</b>).</p>
+    
+    <h2>Settings</h2>
+        
+        <img src="http://i63.photobucket.com/albums/h146/markheath/emc_0_2.png" alt="MIDI File Converter Screenshot" />
+    
+    <h3>Input Folder</h3>
+    <p>
+        Normally you would choose the EZdrummer MIDI folder as the input folder. This is
+        typically located at <b>C:\Program Files\Toontrack\EZDrummer\Midi</b>. However, if you
+        want to specifically choose which MIDI files will be processed, you can select a
+        subfolder or a new folder into which you have copied in the exact files you want to be processed.</p>
+    <h3>
+        Output Folder</h3>
+    <p>
+        MIDI File Converter will not modify any existing files or folders on your PC.
+        What it does is recreates all the contents of the input folder into an empty output
+        folder you have specified. This folder must be initially blank, and its contents
+        can be copied into the Toontrack MIDI folder when you have finished the conversion
+        (you must do this part yourself).</p>
+    <h3>
+        Clip Naming</h3>
+    <p>
+        These settings govern the clip name you will see when dragging into your host sequencer.
+        Please note that in certain circumstances, EZD will generate its own clip name instead
+        of the one in the file. You will need to experiment with your own host sequencer
+        to see how it behaves.</p>
+    <p>
+        If the <b>Apply XML Naming Rules to Toontrack EZD Patterns</b> option is selected, then
+        whenever a MIDI file that was supplied with EZdrummer is processed, it will be given
+        a MIDI clip name that is calculated according to the rules in the NamingRules.xml
+        file (see "Advanced Customisation" below for more details). This setting is turned
+        on by default.</p>
+    <p>
+        If the <b>Use filename for other MIDI patterns</b> option is selected, then all other
+        MIDI files in the input folder will have their clip name set to the name of the
+        file (minus the .mid extension). This setting is on by default. If you turn it off,
+        MIDI files will retain whatever clip names they already had (which may be blank).</p>
+    <h3>
+        MIDI Note Channel</h3>
+    <p>
+        You will normally want to leave MIDI notes on whatever channel they were already
+        on. However, you can move them all to track 1 to be just like the ones in the included
+        EZD libraries. Or you can move them all to track 10, so that when you play them
+        in Windows Media Player, or through a GM module, it will play drum sounds instead
+        of piano sounds.</p>
+    <h3>
+        Output File Type</h3>
+    <p>
+        MIDI File Converter was written to convert Toontrack's type 0 files into type
+        1, so that their clip names would display correctly in SONAR 5. However, users of
+        different hosts may find that they can use type 0 without problems. Choose type
+        1 to force all MIDI files to type 1, type 0 to force them all to type 0, and leave
+        unchanged if you want them to stay as they are.</p>
+    <h3>
+        Verbose Output</h3>
+    <p>
+        Select this option if you want a detailed run-down of everything that EZdrummer
+        MIDI Converter is doing. If it is turned off, you will still be informed of any
+        errors encountered.</p>
+    <h2>
+        How to make MIDI clip names appear in SONAR</h2>
+        <p>Note: these are for users of SONAR 5 or previous versions. SONAR 6 can display
+        EZdrummers own clip names. You may still be able to use this utility with SONAR 6 though
+        if you want to customise what those clip names will be.</p>
+    <ul>
+        <li>First, make sure you have no running instances of EZdrummer.</li>
+        <li>MIDI File Converter will not modify, delete or rename any files on your computer.
+            It will only create new ones. So now, create an empty folder somewhere to contain
+            the created library. A good example would be on your desktop, in a subfolder called
+            Midi.</li>
+        <li>Make sure that the EZdrummer MIDI folder is pointing at EZdrummer's own MIDI folder.</li>
+        <li>Point the output folder at your desired output path. MIDI File Converter will
+            insist that this is a blank folder, to avoid confusion.</li>
+        <li>You want to select type 1 as the ouput file type.</li>
+        <li>If you have user MIDI files you would like to be given clip names as well then select
+            the <b>Use filename for other MIDI patterns</b> option.</li>
+       <li>By default Apply XML Naming Rules is enabled. If you turn this off, the track name
+            for converted EZdrummer MIDI files will simply be the filename minus the .mid extension.
+            It is possible to extensively customise the naming rules, but this is for advanced
+            users only. See the next section for more details. If you just have the EZdrummer
+            included MIDI files, and no expansion packs, the default naming rules will probably
+            be just fine for you.</li>
+        <li>When you are ready, click Convert. The process will take a few minutes, depending
+            on the speed of your computer.</li>
+        <li>When it has finished, you will be informed of how many files were processed, as
+            well as the number of errors encountered. If you have any errors at all, it is recommended
+            that you report them to <a href="mailto:software@wordandspirit.co.uk">software@wordandspirit.co.uk</a>.
+        </li>
+        <li>If you are happy that the output folder contains the MIDI files you want, you are
+            ready to replace EZdrummer's MIDI files with the converted ones. <b>Please make a backup
+                first</b>. One way would simply be to rename the existing MIDI folder to something
+            else (e.g. Original MIDI).</li>
+        <li>Now copy the entire contents of the output directory into the Toontrack MIDI folder
+            (by default this will be <b>C:\Program Files\Toontrack\EZDrummer\Midi</b>.</li>
+    </ul>
+    <h2>
+        How to make user MIDI files loop correctly in EZD 1.0.3</h2>
+    <ul>
+        <li>First, copy all the folders of MIDI files that have the looping problem into an
+            empty folder. This will be your input folder.</li>
+        <li>Create another blank folder to use as your output folder.</li>
+        <li>If you would like them to be given MIDI clip names based on their filename at the
+            same time, ensure that "Use filename for other MIDI patterns" is selected.</li>
+        <li>You can also take the opportunity to modify the MIDI file type or the channel number
+            for the notes. This may be helpful depending on your host.</li>
+            <li>You may also wish to turn on some options in the advanced options screen, available
+            on the <b>Tools</b> menu.</li>
+        <li>When you are ready click <b>Convert</b>. If the process completes without errors, you can
+            replace your user MIDI files with those in the output folder.</li>
+    </ul>
+    <h2>
+        Advanced Customisation</h2>
+    <p>
+        MIDI File Converter allows extensive customisation of the filenames it creates.
+        If you are comfortable with editing XML files and using regular expressions, you
+        will be able to customise these settings. This allows the flexibility to support
+        any EZX expansion pack MIDI files you may purchase. The settings are all stored
+        in <b>NamingRules.xml</b>, which should be in the same folder as the EZdrummer MIDI
+        Converter application. Please be careful modifying these settings and always check
+        that the output is what you wanted before replacing your EZdrummer MIDI files.</p>
+    <ul>
+        <li><b>General Settings</b> - This section contains some global settings. Do not change
+            the order of the keys in this section.</li>
+        <li><b>FilenameRegex</b> - This pattern is matched against all the filenames. If a match
+            is found, then MIDI File Converter considers this to be an EZdrummer MIDI file,
+            and will attempt to apply naming rules. The default setting looks for a filename
+            that starts with one uppercase letter followed by an @ symbol. You only need to
+            change this setting if files you wanted naming rules applied on are being missed
+            out, or files you didn't want the naming rules applied on were being included.</li>
+        <li><b>ContextDepth</b> - This is the number of components (folders and filename) that
+            will be used to formulate the track 1 name. This is normally set to 3 (4 is the
+            maximum), but can be set lower if desired.</li>
+        <li><b>ContextSeparator</b> - This string will be inserted between the converted name
+            of each item in the context hierarchy. If the naming rules have caused the length
+            of a section to be set to zero, then the context separator is not added. The default
+            will be just fine for most people.</li>
+        <li><b>Rules</b> - The rules section allows you to specify a number of string substitutions
+            to be applied to each part of the name. This consists of two parts - the <b>SearchString</b>
+            and the <b>Replacement</b> (see below). Each rule is applied in turn on each folder
+            name or filename used to form the track name. The order is very important in this
+            section - the rules will be applied in the order they appear in the NamingRules.xml
+            file.</li>
+        <li><b>SearchString</b> - this is a regular expression that defines a string to look
+            for within the file or folder name.</li>
+        <li><b>Replacement</b> - this is a literal string that will replace all occurences of
+            the search string in the file or folder name being processed.</li>
+    </ul>
+    <p>
+        Some example rules from the default NamingRules.xml file:</p>
+    <code>&lt;Rule&gt;<br />
+        &nbsp;&nbsp;&nbsp;&lt;SearchString&gt;^[0-9A-Z]+\@[0-9][0-9]\.&lt;/SearchString&gt;<br />
+        &nbsp;&nbsp;&nbsp;&lt;Replacement&gt;&lt;/Replacement&gt;<br />
+        &lt;/Rule&gt; </code>
+    <p>
+        This rule looks for all file or folder names that start with one or more digits
+        or upper case letters followed by an @ sign, followed by exactly two digits and
+        then a full stop. It replaces it with a blank string. This effectively strips off
+        the start of EZdrummer folder and filenames.</p>
+    <code>&lt;Rule&gt;<br />
+        &nbsp;&nbsp;&nbsp;&lt;SearchString&gt;POP/ROCK&lt;/SearchString&gt;<br />
+        &nbsp;&nbsp;&nbsp;&lt;Replacement&gt;P/R&lt;/Replacement&gt;<br />
+        &lt;/Rule&gt; </code>
+    <p>
+        This rule abbreviates any instances of the upper case string "POP/ROCK" to "P/R".
+        Note that this will only operate if it follows the rule that converts the '#' character
+        to a '/' character.</p>
+    <code>&lt;Rule&gt;<br />
+        &nbsp;&nbsp;&nbsp;&lt;SearchString&gt;GROOVE &lt;/SearchString&gt;<br />
+        &nbsp;&nbsp;&nbsp;&lt;Replacement&gt;G&lt;/Replacement&gt;<br />
+        &lt;/Rule&gt; </code>
+    <p>
+        This rule abbreviates any instances of the upper case string "GROOVE" followed by
+        a trailing space to simply "G". Note that this only works because we have already
+        converted all underscore characters to spaces with a previous rule.</p>
+    <code>&lt;Rule&gt;<br />
+        &nbsp;&nbsp;&nbsp;&lt;SearchString&gt;SAMBA&lt;/SearchString&gt;<br />
+        &nbsp;&nbsp;&nbsp;&lt;Replacement&gt;&lt;/Replacement&gt;<br />
+        &lt;/Rule&gt; </code>
+    <p>
+        The Samba MIDI files included with the Cocktail kit EZX will have the word Samba
+        in their name twice by default. This rule strips out the fully capitalised folder
+        name, so the mixed case "Samba" in the filename can be used on its own.</p>
+    <h2>
+        Advanced Options</h2>
+    <p>
+        There are some extra settings available that may be useful for some third party
+        add-on MIDI libraries. These are accessed from the Tools menu. They are recommended
+        for advanced users only. Messages will appear in the output window to inform you
+        of these settings being modified from their default values.</p>
+    <ul>
+        <li><b>Remove Sequencer Specific Events</b> - The Toontrack EZD files each have a sequencer
+            specific event in them. I don't know what it is for, but you can remove it if you
+            want (maybe to trick EZD into thinking this is a user file instead). Default is
+            <b>False</b>.</li>
+        <li><b>Recreate End Track Events</b> - This is what will fix most looping issues in
+            EZD v1.03. It deletes the existing end track markers and puts new ones in that fall
+            exactly after the last note event. Default is <b>True</b>. If this is set to False,
+            then end track markers are left exactly where they were.</li>
+        <li><b>Add Name Marker</b> - In addition to naming the tracks, this will add a marker
+            to track zero with the name of the clip. Any existing markers at position 0 on track
+            0 will be removed. Default is <b>False</b></li>
+        <li><b>Trim Text Events</b> - Trims the whitespace of Text events and removes them if
+            they are zero length. Default is <b>False</b></li>
+        <li><b>Remove Empty Tracks</b> - If the input file is type 1 and has tracks containing
+            no note events, these tracks can be removed. The control track and the first track
+            are never removed. Default is <b>False</b>.</li>
+        <li><b>Remove Extra Tempo Events</b> - Most MIDI files have just one tempo event on
+            the first tick. This option removes any subsequent ones (this is sometimes needed
+            to fix the looping issue in EZD v1.0.3). Default is <b>False</b>.</li>
+        <li><b>Remove Extra Markers</b> - This will remove any markers that are not at the first
+            tick. This is sometimes needed to fix the looping issue in EZD v1.0.3. Default is
+            <b>False</b>.</li>
+    </ul>
+    <h2>
+        Notes</h2>
+    <ul>
+        <li>This software is not affiliated in any way with Toontrack. It is not guaranteed
+            to work on future versions of EZdrummer, or with EZX expansion packs (although I
+            expect it will work just fine).</li>
+        <li>I recommend that if you are installing any patches or updates to EZdrummer, that
+            you restore the original Midi directory before doing so, and then re-run the EZdrummer
+            MIDI Converter afterwards.</li>
+        <li>If you have some user MIDI patterns that you do not want MIDI File Converter
+            to attempt to convert, simply remove them from the input directory before running
+            the conversion process. You do not have to point it to the real EZdrummer MIDI directory
+            if you don't want to. You could create your own folder with only the files you want
+            converted in.</li>
+        <li>For the technically inclined, here is an explanation of what happens to your MIDI
+            events when converting to type 1. All meta-events are placed on track 0. All note
+            events are placed on track 1. In addition a track name (the one worked out by the
+            naming rules) and a track end marker are added to track 1.</li>
+    </ul>
+    <h2>
+        Version History</h2>
+    <p>
+        The latest version of MIDI File Converter can be found at <a href="http://www.codeplex.com/naudio">
+            http://www.codeplex.com/naudio</a>.
+    </p>
+    <ul>
+        <li>v0.1 9 Oct 2006
+            <ul>
+                <li>First public beta release</li>
+            </ul>
+        </li>
+        <li>v0.2 2 Nov 2006
+            <ul>
+                <li>Now processes all MIDI files in the input folder, rather than just copying type
+                    1</li>
+                <li>Allow processing of non-EZD files (to move end track markers to work with EZD v1.03)</li>
+                <li>Ability to select output file type</li>
+                <li>Both tracks in a type 1 file will be given the same track name</li>
+                <li>An advanced options dialog added with extra options</li>
+                <li>Can optionally force all MIDI note events onto channel 1 or 10</li>
+                <li>Properly handles non-ASCII characters (such as copyright symbol)</li>
+                <li>Has an installer</li>
+                <li>Can save the conversion log</li>
+            </ul>
+        </li>
+        <li>v0.3 16 Mar 2007
+            <ul>
+                <li>Name changed to MIDI File Converter to reflect its use for more general-purpose tasks</li>
+                <li>Fixed a bug where track 1 didn't have an end track marker when converting from type 0 to type 1</li>
+            </ul>
+        </li>
+        <li>v0.4 - t.b.a.
+            <ul>
+            <li>Fixed a sysex writing bug</li>
+            <li>Better preserving of event ordering</li>
+            </ul>
+        </li>
+    </ul>
+</body>
+</html>

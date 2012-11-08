@@ -35,6 +35,7 @@
             this.buttonChooseFormat = new System.Windows.Forms.Button();
             this.buttonDecode = new System.Windows.Forms.Button();
             this.richTextBox1 = new System.Windows.Forms.RichTextBox();
+            this.buttonAdd = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // listBoxAcmDrivers
@@ -46,7 +47,7 @@
             this.listBoxAcmDrivers.Name = "listBoxAcmDrivers";
             this.listBoxAcmDrivers.Size = new System.Drawing.Size(522, 95);
             this.listBoxAcmDrivers.TabIndex = 0;
-            this.listBoxAcmDrivers.SelectedIndexChanged += new System.EventHandler(this.listBoxAcmDrivers_SelectedIndexChanged);            
+            this.listBoxAcmDrivers.SelectedIndexChanged += new System.EventHandler(this.listBoxAcmDrivers_SelectedIndexChanged);
             // 
             // label1
             // 
@@ -59,9 +60,9 @@
             // 
             // buttonEncode
             // 
-            this.buttonEncode.Location = new System.Drawing.Point(132, 129);
+            this.buttonEncode.Location = new System.Drawing.Point(216, 129);
             this.buttonEncode.Name = "buttonEncode";
-            this.buttonEncode.Size = new System.Drawing.Size(108, 23);
+            this.buttonEncode.Size = new System.Drawing.Size(74, 23);
             this.buttonEncode.TabIndex = 2;
             this.buttonEncode.Text = "Encode";
             this.buttonEncode.UseVisualStyleBackColor = true;
@@ -70,7 +71,7 @@
             // checkBoxAutoLaunchConvertedFile
             // 
             this.checkBoxAutoLaunchConvertedFile.AutoSize = true;
-            this.checkBoxAutoLaunchConvertedFile.Location = new System.Drawing.Point(360, 135);
+            this.checkBoxAutoLaunchConvertedFile.Location = new System.Drawing.Point(376, 135);
             this.checkBoxAutoLaunchConvertedFile.Name = "checkBoxAutoLaunchConvertedFile";
             this.checkBoxAutoLaunchConvertedFile.Size = new System.Drawing.Size(158, 17);
             this.checkBoxAutoLaunchConvertedFile.TabIndex = 5;
@@ -89,9 +90,9 @@
             // 
             // buttonDecode
             // 
-            this.buttonDecode.Location = new System.Drawing.Point(246, 129);
+            this.buttonDecode.Location = new System.Drawing.Point(296, 129);
             this.buttonDecode.Name = "buttonDecode";
-            this.buttonDecode.Size = new System.Drawing.Size(108, 23);
+            this.buttonDecode.Size = new System.Drawing.Size(74, 23);
             this.buttonDecode.TabIndex = 2;
             this.buttonDecode.Text = "Decode";
             this.buttonDecode.UseVisualStyleBackColor = true;
@@ -108,6 +109,16 @@
             this.richTextBox1.TabIndex = 6;
             this.richTextBox1.Text = "";
             // 
+            // buttonAdd
+            // 
+            this.buttonAdd.Location = new System.Drawing.Point(136, 129);
+            this.buttonAdd.Name = "buttonAdd";
+            this.buttonAdd.Size = new System.Drawing.Size(74, 23);
+            this.buttonAdd.TabIndex = 2;
+            this.buttonAdd.Text = "Add Codec";
+            this.buttonAdd.UseVisualStyleBackColor = true;
+            this.buttonAdd.Click += new System.EventHandler(this.buttonAdd_Click);
+            // 
             // AcmPanel
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -118,6 +129,7 @@
             this.Controls.Add(this.label1);
             this.Controls.Add(this.listBoxAcmDrivers);
             this.Controls.Add(this.buttonDecode);
+            this.Controls.Add(this.buttonAdd);
             this.Controls.Add(this.buttonEncode);
             this.Name = "AcmPanel";
             this.Size = new System.Drawing.Size(546, 325);
@@ -136,5 +148,6 @@
         private System.Windows.Forms.Button buttonChooseFormat;
         private System.Windows.Forms.Button buttonDecode;
         private System.Windows.Forms.RichTextBox richTextBox1;
+        private System.Windows.Forms.Button buttonAdd;
     }
 }

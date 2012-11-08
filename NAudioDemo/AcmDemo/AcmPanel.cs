@@ -20,7 +20,13 @@ namespace NAudioDemo
 
         private void AcmForm_Load(object sender, EventArgs e)
         {
-            foreach (AcmDriver driver in AcmDriver.EnumerateAcmDrivers())
+            RefreshDriversList();
+        }
+
+        private void RefreshDriversList()
+        {
+            listBoxAcmDrivers.Items.Clear();
+            foreach (var driver in AcmDriver.EnumerateAcmDrivers())
             {
                 listBoxAcmDrivers.Items.Add(driver);
             }
@@ -167,16 +173,21 @@ namespace NAudioDemo
             }
         }
 
-        private string GetInputFileName(string title)
+        private string SelectFileToOpen(string title, string filter)
         {
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "WAV File (*.wav)|*.wav";
+            var openFileDialog = new OpenFileDialog();
+            openFileDialog.Filter = filter;
             openFileDialog.Title = title;
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
                 return openFileDialog.FileName;
             }
             return null;
+        }
+
+        private string GetInputFileName(string title)
+        {
+            return SelectFileToOpen(title, "WAV File (*.wav)|*.wav");
         }
 
         private string GetOutputFileName(string title)
@@ -261,7 +272,16 @@ namespace NAudioDemo
                 return e.ToString();
             }
         }
-        
+
+        private void buttonAdd_Click(object sender, EventArgs e)
+        {
+            var codecFile = SelectFileToOpen("Select file to open", "ACM Codecs|*.acm;*.dll");
+            if (codecFile != null)
+            {
+                var driver = AcmDriver.AddLocalDriver(codecFile);
+                listBoxAcmDrivers.Items.Add(driver);
+            }
+        }
     }
 
 

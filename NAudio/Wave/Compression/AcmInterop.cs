@@ -42,6 +42,25 @@ namespace NAudio.Wave.Compression
         // acmGetVersion
         // acmStreamMessage
 
+        // http://msdn.microsoft.com/en-us/library/windows/desktop/dd742885%28v=vs.85%29.aspx
+        // MMRESULT acmDriverAdd(
+        //        LPHACMDRIVERID phadid,
+        //        HINSTANCE hinstModule,
+        //        LPARAM lParam,
+        //        DWORD dwPriority,
+        //        DWORD fdwAdd)
+        [DllImport("msacm32.dll")]
+        public static extern MmResult acmDriverAdd(out IntPtr driverHandle,
+            IntPtr driverModule,
+            IntPtr driverFunctionAddress,
+            int priority,
+            AcmDriverAddFlags flags);
+
+        // http://msdn.microsoft.com/en-us/library/windows/desktop/dd742897%28v=vs.85%29.aspx
+        [DllImport("msacm32.dll")]
+        public static extern MmResult acmDriverRemove(IntPtr driverHandle,
+            int removeFlags);
+
         // http://msdn.microsoft.com/en-us/library/dd742886%28VS.85%29.aspx
         [DllImport("Msacm32.dll")]
         public static extern MmResult acmDriverClose(IntPtr hAcmDriver, int closeFlags);

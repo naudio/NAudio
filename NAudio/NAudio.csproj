@@ -136,7 +136,6 @@
     <Compile Include="Dsp\EnvelopeDetector.cs" />
     <Compile Include="Dsp\FastFourierTransform.cs" />
     <Compile Include="Dsp\ImpulseResponseConvolution.cs" />
-    <Compile Include="Dsp\ShiftBuffer.cs" />
     <Compile Include="Dsp\SimpleCompressor.cs" />
     <Compile Include="Dsp\SimpleGate.cs" />
     <Compile Include="FileFormats\Map\CakewalkDrumMapping.cs" />
@@ -178,12 +177,6 @@
     <Compile Include="FileFormats\SoundFont\ZoneBuilder.cs" />
     <Compile Include="Gui\Fader.cs">
       <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Gui\Graph\Graph.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Gui\LcdPanel.cs">
-      <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="Gui\PanSlider.cs">
       <SubType>UserControl</SubType>
@@ -437,14 +430,6 @@
   <ItemGroup>
     <EmbeddedResource Include="Gui\Fader.resx">
       <DependentUpon>Fader.cs</DependentUpon>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Gui\Graph\Graph.resx">
-      <DependentUpon>Graph.cs</DependentUpon>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Gui\LcdPanel.resx">
-      <DependentUpon>LcdPanel.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Gui\PanSlider.resx">

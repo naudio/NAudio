@@ -82,7 +82,7 @@ namespace NAudio.Wave.Compression
             {
                 throw new ArgumentException("Please pass in the AcmDriver returned by the AddLocalDriver method");
             }
-            var removeResult = AcmInterop.acmDriverRemove(localDriver.driverHandle, 0);
+            var removeResult = AcmInterop.acmDriverRemove(localDriver.driverId, 0); // gets stored as a driver Id
             NativeMethods.FreeLibrary(localDriver.localDllHandle);
             MmException.Try(removeResult, "acmDriverRemove");
         }

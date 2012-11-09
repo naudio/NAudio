@@ -170,6 +170,7 @@ namespace NAudio.Wave.Compression
         /// <param name="bytesToConvert">The number of bytes in the SourceBuffer
         /// that need to be converted</param>
         /// <returns>The number of converted bytes in the DestinationBuffer</returns>
+        [Obsolete("Call the version returning sourceBytesConverted instead")]
         public int Convert(int bytesToConvert)
         {
             int sourceBytesConverted;

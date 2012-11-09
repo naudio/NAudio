@@ -28,6 +28,17 @@ namespace NAudio.Wave
                 return sourceStream;
             }
             WaveFormat pcmFormat = AcmStream.SuggestPcmFormat(sourceStream.WaveFormat);
+            if (pcmFormat.SampleRate < 8000)
+            {
+                if (sourceStream.WaveFormat.Encoding == WaveFormatEncoding.G723)
+                {
+                    pcmFormat = new WaveFormat(8000, 16, 1);
+                }
+                else
+                {
+                    throw new InvalidOperationException("Invalid suggested output format, please explicitly provide a target format");
+                }
+            }
             return new WaveFormatConversionStream(pcmFormat, sourceStream);
         }
 
@@ -42,7 +53,7 @@ namespace NAudio.Wave
             this.targetFormat = targetFormat;
 
             conversionStream = new AcmStream(sourceStream.WaveFormat, targetFormat);
-            try
+            /*try
             {
                 // work out how many bytes the entire input stream will convert to
                 length = conversionStream.SourceToDest((int)sourceStream.Length);
@@ -51,7 +62,9 @@ namespace NAudio.Wave
             {
                 Dispose();
                 throw;
-            }
+            }*/
+            length = EstimateSourceToDest((int)sourceStream.Length);
+
             position = 0;
             preferredSourceReadSize = Math.Min(sourceStream.WaveFormat.AverageBytesPerSecond, conversionStream.SourceBuffer.Length);
             preferredSourceReadSize -= (preferredSourceReadSize%sourceStream.WaveFormat.BlockAlign);
@@ -63,17 +76,31 @@ namespace NAudio.Wave
         [Obsolete("can be unreliable, use of this method not encouraged")]
         public int SourceToDest(int source)
         {
-            return conversionStream.SourceToDest(source);
+            return (int) EstimateSourceToDest(source);
+            //return conversionStream.SourceToDest(source);
         }
 
+        private long EstimateSourceToDest(long source)
+        {
+            var dest = ((source * targetFormat.AverageBytesPerSecond) / sourceStream.WaveFormat.AverageBytesPerSecond);
+            dest -= (dest % targetFormat.BlockAlign);
+            return dest;
+        }
+
+        private long EstimateDestToSource(long dest)
+        {
+            var source = ((dest * sourceStream.WaveFormat.AverageBytesPerSecond) / targetFormat.AverageBytesPerSecond);
+            source -= (source % sourceStream.WaveFormat.BlockAlign);
+            return (int)source;
+        }
         /// <summary>
         /// Converts destination bytes to source bytes
         /// </summary>
         [Obsolete("can be unreliable, use of this method not encouraged")]
         public int DestToSource(int dest)
         {
-            //return (dest * sourceStream.BlockAlign) / blockAlign;
-            return conversionStream.DestToSource(dest);
+            return (int)EstimateDestToSource(dest);
+            //return conversionStream.DestToSource(dest);
         }
 
         /// <summary>
@@ -100,10 +127,11 @@ namespace NAudio.Wave
             {
                 // make sure we don't get out of sync
                 value -= (value % BlockAlign);
+
                 // this relies on conversionStream DestToSource and SourceToDest being reliable
-                var desiredSourcePosition = conversionStream.DestToSource((int) value);
+                var desiredSourcePosition = EstimateDestToSource(value);  //conversionStream.DestToSource((int) value); 
                 sourceStream.Position = desiredSourcePosition;
-                position = conversionStream.SourceToDest((int)sourceStream.Position);
+                position = EstimateSourceToDest(sourceStream.Position);  //conversionStream.SourceToDest((int)sourceStream.Position);
                 leftoverDestBytes = 0;
                 leftoverDestOffset = 0;
                 conversionStream.Reposition();

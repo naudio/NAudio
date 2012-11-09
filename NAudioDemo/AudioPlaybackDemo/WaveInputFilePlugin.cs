@@ -26,7 +26,7 @@ namespace NAudioDemo.AudioPlaybackDemo
             if (readerStream.WaveFormat.Encoding != WaveFormatEncoding.Pcm && readerStream.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
             {
                 readerStream = WaveFormatConversionStream.CreatePcmStream(readerStream);
-                readerStream = new BlockAlignReductionStream(readerStream);
+                //readerStream = new BlockAlignReductionStream(readerStream);
             }
             return readerStream;
         }

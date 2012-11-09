@@ -113,10 +113,8 @@ namespace NAudioDemo.AudioPlaybackDemo
             }
 
 
-            trackBarPosition.Maximum = (int)fileWaveStream.TotalTime.TotalSeconds;
             labelTotalTime.Text = String.Format("{0:00}:{1:00}", (int)fileWaveStream.TotalTime.TotalMinutes,
                 fileWaveStream.TotalTime.Seconds);
-            trackBarPosition.TickFrequency = trackBarPosition.Maximum / 30;
 
             try
             {
@@ -251,7 +249,7 @@ namespace NAudioDemo.AudioPlaybackDemo
             if (waveOut != null && fileWaveStream != null)
             {
                 TimeSpan currentTime = (waveOut.PlaybackState == PlaybackState.Stopped) ? TimeSpan.Zero : fileWaveStream.CurrentTime;
-                trackBarPosition.Value = (int)currentTime.TotalSeconds;
+                trackBarPosition.Value = Math.Min(trackBarPosition.Maximum,(int)(100 * currentTime.TotalSeconds / fileWaveStream.TotalTime.TotalSeconds));
                 labelCurrentTime.Text = String.Format("{0:00}:{1:00}", (int)currentTime.TotalMinutes,
                     currentTime.Seconds);
             }
@@ -265,7 +263,7 @@ namespace NAudioDemo.AudioPlaybackDemo
         {
             if (waveOut != null)
             {
-                fileWaveStream.CurrentTime = TimeSpan.FromSeconds(trackBarPosition.Value);
+                fileWaveStream.CurrentTime = TimeSpan.FromSeconds(fileWaveStream.TotalTime.TotalSeconds * trackBarPosition.Value / 100.0);
             }
         }
 

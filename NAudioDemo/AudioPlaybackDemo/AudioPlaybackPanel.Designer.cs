@@ -190,10 +190,13 @@
             // 
             this.trackBarPosition.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.trackBarPosition.LargeChange = 10;
             this.trackBarPosition.Location = new System.Drawing.Point(18, 324);
+            this.trackBarPosition.Maximum = 100;
             this.trackBarPosition.Name = "trackBarPosition";
             this.trackBarPosition.Size = new System.Drawing.Size(569, 45);
             this.trackBarPosition.TabIndex = 16;
+            this.trackBarPosition.TickFrequency = 5;
             this.trackBarPosition.Scroll += new System.EventHandler(this.trackBarPosition_Scroll);
             // 
             // timer1

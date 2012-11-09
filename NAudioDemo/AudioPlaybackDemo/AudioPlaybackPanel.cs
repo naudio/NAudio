@@ -183,6 +183,7 @@ namespace NAudioDemo.AudioPlaybackDemo
             {
                 MessageBox.Show(e.Exception.Message, "Playback Device Error");
             }
+            fileWaveStream.Position = 0;
         }
 
         private void CloseWaveOut()

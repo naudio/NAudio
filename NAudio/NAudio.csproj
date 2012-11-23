@@ -109,6 +109,7 @@
     <Compile Include="MediaFoundation\IMFSourceReader.cs" />
     <Compile Include="Midi\MidiInMessageEventArgs.cs" />
     <Compile Include="Utils\ByteArrayExtensions.cs" />
+    <Compile Include="Utils\IEEE.cs" />
     <Compile Include="Utils\NativeMethods.cs" />
     <Compile Include="Wave\Asio\AsioDriverCapability.cs" />
     <Compile Include="Wave\Asio\AsioSampleType.cs" />
@@ -360,6 +361,7 @@
     <Compile Include="Wave\WaveFormats\WaveFormatExtraData.cs" />
     <Compile Include="Wave\WaveFormats\WmaWaveFormat.cs" />
     <Compile Include="Wave\WaveInputs\IWaveIn.cs" />
+    <Compile Include="Wave\WaveOutputs\AiffFileWriter.cs" />
     <Compile Include="Wave\WaveOutputs\AsioAudioAvailableEventArgs.cs" />
     <Compile Include="Wave\WaveOutputs\AsioOut.cs" />
     <Compile Include="Wave\WaveOutputs\CueWaveFileWriter.cs" />

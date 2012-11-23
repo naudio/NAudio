@@ -2,6 +2,7 @@
 using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics;
+using NAudio.Utils;
 
 namespace NAudio.Wave
 {
@@ -75,7 +76,7 @@ namespace NAudio.Wave
                     short numChannels = ConvertShort(br.ReadBytes(2));
                     uint numSampleFrames = ConvertInt(br.ReadBytes(4));
                     short sampleSize = ConvertShort(br.ReadBytes(2));
-                    double sampleRate = ConvertExtended(br.ReadBytes(10));
+                    double sampleRate = IEEE.ConvertFromIeeeExtended(br.ReadBytes(10));
 
                     format = new WaveFormat((int)sampleRate, (int)sampleSize, (int)numChannels);
 
@@ -277,50 +278,6 @@ namespace NAudio.Wave
         }
         #endregion
 
-        #region IEEE 80-bit Extended
-        private static double UnsignedToFloat(ulong u)
-        {
-            return (((double)((long)(u - 2147483647L - 1))) + 2147483648.0);
-        }
-
-        private static double ldexp(double x, int exp)
-        {
-            return x * Math.Pow(2, exp);
-        }
-
-        private static double ConvertExtended(byte[] bytes)
-        {
-            if (bytes.Length != 10) throw new Exception("Incorrect length for IEEE extended.");
-            double f;
-            int expon;
-            uint hiMant, loMant;
-
-            expon = ((bytes[0] & 0x7F) << 8) | bytes[1];
-            hiMant = (uint)((bytes[2] << 24) | (bytes[3] << 16) | (bytes[4] << 8) | bytes[5]);
-            loMant = (uint)((bytes[6] << 24) | (bytes[7] << 16) | (bytes[8] << 8) | bytes[9]);
-
-            if (expon == 0 && hiMant == 0 && loMant == 0)
-            {
-                f = 0;
-            }
-            else
-            {
-                if (expon == 0x7FFF)    /* Infinity or NaN */
-                {
-                    f = double.NaN;
-                }
-                else
-                {
-                    expon -= 16383;
-                    f = ldexp(UnsignedToFloat(hiMant), expon -= 31);
-                    f += ldexp(UnsignedToFloat(loMant), expon -= 32);
-                }
-            }
-
-            if ((bytes[0] & 0x80) == 0x80) return -f;
-            else return f;
-        }
-        #endregion
 
         #region AiffChunk
         /// <summary>

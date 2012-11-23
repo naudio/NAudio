@@ -120,6 +120,7 @@
     <Compile Include="Wave\SampleProviders\Pcm32BitToSampleProvider.cs" />
     <Compile Include="Wave\SampleProviders\SampleProviderConverters.cs" />
     <Compile Include="Wave\SampleProviders\SampleToWaveProvider16.cs" />
+    <Compile Include="Wave\SampleProviders\SignalGenerator.cs" />
     <Compile Include="Wave\SampleProviders\WaveToSampleProvider64.cs" />
     <Compile Include="Wave\WaveInputs\WaveInEvent.cs" />
     <Compile Include="Wave\WaveInputs\WasapiCapture.cs" />

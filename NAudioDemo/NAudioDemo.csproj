@@ -184,6 +184,13 @@
     <Compile Include="FadeInOutDemo\FadeInOutPanel.Designer.cs">
       <DependentUpon>FadeInOutPanel.cs</DependentUpon>
     </Compile>
+    <Compile Include="SignalGeneratorDemo\GeneratorPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="SignalGeneratorDemo\GeneratorPanel.Designer.cs">
+      <DependentUpon>GeneratorPanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="SignalGeneratorDemo\GeneratorPlugIn.cs" />
     <Compile Include="SimplePlaybackDemo\SimplePlaybackPanel.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -258,6 +265,9 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
+    <EmbeddedResource Include="SignalGeneratorDemo\GeneratorPanel.resx">
+      <DependentUpon>GeneratorPanel.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="SimplePlaybackDemo\SimplePlaybackPanel.resx">
       <DependentUpon>SimplePlaybackPanel.cs</DependentUpon>
     </EmbeddedResource>

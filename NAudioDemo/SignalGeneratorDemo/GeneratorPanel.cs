@@ -34,7 +34,7 @@ namespace NAudioDemo.Generator
 
             // Init Audio
             driverOut = new WaveOut();
-            driverOut.DeviceNumber = 2;
+            driverOut.DesiredLatency = 100;
             //driverOut = new AsioOut(0);
             wg = new SignalGenerator();
 
@@ -106,6 +106,7 @@ namespace NAudioDemo.Generator
 
             btnStart.Enabled = bDriverReady & (driverOut.PlaybackState == PlaybackState.Stopped);
             btnStop.Enabled = bDriverReady & (driverOut.PlaybackState == PlaybackState.Playing);
+            buttonSave.Enabled = btnStart.Enabled;
 
         }
 
@@ -350,6 +351,20 @@ namespace NAudioDemo.Generator
             if (driverOut != null)
             {
                 driverOut.Dispose();
+            }
+        }
+
+        private void buttonSave_Click(object sender, EventArgs e)
+        {
+            btnStop_Click(this,e);
+            var sfd = new SaveFileDialog();
+            sfd.Filter = "WAV File|*.wav";
+            if (sfd.ShowDialog() == DialogResult.OK)
+            {
+                var osp = new OffsetSampleProvider(wg);
+                osp.TakeSamples = wg.WaveFormat.SampleRate*20*wg.WaveFormat.Channels;
+                WaveFileWriter.CreateWaveFile(sfd.FileName, new SampleToWaveProvider16(osp));
+                
             }
         }
 

@@ -18,13 +18,24 @@ namespace NAudio.SoundFont
 		private PresetsChunk presetsChunk;
 		private SampleDataChunk sampleData;
 
-		/// <summary>
-		/// Loads a SoundFont from a file
-		/// </summary>
-		/// <param name="fileName">Filename of the SoundFont</param>
-		public SoundFont(string fileName) 
-		{
-			using (FileStream sfFile = new FileStream(fileName,FileMode.Open,FileAccess.Read)) 
+#if !NETFX_CORE
+	    /// <summary>
+	    /// Loads a SoundFont from a file
+	    /// </summary>
+	    /// <param name="fileName">Filename of the SoundFont</param>
+	    public SoundFont(string fileName) : 
+            this(new FileStream(fileName,FileMode.Open,FileAccess.Read))
+	    {
+	    }
+#endif
+
+        /// <summary>
+        /// Loads a SoundFont from a stream
+        /// </summary>
+        /// <param name="sfFile">stream</param>
+        public SoundFont(Stream sfFile)
+	    {
+            using(sfFile) // a bit ugly, done to get Win store to compile
 			{
 				RiffChunk riff = RiffChunk.GetTopLevelChunk(new BinaryReader(sfFile));
 				if(riff.ChunkID == "RIFF") 
@@ -32,7 +43,7 @@ namespace NAudio.SoundFont
 					string formHeader = riff.ReadChunkID();
 					if(formHeader != "sfbk") 
 					{
-						throw new ApplicationException(String.Format("Not a SoundFont ({0})",formHeader));
+						throw new InvalidDataException(String.Format("Not a SoundFont ({0})",formHeader));
 					}
 					RiffChunk list = riff.GetNextSubChunk();
 					if(list.ChunkID == "LIST") 
@@ -48,12 +59,12 @@ namespace NAudio.SoundFont
 					}
 					else 
 					{
-						throw new ApplicationException(String.Format("Not info list found ({0})",list.ChunkID));
+                        throw new InvalidDataException(String.Format("Not info list found ({0})", list.ChunkID));
 					}
 				}
 				else
 				{
-					throw new ApplicationException("Not a RIFF file");
+                    throw new InvalidDataException("Not a RIFF file");
 				}
 			}
 		}

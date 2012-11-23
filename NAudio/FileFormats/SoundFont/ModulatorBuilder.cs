@@ -8,8 +8,9 @@ using System;
 using System.IO;
 
 namespace NAudio.SoundFont {
-	class ModulatorBuilder : StructureBuilder {
-		public override object Read(BinaryReader br) {
+	class ModulatorBuilder : StructureBuilder<Modulator> {
+        public override Modulator Read(BinaryReader br)
+        {
 			Modulator m = new Modulator();
 			m.SourceModulationData = new ModulatorType(br.ReadUInt16());
 			m.DestinationGenerator = (GeneratorEnum) br.ReadUInt16();
@@ -20,7 +21,8 @@ namespace NAudio.SoundFont {
 			return m;
 		}
 
-		public override void Write(BinaryWriter bw,object o) {			
+        public override void Write(BinaryWriter bw, Modulator o)
+        {			
 			//Zone z = (Zone) o;
 			//bw.Write(p.---);
 		}
@@ -35,7 +37,7 @@ namespace NAudio.SoundFont {
 		{
 			get
 			{
-				return (Modulator[]) data.ToArray(typeof(Modulator));
+				return data.ToArray();
 			}
 		}
 	}

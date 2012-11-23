@@ -10,14 +10,14 @@ using System.Text;
 
 namespace NAudio.SoundFont 
 {
-	class PresetBuilder : StructureBuilder 
+	class PresetBuilder : StructureBuilder<Preset>
 	{
 		private Preset lastPreset = null;
 
-		public override object Read(BinaryReader br) 
+        public override Preset Read(BinaryReader br) 
 		{
 			Preset p = new Preset();
-			string s = Encoding.ASCII.GetString(br.ReadBytes(20));
+			string s = Encoding.UTF8.GetString(br.ReadBytes(20), 0, 20);
 			if(s.IndexOf('\0') >= 0) {
 				s = s.Substring(0,s.IndexOf('\0'));
 			}
@@ -35,9 +35,8 @@ namespace NAudio.SoundFont
 			return p;
 		}
 
-		public override void Write(BinaryWriter bw,object o) {			
-			Preset p = (Preset) o;
-			//bw.Write(p.---);
+        public override void Write(BinaryWriter bw, Preset preset)
+        {			
 		}
 
 		public override int Length {
@@ -63,7 +62,7 @@ namespace NAudio.SoundFont
 		{
 			get
 			{
-				return (Preset[]) data.ToArray(typeof(Preset));
+				return data.ToArray();
 			}
 		}
 	}

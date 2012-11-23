@@ -74,7 +74,9 @@ namespace NAudio.Dmo
             }
             catch (COMException e)
             {
+#if !NETFX_CORE
                 if (e.ErrorCode != (int)DmoHResults.DMO_E_NO_MORE_ITEMS)
+#endif
                 {
                     throw;
                 }
@@ -105,7 +107,9 @@ namespace NAudio.Dmo
             }
             catch (COMException e)
             {
+#if !NETFX_CORE // TODO: review and see if this is relevant for Windows Store (not sure if DMO is supported)
                 if (e.ErrorCode != (int)DmoHResults.DMO_E_NO_MORE_ITEMS)
+#endif
                 {
                     throw;
                 }

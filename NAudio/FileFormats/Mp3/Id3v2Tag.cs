@@ -101,7 +101,9 @@ namespace NAudio.Wave
             }
 
             return ByteArrayExtensions.Concat(
-                Encoding.ASCII.GetBytes(key),
+                // TODO: to review: converted to UTF8 as Win 8 has no Encoding.ASCII, 
+                // need to check what the rules are for ID3v2 tag identifiers
+                Encoding.UTF8.GetBytes(key),
                 FrameSizeToBytes(body.Length),
                 new byte[] { 0, 0 }, // flags
                 body);
@@ -138,7 +140,7 @@ namespace NAudio.Wave
             }
 
             byte[] tagHeader = ByteArrayExtensions.Concat(
-                Encoding.ASCII.GetBytes("ID3"),
+                Encoding.UTF8.GetBytes("ID3"),
                 new byte[] { 3, 0 }, // version
                 new byte[] { 0 }, // flags
                 GetId3TagHeaderSize(size));

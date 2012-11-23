@@ -9,9 +9,9 @@ using System.IO;
 
 namespace NAudio.SoundFont 
 {
-	internal class GeneratorBuilder : StructureBuilder 
+	internal class GeneratorBuilder : StructureBuilder<Generator> 
 	{
-		public override object Read(BinaryReader br) 
+        public override Generator Read(BinaryReader br) 
 		{
 			Generator g = new Generator();
 			g.GeneratorType = (GeneratorEnum) br.ReadUInt16();
@@ -20,7 +20,7 @@ namespace NAudio.SoundFont
 			return g;
 		}
 
-		public override void Write(BinaryWriter bw,object o) 
+        public override void Write(BinaryWriter bw, Generator o) 
 		{			
 			//Zone z = (Zone) o;
 			//bw.Write(p.---);
@@ -36,7 +36,7 @@ namespace NAudio.SoundFont
 		{
 			get
 			{
-				return (Generator[]) data.ToArray(typeof(Generator));
+				return data.ToArray();
 			}
 		}
 

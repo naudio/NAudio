@@ -23,9 +23,9 @@ namespace NAudio.Wave
         public Wave16ToFloatProvider(IWaveProvider sourceProvider)
         {
             if (sourceProvider.WaveFormat.Encoding != WaveFormatEncoding.Pcm)
-                throw new ApplicationException("Only PCM supported");
+                throw new ArgumentException("Only PCM supported");
             if (sourceProvider.WaveFormat.BitsPerSample != 16)
-                throw new ApplicationException("Only 16 bit audio supported");
+                throw new ArgumentException("Only 16 bit audio supported");
 
             waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sourceProvider.WaveFormat.SampleRate, sourceProvider.WaveFormat.Channels);
 

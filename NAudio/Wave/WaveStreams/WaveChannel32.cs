@@ -49,12 +49,12 @@ namespace NAudio.Wave
                 {
                     this.sampleProvider = provider;
                     break;
-                }                    
+                }
             }
 
             if (this.sampleProvider == null)
             {
-                throw new ApplicationException("Unsupported sourceStream format");
+                throw new ArgumentException("Unsupported sourceStream format");
             }
          
             // always outputs stereo 32 bit

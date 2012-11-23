@@ -5,6 +5,7 @@
 // Please get in touch and let me know of any bugs you find, enhancements you would like,
 // and apps you have written
 using System;
+using System.IO;
 
 namespace NAudio.SoundFont 
 {
@@ -33,7 +34,7 @@ namespace NAudio.SoundFont
 			bool INAMPresent = false;
 			if(chunk.ReadChunkID() != "INFO") 
 			{
-				throw new ApplicationException("Not an INFO chunk");
+				throw new InvalidDataException("Not an INFO chunk");
 			}
 			//this.chunk = chunk;
 			RiffChunk c;
@@ -78,20 +79,20 @@ namespace NAudio.SoundFont
 					tools = c.GetDataAsString();
 					break;
 				default:
-					throw new ApplicationException(String.Format("Unknown chunk type {0}",c.ChunkID));
+					throw new InvalidDataException(String.Format("Unknown chunk type {0}",c.ChunkID));
 				}
 			}
 			if(!ifilPresent) 
 			{
-				throw new ApplicationException("Missing SoundFont version information");
+                throw new InvalidDataException("Missing SoundFont version information");
 			}
 			if(!isngPresent) 
 			{
-				throw new ApplicationException("Missing wavetable sound engine information");
+                throw new InvalidDataException("Missing wavetable sound engine information");
 			}
 			if(!INAMPresent) 
 			{
-				throw new ApplicationException("Missing SoundFont name information");
+                throw new InvalidDataException("Missing SoundFont name information");
 			}
 		}
 

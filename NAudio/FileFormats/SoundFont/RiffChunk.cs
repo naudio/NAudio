@@ -42,9 +42,9 @@ namespace NAudio.SoundFont
 			byte []cid = riffFile.ReadBytes(4);
 			if(cid.Length != 4) 
 			{
-				throw new ApplicationException("Couldn't read Chunk ID");
+				throw new InvalidDataException("Couldn't read Chunk ID");
 			}
-			return Encoding.ASCII.GetString(cid);
+			return Encoding.UTF8.GetString(cid, 0, 4);
 		}
 		
 		/// <summary>
@@ -80,7 +80,7 @@ namespace NAudio.SoundFont
 			byte[] data = riffFile.ReadBytes((int) chunkSize);
 			if(data.Length != chunkSize) 
 			{
-				throw new ApplicationException(String.Format("Couldn't read chunk's data Chunk: {0}, read {1} bytes",this,data.Length));
+				throw new InvalidDataException(String.Format("Couldn't read chunk's data Chunk: {0}, read {1} bytes",this,data.Length));
 			}
 			return data;
 		}
@@ -94,7 +94,7 @@ namespace NAudio.SoundFont
 			byte[] data = GetData();
 			if(data == null)
 				return null;
-			string s = Encoding.ASCII.GetString(data);
+			string s = Encoding.UTF8.GetString(data, 0, data.Length);
 			if(s.IndexOf('\0') >= 0) 
 			{
 				s = s.Substring(0,s.IndexOf('\0'));
@@ -102,25 +102,25 @@ namespace NAudio.SoundFont
 			return s;
 		}
 		
-		public object GetDataAsStructure(StructureBuilder s) 
+		public T GetDataAsStructure<T>(StructureBuilder<T> s) 
 		{
 			riffFile.BaseStream.Position = dataOffset;
 			if(s.Length != chunkSize) 
 			{
-				throw new ApplicationException(String.Format("Chunk size is: {0} so can't read structure of: {1}",chunkSize,s.Length));
+				throw new InvalidDataException(String.Format("Chunk size is: {0} so can't read structure of: {1}",chunkSize,s.Length));
 			}
 			return s.Read(riffFile);
 		}
 		
-		public object[] GetDataAsStructureArray(StructureBuilder s) 
+		public T[] GetDataAsStructureArray<T>(StructureBuilder<T> s) 
 		{
 			riffFile.BaseStream.Position = dataOffset;
 			if(chunkSize % s.Length != 0) 
 			{
-				throw new ApplicationException(String.Format("Chunk size is: {0} not a multiple of structure size: {1}",chunkSize,s.Length));
+                throw new InvalidDataException(String.Format("Chunk size is: {0} not a multiple of structure size: {1}", chunkSize, s.Length));
 			}
 			int structuresToRead = (int) (chunkSize / s.Length);
-			object[] a = new object[structuresToRead];
+			T[] a = new T[structuresToRead];
 			for(int n = 0; n < structuresToRead; n++) 
 			{
 				a[n] = s.Read(riffFile);

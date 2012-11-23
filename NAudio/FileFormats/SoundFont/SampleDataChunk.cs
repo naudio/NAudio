@@ -5,6 +5,7 @@
 // Please get in touch and let me know of any bugs you find, enhancements you would like,
 // and apps you have written
 using System;
+using System.IO;
 
 namespace NAudio.SoundFont 
 {
@@ -16,7 +17,7 @@ namespace NAudio.SoundFont
 			string header = chunk.ReadChunkID();
 			if(header != "sdta") 
 			{
-				throw new ApplicationException(String.Format("Not a sample data chunk ({0})",header));
+				throw new InvalidDataException(String.Format("Not a sample data chunk ({0})",header));
 			}
 			sampleData = chunk.GetData();
 		}

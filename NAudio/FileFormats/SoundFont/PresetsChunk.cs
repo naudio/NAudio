@@ -5,6 +5,7 @@
 // Please get in touch and let me know of any bugs you find, enhancements you would like,
 // and apps you have written
 using System;
+using System.IO;
 using System.Text;
 
 namespace NAudio.SoundFont 
@@ -29,7 +30,7 @@ namespace NAudio.SoundFont
 			string header = chunk.ReadChunkID();
 			if(header != "pdta") 
 			{
-				throw new ApplicationException(String.Format("Not a presets data chunk ({0})",header));
+				throw new InvalidDataException(String.Format("Not a presets data chunk ({0})",header));
 			}
 
 			RiffChunk c;
@@ -73,7 +74,7 @@ namespace NAudio.SoundFont
 					c.GetDataAsStructureArray(sampleHeaders);
 					break;
 				default:
-					throw new ApplicationException(String.Format("Unknown chunk type {0}",c.ChunkID));
+                    throw new InvalidDataException(String.Format("Unknown chunk type {0}", c.ChunkID));
 				}
 			}
 

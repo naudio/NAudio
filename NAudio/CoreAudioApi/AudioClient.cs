@@ -251,9 +251,11 @@ namespace NAudio.CoreAudioApi
         /// Set the Event Handle for buffer synchro.
         /// </summary>
         /// <param name="eventWaitHandle">The Wait Handle to setup</param>
-        public void SetEventHandle(EventWaitHandle eventWaitHandle) 
+        public void SetEventHandle(EventWaitHandle eventWaitHandle)
         {
+#if !NETFX_CORE // TODO: for windows store we need to switch to using CreateEventEx instead
             audioClientInterface.SetEventHandle(eventWaitHandle.SafeWaitHandle.DangerousGetHandle());
+#endif
         }
 
         /// <summary>

@@ -5,6 +5,7 @@
 // Please get in touch and let me know of any bugs you find, enhancements you would like,
 // and apps you have written
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Collections;
 
@@ -14,25 +15,25 @@ namespace NAudio.SoundFont
 	/// <summary>
 	/// base class for structures that can read themselves
 	/// </summary>
-	internal abstract class StructureBuilder 
+	internal abstract class StructureBuilder<T>
 	{
-		protected ArrayList data;
+		protected List<T> data;
 
 		public StructureBuilder()
 		{
 			Reset();
 		}
 
-		public abstract object Read(BinaryReader br);
-		public abstract void Write(BinaryWriter bw,object o);
+		public abstract T Read(BinaryReader br);
+		public abstract void Write(BinaryWriter bw,T o);
 		public abstract int Length { get; }
 		
 		public void Reset()
 		{
-			data = new ArrayList();
+			data = new List<T>();
 		}
 		
-		public object[] Data 
+		public T[] Data 
 		{ 
 			get
 			{

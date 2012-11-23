@@ -41,7 +41,7 @@ namespace NAudio.Wave
         {
             get
             {
-                return ASCIIEncoding.ASCII.GetString(BitConverter.GetBytes(identifier));
+                return Encoding.ASCII.GetString(BitConverter.GetBytes(identifier));
             }
         }
 

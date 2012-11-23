@@ -209,7 +209,7 @@ namespace NAudio.Wave
         private void ReadWaveFormat(BinaryReader br, int formatChunkLength)
         {
             if (formatChunkLength < 16)
-                throw new ApplicationException("Invalid WaveFormat Structure");
+                throw new InvalidDataException("Invalid WaveFormat Structure");
             this.waveFormatTag = (WaveFormatEncoding)br.ReadUInt16();
             this.channels = br.ReadInt16();
             this.sampleRate = br.ReadInt32();

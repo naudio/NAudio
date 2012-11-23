@@ -12,12 +12,12 @@ namespace NAudio.SoundFont
 	/// <summary>
 	/// Builds a SoundFont version
 	/// </summary>
-	class SFVersionBuilder : StructureBuilder 
+	class SFVersionBuilder : StructureBuilder<SFVersion>
 	{
 		/// <summary>
 		/// Reads a SoundFont Version structure
 		/// </summary>
-		public override object Read(BinaryReader br) 
+        public override SFVersion Read(BinaryReader br) 
 		{
 			SFVersion v = new SFVersion();
 			v.Major = br.ReadInt16();
@@ -29,9 +29,8 @@ namespace NAudio.SoundFont
 		/// <summary>
 		/// Writes a SoundFont Version structure
 		/// </summary>
-		public override void Write(BinaryWriter bw,object o) 
+        public override void Write(BinaryWriter bw, SFVersion v) 
 		{
-			SFVersion v = (SFVersion) o;
 			bw.Write(v.Major);
 			bw.Write(v.Minor);
 		}

@@ -30,7 +30,7 @@ namespace NAudio.Wave
         public WaveOffsetStream(WaveStream sourceStream, TimeSpan startTime, TimeSpan sourceOffset, TimeSpan sourceLength)
         {
             if (sourceStream.WaveFormat.Encoding != WaveFormatEncoding.Pcm)
-                throw new ApplicationException("Only PCM supported");
+                throw new ArgumentException("Only PCM supported");
             // TODO: add support for IEEE float + perhaps some others -
             // anything with a fixed bytes per sample
             

@@ -9,11 +9,11 @@ using System.IO;
 
 namespace NAudio.SoundFont 
 {
-	class ZoneBuilder : StructureBuilder 
+	class ZoneBuilder : StructureBuilder<Zone>
 	{
 		private Zone lastZone = null;
 
-		public override object Read(BinaryReader br) 
+        public override Zone Read(BinaryReader br) 
         {
 			Zone z = new Zone();
 			z.generatorIndex = br.ReadUInt16();
@@ -28,9 +28,8 @@ namespace NAudio.SoundFont
 			return z;
 		}
 
-		public override void Write(BinaryWriter bw,object o) 
+        public override void Write(BinaryWriter bw, Zone zone) 
         {			
-			Zone z = (Zone) o;
 			//bw.Write(p.---);
 		}
 
@@ -53,7 +52,7 @@ namespace NAudio.SoundFont
 		{
 			get
 			{
-				return (Zone[]) data.ToArray(typeof(Zone));
+				return data.ToArray();
 			}
 		}
 

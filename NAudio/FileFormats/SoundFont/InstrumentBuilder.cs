@@ -13,14 +13,14 @@ namespace NAudio.SoundFont
 	/// <summary>
 	/// Instrument Builder
 	/// </summary>
-	internal class InstrumentBuilder : StructureBuilder 
+	internal class InstrumentBuilder : StructureBuilder<Instrument>
 	{
 		private Instrument lastInstrument = null;
 
-		public override object Read(BinaryReader br) 
+        public override Instrument Read(BinaryReader br) 
 		{
 			Instrument i = new Instrument();
-			string s = Encoding.ASCII.GetString(br.ReadBytes(20));
+			string s = Encoding.UTF8.GetString(br.ReadBytes(20), 0, 20);
 			if(s.IndexOf('\0') >= 0) 
 			{
 				s = s.Substring(0,s.IndexOf('\0'));
@@ -36,10 +36,8 @@ namespace NAudio.SoundFont
 			return i;
 		}
 
-		public override void Write(BinaryWriter bw,object o) 
+        public override void Write(BinaryWriter bw, Instrument instrument) 
 		{
-			Instrument i = (Instrument) o;
-			//bw.Write(p.---);
 		}
 
 		public override int Length 
@@ -67,7 +65,7 @@ namespace NAudio.SoundFont
 		{
 			get
 			{
-				return (Instrument[]) data.ToArray(typeof(Instrument));
+				return data.ToArray();
 			}
 		}
 	}

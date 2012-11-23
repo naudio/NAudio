@@ -10,12 +10,12 @@ using System.Text;
 
 namespace NAudio.SoundFont
 {
-	class SampleHeaderBuilder : StructureBuilder 
+	class SampleHeaderBuilder : StructureBuilder<SampleHeader>
 	{
-		public override object Read(BinaryReader br) 
+        public override SampleHeader Read(BinaryReader br) 
 		{
 			SampleHeader sh = new SampleHeader();
-			string s = Encoding.ASCII.GetString(br.ReadBytes(20));
+			string s = Encoding.UTF8.GetString(br.ReadBytes(20), 0, 20);
 			if(s.IndexOf('\0') >= 0) 
 			{
 				s = s.Substring(0,s.IndexOf('\0'));
@@ -35,10 +35,8 @@ namespace NAudio.SoundFont
 			return sh;
 		}
 
-		public override void Write(BinaryWriter bw,object o) 
+        public override void Write(BinaryWriter bw, SampleHeader sampleHeader) 
 		{			
-			SampleHeader sh = (SampleHeader) o;
-			//bw.Write(p.---);
 		}
 
 		public override int Length 
@@ -58,7 +56,7 @@ namespace NAudio.SoundFont
 		{
 			get
 			{
-				return (SampleHeader[]) data.ToArray(typeof(SampleHeader));
+				return data.ToArray();
 			}
 		}
 	}

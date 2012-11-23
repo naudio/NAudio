@@ -100,6 +100,13 @@
     <Compile Include="CoreAudioApi\MMDeviceCollection.cs" />
     <Compile Include="CoreAudioApi\PropertyKeys.cs" />
     <Compile Include="FileFormats\Wav\WaveFileChunkReader.cs" />
+    <Compile Include="MediaFoundation\MediaFoundationInterop.cs" />
+    <Compile Include="MediaFoundation\IMFAttributes.cs" />
+    <Compile Include="MediaFoundation\IMFByteStream.cs" />
+    <Compile Include="MediaFoundation\IMFMediaBuffer.cs" />
+    <Compile Include="MediaFoundation\IMFMediaType.cs" />
+    <Compile Include="MediaFoundation\IMFSample.cs" />
+    <Compile Include="MediaFoundation\IMFSourceReader.cs" />
     <Compile Include="Midi\MidiInMessageEventArgs.cs" />
     <Compile Include="Utils\ByteArrayExtensions.cs" />
     <Compile Include="Utils\NativeMethods.cs" />
@@ -395,6 +402,7 @@
     <Compile Include="Wave\WaveStreams\CueList.cs" />
     <Compile Include="Wave\WaveStreams\CueWaveFileReader.cs" />
     <Compile Include="Wave\WaveStreams\ISampleNotifier.cs" />
+    <Compile Include="Wave\WaveStreams\MediaFoundationReader.cs" />
     <Compile Include="Wave\WaveStreams\Mp3FileReader.cs" />
     <Compile Include="Wave\SampleProviders\Pcm16BitToSampleProvider.cs" />
     <Compile Include="Wave\SampleProviders\Pcm24BitToSampleProvider.cs" />
@@ -473,6 +481,7 @@
       <Install>true</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

@@ -144,6 +144,12 @@
     <Compile Include="MainForm.Designer.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="MediaFoundationDemo\MediaFoundationDemoPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="MediaFoundationDemo\MediaFoundationDemoPanel.Designer.cs">
+      <DependentUpon>MediaFoundationDemoPanel.cs</DependentUpon>
+    </Compile>
     <Compile Include="MidiInDemo\MidiInPanel.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -221,6 +227,9 @@
     <EmbeddedResource Include="MainForm.resx">
       <SubType>Designer</SubType>
       <DependentUpon>MainForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="MediaFoundationDemo\MediaFoundationDemoPanel.resx">
+      <DependentUpon>MediaFoundationDemoPanel.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="MidiInDemo\MidiInPanel.resx">
       <SubType>Designer</SubType>

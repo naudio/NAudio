@@ -113,6 +113,11 @@ namespace NAudio.CoreAudioApi.Interfaces
         PROPVARIANT* pvarVal;
         */
 
+        public static PropVariant FromLong(long value)
+        {
+            return new PropVariant() {vt = (short)VarEnum.VT_I8, hVal = value};
+        }
+
         /// <summary>
         /// Helper method to gets blob data
         /// </summary>
@@ -145,6 +150,8 @@ namespace NAudio.CoreAudioApi.Interfaces
                         return iVal;
                     case VarEnum.VT_UI4:
                         return ulVal;
+                    case VarEnum.VT_UI8:
+                        return uhVal;
                     case VarEnum.VT_LPWSTR:
                         return Marshal.PtrToStringUni(pwszVal);
                     case VarEnum.VT_BLOB:
@@ -153,5 +160,16 @@ namespace NAudio.CoreAudioApi.Interfaces
                 throw new NotImplementedException("PropVariant " + ve.ToString());
             }
         }
+
+        /// <summary>
+        /// allows freeing up memory, might turn this into a Dispose method?
+        /// </summary>
+        public void Clear()
+        {
+            PropVariantClear(ref this);
+        }
+
+        [DllImport("ole32.dll")]
+        private static extern int PropVariantClear(ref PropVariant pvar);
     }
 }

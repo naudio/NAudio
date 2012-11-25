@@ -150,6 +150,7 @@
     <Compile Include="MediaFoundationDemo\MediaFoundationDemoPanel.Designer.cs">
       <DependentUpon>MediaFoundationDemoPanel.cs</DependentUpon>
     </Compile>
+    <Compile Include="MediaFoundationDemo\WasapiOutGuiThread.cs" />
     <Compile Include="MidiInDemo\MidiInPanel.cs">
       <SubType>UserControl</SubType>
     </Compile>

@@ -7,6 +7,7 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
+using NAudio.CoreAudioApi;
 using NAudio.Wave;
 
 namespace NAudioDemo.MediaFoundationDemo
@@ -18,7 +19,6 @@ namespace NAudioDemo.MediaFoundationDemo
             InitializeComponent();
             this.Disposed += OnDisposed;
             timer1.Interval = 500;
-
         }
 
         private IWavePlayer wavePlayer;
@@ -89,7 +89,14 @@ namespace NAudioDemo.MediaFoundationDemo
             }
             if (wavePlayer == null)
             {
-                wavePlayer = new WaveOut();
+                if (radioButtonWasapi.Checked)
+                {
+                    wavePlayer = new WasapiOutGuiThread();
+                }
+                else
+                {
+                    wavePlayer = new WaveOut();
+                }
                 wavePlayer.PlaybackStopped += WavePlayerOnPlaybackStopped;
                 wavePlayer.Init(reader);
             }
@@ -101,6 +108,10 @@ namespace NAudioDemo.MediaFoundationDemo
             reader.Position = 0;
             timer1.Enabled = false;
             UpdatePosition();
+            if (stoppedEventArgs.Exception != null)
+            {
+                MessageBox.Show(stoppedEventArgs.Exception.Message);
+            }
         }
 
         private void buttonStop_Click(object sender, EventArgs e)
@@ -108,6 +119,15 @@ namespace NAudioDemo.MediaFoundationDemo
             if (wavePlayer != null)
             {
                 wavePlayer.Stop();
+            }
+        }
+
+        private void radioButtonWaveOut_CheckedChanged(object sender, EventArgs e)
+        {
+            if (wavePlayer != null)
+            {
+                wavePlayer.Dispose();
+                wavePlayer = null;
             }
         }
     }

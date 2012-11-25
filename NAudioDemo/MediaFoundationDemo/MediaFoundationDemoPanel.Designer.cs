@@ -29,6 +29,7 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MediaFoundationDemoPanel));
             this.buttonPlay = new System.Windows.Forms.Button();
             this.buttonStop = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
@@ -36,6 +37,9 @@
             this.trackBar1 = new System.Windows.Forms.TrackBar();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.labelPosition = new System.Windows.Forms.Label();
+            this.radioButtonWaveOut = new System.Windows.Forms.RadioButton();
+            this.radioButtonWasapi = new System.Windows.Forms.RadioButton();
+            this.label2 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.trackBar1)).BeginInit();
             this.SuspendLayout();
             // 
@@ -105,10 +109,44 @@
             this.labelPosition.Size = new System.Drawing.Size(0, 13);
             this.labelPosition.TabIndex = 4;
             // 
+            // radioButtonWaveOut
+            // 
+            this.radioButtonWaveOut.AutoSize = true;
+            this.radioButtonWaveOut.Checked = true;
+            this.radioButtonWaveOut.Location = new System.Drawing.Point(16, 143);
+            this.radioButtonWaveOut.Name = "radioButtonWaveOut";
+            this.radioButtonWaveOut.Size = new System.Drawing.Size(71, 17);
+            this.radioButtonWaveOut.TabIndex = 5;
+            this.radioButtonWaveOut.TabStop = true;
+            this.radioButtonWaveOut.Text = "WaveOut";
+            this.radioButtonWaveOut.UseVisualStyleBackColor = true;
+            this.radioButtonWaveOut.CheckedChanged += new System.EventHandler(this.radioButtonWaveOut_CheckedChanged);
+            // 
+            // radioButtonWasapi
+            // 
+            this.radioButtonWasapi.AutoSize = true;
+            this.radioButtonWasapi.Location = new System.Drawing.Point(16, 166);
+            this.radioButtonWasapi.Name = "radioButtonWasapi";
+            this.radioButtonWasapi.Size = new System.Drawing.Size(67, 17);
+            this.radioButtonWasapi.TabIndex = 5;
+            this.radioButtonWasapi.Text = "WASAPI";
+            this.radioButtonWasapi.UseVisualStyleBackColor = true;
+            // 
+            // label2
+            // 
+            this.label2.Location = new System.Drawing.Point(93, 137);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(394, 56);
+            this.label2.TabIndex = 6;
+            this.label2.Text = resources.GetString("label2.Text");
+            // 
             // MediaFoundationDemoPanel
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.label2);
+            this.Controls.Add(this.radioButtonWasapi);
+            this.Controls.Add(this.radioButtonWaveOut);
             this.Controls.Add(this.labelPosition);
             this.Controls.Add(this.trackBar1);
             this.Controls.Add(this.label1);
@@ -132,5 +170,8 @@
         private System.Windows.Forms.TrackBar trackBar1;
         private System.Windows.Forms.Timer timer1;
         private System.Windows.Forms.Label labelPosition;
+        private System.Windows.Forms.RadioButton radioButtonWaveOut;
+        private System.Windows.Forms.RadioButton radioButtonWasapi;
+        private System.Windows.Forms.Label label2;
     }
 }

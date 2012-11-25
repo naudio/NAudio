@@ -209,6 +209,8 @@ namespace NAudio.Wave
                 var pv = PropVariant.FromLong(nsPosition);
                 pReader.SetCurrentPosition(Guid.Empty, ref pv);
                 position = value;
+                decoderOutputCount = 0;
+                decoderOutputOffset = 0;
             }
         }
 

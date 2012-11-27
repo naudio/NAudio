@@ -23,12 +23,12 @@ namespace NAudio.Midi
             if((c & 0x80) != 0) 
             {
                 // TODO: might be a follow-on
-                throw new ApplicationException("Invalid controller");
+                throw new InvalidDataException("Invalid controller");
             }
             controller = (MidiController) c;
             if((controllerValue & 0x80) != 0) 
             {
-                throw new ApplicationException(String.Format("Invalid controllerValue {0} for controller {1}, Pos 0x{2:X}",controllerValue,controller,br.BaseStream.Position));
+                throw new InvalidDataException(String.Format("Invalid controllerValue {0} for controller {1}, Pos 0x{2:X}", controllerValue, controller, br.BaseStream.Position));
             }
         }
 

@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace NAudio.Utils
+namespace MarkHeath.MidiUtils
 {
     /// <summary>
     /// Progress Event Arguments

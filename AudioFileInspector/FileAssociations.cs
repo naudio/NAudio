@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Microsoft.Win32;
 
-namespace NAudio.Utils
+namespace AudioFileInspector
 {
     /// <summary>
     /// Helper class for registering Windows Explorer File associations

@@ -277,11 +277,9 @@
     <Compile Include="Utils\ByteEncoding.cs" />
     <Compile Include="Utils\CircularBuffer.cs" />
     <Compile Include="Utils\Decibels.cs" />
-    <Compile Include="Utils\FileAssociations.cs" />
     <Compile Include="Utils\HResult.cs" />
     <Compile Include="Utils\IgnoreDisposeStream.cs" />
     <Compile Include="Utils\MergeSort.cs" />
-    <Compile Include="Utils\ProgressEventArgs.cs" />
     <Compile Include="Utils\ProgressLog.cs">
       <SubType>UserControl</SubType>
     </Compile>

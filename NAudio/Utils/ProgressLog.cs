@@ -21,27 +21,7 @@ namespace NAudio.Utils
             InitializeComponent();
         }
 
-        /// <summary>
-        /// Report progress from a progress event
-        /// </summary>
-        public void ReportProgress(ProgressEventArgs e)
-        {
-            Color color = Color.Black;
-            if (e.MessageType == ProgressMessageType.Warning)
-            {
-                color = Color.Blue;
-            }
-            else if (e.MessageType == ProgressMessageType.Error)
-            {
-                color = Color.Red;
-            }
-            else if (e.MessageType == ProgressMessageType.Trace)
-            {
-                color = Color.Purple;
-            }
 
-            LogMessage(color, e.Message);
-        }
 
         /// <summary>
         /// The contents of the log as text

@@ -35,7 +35,7 @@ namespace NAudio.Wave
                 initialized = true;
             }
             var uri = new Uri(file);
-            MediaFoundationInterop.MFCreateSourceReaderFromURL(uri.AbsoluteUri, IntPtr.Zero, out pReader);
+            MediaFoundationInterop.MFCreateSourceReaderFromURL(uri.AbsoluteUri, null, out pReader);
             pReader.SetStreamSelection(MediaFoundationInterop.MF_SOURCE_READER_ALL_STREAMS, false);
             pReader.SetStreamSelection(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, true);
             
@@ -47,8 +47,8 @@ namespace NAudio.Wave
             pReader.GetNativeMediaType(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0, out nativeMediaType);*/
 
             // Create a partial media type indicating that we want uncompressed PCM audio
-            IMFMediaType partialMediaType = null;
-            MediaFoundationInterop.MFCreateMediaType(ref partialMediaType);
+            IMFMediaType partialMediaType;
+            MediaFoundationInterop.MFCreateMediaType(out partialMediaType);
             partialMediaType.SetGUID(MediaFoundationInterop.MF_MT_MAJOR_TYPE, MediaFoundationInterop.MFMediaType_Audio);
             partialMediaType.SetGUID(MediaFoundationInterop.MF_MT_SUBTYPE, MediaFoundationInterop.MFAudioFormat_PCM);
 

@@ -498,6 +498,9 @@
     <Compile Include="..\NAudio\MediaFoundation\MediaFoundationInterop.cs">
       <Link>MediaFoundation\MediaFoundationInterop.cs</Link>
     </Compile>
+    <Compile Include="..\NAudio\MediaFoundation\MediaFoundationTransformCategories.cs">
+      <Link>MediaFoundation\MediaFoundationTransformCategories.cs</Link>
+    </Compile>
     <Compile Include="..\NAudio\MediaFoundation\MFT_INPUT_STREAM_INFO.cs">
       <Link>MediaFoundation\MFT_INPUT_STREAM_INFO.cs</Link>
     </Compile>

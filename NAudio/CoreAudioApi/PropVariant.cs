@@ -113,6 +113,9 @@ namespace NAudio.CoreAudioApi.Interfaces
         PROPVARIANT* pvarVal;
         */
 
+        /// <summary>
+        /// Creates a new PropVariant containing a long value
+        /// </summary>
         public static PropVariant FromLong(long value)
         {
             return new PropVariant() {vt = (short) VarEnum.VT_I8, hVal = value};
@@ -123,9 +126,9 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// </summary>
         private byte[] GetBlob()
         {
-            byte[] Result = new byte[blobVal.Length];
-            Marshal.Copy(blobVal.Data, Result, 0, Result.Length);
-            return Result;
+            var blob = new byte[blobVal.Length];
+            Marshal.Copy(blobVal.Data, blob, 0, blob.Length);
+            return blob;
         }
 
         /// <summary>
@@ -163,6 +166,7 @@ namespace NAudio.CoreAudioApi.Interfaces
                     case VarEnum.VT_LPWSTR:
                         return Marshal.PtrToStringUni(pointerValue);
                     case VarEnum.VT_BLOB:
+                    case VarEnum.VT_VECTOR | VarEnum.VT_UI1:
                         return GetBlob();
                     case VarEnum.VT_CLSID:
                         return (Guid)Marshal.PtrToStructure(pointerValue, typeof(Guid));

@@ -123,4 +123,7 @@
   <data name="label2.Text" xml:space="preserve">
     <value>Since the Media Foundation objects are created on STAThread in this WinForms example, the only output models must be ones that marshal calls back onto the GUI thread. Choose between WaveOut with window messages for callbacks or WASAPI using a timer.</value>
   </data>
+  <metadata name="$this.TrayHeight" type="System.Int32, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+    <value>68</value>
+  </metadata>
 </root>

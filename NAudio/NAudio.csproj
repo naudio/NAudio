@@ -105,6 +105,7 @@
     <Compile Include="MediaFoundation\IMFMediaEvent.cs" />
     <Compile Include="MediaFoundation\IMFTransform.cs" />
     <Compile Include="MediaFoundation\MediaEventType.cs" />
+    <Compile Include="MediaFoundation\MediaFoundationHelpers.cs" />
     <Compile Include="MediaFoundation\MediaFoundationInterop.cs" />
     <Compile Include="MediaFoundation\IMFAttributes.cs" />
     <Compile Include="MediaFoundation\IMFByteStream.cs" />
@@ -116,6 +117,8 @@
     <Compile Include="MediaFoundation\MFT_OUTPUT_DATA_BUFFER.cs" />
     <Compile Include="MediaFoundation\MFT_OUTPUT_STREAM_INFO.cs" />
     <Compile Include="MediaFoundation\MFT_MESSAGE_TYPE.cs" />
+    <Compile Include="MediaFoundation\MFT_REGISTER_TYPE_INFO.cs" />
+    <Compile Include="MediaFoundation\_MFT_ENUM_FLAG.cs" />
     <Compile Include="MediaFoundation\_MFT_INPUT_STATUS_FLAGS.cs" />
     <Compile Include="MediaFoundation\_MFT_INPUT_STREAM_INFO_FLAGS.cs" />
     <Compile Include="MediaFoundation\_MFT_OUTPUT_DATA_BUFFER_FLAGS.cs" />

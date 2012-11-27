@@ -492,6 +492,9 @@
     <Compile Include="..\NAudio\MediaFoundation\MediaEventType.cs">
       <Link>MediaFoundation\MediaEventType.cs</Link>
     </Compile>
+    <Compile Include="..\NAudio\MediaFoundation\MediaFoundationHelpers.cs">
+      <Link>MediaFoundation\MediaFoundationHelpers.cs</Link>
+    </Compile>
     <Compile Include="..\NAudio\MediaFoundation\MediaFoundationInterop.cs">
       <Link>MediaFoundation\MediaFoundationInterop.cs</Link>
     </Compile>
@@ -506,6 +509,12 @@
     </Compile>
     <Compile Include="..\NAudio\MediaFoundation\MFT_OUTPUT_STREAM_INFO.cs">
       <Link>MediaFoundation\MFT_OUTPUT_STREAM_INFO.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\MediaFoundation\MFT_REGISTER_TYPE_INFO.cs">
+      <Link>MediaFoundation\MFT_REGISTER_TYPE_INFO.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\MediaFoundation\_MFT_ENUM_FLAG.cs">
+      <Link>MediaFoundation\_MFT_ENUM_FLAG.cs</Link>
     </Compile>
     <Compile Include="..\NAudio\MediaFoundation\_MFT_INPUT_STATUS_FLAGS.cs">
       <Link>MediaFoundation\_MFT_INPUT_STATUS_FLAGS.cs</Link>

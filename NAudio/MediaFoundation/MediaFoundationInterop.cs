@@ -59,8 +59,8 @@ namespace NAudio.MediaFoundation
         /// Gets a list of Microsoft Media Foundation transforms (MFTs) that match specified search criteria. 
         /// </summary>
         [DllImport("mfplat.dll", ExactSpelling = true, PreserveSig = false)]
-        public static extern void MFTEnumEx([In] Guid guidCategory, [In] int flags, [In] IntPtr pInputType, [In] IntPtr pOutputType,
-                                            [Out] out IMFActivate[] pppMFTActivate, [Out] out int pcMFTActivate);
+        public static extern void MFTEnumEx([In] Guid guidCategory, [In] _MFT_ENUM_FLAG flags, [In] MFT_REGISTER_TYPE_INFO pInputType, [In] MFT_REGISTER_TYPE_INFO pOutputType,
+                                            [Out] out IntPtr pppMFTActivate, [Out] out int pcMFTActivate);
 
         public const int MF_SOURCE_READER_ALL_STREAMS = unchecked((int)0xFFFFFFFE);
         public const int MF_SOURCE_READER_FIRST_AUDIO_STREAM = unchecked((int)0xFFFFFFFD);

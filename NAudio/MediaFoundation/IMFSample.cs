@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.Text;
+using NAudio.CoreAudioApi.Interfaces;
 
 namespace NAudio.MediaFoundation
 {
@@ -153,12 +154,12 @@ namespace NAudio.MediaFoundation
         /// <summary>
         /// Retrieves the number of attributes that are set on this object.
         /// </summary>
-        new void GetCount(ref int pcItems);
+        new void GetCount(out int pcItems);
 
         /// <summary>
         /// Retrieves an attribute at the specified index.
         /// </summary>
-        new void GetItemByIndex(int unIndex, ref Guid pGuidKey, IntPtr pValue);
+        new void GetItemByIndex(int unIndex, out Guid pGuidKey, [In, Out] ref PropVariant pValue);
 
         /// <summary>
         /// Copies all of the attributes from this object into another attribute store.

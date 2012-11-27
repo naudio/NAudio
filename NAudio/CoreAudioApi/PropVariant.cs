@@ -35,34 +35,34 @@ namespace NAudio.CoreAudioApi.Interfaces
     [StructLayout(LayoutKind.Explicit)]
     public struct PropVariant
     {
-        [FieldOffset(0)] short vt;
-        [FieldOffset(2)] short wReserved1;
-        [FieldOffset(4)] short wReserved2;
-        [FieldOffset(6)] short wReserved3;
-        [FieldOffset(8)] sbyte cVal;
-        [FieldOffset(8)] byte bVal;
-        [FieldOffset(8)] short iVal;
-        [FieldOffset(8)] ushort uiVal;
-        [FieldOffset(8)] int lVal;
-        [FieldOffset(8)] uint ulVal;
-        [FieldOffset(8)] int intVal;
-        [FieldOffset(8)] uint uintVal;
-        [FieldOffset(8)] long hVal;
-        [FieldOffset(8)] long uhVal;
-        [FieldOffset(8)] float fltVal;
-        [FieldOffset(8)] double dblVal;
-        [FieldOffset(8)] bool boolVal;
-        [FieldOffset(8)] int scode;
+        [FieldOffset(0)] private short vt;
+        [FieldOffset(2)] private short wReserved1;
+        [FieldOffset(4)] private short wReserved2;
+        [FieldOffset(6)] private short wReserved3;
+        [FieldOffset(8)] private sbyte cVal;
+        [FieldOffset(8)] private byte bVal;
+        [FieldOffset(8)] private short iVal;
+        [FieldOffset(8)] private ushort uiVal;
+        [FieldOffset(8)] private int lVal;
+        [FieldOffset(8)] private uint ulVal;
+        [FieldOffset(8)] private int intVal;
+        [FieldOffset(8)] private uint uintVal;
+        [FieldOffset(8)] private long hVal;
+        [FieldOffset(8)] private long uhVal;
+        [FieldOffset(8)] private float fltVal;
+        [FieldOffset(8)] private double dblVal;
+        [FieldOffset(8)] private bool boolVal;
+        [FieldOffset(8)] private int scode;
         //CY cyVal;
-        [FieldOffset(8)] DateTime date;
-        [FieldOffset(8)] System.Runtime.InteropServices.ComTypes.FILETIME filetime;
+        [FieldOffset(8)] private DateTime date;
+        [FieldOffset(8)] private System.Runtime.InteropServices.ComTypes.FILETIME filetime;
         //CLSID* puuid;
         //CLIPDATA* pclipdata;
         //BSTR bstrVal;
         //BSTRBLOB bstrblobVal;
-        [FieldOffset(8)] Blob blobVal;
+        [FieldOffset(8)] private Blob blobVal;
         //LPSTR pszVal;
-        [FieldOffset(8)] IntPtr pwszVal; //LPWSTR 
+        [FieldOffset(8)] private IntPtr pointerValue; //LPWSTR 
         //IUnknown* punkVal;
         /*IDispatch* pdispVal;
         IStream* pStream;
@@ -115,13 +115,13 @@ namespace NAudio.CoreAudioApi.Interfaces
 
         public static PropVariant FromLong(long value)
         {
-            return new PropVariant() {vt = (short)VarEnum.VT_I8, hVal = value};
+            return new PropVariant() {vt = (short) VarEnum.VT_I8, hVal = value};
         }
 
         /// <summary>
         /// Helper method to gets blob data
         /// </summary>
-        byte[] GetBlob()
+        private byte[] GetBlob()
         {
             byte[] Result = new byte[blobVal.Length];
             Marshal.Copy(blobVal.Data, Result, 0, Result.Length);
@@ -129,13 +129,21 @@ namespace NAudio.CoreAudioApi.Interfaces
         }
 
         /// <summary>
+        /// Gets the type of data in this PropVariant
+        /// </summary>
+        public VarEnum DataType
+        {
+            get { return (VarEnum) vt; }
+        }
+
+    /// <summary>
         /// Property value
         /// </summary>
         public object Value
         {
             get
             {
-                VarEnum ve = (VarEnum)vt;
+                VarEnum ve = DataType;
                 switch (ve)
                 {
                     case VarEnum.VT_I1:
@@ -153,9 +161,11 @@ namespace NAudio.CoreAudioApi.Interfaces
                     case VarEnum.VT_UI8:
                         return uhVal;
                     case VarEnum.VT_LPWSTR:
-                        return Marshal.PtrToStringUni(pwszVal);
+                        return Marshal.PtrToStringUni(pointerValue);
                     case VarEnum.VT_BLOB:
                         return GetBlob();
+                    case VarEnum.VT_CLSID:
+                        return (Guid)Marshal.PtrToStructure(pointerValue, typeof(Guid));
                 }
                 throw new NotImplementedException("PropVariant " + ve.ToString());
             }

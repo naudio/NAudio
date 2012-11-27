@@ -16,7 +16,6 @@ namespace NAudio.Wave
     /// </summary>
     public class MediaFoundationReader : WaveStream
     {
-        private static bool initialized;
         private IMFSourceReader pReader;
         private WaveFormat waveFormat;
         private long position;
@@ -28,12 +27,7 @@ namespace NAudio.Wave
         /// <param name="file">Filename</param>
         public MediaFoundationReader(string file)
         {
-            if (!initialized)
-            {
-                // once only per app - TODO, maybe move this elsewhere
-                MediaFoundationInterop.MFStartup(MediaFoundationInterop.MF_VERSION);
-                initialized = true;
-            }
+            MediaFoundationApi.Startup();
             var uri = new Uri(file);
             MediaFoundationInterop.MFCreateSourceReaderFromURL(uri.AbsoluteUri, null, out pReader);
             pReader.SetStreamSelection(MediaFoundationInterop.MF_SOURCE_READER_ALL_STREAMS, false);

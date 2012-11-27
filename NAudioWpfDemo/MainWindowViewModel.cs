@@ -4,10 +4,11 @@ using System.Linq;
 using System.Text;
 using System.ComponentModel;
 using System.Windows.Controls;
+using NAudioWpfDemo.ViewModel;
 
 namespace NAudioWpfDemo
 {
-    class MainWindowViewModel : INotifyPropertyChanged
+    class MainWindowViewModel : ViewModelBase
     {
         private IModule selectedModule;
 
@@ -37,17 +38,9 @@ namespace NAudioWpfDemo
                         selectedModule.Deactivate();
                     }
                     selectedModule = value;
-                    RaisePropertyChanged("SelectedModule");
-                    RaisePropertyChanged("UserInterface");
+                    OnPropertyChanged("SelectedModule");
+                    OnPropertyChanged("UserInterface");
                 }
-            }
-        }
-
-        private void RaisePropertyChanged(string propertyName)
-        {
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
             }
         }
 
@@ -59,7 +52,5 @@ namespace NAudioWpfDemo
                 return SelectedModule.UserInterface;
             }
         }
-
-        public event PropertyChangedEventHandler PropertyChanged;
     }
 }

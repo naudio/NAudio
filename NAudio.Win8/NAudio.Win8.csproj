@@ -459,14 +459,23 @@
     <Compile Include="..\NAudio\FileFormats\SoundFont\ZoneBuilder.cs">
       <Link>FileFormats\SoundFont\ZoneBuilder.cs</Link>
     </Compile>
+    <Compile Include="..\NAudio\MediaFoundation\IMFActivate.cs">
+      <Link>MediaFoundation\IMFActivate.cs</Link>
+    </Compile>
     <Compile Include="..\NAudio\MediaFoundation\IMFAttributes.cs">
       <Link>MediaFoundation\IMFAttributes.cs</Link>
     </Compile>
     <Compile Include="..\NAudio\MediaFoundation\IMFByteStream.cs">
       <Link>MediaFoundation\IMFByteStream.cs</Link>
     </Compile>
+    <Compile Include="..\NAudio\MediaFoundation\IMFCollection.cs">
+      <Link>MediaFoundation\IMFCollection.cs</Link>
+    </Compile>
     <Compile Include="..\NAudio\MediaFoundation\IMFMediaBuffer.cs">
       <Link>MediaFoundation\IMFMediaBuffer.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\MediaFoundation\IMFMediaEvent.cs">
+      <Link>MediaFoundation\IMFMediaEvent.cs</Link>
     </Compile>
     <Compile Include="..\NAudio\MediaFoundation\IMFMediaType.cs">
       <Link>MediaFoundation\IMFMediaType.cs</Link>
@@ -477,8 +486,50 @@
     <Compile Include="..\NAudio\MediaFoundation\IMFSourceReader.cs">
       <Link>MediaFoundation\IMFSourceReader.cs</Link>
     </Compile>
+    <Compile Include="..\NAudio\MediaFoundation\IMFTransform.cs">
+      <Link>MediaFoundation\IMFTransform.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\MediaFoundation\MediaEventType.cs">
+      <Link>MediaFoundation\MediaEventType.cs</Link>
+    </Compile>
     <Compile Include="..\NAudio\MediaFoundation\MediaFoundationInterop.cs">
       <Link>MediaFoundation\MediaFoundationInterop.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\MediaFoundation\MFT_INPUT_STREAM_INFO.cs">
+      <Link>MediaFoundation\MFT_INPUT_STREAM_INFO.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\MediaFoundation\MFT_MESSAGE_TYPE.cs">
+      <Link>MediaFoundation\MFT_MESSAGE_TYPE.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\MediaFoundation\MFT_OUTPUT_DATA_BUFFER.cs">
+      <Link>MediaFoundation\MFT_OUTPUT_DATA_BUFFER.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\MediaFoundation\MFT_OUTPUT_STREAM_INFO.cs">
+      <Link>MediaFoundation\MFT_OUTPUT_STREAM_INFO.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\MediaFoundation\_MFT_INPUT_STATUS_FLAGS.cs">
+      <Link>MediaFoundation\_MFT_INPUT_STATUS_FLAGS.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\MediaFoundation\_MFT_INPUT_STREAM_INFO_FLAGS.cs">
+      <Link>MediaFoundation\_MFT_INPUT_STREAM_INFO_FLAGS.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\MediaFoundation\_MFT_OUTPUT_DATA_BUFFER_FLAGS.cs">
+      <Link>MediaFoundation\_MFT_OUTPUT_DATA_BUFFER_FLAGS.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\MediaFoundation\_MFT_OUTPUT_STATUS_FLAGS.cs">
+      <Link>MediaFoundation\_MFT_OUTPUT_STATUS_FLAGS.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\MediaFoundation\_MFT_OUTPUT_STREAM_INFO_FLAGS.cs">
+      <Link>MediaFoundation\_MFT_OUTPUT_STREAM_INFO_FLAGS.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\MediaFoundation\_MFT_PROCESS_OUTPUT_FLAGS.cs">
+      <Link>MediaFoundation\_MFT_PROCESS_OUTPUT_FLAGS.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\MediaFoundation\_MFT_PROCESS_OUTPUT_STATUS.cs">
+      <Link>MediaFoundation\_MFT_PROCESS_OUTPUT_STATUS.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\MediaFoundation\_MFT_SET_TYPE_FLAGS.cs">
+      <Link>MediaFoundation\_MFT_SET_TYPE_FLAGS.cs</Link>
     </Compile>
     <Compile Include="..\NAudio\Utils\BufferHelpers.cs">
       <Link>Utils\BufferHelpers.cs</Link>

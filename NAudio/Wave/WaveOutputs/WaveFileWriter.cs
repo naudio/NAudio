@@ -68,12 +68,12 @@ namespace NAudio.Wave
         {
             this.outStream = outStream;
             this.format = format;
-            this.writer = new BinaryWriter(outStream, System.Text.Encoding.ASCII);
-            this.writer.Write(System.Text.Encoding.ASCII.GetBytes("RIFF"));
+            this.writer = new BinaryWriter(outStream, System.Text.Encoding.UTF8);
+            this.writer.Write(System.Text.Encoding.UTF8.GetBytes("RIFF"));
             this.writer.Write((int)0); // placeholder
-            this.writer.Write(System.Text.Encoding.ASCII.GetBytes("WAVE"));
+            this.writer.Write(System.Text.Encoding.UTF8.GetBytes("WAVE"));
 
-            this.writer.Write(System.Text.Encoding.ASCII.GetBytes("fmt "));
+            this.writer.Write(System.Text.Encoding.UTF8.GetBytes("fmt "));
             format.Serialize(this.writer);
 
             CreateFactChunk();
@@ -93,7 +93,7 @@ namespace NAudio.Wave
 
         private void WriteDataChunkHeader()
         {
-            this.writer.Write(System.Text.Encoding.ASCII.GetBytes("data"));
+            this.writer.Write(System.Text.Encoding.UTF8.GetBytes("data"));
             dataSizePos = this.outStream.Position;
             this.writer.Write((int)0); // placeholder
         }
@@ -102,7 +102,7 @@ namespace NAudio.Wave
         {
             if (HasFactChunk())
             {
-                this.writer.Write(System.Text.Encoding.ASCII.GetBytes("fact"));
+                this.writer.Write(System.Text.Encoding.UTF8.GetBytes("fact"));
                 this.writer.Write((int)4);
                 factSampleCountPos = this.outStream.Position;
                 this.writer.Write((int)0); // number of samples

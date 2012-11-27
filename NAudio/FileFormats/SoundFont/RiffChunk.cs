@@ -8,6 +8,7 @@ using System;
 using System.IO;
 using System.Net;
 using System.Text;
+using NAudio.Utils;
 
 namespace NAudio.SoundFont 
 {
@@ -44,7 +45,7 @@ namespace NAudio.SoundFont
 			{
 				throw new InvalidDataException("Couldn't read Chunk ID");
 			}
-			return Encoding.UTF8.GetString(cid, 0, 4);
+			return ByteEncoding.Instance.GetString(cid, 0, cid.Length);
 		}
 		
 		/// <summary>
@@ -94,12 +95,7 @@ namespace NAudio.SoundFont
 			byte[] data = GetData();
 			if(data == null)
 				return null;
-			string s = Encoding.UTF8.GetString(data, 0, data.Length);
-			if(s.IndexOf('\0') >= 0) 
-			{
-				s = s.Substring(0,s.IndexOf('\0'));
-			}
-			return s;
+			return ByteEncoding.Instance.GetString(data, 0, data.Length);
 		}
 		
 		public T GetDataAsStructure<T>(StructureBuilder<T> s) 

@@ -55,10 +55,10 @@ namespace NAudio.Wave
         {
             this.outStream = outStream;
             this.format = format;
-            this.writer = new BinaryWriter(outStream, System.Text.Encoding.ASCII);
-            this.writer.Write(System.Text.Encoding.ASCII.GetBytes("FORM"));
+            this.writer = new BinaryWriter(outStream, System.Text.Encoding.UTF8);
+            this.writer.Write(System.Text.Encoding.UTF8.GetBytes("FORM"));
             this.writer.Write((int)0); // placeholder
-            this.writer.Write(System.Text.Encoding.ASCII.GetBytes("AIFF"));
+            this.writer.Write(System.Text.Encoding.UTF8.GetBytes("AIFF"));
 
             CreateCommChunk();
             WriteSsndChunkHeader();
@@ -69,7 +69,7 @@ namespace NAudio.Wave
         /// </summary>
         /// <param name="filename">The filename to write to</param>
         /// <param name="format">The Wave Format of the output data</param>
-        public AiffFileWriter(string filename, NAudio.Wave.WaveFormat format)
+        public AiffFileWriter(string filename, WaveFormat format)
             : this(new FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.Read), format)
         {
             this.filename = filename;
@@ -77,7 +77,7 @@ namespace NAudio.Wave
 
         private void WriteSsndChunkHeader()
         {
-            this.writer.Write(System.Text.Encoding.ASCII.GetBytes("SSND"));
+            this.writer.Write(System.Text.Encoding.UTF8.GetBytes("SSND"));
             dataSizePos = this.outStream.Position;
             this.writer.Write((int)0);  // placeholder
             this.writer.Write((int)0);  // zero offset
@@ -96,7 +96,7 @@ namespace NAudio.Wave
 
         private void CreateCommChunk()
         {
-            this.writer.Write(System.Text.Encoding.ASCII.GetBytes("COMM"));
+            this.writer.Write(System.Text.Encoding.UTF8.GetBytes("COMM"));
             this.writer.Write(SwapEndian((int)18));
             this.writer.Write(SwapEndian((short)format.Channels));
             commSampleCountPos = this.outStream.Position; ;

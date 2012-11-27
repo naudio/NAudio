@@ -7,6 +7,7 @@
 using System;
 using System.IO;
 using System.Text;
+using NAudio.Utils;
 
 namespace NAudio.SoundFont
 {
@@ -15,13 +16,9 @@ namespace NAudio.SoundFont
         public override SampleHeader Read(BinaryReader br) 
 		{
 			SampleHeader sh = new SampleHeader();
-			string s = Encoding.UTF8.GetString(br.ReadBytes(20), 0, 20);
-			if(s.IndexOf('\0') >= 0) 
-			{
-				s = s.Substring(0,s.IndexOf('\0'));
-			}
+            var s = br.ReadBytes(20);
 
-			sh.SampleName = s;
+			sh.SampleName = ByteEncoding.Instance.GetString(s, 0, s.Length);
 			sh.Start = br.ReadUInt32();
 			sh.End = br.ReadUInt32();
 			sh.StartLoop = br.ReadUInt32();

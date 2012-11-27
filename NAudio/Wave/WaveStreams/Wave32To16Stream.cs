@@ -23,9 +23,9 @@ namespace NAudio.Wave
         public Wave32To16Stream(WaveStream sourceStream)
         {
             if (sourceStream.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
-                throw new ApplicationException("Only 32 bit Floating point supported");
+                throw new ArgumentException("Only 32 bit Floating point supported");
             if (sourceStream.WaveFormat.BitsPerSample != 32)
-                throw new ApplicationException("Only 32 bit Floating point supported");
+                throw new ArgumentException("Only 32 bit Floating point supported");
 
             waveFormat = new WaveFormat(sourceStream.WaveFormat.SampleRate, 16, sourceStream.WaveFormat.Channels);
             this.volume = 1.0f;

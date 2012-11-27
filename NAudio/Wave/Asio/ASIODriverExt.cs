@@ -43,7 +43,7 @@ namespace NAudio.Wave.Asio
 
             if (!driver.init(IntPtr.Zero))
             {
-                throw new ApplicationException(driver.getErrorMessage());
+                throw new InvalidOperationException(driver.getErrorMessage());
             }
 
             callbacks = new ASIOCallbacks();

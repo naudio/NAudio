@@ -238,7 +238,7 @@ namespace NAudio.Wave
             }
             else
             {
-                throw new ApplicationException("Only 16, 24 or 32 bit PCM or IEEE float audio data supported");
+                throw new InvalidOperationException("Only 16, 24 or 32 bit PCM or IEEE float audio data supported");
             }
         }
 
@@ -299,7 +299,7 @@ namespace NAudio.Wave
             }
             else
             {
-                throw new ApplicationException("Only 16, 24 or 32 bit PCM audio data supported");
+                throw new InvalidOperationException("Only 16, 24 or 32 bit PCM audio data supported");
             }
         }
 

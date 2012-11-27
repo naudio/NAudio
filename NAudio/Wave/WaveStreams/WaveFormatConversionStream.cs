@@ -166,7 +166,7 @@ namespace NAudio.Wave
             int bytesRead = 0;
             if (count % BlockAlign != 0)
             {
-                //throw new ApplicationException("Must read complete blocks");
+                //throw new ArgumentException("Must read complete blocks");
                 count -= (count % BlockAlign);
             }
 

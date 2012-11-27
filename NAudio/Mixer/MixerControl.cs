@@ -122,8 +122,8 @@ namespace NAudio.Mixer
 			}
 			else 
 			{
-				throw new ApplicationException(String.Format("Unknown mixer control type {0}",mc.dwControlType));
-			}					
+				throw new InvalidOperationException(String.Format("Unknown mixer control type {0}",mc.dwControlType));
+			}
 		}
 		
 		/// <summary>

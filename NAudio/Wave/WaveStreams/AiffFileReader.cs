@@ -221,7 +221,7 @@ namespace NAudio.Wave
         {
             if (count % waveFormat.BlockAlign != 0)
             {
-                throw new ApplicationException(String.Format("Must read complete blocks: requested {0}, block align is {1}", count, this.WaveFormat.BlockAlign));
+                throw new ArgumentException(String.Format("Must read complete blocks: requested {0}, block align is {1}", count, this.WaveFormat.BlockAlign));
             }
             // sometimes there is more junk at the end of the file past the data chunk
             if (Position + count > dataChunkLength)

@@ -58,6 +58,7 @@ namespace NAudio.MediaFoundation
         /// <summary>
         /// Gets a list of Microsoft Media Foundation transforms (MFTs) that match specified search criteria. 
         /// </summary>
+        [DllImport("mfplat.dll", ExactSpelling = true, PreserveSig = false)]
         public static extern void MFTEnumEx([In] Guid guidCategory, [In] int flags, [In] IntPtr pInputType, [In] IntPtr pOutputType,
                                             [Out] out IMFActivate[] pppMFTActivate, [Out] out int pcMFTActivate);
 

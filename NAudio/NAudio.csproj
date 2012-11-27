@@ -113,6 +113,7 @@
     <Compile Include="MediaFoundation\IMFMediaType.cs" />
     <Compile Include="MediaFoundation\IMFSample.cs" />
     <Compile Include="MediaFoundation\IMFSourceReader.cs" />
+    <Compile Include="MediaFoundation\MediaFoundationTransformCategories.cs" />
     <Compile Include="MediaFoundation\MFT_INPUT_STREAM_INFO.cs" />
     <Compile Include="MediaFoundation\MFT_OUTPUT_DATA_BUFFER.cs" />
     <Compile Include="MediaFoundation\MFT_OUTPUT_STREAM_INFO.cs" />

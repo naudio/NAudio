@@ -6,10 +6,11 @@ using System.Windows.Input;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using System.ComponentModel;
+using NAudioWpfDemo.ViewModel;
 
 namespace NAudioWpfDemo.DrumMachineDemo
 {
-    class DrumMachineDemoViewModel : IDisposable, INotifyPropertyChanged
+    class DrumMachineDemoViewModel : ViewModelBase, IDisposable
     {
         private IWavePlayer waveOut;
         private DrumPattern pattern;
@@ -22,12 +23,8 @@ namespace NAudioWpfDemo.DrumMachineDemo
         {
             this.pattern = pattern;
             this.tempo = 100;
-            PlayCommand = new RelayCommand(
-               () => this.Play(),
-               () => true);
-            StopCommand = new RelayCommand(
-               () => this.Stop(),
-               () => true);
+            PlayCommand = new DelegateCommand(Play);
+            StopCommand = new DelegateCommand(Stop);
         }
 
         private void Play()
@@ -74,19 +71,10 @@ namespace NAudioWpfDemo.DrumMachineDemo
                     {
                         this.patternSequencer.Tempo = value;
                     }
-                    RaisePropertyChanged("Tempo");
+                    OnPropertyChanged("Tempo");
                 }
             }
         }
 
-        private void RaisePropertyChanged(string propertyName)
-        {
-            if (this.PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
-            }
-        }
-
-        public event PropertyChangedEventHandler PropertyChanged;
     }
 }

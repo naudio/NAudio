@@ -8,10 +8,11 @@ using Microsoft.Win32;
 using System.Windows;
 using NAudio.Wave;
 using NAudioWpfDemo.AudioPlaybackDemo;
+using NAudioWpfDemo.ViewModel;
 
 namespace NAudioWpfDemo
 {
-    class AudioPlaybackViewModel : INotifyPropertyChanged, IDisposable
+    class AudioPlaybackViewModel : ViewModelBase, IDisposable
     {
         private AudioPlayback audioPlayback;
         private List<IVisualizationPlugin> visualizations;
@@ -29,21 +30,13 @@ namespace NAudioWpfDemo
             this.selectedVisualization = this.visualizations.FirstOrDefault();
 
             this.audioPlayback = new AudioPlayback();
-            audioPlayback.MaximumCalculated += new EventHandler<MaxSampleEventArgs>(audioGraph_MaximumCalculated);
-            audioPlayback.FftCalculated += new EventHandler<FftEventArgs>(audioGraph_FftCalculated);
+            audioPlayback.MaximumCalculated += audioGraph_MaximumCalculated;
+            audioPlayback.FftCalculated += audioGraph_FftCalculated;
 
-            PlayCommand = new RelayCommand(
-                        () => this.Play(),
-                        () => true);
-            OpenFileCommand = new RelayCommand(
-                        () => this.OpenFile(),
-                        () => true);
-            StopCommand = new RelayCommand(
-                        () => this.Stop(),
-                        () => true);
-            PauseCommand = new RelayCommand(
-                        () => this.Pause(),
-                        () => true);
+            PlayCommand = new DelegateCommand(Play);
+            OpenFileCommand = new DelegateCommand(OpenFile);
+            StopCommand = new DelegateCommand(Stop);
+            PauseCommand = new DelegateCommand(Pause);
         }
 
         private void Pause()
@@ -64,8 +57,8 @@ namespace NAudioWpfDemo
                 if (this.selectedVisualization != value)
                 {
                     this.selectedVisualization = value;
-                    RaisePropertyChangedEvent("SelectedVisualization");
-                    RaisePropertyChangedEvent("Visualization");
+                    OnPropertyChanged("SelectedVisualization");
+                    OnPropertyChanged("Visualization");
                 }
             }
         }
@@ -121,16 +114,6 @@ namespace NAudioWpfDemo
         private void Stop()
         {
             audioPlayback.Stop();
-        }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        private void RaisePropertyChangedEvent(string propertyName)
-        {
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
-            }
         }
 
         public void Dispose()

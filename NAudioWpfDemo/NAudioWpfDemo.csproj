@@ -113,6 +113,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="EnumMediaFoundationTransforms\EnumMftView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="PolygonWaveFormControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -170,6 +174,11 @@
     <Compile Include="DrumMachineDemo\PatternSequencer.cs" />
     <Compile Include="DrumMachineDemo\PatternSequencerTests.cs" />
     <Compile Include="DrumMachineDemo\SampleSource.cs" />
+    <Compile Include="EnumMediaFoundationTransforms\EnumMftDemo.cs" />
+    <Compile Include="EnumMediaFoundationTransforms\EnumMftView.xaml.cs">
+      <DependentUpon>EnumMftView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="EnumMediaFoundationTransforms\EnumMftViewModel.cs" />
     <Compile Include="IModule.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
@@ -200,11 +209,12 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="RelayCommand.cs" />
     <Compile Include="AudioPlaybackDemo\SampleAggregator.cs" />
     <Compile Include="SpectrumAnalyser.xaml.cs">
       <DependentUpon>SpectrumAnalyser.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ViewModel\DelegateCommand.cs" />
+    <Compile Include="ViewModel\ViewModelBase.cs" />
     <Compile Include="WaveFormControl.xaml.cs">
       <DependentUpon>WaveFormControl.xaml</DependentUpon>
     </Compile>

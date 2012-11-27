@@ -10,6 +10,7 @@ using System.Threading;
 using System.Xml;
 using System.Configuration;
 using MarkHeath.MidiUtils.Properties;
+using NAudio.Utils;
 
 namespace MarkHeath.MidiUtils
 {
@@ -182,7 +183,7 @@ namespace MarkHeath.MidiUtils
             {
                 progressLog1.ClearLog();
                 midiConverter = new MidiConverter(namingRules);
-                midiConverter.Progress += new EventHandler<NAudio.Utils.ProgressEventArgs>(midiConverter_Progress);
+                midiConverter.Progress += new EventHandler<ProgressEventArgs>(midiConverter_Progress);
                 midiConverter.Start();
             }
             finally
@@ -192,9 +193,23 @@ namespace MarkHeath.MidiUtils
             }
         }
 
-        void midiConverter_Progress(object sender, NAudio.Utils.ProgressEventArgs e)
+        void midiConverter_Progress(object sender, ProgressEventArgs e)
         {
-            progressLog1.ReportProgress(e);
+            var color = Color.Black;
+            if (e.MessageType == ProgressMessageType.Warning)
+            {
+                color = Color.Blue;
+            }
+            else if (e.MessageType == ProgressMessageType.Error)
+            {
+                color = Color.Red;
+            }
+            else if (e.MessageType == ProgressMessageType.Trace)
+            {
+                color = Color.Purple;
+            }
+
+            progressLog1.LogMessage(color, e.Message);
         }
 
         delegate void FinishedDelegate();

@@ -90,6 +90,7 @@
     <Compile Include="NamingRule.cs" />
     <Compile Include="OutputMidiType.cs" />
     <Compile Include="Program.cs" />
+    <Compile Include="ProgressEventArgs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="AboutForm.resx">
       <DependentUpon>AboutForm.cs</DependentUpon>

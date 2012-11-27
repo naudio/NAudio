@@ -46,7 +46,7 @@ namespace NAudio.Midi
             var br = new BinaryReader(File.OpenRead(filename));
             using(br) 
             {
-                string chunkHeader = Encoding.ASCII.GetString(br.ReadBytes(4));
+                string chunkHeader = Encoding.UTF8.GetString(br.ReadBytes(4));
                 if(chunkHeader != "MThd") 
                 {
                     throw new FormatException("Not a MIDI file - header chunk missing");
@@ -76,7 +76,7 @@ namespace NAudio.Midi
                     {
                         absoluteTime = 0;
                     }
-                    chunkHeader = Encoding.ASCII.GetString(br.ReadBytes(4));
+                    chunkHeader = Encoding.UTF8.GetString(br.ReadBytes(4));
                     if(chunkHeader != "MTrk") 
                     {
                         throw new FormatException("Invalid chunk header");
@@ -231,7 +231,7 @@ namespace NAudio.Midi
             }
             using (var writer = new BinaryWriter(File.Create(filename)))
             {
-                writer.Write(Encoding.ASCII.GetBytes("MThd"));
+                writer.Write(Encoding.UTF8.GetBytes("MThd"));
                 writer.Write(SwapUInt32((uint)6)); // chunk size
                 writer.Write(SwapUInt16((ushort)events.MidiFileType));
                 writer.Write(SwapUInt16((ushort)events.Tracks));
@@ -241,7 +241,7 @@ namespace NAudio.Midi
                 {
                     IList<MidiEvent> eventList = events[track];
 
-                    writer.Write(Encoding.ASCII.GetBytes("MTrk"));
+                    writer.Write(Encoding.UTF8.GetBytes("MTrk"));
                     long trackSizePosition = writer.BaseStream.Position;
                     writer.Write(SwapUInt32((uint)0));
 

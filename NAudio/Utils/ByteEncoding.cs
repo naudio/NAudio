@@ -4,7 +4,7 @@ using System.Text;
 namespace NAudio.Utils
 {
     /// <summary>
-    /// An encoding that can read files with extended ASCII characters
+    /// An encoding for use with file types that have one byte per character
     /// </summary>
     public class ByteEncoding : Encoding
     {
@@ -42,6 +42,11 @@ namespace NAudio.Utils
         /// </summary>
         public override int GetCharCount(byte[] bytes, int index, int count)
         {
+            for (int n = 0; n < count; n++)
+            {
+                if (bytes[index + n] == 0)
+                    return n;
+            }
             return count;
         }
 
@@ -52,7 +57,12 @@ namespace NAudio.Utils
         {
             for (int n = 0; n < byteCount; n++)
             {
-                chars[charIndex + n] = (char)bytes[byteIndex + n];
+                var b = bytes[byteIndex + n];
+                if (b == 0)
+                {
+                    return n;
+                }
+                chars[charIndex + n] = (char)b;
             }
             return byteCount;
         }
@@ -72,6 +82,5 @@ namespace NAudio.Utils
         {
             return charCount;
         }
-
     }
 }

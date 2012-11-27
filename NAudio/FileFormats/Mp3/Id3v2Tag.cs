@@ -101,7 +101,7 @@ namespace NAudio.Wave
             }
 
             return ByteArrayExtensions.Concat(
-                // TODO: to review: converted to UTF8 as Win 8 has no Encoding.ASCII, 
+                // needs review - have converted to UTF8 as Win 8 has no Encoding.ASCII, 
                 // need to check what the rules are for ID3v2 tag identifiers
                 Encoding.UTF8.GetBytes(key),
                 FrameSizeToBytes(body.Length),

@@ -483,6 +483,9 @@
     <Compile Include="..\NAudio\MediaFoundation\IMFSample.cs">
       <Link>MediaFoundation\IMFSample.cs</Link>
     </Compile>
+    <Compile Include="..\NAudio\MediaFoundation\IMFSinkWriter.cs">
+      <Link>MediaFoundation\IMFSinkWriter.cs</Link>
+    </Compile>
     <Compile Include="..\NAudio\MediaFoundation\IMFSourceReader.cs">
       <Link>MediaFoundation\IMFSourceReader.cs</Link>
     </Compile>
@@ -515,6 +518,9 @@
     </Compile>
     <Compile Include="..\NAudio\MediaFoundation\MFT_REGISTER_TYPE_INFO.cs">
       <Link>MediaFoundation\MFT_REGISTER_TYPE_INFO.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\MediaFoundation\MF_SINK_WRITER_STATISTICS.cs">
+      <Link>MediaFoundation\MF_SINK_WRITER_STATISTICS.cs</Link>
     </Compile>
     <Compile Include="..\NAudio\MediaFoundation\_MFT_ENUM_FLAG.cs">
       <Link>MediaFoundation\_MFT_ENUM_FLAG.cs</Link>

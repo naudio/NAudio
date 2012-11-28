@@ -133,19 +133,6 @@ namespace NAudio.MediaFoundation
         /// </summary>
         public static readonly Guid MF_MT_AUDIO_BITS_PER_SAMPLE = new Guid("f2deb57f-40fa-4764-aa33-ed4f2d1ff669");
 
-        // Audio Subtype guids
-        // http://msdn.microsoft.com/en-us/library/windows/desktop/aa372553%28v=vs.85%29.aspx
-        /// <summary>
-        /// Audio format PCM
-        /// </summary>
-        public static readonly Guid MFAudioFormat_PCM = new Guid("00000001-0000-0010-8000-00AA00389B71");
-
-        // major media types - http://msdn.microsoft.com/en-us/library/windows/desktop/aa367377%28v=vs.85%29.aspx
-        /// <summary>
-        /// Media Type Audio
-        /// </summary>
-        public static readonly Guid MFMediaType_Audio = new Guid("73647561-0000-0010-8000-00AA00389B71");
-
         // presentation attributes:
         // http://msdn.microsoft.com/en-gb/library/windows/desktop/aa367736%28v=vs.85%29.aspx
         // in mfid1.h

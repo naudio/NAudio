@@ -459,6 +459,9 @@
     <Compile Include="..\NAudio\FileFormats\SoundFont\ZoneBuilder.cs">
       <Link>FileFormats\SoundFont\ZoneBuilder.cs</Link>
     </Compile>
+    <Compile Include="..\NAudio\MediaFoundation\AudioSubtypes.cs">
+      <Link>MediaFoundation\AudioSubtypes.cs</Link>
+    </Compile>
     <Compile Include="..\NAudio\MediaFoundation\IMFActivate.cs">
       <Link>MediaFoundation\IMFActivate.cs</Link>
     </Compile>
@@ -503,6 +506,9 @@
     </Compile>
     <Compile Include="..\NAudio\MediaFoundation\MediaFoundationTransformCategories.cs">
       <Link>MediaFoundation\MediaFoundationTransformCategories.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\MediaFoundation\MediaTypes.cs">
+      <Link>MediaFoundation\MediaTypes.cs</Link>
     </Compile>
     <Compile Include="..\NAudio\MediaFoundation\MFT_INPUT_STREAM_INFO.cs">
       <Link>MediaFoundation\MFT_INPUT_STREAM_INFO.cs</Link>
@@ -563,6 +569,12 @@
     </Compile>
     <Compile Include="..\NAudio\Utils\Decibels.cs">
       <Link>Utils\Decibels.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\Utils\FieldDescriptionAttribute.cs">
+      <Link>Utils\FieldDescriptionAttribute.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\Utils\FieldDescriptionHelper.cs">
+      <Link>Utils\FieldDescriptionHelper.cs</Link>
     </Compile>
     <Compile Include="..\NAudio\Utils\HResult.cs">
       <Link>Utils\HResult.cs</Link>

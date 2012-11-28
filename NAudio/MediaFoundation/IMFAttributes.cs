@@ -160,7 +160,7 @@ namespace NAudio.MediaFoundation
         /// <summary>
         /// Retrieves an attribute at the specified index.
         /// </summary>
-        new void GetItemByIndex(int unIndex, out Guid pGuidKey, [In, Out] ref PropVariant pValue);
+        void GetItemByIndex(int unIndex, out Guid pGuidKey, [In, Out] ref PropVariant pValue);
         
         /// <summary>
         /// Copies all of the attributes from this object into another attribute store.

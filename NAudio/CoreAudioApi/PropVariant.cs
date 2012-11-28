@@ -22,6 +22,7 @@
 // adapted for use in NAudio
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using System.Runtime.InteropServices;
 
@@ -129,6 +130,28 @@ namespace NAudio.CoreAudioApi.Interfaces
             var blob = new byte[blobVal.Length];
             Marshal.Copy(blobVal.Data, blob, 0, blob.Length);
             return blob;
+        }
+
+        /// <summary>
+        /// Interprets a blob as an array of structs
+        /// </summary>
+        public T[] GetBlobAsArrayOf<T>()
+        {
+            var blobByteLength = blobVal.Length;
+            var singleInstance = (T) Activator.CreateInstance(typeof (T));
+            var structSize = Marshal.SizeOf(singleInstance);
+            if (blobByteLength%structSize != 0)
+            {
+                throw new InvalidDataException(String.Format("Blob size {0} not a multiple of struct size {1}", blobByteLength, structSize));
+            }
+            var items = blobByteLength/structSize;
+            var array = new T[items];
+            for (int n = 0; n < items; n++)
+            {
+                array[n] = (T) Activator.CreateInstance(typeof (T));
+                Marshal.PtrToStructure(new IntPtr((long) blobVal.Data + n*structSize), array[n]);
+            }
+            return array;
         }
 
         /// <summary>

@@ -2,6 +2,9 @@
 
 namespace NAudio.MediaFoundation
 {
+    /// <summary>
+    /// Process Output Status flags
+    /// </summary>
     [Flags]
     public enum _MFT_PROCESS_OUTPUT_STATUS
     {

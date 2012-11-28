@@ -43,8 +43,8 @@ namespace NAudio.Wave
             // Create a partial media type indicating that we want uncompressed PCM audio
             IMFMediaType partialMediaType;
             MediaFoundationInterop.MFCreateMediaType(out partialMediaType);
-            partialMediaType.SetGUID(MediaFoundationInterop.MF_MT_MAJOR_TYPE, MediaFoundationInterop.MFMediaType_Audio);
-            partialMediaType.SetGUID(MediaFoundationInterop.MF_MT_SUBTYPE, MediaFoundationInterop.MFAudioFormat_PCM);
+            partialMediaType.SetGUID(MediaFoundationInterop.MF_MT_MAJOR_TYPE, MediaTypes.MFMediaType_Audio);
+            partialMediaType.SetGUID(MediaFoundationInterop.MF_MT_SUBTYPE, AudioSubtypes.MFAudioFormat_PCM);
 
             // set the media type
             pReader.SetCurrentMediaType(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, IntPtr.Zero, partialMediaType);
@@ -57,10 +57,10 @@ namespace NAudio.Wave
             // Two ways to query it, first is to ask for properties (section is to convet into WaveFormatEx using MFCreateWaveFormatExFromMFMediaType)
             Guid actualMajorType;
             uncompressedMediaType.GetGUID(MediaFoundationInterop.MF_MT_MAJOR_TYPE, out actualMajorType);
-            Debug.Assert(actualMajorType == MediaFoundationInterop.MFMediaType_Audio);
+            Debug.Assert(actualMajorType == MediaTypes.MFMediaType_Audio);
             Guid audioSubType;
             uncompressedMediaType.GetGUID(MediaFoundationInterop.MF_MT_SUBTYPE, out audioSubType);
-            Debug.Assert(audioSubType == MediaFoundationInterop.MFAudioFormat_PCM);
+            Debug.Assert(audioSubType == AudioSubtypes.MFAudioFormat_PCM);
             int channels;
             uncompressedMediaType.GetUINT32(MediaFoundationInterop.MF_MT_AUDIO_NUM_CHANNELS, out channels);
             int bits;

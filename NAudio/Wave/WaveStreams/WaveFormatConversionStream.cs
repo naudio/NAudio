@@ -152,7 +152,7 @@ namespace NAudio.Wave
         private int leftoverDestBytes = 0;
         private int leftoverDestOffset = 0;
         private int leftoverSourceBytes = 0;
-        private int leftoverSourceOffset = 0;
+        //private int leftoverSourceOffset = 0; 
 
         /// <summary>
         /// Reads bytes from this stream

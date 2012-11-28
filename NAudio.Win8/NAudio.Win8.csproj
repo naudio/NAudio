@@ -498,6 +498,9 @@
     <Compile Include="..\NAudio\MediaFoundation\MediaEventType.cs">
       <Link>MediaFoundation\MediaEventType.cs</Link>
     </Compile>
+    <Compile Include="..\NAudio\MediaFoundation\MediaFoundationAttributes.cs">
+      <Link>MediaFoundation\MediaFoundationAttributes.cs</Link>
+    </Compile>
     <Compile Include="..\NAudio\MediaFoundation\MediaFoundationHelpers.cs">
       <Link>MediaFoundation\MediaFoundationHelpers.cs</Link>
     </Compile>

@@ -14,26 +14,26 @@ namespace NAudio.MediaFoundation
         /// <summary>
         /// Specifies whether an MFT performs asynchronous processing.
         /// </summary>
-        public static readonly Guid MF_TRANSFORM_ASYNC = new Guid(0xf81a699a, 0x649a, 0x497d, 0x8c, 0x73, 0x29, 0xf8, 0xfe, 0xd6, 0xad, 0x7a);
+        public static readonly Guid MF_TRANSFORM_ASYNC = new Guid("f81a699a649a497d8c7329f8fed6ad7a");
         /// <summary>
         /// Enables the use of an asynchronous MFT.
         /// </summary>
-        public static readonly Guid MF_TRANSFORM_ASYNC_UNLOCK = new Guid(0xe5666d6b, 0x3422, 0x4eb6, 0xa4, 0x21, 0xda, 0x7d, 0xb1, 0xf8, 0xe2, 0x7);
+        public static readonly Guid MF_TRANSFORM_ASYNC_UNLOCK = new Guid("e5666d6b34224eb6a421da7db1f8e207");
         /// <summary>
         /// Contains flags for an MFT activation object.
         /// </summary>
         [FieldDescription("Transform Flags")]
-        public static readonly Guid MF_TRANSFORM_FLAGS_Attribute = new Guid(0x9359bb7e, 0x6275, 0x46c4, 0xa0, 0x25, 0x1c, 0x1, 0xe4, 0x5f, 0x1a, 0x86);
+        public static readonly Guid MF_TRANSFORM_FLAGS_Attribute = new Guid("9359bb7e627546c4a0251c01e45f1a86");
         /// <summary>
         /// Specifies the category for an MFT.
         /// </summary>
         [FieldDescription("Transform Category")]
-        public static readonly Guid MF_TRANSFORM_CATEGORY_Attribute = new Guid(0xceabba49, 0x506d, 0x4757, 0xa6, 0xff, 0x66, 0xc1, 0x84, 0x98, 0x7e, 0x4e);
+        public static readonly Guid MF_TRANSFORM_CATEGORY_Attribute = new Guid("ceabba49506d4757a6ff66c184987e4e");
         /// <summary>
         /// Contains the class identifier (CLSID) of an MFT.
         /// </summary>
         [FieldDescription("Class identifier")]
-        public static readonly Guid MFT_TRANSFORM_CLSID_Attribute = new Guid(0x6821c42b, 0x65a4, 0x4e82, 0x99, 0xbc, 0x9a, 0x88, 0x20, 0x5e, 0xcd, 0xc);
+        public static readonly Guid MFT_TRANSFORM_CLSID_Attribute = new Guid(0x6821c42b, 0x65a4, 0x4e82, 0x99, 0xbc, 0x9a, 0x88, 0x20, 0x5e, 0xcd, 0x0c);
         /// <summary>
         /// Contains the registered input types for a Media Foundation transform (MFT).
         /// </summary>
@@ -43,11 +43,11 @@ namespace NAudio.MediaFoundation
         /// Contains the registered output types for a Media Foundation transform (MFT).
         /// </summary>
         [FieldDescription("Output Types")]
-        public static readonly Guid MFT_OUTPUT_TYPES_Attributes = new Guid(0x8eae8cf3, 0xa44f, 0x4306, 0xba, 0x5c, 0xbf, 0x5d, 0xda, 0x24, 0x28, 0x18);
+        public static readonly Guid MFT_OUTPUT_TYPES_Attributes = new Guid("8eae8cf3a44f4306ba5cbf5dda242818");
         /// <summary>
         /// Contains the symbolic link for a hardware-based MFT.
         /// </summary>
-        public static readonly Guid MFT_ENUM_HARDWARE_URL_Attribute = new Guid(0x2fb866ac, 0xb078, 0x4942, 0xab, 0x6c, 0x0, 0x3d, 0x5, 0xcd, 0xa6, 0x74);
+        public static readonly Guid MFT_ENUM_HARDWARE_URL_Attribute = new Guid("2fb866acb0784942ab6c003d05cda674");
         /// <summary>
         /// Contains the display name for a hardware-based MFT.
         /// </summary>
@@ -56,7 +56,7 @@ namespace NAudio.MediaFoundation
         /// <summary>
         ///  	Contains a pointer to the stream attributes of the connected stream on a hardware-based MFT.
         /// </summary>
-        public static readonly Guid MFT_CONNECTED_STREAM_ATTRIBUTE = new Guid(0x71eeb820, 0xa59f, 0x4de2, 0xbc, 0xec, 0x38, 0xdb, 0x1d, 0xd6, 0x11, 0xa4);
+        public static readonly Guid MFT_CONNECTED_STREAM_ATTRIBUTE = new Guid("71eeb820a59f4de2bcec38db1dd611a4");
         /// <summary>
         /// Specifies whether a hardware-based MFT is connected to another hardware-based MFT.
         /// </summary>
@@ -77,18 +77,85 @@ namespace NAudio.MediaFoundation
         /// <summary>
         /// Specifies whether a hardware device source uses the system time for time stamps.
         /// </summary>
-        public static readonly Guid MFT_HW_TIMESTAMP_WITH_QPC_Attribute = new Guid(0x8d030fb8, 0xcc43, 0x4258, 0xa2, 0x2e, 0x92, 0x10, 0xbe, 0xf8, 0x9b, 0xe4);
+        public static readonly Guid MFT_HW_TIMESTAMP_WITH_QPC_Attribute = new Guid("8d030fb8cc434258a22e9210bef89be4");
         /// <summary>
         /// Contains an IMFFieldOfUseMFTUnlock pointer, which can be used to unlock the MFT.
         /// </summary>
-        public static readonly Guid MFT_FIELDOFUSE_UNLOCK_Attribute = new Guid(0x8ec2e9fd, 0x9148, 0x410d, 0x83, 0x1e, 0x70, 0x24, 0x39, 0x46, 0x1a, 0x8e);
+        public static readonly Guid MFT_FIELDOFUSE_UNLOCK_Attribute = new Guid("8ec2e9fd9148410d831e702439461a8e");
         /// <summary>
         /// Contains the merit value of a hardware codec.
         /// </summary>
-        public static readonly Guid MFT_CODEC_MERIT_Attribute = new Guid(0x88a7cb15, 0x7b07, 0x4a34, 0x91, 0x28, 0xe6, 0x4c, 0x67, 0x3, 0xc4, 0xd3);
+        public static readonly Guid MFT_CODEC_MERIT_Attribute = new Guid("88a7cb157b074a349128e64c6703c4d3");
         /// <summary>
         /// Specifies whether a decoder is optimized for transcoding rather than for playback.
         /// </summary>
-        public static readonly Guid MFT_ENUM_TRANSCODE_ONLY_ATTRIBUTE = new Guid(0x111ea8cd, 0xb62a, 0x4bdb, 0x89, 0xf6, 0x67, 0xff, 0xcd, 0xc2, 0x45, 0x8b);
+        public static readonly Guid MFT_ENUM_TRANSCODE_ONLY_ATTRIBUTE = new Guid("111ea8cdb62a4bdb89f667ffcdc2458b");
+
+        // Presentation descriptor attributes:
+        // http://msdn.microsoft.com/en-gb/library/windows/desktop/aa367736%28v=vs.85%29.aspx
+
+        // in mfid1.h
+        /// <summary>
+        /// Contains a pointer to the proxy object for the application's presentation descriptor.
+        /// </summary>
+        [FieldDescription("PMP Host Context")]
+        public static readonly Guid MF_PD_PMPHOST_CONTEXT = new Guid(0x6c990d31, unchecked((short)0xbb8e), 0x477a, 0x85, 0x98, 0xd, 0x5d, 0x96, 0xfc, 0xd8, 0x8a);
+        /// <summary>
+        /// Contains a pointer to the presentation descriptor from the protected media path (PMP).
+        /// </summary>
+        [FieldDescription("App Context")]
+        public static readonly Guid MF_PD_APP_CONTEXT = new Guid(0x6c990d32, unchecked((short)0xbb8e), 0x477a, 0x85, 0x98, 0xd, 0x5d, 0x96, 0xfc, 0xd8, 0x8a);
+        /// <summary>
+        /// Specifies the duration of a presentation, in 100-nanosecond units.
+        /// </summary>
+        [FieldDescription("Duration")]
+        public static readonly Guid MF_PD_DURATION = new Guid(0x6c990d33, unchecked((short)0xbb8e), 0x477a, 0x85, 0x98, 0xd, 0x5d, 0x96, 0xfc, 0xd8, 0x8a);
+        /// <summary>
+        /// Specifies the total size of the source file, in bytes. 
+        /// </summary>
+        [FieldDescription("Total File Size")]
+        public static readonly Guid MF_PD_TOTAL_FILE_SIZE = new Guid(0x6c990d34, unchecked((short)0xbb8e), 0x477a, 0x85, 0x98, 0xd, 0x5d, 0x96, 0xfc, 0xd8, 0x8a);
+        /// <summary>
+        /// Specifies the audio encoding bit rate for the presentation, in bits per second.
+        /// </summary>
+        [FieldDescription("Audio encoding bitrate")]
+        public static readonly Guid MF_PD_AUDIO_ENCODING_BITRATE = new Guid(0x6c990d35, unchecked((short)0xbb8e), 0x477a, 0x85, 0x98, 0xd, 0x5d, 0x96, 0xfc, 0xd8, 0x8a);
+        /// <summary>
+        /// Specifies the video encoding bit rate for the presentation, in bits per second.
+        /// </summary>
+        [FieldDescription("Video Encoding Bitrate")]
+        public static readonly Guid MF_PD_VIDEO_ENCODING_BITRATE = new Guid(0x6c990d36, unchecked((short)0xbb8e), 0x477a, 0x85, 0x98, 0xd, 0x5d, 0x96, 0xfc, 0xd8, 0x8a);
+        /// <summary>
+        /// Specifies the MIME type of the content.
+        /// </summary>
+        [FieldDescription("MIME Type")]
+        public static readonly Guid MF_PD_MIME_TYPE = new Guid(0x6c990d37, unchecked((short)0xbb8e), 0x477a, 0x85, 0x98, 0xd, 0x5d, 0x96, 0xfc, 0xd8, 0x8a);
+        /// <summary>
+        /// Specifies when a presentation was last modified.
+        /// </summary>
+        [FieldDescription("Last Modified Time")]
+        public static readonly Guid MF_PD_LAST_MODIFIED_TIME = new Guid(0x6c990d38, unchecked((short)0xbb8e), 0x477a, 0x85, 0x98, 0xd, 0x5d, 0x96, 0xfc, 0xd8, 0x8a);
+        // win 7 and above:
+        /// <summary>
+        /// The identifier of the playlist element in the presentation.
+        /// </summary>
+        [FieldDescription("Element ID")]
+        public static readonly Guid MF_PD_PLAYBACK_ELEMENT_ID = new Guid(0x6c990d39, unchecked((short)0xbb8e), 0x477a, 0x85, 0x98, 0xd, 0x5d, 0x96, 0xfc, 0xd8, 0x8a);
+        /// <summary>
+        /// Contains the preferred RFC 1766 language of the media source.
+        /// </summary>
+        [FieldDescription("Preferred Language")]
+        public static readonly Guid MF_PD_PREFERRED_LANGUAGE = new Guid(0x6c990d3A, unchecked((short)0xbb8e), 0x477a, 0x85, 0x98, 0xd, 0x5d, 0x96, 0xfc, 0xd8, 0x8a);
+        /// <summary>
+        /// The time at which the presentation must begin, relative to the start of the media source.
+        /// </summary>
+        [FieldDescription("Playback boundary time")]
+        public static readonly Guid MF_PD_PLAYBACK_BOUNDARY_TIME = new Guid(0x6c990d3b, unchecked((short)0xbb8e), 0x477a, 0x85, 0x98, 0xd, 0x5d, 0x96, 0xfc, 0xd8, 0x8a);
+        /// <summary>
+        /// Specifies whether the audio streams in the presentation have a variable bit rate.
+        /// </summary>
+        [FieldDescription("Audio is variable bitrate")]
+        public static readonly Guid MF_PD_AUDIO_ISVARIABLEBITRATE = new Guid(0x33026ee0, unchecked((short)0xe387), 0x4582, 0xae, 0x0a, 0x34, 0xa2, 0xad, 0x3b, 0xaa, 0x18);
+
     }
 }

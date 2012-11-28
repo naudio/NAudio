@@ -79,7 +79,7 @@ namespace NAudio.Wave
             CoreAudioApi.Interfaces.PropVariant variant;
             // http://msdn.microsoft.com/en-gb/library/windows/desktop/dd389281%28v=vs.85%29.aspx#getting_file_duration
             pReader.GetPresentationAttribute(MediaFoundationInterop.MF_SOURCE_READER_MEDIASOURCE,
-                MediaFoundationInterop.MF_PD_DURATION, out variant);
+                MediaFoundationAttributes.MF_PD_DURATION, out variant);
             var lengthInBytes = (((long)variant.Value) * waveFormat.AverageBytesPerSecond) / 10000000L;
             variant.Clear();
             return lengthInBytes;

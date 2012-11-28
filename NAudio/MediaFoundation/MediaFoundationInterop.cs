@@ -40,7 +40,7 @@ namespace NAudio.MediaFoundation
         /// Creates the source reader from a URL.
         /// </summary>
         [DllImport("mfreadwrite.dll", ExactSpelling = true, PreserveSig = false)]
-        public static extern void MFCreateSourceReaderFromURL([MarshalAs(UnmanagedType.LPWStr)] string pwszURL, [In] IMFAttributes pAttributes,
+        public static extern void MFCreateSourceReaderFromURL([In, MarshalAs(UnmanagedType.LPWStr)] string pwszURL, [In] IMFAttributes pAttributes,
                                                                 [Out, MarshalAs(UnmanagedType.Interface)] out IMFSourceReader ppSourceReader);
 
         /// <summary>
@@ -48,6 +48,13 @@ namespace NAudio.MediaFoundation
         /// </summary>
         [DllImport("mfreadwrite.dll", ExactSpelling = true, PreserveSig = false)]
         public static extern void MFCreateSourceReaderFromByteStream(IMFByteStream pByteStream, [In] IMFAttributes pAttributes, ref IMFSourceReader ppSourceReader);
+
+        /// <summary>
+        /// Creates the sink writer from a URL or byte stream.
+        /// </summary>
+        [DllImport("mfreadwrite.dll", ExactSpelling = true)]
+        public static extern int MFCreateSinkWriterFromURL([In, MarshalAs(UnmanagedType.LPWStr)] string pwszOutputURL,
+                                                           [In] IMFByteStream pByteStream, [In] IMFAttributes pAttributes, [Out] out IMFSinkWriter ppSinkWriter);
 
         /// <summary>
         /// Creates a Microsoft Media Foundation byte stream that wraps an IRandomAccessStream object.
@@ -62,9 +69,27 @@ namespace NAudio.MediaFoundation
         public static extern void MFTEnumEx([In] Guid guidCategory, [In] _MFT_ENUM_FLAG flags, [In] MFT_REGISTER_TYPE_INFO pInputType, [In] MFT_REGISTER_TYPE_INFO pOutputType,
                                             [Out] out IntPtr pppMFTActivate, [Out] out int pcMFTActivate);
 
+        /// <summary>
+        /// Creates an empty media sample.
+        /// </summary>
+        [DllImport("mfplat.dll", ExactSpelling = true, PreserveSig = false)]
+        public static extern void MFCreateSample(out IMFSample ppIMFSample);
+
+        /// <summary>
+        /// All streams
+        /// </summary>
         public const int MF_SOURCE_READER_ALL_STREAMS = unchecked((int)0xFFFFFFFE);
+        /// <summary>
+        /// First audio stream
+        /// </summary>
         public const int MF_SOURCE_READER_FIRST_AUDIO_STREAM = unchecked((int)0xFFFFFFFD);
+        /// <summary>
+        /// First video stream
+        /// </summary>
         public const int MF_SOURCE_READER_FIRST_VIDEO_STREAM = unchecked((int)0xFFFFFFFC);
+        /// <summary>
+        /// Media source
+        /// </summary>
         public const int MF_SOURCE_READER_MEDIASOURCE = unchecked((int)0xFFFFFFFF);
         /// <summary>
         /// Media Foundation SDK Version

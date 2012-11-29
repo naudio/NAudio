@@ -87,17 +87,77 @@ namespace NAudio.MediaFoundation
         [FieldDescription("Dolby AC3")]
         public static readonly Guid MFAudioFormat_Dolby_AC3 = new Guid("e06d802c-db46-11cf-b4d1-00805f6cbbea");
 
+        /// <summary>
+        /// MPEG-4 and AAC Audio Types
+        /// http://msdn.microsoft.com/en-us/library/windows/desktop/dd317599(v=vs.85).aspx
+        /// Reference : wmcodecdsp.h
+        /// </summary>
+        [FieldDescription("MPEG-4 and AAC Audio Types")]
+        public static readonly Guid MEDIASUBTYPE_RAW_AAC1 = new Guid("000000ff-0000-0010-8000-00aa00389b71");
+
+        /// <summary>
+        /// Dolby Audio Types
+        /// http://msdn.microsoft.com/en-us/library/windows/desktop/dd317599(v=vs.85).aspx
+        /// Reference : wmcodecdsp.h
+        /// </summary>
+        [FieldDescription("Dolby Audio Types")]
+        public static readonly Guid MEDIASUBTYPE_DVM = new Guid("00002000-0000-0010-8000-00aa00389b71");
+
+        /// <summary>
+        /// Dolby Audio Types
+        /// http://msdn.microsoft.com/en-us/library/windows/desktop/dd317599(v=vs.85).aspx
+        /// Reference : wmcodecdsp.h
+        /// </summary>
+        [FieldDescription("Dolby Audio Types")]
+        public static readonly Guid MEDIASUBTYPE_DOLBY_DDPLUS = new Guid("a7fb87af-2d02-42fb-a4d4-05cd93843bdd");
+
+        /// <summary>
+        /// μ-law coding
+        /// http://msdn.microsoft.com/en-us/library/windows/desktop/dd390971(v=vs.85).aspx
+        /// Reference : Ksmedia.h
+        /// </summary>
+        [FieldDescription("μ-law")]
+        public static readonly Guid KSDATAFORMAT_SUBTYPE_MULAW = new Guid("00000007-0000-0010-8000-00aa00389b71");
+
+        /// <summary>
+        /// Adaptive delta pulse code modulation (ADPCM)
+        /// http://msdn.microsoft.com/en-us/library/windows/desktop/dd390971(v=vs.85).aspx
+        /// Reference : Ksmedia.h
+        /// </summary>
+        [FieldDescription("ADPCM")]
+        public static readonly Guid KSDATAFORMAT_SUBTYPE_ADPCM = new Guid("00000002-0000-0010-8000-00aa00389b71");
+
+        /// <summary>
+        /// Dolby Digital Plus formatted for HDMI output.
+        /// http://msdn.microsoft.com/en-us/library/windows/hardware/ff538392(v=vs.85).aspx
+        /// Reference : internet
+        /// </summary>
+        [FieldDescription("Dolby Digital Plus for HDMI")]
+        public static readonly Guid KSDATAFORMAT_SUBTYPE_IEC61937_DOLBY_DIGITAL_PLUS = new Guid("0000000a-0cea-0010-8000-00aa00389b71");
+
+        /// <summary>
+        /// MSAudio1 - unknown meaning
+        /// Reference : wmcodecdsp.h
+        /// </summary>
+        [FieldDescription("MSAudio1")]
+        public static readonly Guid MEDIASUBTYPE_MSAUDIO1 = new Guid("00000160-0000-0010-8000-00aa00389b71");
+
+        /// <summary>
+        /// IMA ADPCM ACM Wrapper
+        /// </summary>
+        [FieldDescription("IMA ADPCM")]
+        public static readonly Guid ImaAdpcm = new Guid("00000011-0000-0010-8000-00aa00389b71");
+
+        /// <summary>
+        /// WMSP2 - unknown meaning
+        /// Reference: wmsdkidl.h
+        /// </summary>
+        [FieldDescription("WMSP2")]
+        public static readonly Guid WMMEDIASUBTYPE_WMSP2 = new Guid("0000000b-0000-0010-8000-00aa00389b71");
+
+
         // TODO: find out what these are, and add them:
-        // {00002000-0000-0010-8000-00aa00389b71} - MEDIASUBTYPE_AC3_AUDIO_OTHER
-        // {a7fb87af-2d02-42fb-a4d4-05cd93843bdd} - MEDIASUBTYPE_DOLBY_DDPLUS
-        // {0000000a-0cea-0010-8000-00aa00389b71} - KSDATAFORMAT_SUBTYPE_IEC61937_DOLBY_DIGITAL_PLUS
-        // {00000160-0000-0010-8000-00aa00389b71} - MEDIASUBTYPE_MSAUDIO1
-        // {000000ff-0000-0010-8000-00aa00389b71} - ?
-        // {00000031-0000-0010-8000-00aa00389b71}
-        // {0000000b-0000-0010-8000-00aa00389b71}
-        // {00000007-0000-0010-8000-00aa00389b71}
-        // {00000011-0000-0010-8000-00aa00389b71}
-        // {00000002-0000-0010-8000-00aa00389b71}
+        // {00000031-0000-0010-8000-00aa00389b71} // probably GSM610 ACM wrapper
 
     }
 }

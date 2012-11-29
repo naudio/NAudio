@@ -43,8 +43,8 @@ namespace NAudio.Wave
             // Create a partial media type indicating that we want uncompressed PCM audio
             IMFMediaType partialMediaType;
             MediaFoundationInterop.MFCreateMediaType(out partialMediaType);
-            partialMediaType.SetGUID(MediaFoundationInterop.MF_MT_MAJOR_TYPE, MediaTypes.MFMediaType_Audio);
-            partialMediaType.SetGUID(MediaFoundationInterop.MF_MT_SUBTYPE, AudioSubtypes.MFAudioFormat_PCM);
+            partialMediaType.SetGUID(MediaFoundationAttributes.MF_MT_MAJOR_TYPE, MediaTypes.MFMediaType_Audio);
+            partialMediaType.SetGUID(MediaFoundationAttributes.MF_MT_SUBTYPE, AudioSubtypes.MFAudioFormat_PCM);
 
             // set the media type
             pReader.SetCurrentMediaType(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, IntPtr.Zero, partialMediaType);
@@ -56,17 +56,17 @@ namespace NAudio.Wave
 
             // Two ways to query it, first is to ask for properties (section is to convet into WaveFormatEx using MFCreateWaveFormatExFromMFMediaType)
             Guid actualMajorType;
-            uncompressedMediaType.GetGUID(MediaFoundationInterop.MF_MT_MAJOR_TYPE, out actualMajorType);
+            uncompressedMediaType.GetGUID(MediaFoundationAttributes.MF_MT_MAJOR_TYPE, out actualMajorType);
             Debug.Assert(actualMajorType == MediaTypes.MFMediaType_Audio);
             Guid audioSubType;
-            uncompressedMediaType.GetGUID(MediaFoundationInterop.MF_MT_SUBTYPE, out audioSubType);
+            uncompressedMediaType.GetGUID(MediaFoundationAttributes.MF_MT_SUBTYPE, out audioSubType);
             Debug.Assert(audioSubType == AudioSubtypes.MFAudioFormat_PCM);
             int channels;
-            uncompressedMediaType.GetUINT32(MediaFoundationInterop.MF_MT_AUDIO_NUM_CHANNELS, out channels);
+            uncompressedMediaType.GetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_NUM_CHANNELS, out channels);
             int bits;
-            uncompressedMediaType.GetUINT32(MediaFoundationInterop.MF_MT_AUDIO_BITS_PER_SAMPLE, out bits);
+            uncompressedMediaType.GetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_BITS_PER_SAMPLE, out bits);
             int sampleRate;
-            uncompressedMediaType.GetUINT32(MediaFoundationInterop.MF_MT_AUDIO_SAMPLES_PER_SECOND, out sampleRate);
+            uncompressedMediaType.GetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_SAMPLES_PER_SECOND, out sampleRate);
 
             waveFormat = new WaveFormat(sampleRate, bits, channels);
 

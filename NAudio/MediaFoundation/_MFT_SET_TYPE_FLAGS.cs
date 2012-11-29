@@ -6,7 +6,7 @@ namespace NAudio.MediaFoundation
     /// Defines flags for the setting or testing the media type on a Media Foundation transform (MFT).
     /// </summary>
     [Flags]
-    enum _MFT_SET_TYPE_FLAGS
+    public enum _MFT_SET_TYPE_FLAGS
     {
         /// <summary>
         /// None

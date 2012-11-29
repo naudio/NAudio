@@ -117,6 +117,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="MediaFoundationEncode\MediaFoundationEncodeView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="PolygonWaveFormControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -189,6 +193,12 @@
     <Compile Include="AudioPlaybackDemo\AudioPlayback.cs" />
     <Compile Include="AudioPlaybackDemo\AudioPlaybackViewModel.cs" />
     <Compile Include="MainWindowViewModel.cs" />
+    <Compile Include="MediaFoundationEncode\MediaFoundationEncodePlugin.cs" />
+    <Compile Include="MediaFoundationEncode\MediaFoundationEncodeView.xaml.cs">
+      <DependentUpon>MediaFoundationEncodeView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="MediaFoundationEncode\MediaFoundationEncodeViewModel.cs" />
+    <Compile Include="ModuleBase.cs" />
     <Compile Include="PolygonWaveFormControl.xaml.cs">
       <DependentUpon>PolygonWaveFormControl.xaml</DependentUpon>
     </Compile>

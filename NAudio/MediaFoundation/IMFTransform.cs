@@ -9,7 +9,7 @@ namespace NAudio.MediaFoundation
     /// IMFTransform, defined in mftransform.h
     /// </summary>
     [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("bf94c121-5b05-4e6f-8000-ba598961414d")]
-    interface IMFTransform
+    public interface IMFTransform
     {
         /// <summary>
         /// Retrieves the minimum and maximum number of input and output streams.

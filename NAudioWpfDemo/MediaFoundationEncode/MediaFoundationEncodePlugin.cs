@@ -4,22 +4,20 @@ using System.ComponentModel.Composition;
 using System.Linq;
 using System.Text;
 using System.Windows.Controls;
-using NAudioWpfDemo.DrumMachineDemo;
 
-namespace NAudioWpfDemo.EnumMediaFoundationTransforms
+namespace NAudioWpfDemo.MediaFoundationEncode
 {
     [Export(typeof(IModule))]
-    class EnumMftModule : ModuleBase
+    class MediaFoundationEncodePlugin : ModuleBase
     {
         protected override UserControl CreateViewAndViewModel()
         {
-            return new EnumMftView() { DataContext = new EnumMftViewModel() };
+            return new MediaFoundationEncodeView() {DataContext = new MediaFoundationEncodeViewModel()};
         }
 
         public override string Name
         {
-            get { return "Enumerate MFTs"; }
+            get { return "Media Foundation Encode"; }
         }
-
     }
 }

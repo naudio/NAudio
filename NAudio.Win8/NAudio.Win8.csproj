@@ -483,6 +483,9 @@
     <Compile Include="..\NAudio\MediaFoundation\IMFMediaType.cs">
       <Link>MediaFoundation\IMFMediaType.cs</Link>
     </Compile>
+    <Compile Include="..\NAudio\MediaFoundation\IMFReadWriteClassFactory.cs">
+      <Link>MediaFoundation\IMFReadWriteClassFactory.cs</Link>
+    </Compile>
     <Compile Include="..\NAudio\MediaFoundation\IMFSample.cs">
       <Link>MediaFoundation\IMFSample.cs</Link>
     </Compile>

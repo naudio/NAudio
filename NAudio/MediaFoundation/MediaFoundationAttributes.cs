@@ -157,5 +157,47 @@ namespace NAudio.MediaFoundation
         [FieldDescription("Audio is variable bitrate")]
         public static readonly Guid MF_PD_AUDIO_ISVARIABLEBITRATE = new Guid("33026ee0-e387-4582-ae0a-34a2ad3baa18");
 
+
+        /// <summary>
+        /// Media type Major Type
+        /// </summary>
+        [FieldDescription("Major Media Type")]
+        public static readonly Guid MF_MT_MAJOR_TYPE = new Guid("48eba18e-f8c9-4687-bf11-0a74c9f96a8f");
+        /// <summary>
+        /// Media Type subtype
+        /// </summary>
+        [FieldDescription("Media Subtype")]
+        public static readonly Guid MF_MT_SUBTYPE = new Guid("f7e34c9a-42e8-4714-b74b-cb29d72c35e5");
+        /// <summary>
+        /// Audio block alignment
+        /// </summary>
+        [FieldDescription("Audio block alignment")]
+        public static readonly Guid MF_MT_AUDIO_BLOCK_ALIGNMENT = new Guid("322de230-9eeb-43bd-ab7a-ff412251541d");
+        /// <summary>
+        /// Audio average bytes per second
+        /// </summary>
+        [FieldDescription("Audio average bytes per second")]
+        public static readonly Guid MF_MT_AUDIO_AVG_BYTES_PER_SECOND = new Guid("1aab75c8-cfef-451c-ab95-ac034b8e1731");
+        /// <summary>
+        /// Audio number of channels
+        /// </summary>
+        [FieldDescription("Audio number of channels")]
+        public static readonly Guid MF_MT_AUDIO_NUM_CHANNELS = new Guid("37e48bf5-645e-4c5b-89de-ada9e29b696a");
+        /// <summary>
+        /// Audio samples per second
+        /// </summary>
+        [FieldDescription("Audio samples per second")]
+        public static readonly Guid MF_MT_AUDIO_SAMPLES_PER_SECOND = new Guid("5faeeae7-0290-4c31-9e8a-c534f68d9dba");
+        /// <summary>
+        /// Audio bits per sample
+        /// </summary>
+        [FieldDescription("Audio bits per sample")]
+        public static readonly Guid MF_MT_AUDIO_BITS_PER_SAMPLE = new Guid("f2deb57f-40fa-4764-aa33-ed4f2d1ff669");
+
+        /// <summary>
+        /// Enables the source reader or sink writer to use hardware-based Media Foundation transforms (MFTs).
+        /// </summary>
+        [FieldDescription("Enable Hardware Transforms")]
+        public static readonly Guid MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS = new Guid("a634a91c-822b-41b9-a494-4de4643612b0");
     }
 }

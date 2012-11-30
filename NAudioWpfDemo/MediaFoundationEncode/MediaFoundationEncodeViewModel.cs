@@ -63,7 +63,7 @@ namespace NAudioWpfDemo.MediaFoundationEncode
                 IMFSample sample;
                 MediaFoundationInterop.MFCreateSample(out sample);
                 sample.AddBuffer(buffer);
-
+                long position = 0;
                 do
                 {
                     IntPtr ptr;
@@ -74,10 +74,14 @@ namespace NAudioWpfDemo.MediaFoundationEncode
                     int read = reader.Read(managedBuffer, 0, maxLength);
                     if (read > 0)
                     {
+                        long duration = BytesToNsPosition(read, reader.WaveFormat);
                         Marshal.Copy(managedBuffer, 0, ptr, read);
                         buffer.SetCurrentLength(read);
                         buffer.Unlock();
+                        sample.SetSampleTime(position);
+                        sample.SetSampleDuration(duration);
                         writer.WriteSample(streamIndex, sample);
+                        position += duration;
                     }
                     else
                     {
@@ -86,6 +90,7 @@ namespace NAudioWpfDemo.MediaFoundationEncode
                     }
                 } while (true);
 
+                writer.Flush(streamIndex);
                 writer.DoFinalize();
 
                 Marshal.ReleaseComObject(inputFormat);
@@ -99,6 +104,12 @@ namespace NAudioWpfDemo.MediaFoundationEncode
             //var encoder = new WindowsMediaEncoder();
             //var mft = (IMFTransform)encoder;
 
+        }
+
+        private long BytesToNsPosition(int bytes, WaveFormat waveFormat)
+        {
+            long nsPosition = (10000000L * bytes) / waveFormat.AverageBytesPerSecond;
+            return nsPosition;
         }
 
         private IMFSinkWriter CreateSinkWriter(string url)

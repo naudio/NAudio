@@ -57,18 +57,20 @@ namespace NAudioWpfDemo.MediaFoundationEncode
 
                 
                 writer.BeginWriting();
-                IMFMediaBuffer buffer;
-                MediaFoundationInterop.MFCreateMemoryBuffer(reader.WaveFormat.AverageBytesPerSecond*4, out buffer);
-                int maxLength;
-                buffer.GetMaxLength(out maxLength);
+                int maxLength = reader.WaveFormat.AverageBytesPerSecond * 4;
                 var managedBuffer = new byte[maxLength];
 
-                IMFSample sample;
-                MediaFoundationInterop.MFCreateSample(out sample);
-                sample.AddBuffer(buffer);
                 long position = 0;
                 do
                 {
+                    IMFMediaBuffer buffer;
+                    MediaFoundationInterop.MFCreateMemoryBuffer(reader.WaveFormat.AverageBytesPerSecond * 4, out buffer);
+                    buffer.GetMaxLength(out maxLength);
+                    
+                    IMFSample sample;
+                    MediaFoundationInterop.MFCreateSample(out sample);
+                    sample.AddBuffer(buffer);
+
                     IntPtr ptr;
                     int currentLength;
                     buffer.Lock(out ptr, out maxLength, out currentLength);
@@ -82,7 +84,7 @@ namespace NAudioWpfDemo.MediaFoundationEncode
                         sample.SetSampleTime(position);
                         sample.SetSampleDuration(duration);
                         writer.WriteSample(streamIndex, sample);
-                        writer.Flush(streamIndex);
+                        //writer.Flush(streamIndex);
                         position += duration;
                     }
                     else
@@ -90,13 +92,14 @@ namespace NAudioWpfDemo.MediaFoundationEncode
                         buffer.Unlock();
                         break;
                     }
+
+                    Marshal.ReleaseComObject(sample);
+                    Marshal.ReleaseComObject(buffer);
                 } while (true);
 
                 writer.DoFinalize();
 
                 Marshal.ReleaseComObject(inputFormat);
-                Marshal.ReleaseComObject(buffer);
-                Marshal.ReleaseComObject(sample);
                 Marshal.ReleaseComObject(mediaType);
                 Marshal.ReleaseComObject(writer);
             }

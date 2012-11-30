@@ -59,6 +59,9 @@ namespace NAudioWpfDemo.MediaFoundationEncode
                 writer.BeginWriting();
                 IMFMediaBuffer buffer;
                 MediaFoundationInterop.MFCreateMemoryBuffer(reader.WaveFormat.AverageBytesPerSecond*4, out buffer);
+                int maxLength;
+                buffer.GetMaxLength(out maxLength);
+                var managedBuffer = new byte[maxLength];
 
                 IMFSample sample;
                 MediaFoundationInterop.MFCreateSample(out sample);
@@ -67,10 +70,8 @@ namespace NAudioWpfDemo.MediaFoundationEncode
                 do
                 {
                     IntPtr ptr;
-                    int maxLength;
                     int currentLength;
                     buffer.Lock(out ptr, out maxLength, out currentLength);
-                    var managedBuffer = new byte[maxLength];
                     int read = reader.Read(managedBuffer, 0, maxLength);
                     if (read > 0)
                     {
@@ -81,6 +82,7 @@ namespace NAudioWpfDemo.MediaFoundationEncode
                         sample.SetSampleTime(position);
                         sample.SetSampleDuration(duration);
                         writer.WriteSample(streamIndex, sample);
+                        writer.Flush(streamIndex);
                         position += duration;
                     }
                     else
@@ -90,7 +92,6 @@ namespace NAudioWpfDemo.MediaFoundationEncode
                     }
                 } while (true);
 
-                writer.Flush(streamIndex);
                 writer.DoFinalize();
 
                 Marshal.ReleaseComObject(inputFormat);

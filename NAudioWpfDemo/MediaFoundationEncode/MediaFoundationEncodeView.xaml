@@ -8,6 +8,21 @@
     <Grid>
         <Button Content="Encode" Command="{Binding EncodeCommand}" HorizontalAlignment="Left" Margin="24,58,0,0" VerticalAlignment="Top" Width="75"/>
         <Label Content="Work in progress, use at your peril" HorizontalAlignment="Left" Margin="24,10,0,0" VerticalAlignment="Top"/>
+        <ComboBox HorizontalAlignment="Left" Margin="24,115,0,0" VerticalAlignment="Top" Width="251" ItemsSource="{Binding OutputFormats}" SelectedItem="{Binding SelectedOutputFormat, Mode=TwoWay}">
+            <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Name}"></TextBlock>
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+         </ComboBox>
+        <ComboBox HorizontalAlignment="Left" Margin="24,142,0,0" VerticalAlignment="Top" Width="251" ItemsSource="{Binding SupportedMediaTypes}" SelectedItem="{Binding SelectedMediaType, Mode=TwoWay}">
+            <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Name}"/>
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
+
 
     </Grid>
 </UserControl>

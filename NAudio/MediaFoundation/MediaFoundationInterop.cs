@@ -28,6 +28,12 @@ namespace NAudio.MediaFoundation
         /// </summary>
         [DllImport("mfplat.dll", ExactSpelling = true, PreserveSig = false)]
         public static extern void MFCreateMediaType(out IMFMediaType ppMFType);
+        
+        /// <summary>
+        /// Initializes a media type from a WAVEFORMATEX structure. 
+        /// </summary>
+        [DllImport("mfplat.dll", ExactSpelling = true, PreserveSig = false)]
+        public static extern void MFInitMediaTypeFromWaveFormatEx([In] IMFMediaType pMFType, [In] WaveFormat pWaveFormat, [In] int cbBufSize);
 
         /// <summary>
         /// Converts a Media Foundation audio media type to a WAVEFORMATEX structure.

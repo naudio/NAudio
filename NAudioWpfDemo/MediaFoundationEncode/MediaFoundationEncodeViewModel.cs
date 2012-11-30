@@ -1,8 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Windows.Input;
+using MS.Internal.Xml.XPath;
 using Microsoft.Win32;
+using NAudio.CoreAudioApi.Interfaces;
 using NAudio.MediaFoundation;
+using NAudio.Utils;
 using NAudio.Wave;
 using NAudioWpfDemo.ViewModel;
 
@@ -15,11 +20,91 @@ namespace NAudioWpfDemo.MediaFoundationEncode
         /// </summary>
         private Guid CWMAEncMediaObject = new Guid("70f598e9-f4ab-495a-99e2-a7c4d3d89abf");
 
+        private Dictionary<Guid, List<MediaTypeViewModel>> supportedMediaTypes;
+
         public MediaFoundationEncodeViewModel()
         {
             MediaFoundationApi.Startup();
+            supportedMediaTypes = new Dictionary<Guid, List<MediaTypeViewModel>>();
             EncodeCommand = new DelegateCommand(Encode);
+            
+            // TODO: fill this by asking the encoders what they can do
+            OutputFormats = new List<EncoderViewModel>();
+            OutputFormats.Add(new EncoderViewModel() { Name = "AAC", Guid = AudioSubtypes.MFAudioFormat_AAC });
+            OutputFormats.Add(new EncoderViewModel() { Name = "WMA v8", Guid = AudioSubtypes.MFAudioFormat_WMAudioV8 });
+            OutputFormats.Add(new EncoderViewModel() { Name = "WMA v9", Guid = AudioSubtypes.MFAudioFormat_WMAudioV9 });
+            // OutputFormats.Add(new EncoderViewModel() { Name = "MP3", Guid = AudioSubtypes.MFAudioFormat_MP3 }); can get MF_E_NOT_FOUND
+            SelectedOutputFormat = OutputFormats[0];
         }
+
+        private EncoderViewModel selectedOutputFormat;
+
+        public EncoderViewModel SelectedOutputFormat
+        {
+            get { return selectedOutputFormat; }
+            set { 
+                if (selectedOutputFormat != value)
+                {
+                    selectedOutputFormat = value;
+                    SetMediaTypes();
+                    OnPropertyChanged("SelectedOutputFormat");
+                    OnPropertyChanged("SupportedMediaTypes");
+                }
+            }
+        }
+
+        
+
+        public List<MediaTypeViewModel> SupportedMediaTypes
+        {
+            get
+            {
+                if (supportedMediaTypes.ContainsKey(SelectedOutputFormat.Guid))
+                    return supportedMediaTypes[SelectedOutputFormat.Guid];
+                return null;
+            }
+        }
+
+        private void SetMediaTypes()
+        {
+            if (!supportedMediaTypes.ContainsKey(SelectedOutputFormat.Guid))
+                supportedMediaTypes[SelectedOutputFormat.Guid] = new List<MediaTypeViewModel>();
+            var dict = supportedMediaTypes[SelectedOutputFormat.Guid];
+            IMFCollection availableTypes;
+            MediaFoundationInterop.MFTranscodeGetAudioOutputAvailableTypes(SelectedOutputFormat.Guid, _MFT_ENUM_FLAG.MFT_ENUM_FLAG_ALL, null, out availableTypes);
+            int count;
+            availableTypes.GetElementCount(out count);
+            for (int n = 0; n < count; n++)
+            {
+                object mediaType;
+                availableTypes.GetElement(n, out mediaType);
+                var mt = new MediaTypeViewModel();
+                mt.MediaType = (IMFMediaType) mediaType;
+                mt.Name = DescribeMediaType(mt.MediaType);
+                dict.Add(mt);
+            }
+            Marshal.ReleaseComObject(availableTypes);
+        }
+
+        private string DescribeMediaType(IMFMediaType mediaType)
+        {
+            int attributeCount;
+            mediaType.GetCount(out attributeCount);
+            StringBuilder sb = new StringBuilder();
+            for (int n = 0; n < attributeCount; n++)
+            {
+                Guid key;
+                PropVariant val = new PropVariant();
+                mediaType.GetItemByIndex(n, out key, ref val);
+                string propertyName = FieldDescriptionHelper.Describe(typeof(MediaFoundationAttributes), key);
+                sb.AppendFormat("{0}={1}\r\n", propertyName, val.Value);
+                val.Clear();
+            }
+            return sb.ToString();
+        }
+        
+
+        public List<EncoderViewModel> OutputFormats { get; private set; }
 
         public ICommand EncodeCommand { get; private set; }
 
@@ -35,7 +120,7 @@ namespace NAudioWpfDemo.MediaFoundationEncode
                 if (outputUrl.EndsWith(".mp4"))
                     mediaType = CreateAacTargetMediaType(reader.WaveFormat.SampleRate, reader.WaveFormat.Channels);
                 else if (outputUrl.EndsWith(".wma"))
-                    mediaType = CreateWmaTargetMediaType(16000); // get something roughly 128kbps
+                    mediaType = CreateWmaTargetMediaType(16000, reader.WaveFormat.SampleRate, reader.WaveFormat.Channels); // get something roughly 128kbps
                 else
                     throw new InvalidOperationException("Unrecognised output format");
                 IMFSinkWriter writer;
@@ -47,11 +132,18 @@ namespace NAudioWpfDemo.MediaFoundationEncode
                 writer = CreateSinkWriter(outputUrl);
 
 
+                var selectedType = DescribeMediaType(mediaType);
                 int streamIndex;
                 writer.AddStream(mediaType, out streamIndex);
 
                 // tell the writer what input format we are giving it
-                var inputFormat = CreateMediaTypeFromWaveFormat(reader.WaveFormat);
+                //var inputFormat = CreateMediaTypeFromWaveFormat(reader.WaveFormat);
+
+                // WMA encoder seems fussy about what media type we pass in, so try to create one from the WAVEFORMAT structure directly
+                IMFMediaType inputFormat;
+                MediaFoundationInterop.MFCreateMediaType(out inputFormat);
+                MediaFoundationInterop.MFInitMediaTypeFromWaveFormatEx(inputFormat, reader.WaveFormat, Marshal.SizeOf(reader.WaveFormat));
+
                 // n.b. can get 0xC00D36B4 - MF_E_INVALIDMEDIATYPE here
                 writer.SetInputMediaType(streamIndex, inputFormat, null);
 
@@ -169,7 +261,7 @@ namespace NAudioWpfDemo.MediaFoundationEncode
             return mediaType;
         }
 
-        private IMFMediaType CreateWmaTargetMediaType(int desiredBytesPerSecond)
+        private IMFMediaType CreateWmaTargetMediaType(int desiredBytesPerSecond, int sampleRate, int channels)
         {
             var subType = AudioSubtypes.MFAudioFormat_WMAudioV8; // could also try v9
             int avgBitrateDiff = int.MaxValue;
@@ -190,6 +282,17 @@ namespace NAudioWpfDemo.MediaFoundationEncode
                 object supportedAttributes;
                 availableTypes.GetElement(elementIndex, out supportedAttributes);
                 var mediaType = (IMFMediaType)supportedAttributes;
+
+                // filter out types that are for the wrong sample rate and channels
+                int samplesPerSecond;
+                mediaType.GetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_SAMPLES_PER_SECOND, out samplesPerSecond);
+                if (sampleRate != samplesPerSecond)
+                    continue;
+                int channelCount;
+                mediaType.GetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_NUM_CHANNELS, out channelCount);
+                if (channels != channelCount)
+                    continue;
+
 
                 // Get the byte per second
                 int avgBytePerSecond;
@@ -237,5 +340,17 @@ namespace NAudioWpfDemo.MediaFoundationEncode
         {
             MediaFoundationApi.Shutdown();
         }
+    }
+
+    internal class MediaTypeViewModel
+    {
+        public IMFMediaType MediaType { get; set; }
+        public string Name { get; set; }
+    }
+
+    internal class EncoderViewModel : ViewModelBase
+    {
+        public string Name { get; set; }
+        public Guid Guid { get; set; }
     }
 }

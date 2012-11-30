@@ -199,5 +199,51 @@ namespace NAudio.MediaFoundation
         /// </summary>
         [FieldDescription("Enable Hardware Transforms")]
         public static readonly Guid MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS = new Guid("a634a91c-822b-41b9-a494-4de4643612b0");
+
+        /// <summary>
+        /// Contains additional format data for a media type. 
+        /// </summary>
+        [FieldDescription("User data")]
+        public static readonly Guid MF_MT_USER_DATA = new Guid("b6bc765f-4c3b-40a4-bd51-2535b66fe09d");
+
+        /// <summary>
+        /// Specifies for a media type whether each sample is independent of the other samples in the stream. 
+        /// </summary>
+        [FieldDescription("All samples independent")]
+        public static readonly Guid MF_MT_ALL_SAMPLES_INDEPENDENT = new Guid("c9173739-5e56-461c-b713-46fb995cb95f");
+
+        /// <summary>
+        /// Specifies for a media type whether the samples have a fixed size. 
+        /// </summary>
+        [FieldDescription("Fixed size samples")]
+        public static readonly Guid MF_MT_FIXED_SIZE_SAMPLES = new Guid("b8ebefaf-b718-4e04-b0a9-116775e3321b");
+
+        /// <summary>
+        /// Contains a DirectShow format GUID for a media type. 
+        /// </summary>
+        [FieldDescription("DirectShow Format Guid")]
+        public static readonly Guid MF_MT_AM_FORMAT_TYPE = new Guid("73d1072d-1870-4174-a063-29ff4ff6c11e");
+
+        /// <summary>
+        /// Specifies the preferred legacy format structure to use when converting an audio media type. 
+        /// </summary>
+        [FieldDescription("Preferred legacy format structure")]
+        public static readonly Guid MF_MT_AUDIO_PREFER_WAVEFORMATEX = new Guid("a901aaba-e037-458a-bdf6-545be2074042");
+
+        /// <summary>
+        /// Specifies for a media type whether the media data is compressed. 
+        /// </summary>
+        [FieldDescription("Is Compressed")]
+        public static readonly Guid MF_MT_COMPRESSED = new Guid("3afd0cee-18f2-4ba5-a110-8bea502e1f92");
+
+        /// <summary>
+        /// Approximate data rate of the video stream, in bits per second, for a video media type. 
+        /// </summary>
+        [FieldDescription("Average bitrate")]
+        public static readonly Guid MF_MT_AVG_BITRATE = new Guid("20332624-fb0d-4d9e-bd0d-cbf6786c102e");
+
+        //Unknown:
+        //7632f0e6-9538-4d61-acda-ea29c8c14456=41
+        //bfbabe79-7434-4d1c-94f0-72a3b9e17188=0
     }
 }

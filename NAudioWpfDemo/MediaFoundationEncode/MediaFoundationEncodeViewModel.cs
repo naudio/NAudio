@@ -1,47 +1,114 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Windows.Forms;
 using System.Windows.Input;
 using MS.Internal.Xml.XPath;
-using Microsoft.Win32;
 using NAudio.CoreAudioApi.Interfaces;
 using NAudio.MediaFoundation;
 using NAudio.Utils;
 using NAudio.Wave;
 using NAudioWpfDemo.ViewModel;
+using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
+using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
 
 namespace NAudioWpfDemo.MediaFoundationEncode
 {
     internal class MediaFoundationEncodeViewModel : ViewModelBase, IDisposable
     {
-        /// <summary>
-        /// WMAudio Encoder DMO wmcodecdsp.h
-        /// </summary>
-        private Guid CWMAEncMediaObject = new Guid("70f598e9-f4ab-495a-99e2-a7c4d3d89abf");
-
-        private Dictionary<Guid, List<MediaTypeViewModel>> supportedMediaTypes;
+        private Dictionary<Guid, List<MediaTypeViewModel>> allMediaTypes;
         private EncoderViewModel selectedOutputFormat;
         private MediaTypeViewModel selectedMediaType;
+        private string inputFile;
+        private string inputFormat;
+        private WaveFormat inputWaveFormat;
+
+        public List<EncoderViewModel> OutputFormats { get; private set; }
+        public List<MediaTypeViewModel> SupportedMediaTypes { get; private set; }
+        public ICommand EncodeCommand { get; private set; }
+        public ICommand SelectInputFileCommand { get; private set; }
 
         public MediaFoundationEncodeViewModel()
         {
             MediaFoundationApi.Startup();
-            supportedMediaTypes = new Dictionary<Guid, List<MediaTypeViewModel>>();
+            allMediaTypes = new Dictionary<Guid, List<MediaTypeViewModel>>();
+            SupportedMediaTypes = new List<MediaTypeViewModel>();
             EncodeCommand = new DelegateCommand(Encode);
-            
+            SelectInputFileCommand = new DelegateCommand(SelectInputFile);
+
             // TODO: fill this by asking the encoders what they can do
             OutputFormats = new List<EncoderViewModel>();
-            OutputFormats.Add(new EncoderViewModel() { Name = "AAC", Guid = AudioSubtypes.MFAudioFormat_AAC });
-            OutputFormats.Add(new EncoderViewModel() { Name = "Windows Media Audio", Guid = AudioSubtypes.MFAudioFormat_WMAudioV8 });
-            OutputFormats.Add(new EncoderViewModel() { Name = "Windows Media Audio Professional", Guid = AudioSubtypes.MFAudioFormat_WMAudioV9 });
-            OutputFormats.Add(new EncoderViewModel() { Name = "MP3", Guid = AudioSubtypes.MFAudioFormat_MP3 }); //can get MF_E_NOT_FOUND
-            OutputFormats.Add(new EncoderViewModel() { Name = "Windows Media Audio Voice", Guid = AudioSubtypes.MFAudioFormat_MSP1});
-            OutputFormats.Add(new EncoderViewModel() { Name = "Windows Media Audio Lossless", Guid = AudioSubtypes.MFAudioFormat_WMAudio_Lossless });
+            OutputFormats.Add(new EncoderViewModel() { Name = "AAC", Guid = AudioSubtypes.MFAudioFormat_AAC, Extension=".aac" });
+            OutputFormats.Add(new EncoderViewModel() { Name = "Windows Media Audio", Guid = AudioSubtypes.MFAudioFormat_WMAudioV8, Extension = ".wma"});
+            OutputFormats.Add(new EncoderViewModel() { Name = "Windows Media Audio Professional", Guid = AudioSubtypes.MFAudioFormat_WMAudioV9, Extension = ".wma" });
+            OutputFormats.Add(new EncoderViewModel() { Name = "MP3", Guid = AudioSubtypes.MFAudioFormat_MP3, Extension = ".mp3" });
+            OutputFormats.Add(new EncoderViewModel() { Name = "Windows Media Audio Voice", Guid = AudioSubtypes.MFAudioFormat_MSP1, Extension = ".wma" });
+            OutputFormats.Add(new EncoderViewModel() { Name = "Windows Media Audio Lossless", Guid = AudioSubtypes.MFAudioFormat_WMAudio_Lossless, Extension = ".wma" });
+            OutputFormats.Add(new EncoderViewModel() { Name = "Fake for testing", Guid = Guid.NewGuid(), Extension = ".xyz" });
             SelectedOutputFormat = OutputFormats[0];
         }
 
+        private void SelectInputFile()
+        {
+            var ofd = new OpenFileDialog();
+            ofd.Filter = "Audio files|*.mp3;*.wav;*.wma;*.aiff;*.aac";
+            if (ofd.ShowDialog() == true)
+            {
+                if (TryOpenInputFile(ofd.FileName))
+                {
+                    InputFile = ofd.FileName;
+                    SetMediaTypes();
+                }
+            }
+        }
+
+        private bool TryOpenInputFile(string file)
+        {
+            bool isValid = false;
+            try
+            {
+                using (var reader = new MediaFoundationReader(file))
+                {
+                    InputFormat = reader.WaveFormat.ToString();
+                    inputWaveFormat = reader.WaveFormat;
+                    isValid = true;
+                }
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(String.Format("Not a supported input file ({0})", e.Message));
+            }
+            return isValid;
+        }
+
+        public string InputFile
+        {
+            get { return inputFile; }
+            set
+            {
+                if (inputFile != value)
+                {
+                    inputFile = value;
+                    OnPropertyChanged("InputFile");
+                }
+            }
+        }
+
+        public string InputFormat
+        {
+            get { return inputFormat; }
+            set
+            {
+                if (inputFormat != value)
+                {
+                    inputFormat = value;
+                    OnPropertyChanged("InputFormat");
+                }
+            }
+        }
 
         public EncoderViewModel SelectedOutputFormat
         {
@@ -52,29 +119,50 @@ namespace NAudioWpfDemo.MediaFoundationEncode
                     selectedOutputFormat = value;
                     SetMediaTypes();
                     OnPropertyChanged("SelectedOutputFormat");
-                    OnPropertyChanged("SupportedMediaTypes");
                 }
-            }
-        }
-
-        
-
-        public List<MediaTypeViewModel> SupportedMediaTypes
-        {
-            get
-            {
-                if (supportedMediaTypes.ContainsKey(SelectedOutputFormat.Guid))
-                    return supportedMediaTypes[SelectedOutputFormat.Guid];
-                return null;
             }
         }
 
         private void SetMediaTypes()
         {
-            if (!supportedMediaTypes.ContainsKey(SelectedOutputFormat.Guid))
+            if (!allMediaTypes.ContainsKey(SelectedOutputFormat.Guid))
             {
-                supportedMediaTypes[SelectedOutputFormat.Guid] = new List<MediaTypeViewModel>();
-                var mediaTypes = supportedMediaTypes[SelectedOutputFormat.Guid];
+                TryGetSupportedMediaTypes();
+            }
+            FilterSupportedMediaTypes();
+            OnPropertyChanged("SupportedMediaTypes");
+            SelectedMediaType = SupportedMediaTypes.FirstOrDefault();
+        }
+
+        private void FilterSupportedMediaTypes()
+        {
+            //SupportedMediaTypes.Clear();
+            SupportedMediaTypes = new List<MediaTypeViewModel>();
+            if (inputWaveFormat == null)
+            {
+                SupportedMediaTypes.Add(new MediaTypeViewModel() {Name="Select an input file"});
+                return;
+            }
+            foreach (var mt in allMediaTypes[SelectedOutputFormat.Guid].Where(m => m.MediaType != null))
+            {
+                if (TryGetUINT32(mt.MediaType, MediaFoundationAttributes.MF_MT_AUDIO_SAMPLES_PER_SECOND) ==
+                    inputWaveFormat.SampleRate
+                    &&
+                    TryGetUINT32(mt.MediaType, MediaFoundationAttributes.MF_MT_AUDIO_NUM_CHANNELS) ==
+                    inputWaveFormat.Channels)
+                {
+                    SupportedMediaTypes.Add(mt);
+                }
+            }
+        }
+
+        private void TryGetSupportedMediaTypes()
+        {
+            allMediaTypes[SelectedOutputFormat.Guid] = new List<MediaTypeViewModel>();
+            var mediaTypes = allMediaTypes[SelectedOutputFormat.Guid];
+            try
+            {
+
                 IMFCollection availableTypes;
                 MediaFoundationInterop.MFTranscodeGetAudioOutputAvailableTypes(SelectedOutputFormat.Guid,
                                                                                _MFT_ENUM_FLAG.MFT_ENUM_FLAG_ALL, null,
@@ -86,14 +174,24 @@ namespace NAudioWpfDemo.MediaFoundationEncode
                     object mediaType;
                     availableTypes.GetElement(n, out mediaType);
                     var mt = new MediaTypeViewModel();
-                    mt.MediaType = (IMFMediaType) mediaType;
+                    mt.MediaType = (IMFMediaType)mediaType;
                     mt.Name = ShortDescription(mt.MediaType);
                     mt.Description = DescribeMediaType(mt.MediaType);
                     mediaTypes.Add(mt);
                 }
                 Marshal.ReleaseComObject(availableTypes);
             }
-            SelectedMediaType = supportedMediaTypes[SelectedOutputFormat.Guid].FirstOrDefault();
+            catch (COMException c)
+            {
+                if (c.ErrorCode == MediaFoundationErrors.MF_E_NOT_FOUND)
+                {
+                    mediaTypes.Add(new MediaTypeViewModel() { Name = "Not Supported", Description = "No encoder found for this output type" });
+                }
+                else
+                {
+                    throw;
+                }
+            }
         }
 
         public MediaTypeViewModel SelectedMediaType 
@@ -121,9 +219,44 @@ namespace NAudioWpfDemo.MediaFoundationEncode
             mediaType.GetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_NUM_CHANNELS, out channels);
 
             int bitsPerSample = TryGetUINT32(mediaType, MediaFoundationAttributes.MF_MT_AUDIO_BITS_PER_SAMPLE);
-            //int bitsPerSample;
+
+
+        //int bitsPerSample;
             //mediaType.GetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_BITS_PER_SAMPLE, out bitsPerSample);
-            return string.Format("{0}kHz {1} bit {2}, {3}kbps", sampleRate / 1000M, bitsPerSample, channels == 1 ? "mono" : "stereo", (8 * bytesPerSecond) / 1000M);
+            var shortDescription = new StringBuilder();
+            shortDescription.AppendFormat("{0}kbps, ", (8*bytesPerSecond)/1000M);
+            shortDescription.AppendFormat("{0}kHz, ", sampleRate / 1000M);
+            if (bitsPerSample != -1)
+                shortDescription.AppendFormat("{0} bit, ", bitsPerSample);
+            shortDescription.AppendFormat("{0}, ", channels == 1 ? "mono" : channels == 2 ? "stereo" : channels.ToString() + " channels");
+            if (subType == AudioSubtypes.MFAudioFormat_AAC)
+            {
+                int payloadType = TryGetUINT32(mediaType, MediaFoundationAttributes.MF_MT_AAC_PAYLOAD_TYPE);
+                if (payloadType != -1)
+                    shortDescription.AppendFormat("Payload Type: {0}, ", (AacPayloadType)payloadType);
+            }
+            shortDescription.Length -= 2;
+            return shortDescription.ToString();
+        }
+
+        enum AacPayloadType
+        {
+            /// <summary>
+            /// The stream contains raw_data_block elements only.
+            /// </summary>
+            RawData = 0,
+            /// <summary>
+            /// Audio Data Transport Stream (ADTS). The stream contains an adts_sequence, as defined by MPEG-2.
+            /// </summary>
+            Adts = 1,
+            /// <summary>
+            /// Audio Data Interchange Format (ADIF). The stream contains an adif_sequence, as defined by MPEG-2.
+            /// </summary>
+            Adif = 2,
+            /// <summary>
+            /// The stream contains an MPEG-4 audio transport stream with a synchronization layer (LOAS) and a multiplex layer (LATM).
+            /// </summary>
+            LoasLatm = 3
         }
 
         private int TryGetUINT32(IMFAttributes att, Guid key)
@@ -171,25 +304,32 @@ namespace NAudioWpfDemo.MediaFoundationEncode
         }
         
 
-        public List<EncoderViewModel> OutputFormats { get; private set; }
-
-        public ICommand EncodeCommand { get; private set; }
-
         private void Encode()
         {
-            string inputFileName = SelectFileToConvert();
-            if (inputFileName == null) return;
-            using (var reader = new Mp3FileReader(inputFileName))
+            if (String.IsNullOrEmpty(InputFile)||!File.Exists(InputFile))
             {
-                string outputUrl = SelectSaveFile();
+                MessageBox.Show("Please select a valid input file to convert");
+                return;
+            }
+            if (SelectedMediaType.MediaType == null)
+            {
+                MessageBox.Show("Please select a valid output format");
+                return;
+            }
+
+            using (var reader = new MediaFoundationReader(InputFile))
+            {
+                string outputUrl = SelectSaveFile(SelectedOutputFormat.Name, SelectedOutputFormat.Extension);
                 if (outputUrl == null) return;
-                IMFMediaType mediaType;
+                IMFMediaType mediaType = SelectedMediaType.MediaType;
+                /*
                 if (outputUrl.EndsWith(".mp4"))
                     mediaType = CreateAacTargetMediaType(reader.WaveFormat.SampleRate, reader.WaveFormat.Channels);
                 else if (outputUrl.EndsWith(".wma"))
                     mediaType = CreateWmaTargetMediaType(16000, reader.WaveFormat.SampleRate, reader.WaveFormat.Channels); // get something roughly 128kbps
                 else
                     throw new InvalidOperationException("Unrecognised output format");
+                 */
                 // not using this for now as we need to provide properly configured attributes or it will complain
                 // that the output file is not found 
                 //http://msdn.microsoft.com/en-gb/library/windows/desktop/dd389284%28v=vs.85%29.aspx
@@ -256,7 +396,7 @@ namespace NAudioWpfDemo.MediaFoundationEncode
                 writer.DoFinalize();
 
                 Marshal.ReleaseComObject(inputFormat);
-                Marshal.ReleaseComObject(mediaType);
+                //Marshal.ReleaseComObject(mediaType);
                 Marshal.ReleaseComObject(writer);
             }
 
@@ -380,22 +520,12 @@ namespace NAudioWpfDemo.MediaFoundationEncode
             return selectedType;
         }
 
-        private string SelectSaveFile()
+        private string SelectSaveFile(string formatName, string extension)
         {
             var sfd = new SaveFileDialog();
+            sfd.Filter = formatName + "|*" + extension;
             //return (sfd.ShowDialog() == true) ? new Uri(sfd.FileName).AbsoluteUri : null;
             return (sfd.ShowDialog() == true) ? sfd.FileName : null;
-        }
-
-        private string SelectFileToConvert()
-        {
-            var ofd = new OpenFileDialog();
-            return (ofd.ShowDialog() == true) ? ofd.FileName : null;
-        }
-
-        [ComImport, Guid("70f598e9-f4ab-495a-99e2-a7c4d3d89abf")]
-        class WindowsMediaEncoder
-        {
         }
 
         public void Dispose()
@@ -415,5 +545,6 @@ namespace NAudioWpfDemo.MediaFoundationEncode
     {
         public string Name { get; set; }
         public Guid Guid { get; set; }
+        public string Extension { get; set; }
     }
 }

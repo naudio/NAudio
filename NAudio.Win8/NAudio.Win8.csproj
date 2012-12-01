@@ -504,6 +504,9 @@
     <Compile Include="..\NAudio\MediaFoundation\MediaFoundationAttributes.cs">
       <Link>MediaFoundation\MediaFoundationAttributes.cs</Link>
     </Compile>
+    <Compile Include="..\NAudio\MediaFoundation\MediaFoundationErrors.cs">
+      <Link>MediaFoundation\MediaFoundationErrors.cs</Link>
+    </Compile>
     <Compile Include="..\NAudio\MediaFoundation\MediaFoundationHelpers.cs">
       <Link>MediaFoundation\MediaFoundationHelpers.cs</Link>
     </Compile>

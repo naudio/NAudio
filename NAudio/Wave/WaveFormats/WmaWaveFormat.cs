@@ -29,7 +29,7 @@ namespace NAudio.Wave.WaveFormats
                 dwChannelMask = 3;
 
             // WMAUDIO3 is Pro
-            this.waveFormatTag = WaveFormatEncoding.WAVE_FORMAT_WMAUDIO2;
+            this.waveFormatTag = WaveFormatEncoding.WindowsMediaAudio;
         }
     }
 }

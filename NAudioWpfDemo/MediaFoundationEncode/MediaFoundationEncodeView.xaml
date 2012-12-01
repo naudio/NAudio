@@ -6,24 +6,24 @@
              mc:Ignorable="d" 
              d:DesignHeight="300" d:DesignWidth="300">
     <Grid>
-        <Button Content="Encode" Command="{Binding EncodeCommand}" HorizontalAlignment="Left" Margin="24,58,0,0" VerticalAlignment="Top" Width="75"/>
+        <Button Content="Encode" Command="{Binding EncodeCommand}" HorizontalAlignment="Left" Margin="221,13,0,0" VerticalAlignment="Top" Width="75"/>
         <Label Content="Work in progress, use at your peril" HorizontalAlignment="Left" Margin="24,10,0,0" VerticalAlignment="Top"/>
-        <ComboBox HorizontalAlignment="Left" Margin="24,115,0,0" VerticalAlignment="Top" Width="251" ItemsSource="{Binding OutputFormats}" SelectedItem="{Binding SelectedOutputFormat, Mode=TwoWay}">
+        <ComboBox HorizontalAlignment="Left" Margin="24,75,0,0" VerticalAlignment="Top" Width="251" ItemsSource="{Binding OutputFormats}" SelectedItem="{Binding SelectedOutputFormat, Mode=TwoWay}">
             <ComboBox.ItemTemplate>
                 <DataTemplate>
                     <TextBlock Text="{Binding Name}"></TextBlock>
                 </DataTemplate>
             </ComboBox.ItemTemplate>
          </ComboBox>
-        <ComboBox HorizontalAlignment="Left" Margin="24,142,0,0" VerticalAlignment="Top" Width="251" ItemsSource="{Binding SupportedMediaTypes}" SelectedItem="{Binding SelectedMediaType, Mode=TwoWay}">
+        <ComboBox HorizontalAlignment="Left" Margin="24,102,0,0" VerticalAlignment="Top" Width="251" ItemsSource="{Binding SupportedMediaTypes}" SelectedItem="{Binding SelectedMediaType, Mode=TwoWay}">
             <ComboBox.ItemTemplate>
                 <DataTemplate>
                     <TextBlock Text="{Binding Name}"/>
                 </DataTemplate>
             </ComboBox.ItemTemplate>
         </ComboBox>
-        <TextBox HorizontalAlignment="Left" Height="85" 
-                 Margin="24,169,0,0" TextWrapping="Wrap" Text="{Binding SelectedMediaType.Description}" 
+        <TextBox HorizontalAlignment="Left" Height="126" 
+                 Margin="24,129,0,0" TextWrapping="Wrap" Text="{Binding SelectedMediaType.Description}" 
                  VerticalAlignment="Top" Width="251" AcceptsReturn="True" IsReadOnly="True"  />
 
 

@@ -102,6 +102,7 @@
     <Compile Include="FileFormats\Wav\WaveFileChunkReader.cs" />
     <Compile Include="MediaFoundation\AudioSubtypes.cs" />
     <Compile Include="MediaFoundation\IMFReadWriteClassFactory.cs" />
+    <Compile Include="MediaFoundation\MediaFoundationErrors.cs" />
     <Compile Include="MediaFoundation\MediaTypes.cs" />
     <Compile Include="Utils\FieldDescriptionAttribute.cs" />
     <Compile Include="MediaFoundation\IMFActivate.cs" />

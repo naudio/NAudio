@@ -36,7 +36,9 @@ namespace NAudioWpfDemo.MediaFoundationEncode
             OutputFormats.Add(new EncoderViewModel() { Name = "AAC", Guid = AudioSubtypes.MFAudioFormat_AAC });
             OutputFormats.Add(new EncoderViewModel() { Name = "Windows Media Audio", Guid = AudioSubtypes.MFAudioFormat_WMAudioV8 });
             OutputFormats.Add(new EncoderViewModel() { Name = "Windows Media Audio Professional", Guid = AudioSubtypes.MFAudioFormat_WMAudioV9 });
-            // OutputFormats.Add(new EncoderViewModel() { Name = "MP3", Guid = AudioSubtypes.MFAudioFormat_MP3 }); can get MF_E_NOT_FOUND
+            OutputFormats.Add(new EncoderViewModel() { Name = "MP3", Guid = AudioSubtypes.MFAudioFormat_MP3 }); //can get MF_E_NOT_FOUND
+            OutputFormats.Add(new EncoderViewModel() { Name = "Windows Media Audio Voice", Guid = AudioSubtypes.MFAudioFormat_MSP1});
+            OutputFormats.Add(new EncoderViewModel() { Name = "Windows Media Audio Lossless", Guid = AudioSubtypes.MFAudioFormat_WMAudio_Lossless });
             SelectedOutputFormat = OutputFormats[0];
         }
 
@@ -117,10 +119,39 @@ namespace NAudioWpfDemo.MediaFoundationEncode
             mediaType.GetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_AVG_BYTES_PER_SECOND, out bytesPerSecond);
             int channels;
             mediaType.GetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_NUM_CHANNELS, out channels);
-            int bitsPerSample;
-            mediaType.GetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_BITS_PER_SAMPLE, out bitsPerSample);
+
+            int bitsPerSample = TryGetUINT32(mediaType, MediaFoundationAttributes.MF_MT_AUDIO_BITS_PER_SAMPLE);
+            //int bitsPerSample;
+            //mediaType.GetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_BITS_PER_SAMPLE, out bitsPerSample);
             return string.Format("{0}kHz {1} bit {2}, {3}kbps", sampleRate / 1000M, bitsPerSample, channels == 1 ? "mono" : "stereo", (8 * bytesPerSecond) / 1000M);
         }
+
+        private int TryGetUINT32(IMFAttributes att, Guid key)
+        {
+            int intValue = -1;
+            try
+            {
+                att.GetUINT32(key, out intValue);
+            }
+            catch (COMException exception)
+            {
+                if (exception.ErrorCode == MediaFoundationErrors.MF_E_ATTRIBUTENOTFOUND)
+                {
+                    // not a problem, return the default
+                }
+                else if (exception.ErrorCode == MediaFoundationErrors.MF_E_INVALIDTYPE)
+                {
+                    throw new ArgumentException("Not a UINT32 parameter");
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            return intValue;
+        }
+
+
 
         private string DescribeMediaType(IMFMediaType mediaType)
         {

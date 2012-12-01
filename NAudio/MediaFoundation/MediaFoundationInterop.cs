@@ -8,6 +8,8 @@ namespace NAudio.MediaFoundation
     /// <summary>
     /// Interop definitions for MediaFoundation
     /// thanks to Lucian Wischik for the initial work on many of these definitions (also various interfaces)
+    /// n.b. the goal is to make as much of this internal as possible, and provide
+    /// better .NET APIs using the MediaFoundationApi class instead
     /// </summary>
     public static class MediaFoundationInterop
     {
@@ -27,20 +29,20 @@ namespace NAudio.MediaFoundation
         /// Creates an empty media type.
         /// </summary>
         [DllImport("mfplat.dll", ExactSpelling = true, PreserveSig = false)]
-        public static extern void MFCreateMediaType(out IMFMediaType ppMFType);
+        internal static extern void MFCreateMediaType(out IMFMediaType ppMFType);
         
         /// <summary>
         /// Initializes a media type from a WAVEFORMATEX structure. 
         /// </summary>
         [DllImport("mfplat.dll", ExactSpelling = true, PreserveSig = false)]
-        public static extern void MFInitMediaTypeFromWaveFormatEx([In] IMFMediaType pMFType, [In] WaveFormat pWaveFormat, [In] int cbBufSize);
+        internal static extern void MFInitMediaTypeFromWaveFormatEx([In] IMFMediaType pMFType, [In] WaveFormat pWaveFormat, [In] int cbBufSize);
 
         /// <summary>
         /// Converts a Media Foundation audio media type to a WAVEFORMATEX structure.
         /// </summary>
         /// TODO: try making second parameter out WaveFormatExtraData
         [DllImport("mfplat.dll", ExactSpelling = true, PreserveSig = false)]
-        public static extern void MFCreateWaveFormatExFromMFMediaType(IMFMediaType pMFType, ref IntPtr ppWF, ref int pcbSize, int flags = 0);
+        internal static extern void MFCreateWaveFormatExFromMFMediaType(IMFMediaType pMFType, ref IntPtr ppWF, ref int pcbSize, int flags = 0);
 
         /// <summary>
         /// Creates the source reader from a URL.
@@ -79,20 +81,20 @@ namespace NAudio.MediaFoundation
         /// Creates an empty media sample.
         /// </summary>
         [DllImport("mfplat.dll", ExactSpelling = true, PreserveSig = false)]
-        public static extern void MFCreateSample([Out] out IMFSample ppIMFSample);
+        internal static extern void MFCreateSample([Out] out IMFSample ppIMFSample);
 
         /// <summary>
         /// Allocates system memory and creates a media buffer to manage it.
         /// </summary>
         [DllImport("mfplat.dll", ExactSpelling = true, PreserveSig = false)]
-        public static extern void MFCreateMemoryBuffer(
+        internal static extern void MFCreateMemoryBuffer(
             int cbMaxLength, [Out] out IMFMediaBuffer ppBuffer);
 
         /// <summary>
         /// Creates an empty attribute store. 
         /// </summary>
         [DllImport("mfplat.dll", ExactSpelling = true, PreserveSig = false)]
-        public static extern void MFCreateAttributes(
+        internal static extern void MFCreateAttributes(
             [Out, MarshalAs(UnmanagedType.Interface)] out IMFAttributes ppMFAttributes,
             [In] int cInitialSize);
 

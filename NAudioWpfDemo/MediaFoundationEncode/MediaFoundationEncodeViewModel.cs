@@ -31,8 +31,8 @@ namespace NAudioWpfDemo.MediaFoundationEncode
             // TODO: fill this by asking the encoders what they can do
             OutputFormats = new List<EncoderViewModel>();
             OutputFormats.Add(new EncoderViewModel() { Name = "AAC", Guid = AudioSubtypes.MFAudioFormat_AAC });
-            OutputFormats.Add(new EncoderViewModel() { Name = "WMA v8", Guid = AudioSubtypes.MFAudioFormat_WMAudioV8 });
-            OutputFormats.Add(new EncoderViewModel() { Name = "WMA v9", Guid = AudioSubtypes.MFAudioFormat_WMAudioV9 });
+            OutputFormats.Add(new EncoderViewModel() { Name = "Windows Media Audio", Guid = AudioSubtypes.MFAudioFormat_WMAudioV8 });
+            OutputFormats.Add(new EncoderViewModel() { Name = "Windows Media Audio Professional", Guid = AudioSubtypes.MFAudioFormat_WMAudioV9 });
             // OutputFormats.Add(new EncoderViewModel() { Name = "MP3", Guid = AudioSubtypes.MFAudioFormat_MP3 }); can get MF_E_NOT_FOUND
             SelectedOutputFormat = OutputFormats[0];
         }
@@ -123,13 +123,13 @@ namespace NAudioWpfDemo.MediaFoundationEncode
                     mediaType = CreateWmaTargetMediaType(16000, reader.WaveFormat.SampleRate, reader.WaveFormat.Channels); // get something roughly 128kbps
                 else
                     throw new InvalidOperationException("Unrecognised output format");
-                IMFSinkWriter writer;
                 // not using this for now as we need to provide properly configured attributes or it will complain
                 // that the output file is not found 
                 //http://msdn.microsoft.com/en-gb/library/windows/desktop/dd389284%28v=vs.85%29.aspx
-                //MediaFoundationInterop.MFCreateSinkWriterFromURL(outputUrl, null, null, out writer);
+                IMFSinkWriter writer;
+                MediaFoundationInterop.MFCreateSinkWriterFromURL(outputUrl, null, null, out writer);
 
-                writer = CreateSinkWriter(outputUrl);
+                //writer = CreateSinkWriter(outputUrl);
 
 
                 var selectedType = DescribeMediaType(mediaType);
@@ -140,9 +140,7 @@ namespace NAudioWpfDemo.MediaFoundationEncode
                 //var inputFormat = CreateMediaTypeFromWaveFormat(reader.WaveFormat);
 
                 // WMA encoder seems fussy about what media type we pass in, so try to create one from the WAVEFORMAT structure directly
-                IMFMediaType inputFormat;
-                MediaFoundationInterop.MFCreateMediaType(out inputFormat);
-                MediaFoundationInterop.MFInitMediaTypeFromWaveFormatEx(inputFormat, reader.WaveFormat, Marshal.SizeOf(reader.WaveFormat));
+                IMFMediaType inputFormat = MediaFoundationApi.CreateMediaTypeFromWaveFormat(reader.WaveFormat);
 
                 // n.b. can get 0xC00D36B4 - MF_E_INVALIDMEDIATYPE here
                 writer.SetInputMediaType(streamIndex, inputFormat, null);
@@ -155,12 +153,11 @@ namespace NAudioWpfDemo.MediaFoundationEncode
                 long position = 0;
                 do
                 {
-                    IMFMediaBuffer buffer;
-                    MediaFoundationInterop.MFCreateMemoryBuffer(reader.WaveFormat.AverageBytesPerSecond * 4, out buffer);
+                    IMFMediaBuffer buffer =
+                        MediaFoundationApi.CreateMemoryBuffer(reader.WaveFormat.AverageBytesPerSecond*4);
                     buffer.GetMaxLength(out maxLength);
                     
-                    IMFSample sample;
-                    MediaFoundationInterop.MFCreateSample(out sample);
+                    IMFSample sample = MediaFoundationApi.CreateSample();
                     sample.AddBuffer(buffer);
 
                     IntPtr ptr;
@@ -213,8 +210,8 @@ namespace NAudioWpfDemo.MediaFoundationEncode
             var factory = (IMFReadWriteClassFactory)(new MFReadWriteClassFactory());
 
             // Create the attributes
-            IMFAttributes attributes;
-            MediaFoundationInterop.MFCreateAttributes(out attributes, 1);
+            IMFAttributes attributes = MediaFoundationApi.CreateAttributes(1);
+            
             attributes.SetUINT32(MediaFoundationAttributes.MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS, 1);
 
             object sinkWriterObject;
@@ -228,8 +225,7 @@ namespace NAudioWpfDemo.MediaFoundationEncode
 
         private IMFMediaType CreateMediaTypeFromWaveFormat(WaveFormat waveFormat)
         {
-            IMFMediaType mediaType;
-            MediaFoundationInterop.MFCreateMediaType(out mediaType);
+            IMFMediaType mediaType = MediaFoundationApi.CreateMediaType();
             mediaType.SetGUID(MediaFoundationAttributes.MF_MT_MAJOR_TYPE, MediaTypes.MFMediaType_Audio);
             if (waveFormat.Encoding == WaveFormatEncoding.Pcm)
                 mediaType.SetGUID(MediaFoundationAttributes.MF_MT_SUBTYPE, AudioSubtypes.MFAudioFormat_PCM);
@@ -249,8 +245,7 @@ namespace NAudioWpfDemo.MediaFoundationEncode
         /// </summary>
         private IMFMediaType CreateAacTargetMediaType(int sampleRate, int channels)
         {
-            IMFMediaType mediaType = null;
-            MediaFoundationInterop.MFCreateMediaType(out mediaType);
+            IMFMediaType mediaType = MediaFoundationApi.CreateMediaType();
             mediaType.SetGUID(MediaFoundationAttributes.MF_MT_MAJOR_TYPE, MediaTypes.MFMediaType_Audio);
             mediaType.SetGUID(MediaFoundationAttributes.MF_MT_SUBTYPE, AudioSubtypes.MFAudioFormat_AAC);
             mediaType.SetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_NUM_CHANNELS, channels); // 1 or 2 allowed

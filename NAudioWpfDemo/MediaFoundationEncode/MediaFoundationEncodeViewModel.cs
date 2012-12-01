@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Input;
@@ -21,6 +22,8 @@ namespace NAudioWpfDemo.MediaFoundationEncode
         private Guid CWMAEncMediaObject = new Guid("70f598e9-f4ab-495a-99e2-a7c4d3d89abf");
 
         private Dictionary<Guid, List<MediaTypeViewModel>> supportedMediaTypes;
+        private EncoderViewModel selectedOutputFormat;
+        private MediaTypeViewModel selectedMediaType;
 
         public MediaFoundationEncodeViewModel()
         {
@@ -37,7 +40,6 @@ namespace NAudioWpfDemo.MediaFoundationEncode
             SelectedOutputFormat = OutputFormats[0];
         }
 
-        private EncoderViewModel selectedOutputFormat;
 
         public EncoderViewModel SelectedOutputFormat
         {
@@ -68,22 +70,41 @@ namespace NAudioWpfDemo.MediaFoundationEncode
         private void SetMediaTypes()
         {
             if (!supportedMediaTypes.ContainsKey(SelectedOutputFormat.Guid))
-                supportedMediaTypes[SelectedOutputFormat.Guid] = new List<MediaTypeViewModel>();
-            var dict = supportedMediaTypes[SelectedOutputFormat.Guid];
-            IMFCollection availableTypes;
-            MediaFoundationInterop.MFTranscodeGetAudioOutputAvailableTypes(SelectedOutputFormat.Guid, _MFT_ENUM_FLAG.MFT_ENUM_FLAG_ALL, null, out availableTypes);
-            int count;
-            availableTypes.GetElementCount(out count);
-            for (int n = 0; n < count; n++)
             {
-                object mediaType;
-                availableTypes.GetElement(n, out mediaType);
-                var mt = new MediaTypeViewModel();
-                mt.MediaType = (IMFMediaType) mediaType;
-                mt.Name = ShortDescription(mt.MediaType);
-                dict.Add(mt);
+                supportedMediaTypes[SelectedOutputFormat.Guid] = new List<MediaTypeViewModel>();
+                var mediaTypes = supportedMediaTypes[SelectedOutputFormat.Guid];
+                IMFCollection availableTypes;
+                MediaFoundationInterop.MFTranscodeGetAudioOutputAvailableTypes(SelectedOutputFormat.Guid,
+                                                                               _MFT_ENUM_FLAG.MFT_ENUM_FLAG_ALL, null,
+                                                                               out availableTypes);
+                int count;
+                availableTypes.GetElementCount(out count);
+                for (int n = 0; n < count; n++)
+                {
+                    object mediaType;
+                    availableTypes.GetElement(n, out mediaType);
+                    var mt = new MediaTypeViewModel();
+                    mt.MediaType = (IMFMediaType) mediaType;
+                    mt.Name = ShortDescription(mt.MediaType);
+                    mt.Description = DescribeMediaType(mt.MediaType);
+                    mediaTypes.Add(mt);
+                }
+                Marshal.ReleaseComObject(availableTypes);
             }
-            Marshal.ReleaseComObject(availableTypes);
+            SelectedMediaType = supportedMediaTypes[SelectedOutputFormat.Guid].FirstOrDefault();
+        }
+
+        public MediaTypeViewModel SelectedMediaType 
+        {
+            get { return selectedMediaType; }
+            set
+            {
+                if (selectedMediaType != value)
+                {
+                    selectedMediaType = value;
+                    OnPropertyChanged("SelectedMediaType");
+                }
+            }
         }
 
         private string ShortDescription(IMFMediaType mediaType)
@@ -356,6 +377,7 @@ namespace NAudioWpfDemo.MediaFoundationEncode
     {
         public IMFMediaType MediaType { get; set; }
         public string Name { get; set; }
+        public string Description { get; set; }
     }
 
     internal class EncoderViewModel : ViewModelBase

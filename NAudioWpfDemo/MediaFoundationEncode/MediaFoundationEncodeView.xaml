@@ -22,6 +22,9 @@
                 </DataTemplate>
             </ComboBox.ItemTemplate>
         </ComboBox>
+        <TextBox HorizontalAlignment="Left" Height="85" 
+                 Margin="24,169,0,0" TextWrapping="Wrap" Text="{Binding SelectedMediaType.Description}" 
+                 VerticalAlignment="Top" Width="251" AcceptsReturn="True" IsReadOnly="True"  />
 
 
     </Grid>

@@ -80,10 +80,25 @@ namespace NAudioWpfDemo.MediaFoundationEncode
                 availableTypes.GetElement(n, out mediaType);
                 var mt = new MediaTypeViewModel();
                 mt.MediaType = (IMFMediaType) mediaType;
-                mt.Name = DescribeMediaType(mt.MediaType);
+                mt.Name = ShortDescription(mt.MediaType);
                 dict.Add(mt);
             }
             Marshal.ReleaseComObject(availableTypes);
+        }
+
+        private string ShortDescription(IMFMediaType mediaType)
+        {
+            Guid subType;
+            mediaType.GetGUID(MediaFoundationAttributes.MF_MT_SUBTYPE, out subType);
+            int sampleRate;
+            mediaType.GetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_SAMPLES_PER_SECOND, out sampleRate);
+            int bytesPerSecond;
+            mediaType.GetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_AVG_BYTES_PER_SECOND, out bytesPerSecond);
+            int channels;
+            mediaType.GetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_NUM_CHANNELS, out channels);
+            int bitsPerSample;
+            mediaType.GetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_BITS_PER_SAMPLE, out bitsPerSample);
+            return string.Format("{0}kHz {1} bit {2}, {3}kbps", sampleRate / 1000M, bitsPerSample, channels == 1 ? "mono" : "stereo", (8 * bytesPerSecond) / 1000M);
         }
 
         private string DescribeMediaType(IMFMediaType mediaType)

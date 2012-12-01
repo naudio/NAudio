@@ -267,8 +267,20 @@ namespace NAudio.MediaFoundation
         [FieldDescription("Average bitrate")]
         public static readonly Guid MF_MT_AVG_BITRATE = new Guid("20332624-fb0d-4d9e-bd0d-cbf6786c102e");
 
-        //Unknown:
-        //7632f0e6-9538-4d61-acda-ea29c8c14456=41
-        //bfbabe79-7434-4d1c-94f0-72a3b9e17188=0
+        /// <summary>
+        /// Specifies the payload type of an Advanced Audio Coding (AAC) stream.
+        /// 0 - The stream contains raw_data_block elements only
+        /// 1 - Audio Data Transport Stream (ADTS). The stream contains an adts_sequence, as defined by MPEG-2.
+        /// 2 - Audio Data Interchange Format (ADIF). The stream contains an adif_sequence, as defined by MPEG-2.
+        /// 3 - The stream contains an MPEG-4 audio transport stream with a synchronization layer (LOAS) and a multiplex layer (LATM).
+        /// </summary>
+        [FieldDescription("AAC payload type")]
+        public static readonly Guid MF_MT_AAC_PAYLOAD_TYPE = new Guid("bfbabe79-7434-4d1c-94f0-72a3b9e17188");
+
+        /// <summary>
+        /// Specifies the audio profile and level of an Advanced Audio Coding (AAC) stream, as defined by ISO/IEC 14496-3.
+        /// </summary>
+        [FieldDescription("AAC Audio Profile Level Indication")]
+        public static readonly Guid MF_MT_AAC_AUDIO_PROFILE_LEVEL_INDICATION = new Guid("7632f0e6-9538-4d61-acda-ea29c8c14456");
     }
 }

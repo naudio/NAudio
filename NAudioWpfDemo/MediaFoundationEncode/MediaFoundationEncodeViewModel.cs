@@ -311,7 +311,7 @@ namespace NAudioWpfDemo.MediaFoundationEncode
                 MessageBox.Show("Please select a valid input file to convert");
                 return;
             }
-            if (SelectedMediaType.MediaType == null)
+            if (SelectedMediaType == null || SelectedMediaType.MediaType == null)
             {
                 MessageBox.Show("Please select a valid output format");
                 return;
@@ -523,6 +523,7 @@ namespace NAudioWpfDemo.MediaFoundationEncode
         private string SelectSaveFile(string formatName, string extension)
         {
             var sfd = new SaveFileDialog();
+            sfd.FileName = Path.GetFileNameWithoutExtension(InputFile) + " converted" + extension;
             sfd.Filter = formatName + "|*" + extension;
             //return (sfd.ShowDialog() == true) ? new Uri(sfd.FileName).AbsoluteUri : null;
             return (sfd.ShowDialog() == true) ? sfd.FileName : null;

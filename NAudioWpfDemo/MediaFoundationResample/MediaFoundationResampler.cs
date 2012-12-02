@@ -25,6 +25,7 @@ namespace NAudioWpfDemo.MediaFoundationResample
         private IMFTransform resamplerTransform;
         private bool disposed;
         private long inputPosition; // in ref-time, so we can timestamp the input samples
+        private long outputPosition; // also in ref-time
 
         public MediaFoundationResampler(IWaveProvider sourceProvider, int outputSampleRate)
         {
@@ -83,6 +84,9 @@ namespace NAudioWpfDemo.MediaFoundationResample
             var resamplerProps = (IWMResamplerProps) comObject;
             // 60 is the best quality, 1 is linear interpolation
             resamplerProps.SetHalfFilterLength(60);
+            // may also be able to set this using MFPKEY_WMRESAMP_CHANNELMTX on the
+            // IPropertyStore interface.
+            // looks like we can also adjust the LPF with MFPKEY_WMRESAMP_LOWPASS_BANDWIDTH
 
             InitializeTransformForStreaming();
         }
@@ -146,7 +150,7 @@ namespace NAudioWpfDemo.MediaFoundationResample
                 int readFromTransform;
                 //do
                 //{
-                    // keep reading from transform, even if we've got enough
+                    // keep reading from transform
                     readFromTransform = ReadFromTransform();
                     bytesWritten += ReadFromOutputBuffer(buffer, offset + bytesWritten, count - bytesWritten);
                 //} while (readFromTransform > 0);
@@ -176,6 +180,7 @@ namespace NAudioWpfDemo.MediaFoundationResample
             var sample = MediaFoundationApi.CreateSample();
             var pBuffer = MediaFoundationApi.CreateMemoryBuffer(outputBuffer.Length);
             sample.AddBuffer(pBuffer);
+            sample.SetSampleTime(outputPosition); // hopefully this is not needed
             outputDataBuffer[0].pSample = sample;
             
             _MFT_PROCESS_OUTPUT_STATUS status;
@@ -210,7 +215,7 @@ namespace NAudioWpfDemo.MediaFoundationResample
             outputBufferOffset = 0;
             outputBufferCount = outputBufferLength;
             outputMediaBuffer.Unlock();
-
+            outputPosition += BytesToNsPosition(outputBufferCount, WaveFormat); // hopefully not needed
             Marshal.ReleaseComObject(pBuffer);
             Marshal.ReleaseComObject(sample);
             Marshal.ReleaseComObject(outputMediaBuffer);
@@ -233,7 +238,7 @@ namespace NAudioWpfDemo.MediaFoundationResample
             IntPtr pBuffer;
             int maxLength, currentLength;
             mediaBuffer.Lock(out pBuffer, out maxLength, out currentLength);
-            Marshal.Copy(pBuffer, sourceBuffer, 0, bytesRead);
+            Marshal.Copy(sourceBuffer, 0, pBuffer, bytesRead);
             mediaBuffer.Unlock();
             mediaBuffer.SetCurrentLength(bytesRead);
 

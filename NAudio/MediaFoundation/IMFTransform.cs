@@ -53,7 +53,7 @@ namespace NAudio.MediaFoundation
         ///     DWORD dwInputStreamID,
         ///     /* [out] */ __RPC__out MFT_INPUT_STREAM_INFO *pStreamInfo) = 0;
         /// </remarks>
-        void GetInputStreamInfo([In] int dwInputStreamID, [In, Out] MFT_INPUT_STREAM_INFO pStreamInfo);
+        void GetInputStreamInfo([In] int dwInputStreamID, [Out] out MFT_INPUT_STREAM_INFO pStreamInfo);
 
         /// <summary>
         /// Gets the buffer requirements and other information for an output stream on this Media Foundation transform (MFT). 
@@ -63,7 +63,7 @@ namespace NAudio.MediaFoundation
         ///     DWORD dwOutputStreamID,
         ///     /* [out] */ __RPC__out MFT_OUTPUT_STREAM_INFO *pStreamInfo) = 0;
         /// </remarks>
-        void GetOutputStreamInfo([In] int dwOutputStreamID, [In, Out] MFT_OUTPUT_STREAM_INFO pStreamInfo);
+        void GetOutputStreamInfo([In] int dwOutputStreamID, [Out] out MFT_OUTPUT_STREAM_INFO pStreamInfo);
 
         /// <summary>
         /// Gets the global attribute store for this Media Foundation transform (MFT). 

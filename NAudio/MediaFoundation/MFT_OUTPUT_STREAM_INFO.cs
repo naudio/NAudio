@@ -6,7 +6,7 @@ namespace NAudio.MediaFoundation
     /// Contains information about an output stream on a Media Foundation transform (MFT).
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
-    public class MFT_OUTPUT_STREAM_INFO 
+    public struct MFT_OUTPUT_STREAM_INFO 
     {
         /// <summary>
         /// Bitwise OR of zero or more flags from the _MFT_OUTPUT_STREAM_INFO_FLAGS enumeration.

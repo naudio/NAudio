@@ -74,6 +74,10 @@ namespace NAudioWpfDemo.MediaFoundationResample
             resamplerTransform.SetOutputType(0, outputMediaFormat, 0);
             Marshal.ReleaseComObject(outputMediaFormat);
 
+            //MFT_OUTPUT_STREAM_INFO pStreamInfo;
+            //resamplerTransform.GetOutputStreamInfo(0, out pStreamInfo);
+            // if pStreamInfo.dwFlags is 0, then it means we have to provide samples
+
             // setup quality
             var resamplerProps = (IWMResamplerProps) comObject;
             // 60 is the best quality, 1 is linear interpolation
@@ -167,8 +171,11 @@ namespace NAudioWpfDemo.MediaFoundationResample
         private int ReadFromTransform()
         {
             var outputDataBuffer = new MFT_OUTPUT_DATA_BUFFER[1];
-
-            //outputDataBuffer[0] = new MFT_OUTPUT_DATA_BUFFER();
+            // we have to create our own for
+            outputDataBuffer[0].pSample = MediaFoundationApi.CreateSample();
+            var pBuffer = MediaFoundationApi.CreateMemoryBuffer(outputBuffer.Length);
+            outputDataBuffer[0].pSample.AddBuffer(pBuffer);
+            
             _MFT_PROCESS_OUTPUT_STATUS status;
             var hr = resamplerTransform.ProcessOutput(_MFT_PROCESS_OUTPUT_FLAGS.None, 
                 1, outputDataBuffer, out status);

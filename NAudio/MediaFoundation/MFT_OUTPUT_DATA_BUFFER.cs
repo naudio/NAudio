@@ -4,10 +4,9 @@ namespace NAudio.MediaFoundation
 {
     /// <summary>
     /// Contains information about an output buffer for a Media Foundation transform. 
-    /// TODO: might need to turn this into a struct
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
-    public class MFT_OUTPUT_DATA_BUFFER
+    public struct MFT_OUTPUT_DATA_BUFFER
     {
         /// <summary>
         /// Output stream identifier.

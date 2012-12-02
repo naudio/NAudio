@@ -24,6 +24,7 @@ namespace NAudioWpfDemo.MediaFoundationResample
 
         private IMFTransform resamplerTransform;
         private bool disposed;
+        private long inputPosition; // in ref-time, so we can timestamp the input samples
 
         public MediaFoundationResampler(IWaveProvider sourceProvider, int outputSampleRate)
         {
@@ -143,12 +144,12 @@ namespace NAudioWpfDemo.MediaFoundationResample
                 Marshal.ReleaseComObject(sample);
 
                 int readFromTransform;
-                do
-                {
+                //do
+                //{
                     // keep reading from transform, even if we've got enough
                     readFromTransform = ReadFromTransform();
                     bytesWritten += ReadFromOutputBuffer(buffer, offset + bytesWritten, count - bytesWritten);
-                } while (readFromTransform > 0);
+                //} while (readFromTransform > 0);
             }
 
             return bytesWritten;
@@ -172,15 +173,18 @@ namespace NAudioWpfDemo.MediaFoundationResample
         {
             var outputDataBuffer = new MFT_OUTPUT_DATA_BUFFER[1];
             // we have to create our own for
-            outputDataBuffer[0].pSample = MediaFoundationApi.CreateSample();
+            var sample = MediaFoundationApi.CreateSample();
             var pBuffer = MediaFoundationApi.CreateMemoryBuffer(outputBuffer.Length);
-            outputDataBuffer[0].pSample.AddBuffer(pBuffer);
+            sample.AddBuffer(pBuffer);
+            outputDataBuffer[0].pSample = sample;
             
             _MFT_PROCESS_OUTPUT_STATUS status;
             var hr = resamplerTransform.ProcessOutput(_MFT_PROCESS_OUTPUT_FLAGS.None, 
                 1, outputDataBuffer, out status);
             if (hr == MediaFoundationErrors.MF_E_TRANSFORM_NEED_MORE_INPUT)
             {
+                Marshal.ReleaseComObject(pBuffer);
+                Marshal.ReleaseComObject(sample);
                 // nothing to read
                 return 0;
             }
@@ -206,7 +210,17 @@ namespace NAudioWpfDemo.MediaFoundationResample
             outputBufferOffset = 0;
             outputBufferCount = outputBufferLength;
             outputMediaBuffer.Unlock();
+
+            Marshal.ReleaseComObject(pBuffer);
+            Marshal.ReleaseComObject(sample);
+            Marshal.ReleaseComObject(outputMediaBuffer);
             return outputBufferLength;
+        }
+        
+        private static long BytesToNsPosition(int bytes, WaveFormat waveFormat)
+        {
+            long nsPosition = (10000000L * bytes) / waveFormat.AverageBytesPerSecond;
+            return nsPosition;
         }
 
         private IMFSample ReadFromSource()
@@ -225,6 +239,11 @@ namespace NAudioWpfDemo.MediaFoundationResample
 
             var sample = MediaFoundationApi.CreateSample();
             sample.AddBuffer(mediaBuffer);
+            // trying to set the time, not sure it helps much
+            sample.SetSampleTime(inputPosition);
+            long duration = BytesToNsPosition(bytesRead, sourceProvider.WaveFormat);
+            sample.SetSampleDuration(duration);
+            inputPosition += duration;
             Marshal.ReleaseComObject(mediaBuffer);
             return sample;
         }

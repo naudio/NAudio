@@ -42,7 +42,7 @@ namespace NAudioWpfDemo.MediaFoundationEncode
             return bitRates.ToArray();
         }
 
-        public static void EncodeToWma(IWaveProvider inputProvider, string outputFile, int desiredBitRate)
+        public static void EncodeToWma(IWaveProvider inputProvider, string outputFile, int desiredBitRate = 192000)
         {
             using (var encoder = new MediaFoundationEncoder(AudioSubtypes.MFAudioFormat_WMAudioV8, inputProvider.WaveFormat,
                                                          desiredBitRate))
@@ -51,7 +51,7 @@ namespace NAudioWpfDemo.MediaFoundationEncode
             }
         }
 
-        public static void EncodeToMp3(IWaveProvider inputProvider, string outputFile, int desiredBitRate)
+        public static void EncodeToMp3(IWaveProvider inputProvider, string outputFile, int desiredBitRate = 192000)
         {
             using (var encoder = new MediaFoundationEncoder(AudioSubtypes.MFAudioFormat_MP3, inputProvider.WaveFormat,
                                                          desiredBitRate))
@@ -60,7 +60,7 @@ namespace NAudioWpfDemo.MediaFoundationEncode
             }
         }
 
-        public static void EncodeToAac(IWaveProvider inputProvider, string outputFile, int desiredBitRate)
+        public static void EncodeToAac(IWaveProvider inputProvider, string outputFile, int desiredBitRate = 192000)
         {
             using (var encoder = new MediaFoundationEncoder(AudioSubtypes.MFAudioFormat_AAC, inputProvider.WaveFormat,
                                              desiredBitRate))

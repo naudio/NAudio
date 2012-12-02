@@ -9,7 +9,7 @@ namespace NAudio.MediaFoundation
     /// Contains information about an input stream on a Media Foundation transform (MFT)
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
-    public class MFT_INPUT_STREAM_INFO
+    public struct MFT_INPUT_STREAM_INFO
     {
         /// <summary>
         /// Maximum amount of time between an input sample and the corresponding output sample, in 100-nanosecond units.

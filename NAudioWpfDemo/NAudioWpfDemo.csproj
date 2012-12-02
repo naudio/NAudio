@@ -194,6 +194,7 @@
     <Compile Include="AudioPlaybackDemo\AudioPlaybackViewModel.cs" />
     <Compile Include="MainWindowViewModel.cs" />
     <Compile Include="MediaFoundationEncode\MediaFoundationEncodePlugin.cs" />
+    <Compile Include="MediaFoundationEncode\MediaFoundationEncoder.cs" />
     <Compile Include="MediaFoundationEncode\MediaFoundationEncodeView.xaml.cs">
       <DependentUpon>MediaFoundationEncodeView.xaml</DependentUpon>
     </Compile>

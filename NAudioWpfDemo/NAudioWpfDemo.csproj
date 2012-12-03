@@ -203,6 +203,7 @@
       <DependentUpon>MediaFoundationEncodeView.xaml</DependentUpon>
     </Compile>
     <Compile Include="MediaFoundationEncode\MediaFoundationEncodeViewModel.cs" />
+    <Compile Include="MediaFoundationEncode\MediaTypeViewModel.cs" />
     <Compile Include="MediaFoundationResample\MediaFoundationEncodePlugin.cs" />
     <Compile Include="MediaFoundationResample\MediaFoundationResampler.cs" />
     <Compile Include="MediaFoundationResample\MediaFoundationResampleView.xaml.cs">

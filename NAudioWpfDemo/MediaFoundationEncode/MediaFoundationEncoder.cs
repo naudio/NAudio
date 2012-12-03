@@ -9,14 +9,15 @@ using NAudio.Wave;
 namespace NAudioWpfDemo.MediaFoundationEncode
 {
     /// <summary>
-    /// Prototyping a Media Foundation Encoder to be part of NAudio
+    /// Media Foundation Encoder class allows you to use Media Foundation to encode an IWaveProvider
+    /// to any supported encoding format
     /// </summary>
     class MediaFoundationEncoder : IDisposable
     {
         /// <summary>
         /// Queries the available bitrates for a given encoding output type, sample rate and number of channels
         /// </summary>
-        /// <param name="audioSubtype"></param>
+        /// <param name="audioSubtype">Audio subtype - a value from the AudioSubtypes class</param>
         /// <param name="sampleRate">The sample rate of the PCM to encode</param>
         /// <param name="channels">The number of channels of the PCM to encode</param>
         /// <returns>An array of available bitrates in average bits per second</returns>
@@ -30,6 +31,11 @@ namespace NAudioWpfDemo.MediaFoundationEncode
                 .ToArray();
         }
 
+        /// <summary>
+        /// Gets all the available media types for a particular 
+        /// </summary>
+        /// <param name="audioSubtype">Audio subtype - a value from the AudioSubtypes class</param>
+        /// <returns>An array of available media types that can be encoded with this subtype</returns>
         public static MediaType[] GetOutputMediaTypes(Guid audioSubtype)
         {
             IMFCollection availableTypes;
@@ -37,7 +43,6 @@ namespace NAudioWpfDemo.MediaFoundationEncode
             {
                 MediaFoundationInterop.MFTranscodeGetAudioOutputAvailableTypes(
                     audioSubtype, _MFT_ENUM_FLAG.MFT_ENUM_FLAG_ALL, null, out availableTypes);
-
             }
             catch (COMException c)
             {
@@ -65,6 +70,13 @@ namespace NAudioWpfDemo.MediaFoundationEncode
             return mediaTypes.ToArray();
         }
 
+        /// <summary>
+        /// Helper function to simplify encoding Window Media Audio
+        /// Should be supported on Vista and above (not tested)
+        /// </summary>
+        /// <param name="inputProvider">Input provider, must be PCM</param>
+        /// <param name="outputFile">Output file path, should end with .wma</param>
+        /// <param name="desiredBitRate">Desired bitrate. Use GetEncodeBitrates to find the possibilities for your input type</param>
         public static void EncodeToWma(IWaveProvider inputProvider, string outputFile, int desiredBitRate = 192000)
         {
             var mediaType = SelectMediaType(AudioSubtypes.MFAudioFormat_WMAudioV8, inputProvider.WaveFormat, desiredBitRate);
@@ -74,6 +86,13 @@ namespace NAudioWpfDemo.MediaFoundationEncode
             }
         }
 
+        /// <summary>
+        /// Helper function to simplify encoding to MP3
+        /// By default, will only be available on Windows 8 and above
+        /// </summary>
+        /// <param name="inputProvider">Input provider, must be PCM</param>
+        /// <param name="outputFile">Output file path, should end with .mp3</param>
+        /// <param name="desiredBitRate">Desired bitrate. Use GetEncodeBitrates to find the possibilities for your input type</param>
         public static void EncodeToMp3(IWaveProvider inputProvider, string outputFile, int desiredBitRate = 192000)
         {
             var mediaType = SelectMediaType(AudioSubtypes.MFAudioFormat_MP3, inputProvider.WaveFormat, desiredBitRate);
@@ -83,6 +102,13 @@ namespace NAudioWpfDemo.MediaFoundationEncode
             }
         }
 
+        /// <summary>
+        /// Helper function to simplify encoding to AAC
+        /// By default, will only be available on Windows 7 and above
+        /// </summary>
+        /// <param name="inputProvider">Input provider, must be PCM</param>
+        /// <param name="outputFile">Output file path, should end with .mp4 (or .aac on Windows 8)</param>
+        /// <param name="desiredBitRate">Desired bitrate. Use GetEncodeBitrates to find the possibilities for your input type</param>
         public static void EncodeToAac(IWaveProvider inputProvider, string outputFile, int desiredBitRate = 192000)
         {
             // Information on configuring an AAC media type can be found here:
@@ -96,6 +122,13 @@ namespace NAudioWpfDemo.MediaFoundationEncode
             }
         }
 
+        /// <summary>
+        /// Tries to find the encoding media type with the closest bitrate to that specified
+        /// </summary>
+        /// <param name="audioSubtype">Audio subtype, a value from AudioSubtypes</param>
+        /// <param name="inputFormat">Your encoder input format (used to check sample rate and channel count)</param>
+        /// <param name="desiredBitRate">Your desired bitrate</param>
+        /// <returns>The closest media type, or null if none available</returns>
         public static MediaType SelectMediaType(Guid audioSubtype, WaveFormat inputFormat, int desiredBitRate)
         {
             return GetOutputMediaTypes(audioSubtype)
@@ -109,11 +142,20 @@ namespace NAudioWpfDemo.MediaFoundationEncode
         private readonly MediaType outputMediaType;
         private bool disposed;
 
+        /// <summary>
+        /// Creates a new encoder that encodes to the specified output media type
+        /// </summary>
+        /// <param name="outputMediaType"></param>
         public MediaFoundationEncoder(MediaType outputMediaType)
         {
             this.outputMediaType = outputMediaType;
         }
 
+        /// <summary>
+        /// Encodes a file
+        /// </summary>
+        /// <param name="outputFile">Output filename (container type is deduced from the filename)</param>
+        /// <param name="inputProvider">Input provider (should be PCM, some encoders will also allow IEEE float)</param>
         public void Encode(string outputFile, IWaveProvider inputProvider)
         {
             if (inputProvider.WaveFormat.Encoding != WaveFormatEncoding.Pcm && inputProvider.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
@@ -122,8 +164,6 @@ namespace NAudioWpfDemo.MediaFoundationEncode
             }
 
             var inputMediaType = new MediaType(inputProvider.WaveFormat);
-
-            // TODO: should validate the extension?
 
             var writer = CreateSinkWriter(outputFile);
             try
@@ -199,8 +239,7 @@ namespace NAudioWpfDemo.MediaFoundationEncode
         {
             long durationConverted = 0;
             int maxLength;
-            IMFMediaBuffer buffer =
-    MediaFoundationApi.CreateMemoryBuffer(managedBuffer.Length);
+            IMFMediaBuffer buffer = MediaFoundationApi.CreateMemoryBuffer(managedBuffer.Length);
             buffer.GetMaxLength(out maxLength);
 
             IMFSample sample = MediaFoundationApi.CreateSample();
@@ -252,48 +291,123 @@ namespace NAudioWpfDemo.MediaFoundationEncode
         }
     }
 
+    /// <summary>
+    /// Media Type helper class, simplifying working with IMFMediaType
+    /// (will probably change in the future, to inherit from an attributes class)
+    /// Currently does not release the COM object, so you must do that yourself
+    /// </summary>
     class MediaType
     {
         private readonly IMFMediaType mediaType;
 
+        /// <summary>
+        /// Wraps an existing IMFMediaType object
+        /// </summary>
+        /// <param name="mediaType">The IMFMediaType object</param>
         public MediaType(IMFMediaType mediaType)
         {
             this.mediaType = mediaType;
         }
 
+        /// <summary>
+        /// Creates and wraps a new IMFMediaType object
+        /// </summary>
         public MediaType()
         {
             this.mediaType = MediaFoundationApi.CreateMediaType();
         }
 
+        /// <summary>
+        /// Creates and wraps a new IMFMediaType object based on a WaveFormat
+        /// </summary>
+        /// <param name="waveFormat">WaveFormat</param>
         public MediaType(WaveFormat waveFormat)
         {
             this.mediaType = MediaFoundationApi.CreateMediaTypeFromWaveFormat(waveFormat);
         }
 
-        private int GetUINT32(Guid key)
+        private int GetUInt32(Guid key)
         {
             int value;
             mediaType.GetUINT32(key, out value);
             return value;
         }
 
+        private Guid GetGuid(Guid key)
+        {
+            Guid value;
+            mediaType.GetGUID(key, out value);
+            return value;
+        }
+
+        /// <summary>
+        /// Tries to get a UINT32 value, returning a default value if it doesn't exist
+        /// </summary>
+        /// <param name="key">Attribute key</param>
+        /// <param name="defaultValue">Default value</param>
+        /// <returns>Value or default if key doesn't exist</returns>
+        public int TryGetUInt32(Guid key, int defaultValue = -1)
+        {
+            int intValue = defaultValue;
+            try
+            {
+                mediaType.GetUINT32(key, out intValue);
+            }
+            catch (COMException exception)
+            {
+                if (exception.ErrorCode == MediaFoundationErrors.MF_E_ATTRIBUTENOTFOUND)
+                {
+                    // not a problem, return the default
+                }
+                else if (exception.ErrorCode == MediaFoundationErrors.MF_E_INVALIDTYPE)
+                {
+                    throw new ArgumentException("Not a UINT32 parameter");
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            return intValue;
+        }
+
+        /// <summary>
+        /// The Sample Rate (valid for audio media types)
+        /// </summary>
         public int SampleRate
         {
-            get { return GetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_SAMPLES_PER_SECOND); }
+            get { return GetUInt32(MediaFoundationAttributes.MF_MT_AUDIO_SAMPLES_PER_SECOND); }
             set { mediaType.SetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_SAMPLES_PER_SECOND, value); }
         }
 
+        /// <summary>
+        /// The number of Channels (valid for audio media types)
+        /// </summary>
         public int ChannelCount
         {
-            get { return GetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_NUM_CHANNELS); }
+            get { return GetUInt32(MediaFoundationAttributes.MF_MT_AUDIO_NUM_CHANNELS); }
         }
 
+        /// <summary>
+        /// The average bytes per second (valid for audio media types)
+        /// </summary>
         public int AverageBytesPerSecond
         {
-            get { return GetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_AVG_BYTES_PER_SECOND); }
+            get { return GetUInt32(MediaFoundationAttributes.MF_MT_AUDIO_AVG_BYTES_PER_SECOND); }
         }
 
+        /// <summary>
+        /// The Media Subtype. For audio, is a value from the AudioSubtypes class
+        /// </summary>
+        public Guid SubType
+        {
+            get { return GetGuid(MediaFoundationAttributes.MF_MT_SUBTYPE); }
+        }
+
+        /// <summary>
+        /// Access to the actual IMFMediaType object
+        /// Use to pass to MF APIs or Marshal.ReleaseComObject when you are finished with it
+        /// </summary>
         public IMFMediaType MediaFoundationObject
         {
             get { return mediaType; }

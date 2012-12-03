@@ -17,7 +17,7 @@ namespace NAudioWpfDemo.MediaFoundationEncode
         public MediaTypeViewModel(MediaType mediaType)
         {
             this.MediaType = mediaType;
-            this.Name = ShortDescription(mediaType.MediaFoundationObject);
+            this.Name = ShortDescription(mediaType);
             this.Description = DescribeMediaType(mediaType.MediaFoundationObject);
         }
 
@@ -25,43 +25,13 @@ namespace NAudioWpfDemo.MediaFoundationEncode
         public string Name { get; set; }
         public string Description { get; set; }
 
-        private int TryGetUINT32(IMFAttributes att, Guid key)
+        private string ShortDescription(MediaType mediaType)
         {
-            int intValue = -1;
-            try
-            {
-                att.GetUINT32(key, out intValue);
-            }
-            catch (COMException exception)
-            {
-                if (exception.ErrorCode == MediaFoundationErrors.MF_E_ATTRIBUTENOTFOUND)
-                {
-                    // not a problem, return the default
-                }
-                else if (exception.ErrorCode == MediaFoundationErrors.MF_E_INVALIDTYPE)
-                {
-                    throw new ArgumentException("Not a UINT32 parameter");
-                }
-                else
-                {
-                    throw;
-                }
-            }
-            return intValue;
-        }
-
-        private string ShortDescription(IMFMediaType mediaType)
-        {
-            Guid subType;
-            mediaType.GetGUID(MediaFoundationAttributes.MF_MT_SUBTYPE, out subType);
-            int sampleRate;
-            mediaType.GetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_SAMPLES_PER_SECOND, out sampleRate);
-            int bytesPerSecond;
-            mediaType.GetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_AVG_BYTES_PER_SECOND, out bytesPerSecond);
-            int channels;
-            mediaType.GetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_NUM_CHANNELS, out channels);
-
-            int bitsPerSample = TryGetUINT32(mediaType, MediaFoundationAttributes.MF_MT_AUDIO_BITS_PER_SAMPLE);
+            Guid subType = mediaType.SubType;
+            int sampleRate = mediaType.SampleRate;
+            int bytesPerSecond = mediaType.AverageBytesPerSecond;
+            int channels = mediaType.ChannelCount;
+            int bitsPerSample = mediaType.TryGetUInt32(MediaFoundationAttributes.MF_MT_AUDIO_BITS_PER_SAMPLE);
 
             //int bitsPerSample;
             //mediaType.GetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_BITS_PER_SAMPLE, out bitsPerSample);
@@ -73,7 +43,7 @@ namespace NAudioWpfDemo.MediaFoundationEncode
             shortDescription.AppendFormat("{0}, ", channels == 1 ? "mono" : channels == 2 ? "stereo" : channels.ToString() + " channels");
             if (subType == AudioSubtypes.MFAudioFormat_AAC)
             {
-                int payloadType = TryGetUINT32(mediaType, MediaFoundationAttributes.MF_MT_AAC_PAYLOAD_TYPE);
+                int payloadType = mediaType.TryGetUInt32(MediaFoundationAttributes.MF_MT_AAC_PAYLOAD_TYPE);
                 if (payloadType != -1)
                     shortDescription.AppendFormat("Payload Type: {0}, ", (AacPayloadType)payloadType);
             }

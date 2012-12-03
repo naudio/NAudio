@@ -18,6 +18,9 @@ namespace NAudio.Dmo
         /// </summary>
         int SetHalfFilterLength(int outputQuality);
 
+        /// <summary>
+        ///  Specifies the channel matrix.
+        /// </summary>
         int SetUserChannelMtx([In] float[] channelConversionMatrix);
     }
 }

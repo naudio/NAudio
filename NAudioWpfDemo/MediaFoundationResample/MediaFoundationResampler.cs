@@ -7,8 +7,7 @@ using NAudio.Wave;
 namespace NAudioWpfDemo.MediaFoundationResample
 {
     // still TODO: 
-    // 1. implement a reposition method
-    // 2. factor out most of this into a MediaFoundationTransform class,
+    // 1. factor out most of this into a MediaFoundationTransform class,
     //    so we can make an IMP3FrameDecoder
 
     class MediaFoundationResampler : IWaveProvider, IDisposable
@@ -26,6 +25,7 @@ namespace NAudioWpfDemo.MediaFoundationResample
         private long inputPosition; // in ref-time, so we can timestamp the input samples
         private long outputPosition; // also in ref-time
         private int resamplerQuality;
+        private bool initializedForStreaming;
 
         /// <summary>
         /// Creates the Media Foundation Resampler, allowing modifying of sample rate, bit depth and channel count
@@ -99,6 +99,7 @@ namespace NAudioWpfDemo.MediaFoundationResample
             resamplerTransform.ProcessMessage(MFT_MESSAGE_TYPE.MFT_MESSAGE_COMMAND_FLUSH, IntPtr.Zero);
             resamplerTransform.ProcessMessage(MFT_MESSAGE_TYPE.MFT_MESSAGE_NOTIFY_BEGIN_STREAMING, IntPtr.Zero);
             resamplerTransform.ProcessMessage(MFT_MESSAGE_TYPE.MFT_MESSAGE_NOTIFY_START_OF_STREAM, IntPtr.Zero);
+            initializedForStreaming = true;
         }
 
         private void CreateResampler()
@@ -131,7 +132,10 @@ namespace NAudioWpfDemo.MediaFoundationResample
 
         protected void Dispose(bool disposing)
         {
-            Marshal.ReleaseComObject(resamplerTransform);
+            if (resamplerTransform != null)
+            {
+                Marshal.ReleaseComObject(resamplerTransform);
+            }
         }
 
         public void Dispose()
@@ -179,6 +183,13 @@ namespace NAudioWpfDemo.MediaFoundationResample
                     break;
                 }
 
+                // might need to resurrect the stream if the user has read all the way to the end,
+                // and then repositioned the input backwards
+                if (!initializedForStreaming)
+                {
+                    InitializeTransformForStreaming();
+                }
+
                 // give the input to the resampler
                 // can get MF_E_NOTACCEPTING if we didn't drain the buffer properly
                 resamplerTransform.ProcessInput(0, sample, 0);
@@ -201,8 +212,15 @@ namespace NAudioWpfDemo.MediaFoundationResample
         {
             resamplerTransform.ProcessMessage(MFT_MESSAGE_TYPE.MFT_MESSAGE_NOTIFY_END_OF_STREAM, IntPtr.Zero);
             resamplerTransform.ProcessMessage(MFT_MESSAGE_TYPE.MFT_MESSAGE_COMMAND_DRAIN, IntPtr.Zero);
-            ReadFromTransform();
+            int read;
+            do
+            {
+                read = ReadFromTransform();
+            } while (read > 0);
+            outputBufferCount = 0;
+            outputBufferOffset = 0;
             resamplerTransform.ProcessMessage(MFT_MESSAGE_TYPE.MFT_MESSAGE_NOTIFY_END_STREAMING, IntPtr.Zero);
+            initializedForStreaming = false;
         }
 
         /// <summary>
@@ -235,12 +253,6 @@ namespace NAudioWpfDemo.MediaFoundationResample
             {
                 Marshal.ThrowExceptionForHR(hr);
             }
-            /* TODO: do we need to handle this? - hopefully passing 1 second in means there is always enough for a read
-            if (hr == MF_E_TRANSFORM_NEED_MORE_INPUT)
-            {
-                // conversion end
-                break;
-            }*/
 
             IMFMediaBuffer outputMediaBuffer;
             outputDataBuffer[0].pSample.ConvertToContiguousBuffer(out outputMediaBuffer);
@@ -302,6 +314,15 @@ namespace NAudioWpfDemo.MediaFoundationResample
                 outputBufferOffset = 0;
             }
             return bytesFromOutputBuffer;
+        }
+
+        public void Reposition()
+        {
+            if (initializedForStreaming)
+            {
+                EndStreamAndDrain();
+                InitializeTransformForStreaming();
+            }
         }
     }
 

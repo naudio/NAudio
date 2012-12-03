@@ -19,12 +19,13 @@
         <Label Grid.Row="1" Content="Output Sample Rate:" HorizontalAlignment="Left" Margin="10,72.12,0,0" VerticalAlignment="Top"/>
         <ComboBox Grid.Row="1" ItemsSource="{Binding SampleRates}" SelectedItem="{Binding SampleRate, Mode=TwoWay}" HorizontalAlignment="Left" Margin="137,72.12,0,0" VerticalAlignment="Top" Width="120"/>
 
-        <Button Grid.Row="1" Content="Resample" Command="{Binding ResampleCommand}" HorizontalAlignment="Left" Margin="137,184.12,0,0" VerticalAlignment="Top" Width="75"/>
+        <Button Grid.Row="1" Content="Resample" Command="{Binding ResampleCommand}" HorizontalAlignment="Left" Margin="10,165.12,0,0" VerticalAlignment="Top" Width="75"/>
         <Label Grid.Row="1" Content="Input File Format:" HorizontalAlignment="Left" Margin="10,41.12,0,0" VerticalAlignment="Top"/>
         <Label Grid.Row="1" Content="{Binding InputFileFormat}" HorizontalAlignment="Left" Margin="118,41.12,0,0" VerticalAlignment="Top"/>
         <Label Content="Bit Depth:" HorizontalAlignment="Left" Margin="10,103.12,0,0" Grid.Row="1" VerticalAlignment="Top"/>
         <ComboBox ItemsSource="{Binding BitDepths}" SelectedIndex="{Binding SelectedBitDepthIndex, Mode=TwoWay}" HorizontalAlignment="Left" Margin="137,103.12,0,0" Grid.Row="1" VerticalAlignment="Top" Width="120"/>
         <Label Content="Channel Count:" HorizontalAlignment="Left" Margin="10,134.12,0,0" Grid.Row="1" VerticalAlignment="Top"/>
         <ComboBox ItemsSource="{Binding ChannelCounts}" SelectedIndex="{Binding SelectedChannelCountIndex, Mode=TwoWay}" HorizontalAlignment="Left" Margin="137,134.12,0,0" Grid.Row="1" VerticalAlignment="Top" Width="120"/>
+        <Button Content="Reposition Test" Command="{Binding RepositionTestCommand}" HorizontalAlignment="Left" Margin="10,210.12,0,0" Grid.Row="1" VerticalAlignment="Top" Width="103" />
     </Grid>
 </UserControl>

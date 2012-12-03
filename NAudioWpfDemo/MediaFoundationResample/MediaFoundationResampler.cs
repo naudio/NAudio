@@ -8,8 +8,7 @@ namespace NAudioWpfDemo.MediaFoundationResample
 {
     // still TODO: 
     // 1. implement a reposition method
-    // 2. configurable quality
-    // 3. factor out most of this into a MediaFoundationTransform class,
+    // 2. factor out most of this into a MediaFoundationTransform class,
     //    so we can make an IMP3FrameDecoder
 
     class MediaFoundationResampler : IWaveProvider, IDisposable
@@ -26,6 +25,7 @@ namespace NAudioWpfDemo.MediaFoundationResample
         private bool disposed;
         private long inputPosition; // in ref-time, so we can timestamp the input samples
         private long outputPosition; // also in ref-time
+        private int resamplerQuality;
 
         /// <summary>
         /// Creates the Media Foundation Resampler, allowing modifying of sample rate, bit depth and channel count
@@ -39,6 +39,7 @@ namespace NAudioWpfDemo.MediaFoundationResample
             if (outputFormat.Encoding != WaveFormatEncoding.Pcm && outputFormat.Encoding != WaveFormatEncoding.IeeeFloat)
                 throw new ArgumentException("Output must be PCM or IEEE float", "outputProvider");
             MediaFoundationApi.Startup();
+            ResamplerQuality = 60; // maximum quality
             this.waveFormat = outputFormat;
             this.sourceProvider = sourceProvider;
             sourceBuffer = new byte[sourceProvider.WaveFormat.AverageBytesPerSecond];
@@ -55,6 +56,21 @@ namespace NAudioWpfDemo.MediaFoundationResample
             : this(sourceProvider, CreateOutputFormat(sourceProvider.WaveFormat, outputSampleRate))
         {
 
+        }
+
+        /// <summary>
+        /// Gets or sets the Resampler quality. n.b. set the quality before starting to resample.
+        /// 1 is lowest quality (linear interpolation) and 60 is best quality
+        /// </summary>
+        public int ResamplerQuality
+        {
+            get { return resamplerQuality; }
+            set 
+            { 
+                if (value < 1 || value > 60)
+                    throw new ArgumentOutOfRangeException("Resampler Quality must be between 1 and 60");
+                resamplerQuality = value; 
+            }
         }
 
         private static WaveFormat CreateOutputFormat(WaveFormat inputFormat, int outputSampleRate)
@@ -105,7 +121,7 @@ namespace NAudioWpfDemo.MediaFoundationResample
             // setup quality
             var resamplerProps = (IWMResamplerProps) comObject;
             // 60 is the best quality, 1 is linear interpolation
-            resamplerProps.SetHalfFilterLength(60);
+            resamplerProps.SetHalfFilterLength(ResamplerQuality);
             // may also be able to set this using MFPKEY_WMRESAMP_CHANNELMTX on the
             // IPropertyStore interface.
             // looks like we can also adjust the LPF with MFPKEY_WMRESAMP_LOWPASS_BANDWIDTH

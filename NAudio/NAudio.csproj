@@ -23,7 +23,7 @@
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
     <OldToolsVersion>3.5</OldToolsVersion>
-    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -39,6 +39,7 @@
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -394,6 +395,8 @@
     <Compile Include="Wave\WaveOutputs\AsioAudioAvailableEventArgs.cs" />
     <Compile Include="Wave\WaveOutputs\AsioOut.cs" />
     <Compile Include="Wave\WaveOutputs\CueWaveFileWriter.cs" />
+    <Compile Include="Wave\WaveOutputs\MediaFoundationEncoder.cs" />
+    <Compile Include="MediaFoundation\MediaType.cs" />
     <Compile Include="Wave\WaveOutputs\StoppedEventArgs.cs" />
     <Compile Include="Wave\WaveOutputs\IWaveBuffer.cs" />
     <Compile Include="Wave\WaveOutputs\IWavePlayer.cs" />

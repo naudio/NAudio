@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using NAudio.MediaFoundation;
+using NAudio.Utils;
 
 namespace NAudio.Wave
 {
@@ -44,7 +45,7 @@ namespace NAudio.Wave
             }
             catch (COMException c)
             {
-                if (c.ErrorCode == MediaFoundationErrors.MF_E_NOT_FOUND)
+                if (c.GetHResult() == MediaFoundationErrors.MF_E_NOT_FOUND)
                 {
                     // Don't worry if we didn't find any - just means no encoder available for this type
                     return new MediaType[0];
@@ -196,7 +197,7 @@ namespace NAudio.Wave
             }
             catch (COMException e)
             {
-                if (e.ErrorCode == MediaFoundationErrors.MF_E_NOT_FOUND)
+                if (e.GetHResult() == MediaFoundationErrors.MF_E_NOT_FOUND)
                 {
                     throw new ArgumentException("Was not able to create a sink writer for this file extension");
                 }

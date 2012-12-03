@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace NAudio.Utils
@@ -56,6 +57,21 @@ namespace NAudio.Utils
         const int FACILITY_WIN32            =  7;  
         const int FACILITY_WINDOWS          =  8;  
         const int FACILITY_WINDOWS_CE       = 24; 
+
+        /// <summary>
+        /// Helper to deal with the fact that in Win Store apps,
+        /// the HResult property name has changed
+        /// </summary>
+        /// <param name="exception">COM Exception</param>
+        /// <returns>The HResult</returns>
+        public static int GetHResult(this COMException exception)
+        {
+#if NETFX_CORE
+            return exception.HResult;
+#else
+            return exception.ErrorCode;
+#endif
+        }
     }
 
 }

@@ -27,24 +27,19 @@ namespace NAudioWpfDemo.MediaFoundationResample
         private long inputPosition; // in ref-time, so we can timestamp the input samples
         private long outputPosition; // also in ref-time
 
-        public MediaFoundationResampler(IWaveProvider sourceProvider, int outputSampleRate)
+        /// <summary>
+        /// Creates the Media Foundation Resampler, allowing modifying of sample rate, bit depth and channel count
+        /// </summary>
+        /// <param name="sourceProvider">Source provider, must be PCM</param>
+        /// <param name="outputFormat"></param>
+        public MediaFoundationResampler(IWaveProvider sourceProvider, WaveFormat outputFormat)
         {
+            if (sourceProvider.WaveFormat.Encoding != WaveFormatEncoding.Pcm && sourceProvider.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
+                throw new ArgumentException("Input must be PCM or IEEE float", "sourceProvider");
+            if (outputFormat.Encoding != WaveFormatEncoding.Pcm && outputFormat.Encoding != WaveFormatEncoding.IeeeFloat)
+                throw new ArgumentException("Output must be PCM or IEEE float", "outputProvider");
             MediaFoundationApi.Startup();
-            if (sourceProvider.WaveFormat.Encoding == WaveFormatEncoding.Pcm)
-            {
-                waveFormat = new WaveFormat(outputSampleRate,
-                    sourceProvider.WaveFormat.BitsPerSample,
-                    sourceProvider.WaveFormat.Channels);
-            }
-            else if (sourceProvider.WaveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
-            {
-                waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(outputSampleRate,
-                    sourceProvider.WaveFormat.Channels);
-            }
-            else
-            {
-                throw new ArgumentException("Can only resample PCM or IEEE float");
-            }
+            this.waveFormat = outputFormat;
             this.sourceProvider = sourceProvider;
             sourceBuffer = new byte[sourceProvider.WaveFormat.AverageBytesPerSecond];
             outputBuffer = new byte[waveFormat.AverageBytesPerSecond + waveFormat.BlockAlign]; // we will grow this buffer if needed, but try to make something big enough
@@ -54,6 +49,33 @@ namespace NAudioWpfDemo.MediaFoundationResample
             // exception if not exists
             var comObject = new ResamplerMediaComObject();
             Marshal.ReleaseComObject(comObject);
+        }
+
+        public MediaFoundationResampler(IWaveProvider sourceProvider, int outputSampleRate)
+            : this(sourceProvider, CreateOutputFormat(sourceProvider.WaveFormat, outputSampleRate))
+        {
+
+        }
+
+        private static WaveFormat CreateOutputFormat(WaveFormat inputFormat, int outputSampleRate)
+        {
+            WaveFormat outputFormat;
+            if (inputFormat.Encoding == WaveFormatEncoding.Pcm)
+            {
+                outputFormat = new WaveFormat(outputSampleRate,
+                    inputFormat.BitsPerSample,
+                    inputFormat.Channels);
+            }
+            else if (inputFormat.Encoding == WaveFormatEncoding.IeeeFloat)
+            {
+                outputFormat = WaveFormat.CreateIeeeFloatWaveFormat(outputSampleRate,
+                    inputFormat.Channels);
+            }
+            else
+            {
+                throw new ArgumentException("Can only resample PCM or IEEE float");
+            }
+            return outputFormat;
         }
 
         private void InitializeTransformForStreaming()

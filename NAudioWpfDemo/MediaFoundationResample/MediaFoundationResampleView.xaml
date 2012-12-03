@@ -5,19 +5,26 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
              d:DesignHeight="300" d:DesignWidth="500">
-    <StackPanel>
-        <TextBlock Margin="5" Text="For testing the MediaFoundationResampler class. Select any file that Media Foundation can play, and then click Resample to create a WAV file at the desired sample rate. Currently a work in progress." TextWrapping="Wrap" VerticalAlignment="Top"/>
-        <Grid>
-            <Label Content="Input File:" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
-            <TextBox Height="23" Margin="91,10,43,0" TextWrapping="Wrap" Text="{Binding InputFile}" VerticalAlignment="Top" IsReadOnly="True"/>
-            <Button Content="..." Command="{Binding SelectInputFileCommand}" Margin="0,10,10,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="28"/>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"></RowDefinition>
+            <RowDefinition Height ="*"></RowDefinition>
+        </Grid.RowDefinitions>
+        <TextBlock Margin="5" Text="For testing the MediaFoundationResampler class. Select any file that Media Foundation can play, and then click Resample to create a WAV file at the desired sample rate. The Media Foundation Resampler also supports changing bit depth and channel count." TextWrapping="Wrap" VerticalAlignment="Top"/>
 
-            <Label Content="Sample Rate" HorizontalAlignment="Left" Margin="10,36,0,-2" VerticalAlignment="Top"/>
-            <ComboBox ItemsSource="{Binding SampleRates}" SelectedItem="{Binding SampleRate, Mode=TwoWay}" HorizontalAlignment="Left" Margin="91,38,0,0" VerticalAlignment="Top" Width="120"/>
+        <Label Grid.Row="1" Content="Input File:" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
+        <TextBox Grid.Row="1" Height="23" Margin="137,10.12,43,0" TextWrapping="Wrap" Text="{Binding InputFile}" VerticalAlignment="Top" IsReadOnly="True"/>
+        <Button Grid.Row="1" Content="..." Command="{Binding SelectInputFileCommand}" Margin="0,10,10,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="28"/>
 
-            <Button Content="Resample" Command="{Binding ResampleCommand}" HorizontalAlignment="Left" Margin="91,65,0,0" VerticalAlignment="Top" Width="75"/>
-            <Label Content="Input Sample Rate:" HorizontalAlignment="Left" Margin="216,38,0,0" VerticalAlignment="Top"/>
-            <Label Content="{Binding InputSampleRate}" HorizontalAlignment="Left" Margin="326,38,0,0" VerticalAlignment="Top"/>
-        </Grid>
-    </StackPanel>
+        <Label Grid.Row="1" Content="Output Sample Rate:" HorizontalAlignment="Left" Margin="10,72.12,0,0" VerticalAlignment="Top"/>
+        <ComboBox Grid.Row="1" ItemsSource="{Binding SampleRates}" SelectedItem="{Binding SampleRate, Mode=TwoWay}" HorizontalAlignment="Left" Margin="137,72.12,0,0" VerticalAlignment="Top" Width="120"/>
+
+        <Button Grid.Row="1" Content="Resample" Command="{Binding ResampleCommand}" HorizontalAlignment="Left" Margin="137,184.12,0,0" VerticalAlignment="Top" Width="75"/>
+        <Label Grid.Row="1" Content="Input File Format:" HorizontalAlignment="Left" Margin="10,41.12,0,0" VerticalAlignment="Top"/>
+        <Label Grid.Row="1" Content="{Binding InputFileFormat}" HorizontalAlignment="Left" Margin="118,41.12,0,0" VerticalAlignment="Top"/>
+        <Label Content="Bit Depth:" HorizontalAlignment="Left" Margin="10,103.12,0,0" Grid.Row="1" VerticalAlignment="Top"/>
+        <ComboBox ItemsSource="{Binding BitDepths}" SelectedIndex="{Binding SelectedBitDepthIndex, Mode=TwoWay}" HorizontalAlignment="Left" Margin="137,103.12,0,0" Grid.Row="1" VerticalAlignment="Top" Width="120"/>
+        <Label Content="Channel Count:" HorizontalAlignment="Left" Margin="10,134.12,0,0" Grid.Row="1" VerticalAlignment="Top"/>
+        <ComboBox ItemsSource="{Binding ChannelCounts}" SelectedIndex="{Binding SelectedChannelCountIndex, Mode=TwoWay}" HorizontalAlignment="Left" Margin="137,134.12,0,0" Grid.Row="1" VerticalAlignment="Top" Width="120"/>
+    </Grid>
 </UserControl>

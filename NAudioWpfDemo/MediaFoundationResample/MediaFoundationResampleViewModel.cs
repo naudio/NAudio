@@ -12,19 +12,25 @@ namespace NAudioWpfDemo.MediaFoundationResample
     {
         private string inputFile;
         private int selectedSampleRate;
-        private int inputSampleRate;
+        private int selectedBitDepthIndex;
+        private int selectedChannelCountIndex;
+        private string inputFileFormat;
 
         public MediaFoundationResampleViewModel()
         {
             SelectInputFileCommand = new DelegateCommand(SelectInputFile);
             ResampleCommand = new DelegateCommand(Resample);
             SampleRates = new int[] { 8000, 16000, 22050, 32000, 44100, 48000, 88200, 96000 };
+            BitDepths = new string[] {"Unchanged", "8", "16", "24", "IEEE float"};
+            ChannelCounts = new string[] { "Unchanged", "mono", "stereo" };
             selectedSampleRate = 16000;
         }
 
         public ICommand SelectInputFileCommand { get; private set; }
         public ICommand ResampleCommand { get; private set; }
         public int[] SampleRates { get; private set; }
+        public string[] BitDepths { get; private set; }
+        public string[] ChannelCounts { get; private set; }
 
         public string InputFile
         {
@@ -39,15 +45,15 @@ namespace NAudioWpfDemo.MediaFoundationResample
             }
         }
 
-        public int InputSampleRate
+        public string InputFileFormat
         {
-            get { return inputSampleRate; }
+            get { return inputFileFormat; }
             set
             {
-                if (inputSampleRate != value)
+                if (inputFileFormat != value)
                 {
-                    inputSampleRate = value;
-                    OnPropertyChanged("InputSampleRate");
+                    inputFileFormat = value;
+                    OnPropertyChanged("InputFileFormat");
                 }
             }
         }
@@ -61,6 +67,32 @@ namespace NAudioWpfDemo.MediaFoundationResample
                 {
                     selectedSampleRate = value;
                     OnPropertyChanged("SampleRate");
+                }
+            }
+        }
+
+        public int SelectedBitDepthIndex
+        {
+            get { return selectedBitDepthIndex; }
+            set
+            {
+                if (selectedBitDepthIndex != value)
+                {
+                    selectedBitDepthIndex = value;
+                    OnPropertyChanged("SelectedBitDepthIndex");
+                }
+            }
+        }
+
+        public int SelectedChannelCountIndex
+        {
+            get { return selectedChannelCountIndex; }
+            set
+            {
+                if (selectedChannelCountIndex != value)
+                {
+                    selectedChannelCountIndex = value;
+                    OnPropertyChanged("SelectedChannelCountIndex");
                 }
             }
         }
@@ -85,7 +117,7 @@ namespace NAudioWpfDemo.MediaFoundationResample
             {
                 using (var reader = new MediaFoundationReader(file))
                 {
-                    InputSampleRate = reader.WaveFormat.SampleRate;
+                    InputFileFormat = reader.WaveFormat.ToString();
                     isValid = true;
                 }
             }
@@ -121,12 +153,43 @@ namespace NAudioWpfDemo.MediaFoundationResample
             }
 
             // do the resample
-            using(var reader = new MediaFoundationReader(InputFile))
-            using (var resampler = new MediaFoundationResampler(reader, SampleRate))
+            using (var reader = new MediaFoundationReader(InputFile))
+            using (var resampler = new MediaFoundationResampler(reader, CreateOutputFormat(reader.WaveFormat)))
             {
                 WaveFileWriter.CreateWaveFile(saveFile, resampler);
             }
             MessageBox.Show("Resample complete");
         }
+
+        private WaveFormat CreateOutputFormat(WaveFormat inputFormat)
+        {
+            bool isIeeeFloat = inputFormat.Encoding == WaveFormatEncoding.IeeeFloat && SelectedBitDepthIndex == 0 ||
+                              SelectedBitDepthIndex == 4;
+            int channels = SelectedChannelCountIndex == 0 ? inputFormat.Channels : selectedChannelCountIndex;
+            WaveFormat waveFormat;
+            if (isIeeeFloat)
+            {
+                waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(SampleRate, channels);
+            }
+            else
+            {
+                int bitDepth = inputFormat.BitsPerSample;
+                switch (SelectedBitDepthIndex)
+                {
+                    case 1: 
+                        bitDepth = 8;
+                        break;
+                    case 2:
+                        bitDepth = 16;
+                        break;
+                    case 3:
+                        bitDepth = 24;
+                        break;
+                }
+                waveFormat = new WaveFormat(SampleRate, bitDepth, channels);
+            }
+            return waveFormat;
+        }
+
     }
 }

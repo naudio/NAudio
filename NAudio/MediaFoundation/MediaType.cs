@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using NAudio.Utils;
 using NAudio.Wave;
 
 namespace NAudio.MediaFoundation
@@ -68,11 +69,11 @@ namespace NAudio.MediaFoundation
             }
             catch (COMException exception)
             {
-                if (exception.ErrorCode == MediaFoundationErrors.MF_E_ATTRIBUTENOTFOUND)
+                if (exception.GetHResult() == MediaFoundationErrors.MF_E_ATTRIBUTENOTFOUND)
                 {
                     // not a problem, return the default
                 }
-                else if (exception.ErrorCode == MediaFoundationErrors.MF_E_INVALIDTYPE)
+                else if (exception.GetHResult() == MediaFoundationErrors.MF_E_INVALIDTYPE)
                 {
                     throw new ArgumentException("Not a UINT32 parameter");
                 }

@@ -513,8 +513,14 @@
     <Compile Include="..\NAudio\MediaFoundation\MediaFoundationInterop.cs">
       <Link>MediaFoundation\MediaFoundationInterop.cs</Link>
     </Compile>
+    <Compile Include="..\NAudio\MediaFoundation\MediaFoundationTransform.cs">
+      <Link>MediaFoundation\MediaFoundationTransform.cs</Link>
+    </Compile>
     <Compile Include="..\NAudio\MediaFoundation\MediaFoundationTransformCategories.cs">
       <Link>MediaFoundation\MediaFoundationTransformCategories.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\MediaFoundation\MediaType.cs">
+      <Link>MediaFoundation\MediaType.cs</Link>
     </Compile>
     <Compile Include="..\NAudio\MediaFoundation\MediaTypes.cs">
       <Link>MediaFoundation\MediaTypes.cs</Link>
@@ -741,6 +747,9 @@
     <Compile Include="..\NAudio\Wave\WaveOutputs\IWaveProviderFloat.cs">
       <Link>Wave\WaveOutputs\IWaveProviderFloat.cs</Link>
     </Compile>
+    <Compile Include="..\NAudio\Wave\WaveOutputs\MediaFoundationEncoder.cs">
+      <Link>Wave\WaveOutputs\MediaFoundationEncoder.cs</Link>
+    </Compile>
     <Compile Include="..\NAudio\Wave\WaveOutputs\PlaybackState.cs">
       <Link>Wave\WaveOutputs\PlaybackState.cs</Link>
     </Compile>
@@ -752,6 +761,9 @@
     </Compile>
     <Compile Include="..\NAudio\Wave\WaveProviders\BufferedWaveProvider.cs">
       <Link>Wave\WaveProviders\BufferedWaveProvider.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\Wave\WaveProviders\MediaFoundationResampler.cs">
+      <Link>Wave\WaveProviders\MediaFoundationResampler.cs</Link>
     </Compile>
     <Compile Include="..\NAudio\Wave\WaveProviders\MonoToStereoProvider16.cs">
       <Link>Wave\WaveProviders\MonoToStereoProvider16.cs</Link>

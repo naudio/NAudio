@@ -6,33 +6,17 @@ using NAudio.Wave;
 
 namespace NAudioWpfDemo.MediaFoundationResample
 {
-    // still TODO: 
-    // 1. factor out most of this into a MediaFoundationTransform class,
-    //    so we can make an IMP3FrameDecoder
-
-    class MediaFoundationResampler : IWaveProvider, IDisposable
+    class MediaFoundationResampler : MediaFoundationTransform
     {
-        private readonly IWaveProvider sourceProvider;
-        private readonly WaveFormat waveFormat;
-        private readonly byte[] sourceBuffer;
-        
-        private byte[] outputBuffer;
-        private int outputBufferOffset;
-        private int outputBufferCount;
-
-        private IMFTransform resamplerTransform;
-        private bool disposed;
-        private long inputPosition; // in ref-time, so we can timestamp the input samples
-        private long outputPosition; // also in ref-time
         private int resamplerQuality;
-        private bool initializedForStreaming;
 
         /// <summary>
         /// Creates the Media Foundation Resampler, allowing modifying of sample rate, bit depth and channel count
         /// </summary>
         /// <param name="sourceProvider">Source provider, must be PCM</param>
-        /// <param name="outputFormat"></param>
+        /// <param name="outputFormat">Output format, must also be PCM</param>
         public MediaFoundationResampler(IWaveProvider sourceProvider, WaveFormat outputFormat)
+            : base(sourceProvider, outputFormat)
         {
             if (sourceProvider.WaveFormat.Encoding != WaveFormatEncoding.Pcm && sourceProvider.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
                 throw new ArgumentException("Input must be PCM or IEEE float", "sourceProvider");
@@ -40,10 +24,7 @@ namespace NAudioWpfDemo.MediaFoundationResample
                 throw new ArgumentException("Output must be PCM or IEEE float", "outputProvider");
             MediaFoundationApi.Startup();
             ResamplerQuality = 60; // maximum quality
-            this.waveFormat = outputFormat;
-            this.sourceProvider = sourceProvider;
-            sourceBuffer = new byte[sourceProvider.WaveFormat.AverageBytesPerSecond];
-            outputBuffer = new byte[waveFormat.AverageBytesPerSecond + waveFormat.BlockAlign]; // we will grow this buffer if needed, but try to make something big enough
+
             // n.b. we will create the resampler COM object on demand in the Read method, 
             // to avoid threading issues but just
             // so we can check it exists on the system we'll make one so it will throw an 
@@ -56,6 +37,33 @@ namespace NAudioWpfDemo.MediaFoundationResample
             : this(sourceProvider, CreateOutputFormat(sourceProvider.WaveFormat, outputSampleRate))
         {
 
+        }
+
+        protected override IMFTransform CreateTransform()
+        {
+            var comObject = new ResamplerMediaComObject();
+            var resamplerTransform = (IMFTransform)comObject;
+
+            var inputMediaFormat = MediaFoundationApi.CreateMediaTypeFromWaveFormat(sourceProvider.WaveFormat);
+            resamplerTransform.SetInputType(0, inputMediaFormat, 0);
+            Marshal.ReleaseComObject(inputMediaFormat);
+
+            var outputMediaFormat = MediaFoundationApi.CreateMediaTypeFromWaveFormat(outputWaveFormat);
+            resamplerTransform.SetOutputType(0, outputMediaFormat, 0);
+            Marshal.ReleaseComObject(outputMediaFormat);
+
+            //MFT_OUTPUT_STREAM_INFO pStreamInfo;
+            //resamplerTransform.GetOutputStreamInfo(0, out pStreamInfo);
+            // if pStreamInfo.dwFlags is 0, then it means we have to provide samples
+
+            // setup quality
+            var resamplerProps = (IWMResamplerProps)comObject;
+            // 60 is the best quality, 1 is linear interpolation
+            resamplerProps.SetHalfFilterLength(ResamplerQuality);
+            // may also be able to set this using MFPKEY_WMRESAMP_CHANNELMTX on the
+            // IPropertyStore interface.
+            // looks like we can also adjust the LPF with MFPKEY_WMRESAMP_LOWPASS_BANDWIDTH
+            return resamplerTransform;
         }
 
         /// <summary>
@@ -93,51 +101,77 @@ namespace NAudioWpfDemo.MediaFoundationResample
             }
             return outputFormat;
         }
+    }
+
+    /// <summary>
+    /// An abstract base class for simplifying working with Media Foundation Transforms
+    /// You need to override the method that actually creates and configures the transform
+    /// </summary>
+    abstract class MediaFoundationTransform : IWaveProvider, IDisposable
+    {
+        /// <summary>
+        /// The Source Provider
+        /// </summary>
+        protected readonly IWaveProvider sourceProvider;
+        /// <summary>
+        /// The Output WaveFormat
+        /// </summary>
+        protected readonly WaveFormat outputWaveFormat;
+        private readonly byte[] sourceBuffer;
+        
+        private byte[] outputBuffer;
+        private int outputBufferOffset;
+        private int outputBufferCount;
+
+        private IMFTransform transform;
+        private bool disposed;
+        private long inputPosition; // in ref-time, so we can timestamp the input samples
+        private long outputPosition; // also in ref-time
+        private bool initializedForStreaming;
+
+        /// <summary>
+        /// Constructs a new MediaFoundationTransform wrapper
+        /// Will read one second at a time
+        /// </summary>
+        /// <param name="sourceProvider">The source provider for input data to the transform</param>
+        /// <param name="outputFormat">The desired output format</param>
+        public MediaFoundationTransform(IWaveProvider sourceProvider, WaveFormat outputFormat)
+        {
+            this.outputWaveFormat = outputFormat;
+            this.sourceProvider = sourceProvider;
+            sourceBuffer = new byte[sourceProvider.WaveFormat.AverageBytesPerSecond];
+            outputBuffer = new byte[outputWaveFormat.AverageBytesPerSecond + outputWaveFormat.BlockAlign]; // we will grow this buffer if needed, but try to make something big enough
+        }
 
         private void InitializeTransformForStreaming()
         {
-            resamplerTransform.ProcessMessage(MFT_MESSAGE_TYPE.MFT_MESSAGE_COMMAND_FLUSH, IntPtr.Zero);
-            resamplerTransform.ProcessMessage(MFT_MESSAGE_TYPE.MFT_MESSAGE_NOTIFY_BEGIN_STREAMING, IntPtr.Zero);
-            resamplerTransform.ProcessMessage(MFT_MESSAGE_TYPE.MFT_MESSAGE_NOTIFY_START_OF_STREAM, IntPtr.Zero);
+            transform.ProcessMessage(MFT_MESSAGE_TYPE.MFT_MESSAGE_COMMAND_FLUSH, IntPtr.Zero);
+            transform.ProcessMessage(MFT_MESSAGE_TYPE.MFT_MESSAGE_NOTIFY_BEGIN_STREAMING, IntPtr.Zero);
+            transform.ProcessMessage(MFT_MESSAGE_TYPE.MFT_MESSAGE_NOTIFY_START_OF_STREAM, IntPtr.Zero);
             initializedForStreaming = true;
         }
 
-        private void CreateResampler()
-        {
-            var comObject = new ResamplerMediaComObject();
-            resamplerTransform = (IMFTransform) comObject;
+        /// <summary>
+        /// To be implemented by overriding classes. Create the transform object, set up its input and output types,
+        /// and configure any custom properties in here
+        /// </summary>
+        /// <returns>An object implementing IMFTrasform</returns>
+        protected abstract IMFTransform CreateTransform();
 
-            var inputMediaFormat = MediaFoundationApi.CreateMediaTypeFromWaveFormat(sourceProvider.WaveFormat);
-            resamplerTransform.SetInputType(0, inputMediaFormat, 0);
-            Marshal.ReleaseComObject(inputMediaFormat);
-
-            var outputMediaFormat = MediaFoundationApi.CreateMediaTypeFromWaveFormat(waveFormat);
-            resamplerTransform.SetOutputType(0, outputMediaFormat, 0);
-            Marshal.ReleaseComObject(outputMediaFormat);
-
-            //MFT_OUTPUT_STREAM_INFO pStreamInfo;
-            //resamplerTransform.GetOutputStreamInfo(0, out pStreamInfo);
-            // if pStreamInfo.dwFlags is 0, then it means we have to provide samples
-
-            // setup quality
-            var resamplerProps = (IWMResamplerProps) comObject;
-            // 60 is the best quality, 1 is linear interpolation
-            resamplerProps.SetHalfFilterLength(ResamplerQuality);
-            // may also be able to set this using MFPKEY_WMRESAMP_CHANNELMTX on the
-            // IPropertyStore interface.
-            // looks like we can also adjust the LPF with MFPKEY_WMRESAMP_LOWPASS_BANDWIDTH
-
-            InitializeTransformForStreaming();
-        }
-
+        /// <summary>
+        /// Disposes this MediaFoundation transform
+        /// </summary>
         protected void Dispose(bool disposing)
         {
-            if (resamplerTransform != null)
+            if (transform != null)
             {
-                Marshal.ReleaseComObject(resamplerTransform);
+                Marshal.ReleaseComObject(transform);
             }
         }
 
+        /// <summary>
+        /// Disposes this Media Foundation Transform
+        /// </summary>
         public void Dispose()
         {
             if (!disposed)
@@ -148,18 +182,32 @@ namespace NAudioWpfDemo.MediaFoundationResample
             }
         }
 
-        ~MediaFoundationResampler()
+        /// <summary>
+        /// Destructor
+        /// </summary>
+        ~MediaFoundationTransform()
         {
             Dispose(false);
         }
 
-        public WaveFormat WaveFormat { get { return waveFormat; } }
+        /// <summary>
+        /// The output WaveFormat of this Media Foundation Transform
+        /// </summary>
+        public WaveFormat WaveFormat { get { return outputWaveFormat; } }
 
+        /// <summary>
+        /// Reads data out of the source, passing it through the transform
+        /// </summary>
+        /// <param name="buffer">Output buffer</param>
+        /// <param name="offset">Offset within buffer to write to</param>
+        /// <param name="count">Desired byte count</param>
+        /// <returns>Number of bytes read</returns>
         public int Read(byte[] buffer, int offset, int count)
         {
-            if (resamplerTransform == null)
+            if (transform == null)
             {
-                CreateResampler();
+                transform = CreateTransform();
+                InitializeTransformForStreaming();
             }
 
             // strategy will be to always read 1 second from the source, and give it to the resampler
@@ -192,11 +240,14 @@ namespace NAudioWpfDemo.MediaFoundationResample
 
                 // give the input to the resampler
                 // can get MF_E_NOTACCEPTING if we didn't drain the buffer properly
-                resamplerTransform.ProcessInput(0, sample, 0);
+                transform.ProcessInput(0, sample, 0);
 
                 Marshal.ReleaseComObject(sample);
 
                 int readFromTransform;
+                // n.b. in theory we ought to loop here, although we'd need to be careful as the next time into ReadFromTransform there could
+                // still be some leftover bytes in outputBuffer, which would get overwritten. Only introduce this if we find a transform that 
+                // needs it. For most transforms, alternating read/write should be OK
                 //do
                 //{
                     // keep reading from transform
@@ -210,8 +261,8 @@ namespace NAudioWpfDemo.MediaFoundationResample
 
         private void EndStreamAndDrain()
         {
-            resamplerTransform.ProcessMessage(MFT_MESSAGE_TYPE.MFT_MESSAGE_NOTIFY_END_OF_STREAM, IntPtr.Zero);
-            resamplerTransform.ProcessMessage(MFT_MESSAGE_TYPE.MFT_MESSAGE_COMMAND_DRAIN, IntPtr.Zero);
+            transform.ProcessMessage(MFT_MESSAGE_TYPE.MFT_MESSAGE_NOTIFY_END_OF_STREAM, IntPtr.Zero);
+            transform.ProcessMessage(MFT_MESSAGE_TYPE.MFT_MESSAGE_COMMAND_DRAIN, IntPtr.Zero);
             int read;
             do
             {
@@ -219,7 +270,9 @@ namespace NAudioWpfDemo.MediaFoundationResample
             } while (read > 0);
             outputBufferCount = 0;
             outputBufferOffset = 0;
-            resamplerTransform.ProcessMessage(MFT_MESSAGE_TYPE.MFT_MESSAGE_NOTIFY_END_STREAMING, IntPtr.Zero);
+            inputPosition = 0;
+            outputPosition = 0;
+            transform.ProcessMessage(MFT_MESSAGE_TYPE.MFT_MESSAGE_NOTIFY_END_STREAMING, IntPtr.Zero);
             initializedForStreaming = false;
         }
 
@@ -240,7 +293,7 @@ namespace NAudioWpfDemo.MediaFoundationResample
             outputDataBuffer[0].pSample = sample;
             
             _MFT_PROCESS_OUTPUT_STATUS status;
-            var hr = resamplerTransform.ProcessOutput(_MFT_PROCESS_OUTPUT_FLAGS.None, 
+            var hr = transform.ProcessOutput(_MFT_PROCESS_OUTPUT_FLAGS.None, 
                 1, outputDataBuffer, out status);
             if (hr == MediaFoundationErrors.MF_E_TRANSFORM_NEED_MORE_INPUT)
             {
@@ -294,7 +347,7 @@ namespace NAudioWpfDemo.MediaFoundationResample
 
             var sample = MediaFoundationApi.CreateSample();
             sample.AddBuffer(mediaBuffer);
-            // trying to set the time, not sure it helps much
+            // we'll set the time, I don't think it is needed for Resampler, but other MFTs might need it
             sample.SetSampleTime(inputPosition);
             long duration = BytesToNsPosition(bytesRead, sourceProvider.WaveFormat);
             sample.SetSampleDuration(duration);
@@ -316,6 +369,9 @@ namespace NAudioWpfDemo.MediaFoundationResample
             return bytesFromOutputBuffer;
         }
 
+        /// <summary>
+        /// Indicate that the source has been repositioned and completely drain out the transforms buffers
+        /// </summary>
         public void Reposition()
         {
             if (initializedForStreaming)

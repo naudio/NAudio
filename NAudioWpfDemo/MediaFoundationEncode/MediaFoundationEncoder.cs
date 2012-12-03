@@ -33,6 +33,17 @@ namespace NAudioWpfDemo.MediaFoundationEncode
                 object mediaTypeObject;
                 availableTypes.GetElement(n, out mediaTypeObject);
                 var mediaType = (IMFMediaType)mediaTypeObject;
+
+                // filter out types that are for the wrong sample rate and channels
+                int samplesPerSecond;
+                mediaType.GetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_SAMPLES_PER_SECOND, out samplesPerSecond);
+                if (sampleRate != samplesPerSecond)
+                    continue;
+                int channelCount;
+                mediaType.GetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_NUM_CHANNELS, out channelCount);
+                if (channels != channelCount)
+                    continue;
+
                 int bytesPerSecond;
                 mediaType.GetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_AVG_BYTES_PER_SECOND, out bytesPerSecond);
                 bitRates.Add(bytesPerSecond*8);

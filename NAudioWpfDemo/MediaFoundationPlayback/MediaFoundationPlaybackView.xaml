@@ -1,0 +1,22 @@
+﻿<UserControl x:Class="NAudioWpfDemo.MediaFoundationPlayback.MediaFoundationPlaybackView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="500">
+    <Grid>
+        <Button Content="Load" Command="{Binding LoadCommand}" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="75"/>
+        <Button Content="Play" Command="{Binding PlayCommand}" HorizontalAlignment="Left" Margin="10,101,0,0" VerticalAlignment="Top" Width="75"/>
+        <Button Content="Pause" Command="{Binding PauseCommand}" HorizontalAlignment="Left" Margin="90,101,0,0" VerticalAlignment="Top" Width="75"/>
+        <Button Content="Stop" Command="{Binding StopCommand}" HorizontalAlignment="Left" Margin="170,101,0,0" VerticalAlignment="Top" Width="75"/>
+        <Label Content="Default PCM decompression format:" HorizontalAlignment="Left" Margin="10,45,0,0" VerticalAlignment="Top"/>
+        <Label Content="{Binding DefaultDecompressionFormat}" HorizontalAlignment="Left" Margin="210,45,0,0" VerticalAlignment="Top"/>
+        <Canvas Name="waveFormCanvas" Background="Black" HorizontalAlignment="Left" Height="48" Margin="10,155,0,0" VerticalAlignment="Top" Width="480" />
+        
+        <Slider Margin="10,128,20,0" VerticalAlignment="Top" Value="{Binding SliderPosition, Mode=TwoWay}" />
+        <CheckBox Content="Request IEEE Float" IsChecked="{Binding RequestFloatOutput, Mode=TwoWay}" HorizontalAlignment="Left" Margin="97,13,0,0" VerticalAlignment="Top"/>
+        <TextBlock Text="WORK IN PROGRESS - don't expect everything on here to work" HorizontalAlignment="Left" Margin="280,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top"/>
+
+    </Grid>
+</UserControl>

@@ -16,69 +16,125 @@ namespace NAudio.Wave
     /// </summary>
     public class MediaFoundationReader : WaveStream
     {
+        private readonly WaveFormat waveFormat;
+        private readonly long length;
+        private readonly MediaFoundationReaderSettings settings;
+        private readonly string file;
         private IMFSourceReader pReader;
-        private WaveFormat waveFormat;
+
         private long position;
-        private long length;
+
+        /// <summary>
+        /// Allows customisation of this reader class
+        /// </summary>
+        public class MediaFoundationReaderSettings
+        {
+            /// <summary>
+            /// Sets up the default settings for MediaFoundationReader
+            /// </summary>
+            public MediaFoundationReaderSettings()
+            {
+                RepositionInRead = true;
+            }
+
+            /// <summary>
+            /// Allows us to request IEEE float output (n.b. no guarantee this will be accepted)
+            /// </summary>
+            public bool RequestFloatOutput { get; set; }
+            /// <summary>
+            /// If true, the reader object created in the constructor is used in Read
+            /// Should only be set to true if you are working entirely on an STA thread, or 
+            /// entirely with MTA threads.
+            /// </summary>
+            public bool SingleReaderObject { get; set; }
+            /// <summary>
+            /// If true, the reposition does not happen immediately, but waits until the
+            /// next call to read to be processed.
+            /// </summary>
+            public bool RepositionInRead { get; set; }
+        }
+
 
         /// <summary>
         /// Creates a new MediaFoundationReader based on the supplied file
         /// </summary>
         /// <param name="file">Filename</param>
         public MediaFoundationReader(string file)
+            : this(file, new MediaFoundationReaderSettings())
+        {
+        }
+
+
+        /// <summary>
+        /// Creates a new MediaFoundationReader based on the supplied file
+        /// </summary>
+        /// <param name="file">Filename</param>
+        /// <param name="settings">Advanced settings</param>
+        public MediaFoundationReader(string file, MediaFoundationReaderSettings settings)
         {
             MediaFoundationApi.Startup();
-            var uri = new Uri(file);
-            MediaFoundationInterop.MFCreateSourceReaderFromURL(uri.AbsoluteUri, null, out pReader);
-            pReader.SetStreamSelection(MediaFoundationInterop.MF_SOURCE_READER_ALL_STREAMS, false);
-            pReader.SetStreamSelection(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, true);
-            
-            /*IMFMediaType currentMediaType;
-            pReader.GetCurrentMediaType(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, out currentMediaType);
-            Guid currentMajorType;
-            currentMediaType.GetMajorType(out currentMajorType);
+            this.settings = settings;
+            this.file = file;
+            var reader = CreateReader();
+
+            /* IMFMediaType currentMediaType;
+            reader.GetCurrentMediaType(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, out currentMediaType);
+            var current = new MediaType(currentMediaType);
             IMFMediaType nativeMediaType;
-            pReader.GetNativeMediaType(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0, out nativeMediaType);*/
-
-            // Create a partial media type indicating that we want uncompressed PCM audio
-            IMFMediaType partialMediaType;
-            MediaFoundationInterop.MFCreateMediaType(out partialMediaType);
-            partialMediaType.SetGUID(MediaFoundationAttributes.MF_MT_MAJOR_TYPE, MediaTypes.MFMediaType_Audio);
-            partialMediaType.SetGUID(MediaFoundationAttributes.MF_MT_SUBTYPE, AudioSubtypes.MFAudioFormat_PCM);
-
-            // set the media type
-            pReader.SetCurrentMediaType(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, IntPtr.Zero, partialMediaType);
-            Marshal.ReleaseComObject(partialMediaType);
+            reader.GetNativeMediaType(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0, out nativeMediaType);
+            var native = new MediaType(nativeMediaType);*/
 
             // now let's find out what we actually got
             IMFMediaType uncompressedMediaType;
-            pReader.GetCurrentMediaType(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, out uncompressedMediaType);
+            reader.GetCurrentMediaType(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, out uncompressedMediaType);
 
-            // Two ways to query it, first is to ask for properties (section is to convet into WaveFormatEx using MFCreateWaveFormatExFromMFMediaType)
-            Guid actualMajorType;
-            uncompressedMediaType.GetGUID(MediaFoundationAttributes.MF_MT_MAJOR_TYPE, out actualMajorType);
+            // Two ways to query it, first is to ask for properties (second is to convert into WaveFormatEx using MFCreateWaveFormatExFromMFMediaType)
+            var outputMediaType = new MediaType(uncompressedMediaType);
+            Guid actualMajorType = outputMediaType.MajorType;
             Debug.Assert(actualMajorType == MediaTypes.MFMediaType_Audio);
-            Guid audioSubType;
-            uncompressedMediaType.GetGUID(MediaFoundationAttributes.MF_MT_SUBTYPE, out audioSubType);
-            Debug.Assert(audioSubType == AudioSubtypes.MFAudioFormat_PCM);
-            int channels;
-            uncompressedMediaType.GetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_NUM_CHANNELS, out channels);
-            int bits;
-            uncompressedMediaType.GetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_BITS_PER_SAMPLE, out bits);
-            int sampleRate;
-            uncompressedMediaType.GetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_SAMPLES_PER_SECOND, out sampleRate);
+            Guid audioSubType = outputMediaType.SubType;
+            int channels = outputMediaType.ChannelCount;
+            int bits = outputMediaType.BitsPerSample;
+            int sampleRate = outputMediaType.SampleRate;
 
-            waveFormat = new WaveFormat(sampleRate, bits, channels);
+            waveFormat = audioSubType == AudioSubtypes.MFAudioFormat_PCM
+                             ? new WaveFormat(sampleRate, bits, channels)
+                             : WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channels);
 
-            pReader.SetStreamSelection(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, true);
-            length = GetLength();
+            reader.SetStreamSelection(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, true);
+            length = GetLength(reader);
+
+            if (settings.SingleReaderObject)
+            {
+                pReader = reader;
+            }
         }
 
-        private long GetLength()
+        private IMFSourceReader CreateReader()
         {
-            CoreAudioApi.Interfaces.PropVariant variant;
+            var uri = new Uri(file);
+            IMFSourceReader reader;
+            MediaFoundationInterop.MFCreateSourceReaderFromURL(uri.AbsoluteUri, null, out reader);
+            reader.SetStreamSelection(MediaFoundationInterop.MF_SOURCE_READER_ALL_STREAMS, false);
+            reader.SetStreamSelection(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, true);
+
+            // Create a partial media type indicating that we want uncompressed PCM audio
+
+            var partialMediaType = new MediaType();
+            partialMediaType.MajorType = MediaTypes.MFMediaType_Audio;
+            partialMediaType.SubType = settings.RequestFloatOutput ? AudioSubtypes.MFAudioFormat_Float : AudioSubtypes.MFAudioFormat_PCM;
+
+            // set the media type
+            // can return MF_E_INVALIDMEDIATYPE if not supported
+            reader.SetCurrentMediaType(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, IntPtr.Zero, partialMediaType.MediaFoundationObject);
+            return reader;
+        }
+
+        private long GetLength(IMFSourceReader reader)
+        {
+            PropVariant variant;
             // http://msdn.microsoft.com/en-gb/library/windows/desktop/dd389281%28v=vs.85%29.aspx#getting_file_duration
-            pReader.GetPresentationAttribute(MediaFoundationInterop.MF_SOURCE_READER_MEDIASOURCE,
+            reader.GetPresentationAttribute(MediaFoundationInterop.MF_SOURCE_READER_MEDIASOURCE,
                 MediaFoundationAttributes.MF_PD_DURATION, out variant);
             var lengthInBytes = (((long)variant.Value) * waveFormat.AverageBytesPerSecond) / 10000000L;
             variant.Clear();
@@ -106,6 +162,15 @@ namespace NAudio.Wave
         /// <returns>Number of bytes read; 0 indicates end of stream</returns>
         public override int Read(byte[] buffer, int offset, int count)
         {
+            if (pReader == null)
+            {
+                pReader = CreateReader();
+            }
+            if (repositionTo != -1)
+            {
+                Reposition(repositionTo);
+            }
+
             int bytesWritten = 0;
             // read in any leftovers from last time
             if (decoderOutputCount > 0)
@@ -198,14 +263,32 @@ namespace NAudio.Wave
             get { return position; }
             set
             {
-                // should pass in a variant of type VT_I8 which is a long containing time in 100nanosecond units
-                long nsPosition = (10000000L * value) / waveFormat.AverageBytesPerSecond;
-                var pv = PropVariant.FromLong(nsPosition);
-                pReader.SetCurrentPosition(Guid.Empty, ref pv);
-                position = value;
-                decoderOutputCount = 0;
-                decoderOutputOffset = 0;
+                if (value < 0)
+                    throw new ArgumentOutOfRangeException("Position cannot be less than 0");
+                if (settings.RepositionInRead)
+                {
+                    repositionTo = value;
+                    position = value; // for gui apps, make it look like we have alread processed the reposition
+                }
+                else
+                {
+                    Reposition(value);
+                }
             }
+        }
+
+        private long repositionTo = -1;
+
+        private void Reposition(long desiredPosition)
+        {
+            long nsPosition = (10000000L * repositionTo) / waveFormat.AverageBytesPerSecond;
+            var pv = PropVariant.FromLong(nsPosition);
+            // should pass in a variant of type VT_I8 which is a long containing time in 100nanosecond units
+            pReader.SetCurrentPosition(Guid.Empty, ref pv);
+            decoderOutputCount = 0;
+            decoderOutputOffset = 0;
+            position = desiredPosition;
+            repositionTo = -1;// clear the flag
         }
 
         /// <summary>

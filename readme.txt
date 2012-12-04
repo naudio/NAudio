@@ -25,6 +25,7 @@ Idael Cardaso
 ioctlLR
 jbaker8935
 jonahoffmann
+jontdelorme
 Lustild
 Lucian Wischik (ljw1004)
 ManuN

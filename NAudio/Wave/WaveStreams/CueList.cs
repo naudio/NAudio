@@ -89,13 +89,13 @@ namespace NAudio.Wave
     /// </remarks>
     public class CueList
     {
-        private List<Cue> cues;
+        private readonly List<Cue> cues = new List<Cue>();
         /// <summary>
         /// Creates an empty cue list
         /// </summary>
         public CueList()
         {
-            cues = new List<Cue>();
+
         }
 
         /// <summary>

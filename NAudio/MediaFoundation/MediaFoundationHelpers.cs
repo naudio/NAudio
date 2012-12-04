@@ -130,5 +130,30 @@ namespace NAudio.MediaFoundation
             MediaFoundationInterop.MFCreateAttributes(out attributes, initialSize);
             return attributes;
         }
+
+        /// <summary>
+        /// Creates a media foundation byte stream based on a stream object
+        /// (usable with WinRT streams)
+        /// </summary>
+        /// <param name="stream">The input stream</param>
+        /// <returns>A media foundation byte stream</returns>
+        public static IMFByteStream CreateByteStream(object stream)
+        {
+            IMFByteStream byteStream;
+            MediaFoundationInterop.MFCreateMFByteStreamOnStreamEx(stream, out byteStream);
+            return byteStream;
+        }
+
+        /// <summary>
+        /// Creates a source reader based on a byte stream
+        /// </summary>
+        /// <param name="byteStream">The byte stream</param>
+        /// <returns>A media foundation source reader</returns>
+        public static IMFSourceReader CreateSourceReaderFromByteStream(IMFByteStream byteStream)
+        {
+            IMFSourceReader reader;
+            MediaFoundationInterop.MFCreateSourceReaderFromByteStream(byteStream, null, out reader);
+            return reader;
+        }
     }
 }

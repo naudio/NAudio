@@ -11,9 +11,10 @@ id, so if you want me to put your full name here, please also get in touch.
 in alphabetical order:
 Alexandre Mutel
 AmandaTarafaMas
-Brandon Hansen (kg6ypi)
 balistof
 biermeester
+borman11
+Brandon Hansen (kg6ypi)
 ChunkWare Music Software
 CKing
 DaMacc
@@ -21,6 +22,7 @@ eejake52
 Giawa
 Hfuy
 Idael Cardaso 
+ioctlLR
 jbaker8935
 jonahoffmann
 Lustild

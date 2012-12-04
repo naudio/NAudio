@@ -100,6 +100,16 @@ namespace NAudio.MediaFoundation
         public int ChannelCount
         {
             get { return GetUInt32(MediaFoundationAttributes.MF_MT_AUDIO_NUM_CHANNELS); }
+            set { mediaType.SetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_NUM_CHANNELS, value); }
+        }
+
+        /// <summary>
+        /// The number of bits per sample (n.b. not always valid for compressed audio types)
+        /// </summary>
+        public int BitsPerSample
+        {
+            get { return GetUInt32(MediaFoundationAttributes.MF_MT_AUDIO_BITS_PER_SAMPLE); }
+            set { mediaType.SetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_BITS_PER_SAMPLE, value); }
         }
 
         /// <summary>
@@ -116,6 +126,16 @@ namespace NAudio.MediaFoundation
         public Guid SubType
         {
             get { return GetGuid(MediaFoundationAttributes.MF_MT_SUBTYPE); }
+            set { mediaType.SetGUID(MediaFoundationAttributes.MF_MT_SUBTYPE, value); }
+        }
+
+        /// <summary>
+        /// The Major type, e.g. audio or video (from the MediaTypes class)
+        /// </summary>
+        public Guid MajorType
+        {
+            get { return GetGuid(MediaFoundationAttributes.MF_MT_MAJOR_TYPE); }
+            set { mediaType.SetGUID(MediaFoundationAttributes.MF_MT_MAJOR_TYPE, value); }
         }
 
         /// <summary>

@@ -95,7 +95,7 @@ namespace NAudio.Wave
                     long newLength = 0;
                     foreach (var inputStream in inputStreams)
                     {
-                        newLength = Math.Max(length, inputStream.Length);
+                        newLength = Math.Max(newLength, inputStream.Length);
                     }
                     length = newLength;
                 }

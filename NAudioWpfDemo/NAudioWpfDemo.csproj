@@ -121,6 +121,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="MediaFoundationPlayback\MediaFoundationPlaybackView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MediaFoundationResample\MediaFoundationResampleView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -203,6 +207,11 @@
     </Compile>
     <Compile Include="MediaFoundationEncode\MediaFoundationEncodeViewModel.cs" />
     <Compile Include="MediaFoundationEncode\MediaTypeViewModel.cs" />
+    <Compile Include="MediaFoundationPlayback\MediaFoundationPlaybackView.xaml.cs">
+      <DependentUpon>MediaFoundationPlaybackView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="MediaFoundationPlayback\MediaFoundationPlaybackPlugin.cs" />
+    <Compile Include="MediaFoundationPlayback\MediaFoundationPlaybackViewModel.cs" />
     <Compile Include="MediaFoundationResample\MediaFoundationEncodePlugin.cs" />
     <Compile Include="MediaFoundationResample\MediaFoundationResampleView.xaml.cs">
       <DependentUpon>MediaFoundationResampleView.xaml</DependentUpon>

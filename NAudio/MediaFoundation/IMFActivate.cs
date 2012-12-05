@@ -12,10 +12,10 @@ namespace NAudio.MediaFoundation
     [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("7FEE9E9A-4A89-47a6-899C-B6A53A70FB67")]
     public interface IMFActivate : IMFAttributes
     {
-                /// <summary>
+        /// <summary>
         /// Retrieves the value associated with a key.
         /// </summary>
-        new void GetItem([In, MarshalAs(UnmanagedType.LPStruct)] Guid guidKey, IntPtr pValue);
+        new void GetItem([In, MarshalAs(UnmanagedType.LPStruct)] Guid guidKey, [In, Out] ref PropVariant pValue);
 
         /// <summary>
         /// Retrieves the data type of the value associated with a key.
@@ -170,7 +170,7 @@ namespace NAudio.MediaFoundation
         /// <summary>
         /// Creates the object associated with this activation object. 
         /// </summary>
-        void ActivateObject([In] Guid riid, [Out, MarshalAs(UnmanagedType.IUnknown)] out object ppv);
+        void ActivateObject([In, MarshalAs(UnmanagedType.LPStruct)] Guid riid, [Out,MarshalAs(UnmanagedType.Interface)] out object ppv);
         
         /// <summary>
         /// Shuts down the created object.

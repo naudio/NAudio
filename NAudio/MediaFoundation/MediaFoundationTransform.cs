@@ -63,7 +63,7 @@ namespace NAudio.MediaFoundation
         /// <summary>
         /// Disposes this MediaFoundation transform
         /// </summary>
-        protected void Dispose(bool disposing)
+        protected virtual void Dispose(bool disposing)
         {
             if (transform != null)
             {

@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using NAudio.CoreAudioApi;
+using NAudio.CoreAudioApi.Interfaces;
 using NAudio.MediaFoundation;
 using NAudio.Wave;
 using NAudio.Win8.Wave.WaveOutputs;
@@ -70,13 +71,13 @@ namespace NAudioWin8Demo
 
         private async void Load()
         {
-            var mfts = MediaFoundationApi.EnumerateTransforms(MediaFoundationTransformCategories.AudioEffect).ToList();
-
             var picker = new FileOpenPicker();
             picker.SuggestedStartLocation = PickerLocationId.MusicLibrary;
             picker.FileTypeFilter.Add("*");
             var file = await picker.PickSingleFileAsync();
-            using (var stream = await file.OpenReadAsync())
+            var stream = await file.OpenReadAsync();
+            if (stream == null) return;
+            using (stream)
             {
                 reader = new MediaFoundationReaderRT(stream);
                 PlayCommand.IsEnabled = true;

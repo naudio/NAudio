@@ -40,8 +40,45 @@ namespace NAudio.Wave
             // to avoid threading issues but just
             // so we can check it exists on the system we'll make one so it will throw an 
             // exception if not exists
-            var comObject = new ResamplerMediaComObject();
+            var comObject = CreateResamplerComObject();
+            FreeComObject(comObject);
+        }
+
+        private static readonly Guid ResamplerClsid = new Guid("f447b69e-1884-4a7e-8055-346f74d6edb3");
+        private static readonly Guid IMFTransformIid = new Guid("bf94c121-5b05-4e6f-8000-ba598961414d");
+        private IMFActivate activate;
+
+        private void FreeComObject(object comObject)
+        {
+            if (activate != null) activate.ShutdownObject();
             Marshal.ReleaseComObject(comObject);
+        }
+
+        private object CreateResamplerComObject()
+        {
+#if NETFX_CORE            
+            return CreateResamplerComObjectUsingActivator();
+#else
+            return new ResamplerMediaComObject();
+#endif
+        }
+
+        private object CreateResamplerComObjectUsingActivator()
+        {
+            var transformActivators = MediaFoundationApi.EnumerateTransforms(MediaFoundationTransformCategories.AudioEffect);
+            foreach (var activator in transformActivators)
+            {
+                Guid clsid;
+                activator.GetGUID(MediaFoundationAttributes.MFT_TRANSFORM_CLSID_Attribute, out clsid);
+                if (clsid.Equals(ResamplerClsid))
+                {
+                    object comObject;
+                    activator.ActivateObject(IMFTransformIid, out comObject);
+                    activate = activator;
+                    return comObject;
+                }
+            }
+            return null;
         }
 
         /// <summary>
@@ -61,7 +98,7 @@ namespace NAudio.Wave
         /// <returns>A newly created and configured resampler MFT</returns>
         protected override IMFTransform CreateTransform()
         {
-            var comObject = new ResamplerMediaComObject();
+            var comObject = CreateResamplerComObject();// new ResamplerMediaComObject();
             var resamplerTransform = (IMFTransform)comObject;
 
             var inputMediaFormat = MediaFoundationApi.CreateMediaTypeFromWaveFormat(sourceProvider.WaveFormat);
@@ -121,5 +158,17 @@ namespace NAudio.Wave
             }
             return outputFormat;
         }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (activate != null)
+            {
+                activate.ShutdownObject();
+                activate = null;
+            }
+
+            base.Dispose(disposing);
+        }
+
     }
 }

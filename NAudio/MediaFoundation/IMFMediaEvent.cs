@@ -17,7 +17,7 @@ namespace NAudio.MediaFoundation
         /// <summary>
         /// Retrieves the value associated with a key.
         /// </summary>
-        new void GetItem([In, MarshalAs(UnmanagedType.LPStruct)] Guid guidKey, IntPtr pValue);
+        new void GetItem([In, MarshalAs(UnmanagedType.LPStruct)] Guid guidKey, [In, Out] ref PropVariant pValue);
 
         /// <summary>
         /// Retrieves the data type of the value associated with a key.

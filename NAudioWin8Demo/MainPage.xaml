@@ -14,5 +14,8 @@
         <Button Content="Play" Command="{Binding PlayCommand}" HorizontalAlignment="Left" Margin="366,175,0,0" VerticalAlignment="Top"/>
         <Button Content="Pause" Command="{Binding PauseCommand}"  HorizontalAlignment="Left" Margin="446,175,0,0" VerticalAlignment="Top"/>
         <Button Content="Stop" Command="{Binding StopCommand}" HorizontalAlignment="Left" Margin="540,175,0,0" VerticalAlignment="Top"/>
+        
+        <!-- for experimental media element out -->
+        <MediaElement Name="me"></MediaElement>
     </Grid>
 </Page>

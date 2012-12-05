@@ -24,7 +24,7 @@ namespace NAudioWin8Demo
         public MainPage()
         {
             this.InitializeComponent();
-            this.DataContext = new MainPageViewModel();
+            this.DataContext = new MainPageViewModel() {MediaElement = me};
         }
 
         /// <summary>

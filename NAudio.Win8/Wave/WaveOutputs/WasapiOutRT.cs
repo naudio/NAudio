@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -68,10 +69,10 @@ namespace NAudio.Win8.Wave.WaveOutputs
             var icbh = new ActivateAudioInterfaceCompletionHandler(
                 ac2 =>
                     {
-                        var wfx = new WaveFormat(44100, 16, 2);
-                        ac2.Initialize(AudioClientShareMode.Shared,
+                        /*var wfx = new WaveFormat(44100, 16, 2);
+                        int hr = ac2.Initialize(AudioClientShareMode.Shared,
                                        AudioClientStreamFlags.EventCallback | AudioClientStreamFlags.NoPersist,
-                                       10000000, 0, wfx, IntPtr.Zero);
+                                       10000000, 0, wfx, IntPtr.Zero);*/
                     });
             var IID_IAudioClient2 = new Guid("726778CD-F60A-4eda-82DE-E47610CD78AA");
             IActivateAudioInterfaceAsyncOperation activationOperation;
@@ -317,8 +318,8 @@ namespace NAudio.Win8.Wave.WaveOutputs
             // Init Shared or Exclusive
             if (shareMode == AudioClientShareMode.Shared)
             {
-                // With EventCallBack and Shared, both latencies must be set to 0
-                audioClient.Initialize(shareMode, AudioClientStreamFlags.EventCallback, 0, 0,
+                // With EventCallBack and Shared, 
+                audioClient.Initialize(shareMode, AudioClientStreamFlags.EventCallback, latencyRefTimes, 0,
                     outputFormat, Guid.Empty);
 
                 // Get back the effective latency from AudioClient

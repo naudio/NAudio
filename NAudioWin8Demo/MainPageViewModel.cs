@@ -83,7 +83,9 @@ namespace NAudioWin8Demo
             if (stream == null) return;
             using (stream)
             {
-                reader = new MediaFoundationReaderRT(stream);
+                // trying to get thre reader created on an MTA Thread
+                await Task.Run(() => reader = new MediaFoundationReaderRT(stream));
+                
                 PlayCommand.IsEnabled = true;
             }
         }

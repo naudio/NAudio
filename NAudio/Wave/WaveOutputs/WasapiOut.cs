@@ -208,10 +208,15 @@ namespace NAudio.Wave
                 if (playbackState == PlaybackState.Stopped)
                 {
                     playThread = new Thread(new ThreadStart(PlayThread));
+                    playbackState = PlaybackState.Playing;
                     playThread.Start();                    
                 }
+                else
+                {
+                    playbackState = PlaybackState.Playing;
+                }
 
-                playbackState = PlaybackState.Playing;
+                
             }
         }
 

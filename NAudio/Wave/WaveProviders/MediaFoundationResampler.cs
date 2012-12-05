@@ -159,6 +159,9 @@ namespace NAudio.Wave
             return outputFormat;
         }
 
+        /// <summary>
+        /// Disposes this resampler
+        /// </summary>
         protected override void Dispose(bool disposing)
         {
             if (activate != null)

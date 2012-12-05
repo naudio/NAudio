@@ -202,10 +202,13 @@ namespace NAudio.Win8.Wave.WaveOutputs
             {
                 if (playbackState == PlaybackState.Stopped)
                 {
+                    playbackState = PlaybackState.Playing;
                     PlayThread();
                 }
-
-                playbackState = PlaybackState.Playing;
+                else
+                {
+                    playbackState = PlaybackState.Playing;
+                }
             }
         }
 

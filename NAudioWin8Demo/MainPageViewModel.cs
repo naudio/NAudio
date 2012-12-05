@@ -12,6 +12,7 @@ using NAudio.Win8.Wave.WaveOutputs;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 using Windows.Storage.Streams;
+using Windows.UI.Xaml.Controls;
 
 namespace NAudioWin8Demo
 {
@@ -52,9 +53,10 @@ namespace NAudioWin8Demo
             }
             if (player == null)
             {
-                // current problems - Shared mode - resampler is not supported
                 // Exclusive mode - fails with a weird buffer alignment error
-                player = new WasapiOutRT(AudioClientShareMode.Shared, 100);
+
+                //player = new MediaElementOut(MediaElement);
+                player = new WasapiOutRT(AudioClientShareMode.Shared, 200);
                 player.PlaybackStopped += PlayerOnPlaybackStopped;
                 await player.Init(reader);
             }
@@ -95,6 +97,7 @@ namespace NAudioWin8Demo
         public DelegateCommand PauseCommand { get; private set; }
         public DelegateCommand StopCommand { get; private set; }
 
+        public MediaElement MediaElement { get; set; }
     }
 
     // Slightly hacky approach to supporting a different WinRT constructor

@@ -341,7 +341,7 @@ namespace NAudio.Wave
 
                 // Create the Wait Event Handle
                 frameEventWaitHandle = new EventWaitHandle(false, EventResetMode.AutoReset);
-                audioClient.SetEventHandle(frameEventWaitHandle);
+                audioClient.SetEventHandle(frameEventWaitHandle.SafeWaitHandle.DangerousGetHandle());
             }
             else
             {

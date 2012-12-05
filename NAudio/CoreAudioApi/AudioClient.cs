@@ -76,7 +76,7 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                uint bufferSize;                
+                uint bufferSize;
                 Marshal.ThrowExceptionForHR(audioClientInterface.GetBufferSize(out bufferSize));
                 return (int) bufferSize;
             }
@@ -154,7 +154,7 @@ namespace NAudio.CoreAudioApi
                 {
                     object audioRenderClientInterface;
                     Guid audioRenderClientGuid = new Guid("F294ACFC-3146-4483-A7BF-ADDCA7C260E2");
-                    Marshal.ThrowExceptionForHR(audioClientInterface.GetService(ref audioRenderClientGuid, out audioRenderClientInterface));
+                    Marshal.ThrowExceptionForHR(audioClientInterface.GetService(audioRenderClientGuid, out audioRenderClientInterface));
                     audioRenderClient = new AudioRenderClient((IAudioRenderClient)audioRenderClientInterface);
                 }
                 return audioRenderClient;
@@ -172,7 +172,7 @@ namespace NAudio.CoreAudioApi
                 {
                     object audioCaptureClientInterface;
                     Guid audioCaptureClientGuid = new Guid("c8adbd64-e71e-48a0-a4de-185c395cd317");
-                    Marshal.ThrowExceptionForHR(audioClientInterface.GetService(ref audioCaptureClientGuid, out audioCaptureClientInterface));
+                    Marshal.ThrowExceptionForHR(audioClientInterface.GetService(audioCaptureClientGuid, out audioCaptureClientInterface));
                     audioCaptureClient = new AudioCaptureClient((IAudioCaptureClient)audioCaptureClientInterface);
                 }
                 return audioCaptureClient;
@@ -251,11 +251,9 @@ namespace NAudio.CoreAudioApi
         /// Set the Event Handle for buffer synchro.
         /// </summary>
         /// <param name="eventWaitHandle">The Wait Handle to setup</param>
-        public void SetEventHandle(EventWaitHandle eventWaitHandle)
+        public void SetEventHandle(IntPtr eventWaitHandle)
         {
-#if !NETFX_CORE // TODO: for windows store we need to switch to using CreateEventEx instead
-            audioClientInterface.SetEventHandle(eventWaitHandle.SafeWaitHandle.DangerousGetHandle());
-#endif
+            audioClientInterface.SetEventHandle(eventWaitHandle);
         }
 
         /// <summary>

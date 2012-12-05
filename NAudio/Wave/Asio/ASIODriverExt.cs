@@ -185,7 +185,7 @@ namespace NAudio.Wave.Asio
                                                 "Invalid number of channels {0}, must be in the range [0,{1}]",
                                                 numberOfOutputChannels, capability.NbOutputChannels));
             }
-            if (numberOfInputChannels < 0 || numberOfInputChannels > capability.NbOutputChannels)
+            if (numberOfInputChannels < 0 || numberOfInputChannels > capability.NbInputChannels)
             {
                 throw new ArgumentException("numberOfInputChannels", 
                     String.Format("Invalid number of input channels {0}, must be in the range [0,{1}]",

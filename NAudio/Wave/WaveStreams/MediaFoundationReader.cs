@@ -75,7 +75,7 @@ namespace NAudio.Wave
             MediaFoundationApi.Startup();
             this.settings = settings;
             this.file = file;
-            var reader = CreateReader();
+            var reader = CreateReader(settings);
 
             /* IMFMediaType currentMediaType;
             reader.GetCurrentMediaType(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, out currentMediaType);
@@ -110,7 +110,10 @@ namespace NAudio.Wave
             }
         }
 
-        private IMFSourceReader CreateReader()
+        /// <summary>
+        /// Creates the reader (overridable by )
+        /// </summary>
+        protected virtual IMFSourceReader CreateReader(MediaFoundationReaderSettings settings)
         {
             var uri = new Uri(file);
             IMFSourceReader reader;
@@ -164,7 +167,7 @@ namespace NAudio.Wave
         {
             if (pReader == null)
             {
-                pReader = CreateReader();
+                pReader = CreateReader(settings);
             }
             if (repositionTo != -1)
             {

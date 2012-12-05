@@ -49,6 +49,12 @@ namespace NAudio.CoreAudioApi.Interfaces
         
         int SetEventHandle(IntPtr eventHandle);
 
-        int GetService(ref Guid interfaceId, [MarshalAs(UnmanagedType.IUnknown)] out object interfacePointer);
+        /// <summary>
+        /// The GetService method accesses additional services from the audio client object.
+        /// </summary>
+        /// <param name="interfaceId">The interface ID for the requested service.</param>
+        /// <param name="interfacePointer">Pointer to a pointer variable into which the method writes the address of an instance of the requested interface. </param>
+        [PreserveSig]
+        int GetService([In, MarshalAs(UnmanagedType.LPStruct)] Guid interfaceId, [Out, MarshalAs(UnmanagedType.IUnknown)] out object interfacePointer);
     }
 }

@@ -10,9 +10,9 @@
     <Grid Background="{StaticResource ApplicationPageBackgroundThemeBrush}">
         <TextBlock Style="{StaticResource PageHeaderTextStyle}" HorizontalAlignment="Left" Margin="34,34,0,0"  TextWrapping="Wrap" Text="NAudio Windows Store Demo" VerticalAlignment="Top"/>
         <TextBlock Style="{StaticResource BasicTextStyle}" HorizontalAlignment="Left" Margin="31,101,0,0" TextWrapping="Wrap" Text="Nothing to see here yet, please be patient while we enable Windows Store app support in NAudio" VerticalAlignment="Top"/>
-        <Button Content="Load" HorizontalAlignment="Left" Margin="281,175,0,0" VerticalAlignment="Top"/>
-        <Button Content="Play" HorizontalAlignment="Left" Margin="366,175,0,0" VerticalAlignment="Top"/>
-        <Button Content="Pause" HorizontalAlignment="Left" Margin="446,175,0,0" VerticalAlignment="Top"/>
-        <Button Content="Stop" HorizontalAlignment="Left" Margin="540,175,0,0" VerticalAlignment="Top"/>
+        <Button Content="Load" Command="{Binding LoadCommand}" HorizontalAlignment="Left" Margin="281,175,0,0" VerticalAlignment="Top" />
+        <Button Content="Play" Command="{Binding PlayCommand}" HorizontalAlignment="Left" Margin="366,175,0,0" VerticalAlignment="Top"/>
+        <Button Content="Pause" Command="{Binding PauseCommand}"  HorizontalAlignment="Left" Margin="446,175,0,0" VerticalAlignment="Top"/>
+        <Button Content="Stop" Command="{Binding StopCommand}" HorizontalAlignment="Left" Margin="540,175,0,0" VerticalAlignment="Top"/>
     </Grid>
 </Page>

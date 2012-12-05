@@ -738,9 +738,6 @@
     <Compile Include="..\NAudio\Wave\WaveOutputs\IWaveBuffer.cs">
       <Link>Wave\WaveOutputs\IWaveBuffer.cs</Link>
     </Compile>
-    <Compile Include="..\NAudio\Wave\WaveOutputs\IWavePlayer.cs">
-      <Link>Wave\WaveOutputs\IWavePlayer.cs</Link>
-    </Compile>
     <Compile Include="..\NAudio\Wave\WaveOutputs\IWaveProvider.cs">
       <Link>Wave\WaveOutputs\IWaveProvider.cs</Link>
     </Compile>
@@ -820,6 +817,8 @@
       <Link>Wave\WaveStreams\WaveStream.cs</Link>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Wave\WaveOutputs\IWavePlayer.cs" />
+    <Compile Include="Wave\WaveOutputs\WasapiOutRT.cs" />
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '11.0' ">
     <VisualStudioVersion>11.0</VisualStudioVersion>

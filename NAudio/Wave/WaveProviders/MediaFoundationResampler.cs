@@ -12,6 +12,15 @@ namespace NAudio.Wave
     {
         private int resamplerQuality;
 
+        private static bool IsPcmOrIeeeFloat(WaveFormat waveFormat)
+        {
+            var wfe = waveFormat as WaveFormatExtensible;
+            return waveFormat.Encoding == WaveFormatEncoding.Pcm ||
+                   waveFormat.Encoding == WaveFormatEncoding.IeeeFloat ||
+                   (wfe != null && (wfe.SubFormat == AudioSubtypes.MFAudioFormat_PCM
+                                    || wfe.SubFormat == AudioSubtypes.MFAudioFormat_Float));
+        }
+
         /// <summary>
         /// Creates the Media Foundation Resampler, allowing modifying of sample rate, bit depth and channel count
         /// </summary>
@@ -20,9 +29,9 @@ namespace NAudio.Wave
         public MediaFoundationResampler(IWaveProvider sourceProvider, WaveFormat outputFormat)
             : base(sourceProvider, outputFormat)
         {
-            if (sourceProvider.WaveFormat.Encoding != WaveFormatEncoding.Pcm && sourceProvider.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
+            if (!IsPcmOrIeeeFloat(sourceProvider.WaveFormat))
                 throw new ArgumentException("Input must be PCM or IEEE float", "sourceProvider");
-            if (outputFormat.Encoding != WaveFormatEncoding.Pcm && outputFormat.Encoding != WaveFormatEncoding.IeeeFloat)
+            if (!IsPcmOrIeeeFloat(outputFormat))
                 throw new ArgumentException("Output must be PCM or IEEE float", "outputFormat");
             MediaFoundationApi.Startup();
             ResamplerQuality = 60; // maximum quality

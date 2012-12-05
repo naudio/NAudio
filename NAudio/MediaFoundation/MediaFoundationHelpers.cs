@@ -49,10 +49,6 @@ namespace NAudio.MediaFoundation
             {
                 yield return i;
             }
-            foreach (var i in interfaces)
-            {
-                Marshal.ReleaseComObject(i);
-            }
             Marshal.FreeCoTaskMem(interfacesPointer);
         }
 

@@ -94,7 +94,6 @@ namespace NAudio.Win8.Wave.WaveOutputs
             IWaveProvider playbackProvider = this.sourceProvider;
             Exception exception = null;
 
-
             try
             {
                 if (this.resamplerNeeded)
@@ -203,7 +202,7 @@ namespace NAudio.Win8.Wave.WaveOutputs
                 if (playbackState == PlaybackState.Stopped)
                 {
                     playbackState = PlaybackState.Playing;
-                    PlayThread();
+                    Task.Run(() => PlayThread());
                 }
                 else
                 {

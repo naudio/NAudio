@@ -9,6 +9,7 @@ using NAudio.CoreAudioApi.Interfaces;
 using NAudio.MediaFoundation;
 using NAudio.Wave;
 using NAudio.Win8.Wave.WaveOutputs;
+using Windows.Storage;
 using Windows.Storage.Pickers;
 using Windows.Storage.Streams;
 
@@ -57,9 +58,12 @@ namespace NAudioWin8Demo
                 player.PlaybackStopped += PlayerOnPlaybackStopped;
                 await player.Init(reader);
             }
-            player.Play();
-            StopCommand.IsEnabled = true;
-            PauseCommand.IsEnabled = true;
+            if (player.PlaybackState != PlaybackState.Playing)
+            {
+                player.Play();
+                StopCommand.IsEnabled = true;
+                PauseCommand.IsEnabled = true;
+            }
         }
 
         private void PlayerOnPlaybackStopped(object sender, StoppedEventArgs stoppedEventArgs)
@@ -75,7 +79,7 @@ namespace NAudioWin8Demo
             picker.SuggestedStartLocation = PickerLocationId.MusicLibrary;
             picker.FileTypeFilter.Add("*");
             var file = await picker.PickSingleFileAsync();
-            var stream = await file.OpenReadAsync();
+            var stream = await file.OpenAsync(FileAccessMode.Read);//  .OpenReadAsync();
             if (stream == null) return;
             using (stream)
             {
@@ -96,6 +100,12 @@ namespace NAudioWin8Demo
     {
         public class MediaFoundationReaderRTSettings : MediaFoundationReaderSettings
         {
+            public MediaFoundationReaderRTSettings()
+            {
+                // can't recreate since we're using a file stream
+                this.SingleReaderObject = true;
+            }
+
             public IRandomAccessStream Stream { get; set; }
         }
 
@@ -114,7 +124,8 @@ namespace NAudioWin8Demo
 
         protected override IMFSourceReader CreateReader(MediaFoundationReaderSettings settings)
         {
-            var byteStream = MediaFoundationApi.CreateByteStream(((MediaFoundationReaderRTSettings)settings).Stream);
+            var fileStream = ((MediaFoundationReaderRTSettings) settings).Stream;
+            var byteStream = MediaFoundationApi.CreateByteStream(fileStream);
             var reader = MediaFoundationApi.CreateSourceReaderFromByteStream(byteStream);
             reader.SetStreamSelection(MediaFoundationInterop.MF_SOURCE_READER_ALL_STREAMS, false);
             reader.SetStreamSelection(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, true);

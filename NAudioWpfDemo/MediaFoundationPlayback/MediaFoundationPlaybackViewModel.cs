@@ -93,9 +93,9 @@ namespace NAudioWpfDemo.MediaFoundationPlayback
             bool isValid = false;
             try
             {
-                using (var reader = new MediaFoundationReader(file))
+                using (var tempReader = new MediaFoundationReader(file))
                 {
-                    DefaultDecompressionFormat = reader.WaveFormat.ToString();
+                    DefaultDecompressionFormat = tempReader.WaveFormat.ToString();
                     inputFile = file;
                     isValid = true;
                 }
@@ -168,6 +168,11 @@ namespace NAudioWpfDemo.MediaFoundationPlayback
 
         private void Load()
         {
+            if (reader != null)
+            {
+                reader.Dispose();
+                reader = null;
+            }
             SelectInputFile();
         }
 

@@ -109,6 +109,7 @@
     <Compile Include="WaveStreams\BlockAlignmentReductionStreamTests.cs" />
     <Compile Include="WaveStreams\CircularBufferTests.cs" />
     <Compile Include="WaveStreams\FadeInOutSampleProviderTests.cs" />
+    <Compile Include="WaveStreams\ChunkIdentifierTests.cs" />
     <Compile Include="WaveStreams\MonoToStereoProvider16Tests.cs" />
     <Compile Include="WaveStreams\MultiplexingSampleProviderTests.cs" />
     <Compile Include="WaveStreams\MultiplexingWaveProviderTests.cs" />

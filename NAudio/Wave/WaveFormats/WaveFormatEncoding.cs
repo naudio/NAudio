@@ -352,12 +352,60 @@ namespace NAudio.Wave
         WAVE_FORMAT_NORRIS = 0x1400, // Norris Communications, Inc. 
         /// <summary></summary>
         WAVE_FORMAT_SOUNDSPACE_MUSICOMPRESS = 0x1500, // AT&T Labs, Inc. 
+
+        /// <summary>
+        /// Advanced Audio Coding (AAC) audio in Audio Data Transport Stream (ADTS) format.
+        /// The format block is a WAVEFORMATEX structure with wFormatTag equal to WAVE_FORMAT_MPEG_ADTS_AAC.
+        /// </summary>
+        /// <remarks>
+        /// The WAVEFORMATEX structure specifies the core AAC-LC sample rate and number of channels, 
+        /// prior to applying spectral band replication (SBR) or parametric stereo (PS) tools, if present.
+        /// No additional data is required after the WAVEFORMATEX structure.
+        /// </remarks>
+        /// <see>http://msdn.microsoft.com/en-us/library/dd317599%28VS.85%29.aspx</see>
+        MPEG_ADTS_AAC = 0x1600,
+
         /// <summary></summary>
+        /// <remarks>Source wmCodec.h</remarks>
+        MPEG_RAW_AAC = 0x1601,
+
+        /// <summary>
+        /// MPEG-4 audio transport stream with a synchronization layer (LOAS) and a multiplex layer (LATM).
+        /// The format block is a WAVEFORMATEX structure with wFormatTag equal to WAVE_FORMAT_MPEG_LOAS.
+        /// </summary>
+        /// <remarks>
+        /// The WAVEFORMATEX structure specifies the core AAC-LC sample rate and number of channels, 
+        /// prior to applying spectral SBR or PS tools, if present.
+        /// No additional data is required after the WAVEFORMATEX structure.
+        /// </remarks>
+        /// <see>http://msdn.microsoft.com/en-us/library/dd317599%28VS.85%29.aspx</see>
+        MPEG_LOAS = 0x1602,
+
+        /// <summary>NOKIA_MPEG_ADTS_AAC</summary>
+        /// <remarks>Source wmCodec.h</remarks>
+        NOKIA_MPEG_ADTS_AAC = 0x1608,
+
+        /// <summary>NOKIA_MPEG_RAW_AAC</summary>
+        /// <remarks>Source wmCodec.h</remarks>
+        NOKIA_MPEG_RAW_AAC = 0x1609,
+
+        /// <summary>VODAFONE_MPEG_ADTS_AAC</summary>
+        /// <remarks>Source wmCodec.h</remarks>
+        VODAFONE_MPEG_ADTS_AAC = 0x160A,
+
+        /// <summary>VODAFONE_MPEG_RAW_AAC</summary>
+        /// <remarks>Source wmCodec.h</remarks>
+        VODAFONE_MPEG_RAW_AAC = 0x160B,
+
+        /// <summary>
+        /// High-Efficiency Advanced Audio Coding (HE-AAC) stream.
+        /// The format block is an HEAACWAVEFORMAT structure.
+        /// </summary>
+        /// <see>http://msdn.microsoft.com/en-us/library/dd317599%28VS.85%29.aspx</see>
+        MPEG_HEAAC = 0x1610,
+
+        /// <summary>WAVE_FORMAT_DVM</summary>
         WAVE_FORMAT_DVM = 0x2000, // FAST Multimedia AG 
-        /// <summary>WAVE_FORMAT_EXTENSIBLE</summary>
-        Extensible = 0xFFFE, // Microsoft 
-        /// <summary></summary>
-        WAVE_FORMAT_DEVELOPMENT = 0xFFFF,
 
         // others - not from MS headers
         /// <summary>WAVE_FORMAT_VORBIS1 "Og" Original stream compatible</summary>
@@ -378,5 +426,9 @@ namespace NAudio.Wave
         /// <summary>WAVE_FORMAT_VORBIS3P "qg" Have no codebook header</summary>
         Vorbis3P = 0x6771,
 
+        /// <summary>WAVE_FORMAT_EXTENSIBLE</summary>
+        Extensible = 0xFFFE, // Microsoft 
+        /// <summary></summary>
+        WAVE_FORMAT_DEVELOPMENT = 0xFFFF,
     }
 }

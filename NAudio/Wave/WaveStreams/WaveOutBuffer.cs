@@ -9,15 +9,15 @@ namespace NAudio.Wave
     /// </summary>
     class WaveOutBuffer : IDisposable
     {
-        private WaveHeader header;
-        private Int32 bufferSize; // allocated bytes, may not be the same as bytes read
-        private byte[] buffer;
+        private readonly WaveHeader header;
+        private readonly Int32 bufferSize; // allocated bytes, may not be the same as bytes read
+        private readonly byte[] buffer;
+        private readonly IWaveProvider waveStream;
+        private readonly object waveOutLock;
         private GCHandle hBuffer;
         private IntPtr hWaveOut;
         private GCHandle hHeader; // we need to pin the header structure
         private GCHandle hThis; // for the user callback
-        private IWaveProvider waveStream;
-        private object waveOutLock;
 
         /// <summary>
         /// creates a new wavebuffer
@@ -36,7 +36,7 @@ namespace NAudio.Wave
             this.waveOutLock = waveOutLock;
 
             header = new WaveHeader();
-            hHeader = GCHandle.Alloc(header);
+            hHeader = GCHandle.Alloc(header, GCHandleType.Pinned);
             header.dataBuffer = hBuffer.AddrOfPinnedObject();
             header.bufferLength = bufferSize;
             header.loops = 1;

@@ -9,9 +9,9 @@ namespace NAudio.Wave
     /// </summary>
     class WaveInBuffer : IDisposable
     {
-        private WaveHeader header;
-        private Int32 bufferSize; // allocated bytes, may not be the same as bytes read
-        private byte[] buffer;
+        private readonly WaveHeader header;
+        private readonly Int32 bufferSize; // allocated bytes, may not be the same as bytes read
+        private readonly byte[] buffer;
         private GCHandle hBuffer;
         private IntPtr waveInHandle;
         private GCHandle hHeader; // we need to pin the header structure
@@ -30,7 +30,7 @@ namespace NAudio.Wave
             this.waveInHandle = waveInHandle;
 
             header = new WaveHeader();
-            hHeader = GCHandle.Alloc(header);
+            hHeader = GCHandle.Alloc(header, GCHandleType.Pinned);
             header.dataBuffer = hBuffer.AddrOfPinnedObject();
             header.bufferLength = bufferSize;
             header.loops = 1;

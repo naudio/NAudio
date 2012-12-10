@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using System.Text.RegularExpressions;
+using NAudio.Utils;
 
 namespace NAudio.Wave
 {
@@ -163,7 +164,7 @@ namespace NAudio.Wave
             int labelLength = 0;
             int cueID = 0;
 
-            Int32 labelChunkID = WaveInterop.mmioStringToFOURCC("labl", 0);
+            Int32 labelChunkID = ChunkIdentifier.ChunkIdentifierToInt32("labl");
             for (int p = 4; listChunkData.Length - p >= 16; p += labelLength + labelLength % 2 + 12)
             {
                 if (BitConverter.ToInt32(listChunkData, p) == labelChunkID)
@@ -203,11 +204,11 @@ namespace NAudio.Wave
                 }
 
                 byte[] chunks = new byte[cueChunkLength + listChunkLength];
-                Int32 cueChunkID = WaveInterop.mmioStringToFOURCC("cue ", 0);
-                Int32 dataChunkID = WaveInterop.mmioStringToFOURCC("data", 0);
-                Int32 listChunkID = WaveInterop.mmioStringToFOURCC("LIST", 0);
-                Int32 adtlTypeID = WaveInterop.mmioStringToFOURCC("adtl", 0);
-                Int32 labelChunkID = WaveInterop.mmioStringToFOURCC("labl", 0);
+                Int32 cueChunkID = ChunkIdentifier.ChunkIdentifierToInt32("cue ");
+                Int32 dataChunkID = ChunkIdentifier.ChunkIdentifierToInt32("data");
+                Int32 listChunkID = ChunkIdentifier.ChunkIdentifierToInt32("LIST");
+                Int32 adtlTypeID = ChunkIdentifier.ChunkIdentifierToInt32("adtl");
+                Int32 labelChunkID = ChunkIdentifier.ChunkIdentifierToInt32("labl");
 
                 using (MemoryStream stream = new MemoryStream(chunks))
                 {

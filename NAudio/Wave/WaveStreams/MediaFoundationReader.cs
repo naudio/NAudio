@@ -136,8 +136,17 @@ namespace NAudio.Wave
         {
             PropVariant variant;
             // http://msdn.microsoft.com/en-gb/library/windows/desktop/dd389281%28v=vs.85%29.aspx#getting_file_duration
-            reader.GetPresentationAttribute(MediaFoundationInterop.MF_SOURCE_READER_MEDIASOURCE,
+            int hResult = reader.GetPresentationAttribute(MediaFoundationInterop.MF_SOURCE_READER_MEDIASOURCE,
                 MediaFoundationAttributes.MF_PD_DURATION, out variant);
+            if (hResult == MediaFoundationErrors.MF_E_ATTRIBUTENOTFOUND)
+            {
+                // this doesn't support telling us its duration (might be streaming)
+                return 0;
+            }
+            if (hResult != 0)
+            {
+                Marshal.ThrowExceptionForHR(hResult);
+            }
             var lengthInBytes = (((long)variant.Value) * waveFormat.AverageBytesPerSecond) / 10000000L;
             variant.Clear();
             return lengthInBytes;

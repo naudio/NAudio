@@ -54,6 +54,7 @@ namespace NAudio.MediaFoundation
         /// <summary>
         /// Gets an attribute from the underlying media source.
         /// </summary>
-        void GetPresentationAttribute([In] int dwStreamIndex, [In, MarshalAs(UnmanagedType.LPStruct)] Guid guidAttribute, [Out] out PropVariant pvarAttribute);
+        [PreserveSig]
+        int GetPresentationAttribute([In] int dwStreamIndex, [In, MarshalAs(UnmanagedType.LPStruct)] Guid guidAttribute, [Out] out PropVariant pvarAttribute);
     }
 }

@@ -1,0 +1,28 @@
+﻿<UserControl x:Class="NAudioWpfDemo.MediaFoundationPlayback.MediaFoundationPlaybackView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="500">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="263*"/>
+        </Grid.RowDefinitions>
+        <TextBlock HorizontalAlignment="Left" Margin="10,10,0,0" TextWrapping="Wrap" Text="Demonstrates the use of the MediaFoundationReader for playback, repositioning. Currently a work in progress" VerticalAlignment="Top" />
+        <Button Grid.Row="1" Content="..." Command="{Binding LoadCommand}" Margin="0,10.08,10,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="34" />
+        <Button Grid.Row="1" Content="Play" Command="{Binding PlayCommand}" HorizontalAlignment="Left" Margin="11,73.08,0,0" VerticalAlignment="Top" Width="75" />
+        <Button Grid.Row="1" Content="Pause" Command="{Binding PauseCommand}" HorizontalAlignment="Left" Margin="91,73.08,0,0" VerticalAlignment="Top" Width="75" />
+        <Button Grid.Row="1" Content="Stop" Command="{Binding StopCommand}" HorizontalAlignment="Left" Margin="171,73.08,0,0" VerticalAlignment="Top" Width="75" />
+        <Label Grid.Row="1" Content="Default PCM decompression format:" HorizontalAlignment="Left" Margin="11,34.08,0,0" VerticalAlignment="Top" />
+        <Label Grid.Row="1" Content="{Binding DefaultDecompressionFormat}" HorizontalAlignment="Left" Margin="211,34.08,0,0" VerticalAlignment="Top" />
+        <Canvas Grid.Row="1" Name="waveFormCanvas" Background="Black" HorizontalAlignment="Left" Height="48" Margin="11,127.08,0,0" VerticalAlignment="Top" Width="480"  />
+
+        <Slider Grid.Row="1" Margin="11,100.08,19,0" VerticalAlignment="Top" Value="{Binding SliderPosition, Mode=TwoWay}"  />
+        <CheckBox Grid.Row="1" IsEnabled="{Binding IsStopped}" Content="Request IEEE Float" IsChecked="{Binding RequestFloatOutput, Mode=TwoWay}" HorizontalAlignment="Left" Margin="367,76.08,0,0" VerticalAlignment="Top" />
+        <TextBlock HorizontalAlignment="Left" Margin="11,11.08,0,0" Grid.Row="1" TextWrapping="Wrap" Text="Selected File or URL:" VerticalAlignment="Top"/>
+        <ComboBox Text="{Binding InputPath, Mode=TwoWay}" ItemsSource="{Binding InputPathHistory}" Margin="126,10.08,49,0" Grid.Row="1" VerticalAlignment="Top" IsEditable="True"/>
+
+    </Grid>
+</UserControl>

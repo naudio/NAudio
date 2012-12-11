@@ -1,0 +1,150 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Input;
+using NAudio.CoreAudioApi;
+using NAudio.CoreAudioApi.Interfaces;
+using NAudio.MediaFoundation;
+using NAudio.Wave;
+using NAudio.Win8.Wave.WaveOutputs;
+using Windows.Storage;
+using Windows.Storage.Pickers;
+using Windows.Storage.Streams;
+using Windows.UI.Xaml.Controls;
+
+namespace NAudioWin8Demo
+{
+    class MainPageViewModel : ViewModelBase
+    {
+        private IWavePlayer player;
+        private WaveStream reader;
+
+        public MainPageViewModel()
+        {
+            LoadCommand = new DelegateCommand(Load);
+            PlayCommand = new DelegateCommand(Play) { IsEnabled = false };
+            PauseCommand = new DelegateCommand(Pause) { IsEnabled = false };
+            StopCommand = new DelegateCommand(Stop) { IsEnabled = false };
+        }
+
+        private void Stop()
+        {
+            if (player != null)
+            {
+                player.Stop();
+            }
+        }
+
+        private void Pause()
+        {
+            if (player != null)
+            {
+                player.Pause();
+            }
+        }
+
+        private async void Play()
+        {
+            if (reader == null)
+            {
+                return;
+            }
+            if (player == null)
+            {
+                // Exclusive mode - fails with a weird buffer alignment error
+
+                //player = new MediaElementOut(MediaElement);
+                player = new WasapiOutRT(AudioClientShareMode.Shared, 200);
+                player.PlaybackStopped += PlayerOnPlaybackStopped;
+                await player.Init(reader);
+            }
+            if (player.PlaybackState != PlaybackState.Playing)
+            {
+                player.Play();
+                StopCommand.IsEnabled = true;
+                PauseCommand.IsEnabled = true;
+            }
+        }
+
+        private void PlayerOnPlaybackStopped(object sender, StoppedEventArgs stoppedEventArgs)
+        {
+            LoadCommand.IsEnabled = true;
+            StopCommand.IsEnabled = false;
+            PauseCommand.IsEnabled = false;
+        }
+
+        private async void Load()
+        {
+            var picker = new FileOpenPicker();
+            picker.SuggestedStartLocation = PickerLocationId.MusicLibrary;
+            picker.FileTypeFilter.Add("*");
+            var file = await picker.PickSingleFileAsync();
+            var stream = await file.OpenAsync(FileAccessMode.Read);//  .OpenReadAsync();
+            if (stream == null) return;
+            using (stream)
+            {
+                // trying to get thre reader created on an MTA Thread
+                await Task.Run(() => reader = new MediaFoundationReaderRT(stream));
+                
+                PlayCommand.IsEnabled = true;
+            }
+        }
+
+        public DelegateCommand LoadCommand { get; private set; }
+        public DelegateCommand PlayCommand { get; private set; }
+        public DelegateCommand PauseCommand { get; private set; }
+        public DelegateCommand StopCommand { get; private set; }
+
+        public MediaElement MediaElement { get; set; }
+    }
+
+    // Slightly hacky approach to supporting a different WinRT constructor
+    class MediaFoundationReaderRT : MediaFoundationReader
+    {
+        public class MediaFoundationReaderRTSettings : MediaFoundationReaderSettings
+        {
+            public MediaFoundationReaderRTSettings()
+            {
+                // can't recreate since we're using a file stream
+                this.SingleReaderObject = true;
+            }
+
+            public IRandomAccessStream Stream { get; set; }
+        }
+
+        public MediaFoundationReaderRT(IRandomAccessStream stream)
+            : this(new MediaFoundationReaderRTSettings() {Stream = stream})
+        {
+            
+        }
+        
+
+        public MediaFoundationReaderRT(MediaFoundationReaderRTSettings settings)
+            : base(null, settings)
+        {
+            
+        }
+
+        protected override IMFSourceReader CreateReader(MediaFoundationReaderSettings settings)
+        {
+            var fileStream = ((MediaFoundationReaderRTSettings) settings).Stream;
+            var byteStream = MediaFoundationApi.CreateByteStream(fileStream);
+            var reader = MediaFoundationApi.CreateSourceReaderFromByteStream(byteStream);
+            reader.SetStreamSelection(MediaFoundationInterop.MF_SOURCE_READER_ALL_STREAMS, false);
+            reader.SetStreamSelection(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, true);
+
+            // Create a partial media type indicating that we want uncompressed PCM audio
+
+            var partialMediaType = new MediaType();
+            partialMediaType.MajorType = MediaTypes.MFMediaType_Audio;
+            partialMediaType.SubType = settings.RequestFloatOutput ? AudioSubtypes.MFAudioFormat_Float : AudioSubtypes.MFAudioFormat_PCM;
+
+            // set the media type
+            // can return MF_E_INVALIDMEDIATYPE if not supported
+            reader.SetCurrentMediaType(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, IntPtr.Zero, partialMediaType.MediaFoundationObject);
+            return reader;
+        }
+    }
+}

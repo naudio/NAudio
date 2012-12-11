@@ -1,0 +1,31 @@
+﻿<UserControl x:Class="NAudioWpfDemo.MediaFoundationResample.MediaFoundationResampleView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="500">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"></RowDefinition>
+            <RowDefinition Height ="*"></RowDefinition>
+        </Grid.RowDefinitions>
+        <TextBlock Margin="5" Text="For testing the MediaFoundationResampler class. Select any file that Media Foundation can play, and then click Resample to create a WAV file at the desired sample rate. The Media Foundation Resampler also supports changing bit depth and channel count." TextWrapping="Wrap" VerticalAlignment="Top"/>
+
+        <Label Grid.Row="1" Content="Input File:" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
+        <TextBox Grid.Row="1" Height="23" Margin="137,10.12,43,0" TextWrapping="Wrap" Text="{Binding InputFile}" VerticalAlignment="Top" IsReadOnly="True"/>
+        <Button Grid.Row="1" Content="..." Command="{Binding SelectInputFileCommand}" Margin="0,10,10,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="28"/>
+
+        <Label Grid.Row="1" Content="Output Sample Rate:" HorizontalAlignment="Left" Margin="10,72.12,0,0" VerticalAlignment="Top"/>
+        <ComboBox Grid.Row="1" ItemsSource="{Binding SampleRates}" SelectedItem="{Binding SampleRate, Mode=TwoWay}" HorizontalAlignment="Left" Margin="137,72.12,0,0" VerticalAlignment="Top" Width="120"/>
+
+        <Button Grid.Row="1" Content="Resample" Command="{Binding ResampleCommand}" HorizontalAlignment="Left" Margin="10,165.12,0,0" VerticalAlignment="Top" Width="75"/>
+        <Label Grid.Row="1" Content="Input File Format:" HorizontalAlignment="Left" Margin="10,41.12,0,0" VerticalAlignment="Top"/>
+        <Label Grid.Row="1" Content="{Binding InputFileFormat}" HorizontalAlignment="Left" Margin="118,41.12,0,0" VerticalAlignment="Top"/>
+        <Label Content="Bit Depth:" HorizontalAlignment="Left" Margin="10,103.12,0,0" Grid.Row="1" VerticalAlignment="Top"/>
+        <ComboBox ItemsSource="{Binding BitDepths}" SelectedIndex="{Binding SelectedBitDepthIndex, Mode=TwoWay}" HorizontalAlignment="Left" Margin="137,103.12,0,0" Grid.Row="1" VerticalAlignment="Top" Width="120"/>
+        <Label Content="Channel Count:" HorizontalAlignment="Left" Margin="10,134.12,0,0" Grid.Row="1" VerticalAlignment="Top"/>
+        <ComboBox ItemsSource="{Binding ChannelCounts}" SelectedIndex="{Binding SelectedChannelCountIndex, Mode=TwoWay}" HorizontalAlignment="Left" Margin="137,134.12,0,0" Grid.Row="1" VerticalAlignment="Top" Width="120"/>
+        <Button Content="Reposition Test" Command="{Binding RepositionTestCommand}" HorizontalAlignment="Left" Margin="10,210.12,0,0" Grid.Row="1" VerticalAlignment="Top" Width="103" />
+    </Grid>
+</UserControl>

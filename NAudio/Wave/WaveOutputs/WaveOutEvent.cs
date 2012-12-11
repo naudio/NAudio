@@ -12,13 +12,13 @@ namespace NAudio.Wave
     /// </summary>
     public class WaveOutEvent : IWavePlayer
     {
+        private readonly object waveOutLock;
+        private readonly SynchronizationContext syncContext;
         private IntPtr hWaveOut; // WaveOut handle
         private WaveOutBuffer[] buffers;
         private IWaveProvider waveStream;
         private volatile PlaybackState playbackState;
         private AutoResetEvent callbackEvent;
-        private object waveOutLock;
-        private SynchronizationContext syncContext;
 
         /// <summary>
         /// Indicates playback has stopped automatically
@@ -56,7 +56,6 @@ namespace NAudio.Wave
             this.NumberOfBuffers = 2;
 
             this.waveOutLock = new object();
-            this.callbackEvent = new AutoResetEvent(false);
         }
 
         /// <summary>
@@ -65,6 +64,21 @@ namespace NAudio.Wave
         /// <param name="waveProvider">WaveProvider to play</param>
         public void Init(IWaveProvider waveProvider)
         {
+            if (playbackState != PlaybackState.Stopped)
+            {
+                throw new InvalidOperationException("Can't re-initialize during playback");
+            }
+            if (hWaveOut != IntPtr.Zero)
+            {
+                // normally we don't allow calling Init twice, but as experiment, see if we can clean up and go again
+                // try to allow reuse of this waveOut device
+                // n.b. risky if Playback thread has not exited
+                DisposeBuffers();
+                CloseWaveOut();
+            }
+
+            this.callbackEvent = new AutoResetEvent(false);
+
             this.waveStream = waveProvider;
             int bufferSize = waveProvider.WaveFormat.ConvertLatencyToByteSize((DesiredLatency + NumberOfBuffers - 1) / NumberOfBuffers);            
 
@@ -88,6 +102,10 @@ namespace NAudio.Wave
         /// </summary>
         public void Play()
         {
+            if (this.buffers == null || this.waveStream == null)
+            {
+                throw new InvalidOperationException("Must call Init first");
+            }
             if (playbackState == PlaybackState.Stopped)
             {
                 playbackState = PlaybackState.Playing;
@@ -121,9 +139,6 @@ namespace NAudio.Wave
 
         private void DoPlayback()
         {
-            if (this.buffers == null || this.waveStream == null)
-                return;
-
             TimeSpan waitTime = TimeSpan.FromSeconds((double)this.buffers[0].BufferSize / (this.waveStream.WaveFormat.AverageBytesPerSecond * 2));
             while (playbackState != PlaybackState.Stopped)
             {
@@ -256,6 +271,11 @@ namespace NAudio.Wave
                 DisposeBuffers();
             }
 
+            CloseWaveOut();
+        }
+
+        private void CloseWaveOut()
+        {
             callbackEvent.Close();
             lock (waveOutLock)
             {

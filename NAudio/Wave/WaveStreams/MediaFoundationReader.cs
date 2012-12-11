@@ -58,7 +58,7 @@ namespace NAudio.Wave
         /// <summary>
         /// Creates a new MediaFoundationReader based on the supplied file
         /// </summary>
-        /// <param name="file">Filename</param>
+        /// <param name="file">Filename (can also be a URL  e.g. http:// mms:// file://)</param>
         public MediaFoundationReader(string file)
             : this(file, new MediaFoundationReaderSettings())
         {
@@ -115,9 +115,8 @@ namespace NAudio.Wave
         /// </summary>
         protected virtual IMFSourceReader CreateReader(MediaFoundationReaderSettings settings)
         {
-            var uri = new Uri(file);
             IMFSourceReader reader;
-            MediaFoundationInterop.MFCreateSourceReaderFromURL(uri.AbsoluteUri, null, out reader);
+            MediaFoundationInterop.MFCreateSourceReaderFromURL(file, null, out reader);
             reader.SetStreamSelection(MediaFoundationInterop.MF_SOURCE_READER_ALL_STREAMS, false);
             reader.SetStreamSelection(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, true);
 

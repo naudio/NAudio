@@ -164,7 +164,7 @@ namespace NAudio.Wave
             }
             set
             {
-                clip = false;
+                clip = value;
             }
         }
 

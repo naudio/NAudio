@@ -119,7 +119,7 @@ namespace NAudio.WindowsMediaFormat
         {
             if (m_Position < m_Length)
             {
-                IntPtr src = (IntPtr)(m_BufferPtr.ToInt32() + m_Position);
+                IntPtr src = (IntPtr)(m_BufferPtr.ToInt64() + m_Position);
                 int ToCopy = Math.Min(count, (int)(this.Length - this.Position));
                 Marshal.Copy(src, buffer, offset, ToCopy);
                 m_Position += (uint)ToCopy;
@@ -152,7 +152,7 @@ namespace NAudio.WindowsMediaFormat
             {
                 throw new ArgumentOutOfRangeException("count");
             }
-            IntPtr dest = (IntPtr)(m_BufferPtr.ToInt32() + m_Position);
+            IntPtr dest = (IntPtr)(m_BufferPtr.ToInt64() + m_Position);
             Marshal.Copy(buffer, offset, dest, count);
             m_Position += (uint)count;
         }

@@ -95,12 +95,15 @@ namespace NAudio.Wave
         {
             var icbh = new ActivateAudioInterfaceCompletionHandler(
                 ac2 =>
-                {
-                    /*var wfx = new WaveFormat(44100, 16, 2);
-                int hr = ac2.Initialize(AudioClientShareMode.Shared,
-                               AudioClientStreamFlags.EventCallback | AudioClientStreamFlags.NoPersist,
-                               10000000, 0, wfx, IntPtr.Zero);*/
-                });
+                    {
+                        InitializeCaptureDevice((IAudioClient)ac2);
+                        /*var wfx = new WaveFormat(44100, 16, 2);
+                    int hr = ac2.Initialize(AudioClientShareMode.Shared,
+                                AudioClientStreamFlags.None, 
+                                //AudioClientStreamFlags.EventCallback | AudioClientStreamFlags.NoPersist,
+                                10000000, 0, wfx, IntPtr.Zero);
+                    Marshal.ThrowExceptionForHR(hr);*/
+                    });
             var IID_IAudioClient2 = new Guid("726778CD-F60A-4eda-82DE-E47610CD78AA");
             IActivateAudioInterfaceAsyncOperation activationOperation;
             NativeMethods.ActivateAudioInterfaceAsync(device, IID_IAudioClient2, IntPtr.Zero, icbh, out activationOperation);
@@ -108,13 +111,17 @@ namespace NAudio.Wave
             return new AudioClient((IAudioClient)audioClient2);
         }
 
-        private void InitializeCaptureDevice(AudioClient audioClient)
+        private void InitializeCaptureDevice(IAudioClient audioClientInterface)
         {
+            var audioClient = new AudioClient((IAudioClient)audioClientInterface);
+            this.waveFormat = audioClient.MixFormat;
+
             if (initialized)
                 return;
 
             long requestedDuration = REFTIMES_PER_MILLISEC * 100;
 
+            
             if (!audioClient.IsFormatSupported(AudioClientShareMode.Shared, WaveFormat))
             {
                 throw new ArgumentException("Unsupported Wave Format");
@@ -148,20 +155,21 @@ namespace NAudio.Wave
         /// <summary>
         /// Start Recording
         /// </summary>
-        public void StartRecording()
+        public async void StartRecording()
         {
+            this.stop = false;
+            var audioClient = await Activate();
+            Task.Run(() => CaptureThread(audioClient));
             
-            Task.Run(
+            /*Task.Run(
                 async () =>
                     {
                         var audioClient = await Activate();
-                        this.waveFormat = audioClient.MixFormat;
-                        InitializeCaptureDevice(audioClient);
+                        //InitializeCaptureDevice(audioClient); - now done in the activate callback
                         CaptureThread(audioClient);
-                    });
+                    });*/
 
             Debug.WriteLine("Thread starting...");
-            this.stop = false;
 
         }
 

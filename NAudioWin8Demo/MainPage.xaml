@@ -16,6 +16,8 @@
         <Button Content="Stop" Command="{Binding StopCommand}" HorizontalAlignment="Left" Margin="540,175,0,0" VerticalAlignment="Top"/>
         
         <!-- for experimental media element out -->
-        <MediaElement Name="me"></MediaElement>
+        <MediaElement Name="me" Margin="51,31,-51,-31"></MediaElement>
+        <Button Content="Record" Command="{Binding RecordCommand}" HorizontalAlignment="Left" Margin="366,319,0,0" VerticalAlignment="Top"/>
+        <Button Content="Stop" Command="{Binding StopRecordingCommand}" HorizontalAlignment="Left" Margin="454,319,0,0" VerticalAlignment="Top"/>
     </Grid>
 </Page>

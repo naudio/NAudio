@@ -33,7 +33,7 @@ namespace NAudio.Win8.Wave.WaveOutputs
         private bool resamplerNeeded;
         private IntPtr frameEventWaitHandle;
         private SynchronizationContext syncContext;
-        
+
         /// <summary>
         /// Playback Stopped
         /// </summary>
@@ -70,22 +70,21 @@ namespace NAudio.Win8.Wave.WaveOutputs
                 ac2 =>
                     {
                         /*var wfx = new WaveFormat(44100, 16, 2);
-                        int hr = ac2.Initialize(AudioClientShareMode.Shared,
-                                       AudioClientStreamFlags.EventCallback | AudioClientStreamFlags.NoPersist,
-                                       10000000, 0, wfx, IntPtr.Zero);*/
+                    int hr = ac2.Initialize(AudioClientShareMode.Shared,
+                                   AudioClientStreamFlags.EventCallback | AudioClientStreamFlags.NoPersist,
+                                   10000000, 0, wfx, IntPtr.Zero);*/
                     });
             var IID_IAudioClient2 = new Guid("726778CD-F60A-4eda-82DE-E47610CD78AA");
             IActivateAudioInterfaceAsyncOperation activationOperation;
-            ActivateAudioInterfaceAsync(device, IID_IAudioClient2, IntPtr.Zero, icbh, out activationOperation);
+            NativeMethods.ActivateAudioInterfaceAsync(device, IID_IAudioClient2, IntPtr.Zero, icbh, out activationOperation);
             var audioClient2 = await icbh;
-            this.audioClient = new AudioClient((IAudioClient)audioClient2);
-
+            this.audioClient = new AudioClient((IAudioClient) audioClient2);
         }
 
-        static string GetDefaultAudioEndpoint()
+        private static string GetDefaultAudioEndpoint()
         {
             // can't use the MMDeviceEnumerator in WinRT
-            
+
             return MediaDevice.GetDefaultAudioRenderId(AudioDeviceRole.Default);
         }
 
@@ -105,8 +104,8 @@ namespace NAudio.Win8.Wave.WaveOutputs
 
                 // fill a whole buffer
                 bufferFrameCount = audioClient.BufferSize;
-                bytesPerFrame = outputFormat.Channels * outputFormat.BitsPerSample / 8;
-                readBuffer = new byte[bufferFrameCount * bytesPerFrame];
+                bytesPerFrame = outputFormat.Channels*outputFormat.BitsPerSample/8;
+                readBuffer = new byte[bufferFrameCount*bytesPerFrame];
                 FillBuffer(playbackProvider, bufferFrameCount);
 
                 audioClient.Start();
@@ -115,7 +114,7 @@ namespace NAudio.Win8.Wave.WaveOutputs
                 {
                     // If using Event Sync, Wait for notification from AudioClient or Sleep half latency
                     int timeout = 3*latencyMilliseconds;
-                    var r = WaitForSingleObjectEx(frameEventWaitHandle, timeout, true);
+                    var r = NativeMethods.WaitForSingleObjectEx(frameEventWaitHandle, timeout, true);
                     if (r != 0) throw new InvalidOperationException("Timed out waiting for event");
                     // If still playing and notification is ok
                     if (playbackState == PlaybackState.Playing)
@@ -176,14 +175,14 @@ namespace NAudio.Win8.Wave.WaveOutputs
         private void FillBuffer(IWaveProvider playbackProvider, int frameCount)
         {
             IntPtr buffer = renderClient.GetBuffer(frameCount);
-            int readLength = frameCount * bytesPerFrame;
+            int readLength = frameCount*bytesPerFrame;
             int read = playbackProvider.Read(readBuffer, 0, readLength);
             if (read == 0)
             {
                 playbackState = PlaybackState.Stopped;
             }
-            Marshal.Copy(readBuffer,0,buffer,read);
-            int actualFrameCount = read / bytesPerFrame;
+            Marshal.Copy(readBuffer, 0, buffer, read);
+            int actualFrameCount = read/bytesPerFrame;
             /*if (actualFrameCount != frameCount)
             {
                 Debug.WriteLine(String.Format("WASAPI wanted {0} frames, supplied {1}", frameCount, actualFrameCount ));
@@ -232,7 +231,7 @@ namespace NAudio.Win8.Wave.WaveOutputs
             {
                 playbackState = PlaybackState.Paused;
             }
-            
+
         }
 
         /// <summary>
@@ -242,7 +241,7 @@ namespace NAudio.Win8.Wave.WaveOutputs
         public async Task Init(IWaveProvider waveProvider)
         {
             await Activate();
-            long latencyRefTimes = latencyMilliseconds * 10000;
+            long latencyRefTimes = latencyMilliseconds*10000;
             outputFormat = waveProvider.WaveFormat;
             // first attempt uses the WaveFormat from the WaveStream
             WaveFormatExtensible closestSampleRateFormat;
@@ -255,30 +254,31 @@ namespace NAudio.Win8.Wave.WaveOutputs
                 if (closestSampleRateFormat == null)
                 {
                     WaveFormat correctSampleRateFormat = audioClient.MixFormat;
-                        /*WaveFormat.CreateIeeeFloatWaveFormat(
-                        audioClient.MixFormat.SampleRate,
-                        audioClient.MixFormat.Channels);*/
+                    /*WaveFormat.CreateIeeeFloatWaveFormat(
+                    audioClient.MixFormat.SampleRate,
+                    audioClient.MixFormat.Channels);*/
 
                     if (!audioClient.IsFormatSupported(shareMode, correctSampleRateFormat))
                     {
                         // Iterate from Worst to Best Format
-                        WaveFormatExtensible[] bestToWorstFormats = {
-                                  new WaveFormatExtensible(
-                                      outputFormat.SampleRate, 32,
-                                      outputFormat.Channels),
-                                  new WaveFormatExtensible(
-                                      outputFormat.SampleRate, 24,
-                                      outputFormat.Channels),
-                                  new WaveFormatExtensible(
-                                      outputFormat.SampleRate, 16,
-                                      outputFormat.Channels),
-                              };
+                        WaveFormatExtensible[] bestToWorstFormats =
+                            {
+                                new WaveFormatExtensible(
+                                    outputFormat.SampleRate, 32,
+                                    outputFormat.Channels),
+                                new WaveFormatExtensible(
+                                    outputFormat.SampleRate, 24,
+                                    outputFormat.Channels),
+                                new WaveFormatExtensible(
+                                    outputFormat.SampleRate, 16,
+                                    outputFormat.Channels),
+                            };
 
                         // Check from best Format to worst format ( Float32, Int24, Int16 )
-                        for (int i = 0; i < bestToWorstFormats.Length; i++ )
+                        for (int i = 0; i < bestToWorstFormats.Length; i++)
                         {
                             correctSampleRateFormat = bestToWorstFormats[i];
-                            if ( audioClient.IsFormatSupported(shareMode, correctSampleRateFormat) )
+                            if (audioClient.IsFormatSupported(shareMode, correctSampleRateFormat))
                             {
                                 break;
                             }
@@ -320,20 +320,20 @@ namespace NAudio.Win8.Wave.WaveOutputs
             {
                 // With EventCallBack and Shared, 
                 audioClient.Initialize(shareMode, AudioClientStreamFlags.EventCallback, latencyRefTimes, 0,
-                    outputFormat, Guid.Empty);
+                                       outputFormat, Guid.Empty);
 
                 // Get back the effective latency from AudioClient
-                latencyMilliseconds = (int)(audioClient.StreamLatency / 10000);
+                latencyMilliseconds = (int) (audioClient.StreamLatency/10000);
             }
             else
             {
                 // With EventCallBack and Exclusive, both latencies must equals
                 audioClient.Initialize(shareMode, AudioClientStreamFlags.EventCallback, latencyRefTimes, latencyRefTimes,
-                                    outputFormat, Guid.Empty);
+                                       outputFormat, Guid.Empty);
             }
 
             // Create the Wait Event Handle
-            frameEventWaitHandle = CreateEventEx(IntPtr.Zero, IntPtr.Zero, 0, EventAccess.EVENT_ALL_ACCESS);
+            frameEventWaitHandle = NativeMethods.CreateEventEx(IntPtr.Zero, IntPtr.Zero, 0, EventAccess.EVENT_ALL_ACCESS);
             audioClient.SetEventHandle(frameEventWaitHandle);
 
             // Get the RenderClient
@@ -346,24 +346,6 @@ namespace NAudio.Win8.Wave.WaveOutputs
         public PlaybackState PlaybackState
         {
             get { return playbackState; }
-        }
-
-        /// <summary>
-        /// Volume
-        /// </summary>
-        public float Volume
-        {
-            get
-            {
-                return 1.0f;
-            }
-            set
-            {
-                if (value != 1.0f)
-                {
-                    throw new NotImplementedException();
-                }
-            }
         }
 
         #endregion
@@ -382,16 +364,25 @@ namespace NAudio.Win8.Wave.WaveOutputs
                 audioClient.Dispose();
                 audioClient = null;
                 renderClient = null;
-                CloseHandle(frameEventWaitHandle);
+                NativeMethods.CloseHandle(frameEventWaitHandle);
             }
 
         }
 
         #endregion
 
-        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, ExactSpelling = false, PreserveSig = true, SetLastError = true)]
+
+    }
+
+    /// <summary>
+    /// Come useful native methods for Windows 8 support
+    /// </summary>
+    class NativeMethods
+    {
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, ExactSpelling = false, PreserveSig = true,
+    SetLastError = true)]
         internal static extern IntPtr CreateEventEx(IntPtr lpEventAttributes, IntPtr lpName, int dwFlags,
-                                                  EventAccess dwDesiredAccess);
+                                                    EventAccess dwDesiredAccess);
 
 
         [DllImport("kernel32.dll", ExactSpelling = true, PreserveSig = true, SetLastError = true)]
@@ -400,12 +391,21 @@ namespace NAudio.Win8.Wave.WaveOutputs
         [DllImport("kernel32", ExactSpelling = true, PreserveSig = true, SetLastError = true)]
         public static extern int WaitForSingleObjectEx(IntPtr hEvent, int milliseconds, bool bAlertable);
 
+        /// <summary>
+        /// Enables Windows Store apps to access preexisting Component Object Model (COM) interfaces in the WASAPI family.
+        /// </summary>
+        /// <param name="deviceInterfacePath">A device interface ID for an audio device. This is normally retrieved from a DeviceInformation object or one of the methods of the MediaDevice class.</param>
+        /// <param name="riid">The IID of a COM interface in the WASAPI family, such as IAudioClient.</param>
+        /// <param name="activationParams">Interface-specific activation parameters. For more information, see the pActivationParams parameter in IMMDevice::Activate. </param>
+        /// <param name="completionHandler"></param>
+        /// <param name="activationOperation"></param>
         [DllImport("Mmdevapi.dll", ExactSpelling = true, PreserveSig = false)]
-        public static extern void ActivateAudioInterfaceAsync([MarshalAs(UnmanagedType.LPWStr)] string deviceInterfacePath,
-           [MarshalAs(UnmanagedType.LPStruct)] Guid riid,
-           IntPtr activationParams,
-    IActivateAudioInterfaceCompletionHandler completionHandler,
-           out IActivateAudioInterfaceAsyncOperation activationOperation);
+        public static extern void ActivateAudioInterfaceAsync(
+            [In, MarshalAs(UnmanagedType.LPWStr)] string deviceInterfacePath,
+            [In, MarshalAs(UnmanagedType.LPStruct)] Guid riid,
+            [In] IntPtr activationParams, // n.b. is actually a pointer to a PropVariant, but we never need to pass anything but null
+            [In] IActivateAudioInterfaceCompletionHandler completionHandler,
+            out IActivateAudioInterfaceAsyncOperation activationOperation);
     }
 
     // trying some ideas from Lucian Wischik (ljw1004):
@@ -466,23 +466,23 @@ namespace NAudio.Win8.Wave.WaveOutputs
         }
     }
 
-        [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("41D949AB-9862-444A-80F6-C261334DA5EB")]
-        public interface IActivateAudioInterfaceCompletionHandler
-        {
-            //virtual HRESULT STDMETHODCALLTYPE ActivateCompleted(/*[in]*/ _In_  
-            //   IActivateAudioInterfaceAsyncOperation *activateOperation) = 0;
-            void ActivateCompleted(IActivateAudioInterfaceAsyncOperation activateOperation);
-        }
-        
-    
-        [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("72A22D78-CDE4-431D-B8CC-843A71199B6D")]
-        public interface IActivateAudioInterfaceAsyncOperation
-        {
-            //virtual HRESULT STDMETHODCALLTYPE GetActivateResult(/*[out]*/ _Out_  
-            //  HRESULT *activateResult, /*[out]*/ _Outptr_result_maybenull_  IUnknown **activatedInterface) = 0;
-            void GetActivateResult([Out] out int activateResult, 
-                [Out, MarshalAs(UnmanagedType.IUnknown)] out object activateInterface);
-        }
+    [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("41D949AB-9862-444A-80F6-C261334DA5EB")]
+    public interface IActivateAudioInterfaceCompletionHandler
+    {
+        //virtual HRESULT STDMETHODCALLTYPE ActivateCompleted(/*[in]*/ _In_  
+        //   IActivateAudioInterfaceAsyncOperation *activateOperation) = 0;
+        void ActivateCompleted(IActivateAudioInterfaceAsyncOperation activateOperation);
+    }
+
+
+    [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("72A22D78-CDE4-431D-B8CC-843A71199B6D")]
+    public interface IActivateAudioInterfaceAsyncOperation
+    {
+        //virtual HRESULT STDMETHODCALLTYPE GetActivateResult(/*[out]*/ _Out_  
+        //  HRESULT *activateResult, /*[out]*/ _Outptr_result_maybenull_  IUnknown **activatedInterface) = 0;
+        void GetActivateResult([Out] out int activateResult,
+                               [Out, MarshalAs(UnmanagedType.IUnknown)] out object activateInterface);
+    }
 
 
     [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("726778CD-F60A-4eda-82DE-E47610CD78AA")]
@@ -490,11 +490,13 @@ namespace NAudio.Win8.Wave.WaveOutputs
     {
         [PreserveSig]
         int Initialize(AudioClientShareMode shareMode,
-            AudioClientStreamFlags streamFlags,
-            long hnsBufferDuration, // REFERENCE_TIME
-            long hnsPeriodicity, // REFERENCE_TIME
-            [In] WaveFormat pFormat,
-            [In] IntPtr audioSessionGuid); // ref Guid AudioSessionGuid
+                       AudioClientStreamFlags streamFlags,
+                       long hnsBufferDuration, // REFERENCE_TIME
+                       long hnsPeriodicity, // REFERENCE_TIME
+                       [In] WaveFormat pFormat,
+                       [In] IntPtr audioSessionGuid);
+
+        // ref Guid AudioSessionGuid
 
         /// <summary>
         /// The GetBufferSize method retrieves the size (maximum capacity) of the endpoint buffer.
@@ -511,7 +513,7 @@ namespace NAudio.Win8.Wave.WaveOutputs
             AudioClientShareMode shareMode,
             [In] WaveFormat pFormat,
             [Out, MarshalAs(UnmanagedType.LPStruct)] out WaveFormatExtensible closestMatchFormat);
-        
+
         int GetMixFormat(out IntPtr deviceFormatPointer);
 
         // REFERENCE_TIME is 64 bit int        
@@ -522,7 +524,7 @@ namespace NAudio.Win8.Wave.WaveOutputs
         int Stop();
 
         int Reset();
-        
+
         int SetEventHandle(IntPtr eventHandle);
 
         /// <summary>
@@ -531,7 +533,8 @@ namespace NAudio.Win8.Wave.WaveOutputs
         /// <param name="interfaceId">The interface ID for the requested service.</param>
         /// <param name="interfacePointer">Pointer to a pointer variable into which the method writes the address of an instance of the requested interface. </param>
         [PreserveSig]
-        int GetService([In, MarshalAs(UnmanagedType.LPStruct)] Guid interfaceId, [Out, MarshalAs(UnmanagedType.IUnknown)] out object interfacePointer);
+        int GetService([In, MarshalAs(UnmanagedType.LPStruct)] Guid interfaceId,
+                       [Out, MarshalAs(UnmanagedType.IUnknown)] out object interfacePointer);
 
         //virtual HRESULT STDMETHODCALLTYPE IsOffloadCapable(/*[in]*/ _In_  
         //   AUDIO_STREAM_CATEGORY Category, /*[in]*/ _Out_  BOOL *pbOffloadCapable) = 0;
@@ -544,14 +547,14 @@ namespace NAudio.Win8.Wave.WaveOutputs
         //  _Out_  REFERENCE_TIME *phnsMinBufferDuration, /*[in]*/ _Out_  
         //  REFERENCE_TIME *phnsMaxBufferDuration) = 0;
         void GetBufferSizeLimits(IntPtr pFormat, bool bEventDriven,
-                 out long phnsMinBufferDuration, out long phnsMaxBufferDuration);
+                                 out long phnsMinBufferDuration, out long phnsMaxBufferDuration);
     }
 
-        [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("94ea2b94-e9cc-49e0-c0ff-ee64ca8f5b90")]
+    [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("94ea2b94-e9cc-49e0-c0ff-ee64ca8f5b90")]
     public interface IAgileObject
-        {
-            
-        }
+    {
+
+    }
 
 
 }

@@ -817,6 +817,7 @@
       <Link>Wave\WaveStreams\WaveStream.cs</Link>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Wave\WaveInputs\WasapiCaptureRT.cs" />
     <Compile Include="Wave\WaveOutputs\IWavePlayer.cs" />
     <Compile Include="Wave\WaveOutputs\WasapiOutRT.cs" />
   </ItemGroup>

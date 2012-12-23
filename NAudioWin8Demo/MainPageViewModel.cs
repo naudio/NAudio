@@ -6,12 +6,10 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using NAudio.CoreAudioApi;
 using NAudio.CoreAudioApi.Interfaces;
-using NAudio.MediaFoundation;
 using NAudio.Wave;
 using NAudio.Win8.Wave.WaveOutputs;
 using Windows.Storage;
 using Windows.Storage.Pickers;
-using Windows.Storage.Streams;
 using Windows.UI.Xaml.Controls;
 
 namespace NAudioWin8Demo
@@ -20,6 +18,7 @@ namespace NAudioWin8Demo
     {
         private IWavePlayer player;
         private WaveStream reader;
+        private IWaveIn recorder;
 
         public MainPageViewModel()
         {
@@ -27,6 +26,8 @@ namespace NAudioWin8Demo
             PlayCommand = new DelegateCommand(Play) { IsEnabled = false };
             PauseCommand = new DelegateCommand(Pause) { IsEnabled = false };
             StopCommand = new DelegateCommand(Stop) { IsEnabled = false };
+            RecordCommand = new DelegateCommand(Record);
+            StopRecordingCommand = new DelegateCommand(StopRecording) { IsEnabled = false };
         }
 
         private void Stop()
@@ -68,6 +69,38 @@ namespace NAudioWin8Demo
             }
         }
 
+        private void Record()
+        {
+            if (recorder == null)
+            {
+                recorder = new WasapiCaptureRT();
+                recorder.RecordingStopped += RecorderOnRecordingStopped;
+                recorder.DataAvailable += RecorderOnDataAvailable;
+            }
+            recorder.StartRecording();
+            RecordCommand.IsEnabled = false;
+            StopRecordingCommand.IsEnabled = true;
+        }
+
+        private void RecorderOnDataAvailable(object sender, WaveInEventArgs waveInEventArgs)
+        {
+            // TODO: handle incoming data
+        }
+
+        private void StopRecording()
+        {
+            if (recorder != null)
+            {
+                recorder.StopRecording();
+            }
+        }
+
+        private void RecorderOnRecordingStopped(object sender, StoppedEventArgs stoppedEventArgs)
+        {
+            RecordCommand.IsEnabled = true;
+        }
+
+
         private void PlayerOnPlaybackStopped(object sender, StoppedEventArgs stoppedEventArgs)
         {
             LoadCommand.IsEnabled = true;
@@ -96,55 +129,11 @@ namespace NAudioWin8Demo
         public DelegateCommand PlayCommand { get; private set; }
         public DelegateCommand PauseCommand { get; private set; }
         public DelegateCommand StopCommand { get; private set; }
+        public DelegateCommand RecordCommand { get; private set; }
+        public DelegateCommand StopRecordingCommand { get; private set; }
 
         public MediaElement MediaElement { get; set; }
     }
 
-    // Slightly hacky approach to supporting a different WinRT constructor
-    class MediaFoundationReaderRT : MediaFoundationReader
-    {
-        public class MediaFoundationReaderRTSettings : MediaFoundationReaderSettings
-        {
-            public MediaFoundationReaderRTSettings()
-            {
-                // can't recreate since we're using a file stream
-                this.SingleReaderObject = true;
-            }
 
-            public IRandomAccessStream Stream { get; set; }
-        }
-
-        public MediaFoundationReaderRT(IRandomAccessStream stream)
-            : this(new MediaFoundationReaderRTSettings() {Stream = stream})
-        {
-            
-        }
-        
-
-        public MediaFoundationReaderRT(MediaFoundationReaderRTSettings settings)
-            : base(null, settings)
-        {
-            
-        }
-
-        protected override IMFSourceReader CreateReader(MediaFoundationReaderSettings settings)
-        {
-            var fileStream = ((MediaFoundationReaderRTSettings) settings).Stream;
-            var byteStream = MediaFoundationApi.CreateByteStream(fileStream);
-            var reader = MediaFoundationApi.CreateSourceReaderFromByteStream(byteStream);
-            reader.SetStreamSelection(MediaFoundationInterop.MF_SOURCE_READER_ALL_STREAMS, false);
-            reader.SetStreamSelection(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, true);
-
-            // Create a partial media type indicating that we want uncompressed PCM audio
-
-            var partialMediaType = new MediaType();
-            partialMediaType.MajorType = MediaTypes.MFMediaType_Audio;
-            partialMediaType.SubType = settings.RequestFloatOutput ? AudioSubtypes.MFAudioFormat_Float : AudioSubtypes.MFAudioFormat_PCM;
-
-            // set the media type
-            // can return MF_E_INVALIDMEDIATYPE if not supported
-            reader.SetCurrentMediaType(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, IntPtr.Zero, partialMediaType.MediaFoundationObject);
-            return reader;
-        }
-    }
 }

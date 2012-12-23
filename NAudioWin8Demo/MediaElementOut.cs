@@ -93,7 +93,7 @@ namespace NAudio.Wave
             writer.Write((short)format.BlockAlign);
             writer.Write((short)format.BitsPerSample);
             writer.Write(Encoding.UTF8.GetBytes("data"));
-            writer.Write(Int32.MaxValue);
+            writer.Write(Int32.MaxValue - 32);
             header.Position = 0;
         }
 

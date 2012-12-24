@@ -33,7 +33,7 @@ namespace NAudio.Wave.SampleProviders
         /// Creates a new MixingSampleProvider, based on the given inputs
         /// </summary>
         /// <param name="sources">Mixer inputs - must all have the same waveformat, and must
-        /// all be of the same WaveFormat</param>
+        /// all be of the same WaveFormat. There must be at least one input</param>
         public MixingSampleProvider(IEnumerable<ISampleProvider> sources)
         {
             this.sources = new List<ISampleProvider>();
@@ -41,7 +41,20 @@ namespace NAudio.Wave.SampleProviders
             {
                 AddMixerInput(source);
             }
+            if (this.sources.Count == 0)
+            {
+                throw new ArgumentException("Must provide at least one input in this constructor");
+            }
         }
+
+        /// <summary>
+        /// When set to true, the Read method always returns the number
+        /// of samples requested, even if there are no inputs, or if the
+        /// current inputs reach their end. Setting this to true effectively
+        /// makes this a never-ending sample provider, so take care if you plan
+        /// to write it out to a file.
+        /// </summary>
+        public bool ReadFully { get; set; }
 
         /// <summary>
         /// Adds a WaveProvider as a Mixer input.
@@ -151,6 +164,16 @@ namespace NAudio.Wave.SampleProviders
                     }
                     index--;
                 }
+            }
+            // optionally ensure we return a full buffer
+            if (ReadFully && outputSamples < count)
+            {
+                int outputIndex = offset + outputSamples;
+                while (outputIndex < offset + count)
+                {
+                    buffer[outputIndex++] = 0;
+                }
+                outputSamples = count;
             }
             return outputSamples;
         }

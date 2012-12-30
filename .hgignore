@@ -2,6 +2,7 @@ syntax: glob
 bin/
 obj/
 Packages/
+AppPackages/
 TestResults/
 TestResult.xml
 BuildArtefacts/

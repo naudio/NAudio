@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
 
 namespace NAudioWpfDemo
 {
@@ -10,6 +11,7 @@ namespace NAudioWpfDemo
         public MainWindow()
         {
             InitializeComponent();
+            this.Title = this.Title + ((System.Runtime.InteropServices.Marshal.SizeOf(IntPtr.Zero) == 8) ? " (x64)" : " (x86)");
         }
     }
 }

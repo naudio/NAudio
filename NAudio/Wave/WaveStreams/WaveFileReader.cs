@@ -191,65 +191,69 @@ namespace NAudio.Wave
         }
         
         /// <summary>
+        /// Attempts to read the next sample or group of samples as floating point normalised into the range -1.0f to 1.0f
+        /// </summary>
+        /// <returns>An array of samples, 1 for mono, 2 for stereo etc. Null indicates end of file reached
+        /// </returns>
+        public float[] ReadNextSampleFrame()
+        {
+            switch (waveFormat.Encoding)
+            {
+                case WaveFormatEncoding.Pcm:
+                case WaveFormatEncoding.IeeeFloat:
+                case WaveFormatEncoding.Extensible: // n.b. not necessarily PCM, should probably write more code to handle this case
+                    break;
+                default:
+                    throw new InvalidOperationException("Only 16, 24 or 32 bit PCM or IEEE float audio data supported");
+            }
+            var sampleFrame = new float[waveFormat.Channels];
+            int bytesToRead = waveFormat.Channels*(waveFormat.BitsPerSample/8);
+            byte[] raw = new byte[bytesToRead];
+            int bytesRead = Read(raw, 0, bytesToRead);
+            if (bytesRead == 0) return null; // end of file
+            if (bytesRead < bytesToRead) throw new InvalidDataException("Unexpected end of file");
+            int offset = 0;
+            for (int channel = 0; channel < waveFormat.Channels; channel++)
+            {
+                if (waveFormat.BitsPerSample == 16)
+                {
+                    sampleFrame[channel] = BitConverter.ToInt16(raw, offset)/32768f;
+                    offset += 2;
+                }
+                else if (waveFormat.BitsPerSample == 24)
+                {
+                    sampleFrame[channel] = (((sbyte)raw[offset + 2] << 16) | (raw[offset + 1] << 8) | raw[offset]) / 8388608f;
+                    offset += 3;
+                }
+                else if (waveFormat.BitsPerSample == 32 && waveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
+                {
+                    sampleFrame[channel] = BitConverter.ToSingle(raw, offset);
+                    offset += 4;
+                }
+                else if (waveFormat.BitsPerSample == 32)
+                {
+                    sampleFrame[channel] = BitConverter.ToInt32(raw, offset) / (Int32.MaxValue + 1f);
+                    offset += 4;
+                }
+                else
+                {
+                    throw new InvalidOperationException("Unsupported bit depth");
+                }
+            }
+            return sampleFrame;
+        }
+
+        /// <summary>
         /// Attempts to read a sample into a float. n.b. only applicable for uncompressed formats
         /// Will normalise the value read into the range -1.0f to 1.0f if it comes from a PCM encoding
         /// </summary>
         /// <returns>False if the end of the WAV data chunk was reached</returns>
+        [Obsolete("Use ReadNextSampleFrame instead (this version does not support stereo properly)")]
         public bool TryReadFloat(out float sampleValue)
         {
-            sampleValue = 0.0f;
-            // 16 bit PCM data
-            if (waveFormat.BitsPerSample == 16)
-            {
-                byte[] value = new byte[2];
-                int read = Read(value, 0, 2);
-                if (read < 2)
-                    return false;
-                sampleValue = (float)BitConverter.ToInt16(value, 0) / 32768f;
-                return true;
-            }
-            // 24 bit PCM data
-            else if (waveFormat.BitsPerSample == 24)
-            {
-                byte[] value = new byte[4];
-                int read = Read(value, 0, 3);
-                if (read < 3)
-                    return false;
-                if (value[2] > 0x7f)
-                {
-                    value[3] = 0xff;
-                }
-                else
-                {
-                    value[3] = 0x00;
-                }
-                sampleValue = (float)BitConverter.ToInt32(value, 0) / (float)(0x800000);
-                return true;
-            }
-            // 32 bit PCM data
-            if (waveFormat.BitsPerSample == 32 && waveFormat.Encoding == WaveFormatEncoding.Extensible)
-            {
-                byte[] value = new byte[4];
-                int read = Read(value, 0, 4);
-                if (read < 4)
-                    return false;
-                sampleValue = (float)BitConverter.ToInt32(value, 0) / ((float)(Int32.MaxValue) + 1f);
-                return true;
-            }
-            // IEEE float data
-            if (waveFormat.BitsPerSample == 32 && waveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
-            {
-                byte[] value = new byte[4];
-                int read = Read(value, 0, 4);
-                if (read < 4)
-                    return false;
-                sampleValue = BitConverter.ToSingle(value, 0);
-                return true;
-            }
-            else
-            {
-                throw new InvalidOperationException("Only 16, 24 or 32 bit PCM or IEEE float audio data supported");
-            }
+            var sf = ReadNextSampleFrame();
+            sampleValue = sf != null ? sf[0] : 0;
+            return sf != null;
         }
     }
 }

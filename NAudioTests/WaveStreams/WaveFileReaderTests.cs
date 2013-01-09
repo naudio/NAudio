@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using NAudio.Utils;
 using NAudio.Wave;
 using NUnit.Framework;
 using System.Diagnostics;
@@ -47,6 +48,81 @@ namespace NAudioTests.WaveStreams
                 Assert.AreEqual(46, chunkReader.DataChunkPosition);
                 Assert.AreEqual(0, chunkReader.DataChunkLength);
                 Assert.AreEqual(0, chunks.Count);
+            }
+        }
+
+        [Test]
+        [Category("UnitTest")]
+        public void CanAccessSamplesIndividuallyInAMonoFile()
+        {
+            var ms =  new MemoryStream();
+            using (var writer = new WaveFileWriter( new IgnoreDisposeStream(ms), new WaveFormat(8000, 16, 1)))
+            {
+                writer.WriteSample(0.1f);
+                writer.WriteSample(0.2f);
+                writer.WriteSample(0.3f);
+                writer.WriteSample(0.4f);
+            }
+            ms.Position = 0;
+            using (var reader = new WaveFileReader(ms))
+            {
+                Assert.AreEqual(0.1f, reader.ReadNextSampleFrame()[0], 0.001f);
+                Assert.AreEqual(0.2f, reader.ReadNextSampleFrame()[0], 0.001f);
+                Assert.AreEqual(0.3f, reader.ReadNextSampleFrame()[0], 0.001f);
+                Assert.AreEqual(0.4f, reader.ReadNextSampleFrame()[0], 0.001f);
+                Assert.IsNull(reader.ReadNextSampleFrame());
+            }
+        }
+
+        [Test]
+        [Category("UnitTest")]
+        public void CanAccessSamplesIndividuallyInAStereoFile()
+        {
+            var ms = new MemoryStream();
+            using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), new WaveFormat(8000, 16, 2)))
+            {
+                writer.WriteSample(0.1f);
+                writer.WriteSample(0.2f);
+                writer.WriteSample(0.3f);
+                writer.WriteSample(0.4f);
+
+            }
+            ms.Position = 0;
+            using (var reader = new WaveFileReader(ms))
+            {
+                var f1 = reader.ReadNextSampleFrame();
+                Assert.AreEqual(0.1f, f1[0], 0.0001f);
+                Assert.AreEqual(0.2f, f1[1], 0.0001f);
+                var f2 = reader.ReadNextSampleFrame();
+                Assert.AreEqual(0.3f, f2[0], 0.0001f);
+                Assert.AreEqual(0.4f, f2[1], 0.0001f);
+                Assert.IsNull(reader.ReadNextSampleFrame());
+            }
+        }
+
+        [Test]
+        [Category("UnitTest")]
+        public void CanAccessSamplesIndividuallyInAStereo24BitFile()
+        {
+            var ms = new MemoryStream();
+            using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), new WaveFormat(44100, 24, 2)))
+            {
+                writer.WriteSample(0.1f);
+                writer.WriteSample(0.2f);
+                writer.WriteSample(0.3f);
+                writer.WriteSample(0.4f);
+
+            }
+            ms.Position = 0;
+            using (var reader = new WaveFileReader(ms))
+            {
+                var f1 = reader.ReadNextSampleFrame();
+                Assert.AreEqual(0.1f, f1[0], 0.0001f);
+                Assert.AreEqual(0.2f, f1[1], 0.0001f);
+                var f2 = reader.ReadNextSampleFrame();
+                Assert.AreEqual(0.3f, f2[0], 0.0001f);
+                Assert.AreEqual(0.4f, f2[1], 0.0001f);
+                Assert.IsNull(reader.ReadNextSampleFrame());
             }
         }
 

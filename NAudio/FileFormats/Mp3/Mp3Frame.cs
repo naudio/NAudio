@@ -178,6 +178,12 @@ namespace NAudio.Wave
                 bool privateBit = (headerBytes[2] & 0x01) == 0x01;
                 frame.ChannelMode = (ChannelMode) ((headerBytes[3] & 0xC0) >> 6);
                 frame.ChannelExtension = (headerBytes[3] & 0x30) >> 4;
+                if (frame.ChannelExtension != 0 && frame.ChannelMode != ChannelMode.JointStereo)
+                {
+                    return false;
+                }
+
+
                 frame.Copyright = (headerBytes[3] & 0x08) == 0x08;
                 bool original = (headerBytes[3] & 0x04) == 0x04;
                 int emphasis = (headerBytes[3] & 0x03);

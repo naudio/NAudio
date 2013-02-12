@@ -37,8 +37,8 @@ namespace NAudio.WindowsMediaFormat
 
         void GetType([Out] out Guid pguidType);
 
-        void GetMediaType( /*[out] WM_MEDIA_TYPE* */ IntPtr pType,
-                           [In, Out] ref uint pcbType);
+        void GetMediaType(/*[out] WM_MEDIA_TYPE* */ IntPtr pType,
+                           [In, Out] ref int pcbType);
 
         void SetMediaType([In] ref WM_MEDIA_TYPE pType);
     }

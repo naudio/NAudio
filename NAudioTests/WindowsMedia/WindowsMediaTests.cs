@@ -104,6 +104,9 @@ namespace NAudioTests.WindowsMedia
                 foreach (var format in codec.CodecFormats)
                 {
                     Debug.WriteLine(format.Description);
+                    Debug.WriteLine(String.Format("---Bitrate: {0}", format.StreamConfig.Bitrate));
+                    var waveFormat = format.StreamConfig.GetWaveFormat();
+                    Debug.WriteLine(String.Format("---WaveFormat: {0}Hz {1} channels", waveFormat.SampleRate, waveFormat.Channels));
                 }
             }
         }

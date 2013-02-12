@@ -23,7 +23,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
+using NAudio.Wave;
 
 namespace NAudio.WindowsMediaFormat
 {
@@ -32,7 +34,7 @@ namespace NAudio.WindowsMediaFormat
     /// </summary>
     public class WMStreamConfig
     {
-        private IWMStreamConfig m_StreamConfig;
+        private readonly IWMStreamConfig streamConfig;
 
         /// <summary>
         /// WMStreamConfig constructor
@@ -40,15 +42,45 @@ namespace NAudio.WindowsMediaFormat
         /// <param name="config">IWMStreamConfig to wrap</param>
         public WMStreamConfig(IWMStreamConfig config)
         {
-            m_StreamConfig = config;
+            streamConfig = config;
         }
+
+        /// <summary>
+        /// Gets the waveformat of this stream
+        /// </summary>
+        /// <returns>A waveformat (or null if this is not an audio stream)</returns>
+        public WaveFormat GetWaveFormat()
+        {
+            var props = (IWMMediaProps) streamConfig;
+            int size = Math.Max(512, Marshal.SizeOf(typeof (WM_MEDIA_TYPE)) + Marshal.SizeOf(typeof (WaveFormat)));
+            IntPtr buffer = Marshal.AllocCoTaskMem(size);
+            try
+            {
+                props.GetMediaType(buffer, ref size);
+                var mt = (WM_MEDIA_TYPE)Marshal.PtrToStructure(buffer, typeof(WM_MEDIA_TYPE));
+                if ((mt.majortype == MediaTypes.WMMEDIATYPE_Audio) &&
+                        // n.b. subtype may not be PCM, but some variation of WM Audio
+                        (mt.formattype == MediaTypes.WMFORMAT_WaveFormatEx))
+                {
+                    var fmt = new WaveFormatExtensible(44100, 16, 2);
+                    Marshal.PtrToStructure(mt.pbFormat, fmt);
+                    return fmt;
+                }
+                return null; 
+            }
+            finally
+            {
+                Marshal.FreeCoTaskMem(buffer);
+            }
+        }
+
 
         /// <summary>
         /// Wrapped IWMStreamConfig object
         /// </summary>
         public IWMStreamConfig StreamConfig
         {
-            get { return m_StreamConfig; }
+            get { return streamConfig; }
         }
 
         /// <summary>
@@ -59,12 +91,12 @@ namespace NAudio.WindowsMediaFormat
             get
             {
                 uint res;
-                m_StreamConfig.GetBitrate(out res);
+                streamConfig.GetBitrate(out res);
                 return res;
             }
             set
             {
-                m_StreamConfig.SetBitrate(value);
+                streamConfig.SetBitrate(value);
             }
         }
 
@@ -76,12 +108,12 @@ namespace NAudio.WindowsMediaFormat
             get
             {
                 uint res;
-                m_StreamConfig.GetBufferWindow(out res);
+                streamConfig.GetBufferWindow(out res);
                 return res;
             }
             set
             {
-                m_StreamConfig.SetBufferWindow(value);
+                streamConfig.SetBufferWindow(value);
             }
         }
 
@@ -94,14 +126,14 @@ namespace NAudio.WindowsMediaFormat
             {
                 StringBuilder name;
                 ushort namelen = 0;
-                m_StreamConfig.GetConnectionName(null, ref namelen);
+                streamConfig.GetConnectionName(null, ref namelen);
                 name = new StringBuilder(namelen);
-                m_StreamConfig.GetConnectionName(name, ref namelen);
+                streamConfig.GetConnectionName(name, ref namelen);
                 return name.ToString();
             }
             set
             {
-                m_StreamConfig.SetConnectionName(value);
+                streamConfig.SetConnectionName(value);
             }
         }
 
@@ -114,14 +146,14 @@ namespace NAudio.WindowsMediaFormat
             {
                 StringBuilder name;
                 ushort namelen = 0;
-                m_StreamConfig.GetStreamName(null, ref namelen);
+                streamConfig.GetStreamName(null, ref namelen);
                 name = new StringBuilder(namelen);
-                m_StreamConfig.GetStreamName(name, ref namelen);
+                streamConfig.GetStreamName(name, ref namelen);
                 return name.ToString();
             }
             set
             {
-                m_StreamConfig.SetStreamName(value);
+                streamConfig.SetStreamName(value);
             }
         }
 
@@ -133,12 +165,12 @@ namespace NAudio.WindowsMediaFormat
             get
             {
                 ushort res;
-                m_StreamConfig.GetStreamNumber(out res);
+                streamConfig.GetStreamNumber(out res);
                 return res;
             }
             set
             {
-                m_StreamConfig.SetStreamNumber(value);
+                streamConfig.SetStreamNumber(value);
             }
         }
 
@@ -151,7 +183,7 @@ namespace NAudio.WindowsMediaFormat
             get
             {
                 Guid res;
-                m_StreamConfig.GetStreamType(out res);
+                streamConfig.GetStreamType(out res);
                 return res;
             }
         }

@@ -135,13 +135,13 @@ namespace NAudio.Wave.Asio
         }
 
         /// <summary>
-        /// Gets the latencies.
+        /// Gets the latencies (n.b. does not throw an exception)
         /// </summary>
         /// <param name="inputLatency">The input latency.</param>
         /// <param name="outputLatency">The output latency.</param>
-        public void getLatencies(out int inputLatency, out int outputLatency)
+        public ASIOError GetLatencies(out int inputLatency, out int outputLatency)
         {
-            handleException(asioDriverVTable.getLatencies(pASIOComObject, out inputLatency, out outputLatency), "getLatencies");
+            return asioDriverVTable.getLatencies(pASIOComObject, out inputLatency, out outputLatency);
         }
 
         /// <summary>

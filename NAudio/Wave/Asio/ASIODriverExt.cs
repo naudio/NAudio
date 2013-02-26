@@ -277,8 +277,15 @@ namespace NAudio.Wave.Asio
             // Get the current SampleRate
             capability.SampleRate = driver.getSampleRate();
 
-            // Get Latencies
-            driver.getLatencies(out capability.InputLatency, out capability.OutputLatency);
+            var error = driver.GetLatencies(out capability.InputLatency, out capability.OutputLatency);
+            // focusrite scarlett 2i4 returns ASE_NotPresent here
+
+            if (error != ASIOError.ASE_OK && error != ASIOError.ASE_NotPresent)
+            {
+                var ex = new ASIOException("ASIOgetLatencies");
+                ex.Error = error;
+                throw ex;
+            }
 
             // Get BufferSize
             driver.getBufferSize(out capability.BufferMinSize, out capability.BufferMaxSize, out capability.BufferPreferredSize, out capability.BufferGranularity);

@@ -70,41 +70,6 @@ namespace NAudioDemo
                 out formatDescription,
                 out formatTagDescription);
             return outputFormat;
-        
-            /*
-            if (radioButtonMuLaw.Checked)
-            {
-                return WaveFormat.CreateCustomFormat(
-                    WaveFormatEncoding.MuLaw,
-                    inputFormat.Channels,
-                    inputFormat.SampleRate,
-                    inputFormat.SampleRate * inputFormat.Channels,
-                    1, 8);
-            }
-            else if (radioButtonALaw.Checked)
-            {
-                return WaveFormat.CreateCustomFormat(
-                    WaveFormatEncoding.ALaw,
-                    inputFormat.Channels,
-                    inputFormat.SampleRate,
-                    inputFormat.SampleRate * inputFormat.Channels,
-                    1, 8);
-            }
-            else if (radioButtonGsm610.Checked)
-            {
-                return WaveFormat.CreateCustomFormat(
-                    WaveFormatEncoding.Gsm610,
-                    1,
-                    8000,
-                    1625,
-                    65, 0);
-            }
-            else if (radioButtonAdpcm.Checked)
-            {
-                return new WaveFormatAdpcm(8000, 1);
-            }
-            throw new NotImplementedException("Not implemented yet!");
-             */
         }
 
         private void EncodeFile()
@@ -217,7 +182,7 @@ namespace NAudioDemo
                 null,out selectedFormat,
                 out selectedFormatDescription, out selectedFormatTagDescription))
             {
-                MessageBox.Show(String.Format("{0}\r\n{1}\r\n{2}",                    
+                MessageBox.Show(String.Format("{0}\r\n{1}\r\n{2}",
                     selectedFormatDescription,
                     selectedFormatTagDescription,
                     selectedFormat));
@@ -273,13 +238,20 @@ namespace NAudioDemo
             }
         }
 
-        private void buttonAdd_Click(object sender, EventArgs e)
+        private void buttonAdd_Click(object sender, EventArgs args)
         {
             var codecFile = SelectFileToOpen("Select file to open", "ACM Codecs|*.acm;*.dll");
             if (codecFile != null)
             {
-                var driver = AcmDriver.AddLocalDriver(codecFile);
-                listBoxAcmDrivers.Items.Add(driver);
+                try
+                {
+                    var driver = AcmDriver.AddLocalDriver(codecFile);
+                    listBoxAcmDrivers.Items.Add(driver);
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show(e.Message, "Error Adding Driver", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
             }
         }
     }

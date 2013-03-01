@@ -26,7 +26,7 @@ namespace NAudio.Wave.Compression
         /// <returns>Whether the codec is installed</returns>
         public static bool IsCodecInstalled(string shortName)
         {
-            foreach (AcmDriver driver in AcmDriver.EnumerateAcmDrivers())
+            foreach (AcmDriver driver in EnumerateAcmDrivers())
             {
                 if (driver.ShortName == shortName)
                 {
@@ -155,7 +155,7 @@ namespace NAudio.Wave.Compression
         {
             get
             {
-                int maxFormatSize = 0;
+                int maxFormatSize;
                 MmException.Try(AcmInterop.acmMetrics(driverHandle, AcmMetrics.MaxSizeFormat, out maxFormatSize), "acmMetrics");
                 return maxFormatSize;
             }
@@ -205,7 +205,7 @@ namespace NAudio.Wave.Compression
         {
             driverId = hAcmDriver;
             details = new AcmDriverDetails();
-            details.structureSize = System.Runtime.InteropServices.Marshal.SizeOf(details);
+            details.structureSize = Marshal.SizeOf(details);
             MmException.Try(AcmInterop.acmDriverDetails(hAcmDriver, ref details, 0), "acmDriverDetails");
         }
 
@@ -285,12 +285,14 @@ namespace NAudio.Wave.Compression
                 throw new InvalidOperationException("Driver must be opened first");
             }
             tempFormatsList = new List<AcmFormat>();
-            AcmFormatDetails formatDetails = new AcmFormatDetails();
+            var formatDetails = new AcmFormatDetails();
             formatDetails.structSize = Marshal.SizeOf(formatDetails);
-            formatDetails.waveFormatByteSize = MaxFormatSize; // formatTag.FormatSize doesn't work;
+            // need to make sure we have enough space for a waveFormat. formatTag.FormatSize isn't reliable, 
+            // and some codecs MaxFormatSize isn't either
+            formatDetails.waveFormatByteSize = 1024;
             formatDetails.waveFormatPointer = Marshal.AllocHGlobal(formatDetails.waveFormatByteSize);
             formatDetails.formatTag = (int)formatTag.FormatTag; // (int)WaveFormatEncoding.Unknown
-            MmResult result = AcmInterop.acmFormatEnum(driverHandle, 
+            var result = AcmInterop.acmFormatEnum(driverHandle, 
                 ref formatDetails, AcmFormatEnumCallback, IntPtr.Zero, 
                 AcmFormatEnumFlags.None);
             Marshal.FreeHGlobal(formatDetails.waveFormatPointer);

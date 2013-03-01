@@ -10,8 +10,9 @@ namespace NAudio.Wave.Compression
     /// </summary>
     public class AcmFormat
     {
-        AcmFormatDetails formatDetails;
-        WaveFormat waveFormat; 
+        private readonly AcmFormatDetails formatDetails;
+        private readonly WaveFormat waveFormat; 
+
         internal AcmFormat(AcmFormatDetails formatDetails)
         {
             this.formatDetails = formatDetails;
@@ -33,6 +34,7 @@ namespace NAudio.Wave.Compression
         {
             get { return (WaveFormatEncoding)formatDetails.formatTag; }
         }
+
         /// <summary>
         /// Support Flags
         /// </summary>
@@ -40,9 +42,10 @@ namespace NAudio.Wave.Compression
         {
             get { return formatDetails.supportFlags; }
         }
+
         /// <summary>
         /// WaveFormat
-        /// </summary>    
+        /// </summary>
         public WaveFormat WaveFormat
         {
             get 
@@ -50,6 +53,7 @@ namespace NAudio.Wave.Compression
                 return waveFormat; 
             }
         }
+
         /// <summary>
         /// WaveFormat Size
         /// </summary>
@@ -57,9 +61,10 @@ namespace NAudio.Wave.Compression
         {
             get { return formatDetails.waveFormatByteSize; }
         }
+
         /// <summary>
         /// Format Description
-        /// </summary>        
+        /// </summary>
         public string FormatDescription
         {
             get { return formatDetails.formatDescription; }

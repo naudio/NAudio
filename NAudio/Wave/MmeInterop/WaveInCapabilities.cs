@@ -64,5 +64,15 @@ namespace NAudio.Wave
                 return productName;
             }
         }
+
+        /// <summary>
+        /// Checks to see if a given SupportedWaveFormat is supported
+        /// </summary>
+        /// <param name="waveFormat">The SupportedWaveFormat</param>
+        /// <returns>true if supported</returns>
+        public bool SupportsWaveFormat(SupportedWaveFormat waveFormat)
+        {
+            return (supportedFormats & waveFormat) == waveFormat;
+        }
     }
 }

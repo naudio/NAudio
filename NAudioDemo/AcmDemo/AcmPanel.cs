@@ -109,25 +109,19 @@ namespace NAudioDemo
             string inputFileName = GetInputFileName("Select a compressed WAV File to decode");
             if (inputFileName == null)
                 return;
-            using (WaveFileReader reader = new WaveFileReader(inputFileName))
+            using (var reader = new WaveFileReader(inputFileName))
             {
                 if (reader.WaveFormat.Encoding == WaveFormatEncoding.Pcm)
                 {
                     MessageBox.Show("Please select a compressed WAV file to decode");
                     return;
                 }
-                WaveFormat targetFormat = GetTargetFormat(reader.WaveFormat);
-                if (targetFormat == null)
-                {
-                    return;
-                }
-
                 string outputFileName = GetOutputFileName("Select Output File Name");
                 if (outputFileName == null)
                 {
                     return;
                 }
-                using (WaveStream convertedStream = new WaveFormatConversionStream(targetFormat, reader))
+                using (var convertedStream = WaveFormatConversionStream.CreatePcmStream(reader))
                 {
                     WaveFileWriter.CreateWaveFile(outputFileName, convertedStream);
                 }

@@ -19,6 +19,7 @@ ChunkWare Music Software
 CKing
 DaMacc
 eejake52
+Florian Rosmann (filoe)
 Giawa
 Hfuy
 Iain McCowan
@@ -41,7 +42,6 @@ Scott Fleischman
 Sirish Bajpai
 Steve Underwood
 Ted Murphy
-Thefiloe
 Tiny Simple Tools
 Tobias Fleming
 Tony Cabello

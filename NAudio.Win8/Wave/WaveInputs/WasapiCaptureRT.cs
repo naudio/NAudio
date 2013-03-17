@@ -27,8 +27,7 @@ namespace NAudio.Wave
         private readonly string device;
         private int bytesPerFrame;
         private WaveFormat waveFormat;
-        private bool initialized;
-
+        
         /// <summary>
         /// Indicates recorded data is available 
         /// </summary>
@@ -38,6 +37,7 @@ namespace NAudio.Wave
         /// Indicates that all recorded data has now been received.
         /// </summary>
         public event EventHandler<StoppedEventArgs> RecordingStopped;
+        private int latencyMilliseconds;
 
         /// <summary>
         /// Initialises a new instance of the WASAPI capture class
@@ -114,10 +114,10 @@ namespace NAudio.Wave
         private void InitializeCaptureDevice(IAudioClient audioClientInterface)
         {
             var audioClient = new AudioClient((IAudioClient)audioClientInterface);
-            this.waveFormat = audioClient.MixFormat;
-
-            if (initialized)
-                return;
+            if (waveFormat == null)
+            {                
+                this.waveFormat = audioClient.MixFormat;
+            }         
 
             long requestedDuration = REFTIMES_PER_MILLISEC * 100;
 
@@ -135,13 +135,15 @@ namespace NAudio.Wave
                 0,
                 this.waveFormat,
                 Guid.Empty);
+           
 
             int bufferFrameCount = audioClient.BufferSize;
             this.bytesPerFrame = this.waveFormat.Channels * this.waveFormat.BitsPerSample / 8;
             this.recordBuffer = new byte[bufferFrameCount * bytesPerFrame];
             Debug.WriteLine(string.Format("record buffer size = {0}", this.recordBuffer.Length));
 
-            initialized = true;
+            // Get back the effective latency from AudioClient
+            latencyMilliseconds = (int)(audioClient.StreamLatency / 10000);
         }
 
         /// <summary>
@@ -149,7 +151,7 @@ namespace NAudio.Wave
         /// </summary>
         protected virtual AudioClientStreamFlags GetAudioClientStreamFlags()
         {
-            return AudioClientStreamFlags.None;
+            return AudioClientStreamFlags.EventCallback;
         }
 
         /// <summary>
@@ -184,7 +186,7 @@ namespace NAudio.Wave
         }
 
         private void CaptureThread(AudioClient client)
-        {
+        { 
             Exception exception = null;
             try
             {
@@ -194,33 +196,82 @@ namespace NAudio.Wave
             {
                 exception = e;
             }
-            finally
-            {
-                client.Stop();
-                client.Dispose();
-            }
-
-            RaiseRecordingStopped(exception);
-            Debug.WriteLine("stop wasapi");
+            
         }
 
         private void DoRecording(AudioClient client)
         {
             Debug.WriteLine(client.BufferSize);
-            int bufferFrameCount = client.BufferSize;
 
-            // Calculate the actual duration of the allocated buffer.
-            long actualDuration = (long)((double)REFTIMES_PER_SEC *
-                             bufferFrameCount / WaveFormat.SampleRate);
-            int sleepMilliseconds = (int)(actualDuration / REFTIMES_PER_MILLISEC / 2);
+            var buf = new Byte[client.BufferSize * bytesPerFrame];
 
-            AudioCaptureClient capture = client.AudioCaptureClient;
-            client.Start();
-            Debug.WriteLine(string.Format("sleep: {0} ms", sleepMilliseconds));
-            while (!this.stop)
+            int bufLength = 0;
+            int minPacketSize = waveFormat.AverageBytesPerSecond / 100; //100ms
+
+            IntPtr hEvent = NativeMethods.CreateEventEx(IntPtr.Zero, IntPtr.Zero, 0, EventAccess.EVENT_ALL_ACCESS);
+            client.SetEventHandle(hEvent);
+           
+            try
             {
-                Task.Delay(sleepMilliseconds);
-                ReadNextPacket(capture);
+                AudioCaptureClient capture = client.AudioCaptureClient;                
+                client.Start();
+
+                int packetSize = capture.GetNextPacketSize();
+
+                while (!this.stop)
+                {                    
+                    IntPtr pData = IntPtr.Zero;
+                    int numFramesToRead = 0;
+                    AudioClientBufferFlags dwFlags = 0;                   
+
+                    if (packetSize == 0)
+                    {
+                        if (NativeMethods.WaitForSingleObjectEx(hEvent, 100, true) != 0)
+                        {
+                            throw new Exception("Capture event timeout");
+                        }
+                    }
+
+                    pData = capture.GetBuffer(out numFramesToRead, out dwFlags);                    
+
+                    if ((int)(dwFlags & AudioClientBufferFlags.Silent) > 0)
+                    {
+                        pData = IntPtr.Zero;
+                    }                    
+
+                    if (numFramesToRead == 0) { continue; }
+
+                    int capturedBytes =  numFramesToRead * bytesPerFrame;                   
+
+                    System.Runtime.InteropServices.Marshal.Copy(pData, buf, bufLength, capturedBytes);
+                    bufLength += capturedBytes;
+
+                    capture.ReleaseBuffer(numFramesToRead);
+
+                    if (bufLength >= minPacketSize)
+                    {
+                        if (DataAvailable != null)
+                        {
+                            DataAvailable(this, new WaveInEventArgs(buf, bufLength));
+                        }
+                        bufLength = 0;
+                    }
+
+                    packetSize = capture.GetNextPacketSize();
+                }
+            }
+            catch (Exception ex)
+            {
+                RaiseRecordingStopped(ex);
+                Debug.WriteLine("stop wasapi");
+            }
+            finally
+            {
+                RaiseRecordingStopped(null);
+                
+                NativeMethods.CloseHandle(hEvent);
+                client.Stop();
+                client.Dispose();               
             }
         }
 

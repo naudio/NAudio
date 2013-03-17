@@ -11,6 +11,8 @@ using NAudio.Win8.Wave.WaveOutputs;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 using Windows.UI.Xaml.Controls;
+using System.IO;
+using NAudio.MediaFoundation;
 
 namespace NAudioWin8Demo
 {
@@ -19,6 +21,7 @@ namespace NAudioWin8Demo
         private IWavePlayer player;
         private WaveStream reader;
         private IWaveIn recorder;
+        private MemoryStream recordStream;
 
         public MainPageViewModel()
         {
@@ -28,7 +31,10 @@ namespace NAudioWin8Demo
             StopCommand = new DelegateCommand(Stop) { IsEnabled = false };
             RecordCommand = new DelegateCommand(Record);
             StopRecordingCommand = new DelegateCommand(StopRecording) { IsEnabled = false };
+            MediaFoundationApi.Startup();
         }
+
+        
 
         private void Stop()
         {
@@ -52,22 +58,28 @@ namespace NAudioWin8Demo
             {
                 return;
             }
+
             if (player == null)
             {
                 // Exclusive mode - fails with a weird buffer alignment error
 
                 //player = new MediaElementOut(MediaElement);
                 player = new WasapiOutRT(AudioClientShareMode.Shared, 200);
+
                 player.PlaybackStopped += PlayerOnPlaybackStopped;
-                await player.Init(reader);
             }
+
             if (player.PlaybackState != PlaybackState.Playing)
             {
+                reader.Seek(0, SeekOrigin.Begin);
+                await player.Init(reader);
                 player.Play();
                 StopCommand.IsEnabled = true;
                 PauseCommand.IsEnabled = true;
             }
         }
+
+        
 
         private void Record()
         {
@@ -75,16 +87,32 @@ namespace NAudioWin8Demo
             {
                 recorder = new WasapiCaptureRT();
                 recorder.RecordingStopped += RecorderOnRecordingStopped;
-                recorder.DataAvailable += RecorderOnDataAvailable;
+                recorder.DataAvailable += RecorderOnDataAvailable;               
             }
+
+            if (reader != null)
+            {
+                reader.Dispose();
+                reader = null;
+            }
+            
             recorder.StartRecording();
+
             RecordCommand.IsEnabled = false;
             StopRecordingCommand.IsEnabled = true;
-        }
+        }   
 
-        private void RecorderOnDataAvailable(object sender, WaveInEventArgs waveInEventArgs)
+       
+
+        private async void RecorderOnDataAvailable(object sender, WaveInEventArgs waveInEventArgs)
         {
-            // TODO: handle incoming data
+            if (reader == null)
+            {
+                recordStream = new MemoryStream();
+                reader = new RawSourceWaveStream(recordStream, recorder.WaveFormat);                
+            }      
+     
+            await recordStream.WriteAsync(waveInEventArgs.Buffer, 0, waveInEventArgs.BytesRecorded);                      
         }
 
         private void StopRecording()
@@ -95,9 +123,11 @@ namespace NAudioWin8Demo
             }
         }
 
-        private void RecorderOnRecordingStopped(object sender, StoppedEventArgs stoppedEventArgs)
+        private async void RecorderOnRecordingStopped(object sender, StoppedEventArgs stoppedEventArgs)
         {
             RecordCommand.IsEnabled = true;
+            StopRecordingCommand.IsEnabled = false;            
+            PlayCommand.IsEnabled = true;    
         }
 
 
@@ -105,7 +135,7 @@ namespace NAudioWin8Demo
         {
             LoadCommand.IsEnabled = true;
             StopCommand.IsEnabled = false;
-            PauseCommand.IsEnabled = false;
+            PauseCommand.IsEnabled = false;           
         }
 
         private async void Load()

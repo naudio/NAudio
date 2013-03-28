@@ -19,7 +19,16 @@ namespace NAudio.Wave
         public AcmMp3FrameDecompressor(WaveFormat sourceFormat)
         {
             this.pcmFormat = AcmStream.SuggestPcmFormat(sourceFormat);
-            conversionStream = new AcmStream(sourceFormat, pcmFormat);
+	        try
+	        {
+		        conversionStream = new AcmStream(sourceFormat, pcmFormat);
+	        }
+	        catch ( Exception )
+	        {
+				disposed = true;
+				GC.SuppressFinalize ( this );
+		        throw;
+	        }
         }
 
         /// <summary>
@@ -68,7 +77,8 @@ namespace NAudio.Wave
             if (!disposed)
             {
                 disposed = true;
-                conversionStream.Dispose();
+				if(conversionStream != null)
+					conversionStream.Dispose();
                 GC.SuppressFinalize(this);
             }
         }

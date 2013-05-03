@@ -36,8 +36,7 @@ namespace NAudioWpfDemo.DrumMachineDemo
             waveOut = new WaveOut();
             this.patternSequencer = new DrumPatternSampleProvider(pattern);
             this.patternSequencer.Tempo = tempo;
-            IWaveProvider wp = new SampleToWaveProvider(patternSequencer);
-            waveOut.Init(wp);
+            waveOut.Init(patternSequencer);
             waveOut.Play();
         }
 

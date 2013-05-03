@@ -52,7 +52,7 @@ namespace NAudioWpfDemo
             try
             {
                 var inputStream = CreateInputStream(fileName);
-                playbackDevice.Init(new SampleToWaveProvider(inputStream));
+                playbackDevice.Init(inputStream);
             }
             catch (Exception e)
             {

@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using NAudio.Wave;
-using NAudio.Wave.SampleProviders;
 
 namespace NAudioWpfDemo.DrumMachineDemo
 {
@@ -13,41 +9,15 @@ namespace NAudioWpfDemo.DrumMachineDemo
         {
             using (var reader = new WaveFileReader(fileName))
             {
-                ISampleProvider sp;
-                int sourceSamples;
-                if (reader.WaveFormat.Encoding == WaveFormatEncoding.Pcm)
-                {
-                    if (reader.WaveFormat.BitsPerSample == 16)
-                    {
-                        sp = new Pcm16BitToSampleProvider(reader);
-                        sourceSamples = (int)(reader.Length / 2);
-                    }
-                    else if (reader.WaveFormat.BitsPerSample == 24)
-                    {
-                        sp = new Pcm24BitToSampleProvider(reader);
-                        sourceSamples = (int)(reader.Length / 3);
-                    }
-                    else
-                    {
-                        throw new ArgumentException("Currently only 16 or 24 bit PCM samples are supported");
-                    }
-                }
-                else if (reader.WaveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
-                {
-                    sp = new WaveToSampleProvider(reader);
-                    sourceSamples = (int)(reader.Length / 4);
-                }
-                else
-                {
-                    throw new ArgumentException("Must be PCM or IEEE float");
-                }
-                float[] sampleData = new float[sourceSamples];
+                var sp = reader.ToSampleProvider();
+                var sourceSamples = (int)(reader.Length / (reader.WaveFormat.BitsPerSample / 8));
+                var sampleData = new float[sourceSamples];
                 int n = sp.Read(sampleData, 0, sourceSamples);
                 if (n != sourceSamples)
                 {
                     throw new InvalidOperationException(String.Format("Couldn't read the whole sample, expected {0} samples, got {1}", n, sourceSamples));
                 }
-                SampleSource ss = new SampleSource(sampleData, sp.WaveFormat);
+                var ss = new SampleSource(sampleData, sp.WaveFormat);
                 return ss;
             }
         }

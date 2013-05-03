@@ -39,7 +39,7 @@ namespace NAudio.Wave.SampleProviders
                 }
                 else
                 {
-                    throw new InvalidOperationException("Unsupported operation");
+                    throw new InvalidOperationException("Unsupported bit depth");
                 }
             }
             else if (waveProvider.WaveFormat.Encoding == WaveFormatEncoding.IeeeFloat)

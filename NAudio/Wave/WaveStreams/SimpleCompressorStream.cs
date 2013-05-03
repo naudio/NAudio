@@ -11,11 +11,12 @@ namespace NAudio.Wave
     public class SimpleCompressorStream : WaveStream
     {
         private WaveStream sourceStream;
-        private SimpleCompressor simpleCompressor;
+        private readonly SimpleCompressor simpleCompressor;
         private byte[] sourceBuffer; // buffer used by Read function
         private bool enabled;
-        private int channels;
-        private int bytesPerSample;
+        private readonly int channels;
+        private readonly int bytesPerSample;
+        private readonly object lockObject = new object();
 
         /// <summary>
         /// Create a new simple compressor stream
@@ -44,7 +45,7 @@ namespace NAudio.Wave
             }
             set 
             {
-                lock (this)
+                lock (lockObject)
                 {
                     simpleCompressor.MakeUpGain = value;
                 } 
@@ -62,7 +63,7 @@ namespace NAudio.Wave
             }
             set 
             {
-                lock (this)
+                lock (lockObject)
                 {
                     simpleCompressor.Threshold = value;
                 }
@@ -80,7 +81,7 @@ namespace NAudio.Wave
             }
             set 
             {
-                lock (this)
+                lock (lockObject)
                 {
                     simpleCompressor.Ratio = value;
                 }
@@ -98,7 +99,7 @@ namespace NAudio.Wave
             }
             set
             {
-                lock (this)
+                lock (lockObject)
                 {
                     simpleCompressor.Attack = value;
                 }
@@ -116,7 +117,7 @@ namespace NAudio.Wave
             }
             set
             {
-                lock (this)
+                lock (lockObject)
                 {
                     simpleCompressor.Release = value;
                 }
@@ -173,7 +174,7 @@ namespace NAudio.Wave
             }
             set
             {
-                lock (this)
+                lock (lockObject)
                 {
                     sourceStream.Position = value;
                 }
@@ -252,7 +253,7 @@ namespace NAudio.Wave
         /// <returns>Number of bytes read</returns>
         public override int Read(byte[] array, int offset, int count)
         {
-            lock (this)
+            lock (lockObject)
             {
                 if (Enabled)
                 {

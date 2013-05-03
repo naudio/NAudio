@@ -699,6 +699,9 @@
     <Compile Include="..\NAudio\Wave\SampleProviders\WaveToSampleProvider64.cs">
       <Link>Wave\SampleProviders\WaveToSampleProvider64.cs</Link>
     </Compile>
+    <Compile Include="..\NAudio\Wave\WaveExtensionMethods.cs">
+      <Link>Wave\WaveExtensionMethods.cs</Link>
+    </Compile>
     <Compile Include="..\NAudio\Wave\WaveFormats\AdpcmWaveFormat.cs">
       <Link>Wave\WaveFormats\AdpcmWaveFormat.cs</Link>
     </Compile>

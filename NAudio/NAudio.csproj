@@ -154,6 +154,7 @@
     <Compile Include="Wave\SampleProviders\SampleToWaveProvider16.cs" />
     <Compile Include="Wave\SampleProviders\SignalGenerator.cs" />
     <Compile Include="Wave\SampleProviders\WaveToSampleProvider64.cs" />
+    <Compile Include="Wave\WaveExtensionMethods.cs" />
     <Compile Include="Wave\WaveInputs\WaveInEvent.cs" />
     <Compile Include="Wave\WaveInputs\WasapiCapture.cs" />
     <Compile Include="Dmo\AudioMediaSubtypes.cs" />

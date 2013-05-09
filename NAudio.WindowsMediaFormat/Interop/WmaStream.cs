@@ -251,13 +251,13 @@ namespace NAudio.WindowsMediaFormat
             m_reader.GetOutputFormat((uint)m_outputNumber, (uint)m_outputFormatNumber, out Props);
             m_reader.SetOutputProps((uint)m_outputNumber, Props);
 
-            uint Size = 0;
-            Props.GetMediaType(IntPtr.Zero, ref Size);
-            IntPtr buffer = Marshal.AllocCoTaskMem((int)Size);
+            int size = 0;
+            Props.GetMediaType(IntPtr.Zero, ref size);
+            IntPtr buffer = Marshal.AllocCoTaskMem(size);
             try
             {
                 WM_MEDIA_TYPE mt;
-                Props.GetMediaType(buffer, ref Size);
+                Props.GetMediaType(buffer, ref size);
                 mt = (WM_MEDIA_TYPE)Marshal.PtrToStructure(buffer, typeof(WM_MEDIA_TYPE));
                 m_sampleSize = mt.lSampleSize;
             }
@@ -322,17 +322,17 @@ namespace NAudio.WindowsMediaFormat
                 for (int i = 0; i < FormatCount; i++)
                 {
                     IWMOutputMediaProps Props = null;
-                    uint Size = 0;
+                    int size = 0;
                     WM_MEDIA_TYPE mt;
                     Reader.GetOutputFormat(OutputNumber, (uint)i, out Props);
-                    Props.GetMediaType(IntPtr.Zero, ref Size);
-                    if ((int)Size > BufferSize)
+                    Props.GetMediaType(IntPtr.Zero, ref size);
+                    if (size > BufferSize)
                     {
-                        BufferSize = (int)Size;
+                        BufferSize = size;
                         Marshal.FreeCoTaskMem(buffer);
                         buffer = Marshal.AllocCoTaskMem(BufferSize);
                     }
-                    Props.GetMediaType(buffer, ref Size);
+                    Props.GetMediaType(buffer, ref size);
                     mt = (WM_MEDIA_TYPE)Marshal.PtrToStructure(buffer, typeof(WM_MEDIA_TYPE));
                     if ((mt.majortype == MediaTypes.WMMEDIATYPE_Audio) &&
                          (mt.subtype == MediaTypes.WMMEDIASUBTYPE_PCM) &&
@@ -350,19 +350,18 @@ namespace NAudio.WindowsMediaFormat
             return result.ToArray();
         }
 
-        private static WaveFormat GetOutputFormat(IWMSyncReader Reader, uint OutputNumber, uint FormatNumber)
+        private static WaveFormat GetOutputFormat(IWMSyncReader reader, uint outputNumber, uint formatNumber)
         {
             IWMOutputMediaProps Props = null;
-            uint Size = 0;
-            WM_MEDIA_TYPE mt;
+            int size = 0;
             WaveFormat fmt = null;
-            Reader.GetOutputFormat(OutputNumber, FormatNumber, out Props);
-            Props.GetMediaType(IntPtr.Zero, ref Size);
-            IntPtr buffer = Marshal.AllocCoTaskMem(Math.Max((int)Size, Marshal.SizeOf(typeof(WM_MEDIA_TYPE)) + Marshal.SizeOf(typeof(WaveFormat))));
+            reader.GetOutputFormat(outputNumber, formatNumber, out Props);
+            Props.GetMediaType(IntPtr.Zero, ref size);
+            IntPtr buffer = Marshal.AllocCoTaskMem(Math.Max(size, Marshal.SizeOf(typeof(WM_MEDIA_TYPE)) + Marshal.SizeOf(typeof(WaveFormat))));
             try
             {
-                Props.GetMediaType(buffer, ref Size);
-                mt = (WM_MEDIA_TYPE)Marshal.PtrToStructure(buffer, typeof(WM_MEDIA_TYPE));
+                Props.GetMediaType(buffer, ref size);
+                var mt = (WM_MEDIA_TYPE)Marshal.PtrToStructure(buffer, typeof(WM_MEDIA_TYPE));
                 if ((mt.majortype == MediaTypes.WMMEDIATYPE_Audio) &&
                      (mt.subtype == MediaTypes.WMMEDIASUBTYPE_PCM) &&
                      (mt.formattype == MediaTypes.WMFORMAT_WaveFormatEx) &&
@@ -373,7 +372,7 @@ namespace NAudio.WindowsMediaFormat
                 }
                 else
                 {
-                    throw new ArgumentException(string.Format("The format {0} of the output {1} is not a valid PCM format", FormatNumber, OutputNumber));
+                    throw new ArgumentException(string.Format("The format {0} of the output {1} is not a valid PCM format", formatNumber, outputNumber));
                 }
             }
             finally

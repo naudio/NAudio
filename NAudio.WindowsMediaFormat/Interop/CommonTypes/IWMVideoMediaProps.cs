@@ -36,7 +36,7 @@ namespace NAudio.WindowsMediaFormat
         //IWMMediaProps
         new void GetType([Out] out Guid pguidType);
         new void GetMediaType( /*[out] WM_MEDIA_TYPE* */ IntPtr pType,
-          [In, Out] ref uint pcbType);
+          [In, Out] ref int pcbType);
         new void SetMediaType([In] ref WM_MEDIA_TYPE pType);
         //IWMVideoMediaProps
         void GetMaxKeyFrameSpacing([Out] out long pllTime);

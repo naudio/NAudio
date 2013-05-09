@@ -9,6 +9,7 @@ using Windows.Foundation;
 using Windows.Storage.Streams;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Media;
 
 namespace NAudio.Wave
 {
@@ -25,6 +26,15 @@ namespace NAudio.Wave
             this.mediaElement = mediaElement;
             mediaElement.MediaFailed += mediaElement_MediaFailed;
             mediaElement.MediaOpened += MediaElementOnMediaOpened;
+            mediaElement.CurrentStateChanged += MediaElementOnCurrentStateChanged;
+        }
+
+        private void MediaElementOnCurrentStateChanged(object sender, RoutedEventArgs routedEventArgs)
+        {
+            if (mediaElement.CurrentState == MediaElementState.Stopped)
+            {
+                OnPlaybackStopped(new StoppedEventArgs());
+            }
         }
 
         private void MediaElementOnMediaOpened(object sender, RoutedEventArgs routedEventArgs)
@@ -67,6 +77,12 @@ namespace NAudio.Wave
 
         public PlaybackState PlaybackState { get; private set; }
         public event EventHandler<StoppedEventArgs> PlaybackStopped;
+
+        protected virtual void OnPlaybackStopped(StoppedEventArgs e)
+        {
+            EventHandler<StoppedEventArgs> handler = PlaybackStopped;
+            if (handler != null) handler(this, e);
+        }
     }
 
     class WaveProviderStream : Stream

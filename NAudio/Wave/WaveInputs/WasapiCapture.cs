@@ -50,7 +50,13 @@ namespace NAudio.CoreAudioApi
         public WasapiCapture(MMDevice captureDevice)
         {
             this.audioClient = captureDevice.AudioClient;
+
             this.waveFormat = audioClient.MixFormat;
+            var wfe = waveFormat as WaveFormatExtensible;
+            if (wfe != null)
+            {
+                waveFormat = wfe.ToStandardWaveFormat();
+            }
         }
 
         /// <summary>

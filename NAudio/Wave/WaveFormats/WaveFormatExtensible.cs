@@ -51,6 +51,20 @@ namespace NAudio.Wave
         }
 
         /// <summary>
+        /// WaveFormatExtensible for PCM or floating point can be awkward to work with
+        /// This creates a regular WaveFormat structure representing the same audio format
+        /// </summary>
+        /// <returns></returns>
+        public WaveFormat ToStandardWaveFormat()
+        {
+            if (subFormat == AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT && bitsPerSample == 32)
+                return CreateIeeeFloatWaveFormat(sampleRate, channels);
+            if (subFormat == AudioMediaSubtypes.MEDIASUBTYPE_PCM)
+                return new WaveFormat(sampleRate,bitsPerSample,channels);
+            throw new InvalidOperationException("Not a recognised PCM or IEEE float format");
+        }
+
+        /// <summary>
         /// SubFormat (may be one of AudioMediaSubtypes)
         /// </summary>
         public Guid SubFormat { get { return subFormat; } }

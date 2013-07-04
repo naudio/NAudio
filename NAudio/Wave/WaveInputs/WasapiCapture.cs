@@ -16,8 +16,8 @@ namespace NAudio.CoreAudioApi
     public class WasapiCapture : IWaveIn
     {
         private const long REFTIMES_PER_SEC = 10000000;
-        private const long REFTIMES_PER_MILLISEC = 10000;        
-        private volatile bool stop;
+        private const long REFTIMES_PER_MILLISEC = 10000;
+        private volatile bool requestStop;
         private byte[] recordBuffer;
         private Thread captureThread;
         private AudioClient audioClient;
@@ -114,34 +114,25 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public void StartRecording()
         {
+            if (captureThread != null)
+            {
+                throw new InvalidOperationException("Previous recording still in progress");
+            }
             InitializeCaptureDevice();
             ThreadStart start = delegate { this.CaptureThread(this.audioClient); };
             this.captureThread = new Thread(start);
 
             Debug.WriteLine("Thread starting...");
-            this.stop = false;
-            this.captureThread.Start();	
+            this.requestStop = false;
+            this.captureThread.Start();
         }
 
         /// <summary>
-        /// Stop Recording
+        /// Stop Recording (requests a stop, wait for RecordingStopped event to know it has finished)
         /// </summary>
         public void StopRecording()
         {
-            if (this.captureThread != null)
-            {
-                this.stop = true;
-
-                Debug.WriteLine("Thread ending...");
-
-                // wait for thread to end
-                this.captureThread.Join();
-                this.captureThread = null;
-
-                Debug.WriteLine("Done.");
-
-                this.stop = false;
-            }
+            this.requestStop = true;
         }
 
         private void CaptureThread(AudioClient client)
@@ -160,9 +151,9 @@ namespace NAudio.CoreAudioApi
                 client.Stop();
                 // don't dispose - the AudioClient only gets disposed when WasapiCapture is disposed
             }
-
+            captureThread = null;
             RaiseRecordingStopped(exception);
-            System.Diagnostics.Debug.WriteLine("stop wasapi");
+            System.Diagnostics.Debug.WriteLine("Stop wasapi");
         }
 
         private void DoRecording(AudioClient client)
@@ -178,7 +169,7 @@ namespace NAudio.CoreAudioApi
             AudioCaptureClient capture = client.AudioCaptureClient;
             client.Start();
             Debug.WriteLine(string.Format("sleep: {0} ms", sleepMilliseconds));
-            while (!this.stop)
+            while (!this.requestStop)
             {
                 Thread.Sleep(sleepMilliseconds);
                 ReadNextPacket(capture);
@@ -196,16 +187,15 @@ namespace NAudio.CoreAudioApi
 
         private void ReadNextPacket(AudioCaptureClient capture)
         {
-            IntPtr buffer;
-            int framesAvailable;
-            AudioClientBufferFlags flags;
             int packetSize = capture.GetNextPacketSize();
             int recordBufferOffset = 0;
             //Debug.WriteLine(string.Format("packet size: {0} samples", packetSize / 4));
 
             while (packetSize != 0)
             {
-                buffer = capture.GetBuffer(out framesAvailable, out flags);
+                int framesAvailable;
+                AudioClientBufferFlags flags;
+                IntPtr buffer = capture.GetBuffer(out framesAvailable, out flags);
 
                 int bytesAvailable = framesAvailable * bytesPerFrame;
 
@@ -243,6 +233,11 @@ namespace NAudio.CoreAudioApi
         public void Dispose()
         {
             StopRecording();
+            if (captureThread != null)
+            {
+                captureThread.Join();
+                captureThread = null;
+            }
             if (audioClient != null)
             {
                 audioClient.Dispose();

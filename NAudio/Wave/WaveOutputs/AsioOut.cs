@@ -24,9 +24,9 @@ namespace NAudio.Wave
         private int nbSamples;
         private byte[] waveBuffer;
         private ASIOSampleConvertor.SampleConvertor convertor;
-        private string driverName;
+        private readonly string driverName;
 
-        private SynchronizationContext syncContext;
+        private readonly SynchronizationContext syncContext;
 
         /// <summary>
         /// Playback Stopped
@@ -382,6 +382,26 @@ namespace NAudio.Wave
                     this.syncContext.Post(state => handler(this, new StoppedEventArgs(e)), null);
                 }
             }
+        }
+
+        /// <summary>
+        /// Get the input channel name
+        /// </summary>
+        /// <param name="channel">channel index (zero based)</param>
+        /// <returns>channel name</returns>
+        public string AsioInputChannelName(int channel)
+        {
+            return channel > DriverInputChannelCount ? "" : driver.Capabilities.InputChannelInfos[channel].name;
+        }
+
+        /// <summary>
+        /// Get the output channel name
+        /// </summary>
+        /// <param name="channel">channel index (zero based)</param>
+        /// <returns>channel name</returns>
+        public string AsioOutputChannelName(int channel)
+        {
+            return channel > DriverOutputChannelCount ? "" : driver.Capabilities.OutputChannelInfos[channel].name;
         }
     }
 }

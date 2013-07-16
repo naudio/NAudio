@@ -7,7 +7,7 @@ namespace NAudio.Wave
     /// <summary>
     /// Alternative WaveOut class, making use of the Event callback
     /// </summary>
-    public class WaveOutEvent : IWavePlayer
+    public class WaveOutEvent : IWavePlayer, IWavePosition
     {
         private readonly object waveOutLock;
         private readonly SynchronizationContext syncContext;
@@ -227,6 +227,35 @@ namespace NAudio.Wave
         }
 
         /// <summary>
+        /// Gets the current position in bytes from the wave output device.
+        /// (n.b. this is not the same thing as the position within your reader
+        /// stream - it calls directly into waveOutGetPosition)
+        /// </summary>
+        /// <returns>Position in bytes</returns>
+        public long GetPosition()
+        {
+            lock (waveOutLock)
+            {
+                MmTime mmTime = new MmTime();
+                mmTime.wType = MmTime.TIME_BYTES; // request results in bytes, TODO: perhaps make this a little more flexible and support the other types?
+                MmException.Try(WaveInterop.waveOutGetPosition(hWaveOut, out mmTime, Marshal.SizeOf(mmTime)), "waveOutGetPosition");
+
+                if (mmTime.wType != MmTime.TIME_BYTES)
+                    throw new Exception(string.Format("waveOutGetPosition: wType -> Expected {0}, Received {1}", MmTime.TIME_BYTES, mmTime.wType));
+
+                return mmTime.cb;
+            }
+        }
+
+        /// <summary>
+        /// Gets a <see cref="Wave.WaveFormat"/> instance indicating the format the hardware is using.
+        /// </summary>
+        public WaveFormat OutputWaveFormat
+        {
+            get { return this.waveStream.WaveFormat; }
+        }
+
+        /// <summary>
         /// Playback State
         /// </summary>
         public PlaybackState PlaybackState
@@ -316,27 +345,6 @@ namespace NAudio.Wave
                 {
                     this.syncContext.Post(state => handler(this, new StoppedEventArgs(e)), null);
                 }
-            }
-        }
-
-        /// <summary>
-        /// Gets the current position in bytes from the wave output device.
-        /// (n.b. this is not the same thing as the position within your reader
-        /// stream - it calls directly into waveOutGetPosition)
-        /// </summary>
-        /// <returns>Position in bytes</returns>
-        public long GetPosition()
-        {
-            lock (waveOutLock)
-            {
-                var mmTime = new MmTime();
-                mmTime.wType = MmTime.TIME_BYTES; // request results in bytes, TODO: perhaps make this a little more flexible and support the other types?
-                MmException.Try(WaveInterop.waveOutGetPosition(hWaveOut, out mmTime, Marshal.SizeOf(mmTime)), "waveOutGetPosition");
-
-                if (mmTime.wType != MmTime.TIME_BYTES)
-                    throw new Exception(string.Format("waveOutGetPosition: wType -> Expected {0}, Received {1}", MmTime.TIME_BYTES, mmTime.wType));
-
-                return mmTime.cb;
             }
         }
     }

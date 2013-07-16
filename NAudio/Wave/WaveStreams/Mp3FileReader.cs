@@ -22,8 +22,7 @@ namespace NAudio.Wave
         private Stream mp3Stream;
         private readonly long mp3DataLength;
         private readonly long dataStartPosition;
-        private readonly int frameLengthInBytes;
-
+        
         /// <summary>
         /// The MP3 wave format (n.b. NOT the output format of this stream - see the WaveFormat property)
         /// </summary>
@@ -37,7 +36,6 @@ namespace NAudio.Wave
         private List<Mp3Index> tableOfContents;
         private int tocIndex;
 
-        private readonly int sampleRate;
         private long totalSamples;
         private readonly int bytesPerSample;
 
@@ -91,13 +89,24 @@ namespace NAudio.Wave
             id3v2Tag = Id3v2Tag.ReadTag(mp3Stream);
 
             dataStartPosition = mp3Stream.Position;
-            var mp3Frame = Mp3Frame.LoadFromStream(mp3Stream);
-            sampleRate = mp3Frame.SampleRate;
-            frameLengthInBytes = mp3Frame.FrameLength;
-            double bitRate = mp3Frame.BitRate;
-            xingHeader = XingHeader.LoadXingHeader(mp3Frame);
+            var firstFrame = Mp3Frame.LoadFromStream(mp3Stream);
+            double bitRate = firstFrame.BitRate;
+            xingHeader = XingHeader.LoadXingHeader(firstFrame);
             // If the header exists, we can skip over it when decoding the rest of the file
             if (xingHeader != null) dataStartPosition = mp3Stream.Position;
+
+            // workaround for a longstanding issue with some files failing to load
+            // because they report a spurious sample rate change
+            var secondFrame = Mp3Frame.LoadFromStream(mp3Stream);
+            if (secondFrame != null && 
+                (secondFrame.SampleRate != firstFrame.SampleRate ||
+                secondFrame.ChannelMode != firstFrame.ChannelMode))
+            {
+                // assume that the first frame was some kind of VBR/LAME header that we failed to recognise properly
+                dataStartPosition = secondFrame.FileOffset;
+                // forget about the first frame, the second one is the first one we really care about
+                firstFrame = secondFrame;
+            }
 
             this.mp3DataLength = mp3Stream.Length - dataStartPosition;
 
@@ -114,7 +123,7 @@ namespace NAudio.Wave
             mp3Stream.Position = dataStartPosition;
             
             // create a temporary MP3 format before we know the real bitrate
-            this.Mp3WaveFormat = new Mp3WaveFormat(sampleRate, mp3Frame.ChannelMode == ChannelMode.Mono ? 1 : 2, frameLengthInBytes, (int)bitRate);
+            this.Mp3WaveFormat = new Mp3WaveFormat(firstFrame.SampleRate, firstFrame.ChannelMode == ChannelMode.Mono ? 1 : 2, firstFrame.FrameLength, (int)bitRate);
             
             CreateTableOfContents();
             this.tocIndex = 0;
@@ -128,7 +137,7 @@ namespace NAudio.Wave
             mp3Stream.Position = dataStartPosition;
 
             // now we know the real bitrate we can create an accurate 
-            this.Mp3WaveFormat = new Mp3WaveFormat(sampleRate, mp3Frame.ChannelMode == ChannelMode.Mono ? 1 : 2, frameLengthInBytes, (int)bitRate);
+            this.Mp3WaveFormat = new Mp3WaveFormat(firstFrame.SampleRate, firstFrame.ChannelMode == ChannelMode.Mono ? 1 : 2, firstFrame.FrameLength, (int)bitRate);
             decompressor = frameDecompressorBuilder(Mp3WaveFormat); 
             this.waveFormat = decompressor.OutputFormat;
             this.bytesPerSample = (decompressor.OutputFormat.BitsPerSample) / 8 * decompressor.OutputFormat.Channels;
@@ -163,7 +172,6 @@ namespace NAudio.Wave
                 // 400 bytes per frame is probably a good enough approximation.
                 tableOfContents = new List<Mp3Index>((int)(mp3DataLength / 400));
                 Mp3Frame frame = null;
-                this.totalSamples = 0;
                 do
                 {
                     var index = new Mp3Index();
@@ -213,7 +221,7 @@ namespace NAudio.Wave
         /// </summary>
         private double TotalSeconds()
         {
-            return (double)this.totalSamples / sampleRate;
+            return (double)this.totalSamples / Mp3WaveFormat.SampleRate;
         }
 
         /// <summary>

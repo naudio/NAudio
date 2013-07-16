@@ -18,6 +18,7 @@ namespace NAudio.Wave
         private readonly int dataChunkLength;
         private readonly List<AiffChunk> chunks = new List<AiffChunk>();
         private Stream waveStream;
+        private readonly object lockObject = new object();
 
         /// <summary>Supports opening a AIF file</summary>
         /// <remarks>The AIF is of similar nastiness to the WAV format.
@@ -49,7 +50,7 @@ namespace NAudio.Wave
         /// <param name="dataChunkPosition">The position of the data chunk</param>
         /// <param name="dataChunkLength">The length of the data chunk</param>
         /// <param name="chunks">Additional chunks found</param>
-        public static void ReadAiffHeader(Stream stream, out NAudio.Wave.WaveFormat format, out long dataChunkPosition, out int dataChunkLength, List<AiffChunk> chunks)
+        public static void ReadAiffHeader(Stream stream, out WaveFormat format, out long dataChunkPosition, out int dataChunkLength, List<AiffChunk> chunks)
         {
             dataChunkPosition = -1;
             format = null;
@@ -202,7 +203,7 @@ namespace NAudio.Wave
             }
             set
             {
-                lock (this)
+                lock (lockObject)
                 {
                     value = Math.Min(value, Length);
                     // make sure we don't get out of sync
@@ -223,45 +224,48 @@ namespace NAudio.Wave
             {
                 throw new ArgumentException(String.Format("Must read complete blocks: requested {0}, block align is {1}", count, this.WaveFormat.BlockAlign));
             }
-            // sometimes there is more junk at the end of the file past the data chunk
-            if (Position + count > dataChunkLength)
+            lock (lockObject)
             {
-                count = dataChunkLength - (int)Position;
+                // sometimes there is more junk at the end of the file past the data chunk
+                if (Position + count > dataChunkLength)
+                {
+                    count = dataChunkLength - (int) Position;
+                }
+
+                // Need to fix the endianness since intel expect little endian, and apple is big endian.
+                byte[] buffer = new byte[count];
+                int length = waveStream.Read(buffer, offset, count);
+
+                int bytesPerSample = WaveFormat.BitsPerSample/8;
+                for (int i = 0; i < length; i += bytesPerSample)
+                {
+                    if (WaveFormat.BitsPerSample == 8)
+                    {
+                        array[i] = buffer[i];
+                    }
+                    else if (WaveFormat.BitsPerSample == 16)
+                    {
+                        array[i + 0] = buffer[i + 1];
+                        array[i + 1] = buffer[i];
+                    }
+                    else if (WaveFormat.BitsPerSample == 24)
+                    {
+                        array[i + 0] = buffer[i + 2];
+                        array[i + 1] = buffer[i + 1];
+                        array[i + 2] = buffer[i + 0];
+                    }
+                    else if (WaveFormat.BitsPerSample == 32)
+                    {
+                        array[i + 0] = buffer[i + 3];
+                        array[i + 1] = buffer[i + 2];
+                        array[i + 2] = buffer[i + 1];
+                        array[i + 3] = buffer[i + 0];
+                    }
+                    else throw new FormatException("Unsupported PCM format.");
+                }
+
+                return length;
             }
-
-            // Need to fix the endianness since intel expect little endian, and apple is big endian.
-            byte[] buffer = new byte[count];
-            int length = waveStream.Read(buffer, offset, count);
-
-            int bytesPerSample = WaveFormat.BitsPerSample / 8;
-            for (int i = 0; i < length; i += bytesPerSample)
-            {
-                if (WaveFormat.BitsPerSample == 8)
-                {
-                    array[i] = buffer[i];
-                }
-                else if (WaveFormat.BitsPerSample == 16)
-                {
-                    array[i + 0] = buffer[i + 1];
-                    array[i + 1] = buffer[i];
-                }
-                else if (WaveFormat.BitsPerSample == 24)
-                {
-                    array[i + 0] = buffer[i + 2];
-                    array[i + 1] = buffer[i + 1];
-                    array[i + 2] = buffer[i + 0];
-                }
-                else if (WaveFormat.BitsPerSample == 32)
-                {
-                    array[i + 0] = buffer[i + 3];
-                    array[i + 1] = buffer[i + 2];
-                    array[i + 2] = buffer[i + 1];
-                    array[i + 3] = buffer[i + 0];
-                }
-                else throw new FormatException("Unsupported PCM format.");
-            }
-
-            return length;
         }
 
         #region Endian Helpers

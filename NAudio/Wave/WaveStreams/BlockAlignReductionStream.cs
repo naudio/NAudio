@@ -12,11 +12,12 @@ namespace NAudio.Wave
     /// </summary>
     public class BlockAlignReductionStream : WaveStream
     {
-        WaveStream sourceStream;
-        long position;
-        CircularBuffer circularBuffer;
-        long bufferStartPosition;
-        byte[] sourceBuffer;
+        private WaveStream sourceStream;
+        private long position;
+        private readonly CircularBuffer circularBuffer;
+        private long bufferStartPosition;
+        private byte[] sourceBuffer;
+        private readonly object lockObject = new object();
 
         /// <summary>
         /// Creates a new BlockAlignReductionStream
@@ -77,7 +78,7 @@ namespace NAudio.Wave
             }
             set
             {
-                lock (this)
+                lock (lockObject)
                 {
                     if (position != value)
                     {
@@ -134,7 +135,7 @@ namespace NAudio.Wave
         /// <returns></returns>
         public override int Read(byte[] buffer, int offset, int count)
         {
-            lock (this)
+            lock (lockObject)
             {
                 // 1. attempt to fill the circular buffer with enough data to meet our request
                 while (BufferEndPosition < position + count)

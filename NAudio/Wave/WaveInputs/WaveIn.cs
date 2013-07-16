@@ -87,7 +87,7 @@ namespace NAudio.Wave
         /// <returns>The WaveIn device capabilities</returns>
         public static WaveInCapabilities GetCapabilities(int devNumber)
         {
-            WaveInCapabilities caps = new WaveInCapabilities();
+            var caps = new WaveInCapabilities();
             int structSize = Marshal.SizeOf(caps);
             MmException.Try(WaveInterop.waveInGetDevCaps((IntPtr)devNumber, out caps, structSize), "waveInGetDevCaps");
             return caps;

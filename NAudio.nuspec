@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
     <id>NAudio</id>
-    <version>1.7-alpha04</version>
+    <version>1.7-alpha06</version>
     <authors>Mark Heath</authors>
     <owners>Mark Heath</owners>
     <licenseUrl>http://naudio.codeplex.com/license</licenseUrl>
@@ -15,6 +15,8 @@
   <files>
     <file src="NAudio\bin\Release\NAudio.dll" target="lib\net35" /> 
     <file src="NAudio\bin\Release\NAudio.xml" target="lib\net35" /> 
+    <file src="NAudio.Win8\bin\Release\NAudio.Win8.dll" target="lib\windows8" /> 
+    <file src="NAudio.Win8\bin\Release\NAudio.Win8.xml" target="lib\windows8" /> 
     <file src="license.txt" />
     <file src="readme.txt" />
   </files>

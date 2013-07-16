@@ -467,7 +467,7 @@ namespace NAudio.Win8.Wave.WaveOutputs
     }
 
     [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("41D949AB-9862-444A-80F6-C261334DA5EB")]
-    public interface IActivateAudioInterfaceCompletionHandler
+    interface IActivateAudioInterfaceCompletionHandler
     {
         //virtual HRESULT STDMETHODCALLTYPE ActivateCompleted(/*[in]*/ _In_  
         //   IActivateAudioInterfaceAsyncOperation *activateOperation) = 0;
@@ -476,7 +476,7 @@ namespace NAudio.Win8.Wave.WaveOutputs
 
 
     [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("72A22D78-CDE4-431D-B8CC-843A71199B6D")]
-    public interface IActivateAudioInterfaceAsyncOperation
+    interface IActivateAudioInterfaceAsyncOperation
     {
         //virtual HRESULT STDMETHODCALLTYPE GetActivateResult(/*[out]*/ _Out_  
         //  HRESULT *activateResult, /*[out]*/ _Outptr_result_maybenull_  IUnknown **activatedInterface) = 0;
@@ -486,7 +486,7 @@ namespace NAudio.Win8.Wave.WaveOutputs
 
 
     [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("726778CD-F60A-4eda-82DE-E47610CD78AA")]
-    public interface IAudioClient2
+    interface IAudioClient2
     {
         [PreserveSig]
         int Initialize(AudioClientShareMode shareMode,
@@ -551,7 +551,7 @@ namespace NAudio.Win8.Wave.WaveOutputs
     }
 
     [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("94ea2b94-e9cc-49e0-c0ff-ee64ca8f5b90")]
-    public interface IAgileObject
+    interface IAgileObject
     {
 
     }

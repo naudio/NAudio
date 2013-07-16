@@ -63,7 +63,7 @@ namespace NAudioDemo.Generator
             tbToSweepLength();
 
             // Init Driver Audio
-            driverOut.Init(new SampleToWaveProvider(wg));
+            driverOut.Init(wg);
             StartStopEnabled();
 
         }
@@ -363,8 +363,7 @@ namespace NAudioDemo.Generator
             {
                 var osp = new OffsetSampleProvider(wg);
                 osp.TakeSamples = wg.WaveFormat.SampleRate*20*wg.WaveFormat.Channels;
-                WaveFileWriter.CreateWaveFile(sfd.FileName, new SampleToWaveProvider16(osp));
-                
+                WaveFileWriter.CreateWaveFile16(sfd.FileName, osp);
             }
         }
 

@@ -9,7 +9,7 @@ namespace NAudio.Wave
     /// <summary>
     /// Represents a wave out device
     /// </summary>
-    public class WaveOut : IWavePlayer
+    public class WaveOut : IWavePlayer, IWavePosition
     {
         private IntPtr hWaveOut;
         private WaveOutBuffer[] buffers;
@@ -266,6 +266,14 @@ namespace NAudio.Wave
 
                 return mmTime.cb;
             }
+        }
+
+        /// <summary>
+        /// Gets a <see cref="Wave.WaveFormat"/> instance indicating the format the hardware is using.
+        /// </summary>
+        public WaveFormat OutputWaveFormat
+        {
+            get { return this.waveStream.WaveFormat; }
         }
 
         /// <summary>

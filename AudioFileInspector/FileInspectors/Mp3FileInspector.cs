@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.ComponentModel.Composition;
+using NAudio.Utils;
 using NAudio.Wave;
 
 namespace AudioFileInspector
@@ -22,8 +24,8 @@ namespace AudioFileInspector
 
         public string Describe(string fileName)
         {
-            StringBuilder stringBuilder = new StringBuilder();
-            using (Mp3FileReader reader = new Mp3FileReader(fileName))
+            var stringBuilder = new StringBuilder();
+            using (var reader = new Mp3FileReader(fileName))
             {
                 Mp3WaveFormat wf = reader.Mp3WaveFormat;
                 stringBuilder.AppendFormat("MP3 File WaveFormat: {0} {1}Hz {2} channels {3} bits per sample\r\n",

@@ -62,6 +62,8 @@ namespace NAudio.Wave
         /// <returns>A valid MP3 frame, or null if none found</returns>
         public static Mp3Frame LoadFromStream(Stream input, bool readData)
         {
+            var frame = new Mp3Frame();
+            frame.FileOffset = input.Position;
             byte[] headerBytes = new byte[4];
             int bytesRead = input.Read(headerBytes, 0, headerBytes.Length);
             if (bytesRead < headerBytes.Length)
@@ -69,8 +71,6 @@ namespace NAudio.Wave
                 // reached end of stream, no more MP3 frames
                 return null;
             }
-            Mp3Frame frame = new Mp3Frame();
-
             while (!IsValidHeader(headerBytes, frame))
             {
                 // shift down by one and try again
@@ -82,6 +82,7 @@ namespace NAudio.Wave
                 {
                     return null;
                 }
+                frame.FileOffset++;
             }
             /* no longer read the CRC since we include this in framelengthbytes
             if (this.crcPresent)
@@ -270,5 +271,10 @@ namespace NAudio.Wave
         /// </summary>
         public bool CrcPresent { get; private set; }
 
+
+        /// <summary>
+        /// Not part of the MP3 frame itself - indicates where in the stream we found this header
+        /// </summary>
+        public long FileOffset { get; private set; }
     }
 }

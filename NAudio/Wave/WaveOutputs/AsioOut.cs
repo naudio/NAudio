@@ -283,6 +283,19 @@ namespace NAudio.Wave
         }
 
         /// <summary>
+        /// Gets the latency (in ms) of the playback driver
+        /// </summary>
+        public int PlaybackLatency
+        {
+            get
+            {
+                int latency, temp;
+                driver.Driver.GetLatencies(out temp, out latency);
+                return latency;
+            }
+        }
+
+        /// <summary>
         /// Playback State
         /// </summary>
         public PlaybackState PlaybackState

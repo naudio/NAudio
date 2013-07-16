@@ -11,7 +11,7 @@ namespace NAudio.Wave
     /// <summary>
     /// Support for playback using Wasapi
     /// </summary>
-    public class WasapiOut : IWavePlayer
+    public class WasapiOut : IWavePlayer, IWavePosition
     {
         private AudioClient audioClient;
         private AudioClientShareMode shareMode;
@@ -194,6 +194,29 @@ namespace NAudio.Wave
                 Debug.WriteLine(String.Format("WASAPI wanted {0} frames, supplied {1}", frameCount, actualFrameCount ));
             }*/
             renderClient.ReleaseBuffer(actualFrameCount, AudioClientBufferFlags.None);
+        }
+
+        /// <summary>
+        /// Gets the current position in bytes from the wave output device.
+        /// (n.b. this is not the same thing as the position within your reader
+        /// stream)
+        /// </summary>
+        /// <returns>Position in bytes</returns>
+        public long GetPosition()
+        {
+            if (playbackState == Wave.PlaybackState.Stopped)
+            {
+                return 0;
+            }
+            return (long)audioClient.AudioClockClient.AdjustedPosition;
+        }
+
+        /// <summary>
+        /// Gets a <see cref="Wave.WaveFormat"/> instance indicating the format the hardware is using.
+        /// </summary>
+        public WaveFormat OutputWaveFormat
+        {
+            get { return outputFormat; }
         }
 
         #region IWavePlayer Members

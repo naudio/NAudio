@@ -136,6 +136,9 @@
     <Compile Include="..\NAudio\CoreAudioApi\AudioClientStreamFlags.cs">
       <Link>CoreAudioApi\AudioClientStreamFlags.cs</Link>
     </Compile>
+    <Compile Include="..\NAudio\CoreAudioApi\AudioClockClient.cs">
+      <Link>CoreAudioApi\AudioClockClient.cs</Link>
+    </Compile>
     <Compile Include="..\NAudio\CoreAudioApi\AudioEndpointVolume.cs">
       <Link>CoreAudioApi\AudioEndpointVolume.cs</Link>
     </Compile>
@@ -195,6 +198,9 @@
     </Compile>
     <Compile Include="..\NAudio\CoreAudioApi\Interfaces\IAudioClient.cs">
       <Link>CoreAudioApi\Interfaces\IAudioClient.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\CoreAudioApi\Interfaces\IAudioClock2.cs">
+      <Link>CoreAudioApi\Interfaces\IAudioClock2.cs</Link>
     </Compile>
     <Compile Include="..\NAudio\CoreAudioApi\Interfaces\IAudioEndpointVolume.cs">
       <Link>CoreAudioApi\Interfaces\IAudioEndpointVolume.cs</Link>

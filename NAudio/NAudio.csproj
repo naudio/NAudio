@@ -84,6 +84,7 @@
     <Compile Include="CoreAudioApi\AudioClientBufferFlags.cs" />
     <Compile Include="CoreAudioApi\AudioClientShareMode.cs" />
     <Compile Include="CoreAudioApi\AudioClientStreamFlags.cs" />
+    <Compile Include="CoreAudioApi\AudioClockClient.cs" />
     <Compile Include="CoreAudioApi\AudioEndpointVolumeCallback.cs" />
     <Compile Include="CoreAudioApi\AudioEndpointVolumeChannel.cs" />
     <Compile Include="CoreAudioApi\AudioEndpointVolumeChannels.cs" />
@@ -96,6 +97,7 @@
     <Compile Include="CoreAudioApi\Interfaces\AudioVolumeNotificationDataStruct.cs" />
     <Compile Include="CoreAudioApi\Interfaces\ErrorCodes.cs" />
     <Compile Include="CoreAudioApi\Interfaces\IAudioCaptureClient.cs" />
+    <Compile Include="CoreAudioApi\Interfaces\IAudioClock2.cs" />
     <Compile Include="CoreAudioApi\Interfaces\IAudioEndpointVolumeCallback.cs" />
     <Compile Include="CoreAudioApi\Interfaces\IAudioRenderClient.cs" />
     <Compile Include="CoreAudioApi\MMDeviceCollection.cs" />
@@ -141,6 +143,7 @@
     <Compile Include="Midi\MidiInMessageEventArgs.cs" />
     <Compile Include="Utils\ByteArrayExtensions.cs" />
     <Compile Include="Utils\FieldDescriptionHelper.cs" />
+    <Compile Include="Utils\WavePositionExtensions.cs" />
     <Compile Include="Utils\IEEE.cs" />
     <Compile Include="Utils\NativeMethods.cs" />
     <Compile Include="Wave\Asio\AsioDriverCapability.cs" />

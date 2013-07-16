@@ -10,11 +10,12 @@ namespace NAudio.Wave
     public class Wave32To16Stream : WaveStream
     {
         private WaveStream sourceStream;
-        private WaveFormat waveFormat;
-        private long length;
+        private readonly WaveFormat waveFormat;
+        private readonly long length;
         private long position;
         private bool clip;
         private float volume;
+        private readonly object lockObject = new object();
 
         /// <summary>
         /// Creates a new Wave32To16Stream
@@ -83,7 +84,7 @@ namespace NAudio.Wave
             }
             set
             {
-                lock (this)
+                lock (lockObject)
                 {
                     // make sure we don't get out of sync
                     value -= (value % BlockAlign);
@@ -102,11 +103,14 @@ namespace NAudio.Wave
         /// <returns>Number of bytes read.</returns>
         public override int Read(byte[] destBuffer, int offset, int numBytes)
         {
-            byte[] sourceBuffer = new byte[numBytes * 2];
-            int bytesRead = sourceStream.Read(sourceBuffer, 0, numBytes * 2);
-            Convert32To16(destBuffer, offset, sourceBuffer, bytesRead);
-            position += (bytesRead / 2);
-            return bytesRead / 2;
+            lock (lockObject)
+            {
+                byte[] sourceBuffer = new byte[numBytes*2];
+                int bytesRead = sourceStream.Read(sourceBuffer, 0, numBytes*2);
+                Convert32To16(destBuffer, offset, sourceBuffer, bytesRead);
+                position += (bytesRead/2);
+                return bytesRead/2;
+            }
         }
 
         /// <summary>

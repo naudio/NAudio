@@ -118,7 +118,7 @@ namespace NAudioDemo.AudioPlaybackDemo
 
             try
             {
-                waveOut.Init(new SampleToWaveProvider(sampleProvider));
+                waveOut.Init(sampleProvider);
             }
             catch (Exception initException)
             {

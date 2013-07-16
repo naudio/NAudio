@@ -14,6 +14,7 @@ AmandaTarafaMas
 balistof
 biermeester
 borman11
+bradb
 Brandon Hansen (kg6ypi)
 ChunkWare Music Software
 CKing
@@ -29,6 +30,8 @@ jbaker8935
 jcameron23
 jonahoffmann
 jontdelorme
+Kassoul
+kevinxxx
 Lustild
 Lucian Wischik (ljw1004)
 ManuN

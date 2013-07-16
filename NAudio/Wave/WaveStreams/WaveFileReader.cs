@@ -13,12 +13,13 @@ namespace NAudio.Wave
     /// </summary>
     public class WaveFileReader : WaveStream
     {
-        private WaveFormat waveFormat;
+        private readonly WaveFormat waveFormat;
+        private readonly bool ownInput;
+        private readonly long dataPosition;
+        private readonly long dataChunkLength;
+        private readonly List<RiffChunk> chunks = new List<RiffChunk>();
+        private readonly object lockObject = new object();
         private Stream waveStream;
-        private bool ownInput;
-        private long dataPosition;
-        private long dataChunkLength;
-        private List<RiffChunk> chunks = new List<RiffChunk>();
 
         /// <summary>Supports opening a WAV file</summary>
         /// <remarks>The WAV file format is a real mess, but we will only
@@ -142,11 +143,8 @@ namespace NAudio.Wave
                 {
                     return dataChunkLength / BlockAlign;
                 }
-                else
-                {
-                    // n.b. if there is a fact chunk, you can use that to get the number of samples
-                    throw new InvalidOperationException("Sample count is calculated only for the standard encodings");
-                }
+                // n.b. if there is a fact chunk, you can use that to get the number of samples
+                throw new InvalidOperationException("Sample count is calculated only for the standard encodings");
             }
         }
 
@@ -162,7 +160,7 @@ namespace NAudio.Wave
             }
             set
             {
-                lock (this)
+                lock (lockObject)
                 {
                     value = Math.Min(value, Length);
                     // make sure we don't get out of sync
@@ -182,12 +180,15 @@ namespace NAudio.Wave
             {
                 throw new ArgumentException(String.Format("Must read complete blocks: requested {0}, block align is {1}",count,this.WaveFormat.BlockAlign));
             }
-            // sometimes there is more junk at the end of the file past the data chunk
-            if (Position + count > dataChunkLength)
+            lock (lockObject)
             {
-                count = (int)(dataChunkLength - Position);
+                // sometimes there is more junk at the end of the file past the data chunk
+                if (Position + count > dataChunkLength)
+                {
+                    count = (int) (dataChunkLength - Position);
+                }
+                return waveStream.Read(array, offset, count);
             }
-            return waveStream.Read(array, offset, count);
         }
         
         /// <summary>

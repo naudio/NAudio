@@ -19,6 +19,7 @@ namespace NAudio.Wave
         private TimeSpan startTime;
         private TimeSpan sourceOffset;
         private TimeSpan sourceLength;
+        private readonly object lockObject = new object();
 
         /// <summary>
         /// Creates a new WaveOffsetStream
@@ -64,7 +65,7 @@ namespace NAudio.Wave
             }
             set 
             {
-                lock (this)
+                lock (lockObject)
                 {
                     startTime = value;
                     audioStartPosition = (long)(startTime.TotalSeconds * sourceStream.WaveFormat.SampleRate) * bytesPerSample;
@@ -86,7 +87,7 @@ namespace NAudio.Wave
             }
             set
             {
-                lock (this)
+                lock (lockObject)
                 {
                     sourceOffset = value;
                     sourceOffsetBytes = (long)(sourceOffset.TotalSeconds * sourceStream.WaveFormat.SampleRate) * bytesPerSample;
@@ -107,7 +108,7 @@ namespace NAudio.Wave
             }
             set
             {
-                lock (this)
+                lock (lockObject)
                 {
                     sourceLength = value;
                     sourceLengthBytes = (long)(sourceLength.TotalSeconds * sourceStream.WaveFormat.SampleRate) * bytesPerSample;
@@ -152,7 +153,7 @@ namespace NAudio.Wave
             }
             set
             {
-                lock (this)
+                lock (lockObject)
                 {
                     // make sure we don't get out of sync
                     value -= (value % BlockAlign);
@@ -174,31 +175,32 @@ namespace NAudio.Wave
         /// <returns>Number of bytes read.</returns>
         public override int Read(byte[] destBuffer, int offset, int numBytes)
         {
-            int bytesWritten = 0;
-            // 1. fill with silence
-            if (position < audioStartPosition)
+            lock (lockObject)
             {
-                bytesWritten = (int)Math.Min(numBytes, audioStartPosition - position);
-                for (int n = 0; n < bytesWritten; n++)
-                    destBuffer[n + offset] = 0;
+                int bytesWritten = 0;
+                // 1. fill with silence
+                if (position < audioStartPosition)
+                {
+                    bytesWritten = (int)Math.Min(numBytes, audioStartPosition - position);
+                    for (int n = 0; n < bytesWritten; n++)
+                        destBuffer[n + offset] = 0;
+                }
+                if (bytesWritten < numBytes)
+                {
+                    // don't read too far into source stream                
+                    int sourceBytesRequired = (int)Math.Min(
+                        numBytes - bytesWritten,
+                        sourceLengthBytes + sourceOffsetBytes - sourceStream.Position);
+                    int read = sourceStream.Read(destBuffer, bytesWritten + offset, sourceBytesRequired);
+                    bytesWritten += read;
+                }
+                // 3. Fill out with zeroes
+                for (int n = bytesWritten; n < numBytes; n++)
+                    destBuffer[offset + n] = 0;
+                position += numBytes;
+                return numBytes;
             }
-            if (bytesWritten < numBytes)
-            {
-                // don't read too far into source stream                
-                int sourceBytesRequired = (int)Math.Min(
-                    numBytes - bytesWritten, 
-                    sourceLengthBytes + sourceOffsetBytes - sourceStream.Position);                
-                int read = sourceStream.Read(destBuffer, bytesWritten + offset, sourceBytesRequired);
-                bytesWritten += read;
-            }
-            // 3. Fill out with zeroes
-            for (int n = bytesWritten; n < numBytes; n++)
-                destBuffer[offset + n] = 0;
-            position += numBytes;
-            return numBytes;
         }
-
-
 
         /// <summary>
         /// <see cref="WaveStream.WaveFormat"/>

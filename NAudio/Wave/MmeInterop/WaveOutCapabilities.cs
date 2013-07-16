@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 namespace NAudio.Wave
 {
     /// <summary>
-    /// WaveOutCapabilities structure (based on WAVEOUTCAPS from mmsystem.h)
+    /// WaveOutCapabilities structure (based on WAVEOUTCAPS2 from mmsystem.h)
     /// http://msdn.microsoft.com/library/default.asp?url=/library/en-us/multimed/htm/_win32_waveoutcaps_str.asp
     /// </summary>
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
@@ -44,6 +44,11 @@ namespace NAudio.Wave
         /// Optional functionality supported by the device
         /// </summary>
         private WaveOutSupport support; // = new WaveOutSupport();
+
+        // extra WAVEOUTCAPS2 members
+        private Guid manufacturerGuid;
+        private Guid productGuid;
+        private Guid nameGuid;
 
         private const int MaxProductNameLength = 32;
 
@@ -89,6 +94,19 @@ namespace NAudio.Wave
         {
             return (supportedFormats & waveFormat) == waveFormat;
         }
+
+        /// <summary>
+        /// The device name Guid (if provided)
+        /// </summary>
+        public Guid NameGuid { get { return nameGuid; } }
+        /// <summary>
+        /// The product name Guid (if provided)
+        /// </summary>
+        public Guid ProductGuid { get { return productGuid; } }
+        /// <summary>
+        /// The manufacturer guid (if provided)
+        /// </summary>
+        public Guid ManufacturerGuid { get { return manufacturerGuid; } }
     }
 
     /// <summary>

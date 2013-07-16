@@ -20,7 +20,8 @@ namespace NAudio.Wave
         private volatile float volume;
         private volatile float pan;
         private long position;
-        private ISampleChunkConverter sampleProvider;
+        private readonly ISampleChunkConverter sampleProvider;
+        private readonly object lockObject = new object();
 
         /// <summary>
         /// Creates a new WaveChannel32
@@ -123,7 +124,7 @@ namespace NAudio.Wave
             }
             set
             {
-                lock (this)
+                lock (lockObject)
                 {
                     // make sure we don't get out of sync
                     value -= (value % BlockAlign);
@@ -151,43 +152,46 @@ namespace NAudio.Wave
         /// <returns>Number of bytes read.</returns>
         public override int Read(byte[] destBuffer, int offset, int numBytes)
         {
-            int bytesWritten = 0;
-            WaveBuffer destWaveBuffer = new WaveBuffer(destBuffer);
-                
-            // 1. fill with silence
-            if (position < 0)
+            lock (lockObject)
             {
-                bytesWritten = (int)Math.Min(numBytes, 0 - position);
-                for (int n = 0; n < bytesWritten; n++)
-                    destBuffer[n + offset] = 0;
-            }
-            if (bytesWritten < numBytes)
-            {
-                this.sampleProvider.LoadNextChunk(sourceStream, (numBytes - bytesWritten) / 8);
-                float left, right;
-                
-                int outIndex = (offset / 4) + bytesWritten / 4;
-                while (this.sampleProvider.GetNextSample(out left, out right) && bytesWritten < numBytes)
+                int bytesWritten = 0;
+                WaveBuffer destWaveBuffer = new WaveBuffer(destBuffer);
+
+                // 1. fill with silence
+                if (position < 0)
                 {
-                    // implement better panning laws. 
-                    left = (pan <= 0) ? left : (left * (1 - pan) / 2.0f);
-                    right = (pan >= 0) ? right : (right * (pan + 1) / 2.0f);
-                    left *= volume;
-                    right *= volume;
-                    destWaveBuffer.FloatBuffer[outIndex++] = left;
-                    destWaveBuffer.FloatBuffer[outIndex++] = right;
-                    bytesWritten += 8;
-                    if (Sample != null) RaiseSample(left, right);
+                    bytesWritten = (int) Math.Min(numBytes, 0 - position);
+                    for (int n = 0; n < bytesWritten; n++)
+                        destBuffer[n + offset] = 0;
                 }
+                if (bytesWritten < numBytes)
+                {
+                    this.sampleProvider.LoadNextChunk(sourceStream, (numBytes - bytesWritten)/8);
+                    float left, right;
+
+                    int outIndex = (offset/4) + bytesWritten/4;
+                    while (this.sampleProvider.GetNextSample(out left, out right) && bytesWritten < numBytes)
+                    {
+                        // implement better panning laws. 
+                        left = (pan <= 0) ? left : (left*(1 - pan)/2.0f);
+                        right = (pan >= 0) ? right : (right*(pan + 1)/2.0f);
+                        left *= volume;
+                        right *= volume;
+                        destWaveBuffer.FloatBuffer[outIndex++] = left;
+                        destWaveBuffer.FloatBuffer[outIndex++] = right;
+                        bytesWritten += 8;
+                        if (Sample != null) RaiseSample(left, right);
+                    }
+                }
+                // 3. Fill out with zeroes
+                if (PadWithZeroes && bytesWritten < numBytes)
+                {
+                    Array.Clear(destBuffer, offset + bytesWritten, numBytes - bytesWritten);
+                    bytesWritten = numBytes;
+                }
+                position += bytesWritten;
+                return bytesWritten;
             }
-            // 3. Fill out with zeroes
-            if (PadWithZeroes && bytesWritten < numBytes)
-            {
-                Array.Clear(destBuffer, offset + bytesWritten, numBytes - bytesWritten);
-                bytesWritten = numBytes;
-            }
-            position += bytesWritten;
-            return bytesWritten;
         }
 
         /// <summary>

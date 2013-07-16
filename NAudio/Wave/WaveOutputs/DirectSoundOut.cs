@@ -36,6 +36,7 @@ namespace NAudio.Wave
         private EventWaitHandle endEventWaitHandle;
         private Thread notifyThread;
         private SynchronizationContext syncContext;
+        private long bytesPlayed;
 
         // Used purely for locking
         private Object m_LockObject = new Object();
@@ -183,6 +184,45 @@ namespace NAudio.Wave
             }
         }
 
+        /// <summary>
+        /// Gets the current position in bytes from the wave output device.
+        /// (n.b. this is not the same thing as the position within your reader
+        /// stream)
+        /// </summary>
+        /// <returns>Position in bytes</returns>
+        public long GetPosition()
+        {
+            if (playbackState != Wave.PlaybackState.Stopped)
+            {
+                var sbuf = secondaryBuffer;
+                if (sbuf != null)
+                {
+                    uint currentPlayCursor, currentWriteCursor;
+                    sbuf.GetCurrentPosition(out currentPlayCursor, out currentWriteCursor);
+                    return currentPlayCursor + bytesPlayed;
+                }
+            }
+            return 0;
+        }
+
+        /// <summary>
+        /// Gets the current position from the wave output device.
+        /// </summary>
+        public TimeSpan PlaybackPosition
+        {
+            get
+            {
+                // bytes played in this stream
+                var pos = GetPosition();
+
+                // samples played in this stream
+                pos /= waveFormat.Channels * waveFormat.BitsPerSample / 8;
+
+                // ms played in this stream
+                return TimeSpan.FromMilliseconds(pos * 1000.0 / waveFormat.SampleRate);
+            }
+        }
+
 
         /// <summary>
         /// Initialise playback
@@ -243,7 +283,8 @@ namespace NAudio.Wave
                         | DirectSoundBufferCaps.DSBCAPS_CTRLPOSITIONNOTIFY
                         | DirectSoundBufferCaps.DSBCAPS_GLOBALFOCUS
                         | DirectSoundBufferCaps.DSBCAPS_CTRLVOLUME
-                        | DirectSoundBufferCaps.DSBCAPS_STICKYFOCUS;
+                        | DirectSoundBufferCaps.DSBCAPS_STICKYFOCUS
+                        | DirectSoundBufferCaps.DSBCAPS_GETCURRENTPOSITION2;
                     bufferDesc2.dwReserved = 0;
                     GCHandle handleOnWaveFormat = GCHandle.Alloc(waveFormat, GCHandleType.Pinned); // Ptr to waveFormat
                     bufferDesc2.lpwfxFormat = handleOnWaveFormat.AddrOfPinnedObject(); // set Ptr to waveFormat
@@ -362,6 +403,8 @@ namespace NAudio.Wave
         {
             // Used to determine if playback is halted
             bool lPlaybackHalted = false;
+            bool firstBufferStarted = false;
+            bytesPlayed = 0;
 
             Exception exception = null;
             // Incase the thread is killed
@@ -408,6 +451,20 @@ namespace NAudio.Wave
                             }
                             else
                             {
+                                if (indexHandle == 0)
+                                {
+                                    // we're at the beginning of the buffer...
+                                    if (firstBufferStarted)
+                                    {
+                                        // because this notification is based on the *playback" cursor, this should be reasonably accurate
+                                        bytesPlayed += samplesFrameSize * 2;
+                                    }
+                                }
+                                else
+                                {
+                                    firstBufferStarted = true;
+                                }
+
                                 indexHandle = (indexHandle == 0) ? 1 : 0;
                                 nextSamplesWriteIndex = indexHandle * samplesFrameSize;
 
@@ -450,6 +507,8 @@ namespace NAudio.Wave
                 {
                     playbackState = PlaybackState.Stopped;
                 }
+
+                bytesPlayed = 0;
 
                 // Fire playback stopped event
                 RaisePlaybackStopped(exception);

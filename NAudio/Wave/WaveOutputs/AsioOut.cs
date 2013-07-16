@@ -1,7 +1,6 @@
 ﻿using System;
 using NAudio.Wave.Asio;
 using System.Threading;
-using NAudio.Wave.WaveOutputs;
 
 namespace NAudio.Wave
 {
@@ -10,7 +9,7 @@ namespace NAudio.Wave
     /// 
     /// This implementation is only supporting Short16Bit and Float32Bit formats and is optimized 
     /// for 2 outputs channels .
-    /// SampleRate is supported only if ASIODriver is supporting it (TODO: Add a resampler otherwhise).
+    /// SampleRate is supported only if ASIODriver is supporting it
     ///     
     /// This implementation is probably the first ASIODriver binding fully implemented in C#!
     /// 
@@ -250,7 +249,11 @@ namespace NAudio.Wave
                 var audioAvailable = AudioAvailable;
                 if (audioAvailable != null)
                 {
-                    audioAvailable(this, new AsioAudioAvailableEventArgs(inputChannels, nbSamples, driver.Capabilities.InputChannelInfos[0].type));
+                    var args = new AsioAudioAvailableEventArgs(inputChannels, outputChannels, nbSamples,
+                                                               driver.Capabilities.InputChannelInfos[0].type);
+                    audioAvailable(this, args);
+                    if (args.WrittenToOutputBuffers)
+                        return;
                 }
             }
 
@@ -276,6 +279,19 @@ namespace NAudio.Wave
                 {
                     Stop();
                 }
+            }
+        }
+
+        /// <summary>
+        /// Gets the latency (in ms) of the playback driver
+        /// </summary>
+        public int PlaybackLatency
+        {
+            get
+            {
+                int latency, temp;
+                driver.Driver.GetLatencies(out temp, out latency);
+                return latency;
             }
         }
 
@@ -366,106 +382,6 @@ namespace NAudio.Wave
                     this.syncContext.Post(state => handler(this, new StoppedEventArgs(e)), null);
                 }
             }
-        }
-    }
-
-    /// <summary>
-    /// Raised when ASIO data has been recorded.
-    /// It is important to handle this as quickly as possible as it is in the buffer callback
-    /// </summary>
-    public class AsioAudioAvailableEventArgs : EventArgs
-    {
-        /// <summary>
-        /// Initialises a new instance of AsioAudioAvailableEventArgs
-        /// </summary>
-        /// <param name="inputBuffers">Pointers to the ASIO buffers for each channel</param>
-        /// <param name="samplesPerBuffer">Number of samples in each buffer</param>
-        /// <param name="asioSampleType">Audio format within each buffer</param>
-        public AsioAudioAvailableEventArgs(IntPtr[] inputBuffers, int samplesPerBuffer, AsioSampleType asioSampleType)
-        {
-            this.InputBuffers = inputBuffers;
-            this.SamplesPerBuffer = samplesPerBuffer;
-            this.AsioSampleType = asioSampleType;
-        }
-
-        /// <summary>
-        /// Pointer to a buffer per input channel
-        /// </summary>
-        public IntPtr[] InputBuffers { get; private set; }
-
-        /// <summary>
-        /// Number of samples in each buffer
-        /// </summary>
-        public int SamplesPerBuffer { get; private set; }
-
-        /// <summary>
-        /// Audio format within each buffer
-        /// Most commonly this will be one of, Int32LSB, Int16LSB, Int24LSB or Float32LSB
-        /// </summary>
-        public AsioSampleType AsioSampleType { get; private set; }
-
-        
-        /// <summary>
-        /// Converts all the recorded audio into a buffer of 32 bit floating point samples, interleaved by channel
-        /// </summary>
-        /// <returns>The samples as 32 bit floating point, interleaved</returns>
-        public float[] GetAsInterleavedSamples()
-        {
-            int channels = InputBuffers.Length;
-            float[] samples = new float[SamplesPerBuffer * channels];
-            int index = 0;
-            unsafe
-            {
-                if (AsioSampleType == Asio.AsioSampleType.Int32LSB)
-                {
-                    for (int n = 0; n < SamplesPerBuffer; n++)
-                    {
-                        for (int ch = 0; ch < channels; ch++)
-                        {
-                            samples[index++] = *((int*)InputBuffers[ch] + n) / (float)Int32.MaxValue;
-                        }
-                    }
-                }
-                else if (AsioSampleType == Asio.AsioSampleType.Int16LSB)
-                {
-                    for (int n = 0; n < SamplesPerBuffer; n++)
-                    {
-                        for (int ch = 0; ch < channels; ch++)
-                        {
-                            samples[index++] = *((short*)InputBuffers[ch] + n) / (float)Int16.MaxValue;
-                        }
-                    }
-                }
-                else if (AsioSampleType == Asio.AsioSampleType.Int24LSB)
-                {
-                    for (int n = 0; n < SamplesPerBuffer; n++)
-                    {
-                        for (int ch = 0; ch < channels; ch++)
-                        {
-                            byte *pSample = ((byte*)InputBuffers[ch] + n * 3);
-
-                            //int sample = *pSample + *(pSample+1) << 8 + (sbyte)*(pSample+2) << 16;
-                            int sample = pSample[0] | (pSample[1] << 8) | ((sbyte)pSample[2] << 16);
-                            samples[index++] = sample / 8388608.0f;
-                        }
-                    }
-                }
-                else if (AsioSampleType == Asio.AsioSampleType.Float32LSB)
-                {
-                    for (int n = 0; n < SamplesPerBuffer; n++)
-                    {
-                        for (int ch = 0; ch < channels; ch++)
-                        {
-                            samples[index++] = *((float*)InputBuffers[ch] + n);
-                        }
-                    }
-                }
-                else
-                {
-                    throw new NotImplementedException(String.Format("ASIO Sample Type {0} not supported", AsioSampleType));
-                }
-            }
-            return samples;
         }
     }
 }

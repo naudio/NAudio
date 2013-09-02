@@ -75,11 +75,18 @@ namespace NAudioDemo
                 MessageBox.Show("No MIDI input devices available");
                 return;
             }
+            if (midiIn != null)
+            {
+                midiIn.Dispose();
+                midiIn.MessageReceived -= midiIn_MessageReceived;
+                midiIn.ErrorReceived -= midiIn_ErrorReceived;
+                midiIn = null;
+            }
             if (midiIn == null)
             {
                 midiIn = new MidiIn(comboBoxMidiInDevices.SelectedIndex);
-                midiIn.MessageReceived += new EventHandler<MidiInMessageEventArgs>(midiIn_MessageReceived);
-                midiIn.ErrorReceived += new EventHandler<MidiInMessageEventArgs>(midiIn_ErrorReceived);
+                midiIn.MessageReceived += midiIn_MessageReceived;
+                midiIn.ErrorReceived += midiIn_ErrorReceived;
             }
             midiIn.Start();
             monitoring = true;

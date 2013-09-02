@@ -79,6 +79,7 @@ namespace NAudio.Wave
         public static void EncodeToWma(IWaveProvider inputProvider, string outputFile, int desiredBitRate = 192000)
         {
             var mediaType = SelectMediaType(AudioSubtypes.MFAudioFormat_WMAudioV8, inputProvider.WaveFormat, desiredBitRate);
+            if (mediaType == null) throw new InvalidOperationException("No suitable WMA encoders available");
             using (var encoder = new MediaFoundationEncoder(mediaType))
             {
                 encoder.Encode(outputFile, inputProvider);
@@ -95,6 +96,7 @@ namespace NAudio.Wave
         public static void EncodeToMp3(IWaveProvider inputProvider, string outputFile, int desiredBitRate = 192000)
         {
             var mediaType = SelectMediaType(AudioSubtypes.MFAudioFormat_MP3, inputProvider.WaveFormat, desiredBitRate);
+            if (mediaType == null) throw new InvalidOperationException("No suitable MP3 encoders available");
             using (var encoder = new MediaFoundationEncoder(mediaType))
             {
                 encoder.Encode(outputFile, inputProvider);
@@ -113,6 +115,7 @@ namespace NAudio.Wave
             // Information on configuring an AAC media type can be found here:
             // http://msdn.microsoft.com/en-gb/library/windows/desktop/dd742785%28v=vs.85%29.aspx
             var mediaType = SelectMediaType(AudioSubtypes.MFAudioFormat_AAC, inputProvider.WaveFormat, desiredBitRate);
+            if (mediaType == null) throw new InvalidOperationException("No suitable AAC encoders available");
             using (var encoder = new MediaFoundationEncoder(mediaType))
             {
                 // should AAC container have ADTS, or is that just for ADTS?
@@ -144,9 +147,10 @@ namespace NAudio.Wave
         /// <summary>
         /// Creates a new encoder that encodes to the specified output media type
         /// </summary>
-        /// <param name="outputMediaType"></param>
+        /// <param name="outputMediaType">Desired output media type</param>
         public MediaFoundationEncoder(MediaType outputMediaType)
         {
+            if (outputMediaType == null) throw new ArgumentNullException("outputMediaType");
             this.outputMediaType = outputMediaType;
         }
 

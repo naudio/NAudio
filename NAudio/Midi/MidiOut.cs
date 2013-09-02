@@ -127,7 +127,28 @@ namespace NAudio.Midi
         private void Callback(IntPtr midiInHandle, MidiInterop.MidiOutMessage message, IntPtr userData, IntPtr messageParameter1, IntPtr messageParameter2)
         {
         }
-        
+
+        /// <summary>
+        /// Send a long message, for example sysex.
+        /// </summary>
+        /// <param name="byteBuffer">The bytes to send.</param>
+        public void SendBuffer(byte[] byteBuffer)
+        {
+            var header = new MidiInterop.MIDIHDR();
+            header.lpData = Marshal.AllocHGlobal(byteBuffer.Length);
+            Marshal.Copy(byteBuffer, 0, header.lpData, byteBuffer.Length);
+
+            header.dwBufferLength = byteBuffer.Length;
+            header.dwBytesRecorded = byteBuffer.Length;
+            int size = Marshal.SizeOf(header);
+            MidiInterop.midiOutPrepareHeader(this.hMidiOut, ref header, size);
+            var errcode = MidiInterop.midiOutLongMsg(this.hMidiOut, ref header, size);
+            if (errcode != MmResult.NoError)
+            {
+                MidiInterop.midiOutUnprepareHeader(this.hMidiOut, ref header, size);
+            }
+            Marshal.FreeHGlobal(header.lpData);
+        }
 
         /// <summary>
         /// Cleanup

@@ -34,10 +34,10 @@ namespace NAudio.CoreAudioApi
     public class MMDevice
     {
         #region Variables
-        private IMMDevice deviceInterface;
-        private PropertyStore _PropertyStore;
-        private AudioMeterInformation _AudioMeterInformation;
-        private AudioEndpointVolume _AudioEndpointVolume;
+        private readonly IMMDevice deviceInterface;
+        private PropertyStore propertyStore;
+        private AudioMeterInformation audioMeterInformation;
+        private AudioEndpointVolume audioEndpointVolume;
 
         #endregion
 
@@ -52,7 +52,7 @@ namespace NAudio.CoreAudioApi
         {
             IPropertyStore propstore;
             Marshal.ThrowExceptionForHR(deviceInterface.OpenPropertyStore(StorageAccessMode.Read, out propstore));
-            _PropertyStore = new PropertyStore(propstore);
+            propertyStore = new PropertyStore(propstore);
         }
 
         private AudioClient GetAudioClient()
@@ -66,14 +66,14 @@ namespace NAudio.CoreAudioApi
         {
             object result;
             Marshal.ThrowExceptionForHR(deviceInterface.Activate(ref IID_IAudioMeterInformation, ClsCtx.ALL, IntPtr.Zero, out result));
-            _AudioMeterInformation = new AudioMeterInformation(result as IAudioMeterInformation);
+            audioMeterInformation = new AudioMeterInformation(result as IAudioMeterInformation);
         }
 
         private void GetAudioEndpointVolume()
         {
             object result;
             Marshal.ThrowExceptionForHR(deviceInterface.Activate(ref IID_IAudioEndpointVolume, ClsCtx.ALL, IntPtr.Zero, out result));
-            _AudioEndpointVolume = new AudioEndpointVolume(result as IAudioEndpointVolume);
+            audioEndpointVolume = new AudioEndpointVolume(result as IAudioEndpointVolume);
         }
 
         #endregion
@@ -100,10 +100,10 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                if (_AudioMeterInformation == null)
+                if (audioMeterInformation == null)
                     GetAudioMeterInformation();
 
-                return _AudioMeterInformation;
+                return audioMeterInformation;
             }
         }
 
@@ -114,10 +114,10 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                if (_AudioEndpointVolume == null)
+                if (audioEndpointVolume == null)
                     GetAudioEndpointVolume();
 
-                return _AudioEndpointVolume;
+                return audioEndpointVolume;
             }
         }
 
@@ -128,9 +128,9 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                if (_PropertyStore == null)
+                if (propertyStore == null)
                     GetPropertyInformation();
-                return _PropertyStore;
+                return propertyStore;
             }
         }
 
@@ -141,13 +141,13 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                if (_PropertyStore == null)
+                if (propertyStore == null)
                 {
                     GetPropertyInformation();
                 }
-                if (_PropertyStore.Contains(PropertyKeys.PKEY_Device_FriendlyName))
+                if (propertyStore.Contains(PropertyKeys.PKEY_Device_FriendlyName))
                 {
-                    return (string)_PropertyStore[PropertyKeys.PKEY_Device_FriendlyName].Value;
+                    return (string)propertyStore[PropertyKeys.PKEY_Device_FriendlyName].Value;
                 }
                 else
                     return "Unknown";
@@ -161,13 +161,13 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                if (_PropertyStore == null)
+                if (propertyStore == null)
                 {
                     GetPropertyInformation();
                 }
-                if (_PropertyStore.Contains(PropertyKeys.PKEY_DeviceInterface_FriendlyName))
+                if (propertyStore.Contains(PropertyKeys.PKEY_DeviceInterface_FriendlyName))
                 {
-                    return (string)_PropertyStore[PropertyKeys.PKEY_DeviceInterface_FriendlyName].Value;
+                    return (string)propertyStore[PropertyKeys.PKEY_DeviceInterface_FriendlyName].Value;
                 }
                 else
                 {
@@ -183,9 +183,9 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                string Result;
-                Marshal.ThrowExceptionForHR(deviceInterface.GetId(out Result));
-                return Result;
+                string result;
+                Marshal.ThrowExceptionForHR(deviceInterface.GetId(out result));
+                return result;
             }
         }
 
@@ -196,10 +196,10 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                DataFlow Result;
-                IMMEndpoint ep = deviceInterface as IMMEndpoint;
-                ep.GetDataFlow(out Result);
-                return Result;
+                DataFlow result;
+                var ep = deviceInterface as IMMEndpoint;
+                ep.GetDataFlow(out result);
+                return result;
             }
         }
 
@@ -210,9 +210,9 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                DeviceState Result;
-                Marshal.ThrowExceptionForHR(deviceInterface.GetState(out Result));
-                return Result;
+                DeviceState result;
+                Marshal.ThrowExceptionForHR(deviceInterface.GetState(out result));
+                return result;
             }
         }
         #endregion

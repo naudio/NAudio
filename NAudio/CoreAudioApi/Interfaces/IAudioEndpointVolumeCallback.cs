@@ -33,7 +33,7 @@ namespace NAudio.CoreAudioApi.Interfaces
      InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     internal interface IAudioEndpointVolumeCallback
     {
-        void OnNotify(IntPtr pNotifyData);
+        void OnNotify(IntPtr notifyData);
     };
 
 }

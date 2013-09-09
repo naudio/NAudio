@@ -14,20 +14,21 @@ namespace NAudio.Wave
     public class WasapiOut : IWavePlayer, IWavePosition
     {
         private AudioClient audioClient;
-        private AudioClientShareMode shareMode;
+        private MMDevice mmDevice;
+        private readonly AudioClientShareMode shareMode;
         private AudioRenderClient renderClient;
         private IWaveProvider sourceProvider;
         private int latencyMilliseconds;
         private int bufferFrameCount;
         private int bytesPerFrame;
-        private bool isUsingEventSync;
+        private readonly bool isUsingEventSync;
         private EventWaitHandle frameEventWaitHandle;
         private byte[] readBuffer;
         private volatile PlaybackState playbackState;
         private Thread playThread;
         private WaveFormat outputFormat;
         private bool dmoResamplerNeeded;
-        private SynchronizationContext syncContext;
+        private readonly SynchronizationContext syncContext;
         
         /// <summary>
         /// Playback Stopped
@@ -67,6 +68,7 @@ namespace NAudio.Wave
         public WasapiOut(MMDevice device, AudioClientShareMode shareMode, bool useEventSync, int latency)
         {
             this.audioClient = device.AudioClient;
+            this.mmDevice = device;
             this.shareMode = shareMode;
             this.isUsingEventSync = useEventSync;
             this.latencyMilliseconds = latency;
@@ -397,14 +399,13 @@ namespace NAudio.Wave
         {
             get
             {
-                return 1.0f;
+                return mmDevice.AudioEndpointVolume.MasterVolumeLevelScalar;                                
             }
             set
             {
-                if (value != 1.0f)
-                {
-                    throw new NotImplementedException();
-                }
+                if (value < 0) throw new ArgumentOutOfRangeException("value", "Volume must be between 0.0 and 1.0");
+                if (value > 1) throw new ArgumentOutOfRangeException("value", "Volume must be between 0.0 and 1.0");
+                mmDevice.AudioEndpointVolume.MasterVolumeLevelScalar = value;
             }
         }
 

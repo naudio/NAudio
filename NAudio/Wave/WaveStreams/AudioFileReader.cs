@@ -63,6 +63,11 @@ namespace NAudio.Wave
             {
                 readerStream = new AiffFileReader(fileName);
             }
+            else
+            {
+                // fall back to media foundation reader, see if that can play it
+                readerStream = new MediaFoundationReader(fileName);
+            }
         }
 
         /// <summary>

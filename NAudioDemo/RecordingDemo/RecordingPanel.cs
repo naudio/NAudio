@@ -53,7 +53,7 @@ namespace NAudioDemo
         {
             if (waveIn == null)
             {
-                outputFilename = String.Format("NAudioDemo {0:yyy-mm-dd HH-mm-ss}.wav", DateTime.Now);
+                outputFilename = String.Format("NAudioDemo {0:yyy-MM-dd HH-mm-ss}.wav", DateTime.Now);
                 if (radioButtonWaveIn.Checked)
                 {
                     waveIn = new WaveIn();

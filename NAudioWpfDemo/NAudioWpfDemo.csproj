@@ -147,6 +147,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="WasapiCaptureDemo\WasapiCaptureDemoView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="WaveFormControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -245,6 +249,11 @@
     <Compile Include="ViewModel\DelegateCommand.cs" />
     <Compile Include="ViewModel\RelayCommand.cs" />
     <Compile Include="ViewModel\ViewModelBase.cs" />
+    <Compile Include="WasapiCaptureDemo\WasapiCaptureDemoPlugin.cs" />
+    <Compile Include="WasapiCaptureDemo\WasapiCaptureDemoView.xaml.cs">
+      <DependentUpon>WasapiCaptureDemoView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="WasapiCaptureDemo\WasapiCaptureViewModel.cs" />
     <Compile Include="WaveFormControl.xaml.cs">
       <DependentUpon>WaveFormControl.xaml</DependentUpon>
     </Compile>

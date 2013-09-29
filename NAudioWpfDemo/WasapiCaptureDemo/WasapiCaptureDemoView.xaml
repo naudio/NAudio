@@ -1,0 +1,35 @@
+﻿<UserControl x:Class="NAudioWpfDemo.WasapiCaptureDemoView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:NAudioWpfDemo"
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="300">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="21*"/>
+            <RowDefinition Height="113*"/>
+            <RowDefinition Height="16*"/>
+        </Grid.RowDefinitions>
+        <ComboBox ItemsSource="{Binding CaptureDevices}" SelectedItem="{Binding SelectedDevice, Mode=TwoWay}"  Margin="119,10,10,0" VerticalAlignment="Top" Height="22"/>
+        <TextBlock HorizontalAlignment="Left" Margin="10,13,0,0" TextWrapping="Wrap" Text="Capture Device" VerticalAlignment="Top" Height="16" Width="94"/>
+        <TextBox HorizontalAlignment="Left" Height="23" Margin="119,9.6,0,0" Grid.Row="1" TextWrapping="Wrap" Text="{Binding SampleRate, Mode=TwoWay}" VerticalAlignment="Top" Width="120"/>
+        <TextBox HorizontalAlignment="Left" Height="23" Margin="119,37.6,0,0" Grid.Row="1" TextWrapping="Wrap" Text="{Binding BitDepth, Mode=TwoWay}" VerticalAlignment="Top" Width="120"/>
+        <TextBox HorizontalAlignment="Left" Height="23" Margin="119,65.6,0,0" Grid.Row="1" TextWrapping="Wrap" Text="{Binding ChannelCount, Mode=TwoWay}" VerticalAlignment="Top" Width="120"/>
+        <ComboBox HorizontalAlignment="Left" Margin="119,93.6,0,0" Grid.Row="1" SelectedIndex="{Binding SampleTypeIndex, Mode=TwoWay}" VerticalAlignment="Top" Width="120">
+            <ComboBox.Items>
+                <TextBlock>IEEE Float</TextBlock>
+                <TextBlock>PCM</TextBlock>
+            </ComboBox.Items>
+        </ComboBox>
+        <Button Content="Record" Command="{Binding RecordCommand}" HorizontalAlignment="Left" Margin="15,155.6,0,0" Grid.Row="1" VerticalAlignment="Top" Width="75"/>
+        <Button Content="Stop" Command="{Binding StopCommand}" HorizontalAlignment="Left" Margin="95,155.6,0,0" Grid.Row="1" VerticalAlignment="Top" Width="75"/>
+        <Label Content="{Binding Message}" HorizontalAlignment="Left" Margin="15,189.6,0,0" Grid.Row="1" VerticalAlignment="Top"/>
+        <TextBlock HorizontalAlignment="Left" Margin="10,16.6,0,0" Grid.Row="1" TextWrapping="Wrap" Text="Sample Rate" VerticalAlignment="Top"/>
+        <TextBlock HorizontalAlignment="Left" Margin="10,44.6,0,0" Grid.Row="1" TextWrapping="Wrap" Text="Bit Depth" VerticalAlignment="Top" RenderTransformOrigin="0.207,0.45"/>
+        <TextBlock HorizontalAlignment="Left" Margin="10,72.6,0,0" Grid.Row="1" TextWrapping="Wrap" Text="Channel Count" VerticalAlignment="Top"/>
+        <TextBlock HorizontalAlignment="Left" Margin="10,99.6,0,0" Grid.Row="1" TextWrapping="Wrap" Text="Sample Type" VerticalAlignment="Top"/>
+
+    </Grid>
+</UserControl>

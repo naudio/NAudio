@@ -24,6 +24,7 @@ namespace NAudio.CoreAudioApi
         private int bytesPerFrame;
         private WaveFormat waveFormat;
         private bool initialized;
+        private readonly SynchronizationContext syncContext;
 
         /// <summary>
         /// Indicates recorded data is available 
@@ -49,6 +50,7 @@ namespace NAudio.CoreAudioApi
         /// <param name="captureDevice">Capture device to use</param>
         public WasapiCapture(MMDevice captureDevice)
         {
+            syncContext = SynchronizationContext.Current;
             audioClient = captureDevice.AudioClient;
 
             waveFormat = audioClient.MixFormat;
@@ -81,7 +83,7 @@ namespace NAudio.CoreAudioApi
         /// <returns>The default audio capture device</returns>
         public static MMDevice GetDefaultCaptureDevice()
         {
-            MMDeviceEnumerator devices = new MMDeviceEnumerator();
+            var devices = new MMDeviceEnumerator();
             return devices.GetDefaultAudioEndpoint(DataFlow.Capture, Role.Console);
         }
 
@@ -132,7 +134,7 @@ namespace NAudio.CoreAudioApi
                 throw new InvalidOperationException("Previous recording still in progress");
             }
             InitializeCaptureDevice();
-            ThreadStart start = delegate { this.CaptureThread(this.audioClient); };
+            ThreadStart start = () => CaptureThread(this.audioClient);
             this.captureThread = new Thread(start);
 
             Debug.WriteLine("Thread starting...");
@@ -189,12 +191,17 @@ namespace NAudio.CoreAudioApi
             }
         }
 
-        private void RaiseRecordingStopped(Exception exception)
+        private void RaiseRecordingStopped(Exception e)
         {
             var handler = RecordingStopped;
-            if (handler != null)
+            if (handler == null) return;
+            if (this.syncContext == null)
             {
-                handler(this, new StoppedEventArgs(exception));
+                handler(this, new StoppedEventArgs(e));
+            }
+            else
+            {
+                this.syncContext.Post(state => handler(this, new StoppedEventArgs(e)), null);
             }
         }
 

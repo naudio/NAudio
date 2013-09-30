@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
 using NAudioWpfDemo.ViewModel;
 
-namespace NAudioWpfDemo
+namespace NAudioWpfDemo.WasapiCaptureDemo
 {
     internal class WasapiCaptureViewModel : ViewModelBase, IDisposable
     {
@@ -15,7 +16,10 @@ namespace NAudioWpfDemo
         private int channelCount;
         private int sampleTypeIndex;
         private WasapiCapture capture;
+        private WaveFileWriter writer;
+        private string currentFileName;
         private string message;
+        public RecordingsViewModel RecordingsViewModel { get; private set; }
 
         public DelegateCommand RecordCommand { get; private set; }
         public DelegateCommand StopCommand { get; private set; }
@@ -28,6 +32,7 @@ namespace NAudioWpfDemo
             SelectedDevice = CaptureDevices.FirstOrDefault(c => c.ID == defaultDevice.ID);
             RecordCommand = new DelegateCommand(Record);
             StopCommand = new DelegateCommand(Stop) { IsEnabled = false };
+            RecordingsViewModel = new RecordingsViewModel();
         }
 
         private void Stop()
@@ -41,13 +46,15 @@ namespace NAudioWpfDemo
         private void Record()
         {
             try
-            {                
+            {
                 capture = new WasapiCapture(SelectedDevice);
                 capture.WaveFormat =
                     SampleTypeIndex == 0 ? WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channelCount) :
                     new WaveFormat(sampleRate, bitDepth, channelCount);
+                currentFileName = String.Format("NAudioDemo {0:yyy-MM-dd HH-mm-ss}.wav", DateTime.Now);
                 capture.StartRecording();
                 capture.RecordingStopped += OnRecordingStopped;
+                capture.DataAvailable += CaptureOnDataAvailable;
                 RecordCommand.IsEnabled = false;
                 StopCommand.IsEnabled = true;
                 Message = "Recording...";
@@ -58,8 +65,20 @@ namespace NAudioWpfDemo
             }
         }
 
+        private void CaptureOnDataAvailable(object sender, WaveInEventArgs waveInEventArgs)
+        {
+            if (writer == null) 
+                writer = new WaveFileWriter(Path.Combine(RecordingsViewModel.OutputFolder, currentFileName), capture.WaveFormat);
+
+            writer.Write(waveInEventArgs.Buffer, 0, waveInEventArgs.BytesRecorded);
+        }
+
         void OnRecordingStopped(object sender, StoppedEventArgs e)
         {
+            writer.Dispose();
+            writer = null;
+            RecordingsViewModel.Recordings.Add(currentFileName);
+            RecordingsViewModel.SelectedRecording = currentFileName;
             if (e.Exception == null)
                 Message = "Recording Stopped";
             else

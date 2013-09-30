@@ -147,6 +147,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="WasapiCaptureDemo\RecordingsView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="WasapiCaptureDemo\WasapiCaptureDemoView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -249,6 +253,10 @@
     <Compile Include="ViewModel\DelegateCommand.cs" />
     <Compile Include="ViewModel\RelayCommand.cs" />
     <Compile Include="ViewModel\ViewModelBase.cs" />
+    <Compile Include="WasapiCaptureDemo\RecordingsView.xaml.cs">
+      <DependentUpon>RecordingsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="WasapiCaptureDemo\RecordingsViewModel.cs" />
     <Compile Include="WasapiCaptureDemo\WasapiCaptureDemoPlugin.cs" />
     <Compile Include="WasapiCaptureDemo\WasapiCaptureDemoView.xaml.cs">
       <DependentUpon>WasapiCaptureDemoView.xaml</DependentUpon>

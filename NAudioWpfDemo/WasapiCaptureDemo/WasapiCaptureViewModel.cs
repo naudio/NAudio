@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
 using NAudioWpfDemo.ViewModel;
@@ -19,6 +20,11 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
         private WaveFileWriter writer;
         private string currentFileName;
         private string message;
+        private float peak;
+        private SynchronizationContext synchronizationContext;
+
+        private float recordLevel;
+
         public RecordingsViewModel RecordingsViewModel { get; private set; }
 
         public DelegateCommand RecordCommand { get; private set; }
@@ -28,6 +34,7 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
 
         public WasapiCaptureViewModel()
         {
+            synchronizationContext = SynchronizationContext.Current;
             var enumerator = new MMDeviceEnumerator();
             CaptureDevices = enumerator.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active).ToArray();
             var defaultDevice = enumerator.GetDefaultAudioEndpoint(DataFlow.Capture, Role.Console);
@@ -55,6 +62,7 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
                     SampleTypeIndex == 0 ? WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channelCount) :
                     new WaveFormat(sampleRate, bitDepth, channelCount);
                 currentFileName = String.Format("NAudioDemo {0:yyy-MM-dd HH-mm-ss}.wav", DateTime.Now);
+                RecordLevel = SelectedDevice.AudioEndpointVolume.MasterVolumeLevelScalar;
                 capture.StartRecording();
                 capture.RecordingStopped += OnRecordingStopped;
                 capture.DataAvailable += CaptureOnDataAvailable;
@@ -74,6 +82,14 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
                 writer = new WaveFileWriter(Path.Combine(RecordingsViewModel.OutputFolder, currentFileName), capture.WaveFormat);
 
             writer.Write(waveInEventArgs.Buffer, 0, waveInEventArgs.BytesRecorded);
+
+            UpdatePeakMeter();
+            
+        }
+
+        void UpdatePeakMeter()
+        {
+            synchronizationContext.Post((s) => Peak = SelectedDevice.AudioMeterInformation.MasterPeakValue, null);
         }
 
         void OnRecordingStopped(object sender, StoppedEventArgs e)
@@ -93,6 +109,19 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
         }
 
         public IEnumerable<MMDevice> CaptureDevices { get; private set; }
+
+        public float Peak
+        {
+            get { return peak; }
+            set
+            {
+                if (peak != value)
+                {
+                    peak = value;
+                    OnPropertyChanged("Peak");
+                }
+            }
+        }
 
         public MMDevice SelectedDevice
         {
@@ -218,5 +247,24 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
         {
             Stop();
         }
+
+        public float RecordLevel
+        {
+            get { return recordLevel; }
+            set
+            {
+                if (recordLevel != value)
+                {
+                    recordLevel = value;
+                    if (capture != null)
+                    {
+                        SelectedDevice.AudioEndpointVolume.MasterVolumeLevelScalar = value;
+                    }
+                    OnPropertyChanged("RecordLevel");
+                }
+            }
+        }
+
+
     }
 }

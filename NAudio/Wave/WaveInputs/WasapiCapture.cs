@@ -52,6 +52,7 @@ namespace NAudio.CoreAudioApi
         {
             syncContext = SynchronizationContext.Current;
             audioClient = captureDevice.AudioClient;
+            ShareMode = AudioClientShareMode.Shared;
 
             waveFormat = audioClient.MixFormat;
             var wfe = waveFormat as WaveFormatExtensible;
@@ -69,12 +70,17 @@ namespace NAudio.CoreAudioApi
         }
 
         /// <summary>
+        /// Share Mode - set before calling StartRecording
+        /// </summary>
+        public AudioClientShareMode ShareMode { get; set; }
+
+        /// <summary>
         /// Recording wave format
         /// </summary>
         public virtual WaveFormat WaveFormat 
         {
-            get { return this.waveFormat; }
-            set { this.waveFormat = value; }
+            get { return waveFormat; }
+            set { waveFormat = value; }
         }
 
         /// <summary>
@@ -94,14 +100,14 @@ namespace NAudio.CoreAudioApi
 
             long requestedDuration = REFTIMES_PER_MILLISEC * 100;
 
-            if (!audioClient.IsFormatSupported(AudioClientShareMode.Shared, WaveFormat))
+            if (!audioClient.IsFormatSupported(ShareMode, WaveFormat))
             {
                 throw new ArgumentException("Unsupported Wave Format");
             }
             
             var streamFlags = GetAudioClientStreamFlags();
 
-            audioClient.Initialize(AudioClientShareMode.Shared,
+            audioClient.Initialize(ShareMode,
                 streamFlags,
                 requestedDuration,
                 0,

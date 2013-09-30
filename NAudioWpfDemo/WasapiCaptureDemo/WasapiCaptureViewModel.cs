@@ -24,6 +24,8 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
         public DelegateCommand RecordCommand { get; private set; }
         public DelegateCommand StopCommand { get; private set; }
 
+        private int shareModeIndex;
+
         public WasapiCaptureViewModel()
         {
             var enumerator = new MMDeviceEnumerator();
@@ -48,6 +50,7 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
             try
             {
                 capture = new WasapiCapture(SelectedDevice);
+                capture.ShareMode = ShareModeIndex == 0 ? AudioClientShareMode.Shared : AudioClientShareMode.Exclusive;
                 capture.WaveFormat =
                     SampleTypeIndex == 0 ? WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channelCount) :
                     new WaveFormat(sampleRate, bitDepth, channelCount);
@@ -196,6 +199,20 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
                 }
             }
         }
+
+        public int ShareModeIndex
+        {
+            get { return shareModeIndex; }
+            set
+            {
+                if (shareModeIndex != value)
+                {
+                    shareModeIndex = value;
+                    OnPropertyChanged("ShareModeIndex");
+                }
+            }
+        }
+
 
         public void Dispose()
         {

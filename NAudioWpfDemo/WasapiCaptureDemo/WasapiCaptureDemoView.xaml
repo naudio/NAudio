@@ -6,7 +6,7 @@
              xmlns:local="clr-namespace:NAudioWpfDemo"
              xmlns:local1="clr-namespace:NAudioWpfDemo.WasapiCaptureDemo" x:Class="NAudioWpfDemo.WasapiCaptureDemo.WasapiCaptureDemoView"
              mc:Ignorable="d" 
-             d:DesignHeight="343" d:DesignWidth="414">
+             d:DesignHeight="362" d:DesignWidth="441">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="48*"/>
@@ -15,22 +15,27 @@
         </Grid.RowDefinitions>
         <ComboBox ItemsSource="{Binding CaptureDevices}" SelectedItem="{Binding SelectedDevice, Mode=TwoWay}"  Margin="119,10,10,0" VerticalAlignment="Top" Height="22"/>
         <TextBlock HorizontalAlignment="Left" Margin="10,13,0,0" TextWrapping="Wrap" Text="Capture Device" VerticalAlignment="Top" Height="16" Width="94"/>
-        <TextBox HorizontalAlignment="Left" Height="23" Margin="119,10,0,0" Grid.Row="1" TextWrapping="Wrap" Text="{Binding SampleRate, Mode=TwoWay}" VerticalAlignment="Top" Width="120"/>
-        <TextBox HorizontalAlignment="Left" Height="23" Margin="119,38,0,0" Grid.Row="1" TextWrapping="Wrap" Text="{Binding BitDepth, Mode=TwoWay}" VerticalAlignment="Top" Width="120"/>
-        <TextBox HorizontalAlignment="Left" Height="23" Margin="119,66,0,0" Grid.Row="1" TextWrapping="Wrap" Text="{Binding ChannelCount, Mode=TwoWay}" VerticalAlignment="Top" Width="120"/>
-        <ComboBox HorizontalAlignment="Left" Margin="119,94,0,0" Grid.Row="1" SelectedIndex="{Binding SampleTypeIndex, Mode=TwoWay}" VerticalAlignment="Top" Width="120" Height="22">
+        <TextBox HorizontalAlignment="Left" Height="23" Margin="119,40,0,0" Grid.Row="1" TextWrapping="Wrap" Text="{Binding SampleRate, Mode=TwoWay}" VerticalAlignment="Top" Width="120"/>
+        <TextBox HorizontalAlignment="Left" Height="23" Margin="119,68,0,0" Grid.Row="1" TextWrapping="Wrap" Text="{Binding BitDepth, Mode=TwoWay}" VerticalAlignment="Top" Width="120"/>
+        <TextBox HorizontalAlignment="Left" Height="23" Margin="119,96,0,0" Grid.Row="1" TextWrapping="Wrap" Text="{Binding ChannelCount, Mode=TwoWay}" VerticalAlignment="Top" Width="120"/>
+        <ComboBox HorizontalAlignment="Left" Margin="119,124,0,0" Grid.Row="1" SelectedIndex="{Binding SampleTypeIndex, Mode=TwoWay}" VerticalAlignment="Top" Width="120" Height="22">
             <TextBlock><Run Text="IEEE Float"/></TextBlock>
             <TextBlock><Run Text="PCM"/></TextBlock>
         </ComboBox>
-        <Button Content="Record" Command="{Binding RecordCommand}" HorizontalAlignment="Left" Margin="14,140,0,0" Grid.Row="1" VerticalAlignment="Top" Width="75" Height="22"/>
-        <Button Content="Stop" Command="{Binding StopCommand}" HorizontalAlignment="Left" Margin="94,140,0,0" Grid.Row="1" VerticalAlignment="Top" Width="75" Height="22"/>
-        <Label Content="{Binding Message}" HorizontalAlignment="Left" Margin="15,0,0,0" Grid.Row="1" VerticalAlignment="Top" Height="10" Width="10"/>
-        <TextBlock HorizontalAlignment="Left" Margin="10,14,0,0" Grid.Row="1" TextWrapping="Wrap" Text="Sample Rate" VerticalAlignment="Top" Height="16" Width="66"/>
-        <TextBlock HorizontalAlignment="Left" Margin="10,42,0,0" Grid.Row="1" TextWrapping="Wrap" Text="Bit Depth" VerticalAlignment="Top" RenderTransformOrigin="0.207,0.45" Height="16" Width="50"/>
-        <TextBlock HorizontalAlignment="Left" Margin="10,70,0,0" Grid.Row="1" TextWrapping="Wrap" Text="Channel Count" VerticalAlignment="Top" Height="16" Width="78"/>
-        <TextBlock HorizontalAlignment="Left" Margin="10,97,0,0" Grid.Row="1" TextWrapping="Wrap" Text="Sample Type" VerticalAlignment="Top" Height="16" Width="68"/>
+        <ComboBox HorizontalAlignment="Left" Margin="119,13,0,0" Grid.Row="1" SelectedIndex="{Binding ShareModeIndex, Mode=TwoWay}" VerticalAlignment="Top" Width="120" Height="22">
+            <TextBlock><Run Text="Shared"/></TextBlock>
+            <TextBlock><Run Text="Exclusive"/></TextBlock>
+        </ComboBox>
+        <Button Content="Record" Command="{Binding RecordCommand}" HorizontalAlignment="Left" Margin="12,157,0,0" Grid.Row="1" VerticalAlignment="Top" Width="75" Height="22"/>
+        <Button Content="Stop" Command="{Binding StopCommand}" HorizontalAlignment="Left" Margin="92,157,0,0" Grid.Row="1" VerticalAlignment="Top" Width="75" Height="22"/>
+        <Label Content="{Binding Message}" HorizontalAlignment="Left" Margin="184,169,0,0" Grid.Row="1" VerticalAlignment="Top" Height="10" Width="10"/>
+        <TextBlock HorizontalAlignment="Left" Margin="10,44,0,0" Grid.Row="1" TextWrapping="Wrap" Text="Sample Rate" VerticalAlignment="Top" Height="16" Width="66"/>
+        <TextBlock HorizontalAlignment="Left" Margin="10,72,0,0" Grid.Row="1" TextWrapping="Wrap" Text="Bit Depth" VerticalAlignment="Top" RenderTransformOrigin="0.207,0.45" Height="16" Width="50"/>
+        <TextBlock HorizontalAlignment="Left" Margin="10,100,0,0" Grid.Row="1" TextWrapping="Wrap" Text="Channel Count" VerticalAlignment="Top" Height="16" Width="78"/>
+        <TextBlock HorizontalAlignment="Left" Margin="10,127,0,0" Grid.Row="1" TextWrapping="Wrap" Text="Sample Type" VerticalAlignment="Top" Height="16" Width="68"/>
 
         <local1:RecordingsView DataContext="{Binding RecordingsViewModel}" Margin="6" Grid.Row="2" />
+        <TextBlock HorizontalAlignment="Left" Margin="10,17,0,0" Grid.Row="1" TextWrapping="Wrap" Text="Share Mode" VerticalAlignment="Top" Height="16" Width="66"/>
 
     </Grid>
 </UserControl>

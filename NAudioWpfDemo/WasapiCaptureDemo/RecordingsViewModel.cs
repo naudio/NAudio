@@ -22,6 +22,11 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
             Recordings = new ObservableCollection<string>();
             OutputFolder = Path.Combine(Path.GetTempPath(), "NAudioWpfDemo");
             Directory.CreateDirectory(OutputFolder);
+            foreach (var file in Directory.GetFiles(OutputFolder))
+            {
+                Recordings.Add(file);
+            }
+
             PlayCommand = new DelegateCommand(Play);
             DeleteCommand = new DelegateCommand(Delete);
             OpenFolderCommand = new DelegateCommand(OpenFolder);

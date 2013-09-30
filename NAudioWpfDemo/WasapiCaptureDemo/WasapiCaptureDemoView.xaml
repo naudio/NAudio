@@ -16,7 +16,7 @@
         <ComboBox ItemsSource="{Binding CaptureDevices}" SelectedItem="{Binding SelectedDevice, Mode=TwoWay}"  Margin="119,10,10,0" VerticalAlignment="Top" Height="22"/>
         <TextBlock HorizontalAlignment="Left" Margin="10,13,0,0" TextWrapping="Wrap" Text="Capture Device" VerticalAlignment="Top" Height="16" Width="94"/>
         <TextBox HorizontalAlignment="Left" Height="23" Margin="119,40,0,0" Grid.Row="1" TextWrapping="Wrap" Text="{Binding SampleRate, Mode=TwoWay}" VerticalAlignment="Top" Width="120"/>
-        <TextBox HorizontalAlignment="Left" Height="23" Margin="119,68,0,0" Grid.Row="1" TextWrapping="Wrap" Text="{Binding BitDepth, Mode=TwoWay}" VerticalAlignment="Top" Width="120"/>
+        <TextBox HorizontalAlignment="Left" Height="23" Margin="119,68,0,0" Grid.Row="1" TextWrapping="Wrap" Text="{Binding BitDepth, Mode=TwoWay}" IsEnabled="{Binding IsBitDepthConfigurable}" VerticalAlignment="Top" Width="120"/>
         <TextBox HorizontalAlignment="Left" Height="23" Margin="119,96,0,0" Grid.Row="1" TextWrapping="Wrap" Text="{Binding ChannelCount, Mode=TwoWay}" VerticalAlignment="Top" Width="120"/>
         <ComboBox HorizontalAlignment="Left" Margin="119,124,0,0" Grid.Row="1" SelectedIndex="{Binding SampleTypeIndex, Mode=TwoWay}" VerticalAlignment="Top" Width="120" Height="22">
             <TextBlock><Run Text="IEEE Float"/></TextBlock>

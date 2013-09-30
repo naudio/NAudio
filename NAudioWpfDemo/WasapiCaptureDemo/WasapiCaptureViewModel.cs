@@ -21,7 +21,7 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
         private string currentFileName;
         private string message;
         private float peak;
-        private SynchronizationContext synchronizationContext;
+        private readonly SynchronizationContext synchronizationContext;
 
         private float recordLevel;
 
@@ -84,12 +84,12 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
             writer.Write(waveInEventArgs.Buffer, 0, waveInEventArgs.BytesRecorded);
 
             UpdatePeakMeter();
-            
         }
 
         void UpdatePeakMeter()
         {
-            synchronizationContext.Post((s) => Peak = SelectedDevice.AudioMeterInformation.MasterPeakValue, null);
+            // can't access this on a different thread from the one it was created on, so get back to GUI thread
+            synchronizationContext.Post(s => Peak = SelectedDevice.AudioMeterInformation.MasterPeakValue, null);
         }
 
         void OnRecordingStopped(object sender, StoppedEventArgs e)
@@ -115,6 +115,7 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
             get { return peak; }
             set
             {
+                // ReSharper disable once CompareOfFloatsByEqualityOperator
                 if (peak != value)
                 {
                     peak = value;
@@ -141,10 +142,10 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
         {
             using (var c = new WasapiCapture(value))
             {
+                SampleTypeIndex = c.WaveFormat.Encoding == WaveFormatEncoding.IeeeFloat ? 0 : 1;
                 SampleRate = c.WaveFormat.SampleRate;
                 BitDepth = c.WaveFormat.BitsPerSample;
                 ChannelCount = c.WaveFormat.Channels;
-                SampleTypeIndex = c.WaveFormat.Encoding == WaveFormatEncoding.IeeeFloat ? 0 : 1;
                 Message = "";
             }
         }
@@ -197,6 +198,14 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
             }
         }
 
+        public bool IsBitDepthConfigurable
+        {
+            get
+            {
+                return SampleTypeIndex == 1;
+            }
+        }
+
         public int SampleTypeIndex
         {
             get
@@ -209,6 +218,8 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
                 {
                     sampleTypeIndex = value;
                     OnPropertyChanged("SampleTypeIndex");
+                    BitDepth = sampleTypeIndex == 1 ? 16 : 32;
+                    OnPropertyChanged("IsBitDepthConfigurable");
                 }
             }
         }
@@ -253,6 +264,7 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
             get { return recordLevel; }
             set
             {
+                // ReSharper disable once CompareOfFloatsByEqualityOperator
                 if (recordLevel != value)
                 {
                     recordLevel = value;
@@ -264,7 +276,5 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
                 }
             }
         }
-
-
     }
 }

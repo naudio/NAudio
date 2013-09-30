@@ -174,13 +174,13 @@ namespace NAudio.CoreAudioApi
             }
             captureThread = null;
             RaiseRecordingStopped(exception);
-            System.Diagnostics.Debug.WriteLine("Stop wasapi");
+            Debug.WriteLine("Stop wasapi");
         }
 
         private void DoRecording(AudioClient client)
         {
-            Debug.WriteLine(client.BufferSize);
-            int bufferFrameCount = audioClient.BufferSize;
+            Debug.WriteLine(String.Format("Client buffer frame count: {0}", client.BufferSize));
+            int bufferFrameCount = client.BufferSize;
 
             // Calculate the actual duration of the allocated buffer.
             long actualDuration = (long)((double)REFTIMES_PER_SEC *

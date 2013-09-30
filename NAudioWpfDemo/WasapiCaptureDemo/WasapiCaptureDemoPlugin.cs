@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Windows.Controls;
 using System.ComponentModel.Composition;
-using NAudioWpfDemo.AudioPlaybackDemo;
+using System.Linq;
+using System.Windows.Controls;
 
-namespace NAudioWpfDemo
+namespace NAudioWpfDemo.WasapiCaptureDemo
 {
     [Export(typeof(IModule))]
     class WasapiCaptureDemoPlugin : IModule

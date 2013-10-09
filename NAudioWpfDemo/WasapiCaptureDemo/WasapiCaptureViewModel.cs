@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Windows;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
 using NAudioWpfDemo.ViewModel;
@@ -72,14 +73,18 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
             }
             catch (Exception e)
             {
-                Message = e.Message;
+                MessageBox.Show(e.Message);
             }
         }
 
         private void CaptureOnDataAvailable(object sender, WaveInEventArgs waveInEventArgs)
         {
-            if (writer == null) 
-                writer = new WaveFileWriter(Path.Combine(RecordingsViewModel.OutputFolder, currentFileName), capture.WaveFormat);
+            if (writer == null)
+            {
+                writer = new WaveFileWriter(Path.Combine(RecordingsViewModel.OutputFolder, 
+                    currentFileName),
+                    capture.WaveFormat);
+            }
 
             writer.Write(waveInEventArgs.Buffer, 0, waveInEventArgs.BytesRecorded);
 
@@ -89,7 +94,8 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
         void UpdatePeakMeter()
         {
             // can't access this on a different thread from the one it was created on, so get back to GUI thread
-            synchronizationContext.Post(s => Peak = SelectedDevice.AudioMeterInformation.MasterPeakValue, null);
+            synchronizationContext.Post(s => Peak = SelectedDevice.AudioMeterInformation
+                .MasterPeakValue, null);
         }
 
         void OnRecordingStopped(object sender, StoppedEventArgs e)

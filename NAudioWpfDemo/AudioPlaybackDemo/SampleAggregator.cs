@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Text;
 using System.Diagnostics;
 using NAudio.Dsp;
+using NAudio.Wave;
 
 namespace NAudioWpfDemo
 {
-    public class SampleAggregator
+    public class SampleAggregator : ISampleProvider
     {
         // volume
         public event EventHandler<MaxSampleEventArgs> MaximumCalculated;
@@ -23,8 +24,9 @@ namespace NAudioWpfDemo
         private int fftPos;
         private int fftLength;
         private int m;
+        private readonly ISampleProvider source;
 
-        public SampleAggregator(int fftLength = 1024)
+        public SampleAggregator(ISampleProvider source, int fftLength = 1024)
         {
             if (!IsPowerOfTwo(fftLength))
             {
@@ -34,6 +36,7 @@ namespace NAudioWpfDemo
             this.fftLength = fftLength;
             this.fftBuffer = new Complex[fftLength];
             this.fftArgs = new FftEventArgs(fftBuffer);
+            this.source = source;
         }
 
         bool IsPowerOfTwo(int x)
@@ -48,7 +51,7 @@ namespace NAudioWpfDemo
             maxValue = minValue = 0;
         }
 
-        public void Add(float value)
+        private void Add(float value)
         {
             if (PerformFFT && FftCalculated != null)
             {
@@ -75,6 +78,18 @@ namespace NAudioWpfDemo
                 }
                 Reset();
             }
+        }
+
+        public WaveFormat WaveFormat { get { return source.WaveFormat; } }
+        
+        public int Read(float[] buffer, int offset, int count)
+        {
+            var samplesRead = source.Read(buffer, offset, count);
+            for (int n = 0; n < samplesRead; n++)
+            {
+                Add(buffer[n+offset]);
+            }
+            return samplesRead;
         }
     }
 

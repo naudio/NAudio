@@ -20,12 +20,6 @@ namespace NAudioWpfDemo
     /// </summary>
     public partial class SpectrumAnalyser : UserControl
     {
-        enum DrawMode
-        {
-            Polyline,
-            Bars,
-        }
-
         private double xScale = 200;
         private int bins = 512; // guess a 1024 size FFT, bins is half FFT size
 
@@ -33,7 +27,7 @@ namespace NAudioWpfDemo
         {
             InitializeComponent();
             CalculateXScale();
-            this.SizeChanged += new SizeChangedEventHandler(SpectrumAnalyser_SizeChanged);
+            this.SizeChanged += SpectrumAnalyser_SizeChanged;
         }
 
         void SpectrumAnalyser_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -65,38 +59,26 @@ namespace NAudioWpfDemo
             
             for (int n = 0; n < fftResults.Length / 2; n+= binsPerPoint)
             {
-                double yPos = GetYPosLog(fftResults[n]);
-                AddResult(n / binsPerPoint, yPos);
+                // averaging out bins
+                double yPos = 0;
+                for (int b = 0; b < binsPerPoint; b++)
+                {
+                    yPos += GetYPosLog(fftResults[n+b]);
+                }
+                AddResult(n / binsPerPoint, yPos / binsPerPoint);
             }
-        }
-
-        private double GetYPosIntensityOnly(Complex c)
-        {
-            double yScale = 1000;
-            double intensity = Math.Sqrt(c.X * c.X + c.Y * c.Y);
-            double yPos = this.ActualHeight - intensity * yScale;
-            return yPos;
         }
 
         private double GetYPosLog(Complex c)
         {
-            // in theory should be 20x to get the power, but doesn't seem to give me sensible values (may be because we throw half the FFT away - bin 0 might need to be halved)
-            double intensityDB = 10 * Math.Log(Math.Sqrt(c.X * c.X + c.Y * c.Y));
-            double minDB = -96;
+            // not entirely sure whether the multiplier should be 10 or 20 in this case.
+            // going with 10 from here http://stackoverflow.com/a/10636698/7532
+            double intensityDB = 10 * Math.Log10(Math.Sqrt(c.X * c.X + c.Y * c.Y));
+            double minDB = -90;
             if (intensityDB < minDB) intensityDB = minDB;
             double percent = intensityDB / minDB;
             // we want 0dB to be at the top (i.e. yPos = 0)
             double yPos = percent * this.ActualHeight;
-            return yPos;
-        }
-
-        private double GetYPosAnotherTry(Complex c, int binNumber, int fftLength)
-        {
-            // this technique based on http://www.mathworks.com/support/tech-notes/1700/1702.html
-            double abs = Math.Sqrt(c.X * c.X + c.Y * c.Y); // do not scale by FFT length as NAudio already does this.
-            abs = abs * abs;
-            if (binNumber != 0) abs *= 2;
-            double yPos = abs * this.ActualHeight;
             return yPos;
         }
 

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Windows;
 using NAudio.Wave;
-using NAudio.Wave.SampleProviders;
 
 namespace NAudioWpfDemo
 {
@@ -9,25 +8,21 @@ namespace NAudioWpfDemo
     {
         private IWavePlayer playbackDevice;
         private WaveStream fileStream;
-        private readonly SampleAggregator aggregator;
 
-        public event EventHandler<FftEventArgs> FftCalculated
+        public event EventHandler<FftEventArgs> FftCalculated;
+
+        protected virtual void OnFftCalculated(FftEventArgs e)
         {
-            add { aggregator.FftCalculated += value; }
-            remove { aggregator.FftCalculated -= value; }
+            EventHandler<FftEventArgs> handler = FftCalculated;
+            if (handler != null) handler(this, e);
         }
 
-        public event EventHandler<MaxSampleEventArgs> MaximumCalculated
-        {
-            add { aggregator.MaximumCalculated += value; }
-            remove { aggregator.MaximumCalculated -= value; }
-        }
+        public event EventHandler<MaxSampleEventArgs> MaximumCalculated;
 
-        public AudioPlayback()
+        protected virtual void OnMaximumCalculated(MaxSampleEventArgs e)
         {
-            aggregator = new SampleAggregator();
-            aggregator.NotificationCount = 882;
-            aggregator.PerformFFT = true;
+            EventHandler<MaxSampleEventArgs> handler = MaximumCalculated;
+            if (handler != null) handler(this, e);
         }
 
         public void Load(string fileName)
@@ -51,45 +46,20 @@ namespace NAudioWpfDemo
         {
             try
             {
-                var inputStream = CreateInputStream(fileName);
-                playbackDevice.Init(inputStream);
+                var inputStream = new AudioFileReader(fileName);
+                fileStream = inputStream;
+                var aggregator = new SampleAggregator(inputStream, 2048);
+                aggregator.NotificationCount = inputStream.WaveFormat.SampleRate / 50;
+                aggregator.PerformFFT = true;
+                aggregator.FftCalculated += (s, a) => OnFftCalculated(a);
+                aggregator.MaximumCalculated += (s, a) => OnMaximumCalculated(a);
+                playbackDevice.Init(aggregator);
             }
             catch (Exception e)
             {
                 MessageBox.Show(e.Message, "Problem opening file");
                 CloseFile();
             }
-        }
-
-        private ISampleProvider CreateInputStream(string fileName)
-        {
-            if (fileName.EndsWith(".wav"))
-            {
-                fileStream = OpenWavStream(fileName);
-            }
-            else if (fileName.EndsWith(".mp3"))
-            {
-                fileStream = new Mp3FileReader(fileName);
-            }
-            else
-            {
-                throw new InvalidOperationException("Unsupported extension");
-            }
-            var inputStream = new SampleChannel(fileStream, true);
-            var sampleStream = new NotifyingSampleProvider(inputStream);
-            sampleStream.Sample += (s, e) => aggregator.Add(e.Left);
-            return sampleStream;
-        }
-
-        private static WaveStream OpenWavStream(string fileName)
-        {
-            WaveStream readerStream = new WaveFileReader(fileName);
-            if (readerStream.WaveFormat.Encoding != WaveFormatEncoding.Pcm)
-            {
-                readerStream = WaveFormatConversionStream.CreatePcmStream(readerStream);
-                readerStream = new BlockAlignReductionStream(readerStream);
-            }
-            return readerStream;
         }
 
         private void EnsureDeviceCreated()

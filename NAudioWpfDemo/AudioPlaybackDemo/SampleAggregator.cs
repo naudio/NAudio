@@ -19,15 +19,18 @@ namespace NAudioWpfDemo
         // FFT
         public event EventHandler<FftEventArgs> FftCalculated;
         public bool PerformFFT { get; set; }
-        private Complex[] fftBuffer;
-        private FftEventArgs fftArgs;
+        private readonly Complex[] fftBuffer;
+        private readonly FftEventArgs fftArgs;
         private int fftPos;
-        private int fftLength;
+        private readonly int fftLength;
         private int m;
         private readonly ISampleProvider source;
 
+        private readonly int channels;
+
         public SampleAggregator(ISampleProvider source, int fftLength = 1024)
         {
+            channels = source.WaveFormat.Channels;
             if (!IsPowerOfTwo(fftLength))
             {
                 throw new ArgumentException("FFT Length must be a power of two");
@@ -55,7 +58,7 @@ namespace NAudioWpfDemo
         {
             if (PerformFFT && FftCalculated != null)
             {
-                fftBuffer[fftPos].X = (float)(value * FastFourierTransform.HammingWindow(fftPos, fftBuffer.Length));
+                fftBuffer[fftPos].X = (float)(value * FastFourierTransform.HammingWindow(fftPos, fftLength));
                 fftBuffer[fftPos].Y = 0;
                 fftPos++;
                 if (fftPos >= fftBuffer.Length)
@@ -85,7 +88,8 @@ namespace NAudioWpfDemo
         public int Read(float[] buffer, int offset, int count)
         {
             var samplesRead = source.Read(buffer, offset, count);
-            for (int n = 0; n < samplesRead; n++)
+
+            for (int n = 0; n < samplesRead; n+=channels)
             {
                 Add(buffer[n+offset]);
             }

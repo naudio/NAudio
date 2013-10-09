@@ -48,8 +48,8 @@ namespace NAudioWpfDemo
             {
                 var inputStream = new AudioFileReader(fileName);
                 fileStream = inputStream;
-                var aggregator = new SampleAggregator(inputStream, 2048);
-                aggregator.NotificationCount = inputStream.WaveFormat.SampleRate / 50;
+                var aggregator = new SampleAggregator(inputStream);
+                aggregator.NotificationCount = inputStream.WaveFormat.SampleRate / 100;
                 aggregator.PerformFFT = true;
                 aggregator.FftCalculated += (s, a) => OnFftCalculated(a);
                 aggregator.MaximumCalculated += (s, a) => OnMaximumCalculated(a);

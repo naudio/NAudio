@@ -102,6 +102,7 @@
     <Compile Include="CoreAudioApi\Interfaces\IAudioRenderClient.cs" />
     <Compile Include="CoreAudioApi\MMDeviceCollection.cs" />
     <Compile Include="CoreAudioApi\PropertyKeys.cs" />
+    <Compile Include="Dsp\EnvelopeGenerator.cs" />
     <Compile Include="FileFormats\Wav\WaveFileChunkReader.cs" />
     <Compile Include="MediaFoundation\AudioSubtypes.cs" />
     <Compile Include="MediaFoundation\IMFReadWriteClassFactory.cs" />

@@ -361,6 +361,9 @@
     <Compile Include="..\NAudio\Dsp\EnvelopeDetector.cs">
       <Link>Dsp\EnvelopeDetector.cs</Link>
     </Compile>
+    <Compile Include="..\NAudio\Dsp\EnvelopeGenerator.cs">
+      <Link>Dsp\EnvelopeGenerator.cs</Link>
+    </Compile>
     <Compile Include="..\NAudio\Dsp\FastFourierTransform.cs">
       <Link>Dsp\FastFourierTransform.cs</Link>
     </Compile>

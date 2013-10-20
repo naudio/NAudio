@@ -10,8 +10,10 @@ namespace NAudio.Utils
     /// </summary>
     class NativeMethods
     {
+#if !NETFX_CORE
         [DllImport("kernel32.dll")]
         public static extern IntPtr LoadLibrary(string dllToLoad);
+#endif
 
         [DllImport("kernel32.dll")]
         public static extern IntPtr GetProcAddress(IntPtr hModule, string procedureName);

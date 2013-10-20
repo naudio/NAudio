@@ -123,7 +123,7 @@ namespace NAudioWin8Demo
             }
         }
 
-        private async void RecorderOnRecordingStopped(object sender, StoppedEventArgs stoppedEventArgs)
+        private void RecorderOnRecordingStopped(object sender, StoppedEventArgs stoppedEventArgs)
         {
             RecordCommand.IsEnabled = true;
             StopRecordingCommand.IsEnabled = false;            
@@ -144,6 +144,7 @@ namespace NAudioWin8Demo
             picker.SuggestedStartLocation = PickerLocationId.MusicLibrary;
             picker.FileTypeFilter.Add("*");
             var file = await picker.PickSingleFileAsync();
+            if (file == null) return;
             var stream = await file.OpenAsync(FileAccessMode.Read);//  .OpenReadAsync();
             if (stream == null) return;
             using (stream)

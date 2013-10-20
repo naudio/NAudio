@@ -29,7 +29,5 @@ namespace NAudio.Dmo
         public static extern int DMOGetName([In] ref Guid clsidDMO,
             // preallocate 80 characters
             [Out] StringBuilder name);
-
-
     }
 }

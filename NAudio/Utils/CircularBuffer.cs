@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Diagnostics;
 
 namespace NAudio.Utils
@@ -10,11 +8,11 @@ namespace NAudio.Utils
     /// </summary>
     public class CircularBuffer
     {
-        private byte[] buffer;
+        private readonly byte[] buffer;
+        private readonly object lockObject;
         private int writePosition;
         private int readPosition;
         private int byteCount;
-        private object lockObject;
 
         /// <summary>
         /// Create a new circular buffer
@@ -37,11 +35,10 @@ namespace NAudio.Utils
         {
             lock (lockObject)
             {
-                int bytesWritten = 0;
-                if (count > buffer.Length - this.byteCount)
+                var bytesWritten = 0;
+                if (count > buffer.Length - byteCount)
                 {
-                    count = buffer.Length - this.byteCount;
-                    //throw new ArgumentException("Not enough space in buffer");
+                    count = buffer.Length - byteCount;
                 }
                 // write to end
                 int writeToEnd = Math.Min(buffer.Length - writePosition, count);
@@ -57,7 +54,7 @@ namespace NAudio.Utils
                     writePosition += (count - bytesWritten);
                     bytesWritten = count;
                 }
-                this.byteCount += bytesWritten;
+                byteCount += bytesWritten;
                 return bytesWritten;
             }
         }
@@ -112,7 +109,7 @@ namespace NAudio.Utils
         /// </summary>
         public int Count
         {
-            get { return this.byteCount; }
+            get { return byteCount; }
         }
 
         /// <summary>
@@ -141,7 +138,6 @@ namespace NAudio.Utils
                 readPosition += count;
                 readPosition %= MaxLength;
             }
-
         }
     }
 }

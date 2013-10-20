@@ -107,6 +107,7 @@
     <Compile Include="WaveFormats\AdpcmWaveFormatTests.cs" />
     <Compile Include="WaveIn\WaveInDevicesTests.cs" />
     <Compile Include="WaveStreams\BlockAlignmentReductionStreamTests.cs" />
+    <Compile Include="WaveStreams\BufferedWaveProviderTests.cs" />
     <Compile Include="WaveStreams\CircularBufferTests.cs" />
     <Compile Include="WaveStreams\FadeInOutSampleProviderTests.cs" />
     <Compile Include="WaveStreams\ChunkIdentifierTests.cs" />

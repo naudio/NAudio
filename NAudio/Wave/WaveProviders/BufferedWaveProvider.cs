@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Collections;
-using NAudio.Wave;
 using NAudio.Utils;
 
 namespace NAudio.Wave
@@ -15,7 +11,7 @@ namespace NAudio.Wave
     public class BufferedWaveProvider : IWaveProvider
     {
         private CircularBuffer circularBuffer;
-        private WaveFormat waveFormat;
+        private readonly WaveFormat waveFormat;
 
         /// <summary>
         /// Creates a new buffered WaveProvider
@@ -58,7 +54,10 @@ namespace NAudio.Wave
         /// </summary>
         public int BufferedBytes
         {
-            get { if (circularBuffer == null) return 0; return circularBuffer.Count; }
+            get
+            {
+                return circularBuffer == null ? 0 : circularBuffer.Count;
+            }
         }
 
         /// <summary>
@@ -83,12 +82,12 @@ namespace NAudio.Wave
         public void AddSamples(byte[] buffer, int offset, int count)
         {
             // create buffer here to allow user to customise buffer length
-            if (this.circularBuffer == null)
+            if (circularBuffer == null)
             { 
-                this.circularBuffer = new CircularBuffer(this.BufferLength);
+                circularBuffer = new CircularBuffer(this.BufferLength);
             }
 
-            int written  = this.circularBuffer.Write(buffer, offset, count);
+            var written = circularBuffer.Write(buffer, offset, count);
             if (written < count && !DiscardOnBufferOverflow)
             {
                 throw new InvalidOperationException("Buffer full");
@@ -102,7 +101,7 @@ namespace NAudio.Wave
         public int Read(byte[] buffer, int offset, int count) 
         {
             int read = 0;
-            if (this.circularBuffer != null) // not yet created
+            if (circularBuffer != null) // not yet created
             { 
                 read = this.circularBuffer.Read(buffer, offset, count);
             }
@@ -119,7 +118,10 @@ namespace NAudio.Wave
         /// </summary>
         public void ClearBuffer()
         {
-            this.circularBuffer.Reset();
+            if (circularBuffer != null)
+            {
+                circularBuffer.Reset();
+            }
         }
     }
 }

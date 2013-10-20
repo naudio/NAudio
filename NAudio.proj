@@ -17,7 +17,8 @@
    <!-- Test target does NUnit test -->
    <Target Name="Test" DependsOnTargets="DebugBuild">
      <NUnit Assemblies="NAudioTests\bin\Debug\NAudioTests.dll" 
-            ToolPath="$(NUnitToolPath)" />
+            ToolPath="$(NUnitToolPath)"
+            ExcludeCategory="IntegrationTest" />
    </Target>
 
    <Target Name="DebugBuild">

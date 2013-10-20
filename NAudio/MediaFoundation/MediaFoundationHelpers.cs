@@ -33,11 +33,10 @@ namespace NAudio.MediaFoundation
         public static IEnumerable<IMFActivate> EnumerateTransforms(Guid category)
         {
             IntPtr interfacesPointer;
-            IMFActivate[] interfaces;
             int interfaceCount;
             MediaFoundationInterop.MFTEnumEx(category, _MFT_ENUM_FLAG.MFT_ENUM_FLAG_ALL,
                 null, null, out interfacesPointer, out interfaceCount);
-            interfaces = new IMFActivate[interfaceCount];
+            var interfaces = new IMFActivate[interfaceCount];
             for (int n = 0; n < interfaceCount; n++)
             {
                 var ptr =

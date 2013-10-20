@@ -1,13 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using NAudio.Wave;
 
 namespace NAudio.Utils
 {
+    /// <summary>
+    /// WavePosition extension methods
+    /// </summary>
     public static class WavePositionExtensions
     {
+        /// <summary>
+        /// Get Position as timespan
+        /// </summary>
         public static TimeSpan GetPositionTimeSpan(this IWavePosition @this)
         {
             var pos = @this.GetPosition() / (@this.OutputWaveFormat.Channels * @this.OutputWaveFormat.BitsPerSample / 8);

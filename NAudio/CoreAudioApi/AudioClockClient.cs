@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using NAudio.CoreAudioApi.Interfaces;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -8,7 +6,7 @@ using System.Runtime.InteropServices;
 namespace NAudio.CoreAudioApi
 {
     /// <summary>
-    /// 
+    /// Audio Clock Client
     /// </summary>
     public class AudioClockClient : IDisposable
     {
@@ -22,6 +20,9 @@ namespace NAudio.CoreAudioApi
             //Stopwatch.Frequency
         }
 
+        /// <summary>
+        /// Characteristics
+        /// </summary>
         public int Characteristics
         {
             get
@@ -32,6 +33,9 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Frequency
+        /// </summary>
         public ulong Frequency
         {
             get
@@ -42,6 +46,9 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Get Position
+        /// </summary>
         public bool GetPosition(out ulong position, out ulong qpcPosition)
         {
             var hr = audioClockClientInterface.GetPosition(out position, out qpcPosition);
@@ -50,6 +57,9 @@ namespace NAudio.CoreAudioApi
             return true;
         }
 
+        /// <summary>
+        /// Adjusted Position
+        /// </summary>
         public ulong AdjustedPosition
         {
             get
@@ -88,6 +98,9 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Can Adjust Position
+        /// </summary>
         public bool CanAdjustPosition
         {
             get { return Stopwatch.IsHighResolution; }
@@ -95,6 +108,9 @@ namespace NAudio.CoreAudioApi
 
         #region IDisposable Members
 
+        /// <summary>
+        /// Dispose
+        /// </summary>
         public void Dispose()
         {
             if (audioClockClientInterface != null)

@@ -21,7 +21,7 @@ namespace NAudio.Win8.Wave.WaveOutputs
     {
         private AudioClient audioClient;
         private readonly string device;
-        private AudioClientShareMode shareMode;
+        private readonly AudioClientShareMode shareMode;
         private AudioRenderClient renderClient;
         private IWaveProvider sourceProvider;
         private int latencyMilliseconds;
@@ -32,7 +32,7 @@ namespace NAudio.Win8.Wave.WaveOutputs
         private WaveFormat outputFormat;
         private bool resamplerNeeded;
         private IntPtr frameEventWaitHandle;
-        private SynchronizationContext syncContext;
+        private readonly SynchronizationContext syncContext;
 
         /// <summary>
         /// Playback Stopped
@@ -90,7 +90,7 @@ namespace NAudio.Win8.Wave.WaveOutputs
 
         private async void PlayThread()
         {
-            MediaFoundationResampler resamplerDmoStream = null;
+            MediaFoundationResampler mediaFoundationResampler = null;
             IWaveProvider playbackProvider = this.sourceProvider;
             Exception exception = null;
 
@@ -98,8 +98,8 @@ namespace NAudio.Win8.Wave.WaveOutputs
             {
                 if (this.resamplerNeeded)
                 {
-                    resamplerDmoStream = new MediaFoundationResampler(sourceProvider, outputFormat);
-                    playbackProvider = resamplerDmoStream;
+                    mediaFoundationResampler = new MediaFoundationResampler(sourceProvider, outputFormat);
+                    playbackProvider = mediaFoundationResampler;
                 }
 
                 // fill a whole buffer
@@ -148,9 +148,9 @@ namespace NAudio.Win8.Wave.WaveOutputs
             }
             finally
             {
-                if (resamplerDmoStream != null)
+                if (mediaFoundationResampler != null)
                 {
-                    resamplerDmoStream.Dispose();
+                    mediaFoundationResampler.Dispose();
                 }
                 RaisePlaybackStopped(exception);
             }

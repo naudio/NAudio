@@ -268,89 +268,8 @@
     <Compile Include="..\NAudio\Dmo\AudioMediaSubtypes.cs">
       <Link>Dmo\AudioMediaSubtypes.cs</Link>
     </Compile>
-    <Compile Include="..\NAudio\Dmo\DmoDescriptor.cs">
-      <Link>Dmo\DmoDescriptor.cs</Link>
-    </Compile>
-    <Compile Include="..\NAudio\Dmo\DmoEnumerator.cs">
-      <Link>Dmo\DmoEnumerator.cs</Link>
-    </Compile>
-    <Compile Include="..\NAudio\Dmo\DmoEnumFlags.cs">
-      <Link>Dmo\DmoEnumFlags.cs</Link>
-    </Compile>
-    <Compile Include="..\NAudio\Dmo\DmoGuids.cs">
-      <Link>Dmo\DmoGuids.cs</Link>
-    </Compile>
-    <Compile Include="..\NAudio\Dmo\DmoHResults.cs">
-      <Link>Dmo\DmoHResults.cs</Link>
-    </Compile>
-    <Compile Include="..\NAudio\Dmo\DmoInputDataBufferFlags.cs">
-      <Link>Dmo\DmoInputDataBufferFlags.cs</Link>
-    </Compile>
-    <Compile Include="..\NAudio\Dmo\DmoInputStatusFlags.cs">
-      <Link>Dmo\DmoInputStatusFlags.cs</Link>
-    </Compile>
-    <Compile Include="..\NAudio\Dmo\DmoInterop.cs">
-      <Link>Dmo\DmoInterop.cs</Link>
-    </Compile>
-    <Compile Include="..\NAudio\Dmo\DmoMediaType.cs">
-      <Link>Dmo\DmoMediaType.cs</Link>
-    </Compile>
-    <Compile Include="..\NAudio\Dmo\DmoOutputDataBuffer.cs">
-      <Link>Dmo\DmoOutputDataBuffer.cs</Link>
-    </Compile>
-    <Compile Include="..\NAudio\Dmo\DmoOutputDataBufferFlags.cs">
-      <Link>Dmo\DmoOutputDataBufferFlags.cs</Link>
-    </Compile>
-    <Compile Include="..\NAudio\Dmo\DmoPartialMediaType.cs">
-      <Link>Dmo\DmoPartialMediaType.cs</Link>
-    </Compile>
-    <Compile Include="..\NAudio\Dmo\DmoProcessOutputFlags.cs">
-      <Link>Dmo\DmoProcessOutputFlags.cs</Link>
-    </Compile>
-    <Compile Include="..\NAudio\Dmo\DmoSetTypeFlags.cs">
-      <Link>Dmo\DmoSetTypeFlags.cs</Link>
-    </Compile>
-    <Compile Include="..\NAudio\Dmo\IEnumDmo.cs">
-      <Link>Dmo\IEnumDmo.cs</Link>
-    </Compile>
-    <Compile Include="..\NAudio\Dmo\IMediaBuffer.cs">
-      <Link>Dmo\IMediaBuffer.cs</Link>
-    </Compile>
-    <Compile Include="..\NAudio\Dmo\IMediaObject.cs">
-      <Link>Dmo\IMediaObject.cs</Link>
-    </Compile>
-    <Compile Include="..\NAudio\Dmo\IMediaParamInfo.cs">
-      <Link>Dmo\IMediaParamInfo.cs</Link>
-    </Compile>
-    <Compile Include="..\NAudio\Dmo\InputStreamInfoFlags.cs">
-      <Link>Dmo\InputStreamInfoFlags.cs</Link>
-    </Compile>
     <Compile Include="..\NAudio\Dmo\IWMResamplerProps.cs">
       <Link>Dmo\IWMResamplerProps.cs</Link>
-    </Compile>
-    <Compile Include="..\NAudio\Dmo\MediaBuffer.cs">
-      <Link>Dmo\MediaBuffer.cs</Link>
-    </Compile>
-    <Compile Include="..\NAudio\Dmo\MediaObject.cs">
-      <Link>Dmo\MediaObject.cs</Link>
-    </Compile>
-    <Compile Include="..\NAudio\Dmo\MediaObjectSizeInfo.cs">
-      <Link>Dmo\MediaObjectSizeInfo.cs</Link>
-    </Compile>
-    <Compile Include="..\NAudio\Dmo\MediaParamInfo.cs">
-      <Link>Dmo\MediaParamInfo.cs</Link>
-    </Compile>
-    <Compile Include="..\NAudio\Dmo\MediaTypes.cs">
-      <Link>Dmo\MediaTypes.cs</Link>
-    </Compile>
-    <Compile Include="..\NAudio\Dmo\OutputStreamInfoFlags.cs">
-      <Link>Dmo\OutputStreamInfoFlags.cs</Link>
-    </Compile>
-    <Compile Include="..\NAudio\Dmo\ResamplerMediaObject.cs">
-      <Link>Dmo\ResamplerMediaObject.cs</Link>
-    </Compile>
-    <Compile Include="..\NAudio\Dmo\WindowsMediaMp3Decoder.cs">
-      <Link>Dmo\WindowsMediaMp3Decoder.cs</Link>
     </Compile>
     <Compile Include="..\NAudio\Dsp\BiQuadFilter.cs">
       <Link>Dsp\BiQuadFilter.cs</Link>
@@ -378,9 +297,6 @@
     </Compile>
     <Compile Include="..\NAudio\FileFormats\Mp3\ChannelMode.cs">
       <Link>FileFormats\Mp3\ChannelMode.cs</Link>
-    </Compile>
-    <Compile Include="..\NAudio\FileFormats\Mp3\DmoMp3FrameDecompressor.cs">
-      <Link>FileFormats\Mp3\DmoMp3FrameDecompressor.cs</Link>
     </Compile>
     <Compile Include="..\NAudio\FileFormats\Mp3\Id3v2Tag.cs">
       <Link>FileFormats\Mp3\Id3v2Tag.cs</Link>
@@ -816,9 +732,6 @@
     </Compile>
     <Compile Include="..\NAudio\Wave\WaveStreams\RawSourceWaveStream.cs">
       <Link>Wave\WaveStreams\RawSourceWaveStream.cs</Link>
-    </Compile>
-    <Compile Include="..\NAudio\Wave\WaveStreams\ResamplerDmoStream.cs">
-      <Link>Wave\WaveStreams\ResamplerDmoStream.cs</Link>
     </Compile>
     <Compile Include="..\NAudio\Wave\WaveStreams\SimpleCompressorStream.cs">
       <Link>Wave\WaveStreams\SimpleCompressorStream.cs</Link>

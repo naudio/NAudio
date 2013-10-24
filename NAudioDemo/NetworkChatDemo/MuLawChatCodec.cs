@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using NAudio.Wave;
 using NAudio.Codecs;
 using System.ComponentModel.Composition;
@@ -42,7 +40,7 @@ namespace NAudioDemo.NetworkChatDemo
 
         public byte[] Encode(byte[] data, int offset, int length)
         {
-            byte[] encoded = new byte[length / 2];
+            var encoded = new byte[length / 2];
             int outIndex = 0;
             for(int n = 0; n < length; n+=2)
             {
@@ -53,7 +51,7 @@ namespace NAudioDemo.NetworkChatDemo
 
         public byte[] Decode(byte[] data, int offset, int length)
         {
-            byte[] decoded = new byte[length * 2];
+            var decoded = new byte[length * 2];
             int outIndex = 0;
             for (int n = 0; n < length; n++)
             {

@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using NAudio.Wave;
 using NAudio.Wave.Compression;
-using System.Diagnostics;
 using NAudio;
 
 namespace NAudioDemo.NetworkChatDemo
@@ -14,15 +11,15 @@ namespace NAudioDemo.NetworkChatDemo
     /// </summary>
     abstract class AcmChatCodec : INetworkChatCodec
     {
-        private WaveFormat encodeFormat;
+        private readonly WaveFormat encodeFormat;
         private AcmStream encodeStream;
         private AcmStream decodeStream;
         private int decodeSourceBytesLeftovers;
         private int encodeSourceBytesLeftovers;
 
-        public AcmChatCodec(WaveFormat recordFormat, WaveFormat encodeFormat)
+        protected AcmChatCodec(WaveFormat recordFormat, WaveFormat encodeFormat)
         {
-            this.RecordFormat = recordFormat;
+            RecordFormat = recordFormat;
             this.encodeFormat = encodeFormat;
         }
 
@@ -30,9 +27,9 @@ namespace NAudioDemo.NetworkChatDemo
 
         public byte[] Encode(byte[] data, int offset, int length)
         {
-            if (this.encodeStream == null)
+            if (encodeStream == null)
             {
-                this.encodeStream = new AcmStream(this.RecordFormat, this.encodeFormat);
+                encodeStream = new AcmStream(RecordFormat, encodeFormat);
             }
             //Debug.WriteLine(String.Format("Encoding {0} + {1} bytes", length, encodeSourceBytesLeftovers));
             return Convert(encodeStream, data, offset, length, ref encodeSourceBytesLeftovers);
@@ -40,9 +37,9 @@ namespace NAudioDemo.NetworkChatDemo
 
         public byte[] Decode(byte[] data, int offset, int length)
         {
-            if (this.decodeStream == null)
+            if (decodeStream == null)
             {
-                this.decodeStream = new AcmStream(this.encodeFormat, this.RecordFormat);
+                decodeStream = new AcmStream(encodeFormat, RecordFormat);
             }
             //Debug.WriteLine(String.Format("Decoding {0} + {1} bytes", data.Length, decodeSourceBytesLeftovers));
             return Convert(decodeStream, data, offset, length, ref decodeSourceBytesLeftovers);
@@ -72,7 +69,7 @@ namespace NAudioDemo.NetworkChatDemo
         {
             get
             {
-                return this.encodeFormat.AverageBytesPerSecond * 8;
+                return encodeFormat.AverageBytesPerSecond * 8;
             }
         }
 
@@ -98,8 +95,8 @@ namespace NAudioDemo.NetworkChatDemo
                 bool available = true;
                 try
                 {
-                    using (var tempEncoder = new AcmStream(this.RecordFormat, this.encodeFormat)) { }
-                    using (var tempDecoder = new AcmStream(this.encodeFormat, this.RecordFormat)) { }
+                    using (new AcmStream(RecordFormat, encodeFormat)) { }
+                    using (new AcmStream(encodeFormat, RecordFormat)) { }
                 }
                 catch (MmException)
                 {

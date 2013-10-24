@@ -1,24 +1,20 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.IO;
-using System.Threading;
-using System.Diagnostics;
 
 namespace NAudioDemo
 {
     public class ReadFullyStream : Stream
     {
-        private Stream sourceStream;
+        private readonly Stream sourceStream;
         private long pos; // psuedo-position
-        private byte[] readAheadBuffer;
+        private readonly byte[] readAheadBuffer;
         private int readAheadLength;
         private int readAheadOffset;
 
         public ReadFullyStream(Stream sourceStream)
         {
             this.sourceStream = sourceStream;
-            this.readAheadBuffer = new byte[4096];
+            readAheadBuffer = new byte[4096];
         }
         public override bool CanRead
         {
@@ -83,7 +79,7 @@ namespace NAudioDemo
                     }
                 }
             }
-            this.pos += bytesRead;
+            pos += bytesRead;
             return bytesRead;
         }
 
@@ -100,11 +96,6 @@ namespace NAudioDemo
         public override void Write(byte[] buffer, int offset, int count)
         {
             throw new InvalidOperationException();
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            base.Dispose(disposing);
         }
     }
 }

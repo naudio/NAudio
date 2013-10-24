@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using NAudio.Wave;
 using NAudio.Codecs;
 using System.Diagnostics;
@@ -12,19 +10,19 @@ namespace NAudioDemo.NetworkChatDemo
     [Export(typeof(INetworkChatCodec))]
     class G722ChatCodec : INetworkChatCodec
     {
-        private int bitrate;
-        private G722CodecState encoderState;
-        private G722CodecState decoderState;
-        private WaveFormat recordingFormat;
-        private G722Codec codec;
+        private readonly int bitrate;
+        private readonly G722CodecState encoderState;
+        private readonly G722CodecState decoderState;
+        private readonly WaveFormat recordingFormat;
+        private readonly G722Codec codec;
 
         public G722ChatCodec()
         {
-            this.bitrate = 64000;
-            this.encoderState = new G722CodecState(bitrate, G722Flags.None);
-            this.decoderState = new G722CodecState(bitrate, G722Flags.None);
-            this.codec = new G722Codec();
-            this.recordingFormat = new WaveFormat(16000, 1);
+            bitrate = 64000;
+            encoderState = new G722CodecState(bitrate, G722Flags.None);
+            decoderState = new G722CodecState(bitrate, G722Flags.None);
+            codec = new G722Codec();
+            recordingFormat = new WaveFormat(16000, 1);
         }
 
         public string Name
@@ -34,12 +32,12 @@ namespace NAudioDemo.NetworkChatDemo
 
         public int BitsPerSecond
         {
-            get { return this.bitrate; }
+            get { return bitrate; }
         }
 
         public WaveFormat RecordFormat
         {
-            get { return this.recordingFormat; }
+            get { return recordingFormat; }
         }
 
         public byte[] Encode(byte[] data, int offset, int length)
@@ -48,10 +46,10 @@ namespace NAudioDemo.NetworkChatDemo
             {
                 throw new ArgumentException("G722 does not yet support non-zero offsets");
             }
-            WaveBuffer wb = new WaveBuffer(data);
+            var wb = new WaveBuffer(data);
             int encodedLength = length / 4;
-            byte[] outputBuffer = new byte[encodedLength];
-            int encoded = this.codec.Encode(this.encoderState, outputBuffer, wb.ShortBuffer, length / 2);
+            var outputBuffer = new byte[encodedLength];
+            int encoded = codec.Encode(encoderState, outputBuffer, wb.ShortBuffer, length / 2);
             Debug.Assert(encodedLength == encoded);
             return outputBuffer;
         }
@@ -63,9 +61,9 @@ namespace NAudioDemo.NetworkChatDemo
                 throw new ArgumentException("G722 does not yet support non-zero offsets");
             }
             int decodedLength = length * 4;
-            byte[] outputBuffer = new byte[decodedLength];
-            WaveBuffer wb = new WaveBuffer(outputBuffer);
-            int decoded = this.codec.Decode(this.decoderState, wb.ShortBuffer, data, length);
+            var outputBuffer = new byte[decodedLength];
+            var wb = new WaveBuffer(outputBuffer);
+            int decoded = codec.Decode(decoderState, wb.ShortBuffer, data, length);
             Debug.Assert(decodedLength == decoded * 2);  // because decoded is a number of samples
             return outputBuffer;
         }

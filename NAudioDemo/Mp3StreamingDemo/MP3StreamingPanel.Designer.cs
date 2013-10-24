@@ -1,6 +1,6 @@
 ﻿namespace NAudioDemo
 {
-    partial class MP3StreamingPanel
+    partial class Mp3StreamingPanel
     {
         /// <summary>
         /// Required designer variable.
@@ -155,7 +155,7 @@
             this.Controls.Add(this.label1);
             this.Controls.Add(this.textBoxStreamingUrl);
             this.Controls.Add(this.buttonPlay);
-            this.Name = "MP3StreamingPanel";
+            this.Name = "Mp3StreamingPanel";
             this.Size = new System.Drawing.Size(337, 133);
             this.ResumeLayout(false);
             this.PerformLayout();

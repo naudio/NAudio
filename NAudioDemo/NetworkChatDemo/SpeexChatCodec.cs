@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using NAudio.Wave;
 using NSpeex;
 using System.ComponentModel.Composition;
@@ -41,19 +39,19 @@ namespace NAudioDemo.NetworkChatDemo
 
     class SpeexChatCodec : INetworkChatCodec
     {
-        private WaveFormat recordingFormat;
-        private SpeexDecoder decoder;
-        private SpeexEncoder encoder;
-        private WaveBuffer encoderInputBuffer;
-        private string description;
+        private readonly WaveFormat recordingFormat;
+        private readonly SpeexDecoder decoder;
+        private readonly SpeexEncoder encoder;
+        private readonly WaveBuffer encoderInputBuffer;
+        private readonly string description;
 
         public SpeexChatCodec(BandMode bandMode, int sampleRate, string description)
         {
-            this.decoder = new SpeexDecoder(bandMode);
-            this.encoder = new SpeexEncoder(bandMode);
-            this.recordingFormat = new WaveFormat(sampleRate, 16, 1);
+            decoder = new SpeexDecoder(bandMode);
+            encoder = new SpeexEncoder(bandMode);
+            recordingFormat = new WaveFormat(sampleRate, 16, 1);
             this.description = description;
-            this.encoderInputBuffer = new WaveBuffer(this.recordingFormat.AverageBytesPerSecond); // more than enough
+            encoderInputBuffer = new WaveBuffer(recordingFormat.AverageBytesPerSecond); // more than enough
         }
 
         public string Name
@@ -79,9 +77,9 @@ namespace NAudioDemo.NetworkChatDemo
             {
                 samplesToEncode -= samplesToEncode % encoder.FrameSize;
             }
-            byte[] outputBufferTemp = new byte[length]; // contains more than enough space
+            var outputBufferTemp = new byte[length]; // contains more than enough space
             int bytesWritten = encoder.Encode(encoderInputBuffer.ShortBuffer, 0, samplesToEncode, outputBufferTemp, 0, length);
-            byte[] encoded = new byte[bytesWritten];
+            var encoded = new byte[bytesWritten];
             Array.Copy(outputBufferTemp, 0, encoded, 0, bytesWritten);
             ShiftLeftoverSamplesDown(samplesToEncode);
             Debug.WriteLine(String.Format("NSpeex: In {0} bytes, encoded {1} bytes [enc frame size = {2}]",length,bytesWritten, encoder.FrameSize));
@@ -103,11 +101,11 @@ namespace NAudioDemo.NetworkChatDemo
 
         public byte[] Decode(byte[] data, int offset, int length)
         {
-            byte[] outputBufferTemp = new byte[length * 320];
-            WaveBuffer wb = new WaveBuffer(outputBufferTemp);
+            var outputBufferTemp = new byte[length * 320];
+            var wb = new WaveBuffer(outputBufferTemp);
             int samplesDecoded = decoder.Decode(data, offset, length, wb.ShortBuffer, 0, false);
             int bytesDecoded = samplesDecoded * 2;
-            byte[] decoded = new byte[bytesDecoded];
+            var decoded = new byte[bytesDecoded];
             Array.Copy(outputBufferTemp, 0, decoded, 0, bytesDecoded);
             Debug.WriteLine(String.Format("NSpeex: In {0} bytes, decoded {1} bytes [dec frame size = {2}]", length, bytesDecoded, decoder.FrameSize));
             return decoded;

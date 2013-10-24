@@ -1,21 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
 using NAudio.Wave;
 using System.Net;
 using System.Threading;
-using System.Net.Sockets;
 using System.IO;
 using System.Diagnostics;
 using System.ComponentModel.Composition;
 
 namespace NAudioDemo
 {
-    public partial class MP3StreamingPanel : UserControl
+    public partial class Mp3StreamingPanel : UserControl
     {
         enum StreamingPlaybackState
         {
@@ -25,18 +19,18 @@ namespace NAudioDemo
             Paused
         }
 
-        public MP3StreamingPanel()
+        public Mp3StreamingPanel()
         {
             InitializeComponent();
-            this.volumeSlider1.VolumeChanged += new EventHandler(volumeSlider1_VolumeChanged);
-            this.Disposed += this.MP3StreamingPanel_Disposing;
+            volumeSlider1.VolumeChanged += OnVolumeSliderChanged;
+            Disposed += MP3StreamingPanel_Disposing;
         }
 
-        void volumeSlider1_VolumeChanged(object sender, EventArgs e)
+        void OnVolumeSliderChanged(object sender, EventArgs e)
         {
-            if (this.volumeProvider != null)
+            if (volumeProvider != null)
             {
-                this.volumeProvider.Volume = this.volumeSlider1.Volume;
+                volumeProvider.Volume = volumeSlider1.Volume;
             }
         }
 
@@ -51,9 +45,9 @@ namespace NAudioDemo
 
         private void ShowError(string message)
         {
-            if (this.InvokeRequired)
+            if (InvokeRequired)
             {
-                this.BeginInvoke(new ShowErrorDelegate(ShowError), message);
+                BeginInvoke(new ShowErrorDelegate(ShowError), message);
             }
             else
             {
@@ -61,12 +55,12 @@ namespace NAudioDemo
             }
         }
 
-        private void StreamMP3(object state)
+        private void StreamMp3(object state)
         {
-            this.fullyDownloaded = false;
-            string url = (string)state;
+            fullyDownloaded = false;
+            var url = (string)state;
             webRequest = (HttpWebRequest)WebRequest.Create(url);
-            HttpWebResponse resp = null;
+            HttpWebResponse resp;
             try
             {
                 resp = (HttpWebResponse)webRequest.GetResponse();
@@ -79,7 +73,7 @@ namespace NAudioDemo
                 }
                 return;
             }
-            byte[] buffer = new byte[16384 * 4]; // needs to be big enough to hold a decompressed frame
+            var buffer = new byte[16384 * 4]; // needs to be big enough to hold a decompressed frame
 
             IMp3FrameDecompressor decompressor = null;
             try
@@ -89,21 +83,21 @@ namespace NAudioDemo
                     var readFullyStream = new ReadFullyStream(responseStream);
                     do
                     {
-                        if (bufferedWaveProvider != null && bufferedWaveProvider.BufferLength - bufferedWaveProvider.BufferedBytes < bufferedWaveProvider.WaveFormat.AverageBytesPerSecond / 4)
+                        if (IsBufferNearlyFull)
                         {
                             Debug.WriteLine("Buffer getting full, taking a break");
                             Thread.Sleep(500);
                         }
                         else
                         {
-                            Mp3Frame frame = null;
+                            Mp3Frame frame;
                             try
                             {
                                 frame = Mp3Frame.LoadFromStream(readFullyStream);
                             }
                             catch (EndOfStreamException)
                             {
-                                this.fullyDownloaded = true;
+                                fullyDownloaded = true;
                                 // reached the end of the MP3 file / stream
                                 break;
                             }
@@ -117,10 +111,9 @@ namespace NAudioDemo
                                 // don't think these details matter too much - just help ACM select the right codec
                                 // however, the buffered provider doesn't know what sample rate it is working at
                                 // until we have a frame
-                                WaveFormat waveFormat = new Mp3WaveFormat(frame.SampleRate, frame.ChannelMode == ChannelMode.Mono ? 1 : 2, frame.FrameLength, frame.BitRate);
-                                decompressor = new AcmMp3FrameDecompressor(waveFormat);
-                                this.bufferedWaveProvider = new BufferedWaveProvider(decompressor.OutputFormat);
-                                this.bufferedWaveProvider.BufferDuration = TimeSpan.FromSeconds(20); // allow us to get well ahead of ourselves
+                                decompressor = CreateFrameDecompressor(frame);
+                                bufferedWaveProvider = new BufferedWaveProvider(decompressor.OutputFormat);
+                                bufferedWaveProvider.BufferDuration = TimeSpan.FromSeconds(20); // allow us to get well ahead of ourselves
                                 //this.bufferedWaveProvider.BufferedDuration = 250;
                             }
                             int decompressed = decompressor.DecompressFrame(frame, buffer, 0);
@@ -144,13 +137,30 @@ namespace NAudioDemo
             }
         }
 
+        private static IMp3FrameDecompressor CreateFrameDecompressor(Mp3Frame frame)
+        {
+            WaveFormat waveFormat = new Mp3WaveFormat(frame.SampleRate, frame.ChannelMode == ChannelMode.Mono ? 1 : 2,
+                frame.FrameLength, frame.BitRate);
+            return new AcmMp3FrameDecompressor(waveFormat);
+        }
+
+        private bool IsBufferNearlyFull
+        {
+            get
+            {
+                return bufferedWaveProvider != null && 
+                       bufferedWaveProvider.BufferLength - bufferedWaveProvider.BufferedBytes 
+                       < bufferedWaveProvider.WaveFormat.AverageBytesPerSecond / 4;
+            }
+        }
+
         private void buttonPlay_Click(object sender, EventArgs e)
         {
             if (playbackState == StreamingPlaybackState.Stopped)
             {
                 playbackState = StreamingPlaybackState.Buffering;
-                this.bufferedWaveProvider = null;
-                ThreadPool.QueueUserWorkItem(new WaitCallback(StreamMP3), textBoxStreamingUrl.Text);
+                bufferedWaveProvider = null;
+                ThreadPool.QueueUserWorkItem(StreamMp3, textBoxStreamingUrl.Text);
                 timer1.Enabled = true;
             }
             else if (playbackState == StreamingPlaybackState.Paused)
@@ -167,7 +177,8 @@ namespace NAudioDemo
                 {
                     webRequest.Abort();
                 }
-                this.playbackState = StreamingPlaybackState.Stopped;
+                
+                playbackState = StreamingPlaybackState.Stopped;
                 if (waveOut != null)
                 { 
                     waveOut.Stop();
@@ -191,13 +202,13 @@ namespace NAudioDemo
         {
             if (playbackState != StreamingPlaybackState.Stopped)
             {
-                if (this.waveOut == null && this.bufferedWaveProvider != null)
+                if (waveOut == null && bufferedWaveProvider != null)
                 {
                     Debug.WriteLine("Creating WaveOut Device");
-                    this.waveOut = CreateWaveOut(); 
-                    waveOut.PlaybackStopped += waveOut_PlaybackStopped;
-                    this.volumeProvider = new VolumeWaveProvider16(bufferedWaveProvider);
-                    this.volumeProvider.Volume = this.volumeSlider1.Volume;
+                    waveOut = CreateWaveOut(); 
+                    waveOut.PlaybackStopped += OnPlaybackStopped;
+                    volumeProvider = new VolumeWaveProvider16(bufferedWaveProvider);
+                    volumeProvider.Volume = volumeSlider1.Volume;
                     waveOut.Init(volumeProvider);
                     progressBarBuffer.Maximum = (int)bufferedWaveProvider.BufferDuration.TotalMilliseconds;
                 }
@@ -206,19 +217,15 @@ namespace NAudioDemo
                     var bufferedSeconds = bufferedWaveProvider.BufferedDuration.TotalSeconds;
                     ShowBufferState(bufferedSeconds);
                     // make it stutter less if we buffer up a decent amount before playing
-                    if (bufferedSeconds < 0.5 && this.playbackState == StreamingPlaybackState.Playing && !this.fullyDownloaded)
+                    if (bufferedSeconds < 0.5 && playbackState == StreamingPlaybackState.Playing && !fullyDownloaded)
                     {
-                        this.playbackState = StreamingPlaybackState.Buffering;
-                        waveOut.Pause();
-                        Debug.WriteLine(String.Format("Paused to buffer, waveOut.PlaybackState={0}", waveOut.PlaybackState));
+                        Pause();
                     }
-                    else if (bufferedSeconds > 4 && this.playbackState == StreamingPlaybackState.Buffering)
+                    else if (bufferedSeconds > 4 && playbackState == StreamingPlaybackState.Buffering)
                     {
-                        waveOut.Play();
-                        Debug.WriteLine(String.Format("Started playing, waveOut.PlaybackState={0}", waveOut.PlaybackState));
-                        this.playbackState = StreamingPlaybackState.Playing;
+                        Play();
                     }
-                    else if (this.fullyDownloaded && bufferedSeconds == 0)
+                    else if (fullyDownloaded && bufferedSeconds == 0)
                     {
                         Debug.WriteLine("Reached end of stream");
                         StopPlayback();
@@ -228,10 +235,23 @@ namespace NAudioDemo
             }
         }
 
+        private void Play()
+        {
+            waveOut.Play();
+            Debug.WriteLine(String.Format("Started playing, waveOut.PlaybackState={0}", waveOut.PlaybackState));
+            playbackState = StreamingPlaybackState.Playing;
+        }
+
+        private void Pause()
+        {
+            playbackState = StreamingPlaybackState.Buffering;
+            waveOut.Pause();
+            Debug.WriteLine(String.Format("Paused to buffer, waveOut.PlaybackState={0}", waveOut.PlaybackState));
+        }
+
         private IWavePlayer CreateWaveOut()
         {
             return new WaveOut();
-            //return new DirectSoundOut();
         }
 
         private void MP3StreamingPanel_Disposing(object sender, EventArgs e)
@@ -254,7 +274,7 @@ namespace NAudioDemo
             StopPlayback();
         }
 
-        private void waveOut_PlaybackStopped(object sender, StoppedEventArgs e)
+        private void OnPlaybackStopped(object sender, StoppedEventArgs e)
         {
             Debug.WriteLine("Playback Stopped");
             if (e.Exception != null)
@@ -265,7 +285,7 @@ namespace NAudioDemo
     }
 
     [Export(typeof(INAudioDemoPlugin))]
-    public class MP3StreamingPanelPlugin : INAudioDemoPlugin
+    public class Mp3StreamingPanelPlugin : INAudioDemoPlugin
     {
         public string Name
         {
@@ -274,7 +294,7 @@ namespace NAudioDemo
 
         public Control CreatePanel()
         {
-            return new MP3StreamingPanel();
+            return new Mp3StreamingPanel();
         }
     }
 }

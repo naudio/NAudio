@@ -60,9 +60,13 @@
        <ZipSourceFiles Include="MixDiff\**\*.*" Exclude="$(ExcludePattern)" />
        <ZipSourceFiles Include="NAudio\**\*.*" Exclude="$(ExcludePattern)" />
        <ZipSourceFiles Include="NAudio.WindowsMediaFormat\**\*.*" Exclude="$(ExcludePattern)" />
+       <ZipSourceFiles Include="NAudio.Win8\**\*.*" Exclude="$(ExcludePattern)" />
        <ZipSourceFiles Include="NAudioDemo\**\*.*" Exclude="$(ExcludePattern)" />
        <ZipSourceFiles Include="NAudioWpfDemo\**\*.*" Exclude="$(ExcludePattern)" />
+       <ZipSourceFiles Include="NAudioWin8Demo\**\*.*" Exclude="$(ExcludePattern)" />
        <ZipSourceFiles Include="NAudioTests\**\*.*" Exclude="$(ExcludePattern)" />
+       <ZipSourceFiles Include="SampleData\**\*.*" Exclude="$(ExcludePattern)" />
+       <ZipSourceFiles Include="Tools\**\*.*" Exclude="$(ExcludePattern)" />
        <ZipSourceFiles Include="NAudio.sln" />
        <ZipSourceFiles Include="license.txt" />
        <ZipSourceFiles Include="build.bat" />

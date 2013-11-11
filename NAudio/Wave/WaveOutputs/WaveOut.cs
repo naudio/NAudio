@@ -411,6 +411,7 @@ namespace NAudio.Wave
                     }
                     else
                     {
+                        playbackState = PlaybackState.Stopped; // set explicitly for when we reach the end of the audio
                         RaisePlaybackStoppedEvent(exception);
                     }
                 }

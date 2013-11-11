@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using NAudio.Wave.SampleProviders;
 
 namespace NAudio.Wave
@@ -18,11 +16,11 @@ namespace NAudio.Wave
     {
         private string fileName;
         private WaveStream readerStream; // the waveStream which we will use for all positioning
-        private SampleChannel sampleChannel; // sample provider that gives us most stuff we need
-        private int destBytesPerSample;
-        private int sourceBytesPerSample;
-        private long length;
-        private object lockObject;
+        private readonly SampleChannel sampleChannel; // sample provider that gives us most stuff we need
+        private readonly int destBytesPerSample;
+        private readonly int sourceBytesPerSample;
+        private readonly long length;
+        private readonly object lockObject;
 
         /// <summary>
         /// Initializes a new instance of AudioFileReader
@@ -30,13 +28,13 @@ namespace NAudio.Wave
         /// <param name="fileName">The file to open</param>
         public AudioFileReader(string fileName)
         {
+            lockObject = new object();
             this.fileName = fileName;
             CreateReaderStream(fileName);
-            this.sourceBytesPerSample = (readerStream.WaveFormat.BitsPerSample / 8) * readerStream.WaveFormat.Channels;
-            this.destBytesPerSample = 8; // stereo float
-            this.sampleChannel = new SampleChannel(readerStream, false);
-            this.length = SourceToDest(readerStream.Length);
-            this.lockObject = new object();
+            sourceBytesPerSample = (readerStream.WaveFormat.BitsPerSample / 8) * readerStream.WaveFormat.Channels;
+            sampleChannel = new SampleChannel(readerStream, false);
+            destBytesPerSample = 4*sampleChannel.WaveFormat.Channels;
+            length = SourceToDest(readerStream.Length);
         }
 
         /// <summary>
@@ -83,7 +81,7 @@ namespace NAudio.Wave
         /// </summary>
         public override long Length
         {
-            get { return this.length; }
+            get { return length; }
         }
 
         /// <summary>
@@ -104,7 +102,7 @@ namespace NAudio.Wave
         /// <returns>Number of bytes read</returns>
         public override int Read(byte[] buffer, int offset, int count)
         {
-            WaveBuffer waveBuffer = new WaveBuffer(buffer);
+            var waveBuffer = new WaveBuffer(buffer);
             int samplesRequired = count / 4;
             int samplesRead = Read(waveBuffer.FloatBuffer, offset / 4, samplesRequired);
             return samplesRead * 4;
@@ -121,7 +119,7 @@ namespace NAudio.Wave
         {
             lock (lockObject)
             {
-                return this.sampleChannel.Read(buffer, offset, count);
+                return sampleChannel.Read(buffer, offset, count);
             }
         }
 
@@ -158,8 +156,8 @@ namespace NAudio.Wave
         {
             if (disposing)
             {
-                this.readerStream.Dispose();
-                this.readerStream = null;
+                readerStream.Dispose();
+                readerStream = null;
             }
             base.Dispose(disposing);
         }

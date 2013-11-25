@@ -51,7 +51,6 @@ namespace NAudio.Utils
 
         /// <summary>
         /// The email address for feedback
-        /// e.g. software@wordandspirit.co.uk
         /// </summary>
         public string Email
         {

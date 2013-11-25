@@ -85,7 +85,7 @@ namespace NAudio.Utils
             this.linkLabelFeedback.Size = new System.Drawing.Size(150, 13);
             this.linkLabelFeedback.TabIndex = 3;
             this.linkLabelFeedback.TabStop = true;
-            this.linkLabelFeedback.Text = "software@wordandspirit.co.uk";
+            this.linkLabelFeedback.Text = "mark.heath@gmail.com";
             this.linkLabelFeedback.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.linkLabelFeedback_LinkClicked);
             // 
             // label3

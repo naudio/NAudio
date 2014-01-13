@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Text;
 using NAudio.CoreAudioApi.Interfaces;
 using NAudio.MediaFoundation;
 
@@ -16,7 +14,7 @@ namespace NAudio.Wave
     /// </summary>
     public class MediaFoundationReader : WaveStream
     {
-        private readonly WaveFormat waveFormat;
+        private WaveFormat waveFormat;
         private readonly long length;
         private readonly MediaFoundationReaderSettings settings;
         private readonly string file;
@@ -77,14 +75,19 @@ namespace NAudio.Wave
             this.file = file;
             var reader = CreateReader(settings);
 
-            /* IMFMediaType currentMediaType;
-            reader.GetCurrentMediaType(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, out currentMediaType);
-            var current = new MediaType(currentMediaType);
-            IMFMediaType nativeMediaType;
-            reader.GetNativeMediaType(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0, out nativeMediaType);
-            var native = new MediaType(nativeMediaType);*/
+            waveFormat = GetCurrentWaveFormat(reader);
 
-            // now let's find out what we actually got
+            reader.SetStreamSelection(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, true);
+            length = GetLength(reader);
+
+            if (settings.SingleReaderObject)
+            {
+                pReader = reader;
+            }
+        }
+
+        private WaveFormat GetCurrentWaveFormat(IMFSourceReader reader)
+        {
             IMFMediaType uncompressedMediaType;
             reader.GetCurrentMediaType(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, out uncompressedMediaType);
 
@@ -97,17 +100,9 @@ namespace NAudio.Wave
             int bits = outputMediaType.BitsPerSample;
             int sampleRate = outputMediaType.SampleRate;
 
-            waveFormat = audioSubType == AudioSubtypes.MFAudioFormat_PCM
-                             ? new WaveFormat(sampleRate, bits, channels)
-                             : WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channels);
-
-            reader.SetStreamSelection(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, true);
-            length = GetLength(reader);
-
-            if (settings.SingleReaderObject)
-            {
-                pReader = reader;
-            }
+            return audioSubType == AudioSubtypes.MFAudioFormat_PCM
+                ? new WaveFormat(sampleRate, bits, channels)
+                : WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channels);
         }
 
         /// <summary>
@@ -196,25 +191,25 @@ namespace NAudio.Wave
                 ulong timestamp;
                 int actualStreamIndex;
                 pReader.ReadSample(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0, out actualStreamIndex, out dwFlags, out timestamp, out pSample);
-                if (dwFlags != 0)
+                if ((dwFlags & MF_SOURCE_READER_FLAG.MF_SOURCE_READERF_ENDOFSTREAM) != 0)
                 {
-                    // reached the end of the stream or media type changed
-                    break;
-                }/*
-                if (dwFlags & MF_SOURCE_READERF_CURRENTMEDIATYPECHANGED)
-                {
-                    printf("Type change - not supported by WAVE file format.\n");
+                    // reached the end of the stream
                     break;
                 }
-                if (dwFlags & MF_SOURCE_READERF_ENDOFSTREAM)
+                else if ((dwFlags & MF_SOURCE_READER_FLAG.MF_SOURCE_READERF_CURRENTMEDIATYPECHANGED) != 0)
                 {
-                    printf("End of input file.\n");
-                    break;
-                }*/
+                    waveFormat = GetCurrentWaveFormat(pReader);
+                    OnWaveFormatChanged();
+                    // carry on, but user must handle the change of format
+                }
+                else if (dwFlags != 0)
+                {
+                    throw new InvalidOperationException(String.Format("MediaFoundationReadError {0}", dwFlags));
+                }
 
                 IMFMediaBuffer pBuffer;
                 pSample.ConvertToContiguousBuffer(out pBuffer);
-                IntPtr pAudioData = IntPtr.Zero;
+                IntPtr pAudioData;
                 int cbBuffer;
                 int pcbMaxLength;
                 pBuffer.Lock(out pAudioData, out pcbMaxLength, out cbBuffer);
@@ -275,7 +270,7 @@ namespace NAudio.Wave
             set
             {
                 if (value < 0)
-                    throw new ArgumentOutOfRangeException("Position cannot be less than 0");
+                    throw new ArgumentOutOfRangeException("value", "Position cannot be less than 0");
                 if (settings.RepositionInRead)
                 {
                     repositionTo = value;
@@ -314,6 +309,17 @@ namespace NAudio.Wave
                 pReader = null;
             }
             base.Dispose(disposing);
+        }
+
+        /// <summary>
+        /// WaveFormat has changed
+        /// </summary>
+        public event EventHandler WaveFormatChanged;
+
+        private void OnWaveFormatChanged()
+        {
+            var handler = WaveFormatChanged;
+            if (handler != null) handler(this, EventArgs.Empty);
         }
     }
 }

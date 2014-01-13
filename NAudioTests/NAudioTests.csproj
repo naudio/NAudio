@@ -90,6 +90,7 @@
     <Compile Include="Dmo\DmoTests.cs" />
     <Compile Include="Dmo\ResamplerDmoStreamTests.cs" />
     <Compile Include="Dmo\ResamplerDmoTests.cs" />
+    <Compile Include="MediaFoundation\MediaFoundationReaderTests.cs" />
     <Compile Include="Midi\MidiEventCollectionTest.cs" />
     <Compile Include="Midi\PitchWheelChangeEventTests.cs" />
     <Compile Include="Mixer\MixerApiTests.cs" />

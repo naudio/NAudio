@@ -124,6 +124,7 @@
     <Compile Include="WaveStreams\WaveChannel32Tests.cs" />
     <Compile Include="WaveStreams\WaveFileReaderTests.cs" />
     <Compile Include="WaveStreams\WaveFileWriterTests.cs" />
+    <Compile Include="WaveStreams\WdlResamplingSampleProviderTests.cs" />
     <Compile Include="WindowsMedia\WindowsMediaTests.cs" />
   </ItemGroup>
   <ItemGroup>

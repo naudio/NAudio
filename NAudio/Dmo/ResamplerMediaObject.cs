@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Runtime.InteropServices;
 using NAudio.CoreAudioApi.Interfaces;
-using NAudio.Utils;
 
 namespace NAudio.Dmo
 {
@@ -22,9 +19,9 @@ namespace NAudio.Dmo
     }
 
     /// <summary>
-    /// Resampler
+    /// DMO Resampler
     /// </summary>
-    public class Resampler : IDisposable
+    public class DmoResampler : IDisposable
     {
         MediaObject mediaObject;
         IPropertyStore propertyStoreInterface;
@@ -34,7 +31,7 @@ namespace NAudio.Dmo
         /// <summary>
         /// Creates a new Resampler based on the DMO Resampler
         /// </summary>
-        public Resampler()
+        public DmoResampler()
         {
             mediaComObject = new ResamplerMediaComObject();
             mediaObject = new MediaObject((IMediaObject)mediaComObject);

@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace NAudio.Wave.SampleProviders
 {
@@ -14,9 +12,9 @@ namespace NAudio.Wave.SampleProviders
     /// </summary>
     public class SampleChannel : ISampleProvider
     {
-        private VolumeSampleProvider volumeProvider;
-        private MeteringSampleProvider preVolumeMeter;
-        private WaveFormat waveFormat;
+        private readonly VolumeSampleProvider volumeProvider;
+        private readonly MeteringSampleProvider preVolumeMeter;
+        private readonly WaveFormat waveFormat;
 
         /// <summary>
         /// Initialises a new instance of SampleChannel

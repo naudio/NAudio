@@ -1,13 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.ComponentModel.Composition;
-using System.Drawing;
-using System.Data;
 using System.Linq;
-using System.Text;
 using System.Windows.Forms;
-using NAudio.CoreAudioApi;
 using NAudio.Wave;
 
 namespace NAudioDemo.MediaFoundationDemo
@@ -17,7 +11,7 @@ namespace NAudioDemo.MediaFoundationDemo
         public MediaFoundationDemoPanel()
         {
             InitializeComponent();
-            this.Disposed += OnDisposed;
+            Disposed += OnDisposed;
             timer1.Interval = 500;
         }
 
@@ -38,7 +32,7 @@ namespace NAudioDemo.MediaFoundationDemo
             }
         }
 
-        private void trackBar1_Scroll(object sender, EventArgs e)
+        private void OnTrackBarScroll(object sender, EventArgs e)
         {
             if (reader != null)
             {
@@ -46,7 +40,7 @@ namespace NAudioDemo.MediaFoundationDemo
             }
         }
 
-        private void buttonLoadFile_Click(object sender, EventArgs e)
+        private void OnButtonLoadFileClick(object sender, EventArgs e)
         {
 
             if (wavePlayer != null)
@@ -62,10 +56,10 @@ namespace NAudioDemo.MediaFoundationDemo
             {
                 reader.Dispose();
             }
-            reader = new MediaFoundationReader(ofd.FileName);
+            reader = new MediaFoundationReader(ofd.FileName, new MediaFoundationReader.MediaFoundationReaderSettings() { SingleReaderObject = true});
         }
 
-        private void timer1_Tick(object sender, EventArgs e)
+        private void OnTimerTick(object sender, EventArgs e)
         {
             if (reader != null)
             {
@@ -79,12 +73,12 @@ namespace NAudioDemo.MediaFoundationDemo
             trackBar1.Value = Math.Min((int) ((trackBar1.Maximum*reader.Position)/reader.Length), trackBar1.Maximum);
         }
 
-        private void buttonPlay_Click(object sender, EventArgs e)
+        private void OnButtonPlayClick(object sender, EventArgs e)
         {
             timer1.Enabled = true;
             if (reader == null)
             {
-                buttonLoadFile_Click(sender,e);
+                OnButtonLoadFileClick(sender,e);
                 if (reader == null) return;
             }
             if (wavePlayer == null)
@@ -114,7 +108,7 @@ namespace NAudioDemo.MediaFoundationDemo
             }
         }
 
-        private void buttonStop_Click(object sender, EventArgs e)
+        private void OnButtonStopClick(object sender, EventArgs e)
         {
             if (wavePlayer != null)
             {
@@ -122,7 +116,7 @@ namespace NAudioDemo.MediaFoundationDemo
             }
         }
 
-        private void radioButtonWaveOut_CheckedChanged(object sender, EventArgs e)
+        private void OnRadioButtonWaveOutCheckedChanged(object sender, EventArgs e)
         {
             if (wavePlayer != null)
             {
@@ -140,7 +134,7 @@ namespace NAudioDemo.MediaFoundationDemo
             get { return "Media Foundation Demo"; }
         }
 
-        public System.Windows.Forms.Control CreatePanel()
+        public Control CreatePanel()
         {
             return new MediaFoundationDemoPanel();
         }

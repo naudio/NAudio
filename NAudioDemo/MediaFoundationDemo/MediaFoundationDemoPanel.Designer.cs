@@ -51,7 +51,7 @@
             this.buttonPlay.TabIndex = 0;
             this.buttonPlay.Text = "Play";
             this.buttonPlay.UseVisualStyleBackColor = true;
-            this.buttonPlay.Click += new System.EventHandler(this.buttonPlay_Click);
+            this.buttonPlay.Click += new System.EventHandler(this.OnButtonPlayClick);
             // 
             // buttonStop
             // 
@@ -61,7 +61,7 @@
             this.buttonStop.TabIndex = 1;
             this.buttonStop.Text = "Stop";
             this.buttonStop.UseVisualStyleBackColor = true;
-            this.buttonStop.Click += new System.EventHandler(this.buttonStop_Click);
+            this.buttonStop.Click += new System.EventHandler(this.OnButtonStopClick);
             // 
             // label1
             // 
@@ -83,7 +83,7 @@
             this.buttonLoadFile.TabIndex = 0;
             this.buttonLoadFile.Text = "Load";
             this.buttonLoadFile.UseVisualStyleBackColor = true;
-            this.buttonLoadFile.Click += new System.EventHandler(this.buttonLoadFile_Click);
+            this.buttonLoadFile.Click += new System.EventHandler(this.OnButtonLoadFileClick);
             // 
             // trackBar1
             // 
@@ -95,11 +95,11 @@
             this.trackBar1.Size = new System.Drawing.Size(569, 45);
             this.trackBar1.TabIndex = 3;
             this.trackBar1.TickFrequency = 10;
-            this.trackBar1.Scroll += new System.EventHandler(this.trackBar1_Scroll);
+            this.trackBar1.Scroll += new System.EventHandler(this.OnTrackBarScroll);
             // 
             // timer1
             // 
-            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
+            this.timer1.Tick += new System.EventHandler(this.OnTimerTick);
             // 
             // labelPosition
             // 
@@ -120,7 +120,7 @@
             this.radioButtonWaveOut.TabStop = true;
             this.radioButtonWaveOut.Text = "WaveOut";
             this.radioButtonWaveOut.UseVisualStyleBackColor = true;
-            this.radioButtonWaveOut.CheckedChanged += new System.EventHandler(this.radioButtonWaveOut_CheckedChanged);
+            this.radioButtonWaveOut.CheckedChanged += new System.EventHandler(this.OnRadioButtonWaveOutCheckedChanged);
             // 
             // radioButtonWasapi
             // 

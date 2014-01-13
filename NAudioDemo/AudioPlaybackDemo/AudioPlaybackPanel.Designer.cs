@@ -140,7 +140,7 @@
             this.buttonPlay.Name = "buttonPlay";
             this.buttonPlay.Size = new System.Drawing.Size(23, 22);
             this.buttonPlay.Text = "Play";
-            this.buttonPlay.Click += new System.EventHandler(this.buttonPlay_Click);
+            this.buttonPlay.Click += new System.EventHandler(this.OnButtonPlayClick);
             // 
             // buttonPause
             // 
@@ -150,7 +150,7 @@
             this.buttonPause.Name = "buttonPause";
             this.buttonPause.Size = new System.Drawing.Size(23, 22);
             this.buttonPause.Text = "Pause";
-            this.buttonPause.Click += new System.EventHandler(this.buttonPause_Click);
+            this.buttonPause.Click += new System.EventHandler(this.OnButtonPauseClick);
             // 
             // buttonStop
             // 
@@ -160,7 +160,7 @@
             this.buttonStop.Name = "buttonStop";
             this.buttonStop.Size = new System.Drawing.Size(23, 22);
             this.buttonStop.Text = "Stop";
-            this.buttonStop.Click += new System.EventHandler(this.buttonStop_Click);
+            this.buttonStop.Click += new System.EventHandler(this.OnButtonStopClick);
             // 
             // toolStripLabel1
             // 
@@ -203,7 +203,7 @@
             // 
             this.timer1.Enabled = true;
             this.timer1.Interval = 500;
-            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
+            this.timer1.Tick += new System.EventHandler(this.OnTimerTick);
             // 
             // label2
             // 
@@ -282,7 +282,7 @@
             this.volumeSlider1.Name = "volumeSlider1";
             this.volumeSlider1.Size = new System.Drawing.Size(96, 16);
             this.volumeSlider1.TabIndex = 11;
-            this.volumeSlider1.VolumeChanged += new System.EventHandler(this.volumeSlider1_VolumeChanged);
+            this.volumeSlider1.VolumeChanged += new System.EventHandler(this.OnVolumeSliderChanged);
             // 
             // AudioPlaybackPanel
             // 

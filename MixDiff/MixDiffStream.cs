@@ -89,7 +89,7 @@ namespace MarkHeath.AudioUtils
                 return volume; 
             }
             set 
-            {                 
+            {
                 volume = value;
                 if (!Mute)
                 {

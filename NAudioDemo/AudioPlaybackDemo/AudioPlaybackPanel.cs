@@ -13,7 +13,7 @@ namespace NAudioDemo.AudioPlaybackDemo
     {
         private IWavePlayer waveOut;
         private string fileName = null;
-        private WaveStream fileWaveStream;
+        private AudioFileReader audioFileReader;
         private Action<float> setVolumeDelegate;
 
         [ImportingConstructor]
@@ -23,13 +23,10 @@ namespace NAudioDemo.AudioPlaybackDemo
             LoadOutputDevicePlugins(outputDevicePlugins);
         }
 
-        [ImportMany(typeof(IInputFileFormatPlugin))]
-        public IEnumerable<IInputFileFormatPlugin> InputFileFormats { get; set; }
-
         private void LoadOutputDevicePlugins(IEnumerable<IOutputDevicePlugin> outputDevicePlugins)
         {
             comboBoxOutputDevice.DisplayMember = "Name";
-            comboBoxOutputDevice.SelectedIndexChanged += new EventHandler(comboBoxOutputDevice_SelectedIndexChanged);
+            comboBoxOutputDevice.SelectedIndexChanged += comboBoxOutputDevice_SelectedIndexChanged;
             foreach (var outputDevicePlugin in outputDevicePlugins.OrderBy(p => p.Priority))
             {
                 comboBoxOutputDevice.Items.Add(outputDevicePlugin);
@@ -57,7 +54,7 @@ namespace NAudioDemo.AudioPlaybackDemo
             get { return (IOutputDevicePlugin)comboBoxOutputDevice.SelectedItem; }
         }
 
-        private void buttonPlay_Click(object sender, EventArgs e)
+        private void OnButtonPlayClick(object sender, EventArgs e)
         {
             if (!SelectedOutputDevicePlugin.IsAvailable)
             {
@@ -113,8 +110,8 @@ namespace NAudioDemo.AudioPlaybackDemo
             }
 
 
-            labelTotalTime.Text = String.Format("{0:00}:{1:00}", (int)fileWaveStream.TotalTime.TotalMinutes,
-                fileWaveStream.TotalTime.Seconds);
+            labelTotalTime.Text = String.Format("{0:00}:{1:00}", (int)audioFileReader.TotalTime.TotalMinutes,
+                audioFileReader.TotalTime.Seconds);
 
             try
             {
@@ -131,24 +128,14 @@ namespace NAudioDemo.AudioPlaybackDemo
             waveOut.Play();
         }
 
-        private IInputFileFormatPlugin GetPluginForFile(string fileName)
-        {
-            return (from f in this.InputFileFormats where fileName.EndsWith(f.Extension, StringComparison.OrdinalIgnoreCase) select f).FirstOrDefault();
-        }
-
         private ISampleProvider CreateInputStream(string fileName)
         {
-            var plugin = GetPluginForFile(fileName);
-            if(plugin == null)
-            {
-                throw new InvalidOperationException("Unsupported file extension");
-            }
-            this.fileWaveStream = plugin.CreateWaveStream(fileName);
-            var waveChannel =  new SampleChannel(this.fileWaveStream, true);
-            this.setVolumeDelegate = (vol) => waveChannel.Volume = vol;
-            waveChannel.PreVolumeMeter += OnPreVolumeMeter;
+            this.audioFileReader = new AudioFileReader(fileName);
             
-            var postVolumeMeter = new MeteringSampleProvider(waveChannel);
+            var sampleChannel = new SampleChannel(audioFileReader, true);
+            sampleChannel.PreVolumeMeter+= OnPreVolumeMeter;
+            this.setVolumeDelegate = (vol) => sampleChannel.Volume = vol;
+            var postVolumeMeter = new MeteringSampleProvider(sampleChannel);
             postVolumeMeter.StreamVolume += OnPostVolumeMeter;
 
             return postVolumeMeter;
@@ -183,7 +170,7 @@ namespace NAudioDemo.AudioPlaybackDemo
             {
                 MessageBox.Show(e.Exception.Message, "Playback Device Error");
             }
-            fileWaveStream.Position = 0;
+            audioFileReader.Position = 0;
         }
 
         private void CloseWaveOut()
@@ -192,10 +179,10 @@ namespace NAudioDemo.AudioPlaybackDemo
             {
                 waveOut.Stop();
             }
-            if (fileWaveStream != null)
+            if (audioFileReader != null)
             {
                 // this one really closes the file and ACM conversion
-                fileWaveStream.Dispose();
+                audioFileReader.Dispose();
                 this.setVolumeDelegate = null;
             }
             if (waveOut != null)
@@ -218,7 +205,7 @@ namespace NAudioDemo.AudioPlaybackDemo
             comboBoxLatency.SelectedIndex = 5;
         }
 
-        private void buttonPause_Click(object sender, EventArgs e)
+        private void OnButtonPauseClick(object sender, EventArgs e)
         {
             if (waveOut != null)
             {
@@ -229,7 +216,7 @@ namespace NAudioDemo.AudioPlaybackDemo
             }
         }
 
-        private void volumeSlider1_VolumeChanged(object sender, EventArgs e)
+        private void OnVolumeSliderChanged(object sender, EventArgs e)
         {
             if (setVolumeDelegate != null)
             {
@@ -237,7 +224,7 @@ namespace NAudioDemo.AudioPlaybackDemo
             }
         }
 
-        private void buttonStop_Click(object sender, EventArgs e)
+        private void OnButtonStopClick(object sender, EventArgs e)
         {
             if (waveOut != null)
             {
@@ -245,12 +232,12 @@ namespace NAudioDemo.AudioPlaybackDemo
             }
         }
 
-        private void timer1_Tick(object sender, EventArgs e)
+        private void OnTimerTick(object sender, EventArgs e)
         {
-            if (waveOut != null && fileWaveStream != null)
+            if (waveOut != null && audioFileReader != null)
             {
-                TimeSpan currentTime = (waveOut.PlaybackState == PlaybackState.Stopped) ? TimeSpan.Zero : fileWaveStream.CurrentTime;
-                trackBarPosition.Value = Math.Min(trackBarPosition.Maximum,(int)(100 * currentTime.TotalSeconds / fileWaveStream.TotalTime.TotalSeconds));
+                TimeSpan currentTime = (waveOut.PlaybackState == PlaybackState.Stopped) ? TimeSpan.Zero : audioFileReader.CurrentTime;
+                trackBarPosition.Value = Math.Min(trackBarPosition.Maximum, (int)(100 * currentTime.TotalSeconds / audioFileReader.TotalTime.TotalSeconds));
                 labelCurrentTime.Text = String.Format("{0:00}:{1:00}", (int)currentTime.TotalMinutes,
                     currentTime.Seconds);
             }
@@ -264,14 +251,14 @@ namespace NAudioDemo.AudioPlaybackDemo
         {
             if (waveOut != null)
             {
-                fileWaveStream.CurrentTime = TimeSpan.FromSeconds(fileWaveStream.TotalTime.TotalSeconds * trackBarPosition.Value / 100.0);
+                audioFileReader.CurrentTime = TimeSpan.FromSeconds(audioFileReader.TotalTime.TotalSeconds * trackBarPosition.Value / 100.0);
             }
         }
 
         private void OnOpenFileClick(object sender, EventArgs e)
         {
             var openFileDialog = new OpenFileDialog();
-            string allExtensions = string.Join(";", (from f in InputFileFormats select "*" + f.Extension).ToArray());
+            string allExtensions = "*.wav;*.aiff;*.mp3;*.aac";
             openFileDialog.Filter = String.Format("All Supported Files|{0}|All Files (*.*)|*.*", allExtensions);
             openFileDialog.FilterIndex = 1;
             if (openFileDialog.ShowDialog() == DialogResult.OK)

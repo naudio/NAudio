@@ -192,7 +192,7 @@ namespace NAudio.Wave
             while (bytesWritten < count)
             {
                 IMFSample pSample;
-                int dwFlags;
+                MF_SOURCE_READER_FLAG dwFlags;
                 ulong timestamp;
                 int actualStreamIndex;
                 pReader.ReadSample(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0, out actualStreamIndex, out dwFlags, out timestamp, out pSample);

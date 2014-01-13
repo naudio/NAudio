@@ -20,7 +20,6 @@ namespace NAudioTests.MediaFoundation
             long total = 0;
             while((bytesRead = reader.Read(buffer, 0, buffer.Length)) > 0)
             {
-                Console.WriteLine(bytesRead);
                 total += bytesRead;
             }
             Assert.IsTrue(total > 0);

@@ -103,6 +103,7 @@
     <Compile Include="CoreAudioApi\MMDeviceCollection.cs" />
     <Compile Include="CoreAudioApi\PropertyKeys.cs" />
     <Compile Include="Dsp\EnvelopeGenerator.cs" />
+    <Compile Include="Dsp\WdlResampler.cs" />
     <Compile Include="FileFormats\Wav\WaveFileChunkReader.cs" />
     <Compile Include="MediaFoundation\AudioSubtypes.cs" />
     <Compile Include="MediaFoundation\IMFReadWriteClassFactory.cs" />
@@ -158,6 +159,7 @@
     <Compile Include="Wave\SampleProviders\SampleToWaveProvider16.cs" />
     <Compile Include="Wave\SampleProviders\SignalGenerator.cs" />
     <Compile Include="Wave\SampleProviders\WaveToSampleProvider64.cs" />
+    <Compile Include="Wave\SampleProviders\WdlResamplingSampleProvider.cs" />
     <Compile Include="Wave\WaveExtensionMethods.cs" />
     <Compile Include="Wave\WaveInputs\WaveInEvent.cs" />
     <Compile Include="Wave\WaveInputs\WasapiCapture.cs" />

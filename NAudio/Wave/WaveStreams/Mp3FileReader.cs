@@ -113,7 +113,7 @@ namespace NAudio.Wave
             // try for an ID3v1 tag as well
             mp3Stream.Position = mp3Stream.Length - 128;
             byte[] tag = new byte[128];
-            mp3Stream.Read(tag, 0, 3);
+            mp3Stream.Read(tag, 0, 128);
             if (tag[0] == 'T' && tag[1] == 'A' && tag[2] == 'G')
             {
                 id3v1Tag = tag;

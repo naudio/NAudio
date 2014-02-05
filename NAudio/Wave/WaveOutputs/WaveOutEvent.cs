@@ -156,6 +156,7 @@ namespace NAudio.Wave
                         {
                             // we got to the end
                             this.playbackState = PlaybackState.Stopped;
+                            callbackEvent.Set();
                         }
                     }
                 }

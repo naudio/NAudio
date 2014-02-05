@@ -31,6 +31,7 @@ jcameron23
 jonahoffmann
 jontdelorme
 Justin Frankel
+K24A3
 Kassoul
 kevinxxx
 Lustild
@@ -44,6 +45,7 @@ Nikolaos Georgiou
 Owen Skriloff
 owoudenb
 painmailer
+PPavan
 Pygmy
 Ray Molenkamp
 Robert Bristow-Johnson

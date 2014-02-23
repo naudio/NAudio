@@ -1,0 +1,347 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{C37A547B-F31E-45FB-870A-CFA704D06152}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>NAudioDemo</RootNamespace>
+    <AssemblyName>NAudioDemo</AssemblyName>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <OldToolsVersion>3.5</OldToolsVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.ComponentModel.Composition.Initialization.Desktop">
+      <HintPath>..\Lib\MEF\Microsoft.ComponentModel.Composition.Initialization.Desktop.dll</HintPath>
+    </Reference>
+    <Reference Include="NSpeex">
+      <HintPath>..\Lib\NSpeex\NSpeex.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.Composition">
+      <HintPath>..\Lib\MEF\System.ComponentModel.Composition.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AcmDemo\AcmPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="AcmDemo\AcmPanel.Designer.cs">
+      <DependentUpon>AcmPanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="AsioDirectDemo\AsioDirectPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="AsioDirectDemo\AsioDirectPanel.Designer.cs">
+      <DependentUpon>AsioDirectPanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="AsioRecordingDemo\AsioRecordingPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="AsioRecordingDemo\AsioRecordingPanel.Designer.cs">
+      <DependentUpon>AsioRecordingPanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="AudioPlaybackDemo\AsioOutPlugin.cs" />
+    <Compile Include="AudioPlaybackDemo\AsioOutSettingsPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="AudioPlaybackDemo\AsioOutSettingsPanel.Designer.cs">
+      <DependentUpon>AsioOutSettingsPanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="AudioPlaybackDemo\AudioPlaybackPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="AudioPlaybackDemo\AudioPlaybackPanel.Designer.cs">
+      <DependentUpon>AudioPlaybackPanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="AudioPlaybackDemo\AudioPlaybackPanelPlugin.cs" />
+    <Compile Include="AudioPlaybackDemo\DirectSoundOutSettingsPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="AudioPlaybackDemo\DirectSoundOutSettingsPanel.Designer.cs">
+      <DependentUpon>DirectSoundOutSettingsPanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="AudioPlaybackDemo\DirectSoundOutPlugin.cs" />
+    <Compile Include="AudioPlaybackDemo\IOutputDevicePlugin.cs" />
+    <Compile Include="AudioPlaybackDemo\WasapiOutPlugin.cs" />
+    <Compile Include="AudioPlaybackDemo\WasapiOutSettingsPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="AudioPlaybackDemo\WasapiOutSettingsPanel.Designer.cs">
+      <DependentUpon>WasapiOutSettingsPanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="AudioPlaybackDemo\WaveOutPlugin.cs" />
+    <Compile Include="AudioPlaybackDemo\WaveOutSettingsPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="AudioPlaybackDemo\WaveOutSettingsPanel.Designer.cs">
+      <DependentUpon>WaveOutSettingsPanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="FadeInOutDemo\FadeInOutPlugin.cs" />
+    <Compile Include="Images.Designer.cs">
+      <DependentUpon>Images.resx</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <Compile Include="INAudioDemoPlugin.cs" />
+    <Compile Include="LoopStream.cs" />
+    <Compile Include="MainForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="MainForm.Designer.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="MediaFoundationDemo\MediaFoundationDemoPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="MediaFoundationDemo\MediaFoundationDemoPanel.Designer.cs">
+      <DependentUpon>MediaFoundationDemoPanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="MediaFoundationDemo\WasapiOutGuiThread.cs" />
+    <Compile Include="MidiInDemo\MidiInPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="MidiInDemo\MidiInPanel.Designer.cs">
+      <DependentUpon>MidiInPanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Mp3StreamingDemo\MP3StreamingPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Mp3StreamingDemo\MP3StreamingPanel.Designer.cs">
+      <DependentUpon>MP3StreamingPanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NetworkChatDemo\AcmChatCodec.cs" />
+    <Compile Include="NetworkChatDemo\ALawChatCodec.cs" />
+    <Compile Include="NetworkChatDemo\G722ChatCodec.cs" />
+    <Compile Include="NetworkChatDemo\Gsm610ChatCodec.cs" />
+    <Compile Include="NetworkChatDemo\INetworkChatCodec.cs" />
+    <Compile Include="NetworkChatDemo\MicrosoftAdpcmChatCodec.cs" />
+    <Compile Include="NetworkChatDemo\MuLawChatCodec.cs" />
+    <Compile Include="NetworkChatDemo\NetworkChatPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="NetworkChatDemo\NetworkChatPanel.Designer.cs">
+      <DependentUpon>NetworkChatPanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NetworkChatDemo\SpeexChatCodec.cs" />
+    <Compile Include="NetworkChatDemo\TrueSpeechChatCodec.cs" />
+    <Compile Include="NetworkChatDemo\UncompressedPcmChatCodec.cs" />
+    <Compile Include="FadeInOutDemo\FadeInOutPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="FadeInOutDemo\FadeInOutPanel.Designer.cs">
+      <DependentUpon>FadeInOutPanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="SignalGeneratorDemo\GeneratorPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="SignalGeneratorDemo\GeneratorPanel.Designer.cs">
+      <DependentUpon>GeneratorPanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="SignalGeneratorDemo\GeneratorPlugIn.cs" />
+    <Compile Include="SimplePlaybackDemo\SimplePlaybackPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="SimplePlaybackDemo\SimplePlaybackPanel.Designer.cs">
+      <DependentUpon>SimplePlaybackPanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="SimplePlaybackDemo\SimplePlaybackPlugin.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="AcmDemo\AcmPanel.resx">
+      <DependentUpon>AcmPanel.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="AsioDirectDemo\AsioDirectPanel.resx">
+      <DependentUpon>AsioDirectPanel.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="AsioRecordingDemo\AsioRecordingPanel.resx">
+      <DependentUpon>AsioRecordingPanel.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="AudioPlaybackDemo\AsioOutSettingsPanel.resx">
+      <DependentUpon>AsioOutSettingsPanel.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="AudioPlaybackDemo\AudioPlaybackPanel.resx">
+      <DependentUpon>AudioPlaybackPanel.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="AudioPlaybackDemo\DirectSoundOutSettingsPanel.resx">
+      <DependentUpon>DirectSoundOutSettingsPanel.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="AudioPlaybackDemo\WasapiOutSettingsPanel.resx">
+      <DependentUpon>WasapiOutSettingsPanel.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="AudioPlaybackDemo\WaveOutSettingsPanel.resx">
+      <DependentUpon>WaveOutSettingsPanel.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Images.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Images.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="MainForm.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="MediaFoundationDemo\MediaFoundationDemoPanel.resx">
+      <DependentUpon>MediaFoundationDemoPanel.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="MidiInDemo\MidiInPanel.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>MidiInPanel.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Mp3StreamingDemo\MP3StreamingPanel.resx">
+      <DependentUpon>MP3StreamingPanel.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="NetworkChatDemo\NetworkChatPanel.resx">
+      <DependentUpon>NetworkChatPanel.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FadeInOutDemo\FadeInOutPanel.resx">
+      <DependentUpon>FadeInOutPanel.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="RecordingDemo\RecordingPanel.resx">
+      <DependentUpon>RecordingPanel.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <EmbeddedResource Include="SignalGeneratorDemo\GeneratorPanel.resx">
+      <DependentUpon>GeneratorPanel.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="SimplePlaybackDemo\SimplePlaybackPanel.resx">
+      <DependentUpon>SimplePlaybackPanel.cs</DependentUpon>
+    </EmbeddedResource>
+    <None Include="app.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+    <Compile Include="Mp3StreamingDemo\ReadFullyStream.cs" />
+    <Compile Include="RecordingDemo\RecordingPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="RecordingDemo\RecordingPanel.Designer.cs">
+      <DependentUpon>RecordingPanel.cs</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NAudio\NAudio.csproj">
+      <Project>{DA4F02E3-0B5E-42CD-B8D9-5583FA51D66E}</Project>
+      <Name>NAudio</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Back.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Forward.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Loop.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Pause.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Play.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Rewind.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Shuffle.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Stop.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Resources\Open.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
+      <Visible>False</Visible>
+      <ProductName>Windows Installer 3.1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

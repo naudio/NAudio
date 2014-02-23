@@ -10,6 +10,7 @@ id, so if you want me to put your full name here, please also get in touch.
 
 in alphabetical order:
 Alexandre Mutel
+Alexander Binkert
 AmandaTarafaMas
 balistof
 biermeester
@@ -26,6 +27,7 @@ Hfuy
 Iain McCowan
 Idael Cardaso 
 ioctlLR
+Jamie Michael Ewins
 jbaker8935
 jcameron23
 jonahoffmann
@@ -39,6 +41,7 @@ ManuN
 MeelMarcel
 Michael Feld 
 Michael J
+Michael Lehenbauer
 Nigel Redmon
 Nikolaos Georgiou
 Owen Skriloff

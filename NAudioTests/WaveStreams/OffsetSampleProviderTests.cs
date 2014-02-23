@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using NAudio.Wave.SampleProviders;
 using NAudioTests.Utils;
 using NUnit.Framework;
@@ -28,6 +29,39 @@ namespace NAudioTests.WaveStreams
             osp.AssertReadsExpected(expected);
         }
 
+
+        [Test]
+        public void CanAddPreDelayUsingTimeSpan()
+        {
+            var source = new TestSampleProvider(100, 1) { Position = 10 };
+            var osp = new OffsetSampleProvider(source) { DelayBy = TimeSpan.FromSeconds(1) };
+
+            var expected = Enumerable.Range(0,100).Select(x => 0f)
+                            .Concat(Enumerable.Range(10,10).Select(x => (float)x)).ToArray();
+            osp.AssertReadsExpected(expected);
+        }
+
+        [Test]
+        public void CanAddPreDelayToStereoSourceUsingTimeSpan()
+        {
+            var source = new TestSampleProvider(100, 2) { Position = 10 };
+            var osp = new OffsetSampleProvider(source) { DelayBy = TimeSpan.FromSeconds(1) };
+
+            var expected = Enumerable.Range(0, 200).Select(x => 0f)
+                            .Concat(Enumerable.Range(10, 10).Select(x => (float)x)).ToArray();
+            osp.AssertReadsExpected(expected);
+        }
+        
+        [Test]
+        public void SettingPreDelayUsingTimeSpanReturnsCorrectTimeSpan()
+        {
+            var source = new TestSampleProvider(100, 2) { Position = 10 };
+            var osp = new OffsetSampleProvider(source) { DelayBy = TimeSpan.FromSeconds(2.5) };
+
+            Assert.AreEqual(2500, (int) osp.DelayBy.TotalMilliseconds);
+            Assert.AreEqual(500, osp.DelayBySamples);
+        }
+
         [Test]
         public void CanSkipOver()
         {
@@ -55,7 +89,9 @@ namespace NAudioTests.WaveStreams
             var osp = new OffsetSampleProvider(source) {LeadOutSamples = 5};
 
             var expected = new float[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 0, 0, 0, 0 };
-            osp.AssertReadsExpected(expected);
+            osp.AssertReadsExpected(expected, 100);
+            var expected2 = new float[] { };
+            osp.AssertReadsExpected(expected2, 100);
         }
 
         [Test]
@@ -191,6 +227,5 @@ namespace NAudioTests.WaveStreams
         }
 
         // TODO: Test that Read offset parameter is respected
-        // TODO: OffsetSampleProvider needs TimeSpan helper methods
     }
 }

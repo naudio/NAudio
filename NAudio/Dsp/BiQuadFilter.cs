@@ -102,7 +102,7 @@ namespace NAudio.Dsp
         /// <param name="centreFrequency">Centre Frequency</param>
         /// <param name="q">Bandwidth (Q)</param>
         /// <param name="dbGain">Gain in decibels</param>
-        public void SetPeakingEQ(float sampleRate, float centreFrequency, float q, float dbGain)
+        public void SetPeakingEq(float sampleRate, float centreFrequency, float q, float dbGain)
         {
             // H(s) = (s^2 + s*(A/Q) + 1) / (s^2 + s/(A*Q) + 1)
             var w0 = 2 * Math.PI * centreFrequency / sampleRate;
@@ -120,6 +120,24 @@ namespace NAudio.Dsp
             SetCoefficients(aa0, aa1, aa2, b0, b1, b2);
         }
 
+        /// <summary>
+        /// Set this as a high pass filter
+        /// </summary>
+        public void SetHighPassFilter(float sampleRate, float cutoffFrequency, float q)
+        {
+            // H(s) = s^2 / (s^2 + s/Q + 1)
+            var w0 = 2 * Math.PI * cutoffFrequency / sampleRate;
+            var cosw0 = Math.Cos(w0);
+            var alpha = Math.Sin(w0) / (2 * q);
+
+            var b0 = (1 + cosw0) / 2;
+            var b1 = -(1 + cosw0);
+            var b2 = (1 + cosw0) / 2;
+            var aa0 = 1 + alpha;
+            var aa1 = -2 * cosw0;
+            var aa2 = 1 - alpha;
+            SetCoefficients(aa0, aa1, aa2, b0, b1, b2);
+        }
 
         /// <summary>
         /// Create a low pass filter
@@ -132,28 +150,21 @@ namespace NAudio.Dsp
         }
 
         /// <summary>
-        /// H(s) = s^2 / (s^2 + s/Q + 1)
+        /// Create a High pass filter
         /// </summary>
         public static BiQuadFilter HighPassFilter(float sampleRate, float cutoffFrequency, float q)
         {
-            var w0 = 2 * Math.PI * cutoffFrequency / sampleRate;
-            var cosw0 = Math.Cos(w0);
-            var alpha = Math.Sin(w0) / (2 * q);
-
-            var b0 = (1 + cosw0) / 2;
-            var b1 = -(1 + cosw0);
-            var b2 = (1 + cosw0) / 2;
-            var a0 = 1 + alpha;
-            var a1 = -2 * cosw0;
-            var a2 = 1 - alpha;
-            return new BiQuadFilter(a0, a1, a2, b0, b1, b2);
+            var filter = new BiQuadFilter();
+            filter.SetHighPassFilter(sampleRate, cutoffFrequency, q);
+            return filter;
         }
 
         /// <summary>
-        /// H(s) = s / (s^2 + s/Q + 1)  (constant skirt gain, peak gain = Q)
+        /// Create a bandpass filter with constant skirt gain
         /// </summary>
         public static BiQuadFilter BandPassFilterConstantSkirtGain(float sampleRate, float centreFrequency, float q)
         {
+            // H(s) = s / (s^2 + s/Q + 1)  (constant skirt gain, peak gain = Q)
             var w0 = 2 * Math.PI * centreFrequency / sampleRate;
             var cosw0 = Math.Cos(w0);
             var sinw0 = Math.Sin(w0);
@@ -169,10 +180,11 @@ namespace NAudio.Dsp
         }
 
         /// <summary>
-        /// H(s) = (s/Q) / (s^2 + s/Q + 1)      (constant 0 dB peak gain)
+        /// Create a bandpass filter with constant peak gain
         /// </summary>
         public static BiQuadFilter BandPassFilterConstantPeakGain(float sampleRate, float centreFrequency, float q)
         {
+            // H(s) = (s/Q) / (s^2 + s/Q + 1)      (constant 0 dB peak gain)
             var w0 = 2 * Math.PI * centreFrequency / sampleRate;
             var cosw0 = Math.Cos(w0);
             var sinw0 = Math.Sin(w0);
@@ -188,10 +200,11 @@ namespace NAudio.Dsp
         }
 
         /// <summary>
-        /// H(s) = (s^2 + 1) / (s^2 + s/Q + 1)
+        /// Creates a notch filter
         /// </summary>
         public static BiQuadFilter NotchFilter(float sampleRate, float centreFrequency, float q)
         {
+            // H(s) = (s^2 + 1) / (s^2 + s/Q + 1)
             var w0 = 2 * Math.PI * centreFrequency / sampleRate;
             var cosw0 = Math.Cos(w0);
             var sinw0 = Math.Sin(w0);
@@ -207,10 +220,11 @@ namespace NAudio.Dsp
         }
 
         /// <summary>
-        /// H(s) = (s^2 - s/Q + 1) / (s^2 + s/Q + 1)
+        /// Creaes an all pass filter
         /// </summary>
         public static BiQuadFilter AllPassFilter(float sampleRate, float centreFrequency, float q)
         {
+            //H(s) = (s^2 - s/Q + 1) / (s^2 + s/Q + 1)
             var w0 = 2 * Math.PI * centreFrequency / sampleRate;
             var cosw0 = Math.Cos(w0);
             var sinw0 = Math.Sin(w0);
@@ -231,7 +245,7 @@ namespace NAudio.Dsp
         public static BiQuadFilter PeakingEQ(float sampleRate, float centreFrequency, float q, float dbGain)
         {
             var filter = new BiQuadFilter();
-            filter.SetPeakingEQ(sampleRate, centreFrequency, q, dbGain);
+            filter.SetPeakingEq(sampleRate, centreFrequency, q, dbGain);
             return filter;
         }
 

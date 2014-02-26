@@ -117,6 +117,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="EqualizationDemo\EqualizationDemoView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="MediaFoundationEncode\MediaFoundationEncodeView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -199,6 +203,13 @@
       <DependentUpon>EnumMftView.xaml</DependentUpon>
     </Compile>
     <Compile Include="EnumMediaFoundationTransforms\EnumMftViewModel.cs" />
+    <Compile Include="EqualizationDemo\EqualizationDemoPlugin.cs" />
+    <Compile Include="EqualizationDemo\EqualizationDemoView.xaml.cs">
+      <DependentUpon>EqualizationDemoView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="EqualizationDemo\EqualizationDemoViewModel.cs" />
+    <Compile Include="EqualizationDemo\Equalizer.cs" />
+    <Compile Include="EqualizationDemo\EqualizerBand.cs" />
     <Compile Include="IModule.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>

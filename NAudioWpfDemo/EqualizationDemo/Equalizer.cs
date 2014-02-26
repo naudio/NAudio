@@ -38,7 +38,7 @@ namespace NAudioWpfDemo.EqualizationDemo
                     if (filters[n, bandIndex] == null)
                         filters[n, bandIndex] = BiQuadFilter.PeakingEQ(sourceProvider.WaveFormat.SampleRate, band.Frequency, band.Bandwidth, band.Gain);
                     else
-                        filters[n, bandIndex].SetPeakingEQ(sourceProvider.WaveFormat.SampleRate, band.Frequency, band.Bandwidth, band.Gain);
+                        filters[n, bandIndex].SetPeakingEq(sourceProvider.WaveFormat.SampleRate, band.Frequency, band.Bandwidth, band.Gain);
                 }
             }
         }

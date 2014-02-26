@@ -30,11 +30,11 @@ namespace NAudio.Dsp
     public class BiQuadFilter
     {
         // coefficients
-        private readonly double a0;
-        private readonly double a1;
-        private readonly double a2;
-        private readonly double a3;
-        private readonly double a4;
+        private double a0;
+        private double a1;
+        private double a2;
+        private double a3;
+        private double a4;
 
         // state
         private float x1;
@@ -63,11 +63,25 @@ namespace NAudio.Dsp
             return y1;
         }
 
-        /// <summary>
-        /// H(s) = 1 / (s^2 + s/Q + 1)
-        /// </summary>
-        public static BiQuadFilter LowPassFilter(float sampleRate, float cutoffFrequency, float q)
+        private void SetCoefficients(double aa0, double aa1, double aa2, double b0, double b1, double b2)
         {
+            // precompute the coefficients
+            a0 = b0/aa0;
+            a1 = b1/aa0;
+            a2 = b2/aa0;
+            a3 = aa1/aa0;
+            a4 = aa2/aa0;
+        }
+
+        /// <summary>
+        /// Set this up as a low pass filter
+        /// </summary>
+        /// <param name="sampleRate">Sample Rate</param>
+        /// <param name="cutoffFrequency">Cut-off Frequency</param>
+        /// <param name="q">Bandwidth</param>
+        public void SetLowPassFilter(float sampleRate, float cutoffFrequency, float q)
+        {
+            // H(s) = 1 / (s^2 + s/Q + 1)
             var w0 = 2 * Math.PI * cutoffFrequency / sampleRate;
             var cosw0 = Math.Cos(w0);
             var alpha = Math.Sin(w0) / (2 * q);
@@ -75,11 +89,46 @@ namespace NAudio.Dsp
             var b0 = (1 - cosw0) / 2;
             var b1 = 1 - cosw0;
             var b2 = (1 - cosw0) / 2;
-            var a0 = 1 + alpha;
-            var a1 = -2 * cosw0;
-            var a2 = 1 - alpha;
+            var aa0 = 1 + alpha;
+            var aa1 = -2 * cosw0;
+            var aa2 = 1 - alpha;
+            SetCoefficients(aa0,aa1,aa2,b0,b1,b2);
+        }
 
-            return new BiQuadFilter(a0, a1, a2, b0, b1, b2);
+        /// <summary>
+        /// Set this up as a peaking EQ
+        /// </summary>
+        /// <param name="sampleRate">Sample Rate</param>
+        /// <param name="centreFrequency">Centre Frequency</param>
+        /// <param name="q">Bandwidth (Q)</param>
+        /// <param name="dbGain">Gain in decibels</param>
+        public void SetPeakingEQ(float sampleRate, float centreFrequency, float q, float dbGain)
+        {
+            // H(s) = (s^2 + s*(A/Q) + 1) / (s^2 + s/(A*Q) + 1)
+            var w0 = 2 * Math.PI * centreFrequency / sampleRate;
+            var cosw0 = Math.Cos(w0);
+            var sinw0 = Math.Sin(w0);
+            var alpha = sinw0 / (2 * q);
+            var a = Math.Pow(10, dbGain / 40);     // TODO: should we square root this value?
+
+            var b0 = 1 + alpha * a;
+            var b1 = -2 * cosw0;
+            var b2 = 1 - alpha * a;
+            var aa0 = 1 + alpha / a;
+            var aa1 = -2 * cosw0;
+            var aa2 = 1 - alpha / a;
+            SetCoefficients(aa0, aa1, aa2, b0, b1, b2);
+        }
+
+
+        /// <summary>
+        /// Create a low pass filter
+        /// </summary>
+        public static BiQuadFilter LowPassFilter(float sampleRate, float cutoffFrequency, float q)
+        {
+            var filter = new BiQuadFilter();
+            filter.SetLowPassFilter(sampleRate,cutoffFrequency,q);
+            return filter;
         }
 
         /// <summary>
@@ -177,23 +226,13 @@ namespace NAudio.Dsp
         }
 
         /// <summary>
-        /// H(s) = (s^2 + s*(A/Q) + 1) / (s^2 + s/(A*Q) + 1)
+        /// Create a Peaking EQ
         /// </summary>
         public static BiQuadFilter PeakingEQ(float sampleRate, float centreFrequency, float q, float dbGain)
         {
-            var w0 = 2 * Math.PI * centreFrequency / sampleRate;
-            var cosw0 = Math.Cos(w0);
-            var sinw0 = Math.Sin(w0);
-            var alpha = sinw0 / (2 * q);
-            var a = Math.Pow(10, dbGain / 40);     // TODO: should we square root this value?
-
-            var b0 = 1 + alpha * a;
-            var b1 = -2 * cosw0;
-            var b2 = 1 - alpha * a;
-            var a0 = 1 + alpha / a;
-            var a1 = -2 * cosw0;
-            var a2 = 1 - alpha / a;
-            return new BiQuadFilter(a0, a1, a2, b0, b1, b2);
+            var filter = new BiQuadFilter();
+            filter.SetPeakingEQ(sampleRate, centreFrequency, q, dbGain);
+            return filter;
         }
 
         /// <summary>
@@ -250,14 +289,16 @@ namespace NAudio.Dsp
             return new BiQuadFilter(a0, a1, a2, b0, b1, b2);
         }
 
+        private BiQuadFilter()
+        {
+            // zero initial samples
+            x1 = x2 = 0;
+            y1 = y2 = 0;
+        }
+
         private BiQuadFilter(double a0, double a1, double a2, double b0, double b1, double b2)
         {
-            // precompute the coefficients
-            this.a0 = b0 / a0;
-            this.a1 = b1 / a0;
-            this.a2 = b2 / a0;
-            a3 = a1 / a0;
-            a4 = a2 / a0;
+            SetCoefficients(a0,a1,a2,b0,b1,b2);
 
             // zero initial samples
             x1 = x2 = 0;
@@ -265,4 +306,3 @@ namespace NAudio.Dsp
         }
     }
 }
-

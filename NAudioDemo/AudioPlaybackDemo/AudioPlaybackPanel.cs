@@ -158,9 +158,9 @@ namespace NAudioDemo.AudioPlaybackDemo
         private void CreateWaveOut()
         {
             CloseWaveOut();
-            int latency = (int)comboBoxLatency.SelectedItem;
-            this.waveOut = SelectedOutputDevicePlugin.CreateDevice(latency);
-            this.waveOut.PlaybackStopped += OnPlaybackStopped;
+            var latency = (int)comboBoxLatency.SelectedItem;
+            waveOut = SelectedOutputDevicePlugin.CreateDevice(latency);
+            waveOut.PlaybackStopped += OnPlaybackStopped;
         }
 
         void OnPlaybackStopped(object sender, StoppedEventArgs e)
@@ -170,7 +170,10 @@ namespace NAudioDemo.AudioPlaybackDemo
             {
                 MessageBox.Show(e.Exception.Message, "Playback Device Error");
             }
-            audioFileReader.Position = 0;
+            if (audioFileReader != null)
+            {
+                audioFileReader.Position = 0;
+            }
         }
 
         private void CloseWaveOut()
@@ -183,7 +186,8 @@ namespace NAudioDemo.AudioPlaybackDemo
             {
                 // this one really closes the file and ACM conversion
                 audioFileReader.Dispose();
-                this.setVolumeDelegate = null;
+                setVolumeDelegate = null;
+                audioFileReader = null;
             }
             if (waveOut != null)
             {

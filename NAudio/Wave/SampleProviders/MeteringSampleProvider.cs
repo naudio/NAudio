@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace NAudio.Wave.SampleProviders
 {
@@ -11,12 +9,12 @@ namespace NAudio.Wave.SampleProviders
     /// </summary>
     public class MeteringSampleProvider : ISampleProvider
     {
-        private ISampleProvider source;
+        private readonly ISampleProvider source;
 
-        private float[] maxSamples;
+        private readonly float[] maxSamples;
         private int sampleCount;
-        private int channels;
-        private StreamVolumeEventArgs args;
+        private readonly int channels;
+        private readonly StreamVolumeEventArgs args;
 
         /// <summary>
         /// Number of Samples per notification

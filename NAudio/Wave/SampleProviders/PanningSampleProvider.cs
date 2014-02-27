@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using NAudio.Utils;
 
 namespace NAudio.Wave.SampleProviders
@@ -10,11 +8,11 @@ namespace NAudio.Wave.SampleProviders
     /// </summary>
     public class PanningSampleProvider : ISampleProvider
     {
-        private ISampleProvider source;
+        private readonly ISampleProvider source;
         private float pan;
         private float leftMultiplier;
         private float rightMultiplier;
-        private WaveFormat waveFormat;
+        private readonly WaveFormat waveFormat;
         private float[] sourceBuffer;
         private IPanStrategy panStrategy;
 
@@ -46,7 +44,7 @@ namespace NAudio.Wave.SampleProviders
             {
                 if (value < -1.0f || value > 1.0f)
                 {
-                    throw new ArgumentOutOfRangeException("Pan must be in the range -1 to 1");
+                    throw new ArgumentOutOfRangeException("value", "Pan must be in the range -1 to 1");
                 }
                 this.pan = value;
                 UpdateMultipliers();

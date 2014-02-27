@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace NAudio.Wave.SampleProviders
 {
@@ -9,7 +7,7 @@ namespace NAudio.Wave.SampleProviders
     /// </summary>
     public class VolumeSampleProvider : ISampleProvider
     {
-        private ISampleProvider source;
+        private readonly ISampleProvider source;
         private float volume;
 
         /// <summary>

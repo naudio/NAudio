@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace NAudio.Wave.SampleProviders
 {
@@ -10,8 +8,8 @@ namespace NAudio.Wave.SampleProviders
     /// </summary>
     public class MonoToStereoSampleProvider : ISampleProvider
     {
-        private ISampleProvider source;
-        private WaveFormat waveFormat;
+        private readonly ISampleProvider source;
+        private readonly WaveFormat waveFormat;
         private float[] sourceBuffer;
 
         /// <summary>

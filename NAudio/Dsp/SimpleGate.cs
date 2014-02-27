@@ -1,7 +1,5 @@
 // based on SimpleGate v1.10 © 2006, ChunkWare Music Software, OPEN-SOURCE
 using System;
-using System.Collections.Generic;
-using System.Text;
 using NAudio.Utils;
 
 namespace NAudio.Dsp

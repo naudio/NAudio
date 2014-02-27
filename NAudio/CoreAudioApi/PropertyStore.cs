@@ -21,8 +21,6 @@
 */
 // this version modified for NAudio from Ray Molenkamp's original
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Runtime.InteropServices;
 using NAudio.CoreAudioApi.Interfaces;
 
@@ -33,7 +31,7 @@ namespace NAudio.CoreAudioApi
     /// </summary>
     public class PropertyStore
     {
-        private IPropertyStore storeInterface;
+        private readonly IPropertyStore storeInterface;
 
         /// <summary>
         /// Property Count

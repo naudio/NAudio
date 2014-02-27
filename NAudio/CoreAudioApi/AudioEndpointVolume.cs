@@ -21,8 +21,6 @@
 */
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 using NAudio.CoreAudioApi.Interfaces;
 using System.Runtime.InteropServices;
 

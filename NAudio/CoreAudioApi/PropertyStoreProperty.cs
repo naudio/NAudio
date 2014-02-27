@@ -23,8 +23,6 @@
 
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 using NAudio.CoreAudioApi.Interfaces;
 
 namespace NAudio.CoreAudioApi
@@ -34,7 +32,7 @@ namespace NAudio.CoreAudioApi
     /// </summary>
     public class PropertyStoreProperty
     {
-        private PropertyKey propertyKey;
+        private readonly PropertyKey propertyKey;
         private PropVariant propertyValue;
 
         internal PropertyStoreProperty(PropertyKey key, PropVariant value)
@@ -48,10 +46,7 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public PropertyKey Key
         {
-            get
-            {
-                return propertyKey;
-            }
+            get { return propertyKey; }
         }
 
         /// <summary>
@@ -59,10 +54,7 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public object Value
         {
-            get
-            {
-                return propertyValue.Value;
-            }
+            get { return propertyValue.Value; }
         }
     }
 }

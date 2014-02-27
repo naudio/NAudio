@@ -22,8 +22,6 @@
 // adapted for NAudio,
 // updated to be in line with http://msdn.microsoft.com/en-us/library/dd370823%28v=vs.85%29.aspx
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace NAudio.CoreAudioApi
 {

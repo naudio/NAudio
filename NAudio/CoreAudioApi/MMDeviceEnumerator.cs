@@ -21,8 +21,6 @@
 */
 // updated for use in NAudio
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Runtime.InteropServices;
 using NAudio.CoreAudioApi.Interfaces;
 
@@ -34,7 +32,7 @@ namespace NAudio.CoreAudioApi
     /// </summary>
     public class MMDeviceEnumerator
     {
-        private IMMDeviceEnumerator _realEnumerator;
+        private readonly IMMDeviceEnumerator realEnumerator;
 
         /// <summary>
         /// Enumerate Audio Endpoints
@@ -45,7 +43,7 @@ namespace NAudio.CoreAudioApi
         public MMDeviceCollection EnumerateAudioEndPoints(DataFlow dataFlow, DeviceState dwStateMask)
         {
             IMMDeviceCollection result;
-            Marshal.ThrowExceptionForHR(_realEnumerator.EnumAudioEndpoints(dataFlow, dwStateMask, out result));
+            Marshal.ThrowExceptionForHR(realEnumerator.EnumAudioEndpoints(dataFlow, dwStateMask, out result));
             return new MMDeviceCollection(result);
         }
 
@@ -57,21 +55,21 @@ namespace NAudio.CoreAudioApi
         /// <returns>Device</returns>
         public MMDevice GetDefaultAudioEndpoint(DataFlow dataFlow, Role role)
         {
-            IMMDevice _Device = null;
-            Marshal.ThrowExceptionForHR(((IMMDeviceEnumerator)_realEnumerator).GetDefaultAudioEndpoint(dataFlow, role, out _Device));
-            return new MMDevice(_Device);
+            IMMDevice device = null;
+            Marshal.ThrowExceptionForHR(((IMMDeviceEnumerator)realEnumerator).GetDefaultAudioEndpoint(dataFlow, role, out device));
+            return new MMDevice(device);
         }
 
         /// <summary>
         /// Get device by ID
         /// </summary>
-        /// <param name="ID">Device ID</param>
+        /// <param name="id">Device ID</param>
         /// <returns>Device</returns>
-        public MMDevice GetDevice(string ID)
+        public MMDevice GetDevice(string id)
         {
-            IMMDevice _Device = null;
-            Marshal.ThrowExceptionForHR(((IMMDeviceEnumerator)_realEnumerator).GetDevice(ID, out _Device));
-            return new MMDevice(_Device);
+            IMMDevice device = null;
+            Marshal.ThrowExceptionForHR(((IMMDeviceEnumerator)realEnumerator).GetDevice(id, out device));
+            return new MMDevice(device);
         }
 
         /// <summary>
@@ -85,7 +83,7 @@ namespace NAudio.CoreAudioApi
                 throw new NotSupportedException("This functionality is only supported on Windows Vista or newer.");
             }
 #endif
-            _realEnumerator = new MMDeviceEnumeratorComObject() as IMMDeviceEnumerator;
+            realEnumerator = new MMDeviceEnumeratorComObject() as IMMDeviceEnumerator;
         }
     }
 }

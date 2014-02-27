@@ -21,8 +21,6 @@
 */
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 using NAudio.CoreAudioApi.Interfaces;
 using System.Runtime.InteropServices;
 
@@ -33,8 +31,8 @@ namespace NAudio.CoreAudioApi
     /// </summary>
     public class AudioEndpointVolumeChannels
     {
-        IAudioEndpointVolume _AudioEndPointVolume;
-        AudioEndpointVolumeChannel[] _Channels;
+        readonly IAudioEndpointVolume audioEndPointVolume;
+        readonly AudioEndpointVolumeChannel[] channels;
 
         /// <summary>
         /// Channel Count
@@ -44,7 +42,7 @@ namespace NAudio.CoreAudioApi
             get
             {
                 int result;
-                Marshal.ThrowExceptionForHR(_AudioEndPointVolume.GetChannelCount(out result));
+                Marshal.ThrowExceptionForHR(audioEndPointVolume.GetChannelCount(out result));
                 return result;
             }
         }
@@ -56,20 +54,20 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                return _Channels[index];
+                return channels[index];
             }
         }
 
         internal AudioEndpointVolumeChannels(IAudioEndpointVolume parent)
         {
             int ChannelCount;
-            _AudioEndPointVolume = parent;
+            audioEndPointVolume = parent;
 
             ChannelCount = Count;
-            _Channels = new AudioEndpointVolumeChannel[ChannelCount];
+            channels = new AudioEndpointVolumeChannel[ChannelCount];
             for (int i = 0; i < ChannelCount; i++)
             {
-                _Channels[i] = new AudioEndpointVolumeChannel(_AudioEndPointVolume, i);
+                channels[i] = new AudioEndpointVolumeChannel(audioEndPointVolume, i);
             }
         }
 

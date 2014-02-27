@@ -11,7 +11,7 @@ namespace NAudio.FileFormats.Map
     public class CakewalkMapFile
     {
         private int mapEntryCount;
-        private List<CakewalkDrumMapping> drumMappings;
+        private readonly List<CakewalkDrumMapping> drumMappings;
         private MapBlockHeader fileHeader1;
         private MapBlockHeader fileHeader2;
         private MapBlockHeader mapNameHeader;
@@ -30,7 +30,7 @@ namespace NAudio.FileFormats.Map
         /// <param name="filename">Path of the .map file</param>
         public CakewalkMapFile(string filename)
         {
-            using (BinaryReader reader = new BinaryReader(File.OpenRead(filename),System.Text.UnicodeEncoding.Unicode))
+            using (var reader = new BinaryReader(File.OpenRead(filename),Encoding.Unicode))
             {
                 drumMappings = new List<CakewalkDrumMapping>();
                 ReadMapHeader(reader);
@@ -68,15 +68,15 @@ namespace NAudio.FileFormats.Map
 
         private CakewalkDrumMapping ReadMapEntry(BinaryReader reader)
         {
-            CakewalkDrumMapping mapping = new CakewalkDrumMapping();
-            int map1 = reader.ReadInt32();
+            var mapping = new CakewalkDrumMapping();
+            reader.ReadInt32(); // unknown
             mapping.InNote = reader.ReadInt32();
-            int map2 = reader.ReadInt32();
-            int map3 = reader.ReadInt32();
-            int map4 = reader.ReadInt32();
-            int map5 = reader.ReadInt32();
-            int map6 = reader.ReadInt32();
-            int map7 = reader.ReadInt32();
+            reader.ReadInt32(); // unknown
+            reader.ReadInt32(); // unknown
+            reader.ReadInt32(); // unknown
+            reader.ReadInt32(); // unknown
+            reader.ReadInt32(); // unknown
+            reader.ReadInt32(); // unknown
             mapping.VelocityScale = reader.ReadSingle();
             mapping.Channel = reader.ReadInt32();
             mapping.OutNote = reader.ReadInt32();
@@ -105,7 +105,7 @@ namespace NAudio.FileFormats.Map
                     break;
             }
             mapName = new string(name,0,nameLength);
-            byte[] whatIsThisFor = reader.ReadBytes(98);
+            reader.ReadBytes(98); // unknown
         }
 
         private void ReadOutputsSection1(BinaryReader reader)
@@ -114,7 +114,7 @@ namespace NAudio.FileFormats.Map
             outputs1Count = reader.ReadInt32();
             for (int n = 0; n < outputs1Count; n++)
             {
-                byte[] data = reader.ReadBytes(20);
+                reader.ReadBytes(20); // data
             }
         }
 
@@ -124,7 +124,7 @@ namespace NAudio.FileFormats.Map
             outputs2Count = reader.ReadInt32();
             for (int n = 0; n < outputs2Count; n++)
             {
-                byte[] data = reader.ReadBytes(24);
+                reader.ReadBytes(24); // data
             }
         }
         
@@ -136,7 +136,7 @@ namespace NAudio.FileFormats.Map
                 outputs3Count = reader.ReadInt32();
                 for (int n = 0; n < outputs3Count; n++)
                 {
-                    byte[] data = reader.ReadBytes(36);
+                    reader.ReadBytes(36); // data
                 }
             }
         }
@@ -146,11 +146,11 @@ namespace NAudio.FileFormats.Map
         /// </summary>
         public override string ToString()
         {
-            System.Text.StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.AppendFormat("FileHeader1: {0}\r\n", fileHeader1);
             sb.AppendFormat("FileHeader2: {0}\r\n", fileHeader2);
             sb.AppendFormat("MapEntryCount: {0}\r\n", mapEntryCount);
-            foreach (CakewalkDrumMapping mapping in drumMappings)
+            foreach (var mapping in drumMappings)
             {
                 sb.AppendFormat("   Map: {0}\r\n", mapping);
             }

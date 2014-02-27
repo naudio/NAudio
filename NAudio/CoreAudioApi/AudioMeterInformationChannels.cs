@@ -20,8 +20,6 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 using System;
-using System.Collections.Generic;
-using System.Text;
 using NAudio.CoreAudioApi.Interfaces;
 using System.Runtime.InteropServices;
 
@@ -32,7 +30,7 @@ namespace NAudio.CoreAudioApi
     /// </summary>
     public class AudioMeterInformationChannels
     {
-        IAudioMeterInformation _AudioMeterInformation;
+        readonly IAudioMeterInformation audioMeterInformation;
 
         /// <summary>
         /// Metering Channel Count
@@ -42,7 +40,7 @@ namespace NAudio.CoreAudioApi
             get
             {
                 int result;
-                Marshal.ThrowExceptionForHR(_AudioMeterInformation.GetMeteringChannelCount(out result));
+                Marshal.ThrowExceptionForHR(audioMeterInformation.GetMeteringChannelCount(out result));
                 return result;
             }
         }
@@ -56,9 +54,9 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                float[] peakValues = new float[Count];
+                var peakValues = new float[Count];
                 GCHandle Params = GCHandle.Alloc(peakValues, GCHandleType.Pinned);
-                Marshal.ThrowExceptionForHR(_AudioMeterInformation.GetChannelsPeakValues(peakValues.Length, Params.AddrOfPinnedObject()));
+                Marshal.ThrowExceptionForHR(audioMeterInformation.GetChannelsPeakValues(peakValues.Length, Params.AddrOfPinnedObject()));
                 Params.Free();
                 return peakValues[index];
             }
@@ -66,7 +64,7 @@ namespace NAudio.CoreAudioApi
 
         internal AudioMeterInformationChannels(IAudioMeterInformation parent)
         {
-            _AudioMeterInformation = parent;
+            audioMeterInformation = parent;
         }
     }
 }

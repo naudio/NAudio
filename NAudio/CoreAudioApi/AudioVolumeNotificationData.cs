@@ -20,8 +20,6 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace NAudio.CoreAudioApi
 {
@@ -30,21 +28,18 @@ namespace NAudio.CoreAudioApi
     /// </summary>
     public class AudioVolumeNotificationData
     {
-        private Guid _EventContext;
-        private bool _Muted;
-        private float _MasterVolume;
-        private int _Channels;
-        private float[] _ChannelVolume;
+        private readonly Guid eventContext;
+        private readonly bool muted;
+        private readonly float masterVolume;
+        private readonly int channels;
+        private readonly float[] channelVolume;
 
         /// <summary>
         /// Event Context
         /// </summary>
         public Guid EventContext
         {
-            get
-            {
-                return _EventContext;
-            }
+            get { return eventContext; }
         }
 
         /// <summary>
@@ -52,10 +47,7 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public bool Muted
         {
-            get
-            {
-                return _Muted;
-            }
+            get { return muted; }
         }
 
         /// <summary>
@@ -63,10 +55,7 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public float MasterVolume
         {
-            get
-            {
-                return _MasterVolume;
-            }
+            get { return masterVolume; }
         }
 
         /// <summary>
@@ -74,10 +63,7 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public int Channels
         {
-            get
-            {
-                return _Channels;
-            }
+            get { return channels; }
         }
 
         /// <summary>
@@ -85,10 +71,7 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public float[] ChannelVolume
         {
-            get
-            {
-                return _ChannelVolume;
-            }
+            get { return channelVolume; }
         }
 
         /// <summary>
@@ -100,11 +83,11 @@ namespace NAudio.CoreAudioApi
         /// <param name="channelVolume"></param>
         public AudioVolumeNotificationData(Guid eventContext, bool muted, float masterVolume, float[] channelVolume)
         {
-            _EventContext = eventContext;
-            _Muted = muted;
-            _MasterVolume = masterVolume;
-            _Channels = channelVolume.Length;
-            _ChannelVolume = channelVolume;
+            this.eventContext = eventContext;
+            this.muted = muted;
+            this.masterVolume = masterVolume;
+            channels = channelVolume.Length;
+            this.channelVolume = channelVolume;
         }
     }
 }

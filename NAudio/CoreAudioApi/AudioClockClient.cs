@@ -83,7 +83,7 @@ namespace NAudio.CoreAudioApi
                     // cool, we can adjust our position appropriately
 
                     // get the current qpc count (in ticks)
-                    var qposNow = (ulong)(((decimal)Stopwatch.GetTimestamp() * 10000000M) / Stopwatch.Frequency);
+                    var qposNow = (ulong)((Stopwatch.GetTimestamp() * 10000000M) / Stopwatch.Frequency);
 
                     // find out how many ticks has passed since the device reported the position
                     var qposDiff = (qposNow - qpos) / 100;

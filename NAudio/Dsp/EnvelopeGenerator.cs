@@ -19,8 +19,8 @@ namespace NAudio.Dsp
         private float decayCoef;
         private float releaseCoef;
         private float sustainLevel;
-        private float targetRatioA;
-        private float targetRatioDR;
+        private float targetRatioAttack;
+        private float targetRatioDecayRelease;
         private float attackBase;
         private float decayBase;
         private float releaseBase;
@@ -62,8 +62,8 @@ namespace NAudio.Dsp
             DecayRate = 0;
             ReleaseRate = 0;
             SustainLevel = 1.0f;
-            SetTargetRatioA(0.3f);
-            SetTargetRatioDR(0.0001f);
+            SetTargetRatioAttack(0.3f);
+            SetTargetRatioDecayRelease(0.0001f);
         }
 
         /// <summary>
@@ -78,8 +78,8 @@ namespace NAudio.Dsp
             set
             {
                 attackRate = value;
-                attackCoef = CalcCoef(value, targetRatioA);
-                attackBase = (1.0f + targetRatioA) * (1.0f - attackCoef);
+                attackCoef = CalcCoef(value, targetRatioAttack);
+                attackBase = (1.0f + targetRatioAttack) * (1.0f - attackCoef);
             }
         }
 
@@ -95,8 +95,8 @@ namespace NAudio.Dsp
             set
             {
                 decayRate = value;
-                decayCoef = CalcCoef(value, targetRatioDR);
-                decayBase = (sustainLevel - targetRatioDR) * (1.0f - decayCoef);
+                decayCoef = CalcCoef(value, targetRatioDecayRelease);
+                decayBase = (sustainLevel - targetRatioDecayRelease) * (1.0f - decayCoef);
             }
         }
 
@@ -112,8 +112,8 @@ namespace NAudio.Dsp
             set
             {
                 releaseRate = value;
-                releaseCoef = CalcCoef(value, targetRatioDR);
-                releaseBase = -targetRatioDR * (1.0f - releaseCoef);
+                releaseCoef = CalcCoef(value, targetRatioDecayRelease);
+                releaseBase = -targetRatioDecayRelease * (1.0f - releaseCoef);
             }
         }
 
@@ -134,25 +134,31 @@ namespace NAudio.Dsp
             set
             {
                 sustainLevel = value;
-                decayBase = (sustainLevel - targetRatioDR) * (1.0f - decayCoef);
+                decayBase = (sustainLevel - targetRatioDecayRelease) * (1.0f - decayCoef);
             }
         }
 
-        void SetTargetRatioA(float targetRatio)
+        /// <summary>
+        /// Sets the attack curve
+        /// </summary>
+        void SetTargetRatioAttack(float targetRatio)
         {
             if (targetRatio < 0.000000001f)
                 targetRatio = 0.000000001f;  // -180 dB
-            targetRatioA = targetRatio;
-            attackBase = (1.0f + targetRatioA) * (1.0f - attackCoef);
+            targetRatioAttack = targetRatio;
+            attackBase = (1.0f + targetRatioAttack) * (1.0f - attackCoef);
         }
 
-        void SetTargetRatioDR(float targetRatio)
+        /// <summary>
+        /// Sets the decay release curve
+        /// </summary>
+        void SetTargetRatioDecayRelease(float targetRatio)
         {
             if (targetRatio < 0.000000001f)
                 targetRatio = 0.000000001f;  // -180 dB
-            targetRatioDR = targetRatio;
-            decayBase = (sustainLevel - targetRatioDR) * (1.0f - decayCoef);
-            releaseBase = -targetRatioDR * (1.0f - releaseCoef);
+            targetRatioDecayRelease = targetRatio;
+            decayBase = (sustainLevel - targetRatioDecayRelease) * (1.0f - decayCoef);
+            releaseBase = -targetRatioDecayRelease * (1.0f - releaseCoef);
         }
 
         /// <summary>

@@ -21,8 +21,6 @@
 */
 // modified for NAudio
 using System;
-using System.Collections.Generic;
-using System.Text;
 using NAudio.CoreAudioApi.Interfaces;
 using System.Runtime.InteropServices;
 
@@ -33,13 +31,13 @@ namespace NAudio.CoreAudioApi
     /// </summary>
     public class AudioEndpointVolumeVolumeRange
     {
-        float _VolumeMindB;
-        float _VolumeMaxdB;
-        float _VolumeIncrementdB;
+        readonly float volumeMinDecibels;
+        readonly float volumeMaxDecibels;
+        readonly float volumeIncrementDecibels;
 
         internal AudioEndpointVolumeVolumeRange(IAudioEndpointVolume parent)
         {
-            Marshal.ThrowExceptionForHR(parent.GetVolumeRange(out _VolumeMindB,out _VolumeMaxdB,out _VolumeIncrementdB));
+            Marshal.ThrowExceptionForHR(parent.GetVolumeRange(out volumeMinDecibels,out volumeMaxDecibels,out volumeIncrementDecibels));
         }
 
         /// <summary>
@@ -47,10 +45,7 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public float MinDecibels
         {
-            get
-            {
-                return _VolumeMindB;
-            }
+            get { return volumeMinDecibels; }
         }
 
         /// <summary>
@@ -58,10 +53,7 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public float MaxDecibels
         {
-            get
-            {
-                return _VolumeMaxdB;
-            }
+            get { return volumeMaxDecibels; }
         }
 
         /// <summary>
@@ -69,10 +61,7 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public float IncrementDecibels
         {
-            get
-            {
-                return _VolumeIncrementdB;
-            }
+            get { return volumeIncrementDecibels; }
         }
     }
 }

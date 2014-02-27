@@ -20,8 +20,6 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 using System;
-using System.Collections.Generic;
-using System.Text;
 using NAudio.CoreAudioApi.Interfaces;
 using System.Runtime.InteropServices;
 
@@ -32,11 +30,12 @@ namespace NAudio.CoreAudioApi
     /// </summary>
     public class AudioEndpointVolumeStepInformation
     {
-        private uint _Step;
-        private uint _StepCount;
+        private readonly uint step;
+        private readonly uint stepCount;
+
         internal AudioEndpointVolumeStepInformation(IAudioEndpointVolume parent)
         {
-            Marshal.ThrowExceptionForHR(parent.GetVolumeStepInfo(out _Step, out _StepCount));
+            Marshal.ThrowExceptionForHR(parent.GetVolumeStepInfo(out step, out stepCount));
         }
 
         /// <summary>
@@ -44,10 +43,7 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public uint Step
         {
-            get
-            {
-                return _Step;
-            }
+            get { return step; }
         }
 
         /// <summary>
@@ -55,11 +51,7 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public uint StepCount
         {
-            get
-            {
-                return _StepCount;
-            }
+            get { return stepCount; }
         }
-
     }
 }

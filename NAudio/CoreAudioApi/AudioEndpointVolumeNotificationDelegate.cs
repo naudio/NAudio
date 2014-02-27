@@ -21,8 +21,6 @@
 */
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace NAudio.CoreAudioApi
 {
@@ -30,5 +28,5 @@ namespace NAudio.CoreAudioApi
     /// Audio Endpoint Volume Notifiaction Delegate
     /// </summary>
     /// <param name="data">Audio Volume Notification Data</param>
-    public delegate void AudioEndpointVolumeNotificationDelegate( AudioVolumeNotificationData data);
+    public delegate void AudioEndpointVolumeNotificationDelegate(AudioVolumeNotificationData data);
 }

@@ -20,8 +20,6 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Runtime.InteropServices;
 using NAudio.CoreAudioApi.Interfaces;
 
@@ -32,18 +30,18 @@ namespace NAudio.CoreAudioApi
     /// </summary>
     public class AudioMeterInformation
     {
-        private IAudioMeterInformation _AudioMeterInformation;
-        private EEndpointHardwareSupport _HardwareSupport;
-        private AudioMeterInformationChannels _Channels;
+        private readonly IAudioMeterInformation audioMeterInformation;
+        private readonly EEndpointHardwareSupport hardwareSupport;
+        private readonly AudioMeterInformationChannels channels;
 
         internal AudioMeterInformation(IAudioMeterInformation realInterface)
         {
-            int HardwareSupp;
+            int hardwareSupp;
 
-            _AudioMeterInformation = realInterface;
-            Marshal.ThrowExceptionForHR(_AudioMeterInformation.QueryHardwareSupport(out HardwareSupp));
-            _HardwareSupport = (EEndpointHardwareSupport)HardwareSupp;
-            _Channels = new AudioMeterInformationChannels(_AudioMeterInformation);
+            audioMeterInformation = realInterface;
+            Marshal.ThrowExceptionForHR(audioMeterInformation.QueryHardwareSupport(out hardwareSupp));
+            hardwareSupport = (EEndpointHardwareSupport)hardwareSupp;
+            channels = new AudioMeterInformationChannels(audioMeterInformation);
 
         }
 
@@ -54,7 +52,7 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                return _Channels;
+                return channels;
             }
         }
 
@@ -65,7 +63,7 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                return _HardwareSupport;
+                return hardwareSupport;
             }
         }
 
@@ -77,7 +75,7 @@ namespace NAudio.CoreAudioApi
             get
             {
                 float result;
-                Marshal.ThrowExceptionForHR(_AudioMeterInformation.GetPeakValue(out result));
+                Marshal.ThrowExceptionForHR(audioMeterInformation.GetPeakValue(out result));
                 return result;
             }
         }

@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.IO;
 
 namespace NAudio.FileFormats.Map
@@ -14,7 +12,7 @@ namespace NAudio.FileFormats.Map
 
         public static MapBlockHeader Read(BinaryReader reader)
         {
-            MapBlockHeader header = new MapBlockHeader();
+            var header = new MapBlockHeader();
             header.length = reader.ReadInt32(); // usually first 2 bytes have a value
             header.value2 = reader.ReadInt32(); // usually 0
             header.value3 = reader.ReadInt16(); // 0,1,2,3

@@ -1,7 +1,5 @@
 // based on SimpleComp v1.10 © 2006, ChunkWare Music Software, OPEN-SOURCE
 using System;
-using System.Collections.Generic;
-using System.Text;
 using NAudio.Utils;
 
 namespace NAudio.Dsp
@@ -9,9 +7,6 @@ namespace NAudio.Dsp
     class SimpleCompressor : AttRelEnvelope
     {
         // transfer function
-        private double threshdB;		// threshold (dB)
-        private double ratio;			// ratio (compression: < 1 ; expansion: > 1)
-        private double makeUpGain;
 
         // runtime variables
         private double envdB;			// over-threshold envelope (dB)
@@ -19,38 +14,26 @@ namespace NAudio.Dsp
         public SimpleCompressor(double attackTime, double releaseTime, double sampleRate)
             : base(attackTime, releaseTime, sampleRate)
         {
-            this.threshdB = 0.0;
-            this.ratio = 1.0;
-            this.makeUpGain = 0.0;
+            this.Threshold = 0.0;
+            this.Ratio = 1.0;
+            this.MakeUpGain = 0.0;
             this.envdB = DC_OFFSET;
         }
 
         public SimpleCompressor()
             : base(10.0, 10.0, 44100.0)
         {
-            this.threshdB = 0.0;
-            this.ratio = 1.0;
-            this.makeUpGain = 0.0;
+            this.Threshold = 0.0;
+            this.Ratio = 1.0;
+            this.MakeUpGain = 0.0;
             this.envdB = DC_OFFSET;
         }
 
-        public double MakeUpGain
-        {
-            get { return makeUpGain; }
-            set { makeUpGain = value; }
-        }
+        public double MakeUpGain { get; set; }
 
-        public double Threshold 
-        {
-            get { return threshdB; }
-            set { threshdB = value; }
-        }
-            
-        public double Ratio
-        {
-            get { return ratio; }
-            set { ratio = value; }
-        }
+        public double Threshold { get; set; }
+
+        public double Ratio { get; set; }
 
         // call before runtime (in resume())
         public void InitRuntime()
@@ -76,7 +59,7 @@ namespace NAudio.Dsp
             double keydB = Decibels.LinearToDecibels( link );		// convert linear -> dB
 
             // threshold
-            double overdB = keydB - threshdB;	// delta over threshold
+            double overdB = keydB - Threshold;	// delta over threshold
             if ( overdB < 0.0 )
                 overdB = 0.0;
 
@@ -95,8 +78,8 @@ namespace NAudio.Dsp
             // a minimum value of 0dB.
     
             // transfer function
-            double gr = overdB * (ratio - 1.0);	// gain reduction (dB)
-            gr = Decibels.DecibelsToLinear(gr) * Decibels.DecibelsToLinear(makeUpGain); // convert dB -> linear
+            double gr = overdB * (Ratio - 1.0);	// gain reduction (dB)
+            gr = Decibels.DecibelsToLinear(gr) * Decibels.DecibelsToLinear(MakeUpGain); // convert dB -> linear
 
             // output gain
             in1 *= gr;	// apply gain reduction to input

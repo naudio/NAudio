@@ -91,6 +91,7 @@ namespace NAudioTests.Dmo
 
         [Test]
         [Category("IntegrationTest")]
+        [Ignore("Doesn't seem to be true anymore")]
         public void WindowsMediaMp3DecoderSupportsPcmOutput()
         {
             var waveFormat = new WaveFormat(44100, 2);

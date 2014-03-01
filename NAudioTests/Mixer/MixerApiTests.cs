@@ -70,7 +70,7 @@ namespace NAudioTests
         [Test]
         public void CanGetWaveInMixerLine()
         {
-            using (WaveIn waveIn = new WaveIn())
+            using (var waveIn = new WaveInEvent())
             {
                 MixerLine line = waveIn.GetMixerLine();                
                 //Debug.WriteLine(String.Format("Mic Level {0}", level));

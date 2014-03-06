@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.IO;
+using System.Text;
 using System.Text.RegularExpressions;
 using NAudio.Utils;
 
@@ -219,11 +219,13 @@ namespace NAudio.Wave
                         writer.Write(this.Count);
                         for (int cue = 0; cue < this.Count; cue++)
                         {
+                            int position = this[cue].Position;
+
                             writer.Write(cue);
-                            writer.Seek(4, SeekOrigin.Current);
+                            writer.Write(position);
                             writer.Write(dataChunkID);
                             writer.Seek(8, SeekOrigin.Current);
-                            writer.Write(this[cue].Position);
+                            writer.Write(position);
                         }
                         writer.Write(listChunkID);
                         writer.Write(listChunkLength - 8);

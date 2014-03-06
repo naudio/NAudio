@@ -1,0 +1,84 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Audio File Inspector</title>
+</head>
+<body>
+    <h2>
+        Audio File Inspector</h2>
+    <p>
+        Audio File Inspector is a simple utility that describes the contents of various
+        types of audio file (for example WAV files or MIDI sequences). It started out as
+        a developer tool to aid in writing code that reads these various formats, but has
+        been released because some people may find it useful for diagnosing problems playing
+        back various media files.</p>
+    <p>
+        Audio File Formats are notoriously vague and it is likely that you will have some
+        files on your computer that cause Audio File Inspector to generate an error message.
+        If you encounter a problem, then feel free to zip the file up and email it to me
+        and I will consider updating the utility to support your file.</p>
+    <h2>
+        Supported File Types</h2>
+    <p>
+        The current version of Audio File Inspector supports the following file types:</p>
+    <ul>
+        <li><b>MID</b> - This will enumerate each event in the MIDI file. At the moment it
+        reports the time of the event in terms of "absolute time". A future update will turn
+        this into measures, beats and ticks (M:B:T)</li>
+        <li><b>SF2</b> - This examines a SoundFont file, reporting all the instruments, zones
+        and audio files contained within</li>
+        <li><b>WAV</b> - This will report the format of the audio data, as well as providing
+        binary dumps of any extra chunks of information.</li>
+        <li><b>MAP</b> - This can extract some information from a Cakewalk drum map file. 
+        </li>
+    </ul>
+
+    <h2>
+        Download</h2>
+        
+    <p>A link to the latest version of Audio File Inspector can be found <a href="http://naudio.codeplex.com">
+            here</a>.</p>
+    <h2>
+        Installation</h2>
+        
+        <p>Audio File Inspector requires the .NET framework version 3.5 to be installed.
+        You can download this <a href="http://msdn.microsoft.com/netframework/downloads/updates/default.aspx">
+            here</a>. Once you have done this you can run the installer which will add a right-click "Describe"
+            action to Windows Explorer for each of the supported file types.</p>        
+    <h2>
+        Usage</h2>
+    <p>
+        There are a variety of ways in which you can load a file into Audio File Inspector for 
+        analysis.</p>
+    <ul>
+        <li>Right-click a supported file in Windows explorer and click <b>"Describe"</b></li>
+        <li>Use the <b>File|Open</b> menu option to select a file to analyse</li>
+        <li>Drag a file from Windows explorer onto the title-bar of Audio File Inspector</li>
+        <li>You can also drag a file over the executable itself or run Audio File Inspector
+            from the command line with a filename as an argument.</li>
+    </ul>
+    <h2>
+        Tools Menu</h2>
+    <p>
+        On the tools menu you can find commands that allow you to clear the log or to save its
+        contents to disk (you are of course free to edit the contents in any way you like before
+        saving it).
+        
+        There is also an options form, which in this version simply allows you to recreate or remove
+        the right-click "Describe" option in Windows Explorer.</p>
+    <h2>
+        Version History</h2>
+    <p>
+        The latest version of Audio File Inspector can be found at <a href="http://naudio.codeplex.com">
+            http://naudio.codeplex.com</a>.
+    </p>
+    <ul>
+        <li>v0.1 2 Nov 2006
+            <ul>
+                <li>First public beta release</li>
+                <li>Support for WAV, MID, SF2 and MAP</li>
+            </ul>
+        </li>
+    </ul>
+</body>
+</html>

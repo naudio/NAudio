@@ -16,9 +16,9 @@ namespace NAudio.Wave
         private IntPtr waveInHandle;
         private volatile bool recording;
         private WaveInBuffer[] buffers;
-        private WaveInterop.WaveCallback callback;
+        private readonly WaveInterop.WaveCallback callback;
         private WaveCallbackInfo callbackInfo;
-        private SynchronizationContext syncContext;
+        private readonly SynchronizationContext syncContext;
         private int lastReturnedBufferIndex;
         /// <summary>
         /// Indicates recorded data is available 
@@ -60,13 +60,13 @@ namespace NAudio.Wave
             {
                 throw new InvalidOperationException("Use WaveInEvent to record on a background thread");
             }
-            this.DeviceNumber = 0;
-            this.WaveFormat = new WaveFormat(8000, 16, 1);
-            this.BufferMilliseconds = 100;
-            this.NumberOfBuffers = 3;
-            this.callback = new WaveInterop.WaveCallback(Callback);
+            DeviceNumber = 0;
+            WaveFormat = new WaveFormat(8000, 16, 1);
+            BufferMilliseconds = 100;
+            NumberOfBuffers = 3;
+            callback = Callback;
             this.callbackInfo = callbackInfo;
-            callbackInfo.Connect(this.callback);
+            callbackInfo.Connect(callback);
         }
 
         /// <summary>
@@ -133,7 +133,7 @@ namespace NAudio.Wave
             {
                 var hBuffer = (GCHandle)waveHeader.userData;
                 var buffer = (WaveInBuffer)hBuffer.Target;
-
+                if (buffer == null) return;
                 if (recording)
                 {
                     lastReturnedBufferIndex = Array.IndexOf(buffers, buffer);
@@ -261,6 +261,7 @@ namespace NAudio.Wave
 
         private void CloseWaveInDevice()
         {
+            if (waveInHandle == IntPtr.Zero) return;
             // Some drivers need the reset to properly release buffers
             WaveInterop.waveInReset(waveInHandle);
             if (buffers != null)

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Runtime.InteropServices;
 
@@ -106,6 +107,7 @@ namespace NAudio.Wave
             if (playbackState == PlaybackState.Stopped)
             {
                 playbackState = PlaybackState.Playing;
+                callbackEvent.Set(); // give the thread a kick
                 ThreadPool.QueueUserWorkItem((state) => PlaybackThread(), null);
             }
             else if (playbackState == PlaybackState.Paused)
@@ -136,28 +138,27 @@ namespace NAudio.Wave
 
         private void DoPlayback()
         {
-            var waitTime = TimeSpan.FromSeconds((double)this.buffers[0].BufferSize / (this.waveStream.WaveFormat.AverageBytesPerSecond * 2));
             while (playbackState != PlaybackState.Stopped)
             {
-                if (callbackEvent.WaitOne())
+                if (!callbackEvent.WaitOne(DesiredLatency))
+                    Debug.WriteLine("WARNING: WaveOutEvent callback event timeout");
+                
+                // requeue any buffers returned to us
+                if (playbackState == PlaybackState.Playing)
                 {
-                    // requeue any buffers returned to us
-                    if (playbackState == PlaybackState.Playing)
+                    int queued = 0;
+                    foreach (var buffer in buffers)
                     {
-                        int queued = 0;
-                        foreach (var buffer in buffers)
+                        if (buffer.InQueue || buffer.OnDone())
                         {
-                            if (buffer.InQueue || buffer.OnDone())
-                            {
-                                queued++;
-                            }
+                            queued++;
                         }
-                        if (queued == 0)
-                        {
-                            // we got to the end
-                            this.playbackState = PlaybackState.Stopped;
-                            callbackEvent.Set();
-                        }
+                    }
+                    if (queued == 0)
+                    {
+                        // we got to the end
+                        this.playbackState = PlaybackState.Stopped;
+                        callbackEvent.Set();
                     }
                 }
             }
@@ -237,7 +238,7 @@ namespace NAudio.Wave
         {
             lock (waveOutLock)
             {
-                MmTime mmTime = new MmTime();
+                var mmTime = new MmTime();
                 mmTime.wType = MmTime.TIME_BYTES; // request results in bytes, TODO: perhaps make this a little more flexible and support the other types?
                 MmException.Try(WaveInterop.waveOutGetPosition(hWaveOut, out mmTime, Marshal.SizeOf(mmTime)), "waveOutGetPosition");
 

@@ -130,11 +130,17 @@
     <Compile Include="..\NAudio\CoreAudioApi\AudioClientBufferFlags.cs">
       <Link>CoreAudioApi\AudioClientBufferFlags.cs</Link>
     </Compile>
+    <Compile Include="..\NAudio\CoreAudioApi\AudioClientProperties.cs">
+      <Link>CoreAudioApi\AudioClientProperties.cs</Link>
+    </Compile>
     <Compile Include="..\NAudio\CoreAudioApi\AudioClientShareMode.cs">
       <Link>CoreAudioApi\AudioClientShareMode.cs</Link>
     </Compile>
     <Compile Include="..\NAudio\CoreAudioApi\AudioClientStreamFlags.cs">
       <Link>CoreAudioApi\AudioClientStreamFlags.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\CoreAudioApi\AudioClientStreamOptions.cs">
+      <Link>CoreAudioApi\AudioClientStreamOptions.cs</Link>
     </Compile>
     <Compile Include="..\NAudio\CoreAudioApi\AudioClockClient.cs">
       <Link>CoreAudioApi\AudioClockClient.cs</Link>
@@ -168,6 +174,9 @@
     </Compile>
     <Compile Include="..\NAudio\CoreAudioApi\AudioRenderClient.cs">
       <Link>CoreAudioApi\AudioRenderClient.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\CoreAudioApi\AudioStreamCategory.cs">
+      <Link>CoreAudioApi\AudioStreamCategory.cs</Link>
     </Compile>
     <Compile Include="..\NAudio\CoreAudioApi\AudioVolumeNotificationData.cs">
       <Link>CoreAudioApi\AudioVolumeNotificationData.cs</Link>

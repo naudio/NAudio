@@ -5,7 +5,6 @@ using System.Windows.Forms;
 using NAudio.Wave;
 using System.Diagnostics;
 using NAudio.CoreAudioApi;
-using System.Collections.ObjectModel;
 using System.ComponentModel.Composition;
 
 namespace NAudioDemo
@@ -33,6 +32,12 @@ namespace NAudioDemo
             }
             outputFolder = Path.Combine(Path.GetTempPath(), "NAudioDemo");
             Directory.CreateDirectory(outputFolder);
+
+            // close the device if we change option only
+            radioButtonWasapi.CheckedChanged += (s, a) => Cleanup();
+            radioButtonWaveIn.CheckedChanged += (s, a) => Cleanup();
+            radioButtonWaveInEvent.CheckedChanged += (s, a) => Cleanup();
+            radioButtonWasapiLoopback.CheckedChanged += (s, a) => Cleanup();
         }
 
         void OnRecordingPanelDisposed(object sender, EventArgs e)
@@ -51,50 +56,56 @@ namespace NAudioDemo
 
         private void OnButtonStartRecordingClick(object sender, EventArgs e)
         {
+            if (radioButtonWaveIn.Checked)
+                Cleanup(); // WaveIn is still unreliable in some circumstances to being reused
+
             if (waveIn == null)
             {
-                outputFilename = String.Format("NAudioDemo {0:yyy-MM-dd HH-mm-ss}.wav", DateTime.Now);
-                if (radioButtonWaveIn.Checked)
-                {
-                    waveIn = new WaveIn();
-                    waveIn.WaveFormat = new WaveFormat(8000, 1);
-                }
-                else if (radioButtonWaveInEvent.Checked)
-                {
-                    waveIn = new WaveInEvent();
-                    waveIn.WaveFormat = new WaveFormat(8000, 1);
-                }
-                else if (radioButtonWasapi.Checked)
-                {
-                    // can't set WaveFormat as WASAPI doesn't support SRC
-                    var device = (MMDevice)comboWasapiDevices.SelectedItem;
-                    waveIn = new WasapiCapture(device);
-                }
-                else
-                {
-                    // can't set WaveFormat as WASAPI doesn't support SRC
-                    waveIn = new WasapiLoopbackCapture();
-                }
-                
-                writer = new WaveFileWriter(Path.Combine(outputFolder, outputFilename), waveIn.WaveFormat);
-
-                waveIn.DataAvailable += OnDataAvailable;
-                waveIn.RecordingStopped += OnRecordingStopped;
-                waveIn.StartRecording();
-                buttonStartRecording.Enabled = false;
+                CreateWaveInDevice();
             }
+
+            outputFilename = String.Format("NAudioDemo {0:yyy-MM-dd HH-mm-ss}.wav", DateTime.Now);
+            writer = new WaveFileWriter(Path.Combine(outputFolder, outputFilename), waveIn.WaveFormat);
+            waveIn.StartRecording();
+            SetControlStates(true);
+        }
+
+        private void CreateWaveInDevice()
+        {
+            if (radioButtonWaveIn.Checked)
+            {
+                waveIn = new WaveIn();
+                waveIn.WaveFormat = new WaveFormat(8000, 1);
+            }
+            else if (radioButtonWaveInEvent.Checked)
+            {
+                waveIn = new WaveInEvent();
+                waveIn.WaveFormat = new WaveFormat(8000, 1);
+            }
+            else if (radioButtonWasapi.Checked)
+            {
+                // can't set WaveFormat as WASAPI doesn't support SRC
+                var device = (MMDevice) comboWasapiDevices.SelectedItem;
+                waveIn = new WasapiCapture(device);
+            }
+            else
+            {
+                // can't set WaveFormat as WASAPI doesn't support SRC
+                waveIn = new WasapiLoopbackCapture();
+            }
+            waveIn.DataAvailable += OnDataAvailable;
+            waveIn.RecordingStopped += OnRecordingStopped;
         }
 
         void OnRecordingStopped(object sender, StoppedEventArgs e)
         {
-            if (this.InvokeRequired)
+            if (InvokeRequired)
             {
-                this.BeginInvoke(new EventHandler<StoppedEventArgs>(OnRecordingStopped), sender, e);
+                BeginInvoke(new EventHandler<StoppedEventArgs>(OnRecordingStopped), sender, e);
             }
             else
             {
-                Cleanup();
-                buttonStartRecording.Enabled = true;
+                FinalizeWaveFile();
                 progressBar1.Value = 0;
                 if (e.Exception != null)
                 {
@@ -103,19 +114,25 @@ namespace NAudioDemo
                 }
                 int newItemIndex = listBoxRecordings.Items.Add(outputFilename);
                 listBoxRecordings.SelectedIndex = newItemIndex;
+                SetControlStates(false);
             }
         }
 
         private void Cleanup()
         {
-            if (waveIn != null) // working around problem with double raising of RecordingStopped
+            if (waveIn != null)
             {
                 waveIn.Dispose();
                 waveIn = null;
             }
+            FinalizeWaveFile();
+        }
+
+        private void FinalizeWaveFile()
+        {
             if (writer != null)
             {
-                writer.Close();
+                writer.Dispose();
                 writer = null;
             }
         }
@@ -146,15 +163,12 @@ namespace NAudioDemo
         void StopRecording()
         {
             Debug.WriteLine("StopRecording");
-            waveIn.StopRecording();
+            if (waveIn != null) waveIn.StopRecording();
         }
 
         private void OnButtonStopRecordingClick(object sender, EventArgs e)
         {
-            if (waveIn != null)
-            {
-                StopRecording();
-            }
+            StopRecording();
         }
 
         private void OnButtonPlayClick(object sender, EventArgs e)
@@ -163,6 +177,13 @@ namespace NAudioDemo
             {
                 Process.Start(Path.Combine(outputFolder, (string)listBoxRecordings.SelectedItem));
             }
+        }
+
+        private void SetControlStates(bool isRecording)
+        {
+            groupBoxRecordingApi.Enabled = !isRecording;
+            buttonStartRecording.Enabled = !isRecording;
+            buttonStopRecording.Enabled = isRecording;
         }
 
         private void OnButtonDeleteClick(object sender, EventArgs e)

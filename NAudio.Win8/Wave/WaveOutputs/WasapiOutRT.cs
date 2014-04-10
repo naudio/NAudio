@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using NAudio.CoreAudioApi;
@@ -64,21 +61,52 @@ namespace NAudio.Win8.Wave.WaveOutputs
             this.syncContext = SynchronizationContext.Current;
         }
 
+        /// <summary>
+        /// Properties of the client's audio stream.
+        /// Set before calling init
+        /// </summary>
+        private AudioClientProperties? audioClientProperties = null;
+
+        /// <summary>
+        /// Sets the parameters that describe the properties of the client's audio stream.
+        /// </summary>
+        /// <param name="useHardwareOffload">Boolean value to indicate whether or not the audio stream is hardware-offloaded.</param>
+        /// <param name="category">An enumeration that is used to specify the category of the audio stream.</param>
+        /// <param name="options">A bit-field describing the characteristics of the stream. Supported in Windows 8.1 and later.</param>
+        public void SetClientProperties(bool useHardwareOffload, AudioStreamCategory category, AudioClientStreamOptions options)
+        {
+            audioClientProperties = new AudioClientProperties()
+            {
+                cbSize = (uint) Marshal.SizeOf(typeof (AudioClientProperties)),
+                bIsOffload = Convert.ToInt32(useHardwareOffload),
+                eCategory = category,
+                Options = options
+            };
+        }
+
         private async Task Activate()
         {
             var icbh = new ActivateAudioInterfaceCompletionHandler(
                 ac2 =>
+                {
+                    if (this.audioClientProperties != null)
                     {
-                        /*var wfx = new WaveFormat(44100, 16, 2);
-                    int hr = ac2.Initialize(AudioClientShareMode.Shared,
-                                   AudioClientStreamFlags.EventCallback | AudioClientStreamFlags.NoPersist,
-                                   10000000, 0, wfx, IntPtr.Zero);*/
-                    });
+                        IntPtr p = Marshal.AllocHGlobal(Marshal.SizeOf(this.audioClientProperties.Value));
+                        Marshal.StructureToPtr(this.audioClientProperties.Value, p, false);
+                        ac2.SetClientProperties(p);
+                        // TODO: consider whether we can marshal this without the need for AllocHGlobal
+                    }
+
+                    /*var wfx = new WaveFormat(44100, 16, 2);
+                int hr = ac2.Initialize(AudioClientShareMode.Shared,
+                               AudioClientStreamFlags.EventCallback | AudioClientStreamFlags.NoPersist,
+                               10000000, 0, wfx, IntPtr.Zero);*/
+                });
             var IID_IAudioClient2 = new Guid("726778CD-F60A-4eda-82DE-E47610CD78AA");
             IActivateAudioInterfaceAsyncOperation activationOperation;
             NativeMethods.ActivateAudioInterfaceAsync(device, IID_IAudioClient2, IntPtr.Zero, icbh, out activationOperation);
             var audioClient2 = await icbh;
-            this.audioClient = new AudioClient((IAudioClient) audioClient2);
+            this.audioClient = new AudioClient((IAudioClient)audioClient2);
         }
 
         private static string GetDefaultAudioEndpoint()
@@ -542,6 +570,7 @@ namespace NAudio.Win8.Wave.WaveOutputs
         //virtual HRESULT STDMETHODCALLTYPE SetClientProperties(/*[in]*/ _In_  
         //  const AudioClientProperties *pProperties) = 0;
         void SetClientProperties([In] IntPtr pProperties);
+        // TODO: try this: void SetClientProperties([In, MarshalAs(UnmanagedType.LPStruct)] AudioClientProperties pProperties);
         //virtual HRESULT STDMETHODCALLTYPE GetBufferSizeLimits(/*[in]*/ _In_  
         //   const WAVEFORMATEX *pFormat, /*[in]*/ _In_  BOOL bEventDriven, /*[in]*/ 
         //  _Out_  REFERENCE_TIME *phnsMinBufferDuration, /*[in]*/ _Out_  

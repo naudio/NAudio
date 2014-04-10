@@ -82,8 +82,10 @@
     <Compile Include="CoreAudioApi\AudioCaptureClient.cs" />
     <Compile Include="CoreAudioApi\AudioClient.cs" />
     <Compile Include="CoreAudioApi\AudioClientBufferFlags.cs" />
+    <Compile Include="CoreAudioApi\AudioClientProperties.cs" />
     <Compile Include="CoreAudioApi\AudioClientShareMode.cs" />
     <Compile Include="CoreAudioApi\AudioClientStreamFlags.cs" />
+    <Compile Include="CoreAudioApi\AudioClientStreamOptions.cs" />
     <Compile Include="CoreAudioApi\AudioClockClient.cs" />
     <Compile Include="CoreAudioApi\AudioEndpointVolumeCallback.cs" />
     <Compile Include="CoreAudioApi\AudioEndpointVolumeChannel.cs" />
@@ -93,6 +95,7 @@
     <Compile Include="CoreAudioApi\AudioEndpointVolumeVolumeRange.cs" />
     <Compile Include="CoreAudioApi\AudioMeterInformationChannels.cs" />
     <Compile Include="CoreAudioApi\AudioRenderClient.cs" />
+    <Compile Include="CoreAudioApi\AudioStreamCategory.cs" />
     <Compile Include="CoreAudioApi\AudioVolumeNotificationData.cs" />
     <Compile Include="CoreAudioApi\Interfaces\AudioVolumeNotificationDataStruct.cs" />
     <Compile Include="CoreAudioApi\Interfaces\ErrorCodes.cs" />

@@ -17,6 +17,7 @@ biermeester
 borman11
 bradb
 Brandon Hansen (kg6ypi)
+csechet
 ChunkWare Music Software
 CKing
 DaMacc
@@ -28,6 +29,7 @@ Iain McCowan
 Idael Cardaso 
 ioctlLR
 Jamie Michael Ewins
+jannera
 jbaker8935
 jcameron23
 jonahoffmann
@@ -60,6 +62,7 @@ Ted Murphy
 Tiny Simple Tools
 Tobias Fleming
 Tony Cabello
+Tony Sistemas
 TuneBlade
 topher3683
 Vladimir Rokovanov

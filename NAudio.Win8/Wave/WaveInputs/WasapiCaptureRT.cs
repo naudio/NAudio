@@ -241,9 +241,17 @@ namespace NAudio.Wave
 
                     if (numFramesToRead == 0) { continue; }
 
-                    int capturedBytes =  numFramesToRead * bytesPerFrame;                   
+                    int capturedBytes =  numFramesToRead * bytesPerFrame;
 
-                    System.Runtime.InteropServices.Marshal.Copy(pData, buf, bufLength, capturedBytes);
+                    if (pData == IntPtr.Zero)
+                    {
+                        Array.Clear(buf, bufLength, capturedBytes);
+                    }
+                    else
+                    {
+                        Marshal.Copy(pData, buf, bufLength, capturedBytes);
+                    }
+                    
                     bufLength += capturedBytes;
 
                     capture.ReleaseBuffer(numFramesToRead);

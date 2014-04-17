@@ -637,9 +637,6 @@
     <Compile Include="..\NAudio\Wave\SampleProviders\WaveToSampleProvider64.cs">
       <Link>Wave\SampleProviders\WaveToSampleProvider64.cs</Link>
     </Compile>
-    <Compile Include="..\NAudio\Wave\WaveExtensionMethods.cs">
-      <Link>Wave\WaveExtensionMethods.cs</Link>
-    </Compile>
     <Compile Include="..\NAudio\Wave\WaveFormats\AdpcmWaveFormat.cs">
       <Link>Wave\WaveFormats\AdpcmWaveFormat.cs</Link>
     </Compile>
@@ -755,6 +752,7 @@
       <Link>Wave\WaveStreams\WaveStream.cs</Link>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Wave\WaveExtensionMethods.cs" />
     <Compile Include="Wave\WaveInputs\WasapiCaptureRT.cs" />
     <Compile Include="Wave\WaveOutputs\IWavePlayer.cs" />
     <Compile Include="Wave\WaveOutputs\WasapiOutRT.cs" />

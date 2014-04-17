@@ -67,12 +67,10 @@ namespace NAudio.Wave
             mediaElement.Pause();
         }
 
-        public Task Init(IWaveProvider waveProvider)
+        public void Init(Func<IWaveProvider> waveProviderFunc)
         {
             // do this still on the gui thread
-            mediaElement.SetSource(new WaveProviderRandomAccessStream(waveProvider), "audio/wav");
-            // must be a better way than this
-            return new Task(() =>{});
+            mediaElement.SetSource(new WaveProviderRandomAccessStream(waveProviderFunc()), "audio/wav");
         }
 
         public PlaybackState PlaybackState { get; private set; }

@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Input;
+using Windows.Storage.Streams;
 using NAudio.CoreAudioApi;
-using NAudio.CoreAudioApi.Interfaces;
 using NAudio.Wave;
 using NAudio.Win8.Wave.WaveOutputs;
 using Windows.Storage;
@@ -22,6 +19,7 @@ namespace NAudioWin8Demo
         private WaveStream reader;
         private IWaveIn recorder;
         private MemoryStream recordStream;
+        private IRandomAccessStream selectedStream;
 
         public MainPageViewModel()
         {
@@ -33,9 +31,7 @@ namespace NAudioWin8Demo
             StopRecordingCommand = new DelegateCommand(StopRecording) { IsEnabled = false };
             MediaFoundationApi.Startup();
         }
-
         
-
         private void Stop()
         {
             if (player != null)
@@ -54,32 +50,35 @@ namespace NAudioWin8Demo
 
         private async void Play()
         {
-            if (reader == null)
-            {
-                return;
-            }
-
             if (player == null)
             {
                 // Exclusive mode - fails with a weird buffer alignment error
-
-                //player = new MediaElementOut(MediaElement);
                 player = new WasapiOutRT(AudioClientShareMode.Shared, 200);
+                player.Init(CreateReader);
 
                 player.PlaybackStopped += PlayerOnPlaybackStopped;
             }
 
             if (player.PlaybackState != PlaybackState.Playing)
             {
-                reader.Seek(0, SeekOrigin.Begin);
-                await player.Init(reader);
+                //reader.Seek(0, SeekOrigin.Begin);
                 player.Play();
                 StopCommand.IsEnabled = true;
                 PauseCommand.IsEnabled = true;
+                LoadCommand.IsEnabled = false;
             }
         }
 
-        
+        private IWaveProvider CreateReader()
+        {
+            if (reader is RawSourceWaveStream)
+            {
+                reader.Position = 0;
+                return reader;
+            }
+            reader = new MediaFoundationReaderRT(selectedStream);
+            return reader;
+        }        
 
         private void Record()
         {
@@ -135,25 +134,28 @@ namespace NAudioWin8Demo
         {
             LoadCommand.IsEnabled = true;
             StopCommand.IsEnabled = false;
-            PauseCommand.IsEnabled = false;           
+            PauseCommand.IsEnabled = false;
+            reader.Position = 0;
         }
 
         private async void Load()
         {
+            if (player != null)
+            {
+                player.Dispose();
+                player = null;
+            }
+            reader = null; // will be disposed by player
+
             var picker = new FileOpenPicker();
             picker.SuggestedStartLocation = PickerLocationId.MusicLibrary;
             picker.FileTypeFilter.Add("*");
             var file = await picker.PickSingleFileAsync();
             if (file == null) return;
-            var stream = await file.OpenAsync(FileAccessMode.Read);//  .OpenReadAsync();
+            var stream = await file.OpenAsync(FileAccessMode.Read);
             if (stream == null) return;
-            using (stream)
-            {
-                // trying to get thre reader created on an MTA Thread
-                await Task.Run(() => reader = new MediaFoundationReaderRT(stream));
-                
-                PlayCommand.IsEnabled = true;
-            }
+            this.selectedStream = stream; 
+            PlayCommand.IsEnabled = true;
         }
 
         public DelegateCommand LoadCommand { get; private set; }

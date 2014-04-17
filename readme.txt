@@ -55,6 +55,7 @@ Pygmy
 Ray Molenkamp
 Robert Bristow-Johnson
 Scott Fleischman 
+Simon Clark
 Sirish Bajpai
 sporn
 Steve Underwood

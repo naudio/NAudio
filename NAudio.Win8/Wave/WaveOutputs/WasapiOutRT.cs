@@ -4,6 +4,8 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.System.Threading;
+using Windows.UI.Xaml.Controls;
 using NAudio.CoreAudioApi;
 using NAudio.CoreAudioApi.Interfaces;
 using NAudio.Wave;
@@ -11,6 +13,18 @@ using Windows.Media.Devices;
 
 namespace NAudio.Win8.Wave.WaveOutputs
 {
+
+    enum WasapiOutState
+    {
+        Uninitialized,
+        Stopped,
+        Paused,
+        Playing,
+        Stopping,
+        Disposing,
+        Disposed
+    }
+
     /// <summary>
     /// WASAPI Out for Windows RT
     /// </summary>
@@ -20,16 +34,17 @@ namespace NAudio.Win8.Wave.WaveOutputs
         private readonly string device;
         private readonly AudioClientShareMode shareMode;
         private AudioRenderClient renderClient;
-        private IWaveProvider sourceProvider;
         private int latencyMilliseconds;
         private int bufferFrameCount;
         private int bytesPerFrame;
         private byte[] readBuffer;
-        private volatile PlaybackState playbackState;
+        private volatile WasapiOutState playbackState;
         private WaveFormat outputFormat;
         private bool resamplerNeeded;
         private IntPtr frameEventWaitHandle;
         private readonly SynchronizationContext syncContext;
+        private bool isInitialized;
+        private readonly AutoResetEvent playThreadEvent;
 
         /// <summary>
         /// Playback Stopped
@@ -59,6 +74,7 @@ namespace NAudio.Win8.Wave.WaveOutputs
             this.shareMode = shareMode;
             this.latencyMilliseconds = latency;
             this.syncContext = SynchronizationContext.Current;
+            playThreadEvent = new AutoResetEvent(false);
         }
 
         /// <summary>
@@ -66,6 +82,8 @@ namespace NAudio.Win8.Wave.WaveOutputs
         /// Set before calling init
         /// </summary>
         private AudioClientProperties? audioClientProperties = null;
+
+        private Func<IWaveProvider> waveProviderFunc;
 
         /// <summary>
         /// Sets the parameters that describe the properties of the client's audio stream.
@@ -119,14 +137,14 @@ namespace NAudio.Win8.Wave.WaveOutputs
         private async void PlayThread()
         {
             MediaFoundationResampler mediaFoundationResampler = null;
-            IWaveProvider playbackProvider = this.sourceProvider;
-            Exception exception = null;
-
+            await Activate();
+            var playbackProvider = Init();
+            bool isClientRunning = false;
             try
             {
                 if (this.resamplerNeeded)
                 {
-                    mediaFoundationResampler = new MediaFoundationResampler(sourceProvider, outputFormat);
+                    mediaFoundationResampler = new MediaFoundationResampler(playbackProvider, outputFormat);
                     playbackProvider = mediaFoundationResampler;
                 }
 
@@ -135,18 +153,26 @@ namespace NAudio.Win8.Wave.WaveOutputs
                 bytesPerFrame = outputFormat.Channels*outputFormat.BitsPerSample/8;
                 readBuffer = new byte[bufferFrameCount*bytesPerFrame];
                 FillBuffer(playbackProvider, bufferFrameCount);
-
-                audioClient.Start();
-
-                while (playbackState != PlaybackState.Stopped)
+                int timeout = 3 * latencyMilliseconds;
+                
+                while (playbackState != WasapiOutState.Disposed)
                 {
-                    // If using Event Sync, Wait for notification from AudioClient or Sleep half latency
-                    int timeout = 3*latencyMilliseconds;
-                    var r = NativeMethods.WaitForSingleObjectEx(frameEventWaitHandle, timeout, true);
-                    if (r != 0) throw new InvalidOperationException("Timed out waiting for event");
-                    // If still playing and notification is ok
-                    if (playbackState == PlaybackState.Playing)
+                    if (playbackState != WasapiOutState.Playing)
                     {
+                        playThreadEvent.WaitOne(500);
+                    }
+                    
+                    // If still playing and notification is ok
+                    if (playbackState == WasapiOutState.Playing)
+                    {
+                        if (!isClientRunning)
+                        {
+                            audioClient.Start();
+                            isClientRunning = true;
+                        }
+                        // If using Event Sync, Wait for notification from AudioClient or Sleep half latency
+                        var r = NativeMethods.WaitForSingleObjectEx(frameEventWaitHandle, timeout, true);
+                        if (r != 0) throw new InvalidOperationException("Timed out waiting for event");
                         // See how much buffer space is available.
                         int numFramesPadding = 0;
                         // In exclusive mode, always ask the max = bufferFrameCount = audioClient.BufferSize
@@ -158,21 +184,38 @@ namespace NAudio.Win8.Wave.WaveOutputs
                             FillBuffer(playbackProvider, numFramesAvailable);
                         }
                     }
-                }
-                // play the buffer out
-                while (audioClient.CurrentPadding > 0)
-                {
-                    await Task.Delay(latencyMilliseconds/2);
-                }
-                audioClient.Stop();
-                if (playbackState == PlaybackState.Stopped)
-                {
-                    audioClient.Reset();
+
+                    if (playbackState == WasapiOutState.Stopping)
+                    {
+                        // play the buffer out
+                        while (audioClient.CurrentPadding > 0)
+                        {
+                            await Task.Delay(latencyMilliseconds / 2);
+                        }
+                        audioClient.Stop();
+                        isClientRunning = false;
+                        audioClient.Reset();
+                        playbackState = WasapiOutState.Stopped;
+                        RaisePlaybackStopped(null);
+                    }
+                    if (playbackState == WasapiOutState.Disposing)
+                    {
+                        audioClient.Stop();
+                        isClientRunning = false;
+                        audioClient.Reset();
+                        playbackState = WasapiOutState.Disposed;
+                        var disposablePlaybackProvider = playbackProvider as IDisposable;
+                        if (disposablePlaybackProvider!=null)
+                            disposablePlaybackProvider.Dispose(); // do everything on this thread, even dispose in case it is Media Foundation
+                        RaisePlaybackStopped(null);
+
+                    }
+
                 }
             }
             catch (Exception e)
             {
-                exception = e;
+                RaisePlaybackStopped(e);
             }
             finally
             {
@@ -180,7 +223,11 @@ namespace NAudio.Win8.Wave.WaveOutputs
                 {
                     mediaFoundationResampler.Dispose();
                 }
-                RaisePlaybackStopped(exception);
+                audioClient.Dispose();
+                audioClient = null;
+                renderClient = null;
+                NativeMethods.CloseHandle(frameEventWaitHandle);
+
             }
         }
 
@@ -207,7 +254,7 @@ namespace NAudio.Win8.Wave.WaveOutputs
             int read = playbackProvider.Read(readBuffer, 0, readLength);
             if (read == 0)
             {
-                playbackState = PlaybackState.Stopped;
+                playbackState = WasapiOutState.Stopping;
             }
             Marshal.Copy(readBuffer, 0, buffer, read);
             int actualFrameCount = read/bytesPerFrame;
@@ -225,17 +272,10 @@ namespace NAudio.Win8.Wave.WaveOutputs
         /// </summary>
         public void Play()
         {
-            if (playbackState != PlaybackState.Playing)
+            if (playbackState != WasapiOutState.Playing)
             {
-                if (playbackState == PlaybackState.Stopped)
-                {
-                    playbackState = PlaybackState.Playing;
-                    Task.Run(() => PlayThread());
-                }
-                else
-                {
-                    playbackState = PlaybackState.Playing;
-                }
+                playbackState = WasapiOutState.Playing;
+                playThreadEvent.Set();
             }
         }
 
@@ -244,9 +284,10 @@ namespace NAudio.Win8.Wave.WaveOutputs
         /// </summary>
         public void Stop()
         {
-            if (playbackState != PlaybackState.Stopped)
+            if (playbackState == WasapiOutState.Playing || playbackState == WasapiOutState.Paused)
             {
-                playbackState = PlaybackState.Stopped;
+                playbackState = WasapiOutState.Stopping;
+                playThreadEvent.Set();
             }
         }
 
@@ -255,20 +296,42 @@ namespace NAudio.Win8.Wave.WaveOutputs
         /// </summary>
         public void Pause()
         {
-            if (playbackState == PlaybackState.Playing)
+            if (playbackState == WasapiOutState.Playing)
             {
-                playbackState = PlaybackState.Paused;
+                playbackState = WasapiOutState.Paused;
+                playThreadEvent.Set();
             }
+        }
 
+        /// <summary>
+        /// Old init implementation. Use the func one
+        /// </summary>
+        /// <param name="provider"></param>
+        /// <returns></returns>
+        [Obsolete]
+        public async Task Init(IWaveProvider provider)
+        {
+            Init(() => provider);
+        }
+
+        /// <summary>
+        /// Initializes with a function to create the provider that is made on the playback thread
+        /// </summary>
+        /// <param name="waveProviderFunc">Creates the wave provider</param>
+        public void Init(Func<IWaveProvider> waveProviderFunc)
+        {
+            if (isInitialized) throw new InvalidOperationException("Already Initialized");
+            isInitialized = true;
+            this.waveProviderFunc = waveProviderFunc;
+            ThreadPool.RunAsync(s => PlayThread());
         }
 
         /// <summary>
         /// Initialize for playing the specified wave stream
         /// </summary>
-        /// <param name="waveProvider">IWaveProvider to play</param>
-        public async Task Init(IWaveProvider waveProvider)
+        private IWaveProvider Init()
         {
-            await Activate();
+            var waveProvider = waveProviderFunc();
             long latencyRefTimes = latencyMilliseconds*10000;
             outputFormat = waveProvider.WaveFormat;
             // first attempt uses the WaveFormat from the WaveStream
@@ -341,7 +404,6 @@ namespace NAudio.Win8.Wave.WaveOutputs
             {
                 resamplerNeeded = false;
             }
-            this.sourceProvider = waveProvider;
 
             // Init Shared or Exclusive
             if (shareMode == AudioClientShareMode.Shared)
@@ -366,6 +428,7 @@ namespace NAudio.Win8.Wave.WaveOutputs
 
             // Get the RenderClient
             renderClient = audioClient.AudioRenderClient;
+            return waveProvider;
         }
 
         /// <summary>
@@ -373,12 +436,21 @@ namespace NAudio.Win8.Wave.WaveOutputs
         /// </summary>
         public PlaybackState PlaybackState
         {
-            get { return playbackState; }
+            get
+            {
+                switch (playbackState)
+                {
+                    case WasapiOutState.Playing:
+                        return PlaybackState.Playing;
+                    case WasapiOutState.Paused:
+                        return PlaybackState.Paused;
+                    default:
+                        return PlaybackState.Stopped;
+                }
+            }
         }
 
         #endregion
-
-        #region IDisposable Members
 
         /// <summary>
         /// Dispose
@@ -387,19 +459,10 @@ namespace NAudio.Win8.Wave.WaveOutputs
         {
             if (audioClient != null)
             {
-                Stop();
-
-                audioClient.Dispose();
-                audioClient = null;
-                renderClient = null;
-                NativeMethods.CloseHandle(frameEventWaitHandle);
+                playbackState = WasapiOutState.Disposing;
+                playThreadEvent.Set();
             }
-
         }
-
-        #endregion
-
-
     }
 
     /// <summary>

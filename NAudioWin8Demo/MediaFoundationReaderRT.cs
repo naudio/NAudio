@@ -8,6 +8,8 @@ namespace NAudioWin8Demo
     // Slightly hacky approach to supporting a different WinRT constructor
     class MediaFoundationReaderRT : MediaFoundationReader
     {
+        private readonly MediaFoundationReaderRTSettings settings;
+
         public class MediaFoundationReaderRTSettings : MediaFoundationReaderSettings
         {
             public MediaFoundationReaderRTSettings()
@@ -29,7 +31,7 @@ namespace NAudioWin8Demo
         public MediaFoundationReaderRT(MediaFoundationReaderRTSettings settings)
             : base(null, settings)
         {
-            
+            this.settings = settings;
         }
 
         protected override IMFSourceReader CreateReader(MediaFoundationReaderSettings settings)
@@ -50,6 +52,15 @@ namespace NAudioWin8Demo
             // can return MF_E_INVALIDMEDIATYPE if not supported
             reader.SetCurrentMediaType(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, IntPtr.Zero, partialMediaType.MediaFoundationObject);
             return reader;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && settings.Stream != null)
+            {
+                settings.Stream.Dispose();
+            }
+            base.Dispose(disposing);
         }
     }
 }

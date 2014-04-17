@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace NAudio.Wave
@@ -27,10 +25,19 @@ namespace NAudio.Wave
         void Pause();
 
         /// <summary>
+        /// Obsolete init method
+        /// </summary>
+        /// <param name="waveProvider"></param>
+        /// <returns></returns>
+        [Obsolete]
+        Task Init(IWaveProvider waveProvider);
+
+        /// <summary>
         /// Initialise playback
         /// </summary>
-        /// <param name="waveProvider">The waveprovider to be played</param>
-        Task Init(IWaveProvider waveProvider);
+        /// <param name="waveProviderFunc">Function to create the waveprovider to be played
+        /// Called on the playback thread</param>
+        void Init(Func<IWaveProvider> waveProviderFunc);
 
         /// <summary>
         /// Current playback state

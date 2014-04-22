@@ -430,7 +430,7 @@ namespace NAudio.Wave
 
                     secondaryBuffer.Play(0, 0, DirectSoundPlayFlags.DSBPLAY_LOOPING);
 
-                    WaitHandle[] waitHandles = new WaitHandle[] { frameEventWaitHandle1, frameEventWaitHandle2, endEventWaitHandle };
+                    var waitHandles = new WaitHandle[] { frameEventWaitHandle1, frameEventWaitHandle2, endEventWaitHandle };
 
                     bool lContinuePlayback = true;
                     while (PlaybackState != PlaybackState.Stopped && lContinuePlayback)
@@ -500,7 +500,16 @@ namespace NAudio.Wave
             {
                 if (!lPlaybackHalted)
                 {
-                    StopPlayback();
+                    try
+                    {
+                        StopPlayback();
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.WriteLine(e.ToString());
+                        // don't overwrite the original reason we exited the playback loop
+                        if (exception == null) exception = e; 
+                    }
                 }
 
                 lock (m_LockObject)

@@ -135,7 +135,10 @@ namespace NAudioWin8Demo
             LoadCommand.IsEnabled = true;
             StopCommand.IsEnabled = false;
             PauseCommand.IsEnabled = false;
-            reader.Position = 0;
+            if (reader != null)
+            {
+                reader.Position = 0;
+            }
         }
 
         private async void Load()

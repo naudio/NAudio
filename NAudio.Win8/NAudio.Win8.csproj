@@ -304,6 +304,9 @@
     <Compile Include="..\NAudio\Dsp\SimpleGate.cs">
       <Link>Dsp\SimpleGate.cs</Link>
     </Compile>
+    <Compile Include="..\NAudio\Dsp\WdlResampler.cs">
+      <Link>Dsp\WdlResampler.cs</Link>
+    </Compile>
     <Compile Include="..\NAudio\FileFormats\Mp3\ChannelMode.cs">
       <Link>FileFormats\Mp3\ChannelMode.cs</Link>
     </Compile>
@@ -637,6 +640,9 @@
     <Compile Include="..\NAudio\Wave\SampleProviders\WaveToSampleProvider64.cs">
       <Link>Wave\SampleProviders\WaveToSampleProvider64.cs</Link>
     </Compile>
+    <Compile Include="..\NAudio\Wave\SampleProviders\WdlResamplingSampleProvider.cs">
+      <Link>Wave\SampleProviders\WdlResamplingSampleProvider.cs</Link>
+    </Compile>
     <Compile Include="..\NAudio\Wave\WaveFormats\AdpcmWaveFormat.cs">
       <Link>Wave\WaveFormats\AdpcmWaveFormat.cs</Link>
     </Compile>
@@ -682,9 +688,6 @@
     <Compile Include="..\NAudio\Wave\WaveOutputs\IWaveProviderFloat.cs">
       <Link>Wave\WaveOutputs\IWaveProviderFloat.cs</Link>
     </Compile>
-    <Compile Include="..\NAudio\Wave\WaveOutputs\MediaFoundationEncoder.cs">
-      <Link>Wave\WaveOutputs\MediaFoundationEncoder.cs</Link>
-    </Compile>
     <Compile Include="..\NAudio\Wave\WaveOutputs\PlaybackState.cs">
       <Link>Wave\WaveOutputs\PlaybackState.cs</Link>
     </Compile>
@@ -696,9 +699,6 @@
     </Compile>
     <Compile Include="..\NAudio\Wave\WaveProviders\BufferedWaveProvider.cs">
       <Link>Wave\WaveProviders\BufferedWaveProvider.cs</Link>
-    </Compile>
-    <Compile Include="..\NAudio\Wave\WaveProviders\MediaFoundationResampler.cs">
-      <Link>Wave\WaveProviders\MediaFoundationResampler.cs</Link>
     </Compile>
     <Compile Include="..\NAudio\Wave\WaveProviders\MonoToStereoProvider16.cs">
       <Link>Wave\WaveProviders\MonoToStereoProvider16.cs</Link>

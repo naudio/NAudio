@@ -70,12 +70,14 @@ namespace NAudio.MediaFoundation
         [DllImport("mfplat.dll", ExactSpelling = true, PreserveSig = false)]
         public static extern void MFCreateMFByteStreamOnStreamEx([MarshalAs(UnmanagedType.IUnknown)] object punkStream, out IMFByteStream ppByteStream);
 
+#if !NETFX_CORE  
         /// <summary>
         /// Gets a list of Microsoft Media Foundation transforms (MFTs) that match specified search criteria. 
         /// </summary>
         [DllImport("mfplat.dll", ExactSpelling = true, PreserveSig = false)]
         public static extern void MFTEnumEx([In] Guid guidCategory, [In] _MFT_ENUM_FLAG flags, [In] MFT_REGISTER_TYPE_INFO pInputType, [In] MFT_REGISTER_TYPE_INFO pOutputType,
                                             [Out] out IntPtr pppMFTActivate, [Out] out int pcMFTActivate);
+#endif
 
         /// <summary>
         /// Creates an empty media sample.
@@ -98,6 +100,7 @@ namespace NAudio.MediaFoundation
             [Out, MarshalAs(UnmanagedType.Interface)] out IMFAttributes ppMFAttributes,
             [In] int cInitialSize);
 
+#if !NETFX_CORE  
         /// <summary>
         /// Gets a list of output formats from an audio encoder.
         /// </summary>
@@ -107,7 +110,7 @@ namespace NAudio.MediaFoundation
             [In] _MFT_ENUM_FLAG dwMFTFlags,
             [In] IMFAttributes pCodecConfig,
             [Out, MarshalAs(UnmanagedType.Interface)] out IMFCollection ppAvailableTypes);
-
+#endif
 
         /// <summary>
         /// All streams

@@ -25,6 +25,7 @@ namespace NAudio.MediaFoundation
             }
         }
 
+#if !NETFX_CORE  
         /// <summary>
         /// Enumerate the installed MediaFoundation transforms in the specified category
         /// </summary>
@@ -50,6 +51,7 @@ namespace NAudio.MediaFoundation
             }
             Marshal.FreeCoTaskMem(interfacesPointer);
         }
+#endif
 
         /// <summary>
         /// uninitializes MediaFoundation

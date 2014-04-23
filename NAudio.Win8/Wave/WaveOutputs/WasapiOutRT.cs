@@ -5,15 +5,15 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.System.Threading;
-using Windows.UI.Xaml.Controls;
 using NAudio.CoreAudioApi;
 using NAudio.CoreAudioApi.Interfaces;
+using NAudio.Dsp;
 using NAudio.Wave;
 using Windows.Media.Devices;
+using NAudio.Wave.SampleProviders;
 
 namespace NAudio.Win8.Wave.WaveOutputs
 {
-
     enum WasapiOutState
     {
         Uninitialized,
@@ -136,7 +136,6 @@ namespace NAudio.Win8.Wave.WaveOutputs
 
         private async void PlayThread()
         {
-            MediaFoundationResampler mediaFoundationResampler = null;
             await Activate();
             var playbackProvider = Init();
             bool isClientRunning = false;
@@ -144,8 +143,8 @@ namespace NAudio.Win8.Wave.WaveOutputs
             {
                 if (this.resamplerNeeded)
                 {
-                    mediaFoundationResampler = new MediaFoundationResampler(playbackProvider, outputFormat);
-                    playbackProvider = mediaFoundationResampler;
+                    var resampler = new WdlResamplingSampleProvider(playbackProvider.ToSampleProvider(), outputFormat.SampleRate);
+                    playbackProvider = new SampleToWaveProvider(resampler);
                 }
 
                 // fill a whole buffer
@@ -219,10 +218,6 @@ namespace NAudio.Win8.Wave.WaveOutputs
             }
             finally
             {
-                if (mediaFoundationResampler != null)
-                {
-                    mediaFoundationResampler.Dispose();
-                }
                 audioClient.Dispose();
                 audioClient = null;
                 renderClient = null;

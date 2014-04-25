@@ -5,7 +5,7 @@ using NAudio.Wave;
 namespace NAudio.CoreAudioApi.Interfaces
 {
     /// <summary>
-    /// n.b. WORK IN PROGRESS - this code will probably do nothing but crash at the moment
+    /// Windows CoreAudio IAudioClient interface
     /// Defined in AudioClient.h
     /// </summary>
     [Guid("1CB9AD4C-DBFA-4c32-B178-C2F568A703B2"), 

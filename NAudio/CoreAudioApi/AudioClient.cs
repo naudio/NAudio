@@ -6,15 +6,15 @@ using NAudio.Wave;
 namespace NAudio.CoreAudioApi
 {
     /// <summary>
-    /// Windows Vista CoreAudio AudioClient
+    /// Windows CoreAudio AudioClient
     /// </summary>
     public class AudioClient : IDisposable
     {
-        IAudioClient audioClientInterface;
-        WaveFormat mixFormat;
-        AudioRenderClient audioRenderClient;
-        AudioCaptureClient audioCaptureClient;
-        AudioClockClient audioClockClient;
+        private IAudioClient audioClientInterface;
+        private WaveFormat mixFormat;
+        private AudioRenderClient audioRenderClient;
+        private AudioCaptureClient audioCaptureClient;
+        private AudioClockClient audioClockClient;
 
         internal AudioClient(IAudioClient audioClientInterface)
         {
@@ -22,33 +22,27 @@ namespace NAudio.CoreAudioApi
         }
 
         /// <summary>
-        /// Mix Format,
+        /// Retrieves the stream format that the audio engine uses for its internal processing of shared-mode streams.
         /// Can be called before initialize
         /// </summary>
         public WaveFormat MixFormat
         {
             get
             {
-                if(mixFormat == null)
+                if (mixFormat == null)
                 {
                     IntPtr waveFormatPointer;
                     Marshal.ThrowExceptionForHR(audioClientInterface.GetMixFormat(out waveFormatPointer));
-                    //WaveFormatExtensible waveFormat = new WaveFormatExtensible(44100,32,2);
-                    //Marshal.PtrToStructure(waveFormatPointer, waveFormat);
-                    WaveFormat waveFormat = WaveFormat.MarshalFromPtr(waveFormatPointer);
+                    var waveFormat = WaveFormat.MarshalFromPtr(waveFormatPointer);
                     Marshal.FreeCoTaskMem(waveFormatPointer);
                     mixFormat = waveFormat;
-                    return waveFormat;
                 }
-                else
-                {
-                    return mixFormat;
-                }
+                return mixFormat;
             }
         }
 
         /// <summary>
-        /// Initialize the Audio Client
+        /// Initializes the Audio Client
         /// </summary>
         /// <param name="shareMode">Share Mode</param>
         /// <param name="streamFlags">Stream Flags</param>
@@ -70,7 +64,7 @@ namespace NAudio.CoreAudioApi
         }
 
         /// <summary>
-        /// Gets the buffer size (must initialize first)
+        /// Retrieves the size (maximum capacity) of the audio buffer associated with the endpoint. (must initialize first)
         /// </summary>
         public int BufferSize
         {
@@ -83,7 +77,7 @@ namespace NAudio.CoreAudioApi
         }
 
         /// <summary>
-        /// Gets the stream latency (must initialize first)
+        /// Retrieves the maximum latency for the current stream and can be called any time after the stream has been initialized.
         /// </summary>
         public long StreamLatency
         {
@@ -94,7 +88,7 @@ namespace NAudio.CoreAudioApi
         }
 
         /// <summary>
-        /// Gets the current padding (must initialize first)
+        /// Retrieves the number of frames of padding in the endpoint buffer (must initialize first)
         /// </summary>
         public int CurrentPadding
         {
@@ -107,7 +101,8 @@ namespace NAudio.CoreAudioApi
         }
 
         /// <summary>
-        /// Gets the default device period (can be called before initialize)
+        /// Retrieves the length of the periodic interval separating successive processing passes by the audio engine on the data in the endpoint buffer.
+        /// (can be called before initialize)
         /// </summary>
         public long DefaultDevicePeriod
         {
@@ -121,7 +116,8 @@ namespace NAudio.CoreAudioApi
         }
 
         /// <summary>
-        /// Gets the minimum device period (can be called before initialize)
+        /// Gets the minimum device period 
+        /// (can be called before initialize)
         /// </summary>
         public long MinimumDevicePeriod
         {
@@ -135,13 +131,11 @@ namespace NAudio.CoreAudioApi
         }
 
         // TODO: GetService:
-        // IID_IAudioCaptureClient
         // IID_IAudioSessionControl
         // IID_IAudioStreamVolume
         // IID_IChannelAudioVolume
         // IID_ISimpleAudioVolume
 
-        // IID_IAudioClock
         /// <summary>
         /// Gets the AudioClockClient service
         /// </summary>
@@ -152,7 +146,7 @@ namespace NAudio.CoreAudioApi
                 if (audioClockClient == null)
                 {
                     object audioClockClientInterface;
-                    Guid audioClockClientGuid = new Guid("6f49ff73-6727-49AC-A008-D98CF5E70048");
+                    var audioClockClientGuid = new Guid("6f49ff73-6727-49AC-A008-D98CF5E70048");
                     Marshal.ThrowExceptionForHR(audioClientInterface.GetService(audioClockClientGuid, out audioClockClientInterface));
                     audioClockClient = new AudioClockClient((IAudioClock)audioClockClientInterface);
                 }
@@ -170,7 +164,7 @@ namespace NAudio.CoreAudioApi
                 if (audioRenderClient == null)
                 {
                     object audioRenderClientInterface;
-                    Guid audioRenderClientGuid = new Guid("F294ACFC-3146-4483-A7BF-ADDCA7C260E2");
+                    var audioRenderClientGuid = new Guid("F294ACFC-3146-4483-A7BF-ADDCA7C260E2");
                     Marshal.ThrowExceptionForHR(audioClientInterface.GetService(audioRenderClientGuid, out audioRenderClientInterface));
                     audioRenderClient = new AudioRenderClient((IAudioRenderClient)audioRenderClientInterface);
                 }
@@ -188,7 +182,7 @@ namespace NAudio.CoreAudioApi
                 if (audioCaptureClient == null)
                 {
                     object audioCaptureClientInterface;
-                    Guid audioCaptureClientGuid = new Guid("c8adbd64-e71e-48a0-a4de-185c395cd317");
+                    var audioCaptureClientGuid = new Guid("c8adbd64-e71e-48a0-a4de-185c395cd317");
                     Marshal.ThrowExceptionForHR(audioClientInterface.GetService(audioCaptureClientGuid, out audioCaptureClientInterface));
                     audioCaptureClient = new AudioCaptureClient((IAudioCaptureClient)audioCaptureClientInterface);
                 }
@@ -201,9 +195,7 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         /// <param name="shareMode">The share mode.</param>
         /// <param name="desiredFormat">The desired format.</param>
-        /// <returns>
-        /// 	<c>true</c> if [is format supported] [the specified share mode]; otherwise, <c>false</c>.
-        /// </returns>
+        /// <returns>True if the format is supported</returns>
         public bool IsFormatSupported(AudioClientShareMode shareMode,
             WaveFormat desiredFormat)
         {
@@ -211,17 +203,13 @@ namespace NAudio.CoreAudioApi
             return IsFormatSupported(shareMode, desiredFormat, out closestMatchFormat);
         }
 
-
-
         /// <summary>
         /// Determines if the specified output format is supported in shared mode
         /// </summary>
         /// <param name="shareMode">Share Mode</param>
         /// <param name="desiredFormat">Desired Format</param>
         /// <param name="closestMatchFormat">Output The closest match format.</param>
-        /// <returns>
-        /// 	<c>true</c> if [is format supported] [the specified share mode]; otherwise, <c>false</c>.
-        /// </returns>
+        /// <returns>True if the format is supported</returns>
         public bool IsFormatSupported(AudioClientShareMode shareMode, WaveFormat desiredFormat, out WaveFormatExtensible closestMatchFormat)
         {
             int hresult = audioClientInterface.IsFormatSupported(shareMode, desiredFormat, out closestMatchFormat);
@@ -235,18 +223,14 @@ namespace NAudio.CoreAudioApi
             {
                 return false;
             }
-            else if (hresult == (int)AudioClientErrors.UnsupportedFormat)
+            if (hresult == (int)AudioClientErrors.UnsupportedFormat)
             {
                 return false;
             }
-            else
-            {
-                Marshal.ThrowExceptionForHR(hresult);
-            }
+            Marshal.ThrowExceptionForHR(hresult);
             // shouldn't get here
-            throw new NotSupportedException("Unknown hresult " + hresult.ToString());
+            throw new NotSupportedException("Unknown hresult " + hresult);
         }
-
 
         /// <summary>
         /// Starts the audio stream

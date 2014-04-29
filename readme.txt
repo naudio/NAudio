@@ -32,6 +32,7 @@ Jamie Michael Ewins
 jannera
 jbaker8935
 jcameron23
+JoeGaggler
 jonahoffmann
 jontdelorme
 Justin Frankel
@@ -46,6 +47,7 @@ MeelMarcel
 Michael Feld 
 Michael J
 Michael Lehenbauer
+nelsonkidd
 Nigel Redmon
 Nikolaos Georgiou
 Owen Skriloff

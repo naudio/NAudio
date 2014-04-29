@@ -5,7 +5,7 @@ namespace NAudio.Dsp
     /// <summary>
     /// Summary description for FastFourierTransform.
     /// </summary>
-    public class FastFourierTransform
+    public static class FastFourierTransform
     {
         /// <summary>
         /// This computes an in-place complex-to-complex FFT 

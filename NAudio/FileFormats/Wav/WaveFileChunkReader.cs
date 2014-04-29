@@ -14,9 +14,9 @@ namespace NAudio.FileFormats.Wav
         private long dataChunkPosition;
         private long dataChunkLength;
         private List<RiffChunk> riffChunks;
-        private bool strictMode;
+        private readonly bool strictMode;
         private bool isRf64;
-        private bool storeAllChunks;
+        private readonly bool storeAllChunks;
         private long riffSize;
 
         public WaveFileChunkReader()
@@ -32,7 +32,7 @@ namespace NAudio.FileFormats.Wav
             this.riffChunks = new List<RiffChunk>();
             this.dataChunkLength = 0;
 
-            BinaryReader br = new BinaryReader(stream);
+            var br = new BinaryReader(stream);
             ReadRiffHeader(br);
             this.riffSize = br.ReadUInt32(); // read the file size (minus 8 bytes)
 
@@ -46,7 +46,7 @@ namespace NAudio.FileFormats.Wav
                 ReadDs64Chunk(br);
             }
 
-            int dataChunkID = ChunkIdentifier.ChunkIdentifierToInt32("data");
+            int dataChunkId = ChunkIdentifier.ChunkIdentifierToInt32("data");
             int formatChunkId = ChunkIdentifier.ChunkIdentifierToInt32("fmt ");
             
             // sometimes a file has more data than is specified after the RIFF header
@@ -56,8 +56,8 @@ namespace NAudio.FileFormats.Wav
             while (stream.Position <= stopPosition - 8)
             {
                 Int32 chunkIdentifier = br.ReadInt32();
-                Int32 chunkLength = br.ReadInt32();
-                if (chunkIdentifier == dataChunkID)
+                var chunkLength = br.ReadUInt32();
+                if (chunkIdentifier == dataChunkId)
                 {
                     dataChunkPosition = stream.Position;
                     if (!isRf64) // we already know the dataChunkLength if this is an RF64 file
@@ -68,12 +68,14 @@ namespace NAudio.FileFormats.Wav
                 }
                 else if (chunkIdentifier == formatChunkId)
                 {
-                    waveFormat = WaveFormat.FromFormatChunk(br, chunkLength);
+                    if (chunkLength > Int32.MaxValue)
+                         throw new InvalidDataException(string.Format("Format chunk length must be between 0 and {0}.", Int32.MaxValue));
+                    waveFormat = WaveFormat.FromFormatChunk(br, (int)chunkLength);
                 }
                 else
                 {
                     // check for invalid chunk length
-                    if (chunkLength < 0 || chunkLength > stream.Length - stream.Position)
+                    if (chunkLength > stream.Length - stream.Position)
                     {
                         if (strictMode)
                         {
@@ -86,7 +88,9 @@ namespace NAudio.FileFormats.Wav
                     }
                     if (storeAllChunks)
                     {
-                        riffChunks.Add(GetRiffChunk(stream, chunkIdentifier, chunkLength));
+                        if (chunkLength > Int32.MaxValue)
+                            throw new InvalidDataException(string.Format("RiffChunk chunk length must be between 0 and {0}.", Int32.MaxValue));
+                        riffChunks.Add(GetRiffChunk(stream, chunkIdentifier, (int)chunkLength));
                     }
                     stream.Position += chunkLength;
                 }

@@ -200,7 +200,7 @@ namespace NAudio.Wave
         /// <returns>A WaveFormatExtraData</returns>
         public static WaveFormat FromFormatChunk(BinaryReader br, int formatChunkLength)
         {
-            WaveFormatExtraData waveFormat = new WaveFormatExtraData();
+            var waveFormat = new WaveFormatExtraData();
             waveFormat.ReadWaveFormat(br, formatChunkLength);
             waveFormat.ReadExtraData(br);
             return waveFormat;

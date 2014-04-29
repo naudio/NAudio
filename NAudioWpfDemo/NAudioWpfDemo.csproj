@@ -1,0 +1,348 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{A7B74F85-D353-4ED4-A321-E6E4AD4D7D32}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>NAudioWpfDemo</RootNamespace>
+    <AssemblyName>NAudioWpfDemo</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <WarningLevel>4</WarningLevel>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <OldToolsVersion>3.5</OldToolsVersion>
+    <UpgradeBackupLocation />
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="nunit.framework">
+      <HintPath>..\packages\NUnit.2.5.10.11092\lib\nunit.framework.dll</HintPath>
+    </Reference>
+    <Reference Include="nunit.mocks">
+      <HintPath>..\packages\NUnit.2.5.10.11092\lib\nunit.mocks.dll</HintPath>
+    </Reference>
+    <Reference Include="pnunit.framework">
+      <HintPath>..\packages\NUnit.2.5.10.11092\lib\pnunit.framework.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="System.Xml.Linq">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data.DataSetExtensions">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+    <Reference Include="UIAutomationProvider">
+      <RequiredTargetFramework>3.0</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="WindowsBase">
+      <RequiredTargetFramework>3.0</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="PresentationCore">
+      <RequiredTargetFramework>3.0</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="PresentationFramework">
+      <RequiredTargetFramework>3.0</RequiredTargetFramework>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <ApplicationDefinition Include="App.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </ApplicationDefinition>
+    <Page Include="AudioPlaybackDemo\AudioPlaybackDemoView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="DrumMachineDemo\DrumMachineDemoView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="DrumMachineDemo\DrumPatternEditor.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="EnumMediaFoundationTransforms\EnumMftView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="EqualizationDemo\EqualizationDemoView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="MediaFoundationEncode\MediaFoundationEncodeView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="MediaFoundationPlayback\MediaFoundationPlaybackView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="MediaFoundationResample\MediaFoundationResampleView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="PolygonWaveFormControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="PolylineWaveFormControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="SpectrumAnalyser.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="WasapiCaptureDemo\RecordingsView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="WasapiCaptureDemo\WasapiCaptureDemoView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="WaveFormControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="MainWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Compile Include="App.xaml.cs">
+      <DependentUpon>App.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="AudioPlaybackDemo\AudioPlaybackDemoPlugin.cs" />
+    <Compile Include="AudioPlaybackDemo\AudioPlaybackDemoView.xaml.cs">
+      <DependentUpon>AudioPlaybackDemoView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="AudioPlaybackDemo\PolylineWaveFormVisualization.cs" />
+    <Compile Include="AudioPlaybackDemo\IVisualizationPlugin.cs" />
+    <Compile Include="AudioPlaybackDemo\PolygonWaveFormVisualization.cs" />
+    <Compile Include="AudioPlaybackDemo\SpectrumAnalyzerVisualization.cs" />
+    <Compile Include="DrumMachineDemo\DrumKit.cs" />
+    <Compile Include="DrumMachineDemo\DrumMachineDemoPlugin.cs" />
+    <Compile Include="DrumMachineDemo\DrumMachineDemoView.xaml.cs">
+      <DependentUpon>DrumMachineDemoView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="DrumMachineDemo\DrumMachineDemoViewModel.cs" />
+    <Compile Include="DrumMachineDemo\DrumPattern.cs" />
+    <Compile Include="DrumMachineDemo\DrumPatternEditor.xaml.cs">
+      <DependentUpon>DrumPatternEditor.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="DrumMachineDemo\MusicSampleProvider.cs" />
+    <Compile Include="DrumMachineDemo\DrumPatternSampleProvider.cs" />
+    <Compile Include="DrumMachineDemo\PatternSequencer.cs" />
+    <Compile Include="DrumMachineDemo\PatternSequencerTests.cs" />
+    <Compile Include="DrumMachineDemo\SampleSource.cs" />
+    <Compile Include="EnumMediaFoundationTransforms\EnumMftDemo.cs" />
+    <Compile Include="EnumMediaFoundationTransforms\EnumMftView.xaml.cs">
+      <DependentUpon>EnumMftView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="EnumMediaFoundationTransforms\EnumMftViewModel.cs" />
+    <Compile Include="EqualizationDemo\EqualizationDemoPlugin.cs" />
+    <Compile Include="EqualizationDemo\EqualizationDemoView.xaml.cs">
+      <DependentUpon>EqualizationDemoView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="EqualizationDemo\EqualizationDemoViewModel.cs" />
+    <Compile Include="EqualizationDemo\Equalizer.cs" />
+    <Compile Include="EqualizationDemo\EqualizerBand.cs" />
+    <Compile Include="IModule.cs" />
+    <Compile Include="MainWindow.xaml.cs">
+      <DependentUpon>MainWindow.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AudioPlaybackDemo\AudioPlayback.cs" />
+    <Compile Include="AudioPlaybackDemo\AudioPlaybackViewModel.cs" />
+    <Compile Include="MainWindowViewModel.cs" />
+    <Compile Include="MediaFoundationEncode\MediaFoundationEncodePlugin.cs" />
+    <Compile Include="MediaFoundationEncode\MediaFoundationEncodeView.xaml.cs">
+      <DependentUpon>MediaFoundationEncodeView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="MediaFoundationEncode\MediaFoundationEncodeViewModel.cs" />
+    <Compile Include="MediaFoundationEncode\MediaTypeViewModel.cs" />
+    <Compile Include="MediaFoundationPlayback\MediaFoundationPlaybackView.xaml.cs">
+      <DependentUpon>MediaFoundationPlaybackView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="MediaFoundationPlayback\MediaFoundationPlaybackPlugin.cs" />
+    <Compile Include="MediaFoundationPlayback\MediaFoundationPlaybackViewModel.cs" />
+    <Compile Include="MediaFoundationResample\MediaFoundationEncodePlugin.cs" />
+    <Compile Include="MediaFoundationResample\MediaFoundationResampleView.xaml.cs">
+      <DependentUpon>MediaFoundationResampleView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="MediaFoundationResample\MediaFoundationResampleViewModel.cs" />
+    <Compile Include="ModuleBase.cs" />
+    <Compile Include="PolygonWaveFormControl.xaml.cs">
+      <DependentUpon>PolygonWaveFormControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="IWaveFormRenderer.cs" />
+    <Compile Include="PolylineWaveFormControl.xaml.cs">
+      <DependentUpon>PolylineWaveFormControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Properties\AssemblyInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+    <Compile Include="AudioPlaybackDemo\SampleAggregator.cs" />
+    <Compile Include="SpectrumAnalyser.xaml.cs">
+      <DependentUpon>SpectrumAnalyser.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ViewModel\DelegateCommand.cs" />
+    <Compile Include="ViewModel\RelayCommand.cs" />
+    <Compile Include="ViewModel\ViewModelBase.cs" />
+    <Compile Include="WasapiCaptureDemo\RecordingsView.xaml.cs">
+      <DependentUpon>RecordingsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="WasapiCaptureDemo\RecordingsViewModel.cs" />
+    <Compile Include="WasapiCaptureDemo\WasapiCaptureDemoPlugin.cs" />
+    <Compile Include="WasapiCaptureDemo\WasapiCaptureDemoView.xaml.cs">
+      <DependentUpon>WasapiCaptureDemoView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="WasapiCaptureDemo\WasapiCaptureViewModel.cs" />
+    <Compile Include="WaveFormControl.xaml.cs">
+      <DependentUpon>WaveFormControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="AudioPlaybackDemo\WaveformVisual.cs" />
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <None Include="app.config" />
+    <None Include="packages.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <AppDesigner Include="Properties\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NAudio\NAudio.csproj">
+      <Project>{DA4F02E3-0B5E-42CD-B8D9-5583FA51D66E}</Project>
+      <Name>NAudio</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
+      <Visible>False</Visible>
+      <ProductName>Windows Installer 3.1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\SampleData\Drums\closed-hat-trimmed.wav">
+      <Link>Samples\closed-hat-trimmed.wav</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\SampleData\Drums\crash-trimmed.wav">
+      <Link>Samples\crash-trimmed.wav</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\SampleData\Drums\kick-trimmed.wav">
+      <Link>Samples\kick-trimmed.wav</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\SampleData\Drums\open-hat-trimmed.wav">
+      <Link>Samples\open-hat-trimmed.wav</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\SampleData\Drums\snare-trimmed.wav">
+      <Link>Samples\snare-trimmed.wav</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

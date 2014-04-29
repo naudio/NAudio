@@ -38,6 +38,7 @@ Justin Frankel
 K24A3
 Kassoul
 kevinxxx
+LionCash
 Lustild
 Lucian Wischik (ljw1004)
 ManuN
@@ -62,6 +63,7 @@ Steve Underwood
 Ted Murphy
 Tiny Simple Tools
 Tobias Fleming
+TomBogle
 Tony Cabello
 Tony Sistemas
 TuneBlade

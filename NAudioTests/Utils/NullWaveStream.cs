@@ -1,15 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using NAudio.Wave;
 
 namespace NAudioTests.Utils
 {
     class NullWaveStream : WaveStream
     {
-        WaveFormat format;
-        long position = 0;
-        long length;
+        private readonly WaveFormat format;
+        private readonly long length;
+        private long position;
         
         public NullWaveStream(WaveFormat format, long length)
         {
@@ -29,14 +27,8 @@ namespace NAudioTests.Utils
 
         public override long Position
         {
-            get
-            {
-                return position;
-            }
-            set
-            {
-                position = value;
-            }
+            get { return position; }
+            set { position = value; }
         }
 
         public override int Read(byte[] buffer, int offset, int count)

@@ -10,12 +10,12 @@ namespace NAudio.Wave
     public class WaveFileWriter : Stream
     {
         private Stream outStream;
-        private BinaryWriter writer;
+        private readonly BinaryWriter writer;
         private long dataSizePos;
         private long factSampleCountPos;
-        private int dataChunkSize = 0;
-        private WaveFormat format;
-        private string filename;
+        private long dataChunkSize;
+        private readonly WaveFormat format;
+        private readonly string filename;
 
         /// <summary>
         /// Creates a 16 bit Wave File from an ISampleProvider
@@ -50,10 +50,7 @@ namespace NAudio.Wave
                         break;
                     }
                     outputLength += bytesRead;
-                    if (outputLength > Int32.MaxValue)
-                    {
-                        throw new InvalidOperationException("WAV File cannot be greater than 2GB. Check that sourceProvider is not an endless stream.");
-                    }
+                    // Write will throw exception if WAV file becomes too large
                     writer.Write(buffer, 0, bytesRead);
                 }
             }
@@ -111,7 +108,8 @@ namespace NAudio.Wave
 
         private bool HasFactChunk()
         {
-            return this.format.Encoding != WaveFormatEncoding.Pcm && this.format.BitsPerSample != 0;
+            return format.Encoding != WaveFormatEncoding.Pcm && 
+                format.BitsPerSample != 0;
         }
 
         /// <summary>
@@ -216,11 +214,13 @@ namespace NAudio.Wave
         /// <param name="count">the number of bytes to write</param>
         public override void Write(byte[] data, int offset, int count)
         {
+            if (outStream.Length + count > UInt32.MaxValue)
+                throw new ArgumentException("WAV file too large", "count");
             outStream.Write(data, offset, count);
             dataChunkSize += count;
         }
 
-        private byte[] value24 = new byte[3]; // keep this around to save us creating it every time
+        private readonly byte[] value24 = new byte[3]; // keep this around to save us creating it every time
         
         /// <summary>
         /// Writes a single sample to the Wave file
@@ -390,13 +390,13 @@ namespace NAudio.Wave
         private void UpdateDataChunk(BinaryWriter writer)
         {
             writer.Seek((int)dataSizePos, SeekOrigin.Begin);
-            writer.Write((int)(dataChunkSize));
+            writer.Write((UInt32)dataChunkSize);
         }
 
         private void UpdateRiffChunk(BinaryWriter writer)
         {
             writer.Seek(4, SeekOrigin.Begin);
-            writer.Write((int)(outStream.Length - 8));
+            writer.Write((UInt32)(outStream.Length - 8));
         }
 
         private void UpdateFactChunk(BinaryWriter writer)
@@ -407,6 +407,7 @@ namespace NAudio.Wave
                 if (bitsPerSample != 0)
                 {
                     writer.Seek((int)factSampleCountPos, SeekOrigin.Begin);
+                    
                     writer.Write((int)((dataChunkSize * 8) / bitsPerSample));
                 }
             }

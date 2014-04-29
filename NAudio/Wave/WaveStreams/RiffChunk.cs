@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Text;
 
 namespace NAudio.Wave
@@ -9,30 +8,20 @@ namespace NAudio.Wave
     /// </summary>
     public class RiffChunk
     {
-        int identifier;
-        int length;
-        long streamPosition;
-        
         /// <summary>
         /// Creates a RiffChunk object
         /// </summary>
         public RiffChunk(int identifier, int length, long streamPosition)
         {
-            this.identifier = identifier;
-            this.length = length;
-            this.streamPosition = streamPosition;
+            Identifier = identifier;
+            Length = length;
+            StreamPosition = streamPosition;
         }
 
         /// <summary>
         /// The chunk identifier
         /// </summary>
-        public int Identifier
-        {
-            get
-            {
-                return identifier;
-            }
-        }
+        public int Identifier { get; private set; }
 
         /// <summary>
         /// The chunk identifier converted to a string
@@ -41,30 +30,18 @@ namespace NAudio.Wave
         {
             get
             {
-                return Encoding.UTF8.GetString(BitConverter.GetBytes(identifier));
+                return Encoding.UTF8.GetString(BitConverter.GetBytes(Identifier));
             }
         }
 
         /// <summary>
         /// The chunk length
         /// </summary>
-        public int Length
-        {
-            get
-            {
-                return length;
-            }
-        }
+        public int Length { get; private set; }
 
         /// <summary>
         /// The stream position this chunk is located at
         /// </summary>
-        public long StreamPosition
-        {
-            get
-            {
-                return streamPosition;
-            }
-        }
+        public long StreamPosition { get; private set; }
     }
 }

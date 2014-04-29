@@ -35,6 +35,20 @@ namespace NAudio.CoreAudioApi
         private readonly IMMDeviceEnumerator realEnumerator;
 
         /// <summary>
+        /// Creates a new MM Device Enumerator
+        /// </summary>
+        public MMDeviceEnumerator()
+        {
+#if !NETFX_CORE
+            if (System.Environment.OSVersion.Version.Major < 6)
+            {
+                throw new NotSupportedException("This functionality is only supported on Windows Vista or newer.");
+            }
+#endif
+            realEnumerator = new MMDeviceEnumeratorComObject() as IMMDeviceEnumerator;
+        }
+
+        /// <summary>
         /// Enumerate Audio Endpoints
         /// </summary>
         /// <param name="dataFlow">Desired DataFlow</param>
@@ -70,20 +84,6 @@ namespace NAudio.CoreAudioApi
             IMMDevice device = null;
             Marshal.ThrowExceptionForHR(((IMMDeviceEnumerator)realEnumerator).GetDevice(id, out device));
             return new MMDevice(device);
-        }
-
-        /// <summary>
-        /// Creates a new MM Device Enumerator
-        /// </summary>
-        public MMDeviceEnumerator()
-        {
-#if !NETFX_CORE
-            if (System.Environment.OSVersion.Version.Major < 6)
-            {
-                throw new NotSupportedException("This functionality is only supported on Windows Vista or newer.");
-            }
-#endif
-            realEnumerator = new MMDeviceEnumeratorComObject() as IMMDeviceEnumerator;
         }
     }
 }

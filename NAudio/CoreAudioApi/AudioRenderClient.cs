@@ -38,8 +38,6 @@ namespace NAudio.CoreAudioApi
             Marshal.ThrowExceptionForHR(audioRenderClientInterface.ReleaseBuffer(numFramesWritten, bufferFlags));
         }
 
-        #region IDisposable Members
-
         /// <summary>
         /// Release the COM object
         /// </summary>
@@ -54,7 +52,5 @@ namespace NAudio.CoreAudioApi
                 GC.SuppressFinalize(this);
             }
         }
-
-        #endregion
     }
 }

@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using NAudio.CoreAudioApi;
 using System.Threading;
 using System.Runtime.InteropServices;
-using System.Diagnostics;
 
 namespace NAudio.Wave
 {
@@ -14,7 +11,7 @@ namespace NAudio.Wave
     public class WasapiOut : IWavePlayer, IWavePosition
     {
         private AudioClient audioClient;
-        private MMDevice mmDevice;
+        private readonly MMDevice mmDevice;
         private readonly AudioClientShareMode shareMode;
         private AudioRenderClient renderClient;
         private IWaveProvider sourceProvider;
@@ -81,7 +78,7 @@ namespace NAudio.Wave
             {
                 throw new NotSupportedException("WASAPI supported only on Windows Vista and above");
             }
-            MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
+            var enumerator = new MMDeviceEnumerator();
             return enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Console);
         }
 
@@ -105,7 +102,7 @@ namespace NAudio.Wave
                 FillBuffer(playbackProvider, bufferFrameCount);
 
                 // Create WaitHandle for sync
-                WaitHandle[] waitHandles = new WaitHandle[] { frameEventWaitHandle };
+                var waitHandles = new WaitHandle[] { frameEventWaitHandle };
 
                 audioClient.Start();
 
@@ -137,7 +134,7 @@ namespace NAudio.Wave
                             numFramesPadding = audioClient.CurrentPadding;
                         }
                         int numFramesAvailable = bufferFrameCount - numFramesPadding;
-                        if (numFramesAvailable > 0)
+                        if (numFramesAvailable > 10) // see https://naudio.codeplex.com/workitem/16363
                         {
                             FillBuffer(playbackProvider, numFramesAvailable);
                         }
@@ -232,7 +229,7 @@ namespace NAudio.Wave
             {
                 if (playbackState == PlaybackState.Stopped)
                 {
-                    playThread = new Thread(new ThreadStart(PlayThread));
+                    playThread = new Thread(PlayThread);
                     playbackState = PlaybackState.Playing;
                     playThread.Start();                    
                 }

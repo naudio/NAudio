@@ -53,10 +53,8 @@ namespace NAudio.Midi
         /// </summary>
         public int MicrosecondsPerQuarterNote
         {
-            get
-            {
-                return microsecondsPerQuarterNote;
-            }
+            get { return microsecondsPerQuarterNote; }
+            set { microsecondsPerQuarterNote = value; }
         }
 
         /// <summary>
@@ -64,10 +62,8 @@ namespace NAudio.Midi
         /// </summary>
         public double Tempo
         {
-            get
-            {
-                return (60000000.0 / microsecondsPerQuarterNote);
-            }
+            get { return (60000000.0/microsecondsPerQuarterNote); }
+            set { microsecondsPerQuarterNote = (int) (60000000.0/value); }
         }
 
         /// <summary>

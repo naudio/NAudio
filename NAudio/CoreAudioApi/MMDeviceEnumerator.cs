@@ -85,5 +85,25 @@ namespace NAudio.CoreAudioApi
             Marshal.ThrowExceptionForHR(((IMMDeviceEnumerator)realEnumerator).GetDevice(id, out device));
             return new MMDevice(device);
         }
+
+        /// <summary>
+        /// Registers a call back for Device Events
+        /// </summary>
+        /// <param name="client">Object implementing IMMNotificationClient type casted as IMMNotificationClient interface</param>
+        /// <returns></returns>
+        public int RegisterEndpointNotificationCallback([In] [MarshalAs(UnmanagedType.Interface)] IMMNotificationClient client)
+        {
+            return realEnumerator.RegisterEndpointNotificationCallback(client);
+        }
+
+        /// <summary>
+        /// UnRegisters a call back for Device Events
+        /// </summary>
+        /// <param name="client">Object implementing IMMNotificationClient type casted as IMMNotificationClient interface </param>
+        /// <returns></returns>
+        public int UnRegisterEndpointNotificationCallback([In] [MarshalAs(UnmanagedType.Interface)] IMMNotificationClient client)
+        {
+            return realEnumerator.UnregisterEndpointNotificationCallback(client);
+        }
     }
 }

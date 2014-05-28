@@ -339,8 +339,9 @@ namespace NAudio.Wave
             var handler = PlaybackStopped;
             if (handler != null)
             {
-                if ((this.syncContext == null) || 
-                    (this.syncContext.GetType() != typeof(System.Windows.Forms.WindowsFormsSynchronizationContext)))
+                if ( (this.syncContext == null) ||
+                     (this.syncContext.GetType().Name == "LegacyAspNetSynchronizationContext") ||
+                     (this.syncContext.GetType().Name == "AspNetSynchronizationContext") )
                 {
                     handler(this, new StoppedEventArgs(e));
                 }

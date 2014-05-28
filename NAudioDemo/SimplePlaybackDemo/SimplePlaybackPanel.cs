@@ -67,7 +67,7 @@ namespace NAudioDemo.SimplePlaybackDemo
         private static string SelectInputFile()
         {
             var ofd = new OpenFileDialog();
-            ofd.Filter = "Audio Files|*.mp3;*.wav;*.aiff";
+            ofd.Filter = "Audio Files|*.mp3;*.wav;*.aiff;*.wma";
 
             if (ofd.ShowDialog() == DialogResult.OK)
             {

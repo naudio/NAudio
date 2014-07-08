@@ -1,0 +1,34 @@
+﻿using System;
+using System.Linq;
+using NAudio.Wave;
+
+namespace NAudioDemo.NetworkChatDemo
+{
+    public interface INetworkChatCodec : IDisposable
+    {
+        /// <summary>
+        /// Friendly Name for this codec
+        /// </summary>
+        string Name { get; }
+        /// <summary>
+        /// Tests whether the codec is available on this system
+        /// </summary>
+        bool IsAvailable { get; }
+        /// <summary>
+        /// Bitrate
+        /// </summary>
+        int BitsPerSecond { get; }
+        /// <summary>
+        /// Preferred PCM format for recording in (usually 8kHz mono 16 bit)
+        /// </summary>
+        WaveFormat RecordFormat { get; }
+        /// <summary>
+        /// Encodes a block of audio
+        /// </summary>
+        byte[] Encode(byte[] data, int offset, int length);
+        /// <summary>
+        /// Decodes a block of audio
+        /// </summary>
+        byte[] Decode(byte[] data, int offset, int length);
+    }
+}

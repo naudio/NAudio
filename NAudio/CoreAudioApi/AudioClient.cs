@@ -146,7 +146,7 @@ namespace NAudio.CoreAudioApi
                 if (audioClockClient == null)
                 {
                     object audioClockClientInterface;
-                    var audioClockClientGuid = new Guid("6f49ff73-6727-49AC-A008-D98CF5E70048");
+                    var audioClockClientGuid = new Guid("CD63314F-3FBA-4a1b-812C-EF96358728E7");
                     Marshal.ThrowExceptionForHR(audioClientInterface.GetService(audioClockClientGuid, out audioClockClientInterface));
                     audioClockClient = new AudioClockClient((IAudioClock)audioClockClientInterface);
                 }

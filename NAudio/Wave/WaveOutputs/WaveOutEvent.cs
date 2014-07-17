@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Threading;
 using System.Runtime.InteropServices;
+using System.Windows.Forms.VisualStyles;
 
 namespace NAudio.Wave
 {
@@ -304,10 +305,18 @@ namespace NAudio.Wave
 
         private void CloseWaveOut()
         {
-            callbackEvent.Close();
+            if (callbackEvent != null)
+            {
+                callbackEvent.Close();
+                callbackEvent = null;
+            }
             lock (waveOutLock)
             {
-                WaveInterop.waveOutClose(hWaveOut);
+                if (hWaveOut != IntPtr.Zero)
+                {
+                    WaveInterop.waveOutClose(hWaveOut);
+                    hWaveOut= IntPtr.Zero;
+                }
             }
         }
 

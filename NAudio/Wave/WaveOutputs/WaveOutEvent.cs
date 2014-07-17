@@ -48,11 +48,18 @@ namespace NAudio.Wave
         /// </summary>
         public WaveOutEvent()
         {
-            this.syncContext = SynchronizationContext.Current;
+            syncContext = SynchronizationContext.Current;
+            if (syncContext != null &&
+                ((syncContext.GetType().Name == "LegacyAspNetSynchronizationContext") ||
+                (syncContext.GetType().Name == "AspNetSynchronizationContext")))
+            {
+                syncContext = null;
+            }
+
             // set default values up
-            this.DeviceNumber = 0;
-            this.DesiredLatency = 300;
-            this.NumberOfBuffers = 2;
+            DeviceNumber = 0;
+            DesiredLatency = 300;
+            NumberOfBuffers = 2;
 
             this.waveOutLock = new object();
         }
@@ -348,7 +355,7 @@ namespace NAudio.Wave
             var handler = PlaybackStopped;
             if (handler != null)
             {
-                if (this.syncContext == null)
+                if (syncContext == null)
                 {
                     handler(this, new StoppedEventArgs(e));
                 }

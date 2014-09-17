@@ -21,6 +21,7 @@ csechet
 ChunkWare Music Software
 CKing
 DaMacc
+Du10
 eejake52
 Florian Rosmann (filoe)
 Giawa
@@ -47,6 +48,7 @@ MeelMarcel
 Michael Feld 
 Michael J
 Michael Lehenbauer
+myrkle
 nelsonkidd
 Nigel Redmon
 Nikolaos Georgiou

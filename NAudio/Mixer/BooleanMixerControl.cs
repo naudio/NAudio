@@ -44,11 +44,11 @@ namespace NAudio.Mixer
 			}
 			set 
 			{
-				//GetControlDetails();
-				//MixerInterop.MIXERCONTROLDETAILS_BOOLEAN boolDetails = (MixerInterop.MIXERCONTROLDETAILS_BOOLEAN) Marshal.PtrToStructure(mixerControlDetails.paDetails,typeof(MixerInterop.MIXERCONTROLDETAILS_BOOLEAN));
-				//boolDetails.fValue = (value) ? 1 : 0;
-				// TODO: pin the memory
+                boolDetails.fValue = (value) ? 1 : 0;
+                mixerControlDetails.paDetails = Marshal.AllocHGlobal(Marshal.SizeOf(boolDetails));
+                Marshal.StructureToPtr(boolDetails, mixerControlDetails.paDetails, false);
                 MmException.Try(MixerInterop.mixerSetControlDetails(mixerHandle, ref mixerControlDetails, MixerFlags.Value | mixerHandleType), "mixerSetControlDetails");
+                Marshal.FreeHGlobal(mixerControlDetails.paDetails);
 			}
 		}		
 	}

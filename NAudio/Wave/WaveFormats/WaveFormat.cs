@@ -92,7 +92,7 @@ namespace NAudio.Wave
         /// <returns>Wave Format</returns>
         public static WaveFormat CreateALawFormat(int sampleRate, int channels)
         {
-            return CreateCustomFormat(WaveFormatEncoding.ALaw, sampleRate, channels, sampleRate * channels, 1, 8);
+            return CreateCustomFormat(WaveFormatEncoding.ALaw, sampleRate, channels, sampleRate * channels, channels, 8);
         }
 
         /// <summary>
@@ -103,7 +103,7 @@ namespace NAudio.Wave
         /// <returns>Wave Format</returns>
         public static WaveFormat CreateMuLawFormat(int sampleRate, int channels)
         {
-            return CreateCustomFormat(WaveFormatEncoding.MuLaw, sampleRate, channels, sampleRate * channels, 1, 8);
+            return CreateCustomFormat(WaveFormatEncoding.MuLaw, sampleRate, channels, sampleRate * channels, channels, 8);
         }
 
         /// <summary>
@@ -113,7 +113,7 @@ namespace NAudio.Wave
         {
             if (channels < 1)
             {
-                throw new ArgumentOutOfRangeException("Channels must be 1 or greater", "channels");
+                throw new ArgumentOutOfRangeException("channels", "Channels must be 1 or greater");
             }
             // minimum 16 bytes, sometimes 18 for PCM
             this.waveFormatTag = WaveFormatEncoding.Pcm;

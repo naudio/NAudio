@@ -131,11 +131,12 @@ namespace NAudio.Wave
         {
             if (message == WaveInterop.WaveMessage.WaveInData)
             {
-                var hBuffer = (GCHandle)waveHeader.userData;
-                var buffer = (WaveInBuffer)hBuffer.Target;
-                if (buffer == null) return;
                 if (recording)
                 {
+                    var hBuffer = (GCHandle)waveHeader.userData;
+                    var buffer = (WaveInBuffer)hBuffer.Target;
+                    if (buffer == null) return;
+                
                     lastReturnedBufferIndex = Array.IndexOf(buffers, buffer);
                     RaiseDataAvailable(buffer);
                     try

@@ -25,6 +25,7 @@ Du10
 eejake52
 Florian Rosmann (filoe)
 Giawa
+Harald Petrovitsch
 Hfuy
 Iain McCowan
 Idael Cardaso 

@@ -13,7 +13,7 @@
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{BC8A1FFA-BEE3-4634-8014-F334798102B3};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <PackageCertificateKeyFile>NAudioWin8Demo_TemporaryKey.pfx</PackageCertificateKeyFile>
-    <PackageCertificateThumbprint>76D46A8BF5809EDE2D4208C6E50F8E240A47F413</PackageCertificateThumbprint>
+    <PackageCertificateThumbprint>C0C909F73647569B07025BC9A5FAD4FC97CCF345</PackageCertificateThumbprint>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>

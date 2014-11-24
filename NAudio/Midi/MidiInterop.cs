@@ -262,8 +262,9 @@ namespace NAudio.Midi
             public IntPtr lpNext; // struct mididhdr_tag *
             public IntPtr reserved; // DWORD_PTR
             public int dwOffset; // DWORD
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)] 
-            public IntPtr[] dwReserved; // DWORD_PTR dwReserved[4]
+            // n.b. MSDN documentation incorrect, see mmsystem.h
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)] 
+            public IntPtr[] dwReserved; // DWORD_PTR dwReserved[8]
         }
 
         [StructLayout(LayoutKind.Sequential)]

@@ -11,7 +11,6 @@ namespace AudioFileInspector
     [Export(typeof(IAudioFileInspector))]
     public class WaveFileInspector : IAudioFileInspector
     {
-        #region IAudioFileInspector Members
 
         public string FileExtension
         {
@@ -94,6 +93,7 @@ namespace AudioFileInspector
             offset += 4;
             sb.AppendFormat("Version: {0}\r\n", BitConverter.ToUInt16(data, offset));
             offset += 2;
+            sb.AppendFormat("SMPTE UMID: {0}\r\n", ByteArrayExtensions.DecodeAsString(data, offset, 64, Encoding.ASCII));
             //byte[] smpteumid = 64 bytes;
             offset += 64;
             sb.AppendFormat("Loudness Value: {0}\r\n", BitConverter.ToUInt16(data, offset));
@@ -108,7 +108,7 @@ namespace AudioFileInspector
             offset += 2;
             //byte[] reserved = 180 bytes;
             offset += 180;
-            sb.AppendFormat("Coding History: {0}\r\n", ByteArrayExtensions.DecodeAsString(data, offset, data.Length-offset, ASCIIEncoding.ASCII));
+            sb.AppendFormat("Coding History: {0}\r\n", ByteArrayExtensions.DecodeAsString(data, offset, data.Length-offset, Encoding.ASCII));
             
         }
 
@@ -145,7 +145,5 @@ namespace AudioFileInspector
                     unknown1, uniqueId1, samplePosition, samplePos2, unknown5, uniqueId2);
             }
         }
-
-        #endregion
     }
 }

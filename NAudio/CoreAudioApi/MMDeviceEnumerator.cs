@@ -97,11 +97,11 @@ namespace NAudio.CoreAudioApi
         }
 
         /// <summary>
-        /// UnRegisters a call back for Device Events
+        /// Unregisters a call back for Device Events
         /// </summary>
         /// <param name="client">Object implementing IMMNotificationClient type casted as IMMNotificationClient interface </param>
         /// <returns></returns>
-        public int UnRegisterEndpointNotificationCallback([In] [MarshalAs(UnmanagedType.Interface)] IMMNotificationClient client)
+        public int UnregisterEndpointNotificationCallback([In] [MarshalAs(UnmanagedType.Interface)] IMMNotificationClient client)
         {
             return realEnumerator.UnregisterEndpointNotificationCallback(client);
         }

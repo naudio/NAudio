@@ -48,31 +48,6 @@
       <exec Command="Tools\NuGet Pack NAudio.Wma.nuspec -OutputDirectory $(BuildFolder)" />
    </Target>
    
-   <PropertyGroup>
-    <ExcludePattern>**\bin\**;**\obj\**;**\.svn\**</ExcludePattern>
-   </PropertyGroup>  
-   
-   <!-- specifies what we are including the the source code zip to go on CodePlex -->
-   <ItemGroup>
-       <ZipSourceFiles Include="AudioFileInspector\**\*.*" Exclude="$(ExcludePattern)" />
-       <ZipSourceFiles Include="MidiFileConverter\**\*.*" Exclude="$(ExcludePattern)" />
-       <ZipSourceFiles Include="Lib\**" Exclude="**\.svn\**" />
-       <ZipSourceFiles Include="MixDiff\**\*.*" Exclude="$(ExcludePattern)" />
-       <ZipSourceFiles Include="NAudio\**\*.*" Exclude="$(ExcludePattern)" />
-       <ZipSourceFiles Include="NAudio.WindowsMediaFormat\**\*.*" Exclude="$(ExcludePattern)" />
-       <ZipSourceFiles Include="NAudio.Win8\**\*.*" Exclude="$(ExcludePattern)" />
-       <ZipSourceFiles Include="NAudioDemo\**\*.*" Exclude="$(ExcludePattern)" />
-       <ZipSourceFiles Include="NAudioWpfDemo\**\*.*" Exclude="$(ExcludePattern)" />
-       <ZipSourceFiles Include="NAudioWin8Demo\**\*.*" Exclude="$(ExcludePattern)" />
-       <ZipSourceFiles Include="NAudioTests\**\*.*" Exclude="$(ExcludePattern)" />
-       <ZipSourceFiles Include="SampleData\**\*.*" Exclude="$(ExcludePattern)" />
-       <ZipSourceFiles Include="Tools\**\*.*" Exclude="$(ExcludePattern)" />
-       <ZipSourceFiles Include="NAudio.sln" />
-       <ZipSourceFiles Include="license.txt" />
-       <ZipSourceFiles Include="build.bat" />
-       <ZipSourceFiles Include="NAudio.proj" />
-   </ItemGroup>
-
    <ItemGroup>
        <ZipLibraryFiles Include="NAudio\bin\Release\NAudio.dll" />
        <ZipLibraryFiles Include="NAudio\bin\Release\NAudio.xml" />
@@ -100,18 +75,12 @@
            ZipFileName="$(BuildFolder)NAudio-Release.zip" />
    </Target>
    
-   <Target Name="Temp">
-      <Message Text="@(ZipSourceFiles)" />
-   </Target>
    
    <!-- for now, the source zip is just the NAudio code, might need to do a project reorganize to make it
    easier to do the entire solution -->
    <Target Name="ZipSource" DependsOnTargets="MakeBuildFolder">
-      <!--<Message Text="@(ZipSourceFiles)" />-->
-      
-      <Zip Files="@(ZipSourceFiles)" 
-           WorkingDirectory="."
-           ZipFileName="$(BuildFolder)NAudio-Source.zip" />
+
+      <Exec Command="hg archive $(BuildFolder)NAudio-Source.zip" />
    </Target>
 
    <Target Name="ZipDemo" DependsOnTargets="MakeBuildFolder">

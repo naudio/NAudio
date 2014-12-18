@@ -25,6 +25,8 @@ namespace NAudio.CoreAudioApi
         private WaveFormat waveFormat;
         private bool initialized;
         private readonly SynchronizationContext syncContext;
+        private readonly bool isUsingEventSync;
+        private EventWaitHandle frameEventWaitHandle;
 
         /// <summary>
         /// Indicates recorded data is available 
@@ -49,10 +51,22 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         /// <param name="captureDevice">Capture device to use</param>
         public WasapiCapture(MMDevice captureDevice)
+            : this(captureDevice, false)
+        {
+
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="WasapiCapture"/> class.
+        /// </summary>
+        /// <param name="captureDevice">The capture device.</param>
+        /// <param name="useEventSync">true if sync is done with event. false use sleep.</param>
+        public WasapiCapture(MMDevice captureDevice, bool useEventSync)
         {
             syncContext = SynchronizationContext.Current;
             audioClient = captureDevice.AudioClient;
             ShareMode = AudioClientShareMode.Shared;
+            isUsingEventSync = useEventSync;
 
             waveFormat = audioClient.MixFormat;
             var wfe = waveFormat as WaveFormatExtensible;
@@ -104,15 +118,40 @@ namespace NAudio.CoreAudioApi
             {
                 throw new ArgumentException("Unsupported Wave Format");
             }
-            
+
             var streamFlags = GetAudioClientStreamFlags();
 
-            audioClient.Initialize(ShareMode,
+            // If using EventSync, setup is specific with shareMode
+            if (isUsingEventSync)
+            {
+                // Init Shared or Exclusive
+                if (ShareMode == AudioClientShareMode.Shared)
+                {
+                    // With EventCallBack and Shared, both latencies must be set to 0
+                    audioClient.Initialize(ShareMode, AudioClientStreamFlags.EventCallback, requestedDuration, 0,
+                        this.waveFormat, Guid.Empty);
+                }
+                else
+                {
+                    // With EventCallBack and Exclusive, both latencies must equals
+                    audioClient.Initialize(ShareMode, AudioClientStreamFlags.EventCallback, requestedDuration, requestedDuration,
+                                        this.waveFormat, Guid.Empty);
+                }
+
+                // Create the Wait Event Handle
+                frameEventWaitHandle = new EventWaitHandle(false, EventResetMode.AutoReset);
+                audioClient.SetEventHandle(frameEventWaitHandle.SafeWaitHandle.DangerousGetHandle());
+            }
+            else
+            {
+                // Normal setup for both sharedMode
+                audioClient.Initialize(ShareMode,
                 streamFlags,
                 requestedDuration,
                 0,
                 this.waveFormat,
                 Guid.Empty);
+            }
 
             int bufferFrameCount = audioClient.BufferSize;
             this.bytesPerFrame = this.waveFormat.Channels * this.waveFormat.BitsPerSample / 8;
@@ -186,14 +225,37 @@ namespace NAudio.CoreAudioApi
             long actualDuration = (long)((double)REFTIMES_PER_SEC *
                              bufferFrameCount / WaveFormat.SampleRate);
             int sleepMilliseconds = (int)(actualDuration / REFTIMES_PER_MILLISEC / 2);
+            int waitMilliseconds = (int)(3 * actualDuration / REFTIMES_PER_MILLISEC);
 
             AudioCaptureClient capture = client.AudioCaptureClient;
             client.Start();
-            Debug.WriteLine(string.Format("sleep: {0} ms", sleepMilliseconds));
+
+            if (isUsingEventSync)
+            {
+                Debug.WriteLine(string.Format("wait: {0} ms", waitMilliseconds));
+            }
+            else
+            {
+                Debug.WriteLine(string.Format("sleep: {0} ms", sleepMilliseconds));
+            }
+
             while (!this.requestStop)
             {
-                Thread.Sleep(sleepMilliseconds);
-                ReadNextPacket(capture);
+                bool readBuffer = true;
+                if (isUsingEventSync)
+                {
+                    readBuffer = frameEventWaitHandle.WaitOne(waitMilliseconds, false);
+                }
+                else
+                {
+                    Thread.Sleep(sleepMilliseconds);
+                }
+
+                // If still playing and notification is ok
+                if (!this.requestStop && readBuffer)
+                {
+                    ReadNextPacket(capture);
+                }
             }
         }
 

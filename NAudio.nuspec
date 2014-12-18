@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>NAudio</id>
+    <version>1.7.2</version>
+    <authors>Mark Heath</authors>
+    <owners>Mark Heath</owners>
+    <licenseUrl>http://naudio.codeplex.com/license</licenseUrl>
+    <projectUrl>http://naudio.codeplex.com/</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>NAudio, an audio library for .NET</description>
+    <summary />
+    <tags>C# .NET audio sound</tags>
+  </metadata>
+  <files>
+    <file src="NAudio\bin\Release\NAudio.dll" target="lib\net35" /> 
+    <file src="NAudio\bin\Release\NAudio.xml" target="lib\net35" /> 
+    <file src="NAudio.Win8\bin\Release\NAudio.Win8.dll" target="lib\windows8" /> 
+    <file src="NAudio.Win8\bin\Release\NAudio.Win8.xml" target="lib\windows8" /> 
+    <file src="license.txt" />
+    <file src="readme.txt" />
+  </files>
+</package>

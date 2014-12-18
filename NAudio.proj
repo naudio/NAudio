@@ -1,0 +1,90 @@
+<Project ToolsVersion="3.5" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <MSBuildCommunityTasksPath>.\.build</MSBuildCommunityTasksPath>
+    </PropertyGroup>  
+
+    <Import Project="$(MSBuildCommunityTasksPath)\MSBuild.Community.Tasks.Targets" />
+
+   <PropertyGroup>
+      <NUnitToolPath>packages\NUnit.2.5.10.11092\tools</NUnitToolPath>
+      <BuildFolder>BuildArtefacts\</BuildFolder>
+   </PropertyGroup>
+
+   <!-- Default target just does a debug build -->
+   <Target Name="Build" DependsOnTargets="DebugBuild">
+   </Target>
+   
+   <!-- Test target does NUnit test -->
+   <Target Name="Test" DependsOnTargets="DebugBuild">
+     <NUnit Assemblies="NAudioTests\bin\Debug\NAudioTests.dll" 
+            ToolPath="$(NUnitToolPath)"
+            ExcludeCategory="IntegrationTest" />
+   </Target>
+
+   <Target Name="DebugBuild">
+     <MSBuild Projects="NAudio.sln" Targets="Build" Properties="Configuration=Debug"/>
+   </Target>
+
+   <Target Name="ReleaseBuild">
+      <MSBuild Projects="NAudio.sln" Targets="Build" Properties="Configuration=Release"/>
+   </Target>
+
+   <Target Name="Release" DependsOnTargets="Clean;DebugBuild;Test;ReleaseBuild">
+   </Target>
+
+   <Target Name="Clean">
+      <MSBuild Projects="NAudio.sln" Targets="Clean" Properties="Configuration=Debug"/>
+      <MSBuild Projects="NAudio.sln" Targets="Clean" Properties="Configuration=Release"/>
+      <RemoveDir Directories="$(BuildFolder)" />
+      <CallTarget Targets="MakeBuildFolder" />
+    </Target>
+
+   <Target Name="MakeBuildFolder">
+      <MakeDir Directories="$(BuildFolder)"/>
+   </Target>
+   
+   <Target Name="NuGet" DependsOnTargets="MakeBuildFolder;ReleaseBuild">
+      <exec Command="Tools\NuGet Pack NAudio.nuspec -OutputDirectory $(BuildFolder)" />
+      <exec Command="Tools\NuGet Pack NAudio.Wma.nuspec -OutputDirectory $(BuildFolder)" />
+   </Target>
+   
+   <ItemGroup>
+       <ZipLibraryFiles Include="NAudio\bin\Release\NAudio.dll" />
+       <ZipLibraryFiles Include="NAudio\bin\Release\NAudio.xml" />
+       <ZipLibraryFiles Include="NAudio.WindowsMediaFormat\bin\Release\NAudio.WindowsMediaFormat.dll" />
+       <ZipLibraryFiles Include="license.txt" />
+       <ZipLibraryFiles Include="readme.txt" />
+   </ItemGroup>
+
+   <ItemGroup>
+      <ZipDemoFiles Include="NAudioDemo\bin\Debug\*.*" Exclude="**\*.pdb;**\*.vshost.*" />
+      <ZipDemoFiles Include="AudioFileInspector\bin\Debug\*.*" Exclude="**\*.pdb;**\*.vshost.*" />
+      <ZipDemoFiles Include="NAudioWpfDemo\bin\Debug\**\*.*" Exclude="**\*.pdb;**\*.vshost.*" />
+      <!-- MixDiff and MidiFileConverter probably not in a state to include as official demos -->
+      <!--<ZipDemoFiles Include="MixDiff\bin\Debug\*.*" Exclude="**\*.pdb;**\*.vshost.*" />-->
+      <!--<ZipDemoFiles Include="MidiFileConverter\bin\Debug\*.*" Exclude="**\*.pdb;**\*.vshost.*" />-->
+   </ItemGroup>
+   
+   <Target Name="ZipAll" DependsOnTargets="ZipLib;ZipSource;ZipDemo">
+      
+   </Target>
+   
+   <Target Name="ZipLib" DependsOnTargets="MakeBuildFolder">
+       <Zip Files="@(ZipLibraryFiles)" 
+           Flatten="true"
+           ZipFileName="$(BuildFolder)NAudio-Release.zip" />
+   </Target>
+   
+   
+   <!-- for now, the source zip is just the NAudio code, might need to do a project reorganize to make it
+   easier to do the entire solution -->
+   <Target Name="ZipSource" DependsOnTargets="MakeBuildFolder">
+
+      <Exec Command="hg archive $(BuildFolder)NAudio-Source.zip" />
+   </Target>
+
+   <Target Name="ZipDemo" DependsOnTargets="MakeBuildFolder">
+      <Message Text="Creating DemoZip (using IronPython)" />
+      <Exec Command="ipy zipdemo.py $(BuildFolder)NAudio-Demo-Apps.zip" />
+   </Target>
+</Project>

@@ -95,6 +95,8 @@
     <Compile Include="CoreAudioApi\AudioEndpointVolumeVolumeRange.cs" />
     <Compile Include="CoreAudioApi\AudioMeterInformationChannels.cs" />
     <Compile Include="CoreAudioApi\AudioRenderClient.cs" />
+    <Compile Include="CoreAudioApi\AudioSessionControl.cs" />
+    <Compile Include="CoreAudioApi\AudioSessionEventsCallback.cs" />
     <Compile Include="CoreAudioApi\AudioSessionManager.cs" />
     <Compile Include="CoreAudioApi\AudioStreamCategory.cs" />
     <Compile Include="CoreAudioApi\AudioVolumeNotificationData.cs" />
@@ -106,6 +108,7 @@
     <Compile Include="CoreAudioApi\Interfaces\IAudioRenderClient.cs" />
     <Compile Include="CoreAudioApi\Interfaces\IAudioSessionControl.cs" />
     <Compile Include="CoreAudioApi\Interfaces\IAudioSessionEvents.cs" />
+    <Compile Include="CoreAudioApi\Interfaces\IAudioSessionEventsHandler.cs" />
     <Compile Include="CoreAudioApi\Interfaces\IAudioSessionManager.cs" />
     <Compile Include="CoreAudioApi\Interfaces\ISimpleAudioVolume.cs" />
     <Compile Include="CoreAudioApi\MMDeviceCollection.cs" />

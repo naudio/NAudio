@@ -20,6 +20,7 @@ namespace NAudio.CoreAudioApi
         private IAudioSessionManager audioSessionInterface;
 
         private SimpleAudioVolume simpleAudioVolume = null;
+        private AudioSessionControl audioSessionControl = null;
 
         internal AudioSessionManager(IAudioSessionManager audioSessionManager)
         {
@@ -40,9 +41,29 @@ namespace NAudio.CoreAudioApi
 
                     audioSessionInterface.GetSimpleAudioVolume(Guid.Empty, 0, out simpleAudioInterface);
 
-                    simpleAudioVolume = new SimpleAudioVolume((ISimpleAudioVolume)simpleAudioInterface);
+                    simpleAudioVolume = new SimpleAudioVolume(simpleAudioInterface);
                 }
                 return simpleAudioVolume;
+            }
+        }
+
+        /// <summary>
+        /// AudioSessionControl object
+        /// for registring for callbacks and other session information
+        /// </summary>
+        public AudioSessionControl AudioSessionControl
+        {
+            get
+            {
+                if (audioSessionControl == null)
+                {
+                    IAudioSessionControl audioSessionControlInterface;
+
+                    audioSessionInterface.GetAudioSessionControl(Guid.Empty, 0, out audioSessionControlInterface);
+
+                    audioSessionControl = new AudioSessionControl(audioSessionControlInterface);
+                }
+                return audioSessionControl;
             }
         }
     }

@@ -20,6 +20,8 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 // modified for NAudio
+// milligan22963 - updated to include audio session manager
+
 using System;
 using NAudio.CoreAudioApi.Interfaces;
 using System.Runtime.InteropServices;
@@ -36,13 +38,14 @@ namespace NAudio.CoreAudioApi
         private PropertyStore propertyStore;
         private AudioMeterInformation audioMeterInformation;
         private AudioEndpointVolume audioEndpointVolume;
-
+        private AudioSessionManager audioSessionManager;
         #endregion
 
         #region Guids
         private static Guid IID_IAudioMeterInformation = new Guid("C02216F6-8C67-4B5B-9D00-D008E73E0064");
         private static Guid IID_IAudioEndpointVolume = new Guid("5CDF2C82-841E-4546-9722-0CF74078229A");
         private static Guid IID_IAudioClient = new Guid("1CB9AD4C-DBFA-4c32-B178-C2F568A703B2");
+        private static Guid IDD_IAudioSessionManager = new Guid("BFA971F1-4D5E-40BB-935E-967039BFBEE4");
         #endregion
 
         #region Init
@@ -74,6 +77,12 @@ namespace NAudio.CoreAudioApi
             audioEndpointVolume = new AudioEndpointVolume(result as IAudioEndpointVolume);
         }
 
+        private void GetAudioSessionManager()
+        {
+            object result;
+            Marshal.ThrowExceptionForHR(deviceInterface.Activate(ref IDD_IAudioSessionManager, ClsCtx.ALL, IntPtr.Zero, out result));
+            audioSessionManager = new AudioSessionManager(result as IAudioSessionManager);
+        }
         #endregion
 
         #region Properties
@@ -116,6 +125,21 @@ namespace NAudio.CoreAudioApi
                     GetAudioEndpointVolume();
 
                 return audioEndpointVolume;
+            }
+        }
+
+        /// <summary>
+        /// AudioSessionManager instance
+        /// </summary>
+        public AudioSessionManager AudioSessionManager
+        {
+            get
+            {
+                if (audioSessionManager == null)
+                {
+                    GetAudioSessionManager();
+                }
+                return audioSessionManager;
             }
         }
 

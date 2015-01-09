@@ -55,18 +55,7 @@ namespace NAudio.CoreAudioApi
             ShareMode = AudioClientShareMode.Shared;
 
             waveFormat = audioClient.MixFormat;
-            var wfe = waveFormat as WaveFormatExtensible;
-            if (wfe != null)
-            {
-                try
-                {
-                    waveFormat = wfe.ToStandardWaveFormat();
-                }
-                catch (InvalidOperationException)
-                {
-                    // couldn't convert to a standard format
-                }
-            }
+
         }
 
         /// <summary>
@@ -79,7 +68,24 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public virtual WaveFormat WaveFormat 
         {
-            get { return waveFormat; }
+            get
+            {
+                // for convenience, return a WAVEFORMATEX, instead of the real
+                // WAVEFORMATEXTENSIBLE being used
+                var wfe = waveFormat as WaveFormatExtensible;
+                if (wfe != null)
+                {
+                    try
+                    {
+                        return wfe.ToStandardWaveFormat();
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        // couldn't convert to a standard format
+                    }
+                }
+                return waveFormat;
+            }
             set { waveFormat = value; }
         }
 
@@ -100,7 +106,7 @@ namespace NAudio.CoreAudioApi
 
             long requestedDuration = REFTIMES_PER_MILLISEC * 100;
 
-            if (!audioClient.IsFormatSupported(ShareMode, WaveFormat))
+            if (!audioClient.IsFormatSupported(ShareMode, waveFormat))
             {
                 throw new ArgumentException("Unsupported Wave Format");
             }
@@ -184,7 +190,7 @@ namespace NAudio.CoreAudioApi
 
             // Calculate the actual duration of the allocated buffer.
             long actualDuration = (long)((double)REFTIMES_PER_SEC *
-                             bufferFrameCount / WaveFormat.SampleRate);
+                             bufferFrameCount / waveFormat.SampleRate);
             int sleepMilliseconds = (int)(actualDuration / REFTIMES_PER_MILLISEC / 2);
 
             AudioCaptureClient capture = client.AudioCaptureClient;

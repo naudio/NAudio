@@ -18,6 +18,7 @@ namespace NAudio.Wave
         private IWaveProvider waveStream;
         private volatile PlaybackState playbackState;
         private AutoResetEvent callbackEvent;
+        private float volume = 1.0f;
 
         /// <summary>
         /// Indicates playback has stopped automatically
@@ -279,8 +280,12 @@ namespace NAudio.Wave
         [Obsolete]
         public float Volume
         {
-            get { return 1.0f; }
-            set { if (value != 1.0f) throw new NotImplementedException(); }
+            get { return volume; }
+            set
+            {
+                WaveOut.SetWaveOutVolume(value, hWaveOut, waveOutLock);
+                volume = value;
+            }
         }
 
         #region Dispose Pattern

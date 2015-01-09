@@ -175,6 +175,15 @@
     <Compile Include="..\NAudio\CoreAudioApi\AudioRenderClient.cs">
       <Link>CoreAudioApi\AudioRenderClient.cs</Link>
     </Compile>
+    <Compile Include="..\NAudio\CoreAudioApi\AudioSessionControl.cs">
+      <Link>CoreAudioApi\AudioSessionControl.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\CoreAudioApi\AudioSessionEventsCallback.cs">
+      <Link>CoreAudioApi\AudioSessionEventsCallback.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\CoreAudioApi\AudioSessionManager.cs">
+      <Link>CoreAudioApi\AudioSessionManager.cs</Link>
+    </Compile>
     <Compile Include="..\NAudio\CoreAudioApi\AudioStreamCategory.cs">
       <Link>CoreAudioApi\AudioStreamCategory.cs</Link>
     </Compile>
@@ -223,6 +232,18 @@
     <Compile Include="..\NAudio\CoreAudioApi\Interfaces\IAudioRenderClient.cs">
       <Link>CoreAudioApi\Interfaces\IAudioRenderClient.cs</Link>
     </Compile>
+    <Compile Include="..\NAudio\CoreAudioApi\Interfaces\IAudioSessionControl.cs">
+      <Link>CoreAudioApi\Interfaces\IAudioSessionControl.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\CoreAudioApi\Interfaces\IAudioSessionEvents.cs">
+      <Link>CoreAudioApi\Interfaces\IAudioSessionEvents.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\CoreAudioApi\Interfaces\IAudioSessionEventsHandler.cs">
+      <Link>CoreAudioApi\Interfaces\IAudioSessionEventsHandler.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\CoreAudioApi\Interfaces\IAudioSessionManager.cs">
+      <Link>CoreAudioApi\Interfaces\IAudioSessionManager.cs</Link>
+    </Compile>
     <Compile Include="..\NAudio\CoreAudioApi\Interfaces\IMMDevice.cs">
       <Link>CoreAudioApi\Interfaces\IMMDevice.cs</Link>
     </Compile>
@@ -240,6 +261,9 @@
     </Compile>
     <Compile Include="..\NAudio\CoreAudioApi\Interfaces\IPropertyStore.cs">
       <Link>CoreAudioApi\Interfaces\IPropertyStore.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\CoreAudioApi\Interfaces\ISimpleAudioVolume.cs">
+      <Link>CoreAudioApi\Interfaces\ISimpleAudioVolume.cs</Link>
     </Compile>
     <Compile Include="..\NAudio\CoreAudioApi\Interfaces\MMDeviceEnumeratorComObject.cs">
       <Link>CoreAudioApi\Interfaces\MMDeviceEnumeratorComObject.cs</Link>
@@ -273,6 +297,9 @@
     </Compile>
     <Compile Include="..\NAudio\CoreAudioApi\Role.cs">
       <Link>CoreAudioApi\Role.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\CoreAudioApi\SimpleAudioVolume.cs">
+      <Link>CoreAudioApi\SimpleAudioVolume.cs</Link>
     </Compile>
     <Compile Include="..\NAudio\Dmo\AudioMediaSubtypes.cs">
       <Link>Dmo\AudioMediaSubtypes.cs</Link>

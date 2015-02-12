@@ -82,6 +82,26 @@ namespace NAudioTests.WaveStreams
             osp.AssertReadsExpected(expected, 10);
         }
 
+
+        [Test]
+        public void CanTakeThirtySeconds()
+        {
+            var source = new TestSampleProvider(16000, 1);
+            var osp = new OffsetSampleProvider(source) { Take = TimeSpan.FromSeconds(30) };
+            var buffer = new float[16000];
+            var totalRead = 0;
+            while (true)
+            {
+                var read = osp.Read(buffer, 0, buffer.Length);
+                totalRead += read;
+                if (read == 0) break;
+                Assert.IsTrue(totalRead <= 480000);
+
+            }
+            Assert.AreEqual(480000, totalRead);
+
+        }
+
         [Test]
         public void CanAddLeadOut()
         {

@@ -9,6 +9,7 @@ if your name should be on it but isn't please let me know and I will include it.
 id, so if you want me to put your full name here, please also get in touch.
 
 in alphabetical order:
+Alan Jordan
 Alexandre Mutel
 Alexander Binkert
 AmandaTarafaMas
@@ -47,9 +48,11 @@ Lustild
 Lucian Wischik (ljw1004)
 ManuN
 MeelMarcel
+Michael Chadwick
 Michael Feld 
 Michael J
 Michael Lehenbauer
+milligan22963
 myrkle
 nelsonkidd
 Nigel Redmon
@@ -60,6 +63,7 @@ painmailer
 PPavan
 Pygmy
 Ray Molenkamp
+Roadz
 Robert Bristow-Johnson
 Scott Fleischman 
 Simon Clark

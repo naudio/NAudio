@@ -16,7 +16,7 @@ namespace NAudioTests.Utils
 
         public static void AssertReadsExpected(this ISampleProvider sampleProvider, float[] expected, int readSize)
         {
-            float[] buffer = new float[readSize];
+            var buffer = new float[readSize];
             var read = sampleProvider.Read(buffer, 0, readSize);
             Assert.AreEqual(expected.Length, read, "Number of samples read");
             for (int n = 0; n < read; n++)

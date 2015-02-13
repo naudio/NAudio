@@ -33,10 +33,45 @@ namespace NAudioTests.WaveStreams
                 Assert.AreEqual(testSequence.Length, read, "Data Length");
                 for (int n = 0; n < read; n++)
                 {
-                    Assert.AreEqual(testSequence[n], buffer[n], "Byte " + n.ToString());
+                    Assert.AreEqual(testSequence[n], buffer[n], "Byte " + n);
                 }
             }
         }
+
+
+        [Test]
+        public void FlushUpdatesHeaderEvenIfDisposeNotCalled()
+        {
+            var ms = new MemoryStream();
+            var testSequence = new byte[] { 0x1, 0x2, 0xFF, 0xFE };
+            var testSequence2 = new byte[] { 0x3, 0x4, 0x5 };
+            var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), new WaveFormat(16000, 24, 1));
+            writer.Write(testSequence, 0, testSequence.Length);
+            writer.Flush();
+            // BUT NOT DISPOSED
+            // another write that was not flushed
+            writer.Write(testSequence2, 0, testSequence2.Length);
+            
+            // check the Reader can read it
+            ms.Position = 0;
+            using (var reader = new WaveFileReader(ms))
+            {
+                Assert.AreEqual(16000, reader.WaveFormat.SampleRate, "Sample Rate");
+                Assert.AreEqual(24, reader.WaveFormat.BitsPerSample, "Bits Per Sample");
+                Assert.AreEqual(1, reader.WaveFormat.Channels, "Channels");
+                Assert.AreEqual(testSequence.Length, reader.Length, "File Length");
+                var buffer = new byte[600]; // 24 bit audio, block align is 3
+                int read = reader.Read(buffer, 0, buffer.Length);
+                Assert.AreEqual(testSequence.Length, read, "Data Length");
+                
+                for (int n = 0; n < read; n++)
+                {
+                    Assert.AreEqual(testSequence[n], buffer[n], "Byte " + n);
+                }
+            }
+            writer.Dispose(); // to stop the finalizer from moaning
+        }
+
 
         [Test]
         public void CreateWaveFileCreatesFileOfCorrectLength()

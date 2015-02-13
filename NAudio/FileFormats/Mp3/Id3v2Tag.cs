@@ -178,9 +178,10 @@ namespace NAudio.Wave
         private Id3v2Tag(Stream input)
         {
             tagStartPosition = input.Position;
-            BinaryReader reader = new BinaryReader(input);
+            var reader = new BinaryReader(input);
             byte[] headerBytes = reader.ReadBytes(10);
-            if ((headerBytes[0] == (byte)'I') &&
+            if ((headerBytes.Length >= 3) &&
+                (headerBytes[0] == (byte)'I') &&
                 (headerBytes[1] == (byte)'D') &&
                 (headerBytes[2] == '3'))
             {
@@ -214,7 +215,7 @@ namespace NAudio.Wave
             }
             else
             {
-                input.Position -= 10;
+                input.Position = tagStartPosition;
                 throw new FormatException("Not an ID3v2 tag");
             }
             tagEndPosition = input.Position;

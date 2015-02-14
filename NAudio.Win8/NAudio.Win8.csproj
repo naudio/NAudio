@@ -655,6 +655,9 @@
     <Compile Include="..\NAudio\Wave\SampleProviders\SampleToWaveProvider16.cs">
       <Link>Wave\SampleProviders\SampleToWaveProvider16.cs</Link>
     </Compile>
+    <Compile Include="..\NAudio\Wave\SampleProviders\SampleToWaveProvider24.cs">
+      <Link>Wave\SampleProviders\SampleToWaveProvider24.cs</Link>
+    </Compile>
     <Compile Include="..\NAudio\Wave\SampleProviders\SignalGenerator.cs">
       <Link>Wave\SampleProviders\SignalGenerator.cs</Link>
     </Compile>

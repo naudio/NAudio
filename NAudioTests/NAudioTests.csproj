@@ -1,0 +1,176 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{5080281A-F9A1-403F-85C7-0DFF6839B07B}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>NAudioTests</RootNamespace>
+    <AssemblyName>NAudioTests</AssemblyName>
+    <SccProjectName>
+    </SccProjectName>
+    <SccLocalPath>
+    </SccLocalPath>
+    <SccAuxPath>
+    </SccAuxPath>
+    <SccProvider>
+    </SccProvider>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <OldToolsVersion>3.5</OldToolsVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkProfile>
+    </TargetFrameworkProfile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Moq">
+      <HintPath>..\packages\Moq.4.0.10827\lib\NET35\Moq.dll</HintPath>
+    </Reference>
+    <Reference Include="nunit.framework, Version=2.5.10.11092, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
+      <HintPath>..\packages\NUnit.2.5.10.11092\lib\nunit.framework.dll</HintPath>
+    </Reference>
+    <Reference Include="nunit.mocks, Version=2.5.10.11092, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
+      <HintPath>..\packages\NUnit.2.5.10.11092\lib\nunit.mocks.dll</HintPath>
+    </Reference>
+    <Reference Include="pnunit.framework">
+      <HintPath>..\packages\NUnit.2.5.10.11092\lib\pnunit.framework.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Acm\AcmDriverTests.cs" />
+    <Compile Include="Acm\GsmEncodeTest.cs" />
+    <Compile Include="Acm\WaveFormatConversionStreamTests.cs" />
+    <Compile Include="Aiff\AiffReaderTests.cs" />
+    <Compile Include="DirectSound\DirectSoundTests.cs" />
+    <Compile Include="Dmo\DmoMp3FrameDecompressorTests.cs" />
+    <Compile Include="Dmo\DmoTests.cs" />
+    <Compile Include="Dmo\ResamplerDmoStreamTests.cs" />
+    <Compile Include="Dmo\ResamplerDmoTests.cs" />
+    <Compile Include="MediaFoundation\MediaFoundationReaderTests.cs" />
+    <Compile Include="Midi\MidiEventCollectionTest.cs" />
+    <Compile Include="Midi\PitchWheelChangeEventTests.cs" />
+    <Compile Include="Mixer\MixerApiTests.cs" />
+    <Compile Include="Mp3\Mp3FileReaderTests.cs" />
+    <Compile Include="Mp3\Mp3FrameTests.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="StopwatchExtensions.cs" />
+    <Compile Include="Utils\BlockAlignedWaveStream.cs" />
+    <Compile Include="Utils\ByteEncodingTests.cs" />
+    <Compile Include="Utils\NullWaveStream.cs" />
+    <Compile Include="Utils\OSUtils.cs" />
+    <Compile Include="Utils\SampleProviderTestHelpers.cs" />
+    <Compile Include="Wasapi\AudioClientTests.cs" />
+    <Compile Include="Wasapi\MMDeviceEnumeratorTests.cs" />
+    <Compile Include="WaveFormats\AdpcmWaveFormatTests.cs" />
+    <Compile Include="WaveIn\WaveInDevicesTests.cs" />
+    <Compile Include="WaveStreams\BlockAlignmentReductionStreamTests.cs" />
+    <Compile Include="WaveStreams\BufferedWaveProviderTests.cs" />
+    <Compile Include="WaveStreams\CircularBufferTests.cs" />
+    <Compile Include="WaveStreams\FadeInOutSampleProviderTests.cs" />
+    <Compile Include="WaveStreams\ChunkIdentifierTests.cs" />
+    <Compile Include="WaveStreams\MixingSampleProviderTests.cs" />
+    <Compile Include="WaveStreams\MonoToStereoProvider16Tests.cs" />
+    <Compile Include="WaveStreams\MultiplexingSampleProviderTests.cs" />
+    <Compile Include="WaveStreams\MultiplexingWaveProviderTests.cs" />
+    <Compile Include="WaveStreams\OffsetSampleProviderTests.cs" />
+    <Compile Include="WaveStreams\SampleToWaveProvider24Tests.cs" />
+    <Compile Include="WaveStreams\StereoToMonoProvider16Tests.cs" />
+    <Compile Include="WaveStreams\TestSampleProvider.cs" />
+    <Compile Include="WaveStreams\TestWaveProvider.cs" />
+    <Compile Include="WaveStreams\VolumeWaveProvider16Tests.cs" />
+    <Compile Include="WaveStreams\WaveChannel32Tests.cs" />
+    <Compile Include="WaveStreams\WaveFileReaderTests.cs" />
+    <Compile Include="WaveStreams\WaveFileWriterTests.cs" />
+    <Compile Include="WaveStreams\WdlResamplingSampleProviderTests.cs" />
+    <Compile Include="WindowsMedia\WindowsMediaTests.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NAudio.WindowsMediaFormat\NAudio.WindowsMediaFormat.csproj">
+      <Project>{1868FC77-FD6F-4881-9CF5-DE7451806BFA}</Project>
+      <Name>NAudio.WindowsMediaFormat</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\NAudio\NAudio.csproj">
+      <Project>{DA4F02E3-0B5E-42CD-B8D9-5583FA51D66E}</Project>
+      <Name>NAudio</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="NAudioTests.nunit" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
+      <Visible>False</Visible>
+      <ProductName>Windows Installer 3.1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>"$(SolutionDir)Tools\nuget" install "$(ProjectDir)packages.config" -o "$(SolutionDir)Packages"</PreBuildEvent>
+  </PropertyGroup>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

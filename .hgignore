@@ -1,0 +1,14 @@
+syntax: glob
+bin/
+obj/
+[pP]ackages/
+AppPackages/
+TestResults/
+TestResult.xml
+BuildArtefacts/
+_ReSharper.*/
+*.suo
+*.ncrunchsolution
+*.user
+*.ncrunchproject
+*.orig

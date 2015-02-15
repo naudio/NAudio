@@ -39,5 +39,11 @@ namespace NAudioTests.Mp3
             }
         }
 
+        [Test]
+        public void CopesWithZeroLengthMp3()
+        {
+            var ms = new MemoryStream(new byte[0]);
+            Assert.Throws<InvalidDataException>(() => new Mp3FileReader(ms));            
+        }
     }
 }

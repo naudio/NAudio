@@ -346,7 +346,9 @@ namespace NAudio.Wave
         /// </summary>
         public override void Flush()
         {
-            writer.Flush();
+            var pos = writer.BaseStream.Position;
+            UpdateHeader(writer);
+            writer.BaseStream.Position = pos;
         }
 
         #region IDisposable Members
@@ -381,7 +383,7 @@ namespace NAudio.Wave
         /// </summary>
         protected virtual void UpdateHeader(BinaryWriter writer)
         {
-            this.Flush();
+            writer.Flush();
             UpdateRiffChunk(writer);
             UpdateFactChunk(writer);
             UpdateDataChunk(writer);

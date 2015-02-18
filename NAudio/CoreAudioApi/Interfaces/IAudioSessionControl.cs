@@ -30,7 +30,7 @@ namespace NAudio.CoreAudioApi.Interfaces
     /// </summary>
     [Guid("F4B1A599-7266-4319-A8CA-E70ACB11E8CD"),
         InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    internal interface IAudioSessionControl
+    public interface IAudioSessionControl
     {
         /// <summary>
         /// Retrieves the current state of the audio session.
@@ -118,5 +118,47 @@ namespace NAudio.CoreAudioApi.Interfaces
         [PreserveSig]
         int UnregisterAudioSessionNotification(
             [In] IAudioSessionEvents client);
+
+        /// <summary>
+        /// Retrieves the identifier for the audio session.
+        /// </summary>
+        /// <param name="retVal">Receives the session identifier.</param>
+        /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        [PreserveSig]
+        int GetSessionIdentifier(
+            [Out] [MarshalAs(UnmanagedType.LPWStr)] out string retVal);
+
+        /// <summary>
+        /// Retrieves the identifier of the audio session instance.
+        /// </summary>
+        /// <param name="retVal">Receives the identifier of a particular instance.</param>
+        /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        [PreserveSig]
+        int GetSessionInstanceIdentifier(
+            [Out] [MarshalAs(UnmanagedType.LPWStr)] out string retVal);
+
+        /// <summary>
+        /// Retrieves the process identifier of the audio session.
+        /// </summary>
+        /// <param name="retVal">Receives the process identifier of the audio session.</param>
+        /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        [PreserveSig]
+        int GetProcessId(
+            [Out] out UInt32 retVal);
+
+        /// <summary>
+        /// Indicates whether the session is a system sounds session.
+        /// </summary>
+        /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        [PreserveSig]
+        int IsSystemSoundsSession();
+
+        /// <summary>
+        /// Enables or disables the default stream attenuation experience (auto-ducking) provided by the system.
+        /// </summary>
+        /// <param name="optOut">A variable that enables or disables system auto-ducking.</param>
+        /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+        [PreserveSig]
+        int SetDuckingPreference(bool optOut);
     }
 }

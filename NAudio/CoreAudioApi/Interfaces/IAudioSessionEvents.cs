@@ -93,7 +93,7 @@ namespace NAudio.CoreAudioApi.Interfaces
     /// </summary>
     [Guid("24918ACC-64B3-37C1-8CA9-74A66E9957A8"),
         InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    internal interface IAudioSessionEvents
+    public interface IAudioSessionEvents
     {
         /// <summary>
         /// Notifies the client that the display name for the session has changed.

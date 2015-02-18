@@ -57,5 +57,20 @@ namespace NAudio.CoreAudioApi.Interfaces
             [In, Optional] [MarshalAs(UnmanagedType.LPStruct)] Guid sessionId,
             [In] [MarshalAs(UnmanagedType.U4)] UInt32 streamFlags,
             [Out] [MarshalAs(UnmanagedType.Interface)] out ISimpleAudioVolume audioVolume);
+
+        [PreserveSig]
+        int GetSessionEnumerator(out IAudioSessionEnumerator sessionEnum);
+
+        [PreserveSig]
+        int RegisterSessionNotification(IAudioSessionNotification sessionNotification);
+
+        [PreserveSig]
+        int UnregisterSessionNotification(IAudioSessionNotification sessionNotification);
+
+        [PreserveSig]
+        int RegisterDuckNotification(string sessionID, IAudioSessionNotification audioVolumeDuckNotification);
+
+        [PreserveSig]
+        int UnregisterDuckNotification(IntPtr audioVolumeDuckNotification);
     }
 }

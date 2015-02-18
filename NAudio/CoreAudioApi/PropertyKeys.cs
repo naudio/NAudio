@@ -80,5 +80,9 @@ namespace NAudio.CoreAudioApi
         /// PKEY _Devie_FriendlyName
         /// </summary>
         public static readonly PropertyKey PKEY_Device_FriendlyName = new PropertyKey(new Guid(unchecked((int)0xa45c254e), unchecked((short)0xdf1c), 0x4efd, 0x80, 0x20, 0x67, 0xd1, 0x46, 0xa8, 0x50, 0xe0), 14);
+        /// <summary>
+        /// PKEY _Device_IconPath
+        /// </summary>
+        public static readonly PropertyKey PKEY_Device_IconPath = new PropertyKey(new Guid(unchecked((int)0x259abffc), unchecked((short)0x50a7), 0x47ce, 0xaf, 0x8, 0x68, 0xc9, 0xa7, 0xd7, 0x33, 0x66), 12);
     }
 }

@@ -98,6 +98,7 @@
     <Compile Include="CoreAudioApi\AudioSessionControl.cs" />
     <Compile Include="CoreAudioApi\AudioSessionEventsCallback.cs" />
     <Compile Include="CoreAudioApi\AudioSessionManager.cs" />
+    <Compile Include="CoreAudioApi\AudioSessionNotification.cs" />
     <Compile Include="CoreAudioApi\AudioStreamCategory.cs" />
     <Compile Include="CoreAudioApi\AudioVolumeNotificationData.cs" />
     <Compile Include="CoreAudioApi\Interfaces\AudioVolumeNotificationDataStruct.cs" />
@@ -107,12 +108,15 @@
     <Compile Include="CoreAudioApi\Interfaces\IAudioEndpointVolumeCallback.cs" />
     <Compile Include="CoreAudioApi\Interfaces\IAudioRenderClient.cs" />
     <Compile Include="CoreAudioApi\Interfaces\IAudioSessionControl.cs" />
+    <Compile Include="CoreAudioApi\Interfaces\IAudioSessionEnumerator.cs" />
     <Compile Include="CoreAudioApi\Interfaces\IAudioSessionEvents.cs" />
     <Compile Include="CoreAudioApi\Interfaces\IAudioSessionEventsHandler.cs" />
     <Compile Include="CoreAudioApi\Interfaces\IAudioSessionManager.cs" />
+    <Compile Include="CoreAudioApi\Interfaces\IAudioSessionNotification.cs" />
     <Compile Include="CoreAudioApi\Interfaces\ISimpleAudioVolume.cs" />
     <Compile Include="CoreAudioApi\MMDeviceCollection.cs" />
     <Compile Include="CoreAudioApi\PropertyKeys.cs" />
+    <Compile Include="CoreAudioApi\SessionCollection.cs" />
     <Compile Include="CoreAudioApi\SimpleAudioVolume.cs" />
     <Compile Include="Dsp\EnvelopeGenerator.cs" />
     <Compile Include="Dsp\WdlResampler.cs" />

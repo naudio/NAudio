@@ -18,13 +18,29 @@ namespace NAudio.CoreAudioApi
     public class AudioSessionManager
     {
         private IAudioSessionManager audioSessionInterface;
+        private AudioSessionNotification audioSessionNotification;
+        private SessionCollection sessions;
 
         private SimpleAudioVolume simpleAudioVolume = null;
         private AudioSessionControl audioSessionControl = null;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="newSession"></param>
+        public delegate void SessionCreatedDelegate(object sender, IAudioSessionControl newSession);
+        
+        /// <summary>
+        /// Occurs when audio session has been added (for example run another program that use audio playback).
+        /// </summary>
+        public event SessionCreatedDelegate OnSessionCreated;
+
         internal AudioSessionManager(IAudioSessionManager audioSessionManager)
         {
             audioSessionInterface = audioSessionManager;
+
+            RefreshSessions();
         }
 
         /// <summary>
@@ -65,6 +81,63 @@ namespace NAudio.CoreAudioApi
                 }
                 return audioSessionControl;
             }
+        }
+
+        internal void FireSessionCreated(IAudioSessionControl newSession)
+        {
+            if (OnSessionCreated != null)
+                OnSessionCreated(this, newSession);
+        }
+
+        /// <summary>
+        /// Refresh session of current device.
+        /// </summary>
+        public void RefreshSessions()
+        {
+            UnregisterNotifications();
+
+            IAudioSessionEnumerator _SessionEnum;
+            Marshal.ThrowExceptionForHR(audioSessionInterface.GetSessionEnumerator(out _SessionEnum));
+            sessions = new SessionCollection(_SessionEnum);
+
+            audioSessionNotification = new AudioSessionNotification(this);
+            Marshal.ThrowExceptionForHR(audioSessionInterface.RegisterSessionNotification(audioSessionNotification));
+        }
+
+        /// <summary>
+        /// Returns list of sessions of current device.
+        /// </summary>
+        public SessionCollection Sessions
+        {
+            get
+            {
+                return sessions;
+            }
+        }
+
+        /// <summary>
+        /// Dispose.
+        /// </summary>
+        public void Dispose()
+        {
+            UnregisterNotifications();
+        }
+
+        private void UnregisterNotifications()
+        {
+            if (sessions != null)
+                sessions = null;
+
+            if (audioSessionNotification != null)
+                Marshal.ThrowExceptionForHR(audioSessionInterface.UnregisterSessionNotification(audioSessionNotification));
+        }
+
+        /// <summary>
+        /// Finalizer.
+        /// </summary>
+        ~AudioSessionManager()
+        {
+            Dispose();
         }
     }
 }

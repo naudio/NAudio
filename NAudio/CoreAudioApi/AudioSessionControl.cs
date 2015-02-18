@@ -17,10 +17,23 @@ namespace NAudio.CoreAudioApi
     {
         private IAudioSessionControl audioSessionControlInterface;
         private AudioSessionEventsCallback audioSessionEventCallback = null;
+        internal AudioMeterInformation audioMeterInformation;
+        internal SimpleAudioVolume simpleAudioVolume;
 
-        internal AudioSessionControl(IAudioSessionControl audioSessionControl)
+        /// <summary>
+        /// Constructor.
+        /// </summary>
+        /// <param name="audioSessionControl"></param>
+        public AudioSessionControl(IAudioSessionControl audioSessionControl)
         {
             audioSessionControlInterface = audioSessionControl;
+
+            IAudioMeterInformation _meters = audioSessionControlInterface as IAudioMeterInformation;
+            ISimpleAudioVolume _volume = audioSessionControlInterface as ISimpleAudioVolume;
+            if (_meters != null)
+                audioMeterInformation = new AudioMeterInformation(_meters);
+            if (_volume != null)
+                simpleAudioVolume = new SimpleAudioVolume(_volume);
         }
 
         #region IDisposable Members
@@ -48,7 +61,29 @@ namespace NAudio.CoreAudioApi
         #endregion
 
         /// <summary>
-        /// The current state of the audio session
+        /// Audio meter information of the audio session.
+        /// </summary>
+        public AudioMeterInformation AudioMeterInformation
+        {
+            get
+            {
+                return audioMeterInformation;
+            }
+        }
+
+        /// <summary>
+        /// Simple audio volume of the audio session (for volume and mute status).
+        /// </summary>
+        public SimpleAudioVolume SimpleAudioVolume
+        {
+            get
+            {
+                return simpleAudioVolume;
+            }
+        }
+
+        /// <summary>
+        /// The current state of the audio session.
         /// </summary>
         public AudioSessionState State
         {
@@ -63,7 +98,7 @@ namespace NAudio.CoreAudioApi
         }
 
         /// <summary>
-        /// The name of the audio session
+        /// The name of the audio session.
         /// </summary>
         public string DisplayName
         {
@@ -85,7 +120,7 @@ namespace NAudio.CoreAudioApi
         }
 
         /// <summary>
-        /// the path to the icon shown in the mixer
+        /// the path to the icon shown in the mixer.
         /// </summary>
         public string IconPath
         {
@@ -103,6 +138,56 @@ namespace NAudio.CoreAudioApi
                 {
                     Marshal.ThrowExceptionForHR(audioSessionControlInterface.SetIconPath(value, Guid.Empty));
                 }
+            }
+        }
+
+        /// <summary>
+        /// The session identifier of the audio session.
+        /// </summary>
+        public string GetSessionIdentifier
+        {
+            get
+            {
+                string str;
+                Marshal.ThrowExceptionForHR(audioSessionControlInterface.GetSessionIdentifier(out str));
+                return str;
+            }
+        }
+
+        /// <summary>
+        /// The session instance identifier of the audio session.
+        /// </summary>
+        public string GetSessionInstanceIdentifier
+        {
+            get
+            {
+                string str;
+                Marshal.ThrowExceptionForHR(audioSessionControlInterface.GetSessionInstanceIdentifier(out str));
+                return str;
+            }
+        }
+
+        /// <summary>
+        /// The process identifier of the audio session.
+        /// </summary>
+        public uint GetProcessID
+        {
+            get
+            {
+                uint pid;
+                Marshal.ThrowExceptionForHR(audioSessionControlInterface.GetProcessId(out pid));
+                return pid;
+            }
+        }
+
+        /// <summary>
+        /// Is the session a system sounds session.
+        /// </summary>
+        public bool IsSystemSoundsSession
+        {
+            get
+            {
+                return (audioSessionControlInterface.IsSystemSoundsSession() == 0);
             }
         }
 

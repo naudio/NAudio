@@ -406,6 +406,27 @@ namespace NAudio.Wave
             }
         }
 
+        /// <summary>
+        /// Retrieve the AudioStreamVolume object for this audio stream
+        /// </summary>
+        /// <remarks>
+        /// This returns the AudioStreamVolume object ONLY for shared audio streams.
+        /// </remarks>
+        /// <exception cref="InvalidOperationException">
+        /// This is thrown when an exclusive audio stream is being used.
+        /// </exception>
+        public AudioStreamVolume AudioStreamVolume
+        {
+            get 
+            {
+                if (shareMode == AudioClientShareMode.Exclusive)
+                {
+                    throw new InvalidOperationException("AudioStreamVolume is ONLY supported for shared audio streams.");
+                }
+                return audioClient.AudioStreamVolume;  
+            }
+        }
+
         #endregion
 
         #region IDisposable Members

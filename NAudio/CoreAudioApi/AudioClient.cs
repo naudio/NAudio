@@ -15,6 +15,7 @@ namespace NAudio.CoreAudioApi
         private AudioRenderClient audioRenderClient;
         private AudioCaptureClient audioCaptureClient;
         private AudioClockClient audioClockClient;
+        private AudioStreamVolume audioStreamVolume;
 
         internal AudioClient(IAudioClient audioClientInterface)
         {
@@ -132,9 +133,26 @@ namespace NAudio.CoreAudioApi
 
         // TODO: GetService:
         // IID_IAudioSessionControl
-        // IID_IAudioStreamVolume
         // IID_IChannelAudioVolume
         // IID_ISimpleAudioVolume
+
+        /// <summary>
+        /// Returns the AudioStreamVolume service for this AudioClient.
+        /// </summary>
+        public AudioStreamVolume AudioStreamVolume
+        {
+            get
+            {
+                if (audioStreamVolume == null)
+                {
+                    object audioStreamVolumeInterface;
+                    var audioStreamVolumeGuid = new Guid("93014887-242D-4068-8A15-CF5E93B90FE3");
+                    Marshal.ThrowExceptionForHR(audioClientInterface.GetService(audioStreamVolumeGuid, out audioStreamVolumeInterface));
+                    audioStreamVolume = new AudioStreamVolume((IAudioStreamVolume)audioStreamVolumeInterface);
+                }
+                return audioStreamVolume;
+            }
+        }
 
         /// <summary>
         /// Gets the AudioClockClient service
@@ -291,6 +309,11 @@ namespace NAudio.CoreAudioApi
                 {
                     audioCaptureClient.Dispose();
                     audioCaptureClient = null;
+                }
+                if (audioStreamVolume != null)
+                {
+                    audioStreamVolume.Dispose();
+                    audioStreamVolume = null;
                 }
                 Marshal.ReleaseComObject(audioClientInterface);
                 audioClientInterface = null;

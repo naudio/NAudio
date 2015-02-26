@@ -16,6 +16,7 @@ namespace NAudio.CoreAudioApi
         private AudioCaptureClient audioCaptureClient;
         private AudioClockClient audioClockClient;
         private AudioStreamVolume audioStreamVolume;
+        private AudioClientShareMode shareMode;
 
         internal AudioClient(IAudioClient audioClientInterface)
         {
@@ -58,6 +59,7 @@ namespace NAudio.CoreAudioApi
             WaveFormat waveFormat,
             Guid audioSessionGuid)
         {
+            this.shareMode = shareMode;
             int hresult = audioClientInterface.Initialize(shareMode, streamFlags, bufferDuration, periodicity, waveFormat, ref audioSessionGuid);
             Marshal.ThrowExceptionForHR(hresult);
             // may have changed the mix format so reset it
@@ -139,10 +141,20 @@ namespace NAudio.CoreAudioApi
         /// <summary>
         /// Returns the AudioStreamVolume service for this AudioClient.
         /// </summary>
+        /// <remarks>
+        /// This returns the AudioStreamVolume object ONLY for shared audio streams.
+        /// </remarks>
+        /// <exception cref="InvalidOperationException">
+        /// This is thrown when an exclusive audio stream is being used.
+        /// </exception>
         public AudioStreamVolume AudioStreamVolume
         {
             get
             {
+                if (shareMode == AudioClientShareMode.Exclusive)
+                {
+                    throw new InvalidOperationException("AudioStreamVolume is ONLY supported for shared audio streams.");
+                }
                 if (audioStreamVolume == null)
                 {
                     object audioStreamVolumeInterface;

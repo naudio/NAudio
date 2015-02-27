@@ -17,12 +17,13 @@ namespace NAudio.CoreAudioApi
     /// </summary>
     public class AudioSessionManager
     {
-        private IAudioSessionManager audioSessionInterface;
+        private readonly IAudioSessionManager audioSessionInterface;
+        private readonly IAudioSessionManager2 audioSessionInterface2;
         private AudioSessionNotification audioSessionNotification;
         private SessionCollection sessions;
 
-        private SimpleAudioVolume simpleAudioVolume = null;
-        private AudioSessionControl audioSessionControl = null;
+        private SimpleAudioVolume simpleAudioVolume;
+        private AudioSessionControl audioSessionControl;
 
         /// <summary>
         /// 
@@ -39,6 +40,7 @@ namespace NAudio.CoreAudioApi
         internal AudioSessionManager(IAudioSessionManager audioSessionManager)
         {
             audioSessionInterface = audioSessionManager;
+            audioSessionInterface2 = audioSessionManager as IAudioSessionManager2;
 
             RefreshSessions();
         }
@@ -96,12 +98,15 @@ namespace NAudio.CoreAudioApi
         {
             UnregisterNotifications();
 
-            IAudioSessionEnumerator _SessionEnum;
-            Marshal.ThrowExceptionForHR(audioSessionInterface.GetSessionEnumerator(out _SessionEnum));
-            sessions = new SessionCollection(_SessionEnum);
+            if (audioSessionInterface2 != null)
+            {
+                IAudioSessionEnumerator sessionEnum;
+                Marshal.ThrowExceptionForHR(audioSessionInterface2.GetSessionEnumerator(out sessionEnum));
+                sessions = new SessionCollection(sessionEnum);
 
-            audioSessionNotification = new AudioSessionNotification(this);
-            Marshal.ThrowExceptionForHR(audioSessionInterface.RegisterSessionNotification(audioSessionNotification));
+                audioSessionNotification = new AudioSessionNotification(this);
+                Marshal.ThrowExceptionForHR(audioSessionInterface2.RegisterSessionNotification(audioSessionNotification));
+            }
         }
 
         /// <summary>
@@ -121,6 +126,8 @@ namespace NAudio.CoreAudioApi
         public void Dispose()
         {
             UnregisterNotifications();
+
+            GC.SuppressFinalize(this);
         }
 
         private void UnregisterNotifications()
@@ -129,7 +136,7 @@ namespace NAudio.CoreAudioApi
                 sessions = null;
 
             if (audioSessionNotification != null)
-                Marshal.ThrowExceptionForHR(audioSessionInterface.UnregisterSessionNotification(audioSessionNotification));
+                Marshal.ThrowExceptionForHR(audioSessionInterface2.UnregisterSessionNotification(audioSessionNotification));
         }
 
         /// <summary>

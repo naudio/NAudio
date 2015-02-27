@@ -15,9 +15,9 @@ namespace NAudioDemo.VolumeMixerDemo
 {
     public partial class VolumePanel : UserControl, IAudioSessionEventsHandler
     {
-        private bool devicePanel;
+        private readonly bool devicePanel;
         private MMDevice device;
-        private AudioSessionControl session;
+        private readonly AudioSessionControl session;
 
         public MMDevice Device
         {

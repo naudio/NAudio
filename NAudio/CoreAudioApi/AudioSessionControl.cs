@@ -15,7 +15,8 @@ namespace NAudio.CoreAudioApi
     /// </summary>
     public class AudioSessionControl : IDisposable
     {
-        private IAudioSessionControl audioSessionControlInterface;
+        private readonly IAudioSessionControl audioSessionControlInterface;
+        private readonly IAudioSessionControl2 audioSessionControlInterface2;
         private AudioSessionEventsCallback audioSessionEventCallback = null;
         internal AudioMeterInformation audioMeterInformation;
         internal SimpleAudioVolume simpleAudioVolume;
@@ -27,13 +28,14 @@ namespace NAudio.CoreAudioApi
         public AudioSessionControl(IAudioSessionControl audioSessionControl)
         {
             audioSessionControlInterface = audioSessionControl;
+            audioSessionControlInterface2 = audioSessionControl as IAudioSessionControl2;
 
-            IAudioMeterInformation _meters = audioSessionControlInterface as IAudioMeterInformation;
-            ISimpleAudioVolume _volume = audioSessionControlInterface as ISimpleAudioVolume;
-            if (_meters != null)
-                audioMeterInformation = new AudioMeterInformation(_meters);
-            if (_volume != null)
-                simpleAudioVolume = new SimpleAudioVolume(_volume);
+            var meters = audioSessionControlInterface as IAudioMeterInformation;
+            var volume = audioSessionControlInterface as ISimpleAudioVolume;
+            if (meters != null)
+                audioMeterInformation = new AudioMeterInformation(meters);
+            if (volume != null)
+                simpleAudioVolume = new SimpleAudioVolume(volume);
         }
 
         #region IDisposable Members
@@ -43,6 +45,10 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public void Dispose()
         {
+            if (audioSessionEventCallback != null)
+            {
+                Marshal.ThrowExceptionForHR(audioSessionControlInterface.UnregisterAudioSessionNotification(audioSessionEventCallback));
+            }
             GC.SuppressFinalize(this);
         }
         
@@ -51,10 +57,6 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         ~AudioSessionControl()
         {
-            if (audioSessionEventCallback != null)
-            {
-                Marshal.ThrowExceptionForHR(audioSessionControlInterface.UnregisterAudioSessionNotification(audioSessionEventCallback));
-            }
             Dispose();
         }
 
@@ -148,8 +150,9 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
+                if (audioSessionControlInterface2 == null) throw new InvalidOperationException("Not supported on this version of Windows");
                 string str;
-                Marshal.ThrowExceptionForHR(audioSessionControlInterface.GetSessionIdentifier(out str));
+                Marshal.ThrowExceptionForHR(audioSessionControlInterface2.GetSessionIdentifier(out str));
                 return str;
             }
         }
@@ -161,8 +164,9 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
+                if (audioSessionControlInterface2 == null) throw new InvalidOperationException("Not supported on this version of Windows");
                 string str;
-                Marshal.ThrowExceptionForHR(audioSessionControlInterface.GetSessionInstanceIdentifier(out str));
+                Marshal.ThrowExceptionForHR(audioSessionControlInterface2.GetSessionInstanceIdentifier(out str));
                 return str;
             }
         }
@@ -174,8 +178,9 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
+                if (audioSessionControlInterface2 == null) throw new InvalidOperationException("Not supported on this version of Windows");
                 uint pid;
-                Marshal.ThrowExceptionForHR(audioSessionControlInterface.GetProcessId(out pid));
+                Marshal.ThrowExceptionForHR(audioSessionControlInterface2.GetProcessId(out pid));
                 return pid;
             }
         }
@@ -187,7 +192,8 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                return (audioSessionControlInterface.IsSystemSoundsSession() == 0);
+                if (audioSessionControlInterface2 == null) throw new InvalidOperationException("Not supported on this version of Windows");
+                return (audioSessionControlInterface2.IsSystemSoundsSession() == 0);
             }
         }
 

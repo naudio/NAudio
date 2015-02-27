@@ -1,9 +1,7 @@
 ﻿using NAudio.CoreAudioApi.Interfaces;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace NAudio.CoreAudioApi
 {
@@ -12,7 +10,7 @@ namespace NAudio.CoreAudioApi
     /// </summary>
     public class SessionCollection
     {
-        IAudioSessionEnumerator audioSessionEnumerator;
+        readonly IAudioSessionEnumerator audioSessionEnumerator;
 
         internal SessionCollection(IAudioSessionEnumerator realEnumerator)
         {
@@ -28,7 +26,7 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                IAudioSessionControl result = null;
+                IAudioSessionControl result;
                 Marshal.ThrowExceptionForHR(audioSessionEnumerator.GetSession(index, out result));
                 return new AudioSessionControl(result);
             }
@@ -41,9 +39,9 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                int result = 0;
+                int result;
                 Marshal.ThrowExceptionForHR(audioSessionEnumerator.GetCount(out result));
-                return (int)result;
+                return result;
             }
         }
     }

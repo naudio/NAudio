@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Data;
 using System.Linq;
+using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Windows.Forms;
 using NAudio.CoreAudioApi;
@@ -53,20 +54,26 @@ namespace NAudioDemo.VolumeMixerDemo
         {
             flowLayoutPanelApps.Controls.Clear();
             var device = (MMDevice)DeviceVolumePanel.Device;
-            var sessions = device.AudioSessionManager.Sessions;
             DeviceVolumePanel.UpdateVolume();
+            
+            var sessions = device.AudioSessionManager.Sessions;
+            if (sessions == null) return;
             AppVolumePanels = new List<VolumePanel>(sessions.Count);
             for (int i = 0; i < sessions.Count; i++)
             {
-                if (sessions[i].IsSystemSoundsSession && ProcessExists(sessions[i].GetProcessID))
+                var session = sessions[i];
+                if (session.IsSystemSoundsSession && ProcessExists(session.GetProcessID))
                 {
-                    AddVolumePanel(sessions[i]);
+                    AddVolumePanel(session);
                     break;
                 }
             }
             for (int i = 0; i < sessions.Count; i++)
-                if (!sessions[i].IsSystemSoundsSession && ProcessExists(sessions[i].GetProcessID))
-                    AddVolumePanel(sessions[i]);
+            {
+                var session = sessions[i];
+                if (!session.IsSystemSoundsSession && ProcessExists(session.GetProcessID))
+                    AddVolumePanel(session);
+            }
         }
 
         bool ProcessExists(uint processId)

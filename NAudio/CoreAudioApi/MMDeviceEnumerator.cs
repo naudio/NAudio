@@ -75,6 +75,30 @@ namespace NAudio.CoreAudioApi
         }
 
         /// <summary>
+        /// Check to see if a default audio end point exists without needing an exception.
+        /// </summary>
+        /// <param name="dataFlow">Data Flow</param>
+        /// <param name="role">Role</param>
+        /// <returns>True if one exists, and false if one does not exist.</returns>
+        public bool HasDefaultAudioEndpoint(DataFlow dataFlow, Role role)
+        {
+            const int E_NOTFOUND = unchecked((int)0x80070490);
+            IMMDevice device = null;
+            int hresult = ((IMMDeviceEnumerator)realEnumerator).GetDefaultAudioEndpoint(dataFlow, role, out device);
+            if (hresult == 0x0)
+            {
+                Marshal.ReleaseComObject(device);
+                return true;
+            }
+            if (hresult == E_NOTFOUND)
+            {
+                return false;
+            }
+            Marshal.ThrowExceptionForHR(hresult);
+            return false;
+        }
+
+        /// <summary>
         /// Get device by ID
         /// </summary>
         /// <param name="id">Device ID</param>

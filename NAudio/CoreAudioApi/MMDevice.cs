@@ -199,6 +199,26 @@ namespace NAudio.CoreAudioApi
         }
 
         /// <summary>
+        /// Icon path of device
+        /// </summary>
+        public string IconPath
+        {
+            get
+            {
+                if (propertyStore == null)
+                {
+                    GetPropertyInformation();
+                }
+                if (propertyStore.Contains(PropertyKeys.PKEY_Device_IconPath))
+                {
+                    return (string)propertyStore[PropertyKeys.PKEY_Device_IconPath].Value;
+                }
+                else
+                    return "Unknown";
+            }
+        }
+
+        /// <summary>
         /// Device ID
         /// </summary>
         public string ID
@@ -237,6 +257,7 @@ namespace NAudio.CoreAudioApi
                 return result;
             }
         }
+
         #endregion
 
         #region Constructor

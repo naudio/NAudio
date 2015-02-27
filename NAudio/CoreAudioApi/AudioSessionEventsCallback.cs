@@ -16,7 +16,11 @@ namespace NAudio.CoreAudioApi
     {
         private readonly IAudioSessionEventsHandler audioSessionEventsHandler;
 
-        internal AudioSessionEventsCallback(IAudioSessionEventsHandler handler)
+        /// <summary>
+        /// Constructor.
+        /// </summary>
+        /// <param name="handler"></param>
+        public AudioSessionEventsCallback(IAudioSessionEventsHandler handler)
         {
             audioSessionEventsHandler = handler;
         }
@@ -31,6 +35,8 @@ namespace NAudio.CoreAudioApi
             [In] [MarshalAs(UnmanagedType.LPWStr)] string displayName,
             [In] ref Guid eventContext)
         {
+            audioSessionEventsHandler.OnDisplayNameChanged(displayName);
+
             return 0;
         }
 
@@ -44,6 +50,8 @@ namespace NAudio.CoreAudioApi
             [In] [MarshalAs(UnmanagedType.LPWStr)] string iconPath,
             [In] ref Guid eventContext)
         {
+            audioSessionEventsHandler.OnIconPathChanged(iconPath);
+
             return 0;
         }
 
@@ -78,6 +86,8 @@ namespace NAudio.CoreAudioApi
             [In] [MarshalAs(UnmanagedType.U4)] UInt32 channelIndex,
             [In] ref Guid eventContext)
         {
+            audioSessionEventsHandler.OnChannelVolumeChanged(channelCount, newVolumes, channelIndex);
+
             return 0;
         }
 
@@ -91,6 +101,8 @@ namespace NAudio.CoreAudioApi
             [In] ref Guid groupingId,
             [In] ref Guid eventContext)
         {
+            audioSessionEventsHandler.OnGroupingParamChanged(ref groupingId);
+
             return 0;
         }
 
@@ -102,6 +114,8 @@ namespace NAudio.CoreAudioApi
         public int OnStateChanged(
             [In] AudioSessionState state)
         {
+            audioSessionEventsHandler.OnStateChanged(state);
+
             return 0;
         }
 
@@ -113,6 +127,8 @@ namespace NAudio.CoreAudioApi
         public int OnSessionDisconnected(
             [In] AudioSessionDisconnectReason disconnectReason)
         {
+            audioSessionEventsHandler.OnSessionDisconnected(disconnectReason);
+
             return 0;
         }
     }

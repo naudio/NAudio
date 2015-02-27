@@ -20,7 +20,12 @@ namespace NAudio.MediaFoundation
         {
             if (!initialized)
             {
-                MediaFoundationInterop.MFStartup(MediaFoundationInterop.MF_VERSION, 0);
+                var os = Environment.OSVersion;
+                var sdkVersion = MediaFoundationInterop.MF_SDK_VERSION;
+                if (os.Version.Major == 6 && os.Version.Minor == 0)
+                    sdkVersion = 1;
+
+                MediaFoundationInterop.MFStartup((sdkVersion << 16) | MediaFoundationInterop.MF_API_VERSION, 0);
                 initialized = true;
             }
         }

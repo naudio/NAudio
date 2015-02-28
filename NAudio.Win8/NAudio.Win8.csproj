@@ -184,8 +184,14 @@
     <Compile Include="..\NAudio\CoreAudioApi\AudioSessionManager.cs">
       <Link>CoreAudioApi\AudioSessionManager.cs</Link>
     </Compile>
+    <Compile Include="..\NAudio\CoreAudioApi\AudioSessionNotification.cs">
+      <Link>CoreAudioApi\AudioSessionNotification.cs</Link>
+    </Compile>
     <Compile Include="..\NAudio\CoreAudioApi\AudioStreamCategory.cs">
       <Link>CoreAudioApi\AudioStreamCategory.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\CoreAudioApi\AudioStreamVolume.cs">
+      <Link>CoreAudioApi\AudioStreamVolume.cs</Link>
     </Compile>
     <Compile Include="..\NAudio\CoreAudioApi\AudioVolumeNotificationData.cs">
       <Link>CoreAudioApi\AudioVolumeNotificationData.cs</Link>
@@ -235,6 +241,9 @@
     <Compile Include="..\NAudio\CoreAudioApi\Interfaces\IAudioSessionControl.cs">
       <Link>CoreAudioApi\Interfaces\IAudioSessionControl.cs</Link>
     </Compile>
+    <Compile Include="..\NAudio\CoreAudioApi\Interfaces\IAudioSessionEnumerator.cs">
+      <Link>CoreAudioApi\Interfaces\IAudioSessionEnumerator.cs</Link>
+    </Compile>
     <Compile Include="..\NAudio\CoreAudioApi\Interfaces\IAudioSessionEvents.cs">
       <Link>CoreAudioApi\Interfaces\IAudioSessionEvents.cs</Link>
     </Compile>
@@ -243,6 +252,12 @@
     </Compile>
     <Compile Include="..\NAudio\CoreAudioApi\Interfaces\IAudioSessionManager.cs">
       <Link>CoreAudioApi\Interfaces\IAudioSessionManager.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\CoreAudioApi\Interfaces\IAudioSessionNotification.cs">
+      <Link>CoreAudioApi\Interfaces\IAudioSessionNotification.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\CoreAudioApi\Interfaces\IAudioStreamVolume.cs">
+      <Link>CoreAudioApi\Interfaces\IAudioStreamVolume.cs</Link>
     </Compile>
     <Compile Include="..\NAudio\CoreAudioApi\Interfaces\IMMDevice.cs">
       <Link>CoreAudioApi\Interfaces\IMMDevice.cs</Link>
@@ -297,6 +312,9 @@
     </Compile>
     <Compile Include="..\NAudio\CoreAudioApi\Role.cs">
       <Link>CoreAudioApi\Role.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\CoreAudioApi\SessionCollection.cs">
+      <Link>CoreAudioApi\SessionCollection.cs</Link>
     </Compile>
     <Compile Include="..\NAudio\CoreAudioApi\SimpleAudioVolume.cs">
       <Link>CoreAudioApi\SimpleAudioVolume.cs</Link>

@@ -72,7 +72,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <param name="sessionControl">Receives an <see cref="IAudioSessionControl"/> interface for the audio session.</param>
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
-        int GetAudioSessionControl(
+        new int GetAudioSessionControl(
             [In, Optional] [MarshalAs(UnmanagedType.LPStruct)] Guid sessionId,
             [In] [MarshalAs(UnmanagedType.U4)] UInt32 streamFlags,
             [Out] [MarshalAs(UnmanagedType.Interface)] out IAudioSessionControl sessionControl);
@@ -85,7 +85,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <param name="audioVolume">Receives an <see cref="ISimpleAudioVolume"/> interface for the audio session.</param>
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
-        int GetSimpleAudioVolume(
+        new int GetSimpleAudioVolume(
             [In, Optional] [MarshalAs(UnmanagedType.LPStruct)] Guid sessionId,
             [In] [MarshalAs(UnmanagedType.U4)] UInt32 streamFlags,
             [Out] [MarshalAs(UnmanagedType.Interface)] out ISimpleAudioVolume audioVolume);

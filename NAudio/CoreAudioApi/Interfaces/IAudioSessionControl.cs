@@ -135,7 +135,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <param name="state">Receives the current session state.</param>
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
-        int GetState(
+        new int GetState(
             [Out] out AudioSessionState state);
 
         /// <summary>
@@ -144,7 +144,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <param name="displayName">Receives a string that contains the display name.</param>
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
-        int GetDisplayName(
+        new int GetDisplayName(
             [Out] [MarshalAs(UnmanagedType.LPWStr)] out string displayName);
 
         /// <summary>
@@ -154,7 +154,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <param name="eventContext">A user context value that is passed to the notification callback.</param>
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
-        int SetDisplayName(
+        new int SetDisplayName(
             [In] [MarshalAs(UnmanagedType.LPWStr)] string displayName,
             [In] [MarshalAs(UnmanagedType.LPStruct)] Guid eventContext);
 
@@ -164,7 +164,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <param name="iconPath">Receives a string that specifies the fully qualified path of the file that contains the icon.</param>
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
-        int GetIconPath(
+        new int GetIconPath(
             [Out] [MarshalAs(UnmanagedType.LPWStr)] out string iconPath);
 
         /// <summary>
@@ -174,7 +174,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <param name="eventContext">A user context value that is passed to the notification callback.</param>
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
-        int SetIconPath(
+        new int SetIconPath(
             [In] [MarshalAs(UnmanagedType.LPWStr)] string iconPath,
             [In] [MarshalAs(UnmanagedType.LPStruct)] Guid eventContext);
 
@@ -184,7 +184,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <param name="groupingId">Receives the grouping parameter ID.</param>
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
-        int GetGroupingParam(
+        new int GetGroupingParam(
             [Out] out Guid groupingId);
 
         /// <summary>
@@ -194,7 +194,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <param name="eventContext">A user context value that is passed to the notification callback.</param>
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
-        int SetGroupingParam(
+        new int SetGroupingParam(
             [In] [MarshalAs(UnmanagedType.LPStruct)] Guid groupingId,
             [In] [MarshalAs(UnmanagedType.LPStruct)] Guid eventContext);
 
@@ -204,7 +204,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <param name="client">A client-implemented <see cref="IAudioSessionEvents"/> interface.</param>
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
-        int RegisterAudioSessionNotification(
+        new int RegisterAudioSessionNotification(
             [In] IAudioSessionEvents client);
 
         /// <summary>
@@ -213,7 +213,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <param name="client">A client-implemented <see cref="IAudioSessionEvents"/> interface.</param>
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
-        int UnregisterAudioSessionNotification(
+        new int UnregisterAudioSessionNotification(
             [In] IAudioSessionEvents client);
     /// <summary>
         /// Retrieves the identifier for the audio session.

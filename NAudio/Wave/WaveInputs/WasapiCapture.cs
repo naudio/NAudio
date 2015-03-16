@@ -27,6 +27,7 @@ namespace NAudio.CoreAudioApi
         private readonly SynchronizationContext syncContext;
         private readonly bool isUsingEventSync;
         private EventWaitHandle frameEventWaitHandle;
+		private int audioBufferMillisecondsLength;
 
         /// <summary>
         /// Indicates recorded data is available 
@@ -56,17 +57,29 @@ namespace NAudio.CoreAudioApi
 
         }
 
-        /// <summary>
+		        /// <summary>
         /// Initializes a new instance of the <see cref="WasapiCapture"/> class.
         /// </summary>
         /// <param name="captureDevice">The capture device.</param>
         /// <param name="useEventSync">true if sync is done with event. false use sleep.</param>
-        public WasapiCapture(MMDevice captureDevice, bool useEventSync)
+        public WasapiCapture(MMDevice captureDevice, bool useEventSync) 
+			: this(captureDevice, useEventSync, 100)
+		{
+		}
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="WasapiCapture" /> class.
+		/// </summary>
+		/// <param name="captureDevice">The capture device.</param>
+		/// <param name="useEventSync">true if sync is done with event. false use sleep.</param>
+		/// <param name="audioBufferMillisecondsLength">Length of the audio buffer in milliseconds. A lower value means lower latency but increased CPU usage.</param>
+        public WasapiCapture(MMDevice captureDevice, bool useEventSync, int audioBufferMillisecondsLength)
         {
             syncContext = SynchronizationContext.Current;
             audioClient = captureDevice.AudioClient;
             ShareMode = AudioClientShareMode.Shared;
             isUsingEventSync = useEventSync;
+			this.audioBufferMillisecondsLength = audioBufferMillisecondsLength;
 
             waveFormat = audioClient.MixFormat;
 
@@ -118,7 +131,7 @@ namespace NAudio.CoreAudioApi
             if (initialized)
                 return;
 
-            long requestedDuration = REFTIMES_PER_MILLISEC * 100;
+			long requestedDuration = REFTIMES_PER_MILLISEC * this.audioBufferMillisecondsLength;
 
             if (!audioClient.IsFormatSupported(ShareMode, waveFormat))
             {

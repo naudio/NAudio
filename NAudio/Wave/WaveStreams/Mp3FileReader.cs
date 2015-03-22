@@ -388,23 +388,36 @@ namespace NAudio.Wave
                     offset += toCopy;
                 }
 
+                int targetTocIndex = tocIndex; // the frame index that contains the requested data
+
+                if (repositionedFlag)
+                {
+                    decompressor.Reset();
+
+                    // Seek back a few frames of the stream to get the reset decoder decode a few
+                    // warm-up frames before reading the requested data. Without the warm-up phase,
+                    // the first half of the frame after the reset is attenuated and does not resemble
+                    // the data as it would be when reading sequentially from the beginning, because 
+                    // the decoder is missing the required overlap from the previous frame.
+                    tocIndex = Math.Max(0, tocIndex - 3); // no warm-up at the beginning of the stream
+                    mp3Stream.Position = tableOfContents[tocIndex].FilePosition;
+
+                    repositionedFlag = false;
+                }
+
                 while (bytesRead < numBytes)
                 {
                     Mp3Frame frame = ReadNextFrame();
                     if (frame != null)
                     {
-                        if (repositionedFlag)
-                        {
-                            decompressor.Reset();
-                            repositionedFlag = false;
-                        }
                         int decompressed = decompressor.DecompressFrame(frame, decompressBuffer, 0);
 
-                        if (decompressed == 0)
+                        if (tocIndex <= targetTocIndex || decompressed == 0)
                         {
                             // The first frame after a reset usually does not immediately yield decoded samples.
                             // Because the next instructions will fail if a buffer offset is set and the frame 
                             // decoding didn't return data, we skip the part.
+                            // We skip the following instructions also after decoding a warm-up frame.
                             continue;
                         }
 

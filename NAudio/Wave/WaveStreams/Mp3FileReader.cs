@@ -330,7 +330,7 @@ namespace NAudio.Wave
                     Mp3Index mp3Index = null;
                     for (int index = 0; index < tableOfContents.Count; index++)
                     {
-                        if (tableOfContents[index].SamplePosition >= samplePosition)
+                        if (tableOfContents[index].SamplePosition + tableOfContents[index].SampleCount > samplePosition)
                         {
                             mp3Index = tableOfContents[index];
                             tocIndex = index;

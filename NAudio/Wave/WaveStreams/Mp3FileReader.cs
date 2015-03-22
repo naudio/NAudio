@@ -337,19 +337,28 @@ namespace NAudio.Wave
                             break;
                         }
                     }
+
+                    decompressBufferOffset = 0;
+                    decompressLeftovers = 0;
+                    repositionedFlag = true;
+
                     if (mp3Index != null)
                     {
                         // perform the reposition
                         mp3Stream.Position = mp3Index.FilePosition;
+
+                        // set the offset into the buffer (that is yet to be populated in Read())
+                        var frameOffset = samplePosition - mp3Index.SamplePosition;
+                        if (frameOffset > 0)
+                        {
+                            decompressBufferOffset = (int)frameOffset * bytesPerSample;
+                        }
                     }
                     else
                     {
                         // we are repositioning to the end of the data
                         mp3Stream.Position = mp3DataLength + dataStartPosition;
                     }
-                    decompressBufferOffset = 0;
-                    decompressLeftovers = 0;
-                    repositionedFlag = true;
                 }
             }
         }
@@ -390,10 +399,18 @@ namespace NAudio.Wave
                             repositionedFlag = false;
                         }
                         int decompressed = decompressor.DecompressFrame(frame, decompressBuffer, 0);
-                        
-                        int toCopy = Math.Min(decompressed, numBytes - bytesRead);
-                        Array.Copy(decompressBuffer, 0, sampleBuffer, offset, toCopy);
-                        if (toCopy < decompressed)
+
+                        if (decompressed == 0)
+                        {
+                            // The first frame after a reset usually does not immediately yield decoded samples.
+                            // Because the next instructions will fail if a buffer offset is set and the frame 
+                            // decoding didn't return data, we skip the part.
+                            continue;
+                        }
+
+                        int toCopy = Math.Min(decompressed - decompressBufferOffset, numBytes - bytesRead);
+                        Array.Copy(decompressBuffer, decompressBufferOffset, sampleBuffer, offset, toCopy);
+                        if ((toCopy + decompressBufferOffset) < decompressed)
                         {
                             decompressBufferOffset = toCopy;
                             decompressLeftovers = decompressed - toCopy;

@@ -425,8 +425,8 @@ namespace NAudio.Wave
                         Array.Copy(decompressBuffer, decompressBufferOffset, sampleBuffer, offset, toCopy);
                         if ((toCopy + decompressBufferOffset) < decompressed)
                         {
-                            decompressBufferOffset = toCopy;
-                            decompressLeftovers = decompressed - toCopy;
+                            decompressBufferOffset = toCopy + decompressBufferOffset;
+                            decompressLeftovers = decompressed - decompressBufferOffset;
                         }
                         else
                         {

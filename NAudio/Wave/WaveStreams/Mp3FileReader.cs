@@ -38,6 +38,7 @@ namespace NAudio.Wave
 
         private long totalSamples;
         private readonly int bytesPerSample;
+        private readonly int bytesPerDecodedFrame;
 
         private IMp3FrameDecompressor decompressor;
         
@@ -148,8 +149,9 @@ namespace NAudio.Wave
                 this.waveFormat = decompressor.OutputFormat;
                 this.bytesPerSample = (decompressor.OutputFormat.BitsPerSample)/8*decompressor.OutputFormat.Channels;
                 // no MP3 frames have more than 1152 samples in them
+                this.bytesPerDecodedFrame = 1152 * bytesPerSample;
                 // some MP3s I seem to get double
-                this.decompressBuffer = new byte[1152*bytesPerSample*2];
+                this.decompressBuffer = new byte[this.bytesPerDecodedFrame * 2];
             }
             catch (Exception)
             {
@@ -419,6 +421,19 @@ namespace NAudio.Wave
                             // decoding didn't return data, we skip the part.
                             // We skip the following instructions also after decoding a warm-up frame.
                             continue;
+                        }
+                        // Two special cases can happen here:
+                        // 1. We are interested in the first frame of the stream, but need to read the second frame too
+                        //    for the decoder to return decoded data
+                        // 2. We are interested in the second frame of the stream, but because reading the first frame
+                        //    as warm-up didn't yield any data (because the decoder needs two frames to return data), we
+                        //    get data from the first and second frame. 
+                        //    This case needs special handling, and we have to purge the data of the first frame.
+                        else if (tocIndex == targetTocIndex + 1 && decompressed == bytesPerDecodedFrame * 2)
+                        {
+                            // Purge the first frame's data
+                            Array.Copy(decompressBuffer, bytesPerDecodedFrame, decompressBuffer, 0, bytesPerDecodedFrame);
+                            decompressed = bytesPerDecodedFrame;
                         }
 
                         int toCopy = Math.Min(decompressed - decompressBufferOffset, numBytes - bytesRead);

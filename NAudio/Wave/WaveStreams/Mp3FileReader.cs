@@ -47,6 +47,8 @@ namespace NAudio.Wave
         private int decompressLeftovers;
         private bool repositionedFlag;
 
+        private long position; // decompressed data position tracker
+
         private readonly object repositionLock = new object();
 
         /// <summary>Supports opening a MP3 file</summary>
@@ -314,14 +316,7 @@ namespace NAudio.Wave
         {
             get
             {
-                if (tocIndex >= tableOfContents.Count)
-                {
-                    return this.Length;
-                }
-                else
-                {
-                    return (tableOfContents[tocIndex].SamplePosition * this.bytesPerSample) + decompressBufferOffset;
-                }
+                return position;
             }
             set
             {
@@ -361,6 +356,8 @@ namespace NAudio.Wave
                         // we are repositioning to the end of the data
                         mp3Stream.Position = mp3DataLength + dataStartPosition;
                     }
+
+                    position = value;
                 }
             }
         }
@@ -459,6 +456,7 @@ namespace NAudio.Wave
                 }
             }
             Debug.Assert(bytesRead <= numBytes, "MP3 File Reader read too much");
+            position += bytesRead;
             return bytesRead;
         }
 

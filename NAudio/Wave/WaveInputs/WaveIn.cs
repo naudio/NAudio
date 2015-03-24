@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.Mime;
 using System.Text;
+using System.Windows;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Windows.Threading;
 using NAudio.Mixer;
 
 namespace NAudio.Wave
@@ -19,6 +22,7 @@ namespace NAudio.Wave
         private readonly WaveInterop.WaveCallback callback;
         private WaveCallbackInfo callbackInfo;
         private readonly SynchronizationContext syncContext;
+        private readonly Dispatcher dispatcher;
         private int lastReturnedBufferIndex;
         /// <summary>
         /// Indicates recorded data is available 
@@ -54,9 +58,13 @@ namespace NAudio.Wave
         /// </summary>
         public WaveIn(WaveCallbackInfo callbackInfo)
         {
+            if (Application.Current != null)
+            {
+                dispatcher = Application.Current.Dispatcher;
+            }
+
             syncContext = SynchronizationContext.Current;
-            if ((callbackInfo.Strategy == WaveCallbackStrategy.NewWindow || callbackInfo.Strategy == WaveCallbackStrategy.ExistingWindow) &&
-                syncContext == null)
+            if ((callbackInfo.Strategy == WaveCallbackStrategy.NewWindow || callbackInfo.Strategy == WaveCallbackStrategy.ExistingWindow) && syncContext == null)
             {
                 throw new InvalidOperationException("Use WaveInEvent to record on a background thread");
             }
@@ -167,7 +175,12 @@ namespace NAudio.Wave
             var handler = RecordingStopped;
             if (handler != null)
             {
-                if (this.syncContext == null)
+                if (dispatcher != null)
+                {
+                    dispatcher.BeginInvoke(
+                        DispatcherPriority.Normal, new Action(() => handler(this, new StoppedEventArgs(e))));
+                }
+                else if (this.syncContext == null)
                 {
                     handler(this, new StoppedEventArgs(e));
                 }

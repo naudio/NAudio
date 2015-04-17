@@ -157,20 +157,24 @@ namespace NAudio.Wave
         /// <summary>
         /// Start Recording
         /// </summary>
-        public async void StartRecording()
+        public void StartRecording()
         {
             this.stop = false;
-            var audioClient = await Activate();
-            Task.Run(() => CaptureThread(audioClient));
-            
-            /*Task.Run(
-                async () =>
-                    {
-                        var audioClient = await Activate();
-                        //InitializeCaptureDevice(audioClient); - now done in the activate callback
-                        CaptureThread(audioClient);
-                    });*/
 
+            try
+            {
+                Task.Run(new Func<Task>(async () =>
+                {
+                    AudioClient audioClient = await Activate();
+                    Task.Run(() => DoRecording(audioClient));
+                })).Wait();
+            }
+            catch (AggregateException ae)
+            {
+                Debug.WriteLine("Error starting thread: " + ae.InnerException);
+                throw ae.InnerException;
+            }
+            
             Debug.WriteLine("Thread starting...");
 
         }
@@ -183,20 +187,6 @@ namespace NAudio.Wave
             this.stop = true;
             // todo: wait for thread to end
             // todo: could signal the event
-        }
-
-        private void CaptureThread(AudioClient client)
-        { 
-            Exception exception = null;
-            try
-            {
-                DoRecording(client);
-            }
-            catch (Exception e)
-            {
-                exception = e;
-            }
-            
         }
 
         private void DoRecording(AudioClient client)

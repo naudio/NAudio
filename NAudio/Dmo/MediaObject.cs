@@ -474,18 +474,40 @@ namespace NAudio.Dmo
 
         #region IDisposable Members
 
+        bool isDisposed = false;
+        /// <summary>
+        /// Experimental code, not currently being called
+        /// Not sure if it is necessary anyway
+        /// </summary>
+        protected virtual void Dispose(bool isDisposing)
+        {
+            if (!isDisposed)
+            {
+                if (mediaObject != null)
+                {
+                    Marshal.ReleaseComObject(mediaObject);
+                    mediaObject = null;
+                }
+                
+                isDisposed = false;
+            }
+        }
         /// <summary>
         /// Experimental code, not currently being called
         /// Not sure if it is necessary anyway
         /// </summary>
         public void Dispose()
         {
-            if (mediaObject != null)
-            {
-                Marshal.ReleaseComObject(mediaObject);
-                mediaObject = null;
-            }
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
+
+#pragma warning disable 1591
+        ~MediaObject()
+        {
+            Dispose(false);
+        }
+#pragma warning restore 1591
 
         #endregion
     }

@@ -24,7 +24,7 @@ namespace NAudio.Wave
         {
             return GetOutputMediaTypes(audioSubtype)
                 .Where(mt => mt.SampleRate == sampleRate && mt.ChannelCount == channels)
-                .Select(mt => mt.AverageBytesPerSecond*8)
+                .Select(mt => mt.AverageBytesPerSecond * 8)
                 .Distinct()
                 .OrderBy(br => br)
                 .ToArray();
@@ -135,7 +135,7 @@ namespace NAudio.Wave
         {
             return GetOutputMediaTypes(audioSubtype)
                 .Where(mt => mt.SampleRate == inputFormat.SampleRate && mt.ChannelCount == inputFormat.Channels)
-                .Select(mt => new { MediaType = mt, Delta = Math.Abs(desiredBitRate - mt.AverageBytesPerSecond * 8) } )
+                .Select(mt => new { MediaType = mt, Delta = Math.Abs(desiredBitRate - mt.AverageBytesPerSecond * 8) })
                 .OrderBy(mt => mt.Delta)
                 .Select(mt => mt.MediaType)
                 .FirstOrDefault();
@@ -277,9 +277,14 @@ namespace NAudio.Wave
         /// Disposes this instance
         /// </summary>
         /// <param name="disposing"></param>
-        protected void Dispose(bool disposing)
+        protected virtual void Dispose(bool disposing)
         {
-            Marshal.ReleaseComObject(outputMediaType.MediaFoundationObject);
+            if (!disposed)
+            {
+                Marshal.ReleaseComObject(outputMediaType.MediaFoundationObject);
+
+                disposed = true;
+            }
         }
 
         /// <summary>
@@ -287,11 +292,7 @@ namespace NAudio.Wave
         /// </summary>
         public void Dispose()
         {
-            if (!disposed)
-            {
-                disposed = true;
-                Dispose(true);
-            }
+            Dispose(true);
             GC.SuppressFinalize(this);
         }
 

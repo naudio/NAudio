@@ -52,8 +52,9 @@ namespace NAudio.Wave
         private readonly object repositionLock = new object();
 
         /// <summary>Supports opening a MP3 file</summary>
-        public Mp3FileReader(string mp3FileName) 
-            : this(File.OpenRead(mp3FileName))
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope")]
+        public Mp3FileReader(string mp3FileName)
+            : this(File.OpenRead(mp3FileName), CreateAcmFrameDecompressor, true)
         {
             ownInputStream = true;
         }
@@ -61,10 +62,10 @@ namespace NAudio.Wave
         /// <summary>Supports opening a MP3 file</summary>
         /// <param name="mp3FileName">MP3 File name</param>
         /// <param name="frameDecompressorBuilder">Factory method to build a frame decompressor</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope")]
         public Mp3FileReader(string mp3FileName, FrameDecompressorBuilder frameDecompressorBuilder)
-            : this(File.OpenRead(mp3FileName), frameDecompressorBuilder)
+            : this(File.OpenRead(mp3FileName), frameDecompressorBuilder, true)
         {
-            ownInputStream = true;
         }
 
         /// <summary>
@@ -74,8 +75,7 @@ namespace NAudio.Wave
         /// <param name="inputStream">The incoming stream containing MP3 data</param>
         public Mp3FileReader(Stream inputStream)
             : this (inputStream, CreateAcmFrameDecompressor)
-        {
-            
+        {            
         }
         
         /// <summary>
@@ -85,10 +85,16 @@ namespace NAudio.Wave
         /// <param name="inputStream">The incoming stream containing MP3 data</param>
         /// <param name="frameDecompressorBuilder">Factory method to build a frame decompressor</param>
         public Mp3FileReader(Stream inputStream, FrameDecompressorBuilder frameDecompressorBuilder)
+            :this(inputStream, frameDecompressorBuilder, false)
         {
-            if (inputStream == null) throw new ArgumentNullException("inputStream");
+        }
+
+        private Mp3FileReader(Stream inputStream, FrameDecompressorBuilder frameDecompressorBuilder, bool ownsInput)
+        {
             try
             {
+                if (inputStream == null) throw new ArgumentNullException("inputStream");
+
                 mp3Stream = inputStream;
                 id3v2Tag = Id3v2Tag.ReadTag(mp3Stream);
 
@@ -155,9 +161,9 @@ namespace NAudio.Wave
                 // some MP3s I seem to get double
                 this.decompressBuffer = new byte[this.bytesPerDecodedFrame * 2];
             }
-            catch (Exception)
+            catch
             {
-                if (ownInputStream) inputStream.Dispose();
+                if (ownsInput && inputStream != null) inputStream.Dispose();
                 throw;
             }
         }

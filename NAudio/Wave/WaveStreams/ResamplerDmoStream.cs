@@ -182,18 +182,24 @@ namespace NAudio.Wave
         /// <param name="disposing">True if disposing (not from finalizer)</param>
         protected override void Dispose(bool disposing)
         {
-            if (inputMediaBuffer != null)
+            try
             {
-                inputMediaBuffer.Dispose();
-                inputMediaBuffer = null;
+                if (inputMediaBuffer != null)
+                {
+                    inputMediaBuffer.Dispose();
+                    inputMediaBuffer = null;
+                }
+                outputBuffer.Dispose();
+                if (dmoResampler != null)
+                {
+                    dmoResampler.Dispose();
+                    dmoResampler = null;
+                }
             }
-            outputBuffer.Dispose();
-            if (dmoResampler != null)
+            finally
             {
-                //resampler.Dispose(); s
-                dmoResampler = null;
+                base.Dispose(disposing);
             }
-            base.Dispose(disposing);
         }
     }
 }

@@ -62,19 +62,37 @@ namespace NAudio.Wave
         /// <param name="outStream">Stream to be written to</param>
         /// <param name="format">Wave format to use</param>
         public WaveFileWriter(Stream outStream, WaveFormat format)
+            : this(outStream, format, false)
         {
-            this.outStream = outStream;
-            this.format = format;
-            this.writer = new BinaryWriter(outStream, System.Text.Encoding.UTF8);
-            this.writer.Write(System.Text.Encoding.UTF8.GetBytes("RIFF"));
-            this.writer.Write((int)0); // placeholder
-            this.writer.Write(System.Text.Encoding.UTF8.GetBytes("WAVE"));
 
-            this.writer.Write(System.Text.Encoding.UTF8.GetBytes("fmt "));
-            format.Serialize(this.writer);
+        }
 
-            CreateFactChunk();
-            WriteDataChunkHeader();
+        private WaveFileWriter(Stream outStream, WaveFormat format, bool ownsStream)
+        {
+            try
+            {
+                this.outStream = outStream;
+                this.format = format;
+                this.writer = new BinaryWriter(outStream, System.Text.Encoding.UTF8);
+                this.writer.Write(System.Text.Encoding.UTF8.GetBytes("RIFF"));
+                this.writer.Write((int)0); // placeholder
+                this.writer.Write(System.Text.Encoding.UTF8.GetBytes("WAVE"));
+
+                this.writer.Write(System.Text.Encoding.UTF8.GetBytes("fmt "));
+                format.Serialize(this.writer);
+
+                CreateFactChunk();
+                WriteDataChunkHeader();
+            }
+            catch
+            {
+                if (ownsStream)
+                {
+                    outStream.Dispose();
+                }
+
+                throw;
+            }
         }
 
         /// <summary>
@@ -82,8 +100,9 @@ namespace NAudio.Wave
         /// </summary>
         /// <param name="filename">The filename to write to</param>
         /// <param name="format">The Wave Format of the output data</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope")]
         public WaveFileWriter(string filename, WaveFormat format)
-            : this(new FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.Read), format)
+            : this(new FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.Read), format, true)
         {
             this.filename = filename;
         }
@@ -108,7 +127,7 @@ namespace NAudio.Wave
 
         private bool HasFactChunk()
         {
-            return format.Encoding != WaveFormatEncoding.Pcm && 
+            return format.Encoding != WaveFormatEncoding.Pcm &&
                 format.BitsPerSample != 0;
         }
 
@@ -221,7 +240,7 @@ namespace NAudio.Wave
         }
 
         private readonly byte[] value24 = new byte[3]; // keep this around to save us creating it every time
-        
+
         /// <summary>
         /// Writes a single sample to the Wave file
         /// </summary>
@@ -296,7 +315,7 @@ namespace NAudio.Wave
         {
             // 16 bit PCM data
             if (WaveFormat.BitsPerSample == 16)
-            {                
+            {
                 for (int sample = 0; sample < count; sample++)
                 {
                     writer.Write(samples[sample + offset]);
@@ -359,22 +378,36 @@ namespace NAudio.Wave
         /// <param name="disposing">True if called from <see>Dispose</see></param>
         protected override void Dispose(bool disposing)
         {
-            if (disposing)
+            try
             {
-                if (outStream != null)
+                if (disposing)
                 {
-                    try
+                    if (outStream != null)
                     {
-                        UpdateHeader(writer);
-                    }
-                    finally
-                    {
-                        // in a finally block as we don't want the FileStream to run its disposer in
-                        // the GC thread if the code above caused an IOException (e.g. due to disk full)
-                        outStream.Close(); // will close the underlying base stream
-                        outStream = null;
+                        try
+                        {
+                            UpdateHeader(writer);
+                        }
+                        finally
+                        {
+                            if (writer != null)
+                            {
+                                writer.Close();
+                            }
+                            else if (outStream != null)
+                            {
+                                // in a finally block as we don't want the FileStream to run its disposer in
+                                // the GC thread if the code above caused an IOException (e.g. due to disk full)
+                                outStream.Dispose(); // will close the underlying base stream
+                                outStream = null;
+                            }
+                        }
                     }
                 }
+            }
+            finally
+            {
+                base.Dispose(disposing);
             }
         }
 
@@ -409,7 +442,7 @@ namespace NAudio.Wave
                 if (bitsPerSample != 0)
                 {
                     writer.Seek((int)factSampleCountPos, SeekOrigin.Begin);
-                    
+
                     writer.Write((int)((dataChunkSize * 8) / bitsPerSample));
                 }
             }

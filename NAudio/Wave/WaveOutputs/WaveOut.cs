@@ -323,15 +323,15 @@ namespace NAudio.Wave
         /// </summary>
         public void Dispose()
         {
-            GC.SuppressFinalize(this);
             Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         /// <summary>
         /// Closes the WaveOut device and disposes of buffers
         /// </summary>
         /// <param name="disposing">True if called from <see>Dispose</see></param>
-        protected void Dispose(bool disposing)
+        protected virtual void Dispose(bool disposing)
         {
             Stop();
 

@@ -29,6 +29,7 @@ namespace NAudio.Wave
         /// this class, email it to the NAudio project and we will probably
         /// fix this reader to support it
         /// </remarks>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope")]
         public WaveFileReader(String waveFile) :
             this(File.OpenRead(waveFile), true)
         {            
@@ -43,12 +44,13 @@ namespace NAudio.Wave
         {
         }
 
-        private WaveFileReader(Stream inputStream, bool ownInput)
+        private WaveFileReader(Stream inputStream, bool ownsInput)
         {
-            this.waveStream = inputStream;
-            var chunkReader = new WaveFileChunkReader();
             try
             {
+                this.waveStream = inputStream;
+                var chunkReader = new WaveFileChunkReader();
+
                 chunkReader.ReadWaveHeader(inputStream);
                 this.waveFormat = chunkReader.WaveFormat;
                 this.dataPosition = chunkReader.DataChunkPosition;
@@ -57,16 +59,12 @@ namespace NAudio.Wave
             }
             catch
             {
-                if (ownInput)
-                {
-                    inputStream.Dispose();
-                }
-
+                if (ownsInput) inputStream.Dispose();
                 throw;
             }
 
             Position = 0;
-            this.ownInput = ownInput;
+            this.ownInput = ownsInput;
         }
 
         /// <summary>

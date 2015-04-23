@@ -171,7 +171,7 @@ namespace NAudio.CoreAudioApi
             callBack = new AudioEndpointVolumeCallback(this);
             Marshal.ThrowExceptionForHR(audioEndPointVolume.RegisterControlChangeNotify(callBack));
         }
-        
+
         internal void FireNotification(AudioVolumeNotificationData notificationData)
         {
             AudioEndpointVolumeNotificationDelegate del = OnVolumeNotification;
@@ -181,27 +181,38 @@ namespace NAudio.CoreAudioApi
             }
         }
         #region IDisposable Members
+        private bool isDisposed = false;
+        /// <summary>
+        /// Dispose
+        /// </summary>
+        protected virtual void Dispose(bool isDisposing)
+        {
+            if (!isDisposed)
+            {
+                if (callBack != null)
+                {
+                    audioEndPointVolume.UnregisterControlChangeNotify(callBack);
+                    callBack = null;
+                }
 
+                isDisposed = true;
+            }
+        }
         /// <summary>
         /// Dispose
         /// </summary>
         public void Dispose()
         {
-            if (callBack != null)
-            {
-                Marshal.ThrowExceptionForHR(audioEndPointVolume.UnregisterControlChangeNotify(callBack));
-                callBack = null;
-            }
+            Dispose(true);
             GC.SuppressFinalize(this);
-
         }
-        
+
         /// <summary>
         /// Finalizer
         /// </summary>
         ~AudioEndpointVolume()
         {
-            Dispose();
+            Dispose(false);
         }
 
         #endregion

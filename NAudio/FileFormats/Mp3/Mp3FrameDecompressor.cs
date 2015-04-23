@@ -68,19 +68,29 @@ namespace NAudio.Wave
         {
             conversionStream.Reposition();
         }
+        /// <summary>
+        /// Disposes of this MP3 frame decompressor
+        /// </summary>
+        protected virtual void Dispose(bool isDisposing)
+        {
+            if (!disposed)
+            {
+                if (isDisposing)
+                {
+                    if (conversionStream != null)
+                        conversionStream.Dispose();
+                }
 
+                disposed = true;
+            }
+        }
         /// <summary>
         /// Disposes of this MP3 frame decompressor
         /// </summary>
         public void Dispose()
         {
-            if (!disposed)
-            {
-                disposed = true;
-				if(conversionStream != null)
-					conversionStream.Dispose();
-                GC.SuppressFinalize(this);
-            }
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         /// <summary>
@@ -89,7 +99,7 @@ namespace NAudio.Wave
         ~AcmMp3FrameDecompressor()
         {
             System.Diagnostics.Debug.Assert(false, "AcmMp3FrameDecompressor Dispose was not called");
-            Dispose();
+            Dispose(false);
         }
     }
 }

@@ -59,7 +59,6 @@ namespace NAudio.Midi
         /// </summary>
         public void Dispose() 
         {
-            GC.KeepAlive(callback);
             Dispose(true);
             GC.SuppressFinalize(this);
         }
@@ -118,7 +117,9 @@ namespace NAudio.Midi
         {
             if(!this.disposed) 
             {
-                //if(disposing) Components.Dispose();
+                if (disposing)
+                    GC.KeepAlive(callback);
+
                 MidiInterop.midiOutClose(hMidiOut);
             }
             disposed = true;

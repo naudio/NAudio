@@ -15,7 +15,7 @@ namespace NAudio.CoreAudioApi
     /// Designed to manage audio sessions and in particuar the
     /// SimpleAudioVolume interface to adjust a session volume
     /// </summary>
-    public class AudioSessionManager
+    public class AudioSessionManager : IDisposable
     {
         private readonly IAudioSessionManager audioSessionInterface;
         private readonly IAudioSessionManager2 audioSessionInterface2;
@@ -31,7 +31,7 @@ namespace NAudio.CoreAudioApi
         /// <param name="sender"></param>
         /// <param name="newSession"></param>
         public delegate void SessionCreatedDelegate(object sender, IAudioSessionControl newSession);
-        
+
         /// <summary>
         /// Occurs when audio session has been added (for example run another program that use audio playback).
         /// </summary>
@@ -120,16 +120,6 @@ namespace NAudio.CoreAudioApi
             }
         }
 
-        /// <summary>
-        /// Dispose.
-        /// </summary>
-        public void Dispose()
-        {
-            UnregisterNotifications();
-
-            GC.SuppressFinalize(this);
-        }
-
         private void UnregisterNotifications()
         {
             if (sessions != null)
@@ -139,12 +129,40 @@ namespace NAudio.CoreAudioApi
                 Marshal.ThrowExceptionForHR(audioSessionInterface2.UnregisterSessionNotification(audioSessionNotification));
         }
 
+        private bool isDisposed = false;
+
+        /// <summary>
+        /// Dispose.
+        /// </summary>
+        protected virtual void Dispose(bool isDisposing)
+        {
+            if (!isDisposed)
+            {
+                if (isDisposing)
+                {
+                    if (audioSessionControl != null) audioSessionControl.Dispose();
+                }
+
+                UnregisterNotifications();
+
+                isDisposed = true;
+            }
+        }
+        /// <summary>
+        /// Dispose
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
         /// <summary>
         /// Finalizer.
         /// </summary>
         ~AudioSessionManager()
         {
-            Dispose();
+            Dispose(false);
         }
     }
 }

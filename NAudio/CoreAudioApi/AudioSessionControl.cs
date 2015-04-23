@@ -40,24 +40,37 @@ namespace NAudio.CoreAudioApi
 
         #region IDisposable Members
 
+        private bool isDisposed = false;
+        /// <summary>
+        /// Dispose
+        /// </summary>
+        protected virtual void Dispose(bool isDisposing)
+        {
+            if (!isDisposed)
+            {
+                if (audioSessionEventCallback != null)
+                {
+                    Marshal.ThrowExceptionForHR(audioSessionControlInterface.UnregisterAudioSessionNotification(audioSessionEventCallback));
+                }
+
+                isDisposed = true;
+            }
+        }
         /// <summary>
         /// Dispose
         /// </summary>
         public void Dispose()
         {
-            if (audioSessionEventCallback != null)
-            {
-                Marshal.ThrowExceptionForHR(audioSessionControlInterface.UnregisterAudioSessionNotification(audioSessionEventCallback));
-            }
+            Dispose(true);
             GC.SuppressFinalize(this);
         }
-        
+
         /// <summary>
         /// Finalizer
         /// </summary>
         ~AudioSessionControl()
         {
-            Dispose();
+            Dispose(false);
         }
 
         #endregion

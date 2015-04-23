@@ -119,13 +119,33 @@ namespace NAudio.Wave
             this.syncContext = SynchronizationContext.Current;
         }
 
+        private bool isDisposed = false;
         /// <summary>
-        /// Releases unmanaged resources and performs other cleanup operations before the
-        /// <see cref="DirectSoundOut"/> is reclaimed by garbage collection.
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
-        ~DirectSoundOut()
+        protected virtual void Dispose(bool isDisposing)
         {
-            Dispose();
+            if (!isDisposed)
+            {
+                if (isDisposing)
+                {
+                    Stop();
+
+                    if (frameEventWaitHandle1 != null) frameEventWaitHandle1.Close();
+                    if (frameEventWaitHandle2 != null) frameEventWaitHandle2.Close();
+                    if (endEventWaitHandle != null) endEventWaitHandle.Close();
+                }
+                
+                isDisposed = true;
+            }
+        }
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         /// <summary>
@@ -362,15 +382,6 @@ namespace NAudio.Wave
                 //int intVol = (int)((value - 1) * 10000.0f);
                 //secondaryBuffer.SetVolume(intVol);
             }
-        }
-
-        /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-        /// </summary>
-        public void Dispose()
-        {
-            Stop();
-            GC.SuppressFinalize(this);
         }
 
         /// <summary>

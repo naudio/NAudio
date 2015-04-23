@@ -91,22 +91,42 @@ namespace NAudio.FileFormats.Mp3
             reposition = true;
         }
 
+        private bool isDisposed = false;
+        /// <summary>
+        /// Dispose of this obejct and clean up resources
+        /// </summary>
+        protected virtual void Dispose(bool isDisposing)
+        {
+            if (!isDisposed)
+            {
+                if (isDisposing)
+                {
+                    if (inputMediaBuffer != null)
+                    {
+                        inputMediaBuffer.Dispose();
+                        inputMediaBuffer = null;
+                    }
+
+                    outputBuffer.Dispose();
+
+                    if (mp3Decoder != null)
+                    {
+                        mp3Decoder.Dispose();
+                        mp3Decoder = null;
+                    }
+                }
+
+                isDisposed = true;
+            }
+        }
+
         /// <summary>
         /// Dispose of this obejct and clean up resources
         /// </summary>
         public void Dispose()
         {
-            if (inputMediaBuffer != null)
-            {
-                inputMediaBuffer.Dispose();
-                inputMediaBuffer = null;
-            }
-            outputBuffer.Dispose();
-            if (mp3Decoder!= null)
-            {
-                mp3Decoder.Dispose();
-                mp3Decoder = null;
-            }
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
     }
 }

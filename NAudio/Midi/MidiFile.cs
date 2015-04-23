@@ -39,12 +39,13 @@ namespace NAudio.Midi
         /// </summary>
         /// <param name="filename">Name of MIDI file</param>
         /// <param name="strictChecking">If true will error on non-paired note events</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2202:Do not dispose objects multiple times")]
         public MidiFile(string filename, bool strictChecking)
         {
             this.strictChecking = strictChecking;
-            
-            var br = new BinaryReader(File.OpenRead(filename));
-            using(br) 
+
+            using (Stream file = File.OpenRead(filename))
+            using(var br = new BinaryReader(file)) 
             {
                 string chunkHeader = Encoding.UTF8.GetString(br.ReadBytes(4));
                 if(chunkHeader != "MThd") 
@@ -223,13 +224,15 @@ namespace NAudio.Midi
         /// </summary>
         /// <param name="filename">Filename to export to</param>
         /// <param name="events">Events to export</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2202:Do not dispose objects multiple times")]
         public static void Export(string filename, MidiEventCollection events)
         {
             if (events.MidiFileType == 0 && events.Tracks > 1)
             {
                 throw new ArgumentException("Can't export more than one track to a type 0 file");
             }
-            using (var writer = new BinaryWriter(File.Create(filename)))
+            using (Stream file = File.Create(filename))
+            using (var writer = new BinaryWriter(file))
             {
                 writer.Write(Encoding.UTF8.GetBytes("MThd"));
                 writer.Write(SwapUInt32((uint)6)); // chunk size

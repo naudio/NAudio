@@ -26,17 +26,30 @@ namespace NAudio.Dmo
             this.maxLength = maxLength;
         }
 
+        private bool isDisposed = false;
+        /// <summary>
+        /// Dispose and free memory for buffer
+        /// </summary>
+        protected virtual void Dispose(bool isDisposing)
+        {
+            if(!isDisposed)
+            {
+                if (buffer != IntPtr.Zero)
+                {
+                    Marshal.FreeCoTaskMem(buffer);
+                    buffer = IntPtr.Zero;
+                }
+
+                isDisposed = true;
+            }
+        }
         /// <summary>
         /// Dispose and free memory for buffer
         /// </summary>
         public void Dispose()
         {
-            if (buffer != IntPtr.Zero)
-            {
-                Marshal.FreeCoTaskMem(buffer);
-                buffer = IntPtr.Zero;
-                GC.SuppressFinalize(this);
-            }
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         /// <summary>
@@ -44,7 +57,7 @@ namespace NAudio.Dmo
         /// </summary>
         ~MediaBuffer()
         {
-            Dispose();
+            Dispose(false);
         }
 
         #region IMediaBuffer Members

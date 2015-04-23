@@ -17,7 +17,8 @@ namespace NAudio.SoundFont
 	    /// Loads a SoundFont from a file
 	    /// </summary>
 	    /// <param name="fileName">Filename of the SoundFont</param>
-	    public SoundFont(string fileName) : 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope")]
+        public SoundFont(string fileName) : 
             this(new FileStream(fileName,FileMode.Open,FileAccess.Read))
 	    {
 	    }

@@ -38,7 +38,6 @@ namespace NAudio.Dmo
             {
                 ((MediaBuffer)pBuffer).Dispose();
                 pBuffer = null;
-                GC.SuppressFinalize(this);
             }
         }
 

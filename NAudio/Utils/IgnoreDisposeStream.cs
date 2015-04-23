@@ -125,10 +125,17 @@ namespace NAudio.Utils
         /// </summary>
         protected override void Dispose(bool disposing)
         {
-            if (!IgnoreDispose)
+            try
             {
-                SourceStream.Dispose();
-                SourceStream = null;
+                if (!IgnoreDispose)
+                {
+                    SourceStream.Dispose();
+                    SourceStream = null;
+                }
+            }
+            finally
+            {
+                base.Dispose(disposing);
             }
         }
     }

@@ -30,8 +30,12 @@ namespace NAudio.FileFormats.Map
         /// <param name="filename">Path of the .map file</param>
         public CakewalkMapFile(string filename)
         {
-            using (var reader = new BinaryReader(File.OpenRead(filename),Encoding.Unicode))
+            BinaryReader reader = null;
+            Stream file = File.OpenRead(filename);
+            try
             {
+                reader = new BinaryReader(file, Encoding.Unicode);
+
                 drumMappings = new List<CakewalkDrumMapping>();
                 ReadMapHeader(reader);
                 for (int n = 0; n < mapEntryCount; n++)
@@ -47,6 +51,13 @@ namespace NAudio.FileFormats.Map
                     return;
                 ReadOutputsSection3(reader);
                 System.Diagnostics.Debug.Assert(reader.BaseStream.Position == reader.BaseStream.Length);
+            }
+            finally
+            {
+                if (reader != null)
+                    reader.Close();
+                else
+                    file.Dispose();
             }
         }
 
@@ -104,7 +115,7 @@ namespace NAudio.FileFormats.Map
                 if (name[nameLength] == 0)
                     break;
             }
-            mapName = new string(name,0,nameLength);
+            mapName = new string(name, 0, nameLength);
             reader.ReadBytes(98); // unknown
         }
 
@@ -127,7 +138,7 @@ namespace NAudio.FileFormats.Map
                 reader.ReadBytes(24); // data
             }
         }
-        
+
         private void ReadOutputsSection3(BinaryReader reader)
         {
             outputs3Header = MapBlockHeader.Read(reader);

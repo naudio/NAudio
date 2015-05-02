@@ -61,7 +61,14 @@ namespace NAudio.Wave
         /// </summary>
         public override int Read(byte[] buffer, int offset, int count)
         {
-            return sourceStream.Read(buffer, offset, count);
+            try
+            {
+                return sourceStream.Read(buffer, offset, count);
+            }
+            catch (EndOfStreamException)
+            {
+                return 0;
+            }
         }
     }
 }

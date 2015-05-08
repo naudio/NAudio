@@ -80,7 +80,7 @@
    easier to do the entire solution -->
    <Target Name="ZipSource" DependsOnTargets="MakeBuildFolder">
 
-      <Exec Command="hg archive $(BuildFolder)NAudio-Source.zip" />
+      <Exec Command="git archive --format zip --output $(BuildFolder)NAudio-Source.zip master" />
    </Target>
 
    <Target Name="ZipDemo" DependsOnTargets="MakeBuildFolder">

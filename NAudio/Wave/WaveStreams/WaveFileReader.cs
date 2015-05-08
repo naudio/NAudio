@@ -30,25 +30,43 @@ namespace NAudio.Wave
         /// fix this reader to support it
         /// </remarks>
         public WaveFileReader(String waveFile) :
-            this(File.OpenRead(waveFile))
-        {
-            ownInput = true;
+            this(File.OpenRead(waveFile), true)
+        {            
         }
 
         /// <summary>
         /// Creates a Wave File Reader based on an input stream
         /// </summary>
         /// <param name="inputStream">The input stream containing a WAV file including header</param>
-        public WaveFileReader(Stream inputStream)
+        public WaveFileReader(Stream inputStream) :
+           this(inputStream, false)
+        {
+        }
+
+        private WaveFileReader(Stream inputStream, bool ownInput)
         {
             this.waveStream = inputStream;
             var chunkReader = new WaveFileChunkReader();
-            chunkReader.ReadWaveHeader(inputStream);
-            this.waveFormat = chunkReader.WaveFormat;
-            this.dataPosition = chunkReader.DataChunkPosition;
-            this.dataChunkLength = chunkReader.DataChunkLength;
-            this.chunks = chunkReader.RiffChunks;            
+            try
+            {
+                chunkReader.ReadWaveHeader(inputStream);
+                this.waveFormat = chunkReader.WaveFormat;
+                this.dataPosition = chunkReader.DataChunkPosition;
+                this.dataChunkLength = chunkReader.DataChunkLength;
+                this.chunks = chunkReader.RiffChunks;
+            }
+            catch
+            {
+                if (ownInput)
+                {
+                    inputStream.Dispose();
+                }
+
+                throw;
+            }
+
             Position = 0;
+            this.ownInput = ownInput;
         }
 
         /// <summary>

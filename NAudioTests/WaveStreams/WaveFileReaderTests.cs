@@ -153,5 +153,27 @@ namespace NAudioTests.WaveStreams
                 }
             }
         }
+
+        [Test]
+        [Category("UnitTest")]
+        public void DisposeOfStreamWhenConstructedFromFilePath()
+        {
+            string tempFilePath = System.IO.Path.GetTempFileName();
+            System.IO.File.WriteAllText(tempFilePath, "Some test content");
+            try
+            {
+                WaveFileReader waveReader = new WaveFileReader(tempFilePath);
+
+                Assert.Fail("Expected exception System.FormatException was not thrown for file missing a header.");
+            }
+            catch(FormatException ex)
+            {
+                Assert.IsNotNull(ex);
+            }
+            finally
+            {
+                System.IO.File.Delete(tempFilePath);
+            }
+        }
     }
 }

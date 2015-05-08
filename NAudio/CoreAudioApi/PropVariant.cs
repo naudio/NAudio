@@ -50,7 +50,8 @@ namespace NAudio.CoreAudioApi.Interfaces
         [FieldOffset(8)] private long uhVal;
         [FieldOffset(8)] private float fltVal;
         [FieldOffset(8)] private double dblVal;
-        [FieldOffset(8)] private bool boolVal;
+        //VARIANT_BOOL boolVal;
+        [FieldOffset(8)] private short boolVal;
         [FieldOffset(8)] private int scode;
         //CY cyVal;
         [FieldOffset(8)] private DateTime date;
@@ -191,6 +192,16 @@ namespace NAudio.CoreAudioApi.Interfaces
                         return GetBlob();
                     case VarEnum.VT_CLSID:
                         return (Guid)Marshal.PtrToStructure(pointerValue, typeof(Guid));
+                    case VarEnum.VT_BOOL:
+                        switch (boolVal)
+                        {
+                            case -1:
+                                return true;
+                            case 0:
+                                return false;
+                            default:
+                                throw new NotSupportedException("PropVariant VT_BOOL must be either -1 or 0");
+                        }
                 }
                 throw new NotImplementedException("PropVariant " + ve.ToString());
             }

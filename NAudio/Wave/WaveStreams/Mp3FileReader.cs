@@ -38,6 +38,7 @@ namespace NAudio.Wave
 
         private long totalSamples;
         private readonly int bytesPerSample;
+        private readonly int bytesPerDecodedFrame;
 
         private IMp3FrameDecompressor decompressor;
         
@@ -45,6 +46,8 @@ namespace NAudio.Wave
         private int decompressBufferOffset;
         private int decompressLeftovers;
         private bool repositionedFlag;
+
+        private long position; // decompressed data position tracker
 
         private readonly object repositionLock = new object();
 
@@ -148,8 +151,9 @@ namespace NAudio.Wave
                 this.waveFormat = decompressor.OutputFormat;
                 this.bytesPerSample = (decompressor.OutputFormat.BitsPerSample)/8*decompressor.OutputFormat.Channels;
                 // no MP3 frames have more than 1152 samples in them
+                this.bytesPerDecodedFrame = 1152 * bytesPerSample;
                 // some MP3s I seem to get double
-                this.decompressBuffer = new byte[1152*bytesPerSample*2];
+                this.decompressBuffer = new byte[this.bytesPerDecodedFrame * 2];
             }
             catch (Exception)
             {
@@ -312,14 +316,7 @@ namespace NAudio.Wave
         {
             get
             {
-                if (tocIndex >= tableOfContents.Count)
-                {
-                    return this.Length;
-                }
-                else
-                {
-                    return (tableOfContents[tocIndex].SamplePosition * this.bytesPerSample) + decompressBufferOffset;
-                }
+                return position;
             }
             set
             {
@@ -330,26 +327,37 @@ namespace NAudio.Wave
                     Mp3Index mp3Index = null;
                     for (int index = 0; index < tableOfContents.Count; index++)
                     {
-                        if (tableOfContents[index].SamplePosition >= samplePosition)
+                        if (tableOfContents[index].SamplePosition + tableOfContents[index].SampleCount > samplePosition)
                         {
                             mp3Index = tableOfContents[index];
                             tocIndex = index;
                             break;
                         }
                     }
+
+                    decompressBufferOffset = 0;
+                    decompressLeftovers = 0;
+                    repositionedFlag = true;
+
                     if (mp3Index != null)
                     {
                         // perform the reposition
                         mp3Stream.Position = mp3Index.FilePosition;
+
+                        // set the offset into the buffer (that is yet to be populated in Read())
+                        var frameOffset = samplePosition - mp3Index.SamplePosition;
+                        if (frameOffset > 0)
+                        {
+                            decompressBufferOffset = (int)frameOffset * bytesPerSample;
+                        }
                     }
                     else
                     {
                         // we are repositioning to the end of the data
                         mp3Stream.Position = mp3DataLength + dataStartPosition;
                     }
-                    decompressBufferOffset = 0;
-                    decompressLeftovers = 0;
-                    repositionedFlag = true;
+
+                    position = value;
                 }
             }
         }
@@ -379,24 +387,58 @@ namespace NAudio.Wave
                     offset += toCopy;
                 }
 
+                int targetTocIndex = tocIndex; // the frame index that contains the requested data
+
+                if (repositionedFlag)
+                {
+                    decompressor.Reset();
+
+                    // Seek back a few frames of the stream to get the reset decoder decode a few
+                    // warm-up frames before reading the requested data. Without the warm-up phase,
+                    // the first half of the frame after the reset is attenuated and does not resemble
+                    // the data as it would be when reading sequentially from the beginning, because 
+                    // the decoder is missing the required overlap from the previous frame.
+                    tocIndex = Math.Max(0, tocIndex - 3); // no warm-up at the beginning of the stream
+                    mp3Stream.Position = tableOfContents[tocIndex].FilePosition;
+
+                    repositionedFlag = false;
+                }
+
                 while (bytesRead < numBytes)
                 {
                     Mp3Frame frame = ReadNextFrame();
                     if (frame != null)
                     {
-                        if (repositionedFlag)
-                        {
-                            decompressor.Reset();
-                            repositionedFlag = false;
-                        }
                         int decompressed = decompressor.DecompressFrame(frame, decompressBuffer, 0);
-                        
-                        int toCopy = Math.Min(decompressed, numBytes - bytesRead);
-                        Array.Copy(decompressBuffer, 0, sampleBuffer, offset, toCopy);
-                        if (toCopy < decompressed)
+
+                        if (tocIndex <= targetTocIndex || decompressed == 0)
                         {
-                            decompressBufferOffset = toCopy;
-                            decompressLeftovers = decompressed - toCopy;
+                            // The first frame after a reset usually does not immediately yield decoded samples.
+                            // Because the next instructions will fail if a buffer offset is set and the frame 
+                            // decoding didn't return data, we skip the part.
+                            // We skip the following instructions also after decoding a warm-up frame.
+                            continue;
+                        }
+                        // Two special cases can happen here:
+                        // 1. We are interested in the first frame of the stream, but need to read the second frame too
+                        //    for the decoder to return decoded data
+                        // 2. We are interested in the second frame of the stream, but because reading the first frame
+                        //    as warm-up didn't yield any data (because the decoder needs two frames to return data), we
+                        //    get data from the first and second frame. 
+                        //    This case needs special handling, and we have to purge the data of the first frame.
+                        else if (tocIndex == targetTocIndex + 1 && decompressed == bytesPerDecodedFrame * 2)
+                        {
+                            // Purge the first frame's data
+                            Array.Copy(decompressBuffer, bytesPerDecodedFrame, decompressBuffer, 0, bytesPerDecodedFrame);
+                            decompressed = bytesPerDecodedFrame;
+                        }
+
+                        int toCopy = Math.Min(decompressed - decompressBufferOffset, numBytes - bytesRead);
+                        Array.Copy(decompressBuffer, decompressBufferOffset, sampleBuffer, offset, toCopy);
+                        if ((toCopy + decompressBufferOffset) < decompressed)
+                        {
+                            decompressBufferOffset = toCopy + decompressBufferOffset;
+                            decompressLeftovers = decompressed - decompressBufferOffset;
                         }
                         else
                         {
@@ -414,6 +456,7 @@ namespace NAudio.Wave
                 }
             }
             Debug.Assert(bytesRead <= numBytes, "MP3 File Reader read too much");
+            position += bytesRead;
             return bytesRead;
         }
 

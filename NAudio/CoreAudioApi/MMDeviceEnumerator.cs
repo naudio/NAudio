@@ -30,9 +30,9 @@ namespace NAudio.CoreAudioApi
     /// <summary>
     /// MM Device Enumerator
     /// </summary>
-    public class MMDeviceEnumerator
+    public class MMDeviceEnumerator : IDisposable
     {
-        private readonly IMMDeviceEnumerator realEnumerator;
+        private IMMDeviceEnumerator realEnumerator;
 
         /// <summary>
         /// Creates a new MM Device Enumerator
@@ -128,6 +128,30 @@ namespace NAudio.CoreAudioApi
         public int UnregisterEndpointNotificationCallback([In] [MarshalAs(UnmanagedType.Interface)] IMMNotificationClient client)
         {
             return realEnumerator.UnregisterEndpointNotificationCallback(client);
+        }
+
+        /// <inheritdoc/>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Called to dispose/finalize contained objects.
+        /// </summary>
+        /// <param name="disposing">True if disposing, false if called from a finalizer.</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (realEnumerator != null)
+                {
+                    // although GC would do this for us, we want it done now
+                    Marshal.ReleaseComObject(realEnumerator);
+                    realEnumerator = null;
+                }
+            }
         }
     }
 }

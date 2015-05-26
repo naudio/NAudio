@@ -63,6 +63,9 @@ namespace NAudioDemo
             {
                 CreateWaveInDevice();
             }
+            // Forcibly turn on the microphone (some programs (Skype) turn it off).
+            var device = (MMDevice)comboWasapiDevices.SelectedItem;
+            device.AudioEndpointVolume.Mute = false;
 
             outputFilename = String.Format("NAudioDemo {0:yyy-MM-dd HH-mm-ss}.wav", DateTime.Now);
             writer = new WaveFileWriter(Path.Combine(outputFolder, outputFilename), waveIn.WaveFormat);

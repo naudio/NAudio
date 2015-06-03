@@ -2,8 +2,8 @@
 using System.Diagnostics;
 using System.Threading;
 using System.Runtime.InteropServices;
-using System.Windows.Forms.VisualStyles;
 
+// ReSharper disable once CheckNamespace
 namespace NAudio.Wave
 {
     /// <summary>
@@ -62,7 +62,7 @@ namespace NAudio.Wave
             DesiredLatency = 300;
             NumberOfBuffers = 2;
 
-            this.waveOutLock = new object();
+            waveOutLock = new object();
         }
 
         /// <summary>
@@ -84,9 +84,9 @@ namespace NAudio.Wave
                 CloseWaveOut();
             }
 
-            this.callbackEvent = new AutoResetEvent(false);
+            callbackEvent = new AutoResetEvent(false);
 
-            this.waveStream = waveProvider;
+            waveStream = waveProvider;
             int bufferSize = waveProvider.WaveFormat.ConvertLatencyToByteSize((DesiredLatency + NumberOfBuffers - 1) / NumberOfBuffers);            
 
             MmResult result;
@@ -98,7 +98,7 @@ namespace NAudio.Wave
 
             buffers = new WaveOutBuffer[NumberOfBuffers];
             playbackState = PlaybackState.Stopped;
-            for (int n = 0; n < NumberOfBuffers; n++)
+            for (var n = 0; n < NumberOfBuffers; n++)
             {
                 buffers[n] = new WaveOutBuffer(hWaveOut, bufferSize, waveStream, waveOutLock);
             }
@@ -109,7 +109,7 @@ namespace NAudio.Wave
         /// </summary>
         public void Play()
         {
-            if (this.buffers == null || this.waveStream == null)
+            if (buffers == null || waveStream == null)
             {
                 throw new InvalidOperationException("Must call Init first");
             }
@@ -117,7 +117,7 @@ namespace NAudio.Wave
             {
                 playbackState = PlaybackState.Playing;
                 callbackEvent.Set(); // give the thread a kick
-                ThreadPool.QueueUserWorkItem((state) => PlaybackThread(), null);
+                ThreadPool.QueueUserWorkItem(state => PlaybackThread(), null);
             }
             else if (playbackState == PlaybackState.Paused)
             {
@@ -150,7 +150,13 @@ namespace NAudio.Wave
             while (playbackState != PlaybackState.Stopped)
             {
                 if (!callbackEvent.WaitOne(DesiredLatency))
-                    Debug.WriteLine("WARNING: WaveOutEvent callback event timeout");
+                {
+                    if (playbackState == PlaybackState.Playing)
+                    {
+                        Debug.WriteLine("WARNING: WaveOutEvent callback event timeout");
+                    }
+                }
+                    
                 
                 // requeue any buffers returned to us
                 if (playbackState == PlaybackState.Playing)
@@ -166,7 +172,7 @@ namespace NAudio.Wave
                     if (queued == 0)
                     {
                         // we got to the end
-                        this.playbackState = PlaybackState.Stopped;
+                        playbackState = PlaybackState.Stopped;
                         callbackEvent.Set();
                     }
                 }
@@ -263,7 +269,7 @@ namespace NAudio.Wave
         /// </summary>
         public WaveFormat OutputWaveFormat
         {
-            get { return this.waveStream.WaveFormat; }
+            get { return waveStream.WaveFormat; }
         }
 
         /// <summary>
@@ -349,8 +355,8 @@ namespace NAudio.Wave
         /// </summary>
         ~WaveOutEvent()
         {
-            System.Diagnostics.Debug.Assert(false, "WaveOutEvent device was not closed");
             Dispose(false);
+            Debug.Assert(false, "WaveOutEvent device was not closed");
         }
 
         #endregion
@@ -366,7 +372,7 @@ namespace NAudio.Wave
                 }
                 else
                 {
-                    this.syncContext.Post(state => handler(this, new StoppedEventArgs(e)), null);
+                    syncContext.Post(state => handler(this, new StoppedEventArgs(e)), null);
                 }
             }
         }

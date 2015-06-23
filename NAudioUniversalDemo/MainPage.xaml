@@ -1,0 +1,29 @@
+﻿<Page
+    x:Class="NAudioUniversalDemo.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:NAudioUniversalDemo"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <StackPanel Margin="16,0,16,0" Orientation="Vertical">
+            <TextBlock Style="{StaticResource HeaderTextBlockStyle}" HorizontalAlignment="Left" Margin="16,0,0,0"  TextWrapping="Wrap" Text="NAudio Windows Universal Demo"/>
+            <TextBlock Style="{StaticResource BodyTextBlockStyle}" HorizontalAlignment="Left" TextWrapping="Wrap" Text="Nothing to see here yet, please be patient while we enable Windows Store app support in NAudio"/>
+            <StackPanel Orientation="Horizontal" Margin="32,32,0,0" HorizontalAlignment="Left">
+                <Button Content="Load" Command="{Binding LoadCommand}" Margin="0,0,0,0"/>
+                <Button Content="Play" Command="{Binding PlayCommand}" Margin="16,0,0,0"/>
+                <Button Content="Pause" Command="{Binding PauseCommand}" Margin="16,0,0,0"/>
+                <Button Content="Stop" Command="{Binding StopCommand}" Margin="16,0,0,0"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Margin="32,64,0,0">
+                <Button Content="Record" Command="{Binding RecordCommand}" Margin="0,0,0,0"/>
+                <Button Content="Stop" Command="{Binding StopRecordingCommand}" Margin="16,0,0,0"/>
+            </StackPanel>
+            <!-- for experimental media element out -->
+            <MediaElement Name="me" Margin="51,31,-51,-31"></MediaElement>
+        </StackPanel>
+    </Grid>
+</Page>

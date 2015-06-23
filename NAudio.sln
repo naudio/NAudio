@@ -1,6 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 14
+VisualStudioVersion = 14.0.22823.1
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NAudio", "NAudio\NAudio.csproj", "{DA4F02E3-0B5E-42CD-B8D9-5583FA51D66E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MidiFileConverter", "MidiFileConverter\MidiFileConverter.csproj", "{5B5897BD-A423-4AF8-8A59-1C1372ED77DB}"
@@ -29,6 +31,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".build", ".build", "{FA54AC
 		.build\MSBuild.Community.Tasks.dll = .build\MSBuild.Community.Tasks.dll
 		.build\MSBuild.Community.Tasks.targets = .build\MSBuild.Community.Tasks.targets
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NAudio.Universal", "NAudio.Universal\NAudio.Universal.csproj", "{B7418F4D-290E-4CBA-9DAB-83923E54DC61}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NAudioUniversalDemo", "NAudioUniversalDemo\NAudioUniversalDemo.csproj", "{0BE833CC-8127-4079-BEEC-27397EDA3EDB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -162,6 +168,42 @@ Global
 		{03A0E22E-5B00-4B87-9CDF-20CC121DCF03}.Release|x86.ActiveCfg = Release|x86
 		{03A0E22E-5B00-4B87-9CDF-20CC121DCF03}.Release|x86.Build.0 = Release|x86
 		{03A0E22E-5B00-4B87-9CDF-20CC121DCF03}.Release|x86.Deploy.0 = Release|x86
+		{B7418F4D-290E-4CBA-9DAB-83923E54DC61}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B7418F4D-290E-4CBA-9DAB-83923E54DC61}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B7418F4D-290E-4CBA-9DAB-83923E54DC61}.Debug|ARM.ActiveCfg = Debug|ARM
+		{B7418F4D-290E-4CBA-9DAB-83923E54DC61}.Debug|ARM.Build.0 = Debug|ARM
+		{B7418F4D-290E-4CBA-9DAB-83923E54DC61}.Debug|x64.ActiveCfg = Debug|x64
+		{B7418F4D-290E-4CBA-9DAB-83923E54DC61}.Debug|x64.Build.0 = Debug|x64
+		{B7418F4D-290E-4CBA-9DAB-83923E54DC61}.Debug|x86.ActiveCfg = Debug|x86
+		{B7418F4D-290E-4CBA-9DAB-83923E54DC61}.Debug|x86.Build.0 = Debug|x86
+		{B7418F4D-290E-4CBA-9DAB-83923E54DC61}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B7418F4D-290E-4CBA-9DAB-83923E54DC61}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B7418F4D-290E-4CBA-9DAB-83923E54DC61}.Release|ARM.ActiveCfg = Release|ARM
+		{B7418F4D-290E-4CBA-9DAB-83923E54DC61}.Release|ARM.Build.0 = Release|ARM
+		{B7418F4D-290E-4CBA-9DAB-83923E54DC61}.Release|x64.ActiveCfg = Release|x64
+		{B7418F4D-290E-4CBA-9DAB-83923E54DC61}.Release|x64.Build.0 = Release|x64
+		{B7418F4D-290E-4CBA-9DAB-83923E54DC61}.Release|x86.ActiveCfg = Release|x86
+		{B7418F4D-290E-4CBA-9DAB-83923E54DC61}.Release|x86.Build.0 = Release|x86
+		{0BE833CC-8127-4079-BEEC-27397EDA3EDB}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{0BE833CC-8127-4079-BEEC-27397EDA3EDB}.Debug|ARM.ActiveCfg = Debug|ARM
+		{0BE833CC-8127-4079-BEEC-27397EDA3EDB}.Debug|ARM.Build.0 = Debug|ARM
+		{0BE833CC-8127-4079-BEEC-27397EDA3EDB}.Debug|ARM.Deploy.0 = Debug|ARM
+		{0BE833CC-8127-4079-BEEC-27397EDA3EDB}.Debug|x64.ActiveCfg = Debug|x64
+		{0BE833CC-8127-4079-BEEC-27397EDA3EDB}.Debug|x64.Build.0 = Debug|x64
+		{0BE833CC-8127-4079-BEEC-27397EDA3EDB}.Debug|x64.Deploy.0 = Debug|x64
+		{0BE833CC-8127-4079-BEEC-27397EDA3EDB}.Debug|x86.ActiveCfg = Debug|x86
+		{0BE833CC-8127-4079-BEEC-27397EDA3EDB}.Debug|x86.Build.0 = Debug|x86
+		{0BE833CC-8127-4079-BEEC-27397EDA3EDB}.Debug|x86.Deploy.0 = Debug|x86
+		{0BE833CC-8127-4079-BEEC-27397EDA3EDB}.Release|Any CPU.ActiveCfg = Release|x86
+		{0BE833CC-8127-4079-BEEC-27397EDA3EDB}.Release|ARM.ActiveCfg = Release|ARM
+		{0BE833CC-8127-4079-BEEC-27397EDA3EDB}.Release|ARM.Build.0 = Release|ARM
+		{0BE833CC-8127-4079-BEEC-27397EDA3EDB}.Release|ARM.Deploy.0 = Release|ARM
+		{0BE833CC-8127-4079-BEEC-27397EDA3EDB}.Release|x64.ActiveCfg = Release|x64
+		{0BE833CC-8127-4079-BEEC-27397EDA3EDB}.Release|x64.Build.0 = Release|x64
+		{0BE833CC-8127-4079-BEEC-27397EDA3EDB}.Release|x64.Deploy.0 = Release|x64
+		{0BE833CC-8127-4079-BEEC-27397EDA3EDB}.Release|x86.ActiveCfg = Release|x86
+		{0BE833CC-8127-4079-BEEC-27397EDA3EDB}.Release|x86.Build.0 = Release|x86
+		{0BE833CC-8127-4079-BEEC-27397EDA3EDB}.Release|x86.Deploy.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

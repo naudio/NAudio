@@ -117,12 +117,12 @@ namespace NAudio.Utils
         /// </summary>
         public void Reset()
         {
-			lock (lockObject)
-			{
-				byteCount = 0;
-				readPosition = 0;
-				writePosition = 0;
-			}
+            lock (lockObject)
+            {
+                byteCount = 0;
+                readPosition = 0;
+                writePosition = 0;
+            }
         }
 
         /// <summary>
@@ -131,19 +131,19 @@ namespace NAudio.Utils
         /// <param name="count">Bytes to advance</param>
         public void Advance(int count)
         {
-			lock (lockObject)
-			{
-				if (count >= byteCount)
-				{
-					Reset();
-				}
-				else
-				{
-					byteCount -= count;
-					readPosition += count;
-					readPosition %= MaxLength;
-				}
-			}
+            lock (lockObject)
+            {
+                if (count >= byteCount)
+                {
+                    Reset();
+                }
+                else
+                {
+                    byteCount -= count;
+                    readPosition += count;
+                    readPosition %= MaxLength;
+                }
+            }
         }
     }
 }

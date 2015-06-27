@@ -407,8 +407,9 @@ namespace NAudio.Win8.Wave.WaveOutputs
                 audioClient.Initialize(shareMode, AudioClientStreamFlags.EventCallback, latencyRefTimes, 0,
                                        outputFormat, Guid.Empty);
 
-                // Get back the effective latency from AudioClient
-                latencyMilliseconds = (int) (audioClient.StreamLatency/10000);
+                // Get back the effective latency from AudioClient. On Windows 10 it can be 0
+                if (audioClient.StreamLatency > 0)
+                    latencyMilliseconds = (int) (audioClient.StreamLatency/10000);
             }
             else
             {
@@ -418,7 +419,7 @@ namespace NAudio.Win8.Wave.WaveOutputs
             }
 
             // Create the Wait Event Handle
-            frameEventWaitHandle = NativeMethods.CreateEventEx(IntPtr.Zero, IntPtr.Zero, 0, EventAccess.EVENT_ALL_ACCESS);
+            frameEventWaitHandle = NativeMethods.CreateEventExW(IntPtr.Zero, IntPtr.Zero, 0, EventAccess.EVENT_ALL_ACCESS);
             audioClient.SetEventHandle(frameEventWaitHandle);
 
             // Get the RenderClient
@@ -461,20 +462,20 @@ namespace NAudio.Win8.Wave.WaveOutputs
     }
 
     /// <summary>
-    /// Come useful native methods for Windows 8 support
+    /// Some useful native methods for Windows 8/10 support ( https://msdn.microsoft.com/en-us/library/windows/desktop/hh802935(v=vs.85).aspx )
     /// </summary>
     class NativeMethods
     {
-        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, ExactSpelling = false, PreserveSig = true,
-    SetLastError = true)]
-        internal static extern IntPtr CreateEventEx(IntPtr lpEventAttributes, IntPtr lpName, int dwFlags,
+        [DllImport("api-ms-win-core-synch-l1-2-0.dll", CharSet = CharSet.Unicode, ExactSpelling = false,
+            PreserveSig = true, SetLastError = true)]
+        internal static extern IntPtr CreateEventExW(IntPtr lpEventAttributes, IntPtr lpName, int dwFlags,
                                                     EventAccess dwDesiredAccess);
 
 
-        [DllImport("kernel32.dll", ExactSpelling = true, PreserveSig = true, SetLastError = true)]
+        [DllImport("api-ms-win-core-handle-l1-1-0.dll", ExactSpelling = true, PreserveSig = true, SetLastError = true)]
         public static extern bool CloseHandle(IntPtr hObject);
 
-        [DllImport("kernel32", ExactSpelling = true, PreserveSig = true, SetLastError = true)]
+        [DllImport("api-ms-win-core-synch-l1-2-0.dll", ExactSpelling = true, PreserveSig = true, SetLastError = true)]
         public static extern int WaitForSingleObjectEx(IntPtr hEvent, int milliseconds, bool bAlertable);
 
         /// <summary>

@@ -191,14 +191,14 @@ namespace NAudio.Wave
 
         private void DoRecording(AudioClient client)
         {
-            Debug.WriteLine(client.BufferSize);
+            Debug.WriteLine("Recording buffer size: " + client.BufferSize);
 
             var buf = new Byte[client.BufferSize * bytesPerFrame];
 
             int bufLength = 0;
             int minPacketSize = waveFormat.AverageBytesPerSecond / 100; //100ms
 
-            IntPtr hEvent = NativeMethods.CreateEventEx(IntPtr.Zero, IntPtr.Zero, 0, EventAccess.EVENT_ALL_ACCESS);
+            IntPtr hEvent = NativeMethods.CreateEventExW(IntPtr.Zero, IntPtr.Zero, 0, EventAccess.EVENT_ALL_ACCESS);
             client.SetEventHandle(hEvent);
            
             try

@@ -41,7 +41,7 @@ namespace NAudioWpfDemo.ViewModel
         [DebuggerStepThrough]
         public bool CanExecute(object parameter)
         {
-            return canExecute == null ? true : canExecute(parameter);
+            return canExecute == null || canExecute(parameter);
         }
 
         public event EventHandler CanExecuteChanged

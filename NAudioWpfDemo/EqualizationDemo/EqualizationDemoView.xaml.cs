@@ -5,7 +5,7 @@ using System.Windows.Controls;
 namespace NAudioWpfDemo.EqualizationDemo
 {
     /// <summary>
-    /// Interaction logic for AudioPlaybackDemo.xaml
+    /// Interaction logic for EqualizationDemoView.xaml
     /// </summary>
     public partial class EqualizationDemoView : UserControl
     {

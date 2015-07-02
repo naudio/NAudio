@@ -4,7 +4,7 @@ using System.Windows;
 namespace NAudioWpfDemo
 {
     /// <summary>
-    /// Interaction logic for Window1.xaml
+    /// Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
     {

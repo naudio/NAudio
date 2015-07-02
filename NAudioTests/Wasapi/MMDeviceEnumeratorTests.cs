@@ -24,9 +24,18 @@ namespace NAudioTests.Wasapi
         {
             OSUtils.RequireVista();
             MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
-            foreach (MMDevice devices in enumerator.EnumerateAudioEndPoints(DataFlow.All,DeviceState.All))
+            var devices = enumerator.EnumerateAudioEndPoints(DataFlow.All, DeviceState.All);
+
+            foreach (MMDevice device in devices)
             {
-                Debug.WriteLine(devices);
+                if (device.State != DeviceState.NotPresent)
+                {
+                    Debug.WriteLine(String.Format("{0}, {1}", device.FriendlyName, device.State));
+                }
+                else
+                {
+                    Debug.WriteLine(String.Format("{0}, {1}", device.ID, device.State));
+                }
             }
         }
 
@@ -35,9 +44,18 @@ namespace NAudioTests.Wasapi
         {
             OSUtils.RequireVista();
             MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
-            foreach (MMDevice device in enumerator.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.All))
+            var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.All);
+
+            foreach (MMDevice device in devices)
             {
-                Debug.WriteLine(String.Format("{0}, {1}", device.FriendlyName, device.State));
+                if (device.State != DeviceState.NotPresent)
+                {
+                    Debug.WriteLine(String.Format("{0}, {1}", device.FriendlyName, device.State));
+                }
+                else
+                {
+                    Debug.WriteLine(String.Format("{0}, {1}", device.ID, device.State));
+                }
             }
         }
 

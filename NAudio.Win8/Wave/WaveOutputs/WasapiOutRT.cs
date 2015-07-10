@@ -318,7 +318,10 @@ namespace NAudio.Win8.Wave.WaveOutputs
             if (isInitialized) throw new InvalidOperationException("Already Initialized");
             isInitialized = true;
             this.waveProviderFunc = waveProviderFunc;
-            ThreadPool.RunAsync(s => PlayThread());
+            Task.Factory.StartNew(() =>
+            {
+                PlayThread();
+            });
         }
 
         /// <summary>

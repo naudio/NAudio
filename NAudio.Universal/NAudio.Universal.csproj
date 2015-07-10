@@ -118,6 +118,9 @@
     <Compile Include="..\NAudio.Win8\Wave\WaveOutputs\WasapiOutRT.cs">
       <Link>Wave\WaveOutputs\WasapiOutRT.cs</Link>
     </Compile>
+    <Compile Include="..\NAudio.Win8\Wave\WaveOutputs\WaveFileWriterRT.cs">
+      <Link>Wave\WaveOutputs\WaveFileWriterRT.cs</Link>
+    </Compile>
     <Compile Include="..\NAudio\Codecs\ALawDecoder.cs">
       <Link>Codecs\ALawDecoder.cs</Link>
     </Compile>

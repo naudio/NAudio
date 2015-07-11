@@ -24,6 +24,19 @@ namespace NAudio.Wave
             this.sourceStream = sourceStream;
             this.waveFormat = waveFormat;
         }
+        
+        /// <summary>
+        /// Initialises a new instance of RawSourceWaveStream
+        /// </summary>
+        /// <param name="sourceBuffer">The buffer containing raw audio</param>
+        /// <param name="sourceOffset">Offset in the source buffer to read from</param>
+        /// <param name="sourceCount">Number of bytes to read in the buffer</param>
+        /// <param name="waveFormat">The waveformat of the audio in the source stream</param>
+        public RawSourceWaveStream(byte[] byteStream, int offset, int count, WaveFormat waveFormat)
+        {
+            this.sourceStream = new MemoryStream(byteStream, offset, count);
+            this.waveFormat = waveFormat;
+        }
 
         /// <summary>
         /// The WaveFormat of this stream
@@ -52,7 +65,7 @@ namespace NAudio.Wave
             }
             set
             {
-                this.sourceStream.Position = value;
+                this.sourceStream.Position = (long)(Math.Round((decimal)value / waveFormat.BitsPerSample) * waveFormat.BitsPerSample);
             }
         }
 

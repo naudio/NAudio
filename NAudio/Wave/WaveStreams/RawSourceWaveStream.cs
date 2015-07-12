@@ -65,7 +65,7 @@ namespace NAudio.Wave
             }
             set
             {
-                this.sourceStream.Position = (long)(Math.Round((decimal)value / waveFormat.BitsPerSample) * waveFormat.BitsPerSample);
+                this.sourceStream.Position = value - (value % waveFormat.BlockAlign);
             }
         }
 

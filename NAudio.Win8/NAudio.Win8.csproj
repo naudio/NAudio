@@ -803,6 +803,7 @@
     <Compile Include="Wave\WaveExtensionMethods.cs" />
     <Compile Include="Wave\WaveInputs\WasapiCaptureRT.cs" />
     <Compile Include="Wave\WaveOutputs\IWavePlayer.cs" />
+    <Compile Include="Wave\WaveOutputs\WaveFileWriterRT.cs" />
     <Compile Include="Wave\WaveOutputs\WasapiOutRT.cs" />
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '11.0' ">

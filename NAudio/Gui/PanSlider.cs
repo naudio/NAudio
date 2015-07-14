@@ -68,29 +68,32 @@ namespace NAudio.Gui
         /// </summary>
 		protected override void OnPaint(PaintEventArgs pe)
 		{
-			StringFormat format = new StringFormat();
-			format.LineAlignment = StringAlignment.Center;
-			format.Alignment = StringAlignment.Center;
-			string panValue;
-			if(pan == 0.0)
-			{
-				pe.Graphics.FillRectangle(Brushes.Orange,(this.Width/2) - 1  ,1,3,this.Height-2);
-				panValue = "C";
-			}
-			else if(pan > 0)
-			{
-				pe.Graphics.FillRectangle(Brushes.Orange,(this.Width/2),1,(int) ((this.Width/2) * pan),this.Height-2);
-				panValue = String.Format("{0:F0}%R",pan*100);
-			}
-			else
-			{
-				pe.Graphics.FillRectangle(Brushes.Orange,(int)((this.Width/2) * (pan+1)),1,(int) ((this.Width/2) * (0-pan)),this.Height-2);
-				panValue = String.Format("{0:F0}%L",pan*-100);
-			}
-			pe.Graphics.DrawRectangle(Pens.Black,0,0,this.Width-1,this.Height-1);
+            using (StringFormat format = new StringFormat())
+            {
+                format.LineAlignment = StringAlignment.Center;
+                format.Alignment = StringAlignment.Center;
+                string panValue;
+                if (pan == 0.0)
+                {
+                    pe.Graphics.FillRectangle(Brushes.Orange, (this.Width / 2) - 1, 1, 3, this.Height - 2);
+                    panValue = "C";
+                }
+                else if (pan > 0)
+                {
+                    pe.Graphics.FillRectangle(Brushes.Orange, (this.Width / 2), 1, (int)((this.Width / 2) * pan), this.Height - 2);
+                    panValue = String.Format("{0:F0}%R", pan * 100);
+                }
+                else
+                {
+                    pe.Graphics.FillRectangle(Brushes.Orange, (int)((this.Width / 2) * (pan + 1)), 1, (int)((this.Width / 2) * (0 - pan)), this.Height - 2);
+                    panValue = String.Format("{0:F0}%L", pan * -100);
+                }
+                pe.Graphics.DrawRectangle(Pens.Black, 0, 0, this.Width - 1, this.Height - 1);
 
-			pe.Graphics.DrawString(panValue,this.Font,
-				Brushes.Black,this.ClientRectangle,format);
+                pe.Graphics.DrawString(panValue, this.Font,
+                    Brushes.Black, this.ClientRectangle, format);
+            }
+
 			// Calling the base class OnPaint
 			//base.OnPaint(pe);
 		}

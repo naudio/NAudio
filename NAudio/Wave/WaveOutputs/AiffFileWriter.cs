@@ -54,14 +54,7 @@ namespace NAudio.Wave
         public AiffFileWriter(Stream outStream, WaveFormat format)
         {
             this.outStream = outStream;
-            this.format = format;
-            this.writer = new BinaryWriter(outStream, System.Text.Encoding.UTF8);
-            this.writer.Write(System.Text.Encoding.UTF8.GetBytes("FORM"));
-            this.writer.Write((int)0); // placeholder
-            this.writer.Write(System.Text.Encoding.UTF8.GetBytes("AIFF"));
-
-            CreateCommChunk();
-            WriteSsndChunkHeader();
+            Initialize(format);
         }
 
         /// <summary>
@@ -70,9 +63,31 @@ namespace NAudio.Wave
         /// <param name="filename">The filename to write to</param>
         /// <param name="format">The Wave Format of the output data</param>
         public AiffFileWriter(string filename, WaveFormat format)
-            : this(new FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.Read), format)
         {
             this.filename = filename;
+            this.outStream = new FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.Read);
+            try
+            {
+                Initialize(format);
+            }
+            catch
+            {
+                outStream.Dispose();
+                throw;
+            }
+        }
+
+        private void Initialize(WaveFormat format)
+        {
+            this.format = format;
+
+            this.writer = new BinaryWriter(outStream, System.Text.Encoding.UTF8);
+            this.writer.Write(System.Text.Encoding.UTF8.GetBytes("FORM"));
+            this.writer.Write((int)0); // placeholder
+            this.writer.Write(System.Text.Encoding.UTF8.GetBytes("AIFF"));
+
+            CreateCommChunk();
+            WriteSsndChunkHeader();
         }
 
         private void WriteSsndChunkHeader()
@@ -313,28 +328,47 @@ namespace NAudio.Wave
 
         #region IDisposable Members
 
+        private bool isDisposed = false;
+
         /// <summary>
         /// Actually performs the close,making sure the header contains the correct data
         /// </summary>
         /// <param name="disposing">True if called from <see>Dispose</see></param>
         protected override void Dispose(bool disposing)
         {
-            if (disposing)
+            try
             {
-                if (outStream != null)
+                if (!isDisposed)
                 {
-                    try
+                    if (disposing)
                     {
-                        UpdateHeader(writer);
+                        if (writer != null)
+                        {
+                            try
+                            {
+                                UpdateHeader(writer);
+                            }
+                            finally
+                            {
+                                // in a finally block as we don't want the FileStream to run its disposer in
+                                // the GC thread if the code above caused an IOException (e.g. due to disk full)
+                                writer.Close(); // will close the underlying base stream
+                                writer = null;
+                            }
+                        }
+
+                        if (outStream != null)
+                        {
+                            outStream.Dispose();
+                        }
                     }
-                    finally
-                    {
-                        // in a finally block as we don't want the FileStream to run its disposer in
-                        // the GC thread if the code above caused an IOException (e.g. due to disk full)
-                        outStream.Close(); // will close the underlying base stream
-                        outStream = null;
-                    }
+
+                    isDisposed = true;
                 }
+            }
+            finally
+            {
+                base.Dispose(disposing);
             }
         }
 

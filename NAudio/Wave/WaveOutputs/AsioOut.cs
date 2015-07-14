@@ -83,7 +83,7 @@ namespace NAudio.Wave
         /// </summary>
         ~AsioOut()
         {
-            Dispose();
+            Dispose(false);
         }
 
         /// <summary>
@@ -91,14 +91,29 @@ namespace NAudio.Wave
         /// </summary>
         public void Dispose()
         {
-            if (driver != null)
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        private bool isDisposed = false;
+        /// <summary>
+        /// Dispose
+        /// </summary>
+        protected virtual void Dispose(bool isDisposing)
+        {
+            if(!isDisposed)
             {
-                if (playbackState != PlaybackState.Stopped)
+                if (driver != null)
                 {
-                    driver.Stop();
+                    if (playbackState != PlaybackState.Stopped)
+                    {
+                        driver.Stop();
+                    }
+                    driver.ReleaseDriver();
+                    driver = null;
                 }
-                driver.ReleaseDriver();
-                driver = null;
+
+                isDisposed = true;
             }
         }
 

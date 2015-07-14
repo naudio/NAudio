@@ -199,20 +199,6 @@ namespace NAudio.Wave
         /// WaveFormat we are recording in
         /// </summary>
         public WaveFormat WaveFormat { get; set; }
-        
-        /// <summary>
-        /// Dispose pattern
-        /// </summary>
-        protected virtual void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                if (recording)
-                    StopRecording();
-                
-                CloseWaveInDevice();
-            }
-        }
 
         private void CloseWaveInDevice()
         {
@@ -249,6 +235,22 @@ namespace NAudio.Wave
         }
 
         /// <summary>
+        /// Dispose pattern
+        /// </summary>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (recording)
+                    StopRecording();
+
+                CloseWaveInDevice();
+
+                if (callbackEvent != null) callbackEvent.Close();
+            }
+        }
+
+        /// <summary>
         /// Dispose method
         /// </summary>
         public void Dispose()
@@ -256,5 +258,13 @@ namespace NAudio.Wave
             Dispose(true);
             GC.SuppressFinalize(this);
         }
+
+#pragma warning disable 1591
+        ~WaveInEvent()
+        {
+            Dispose(false);
+        }
+#pragma warning restore 1591
+
     }
 }

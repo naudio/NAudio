@@ -42,16 +42,33 @@ namespace NAudio.Wave
             get { return source.WaveFormat; }
         }
 
+        private bool isDisposed = false;
+        /// <summary>
+        /// Closes the WAV file
+        /// </summary>
+        protected virtual void Dispose(bool isDisposing)
+        {
+            if (!isDisposed)
+            {
+                if (isDisposing)
+                {
+                    if (writer != null)
+                    {
+                        writer.Dispose();
+                        writer = null;
+                    }
+                }
+
+                isDisposed = true;
+            }
+        }
         /// <summary>
         /// Closes the WAV file
         /// </summary>
         public void Dispose()
         {
-            if (writer != null)
-            {
-                writer.Dispose();
-                writer = null;
-            }
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
     }
 }

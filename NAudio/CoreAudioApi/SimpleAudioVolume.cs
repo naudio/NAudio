@@ -12,7 +12,7 @@ namespace NAudio.CoreAudioApi
     /// <summary>
     /// Windows CoreAudio SimpleAudioVolume
     /// </summary>
-    public class SimpleAudioVolume : IDisposable
+    public class SimpleAudioVolume
     {
         private readonly ISimpleAudioVolume simpleAudioVolume;
 
@@ -24,26 +24,6 @@ namespace NAudio.CoreAudioApi
         {
             simpleAudioVolume = realSimpleVolume;
         }
-
-        #region IDisposable Members
-
-        /// <summary>
-        /// Dispose
-        /// </summary>
-        public void Dispose()
-        {
-            GC.SuppressFinalize(this);
-        }
-        
-        /// <summary>
-        /// Finalizer
-        /// </summary>
-        ~SimpleAudioVolume()
-        {
-            Dispose();
-        }
-
-        #endregion
 
         /// <summary>
         /// Allows the user to adjust the volume from

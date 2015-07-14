@@ -33,24 +33,47 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         /// <param name="numFramesWritten">Number of frames written</param>
         /// <param name="bufferFlags">Buffer flags</param>
-        public void ReleaseBuffer(int numFramesWritten,AudioClientBufferFlags bufferFlags)
+        public void ReleaseBuffer(int numFramesWritten, AudioClientBufferFlags bufferFlags)
         {
             Marshal.ThrowExceptionForHR(audioRenderClientInterface.ReleaseBuffer(numFramesWritten, bufferFlags));
         }
 
+        private bool isDisposed = false;
+
         /// <summary>
         /// Release the COM object
         /// </summary>
+        protected virtual void Dispose(bool isDisposing)
+        {
+            if (!isDisposed)
+            {
+                if (audioRenderClientInterface != null)
+                {
+                    // althugh GC would do this for us, we want it done now
+                    // to let us reopen WASAPI
+                    Marshal.ReleaseComObject(audioRenderClientInterface);
+                    audioRenderClientInterface = null;
+                }
+
+                isDisposed = true;
+            }
+
+        }
+        /// <summary>
+        /// Dispose
+        /// </summary>
         public void Dispose()
         {
-            if (audioRenderClientInterface != null)
-            {
-                // althugh GC would do this for us, we want it done now
-                // to let us reopen WASAPI
-                Marshal.ReleaseComObject(audioRenderClientInterface);
-                audioRenderClientInterface = null;
-                GC.SuppressFinalize(this);
-            }
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Finalizer
+        /// </summary>
+        ~AudioRenderClient()
+        {
+            Dispose(false);
         }
     }
 }

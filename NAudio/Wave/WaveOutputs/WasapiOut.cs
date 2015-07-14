@@ -78,8 +78,10 @@ namespace NAudio.Wave
             {
                 throw new NotSupportedException("WASAPI supported only on Windows Vista and above");
             }
-            var enumerator = new MMDeviceEnumerator();
-            return enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Console);
+            using (var enumerator = new MMDeviceEnumerator())
+            {
+                return enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Console);
+            }
         }
 
         private void PlayThread()
@@ -431,22 +433,49 @@ namespace NAudio.Wave
 
         #region IDisposable Members
 
+        private bool isDisposed = false;
+        /// <summary>
+        /// Dispose
+        /// </summary>
+        protected virtual void Dispose(bool isDisposing)
+        {
+            if (!isDisposed)
+            {
+                if (isDisposing)
+                {
+                    if (audioClient != null)
+                    {
+                        Stop();
+
+                        audioClient.Dispose();
+                        audioClient = null;
+                        renderClient = null;
+                    }
+                }
+
+                if (frameEventWaitHandle != null) frameEventWaitHandle.Close();
+
+                isDisposed = true;
+            }
+        }
+
         /// <summary>
         /// Dispose
         /// </summary>
         public void Dispose()
         {
-            if (audioClient != null)
-            {
-                Stop();
-
-                audioClient.Dispose();
-                audioClient = null;
-                renderClient = null;
-            }
-
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         #endregion
+
+#pragma warning disable 1591
+        ~WasapiOut()
+        {
+            Dispose(false);
+        }
+#pragma warning restore 1591
+
     }
 }

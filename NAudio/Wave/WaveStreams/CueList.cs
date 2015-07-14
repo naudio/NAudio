@@ -186,6 +186,7 @@ namespace NAudio.Wave
         /// Gets the cues as the concatenated cue and list RIFF chunks.
         /// </summary>
         /// <returns>RIFF chunks containing the cue data</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2202:Do not dispose objects multiple times")]
         internal byte[] GetRIFFChunks()
         {
             if (this.Count == 0)

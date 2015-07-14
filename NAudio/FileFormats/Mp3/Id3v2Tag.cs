@@ -39,7 +39,10 @@ namespace NAudio.Wave
         /// <returns>A new ID3v2 tag</returns>
         public static Id3v2Tag Create(IEnumerable<KeyValuePair<string, string>> tags)
         {
-            return Id3v2Tag.ReadTag(CreateId3v2TagStream(tags));
+            using(Stream tagStream = CreateId3v2TagStream(tags))
+            {
+                return Id3v2Tag.ReadTag(tagStream);
+            }
         }
 
         /// <summary>
@@ -163,13 +166,22 @@ namespace NAudio.Wave
             byte[] header = CreateId3v2TagHeader(frames);
 
             MemoryStream ms = new MemoryStream();
-            ms.Write(header, 0, header.Length);
-            foreach (byte[] frame in frames)
+            try
             {
-                ms.Write(frame, 0, frame.Length);
-            }
+                ms.Write(header, 0, header.Length);
+                foreach (byte[] frame in frames)
+                {
+                    ms.Write(frame, 0, frame.Length);
+                }
 
-            ms.Position = 0;
+                ms.Position = 0;
+            }
+            catch
+            {
+                ms.Dispose();
+
+                throw;
+            }
             return ms;
         }
 

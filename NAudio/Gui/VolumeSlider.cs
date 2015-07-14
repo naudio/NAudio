@@ -68,23 +68,25 @@ namespace NAudio.Gui
         /// </summary>
         protected override void OnPaint(PaintEventArgs pe)
         {
-            StringFormat format = new StringFormat();
-            format.LineAlignment = StringAlignment.Center;
-            format.Alignment = StringAlignment.Center;
-
-            pe.Graphics.DrawRectangle(Pens.Black, 0, 0, this.Width - 1, this.Height - 1);
-            float db = 20 * (float)Math.Log10(Volume);
-            float percent = 1 - (db / MinDb);
-
-            pe.Graphics.FillRectangle(Brushes.LightGreen, 1, 1, (int)((this.Width - 2) * percent), this.Height - 2);
-            string dbValue = String.Format("{0:F2} dB", db);
-            /*if(Double.IsNegativeInfinity(db))
+            using (StringFormat format = new StringFormat())
             {
-                dbValue = "-\x221e db"; // -8 dB
-            }*/
+                format.LineAlignment = StringAlignment.Center;
+                format.Alignment = StringAlignment.Center;
 
-            pe.Graphics.DrawString(dbValue, this.Font,
-                Brushes.Black, this.ClientRectangle, format);
+                pe.Graphics.DrawRectangle(Pens.Black, 0, 0, this.Width - 1, this.Height - 1);
+                float db = 20 * (float)Math.Log10(Volume);
+                float percent = 1 - (db / MinDb);
+
+                pe.Graphics.FillRectangle(Brushes.LightGreen, 1, 1, (int)((this.Width - 2) * percent), this.Height - 2);
+                string dbValue = String.Format("{0:F2} dB", db);
+                /*if(Double.IsNegativeInfinity(db))
+                {
+                    dbValue = "-\x221e db"; // -8 dB
+                }*/
+
+                pe.Graphics.DrawString(dbValue, this.Font,
+                    Brushes.Black, this.ClientRectangle, format);
+            }
             // Calling the base class OnPaint
             //base.OnPaint(pe);
         }

@@ -63,11 +63,20 @@ namespace NAudio.Wave.Compression
                 throw new MmException(result, "acmDriverAdd");
             }
             var driver = new AcmDriver(driverHandle);
-            // long name seems to be missing when we use acmDriverAdd
-            if (string.IsNullOrEmpty(driver.details.longName))
+            try
             {
-                driver.details.longName = "Local driver: " + Path.GetFileName(driverFile);
-                driver.localDllHandle = handle;
+                // long name seems to be missing when we use acmDriverAdd
+                if (string.IsNullOrEmpty(driver.details.longName))
+                {
+                    driver.details.longName = "Local driver: " + Path.GetFileName(driverFile);
+                    driver.localDllHandle = handle;
+                }
+            }
+            catch
+            {
+                driver.Dispose();
+
+                throw;
             }
             return driver;
         }
@@ -337,17 +346,46 @@ namespace NAudio.Wave.Compression
 
         #region IDisposable Members
 
+        private bool isDisposed = false;
+        /// <summary>
+        /// Dispose
+        /// </summary>
+        protected virtual void Dispose(bool isDisposing)
+        {
+            if (!isDisposed)
+            {
+                if (isDisposing)
+                {
+                    Close();
+                }
+                else
+                {
+                    if (driverHandle != IntPtr.Zero)
+                    {
+                        AcmInterop.acmDriverClose(driverHandle, 0);
+                        driverHandle = IntPtr.Zero;
+                    }
+                }
+
+                isDisposed = true;
+            }
+        }
+
         /// <summary>
         /// Dispose
         /// </summary>
         public void Dispose()
         {
-            if (driverHandle != IntPtr.Zero)
-            {
-                Close();
-                GC.SuppressFinalize(this);
-            }
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
+
+#pragma warning disable 1591
+        ~AcmDriver()
+        {
+            Dispose(false);
+        }
+#pragma warning restore 1591
 
         #endregion
     }

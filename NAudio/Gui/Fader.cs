@@ -30,24 +30,30 @@ namespace NAudio.Gui
             // Required for Windows.Forms Class Composition Designer support
             InitializeComponent();
 
-            this.SetStyle(ControlStyles.DoubleBuffer | 
+            this.SetStyle(ControlStyles.DoubleBuffer |
                 ControlStyles.AllPaintingInWmPaint |
-                ControlStyles.UserPaint,true);
+                ControlStyles.UserPaint, true);
         }
 
         /// <summary> 
         /// Clean up any resources being used.
         /// </summary>
-        protected override void Dispose( bool disposing )
+        protected override void Dispose(bool disposing)
         {
-            if( disposing )
+            try
             {
-                if(components != null)
+                if (disposing)
                 {
-                    components.Dispose();
+                    if (components != null)
+                    {
+                        components.Dispose();
+                    }
                 }
             }
-            base.Dispose( disposing );
+            finally
+            {
+                base.Dispose(disposing);
+            }            
         }
 
         private readonly int SliderHeight = 30;
@@ -56,25 +62,23 @@ namespace NAudio.Gui
 
         private void DrawSlider(Graphics g)
         {
-            Brush block = new SolidBrush(Color.White);
-            Pen centreLine = new Pen(Color.Black);
-            sliderRectangle.X = (this.Width - SliderWidth) / 2;
-            sliderRectangle.Width = SliderWidth;
-            sliderRectangle.Y = (int) ((this.Height - SliderHeight) * percent);
-            sliderRectangle.Height = SliderHeight;
+            using (Brush block = new SolidBrush(Color.White))
+            using (Pen centreLine = new Pen(Color.Black))
+            {
+                sliderRectangle.X = (this.Width - SliderWidth) / 2;
+                sliderRectangle.Width = SliderWidth;
+                sliderRectangle.Y = (int)((this.Height - SliderHeight) * percent);
+                sliderRectangle.Height = SliderHeight;
 
-            g.FillRectangle(block,sliderRectangle);
-            g.DrawLine(centreLine,sliderRectangle.Left,sliderRectangle.Top + sliderRectangle.Height/2,sliderRectangle.Right,sliderRectangle.Top + sliderRectangle.Height/2);
-            block.Dispose();
-            centreLine.Dispose();
+                g.FillRectangle(block, sliderRectangle);
+                g.DrawLine(centreLine, sliderRectangle.Left, sliderRectangle.Top + sliderRectangle.Height / 2, sliderRectangle.Right, sliderRectangle.Top + sliderRectangle.Height / 2);
+            }
 
             /*sliderRectangle.X = (this.Width - SliderWidth) / 2;
             sliderRectangle.Width = SliderWidth;
             sliderRectangle.Y = (int)((this.Height - SliderHeight) * percent);
             sliderRectangle.Height = SliderHeight;
             g.DrawImage(Images.Fader1,sliderRectangle);*/
-
-            
         }
 
 
@@ -84,15 +88,16 @@ namespace NAudio.Gui
         protected override void OnPaint(PaintEventArgs e)
         {
             Graphics g = e.Graphics;
-            if(this.Orientation == Orientation.Vertical)
+            if (this.Orientation == Orientation.Vertical)
             {
-                Brush groove = new SolidBrush(Color.Black);
-                g.FillRectangle(groove, this.Width / 2, SliderHeight / 2, 2, this.Height - SliderHeight);
-                groove.Dispose();
+                using (Brush groove = new SolidBrush(Color.Black))
+                {
+                    g.FillRectangle(groove, this.Width / 2, SliderHeight / 2, 2, this.Height - SliderHeight);
+                }
                 DrawSlider(g);
             }
-            
-            base.OnPaint (e);
+
+            base.OnPaint(e);
         }
 
         private bool dragging;
@@ -103,13 +108,13 @@ namespace NAudio.Gui
         /// </summary>
         protected override void OnMouseDown(MouseEventArgs e)
         {
-            if(sliderRectangle.Contains(e.X,e.Y))
+            if (sliderRectangle.Contains(e.X, e.Y))
             {
                 dragging = true;
                 dragY = e.Y - sliderRectangle.Y;
             }
             // TODO: are we over the fader
-            base.OnMouseDown (e);
+            base.OnMouseDown(e);
         }
 
         /// <summary>
@@ -117,24 +122,24 @@ namespace NAudio.Gui
         /// </summary>
         protected override void OnMouseMove(MouseEventArgs e)
         {
-            if(dragging)
+            if (dragging)
             {
                 int sliderTop = e.Y - dragY;
-                if(sliderTop < 0)
+                if (sliderTop < 0)
                 {
                     this.percent = 0;
                 }
-                else if(sliderTop > this.Height - SliderHeight)
+                else if (sliderTop > this.Height - SliderHeight)
                 {
                     this.percent = 1;
                 }
                 else
                 {
-                    percent = (float) sliderTop / (float) (this.Height - SliderHeight);					
+                    percent = (float)sliderTop / (float)(this.Height - SliderHeight);
                 }
                 this.Invalidate();
             }
-            base.OnMouseMove (e);
+            base.OnMouseMove(e);
         }
 
         /// <summary>
@@ -143,7 +148,7 @@ namespace NAudio.Gui
         protected override void OnMouseUp(MouseEventArgs e)
         {
             dragging = false;
-            base.OnMouseUp (e);
+            base.OnMouseUp(e);
         }
 
 
@@ -185,11 +190,11 @@ namespace NAudio.Gui
         {
             get
             {
-                return (int) (percent * (maximum-minimum)) + minimum;
+                return (int)(percent * (maximum - minimum)) + minimum;
             }
             set
             {
-                percent = (float) (value-minimum) / (maximum-minimum);
+                percent = (float)(value - minimum) / (maximum - minimum);
             }
         }
 

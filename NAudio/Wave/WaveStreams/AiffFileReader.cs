@@ -25,21 +25,37 @@ namespace NAudio.Wave
         /// This supports basic reading of uncompressed PCM AIF files,
         /// with 8, 16, 24 and 32 bit PCM data.
         /// </remarks>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope")]
         public AiffFileReader(String aiffFile) :
-            this(File.OpenRead(aiffFile))
+            this(File.OpenRead(aiffFile), true)
         {
-            ownInput = true;
+
         }
 
         /// <summary>
         /// Creates an Aiff File Reader based on an input stream
         /// </summary>
         /// <param name="inputStream">The input stream containing a AIF file including header</param>
-        public AiffFileReader(Stream inputStream)
+        public AiffFileReader(Stream inputStream) :
+            this(inputStream, false)
         {
-            this.waveStream = inputStream;
-            ReadAiffHeader(waveStream, out waveFormat, out dataPosition, out dataChunkLength, chunks);
+
+        }
+
+        private AiffFileReader(Stream inputStream, bool ownsInput)
+        {
+            try
+            {
+                this.waveStream = inputStream;
+                ReadAiffHeader(waveStream, out waveFormat, out dataPosition, out dataChunkLength, chunks);
+            }
+            catch
+            {
+                if(ownsInput) inputStream.Dispose();
+            }
+
             Position = 0;
+            ownInput = ownsInput;
         }
 
         /// <summary>

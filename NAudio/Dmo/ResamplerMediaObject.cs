@@ -53,6 +53,44 @@ namespace NAudio.Dmo
 
         #region IDisposable Members
 
+        private bool isDisposed = false;
+        /// <summary>
+        /// Dispose code - experimental at the moment
+        /// Was added trying to track down why Resampler crashes NUnit
+        /// This code not currently being called by ResamplerDmoStream
+        /// </summary>
+        protected virtual void Dispose(bool isDisposing)
+        {
+            if (!isDisposed)
+            {
+                if (isDisposing)
+                {
+                    if (mediaObject != null)
+                    {
+                        mediaObject.Dispose();
+                        mediaObject = null;
+                    }
+                }
+
+                if (propertyStoreInterface != null)
+                {
+                    Marshal.ReleaseComObject(propertyStoreInterface);
+                    propertyStoreInterface = null;
+                }
+                if (resamplerPropsInterface != null)
+                {
+                    Marshal.ReleaseComObject(resamplerPropsInterface);
+                    resamplerPropsInterface = null;
+                }
+                if (mediaComObject != null)
+                {
+                    Marshal.ReleaseComObject(mediaComObject);
+                    mediaComObject = null;
+                }
+
+                isDisposed = true;
+            }
+        }
         /// <summary>
         /// Dispose code - experimental at the moment
         /// Was added trying to track down why Resampler crashes NUnit
@@ -60,27 +98,16 @@ namespace NAudio.Dmo
         /// </summary>
         public void Dispose()
         {
-            if(propertyStoreInterface != null)
-            {
-                Marshal.ReleaseComObject(propertyStoreInterface);
-                propertyStoreInterface = null;
-            }
-            if(resamplerPropsInterface != null)
-            {
-                Marshal.ReleaseComObject(resamplerPropsInterface);
-                resamplerPropsInterface = null;
-            }
-            if (mediaObject != null)
-            {
-                mediaObject.Dispose();
-                mediaObject = null;
-            }
-            if (mediaComObject != null)
-            {
-                Marshal.ReleaseComObject(mediaComObject);
-                mediaComObject = null;
-            }
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
+
+#pragma warning disable 1591
+        ~DmoResampler()
+        {
+            Dispose(false);
+        }
+#pragma warning restore 1591
 
         #endregion
     }

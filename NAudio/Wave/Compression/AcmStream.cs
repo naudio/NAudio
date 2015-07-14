@@ -219,12 +219,8 @@ namespace NAudio.Wave.Compression
 
             if (streamHandle != IntPtr.Zero)
             {
-                MmResult result = AcmInterop.acmStreamClose(streamHandle, 0);
+                AcmInterop.acmStreamClose(streamHandle, 0);
                 streamHandle = IntPtr.Zero;
-                if (result != MmResult.NoError)
-                {
-                    throw new MmException(result, "acmStreamClose");
-                }
 
             }
             // Set large fields to null.

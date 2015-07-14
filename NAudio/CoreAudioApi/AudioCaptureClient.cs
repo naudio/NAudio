@@ -72,14 +72,39 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public void Dispose()
         {
-            if (audioCaptureClientInterface != null)
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        private bool isDisposed = false;
+
+        /// <summary>
+        /// Release the COM object
+        /// </summary>
+        protected virtual void Dispose(bool isDisposing)
+        {
+            if (!isDisposed)
             {
-                // althugh GC would do this for us, we want it done now
-                // to let us reopen WASAPI
-                Marshal.ReleaseComObject(audioCaptureClientInterface);
-                audioCaptureClientInterface = null;
-                GC.SuppressFinalize(this);
+                if (!isDisposing)
+                {
+                    if (audioCaptureClientInterface != null)
+                    {
+                        // although GC would do this for us, we want it done now
+                        // to let us reopen WASAPI
+                        Marshal.ReleaseComObject(audioCaptureClientInterface);
+                        audioCaptureClientInterface = null;
+                    }
+                }
+
+                isDisposed = true;
             }
         }
+
+#pragma warning disable 1591
+        ~AudioCaptureClient()
+        {
+            Dispose(false);
+        }
+#pragma warning restore 1591
     }
 }

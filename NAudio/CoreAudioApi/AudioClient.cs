@@ -300,38 +300,63 @@ namespace NAudio.CoreAudioApi
 
         #region IDisposable Members
 
+        private bool isDisposed = false;
+
+        /// <summary>
+        /// Dispose
+        /// </summary>
+        protected virtual void Dispose(bool isDisposing)
+        {
+            if (!isDisposed)
+            {
+                if(isDisposing)
+                {
+                    if (audioClockClient != null)
+                    {
+                        audioClockClient.Dispose();
+                        audioClockClient = null;
+                    }
+                    if (audioRenderClient != null)
+                    {
+                        audioRenderClient.Dispose();
+                        audioRenderClient = null;
+                    }
+                    if (audioCaptureClient != null)
+                    {
+                        audioCaptureClient.Dispose();
+                        audioCaptureClient = null;
+                    }
+                    if (audioStreamVolume != null)
+                    {
+                        audioStreamVolume.Dispose();
+                        audioStreamVolume = null;
+                    }
+                }
+
+                if (audioClientInterface != null)
+                {
+                    Marshal.ReleaseComObject(audioClientInterface);
+                    audioClientInterface = null;
+                }
+
+                isDisposed = true;
+            }
+        }
         /// <summary>
         /// Dispose
         /// </summary>
         public void Dispose()
         {
-            if (audioClientInterface != null)
-            {
-                if (audioClockClient != null)
-                {
-                    audioClockClient.Dispose();
-                    audioClockClient = null;
-                }
-                if (audioRenderClient != null)
-                {
-                    audioRenderClient.Dispose();
-                    audioRenderClient = null;
-                }
-                if (audioCaptureClient != null)
-                {
-                    audioCaptureClient.Dispose();
-                    audioCaptureClient = null;
-                }
-                if (audioStreamVolume != null)
-                {
-                    audioStreamVolume.Dispose();
-                    audioStreamVolume = null;
-                }
-                Marshal.ReleaseComObject(audioClientInterface);
-                audioClientInterface = null;
-                GC.SuppressFinalize(this);
-            }
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
+
+#pragma warning disable 1591
+        ~AudioClient()
+        {
+            Dispose(false);
+        }
+#pragma warning restore 1591
 
         #endregion
     }

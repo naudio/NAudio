@@ -62,7 +62,24 @@ namespace NAudio.Wave
         /// </summary>
         public virtual WaveFormat WaveFormat 
         {
-            get { return waveFormat; }
+            get
+            {
+                // for convenience, return a WAVEFORMATEX, instead of the real
+                // WAVEFORMATEXTENSIBLE being used
+                var wfe = waveFormat as WaveFormatExtensible;
+                if (wfe != null)
+                {
+                    try
+                    {
+                        return wfe.ToStandardWaveFormat();
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        // couldn't convert to a standard format
+                    }
+                }
+                return waveFormat;
+            }
             set { waveFormat = value; }
         }
 

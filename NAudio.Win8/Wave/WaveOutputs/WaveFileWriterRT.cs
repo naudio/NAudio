@@ -1,9 +1,9 @@
+using NAudio.Wave.SampleProviders;
 using System;
 using System.IO;
-using NAudio.Wave.SampleProviders;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.Storage;
-using System.Threading;
 
 namespace NAudio.Wave
 {
@@ -21,7 +21,7 @@ namespace NAudio.Wave
         private string filename;
 
         // Protects WriteAsync and FlushAsync from overlapping
-        private readonly Semaphore semaphoneLock = new Semaphore(1, 100);
+        private readonly Semaphore asyncOperationsLock = new Semaphore(1, 100);
 
         /// <summary>
         /// Creates a 16 bit Wave File from an ISampleProvider
@@ -252,12 +252,12 @@ namespace NAudio.Wave
             {
                 try
                 {
-                    semaphoneLock.WaitOne();
+                    asyncOperationsLock.WaitOne();
                     Write(buffer, offset, count);
                 }
                 finally
                 {
-                    semaphoneLock.Release();
+                    asyncOperationsLock.Release();
                 }
             });
         }
@@ -399,12 +399,12 @@ namespace NAudio.Wave
             {
                 try
                 {
-                    semaphoneLock.WaitOne();
+                    asyncOperationsLock.WaitOne();
                     Flush();
                 }
                 finally
                 {
-                    semaphoneLock.Release();
+                    asyncOperationsLock.Release();
                 }
             });
         }
@@ -431,7 +431,7 @@ namespace NAudio.Wave
                         // the GC thread if the code above caused an IOException (e.g. due to disk full)
                         outStream.Dispose(); // will close the underlying base stream
                         outStream = null;
-                        semaphoneLock.Dispose();
+                        asyncOperationsLock.Dispose();
                     }
                 }
             }

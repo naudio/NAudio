@@ -179,8 +179,8 @@ namespace NAudio.Wave
 
         private void FillBuffer(IWaveProvider playbackProvider, int frameCount)
         {
-            IntPtr buffer = renderClient.GetBuffer(frameCount);
-            int readLength = frameCount * bytesPerFrame;
+            var buffer = renderClient.GetBuffer(frameCount);
+            var readLength = frameCount * bytesPerFrame;
             int read = playbackProvider.Read(readBuffer, 0, readLength);
             if (read == 0)
             {
@@ -344,7 +344,7 @@ namespace NAudio.Wave
             {
                 dmoResamplerNeeded = false;
             }
-            this.sourceProvider = waveProvider;
+            sourceProvider = waveProvider;
 
             // If using EventSync, setup is specific with shareMode
             if (isUsingEventSync)
@@ -352,12 +352,18 @@ namespace NAudio.Wave
                 // Init Shared or Exclusive
                 if (shareMode == AudioClientShareMode.Shared)
                 {
-                    // With EventCallBack and Shared, both latencies must be set to 0
-                    audioClient.Initialize(shareMode, AudioClientStreamFlags.EventCallback, 0, 0,
+                    // With EventCallBack and Shared, both latencies must be set to 0 (update - not sure this is true anymore)
+                    // 
+                    audioClient.Initialize(shareMode, AudioClientStreamFlags.EventCallback, latencyRefTimes, 0,
                         outputFormat, Guid.Empty);
 
-                    // Get back the effective latency from AudioClient
-                    latencyMilliseconds = (int)(audioClient.StreamLatency / 10000);
+                    // Windows 10 returns 0 from stream latency, resulting in maxing out CPU usage later
+                    var streamLatency = audioClient.StreamLatency;
+                    if (streamLatency != 0)
+                    {
+                        // Get back the effective latency from AudioClient
+                        latencyMilliseconds = (int)(streamLatency / 10000);
+                    }
                 }
                 else
                 {
@@ -444,7 +450,6 @@ namespace NAudio.Wave
                 audioClient = null;
                 renderClient = null;
             }
-
         }
 
         #endregion

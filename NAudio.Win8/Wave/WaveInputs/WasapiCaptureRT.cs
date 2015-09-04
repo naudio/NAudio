@@ -20,6 +20,7 @@ namespace NAudio.Wave
     /// </summary>
     public class WasapiCaptureRT : IWaveIn
     {
+        static readonly Guid IID_IAudioClient2 = new Guid("726778CD-F60A-4eda-82DE-E47610CD78AA");
         private const long REFTIMES_PER_SEC = 10000000;
         private const long REFTIMES_PER_MILLISEC = 10000;
         private volatile bool stop;
@@ -108,25 +109,7 @@ namespace NAudio.Wave
             return defaultCaptureDeviceId;
         }
 
-        private async Task<AudioClient> Activate()
-        {
-            var icbh = new ActivateAudioInterfaceCompletionHandler(
-                ac2 =>
-                    {
-                        InitializeCaptureDevice((IAudioClient)ac2);
-                        /*var wfx = new WaveFormat(44100, 16, 2);
-                    int hr = ac2.Initialize(AudioClientShareMode.Shared,
-                                AudioClientStreamFlags.None, 
-                                //AudioClientStreamFlags.EventCallback | AudioClientStreamFlags.NoPersist,
-                                10000000, 0, wfx, IntPtr.Zero);
-                    Marshal.ThrowExceptionForHR(hr);*/
-                    });
-            var IID_IAudioClient2 = new Guid("726778CD-F60A-4eda-82DE-E47610CD78AA");
-            IActivateAudioInterfaceAsyncOperation activationOperation;
-            NativeMethods.ActivateAudioInterfaceAsync(device, IID_IAudioClient2, IntPtr.Zero, icbh, out activationOperation);
-            var audioClient2 = await icbh;
-            return new AudioClient((IAudioClient)audioClient2);
-        }
+        
 
         private void InitializeCaptureDevice(IAudioClient audioClientInterface)
         {
@@ -174,26 +157,19 @@ namespace NAudio.Wave
         /// <summary>
         /// Start Recording
         /// </summary>
-        public void StartRecording()
+        public async void StartRecording()
         {
-            this.stop = false;
+            stop = false;
 
-            try
-            {
-                Task.Run(new Func<Task>(async () =>
-                {
-                    AudioClient audioClient = await Activate();
-                    Task.Run(() => DoRecording(audioClient));
-                })).Wait();
-            }
-            catch (AggregateException ae)
-            {
-                Debug.WriteLine("Error starting thread: " + ae.InnerException);
-                throw ae.InnerException;
-            }
+            var icbh = new ActivateAudioInterfaceCompletionHandler(ac2 =>{ InitializeCaptureDevice((IAudioClient)ac2);});
             
-            Debug.WriteLine("Thread starting...");
-
+            IActivateAudioInterfaceAsyncOperation activationOperation;
+            // must be called on UI thread
+            NativeMethods.ActivateAudioInterfaceAsync(device, IID_IAudioClient2, IntPtr.Zero, icbh, out activationOperation);
+            var audioClient2 = await icbh;
+            await Task.Run(() => DoRecording(new AudioClient((IAudioClient)audioClient2)));
+            
+            Debug.WriteLine("Recording...");
         }
 
         /// <summary>

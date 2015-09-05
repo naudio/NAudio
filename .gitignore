@@ -11,3 +11,5 @@ _ReSharper*/
 *.user
 *.ncrunchproject
 *.orig
+*.lock.json
+.vs/

@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
     <id>NAudio.Wma</id>
-    <version>1.0.1</version>
+    <version>@build.number@</version>
     <authors>Mark Heath, Yuval Naveh</authors>
     <owners>Mark Heath</owners>
     <licenseUrl>http://naudio.codeplex.com/license</licenseUrl>

@@ -13,3 +13,4 @@ _ReSharper*/
 *.orig
 *.lock.json
 .vs/
+.fake/

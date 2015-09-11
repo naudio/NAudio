@@ -8,6 +8,7 @@
 * WaveFileWriterRT for Win 8/10 (thanks to kamenlitchev)
 * Improvements to Mp3FileReader seeking and position reporting (thanks to protyposis)
 * updated NAudio build process to use FAKE, retiring the old MSBuild and IronPython scripts
+* NAudio.Wma project is moved out into its own [GitHub repository](https://github.com/naudio/NAudio.Wma)
 * Various bugfixes and enhancements. See commit log for full details
   * WasapiCapture buffer sizes can be specified 
   * MMDeviceEnumerator is disposable

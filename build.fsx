@@ -65,16 +65,6 @@ Target "NuGet" (fun _ ->
             
             Publish = false }) 
             "NAudio.nuspec"
-
-    NuGet (fun p -> 
-        {p with
-            Version = "1.0.1"
-            WorkingDir = "."
-            OutputPath = deployDir
-            
-            Publish = false }) 
-            "NAudio.Wma.nuspec"
-
 )
 
 Target "Release" DoNothing
@@ -109,7 +99,6 @@ Target "ZipSource" (fun _ ->
 Target "ZipLib" (fun _ ->
     let zipFiles = [@".\NAudio\bin\Release\NAudio.dll";
         @".\NAudio\bin\Release\NAudio.xml";
-        @".\NAudio.WindowsMediaFormat\bin\Release\NAudio.WindowsMediaFormat.dll";
         "license.txt";
         "readme.txt"
         ]

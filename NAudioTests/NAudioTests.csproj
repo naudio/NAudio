@@ -126,20 +126,14 @@
     <Compile Include="WaveStreams\WaveFileReaderTests.cs" />
     <Compile Include="WaveStreams\WaveFileWriterTests.cs" />
     <Compile Include="WaveStreams\WdlResamplingSampleProviderTests.cs" />
-    <Compile Include="WindowsMedia\WindowsMediaTests.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\NAudio.WindowsMediaFormat\NAudio.WindowsMediaFormat.csproj">
-      <Project>{1868FC77-FD6F-4881-9CF5-DE7451806BFA}</Project>
-      <Name>NAudio.WindowsMediaFormat</Name>
-    </ProjectReference>
     <ProjectReference Include="..\NAudio\NAudio.csproj">
       <Project>{DA4F02E3-0B5E-42CD-B8D9-5583FA51D66E}</Project>
       <Name>NAudio</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="NAudioTests.nunit" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

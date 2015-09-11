@@ -9,6 +9,15 @@ let deployDir = "./BuildArtefacts/"
 let testDir = "./NAudioTests/bin/Debug/"
 let testDlls = !! (testDir + "*Tests.dll")
 
+let buildLogo = """  _   _    _             _ _       
+ | \ | |  / \  _   _  __| (_) ___  
+ |  \| | / _ \| | | |/ _` | |/ _ \ 
+ | |\  |/ ___ \ |_| | (_| | | (_) |
+ |_| \_/_/   \_\__,_|\__,_|_|\___/ 
+"""                                   
+
+traceHeader buildLogo
+
 Target "DebugBuild" (fun _ ->
     MSBuildDebug buildDir "Build" appReferences
         |> Log "Build output: "

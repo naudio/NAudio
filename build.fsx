@@ -3,7 +3,7 @@ open Fake
 open System.IO
 
 let buildDir = "" // using the defaults build output
-let appReferences = !! "./NAudio.sln" // still building from the solution
+let appReferences = !! "./*.sln" // still building from the solution
 
 let deployDir = "./BuildArtefacts/"
 let testDir = "./NAudioTests/bin/Debug/"
@@ -20,7 +20,7 @@ traceHeader buildLogo
 
 Target "DebugBuild" (fun _ ->
     MSBuildDebug buildDir "Build" appReferences
-        |> Log "Build output: "
+        |> ignore //Log "Build output: "
 )
 
 Target "ReleaseBuild" (fun _ ->

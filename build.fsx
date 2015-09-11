@@ -86,24 +86,17 @@ let demoIncludes =
     !! "**"
     -- "**/*.pdb"
     -- "*.vshost.*"
+    -- "*nunit*"
+    
+let demoApps = ["AudioFileInspector"; "NAudioDemo"; "NAudioWpfDemo"]
+
+let demoFiles = 
+    demoApps
+        |> Seq.map (fun a -> a, Path.GetFullPath (sprintf "./%s/bin/Debug" a))
+        |> Seq.map (fun (a,b) -> a, { demoIncludes with BaseDirectory = b })
+        |> List.ofSeq
                     
-let audioFileInspectorBaseDirectory = Path.GetFullPath "./AudioFileInspector/bin/Debug"
-let audioFileInspectorIncludes = { demoIncludes with BaseDirectory = audioFileInspectorBaseDirectory }
-
-let naudioDemoBaseDirectory = Path.GetFullPath "./NAudioDemo/bin/Debug"
-let naudioDemoIncludes = { demoIncludes with BaseDirectory = naudioDemoBaseDirectory }
-
-let wpfDemoBaseDirectory = Path.GetFullPath "./NAudioWpfDemo/bin/Debug"
-let wpfDemoIncludes = { demoIncludes with BaseDirectory = wpfDemoBaseDirectory }
-
-
-let demoFiles = [ "AudioFileInspector", audioFileInspectorIncludes;
-        "NAudioDemo", naudioDemoIncludes;
-        "NAudioWpfDemo", wpfDemoIncludes
-]
-
 Target "ZipDemo" (fun _ ->
-    trace audioFileInspectorBaseDirectory
     CreateZipOfIncludes (deployDir + "NAudio-Demos.zip") "" DefaultZipLevel demoFiles        
 )
 

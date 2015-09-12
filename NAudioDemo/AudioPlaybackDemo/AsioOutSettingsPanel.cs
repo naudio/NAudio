@@ -1,10 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Drawing;
-using System.Data;
 using System.Linq;
-using System.Text;
 using System.Windows.Forms;
 using NAudio.Wave;
 
@@ -31,7 +26,7 @@ namespace NAudioDemo.AudioPlaybackDemo
 
         public string SelectedDeviceName { get { return (string)comboBoxAsioDriver.SelectedItem; } }
 
-        private void buttonControlPanel_Click(object sender, EventArgs args)
+        private void OnButtonControlPanelClick(object sender, EventArgs args)
         {
             try
             {

@@ -1,15 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using NAudio.Wave;
 using System.Windows.Forms;
-using NAudio.CoreAudioApi;
-using System.ComponentModel.Composition;
 
 namespace NAudioDemo.AudioPlaybackDemo
 {
-    [Export(typeof(IOutputDevicePlugin))]
     class WasapiOutPlugin : IOutputDevicePlugin
     {
         WasapiOutSettingsPanel settingsPanel;
@@ -26,7 +21,7 @@ namespace NAudioDemo.AudioPlaybackDemo
 
         public UserControl CreateSettingsPanel()
         {
-            this.settingsPanel = new WasapiOutSettingsPanel();
+            settingsPanel = new WasapiOutSettingsPanel();
             return settingsPanel;
         }
 

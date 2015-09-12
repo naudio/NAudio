@@ -1,2 +1,0 @@
-had to get a special build of Composition.Initialization.Desktop.zip to be able to use ExportFactory<T> with .NET 3.5
-http://cid-f8b2fd72406fb218.office.live.com/self.aspx/blog/Composition.Initialization.Desktop.zip

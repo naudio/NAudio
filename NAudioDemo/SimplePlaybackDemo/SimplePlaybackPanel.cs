@@ -1,12 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Drawing;
-using System.Data;
 using System.Linq;
-using System.Text;
 using System.Windows.Forms;
-using NAudio.FileFormats.Mp3;
 using NAudio.Wave;
 using System.Diagnostics;
 
@@ -15,7 +9,7 @@ namespace NAudioDemo.SimplePlaybackDemo
     public partial class SimplePlaybackPanel : UserControl
     {
         private IWavePlayer wavePlayer;
-        private AudioFileReader file;
+        private AudioFileReader audioFileReader;
         private string fileName;
 
         public SimplePlaybackPanel()
@@ -23,9 +17,9 @@ namespace NAudioDemo.SimplePlaybackDemo
             InitializeComponent();
             EnableButtons(false);
             PopulateOutputDriverCombo();
-            this.Disposed += new EventHandler(SimplePlaybackPanel_Disposed);
-            this.timer1.Interval = 250;
-            this.timer1.Tick += new EventHandler(timer1_Tick);
+            Disposed += SimplePlaybackPanel_Disposed;
+            timer1.Interval = 250;
+            timer1.Tick += OnTimerTick;
         }
 
         private static string FormatTimeSpan(TimeSpan ts)
@@ -33,12 +27,12 @@ namespace NAudioDemo.SimplePlaybackDemo
             return string.Format("{0:D2}:{1:D2}", (int)ts.TotalMinutes, ts.Seconds);
         }
 
-        void timer1_Tick(object sender, EventArgs e)
+        void OnTimerTick(object sender, EventArgs e)
         {
-            if (file != null)
+            if (audioFileReader != null)
             {
-                labelNowTime.Text = FormatTimeSpan(file.CurrentTime);
-                labelTotalTime.Text = FormatTimeSpan(file.TotalTime);
+                labelNowTime.Text = FormatTimeSpan(audioFileReader.CurrentTime);
+                labelTotalTime.Text = FormatTimeSpan(audioFileReader.TotalTime);
             }
         }
 
@@ -79,13 +73,13 @@ namespace NAudioDemo.SimplePlaybackDemo
 
         private void BeginPlayback(string filename)
         {
-            Debug.Assert(this.wavePlayer == null);
-            this.wavePlayer = CreateWavePlayer();
-            this.file = new AudioFileReader(filename);
-            this.file.Volume = volumeSlider1.Volume;
-            this.wavePlayer.Init(file);
-            this.wavePlayer.PlaybackStopped += wavePlayer_PlaybackStopped;
-            this.wavePlayer.Play();
+            Debug.Assert(wavePlayer == null);
+            wavePlayer = CreateWavePlayer();
+            audioFileReader = new AudioFileReader(filename);
+            audioFileReader.Volume = volumeSlider1.Volume;
+            wavePlayer.Init(audioFileReader);
+            wavePlayer.PlaybackStopped += OnPlaybackStopped;
+            wavePlayer.Play();
             EnableButtons(true);
             timer1.Enabled = true; // timer for updating current time label
         }
@@ -98,7 +92,6 @@ namespace NAudioDemo.SimplePlaybackDemo
                     return new WaveOutEvent();
                 case 1:
                     return new WaveOut(WaveCallbackInfo.FunctionCallback());
-                case 0:
                 default:
                     return new WaveOut();
             }
@@ -111,10 +104,10 @@ namespace NAudioDemo.SimplePlaybackDemo
             buttonOpen.Enabled = !playing;
         }
 
-        void wavePlayer_PlaybackStopped(object sender, StoppedEventArgs e)
+        void OnPlaybackStopped(object sender, StoppedEventArgs e)
         {
             // we want to be always on the GUI thread and be able to change GUI components
-            Debug.Assert(!this.InvokeRequired, "PlaybackStopped on wrong thread");
+            Debug.Assert(!InvokeRequired, "PlaybackStopped on wrong thread");
             // we want it to be safe to clean up input stream and playback device in the handler for PlaybackStopped
             CleanUp();
             EnableButtons(false);
@@ -128,33 +121,33 @@ namespace NAudioDemo.SimplePlaybackDemo
 
         private void CleanUp()
         {
-            if (this.file != null)
+            if (audioFileReader != null)
             {
-                this.file.Dispose();
-                this.file = null;
+                audioFileReader.Dispose();
+                audioFileReader = null;
             }
-            if (this.wavePlayer != null)
+            if (wavePlayer != null)
             {
-                this.wavePlayer.Dispose();
-                this.wavePlayer = null;
+                wavePlayer.Dispose();
+                wavePlayer = null;
             }
         }
 
-        private void buttonStop_Click(object sender, EventArgs e)
+        private void OnButtonStopClick(object sender, EventArgs e)
         {
-            this.wavePlayer.Stop();
+            wavePlayer.Stop();
             // don't set button states now, we'll wait for our PlaybackStopped to come
         }
 
-        private void volumeSlider1_VolumeChanged(object sender, EventArgs e)
+        private void OnVolumeSliderChanged(object sender, EventArgs e)
         {
-            if (this.file != null)
+            if (audioFileReader != null)
             {
-                this.file.Volume = volumeSlider1.Volume;
+                audioFileReader.Volume = volumeSlider1.Volume;
             }
         }
 
-        private void buttonOpen_Click(object sender, EventArgs e)
+        private void OnButtonOpenClick(object sender, EventArgs e)
         {
             fileName = SelectInputFile();
         }

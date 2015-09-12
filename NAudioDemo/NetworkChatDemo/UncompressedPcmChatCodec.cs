@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Linq;
 using NAudio.Wave;
-using System.ComponentModel.Composition;
 
 namespace NAudioDemo.NetworkChatDemo
 {
-    [Export(typeof(INetworkChatCodec))]
     class UncompressedPcmChatCodec : INetworkChatCodec
     {
         public UncompressedPcmChatCodec()

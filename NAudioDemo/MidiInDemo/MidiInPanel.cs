@@ -1,14 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
 using NAudio.Midi;
-using System.ComponentModel.Composition;
 
-namespace NAudioDemo
+namespace NAudioDemo.MidiInDemo
 {
     public partial class MidiInPanel : UserControl
     {
@@ -166,7 +162,6 @@ namespace NAudioDemo
         }
     }
     
-    [Export(typeof(INAudioDemoPlugin))]
     public class MidiInPanelPlugin : INAudioDemoPlugin
     {
         public string Name

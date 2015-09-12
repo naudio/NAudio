@@ -1,15 +1,16 @@
-﻿using NAudio.Utils;
-using NAudio.Wave;
-using System;
+﻿using System;
+using System.Globalization;
 using System.Windows.Forms;
+using NAudio.Utils;
+using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 
-namespace NAudioDemo.Generator
+namespace NAudioDemo.SignalGeneratorDemo
 {
     public partial class GeneratorPanel : UserControl
     {
 
-        private WaveOut driverOut;
+        private readonly IWavePlayer driverOut;
 
         private SignalGenerator wg;
 
@@ -20,21 +21,20 @@ namespace NAudioDemo.Generator
         private const double FMin = 20;
 
         // constante  Math.Log10(FMax / FMin)
-        private double Log10FmaxFMin;
+        private readonly double log10FmaxFMin;
 
 
         public GeneratorPanel()
         {
             // Const
-            Log10FmaxFMin = Math.Log10(FMax/FMin);
+            log10FmaxFMin = Math.Log10(FMax/FMin);
 
             // Panel Init
             InitializeComponent();
-            this.Disposed += new EventHandler(GeneratorPanel_Disposed);
+            Disposed += OnGeneratorPanelDisposed;
 
             // Init Audio
-            driverOut = new WaveOut();
-            driverOut.DesiredLatency = 100;
+            driverOut = new WaveOutEvent();
             //driverOut = new AsioOut(0);
             wg = new SignalGenerator();
 
@@ -42,13 +42,13 @@ namespace NAudioDemo.Generator
             cmbFrq.SelectedIndex = 0;
             cmbPrecisionFrq.SelectedIndex = 2;
             tbFrq.Value = 12; // 1200Hz
-            tbToFrq();
+            CalculateTrackBarFrequency();
 
             // Par Default Frq End 2000Hz
             cmbFrqEnd.SelectedIndex = 0;
             cmbPrecisionFrqEnd.SelectedIndex = 2;
             tbFrqEnd.Value = tbFrqEnd.Maximum;
-            tbToFrqEnd();
+            CalculateTrackBarEndFrequency();
 
             // comboBox Type
             cmbType.DataSource = Enum.GetValues(typeof (SignalGeneratorType));
@@ -56,11 +56,11 @@ namespace NAudioDemo.Generator
 
             // Par Default Gain -20dB
             tbGain.Value = -20;
-            tbToGain();
+            CalculateTrackBarToGain();
 
             // Par Default SweepSeconds
             tbSweepLength.Value = 10;
-            tbToSweepLength();
+            CalculateTrackBarToSweepLength();
 
             // Init Driver Audio
             driverOut.Init(wg);
@@ -68,7 +68,7 @@ namespace NAudioDemo.Generator
 
         }
 
-        private void GeneratorPanel_Disposed(object sender, EventArgs e)
+        private void OnGeneratorPanelDisposed(object sender, EventArgs e)
         {
             Cleanup();
         }
@@ -78,7 +78,7 @@ namespace NAudioDemo.Generator
         // --------------
 
         // btn Start
-        private void btnStart_Click(object sender, EventArgs e)
+        private void OnButtonStartClick(object sender, EventArgs e)
         {
             if (driverOut != null)
             {
@@ -88,26 +88,22 @@ namespace NAudioDemo.Generator
         }
 
         // btn Stop
-        private void btnStop_Click(object sender, EventArgs e)
+        private void OnButtonStopClick(object sender, EventArgs e)
         {
             if (driverOut != null)
             {
                 driverOut.Stop();
                 StartStopEnabled();
             }
-
-
         }
 
-        // Bouton Enabled
         private void StartStopEnabled()
         {
             bool bDriverReady = (driverOut != null);
 
-            btnStart.Enabled = bDriverReady & (driverOut.PlaybackState == PlaybackState.Stopped);
-            btnStop.Enabled = bDriverReady & (driverOut.PlaybackState == PlaybackState.Playing);
+            btnStart.Enabled = bDriverReady && (driverOut.PlaybackState == PlaybackState.Stopped);
+            btnStop.Enabled = bDriverReady && (driverOut.PlaybackState == PlaybackState.Playing);
             buttonSave.Enabled = btnStart.Enabled;
-
         }
 
         // --------------
@@ -115,7 +111,7 @@ namespace NAudioDemo.Generator
         // --------------
 
         // cmb Type
-        private void cmbType_SelectedIndexChanged(object sender, EventArgs e)
+        private void OnComboTypeSelectedIndexChanged(object sender, EventArgs e)
         {
 
             FrqEnabled(false);
@@ -136,9 +132,6 @@ namespace NAudioDemo.Generator
                     FrqEndEnabled(true);
                     SweepLengthEnabled(true);
                     break;
-
-                default:
-                    break;
             }
 
             wg.Type = (SignalGeneratorType) cmbType.SelectedItem;
@@ -149,20 +142,20 @@ namespace NAudioDemo.Generator
         // --------------
 
         // cmbFrq
-        private void cmbFrq_SelectedIndexChanged(object sender, EventArgs e)
+        private void OnComboFrequencySelectedIndexChanged(object sender, EventArgs e)
         {
-            tbToFrq();
+            CalculateTrackBarFrequency();
             FrqEnabled(true);
         }
 
         // trackbar Frq
-        private void tbFrq_Scroll(object sender, EventArgs e)
+        private void OnTrackBarFrequencyScroll(object sender, EventArgs e)
         {
-            tbToFrq();
+            CalculateTrackBarFrequency();
         }
 
         // comboBox Precision Frq
-        private void cmbPrecisionFrq_SelectedIndexChanged(object sender, EventArgs e)
+        private void OnComboPrecisionFrequencySelectedIndexChanged(object sender, EventArgs e)
         {
             // change Type
             int octave = cmbPrecisionToOctave(cmbPrecisionFrq.SelectedIndex);
@@ -171,14 +164,12 @@ namespace NAudioDemo.Generator
             tbFrq.Maximum = octave;
 
             // 
-            tbToFrq();
+            CalculateTrackBarFrequency();
         }
 
-
-        // Calcul TaskBar to Frq
-        private void tbToFrq()
+        private void CalculateTrackBarFrequency()
         {
-            double x = Math.Pow(10, (tbFrq.Value/(tbFrq.Maximum/Log10FmaxFMin)))*FMin;
+            double x = Math.Pow(10, (tbFrq.Value/(tbFrq.Maximum/log10FmaxFMin)))*FMin;
             x = Math.Round(x, 1);
 
 
@@ -189,7 +180,7 @@ namespace NAudioDemo.Generator
                 wg.Frequency = Convert.ToDouble(cmbFrq.SelectedItem);
 
             // View Frq
-            lblFrq.Text = x.ToString();
+            lblFrq.Text = x.ToString(CultureInfo.InvariantCulture);
         }
 
         // Frq Enabled
@@ -210,20 +201,20 @@ namespace NAudioDemo.Generator
         // --------------
 
         // cmb Frq End
-        private void cmbFrqEnd_SelectedIndexChanged(object sender, EventArgs e)
+        private void OnComboFrequencyEndSelectedIndexChanged(object sender, EventArgs e)
         {
-            tbToFrqEnd();
+            CalculateTrackBarEndFrequency();
             FrqEndEnabled(true);
         }
 
         // trackbar FrqEnd
-        private void tbFrqEnd_Scroll(object sender, EventArgs e)
+        private void OnTrackBarFrequencyEndScroll(object sender, EventArgs e)
         {
-            tbToFrqEnd();
+            CalculateTrackBarEndFrequency();
         }
 
         // combobox FrqEnd Precision
-        private void cmbPrecisionFrqEnd_SelectedIndexChanged(object sender, EventArgs e)
+        private void OnComboPrecisionFrequencyEndSelectedIndexChanged(object sender, EventArgs e)
         {
             // change Type
             int octave = cmbPrecisionToOctave(cmbPrecisionFrqEnd.SelectedIndex);
@@ -232,13 +223,12 @@ namespace NAudioDemo.Generator
             tbFrqEnd.Maximum = octave;
 
             // 
-            tbToFrqEnd();
+            CalculateTrackBarEndFrequency();
         }
 
-        // Calcul TaskBar to Frq
-        private void tbToFrqEnd()
+        private void CalculateTrackBarEndFrequency()
         {
-            double x = Math.Pow(10, (tbFrqEnd.Value/(tbFrqEnd.Maximum/Log10FmaxFMin)))*FMin;
+            double x = Math.Pow(10, (tbFrqEnd.Value/(tbFrqEnd.Maximum/log10FmaxFMin)))*FMin;
             x = Math.Round(x, 1);
 
             // Change Frequency in Generator
@@ -249,7 +239,7 @@ namespace NAudioDemo.Generator
 
 
             // View Frq
-            lblFrqEnd.Text = x.ToString();
+            lblFrqEnd.Text = x.ToString(CultureInfo.InvariantCulture);
         }
 
         // FrqEnd Enabled
@@ -270,13 +260,12 @@ namespace NAudioDemo.Generator
         // --------------
 
         // trackbar Gain
-        private void tbGain_Scroll(object sender, EventArgs e)
+        private void OnTrackBarGainScroll(object sender, EventArgs e)
         {
-            tbToGain();
+            CalculateTrackBarToGain();
         }
 
-        // Calcul TaskBar to Gain
-        private void tbToGain()
+        private void CalculateTrackBarToGain()
         {
             lblGain.Text = tbGain.Value.ToString();
             wg.Gain = Decibels.DecibelsToLinear(tbGain.Value);
@@ -287,13 +276,12 @@ namespace NAudioDemo.Generator
         // --------------
 
         // trackbar Sweep Length
-        private void tbSweepLength_Scroll(object sender, EventArgs e)
+        private void OnTrackBarSweepLengthScroll(object sender, EventArgs e)
         {
-            tbToSweepLength();
+            CalculateTrackBarToSweepLength();
         }
 
-        // Calcul TaskBar to Length
-        private void tbToSweepLength()
+        private void CalculateTrackBarToSweepLength()
         {
             lblSweepLength.Text = tbSweepLength.Value.ToString();
             wg.SweepLengthSecs = tbSweepLength.Value;
@@ -311,13 +299,13 @@ namespace NAudioDemo.Generator
         // --------------
 
         // Reverse Left
-        private void chkReverseLeft_CheckedChanged(object sender, EventArgs e)
+        private void OnReverseLeftCheckedChanged(object sender, EventArgs e)
         {
             PhaseReverse();
         }
 
         // Reverse Right
-        private void chkReverseRight_CheckedChanged(object sender, EventArgs e)
+        private void OnReverseRightCheckedChanged(object sender, EventArgs e)
         {
             PhaseReverse();
         }
@@ -345,8 +333,7 @@ namespace NAudioDemo.Generator
             if (driverOut != null)
                 driverOut.Stop();
 
-            if (wg != null)
-                wg = null;
+            wg = null;
 
             if (driverOut != null)
             {
@@ -354,9 +341,9 @@ namespace NAudioDemo.Generator
             }
         }
 
-        private void buttonSave_Click(object sender, EventArgs e)
+        private void OnButtonSaveClick(object sender, EventArgs e)
         {
-            btnStop_Click(this,e);
+            OnButtonStopClick(this,e);
             var sfd = new SaveFileDialog();
             sfd.Filter = "WAV File|*.wav";
             if (sfd.ShowDialog() == DialogResult.OK)

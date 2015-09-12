@@ -1,4 +1,4 @@
-﻿namespace NAudioDemo
+﻿namespace NAudioDemo.RecordingDemo
 {
     partial class RecordingPanel
     {

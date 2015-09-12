@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace NAudioDemo
+namespace NAudioDemo.Mp3StreamingDemo
 {
     public class ReadFullyStream : Stream
     {

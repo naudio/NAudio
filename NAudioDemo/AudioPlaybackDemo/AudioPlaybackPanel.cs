@@ -1,32 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.Composition;
 using System.Linq;
 using System.Windows.Forms;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
+using NAudioDemo.Utils;
 
 namespace NAudioDemo.AudioPlaybackDemo
 {
-    [Export]
     public partial class AudioPlaybackPanel : UserControl
     {
         private IWavePlayer waveOut;
-        private string fileName = null;
+        private string fileName;
         private AudioFileReader audioFileReader;
         private Action<float> setVolumeDelegate;
 
-        [ImportingConstructor]
-        public AudioPlaybackPanel([ImportMany]IEnumerable<IOutputDevicePlugin> outputDevicePlugins)
+        public AudioPlaybackPanel()
         {
+
             InitializeComponent();
-            LoadOutputDevicePlugins(outputDevicePlugins);
+            LoadOutputDevicePlugins(ReflectionHelper.CreateAllInstancesOf<IOutputDevicePlugin>());
         }
 
         private void LoadOutputDevicePlugins(IEnumerable<IOutputDevicePlugin> outputDevicePlugins)
         {
             comboBoxOutputDevice.DisplayMember = "Name";
-            comboBoxOutputDevice.SelectedIndexChanged += comboBoxOutputDevice_SelectedIndexChanged;
+            comboBoxOutputDevice.SelectedIndexChanged += OnComboBoxOutputDeviceSelectedIndexChanged;
             foreach (var outputDevicePlugin in outputDevicePlugins.OrderBy(p => p.Priority))
             {
                 comboBoxOutputDevice.Items.Add(outputDevicePlugin);
@@ -34,7 +33,7 @@ namespace NAudioDemo.AudioPlaybackDemo
             comboBoxOutputDevice.SelectedIndex = 0;
         }
 
-        void comboBoxOutputDevice_SelectedIndexChanged(object sender, EventArgs e)
+        void OnComboBoxOutputDeviceSelectedIndexChanged(object sender, EventArgs e)
         {
             panelOutputDeviceSettings.Controls.Clear();
             Control settingsPanel;
@@ -98,7 +97,7 @@ namespace NAudioDemo.AudioPlaybackDemo
                 return;
             }
 
-            ISampleProvider sampleProvider = null;
+            ISampleProvider sampleProvider;
             try
             {
                 sampleProvider = CreateInputStream(fileName);
@@ -130,11 +129,11 @@ namespace NAudioDemo.AudioPlaybackDemo
 
         private ISampleProvider CreateInputStream(string fileName)
         {
-            this.audioFileReader = new AudioFileReader(fileName);
+            audioFileReader = new AudioFileReader(fileName);
             
             var sampleChannel = new SampleChannel(audioFileReader, true);
             sampleChannel.PreVolumeMeter+= OnPreVolumeMeter;
-            this.setVolumeDelegate = (vol) => sampleChannel.Volume = vol;
+            setVolumeDelegate = vol => sampleChannel.Volume = vol;
             var postVolumeMeter = new MeteringSampleProvider(sampleChannel);
             postVolumeMeter.StreamVolume += OnPostVolumeMeter;
 

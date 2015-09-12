@@ -1,10 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Drawing;
-using System.Data;
 using System.Linq;
-using System.Text;
 using System.Windows.Forms;
 using NAudio.Wave;
 
@@ -12,8 +7,6 @@ namespace NAudioDemo.AudioPlaybackDemo
 {
     public partial class WaveOutSettingsPanel : UserControl
     {
-        
-
         public WaveOutSettingsPanel()
         {
             InitializeComponent();
@@ -21,12 +14,12 @@ namespace NAudioDemo.AudioPlaybackDemo
             InitialiseStrategyCombo();
         }
 
-        class CallbackComboItem
+        internal class CallbackComboItem
         {
             public CallbackComboItem(string text, WaveCallbackStrategy strategy)
             {
-                this.Text = text;
-                this.Strategy = strategy;
+                Text = text;
+                Strategy = strategy;
             }
             public string Text { get; private set; }
             public WaveCallbackStrategy Strategy { get; private set; }

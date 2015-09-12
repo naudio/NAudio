@@ -1,4 +1,4 @@
-﻿namespace NAudioDemo.Generator
+﻿namespace NAudioDemo.SignalGeneratorDemo
 {
 	partial class GeneratorPanel
 	{
@@ -81,7 +81,7 @@
             this.btnStart.TabIndex = 0;
             this.btnStart.Text = "Start";
             this.btnStart.UseVisualStyleBackColor = true;
-            this.btnStart.Click += new System.EventHandler(this.btnStart_Click);
+            this.btnStart.Click += new System.EventHandler(this.OnButtonStartClick);
             // 
             // btnStop
             // 
@@ -91,7 +91,7 @@
             this.btnStop.TabIndex = 0;
             this.btnStop.Text = "Stop";
             this.btnStop.UseVisualStyleBackColor = true;
-            this.btnStop.Click += new System.EventHandler(this.btnStop_Click);
+            this.btnStop.Click += new System.EventHandler(this.OnButtonStopClick);
             // 
             // cmbType
             // 
@@ -101,7 +101,7 @@
             this.cmbType.Name = "cmbType";
             this.cmbType.Size = new System.Drawing.Size(191, 21);
             this.cmbType.TabIndex = 1;
-            this.cmbType.SelectedIndexChanged += new System.EventHandler(this.cmbType_SelectedIndexChanged);
+            this.cmbType.SelectedIndexChanged += new System.EventHandler(this.OnComboTypeSelectedIndexChanged);
             // 
             // label1
             // 
@@ -121,7 +121,7 @@
             this.tbFrq.Size = new System.Drawing.Size(272, 45);
             this.tbFrq.TabIndex = 3;
             this.tbFrq.TickStyle = System.Windows.Forms.TickStyle.None;
-            this.tbFrq.Scroll += new System.EventHandler(this.tbFrq_Scroll);
+            this.tbFrq.Scroll += new System.EventHandler(this.OnTrackBarFrequencyScroll);
             // 
             // lblFrq
             // 
@@ -158,7 +158,7 @@
             this.tbFrqEnd.Size = new System.Drawing.Size(272, 45);
             this.tbFrqEnd.TabIndex = 3;
             this.tbFrqEnd.TickStyle = System.Windows.Forms.TickStyle.None;
-            this.tbFrqEnd.Scroll += new System.EventHandler(this.tbFrqEnd_Scroll);
+            this.tbFrqEnd.Scroll += new System.EventHandler(this.OnTrackBarFrequencyEndScroll);
             // 
             // lblFrqEnd
             // 
@@ -188,7 +188,7 @@
             this.tbGain.TabIndex = 3;
             this.tbGain.TickStyle = System.Windows.Forms.TickStyle.None;
             this.tbGain.Value = -50;
-            this.tbGain.Scroll += new System.EventHandler(this.tbGain_Scroll);
+            this.tbGain.Scroll += new System.EventHandler(this.OnTrackBarGainScroll);
             // 
             // lblGain
             // 
@@ -218,7 +218,7 @@
             this.tbSweepLength.TabIndex = 3;
             this.tbSweepLength.TickStyle = System.Windows.Forms.TickStyle.None;
             this.tbSweepLength.Value = 10;
-            this.tbSweepLength.Scroll += new System.EventHandler(this.tbSweepLength_Scroll);
+            this.tbSweepLength.Scroll += new System.EventHandler(this.OnTrackBarSweepLengthScroll);
             // 
             // lblSweepLength
             // 
@@ -247,7 +247,7 @@
             this.chkReverseLeft.TabIndex = 5;
             this.chkReverseLeft.Text = "Left";
             this.chkReverseLeft.UseVisualStyleBackColor = true;
-            this.chkReverseLeft.CheckedChanged += new System.EventHandler(this.chkReverseLeft_CheckedChanged);
+            this.chkReverseLeft.CheckedChanged += new System.EventHandler(this.OnReverseLeftCheckedChanged);
             // 
             // chkReverseRight
             // 
@@ -258,7 +258,7 @@
             this.chkReverseRight.TabIndex = 5;
             this.chkReverseRight.Text = "Right";
             this.chkReverseRight.UseVisualStyleBackColor = true;
-            this.chkReverseRight.CheckedChanged += new System.EventHandler(this.chkReverseRight_CheckedChanged);
+            this.chkReverseRight.CheckedChanged += new System.EventHandler(this.OnReverseRightCheckedChanged);
             // 
             // cmbPrecisionFrq
             // 
@@ -275,7 +275,7 @@
             this.cmbPrecisionFrq.Name = "cmbPrecisionFrq";
             this.cmbPrecisionFrq.Size = new System.Drawing.Size(108, 21);
             this.cmbPrecisionFrq.TabIndex = 1;
-            this.cmbPrecisionFrq.SelectedIndexChanged += new System.EventHandler(this.cmbPrecisionFrq_SelectedIndexChanged);
+            this.cmbPrecisionFrq.SelectedIndexChanged += new System.EventHandler(this.OnComboPrecisionFrequencySelectedIndexChanged);
             // 
             // lblFrqPrecision
             // 
@@ -301,7 +301,7 @@
             this.cmbPrecisionFrqEnd.Name = "cmbPrecisionFrqEnd";
             this.cmbPrecisionFrqEnd.Size = new System.Drawing.Size(108, 21);
             this.cmbPrecisionFrqEnd.TabIndex = 1;
-            this.cmbPrecisionFrqEnd.SelectedIndexChanged += new System.EventHandler(this.cmbPrecisionFrqEnd_SelectedIndexChanged);
+            this.cmbPrecisionFrqEnd.SelectedIndexChanged += new System.EventHandler(this.OnComboPrecisionFrequencyEndSelectedIndexChanged);
             // 
             // lblFrqEndPrecision
             // 
@@ -364,7 +364,7 @@
             this.cmbFrq.Name = "cmbFrq";
             this.cmbFrq.Size = new System.Drawing.Size(108, 21);
             this.cmbFrq.TabIndex = 1;
-            this.cmbFrq.SelectedIndexChanged += new System.EventHandler(this.cmbFrq_SelectedIndexChanged);
+            this.cmbFrq.SelectedIndexChanged += new System.EventHandler(this.OnComboFrequencySelectedIndexChanged);
             // 
             // grbFrq
             // 
@@ -452,7 +452,7 @@
             this.cmbFrqEnd.Name = "cmbFrqEnd";
             this.cmbFrqEnd.Size = new System.Drawing.Size(108, 21);
             this.cmbFrqEnd.TabIndex = 5;
-            this.cmbFrqEnd.SelectedIndexChanged += new System.EventHandler(this.cmbFrqEnd_SelectedIndexChanged);
+            this.cmbFrqEnd.SelectedIndexChanged += new System.EventHandler(this.OnComboFrequencyEndSelectedIndexChanged);
             // 
             // lblEndPreset
             // 
@@ -506,7 +506,7 @@
             this.buttonSave.TabIndex = 0;
             this.buttonSave.Text = "Save";
             this.buttonSave.UseVisualStyleBackColor = true;
-            this.buttonSave.Click += new System.EventHandler(this.buttonSave_Click);
+            this.buttonSave.Click += new System.EventHandler(this.OnButtonSaveClick);
             // 
             // GeneratorPanel
             // 

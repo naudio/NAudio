@@ -2,12 +2,10 @@
 using System.Linq;
 using NAudio.Wave;
 using NSpeex;
-using System.ComponentModel.Composition;
 using System.Diagnostics;
 
 namespace NAudioDemo.NetworkChatDemo
 {
-    [Export(typeof(INetworkChatCodec))]
     class NarrowBandSpeexCodec : SpeexChatCodec
     {
         public NarrowBandSpeexCodec() : 
@@ -17,7 +15,6 @@ namespace NAudioDemo.NetworkChatDemo
         }
     }
 
-    [Export(typeof(INetworkChatCodec))]
     class WideBandSpeexCodec : SpeexChatCodec
     {
         public WideBandSpeexCodec() : 
@@ -27,7 +24,6 @@ namespace NAudioDemo.NetworkChatDemo
         }
     }
 
-    [Export(typeof(INetworkChatCodec))]
     class UltraWideBandSpeexCodec : SpeexChatCodec
     {
         public UltraWideBandSpeexCodec() :
@@ -37,7 +33,7 @@ namespace NAudioDemo.NetworkChatDemo
         }
     }
 
-    class SpeexChatCodec : INetworkChatCodec
+    abstract class SpeexChatCodec : INetworkChatCodec
     {
         private readonly WaveFormat recordingFormat;
         private readonly SpeexDecoder decoder;
@@ -45,7 +41,7 @@ namespace NAudioDemo.NetworkChatDemo
         private readonly WaveBuffer encoderInputBuffer;
         private readonly string description;
 
-        public SpeexChatCodec(BandMode bandMode, int sampleRate, string description)
+        protected SpeexChatCodec(BandMode bandMode, int sampleRate, string description)
         {
             decoder = new SpeexDecoder(bandMode);
             encoder = new SpeexEncoder(bandMode);

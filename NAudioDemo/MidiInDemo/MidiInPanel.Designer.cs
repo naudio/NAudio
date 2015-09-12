@@ -1,4 +1,4 @@
-namespace NAudioDemo
+namespace NAudioDemo.MidiInDemo
 {
     partial class MidiInPanel
     {

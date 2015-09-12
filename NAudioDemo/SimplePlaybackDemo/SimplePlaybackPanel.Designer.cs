@@ -70,7 +70,7 @@
             this.buttonStop.TabIndex = 2;
             this.buttonStop.Text = "Stop";
             this.buttonStop.UseVisualStyleBackColor = true;
-            this.buttonStop.Click += new System.EventHandler(this.buttonStop_Click);
+            this.buttonStop.Click += new System.EventHandler(this.OnButtonStopClick);
             // 
             // comboBoxOutputDriver
             // 
@@ -98,7 +98,7 @@
             this.buttonOpen.TabIndex = 1;
             this.buttonOpen.Text = "Open";
             this.buttonOpen.UseVisualStyleBackColor = true;
-            this.buttonOpen.Click += new System.EventHandler(this.buttonOpen_Click);
+            this.buttonOpen.Click += new System.EventHandler(this.OnButtonOpenClick);
             // 
             // labelNowTime
             // 
@@ -134,7 +134,7 @@
             this.volumeSlider1.Name = "volumeSlider1";
             this.volumeSlider1.Size = new System.Drawing.Size(96, 16);
             this.volumeSlider1.TabIndex = 5;
-            this.volumeSlider1.VolumeChanged += new System.EventHandler(this.volumeSlider1_VolumeChanged);
+            this.volumeSlider1.VolumeChanged += new System.EventHandler(this.OnVolumeSliderChanged);
             // 
             // SimplePlaybackPanel
             // 

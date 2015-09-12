@@ -1,4 +1,4 @@
-﻿namespace NAudioDemo
+﻿namespace NAudioDemo.AcmDemo
 {
     partial class AcmPanel
     {
@@ -47,7 +47,7 @@
             this.listBoxAcmDrivers.Name = "listBoxAcmDrivers";
             this.listBoxAcmDrivers.Size = new System.Drawing.Size(522, 95);
             this.listBoxAcmDrivers.TabIndex = 0;
-            this.listBoxAcmDrivers.SelectedIndexChanged += new System.EventHandler(this.listBoxAcmDrivers_SelectedIndexChanged);
+            this.listBoxAcmDrivers.SelectedIndexChanged += new System.EventHandler(this.OnListBoxAcmDriversSelectedIndexChanged);
             // 
             // label1
             // 
@@ -66,7 +66,7 @@
             this.buttonEncode.TabIndex = 2;
             this.buttonEncode.Text = "Encode";
             this.buttonEncode.UseVisualStyleBackColor = true;
-            this.buttonEncode.Click += new System.EventHandler(this.buttonEncode_Click);
+            this.buttonEncode.Click += new System.EventHandler(this.OnButtonEncodeClick);
             // 
             // checkBoxAutoLaunchConvertedFile
             // 
@@ -86,7 +86,7 @@
             this.buttonChooseFormat.TabIndex = 4;
             this.buttonChooseFormat.Text = "Choose Format...";
             this.buttonChooseFormat.UseVisualStyleBackColor = true;
-            this.buttonChooseFormat.Click += new System.EventHandler(this.buttonChooseFormat_Click);
+            this.buttonChooseFormat.Click += new System.EventHandler(this.OnButtonChooseFormatClick);
             // 
             // buttonDecode
             // 
@@ -133,7 +133,7 @@
             this.Controls.Add(this.buttonEncode);
             this.Name = "AcmPanel";
             this.Size = new System.Drawing.Size(546, 325);
-            this.Load += new System.EventHandler(this.AcmForm_Load);
+            this.Load += new System.EventHandler(this.OnAcmFormLoad);
             this.ResumeLayout(false);
             this.PerformLayout();
 

@@ -1,14 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using NAudio.Wave;
 using System.Windows.Forms;
-using System.ComponentModel.Composition;
 
 namespace NAudioDemo.AudioPlaybackDemo
 {
-    [Export(typeof(IOutputDevicePlugin))]
     class AsioOutPlugin : IOutputDevicePlugin
     {
         AsioOutSettingsPanel settingsPanel;
@@ -20,7 +16,7 @@ namespace NAudioDemo.AudioPlaybackDemo
 
         public UserControl CreateSettingsPanel()
         {
-            this.settingsPanel = new AsioOutSettingsPanel();
+            settingsPanel = new AsioOutSettingsPanel();
             return settingsPanel;
         }
 

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using NAudio.Wave.SampleProviders;
+﻿using NAudio.Wave.SampleProviders;
 
 namespace NAudio.Wave
 {
@@ -32,6 +28,17 @@ namespace NAudio.Wave
         {
             IWaveProvider provider = convertTo16Bit ? (IWaveProvider)new SampleToWaveProvider16(sampleProvider) : new SampleToWaveProvider(sampleProvider);
             wavePlayer.Init(provider);
+        }
+
+        /// <summary>
+        /// Turns WaveFormatExtensible into a standard waveformat if possible
+        /// </summary>
+        /// <param name="waveFormat">Input wave format</param>
+        /// <returns>A standard PCM or IEEE waveformat, or the original waveformat</returns>
+        public static WaveFormat AsStandardWaveFormat(this WaveFormat waveFormat)
+        {
+            var wfe = waveFormat as WaveFormatExtensible;
+            return wfe != null ? wfe.ToStandardWaveFormat() : waveFormat;
         }
     }
 }

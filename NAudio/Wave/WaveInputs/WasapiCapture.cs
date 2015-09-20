@@ -1,12 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using NAudio.Wave;
 using System.Threading;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 // for consistency this should be in NAudio.Wave namespace, but left as it is for backwards compatibility
+// ReSharper disable once CheckNamespace
 namespace NAudio.CoreAudioApi
 {
     /// <summary>
@@ -15,8 +14,8 @@ namespace NAudio.CoreAudioApi
     /// </summary>
     public class WasapiCapture : IWaveIn
     {
-        private const long REFTIMES_PER_SEC = 10000000;
-        private const long REFTIMES_PER_MILLISEC = 10000;
+        private const long ReftimesPerSec = 10000000;
+        private const long ReftimesPerMillisec = 10000;
         private volatile bool requestStop;
         private byte[] recordBuffer;
         private Thread captureThread;
@@ -27,7 +26,7 @@ namespace NAudio.CoreAudioApi
         private readonly SynchronizationContext syncContext;
         private readonly bool isUsingEventSync;
         private EventWaitHandle frameEventWaitHandle;
-        private int audioBufferMillisecondsLength;
+        private readonly int audioBufferMillisecondsLength;
 
         /// <summary>
         /// Indicates recorded data is available 
@@ -99,19 +98,7 @@ namespace NAudio.CoreAudioApi
             {
                 // for convenience, return a WAVEFORMATEX, instead of the real
                 // WAVEFORMATEXTENSIBLE being used
-                var wfe = waveFormat as WaveFormatExtensible;
-                if (wfe != null)
-                {
-                    try
-                    {
-                        return wfe.ToStandardWaveFormat();
-                    }
-                    catch (InvalidOperationException)
-                    {
-                        // couldn't convert to a standard format
-                    }
-                }
-                return waveFormat;
+                return waveFormat.AsStandardWaveFormat();
             }
             set { waveFormat = value; }
         }
@@ -131,7 +118,7 @@ namespace NAudio.CoreAudioApi
             if (initialized)
                 return;
 
-            long requestedDuration = REFTIMES_PER_MILLISEC * this.audioBufferMillisecondsLength;
+            long requestedDuration = ReftimesPerMillisec * audioBufferMillisecondsLength;
 
             if (!audioClient.IsFormatSupported(ShareMode, waveFormat))
             {
@@ -148,13 +135,13 @@ namespace NAudio.CoreAudioApi
                 {
                     // With EventCallBack and Shared, both latencies must be set to 0
                     audioClient.Initialize(ShareMode, AudioClientStreamFlags.EventCallback, requestedDuration, 0,
-                        this.waveFormat, Guid.Empty);
+                        waveFormat, Guid.Empty);
                 }
                 else
                 {
                     // With EventCallBack and Exclusive, both latencies must equals
                     audioClient.Initialize(ShareMode, AudioClientStreamFlags.EventCallback, requestedDuration, requestedDuration,
-                                        this.waveFormat, Guid.Empty);
+                                        waveFormat, Guid.Empty);
                 }
 
                 // Create the Wait Event Handle
@@ -168,14 +155,15 @@ namespace NAudio.CoreAudioApi
                 streamFlags,
                 requestedDuration,
                 0,
-                this.waveFormat,
+                waveFormat,
                 Guid.Empty);
             }
 
             int bufferFrameCount = audioClient.BufferSize;
-            this.bytesPerFrame = this.waveFormat.Channels * this.waveFormat.BitsPerSample / 8;
-            this.recordBuffer = new byte[bufferFrameCount * bytesPerFrame];
-            Debug.WriteLine(string.Format("record buffer size = {0}", this.recordBuffer.Length));
+            bytesPerFrame = waveFormat.Channels * waveFormat.BitsPerSample / 8;
+            recordBuffer = new byte[bufferFrameCount * bytesPerFrame];
+            
+            //Debug.WriteLine(string.Format("record buffer size = {0}", this.recordBuffer.Length));
 
             initialized = true;
         }
@@ -198,12 +186,12 @@ namespace NAudio.CoreAudioApi
                 throw new InvalidOperationException("Previous recording still in progress");
             }
             InitializeCaptureDevice();
-            ThreadStart start = () => CaptureThread(this.audioClient);
-            this.captureThread = new Thread(start);
+            ThreadStart start = () => CaptureThread(audioClient);
+            captureThread = new Thread(start);
 
             Debug.WriteLine("Thread starting...");
-            this.requestStop = false;
-            this.captureThread.Start();
+            requestStop = false;
+            captureThread.Start();
         }
 
         /// <summary>
@@ -211,7 +199,7 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public void StopRecording()
         {
-            this.requestStop = true;
+            requestStop = true;
         }
 
         private void CaptureThread(AudioClient client)
@@ -241,24 +229,15 @@ namespace NAudio.CoreAudioApi
             int bufferFrameCount = client.BufferSize;
 
             // Calculate the actual duration of the allocated buffer.
-            long actualDuration = (long)((double)REFTIMES_PER_SEC *
+            long actualDuration = (long)((double)ReftimesPerSec *
                              bufferFrameCount / waveFormat.SampleRate);
-            int sleepMilliseconds = (int)(actualDuration / REFTIMES_PER_MILLISEC / 2);
-            int waitMilliseconds = (int)(3 * actualDuration / REFTIMES_PER_MILLISEC);
+            int sleepMilliseconds = (int)(actualDuration / ReftimesPerMillisec / 2);
+            int waitMilliseconds = (int)(3 * actualDuration / ReftimesPerMillisec);
 
-            AudioCaptureClient capture = client.AudioCaptureClient;
+            var capture = client.AudioCaptureClient;
             client.Start();
 
-            if (isUsingEventSync)
-            {
-                Debug.WriteLine(string.Format("wait: {0} ms", waitMilliseconds));
-            }
-            else
-            {
-                Debug.WriteLine(string.Format("sleep: {0} ms", sleepMilliseconds));
-            }
-
-            while (!this.requestStop)
+            while (!requestStop)
             {
                 bool readBuffer = true;
                 if (isUsingEventSync)
@@ -271,7 +250,7 @@ namespace NAudio.CoreAudioApi
                 }
 
                 // If still playing and notification is ok
-                if (!this.requestStop && readBuffer)
+                if (!requestStop && readBuffer)
                 {
                     ReadNextPacket(capture);
                 }
@@ -282,13 +261,13 @@ namespace NAudio.CoreAudioApi
         {
             var handler = RecordingStopped;
             if (handler == null) return;
-            if (this.syncContext == null)
+            if (syncContext == null)
             {
                 handler(this, new StoppedEventArgs(e));
             }
             else
             {
-                this.syncContext.Post(state => handler(this, new StoppedEventArgs(e)), null);
+                syncContext.Post(state => handler(this, new StoppedEventArgs(e)), null);
             }
         }
 

@@ -20,6 +20,10 @@
   * RawSourceStream handles end of stream better
   * PropVariant supports VT_BOOL
   * Better handling of exceptions in WaveFileReader constructor
+  * WasapiOut default constructor (uses default device, shared mode)
+  * WasapiCapture and WasapiLoopbackCapture can report capture state
+  * BufferedWaveProvider can be configured to not fully read if no data is available
+  * WasapiOut can report the default mix format for shared mode
   
 #### 1.7.3 5 Mar 2015
 

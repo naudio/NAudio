@@ -1,13 +1,35 @@
 ﻿using System;
 using NAudio.Wave;
 using System.Threading;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 // for consistency this should be in NAudio.Wave namespace, but left as it is for backwards compatibility
 // ReSharper disable once CheckNamespace
 namespace NAudio.CoreAudioApi
 {
+    /// <summary>
+    /// Represents state of a capture device
+    /// </summary>
+    public enum CaptureState
+    {
+        /// <summary>
+        /// Not recording
+        /// </summary>
+        Stopped,
+        /// <summary>
+        /// Beginning to record
+        /// </summary>
+        Starting,
+        /// <summary>
+        /// Recording in progress
+        /// </summary>
+        Capturing,
+        /// <summary>
+        /// Requesting stop
+        /// </summary>
+        Stopping
+    }
+
     /// <summary>
     /// Audio Capture using Wasapi
     /// See http://msdn.microsoft.com/en-us/library/dd370800%28VS.85%29.aspx
@@ -16,7 +38,7 @@ namespace NAudio.CoreAudioApi
     {
         private const long ReftimesPerSec = 10000000;
         private const long ReftimesPerMillisec = 10000;
-        private volatile bool requestStop;
+        private volatile CaptureState captureState;
         private byte[] recordBuffer;
         private Thread captureThread;
         private AudioClient audioClient;
@@ -90,7 +112,12 @@ namespace NAudio.CoreAudioApi
         public AudioClientShareMode ShareMode { get; set; }
 
         /// <summary>
-        /// Recording wave format
+        /// Current Capturing State
+        /// </summary>
+        public CaptureState CaptureState {  get { return captureState; } }
+
+        /// <summary>
+        /// Capturing wave format
         /// </summary>
         public virtual WaveFormat WaveFormat 
         {
@@ -177,29 +204,28 @@ namespace NAudio.CoreAudioApi
         }
 
         /// <summary>
-        /// Start Recording
+        /// Start Capturing
         /// </summary>
         public void StartRecording()
         {
-            if (captureThread != null)
+            if (captureState != CaptureState.Stopped)
             {
                 throw new InvalidOperationException("Previous recording still in progress");
             }
+            captureState = CaptureState.Starting;
             InitializeCaptureDevice();
             ThreadStart start = () => CaptureThread(audioClient);
             captureThread = new Thread(start);
-
-            Debug.WriteLine("Thread starting...");
-            requestStop = false;
             captureThread.Start();
         }
 
         /// <summary>
-        /// Stop Recording (requests a stop, wait for RecordingStopped event to know it has finished)
+        /// Stop Capturing (requests a stop, wait for RecordingStopped event to know it has finished)
         /// </summary>
         public void StopRecording()
         {
-            requestStop = true;
+            if (captureState != CaptureState.Stopped)
+                captureState = CaptureState.Stopping;
         }
 
         private void CaptureThread(AudioClient client)
@@ -219,13 +245,13 @@ namespace NAudio.CoreAudioApi
                 // don't dispose - the AudioClient only gets disposed when WasapiCapture is disposed
             }
             captureThread = null;
+            captureState = CaptureState.Stopped;
             RaiseRecordingStopped(exception);
-            Debug.WriteLine("Stop wasapi");
         }
 
         private void DoRecording(AudioClient client)
         {
-            Debug.WriteLine(String.Format("Client buffer frame count: {0}", client.BufferSize));
+            //Debug.WriteLine(String.Format("Client buffer frame count: {0}", client.BufferSize));
             int bufferFrameCount = client.BufferSize;
 
             // Calculate the actual duration of the allocated buffer.
@@ -236,8 +262,8 @@ namespace NAudio.CoreAudioApi
 
             var capture = client.AudioCaptureClient;
             client.Start();
-
-            while (!requestStop)
+            captureState = CaptureState.Capturing;
+            while (captureState == CaptureState.Capturing)
             {
                 bool readBuffer = true;
                 if (isUsingEventSync)
@@ -248,9 +274,11 @@ namespace NAudio.CoreAudioApi
                 {
                     Thread.Sleep(sleepMilliseconds);
                 }
+                if (captureState != CaptureState.Capturing)
+                    break;
 
-                // If still playing and notification is ok
-                if (!requestStop && readBuffer)
+                // If still recording and notification is ok
+                if (readBuffer)
                 {
                     ReadNextPacket(capture);
                 }

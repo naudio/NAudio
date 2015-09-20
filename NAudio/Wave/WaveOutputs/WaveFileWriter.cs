@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using NAudio.Wave.SampleProviders;
 
+// ReSharper disable once CheckNamespace
 namespace NAudio.Wave
 {
     /// <summary>
@@ -39,7 +40,6 @@ namespace NAudio.Wave
         {
             using (var writer = new WaveFileWriter(filename, sourceProvider.WaveFormat))
             {
-                long outputLength = 0;
                 var buffer = new byte[sourceProvider.WaveFormat.AverageBytesPerSecond * 4];
                 while (true)
                 {
@@ -49,7 +49,6 @@ namespace NAudio.Wave
                         // end of source provider
                         break;
                     }
-                    outputLength += bytesRead;
                     // Write will throw exception if WAV file becomes too large
                     writer.Write(buffer, 0, bytesRead);
                 }
@@ -65,13 +64,13 @@ namespace NAudio.Wave
         {
             this.outStream = outStream;
             this.format = format;
-            this.writer = new BinaryWriter(outStream, System.Text.Encoding.UTF8);
-            this.writer.Write(System.Text.Encoding.UTF8.GetBytes("RIFF"));
-            this.writer.Write((int)0); // placeholder
-            this.writer.Write(System.Text.Encoding.UTF8.GetBytes("WAVE"));
+            writer = new BinaryWriter(outStream, System.Text.Encoding.UTF8);
+            writer.Write(System.Text.Encoding.UTF8.GetBytes("RIFF"));
+            writer.Write((int)0); // placeholder
+            writer.Write(System.Text.Encoding.UTF8.GetBytes("WAVE"));
 
-            this.writer.Write(System.Text.Encoding.UTF8.GetBytes("fmt "));
-            format.Serialize(this.writer);
+            writer.Write(System.Text.Encoding.UTF8.GetBytes("fmt "));
+            format.Serialize(writer);
 
             CreateFactChunk();
             WriteDataChunkHeader();
@@ -90,19 +89,19 @@ namespace NAudio.Wave
 
         private void WriteDataChunkHeader()
         {
-            this.writer.Write(System.Text.Encoding.UTF8.GetBytes("data"));
-            dataSizePos = this.outStream.Position;
-            this.writer.Write((int)0); // placeholder
+            writer.Write(System.Text.Encoding.UTF8.GetBytes("data"));
+            dataSizePos = outStream.Position;
+            writer.Write((int)0); // placeholder
         }
 
         private void CreateFactChunk()
         {
             if (HasFactChunk())
             {
-                this.writer.Write(System.Text.Encoding.UTF8.GetBytes("fact"));
-                this.writer.Write((int)4);
-                factSampleCountPos = this.outStream.Position;
-                this.writer.Write((int)0); // number of samples
+                writer.Write(System.Text.Encoding.UTF8.GetBytes("fact"));
+                writer.Write((int)4);
+                factSampleCountPos = outStream.Position;
+                writer.Write((int)0); // number of samples
             }
         }
 
@@ -343,6 +342,7 @@ namespace NAudio.Wave
 
         /// <summary>
         /// Ensures data is written to disk
+        /// Also updates header, so that WAV file will be valid up to the point currently written
         /// </summary>
         public override void Flush()
         {

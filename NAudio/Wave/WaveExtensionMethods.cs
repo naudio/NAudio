@@ -40,5 +40,25 @@ namespace NAudio.Wave
             var wfe = waveFormat as WaveFormatExtensible;
             return wfe != null ? wfe.ToStandardWaveFormat() : waveFormat;
         }
+
+        /// <summary>
+        /// Converts a ISampleProvider to a IWaveProvider but still 32 bit float
+        /// </summary>
+        /// <param name="sampleProvider">SampleProvider to convert</param>
+        /// <returns>An IWaveProvider</returns>
+        public static IWaveProvider ToWaveProvider(this ISampleProvider sampleProvider)
+        {
+            return new SampleToWaveProvider(sampleProvider);
+        }
+
+        /// <summary>
+        /// Converts a ISampleProvider to a IWaveProvider but and convert to 16 bit
+        /// </summary>
+        /// <param name="sampleProvider">SampleProvider to convert</param>
+        /// <returns>A 16 bit IWaveProvider</returns>
+        public static IWaveProvider ToWaveProvider16(this ISampleProvider sampleProvider)
+        {
+            return new SampleToWaveProvider16(sampleProvider);
+        }
     }
 }

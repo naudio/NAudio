@@ -50,4 +50,6 @@ The latest source code is here on GitHub.
     * Respond to received MIDI events
     * Send MIDI events
 * An extensible model
-    * All base classes easily inherited from for you to add your
+    * All base classes easily inherited from for you to add your custom components
+* Support for Windows RT
+    * Create Windows 8 Store apps and Windows Universal apps

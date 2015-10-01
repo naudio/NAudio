@@ -110,6 +110,7 @@
     <Compile Include="WaveStreams\BlockAlignmentReductionStreamTests.cs" />
     <Compile Include="WaveStreams\BufferedWaveProviderTests.cs" />
     <Compile Include="WaveStreams\CircularBufferTests.cs" />
+    <Compile Include="WaveStreams\ConcatenatingSampleProviderTests.cs" />
     <Compile Include="WaveStreams\FadeInOutSampleProviderTests.cs" />
     <Compile Include="WaveStreams\ChunkIdentifierTests.cs" />
     <Compile Include="WaveStreams\MixingSampleProviderTests.cs" />

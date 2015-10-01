@@ -170,6 +170,7 @@
     <Compile Include="Wave\Asio\AsioSampleType.cs" />
     <Compile Include="Wave\Compression\AcmDriverAddFlags.cs" />
     <Compile Include="Wave\SampleProviders\AdsrSampleProvider.cs" />
+    <Compile Include="Wave\SampleProviders\ConcatenatingSampleProvider.cs" />
     <Compile Include="Wave\SampleProviders\FadeInOutSampleProvider.cs" />
     <Compile Include="Wave\SampleProviders\MultiplexingSampleProvider.cs" />
     <Compile Include="Wave\SampleProviders\OffsetSampleProvider.cs" />

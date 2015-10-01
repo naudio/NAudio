@@ -1,4 +1,5 @@
-﻿using NAudio.Wave.SampleProviders;
+﻿using System;
+using NAudio.Wave.SampleProviders;
 
 namespace NAudio.Wave
 {
@@ -60,5 +61,31 @@ namespace NAudio.Wave
         {
             return new SampleToWaveProvider16(sampleProvider);
         }
+
+        /// <summary>
+        /// Concatenates one Sample Provider on the end of another
+        /// </summary>
+        /// <param name="sampleProvider">The sample provider to play first</param>
+        /// <param name="next">The sample provider to play next</param>
+        /// <returns>A single sampleprovider to play one after the other</returns>
+        public static ISampleProvider FollowedBy(this ISampleProvider sampleProvider, ISampleProvider next)
+        {
+            return new ConcatenatingSampleProvider(new[] { sampleProvider, next});
+        }
+
+        /// <summary>
+        /// Concatenates one Sample Provider on the end of another with silence inserted
+        /// </summary>
+        /// <param name="sampleProvider">The sample provider to play first</param>
+        /// <param name="silenceDuration">Silence duration to insert between the two</param>
+        /// <param name="next">The sample provider to play next</param>
+        /// <returns>A single sample provider</returns>
+        public static ISampleProvider FollowedBy(this ISampleProvider sampleProvider, TimeSpan silenceDuration, ISampleProvider next)
+        {
+            var silenceAppended = new OffsetSampleProvider(sampleProvider) {LeadOut = silenceDuration};
+            return new ConcatenatingSampleProvider(new[] { silenceAppended, next });
+        }
+
+
     }
 }

@@ -53,6 +53,7 @@
     <DocumentationFile>bin\Debug\NAudio.XML</DocumentationFile>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <CodeAnalysisRuleSet>NAudio.ruleset</CodeAnalysisRuleSet>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>

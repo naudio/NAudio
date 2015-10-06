@@ -682,6 +682,9 @@
     <Compile Include="..\NAudio\Wave\SampleProviders\SignalGenerator.cs">
       <Link>Wave\SampleProviders\SignalGenerator.cs</Link>
     </Compile>
+    <Compile Include="..\NAudio\Wave\SampleProviders\StereoToMonoSampleProvider.cs">
+      <Link>Wave\SampleProviders\StereoToMonoSampleProvider.cs</Link>
+    </Compile>
     <Compile Include="..\NAudio\Wave\SampleProviders\VolumeSampleProvider.cs">
       <Link>Wave\SampleProviders\VolumeSampleProvider.cs</Link>
     </Compile>

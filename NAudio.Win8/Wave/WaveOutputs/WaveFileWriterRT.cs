@@ -242,9 +242,10 @@ namespace NAudio.Wave
         /// <summary>
         /// Appends bytes to the WaveFile (assumes they are already in the correct format)
         /// </summary>
-        /// <param name="data">the buffer containing the wave data</param>
+        /// <param name="buffer">the buffer containing the wave data</param>
         /// <param name="offset">the offset from which to start writing</param>
         /// <param name="count">the number of bytes to write</param>
+        /// <param name="cancellationToken">Cancellation token</param>
         public override Task WriteAsync(byte[] buffer, int offset, int count, 
             CancellationToken cancellationToken)
         {

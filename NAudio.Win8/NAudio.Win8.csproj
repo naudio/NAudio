@@ -622,6 +622,9 @@
     <Compile Include="..\NAudio\Wave\SampleChunkConverters\StereoFloatSampleChunkConverter.cs">
       <Link>Wave\SampleChunkConverters\StereoFloatSampleChunkConverter.cs</Link>
     </Compile>
+    <Compile Include="..\NAudio\Wave\SampleProviders\ConcatenatingSampleProvider.cs">
+      <Link>Wave\SampleProviders\ConcatenatingSampleProvider.cs</Link>
+    </Compile>
     <Compile Include="..\NAudio\Wave\SampleProviders\FadeInOutSampleProvider.cs">
       <Link>Wave\SampleProviders\FadeInOutSampleProvider.cs</Link>
     </Compile>
@@ -690,6 +693,9 @@
     </Compile>
     <Compile Include="..\NAudio\Wave\SampleProviders\WdlResamplingSampleProvider.cs">
       <Link>Wave\SampleProviders\WdlResamplingSampleProvider.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\Wave\WaveExtensionMethods.cs">
+      <Link>Wave\WaveExtensionMethods.cs</Link>
     </Compile>
     <Compile Include="..\NAudio\Wave\WaveFormats\AdpcmWaveFormat.cs">
       <Link>Wave\WaveFormats\AdpcmWaveFormat.cs</Link>
@@ -800,7 +806,6 @@
       <Link>Wave\WaveStreams\WaveStream.cs</Link>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Wave\WaveExtensionMethods.cs" />
     <Compile Include="Wave\WaveInputs\WasapiCaptureRT.cs" />
     <Compile Include="Wave\WaveOutputs\IWavePlayer.cs" />
     <Compile Include="Wave\WaveOutputs\WaveFileWriterRT.cs" />

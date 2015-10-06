@@ -108,14 +108,11 @@
     <ErrorReport>prompt</ErrorReport>
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
-    <ItemGroup>
+  <ItemGroup>
     <!-- A reference to the entire .Net Framework and Windows SDK are automatically included -->
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\NAudio.Win8\Wave\WaveExtensionMethods.cs">
-      <Link>Wave\WaveExtensionMethods.cs</Link>
-    </Compile>
     <Compile Include="..\NAudio.Win8\Wave\WaveInputs\WasapiCaptureRT.cs">
       <Link>Wave\WaveInputs\WasapiCaptureRT.cs</Link>
     </Compile>
@@ -641,6 +638,9 @@
     <Compile Include="..\NAudio\Wave\SampleChunkConverters\StereoFloatSampleChunkConverter.cs">
       <Link>Wave\SampleChunkConverters\StereoFloatSampleChunkConverter.cs</Link>
     </Compile>
+    <Compile Include="..\NAudio\Wave\SampleProviders\ConcatenatingSampleProvider.cs">
+      <Link>Wave\SampleProviders\ConcatenatingSampleProvider.cs</Link>
+    </Compile>
     <Compile Include="..\NAudio\Wave\SampleProviders\FadeInOutSampleProvider.cs">
       <Link>Wave\SampleProviders\FadeInOutSampleProvider.cs</Link>
     </Compile>
@@ -709,6 +709,9 @@
     </Compile>
     <Compile Include="..\NAudio\Wave\SampleProviders\WdlResamplingSampleProvider.cs">
       <Link>Wave\SampleProviders\WdlResamplingSampleProvider.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\Wave\WaveExtensionMethods.cs">
+      <Link>Wave\WaveExtensionMethods.cs</Link>
     </Compile>
     <Compile Include="..\NAudio\Wave\WaveFormats\AdpcmWaveFormat.cs">
       <Link>Wave\WaveFormats\AdpcmWaveFormat.cs</Link>

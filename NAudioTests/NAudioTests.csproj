@@ -115,11 +115,13 @@
     <Compile Include="WaveStreams\ChunkIdentifierTests.cs" />
     <Compile Include="WaveStreams\MixingSampleProviderTests.cs" />
     <Compile Include="WaveStreams\MonoToStereoProvider16Tests.cs" />
+    <Compile Include="WaveStreams\MonoToStereoSampleProviderTests.cs" />
     <Compile Include="WaveStreams\MultiplexingSampleProviderTests.cs" />
     <Compile Include="WaveStreams\MultiplexingWaveProviderTests.cs" />
     <Compile Include="WaveStreams\OffsetSampleProviderTests.cs" />
     <Compile Include="WaveStreams\SampleToWaveProvider24Tests.cs" />
     <Compile Include="WaveStreams\StereoToMonoProvider16Tests.cs" />
+    <Compile Include="WaveStreams\StereoToMonoSampleProviderTests.cs" />
     <Compile Include="WaveStreams\TestSampleProvider.cs" />
     <Compile Include="WaveStreams\TestWaveProvider.cs" />
     <Compile Include="WaveStreams\VolumeWaveProvider16Tests.cs" />

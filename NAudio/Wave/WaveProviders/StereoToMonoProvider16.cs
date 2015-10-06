@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using NAudio.Utils;
 
+// ReSharper disable once CheckNamespace
 namespace NAudio.Wave
 {
     /// <summary>
@@ -10,8 +9,7 @@ namespace NAudio.Wave
     /// </summary>
     public class StereoToMonoProvider16 : IWaveProvider
     {
-        private IWaveProvider sourceProvider;
-        private WaveFormat outputFormat;
+        private readonly IWaveProvider sourceProvider;
         private byte[] sourceBuffer;
 
         /// <summary>
@@ -33,7 +31,7 @@ namespace NAudio.Wave
                 throw new ArgumentException("Source must be 16 bit");
             }
             this.sourceProvider = sourceProvider;
-            this.outputFormat = new WaveFormat(sourceProvider.WaveFormat.SampleRate, 1);
+            WaveFormat = new WaveFormat(sourceProvider.WaveFormat.SampleRate, 1);
         }
 
         /// <summary>
@@ -49,10 +47,7 @@ namespace NAudio.Wave
         /// <summary>
         /// Output Wave Format
         /// </summary>
-        public WaveFormat WaveFormat
-        {
-            get { return this.outputFormat; }
-        }
+        public WaveFormat WaveFormat { get; private set; }
 
         /// <summary>
         /// Reads bytes from this WaveProvider
@@ -60,7 +55,7 @@ namespace NAudio.Wave
         public int Read(byte[] buffer, int offset, int count)
         {
             int sourceBytesRequired = count * 2;
-            this.sourceBuffer = BufferHelpers.Ensure(this.sourceBuffer, sourceBytesRequired);
+            sourceBuffer = BufferHelpers.Ensure(sourceBuffer, sourceBytesRequired);
             WaveBuffer sourceWaveBuffer = new WaveBuffer(sourceBuffer);
             WaveBuffer destWaveBuffer = new WaveBuffer(buffer);
 

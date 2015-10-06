@@ -86,6 +86,41 @@ namespace NAudio.Wave
             return new ConcatenatingSampleProvider(new[] { silenceAppended, next });
         }
 
+        /// <summary>
+        /// Skips over a specified amount of time (by consuming source stream)
+        /// </summary>
+        /// <param name="sampleProvider">Source sample provider</param>
+        /// <param name="skipDuration">Duration to skip over</param>
+        /// <returns>A sample provider that skips over the specified amount of time</returns>
+        public static ISampleProvider Skip(this ISampleProvider sampleProvider, TimeSpan skipDuration)
+        {
+            return new OffsetSampleProvider(sampleProvider) { SkipOver = skipDuration};            
+        }
 
+        /// <summary>
+        /// Converts a Stereo Sample Provider to mono, allowing mixing of channel volume
+        /// </summary>
+        /// <param name="sourceProvider">Stereo Source Provider</param>
+        /// <param name="leftVol">Amount of left channel to mix in (0 = mute, 1 = full, 0.5 for mixing half from each channel)</param>
+        /// <param name="rightVol">Amount of right channel to mix in (0 = mute, 1 = full, 0.5 for mixing half from each channel)</param>
+        /// <returns>A mono SampleProvider</returns>
+        public static ISampleProvider ToMono(this ISampleProvider sourceProvider, float leftVol = 0.5f, float rightVol = 0.5f)
+        {
+            if(sourceProvider.WaveFormat.Channels == 1) return sourceProvider;
+            return new StereoToMonoSampleProvider(sourceProvider) {LeftVolume = leftVol, RightVolume = rightVol};
+        }
+
+        /// <summary>
+        /// Converts a Mono ISampleProvider to stereo
+        /// </summary>
+        /// <param name="sourceProvider">Mono Source Provider</param>
+        /// <param name="leftVol">Amount to mix to left channel (1.0 is full volume)</param>
+        /// <param name="rightVol">Amount to mix to right channel (1.0 is full volume)</param>
+        /// <returns></returns>
+        public static ISampleProvider ToStereo(this ISampleProvider sourceProvider, float leftVol = 1.0f, float rightVol = 1.0f)
+        {
+            if (sourceProvider.WaveFormat.Channels == 2) return sourceProvider;
+            return new MonoToStereoSampleProvider(sourceProvider) { LeftVolume = leftVol, RightVolume = rightVol };
+        }
     }
 }

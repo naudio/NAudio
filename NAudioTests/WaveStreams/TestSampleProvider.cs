@@ -1,14 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using NAudio.Wave;
 
 namespace NAudioTests.WaveStreams
 {
     class TestSampleProvider : ISampleProvider
     {
-        private int length;
+        private readonly int length;
 
         public TestSampleProvider(int sampleRate, int channels, int length = Int32.MaxValue)
         {

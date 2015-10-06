@@ -180,6 +180,7 @@
     <Compile Include="Wave\SampleProviders\SampleToWaveProvider16.cs" />
     <Compile Include="Wave\SampleProviders\SampleToWaveProvider24.cs" />
     <Compile Include="Wave\SampleProviders\SignalGenerator.cs" />
+    <Compile Include="Wave\SampleProviders\StereoToMonoSampleProvider.cs" />
     <Compile Include="Wave\SampleProviders\WaveToSampleProvider64.cs" />
     <Compile Include="Wave\SampleProviders\WdlResamplingSampleProvider.cs" />
     <Compile Include="Wave\WaveExtensionMethods.cs" />

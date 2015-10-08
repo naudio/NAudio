@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using NUnit.Framework;
 using NAudio.Wave;
 using NAudio.Wave.Compression;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
+using System.Linq;
 using NAudioTests.Utils;
 
 namespace NAudioTests.Acm
@@ -81,16 +79,16 @@ namespace NAudioTests.Acm
         [Test]
         public void CanConvertAdpcmToSuggestedPcm()
         {
-            using(WaveStream stream = WaveFormatConversionStream.CreatePcmStream(
+            using (WaveFormatConversionStream.CreatePcmStream(
                 new NullWaveStream(new AdpcmWaveFormat(8000, 1),1000)))
-                {
+            {
             }
         }
 
         [Test]
         public void CanConvertALawToSuggestedPcm()
         {
-            using (WaveStream stream = WaveFormatConversionStream.CreatePcmStream(
+            using (WaveFormatConversionStream.CreatePcmStream(
                 new NullWaveStream(WaveFormat.CreateALawFormat(8000,1),1000)))
             {
             }
@@ -99,7 +97,7 @@ namespace NAudioTests.Acm
         [Test]
         public void CanConvertMuLawToSuggestedPcm()
         {
-            using (WaveStream stream = WaveFormatConversionStream.CreatePcmStream(
+            using (WaveFormatConversionStream.CreatePcmStream(
                 new NullWaveStream(WaveFormat.CreateMuLawFormat(8000, 1), 1000)))
             {
             }
@@ -122,19 +120,15 @@ namespace NAudioTests.Acm
             driver.Open();
             try
             {
-                foreach (AcmFormatTag formatTag in driver.FormatTags)
+                foreach (var format in driver.FormatTags
+                    .SelectMany(formatTag => driver.GetFormats(formatTag)
+                    .Where(format => format.FormatTag == WaveFormatEncoding.DviAdpcm ||
+                                     format.FormatTag == WaveFormatEncoding.ImaAdpcm)))
                 {
-                    foreach (AcmFormat format in driver.GetFormats(formatTag))
-                    {
-                        if (format.FormatTag == WaveFormatEncoding.DviAdpcm ||
-                            format.FormatTag == WaveFormatEncoding.ImaAdpcm)
-                        {
-                            // see if we can convert it to 16 bit PCM
-                            Debug.WriteLine(String.Format("Converting {0} to PCM", format.WaveFormat));
-                            CanCreateConversionStream(format.WaveFormat,
-                                new WaveFormat(format.WaveFormat.SampleRate, 16, format.WaveFormat.Channels));
-                        }
-                    }
+                    // see if we can convert it to 16 bit PCM
+                    Debug.WriteLine(String.Format("Converting {0} to PCM", format.WaveFormat));
+                    CanCreateConversionStream(format.WaveFormat,
+                        new WaveFormat(format.WaveFormat.SampleRate, 16, format.WaveFormat.Channels));
                 }
             }
             finally
@@ -145,8 +139,8 @@ namespace NAudioTests.Acm
 
         private void CanCreateConversionStream(WaveFormat inputFormat, WaveFormat outputFormat)
         {
-            WaveStream inputStream = new NullWaveStream(inputFormat, 10000);
-            using (WaveFormatConversionStream stream = new WaveFormatConversionStream(
+            var inputStream = new NullWaveStream(inputFormat, 10000);
+            using (var stream = new WaveFormatConversionStream(
                 outputFormat, inputStream))
             {
                 byte[] buffer = new byte[stream.WaveFormat.AverageBytesPerSecond];

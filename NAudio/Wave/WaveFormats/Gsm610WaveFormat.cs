@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Runtime.InteropServices;
 using System.IO;
 
+// ReSharper disable once CheckNamespace
 namespace NAudio.Wave
 {
     /// <summary>
@@ -12,7 +11,7 @@ namespace NAudio.Wave
     [StructLayout(LayoutKind.Sequential, Pack = 2)]
     public class Gsm610WaveFormat : WaveFormat
     {
-        private short samplesPerBlock;
+        private readonly short samplesPerBlock;
 
         /// <summary>
         /// Creates a GSM 610 WaveFormat
@@ -20,21 +19,21 @@ namespace NAudio.Wave
         /// </summary>
         public Gsm610WaveFormat()
         {
-            this.waveFormatTag = WaveFormatEncoding.Gsm610;
-            this.channels = 1;
-            this.averageBytesPerSecond = 1625;
-            this.bitsPerSample = 0; // must be zero
-            this.blockAlign = 65;
-            this.sampleRate = 8000;
+            waveFormatTag = WaveFormatEncoding.Gsm610;
+            channels = 1;
+            averageBytesPerSecond = 1625;
+            bitsPerSample = 0; // must be zero
+            blockAlign = 65;
+            sampleRate = 8000;
 
-            this.extraSize = 2;
-            this.samplesPerBlock = 320;
+            extraSize = 2;
+            samplesPerBlock = 320;
         }
 
         /// <summary>
         /// Samples per block
         /// </summary>
-        public short SamplesPerBlock { get { return this.samplesPerBlock; } }
+        public short SamplesPerBlock { get { return samplesPerBlock; } }
 
         /// <summary>
         /// Writes this structure to a BinaryWriter

@@ -482,6 +482,7 @@
     <Compile Include="Wave\WaveStreams\WaveChannel32.cs" />
     <Compile Include="Wave\SampleProviders\SampleChannel.cs" />
     <Compile Include="Wave\WaveStreams\WaveFileReader.cs" />
+    <Compile Include="Wave\WaveStreams\WaveFormatConversionProvider.cs" />
     <Compile Include="Wave\WaveStreams\WaveFormatConversionStream.cs" />
     <Compile Include="Wave\WaveStreams\WaveInBuffer.cs" />
     <Compile Include="Wave\WaveStreams\WaveMixerStream32.cs" />

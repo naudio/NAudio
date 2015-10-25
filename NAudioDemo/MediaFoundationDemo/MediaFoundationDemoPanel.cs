@@ -1,5 +1,4 @@
 ﻿using System;
-using System.ComponentModel.Composition;
 using System.Linq;
 using System.Windows.Forms;
 using NAudio.Wave;
@@ -126,7 +125,6 @@ namespace NAudioDemo.MediaFoundationDemo
         }
     }
 
-    [Export(typeof(INAudioDemoPlugin))]
     class MediaFoundationDemoPlugin : INAudioDemoPlugin
     {
         public string Name

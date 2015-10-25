@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using NAudio.Wave;
-using System.ComponentModel.Composition;
 
 namespace NAudioDemo.NetworkChatDemo
 {
@@ -10,7 +9,6 @@ namespace NAudioDemo.NetworkChatDemo
     /// n.b. Windows XP came with a TrueSpeech codec built in
     /// - looks like Windows 7 doesn't
     /// </summary>
-    [Export(typeof(INetworkChatCodec))]
     class TrueSpeechChatCodec : AcmChatCodec
     {
         public TrueSpeechChatCodec()
@@ -18,7 +16,6 @@ namespace NAudioDemo.NetworkChatDemo
         {
         }
     
-
         public override string Name
         {
             get { return "DSP Group TrueSpeech"; }

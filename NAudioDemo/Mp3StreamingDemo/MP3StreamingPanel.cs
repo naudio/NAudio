@@ -1,13 +1,12 @@
 ﻿using System;
-using System.Windows.Forms;
-using NAudio.Wave;
+using System.Diagnostics;
+using System.IO;
 using System.Net;
 using System.Threading;
-using System.IO;
-using System.Diagnostics;
-using System.ComponentModel.Composition;
+using System.Windows.Forms;
+using NAudio.Wave;
 
-namespace NAudioDemo
+namespace NAudioDemo.Mp3StreamingDemo
 {
     public partial class Mp3StreamingPanel : UserControl
     {
@@ -284,7 +283,6 @@ namespace NAudioDemo
         }
     }
 
-    [Export(typeof(INAudioDemoPlugin))]
     public class Mp3StreamingPanelPlugin : INAudioDemoPlugin
     {
         public string Name

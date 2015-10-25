@@ -1,6 +1,6 @@
 namespace NAudioDemo
 {
-    partial class MainForm
+    sealed partial class MainForm
     {
         /// <summary>
         /// Required designer variable.
@@ -43,7 +43,7 @@ namespace NAudioDemo
             this.listBoxDemos.Name = "listBoxDemos";
             this.listBoxDemos.Size = new System.Drawing.Size(120, 329);
             this.listBoxDemos.TabIndex = 3;
-            this.listBoxDemos.DoubleClick += new System.EventHandler(this.listBoxDemos_DoubleClick);
+            this.listBoxDemos.DoubleClick += new System.EventHandler(this.OnListBoxDemosDoubleClick);
             // 
             // buttonLoadDemo
             // 
@@ -54,7 +54,7 @@ namespace NAudioDemo
             this.buttonLoadDemo.TabIndex = 4;
             this.buttonLoadDemo.Text = "Load";
             this.buttonLoadDemo.UseVisualStyleBackColor = true;
-            this.buttonLoadDemo.Click += new System.EventHandler(this.buttonLoadDemo_Click);
+            this.buttonLoadDemo.Click += new System.EventHandler(this.OnLoadDemoClick);
             // 
             // panelDemo
             // 
@@ -85,7 +85,7 @@ namespace NAudioDemo
             this.Controls.Add(this.listBoxDemos);
             this.Name = "MainForm";
             this.Text = "NAudio Demo";
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.OnMainFormClosing);
             this.ResumeLayout(false);
 
         }

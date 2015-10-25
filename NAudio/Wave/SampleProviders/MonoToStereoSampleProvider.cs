@@ -9,7 +9,6 @@ namespace NAudio.Wave.SampleProviders
     public class MonoToStereoSampleProvider : ISampleProvider
     {
         private readonly ISampleProvider source;
-        private readonly WaveFormat waveFormat;
         private float[] sourceBuffer;
 
         /// <summary>
@@ -18,21 +17,20 @@ namespace NAudio.Wave.SampleProviders
         /// <param name="source">Source sample provider</param>
         public MonoToStereoSampleProvider(ISampleProvider source)
         {
+            LeftVolume = 1.0f;
+            RightVolume = 1.0f;
             if (source.WaveFormat.Channels != 1)
             {
                 throw new ArgumentException("Source must be mono");
             }
             this.source = source;
-            this.waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(source.WaveFormat.SampleRate, 2);
+            WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(source.WaveFormat.SampleRate, 2);
         }
 
         /// <summary>
         /// WaveFormat of this provider
         /// </summary>
-        public WaveFormat WaveFormat
-        {
-            get { return this.waveFormat; }
-        }
+        public WaveFormat WaveFormat { get; private set; }
 
         /// <summary>
         /// Reads samples from this provider
@@ -43,23 +41,33 @@ namespace NAudio.Wave.SampleProviders
         /// <returns>Number of samples read</returns>
         public int Read(float[] buffer, int offset, int count)
         {
-            int sourceSamplesRequired = count / 2;
-            int outIndex = offset;
+            var sourceSamplesRequired = count / 2;
+            var outIndex = offset;
             EnsureSourceBuffer(sourceSamplesRequired);
-            int sourceSamplesRead = source.Read(sourceBuffer, 0, sourceSamplesRequired);
-            for (int n = 0; n < sourceSamplesRead; n++)
+            var sourceSamplesRead = source.Read(sourceBuffer, 0, sourceSamplesRequired);
+            for (var n = 0; n < sourceSamplesRead; n++)
             {
-                buffer[outIndex++] = sourceBuffer[n];
-                buffer[outIndex++] = sourceBuffer[n];
+                buffer[outIndex++] = sourceBuffer[n] * LeftVolume;
+                buffer[outIndex++] = sourceBuffer[n] * RightVolume;
             }
             return sourceSamplesRead * 2;
         }
 
+        /// <summary>
+        /// Multiplier for left channel (default is 1.0)
+        /// </summary>
+        public float LeftVolume { get; set; }
+
+        /// <summary>
+        /// Multiplier for right channel (default is 1.0)
+        /// </summary>
+        public float RightVolume { get; set; }
+
         private void EnsureSourceBuffer(int count)
         {
-            if (this.sourceBuffer == null || this.sourceBuffer.Length < count)
+            if (sourceBuffer == null || sourceBuffer.Length < count)
             {
-                this.sourceBuffer = new float[count];
+                sourceBuffer = new float[count];
             }
         }
     }

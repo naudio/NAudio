@@ -1,6 +1,7 @@
 ﻿using System;
 using NAudio.Utils;
 
+// ReSharper disable once CheckNamespace
 namespace NAudio.Wave
 {
     /// <summary>
@@ -20,8 +21,15 @@ namespace NAudio.Wave
         public BufferedWaveProvider(WaveFormat waveFormat)
         {
             this.waveFormat = waveFormat;
-            this.BufferLength = waveFormat.AverageBytesPerSecond * 5;
+            BufferLength = waveFormat.AverageBytesPerSecond * 5;
+            ReadFully = true;
         }
+
+        /// <summary>
+        /// If true, always read the amount of data requested, padding with zeroes if necessary
+        /// By default is set to true
+        /// </summary>
+        public bool ReadFully { get; set; }
 
         /// <summary>
         /// Buffer length in bytes
@@ -84,7 +92,7 @@ namespace NAudio.Wave
             // create buffer here to allow user to customise buffer length
             if (circularBuffer == null)
             { 
-                circularBuffer = new CircularBuffer(this.BufferLength);
+                circularBuffer = new CircularBuffer(BufferLength);
             }
 
             var written = circularBuffer.Write(buffer, offset, count);
@@ -103,14 +111,15 @@ namespace NAudio.Wave
             int read = 0;
             if (circularBuffer != null) // not yet created
             { 
-                read = this.circularBuffer.Read(buffer, offset, count);
+                read = circularBuffer.Read(buffer, offset, count);
             }
-            if (read < count)
+            if (ReadFully && read < count)
             {
                 // zero the end of the buffer
                 Array.Clear(buffer, offset + read, count - read);
+                read = count;
             }
-            return count;
+            return read;
         }
 
         /// <summary>

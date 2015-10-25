@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using NAudio.Wave;
@@ -63,11 +64,11 @@ namespace NAudioTests.WaveStreams
             //string fileName = "From {0}"
             //WaveFileWriter.CreateWaveFile16(;
             var buffer = new float[to * channels];
-            Console.WriteLine("From {0} to {1}", from, to);
+            Debug.WriteLine(String.Format("From {0} to {1}", from, to));
             for (int n = 0; n < 10; n++)
             {
                 var read = resampler.Read(buffer, 0, buffer.Length);
-                Console.WriteLine("read {0}", read);
+                Debug.WriteLine(String.Format("read {0}", read));
             }
 
         }

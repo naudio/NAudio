@@ -6,7 +6,7 @@ using NAudio.Wave;
 using System.Net.Sockets;
 using System.Threading;
 using System.Net;
-using System.ComponentModel.Composition;
+using NAudioDemo.Utils;
 
 namespace NAudioDemo.NetworkChatDemo
 {
@@ -20,8 +20,11 @@ namespace NAudioDemo.NetworkChatDemo
         private INetworkChatCodec selectedCodec;
         private volatile bool connected;
 
-        public NetworkChatPanel(IEnumerable<INetworkChatCodec> codecs)
+        public NetworkChatPanel()
         {
+            // use reflection to find all the codecs
+            var codecs = ReflectionHelper.CreateAllInstancesOf<INetworkChatCodec>();
+
             InitializeComponent();
             PopulateInputDevicesCombo();
             PopulateCodecsCombo(codecs);
@@ -42,8 +45,8 @@ namespace NAudioDemo.NetworkChatDemo
             
             foreach(var codec in sorted)
             {
-                string bitRate = codec.BitsPerSecond == -1 ? "VBR" : String.Format("{0:0.#}kbps", codec.BitsPerSecond / 1000.0);
-                string text = String.Format("{0} ({1})", codec.Name, bitRate);
+                var bitRate = codec.BitsPerSecond == -1 ? "VBR" : String.Format("{0:0.#}kbps", codec.BitsPerSecond / 1000.0);
+                var text = String.Format("{0} ({1})", codec.Name, bitRate);
                 comboBoxCodecs.Items.Add(new CodecComboItem { Text=text, Codec=codec });
             }
             comboBoxCodecs.SelectedIndex = 0;
@@ -170,7 +173,6 @@ namespace NAudioDemo.NetworkChatDemo
         }
     }
 
-    [Export(typeof(INAudioDemoPlugin))]
     public class NetworkChatPanelPlugin : INAudioDemoPlugin
     {
         public string Name
@@ -178,12 +180,9 @@ namespace NAudioDemo.NetworkChatDemo
             get { return "Network Chat"; }
         }
 
-        [ImportMany(typeof(INetworkChatCodec))]
-        public IEnumerable<INetworkChatCodec> Codecs { get; set; }
-
         public Control CreatePanel()
         {
-            return new NetworkChatPanel(Codecs);
+            return new NetworkChatPanel();
         }
     }
 }

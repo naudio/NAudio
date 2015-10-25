@@ -1,17 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Drawing;
-using System.Data;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
-using System.Text;
 using System.Windows.Forms;
 using NAudio.Wave;
-using System.ComponentModel.Composition;
-using System.IO;
-using System.Diagnostics;
 
-namespace NAudioDemo
+namespace NAudioDemo.AsioRecordingDemo
 {
     public partial class AsioRecordingPanel : UserControl
     {
@@ -22,37 +16,37 @@ namespace NAudioDemo
         public AsioRecordingPanel()
         {
             InitializeComponent();
-            this.Disposed += new EventHandler(AsioDirectPanel_Disposed);
+            Disposed += OnAsioDirectPanelDisposed;
             foreach(var device in AsioOut.GetDriverNames())
             {
-                this.comboBoxAsioDevice.Items.Add(device);
+                comboBoxAsioDevice.Items.Add(device);
             }
-            if (this.comboBoxAsioDevice.Items.Count > 0)
+            if (comboBoxAsioDevice.Items.Count > 0)
             {
-                this.comboBoxAsioDevice.SelectedIndex = 0;
+                comboBoxAsioDevice.SelectedIndex = 0;
             }
         }
 
-        void AsioDirectPanel_Disposed(object sender, EventArgs e)
+        void OnAsioDirectPanelDisposed(object sender, EventArgs e)
         {
             Cleanup();
         }
 
         private void Cleanup()
         {
-            if (this.asioOut != null)
+            if (asioOut != null)
             {
-                this.asioOut.Dispose();
-                this.asioOut = null;
+                asioOut.Dispose();
+                asioOut = null;
             }
-            if (this.writer != null)
+            if (writer != null)
             {
-                this.writer.Dispose();
-                this.writer = null;
+                writer.Dispose();
+                writer = null;
             }
         }
 
-        private void buttonStart_Click(object sender, EventArgs args)
+        private void OnButtonStartClick(object sender, EventArgs args)
         {
             try
             {
@@ -66,51 +60,52 @@ namespace NAudioDemo
 
         private int GetUserSpecifiedChannelOffset()
         {
-            int channelOffset = 0;
+            int channelOffset;
             int.TryParse(textBoxChannelOffset.Text, out channelOffset);
             return channelOffset;
         }
 
         private int GetUserSpecifiedChannelCount()
         {
-            int channelCount = 1;
-            int.TryParse(textBoxChannelCount.Text, out channelCount);
-            return channelCount;
+            int channelCount;
+            return int.TryParse(textBoxChannelCount.Text, out channelCount) ? channelCount : 1;
         }
 
         private void Start()
         {
             // allow change device
-            if (this.asioOut != null && 
-                (this.asioOut.DriverName != comboBoxAsioDevice.Text || 
-                this.asioOut.ChannelOffset != GetUserSpecifiedChannelOffset()))
+            if (asioOut != null && 
+                (asioOut.DriverName != comboBoxAsioDevice.Text || 
+                asioOut.ChannelOffset != GetUserSpecifiedChannelOffset()))
             {
-                this.asioOut.AudioAvailable -= asioOut_AudioAvailable;
-                this.asioOut.Dispose();
-                this.asioOut = null;
+                asioOut.AudioAvailable -= OnAsioOutAudioAvailable;
+                asioOut.Dispose();
+                asioOut = null;
             }
 
             int recordChannelCount = GetUserSpecifiedChannelCount();
             
             // create device if necessary
-            if (this.asioOut == null)
+            if (asioOut == null)
             {
-                this.asioOut = new AsioOut(comboBoxAsioDevice.Text);
-                this.asioOut.InputChannelOffset = GetUserSpecifiedChannelOffset();
-                this.asioOut.InitRecordAndPlayback(null, recordChannelCount, 44100);
-                this.asioOut.AudioAvailable += asioOut_AudioAvailable;
+                asioOut = new AsioOut(comboBoxAsioDevice.Text);
+                asioOut.InputChannelOffset = GetUserSpecifiedChannelOffset();
+                asioOut.InitRecordAndPlayback(null, recordChannelCount, 44100);
+                asioOut.AudioAvailable += OnAsioOutAudioAvailable;
             }
             
-            this.fileName = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".wav");
-            this.writer = new WaveFileWriter(fileName, new WaveFormat(44100, recordChannelCount));
-            this.asioOut.Play();
-            this.timer1.Enabled = true;
+            fileName = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".wav");
+            writer = new WaveFileWriter(fileName, new WaveFormat(44100, recordChannelCount));
+            asioOut.Play();
+            timer1.Enabled = true;
             SetButtonStates();
         }
 
-        void asioOut_AudioAvailable(object sender, AsioAudioAvailableEventArgs e)
+        void OnAsioOutAudioAvailable(object sender, AsioAudioAvailableEventArgs e)
         {
+#pragma warning disable 618
             var samples = e.GetAsInterleavedSamples();
+#pragma warning restore 618
             writer.WriteSamples(samples, 0, samples.Length);
         }
 
@@ -120,26 +115,26 @@ namespace NAudioDemo
             buttonStop.Enabled = asioOut != null && asioOut.PlaybackState == PlaybackState.Playing;
         }
 
-        private void buttonStop_Click(object sender, EventArgs e)
+        private void OnButtonStopClick(object sender, EventArgs e)
         {
             Stop();
         }
 
         private void Stop()
         {
-            this.asioOut.Stop();
-            if (this.writer != null)
+            asioOut.Stop();
+            if (writer != null)
             {
-                this.writer.Dispose();
-                this.writer = null;
+                writer.Dispose();
+                writer = null;
             }
-            this.timer1.Enabled = false;
+            timer1.Enabled = false;
             SetButtonStates();
             int index = listBoxRecordings.Items.Add(fileName);
             listBoxRecordings.SelectedIndex = index;
         }
 
-        private void timer1_Tick(object sender, EventArgs e)
+        private void OnTimerTick(object sender, EventArgs e)
         {
             if (asioOut != null && asioOut.PlaybackState == PlaybackState.Playing && writer.Length > writer.WaveFormat.AverageBytesPerSecond * 30)
             {
@@ -147,7 +142,7 @@ namespace NAudioDemo
             }
         }
 
-        private void buttonPlay_Click(object sender, EventArgs e)
+        private void OnButtonPlayClick(object sender, EventArgs e)
         {
             if (listBoxRecordings.SelectedItem != null)
             {
@@ -155,7 +150,7 @@ namespace NAudioDemo
             }
         }
 
-        private void buttonDelete_Click(object sender, EventArgs e)
+        private void OnButtonDeleteClick(object sender, EventArgs e)
         {
             if (listBoxRecordings.SelectedItem != null)
             {
@@ -166,7 +161,7 @@ namespace NAudioDemo
 
         public string SelectedDeviceName { get { return (string)comboBoxAsioDevice.SelectedItem; } }
 
-        private void buttonControlPanel_Click(object sender, EventArgs args)
+        private void OnButtonControlPanelClick(object sender, EventArgs args)
         {
             try
             {
@@ -182,7 +177,6 @@ namespace NAudioDemo
         }
     }
 
-    [Export(typeof(INAudioDemoPlugin))]
     public class AsioRecordingPanelPlugin : INAudioDemoPlugin
     {
         public string Name

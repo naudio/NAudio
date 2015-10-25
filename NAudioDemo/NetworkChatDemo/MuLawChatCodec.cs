@@ -2,7 +2,6 @@
 using System.Linq;
 using NAudio.Wave;
 using NAudio.Codecs;
-using System.ComponentModel.Composition;
 
 namespace NAudioDemo.NetworkChatDemo
 {
@@ -20,7 +19,6 @@ namespace NAudioDemo.NetworkChatDemo
     }
 
 
-    [Export(typeof(INetworkChatCodec))]
     class MuLawChatCodec : INetworkChatCodec
     {
         public string Name

@@ -1,20 +1,19 @@
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Text;
+using System.Linq;
 using System.Windows.Forms;
-using System.ComponentModel.Composition;
+using NAudioDemo.Utils;
 
 namespace NAudioDemo
 {
-    [Export]
-    public partial class MainForm : Form
+    public sealed partial class MainForm : Form
     {
-        [ImportingConstructor]
-        public MainForm([ImportMany] IEnumerable<INAudioDemoPlugin> demos)
+        private INAudioDemoPlugin currentPlugin;
+
+        public MainForm()
         {
+            // use reflection to find all the demos
+            var demos = ReflectionHelper.CreateAllInstancesOf<INAudioDemoPlugin>();
+
             InitializeComponent();
             listBoxDemos.DisplayMember = "Name";
             foreach (var demo in demos)
@@ -22,40 +21,35 @@ namespace NAudioDemo
                 listBoxDemos.Items.Add(demo);
             }
 
-            this.Text = this.Text + ((System.Runtime.InteropServices.Marshal.SizeOf(IntPtr.Zero) == 8) ? " (x64)" : " (x86)");
+            Text += ((System.Runtime.InteropServices.Marshal.SizeOf(IntPtr.Zero) == 8) ? " (x64)" : " (x86)");
         }
 
-        private INAudioDemoPlugin currentPlugin;
 
-        private void buttonLoadDemo_Click(object sender, EventArgs e)
+        private void OnLoadDemoClick(object sender, EventArgs e)
         {
             var plugin = (INAudioDemoPlugin)listBoxDemos.SelectedItem;
-            if (plugin != currentPlugin)
-            {
-                this.currentPlugin = plugin;
-                DisposeCurrentDemo();
-                var control = plugin.CreatePanel();
-                control.Dock = DockStyle.Fill;
-                panelDemo.Controls.Add(control);
-            }
+            if (plugin == currentPlugin) return;
+            currentPlugin = plugin;
+            DisposeCurrentDemo();
+            var control = plugin.CreatePanel();
+            control.Dock = DockStyle.Fill;
+            panelDemo.Controls.Add(control);
         }
 
         private void DisposeCurrentDemo()
         {
-            if (panelDemo.Controls.Count > 0)
-            {
-                panelDemo.Controls[0].Dispose();
-                panelDemo.Controls.Clear();
-                GC.Collect();
-            }
+            if (panelDemo.Controls.Count <= 0) return;
+            panelDemo.Controls[0].Dispose();
+            panelDemo.Controls.Clear();
+            GC.Collect();
         }
 
-        private void listBoxDemos_DoubleClick(object sender, EventArgs e)
+        private void OnListBoxDemosDoubleClick(object sender, EventArgs e)
         {
-            buttonLoadDemo_Click(sender, e);
+            OnLoadDemoClick(sender, e);
         }
 
-        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        private void OnMainFormClosing(object sender, FormClosingEventArgs e)
         {
             DisposeCurrentDemo();
         }

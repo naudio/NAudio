@@ -1,14 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using NAudio.Wave;
 using System.Windows.Forms;
-using System.ComponentModel.Composition;
 
 namespace NAudioDemo.AudioPlaybackDemo
 {
-    [Export(typeof(IOutputDevicePlugin))]
     class WaveOutPlugin : IOutputDevicePlugin
     {
         private WaveOutSettingsPanel waveOutSettingsPanel;
@@ -16,7 +12,7 @@ namespace NAudioDemo.AudioPlaybackDemo
         public IWavePlayer CreateDevice(int latency)
         {
             IWavePlayer device;
-            WaveCallbackStrategy strategy = waveOutSettingsPanel.CallbackStrategy;
+            var strategy = waveOutSettingsPanel.CallbackStrategy;
             if (strategy == WaveCallbackStrategy.Event)
             {
                 var waveOut = new WaveOutEvent();
@@ -39,7 +35,7 @@ namespace NAudioDemo.AudioPlaybackDemo
 
         public UserControl CreateSettingsPanel()
         {
-            this.waveOutSettingsPanel = new WaveOutSettingsPanel();
+            waveOutSettingsPanel = new WaveOutSettingsPanel();
             return waveOutSettingsPanel;
         }
 

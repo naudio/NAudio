@@ -49,7 +49,7 @@
             this.buttonControlPanel.TabIndex = 17;
             this.buttonControlPanel.Text = "ASIO Control Panel";
             this.buttonControlPanel.UseVisualStyleBackColor = true;
-            this.buttonControlPanel.Click += new System.EventHandler(this.buttonControlPanel_Click);
+            this.buttonControlPanel.Click += new System.EventHandler(this.OnButtonControlPanelClick);
             // 
             // AsioOutSettingsPanel
             // 

@@ -1,13 +1,12 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
-using NAudio.Wave;
-using System.Diagnostics;
 using NAudio.CoreAudioApi;
-using System.ComponentModel.Composition;
+using NAudio.Wave;
 
-namespace NAudioDemo
+namespace NAudioDemo.RecordingDemo
 {
     public partial class RecordingPanel : UserControl
     {
@@ -61,7 +60,7 @@ namespace NAudioDemo
 
             if (waveIn == null)
             {
-                CreateWaveInDevice();
+                waveIn = CreateWaveInDevice();
             }
             // Forcibly turn on the microphone (some programs (Skype) turn it off).
             var device = (MMDevice)comboWasapiDevices.SelectedItem;
@@ -73,31 +72,33 @@ namespace NAudioDemo
             SetControlStates(true);
         }
 
-        private void CreateWaveInDevice()
+        private IWaveIn CreateWaveInDevice()
         {
+            IWaveIn newWaveIn;
             if (radioButtonWaveIn.Checked)
             {
-                waveIn = new WaveIn();
-                waveIn.WaveFormat = new WaveFormat(8000, 1);
+                newWaveIn = new WaveIn();
+                newWaveIn.WaveFormat = new WaveFormat(8000, 1);
             }
             else if (radioButtonWaveInEvent.Checked)
             {
-                waveIn = new WaveInEvent();
-                waveIn.WaveFormat = new WaveFormat(8000, 1);
+                newWaveIn = new WaveInEvent();
+                newWaveIn.WaveFormat = new WaveFormat(8000, 1);
             }
             else if (radioButtonWasapi.Checked)
             {
                 // can't set WaveFormat as WASAPI doesn't support SRC
                 var device = (MMDevice) comboWasapiDevices.SelectedItem;
-                waveIn = new WasapiCapture(device);
+                newWaveIn = new WasapiCapture(device);
             }
             else
             {
                 // can't set WaveFormat as WASAPI doesn't support SRC
-                waveIn = new WasapiLoopbackCapture();
+                newWaveIn = new WasapiLoopbackCapture();
             }
-            waveIn.DataAvailable += OnDataAvailable;
-            waveIn.RecordingStopped += OnRecordingStopped;
+            newWaveIn.DataAvailable += OnDataAvailable;
+            newWaveIn.RecordingStopped += OnRecordingStopped;
+            return newWaveIn;
         }
 
         void OnRecordingStopped(object sender, StoppedEventArgs e)
@@ -142,10 +143,10 @@ namespace NAudioDemo
 
         void OnDataAvailable(object sender, WaveInEventArgs e)
         {
-            if (this.InvokeRequired)
+            if (InvokeRequired)
             {
                 //Debug.WriteLine("Data Available");
-                this.BeginInvoke(new EventHandler<WaveInEventArgs>(OnDataAvailable), sender, e);
+                BeginInvoke(new EventHandler<WaveInEventArgs>(OnDataAvailable), sender, e);
             }
             else
             {
@@ -215,7 +216,6 @@ namespace NAudioDemo
         }
     }
 
-    [Export(typeof(INAudioDemoPlugin))]
     public class RecordingPanelPlugin : INAudioDemoPlugin
     {
         public string Name

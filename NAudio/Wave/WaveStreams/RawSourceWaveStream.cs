@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.IO;
 
+// ReSharper disable once CheckNamespace
 namespace NAudio.Wave
 {
     /// <summary>
@@ -11,8 +10,8 @@ namespace NAudio.Wave
     /// </summary>
     public class RawSourceWaveStream : WaveStream
     {
-        private Stream sourceStream;
-        private WaveFormat waveFormat;
+        private readonly Stream sourceStream;
+        private readonly WaveFormat waveFormat;
 
         /// <summary>
         /// Initialises a new instance of RawSourceWaveStream
@@ -28,13 +27,13 @@ namespace NAudio.Wave
         /// <summary>
         /// Initialises a new instance of RawSourceWaveStream
         /// </summary>
-        /// <param name="sourceBuffer">The buffer containing raw audio</param>
-        /// <param name="sourceOffset">Offset in the source buffer to read from</param>
-        /// <param name="sourceCount">Number of bytes to read in the buffer</param>
+        /// <param name="byteStream">The buffer containing raw audio</param>
+        /// <param name="offset">Offset in the source buffer to read from</param>
+        /// <param name="count">Number of bytes to read in the buffer</param>
         /// <param name="waveFormat">The waveformat of the audio in the source stream</param>
         public RawSourceWaveStream(byte[] byteStream, int offset, int count, WaveFormat waveFormat)
         {
-            this.sourceStream = new MemoryStream(byteStream, offset, count);
+            sourceStream = new MemoryStream(byteStream, offset, count);
             this.waveFormat = waveFormat;
         }
 
@@ -43,7 +42,7 @@ namespace NAudio.Wave
         /// </summary>
         public override WaveFormat WaveFormat
         {
-            get { return this.waveFormat; }
+            get { return waveFormat; }
         }
 
         /// <summary>
@@ -51,7 +50,7 @@ namespace NAudio.Wave
         /// </summary>
         public override long Length
         {
-            get { return this.sourceStream.Length; }
+            get { return sourceStream.Length; }
         }
 
         /// <summary>
@@ -61,11 +60,11 @@ namespace NAudio.Wave
         {
             get
             {
-                return this.sourceStream.Position;
+                return sourceStream.Position;
             }
             set
             {
-                this.sourceStream.Position = value - (value % waveFormat.BlockAlign);
+                sourceStream.Position = value - (value % waveFormat.BlockAlign);
             }
         }
 

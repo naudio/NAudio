@@ -53,6 +53,7 @@
     <DocumentationFile>bin\Debug\NAudio.XML</DocumentationFile>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <CodeAnalysisRuleSet>NAudio.ruleset</CodeAnalysisRuleSet>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -170,6 +171,7 @@
     <Compile Include="Wave\Asio\AsioSampleType.cs" />
     <Compile Include="Wave\Compression\AcmDriverAddFlags.cs" />
     <Compile Include="Wave\SampleProviders\AdsrSampleProvider.cs" />
+    <Compile Include="Wave\SampleProviders\ConcatenatingSampleProvider.cs" />
     <Compile Include="Wave\SampleProviders\FadeInOutSampleProvider.cs" />
     <Compile Include="Wave\SampleProviders\MultiplexingSampleProvider.cs" />
     <Compile Include="Wave\SampleProviders\OffsetSampleProvider.cs" />
@@ -178,6 +180,7 @@
     <Compile Include="Wave\SampleProviders\SampleToWaveProvider16.cs" />
     <Compile Include="Wave\SampleProviders\SampleToWaveProvider24.cs" />
     <Compile Include="Wave\SampleProviders\SignalGenerator.cs" />
+    <Compile Include="Wave\SampleProviders\StereoToMonoSampleProvider.cs" />
     <Compile Include="Wave\SampleProviders\WaveToSampleProvider64.cs" />
     <Compile Include="Wave\SampleProviders\WdlResamplingSampleProvider.cs" />
     <Compile Include="Wave\WaveExtensionMethods.cs" />
@@ -479,6 +482,7 @@
     <Compile Include="Wave\WaveStreams\WaveChannel32.cs" />
     <Compile Include="Wave\SampleProviders\SampleChannel.cs" />
     <Compile Include="Wave\WaveStreams\WaveFileReader.cs" />
+    <Compile Include="Wave\WaveStreams\WaveFormatConversionProvider.cs" />
     <Compile Include="Wave\WaveStreams\WaveFormatConversionStream.cs" />
     <Compile Include="Wave\WaveStreams\WaveInBuffer.cs" />
     <Compile Include="Wave\WaveStreams\WaveMixerStream32.cs" />

@@ -1,15 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Drawing;
-using System.Data;
 using System.Linq;
-using System.Text;
 using System.Windows.Forms;
 using NAudio.Wave;
-using System.ComponentModel.Composition;
 
-namespace NAudioDemo
+namespace NAudioDemo.AsioDirectDemo
 {
     public partial class AsioDirectPanel : UserControl
     {
@@ -19,48 +13,48 @@ namespace NAudioDemo
         public AsioDirectPanel()
         {
             InitializeComponent();
-            this.Disposed += new EventHandler(AsioDirectPanel_Disposed);
+            Disposed += OnAsioDirectPanelDisposed;
             foreach(var device in AsioOut.GetDriverNames())
             {
-                this.comboBoxAsioDevice.Items.Add(device);
+                comboBoxAsioDevice.Items.Add(device);
             }
-            if (this.comboBoxAsioDevice.Items.Count > 0)
+            if (comboBoxAsioDevice.Items.Count > 0)
             {
-                this.comboBoxAsioDevice.SelectedIndex = 0;
+                comboBoxAsioDevice.SelectedIndex = 0;
             }
         }
 
-        void AsioDirectPanel_Disposed(object sender, EventArgs e)
+        void OnAsioDirectPanelDisposed(object sender, EventArgs e)
         {
             Cleanup();
         }
 
         private void Cleanup()
         {
-            if (this.asioOut != null)
+            if (asioOut != null)
             {
-                this.asioOut.Dispose();
-                this.asioOut = null;
+                asioOut.Dispose();
+                asioOut = null;
             }
-            if (this.reader != null)
+            if (reader != null)
             {
-                this.reader.Dispose();
-                this.reader = null;
+                reader.Dispose();
+                reader = null;
             }
         }
 
-        private void buttonSelectFile_Click(object sender, EventArgs e)
+        private void OnButtonSelectFileClick(object sender, EventArgs e)
         {
             Cleanup();
             var ofd = new OpenFileDialog();
             ofd.Filter = "Audio files|*.wav;*.mp3";
             if (ofd.ShowDialog() == DialogResult.OK)
             {
-                this.reader = new AudioFileReader(ofd.FileName);
+                reader = new AudioFileReader(ofd.FileName);
             }
         }
 
-        private void buttonPlay_Click(object sender, EventArgs args)
+        private void OnButtonPlayClick(object sender, EventArgs args)
         {
             try
             {
@@ -74,7 +68,7 @@ namespace NAudioDemo
 
         private int GetUserSpecifiedChannelOffset()
         {
-            int channelOffset = 0;
+            int channelOffset;
             int.TryParse(textBoxChannelOffset.Text, out channelOffset);
             return channelOffset;
         }
@@ -82,25 +76,25 @@ namespace NAudioDemo
         private void Play()
         {
             // allow change device
-            if (this.asioOut != null && 
-                (this.asioOut.DriverName != comboBoxAsioDevice.Text || 
-                this.asioOut.ChannelOffset != GetUserSpecifiedChannelOffset()))
+            if (asioOut != null && 
+                (asioOut.DriverName != comboBoxAsioDevice.Text || 
+                asioOut.ChannelOffset != GetUserSpecifiedChannelOffset()))
             {
-                this.asioOut.Dispose();
-                this.asioOut = null;
+                asioOut.Dispose();
+                asioOut = null;
             }
             
             // create device if necessary
-            if (this.asioOut == null)
+            if (asioOut == null)
             {
-                this.asioOut = new AsioOut(comboBoxAsioDevice.Text);
-                this.asioOut.ChannelOffset = GetUserSpecifiedChannelOffset();
-                this.asioOut.Init(this.reader);
+                asioOut = new AsioOut(comboBoxAsioDevice.Text);
+                asioOut.ChannelOffset = GetUserSpecifiedChannelOffset();
+                asioOut.Init(reader);
             }
             
-            this.reader.Position = 0;
-            this.asioOut.Play();
-            this.timer1.Enabled = true;
+            reader.Position = 0;
+            asioOut.Play();
+            timer1.Enabled = true;
             SetButtonStates();
         }
 
@@ -110,19 +104,19 @@ namespace NAudioDemo
             buttonStop.Enabled = asioOut != null && asioOut.PlaybackState == PlaybackState.Playing;            
         }
 
-        private void buttonStop_Click(object sender, EventArgs e)
+        private void OnButtonStopClick(object sender, EventArgs e)
         {
             Stop();
         }
 
         private void Stop()
         {
-            this.asioOut.Stop();
-            this.timer1.Enabled = false;
+            asioOut.Stop();
+            timer1.Enabled = false;
             SetButtonStates();
         }
 
-        private void timer1_Tick(object sender, EventArgs e)
+        private void OnTimerTick(object sender, EventArgs e)
         {
             if (asioOut != null && asioOut.PlaybackState == PlaybackState.Playing && reader.Position >= reader.Length)
             {
@@ -131,7 +125,6 @@ namespace NAudioDemo
         }        
     }
 
-    [Export(typeof(INAudioDemoPlugin))]
     public class AsioDirectPanelPlugin : INAudioDemoPlugin
     {
         public string Name

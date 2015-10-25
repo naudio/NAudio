@@ -1,4 +1,4 @@
-﻿namespace NAudioDemo
+﻿namespace NAudioDemo.Mp3StreamingDemo
 {
     partial class Mp3StreamingPanel
     {

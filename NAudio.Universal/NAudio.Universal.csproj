@@ -11,8 +11,8 @@
     <AssemblyName>NAudio.Universal</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
-    <TargetPlatformVersion>10.0.10166.0</TargetPlatformVersion>
-    <TargetPlatformMinVersion>10.0.10166.0</TargetPlatformMinVersion>
+    <TargetPlatformVersion>10.0.10240.0</TargetPlatformVersion>
+    <TargetPlatformMinVersion>10.0.10240.0</TargetPlatformMinVersion>
     <MinimumVisualStudioVersion>14</MinimumVisualStudioVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{A5A43C5B-DE2A-4C0C-9213-0A381AF9435A};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
@@ -109,9 +109,10 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="..\NAudio.Win8\Wave\WaveExtensionMethods.cs">
-      <Link>Wave\WaveExtensionMethods.cs</Link>
-    </Compile>
+    <!-- A reference to the entire .Net Framework and Windows SDK are automatically included -->
+    <None Include="project.json" />
+  </ItemGroup>
+  <ItemGroup>
     <Compile Include="..\NAudio.Win8\Wave\WaveInputs\WasapiCaptureRT.cs">
       <Link>Wave\WaveInputs\WasapiCaptureRT.cs</Link>
     </Compile>
@@ -637,6 +638,9 @@
     <Compile Include="..\NAudio\Wave\SampleChunkConverters\StereoFloatSampleChunkConverter.cs">
       <Link>Wave\SampleChunkConverters\StereoFloatSampleChunkConverter.cs</Link>
     </Compile>
+    <Compile Include="..\NAudio\Wave\SampleProviders\ConcatenatingSampleProvider.cs">
+      <Link>Wave\SampleProviders\ConcatenatingSampleProvider.cs</Link>
+    </Compile>
     <Compile Include="..\NAudio\Wave\SampleProviders\FadeInOutSampleProvider.cs">
       <Link>Wave\SampleProviders\FadeInOutSampleProvider.cs</Link>
     </Compile>
@@ -694,6 +698,9 @@
     <Compile Include="..\NAudio\Wave\SampleProviders\SignalGenerator.cs">
       <Link>Wave\SampleProviders\SignalGenerator.cs</Link>
     </Compile>
+    <Compile Include="..\NAudio\Wave\SampleProviders\StereoToMonoSampleProvider.cs">
+      <Link>Wave\SampleProviders\StereoToMonoSampleProvider.cs</Link>
+    </Compile>
     <Compile Include="..\NAudio\Wave\SampleProviders\VolumeSampleProvider.cs">
       <Link>Wave\SampleProviders\VolumeSampleProvider.cs</Link>
     </Compile>
@@ -705,6 +712,9 @@
     </Compile>
     <Compile Include="..\NAudio\Wave\SampleProviders\WdlResamplingSampleProvider.cs">
       <Link>Wave\SampleProviders\WdlResamplingSampleProvider.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\Wave\WaveExtensionMethods.cs">
+      <Link>Wave\WaveExtensionMethods.cs</Link>
     </Compile>
     <Compile Include="..\NAudio\Wave\WaveFormats\AdpcmWaveFormat.cs">
       <Link>Wave\WaveFormats\AdpcmWaveFormat.cs</Link>

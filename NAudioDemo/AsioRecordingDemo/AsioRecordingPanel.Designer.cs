@@ -1,4 +1,4 @@
-﻿namespace NAudioDemo
+﻿namespace NAudioDemo.AsioRecordingDemo
 {
     partial class AsioRecordingPanel
     {
@@ -64,7 +64,7 @@
             this.buttonStart.TabIndex = 2;
             this.buttonStart.Text = "Start";
             this.buttonStart.UseVisualStyleBackColor = true;
-            this.buttonStart.Click += new System.EventHandler(this.buttonStart_Click);
+            this.buttonStart.Click += new System.EventHandler(this.OnButtonStartClick);
             // 
             // buttonStop
             // 
@@ -74,7 +74,7 @@
             this.buttonStop.TabIndex = 2;
             this.buttonStop.Text = "Stop";
             this.buttonStop.UseVisualStyleBackColor = true;
-            this.buttonStop.Click += new System.EventHandler(this.buttonStop_Click);
+            this.buttonStop.Click += new System.EventHandler(this.OnButtonStopClick);
             // 
             // comboBoxAsioDevice
             // 
@@ -105,7 +105,7 @@
             // timer1
             // 
             this.timer1.Interval = 250;
-            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
+            this.timer1.Tick += new System.EventHandler(this.OnTimerTick);
             // 
             // textBoxChannelCount
             // 
@@ -158,7 +158,7 @@
             this.buttonPlay.TabIndex = 7;
             this.buttonPlay.Text = "Play";
             this.buttonPlay.UseVisualStyleBackColor = true;
-            this.buttonPlay.Click += new System.EventHandler(this.buttonPlay_Click);
+            this.buttonPlay.Click += new System.EventHandler(this.OnButtonPlayClick);
             // 
             // buttonDelete
             // 
@@ -168,7 +168,7 @@
             this.buttonDelete.TabIndex = 7;
             this.buttonDelete.Text = "Delete";
             this.buttonDelete.UseVisualStyleBackColor = true;
-            this.buttonDelete.Click += new System.EventHandler(this.buttonDelete_Click);
+            this.buttonDelete.Click += new System.EventHandler(this.OnButtonDeleteClick);
             // 
             // buttonControlPanel
             // 
@@ -178,7 +178,7 @@
             this.buttonControlPanel.TabIndex = 2;
             this.buttonControlPanel.Text = "Control Panel";
             this.buttonControlPanel.UseVisualStyleBackColor = true;
-            this.buttonControlPanel.Click += new System.EventHandler(this.buttonControlPanel_Click);
+            this.buttonControlPanel.Click += new System.EventHandler(this.OnButtonControlPanelClick);
             // 
             // AsioRecordingPanel
             // 

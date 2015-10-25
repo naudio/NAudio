@@ -44,6 +44,8 @@ namespace NAudioWpfDemo.MediaFoundationEncode
             OutputFormats.Add(new EncoderViewModel() { Name = "MP3", Guid = AudioSubtypes.MFAudioFormat_MP3, Extension = ".mp3" });
             OutputFormats.Add(new EncoderViewModel() { Name = "Windows Media Audio Voice", Guid = AudioSubtypes.MFAudioFormat_MSP1, Extension = ".wma" });
             OutputFormats.Add(new EncoderViewModel() { Name = "Windows Media Audio Lossless", Guid = AudioSubtypes.MFAudioFormat_WMAudio_Lossless, Extension = ".wma" });
+            OutputFormats.Add(new EncoderViewModel() { Name = "FLAC", Guid = Guid.Parse("0000f1ac-0000-0010-8000-00aa00389b71"), Extension = ".flac" });
+            OutputFormats.Add(new EncoderViewModel() { Name = "Apple Lossless (ALAC)", Guid = Guid.Parse("63616c61-0000-0010-8000-00aa00389b71"), Extension = ".m4a" });
             OutputFormats.Add(new EncoderViewModel() { Name = "Fake for testing", Guid = Guid.NewGuid(), Extension = ".xyz" });
             SelectedOutputFormat = OutputFormats[0];
         }

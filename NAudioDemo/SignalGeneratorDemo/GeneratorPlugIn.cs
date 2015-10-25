@@ -1,9 +1,7 @@
-﻿using System.ComponentModel.Composition;
-using System.Windows.Forms;
+﻿using System.Windows.Forms;
 
-namespace NAudioDemo.Generator
+namespace NAudioDemo.SignalGeneratorDemo
 {
-    [Export(typeof (INAudioDemoPlugin))]
     internal class GeneratorPlugin : INAudioDemoPlugin
     {
         public string Name

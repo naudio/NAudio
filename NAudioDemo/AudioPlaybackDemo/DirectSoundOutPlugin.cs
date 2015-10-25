@@ -1,22 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using NAudio.Wave;
 using System.Windows.Forms;
-using System.ComponentModel.Composition;
 
 namespace NAudioDemo.AudioPlaybackDemo
 {
-    [Export(typeof(IOutputDevicePlugin))]
     class DirectSoundOutPlugin : IOutputDevicePlugin
     {
         private DirectSoundOutSettingsPanel settingsPanel;
-        private bool isAvailable;
+        private readonly bool isAvailable;
 
         public DirectSoundOutPlugin()
         {
-            this.isAvailable = DirectSoundOut.Devices.Count() > 0;
+            isAvailable = DirectSoundOut.Devices.Any();
         }
 
         public IWavePlayer CreateDevice(int latency)
@@ -26,8 +22,8 @@ namespace NAudioDemo.AudioPlaybackDemo
 
         public UserControl CreateSettingsPanel()
         {
-            this.settingsPanel = new DirectSoundOutSettingsPanel();
-            return this.settingsPanel;
+            settingsPanel = new DirectSoundOutSettingsPanel();
+            return settingsPanel;
         }
 
         public string Name

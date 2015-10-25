@@ -110,15 +110,18 @@
     <Compile Include="WaveStreams\BlockAlignmentReductionStreamTests.cs" />
     <Compile Include="WaveStreams\BufferedWaveProviderTests.cs" />
     <Compile Include="WaveStreams\CircularBufferTests.cs" />
+    <Compile Include="WaveStreams\ConcatenatingSampleProviderTests.cs" />
     <Compile Include="WaveStreams\FadeInOutSampleProviderTests.cs" />
     <Compile Include="WaveStreams\ChunkIdentifierTests.cs" />
     <Compile Include="WaveStreams\MixingSampleProviderTests.cs" />
     <Compile Include="WaveStreams\MonoToStereoProvider16Tests.cs" />
+    <Compile Include="WaveStreams\MonoToStereoSampleProviderTests.cs" />
     <Compile Include="WaveStreams\MultiplexingSampleProviderTests.cs" />
     <Compile Include="WaveStreams\MultiplexingWaveProviderTests.cs" />
     <Compile Include="WaveStreams\OffsetSampleProviderTests.cs" />
     <Compile Include="WaveStreams\SampleToWaveProvider24Tests.cs" />
     <Compile Include="WaveStreams\StereoToMonoProvider16Tests.cs" />
+    <Compile Include="WaveStreams\StereoToMonoSampleProviderTests.cs" />
     <Compile Include="WaveStreams\TestSampleProvider.cs" />
     <Compile Include="WaveStreams\TestWaveProvider.cs" />
     <Compile Include="WaveStreams\VolumeWaveProvider16Tests.cs" />
@@ -126,20 +129,14 @@
     <Compile Include="WaveStreams\WaveFileReaderTests.cs" />
     <Compile Include="WaveStreams\WaveFileWriterTests.cs" />
     <Compile Include="WaveStreams\WdlResamplingSampleProviderTests.cs" />
-    <Compile Include="WindowsMedia\WindowsMediaTests.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\NAudio.WindowsMediaFormat\NAudio.WindowsMediaFormat.csproj">
-      <Project>{1868FC77-FD6F-4881-9CF5-DE7451806BFA}</Project>
-      <Name>NAudio.WindowsMediaFormat</Name>
-    </ProjectReference>
     <ProjectReference Include="..\NAudio\NAudio.csproj">
       <Project>{DA4F02E3-0B5E-42CD-B8D9-5583FA51D66E}</Project>
       <Name>NAudio</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="NAudioTests.nunit" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

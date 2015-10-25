@@ -72,6 +72,12 @@ namespace NAudio.Wave
             while (br.BaseStream.Position < br.BaseStream.Length)
             {
                 AiffChunk nextChunk = ReadChunkHeader(br);
+                if (nextChunk.ChunkName == "\0\0\0\0") break;
+
+                if (br.BaseStream.Position + nextChunk.ChunkLength > br.BaseStream.Length)
+                {
+                    break;
+                }
                 if (nextChunk.ChunkName == "COMM")
                 {
                     short numChannels = ConvertShort(br.ReadBytes(2));
@@ -96,8 +102,7 @@ namespace NAudio.Wave
                     uint blockSize = ConvertInt(br.ReadBytes(4));
                     dataChunkPosition = nextChunk.ChunkStart + 16 + offset;
                     dataChunkLength = (int)nextChunk.ChunkLength - 8;
-
-                    br.ReadBytes((int)nextChunk.ChunkLength - 8);
+                    br.BaseStream.Position += (nextChunk.ChunkLength - 8);
                 }
                 else
                 {
@@ -105,10 +110,10 @@ namespace NAudio.Wave
                     {
                         chunks.Add(nextChunk);
                     }
-                    br.ReadBytes((int)nextChunk.ChunkLength);
+                    br.BaseStream.Position += nextChunk.ChunkLength;
                 }
 
-                if (nextChunk.ChunkName == "\0\0\0\0") break;
+                
             }
 
             if (format == null)

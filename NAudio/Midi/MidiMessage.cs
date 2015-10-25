@@ -32,24 +32,48 @@ namespace NAudio.Midi
         /// <summary>
         /// Creates a Note On message
         /// </summary>
-        /// <param name="note">Note number</param>
-        /// <param name="volume">Volume</param>
-        /// <param name="channel">MIDI channel</param>
+        /// <param name="note">Note number (0 to 127)</param>
+        /// <param name="volume">Volume (0 to 127)</param>
+        /// <param name="channel">MIDI channel (1 to 16)</param>
         /// <returns>A new MidiMessage object</returns>
         public static MidiMessage StartNote(int note, int volume, int channel)
         {
+            ValidateNoteParameters(note, volume, channel);
             return new MidiMessage((int)MidiCommandCode.NoteOn + channel - 1, note, volume);
+        }
+
+        private static void ValidateNoteParameters(int note, int volume, int channel)
+        {
+            ValidateChannel(channel);
+            if (note < 0 || note > 127)
+            {
+                throw new ArgumentOutOfRangeException("note", "Note number must be in the range 0-127");
+            }
+            if (volume < 0 || volume > 127)
+            {
+                throw new ArgumentOutOfRangeException("volume", "Velocity must be in the range 0-127");
+            }
+        }
+
+        private static void ValidateChannel(int channel)
+        {
+            if ((channel < 1) || (channel > 16))
+            {
+                throw new ArgumentOutOfRangeException("channel", channel,
+                    String.Format("Channel must be 1-16 (Got {0})", channel));
+            }
         }
 
         /// <summary>
         /// Creates a Note Off message
         /// </summary>
         /// <param name="note">Note number</param>
-        /// <param name="volume">Volume</param>
+        /// <param name="volume">Volume </param>
         /// <param name="channel">MIDI channel (1-16)</param>
         /// <returns>A new MidiMessage object</returns>
         public static MidiMessage StopNote(int note, int volume, int channel)
         {
+            ValidateNoteParameters(note, volume, channel);
             return new MidiMessage((int)MidiCommandCode.NoteOff + channel - 1, note, volume);
         }
 
@@ -61,6 +85,7 @@ namespace NAudio.Midi
         /// <returns>A new MidiMessageObject</returns>
         public static MidiMessage ChangePatch(int patch, int channel)
         {
+            ValidateChannel(channel);
             return new MidiMessage((int)MidiCommandCode.PatchChange + channel - 1, patch, 0);
         }
 
@@ -73,6 +98,7 @@ namespace NAudio.Midi
         /// <returns>A new MidiMessageObject</returns>
         public static MidiMessage ChangeControl(int controller, int value, int channel)
         {
+            ValidateChannel(channel);
             return new MidiMessage((int)MidiCommandCode.ControlChange + channel - 1, controller, value);
         }
 

@@ -1,4 +1,4 @@
-﻿namespace NAudioDemo
+﻿namespace NAudioDemo.AsioDirectDemo
 {
     partial class AsioDirectPanel
     {
@@ -58,7 +58,7 @@
             this.buttonSelectFile.TabIndex = 1;
             this.buttonSelectFile.Text = "Open WAV...";
             this.buttonSelectFile.UseVisualStyleBackColor = true;
-            this.buttonSelectFile.Click += new System.EventHandler(this.buttonSelectFile_Click);
+            this.buttonSelectFile.Click += new System.EventHandler(this.OnButtonSelectFileClick);
             // 
             // buttonPlay
             // 
@@ -68,7 +68,7 @@
             this.buttonPlay.TabIndex = 2;
             this.buttonPlay.Text = "Play";
             this.buttonPlay.UseVisualStyleBackColor = true;
-            this.buttonPlay.Click += new System.EventHandler(this.buttonPlay_Click);
+            this.buttonPlay.Click += new System.EventHandler(this.OnButtonPlayClick);
             // 
             // buttonStop
             // 
@@ -78,7 +78,7 @@
             this.buttonStop.TabIndex = 2;
             this.buttonStop.Text = "Stop";
             this.buttonStop.UseVisualStyleBackColor = true;
-            this.buttonStop.Click += new System.EventHandler(this.buttonStop_Click);
+            this.buttonStop.Click += new System.EventHandler(this.OnButtonStopClick);
             // 
             // comboBoxAsioDevice
             // 
@@ -109,7 +109,7 @@
             // timer1
             // 
             this.timer1.Interval = 250;
-            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
+            this.timer1.Tick += new System.EventHandler(this.OnTimerTick);
             // 
             // AsioDirectPanel
             // 

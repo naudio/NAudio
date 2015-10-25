@@ -1,15 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 using NAudio.Wave;
 using NAudio.Wave.Compression;
-using System.ComponentModel.Composition;
 
-namespace NAudioDemo
+namespace NAudioDemo.AcmDemo
 {
     public partial class AcmPanel : UserControl
     {
@@ -18,7 +13,7 @@ namespace NAudioDemo
             InitializeComponent();
         }
 
-        private void AcmForm_Load(object sender, EventArgs e)
+        private void OnAcmFormLoad(object sender, EventArgs e)
         {
             RefreshDriversList();
         }
@@ -32,7 +27,7 @@ namespace NAudioDemo
             }
         }
 
-        private void buttonEncode_Click(object sender, EventArgs args)
+        private void OnButtonEncodeClick(object sender, EventArgs args)
         {
             try
             {
@@ -62,7 +57,7 @@ namespace NAudioDemo
             string formatDescription;
             string formatTagDescription;
             AcmDriver.ShowFormatChooseDialog(
-                this.Handle,
+                Handle,
                 "Select Compressed Format:",
                 AcmFormatEnumFlags.Convert,
                 inputFormat,
@@ -161,18 +156,18 @@ namespace NAudioDemo
             return null;
         }
 
-        private void listBoxAcmDrivers_SelectedIndexChanged(object sender, EventArgs e)
+        private void OnListBoxAcmDriversSelectedIndexChanged(object sender, EventArgs e)
         {
             var driver = listBoxAcmDrivers.SelectedItem as AcmDriver;
             richTextBox1.Text = DescribeCodec(driver);
         }
 
-        private void buttonChooseFormat_Click(object sender, EventArgs e)
+        private void OnButtonChooseFormatClick(object sender, EventArgs e)
         {
             WaveFormat selectedFormat;
             string selectedFormatDescription;
             string selectedFormatTagDescription;
-            if(AcmDriver.ShowFormatChooseDialog(this.Handle,"Choose a WaveFormat",AcmFormatEnumFlags.None,
+            if(AcmDriver.ShowFormatChooseDialog(Handle,"Choose a WaveFormat",AcmFormatEnumFlags.None,
                 null,out selectedFormat,
                 out selectedFormatDescription, out selectedFormatTagDescription))
             {
@@ -266,8 +261,6 @@ namespace NAudioDemo
         }
     }
 
-
-    [Export(typeof(INAudioDemoPlugin))]
     public class AcmPanelPlugin : INAudioDemoPlugin
     {
         public string Name

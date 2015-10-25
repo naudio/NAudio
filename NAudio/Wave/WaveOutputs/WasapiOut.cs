@@ -3,6 +3,7 @@ using NAudio.CoreAudioApi;
 using System.Threading;
 using System.Runtime.InteropServices;
 
+// ReSharper disable once CheckNamespace
 namespace NAudio.Wave
 {
     /// <summary>
@@ -33,6 +34,15 @@ namespace NAudio.Wave
         public event EventHandler<StoppedEventArgs> PlaybackStopped;
 
         /// <summary>
+        /// WASAPI Out shared mode, defauult
+        /// </summary>
+        public WasapiOut() :
+            this(GetDefaultAudioEndpoint(), AudioClientShareMode.Shared, true, 200)
+        {
+
+        }
+
+        /// <summary>
         /// WASAPI Out using default audio endpoint
         /// </summary>
         /// <param name="shareMode">ShareMode - shared or exclusive</param>
@@ -61,15 +71,16 @@ namespace NAudio.Wave
         /// <param name="device">Device to use</param>
         /// <param name="shareMode"></param>
         /// <param name="useEventSync">true if sync is done with event. false use sleep.</param>
-        /// <param name="latency"></param>
+        /// <param name="latency">Desired latency in milliseconds</param>
         public WasapiOut(MMDevice device, AudioClientShareMode shareMode, bool useEventSync, int latency)
         {
-            this.audioClient = device.AudioClient;
-            this.mmDevice = device;
+            audioClient = device.AudioClient;
+            mmDevice = device;
             this.shareMode = shareMode;
-            this.isUsingEventSync = useEventSync;
-            this.latencyMilliseconds = latency;
-            this.syncContext = SynchronizationContext.Current;
+            isUsingEventSync = useEventSync;
+            latencyMilliseconds = latency;
+            syncContext = SynchronizationContext.Current;
+            outputFormat = audioClient.MixFormat; // allow the user to query the default format for shared mode streams
         }
 
         static MMDevice GetDefaultAudioEndpoint()
@@ -85,11 +96,11 @@ namespace NAudio.Wave
         private void PlayThread()
         {
             ResamplerDmoStream resamplerDmoStream = null;
-            IWaveProvider playbackProvider = this.sourceProvider;
+            IWaveProvider playbackProvider = sourceProvider;
             Exception exception = null;
             try
             {
-                if (this.dmoResamplerNeeded)
+                if (dmoResamplerNeeded)
                 {
                     resamplerDmoStream = new ResamplerDmoStream(sourceProvider, outputFormat);
                     playbackProvider = resamplerDmoStream;
@@ -123,7 +134,7 @@ namespace NAudio.Wave
                     if (playbackState == PlaybackState.Playing && indexHandle != WaitHandle.WaitTimeout)
                     {
                         // See how much buffer space is available.
-                        int numFramesPadding = 0;
+                        int numFramesPadding;
                         if (isUsingEventSync)
                         {
                             // In exclusive mode, always ask the max = bufferFrameCount = audioClient.BufferSize
@@ -166,7 +177,7 @@ namespace NAudio.Wave
             var handler = PlaybackStopped;
             if (handler != null)
             {
-                if (this.syncContext == null)
+                if (syncContext == null)
                 {
                     handler(this, new StoppedEventArgs(e));
                 }
@@ -203,7 +214,7 @@ namespace NAudio.Wave
         /// <returns>Position in bytes</returns>
         public long GetPosition()
         {
-            if (playbackState == Wave.PlaybackState.Stopped)
+            if (playbackState == PlaybackState.Stopped)
             {
                 return 0;
             }
@@ -236,9 +247,7 @@ namespace NAudio.Wave
                 else
                 {
                     playbackState = PlaybackState.Playing;
-                }
-
-                
+                }                
             }
         }
 
@@ -338,7 +347,7 @@ namespace NAudio.Wave
                 using (new ResamplerDmoStream(waveProvider, outputFormat))
                 {
                 }
-                this.dmoResamplerNeeded = true;
+                dmoResamplerNeeded = true;
             }
             else
             {

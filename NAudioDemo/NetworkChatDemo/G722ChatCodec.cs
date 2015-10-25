@@ -3,11 +3,9 @@ using System.Linq;
 using NAudio.Wave;
 using NAudio.Codecs;
 using System.Diagnostics;
-using System.ComponentModel.Composition;
 
 namespace NAudioDemo.NetworkChatDemo
 {
-    [Export(typeof(INetworkChatCodec))]
     class G722ChatCodec : INetworkChatCodec
     {
         private readonly int bitrate;

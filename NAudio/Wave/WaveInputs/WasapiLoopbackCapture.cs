@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using NAudio.CoreAudioApi;
 
+// ReSharper disable once CheckNamespace
 namespace NAudio.Wave
 {
     /// <summary>
@@ -39,7 +38,7 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// Recording wave format
+        /// Capturing wave format
         /// </summary>
         public override WaveFormat WaveFormat
         {

@@ -33,6 +33,7 @@ namespace NAudioTests.WaveStreams
         }
     }
 
+
     class TestMonoProvider : WaveProvider16
     {
         short current;
@@ -47,3 +48,4 @@ namespace NAudioTests.WaveStreams
         }
     }
 }
+

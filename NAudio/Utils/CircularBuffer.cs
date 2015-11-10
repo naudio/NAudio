@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 
 namespace NAudio.Utils
@@ -109,13 +109,27 @@ namespace NAudio.Utils
         /// </summary>
         public int Count
         {
-            get { return byteCount; }
+            get
+            {
+                lock (lockObject)
+                {
+                    return byteCount;
+                }
+            }
         }
 
         /// <summary>
         /// Resets the buffer
         /// </summary>
         public void Reset()
+        {
+            lock (lockObject)
+            {
+                ResetInner();
+            }
+        }
+
+        private void ResetInner()
         {
             byteCount = 0;
             readPosition = 0;
@@ -128,15 +142,18 @@ namespace NAudio.Utils
         /// <param name="count">Bytes to advance</param>
         public void Advance(int count)
         {
-            if (count >= byteCount)
+            lock (lockObject)
             {
-                Reset();
-            }
-            else
-            {
-                byteCount -= count;
-                readPosition += count;
-                readPosition %= MaxLength;
+                if (count >= byteCount)
+                {
+                    ResetInner();
+                }
+                else
+                {
+                    byteCount -= count;
+                    readPosition += count;
+                    readPosition %= MaxLength;
+                }
             }
         }
     }

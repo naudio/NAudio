@@ -126,6 +126,7 @@
     <Compile Include="WaveStreams\TestWaveProvider.cs" />
     <Compile Include="WaveStreams\VolumeWaveProvider16Tests.cs" />
     <Compile Include="WaveStreams\WaveChannel32Tests.cs" />
+    <Compile Include="WaveStreams\WaveFileForwardOnlyReaderTests.cs" />
     <Compile Include="WaveStreams\WaveFileReaderTests.cs" />
     <Compile Include="WaveStreams\WaveFileWriterTests.cs" />
     <Compile Include="WaveStreams\WdlResamplingSampleProviderTests.cs" />

@@ -154,6 +154,11 @@ namespace NAudio.Wave
         }
 
         /// <summary>
+        /// We can NOT seek within this stream
+        /// </summary>
+        public override bool CanSeek { get { return false; } }
+
+        /// <summary>
         /// Reads bytes from the Wave File
         /// <see cref="Stream.Read"/>
         /// </summary>

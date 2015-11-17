@@ -35,8 +35,8 @@ namespace NAudioTests.WaveStreams
             using (var inputStream = new MemoryStream(fileContents))
             {
                 // act
-                var chunks = new List<RiffChunk>();
-                var chunkReader = new WaveFileChunkForwardOnlyReader();
+                var chunks = new List<RiffChunkData>();
+                var chunkReader = new WaveFileChunkForwardOnlyReader(true);
                 chunkReader.ReadWaveHeader(inputStream);
 
                 // assert
@@ -45,7 +45,7 @@ namespace NAudioTests.WaveStreams
                 Assert.AreEqual(2, chunkReader.WaveFormat.Channels);
                 Assert.AreEqual(8000, chunkReader.WaveFormat.SampleRate);
 
-                Assert.AreEqual(46, chunkReader.DataChunkPosition);
+                Assert.AreEqual(46, inputStream.Position);
                 Assert.AreEqual(0, chunkReader.DataChunkLength);
                 Assert.AreEqual(0, chunks.Count);
             }

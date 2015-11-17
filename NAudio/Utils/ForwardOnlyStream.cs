@@ -69,7 +69,7 @@ namespace NAudio.Utils
         /// </summary>
         public override long Length
         {
-            get { throw new NotSupportedException("Stream is not seekable."); }
+            get { throw new NotSupportedException("Stream doesn't allow seeking."); }
         }
 
         /// <summary>
@@ -79,15 +79,24 @@ namespace NAudio.Utils
         {
             get
             {
-                // Some none seekable streams, don't support reading the position ether.
-                // but for now we are going to assume we can do this.
+               if(!AllowPositionRead)
+                    throw new NotSupportedException("Stream doesn't allow seeking.");
                 return SourceStream.Position;
             }
             set
             {
-                throw new NotSupportedException("Stream is not seekable.");
+                throw new NotSupportedException("Stream doesn't allow seeking.");
             }
         }
+
+        /// <summary>
+        /// Gets or sets a value indication if reading the Position property is allowed
+        /// </summary>
+        /// <remarks>
+        /// Some streams implement none seekable differently.  Sometimes they will track how far
+        /// you have read into the steam for you, but other like the .Net Crypto streams do not.
+        /// </remarks>
+        public bool AllowPositionRead { get; set; }
 
         /// <summary>
         /// Reads from the underlying stream
@@ -102,7 +111,7 @@ namespace NAudio.Utils
         /// </summary>
         public override long Seek(long offset, SeekOrigin origin)
         {
-            throw new NotSupportedException("Stream is not seekable.");
+            throw new NotSupportedException("Stream doesn't allow seeking.");
         }
 
         /// <summary>
@@ -110,7 +119,7 @@ namespace NAudio.Utils
         /// </summary>
         public override void SetLength(long value)
         {
-            throw new NotSupportedException("Stream is not seekable.");
+            throw new NotSupportedException("Stream doesn't allow seeking.");
         }
 
         /// <summary>

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using NAudio.FileFormats.Wav;
 
-namespace NAudio.Wave 
+namespace NAudio.Wave
 {
     /// <summary>This class supports the reading of WAV files from none seekable streams,
     /// providing a repositionable WaveStream that returns the raw data
@@ -13,11 +13,14 @@ namespace NAudio.Wave
     /// </summary>
     public class WaveFileForwardOnlyReader : WaveStream
     {
+        /// <summary>
+        /// This riff chunks that were found.
+        /// </summary>
+        protected readonly List<RiffChunkData> Chunks;
         private readonly WaveFormat waveFormat;
         private readonly bool ownInput;
-        private readonly long dataPosition;
         private readonly long dataChunkLength;
-        private readonly List<RiffChunk> chunks = new List<RiffChunk>();
+        private long currentPosition = 0;
         private readonly object lockObject = new object();
         private Stream waveStream;
 
@@ -30,7 +33,7 @@ namespace NAudio.Wave
         /// fix this reader to support it
         /// </remarks>
         public WaveFileForwardOnlyReader(String waveFile) :
-            this(File.OpenRead(waveFile), true)
+            this(File.OpenRead(waveFile), true, false)
         {
         }
 
@@ -39,21 +42,20 @@ namespace NAudio.Wave
         /// </summary>
         /// <param name="inputStream">The input stream containing a WAV file including header</param>
         public WaveFileForwardOnlyReader(Stream inputStream) :
-           this(inputStream, false)
+           this(inputStream, false, false)
         {
         }
 
-        private WaveFileForwardOnlyReader(Stream inputStream, bool ownInput)
+        private WaveFileForwardOnlyReader(Stream inputStream, bool ownInput, bool storeAllChunks)
         {
             this.waveStream = inputStream;
-            var chunkReader = new WaveFileChunkForwardOnlyReader();
+            var chunkReader = new WaveFileChunkForwardOnlyReader(storeAllChunks);
             try
             {
                 chunkReader.ReadWaveHeader(inputStream);
                 this.waveFormat = chunkReader.WaveFormat;
-                this.dataPosition = chunkReader.DataChunkPosition;
                 this.dataChunkLength = chunkReader.DataChunkLength;
-                this.chunks = chunkReader.RiffChunks;
+                this.Chunks = chunkReader.RiffChunks;
             }
             catch
             {
@@ -64,36 +66,8 @@ namespace NAudio.Wave
 
                 throw;
             }
-            
+
             this.ownInput = ownInput;
-        }
-
-        /// <summary>
-        /// Gets a list of the additional chunks found in this file
-        /// </summary>
-        public List<RiffChunk> ExtraChunks
-        {
-            get
-            {
-                return chunks;
-            }
-        }
-
-        /// <summary>
-        /// Gets the data for the specified chunk
-        /// </summary>
-        public byte[] GetChunkData(RiffChunk chunk)
-        {
-            var dataChunk = chunk as WaveFileChunkForwardOnlyReader.RiffChunkData;
-            if (dataChunk != null)
-                return dataChunk.Data;
-            
-            long oldPosition = waveStream.Position;
-            waveStream.Position = chunk.StreamPosition;
-            byte[] data = new byte[chunk.Length];
-            waveStream.Read(data, 0, data.Length);
-            waveStream.Position = oldPosition;
-            return data;
         }
 
         /// <summary>
@@ -175,20 +149,8 @@ namespace NAudio.Wave
         /// </summary>
         public override long Position
         {
-            get
-            {
-                return waveStream.Position - dataPosition;
-            }
-            set
-            {
-                lock (lockObject)
-                {
-                    value = Math.Min(value, Length);
-                    // make sure we don't get out of sync
-                    value -= (value % waveFormat.BlockAlign);
-                    waveStream.Position = value + dataPosition;
-                }
-            }
+            get { return currentPosition; }
+            set { throw new NotSupportedException("Reader doesn't support seeking."); }
         }
 
         /// <summary>
@@ -199,19 +161,22 @@ namespace NAudio.Wave
         {
             if (count % waveFormat.BlockAlign != 0)
             {
-                throw new ArgumentException(String.Format("Must read complete blocks: requested {0}, block align is {1}",count,this.WaveFormat.BlockAlign));
+                throw new ArgumentException(String.Format("Must read complete blocks: requested {0}, block align is {1}", count, this.WaveFormat.BlockAlign));
             }
             lock (lockObject)
             {
                 // sometimes there is more junk at the end of the file past the data chunk
                 if (Position + count > dataChunkLength)
                 {
-                    count = (int) (dataChunkLength - Position);
+                    count = (int)(dataChunkLength - Position);
                 }
-                return waveStream.Read(array, offset, count);
+
+                var readCount = waveStream.Read(array, offset, count);
+                currentPosition += readCount;
+                return readCount;
             }
         }
-        
+
         /// <summary>
         /// Attempts to read the next sample or group of samples as floating point normalised into the range -1.0f to 1.0f
         /// </summary>
@@ -229,7 +194,7 @@ namespace NAudio.Wave
                     throw new InvalidOperationException("Only 16, 24 or 32 bit PCM or IEEE float audio data supported");
             }
             var sampleFrame = new float[waveFormat.Channels];
-            int bytesToRead = waveFormat.Channels*(waveFormat.BitsPerSample/8);
+            int bytesToRead = waveFormat.Channels * (waveFormat.BitsPerSample / 8);
             byte[] raw = new byte[bytesToRead];
             int bytesRead = Read(raw, 0, bytesToRead);
             if (bytesRead == 0) return null; // end of file
@@ -239,7 +204,7 @@ namespace NAudio.Wave
             {
                 if (waveFormat.BitsPerSample == 16)
                 {
-                    sampleFrame[channel] = BitConverter.ToInt16(raw, offset)/32768f;
+                    sampleFrame[channel] = BitConverter.ToInt16(raw, offset) / 32768f;
                     offset += 2;
                 }
                 else if (waveFormat.BitsPerSample == 24)
@@ -266,16 +231,42 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// Attempts to read a sample into a float. n.b. only applicable for uncompressed formats
-        /// Will normalise the value read into the range -1.0f to 1.0f if it comes from a PCM encoding
+        /// A forward only wave read that will also retrieve the data from the Riff Chunks that are found before the data chunk
         /// </summary>
-        /// <returns>False if the end of the WAV data chunk was reached</returns>
-        [Obsolete("Use ReadNextSampleFrame instead (this version does not support stereo properly)")]
-        public bool TryReadFloat(out float sampleValue)
+        public class WithChunkData : WaveFileForwardOnlyReader
         {
-            var sf = ReadNextSampleFrame();
-            sampleValue = sf != null ? sf[0] : 0;
-            return sf != null;
+            /// <summary>Supports opening a WAV file</summary>
+            /// <remarks>The WAV file format is a real mess, but we will only
+            /// support the basic WAV file format which actually covers the vast
+            /// majority of WAV files out there. For more WAV file format information
+            /// visit www.wotsit.org. If you have a WAV file that can't be read by
+            /// this class, email it to the NAudio project and we will probably
+            /// fix this reader to support it
+            /// </remarks>
+            public WithChunkData(string waveFile)
+                : base(File.OpenRead(waveFile), true, false)
+            {
+            }
+
+            /// <summary>
+            /// Creates a Wave File Reader based on an input stream
+            /// </summary>
+            /// <param name="inputStream">The input stream containing a WAV file including header</param>
+            public WithChunkData(Stream inputStream)
+                : base(inputStream, false, true)
+            {
+            }
+
+            /// <summary>
+            /// Gets a list of the additional Chunks found in this file
+            /// </summary>
+            public IEnumerable<RiffChunkData> ExtraChunks
+            {
+                get
+                {
+                    return Chunks ?? new List<RiffChunkData>();
+                }
+            }
         }
     }
 }

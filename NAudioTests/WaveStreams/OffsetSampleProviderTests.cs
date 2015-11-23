@@ -138,6 +138,17 @@ namespace NAudioTests.WaveStreams
         }
 
         [Test]
+        public void CanFollowTakeWithLeadout()
+        {
+            var source = new TestSampleProvider(32000, 1) { Position = 10 };
+            var osp = new OffsetSampleProvider(source) { TakeSamples = 10, LeadOutSamples = 5};
+
+            
+            var expected = new float[] { 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 0, 0, 0, 0, 0 };
+            osp.AssertReadsExpected(expected);
+        }
+
+        [Test]
         public void MaintainsTakeState()
         {
             var source = new TestSampleProvider(32000, 1);

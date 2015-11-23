@@ -226,7 +226,7 @@ namespace NAudio.Wave.SampleProviders
                 int read = sourceProvider.Read(buffer, offset + samplesRead, samplesRequired);
                 phasePos += read;
                 samplesRead += read;
-                if (read < samplesRequired)
+                if (read < samplesRequired || phasePos >= TakeSamples)
                 {
                     phase++;
                     phasePos = 0;

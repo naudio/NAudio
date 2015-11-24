@@ -221,12 +221,12 @@ namespace NAudio.Wave.SampleProviders
             if (phase == 3) // take
             {
                 int samplesRequired = count - samplesRead;
-                if (TakeSamples != 0)
-                    samplesRequired = Math.Min(samplesRequired, TakeSamples - phasePos);
+                if (takeSamples != 0)
+                    samplesRequired = Math.Min(samplesRequired, takeSamples - phasePos);
                 int read = sourceProvider.Read(buffer, offset + samplesRead, samplesRequired);
                 phasePos += read;
                 samplesRead += read;
-                if (read < samplesRequired || phasePos >= TakeSamples)
+                if (read < samplesRequired || (takeSamples > 0 && phasePos >= takeSamples))
                 {
                     phase++;
                     phasePos = 0;

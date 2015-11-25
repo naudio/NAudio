@@ -120,6 +120,7 @@
     <Compile Include="WaveStreams\MultiplexingWaveProviderTests.cs" />
     <Compile Include="WaveStreams\OffsetSampleProviderTests.cs" />
     <Compile Include="WaveStreams\SampleToWaveProvider24Tests.cs" />
+    <Compile Include="WaveStreams\SilenceProviderTests.cs" />
     <Compile Include="WaveStreams\StereoToMonoProvider16Tests.cs" />
     <Compile Include="WaveStreams\StereoToMonoSampleProviderTests.cs" />
     <Compile Include="WaveStreams\TestSampleProvider.cs" />

@@ -119,6 +119,7 @@
     <Compile Include="CoreAudioApi\Interfaces\ISimpleAudioVolume.cs" />
     <Compile Include="CoreAudioApi\MMDeviceCollection.cs" />
     <Compile Include="CoreAudioApi\PropertyKeys.cs" />
+    <Compile Include="CoreAudioApi\PropVariantNative.cs" />
     <Compile Include="CoreAudioApi\SessionCollection.cs" />
     <Compile Include="CoreAudioApi\SimpleAudioVolume.cs" />
     <Compile Include="Dsp\EnvelopeGenerator.cs" />

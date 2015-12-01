@@ -212,10 +212,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// </summary>
         public void Clear()
         {
-            PropVariantClear(ref this);
+            PropVariantNative.PropVariantClear(ref this);
         }
-
-        [DllImport("ole32.dll")]
-        private static extern int PropVariantClear(ref PropVariant pvar);
     }
 }

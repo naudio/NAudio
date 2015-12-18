@@ -310,6 +310,9 @@
     <Compile Include="..\NAudio\CoreAudioApi\PropVariant.cs">
       <Link>CoreAudioApi\PropVariant.cs</Link>
     </Compile>
+    <Compile Include="..\NAudio\CoreAudioApi\PropVariantNative.cs">
+      <Link>CoreAudioApi\PropVariantNative.cs</Link>
+    </Compile>
     <Compile Include="..\NAudio\CoreAudioApi\Role.cs">
       <Link>CoreAudioApi\Role.cs</Link>
     </Compile>
@@ -808,7 +811,6 @@
     <Compile Include="..\NAudio\Wave\WaveStreams\WaveStream.cs">
       <Link>Wave\WaveStreams\WaveStream.cs</Link>
     </Compile>
-    <Compile Include="CoreAudioApi\PropVariantNative.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Wave\WaveInputs\WasapiCaptureRT.cs" />
     <Compile Include="Wave\WaveOutputs\IWavePlayer.cs" />

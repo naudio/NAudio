@@ -310,6 +310,9 @@
     <Compile Include="..\NAudio\CoreAudioApi\PropVariant.cs">
       <Link>CoreAudioApi\PropVariant.cs</Link>
     </Compile>
+    <Compile Include="..\NAudio\CoreAudioApi\PropVariantNative.cs">
+      <Link>CoreAudioApi\PropVariantNative.cs</Link>
+    </Compile>
     <Compile Include="..\NAudio\CoreAudioApi\Role.cs">
       <Link>CoreAudioApi\Role.cs</Link>
     </Compile>

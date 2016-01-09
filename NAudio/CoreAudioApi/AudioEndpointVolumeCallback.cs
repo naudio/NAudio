@@ -66,7 +66,7 @@ namespace NAudio.CoreAudioApi
             }
 
             //Create combined structure and Fire Event in parent class.
-            var notificationData = new AudioVolumeNotificationData(data.guidEventContext, data.bMuted, data.fMasterVolume, voldata);
+            var notificationData = new AudioVolumeNotificationData(data.guidEventContext, data.bMuted, data.fMasterVolume, voldata, data.guidEventContext);
             parent.FireNotification(notificationData);
         }
     }

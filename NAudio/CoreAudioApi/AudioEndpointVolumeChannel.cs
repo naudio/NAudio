@@ -34,6 +34,23 @@ namespace NAudio.CoreAudioApi
         private readonly uint channel;
         private readonly IAudioEndpointVolume audioEndpointVolume;
 
+        private Guid notificationGuid = Guid.Empty;
+
+        /// <summary>
+        /// GUID to pass to AudioEndpointVolumeCallback
+        /// </summary>
+        public Guid NotificationGuid
+        {
+            get
+            {
+                return notificationGuid;
+            }
+            set
+            {
+                notificationGuid = value;
+            }
+        }
+
         internal AudioEndpointVolumeChannel(IAudioEndpointVolume parent, int channel)
         {
             this.channel = (uint)channel;
@@ -53,7 +70,7 @@ namespace NAudio.CoreAudioApi
             }
             set
             {
-                Marshal.ThrowExceptionForHR(audioEndpointVolume.SetChannelVolumeLevel(channel, value,Guid.Empty));
+                Marshal.ThrowExceptionForHR(audioEndpointVolume.SetChannelVolumeLevel(channel, value, ref this.notificationGuid));
             }
         }
 
@@ -70,7 +87,7 @@ namespace NAudio.CoreAudioApi
             }
             set
             {
-                Marshal.ThrowExceptionForHR(audioEndpointVolume.SetChannelVolumeLevelScalar(channel, value, Guid.Empty));
+                Marshal.ThrowExceptionForHR(audioEndpointVolume.SetChannelVolumeLevelScalar(channel, value, ref this.notificationGuid));
             }
         }
 

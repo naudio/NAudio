@@ -115,6 +115,20 @@ namespace NAudioTests.WaveStreams
         }
 
         [Test]
+        public void LeadOutWithoutTakeOnlyBeginsAfterSourceIsCompletelyRead()
+        {
+            var source = new TestSampleProvider(32000, 1, 10);
+            var osp = new OffsetSampleProvider(source) { LeadOutSamples = 5 };
+
+            var expected = new float[] { 0, 1, 2, 3, 4, 5, 6 };
+            osp.AssertReadsExpected(expected, 7);
+            var expected2 = new float[] { 7, 8, 9, 0, 0, 0 };
+            osp.AssertReadsExpected(expected2, 6);
+            var expected3 = new float[] { 0, 0 };
+            osp.AssertReadsExpected(expected3, 6);
+        }
+
+        [Test]
         public void WaveFormatIsSampeAsSource()
         {
             var source = new TestSampleProvider(32000, 1, 10);
@@ -135,6 +149,17 @@ namespace NAudioTests.WaveStreams
             osp.AssertReadsExpected(expected2);
             var expected3 = new float[] {10, 11, 12, 13, 14, 15}; 
             osp.AssertReadsExpected(expected3);
+        }
+
+        [Test]
+        public void CanFollowTakeWithLeadout()
+        {
+            var source = new TestSampleProvider(32000, 1) { Position = 10 };
+            var osp = new OffsetSampleProvider(source) { TakeSamples = 10, LeadOutSamples = 5};
+
+            
+            var expected = new float[] { 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 0, 0, 0, 0, 0 };
+            osp.AssertReadsExpected(expected);
         }
 
         [Test]

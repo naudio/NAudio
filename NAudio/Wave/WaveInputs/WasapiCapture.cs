@@ -161,13 +161,13 @@ namespace NAudio.CoreAudioApi
                 if (ShareMode == AudioClientShareMode.Shared)
                 {
                     // With EventCallBack and Shared, both latencies must be set to 0
-                    audioClient.Initialize(ShareMode, AudioClientStreamFlags.EventCallback, requestedDuration, 0,
+                    audioClient.Initialize(ShareMode, AudioClientStreamFlags.EventCallback | streamFlags, requestedDuration, 0,
                         waveFormat, Guid.Empty);
                 }
                 else
                 {
                     // With EventCallBack and Exclusive, both latencies must equals
-                    audioClient.Initialize(ShareMode, AudioClientStreamFlags.EventCallback, requestedDuration, requestedDuration,
+                    audioClient.Initialize(ShareMode, AudioClientStreamFlags.EventCallback | streamFlags, requestedDuration, requestedDuration,
                                         waveFormat, Guid.Empty);
                 }
 

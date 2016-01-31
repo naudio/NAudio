@@ -48,6 +48,7 @@ namespace NAudio.CoreAudioApi
             if (audioSessionEventCallback != null)
             {
                 Marshal.ThrowExceptionForHR(audioSessionControlInterface.UnregisterAudioSessionNotification(audioSessionEventCallback));
+                audioSessionEventCallback = null;
             }
             GC.SuppressFinalize(this);
         }
@@ -241,6 +242,7 @@ namespace NAudio.CoreAudioApi
             if (audioSessionEventCallback != null)
             {
                 Marshal.ThrowExceptionForHR(audioSessionControlInterface.UnregisterAudioSessionNotification(audioSessionEventCallback));
+                audioSessionEventCallback = null;
             }
         }
     }

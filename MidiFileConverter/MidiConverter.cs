@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using NAudio.Utils;
 using NAudio.Midi;
@@ -191,7 +192,7 @@ namespace MarkHeath.MidiUtils
                 if (midiFile.FileFormat == 0)
                     outputTrackCount = 2;
                 else
-                    outputTrackCount = midiFile.Tracks;
+                    outputTrackCount = Math.Max(midiFile.Tracks,2); // at least two tracks because we'll move notes onto track 1 always
             }
 
 
@@ -327,11 +328,8 @@ namespace MarkHeath.MidiUtils
             {
                 if (outputFileType == 1)
                 {
-                    // if we are converting type 0 to type 1 and recreating end markers,
-                    if (midiFile.FileFormat == 0)
-                    {
-                        AppendEndMarker(events[1]);
-                    }
+                    // make sure track 1 has an end track marker
+                    AppendEndMarker(events[1]);
                 }
                 // make sure that track zero has an end track marker
                 AppendEndMarker(events[0]);
@@ -397,20 +395,24 @@ namespace MarkHeath.MidiUtils
 
         private bool HasNotes(IList<MidiEvent> midiEvents)
         {
-            foreach (MidiEvent midiEvent in midiEvents)
-            {
-                if (midiEvent.CommandCode == MidiCommandCode.NoteOn)
-                    return true;
-            }
-            return false;
+            return midiEvents.Any(midiEvent => midiEvent.CommandCode == MidiCommandCode.NoteOn);
+        }
+
+        private bool IsEndTrack(MidiEvent midiEvent)
+        {
+            var meta = midiEvent as MetaEvent;
+            return meta?.MetaEventType == MetaEventType.EndTrack;
         }
 
         private void AppendEndMarker(IList<MidiEvent> eventList)
         {
             long absoluteTime = 0;
+            
             if (eventList.Count > 0)
                 absoluteTime = eventList[eventList.Count - 1].AbsoluteTime;
-            eventList.Add(new MetaEvent(MetaEventType.EndTrack, 0, absoluteTime));
+            
+            if (!IsEndTrack(eventList.LastOrDefault()))
+                eventList.Add(new MetaEvent(MetaEventType.EndTrack, 0, absoluteTime));
         }
 
         private string CreateEzdName(string[] context)

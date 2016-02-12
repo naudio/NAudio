@@ -75,14 +75,14 @@ namespace NAudio.Utils
             this.labelCopyright.Name = "labelCopyright";
             this.labelCopyright.Size = new System.Drawing.Size(149, 13);
             this.labelCopyright.TabIndex = 2;
-            this.labelCopyright.Text = "Copyright © Mark Heath 2007";
+            this.labelCopyright.Text = "Copyright © Mark Heath 2016";
             // 
             // linkLabelFeedback
             // 
             this.linkLabelFeedback.AutoSize = true;
             this.linkLabelFeedback.Location = new System.Drawing.Point(13, 101);
             this.linkLabelFeedback.Name = "linkLabelFeedback";
-            this.linkLabelFeedback.Size = new System.Drawing.Size(150, 13);
+            this.linkLabelFeedback.Size = new System.Drawing.Size(118, 13);
             this.linkLabelFeedback.TabIndex = 3;
             this.linkLabelFeedback.TabStop = true;
             this.linkLabelFeedback.Text = "mark.heath@gmail.com";

@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Mark Heath")]
 [assembly: AssemblyProduct("MIDI File Converter")]
-[assembly: AssemblyCopyright("Copyright © Mark Heath 2007")]
+[assembly: AssemblyCopyright("Copyright © Mark Heath 2016")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -29,8 +29,8 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("0.3.10.0")]
-[assembly: AssemblyFileVersion("0.3.10.0")]
+[assembly: AssemblyVersion("0.3.11.0")]
+[assembly: AssemblyFileVersion("0.3.11.0")]
 
 // build 1 29 Oct 2006
 // build 1 is experimental
@@ -73,6 +73,8 @@ using System.Runtime.InteropServices;
 // and converting from type 0 to type 1
 // build 10 5 Apr 2007
 // updated to use new MidiEventCollection
+// build 11 12 Feb 2016
+// ensuring end track markers persent converting type 1 to 1
 
 // revamp help for advanced options
 

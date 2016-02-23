@@ -283,7 +283,6 @@ namespace NAudio.Wave
         /// <summary>
         /// Obsolete property
         /// </summary>
-        [Obsolete]
         public float Volume
         {
             get { return volume; }

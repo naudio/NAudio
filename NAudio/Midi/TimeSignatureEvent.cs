@@ -50,19 +50,6 @@ namespace NAudio.Midi
         }
 
         /// <summary>
-        /// Creates a new time signature event with the specified parameters
-        /// </summary>
-        [Obsolete("Use the constructor that has absolute time first")]
-        public TimeSignatureEvent(int numerator, int denominator, int ticksInMetronomeClick, int no32ndNotesInQuarterNote, long absoluteTime)
-            : base(MetaEventType.TimeSignature, 4, absoluteTime)
-        {
-            this.numerator = (byte) numerator;
-            this.denominator = (byte) denominator;
-            this.ticksInMetronomeClick = (byte) ticksInMetronomeClick;
-            this.no32ndNotesInQuarterNote = (byte) no32ndNotesInQuarterNote;
-        }
-
-        /// <summary>
         /// Numerator (number of beats in a bar)
         /// </summary>
         public int Numerator

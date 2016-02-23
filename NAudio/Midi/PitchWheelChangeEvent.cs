@@ -57,7 +57,7 @@ namespace NAudio.Midi
         }
 
         /// <summary>
-        /// Pitch Wheel Value 0 is minimum, 0x2000 (8192) is default, 0x4000 (16384) is maximum
+        /// Pitch Wheel Value 0 is minimum, 0x2000 (8192) is default, 0x3FFF (16383) is maximum
         /// </summary>
         public int Pitch
         {
@@ -67,9 +67,9 @@ namespace NAudio.Midi
             }
             set
             {
-                if (value < 0 || value > 0x4000)
+                if (value < 0 || value >= 0x4000)
                 {
-                    throw new ArgumentOutOfRangeException("value", "Pitch value must be in the range 0 - 0x4000");
+                    throw new ArgumentOutOfRangeException("value", "Pitch value must be in the range 0 - 0x3FFF");
                 }
                 pitch = value;
             }

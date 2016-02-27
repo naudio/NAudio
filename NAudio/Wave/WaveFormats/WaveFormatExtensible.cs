@@ -33,10 +33,7 @@ namespace NAudio.Wave
             waveFormatTag = WaveFormatEncoding.Extensible;
             extraSize = 22;
             wValidBitsPerSample = (short) bits;
-            for (int n = 0; n < channels; n++)
-            {
-                dwChannelMask |= (1 << n);
-            }
+            dwChannelMask = channelMaskForChannels(channels);
             if (bits == 32)
             {
                 // KSDATAFORMAT_SUBTYPE_IEEE_FLOAT
@@ -95,6 +92,31 @@ namespace NAudio.Wave
                 dwChannelMask,
                 subFormat,
                 extraSize);
+        }
+
+        /// <summary>
+        /// Picks a channel mask for a specified number of channels.
+        /// </summary>
+        /// <param name="channels">Number of channels.</param>
+        /// <returns>Channel Mask</returns>
+        private static int channelMaskForChannels(int channels)
+        {
+            if (channels == 8 && System.Environment.OSVersion.Version.Major >= 6)
+            {
+                // For 8 channels, the below logic would return 0xFF (KSAUDIO_SPEAKER_7POINT1) which is
+                // not supported in Vista and later. Using 0x63F (KSAUDIO_SPEAKER_7POINT1_SURROUND) instead.
+                // https://msdn.microsoft.com/en-us/library/windows/hardware/ff536440(v=vs.85).aspx
+                return 0x63F;
+            }
+            else
+            {
+                int channelMask = 0;
+                for (int n = 0; n < channels; n++)
+                {
+                    channelMask |= (1 << n);
+                }
+                return channelMask;
+            }
         }
     }
 }

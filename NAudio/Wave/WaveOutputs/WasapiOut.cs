@@ -325,6 +325,25 @@ namespace NAudio.Wave
                             correctSampleRateFormat = null;
                         }
 
+                        // If still null and we're using exclusive mode, try to get the device format property.
+                        if (correctSampleRateFormat == null && shareMode == AudioClientShareMode.Exclusive)
+                        {
+                            // Based on https://stackoverflow.com/questions/22616924/wasapi-choosing-a-wave-format-for-exclusive-output
+                            byte[] waveFormatBytes = (byte[])mmDevice.Properties[PropertyKeys.PKEY_AudioEngine_DeviceFormat].Value;
+                            if (waveFormatBytes != null)
+                            {
+                                GCHandle handle = GCHandle.Alloc(waveFormatBytes, GCHandleType.Pinned);
+                                try
+                                {
+                                    correctSampleRateFormat = (WaveFormatExtensible)Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(WaveFormatExtensible));
+                                }
+                                finally
+                                {
+                                    handle.Free();
+                                }
+                            }
+                        }
+
                         // If still null, then test on the PCM16, 2 channels
                         if (correctSampleRateFormat == null)
                         {

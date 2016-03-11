@@ -98,6 +98,17 @@ namespace NAudio.Wave
         }
 
         /// <summary>
+        /// Takes a specified amount of time from the source stream
+        /// </summary>
+        /// <param name="sampleProvider">Source sample provider</param>
+        /// <param name="takeDuration">Duration to take</param>
+        /// <returns>A sample provider that reads up to the specified amount of time</returns>
+        public static ISampleProvider Take(this ISampleProvider sampleProvider, TimeSpan takeDuration)
+        {
+            return new OffsetSampleProvider(sampleProvider) { Take = takeDuration };
+        }
+
+        /// <summary>
         /// Converts a Stereo Sample Provider to mono, allowing mixing of channel volume
         /// </summary>
         /// <param name="sourceProvider">Stereo Source Provider</param>

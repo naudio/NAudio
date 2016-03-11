@@ -119,6 +119,7 @@
     <Compile Include="CoreAudioApi\Interfaces\ISimpleAudioVolume.cs" />
     <Compile Include="CoreAudioApi\MMDeviceCollection.cs" />
     <Compile Include="CoreAudioApi\PropertyKeys.cs" />
+    <Compile Include="CoreAudioApi\PropVariantNative.cs" />
     <Compile Include="CoreAudioApi\SessionCollection.cs" />
     <Compile Include="CoreAudioApi\SimpleAudioVolume.cs" />
     <Compile Include="Dsp\EnvelopeGenerator.cs" />
@@ -452,6 +453,7 @@
     <Compile Include="MediaFoundation\MediaFoundationTransform.cs" />
     <Compile Include="Wave\WaveProviders\MixingWaveProvider32.cs" />
     <Compile Include="Wave\WaveProviders\MultiplexingWaveProvider.cs" />
+    <Compile Include="Wave\WaveProviders\SilenceWaveProvider.cs" />
     <Compile Include="Wave\WaveProviders\StereoToMonoProvider16.cs" />
     <Compile Include="Wave\WaveProviders\MonoToStereoProvider16.cs" />
     <Compile Include="Wave\WaveProviders\VolumeWaveProvider16.cs" />
@@ -481,6 +483,7 @@
     <Compile Include="Wave\WaveStreams\WaveChannel32.cs" />
     <Compile Include="Wave\SampleProviders\SampleChannel.cs" />
     <Compile Include="Wave\WaveStreams\WaveFileReader.cs" />
+    <Compile Include="Wave\WaveStreams\WaveFormatConversionProvider.cs" />
     <Compile Include="Wave\WaveStreams\WaveFormatConversionStream.cs" />
     <Compile Include="Wave\WaveStreams\WaveInBuffer.cs" />
     <Compile Include="Wave\WaveStreams\WaveMixerStream32.cs" />

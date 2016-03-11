@@ -38,6 +38,22 @@ namespace NAudio.CoreAudioApi
         private readonly EEndpointHardwareSupport hardwareSupport;
         private AudioEndpointVolumeCallback callBack;
 
+        private Guid notificationGuid = Guid.Empty;
+
+        /// <summary>
+        /// GUID to pass to AudioEndpointVolumeCallback
+        /// </summary>
+        public Guid NotificationGuid {
+            get
+            {
+                return notificationGuid;
+            }
+            set
+            {
+                notificationGuid = value;
+            }
+        }
+
         /// <summary>
         /// On Volume Notification
         /// </summary>
@@ -100,7 +116,7 @@ namespace NAudio.CoreAudioApi
             }
             set
             {
-                Marshal.ThrowExceptionForHR(audioEndPointVolume.SetMasterVolumeLevel(value, Guid.Empty));
+                Marshal.ThrowExceptionForHR(audioEndPointVolume.SetMasterVolumeLevel(value, ref notificationGuid));
             }
         }
 
@@ -117,7 +133,7 @@ namespace NAudio.CoreAudioApi
             }
             set
             {
-                Marshal.ThrowExceptionForHR(audioEndPointVolume.SetMasterVolumeLevelScalar(value, Guid.Empty));
+                Marshal.ThrowExceptionForHR(audioEndPointVolume.SetMasterVolumeLevelScalar(value, ref notificationGuid));
             }
         }
 
@@ -134,7 +150,7 @@ namespace NAudio.CoreAudioApi
             }
             set
             {
-                Marshal.ThrowExceptionForHR(audioEndPointVolume.SetMute(value, Guid.Empty));
+                Marshal.ThrowExceptionForHR(audioEndPointVolume.SetMute(value, ref notificationGuid));
             }
         }
 
@@ -143,7 +159,7 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public void VolumeStepUp()
         {
-            Marshal.ThrowExceptionForHR(audioEndPointVolume.VolumeStepUp(Guid.Empty));
+            Marshal.ThrowExceptionForHR(audioEndPointVolume.VolumeStepUp(ref notificationGuid));
         }
 
         /// <summary>
@@ -151,7 +167,7 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public void VolumeStepDown()
         {
-            Marshal.ThrowExceptionForHR(audioEndPointVolume.VolumeStepDown(Guid.Empty));
+            Marshal.ThrowExceptionForHR(audioEndPointVolume.VolumeStepDown(ref notificationGuid));
         }
 
         /// <summary>

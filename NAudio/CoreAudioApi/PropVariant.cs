@@ -214,10 +214,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         [Obsolete("Call with pointer instead")]
         public void Clear()
         {
-            var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(this));
-            Marshal.StructureToPtr(this, ptr, false);
-            PropVariantClear(ptr);
-            Marshal.FreeHGlobal(ptr);
+            PropVariantNative.PropVariantClear(ref this);
         }
 
         /// <summary>
@@ -225,10 +222,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// </summary>
         public static void Clear(IntPtr ptr)
         {
-            PropVariantClear(ptr);
+            PropVariantNative.PropVariantClear(ptr);
         }
-
-        [DllImport("ole32.dll")]
-        private static extern int PropVariantClear(IntPtr pvar);
     }
 }

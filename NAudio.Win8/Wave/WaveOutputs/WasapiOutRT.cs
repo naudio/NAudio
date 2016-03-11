@@ -10,6 +10,7 @@ using NAudio.CoreAudioApi.Interfaces;
 using NAudio.Dsp;
 using NAudio.Wave;
 using Windows.Media.Devices;
+using NAudio.Utils;
 using NAudio.Wave.SampleProviders;
 
 namespace NAudio.Win8.Wave.WaveOutputs
@@ -95,7 +96,7 @@ namespace NAudio.Win8.Wave.WaveOutputs
         {
             audioClientProperties = new AudioClientProperties()
             {
-                cbSize = (uint) Marshal.SizeOf<AudioClientProperties>(),
+                cbSize = (uint) MarshalHelpers.SizeOf<AudioClientProperties>(),
                 bIsOffload = Convert.ToInt32(useHardwareOffload),
                 eCategory = category,
                 Options = options

@@ -825,7 +825,9 @@
     <Compile Include="..\NAudio\Wave\WaveStreams\WaveStream.cs">
       <Link>Wave\WaveStreams\WaveStream.cs</Link>
     </Compile>
+    <Compile Include="CoreAudioApi\PropVariantNative.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utils\MarshalHelpers.cs" />
     <Compile Include="Wave\WaveOutputs\IWavePlayer.cs" />
   </ItemGroup>
   <ItemGroup />

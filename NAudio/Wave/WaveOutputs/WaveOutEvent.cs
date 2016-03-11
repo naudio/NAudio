@@ -187,6 +187,7 @@ namespace NAudio.Wave
             if (playbackState == PlaybackState.Playing)
             {
                 MmResult result;
+                playbackState = PlaybackState.Paused; // set this here to avoid a deadlock problem with some drivers
                 lock (waveOutLock)
                 {
                     result = WaveInterop.waveOutPause(hWaveOut);
@@ -195,7 +196,6 @@ namespace NAudio.Wave
                 {
                     throw new MmException(result, "waveOutPause");
                 }
-                playbackState = PlaybackState.Paused;
             }
         }
 
@@ -283,7 +283,6 @@ namespace NAudio.Wave
         /// <summary>
         /// Obsolete property
         /// </summary>
-        [Obsolete]
         public float Volume
         {
             get { return volume; }

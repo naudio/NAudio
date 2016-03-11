@@ -310,6 +310,9 @@
     <Compile Include="..\NAudio\CoreAudioApi\PropVariant.cs">
       <Link>CoreAudioApi\PropVariant.cs</Link>
     </Compile>
+    <Compile Include="..\NAudio\CoreAudioApi\PropVariantNative.cs">
+      <Link>CoreAudioApi\PropVariantNative.cs</Link>
+    </Compile>
     <Compile Include="..\NAudio\CoreAudioApi\Role.cs">
       <Link>CoreAudioApi\Role.cs</Link>
     </Compile>
@@ -585,6 +588,9 @@
     </Compile>
     <Compile Include="..\NAudio\Utils\IgnoreDisposeStream.cs">
       <Link>Utils\IgnoreDisposeStream.cs</Link>
+    </Compile>
+    <Compile Include="..\NAudio\Utils\MarshalHelpers.cs">
+      <Link>Utils\MarshalHelpers.cs</Link>
     </Compile>
     <Compile Include="..\NAudio\Utils\MergeSort.cs">
       <Link>Utils\MergeSort.cs</Link>

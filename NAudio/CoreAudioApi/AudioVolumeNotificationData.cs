@@ -33,6 +33,7 @@ namespace NAudio.CoreAudioApi
         private readonly float masterVolume;
         private readonly int channels;
         private readonly float[] channelVolume;
+        private readonly Guid guid;
 
         /// <summary>
         /// Event Context
@@ -48,6 +49,14 @@ namespace NAudio.CoreAudioApi
         public bool Muted
         {
             get { return muted; }
+        }
+
+        /// <summary>
+        /// Guid that raised the event
+        /// </summary>
+        public Guid Guid
+        {
+            get { return guid; }
         }
 
         /// <summary>
@@ -81,13 +90,15 @@ namespace NAudio.CoreAudioApi
         /// <param name="muted"></param>
         /// <param name="masterVolume"></param>
         /// <param name="channelVolume"></param>
-        public AudioVolumeNotificationData(Guid eventContext, bool muted, float masterVolume, float[] channelVolume)
+        /// <param name="guid"></param>
+        public AudioVolumeNotificationData(Guid eventContext, bool muted, float masterVolume, float[] channelVolume, Guid guid)
         {
             this.eventContext = eventContext;
             this.muted = muted;
             this.masterVolume = masterVolume;
             channels = channelVolume.Length;
             this.channelVolume = channelVolume;
+            this.guid = guid;
         }
     }
 }

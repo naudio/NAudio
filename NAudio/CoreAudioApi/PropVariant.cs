@@ -23,6 +23,7 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using NAudio.Utils;
 
 namespace NAudio.CoreAudioApi.Interfaces
 {
@@ -191,7 +192,7 @@ namespace NAudio.CoreAudioApi.Interfaces
                     case VarEnum.VT_VECTOR | VarEnum.VT_UI1:
                         return GetBlob();
                     case VarEnum.VT_CLSID:
-                        return (Guid)Marshal.PtrToStructure(pointerValue, typeof(Guid));
+                        return MarshalHelpers.PtrToStructure<Guid>(pointerValue);
                     case VarEnum.VT_BOOL:
                         switch (boolVal)
                         {
@@ -203,19 +204,31 @@ namespace NAudio.CoreAudioApi.Interfaces
                                 throw new NotSupportedException("PropVariant VT_BOOL must be either -1 or 0");
                         }
                 }
-                throw new NotImplementedException("PropVariant " + ve.ToString());
+                throw new NotImplementedException("PropVariant " + ve);
             }
         }
 
         /// <summary>
         /// allows freeing up memory, might turn this into a Dispose method?
         /// </summary>
+        [Obsolete("Call with pointer instead")]
         public void Clear()
         {
-            PropVariantClear(ref this);
+            var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(this));
+            Marshal.StructureToPtr(this, ptr, false);
+            PropVariantClear(ptr);
+            Marshal.FreeHGlobal(ptr);
+        }
+
+        /// <summary>
+        /// Clears with a known pointer
+        /// </summary>
+        public static void Clear(IntPtr ptr)
+        {
+            PropVariantClear(ptr);
         }
 
         [DllImport("ole32.dll")]
-        private static extern int PropVariantClear(ref PropVariant pvar);
+        private static extern int PropVariantClear(IntPtr pvar);
     }
 }

@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace NAudio.MediaFoundation
 {
@@ -43,7 +41,7 @@ namespace NAudio.MediaFoundation
         ///     DWORD dwOutputIDArraySize,
         ///     /* [size_is][out] */ __RPC__out_ecount_full(dwOutputIDArraySize) DWORD *pdwOutputIDs) = 0;
         /// </remarks>
-        void GetStreamIds([In] int dwInputIDArraySize, [In, Out] int[] pdwInputIDs, [In] int dwOutputIDArraySize, [In, Out] int[] pdwOutputIDs);
+        void GetStreamIds([In] int dwInputIdArraySize, [In, Out] IntPtr pdwInputIDs, [In] int dwOutputIdArraySize, [In, Out] IntPtr pdwOutputIDs);
 
         /// <summary>
         /// Gets the buffer requirements and other information for an input stream on this Media Foundation transform (MFT). 
@@ -53,7 +51,7 @@ namespace NAudio.MediaFoundation
         ///     DWORD dwInputStreamID,
         ///     /* [out] */ __RPC__out MFT_INPUT_STREAM_INFO *pStreamInfo) = 0;
         /// </remarks>
-        void GetInputStreamInfo([In] int dwInputStreamID, [Out] out MFT_INPUT_STREAM_INFO pStreamInfo);
+        void GetInputStreamInfo([In] int dwInputStreamId, [Out] out MFT_INPUT_STREAM_INFO pStreamInfo);
 
         /// <summary>
         /// Gets the buffer requirements and other information for an output stream on this Media Foundation transform (MFT). 
@@ -63,7 +61,7 @@ namespace NAudio.MediaFoundation
         ///     DWORD dwOutputStreamID,
         ///     /* [out] */ __RPC__out MFT_OUTPUT_STREAM_INFO *pStreamInfo) = 0;
         /// </remarks>
-        void GetOutputStreamInfo([In] int dwOutputStreamID, [Out] out MFT_OUTPUT_STREAM_INFO pStreamInfo);
+        void GetOutputStreamInfo([In] int dwOutputStreamId, [Out] out MFT_OUTPUT_STREAM_INFO pStreamInfo);
 
         /// <summary>
         /// Gets the global attribute store for this Media Foundation transform (MFT). 
@@ -82,7 +80,7 @@ namespace NAudio.MediaFoundation
         ///     DWORD dwInputStreamID,
         ///     /* [out] */ __RPC__deref_out_opt IMFAttributes **pAttributes) = 0;
         /// </remarks>
-        void GetInputStreamAttributes([In] int dwInputStreamID, [Out] out IMFAttributes pAttributes);
+        void GetInputStreamAttributes([In] int dwInputStreamId, [Out] out IMFAttributes pAttributes);
 
         /// <summary>
         /// Retrieves the attribute store for an output stream on this MFT.
@@ -92,7 +90,7 @@ namespace NAudio.MediaFoundation
         ///     DWORD dwOutputStreamID,
         ///     /* [out] */ __RPC__deref_out_opt IMFAttributes **pAttributes) = 0;
         /// </remarks>
-        void GetOutputStreamAttributes([In] int dwOutputStreamID, [Out] out IMFAttributes pAttributes);
+        void GetOutputStreamAttributes([In] int dwOutputStreamId, [Out] out IMFAttributes pAttributes);
 
         /// <summary>
         /// Removes an input stream from this MFT.
@@ -101,7 +99,7 @@ namespace NAudio.MediaFoundation
         /// virtual HRESULT STDMETHODCALLTYPE DeleteInputStream( 
         ///     DWORD dwStreamID) = 0;
         /// </remarks>
-        void DeleteInputStream([In] int dwOutputStreamID);
+        void DeleteInputStream([In] int dwOutputStreamId);
 
         /// <summary>
         /// Adds one or more new input streams to this MFT.
@@ -111,7 +109,7 @@ namespace NAudio.MediaFoundation
         ///     DWORD cStreams,
         ///     /* [in] */ __RPC__in DWORD *adwStreamIDs) = 0;
         /// </remarks>
-        void AddInputStreams([In] int cStreams, [In] int[] adwStreamIDs);
+        void AddInputStreams([In] int cStreams, [In] IntPtr adwStreamIDs);
 
         /// <summary>
         /// Gets an available media type for an input stream on this Media Foundation transform (MFT). 
@@ -122,7 +120,7 @@ namespace NAudio.MediaFoundation
         ///     DWORD dwTypeIndex,
         ///     /* [out] */ __RPC__deref_out_opt IMFMediaType **ppType) = 0;
         /// </remarks>
-        void GetInputAvailableType([In] int dwInputStreamID, [In] int dwTypeIndex, [Out] out IMFMediaType ppType);
+        void GetInputAvailableType([In] int dwInputStreamId, [In] int dwTypeIndex, [Out] out IMFMediaType ppType);
 
         /// <summary>
         /// Retrieves an available media type for an output stream on this MFT.
@@ -133,7 +131,7 @@ namespace NAudio.MediaFoundation
         ///     DWORD dwTypeIndex,
         ///     /* [out] */ __RPC__deref_out_opt IMFMediaType **ppType) = 0;
         /// </remarks>
-        void GetOutputAvailableType([In] int dwOutputStreamID, [In] int dwTypeIndex, [Out] out IMFMediaType ppType);
+        void GetOutputAvailableType([In] int dwOutputStreamId, [In] int dwTypeIndex, [Out] out IMFMediaType ppType);
 
         /// <summary>
         /// Sets, tests, or clears the media type for an input stream on this Media Foundation transform (MFT). 
@@ -144,7 +142,7 @@ namespace NAudio.MediaFoundation
         ///     /* [in] */ __RPC__in_opt IMFMediaType *pType,
         ///     DWORD dwFlags) = 0;
         /// </remarks>
-        void SetInputType([In] int dwInputStreamID, [In] IMFMediaType pType, [In] _MFT_SET_TYPE_FLAGS dwFlags);
+        void SetInputType([In] int dwInputStreamId, [In] IMFMediaType pType, [In] _MFT_SET_TYPE_FLAGS dwFlags);
 
         /// <summary>
         /// Sets, tests, or clears the media type for an output stream on this Media Foundation transform (MFT). 
@@ -155,7 +153,7 @@ namespace NAudio.MediaFoundation
         ///     /* [in] */ __RPC__in_opt IMFMediaType *pType,
         ///     DWORD dwFlags) = 0;
         /// </remarks>
-        void SetOutputType([In] int dwOutputStreamID, [In] IMFMediaType pType, [In] _MFT_SET_TYPE_FLAGS dwFlags);
+        void SetOutputType([In] int dwOutputStreamId, [In] IMFMediaType pType, [In] _MFT_SET_TYPE_FLAGS dwFlags);
 
         /// <summary>
         /// Gets the current media type for an input stream on this Media Foundation transform (MFT). 
@@ -165,7 +163,7 @@ namespace NAudio.MediaFoundation
         ///     DWORD dwInputStreamID,
         ///     /* [out] */ __RPC__deref_out_opt IMFMediaType **ppType) = 0;
         /// </remarks>
-        void GetInputCurrentType([In] int dwInputStreamID, [Out] out IMFMediaType ppType);
+        void GetInputCurrentType([In] int dwInputStreamId, [Out] out IMFMediaType ppType);
 
         /// <summary>
         /// Gets the current media type for an output stream on this Media Foundation transform (MFT). 
@@ -175,7 +173,7 @@ namespace NAudio.MediaFoundation
         ///     DWORD dwOutputStreamID,
         ///     /* [out] */ __RPC__deref_out_opt IMFMediaType **ppType) = 0;
         /// </remarks>
-        void GetOutputCurrentType([In] int dwOutputStreamID, [Out] out IMFMediaType ppType);
+        void GetOutputCurrentType([In] int dwOutputStreamId, [Out] out IMFMediaType ppType);
 
         /// <summary>
         /// Queries whether an input stream on this Media Foundation transform (MFT) can accept more data. 
@@ -185,7 +183,7 @@ namespace NAudio.MediaFoundation
         ///     DWORD dwInputStreamID,
         ///     /* [out] */ __RPC__out DWORD *pdwFlags) = 0;
         /// </remarks>
-        void GetInputStatus([In] int dwInputStreamID, [Out] out _MFT_INPUT_STATUS_FLAGS pdwFlags);
+        void GetInputStatus([In] int dwInputStreamId, [Out] out _MFT_INPUT_STATUS_FLAGS pdwFlags);
 
         /// <summary>
         /// Queries whether the Media Foundation transform (MFT) is ready to produce output data. 
@@ -194,7 +192,7 @@ namespace NAudio.MediaFoundation
         /// virtual HRESULT STDMETHODCALLTYPE GetOutputStatus( 
         ///     /* [out] */ __RPC__out DWORD *pdwFlags) = 0;
         /// </remarks>
-        void GetOutputStatus([In] int dwInputStreamID, [Out] out _MFT_OUTPUT_STATUS_FLAGS pdwFlags);
+        void GetOutputStatus([In] int dwInputStreamId, [Out] out _MFT_OUTPUT_STATUS_FLAGS pdwFlags);
 
         /// <summary>
         /// Sets the range of time stamps the client needs for output. 
@@ -214,7 +212,7 @@ namespace NAudio.MediaFoundation
         ///     DWORD dwInputStreamID,
         ///     /* [in] */ __RPC__in_opt IMFMediaEvent *pEvent) = 0;
         /// </remarks>
-        void ProcessEvent([In] int dwInputStreamID, [In] IMFMediaEvent pEvent);
+        void ProcessEvent([In] int dwInputStreamId, [In] IMFMediaEvent pEvent);
 
         /// <summary>
         /// Sends a message to the Media Foundation transform (MFT). 
@@ -235,7 +233,7 @@ namespace NAudio.MediaFoundation
         ///     IMFSample *pSample,
         ///     DWORD dwFlags) = 0;
         /// </remarks>
-        void ProcessInput([In] int dwInputStreamID, [In] IMFSample pSample, int dwFlags);
+        void ProcessInput([In] int dwInputStreamId, [In] IMFSample pSample, int dwFlags);
 
         /// <summary>
         /// Generates output from the current input data. 

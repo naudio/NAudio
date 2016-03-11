@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using NAudio.CoreAudioApi.Interfaces;
 
 namespace NAudio.MediaFoundation
 {
@@ -34,7 +33,7 @@ namespace NAudio.MediaFoundation
         /// <summary>
         /// Seeks to a new position in the media source.
         /// </summary>
-        void SetCurrentPosition([In, MarshalAs(UnmanagedType.LPStruct)] Guid guidTimeFormat, [In] ref PropVariant varPosition);
+        void SetCurrentPosition([In, MarshalAs(UnmanagedType.LPStruct)] Guid guidTimeFormat, [In] IntPtr varPosition);
         /// <summary>
         /// Reads the next sample from the media source.
         /// </summary>
@@ -55,7 +54,7 @@ namespace NAudio.MediaFoundation
         /// Gets an attribute from the underlying media source.
         /// </summary>
         [PreserveSig]
-        int GetPresentationAttribute([In] int dwStreamIndex, [In, MarshalAs(UnmanagedType.LPStruct)] Guid guidAttribute, [Out] out PropVariant pvarAttribute);
+        int GetPresentationAttribute([In] int dwStreamIndex, [In, MarshalAs(UnmanagedType.LPStruct)] Guid guidAttribute, [Out] IntPtr pvarAttribute);
     }
 
     /// <summary>

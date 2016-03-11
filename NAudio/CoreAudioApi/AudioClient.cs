@@ -1,6 +1,7 @@
 ﻿using System;
 using NAudio.CoreAudioApi.Interfaces;
 using System.Runtime.InteropServices;
+using NAudio.Utils;
 using NAudio.Wave;
 
 namespace NAudio.CoreAudioApi
@@ -233,6 +234,11 @@ namespace NAudio.CoreAudioApi
             return IsFormatSupported(shareMode, desiredFormat, out closestMatchFormat);
         }
 
+        private IntPtr GetPointerToPointer()
+        {
+            return Marshal.AllocHGlobal(MarshalHelpers.SizeOf<IntPtr>());
+        }
+
         /// <summary>
         /// Determines if the specified output format is supported in shared mode
         /// </summary>
@@ -242,10 +248,22 @@ namespace NAudio.CoreAudioApi
         /// <returns>True if the format is supported</returns>
         public bool IsFormatSupported(AudioClientShareMode shareMode, WaveFormat desiredFormat, out WaveFormatExtensible closestMatchFormat)
         {
-            int hresult = audioClientInterface.IsFormatSupported(shareMode, desiredFormat, out closestMatchFormat);
+            IntPtr pointerToPtr = GetPointerToPointer(); // IntPtr.Zero; // Marshal.AllocHGlobal(Marshal.SizeOf<WaveFormatExtensible>());
+            closestMatchFormat = null;
+            int hresult = audioClientInterface.IsFormatSupported(shareMode, desiredFormat, pointerToPtr);
+
+            var closestMatchPtr = MarshalHelpers.PtrToStructure<IntPtr>(pointerToPtr);
+
+            if (closestMatchPtr != IntPtr.Zero)
+            {
+                closestMatchFormat = MarshalHelpers.PtrToStructure<WaveFormatExtensible>(closestMatchPtr);
+                Marshal.FreeCoTaskMem(closestMatchPtr);
+            }
+            Marshal.FreeHGlobal(pointerToPtr);
             // S_OK is 0, S_FALSE = 1
             if (hresult == 0)
             {
+
                 // directly supported
                 return true;
             }
@@ -255,7 +273,8 @@ namespace NAudio.CoreAudioApi
             }
             if (hresult == (int)AudioClientErrors.UnsupportedFormat)
             {
-                return false;
+                // Succeeded but the specified format is not supported in exclusive mode.
+                return shareMode != AudioClientShareMode.Exclusive;
             }
             Marshal.ThrowExceptionForHR(hresult);
             // shouldn't get here

@@ -164,6 +164,7 @@
     <Compile Include="Midi\MidiInMessageEventArgs.cs" />
     <Compile Include="Utils\ByteArrayExtensions.cs" />
     <Compile Include="Utils\FieldDescriptionHelper.cs" />
+    <Compile Include="Utils\MarshalHelpers.cs" />
     <Compile Include="Utils\WavePositionExtensions.cs" />
     <Compile Include="Utils\IEEE.cs" />
     <Compile Include="Utils\NativeMethods.cs" />
@@ -395,9 +396,7 @@
     <Compile Include="Wave\MmeInterop\WaveInterop.cs" />
     <Compile Include="Wave\MmeInterop\WaveOutCapabilities.cs" />
     <Compile Include="Wave\MmeInterop\WaveOutSupport.cs" />
-    <Compile Include="Wave\MmeInterop\WaveWindow.cs">
-      <SubType>Form</SubType>
-    </Compile>
+    <Compile Include="Wave\MmeInterop\WaveWindow.cs" />
     <Compile Include="Wave\SampleChunkConverters\ISampleChunkConverter.cs" />
     <Compile Include="Wave\SampleChunkConverters\Mono16SampleChunkConverter.cs" />
     <Compile Include="Wave\SampleChunkConverters\Mono24SampleChunkConverter.cs" />

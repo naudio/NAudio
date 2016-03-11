@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
+using NAudio.Utils;
 
 namespace NAudio.Wave
 {
@@ -151,7 +152,7 @@ namespace NAudio.Wave
         /// <returns></returns>
         public static WaveFormat MarshalFromPtr(IntPtr pointer)
         {
-            WaveFormat waveFormat = (WaveFormat)Marshal.PtrToStructure(pointer, typeof(WaveFormat));
+            var waveFormat = MarshalHelpers.PtrToStructure<WaveFormat>(pointer);
             switch (waveFormat.Encoding)
             {
                 case WaveFormatEncoding.Pcm:
@@ -160,18 +161,18 @@ namespace NAudio.Wave
                     waveFormat.extraSize = 0;
                     break;
                 case WaveFormatEncoding.Extensible:
-                    waveFormat = (WaveFormatExtensible)Marshal.PtrToStructure(pointer, typeof(WaveFormatExtensible));
+                    waveFormat = MarshalHelpers.PtrToStructure<WaveFormatExtensible>(pointer);
                     break;
                 case WaveFormatEncoding.Adpcm:
-                    waveFormat = (AdpcmWaveFormat)Marshal.PtrToStructure(pointer, typeof(AdpcmWaveFormat));
+                    waveFormat = MarshalHelpers.PtrToStructure<AdpcmWaveFormat>(pointer);
                     break;
                 case WaveFormatEncoding.Gsm610:
-                    waveFormat = (Gsm610WaveFormat)Marshal.PtrToStructure(pointer, typeof(Gsm610WaveFormat));
+                    waveFormat = MarshalHelpers.PtrToStructure<Gsm610WaveFormat>(pointer);
                     break;
                 default:
                     if (waveFormat.ExtraSize > 0)
                     {
-                        waveFormat = (WaveFormatExtraData)Marshal.PtrToStructure(pointer, typeof(WaveFormatExtraData));
+                        waveFormat = MarshalHelpers.PtrToStructure<WaveFormatExtraData>(pointer);
                     }
                     break;
             }

@@ -148,22 +148,32 @@ namespace NAudio.Wave
 
         private long GetLength(IMFSourceReader reader)
         {
-            PropVariant variant;
-            // http://msdn.microsoft.com/en-gb/library/windows/desktop/dd389281%28v=vs.85%29.aspx#getting_file_duration
-            int hResult = reader.GetPresentationAttribute(MediaFoundationInterop.MF_SOURCE_READER_MEDIASOURCE,
-                MediaFoundationAttributes.MF_PD_DURATION, out variant);
-            if (hResult == MediaFoundationErrors.MF_E_ATTRIBUTENOTFOUND)
+            var variantPtr = Marshal.AllocHGlobal(MarshalHelpers.SizeOf<PropVariant>());
+            try
             {
-                // this doesn't support telling us its duration (might be streaming)
-                return 0;
+
+                // http://msdn.microsoft.com/en-gb/library/windows/desktop/dd389281%28v=vs.85%29.aspx#getting_file_duration
+                int hResult = reader.GetPresentationAttribute(MediaFoundationInterop.MF_SOURCE_READER_MEDIASOURCE,
+                    MediaFoundationAttributes.MF_PD_DURATION, variantPtr);
+                if (hResult == MediaFoundationErrors.MF_E_ATTRIBUTENOTFOUND)
+                {
+                    // this doesn't support telling us its duration (might be streaming)
+                    return 0;
+                }
+                if (hResult != 0)
+                {
+                    Marshal.ThrowExceptionForHR(hResult);
+                }
+                var variant = MarshalHelpers.PtrToStructure<PropVariant>(variantPtr);
+
+                var lengthInBytes = (((long)variant.Value) * waveFormat.AverageBytesPerSecond) / 10000000L;
+                return lengthInBytes;
             }
-            if (hResult != 0)
+            finally 
             {
-                Marshal.ThrowExceptionForHR(hResult);
+                PropVariant.Clear(variantPtr);
+                Marshal.FreeHGlobal(variantPtr);
             }
-            var lengthInBytes = (((long)variant.Value) * waveFormat.AverageBytesPerSecond) / 10000000L;
-            variant.Clear();
-            return lengthInBytes;
         }
 
         private byte[] decoderOutputBuffer;
@@ -308,8 +318,12 @@ namespace NAudio.Wave
         {
             long nsPosition = (10000000L * repositionTo) / waveFormat.AverageBytesPerSecond;
             var pv = PropVariant.FromLong(nsPosition);
+            var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(pv));
+            Marshal.StructureToPtr(pv,ptr,false);
+            
             // should pass in a variant of type VT_I8 which is a long containing time in 100nanosecond units
-            pReader.SetCurrentPosition(Guid.Empty, ref pv);
+            pReader.SetCurrentPosition(Guid.Empty, ptr);
+            Marshal.FreeHGlobal(ptr);
             decoderOutputCount = 0;
             decoderOutputOffset = 0;
             position = desiredPosition;

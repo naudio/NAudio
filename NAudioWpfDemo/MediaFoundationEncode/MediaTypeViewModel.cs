@@ -58,14 +58,27 @@ namespace NAudioWpfDemo.MediaFoundationEncode
             var sb = new StringBuilder();
             for (int n = 0; n < attributeCount; n++)
             {
-                Guid key;
-                var val = new PropVariant();
-                mediaType.GetItemByIndex(n, out key, ref val);
-                string propertyName = FieldDescriptionHelper.Describe(typeof(MediaFoundationAttributes), key);
-                sb.AppendFormat("{0}={1}\r\n", propertyName, val.Value);
-                val.Clear();
+                DescribeAttribute(mediaType, n, sb);
             }
             return sb.ToString();
+        }
+
+        private static void DescribeAttribute(IMFMediaType mediaType, int n, StringBuilder sb)
+        {
+            var variantPtr = Marshal.AllocHGlobal(MarshalHelpers.SizeOf<PropVariant>());
+            try
+            {
+                Guid key;
+                mediaType.GetItemByIndex(n, out key, variantPtr);
+                var val = MarshalHelpers.PtrToStructure<PropVariant>(variantPtr);
+                string propertyName = FieldDescriptionHelper.Describe(typeof (MediaFoundationAttributes), key);
+                sb.AppendFormat("{0}={1}\r\n", propertyName, val.Value);
+            }
+            finally
+            {
+                PropVariant.Clear(variantPtr);
+                Marshal.FreeHGlobal(variantPtr);
+            }
         }
     }
 }

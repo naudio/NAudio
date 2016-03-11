@@ -116,13 +116,13 @@ namespace NAudio.Wave
             var audioClient = new AudioClient((IAudioClient)audioClientInterface);
             if (waveFormat == null)
             {                
-                this.waveFormat = audioClient.MixFormat;
+                waveFormat = audioClient.MixFormat;
             }         
 
             long requestedDuration = REFTIMES_PER_MILLISEC * 100;
 
             
-            if (!audioClient.IsFormatSupported(AudioClientShareMode.Shared, WaveFormat))
+            if (!audioClient.IsFormatSupported(AudioClientShareMode.Shared, waveFormat))
             {
                 throw new ArgumentException("Unsupported Wave Format");
             }
@@ -133,7 +133,7 @@ namespace NAudio.Wave
                 streamFlags,
                 requestedDuration,
                 0,
-                this.waveFormat,
+                waveFormat,
                 Guid.Empty);
            
 
@@ -161,7 +161,7 @@ namespace NAudio.Wave
         {
             stop = false;
 
-            var icbh = new ActivateAudioInterfaceCompletionHandler(ac2 =>{ InitializeCaptureDevice((IAudioClient)ac2);});
+            var icbh = new ActivateAudioInterfaceCompletionHandler(ac2 => InitializeCaptureDevice((IAudioClient)ac2));
             
             IActivateAudioInterfaceAsyncOperation activationOperation;
             // must be called on UI thread

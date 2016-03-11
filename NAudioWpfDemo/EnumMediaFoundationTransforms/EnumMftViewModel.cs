@@ -44,43 +44,57 @@ namespace NAudioWpfDemo.EnumMediaFoundationTransforms
                 sb.AppendLine();
                 for (int n = 0; n < attributeCount; n++)
                 {
-                    Guid key;
-                    var value = new PropVariant();
-                    mft.GetItemByIndex(n, out key, ref value);
-                    string propertyName = FieldDescriptionHelper.Describe(typeof(MediaFoundationAttributes), key);
-                    if (key == MediaFoundationAttributes.MFT_INPUT_TYPES_Attributes || key == MediaFoundationAttributes.MFT_OUTPUT_TYPES_Attributes)
-                    {
-                        var types = value.GetBlobAsArrayOf<MFT_REGISTER_TYPE_INFO>();
-                        sb.AppendFormat("{0}: {1} items:", propertyName, types.Length);
-                        sb.AppendLine();
-                        foreach (var t in types)
-                        {
-                            sb.AppendFormat("    {0}-{1}", 
-                                FieldDescriptionHelper.Describe(typeof(MediaTypes), t.guidMajorType), 
-                                FieldDescriptionHelper.Describe(typeof(AudioSubtypes), t.guidSubtype));
-                            sb.AppendLine();
-                        }
-                    }
-                    else if (key == MediaFoundationAttributes.MF_TRANSFORM_CATEGORY_Attribute)
-                    {
-                        sb.AppendFormat("{0}: {1}", propertyName, FieldDescriptionHelper.Describe(typeof(MediaFoundationTransformCategories), (Guid)value.Value));
-                        sb.AppendLine();
-                    }
-                    else if (value.DataType == (VarEnum.VT_VECTOR | VarEnum.VT_UI1))
-                    {
-                        var b = (byte[])value.Value;
-                        sb.AppendFormat("{0}: Blob of {1} bytes", propertyName, b.Length);
-                        sb.AppendLine();
-                    }
-                    else
-                    {
-                        sb.AppendFormat("{0}: {1}", propertyName, value.Value);
-                        sb.AppendLine();
-                    }
-                    
-                    value.Clear();
+                    AddAttribute(mft, n, sb);
                 }
                 Transforms.Add(sb.ToString());
+            }
+        }
+
+        private static void AddAttribute(IMFActivate mft, int index, StringBuilder sb)
+        {
+            var variantPtr = Marshal.AllocHGlobal(MarshalHelpers.SizeOf<PropVariant>());
+            try
+            {
+                Guid key;
+                mft.GetItemByIndex(index, out key, variantPtr);
+                var value = MarshalHelpers.PtrToStructure<PropVariant>(variantPtr);
+                string propertyName = FieldDescriptionHelper.Describe(typeof (MediaFoundationAttributes), key);
+                if (key == MediaFoundationAttributes.MFT_INPUT_TYPES_Attributes ||
+                    key == MediaFoundationAttributes.MFT_OUTPUT_TYPES_Attributes)
+                {
+                    var types = value.GetBlobAsArrayOf<MFT_REGISTER_TYPE_INFO>();
+                    sb.AppendFormat("{0}: {1} items:", propertyName, types.Length);
+                    sb.AppendLine();
+                    foreach (var t in types)
+                    {
+                        sb.AppendFormat("    {0}-{1}",
+                            FieldDescriptionHelper.Describe(typeof (MediaTypes), t.guidMajorType),
+                            FieldDescriptionHelper.Describe(typeof (AudioSubtypes), t.guidSubtype));
+                        sb.AppendLine();
+                    }
+                }
+                else if (key == MediaFoundationAttributes.MF_TRANSFORM_CATEGORY_Attribute)
+                {
+                    sb.AppendFormat("{0}: {1}", propertyName,
+                        FieldDescriptionHelper.Describe(typeof (MediaFoundationTransformCategories), (Guid) value.Value));
+                    sb.AppendLine();
+                }
+                else if (value.DataType == (VarEnum.VT_VECTOR | VarEnum.VT_UI1))
+                {
+                    var b = (byte[]) value.Value;
+                    sb.AppendFormat("{0}: Blob of {1} bytes", propertyName, b.Length);
+                    sb.AppendLine();
+                }
+                else
+                {
+                    sb.AppendFormat("{0}: {1}", propertyName, value.Value);
+                    sb.AppendLine();
+                }
+            }
+            finally
+            {
+                PropVariant.Clear(variantPtr);
+                Marshal.FreeHGlobal(variantPtr);
             }
         }
 

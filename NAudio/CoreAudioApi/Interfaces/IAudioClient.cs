@@ -9,16 +9,17 @@ namespace NAudio.CoreAudioApi.Interfaces
     /// Defined in AudioClient.h
     /// </summary>
     [Guid("1CB9AD4C-DBFA-4c32-B178-C2F568A703B2"), 
-        InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
+        ComImport]
     internal interface IAudioClient
     {
         [PreserveSig]
         int Initialize(AudioClientShareMode shareMode,
-            AudioClientStreamFlags StreamFlags,
+            AudioClientStreamFlags streamFlags,
             long hnsBufferDuration, // REFERENCE_TIME
             long hnsPeriodicity, // REFERENCE_TIME
             [In] WaveFormat pFormat,
-            [In] ref Guid AudioSessionGuid);
+            [In] ref Guid audioSessionGuid);
 
         /// <summary>
         /// The GetBufferSize method retrieves the size (maximum capacity) of the endpoint buffer.
@@ -34,8 +35,8 @@ namespace NAudio.CoreAudioApi.Interfaces
         int IsFormatSupported(
             AudioClientShareMode shareMode,
             [In] WaveFormat pFormat,
-            [Out, MarshalAs(UnmanagedType.LPStruct)] out WaveFormatExtensible closestMatchFormat);
-        
+            IntPtr closestMatchFormat);
+
         int GetMixFormat(out IntPtr deviceFormatPointer);
 
         // REFERENCE_TIME is 64 bit int        

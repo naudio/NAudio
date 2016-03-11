@@ -15,7 +15,7 @@ namespace NAudio.MediaFoundation
         /// <summary>
         /// Retrieves the value associated with a key.
         /// </summary>
-        void GetItem([In, MarshalAs(UnmanagedType.LPStruct)] Guid guidKey, [In, Out] ref PropVariant pValue);
+        void GetItem([In, MarshalAs(UnmanagedType.LPStruct)] Guid guidKey, [In, Out] IntPtr pValue);
 
         /// <summary>
         /// Retrieves the data type of the value associated with a key.
@@ -25,12 +25,12 @@ namespace NAudio.MediaFoundation
         /// <summary>
         /// Queries whether a stored attribute value equals a specified PROPVARIANT.
         /// </summary>
-        void CompareItem([In, MarshalAs(UnmanagedType.LPStruct)] Guid guidKey, IntPtr Value, [MarshalAs(UnmanagedType.Bool)] out bool pbResult);
+        void CompareItem([In, MarshalAs(UnmanagedType.LPStruct)] Guid guidKey, IntPtr value, [MarshalAs(UnmanagedType.Bool)] out bool pbResult);
         
         /// <summary>
         /// Compares the attributes on this object with the attributes on another object.
         /// </summary>
-        void Compare([MarshalAs(UnmanagedType.Interface)] IMFAttributes pTheirs, int MatchType, [MarshalAs(UnmanagedType.Bool)] out bool pbResult);
+        void Compare([MarshalAs(UnmanagedType.Interface)] IMFAttributes pTheirs, int matchType, [MarshalAs(UnmanagedType.Bool)] out bool pbResult);
         
         /// <summary>
         /// Retrieves a UINT32 value associated with a key.
@@ -160,7 +160,7 @@ namespace NAudio.MediaFoundation
         /// <summary>
         /// Retrieves an attribute at the specified index.
         /// </summary>
-        void GetItemByIndex(int unIndex, out Guid pGuidKey, [In, Out] ref PropVariant pValue);
+        void GetItemByIndex(int unIndex, out Guid pGuidKey, [In, Out] IntPtr pValue);
         
         /// <summary>
         /// Copies all of the attributes from this object into another attribute store.

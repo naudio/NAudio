@@ -23,9 +23,11 @@ csechet
 ChunkWare Music Software
 CKing
 DaMacc
+Dirk Eckhardt
 Du10
 eejake52
 Florian Rosmann (filoe)
+Freefall
 Giawa
 Harald Petrovitsch
 Hfuy
@@ -40,6 +42,7 @@ jcameron23
 JoeGaggler
 jonahoffmann
 jontdelorme
+Jospin Software
 Justin Frankel
 K24A3
 Kamen Lichev

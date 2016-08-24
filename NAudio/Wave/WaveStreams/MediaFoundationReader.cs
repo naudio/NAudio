@@ -17,8 +17,8 @@ namespace NAudio.Wave
     public class MediaFoundationReader : WaveStream
     {
         private WaveFormat waveFormat;
-        private readonly long length;
-        private readonly MediaFoundationReaderSettings settings;
+        private long length;
+        private MediaFoundationReaderSettings settings;
         private readonly string file;
         private IMFSourceReader pReader;
 
@@ -54,6 +54,9 @@ namespace NAudio.Wave
             public bool RepositionInRead { get; set; }
         }
 
+        /// <summary>
+        /// Default constructor
+        /// </summary>
         protected MediaFoundationReader()
         {
         }
@@ -63,7 +66,7 @@ namespace NAudio.Wave
         /// </summary>
         /// <param name="file">Filename (can also be a URL  e.g. http:// mms:// file://)</param>
         public MediaFoundationReader(string file)
-            : this(file)
+            : this(file, null)
         {
         }
 
@@ -79,10 +82,13 @@ namespace NAudio.Wave
             Init(settings);
         }
 
-        protected void Init(MediaFoundationReaderSettings settings=null)
+        /// <summary>
+        /// Initializes 
+        /// </summary>
+        protected void Init(MediaFoundationReaderSettings initialSettings)
         {
             MediaFoundationApi.Startup();
-            this.settings = settings ?? new MediaFoundationReaderSettings();
+            settings = initialSettings ?? new MediaFoundationReaderSettings();
             var reader = CreateReader(settings);
 
             waveFormat = GetCurrentWaveFormat(reader);

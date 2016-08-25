@@ -10,7 +10,7 @@ using NAudio.Wave;
 /// Date: 05.08.16
 /// Based on: the port of Stephan M. Bernsee´s pitch shifting class
 /// Port site: https://sites.google.com/site/mikescoderama/pitch-shifting
-/// Test application & github site: https://github.com/Freefall63/NAudio-Pitchshifter
+/// Test application and github site: https://github.com/Freefall63/NAudio-Pitchshifter
 /// 
 /// NOTE: I strongly advice to add a Limiter for post-processing.
 /// For my needs the FastAttackCompressor1175 provides acceptable results:

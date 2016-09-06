@@ -60,10 +60,12 @@ namespace NAudioTests.Midi
             new PatchChangeEvent(0, 1, 0),
             new PitchWheelChangeEvent(0, 1, 0),
             new SequencerSpecificEvent(new byte[0], 0),
+            new SmpteOffsetEvent(1, 1, 1, 1, 1),
             new SysexEvent(),
             new TempoEvent(0, 0),
             new TextEvent(string.Empty, MetaEventType.Copyright, 0),
-            new TimeSignatureEvent(0, 1, 1, 1, 1)
+            new TimeSignatureEvent(0, 1, 1, 1, 1),
+            new TrackSequenceNumberEvent(1)
         }.ToDictionary(_ => _.GetType());
 
         [Test, TestCaseSource(nameof(AllMidiEventTypes))]

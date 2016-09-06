@@ -12,7 +12,19 @@ namespace NAudio.Midi
         private byte seconds;
         private byte frames;
         private byte subFrames; // 100ths of a frame
-        
+
+        /// <summary>
+        /// Creates a new time signature event
+        /// </summary>
+        public SmpteOffsetEvent(byte hours, byte minutes, byte seconds, byte frames, byte subFrames)
+        {
+            this.hours = hours;
+            this.minutes = minutes;
+            this.seconds = seconds;
+            this.frames = frames;
+            this.subFrames = subFrames;
+        }
+
         /// <summary>
         /// Reads a new time signature event from a MIDI stream
         /// </summary>

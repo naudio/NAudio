@@ -44,6 +44,11 @@ namespace NAudio.Midi
         }
 
         /// <summary>
+        /// Creates a deep clone of this MIDI event.
+        /// </summary>
+        public override MidiEvent Clone() => new MetaEvent(metaEvent, metaDataLength, AbsoluteTime) { data = (byte[])data?.Clone() };
+
+        /// <summary>
         /// Reads a meta-event from a stream
         /// </summary>
         /// <param name="br">A binary reader based on the stream of MIDI data</param>

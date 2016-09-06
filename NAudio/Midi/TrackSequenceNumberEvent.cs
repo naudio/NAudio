@@ -29,6 +29,11 @@ namespace NAudio.Midi
         }
 
         /// <summary>
+        /// Creates a deep clone of this MIDI event.
+        /// </summary>
+        public override MidiEvent Clone() => (TrackSequenceNumberEvent)MemberwiseClone();
+
+        /// <summary>
         /// Describes this event
         /// </summary>
         /// <returns>String describing the event</returns>

@@ -35,7 +35,12 @@ namespace NAudio.Midi
         {
             this.microsecondsPerQuarterNote = microsecondsPerQuarterNote;
         }
-        
+
+        /// <summary>
+        /// Creates a deep clone of this MIDI event.
+        /// </summary>
+        public override MidiEvent Clone() => (TempoEvent)MemberwiseClone();
+
         /// <summary>
         /// Describes this tempo event
         /// </summary>

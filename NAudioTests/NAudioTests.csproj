@@ -92,6 +92,7 @@
     <Compile Include="Dmo\ResamplerDmoTests.cs" />
     <Compile Include="MediaFoundation\MediaFoundationReaderTests.cs" />
     <Compile Include="Midi\MidiEventCollectionTest.cs" />
+    <Compile Include="Midi\MidiEventCloneTests.cs" />
     <Compile Include="Midi\PitchWheelChangeEventTests.cs" />
     <Compile Include="Mixer\MixerApiTests.cs" />
     <Compile Include="Mp3\Mp3FileReaderTests.cs" />

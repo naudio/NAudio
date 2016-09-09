@@ -48,7 +48,7 @@ namespace NAudio.Wave
             byte[] littleEndian = BitConverter.GetBytes(value);
             for (int n = 0; n < 4; n++)
             {
-                buffer[offset + 4 - n] = littleEndian[n];
+                buffer[offset + 3 - n] = littleEndian[n];
             }
         }
 

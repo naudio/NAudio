@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.IO;
 
 namespace NAudio.Utils
@@ -35,26 +33,17 @@ namespace NAudio.Utils
         /// <summary>
         /// Can Read
         /// </summary>
-        public override bool CanRead
-        {
-            get { return SourceStream.CanRead; }
-        }
+        public override bool CanRead => SourceStream.CanRead;
 
         /// <summary>
         /// Can Seek
         /// </summary>
-        public override bool CanSeek
-        {
-            get { return SourceStream.CanSeek; }
-        }
+        public override bool CanSeek => SourceStream.CanSeek;
 
         /// <summary>
         /// Can write to the underlying stream
         /// </summary>
-        public override bool CanWrite
-        {
-            get { return SourceStream.CanWrite; }
-        }
+        public override bool CanWrite => SourceStream.CanWrite;
 
         /// <summary>
         /// Flushes the underlying stream
@@ -67,10 +56,7 @@ namespace NAudio.Utils
         /// <summary>
         /// Gets the length of the underlying stream
         /// </summary>
-        public override long Length
-        {
-            get { return SourceStream.Length; }
-        }
+        public override long Length => SourceStream.Length;
 
         /// <summary>
         /// Gets or sets the position of the underlying stream

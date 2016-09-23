@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows.Media;
 using System.Windows;
 
@@ -10,9 +9,9 @@ namespace NAudioWpfDemo
     class WaveFormVisual : FrameworkElement, IWaveFormRenderer
     {
         // Create a collection of child visual objects.
-        private VisualCollection _children;
-        private List<Point> maxPoints;
-        private List<Point> minPoints;
+        private readonly VisualCollection children;
+        private readonly List<Point> maxPoints;
+        private readonly List<Point> minPoints;
         double yTranslate = 40;
         double yScale = 40;        
 
@@ -20,8 +19,8 @@ namespace NAudioWpfDemo
         {
             maxPoints = new List<Point>();
             minPoints = new List<Point>();
-            _children = new VisualCollection(this);
-            _children.Add(CreateWaveFormVisual());            
+            children = new VisualCollection(this);
+            children.Add(CreateWaveFormVisual());            
         }
 
         private DrawingVisual CreateWaveFormVisual()
@@ -76,20 +75,17 @@ namespace NAudioWpfDemo
         }
 
         // Provide a required override for the VisualChildrenCount property.
-        protected override int VisualChildrenCount
-        {
-            get { return _children.Count; }
-        }
+        protected override int VisualChildrenCount => children.Count;
 
         // Provide a required override for the GetVisualChild method.
         protected override Visual GetVisualChild(int index)
         {
-            if (index < 0 || index >= _children.Count)
+            if (index < 0 || index >= children.Count)
             {
                 throw new ArgumentOutOfRangeException();
             }
 
-            return _children[index];
+            return children[index];
         }
 
 
@@ -100,9 +96,9 @@ namespace NAudioWpfDemo
             int xpos = maxPoints.Count;
             maxPoints.Add(new Point(xpos, SampleToYPosition(minValue)));
             minPoints.Add(new Point(xpos, SampleToYPosition(maxValue)));
-            _children.Clear();
+            children.Clear();
 
-            _children.Add(CreateWaveFormVisual());
+            children.Add(CreateWaveFormVisual());
             this.InvalidateVisual();
         }
         private double SampleToYPosition(float value)

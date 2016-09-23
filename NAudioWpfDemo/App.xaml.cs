@@ -1,7 +1,7 @@
 ﻿using System;
-using System.ComponentModel.Composition.Hosting;
 using System.Linq;
 using System.Windows;
+using NAudioWpfDemo.Utils;
 
 namespace NAudioWpfDemo
 {
@@ -14,9 +14,7 @@ namespace NAudioWpfDemo
         {
             var mainWindow = new MainWindow();
 
-            var catalog = new AssemblyCatalog(this.GetType().Assembly);
-            var container = new CompositionContainer(catalog);
-            var modules = container.GetExportedValues<IModule>();
+            var modules = ReflectionHelper.CreateAllInstancesOf<IModule>();
 
             var vm = new MainWindowViewModel(modules);
             mainWindow.DataContext = vm;

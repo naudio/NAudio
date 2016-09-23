@@ -1,16 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.ComponentModel.Composition;
 
 namespace NAudioWpfDemo.DrumMachineDemo
 {
-    [Export(typeof(IModule))]
     class DrumMachineDemoPlugin : IModule
     {
         private DrumMachineDemoView view;
         private DrumMachineDemoViewModel viewModel;
+
         public string Name
         {
             get { return "Drum Machine"; }

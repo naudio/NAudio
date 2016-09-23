@@ -1,20 +1,11 @@
-﻿using System;
-using System.ComponentModel.Composition;
-using System.Linq;
-using System.Windows.Controls;
+﻿using System.Windows.Controls;
 
 namespace NAudioWpfDemo.EqualizationDemo
 {
-    [Export(typeof(IModule))]
     class EqualizationPlaybackDemoPlugin : IModule
     {
         private EqualizationDemoView view;
         private EqualizationDemoViewModel viewModel;
-
-        [ImportingConstructor]
-        public EqualizationPlaybackDemoPlugin()
-        {
-        }
 
         public string Name
         {

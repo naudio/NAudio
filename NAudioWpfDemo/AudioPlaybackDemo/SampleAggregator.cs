@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Diagnostics;
 using NAudio.Dsp;
 using NAudio.Wave;
@@ -23,7 +21,7 @@ namespace NAudioWpfDemo
         private readonly FftEventArgs fftArgs;
         private int fftPos;
         private readonly int fftLength;
-        private int m;
+        private readonly int m;
         private readonly ISampleProvider source;
 
         private readonly int channels;
@@ -42,7 +40,7 @@ namespace NAudioWpfDemo
             this.source = source;
         }
 
-        bool IsPowerOfTwo(int x)
+        static bool IsPowerOfTwo(int x)
         {
             return (x & (x - 1)) == 0;
         }
@@ -75,16 +73,13 @@ namespace NAudioWpfDemo
             count++;
             if (count >= NotificationCount && NotificationCount > 0)
             {
-                if (MaximumCalculated != null)
-                {
-                    MaximumCalculated(this, new MaxSampleEventArgs(minValue, maxValue));
-                }
+                MaximumCalculated?.Invoke(this, new MaxSampleEventArgs(minValue, maxValue));
                 Reset();
             }
         }
 
-        public WaveFormat WaveFormat { get { return source.WaveFormat; } }
-        
+        public WaveFormat WaveFormat => source.WaveFormat;
+
         public int Read(float[] buffer, int offset, int count)
         {
             var samplesRead = source.Read(buffer, offset, count);
@@ -102,8 +97,8 @@ namespace NAudioWpfDemo
         [DebuggerStepThrough]
         public MaxSampleEventArgs(float minValue, float maxValue)
         {
-            this.MaxSample = maxValue;
-            this.MinSample = minValue;
+            MaxSample = maxValue;
+            MinSample = minValue;
         }
         public float MaxSample { get; private set; }
         public float MinSample { get; private set; }
@@ -114,7 +109,7 @@ namespace NAudioWpfDemo
         [DebuggerStepThrough]
         public FftEventArgs(Complex[] result)
         {
-            this.Result = result;
+            Result = result;
         }
         public Complex[] Result { get; private set; }
     }

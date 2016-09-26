@@ -467,6 +467,7 @@
     <Compile Include="Wave\WaveStreams\AiffFileReader.cs" />
     <Compile Include="Wave\WaveStreams\AudioFileReader.cs" />
     <Compile Include="Wave\WaveStreams\BlockAlignReductionStream.cs" />
+    <Compile Include="Wave\WaveStreams\ComStream.cs" />
     <Compile Include="Wave\WaveStreams\CueList.cs" />
     <Compile Include="Wave\WaveStreams\CueWaveFileReader.cs" />
     <Compile Include="Wave\WaveStreams\ISampleNotifier.cs" />
@@ -479,6 +480,7 @@
     <Compile Include="Wave\WaveStreams\ResamplerDmoStream.cs" />
     <Compile Include="Wave\WaveStreams\RiffChunk.cs" />
     <Compile Include="Wave\WaveStreams\SimpleCompressorStream.cs" />
+    <Compile Include="Wave\WaveStreams\StreamMediaFoundationReader.cs" />
     <Compile Include="Wave\WaveStreams\Wave32To16Stream.cs" />
     <Compile Include="Wave\WaveStreams\WaveChannel32.cs" />
     <Compile Include="Wave\SampleProviders\SampleChannel.cs" />

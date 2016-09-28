@@ -29,8 +29,8 @@ namespace NAudio.MediaFoundation
         /// Creates an empty media type.
         /// </summary>
         [DllImport("mfplat.dll", ExactSpelling = true, PreserveSig = false)]
-        internal static extern void MFCreateMediaType(out IMFMediaType ppMFType);
-        
+        internal static extern void MFCreateMediaType([In, Out, MarshalAs(UnmanagedType.Interface)] ref IMFMediaType ppMFType);
+
         /// <summary>
         /// Initializes a media type from a WAVEFORMATEX structure. 
         /// </summary>
@@ -55,7 +55,7 @@ namespace NAudio.MediaFoundation
         /// Creates the source reader from a byte stream.
         /// </summary>
         [DllImport("mfreadwrite.dll", ExactSpelling = true, PreserveSig = false)]
-        public static extern void MFCreateSourceReaderFromByteStream([In] IMFByteStream pByteStream, [In] IMFAttributes pAttributes, [Out, MarshalAs(UnmanagedType.Interface)] out IMFSourceReader ppSourceReader);
+        public static extern void MFCreateSourceReaderFromByteStream([In, MarshalAs(UnmanagedType.Interface)] IMFByteStream pByteStream, [In] IMFAttributes pAttributes, [In, Out, MarshalAs(UnmanagedType.Interface)] ref IMFSourceReader ppSourceReader);
 
         /// <summary>
         /// Creates the sink writer from a URL or byte stream.
@@ -68,7 +68,7 @@ namespace NAudio.MediaFoundation
         /// Creates a Microsoft Media Foundation byte stream that wraps an IRandomAccessStream object.
         /// </summary>
         [DllImport("mfplat.dll", ExactSpelling = true, PreserveSig = false)]
-        public static extern void MFCreateMFByteStreamOnStreamEx([MarshalAs(UnmanagedType.IUnknown)] object punkStream, out IMFByteStream ppByteStream);
+        public static extern void MFCreateMFByteStreamOnStreamEx([MarshalAs(UnmanagedType.IUnknown)] object punkStream, [Out, MarshalAs(UnmanagedType.Interface)] out IMFByteStream ppByteStream);
 
 #if !NETFX_CORE  
         /// <summary>

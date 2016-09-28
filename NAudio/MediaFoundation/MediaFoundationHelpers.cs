@@ -76,8 +76,8 @@ namespace NAudio.MediaFoundation
         /// </summary>
         public static IMFMediaType CreateMediaType()
         {
-            IMFMediaType mediaType;
-            MediaFoundationInterop.MFCreateMediaType(out mediaType);
+            IMFMediaType mediaType = null;
+            MediaFoundationInterop.MFCreateMediaType(ref mediaType);
             return mediaType;
         }
 
@@ -154,8 +154,8 @@ namespace NAudio.MediaFoundation
         /// <returns>A media foundation source reader</returns>
         public static IMFSourceReader CreateSourceReaderFromByteStream(IMFByteStream byteStream)
         {
-            IMFSourceReader reader;
-            MediaFoundationInterop.MFCreateSourceReaderFromByteStream(byteStream, null, out reader);
+            IMFSourceReader reader = null;
+            MediaFoundationInterop.MFCreateSourceReaderFromByteStream(byteStream, null, ref reader);
             return reader;
         }
     }

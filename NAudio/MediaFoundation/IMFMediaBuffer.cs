@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace NAudio.MediaFoundation
@@ -13,22 +14,27 @@ namespace NAudio.MediaFoundation
         /// <summary>
         /// Gives the caller access to the memory in the buffer.
         /// </summary>
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
         void Lock(out IntPtr ppbBuffer, out int pcbMaxLength, out int pcbCurrentLength);
         /// <summary>
         /// Unlocks a buffer that was previously locked.
         /// </summary>
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
         void Unlock();
         /// <summary>
         /// Retrieves the length of the valid data in the buffer.
         /// </summary>
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
         void GetCurrentLength(out int pcbCurrentLength);
         /// <summary>
         /// Sets the length of the valid data in the buffer.
         /// </summary>
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
         void SetCurrentLength(int cbCurrentLength);
         /// <summary>
         /// Retrieves the allocated size of the buffer.
         /// </summary>
+        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
         void GetMaxLength(out int pcbMaxLength);
     }
 }

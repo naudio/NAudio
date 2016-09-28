@@ -36,7 +36,7 @@ public class SMBPitchShiftingSampleProvider : ISampleProvider
     const float M_PI_2 = (float)(Math.PI / 2);
 
     public SMBPitchShiftingSampleProvider(ISampleProvider SourceProvider)
-        : this(SourceProvider, 4096, 4, 1f) { }
+        : this(SourceProvider, 4096, 4L, 1f) { }
         
     public SMBPitchShiftingSampleProvider(ISampleProvider SourceProvider, int FFTSize, long osamp, float InitialPitch)
     {

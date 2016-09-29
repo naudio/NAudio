@@ -1,401 +1,156 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Data;
-using System.Diagnostics;
-using NAudio.Wave;
+using NAudio.Dsp;
 
-///
-/// Author: Freefall
-/// Date: 05.08.16
-/// Based on: the port of Stephan M. Bernsee´s pitch shifting class
-/// Port site: https://sites.google.com/site/mikescoderama/pitch-shifting
-/// Test application and github site: https://github.com/Freefall63/NAudio-Pitchshifter
-/// 
-/// NOTE: I strongly advice to add a Limiter for post-processing.
-/// For my needs the FastAttackCompressor1175 provides acceptable results:
-/// https://github.com/Jiyuu/SkypeFX/blob/master/JSNet/FastAttackCompressor1175.cs
-///
-/// UPDATE: Added a simple Limiter based on the pydirac implementation.
-/// https://github.com/echonest/remix/blob/master/external/pydirac225/source/Dirac_LE.cpp
-/// 
-public class SMBPitchShiftingSampleProvider : ISampleProvider
+namespace NAudio.Wave.SampleProviders
 {
-    //Shifter objects
-    private ISampleProvider SourceStream = null;
-    private WaveFormat WFormat = null;
-    private float Pitch = 1f;
-    private int _FFTSize;
-    private long _osamp;
-    private SMBPitchShifter ShifterLeft = new SMBPitchShifter();
-    private SMBPitchShifter ShifterRight = new SMBPitchShifter();
-
-    //Limiter constants
-    const float LIM_THRESH = 0.95f;
-    const float LIM_RANGE = (1f - LIM_THRESH);
-    const float M_PI_2 = (float)(Math.PI / 2);
-
-    public SMBPitchShiftingSampleProvider(ISampleProvider SourceProvider)
-        : this(SourceProvider, 4096, 4L, 1f) { }
-        
-    public SMBPitchShiftingSampleProvider(ISampleProvider SourceProvider, int FFTSize, long osamp, float InitialPitch)
+    /// <summary>
+    /// Author: Freefall
+    /// Date: 05.08.16
+    /// Based on: the port of Stephan M. Bernsee´s pitch shifting class
+    /// Port site: https://sites.google.com/site/mikescoderama/pitch-shifting
+    /// Test application and github site: https://github.com/Freefall63/NAudio-Pitchshifter
+    /// 
+    /// NOTE: I strongly advice to add a Limiter for post-processing.
+    /// For my needs the FastAttackCompressor1175 provides acceptable results:
+    /// https://github.com/Jiyuu/SkypeFX/blob/master/JSNet/FastAttackCompressor1175.cs
+    ///
+    /// UPDATE: Added a simple Limiter based on the pydirac implementation.
+    /// https://github.com/echonest/remix/blob/master/external/pydirac225/source/Dirac_LE.cpp
+    /// 
+    ///</summary>
+    public class SmbPitchShiftingSampleProvider : ISampleProvider
     {
-        SourceStream = SourceProvider;
-        WFormat = SourceProvider.WaveFormat;
-        _FFTSize = FFTSize;
-        _osamp = osamp;
-        PitchFactor = InitialPitch;
-    }
+        //Shifter objects
+        private readonly ISampleProvider sourceStream;
+        private readonly WaveFormat waveFormat;
+        private float pitch = 1f;
+        private readonly int fftSize;
+        private readonly long osamp;
+        private readonly SmbPitchShifter shifterLeft = new SmbPitchShifter();
+        private readonly SmbPitchShifter shifterRight = new SmbPitchShifter();
 
-    public int Read(float[] buffer, int offset, int count)
-    {
-        int SampRead = SourceStream.Read(buffer, offset, count);
-        if (Pitch == 1f)    
-            //Nothing to do.
-            return SampRead;
-        if (WFormat.Channels == 1) {
-            float[] Mono = new float[SampRead];
-            int index = 0;
-            for (int sample = offset; sample <= SampRead - 1; sample++) {
-                Mono[index] = buffer[sample];
-                index += 1;
+        //Limiter constants
+
+        // ReSharper disable InconsistentNaming
+        const float LIM_THRESH = 0.95f;
+        const float LIM_RANGE = (1f - LIM_THRESH);
+        const float M_PI_2 = (float) (Math.PI/2);
+        // ReSharper restore InconsistentNaming
+
+        /// <summary>
+        /// Creates a new SMB Pitch Shifting Sample Provider with default settings
+        /// </summary>
+        /// <param name="sourceProvider">Source provider</param>
+        public SmbPitchShiftingSampleProvider(ISampleProvider sourceProvider)
+            : this(sourceProvider, 4096, 4L, 1f)
+        {
+        }
+
+
+        /// <summary>
+        /// Creates a new SMB Pitch Shifting Sample Provider with custom settings
+        /// </summary>
+        /// <param name="sourceProvider">Source Provider</param>
+        /// <param name="fftSize">FFT Size (port of two)</param>
+        /// <param name="osamp">Oversampling</param>
+        /// <param name="initialPitch">Initial pitch (1 = 100%)</param>
+        public SmbPitchShiftingSampleProvider(ISampleProvider sourceProvider, int fftSize, long osamp,
+            float initialPitch)
+        {
+            sourceStream = sourceProvider;
+            waveFormat = sourceProvider.WaveFormat;
+            this.fftSize = fftSize;
+            this.osamp = osamp;
+            PitchFactor = initialPitch;
+        }
+
+        /// <summary>
+        /// Read from this sample provider
+        /// </summary>
+        public int Read(float[] buffer, int offset, int count)
+        {
+            int sampRead = sourceStream.Read(buffer, offset, count);
+            // ReSharper disable once CompareOfFloatsByEqualityOperator
+            if (pitch == 1f)
+            {
+                //Nothing to do.
+                return sampRead;
             }
-            ShifterLeft.PitchShift(Pitch, SampRead, _FFTSize, _osamp, WFormat.SampleRate, Mono);
-            index = 0;
-            for (int sample = offset; sample <= SampRead - 1; sample++) {
-                buffer[sample] = Limiter(Mono[index]);
-                index += 1;
+            if (waveFormat.Channels == 1)
+            {
+                var mono = new float[sampRead];
+                var index = 0;
+                for (var sample = offset; sample <= sampRead - 1; sample++)
+                {
+                    mono[index] = buffer[sample];
+                    index += 1;
+                }
+                shifterLeft.PitchShift(pitch, sampRead, fftSize, osamp, waveFormat.SampleRate, mono);
+                index = 0;
+                for (var sample = offset; sample <= sampRead - 1; sample++)
+                {
+                    buffer[sample] = Limiter(mono[index]);
+                    index += 1;
+                }
+                return sampRead;
             }
-            return SampRead;
-        } else if (WFormat.Channels == 2) {
-            float[] Left = new float[(SampRead >> 1)];
-            float[] Right = new float[(SampRead >> 1)];
-            int index = 0;
-            for (int sample = offset; sample <= SampRead - 1; sample += 2) {
-                Left[index] = buffer[sample];
-                Right[index] = buffer[sample + 1];
-                index += 1;
+            if (waveFormat.Channels == 2)
+            {
+                var left = new float[(sampRead >> 1)];
+                var right = new float[(sampRead >> 1)];
+                var index = 0;
+                for (var sample = offset; sample <= sampRead - 1; sample += 2)
+                {
+                    left[index] = buffer[sample];
+                    right[index] = buffer[sample + 1];
+                    index += 1;
+                }
+                shifterLeft.PitchShift(pitch, sampRead >> 1, fftSize, osamp, waveFormat.SampleRate, left);
+                shifterRight.PitchShift(pitch, sampRead >> 1, fftSize, osamp, waveFormat.SampleRate, right);
+                index = 0;
+                for (var sample = offset; sample <= sampRead - 1; sample += 2)
+                {
+                    buffer[sample] = Limiter(left[index]);
+                    buffer[sample + 1] = Limiter(right[index]);
+                    index += 1;
+                }
+                return sampRead;
             }
-            ShifterLeft.PitchShift(Pitch, SampRead >> 1, _FFTSize, _osamp, WFormat.SampleRate, Left);
-            ShifterRight.PitchShift(Pitch, SampRead >> 1, _FFTSize, _osamp, WFormat.SampleRate, Right);
-            index = 0;
-            for (int sample = offset; sample <= SampRead - 1; sample += 2) {
-                buffer[sample] = Limiter(Left[index]);
-                buffer[sample + 1] = Limiter(Right[index]);
-                index += 1;
-            }
-            return SampRead;
-        } else {
             throw new Exception("Shifting of more than 2 channels is currently not supported.");
         }
-    }
 
-    public NAudio.Wave.WaveFormat WaveFormat {
-        get { return WFormat; }
-    }
+        /// <summary>
+        /// WaveFormat
+        /// </summary>
+        public WaveFormat WaveFormat => waveFormat;
 
-    public float PitchFactor {
-        get { return Pitch; }
-        set {
-            Pitch = value;
-        }
-    }
-
-    private float Limiter(float Sample)
-    {
-        float res = 0f;
-        if ((LIM_THRESH < Sample)) {
-            res = (Sample - LIM_THRESH) / LIM_RANGE;
-            res = (float)((Math.Atan(res) / M_PI_2) * LIM_RANGE + LIM_THRESH);
-        } else if ((Sample < -LIM_THRESH)) {
-            res = -(Sample + LIM_THRESH) / LIM_RANGE;
-            res = -(float)((Math.Atan(res) / M_PI_2) * LIM_RANGE + LIM_THRESH);
-        } else {
-            res = Sample;
-        }
-        return res;
-    }
-}
-
-
-/****************************************************************************
-*
-* NAME: PitchShift.cs
-* VERSION: 1.0
-* HOME URL: http://www.dspdimension.com
-* KNOWN BUGS: none
-*
-* SYNOPSIS: Routine for doing pitch shifting while maintaining
-* duration using the Short Time Fourier Transform.
-*
-* DESCRIPTION: The routine takes a pitchShift factor value which is between 0.5
-* (one octave down) and 2. (one octave up). A value of exactly 1 does not change
-* the pitch. numSampsToProcess tells the routine how many samples in indata[0...
-* numSampsToProcess-1] should be pitch shifted and moved to outdata[0 ...
-* numSampsToProcess-1]. The two buffers can be identical (ie. it can process the
-* data in-place). fftFrameSize defines the FFT frame size used for the
-* processing. Typical values are 1024, 2048 and 4096. It may be any value <=
-* MAX_FRAME_LENGTH but it MUST be a power of 2. osamp is the STFT
-* oversampling factor which also determines the overlap between adjacent STFT
-* frames. It should at least be 4 for moderate scaling ratios. A value of 32 is
-* recommended for best quality. sampleRate takes the sample rate for the signal 
-* in unit Hz, ie. 44100 for 44.1 kHz audio. The data passed to the routine in 
-* indata[] should be in the range [-1.0, 1.0), which is also the output range 
-* for the data, make sure you scale the data accordingly (for 16bit signed integers
-* you would have to divide (and multiply) by 32768). 
-*
-* COPYRIGHT 1999-2006 Stephan M. Bernsee <smb [AT] dspdimension [DOT] com>
-*
-* 						The Wide Open License (WOL)
-*
-* Permission to use, copy, modify, distribute and sell this software and its
-* documentation for any purpose is hereby granted without fee, provided that
-* the above copyright notice and this license appear in all source copies. 
-* THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT EXPRESS OR IMPLIED WARRANTY OF
-* ANY KIND. See http://www.dspguru.com/wol.htm for more information.
-*
-*****************************************************************************/
-
-/****************************************************************************
-*
-* This code was converted to C# by Michael Knight
-* madmik3 at gmail dot com. 
-* http://sites.google.com/site/mikescoderama/
-*
-*****************************************************************************/
-
-using System;
-using System.Collections.Generic;
-using System.Text;
-
-public class SMBPitchShifter
-{
-
-    private static int MAX_FRAME_LENGTH = 16000;
-    private float[] gInFIFO = new float[MAX_FRAME_LENGTH];
-    private float[] gOutFIFO = new float[MAX_FRAME_LENGTH];
-    private float[] gFFTworksp = new float[2 * MAX_FRAME_LENGTH];
-    private float[] gLastPhase = new float[MAX_FRAME_LENGTH / 2 + 1];
-    private float[] gSumPhase = new float[MAX_FRAME_LENGTH / 2 + 1];
-    private float[] gOutputAccum = new float[2 * MAX_FRAME_LENGTH];
-    private float[] gAnaFreq = new float[MAX_FRAME_LENGTH];
-    private float[] gAnaMagn = new float[MAX_FRAME_LENGTH];
-    private float[] gSynFreq = new float[MAX_FRAME_LENGTH];
-    private float[] gSynMagn = new float[MAX_FRAME_LENGTH];
-    private long gRover, gInit;
-
-    public void PitchShift(float pitchShift, long numSampsToProcess,
-       float sampleRate, float[] indata)
-    {
-        PitchShift(pitchShift, numSampsToProcess, (long)2048, (long)10, sampleRate, indata);
-    }
-    public void PitchShift(float pitchShift, long numSampsToProcess, long fftFrameSize,
-        long osamp, float sampleRate, float[] indata)
-    {
-        double magn, phase, tmp, window, real, imag;
-        double freqPerBin, expct;
-        long i, k, qpd, index, inFifoLatency, stepSize, fftFrameSize2;
-
-
-        float[] outdata = indata;
-        /* set up some handy variables */
-        fftFrameSize2 = fftFrameSize / 2;
-        stepSize = fftFrameSize / osamp;
-        freqPerBin = sampleRate / (double)fftFrameSize;
-        expct = 2.0 * Math.PI * (double)stepSize / (double)fftFrameSize;
-        inFifoLatency = fftFrameSize - stepSize;
-        if (gRover == 0) gRover = inFifoLatency;
-
-
-        /* main processing loop */
-        for (i = 0; i < numSampsToProcess; i++)
+        /// <summary>
+        /// Pitch Factor (1.0 = normal)
+        /// </summary>
+        public float PitchFactor
         {
-
-            /* As long as we have not yet collected enough data just read in */
-            gInFIFO[gRover] = indata[i];
-            outdata[i] = gOutFIFO[gRover - inFifoLatency];
-            gRover++;
-
-            /* now we have enough data for processing */
-            if (gRover >= fftFrameSize)
-            {
-                gRover = inFifoLatency;
-
-                /* do windowing and re,im interleave */
-                for (k = 0; k < fftFrameSize; k++)
-                {
-                    window = -.5 * Math.Cos(2.0 * Math.PI * (double)k / (double)fftFrameSize) + .5;
-                    gFFTworksp[2 * k] = (float)(gInFIFO[k] * window);
-                    gFFTworksp[2 * k + 1] = 0.0F;
-                }
-
-
-                /* ***************** ANALYSIS ******************* */
-                /* do transform */
-                ShortTimeFourierTransform(gFFTworksp, fftFrameSize, -1);
-
-                /* this is the analysis step */
-                for (k = 0; k <= fftFrameSize2; k++)
-                {
-
-                    /* de-interlace FFT buffer */
-                    real = gFFTworksp[2 * k];
-                    imag = gFFTworksp[2 * k + 1];
-
-                    /* compute magnitude and phase */
-                    magn = 2.0 * Math.Sqrt(real * real + imag * imag);
-                    phase = Math.Atan2(imag, real);
-
-                    /* compute phase difference */
-                    tmp = phase - gLastPhase[k];
-                    gLastPhase[k] = (float)phase;
-
-                    /* subtract expected phase difference */
-                    tmp -= (double)k * expct;
-
-                    /* map delta phase into +/- Pi interval */
-                    qpd = (long)(tmp / Math.PI);
-                    if (qpd >= 0) qpd += qpd & 1;
-                    else qpd -= qpd & 1;
-                    tmp -= Math.PI * (double)qpd;
-
-                    /* get deviation from bin frequency from the +/- Pi interval */
-                    tmp = osamp * tmp / (2.0 * Math.PI);
-
-                    /* compute the k-th partials' true frequency */
-                    tmp = (double)k * freqPerBin + tmp * freqPerBin;
-
-                    /* store magnitude and true frequency in analysis arrays */
-                    gAnaMagn[k] = (float)magn;
-                    gAnaFreq[k] = (float)tmp;
-
-                }
-
-                /* ***************** PROCESSING ******************* */
-                /* this does the actual pitch shifting */
-                for (int zero = 0; zero < fftFrameSize; zero++)
-                {
-                    gSynMagn[zero] = 0;
-                    gSynFreq[zero] = 0;
-                }
-
-                for (k = 0; k <= fftFrameSize2; k++)
-                {
-                    index = (long)(k * pitchShift);
-                    if (index <= fftFrameSize2)
-                    {
-                        gSynMagn[index] += gAnaMagn[k];
-                        gSynFreq[index] = gAnaFreq[k] * pitchShift;
-                    }
-                }
-
-                /* ***************** SYNTHESIS ******************* */
-                /* this is the synthesis step */
-                for (k = 0; k <= fftFrameSize2; k++)
-                {
-
-                    /* get magnitude and true frequency from synthesis arrays */
-                    magn = gSynMagn[k];
-                    tmp = gSynFreq[k];
-
-                    /* subtract bin mid frequency */
-                    tmp -= (double)k * freqPerBin;
-
-                    /* get bin deviation from freq deviation */
-                    tmp /= freqPerBin;
-
-                    /* take osamp into account */
-                    tmp = 2.0 * Math.PI * tmp / osamp;
-
-                    /* add the overlap phase advance back in */
-                    tmp += (double)k * expct;
-
-                    /* accumulate delta phase to get bin phase */
-                    gSumPhase[k] += (float)tmp;
-                    phase = gSumPhase[k];
-
-                    /* get real and imag part and re-interleave */
-                    gFFTworksp[2 * k] = (float)(magn * Math.Cos(phase));
-                    gFFTworksp[2 * k + 1] = (float)(magn * Math.Sin(phase));
-                }
-
-                /* zero negative frequencies */
-                for (k = fftFrameSize + 2; k < 2 * fftFrameSize; k++) gFFTworksp[k] = 0.0F;
-
-                /* do inverse transform */
-                ShortTimeFourierTransform(gFFTworksp, fftFrameSize, 1);
-
-                /* do windowing and add to output accumulator */
-                for (k = 0; k < fftFrameSize; k++)
-                {
-                    window = -.5 * Math.Cos(2.0 * Math.PI * (double)k / (double)fftFrameSize) + .5;
-                    gOutputAccum[k] += (float)(2.0 * window * gFFTworksp[2 * k] / (fftFrameSize2 * osamp));
-                }
-                for (k = 0; k < stepSize; k++) gOutFIFO[k] = gOutputAccum[k];
-
-                /* shift accumulator */
-                //memmove(gOutputAccum, gOutputAccum + stepSize, fftFrameSize * sizeof(float));
-                for (k = 0; k < fftFrameSize; k++)
-                {
-                    gOutputAccum[k] = gOutputAccum[k + stepSize];
-                }
-
-                /* move input FIFO */
-                for (k = 0; k < inFifoLatency; k++) gInFIFO[k] = gInFIFO[k + stepSize];
-            }
+            get { return pitch; }
+            set { pitch = value; }
         }
-    }
 
-    public void ShortTimeFourierTransform(float[] fftBuffer, long fftFrameSize, long sign)
-    {
-        float wr, wi, arg, temp;
-        float tr, ti, ur, ui;
-        long i, bitm, j, le, le2, k;
-
-        for (i = 2; i < 2 * fftFrameSize - 2; i += 2)
+        private float Limiter(float sample)
         {
-            for (bitm = 2, j = 0; bitm < 2 * fftFrameSize; bitm <<= 1)
+            float res;
+            if ((LIM_THRESH < sample))
             {
-                if ((i & bitm) != 0) j++;
-                j <<= 1;
+                res = (sample - LIM_THRESH)/LIM_RANGE;
+                res = (float) ((Math.Atan(res)/M_PI_2)*LIM_RANGE + LIM_THRESH);
             }
-            if (i < j)
+            else if ((sample < -LIM_THRESH))
             {
-                temp = fftBuffer[i];
-                fftBuffer[i] = fftBuffer[j];
-                fftBuffer[j] = temp;
-                temp = fftBuffer[i + 1];
-                fftBuffer[i + 1] = fftBuffer[j + 1];
-                fftBuffer[j + 1] = temp;
+                res = -(sample + LIM_THRESH)/LIM_RANGE;
+                res = -(float) ((Math.Atan(res)/M_PI_2)*LIM_RANGE + LIM_THRESH);
             }
-        }
-        long max = (long)(Math.Log(fftFrameSize) / Math.Log(2.0) + .5);
-        for (k = 0, le = 2; k < max; k++)
-        {
-            le <<= 1;
-            le2 = le >> 1;
-            ur = 1.0F;
-            ui = 0.0F;
-            arg = (float)Math.PI / (le2 >> 1);
-            wr = (float)Math.Cos(arg);
-            wi = (float)(sign * Math.Sin(arg));
-            for (j = 0; j < le2; j += 2)
+            else
             {
-
-                for (i = j; i < 2 * fftFrameSize; i += le)
-                {
-                    tr = fftBuffer[i + le2] * ur - fftBuffer[i + le2 + 1] * ui;
-                    ti = fftBuffer[i + le2] * ui + fftBuffer[i + le2 + 1] * ur;
-                    fftBuffer[i + le2] = fftBuffer[i] - tr;
-                    fftBuffer[i + le2 + 1] = fftBuffer[i + 1] - ti;
-                    fftBuffer[i] += tr;
-                    fftBuffer[i + 1] += ti;
-
-                }
-                tr = ur * wr - ui * wi;
-                ui = ur * wi + ui * wr;
-                ur = tr;
+                res = sample;
             }
+            return res;
         }
     }
 }

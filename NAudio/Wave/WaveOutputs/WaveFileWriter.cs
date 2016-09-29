@@ -62,7 +62,7 @@ namespace NAudio.Wave
         /// </summary>
         /// <param name="outStream">The stream the method will output to</param>
         /// <param name="sourceProvider">The source WaveProvider</param>
-        private static void WriteToStream(Stream outStream, IWaveProvider sourceProvider) {
+        private static void WriteWavFileToStream(Stream outStream, IWaveProvider sourceProvider) {
             using (var writer = new WaveFileWriter(new IgnoreDisposeStream(outStream), sourceProvider.WaveFormat)) 
             {
                 var buffer = new byte[sourceProvider.WaveFormat.AverageBytesPerSecond * 4];

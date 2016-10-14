@@ -80,14 +80,14 @@ namespace NAudio.Wave.SampleProviders
             {
                 var mono = new float[sampRead];
                 var index = 0;
-                for (var sample = offset; sample <= sampRead - 1; sample++)
+                for (var sample = offset; sample <= sampRead + offset - 1; sample++)
                 {
                     mono[index] = buffer[sample];
                     index += 1;
                 }
                 shifterLeft.PitchShift(pitch, sampRead, fftSize, osamp, waveFormat.SampleRate, mono);
                 index = 0;
-                for (var sample = offset; sample <= sampRead - 1; sample++)
+                for (var sample = offset; sample <= sampRead + offset - 1; sample++)
                 {
                     buffer[sample] = Limiter(mono[index]);
                     index += 1;
@@ -99,7 +99,7 @@ namespace NAudio.Wave.SampleProviders
                 var left = new float[(sampRead >> 1)];
                 var right = new float[(sampRead >> 1)];
                 var index = 0;
-                for (var sample = offset; sample <= sampRead - 1; sample += 2)
+                for (var sample = offset; sample <= sampRead + offset - 1; sample += 2)
                 {
                     left[index] = buffer[sample];
                     right[index] = buffer[sample + 1];
@@ -108,7 +108,7 @@ namespace NAudio.Wave.SampleProviders
                 shifterLeft.PitchShift(pitch, sampRead >> 1, fftSize, osamp, waveFormat.SampleRate, left);
                 shifterRight.PitchShift(pitch, sampRead >> 1, fftSize, osamp, waveFormat.SampleRate, right);
                 index = 0;
-                for (var sample = offset; sample <= sampRead - 1; sample += 2)
+                for (var sample = offset; sample <= sampRead + offset - 1; sample += 2)
                 {
                     buffer[sample] = Limiter(left[index]);
                     buffer[sample + 1] = Limiter(right[index]);

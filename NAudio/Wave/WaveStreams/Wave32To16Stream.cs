@@ -1,4 +1,5 @@
 using System;
+using NAudio.Utils;
 
 namespace NAudio.Wave
 {
@@ -19,7 +20,7 @@ namespace NAudio.Wave
         /// The <see cref="Read"/> method reuses the same buffer to prevent
         /// unnecessary allocations.
         /// </summary>
-        private byte[] sourceBuffer = new byte[0];
+        private byte[] sourceBuffer;
 
         /// <summary>
         /// Creates a new Wave32To16Stream
@@ -110,8 +111,7 @@ namespace NAudio.Wave
             lock (lockObject)
             {
                 int count = numBytes*2;
-                if (sourceBuffer.Length < count)
-                    sourceBuffer = new byte[count];
+                sourceBuffer = BufferHelpers.Ensure(sourceBuffer, count);
                 int bytesRead = sourceStream.Read(sourceBuffer, 0, count);
                 Convert32To16(destBuffer, offset, sourceBuffer, bytesRead);
                 position += (bytesRead/2);

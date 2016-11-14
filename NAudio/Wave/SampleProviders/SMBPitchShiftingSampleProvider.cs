@@ -30,12 +30,9 @@ namespace NAudio.Wave.SampleProviders
         private readonly SmbPitchShifter shifterRight = new SmbPitchShifter();
 
         //Limiter constants
-
-        // ReSharper disable InconsistentNaming
         const float LIM_THRESH = 0.95f;
         const float LIM_RANGE = (1f - LIM_THRESH);
         const float M_PI_2 = (float) (Math.PI/2);
-        // ReSharper restore InconsistentNaming
 
         /// <summary>
         /// Creates a new SMB Pitch Shifting Sample Provider with default settings
@@ -46,14 +43,13 @@ namespace NAudio.Wave.SampleProviders
         {
         }
 
-
         /// <summary>
         /// Creates a new SMB Pitch Shifting Sample Provider with custom settings
         /// </summary>
-        /// <param name="sourceProvider">Source Provider</param>
-        /// <param name="fftSize">FFT Size (port of two)</param>
-        /// <param name="osamp">Oversampling</param>
-        /// <param name="initialPitch">Initial pitch (1 = 100%)</param>
+        /// <param name="sourceProvider">Source provider</param>
+        /// <param name="fftSize">FFT Size (any power of two <= 4096: 4096, 2048, 1024, 512, ...)</param>
+        /// <param name="osamp">Oversampling (number of overlapping windows)</param>
+        /// <param name="initialPitch">Initial pitch (0.5f = octave down, 1.0f = normal, 2.0f = octave up)</param>
         public SmbPitchShiftingSampleProvider(ISampleProvider sourceProvider, int fftSize, long osamp,
             float initialPitch)
         {
@@ -70,7 +66,6 @@ namespace NAudio.Wave.SampleProviders
         public int Read(float[] buffer, int offset, int count)
         {
             int sampRead = sourceStream.Read(buffer, offset, count);
-            // ReSharper disable once CompareOfFloatsByEqualityOperator
             if (pitch == 1f)
             {
                 //Nothing to do.
@@ -125,7 +120,7 @@ namespace NAudio.Wave.SampleProviders
         public WaveFormat WaveFormat => waveFormat;
 
         /// <summary>
-        /// Pitch Factor (1.0 = normal)
+        /// Pitch Factor (0.5f = octave down, 1.0f = normal, 2.0f = octave up)
         /// </summary>
         public float PitchFactor
         {

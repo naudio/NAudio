@@ -47,7 +47,7 @@ namespace NAudio.Wave.SampleProviders
         /// Creates a new SMB Pitch Shifting Sample Provider with custom settings
         /// </summary>
         /// <param name="sourceProvider">Source provider</param>
-        /// <param name="fftSize">FFT Size (any power of two <= 4096: 4096, 2048, 1024, 512, ...)</param>
+        /// <param name="fftSize">FFT Size (any power of two &lt;= 4096: 4096, 2048, 1024, 512, ...)</param>
         /// <param name="osamp">Oversampling (number of overlapping windows)</param>
         /// <param name="initialPitch">Initial pitch (0.5f = octave down, 1.0f = normal, 2.0f = octave up)</param>
         public SmbPitchShiftingSampleProvider(ISampleProvider sourceProvider, int fftSize, long osamp,

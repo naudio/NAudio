@@ -40,6 +40,7 @@ The latest source code is here on GitHub.
     * pass blocks of samples through an FFT for metering or DSP
     * delay, loop, or fade audio in and out
     * Perform EQ with a BiQuad filter (allowing low pass, high pass, peaking EQ, etc.)
+    * Pitch shifting of audio with a phase vocoder
 * Record audio 
     * using WaveIn, WASAPI or ASIO
 * Work with soundcards

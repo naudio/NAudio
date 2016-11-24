@@ -36,6 +36,11 @@ namespace NAudio.Midi
         }
 
         /// <summary>
+        /// Creates a deep clone of this MIDI event.
+        /// </summary>
+        public override MidiEvent Clone() => (TextEvent)MemberwiseClone();
+
+        /// <summary>
         /// The contents of this text event
         /// </summary>
         public string Text

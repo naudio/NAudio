@@ -13,6 +13,14 @@ namespace NAudio.Midi
         private ushort sequenceNumber;
 
         /// <summary>
+        /// Creates a new track sequence number event
+        /// </summary>
+        public TrackSequenceNumberEvent(ushort sequenceNumber)
+        {
+            this.sequenceNumber = sequenceNumber;
+        }
+
+        /// <summary>
         /// Reads a new track sequence number event from a MIDI stream
         /// </summary>
         /// <param name="br">The MIDI stream</param>
@@ -27,6 +35,11 @@ namespace NAudio.Midi
             }
             sequenceNumber = (ushort) ((br.ReadByte() << 8) + br.ReadByte());
         }
+
+        /// <summary>
+        /// Creates a deep clone of this MIDI event.
+        /// </summary>
+        public override MidiEvent Clone() => (TrackSequenceNumberEvent)MemberwiseClone();
 
         /// <summary>
         /// Describes this event

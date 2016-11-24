@@ -11,7 +11,7 @@ namespace NAudio.Midi
     {
         private MetaEventType metaEvent;
         internal int metaDataLength;
-        private byte[] data; // only filled in for generic meta-event types
+
         /// <summary>
         /// Gets the type of this meta event
         /// </summary>
@@ -42,6 +42,11 @@ namespace NAudio.Midi
             this.metaEvent = metaEventType;
             this.metaDataLength = metaDataLength;
         }
+
+        /// <summary>
+        /// Creates a deep clone of this MIDI event.
+        /// </summary>
+        public override MidiEvent Clone() => new MetaEvent(metaEvent, metaDataLength, AbsoluteTime);
 
         /// <summary>
         /// Reads a meta-event from a stream
@@ -93,12 +98,12 @@ namespace NAudio.Midi
                 break;
             default:
 //System.Windows.Forms.MessageBox.Show(String.Format("Unsupported MetaEvent {0} length {1} pos {2}",metaEvent,length,br.BaseStream.Position));
-                me.data = br.ReadBytes(length);
-                if (me.data.Length != length)
+                var data = br.ReadBytes(length);
+                if (data.Length != length)
                 {
                     throw new FormatException("Failed to read metaevent's data fully");
                 }
-                break;
+                return new RawMetaEvent(metaEvent, default(long), data);
             }
             me.metaEvent = metaEvent;
             me.metaDataLength = length;
@@ -107,21 +112,11 @@ namespace NAudio.Midi
         }
 
         /// <summary>
-        /// Describes this Meta event
+        /// Describes this meta event
         /// </summary>
-        /// <returns>String describing the metaevent</returns>
         public override string ToString() 
         {
-            if (data == null)
-            {
-                return String.Format("{0} {1}", this.AbsoluteTime, metaEvent);
-            }
-            StringBuilder sb = new StringBuilder();
-            foreach (byte b in data)
-            {
-                sb.AppendFormat("{0:X2} ", b);
-            }
-            return String.Format("{0} {1}\r\n{2}", this.AbsoluteTime, metaEvent,sb.ToString());
+            return $"{AbsoluteTime} {metaEvent}";
         }
 
         /// <summary>
@@ -132,8 +127,6 @@ namespace NAudio.Midi
             base.Export(ref absoluteTime, writer);
             writer.Write((byte)metaEvent);
             WriteVarInt(writer, metaDataLength);
-            if(data != null)
-                writer.Write(data,0,data.Length);
         }
     }
 }

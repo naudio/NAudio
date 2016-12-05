@@ -23,7 +23,13 @@ namespace NAudio.Wave.SampleProviders
                 throw new ArgumentException("Source must be stereo");
             }
             this.sourceProvider = sourceProvider;
-            WaveFormat = new WaveFormat(sourceProvider.WaveFormat.SampleRate, 1);
+            WaveFormat = WaveFormat.CreateCustomFormat(
+                sourceProvider.WaveFormat.Encoding,
+                sourceProvider.WaveFormat.SampleRate,
+                1,
+                sourceProvider.WaveFormat.AverageBytesPerSecond/2,
+                sourceProvider.WaveFormat.BitsPerSample/8,
+                sourceProvider.WaveFormat.BitsPerSample);
         }
 
         /// <summary>

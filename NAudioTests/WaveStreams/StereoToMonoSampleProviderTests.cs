@@ -21,5 +21,15 @@ namespace NAudioTests.WaveStreams
                 Assert.AreEqual(1 + 2*sample, buffer[sample], "sample #" + sample);
             }
         }
+
+        [Test]
+        public void CorrectOutputFormat()
+        {
+            var stereoSampleProvider = new TestSampleProvider(44100, 2);
+            var mono = stereoSampleProvider.ToMono(0f, 1f);
+            Assert.AreEqual(WaveFormatEncoding.IeeeFloat, mono.WaveFormat.Encoding);
+            Assert.AreEqual(1, mono.WaveFormat.Channels);
+            Assert.AreEqual(44100, mono.WaveFormat.SampleRate);
+        }
     }
 }

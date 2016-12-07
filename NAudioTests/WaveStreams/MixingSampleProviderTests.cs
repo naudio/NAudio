@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
-using System.Text;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using NUnit.Framework;
@@ -56,7 +53,7 @@ namespace NAudioTests.WaveStreams
             var input1 = new TestSampleProvider(44100, 2, 800);
             var msp = new MixingSampleProvider(new[] { input1 });
             msp.ReadFully = true;
-            // of 1000 floats of value 9999
+            // buffer of 1000 floats of value 9999
             var buffer = Enumerable.Range(1,1000).Select(n => 9999f).ToArray();
 
             Assert.AreEqual(buffer.Length, msp.Read(buffer, 0, buffer.Length));
@@ -65,6 +62,26 @@ namespace NAudioTests.WaveStreams
             Assert.AreEqual(799f, buffer[799]);
             Assert.AreEqual(0, buffer[800]);
             Assert.AreEqual(0, buffer[999]);
+        }
+
+        [Test]
+        public void MixerInputEndedInvoked()
+        {
+            var input1 = new TestSampleProvider(44100, 2, 8000);
+            var input2 = new TestSampleProvider(44100, 2, 800);
+            var msp = new MixingSampleProvider(new[] { input1, input2 });
+            ISampleProvider endedInput = null;
+            msp.MixerInputEnded += (s, a) =>
+            {
+                Assert.IsNull(endedInput);
+                endedInput = a.SampleProvider;
+            };
+            // buffer of 1000 floats of value 9999
+            var buffer = Enumerable.Range(1, 1000).Select(n => 9999f).ToArray();
+
+            Assert.AreEqual(buffer.Length, msp.Read(buffer, 0, buffer.Length));
+            Assert.AreSame(input2, endedInput);
+            Assert.AreEqual(1,msp.MixerInputs.Count());
         }
 
     }

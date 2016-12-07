@@ -1,20 +1,11 @@
-﻿using System;
-using System.ComponentModel.Composition;
-using System.Linq;
-using System.Windows.Controls;
+﻿using System.Windows.Controls;
 
 namespace NAudioWpfDemo.WasapiCaptureDemo
 {
-    [Export(typeof(IModule))]
     class WasapiCaptureDemoPlugin : IModule
     {
         private WasapiCaptureViewModel viewModel;
         private WasapiCaptureDemoView view;
-
-        public WasapiCaptureDemoPlugin()
-        {
-
-        }
 
         public string Name
         {
@@ -29,14 +20,14 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
         private void CreateView()
         {
             view = new WasapiCaptureDemoView();
-            this.viewModel = new WasapiCaptureViewModel();
+            viewModel = new WasapiCaptureViewModel();
             view.DataContext = viewModel;
         }
 
         public void Deactivate()
         {
-            this.viewModel.Dispose();
-            this.view = null;
+            viewModel.Dispose();
+            view = null;
         }
     }
 }

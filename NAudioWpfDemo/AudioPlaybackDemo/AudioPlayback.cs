@@ -11,19 +11,7 @@ namespace NAudioWpfDemo
 
         public event EventHandler<FftEventArgs> FftCalculated;
 
-        protected virtual void OnFftCalculated(FftEventArgs e)
-        {
-            EventHandler<FftEventArgs> handler = FftCalculated;
-            if (handler != null) handler(this, e);
-        }
-
         public event EventHandler<MaxSampleEventArgs> MaximumCalculated;
-
-        protected virtual void OnMaximumCalculated(MaxSampleEventArgs e)
-        {
-            EventHandler<MaxSampleEventArgs> handler = MaximumCalculated;
-            if (handler != null) handler(this, e);
-        }
 
         public void Load(string fileName)
         {
@@ -35,11 +23,8 @@ namespace NAudioWpfDemo
 
         private void CloseFile()
         {
-            if (fileStream != null)
-            {
-                fileStream.Dispose();
-                fileStream = null;
-            }
+            fileStream?.Dispose();
+            fileStream = null;
         }
 
         private void OpenFile(string fileName)
@@ -51,8 +36,8 @@ namespace NAudioWpfDemo
                 var aggregator = new SampleAggregator(inputStream);
                 aggregator.NotificationCount = inputStream.WaveFormat.SampleRate / 100;
                 aggregator.PerformFFT = true;
-                aggregator.FftCalculated += (s, a) => OnFftCalculated(a);
-                aggregator.MaximumCalculated += (s, a) => OnMaximumCalculated(a);
+                aggregator.FftCalculated += (s, a) => FftCalculated?.Invoke(this, a);
+                aggregator.MaximumCalculated += (s, a) => MaximumCalculated?.Invoke(this, a); 
                 playbackDevice.Init(aggregator);
             }
             catch (Exception e)
@@ -85,18 +70,12 @@ namespace NAudioWpfDemo
 
         public void Pause()
         {
-            if (playbackDevice != null)
-            {
-                playbackDevice.Pause();
-            }
+            playbackDevice?.Pause();
         }
 
         public void Stop()
         {
-            if (playbackDevice != null)
-            {
-                playbackDevice.Stop();
-            }
+            playbackDevice?.Stop();
             if (fileStream != null)
             {
                 fileStream.Position = 0;
@@ -107,11 +86,8 @@ namespace NAudioWpfDemo
         {
             Stop();
             CloseFile();
-            if (playbackDevice != null)
-            {
-                playbackDevice.Dispose();
-                playbackDevice = null;
-            }
+            playbackDevice?.Dispose();
+            playbackDevice = null;            
         }
     }
 }

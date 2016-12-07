@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using NAudio.Utils;
 
 namespace NAudio.Wave.SampleProviders
@@ -10,10 +9,9 @@ namespace NAudio.Wave.SampleProviders
     /// </summary>
     public class MixingSampleProvider : ISampleProvider
     {
-        private List<ISampleProvider> sources;
-        private WaveFormat waveFormat;
+        private readonly List<ISampleProvider> sources;
         private float[] sourceBuffer;
-        private const int maxInputs = 1024; // protect ourselves against doing something silly
+        private const int MaxInputs = 1024; // protect ourselves against doing something silly
 
         /// <summary>
         /// Creates a new MixingSampleProvider, with no inputs, but a specified WaveFormat
@@ -25,8 +23,8 @@ namespace NAudio.Wave.SampleProviders
             {
                 throw new ArgumentException("Mixer wave format must be IEEE float");
             }
-            this.sources = new List<ISampleProvider>();
-            this.waveFormat = waveFormat;
+            sources = new List<ISampleProvider>();
+            WaveFormat = waveFormat;
         }
 
         /// <summary>
@@ -46,6 +44,11 @@ namespace NAudio.Wave.SampleProviders
                 throw new ArgumentException("Must provide at least one input in this constructor");
             }
         }
+
+        /// <summary>
+        /// Returns the mixer inputs (read-only - use AddMixerInput to add an input
+        /// </summary>
+        public IEnumerable<ISampleProvider> MixerInputs => sources;
 
         /// <summary>
         /// When set to true, the Read method always returns the number
@@ -76,25 +79,30 @@ namespace NAudio.Wave.SampleProviders
             // the same time as a Read, rather than two AddMixerInput calls at the same time
             lock (sources)
             {
-                if (this.sources.Count >= maxInputs)
+                if (sources.Count >= MaxInputs)
                 {
                     throw new InvalidOperationException("Too many mixer inputs");
                 }
-                this.sources.Add(mixerInput);
+                sources.Add(mixerInput);
             }
-            if (this.waveFormat == null)
+            if (WaveFormat == null)
             {
-                this.waveFormat = mixerInput.WaveFormat;
+                WaveFormat = mixerInput.WaveFormat;
             }
             else
             {
-                if (this.WaveFormat.SampleRate != mixerInput.WaveFormat.SampleRate ||
-                    this.WaveFormat.Channels != mixerInput.WaveFormat.Channels)
+                if (WaveFormat.SampleRate != mixerInput.WaveFormat.SampleRate ||
+                    WaveFormat.Channels != mixerInput.WaveFormat.Channels)
                 {
                     throw new ArgumentException("All mixer inputs must have the same WaveFormat");
                 }
             }
         }
+
+        /// <summary>
+        /// Raised when a mixer input has been removed because it has ended
+        /// </summary>
+        public event EventHandler<SampleProviderEventArgs> MixerInputEnded;
 
         /// <summary>
         /// Removes a mixer input
@@ -104,7 +112,7 @@ namespace NAudio.Wave.SampleProviders
         {
             lock (sources)
             {
-                this.sources.Remove(mixerInput);
+                sources.Remove(mixerInput);
             }
         }
 
@@ -115,17 +123,14 @@ namespace NAudio.Wave.SampleProviders
         {
             lock (sources)
             {
-                this.sources.Clear();
+                sources.Clear();
             }
         }
 
         /// <summary>
         /// The output WaveFormat of this sample provider
         /// </summary>
-        public WaveFormat WaveFormat
-        {
-            get { return this.waveFormat; }
-        }
+        public WaveFormat WaveFormat { get; private set; }
 
         /// <summary>
         /// Reads samples from this sample provider
@@ -137,29 +142,30 @@ namespace NAudio.Wave.SampleProviders
         public int Read(float[] buffer, int offset, int count)
         {
             int outputSamples = 0;
-            this.sourceBuffer = BufferHelpers.Ensure(this.sourceBuffer, count);
+            sourceBuffer = BufferHelpers.Ensure(sourceBuffer, count);
             lock (sources)
             {
                 int index = sources.Count - 1;
                 while (index >= 0)
                 {
                     var source = sources[index];
-                    int samplesRead = source.Read(this.sourceBuffer, 0, count);
+                    int samplesRead = source.Read(sourceBuffer, 0, count);
                     int outIndex = offset;
                     for (int n = 0; n < samplesRead; n++)
                     {
                         if (n >= outputSamples)
                         {
-                            buffer[outIndex++] = this.sourceBuffer[n];
+                            buffer[outIndex++] = sourceBuffer[n];
                         }
                         else
                         {
-                            buffer[outIndex++] += this.sourceBuffer[n];
+                            buffer[outIndex++] += sourceBuffer[n];
                         }
                     }
                     outputSamples = Math.Max(samplesRead, outputSamples);
-                    if (samplesRead == 0)
+                    if (samplesRead < count)
                     {
+                        MixerInputEnded?.Invoke(this, new SampleProviderEventArgs(source));
                         sources.RemoveAt(index);
                     }
                     index--;
@@ -177,5 +183,24 @@ namespace NAudio.Wave.SampleProviders
             }
             return outputSamples;
         }
+    }
+
+    /// <summary>
+    /// SampleProvider event args
+    /// </summary>
+    public class SampleProviderEventArgs : EventArgs
+    {
+        /// <summary>
+        /// Constructs a new SampleProviderEventArgs
+        /// </summary>
+        public SampleProviderEventArgs(ISampleProvider sampleProvider)
+        {
+            SampleProvider = sampleProvider;
+        }
+
+        /// <summary>
+        /// The Sample Provider
+        /// </summary>
+        public ISampleProvider SampleProvider { get; private set; }
     }
 }

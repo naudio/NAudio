@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.Composition;
 using System.Linq;
-using System.Text;
 using System.Windows.Controls;
 
 namespace NAudioWpfDemo.MediaFoundationEncode
 {
-    [Export(typeof(IModule))]
     class MediaFoundationEncodePlugin : ModuleBase
     {
         protected override UserControl CreateViewAndViewModel()

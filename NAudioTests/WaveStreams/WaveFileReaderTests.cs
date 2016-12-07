@@ -175,5 +175,27 @@ namespace NAudioTests.WaveStreams
                 System.IO.File.Delete(tempFilePath);
             }
         }
+
+        [Test]
+        [Category("IntegrationTest")]
+        public void Mp3FileReaderDisposesFileOnFailToParse()
+        {
+            string tempFilePath = Path.GetTempFileName();
+            File.WriteAllText(tempFilePath, "Some test content");
+            try
+            {
+                var reader = new Mp3FileReader(tempFilePath);
+
+                Assert.Fail("Expected exception System.FormatException was not thrown for file missing a header.");
+            }
+            catch (InvalidDataException ex)
+            {
+                Assert.IsNotNull(ex);
+            }
+            finally
+            {
+                File.Delete(tempFilePath);
+            }
+        }
     }
 }

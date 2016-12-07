@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using NAudio.Wave.SampleProviders;
+using NAudio.Utils;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave
@@ -54,7 +55,34 @@ namespace NAudio.Wave
                 }
             }
         }
+        
+        /// <summary>
+        /// Writes to a stream by reading all the data from a WaveProvider
+        /// BEWARE: the WaveProvider MUST return 0 from its Read method when it is finished,
+        /// or the Wave File will grow indefinitely.
+        /// </summary>
+        /// <param name="outStream">The stream the method will output to</param>
+        /// <param name="sourceProvider">The source WaveProvider</param>
+        public static void WriteWavFileToStream(Stream outStream, IWaveProvider sourceProvider)
+        {
+            using (var writer = new WaveFileWriter(new IgnoreDisposeStream(outStream), sourceProvider.WaveFormat)) 
+            {
+                var buffer = new byte[sourceProvider.WaveFormat.AverageBytesPerSecond * 4];
+                while(true) 
+                {
+                    var bytesRead = sourceProvider.Read(buffer, 0, buffer.Length);
+                    if (bytesRead == 0) 
+                    {
+                        // end of source provider
+                        outStream.Flush();
+                        break;
+                    }
 
+                    writer.Write(buffer, 0, bytesRead);
+                }
+            }
+        }
+        
         /// <summary>
         /// WaveFileWriter that actually writes to a stream
         /// </summary>

@@ -37,6 +37,11 @@ namespace NAudio.Midi
         }
 
         /// <summary>
+        /// Creates a deep clone of this MIDI event.
+        /// </summary>
+        public override MidiEvent Clone() => (KeySignatureEvent)MemberwiseClone();
+
+        /// <summary>
         /// Number of sharps or flats
         /// </summary>
         public int SharpsFlats

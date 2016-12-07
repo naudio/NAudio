@@ -1,10 +1,7 @@
-﻿using System.ComponentModel.Composition;
-using System.Windows.Controls;
-using NAudioWpfDemo.MediaFoundationEncode;
+﻿using System.Windows.Controls;
 
 namespace NAudioWpfDemo.MediaFoundationResample
 {
-    [Export(typeof(IModule))]
     class MediaFoundationResamplePlugin : ModuleBase
     {
         protected override UserControl CreateViewAndViewModel()

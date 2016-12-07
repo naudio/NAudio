@@ -129,6 +129,7 @@
     <Compile Include="MediaFoundation\IMFReadWriteClassFactory.cs" />
     <Compile Include="MediaFoundation\MediaFoundationErrors.cs" />
     <Compile Include="MediaFoundation\MediaTypes.cs" />
+    <Compile Include="Midi\RawMetaEvent.cs" />
     <Compile Include="Utils\ChunkIdentifier.cs" />
     <Compile Include="Utils\FieldDescriptionAttribute.cs" />
     <Compile Include="MediaFoundation\IMFActivate.cs" />
@@ -182,6 +183,8 @@
     <Compile Include="Wave\SampleProviders\SampleToWaveProvider16.cs" />
     <Compile Include="Wave\SampleProviders\SampleToWaveProvider24.cs" />
     <Compile Include="Wave\SampleProviders\SignalGenerator.cs" />
+    <Compile Include="Dsp\SmbPitchShifter.cs" />
+    <Compile Include="Wave\SampleProviders\SmbPitchShiftingSampleProvider.cs" />
     <Compile Include="Wave\SampleProviders\StereoToMonoSampleProvider.cs" />
     <Compile Include="Wave\SampleProviders\WaveToSampleProvider64.cs" />
     <Compile Include="Wave\SampleProviders\WdlResamplingSampleProvider.cs" />

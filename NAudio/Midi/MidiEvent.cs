@@ -7,7 +7,7 @@ namespace NAudio.Midi
     /// <summary>
     /// Represents an individual MIDI event
     /// </summary>
-    public class MidiEvent 
+    public class MidiEvent : ICloneable
     {
         /// <summary>The MIDI command code</summary>
         private MidiCommandCode commandCode;
@@ -190,6 +190,13 @@ namespace NAudio.Midi
             this.Channel = channel;
             this.commandCode = commandCode;
         }
+
+        /// <summary>
+        /// Creates a deep clone of this MIDI event.
+        /// </summary>
+        public virtual MidiEvent Clone() => (MidiEvent)MemberwiseClone();
+
+        object ICloneable.Clone() => Clone();
 
         /// <summary>
         /// The MIDI Channel Number for this event (1-16)

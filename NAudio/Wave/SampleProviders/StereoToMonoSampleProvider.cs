@@ -23,7 +23,7 @@ namespace NAudio.Wave.SampleProviders
                 throw new ArgumentException("Source must be stereo");
             }
             this.sourceProvider = sourceProvider;
-            WaveFormat = new WaveFormat(sourceProvider.WaveFormat.SampleRate, 1);
+            WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sourceProvider.WaveFormat.SampleRate, 1);
         }
 
         /// <summary>

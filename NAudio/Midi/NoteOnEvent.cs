@@ -38,6 +38,11 @@ namespace NAudio.Midi
         }
 
         /// <summary>
+        /// Creates a deep clone of this MIDI event.
+        /// </summary>
+        public override MidiEvent Clone() => new NoteOnEvent(AbsoluteTime, Channel, NoteNumber, Velocity, NoteLength);
+
+        /// <summary>
         /// The associated Note off event
         /// </summary>
         public NoteEvent OffEvent

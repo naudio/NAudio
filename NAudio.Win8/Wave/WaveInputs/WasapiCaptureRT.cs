@@ -39,6 +39,7 @@ namespace NAudio.Wave
         private AudioClient audioClient;
         private IntPtr hEvent;
         private Task captureTask;
+        private SynchronizationContext syncContext;
 
         /// <summary>
         /// Indicates recorded data is available 
@@ -66,6 +67,7 @@ namespace NAudio.Wave
         public WasapiCaptureRT(string device)
         {
             this.device = device;
+            this.syncContext = SynchronizationContext.Current;
             //this.waveFormat = audioClient.MixFormat;
         }
 
@@ -294,11 +296,18 @@ namespace NAudio.Wave
 
         private void RaiseRecordingStopped(Exception exception)
         {
-            // Do async invoke, otherwise StopRecording():captureTask.Wait() 
-            // will deadlock when StopRecording() is called from the UI thread
-            Task.Run(() =>
-                RecordingStopped?.Invoke(this, new StoppedEventArgs(exception))
-            );
+            var handler = RecordingStopped;
+            if (handler != null)
+            {
+                if (this.syncContext == null)
+                {
+                    handler(this, new StoppedEventArgs(exception));
+                }
+                else
+                {
+                    syncContext.Post(state => handler(this, new StoppedEventArgs(exception)), null);
+                }
+            }
         }
 
         private void ReadNextPacket(AudioCaptureClient capture)

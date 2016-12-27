@@ -5,7 +5,10 @@ using System.Runtime.InteropServices.ComTypes;
 
 namespace NAudio.Wave
 {
-    public class ComStream : Stream, IStream
+    /// <summary>
+    /// Implementation of Com IStream
+    /// </summary>
+    class ComStream : Stream, IStream
     {
         private Stream stream;
 

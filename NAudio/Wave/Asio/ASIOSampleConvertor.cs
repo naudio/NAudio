@@ -6,7 +6,7 @@ namespace NAudio.Wave.Asio
     /// This class stores convertors for different interleaved WaveFormat to ASIOSampleType separate channel
     /// format.
     /// </summary>
-    internal class ASIOSampleConvertor
+    internal class AsioSampleConvertor
     {
         public delegate void SampleConvertor(IntPtr inputInterleavedBuffer, IntPtr[] asioOutputBuffers, int nbChannels, int nbSamples);
 

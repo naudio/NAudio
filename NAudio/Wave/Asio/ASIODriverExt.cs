@@ -3,12 +3,12 @@
 namespace NAudio.Wave.Asio
 {
     /// <summary>
-    /// Callback used by the ASIODriverExt to get wave data
+    /// Callback used by the AsioDriverExt to get wave data
     /// </summary>
-    internal delegate void ASIOFillBufferCallback(IntPtr[] inputChannels, IntPtr[] outputChannels);
+    public delegate void AsioFillBufferCallback(IntPtr[] inputChannels, IntPtr[] outputChannels);
 
     /// <summary>
-    /// ASIODriverExt is a simplified version of the ASIODriver. It provides an easier
+    /// AsioDriverExt is a simplified version of the AsioDriver. It provides an easier
     /// way to access the capabilities of the Driver and implement the callbacks necessary 
     /// for feeding the driver.
     /// Implementation inspired from Rob Philpot's with a managed C++ ASIO wrapper BlueWave.Interop.Asio
@@ -16,37 +16,37 @@ namespace NAudio.Wave.Asio
     /// 
     /// Contributor: Alexandre Mutel - email: alexandre_mutel at yahoo.fr
     /// </summary>
-    internal class ASIODriverExt
+    public class AsioDriverExt
     {
-        private ASIODriver driver;
-        private ASIOCallbacks callbacks;
+        private readonly AsioDriver driver;
+        private AsioCallbacks callbacks;
         private AsioDriverCapability capability;
-        private ASIOBufferInfo[] bufferInfos;
+        private AsioBufferInfo[] bufferInfos;
         private bool isOutputReadySupported;
         private IntPtr[] currentOutputBuffers;
         private IntPtr[] currentInputBuffers;
         private int numberOfOutputChannels;
         private int numberOfInputChannels;
-        private ASIOFillBufferCallback fillBufferCallback;
+        private AsioFillBufferCallback fillBufferCallback;
         private int bufferSize;
         private int outputChannelOffset;
         private int inputChannelOffset;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ASIODriverExt"/> class based on an already
-        /// instantiated ASIODriver instance.
+        /// Initializes a new instance of the <see cref="AsioDriverExt"/> class based on an already
+        /// instantiated AsioDriver instance.
         /// </summary>
-        /// <param name="driver">A ASIODriver already instantiated.</param>
-        public ASIODriverExt(ASIODriver driver)
+        /// <param name="driver">A AsioDriver already instantiated.</param>
+        public AsioDriverExt(AsioDriver driver)
         {
             this.driver = driver;
 
-            if (!driver.init(IntPtr.Zero))
+            if (!driver.Init(IntPtr.Zero))
             {
-                throw new InvalidOperationException(driver.getErrorMessage());
+                throw new InvalidOperationException(driver.GetErrorMessage());
             }
 
-            callbacks = new ASIOCallbacks();
+            callbacks = new AsioCallbacks();
             callbacks.pasioMessage = AsioMessageCallBack;
             callbacks.pbufferSwitch = BufferSwitchCallBack;
             callbacks.pbufferSwitchTimeInfo = BufferSwitchTimeInfoCallBack;
@@ -85,17 +85,14 @@ namespace NAudio.Wave.Asio
         /// Gets the driver used.
         /// </summary>
         /// <value>The ASIOdriver.</value>
-        public ASIODriver Driver
-        {
-            get { return driver; }
-        }
+        public AsioDriver Driver => driver;
 
         /// <summary>
         /// Starts playing the buffers.
         /// </summary>
         public void Start()
         {
-            driver.start();
+            driver.Start();
         }
 
         /// <summary>
@@ -103,7 +100,7 @@ namespace NAudio.Wave.Asio
         /// </summary>
         public void Stop()
         {
-            driver.stop();
+            driver.Stop();
         }
 
         /// <summary>
@@ -111,7 +108,7 @@ namespace NAudio.Wave.Asio
         /// </summary>
         public void ShowControlPanel()
         {
-            driver.controlPanel();
+            driver.ControlPanel();
         }
 
         /// <summary>
@@ -121,12 +118,12 @@ namespace NAudio.Wave.Asio
         {
             try
             {
-                driver.disposeBuffers();
+                driver.DisposeBuffers();
             } catch (Exception ex)
             {
                 Console.Out.WriteLine(ex.ToString());
             }
-            driver.ReleaseComASIODriver();
+            driver.ReleaseComAsioDriver();
         }
 
         /// <summary>
@@ -138,7 +135,7 @@ namespace NAudio.Wave.Asio
         /// </returns>
         public bool IsSampleRateSupported(double sampleRate)
         {
-            return driver.canSampleRate(sampleRate);
+            return driver.CanSampleRate(sampleRate);
         }
 
         /// <summary>
@@ -147,7 +144,7 @@ namespace NAudio.Wave.Asio
         /// <param name="sampleRate">The sample rate.</param>
         public void SetSampleRate(double sampleRate)
         {
-            driver.setSampleRate(sampleRate);
+            driver.SetSampleRate(sampleRate);
             // Update Capabilities
             BuildCapabilities();
         }
@@ -156,20 +153,17 @@ namespace NAudio.Wave.Asio
         /// Gets or sets the fill buffer callback.
         /// </summary>
         /// <value>The fill buffer callback.</value>
-        public ASIOFillBufferCallback FillBufferCallback
+        public AsioFillBufferCallback FillBufferCallback
         {
             get { return fillBufferCallback; }
             set { fillBufferCallback = value; }
         }
 
         /// <summary>
-        /// Gets the capabilities of the ASIODriver.
+        /// Gets the capabilities of the AsioDriver.
         /// </summary>
         /// <value>The capabilities.</value>
-        public AsioDriverCapability Capabilities
-        {
-            get { return capability; }
-        }
+        public AsioDriverCapability Capabilities => capability;
 
         /// <summary>
         /// Creates the buffers for playing.
@@ -181,15 +175,13 @@ namespace NAudio.Wave.Asio
         {
             if (numberOfOutputChannels < 0 || numberOfOutputChannels > capability.NbOutputChannels)
             {
-                throw new ArgumentException(String.Format(
-                                                "Invalid number of channels {0}, must be in the range [0,{1}]",
-                                                numberOfOutputChannels, capability.NbOutputChannels));
+                throw new ArgumentException(
+                    $"Invalid number of channels {numberOfOutputChannels}, must be in the range [0,{capability.NbOutputChannels}]");
             }
             if (numberOfInputChannels < 0 || numberOfInputChannels > capability.NbInputChannels)
             {
-                throw new ArgumentException("numberOfInputChannels", 
-                    String.Format("Invalid number of input channels {0}, must be in the range [0,{1}]",
-                        numberOfInputChannels, capability.NbInputChannels));
+                throw new ArgumentException("numberOfInputChannels",
+                    $"Invalid number of input channels {numberOfInputChannels}, must be in the range [0,{capability.NbInputChannels}]");
             }
 
             // each channel needs a buffer info
@@ -197,7 +189,7 @@ namespace NAudio.Wave.Asio
             this.numberOfInputChannels = numberOfInputChannels;
             // Ask for maximum of output channels even if we use only the nbOutputChannelsArg
             int nbTotalChannels = capability.NbInputChannels + capability.NbOutputChannels;
-            bufferInfos = new ASIOBufferInfo[nbTotalChannels];
+            bufferInfos = new AsioBufferInfo[nbTotalChannels];
             currentOutputBuffers = new IntPtr[numberOfOutputChannels];
             currentInputBuffers = new IntPtr[numberOfInputChannels];
 
@@ -233,17 +225,17 @@ namespace NAudio.Wave.Asio
 
             unsafe
             {
-                fixed (ASIOBufferInfo* infos = &bufferInfos[0])
+                fixed (AsioBufferInfo* infos = &bufferInfos[0])
                 {
                     IntPtr pOutputBufferInfos = new IntPtr(infos);
 
                     // Create the ASIO Buffers with the callbacks
-                    driver.createBuffers(pOutputBufferInfos, nbTotalChannels, bufferSize, ref callbacks);
+                    driver.CreateBuffers(pOutputBufferInfos, nbTotalChannels, bufferSize, ref callbacks);
                 }
             }
 
             // Check if outputReady is supported
-            isOutputReadySupported = (driver.outputReady() == ASIOError.ASE_OK);
+            isOutputReadySupported = (driver.OutputReady() == AsioError.ASE_OK);
             return bufferSize;
         }
 
@@ -254,45 +246,45 @@ namespace NAudio.Wave.Asio
         {
             capability = new AsioDriverCapability();
 
-            capability.DriverName = driver.getDriverName();
+            capability.DriverName = driver.GetDriverName();
 
             // Get nb Input/Output channels
-            driver.getChannels(out capability.NbInputChannels, out capability.NbOutputChannels);
+            driver.GetChannels(out capability.NbInputChannels, out capability.NbOutputChannels);
 
-            capability.InputChannelInfos = new ASIOChannelInfo[capability.NbInputChannels];
-            capability.OutputChannelInfos = new ASIOChannelInfo[capability.NbOutputChannels];
+            capability.InputChannelInfos = new AsioChannelInfo[capability.NbInputChannels];
+            capability.OutputChannelInfos = new AsioChannelInfo[capability.NbOutputChannels];
 
             // Get ChannelInfo for Inputs
             for (int i = 0; i < capability.NbInputChannels; i++)
             {
-                capability.InputChannelInfos[i] = driver.getChannelInfo(i, true);
+                capability.InputChannelInfos[i] = driver.GetChannelInfo(i, true);
             }
 
             // Get ChannelInfo for Output
             for (int i = 0; i < capability.NbOutputChannels; i++)
             {
-                capability.OutputChannelInfos[i] = driver.getChannelInfo(i, false);
+                capability.OutputChannelInfos[i] = driver.GetChannelInfo(i, false);
             }
 
             // Get the current SampleRate
-            capability.SampleRate = driver.getSampleRate();
+            capability.SampleRate = driver.GetSampleRate();
 
             var error = driver.GetLatencies(out capability.InputLatency, out capability.OutputLatency);
             // focusrite scarlett 2i4 returns ASE_NotPresent here
 
-            if (error != ASIOError.ASE_OK && error != ASIOError.ASE_NotPresent)
+            if (error != AsioError.ASE_OK && error != AsioError.ASE_NotPresent)
             {
-                var ex = new ASIOException("ASIOgetLatencies");
+                var ex = new AsioException("ASIOgetLatencies");
                 ex.Error = error;
                 throw ex;
             }
 
             // Get BufferSize
-            driver.getBufferSize(out capability.BufferMinSize, out capability.BufferMaxSize, out capability.BufferPreferredSize, out capability.BufferGranularity);
+            driver.GetBufferSize(out capability.BufferMinSize, out capability.BufferMaxSize, out capability.BufferPreferredSize, out capability.BufferGranularity);
         }
 
         /// <summary>
-        /// Callback called by the ASIODriver on fill buffer demand. Redirect call to external callback.
+        /// Callback called by the AsioDriver on fill buffer demand. Redirect call to external callback.
         /// </summary>
         /// <param name="doubleBufferIndex">Index of the double buffer.</param>
         /// <param name="directProcess">if set to <c>true</c> [direct process].</param>
@@ -308,19 +300,16 @@ namespace NAudio.Wave.Asio
                 currentOutputBuffers[i] = bufferInfos[i + outputChannelOffset + capability.NbInputChannels].Buffer(doubleBufferIndex);
             }
 
-            if (fillBufferCallback != null)
-            {
-                fillBufferCallback(currentInputBuffers, currentOutputBuffers);
-            }
+            fillBufferCallback?.Invoke(currentInputBuffers, currentOutputBuffers);
 
             if (isOutputReadySupported)
             {
-                driver.outputReady();
+                driver.OutputReady();
             }
         }
 
         /// <summary>
-        /// Callback called by the ASIODriver on event "Samples rate changed".
+        /// Callback called by the AsioDriver on event "Samples rate changed".
         /// </summary>
         /// <param name="sRate">The sample rate.</param>
         private void SampleRateDidChangeCallBack(double sRate)
@@ -337,46 +326,46 @@ namespace NAudio.Wave.Asio
         /// <param name="message">The message.</param>
         /// <param name="opt">The opt.</param>
         /// <returns></returns>
-        private int AsioMessageCallBack(ASIOMessageSelector selector, int value, IntPtr message, IntPtr opt)
+        private int AsioMessageCallBack(AsioMessageSelector selector, int value, IntPtr message, IntPtr opt)
         {
             // Check when this is called?
             switch (selector)
             {
-                case ASIOMessageSelector.kAsioSelectorSupported:
-                    ASIOMessageSelector subValue = (ASIOMessageSelector)Enum.ToObject(typeof(ASIOMessageSelector), value);
+                case AsioMessageSelector.kAsioSelectorSupported:
+                    AsioMessageSelector subValue = (AsioMessageSelector)Enum.ToObject(typeof(AsioMessageSelector), value);
                     switch (subValue)
                     {
-                        case ASIOMessageSelector.kAsioEngineVersion:
+                        case AsioMessageSelector.kAsioEngineVersion:
                             return 1;
-                        case ASIOMessageSelector.kAsioResetRequest:
+                        case AsioMessageSelector.kAsioResetRequest:
                             return 0;
-                        case ASIOMessageSelector.kAsioBufferSizeChange:
+                        case AsioMessageSelector.kAsioBufferSizeChange:
                             return 0;
-                        case ASIOMessageSelector.kAsioResyncRequest:
+                        case AsioMessageSelector.kAsioResyncRequest:
                             return 0;
-                        case ASIOMessageSelector.kAsioLatenciesChanged:
+                        case AsioMessageSelector.kAsioLatenciesChanged:
                             return 0;
-                        case ASIOMessageSelector.kAsioSupportsTimeInfo:
+                        case AsioMessageSelector.kAsioSupportsTimeInfo:
 //                            return 1; DON'T SUPPORT FOR NOW. NEED MORE TESTING.
                             return 0;
-                        case ASIOMessageSelector.kAsioSupportsTimeCode:
+                        case AsioMessageSelector.kAsioSupportsTimeCode:
 //                            return 1; DON'T SUPPORT FOR NOW. NEED MORE TESTING.
                             return 0;
                     }
                     break;
-                case ASIOMessageSelector.kAsioEngineVersion:
+                case AsioMessageSelector.kAsioEngineVersion:
                     return 2;
-                case ASIOMessageSelector.kAsioResetRequest:
+                case AsioMessageSelector.kAsioResetRequest:
                     return 1;
-                case ASIOMessageSelector.kAsioBufferSizeChange:
+                case AsioMessageSelector.kAsioBufferSizeChange:
                     return 0;
-                case ASIOMessageSelector.kAsioResyncRequest:
+                case AsioMessageSelector.kAsioResyncRequest:
                     return 0;
-                case ASIOMessageSelector.kAsioLatenciesChanged:
+                case AsioMessageSelector.kAsioLatenciesChanged:
                     return 0;
-                case ASIOMessageSelector.kAsioSupportsTimeInfo:
+                case AsioMessageSelector.kAsioSupportsTimeInfo:
                     return 0;
-                case ASIOMessageSelector.kAsioSupportsTimeCode:
+                case AsioMessageSelector.kAsioSupportsTimeCode:
                     return 0;
             }
             return 0;

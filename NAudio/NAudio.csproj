@@ -170,7 +170,12 @@
     <Compile Include="Utils\WavePositionExtensions.cs" />
     <Compile Include="Utils\IEEE.cs" />
     <Compile Include="Utils\NativeMethods.cs" />
+    <Compile Include="Wave\Asio\Asio64Bit.cs" />
+    <Compile Include="Wave\Asio\AsioCallbacks.cs" />
+    <Compile Include="Wave\Asio\AsioChannelInfo.cs" />
     <Compile Include="Wave\Asio\AsioDriverCapability.cs" />
+    <Compile Include="Wave\Asio\AsioError.cs" />
+    <Compile Include="Wave\Asio\AsioMessageSelector.cs" />
     <Compile Include="Wave\Asio\AsioSampleType.cs" />
     <Compile Include="Wave\Compression\AcmDriverAddFlags.cs" />
     <Compile Include="Wave\SampleProviders\AdsrSampleProvider.cs" />
@@ -361,10 +366,10 @@
     <Compile Include="CoreAudioApi\MMDeviceEnumerator.cs" />
     <Compile Include="CoreAudioApi\PropertyStore.cs" />
     <Compile Include="CoreAudioApi\PropertyStoreProperty.cs" />
-    <Compile Include="Wave\Asio\ASIODriver.cs" />
-    <Compile Include="Wave\Asio\ASIODriverExt.cs" />
-    <Compile Include="Wave\Asio\ASIOSampleConvertor.cs" />
-    <Compile Include="Wave\Asio\ASIOStructures.cs" />
+    <Compile Include="Wave\Asio\AsioDriver.cs" />
+    <Compile Include="Wave\Asio\AsioDriverExt.cs" />
+    <Compile Include="Wave\Asio\AsioSampleConvertor.cs" />
+    <Compile Include="Wave\Asio\AsioStructures.cs" />
     <Compile Include="Wave\Compression\AcmDriver.cs" />
     <Compile Include="Wave\Compression\AcmDriverDetails.cs" />
     <Compile Include="Wave\Compression\AcmDriverDetailsSupportFlags.cs" />

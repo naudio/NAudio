@@ -9,21 +9,21 @@ namespace NAudio.Wave
     /// 
     /// This implementation is only supporting Short16Bit and Float32Bit formats and is optimized 
     /// for 2 outputs channels .
-    /// SampleRate is supported only if ASIODriver is supporting it
+    /// SampleRate is supported only if AsioDriver is supporting it
     ///     
-    /// This implementation is probably the first ASIODriver binding fully implemented in C#!
+    /// This implementation is probably the first AsioDriver binding fully implemented in C#!
     /// 
     /// Original Contributor: Mark Heath 
     /// New Contributor to C# binding : Alexandre Mutel - email: alexandre_mutel at yahoo.fr
     /// </summary>
     public class AsioOut : IWavePlayer
     {
-        private ASIODriverExt driver;
+        private AsioDriverExt driver;
         private IWaveProvider sourceStream;
         private PlaybackState playbackState;
         private int nbSamples;
         private byte[] waveBuffer;
-        private ASIOSampleConvertor.SampleConvertor convertor;
+        private AsioSampleConvertor.SampleConvertor convertor;
         private readonly string driverName;
 
         private readonly SynchronizationContext syncContext;
@@ -108,7 +108,7 @@ namespace NAudio.Wave
         /// <returns>an array of driver names</returns>
         public static String[] GetDriverNames()
         {
-            return ASIODriver.GetASIODriverNames();
+            return AsioDriver.GetAsioDriverNames();
         }
 
         /// <summary>
@@ -129,10 +129,10 @@ namespace NAudio.Wave
         private void InitFromName(String driverName)
         {
             // Get the basic driver
-            ASIODriver basicDriver = ASIODriver.GetASIODriverByName(driverName);
+            AsioDriver basicDriver = AsioDriver.GetAsioDriverByName(driverName);
 
             // Instantiate the extended driver
-            driver = new ASIODriverExt(basicDriver);
+            driver = new AsioDriverExt(basicDriver);
             this.ChannelOffset = 0;
         }
 
@@ -205,7 +205,7 @@ namespace NAudio.Wave
                 this.NumberOfOutputChannels = waveProvider.WaveFormat.Channels;
 
                 // Select the correct sample convertor from WaveFormat -> ASIOFormat
-                convertor = ASIOSampleConvertor.SelectSampleConvertor(waveProvider.WaveFormat, driver.Capabilities.OutputChannelInfos[0].type);
+                convertor = AsioSampleConvertor.SelectSampleConvertor(waveProvider.WaveFormat, driver.Capabilities.OutputChannelInfos[0].type);
             }
             else
             {

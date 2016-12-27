@@ -12,7 +12,7 @@ namespace NAudioDemo
         public MainForm()
         {
             // use reflection to find all the demos
-            var demos = ReflectionHelper.CreateAllInstancesOf<INAudioDemoPlugin>();
+            var demos = ReflectionHelper.CreateAllInstancesOf<INAudioDemoPlugin>().OrderBy(d => d.Name);
 
             InitializeComponent();
             listBoxDemos.DisplayMember = "Name";

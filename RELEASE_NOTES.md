@@ -1,5 +1,5 @@
 
-#### 1.8.0 (not yet released)
+#### 1.8.0 (27 Dec 2016)
 
 * Windows 10 Universal project. Very similar feature set to the Win 8 one.
   * Added a Windows 10 Universal demo app with limited functionality  
@@ -10,6 +10,13 @@
 * updated NAudio build process to use FAKE, retiring the old MSBuild and IronPython scripts
 * NAudio.Wma project is moved out into its own [GitHub repository](https://github.com/naudio/NAudio.Wma)
 * ConcatenatingSampleProvider and FollowedBy extension method making it easy to concatenate Sample Providers
+* MixingSampleProvider raises events as inputs are removed and allows access to list of inputs
+* Improvements to MIDI event classes including clone support (thanks to Joseph Musser)
+* SMBPitchShiftingSampleProvider (thanks to Freefall63)
+* StreamMediaFoundationReader to allow using MediaFoundation with streams
+* New Skip, ToMono, Take, ToStereo extension methods
+* New SilenceProvider class
+* OffsetSampleProvider fix for leadout following take
 * Various bugfixes and enhancements. See commit log for full details
   * WasapiCapture buffer sizes can be specified 
   * MMDeviceEnumerator is disposable
@@ -25,6 +32,11 @@
   * WasapiCapture and WasapiLoopbackCapture can report capture state
   * BufferedWaveProvider can be configured to not fully read if no data is available
   * WasapiOut can report the default mix format for shared mode
+  * AsioDriver and AsioDriver ext now public
+  * Fix for Xing header writing
+  * Fixed XING header creation bug
+  * Fixed MIDI to type 1 converter bug
+  
   
 #### 1.7.3 5 Mar 2015
 

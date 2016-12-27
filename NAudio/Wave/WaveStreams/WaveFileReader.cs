@@ -1,8 +1,6 @@
 using System;
 using System.IO;
-using System.Text;
 using System.Collections.Generic;
-using System.Diagnostics;
 using NAudio.FileFormats.Wav;
 
 namespace NAudio.Wave 
@@ -17,7 +15,6 @@ namespace NAudio.Wave
         private readonly bool ownInput;
         private readonly long dataPosition;
         private readonly long dataChunkLength;
-        private readonly List<RiffChunk> chunks = new List<RiffChunk>();
         private readonly object lockObject = new object();
         private Stream waveStream;
 
@@ -50,10 +47,10 @@ namespace NAudio.Wave
             try
             {
                 chunkReader.ReadWaveHeader(inputStream);
-                this.waveFormat = chunkReader.WaveFormat;
-                this.dataPosition = chunkReader.DataChunkPosition;
-                this.dataChunkLength = chunkReader.DataChunkLength;
-                this.chunks = chunkReader.RiffChunks;
+                waveFormat = chunkReader.WaveFormat;
+                dataPosition = chunkReader.DataChunkPosition;
+                dataChunkLength = chunkReader.DataChunkLength;
+                ExtraChunks = chunkReader.RiffChunks;
             }
             catch
             {
@@ -72,13 +69,7 @@ namespace NAudio.Wave
         /// <summary>
         /// Gets a list of the additional chunks found in this file
         /// </summary>
-        public List<RiffChunk> ExtraChunks
-        {
-            get
-            {
-                return chunks;
-            }
-        }
+        public List<RiffChunk> ExtraChunks { get; }
 
         /// <summary>
         /// Gets the data for the specified chunk
@@ -124,32 +115,19 @@ namespace NAudio.Wave
         /// <summary>
         /// <see cref="WaveStream.WaveFormat"/>
         /// </summary>
-        public override WaveFormat WaveFormat
-        {
-            get
-            {
-                return waveFormat;
-            }
-        }
+        public override WaveFormat WaveFormat => waveFormat;
 
         /// <summary>
         /// This is the length of audio data contained in this WAV file, in bytes
         /// (i.e. the byte length of the data chunk, not the length of the WAV file itself)
         /// <see cref="WaveStream.WaveFormat"/>
         /// </summary>
-        public override long Length
-        {
-            get
-            {
-                return dataChunkLength;
-            }
-        }
+        public override long Length => dataChunkLength;
 
         /// <summary>
-        /// Number of Samples (if possible to calculate)
-        /// This currently does not take into account number of channels, so
-        /// divide again by number of channels if you want the number of 
-        /// audio 'frames'
+        /// Number of Sample Frames  (if possible to calculate)
+        /// This currently does not take into account number of channels
+        /// Multiply number of channels if you want the total number of samples
         /// </summary>
         public long SampleCount
         {
@@ -196,7 +174,8 @@ namespace NAudio.Wave
         {
             if (count % waveFormat.BlockAlign != 0)
             {
-                throw new ArgumentException(String.Format("Must read complete blocks: requested {0}, block align is {1}",count,this.WaveFormat.BlockAlign));
+                throw new ArgumentException(
+                    $"Must read complete blocks: requested {count}, block align is {this.WaveFormat.BlockAlign}");
             }
             lock (lockObject)
             {

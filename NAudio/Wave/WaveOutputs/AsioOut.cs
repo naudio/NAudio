@@ -27,6 +27,7 @@ namespace NAudio.Wave
         private readonly string driverName;
 
         private readonly SynchronizationContext syncContext;
+        private bool isInitialized;
 
         /// <summary>
         /// Playback Stopped
@@ -192,10 +193,11 @@ namespace NAudio.Wave
         /// <param name="recordOnlySampleRate">Specify sample rate here if only recording, ignored otherwise</param>
         public void InitRecordAndPlayback(IWaveProvider waveProvider, int recordChannels, int recordOnlySampleRate)
         {
-            if (this.sourceStream != null)
+            if (isInitialized)
             {
                 throw new InvalidOperationException("Already initialised this instance of AsioOut - dispose and create a new one");
             }
+            isInitialized = true;
             int desiredSampleRate = waveProvider != null ? waveProvider.WaveFormat.SampleRate : recordOnlySampleRate;
 
             if (waveProvider != null)

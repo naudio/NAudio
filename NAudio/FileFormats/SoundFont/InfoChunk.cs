@@ -24,7 +24,6 @@ namespace NAudio.SoundFont
 		internal InfoChunk(RiffChunk chunk) 
 		{
 			bool ifilPresent = false;
-			bool isngPresent = false;
 			bool INAMPresent = false;
 			if(chunk.ReadChunkID() != "INFO") 
 			{
@@ -41,7 +40,6 @@ namespace NAudio.SoundFont
 					verSoundFont = (SFVersion) c.GetDataAsStructure(new SFVersionBuilder());
 					break;
 				case "isng":
-					isngPresent = true;
 					waveTableSoundEngine = c.GetDataAsString();
 					break;
 				case "INAM":
@@ -80,10 +78,7 @@ namespace NAudio.SoundFont
 			{
                 throw new InvalidDataException("Missing SoundFont version information");
 			}
-			if(!isngPresent) 
-			{
-                throw new InvalidDataException("Missing wavetable sound engine information");
-			}
+            // issue #150 - it is valid for isng not to be present
 			if(!INAMPresent) 
 			{
                 throw new InvalidDataException("Missing SoundFont name information");

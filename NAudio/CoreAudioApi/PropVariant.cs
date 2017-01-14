@@ -55,7 +55,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         [FieldOffset(8)] private short boolVal;
         [FieldOffset(8)] private int scode;
         //CY cyVal;
-        [FieldOffset(8)] private DateTime date;
+        //[FieldOffset(8)] private DateTime date; - can cause issues with invalid value
         [FieldOffset(8)] private System.Runtime.InteropServices.ComTypes.FILETIME filetime;
         //CLSID* puuid;
         //CLIPDATA* pclipdata;

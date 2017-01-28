@@ -336,6 +336,20 @@ namespace NAudio.Wave
         public int DriverOutputChannelCount { get { return driver.Capabilities.NbOutputChannels; } }
 
         /// <summary>
+        /// The number of samples per channel, per buffer.
+        /// </summary>
+        public int FramesPerBuffer
+        {
+            get
+            {
+                if (!isInitialized)
+                    throw new Exception("Not initialized yet. Call this after calling Init");
+
+                return nbSamples;
+            }
+        }
+
+        /// <summary>
         /// By default the first channel on the input WaveProvider is sent to the first ASIO output.
         /// This option sends it to the specified channel number.
         /// Warning: make sure you don't set it higher than the number of available output channels - 

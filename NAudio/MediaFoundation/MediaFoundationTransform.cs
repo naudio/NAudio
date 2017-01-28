@@ -222,6 +222,7 @@ namespace NAudio.MediaFoundation
             outputMediaBuffer.Unlock();
             outputPosition += BytesToNsPosition(outputBufferCount, WaveFormat); // hopefully not needed
             Marshal.ReleaseComObject(pBuffer);
+            sample.RemoveAllBuffers(); // needed to fix memory leak in some cases
             Marshal.ReleaseComObject(sample);
             Marshal.ReleaseComObject(outputMediaBuffer);
             return outputBufferLength;

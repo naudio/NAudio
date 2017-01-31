@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using NAudio.Wave;
+using System.Runtime.InteropServices.ComTypes;
 
 namespace NAudio.MediaFoundation
 {
@@ -64,13 +65,23 @@ namespace NAudio.MediaFoundation
         public static extern void MFCreateSinkWriterFromURL([In, MarshalAs(UnmanagedType.LPWStr)] string pwszOutputURL,
                                                            [In] IMFByteStream pByteStream, [In] IMFAttributes pAttributes, [Out] out IMFSinkWriter ppSinkWriter);
 
+
+#if NETFX_CORE
         /// <summary>
         /// Creates a Microsoft Media Foundation byte stream that wraps an IRandomAccessStream object.
         /// </summary>
         [DllImport("mfplat.dll", ExactSpelling = true, PreserveSig = false)]
         public static extern void MFCreateMFByteStreamOnStreamEx([MarshalAs(UnmanagedType.IUnknown)] object punkStream, out IMFByteStream ppByteStream);
 
-#if !NETFX_CORE  
+#else
+        /// <summary>
+        /// Creates a Microsoft Media Foundation byte stream that wraps an IRandomAccessStream object.
+        /// </summary>
+        [DllImport("mfplat.dll", ExactSpelling = true, PreserveSig = false)]
+        public static extern void MFCreateMFByteStreamOnStream([In] IStream punkStream, out IMFByteStream ppByteStream);
+#endif
+
+#if !NETFX_CORE
         /// <summary>
         /// Gets a list of Microsoft Media Foundation transforms (MFTs) that match specified search criteria. 
         /// </summary>
@@ -100,7 +111,7 @@ namespace NAudio.MediaFoundation
             [Out, MarshalAs(UnmanagedType.Interface)] out IMFAttributes ppMFAttributes,
             [In] int cInitialSize);
 
-#if !NETFX_CORE  
+#if !NETFX_CORE
         /// <summary>
         /// Gets a list of output formats from an audio encoder.
         /// </summary>

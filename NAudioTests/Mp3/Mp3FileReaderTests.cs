@@ -1,10 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using NUnit.Framework;
 using System.IO;
 using NAudio.Wave;
 using System.Diagnostics;
+using NAudio.MediaFoundation;
+using NAudio.Wave.SampleProviders;
 
 namespace NAudioTests.Mp3
 {
@@ -23,7 +23,7 @@ namespace NAudioTests.Mp3
             foreach (string file in Directory.GetFiles(testDataFolder, "*.mp3"))
             {
                 string mp3File = Path.Combine(testDataFolder, file);
-                Debug.WriteLine(String.Format("Opening {0}", mp3File));
+                Debug.WriteLine($"Opening {mp3File}");
                 using (var reader = new Mp3FileReader(mp3File))
                 {
                     byte[] buffer = new byte[4096];
@@ -34,8 +34,41 @@ namespace NAudioTests.Mp3
                         bytesRead = reader.Read(buffer, 0, buffer.Length);
                         total += bytesRead;
                     } while (bytesRead > 0);
-                    Debug.WriteLine(String.Format("Read {0} bytes", total));
+                    Debug.WriteLine($"Read {total} bytes");
                 }
+            }
+        }
+
+        [Test]
+        public void ReadFrameAdvancesPosition()
+        {
+            var testSignal = new SignalGenerator() {Frequency = 1000}
+                .Take(TimeSpan.FromSeconds(5))
+                .ToWaveProvider();
+            var path = Path.Combine(Path.GetTempPath(), "NAudioTests");
+            if (!Directory.Exists(path)) Directory.CreateDirectory(path);
+            var file = Path.Combine(Path.GetTempPath(),@"NAudioTests\TestSignal.mp3");
+            try
+            {
+                MediaFoundationApi.Startup();
+                MediaFoundationEncoder.EncodeToMp3(testSignal, file, 96000);
+
+                using (var mp3FileReader = new Mp3FileReader(file))
+                {
+                    var lastPos = mp3FileReader.Position;
+                    while ((mp3FileReader.ReadNextFrame()) != null)
+                    {
+                        Assert.IsTrue(mp3FileReader.Position > lastPos);
+                        lastPos = mp3FileReader.Position;
+                    }
+                    Assert.AreEqual(mp3FileReader.Length, mp3FileReader.Position);
+                    Assert.IsTrue(mp3FileReader.Length > 0);
+                }
+
+            }
+            finally
+            {
+                File.Delete(file);
             }
         }
 

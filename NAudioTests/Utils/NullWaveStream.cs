@@ -5,25 +5,18 @@ namespace NAudioTests.Utils
 {
     class NullWaveStream : WaveStream
     {
-        private readonly WaveFormat format;
         private readonly long length;
         private long position;
         
         public NullWaveStream(WaveFormat format, long length)
         {
-            this.format = format;
+            WaveFormat = format;
             this.length = length;
         }
 
-        public override WaveFormat WaveFormat
-        {
-            get { return format; }
-        }
+        public override WaveFormat WaveFormat { get; }
 
-        public override long Length
-        {
-            get { return length; }
-        }
+        public override long Length => length;
 
         public override long Position
         {

@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Runtime.InteropServices;
 using NAudio.Utils;
 
@@ -12,9 +10,9 @@ namespace NAudio.Dmo
     /// </summary>
     public class MediaBuffer : IMediaBuffer, IDisposable
     {
-        IntPtr buffer;
-        int length;
-        int maxLength;
+        private IntPtr buffer;
+        private int length;
+        private readonly int maxLength;
         
         /// <summary>
         /// Creates a new Media Buffer
@@ -22,7 +20,7 @@ namespace NAudio.Dmo
         /// <param name="maxLength">Maximum length in bytes</param>
         public MediaBuffer(int maxLength)
         {
-            this.buffer = Marshal.AllocCoTaskMem(maxLength);
+            buffer = Marshal.AllocCoTaskMem(maxLength);
             this.maxLength = maxLength;
         }
 

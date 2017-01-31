@@ -5,6 +5,7 @@ using NAudio.Wave;
 using System.Diagnostics;
 using NAudio.MediaFoundation;
 using NAudio.Wave.SampleProviders;
+using NAudioTests.Utils;
 
 namespace NAudioTests.Mp3
 {
@@ -42,17 +43,9 @@ namespace NAudioTests.Mp3
         [Test]
         public void ReadFrameAdvancesPosition()
         {
-            var testSignal = new SignalGenerator() {Frequency = 1000}
-                .Take(TimeSpan.FromSeconds(5))
-                .ToWaveProvider();
-            var path = Path.Combine(Path.GetTempPath(), "NAudioTests");
-            if (!Directory.Exists(path)) Directory.CreateDirectory(path);
-            var file = Path.Combine(Path.GetTempPath(),@"NAudioTests\TestSignal.mp3");
+            var file = TestFileBuilder.CreateMp3File(5);
             try
             {
-                MediaFoundationApi.Startup();
-                MediaFoundationEncoder.EncodeToMp3(testSignal, file, 96000);
-
                 using (var mp3FileReader = new Mp3FileReader(file))
                 {
                     var lastPos = mp3FileReader.Position;
@@ -64,7 +57,6 @@ namespace NAudioTests.Mp3
                     Assert.AreEqual(mp3FileReader.Length, mp3FileReader.Position);
                     Assert.IsTrue(mp3FileReader.Length > 0);
                 }
-
             }
             finally
             {

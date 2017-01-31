@@ -42,14 +42,7 @@ namespace NAudio.Dmo
         /// <summary>
         /// Media Object
         /// </summary>
-        public MediaObject MediaObject
-        {
-            get
-            {
-                return mediaObject;
-            }
-        }
-
+        public MediaObject MediaObject => mediaObject;
 
         #region IDisposable Members
 

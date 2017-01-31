@@ -22,7 +22,7 @@ namespace NAudioTests.Dmo
         [Category("IntegrationTest")]
         public void CanCreateDmoMp3FrameDecompressor()
         {
-            var mp3Format = new Mp3WaveFormat(44100,2,215,32000);
+            var mp3Format = new Mp3WaveFormat(44100, 2, 215, 32000);
             var frameDecompressor = new DmoMp3FrameDecompressor(mp3Format);
             Assert.IsNotNull(frameDecompressor);
         }
@@ -31,21 +31,24 @@ namespace NAudioTests.Dmo
         [Category("IntegrationTest")]
         public void CanDecompressAnMp3()
         {
-            var testFile = @"C:\Users\Public\Music\Coldplay\X&Y\01-Square One.mp3";
-            if (!File.Exists(testFile))
+            var testFile = TestFileBuilder.CreateMp3File(20);
+            try
             {
-                Assert.Ignore("{0} not found", testFile);
-            }
-            using(var reader = new Mp3FileReader(testFile))
-            {
-                var frameDecompressor = new DmoMp3FrameDecompressor(reader.Mp3WaveFormat);
-                Mp3Frame frame = null;
-                var buffer = new byte[reader.WaveFormat.AverageBytesPerSecond];
-                while ((frame = reader.ReadNextFrame()) != null)
+                using (var reader = new Mp3FileReader(testFile))
                 {
-                    int decompressed = frameDecompressor.DecompressFrame(frame, buffer, 0);
-                    Debug.WriteLine(String.Format("Decompressed {0} bytes to {1}", frame.FrameLength, decompressed));
+                    var frameDecompressor = new DmoMp3FrameDecompressor(reader.Mp3WaveFormat);
+                    Mp3Frame frame;
+                    var buffer = new byte[reader.WaveFormat.AverageBytesPerSecond];
+                    while ((frame = reader.ReadNextFrame()) != null)
+                    {
+                        int decompressed = frameDecompressor.DecompressFrame(frame, buffer, 0);
+                        Debug.WriteLine($"Decompressed {frame.FrameLength} bytes to {decompressed}");
+                    }
                 }
+            }
+            finally 
+            {
+                File.Delete(testFile);
             }
         }
 
@@ -57,10 +60,7 @@ namespace NAudioTests.Dmo
             Assert.AreEqual(decoder.MediaObject.InputStreamCount, 1);
             foreach (DmoMediaType mediaType in decoder.MediaObject.GetInputTypes(0))
             {
-                Debug.WriteLine(String.Format("{0}:{1}:{2}",
-                    mediaType.MajorTypeName,
-                    mediaType.SubTypeName,
-                    mediaType.FormatTypeName));
+                Debug.WriteLine($"{mediaType.MajorTypeName}:{mediaType.SubTypeName}:{mediaType.FormatTypeName}");
             }
         }
 
@@ -74,10 +74,7 @@ namespace NAudioTests.Dmo
 
             foreach (DmoMediaType mediaType in decoder.MediaObject.GetOutputTypes(0))
             {
-                Debug.WriteLine(String.Format("{0}:{1}:{2}",
-                    mediaType.MajorTypeName,
-                    mediaType.SubTypeName,
-                    mediaType.FormatTypeName));
+                Debug.WriteLine($"{mediaType.MajorTypeName}:{mediaType.SubTypeName}:{mediaType.FormatTypeName}");
             }
         }
 
@@ -89,25 +86,10 @@ namespace NAudioTests.Dmo
             Assert.IsTrue(IsInputFormatSupported(waveFormat));
         }
 
-        [Test]
-        [Category("IntegrationTest")]
-        [Ignore("Doesn't seem to be true anymore")]
-        public void WindowsMediaMp3DecoderSupportsPcmOutput()
-        {
-            var waveFormat = new WaveFormat(44100, 2);
-            Assert.IsTrue(IsOutputFormatSupported(waveFormat));
-        }
-
         private bool IsInputFormatSupported(WaveFormat waveFormat)
         {
             var decoder = new WindowsMediaMp3Decoder();
             return decoder.MediaObject.SupportsInputWaveFormat(0, waveFormat);
-        }
-
-        private bool IsOutputFormatSupported(WaveFormat waveFormat)
-        {
-            var decoder = new WindowsMediaMp3Decoder();
-            return decoder.MediaObject.SupportsOutputWaveFormat(0, waveFormat);
         }
     }
 }

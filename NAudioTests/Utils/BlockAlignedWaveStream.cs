@@ -16,23 +16,11 @@ namespace NAudioTests.Utils
             this.length = length;  
         }
 
-        public override int BlockAlign
-        {
-            get
-            {
-                return waveFormat.BlockAlign;
-            }
-        }
+        public override int BlockAlign => waveFormat.BlockAlign;
 
-        public override WaveFormat WaveFormat
-        {
-            get { return waveFormat; }
-        }
+        public override WaveFormat WaveFormat => waveFormat;
 
-        public override long Length
-        {
-            get { return length; }
-        }
+        public override long Length => length;
 
         public override long Position
         {

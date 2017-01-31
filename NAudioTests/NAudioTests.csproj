@@ -104,6 +104,7 @@
     <Compile Include="Utils\NullWaveStream.cs" />
     <Compile Include="Utils\OSUtils.cs" />
     <Compile Include="Utils\SampleProviderTestHelpers.cs" />
+    <Compile Include="Utils\TestFileBuilder.cs" />
     <Compile Include="Wasapi\AudioClientTests.cs" />
     <Compile Include="Wasapi\MMDeviceEnumeratorTests.cs" />
     <Compile Include="WaveFormats\AdpcmWaveFormatTests.cs" />

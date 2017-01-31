@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace NAudio.Dmo
 {
@@ -15,7 +13,7 @@ namespace NAudio.Dmo
         public string Name { get; private set; }
 
         /// <summary>
-        /// Clsid
+        /// CLSID
         /// </summary>
         public Guid Clsid { get; private set; }
 
@@ -24,8 +22,8 @@ namespace NAudio.Dmo
         /// </summary>
         public DmoDescriptor(string name, Guid clsid)
         {
-            this.Name = name;
-            this.Clsid = clsid;
+            Name = name;
+            Clsid = clsid;
         }
     }
 }

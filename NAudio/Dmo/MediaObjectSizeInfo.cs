@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace NAudio.Dmo
 {
@@ -17,12 +15,12 @@ namespace NAudio.Dmo
         /// <summary>
         /// Max Lookahead
         /// </summary>
-        public int MaxLookahead { get; private set; }
+        public int MaxLookahead { get; }
 
         /// <summary>
         /// Alignment
         /// </summary>
-        public int Alignment { get; private set; }
+        public int Alignment { get; }
 
         /// <summary>
         /// Media Object Size Info
@@ -39,8 +37,7 @@ namespace NAudio.Dmo
         /// </summary>        
         public override string ToString()
         {
-            return String.Format("Size: {0}, Alignment {1}, MaxLookahead {2}",
-                Size, Alignment, MaxLookahead);
+            return $"Size: {Size}, Alignment {Alignment}, MaxLookahead {MaxLookahead}";
         }
 
     }

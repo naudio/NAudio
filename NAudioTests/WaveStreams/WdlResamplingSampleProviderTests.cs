@@ -14,7 +14,7 @@ namespace NAudioTests.WaveStreams
         [Test]
         public void CanDownsampleAnMp3File()
         {
-            string testFile = @"D:\Audio\Music\Coldplay\Mylo Xyloto\03 - Paradise.mp3";
+            string testFile =  @"D:\Audio\Music\Coldplay\Mylo Xyloto\03 - Paradise.mp3";
             if (!File.Exists(testFile)) Assert.Ignore(testFile);
             string outFile = @"d:\test22.wav";
             using (var reader = new AudioFileReader(testFile))

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using NAudio.Utils;
 using System.Runtime.InteropServices;
 using NAudio.Wave;
@@ -13,9 +12,9 @@ namespace NAudio.Dmo
     /// </summary>
     public class MediaObject : IDisposable
     {
-        IMediaObject mediaObject;
-        int inputStreams;
-        int outputStreams;
+        private IMediaObject mediaObject;
+        private readonly int inputStreams;
+        private readonly int outputStreams;
 
         #region Construction
 

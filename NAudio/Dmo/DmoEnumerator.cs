@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Runtime.InteropServices;
 
 namespace NAudio.Dmo
@@ -40,13 +39,13 @@ namespace NAudio.Dmo
         private static IEnumerable<DmoDescriptor> GetDmos(Guid category)
         {
             IEnumDmo enumDmo;
-            int hresult = DmoInterop.DMOEnum(ref category, DmoEnumFlags.None, 0, null, 0, null, out enumDmo);
+            var hresult = DmoInterop.DMOEnum(ref category, DmoEnumFlags.None, 0, null, 0, null, out enumDmo);
             Marshal.ThrowExceptionForHR(hresult);
-            Guid guid;
             int itemsFetched;
-            IntPtr namePointer;
             do
             {
+                Guid guid;
+                IntPtr namePointer;
                 enumDmo.Next(1, out guid, out namePointer, out itemsFetched);
 
                 if (itemsFetched == 1)

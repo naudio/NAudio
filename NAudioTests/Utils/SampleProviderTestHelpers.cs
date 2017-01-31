@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using NUnit.Framework;
 using NAudio.Wave;
 
@@ -21,7 +19,7 @@ namespace NAudioTests.Utils
             Assert.AreEqual(expected.Length, read, "Number of samples read");
             for (int n = 0; n < read; n++)
             {
-                Assert.AreEqual(expected[n], buffer[n], String.Format("Buffer at index {0}",n));
+                Assert.AreEqual(expected[n], buffer[n], $"Buffer at index {n}");
             }
         }
     }

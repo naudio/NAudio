@@ -231,7 +231,6 @@
     <Compile Include="FileFormats\Mp3\MpegLayer.cs" />
     <Compile Include="FileFormats\Mp3\MpegVersion.cs" />
     <Compile Include="FileFormats\Mp3\XingHeader.cs" />
-    <Compile Include="FileFormats\Sfz\SfzFileReader.cs" />
     <Compile Include="FileFormats\SoundFont\Generator.cs" />
     <Compile Include="FileFormats\SoundFont\GeneratorBuilder.cs" />
     <Compile Include="FileFormats\SoundFont\GeneratorEnum.cs" />

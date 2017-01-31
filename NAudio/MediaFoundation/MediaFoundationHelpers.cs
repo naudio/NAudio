@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 using NAudio.Wave;
+using System.Runtime.InteropServices.ComTypes;
 
 namespace NAudio.MediaFoundation
 {
@@ -143,7 +144,18 @@ namespace NAudio.MediaFoundation
         public static IMFByteStream CreateByteStream(object stream)
         {
             IMFByteStream byteStream;
+#if NETFX_CORE
             MediaFoundationInterop.MFCreateMFByteStreamOnStreamEx(stream, out byteStream);
+#else
+            if (stream is IStream)
+            {
+                MediaFoundationInterop.MFCreateMFByteStreamOnStream(stream as IStream, out byteStream);
+            }
+            else
+            {
+                throw new ArgumentException("Stream must be IStream in desktop apps");
+            }
+#endif
             return byteStream;
         }
 

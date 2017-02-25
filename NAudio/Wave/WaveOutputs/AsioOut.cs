@@ -24,7 +24,7 @@ namespace NAudio.Wave
         private int nbSamples;
         private byte[] waveBuffer;
         private AsioSampleConvertor.SampleConvertor convertor;
-        private readonly string driverName;
+        private string driverName;
 
         private readonly SynchronizationContext syncContext;
         private bool isInitialized;
@@ -52,7 +52,7 @@ namespace NAudio.Wave
         /// Initializes a new instance of the <see cref="AsioOut"/> class with the driver name.
         /// </summary>
         /// <param name="driverName">Name of the device.</param>
-        public AsioOut(String driverName)
+        public AsioOut(string driverName)
         {
             this.syncContext = SynchronizationContext.Current;
             InitFromName(driverName);
@@ -74,7 +74,6 @@ namespace NAudio.Wave
             {
                 throw new ArgumentException(String.Format("Invalid device number. Must be in the range [0,{0}]", names.Length));
             }
-            this.driverName = names[driverIndex];
             InitFromName(this.driverName);
         }
 
@@ -107,7 +106,7 @@ namespace NAudio.Wave
         /// Gets the names of the installed ASIO Driver.
         /// </summary>
         /// <returns>an array of driver names</returns>
-        public static String[] GetDriverNames()
+        public static string[] GetDriverNames()
         {
             return AsioDriver.GetAsioDriverNames();
         }
@@ -127,8 +126,10 @@ namespace NAudio.Wave
         /// Inits the driver from the asio driver name.
         /// </summary>
         /// <param name="driverName">Name of the driver.</param>
-        private void InitFromName(String driverName)
+        private void InitFromName(string driverName)
         {
+            this.driverName = driverName;
+
             // Get the basic driver
             AsioDriver basicDriver = AsioDriver.GetAsioDriverByName(driverName);
 
@@ -182,7 +183,7 @@ namespace NAudio.Wave
         /// <param name="waveProvider">Source wave provider</param>
         public void Init(IWaveProvider waveProvider)
         {
-            this.InitRecordAndPlayback(waveProvider, 0, -1);
+            InitRecordAndPlayback(waveProvider, 0, -1);
         }
 
         /// <summary>
@@ -300,18 +301,12 @@ namespace NAudio.Wave
         /// <summary>
         /// Playback State
         /// </summary>
-        public PlaybackState PlaybackState
-        {
-            get { return playbackState; }
-        }
+        public PlaybackState PlaybackState => playbackState;
 
         /// <summary>
         /// Driver Name
         /// </summary>
-        public string DriverName
-        {
-            get { return this.driverName; }
-        }
+        public string DriverName => this.driverName;
 
         /// <summary>
         /// The number of output channels we are currently using for playback
@@ -328,12 +323,12 @@ namespace NAudio.Wave
         /// <summary>
         /// The maximum number of input channels this ASIO driver supports
         /// </summary>
-        public int DriverInputChannelCount { get { return driver.Capabilities.NbInputChannels; } }
-        
+        public int DriverInputChannelCount => driver.Capabilities.NbInputChannels;
+
         /// <summary>
         /// The maximum number of output channels this ASIO driver supports
         /// </summary>
-        public int DriverOutputChannelCount { get { return driver.Capabilities.NbOutputChannels; } }
+        public int DriverOutputChannelCount => driver.Capabilities.NbOutputChannels;
 
         /// <summary>
         /// The number of samples per channel, per buffer.
@@ -389,13 +384,13 @@ namespace NAudio.Wave
             var handler = PlaybackStopped;
             if (handler != null)
             {
-                if (this.syncContext == null)
+                if (syncContext == null)
                 {
                     handler(this, new StoppedEventArgs(e));
                 }
                 else
                 {
-                    this.syncContext.Post(state => handler(this, new StoppedEventArgs(e)), null);
+                    syncContext.Post(state => handler(this, new StoppedEventArgs(e)), null);
                 }
             }
         }

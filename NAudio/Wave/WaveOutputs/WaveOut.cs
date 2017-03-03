@@ -66,9 +66,10 @@ namespace NAudio.Wave
         /// <summary>
         /// Gets or sets the device number
         /// Should be set before a call to Init
-        /// This must be between 0 and <see>DeviceCount</see> - 1.
+        /// This must be between -1 and <see>DeviceCount</see> - 1.
+        /// -1 means stick to default device even default device is changed
         /// </summary>
-        public int DeviceNumber { get; set; }
+        public int DeviceNumber { get; set; } = -1;
 
 
         /// <summary>

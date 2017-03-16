@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace NAudio.Utils
+﻿namespace NAudio.Utils
 {
     /// <summary>
     /// Helper methods for working with audio buffers

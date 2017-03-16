@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace NAudio.Wave.SampleProviders
 {
@@ -10,7 +8,7 @@ namespace NAudio.Wave.SampleProviders
     /// </summary>
     public class SampleToWaveProvider : IWaveProvider
     {
-        private ISampleProvider source;
+        private readonly ISampleProvider source;
 
         /// <summary>
         /// Initializes a new instance of the WaveProviderFloatToWaveProvider class
@@ -31,7 +29,7 @@ namespace NAudio.Wave.SampleProviders
         public int Read(byte[] buffer, int offset, int count)
         {
             int samplesNeeded = count / 4;
-            WaveBuffer wb = new WaveBuffer(buffer);
+            var wb = new WaveBuffer(buffer);
             int samplesRead = source.Read(wb.FloatBuffer, offset / 4, samplesNeeded);
             return samplesRead * 4;
         }
@@ -39,9 +37,6 @@ namespace NAudio.Wave.SampleProviders
         /// <summary>
         /// The waveformat of this WaveProvider (same as the source)
         /// </summary>
-        public WaveFormat WaveFormat
-        {
-            get { return source.WaveFormat; }
-        }
+        public WaveFormat WaveFormat => source.WaveFormat;
     }
 }

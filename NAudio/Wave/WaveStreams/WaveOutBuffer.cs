@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Runtime.InteropServices;
 
 namespace NAudio.Wave 
@@ -29,10 +28,10 @@ namespace NAudio.Wave
         public WaveOutBuffer(IntPtr hWaveOut, Int32 bufferSize, IWaveProvider bufferFillStream, object waveOutLock)
         {
             this.bufferSize = bufferSize;
-            this.buffer = new byte[bufferSize];
-            this.hBuffer = GCHandle.Alloc(buffer, GCHandleType.Pinned);
+            buffer = new byte[bufferSize];
+            hBuffer = GCHandle.Alloc(buffer, GCHandleType.Pinned);
             this.hWaveOut = hWaveOut;
-            this.waveStream = bufferFillStream;
+            waveStream = bufferFillStream;
             this.waveOutLock = waveOutLock;
 
             header = new WaveHeader();
@@ -108,12 +107,9 @@ namespace NAudio.Wave
             {
                 return false;
             }
-            else
+            for (int n = bytes; n < buffer.Length; n++)
             {
-                for (int n = bytes; n < buffer.Length; n++)
-                {
-                    buffer[n] = 0;
-                }
+                buffer[n] = 0;
             }
             WriteToWaveOut();
             return true;
@@ -133,13 +129,7 @@ namespace NAudio.Wave
         /// <summary>
         /// The buffer size in bytes
         /// </summary>
-        public Int32 BufferSize
-        {
-            get
-            {
-                return bufferSize;
-            }
-        }
+        public int BufferSize => bufferSize;
 
         private void WriteToWaveOut()
         {

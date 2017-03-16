@@ -457,10 +457,7 @@ namespace NAudio.Wave
         /// <summary>
         /// Xing header if present
         /// </summary>
-        public XingHeader XingHeader
-        {
-            get { return xingHeader; }
-        }
+        public XingHeader XingHeader => xingHeader;
 
         /// <summary>
         /// Disposes this WaveStream

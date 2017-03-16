@@ -114,17 +114,17 @@ namespace NAudio.Wave
         {
             if (channels < 1)
             {
-                throw new ArgumentOutOfRangeException("channels", "Channels must be 1 or greater");
+                throw new ArgumentOutOfRangeException(nameof(channels), "Channels must be 1 or greater");
             }
             // minimum 16 bytes, sometimes 18 for PCM
-            this.waveFormatTag = WaveFormatEncoding.Pcm;
+            waveFormatTag = WaveFormatEncoding.Pcm;
             this.channels = (short)channels;
-            this.sampleRate = rate;
-            this.bitsPerSample = (short)bits;
-            this.extraSize = 0;
-                   
-            this.blockAlign = (short)(channels * (bits / 8));
-            this.averageBytesPerSecond = this.sampleRate * this.blockAlign;
+            sampleRate = rate;
+            bitsPerSample = (short)bits;
+            extraSize = 0;
+
+            blockAlign = (short)(channels * (bits / 8));
+            averageBytesPerSecond = this.sampleRate * this.blockAlign;
         }
 
         /// <summary>
@@ -134,7 +134,7 @@ namespace NAudio.Wave
         /// <param name="channels">number of channels</param>
         public static WaveFormat CreateIeeeFloatWaveFormat(int sampleRate, int channels)
         {
-            WaveFormat wf = new WaveFormat();
+            var wf = new WaveFormat();
             wf.waveFormatTag = WaveFormatEncoding.IeeeFloat;
             wf.channels = (short)channels;
             wf.bitsPerSample = 32;
@@ -176,7 +176,7 @@ namespace NAudio.Wave
                     }
                     break;
             }
-            return waveFormat;            
+            return waveFormat;
         }
 
         /// <summary>
@@ -188,7 +188,7 @@ namespace NAudio.Wave
         {
             int formatSize = Marshal.SizeOf(format);
             IntPtr formatPointer = Marshal.AllocHGlobal(formatSize);
-            Marshal.StructureToPtr(format, formatPointer, false);            
+            Marshal.StructureToPtr(format, formatPointer, false);
             return formatPointer;
         }
 
@@ -211,19 +211,19 @@ namespace NAudio.Wave
         {
             if (formatChunkLength < 16)
                 throw new InvalidDataException("Invalid WaveFormat Structure");
-            this.waveFormatTag = (WaveFormatEncoding)br.ReadUInt16();
-            this.channels = br.ReadInt16();
-            this.sampleRate = br.ReadInt32();
-            this.averageBytesPerSecond = br.ReadInt32();
-            this.blockAlign = br.ReadInt16();
-            this.bitsPerSample = br.ReadInt16();
+            waveFormatTag = (WaveFormatEncoding)br.ReadUInt16();
+            channels = br.ReadInt16();
+            sampleRate = br.ReadInt32();
+            averageBytesPerSecond = br.ReadInt32();
+            blockAlign = br.ReadInt16();
+            bitsPerSample = br.ReadInt16();
             if (formatChunkLength > 16)
             {
-                this.extraSize = br.ReadInt16();
-                if (this.extraSize != formatChunkLength - 18)
+                extraSize = br.ReadInt16();
+                if (extraSize != formatChunkLength - 18)
                 {
                     Debug.WriteLine("Format chunk mismatch");
-                    this.extraSize = (short)(formatChunkLength - 18);
+                    extraSize = (short)(formatChunkLength - 18);
                 }
             }
         }
@@ -235,7 +235,7 @@ namespace NAudio.Wave
         public WaveFormat(BinaryReader br)
         {
             int formatChunkLength = br.ReadInt32();
-            this.ReadWaveFormat(br, formatChunkLength);
+            ReadWaveFormat(br, formatChunkLength);
         }
 
         /// <summary>
@@ -244,15 +244,14 @@ namespace NAudio.Wave
         /// <returns>String describing the wave format</returns>
         public override string ToString()
         {
-            switch (this.waveFormatTag)
+            switch (waveFormatTag)
             {
                 case WaveFormatEncoding.Pcm:
                 case WaveFormatEncoding.Extensible:
                     // extensible just has some extra bits after the PCM header
-                    return String.Format("{0} bit PCM: {1}kHz {2} channels",
-                        bitsPerSample, sampleRate / 1000, channels);
+                    return $"{bitsPerSample} bit PCM: {sampleRate/1000}kHz {channels} channels";
                 default:
-                    return this.waveFormatTag.ToString();
+                    return waveFormatTag.ToString();
             }
         }
 
@@ -263,7 +262,7 @@ namespace NAudio.Wave
         /// <returns>True if the objects are the same</returns>
         public override bool Equals(object obj)
         {
-            WaveFormat other = obj as WaveFormat;
+            var other = obj as WaveFormat;
             if(other != null)
             {
                 return waveFormatTag == other.waveFormatTag &&
@@ -293,13 +292,7 @@ namespace NAudio.Wave
         /// <summary>
         /// Returns the encoding type used
         /// </summary>
-        public WaveFormatEncoding Encoding
-        {
-            get	
-            {
-                return waveFormatTag;
-            }
-        }
+        public WaveFormatEncoding Encoding => waveFormatTag;
 
         /// <summary>
         /// Writes this WaveFormat object to a stream
@@ -320,71 +313,33 @@ namespace NAudio.Wave
         /// <summary>
         /// Returns the number of channels (1=mono,2=stereo etc)
         /// </summary>
-        public int Channels
-        {
-            get
-            {
-                return channels;
-            }
-        }
+        public int Channels => channels;
 
         /// <summary>
         /// Returns the sample rate (samples per second)
         /// </summary>
-        public int SampleRate
-        {
-            get
-            {
-                return sampleRate;
-            }
-        }
+        public int SampleRate => sampleRate;
 
         /// <summary>
         /// Returns the average number of bytes used per second
         /// </summary>
-        public int AverageBytesPerSecond
-        {
-            get
-            {
-                return averageBytesPerSecond;
-            }
-        }
+        public int AverageBytesPerSecond => averageBytesPerSecond;
 
         /// <summary>
         /// Returns the block alignment
         /// </summary>
-        public virtual int BlockAlign
-        {
-            get
-            {
-                return blockAlign;
-            }
-        }
+        public virtual int BlockAlign => blockAlign;
 
         /// <summary>
         /// Returns the number of bits per sample (usually 16 or 32, sometimes 24 or 8)
         /// Can be 0 for some codecs
         /// </summary>
-        public int BitsPerSample
-        {
-            get
-            {
-                return bitsPerSample;
-            }
-        }
+        public int BitsPerSample => bitsPerSample;
 
         /// <summary>
         /// Returns the number of extra bytes used by this waveformat. Often 0,
         /// except for compressed formats which store extra data after the WAVEFORMATEX header
         /// </summary>
-        public int ExtraSize
-        {
-            get
-            {
-                return extraSize;
-            }
-        }
-
-        
+        public int ExtraSize => extraSize;
     }
 }

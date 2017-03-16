@@ -21,14 +21,14 @@ namespace NAudio.Wave.SampleProviders
         public SampleToWaveProvider16(ISampleProvider sourceProvider)
         {
             if (sourceProvider.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
-                throw new ArgumentException("Input source provider must be IEEE float", "sourceProvider");
+                throw new ArgumentException("Input source provider must be IEEE float", nameof(sourceProvider));
             if (sourceProvider.WaveFormat.BitsPerSample != 32)
-                throw new ArgumentException("Input source provider must be 32 bit", "sourceProvider");
+                throw new ArgumentException("Input source provider must be 32 bit", nameof(sourceProvider));
 
             waveFormat = new WaveFormat(sourceProvider.WaveFormat.SampleRate, 16, sourceProvider.WaveFormat.Channels);
 
             this.sourceProvider = sourceProvider;
-            this.volume = 1.0f;
+            volume = 1.0f;
         }
 
         /// <summary>
@@ -64,10 +64,7 @@ namespace NAudio.Wave.SampleProviders
         /// <summary>
         /// <see cref="IWaveProvider.WaveFormat"/>
         /// </summary>
-        public WaveFormat WaveFormat
-        {
-            get { return waveFormat; }
-        }
+        public WaveFormat WaveFormat => waveFormat;
 
         /// <summary>
         /// Volume of this channel. 1.0 = full scale

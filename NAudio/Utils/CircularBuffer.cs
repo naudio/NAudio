@@ -99,10 +99,7 @@ namespace NAudio.Utils
         /// <summary>
         /// Maximum length of this circular buffer
         /// </summary>
-        public int MaxLength
-        {
-            get { return buffer.Length; }
-        }
+        public int MaxLength => buffer.Length;
 
         /// <summary>
         /// Number of bytes currently stored in the circular buffer

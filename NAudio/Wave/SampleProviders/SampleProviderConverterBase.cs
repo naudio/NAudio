@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using NAudio.Utils;
 
 namespace NAudio.Wave.SampleProviders
@@ -14,7 +12,7 @@ namespace NAudio.Wave.SampleProviders
         /// Source Wave Provider
         /// </summary>
         protected IWaveProvider source;
-        private WaveFormat waveFormat;
+        private readonly WaveFormat waveFormat;
 
         /// <summary>
         /// Source buffer (to avoid constantly creating small buffers during playback)
@@ -28,16 +26,13 @@ namespace NAudio.Wave.SampleProviders
         public SampleProviderConverterBase(IWaveProvider source)
         {
             this.source = source;
-            this.waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(source.WaveFormat.SampleRate, source.WaveFormat.Channels);
+            waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(source.WaveFormat.SampleRate, source.WaveFormat.Channels);
         }
 
         /// <summary>
         /// Wave format of this wave provider
         /// </summary>
-        public WaveFormat WaveFormat
-        {
-            get { return this.waveFormat; }
-        }
+        public WaveFormat WaveFormat => waveFormat;
 
         /// <summary>
         /// Reads samples from the source wave provider
@@ -54,7 +49,7 @@ namespace NAudio.Wave.SampleProviders
         /// <param name="sourceBytesRequired">Bytes required</param>
         protected void EnsureSourceBuffer(int sourceBytesRequired)
         {
-            this.sourceBuffer = BufferHelpers.Ensure(this.sourceBuffer, sourceBytesRequired);
+            sourceBuffer = BufferHelpers.Ensure(sourceBuffer, sourceBytesRequired);
         }
     }
 }

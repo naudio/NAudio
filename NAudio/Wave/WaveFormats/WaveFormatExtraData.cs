@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Runtime.InteropServices;
 using System.IO;
 
+// ReSharper disable once CheckNamespace
 namespace NAudio.Wave
 {
     /// <summary>
@@ -19,7 +18,7 @@ namespace NAudio.Wave
         /// <summary>
         /// Allows the extra data to be read
         /// </summary>
-        public byte[] ExtraData { get { return extraData; } }
+        public byte[] ExtraData => extraData;
 
         /// <summary>
         /// parameterless constructor for marshalling

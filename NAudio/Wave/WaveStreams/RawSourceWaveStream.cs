@@ -40,18 +40,12 @@ namespace NAudio.Wave
         /// <summary>
         /// The WaveFormat of this stream
         /// </summary>
-        public override WaveFormat WaveFormat
-        {
-            get { return waveFormat; }
-        }
+        public override WaveFormat WaveFormat => waveFormat;
 
         /// <summary>
         /// The length in bytes of this stream (if supported)
         /// </summary>
-        public override long Length
-        {
-            get { return sourceStream.Length; }
-        }
+        public override long Length => sourceStream.Length;
 
         /// <summary>
         /// The current position in this stream

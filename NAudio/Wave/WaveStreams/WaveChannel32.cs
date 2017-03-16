@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using NAudio.Wave.SampleProviders;
 
 namespace NAudio.Wave
@@ -94,24 +93,12 @@ namespace NAudio.Wave
         /// <summary>
         /// Gets the block alignment for this WaveStream
         /// </summary>
-        public override int BlockAlign
-        {
-            get
-            {
-                return (int)SourceToDest(sourceStream.BlockAlign);
-            }
-        }
+        public override int BlockAlign => (int)SourceToDest(sourceStream.BlockAlign);
 
         /// <summary>
         /// Returns the stream length
         /// </summary>
-        public override long Length
-        {
-            get
-            {
-                return length;
-            }
-        }
+        public override long Length => length;
 
         /// <summary>
         /// Gets or sets the current position in the stream
@@ -166,7 +153,7 @@ namespace NAudio.Wave
                 }
                 if (bytesWritten < numBytes)
                 {
-                    this.sampleProvider.LoadNextChunk(sourceStream, (numBytes - bytesWritten)/8);
+                    sampleProvider.LoadNextChunk(sourceStream, (numBytes - bytesWritten)/8);
                     float left, right;
 
                     int outIndex = (offset/4) + bytesWritten/4;
@@ -203,13 +190,7 @@ namespace NAudio.Wave
         /// <summary>
         /// <see cref="WaveStream.WaveFormat"/>
         /// </summary>
-        public override WaveFormat WaveFormat
-        {
-            get
-            {
-                return waveFormat;
-            }
-        }
+        public override WaveFormat WaveFormat => waveFormat;
 
         /// <summary>
         /// Volume of this channel. 1.0 = full scale

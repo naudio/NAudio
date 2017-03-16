@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace NAudio.Wave.SampleProviders
+﻿namespace NAudio.Wave.SampleProviders
 {
     /// <summary>
     /// Sample Provider to allow fading in and out
@@ -31,7 +27,7 @@ namespace NAudio.Wave.SampleProviders
         public FadeInOutSampleProvider(ISampleProvider source, bool initiallySilent = false)
         {
             this.source = source;
-            this.fadeState = initiallySilent ? FadeState.Silence : FadeState.FullVolume;
+            fadeState = initiallySilent ? FadeState.Silence : FadeState.FullVolume;
         }
 
         /// <summary>

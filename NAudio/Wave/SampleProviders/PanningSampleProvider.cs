@@ -27,8 +27,8 @@ namespace NAudio.Wave.SampleProviders
                 throw new ArgumentException("Source sample provider must be mono");
             }
             this.source = source;
-            this.waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(source.WaveFormat.SampleRate, 2);
-            this.panStrategy = new SinPanStrategy();
+            waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(source.WaveFormat.SampleRate, 2);
+            panStrategy = new SinPanStrategy();
         }
 
         /// <summary>
@@ -38,15 +38,15 @@ namespace NAudio.Wave.SampleProviders
         {
             get
             {
-                return this.pan;
+                return pan;
             }
             set
             {
                 if (value < -1.0f || value > 1.0f)
                 {
-                    throw new ArgumentOutOfRangeException("value", "Pan must be in the range -1 to 1");
+                    throw new ArgumentOutOfRangeException(nameof(value), "Pan must be in the range -1 to 1");
                 }
-                this.pan = value;
+                pan = value;
                 UpdateMultipliers();
             }
         }
@@ -58,29 +58,26 @@ namespace NAudio.Wave.SampleProviders
         {
             get
             {
-                return this.panStrategy;
+                return panStrategy;
             }
             set
             {
-                this.panStrategy = value;
+                panStrategy = value;
                 UpdateMultipliers();
             }
         }
 
         private void UpdateMultipliers()
         {
-            var multipliers = this.panStrategy.GetMultipliers(this.Pan);
-            this.leftMultiplier = multipliers.Left;
-            this.rightMultiplier = multipliers.Right;
+            var multipliers = panStrategy.GetMultipliers(Pan);
+            leftMultiplier = multipliers.Left;
+            rightMultiplier = multipliers.Right;
         }
 
         /// <summary>
         /// The WaveFormat of this sample provider
         /// </summary>
-        public WaveFormat WaveFormat
-        {
-            get { return this.waveFormat; }
-        }
+        public WaveFormat WaveFormat => waveFormat;
 
         /// <summary>
         /// Reads samples from this sample provider
@@ -92,13 +89,13 @@ namespace NAudio.Wave.SampleProviders
         public int Read(float[] buffer, int offset, int count)
         {
             int sourceSamplesRequired = count / 2;
-            this.sourceBuffer = BufferHelpers.Ensure(this.sourceBuffer, sourceSamplesRequired);
-            int sourceSamplesRead = source.Read(this.sourceBuffer, 0, sourceSamplesRequired);
+            sourceBuffer = BufferHelpers.Ensure(sourceBuffer, sourceSamplesRequired);
+            int sourceSamplesRead = source.Read(sourceBuffer, 0, sourceSamplesRequired);
             int outIndex = offset;
             for (int n = 0; n < sourceSamplesRead; n++)
             {
-                buffer[outIndex++] = leftMultiplier * this.sourceBuffer[n];
-                buffer[outIndex++] = rightMultiplier * this.sourceBuffer[n];
+                buffer[outIndex++] = leftMultiplier * sourceBuffer[n];
+                buffer[outIndex++] = rightMultiplier * sourceBuffer[n];
             }
             return sourceSamplesRead * 2;
         }

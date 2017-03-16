@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace NAudio.Wave.SampleProviders
 {
@@ -9,10 +7,10 @@ namespace NAudio.Wave.SampleProviders
     /// </summary>
     public class NotifyingSampleProvider : ISampleProvider, ISampleNotifier
     {
-        private ISampleProvider source;
+        private readonly ISampleProvider source;
         // try not to give the garbage collector anything to deal with when playing live audio
-        private SampleEventArgs sampleArgs = new SampleEventArgs(0, 0);
-        private int channels;
+        private readonly SampleEventArgs sampleArgs = new SampleEventArgs(0, 0);
+        private readonly int channels;
 
         /// <summary>
         /// Initializes a new instance of NotifyingSampleProvider
@@ -21,16 +19,13 @@ namespace NAudio.Wave.SampleProviders
         public NotifyingSampleProvider(ISampleProvider source)
         {
             this.source = source;
-            this.channels = this.WaveFormat.Channels;
+            channels = WaveFormat.Channels;
         }
 
         /// <summary>
         /// WaveFormat
         /// </summary>
-        public WaveFormat WaveFormat
-        {
-            get { return source.WaveFormat; }
-        }
+        public WaveFormat WaveFormat => source.WaveFormat;
 
         /// <summary>
         /// Reads samples from this sample provider

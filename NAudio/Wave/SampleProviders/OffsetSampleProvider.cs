@@ -57,7 +57,7 @@ namespace NAudio.Wave.SampleProviders
         {
             get { return SamplesToTimeSpan(delayBySamples); }
             set { delayBySamples = TimeSpanToSamples(value); }
-        }        
+        }
 
         /// <summary>
         /// Number of samples in source to discard

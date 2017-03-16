@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using NAudio.Utils;
 
+// ReSharper disable once CheckNamespace
 namespace NAudio.Wave
 {
     /// <summary>
@@ -15,19 +16,12 @@ namespace NAudio.Wave
         /// <summary>
         /// Cue position in samples
         /// </summary>
-        public int Position
-        {
-            get;
-            private set;
-        }
+        public int Position { get; }
         /// <summary>
         /// Label of the cue
         /// </summary>
-        public string Label
-        {
-            get;
-            private set;
-        }
+        public string Label { get; }
+
         /// <summary>
         /// Creates a Cue based on a sample position and label 
         /// </summary>
@@ -162,16 +156,15 @@ namespace NAudio.Wave
 
             string[] labels = new string[cueCount];
             int labelLength = 0;
-            int cueID = 0;
 
-            Int32 labelChunkID = ChunkIdentifier.ChunkIdentifierToInt32("labl");
+            var labelChunkId = ChunkIdentifier.ChunkIdentifierToInt32("labl");
             for (int p = 4; listChunkData.Length - p >= 16; p += labelLength + labelLength % 2 + 12)
             {
-                if (BitConverter.ToInt32(listChunkData, p) == labelChunkID)
+                if (BitConverter.ToInt32(listChunkData, p) == labelChunkId)
                 {
                     labelLength = BitConverter.ToInt32(listChunkData, p + 4) - 4;
-                    cueID = BitConverter.ToInt32(listChunkData, p + 8);
-                    cue = cueIndex[cueID];
+                    var cueId = BitConverter.ToInt32(listChunkData, p + 8);
+                    cue = cueIndex[cueId];
                     labels[cue] = Encoding.Default.GetString(listChunkData, p + 12, labelLength - 1);
                 }
             }
@@ -186,88 +179,78 @@ namespace NAudio.Wave
         /// Gets the cues as the concatenated cue and list RIFF chunks.
         /// </summary>
         /// <returns>RIFF chunks containing the cue data</returns>
-        internal byte[] GetRIFFChunks()
+        internal byte[] GetRiffChunks()
         {
-            if (this.Count == 0)
+            if (Count == 0)
             {
                 return null;
             }
-            else
+            var cueChunkLength = 12 + 24 * Count;
+            var listChunkLength = 12;
+            for (int i = 0; i < Count; i++)
             {
-                int cueChunkLength = 12 + 24 * this.Count;
-                int listChunkLength = 12;
-                int labelChunkLength = 0;
-                for (int i = 0; i < this.Count; i++)
-                {
-                    labelChunkLength = this[i].Label.Length + 1;
-                    listChunkLength += labelChunkLength + labelChunkLength % 2 + 12;
-                }
+                var labelChunkLength = this[i].Label.Length + 1;
+                listChunkLength += labelChunkLength + labelChunkLength % 2 + 12;
+            }
 
-                byte[] chunks = new byte[cueChunkLength + listChunkLength];
-                Int32 cueChunkID = ChunkIdentifier.ChunkIdentifierToInt32("cue ");
-                Int32 dataChunkID = ChunkIdentifier.ChunkIdentifierToInt32("data");
-                Int32 listChunkID = ChunkIdentifier.ChunkIdentifierToInt32("LIST");
-                Int32 adtlTypeID = ChunkIdentifier.ChunkIdentifierToInt32("adtl");
-                Int32 labelChunkID = ChunkIdentifier.ChunkIdentifierToInt32("labl");
+            byte[] chunks = new byte[cueChunkLength + listChunkLength];
+            var cueChunkId = ChunkIdentifier.ChunkIdentifierToInt32("cue ");
+            int dataChunkId = ChunkIdentifier.ChunkIdentifierToInt32("data");
+            int listChunkId = ChunkIdentifier.ChunkIdentifierToInt32("LIST");
+            int adtlTypeId = ChunkIdentifier.ChunkIdentifierToInt32("adtl");
+            int labelChunkId = ChunkIdentifier.ChunkIdentifierToInt32("labl");
 
-                using (MemoryStream stream = new MemoryStream(chunks))
+            using (var stream = new MemoryStream(chunks))
+            {
+                using (var writer = new BinaryWriter(stream))
                 {
-                    using (BinaryWriter writer = new BinaryWriter(stream))
+                    writer.Write(cueChunkId);
+                    writer.Write(cueChunkLength - 8);
+                    writer.Write(Count);
+                    for (int cue = 0; cue < Count; cue++)
                     {
-                        writer.Write(cueChunkID);
-                        writer.Write(cueChunkLength - 8);
-                        writer.Write(this.Count);
-                        for (int cue = 0; cue < this.Count; cue++)
-                        {
-                            int position = this[cue].Position;
+                        int position = this[cue].Position;
 
-                            writer.Write(cue);
-                            writer.Write(position);
-                            writer.Write(dataChunkID);
-                            writer.Seek(8, SeekOrigin.Current);
-                            writer.Write(position);
-                        }
-                        writer.Write(listChunkID);
-                        writer.Write(listChunkLength - 8);
-                        writer.Write(adtlTypeID);
-                        for (int cue = 0; cue < this.Count; cue++)
+                        writer.Write(cue);
+                        writer.Write(position);
+                        writer.Write(dataChunkId);
+                        writer.Seek(8, SeekOrigin.Current);
+                        writer.Write(position);
+                    }
+                    writer.Write(listChunkId);
+                    writer.Write(listChunkLength - 8);
+                    writer.Write(adtlTypeId);
+                    for (int cue = 0; cue < Count; cue++)
+                    {
+                        writer.Write(labelChunkId);
+                        writer.Write(this[cue].Label.Length + 1 + 4);
+                        writer.Write(cue);
+                        writer.Write(Encoding.Default.GetBytes(this[cue].Label.ToCharArray()));
+                        if (this[cue].Label.Length % 2 == 0)
                         {
-                            writer.Write(labelChunkID);
-                            writer.Write(this[cue].Label.Length + 1 + 4);
-                            writer.Write(cue);
-                            writer.Write(Encoding.Default.GetBytes(this[cue].Label.ToCharArray()));
-                            if (this[cue].Label.Length % 2 == 0)
-                            {
-                                writer.Seek(2, SeekOrigin.Current);
-                            }
-                            else
-                            {
-                                writer.Seek(1, SeekOrigin.Current);
-                            }
+                            writer.Seek(2, SeekOrigin.Current);
+                        }
+                        else
+                        {
+                            writer.Seek(1, SeekOrigin.Current);
                         }
                     }
                 }
-                return chunks;
             }
+            return chunks;
         }
 
         /// <summary>
         /// Number of cues
         /// </summary>
-        public int Count
-        {
-            get { return cues.Count; }
-        }
+        public int Count => cues.Count;
 
         /// <summary>
         /// Accesses the cue at the specified index
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
-        public Cue this[int index]
-	    {
-            get { return cues[index]; }
-	    }
+        public Cue this[int index] => cues[index];
 
         /// <summary>
         /// Checks if the cue and list chunks exist and if so, creates a cue list

@@ -12,7 +12,7 @@ namespace NAudio.Wave
     /// </summary>
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 2)]	
     public class WaveFormatExtensible : WaveFormat
-    {        
+    {
         short wValidBitsPerSample; // bits of precision, or is wSamplesPerBlock if wBitsPerSample==0
         int dwChannelMask; // which channels are present in stream
         Guid subFormat;

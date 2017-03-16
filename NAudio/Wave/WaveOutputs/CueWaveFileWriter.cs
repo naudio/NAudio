@@ -39,7 +39,7 @@ namespace NAudio.Wave
             // write the cue chunks to the end of the stream
             if (cues != null)
             {
-                byte[] cueChunks = cues.GetRIFFChunks();
+                byte[] cueChunks = cues.GetRiffChunks();
                 int cueChunksSize = cueChunks.Length;
                 w.Seek(0, SeekOrigin.End);
                 
@@ -48,7 +48,7 @@ namespace NAudio.Wave
                     w.Write((Byte)0x00);
                 }
                 
-                w.Write(cues.GetRIFFChunks(), 0, cueChunksSize);
+                w.Write(cues.GetRiffChunks(), 0, cueChunksSize);
                 w.Seek(4, SeekOrigin.Begin);
                 w.Write((int)(w.BaseStream.Length - 8));
             }

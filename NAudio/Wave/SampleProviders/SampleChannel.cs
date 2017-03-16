@@ -38,10 +38,10 @@ namespace NAudio.Wave.SampleProviders
             {
                 sampleProvider = new MonoToStereoSampleProvider(sampleProvider);
             }
-            this.waveFormat = sampleProvider.WaveFormat;
+            waveFormat = sampleProvider.WaveFormat;
             // let's put the meter before the volume (useful for drawing waveforms)
-            this.preVolumeMeter = new MeteringSampleProvider(sampleProvider);
-            this.volumeProvider = new VolumeSampleProvider(preVolumeMeter);
+            preVolumeMeter = new MeteringSampleProvider(sampleProvider);
+            volumeProvider = new VolumeSampleProvider(preVolumeMeter);
         }
 
         /// <summary>
@@ -59,10 +59,7 @@ namespace NAudio.Wave.SampleProviders
         /// <summary>
         /// The WaveFormat of this Sample Provider
         /// </summary>
-        public WaveFormat WaveFormat
-        {
-            get { return this.waveFormat; }
-        }
+        public WaveFormat WaveFormat => waveFormat;
 
         /// <summary>
         /// Allows adjusting the volume, 1.0f = full volume
@@ -79,8 +76,8 @@ namespace NAudio.Wave.SampleProviders
         /// </summary>
         public event EventHandler<StreamVolumeEventArgs> PreVolumeMeter
         {
-            add { this.preVolumeMeter.StreamVolume += value; }
-            remove { this.preVolumeMeter.StreamVolume -= value; }
+            add { preVolumeMeter.StreamVolume += value; }
+            remove { preVolumeMeter.StreamVolume -= value; }
         }
     }
 }

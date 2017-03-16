@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 
+// ReSharper disable once CheckNamespace
 namespace NAudio.Wave 
 {
     /// <summary>
@@ -22,17 +23,17 @@ namespace NAudio.Wave
         /// <summary>
         /// We can read from this stream
         /// </summary>
-        public override bool CanRead { get { return true; } }
+        public override bool CanRead => true;
 
         /// <summary>
         /// We can seek within this stream
         /// </summary>
-        public override bool CanSeek { get { return true; } }
+        public override bool CanSeek => true;
 
         /// <summary>
         /// We can't write to this stream
         /// </summary>
-        public override bool CanWrite { get { return false; } }
+        public override bool CanWrite => false;
 
         /// <summary>
         /// Flush does not need to do anything
@@ -76,13 +77,7 @@ namespace NAudio.Wave
         /// The block alignment for this wavestream. Do not modify the Position
         /// to anything that is not a whole multiple of this value
         /// </summary>
-        public virtual int BlockAlign
-        {
-            get
-            {
-                return WaveFormat.BlockAlign;
-            }
-        }
+        public virtual int BlockAlign => WaveFormat.BlockAlign;
 
         /// <summary>
         /// Moves forward or backwards the specified number of seconds in the stream
@@ -121,7 +116,6 @@ namespace NAudio.Wave
         {
             get
             {
-                
                 return TimeSpan.FromSeconds((double) Length / WaveFormat.AverageBytesPerSecond);
             }
         }

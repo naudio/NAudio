@@ -67,10 +67,7 @@ namespace NAudio.Wave.SampleProviders
         /// <summary>
         /// The waveformat of this WaveProvider (same as the source)
         /// </summary>
-        public WaveFormat WaveFormat
-        {
-            get { return waveFormat; }
-        }
+        public WaveFormat WaveFormat => waveFormat;
 
         /// <summary>
         /// Frequency for the Generator. (20.0 - 20000.0 Hz)
@@ -81,10 +78,7 @@ namespace NAudio.Wave.SampleProviders
         /// <summary>
         /// Return Log of Frequency Start (Read only)
         /// </summary>
-        public double FrequencyLog
-        {
-            get { return Math.Log(Frequency); }
-        }
+        public double FrequencyLog => Math.Log(Frequency);
 
         /// <summary>
         /// End Frequency for the Sweep Generator. (Start Frequency in Frequency)
@@ -94,10 +88,7 @@ namespace NAudio.Wave.SampleProviders
         /// <summary>
         /// Return Log of Frequency End (Read only)
         /// </summary>
-        public double FrequencyEndLog
-        {
-            get { return Math.Log(FrequencyEnd); }
-        }
+        public double FrequencyEndLog => Math.Log(FrequencyEnd);
 
         /// <summary>
         /// Gain for the Generator. (0.0 to 1.0)
@@ -107,7 +98,7 @@ namespace NAudio.Wave.SampleProviders
         /// <summary>
         /// Channel PhaseReverse
         /// </summary>
-        public bool[] PhaseReverse { get; private set; }
+        public bool[] PhaseReverse { get; }
 
         /// <summary>
         /// Type of Generator.

@@ -39,7 +39,7 @@ namespace NAudio.Wave.SampleProviders
         /// <summary>
         /// Output Wave Format
         /// </summary>
-        public WaveFormat WaveFormat { get; private set; }
+        public WaveFormat WaveFormat { get; }
 
         /// <summary>
         /// Reads bytes from this SampleProvider

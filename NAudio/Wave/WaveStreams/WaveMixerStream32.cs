@@ -64,7 +64,7 @@ namespace NAudio.Wave
                 // first one - set the format
                 int sampleRate = waveStream.WaveFormat.SampleRate;
                 int channels = waveStream.WaveFormat.Channels;
-                this.waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channels);
+                waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channels);
             }
             else
             {
@@ -74,8 +74,8 @@ namespace NAudio.Wave
 
             lock (inputsLock)
             {
-                this.inputStreams.Add(waveStream);
-                this.length = Math.Max(this.length, waveStream.Length);
+                inputStreams.Add(waveStream);
+                length = Math.Max(length, waveStream.Length);
                 // get to the right point in this input file
                 waveStream.Position = Position;
             }
@@ -105,10 +105,7 @@ namespace NAudio.Wave
         /// <summary>
         /// The number of inputs to this mixer
         /// </summary>
-        public int InputCount
-        {
-            get { return inputStreams.Count; }
-        }
+        public int InputCount => inputStreams.Count;
 
         /// <summary>
         /// Automatically stop when all inputs have been read
@@ -188,25 +185,13 @@ namespace NAudio.Wave
         /// <summary>
         /// <see cref="WaveStream.BlockAlign"/>
         /// </summary>
-        public override int BlockAlign
-        {
-            get
-            {
-                return waveFormat.BlockAlign; // inputStreams[0].BlockAlign;
-            }
-        }
+        public override int BlockAlign => waveFormat.BlockAlign;
 
         /// <summary>
         /// Length of this Wave Stream (in bytes)
         /// <see cref="System.IO.Stream.Length"/>
         /// </summary>
-        public override long Length
-        {
-            get
-            {
-                return length;
-            }
-        }
+        public override long Length => length;
 
         /// <summary>
         /// Position within this Wave Stream (in bytes)
@@ -228,7 +213,7 @@ namespace NAudio.Wave
                     {
                         inputStream.Position = Math.Min(value, inputStream.Length);
                     }
-                    this.position = value;
+                    position = value;
                 }
             }
         }
@@ -236,13 +221,7 @@ namespace NAudio.Wave
         /// <summary>
         /// <see cref="WaveStream.WaveFormat"/>
         /// </summary>
-        public override WaveFormat WaveFormat
-        {
-            get
-            {
-                return waveFormat;
-            }
-        }
+        public override WaveFormat WaveFormat => waveFormat;
 
         /// <summary>
         /// Disposes this WaveStream

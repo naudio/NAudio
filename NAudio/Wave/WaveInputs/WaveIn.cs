@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Runtime.InteropServices;
 using System.Threading;
 using NAudio.Mixer;
 
+// ReSharper disable once CheckNamespace
 namespace NAudio.Wave
 {
     /// <summary>
@@ -155,11 +154,7 @@ namespace NAudio.Wave
 
         private void RaiseDataAvailable(WaveInBuffer buffer)
         {
-            var handler = DataAvailable;
-            if (handler != null)
-            {
-                handler(this, new WaveInEventArgs(buffer.Data, buffer.BytesRecorded));
-            }
+            DataAvailable?.Invoke(this, new WaveInEventArgs(buffer.Data, buffer.BytesRecorded));
         }
 
         private void RaiseRecordingStopped(Exception e)
@@ -167,13 +162,13 @@ namespace NAudio.Wave
             var handler = RecordingStopped;
             if (handler != null)
             {
-                if (this.syncContext == null)
+                if (syncContext == null)
                 {
                     handler(this, new StoppedEventArgs(e));
                 }
                 else
                 {
-                    this.syncContext.Post(state => handler(this, new StoppedEventArgs(e)), null);
+                    syncContext.Post(state => handler(this, new StoppedEventArgs(e)), null);
                 }
             }
         }
@@ -287,7 +282,7 @@ namespace NAudio.Wave
             MixerLine mixerLine;
             if (waveInHandle != IntPtr.Zero)
             {
-                mixerLine = new MixerLine(this.waveInHandle, 0, MixerFlags.WaveInHandle);
+                mixerLine = new MixerLine(waveInHandle, 0, MixerFlags.WaveInHandle);
             }
             else
             {

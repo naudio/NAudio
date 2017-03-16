@@ -97,7 +97,7 @@ namespace NAudio.Wave
                     // only dispose our source if we created it
                     if (ownInput)
                     {
-                        waveStream.Close();
+                        waveStream.Dispose();
                     }
                     waveStream = null;
                 }
@@ -175,7 +175,7 @@ namespace NAudio.Wave
             if (count % waveFormat.BlockAlign != 0)
             {
                 throw new ArgumentException(
-                    $"Must read complete blocks: requested {count}, block align is {this.WaveFormat.BlockAlign}");
+                    $"Must read complete blocks: requested {count}, block align is {WaveFormat.BlockAlign}");
             }
             lock (lockObject)
             {

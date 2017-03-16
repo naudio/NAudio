@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using NAudio.Utils;
 
 namespace NAudio.Wave.SampleProviders
@@ -27,7 +26,7 @@ namespace NAudio.Wave.SampleProviders
         public MultiplexingSampleProvider(IEnumerable<ISampleProvider> inputs, int numberOfOutputChannels)
         {
             this.inputs = new List<ISampleProvider>(inputs);
-            this.outputChannelCount = numberOfOutputChannels;
+            outputChannelCount = numberOfOutputChannels;
 
             if (this.inputs.Count == 0)
             {
@@ -39,21 +38,21 @@ namespace NAudio.Wave.SampleProviders
             }
             foreach (var input in this.inputs)
             {
-                if (this.waveFormat == null)
+                if (waveFormat == null)
                 {
                     if (input.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
                     {
                         throw new ArgumentException("Only 32 bit float is supported");
                     }
-                    this.waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(input.WaveFormat.SampleRate, numberOfOutputChannels);
+                    waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(input.WaveFormat.SampleRate, numberOfOutputChannels);
                 }
                 else
                 {
-                    if (input.WaveFormat.BitsPerSample != this.waveFormat.BitsPerSample)
+                    if (input.WaveFormat.BitsPerSample != waveFormat.BitsPerSample)
                     {
                         throw new ArgumentException("All inputs must have the same bit depth");
                     }
-                    if (input.WaveFormat.SampleRate != this.waveFormat.SampleRate)
+                    if (input.WaveFormat.SampleRate != waveFormat.SampleRate)
                     {
                         throw new ArgumentException("All inputs must have the same sample rate");
                     }
@@ -89,7 +88,7 @@ namespace NAudio.Wave.SampleProviders
             foreach (var input in inputs)
             {
                 int samplesRequired = sampleFramesRequested * input.WaveFormat.Channels;
-                this.inputBuffer = BufferHelpers.Ensure(this.inputBuffer, samplesRequired);
+                inputBuffer = BufferHelpers.Ensure(inputBuffer, samplesRequired);
                 int samplesRead = input.Read(inputBuffer, 0, samplesRequired);
                 sampleFramesRead = Math.Max(sampleFramesRead, samplesRead / input.WaveFormat.Channels);
 
@@ -129,10 +128,7 @@ namespace NAudio.Wave.SampleProviders
         /// <summary>
         /// The output WaveFormat for this SampleProvider
         /// </summary>
-        public WaveFormat WaveFormat
-        {
-            get { return waveFormat; }
-        }
+        public WaveFormat WaveFormat => waveFormat;
 
         /// <summary>
         /// Connects a specified input channel to an output channel
@@ -156,17 +152,11 @@ namespace NAudio.Wave.SampleProviders
         /// The number of input channels. Note that this is not the same as the number of input wave providers. If you pass in
         /// one stereo and one mono input provider, the number of input channels is three.
         /// </summary>
-        public int InputChannelCount
-        {
-            get { return inputChannelCount; }
-        }
+        public int InputChannelCount => inputChannelCount;
 
         /// <summary>
         /// The number of output channels, as specified in the constructor.
         /// </summary>
-        public int OutputChannelCount
-        {
-            get { return outputChannelCount; }
-        }
+        public int OutputChannelCount => outputChannelCount;
     }
 }

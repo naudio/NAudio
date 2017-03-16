@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using NAudio.Utils;
 
 namespace NAudio.Wave.SampleProviders
 {
@@ -19,17 +18,17 @@ namespace NAudio.Wave.SampleProviders
         /// <param name="providers">The source providers to play one after the other. Must all share the same sample rate and channel count</param>
         public ConcatenatingSampleProvider(IEnumerable<ISampleProvider> providers)
         {
-            if (providers == null) throw new ArgumentNullException("providers");
+            if (providers == null) throw new ArgumentNullException(nameof(providers));
             this.providers = providers.ToArray();
-            if (this.providers.Length == 0) throw new ArgumentException("Must provide at least one input", "providers");
-            if (this.providers.Any(p => p.WaveFormat.Channels != WaveFormat.Channels)) throw new ArgumentException("All inputs must have the same channel count", "providers");
-            if (this.providers.Any(p => p.WaveFormat.SampleRate != WaveFormat.SampleRate)) throw new ArgumentException("All inputs must have the same sample rate", "providers");
+            if (this.providers.Length == 0) throw new ArgumentException("Must provide at least one input", nameof(providers));
+            if (this.providers.Any(p => p.WaveFormat.Channels != WaveFormat.Channels)) throw new ArgumentException("All inputs must have the same channel count", nameof(providers));
+            if (this.providers.Any(p => p.WaveFormat.SampleRate != WaveFormat.SampleRate)) throw new ArgumentException("All inputs must have the same sample rate", nameof(providers));
         }
 
         /// <summary>
         /// The WaveFormat of this Sample Provider
         /// </summary>
-        public WaveFormat WaveFormat { get { return providers[0].WaveFormat; } }
+        public WaveFormat WaveFormat => providers[0].WaveFormat;
 
         /// <summary>
         /// Read Samples from this sample provider

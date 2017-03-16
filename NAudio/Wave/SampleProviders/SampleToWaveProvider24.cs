@@ -47,7 +47,7 @@ namespace NAudio.Wave.SampleProviders
             int destOffset = offset;
             for (var sample = 0; sample < sourceSamples; sample++)
             {
-                // adjust volume                
+                // adjust volume
                 var sample32 = sourceBuffer[sample] * volume;
                 // clip
                 if (sample32 > 1.0f)

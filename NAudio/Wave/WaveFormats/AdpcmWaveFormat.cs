@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Runtime.InteropServices;
 
+// ReSharper disable once CheckNamespace
 namespace NAudio.Wave
 {
     /// <summary>
@@ -28,26 +27,17 @@ namespace NAudio.Wave
         /// <summary>
         /// Samples per block
         /// </summary>
-        public int SamplesPerBlock
-        {
-            get { return samplesPerBlock; }
-        }
+        public int SamplesPerBlock => samplesPerBlock;
 
         /// <summary>
         /// Number of coefficients
         /// </summary>
-        public int NumCoefficients
-        {
-            get { return numCoeff; }
-        }
+        public int NumCoefficients => numCoeff;
 
         /// <summary>
         /// Coefficients
         /// </summary>
-        public short[] Coefficients
-        {
-            get { return coefficients; }
-        }
+        public short[] Coefficients => coefficients;
 
         /// <summary>
         /// Microsoft ADPCM  

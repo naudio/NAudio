@@ -6,6 +6,7 @@ using NAudio.CoreAudioApi.Interfaces;
 using NAudio.MediaFoundation;
 using NAudio.Utils;
 
+// ReSharper disable once CheckNamespace
 namespace NAudio.Wave
 {
     /// <summary>

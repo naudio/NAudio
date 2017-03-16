@@ -44,19 +44,16 @@ namespace NAudio.Wave.SampleProviders
         public MeteringSampleProvider(ISampleProvider source, int samplesPerNotification)
         {
             this.source = source;
-            this.channels = source.WaveFormat.Channels;
-            this.maxSamples = new float[channels];
-            this.SamplesPerNotification = samplesPerNotification;
-            this.args = new StreamVolumeEventArgs() { MaxSampleValues = this.maxSamples }; // create objects up front giving GC little to do
+            channels = source.WaveFormat.Channels;
+            maxSamples = new float[channels];
+            SamplesPerNotification = samplesPerNotification;
+            args = new StreamVolumeEventArgs() { MaxSampleValues = maxSamples }; // create objects up front giving GC little to do
         }
 
         /// <summary>
         /// The WaveFormat of this sample provider
         /// </summary>
-        public WaveFormat WaveFormat
-        {
-            get { return source.WaveFormat; }
-        }
+        public WaveFormat WaveFormat => source.WaveFormat;
 
         /// <summary>
         /// Reads samples from this Sample Provider

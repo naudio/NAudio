@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
 using NAudio.Dsp;
 
 namespace NAudio.Wave
@@ -13,7 +11,6 @@ namespace NAudio.Wave
         private WaveStream sourceStream;
         private readonly SimpleCompressor simpleCompressor;
         private byte[] sourceBuffer; // buffer used by Read function
-        private bool enabled;
         private readonly int channels;
         private readonly int bytesPerSample;
         private readonly object lockObject = new object();
@@ -25,8 +22,8 @@ namespace NAudio.Wave
         public SimpleCompressorStream(WaveStream sourceStream)
         {
             this.sourceStream = sourceStream;
-            this.channels = sourceStream.WaveFormat.Channels;
-            this.bytesPerSample = sourceStream.WaveFormat.BitsPerSample / 8;
+            channels = sourceStream.WaveFormat.Channels;
+            bytesPerSample = sourceStream.WaveFormat.BitsPerSample / 8;
             simpleCompressor = new SimpleCompressor(5.0, 10.0, sourceStream.WaveFormat.SampleRate);
             simpleCompressor.Threshold = 16;
             simpleCompressor.Ratio = 6;
@@ -139,29 +136,13 @@ namespace NAudio.Wave
         /// <summary>
         /// Turns gain on or off
         /// </summary>
-        public bool Enabled
-        {
-            get
-            {
-                return enabled;
-            }
-            set
-            {
-                enabled = value;
-            }
-        }
+        public bool Enabled { get; set; }
 
 
         /// <summary>
         /// Returns the stream length
         /// </summary>
-        public override long Length
-        {
-            get
-            {
-                return sourceStream.Length;
-            }
-        }
+        public override long Length => sourceStream.Length;
 
         /// <summary>
         /// Gets or sets the current position in the stream
@@ -184,13 +165,7 @@ namespace NAudio.Wave
         /// <summary>
         /// Gets the WaveFormat of this stream
         /// </summary>
-        public override WaveFormat WaveFormat
-        {
-            get
-            {
-                return sourceStream.WaveFormat;
-            }
-        }
+        public override WaveFormat WaveFormat => sourceStream.WaveFormat;
 
         private void ReadSamples(byte[] buffer, int start, out double left, out double right)
         {

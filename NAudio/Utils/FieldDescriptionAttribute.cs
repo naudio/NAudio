@@ -11,7 +11,7 @@ namespace NAudio.Utils
         /// <summary>
         /// The description
         /// </summary>
-        public string Description { get; private set; }
+        public string Description { get; }
 
         /// <summary>
         /// Field description

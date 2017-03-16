@@ -1,5 +1,6 @@
 using System;
 
+// ReSharper disable once CheckNamespace
 namespace NAudio.Wave
 {
     /// <summary>
@@ -38,9 +39,9 @@ namespace NAudio.Wave
             this.sourceStream = sourceStream;
             position = 0;
             bytesPerSample = (sourceStream.WaveFormat.BitsPerSample / 8) * sourceStream.WaveFormat.Channels;
-            this.StartTime = startTime;
-            this.SourceOffset = sourceOffset;
-            this.SourceLength = sourceLength;
+            StartTime = startTime;
+            SourceOffset = sourceOffset;
+            SourceLength = sourceLength;
             
         }
 
@@ -70,7 +71,7 @@ namespace NAudio.Wave
                     startTime = value;
                     audioStartPosition = (long)(startTime.TotalSeconds * sourceStream.WaveFormat.SampleRate) * bytesPerSample;
                     // fix up our length and position
-                    this.length = audioStartPosition + sourceLengthBytes;
+                    length = audioStartPosition + sourceLengthBytes;
                     Position = Position;
                 }
             }
@@ -113,7 +114,7 @@ namespace NAudio.Wave
                     sourceLength = value;
                     sourceLengthBytes = (long)(sourceLength.TotalSeconds * sourceStream.WaveFormat.SampleRate) * bytesPerSample;
                     // fix up our length and position
-                    this.length = audioStartPosition + sourceLengthBytes;
+                    length = audioStartPosition + sourceLengthBytes;
                     Position = Position;
                 }
             }
@@ -123,24 +124,12 @@ namespace NAudio.Wave
         /// <summary>
         /// Gets the block alignment for this WaveStream
         /// </summary>
-        public override int BlockAlign
-        {
-            get
-            {
-                return sourceStream.BlockAlign;
-            }
-        }
+        public override int BlockAlign => sourceStream.BlockAlign;
 
         /// <summary>
         /// Returns the stream length
         /// </summary>
-        public override long Length
-        {
-            get
-            {
-                return length;
-            }
-        }
+        public override long Length => length;
 
         /// <summary>
         /// Gets or sets the current position in the stream
@@ -187,7 +176,7 @@ namespace NAudio.Wave
                 }
                 if (bytesWritten < numBytes)
                 {
-                    // don't read too far into source stream                
+                    // don't read too far into source stream
                     int sourceBytesRequired = (int)Math.Min(
                         numBytes - bytesWritten,
                         sourceLengthBytes + sourceOffsetBytes - sourceStream.Position);
@@ -205,13 +194,7 @@ namespace NAudio.Wave
         /// <summary>
         /// <see cref="WaveStream.WaveFormat"/>
         /// </summary>
-        public override WaveFormat WaveFormat
-        {
-            get
-            {
-                return sourceStream.WaveFormat;
-            }
-        }
+        public override WaveFormat WaveFormat => sourceStream.WaveFormat;
 
         /// <summary>
         /// Determines whether this channel has any data to play

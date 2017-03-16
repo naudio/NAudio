@@ -1,6 +1,7 @@
 using System;
 using NAudio.Utils;
 
+// ReSharper disable once CheckNamespace
 namespace NAudio.Wave
 {
     /// <summary>
@@ -34,7 +35,7 @@ namespace NAudio.Wave
                 throw new ArgumentException("Only 32 bit Floating point supported");
 
             waveFormat = new WaveFormat(sourceStream.WaveFormat.SampleRate, 16, sourceStream.WaveFormat.Channels);
-            this.volume = 1.0f;
+            volume = 1.0f;
             this.sourceStream = sourceStream;
             length = sourceStream.Length / 2;
             position = sourceStream.Position / 2;
@@ -58,25 +59,13 @@ namespace NAudio.Wave
         /// <summary>
         /// <see cref="WaveStream.BlockAlign"/>
         /// </summary>
-        public override int BlockAlign
-        {
-            get
-            {
-                return sourceStream.BlockAlign / 2;
-            }
-        }
+        public override int BlockAlign => sourceStream.BlockAlign / 2;
 
 
         /// <summary>
         /// Returns the stream length
         /// </summary>
-        public override long Length
-        {
-            get
-            {
-                return length;
-            }
-        }
+        public override long Length => length;
 
         /// <summary>
         /// Gets or sets the current position in the stream
@@ -122,10 +111,10 @@ namespace NAudio.Wave
         /// <summary>
         /// Conversion to 16 bit and clipping
         /// </summary>
-        private unsafe void Convert32To16(byte[] destBuffer, int offset, byte[] sourceBuffer, int bytesRead)
+        private unsafe void Convert32To16(byte[] destBuffer, int offset, byte[] source, int bytesRead)
         {
             fixed (byte* pDestBuffer = &destBuffer[offset],
-                pSourceBuffer = &sourceBuffer[0])
+                pSourceBuffer = &source[0])
             {
                 short* psDestBuffer = (short*)pDestBuffer;
                 float* pfSourceBuffer = (float*)pSourceBuffer;
@@ -155,13 +144,7 @@ namespace NAudio.Wave
         /// <summary>
         /// <see cref="WaveStream.WaveFormat"/>
         /// </summary>
-        public override WaveFormat WaveFormat
-        {
-            get
-            {
-                return waveFormat;
-            }
-        }
+        public override WaveFormat WaveFormat => waveFormat;
 
         /// <summary>
         /// Clip indicator. Can be reset.

@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
+// ReSharper disable once CheckNamespace
 namespace NAudio.Wave
 {
     /// <summary>
@@ -34,8 +33,8 @@ namespace NAudio.Wave
         /// </summary>
         public SampleEventArgs(float left, float right)
         {
-            this.Left = left;
-            this.Right = right;
+            Left = left;
+            Right = right;
         }
     }
 }

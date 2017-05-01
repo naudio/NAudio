@@ -39,12 +39,27 @@ namespace NAudio.Midi
         /// </summary>
         /// <param name="filename">Name of MIDI file</param>
         /// <param name="strictChecking">If true will error on non-paired note events</param>
-        public MidiFile(string filename, bool strictChecking)
+        public MidiFile(string filename, bool strictChecking) :
+            this(File.OpenRead(filename), strictChecking, true)
+        {
+        }
+
+        /// <summary>
+        /// Opens a MIDI file stream for reading
+        /// </summary>
+        /// <param name="inputStream">The input stream containing a MIDI file</param>
+        /// <param name="strictChecking">If true will error on non-paired note events</param>
+        public MidiFile(Stream inputStream, bool strictChecking) :
+            this(inputStream, strictChecking, false)
+        {
+        }
+
+        private MidiFile(Stream inputStream, bool strictChecking, bool ownInputStream)
         {
             this.strictChecking = strictChecking;
             
-            var br = new BinaryReader(File.OpenRead(filename));
-            using(br) 
+            var br = new BinaryReader(inputStream);
+            try 
             {
                 string chunkHeader = Encoding.UTF8.GetString(br.ReadBytes(4));
                 if(chunkHeader != "MThd") 
@@ -140,6 +155,11 @@ namespace NAudio.Midi
                         throw new FormatException(String.Format("Read too far {0}+{1}!={2}", chunkSize, startPos, br.BaseStream.Position));
                     }
                 }
+            }
+            finally
+            {
+                if (ownInputStream)
+                    br.Close();
             }
         }
 

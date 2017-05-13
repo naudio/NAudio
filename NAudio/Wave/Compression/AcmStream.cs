@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace NAudio.Wave.Compression
@@ -13,7 +12,7 @@ namespace NAudio.Wave.Compression
         private IntPtr streamHandle;
         private IntPtr driverHandle;
         private AcmStreamHeader streamHeader;
-        private WaveFormat sourceFormat;
+        private readonly WaveFormat sourceFormat;
 
         /// <summary>
         /// Creates a new ACM stream to convert one format to another. Note that
@@ -118,25 +117,13 @@ namespace NAudio.Wave.Compression
         /// <summary>
         /// Returns the Source Buffer. Fill this with data prior to calling convert
         /// </summary>
-        public byte[] SourceBuffer
-        {
-            get
-            {
-                return streamHeader.SourceBuffer;
-            }
-        }
+        public byte[] SourceBuffer => streamHeader.SourceBuffer;
 
         /// <summary>
         /// Returns the Destination buffer. This will contain the converted data
         /// after a successful call to Convert
         /// </summary>
-        public byte[] DestBuffer
-        {
-            get
-            {
-                return streamHeader.DestBuffer;
-            }
-        }
+        public byte[] DestBuffer => streamHeader.DestBuffer;
 
         /// <summary>
         /// Report that we have repositioned in the source stream

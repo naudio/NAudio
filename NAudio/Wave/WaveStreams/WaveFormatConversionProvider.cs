@@ -12,12 +12,12 @@ namespace NAudio.Wave
     {
         private readonly AcmStream conversionStream;
         private readonly IWaveProvider sourceProvider;
-        private readonly WaveFormat targetFormat;
         private readonly int preferredSourceReadSize;
         private int leftoverDestBytes;
         private int leftoverDestOffset;
         private int leftoverSourceBytes;
         private bool isDisposed;
+
         /// <summary>
         /// Create a new WaveFormat conversion stream
         /// </summary>
@@ -26,7 +26,7 @@ namespace NAudio.Wave
         public WaveFormatConversionProvider(WaveFormat targetFormat, IWaveProvider sourceProvider)
         {
             this.sourceProvider = sourceProvider;
-            this.targetFormat = targetFormat;
+            WaveFormat = targetFormat;
 
             conversionStream = new AcmStream(sourceProvider.WaveFormat, targetFormat);
 
@@ -37,13 +37,7 @@ namespace NAudio.Wave
         /// <summary>
         /// Gets the WaveFormat of this stream
         /// </summary>
-        public WaveFormat WaveFormat
-        {
-            get
-            {
-                return targetFormat;
-            }
-        }
+        public WaveFormat WaveFormat { get; }
 
         /// <summary>
         /// Indicates that a reposition has taken place, and internal buffers should be reset
@@ -107,7 +101,7 @@ namespace NAudio.Wave
                 int destBytesConverted = conversionStream.Convert(sourceBytesAvailable, out sourceBytesConverted);
                 if (sourceBytesConverted == 0)
                 {
-                    Debug.WriteLine(String.Format("Warning: couldn't convert anything from {0}", sourceBytesAvailable));
+                    Debug.WriteLine($"Warning: couldn't convert anything from {sourceBytesAvailable}");
                     // no point backing up in this case as we're not going to manage to finish playing this
                     break;
                 }
@@ -137,8 +131,8 @@ namespace NAudio.Wave
                 else
                 {
                     // possible error here
-                    Debug.WriteLine(string.Format("sourceBytesRead: {0}, sourceBytesConverted {1}, destBytesConverted {2}", 
-                        sourceBytesRead, sourceBytesConverted, destBytesConverted));
+                    Debug.WriteLine(
+                        $"sourceBytesRead: {sourceBytesRead}, sourceBytesConverted {sourceBytesConverted}, destBytesConverted {destBytesConverted}");
                     //Debug.Assert(false, "conversion stream returned nothing at all");
                     break;
                 }
@@ -155,7 +149,7 @@ namespace NAudio.Wave
             if (!isDisposed)
             {
                 isDisposed = true;
-                conversionStream.Dispose();
+                conversionStream?.Dispose();
             }
         }
 

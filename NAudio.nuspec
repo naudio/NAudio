@@ -13,6 +13,8 @@
     <tags>C# .NET audio sound</tags>
   </metadata>
   <files>
+    <file src="NAudio\bin\Release\NAudio.dll" target="lib" /> 
+    <file src="NAudio\bin\Release\NAudio.xml" target="lib" /> 
     <file src="NAudio\bin\Release\NAudio.dll" target="lib\net35" /> 
     <file src="NAudio\bin\Release\NAudio.xml" target="lib\net35" /> 
     <file src="NAudio.Win8\bin\Release\NAudio.Win8.dll" target="lib\windows8" /> 

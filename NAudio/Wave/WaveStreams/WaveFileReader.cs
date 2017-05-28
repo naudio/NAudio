@@ -27,7 +27,7 @@ namespace NAudio.Wave
         /// fix this reader to support it
         /// </remarks>
         public WaveFileReader(String waveFile) :
-            this(File.OpenRead(waveFile), true)
+            this(File.Open(waveFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite), true)
         {            
         }
 

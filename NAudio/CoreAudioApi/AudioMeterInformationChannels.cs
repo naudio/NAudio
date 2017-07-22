@@ -30,7 +30,7 @@ namespace NAudio.CoreAudioApi
     /// </summary>
     public class AudioMeterInformationChannels
     {
-        readonly IAudioMeterInformation audioMeterInformation;
+        private readonly IAudioMeterInformation audioMeterInformation;
 
         /// <summary>
         /// Metering Channel Count
@@ -54,8 +54,14 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
+                var channels = Count;
+                if (index >= channels)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(index),
+                        $"Peak index cannot be greater than number of channels ({channels})");
+                }
                 var peakValues = new float[Count];
-                GCHandle Params = GCHandle.Alloc(peakValues, GCHandleType.Pinned);
+                var Params = GCHandle.Alloc(peakValues, GCHandleType.Pinned);
                 Marshal.ThrowExceptionForHR(audioMeterInformation.GetChannelsPeakValues(peakValues.Length, Params.AddrOfPinnedObject()));
                 Params.Free();
                 return peakValues[index];

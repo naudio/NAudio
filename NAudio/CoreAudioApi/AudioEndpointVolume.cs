@@ -208,8 +208,8 @@ namespace NAudio.CoreAudioApi
                 Marshal.ThrowExceptionForHR(audioEndPointVolume.UnregisterControlChangeNotify(callBack));
                 callBack = null;
             }
+            Marshal.ReleaseComObject(audioEndPointVolume);
             GC.SuppressFinalize(this);
-
         }
         
         /// <summary>

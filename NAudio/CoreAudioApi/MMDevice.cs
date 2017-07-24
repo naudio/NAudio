@@ -31,7 +31,7 @@ namespace NAudio.CoreAudioApi
     /// <summary>
     /// MM Device
     /// </summary>
-    public class MMDevice
+    public class MMDevice : IDisposable
     {
         #region Variables
         private readonly IMMDevice deviceInterface;
@@ -275,5 +275,22 @@ namespace NAudio.CoreAudioApi
             return FriendlyName;
         }
 
+        /// <summary>
+        /// Dispose
+        /// </summary>
+        public void Dispose()
+        {
+            this.audioEndpointVolume?.Dispose();
+            this.audioSessionManager?.Dispose();
+            GC.SuppressFinalize(this);
+        }
+        
+        /// <summary>
+        /// Finalizer
+        /// </summary>
+        ~MMDevice()
+        {
+            Dispose();
+        }
     }
 }

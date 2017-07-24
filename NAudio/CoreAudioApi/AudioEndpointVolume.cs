@@ -210,7 +210,6 @@ namespace NAudio.CoreAudioApi
             }
             Marshal.ReleaseComObject(audioEndPointVolume);
             GC.SuppressFinalize(this);
-
         }
         
         /// <summary>

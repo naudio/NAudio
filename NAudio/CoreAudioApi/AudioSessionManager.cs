@@ -26,10 +26,8 @@ namespace NAudio.CoreAudioApi
         private AudioSessionControl audioSessionControl;
 
         /// <summary>
-        /// 
+        /// Session created delegate
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="newSession"></param>
         public delegate void SessionCreatedDelegate(object sender, IAudioSessionControl newSession);
         
         /// <summary>
@@ -87,8 +85,7 @@ namespace NAudio.CoreAudioApi
 
         internal void FireSessionCreated(IAudioSessionControl newSession)
         {
-            if (OnSessionCreated != null)
-                OnSessionCreated(this, newSession);
+            OnSessionCreated?.Invoke(this, newSession);
         }
 
         /// <summary>
@@ -112,13 +109,7 @@ namespace NAudio.CoreAudioApi
         /// <summary>
         /// Returns list of sessions of current device.
         /// </summary>
-        public SessionCollection Sessions
-        {
-            get
-            {
-                return sessions;
-            }
-        }
+        public SessionCollection Sessions => sessions;
 
         /// <summary>
         /// Dispose.
@@ -132,11 +123,14 @@ namespace NAudio.CoreAudioApi
 
         private void UnregisterNotifications()
         {
-            if (sessions != null)
-                sessions = null;
+            sessions = null;
 
-            if (audioSessionNotification != null)
-                Marshal.ThrowExceptionForHR(audioSessionInterface2.UnregisterSessionNotification(audioSessionNotification));
+            if (audioSessionNotification != null && audioSessionInterface2 != null)
+            {
+                Marshal.ThrowExceptionForHR(
+                    audioSessionInterface2.UnregisterSessionNotification(audioSessionNotification));
+                audioSessionNotification = null;
+            }
         }
 
         /// <summary>

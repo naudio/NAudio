@@ -17,9 +17,7 @@ namespace NAudio.CoreAudioApi
     {
         private readonly IAudioSessionControl audioSessionControlInterface;
         private readonly IAudioSessionControl2 audioSessionControlInterface2;
-        private AudioSessionEventsCallback audioSessionEventCallback = null;
-        internal AudioMeterInformation audioMeterInformation;
-        internal SimpleAudioVolume simpleAudioVolume;
+        private AudioSessionEventsCallback audioSessionEventCallback;
 
         /// <summary>
         /// Constructor.
@@ -30,12 +28,14 @@ namespace NAudio.CoreAudioApi
             audioSessionControlInterface = audioSessionControl;
             audioSessionControlInterface2 = audioSessionControl as IAudioSessionControl2;
 
+            // ReSharper disable once SuspiciousTypeConversion.Global
             var meters = audioSessionControlInterface as IAudioMeterInformation;
+            // ReSharper disable once SuspiciousTypeConversion.Global
             var volume = audioSessionControlInterface as ISimpleAudioVolume;
             if (meters != null)
-                audioMeterInformation = new AudioMeterInformation(meters);
+                AudioMeterInformation = new AudioMeterInformation(meters);
             if (volume != null)
-                simpleAudioVolume = new SimpleAudioVolume(volume);
+                SimpleAudioVolume = new SimpleAudioVolume(volume);
         }
 
         #region IDisposable Members
@@ -66,24 +66,12 @@ namespace NAudio.CoreAudioApi
         /// <summary>
         /// Audio meter information of the audio session.
         /// </summary>
-        public AudioMeterInformation AudioMeterInformation
-        {
-            get
-            {
-                return audioMeterInformation;
-            }
-        }
+        public AudioMeterInformation AudioMeterInformation { get; }
 
         /// <summary>
         /// Simple audio volume of the audio session (for volume and mute status).
         /// </summary>
-        public SimpleAudioVolume SimpleAudioVolume
-        {
-            get
-            {
-                return simpleAudioVolume;
-            }
-        }
+        public SimpleAudioVolume SimpleAudioVolume { get; }
 
         /// <summary>
         /// The current state of the audio session.
@@ -107,7 +95,7 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                string displayName = String.Empty;
+                string displayName;
 
                 Marshal.ThrowExceptionForHR(audioSessionControlInterface.GetDisplayName(out displayName));
 
@@ -129,7 +117,7 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                string iconPath = String.Empty;
+                string iconPath;
 
                 Marshal.ThrowExceptionForHR(audioSessionControlInterface.GetIconPath(out iconPath));
 
@@ -204,7 +192,7 @@ namespace NAudio.CoreAudioApi
         /// <returns></returns>
         public Guid GetGroupingParam()
         {
-            Guid groupingId = Guid.Empty;
+            Guid groupingId;
 
             Marshal.ThrowExceptionForHR(audioSessionControlInterface.GetGroupingParam(out groupingId));
 

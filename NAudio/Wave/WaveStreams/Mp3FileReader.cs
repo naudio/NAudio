@@ -400,7 +400,7 @@ namespace NAudio.Wave
 
                 while (bytesRead < numBytes)
                 {
-                    Mp3Frame frame = ReadNextFrame();
+                    Mp3Frame frame = ReadNextFrame(true); // internal read - should not advance position
                     if (frame != null)
                     {
                         int decompressed = decompressor.DecompressFrame(frame, decompressBuffer, 0);

@@ -59,7 +59,7 @@ Target "NuGet" (fun _ ->
             Summary = projectSummary
             WorkingDir = packagingDir
             AccessKey = myAccesskey*)
-            Version = "1.8.1" // todo get the version number from elsewhere
+            Version = "1.8.2" // todo get the version number from elsewhere
             WorkingDir = "."
             OutputPath = deployDir
             

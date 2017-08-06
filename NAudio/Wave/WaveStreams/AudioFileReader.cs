@@ -57,7 +57,7 @@ namespace NAudio.Wave
             {
                 readerStream = new Mp3FileReader(fileName);
             }
-            else if (fileName.EndsWith(".aiff"))
+            else if (fileName.EndsWith(".aiff", StringComparison.OrdinalIgnoreCase) || fileName.EndsWith(".aif", StringComparison.OrdinalIgnoreCase))
             {
                 readerStream = new AiffFileReader(fileName);
             }

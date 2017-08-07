@@ -52,14 +52,14 @@ namespace NAudio.Midi
             set
             {
                 Encoding byteEncoding = NAudio.Utils.ByteEncoding.Instance;
-                data = byteEncoding.getBytes(value);
+                data = byteEncoding.GetBytes(value);
                 metaDataLength = data.Length;
             }
         }
         
         /// <summary>
         /// The raw contents of this text event
-        /// <summary>
+        /// </summary>
         public byte[] Data
         {
             get

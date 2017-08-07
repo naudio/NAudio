@@ -9,7 +9,7 @@ namespace NAudio.Midi
     /// </summary>
     public class TextEvent : MetaEvent 
     {
-        private string text;
+        private byte[] data;
         
         /// <summary>
         /// Reads a new text event from a MIDI stream
@@ -18,8 +18,7 @@ namespace NAudio.Midi
         /// <param name="length">The data length</param>
         public TextEvent(BinaryReader br,int length) 
         {
-            Encoding byteEncoding = NAudio.Utils.ByteEncoding.Instance;
-            text = byteEncoding.GetString(br.ReadBytes(length));
+            data = br.ReadBytes(length);
         }
 
         /// <summary>
@@ -32,7 +31,7 @@ namespace NAudio.Midi
         public TextEvent(string text, MetaEventType metaEventType, long absoluteTime)
             : base(metaEventType, text.Length, absoluteTime)
         {
-            this.text = text;
+            Text = text;
         }
 
         /// <summary>
@@ -47,12 +46,30 @@ namespace NAudio.Midi
         {
             get 
             { 
-                return text; 
+                Encoding byteEncoding = NAudio.Utils.ByteEncoding.Instance;
+                return byteEncoding.GetString(data); 
             }
             set
             {
-                text = value;
-                metaDataLength = text.Length;
+                Encoding byteEncoding = NAudio.Utils.ByteEncoding.Instance;
+                data = byteEncoding.GetBytes(value);
+                metaDataLength = data.Length;
+            }
+        }
+        
+        /// <summary>
+        /// The raw contents of this text event
+        /// </summary>
+        public byte[] Data
+        {
+            get
+            {
+                return data;
+            }
+            set
+            {
+                data = value;
+                metaDataLength = data.Length;
             }
         }
 
@@ -62,7 +79,7 @@ namespace NAudio.Midi
         /// <returns>A string describing this event</returns>
         public override string ToString() 
         {
-            return String.Format("{0} {1}",base.ToString(),text);
+            return String.Format("{0} {1}",base.ToString(),Text);
         }
 
         /// <summary>
@@ -73,9 +90,7 @@ namespace NAudio.Midi
         public override void Export(ref long absoluteTime, BinaryWriter writer)
         {
             base.Export(ref absoluteTime, writer);
-            Encoding byteEncoding = NAudio.Utils.ByteEncoding.Instance;
-            byte[] encoded = byteEncoding.GetBytes(text);
-            writer.Write(encoded);
+            writer.Write(data);
         }
     }
 }

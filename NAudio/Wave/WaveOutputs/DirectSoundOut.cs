@@ -550,40 +550,7 @@ namespace NAudio.Wave
             {
                 if (secondaryBuffer != null)
                 {
-
-                    // **************************************************
-                    // In DirectSound, when playback is started,
-                    // the rest of the sound that was played last time is played back as noise.
-                    // This happens even if the secondary buffer is completely silenced, 
-                    // so it seems that the buffer in the primary buffer or higher is not cleared.
-                    // 
-                    // To solve this problem fill the secondary buffer with silence data when stop playback.
-                    // **************************************************
-
-                    byte[] silence = new byte[samplesTotalSize];
-
-                    // Lock the SecondaryBuffer
-                    IntPtr wavBuffer1;
-                    int nbSamples1;
-                    IntPtr wavBuffer2;
-                    int nbSamples2;
-                    secondaryBuffer.Lock(0, (uint)samplesTotalSize,
-                                         out wavBuffer1, out nbSamples1,
-                                         out wavBuffer2, out nbSamples2,
-                                         DirectSoundBufferLockFlag.None);
-
-                    // Copy silence data to the SecondaryBuffer
-                    if (wavBuffer1 != IntPtr.Zero)
-                    {
-                        Marshal.Copy(silence, 0, wavBuffer1, nbSamples1);
-                        if (wavBuffer2 != IntPtr.Zero)
-                        {
-                            Marshal.Copy(silence, 0, wavBuffer1, nbSamples1);
-                        }
-                    }
-
-                    // Unlock the SecondaryBuffer
-                    secondaryBuffer.Unlock(wavBuffer1, nbSamples1, wavBuffer2, nbSamples2);
+                    CleanUpSecondaryBuffer();
 
                     secondaryBuffer.Stop();
                     secondaryBuffer = null;
@@ -593,6 +560,51 @@ namespace NAudio.Wave
                     primarySoundBuffer.Stop();
                     primarySoundBuffer = null;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Clean up the SecondaryBuffer
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// In DirectSound, when playback is started,
+        /// the rest of the sound that was played last time is played back as noise.
+        /// This happens even if the secondary buffer is completely silenced,
+        /// so it seems that the buffer in the primary buffer or higher is not cleared.
+        /// </para>
+        /// <para>
+        /// To solve this problem fill the secondary buffer with silence data when stop playback.
+        /// </para>
+        /// </remarks>
+        private void CleanUpSecondaryBuffer()
+        {
+            if (secondaryBuffer != null)
+            {
+                byte[] silence = new byte[samplesTotalSize];
+
+                // Lock the SecondaryBuffer
+                IntPtr wavBuffer1;
+                int nbSamples1;
+                IntPtr wavBuffer2;
+                int nbSamples2;
+                secondaryBuffer.Lock(0, (uint)samplesTotalSize,
+                                     out wavBuffer1, out nbSamples1,
+                                     out wavBuffer2, out nbSamples2,
+                                     DirectSoundBufferLockFlag.None);
+
+                // Copy silence data to the SecondaryBuffer
+                if (wavBuffer1 != IntPtr.Zero)
+                {
+                    Marshal.Copy(silence, 0, wavBuffer1, nbSamples1);
+                    if (wavBuffer2 != IntPtr.Zero)
+                    {
+                        Marshal.Copy(silence, 0, wavBuffer1, nbSamples1);
+                    }
+                }
+
+                // Unlock the SecondaryBuffer
+                secondaryBuffer.Unlock(wavBuffer1, nbSamples1, wavBuffer2, nbSamples2);
             }
         }
 

@@ -129,6 +129,24 @@ namespace NAudio.CoreAudioApi
         }
 
         /// <summary>
+        /// Sets property value at specified key.
+        /// </summary>
+        /// <param name="key">Key of property to set.</param>
+        /// <param name="key">Value to write.</param>
+        public void SetValue(PropertyKey key, PropVariant value)
+        {
+            Marshal.ThrowExceptionForHR(storeInterface.SetValue(ref key, ref value));
+        }
+
+        /// <summary>
+        /// Saves a property change.
+        /// </summary>
+        public void Commit()
+        {
+            Marshal.ThrowExceptionForHR(storeInterface.Commit());
+        }
+
+        /// <summary>
         /// Creates a new property store
         /// </summary>
         /// <param name="store">IPropertyStore COM interface</param>

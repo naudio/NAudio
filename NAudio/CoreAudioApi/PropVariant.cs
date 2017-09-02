@@ -35,35 +35,35 @@ namespace NAudio.CoreAudioApi.Interfaces
     [StructLayout(LayoutKind.Explicit)]
     public struct PropVariant
     {
-        [FieldOffset(0)] private short vt;
-        [FieldOffset(2)] private short wReserved1;
-        [FieldOffset(4)] private short wReserved2;
-        [FieldOffset(6)] private short wReserved3;
-        [FieldOffset(8)] private sbyte cVal;
-        [FieldOffset(8)] private byte bVal;
-        [FieldOffset(8)] private short iVal;
-        [FieldOffset(8)] private ushort uiVal;
-        [FieldOffset(8)] private int lVal;
-        [FieldOffset(8)] private uint ulVal;
-        [FieldOffset(8)] private int intVal;
-        [FieldOffset(8)] private uint uintVal;
-        [FieldOffset(8)] private long hVal;
-        [FieldOffset(8)] private long uhVal;
-        [FieldOffset(8)] private float fltVal;
-        [FieldOffset(8)] private double dblVal;
+        [FieldOffset(0)] public short vt;
+        [FieldOffset(2)] public short wReserved1;
+        [FieldOffset(4)] public short wReserved2;
+        [FieldOffset(6)] public short wReserved3;
+        [FieldOffset(8)] public sbyte cVal;
+        [FieldOffset(8)] public byte bVal;
+        [FieldOffset(8)] public short iVal;
+        [FieldOffset(8)] public ushort uiVal;
+        [FieldOffset(8)] public int lVal;
+        [FieldOffset(8)] public uint ulVal;
+        [FieldOffset(8)] public int intVal;
+        [FieldOffset(8)] public uint uintVal;
+        [FieldOffset(8)] public long hVal;
+        [FieldOffset(8)] public long uhVal;
+        [FieldOffset(8)] public float fltVal;
+        [FieldOffset(8)] public double dblVal;
         //VARIANT_BOOL boolVal;
-        [FieldOffset(8)] private short boolVal;
-        [FieldOffset(8)] private int scode;
+        [FieldOffset(8)] public short boolVal;
+        [FieldOffset(8)] public int scode;
         //CY cyVal;
         //[FieldOffset(8)] private DateTime date; - can cause issues with invalid value
-        [FieldOffset(8)] private System.Runtime.InteropServices.ComTypes.FILETIME filetime;
+        [FieldOffset(8)] public System.Runtime.InteropServices.ComTypes.FILETIME filetime;
         //CLSID* puuid;
         //CLIPDATA* pclipdata;
         //BSTR bstrVal;
         //BSTRBLOB bstrblobVal;
-        [FieldOffset(8)] private Blob blobVal;
+        [FieldOffset(8)] public Blob blobVal;
         //LPSTR pszVal;
-        [FieldOffset(8)] private IntPtr pointerValue; //LPWSTR 
+        [FieldOffset(8)] public IntPtr pointerValue; //LPWSTR 
         //IUnknown* punkVal;
         /*IDispatch* pdispVal;
         IStream* pStream;

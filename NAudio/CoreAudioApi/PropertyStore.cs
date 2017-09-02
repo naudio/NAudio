@@ -132,7 +132,7 @@ namespace NAudio.CoreAudioApi
         /// Sets property value at specified key.
         /// </summary>
         /// <param name="key">Key of property to set.</param>
-        /// <param name="key">Value to write.</param>
+        /// <param name="value">Value to write.</param>
         public void SetValue(PropertyKey key, PropVariant value)
         {
             Marshal.ThrowExceptionForHR(storeInterface.SetValue(ref key, ref value));

@@ -49,10 +49,10 @@ namespace NAudio.CoreAudioApi
         #endregion
 
         #region Init
-        private void GetPropertyInformation()
+        public void GetPropertyInformation(StorageAccessMode stgmAccess = StorageAccessMode.Read)
         {
             IPropertyStore propstore;
-            Marshal.ThrowExceptionForHR(deviceInterface.OpenPropertyStore(StorageAccessMode.Read, out propstore));
+            Marshal.ThrowExceptionForHR(deviceInterface.OpenPropertyStore(stgmAccess, out propstore));
             propertyStore = new PropertyStore(propstore);
         }
 

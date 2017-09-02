@@ -27,7 +27,7 @@ using System.Runtime.InteropServices;
 
 namespace NAudio.CoreAudioApi.Interfaces
 {
-    internal struct Blob
+    public struct Blob
     {
         public int Length;
         public IntPtr Data;

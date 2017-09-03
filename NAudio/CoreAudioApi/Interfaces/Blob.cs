@@ -27,9 +27,18 @@ using System.Runtime.InteropServices;
 
 namespace NAudio.CoreAudioApi.Interfaces
 {
+    /// <summary>
+    /// Representation of binary large object container.
+    /// </summary>
     public struct Blob
     {
+        /// <summary>
+        /// Length of binary object.
+        /// </summary>
         public int Length;
+        /// <summary>
+        /// Pointer to buffer storing data.
+        /// </summary>
         public IntPtr Data;
 
         //Code Should Compile at warning level4 without any warnings, 

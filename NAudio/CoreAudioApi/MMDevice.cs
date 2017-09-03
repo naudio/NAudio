@@ -49,6 +49,11 @@ namespace NAudio.CoreAudioApi
         #endregion
 
         #region Init
+        /// <summary>
+        /// Initializes the device's property store.
+        /// </summary>
+        /// <param name="stgmAccess">The storage-access mode to open store for.</param>
+        /// <remarks>Administrative client is required for Write and ReadWrite modes.</remarks>
         public void GetPropertyInformation(StorageAccessMode stgmAccess = StorageAccessMode.Read)
         {
             IPropertyStore propstore;

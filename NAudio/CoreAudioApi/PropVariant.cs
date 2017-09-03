@@ -35,34 +35,97 @@ namespace NAudio.CoreAudioApi.Interfaces
     [StructLayout(LayoutKind.Explicit)]
     public struct PropVariant
     {
+        /// <summary>
+        /// Value type tag.
+        /// </summary>
         [FieldOffset(0)] public short vt;
+        /// <summary>
+        /// Reserved1.
+        /// </summary>
         [FieldOffset(2)] public short wReserved1;
+        /// <summary>
+        /// Reserved2.
+        /// </summary>
         [FieldOffset(4)] public short wReserved2;
+        /// <summary>
+        /// Reserved3.
+        /// </summary>
         [FieldOffset(6)] public short wReserved3;
+        /// <summary>
+        /// cVal.
+        /// </summary>
         [FieldOffset(8)] public sbyte cVal;
+        /// <summary>
+        /// bVal.
+        /// </summary>
         [FieldOffset(8)] public byte bVal;
+        /// <summary>
+        /// iVal.
+        /// </summary>
         [FieldOffset(8)] public short iVal;
+        /// <summary>
+        /// uiVal.
+        /// </summary>
         [FieldOffset(8)] public ushort uiVal;
+        /// <summary>
+        /// lVal.
+        /// </summary>
         [FieldOffset(8)] public int lVal;
+        /// <summary>
+        /// ulVal.
+        /// </summary>
         [FieldOffset(8)] public uint ulVal;
+        /// <summary>
+        /// intVal.
+        /// </summary>
         [FieldOffset(8)] public int intVal;
+        /// <summary>
+        /// uintVal.
+        /// </summary>
         [FieldOffset(8)] public uint uintVal;
+        /// <summary>
+        /// hVal.
+        /// </summary>
         [FieldOffset(8)] public long hVal;
+        /// <summary>
+        /// uhVal.
+        /// </summary>
         [FieldOffset(8)] public long uhVal;
+        /// <summary>
+        /// fltVal.
+        /// </summary>
         [FieldOffset(8)] public float fltVal;
+        /// <summary>
+        /// dblVal.
+        /// </summary>
         [FieldOffset(8)] public double dblVal;
         //VARIANT_BOOL boolVal;
+        /// <summary>
+        /// boolVal.
+        /// </summary>
         [FieldOffset(8)] public short boolVal;
+        /// <summary>
+        /// scode.
+        /// </summary>
         [FieldOffset(8)] public int scode;
         //CY cyVal;
         //[FieldOffset(8)] private DateTime date; - can cause issues with invalid value
+        /// <summary>
+        /// Date time.
+        /// </summary>
         [FieldOffset(8)] public System.Runtime.InteropServices.ComTypes.FILETIME filetime;
         //CLSID* puuid;
         //CLIPDATA* pclipdata;
         //BSTR bstrVal;
         //BSTRBLOB bstrblobVal;
+        /// <summary>
+        /// Binary large object.
+        /// </summary>
         [FieldOffset(8)] public Blob blobVal;
         //LPSTR pszVal;
+        /// <summary>
+        /// Pointer value.
+        /// </summary>
         [FieldOffset(8)] public IntPtr pointerValue; //LPWSTR 
         //IUnknown* punkVal;
         /*IDispatch* pdispVal;

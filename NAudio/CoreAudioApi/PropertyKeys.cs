@@ -84,5 +84,17 @@ namespace NAudio.CoreAudioApi
         /// PKEY _Device_IconPath
         /// </summary>
         public static readonly PropertyKey PKEY_Device_IconPath = new PropertyKey(new Guid(unchecked((int)0x259abffc), unchecked((short)0x50a7), 0x47ce, 0xaf, 0x8, 0x68, 0xc9, 0xa7, 0xd7, 0x33, 0x66), 12);
+        /// <summary>
+        /// Device description property.
+        /// </summary>
+        public static readonly PropertyKey PKEY_Device_DeviceDesc = new PropertyKey(new Guid(unchecked((int)0xa45c254e), unchecked((short)0xdf1c), 0x4efd, 0x80, 0x20, 0x67, 0xd1, 0x46, 0xa8, 0x50, 0xe0), 2);
+        /// <summary>
+        /// Id of controller device for endpoint device property.
+        /// </summary>
+        public static readonly PropertyKey PKEY_Device_ControllerDeviceId = new PropertyKey(new Guid(unchecked((int)0xb3f8fa53), unchecked((short)0x0004), 0x438e, 0x90, 0x03, 0x51, 0xa4, 0x6e, 0x13, 0x9b, 0xfc), 2);
+        /// <summary>
+        /// Device interface key property.
+        /// </summary>
+        public static readonly PropertyKey PKEY_Device_InterfaceKey = new PropertyKey(new Guid(unchecked((int)0x233164c8), unchecked((short)0x1b2c), 0x4c7d, 0xbc, 0x68, 0xb6, 0x71, 0x68, 0x7a, 0x25, 0x67), 1);
     }
 }

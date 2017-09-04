@@ -149,6 +149,13 @@ namespace NAudio.Wave
             partialMediaType.SubType = settings.RequestFloatOutput ? AudioSubtypes.MFAudioFormat_Float : AudioSubtypes.MFAudioFormat_PCM;
 
             var currentMediaType = GetCurrentMediaType(reader);
+
+            // HE-AAC (and v2) seems to halve the samplerate
+            if (currentMediaType.SubType == AudioSubtypes.MFAudioFormat_AAC && currentMediaType.ChannelCount == 1)
+            {
+                currentMediaType.SampleRate *= 2;
+                currentMediaType.ChannelCount *= 2;
+            }
             // mono, low sample rate files can go wrong on Windows 10 unless we specify here
             partialMediaType.ChannelCount = currentMediaType.ChannelCount;
             partialMediaType.SampleRate = currentMediaType.SampleRate;

@@ -151,18 +151,34 @@ namespace NAudio.Wave
             var currentMediaType = GetCurrentMediaType(reader);
 
             // HE-AAC (and v2) seems to halve the samplerate
+            bool sampleRateMultiplied = false;
             if (currentMediaType.SubType == AudioSubtypes.MFAudioFormat_AAC && currentMediaType.ChannelCount == 1)
             {
+                sampleRateMultiplied = true;
                 currentMediaType.SampleRate *= 2;
                 currentMediaType.ChannelCount *= 2;
             }
+
             // mono, low sample rate files can go wrong on Windows 10 unless we specify here
             partialMediaType.ChannelCount = currentMediaType.ChannelCount;
             partialMediaType.SampleRate = currentMediaType.SampleRate;
 
             // set the media type
             // can return MF_E_INVALIDMEDIATYPE if not supported
-            reader.SetCurrentMediaType(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, IntPtr.Zero, partialMediaType.MediaFoundationObject);
+            try
+            {
+                reader.SetCurrentMediaType(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, IntPtr.Zero, partialMediaType.MediaFoundationObject);
+            }
+            catch
+            {
+                // revert SampleRate & ChannelCount multiplication (not needed for aac_lc mono)
+                if (sampleRateMultiplied)
+                {
+                    partialMediaType.SampleRate /= 2;
+                    partialMediaType.ChannelCount /= 2;
+                    reader.SetCurrentMediaType(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, IntPtr.Zero, partialMediaType.MediaFoundationObject);
+                }
+            }
 
             Marshal.ReleaseComObject(currentMediaType.MediaFoundationObject);
             return reader;

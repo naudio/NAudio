@@ -101,6 +101,10 @@ namespace NAudio.Wave
             {
                 pReader = reader;
             }
+            else
+            {
+                Marshal.ReleaseComObject(reader);
+            }
         }
 
         private WaveFormat GetCurrentWaveFormat(IMFSourceReader reader)

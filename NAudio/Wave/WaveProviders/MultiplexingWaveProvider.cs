@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 using NAudio.Utils;
 
+// ReSharper disable once CheckNamespace
 namespace NAudio.Wave
 {
     /// <summary>
@@ -13,7 +14,6 @@ namespace NAudio.Wave
     public class MultiplexingWaveProvider : IWaveProvider
     {
         private readonly IList<IWaveProvider> inputs;
-        private readonly WaveFormat waveFormat;
         private readonly int outputChannelCount;
         private readonly int inputChannelCount;
         private readonly List<int> mappings;
@@ -21,34 +21,45 @@ namespace NAudio.Wave
 
         /// <summary>
         /// Creates a multiplexing wave provider, allowing re-patching of input channels to different
+        /// output channels. Number of outputs is equal to total number of channels in inputs
+        /// </summary>
+        /// <param name="inputs">Input wave providers. Must all be of the same format, but can have any number of channels</param>
+        public MultiplexingWaveProvider(IEnumerable<IWaveProvider> inputs) : this(inputs, -1)
+        {
+            
+        }
+
+        /// <summary>
+        /// Creates a multiplexing wave provider, allowing re-patching of input channels to different
         /// output channels
         /// </summary>
         /// <param name="inputs">Input wave providers. Must all be of the same format, but can have any number of channels</param>
-        /// <param name="numberOfOutputChannels">Desired number of output channels.</param>
+        /// <param name="numberOfOutputChannels">Desired number of output channels. (-1 means use total number of input channels)</param>
         public MultiplexingWaveProvider(IEnumerable<IWaveProvider> inputs, int numberOfOutputChannels)
         {
             this.inputs = new List<IWaveProvider>(inputs);
-            this.outputChannelCount = numberOfOutputChannels;
+            
+            outputChannelCount = numberOfOutputChannels == -1 ? this.inputs.Sum(i => i.WaveFormat.Channels)  : numberOfOutputChannels;
 
             if (this.inputs.Count == 0)
             {
                 throw new ArgumentException("You must provide at least one input");
             }
-            if (numberOfOutputChannels < 1)
+            if (outputChannelCount < 1)
             {
                 throw new ArgumentException("You must provide at least one output");
             }
             foreach (var input in this.inputs)
             {
-                if (this.waveFormat == null)
+                if (WaveFormat == null)
                 {
                     if (input.WaveFormat.Encoding == WaveFormatEncoding.Pcm)
                     {
-                        this.waveFormat = new WaveFormat(input.WaveFormat.SampleRate, input.WaveFormat.BitsPerSample, numberOfOutputChannels);
+                        WaveFormat = new WaveFormat(input.WaveFormat.SampleRate, input.WaveFormat.BitsPerSample, outputChannelCount);
                     }
                     else if (input.WaveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
                     {
-                        this.waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(input.WaveFormat.SampleRate, numberOfOutputChannels);
+                        WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(input.WaveFormat.SampleRate, outputChannelCount);
                     }
                     else
                     {
@@ -57,18 +68,18 @@ namespace NAudio.Wave
                 }
                 else
                 {
-                    if (input.WaveFormat.BitsPerSample != this.waveFormat.BitsPerSample)
+                    if (input.WaveFormat.BitsPerSample != WaveFormat.BitsPerSample)
                     {
                         throw new ArgumentException("All inputs must have the same bit depth");
                     }
-                    if (input.WaveFormat.SampleRate != this.waveFormat.SampleRate)
+                    if (input.WaveFormat.SampleRate != WaveFormat.SampleRate)
                     {
                         throw new ArgumentException("All inputs must have the same sample rate");
                     }
                 }
                 inputChannelCount += input.WaveFormat.Channels;
             }
-            this.bytesPerSample = this.waveFormat.BitsPerSample / 8;
+            bytesPerSample = WaveFormat.BitsPerSample / 8;
 
             mappings = new List<int>();
             for (int n = 0; n < outputChannelCount; n++)
@@ -100,7 +111,7 @@ namespace NAudio.Wave
             {
                 int inputBytesPerFrame = bytesPerSample * input.WaveFormat.Channels;
                 int bytesRequired = sampleFramesRequested * inputBytesPerFrame;
-                this.inputBuffer = BufferHelpers.Ensure(this.inputBuffer, bytesRequired);
+                inputBuffer = BufferHelpers.Ensure(inputBuffer, bytesRequired);
                 int bytesRead = input.Read(inputBuffer, 0, bytesRequired);
                 sampleFramesRead = Math.Max(sampleFramesRead, bytesRead / inputBytesPerFrame);
 
@@ -140,10 +151,7 @@ namespace NAudio.Wave
         /// <summary>
         /// The WaveFormat of this WaveProvider
         /// </summary>
-        public WaveFormat WaveFormat
-        {
-            get { return waveFormat; }
-        }
+        public WaveFormat WaveFormat { get; }
 
         /// <summary>
         /// Connects a specified input channel to an output channel
@@ -167,17 +175,11 @@ namespace NAudio.Wave
         /// The number of input channels. Note that this is not the same as the number of input wave providers. If you pass in
         /// one stereo and one mono input provider, the number of input channels is three.
         /// </summary>
-        public int InputChannelCount
-        {
-            get { return inputChannelCount; }
-        }
+        public int InputChannelCount => inputChannelCount;
 
         /// <summary>
         /// The number of output channels, as specified in the constructor.
         /// </summary>
-        public int OutputChannelCount
-        {
-            get { return outputChannelCount; }
-        }
+        public int OutputChannelCount => outputChannelCount;
     }
 }

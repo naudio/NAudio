@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -101,6 +101,10 @@ namespace NAudio.Wave
             {
                 pReader = reader;
             }
+            else
+            {
+                Marshal.ReleaseComObject(reader);
+            }
         }
 
         private WaveFormat GetCurrentWaveFormat(IMFSourceReader reader)
@@ -149,13 +153,28 @@ namespace NAudio.Wave
             partialMediaType.SubType = settings.RequestFloatOutput ? AudioSubtypes.MFAudioFormat_Float : AudioSubtypes.MFAudioFormat_PCM;
 
             var currentMediaType = GetCurrentMediaType(reader);
+
             // mono, low sample rate files can go wrong on Windows 10 unless we specify here
             partialMediaType.ChannelCount = currentMediaType.ChannelCount;
             partialMediaType.SampleRate = currentMediaType.SampleRate;
 
-            // set the media type
-            // can return MF_E_INVALIDMEDIATYPE if not supported
-            reader.SetCurrentMediaType(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, IntPtr.Zero, partialMediaType.MediaFoundationObject);
+            try
+            {
+                // set the media type
+                // can return MF_E_INVALIDMEDIATYPE if not supported
+                reader.SetCurrentMediaType(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, IntPtr.Zero, partialMediaType.MediaFoundationObject);
+            }
+            catch (COMException ex) when (ex.GetHResult() == MediaFoundationErrors.MF_E_INVALIDMEDIATYPE)
+            {               
+                // HE-AAC (and v2) seems to halve the samplerate
+                if (currentMediaType.SubType == AudioSubtypes.MFAudioFormat_AAC && currentMediaType.ChannelCount == 1)
+                {
+                    partialMediaType.SampleRate = currentMediaType.SampleRate *= 2;
+                    partialMediaType.ChannelCount = currentMediaType.ChannelCount *= 2;
+                    reader.SetCurrentMediaType(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, IntPtr.Zero, partialMediaType.MediaFoundationObject);
+                }
+                else { throw; }
+            }
 
             Marshal.ReleaseComObject(currentMediaType.MediaFoundationObject);
             return reader;

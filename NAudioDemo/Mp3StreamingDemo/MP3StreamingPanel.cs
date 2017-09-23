@@ -105,6 +105,7 @@ namespace NAudioDemo.Mp3StreamingDemo
                                 // probably we have aborted download from the GUI thread
                                 break;
                             }
+                            if (frame == null) break;
                             if (decompressor == null)
                             {
                                 // don't think these details matter too much - just help ACM select the right codec
@@ -112,7 +113,8 @@ namespace NAudioDemo.Mp3StreamingDemo
                                 // until we have a frame
                                 decompressor = CreateFrameDecompressor(frame);
                                 bufferedWaveProvider = new BufferedWaveProvider(decompressor.OutputFormat);
-                                bufferedWaveProvider.BufferDuration = TimeSpan.FromSeconds(20); // allow us to get well ahead of ourselves
+                                bufferedWaveProvider.BufferDuration =
+                                    TimeSpan.FromSeconds(20); // allow us to get well ahead of ourselves
                                 //this.bufferedWaveProvider.BufferedDuration = 250;
                             }
                             int decompressed = decompressor.DecompressFrame(frame, buffer, 0);

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 
 // ReSharper disable once CheckNamespace
@@ -21,11 +21,7 @@ namespace NAudio.Wave
         /// </summary>
         public int Read(byte[] buffer, int offset, int count)
         {
-            var end = offset + count;
-            for (var pos = offset; pos < end; pos++)
-            {
-                buffer[pos] = 0;
-            }
+            Array.Clear(buffer, offset, count);
             return count;
         }
 

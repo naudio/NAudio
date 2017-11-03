@@ -5,7 +5,8 @@ NAudio is an open source .NET audio library written by [Mark Heath](https://mark
 We're currently in the process of migrating documentation from [CodePlex](http://naudio.codeplex.com). 
 
  - [Getting Started](Docs/GettingStarted.md)
-
+ - [Playing an Audio File from a WinForms application](Docs/GettingStarted.md)
+ - [Playing an Audio File from a Console application](Docs/PlayAudioConsoleApp.md)
 
 Additional sources of documentation for NAudio are:
  - [Original Documentation on CodePlex](http://naudio.codeplex.com/documentation)

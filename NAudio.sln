@@ -33,6 +33,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{BA7F6DBB-9FC4-49E6-92E4-621EFE4BBBBC}"
 	ProjectSection(SolutionItems) = preProject
 		Docs\GettingStarted.md = Docs\GettingStarted.md
+		Docs\PlayAudioFileConsoleApp.md = Docs\PlayAudioFileConsoleApp.md
 	EndProjectSection
 EndProject
 Global

@@ -7,7 +7,7 @@ The most common namespaces you'll want to reference are:
 - `NAudio.Wave`
 - `NAudio.Wave.SampleProviders`
 
-## Play Audio from a WinForms application
+## Play an Audio File from a WinForms application
 
 In this demo, we'll see how to play an audio file from a WinForms application. This technique will also work
 
@@ -103,4 +103,4 @@ private void OnPlaybackStopped(object sender, StoppedEventArgs args)
 }
 ```
 
-And that's it. Congratulations, you've played your first audio file from a 
+And that's it. Congratulations, you've played your first audio file with NAudio.

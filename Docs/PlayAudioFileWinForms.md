@@ -1,12 +1,3 @@
-# Getting Started
-
-To get started with NAudio, simply add a reference to the [NAudio NuGet package](https://www.nuget.org/packages/NAudio/)
-
-The most common namespaces you'll want to reference are:
-
-- `NAudio.Wave`
-- `NAudio.Wave.SampleProviders`
-
 ## Play an Audio File from a WinForms application
 
 In this demo, we'll see how to play an audio file from a WinForms application. This technique will also work
@@ -14,6 +5,9 @@ In this demo, we'll see how to play an audio file from a WinForms application. T
 To start with, we'll create a very simple form with a start and a stop button. And we'll also declare two private members, one to hold the audio output device (that's the soundcard we're playing out of), and one to hold the audio file (that's the audio file we're playing).
 
 ```c#
+using NAudio.Wave;
+using NAudio.Wave.SampleProviders
+
 public class MainForm : Form
 {
     private WaveOutEvent outputDevice;

@@ -98,3 +98,74 @@ private void OnPlaybackStopped(object sender, StoppedEventArgs args)
 ```
 
 And that's it. Congratulations, you've played your first audio file with NAudio.
+
+## Example 2 - Supporting Rewind and Resume
+
+In this example, we'll use a similar approach, but this time, when we stop, we won't dispose either the output device or the reader. This means that next time we press play, we'll resume from where we were when we stopped.
+
+I've also added a rewind button. This sets the position of the `AudioFileReader` back to the start by simply setting `Position = 0` 
+
+Obviously it is important that when the form is closed we do properly stop playback and dispose our resources, so we set a `closing` flag to true when the user shuts down the form. This means that when the `PlaybackStopped` event fires, we can dispose of the output device and `AudioFileReader`
+
+Here's the code
+
+```c#
+var wo = new WaveOutEvent();
+var af = new AudioFileReader(@"example.mp3");
+var closing = false;
+wo.PlaybackStopped += (s, a) => { if (closing) { wo.Dispose(); af.Dispose(); } };
+wo.Init(af);
+var f = new Form();
+var b = new Button() { Text = "Play" };
+b.Click += (s, a) => wo.Play();
+var b2 = new Button() { Text = "Stop", Left=b.Right };
+b2.Click += (s, a) => wo.Stop();
+var b3 = new Button { Text="Rewind", Left = b2.Right };
+b3.Click += (s, a) => af.Position = 0;
+f.Controls.Add(b);
+f.Controls.Add(b2);
+f.Controls.Add(b3);
+f.FormClosing += (s, a) => { closing = true; wo.Stop(); };
+f.ShowDialog();
+```
+
+## Example 3 - Adjusting Volume
+
+In this example, we'll build on the previous one by adding in a volume slider. We'll use a WinForms `TrackBar` with value between 0 and 100. 
+
+When the user moves the trackbar, the `Scroll` event fires and we can adjust the volume in one of two ways.
+
+First, we can simply change the volume of our output device. It's important to note that this is a floating point value where 0.0f is silence and 1.0f is the maximum value. So we'll need to divide the value of our `TrackBar` by 100.
+
+```c#
+t.Scroll += (s, a) => wo.Volume = t.Value / 100f;
+```
+
+Alternatively, the `AudioFileReader` class has a convenient `Volume` property. This adjusts the value of each sample before it even reaches the soundcard. This is more work for the code to do, but is very convenient when you are mixing together multiple files and want to control their volume individually. The `Volume` property on the `AudioFileReader` works just the same, going between 0.0 and 1.0. You can actually provide values greater than 1.0f to this property, to amplify the audio, but this does result in the potential for clipping.
+
+```c#
+t.Scroll += (s, a) => af.Volume = t.Value / 100f;
+```
+
+Let's see the revised version of our form:
+
+```c#
+var wo = new WaveOutEvent();
+var af = new AudioFileReader(inputFilePath);
+var closing = false;
+wo.PlaybackStopped += (s, a) => { if (closing) { wo.Dispose(); af.Dispose(); } };
+wo.Init(af);
+var f = new Form();
+var b = new Button() { Text = "Play" };
+b.Click += (s, a) => wo.Play();
+var b2 = new Button() { Text = "Stop", Left=b.Right };
+b2.Click += (s, a) => wo.Stop();
+var b3 = new Button { Text="Rewind", Left = b2.Right };
+b3.Click += (s, a) => af.Position = 0;
+var t = new TrackBar() { Minimum = 0, Maximum = 100, Value = 100, Top = b.Bottom, TickFrequency = 10 };
+t.Scroll += (s, a) => wo.Volume = t.Value / 100f;
+// Alternative: t.Scroll += (s, a) => af.Volume = t.Value / 100f;
+f.Controls.AddRange(new Control[] { b, b2, b3, t });
+f.FormClosing += (s, a) => { closing = true; wo.Stop(); };
+f.ShowDialog();
+```

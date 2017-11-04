@@ -59,6 +59,8 @@ NAudio comes with several demo applications which are the quickest way to see ho
 
  - [Playing an Audio File from a WinForms application](Docs/PlayAudioFileWinForms.md)
  - [Playing an Audio File from a Console application](Docs/PlayAudioFileConsoleApp.md)
+ - [Playing Audio from a URL](Docs/PlayAudioFromUrl.md)
+ - [Mix Two Audio Files to WAV](Docs/MixTwoAudioFilesToWav.md)
  - [Choose an audio output driver](http://mark-dot-net.blogspot.com/2011/05/naudio-audio-output-devices.html)
  - [Understand how to convert between any audio formats you have codecs for](http://www.codeproject.com/Articles/501521/How-to-convert-between-most-audio-formats-in-NET)
  - [Convert an MP3 to WAV](http://naudio.codeplex.com/wikipage?title=Convert%20a%20MP3%20to%20WAV)

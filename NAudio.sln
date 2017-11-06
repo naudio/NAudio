@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26730.12
+VisualStudioVersion = 15.0.27004.2005
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NAudio", "NAudio\NAudio.csproj", "{DA4F02E3-0B5E-42CD-B8D9-5583FA51D66E}"
 EndProject
@@ -33,6 +33,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{BA7F6DBB-9FC4-49E6-92E4-621EFE4BBBBC}"
 	ProjectSection(SolutionItems) = preProject
 		Docs\MixTwoAudioFilesToWav.md = Docs\MixTwoAudioFilesToWav.md
+		Docs\OutputDevices.md = Docs\OutputDevices.md
 		Docs\PlayAudioFileConsoleApp.md = Docs\PlayAudioFileConsoleApp.md
 		Docs\PlayAudioFileWinForms.md = Docs\PlayAudioFileWinForms.md
 		Docs\PlayAudioFromUrl.md = Docs\PlayAudioFromUrl.md

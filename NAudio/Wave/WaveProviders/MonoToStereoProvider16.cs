@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using NAudio.Utils;
 
 namespace NAudio.Wave
@@ -10,8 +8,7 @@ namespace NAudio.Wave
     /// </summary>
     public class MonoToStereoProvider16 : IWaveProvider
     {
-        private IWaveProvider sourceProvider;
-        private WaveFormat outputFormat;
+        private readonly IWaveProvider sourceProvider;
         private byte[] sourceBuffer;
 
         /// <summary>
@@ -33,7 +30,7 @@ namespace NAudio.Wave
                 throw new ArgumentException("Source must be 16 bit");
             }
             this.sourceProvider = sourceProvider;
-            this.outputFormat = new WaveFormat(sourceProvider.WaveFormat.SampleRate, 2);
+            WaveFormat = new WaveFormat(sourceProvider.WaveFormat.SampleRate, 2);
             RightVolume = 1.0f;
             LeftVolume = 1.0f;
         }
@@ -51,25 +48,22 @@ namespace NAudio.Wave
         /// <summary>
         /// Output Wave Format
         /// </summary>
-        public WaveFormat WaveFormat
-        {
-            get { return this.outputFormat; }
-        }
+        public WaveFormat WaveFormat { get; }
 
         /// <summary>
         /// Reads bytes from this WaveProvider
         /// </summary>
         public int Read(byte[] buffer, int offset, int count)
-        {            
-            int sourceBytesRequired = count / 2;
-            this.sourceBuffer = BufferHelpers.Ensure(this.sourceBuffer, sourceBytesRequired);
-            WaveBuffer sourceWaveBuffer = new WaveBuffer(sourceBuffer);
-            WaveBuffer destWaveBuffer = new WaveBuffer(buffer);
+        {
+            var sourceBytesRequired = count / 2;
+            sourceBuffer = BufferHelpers.Ensure(this.sourceBuffer, sourceBytesRequired);
+            var sourceWaveBuffer = new WaveBuffer(sourceBuffer);
+            var destWaveBuffer = new WaveBuffer(buffer);
 
-            int sourceBytesRead = sourceProvider.Read(sourceBuffer, 0, sourceBytesRequired);
-            int samplesRead = sourceBytesRead / 2;
-            int destOffset = offset / 2;
-            for (int sample = 0; sample < samplesRead; sample++)
+            var sourceBytesRead = sourceProvider.Read(sourceBuffer, 0, sourceBytesRequired);
+            var samplesRead = sourceBytesRead / 2;
+            var destOffset = offset / 2;
+            for (var sample = 0; sample < samplesRead; sample++)
             {
                 short sampleVal = sourceWaveBuffer.ShortBuffer[sample];
                 destWaveBuffer.ShortBuffer[destOffset++] = (short)(LeftVolume * sampleVal);
@@ -77,6 +71,5 @@ namespace NAudio.Wave
             }
             return samplesRead * 4;
         }
-
     }
 }

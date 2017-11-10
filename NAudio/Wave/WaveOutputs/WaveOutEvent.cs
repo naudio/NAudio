@@ -59,7 +59,6 @@ namespace NAudio.Wave
             }
 
             // set default values up
-            DeviceNumber = 0;
             DesiredLatency = 300;
             NumberOfBuffers = 2;
 

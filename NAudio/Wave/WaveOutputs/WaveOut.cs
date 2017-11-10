@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.Threading;
@@ -15,12 +14,12 @@ namespace NAudio.Wave
         private WaveOutBuffer[] buffers;
         private IWaveProvider waveStream;
         private volatile PlaybackState playbackState;
-        private WaveInterop.WaveCallback callback;
+        private readonly WaveInterop.WaveCallback callback;
         private float volume = 1;
-        private WaveCallbackInfo callbackInfo;
-        private object waveOutLock;
+        private readonly WaveCallbackInfo callbackInfo;
+        private readonly object waveOutLock;
         private int queuedBuffers;
-        private SynchronizationContext syncContext;
+        private readonly SynchronizationContext syncContext;
 
         /// <summary>
         /// Indicates playback has stopped automatically
@@ -34,8 +33,8 @@ namespace NAudio.Wave
         /// <returns>The WaveOut device capabilities</returns>
         public static WaveOutCapabilities GetCapabilities(int devNumber)
         {
-            WaveOutCapabilities caps = new WaveOutCapabilities();
-            int structSize = Marshal.SizeOf(caps);
+            var caps = new WaveOutCapabilities();
+            var structSize = Marshal.SizeOf(caps);
             MmException.Try(WaveInterop.waveOutGetDevCaps((IntPtr)devNumber, out caps, structSize), "waveOutGetDevCaps");
             return caps;
         }
@@ -43,13 +42,7 @@ namespace NAudio.Wave
         /// <summary>
         /// Returns the number of Wave Out devices available in the system
         /// </summary>
-        public static Int32 DeviceCount
-        {
-            get
-            {
-                return WaveInterop.waveOutGetNumDevs();
-            }
-        }
+        public static Int32 DeviceCount => WaveInterop.waveOutGetNumDevs();
 
         /// <summary>
         /// Gets or sets the desired latency in milliseconds
@@ -97,16 +90,15 @@ namespace NAudio.Wave
         /// </summary>
         public WaveOut(WaveCallbackInfo callbackInfo)
         {
-            this.syncContext = SynchronizationContext.Current;
+            syncContext = SynchronizationContext.Current;
             // set default values up
-            this.DeviceNumber = 0;
-            this.DesiredLatency = 300;
-            this.NumberOfBuffers = 2;
+            DesiredLatency = 300;
+            NumberOfBuffers = 2;
 
-            this.callback = new WaveInterop.WaveCallback(Callback);
-            this.waveOutLock = new object();
+            callback = Callback;
+            waveOutLock = new object();
             this.callbackInfo = callbackInfo;
-            callbackInfo.Connect(this.callback);
+            callbackInfo.Connect(callback);
         }
 
         /// <summary>
@@ -115,7 +107,7 @@ namespace NAudio.Wave
         /// <param name="waveProvider">WaveProvider to play</param>
         public void Init(IWaveProvider waveProvider)
         {
-            this.waveStream = waveProvider;
+            waveStream = waveProvider;
             int bufferSize = waveProvider.WaveFormat.ConvertLatencyToByteSize((DesiredLatency + NumberOfBuffers - 1) / NumberOfBuffers);            
 
             MmResult result;
@@ -272,28 +264,19 @@ namespace NAudio.Wave
         /// <summary>
         /// Gets a <see cref="Wave.WaveFormat"/> instance indicating the format the hardware is using.
         /// </summary>
-        public WaveFormat OutputWaveFormat
-        {
-            get { return this.waveStream.WaveFormat; }
-        }
+        public WaveFormat OutputWaveFormat => waveStream.WaveFormat;
 
         /// <summary>
         /// Playback State
         /// </summary>
-        public PlaybackState PlaybackState
-        {
-            get { return playbackState; }
-        }
+        public PlaybackState PlaybackState => playbackState;
 
         /// <summary>
         /// Volume for this device 1.0 is full scale
         /// </summary>
         public float Volume
         {
-            get
-            {
-                return volume;
-            }
+            get => volume;
             set 
             {
                 SetWaveOutVolume(value, hWaveOut, waveOutLock);
@@ -303,8 +286,8 @@ namespace NAudio.Wave
 
         internal static void SetWaveOutVolume(float value, IntPtr hWaveOut, object lockObject)
         {
-            if (value < 0) throw new ArgumentOutOfRangeException("value", "Volume must be between 0.0 and 1.0");
-            if (value > 1) throw new ArgumentOutOfRangeException("value", "Volume must be between 0.0 and 1.0");
+            if (value < 0) throw new ArgumentOutOfRangeException(nameof(value), "Volume must be between 0.0 and 1.0");
+            if (value > 1) throw new ArgumentOutOfRangeException(nameof(value), "Volume must be between 0.0 and 1.0");
             float left = value;
             float right = value;
 
@@ -428,13 +411,13 @@ namespace NAudio.Wave
             var handler = PlaybackStopped;
             if (handler != null)
             {
-                if (this.syncContext == null)
+                if (syncContext == null)
                 {
                     handler(this, new StoppedEventArgs(e));
                 }
                 else
                 {
-                    this.syncContext.Post(state => handler(this, new StoppedEventArgs(e)), null);
+                    syncContext.Post(state => handler(this, new StoppedEventArgs(e)), null);
                 }
             }
         }

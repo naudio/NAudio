@@ -67,6 +67,7 @@ NAudio comes with several demo applications which are the quickest way to see ho
  - [Convert an MP3 to WAV](Docs/ConvertMp3ToWav.md)
  - [Convert between mono and stereo](Docs/ConvertBetweenStereoAndMono.md)
  - [Concatenating Audio](Docs/ConcatenatingAudio.md)
+ - [Skip and Take Using OffsetSampleProvider](Docs/OffsetSampleProvider.md)
  - [Understand how to convert between any audio formats you have codecs for](http://www.codeproject.com/Articles/501521/How-to-convert-between-most-audio-formats-in-NET)
  - [Encode to MP3 or other formats using MediaFoundationEncoder](http://markheath.net/post/naudio-mediafoundationencoder)
  - [Implement "Fire and Forget" Playback (e.g. game sound effects)](http://mark-dot-net.blogspot.co.uk/2014/02/fire-and-forget-audio-playback-with.html)

@@ -43,6 +43,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{BA7F6DBB-9
 		Docs\PlayAudioFileWinForms.md = Docs\PlayAudioFileWinForms.md
 		Docs\PlayAudioFromUrl.md = Docs\PlayAudioFromUrl.md
 		Docs\PlaySineWave.md = Docs\PlaySineWave.md
+		Docs\RecordWavFileWinFormsWaveIn.md = Docs\RecordWavFileWinFormsWaveIn.md
 		Docs\WasapiOut.md = Docs\WasapiOut.md
 	EndProjectSection
 EndProject

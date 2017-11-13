@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Runtime.InteropServices;
 using NAudio.Mixer;
 using System.Threading;
 
+// ReSharper disable once CheckNamespace
 namespace NAudio.Wave
 {
     /// <summary>
@@ -35,24 +34,18 @@ namespace NAudio.Wave
         /// </summary>
         public WaveInEvent()
         {
-            this.callbackEvent = new AutoResetEvent(false);
-            this.syncContext = SynchronizationContext.Current;
-            this.DeviceNumber = 0;
-            this.WaveFormat = new WaveFormat(8000, 16, 1);
-            this.BufferMilliseconds = 100;
-            this.NumberOfBuffers = 3;
+            callbackEvent = new AutoResetEvent(false);
+            syncContext = SynchronizationContext.Current;
+            DeviceNumber = 0;
+            WaveFormat = new WaveFormat(8000, 16, 1);
+            BufferMilliseconds = 100;
+            NumberOfBuffers = 3;
         }
 
         /// <summary>
         /// Returns the number of Wave In devices available in the system
         /// </summary>
-        public static int DeviceCount
-        {
-            get
-            {
-                return WaveInterop.waveInGetNumDevs();
-            }
-        }
+        public static int DeviceCount => WaveInterop.waveInGetNumDevs();
 
         /// <summary>
         /// Retrieves the capabilities of a waveIn device
@@ -175,13 +168,13 @@ namespace NAudio.Wave
             var handler = RecordingStopped;
             if (handler != null)
             {
-                if (this.syncContext == null)
+                if (syncContext == null)
                 {
                     handler(this, new StoppedEventArgs(e));
                 }
                 else
                 {
-                    this.syncContext.Post(state => handler(this, new StoppedEventArgs(e)), null);
+                    syncContext.Post(state => handler(this, new StoppedEventArgs(e)), null);
                 }
             }
         }
@@ -190,9 +183,12 @@ namespace NAudio.Wave
         /// </summary>
         public void StopRecording()
         {
-            recording = false;
-            this.callbackEvent.Set(); // signal the thread to exit
-            MmException.Try(WaveInterop.waveInStop(waveInHandle), "waveInStop");
+            if (recording)
+            {
+                recording = false;
+                callbackEvent.Set(); // signal the thread to exit
+                MmException.Try(WaveInterop.waveInStop(waveInHandle), "waveInStop");
+            }
         }
 
         /// <summary>
@@ -239,7 +235,7 @@ namespace NAudio.Wave
             MixerLine mixerLine;
             if (waveInHandle != IntPtr.Zero)
             {
-                mixerLine = new MixerLine(this.waveInHandle, 0, MixerFlags.WaveInHandle);
+                mixerLine = new MixerLine(waveInHandle, 0, MixerFlags.WaveInHandle);
             }
             else
             {

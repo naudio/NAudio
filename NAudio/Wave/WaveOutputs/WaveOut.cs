@@ -276,7 +276,10 @@ namespace NAudio.Wave
         /// </summary>
         public float Volume
         {
-            get => volume;
+            get
+            {
+                return volume;
+            }
             set 
             {
                 SetWaveOutVolume(value, hWaveOut, waveOutLock);

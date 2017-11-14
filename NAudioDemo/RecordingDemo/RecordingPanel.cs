@@ -10,7 +10,7 @@ namespace NAudioDemo.RecordingDemo
 {
     public partial class RecordingPanel : UserControl
     {
-        private IWaveIn waveIn;
+        private IWaveIn captureDevice;
         private WaveFileWriter writer;
         private string outputFilename;
         private readonly string outputFolder;
@@ -29,14 +29,23 @@ namespace NAudioDemo.RecordingDemo
                 comboWasapiDevices.Enabled = false;
                 radioButtonWasapiLoopback.Enabled = false;
             }
+            LoadWaveInDevicesCombo();
+            comboBoxSampleRate.DataSource = new[] {8000, 16000, 22050, 32000, 44100, 48000};
+            comboBoxSampleRate.SelectedIndex = 0;
+            comboBoxChannels.DataSource = new[] { "Mono", "Stereo" };
+            comboBoxChannels.SelectedIndex = 0;
             outputFolder = Path.Combine(Path.GetTempPath(), "NAudioDemo");
             Directory.CreateDirectory(outputFolder);
 
             // close the device if we change option only
             radioButtonWasapi.CheckedChanged += (s, a) => Cleanup();
             radioButtonWaveIn.CheckedChanged += (s, a) => Cleanup();
-            radioButtonWaveInEvent.CheckedChanged += (s, a) => Cleanup();
             radioButtonWasapiLoopback.CheckedChanged += (s, a) => Cleanup();
+            checkBoxEventCallback.CheckedChanged += (s, a) => Cleanup();
+            comboWaveInDevice.SelectedIndexChanged += (s, a) => Cleanup();
+            comboBoxChannels.SelectedIndexChanged += (s, a) => Cleanup();
+            comboWasapiDevices.SelectedIndexChanged += (s, a) => Cleanup();
+            comboWasapiLoopbackDevices.SelectedIndexChanged += (s, a) => Cleanup();
         }
 
         void OnRecordingPanelDisposed(object sender, EventArgs e)
@@ -51,6 +60,19 @@ namespace NAudioDemo.RecordingDemo
 
             comboWasapiDevices.DataSource = devices;
             comboWasapiDevices.DisplayMember = "FriendlyName";
+
+            var renderDevices = deviceEnum.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active).ToList();
+            comboWasapiLoopbackDevices.DataSource = renderDevices;
+            comboWasapiLoopbackDevices.DisplayMember = "FriendlyName";
+
+        }
+
+        private void LoadWaveInDevicesCombo()
+        {
+            var devices = Enumerable.Range(-1, WaveIn.DeviceCount + 1).Select(n => WaveIn.GetCapabilities(n)).ToArray();
+
+            comboWaveInDevice.DataSource = devices;
+            comboWaveInDevice.DisplayMember = "ProductName";
         }
 
         private void OnButtonStartRecordingClick(object sender, EventArgs e)
@@ -58,18 +80,27 @@ namespace NAudioDemo.RecordingDemo
             if (radioButtonWaveIn.Checked)
                 Cleanup(); // WaveIn is still unreliable in some circumstances to being reused
 
-            if (waveIn == null)
+            if (captureDevice == null)
             {
-                waveIn = CreateWaveInDevice();
+                captureDevice = CreateWaveInDevice();
             }
             // Forcibly turn on the microphone (some programs (Skype) turn it off).
             var device = (MMDevice)comboWasapiDevices.SelectedItem;
             device.AudioEndpointVolume.Mute = false;
 
-            outputFilename = String.Format("NAudioDemo {0:yyy-MM-dd HH-mm-ss}.wav", DateTime.Now);
-            writer = new WaveFileWriter(Path.Combine(outputFolder, outputFilename), waveIn.WaveFormat);
-            waveIn.StartRecording();
+            outputFilename = GetFileName();
+            writer = new WaveFileWriter(Path.Combine(outputFolder, outputFilename), captureDevice.WaveFormat);
+            captureDevice.StartRecording();
             SetControlStates(true);
+        }
+
+        private string GetFileName()
+        {
+            var deviceName = captureDevice.GetType().Name;
+            var sampleRate = $"{captureDevice.WaveFormat.SampleRate / 1000}kHz";
+            var channels = captureDevice.WaveFormat.Channels == 1 ? "mono" : "stereo";
+
+            return $"{deviceName} {sampleRate} {channels} {DateTime.Now:yyy-MM-dd HH-mm-ss}.wav";
         }
 
         private IWaveIn CreateWaveInDevice()
@@ -77,13 +108,18 @@ namespace NAudioDemo.RecordingDemo
             IWaveIn newWaveIn;
             if (radioButtonWaveIn.Checked)
             {
-                newWaveIn = new WaveIn();
-                newWaveIn.WaveFormat = new WaveFormat(8000, 1);
-            }
-            else if (radioButtonWaveInEvent.Checked)
-            {
-                newWaveIn = new WaveInEvent();
-                newWaveIn.WaveFormat = new WaveFormat(8000, 1);
+                var deviceNumber = comboWaveInDevice.SelectedIndex - 1;
+                if (checkBoxEventCallback.Checked)
+                {
+                    newWaveIn = new WaveInEvent() { DeviceNumber = deviceNumber };
+                }
+                else
+                {
+                    newWaveIn = new WaveIn() { DeviceNumber = deviceNumber };
+                }
+                var sampleRate = (int)comboBoxSampleRate.SelectedItem;
+                var channels = comboBoxChannels.SelectedIndex + 1;
+                newWaveIn.WaveFormat = new WaveFormat(sampleRate, channels);
             }
             else if (radioButtonWasapi.Checked)
             {
@@ -94,7 +130,8 @@ namespace NAudioDemo.RecordingDemo
             else
             {
                 // can't set WaveFormat as WASAPI doesn't support SRC
-                newWaveIn = new WasapiLoopbackCapture();
+                var device = (MMDevice)comboWasapiLoopbackDevices.SelectedItem;
+                newWaveIn = new WasapiLoopbackCapture(device);
             }
             newWaveIn.DataAvailable += OnDataAvailable;
             newWaveIn.RecordingStopped += OnRecordingStopped;
@@ -124,21 +161,18 @@ namespace NAudioDemo.RecordingDemo
 
         private void Cleanup()
         {
-            if (waveIn != null)
+            if (captureDevice != null)
             {
-                waveIn.Dispose();
-                waveIn = null;
+                captureDevice.Dispose();
+                captureDevice = null;
             }
             FinalizeWaveFile();
         }
 
         private void FinalizeWaveFile()
         {
-            if (writer != null)
-            {
-                writer.Dispose();
-                writer = null;
-            }
+            writer?.Dispose();
+            writer = null;
         }
 
         void OnDataAvailable(object sender, WaveInEventArgs e)
@@ -167,7 +201,7 @@ namespace NAudioDemo.RecordingDemo
         void StopRecording()
         {
             Debug.WriteLine("StopRecording");
-            if (waveIn != null) waveIn.StopRecording();
+            captureDevice?.StopRecording();
         }
 
         private void OnButtonStopRecordingClick(object sender, EventArgs e)
@@ -218,10 +252,7 @@ namespace NAudioDemo.RecordingDemo
 
     public class RecordingPanelPlugin : INAudioDemoPlugin
     {
-        public string Name
-        {
-            get { return "WAV Recording"; }
-        }
+        public string Name => "WAV Recording";
 
         public Control CreatePanel()
         {

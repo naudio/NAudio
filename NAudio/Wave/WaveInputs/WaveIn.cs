@@ -142,10 +142,9 @@ namespace NAudio.Wave
                     {
                         buffer.Reuse();
                     }
-                    catch (Exception e)
+                    catch (MmException)
                     {
-                        recording = false;
-                        RaiseRecordingStopped(e);
+                        // skip Resuse() if MmException
                     }
                 }
                 

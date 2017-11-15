@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27004.2005
+VisualStudioVersion = 15.0.27004.2006
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NAudio", "NAudio\NAudio.csproj", "{DA4F02E3-0B5E-42CD-B8D9-5583FA51D66E}"
 EndProject
@@ -36,6 +36,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{BA7F6DBB-9
 		Docs\ConvertBetweenStereoAndMono.md = Docs\ConvertBetweenStereoAndMono.md
 		Docs\ConvertMp3ToWav.md = Docs\ConvertMp3ToWav.md
 		Docs\EnumerateOutputDevices.md = Docs\EnumerateOutputDevices.md
+		Docs\MediaFoundationEncoder.md = Docs\MediaFoundationEncoder.md
 		Docs\MixTwoAudioFilesToWav.md = Docs\MixTwoAudioFilesToWav.md
 		Docs\OffsetSampleProvider.md = Docs\OffsetSampleProvider.md
 		Docs\OutputDeviceTypes.md = Docs\OutputDeviceTypes.md

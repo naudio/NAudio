@@ -37,17 +37,21 @@ namespace NAudioWpfDemo.EnumMediaFoundationTransforms
         {
             foreach (var mft in effects)
             {
-                int attributeCount;
-                mft.GetCount(out attributeCount);
-                var sb = new StringBuilder();
-                sb.AppendFormat(type);
-                sb.AppendLine();
-                for (int n = 0; n < attributeCount; n++)
-                {
-                    AddAttribute(mft, n, sb);
-                }
-                Transforms.Add(sb.ToString());
+                Transforms.Add(DescribeMft(type, mft));
             }
+        }
+
+        private string DescribeMft(string type, IMFActivate mft)
+        {
+            mft.GetCount(out var attributeCount);
+            var sb = new StringBuilder();
+            sb.AppendFormat(type);
+            sb.AppendLine();
+            for (int n = 0; n < attributeCount; n++)
+            {
+                AddAttribute(mft, n, sb);
+            }
+            return sb.ToString();
         }
 
         private static void AddAttribute(IMFActivate mft, int index, StringBuilder sb)
@@ -55,10 +59,9 @@ namespace NAudioWpfDemo.EnumMediaFoundationTransforms
             var variantPtr = Marshal.AllocHGlobal(MarshalHelpers.SizeOf<PropVariant>());
             try
             {
-                Guid key;
-                mft.GetItemByIndex(index, out key, variantPtr);
+                mft.GetItemByIndex(index, out var key, variantPtr);
                 var value = MarshalHelpers.PtrToStructure<PropVariant>(variantPtr);
-                string propertyName = FieldDescriptionHelper.Describe(typeof (MediaFoundationAttributes), key);
+                var propertyName = FieldDescriptionHelper.Describe(typeof (MediaFoundationAttributes), key);
                 if (key == MediaFoundationAttributes.MFT_INPUT_TYPES_Attributes ||
                     key == MediaFoundationAttributes.MFT_OUTPUT_TYPES_Attributes)
                 {

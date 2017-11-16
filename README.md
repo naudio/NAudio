@@ -57,36 +57,50 @@ NAudio comes with several demo applications which are the quickest way to see ho
 
 ## Tutorials
 
+### Playback
  - [Playing an Audio File from a WinForms application](Docs/PlayAudioFileWinForms.md)
  - [Playing an Audio File from a Console application](Docs/PlayAudioFileConsoleApp.md)
  - [Playing Audio from a URL](Docs/PlayAudioFromUrl.md)
- - [Mix Two Audio Files to WAV](Docs/MixTwoAudioFilesToWav.md)
  - [Play Sine Waves and other signal types](Docs/PlaySineWave.md)
  - [Choose an audio output device type](Docs/OutputDeviceTypes.md)
  - [Enumerate and select Output Devices](Docs/EnumerateOutputDevices.md)
- - [Convert an MP3 to WAV](Docs/ConvertMp3ToWav.md)
- - [Convert between mono and stereo](Docs/ConvertBetweenStereoAndMono.md)
- - [Concatenating Audio](Docs/ConcatenatingAudio.md)
- - [Skip and Take Using OffsetSampleProvider](Docs/OffsetSampleProvider.md)
- - [Recording a WAV file from a WinForms application](Docs/RecordWavFileWinFormsWaveIn.md)
  - [Creating and configuring a WasapiOut device](Docs/WasapiOut.md)
- - [Capturing system audio with WasapiLoopbackCapture](Docs/WasapiLoopbackCapture.md)
- - [Encode to MP3 and other formats using MediaFoundationEncoder](Docs/MediaFoundationEncoder.md) [more examples](http://markheath.net/post/naudio-mediafoundationencoder)
- - [Understand how to convert between any audio formats you have codecs for](http://www.codeproject.com/Articles/501521/How-to-convert-between-most-audio-formats-in-NET)
  - [Implement "Fire and Forget" Playback (e.g. game sound effects)](http://mark-dot-net.blogspot.co.uk/2014/02/fire-and-forget-audio-playback-with.html)
- - [Use the WavFileWriter class](http://mark-dot-net.blogspot.com/2011/04/how-to-use-wavefilewriter.html)
  - [Play streaming MP3](http://mark-dot-net.blogspot.com/2011/05/how-to-play-back-streaming-mp3-using.html)
- - [Implement Looped Playback](http://mark-dot-net.blogspot.com/2009/10/looped-playback-in-net-with-naudio.html)
+
+### Working with Audio Files (WAV, MP3, WMA etc)
+
+ - [Mix Two Audio Files to WAV](Docs/MixTwoAudioFilesToWav.md)
+ - [Convert an MP3 to WAV](Docs/ConvertMp3ToWav.md)
+ - [Encode to MP3 and other formats using MediaFoundationEncoder](Docs/MediaFoundationEncoder.md)
+    - [eMore examples](http://markheath.net/post/naudio-mediafoundationencoder)
+ - [Understand how to convert between any audio formats you have codecs for](http://www.codeproject.com/Articles/501521/How-to-convert-between-most-audio-formats-in-NET)
  - [Trim a WAV File](http://mark-dot-net.blogspot.com/2009/09/trimming-wav-file-using-naudio.html)
  - [Merge MP3 Files](http://mark-dot-net.blogspot.com/2010/11/merging-mp3-files-with-naudio-in-c-and.html)
  - [Convert an AIFF file to WAV](http://mark-dot-net.blogspot.com/2011/05/how-to-convert-aiff-files-to-wav-using.html)
- - [Work with Multi-Channel Audio](http://mark-dot-net.blogspot.com/2012/01/handling-multi-channel-audio-in-naudio.html)
+ - [Use the WavFileWriter class](http://mark-dot-net.blogspot.com/2011/04/how-to-use-wavefilewriter.html)
  - [Create an ID3v2 tag](http://naudio.codeplex.com/wikipage?title=Create%20an%20ID3v2%20Tag)
- - [Play and Record audio at the same time](http://mark-dot-net.blogspot.co.uk/2014/03/how-to-record-and-play-audio-at-same.html)
+
+### Manipulating audio
+
+ - [Convert between mono and stereo](Docs/ConvertBetweenStereoAndMono.md)
+ - [Concatenating Audio](Docs/ConcatenatingAudio.md)
+ - [Skip and Take Using OffsetSampleProvider](Docs/OffsetSampleProvider.md)
+ - [Implement Looped Playback](http://mark-dot-net.blogspot.com/2009/10/looped-playback-in-net-with-naudio.html)
+ - [Work with Multi-Channel Audio](http://mark-dot-net.blogspot.com/2012/01/handling-multi-channel-audio-in-naudio.html)
  - [Fix the NoDriver calling acmFormatSuggest issue](http://mark-dot-net.blogspot.co.uk/2014/04/nodriver-calling-acmformatsuggest.html)
  - [Resample Audio](http://mark-dot-net.blogspot.co.uk/2014/05/how-to-resample-audio-with-naudio.html)
  - [Input driven Audio Resampling](http://markheath.net/post/input-driven-resampling-with-naudio-using-acm)
+ - [Enumerate Media Foundation Transforms](Docs/EnumerateMediaFoundationTransforms.md)
 
+
+### Recording
+
+ - [Recording a WAV file from a WinForms application](Docs/RecordWavFileWinFormsWaveIn.md)
+ - [Capturing system audio with WasapiLoopbackCapture](Docs/WasapiLoopbackCapture.md)
+ - [Play and Record audio at the same time](http://mark-dot-net.blogspot.co.uk/2014/03/how-to-record-and-play-audio-at-same.html)
+
+### More...
 
 Additional sources of documentation for NAudio are:
  - [Original Documentation on CodePlex](http://naudio.codeplex.com/documentation)

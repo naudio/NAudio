@@ -432,6 +432,8 @@
     <Compile Include="Wave\WaveOutputs\AiffFileWriter.cs" />
     <Compile Include="Wave\WaveOutputs\AsioAudioAvailableEventArgs.cs" />
     <Compile Include="Wave\WaveOutputs\AsioOut.cs" />
+    <Compile Include="Wave\WaveOutputs\BextChunkInfo.cs" />
+    <Compile Include="Wave\WaveOutputs\BwfWriter.cs" />
     <Compile Include="Wave\WaveOutputs\CueWaveFileWriter.cs" />
     <Compile Include="Wave\WaveOutputs\MediaFoundationEncoder.cs" />
     <Compile Include="MediaFoundation\MediaType.cs" />

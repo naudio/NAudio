@@ -73,7 +73,7 @@ NAudio comes with several demo applications which are the quickest way to see ho
  - [Mix Two Audio Files to WAV](Docs/MixTwoAudioFilesToWav.md)
  - [Convert an MP3 to WAV](Docs/ConvertMp3ToWav.md)
  - [Encode to MP3 and other formats using MediaFoundationEncoder](Docs/MediaFoundationEncoder.md)
-    - [eMore examples](http://markheath.net/post/naudio-mediafoundationencoder)
+    - [More examples](http://markheath.net/post/naudio-mediafoundationencoder)
  - [Understand how to convert between any audio formats you have codecs for](http://www.codeproject.com/Articles/501521/How-to-convert-between-most-audio-formats-in-NET)
  - [Trim a WAV File](http://mark-dot-net.blogspot.com/2009/09/trimming-wav-file-using-naudio.html)
  - [Merge MP3 Files](http://mark-dot-net.blogspot.com/2010/11/merging-mp3-files-with-naudio-in-c-and.html)
@@ -92,6 +92,7 @@ NAudio comes with several demo applications which are the quickest way to see ho
  - [Resample Audio](http://mark-dot-net.blogspot.co.uk/2014/05/how-to-resample-audio-with-naudio.html)
  - [Input driven Audio Resampling](http://markheath.net/post/input-driven-resampling-with-naudio-using-acm)
  - [Enumerate Media Foundation Transforms](Docs/EnumerateMediaFoundationTransforms.md)
+ - [Using RawSourceWaveStream](Docs/RawSourceWaveStream.md)
 
 
 ### Recording

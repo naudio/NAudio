@@ -35,6 +35,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{BA7F6DBB-9
 		Docs\ConcatenatingAudio.md = Docs\ConcatenatingAudio.md
 		Docs\ConvertBetweenStereoAndMono.md = Docs\ConvertBetweenStereoAndMono.md
 		Docs\ConvertMp3ToWav.md = Docs\ConvertMp3ToWav.md
+		Docs\EnumerateAcmDrivers.md = Docs\EnumerateAcmDrivers.md
 		Docs\EnumerateMediaFoundationTransforms.md = Docs\EnumerateMediaFoundationTransforms.md
 		Docs\EnumerateOutputDevices.md = Docs\EnumerateOutputDevices.md
 		Docs\MediaFoundationEncoder.md = Docs\MediaFoundationEncoder.md

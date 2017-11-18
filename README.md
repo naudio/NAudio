@@ -68,13 +68,19 @@ NAudio comes with several demo applications which are the quickest way to see ho
  - [Implement "Fire and Forget" Playback (e.g. game sound effects)](http://mark-dot-net.blogspot.co.uk/2014/02/fire-and-forget-audio-playback-with.html)
  - [Play streaming MP3](http://mark-dot-net.blogspot.com/2011/05/how-to-play-back-streaming-mp3-using.html)
 
-### Working with Audio Files (WAV, MP3, WMA etc)
+### Working with Codecs
 
- - [Mix Two Audio Files to WAV](Docs/MixTwoAudioFilesToWav.md)
  - [Convert an MP3 to WAV](Docs/ConvertMp3ToWav.md)
  - [Encode to MP3 and other formats using MediaFoundationEncoder](Docs/MediaFoundationEncoder.md)
     - [More examples](http://markheath.net/post/naudio-mediafoundationencoder)
  - [Understand how to convert between any audio formats you have codecs for](http://www.codeproject.com/Articles/501521/How-to-convert-between-most-audio-formats-in-NET)
+ - [Enumerate Media Foundation Transforms (MFTs)](Docs/EnumerateMediaFoundationTransforms.md)
+ - [Enumerate ACM Codecs](Docs/EnumerateAcmDrivers.md)
+
+
+### Working with Audio Files (WAV, MP3, WMA etc)
+
+ - [Mix Two Audio Files to WAV](Docs/MixTwoAudioFilesToWav.md)
  - [Trim a WAV File](http://mark-dot-net.blogspot.com/2009/09/trimming-wav-file-using-naudio.html)
  - [Merge MP3 Files](http://mark-dot-net.blogspot.com/2010/11/merging-mp3-files-with-naudio-in-c-and.html)
  - [Convert an AIFF file to WAV](http://mark-dot-net.blogspot.com/2011/05/how-to-convert-aiff-files-to-wav-using.html)
@@ -91,7 +97,6 @@ NAudio comes with several demo applications which are the quickest way to see ho
  - [Fix the NoDriver calling acmFormatSuggest issue](http://mark-dot-net.blogspot.co.uk/2014/04/nodriver-calling-acmformatsuggest.html)
  - [Resample Audio](http://mark-dot-net.blogspot.co.uk/2014/05/how-to-resample-audio-with-naudio.html)
  - [Input driven Audio Resampling](http://markheath.net/post/input-driven-resampling-with-naudio-using-acm)
- - [Enumerate Media Foundation Transforms](Docs/EnumerateMediaFoundationTransforms.md)
  - [Using RawSourceWaveStream](Docs/RawSourceWaveStream.md)
 
 

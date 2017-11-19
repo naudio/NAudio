@@ -1,5 +1,7 @@
 NAudio is an open source .NET audio library written by [Mark Heath](https://markheath.net)
 
+![NAudio logo](naudio-logo.png)
+
 ## Features
 
 * Play back audio using a variety of APIs
@@ -61,12 +63,11 @@ NAudio comes with several demo applications which are the quickest way to see ho
  - [Playing an Audio File from a WinForms application](Docs/PlayAudioFileWinForms.md)
  - [Playing an Audio File from a Console application](Docs/PlayAudioFileConsoleApp.md)
  - [Playing Audio from a URL](Docs/PlayAudioFromUrl.md)
- - [Play Sine Waves and other signal types](Docs/PlaySineWave.md)
  - [Choose an audio output device type](Docs/OutputDeviceTypes.md)
  - [Enumerate and select Output Devices](Docs/EnumerateOutputDevices.md)
  - [Creating and configuring a WasapiOut device](Docs/WasapiOut.md)
- - [Implement "Fire and Forget" Playback (e.g. game sound effects)](http://mark-dot-net.blogspot.co.uk/2014/02/fire-and-forget-audio-playback-with.html)
- - [Play streaming MP3](http://mark-dot-net.blogspot.com/2011/05/how-to-play-back-streaming-mp3-using.html)
+ - [Implement "Fire and Forget" Playback (e.g. game sound effects)](http://markheath.net/post/fire-and-forget-audio-playback-with)
+ - [Play streaming MP3](http://markheath.net/post/how-to-play-back-streaming-mp3-using)
 
 ### Working with Codecs
 
@@ -76,15 +77,16 @@ NAudio comes with several demo applications which are the quickest way to see ho
  - [Understand how to convert between any audio formats you have codecs for](http://www.codeproject.com/Articles/501521/How-to-convert-between-most-audio-formats-in-NET)
  - [Enumerate Media Foundation Transforms (MFTs)](Docs/EnumerateMediaFoundationTransforms.md)
  - [Enumerate ACM Codecs](Docs/EnumerateAcmDrivers.md)
+ - [Fix the NoDriver calling acmFormatSuggest issue](http://markheath.net/post/nodriver-calling-acmformatsuggest)
 
 
-### Working with Audio Files (WAV, MP3, WMA etc)
+### Working with audio files
 
  - [Mix Two Audio Files to WAV](Docs/MixTwoAudioFilesToWav.md)
- - [Trim a WAV File](http://mark-dot-net.blogspot.com/2009/09/trimming-wav-file-using-naudio.html)
- - [Merge MP3 Files](http://mark-dot-net.blogspot.com/2010/11/merging-mp3-files-with-naudio-in-c-and.html)
- - [Convert an AIFF file to WAV](http://mark-dot-net.blogspot.com/2011/05/how-to-convert-aiff-files-to-wav-using.html)
- - [Use the WavFileWriter class](http://mark-dot-net.blogspot.com/2011/04/how-to-use-wavefilewriter.html)
+ - [Trim a WAV File](http://markheath.net/post/trimming-wav-file-using-naudio)
+ - [Merge MP3 Files](http://markheath.net/post/merging-mp3-files-with-naudio-in-c-and)
+ - [Convert an AIFF file to WAV](http://markheath.net/post/how-to-convert-aiff-files-to-wav-using)
+ - [Use the WavFileWriter class](http://markheath.net/post/how-to-use-wavefilewriter)
  - [Create an ID3v2 tag](http://naudio.codeplex.com/wikipage?title=Create%20an%20ID3v2%20Tag)
 
 ### Manipulating audio
@@ -92,20 +94,28 @@ NAudio comes with several demo applications which are the quickest way to see ho
  - [Convert between mono and stereo](Docs/ConvertBetweenStereoAndMono.md)
  - [Concatenating Audio](Docs/ConcatenatingAudio.md)
  - [Skip and Take Using OffsetSampleProvider](Docs/OffsetSampleProvider.md)
- - [Implement Looped Playback](http://mark-dot-net.blogspot.com/2009/10/looped-playback-in-net-with-naudio.html)
- - [Work with Multi-Channel Audio](http://mark-dot-net.blogspot.com/2012/01/handling-multi-channel-audio-in-naudio.html)
- - [Fix the NoDriver calling acmFormatSuggest issue](http://mark-dot-net.blogspot.co.uk/2014/04/nodriver-calling-acmformatsuggest.html)
- - [Resample Audio](http://mark-dot-net.blogspot.co.uk/2014/05/how-to-resample-audio-with-naudio.html)
+ - [Implement Looped Playback](http://markheath.net/post/looped-playback-in-net-with-naudio)
+ - [Work with Multi-Channel Audio](http://markheath.net/post/handling-multi-channel-audio-in-naudio)
+ - [Resample Audio](http://markheath.net/post/how-to-resample-audio-with-naudio)
  - [Input driven Audio Resampling](http://markheath.net/post/input-driven-resampling-with-naudio-using-acm)
  - [Using RawSourceWaveStream](Docs/RawSourceWaveStream.md)
+ - [Adjust the pitch of audio using SmbPitchShiftingSampleProvider](Docs/SmbPitchShiftingSampleProvider.md)
+ - [Varispeed playback with NAudio using SoundTouch](http://markheath.net/post/varispeed-naudio-soundtouch)
 
+### Generating audio
+
+ - [Play Sine Waves and other signal types](Docs/PlaySineWave.md)
+ - [Implement sine wave with portamento](http://markheath.net/post/naudio-sine-portamento)
 
 ### Recording
 
  - [Recording a WAV file from a WinForms application](Docs/RecordWavFileWinFormsWaveIn.md)
  - [Capturing system audio with WasapiLoopbackCapture](Docs/WasapiLoopbackCapture.md)
- - [Play and Record audio at the same time](http://mark-dot-net.blogspot.co.uk/2014/03/how-to-record-and-play-audio-at-same.html)
+ - [Play and Record audio at the same time](http://markheath.net/post/how-to-record-and-play-audio-at-same)
 
+### Visualization
+
+ - [WaveForm Rendering to PNG](http://markheath.net/post/naudio-png-waveform-rendering)
 ### More...
 
 Additional sources of documentation for NAudio are:
@@ -151,7 +161,7 @@ There are three main ways to get help. First, you can raise an issue here on Git
 
 You can also ask on StackOverflow and [tag your question with naudio](http://stackoverflow.com/questions/tagged/naudio), if your question is a "how do I..." sort of question. This gives you a better chance of getting a quick answer. Please try to search first to see if your question has already been answered elsewhere.
 
-Finally, I am occasionally able to offer paid support for situations where you need quick advice, bugfixes or new features. Use the contact feature of the Codeplex website to get in touch with Mark Heath if you wish to pursue this option.
+Finally, I am occasionally able to offer paid support for situations where you need quick advice, bugfixes or new features. Please contact Mark Heath directly if you wish to pursue this option.
 
 **How do I submit a patch?**
 

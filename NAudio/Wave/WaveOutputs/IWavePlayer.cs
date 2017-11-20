@@ -1,5 +1,6 @@
 using System;
 
+// ReSharper disable once CheckNamespace
 namespace NAudio.Wave
 {
     /// <summary>
@@ -34,9 +35,10 @@ namespace NAudio.Wave
         PlaybackState PlaybackState { get; }
 
         /// <summary>
-        /// The volume 1.0 is full scale
+        /// The volume 
+        /// 1.0f is full scale
+        /// Note that not all implementations necessarily support volume changes
         /// </summary>
-        [Obsolete("Not intending to keep supporting this going forward: set the volume on your input WaveProvider instead")]
         float Volume { get; set; }
 
         /// <summary>
@@ -52,7 +54,7 @@ namespace NAudio.Wave
     public interface IWavePosition
     {
         /// <summary>
-        /// Position (in terms of bytes played - does not necessarily)
+        /// Position (in terms of bytes played - does not necessarily translate directly to the position within the source audio file)
         /// </summary>
         /// <returns>Position in bytes</returns>
         long GetPosition();

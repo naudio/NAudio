@@ -68,6 +68,7 @@ NAudio comes with several demo applications which are the quickest way to see ho
  - [Creating and configuring a WasapiOut device](Docs/WasapiOut.md)
  - [Implement "Fire and Forget" Playback (e.g. game sound effects)](http://markheath.net/post/fire-and-forget-audio-playback-with)
  - [Play streaming MP3](http://markheath.net/post/how-to-play-back-streaming-mp3-using)
+ - [Handling playback stopped](Docs/PlaybackStopped.md)
 
 ### Working with Codecs
 

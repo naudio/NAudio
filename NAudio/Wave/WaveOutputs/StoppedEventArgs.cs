@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
+// ReSharper disable once CheckNamespace
 namespace NAudio.Wave
 {
     /// <summary>
@@ -21,8 +20,9 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// An exception. Will be null if the playback or record operation stopped
+        /// An exception. Will be null if the playback or record operation stopped due to 
+        /// the user requesting stop or reached the end of the input audio
         /// </summary>
-        public Exception Exception { get { return exception; } }
+        public Exception Exception => exception;
     }
 }

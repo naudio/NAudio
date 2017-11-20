@@ -45,6 +45,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{BA7F6DBB-9
 		Docs\PlayAudioFileConsoleApp.md = Docs\PlayAudioFileConsoleApp.md
 		Docs\PlayAudioFileWinForms.md = Docs\PlayAudioFileWinForms.md
 		Docs\PlayAudioFromUrl.md = Docs\PlayAudioFromUrl.md
+		Docs\PlaybackStopped.md = Docs\PlaybackStopped.md
 		Docs\PlaySineWave.md = Docs\PlaySineWave.md
 		Docs\RawSourceWaveStream.md = Docs\RawSourceWaveStream.md
 		Docs\RecordWavFileWinFormsWaveIn.md = Docs\RecordWavFileWinFormsWaveIn.md

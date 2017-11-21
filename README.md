@@ -69,6 +69,7 @@ NAudio comes with several demo applications which are the quickest way to see ho
  - [Implement "Fire and Forget" Playback (e.g. game sound effects)](http://markheath.net/post/fire-and-forget-audio-playback-with)
  - [Play streaming MP3](http://markheath.net/post/how-to-play-back-streaming-mp3-using)
  - [Handling playback stopped](Docs/PlaybackStopped.md)
+ - [Understanding WaveStream, IWavePlayer and ISampleProvider](Docs/WaveProviders.md)
 
 ### Working with Codecs
 
@@ -79,7 +80,6 @@ NAudio comes with several demo applications which are the quickest way to see ho
  - [Enumerate Media Foundation Transforms (MFTs)](Docs/EnumerateMediaFoundationTransforms.md)
  - [Enumerate ACM Codecs](Docs/EnumerateAcmDrivers.md)
  - [Fix the NoDriver calling acmFormatSuggest issue](http://markheath.net/post/nodriver-calling-acmformatsuggest)
-
 
 ### Working with audio files
 

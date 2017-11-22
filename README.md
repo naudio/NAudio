@@ -117,6 +117,11 @@ NAudio comes with several demo applications which are the quickest way to see ho
 ### Visualization
 
  - [WaveForm Rendering to PNG](http://markheath.net/post/naudio-png-waveform-rendering)
+
+## MIDI
+
+ - [Sending and Receiving MIDI Events](Docs/MidiInAndOut.md)
+
 ### More...
 
 Additional sources of documentation for NAudio are:

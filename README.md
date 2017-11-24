@@ -122,6 +122,7 @@ NAudio comes with several demo applications which are the quickest way to see ho
 
  - [Sending and Receiving MIDI Events](Docs/MidiInAndOut.md)
  - [Exploring MIDI Files with MidiFile](Docs/MidiFile.md)
+ - [MIDI Event types](Docs/MidiEvent.md)
 
 ### More...
 

@@ -117,6 +117,7 @@ NAudio comes with several demo applications which are the quickest way to see ho
 ### Visualization
 
  - [WaveForm Rendering to PNG](Docs/WaveFormRendering.md)
+ - [Implement a Recording Level Meter](Docs/RecordingLevelMeter.md)
 
 ### MIDI
 

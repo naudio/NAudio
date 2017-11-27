@@ -97,7 +97,7 @@ NAudio comes with several demo applications which are the quickest way to see ho
  - [Skip and Take Using OffsetSampleProvider](Docs/OffsetSampleProvider.md)
  - [Implement Looped Playback](http://markheath.net/post/looped-playback-in-net-with-naudio)
  - [Work with Multi-Channel Audio](http://markheath.net/post/handling-multi-channel-audio-in-naudio)
- - [Resample Audio](http://markheath.net/post/how-to-resample-audio-with-naudio)
+ - [Resample Audio](Docs/Resampling.md)
  - [Input driven Audio Resampling](http://markheath.net/post/input-driven-resampling-with-naudio-using-acm)
  - [Using RawSourceWaveStream](Docs/RawSourceWaveStream.md)
  - [Adjust the pitch of audio using SmbPitchShiftingSampleProvider](Docs/SmbPitchShiftingSampleProvider.md)

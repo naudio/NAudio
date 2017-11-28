@@ -102,6 +102,7 @@ NAudio comes with several demo applications which are the quickest way to see ho
  - [Using RawSourceWaveStream](Docs/RawSourceWaveStream.md)
  - [Adjust the pitch of audio using SmbPitchShiftingSampleProvider](Docs/SmbPitchShiftingSampleProvider.md)
  - [Varispeed playback with NAudio using SoundTouch](http://markheath.net/post/varispeed-naudio-soundtouch)
+ - [Fade audio in and out](Docs/FadeInOutSampleProvider.md)
 
 ### Generating audio
 

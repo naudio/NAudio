@@ -114,6 +114,7 @@ NAudio comes with several demo applications which are the quickest way to see ho
  - [Recording a WAV file from a WinForms application](Docs/RecordWavFileWinFormsWaveIn.md)
  - [Capturing system audio with WasapiLoopbackCapture](Docs/WasapiLoopbackCapture.md)
  - [Play and Record audio at the same time](http://markheath.net/post/how-to-record-and-play-audio-at-same)
+ - [Record Audio with ASIO](Docs/AsioRecording.md)
 
 ### Visualization
 

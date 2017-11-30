@@ -70,6 +70,7 @@ NAudio comes with several demo applications which are the quickest way to see ho
  - [Play streaming MP3](http://markheath.net/post/how-to-play-back-streaming-mp3-using)
  - [Handling playback stopped](Docs/PlaybackStopped.md)
  - [Understanding WaveStream, IWavePlayer and ISampleProvider](Docs/WaveProviders.md)
+ - [Playing Audio with ASIO](Docs/AsioPlayback.md)
 
 ### Working with Codecs
 

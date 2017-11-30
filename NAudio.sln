@@ -32,6 +32,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{778D
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{BA7F6DBB-9FC4-49E6-92E4-621EFE4BBBBC}"
 	ProjectSection(SolutionItems) = preProject
+		Docs\AsioPlayback.md = Docs\AsioPlayback.md
 		Docs\AsioRecording.md = Docs\AsioRecording.md
 		Docs\ConcatenatingAudio.md = Docs\ConcatenatingAudio.md
 		Docs\ConvertBetweenStereoAndMono.md = Docs\ConvertBetweenStereoAndMono.md

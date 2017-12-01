@@ -46,9 +46,11 @@ namespace NAudio.FileFormats.Wav
                 ReadDs64Chunk(br);
             }
 
+            HashSet<int> knownChunkIds = new HashSet<int>(ChunkIdentifier.KnownChunkIdentifiers());
+
             int dataChunkId = ChunkIdentifier.ChunkIdentifierToInt32("data");
             int formatChunkId = ChunkIdentifier.ChunkIdentifierToInt32("fmt ");
-            
+
             // sometimes a file has more data than is specified after the RIFF header
             long stopPosition = Math.Min(riffSize + 8, stream.Length);
 
@@ -56,6 +58,13 @@ namespace NAudio.FileFormats.Wav
             while (stream.Position <= stopPosition - 8)
             {
                 Int32 chunkIdentifier = br.ReadInt32();
+
+                if (knownChunkIds.Contains(chunkIdentifier) == false)
+                {
+                    //this chunk id isn't known, perhaps the previous chunk length was incorrect, lets look in nearby offsets
+                    chunkIdentifier = LocalSeekForChunkIdentifier(stream, br, knownChunkIds);
+                }
+
                 var chunkLength = br.ReadUInt32();
                 if (chunkIdentifier == dataChunkId)
                 {
@@ -71,7 +80,7 @@ namespace NAudio.FileFormats.Wav
                     if (chunkLength > Int32.MaxValue)
                          throw new InvalidDataException(string.Format("Format chunk length must be between 0 and {0}.", Int32.MaxValue));
                     waveFormat = WaveFormat.FromFormatChunk(br, (int)chunkLength);
-                }
+                }                
                 else
                 {
                     // check for invalid chunk length
@@ -104,6 +113,35 @@ namespace NAudio.FileFormats.Wav
             {
                 throw new FormatException("Invalid WAV file - No data chunk found");
             }
+        }
+
+        /// <summary>
+        /// Sometimes poorly written programs can create WAV headers with mis-aligned chunks.
+        /// This function will look locally offset by -1 and +1 bytes to see if there is a nearby valid chunk identifier.
+        /// https://sites.google.com/site/musicgapi/technical-documents/wav-file-format#formatvariations
+        /// </summary>
+        /// <param name="stream">Source stream</param>
+        /// <param name="reader">Current BinaryReader</param>
+        /// <param name="knownChunkIds">Hashset of known chunk identifiers</param>
+        /// <returns>Found matching chunk identifier or original identifier if none found</returns>
+        private Int32 LocalSeekForChunkIdentifier(Stream stream, BinaryReader reader, HashSet<int> knownChunkIds)
+        {
+            //offset by 1 byte before prior read
+            stream.Position -= 5;
+            Int32 chunkIdentifier = reader.ReadInt32();
+            if (knownChunkIds.Contains(chunkIdentifier) == false)
+            {
+                //still not? try +1 byte
+                stream.Position -= 2;
+                chunkIdentifier = reader.ReadInt32();
+                if (knownChunkIds.Contains(chunkIdentifier) == false)
+                {
+                    //ok, still not, go back to where we were and carry on
+                    stream.Position -= 5;
+                    chunkIdentifier = reader.ReadInt32();
+                }
+            }
+            return chunkIdentifier;
         }
 
         /// <summary>

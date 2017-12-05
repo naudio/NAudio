@@ -18,6 +18,8 @@ namespace NAudio.Wave
         /// <param name="sourceProvider">Stereo 16 bit PCM input</param>
         public StereoToMonoProvider16(IWaveProvider sourceProvider)
         {
+            LeftVolume = 0.5f;
+            RightVolume = 0.5f;
             if (sourceProvider.WaveFormat.Encoding != WaveFormatEncoding.Pcm)
             {
                 throw new ArgumentException("Source must be PCM");

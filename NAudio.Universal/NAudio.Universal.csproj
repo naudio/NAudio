@@ -26,6 +26,7 @@
     <DefineConstants>DEBUG;TRACE;NETFX_CORE;WINDOWS_UAP</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Debug\NAudio.Universal.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -35,6 +36,7 @@
     <DefineConstants>TRACE;NETFX_CORE;WINDOWS_UAP</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Release\NAudio.Universal.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|ARM'">
     <PlatformTarget>ARM</PlatformTarget>
@@ -114,15 +116,6 @@
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\NAudio.Win8\Wave\WaveInputs\WasapiCaptureRT.cs">
-      <Link>Wave\WaveInputs\WasapiCaptureRT.cs</Link>
-    </Compile>
-    <Compile Include="..\NAudio.Win8\Wave\WaveOutputs\WasapiOutRT.cs">
-      <Link>Wave\WaveOutputs\WasapiOutRT.cs</Link>
-    </Compile>
-    <Compile Include="..\NAudio.Win8\Wave\WaveOutputs\WaveFileWriterRT.cs">
-      <Link>Wave\WaveOutputs\WaveFileWriterRT.cs</Link>
-    </Compile>
     <Compile Include="..\NAudio\Codecs\ALawDecoder.cs">
       <Link>Codecs\ALawDecoder.cs</Link>
     </Compile>
@@ -828,7 +821,10 @@
     <Compile Include="CoreAudioApi\PropVariantNative.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utils\MarshalHelpers.cs" />
+    <Compile Include="Wave\WaveInputs\WasapiCaptureRT.cs" />
     <Compile Include="Wave\WaveOutputs\IWavePlayer.cs" />
+    <Compile Include="Wave\WaveOutputs\WasapiOutRT.cs" />
+    <Compile Include="Wave\WaveOutputs\WaveFileWriterRT.cs" />
   </ItemGroup>
   <ItemGroup />
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">

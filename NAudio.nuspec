@@ -13,12 +13,10 @@
     <tags>C# .NET audio sound</tags>
   </metadata>
   <files>
-    <file src="NAudio\bin\Release\NAudio.dll" target="lib" /> 
-    <file src="NAudio\bin\Release\NAudio.xml" target="lib" /> 
     <file src="NAudio\bin\Release\NAudio.dll" target="lib\net35" /> 
     <file src="NAudio\bin\Release\NAudio.xml" target="lib\net35" /> 
-    <file src="NAudio.Win8\bin\Release\NAudio.Win8.dll" target="lib\windows8" /> 
-    <file src="NAudio.Win8\bin\Release\NAudio.Win8.xml" target="lib\windows8" /> 
+    <file src="NAudio.Universal\bin\Release\NAudio.Universal.dll" target="lib\uap10.0" /> 
+    <file src="NAudio.Universal\bin\Release\NAudio.Universal.xml" target="lib\uap10.0" /> 
     <file src="license.txt" />
     <file src="readme.txt" />
   </files>

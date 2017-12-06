@@ -1,7 +1,0 @@
-# runs on mono, so we can't build the Win 8 or Universal projects
-# docs here: https://docs.travis-ci.com/user/languages/csharp/
-language: csharp
-solution: NAudio.sln
-script:
-  - xbuild /p:Configuration=Release NAudio.sln
-  - mono ./packages/NUnit.*/tools/nunit-console.exe /exclude=IntegrationTest ./NAudioTests/bin/Release/NAudioTests.dll

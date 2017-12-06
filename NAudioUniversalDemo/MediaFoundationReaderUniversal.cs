@@ -15,7 +15,7 @@ namespace NAudioUniversalDemo
             public MediaFoundationReaderUniversalSettings()
             {
                 // can't recreate since we're using a file stream
-                this.SingleReaderObject = true;
+                SingleReaderObject = true;
             }
 
             public IRandomAccessStream Stream { get; set; }
@@ -56,9 +56,9 @@ namespace NAudioUniversalDemo
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing && settings.Stream != null)
+            if (disposing)
             {
-                settings.Stream.Dispose();
+                settings.Stream?.Dispose();
             }
             base.Dispose(disposing);
         }

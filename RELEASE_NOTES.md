@@ -1,5 +1,56 @@
 
-#### 1.8.0 (27 Dec 2016)
+### 1.8.4
+
+* Windows 10 Universal build now included in NuGet package
+* adding a TotalTime property to WaveFileWriter
+* adding a Broadcast Wave File Writer
+* Various bugfixes and enhancements:
+  * Prevent audio files from staying locked
+  * additional constructor for MultiplexingWaveProvider
+  * Faster SilenceWaveProvider implementation #257
+  * fixing calling stoprecording without ever starting recording on WaveIn
+  * improved reliability in WaveInEvent
+  * make non-strict MIDI file checking tolerant of invalid CC values #250
+  * Adding defaults for StereoToMonoProvider16 volumes #267
+
+### 1.8.3 (5 Sep 2017)
+
+* Allow access to property store of MMDevice
+* Various bugfixes and enhancements:
+  * Support unicode in MIDI TextEvent
+  * Fixed noise issue on restart DirectSoundOut
+  * improved support for mono AAC #223
+  * fix NullReferenceException opening AsioOut by index #234
+
+
+### 1.8.2 (6 Aug 2017)
+
+* AudioFileReader supports filenames ending with .aif
+* Various bugfixes and enhancements:
+  * fixing problem with Mp3FileReader position advancing too rapidly #202
+  * Implemented IDisposable in MMDevice
+  * fix dispose of AudioSessionManager
+
+
+### 1.8.1 (22 Jul 2017)
+
+* AsioOut exposes FramesPerBuffer
+* change WaveOut and WaveOutEvent default DeviceNumber to -1 (Mapper)
+* Added MidiFile constructor overload that takes an input Stream object.
+* Various bugfixes and enhancements:
+  * desktop apps use MFCreateMFByteStreamOnStream instead of MFCreateMFByteStreamOnStream
+  * Fix for propvariant marshalling #154
+  * Soundfont should not require isng chunk #150
+  * Fixed potential MFT memory leak
+  * Mp3FileReader.ReadFrame advances Position #161
+  * sfzfilereader class obsoleted
+  * ensure DriverName property always set on AsioOut. #169
+  * WaveFormatConversionProvider can throw an error in finalizer #188
+  * Restore compatibility with .NET Portable. #189
+  * improved error message for channel index out of range #208
+  * Added Releasing of Com Object to AudioEndpointVolume Dispose
+
+### 1.8.0 (27 Dec 2016)
 
 * Windows 10 Universal project. Very similar feature set to the Win 8 one.
   * Added a Windows 10 Universal demo app with limited functionality  
@@ -38,7 +89,7 @@
   * Fixed MIDI to type 1 converter bug
   
   
-#### 1.7.3 5 Mar 2015
+### 1.7.3 5 Mar 2015
 
 * WaveFileWriter.Flush now updates the WAV headers, resulting in a playable file without having to call Dispose
 * SampleToWaveProvider24 class added for conversion to 24 bit
@@ -57,7 +108,7 @@
   * WaveOutEvent can set device volume
   * Better handling of WAVEFORMATEXTENSIBLE for WasapiIn
 
-#### 1.7.2 24 Nov 2014
+### 1.7.2 24 Nov 2014
 
 * WaveFileReader and WaveFileWriter supporting data chunk > 2GB
 * Working towards making WinRT build pass WACK
@@ -74,7 +125,7 @@
   * Fixes for sync context issues in ASP.NET
   * Fixed WasapiOut could stop when playing resampled audio
   
-#### 1.7.1 10 Apr 2014
+### 1.7.1 10 Apr 2014
 
 * WdlResampler - a fully managed resampler based on the one from CockosWDL
 * AdsrSampleProvider for creating ADSR envelopes
@@ -90,8 +141,8 @@
   * OffsetSampleProvider bugfixes and TimeSpan helper methods
   * Cue markers RIFF chunk writing fixes
   * WaveIn and WaveOutEvent robustness fixes
-    
-#### 1.7.0 29 Oct 2013
+
+### 1.7.0 29 Oct 2013
 
 [Release announcement](http://markheath.net/post/naudio-17-release-notes)
 * MediaFoundationReader allows you to play any audio files that Media Foundation can play, which on Windows 7 and above means playback of AAC, MP3, WMA, as well as playing the audio from video files.
@@ -121,7 +172,7 @@
   * Use WasapiCaptureRTfor record (thanks to Kassoul for some performance enhancement suggestions)
   * There is a demo application in the NAudio source code showing record and playback
 
-#### 1.6.0 26 Oct 2012
+### 1.6.0 26 Oct 2012
 
 [Release Announcement](http://markheath.net/post/naudio-16-release-notes-10th)
 
@@ -145,7 +196,7 @@
 * WMA Nuget Package (NAudio.Wma) for playing WMA files. Download here.
 * RF64 read support
 
-#### 1.5.0 18 Dec 2011
+### 1.5.0 18 Dec 2011
 
 [Release Announcement](http://markheath.net/post/naudio-15-released)
 
@@ -201,7 +252,7 @@
   * WPF Demo has visualization plugins, allowing me to trial different drawing mechanisms
   * WPF Demo has a (very basic) drum machine example
 
-#### 1.4.0 20 Apr 2011
+### 1.4.0 20 Apr 2011
 
 [Release announcement](http://markheath.net/post/naudio-14-release-notes)
 
@@ -232,7 +283,7 @@
 * WaveOut uses 2 buffers not 3 by default now (a leftover from the original days of NAudio when my PC had a 400MHz Pentium II processor!).
 * Lots more minor bug fixes & patches applied – see the check-in history for full details
 
-#### 1.3.0 10 Oct 2009
+### 1.3.0 10 Oct 2009
 
 [Release Announcement](http://markheath.net/post/naudio-13-release-notes)
 
@@ -249,7 +300,7 @@
 * WASAPI audio capture is now supported.
 * NAudio should now work correctly on x64operating systems (accomplished this by setting Visual Studio to compile for x86).
 
-#### 1.2.0 26 Jun 2008
+### 1.2.0 26 Jun 2008
 
 [Release Announcement](http://markheath.net/post/naudio-12-release-notes)
 
@@ -272,7 +323,7 @@
 * IWaveProvider Tech Preview - As discussed recently on my blog, we will be using a new interface called IWaveProvider in future versions of NAudio, which uses the WaveBuffer class. This code is available in the version 1.2 release, but you are not currently required to use it.
 * Alexandre Mutel- Finally, this version welcomes a new contributor to the team. In fact, Alexandre is the first contributor I have added to this project. He has provided the new implementations of ASIO and DirectSoundOut, as well as helping out with WASAPI and the new IWaveProvider interface design. His enthusiasm for the project has also meant that I have been working on it a little more than I might have otherwise!
 
-#### 1.1.0 26 May 2008
+### 1.1.0 26 May 2008
  * Added some new NoteEvent and NoteOnEvent constructors    
  * WaveOffsetStream
  * WaveStream32 preparation for 24 bit inputs
@@ -297,7 +348,7 @@
  * More MidiEventCollection automated tests
  * Test application can now send test MIDI out messages
 
-#### 1.0.0 19 Apr 2007
+### 1.0.0 19 Apr 2007
 * Minor updates to support EZdrummer MIDI converter
 * Beginnings of a new WaveOut class with its own thread
 * Fixed a bug in WaveFileReader
@@ -328,7 +379,7 @@
 * WaveMixerStream32 updated ready to support dynamic adding of streams
 * Some bugfixes to WaveOut to support auto stop mode again
 
-#### 0.9.0 6 Oct 2006
+### 0.9.0 6 Oct 2006
 * ACM stream bug fixes
 * Support for waveOut window message callbacks
 * Wave In Recording bug fixes
@@ -361,7 +412,7 @@
 * Meta events use VarInts for lengths now
 * Allow non-strict reading of MIDI file
   
-#### 0.8.0 21 Feb 2006
+### 0.8.0 21 Feb 2006
 * Minor bug fix to WaveMixer classes
 * NICE specific code removed
 * MP3 Reader can read ID3 tags and frames now
@@ -379,7 +430,7 @@
 * Added simple compressor
 * Added simple gate
   
-#### 0.7.0 12 Dec 2005
+### 0.7.0 12 Dec 2005
 * Made a 16 and 32 bit mixer stream
 * Made a 32 bit WaveChannel stream
 * A 32 to 16 bit conversion stream
@@ -398,7 +449,7 @@
 * Support for Speed codec
 * WaveStream inherits Stream
 
-#### 0.6.0 16 Nov 2005
+### 0.6.0 16 Nov 2005
 * Dual channel strip in WavePlayer
 * Fixed bad calculation of offset seconds in WavePlayer
 * Improved checking that we don't go beyond the end of streams
@@ -425,7 +476,7 @@
 * Converted to .NET 2.0
 * n.b. DirectSound has issues - needed to turn off the LoaderLock Managed Debug Assistant
 
-#### 0.5.0 31 Oct 2005
+### 0.5.0 31 Oct 2005
 * WaveChannel can supply from stereo input
 * Initial VST interfaces and enums
 * VstLoader implements IVstEffect
@@ -441,7 +492,7 @@
 * Some more LCD control characters
 * Initial WaveViewer control
 
-#### 0.4.0 12 May 2005
+### 0.4.0 12 May 2005
 * changes recommended by FxCop
 * namespace changed to NAudio
 * XML documentation, FxCop fixes, Namespace improvements
@@ -461,7 +512,7 @@
 * A very basic time domain convolution
 * Improvements to wave-reader and writer for floating point audio
 
-#### 0.3.0 8 Mar 2005 
+### 0.3.0 8 Mar 2005 
 * Skip backwards and forwards in wav file
 * WavPlayer trackBar indicates progress
 * Allows trackBar repositioning
@@ -489,7 +540,7 @@
 * Greatly improved the ability to calculate appropriate buffer sizes
 * Realtime GSM decoding is now working
 
-#### 0.2.0 25 Feb 2005
+### 0.2.0 25 Feb 2005
 * Improvements to WaveStream class
 * SoundFont library merged
 * Converted to Visual Studio .NET
@@ -498,7 +549,7 @@
 * Generic WaveStream class and WaveFileReader
 * Improved class design trying to fix WaveOut bug (waveout callback was being GCed)
 
-#### 0.1.0 23 Dec 2002
+### 0.1.0 23 Dec 2002
 * Added pause and stop for WaveOut
 * Got wave playing working better
 * Wave functions improved
@@ -507,5 +558,5 @@
 * Improvements to Mixer interop &amp; classes
 * Added MIDI interop, MMException, more mixer classes
 
-#### 0.0.0 9 Dec 2002
+### 0.0.0 9 Dec 2002
 * Initial version, basic mixer interop

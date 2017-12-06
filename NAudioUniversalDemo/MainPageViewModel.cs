@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Threading.Tasks;
 using Windows.Storage.Streams;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
@@ -34,18 +33,12 @@ namespace NAudioUniversalDemo
         
         private void Stop()
         {
-            if (player != null)
-            {
-                player.Stop();
-            }
+            player?.Stop();
         }
 
         private void Pause()
         {
-            if (player != null)
-            {
-                player.Pause();
-            }
+            player?.Pause();
         }
 
         private void Play()
@@ -116,10 +109,7 @@ namespace NAudioUniversalDemo
 
         private void StopRecording()
         {
-            if (recorder != null)
-            {
-                recorder.StopRecording();
-            }
+            recorder?.StopRecording();
         }
 
         private void RecorderOnRecordingStopped(object sender, StoppedEventArgs stoppedEventArgs)
@@ -157,16 +147,16 @@ namespace NAudioUniversalDemo
             if (file == null) return;
             var stream = await file.OpenAsync(FileAccessMode.Read);
             if (stream == null) return;
-            this.selectedStream = stream; 
+            selectedStream = stream; 
             PlayCommand.IsEnabled = true;
         }
 
-        public DelegateCommand LoadCommand { get; private set; }
-        public DelegateCommand PlayCommand { get; private set; }
-        public DelegateCommand PauseCommand { get; private set; }
-        public DelegateCommand StopCommand { get; private set; }
-        public DelegateCommand RecordCommand { get; private set; }
-        public DelegateCommand StopRecordingCommand { get; private set; }
+        public DelegateCommand LoadCommand { get; }
+        public DelegateCommand PlayCommand { get; }
+        public DelegateCommand PauseCommand { get; }
+        public DelegateCommand StopCommand { get; }
+        public DelegateCommand RecordCommand { get; }
+        public DelegateCommand StopRecordingCommand { get; }
 
         public MediaElement MediaElement { get; set; }
     }

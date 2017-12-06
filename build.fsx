@@ -55,11 +55,11 @@ Target "NuGet" (fun _ ->
         {p with
             (*Authors = authors
             Project = projectName
-            Description = projectDescription                               
+            Description = projectDescription
             Summary = projectSummary
             WorkingDir = packagingDir
             AccessKey = myAccesskey*)
-            Version = "1.8.3" // todo get the version number from elsewhere
+            Version = "1.8.4" // todo get the version number from elsewhere
             WorkingDir = "."
             OutputPath = deployDir
             
@@ -85,7 +85,7 @@ let demoFiles =
         |> Seq.map (fun a -> a, Path.GetFullPath (sprintf "./%s/bin/Debug" a))
         |> Seq.map (fun (a,b) -> a, { demoIncludes with BaseDirectory = b })
         |> List.ofSeq
-                    
+
 Target "ZipDemo" (fun _ ->
     CreateZipOfIncludes (deployDir + "NAudio-Demos.zip") "" DefaultZipLevel demoFiles        
 )
@@ -113,8 +113,6 @@ Target "ZipLib" (fun _ ->
     ==> "Test"
     ?=> "ReleaseBuild"
     ==> "Release"
-
-
 
 "ZipDemo" ==> "ZipAll"
 "ZipLib" ==> "ZipAll"

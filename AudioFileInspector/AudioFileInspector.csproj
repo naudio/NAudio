@@ -88,7 +88,6 @@
       <DependentUpon>AudioFileInspectorForm.cs</DependentUpon>
     </Compile>
     <Compile Include="FileAssociations.cs" />
-    <Compile Include="FileInspectors\CakewalkMapInspector.cs" />
     <Compile Include="FileInspectors\Mp3FileInspector.cs" />
     <Compile Include="FindForm.cs">
       <SubType>Form</SubType>

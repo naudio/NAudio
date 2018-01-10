@@ -16,17 +16,17 @@ namespace NAudioWpfDemo.MediaFoundationEncode
 {
     internal class MediaFoundationEncodeViewModel : ViewModelBase, IDisposable
     {
-        private Dictionary<Guid, List<MediaTypeViewModel>> allMediaTypes;
+        private readonly Dictionary<Guid, List<MediaTypeViewModel>> allMediaTypes;
         private EncoderViewModel selectedOutputFormat;
         private MediaTypeViewModel selectedMediaType;
         private string inputFile;
         private string inputFormat;
         private WaveFormat inputWaveFormat;
 
-        public List<EncoderViewModel> OutputFormats { get; private set; }
+        public List<EncoderViewModel> OutputFormats { get; }
         public List<MediaTypeViewModel> SupportedMediaTypes { get; private set; }
-        public ICommand EncodeCommand { get; private set; }
-        public ICommand SelectInputFileCommand { get; private set; }
+        public ICommand EncodeCommand { get; }
+        public ICommand SelectInputFileCommand { get; }
 
         public MediaFoundationEncodeViewModel()
         {
@@ -85,7 +85,7 @@ namespace NAudioWpfDemo.MediaFoundationEncode
 
         public string InputFile
         {
-            get { return inputFile; }
+            get => inputFile;
             set
             {
                 if (inputFile != value)
@@ -98,7 +98,7 @@ namespace NAudioWpfDemo.MediaFoundationEncode
 
         public string InputFormat
         {
-            get { return inputFormat; }
+            get => inputFormat;
             set
             {
                 if (inputFormat != value)
@@ -111,7 +111,7 @@ namespace NAudioWpfDemo.MediaFoundationEncode
 
         public EncoderViewModel SelectedOutputFormat
         {
-            get { return selectedOutputFormat; }
+            get => selectedOutputFormat;
             set { 
                 if (selectedOutputFormat != value)
                 {
@@ -163,7 +163,7 @@ namespace NAudioWpfDemo.MediaFoundationEncode
 
         public MediaTypeViewModel SelectedMediaType 
         {
-            get { return selectedMediaType; }
+            get => selectedMediaType;
             set
             {
                 if (selectedMediaType != value)

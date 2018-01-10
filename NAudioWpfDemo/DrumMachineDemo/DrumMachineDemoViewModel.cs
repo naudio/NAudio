@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows.Input;
 using NAudio.Wave;
-using NAudio.Wave.SampleProviders;
-using System.ComponentModel;
 using NAudioWpfDemo.ViewModel;
 
 namespace NAudioWpfDemo.DrumMachineDemo
@@ -13,16 +9,16 @@ namespace NAudioWpfDemo.DrumMachineDemo
     class DrumMachineDemoViewModel : ViewModelBase, IDisposable
     {
         private IWavePlayer waveOut;
-        private DrumPattern pattern;
+        private readonly DrumPattern pattern;
         private DrumPatternSampleProvider patternSequencer;
         private int tempo;
-        public ICommand PlayCommand { get; private set; }
-        public ICommand StopCommand { get; private set; }
+        public ICommand PlayCommand { get; }
+        public ICommand StopCommand { get; }
 
         public DrumMachineDemoViewModel(DrumPattern pattern)
         {
             this.pattern = pattern;
-            this.tempo = 100;
+            tempo = 100;
             PlayCommand = new DelegateCommand(Play);
             StopCommand = new DelegateCommand(Stop);
         }
@@ -34,8 +30,8 @@ namespace NAudioWpfDemo.DrumMachineDemo
                 Stop();
             }
             waveOut = new WaveOut();
-            this.patternSequencer = new DrumPatternSampleProvider(pattern);
-            this.patternSequencer.Tempo = tempo;
+            patternSequencer = new DrumPatternSampleProvider(pattern);
+            patternSequencer.Tempo = tempo;
             waveOut.Init(patternSequencer);
             waveOut.Play();
         }
@@ -44,7 +40,7 @@ namespace NAudioWpfDemo.DrumMachineDemo
         {
             if (waveOut != null)
             {
-                this.patternSequencer = null;
+                patternSequencer = null;
                 waveOut.Dispose();
                 waveOut = null;
             }
@@ -57,21 +53,16 @@ namespace NAudioWpfDemo.DrumMachineDemo
 
         public int Tempo
         {
-            get
-            {
-                return tempo;
-            }
+            get => tempo;
             set
             {
-                if (tempo != value)
+                if (tempo == value) return;
+                tempo = value;
+                if (patternSequencer != null)
                 {
-                    this.tempo = value;
-                    if (this.patternSequencer != null)
-                    {
-                        this.patternSequencer.Tempo = value;
-                    }
-                    OnPropertyChanged("Tempo");
+                    patternSequencer.Tempo = value;
                 }
+                OnPropertyChanged("Tempo");
             }
         }
 

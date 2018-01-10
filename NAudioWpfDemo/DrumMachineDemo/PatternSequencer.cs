@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Diagnostics;
-using NAudio.Wave.SampleProviders;
 
 namespace NAudioWpfDemo.DrumMachineDemo
 {
@@ -16,30 +14,27 @@ namespace NAudioWpfDemo.DrumMachineDemo
 
         public PatternSequencer(DrumPattern drumPattern, DrumKit kit)
         {
-            this.drumKit = kit;
+            drumKit = kit;
             this.drumPattern = drumPattern;
-            this.Tempo = 120;
+            Tempo = 120;
         }
 
         public int Tempo
         {
-            get
-            {
-                return this.tempo;
-            }
+            get => tempo;
             set
             {
-                if (this.tempo != value)
+                if (tempo != value)
                 { 
-                    this.tempo = value;
-                    this.newTempo = true;
+                    tempo = value;
+                    newTempo = true;
                 }
             }
         }
 
         private bool newTempo;
-        private int currentStep = 0;
-        private double patternPosition = 0;
+        private int currentStep;
+        private double patternPosition;
 
         public IList<MusicSampleProvider> GetNextMixerInputs(int sampleCount)
         {
@@ -47,8 +42,8 @@ namespace NAudioWpfDemo.DrumMachineDemo
             int samplePos = 0;
             if (newTempo)
             {
-                int samplesPerBeat = (this.drumKit.WaveFormat.Channels * this.drumKit.WaveFormat.SampleRate * 60) / tempo;
-                this.samplesPerStep = samplesPerBeat / 4;
+                int samplesPerBeat = (drumKit.WaveFormat.Channels * drumKit.WaveFormat.SampleRate * 60) / tempo;
+                samplesPerStep = samplesPerBeat / 4;
                 //patternPosition = 0;
                 newTempo = false;
             }
@@ -57,7 +52,7 @@ namespace NAudioWpfDemo.DrumMachineDemo
             {
                 double offsetFromCurrent = (currentStep - patternPosition);
                 if (offsetFromCurrent < 0) offsetFromCurrent += drumPattern.Steps;
-                int delayForThisStep = (int)(this.samplesPerStep * offsetFromCurrent);
+                int delayForThisStep = (int)(samplesPerStep * offsetFromCurrent);
                 if (delayForThisStep >= sampleCount)
                 {
                     // don't queue up any samples beyond the requested time range
@@ -80,10 +75,10 @@ namespace NAudioWpfDemo.DrumMachineDemo
                 currentStep = currentStep % drumPattern.Steps;
 
             }
-            this.patternPosition += ((double)sampleCount / samplesPerStep);
-            if (this.patternPosition > drumPattern.Steps)
+            patternPosition += ((double)sampleCount / samplesPerStep);
+            if (patternPosition > drumPattern.Steps)
             {
-                this.patternPosition -= drumPattern.Steps;
+                patternPosition -= drumPattern.Steps;
             }
             return mixerInputs;
         }

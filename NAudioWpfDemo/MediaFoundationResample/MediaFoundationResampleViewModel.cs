@@ -21,22 +21,22 @@ namespace NAudioWpfDemo.MediaFoundationResample
             SelectInputFileCommand = new DelegateCommand(SelectInputFile);
             ResampleCommand = new DelegateCommand(Resample);
             RepositionTestCommand = new DelegateCommand(RepositionTest);
-            SampleRates = new int[] { 8000, 16000, 22050, 32000, 44100, 48000, 88200, 96000 };
-            BitDepths = new string[] {"Unchanged", "8", "16", "24", "IEEE float"};
-            ChannelCounts = new string[] { "Unchanged", "mono", "stereo" };
+            SampleRates = new[] { 8000, 16000, 22050, 32000, 44100, 48000, 88200, 96000 };
+            BitDepths = new[] {"Unchanged", "8", "16", "24", "IEEE float"};
+            ChannelCounts = new[] { "Unchanged", "mono", "stereo" };
             selectedSampleRate = 16000;
         }
 
-        public ICommand SelectInputFileCommand { get; private set; }
-        public ICommand ResampleCommand { get; private set; }
-        public ICommand RepositionTestCommand { get; private set; }
-        public int[] SampleRates { get; private set; }
-        public string[] BitDepths { get; private set; }
-        public string[] ChannelCounts { get; private set; }
+        public ICommand SelectInputFileCommand { get; }
+        public ICommand ResampleCommand { get; }
+        public ICommand RepositionTestCommand { get; }
+        public int[] SampleRates { get; }
+        public string[] BitDepths { get; }
+        public string[] ChannelCounts { get; }
 
         public string InputFile
         {
-            get { return inputFile; }
+            get => inputFile;
             set
             {
                 if (inputFile != value)
@@ -49,7 +49,7 @@ namespace NAudioWpfDemo.MediaFoundationResample
 
         public string InputFileFormat
         {
-            get { return inputFileFormat; }
+            get => inputFileFormat;
             set
             {
                 if (inputFileFormat != value)
@@ -62,7 +62,7 @@ namespace NAudioWpfDemo.MediaFoundationResample
 
         public int SampleRate
         {
-            get { return selectedSampleRate; }
+            get => selectedSampleRate;
             set
             {
                 if (selectedSampleRate != value)
@@ -75,7 +75,7 @@ namespace NAudioWpfDemo.MediaFoundationResample
 
         public int SelectedBitDepthIndex
         {
-            get { return selectedBitDepthIndex; }
+            get => selectedBitDepthIndex;
             set
             {
                 if (selectedBitDepthIndex != value)
@@ -88,7 +88,7 @@ namespace NAudioWpfDemo.MediaFoundationResample
 
         public int SelectedChannelCountIndex
         {
-            get { return selectedChannelCountIndex; }
+            get => selectedChannelCountIndex;
             set
             {
                 if (selectedChannelCountIndex != value)

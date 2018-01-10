@@ -7,10 +7,7 @@ namespace NAudioWpfDemo.EqualizationDemo
         private EqualizationDemoView view;
         private EqualizationDemoViewModel viewModel;
 
-        public string Name
-        {
-            get { return "Graphic EQ"; }
-        }
+        public string Name => "Graphic EQ";
 
         public UserControl UserInterface
         {

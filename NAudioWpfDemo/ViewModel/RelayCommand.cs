@@ -1,16 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using System.Windows.Input;
 
 namespace NAudioWpfDemo.ViewModel
 {
     public class RelayCommand : ICommand
     {
-        readonly Action<object> execute;
-        readonly Predicate<object> canExecute;
+        private readonly Action<object> execute;
+        private readonly Predicate<object> canExecute;
 
         public RelayCommand(Action<object> execute)
             : this(execute, null)
@@ -31,10 +29,7 @@ namespace NAudioWpfDemo.ViewModel
 
         public RelayCommand(Action<object> execute, Predicate<object> canExecute)
         {
-            if (execute == null)
-                throw new ArgumentNullException("execute");
-
-            this.execute = execute;
+            this.execute = execute ?? throw new ArgumentNullException(nameof(execute));
             this.canExecute = canExecute;
         }
 

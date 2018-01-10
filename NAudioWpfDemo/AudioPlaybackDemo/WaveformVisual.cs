@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Windows.Media;
 using System.Windows;
+using System.Windows.Media;
 
-namespace NAudioWpfDemo
+namespace NAudioWpfDemo.AudioPlaybackDemo
 {
     class WaveFormVisual : FrameworkElement, IWaveFormRenderer
     {
@@ -13,14 +12,14 @@ namespace NAudioWpfDemo
         private readonly List<Point> maxPoints;
         private readonly List<Point> minPoints;
         double yTranslate = 40;
-        double yScale = 40;        
+        double yScale = 40;
 
         public WaveFormVisual()
         {
             maxPoints = new List<Point>();
             minPoints = new List<Point>();
             children = new VisualCollection(this);
-            children.Add(CreateWaveFormVisual());            
+            children.Add(CreateWaveFormVisual());
         }
 
         private DrawingVisual CreateWaveFormVisual()

@@ -20,9 +20,9 @@ namespace NAudioWpfDemo
         List<Line> lines = new List<Line>();
 
         public WaveFormControl()
-        {            
+        {
             InitializeComponent();
-            this.SizeChanged += new SizeChangedEventHandler(WaveFormControl_SizeChanged);
+            SizeChanged += WaveFormControl_SizeChanged;
         }
 
         void WaveFormControl_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -35,8 +35,8 @@ namespace NAudioWpfDemo
             renderPosition = 0;
             ClearAllLines();
 
-            this.yTranslate = this.ActualHeight / 2;
-            this.yScale = this.ActualHeight / 2;
+            yTranslate = ActualHeight / 2;
+            yScale = ActualHeight / 2;
         }
 
         private void ClearAllLines()
@@ -80,7 +80,7 @@ namespace NAudioWpfDemo
             {
                 line = lines[renderPosition];
             }
-            line.Stroke = this.Foreground;
+            line.Stroke = Foreground;
             line.X1 = renderPosition;
             line.X2 = renderPosition;
             line.Y1 = yTranslate + minValue * yScale;

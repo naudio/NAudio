@@ -3,7 +3,7 @@ using System.Diagnostics;
 using NAudio.Dsp;
 using NAudio.Wave;
 
-namespace NAudioWpfDemo
+namespace NAudioWpfDemo.AudioPlaybackDemo
 {
     public class SampleAggregator : ISampleProvider
     {
@@ -33,10 +33,10 @@ namespace NAudioWpfDemo
             {
                 throw new ArgumentException("FFT Length must be a power of two");
             }
-            this.m = (int)Math.Log(fftLength, 2.0);
+            m = (int)Math.Log(fftLength, 2.0);
             this.fftLength = fftLength;
-            this.fftBuffer = new Complex[fftLength];
-            this.fftArgs = new FftEventArgs(fftBuffer);
+            fftBuffer = new Complex[fftLength];
+            fftArgs = new FftEventArgs(fftBuffer);
             this.source = source;
         }
 

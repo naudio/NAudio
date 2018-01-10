@@ -1,17 +1,11 @@
-﻿using System;
-using System.Linq;
-
-namespace NAudioWpfDemo.DrumMachineDemo
+﻿namespace NAudioWpfDemo.DrumMachineDemo
 {
     class DrumMachineDemoPlugin : IModule
     {
         private DrumMachineDemoView view;
         private DrumMachineDemoViewModel viewModel;
 
-        public string Name
-        {
-            get { return "Drum Machine"; }
-        }
+        public string Name => "Drum Machine";
 
         public System.Windows.Controls.UserControl UserInterface
         {
@@ -29,12 +23,9 @@ namespace NAudioWpfDemo.DrumMachineDemo
 
         public void Deactivate()
         {
-            if (view != null)
-            {
-                viewModel.Dispose();
-                view = null;
-                viewModel = null;
-            }
+            viewModel?.Dispose();
+            view = null;
+            viewModel = null;
         }
     }
 }

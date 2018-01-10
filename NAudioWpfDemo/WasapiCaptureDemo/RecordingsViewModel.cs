@@ -10,12 +10,12 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
 {
     class RecordingsViewModel : ViewModelBase
     {
-        public string OutputFolder { get; private set; }
+        public string OutputFolder { get; }
         private string selectedRecording;
-        public ObservableCollection<string> Recordings { get; private set; }
-        public DelegateCommand PlayCommand { get; private set; }
-        public DelegateCommand DeleteCommand { get; private set; }
-        public DelegateCommand OpenFolderCommand { get; private set; }
+        public ObservableCollection<string> Recordings { get; }
+        public DelegateCommand PlayCommand { get; }
+        public DelegateCommand DeleteCommand { get; }
+        public DelegateCommand OpenFolderCommand { get; }
 
         public RecordingsViewModel()
         {
@@ -65,7 +65,7 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
 
         public string SelectedRecording
         {
-            get { return selectedRecording; }
+            get => selectedRecording;
             set
             {
                 if (selectedRecording != value)

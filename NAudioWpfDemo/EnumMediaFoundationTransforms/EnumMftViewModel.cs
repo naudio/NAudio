@@ -15,10 +15,10 @@ namespace NAudioWpfDemo.EnumMediaFoundationTransforms
         public EnumMftViewModel()
         {
             MediaFoundationApi.Startup();
-            this.EnumerateCommand = new DelegateCommand(Enumerate);
+            EnumerateCommand = new DelegateCommand(Enumerate);
         }
 
-        public ICommand EnumerateCommand { get; private set; }
+        public ICommand EnumerateCommand { get; }
 
         public List<string> Transforms { get; private set; }
 

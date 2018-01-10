@@ -26,10 +26,10 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
 
         private float recordLevel;
 
-        public RecordingsViewModel RecordingsViewModel { get; private set; }
+        public RecordingsViewModel RecordingsViewModel { get; }
 
-        public DelegateCommand RecordCommand { get; private set; }
-        public DelegateCommand StopCommand { get; private set; }
+        public DelegateCommand RecordCommand { get; }
+        public DelegateCommand StopCommand { get; }
 
         private int shareModeIndex;
 
@@ -47,10 +47,7 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
 
         private void Stop()
         {
-            if (capture != null)
-            {
-                capture.StopRecording();
-            }
+            capture?.StopRecording();
         }
 
         private void Record()
@@ -114,11 +111,11 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
             StopCommand.IsEnabled = false;
         }
 
-        public IEnumerable<MMDevice> CaptureDevices { get; private set; }
+        public IEnumerable<MMDevice> CaptureDevices { get; }
 
         public float Peak
         {
-            get { return peak; }
+            get => peak;
             set
             {
                 // ReSharper disable once CompareOfFloatsByEqualityOperator
@@ -132,7 +129,7 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
 
         public MMDevice SelectedDevice
         {
-            get { return selectedDevice; }
+            get => selectedDevice;
             set
             {
                 if (selectedDevice != value)
@@ -158,10 +155,7 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
 
         public int SampleRate
         {
-            get
-            {
-                return sampleRate;
-            }
+            get => sampleRate;
             set
             {
                 if (sampleRate != value)
@@ -174,10 +168,7 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
 
         public int BitDepth
         {
-            get
-            {
-                return bitDepth;
-            }
+            get => bitDepth;
             set
             {
                 if (bitDepth != value)
@@ -190,10 +181,7 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
 
         public int ChannelCount
         {
-            get
-            {
-                return channelCount;
-            }
+            get => channelCount;
             set
             {
                 if (channelCount != value)
@@ -204,20 +192,11 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
             }
         }
 
-        public bool IsBitDepthConfigurable
-        {
-            get
-            {
-                return SampleTypeIndex == 1;
-            }
-        }
+        public bool IsBitDepthConfigurable => SampleTypeIndex == 1;
 
         public int SampleTypeIndex
         {
-            get
-            {
-                return sampleTypeIndex;
-            }
+            get => sampleTypeIndex;
             set
             {
                 if (sampleTypeIndex != value)
@@ -232,10 +211,7 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
 
         public string Message
         {
-            get
-            {
-                return message;
-            }
+            get => message;
             set
             {
                 if (message != value)
@@ -248,7 +224,7 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
 
         public int ShareModeIndex
         {
-            get { return shareModeIndex; }
+            get => shareModeIndex;
             set
             {
                 if (shareModeIndex != value)
@@ -267,7 +243,7 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
 
         public float RecordLevel
         {
-            get { return recordLevel; }
+            get => recordLevel;
             set
             {
                 // ReSharper disable once CompareOfFloatsByEqualityOperator

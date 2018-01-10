@@ -16,9 +16,9 @@ namespace NAudioWpfDemo.MediaFoundationEncode
 
         public MediaTypeViewModel(MediaType mediaType)
         {
-            this.MediaType = mediaType;
-            this.Name = ShortDescription(mediaType);
-            this.Description = DescribeMediaType(mediaType.MediaFoundationObject);
+            MediaType = mediaType;
+            Name = ShortDescription(mediaType);
+            Description = DescribeMediaType(mediaType.MediaFoundationObject);
         }
 
         public MediaType MediaType { get; set; }

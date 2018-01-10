@@ -1,6 +1,5 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Linq;
 using System.Windows.Input;
 using Microsoft.Win32;
 using NAudio.Wave;
@@ -16,10 +15,10 @@ namespace NAudioWpfDemo.EqualizationDemo
         private string selectedFile;
         private readonly EqualizerBand[] bands;
         
-        public ICommand OpenFileCommand { get; private set; }
-        public ICommand PlayCommand { get; private set; }
-        public ICommand PauseCommand { get; private set; }
-        public ICommand StopCommand { get; private set; }
+        public ICommand OpenFileCommand { get; }
+        public ICommand PlayCommand { get; }
+        public ICommand PauseCommand { get; }
+        public ICommand StopCommand { get; }
 
         public EqualizationDemoViewModel()
         {
@@ -43,22 +42,16 @@ namespace NAudioWpfDemo.EqualizationDemo
 
         private void OnPropertyChanged(object sender, PropertyChangedEventArgs propertyChangedEventArgs)
         {
-            if (equalizer!=null) equalizer.Update();
+            equalizer?.Update();
         }
 
-        public float MinimumGain
-        {
-            get { return -30; }
-        }
+        public float MinimumGain => -30;
 
-        public float MaximumGain
-        {
-            get { return 30; } 
-        }
+        public float MaximumGain => 30;
 
         public float Band1
         {
-            get { return bands[0].Gain; }
+            get => bands[0].Gain;
             set
             {
                 if (bands[0].Gain != value)
@@ -71,7 +64,7 @@ namespace NAudioWpfDemo.EqualizationDemo
 
         public float Band2
         {
-            get { return bands[1].Gain; }
+            get => bands[1].Gain;
             set
             {
                 if (bands[1].Gain != value)
@@ -84,7 +77,7 @@ namespace NAudioWpfDemo.EqualizationDemo
 
         public float Band3
         {
-            get { return bands[2].Gain; }
+            get => bands[2].Gain;
             set
             {
                 if (bands[2].Gain != value)
@@ -97,7 +90,7 @@ namespace NAudioWpfDemo.EqualizationDemo
 
         public float Band4
         {
-            get { return bands[3].Gain; }
+            get => bands[3].Gain;
             set
             {
                 if (bands[3].Gain != value)
@@ -110,7 +103,7 @@ namespace NAudioWpfDemo.EqualizationDemo
 
         public float Band5
         {
-            get { return bands[4].Gain; }
+            get => bands[4].Gain;
             set
             {
                 if (bands[4].Gain != value)
@@ -123,7 +116,7 @@ namespace NAudioWpfDemo.EqualizationDemo
 
         public float Band6
         {
-            get { return bands[5].Gain; }
+            get => bands[5].Gain;
             set
             {
                 if (bands[5].Gain != value)
@@ -137,7 +130,7 @@ namespace NAudioWpfDemo.EqualizationDemo
 
         public float Band7
         {
-            get { return bands[6].Gain; }
+            get => bands[6].Gain;
             set
             {
                 if (bands[6].Gain != value)
@@ -150,7 +143,7 @@ namespace NAudioWpfDemo.EqualizationDemo
 
         public float Band8
         {
-            get { return bands[7].Gain; }
+            get => bands[7].Gain;
             set
             {
                 if (bands[7].Gain != value)
@@ -163,10 +156,7 @@ namespace NAudioWpfDemo.EqualizationDemo
 
         private void Pause()
         {
-            if (player != null)
-            {
-                player.Pause();
-            }
+            player?.Pause();
         }
 
         private void OpenFile()
@@ -198,23 +188,13 @@ namespace NAudioWpfDemo.EqualizationDemo
 
         private void Stop()
         {
-            if (player != null)
-            {
-                player.Stop();
-            }
+            player?.Stop();
         }
 
         public void Dispose()
         {
-            if (player != null)
-            {
-                player.Dispose();
-            }
-            if (reader != null)
-            {
-                reader.Dispose();
-            }
-            
+            player?.Dispose();
+            reader?.Dispose();
         }
     }
 }

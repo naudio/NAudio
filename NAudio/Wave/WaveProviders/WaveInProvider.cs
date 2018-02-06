@@ -1,17 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NAudio.Wave;
-
-namespace NAudio.Wave
+﻿namespace NAudio.Wave
 {
     /// <summary>
     /// Buffered WaveProvider taking source data from WaveIn
     /// </summary>
     public class WaveInProvider : IWaveProvider
     {
-        IWaveIn waveIn;
-        BufferedWaveProvider bufferedWaveProvider;
+        private readonly IWaveIn waveIn;
+        private readonly BufferedWaveProvider bufferedWaveProvider;
 
         /// <summary>
         /// Creates a new WaveInProvider
@@ -21,11 +16,11 @@ namespace NAudio.Wave
         public WaveInProvider(IWaveIn waveIn)
         {
             this.waveIn = waveIn;
-            waveIn.DataAvailable += waveIn_DataAvailable;
-            bufferedWaveProvider = new BufferedWaveProvider(this.WaveFormat);
+            waveIn.DataAvailable += OnDataAvailable;
+            bufferedWaveProvider = new BufferedWaveProvider(WaveFormat);
         }
 
-        void waveIn_DataAvailable(object sender, WaveInEventArgs e)
+        private void OnDataAvailable(object sender, WaveInEventArgs e)
         {
             bufferedWaveProvider.AddSamples(e.Buffer, 0, e.BytesRecorded);
         }
@@ -35,15 +30,12 @@ namespace NAudio.Wave
         /// </summary>
         public int Read(byte[] buffer, int offset, int count)
         {
-            return bufferedWaveProvider.Read(buffer, 0, count);
+            return bufferedWaveProvider.Read(buffer, offset, count);
         }
 
         /// <summary>
         /// The WaveFormat
         /// </summary>
-        public WaveFormat WaveFormat
-        {
-            get { return waveIn.WaveFormat; }
-        }
+        public WaveFormat WaveFormat => waveIn.WaveFormat;
     }
 }

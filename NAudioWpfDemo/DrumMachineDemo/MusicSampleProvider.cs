@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using NAudio.Wave;
 
 namespace NAudioWpfDemo.DrumMachineDemo
@@ -22,7 +20,7 @@ namespace NAudioWpfDemo.DrumMachineDemo
         /// </summary>
         public int DelayBy
         {
-            get { return delayBy; }
+            get => delayBy;
             set 
             { 
                 if (value < 0)
@@ -33,10 +31,7 @@ namespace NAudioWpfDemo.DrumMachineDemo
             }
         }
 
-        public WaveFormat WaveFormat
-        {
-            get { return this.sampleSource.SampleWaveFormat; }
-        }
+        public WaveFormat WaveFormat => sampleSource.SampleWaveFormat;
 
         public int Read(float[] buffer, int offset, int count)
         {
@@ -60,12 +55,6 @@ namespace NAudioWpfDemo.DrumMachineDemo
             return samplesWritten;
         }
 
-        private int PositionInSampleSource
-        {
-            get
-            {
-                return (position - delayBy) + sampleSource.StartIndex;
-            }
-        }
+        private int PositionInSampleSource => (position - delayBy) + sampleSource.StartIndex;
     }
 }

@@ -7,10 +7,7 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
         private WasapiCaptureViewModel viewModel;
         private WasapiCaptureDemoView view;
 
-        public string Name
-        {
-            get { return "WASAPI Capture"; }
-        }
+        public string Name => "WASAPI Capture";
 
         public UserControl UserInterface
         {

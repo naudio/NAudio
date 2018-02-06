@@ -49,7 +49,7 @@ namespace NAudioWpfDemo.EqualizationDemo
             CreateFilters();
         }
 
-        public WaveFormat WaveFormat { get { return sourceProvider.WaveFormat; } }
+        public WaveFormat WaveFormat => sourceProvider.WaveFormat;
 
         public int Read(float[] buffer, int offset, int count)
         {

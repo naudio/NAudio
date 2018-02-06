@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Windows.Controls;
+﻿using System.Windows.Controls;
 
 namespace NAudioWpfDemo.MediaFoundationEncode
 {
@@ -11,9 +9,6 @@ namespace NAudioWpfDemo.MediaFoundationEncode
             return new MediaFoundationEncodeView() {DataContext = new MediaFoundationEncodeViewModel()};
         }
 
-        public override string Name
-        {
-            get { return "Media Foundation Encode"; }
-        }
+        public override string Name => "Media Foundation Encode";
     }
 }

@@ -2,7 +2,7 @@
 using System.Windows;
 using NAudio.Wave;
 
-namespace NAudioWpfDemo
+namespace NAudioWpfDemo.AudioPlaybackDemo
 {
     class AudioPlayback : IDisposable
     {
@@ -87,7 +87,7 @@ namespace NAudioWpfDemo
             Stop();
             CloseFile();
             playbackDevice?.Dispose();
-            playbackDevice = null;            
+            playbackDevice = null;
         }
     }
 }

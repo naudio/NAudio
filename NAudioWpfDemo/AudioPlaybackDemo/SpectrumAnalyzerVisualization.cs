@@ -11,7 +11,6 @@ namespace NAudioWpfDemo.AudioPlaybackDemo
 
         public object Content => spectrumAnalyser;
 
-
         public void OnMaxCalculated(float min, float max)
         {
             // nothing to do

@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-
 using NAudio.Dsp;
 
 namespace NAudioWpfDemo
@@ -19,7 +17,7 @@ namespace NAudioWpfDemo
         {
             InitializeComponent();
             CalculateXScale();
-            this.SizeChanged += SpectrumAnalyser_SizeChanged;
+            SizeChanged += SpectrumAnalyser_SizeChanged;
         }
 
         void SpectrumAnalyser_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -29,7 +27,7 @@ namespace NAudioWpfDemo
 
         private void CalculateXScale()
         {
-            this.xScale = this.ActualWidth / (bins / binsPerPoint);
+            xScale = ActualWidth / (bins / binsPerPoint);
         }
 
         private const int binsPerPoint = 2; // reduce the number of points we plot for a less jagged line?
@@ -45,7 +43,7 @@ namespace NAudioWpfDemo
 
             if (fftResults.Length / 2 != bins)
             {
-                this.bins = fftResults.Length / 2;
+                bins = fftResults.Length / 2;
                 CalculateXScale();
             }
             
@@ -70,7 +68,7 @@ namespace NAudioWpfDemo
             if (intensityDB < minDB) intensityDB = minDB;
             double percent = intensityDB / minDB;
             // we want 0dB to be at the top (i.e. yPos = 0)
-            double yPos = percent * this.ActualHeight;
+            double yPos = percent * ActualHeight;
             return yPos;
         }
 

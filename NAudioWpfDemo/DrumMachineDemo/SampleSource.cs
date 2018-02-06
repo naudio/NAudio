@@ -15,7 +15,8 @@ namespace NAudioWpfDemo.DrumMachineDemo
                 int n = sp.Read(sampleData, 0, sourceSamples);
                 if (n != sourceSamples)
                 {
-                    throw new InvalidOperationException(String.Format("Couldn't read the whole sample, expected {0} samples, got {1}", n, sourceSamples));
+                    throw new InvalidOperationException(
+                        $"Couldn't read the whole sample, expected {n} samples, got {sourceSamples}");
                 }
                 var ss = new SampleSource(sampleData, sp.WaveFormat);
                 return ss;
@@ -29,27 +30,27 @@ namespace NAudioWpfDemo.DrumMachineDemo
 
         public SampleSource(float[] sampleData, WaveFormat waveFormat, int startIndex, int length)
         {
-            this.SampleData = sampleData;
-            this.SampleWaveFormat = waveFormat;
-            this.StartIndex = startIndex;
-            this.Length = length;
+            SampleData = sampleData;
+            SampleWaveFormat = waveFormat;
+            StartIndex = startIndex;
+            Length = length;
         }
 
         /// <summary>
         /// Sample data
         /// </summary>
-        public float[] SampleData { get; private set; }
+        public float[] SampleData { get; }
         /// <summary>
         /// Format of sampleData
         /// </summary>
-        public WaveFormat SampleWaveFormat { get; private set; }
+        public WaveFormat SampleWaveFormat { get; }
         /// <summary>
         /// Index of the first sample to play
         /// </summary>
-        public int StartIndex { get; private set; }
+        public int StartIndex { get; }
         /// <summary>
         /// Number of valid samples
         /// </summary>
-        public int Length { get; private set; }
+        public int Length { get; }
     }
 }

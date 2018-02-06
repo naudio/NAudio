@@ -8,7 +8,6 @@
 
         public object Content => polygonWaveFormControl;
 
-
         public void OnMaxCalculated(float min, float max)
         {
             polygonWaveFormControl.AddValue(max, min);

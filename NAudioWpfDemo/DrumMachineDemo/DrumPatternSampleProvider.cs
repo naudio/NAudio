@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using NAudio.Wave;
-using NAudio.Midi;
+﻿using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 
 namespace NAudioWpfDemo.DrumMachineDemo
@@ -17,27 +12,18 @@ namespace NAudioWpfDemo.DrumMachineDemo
         public DrumPatternSampleProvider(DrumPattern pattern)
         {
             var kit = new DrumKit();
-            this.sequencer = new PatternSequencer(pattern, kit);
-            this.waveFormat = kit.WaveFormat;
+            sequencer = new PatternSequencer(pattern, kit);
+            waveFormat = kit.WaveFormat;
             mixer = new MixingSampleProvider(waveFormat);
         }
 
         public int Tempo
         {
-            get
-            {
-                return sequencer.Tempo;
-            }
-            set
-            {
-                sequencer.Tempo = value;
-            }
+            get => sequencer.Tempo;
+            set => sequencer.Tempo = value;
         }
 
-        public WaveFormat WaveFormat
-        {
-            get { return waveFormat; }
-        }
+        public WaveFormat WaveFormat => waveFormat;
 
         public int Read(float[] buffer, int offset, int count)
         {

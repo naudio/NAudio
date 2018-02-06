@@ -9,10 +9,6 @@ namespace NAudioWpfDemo.EnumMediaFoundationTransforms
             return new EnumMftView() { DataContext = new EnumMftViewModel() };
         }
 
-        public override string Name
-        {
-            get { return "Enumerate MFTs"; }
-        }
-
+        public override string Name => "Enumerate MFTs";
     }
 }

@@ -9,9 +9,6 @@ namespace NAudioWpfDemo.MediaFoundationResample
             return new MediaFoundationResampleView() {DataContext = new MediaFoundationResampleViewModel()};
         }
 
-        public override string Name
-        {
-            get { return "Media Foundation Resample"; }
-        }
+        public override string Name => "Media Foundation Resample";
     }
 }

@@ -2,9 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Windows.Forms;
-using System.Windows.Input;
 using System.Windows.Threading;
-using NAudio.MediaFoundation;
 using NAudio.Wave;
 using NAudioWpfDemo.ViewModel;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
@@ -18,13 +16,13 @@ namespace NAudioWpfDemo.MediaFoundationPlayback
         private string defaultDecompressionFormat;
         private IWavePlayer wavePlayer;
         private WaveStream reader;
-        public RelayCommand LoadCommand { get; private set; }
-        public RelayCommand PlayCommand { get; private set; }
-        public RelayCommand PauseCommand { get; private set; }
-        public RelayCommand StopCommand { get; private set; }
-        private DispatcherTimer timer = new DispatcherTimer();
+        public RelayCommand LoadCommand { get; }
+        public RelayCommand PlayCommand { get; }
+        public RelayCommand PauseCommand { get; }
+        public RelayCommand StopCommand { get; }
+        private readonly DispatcherTimer timer = new DispatcherTimer();
         private double sliderPosition;
-        private ObservableCollection<string> inputPathHistory;
+        private readonly ObservableCollection<string> inputPathHistory;
         private string lastPlayed;
 
         public MediaFoundationPlaybackViewModel()
@@ -38,34 +36,27 @@ namespace NAudioWpfDemo.MediaFoundationPlayback
             timer.Tick += TimerOnTick;
         }
 
-        public bool IsPlaying
-        {
-            get { return wavePlayer != null && wavePlayer.PlaybackState == PlaybackState.Playing; }
-            
-        }
+        public bool IsPlaying => wavePlayer != null && wavePlayer.PlaybackState == PlaybackState.Playing;
 
-        public bool IsStopped
-        {
-            get { return wavePlayer == null || wavePlayer.PlaybackState == PlaybackState.Stopped; }
-        }
+        public bool IsStopped => wavePlayer == null || wavePlayer.PlaybackState == PlaybackState.Stopped;
 
 
-        public IEnumerable<string> InputPathHistory { get { return inputPathHistory; } }
+        public IEnumerable<string> InputPathHistory => inputPathHistory;
 
-        const double sliderMax = 10.0;
+        const double SliderMax = 10.0;
 
         private void TimerOnTick(object sender, EventArgs eventArgs)
         {
             if (reader != null)
             {
-                sliderPosition = Math.Min(sliderMax, reader.Position * sliderMax / reader.Length);
+                sliderPosition = Math.Min(SliderMax, reader.Position * SliderMax / reader.Length);
                 OnPropertyChanged("SliderPosition");
             }
         }
 
         public double SliderPosition
         {
-            get { return sliderPosition; }
+            get => sliderPosition;
             set
             {
                 if (sliderPosition != value)
@@ -73,7 +64,7 @@ namespace NAudioWpfDemo.MediaFoundationPlayback
                     sliderPosition = value;
                     if (reader != null)
                     {
-                        var pos = (long)(reader.Length * sliderPosition/sliderMax);
+                        var pos = (long)(reader.Length * sliderPosition/SliderMax);
                         reader.Position = pos; // media foundation will worry about block align for us
                     }
                     OnPropertyChanged("SliderPosition");
@@ -81,10 +72,9 @@ namespace NAudioWpfDemo.MediaFoundationPlayback
             }
         }
 
-
         public int RequestFloatOutput
         {
-            get { return requestFloatOutput; }
+            get => requestFloatOutput;
             set
             {
                 if (requestFloatOutput != value)
@@ -121,14 +111,14 @@ namespace NAudioWpfDemo.MediaFoundationPlayback
             }
             catch (Exception e)
             {
-                MessageBox.Show(String.Format("Not a supported input file ({0})", e.Message));
+                MessageBox.Show($"Not a supported input file ({e.Message})");
             }
             return isValid;
         }
 
         public string DefaultDecompressionFormat
         {
-            get { return defaultDecompressionFormat; }
+            get => defaultDecompressionFormat;
             set
             {
                 defaultDecompressionFormat = value;
@@ -138,7 +128,7 @@ namespace NAudioWpfDemo.MediaFoundationPlayback
 
         public string InputPath
         {
-            get { return inputPath; }
+            get => inputPath;
             set
             {
                 if (inputPath != value)
@@ -239,14 +229,8 @@ namespace NAudioWpfDemo.MediaFoundationPlayback
 
         public void Dispose()
         {
-            if (wavePlayer != null)
-            {
-                wavePlayer.Dispose();
-            }
-            if (reader != null)
-            {
-                reader.Dispose();
-            }
+            wavePlayer?.Dispose();
+            reader?.Dispose();
         }
     }
 

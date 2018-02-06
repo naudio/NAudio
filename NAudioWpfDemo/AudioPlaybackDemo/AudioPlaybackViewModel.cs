@@ -1,28 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.ComponentModel;
 using System.Windows.Input;
 using Microsoft.Win32;
-using System.Windows;
-using NAudio.Wave;
-using NAudioWpfDemo.AudioPlaybackDemo;
 using NAudioWpfDemo.ViewModel;
 
-namespace NAudioWpfDemo
+namespace NAudioWpfDemo.AudioPlaybackDemo
 {
     class AudioPlaybackViewModel : ViewModelBase, IDisposable
     {
-        private AudioPlayback audioPlayback;
-        private List<IVisualizationPlugin> visualizations;
+        private readonly AudioPlayback audioPlayback;
+        private readonly List<IVisualizationPlugin> visualizations;
         private IVisualizationPlugin selectedVisualization;
         private string selectedFile;
 
-        public ICommand OpenFileCommand { get; private set; }
-        public ICommand PlayCommand { get; private set; }
-        public ICommand PauseCommand { get; private set; }
-        public ICommand StopCommand { get; private set; }
+        public ICommand OpenFileCommand { get; }
+        public ICommand PlayCommand { get; }
+        public ICommand PauseCommand { get; }
+        public ICommand StopCommand { get; }
 
         public AudioPlaybackViewModel(IEnumerable<IVisualizationPlugin> visualizations)
         {

@@ -13,29 +13,23 @@ namespace NAudioWpfDemo
 
         public MainWindowViewModel(IEnumerable<IModule> modules)
         {
-            this.Modules = modules.OrderBy(m => m.Name).ToList();
-            if (this.Modules.Count > 0)
+            Modules = modules.OrderBy(m => m.Name).ToList();
+            if (Modules.Count > 0)
             {
-                this.SelectedModule = this.Modules[0];
+                SelectedModule = Modules[0];
             }
         }
 
-        public List<IModule> Modules { get; private set; }
+        public List<IModule> Modules { get; }
 
         public IModule SelectedModule
         {
-            get
-            {
-                return selectedModule;
-            }
+            get => selectedModule;
             set
             {
                 if (value != selectedModule)
                 {
-                    if (selectedModule != null)
-                    {
-                        selectedModule.Deactivate();
-                    }
+                    selectedModule?.Deactivate();
                     selectedModule = value;
                     OnPropertyChanged("SelectedModule");
                     OnPropertyChanged("UserInterface");
@@ -43,13 +37,6 @@ namespace NAudioWpfDemo
             }
         }
 
-        public UserControl UserInterface
-        {
-            get
-            {
-                if (SelectedModule == null) return null;
-                return SelectedModule.UserInterface;
-            }
-        }
+        public UserControl UserInterface => SelectedModule?.UserInterface;
     }
 }

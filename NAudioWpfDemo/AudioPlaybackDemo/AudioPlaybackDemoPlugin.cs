@@ -2,10 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Controls;
-using NAudioWpfDemo.AudioPlaybackDemo;
 using NAudioWpfDemo.Utils;
 
-namespace NAudioWpfDemo
+namespace NAudioWpfDemo.AudioPlaybackDemo
 {
     class AudioPlaybackDemoPlugin : IModule
     {

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Windows.Controls;
 
 namespace NAudioWpfDemo
@@ -12,24 +11,14 @@ namespace NAudioWpfDemo
         
         public abstract string Name { get; }
 
-        public UserControl UserInterface
-        {
-            get
-            {
-                if (view == null)
-                {
-                    view = CreateViewAndViewModel();
-                }
-                return view;
-            }
-        }
+        public UserControl UserInterface => view ?? (view = CreateViewAndViewModel());
 
         public void Deactivate()
         {
             if (view != null)
             {
                 var d = view.DataContext as IDisposable;
-                if (d != null) d.Dispose();
+                d?.Dispose();
                 view = null;
             }
         }

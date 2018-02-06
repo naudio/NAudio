@@ -116,6 +116,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="FireAndForgetPlayback\FireAndForgetPlaybackView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="MediaFoundationEncode\MediaFoundationEncodeView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -205,6 +209,15 @@
     <Compile Include="EqualizationDemo\EqualizationDemoViewModel.cs" />
     <Compile Include="EqualizationDemo\Equalizer.cs" />
     <Compile Include="EqualizationDemo\EqualizerBand.cs" />
+    <Compile Include="FireAndForgetPlayback\AudioPlaybackEngine.cs" />
+    <Compile Include="FireAndForgetPlayback\AutoDisposeFileReader.cs" />
+    <Compile Include="FireAndForgetPlayback\CachedSound.cs" />
+    <Compile Include="FireAndForgetPlayback\CachedSoundSampleProvider.cs" />
+    <Compile Include="FireAndForgetPlayback\FireAndForgetDemoPlugin.cs" />
+    <Compile Include="FireAndForgetPlayback\FireAndForgetPlaybackView.xaml.cs">
+      <DependentUpon>FireAndForgetPlaybackView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="FireAndForgetPlayback\FireAndForgetPlaybackViewModel.cs" />
     <Compile Include="IModule.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>

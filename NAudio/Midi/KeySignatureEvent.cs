@@ -8,8 +8,8 @@ namespace NAudio.Midi
     /// </summary>
     public class KeySignatureEvent : MetaEvent
     {
-        private byte sharpsFlats;
-        private byte majorMinor;
+        private readonly byte sharpsFlats;
+        private readonly byte majorMinor;
 
         /// <summary>
         /// Reads a new track sequence number event from a MIDI stream
@@ -23,7 +23,7 @@ namespace NAudio.Midi
                 throw new FormatException("Invalid key signature length");
             }
             sharpsFlats = br.ReadByte(); // sf=sharps/flats (-7=7 flats, 0=key of C,7=7 sharps)
-            majorMinor = br.ReadByte(); // mi=major/minor (0=major, 1=minor)       }
+            majorMinor = br.ReadByte(); // mi=major/minor (0=major, 1=minor)
         }
 
         /// <summary>
@@ -44,24 +44,12 @@ namespace NAudio.Midi
         /// <summary>
         /// Number of sharps or flats
         /// </summary>
-        public int SharpsFlats
-        {
-            get
-            {
-                return sharpsFlats;
-            }
-        }
+        public int SharpsFlats => (sbyte)sharpsFlats;
 
         /// <summary>
         /// Major or Minor key
         /// </summary>
-        public int MajorMinor
-        {
-            get
-            {
-                return majorMinor;
-            }
-        }
+        public int MajorMinor => majorMinor;
 
         /// <summary>
         /// Describes this event
@@ -69,7 +57,7 @@ namespace NAudio.Midi
         /// <returns>String describing the event</returns>
         public override string ToString()
         {
-            return String.Format("{0} {1} {2}", base.ToString(), sharpsFlats, majorMinor);
+            return String.Format("{0} {1} {2}", base.ToString(), SharpsFlats, majorMinor);
         }
 
         /// <summary>
@@ -85,6 +73,3 @@ namespace NAudio.Midi
         }
     }
 }
-
-
-

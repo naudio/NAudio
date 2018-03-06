@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace NAudio.Wave.SampleProviders
+﻿namespace NAudio.Wave.SampleProviders
 {
     /// <summary>
     /// Very simple sample provider supporting adjustable gain
@@ -8,7 +6,6 @@ namespace NAudio.Wave.SampleProviders
     public class VolumeSampleProvider : ISampleProvider
     {
         private readonly ISampleProvider source;
-        private float volume;
 
         /// <summary>
         /// Initializes a new instance of VolumeSampleProvider
@@ -17,16 +14,13 @@ namespace NAudio.Wave.SampleProviders
         public VolumeSampleProvider(ISampleProvider source)
         {
             this.source = source;
-            this.volume = 1.0f;
+            Volume = 1.0f;
         }
 
         /// <summary>
         /// WaveFormat
         /// </summary>
-        public WaveFormat WaveFormat
-        {
-            get { return source.WaveFormat; }
-        }
+        public WaveFormat WaveFormat => source.WaveFormat;
 
         /// <summary>
         /// Reads samples from this sample provider
@@ -38,11 +32,11 @@ namespace NAudio.Wave.SampleProviders
         public int Read(float[] buffer, int offset, int sampleCount)
         {
             int samplesRead = source.Read(buffer, offset, sampleCount);
-            if (volume != 1f)
+            if (Volume != 1f)
             {
                 for (int n = 0; n < sampleCount; n++)
                 {
-                    buffer[offset + n] *= volume;
+                    buffer[offset + n] *= Volume;
                 }
             }
             return samplesRead;
@@ -51,10 +45,6 @@ namespace NAudio.Wave.SampleProviders
         /// <summary>
         /// Allows adjusting the volume, 1.0f = full volume
         /// </summary>
-        public float Volume
-        {
-            get { return volume; }
-            set { volume = value; }
-        }
+        public float Volume { get; set; }
     }
 }

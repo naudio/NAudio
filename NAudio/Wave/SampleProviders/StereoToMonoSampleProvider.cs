@@ -50,7 +50,7 @@ namespace NAudio.Wave.SampleProviders
             if (sourceBuffer == null || sourceBuffer.Length < sourceSamplesRequired) sourceBuffer = new float[sourceSamplesRequired];
 
             var sourceSamplesRead = sourceProvider.Read(sourceBuffer, 0, sourceSamplesRequired);
-            var destOffset = offset / 2;
+            var destOffset = offset;
             for (var sourceSample = 0; sourceSample < sourceSamplesRead; sourceSample += 2)
             {
                 var left = sourceBuffer[sourceSample];

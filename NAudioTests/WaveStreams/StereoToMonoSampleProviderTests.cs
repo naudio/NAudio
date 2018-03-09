@@ -31,5 +31,39 @@ namespace NAudioTests.WaveStreams
             Assert.AreEqual(1, mono.WaveFormat.Channels);
             Assert.AreEqual(44100, mono.WaveFormat.SampleRate);
         }
+
+        [Test]
+        public void CorrectOffset()
+        {
+            var stereoSampleProvider = new TestSampleProvider(44100, 2)
+            {
+                UseConstValue = true,
+                ConstValue = 1
+            };
+            var mono = stereoSampleProvider.ToMono();
+
+            var bufferLength = 30;
+            var offset = 10;
+            var samples = 10;
+
+            // [10,20) in buffer will be filled with 1
+            var buffer = new float[bufferLength];
+            var read = mono.Read(buffer, offset, samples);
+            Assert.AreEqual(samples, read, "samples read");
+
+            for (int i = 0; i < bufferLength; i++)
+            {
+                var sample = buffer[i];
+
+                if (i < offset || i >= offset + samples)
+                {
+                    Assert.AreEqual(0, sample, "not in Read range");
+                }
+                else
+                {
+                    Assert.AreNotEqual(0, sample, "in Read range");
+                }
+            }
+        }
     }
 }

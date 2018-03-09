@@ -38,7 +38,7 @@ namespace NAudio.CoreAudioApi
     {
         private const long ReftimesPerSec = 10000000;
         private const long ReftimesPerMillisec = 10000;
-        private volatile CaptureState captureState;
+        private volatile int captureState;
         private byte[] recordBuffer;
         private Thread captureThread;
         private AudioClient audioClient;
@@ -114,7 +114,11 @@ namespace NAudio.CoreAudioApi
         /// <summary>
         /// Current Capturing State
         /// </summary>
-        public CaptureState CaptureState {  get { return captureState; } }
+        public CaptureState CaptureState
+        {
+            get { return (CaptureState)captureState; }
+            set { captureState = (int)value; }
+        }
 
         /// <summary>
         /// Capturing wave format
@@ -208,11 +212,11 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public void StartRecording()
         {
-            if (captureState != CaptureState.Stopped)
+            if (CaptureState != CaptureState.Stopped)
             {
                 throw new InvalidOperationException("Previous recording still in progress");
             }
-            captureState = CaptureState.Starting;
+            CaptureState = CaptureState.Starting;
             InitializeCaptureDevice();
             ThreadStart start = () => CaptureThread(audioClient);
             captureThread = new Thread(start);
@@ -224,28 +228,54 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public void StopRecording()
         {
-            if (captureState != CaptureState.Stopped)
-                captureState = CaptureState.Stopping;
+            // Set Stopping to CaptureState if the value is not Stopped
+            while (true)
+            {
+                var currentState = captureState;
+                if (currentState == (int)CaptureState.Stopped)
+                {
+                    break;
+                }
+                if (Interlocked.CompareExchange(ref captureState, (int)CaptureState.Stopping, currentState) == currentState)
+                {
+                    break;
+                }
+            }
         }
 
         private void CaptureThread(AudioClient client)
         {
             Exception exception = null;
-            try
+
+            var currentState = CaptureState;
+            if (currentState == CaptureState.Starting)
             {
-                DoRecording(client);
+                try
+                {
+                    DoRecording(client);
+                }
+                catch (Exception e)
+                {
+                    exception = e;
+                }
+                finally
+                {
+                    client.Stop();
+                    // don't dispose - the AudioClient only gets disposed when WasapiCapture is disposed
+                }
             }
-            catch (Exception e)
+            else if (currentState == CaptureState.Stopping)
             {
-                exception = e;
+                // This session was stopped before this thread is started by the OS
             }
-            finally
+            else
             {
-                client.Stop();
-                // don't dispose - the AudioClient only gets disposed when WasapiCapture is disposed
+                // It may be a bug if reach here
+                throw new InvalidOperationException("Unexpected CaptureState: " + currentState);
             }
+
             captureThread = null;
-            captureState = CaptureState.Stopped;
+            CaptureState = CaptureState.Stopped;
             RaiseRecordingStopped(exception);
         }
 
@@ -262,8 +292,15 @@ namespace NAudio.CoreAudioApi
 
             var capture = client.AudioCaptureClient;
             client.Start();
-            captureState = CaptureState.Capturing;
-            while (captureState == CaptureState.Capturing)
+
+            // Set Capturing to CaptureState
+            if (Interlocked.CompareExchange(ref captureState, (int)CaptureState.Capturing, (int)CaptureState.Starting) != (int)CaptureState.Starting)
+            {
+                // This session was stopped before this thread is started by the OS
+                return;
+            }
+
+            while (CaptureState == CaptureState.Capturing)
             {
                 bool readBuffer = true;
                 if (isUsingEventSync)
@@ -274,7 +311,7 @@ namespace NAudio.CoreAudioApi
                 {
                     Thread.Sleep(sleepMilliseconds);
                 }
-                if (captureState != CaptureState.Capturing)
+                if (CaptureState != CaptureState.Capturing)
                     break;
 
                 // If still recording and notification is ok

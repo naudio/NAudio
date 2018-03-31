@@ -42,7 +42,7 @@ namespace NAudio.Dsp
             // attack/release
             over += DC_OFFSET;				// add DC offset to avoid denormal
 
-            Run( over, ref env );	// run attack/release
+            env = Run(over, env);	// run attack/release
 
             over = env - DC_OFFSET;		// subtract DC offset
 
@@ -59,10 +59,7 @@ namespace NAudio.Dsp
 
         public double Threshold 
         {
-            get 
-            { 
-                return threshdB; 
-            }
+            get => threshdB;
             set 
             { 
                 threshdB = value;

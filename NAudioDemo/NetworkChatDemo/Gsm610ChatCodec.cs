@@ -11,6 +11,6 @@ namespace NAudioDemo.NetworkChatDemo
         {
         }
 
-        public override string Name { get { return "GSM 6.10"; } }
+        public override string Name => "GSM 6.10";
     }
 }

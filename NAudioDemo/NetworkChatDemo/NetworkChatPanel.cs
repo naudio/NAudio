@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
 using NAudio.Wave;
-using System.Net.Sockets;
-using System.Threading;
 using System.Net;
 using NAudioDemo.Utils;
 
@@ -12,13 +10,10 @@ namespace NAudioDemo.NetworkChatDemo
 {
     public partial class NetworkChatPanel : UserControl
     {
-        private WaveIn waveIn;
-        private UdpClient udpSender;
-        private UdpClient udpListener;
-        private IWavePlayer waveOut;
-        private BufferedWaveProvider waveProvider;
         private INetworkChatCodec selectedCodec;
         private volatile bool connected;
+        private NetworkAudioPlayer player;
+        private NetworkAudioSender audioSender;
 
         public NetworkChatPanel()
         {
@@ -28,6 +23,9 @@ namespace NAudioDemo.NetworkChatDemo
             InitializeComponent();
             PopulateInputDevicesCombo();
             PopulateCodecsCombo(codecs);
+            comboBoxProtocol.Items.Add("UDP");
+            comboBoxProtocol.Items.Add("TCP");
+            comboBoxProtocol.SelectedIndex = 0;
             Disposed += OnPanelDisposed;
         }
 
@@ -45,8 +43,8 @@ namespace NAudioDemo.NetworkChatDemo
             
             foreach(var codec in sorted)
             {
-                var bitRate = codec.BitsPerSecond == -1 ? "VBR" : String.Format("{0:0.#}kbps", codec.BitsPerSecond / 1000.0);
-                var text = String.Format("{0} ({1})", codec.Name, bitRate);
+                var bitRate = codec.BitsPerSecond == -1 ? "VBR" : $"{codec.BitsPerSecond / 1000.0:0.#}kbps";
+                var text = $"{codec.Name} ({bitRate})";
                 comboBoxCodecs.Items.Add(new CodecComboItem { Text=text, Codec=codec });
             }
             comboBoxCodecs.SelectedIndex = 0;
@@ -94,91 +92,37 @@ namespace NAudioDemo.NetworkChatDemo
 
         private void Connect(IPEndPoint endPoint, int inputDeviceNumber, INetworkChatCodec codec)
         {
-            waveIn = new WaveIn();
-            waveIn.BufferMilliseconds = 50;
-            waveIn.DeviceNumber = inputDeviceNumber;
-            waveIn.WaveFormat = codec.RecordFormat;
-            waveIn.DataAvailable += waveIn_DataAvailable;
-            waveIn.StartRecording();
-            
-            udpSender = new UdpClient();
-            udpListener = new UdpClient();
+            var receiver = (comboBoxProtocol.SelectedIndex == 0)
+                ? (IAudioReceiver) new UdpAudioReceiver(endPoint.Port)
+                : new TcpAudioReceiver(endPoint.Port);
+            var sender = (comboBoxProtocol.SelectedIndex == 0)
+                ? (IAudioSender)new UdpAudioSender(endPoint)
+                : new TcpAudioSender(endPoint);
 
-            // To allow us to talk to ourselves for test purposes:
-            // http://stackoverflow.com/questions/687868/sending-and-receiving-udp-packets-between-two-programs-on-the-same-computer
-            udpListener.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-            udpListener.Client.Bind(endPoint);
-
-            udpSender.Connect(endPoint);
-            
-            waveOut = new WaveOut();
-            waveProvider = new BufferedWaveProvider(codec.RecordFormat);
-            waveOut.Init(waveProvider);
-            waveOut.Play();
-
+            player = new NetworkAudioPlayer(codec, receiver);
+            audioSender = new NetworkAudioSender(codec, inputDeviceNumber, sender);
             connected = true;
-            var state = new ListenerThreadState { Codec = codec, EndPoint = endPoint };
-            ThreadPool.QueueUserWorkItem(ListenerThread, state);
         }
 
         private void Disconnect()
         {
             if (connected)
-            { 
+            {
                 connected = false;
-                waveIn.DataAvailable -= waveIn_DataAvailable;
-                waveIn.StopRecording();
-                waveOut.Stop();
 
-                udpSender.Close();
-                udpListener.Close();
-                waveIn.Dispose();
-                waveOut.Dispose();
+                player.Dispose();
+                audioSender.Dispose();
 
                 // a bit naughty but we have designed the codecs to support multiple calls to Dispose, 
                 // recreating their resources if Encode/Decode called again
                 selectedCodec.Dispose(); 
             }
         }
-
-        class ListenerThreadState
-        {
-            public IPEndPoint EndPoint { get; set; }
-            public INetworkChatCodec Codec { get; set; }
-        }
-
-        private void ListenerThread(object state)
-        {
-            var listenerThreadState = (ListenerThreadState)state;
-            var endPoint = listenerThreadState.EndPoint;            
-            try
-            {
-                while (connected)
-                {
-                    byte[] b = udpListener.Receive(ref endPoint);
-                    byte[] decoded = listenerThreadState.Codec.Decode(b, 0, b.Length);
-                    waveProvider.AddSamples(decoded, 0, decoded.Length);
-                }
-            }
-            catch (SocketException)
-            {
-                // usually not a problem - just means we have disconnected
-            }
-        }
-
-        void waveIn_DataAvailable(object sender, WaveInEventArgs e)
-        {
-            byte[] encoded = selectedCodec.Encode(e.Buffer, 0, e.BytesRecorded);
-            udpSender.Send(encoded, encoded.Length);
-        }
     }
 
     public class NetworkChatPanelPlugin : INAudioDemoPlugin
     {
-        public string Name
-        {
-            get { return "Network Chat"; }
-        }
+        public string Name => "Network Chat";
 
         public Control CreatePanel()
         {

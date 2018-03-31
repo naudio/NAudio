@@ -23,7 +23,7 @@ namespace NAudioDemo.NetworkChatDemo
             this.encodeFormat = encodeFormat;
         }
 
-        public WaveFormat RecordFormat { get; private set; }
+        public WaveFormat RecordFormat { get; }
 
         public byte[] Encode(byte[] data, int offset, int length)
         {
@@ -49,8 +49,7 @@ namespace NAudioDemo.NetworkChatDemo
         {
             int bytesInSourceBuffer = length + sourceBytesLeftovers;
             Array.Copy(data, offset, conversionStream.SourceBuffer, sourceBytesLeftovers, length);
-            int sourceBytesConverted;
-            int bytesConverted = conversionStream.Convert(bytesInSourceBuffer, out sourceBytesConverted);
+            int bytesConverted = conversionStream.Convert(bytesInSourceBuffer, out var sourceBytesConverted);
             sourceBytesLeftovers = bytesInSourceBuffer - sourceBytesConverted;
             if (sourceBytesLeftovers > 0)
             {
@@ -65,13 +64,7 @@ namespace NAudioDemo.NetworkChatDemo
 
         public abstract string Name { get; }
 
-        public int BitsPerSecond
-        {
-            get
-            {
-                return encodeFormat.AverageBytesPerSecond * 8;
-            }
-        }
+        public int BitsPerSecond => encodeFormat.AverageBytesPerSecond * 8;
 
         public void Dispose()
         {

@@ -50,20 +50,11 @@ namespace NAudioDemo.NetworkChatDemo
             encoderInputBuffer = new WaveBuffer(recordingFormat.AverageBytesPerSecond); // more than enough
         }
 
-        public string Name
-        {
-            get { return description; }
-        }
+        public string Name => description;
 
-        public int BitsPerSecond
-        {
-            get { return -1; }
-        }
+        public int BitsPerSecond => -1;
 
-        public WaveFormat RecordFormat
-        {
-            get { return recordingFormat; }
-        }
+        public WaveFormat RecordFormat => recordingFormat;
 
         public byte[] Encode(byte[] data, int offset, int length)
         {
@@ -78,7 +69,8 @@ namespace NAudioDemo.NetworkChatDemo
             var encoded = new byte[bytesWritten];
             Array.Copy(outputBufferTemp, 0, encoded, 0, bytesWritten);
             ShiftLeftoverSamplesDown(samplesToEncode);
-            Debug.WriteLine(String.Format("NSpeex: In {0} bytes, encoded {1} bytes [enc frame size = {2}]",length,bytesWritten, encoder.FrameSize));
+            Debug.WriteLine(
+                $"NSpeex: In {length} bytes, encoded {bytesWritten} bytes [enc frame size = {encoder.FrameSize}]");
             return encoded;
         }
 
@@ -103,7 +95,8 @@ namespace NAudioDemo.NetworkChatDemo
             int bytesDecoded = samplesDecoded * 2;
             var decoded = new byte[bytesDecoded];
             Array.Copy(outputBufferTemp, 0, decoded, 0, bytesDecoded);
-            Debug.WriteLine(String.Format("NSpeex: In {0} bytes, decoded {1} bytes [dec frame size = {2}]", length, bytesDecoded, decoder.FrameSize));
+            Debug.WriteLine(
+                $"NSpeex: In {length} bytes, decoded {bytesDecoded} bytes [dec frame size = {decoder.FrameSize}]");
             return decoded;
         }
 
@@ -112,6 +105,6 @@ namespace NAudioDemo.NetworkChatDemo
             // nothing to do
         }
 
-        public bool IsAvailable { get { return true; } }
+        public bool IsAvailable => true;
     }
 }

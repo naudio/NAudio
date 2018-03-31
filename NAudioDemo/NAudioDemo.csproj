@@ -157,9 +157,13 @@
     <Compile Include="NetworkChatDemo\ALawChatCodec.cs" />
     <Compile Include="NetworkChatDemo\G722ChatCodec.cs" />
     <Compile Include="NetworkChatDemo\Gsm610ChatCodec.cs" />
+    <Compile Include="NetworkChatDemo\IAudioReceiver.cs" />
+    <Compile Include="NetworkChatDemo\IAudioSender.cs" />
     <Compile Include="NetworkChatDemo\INetworkChatCodec.cs" />
     <Compile Include="NetworkChatDemo\MicrosoftAdpcmChatCodec.cs" />
     <Compile Include="NetworkChatDemo\MuLawChatCodec.cs" />
+    <Compile Include="NetworkChatDemo\NetworkAudioPlayer.cs" />
+    <Compile Include="NetworkChatDemo\NetworkAudioSender.cs" />
     <Compile Include="NetworkChatDemo\NetworkChatPanel.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -167,7 +171,11 @@
       <DependentUpon>NetworkChatPanel.cs</DependentUpon>
     </Compile>
     <Compile Include="NetworkChatDemo\SpeexChatCodec.cs" />
+    <Compile Include="NetworkChatDemo\TcpAudioReceiver.cs" />
+    <Compile Include="NetworkChatDemo\TcpAudioSender.cs" />
     <Compile Include="NetworkChatDemo\TrueSpeechChatCodec.cs" />
+    <Compile Include="NetworkChatDemo\UdpAudioReceiver.cs" />
+    <Compile Include="NetworkChatDemo\UdpAudioSender.cs" />
     <Compile Include="NetworkChatDemo\UncompressedPcmChatCodec.cs" />
     <Compile Include="FadeInOutDemo\FadeInOutPanel.cs">
       <SubType>UserControl</SubType>

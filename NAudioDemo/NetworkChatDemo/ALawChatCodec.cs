@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using NAudio.Wave;
 using NAudio.Codecs;
 
@@ -12,29 +11,17 @@ namespace NAudioDemo.NetworkChatDemo
         {
         }
 
-        public override string Name
-        {
-            get { return "ACM G.711 a-law"; }
-        }
+        public override string Name => "ACM G.711 a-law";
     }
 
 
     class ALawChatCodec : INetworkChatCodec
     {
-        public string Name
-        {
-            get { return "G.711 a-law"; }
-        }
+        public string Name => "G.711 a-law";
 
-        public int BitsPerSecond
-        {
-            get { return RecordFormat.SampleRate * 8; }
-        }
+        public int BitsPerSecond => RecordFormat.SampleRate * 8;
 
-        public WaveFormat RecordFormat
-        {
-            get { return new WaveFormat(8000, 16, 1); }
-        }
+        public WaveFormat RecordFormat => new WaveFormat(8000, 16, 1);
 
         public byte[] Encode(byte[] data, int offset, int length)
         {
@@ -65,6 +52,6 @@ namespace NAudioDemo.NetworkChatDemo
             // nothing to do
         }
 
-        public bool IsAvailable { get { return true; } }
+        public bool IsAvailable => true;
     }
 }

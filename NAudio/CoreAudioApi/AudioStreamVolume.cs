@@ -1,10 +1,7 @@
 ﻿using NAudio.CoreAudioApi.Interfaces;
 using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace NAudio.CoreAudioApi
 {
@@ -40,10 +37,8 @@ namespace NAudio.CoreAudioApi
         /// <returns>An array of volume levels between 0.0 and 1.0 for each channel in the audio stream.</returns>
         public float[] GetAllVolumes()
         {
-            uint channels;
-            float[] levels;
-            Marshal.ThrowExceptionForHR(audioStreamVolumeInterface.GetChannelCount(out channels));
-            levels = new float[channels];
+            Marshal.ThrowExceptionForHR(audioStreamVolumeInterface.GetChannelCount(out var channels));
+            var levels = new float[channels];
             Marshal.ThrowExceptionForHR(audioStreamVolumeInterface.GetAllVolumes(channels, levels));
             return levels;
         }
@@ -55,8 +50,7 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                uint channels;
-                Marshal.ThrowExceptionForHR(audioStreamVolumeInterface.GetChannelCount(out channels));
+                Marshal.ThrowExceptionForHR(audioStreamVolumeInterface.GetChannelCount(out var channels));
                 unchecked
                 {
                     return (int)channels;
@@ -74,12 +68,11 @@ namespace NAudio.CoreAudioApi
             CheckChannelIndex(channelIndex, "channelIndex");
 
             uint index;
-            float level;
             unchecked 
             {
                 index = (uint)channelIndex;
             }
-            Marshal.ThrowExceptionForHR(audioStreamVolumeInterface.GetChannelVolume(index, out level));
+            Marshal.ThrowExceptionForHR(audioStreamVolumeInterface.GetChannelVolume(index, out var level));
             return level;
         }
 
@@ -99,20 +92,20 @@ namespace NAudio.CoreAudioApi
             int channelCount = ChannelCount;
             if (levels == null)
             {
-                throw new ArgumentNullException("levels");
+                throw new ArgumentNullException(nameof(levels));
             }
             if (levels.Length != channelCount)
             {
                 throw new ArgumentOutOfRangeException(
-                    "levels",
+                    nameof(levels),
                     String.Format(CultureInfo.InvariantCulture, "SetAllVolumes MUST be supplied with a volume level for ALL channels. The AudioStream has {0} channels and you supplied {1} channels.",
                                   channelCount, levels.Length));
             }
             for (int i = 0; i < levels.Length; i++)
             {
                 float level = levels[i];
-                if (level < 0.0f) throw new ArgumentOutOfRangeException("levels", "All volumes must be between 0.0 and 1.0. Invalid volume at index: " + i.ToString());
-                if (level > 1.0f) throw new ArgumentOutOfRangeException("levels", "All volumes must be between 0.0 and 1.0. Invalid volume at index: " + i.ToString());
+                if (level < 0.0f) throw new ArgumentOutOfRangeException(nameof(levels), "All volumes must be between 0.0 and 1.0. Invalid volume at index: " + i.ToString());
+                if (level > 1.0f) throw new ArgumentOutOfRangeException(nameof(levels), "All volumes must be between 0.0 and 1.0. Invalid volume at index: " + i.ToString());
             }
             unchecked
             {
@@ -129,8 +122,8 @@ namespace NAudio.CoreAudioApi
         {
             CheckChannelIndex(index, "index");
 
-            if (level < 0.0f) throw new ArgumentOutOfRangeException("level", "Volume must be between 0.0 and 1.0");
-            if (level > 1.0f) throw new ArgumentOutOfRangeException("level", "Volume must be between 0.0 and 1.0");
+            if (level < 0.0f) throw new ArgumentOutOfRangeException(nameof(level), "Volume must be between 0.0 and 1.0");
+            if (level > 1.0f) throw new ArgumentOutOfRangeException(nameof(level), "Volume must be between 0.0 and 1.0");
             unchecked
             {
                 Marshal.ThrowExceptionForHR(audioStreamVolumeInterface.SetChannelVolume((uint)index, level));

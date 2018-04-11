@@ -220,12 +220,9 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <summary>
         /// Gets the type of data in this PropVariant
         /// </summary>
-        public VarEnum DataType
-        {
-            get { return (VarEnum) vt; }
-        }
+        public VarEnum DataType => (VarEnum) vt;
 
-    /// <summary>
+        /// <summary>
         /// Property value
         /// </summary>
         public object Value

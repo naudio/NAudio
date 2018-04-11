@@ -100,7 +100,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         int UnregisterSessionNotification(IAudioSessionNotification sessionNotification);
 
         [PreserveSig]
-        int RegisterDuckNotification(string sessionID, IAudioSessionNotification audioVolumeDuckNotification);
+        int RegisterDuckNotification(string sessionId, IAudioSessionNotification audioVolumeDuckNotification);
 
         [PreserveSig]
         int UnregisterDuckNotification(IntPtr audioVolumeDuckNotification);

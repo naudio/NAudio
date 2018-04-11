@@ -20,7 +20,6 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 // modified for NAudio
-using System;
 using NAudio.CoreAudioApi.Interfaces;
 using System.Runtime.InteropServices;
 
@@ -43,25 +42,16 @@ namespace NAudio.CoreAudioApi
         /// <summary>
         /// Minimum Decibels
         /// </summary>
-        public float MinDecibels
-        {
-            get { return volumeMinDecibels; }
-        }
+        public float MinDecibels => volumeMinDecibels;
 
         /// <summary>
         /// Maximum Decibels
         /// </summary>
-        public float MaxDecibels
-        {
-            get { return volumeMaxDecibels; }
-        }
+        public float MaxDecibels => volumeMaxDecibels;
 
         /// <summary>
         /// Increment Decibels
         /// </summary>
-        public float IncrementDecibels
-        {
-            get { return volumeIncrementDecibels; }
-        }
+        public float IncrementDecibels => volumeIncrementDecibels;
     }
 }

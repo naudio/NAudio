@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace NAudio.CoreAudioApi.Interfaces
 {
@@ -21,6 +19,6 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <param name="newSession">session being added</param>
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
-        int OnSessionCreated(Interfaces.IAudioSessionControl newSession);
+        int OnSessionCreated(IAudioSessionControl newSession);
     }
 }

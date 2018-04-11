@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using NAudio.Utils;
 
 namespace NAudio.CoreAudioApi.Interfaces
@@ -29,8 +27,7 @@ namespace NAudio.CoreAudioApi.Interfaces
     }
 
     static class ErrorCodes
-    {                
-        // AUDCLNT_ERR(n) MAKE_HRESULT(SEVERITY_ERROR, FACILITY_AUDCLNT, n)
+    {   // AUDCLNT_ERR(n) MAKE_HRESULT(SEVERITY_ERROR, FACILITY_AUDCLNT, n)
         // AUDCLNT_SUCCESS(n) MAKE_SCODE(SEVERITY_SUCCESS, FACILITY_AUDCLNT, n)
         // ReSharper disable InconsistentNaming
         public const int SEVERITY_ERROR = 1;
@@ -58,7 +55,6 @@ namespace NAudio.CoreAudioApi.Interfaces
         public static readonly int AUDCLNT_E_BUFFER_SIZE_ERROR  = HResult.MAKE_HRESULT(SEVERITY_ERROR, FACILITY_AUDCLNT, 0x016);
         public static readonly int AUDCLNT_E_CPUUSAGE_EXCEEDED  = HResult.MAKE_HRESULT(SEVERITY_ERROR, FACILITY_AUDCLNT, 0x017);
         public static readonly int AUDCLNT_E_RESOURCES_INVALIDATED = unchecked((int) 0x88890026);
-        // ReSharper restore InconsistentNaming
         /*static readonly int AUDCLNT_S_BUFFER_EMPTY              AUDCLNT_SUCCESS(0x001)
         static readonly int AUDCLNT_S_THREAD_ALREADY_REGISTERED AUDCLNT_SUCCESS(0x002)
         static readonly int AUDCLNT_S_POSITION_STALLED		   AUDCLNT_SUCCESS(0x003)*/

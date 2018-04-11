@@ -40,8 +40,7 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                int result;
-                Marshal.ThrowExceptionForHR(storeInterface.GetCount(out result));
+                Marshal.ThrowExceptionForHR(storeInterface.GetCount(out var result));
                 return result;
             }
         }
@@ -55,9 +54,8 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                PropVariant result;
                 PropertyKey key = Get(index);
-                Marshal.ThrowExceptionForHR(storeInterface.GetValue(ref key, out result));
+                Marshal.ThrowExceptionForHR(storeInterface.GetValue(ref key, out var result));
                 return new PropertyStoreProperty(key, result);
             }
         }
@@ -89,13 +87,12 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                PropVariant result;
                 for (int i = 0; i < Count; i++)
                 {
                     PropertyKey ikey = Get(i);
                     if ((ikey.formatId == key.formatId) && (ikey.propertyId == key.propertyId))
                     {
-                        Marshal.ThrowExceptionForHR(storeInterface.GetValue(ref ikey, out result));
+                        Marshal.ThrowExceptionForHR(storeInterface.GetValue(ref ikey, out var result));
                         return new PropertyStoreProperty(ikey, result);
                     }
                 }
@@ -110,8 +107,7 @@ namespace NAudio.CoreAudioApi
         /// <returns>Property key</returns>
         public PropertyKey Get(int index)
         {
-            PropertyKey key;
-            Marshal.ThrowExceptionForHR(storeInterface.GetAt(index, out key));
+            Marshal.ThrowExceptionForHR(storeInterface.GetAt(index, out var key));
             return key;
         }
 
@@ -122,9 +118,8 @@ namespace NAudio.CoreAudioApi
         /// <returns>Property value</returns>
         public PropVariant GetValue(int index)
         {
-            PropVariant result;
             PropertyKey key = Get(index);
-            Marshal.ThrowExceptionForHR(storeInterface.GetValue(ref key, out result));
+            Marshal.ThrowExceptionForHR(storeInterface.GetValue(ref key, out var result));
             return result;
         }
 
@@ -152,7 +147,7 @@ namespace NAudio.CoreAudioApi
         /// <param name="store">IPropertyStore COM interface</param>
         internal PropertyStore(IPropertyStore store)
         {
-            this.storeInterface = store;
+            storeInterface = store;
         }
     }
 }

@@ -23,8 +23,7 @@ namespace NAudio.CoreAudioApi
         /// <returns>Pointer to the buffer</returns>
         public IntPtr GetBuffer(int numFramesRequested)
         {
-            IntPtr bufferPointer;
-            Marshal.ThrowExceptionForHR(audioRenderClientInterface.GetBuffer(numFramesRequested, out bufferPointer));
+            Marshal.ThrowExceptionForHR(audioRenderClientInterface.GetBuffer(numFramesRequested, out var bufferPointer));
             return bufferPointer;
         }
 

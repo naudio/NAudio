@@ -41,8 +41,7 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                int result;
-                Marshal.ThrowExceptionForHR(audioEndPointVolume.GetChannelCount(out result));
+                Marshal.ThrowExceptionForHR(audioEndPointVolume.GetChannelCount(out var result));
                 return result;
             }
         }
@@ -50,22 +49,15 @@ namespace NAudio.CoreAudioApi
         /// <summary>
         /// Indexer - get a specific channel
         /// </summary>
-        public AudioEndpointVolumeChannel this[int index]
-        {
-            get
-            {
-                return channels[index];
-            }
-        }
+        public AudioEndpointVolumeChannel this[int index] => channels[index];
 
         internal AudioEndpointVolumeChannels(IAudioEndpointVolume parent)
         {
-            int ChannelCount;
             audioEndPointVolume = parent;
 
-            ChannelCount = Count;
-            channels = new AudioEndpointVolumeChannel[ChannelCount];
-            for (int i = 0; i < ChannelCount; i++)
+            var channelCount = Count;
+            channels = new AudioEndpointVolumeChannel[channelCount];
+            for (int i = 0; i < channelCount; i++)
             {
                 channels[i] = new AudioEndpointVolumeChannel(audioEndPointVolume, i);
             }

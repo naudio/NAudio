@@ -27,8 +27,7 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                uint characteristics;
-                Marshal.ThrowExceptionForHR(audioClockClientInterface.GetCharacteristics(out characteristics));
+                Marshal.ThrowExceptionForHR(audioClockClientInterface.GetCharacteristics(out var characteristics));
                 return (int)characteristics;
             }
         }
@@ -40,8 +39,7 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                ulong freq;
-                Marshal.ThrowExceptionForHR(audioClockClientInterface.GetFrequency(out freq));
+                Marshal.ThrowExceptionForHR(audioClockClientInterface.GetFrequency(out var freq));
                 return freq;
             }
         }
@@ -101,10 +99,7 @@ namespace NAudio.CoreAudioApi
         /// <summary>
         /// Can Adjust Position
         /// </summary>
-        public bool CanAdjustPosition
-        {
-            get { return Stopwatch.IsHighResolution; }
-        }
+        public bool CanAdjustPosition => Stopwatch.IsHighResolution;
 
         #region IDisposable Members
 

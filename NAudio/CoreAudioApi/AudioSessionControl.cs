@@ -80,9 +80,7 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                AudioSessionState state;
-
-                Marshal.ThrowExceptionForHR(audioSessionControlInterface.GetState(out state));
+                Marshal.ThrowExceptionForHR(audioSessionControlInterface.GetState(out var state));
 
                 return state;
             }
@@ -95,9 +93,7 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                string displayName;
-
-                Marshal.ThrowExceptionForHR(audioSessionControlInterface.GetDisplayName(out displayName));
+                Marshal.ThrowExceptionForHR(audioSessionControlInterface.GetDisplayName(out var displayName));
 
                 return displayName;
             }
@@ -117,9 +113,7 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                string iconPath;
-
-                Marshal.ThrowExceptionForHR(audioSessionControlInterface.GetIconPath(out iconPath));
+                Marshal.ThrowExceptionForHR(audioSessionControlInterface.GetIconPath(out var iconPath));
 
                 return iconPath;
             }
@@ -140,8 +134,7 @@ namespace NAudio.CoreAudioApi
             get
             {
                 if (audioSessionControlInterface2 == null) throw new InvalidOperationException("Not supported on this version of Windows");
-                string str;
-                Marshal.ThrowExceptionForHR(audioSessionControlInterface2.GetSessionIdentifier(out str));
+                Marshal.ThrowExceptionForHR(audioSessionControlInterface2.GetSessionIdentifier(out var str));
                 return str;
             }
         }
@@ -154,8 +147,7 @@ namespace NAudio.CoreAudioApi
             get
             {
                 if (audioSessionControlInterface2 == null) throw new InvalidOperationException("Not supported on this version of Windows");
-                string str;
-                Marshal.ThrowExceptionForHR(audioSessionControlInterface2.GetSessionInstanceIdentifier(out str));
+                Marshal.ThrowExceptionForHR(audioSessionControlInterface2.GetSessionInstanceIdentifier(out var str));
                 return str;
             }
         }
@@ -168,8 +160,7 @@ namespace NAudio.CoreAudioApi
             get
             {
                 if (audioSessionControlInterface2 == null) throw new InvalidOperationException("Not supported on this version of Windows");
-                uint pid;
-                Marshal.ThrowExceptionForHR(audioSessionControlInterface2.GetProcessId(out pid));
+                Marshal.ThrowExceptionForHR(audioSessionControlInterface2.GetProcessId(out var pid));
                 return pid;
             }
         }
@@ -192,9 +183,7 @@ namespace NAudio.CoreAudioApi
         /// <returns></returns>
         public Guid GetGroupingParam()
         {
-            Guid groupingId;
-
-            Marshal.ThrowExceptionForHR(audioSessionControlInterface.GetGroupingParam(out groupingId));
+            Marshal.ThrowExceptionForHR(audioSessionControlInterface.GetGroupingParam(out var groupingId));
 
             return groupingId;
         }

@@ -53,9 +53,7 @@ namespace NAudio.CoreAudioApi
             {
                 if (simpleAudioVolume == null)
                 {
-                    ISimpleAudioVolume simpleAudioInterface;
-
-                    audioSessionInterface.GetSimpleAudioVolume(Guid.Empty, 0, out simpleAudioInterface);
+                    audioSessionInterface.GetSimpleAudioVolume(Guid.Empty, 0, out var simpleAudioInterface);
 
                     simpleAudioVolume = new SimpleAudioVolume(simpleAudioInterface);
                 }
@@ -73,9 +71,7 @@ namespace NAudio.CoreAudioApi
             {
                 if (audioSessionControl == null)
                 {
-                    IAudioSessionControl audioSessionControlInterface;
-
-                    audioSessionInterface.GetAudioSessionControl(Guid.Empty, 0, out audioSessionControlInterface);
+                    audioSessionInterface.GetAudioSessionControl(Guid.Empty, 0, out var audioSessionControlInterface);
 
                     audioSessionControl = new AudioSessionControl(audioSessionControlInterface);
                 }
@@ -97,8 +93,7 @@ namespace NAudio.CoreAudioApi
 
             if (audioSessionInterface2 != null)
             {
-                IAudioSessionEnumerator sessionEnum;
-                Marshal.ThrowExceptionForHR(audioSessionInterface2.GetSessionEnumerator(out sessionEnum));
+                Marshal.ThrowExceptionForHR(audioSessionInterface2.GetSessionEnumerator(out var sessionEnum));
                 sessions = new SessionCollection(sessionEnum);
 
                 audioSessionNotification = new AudioSessionNotification(this);

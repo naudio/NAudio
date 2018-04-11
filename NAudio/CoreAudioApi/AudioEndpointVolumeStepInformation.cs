@@ -41,17 +41,11 @@ namespace NAudio.CoreAudioApi
         /// <summary>
         /// Step
         /// </summary>
-        public uint Step
-        {
-            get { return step; }
-        }
+        public uint Step => step;
 
         /// <summary>
         /// StepCount
         /// </summary>
-        public uint StepCount
-        {
-            get { return stepCount; }
-        }
+        public uint StepCount => stepCount;
     }
 }

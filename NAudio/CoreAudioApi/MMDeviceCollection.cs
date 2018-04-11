@@ -32,7 +32,7 @@ namespace NAudio.CoreAudioApi
     /// </summary>
     public class MMDeviceCollection : IEnumerable<MMDevice>
     {
-        private IMMDeviceCollection _MMDeviceCollection;
+        private readonly IMMDeviceCollection mmDeviceCollection;
 
         /// <summary>
         /// Device count
@@ -41,8 +41,7 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                int result;
-                Marshal.ThrowExceptionForHR(_MMDeviceCollection.GetCount(out result));
+                Marshal.ThrowExceptionForHR(mmDeviceCollection.GetCount(out var result));
                 return result;
             }
         }
@@ -56,15 +55,14 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                IMMDevice result;
-                _MMDeviceCollection.Item(index, out result);
+                mmDeviceCollection.Item(index, out var result);
                 return new MMDevice(result);
             }
         }
 
         internal MMDeviceCollection(IMMDeviceCollection parent)
         {
-            _MMDeviceCollection = parent;
+            mmDeviceCollection = parent;
         }
 
         #region IEnumerable<MMDevice> Members

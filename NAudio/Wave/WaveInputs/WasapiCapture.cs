@@ -1,35 +1,12 @@
 ﻿using System;
-using NAudio.Wave;
 using System.Threading;
 using System.Runtime.InteropServices;
+using NAudio.Wave;
 
 // for consistency this should be in NAudio.Wave namespace, but left as it is for backwards compatibility
 // ReSharper disable once CheckNamespace
 namespace NAudio.CoreAudioApi
 {
-    /// <summary>
-    /// Represents state of a capture device
-    /// </summary>
-    public enum CaptureState
-    {
-        /// <summary>
-        /// Not recording
-        /// </summary>
-        Stopped,
-        /// <summary>
-        /// Beginning to record
-        /// </summary>
-        Starting,
-        /// <summary>
-        /// Recording in progress
-        /// </summary>
-        Capturing,
-        /// <summary>
-        /// Requesting stop
-        /// </summary>
-        Stopping
-    }
-
     /// <summary>
     /// Audio Capture using Wasapi
     /// See http://msdn.microsoft.com/en-us/library/dd370800%28VS.85%29.aspx

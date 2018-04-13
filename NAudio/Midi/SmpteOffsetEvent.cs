@@ -5,7 +5,7 @@ using System.IO;
 
 namespace NAudio.Midi
 {
-    class SmpteOffsetEvent : MetaEvent
+    public class SmpteOffsetEvent : MetaEvent
     {
         private byte hours;
         private byte minutes;

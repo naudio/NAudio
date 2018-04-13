@@ -288,12 +288,28 @@ namespace NAudio.Wave
             get { return volume; }
             set
             {
-                WaveOut.SetWaveOutVolume(value, hWaveOut, waveOutLock);
+                SetWaveOutVolume(value, hWaveOut, waveOutLock);
                 volume = value;
             }
         }
 
-        #region Dispose Pattern
+        internal static void SetWaveOutVolume(float value, IntPtr hWaveOut, object lockObject)
+        {
+            if (value < 0) throw new ArgumentOutOfRangeException(nameof(value), "Volume must be between 0.0 and 1.0");
+            if (value > 1) throw new ArgumentOutOfRangeException(nameof(value), "Volume must be between 0.0 and 1.0");
+            float left = value;
+            float right = value;
+
+            int stereoVolume = (int)(left * 0xFFFF) + ((int)(right * 0xFFFF) << 16);
+            MmResult result;
+            lock (lockObject)
+            {
+                result = WaveInterop.waveOutSetVolume(hWaveOut, stereoVolume);
+            }
+            MmException.Try(result, "waveOutSetVolume");
+        }
+
+#region Dispose Pattern
 
         /// <summary>
         /// Closes this WaveOut device
@@ -358,7 +374,7 @@ namespace NAudio.Wave
             Debug.Assert(false, "WaveOutEvent device was not closed");
         }
 
-        #endregion
+#endregion
 
         private void RaisePlaybackStoppedEvent(Exception e)
         {

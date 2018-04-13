@@ -22,11 +22,9 @@ namespace NAudio.MediaFoundation
             if (!initialized)
             {
                 var sdkVersion = MediaFoundationInterop.MF_SDK_VERSION;
-#if !NETFX_CORE
                 var os = Environment.OSVersion;
                 if (os.Version.Major == 6 && os.Version.Minor == 0)
                     sdkVersion = 1;
-#endif
                 MediaFoundationInterop.MFStartup((sdkVersion << 16) | MediaFoundationInterop.MF_API_VERSION, 0);
                 initialized = true;
             }
@@ -40,10 +38,8 @@ namespace NAudio.MediaFoundation
         /// <returns></returns>
         public static IEnumerable<IMFActivate> EnumerateTransforms(Guid category)
         {
-            IntPtr interfacesPointer;
-            int interfaceCount;
             MediaFoundationInterop.MFTEnumEx(category, _MFT_ENUM_FLAG.MFT_ENUM_FLAG_ALL,
-                null, null, out interfacesPointer, out interfaceCount);
+                null, null, out var interfacesPointer, out var interfaceCount);
             var interfaces = new IMFActivate[interfaceCount];
             for (int n = 0; n < interfaceCount; n++)
             {

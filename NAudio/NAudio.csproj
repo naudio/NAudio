@@ -29,22 +29,13 @@
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
     <Compile Remove="Utils\ProgressLog*.*" />
     <Compile Remove="Gui\*.*" />
-    <Compile Remove="Wave\Compression\*.cs" />
-    <Compile Remove="Wave\Asio\*.cs" />
     <Compile Remove="Wave\MmeInterop\WaveWindow.cs" />
     <Compile Remove="Wave\MmeInterop\WaveCallbackInfo.cs" />
     <Compile Remove="Wave\WaveInputs\WaveIn.cs" />
-    <Compile Remove="Wave\WaveInputs\WasapiCapture.cs" />
-    <Compile Remove="Wave\WaveInputs\WasapiLoopbackCapture.cs" />
     <Compile Remove="Wave\WaveOutputs\WaveOut.cs" />
     <Compile Remove="Wave\WaveOutputs\AsioOut.cs" />
     <Compile Remove="Wave\WaveOutputs\AsioAudioAvailableEventArgs.cs" />
-    <Compile Remove="Wave\WaveStreams\AudioFileReader.cs" />
-    <Compile Remove="Wave\WaveStreams\Mp3FileReader.cs" />
-    <Compile Remove="Wave\WaveStreams\WaveFormatConversionProvider.cs" />
-    <Compile Remove="Wave\WaveStreams\WaveFormatConversionStream.cs" />
     <Compile Remove="Wave\WaveFormats\WaveFormatCustomMarshaler.cs" />
-    <Compile Remove="FileFormats\Mp3\Mp3FrameDecompressor.cs" />
     <Compile Remove="Wave\WaveOutputs\WasapiOutRT.cs" />
     <Compile Remove="Wave\WaveInputs\WasapiCaptureRT.cs" />
     <Compile Remove="Wave\WaveOutputs\WaveFileWriterRT.cs" />

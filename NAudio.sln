@@ -22,8 +22,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		build.bat = build.bat
 		build.fsx = build.fsx
 		license.txt = license.txt
-		NAudio.nuspec = NAudio.nuspec
-		NAudioUniversalDemo\NAudioUniversalDemo.csproj = NAudioUniversalDemo\NAudioUniversalDemo.csproj
 		README.md = README.md
 		readme.txt = readme.txt
 		RELEASE_NOTES.md = RELEASE_NOTES.md
@@ -193,6 +191,7 @@ Global
 		{D29C1659-635C-497B-847E-FE9A5A69ED03} = {778D0FA5-FE72-4BF9-B83F-5ECDFBF32F62}
 		{A7B74F85-D353-4ED4-A321-E6E4AD4D7D32} = {778D0FA5-FE72-4BF9-B83F-5ECDFBF32F62}
 		{BA7F6DBB-9FC4-49E6-92E4-621EFE4BBBBC} = {F91DCE20-90A9-49A8-8773-CACECE651F37}
+		{0BE833CC-8127-4079-BEEC-27397EDA3EDB} = {778D0FA5-FE72-4BF9-B83F-5ECDFBF32F62}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F7CAB18A-FDAF-4BC8-AFD0-19CC898E85CE}

@@ -1,4 +1,9 @@
 
+### 1.9.0
+
+* Switched to multi-targetting project type
+   * Targets .NET 3.5, .NET Standard 2.0, and UWP
+
 ### 1.8.4
 
 * Windows 10 Universal build now included in NuGet package

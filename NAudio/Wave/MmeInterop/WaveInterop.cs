@@ -119,14 +119,22 @@ namespace NAudio.Wave
         public static extern MmResult waveOutGetVolume(IntPtr hWaveOut, out int dwVolume);
 
         // http://msdn.microsoft.com/en-us/library/dd743857%28VS.85%29.aspx
-        [DllImport("winmm.dll", CharSet = CharSet.Auto)]
+        [DllImport("winmm.dll"
+#if !WINDOWS_UWP
+        , CharSet = CharSet.Auto
+#endif
+        )]
         public static extern MmResult waveOutGetDevCaps(IntPtr deviceID, out WaveOutCapabilities waveOutCaps, int waveOutCapsSize);
 
         [DllImport("winmm.dll")]
         public static extern Int32 waveInGetNumDevs();
 
         // http://msdn.microsoft.com/en-us/library/dd743841%28VS.85%29.aspx
-        [DllImport("winmm.dll", CharSet = CharSet.Auto)]
+        [DllImport("winmm.dll"
+#if !WINDOWS_UWP
+        , CharSet = CharSet.Auto
+#endif
+        )]
         public static extern MmResult waveInGetDevCaps(IntPtr deviceID, out WaveInCapabilities waveInCaps, int waveInCapsSize);
         
         // http://msdn.microsoft.com/en-us/library/dd743838%28VS.85%29.aspx

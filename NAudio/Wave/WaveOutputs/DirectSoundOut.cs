@@ -763,7 +763,9 @@ namespace NAudio.Wave
         /// </summary>
         [ComImport,
          Guid("279AFA83-4981-11CE-A521-0020AF0BE560"),
-            SuppressUnmanagedCodeSecurity,
+#if !WINDOWS_UWP
+    System.Security.SuppressUnmanagedCodeSecurity,
+#endif
          InterfaceType(ComInterfaceType.InterfaceIsIUnknown)
          ]
         internal interface IDirectSound
@@ -791,7 +793,9 @@ namespace NAudio.Wave
         /// </summary>
         [ComImport,
          Guid("279AFA85-4981-11CE-A521-0020AF0BE560"),
-         SuppressUnmanagedCodeSecurity,
+#if !WINDOWS_UWP
+    System.Security.SuppressUnmanagedCodeSecurity,
+#endif         
          InterfaceType(ComInterfaceType.InterfaceIsIUnknown)
          ]
         internal interface IDirectSoundBuffer
@@ -843,7 +847,9 @@ namespace NAudio.Wave
         /// </summary>
         [ComImport,
          Guid("b0210783-89cd-11d0-af08-00a0c925cd16"),
-         SuppressUnmanagedCodeSecurity,
+#if !WINDOWS_UWP
+    System.Security.SuppressUnmanagedCodeSecurity,
+#endif
          InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
         internal interface IDirectSoundNotify
         {

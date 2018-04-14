@@ -13,7 +13,11 @@ namespace NAudio.Utils
         /// </summary>
         public static int SizeOf<T>()
         {
+#if NET35
             return Marshal.SizeOf(typeof (T));
+#else
+            return Marshal.SizeOf<T>();
+#endif
         }
 
         /// <summary>
@@ -21,15 +25,23 @@ namespace NAudio.Utils
         /// </summary>
         public static IntPtr OffsetOf<T>(string fieldName)
         {
+#if NET35
             return Marshal.OffsetOf(typeof(T), fieldName);
+#else
+            return Marshal.OffsetOf<T>(fieldName);
+#endif
         }
-        
+
         /// <summary>
         /// Pointer to Structure
         /// </summary>
         public static T PtrToStructure<T>(IntPtr pointer)
         {
+#if NET35
             return (T)Marshal.PtrToStructure(pointer, typeof(T));
+#else
+            return Marshal.PtrToStructure<T>(pointer);
+#endif
         }
     }
 }

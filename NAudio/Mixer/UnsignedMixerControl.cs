@@ -1,6 +1,7 @@
 // created on 13/12/2002 at 22:04
 using System;
 using System.Runtime.InteropServices;
+using NAudio.Utils;
 using NAudio.Wave;
 
 namespace NAudio.Mixer
@@ -30,7 +31,7 @@ namespace NAudio.Mixer
             unsignedDetails = new MixerInterop.MIXERCONTROLDETAILS_UNSIGNED[nChannels];
             for (int channel = 0; channel < nChannels; channel++)
             {
-                unsignedDetails[channel] = (MixerInterop.MIXERCONTROLDETAILS_UNSIGNED)Marshal.PtrToStructure(mixerControlDetails.paDetails, typeof(MixerInterop.MIXERCONTROLDETAILS_UNSIGNED));
+                unsignedDetails[channel] = MarshalHelpers.PtrToStructure<MixerInterop.MIXERCONTROLDETAILS_UNSIGNED>(mixerControlDetails.paDetails);
             }
         }
 

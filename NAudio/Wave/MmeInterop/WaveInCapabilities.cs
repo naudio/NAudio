@@ -8,7 +8,11 @@ namespace NAudio.Wave
     /// WaveInCapabilities structure (based on WAVEINCAPS2 from mmsystem.h)
     /// http://msdn.microsoft.com/en-us/library/ms713726(VS.85).aspx
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+    [StructLayout(LayoutKind.Sequential
+#if !WINDOWS_UWP
+        , CharSet = CharSet.Auto
+#endif
+    )]
     public struct WaveInCapabilities
     {
         /// <summary>

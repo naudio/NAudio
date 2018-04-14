@@ -139,7 +139,11 @@ namespace NAudio.Wave
                     // only dispose our source if we created it
                     if (ownInput)
                     {
+#if NET35
                         waveStream.Close();
+#else
+                        waveStream.Dispose();
+#endif
                     }
                     waveStream = null;
                 }
@@ -262,7 +266,7 @@ namespace NAudio.Wave
             }
         }
 
-        #region Endian Helpers
+#region Endian Helpers
         private static uint ConvertInt(byte[] buffer)
         {
             if (buffer.Length != 4) throw new Exception("Incorrect length for long.");
@@ -274,10 +278,10 @@ namespace NAudio.Wave
             if (buffer.Length != 2) throw new Exception("Incorrect length for int.");
             return (short)((buffer[0] << 8) | buffer[1]);
         }
-        #endregion
+#endregion
 
 
-        #region AiffChunk
+#region AiffChunk
         /// <summary>
         /// AIFF Chunk
         /// </summary>
@@ -319,6 +323,6 @@ namespace NAudio.Wave
         {
             return new string(br.ReadChars(4));
         }
-        #endregion
+#endregion
     }
 }

@@ -22,9 +22,11 @@ namespace NAudio.MediaFoundation
             if (!initialized)
             {
                 var sdkVersion = MediaFoundationInterop.MF_SDK_VERSION;
+#if !NETFX_CORE
                 var os = Environment.OSVersion;
                 if (os.Version.Major == 6 && os.Version.Minor == 0)
                     sdkVersion = 1;
+#endif
                 MediaFoundationInterop.MFStartup((sdkVersion << 16) | MediaFoundationInterop.MF_API_VERSION, 0);
                 initialized = true;
             }

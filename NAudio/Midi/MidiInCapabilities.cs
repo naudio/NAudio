@@ -9,8 +9,9 @@ namespace NAudio.Midi
     /// MIDI In Device Capabilities
     /// </summary>
     [StructLayout(LayoutKind.Sequential
+#if !WINDOWS_UWP
         , CharSet = CharSet.Auto
-
+#endif
     )]
     public struct MidiInCapabilities
     {

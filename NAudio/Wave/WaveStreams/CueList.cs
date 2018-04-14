@@ -165,7 +165,7 @@ namespace NAudio.Wave
                     labelLength = BitConverter.ToInt32(listChunkData, p + 4) - 4;
                     var cueId = BitConverter.ToInt32(listChunkData, p + 8);
                     cue = cueIndex[cueId];
-                    labels[cue] = Encoding.Default.GetString(listChunkData, p + 12, labelLength - 1);
+                    labels[cue] = Encoding.UTF8.GetString(listChunkData, p + 12, labelLength - 1);
                 }
             }
 
@@ -225,7 +225,7 @@ namespace NAudio.Wave
                         writer.Write(labelChunkId);
                         writer.Write(this[cue].Label.Length + 1 + 4);
                         writer.Write(cue);
-                        writer.Write(Encoding.Default.GetBytes(this[cue].Label.ToCharArray()));
+                        writer.Write(Encoding.UTF8.GetBytes(this[cue].Label.ToCharArray()));
                         if (this[cue].Label.Length % 2 == 0)
                         {
                             writer.Seek(2, SeekOrigin.Current);

@@ -7,7 +7,9 @@ namespace NAudio.Dmo
     /// defined in mediaobj.h
     /// </summary>
     [ComImport,
+#if !WINDOWS_UWP
     System.Security.SuppressUnmanagedCodeSecurity,
+#endif
     Guid("d8ad0f58-5494-4102-97c5-ec798e59bcf4"),
     InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     interface IMediaObject

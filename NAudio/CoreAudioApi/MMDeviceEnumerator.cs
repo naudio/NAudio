@@ -39,10 +39,12 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public MMDeviceEnumerator()
         {
+#if !NETFX_CORE
             if (System.Environment.OSVersion.Version.Major < 6)
             {
                 throw new NotSupportedException("This functionality is only supported on Windows Vista or newer.");
             }
+#endif
             realEnumerator = new MMDeviceEnumeratorComObject() as IMMDeviceEnumerator;
         }
 

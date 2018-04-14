@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net35</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net35;uap10.0</TargetFrameworks>
     <Version>1.9.0</Version>
     <Authors>Mark Heath &amp; Contributors</Authors>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -9,6 +9,8 @@
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net35' ">
     <Reference Include="System.Windows.Forms" />
+    <Compile Remove="Wave\WaveOutputs\WasapiOutRT.cs" />
+    <Compile Remove="Wave\WaveOutputs\WaveFileWriterRT.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -34,7 +36,42 @@
     <Compile Remove="Wave\WaveStreams\WaveFormatConversionStream.cs" />
     <Compile Remove="Wave\WaveFormats\WaveFormatCustomMarshaler.cs" />
     <Compile Remove="FileFormats\Mp3\Mp3FrameDecompressor.cs" />
+    <Compile Remove="Wave\WaveOutputs\WasapiOutRT.cs" />
+    <Compile Remove="Wave\WaveOutputs\WaveFileWriterRT.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'uap10.0' ">
+    <Compile Remove="Utils\ProgressLog*.*" />
+    <Compile Remove="Gui\*.*" />
+    <Compile Remove="Wave\Compression\*.cs" />
+    <Compile Remove="Wave\Asio\*.cs" />
+    <Compile Remove="Wave\MmeInterop\WaveWindow.cs" />
+    <Compile Remove="Wave\MmeInterop\WaveCallbackInfo.cs" />
+    <Compile Remove="Wave\Midi\MidiInterop.cs" />
+    <Compile Remove="Wave\WaveInputs\WaveIn.cs" />
+    <Compile Remove="Wave\WaveInputs\WaveInEvent.cs" />
+    <Compile Remove="Wave\WaveInputs\WasapiCapture.cs" />
+    <Compile Remove="Wave\WaveInputs\WasapiLoopbackCapture.cs" />
+    <Compile Remove="Wave\WaveOutputs\WaveOut.cs" />
+    <Compile Remove="Wave\WaveOutputs\WaveOutEvent.cs" />
+    <Compile Remove="Wave\WaveOutputs\DirectSoundOut.cs" />
+    <Compile Remove="Wave\WaveOutputs\WasapiOut.cs" />
+    <Compile Remove="Wave\WaveOutputs\MediaFoundationEncoder.cs" />
+    <Compile Remove="Wave\WaveOutputs\AsioOut.cs" />
+    <Compile Remove="Wave\WaveOutputs\AsioAudioAvailableEventArgs.cs" />
+    <Compile Remove="Wave\WaveStreams\AudioFileReader.cs" />
+    <Compile Remove="Wave\WaveStreams\Mp3FileReader.cs" />
+    <Compile Remove="Wave\WaveStreams\WaveFormatConversionProvider.cs" />
+    <Compile Remove="Wave\WaveStreams\WaveFormatConversionStream.cs" />
+    <Compile Remove="Wave\WaveFormats\WaveFormatCustomMarshaler.cs" />
+    <Compile Remove="Wave\WaveProviders\MediaFoundationResampler.cs" />
+    <Compile Remove="FileFormats\Mp3\Mp3FrameDecompressor.cs" />
   </ItemGroup>
 
 
+  <ItemGroup Condition=" '$(TargetFramework)' == 'uap10.0' or '$(TargetFramework)' == 'uap10.0.16299'">
+    <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform" Version="6.0.5" />
+    <PackageReference Include="MSBuild.Sdk.Extras" Version="1.2.0" PrivateAssets="All" />
+  </ItemGroup>
+  <Import Project="$(MSBuildSDKExtrasTargets)" Condition="Exists('$(MSBuildSDKExtrasTargets)')" />
 </Project>

@@ -80,7 +80,11 @@ namespace NAudio.Midi
         public static extern MmResult midiInClose(IntPtr hMidiIn);
 
         // http://msdn.microsoft.com/en-us/library/dd798453%28VS.85%29.aspx
-        [DllImport("winmm.dll", CharSet = CharSet.Auto)]
+        [DllImport("winmm.dll"
+#if !WINDOWS_UWP
+            , CharSet = CharSet.Auto
+#endif
+    )]
         public static extern MmResult midiInGetDevCaps(IntPtr deviceId, out MidiInCapabilities capabilities, int size);
 
         // http://msdn.microsoft.com/en-us/library/dd798454%28VS.85%29.aspx
@@ -141,7 +145,11 @@ namespace NAudio.Midi
         public static extern MmResult midiOutClose(IntPtr hMidiOut);
 
         // http://msdn.microsoft.com/en-us/library/dd798469%28VS.85%29.aspx
-        [DllImport("winmm.dll", CharSet = CharSet.Auto)]
+        [DllImport("winmm.dll"
+#if !WINDOWS_UWP
+            , CharSet = CharSet.Auto
+#endif
+            )]
         public static extern MmResult midiOutGetDevCaps(IntPtr deviceNumber, out MidiOutCapabilities caps, int uSize);
 
         // http://msdn.microsoft.com/en-us/library/dd798470%28VS.85%29.aspx

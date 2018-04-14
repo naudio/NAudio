@@ -10,6 +10,7 @@
   <ItemGroup Condition=" '$(TargetFramework)' == 'net35' ">
     <Reference Include="System.Windows.Forms" />
     <Compile Remove="Wave\WaveOutputs\WasapiOutRT.cs" />
+    <Compile Remove="Wave\WaveInputs\WasapiCaptureRT.cs" />
     <Compile Remove="Wave\WaveOutputs\WaveFileWriterRT.cs" />
   </ItemGroup>
 
@@ -37,6 +38,7 @@
     <Compile Remove="Wave\WaveFormats\WaveFormatCustomMarshaler.cs" />
     <Compile Remove="FileFormats\Mp3\Mp3FrameDecompressor.cs" />
     <Compile Remove="Wave\WaveOutputs\WasapiOutRT.cs" />
+    <Compile Remove="Wave\WaveInputs\WasapiCaptureRT.cs" />
     <Compile Remove="Wave\WaveOutputs\WaveFileWriterRT.cs" />
   </ItemGroup>
 

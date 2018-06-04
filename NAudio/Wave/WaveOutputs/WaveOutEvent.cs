@@ -18,6 +18,7 @@ namespace NAudio.Wave
         private IWaveProvider waveStream;
         private volatile PlaybackState playbackState;
         private AutoResetEvent callbackEvent;
+        private Thread playbackThread;
         private float volume = 1.0f;
 
         /// <summary>
@@ -117,7 +118,8 @@ namespace NAudio.Wave
             {
                 playbackState = PlaybackState.Playing;
                 callbackEvent.Set(); // give the thread a kick
-                ThreadPool.QueueUserWorkItem(state => PlaybackThread(), null);
+                playbackThread = new Thread(PlaybackThread);
+                playbackThread.Start();
             }
             else if (playbackState == PlaybackState.Paused)
             {
@@ -240,6 +242,8 @@ namespace NAudio.Wave
                     throw new MmException(result, "waveOutReset");
                 }
                 callbackEvent.Set(); // give the thread a kick, make sure we exit
+                playbackThread.Join();
+                playbackThread = null;
             }
         }
 

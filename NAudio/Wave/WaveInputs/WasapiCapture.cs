@@ -191,8 +191,7 @@ namespace NAudio.CoreAudioApi
             }
             captureState = CaptureState.Starting;
             InitializeCaptureDevice();
-            ThreadStart start = () => CaptureThread(audioClient);
-            captureThread = new Thread(start);
+            captureThread = new Thread(() => CaptureThread(audioClient));
             captureThread.Start();
         }
 
@@ -284,9 +283,7 @@ namespace NAudio.CoreAudioApi
 
             while (packetSize != 0)
             {
-                int framesAvailable;
-                AudioClientBufferFlags flags;
-                IntPtr buffer = capture.GetBuffer(out framesAvailable, out flags);
+                IntPtr buffer = capture.GetBuffer(out int framesAvailable, out AudioClientBufferFlags flags);
 
                 int bytesAvailable = framesAvailable * bytesPerFrame;
 
@@ -295,7 +292,7 @@ namespace NAudio.CoreAudioApi
                 int spaceRemaining = Math.Max(0, recordBuffer.Length - recordBufferOffset);
                 if (spaceRemaining < bytesAvailable && recordBufferOffset > 0)
                 {
-                    if (DataAvailable != null) DataAvailable(this, new WaveInEventArgs(recordBuffer, recordBufferOffset));
+                    DataAvailable?.Invoke(this, new WaveInEventArgs(recordBuffer, recordBufferOffset));
                     recordBufferOffset = 0;
                 }
 
@@ -312,10 +309,7 @@ namespace NAudio.CoreAudioApi
                 capture.ReleaseBuffer(framesAvailable);
                 packetSize = capture.GetNextPacketSize();
             }
-            if (DataAvailable != null)
-            {
-                DataAvailable(this, new WaveInEventArgs(recordBuffer, recordBufferOffset));
-            }
+            DataAvailable?.Invoke(this, new WaveInEventArgs(recordBuffer, recordBufferOffset));
         }
 
         /// <summary>

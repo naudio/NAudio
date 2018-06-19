@@ -304,15 +304,13 @@ namespace NAudio.Wave
         private void ReadNextPacket(AudioCaptureClient capture)
         {
             IntPtr buffer;
-            int framesAvailable;
-            AudioClientBufferFlags flags;
             int packetSize = capture.GetNextPacketSize();
             int recordBufferOffset = 0;
             //Debug.WriteLine(string.Format("packet size: {0} samples", packetSize / 4));
 
             while (packetSize != 0)
             {
-                buffer = capture.GetBuffer(out framesAvailable, out flags);
+                buffer = capture.GetBuffer(out int framesAvailable, out AudioClientBufferFlags flags);
 
                 int bytesAvailable = framesAvailable * bytesPerFrame;
 
@@ -321,7 +319,7 @@ namespace NAudio.Wave
                 int spaceRemaining = Math.Max(0, recordBuffer.Length - recordBufferOffset);
                 if (spaceRemaining < bytesAvailable && recordBufferOffset > 0)
                 {
-                    if (DataAvailable != null) DataAvailable(this, new WaveInEventArgs(recordBuffer, recordBufferOffset));
+                    DataAvailable?.Invoke(this, new WaveInEventArgs(recordBuffer, recordBufferOffset));
                     recordBufferOffset = 0;
                 }
 
@@ -338,10 +336,7 @@ namespace NAudio.Wave
                 capture.ReleaseBuffer(framesAvailable);
                 packetSize = capture.GetNextPacketSize();
             }
-            if (DataAvailable != null)
-            {
-                DataAvailable(this, new WaveInEventArgs(recordBuffer, recordBufferOffset));
-            }
+            DataAvailable?.Invoke(this, new WaveInEventArgs(recordBuffer, recordBufferOffset));
         }
 
         /// <summary>

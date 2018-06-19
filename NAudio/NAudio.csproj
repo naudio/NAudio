@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net35;uap10.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net35;uap10.0.10240</TargetFrameworks>
     <Version>1.9.0-preview1</Version>
     <Authors>Mark Heath &amp; Contributors</Authors>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -41,7 +41,7 @@
     <Compile Remove="Wave\WaveOutputs\WaveFileWriterRT.cs" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'uap10.0' ">
+  <ItemGroup Condition=" '$(TargetFramework)' == 'uap10.0.10240' ">
     <Compile Remove="Utils\ProgressLog*.*" />
     <Compile Remove="Gui\*.*" />
     <Compile Remove="Wave\Compression\*.cs" />
@@ -70,9 +70,9 @@
   </ItemGroup>
 
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'uap10.0' or '$(TargetFramework)' == 'uap10.0.16299'">
+  <ItemGroup Condition=" '$(TargetFramework)' == 'uap10.0' or '$(TargetFramework)' == 'uap10.0.10240'">
     <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform" Version="6.0.8" />
-    <PackageReference Include="MSBuild.Sdk.Extras" Version="1.3.1" PrivateAssets="All" />
+    <PackageReference Include="MSBuild.Sdk.Extras" Version="1.5.4" PrivateAssets="All" />
   </ItemGroup>
   <Import Project="$(MSBuildSDKExtrasTargets)" Condition="Exists('$(MSBuildSDKExtrasTargets)')" />
 </Project>

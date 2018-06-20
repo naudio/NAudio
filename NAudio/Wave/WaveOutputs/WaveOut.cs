@@ -15,7 +15,6 @@ namespace NAudio.Wave
         private IWaveProvider waveStream;
         private volatile PlaybackState playbackState;
         private readonly WaveInterop.WaveCallback callback;
-        private float volume = 1;
         private readonly WaveCallbackInfo callbackInfo;
         private readonly object waveOutLock;
         private int queuedBuffers;
@@ -276,12 +275,26 @@ namespace NAudio.Wave
         /// </summary>
         public float Volume
         {
-            get => volume;
-            set 
+            get
+            {
+                return GetWaveOutVolume(hWaveOut, waveOutLock);
+            }
+            set
             {
                 SetWaveOutVolume(value, hWaveOut, waveOutLock);
-                volume = value;
             }
+        }
+
+        internal static float GetWaveOutVolume(IntPtr hWaveOut, object lockObject)
+        {
+            int stereoVolume;
+            MmResult result;
+            lock (lockObject)
+            {
+                result = WaveInterop.waveOutGetVolume(hWaveOut, out stereoVolume);
+            }
+            MmException.Try(result, "waveOutGetVolume");
+            return (stereoVolume & 0xFFFF) / (float)0xFFFF;
         }
 
         internal static void SetWaveOutVolume(float value, IntPtr hWaveOut, object lockObject)

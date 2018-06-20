@@ -18,7 +18,6 @@ namespace NAudio.Wave
         private IWaveProvider waveStream;
         private volatile PlaybackState playbackState;
         private AutoResetEvent callbackEvent;
-        private float volume = 1.0f;
 
         /// <summary>
         /// Indicates playback has stopped automatically
@@ -281,15 +280,17 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// Obsolete property
+        /// Volume for this device 1.0 is full scale
         /// </summary>
         public float Volume
         {
-            get { return volume; }
+            get
+            {
+                return WaveOut.GetWaveOutVolume(hWaveOut, waveOutLock);
+            }
             set
             {
                 WaveOut.SetWaveOutVolume(value, hWaveOut, waveOutLock);
-                volume = value;
             }
         }
 

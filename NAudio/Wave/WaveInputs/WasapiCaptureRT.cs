@@ -6,7 +6,6 @@ using NAudio.CoreAudioApi.Interfaces;
 using System.Threading;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using NAudio.Win8.Wave.WaveOutputs;
 using Windows.Devices.Enumeration;
 using Windows.Media.Devices;
 

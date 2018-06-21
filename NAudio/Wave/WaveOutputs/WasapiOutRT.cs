@@ -1,19 +1,15 @@
 ﻿using System;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Windows.System.Threading;
 using NAudio.CoreAudioApi;
 using NAudio.CoreAudioApi.Interfaces;
-using NAudio.Dsp;
-using NAudio.Wave;
 using Windows.Media.Devices;
 using NAudio.Utils;
 using NAudio.Wave.SampleProviders;
 
-namespace NAudio.Win8.Wave.WaveOutputs
+namespace NAudio.Wave
 {
     enum WasapiOutState
     {
@@ -127,7 +123,7 @@ namespace NAudio.Win8.Wave.WaveOutputs
             IActivateAudioInterfaceAsyncOperation activationOperation;
             NativeMethods.ActivateAudioInterfaceAsync(device, IID_IAudioClient2, IntPtr.Zero, icbh, out activationOperation);
             var audioClient2 = await icbh;
-            this.audioClient = new AudioClient((IAudioClient)audioClient2);
+            audioClient = new AudioClient((IAudioClient)audioClient2);
         }
 
         private static string GetDefaultAudioEndpoint()

@@ -24,8 +24,6 @@
 
 
 using System;
-using System.Diagnostics;
-using System.Linq;
 
 // default to floats for audio samples
 using WDL_ResampleSample = System.Single; // n.b. default in WDL is double

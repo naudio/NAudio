@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Runtime.InteropServices;
-
-namespace NAudio.Wave.Compression
+﻿namespace NAudio.Wave.Compression
 {
     /// <summary>
     /// ACM Format
@@ -11,63 +6,41 @@ namespace NAudio.Wave.Compression
     public class AcmFormat
     {
         private readonly AcmFormatDetails formatDetails;
-        private readonly WaveFormat waveFormat; 
 
         internal AcmFormat(AcmFormatDetails formatDetails)
         {
             this.formatDetails = formatDetails;
-            waveFormat = WaveFormat.MarshalFromPtr(formatDetails.waveFormatPointer);
+            WaveFormat = WaveFormat.MarshalFromPtr(formatDetails.waveFormatPointer);
         }
 
         /// <summary>
         /// Format Index
         /// </summary>
-        public int FormatIndex
-        {
-            get { return formatDetails.formatIndex; }
-        }
+        public int FormatIndex => formatDetails.formatIndex;
 
         /// <summary>
         /// Format Tag
         /// </summary>
-        public WaveFormatEncoding FormatTag
-        {
-            get { return (WaveFormatEncoding)formatDetails.formatTag; }
-        }
+        public WaveFormatEncoding FormatTag => (WaveFormatEncoding)formatDetails.formatTag;
 
         /// <summary>
         /// Support Flags
         /// </summary>
-        public AcmDriverDetailsSupportFlags SupportFlags
-        {
-            get { return formatDetails.supportFlags; }
-        }
+        public AcmDriverDetailsSupportFlags SupportFlags => formatDetails.supportFlags;
 
         /// <summary>
         /// WaveFormat
         /// </summary>
-        public WaveFormat WaveFormat
-        {
-            get 
-            {
-                return waveFormat; 
-            }
-        }
+        public WaveFormat WaveFormat { get; private set; }
 
         /// <summary>
         /// WaveFormat Size
         /// </summary>
-        public int WaveFormatByteSize
-        {
-            get { return formatDetails.waveFormatByteSize; }
-        }
+        public int WaveFormatByteSize => formatDetails.waveFormatByteSize;
 
         /// <summary>
         /// Format Description
         /// </summary>
-        public string FormatDescription
-        {
-            get { return formatDetails.formatDescription; }
-        }
+        public string FormatDescription => formatDetails.formatDescription;
     }
 }

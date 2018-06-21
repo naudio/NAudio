@@ -81,44 +81,26 @@ namespace NAudio.SoundFont
 			presetHeaders.LoadZones(presetZones.Zones);
 			sampleHeaders.RemoveEOS();
 		}
-		
-		/// <summary>
-		/// The Presets contained in this chunk
-		/// </summary>
-		public Preset[] Presets
-		{
-			get
-			{
-				return presetHeaders.Presets;
-			}
-		}
 
-		/// <summary>
-		/// The instruments contained in this chunk
-		/// </summary>
-		public Instrument[] Instruments
-		{
-			get
-			{
-				return instruments.Instruments;
-			}
-		}
+        /// <summary>
+        /// The Presets contained in this chunk
+        /// </summary>
+        public Preset[] Presets => presetHeaders.Presets;
 
-		/// <summary>
-		/// The sample headers contained in this chunk
-		/// </summary>
-		public SampleHeader[] SampleHeaders
-		{
-			get
-			{
-				return sampleHeaders.SampleHeaders;
-			}
-		}
+        /// <summary>
+        /// The instruments contained in this chunk
+        /// </summary>
+        public Instrument[] Instruments => instruments.Instruments;
 
-		/// <summary>
-		/// <see cref="Object.ToString"/>
-		/// </summary>
-		public override string ToString() 
+        /// <summary>
+        /// The sample headers contained in this chunk
+        /// </summary>
+        public SampleHeader[] SampleHeaders => sampleHeaders.SampleHeaders;
+
+        /// <summary>
+        /// <see cref="Object.ToString"/>
+        /// </summary>
+        public override string ToString() 
 		{
 			StringBuilder sb = new StringBuilder();
 			sb.Append("Preset Headers:\r\n");

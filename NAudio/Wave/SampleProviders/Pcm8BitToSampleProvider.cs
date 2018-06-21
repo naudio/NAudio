@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace NAudio.Wave.SampleProviders
+﻿namespace NAudio.Wave.SampleProviders
 {
     /// <summary>
     /// Converts an IWaveProvider containing 8 bit PCM to an

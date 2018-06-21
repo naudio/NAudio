@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace NAudio.Codecs
+﻿namespace NAudio.Codecs
 {
     /// <summary>
     /// A-law encoder

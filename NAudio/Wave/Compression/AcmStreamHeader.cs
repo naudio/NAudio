@@ -6,9 +6,7 @@ namespace NAudio.Wave.Compression
     class AcmStreamHeader : IDisposable
     {
         private AcmStreamHeaderStruct streamHeader;
-        private byte[] sourceBuffer;
         private GCHandle hSourceBuffer;
-        private byte[] destBuffer;
         private GCHandle hDestBuffer;
         private IntPtr streamHandle;
         private bool firstTime;
@@ -16,11 +14,11 @@ namespace NAudio.Wave.Compression
         public AcmStreamHeader(IntPtr streamHandle, int sourceBufferLength, int destBufferLength)
         {
             streamHeader = new AcmStreamHeaderStruct();
-            sourceBuffer = new byte[sourceBufferLength];
-            hSourceBuffer = GCHandle.Alloc(sourceBuffer, GCHandleType.Pinned);
+            SourceBuffer = new byte[sourceBufferLength];
+            hSourceBuffer = GCHandle.Alloc(SourceBuffer, GCHandleType.Pinned);
 
-            destBuffer = new byte[destBufferLength];
-            hDestBuffer = GCHandle.Alloc(destBuffer, GCHandleType.Pinned);
+            DestBuffer = new byte[destBufferLength];
+            hDestBuffer = GCHandle.Alloc(DestBuffer, GCHandleType.Pinned);
 
             this.streamHandle = streamHandle;
             firstTime = true;
@@ -30,18 +28,18 @@ namespace NAudio.Wave.Compression
         private void Prepare()
         {
             streamHeader.cbStruct = Marshal.SizeOf(streamHeader);
-            streamHeader.sourceBufferLength = sourceBuffer.Length;
+            streamHeader.sourceBufferLength = SourceBuffer.Length;
             streamHeader.sourceBufferPointer = hSourceBuffer.AddrOfPinnedObject();
-            streamHeader.destBufferLength = destBuffer.Length;
+            streamHeader.destBufferLength = DestBuffer.Length;
             streamHeader.destBufferPointer = hDestBuffer.AddrOfPinnedObject();
             MmException.Try(AcmInterop.acmStreamPrepareHeader(streamHandle, streamHeader, 0), "acmStreamPrepareHeader");
         }
 
         private void Unprepare()
         {
-            streamHeader.sourceBufferLength = sourceBuffer.Length;
+            streamHeader.sourceBufferLength = SourceBuffer.Length;
             streamHeader.sourceBufferPointer = hSourceBuffer.AddrOfPinnedObject();
-            streamHeader.destBufferLength = destBuffer.Length;
+            streamHeader.destBufferLength = DestBuffer.Length;
             streamHeader.destBufferPointer = hDestBuffer.AddrOfPinnedObject();
 
             MmResult result = AcmInterop.acmStreamUnprepareHeader(streamHandle, streamHeader, 0);
@@ -67,7 +65,7 @@ namespace NAudio.Wave.Compression
                 AcmStreamConvertFlags flags = firstTime ? (AcmStreamConvertFlags.Start | AcmStreamConvertFlags.BlockAlign) : AcmStreamConvertFlags.BlockAlign;
                 MmException.Try(AcmInterop.acmStreamConvert(streamHandle, streamHeader, flags), "acmStreamConvert");
                 firstTime = false;
-                System.Diagnostics.Debug.Assert(streamHeader.destBufferLength == destBuffer.Length, "Codecs should not change dest buffer length");
+                System.Diagnostics.Debug.Assert(streamHeader.destBufferLength == DestBuffer.Length, "Codecs should not change dest buffer length");
                 sourceBytesConverted = streamHeader.sourceBufferLengthUsed;
             }
             finally
@@ -78,21 +76,9 @@ namespace NAudio.Wave.Compression
             return streamHeader.destBufferLengthUsed;
         }
 
-        public byte[] SourceBuffer
-        {
-            get
-            {
-                return sourceBuffer;
-            }
-        }
+        public byte[] SourceBuffer { get; private set; }
 
-        public byte[] DestBuffer
-        {
-            get
-            {
-                return destBuffer;
-            }
-        }
+        public byte[] DestBuffer { get; private set; }
 
         #region IDisposable Members
 
@@ -109,8 +95,8 @@ namespace NAudio.Wave.Compression
             if (!disposed)
             {
                 //Unprepare();
-                sourceBuffer = null;
-                destBuffer = null;
+                SourceBuffer = null;
+                DestBuffer = null;
                 hSourceBuffer.Free();
                 hDestBuffer.Free();
             }

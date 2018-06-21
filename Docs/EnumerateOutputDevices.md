@@ -18,10 +18,10 @@ for (int n = -1; n < WaveOut.DeviceCount; n++)
 }
 ```
 
-Once you've selected the device you want, you can open it by passing the device number into the `WaveOut` or `WaveOutEvent` constructor:
+Once you've selected the device you want, you can open it by creating an instance of `WaveOut` or `WaveOutEvent` and specifying it as the `DeviceNumber`:
 
 ```c#
-var outputDevice = new WaveOutEvent(deviceNumber);
+var outputDevice = new WaveOutEvent() { DeviceNumber = deviceNumber };
 ```
 
 # WaveIn or WaveInEvent
@@ -36,10 +36,10 @@ for (int n = -1; n < WaveIn.DeviceCount; n++)
 }
 ```
 
-Once you've selected the device you want, you can open it by passing the device number into the `WaveIn` or `WaveInEvent` constructor:
+Once you've selected the device you want, you can open it by creating an instance of `WaveIn` or `WaveInEvent` and specifying it as the `DeviceNumber`:
 
 ```c#
-var recordingDevice = new WaveInEvent(deviceNumber);
+var recordingDevice = new WaveInEvent() { DeviceNumber = deviceNumber };
 ```
 
 # DirectSoundOut

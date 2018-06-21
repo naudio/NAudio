@@ -263,6 +263,8 @@ namespace NAudio.CoreAudioApi.Interfaces
                             default:
                                 throw new NotSupportedException("PropVariant VT_BOOL must be either -1 or 0");
                         }
+                    case VarEnum.VT_FILETIME:
+                        return DateTime.FromFileTime((((long)filetime.dwHighDateTime) << 32) + filetime.dwLowDateTime);
                 }
                 throw new NotImplementedException("PropVariant " + ve);
             }

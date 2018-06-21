@@ -238,7 +238,11 @@ namespace NAudio.CoreAudioApi
 
             var capture = client.AudioCaptureClient;
             client.Start();
-            captureState = CaptureState.Capturing;
+            // avoid race condition where we stop immediately after starting
+            if (captureState == CaptureState.Starting)
+            {
+                captureState = CaptureState.Capturing;
+            }
             while (captureState == CaptureState.Capturing)
             {
                 bool readBuffer = true;

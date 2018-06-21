@@ -245,20 +245,7 @@ namespace NAudio.Wave
         /// stream - it calls directly into waveOutGetPosition)
         /// </summary>
         /// <returns>Position in bytes</returns>
-        public long GetPosition()
-        {
-            lock (waveOutLock)
-            {
-                MmTime mmTime = new MmTime();
-                mmTime.wType = MmTime.TIME_BYTES; // request results in bytes, TODO: perhaps make this a little more flexible and support the other types?
-                MmException.Try(WaveInterop.waveOutGetPosition(hWaveOut, out mmTime, Marshal.SizeOf(mmTime)), "waveOutGetPosition");
-
-                if (mmTime.wType != MmTime.TIME_BYTES)
-                    throw new Exception(string.Format("waveOutGetPosition: wType -> Expected {0}, Received {1}", MmTime.TIME_BYTES, mmTime.wType));
-
-                return mmTime.cb;
-            }
-        }
+        public long GetPosition() => WaveOutUtils.GetPositionBytes(hWaveOut, waveOutLock);
 
         /// <summary>
         /// Gets a <see cref="Wave.WaveFormat"/> instance indicating the format the hardware is using.
@@ -277,40 +264,12 @@ namespace NAudio.Wave
         {
             get
             {
-                return GetWaveOutVolume(hWaveOut, waveOutLock);
+                return WaveOutUtils.GetWaveOutVolume(hWaveOut, waveOutLock);
             }
             set
             {
-                SetWaveOutVolume(value, hWaveOut, waveOutLock);
+                WaveOutUtils.SetWaveOutVolume(value, hWaveOut, waveOutLock);
             }
-        }
-
-        internal static float GetWaveOutVolume(IntPtr hWaveOut, object lockObject)
-        {
-            int stereoVolume;
-            MmResult result;
-            lock (lockObject)
-            {
-                result = WaveInterop.waveOutGetVolume(hWaveOut, out stereoVolume);
-            }
-            MmException.Try(result, "waveOutGetVolume");
-            return (stereoVolume & 0xFFFF) / (float)0xFFFF;
-        }
-
-        internal static void SetWaveOutVolume(float value, IntPtr hWaveOut, object lockObject)
-        {
-            if (value < 0) throw new ArgumentOutOfRangeException(nameof(value), "Volume must be between 0.0 and 1.0");
-            if (value > 1) throw new ArgumentOutOfRangeException(nameof(value), "Volume must be between 0.0 and 1.0");
-            float left = value;
-            float right = value;
-
-            int stereoVolume = (int) (left*0xFFFF) + ((int) (right*0xFFFF) << 16);
-            MmResult result;
-            lock (lockObject)
-            {
-                result = WaveInterop.waveOutSetVolume(hWaveOut, stereoVolume);
-            }
-            MmException.Try(result, "waveOutSetVolume");
         }
 
         #region Dispose Pattern

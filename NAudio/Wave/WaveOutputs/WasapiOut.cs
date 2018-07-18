@@ -34,7 +34,7 @@ namespace NAudio.Wave
         public event EventHandler<StoppedEventArgs> PlaybackStopped;
 
         /// <summary>
-        /// WASAPI Out shared mode, defauult
+        /// WASAPI Out shared mode, default
         /// </summary>
         public WasapiOut() :
             this(GetDefaultAudioEndpoint(), AudioClientShareMode.Shared, true, 200)

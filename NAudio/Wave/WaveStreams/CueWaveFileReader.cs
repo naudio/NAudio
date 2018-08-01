@@ -23,7 +23,7 @@ namespace NAudio.Wave
         /// <summary>
         /// Loads a wave from a stream and supports reading cues
         /// </summary>
-        /// <param name="fileName"></param>
+        /// <param name="inputStream"></param>
         public CueWaveFileReader(Stream inputStream)
             : this(inputStream)
         {

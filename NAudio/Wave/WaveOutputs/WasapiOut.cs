@@ -237,7 +237,7 @@ namespace NAudio.Wave
             get { return outputFormat; }
         }
 
-        #region IWavePlayer Members
+#region IWavePlayer Members
 
         /// <summary>
         /// Begin Playback
@@ -470,9 +470,9 @@ namespace NAudio.Wave
             }
         }
 
-        #endregion
+#endregion
 
-        #region IDisposable Members
+#region IDisposable Members
 
         /// <summary>
         /// Dispose
@@ -489,6 +489,6 @@ namespace NAudio.Wave
             }
         }
 
-        #endregion
+#endregion
     }
 }

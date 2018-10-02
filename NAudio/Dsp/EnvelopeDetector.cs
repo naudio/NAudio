@@ -24,10 +24,7 @@ namespace NAudio.Dsp
 
         public double TimeConstant
         {
-            get 
-            { 
-                return ms; 
-            }
+            get => ms;
             set 
             {
                 System.Diagnostics.Debug.Assert( value > 0.0 );
@@ -38,10 +35,7 @@ namespace NAudio.Dsp
 
         public double SampleRate
         {
-            get 
-            {
-                return sampleRate; 
-            }
+            get => sampleRate;
             set
             {
                 System.Diagnostics.Debug.Assert( value > 0.0 );
@@ -50,9 +44,9 @@ namespace NAudio.Dsp
             }
         }
 
-        public void Run( double inValue, ref double state )
+        public double Run( double inValue, double state )
         {
-            state = inValue + coeff * (state - inValue);
+            return inValue + coeff * (state - inValue);
         }
 
         private void SetCoef()
@@ -77,32 +71,29 @@ namespace NAudio.Dsp
 
         public double Attack 
         {
-            get { return attack.TimeConstant; }
-            set { attack.TimeConstant = value; }
+            get => attack.TimeConstant;
+            set => attack.TimeConstant = value;
         }
 
         public double Release
         {
-            get { return release.TimeConstant; }
-            set { release.TimeConstant = value; }
+            get => release.TimeConstant;
+            set => release.TimeConstant = value;
         }
 
         public double SampleRate
         {
-            get { return attack.SampleRate; }
-            set { attack.SampleRate = release.SampleRate = value; }
+            get => attack.SampleRate;
+            set => attack.SampleRate = release.SampleRate = value;
         }
 
-        public void Run(double inValue, ref double state)
+        public double Run(double inValue, double state)
         {
             // assumes that:
             // positive delta = attack
             // negative delta = release
             // good for linear & log values
-            if ( inValue > state )
-                attack.Run( inValue, ref state );   // attack
-            else
-                release.Run( inValue, ref state );  // release
+            return inValue > state ? attack.Run( inValue, state ) : release.Run( inValue, state );
         }
     }
 }

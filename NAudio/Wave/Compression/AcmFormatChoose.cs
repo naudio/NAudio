@@ -9,7 +9,11 @@ namespace NAudio.Wave.Compression
     /// ACMFORMATCHOOSE
     /// http://msdn.microsoft.com/en-us/library/dd742911%28VS.85%29.aspx
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4, CharSet = CharSet.Auto)]
+    [StructLayout(LayoutKind.Sequential, Pack = 4
+#if NET35
+        , CharSet = CharSet.Auto
+#endif
+        )]
     struct AcmFormatChoose
     {
         /// <summary>

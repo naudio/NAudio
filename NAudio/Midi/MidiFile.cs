@@ -172,7 +172,13 @@ namespace NAudio.Midi
             finally
             {
                 if (ownInputStream)
+                {
+#if NET35
                     br.Close();
+#else
+                    br.Dispose();
+#endif
+                }
             }
         }
 

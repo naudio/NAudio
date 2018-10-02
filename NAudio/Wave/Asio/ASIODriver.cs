@@ -23,6 +23,7 @@ namespace NAudio.Wave.Asio
         {
         }
 
+#if NET35
         /// <summary>
         /// Gets the ASIO driver names installed.
         /// </summary>
@@ -54,7 +55,7 @@ namespace NAudio.Wave.Asio
             var guid = regKey.GetValue("CLSID").ToString();
             return GetAsioDriverByGuid(new Guid(guid));
         }
-
+#endif
         /// <summary>
         /// Instantiate the ASIO driver by GUID.
         /// </summary>

@@ -1,6 +1,7 @@
 // created on 10/12/2002 at 23:58
 using System;
 using System.Runtime.InteropServices;
+using NAudio.Utils;
 
 namespace NAudio.Mixer 
 {
@@ -29,7 +30,7 @@ namespace NAudio.Mixer
 		/// <param name="pDetails">memory pointer</param>
 		protected override void GetDetails(IntPtr pDetails) 
 		{
-			boolDetails = (MixerInterop.MIXERCONTROLDETAILS_BOOLEAN) Marshal.PtrToStructure(pDetails,typeof(MixerInterop.MIXERCONTROLDETAILS_BOOLEAN));
+			boolDetails = MarshalHelpers.PtrToStructure<MixerInterop.MIXERCONTROLDETAILS_BOOLEAN>(pDetails);
 		}
 		
 		/// <summary>

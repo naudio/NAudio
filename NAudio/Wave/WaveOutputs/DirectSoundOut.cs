@@ -670,7 +670,7 @@ namespace NAudio.Wave
         //----------------------------------------------------------------------------------------------
         // Minimal Native DirectSound COM interop interfaces
         //----------------------------------------------------------------------------------------------
-        #region Native DirectSound COM Interface
+#region Native DirectSound COM Interface
 
         [StructLayout(LayoutKind.Sequential, Pack = 2)]
         internal class BufferDescription
@@ -763,8 +763,11 @@ namespace NAudio.Wave
         /// </summary>
         [ComImport,
          Guid("279AFA83-4981-11CE-A521-0020AF0BE560"),
-         InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
-         SuppressUnmanagedCodeSecurity]
+#if !WINDOWS_UWP
+    System.Security.SuppressUnmanagedCodeSecurity,
+#endif
+         InterfaceType(ComInterfaceType.InterfaceIsIUnknown)
+         ]
         internal interface IDirectSound
         {
             //STDMETHOD(CreateSoundBuffer)    (THIS_ LPCDSBUFFERDESC pcDSBufferDesc, LPDIRECTSOUNDBUFFER *ppDSBuffer, LPUNKNOWN pUnkOuter) PURE;
@@ -790,8 +793,11 @@ namespace NAudio.Wave
         /// </summary>
         [ComImport,
          Guid("279AFA85-4981-11CE-A521-0020AF0BE560"),
-         InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
-         SuppressUnmanagedCodeSecurity]
+#if !WINDOWS_UWP
+    System.Security.SuppressUnmanagedCodeSecurity,
+#endif         
+         InterfaceType(ComInterfaceType.InterfaceIsIUnknown)
+         ]
         internal interface IDirectSoundBuffer
         {
             //    STDMETHOD(GetCaps)              (THIS_ LPDSBCAPS pDSBufferCaps) PURE;
@@ -841,8 +847,10 @@ namespace NAudio.Wave
         /// </summary>
         [ComImport,
          Guid("b0210783-89cd-11d0-af08-00a0c925cd16"),
-         InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
-         SuppressUnmanagedCodeSecurity]
+#if !WINDOWS_UWP
+    System.Security.SuppressUnmanagedCodeSecurity,
+#endif
+         InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
         internal interface IDirectSoundNotify
         {
             void SetNotificationPositions(UInt32 dwPositionNotifies, [In, MarshalAs(UnmanagedType.LPArray)] DirectSoundBufferPositionNotify[] pcPositionNotifies);
@@ -903,7 +911,7 @@ namespace NAudio.Wave
         /// <returns>HANDLE of the Desktop window</returns>
         [DllImport("user32.dll")]
         private static extern IntPtr GetDesktopWindow();
-        #endregion
+#endregion
     }
 
     /// <summary>

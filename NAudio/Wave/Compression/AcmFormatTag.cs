@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace NAudio.Wave.Compression
+﻿namespace NAudio.Wave.Compression
 {
     /// <summary>
     /// ACM Format Tag
@@ -13,7 +9,7 @@ namespace NAudio.Wave.Compression
 
         internal AcmFormatTag(AcmFormatTagDetails formatTagDetails)
         {
-            this.formatTagDetails = formatTagDetails;                        
+            this.formatTagDetails = formatTagDetails;
         }
 
         /// <summary>

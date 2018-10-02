@@ -15,7 +15,7 @@ namespace NAudio.Utils
         {
             // when we go to .NET 3.5, use LINQ for this
             foreach (var f in t
-#if NETFX_CORE
+#if NETSTANDARD1_6
                 .GetRuntimeFields())
 #else
                 .GetFields(BindingFlags.Static | BindingFlags.Public))

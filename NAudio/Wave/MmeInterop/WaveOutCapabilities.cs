@@ -7,7 +7,11 @@ namespace NAudio.Wave
     /// WaveOutCapabilities structure (based on WAVEOUTCAPS2 from mmsystem.h)
     /// http://msdn.microsoft.com/library/default.asp?url=/library/en-us/multimed/htm/_win32_waveoutcaps_str.asp
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+    [StructLayout(LayoutKind.Sequential
+#if !WINDOWS_UWP
+        , CharSet = CharSet.Auto
+#endif
+        )]
     public struct WaveOutCapabilities
     {
         /// <summary>

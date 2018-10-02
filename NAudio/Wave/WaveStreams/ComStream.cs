@@ -35,8 +35,10 @@ namespace NAudio.Wave
         {
             if (stream == null)
                 throw new ArgumentNullException(nameof(stream));
+#if !WINDOWS_UWP
             if (synchronizeStream)
                 stream = Synchronized(stream);
+#endif
             this.stream = stream;
         }
 
@@ -151,6 +153,7 @@ namespace NAudio.Wave
             stream = null;
         }
 
+#if !WINDOWS_UWP
         public override void Close()
         {
             base.Close();
@@ -159,5 +162,6 @@ namespace NAudio.Wave
             stream.Close();
             stream = null;
         }
+#endif
     }
 }

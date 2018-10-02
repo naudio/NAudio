@@ -1,17 +1,18 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.IO;
 
 namespace NAudio.Midi
 {
-    class SmpteOffsetEvent : MetaEvent
+    /// <summary>
+    /// SMPTE Offset Event
+    /// </summary>
+    public class SmpteOffsetEvent : MetaEvent
     {
-        private byte hours;
-        private byte minutes;
-        private byte seconds;
-        private byte frames;
-        private byte subFrames; // 100ths of a frame
+        private readonly byte hours;
+        private readonly byte minutes;
+        private readonly byte seconds;
+        private readonly byte frames;
+        private readonly byte subFrames; // 100ths of a frame
 
         /// <summary>
         /// Creates a new time signature event
@@ -51,44 +52,29 @@ namespace NAudio.Midi
         /// <summary>
         /// Hours
         /// </summary>
-        public int Hours
-        {
-            get { return hours; }
-        }
+        public int Hours => hours;
 
         /// <summary>
         /// Minutes
         /// </summary>
-        public int Minutes
-        {
-            get { return minutes; }
-        }
+        public int Minutes => minutes;
 
         /// <summary>
         /// Seconds
         /// </summary>
-        public int Seconds
-        {
-            get { return seconds; }
-        }
+        public int Seconds => seconds;
 
         /// <summary>
         /// Frames
         /// </summary>
-        public int Frames
-        {
-            get { return frames; }
-        }
+        public int Frames => frames;
 
         /// <summary>
         /// SubFrames
         /// </summary>
-        public int SubFrames
-        {
-            get { return subFrames; }
-        }
+        public int SubFrames => subFrames;
 
-        
+
         /// <summary>
         /// Describes this time signature event
         /// </summary>

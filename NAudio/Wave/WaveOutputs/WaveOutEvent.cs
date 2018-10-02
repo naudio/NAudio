@@ -86,7 +86,7 @@ namespace NAudio.Wave
             callbackEvent = new AutoResetEvent(false);
 
             waveStream = waveProvider;
-            int bufferSize = waveProvider.WaveFormat.ConvertLatencyToByteSize((DesiredLatency + NumberOfBuffers - 1) / NumberOfBuffers);            
+            int bufferSize = waveProvider.WaveFormat.ConvertLatencyToByteSize((DesiredLatency + NumberOfBuffers - 1) / NumberOfBuffers);
 
             MmResult result;
             lock (waveOutLock)
@@ -248,50 +248,25 @@ namespace NAudio.Wave
         /// stream - it calls directly into waveOutGetPosition)
         /// </summary>
         /// <returns>Position in bytes</returns>
-        public long GetPosition()
-        {
-            lock (waveOutLock)
-            {
-                var mmTime = new MmTime();
-                mmTime.wType = MmTime.TIME_BYTES; // request results in bytes, TODO: perhaps make this a little more flexible and support the other types?
-                MmException.Try(WaveInterop.waveOutGetPosition(hWaveOut, out mmTime, Marshal.SizeOf(mmTime)), "waveOutGetPosition");
-
-                if (mmTime.wType != MmTime.TIME_BYTES)
-                    throw new Exception(string.Format("waveOutGetPosition: wType -> Expected {0}, Received {1}", MmTime.TIME_BYTES, mmTime.wType));
-
-                return mmTime.cb;
-            }
-        }
+        public long GetPosition() => WaveOutUtils.GetPositionBytes(hWaveOut, waveOutLock);
 
         /// <summary>
         /// Gets a <see cref="Wave.WaveFormat"/> instance indicating the format the hardware is using.
         /// </summary>
-        public WaveFormat OutputWaveFormat
-        {
-            get { return waveStream.WaveFormat; }
-        }
+        public WaveFormat OutputWaveFormat => waveStream.WaveFormat;
 
         /// <summary>
         /// Playback State
         /// </summary>
-        public PlaybackState PlaybackState
-        {
-            get { return playbackState; }
-        }
+        public PlaybackState PlaybackState => playbackState;
 
         /// <summary>
         /// Volume for this device 1.0 is full scale
         /// </summary>
         public float Volume
         {
-            get
-            {
-                return WaveOut.GetWaveOutVolume(hWaveOut, waveOutLock);
-            }
-            set
-            {
-                WaveOut.SetWaveOutVolume(value, hWaveOut, waveOutLock);
-            }
+            get => WaveOutUtils.GetWaveOutVolume(hWaveOut, waveOutLock);
+            set => WaveOutUtils.SetWaveOutVolume(value, hWaveOut, waveOutLock);
         }
 
         #region Dispose Pattern
@@ -359,7 +334,7 @@ namespace NAudio.Wave
             Debug.Assert(false, "WaveOutEvent device was not closed");
         }
 
-        #endregion
+#endregion
 
         private void RaisePlaybackStoppedEvent(Exception e)
         {

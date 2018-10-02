@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
 
 namespace NAudio.Wave
 {
-    class WaveWindowNative : System.Windows.Forms.NativeWindow
+    class WaveWindowNative : NativeWindow
     {
         private WaveInterop.WaveCallback waveCallback;
 
@@ -15,7 +13,7 @@ namespace NAudio.Wave
             this.waveCallback = waveCallback;
         }
 
-        protected override void WndProc(ref System.Windows.Forms.Message m)
+        protected override void WndProc(ref Message m)
         {
             WaveInterop.WaveMessage message = (WaveInterop.WaveMessage)m.Msg;
             
@@ -50,7 +48,7 @@ namespace NAudio.Wave
             this.waveCallback = waveCallback;
         }
 
-        protected override void WndProc(ref System.Windows.Forms.Message m)
+        protected override void WndProc(ref Message m)
         {
             WaveInterop.WaveMessage message = (WaveInterop.WaveMessage)m.Msg;
             

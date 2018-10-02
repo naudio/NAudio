@@ -94,6 +94,16 @@ namespace NAudio.FileFormats.Wav
                     }
                     stream.Position += chunkLength;
                 }
+
+                // All Chunks have to be word aligned.
+                // https://www.tactilemedia.com/info/MCI_Control_Info.html
+                // "If the chunk size is an odd number of bytes, a pad byte with value zero is
+                //  written after ckData. Word aligning improves access speed (for chunks resident in memory)
+                //  and maintains compatibility with EA IFF. The ckSize value does not include the pad byte."
+                if (((chunkLength % 2) != 0) && (br.PeekChar() == 0))
+                {
+                    stream.Position++;
+                }
             }
 
             if (waveFormat == null)

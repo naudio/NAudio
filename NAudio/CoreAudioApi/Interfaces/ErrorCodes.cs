@@ -54,6 +54,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         public static readonly int AUDCLNT_E_INCORRECT_BUFFER_SIZE  = HResult.MAKE_HRESULT(SEVERITY_ERROR, FACILITY_AUDCLNT, 0x015);
         public static readonly int AUDCLNT_E_BUFFER_SIZE_ERROR  = HResult.MAKE_HRESULT(SEVERITY_ERROR, FACILITY_AUDCLNT, 0x016);
         public static readonly int AUDCLNT_E_CPUUSAGE_EXCEEDED  = HResult.MAKE_HRESULT(SEVERITY_ERROR, FACILITY_AUDCLNT, 0x017);
+        public static readonly int AUDCLNT_E_BUFFER_SIZE_NOT_ALIGNED = HResult.MAKE_HRESULT(SEVERITY_ERROR, FACILITY_AUDCLNT, 0x019);
         public static readonly int AUDCLNT_E_RESOURCES_INVALIDATED = unchecked((int) 0x88890026);
         /*static readonly int AUDCLNT_S_BUFFER_EMPTY              AUDCLNT_SUCCESS(0x001)
         static readonly int AUDCLNT_S_THREAD_ALREADY_REGISTERED AUDCLNT_SUCCESS(0x002)

@@ -1,4 +1,5 @@
 ﻿using System;
+using NAudio.Utils;
 
 namespace NAudio.Wave
 {
@@ -57,11 +58,7 @@ namespace NAudio.Wave
             const int ratio = SourceBitsPerSample / TargetBitsPerSample;
             var samplesRequired = bytesCount / ratio;
 
-            //_sourceBuffer = BufferHelpers.Ensure(_sourceBuffer, samplesRequired);
-            if (_sourceBuffer == null || _sourceBuffer.Length < samplesRequired)
-            {
-                _sourceBuffer = new float[samplesRequired];
-            }
+            _sourceBuffer = BufferHelpers.Ensure(_sourceBuffer, samplesRequired);
 
             var sourceSamples = _sourceProvider.Read(_sourceBuffer, 0, samplesRequired);
             var destWaveBuffer = new WaveBuffer(buffer);

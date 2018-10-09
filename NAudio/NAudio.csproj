@@ -511,6 +511,7 @@
     <Compile Include="Dmo\InputStreamInfoFlags.cs" />
     <Compile Include="Dmo\OutputStreamInfoFlags.cs" />
     <Compile Include="Dmo\ResamplerMediaObject.cs" />
+    <Compile Include="Wave\WaveProviders\WaveFloatTo8Provider.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Gui\Fader.resx">

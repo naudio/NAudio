@@ -91,13 +91,13 @@ namespace NAudio.Wave
         public static extern MmResult waveOutUnprepareHeader(IntPtr hWaveOut, WaveHeader lpWaveOutHdr, int uSize);
         [DllImport("winmm.dll")]
         public static extern MmResult waveOutWrite(IntPtr hWaveOut, WaveHeader lpWaveOutHdr, int uSize);
-        
+
         // http://msdn.microsoft.com/en-us/library/dd743866%28VS.85%29.aspx
         [DllImport("winmm.dll")]
         public static extern MmResult waveOutOpen(out IntPtr hWaveOut, IntPtr uDeviceID, WaveFormat lpFormat, WaveCallback dwCallback, IntPtr dwInstance, WaveInOutOpenFlags dwFlags);
         [DllImport("winmm.dll", EntryPoint = "waveOutOpen")]
         public static extern MmResult waveOutOpenWindow(out IntPtr hWaveOut, IntPtr uDeviceID, WaveFormat lpFormat, IntPtr callbackWindowHandle, IntPtr dwInstance, WaveInOutOpenFlags dwFlags);
-        
+
         [DllImport("winmm.dll")]
         public static extern MmResult waveOutReset(IntPtr hWaveOut);
         [DllImport("winmm.dll")]
@@ -114,7 +114,7 @@ namespace NAudio.Wave
         // http://msdn.microsoft.com/en-us/library/dd743874%28VS.85%29.aspx
         [DllImport("winmm.dll")]
         public static extern MmResult waveOutSetVolume(IntPtr hWaveOut, int dwVolume);
-        
+
         [DllImport("winmm.dll")]
         public static extern MmResult waveOutGetVolume(IntPtr hWaveOut, out int dwVolume);
 
@@ -128,13 +128,13 @@ namespace NAudio.Wave
         // http://msdn.microsoft.com/en-us/library/dd743841%28VS.85%29.aspx
         [DllImport("winmm.dll", CharSet = CharSet.Auto)]
         public static extern MmResult waveInGetDevCaps(IntPtr deviceID, out WaveInCapabilities waveInCaps, int waveInCapsSize);
-        
+
         // http://msdn.microsoft.com/en-us/library/dd743838%28VS.85%29.aspx
         [DllImport("winmm.dll")]
         public static extern MmResult waveInAddBuffer(IntPtr hWaveIn, WaveHeader pwh, int cbwh);
         [DllImport("winmm.dll")]
         public static extern MmResult waveInClose(IntPtr hWaveIn);
-        
+
         // http://msdn.microsoft.com/en-us/library/dd743847%28VS.85%29.aspx
         [DllImport("winmm.dll")]
         public static extern MmResult waveInOpen(out IntPtr hWaveIn, IntPtr uDeviceID, WaveFormat lpFormat, WaveCallback dwCallback, IntPtr dwInstance, WaveInOutOpenFlags dwFlags);
@@ -144,7 +144,7 @@ namespace NAudio.Wave
         // http://msdn.microsoft.com/en-us/library/dd743848%28VS.85%29.aspx
         [DllImport("winmm.dll")]
         public static extern MmResult waveInPrepareHeader(IntPtr hWaveIn, WaveHeader lpWaveInHdr, int uSize);
-        
+
         [DllImport("winmm.dll")]
         public static extern MmResult waveInUnprepareHeader(IntPtr hWaveIn, WaveHeader lpWaveInHdr, int uSize);
 
@@ -159,6 +159,11 @@ namespace NAudio.Wave
         // http://msdn.microsoft.com/en-us/library/dd743852%28VS.85%29.aspx
         [DllImport("winmm.dll")]
         public static extern MmResult waveInStop(IntPtr hWaveIn);
+
+        // https://msdn.microsoft.com/en-us/library/Dd743845(v=VS.85).aspx
+        [DllImport("winmm.dll")]
+        public static extern MmResult waveInGetPosition(IntPtr hWaveIn, out MmTime mmTime, int uSize);
+
 
     }
 }

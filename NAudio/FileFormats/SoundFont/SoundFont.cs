@@ -118,10 +118,32 @@ namespace NAudio.SoundFont
 			}
 		}
 
-		/// <summary>
-		/// <see cref="Object.ToString"/>
+        /// <summary>
+		/// The 24 bit portion of Sample Data
 		/// </summary>
-		public override string ToString() 
+		public byte[] SampleData24
+        {
+            get
+            {
+                return sampleData.SampleData24bit;
+            }
+        }
+
+        /// <summary>
+        /// Does this SoundFont contain 24 bit samples?
+        /// </summary>
+        public bool Is24Bit
+        {
+            get
+            {
+                return sampleData.Is24Bit;
+            }
+        }
+
+        /// <summary>
+        /// <see cref="Object.ToString"/>
+        /// </summary>
+        public override string ToString() 
 		{
 			return String.Format("Info Chunk:\r\n{0}\r\nPresets Chunk:\r\n{1}",
 									info,presetsChunk);

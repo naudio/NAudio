@@ -25,7 +25,7 @@ namespace NAudio.Wave
         /// </summary>
         /// <param name="inputStream"></param>
         public CueWaveFileReader(Stream inputStream)
-            : this(inputStream)
+            : base(inputStream)
         {
         }
 

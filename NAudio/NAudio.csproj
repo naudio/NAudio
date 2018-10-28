@@ -122,6 +122,10 @@
     <Compile Include="CoreAudioApi\PropVariantNative.cs" />
     <Compile Include="CoreAudioApi\SessionCollection.cs" />
     <Compile Include="CoreAudioApi\SimpleAudioVolume.cs" />
+    <Compile Include="Dmo\DmoInPlaceProcessReturn.cs" />
+    <Compile Include="Dmo\MediaObjectInPlace.cs" />
+    <Compile Include="Dmo\DmoInPlaceProcessFlags.cs" />
+    <Compile Include="Dmo\IMediaObjectInPlace.cs" />
     <Compile Include="Dsp\EnvelopeGenerator.cs" />
     <Compile Include="Dsp\WdlResampler.cs" />
     <Compile Include="FileFormats\Wav\WaveFileChunkReader.cs" />

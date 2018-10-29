@@ -476,6 +476,7 @@
     <Compile Include="Wave\SampleProviders\SampleToWaveProvider.cs" />
     <Compile Include="Wave\WaveProviders\BufferedWaveProvider.cs" />
     <Compile Include="Wave\SampleProviders\MonoToStereoSampleProvider.cs" />
+    <Compile Include="Wave\WaveProviders\DmoEffectWaveProvider.cs" />
     <Compile Include="Wave\WaveProviders\MediaFoundationResampler.cs" />
     <Compile Include="MediaFoundation\MediaFoundationTransform.cs" />
     <Compile Include="Wave\WaveProviders\MixingWaveProvider32.cs" />

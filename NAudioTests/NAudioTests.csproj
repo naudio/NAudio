@@ -86,6 +86,7 @@
     <Compile Include="Acm\WaveFormatConversionStreamTests.cs" />
     <Compile Include="Aiff\AiffReaderTests.cs" />
     <Compile Include="DirectSound\DirectSoundTests.cs" />
+    <Compile Include="Dmo\DmoEffectorTests.cs" />
     <Compile Include="Dmo\DmoMp3FrameDecompressorTests.cs" />
     <Compile Include="Dmo\DmoTests.cs" />
     <Compile Include="Dmo\ResamplerDmoStreamTests.cs" />

@@ -152,7 +152,11 @@ namespace NAudio.Wave
                     {
                         if (buffer.Done)
                         {
-                            DataAvailable?.Invoke(this, new WaveInEventArgs(buffer.Data, buffer.BytesRecorded));
+                            if (buffer.BytesRecorded > 0)
+                            {
+                                DataAvailable?.Invoke(this, new WaveInEventArgs(buffer.Data, buffer.BytesRecorded));
+                            }
+
                             if (captureState == CaptureState.Capturing)
                             {
                                 buffer.Reuse();

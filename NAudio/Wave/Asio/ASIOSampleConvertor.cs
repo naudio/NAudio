@@ -31,7 +31,10 @@ namespace NAudio.Wave.Asio
                             convertor = (is2Channels) ? (SampleConvertor)ConvertorShortToInt2Channels : (SampleConvertor)ConvertorShortToIntGeneric;
                             break;
                         case 32:
-                            convertor = (is2Channels) ? (SampleConvertor)ConvertorFloatToInt2Channels : (SampleConvertor)ConvertorFloatToIntGeneric;
+                            if (waveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
+                                convertor = (is2Channels) ? (SampleConvertor)ConvertorFloatToInt2Channels : (SampleConvertor)ConvertorFloatToIntGeneric;
+                            else
+                                convertor = (is2Channels) ? (SampleConvertor)ConvertorIntToInt2Channels : (SampleConvertor)ConvertorIntToIntGeneric;
                             break;
                     }
                     break;
@@ -42,7 +45,10 @@ namespace NAudio.Wave.Asio
                             convertor = (is2Channels) ? (SampleConvertor)ConvertorShortToShort2Channels : (SampleConvertor)ConvertorShortToShortGeneric;
                             break;
                         case 32:
-                            convertor = (is2Channels) ? (SampleConvertor)ConvertorFloatToShort2Channels : (SampleConvertor)ConvertorFloatToShortGeneric;
+                            if (waveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
+                                convertor = (is2Channels) ? (SampleConvertor)ConvertorFloatToShort2Channels : (SampleConvertor)ConvertorFloatToShortGeneric;
+                            else
+                                convertor = (is2Channels) ? (SampleConvertor)ConvertorIntToShort2Channels : (SampleConvertor)ConvertorIntToShortGeneric;
                             break;
                     }
                     break;
@@ -52,7 +58,10 @@ namespace NAudio.Wave.Asio
                         case 16:
                             throw new ArgumentException("Not a supported conversion");
                         case 32:
-                            convertor = ConverterFloatTo24LSBGeneric;
+                            if (waveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
+                                convertor = ConverterFloatTo24LSBGeneric;
+                            else
+                                throw new ArgumentException("Not a supported conversion");
                             break;
                     }
                     break;
@@ -62,7 +71,10 @@ namespace NAudio.Wave.Asio
                         case 16:
                             throw new ArgumentException("Not a supported conversion");
                         case 32:
-                            convertor = ConverterFloatToFloatGeneric;
+                            if (waveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
+                                convertor = ConverterFloatToFloatGeneric;
+                            else
+                                convertor = ConvertorIntToFloatGeneric;
                             break;
                     }
                     break;
@@ -74,7 +86,6 @@ namespace NAudio.Wave.Asio
             }
             return convertor;
         }
-
 
         /// <summary>
         /// Optimized convertor for 2 channels SHORT
@@ -153,7 +164,7 @@ namespace NAudio.Wave.Asio
         }
 
         /// <summary>
-        /// Generic convertor SHORT
+        /// Generic convertor Float to INT
         /// </summary>
         public static void ConvertorFloatToIntGeneric(IntPtr inputInterleavedBuffer, IntPtr[] asioOutputBuffers, int nbChannels, int nbSamples)
         {
@@ -171,6 +182,118 @@ namespace NAudio.Wave.Asio
                     for (int j = 0; j < nbChannels; j++)
                     {
                         *samples[j]++ = clampToInt(*inputSamples++);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Optimized convertor for 2 channels INT to INT
+        /// </summary>
+        public static void ConvertorIntToInt2Channels(IntPtr inputInterleavedBuffer, IntPtr[] asioOutputBuffers, int nbChannels, int nbSamples)
+        {
+            unsafe
+            {
+                int* inputSamples = (int*)inputInterleavedBuffer;
+                int* leftSamples = (int*)asioOutputBuffers[0];
+                int* rightSamples = (int*)asioOutputBuffers[1];
+
+                for (int i = 0; i < nbSamples; i++)
+                {
+                    *leftSamples++ = inputSamples[0];
+                    *rightSamples++ = inputSamples[1];
+                    inputSamples += 2;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Generic convertor INT to INT
+        /// </summary>
+        public static void ConvertorIntToIntGeneric(IntPtr inputInterleavedBuffer, IntPtr[] asioOutputBuffers, int nbChannels, int nbSamples)
+        {
+            unsafe
+            {
+                int* inputSamples = (int*)inputInterleavedBuffer;
+                int*[] samples = new int*[nbChannels];
+                for (int i = 0; i < nbChannels; i++)
+                {
+                    samples[i] = (int*)asioOutputBuffers[i];
+                }
+
+                for (int i = 0; i < nbSamples; i++)
+                {
+                    for (int j = 0; j < nbChannels; j++)
+                    {
+                        *samples[j]++ = *inputSamples++;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Optimized convertor for 2 channels INT to SHORT
+        /// </summary>
+        public static void ConvertorIntToShort2Channels(IntPtr inputInterleavedBuffer, IntPtr[] asioOutputBuffers, int nbChannels, int nbSamples)
+        {
+            unsafe
+            {
+                int* inputSamples = (int*)inputInterleavedBuffer;
+                short* leftSamples = (short*)asioOutputBuffers[0];
+                short* rightSamples = (short*)asioOutputBuffers[1];
+
+                for (int i = 0; i < nbSamples; i++)
+                {
+                    *leftSamples++ = (short)(inputSamples[0] / (1 << 16));
+                    *rightSamples++ = (short)(inputSamples[1] / (1 << 16));
+                    inputSamples += 2;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Generic convertor INT to SHORT
+        /// </summary>
+        public static void ConvertorIntToShortGeneric(IntPtr inputInterleavedBuffer, IntPtr[] asioOutputBuffers, int nbChannels, int nbSamples)
+        {
+            unsafe
+            {
+                int* inputSamples = (int*)inputInterleavedBuffer;
+                int*[] samples = new int*[nbChannels];
+                for (int i = 0; i < nbChannels; i++)
+                {
+                    samples[i] = (int*)asioOutputBuffers[i];
+                }
+
+                for (int i = 0; i < nbSamples; i++)
+                {
+                    for (int j = 0; j < nbChannels; j++)
+                    {
+                        *samples[j]++ = (short)(*inputSamples++ / (1 << 16));
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Generic convertor INT to FLOAT
+        /// </summary>
+        public static void ConvertorIntToFloatGeneric(IntPtr inputInterleavedBuffer, IntPtr[] asioOutputBuffers, int nbChannels, int nbSamples)
+        {
+            unsafe
+            {
+                int* inputSamples = (int*)inputInterleavedBuffer;
+                float*[] samples = new float*[nbChannels];
+                for (int i = 0; i < nbChannels; i++)
+                {
+                    samples[i] = (float*)asioOutputBuffers[i];
+                }
+
+                for (int i = 0; i < nbSamples; i++)
+                {
+                    for (int j = 0; j < nbChannels; j++)
+                    {
+                        *samples[j]++ = *inputSamples++ / (1 << (32 - 1));
                     }
                 }
             }

@@ -135,7 +135,7 @@ namespace NAudio.Wave
                     var hBuffer = (GCHandle)waveHeader.userData;
                     var buffer = (WaveInBuffer)hBuffer.Target;
                     if (buffer == null) return;
-                
+
                     lastReturnedBufferIndex = Array.IndexOf(buffers, buffer);
                     RaiseDataAvailable(buffer);
                     try
@@ -148,7 +148,7 @@ namespace NAudio.Wave
                         RaiseRecordingStopped(e);
                     }
                 }
-                
+
             }
         }
 
@@ -219,7 +219,7 @@ namespace NAudio.Wave
                 // report the last buffers, sometimes more than one, so taking care to report them in the right order
                 for (int n = 0; n < buffers.Length; n++)
                 {
-                    int index = (n + lastReturnedBufferIndex + 1)%buffers.Length;
+                    int index = (n + lastReturnedBufferIndex + 1) % buffers.Length;
                     var buffer = buffers[index];
                     if (buffer.Done)
                     {
@@ -233,10 +233,27 @@ namespace NAudio.Wave
         }
 
         /// <summary>
+        /// Gets the current position in bytes from the wave input device.
+        /// it calls directly into waveInGetPosition)
+        /// </summary>
+        /// <returns>Position in bytes</returns>
+        public long GetPosition()
+        {
+            MmTime mmTime = new MmTime();
+            mmTime.wType = MmTime.TIME_BYTES; // request results in bytes, TODO: perhaps make this a little more flexible and support the other types?
+            MmException.Try(WaveInterop.waveInGetPosition(waveInHandle, out mmTime, Marshal.SizeOf(mmTime)), "waveInGetPosition");
+
+            if (mmTime.wType != MmTime.TIME_BYTES)
+                throw new Exception(string.Format("waveInGetPosition: wType -> Expected {0}, Received {1}", MmTime.TIME_BYTES, mmTime.wType));
+
+            return mmTime.cb;
+        }
+
+        /// <summary>
         /// WaveFormat we are recording in
         /// </summary>
         public WaveFormat WaveFormat { get; set; }
-        
+
         /// <summary>
         /// Dispose pattern
         /// </summary>

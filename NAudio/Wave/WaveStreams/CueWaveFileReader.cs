@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave
@@ -16,6 +17,15 @@ namespace NAudio.Wave
         /// <param name="fileName"></param>
         public CueWaveFileReader(string fileName)
             : base(fileName)
+        {
+        }
+
+        /// <summary>
+        /// Loads a wave from a stream and supports reading cues
+        /// </summary>
+        /// <param name="inputStream"></param>
+        public CueWaveFileReader(Stream inputStream)
+            : base(inputStream)
         {
         }
 

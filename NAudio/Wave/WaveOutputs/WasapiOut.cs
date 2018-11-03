@@ -1,5 +1,6 @@
 ﻿using System;
 using NAudio.CoreAudioApi;
+using NAudio.CoreAudioApi.Interfaces;
 using System.Threading;
 using System.Runtime.InteropServices;
 
@@ -34,7 +35,7 @@ namespace NAudio.Wave
         public event EventHandler<StoppedEventArgs> PlaybackStopped;
 
         /// <summary>
-        /// WASAPI Out shared mode, defauult
+        /// WASAPI Out shared mode, default
         /// </summary>
         public WasapiOut() :
             this(GetDefaultAudioEndpoint(), AudioClientShareMode.Shared, true, 200)
@@ -197,13 +198,20 @@ namespace NAudio.Wave
             {
                 playbackState = PlaybackState.Stopped;
             }
-            Marshal.Copy(readBuffer,0,buffer,read);
-            int actualFrameCount = read / bytesPerFrame;
-            /*if (actualFrameCount != frameCount)
+            Marshal.Copy(readBuffer, 0, buffer, read);
+            if (this.isUsingEventSync && this.shareMode == AudioClientShareMode.Exclusive)
             {
-                Debug.WriteLine(String.Format("WASAPI wanted {0} frames, supplied {1}", frameCount, actualFrameCount ));
-            }*/
-            renderClient.ReleaseBuffer(actualFrameCount, AudioClientBufferFlags.None);
+                renderClient.ReleaseBuffer(frameCount, AudioClientBufferFlags.None);
+            }
+            else
+            {
+                int actualFrameCount = read / bytesPerFrame;
+                /*if (actualFrameCount != frameCount)
+                {
+                    Debug.WriteLine(String.Format("WASAPI wanted {0} frames, supplied {1}", frameCount, actualFrameCount ));
+                }*/
+                renderClient.ReleaseBuffer(actualFrameCount, AudioClientBufferFlags.None);
+            }
         }
 
         /// <summary>
@@ -376,9 +384,29 @@ namespace NAudio.Wave
                 }
                 else
                 {
-                    // With EventCallBack and Exclusive, both latencies must equals
-                    audioClient.Initialize(shareMode, AudioClientStreamFlags.EventCallback, latencyRefTimes, latencyRefTimes,
-                                        outputFormat, Guid.Empty);
+                    try
+                    {
+                        // With EventCallBack and Exclusive, both latencies must equals
+                        audioClient.Initialize(shareMode, AudioClientStreamFlags.EventCallback, latencyRefTimes, latencyRefTimes,
+                                            outputFormat, Guid.Empty);
+                    }
+                    catch (COMException ex)
+                    {
+                        // Starting with Windows 7, Initialize can return AUDCLNT_E_BUFFER_SIZE_NOT_ALIGNED for a render device.
+                        // We should to initialize again.
+                        if (ex.ErrorCode != ErrorCodes.AUDCLNT_E_BUFFER_SIZE_NOT_ALIGNED)
+                            throw ex;
+
+                        // Calculate the new latency.
+                        long newLatencyRefTimes = (long)(10000000.0 /
+                            (double)this.outputFormat.SampleRate *
+                            (double)this.audioClient.BufferSize + 0.5);
+
+                        this.audioClient.Dispose();
+                        this.audioClient = this.mmDevice.AudioClient;
+                        this.audioClient.Initialize(this.shareMode, AudioClientStreamFlags.EventCallback,
+                                            newLatencyRefTimes, newLatencyRefTimes, this.outputFormat, Guid.Empty);
+                    }
                 }
 
                 // Create the Wait Event Handle

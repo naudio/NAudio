@@ -152,7 +152,11 @@ namespace NAudio.Wave
                     {
                         if (buffer.Done)
                         {
-                            DataAvailable?.Invoke(this, new WaveInEventArgs(buffer.Data, buffer.BytesRecorded));
+                            if (buffer.BytesRecorded > 0)
+                            {
+                                DataAvailable?.Invoke(this, new WaveInEventArgs(buffer.Data, buffer.BytesRecorded));
+                            }
+
                             if (captureState == CaptureState.Capturing)
                             {
                                 buffer.Reuse();
@@ -186,8 +190,12 @@ namespace NAudio.Wave
             if (captureState != CaptureState.Stopped)
             {
                 captureState = CaptureState.Stopping;
-                callbackEvent.Set(); // signal the thread to exit
                 MmException.Try(WaveInterop.waveInStop(waveInHandle), "waveInStop");
+
+                //Reset, triggering the buffers to be returned
+                MmException.Try(WaveInterop.waveInReset(waveInHandle), "waveInReset");
+
+                callbackEvent.Set(); // signal the thread to exit
             }
         }
 

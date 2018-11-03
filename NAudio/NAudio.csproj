@@ -67,6 +67,12 @@
     <Compile Remove="Wave\WaveFormats\WaveFormatCustomMarshaler.cs" />
     <Compile Remove="Wave\WaveProviders\MediaFoundationResampler.cs" />
     <Compile Remove="FileFormats\Mp3\Mp3FrameDecompressor.cs" />
+    <Compile Remove="Dmo\DmoChorus.cs" />
+    <Compile Remove="Dmo\DmoCompressor.cs" />
+    <Compile Remove="Dmo\DmoDistortion.cs" />
+    <Compile Remove="Dmo\DmoDistortion.cs" />
+    <Compile Remove="Dmo\Effect\*.cs" />
+    <Compile Remove="Wave\WaveProviders\DmoEffectWaveProvider.cs" />
   </ItemGroup>
 
 

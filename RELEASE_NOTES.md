@@ -1,5 +1,25 @@
+### 1.8.5 (3 Nov 2018)
 
-### 1.8.4
+- DMO Effect support via `DmoEffectWaveProvider` #413
+- New Broadcast Wave File Writer `BwfWriter`
+- Various bugfixes and enhancements:
+  - Improvements to stopping recording in `WaveInEvent` #403
+  - `WaveIn` and `WaveInEvent` support `GetPosition` #399
+  - `CueWaveFileReader` support for `Stream` #409, #376
+  - Fix reading wave files with odd chunk lengths #386
+  - Fix some WASAPI exclusive /event mode issues #383
+  - Fix 32 bit float ASIO sample converter #356
+  - Fixing `IAudioCaptureClient` cast exception issue #350
+  - `WaveOut` and `WaveOutEvent` read the actual volume #349
+  - `PropVariant` support for `VT_FILETIME` #341
+  - Added definitions of several media subtypes
+  - Fixed offset bug in `StereoToMonoSampleProvider` #312
+  - `KeySignatureEvent` reports flats properly as negative number #295
+  - `WaveInProvider.Read` uses offset parameter #297
+  - BREAKING - retired cakewalk drum map file format support
+  - Retired Win 8 project in favour of UWP
+
+### 1.8.4 (6 Dec 2017)
 
 * Windows 10 Universal build now included in NuGet package
 * adding a TotalTime property to WaveFileWriter

@@ -18,6 +18,5 @@
     <file src="NAudio.Universal\bin\Release\NAudio.Universal.dll" target="lib\uap10.0" /> 
     <file src="NAudio.Universal\bin\Release\NAudio.Universal.xml" target="lib\uap10.0" /> 
     <file src="license.txt" />
-    <file src="readme.txt" />
   </files>
 </package>

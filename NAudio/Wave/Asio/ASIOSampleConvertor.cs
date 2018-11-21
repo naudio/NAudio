@@ -448,19 +448,19 @@ namespace NAudio.Wave.Asio
         private static int clampTo24Bit(double sampleValue)
         {
             sampleValue = (sampleValue < -1.0) ? -1.0 : (sampleValue > 1.0) ? 1.0 : sampleValue;
-            return (int)(sampleValue * 8388607.0);
+            return (int)(sampleValue * (sampleValue < 0.0 ? 8388608.0 : 8388607.0));
         }
 
         private static int clampToInt(double sampleValue)
         {
             sampleValue = (sampleValue < -1.0) ? -1.0 : (sampleValue > 1.0) ? 1.0 : sampleValue;
-            return (int)(sampleValue * 2147483647.0);
+            return (int)(sampleValue * (sampleValue < 0.0 ? 2147483648.0 : 2147483647.0));
         }
 
         private static short clampToShort(double sampleValue)
         {
             sampleValue = (sampleValue < -1.0) ? -1.0 : (sampleValue > 1.0) ? 1.0 : sampleValue;
-            return (short)(sampleValue * 32767.0);
+            return (short)(sampleValue * (sampleValue < 0.0 ? 32768.0 : 32767.0));
         }
     }
 }

@@ -154,6 +154,7 @@ namespace NAudio.Wave
             if (playbackState != PlaybackState.Playing)
             {
                 playbackState = PlaybackState.Playing;
+                HasReachedEnd = false;
                 driver.Start();
             }
         }
@@ -165,6 +166,7 @@ namespace NAudio.Wave
         {
             playbackState = PlaybackState.Stopped;
             driver.Stop();
+            HasReachedEnd = false;
             RaisePlaybackStopped(null);
         }
 
@@ -265,7 +267,8 @@ namespace NAudio.Wave
                 int read = sourceStream.Read(waveBuffer, 0, waveBuffer.Length);
                 if (read < waveBuffer.Length)
                 {
-                    // we have stopped
+                    // we have reached the end of the input data - clear out the end
+                    Array.Clear(waveBuffer, read, waveBuffer.Length - read);
                 }
 
                 // Call the convertor
@@ -280,7 +283,9 @@ namespace NAudio.Wave
 
                 if (read == 0)
                 {
-                    Stop();
+                    if (AutoStop)
+                        Stop(); // this can cause hanging issues
+                    HasReachedEnd = true;
                 }
             }
         }
@@ -297,6 +302,19 @@ namespace NAudio.Wave
                 return latency;
             }
         }
+
+        /// <summary>
+        /// Automatically stop when the end of the input stream is reached
+        /// Disable this if auto-stop is causing hanging issues
+        /// </summary>
+        public bool AutoStop { get; set; } 
+
+        /// <summary>
+        /// A flag to let you know that we have reached the end of the input file
+        /// Useful if AutoStop is set to false
+        /// You can monitor this yourself and call Stop when it is true
+        /// </summary>
+        public bool HasReachedEnd { get; private set; }
 
         /// <summary>
         /// Playback State

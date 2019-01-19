@@ -78,9 +78,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\NAudio\Wave\WaveStreams\WaveChannel32.cs">
-      <Link>WaveChannel32.cs</Link>
-    </Compile>
     <Compile Include="Acm\AcmDriverTests.cs" />
     <Compile Include="Acm\GsmEncodeTest.cs" />
     <Compile Include="Acm\WaveFormatConversionStreamTests.cs" />

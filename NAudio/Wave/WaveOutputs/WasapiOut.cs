@@ -214,6 +214,54 @@ namespace NAudio.Wave
             }
         }
 
+        private WaveFormat GetFallbackFormat()
+        {
+            WaveFormat correctSampleRateFormat = audioClient.MixFormat;
+            /*WaveFormat.CreateIeeeFloatWaveFormat(
+            audioClient.MixFormat.SampleRate,
+            audioClient.MixFormat.Channels);*/
+
+            if (!audioClient.IsFormatSupported(shareMode, correctSampleRateFormat))
+            {
+                // Iterate from Worst to Best Format
+                WaveFormatExtensible[] bestToWorstFormats = {
+                                  new WaveFormatExtensible(
+                                      outputFormat.SampleRate, 32,
+                                      outputFormat.Channels),
+                                  new WaveFormatExtensible(
+                                      outputFormat.SampleRate, 24,
+                                      outputFormat.Channels),
+                                  new WaveFormatExtensible(
+                                      outputFormat.SampleRate, 16,
+                                      outputFormat.Channels),
+                              };
+
+                // Check from best Format to worst format ( Float32, Int24, Int16 )
+                for (int i = 0; i < bestToWorstFormats.Length; i++)
+                {
+                    correctSampleRateFormat = bestToWorstFormats[i];
+                    if (audioClient.IsFormatSupported(shareMode, correctSampleRateFormat))
+                    {
+                        break;
+                    }
+                    correctSampleRateFormat = null;
+                }
+
+                // If still null, then test on the PCM16, 2 channels
+                if (correctSampleRateFormat == null)
+                {
+                    // Last Last Last Chance (Thanks WASAPI)
+                    correctSampleRateFormat = new WaveFormatExtensible(outputFormat.SampleRate, 16, 2);
+                    if (!audioClient.IsFormatSupported(shareMode, correctSampleRateFormat))
+                    {
+                        throw new NotSupportedException("Can't find a supported format to use");
+                    }
+                }
+            }
+
+            return correctSampleRateFormat;
+        }
+
         /// <summary>
         /// Gets the current position in bytes from the wave output device.
         /// (n.b. this is not the same thing as the position within your reader
@@ -302,58 +350,29 @@ namespace NAudio.Wave
                 // The MixFormat is more likely to be a WaveFormatExtensible.
                 if (closestSampleRateFormat == null)
                 {
-                    WaveFormat correctSampleRateFormat = audioClient.MixFormat;
-                        /*WaveFormat.CreateIeeeFloatWaveFormat(
-                        audioClient.MixFormat.SampleRate,
-                        audioClient.MixFormat.Channels);*/
 
-                    if (!audioClient.IsFormatSupported(shareMode, correctSampleRateFormat))
-                    {
-                        // Iterate from Worst to Best Format
-                        WaveFormatExtensible[] bestToWorstFormats = {
-                                  new WaveFormatExtensible(
-                                      outputFormat.SampleRate, 32,
-                                      outputFormat.Channels),
-                                  new WaveFormatExtensible(
-                                      outputFormat.SampleRate, 24,
-                                      outputFormat.Channels),
-                                  new WaveFormatExtensible(
-                                      outputFormat.SampleRate, 16,
-                                      outputFormat.Channels),
-                              };
-
-                        // Check from best Format to worst format ( Float32, Int24, Int16 )
-                        for (int i = 0; i < bestToWorstFormats.Length; i++ )
-                        {
-                            correctSampleRateFormat = bestToWorstFormats[i];
-                            if ( audioClient.IsFormatSupported(shareMode, correctSampleRateFormat) )
-                            {
-                                break;
-                            }
-                            correctSampleRateFormat = null;
-                        }
-
-                        // If still null, then test on the PCM16, 2 channels
-                        if (correctSampleRateFormat == null)
-                        {
-                            // Last Last Last Chance (Thanks WASAPI)
-                            correctSampleRateFormat = new WaveFormatExtensible(outputFormat.SampleRate, 16, 2);
-                            if (!audioClient.IsFormatSupported(shareMode, correctSampleRateFormat))
-                            {
-                                throw new NotSupportedException("Can't find a supported format to use");
-                            }
-                        }
-                    }
-                    outputFormat = correctSampleRateFormat;
+                    outputFormat = GetFallbackFormat();
                 }
                 else
                 {
                     outputFormat = closestSampleRateFormat;
                 }
 
-                // just check that we can make it.
-                using (new ResamplerDmoStream(waveProvider, outputFormat))
+                try
                 {
+                    // just check that we can make it.
+                    using (new ResamplerDmoStream(waveProvider, outputFormat))
+                    {
+                    }
+                }
+                catch (Exception)
+                {
+                    // On Windows 10 some poorly coded drivers return a bad format in to closestSampleRateFormat
+                    // In that case, try and fallback as if it provided no closest (e.g. force trying the mix format)
+                    outputFormat = GetFallbackFormat();
+                    using (new ResamplerDmoStream(waveProvider, outputFormat))
+                    {
+                    }
                 }
                 dmoResamplerNeeded = true;
             }

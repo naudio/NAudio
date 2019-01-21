@@ -256,8 +256,10 @@ namespace NAudio.CoreAudioApi
             }
             if (hresult == (int)AudioClientErrors.UnsupportedFormat)
             {
-                // Succeeded but the specified format is not supported in exclusive mode.
-                return shareMode != AudioClientShareMode.Exclusive;
+                // documentation is confusing as to what this flag means
+                // https://docs.microsoft.com/en-us/windows/desktop/api/audioclient/nf-audioclient-iaudioclient-isformatsupported
+                // "Succeeded but the specified format is not supported in exclusive mode."
+                return false; // shareMode != AudioClientShareMode.Exclusive;
             }
             Marshal.ThrowExceptionForHR(hresult);
             // shouldn't get here

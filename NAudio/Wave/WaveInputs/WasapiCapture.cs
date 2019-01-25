@@ -38,6 +38,7 @@ namespace NAudio.CoreAudioApi
     {
         private const long ReftimesPerSec = 10000000;
         private const long ReftimesPerMillisec = 10000;
+        private readonly object syncLock = new object();
         private volatile CaptureState captureState;
         private byte[] recordBuffer;
         private Thread captureThread;
@@ -208,15 +209,18 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public void StartRecording()
         {
-            if (captureState != CaptureState.Stopped)
+            lock (syncLock)
             {
-                throw new InvalidOperationException("Previous recording still in progress");
+                if (captureState != CaptureState.Stopped)
+                {
+                    throw new InvalidOperationException("Previous recording still in progress");
+                }
+                captureState = CaptureState.Starting;
+                InitializeCaptureDevice();
+                ThreadStart start = () => CaptureThread(audioClient);
+                captureThread = new Thread(start);
+                captureThread.Start();
             }
-            captureState = CaptureState.Starting;
-            InitializeCaptureDevice();
-            ThreadStart start = () => CaptureThread(audioClient);
-            captureThread = new Thread(start);
-            captureThread.Start();
         }
 
         /// <summary>
@@ -224,8 +228,11 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public void StopRecording()
         {
-            if (captureState != CaptureState.Stopped)
-                captureState = CaptureState.Stopping;
+            lock (syncLock)
+            {
+                if (captureState != CaptureState.Stopped)
+                    captureState = CaptureState.Stopping;
+            }
         }
 
         private void CaptureThread(AudioClient client)
@@ -261,8 +268,13 @@ namespace NAudio.CoreAudioApi
             int waitMilliseconds = (int)(3 * actualDuration / ReftimesPerMillisec);
 
             var capture = client.AudioCaptureClient;
-            client.Start();
-            captureState = CaptureState.Capturing;
+            lock (syncLock)
+            {
+                if (captureState != CaptureState.Starting)
+                    return; // Client probably requested stop (or some other state change happened) before we actually started capturing.
+                client.Start();
+                captureState = CaptureState.Capturing;
+            }
             while (captureState == CaptureState.Capturing)
             {
                 bool readBuffer = true;

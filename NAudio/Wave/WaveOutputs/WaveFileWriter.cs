@@ -18,6 +18,7 @@ namespace NAudio.Wave
         private long dataChunkSize;
         private readonly WaveFormat format;
         private readonly string filename;
+        private readonly int headerSize;
 
         /// <summary>
         /// Creates a 16 bit Wave File from an ISampleProvider
@@ -102,6 +103,8 @@ namespace NAudio.Wave
 
             CreateFactChunk();
             WriteDataChunkHeader();
+
+            headerSize = (int)outStream.Length; // Probably always 46
         }
 
         /// <summary>
@@ -204,7 +207,7 @@ namespace NAudio.Wave
         /// </summary>
         public override long Position
         {
-            get => dataChunkSize;
+            get => outStream.Position;
             set => throw new InvalidOperationException("Repositioning a WaveFileWriter is not supported");
         }
 
@@ -228,10 +231,21 @@ namespace NAudio.Wave
         /// <param name="count">the number of bytes to write</param>
         public override void Write(byte[] data, int offset, int count)
         {
-            if (outStream.Length + count > UInt32.MaxValue)
-                throw new ArgumentException("WAV file too large", nameof(count));
+            CheckForFileSizeOverflow(count);
             outStream.Write(data, offset, count);
             dataChunkSize += count;
+        }
+
+        /// <summary>
+        /// Checks whether the addition of the specified number of bytes would cause the file
+        /// to go over the maximum size.
+        /// </summary>
+        /// <param name="count">Number of bytes to be added</param>
+        protected void CheckForFileSizeOverflow(int count)
+        {
+            // dataChunkSize + headerSize is the same as outStream.Length, but is MUCH faster.
+            if (dataChunkSize + headerSize + count > UInt32.MaxValue)
+                throw new ArgumentException("WAV file too large", nameof(count));
         }
 
         private readonly byte[] value24 = new byte[3]; // keep this around to save us creating it every time
@@ -244,27 +258,35 @@ namespace NAudio.Wave
         {
             if (WaveFormat.BitsPerSample == 16)
             {
+                const int sampleSize = 2;
+                CheckForFileSizeOverflow(sampleSize);
                 writer.Write((Int16)(Int16.MaxValue * sample));
-                dataChunkSize += 2;
+                dataChunkSize += sampleSize;
             }
             else if (WaveFormat.BitsPerSample == 24)
             {
+                const int sampleSize = 3;
+                CheckForFileSizeOverflow(sampleSize);
                 var value = BitConverter.GetBytes((Int32)(Int32.MaxValue * sample));
                 value24[0] = value[1];
                 value24[1] = value[2];
                 value24[2] = value[3];
                 writer.Write(value24);
-                dataChunkSize += 3;
+                dataChunkSize += sampleSize;
             }
             else if (WaveFormat.BitsPerSample == 32 && WaveFormat.Encoding == WaveFormatEncoding.Extensible)
             {
+                const int sampleSize = 4;
+                CheckForFileSizeOverflow(sampleSize);
                 writer.Write(UInt16.MaxValue * (Int32)sample);
-                dataChunkSize += 4;
+                dataChunkSize += sampleSize;
             }
             else if (WaveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
             {
+                const int sampleSize = 4;
+                CheckForFileSizeOverflow(sampleSize);
                 writer.Write(sample);
-                dataChunkSize += 4;
+                dataChunkSize += sampleSize;
             }
             else
             {
@@ -311,15 +333,19 @@ namespace NAudio.Wave
             // 16 bit PCM data
             if (WaveFormat.BitsPerSample == 16)
             {
+                var dataSize = count * 2;
+                CheckForFileSizeOverflow(dataSize);
                 for (int sample = 0; sample < count; sample++)
                 {
                     writer.Write(samples[sample + offset]);
                 }
-                dataChunkSize += (count * 2);
+                dataChunkSize += dataSize;
             }
             // 24 bit PCM data
             else if (WaveFormat.BitsPerSample == 24)
             {
+                var dataSize = count * 3;
+                CheckForFileSizeOverflow(dataSize);
                 for (int sample = 0; sample < count; sample++)
                 {
                     var value = BitConverter.GetBytes(UInt16.MaxValue * (Int32)samples[sample + offset]);
@@ -328,25 +354,29 @@ namespace NAudio.Wave
                     value24[2] = value[3];
                     writer.Write(value24);
                 }
-                dataChunkSize += (count * 3);
+                dataChunkSize += dataSize;
             }
             // 32 bit PCM data
             else if (WaveFormat.BitsPerSample == 32 && WaveFormat.Encoding == WaveFormatEncoding.Extensible)
             {
+                var dataSize = count * 4;
+                CheckForFileSizeOverflow(dataSize);
                 for (int sample = 0; sample < count; sample++)
                 {
                     writer.Write(UInt16.MaxValue * (Int32)samples[sample + offset]);
                 }
-                dataChunkSize += (count * 4);
+                dataChunkSize += dataSize;
             }
             // IEEE float data
             else if (WaveFormat.BitsPerSample == 32 && WaveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
             {
+                var dataSize = count * 4;
+                CheckForFileSizeOverflow(dataSize);
                 for (int sample = 0; sample < count; sample++)
                 {
                     writer.Write((float)samples[sample + offset] / (float)(Int16.MaxValue + 1));
                 }
-                dataChunkSize += (count * 4);
+                dataChunkSize += dataSize;
             }
             else
             {
@@ -434,7 +464,7 @@ namespace NAudio.Wave
         /// </summary>
         ~WaveFileWriter()
         {
-            System.Diagnostics.Debug.Assert(false, "WaveFileWriter was not disposed");
+            System.Diagnostics.Debug.Fail("WaveFileWriter was not disposed");
             Dispose(false);
         }
 

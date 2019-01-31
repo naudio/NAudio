@@ -91,6 +91,14 @@ namespace NAudio.Wave
                 xingHeader.startOffset = offset;
                 offset += 4;
             }
+            else if ((frame.RawData[offset + 0] == 'I') &&
+                     (frame.RawData[offset + 1] == 'n') &&
+                     (frame.RawData[offset + 2] == 'f') &&
+                     (frame.RawData[offset + 3] == 'o'))
+            {
+                xingHeader.startOffset = offset;
+                offset += 4;
+            }
             else
             {
                 return null;

@@ -6,7 +6,7 @@ To start with, we'll create a very simple form with a start and a stop button. A
 
 ```c#
 using NAudio.Wave;
-using NAudio.Wave.SampleProviders
+using NAudio.Wave.SampleProviders;
 
 public class MainForm : Form
 {

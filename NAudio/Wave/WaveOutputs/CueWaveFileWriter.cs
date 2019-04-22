@@ -41,15 +41,16 @@ namespace NAudio.Wave
             {
                 byte[] cueChunks = cues.GetRiffChunks();
                 int cueChunksSize = cueChunks.Length;
-                w.Seek(0, SeekOrigin.End);
-                
-                if (w.BaseStream.Length % 2 == 1)
+	            CheckForFileSizeOverflow(cueChunksSize);
+				w.Seek(0, SeekOrigin.End);
+
+				if (w.BaseStream.Length % 2 == 1)
                 {
                     w.Write((Byte)0x00);
                 }
-                
-                w.Write(cues.GetRiffChunks(), 0, cueChunksSize);
-                w.Seek(4, SeekOrigin.Begin);
+
+				w.Write(cueChunks, 0, cueChunksSize);
+				w.Seek(4, SeekOrigin.Begin);
                 w.Write((int)(w.BaseStream.Length - 8));
             }
         }

@@ -1,4 +1,5 @@
 ﻿using System;
+using NAudio.FileFormats.Wav;
 using NUnit.Framework;
 using NAudio.Wave;
 using System.IO;
@@ -113,7 +114,6 @@ namespace NAudioTests.WaveStreams
         }
 
         [Test]
-        [Explicit]
         public void CanCreateWaveFileGreaterThan2Gb()
         {
             var tempFile = Path.GetTempFileName();
@@ -129,8 +129,7 @@ namespace NAudioTests.WaveStreams
             }
         }
 
-        [Test]
-        [Explicit]        
+        [Test]      
         public void FailsToCreateWaveFileGreaterThan4Gb()
         {
             var tempFile = Path.GetTempFileName();
@@ -145,6 +144,73 @@ namespace NAudioTests.WaveStreams
             {
                 File.Delete(tempFile);
             }
+        }
+
+        [Test]
+        public void CanWriteDataChunkGreaterThan2GB()
+        {
+            WaveFormat format = WaveFormat.CreateIeeeFloatWaveFormat(8000, 2);
+            uint blockSizeInBytes = (uint)format.AverageBytesPerSecond * 8U;
+            using (var writer = new LargeWaveWriter(blockSizeInBytes, UInt32.MaxValue / blockSizeInBytes, format))
+            {
+                Assert.IsTrue(writer.ActualDataSizeInBytes > Int32.MaxValue && writer.ActualDataSizeInBytes <= UInt32.MaxValue,
+                    "Something is wrong with the test set-up parameters.");
+                using (var stream = new FileStream(writer.Filename, FileMode.Open))
+                {
+                    var reader = new WaveFileChunkReader();
+                    reader.ReadWaveHeader(stream);
+                    Assert.AreEqual(writer.ActualDataSizeInBytes, reader.DataChunkLength);
+                }
+            }
+        }
+
+        [Test]
+        public void WritingDataChunkGreaterThan4GBThrows()
+        {
+            WaveFormat format = WaveFormat.CreateIeeeFloatWaveFormat(8000, 2);
+            uint blockSizeInBytes = (uint) format.AverageBytesPerSecond * 8U;
+            uint sampleBlockCount = (UInt32.MaxValue / blockSizeInBytes) + 1;
+            Assert.IsTrue((long)blockSizeInBytes * sampleBlockCount > UInt32.MaxValue,
+                "Something is wrong with the test set-up parameters.");
+            Assert.Throws<ArgumentException>(() =>
+                {
+                    using (new LargeWaveWriter(blockSizeInBytes, sampleBlockCount, format))
+                    {
+                    }
+                });
+        }
+    }
+
+    internal class LargeWaveWriter : IDisposable
+    {
+        public string Filename { get; private set; }
+        public long ActualDataSizeInBytes { get; private set; }
+
+        public LargeWaveWriter(uint blockSizeInBytes, uint sampleBlockCount, WaveFormat format)
+        {
+            uint samplesPerBlock = blockSizeInBytes / ((uint) format.BitsPerSample / 8U);
+            ActualDataSizeInBytes = sampleBlockCount * blockSizeInBytes;
+            Filename = Path.GetTempFileName();
+            try
+            {
+                using (var stream = new FileStream(Filename, FileMode.Create))
+                using (var writer = new WaveFileWriter(stream, format))
+                {
+                    float[] samples = new float[samplesPerBlock];
+                    for (int j = 0; j < sampleBlockCount; j++)
+                        writer.WriteSamples(samples, 0, samples.Length);
+                }
+            }
+            catch
+            {
+                Dispose();
+                throw;
+            }
+        }
+
+        public void Dispose()
+        {
+            File.Delete(Filename);
         }
     }
 }

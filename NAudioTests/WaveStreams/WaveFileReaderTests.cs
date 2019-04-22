@@ -127,6 +127,49 @@ namespace NAudioTests.WaveStreams
         }
 
         [Test]
+		[Category("UnitTest")]
+		public void CanCreateReaderForStreamWithDataChunkGreaterThan2GB()
+        {
+            const int sampleBlockCount = Int32.MaxValue / (1024 * 3);
+            const int channels = 2;
+            const uint samplesPerBlock = 1024U * channels;
+            const int bitsPerSample = 16;
+            const uint bytesPerBlock = samplesPerBlock * (bitsPerSample / 8);
+            const uint dataChunkLengthInBytes = sampleBlockCount * bytesPerBlock;
+            Assert.IsTrue(dataChunkLengthInBytes > Int32.MaxValue && dataChunkLengthInBytes <= UInt32.MaxValue,
+                "Something is wrong with the test set-up parameters.");
+            using (var reader = new WaveFileReader(new LargeWaveStream(dataChunkLengthInBytes, new WaveFormat(8000, bitsPerSample, channels), new[] {0.1f, 0.2f})))
+            {
+                // Check the values in the first block.
+                for (int i = 0; i < 1024; i++)
+                {
+                    var f1 = reader.ReadNextSampleFrame();
+                    Assert.AreEqual(0.1f, f1[0], 0.0001f);
+                    Assert.AreEqual(0.2f, f1[1], 0.0001f);
+                }
+
+                // Read the rest of the blocks in large chunks, except for the last one
+                byte[] dataToReadAndIgnore = new byte[bytesPerBlock];
+                for (int i = 0; i < sampleBlockCount - 2; i++)
+                {
+                    Assert.AreEqual(dataToReadAndIgnore.Length,
+                        reader.Read(dataToReadAndIgnore, 0, dataToReadAndIgnore.Length),
+                        "Failed to read block " + i + 1);
+                }
+
+                // Check the values in the last block.
+                for (int i = 0; i < 1024; i++)
+                {
+                    var f1 = reader.ReadNextSampleFrame();
+                    Assert.AreEqual(0.1f, f1[0], 0.0001f);
+                    Assert.AreEqual(0.2f, f1[1], 0.0001f);
+                }
+
+                // Make sure there's no more data
+                Assert.AreEqual(0, reader.Read(dataToReadAndIgnore, 0, 4));
+            }
+        }
+        [Test]
         [Category("IntegrationTest")]
         public void CanLoadAndReadVariousProblemWavFiles()
         {
@@ -198,4 +241,122 @@ namespace NAudioTests.WaveStreams
             }
         }
     }
+
+
+	internal class LargeWaveStream : Stream
+	{
+		private const int HeaderLength = 46;
+		private readonly long length;
+		private byte[] header;
+		private byte[] sampleData;
+
+		public LargeWaveStream(uint dataLength, WaveFormat format, params float[] samples) :
+			this(dataLength, format, ConvertFloatArrayToByteArray(format.BitsPerSample / 8, samples))
+		{
+		}
+
+		public LargeWaveStream(uint dataLength, WaveFormat format, params byte[] bytes)
+		{
+			sampleData = bytes;
+			MemoryStream headerStream = new MemoryStream(HeaderLength);
+			using (new WaveFileWriter(headerStream, format))
+			{
+			}
+
+			header = headerStream.ToArray();
+			int dataPosition = header.Length - 4;
+			byte[] dataLengthBytes = BitConverter.GetBytes(dataLength);
+			for (int i = 0; i < dataLengthBytes.Length; i++)
+				header[dataPosition + i] = dataLengthBytes[i];
+
+			length = dataLength + HeaderLength;
+		}
+
+		private static byte[] ConvertFloatArrayToByteArray(int bytesPerSample, float[] samples)
+		{
+			byte[] bytes;
+			switch (bytesPerSample)
+			{
+				case 2:
+					bytes = new byte[2 * samples.Length];
+					for (int i = 0; i < samples.Length; i++)
+					{
+						float sample = samples[i];
+						Int16 val = (Int16)(Int16.MaxValue * sample);
+						bytes[i * 2] = (byte)(val & 0xFF);
+						bytes[i * 2 + 1] = (byte)((val >> 8) & 0xFF);
+					}
+					break;
+				default:
+					throw new NotImplementedException(String.Format("We don't handle {0} bytes per sample.", bytesPerSample));
+			}
+			return bytes;
+		}
+
+		public override void Flush()
+		{
+			throw new NotImplementedException();
+		}
+
+		public override long Seek(long offset, SeekOrigin origin)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override void SetLength(long value)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override int Read(byte[] buffer, int offset, int count)
+		{
+			long position = Position; // Avoid extra member data access to shave off a few seconds.
+
+			if (position < HeaderLength)
+			{
+				int headerBytesRead = 0;
+				while (position < HeaderLength && count > 0)
+				{
+					buffer[offset + headerBytesRead++] = header[position++];
+					count--;
+				}
+				Debug.Assert(count == 0, "Should never read any data along with header bytes");
+				Position = position;
+				return headerBytesRead;
+			}
+
+			count = (int)Math.Min(count, length - position);
+			if (count == 0)
+				return 0;
+
+			int samLen = sampleData.Length;
+			for (int i = 0; i < count; i++)
+				buffer[i + offset] = sampleData[i % samLen];
+			Position = position + count;
+			return count;
+		}
+
+		public override void Write(byte[] buffer, int offset, int count)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override bool CanRead
+		{
+			get { return true; }
+		}
+		public override bool CanSeek
+		{
+			get { return false; }
+		}
+		public override bool CanWrite
+		{
+			get { return false; }
+		}
+		public override long Length
+		{
+			get { return length; }
+		}
+		public override long Position { get; set; }
+	}
 }

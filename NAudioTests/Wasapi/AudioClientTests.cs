@@ -187,7 +187,7 @@ namespace NAudioTests.Wasapi
             }
         }
  
-        [Test, MaxTime(3000)]
+        [Test]
         public void CanReuseWasapiCapture()
         {
             using (var wasapiClient = new WasapiCapture())

@@ -7,7 +7,7 @@ namespace NAudio.Dmo
     /// defined in Medparam.h
     /// </summary>
     [ComImport,
-#if !NETFX_CORE
+#if !WINDOWS_UWP
     System.Security.SuppressUnmanagedCodeSecurity,
 #endif
     Guid("6d6cbb60-a223-44aa-842f-a2f06750be6d"),

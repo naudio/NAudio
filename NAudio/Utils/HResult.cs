@@ -64,7 +64,7 @@ namespace NAudio.Utils
         /// <returns>The HResult</returns>
         public static int GetHResult(this COMException exception)
         {
-#if NETFX_CORE
+#if NETSTANDARD1_6 || NETFX_CORE
             return exception.HResult;
 #else
             return exception.ErrorCode;

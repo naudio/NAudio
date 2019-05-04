@@ -11,7 +11,7 @@ namespace NAudioTests.Acm
     public class GsmEncodeTest
     {
         private string tempFolder;
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void Setup()
         {
             tempFolder = Path.Combine(Path.GetTempPath(), "NAudio");

@@ -1,54 +1,28 @@
 using System;
 
-namespace NAudio.SoundFont 
+namespace NAudio.SoundFont
 {
-	/// <summary>
-	/// SoundFont instrument
-	/// </summary>
-	public class Instrument 
-	{
-		private string name;
-		internal ushort startInstrumentZoneIndex;
-		internal ushort endInstrumentZoneIndex;
-		private Zone[] zones;
-		
-		/// <summary>
-		/// instrument name
-		/// </summary>
-		public string Name 
-		{
-			get 
-			{
-				return name;
-			}
-			set 
-			{
-				// TODO: validate
-				name = value;
-			}
-		}
+    /// <summary>
+    /// SoundFont instrument
+    /// </summary>
+    public class Instrument
+    {
+        internal ushort startInstrumentZoneIndex;
+        internal ushort endInstrumentZoneIndex;
 
-		/// <summary>
-		/// Zones
-		/// </summary>
-		public Zone[] Zones
-		{
-			get
-			{
-				return zones;
-			}
-			set
-			{
-				zones = value;
-			}
-		}
+        /// <summary>
+        /// instrument name
+        /// </summary>
+        public string Name { get; set; }
 
-		/// <summary>
-		/// <see cref="Object.ToString"/>
-		/// </summary>
-		public override string ToString() 
-		{
-			return this.name;
-		}
-	}
+        /// <summary>
+        /// Zones
+        /// </summary>
+        public Zone[] Zones { get; set; }
+
+        /// <summary>
+        /// <see cref="Object.ToString"/>
+        /// </summary>
+        public override string ToString() => Name;
+    }
 }

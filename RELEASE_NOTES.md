@@ -1,3 +1,10 @@
+### 1.9.0 (4 May 2019)
+
+ * Switched to multi-targetting project type
+ * Targets .NET 3.5, .NET Standard 2.0, and UWP
+ * Better handling of `IAudioClient.IsFormatSupported`
+ * `AsioOut` will no longer stop when it reaches the end
+
 ### 1.8.5 (3 Nov 2018)
 
 - DMO Effect support via `DmoEffectWaveProvider` #413

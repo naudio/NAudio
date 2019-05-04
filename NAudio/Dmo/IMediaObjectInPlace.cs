@@ -6,7 +6,10 @@ namespace NAudio.Dmo
     /// <summary>
     /// defined in mediaobj.h
     /// </summary>
-    [ComImport, System.Security.SuppressUnmanagedCodeSecurity,
+    [ComImport,
+#if !NETFX_CORE
+     System.Security.SuppressUnmanagedCodeSecurity,
+#endif
      InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
      Guid("651B9AD0-0FC7-4AA9-9538-D89931010741")]
     internal interface IMediaObjectInPlace

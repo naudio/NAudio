@@ -302,7 +302,7 @@
             this.Controls.Add(this.volumeSlider1);
             this.Name = "AudioPlaybackPanel";
             this.Size = new System.Drawing.Size(591, 381);
-            this.Load += new System.EventHandler(this.Form1_Load);
+            this.Load += new System.EventHandler(this.OnFormLoad);
             this.groupBoxDriverModel.ResumeLayout(false);
             this.toolStrip1.ResumeLayout(false);
             this.toolStrip1.PerformLayout();

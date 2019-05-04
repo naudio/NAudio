@@ -44,7 +44,7 @@ namespace NAudioDemo.AudioPlaybackDemo
             comboBoxCallback.SelectedIndex = 0;
         }
 
-        public int SelectedDeviceNumber => comboBoxWaveOutDevice.SelectedIndex;
+        public int SelectedDeviceNumber => comboBoxWaveOutDevice.SelectedIndex - 1;
 
         public WaveCallbackStrategy CallbackStrategy => ((CallbackComboItem)comboBoxCallback.SelectedItem).Strategy;
     }

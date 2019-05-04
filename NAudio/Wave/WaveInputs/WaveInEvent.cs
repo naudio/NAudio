@@ -97,7 +97,8 @@ namespace NAudio.Wave
         {
             CloseWaveInDevice();
             MmResult result = WaveInterop.waveInOpenWindow(out waveInHandle, (IntPtr)DeviceNumber, WaveFormat,
-                callbackEvent.SafeWaitHandle.DangerousGetHandle(), IntPtr.Zero, WaveInterop.WaveInOutOpenFlags.CallbackEvent);
+                callbackEvent.SafeWaitHandle.DangerousGetHandle(), 
+                IntPtr.Zero, WaveInterop.WaveInOutOpenFlags.CallbackEvent);
             MmException.Try(result, "waveInOpen");
             CreateBuffers();
         }
@@ -279,3 +280,4 @@ namespace NAudio.Wave
         }
     }
 }
+

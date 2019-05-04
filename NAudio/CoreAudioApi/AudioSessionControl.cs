@@ -28,13 +28,9 @@ namespace NAudio.CoreAudioApi
             audioSessionControlInterface = audioSessionControl;
             audioSessionControlInterface2 = audioSessionControl as IAudioSessionControl2;
 
-            // ReSharper disable once SuspiciousTypeConversion.Global
-            var meters = audioSessionControlInterface as IAudioMeterInformation;
-            // ReSharper disable once SuspiciousTypeConversion.Global
-            var volume = audioSessionControlInterface as ISimpleAudioVolume;
-            if (meters != null)
+            if (audioSessionControlInterface is IAudioMeterInformation meters)
                 AudioMeterInformation = new AudioMeterInformation(meters);
-            if (volume != null)
+            if (audioSessionControlInterface is ISimpleAudioVolume volume)
                 SimpleAudioVolume = new SimpleAudioVolume(volume);
         }
 

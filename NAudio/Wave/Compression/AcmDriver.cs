@@ -54,8 +54,7 @@ namespace NAudio.Wave.Compression
                 NativeMethods.FreeLibrary(handle);
                 throw new ArgumentException("Failed to discover DriverProc");
             }
-            IntPtr driverHandle;
-            var result = AcmInterop.acmDriverAdd(out driverHandle,
+            var result = AcmInterop.acmDriverAdd(out IntPtr driverHandle,
                 handle, driverProc, 0, AcmDriverAddFlags.Function);
             if (result != MmResult.NoError)
             {
@@ -155,8 +154,7 @@ namespace NAudio.Wave.Compression
         {
             get
             {
-                int maxFormatSize;
-                MmException.Try(AcmInterop.acmMetrics(driverHandle, AcmMetrics.MaxSizeFormat, out maxFormatSize), "acmMetrics");
+                MmException.Try(AcmInterop.acmMetrics(driverHandle, AcmMetrics.MaxSizeFormat, out int maxFormatSize), "acmMetrics");
                 return maxFormatSize;
             }
         }

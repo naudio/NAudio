@@ -313,7 +313,7 @@ namespace NAudio.Midi
         public static void Export(Stream stream, MidiEventCollection events)
         {
             ExportCheckTracks(events);
-            using (var writer = new BinaryWriter(stream)
+            using (var writer = new BinaryWriter(stream))
                 ExportBinary(writer);
         }
     }

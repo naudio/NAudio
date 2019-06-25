@@ -248,7 +248,7 @@ namespace NAudio.Midi
             return sb.ToString();
         }
 
-        private static void ExportBinary(BinaryWriter writer)
+        private static void ExportBinary(BinaryWriter writer, MidiEventCollection events)
         {
                 writer.Write(Encoding.UTF8.GetBytes("MThd"));
                 writer.Write(SwapUInt32(6)); // chunk size
@@ -302,14 +302,14 @@ namespace NAudio.Midi
         {
             ExportCheckTracks(events);
             using (var writer = new BinaryWriter(File.Create(filename)))
-                ExportBinary(writer);
+                ExportBinary(writer, events);
         }
 
+        /// <summary>
         /// Exports a MIDI file
         /// </summary>
         /// <param name="stream">Stream to work with</param>
         /// <param name="events">Events to export</param>
-        /// <summary>
         public static void Export(Stream stream, MidiEventCollection events)
         {
             ExportCheckTracks(events);

@@ -314,7 +314,7 @@ namespace NAudio.Midi
         {
             ExportCheckTracks(events);
             using (var writer = new BinaryWriter(stream))
-                ExportBinary(writer);
+                ExportBinary(writer, events);
         }
     }
 }

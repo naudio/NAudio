@@ -97,5 +97,9 @@ namespace NAudio.CoreAudioApi
         /// Device interface key property.
         /// </summary>
         public static readonly PropertyKey PKEY_Device_InterfaceKey = new PropertyKey(new Guid(unchecked((int)0x233164c8), unchecked((short)0x1b2c), 0x4c7d, 0xbc, 0x68, 0xb6, 0x71, 0x68, 0x7a, 0x25, 0x67), 1);
+        /// <summary>
+        /// System-supplied device instance identification string, assigned by PnP manager, persistent across system restarts.
+        /// </summary>
+        public static readonly PropertyKey PKEY_Device_InstanceId = new PropertyKey(new Guid(0x78c34fc8, 0x104a, 0x4aca, 0x9e, 0xa4, 0x52, 0x4d, 0x52, 0x99, 0x6e, 0x57), 256);
     }
 }

@@ -1,7 +1,6 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+﻿<Project Sdk="MSBuild.Sdk.Extras">
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net35;uap10.0.10240</TargetFrameworks>
+    <TargetFrameworks>net35;netstandard2.0;uap10.0</TargetFrameworks>
     <Version>1.9.0</Version>
     <Authors>Mark Heath &amp; Contributors</Authors>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -15,15 +14,15 @@
     <GenerateDocumentationFile Condition=" '$(Configuration)' == 'Release' ">true</GenerateDocumentationFile>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+
   <ItemGroup Condition=" '$(TargetFramework)' == 'net35' ">
     <Reference Include="System.Windows.Forms" />
     <Compile Remove="Wave\WaveOutputs\WasapiOutRT.cs" />
     <Compile Remove="Wave\WaveInputs\WasapiCaptureRT.cs" />
     <Compile Remove="Wave\WaveOutputs\WaveFileWriterRT.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Properties\" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
@@ -41,7 +40,9 @@
     <Compile Remove="Wave\WaveOutputs\WaveFileWriterRT.cs" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'uap10.0.10240' ">
+  <ItemGroup Condition=" '$(TargetFramework)' == 'uap10.0' ">
+    <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform" Version="6.2.8" />
+
     <Compile Remove="Utils\ProgressLog*.*" />
     <Compile Remove="Gui\*.*" />
     <Compile Remove="Wave\Compression\*.cs" />
@@ -74,11 +75,4 @@
     <Compile Remove="Dmo\Effect\*.cs" />
     <Compile Remove="Wave\WaveProviders\DmoEffectWaveProvider.cs" />
   </ItemGroup>
-
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'uap10.0' or '$(TargetFramework)' == 'uap10.0.10240'">
-    <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform" Version="6.0.8" />
-    <PackageReference Include="MSBuild.Sdk.Extras" Version="1.5.4" PrivateAssets="All" />
-  </ItemGroup>
-  <Import Project="$(MSBuildSDKExtrasTargets)" Condition="Exists('$(MSBuildSDKExtrasTargets)')" />
 </Project>

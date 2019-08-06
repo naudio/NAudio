@@ -39,6 +39,7 @@ namespace NAudio.CoreAudioApi
         private AudioMeterInformation audioMeterInformation;
         private AudioEndpointVolume audioEndpointVolume;
         private AudioSessionManager audioSessionManager;
+        private DeviceTopology deviceTopology;
         #endregion
 
         #region Guids
@@ -47,6 +48,7 @@ namespace NAudio.CoreAudioApi
         private static Guid IID_IAudioEndpointVolume = new Guid("5CDF2C82-841E-4546-9722-0CF74078229A");
         private static Guid IID_IAudioClient = new Guid("1CB9AD4C-DBFA-4c32-B178-C2F568A703B2");
         private static Guid IDD_IAudioSessionManager = new Guid("BFA971F1-4D5E-40BB-935E-967039BFBEE4");
+        private static Guid IDD_IDeviceTopology = new Guid("2A07407E-6497-4A18-9787-32F79BD0D98F");
         // ReSharper restore InconsistentNaming
         #endregion
 
@@ -85,6 +87,13 @@ namespace NAudio.CoreAudioApi
             Marshal.ThrowExceptionForHR(deviceInterface.Activate(ref IDD_IAudioSessionManager, ClsCtx.ALL, IntPtr.Zero, out var result));
             audioSessionManager = new AudioSessionManager(result as IAudioSessionManager);
         }
+
+        private void GetDeviceTopology()
+        {
+            Marshal.ThrowExceptionForHR(deviceInterface.Activate(ref IDD_IDeviceTopology, ClsCtx.ALL, IntPtr.Zero, out var result));
+            deviceTopology = new DeviceTopology(result as IDeviceTopology);
+        }
+
         #endregion
 
         #region Properties
@@ -136,6 +145,21 @@ namespace NAudio.CoreAudioApi
                     GetAudioSessionManager();
                 }
                 return audioSessionManager;
+            }
+        }
+
+        /// <summary>
+        /// DeviceTopology instance
+        /// </summary>
+        public DeviceTopology DeviceTopology
+        {
+            get
+            {
+                if (deviceTopology == null)
+                {
+                    GetDeviceTopology();
+                }
+                return deviceTopology;
             }
         }
 
@@ -208,6 +232,26 @@ namespace NAudio.CoreAudioApi
                 if (propertyStore.Contains(PropertyKeys.PKEY_Device_IconPath))
                 {
                     return (string)propertyStore[PropertyKeys.PKEY_Device_IconPath].Value;
+                }
+
+                return "Unknown";
+            }
+        }
+
+        /// <summary>
+        /// Device Instance Id of Device
+        /// </summary>
+        public string InstanceId
+        {
+            get
+            {
+                if (propertyStore == null)
+                {
+                    GetPropertyInformation();
+                }
+                if (propertyStore.Contains(PropertyKeys.PKEY_Device_InstanceId))
+                {
+                    return (string)propertyStore[PropertyKeys.PKEY_Device_InstanceId].Value;
                 }
 
                 return "Unknown";

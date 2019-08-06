@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace NAudio.CoreAudioApi
+﻿namespace NAudio.CoreAudioApi
 {
+    /// <summary>
+    /// Connector Type
+    /// </summary>
     public enum ConnectorType
     {
         /// <summary>

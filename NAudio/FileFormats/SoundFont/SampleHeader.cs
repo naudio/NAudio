@@ -47,7 +47,7 @@ namespace NAudio.SoundFont
         public SFSampleLink SFSampleLink;
 
         /// <summary>
-        /// <see cref="Object.ToString"/>
+        /// <see cref="object.ToString"/>
         /// </summary>
         public override string ToString() => SampleName;
 

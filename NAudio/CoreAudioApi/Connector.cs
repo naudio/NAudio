@@ -1,10 +1,10 @@
 ﻿using NAudio.CoreAudioApi.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace NAudio.CoreAudioApi
 {
+    /// <summary>
+    /// Connector
+    /// </summary>
     public class Connector
     {
         private readonly IConnector connectorInterface;

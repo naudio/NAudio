@@ -13,12 +13,17 @@ namespace NAudio.Dsp
         // runtime variables
         private double env;		// over-threshold envelope (linear)
 
-        public SimpleGate()
-            : base(10.0, 10.0, 44100.0)
+        public SimpleGate(double attackTime, double releaseTime, double sampleRate)
+            : base(attackTime, releaseTime, sampleRate)
         {
             threshdB = 0.0;
             thresh = 1.0;
             env = DC_OFFSET;
+        }
+
+        public SimpleGate()
+            : this(10.0, 10.0, 44100.0)
+        {
         }
 
         public void Process( ref double in1, ref double in2 )

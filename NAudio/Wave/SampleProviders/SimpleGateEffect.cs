@@ -75,32 +75,32 @@ namespace NAudio.Wave.SampleProviders
         public bool Enabled { get; set; }
 
         /// <summary>
-        /// Gets the WaveFormat of this stream
+        /// Gets the WaveFormat of this sample provider
         /// </summary>
         public WaveFormat WaveFormat => sourceProvider.WaveFormat;
 
         /// <summary>
-        /// Reads bytes from this stream
+        /// Reads samples from this sample provider
         /// </summary>
-        /// <param name="array">Buffer to read into</param>
-        /// <param name="offset">Offset in array to read into</param>
-        /// <param name="count">Number of bytes to read</param>
-        /// <returns>Number of bytes read</returns>
-        public int Read(float[] array, int offset, int count)
+        /// <param name="buffer">Sample buffer</param>
+        /// <param name="offset">Offset into sample buffer</param>
+        /// <param name="count">Samples required</param>
+        /// <returns>Number of samples read</returns>
+        public int Read(float[] buffer, int offset, int count)
         {
             lock (lockObject)
             {
-                int samplesRead = sourceProvider.Read(array, offset, count);
+                int samplesRead = sourceProvider.Read(buffer, offset, count);
                 if (Enabled)
                 {
                     for (int sample = 0; sample < samplesRead; sample += channels)
                     {
-                        double in1 = array[offset + sample];
-                        double in2 = (channels == 1) ? 0 : array[offset + sample + 1];
+                        double in1 = buffer[offset + sample];
+                        double in2 = (channels == 1) ? 0 : buffer[offset + sample + 1];
                         simpleGate.Process(ref in1, ref in2);
-                        array[offset + sample] = (float)in1;
+                        buffer[offset + sample] = (float)in1;
                         if (channels > 1)
-                            array[offset + sample + 1] = (float)in2;
+                            buffer[offset + sample + 1] = (float)in2;
                     }
                 }
                 return samplesRead;

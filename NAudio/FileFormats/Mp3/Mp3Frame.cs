@@ -274,5 +274,22 @@ namespace NAudio.Wave
         /// Not part of the MP3 frame itself - indicates where in the stream we found this header
         /// </summary>
         public long FileOffset { get; private set; }
+
+
+        /// <summary>
+        /// Gets the duration of the frame in seconds
+        /// </summary>
+        public double FrameDuration
+        {
+            get
+            {
+                double duration = SampleCount * 2.0 / SampleRate;
+
+                if (ChannelMode != ChannelMode.Mono)
+                    duration *= 2;
+
+                return duration;
+            }
+        }
     }
 }

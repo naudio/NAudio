@@ -63,6 +63,22 @@ namespace NAudio.Dsp
             return y1;
         }
 
+        /// <summary>
+        /// Passes an array of samples through the filter
+        /// </summary>
+        /// <param name="inSamples">Input sample array</param>
+        /// <returns>Output samples</returns>
+        public float[] Transform(float[] inSamples)
+        {
+            // compute result
+            for (int i = 0; i < inSamples.Length; i++)
+            {
+                inSamples[i] = Transform(inSamples[i]);
+            }
+
+            return inSamples;
+        }
+
         private void SetCoefficients(double aa0, double aa1, double aa2, double b0, double b1, double b2)
         {
             // precompute the coefficients

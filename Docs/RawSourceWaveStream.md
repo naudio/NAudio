@@ -54,9 +54,15 @@ Suppose we have a raw audio file and we know the wave format of the audio in it.
 
 ```c#
 var path = "example.pcm";
-var s = new RawSourceWaveStream(File.OpenRead(path), new WaveFormat(8000,1));
-var outpath = "example.wav";
-WaveFileWriter.CreateWaveFile(outpath, s);
+using(var inputStream = File.OpenRead(path))
+{
+    var s = new RawSourceWaveStream(inputStream, new WaveFormat(8000,1));
+    var outpath = "example.wav";
+    WaveFileWriter.CreateWaveFile(outpath, s);
+    
+    inputStream.close();
+    s.close();
+}
 ```
 
 Note that WAV files can contain compressed audio, so as long as you know the correct `WaveFormat` structure you can use that. Let's look at a compressed audio example next.

@@ -1,6 +1,6 @@
 ﻿<Project Sdk="MSBuild.Sdk.Extras">
   <PropertyGroup>
-    <TargetFrameworks>net35;netstandard2.0;uap10.0</TargetFrameworks>
+    <TargetFrameworks>net35;netstandard2.0;uap10.0;netcoreapp3.0</TargetFrameworks>
     <Version>1.9.0</Version>
     <Authors>Mark Heath &amp; Contributors</Authors>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -72,5 +72,23 @@
     <Compile Remove="Dmo\DmoDistortion.cs" />
     <Compile Remove="Dmo\Effect\*.cs" />
     <Compile Remove="Wave\WaveProviders\DmoEffectWaveProvider.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.0'">
+    <Compile Remove="Utils\ProgressLog*.*" />
+    <Compile Remove="Gui\*.*" />
+    <Compile Remove="Wave\MmeInterop\WaveWindow.cs" />
+    <Compile Remove="Wave\MmeInterop\WaveCallbackInfo.cs" />
+    <Compile Remove="Wave\WaveInputs\WaveIn.cs" />
+    <Compile Remove="Wave\WaveOutputs\WaveOut.cs" />
+    <Compile Remove="Wave\WaveOutputs\AsioOut.cs" />
+    <Compile Remove="Wave\WaveOutputs\AsioAudioAvailableEventArgs.cs" />
+    <Compile Remove="Wave\WaveFormats\WaveFormatCustomMarshaler.cs" />
+    <Compile Remove="Wave\WaveOutputs\WasapiOutRT.cs" />
+    <Compile Remove="Wave\WaveInputs\WasapiCaptureRT.cs" />
+    <Compile Remove="Wave\WaveOutputs\WaveFileWriterRT.cs" />
+    <PackageReference Include="System.Resources.Extensions">
+      <Version>4.6.0</Version>
+    </PackageReference>
   </ItemGroup>
 </Project>

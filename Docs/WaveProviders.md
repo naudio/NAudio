@@ -36,7 +36,7 @@ public interface IWaveProvider
 }
 ```
 
-The `IWavePlayer` interface only needs an `IWaveProvider` passed to its `Init` method in order to be able to play audio. `WaveFileWriter.CreateWaveFile` and `MediaFoundationEncoder.EncodeToMp3` also only needs an `IWaveProvider` to dump the audio out to a WAV file. So in many cases you won't need to create a `WaveStream` implementation, just implement `IWavePlayer` and you've got an audio source that can be played or rendered to a file.
+The `IWavePlayer` interface only needs an `IWaveProvider` passed to its `Init` method in order to be able to play audio. `WaveFileWriter.CreateWaveFile` and `MediaFoundationEncoder.EncodeToMp3` also only needs an `IWaveProvider` to dump the audio out to a WAV file. So in many cases you won't need to create a `WaveStream` implementation, just implement `IWaveProvider` and you've got an audio source that can be played or rendered to a file.
 
 `BufferedWaveProvider` is a good example of a `IWaveProvider` as it has no ability to reposition - it simply returns any buffered audio from its `Read` method.
 

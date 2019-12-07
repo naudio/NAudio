@@ -134,7 +134,11 @@ namespace NAudio.Wave
             if (!isDisposed)
             {
                 FixUpChunkSizes(false);
+#if NET35
                 writer.Close();
+#else
+                writer.Dispose();
+#endif
                 isDisposed = true;
             }
         }

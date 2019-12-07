@@ -6,10 +6,8 @@ namespace NAudio.Dsp
 {
     class SimpleCompressor : AttRelEnvelope
     {
-        // transfer function
-
         // runtime variables
-        private double envdB;			// over-threshold envelope (dB)
+        private double envdB; // over-threshold envelope (dB)
 
         public SimpleCompressor(double attackTime, double releaseTime, double sampleRate)
             : base(attackTime, releaseTime, sampleRate)
@@ -21,12 +19,8 @@ namespace NAudio.Dsp
         }
 
         public SimpleCompressor()
-            : base(10.0, 10.0, 44100.0)
+            : this(10.0, 10.0, 44100.0)
         {
-            this.Threshold = 0.0;
-            this.Ratio = 1.0;
-            this.MakeUpGain = 0.0;
-            this.envdB = DC_OFFSET;
         }
 
         public double MakeUpGain { get; set; }
@@ -47,29 +41,29 @@ namespace NAudio.Dsp
             // sidechain
 
             // rectify input
-            double rect1 = Math.Abs( in1 );	// n.b. was fabs
-            double rect2 = Math.Abs( in2 ); // n.b. was fabs
+            double rect1 = Math.Abs(in1); // n.b. was fabs
+            double rect2 = Math.Abs(in2); // n.b. was fabs
 
             // if desired, one could use another EnvelopeDetector to smooth
             // the rectified signal.
 
             double link = Math.Max( rect1, rect2 );	// link channels with greater of 2
 
-            link += DC_OFFSET;					// add DC offset to avoid log( 0 )
-            double keydB = Decibels.LinearToDecibels( link );		// convert linear -> dB
+            link += DC_OFFSET; // add DC offset to avoid log( 0 )
+            double keydB = Decibels.LinearToDecibels(link); // convert linear -> dB
 
             // threshold
-            double overdB = keydB - Threshold;	// delta over threshold
-            if ( overdB < 0.0 )
+            double overdB = keydB - Threshold; // delta over threshold
+            if (overdB < 0.0)
                 overdB = 0.0;
 
             // attack/release
 
-            overdB += DC_OFFSET;					// add DC offset to avoid denormal
+            overdB += DC_OFFSET; // add DC offset to avoid denormal
 
-            Run( overdB, ref envdB );	// run attack/release envelope
+            envdB = Run(overdB, envdB); // run attack/release envelope
 
-            overdB = envdB - DC_OFFSET;			// subtract DC offset
+            overdB = envdB - DC_OFFSET; // subtract DC offset
 
             // Regarding the DC offset: In this case, since the offset is added before 
             // the attack/release processes, the envelope will never fall below the offset,

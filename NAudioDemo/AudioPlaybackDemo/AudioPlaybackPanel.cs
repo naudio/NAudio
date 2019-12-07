@@ -195,7 +195,7 @@ namespace NAudioDemo.AudioPlaybackDemo
             }
         }
 
-        private void Form1_Load(object sender, EventArgs e)
+        private void OnFormLoad(object sender, EventArgs e)
         {
             comboBoxLatency.Items.Add(25);
             comboBoxLatency.Items.Add(50);
@@ -221,19 +221,10 @@ namespace NAudioDemo.AudioPlaybackDemo
 
         private void OnVolumeSliderChanged(object sender, EventArgs e)
         {
-            if (setVolumeDelegate != null)
-            {
-                setVolumeDelegate(volumeSlider1.Volume);
-            }
+            setVolumeDelegate?.Invoke(volumeSlider1.Volume);
         }
 
-        private void OnButtonStopClick(object sender, EventArgs e)
-        {
-            if (waveOut != null)
-            {
-                waveOut.Stop();
-            }
-        }
+        private void OnButtonStopClick(object sender, EventArgs e) => waveOut?.Stop();
 
         private void OnTimerTick(object sender, EventArgs e)
         {

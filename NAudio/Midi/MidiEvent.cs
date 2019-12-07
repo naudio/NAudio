@@ -1,13 +1,15 @@
 using System;
 using System.IO;
-using System.Text;
 
 namespace NAudio.Midi 
 {
     /// <summary>
     /// Represents an individual MIDI event
     /// </summary>
-    public class MidiEvent : ICloneable
+    public class MidiEvent
+#if !WINDOWS_UWP
+        : ICloneable
+#endif
     {
         /// <summary>The MIDI command code</summary>
         private MidiCommandCode commandCode;
@@ -75,8 +77,8 @@ namespace NAudio.Midi
                 case MidiCommandCode.AutoSensing:
                     me = new MidiEvent(absoluteTime,channel,commandCode);
                     break;
-                case MidiCommandCode.MetaEvent:
-                case MidiCommandCode.Sysex:
+                //case MidiCommandCode.MetaEvent:
+                //case MidiCommandCode.Sysex:
                 default:
                     throw new FormatException(String.Format("Unsupported MIDI Command Code for Raw Message {0}", commandCode));
             }
@@ -92,7 +94,7 @@ namespace NAudio.Midi
         /// <returns>A new MidiEvent</returns>
         public static MidiEvent ReadNextEvent(BinaryReader br, MidiEvent previous) 
         {
-            int deltaTime = MidiEvent.ReadVarInt(br);
+            int deltaTime = ReadVarInt(br);
             MidiCommandCode commandCode;
             int channel = 1;
             byte b = br.ReadByte();
@@ -187,7 +189,7 @@ namespace NAudio.Midi
         public MidiEvent(long absoluteTime, int channel, MidiCommandCode commandCode)
         {
             this.absoluteTime = absoluteTime;
-            this.Channel = channel;
+            Channel = channel;
             this.commandCode = commandCode;
         }
 
@@ -196,17 +198,16 @@ namespace NAudio.Midi
         /// </summary>
         public virtual MidiEvent Clone() => (MidiEvent)MemberwiseClone();
 
+#if !WINDOWS_UWP
         object ICloneable.Clone() => Clone();
+#endif
 
         /// <summary>
         /// The MIDI Channel Number for this event (1-16)
         /// </summary>
         public virtual int Channel 
         {
-            get 
-            {
-                return channel;
-            }
+            get => channel;
             set
             {
                 if ((value < 1) || (value > 16))

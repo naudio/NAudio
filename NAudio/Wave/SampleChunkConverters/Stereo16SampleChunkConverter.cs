@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NAudio.Utils;
+﻿using NAudio.Utils;
 
 namespace NAudio.Wave.SampleProviders
 {

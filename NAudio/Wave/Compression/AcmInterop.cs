@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Runtime.InteropServices;
 
 namespace NAudio.Wave.Compression
@@ -84,7 +83,8 @@ namespace NAudio.Wave.Compression
         // http://msdn.microsoft.com/en-us/library/dd742914%28VS.85%29.aspx
         [DllImport("Msacm32.dll")]
         public static extern MmResult acmFormatEnum(IntPtr hAcmDriver, ref AcmFormatDetails formatDetails, AcmFormatEnumCallback callback, IntPtr instance, AcmFormatEnumFlags flags);
-        
+
+#if NET35
         /// <summary>
         /// http://msdn.microsoft.com/en-us/library/dd742916%28VS.85%29.aspx
         /// MMRESULT acmFormatSuggest(
@@ -103,6 +103,7 @@ namespace NAudio.Wave.Compression
             WaveFormat destFormat, 
             int sizeDestFormat, 
             AcmFormatSuggestFlags suggestFlags);
+#endif
 
         [DllImport("Msacm32.dll",EntryPoint="acmFormatSuggest")]
         public static extern MmResult acmFormatSuggest2(
@@ -120,7 +121,8 @@ namespace NAudio.Wave.Compression
         // this version of the prototype is for metrics that output a single integer
         [DllImport("Msacm32.dll")]
         public static extern MmResult acmMetrics(IntPtr hAcmObject, AcmMetrics metric, out int output);
-        
+
+#if NET35
         /// <summary>
         /// http://msdn.microsoft.com/en-us/library/dd742928%28VS.85%29.aspx
         /// MMRESULT acmStreamOpen(
@@ -145,6 +147,7 @@ namespace NAudio.Wave.Compression
             IntPtr callback, 
             IntPtr instance, 
             AcmStreamOpenFlags openFlags);
+#endif
 
         /// <summary>
         /// A version with pointers for troubleshooting

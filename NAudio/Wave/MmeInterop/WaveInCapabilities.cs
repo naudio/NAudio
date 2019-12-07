@@ -8,7 +8,11 @@ namespace NAudio.Wave
     /// WaveInCapabilities structure (based on WAVEINCAPS2 from mmsystem.h)
     /// http://msdn.microsoft.com/en-us/library/ms713726(VS.85).aspx
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+    [StructLayout(LayoutKind.Sequential
+#if !WINDOWS_UWP
+        , CharSet = CharSet.Auto
+#endif
+    )]
     public struct WaveInCapabilities
     {
         /// <summary>
@@ -101,7 +105,7 @@ namespace NAudio.Wave
         public static readonly Guid MicrosoftDefaultManufacturerId = new Guid("d5a47fa8-6d98-11d1-a21a-00a0c9223196");
         public static readonly Guid DefaultWaveOutGuid = new Guid("E36DC310-6D9A-11D1-A21A-00A0C9223196");
         public static readonly Guid DefaultWaveInGuid = new Guid("E36DC311-6D9A-11D1-A21A-00A0C9223196");
-
+#if NET35
         /// <summary>
         /// The device name from the registry if supported
         /// </summary>
@@ -117,5 +121,6 @@ namespace NAudio.Wave
             }
             return name;
         }
+#endif
     }
 }

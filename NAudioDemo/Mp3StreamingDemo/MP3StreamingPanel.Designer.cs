@@ -60,7 +60,7 @@
             this.textBoxStreamingUrl.Name = "textBoxStreamingUrl";
             this.textBoxStreamingUrl.Size = new System.Drawing.Size(228, 20);
             this.textBoxStreamingUrl.TabIndex = 1;
-            this.textBoxStreamingUrl.Text = "http://radio.reaper.fm/stream/";
+            this.textBoxStreamingUrl.Text = "http://bbcmedia.ic.llnwd.net/stream/bbcmedia_lrsolent_mf_p?s=1547899570&e=1547913970&h=8fae702f7db0469c3a6b36036c6273c3";
             // 
             // timer1
             // 

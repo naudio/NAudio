@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace NAudio.Wave.Compression
+﻿namespace NAudio.Wave.Compression
 {
     /// <summary>
     /// Flags for use with acmDriverAdd

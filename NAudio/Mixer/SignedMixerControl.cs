@@ -1,6 +1,7 @@
 // created on 13/12/2002 at 22:01
 using System;
 using System.Runtime.InteropServices;
+using NAudio.Utils;
 using NAudio.Wave;
 
 namespace NAudio.Mixer 
@@ -27,7 +28,7 @@ namespace NAudio.Mixer
 		/// </summary>
 		protected override void GetDetails(IntPtr pDetails) 
 		{
-			signedDetails = (MixerInterop.MIXERCONTROLDETAILS_SIGNED) Marshal.PtrToStructure(mixerControlDetails.paDetails,typeof(MixerInterop.MIXERCONTROLDETAILS_SIGNED));
+			signedDetails = MarshalHelpers.PtrToStructure<MixerInterop.MIXERCONTROLDETAILS_SIGNED>(mixerControlDetails.paDetails);
 		}
 		
 		/// <summary>

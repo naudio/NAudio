@@ -58,7 +58,11 @@ namespace NAudio.Mixer
         public static extern MmResult mixerSetControlDetails(IntPtr hMixer, ref MIXERCONTROLDETAILS mixerControlDetails, MixerFlags dwDetailsFlags);
 
         // http://msdn.microsoft.com/en-us/library/dd757294%28VS.85%29.aspx
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential,
+#if !WINDOWS_UWP
+    CharSet = CharSet.Auto,
+#endif
+             Pack = 1)]
         public struct MIXERCONTROLDETAILS
         {
             public Int32 cbStruct; // size of the MIXERCONTROLDETAILS structure

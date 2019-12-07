@@ -2,6 +2,7 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
+using NAudio.Utils;
 
 namespace NAudio.Mixer
 {
@@ -41,14 +42,14 @@ namespace NAudio.Mixer
             var controls = new List<MixerControl>();
             if (mixerLine.ControlsCount > 0)
             {
-                int mixerControlSize = Marshal.SizeOf(typeof (MixerInterop.MIXERCONTROL));
+                int mixerControlSize = MarshalHelpers.SizeOf<MixerInterop.MIXERCONTROL>();
                 var mlc = new MixerInterop.MIXERLINECONTROLS();
                 IntPtr pmc = Marshal.AllocHGlobal(mixerControlSize * mixerLine.ControlsCount);
                 mlc.cbStruct = Marshal.SizeOf(mlc);
                 mlc.dwLineID = mixerLine.LineId;
                 mlc.cControls = mixerLine.ControlsCount;
                 mlc.pamxctrl = pmc;
-                mlc.cbmxctrl = Marshal.SizeOf(typeof(MixerInterop.MIXERCONTROL));
+                mlc.cbmxctrl = MarshalHelpers.SizeOf<MixerInterop.MIXERCONTROL>();
                 try
                 {
                     MmResult err = MixerInterop.mixerGetLineControls(mixerHandle, ref mlc, MixerFlags.All | mixerHandleType);
@@ -60,8 +61,8 @@ namespace NAudio.Mixer
                     {
                         Int64 address = pmc.ToInt64() + mixerControlSize * i;
 
-                        var mc = (MixerInterop.MIXERCONTROL)
-                            Marshal.PtrToStructure((IntPtr)address, typeof(MixerInterop.MIXERCONTROL));
+                        var mc = 
+                            MarshalHelpers.PtrToStructure<MixerInterop.MIXERCONTROL>((IntPtr)address);
                         var mixerControl = GetMixerControl(mixerHandle, mixerLine.LineId, mc.dwControlID, mixerLine.Channels,
                                                                                  mixerHandleType);
 
@@ -81,16 +82,16 @@ namespace NAudio.Mixer
         /// Gets a specified Mixer Control
         /// </summary>
         /// <param name="mixerHandle">Mixer Handle</param>
-        /// <param name="nLineID">Line ID</param>
+        /// <param name="nLineId">Line ID</param>
         /// <param name="controlId">Control ID</param>
         /// <param name="nChannels">Number of Channels</param>
         /// <param name="mixerFlags">Flags to use (indicates the meaning of mixerHandle)</param>
         /// <returns></returns>
-        public static MixerControl GetMixerControl(IntPtr mixerHandle, int nLineID, int controlId, int nChannels,
+        public static MixerControl GetMixerControl(IntPtr mixerHandle, int nLineId, int controlId, int nChannels,
                                                    MixerFlags mixerFlags)
         {
-            MixerInterop.MIXERLINECONTROLS mlc = new MixerInterop.MIXERLINECONTROLS();
-            MixerInterop.MIXERCONTROL mc = new MixerInterop.MIXERCONTROL();
+            var mlc = new MixerInterop.MIXERLINECONTROLS();
+            var mc = new MixerInterop.MIXERCONTROL();
 
             // set up the pointer to a structure
             IntPtr pMixerControl = Marshal.AllocCoTaskMem(Marshal.SizeOf(mc));
@@ -101,7 +102,7 @@ namespace NAudio.Mixer
             mlc.dwControlID = controlId;
             mlc.cbmxctrl = Marshal.SizeOf(mc);
             mlc.pamxctrl = pMixerControl;
-            mlc.dwLineID = nLineID;
+            mlc.dwLineID = nLineId;
             MmResult err = MixerInterop.mixerGetLineControls(mixerHandle, ref mlc, MixerFlags.OneById | mixerFlags);
             if (err != MmResult.NoError)
             {
@@ -110,33 +111,35 @@ namespace NAudio.Mixer
             }
 
             // retrieve the structure from the pointer
-            mc = (MixerInterop.MIXERCONTROL) Marshal.PtrToStructure(mlc.pamxctrl, typeof (MixerInterop.MIXERCONTROL));
+            mc = MarshalHelpers.PtrToStructure<MixerInterop.MIXERCONTROL>(mlc.pamxctrl);
             Marshal.FreeCoTaskMem(pMixerControl);
 
-            if (MixerControl.IsControlBoolean(mc.dwControlType))
+            if (IsControlBoolean(mc.dwControlType))
             {
                 return new BooleanMixerControl(mc, mixerHandle, mixerFlags, nChannels);
             }
-            else if (MixerControl.IsControlSigned(mc.dwControlType))
+
+            if (IsControlSigned(mc.dwControlType))
             {
                 return new SignedMixerControl(mc, mixerHandle, mixerFlags, nChannels);
             }
-            else if (MixerControl.IsControlUnsigned(mc.dwControlType))
+
+            if (IsControlUnsigned(mc.dwControlType))
             {
                 return new UnsignedMixerControl(mc, mixerHandle, mixerFlags, nChannels);
             }
-            else if (MixerControl.IsControlListText(mc.dwControlType))
+
+            if (IsControlListText(mc.dwControlType))
             {
                 return new ListTextMixerControl(mc, mixerHandle, mixerFlags, nChannels);
             }
-            else if (MixerControl.IsControlCustom(mc.dwControlType))
+
+            if (IsControlCustom(mc.dwControlType))
             {
                 return new CustomMixerControl(mc, mixerHandle, mixerFlags, nChannels);
             }
-            else
-            {
-                throw new InvalidOperationException(String.Format("Unknown mixer control type {0}", mc.dwControlType));
-            }
+
+            throw new InvalidOperationException($"Unknown mixer control type {mc.dwControlType}");
         }
 
         /// <summary>
@@ -175,19 +178,19 @@ namespace NAudio.Mixer
 
             if (IsBoolean)
             {
-                mixerControlDetails.cbDetails = Marshal.SizeOf(new MixerInterop.MIXERCONTROLDETAILS_BOOLEAN());
+                mixerControlDetails.cbDetails = MarshalHelpers.SizeOf<MixerInterop.MIXERCONTROLDETAILS_BOOLEAN>();
             }
             else if (IsListText)
             {
-                mixerControlDetails.cbDetails = Marshal.SizeOf(new MixerInterop.MIXERCONTROLDETAILS_LISTTEXT());
+                mixerControlDetails.cbDetails = MarshalHelpers.SizeOf<MixerInterop.MIXERCONTROLDETAILS_LISTTEXT>();
             }
             else if (IsSigned)
             {
-                mixerControlDetails.cbDetails = Marshal.SizeOf(new MixerInterop.MIXERCONTROLDETAILS_SIGNED());
+                mixerControlDetails.cbDetails = MarshalHelpers.SizeOf<MixerInterop.MIXERCONTROLDETAILS_SIGNED>();
             }
             else if (IsUnsigned)
             {
-                mixerControlDetails.cbDetails = Marshal.SizeOf(new MixerInterop.MIXERCONTROLDETAILS_UNSIGNED());
+                mixerControlDetails.cbDetails = MarshalHelpers.SizeOf<MixerInterop.MIXERCONTROLDETAILS_UNSIGNED>();
             }
             else
             {
@@ -227,18 +230,12 @@ namespace NAudio.Mixer
         /// <summary>
         /// Mixer control name
         /// </summary>
-        public String Name
-        {
-            get { return mixerControl.szName; }
-        }
+        public String Name => mixerControl.szName;
 
         /// <summary>
         /// Mixer control type
         /// </summary>
-        public MixerControlType ControlType
-        {
-            get { return mixerControl.dwControlType; }
-        }
+        public MixerControlType ControlType => mixerControl.dwControlType;
 
         /// <summary>
         /// Returns true if this is a boolean control
@@ -269,10 +266,7 @@ namespace NAudio.Mixer
         /// <summary>
         /// Is this a boolean control
         /// </summary>
-        public bool IsBoolean
-        {
-            get { return MixerControl.IsControlBoolean(mixerControl.dwControlType); }
-        }
+        public bool IsBoolean => IsControlBoolean(mixerControl.dwControlType);
 
         /// <summary>
         /// Determines whether a specified mixer control type is a list text control
@@ -295,10 +289,7 @@ namespace NAudio.Mixer
         /// <summary>
         /// True if this is a list text control
         /// </summary>
-        public bool IsListText
-        {
-            get { return MixerControl.IsControlListText(mixerControl.dwControlType); }
-        }
+        public bool IsListText => IsControlListText(mixerControl.dwControlType);
 
         private static bool IsControlSigned(MixerControlType controlType)
         {
@@ -320,10 +311,7 @@ namespace NAudio.Mixer
         /// <summary>
         /// True if this is a signed control
         /// </summary>
-        public bool IsSigned
-        {
-            get { return MixerControl.IsControlSigned(mixerControl.dwControlType); }
-        }
+        public bool IsSigned => IsControlSigned(mixerControl.dwControlType);
 
         private static bool IsControlUnsigned(MixerControlType controlType)
         {
@@ -348,30 +336,21 @@ namespace NAudio.Mixer
         /// <summary>
         /// True if this is an unsigned control
         /// </summary>
-        public bool IsUnsigned
-        {
-            get { return MixerControl.IsControlUnsigned(mixerControl.dwControlType); }
-        }
+        public bool IsUnsigned => IsControlUnsigned(mixerControl.dwControlType);
 
         private static bool IsControlCustom(MixerControlType controlType)
         {
-            return (controlType == MixerControlType.Custom);
+            return controlType == MixerControlType.Custom;
         }
 
         /// <summary>
         /// True if this is a custom control
         /// </summary>
-        public bool IsCustom
-        {
-            get { return MixerControl.IsControlCustom(mixerControl.dwControlType); }
-        }
+        public bool IsCustom => IsControlCustom(mixerControl.dwControlType);
 
         /// <summary>
         /// String representation for debug purposes
         /// </summary>
-        public override string ToString()
-        {
-            return String.Format("{0} {1}", Name, ControlType);
-        }
+        public override string ToString() => $"{Name} {ControlType}";
     }
 }

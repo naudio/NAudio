@@ -7,7 +7,7 @@ namespace NAudio.Dmo
     /// IMediaBuffer Interface
     /// </summary>
     [ComImport,
-#if !NETFX_CORE
+#if !WINDOWS_UWP
     System.Security.SuppressUnmanagedCodeSecurity,
 #endif
     Guid("59eff8b9-938c-4a26-82f2-95cb84cdc837"),

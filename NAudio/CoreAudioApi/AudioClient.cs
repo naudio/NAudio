@@ -73,8 +73,7 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                uint bufferSize;
-                Marshal.ThrowExceptionForHR(audioClientInterface.GetBufferSize(out bufferSize));
+                Marshal.ThrowExceptionForHR(audioClientInterface.GetBufferSize(out uint bufferSize));
                 return (int) bufferSize;
             }
         }

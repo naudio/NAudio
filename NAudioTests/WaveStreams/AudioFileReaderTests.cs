@@ -1,5 +1,6 @@
 ﻿using NAudio.Wave;
 using NUnit.Framework;
+using System.IO;
 
 namespace NAudioTests.WaveStreams
 {
@@ -10,7 +11,10 @@ namespace NAudioTests.WaveStreams
         [Category("IntegrationTest")]
         public void CanBeDisposedMoreThanOnce()
         {
-            var reader = new AudioFileReader(@"..\..\..\SampleData\Drums\closed-hat-trimmed.wav");
+            var path = @"..\..\..\SampleData\Drums\closed-hat-trimmed.wav";
+            if (!File.Exists(path))
+                Assert.Ignore("test file not found");
+            var reader = new AudioFileReader(path);
             reader.Dispose();
             Assert.DoesNotThrow(() => reader.Dispose());
         }

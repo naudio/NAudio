@@ -1,6 +1,7 @@
 #r "packages/FAKE/tools/FakeLib.dll"
 open Fake 
 open System.IO
+open Fake.Testing
 
 let buildDir = "" // using the defaults build output
 let appReferences = !! "./*.sln" // still building from the solution
@@ -31,11 +32,11 @@ Target "ReleaseBuild" (fun _ ->
 Target "Test" (fun _ ->
     trace "Running unit tests"
     testDlls
-    |> NUnit (fun p -> 
-        {p with
-            ExcludeCategory = "IntegrationTest";
-            DisableShadowCopy = true; 
-            OutputFile = testDir + "TestResults.xml"})
+    |> NUnit3 (fun p -> 
+        {p with        
+            Where = "cat != IntegrationTest";
+            ShadowCopy = true; 
+            ResultSpecs = [testDir + "TestResults.xml"]})
 )
 
 Target "Clean" (fun _ ->
@@ -59,7 +60,7 @@ Target "NuGet" (fun _ ->
             Summary = projectSummary
             WorkingDir = packagingDir
             AccessKey = myAccesskey*)
-            Version = "1.8.5" // todo get the version number from elsewhere
+            Version = "1.9.0" // todo get the version number from elsewhere
             WorkingDir = "."
             OutputPath = deployDir
             

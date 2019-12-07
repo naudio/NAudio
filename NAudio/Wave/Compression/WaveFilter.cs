@@ -1,12 +1,11 @@
-using System;
 using System.Runtime.InteropServices;
 
 namespace NAudio.Wave.Compression
 {
-	/// <summary>
-	/// Summary description for WaveFilter.
-	/// </summary>
-	[StructLayout(LayoutKind.Sequential, CharSet=CharSet.Ansi)]
+    /// <summary>
+    /// Summary description for WaveFilter.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Ansi)]
 	public class WaveFilter
 	{
         /// <summary>

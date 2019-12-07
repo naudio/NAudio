@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.InteropServices;
-using NAudio.Wave;
 
 namespace NAudio.Midi
 {
@@ -73,14 +72,18 @@ namespace NAudio.Midi
 
         // http://msdn.microsoft.com/en-us/library/dd798450%28VS.85%29.aspx
         [DllImport("winmm.dll")]
-        public static extern MmResult midiInAddBuffer(IntPtr hMidiIn, [MarshalAs(UnmanagedType.Struct)] ref MIDIHDR lpMidiInHdr, int uSize);
+        public static extern MmResult midiInAddBuffer(IntPtr hMidiIn, ref MIDIHDR lpMidiInHdr, int uSize);
 
         // http://msdn.microsoft.com/en-us/library/dd798452%28VS.85%29.aspx
         [DllImport("winmm.dll")]
         public static extern MmResult midiInClose(IntPtr hMidiIn);
 
         // http://msdn.microsoft.com/en-us/library/dd798453%28VS.85%29.aspx
-        [DllImport("winmm.dll", CharSet = CharSet.Auto)]
+        [DllImport("winmm.dll"
+#if !WINDOWS_UWP
+            , CharSet = CharSet.Auto
+#endif
+    )]
         public static extern MmResult midiInGetDevCaps(IntPtr deviceId, out MidiInCapabilities capabilities, int size);
 
         // http://msdn.microsoft.com/en-us/library/dd798454%28VS.85%29.aspx
@@ -110,7 +113,7 @@ namespace NAudio.Midi
 
         // http://msdn.microsoft.com/en-us/library/dd798459%28VS.85%29.aspx
         [DllImport("winmm.dll")]
-        public static extern MmResult midiInPrepareHeader(IntPtr hMidiIn, [MarshalAs(UnmanagedType.Struct)] ref MIDIHDR lpMidiInHdr, int uSize);
+        public static extern MmResult midiInPrepareHeader(IntPtr hMidiIn, ref MIDIHDR lpMidiInHdr, int uSize);
 
         // http://msdn.microsoft.com/en-us/library/dd798461%28VS.85%29.aspx
         [DllImport("winmm.dll")]
@@ -126,7 +129,7 @@ namespace NAudio.Midi
 
         // http://msdn.microsoft.com/en-us/library/dd798464%28VS.85%29.aspx
         [DllImport("winmm.dll")]
-        public static extern MmResult midiInUnprepareHeader(IntPtr hMidiIn, [MarshalAs(UnmanagedType.Struct)] ref MIDIHDR lpMidiInHdr, int uSize);
+        public static extern MmResult midiInUnprepareHeader(IntPtr hMidiIn, ref MIDIHDR lpMidiInHdr, int uSize);
 
         // http://msdn.microsoft.com/en-us/library/dd798465%28VS.85%29.aspx
         [DllImport("winmm.dll")]
@@ -141,7 +144,11 @@ namespace NAudio.Midi
         public static extern MmResult midiOutClose(IntPtr hMidiOut);
 
         // http://msdn.microsoft.com/en-us/library/dd798469%28VS.85%29.aspx
-        [DllImport("winmm.dll", CharSet = CharSet.Auto)]
+        [DllImport("winmm.dll"
+#if !WINDOWS_UWP
+            , CharSet = CharSet.Auto
+#endif
+            )]
         public static extern MmResult midiOutGetDevCaps(IntPtr deviceNumber, out MidiOutCapabilities caps, int uSize);
 
         // http://msdn.microsoft.com/en-us/library/dd798470%28VS.85%29.aspx
@@ -163,7 +170,7 @@ namespace NAudio.Midi
 
         // http://msdn.microsoft.com/en-us/library/dd798474%28VS.85%29.aspx
         [DllImport("winmm.dll")]
-        public static extern MmResult midiOutLongMsg(IntPtr hMidiOut, [MarshalAs(UnmanagedType.Struct)] ref MIDIHDR lpMidiOutHdr, int uSize);
+        public static extern MmResult midiOutLongMsg(IntPtr hMidiOut, ref MIDIHDR lpMidiOutHdr, int uSize);
 
         // http://msdn.microsoft.com/en-us/library/dd798475%28VS.85%29.aspx
         [DllImport("winmm.dll")]
@@ -175,7 +182,7 @@ namespace NAudio.Midi
 
         // http://msdn.microsoft.com/en-us/library/dd798477%28VS.85%29.aspx
         [DllImport("winmm.dll")]
-        public static extern MmResult midiOutPrepareHeader(IntPtr hMidiOut, [MarshalAs(UnmanagedType.Struct)] ref MIDIHDR lpMidiOutHdr, int uSize);
+        public static extern MmResult midiOutPrepareHeader(IntPtr hMidiOut, ref MIDIHDR lpMidiOutHdr, int uSize);
 
         // http://msdn.microsoft.com/en-us/library/dd798479%28VS.85%29.aspx
         [DllImport("winmm.dll")]
@@ -191,7 +198,7 @@ namespace NAudio.Midi
 
         // http://msdn.microsoft.com/en-us/library/dd798482%28VS.85%29.aspx
         [DllImport("winmm.dll")]
-        public static extern MmResult midiOutUnprepareHeader(IntPtr hMidiOut, [MarshalAs(UnmanagedType.Struct)] ref MIDIHDR lpMidiOutHdr, int uSize);
+        public static extern MmResult midiOutUnprepareHeader(IntPtr hMidiOut, ref MIDIHDR lpMidiOutHdr, int uSize);
 
         // http://msdn.microsoft.com/en-us/library/dd798485%28VS.85%29.aspx
         [DllImport("winmm.dll")]
@@ -203,7 +210,7 @@ namespace NAudio.Midi
 
         // http://msdn.microsoft.com/en-us/library/dd798487%28VS.85%29.aspx
         [DllImport("winmm.dll")]
-        public static extern MmResult midiStreamOut(IntPtr hMidiStream, [MarshalAs(UnmanagedType.Struct)] ref MIDIHDR pmh, int cbmh);
+        public static extern MmResult midiStreamOut(IntPtr hMidiStream, ref MIDIHDR pmh, int cbmh);
 
         // http://msdn.microsoft.com/en-us/library/dd798488%28VS.85%29.aspx
         [DllImport("winmm.dll")]
@@ -211,7 +218,7 @@ namespace NAudio.Midi
 
         // http://msdn.microsoft.com/en-us/library/dd798489%28VS.85%29.aspx
         [DllImport("winmm.dll")]
-        public static extern MmResult midiStreamPosition(IntPtr hMidiStream, [MarshalAs(UnmanagedType.Struct)] ref MMTIME lpmmt, int cbmmt);
+        public static extern MmResult midiStreamPosition(IntPtr hMidiStream, ref MMTIME lpmmt, int cbmmt);
 
         // http://msdn.microsoft.com/en-us/library/dd798490%28VS.85%29.aspx
         [DllImport("winmm.dll")]

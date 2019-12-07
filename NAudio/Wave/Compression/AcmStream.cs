@@ -28,7 +28,19 @@ namespace NAudio.Wave.Compression
                 this.sourceFormat = sourceFormat;
                 int sourceBufferSize = Math.Max(65536, sourceFormat.AverageBytesPerSecond);
                 sourceBufferSize -= (sourceBufferSize % sourceFormat.BlockAlign);
-                MmException.Try(AcmInterop.acmStreamOpen(out streamHandle, IntPtr.Zero, sourceFormat, destFormat, null, IntPtr.Zero, IntPtr.Zero, AcmStreamOpenFlags.NonRealTime), "acmStreamOpen");
+                IntPtr sourceFormatPointer = WaveFormat.MarshalToPtr(sourceFormat);
+                IntPtr destFormatPointer = WaveFormat.MarshalToPtr(destFormat);
+
+                try
+                {
+                    MmException.Try(AcmInterop.acmStreamOpen2(out streamHandle, IntPtr.Zero, sourceFormatPointer, destFormatPointer, null, IntPtr.Zero, IntPtr.Zero, AcmStreamOpenFlags.NonRealTime), "acmStreamOpen");
+                }
+                finally 
+                {
+                    Marshal.FreeHGlobal(sourceFormatPointer);
+                    Marshal.FreeHGlobal(destFormatPointer);
+
+                }
 
                 int destBufferSize = SourceToDest(sourceBufferSize);
                 streamHeader = new AcmStreamHeader(streamHandle, sourceBufferSize, destBufferSize);
@@ -44,7 +56,7 @@ namespace NAudio.Wave.Compression
 
         /// <summary>
         /// Creates a new ACM stream to convert one format to another, using a 
-        /// specified driver identified and wave filter
+        /// specified driver identifier and wave filter
         /// </summary>
         /// <param name="driverId">the driver identifier</param>
         /// <param name="sourceFormat">the source format</param>
@@ -55,8 +67,17 @@ namespace NAudio.Wave.Compression
             this.sourceFormat = sourceFormat;
             sourceBufferSize -= (sourceBufferSize % sourceFormat.BlockAlign);
             MmException.Try(AcmInterop.acmDriverOpen(out driverHandle, driverId, 0), "acmDriverOpen");
-            MmException.Try(AcmInterop.acmStreamOpen(out streamHandle, driverHandle,
-                          sourceFormat, sourceFormat, waveFilter, IntPtr.Zero, IntPtr.Zero, AcmStreamOpenFlags.NonRealTime), "acmStreamOpen");
+
+            IntPtr sourceFormatPointer = WaveFormat.MarshalToPtr(sourceFormat);
+            try
+            {
+                MmException.Try(AcmInterop.acmStreamOpen2(out streamHandle, driverHandle,
+                    sourceFormatPointer, sourceFormatPointer, waveFilter, IntPtr.Zero, IntPtr.Zero, AcmStreamOpenFlags.NonRealTime), "acmStreamOpen");
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(sourceFormatPointer);
+            }
             streamHeader = new AcmStreamHeader(streamHandle, sourceBufferSize, SourceToDest(sourceBufferSize));
         }
 
@@ -100,17 +121,23 @@ namespace NAudio.Wave.Compression
         {
             // create a PCM format
             WaveFormat suggestedFormat = new WaveFormat(compressedFormat.SampleRate, 16, compressedFormat.Channels);
-            MmException.Try(AcmInterop.acmFormatSuggest(IntPtr.Zero, compressedFormat, suggestedFormat, Marshal.SizeOf(suggestedFormat), AcmFormatSuggestFlags.FormatTag), "acmFormatSuggest");
+            //MmException.Try(AcmInterop.acmFormatSuggest(IntPtr.Zero, compressedFormat, suggestedFormat, Marshal.SizeOf(suggestedFormat), AcmFormatSuggestFlags.FormatTag), "acmFormatSuggest");
             
-            /*IntPtr suggestedFormatPointer = WaveFormat.MarshalToPtr(suggestedFormat);
-            IntPtr compressedFormatPointer = WaveFormat.MarshalToPtr(compressedFormat);
-            MmResult result = AcmInterop.acmFormatSuggest2(IntPtr.Zero, compressedFormatPointer, suggestedFormatPointer, Marshal.SizeOf(suggestedFormat), AcmFormatSuggestFlags.FormatTag);
-            suggestedFormat = WaveFormat.MarshalFromPtr(suggestedFormatPointer);
-            Marshal.FreeHGlobal(suggestedFormatPointer);
-            Marshal.FreeHGlobal(compressedFormatPointer);
-            MmException.Try(result, "acmFormatSuggest");*/
 
-            
+            IntPtr suggestedFormatPointer = WaveFormat.MarshalToPtr(suggestedFormat);
+            IntPtr compressedFormatPointer = WaveFormat.MarshalToPtr(compressedFormat);
+            try
+            {
+                MmResult result = AcmInterop.acmFormatSuggest2(IntPtr.Zero, compressedFormatPointer,
+                    suggestedFormatPointer, Marshal.SizeOf(suggestedFormat), AcmFormatSuggestFlags.FormatTag);
+                suggestedFormat = WaveFormat.MarshalFromPtr(suggestedFormatPointer);
+                MmException.Try(result, "acmFormatSuggest");
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(suggestedFormatPointer);
+                Marshal.FreeHGlobal(compressedFormatPointer);
+            }
             return suggestedFormat;
         }
 

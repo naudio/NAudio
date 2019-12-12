@@ -16,6 +16,7 @@ namespace NAudio.Wave
         private long dataSizePos;
         private long factSampleCountPos;
         private long dataChunkSize;
+        private bool append;
         private readonly WaveFormat format;
         private readonly string filename;
 
@@ -115,6 +116,26 @@ namespace NAudio.Wave
             this.filename = filename;
         }
 
+        /// <summary>
+        /// Creates a new WaveFileWriter
+        /// </summary>
+        /// <param name="filename">The filename to write to</param>
+        /// <param name="format">The Wave Format of the output data</param>
+        /// <param name="append">Switch whether append or not</param>
+        public WaveFileWriter(string filename, WaveFormat format, bool append)
+            : this(new FileStream(filename, (append && File.Exists(filename)) ? FileMode.OpenOrCreate : FileMode.Create, FileAccess.Write, FileShare.Read), format)
+        {
+            this.filename = filename;
+            this.append = append;
+            if (append && outStream.Length != 46 && outStream.Length != 58) // 58 for has fact file, 46 without fact chunk
+            {
+                FileInfo fileInfo = new FileInfo(filename);
+                outStream.Position = fileInfo.Length;
+                writer.BaseStream.Position = fileInfo.Length;
+                dataChunkSize = fileInfo.Length;
+            }
+        }
+
         private void WriteDataChunkHeader()
         {
             writer.Write(System.Text.Encoding.UTF8.GetBytes("data"));
@@ -205,7 +226,7 @@ namespace NAudio.Wave
         public override long Position
         {
             get => dataChunkSize;
-            set => throw new InvalidOperationException("Repositioning a WaveFileWriter is not supported");
+            set { writer.BaseStream.Position = value; }
         }
 
         /// <summary>

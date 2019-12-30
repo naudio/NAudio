@@ -5,7 +5,6 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.Windows.Input;
-using MS.Internal.Xml.XPath;
 using NAudio.MediaFoundation;
 using NAudio.Wave;
 using NAudioWpfDemo.ViewModel;

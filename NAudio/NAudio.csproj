@@ -1,6 +1,6 @@
 ﻿<Project Sdk="MSBuild.Sdk.Extras">
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp3.0;netstandard2.0;net35</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.0;net35;netstandard2.0;uap10.0</TargetFrameworks>
     <Version>1.9.0</Version>
     <Authors>Mark Heath &amp; Contributors</Authors>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>

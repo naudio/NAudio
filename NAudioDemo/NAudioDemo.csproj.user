@@ -2,6 +2,7 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ProjectView>ShowAllFiles</ProjectView>
+    <ActiveDebugFramework>net40-client</ActiveDebugFramework>
   </PropertyGroup>
   <ItemGroup>
     <Compile Update="AcmDemo\AcmPanel.cs">

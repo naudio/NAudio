@@ -18,8 +18,7 @@ namespace NAudioWpfDemo
             InitializeComponent();
             var arch = Environment.Is64BitProcess ? "x64" : "x86";
             var framework = Assembly.GetEntryAssembly().GetCustomAttribute<TargetFrameworkAttribute>().FrameworkName;
-            //this.Title = this.Title + arch;
-            this.Title = $"{this.Title} ({framework}, {arch})";
+            this.Title = $"{this.Title} ({framework}) ({arch})";
         }
     }
 }

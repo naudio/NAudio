@@ -1,20 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="MSBuild.Sdk.Extras">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <TargetFrameworks>net40-client</TargetFrameworks>
     <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{C37A547B-F31E-45FB-870A-CFA704D06152}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>NAudioDemo</RootNamespace>
     <AssemblyName>NAudioDemo</AssemblyName>
-    <FileUpgradeFlags>
-    </FileUpgradeFlags>
-    <UpgradeBackupLocation>
-    </UpgradeBackupLocation>
     <OldToolsVersion>3.5</OldToolsVersion>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
@@ -38,27 +31,6 @@
     <Title>NAudioDemo</Title>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
-    <PlatformTarget>x86</PlatformTarget>
-  </PropertyGroup>
   <ItemGroup>
     <Reference Include="NSpeex">
       <HintPath>..\Lib\NSpeex\NSpeex.dll</HintPath>
@@ -75,29 +47,13 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\Back.png" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Resources\Forward.png" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Resources\Loop.png" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Resources\Pause.png" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Resources\Play.png" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Resources\Rewind.png" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Resources\Shuffle.png" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Resources\Stop.png" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Resources\Audiosrv.png" />
     <None Include="Resources\Mute.png" />
     <Content Include="Resources\Open.png" />

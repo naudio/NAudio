@@ -24,7 +24,7 @@ namespace NAudioDemo
             }
 
             var arch = Environment.Is64BitProcess ? "x64" : "x86";
-            var framework = Assembly.GetEntryAssembly().GetCustomAttribute<TargetFrameworkAttribute>().FrameworkName;
+            var framework = ((TargetFrameworkAttribute)(Assembly.GetEntryAssembly().GetCustomAttributes(typeof(TargetFrameworkAttribute),true).ToArray()[0])).FrameworkName;
             this.Text = $"{this.Text} ({framework}) ({arch})";
         }
 

@@ -23,7 +23,7 @@ namespace NAudio.Wave.Asio
         {
         }
 
-#if NET35
+#if NET35 || NETCOREAPP3_0
         /// <summary>
         /// Gets the ASIO driver names installed.
         /// </summary>

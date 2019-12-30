@@ -45,10 +45,6 @@
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.0' ">
-    <Compile Remove="Wave\MmeInterop\WaveWindow.cs" />
-    <Compile Remove="Wave\MmeInterop\WaveCallbackInfo.cs" />
-    <Compile Remove="Wave\WaveInputs\WaveIn.cs" />
-    <Compile Remove="Wave\WaveOutputs\WaveOut.cs" />
     <Compile Remove="Wave\WaveFormats\WaveFormatCustomMarshaler.cs" />
     <Compile Remove="Wave\WaveOutputs\WasapiOutRT.cs" />
     <Compile Remove="Wave\WaveInputs\WasapiCaptureRT.cs" />

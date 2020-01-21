@@ -450,6 +450,11 @@ namespace NAudio.Wave
             }
         }
 
+        /// <summary>
+        /// Volume (not implemented)
+        /// </summary>
+        float IWavePlayer.Volume { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
         #endregion
 
         /// <summary>

@@ -44,6 +44,7 @@ namespace NAudio.Wave
         /// </summary>
         /// <param name="waveProvider">The waveprovider to be played</param>
         void Init(IWaveProvider waveProvider);
+#endif
 
         /// <summary>
         /// The volume 
@@ -51,12 +52,11 @@ namespace NAudio.Wave
         /// Note that not all implementations necessarily support volume changes
         /// </summary>
         float Volume { get; set; }
-#endif
+
         /// <summary>
         /// Current playback state
         /// </summary>
         PlaybackState PlaybackState { get; }
-
 
         /// <summary>
         /// Indicates that playback has gone into a stopped state due to 

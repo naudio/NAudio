@@ -274,7 +274,8 @@ namespace NAudio.Wave
             {
                 return 0;
             }
-            return (long)audioClient.AudioClockClient.AdjustedPosition;
+            var clock = audioClient.AudioClockClient;
+            return ((long)clock.AdjustedPosition * outputFormat.AverageBytesPerSecond) / (long)clock.Frequency;
         }
 
         /// <summary>

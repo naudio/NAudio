@@ -62,9 +62,6 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                // figure out ticks per byte (for later)
-                var byteLatency = (TimeSpan.TicksPerSecond / Frequency);
-
                 ulong pos, qpos;
                 int cnt = 0;
                 while (!GetPosition(out pos, out qpos))
@@ -83,14 +80,14 @@ namespace NAudio.CoreAudioApi
                     // get the current qpc count (in ticks)
                     var qposNow = (ulong)((Stopwatch.GetTimestamp() * 10000000M) / Stopwatch.Frequency);
 
-                    // find out how many ticks has passed since the device reported the position
-                    var qposDiff = (qposNow - qpos) / 100;
+                    // find out how many ticks have passed since the device reported the position
+                    var qposDiff = qposNow - qpos;
 
-                    // find out how many byte would have played in that time span
-                    var bytes = qposDiff / byteLatency;
+                    // find out how many device position units (usually bytes) would have played in that time span
+                    var posDiff = (qposDiff * Frequency) / TimeSpan.TicksPerSecond;
 
                     // add it to the position
-                    pos += bytes;
+                    pos += posDiff;
                 }
                 return pos;
             }

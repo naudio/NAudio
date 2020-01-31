@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Windows.Forms;
+using System.Windows;
 using System.Windows.Input;
 using NAudio.MediaFoundation;
 using NAudio.Wave;
@@ -77,7 +77,7 @@ namespace NAudioWpfDemo.MediaFoundationEncode
             }
             catch (Exception e)
             {
-                MessageBox.Show(String.Format("Not a supported input file ({0})", e.Message));
+                MessageBox.Show($"Not a supported input file ({e.Message})");
             }
             return isValid;
         }

@@ -270,11 +270,19 @@ namespace NAudio.Wave
         /// <returns>Position in bytes</returns>
         public long GetPosition()
         {
-            if (playbackState == PlaybackState.Stopped)
+            ulong pos;
+            switch (playbackState)
             {
-                return 0;
+                case PlaybackState.Stopped:
+                    return 0;
+                case PlaybackState.Playing:
+                    pos = audioClient.AudioClockClient.AdjustedPosition;
+                    break;
+                default: // PlaybackState.Paused
+                    audioClient.AudioClockClient.GetPosition(out pos, out _);
+                    break;
             }
-            return (long)audioClient.AudioClockClient.AdjustedPosition;
+            return ((long)pos * outputFormat.AverageBytesPerSecond) / (long)audioClient.AudioClockClient.Frequency;
         }
 
         /// <summary>

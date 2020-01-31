@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Windows.Forms;
+using System.Windows;
 using System.Windows.Threading;
 using NAudio.Wave;
 using NAudioWpfDemo.ViewModel;

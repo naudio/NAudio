@@ -105,7 +105,10 @@ namespace NAudio.Wave
             }
             set
             {
-                Position = (long) (value.TotalSeconds * WaveFormat.AverageBytesPerSecond);
+                long bytePosition = (long)(value.TotalSeconds * WaveFormat.AverageBytesPerSecond);
+                long roundedPostion = bytePosition - (bytePosition % BlockAlign);
+
+                Position = roundedPostion;
             }
         }
 

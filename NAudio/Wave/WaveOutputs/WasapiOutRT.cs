@@ -451,9 +451,9 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// Volume (not implemented)
+        /// Volume (not supported)
         /// </summary>
-        float IWavePlayer.Volume { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        float IWavePlayer.Volume { get => 1.0f; set => throw new NotSupportedException(); }
 
         #endregion
 

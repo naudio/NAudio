@@ -44,7 +44,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\NAudio\NAudio.csproj" />
+    <ProjectReference Include="..\NAudio.Core\NAudio.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\Back.png" />

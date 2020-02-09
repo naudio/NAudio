@@ -64,7 +64,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{BA7F6DBB-9
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NAudioUniversalDemo", "NAudioUniversalDemo\NAudioUniversalDemo.csproj", "{0BE833CC-8127-4079-BEEC-27397EDA3EDB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NAudio.Asio", "NAudio.Asio\NAudio.Asio.csproj", "{90ECA4FE-5900-4FEF-B11F-C4455BD805C4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NAudio.Asio", "NAudio.Asio\NAudio.Asio.csproj", "{90ECA4FE-5900-4FEF-B11F-C4455BD805C4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NAudio", "NAudio\NAudio.csproj", "{2C904345-787E-4D0A-883D-FFF644AC5682}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -198,6 +200,22 @@ Global
 		{90ECA4FE-5900-4FEF-B11F-C4455BD805C4}.Release|x64.Build.0 = Release|Any CPU
 		{90ECA4FE-5900-4FEF-B11F-C4455BD805C4}.Release|x86.ActiveCfg = Release|Any CPU
 		{90ECA4FE-5900-4FEF-B11F-C4455BD805C4}.Release|x86.Build.0 = Release|Any CPU
+		{2C904345-787E-4D0A-883D-FFF644AC5682}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C904345-787E-4D0A-883D-FFF644AC5682}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C904345-787E-4D0A-883D-FFF644AC5682}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{2C904345-787E-4D0A-883D-FFF644AC5682}.Debug|ARM.Build.0 = Debug|Any CPU
+		{2C904345-787E-4D0A-883D-FFF644AC5682}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2C904345-787E-4D0A-883D-FFF644AC5682}.Debug|x64.Build.0 = Debug|Any CPU
+		{2C904345-787E-4D0A-883D-FFF644AC5682}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2C904345-787E-4D0A-883D-FFF644AC5682}.Debug|x86.Build.0 = Debug|Any CPU
+		{2C904345-787E-4D0A-883D-FFF644AC5682}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C904345-787E-4D0A-883D-FFF644AC5682}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2C904345-787E-4D0A-883D-FFF644AC5682}.Release|ARM.ActiveCfg = Release|Any CPU
+		{2C904345-787E-4D0A-883D-FFF644AC5682}.Release|ARM.Build.0 = Release|Any CPU
+		{2C904345-787E-4D0A-883D-FFF644AC5682}.Release|x64.ActiveCfg = Release|Any CPU
+		{2C904345-787E-4D0A-883D-FFF644AC5682}.Release|x64.Build.0 = Release|Any CPU
+		{2C904345-787E-4D0A-883D-FFF644AC5682}.Release|x86.ActiveCfg = Release|Any CPU
+		{2C904345-787E-4D0A-883D-FFF644AC5682}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

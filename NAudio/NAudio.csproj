@@ -12,13 +12,10 @@
     <Copyright>© Mark Heath 2020</Copyright>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile Condition=" '$(Configuration)' == 'Release' ">true</GenerateDocumentationFile>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
   </PropertyGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'uap10.0' ">
-    <Compile Remove="Wave\Asio\*.cs" />
-    <Compile Remove="Wave\WaveOutputs\AsioOut.cs" />
-    <Compile Remove="Wave\WaveOutputs\AsioAudioAvailableEventArgs.cs" />
-  </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\NAudio.Asio\NAudio.Asio.csproj" />
     <ProjectReference Include="..\NAudio.Core\NAudio.Core.csproj" />
   </ItemGroup>
 </Project>

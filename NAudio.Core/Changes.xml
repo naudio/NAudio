@@ -1,0 +1,975 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<changes>
+  <change>
+    <version>0.0.0.1</version>
+    <date>9 Dec 2002</date>
+    <desc>Initial version, basic mixer interop</desc>
+  </change>
+  <change>
+    <version>0.0.0.2</version>
+    <date>10 Dec 2002</date>
+    <desc>Added MIDI interop, MMException, more mixer classes</desc>
+  </change>
+  <change>
+    <version>0.0.0.3</version>
+    <date>12 Dec 2002</date>
+    <desc>Improvements to Mixer interop &amp; classes</desc>
+  </change>
+  <change>
+    <version>0.0.0.4</version>
+    <date>13 Dec 2002</date>
+    <desc>Added basic WaveOut interop &amp; classes</desc>
+  </change>
+  <change>
+    <version>0.0.0.5</version>
+    <date>14 Dec 2002</date>
+    <desc>Mixer bugfixes for mixer app</desc>
+  </change>
+  <change>
+    <version>0.0.0.6</version>
+    <date>15 Dec 2002</date>
+    <desc>More mixer bugfixes and design improvements</desc>
+  </change>
+  <change>
+    <version>0.0.0.7</version>
+    <date>19 Dec 2002</date>
+    <desc>Mixer interop bug fixes</desc>
+  </change>
+  <change>
+    <version>0.0.0.8</version>
+    <date>20 Dec 2002</date>
+    <desc>Wave functions improved</desc>
+  </change>
+  <change>
+    <version>0.0.0.9</version>
+    <date>22 Dec 2002</date>
+    <desc>Got wave playing working better</desc>
+  </change>
+  <change>
+    <version>0.0.1.10</version>
+    <date>23 Dec 2002</date>
+    <desc>Added pause and stop for WaveOut</desc>
+  </change>
+  <change>
+    <version>0.0.1.11</version>
+    <date>24 Dec 2002</date>
+    <desc>Improved class design trying to fix WaveOut bug (waveout callback was being GCed)</desc>
+  </change>
+  <change>
+    <version>0.0.1.12</version>
+    <date>27 Dec 2002</date>
+    <desc>Generic WaveStream class and WaveFileReader</desc>
+  </change>
+  <change>
+    <version>0.0.1.13</version>
+    <date>5 Feb 2003</date>
+    <desc>Improvements to WaveStream class</desc>
+    <desc>SoundFont library merged</desc>
+  </change>
+  <change>
+    <version>0.0.1.14</version>
+    <date>27 Oct 2003</date>
+    <desc>Converted to Visual Studio .NET</desc>
+  </change>
+  <change>
+    <version>0.0.1.15</version>
+    <date>5 Dec 2003</date>
+    <desc>Merged JavaLayer</desc>
+  </change>
+  <change>
+    <version>0.2.20.0</version>
+    <date>25 Feb 2005</date>
+    <desc>Merged newer SoundFontLib, MidiLib, Ogg, Acm</desc>
+  </change>
+  <change>
+    <version>0.2.21.0</version>
+    <date>25 Feb 2005</date>
+    <desc>Skip backwards and forwards in wav file</desc>
+    <desc>WavPlayer trackBar indicates progress</desc>
+    <desc>Allows trackBar repositioning</desc>
+  </change>
+  <change>
+    <version>0.2.22.0</version>
+    <date>28 Feb 2005</date>
+    <desc>WavePlayer show current time in hh:mm:ss</desc>
+    <desc>Can start playing from any point in the file</desc>
+  </change>
+  <change>
+    <version>0.2.23.0</version>
+    <date>1 Mar 2005</date>
+    <desc>More ACM stream conversion interop</desc>
+  </change>
+  <change>
+    <version>0.2.24.0</version>
+    <date>2 Mar 2005</date>
+    <desc>More ACM interop improvements</desc>
+    <desc>WaveFormatConversionStream class</desc>
+    <desc>WaveStream no longer inherits from Stream</desc>
+    <desc>AcmStream class</desc>
+    <desc>waveOutDevCaps interop</desc>
+    <desc>Improvements to WaveFileWriter</desc>
+  </change>
+  <change>
+    <version>0.2.25.0</version>
+    <date>3 Mar 2005</date>
+    <desc>AcmStream and AcmStreamHeader bug fixes</desc>
+    <desc>Improvements to WaveFileReader and WaveFileWriter</desc>
+    <desc>PCM to PCM offline conversion working</desc>		
+  </change>
+  <change>
+    <version>0.2.26.0</version>
+    <date>3 Mar 2005</date>
+    <desc>Very basic ability to play converted streams in realtime</desc>
+  </change>
+  <change>
+    <version>0.2.27.0</version>
+    <date>4 Mar 2005</date>
+    <desc>Initial version of Renaissance GSM conversion stream</desc>
+  </change>
+  <change>
+    <version>0.2.28.0</version>
+    <date>7 Mar 2005</date>
+    <desc>Fix to WaveFileWriter</desc>
+    <desc>More disposable pattern</desc>
+    <desc>WaveFileConversionStream can convert files offline</desc>
+    <desc>WaveStreams can now recommend a read buffer size based on latency</desc>
+  </change>
+  <change>
+    <version>0.2.29.0</version>
+    <date>8 Mar 2005</date>
+    <desc>Offline Renaissance GSM stream conversion working</desc>
+    <desc>WaveOut takes a latency now</desc>
+    <desc>MmException improvement</desc>
+  </change>
+  <change>
+    <version>0.3.30.0</version>
+    <date>8 Mar 2005</date>
+    <desc>Greatly improved the ability to calculate appropriate buffer sizes</desc>
+    <desc>Realtime GSM decoding is now working</desc>
+  </change>
+  <change>
+    <version>0.3.31.0</version>
+    <date>14 Mar 2005</date>
+    <desc>Some changes recommended by FxCop</desc>
+  </change>
+  <change>
+    <version>0.3.32.0</version>
+    <date>15 Mar 2005</date>
+    <desc>More changes recommended by FxCop</desc>
+  </change>
+  <change>
+    <version>0.3.33.0</version>
+    <date>15 Mar 2005</date>
+    <desc>namespace changed to NAudio</desc>
+  </change>
+  <change>
+    <version>0.3.34.0</version>
+    <date>23 Mar 2005</date>
+    <desc>XML documentation, FxCop fixes, Namespace improvements</desc>
+    <desc>WaveFormat constructor from a BinaryReader</desc>
+  </change>
+  <change>
+    <version>0.3.35.0</version>
+    <date>23 Mar 2005</date>
+    <desc>WaveChannel and WaveMixerStream</desc>
+  </change>
+  <change>
+    <version>0.3.36.0</version>
+    <date>24 Mar 2005</date>
+    <desc>More namespace improvements</desc>
+    <desc>More XML documentation</desc>
+  </change>
+  <change>
+    <version>0.3.37.0</version>
+    <date>6 May 2005</date>
+    <desc>More XML documentation</desc>
+    <desc>Ogg encoder improvements</desc>
+    <desc>ACM driver enumeration</desc>
+    <desc>Got test apps building again</desc>
+    <desc>Retired the JavaLayer port - its a few versions out of date anyway</desc>
+    <desc>WaveBuffer is now 16bit - experimental, needs optimising</desc>
+  </change>
+  <change>
+    <version>0.3.38.0</version>
+    <date>7 May 2005</date>
+    <desc>WaveStream::ReadInt16 optimisation</desc>
+    <desc>Fixed bugs in 16 bit positioning code</desc>
+    <desc>More XML documentation</desc>
+  </change>
+  <change>
+    <version>0.3.39.0</version>
+    <date>10 May 2005</date>
+    <desc>Initial Fader control implementation</desc>
+  </change>
+  <change>
+    <version>0.4.40.0</version>
+    <date>12 May 2005</date>
+    <desc>A very basic time domain convolution</desc>
+    <desc>Improvements to wave-reader and writer for floating point audio</desc>
+  </change>
+  <change>
+    <version>0.4.41.0</version>
+    <date>25 May 2005</date>
+    <desc>WaveChannel can supply from stereo input</desc>
+  </change>
+  <change>
+    <version>0.4.42.0</version>
+    <date>27 May 2005</date>
+    <desc>Initial VST interfaces and enums</desc>
+  </change>	
+  <change>
+    <version>0.4.43.0</version>
+    <date>3 Jun 2005</date>
+    <desc>VstLoader implements IVstEffect</desc>
+    <desc>Began converting dispatcher opcodes to IVstEffect functions</desc>
+  </change>
+  <change>
+    <version>0.4.44.0</version>
+    <date>6 Jun 2005</date>
+    <desc>Finished IVstEffect functions</desc>
+  </change>
+  <change>
+    <version>0.4.45.0</version>
+    <date>7 Jun 2005</date>
+    <desc>IVstEffect function implementations for VstLoader</desc>
+  </change>
+  <change>
+    <version>0.4.46.0</version>
+    <date>5 Aug 2005</date>
+    <desc>Final consolidation of VST, prior to removal</desc>
+  </change>
+  <change>
+    <version>0.4.47.0</version>
+    <date>27 Oct 2005</date>
+    <desc>Wave Channel can convert mono to stereo now</desc>
+  </change>
+  <change>
+    <version>0.4.48.0</version>
+    <date>27 Oct 2005</date>
+    <desc>Wave Channel and Wave Mixer used for first time</desc>
+  </change>
+  <change>
+    <version>0.4.49.0</version>
+    <date>28 Oct 2005</date>
+    <desc>Volume and pan slider controls</desc>
+    <desc>Channel strip and WavePlayer export to WAV</desc>
+    <desc>WaveMixer doesn't go on indefinitely</desc>
+  </change>
+  <change>
+    <version>0.5.50.0</version>
+    <date>31 Oct 2005</date>
+    <desc>Some more LCD control characters</desc>
+    <desc>Initial WaveViewer control</desc>
+  </change>
+  <change>
+    <version>0.5.51.0</version>
+    <date>3 Nov 2005</date>
+    <desc>Dual channel strip in WavePlayer</desc>
+  </change>
+  <change>
+    <version>0.5.52.0</version>
+    <date>4 Nov 2005</date>
+    <desc>Fixed bad calculation of offset seconds in WavePlayer</desc>
+    <desc>Improved checking that we don't go beyond the end of streams</desc>
+  </change>
+  <change>
+    <version>0.5.53.0</version>
+    <date>9 Nov 2005</date>
+    <desc>SoundFont reading improvements for conversion to sfz</desc>
+  </change>
+  <change>
+    <version>0.5.54.0</version>
+    <date>10 Nov 2005</date>
+    <desc>IWavePlayer interface</desc>
+    <desc>Initial DirectSoundOut class</desc>
+    <desc>Major rework to return to 8 bit reads on all WaveStream, ready for inheriting Stream</desc>
+  </change>
+  <change>
+    <version>0.5.55.0</version>
+    <date>11 Nov 2005</date>
+    <desc>Cleaned up WaveFileReader</desc>
+    <desc>WaveOut is an IWavePlayer</desc>
+    <desc>WaveFormatStream</desc>
+    <desc>Ability to select between WaveOut and DirectSound</desc>
+    <desc>Initial playing back through DirectSound</desc>
+  </change>
+  <change>
+    <version>0.5.56.0</version>
+    <date>11 Nov 2005</date>
+    <desc>Retired StreamMixer project</desc>
+    <desc>WavePlayer better switching between settings</desc>
+    <desc>DirectSound feeds in on a timer now, (from MSDN Coding 4 Fun Drum Machine demo)</desc>
+  </change>	
+  <change>
+    <version>0.5.57.0</version>
+    <date>14 Nov 2005</date>
+    <desc>DirectSoundOut fills buffer only twice per latency</desc>
+    <desc>DirectSoundOut stops at end</desc>
+    <desc>WavePlayer now has three channels</desc>
+    <desc>Selectable latency in WavePlayer</desc>
+  </change>
+  <change>
+    <version>0.5.58.0</version>
+    <date>15 Nov 2005</date>
+    <desc>DirectSoundOut now only reads buffers of the right size, which solves GSM cutout issues</desc>
+    <desc>WaveOut dispenses with an unnecessary delegate by passing WaveStream to WaveBuffer</desc>
+  </change>
+  <change>
+    <version>0.5.59.0</version>
+    <date>16 Nov 2005</date>
+    <desc>Fixed a crash in AdjustVolume on the MixerStream</desc>
+    <desc>sfz loop_continuous fix</desc>
+  </change>
+  <change>
+    <version>0.6.60.0</version>
+    <date>16 Nov 2005</date>
+    <desc>Converted to .NET 2.0</desc>
+    <desc>n.b. DirectSound has issues - needed to turn off the LoaderLock Managed Debug Assistant</desc>
+  </change>
+  <change>
+    <version>0.6.61.0</version>
+    <date>17 Nov 2005</date>
+    <desc>Made a 16 and 32 bit mixer stream</desc>
+  </change>
+  <change>
+    <version>0.6.62.0</version>
+    <date>21 Nov 2005</date>
+    <desc>Made a 32 bit WaveChannel stream</desc>
+    <desc>A 32 to 16 bit conversion stream</desc>
+    <desc>More MM error codes</desc>
+    <desc>32 bit audio path tested and working</desc>
+  </change>
+  <change>
+    <version>0.6.63.0</version>
+    <date>21 Nov 2005</date>
+    <desc>Initial support for an ACM MP3 decoder - not working yet</desc>    
+  </change>
+  <change>
+    <version>0.6.64.0</version>
+    <date>22 Nov 2005</date>
+    <desc>Basic working MP3 playback</desc>
+  </change>
+  <change>
+    <version>0.6.65.0</version>
+    <date>25 Nov 2005</date>
+    <desc>ADPCM Wave Format</desc>
+    <desc>Wave Formats can serialize themselves</desc>
+    <desc>WaveFileWriter can write non PCM formats</desc>
+  </change>
+  <change>
+    <version>0.6.66.0</version>
+    <date>28 Nov 2005</date>
+    <desc>WaveFileWriter writes a fact chunk - non-ideal though</desc>
+    <desc>Improved support for playback of compressed formats</desc>
+  </change>
+  <change>
+    <version>0.6.67.0</version>
+    <date>28 Nov 2005</date>
+    <desc>Improvements to BlockAlign and GetReadSize</desc>
+  </change>
+  <change>
+    <version>0.6.68.0</version>
+    <date>1 Dec 2005</date>
+    <desc>Nice ADPCM converter</desc>
+  </change>
+  <change>
+    <version>0.6.69.0</version>
+    <date>5 Dec 2005</date>
+    <desc>Support for AGC codec</desc>
+    <desc>Support for Speed codec</desc>
+  </change>
+  <change>
+    <version>0.7.70.0</version>
+    <date>12 Dec 2005</date>
+    <desc>WaveStream inherits Stream</desc>
+  </change>
+  <change>
+    <version>0.7.71.0</version>
+    <date>19 Dec 2005</date>
+    <desc>Minor bug fix to WaveMixer classes</desc>
+  </change>
+  <change>
+    <version>0.7.72.0</version>
+    <date>3 Jan 2006</date>
+    <desc>NICE specific code removed</desc>
+  </change>
+  <change>
+    <version>0.7.73.0</version>
+    <date>6 Jan 2006</date>
+    <desc>MP3 Reader can read ID3 tags and frames now</desc>
+  </change>
+  <change>
+    <version>0.7.74.0</version>
+    <date>12 Jan 2006</date>
+    <desc>Xing header support</desc>
+  </change>
+  <change>
+    <version>0.7.75.0</version>
+    <date>15 Feb 2006</date>
+    <desc>Reorganised class structures</desc>
+    <desc>WaveIn recording support added</desc>
+  </change>
+  <change>
+    <version>0.7.76.0</version>
+    <date>15 Feb 2006</date>
+    <desc>More structural reorganisation</desc>
+    <desc>Got rid of some compiler warnings</desc>
+    <desc>Retired 16 bit mixing code</desc>
+  </change>
+  <change>
+    <version>0.7.77.0</version>
+    <date>16 Feb 2006</date>
+    <desc>Improved WaveViewer control</desc>
+  </change>
+  <change>
+    <version>0.7.78.0</version>
+    <date>17 Feb 2006</date>
+    <desc>Fader control uses an image for the slider</desc>
+  </change>
+  <change>
+    <version>0.7.79.0</version>
+    <date>20 Feb 2006</date>
+    <desc>Added some copyright messages to SoundFont source files</desc>
+    <desc>Added BiQuad filters class</desc>
+  </change>
+  <change>
+    <version>0.8.80.0</version>
+    <date>21 Feb 2006</date>
+    <desc>Added envelope detector</desc>
+    <desc>Added simple compressor</desc>
+    <desc>Added simple gate</desc>
+  </change>
+  <change>
+    <version>0.8.81.0</version>
+    <date>4 Apr 2006</date>
+    <desc>ACM stream bug fixes</desc>
+    <desc>Support for waveOut window message callbacks</desc>
+    <desc>Wave In Recording bug fixes</desc>
+  </change>
+  <change>
+    <version>0.8.82.0</version>
+    <date>13 Sep 2006</date>
+    <desc>SimpleCompressor Wave Stream</desc>
+    <desc>Optimisation to WaveViewer</desc>
+    <desc>Minor bugfixes to Wave classes</desc>
+    <desc>Created a new Pot control</desc>
+  </change>
+  <change>
+    <version>0.8.83.0</version>
+    <date>14 Sep 2006</date>
+    <desc>Real-time adjustment of SimpleCompressor Wave Stream</desc>
+    <desc>Pot control drawing enhancements</desc>
+    <desc>The beginnings of a track-view control</desc>
+    <desc>The beginnings of a time-line control</desc>
+  </change>
+  <change>
+    <version>0.8.84.0</version>
+    <date>21 Sep 2006</date>
+    <desc>TimeLine control has a now cursor</desc>
+    <desc>TimeLine control can zoom</desc>
+  </change>
+  <change>
+    <version>0.8.85.0</version>
+    <date>22 Sep 2006</date>
+    <desc>TimeLine supports changing colours</desc>
+    <desc>TrackView can draw clips</desc>
+    <desc>New trackheader control</desc>
+  </change>
+  <change>
+    <version>0.8.86.0</version>
+    <date>29 Sep 2006</date>
+    <desc>MIDI events now support being exported</desc>
+    <desc>MIDI TrackSequenceNumber event</desc>
+    <desc>MIDI KeySignature event</desc>
+  </change>
+  <change>
+    <version>0.8.87.0</version>
+    <date>2 Oct 2006</date>
+    <desc>Bugfix for exporting note-off</desc>
+    <desc>Alternative constructors for MIDI events</desc>
+    <desc>Bugfix for exporting MIDI variable length integers</desc>
+    <desc>WaveFileReader can report information on non-standard chunks</desc>
+  </change>
+  <change>
+    <version>0.8.88.0</version>
+    <date>4 Oct 2006</date>
+    <desc>Bugfix MIDI export event sorting</desc>
+  </change>
+  <change>
+    <version>0.8.89.0</version>
+    <date>5 Oct 2006</date>
+    <desc>Bugfix MIDI export event sorting</desc>
+    <desc>Some support for modifying MIDI event parameters</desc>
+  </change>
+  <change>
+    <version>0.9.90.0</version>
+    <date>6 Oct 2006</date>
+    <desc>Bugfix Time Signature Event and Control Change Event</desc>
+    <desc>New SMPTE Offset event</desc>
+    <desc>Patch and Bank name meta events added</desc>
+    <desc>Meta events use VarInts for lengths now</desc>
+    <desc>Allow non-strict reading of MIDI file</desc>
+  </change>
+  <change>
+    <version>0.9.91.0</version>
+    <date>9 Oct 2006</date>
+    <desc>Minor updates to support EZdrummer MIDI converter</desc>
+    <desc>Beginnings of a new WaveOut class with its own thread</desc>
+  </change>
+  <change>
+    <version>0.9.92.0</version>
+    <date>10 Oct 2006</date>
+    <desc>Fixed a bug in WaveFileReader</desc>
+    <desc>Fix to ensure track-view shows correct length</desc>
+    <desc>An alternative thread-safe approach using locking</desc>
+    <desc>Initial ASIO classes created</desc>
+  </change>
+  <change>
+    <version>0.9.93.0</version>
+    <date>11 Oct 2006</date>
+    <desc>Support for exporting MIDI type 0 files</desc>
+    <desc>Can parse MIDI files with more than one end track marker per track</desc>
+  </change>
+  <change>
+    <version>0.9.94.0</version>
+    <date>13 Oct 2006</date>
+    <desc>Recognises some more rare MIDI meta event types</desc>
+    <desc>Initial support for reading Cakewalk drum map files</desc>
+  </change>
+  <change>
+    <version>0.9.95.0</version>
+    <date>16 Oct 2006</date>
+    <desc>MIDI events report channel from 1 to 16 now rather than 0 to 15</desc>
+    <desc>Got rid of the fader png image</desc>
+  </change>
+  <change>
+    <version>0.9.96.0</version>
+    <date>17 Oct 2006</date>
+    <desc>Cakewalk drum map enhancements</desc>
+  </change>
+  <change>
+    <version>0.9.97.0</version>
+    <date>29 Oct 2006</date>
+    <desc>ByteEncoding added</desc>
+    <desc>MIDI Text events use byte encoding for reading and writing</desc>
+  </change>
+  <change>
+    <version>0.9.97.1</version>
+    <date>30 Oct 2006</date>
+    <desc>ProgressLog control and AboutForm added</desc>
+    <desc>MIDI Text events can have their text modified</desc>
+  </change>
+  <change>
+    <version>0.9.97.2</version>
+    <date>31 Oct 2006</date>
+    <desc>ProgressLog control can report its text</desc>
+    <desc>Initial support for file association modification</desc>
+  </change>
+  <change>
+    <version>0.9.97.3</version>
+    <date>1 Nov 2006</date>
+    <desc>Bug fixes to file associations</desc>    
+  </change>
+  <change>
+    <version>0.9.98.0</version>
+    <date>6 Nov 2006</date>
+    <desc>Support for modifying MIDI Control Change Event parameters</desc>
+  </change>
+  <change>
+    <version>0.9.98.1</version>
+    <date>7 Nov 2006</date>
+    <desc>After-touch pressure can be set</desc>
+    <desc>Note number and velocity can be set</desc>
+  </change>
+  <change>
+    <version>0.9.98.2</version>
+    <date>9 Nov 2006</date>
+    <desc>Pitch wheel event modifications</desc>    
+  </change>
+  <change>
+    <version>0.9.98.3</version>
+    <date>10 Nov 2006</date>
+    <desc>Helper function for detecting note off events</desc>
+  </change>
+  <change>
+    <version>0.9.98.4</version>
+    <date>1 Mar 2007</date>
+    <desc>Updated some XML documentation</desc>
+  </change>
+  <change>
+    <version>0.9.99.0</version>
+    <date>6 Mar 2007</date>
+    <desc>Some checking for end of track markers in MIDI files</desc>
+  </change>
+  <change>
+    <version>1.0.100.0</version>
+    <date>8 Mar 2007</date>
+    <desc>WaveMixerStream32 updated ready to support dynamic adding of streams</desc>
+    <desc>Some bugfixes to WaveOut to support auto stop mode again</desc>
+  </change>
+  <change>
+    <version>1.0.101.0</version>
+    <date>13 Mar 2007</date>
+    <desc>Added some new NoteEvent and NoteOnEvent constructors</desc>    
+  </change>
+  <change>
+    <version>1.0.102.0</version>
+    <date>16 Mar 2007</date>
+    <desc>Customisable about box URL, Email and Copyright</desc>
+  </change>
+  <change>
+    <version>1.0.103.0</version>
+    <date>16 Mar 2007</date>
+    <desc>Ability to remove WaveStreams from WaveMixerStream32</desc>
+  </change>
+  <change>
+    <version>1.0.104.0</version>
+    <date>19 Mar 2007</date>
+    <desc>WaveOffsetStream created</desc>
+    <desc>WaveStream32 preparation for 24 bit inputs</desc>
+    <desc>WaveStream32 new default constructor</desc>
+    <desc>Made the decibels to linear conversion functions public</desc>
+  </change>
+  <change>
+    <version>1.0.105.0</version>
+    <date>30 Mar 2007</date>
+    <desc>New constructor for ControlChangeEvent</desc>
+    <desc>New constructor for ChannelAfterTouchEvent</desc>
+    <desc>New constructor and property setting for PatchChangeEvent</desc>
+    <desc>New constructor for PitchWheelChangeEvent</desc>
+  </change>
+  <change>
+    <version>1.0.106.0</version>
+    <date>2 Apr 2007</date>
+    <desc>Bugfix for sysex event writing</desc>
+    <desc>MidiEvent IsEndTrack and IsNoteOff are now static functions</desc>
+    <desc>New IsNoteOn function</desc>
+    <desc>NoteOnEvent now updates the NoteNumber and Channel of its OffEvent when they are modified</desc>
+  </change>
+  <change>
+    <version>1.0.107.0</version>
+    <date>3 Apr 2007</date>
+    <desc>MIDI events are now sorted using a stable algorithm to allow
+    batch file processing utilities to retain original ordering of events 
+    with the same start times.</desc>
+  </change>
+  <change>
+    <version>1.0.108.0</version>
+    <date>4 Apr 2007</date>
+    <desc>New MidiEventCollection class to make converting MIDI file types
+    more generic</desc>
+    <desc>Added an NUnit unit tests library</desc>
+    <desc>Fixed a bug in meta event constructor</desc>
+  </change>
+  <change>
+    <version>1.0.109.0</version>
+    <date>5 Apr 2007</date>
+    <desc>MidiFile updated to use MidiEventCollection</desc>
+  </change>
+  <change>
+    <version>1.0.109.1</version>
+    <date>7 Apr 2007</date>
+    <desc>Fixed a bug in MidiEventCollection.AddEvent</desc>
+  </change>
+  <change>
+    <version>1.0.110.0</version>
+    <date>7 Apr 2007</date>
+    <desc>Many enhancements to MIDI interop</desc>
+    <desc>New MidiIn, MidiInCapabilities classes</desc>
+    <desc>Added a new NAudioDemo for testing / demonstrating use of NAudio APIs</desc>
+  </change>
+  <change>
+    <version>1.0.111.0</version>
+    <date>18 Apr 2007</date>
+    <desc>More MidiEventCollection automated tests</desc>
+    <desc>Fixes to MidiEventCollection</desc>
+  </change>
+  <change>
+    <version>1.0.112.0</version>
+    <date>19 Apr 2007</date>
+    <desc>Some improvements to MIDI out interop</desc>
+    <desc>Test application can now send test MIDI out messages</desc>
+  </change>
+  <change>
+    <version>1.1.113.0</version>
+    <date>26 Apr 2007</date>
+    <desc>Allow invalid NoteOff velocities to be read from a MIDI file</desc>
+    <desc>MIDI File Splitter project moved off to its own CodePlex project</desc>
+  </change>
+  <change>
+    <version>1.1.114.0</version>
+    <date>27 Mar 2008</date>
+    <date>Fixed a defect in WaveStream32 constructor</date>
+    <desc>Restored the Managed DirectX output to the solution</desc>
+    <desc>Turned off ManagedLoaderLock to cope with DirectSound known issues (http://www.thezbuffer.com/articles/304.aspx) </desc>
+    <desc>Updated the NAudioDemo project to do some audio playback</desc>
+    <desc>Added Rob Philpot's managed ASIO wrapper (http://www.codeproject.com/KB/mcpp/Asio.Net.aspx)</desc>
+  </change>
+  <change>
+    <version>1.1.115.0</version>
+    <date>17 May 2008</date>
+    <desc>Updated to latest version of Rob Philpot's managed ASIO wrapper (http://www.codeproject.com/KB/mcpp/Asio.Net.aspx)</desc>
+  </change>
+  <change>
+    <version>1.1.116.0</version>
+    <date>19 May 2008</date>
+    <desc>Made some very small beginnings to WASAPI support</desc>
+    <desc>Added a couple of unit tests for AcmDriver</desc>
+  </change>
+  <change>
+    <version>1.1.117.0</version>
+    <date>20 May 2008</date>
+    <desc>Added some WASAPI interfaces (mainly MMDevice API)</desc>
+  </change>
+  <change>
+    <version>1.1.118.0</version>
+    <date>24 May 2008</date>
+    <desc>Added WASAPI interface IMMEndpoint</desc>
+    <desc>begun MMDevice implementation</desc>
+    <desc>Decided to make use of some code from Ray Molenkamp to speed WASAPI implementation</desc>
+  </change>
+  <change>
+    <version>1.1.119.0</version>
+    <date>26 May 2008</date>
+    <desc>Borrowing lots more from Ray Molenkamp</desc>
+    <desc>Renamed WASAPI namespace to CoreAudioApi</desc>
+  </change>
+  <change>
+    <version>1.2.120.0</version>
+    <date>27 May 2008</date>
+    <desc>More work on WASAPI interfaces (IAudioClient, IAudioRenderClient)</desc>
+  </change>
+  <change>
+    <version>1.2.121.0</version>
+    <date>28 May 2008</date>
+    <desc>WASAPI interface - IAudioCaptureClient</desc>
+  </change>
+  <change>
+    <version>1.2.122.0</version>
+    <date>28 May 2008</date>
+    <desc>More WASAPI work - AudioClient, WaveFormatExtensible, AudioRenderClient</desc>
+  </change>
+    <change>
+    <version>1.2.123.0</version>
+    <date>29 May 2008</date>
+    <desc>AudioClient IsFormatSupported - it appears WASAPI does not do sample rate conversion for you</desc>
+  </change>
+  <change>
+    <version>1.2.124.0</version>
+    <date>29 May 2008</date>
+    <desc>Begun work on WasapiOut</desc>
+    <desc>Removed Resume from IWavePlayer</desc>
+    <desc>Removed Pan from IWavePlayer</desc>
+    <desc>PlaybackState instead of IsPlaying and IsPaused on IWavePlayer</desc>
+    <desc>WaveOut implementation simplified</desc>
+  </change>
+  <change>
+    <version>1.2.125.0</version>
+    <date>30 May 2008</date>
+    <desc>AcmDriver enhancements</desc>
+    <desc>WMA Wave Format</desc>
+  </change>
+  <change>
+    <version>1.2.126.0</version>
+    <date>31 May 2008</date>
+    <desc>WASAPI out working! but need a solution for SRC</desc>
+  </change>
+  <change>
+    <version>1.2.127.0</version>
+    <date>31 May 2008</date>
+    <desc>Lots of DMO interop written (DirectX media objects)</desc>
+  </change>
+  <change>
+    <version>1.2.128.0</version>
+    <date>1 June 2008</date>
+    <desc>Lots more DMO interop - Resampler DMO</desc>
+    <desc>Media Object can set input and output WaveFormat</desc>
+    <desc>Getting caught back up with XML documentation</desc>
+    <desc>Media Object can get input and output buffer sizes</desc>
+  
+  </change>
+  <change>
+    <version>1.2.129.0</version>
+    <date>2 June 2008</date>
+    <desc>Eventually got IMediaBuffer ProcessInput working (thanks to PreserveSig attribute)</desc>
+    <desc>IMediaBuffer ProcessOutput also working, but Resampler not outputting expected number of bytes</desc>
+    <desc>ResamplerDmoStream created</desc>
+  </change>
+  <change>
+    <version>1.2.130.0</version>
+    <date>3 June 2008</date>
+    <desc>ResamplerDmoStream bugfixes</desc>
+  </change>
+  <change>
+    <version>1.2.131.0</version>    
+    <date>10 June 2008</date>
+    <desc>Wasapi output stream uses ResamplerDmoStream (but needs app to be MTAThread to work atm)</desc>
+    <desc>Audio Client using PreserveSig</desc>
+    <desc>More reliable Wasapi out</desc>
+    <desc>NAudio demo plays a file now rather than mixing a whole folder together</desc>
+    <desc></desc>
+  </change>
+  <change>
+    <version>1.2.132.0</version>
+    <date>11 June 2008</date>
+    <author>Mark Heath</author>
+    <desc>Added Alexandre Mutel's Native DirectSound class</desc>
+    <desc>Added a bug fix to WasapiOut PlayThread (thanks Alexandre)</desc>
+  </change>
+  <change>
+    <version>1.2.133.0</version>
+    <author>Alexandre Mutel</author>
+    <desc>WASAPI Out fixes</desc>    
+  </change>
+  <change>
+    <version>1.2.134.0</version>
+    <author>Mark Heath</author>
+    <desc>Fix to get WASAPI out working with DMO resampler again</desc>
+    <desc>Fix to get WASAPI working with DMO resampler without needing MTA Thread (woohoo!)</desc>
+    <desc>Improvements to NAudioDemo Audio Playback Form</desc>
+  </change>
+  <change>
+    <version>1.2.135.0</version>
+    <author>Mark Heath</author>
+    <date>13 Jun 2008</date>
+    <desc>More unit tests for AudioClient</desc>
+    <desc>Added option for WASAPI exclusive mode to NAudio Demo (not working yet)</desc>
+    <desc>NAudioDemo can play MP3 files (not at low latency though)</desc>
+    <desc>Position bar in NAudioDemo</desc>
+    <desc>Performance enhancements to WaveChannel32</desc>
+    <desc>MP3 playback less choppy</desc>
+  </change>
+  <change>
+    <version>1.2.136.0</version>
+    <author>Mark Heath</author>
+    <date>14 Jun 2008</date>
+    <desc>WASAPI Exclusive mode working (thanks Alexandre)</desc>
+    <desc>Proper closing of WASAPI allowing us immediate re-open</desc>
+    <desc>NAudioDemo has some ACM encoding demos (mu-law, a-law working so far)</desc>
+    <desc>Added interop for AcmFormatEnum</desc>
+    <desc>Added interop for AcmFormatTagEnum</desc>
+    <desc>AudioDriver can now enumerate all tags and formats</desc>
+  </change>
+  <change>
+    <version>1.2.137.0</version>
+    <author>Mark Heath</author>
+    <date>15 Jun 2008</date>
+    <desc>Alexandre Mutel added WASAPI event model playback</desc>
+    <desc>NAudioDemo has better selection of output driver settings</desc>
+    <desc>Added interop for AcmFormatChoose</desc>
+    <desc>Moved ACM interop into NAudio.Wave.Compression namespace</desc>
+  </change>
+  <change>
+    <version>1.2.138.0</version>
+    <author>Mark Heath</author>
+    <date>16 Jun 2008</date>
+    <desc>Added a Custom Marshaller for WaveFormat (not used everywhere yet)</desc>
+    <desc>Fixed some marshalling bugs in ResamplerDMOStream caused by WaveFileReader using WaveFormatExtraData</desc>
+    <desc>Got majority of unit tests working (things had slipped a little!)</desc>    
+  </change>
+  <change>
+    <version>1.2.139.0</version>
+    <author>Mark Heath</author>
+    <date>18 Jun 2008</date>
+    <desc>NativeDirectSound working in STAThread mode</desc>
+    <desc>NAudioDemo stops playback at end of file</desc>
+    <desc>Unit Test reorganization</desc>
+  </change>
+  <change>
+    <version>1.2.140.0</version>
+    <author>Mark Heath</author>
+    <date>19 Jun 2008</date>
+    <desc>WaveStream32 has option not to pad reads out to full length</desc>
+    <desc>NAudioDemo sets volume on WaveStream rather than WaveOut</desc>    
+  </change>
+  <change>
+    <version>1.2.141.0</version>
+    <author>Alexandre Mutel</author>
+    <date>22 Jun 2008</date>
+    <desc>Managed ASIO Output implementation</desc>
+  </change>
+  <change>
+    <version>1.2.142.0</version>
+    <author>Mark Heath</author>
+    <date>22 Jun 2008</date>
+    <desc>NAudioDemo has basic event-driven recording demo</desc>
+  </change>
+  <change>
+    <version>1.2.143.0</version>
+    <author>Mark Heath</author>
+    <date>23 Jun 2008</date>
+    <desc>Fix to MP3 smooth playback</desc>
+    <desc>A circular buffer class</desc>
+    <desc>A block alignment reduction stream</desc>
+    <desc>Xing header detection without throwing exceptions</desc>
+  </change>
+  <change>
+    <version>1.2.144.0</version>
+    <author>Mark Heath</author>
+    <date>26 June 2008</date>
+    <desc>Improved error handling on NAudioDemo</desc>
+  </change>
+  <change>
+    <version>1.3.1.0</version>
+    <author>Mark Heath</author>
+    <date>27 June 2008</date>
+    <desc>IWavePlayer using IWaveProvider and WaveBuffer (initial port)</desc>    
+  </change>
+  <change>
+    <version>1.3.2.0</version>
+    <author>Mark Heath</author>
+    <date>28 June 2008</date>
+    <desc>NativeDirectSoundOut now becomes DirectSoundOut as Managed Direct X is retired</desc>
+  </change>
+  <change>
+    <version>1.3.3.0</version>
+    <author>Mark Heath</author>
+    <date>20 Oct 2008</date>
+    <desc>Some possible bugfixes to ASIO</desc>
+    <desc>MeteringStream</desc>
+    <desc>VolumeMeter</desc>
+    <desc>WaveFormPainter</desc>
+  </change>
+  <change>
+    <version>1.3.4.0</version>
+    <author>Mark Heath</author>
+    <date>12 Jan 2009</date>
+    <desc>Can write larger Var Ints in MIDI files</desc>
+  </change>
+  <change>
+    <version>1.3.5.0</version>
+    <author>Mark Heath</author>
+    <date>19 Sep 2009</date>
+    <desc>Many changes not listed here, see checkin history</desc>
+    <desc>WaveIn callback options brought into line with WaveOut</desc>
+  </change>
+  <change>
+    <version>1.3.11.0</version>
+    <author>Mark Heath</author>
+    <date>30 Aug 2010</date>
+    <desc>Many changes not listed here, see checkin history</desc>
+    <desc>Sequencer-specific event added</desc>
+  </change>
+  <change>
+    <version>1.3.12.0</version>
+    <author>Mark Heath</author>
+    <date>29 Sep 2010</date>
+    <desc>Changes not listed here, see checkin history</desc>
+    <desc>Added BufferedWaveProvider</desc>
+    <desc>Added Wave16ToIeeeProvider</desc>
+    <desc>Added WaveInProvider</desc>
+  </change>
+  <change>
+    <version>1.3.13.0</version>
+    <author>Mark Heath</author>
+    <date>14 Oct 2010</date>
+    <desc>Retired WaveStream.GetReadSize - not reliable, too difficult to implement, hardly used</desc>
+    <desc>Cleanup on MP3 File Reader</desc>
+  </change>
+  <change>
+    <version>1.3.14.0</version>
+    <author>Mark Heath</author>
+    <date>7 Nov 2010</date>
+    <desc>Huge improvements to MP3 File Reader</desc>
+  </change>  
+</changes>

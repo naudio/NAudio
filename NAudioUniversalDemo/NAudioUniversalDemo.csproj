@@ -129,7 +129,7 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\NAudio\NAudio.csproj">
+    <ProjectReference Include="..\NAudio.Core\NAudio.Core.csproj">
       <Project>{da4f02e3-0b5e-42cd-b8d9-5583fa51d66e}</Project>
       <Name>NAudio</Name>
     </ProjectReference>

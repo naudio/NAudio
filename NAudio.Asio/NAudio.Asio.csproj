@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Version>1.10.0</Version>
+    <Authors>Mark Heath &amp; Contributors</Authors>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Description>NAudio, an audio library for .NET</Description>
+    <PackageLicenseUrl>https://github.com/naudio/NAudio/blob/master/license.txt</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/naudio/NAudio</PackageProjectUrl>
+    <PackageTags>C# .NET audio sound</PackageTags>
+    <RepositoryUrl>https://github.com/naudio/NAudio</RepositoryUrl>
+    <Copyright>© Mark Heath 2020</Copyright>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GenerateDocumentationFile Condition=" '$(Configuration)' == 'Release' ">true</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NAudio.Core\NAudio.Core.csproj" />
+  </ItemGroup>
+</Project>

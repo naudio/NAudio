@@ -53,7 +53,6 @@
     <Compile Remove="Utils\ProgressLog*.*" />
     <Compile Remove="Gui\*.*" />
     <Compile Remove="Wave\Compression\*.cs" />
-    <Compile Remove="Wave\Asio\*.cs" />
     <Compile Remove="Wave\MmeInterop\WaveWindow.cs" />
     <Compile Remove="Wave\MmeInterop\WaveCallbackInfo.cs" />
     <Compile Remove="Wave\Midi\MidiInterop.cs" />

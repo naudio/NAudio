@@ -19,7 +19,7 @@ namespace NAudio.CoreAudioApi
         private AudioStreamVolume audioStreamVolume;
         private AudioClientShareMode shareMode;
 
-        internal AudioClient(IAudioClient audioClientInterface)
+        public AudioClient(IAudioClient audioClientInterface) // #591 temporary change
         {
             this.audioClientInterface = audioClientInterface;
         }

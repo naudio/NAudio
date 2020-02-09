@@ -12,11 +12,17 @@
     <Copyright>© Mark Heath 2020</Copyright>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile Condition=" '$(Configuration)' == 'Release' ">true</GenerateDocumentationFile>
-    <IncludeBuildOutput>false</IncludeBuildOutput>
   </PropertyGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' != 'uap10.0' ">
+    <Compile Remove="Wave\WaveOutputs\WasapiOutRT.cs" />
+    <Compile Remove="Wave\WaveInputs\WasapiCaptureRT.cs" />
+  </ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' == 'uap10.0' ">
+    <Compile Remove="Wave\WaveOutputs\WasapiOut.cs" />
+    <Compile Remove="Wave\WaveInputs\WasapiCapture.cs" />
+    <Compile Remove="Wave\WaveInputs\WasapiLoopbackCapture.cs" />
+  </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\NAudio.Asio\NAudio.Asio.csproj" Condition=" '$(TargetFramework)' != 'uap10.0' " />
     <ProjectReference Include="..\NAudio.Core\NAudio.Core.csproj" />
-    <ProjectReference Include="..\NAudio.Wasapi\NAudio.Wasapi.csproj" />
   </ItemGroup>
 </Project>

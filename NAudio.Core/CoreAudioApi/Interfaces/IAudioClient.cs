@@ -11,7 +11,7 @@ namespace NAudio.CoreAudioApi.Interfaces
     [Guid("1CB9AD4C-DBFA-4c32-B178-C2F568A703B2"), 
         InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
         ComImport]
-    internal interface IAudioClient
+    public interface IAudioClient // #591 temporary change
     {
         [PreserveSig]
         int Initialize(AudioClientShareMode shareMode,

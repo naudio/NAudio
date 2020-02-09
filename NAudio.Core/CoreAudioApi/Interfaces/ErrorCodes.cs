@@ -26,7 +26,8 @@ namespace NAudio.CoreAudioApi.Interfaces
         ResourcesInvalidated = unchecked((int)0x88890026),
     }
 
-    static class ErrorCodes
+    // #591 temporary change
+    public static class ErrorCodes
     {   // AUDCLNT_ERR(n) MAKE_HRESULT(SEVERITY_ERROR, FACILITY_AUDCLNT, n)
         // AUDCLNT_SUCCESS(n) MAKE_SCODE(SEVERITY_SUCCESS, FACILITY_AUDCLNT, n)
         // ReSharper disable InconsistentNaming

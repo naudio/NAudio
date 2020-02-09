@@ -24,8 +24,6 @@
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net35' ">
     <Reference Include="System.Windows.Forms" />
-    <Compile Remove="Wave\WaveOutputs\WasapiOutRT.cs" />
-    <Compile Remove="Wave\WaveInputs\WasapiCaptureRT.cs" />
     <Compile Remove="Wave\WaveOutputs\WaveFileWriterRT.cs" />
   </ItemGroup>
 
@@ -37,15 +35,11 @@
     <Compile Remove="Wave\WaveInputs\WaveIn.cs" />
     <Compile Remove="Wave\WaveOutputs\WaveOut.cs" />
     <Compile Remove="Wave\WaveFormats\WaveFormatCustomMarshaler.cs" />
-    <Compile Remove="Wave\WaveOutputs\WasapiOutRT.cs" />
-    <Compile Remove="Wave\WaveInputs\WasapiCaptureRT.cs" />
     <Compile Remove="Wave\WaveOutputs\WaveFileWriterRT.cs" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.0' ">
     <Compile Remove="Wave\WaveFormats\WaveFormatCustomMarshaler.cs" />
-    <Compile Remove="Wave\WaveOutputs\WasapiOutRT.cs" />
-    <Compile Remove="Wave\WaveInputs\WasapiCaptureRT.cs" />
     <Compile Remove="Wave\WaveOutputs\WaveFileWriterRT.cs" />
   </ItemGroup>
 
@@ -58,12 +52,9 @@
     <Compile Remove="Wave\Midi\MidiInterop.cs" />
     <Compile Remove="Wave\WaveInputs\WaveIn.cs" />
     <Compile Remove="Wave\WaveInputs\WaveInEvent.cs" />
-    <Compile Remove="Wave\WaveInputs\WasapiCapture.cs" />
-    <Compile Remove="Wave\WaveInputs\WasapiLoopbackCapture.cs" />
     <Compile Remove="Wave\WaveOutputs\WaveOut.cs" />
     <Compile Remove="Wave\WaveOutputs\WaveOutEvent.cs" />
     <Compile Remove="Wave\WaveOutputs\DirectSoundOut.cs" />
-    <Compile Remove="Wave\WaveOutputs\WasapiOut.cs" />
     <Compile Remove="Wave\WaveOutputs\MediaFoundationEncoder.cs" />
     <Compile Remove="Wave\WaveOutputs\AsioOut.cs" />
     <Compile Remove="Wave\WaveOutputs\AsioAudioAvailableEventArgs.cs" />

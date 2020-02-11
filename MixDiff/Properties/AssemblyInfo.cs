@@ -2,18 +2,6 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-// General Information about an assembly is controlled through the following 
-// set of attributes. Change these attribute values to modify the information
-// associated with an assembly.
-[assembly: AssemblyTitle("MixDiff")]
-[assembly: AssemblyDescription("Mix Comparison Utility")]
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Mark Heath")]
-[assembly: AssemblyProduct("MixDiff")]
-[assembly: AssemblyCopyright("Copyright © Mark Heath 2006")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
-
 // Setting ComVisible to false makes the types in this assembly not visible 
 // to COM components.  If you need to access a type in this assembly from 
 // COM, set the ComVisible attribute to true on that type.
@@ -21,16 +9,6 @@ using System.Runtime.InteropServices;
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
 [assembly: Guid("12d6167b-bcab-4b93-b7ae-460fee425dfa")]
-
-// Version information for an assembly consists of the following four values:
-//
-//      Major Version
-//      Minor Version 
-//      Build Number
-//      Revision
-//
-[assembly: AssemblyVersion("0.1.7.0")]
-[assembly: AssemblyFileVersion("0.1.7.0")]
 
 // build 1 19 Oct 2006
 // initial project created

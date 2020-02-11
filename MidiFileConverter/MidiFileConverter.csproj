@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="MSBuild.Sdk.Extras">
   <PropertyGroup>
-    <TargetFrameworks>net48;net35;netcoreapp3.0</TargetFrameworks>
+    <TargetFramework>net48</TargetFramework>
     <ProductVersion>8.0.50727</ProductVersion>
     <ProjectGuid>{5B5897BD-A423-4AF8-8A59-1C1372ED77DB}</ProjectGuid>
     <OutputType>WinExe</OutputType>

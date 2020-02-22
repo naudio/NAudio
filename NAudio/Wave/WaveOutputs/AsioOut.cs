@@ -40,6 +40,11 @@ namespace NAudio.Wave
         public event EventHandler<AsioAudioAvailableEventArgs> AudioAvailable;
 
         /// <summary>
+        /// Occurs when the driver settings are changed by the user, e.g. in the control panel.
+        /// </summary>
+        public event EventHandler DriverResetRequest;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="AsioOut"/> class with the first 
         /// available ASIO Driver.
         /// </summary>
@@ -97,6 +102,7 @@ namespace NAudio.Wave
                 {
                     driver.Stop();
                 }
+                driver.ResetRequestCallback = null;
                 driver.ReleaseDriver();
                 driver = null;
             }
@@ -135,7 +141,15 @@ namespace NAudio.Wave
 
             // Instantiate the extended driver
             driver = new AsioDriverExt(basicDriver);
+            driver.ResetRequestCallback = OnDriverResetRequest;
             this.ChannelOffset = 0;
+        }
+
+
+
+        private void OnDriverResetRequest()
+        {
+            DriverResetRequest?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>

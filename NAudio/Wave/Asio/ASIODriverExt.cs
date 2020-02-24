@@ -31,6 +31,7 @@ namespace NAudio.Wave.Asio
         private int bufferSize;
         private int outputChannelOffset;
         private int inputChannelOffset;
+        public Action ResetRequestCallback;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AsioDriverExt"/> class based on an already
@@ -338,6 +339,7 @@ namespace NAudio.Wave.Asio
                         case AsioMessageSelector.kAsioEngineVersion:
                             return 1;
                         case AsioMessageSelector.kAsioResetRequest:
+                            ResetRequestCallback?.Invoke();
                             return 0;
                         case AsioMessageSelector.kAsioBufferSizeChange:
                             return 0;
@@ -356,6 +358,7 @@ namespace NAudio.Wave.Asio
                 case AsioMessageSelector.kAsioEngineVersion:
                     return 2;
                 case AsioMessageSelector.kAsioResetRequest:
+                    ResetRequestCallback?.Invoke();
                     return 1;
                 case AsioMessageSelector.kAsioBufferSizeChange:
                     return 0;

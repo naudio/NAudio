@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using NAudio.Wave;
+using System.IO;
 
 namespace NAudioWpfDemo.FireAndForgetPlayback
 {

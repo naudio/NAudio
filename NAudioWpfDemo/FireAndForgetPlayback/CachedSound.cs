@@ -24,5 +24,22 @@ namespace NAudioWpfDemo.FireAndForgetPlayback
                 AudioData = wholeFile.ToArray();
             }
         }
+        public CachedSound(Stream sound) 
+        {
+            using (var audioFileReader = new WaveFileReader(sound))
+            {
+                WaveFormat = audioFileReader.WaveFormat;
+                var sp = audioFileReader.ToSampleProvider();
+                var wholeFile = new List<float>((int)(audioFileReader.Length / 4));
+                var sourceSamples = (int)(audioFileReader.Length / (audioFileReader.WaveFormat.BitsPerSample / 8));
+                var sampleData = new float[sourceSamples];
+                int samplesread;
+                while ((samplesread = sp.Read(sampleData, 0, sourceSamples)) > 0)
+                {
+                    wholeFile.AddRange(sampleData.Take(samplesread));
+                }
+                AudioData = wholeFile.ToArray();                
+            }
+        }
     }
 }

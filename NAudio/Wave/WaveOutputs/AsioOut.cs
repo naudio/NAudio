@@ -40,6 +40,11 @@ namespace NAudio.Wave
         public event EventHandler<AsioAudioAvailableEventArgs> AudioAvailable;
 
         /// <summary>
+        /// Occurs when the driver settings are changed by the user, e.g. in the control panel.
+        /// </summary>
+        public event EventHandler DriverResetRequest;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="AsioOut"/> class with the first 
         /// available ASIO Driver.
         /// </summary>
@@ -97,6 +102,7 @@ namespace NAudio.Wave
                 {
                     driver.Stop();
                 }
+                driver.ResetRequestCallback = null;
                 driver.ReleaseDriver();
                 driver = null;
             }
@@ -123,6 +129,18 @@ namespace NAudio.Wave
         }
 
         /// <summary>
+        /// Determines whether this driver supports the specified sample rate.
+        /// </summary>
+        /// <param name="sampleRate">The samplerate to check.</param>
+        /// <returns>
+        ///   <c>true</c> if the specified sample rate is supported otherwise, <c>false</c>.
+        /// </returns>
+        public bool IsSampleRateSupported(int sampleRate)
+        {
+            return driver.IsSampleRateSupported(sampleRate);
+        }
+
+        /// <summary>
         /// Inits the driver from the asio driver name.
         /// </summary>
         /// <param name="driverName">Name of the driver.</param>
@@ -135,7 +153,15 @@ namespace NAudio.Wave
 
             // Instantiate the extended driver
             driver = new AsioDriverExt(basicDriver);
+            driver.ResetRequestCallback = OnDriverResetRequest;
             this.ChannelOffset = 0;
+        }
+
+
+
+        private void OnDriverResetRequest()
+        {
+            DriverResetRequest?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>

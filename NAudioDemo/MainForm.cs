@@ -1,5 +1,7 @@
 using System;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.Versioning;
 using System.Windows.Forms;
 using NAudioDemo.Utils;
 
@@ -21,7 +23,9 @@ namespace NAudioDemo
                 listBoxDemos.Items.Add(demo);
             }
 
-            Text += ((System.Runtime.InteropServices.Marshal.SizeOf(IntPtr.Zero) == 8) ? " (x64)" : " (x86)");
+            var arch = Environment.Is64BitProcess ? "x64" : "x86";
+            var framework = ((TargetFrameworkAttribute)(Assembly.GetEntryAssembly().GetCustomAttributes(typeof(TargetFrameworkAttribute),true).ToArray()[0])).FrameworkName;
+            this.Text = $"{this.Text} ({framework}) ({arch})";
         }
 
 

@@ -66,7 +66,10 @@ namespace NAudio.Wave
 
             lock (inputs)
             {
-                this.inputs.Add(waveProvider);
+                if (!this.inputs.Contains(waveProvider))
+                {
+                    this.inputs.Add(waveProvider);
+                }
             }
         }
 

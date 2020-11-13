@@ -7,7 +7,8 @@ namespace NAudioTests.WaveProviders
     public class MixingWaveProvider32Tests
     {
         [Test]
-        public void CannotAddSameInputInputProviderSecondTime()
+        public void CannotAddSameInputProviderSecondTime()
+
         {
             // arrange
             var sut = new MixingWaveProvider32();

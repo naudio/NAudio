@@ -11,8 +11,8 @@
     <AssemblyName>NAudioUniversalDemo</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
-    <TargetPlatformVersion>10.0.17134.0</TargetPlatformVersion>
-    <TargetPlatformMinVersion>10.0.16299.0</TargetPlatformMinVersion>
+    <TargetPlatformVersion>10.0.18362.0</TargetPlatformVersion>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <MinimumVisualStudioVersion>14</MinimumVisualStudioVersion>
     <EnableDotNetNativeCompatibleProfile>true</EnableDotNetNativeCompatibleProfile>
     <FileAlignment>512</FileAlignment>
@@ -129,15 +129,23 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\NAudio\NAudio.csproj">
-      <Project>{da4f02e3-0b5e-42cd-b8d9-5583fa51d66e}</Project>
-      <Name>NAudio</Name>
-    </ProjectReference>
+    <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform">
+      <Version>6.2.9</Version>
+    </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform">
-      <Version>6.2.8</Version>
-    </PackageReference>
+    <ProjectReference Include="..\NAudio.Core\NAudio.Core.csproj">
+      <Project>{5bfaf13b-0823-4a5d-a9cb-a894ee53e2b2}</Project>
+      <Name>NAudio.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\NAudio.Uap\NAudio.Uap.csproj">
+      <Project>{4674142a-2abf-4429-91d9-ef193dd8590e}</Project>
+      <Name>NAudio.Uap</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\NAudio.Wasapi\NAudio.Wasapi.csproj">
+      <Project>{d432bb11-2355-4143-baa5-008812d3e82c}</Project>
+      <Name>NAudio.Wasapi</Name>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>

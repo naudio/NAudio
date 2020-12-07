@@ -12,7 +12,7 @@ namespace NAudioUniversalDemo
 {
     class MainPageViewModel : ViewModelBase
     {
-        private IWavePlayer player;
+        private WasapiOutRT player;
         private WaveStream reader;
         private IWaveIn recorder;
         private MemoryStream recordStream;

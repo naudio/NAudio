@@ -1,0 +1,13 @@
+﻿<Project Sdk="MSBuild.Sdk.Extras">
+
+  <PropertyGroup>
+    <TargetFramework>uap10.0.17763</TargetFramework>
+    <Version>2.0.0-beta1</Version>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NAudio.Wasapi\NAudio.Wasapi.csproj" />
+  </ItemGroup>
+
+</Project>

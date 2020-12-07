@@ -1,17 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Drawing;
-using System.Data;
-using System.Linq;
-#if NET35
-using System.Runtime.Remoting.Messaging;
-#endif
-using System.Text;
 using System.Windows.Forms;
 using NAudio.CoreAudioApi;
 using System.Diagnostics;
-using NAudio.CoreAudioApi.Interfaces;
 
 namespace NAudioDemo.VolumeMixerDemo
 {

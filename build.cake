@@ -1,4 +1,4 @@
-#tool nuget:?package=NUnit.ConsoleRunner&version=3.4.0
+#tool nuget:?package=NUnit.ConsoleRunner&version=3.11.1
 //////////////////////////////////////////////////////////////////////
 // ARGUMENTS
 //////////////////////////////////////////////////////////////////////
@@ -63,7 +63,7 @@ Task("Run-Unit-Tests")
     .Does(() =>
 {
     // https://cakebuild.net/api/Cake.Common.Tools.NUnit/NUnit3Settings/
-    NUnit3("./**/bin/" + configuration + "/*Tests.dll", new NUnit3Settings {
+    NUnit3("./**/bin/" + configuration + "/**/*Tests.dll", new NUnit3Settings {
         Where = "cat != IntegrationTest",
         NoResults = true
         });

@@ -13,7 +13,7 @@ variables:
   buildConfiguration: 'Release'
 
 steps:
-- task: NuGetToolInstaller@0
+- task: NuGetToolInstaller@1
 
 - task: NuGetCommand@2
   inputs:

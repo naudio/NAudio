@@ -29,3 +29,4 @@ steps:
   inputs:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
+    testFiltercriteria: 'TestCategory!=IntegrationTest'

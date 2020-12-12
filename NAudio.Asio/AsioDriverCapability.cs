@@ -3,8 +3,8 @@
 namespace NAudio.Wave.Asio
 {
     /// <summary>
-    /// ASIODriverCapability holds all the information from the AsioDriver.
-    /// Use ASIODriverExt to get the Capabilities
+    /// AsioDriverCapability holds all the information from the AsioDriver.
+    /// Use AsioDriverExt to get the Capabilities
     /// </summary>
     public class AsioDriverCapability
     {

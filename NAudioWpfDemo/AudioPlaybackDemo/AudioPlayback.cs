@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Windows;
+using NAudio.Extras;
 using NAudio.Wave;
 
 namespace NAudioWpfDemo.AudioPlaybackDemo

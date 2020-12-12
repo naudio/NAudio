@@ -7,6 +7,7 @@
     <UseWpf>true</UseWpf>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\NAudio.Extras\NAudio.Extras.csproj" />
     <ProjectReference Include="..\NAudio.WinForms\NAudio.WinForms.csproj" />
     <ProjectReference Include="..\NAudio\NAudio.csproj" />
   </ItemGroup>

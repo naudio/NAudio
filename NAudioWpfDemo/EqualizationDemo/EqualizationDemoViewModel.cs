@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Windows.Input;
 using Microsoft.Win32;
+using NAudio.Extras;
 using NAudio.Wave;
 using NAudioWpfDemo.ViewModel;
 

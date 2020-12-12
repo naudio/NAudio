@@ -2,9 +2,12 @@
 using System.Linq;
 using NAudio.Wave;
 
-namespace NAudioWpfDemo.FireAndForgetPlayback
+namespace NAudio.Extras
 {
-    class CachedSound
+    /// <summary>
+    /// Used by AudioPlaybackEngine
+    /// </summary>
+    public class CachedSound
     {
         public float[] AudioData { get; }
         public WaveFormat WaveFormat { get; }

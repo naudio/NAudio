@@ -92,7 +92,7 @@ namespace NAudio.Wave
         {
             audioClientProperties = new AudioClientProperties()
             {
-                cbSize = (uint) MarshalHelpers.SizeOf<AudioClientProperties>(),
+                cbSize = (uint) Marshal.SizeOf<AudioClientProperties>(),
                 bIsOffload = Convert.ToInt32(useHardwareOffload),
                 eCategory = category,
                 Options = options

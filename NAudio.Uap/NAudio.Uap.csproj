@@ -4,6 +4,7 @@
     <TargetFramework>uap10.0.17763</TargetFramework>
     <Version>2.0.0-beta1</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>Mark Heath</Authors>
   </PropertyGroup>
 
   <ItemGroup>

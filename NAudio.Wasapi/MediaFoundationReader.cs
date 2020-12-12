@@ -182,7 +182,7 @@ namespace NAudio.Wave
 
         private long GetLength(IMFSourceReader reader)
         {
-            var variantPtr = Marshal.AllocHGlobal(MarshalHelpers.SizeOf<PropVariant>());
+            var variantPtr = Marshal.AllocHGlobal(Marshal.SizeOf<PropVariant>());
             try
             {
 
@@ -198,7 +198,7 @@ namespace NAudio.Wave
                 {
                     Marshal.ThrowExceptionForHR(hResult);
                 }
-                var variant = MarshalHelpers.PtrToStructure<PropVariant>(variantPtr);
+                var variant = Marshal.PtrToStructure<PropVariant>(variantPtr);
 
                 var lengthInBytes = (((long)variant.Value) * waveFormat.AverageBytesPerSecond) / 10000000L;
                 return lengthInBytes;

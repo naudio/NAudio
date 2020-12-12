@@ -18,7 +18,6 @@ namespace NAudio.Wave
             return SampleProviderConverters.ConvertWaveProviderIntoSampleProvider(waveProvider);
         }
 
-#if !WINDOWS_UWP
         /// <summary>
         /// Allows sending a SampleProvider directly to an IWavePlayer without needing to convert
         /// back to an IWaveProvider
@@ -31,7 +30,6 @@ namespace NAudio.Wave
             IWaveProvider provider = convertTo16Bit ? (IWaveProvider)new SampleToWaveProvider16(sampleProvider) : new SampleToWaveProvider(sampleProvider);
             wavePlayer.Init(provider);
         }
-#endif
 
         /// <summary>
         /// Turns WaveFormatExtensible into a standard waveformat if possible

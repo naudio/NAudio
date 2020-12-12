@@ -42,14 +42,14 @@ namespace NAudio.Mixer
             var controls = new List<MixerControl>();
             if (mixerLine.ControlsCount > 0)
             {
-                int mixerControlSize = MarshalHelpers.SizeOf<MixerInterop.MIXERCONTROL>();
+                int mixerControlSize = Marshal.SizeOf<MixerInterop.MIXERCONTROL>();
                 var mlc = new MixerInterop.MIXERLINECONTROLS();
                 IntPtr pmc = Marshal.AllocHGlobal(mixerControlSize * mixerLine.ControlsCount);
                 mlc.cbStruct = Marshal.SizeOf(mlc);
                 mlc.dwLineID = mixerLine.LineId;
                 mlc.cControls = mixerLine.ControlsCount;
                 mlc.pamxctrl = pmc;
-                mlc.cbmxctrl = MarshalHelpers.SizeOf<MixerInterop.MIXERCONTROL>();
+                mlc.cbmxctrl = Marshal.SizeOf<MixerInterop.MIXERCONTROL>();
                 try
                 {
                     MmResult err = MixerInterop.mixerGetLineControls(mixerHandle, ref mlc, MixerFlags.All | mixerHandleType);
@@ -62,7 +62,7 @@ namespace NAudio.Mixer
                         Int64 address = pmc.ToInt64() + mixerControlSize * i;
 
                         var mc = 
-                            MarshalHelpers.PtrToStructure<MixerInterop.MIXERCONTROL>((IntPtr)address);
+                            Marshal.PtrToStructure<MixerInterop.MIXERCONTROL>((IntPtr)address);
                         var mixerControl = GetMixerControl(mixerHandle, mixerLine.LineId, mc.dwControlID, mixerLine.Channels,
                                                                                  mixerHandleType);
 
@@ -111,7 +111,7 @@ namespace NAudio.Mixer
             }
 
             // retrieve the structure from the pointer
-            mc = MarshalHelpers.PtrToStructure<MixerInterop.MIXERCONTROL>(mlc.pamxctrl);
+            mc = Marshal.PtrToStructure<MixerInterop.MIXERCONTROL>(mlc.pamxctrl);
             Marshal.FreeCoTaskMem(pMixerControl);
 
             if (IsControlBoolean(mc.dwControlType))
@@ -178,19 +178,19 @@ namespace NAudio.Mixer
 
             if (IsBoolean)
             {
-                mixerControlDetails.cbDetails = MarshalHelpers.SizeOf<MixerInterop.MIXERCONTROLDETAILS_BOOLEAN>();
+                mixerControlDetails.cbDetails = Marshal.SizeOf<MixerInterop.MIXERCONTROLDETAILS_BOOLEAN>();
             }
             else if (IsListText)
             {
-                mixerControlDetails.cbDetails = MarshalHelpers.SizeOf<MixerInterop.MIXERCONTROLDETAILS_LISTTEXT>();
+                mixerControlDetails.cbDetails = Marshal.SizeOf<MixerInterop.MIXERCONTROLDETAILS_LISTTEXT>();
             }
             else if (IsSigned)
             {
-                mixerControlDetails.cbDetails = MarshalHelpers.SizeOf<MixerInterop.MIXERCONTROLDETAILS_SIGNED>();
+                mixerControlDetails.cbDetails = Marshal.SizeOf<MixerInterop.MIXERCONTROLDETAILS_SIGNED>();
             }
             else if (IsUnsigned)
             {
-                mixerControlDetails.cbDetails = MarshalHelpers.SizeOf<MixerInterop.MIXERCONTROLDETAILS_UNSIGNED>();
+                mixerControlDetails.cbDetails = Marshal.SizeOf<MixerInterop.MIXERCONTROLDETAILS_UNSIGNED>();
             }
             else
             {

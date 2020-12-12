@@ -28,7 +28,7 @@ namespace NAudio.Mixer
 		/// </summary>
 		protected override void GetDetails(IntPtr pDetails) 
 		{
-			signedDetails = MarshalHelpers.PtrToStructure<MixerInterop.MIXERCONTROLDETAILS_SIGNED>(mixerControlDetails.paDetails);
+			signedDetails = Marshal.PtrToStructure<MixerInterop.MIXERCONTROLDETAILS_SIGNED>(mixerControlDetails.paDetails);
 		}
 		
 		/// <summary>

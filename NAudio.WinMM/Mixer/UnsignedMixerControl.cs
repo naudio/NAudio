@@ -31,7 +31,7 @@ namespace NAudio.Mixer
             unsignedDetails = new MixerInterop.MIXERCONTROLDETAILS_UNSIGNED[nChannels];
             for (int channel = 0; channel < nChannels; channel++)
             {
-                unsignedDetails[channel] = MarshalHelpers.PtrToStructure<MixerInterop.MIXERCONTROLDETAILS_UNSIGNED>(mixerControlDetails.paDetails);
+                unsignedDetails[channel] = Marshal.PtrToStructure<MixerInterop.MIXERCONTROLDETAILS_UNSIGNED>(mixerControlDetails.paDetails);
             }
         }
 

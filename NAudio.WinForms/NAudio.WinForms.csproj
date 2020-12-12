@@ -5,6 +5,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <Version>2.0.0-beta1</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>Mark Heath</Authors>
   </PropertyGroup>
   
   <ItemGroup>

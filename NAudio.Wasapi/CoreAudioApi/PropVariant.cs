@@ -255,7 +255,7 @@ namespace NAudio.CoreAudioApi.Interfaces
                     case VarEnum.VT_VECTOR | VarEnum.VT_UI1:
                         return GetBlob();
                     case VarEnum.VT_CLSID:
-                        return MarshalHelpers.PtrToStructure<Guid>(pointerValue);
+                        return Marshal.PtrToStructure<Guid>(pointerValue);
                     case VarEnum.VT_BOOL:
                         switch (boolVal)
                         {
@@ -271,15 +271,6 @@ namespace NAudio.CoreAudioApi.Interfaces
                 }
                 throw new NotImplementedException("PropVariant " + ve);
             }
-        }
-
-        /// <summary>
-        /// allows freeing up memory, might turn this into a Dispose method?
-        /// </summary>
-        [Obsolete("Call with pointer instead")]
-        public void Clear()
-        {
-            PropVariantNative.PropVariantClear(ref this);
         }
 
         /// <summary>

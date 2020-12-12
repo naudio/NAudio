@@ -30,7 +30,7 @@ namespace NAudio.Mixer
 		/// <param name="pDetails">memory pointer</param>
 		protected override void GetDetails(IntPtr pDetails) 
 		{
-			boolDetails = MarshalHelpers.PtrToStructure<MixerInterop.MIXERCONTROLDETAILS_BOOLEAN>(pDetails);
+			boolDetails = Marshal.PtrToStructure<MixerInterop.MIXERCONTROLDETAILS_BOOLEAN>(pDetails);
 		}
 		
 		/// <summary>

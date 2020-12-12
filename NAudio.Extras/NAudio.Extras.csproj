@@ -6,7 +6,11 @@
     <AssemblyOriginatorKeyFile>..\NAudioStrongNameKey.snk</AssemblyOriginatorKeyFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Mark Heath</Authors>
-
+    <PackageProjectUrl>https://github.com/naudio/NAudio</PackageProjectUrl>
+    <PackageTags>C# .NET audio sound</PackageTags>
+    <RepositoryUrl>https://github.com/naudio/NAudio</RepositoryUrl>
+    <Copyright>© Mark Heath 2020</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>

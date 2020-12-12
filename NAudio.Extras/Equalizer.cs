@@ -2,7 +2,7 @@ using NAudio.Dsp;
 using NAudio.Wave;
 using System;
 
-namespace NAudioWpfDemo.EqualizationDemo
+namespace NAudio.Extras
 {
     /// <summary>
     /// Basic example of a multi-band eq
@@ -10,7 +10,7 @@ namespace NAudioWpfDemo.EqualizationDemo
     /// Call Update after you've updated the bands
     /// Potentially to be added to NAudio in a future version
     /// </summary>
-    class Equalizer : ISampleProvider
+    public class Equalizer : ISampleProvider
     {
         private readonly ISampleProvider sourceProvider;
         private readonly EqualizerBand[] bands;

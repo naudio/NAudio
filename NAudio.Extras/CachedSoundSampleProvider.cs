@@ -2,7 +2,7 @@
 using NAudio.Utils;
 using NAudio.Wave;
 
-namespace NAudioWpfDemo.FireAndForgetPlayback
+namespace NAudio.Extras
 {
     class CachedSoundSampleProvider : ISampleProvider
     {

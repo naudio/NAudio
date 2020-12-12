@@ -2,9 +2,12 @@
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 
-namespace NAudioWpfDemo.FireAndForgetPlayback
+namespace NAudio.Extras
 {
-    class AudioPlaybackEngine : IDisposable
+    /// <summary>
+    /// Demo for fire and forget playback
+    /// </summary>
+    public class AudioPlaybackEngine : IDisposable
     {
         private readonly IWavePlayer outputDevice;
         private readonly MixingSampleProvider mixer;

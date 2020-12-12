@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Windows.Input;
+using NAudio.Extras;
 using NAudioWpfDemo.ViewModel;
 
 namespace NAudioWpfDemo.FireAndForgetPlayback

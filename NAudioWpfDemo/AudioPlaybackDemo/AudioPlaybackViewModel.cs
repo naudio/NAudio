@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Input;
 using Microsoft.Win32;
+using NAudio.Extras;
 using NAudioWpfDemo.ViewModel;
 
 namespace NAudioWpfDemo.AudioPlaybackDemo

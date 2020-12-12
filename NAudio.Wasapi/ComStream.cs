@@ -151,7 +151,6 @@ namespace NAudio.Wave
             stream = null;
         }
 
-#if !WINDOWS_UWP
         public override void Close()
         {
             base.Close();
@@ -160,6 +159,5 @@ namespace NAudio.Wave
             stream.Close();
             stream = null;
         }
-#endif
     }
 }

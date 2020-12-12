@@ -152,7 +152,7 @@ namespace NAudio.Wave
         /// <returns></returns>
         public static WaveFormat MarshalFromPtr(IntPtr pointer)
         {
-            var waveFormat = MarshalHelpers.PtrToStructure<WaveFormat>(pointer);
+            var waveFormat = Marshal.PtrToStructure<WaveFormat>(pointer);
             switch (waveFormat.Encoding)
             {
                 case WaveFormatEncoding.Pcm:
@@ -161,18 +161,18 @@ namespace NAudio.Wave
                     waveFormat.extraSize = 0;
                     break;
                 case WaveFormatEncoding.Extensible:
-                    waveFormat = MarshalHelpers.PtrToStructure<WaveFormatExtensible>(pointer);
+                    waveFormat = Marshal.PtrToStructure<WaveFormatExtensible>(pointer);
                     break;
                 case WaveFormatEncoding.Adpcm:
-                    waveFormat = MarshalHelpers.PtrToStructure<AdpcmWaveFormat>(pointer);
+                    waveFormat = Marshal.PtrToStructure<AdpcmWaveFormat>(pointer);
                     break;
                 case WaveFormatEncoding.Gsm610:
-                    waveFormat = MarshalHelpers.PtrToStructure<Gsm610WaveFormat>(pointer);
+                    waveFormat = Marshal.PtrToStructure<Gsm610WaveFormat>(pointer);
                     break;
                 default:
                     if (waveFormat.ExtraSize > 0)
                     {
-                        waveFormat = MarshalHelpers.PtrToStructure<WaveFormatExtraData>(pointer);
+                        waveFormat = Marshal.PtrToStructure<WaveFormatExtraData>(pointer);
                     }
                     break;
             }

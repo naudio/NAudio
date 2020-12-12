@@ -3,8 +3,11 @@ using System.Diagnostics;
 using NAudio.Dsp;
 using NAudio.Wave;
 
-namespace NAudioWpfDemo.AudioPlaybackDemo
+namespace NAudio.Extras
 {
+    /// <summary>
+    /// Demo sample provider that performs FFTs
+    /// </summary>
     public class SampleAggregator : ISampleProvider
     {
         // volume

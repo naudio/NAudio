@@ -56,11 +56,11 @@ namespace NAudioWpfDemo.EnumMediaFoundationTransforms
 
         private static void AddAttribute(IMFActivate mft, int index, StringBuilder sb)
         {
-            var variantPtr = Marshal.AllocHGlobal(MarshalHelpers.SizeOf<PropVariant>());
+            var variantPtr = Marshal.AllocHGlobal(Marshal.SizeOf<PropVariant>());
             try
             {
                 mft.GetItemByIndex(index, out var key, variantPtr);
-                var value = MarshalHelpers.PtrToStructure<PropVariant>(variantPtr);
+                var value = Marshal.PtrToStructure<PropVariant>(variantPtr);
                 var propertyName = FieldDescriptionHelper.Describe(typeof (MediaFoundationAttributes), key);
                 if (key == MediaFoundationAttributes.MFT_INPUT_TYPES_Attributes ||
                     key == MediaFoundationAttributes.MFT_OUTPUT_TYPES_Attributes)

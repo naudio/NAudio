@@ -218,7 +218,7 @@ namespace NAudio.CoreAudioApi
 
         private IntPtr GetPointerToPointer()
         {
-            return Marshal.AllocHGlobal(MarshalHelpers.SizeOf<IntPtr>());
+            return Marshal.AllocHGlobal(Marshal.SizeOf<IntPtr>());
         }
 
         /// <summary>
@@ -234,11 +234,11 @@ namespace NAudio.CoreAudioApi
             closestMatchFormat = null;
             int hresult = audioClientInterface.IsFormatSupported(shareMode, desiredFormat, pointerToPtr);
 
-            var closestMatchPtr = MarshalHelpers.PtrToStructure<IntPtr>(pointerToPtr);
+            var closestMatchPtr = Marshal.PtrToStructure<IntPtr>(pointerToPtr);
 
             if (closestMatchPtr != IntPtr.Zero)
             {
-                closestMatchFormat = MarshalHelpers.PtrToStructure<WaveFormatExtensible>(closestMatchPtr);
+                closestMatchFormat = Marshal.PtrToStructure<WaveFormatExtensible>(closestMatchPtr);
                 Marshal.FreeCoTaskMem(closestMatchPtr);
             }
             Marshal.FreeHGlobal(pointerToPtr);

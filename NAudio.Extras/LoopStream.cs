@@ -1,9 +1,9 @@
 ﻿using System;
 using NAudio.Wave;
 
-namespace NAudioDemo
+namespace NAudio.Extras
 {
-    class LoopStream : WaveStream
+    public class LoopStream : WaveStream
     {
         readonly WaveStream sourceStream;
 

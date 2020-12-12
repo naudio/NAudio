@@ -6,6 +6,9 @@
     <Version>2.0.0-beta1</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Mark Heath</Authors>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\NAudioStrongNameKey.snk</AssemblyOriginatorKeyFile>
+
   </PropertyGroup>
   
   <ItemGroup>

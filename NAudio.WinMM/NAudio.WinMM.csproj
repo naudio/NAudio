@@ -4,6 +4,9 @@
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <Version>2.0.0-beta1</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\NAudioStrongNameKey.snk</AssemblyOriginatorKeyFile>
+
   </PropertyGroup>
 
   <ItemGroup>

@@ -422,7 +422,7 @@ namespace NAudio.Wave
                         // Starting with Windows 7, Initialize can return AUDCLNT_E_BUFFER_SIZE_NOT_ALIGNED for a render device.
                         // We should to initialize again.
                         if (ex.ErrorCode != ErrorCodes.AUDCLNT_E_BUFFER_SIZE_NOT_ALIGNED)
-                            throw ex;
+                            throw;
 
                         // Calculate the new latency.
                         long newLatencyRefTimes = (long)(10000000.0 /

@@ -1,4 +1,6 @@
-﻿namespace NAudio.Wave
+﻿using System;
+
+namespace NAudio.Wave
 {
     /// <summary>
     /// Buffered WaveProvider taking source data from WaveIn
@@ -28,9 +30,9 @@
         /// <summary>
         /// Reads data from the WaveInProvider
         /// </summary>
-        public int Read(byte[] buffer, int offset, int count)
+        public int Read(Span<byte> buffer)
         {
-            return bufferedWaveProvider.Read(buffer, offset, count);
+            return bufferedWaveProvider.Read(buffer);
         }
 
         /// <summary>

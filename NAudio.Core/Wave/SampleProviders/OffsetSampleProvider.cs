@@ -168,12 +168,11 @@ namespace NAudio.Wave.SampleProviders
         /// Reads from this sample provider
         /// </summary>
         /// <param name="buffer">Sample buffer</param>
-        /// <param name="offset">Offset within sample buffer to read to</param>
-        /// <param name="count">Number of samples required</param>
         /// <returns>Number of samples read</returns>
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
             int samplesRead = 0;
+            var count = buffer.Length;
 
             if (phase == 0) // not started yet
             {
@@ -185,7 +184,7 @@ namespace NAudio.Wave.SampleProviders
                 int delaySamples = Math.Min(count, DelayBySamples - phasePos);
                 for (int n = 0; n < delaySamples; n++)
                 {
-                    buffer[offset + n] = 0;
+                    buffer[n] = 0;
                 }
                 phasePos += delaySamples;
                 samplesRead += delaySamples;
@@ -206,7 +205,7 @@ namespace NAudio.Wave.SampleProviders
                     while (samplesSkipped < SkipOverSamples)
                     {
                         int samplesRequired = Math.Min(SkipOverSamples - samplesSkipped, skipBuffer.Length);
-                        var read = sourceProvider.Read(skipBuffer, 0, samplesRequired);
+                        var read = sourceProvider.Read(new Span<float>(skipBuffer, 0, samplesRequired));
                         if (read == 0) // source has ended while still in skip
                         {
                             break;
@@ -223,7 +222,7 @@ namespace NAudio.Wave.SampleProviders
                 int samplesRequired = count - samplesRead;
                 if (takeSamples != 0)
                     samplesRequired = Math.Min(samplesRequired, takeSamples - phasePos);
-                int read = sourceProvider.Read(buffer, offset + samplesRead, samplesRequired);
+                int read = sourceProvider.Read(buffer.Slice(samplesRead, samplesRequired));
                 phasePos += read;
                 samplesRead += read;
                 if (read < samplesRequired || (takeSamples > 0 && phasePos >= takeSamples))
@@ -238,7 +237,7 @@ namespace NAudio.Wave.SampleProviders
                 int samplesRequired = Math.Min(count - samplesRead, LeadOutSamples - phasePos);
                 for (int n = 0; n < samplesRequired; n++)
                 {
-                    buffer[offset + samplesRead + n] = 0;
+                    buffer[samplesRead + n] = 0;
                 }
                 phasePos += samplesRequired;
                 samplesRead += samplesRequired;

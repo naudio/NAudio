@@ -24,13 +24,13 @@ namespace NAudio.Wave.SampleProviders
         /// <summary>
         /// Reads from this provider
         /// </summary>
-        public override int Read(float[] buffer, int offset, int count)
+        public override int Read(Span<float> buffer)
         {
-            int bytesNeeded = count * 4;
+            int bytesNeeded = buffer.Length * 4;
             EnsureSourceBuffer(bytesNeeded);
-            int bytesRead = source.Read(sourceBuffer, 0, bytesNeeded);
+            int bytesRead = source.Read(new Span<byte>(sourceBuffer, 0, bytesNeeded));
             int samplesRead = bytesRead / 4;
-            int outputIndex = offset;
+            int outputIndex = 0;
             for (int n = 0; n < bytesRead; n+=4)
             {
                 buffer[outputIndex++] = BitConverter.ToSingle(sourceBuffer, n);

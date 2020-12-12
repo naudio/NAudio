@@ -80,13 +80,13 @@ namespace NAudioWpfDemo.AudioPlaybackDemo
 
         public WaveFormat WaveFormat => source.WaveFormat;
 
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
-            var samplesRead = source.Read(buffer, offset, count);
+            var samplesRead = source.Read(buffer);
 
             for (int n = 0; n < samplesRead; n+=channels)
             {
-                Add(buffer[n+offset]);
+                Add(buffer[n]);
             }
             return samplesRead;
         }

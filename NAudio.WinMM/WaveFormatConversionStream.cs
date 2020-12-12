@@ -138,12 +138,10 @@ namespace NAudio.Wave
         /// 
         /// </summary>
         /// <param name="buffer">Buffer to read into</param>
-        /// <param name="offset">Offset within buffer to write to</param>
-        /// <param name="count">Number of bytes to read</param>
         /// <returns>Bytes read</returns>
-        public override int Read(byte[] buffer, int offset, int count)
+        public override int Read(Span<byte> buffer)
         {
-            var bytesRead = conversionProvider.Read(buffer, offset, count);
+            var bytesRead = conversionProvider.Read(buffer);
             position += bytesRead;
             return bytesRead;
         }

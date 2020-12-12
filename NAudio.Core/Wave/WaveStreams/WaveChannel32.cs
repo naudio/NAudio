@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using NAudio.Wave.SampleProviders;
 
 namespace NAudio.Wave
@@ -134,29 +135,28 @@ namespace NAudio.Wave
         /// Reads bytes from this wave stream
         /// </summary>
         /// <param name="destBuffer">The destination buffer</param>
-        /// <param name="offset">Offset into the destination buffer</param>
-        /// <param name="numBytes">Number of bytes read</param>
         /// <returns>Number of bytes read.</returns>
-        public override int Read(byte[] destBuffer, int offset, int numBytes)
+        public override int Read(Span<byte> destBuffer)
         {
+            var numBytes = destBuffer.Length;
             lock (lockObject)
             {
                 int bytesWritten = 0;
-                WaveBuffer destWaveBuffer = new WaveBuffer(destBuffer);
+                var destWaveBuffer = MemoryMarshal.Cast<byte, float>(destBuffer);
 
                 // 1. fill with silence
                 if (position < 0)
                 {
                     bytesWritten = (int) Math.Min(numBytes, 0 - position);
                     for (int n = 0; n < bytesWritten; n++)
-                        destBuffer[n + offset] = 0;
+                        destBuffer[n] = 0;
                 }
                 if (bytesWritten < numBytes)
                 {
                     sampleProvider.LoadNextChunk(sourceStream, (numBytes - bytesWritten)/8);
                     float left, right;
 
-                    int outIndex = (offset/4) + bytesWritten/4;
+                    int outIndex =  bytesWritten/4;
                     while (this.sampleProvider.GetNextSample(out left, out right) && bytesWritten < numBytes)
                     {
                         // implement better panning laws. 
@@ -164,8 +164,8 @@ namespace NAudio.Wave
                         right = (pan >= 0) ? right : (right*(pan + 1)/2.0f);
                         left *= volume;
                         right *= volume;
-                        destWaveBuffer.FloatBuffer[outIndex++] = left;
-                        destWaveBuffer.FloatBuffer[outIndex++] = right;
+                        destWaveBuffer[outIndex++] = left;
+                        destWaveBuffer[outIndex++] = right;
                         bytesWritten += 8;
                         if (Sample != null) RaiseSample(left, right);
                     }
@@ -173,7 +173,7 @@ namespace NAudio.Wave
                 // 3. Fill out with zeroes
                 if (PadWithZeroes && bytesWritten < numBytes)
                 {
-                    Array.Clear(destBuffer, offset + bytesWritten, numBytes - bytesWritten);
+                    destBuffer.Slice(bytesWritten).Clear();
                     bytesWritten = numBytes;
                 }
                 position += bytesWritten;

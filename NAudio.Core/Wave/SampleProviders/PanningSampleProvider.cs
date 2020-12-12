@@ -83,15 +83,13 @@ namespace NAudio.Wave.SampleProviders
         /// Reads samples from this sample provider
         /// </summary>
         /// <param name="buffer">Sample buffer</param>
-        /// <param name="offset">Offset into sample buffer</param>
-        /// <param name="count">Number of samples desired</param>
         /// <returns>Number of samples read</returns>
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
-            int sourceSamplesRequired = count / 2;
+            int sourceSamplesRequired = buffer.Length / 2;
             sourceBuffer = BufferHelpers.Ensure(sourceBuffer, sourceSamplesRequired);
-            int sourceSamplesRead = source.Read(sourceBuffer, 0, sourceSamplesRequired);
-            int outIndex = offset;
+            int sourceSamplesRead = source.Read(new Span<float>(sourceBuffer, 0, sourceSamplesRequired));
+            int outIndex = 0;
             for (int n = 0; n < sourceSamplesRead; n++)
             {
                 buffer[outIndex++] = leftMultiplier * sourceBuffer[n];

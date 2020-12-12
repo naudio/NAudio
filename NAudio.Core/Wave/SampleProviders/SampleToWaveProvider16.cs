@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using NAudio.Utils;
 
 namespace NAudio.Wave.SampleProviders
@@ -35,17 +36,15 @@ namespace NAudio.Wave.SampleProviders
         /// Reads bytes from this wave stream
         /// </summary>
         /// <param name="destBuffer">The destination buffer</param>
-        /// <param name="offset">Offset into the destination buffer</param>
-        /// <param name="numBytes">Number of bytes read</param>
         /// <returns>Number of bytes read.</returns>
-        public int Read(byte[] destBuffer, int offset, int numBytes)
+        public int Read(Span<byte> destBuffer)
         {
-            int samplesRequired = numBytes / 2;
+            int samplesRequired = destBuffer.Length / 2;
             sourceBuffer = BufferHelpers.Ensure(sourceBuffer, samplesRequired);
-            int sourceSamples = sourceProvider.Read(sourceBuffer, 0, samplesRequired);
-            var destWaveBuffer = new WaveBuffer(destBuffer);
+            int sourceSamples = sourceProvider.Read(new Span<float>(sourceBuffer, 0, samplesRequired));
+            var destWaveBuffer = MemoryMarshal.Cast<byte, short>(destBuffer);
 
-            int destOffset = offset / 2;
+            int destOffset = 0;
             for (int sample = 0; sample < sourceSamples; sample++)
             {
                 // adjust volume
@@ -55,7 +54,7 @@ namespace NAudio.Wave.SampleProviders
                     sample32 = 1.0f;
                 if (sample32 < -1.0f)
                     sample32 = -1.0f;
-                destWaveBuffer.ShortBuffer[destOffset++] = (short)(sample32 * 32767);
+                destWaveBuffer[destOffset++] = (short)(sample32 * 32767);
             }
 
             return sourceSamples * 2;

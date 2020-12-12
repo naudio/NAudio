@@ -245,7 +245,7 @@ namespace NAudio.Wave
         {
             IntPtr buffer = renderClient.GetBuffer(frameCount);
             int readLength = frameCount*bytesPerFrame;
-            int read = playbackProvider.Read(readBuffer, 0, readLength);
+            int read = playbackProvider.Read(new Span<byte>(readBuffer, 0, readLength));
             if (read == 0)
             {
                 playbackState = WasapiOutState.Stopping;

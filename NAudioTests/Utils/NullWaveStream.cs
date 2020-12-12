@@ -24,14 +24,15 @@ namespace NAudioTests.Utils
             set { position = value; }
         }
 
-        public override int Read(byte[] buffer, int offset, int count)
+        public override int Read(Span<byte> buffer)
         {
+            var count = buffer.Length;
             if (position > length)
             {
                 return 0;
             }
             count = (int)Math.Min(count, length - position);
-            Array.Clear(buffer, offset, count);
+            buffer.Clear();
             position += count;
             return count;
         }

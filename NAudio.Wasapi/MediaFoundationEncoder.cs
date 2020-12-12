@@ -241,17 +241,14 @@ namespace NAudio.Wave
         private long ConvertOneBuffer(IMFSinkWriter writer, int streamIndex, IWaveProvider inputProvider, long position, byte[] managedBuffer)
         {
             long durationConverted = 0;
-            int maxLength;
             IMFMediaBuffer buffer = MediaFoundationApi.CreateMemoryBuffer(managedBuffer.Length);
-            buffer.GetMaxLength(out maxLength);
+            buffer.GetMaxLength(out int maxLength);
 
             IMFSample sample = MediaFoundationApi.CreateSample();
             sample.AddBuffer(buffer);
 
-            IntPtr ptr;
-            int currentLength;
-            buffer.Lock(out ptr, out maxLength, out currentLength);
-            int read = inputProvider.Read(managedBuffer, 0, maxLength);
+            buffer.Lock(out IntPtr ptr, out maxLength, out int currentLength);
+            int read = inputProvider.Read(new Span<byte>(managedBuffer, 0, maxLength));
             if (read > 0)
             {
                 durationConverted = BytesToNsPosition(read, inputProvider.WaveFormat);

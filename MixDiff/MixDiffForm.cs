@@ -73,7 +73,7 @@ namespace MarkHeath.AudioUtils
             {
                 MixdownInfo buttonInfo = button.Tag as MixdownInfo;
                 mixer.RemoveInputStream(buttonInfo.Stream);
-                buttonInfo.Stream.Close();
+                buttonInfo.Stream.Dispose();
                 button.Tag = null;
                 SetButtonAppearance(button);
             }

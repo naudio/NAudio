@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace NAudio.Wave
@@ -42,11 +43,10 @@ namespace NAudio.Wave
         /// Implements the Read method of IWaveProvider by delegating to the abstract
         /// Read method taking a short array
         /// </summary>
-        public int Read(byte[] buffer, int offset, int count)
+        public int Read(Span<byte> buffer)
         {
-            WaveBuffer waveBuffer = new WaveBuffer(buffer);
-            int samplesRequired = count / 2;
-            int samplesRead = Read(waveBuffer.ShortBuffer, offset / 2, samplesRequired);
+            var buffer16 = MemoryMarshal.Cast<byte, short>(buffer);
+            int samplesRead = Read(buffer16);
             return samplesRead * 2;
         }
 
@@ -54,7 +54,7 @@ namespace NAudio.Wave
         /// Method to override in derived classes
         /// Supply the requested number of samples into the buffer
         /// </summary>
-        public abstract int Read(short[] buffer, int offset, int sampleCount);
+        public abstract int Read(Span<short> buffer);
 
         /// <summary>
         /// The Wave Format

@@ -44,7 +44,7 @@ namespace NAudio.Wave
                 var buffer = new byte[sourceProvider.WaveFormat.AverageBytesPerSecond * 4];
                 while (true)
                 {
-                    int bytesRead = sourceProvider.Read(buffer, 0, buffer.Length);
+                    int bytesRead = sourceProvider.Read(new Span<byte>(buffer, 0, buffer.Length));
                     if (bytesRead == 0)
                     {
                         // end of source provider
@@ -70,7 +70,7 @@ namespace NAudio.Wave
                 var buffer = new byte[sourceProvider.WaveFormat.AverageBytesPerSecond * 4];
                 while(true) 
                 {
-                    var bytesRead = sourceProvider.Read(buffer, 0, buffer.Length);
+                    var bytesRead = sourceProvider.Read(new Span<byte>(buffer, 0, buffer.Length));
                     if (bytesRead == 0) 
                     {
                         // end of source provider
@@ -214,23 +214,21 @@ namespace NAudio.Wave
         /// <param name="data">the buffer containing the wave data</param>
         /// <param name="offset">the offset from which to start writing</param>
         /// <param name="count">the number of bytes to write</param>
-        [Obsolete("Use Write instead")]
-        public void WriteData(byte[] data, int offset, int count)
+        public override void Write(byte[] data, int offset, int count)
         {
-            Write(data, offset, count);
+            Write(new Span<byte>(data, offset, count));
         }
 
         /// <summary>
         /// Appends bytes to the WaveFile (assumes they are already in the correct format)
         /// </summary>
-        /// <param name="data">the buffer containing the wave data</param>
-        /// <param name="offset">the offset from which to start writing</param>
-        /// <param name="count">the number of bytes to write</param>
-        public override void Write(byte[] data, int offset, int count)
+        /// <param name="buffer">the buffer containing the wave data</param>
+        public void Write(Span<byte> buffer)
         {
+            var count = buffer.Length;
             if (outStream.Length + count > UInt32.MaxValue)
                 throw new ArgumentException("WAV file too large", nameof(count));
-            outStream.Write(data, offset, count);
+            outStream.Write(buffer);
             dataChunkSize += count;
         }
 

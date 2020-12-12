@@ -8,70 +8,18 @@ namespace NAudio.Wave
     /// <summary>
     /// Base class for all WaveStream classes. Derives from stream.
     /// </summary>
-    public abstract class WaveStream : Stream, IWaveProvider
+    public abstract class WaveStream : IWaveProvider, IDisposable
     {
         /// <summary>
         /// Retrieves the WaveFormat for this stream
         /// </summary>
         public abstract WaveFormat WaveFormat { get; }
 
-        // base class includes long Position get; set
-        // base class includes long Length get
-        // base class includes Read
-        // base class includes Dispose
+        public abstract long Position { get; set; }
 
-        /// <summary>
-        /// We can read from this stream
-        /// </summary>
-        public override bool CanRead => true;
+        public abstract long Length { get; }
 
-        /// <summary>
-        /// We can seek within this stream
-        /// </summary>
-        public override bool CanSeek => true;
-
-        /// <summary>
-        /// We can't write to this stream
-        /// </summary>
-        public override bool CanWrite => false;
-
-        /// <summary>
-        /// Flush does not need to do anything
-        /// See <see cref="Stream.Flush"/>
-        /// </summary>
-        public override void Flush() { }
-
-        /// <summary>
-        /// An alternative way of repositioning.
-        /// See <see cref="Stream.Seek"/>
-        /// </summary>
-        public override long Seek(long offset, SeekOrigin origin)
-        {
-            if (origin == SeekOrigin.Begin)
-                Position = offset;
-            else if (origin == SeekOrigin.Current)
-                Position += offset;
-            else
-                Position = Length + offset;
-            return Position;
-        }
-
-        /// <summary>
-        /// Sets the length of the WaveStream. Not Supported.
-        /// </summary>
-        /// <param name="length"></param>
-        public override void SetLength(long length)
-        {
-            throw new NotSupportedException("Can't set length of a WaveFormatString");
-        }
-
-        /// <summary>
-        /// Writes to the WaveStream. Not Supported.
-        /// </summary>
-        public override void Write(byte[] buffer, int offset, int count)
-        {
-            throw new NotSupportedException("Can't write to a WaveFormatString");
-        }
+        public abstract int Read(Span<byte> buffer);
 
         /// <summary>
         /// The block alignment for this wavestream. Do not modify the Position
@@ -129,5 +77,40 @@ namespace NAudio.Wave
         {
             return Position < Length;
         }
+
+        #region IDisposable Support
+        private bool disposedValue = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    // TODO: dispose managed state (managed objects).
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
+                // TODO: set large fields to null.
+
+                disposedValue = true;
+            }
+        }
+
+        // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
+        // ~WaveStream() {
+        //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+        //   Dispose(false);
+        // }
+
+        // This code added to correctly implement the disposable pattern.
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose(true);
+            // TODO: uncomment the following line if the finalizer is overridden above.
+            // GC.SuppressFinalize(this);
+        }
+        #endregion
     }
 }

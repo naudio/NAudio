@@ -159,11 +159,10 @@ namespace NAudio.Wave
         /// Reads bytes from this wave stream
         /// </summary>
         /// <param name="destBuffer">The destination buffer</param>
-        /// <param name="offset">Offset into the destination buffer</param>
-        /// <param name="numBytes">Number of bytes read</param>
         /// <returns>Number of bytes read.</returns>
-        public override int Read(byte[] destBuffer, int offset, int numBytes)
+        public override int Read(Span<byte> destBuffer)
         {
+            var numBytes = destBuffer.Length;
             lock (lockObject)
             {
                 int bytesWritten = 0;
@@ -172,7 +171,7 @@ namespace NAudio.Wave
                 {
                     bytesWritten = (int)Math.Min(numBytes, audioStartPosition - position);
                     for (int n = 0; n < bytesWritten; n++)
-                        destBuffer[n + offset] = 0;
+                        destBuffer[n] = 0;
                 }
                 if (bytesWritten < numBytes)
                 {
@@ -180,12 +179,12 @@ namespace NAudio.Wave
                     int sourceBytesRequired = (int)Math.Min(
                         numBytes - bytesWritten,
                         sourceLengthBytes + sourceOffsetBytes - sourceStream.Position);
-                    int read = sourceStream.Read(destBuffer, bytesWritten + offset, sourceBytesRequired);
+                    int read = sourceStream.Read( destBuffer.Slice(bytesWritten, sourceBytesRequired));
                     bytesWritten += read;
                 }
                 // 3. Fill out with zeroes
                 for (int n = bytesWritten; n < numBytes; n++)
-                    destBuffer[offset + n] = 0;
+                    destBuffer[n] = 0;
                 position += numBytes;
                 return numBytes;
             }

@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using NAudio.FileFormats.Wav;
+using NAudio.Utils;
 
 namespace NAudio.Wave 
 {
@@ -170,8 +171,9 @@ namespace NAudio.Wave
         /// Reads bytes from the Wave File
         /// <see cref="Stream.Read"/>
         /// </summary>
-        public override int Read(byte[] array, int offset, int count)
+        public override int Read(Span<byte> array)
         {
+            var count = array.Length;
             if (count % waveFormat.BlockAlign != 0)
             {
                 throw new ArgumentException(
@@ -184,7 +186,7 @@ namespace NAudio.Wave
                 {
                     count = (int) (dataChunkLength - Position);
                 }
-                return waveStream.Read(array, offset, count);
+                return waveStream.Read(array.Slice(0,count));
             }
         }
         
@@ -207,7 +209,7 @@ namespace NAudio.Wave
             var sampleFrame = new float[waveFormat.Channels];
             int bytesToRead = waveFormat.Channels*(waveFormat.BitsPerSample/8);
             byte[] raw = new byte[bytesToRead];
-            int bytesRead = Read(raw, 0, bytesToRead);
+            int bytesRead = Read(new Span<byte>(raw, 0, bytesToRead));
             if (bytesRead == 0) return null; // end of file
             if (bytesRead < bytesToRead) throw new InvalidDataException("Unexpected end of file");
             int offset = 0;
@@ -241,17 +243,6 @@ namespace NAudio.Wave
             return sampleFrame;
         }
 
-        /// <summary>
-        /// Attempts to read a sample into a float. n.b. only applicable for uncompressed formats
-        /// Will normalise the value read into the range -1.0f to 1.0f if it comes from a PCM encoding
-        /// </summary>
-        /// <returns>False if the end of the WAV data chunk was reached</returns>
-        [Obsolete("Use ReadNextSampleFrame instead (this version does not support stereo properly)")]
-        public bool TryReadFloat(out float sampleValue)
-        {
-            var sf = ReadNextSampleFrame();
-            sampleValue = sf != null ? sf[0] : 0;
-            return sf != null;
-        }
+
     }
 }

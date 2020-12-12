@@ -88,10 +88,9 @@ namespace NAudio.Dmo
         /// Retrives the data in this buffer
         /// </summary>
         /// <param name="data">Buffer to receive data</param>
-        /// <param name="offset">Offset into buffer</param>
-        public void RetrieveData(byte[] data, int offset)
+        public void RetrieveData(Span<byte> data)
         {
-            ((MediaBuffer)pBuffer).RetrieveData(data, offset);
+            ((MediaBuffer)pBuffer).RetrieveData(data);
         }
 
         /// <summary>

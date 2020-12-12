@@ -128,11 +128,10 @@ namespace NAudio.Wave
         /// Reads data from this stream
         /// </summary>
         /// <param name="buffer"></param>
-        /// <param name="offset"></param>
-        /// <param name="count"></param>
         /// <returns></returns>
-        public override int Read(byte[] buffer, int offset, int count)
+        public override int Read(Span<byte> buffer)
         {
+            var count = buffer.Length;
             lock (lockObject)
             {
                 // 1. attempt to fill the circular buffer with enough data to meet our request
@@ -144,8 +143,10 @@ namespace NAudio.Wave
                         sourceReadCount = (count + sourceStream.BlockAlign) - (count % sourceStream.BlockAlign);
                     }
 
-                    int sourceRead = sourceStream.Read(GetSourceBuffer(sourceReadCount), 0, sourceReadCount);
-                    circularBuffer.Write(GetSourceBuffer(sourceReadCount), 0, sourceRead);
+                    var sourceBuffer = GetSourceBuffer(sourceReadCount);
+                    var sourceSpan = new Span<byte>(sourceBuffer, 0, sourceReadCount);
+                    int sourceRead = sourceStream.Read(sourceSpan);
+                    circularBuffer.Write(sourceBuffer, 0, sourceRead);
                     if (sourceRead == 0)
                     {
                         // assume we have run out of data
@@ -161,7 +162,7 @@ namespace NAudio.Wave
                 }
 
                 // 3. now whatever is in the buffer we can return
-                int bytesRead = circularBuffer.Read(buffer, offset, count);
+                int bytesRead = circularBuffer.Read(buffer);
                 position += bytesRead;
                 // anything left in buffer is at start position
                 bufferStartPosition = position;

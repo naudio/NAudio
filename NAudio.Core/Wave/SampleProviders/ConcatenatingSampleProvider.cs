@@ -33,13 +33,12 @@ namespace NAudio.Wave.SampleProviders
         /// <summary>
         /// Read Samples from this sample provider
         /// </summary>
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
             var read = 0;
-            while (read < count && currentProviderIndex < providers.Length)
+            while (read < buffer.Length && currentProviderIndex < providers.Length)
             {
-                var needed = count - read;
-                var readThisTime = providers[currentProviderIndex].Read(buffer, read, needed);
+                var readThisTime = providers[currentProviderIndex].Read(buffer.Slice(read));
                 read += readThisTime;
                 if (readThisTime == 0) currentProviderIndex++;
             }

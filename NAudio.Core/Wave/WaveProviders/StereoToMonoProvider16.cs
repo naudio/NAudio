@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using NAudio.Utils;
 
 // ReSharper disable once CheckNamespace
@@ -54,26 +55,26 @@ namespace NAudio.Wave
         /// <summary>
         /// Reads bytes from this WaveProvider
         /// </summary>
-        public int Read(byte[] buffer, int offset, int count)
+        public int Read(Span<byte> buffer)
         {
-            int sourceBytesRequired = count * 2;
+            int sourceBytesRequired = buffer.Length * 2;
             sourceBuffer = BufferHelpers.Ensure(sourceBuffer, sourceBytesRequired);
-            WaveBuffer sourceWaveBuffer = new WaveBuffer(sourceBuffer);
-            WaveBuffer destWaveBuffer = new WaveBuffer(buffer);
+            var sourceWaveBuffer = MemoryMarshal.Cast<byte, short>(sourceBuffer);
+            var destWaveBuffer = MemoryMarshal.Cast<byte, short>(buffer);
 
-            int sourceBytesRead = sourceProvider.Read(sourceBuffer, 0, sourceBytesRequired);
+            int sourceBytesRead = sourceProvider.Read(new Span<byte>(sourceBuffer, 0, sourceBytesRequired));
             int samplesRead = sourceBytesRead / 2;
-            int destOffset = offset / 2;
+            int destOffset = 0 / 2;
             for (int sample = 0; sample < samplesRead; sample+=2)
             {
-                short left = sourceWaveBuffer.ShortBuffer[sample];
-                short right = sourceWaveBuffer.ShortBuffer[sample+1];
+                short left = sourceWaveBuffer[sample];
+                short right = sourceWaveBuffer[sample+1];
                 float outSample = (left * LeftVolume) + (right * RightVolume);
                 // hard limiting
                 if (outSample > Int16.MaxValue) outSample = Int16.MaxValue;
                 if (outSample < Int16.MinValue) outSample = Int16.MinValue;
 
-                destWaveBuffer.ShortBuffer[destOffset++] = (short)outSample;
+                destWaveBuffer[destOffset++] = (short)outSample;
             }
             return sourceBytesRead / 2;
         }

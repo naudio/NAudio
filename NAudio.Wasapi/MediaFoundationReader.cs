@@ -226,11 +226,10 @@ namespace NAudio.Wave
         /// Reads from this wave stream
         /// </summary>
         /// <param name="buffer">Buffer to read into</param>
-        /// <param name="offset">Offset in buffer</param>
-        /// <param name="count">Bytes required</param>
         /// <returns>Number of bytes read; 0 indicates end of stream</returns>
-        public override int Read(byte[] buffer, int offset, int count)
+        public override int Read(Span<byte> buffer)
         {
+            var count = buffer.Length;
             if (pReader == null)
             {
                 pReader = CreateReader(settings);
@@ -244,7 +243,7 @@ namespace NAudio.Wave
             // read in any leftovers from last time
             if (decoderOutputCount > 0)
             {
-                bytesWritten += ReadFromDecoderBuffer(buffer, offset, count - bytesWritten);
+                bytesWritten += ReadFromDecoderBuffer(buffer, 0, count - bytesWritten);
             }
 
             while (bytesWritten < count)
@@ -281,7 +280,7 @@ namespace NAudio.Wave
                 decoderOutputOffset = 0;
                 decoderOutputCount = cbBuffer;
 
-                bytesWritten += ReadFromDecoderBuffer(buffer, offset + bytesWritten, count - bytesWritten);
+                bytesWritten += ReadFromDecoderBuffer(buffer, bytesWritten, count - bytesWritten);
 
 
                 pBuffer.Unlock();
@@ -292,10 +291,13 @@ namespace NAudio.Wave
             return bytesWritten;
         }
 
-        private int ReadFromDecoderBuffer(byte[] buffer, int offset, int needed)
+        private int ReadFromDecoderBuffer(Span<byte> buffer, int offset, int needed)
         {
             int bytesFromDecoderOutput = Math.Min(needed, decoderOutputCount);
-            Array.Copy(decoderOutputBuffer, decoderOutputOffset, buffer, offset, bytesFromDecoderOutput);
+            for(var n = 0; n < bytesFromDecoderOutput; n++)
+            {
+                buffer[offset + n] = decoderOutputBuffer[decoderOutputOffset + n];
+            }
             decoderOutputOffset += bytesFromDecoderOutput;
             decoderOutputCount -= bytesFromDecoderOutput;
             if (decoderOutputCount == 0)

@@ -19,10 +19,13 @@ namespace NAudio.Wave
         /// <summary>
         /// Read silence from into the buffer
         /// </summary>
-        public int Read(byte[] buffer, int offset, int count)
+        public int Read(Span<byte> buffer)
         {
-            Array.Clear(buffer, offset, count);
-            return count;
+            for(int n = 0; n < buffer.Length; n++)
+            {
+                buffer[n] = 0;
+            }
+            return buffer.Length;
         }
 
         /// <summary>

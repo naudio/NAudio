@@ -101,11 +101,10 @@ namespace NAudio.MediaFoundation
         /// Reads data out of the source, passing it through the transform
         /// </summary>
         /// <param name="buffer">Output buffer</param>
-        /// <param name="offset">Offset within buffer to write to</param>
-        /// <param name="count">Desired byte count</param>
         /// <returns>Number of bytes read</returns>
-        public int Read(byte[] buffer, int offset, int count)
+        public int Read(Span<byte> buffer)
         {
+            var count = buffer.Length;
             if (transform == null)
             {
                 transform = CreateTransform();
@@ -118,7 +117,7 @@ namespace NAudio.MediaFoundation
             // read in any leftovers from last time
             if (outputBufferCount > 0)
             {
-                bytesWritten += ReadFromOutputBuffer(buffer, offset, count - bytesWritten);
+                bytesWritten += ReadFromOutputBuffer(buffer);
             }
 
             while (bytesWritten < count)
@@ -129,7 +128,7 @@ namespace NAudio.MediaFoundation
                     // be good citizens and send some end messages:
                     EndStreamAndDrain();
                     // resampler might have given us a little bit more to return
-                    bytesWritten += ReadFromOutputBuffer(buffer, offset + bytesWritten, count - bytesWritten);
+                    bytesWritten += ReadFromOutputBuffer(buffer.Slice(bytesWritten));
                     break;
                 }
 
@@ -154,7 +153,7 @@ namespace NAudio.MediaFoundation
                 //{
                 // keep reading from transform
                 readFromTransform = ReadFromTransform();
-                bytesWritten += ReadFromOutputBuffer(buffer, offset + bytesWritten, count - bytesWritten);
+                bytesWritten += ReadFromOutputBuffer(buffer.Slice(bytesWritten));
                 //} while (readFromTransform > 0);
             }
 
@@ -237,7 +236,7 @@ namespace NAudio.MediaFoundation
         private IMFSample ReadFromSource()
         {
             // we always read a full second
-            int bytesRead = sourceProvider.Read(sourceBuffer, 0, sourceBuffer.Length);
+            int bytesRead = sourceProvider.Read(new Span<byte>(sourceBuffer));
             if (bytesRead == 0) return null;
 
             var mediaBuffer = MediaFoundationApi.CreateMemoryBuffer(bytesRead);
@@ -259,10 +258,10 @@ namespace NAudio.MediaFoundation
             return sample;
         }
 
-        private int ReadFromOutputBuffer(byte[] buffer, int offset, int needed)
-        {
-            int bytesFromOutputBuffer = Math.Min(needed, outputBufferCount);
-            Array.Copy(outputBuffer, outputBufferOffset, buffer, offset, bytesFromOutputBuffer);
+        private int ReadFromOutputBuffer(Span<byte> buffer)
+        {            
+            int bytesFromOutputBuffer = Math.Min(buffer.Length, outputBufferCount);
+            SpanExtensions.ArrayCopy(outputBuffer, outputBufferOffset, buffer, bytesFromOutputBuffer);
             outputBufferOffset += bytesFromOutputBuffer;
             outputBufferCount -= bytesFromOutputBuffer;
             if (outputBufferCount == 0)

@@ -118,11 +118,10 @@ namespace NAudio.Wave
         /// Reads data from input stream
         /// </summary>
         /// <param name="buffer">buffer</param>
-        /// <param name="offset">offset into buffer</param>
-        /// <param name="count">Bytes required</param>
         /// <returns>Number of bytes read</returns>
-        public override int Read(byte[] buffer, int offset, int count)
+        public override int Read(Span<byte> buffer)
         {
+            var count = buffer.Length;
             int outputBytesProvided = 0;
 
             while (outputBytesProvided < count)
@@ -132,7 +131,7 @@ namespace NAudio.Wave
                     // 1. Read from the input stream 
                     int inputBytesRequired = (int)OutputToInputPosition(count - outputBytesProvided);
                     byte[] inputByteArray = new byte[inputBytesRequired];
-                    int inputBytesRead = inputProvider.Read(inputByteArray, 0, inputBytesRequired);
+                    int inputBytesRead = inputProvider.Read(new Span<byte>(inputByteArray));
                     if (inputBytesRead == 0)
                     {
                         //Debug.WriteLine("ResamplerDmoStream.Read: No input data available");
@@ -157,7 +156,7 @@ namespace NAudio.Wave
                     }
 
                     // 5. Now get the data out of the output buffer
-                    outputBuffer.RetrieveData(buffer, offset + outputBytesProvided);
+                    outputBuffer.RetrieveData(buffer.Slice(outputBytesProvided));
                     outputBytesProvided += outputBuffer.Length;
 
                     Debug.Assert(!outputBuffer.MoreDataAvailable, "have not implemented more data available yet");

@@ -146,7 +146,7 @@ namespace NAudioTests.WaveStreams
                     int total = 0;
                     do
                     {
-                        bytesRead = reader.Read(buffer, 0, buffer.Length);
+                        bytesRead = reader.Read(new Span<byte>(buffer, 0, buffer.Length));
                         total += bytesRead;
                     } while (bytesRead > 0);
                     Debug.WriteLine(String.Format("Read {0} bytes", total));

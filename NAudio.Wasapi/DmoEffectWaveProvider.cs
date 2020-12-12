@@ -54,23 +54,21 @@ namespace NAudio.Wave
         /// Reads data from input stream
         /// </summary>
         /// <param name="buffer">buffer</param>
-        /// <param name="offset">offset into buffer</param>
-        /// <param name="count">Bytes required</param>
         /// <returns>Number of bytes read</returns>
-        public int Read(byte[] buffer, int offset, int count)
+        public int Read(Span<byte> buffer)
         {
-            var readNum = inputProvider.Read(buffer, offset, count);
+            var readNum = inputProvider.Read(buffer);
 
             if (effector == null)
             {
                 return readNum;
             }
 
-            if (effector.MediaObjectInPlace.Process(readNum, offset, buffer, 0, DmoInPlaceProcessFlags.Normal)
+            if (effector.MediaObjectInPlace.Process(readNum, buffer, 0, DmoInPlaceProcessFlags.Normal)
                 == DmoInPlaceProcessReturn.HasEffectTail)
             {
                 var effectTail = new byte[readNum];
-                while (effector.MediaObjectInPlace.Process(readNum, 0, effectTail, 0, DmoInPlaceProcessFlags.Zero) ==
+                while (effector.MediaObjectInPlace.Process(readNum, effectTail, 0, DmoInPlaceProcessFlags.Zero) ==
                        DmoInPlaceProcessReturn.HasEffectTail)
                 {
                 }

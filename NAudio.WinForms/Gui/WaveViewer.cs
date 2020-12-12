@@ -114,7 +114,7 @@ namespace NAudio.Gui
                 {
                     short low = 0;
                     short high = 0;
-                    bytesRead = waveStream.Read(waveData, 0, samplesPerPixel * bytesPerSample);
+                    bytesRead = waveStream.Read(new Span<byte>(waveData, 0, samplesPerPixel * bytesPerSample));
                     if(bytesRead == 0)
                         break;
                     for(int n = 0; n < bytesRead; n+=2)

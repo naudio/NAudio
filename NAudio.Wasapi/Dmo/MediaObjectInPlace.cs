@@ -29,15 +29,17 @@ namespace NAudio.Dmo
         /// <param name="timeStart">Start time of the data.</param>
         /// <param name="inPlaceFlag">DmoInplaceProcessFlags</param>
         /// <returns>Return value when Process is executed with IMediaObjectInPlace</returns>
-        public DmoInPlaceProcessReturn Process(int size, int offset, byte[] data, long timeStart, DmoInPlaceProcessFlags inPlaceFlag)
+        public unsafe DmoInPlaceProcessReturn Process(int size, Span<byte> data, long timeStart, DmoInPlaceProcessFlags inPlaceFlag)
         {
             var pointer = Marshal.AllocHGlobal(size);
-            Marshal.Copy(data, offset, pointer, size);
-
+            
+            var nativeSpan = new Span<byte>((void *)pointer, size);
+            data.CopyTo(nativeSpan);
+            
             var result = mediaObjectInPlace.Process(size, pointer, timeStart, inPlaceFlag);
             Marshal.ThrowExceptionForHR(result);
 
-            Marshal.Copy(pointer, data, offset, size);
+            nativeSpan.CopyTo(data);
             Marshal.FreeHGlobal(pointer);
 
             return (DmoInPlaceProcessReturn) result;

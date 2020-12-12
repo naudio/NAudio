@@ -106,18 +106,19 @@ namespace NAudio.Wave
         /// Reads from this WaveProvider
         /// Will always return count bytes, since we will zero-fill the buffer if not enough available
         /// </summary>
-        public int Read(byte[] buffer, int offset, int count) 
+        public int Read(Span<byte> buffer) 
         {
             int read = 0;
             if (circularBuffer != null) // not yet created
             { 
-                read = circularBuffer.Read(buffer, offset, count);
+                read = circularBuffer.Read(buffer);
             }
-            if (ReadFully && read < count)
+            if (ReadFully && read < buffer.Length)
             {
                 // zero the end of the buffer
-                Array.Clear(buffer, offset + read, count - read);
-                read = count;
+                for (int n = read; n < buffer.Length; n++)
+                    buffer[n] = 0;
+                read = buffer.Length;
             }
             return read;
         }

@@ -101,7 +101,7 @@ namespace NAudio.Wave
             int bytes;
             lock (waveStream)
             {
-                bytes = waveStream.Read(buffer, 0, buffer.Length);
+                bytes = waveStream.Read(new Span<byte>(buffer, 0, buffer.Length));
             }
             if (bytes == 0)
             {

@@ -35,16 +35,14 @@ namespace NAudio.Wave.SampleProviders
         /// Reads bytes from this wave stream, clipping if necessary
         /// </summary>
         /// <param name="destBuffer">The destination buffer</param>
-        /// <param name="offset">Offset into the destination buffer</param>
-        /// <param name="numBytes">Number of bytes read</param>
         /// <returns>Number of bytes read.</returns>
-        public int Read(byte[] destBuffer, int offset, int numBytes)
+        public int Read(Span<byte> destBuffer)
         {
-            var samplesRequired = numBytes / 3;
+            var samplesRequired = destBuffer.Length / 3;
             sourceBuffer = BufferHelpers.Ensure(sourceBuffer, samplesRequired);
-            var sourceSamples = sourceProvider.Read(sourceBuffer, 0, samplesRequired);
+            var sourceSamples = sourceProvider.Read(new Span<float>(sourceBuffer, 0, samplesRequired));
 
-            int destOffset = offset;
+            int destOffset = 0;
             for (var sample = 0; sample < sourceSamples; sample++)
             {
                 // adjust volume

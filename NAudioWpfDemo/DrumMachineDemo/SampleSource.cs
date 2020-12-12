@@ -11,8 +11,8 @@ namespace NAudioWpfDemo.DrumMachineDemo
             {
                 var sp = reader.ToSampleProvider();
                 var sourceSamples = (int)(reader.Length / (reader.WaveFormat.BitsPerSample / 8));
-                var sampleData = new float[sourceSamples];
-                int n = sp.Read(sampleData, 0, sourceSamples);
+                var sampleData =  new float[sourceSamples];
+                int n = sp.Read(new Span<float>(sampleData));
                 if (n != sourceSamples)
                 {
                     throw new InvalidOperationException(

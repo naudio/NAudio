@@ -35,14 +35,14 @@ namespace NAudio.Wave.SampleProviders
         /// <summary>
         /// Reads from this sample provider
         /// </summary>
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
             float[] inBuffer;
             int inBufferOffset;
-            int framesRequested = count / channels;
+            int framesRequested = buffer.Length / channels;
             int inNeeded = resampler.ResamplePrepare(framesRequested, outFormat.Channels, out inBuffer, out inBufferOffset);
-            int inAvailable = source.Read(inBuffer, inBufferOffset, inNeeded * channels) / channels;
-            int outAvailable = resampler.ResampleOut(buffer, offset, inAvailable, framesRequested, channels);
+            int inAvailable = source.Read(new Span<float>(inBuffer, inBufferOffset, inNeeded * channels)) / channels;
+            int outAvailable = resampler.ResampleOut(buffer, inAvailable, framesRequested, channels);
             return outAvailable * channels;
         }
 

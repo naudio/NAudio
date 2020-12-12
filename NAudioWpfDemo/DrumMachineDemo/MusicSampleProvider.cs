@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using NAudio.Utils;
 using NAudio.Wave;
 
 namespace NAudioWpfDemo.DrumMachineDemo
@@ -33,13 +34,14 @@ namespace NAudioWpfDemo.DrumMachineDemo
 
         public WaveFormat WaveFormat => sampleSource.SampleWaveFormat;
 
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
             int samplesWritten = 0;
+            var count = buffer.Length;
             if (position < delayBy)
             {
                 int zeroFill = Math.Min(delayBy - position, count);
-                Array.Clear(buffer, offset, zeroFill);
+                buffer.Slice(0, zeroFill).Clear();
                 position += zeroFill;
                 samplesWritten += zeroFill;
             }
@@ -48,7 +50,8 @@ namespace NAudioWpfDemo.DrumMachineDemo
                 int samplesNeeded = count - samplesWritten;
                 int samplesAvailable = sampleSource.Length - (position - delayBy);
                 int samplesToCopy = Math.Min(samplesNeeded, samplesAvailable);
-                Array.Copy(sampleSource.SampleData, PositionInSampleSource, buffer, samplesWritten, samplesToCopy);
+                SpanExtensions.ArrayCopy(sampleSource.SampleData, PositionInSampleSource, buffer.Slice(samplesWritten), samplesToCopy);
+                //Array.Copy(sampleSource.SampleData, PositionInSampleSource, buffer, samplesWritten, samplesToCopy);
                 position += samplesToCopy;
                 samplesWritten += samplesToCopy;
             }

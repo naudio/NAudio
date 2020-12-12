@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace NAudio.Wave
@@ -48,25 +49,24 @@ namespace NAudio.Wave
         /// Read bytes from this WaveProvider
         /// </summary>
         /// <param name="buffer">Buffer to read into</param>
-        /// <param name="offset">Offset within buffer to read to</param>
-        /// <param name="count">Bytes desired</param>
         /// <returns>Bytes read</returns>
-        public int Read(byte[] buffer, int offset, int count)
+        public int Read(Span<byte> buffer)
         {
             // always read from the source
-            int bytesRead = sourceProvider.Read(buffer, offset, count);
+            int bytesRead = sourceProvider.Read(buffer);
             if (this.volume == 0.0f)
             {
                 for (int n = 0; n < bytesRead; n++)
                 {
-                    buffer[offset++] = 0;
+                    buffer[n] = 0;
                 }
             }
             else if (this.volume != 1.0f)
             {
-                for (int n = 0; n < bytesRead; n += 2)
+                var buffer16 = MemoryMarshal.Cast<byte, short>(buffer);
+                for (int n = 0; n < bytesRead/2; n++)
                 {
-                    short sample = (short)((buffer[offset + 1] << 8) | buffer[offset]);
+                    short sample = buffer16[n];
                     var newSample = sample * this.volume;
                     sample = (short)newSample;
                     // clip if necessary
@@ -76,8 +76,7 @@ namespace NAudio.Wave
                         else if (newSample < Int16.MinValue) sample = Int16.MinValue;
                     }
 
-                    buffer[offset++] = (byte)(sample & 0xFF);
-                    buffer[offset++] = (byte)(sample >> 8);
+                    buffer16[n] = sample;
                 }
             }
             return bytesRead;

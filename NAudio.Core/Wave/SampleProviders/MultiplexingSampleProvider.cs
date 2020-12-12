@@ -79,9 +79,9 @@ namespace NAudio.Wave.SampleProviders
         /// <param name="offset">Offset into buffer to start writing to, usually 0</param>
         /// <param name="count">Number of samples required</param>
         /// <returns>Number of samples read</returns>
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
-            int sampleFramesRequested = count / outputChannelCount;
+            int sampleFramesRequested = buffer.Length / outputChannelCount;
             int inputOffset = 0;
             int sampleFramesRead = 0;
             // now we must read from all inputs, even if we don't need their data, so they stay in sync
@@ -89,7 +89,7 @@ namespace NAudio.Wave.SampleProviders
             {
                 int samplesRequired = sampleFramesRequested * input.WaveFormat.Channels;
                 inputBuffer = BufferHelpers.Ensure(inputBuffer, samplesRequired);
-                int samplesRead = input.Read(inputBuffer, 0, samplesRequired);
+                int samplesRead = input.Read(new Span<float>(inputBuffer, 0, samplesRequired));
                 sampleFramesRead = Math.Max(sampleFramesRead, samplesRead / input.WaveFormat.Channels);
 
                 for (int n = 0; n < input.WaveFormat.Channels; n++)
@@ -100,7 +100,7 @@ namespace NAudio.Wave.SampleProviders
                         if (mappings[outputIndex] == inputIndex)
                         {
                             int inputBufferOffset = n;
-                            int outputBufferOffset = offset + outputIndex;
+                            int outputBufferOffset = outputIndex;
                             int sample = 0;
                             while (sample < sampleFramesRequested && inputBufferOffset < samplesRead)
                             {

@@ -92,14 +92,12 @@ namespace NAudioTests.WaveStreams
             var totalRead = 0;
             while (true)
             {
-                var read = osp.Read(buffer, 0, buffer.Length);
+                var read = osp.Read(new Span<float>(buffer));
                 totalRead += read;
                 if (read == 0) break;
                 Assert.IsTrue(totalRead <= 480000);
-
             }
             Assert.AreEqual(480000, totalRead);
-
         }
 
         [Test]
@@ -180,7 +178,7 @@ namespace NAudioTests.WaveStreams
             var source = new TestSampleProvider(32000, 1);
             var osp = new OffsetSampleProvider(source);
             var buffer = new float[10];
-            osp.Read(buffer, 0, buffer.Length);
+            osp.Read(new Span<float>(buffer));
 
             Assert.Throws<InvalidOperationException>(() => osp.DelayBySamples = 4);
         }
@@ -191,7 +189,7 @@ namespace NAudioTests.WaveStreams
             var source = new TestSampleProvider(32000, 1);
             var osp = new OffsetSampleProvider(source);
             var buffer = new float[10];
-            osp.Read(buffer, 0, buffer.Length);
+            osp.Read(new Span<float>(buffer));
 
             Assert.Throws<InvalidOperationException>(() => osp.LeadOutSamples = 4);
         }
@@ -202,7 +200,7 @@ namespace NAudioTests.WaveStreams
             var source = new TestSampleProvider(32000, 1);
             var osp = new OffsetSampleProvider(source);
             var buffer = new float[10];
-            osp.Read(buffer, 0, buffer.Length);
+            osp.Read(new Span<float>(buffer));
 
             Assert.Throws<InvalidOperationException>(() => osp.SkipOverSamples = 4);
         }
@@ -213,7 +211,7 @@ namespace NAudioTests.WaveStreams
             var source = new TestSampleProvider(32000, 1);
             var osp = new OffsetSampleProvider(source);
             var buffer = new float[10];
-            osp.Read(buffer, 0, buffer.Length);
+            osp.Read(new Span<float>(buffer));
 
             Assert.Throws<InvalidOperationException>(() => osp.TakeSamples = 4);
         }

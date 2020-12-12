@@ -1,5 +1,6 @@
 using NAudio.Dsp;
 using NAudio.Wave;
+using System;
 
 namespace NAudioWpfDemo.EqualizationDemo
 {
@@ -51,9 +52,9 @@ namespace NAudioWpfDemo.EqualizationDemo
 
         public WaveFormat WaveFormat => sourceProvider.WaveFormat;
 
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
-            int samplesRead = sourceProvider.Read(buffer, offset, count);
+            int samplesRead = sourceProvider.Read(buffer);
 
             if (updated)
             {
@@ -67,7 +68,7 @@ namespace NAudioWpfDemo.EqualizationDemo
                 
                 for (int band = 0; band < bandCount; band++)
                 {
-                    buffer[offset + n] = filters[ch, band].Transform(buffer[offset + n]);
+                    buffer[n] = filters[ch, band].Transform(buffer[n]);
                 }
             }
             return samplesRead;

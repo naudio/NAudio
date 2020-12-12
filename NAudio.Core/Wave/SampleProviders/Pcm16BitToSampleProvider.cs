@@ -21,15 +21,13 @@ namespace NAudio.Wave.SampleProviders
         /// Reads samples from this sample provider
         /// </summary>
         /// <param name="buffer">Sample buffer</param>
-        /// <param name="offset">Offset into sample buffer</param>
-        /// <param name="count">Samples required</param>
         /// <returns>Number of samples read</returns>
-        public override int Read(float[] buffer, int offset, int count)
+        public override int Read(Span<float> buffer)
         {
-            int sourceBytesRequired = count * 2;
+            int sourceBytesRequired = buffer.Length * 2;
             EnsureSourceBuffer(sourceBytesRequired);
-            int bytesRead = source.Read(sourceBuffer, 0, sourceBytesRequired);
-            int outIndex = offset;
+            int bytesRead = source.Read(new Span<byte>(sourceBuffer, 0, sourceBytesRequired));
+            int outIndex = 0;
             for(int n = 0; n < bytesRead; n+=2)
             {
                 buffer[outIndex++] = BitConverter.ToInt16(sourceBuffer, n) / 32768f;

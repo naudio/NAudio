@@ -113,9 +113,10 @@ namespace NAudio.Wave.SampleProviders
         /// <summary>
         /// Reads from this provider.
         /// </summary>
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
-            int outIndex = offset;
+            int outIndex = 0;
+            var count = buffer.Length;
 
             // Generator current value
             double multiple;

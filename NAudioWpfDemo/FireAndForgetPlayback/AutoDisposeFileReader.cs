@@ -1,4 +1,5 @@
 ﻿using NAudio.Wave;
+using System;
 
 namespace NAudioWpfDemo.FireAndForgetPlayback
 {
@@ -12,11 +13,11 @@ namespace NAudioWpfDemo.FireAndForgetPlayback
             WaveFormat = reader.WaveFormat;
         }
 
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
             if (isDisposed)
                 return 0;
-            int read = reader.Read(buffer, offset, count);
+            int read = reader.Read(buffer);
             if (read == 0)
             {
                 reader.Dispose();

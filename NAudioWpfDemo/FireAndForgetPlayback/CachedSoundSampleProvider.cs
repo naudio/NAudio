@@ -1,4 +1,5 @@
 ﻿using System;
+using NAudio.Utils;
 using NAudio.Wave;
 
 namespace NAudioWpfDemo.FireAndForgetPlayback
@@ -13,11 +14,11 @@ namespace NAudioWpfDemo.FireAndForgetPlayback
             this.cachedSound = cachedSound;
         }
 
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
             var availableSamples = cachedSound.AudioData.Length - position;
-            var samplesToCopy = Math.Min(availableSamples, count);
-            Array.Copy(cachedSound.AudioData, position, buffer, offset, samplesToCopy);
+            var samplesToCopy = Math.Min(availableSamples, buffer.Length);
+            SpanExtensions.ArrayCopy(cachedSound.AudioData, (int)position, buffer, (int)samplesToCopy);
             position += samplesToCopy;
             return (int)samplesToCopy;
         }

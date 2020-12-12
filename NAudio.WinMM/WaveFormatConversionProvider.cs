@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using NAudio.Utils;
 using NAudio.Wave.Compression;
 
 // ReSharper disable once CheckNamespace
@@ -54,11 +55,10 @@ namespace NAudio.Wave
         /// Reads bytes from this stream
         /// </summary>
         /// <param name="buffer">Buffer to read into</param>
-        /// <param name="offset">Offset in buffer to read into</param>
-        /// <param name="count">Number of bytes to read</param>
         /// <returns>Number of bytes read</returns>
-        public int Read(byte[] buffer, int offset, int count)
+        public int Read(Span<byte> buffer)
         {
+            var count = buffer.Length;
             int bytesRead = 0;
             if (count % WaveFormat.BlockAlign != 0)
             {
@@ -72,7 +72,9 @@ namespace NAudio.Wave
                 int readFromLeftoverDest = Math.Min(count - bytesRead, leftoverDestBytes);
                 if (readFromLeftoverDest > 0)
                 {
-                    Array.Copy(conversionStream.DestBuffer, leftoverDestOffset, buffer, offset+bytesRead, readFromLeftoverDest);
+                    var source = new Span<byte>(conversionStream.DestBuffer, leftoverDestOffset, readFromLeftoverDest);
+                    source.CopyTo(buffer.Slice(bytesRead));
+                    /*Array.Copy(conversionStream.DestBuffer, leftoverDestOffset, buffer, bytesRead, readFromLeftoverDest);*/
                     leftoverDestOffset += readFromLeftoverDest;
                     leftoverDestBytes -= readFromLeftoverDest;
                     bytesRead += readFromLeftoverDest;
@@ -89,7 +91,7 @@ namespace NAudio.Wave
 
                 // always read our preferred size, we can always keep leftovers for the next call to Read if we get
                 // too much
-                int sourceBytesRead = sourceProvider.Read(conversionStream.SourceBuffer, leftoverSourceBytes, sourceReadSize);
+                int sourceBytesRead = sourceProvider.Read(new Span<byte>(conversionStream.SourceBuffer, leftoverSourceBytes, sourceReadSize));
                 int sourceBytesAvailable = sourceBytesRead + leftoverSourceBytes;
                 if (sourceBytesAvailable == 0)
                 {
@@ -125,7 +127,8 @@ namespace NAudio.Wave
                         leftoverDestBytes = destBytesConverted - toCopy;
                         leftoverDestOffset = toCopy;
                     }
-                    Array.Copy(conversionStream.DestBuffer, 0, buffer, bytesRead + offset, toCopy);
+                    SpanExtensions.ArrayCopy(conversionStream.DestBuffer, 0, buffer.Slice(bytesRead), toCopy);
+                    //Array.Copy(conversionStream.DestBuffer, 0, buffer, bytesRead, toCopy);
                     bytesRead += toCopy;
                 }
                 else

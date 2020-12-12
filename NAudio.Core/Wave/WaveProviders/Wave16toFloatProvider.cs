@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NAudio.Wave;
+using System.Runtime.InteropServices;
 using NAudio.Utils;
 
 namespace NAudio.Wave
@@ -37,22 +35,21 @@ namespace NAudio.Wave
         /// Reads bytes from this wave stream
         /// </summary>
         /// <param name="destBuffer">The destination buffer</param>
-        /// <param name="offset">Offset into the destination buffer</param>
-        /// <param name="numBytes">Number of bytes read</param>
         /// <returns>Number of bytes read.</returns>
-        public int Read(byte[] destBuffer, int offset, int numBytes)
+        public int Read(Span<byte> destBuffer)
         {
-            int sourceBytesRequired = numBytes / 2;
+            int sourceBytesRequired = destBuffer.Length / 2;
             sourceBuffer = BufferHelpers.Ensure(sourceBuffer, sourceBytesRequired);
-            int sourceBytesRead = sourceProvider.Read(sourceBuffer, offset, sourceBytesRequired);
-            WaveBuffer sourceWaveBuffer = new WaveBuffer(sourceBuffer);
-            WaveBuffer destWaveBuffer = new WaveBuffer(destBuffer);
+            var sourceSpan = new Span<byte>(sourceBuffer,0, sourceBytesRequired);
+            int sourceBytesRead = sourceProvider.Read(sourceSpan);
+            var sourceWaveBuffer = MemoryMarshal.Cast<byte, short>(sourceSpan);
+            var destWaveBuffer = MemoryMarshal.Cast<byte, float>(destBuffer);
 
             int sourceSamples = sourceBytesRead / 2;
-            int destOffset = offset / 4;
+            int destOffset = 0;
             for (int sample = 0; sample < sourceSamples; sample++)
             {
-                destWaveBuffer.FloatBuffer[destOffset++] = (sourceWaveBuffer.ShortBuffer[sample] / 32768f) * volume;
+                destWaveBuffer[destOffset++] = (sourceWaveBuffer[sample] / 32768f) * volume;
             }
 
             return sourceSamples * 4;

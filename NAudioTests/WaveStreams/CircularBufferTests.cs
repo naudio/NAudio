@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using NUnit.Framework;
 using NAudio.Utils;
 
@@ -23,7 +21,7 @@ namespace NAudioTests.WaveStreams
         {
             CircularBuffer circularBuffer = new CircularBuffer(1024);
             byte[] buffer = new byte[1024];
-            int read = circularBuffer.Read(buffer, 0, 1024);
+            int read = circularBuffer.Read(new Span<byte>(buffer));
             Assert.AreEqual(0, read);
         }
 
@@ -46,7 +44,7 @@ namespace NAudioTests.WaveStreams
             circularBuffer.Write(buffer, 0, 100);
             Assert.AreEqual(100, circularBuffer.Count);
             byte[] readBuffer = new byte[1000];
-            int read = circularBuffer.Read(readBuffer, 0, 1000);
+            int read = circularBuffer.Read(new Span<byte>(readBuffer, 0, 1000));
             Assert.AreEqual(100, read);
         }
 
@@ -87,14 +85,14 @@ namespace NAudioTests.WaveStreams
             byte[] buffer = new byte[200];
             circularBuffer.Write(buffer, 0, 75);
             Assert.AreEqual(75, circularBuffer.Count, "Initial count");
-            int read = circularBuffer.Read(buffer, 0, 75);
+            int read = circularBuffer.Read(new Span<byte>(buffer, 0, 75));
             Assert.AreEqual(0, circularBuffer.Count, "Count after read");
             Assert.AreEqual(75, read, "Bytes read");
             // write wraps round
             circularBuffer.Write(buffer, 0, 50);
             Assert.AreEqual(50, circularBuffer.Count, "Count after wrap round");
             // read wraps round
-            read = circularBuffer.Read(buffer, 0, 75);
+            read = circularBuffer.Read(new Span<byte>(buffer, 0, 75));
             Assert.AreEqual(50, read, "Bytes Read 2");
             Assert.AreEqual(0, circularBuffer.Count, "Final Count");
         }
@@ -112,7 +110,7 @@ namespace NAudioTests.WaveStreams
             CircularBuffer circularBuffer = new CircularBuffer(300);
             circularBuffer.Write(numbers, 0, 200);
             Array.Clear(readBuffer, 0, readBuffer.Length);
-            int read = circularBuffer.Read(readBuffer, 0, 200);
+            int read = circularBuffer.Read(new Span<byte>(readBuffer, 0, 200));
             Assert.AreEqual(200, read);
             CheckBuffer(readBuffer, 0, read);
             
@@ -120,7 +118,7 @@ namespace NAudioTests.WaveStreams
             circularBuffer.Write(numbers, 0, 200);
             Array.Clear(readBuffer, 0, readBuffer.Length);
             // now read past the end
-            read = circularBuffer.Read(readBuffer, 0, 200);
+            read = circularBuffer.Read(new Span<byte>(readBuffer, 0, 200));
             Assert.AreEqual(200, read);
             CheckBuffer(readBuffer, 0, read);
             

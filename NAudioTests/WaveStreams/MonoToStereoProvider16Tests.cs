@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
 using NAudio.Wave;
+using System.Runtime.InteropServices;
 
 namespace NAudioTests.WaveStreams
 {
@@ -18,15 +19,15 @@ namespace NAudioTests.WaveStreams
             stereo.LeftVolume = 1.0f;
             stereo.RightVolume = 0.0f;
             int samples = 1000;
-            byte[] buffer = new byte[samples * 2];
-            int read = stereo.Read(buffer, 0, buffer.Length);
+            var buffer = new Span<byte>(new byte[samples * 2]);
+            int read = stereo.Read(buffer);
             Assert.AreEqual(buffer.Length, read, "bytes read");
-            WaveBuffer waveBuffer = new WaveBuffer(buffer);
+            var shortBuffer = MemoryMarshal.Cast<byte,short>(buffer);
             short expected = 0;
             for (int sample = 0; sample < samples; sample+=2)
             {
-                short sampleLeft = waveBuffer.ShortBuffer[sample];
-                short sampleRight = waveBuffer.ShortBuffer[sample+1];
+                short sampleLeft = shortBuffer[sample];
+                short sampleRight = shortBuffer[sample+1];
                 Assert.AreEqual(expected++, sampleLeft, "sample left");
                 Assert.AreEqual(0, sampleRight, "sample right");
             }
@@ -38,13 +39,13 @@ namespace NAudioTests.WaveStreams
     {
         short current;
 
-        public override int Read(short[] buffer, int offset, int sampleCount)
+        public override int Read(Span<short> buffer)
         {
-            for (int sample = 0; sample < sampleCount; sample++)
+            for (int sample = 0; sample < buffer.Length; sample++)
             {
-                buffer[offset + sample] = current++;
+                buffer[sample] = current++;
             }
-            return sampleCount;
+            return buffer.Length;
         }
     }
 }

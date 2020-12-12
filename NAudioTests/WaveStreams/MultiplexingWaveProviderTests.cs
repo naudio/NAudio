@@ -64,11 +64,10 @@ namespace NAudioTests.WaveStreams
             byte[] expected = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
             var mp = new MultiplexingWaveProvider(new IWaveProvider[] { input1 }, 1);
             byte[] buffer = new byte[10];
-            var read = mp.Read(buffer, 0, 10);
+            var read = mp.Read(new Span<byte>(buffer)); 
             Assert.AreEqual(10, read);
             Assert.AreEqual(expected, buffer);
         }
-
 
         [Test]
         public void OneInTwoOutShouldConvertMonoToStereo()
@@ -78,7 +77,7 @@ namespace NAudioTests.WaveStreams
             byte[] expected = { 0, 1, 0, 1, 2, 3, 2, 3, 4, 5, 4, 5, 6, 7, 6, 7, 8, 9, 8, 9 };
             var mp = new MultiplexingWaveProvider(new IWaveProvider[] { input1 }, 2);
             byte[] buffer = new byte[20];
-            var read = mp.Read(buffer, 0, 20);
+            var read = mp.Read(new Span<byte>(buffer)); 
             Assert.AreEqual(20, read);
             Assert.AreEqual(expected, buffer);
         }
@@ -91,7 +90,7 @@ namespace NAudioTests.WaveStreams
             byte[] expected = { 0, 1, 4, 5, 8, 9, 12, 13, 16, 17 };
             var mp = new MultiplexingWaveProvider(new IWaveProvider[] { input1 }, 1);
             byte[] buffer = new byte[10];
-            var read = mp.Read(buffer, 0, 10);
+            var read = mp.Read(new Span<byte>(buffer)); 
             Assert.AreEqual(10, read);
             Assert.AreEqual(expected, buffer);
         }
@@ -105,7 +104,7 @@ namespace NAudioTests.WaveStreams
             var mp = new MultiplexingWaveProvider(new IWaveProvider[] { input1 }, 1);
             mp.ConnectInputToOutput(1, 0);
             byte[] buffer = new byte[10];
-            var read = mp.Read(buffer, 0, 10);
+            var read = mp.Read(new Span<byte>(buffer)); 
             Assert.AreEqual(10, read);
             Assert.AreEqual(expected, buffer);
         }
@@ -118,7 +117,7 @@ namespace NAudioTests.WaveStreams
             byte[] expected = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
             var mp = new MultiplexingWaveProvider(new IWaveProvider[] { input1 }, 2);
             byte[] buffer = new byte[12];
-            var read = mp.Read(buffer, 0, 12);
+            var read = mp.Read(new Span<byte>(buffer)); 
             Assert.AreEqual(12, read);
             Assert.AreEqual(expected, buffer);
         }
@@ -132,7 +131,7 @@ namespace NAudioTests.WaveStreams
             byte[] expected = { 0, 1, 100, 101, 2, 3, 102, 103, 4, 5, 104, 105, };
             var mp = new MultiplexingWaveProvider(new IWaveProvider[] { input1, input2 }, 2);
             byte[] buffer = new byte[expected.Length];
-            var read = mp.Read(buffer, 0, expected.Length);
+            var read = mp.Read(new Span<byte>(buffer)); 
             Assert.AreEqual(expected.Length, read);
             Assert.AreEqual(expected, buffer);
         }
@@ -147,7 +146,7 @@ namespace NAudioTests.WaveStreams
             mp.ConnectInputToOutput(0, 1);
             mp.ConnectInputToOutput(1, 0);
             byte[] buffer = new byte[12];
-            var read = mp.Read(buffer, 0, 12);
+            var read = mp.Read(new Span<byte>(buffer)); 
             Assert.AreEqual(12, read);
             Assert.AreEqual(expected, buffer);
         }
@@ -216,7 +215,7 @@ namespace NAudioTests.WaveStreams
             byte[] expected = { };
             var mp = new MultiplexingWaveProvider(new IWaveProvider[] { input1 }, 1);
             byte[] buffer = new byte[10];
-            var read = mp.Read(buffer, 0, 10);
+            var read = mp.Read(new Span<byte>(buffer)); 
             Assert.AreEqual(0, read);
         }
 
@@ -228,7 +227,7 @@ namespace NAudioTests.WaveStreams
             byte[] expected = { };
             var mp = new MultiplexingWaveProvider(new IWaveProvider[] { input1, input2 }, 1);
             byte[] buffer = new byte[10];
-            var read = mp.Read(buffer, 0, 10);
+            var read = mp.Read(new Span<byte>(buffer)); 
             Assert.AreEqual(10, read);
         }
 
@@ -241,7 +240,7 @@ namespace NAudioTests.WaveStreams
             var mp = new MultiplexingWaveProvider(new IWaveProvider[] { input1, input2 });
             Assert.AreEqual(3, mp.WaveFormat.Channels);
             byte[] buffer = new byte[9];
-            var read = mp.Read(buffer, 0, 9);
+            var read = mp.Read(new Span<byte>(buffer));
             Assert.AreEqual(9, read);
             Assert.AreEqual(buffer,expected);
         }
@@ -258,7 +257,7 @@ namespace NAudioTests.WaveStreams
             {
                 buffer[n] = 0xFF;
             }
-            var read = mp.Read(buffer, 0, buffer.Length);
+            var read = mp.Read(new Span<byte>(buffer));
             Assert.AreEqual(6, read);
             Assert.AreEqual(expected, buffer);
         }
@@ -270,7 +269,7 @@ namespace NAudioTests.WaveStreams
             byte[] expected = { 0, 1, 2, 0, 1, 2, 3, 4, 5, 3, 4, 5, 6, 7, 8, 6, 7, 8, 9, 10, 11, 9, 10, 11 };
             var mp = new MultiplexingWaveProvider(new IWaveProvider[] { input1 }, 2);
             byte[] buffer = new byte[expected.Length];
-            var read = mp.Read(buffer, 0, expected.Length);
+            var read = mp.Read(new Span<byte>(buffer));
             Assert.AreEqual(expected.Length, read);
             Assert.AreEqual(expected, buffer);
         }
@@ -282,7 +281,7 @@ namespace NAudioTests.WaveStreams
             byte[] expected = { 0, 1, 2, 3, 0, 1, 2, 3, 4, 5, 6, 7, 4, 5, 6, 7, 8, 9, 10, 11, 8, 9, 10, 11, };
             var mp = new MultiplexingWaveProvider(new IWaveProvider[] { input1 }, 2);
             byte[] buffer = new byte[expected.Length];
-            var read = mp.Read(buffer, 0, expected.Length);
+            var read = mp.Read(new Span<byte>(buffer));
             Assert.AreEqual(expected.Length, read);
             Assert.AreEqual(expected, buffer);
         }
@@ -317,7 +316,7 @@ namespace NAudioTests.WaveStreams
                 // read one hour worth of audio
                 for (int n = 0; n < 60 * 60; n++)
                 {
-                    mp.Read(buffer, 0, buffer.Length);
+                    mp.Read(new Span<byte>(buffer));
                 }
             });
             Console.WriteLine("Performance test took {0}ms", duration);

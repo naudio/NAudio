@@ -59,12 +59,10 @@ namespace NAudio.Wave.SampleProviders
         /// Reads samples from this Sample Provider
         /// </summary>
         /// <param name="buffer">Sample buffer</param>
-        /// <param name="offset">Offset into sample buffer</param>
-        /// <param name="count">Number of samples required</param>
         /// <returns>Number of samples read</returns>
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
-            int samplesRead = source.Read(buffer, offset, count);
+            int samplesRead = source.Read(buffer);
             // only bother if there is an event listener
             if (StreamVolume != null)
             {
@@ -72,7 +70,7 @@ namespace NAudio.Wave.SampleProviders
                 {
                     for (int channel = 0; channel < channels; channel++)
                     {
-                        float sampleValue = Math.Abs(buffer[offset + index + channel]);
+                        float sampleValue = Math.Abs(buffer[index + channel]);
                         maxSamples[channel] = Math.Max(maxSamples[channel], sampleValue);
                     }
                     sampleCount++;

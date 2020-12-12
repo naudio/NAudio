@@ -38,8 +38,9 @@ namespace NAudioTests.Utils
             }
         }
 
-        public override int Read(byte[] buffer, int offset, int count)
+        public override int Read(Span<byte> buffer)
         {
+            var count = buffer.Length;
             if (count % BlockAlign != 0)
             {
                 throw new ArgumentException("Must read block aligned");
@@ -50,7 +51,7 @@ namespace NAudioTests.Utils
             }
             for (int n = 0; n < count; n++)
             {
-                buffer[n + offset] = (byte) ((position + n) % 256);
+                buffer[n] = (byte) ((position + n) % 256);
             }
             position += count;
             return count;

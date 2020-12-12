@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics;
+using NAudio.Utils;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave
@@ -359,15 +360,17 @@ namespace NAudio.Wave
         /// <summary>
         /// Reads decompressed PCM data from our MP3 file.
         /// </summary>
-        public override int Read(byte[] sampleBuffer, int offset, int numBytes)
+        public override int Read(Span<byte> sampleBuffer)
         {
             int bytesRead = 0;
+            var numBytes = sampleBuffer.Length;
+            var offset = 0;
             lock (repositionLock)
             {
                 if (decompressLeftovers != 0)
                 {
                     int toCopy = Math.Min(decompressLeftovers, numBytes);
-                    Array.Copy(decompressBuffer, decompressBufferOffset, sampleBuffer, offset, toCopy);
+                    SpanExtensions.ArrayCopy(decompressBuffer, decompressBufferOffset, sampleBuffer.Slice(offset), toCopy);
                     decompressLeftovers -= toCopy;
                     if (decompressLeftovers == 0)
                     {
@@ -428,7 +431,7 @@ namespace NAudio.Wave
                         }
 
                         int toCopy = Math.Min(decompressed - decompressBufferOffset, numBytes - bytesRead);
-                        Array.Copy(decompressBuffer, decompressBufferOffset, sampleBuffer, offset, toCopy);
+                        SpanExtensions.ArrayCopy(decompressBuffer, decompressBufferOffset, sampleBuffer.Slice(offset), toCopy);
                         if ((toCopy + decompressBufferOffset) < decompressed)
                         {
                             decompressBufferOffset = toCopy + decompressBufferOffset;

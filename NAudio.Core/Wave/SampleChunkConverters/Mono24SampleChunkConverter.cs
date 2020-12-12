@@ -1,4 +1,5 @@
 ﻿using NAudio.Utils;
+using System;
 
 namespace NAudio.Wave.SampleProviders
 {
@@ -18,8 +19,8 @@ namespace NAudio.Wave.SampleProviders
         public void LoadNextChunk(IWaveProvider source, int samplePairsRequired)
         {
             int sourceBytesRequired = samplePairsRequired * 3;
-            sourceBuffer = BufferHelpers.Ensure(sourceBuffer,sourceBytesRequired);
-            sourceBytes = source.Read(sourceBuffer, 0, sourceBytesRequired);
+            sourceBuffer = BufferHelpers.Ensure(sourceBuffer, sourceBytesRequired);
+            sourceBytes = source.Read(new Span<byte>(sourceBuffer, 0, sourceBytesRequired));
             offset = 0;
         }
 

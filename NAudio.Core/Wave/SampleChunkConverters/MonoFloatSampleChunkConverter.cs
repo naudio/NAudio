@@ -1,12 +1,13 @@
 ﻿using NAudio.Utils;
+using System;
+using System.Runtime.InteropServices;
 
 namespace NAudio.Wave.SampleProviders
 {
     class MonoFloatSampleChunkConverter : ISampleChunkConverter
     {
         private int sourceSample;
-        private byte[] sourceBuffer;
-        private WaveBuffer sourceWaveBuffer;
+        private float[] sourceBuffer;
         private int sourceSamples;
 
         public bool Supports(WaveFormat waveFormat)
@@ -17,10 +18,9 @@ namespace NAudio.Wave.SampleProviders
 
         public void LoadNextChunk(IWaveProvider source, int samplePairsRequired)
         {
-            int sourceBytesRequired = samplePairsRequired * 4;
-            sourceBuffer = BufferHelpers.Ensure(sourceBuffer, sourceBytesRequired);
-            sourceWaveBuffer = new WaveBuffer(sourceBuffer);
-            sourceSamples = source.Read(sourceBuffer, 0, sourceBytesRequired) / 4;
+            sourceBuffer = BufferHelpers.Ensure(sourceBuffer, samplePairsRequired);
+            var sourceByteBuffer = MemoryMarshal.Cast<float, byte>(new Span<float>(sourceBuffer, 0, samplePairsRequired));
+            sourceSamples = source.Read(sourceByteBuffer) / 4;
             sourceSample = 0;
         }
 
@@ -28,7 +28,7 @@ namespace NAudio.Wave.SampleProviders
         {
             if (sourceSample < sourceSamples)
             {
-                sampleLeft = sourceWaveBuffer.FloatBuffer[sourceSample++];
+                sampleLeft = sourceBuffer[sourceSample++];
                 sampleRight = sampleLeft;
                 return true;
             }

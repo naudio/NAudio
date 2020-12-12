@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using NAudio.Utils;
 
 // ReSharper disable once CheckNamespace
@@ -92,17 +93,18 @@ namespace NAudio.Wave
         /// Reads bytes from this wave stream
         /// </summary>
         /// <param name="destBuffer">Destination buffer</param>
-        /// <param name="offset">Offset into destination buffer</param>
-        /// <param name="numBytes"></param>
         /// <returns>Number of bytes read.</returns>
-        public override int Read(byte[] destBuffer, int offset, int numBytes)
+        public override int Read(Span<byte> destBuffer)
         {
             lock (lockObject)
             {
-                int count = numBytes*2;
+                int count = destBuffer.Length * 2;
                 sourceBuffer = BufferHelpers.Ensure(sourceBuffer, count);
-                int bytesRead = sourceStream.Read(sourceBuffer, 0, count);
-                Convert32To16(destBuffer, offset, sourceBuffer, bytesRead);
+                var sourceSpan = new Span<byte>(sourceBuffer, 0, count);
+                int bytesRead = sourceStream.Read(sourceSpan);
+                int samplesRead = bytesRead / 4;
+                Convert32To16(MemoryMarshal.Cast<byte,short>( destBuffer), 
+                    MemoryMarshal.Cast<byte,float>(sourceSpan), samplesRead);
                 position += (bytesRead/2);
                 return bytesRead/2;
             }
@@ -111,32 +113,24 @@ namespace NAudio.Wave
         /// <summary>
         /// Conversion to 16 bit and clipping
         /// </summary>
-        private unsafe void Convert32To16(byte[] destBuffer, int offset, byte[] source, int bytesRead)
+        private unsafe void Convert32To16(Span<short> destBuffer, Span<float> source, int samplesRead)
         {
-            fixed (byte* pDestBuffer = &destBuffer[offset],
-                pSourceBuffer = &source[0])
+            for (int n = 0; n < samplesRead; n++)
             {
-                short* psDestBuffer = (short*)pDestBuffer;
-                float* pfSourceBuffer = (float*)pSourceBuffer;
-
-                int samplesRead = bytesRead / 4;
-                for (int n = 0; n < samplesRead; n++)
+                float sampleVal = source[n] * volume;
+                if (sampleVal > 1.0f)
                 {
-                    float sampleVal = pfSourceBuffer[n] * volume;
-                    if (sampleVal > 1.0f)
-                    {
-                        psDestBuffer[n] = short.MaxValue;
-                        clip = true;
-                    }
-                    else if (sampleVal < -1.0f)
-                    {
-                        psDestBuffer[n] = short.MinValue;
-                        clip = true;
-                    }
-                    else
-                    {
-                        psDestBuffer[n] = (short)(sampleVal * 32767);
-                    }
+                    destBuffer[n] = short.MaxValue;
+                    clip = true;
+                }
+                else if (sampleVal < -1.0f)
+                {
+                    destBuffer[n] = short.MinValue;
+                    clip = true;
+                }
+                else
+                {
+                    destBuffer[n] = (short)(sampleVal * 32767);
                 }
             }
         }

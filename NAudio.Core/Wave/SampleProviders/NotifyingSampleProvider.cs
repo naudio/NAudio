@@ -31,18 +31,16 @@ namespace NAudio.Wave.SampleProviders
         /// Reads samples from this sample provider
         /// </summary>
         /// <param name="buffer">Sample buffer</param>
-        /// <param name="offset">Offset into sample buffer</param>
-        /// <param name="sampleCount">Number of samples desired</param>
         /// <returns>Number of samples read</returns>
-        public int Read(float[] buffer, int offset, int sampleCount)
+        public int Read(Span<float> buffer)
         {
-            int samplesRead = source.Read(buffer, offset, sampleCount);
+            int samplesRead = source.Read(buffer);
             if (Sample != null)
             {
                 for (int n = 0; n < samplesRead; n += channels)
                 {
-                    sampleArgs.Left = buffer[offset + n];
-                    sampleArgs.Right = channels > 1 ? buffer[offset + n + 1] : sampleArgs.Left;
+                    sampleArgs.Left = buffer[n];
+                    sampleArgs.Right = channels > 1 ? buffer[n + 1] : sampleArgs.Left;
                     Sample(this, sampleArgs);
                 }
             }

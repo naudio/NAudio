@@ -31,6 +31,7 @@
     <Title>NAudioDemo</Title>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <UseWindowsForms>true</UseWindowsForms>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="NSpeex">

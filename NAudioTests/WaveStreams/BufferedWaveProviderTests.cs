@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using NAudio.Wave;
 using NUnit.Framework;
 
@@ -24,7 +25,7 @@ namespace NAudioTests.WaveStreams
             bwp.AddSamples(data, 0, data.Length);
             Assert.AreEqual(bytesToBuffer, bwp.BufferedBytes);
             var readBuffer = new byte[bytesToBuffer];
-            var bytesRead = bwp.Read(readBuffer, 0, bytesToBuffer);
+            var bytesRead = bwp.Read(new Span<byte>(readBuffer));
             Assert.AreEqual(bytesRead, bytesToBuffer);
             Assert.AreEqual(readBuffer,data);
             Assert.AreEqual(0, bwp.BufferedBytes);
@@ -36,7 +37,7 @@ namespace NAudioTests.WaveStreams
             var bwp = new BufferedWaveProvider(new WaveFormat());
             bwp.ReadFully = false;
             var buffer = new byte[44100];
-            var read = bwp.Read(buffer, 0, buffer.Length);
+            var read = bwp.Read(new Span<byte>(buffer));
             Assert.AreEqual(0, read);
         }
 
@@ -47,7 +48,7 @@ namespace NAudioTests.WaveStreams
             bwp.ReadFully = false;
             var buffer = new byte[44100];
             bwp.AddSamples(buffer, 0, 2000);
-            var read = bwp.Read(buffer, 0, buffer.Length);
+            var read = bwp.Read(new Span<byte>(buffer));
             Assert.AreEqual(2000, read);
             Assert.AreEqual(0, bwp.BufferedBytes);
         }
@@ -58,7 +59,7 @@ namespace NAudioTests.WaveStreams
             var bwp = new BufferedWaveProvider(new WaveFormat());
             var buffer = new byte[44100];
             bwp.AddSamples(buffer, 0, 2000);
-            var read = bwp.Read(buffer, 0, buffer.Length);
+            var read = bwp.Read(new Span<byte>(buffer));
             Assert.AreEqual(buffer.Length, read);
             Assert.AreEqual(0, bwp.BufferedBytes);
         }
@@ -69,7 +70,7 @@ namespace NAudioTests.WaveStreams
             var bwp = new BufferedWaveProvider(new WaveFormat());
             var buffer = new byte[44100];
             bwp.AddSamples(buffer, 0, 5000);
-            var read = bwp.Read(buffer, 0, 2000);
+            var read = bwp.Read(new Span<byte>(buffer, 0, 2000));
             Assert.AreEqual(2000, read);
             Assert.AreEqual(3000, bwp.BufferedBytes);
         }

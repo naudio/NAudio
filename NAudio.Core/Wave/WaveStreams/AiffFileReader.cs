@@ -211,8 +211,9 @@ namespace NAudio.Wave
         /// Reads bytes from the AIFF File
         /// <see cref="Stream.Read"/>
         /// </summary>
-        public override int Read(byte[] array, int offset, int count)
+        public override int Read(Span<byte> array)
         {
+            var count = array.Length;
             if (count % waveFormat.BlockAlign != 0)
             {
                 throw new ArgumentException(
@@ -228,7 +229,7 @@ namespace NAudio.Wave
 
                 // Need to fix the endianness since intel expect little endian, and apple is big endian.
                 byte[] buffer = new byte[count];
-                int length = waveStream.Read(buffer, offset, count);
+                int length = waveStream.Read(buffer, 0, count);
 
                 int bytesPerSample = WaveFormat.BitsPerSample/8;
                 for (int i = 0; i < length; i += bytesPerSample)

@@ -1,4 +1,5 @@
 using NAudio.Dsp;
+using System;
 
 namespace NAudio.Wave
 {
@@ -117,24 +118,22 @@ namespace NAudio.Wave
         /// Reads bytes from this stream
         /// </summary>
         /// <param name="array">Buffer to read into</param>
-        /// <param name="offset">Offset in array to read into</param>
-        /// <param name="count">Number of bytes to read</param>
         /// <returns>Number of bytes read</returns>
-        public int Read(float[] array, int offset, int count)
+        public int Read(Span<float> array)
         {
             lock (lockObject)
             {
-                int samplesRead = sourceStream.Read(array, offset, count);
+                int samplesRead = sourceStream.Read(array);
                 if (Enabled)
                 {
                     for (int sample = 0; sample < samplesRead; sample+=channels)
                     {
-                        double in1 = array[offset+sample];
-                        double in2 = (channels == 1) ? 0 : array[offset+sample+1];
+                        double in1 = array[sample];
+                        double in2 = (channels == 1) ? 0 : array[sample+1];
                         simpleCompressor.Process(ref in1, ref in2);
-                        array[offset + sample] = (float)in1;
+                        array[sample] = (float)in1;
                         if (channels > 1)
-                            array[offset + sample + 1] = (float)in2;
+                            array[sample + 1] = (float)in2;
                     }
                 }
                 return samplesRead;

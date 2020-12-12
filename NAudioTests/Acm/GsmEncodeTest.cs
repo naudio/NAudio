@@ -35,7 +35,7 @@ namespace NAudioTests.Acm
 
 
             byte[] data = new byte[outFormat.AverageBytesPerSecond * durationInSeconds];
-            var bytesRead = sp.Read(data, 0, data.Length);
+            var bytesRead = sp.Read(new Span<byte>(data));
             Assert.AreEqual(bytesRead, data.Length);
             return new RawSourceWaveStream(new MemoryStream(data), outFormat);
         }

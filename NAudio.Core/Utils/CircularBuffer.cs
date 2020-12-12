@@ -63,11 +63,10 @@ namespace NAudio.Utils
         /// Read from the buffer
         /// </summary>
         /// <param name="data">Buffer to read into</param>
-        /// <param name="offset">Offset into read buffer</param>
-        /// <param name="count">Bytes to read</param>
         /// <returns>Number of bytes actually read</returns>
-        public int Read(byte[] data, int offset, int count)
+        public int Read(Span<byte> data)
         {
+            var count = data.Length;
             lock (lockObject)
             {
                 if (count > byteCount)
@@ -76,7 +75,9 @@ namespace NAudio.Utils
                 }
                 int bytesRead = 0;
                 int readToEnd = Math.Min(buffer.Length - readPosition, count);
-                Array.Copy(buffer, readPosition, data, offset, readToEnd);
+                
+                SpanExtensions.ArrayCopy(buffer, readPosition, data, readToEnd);
+                //Array.Copy(buffer, readPosition, data, 0, readToEnd);
                 bytesRead += readToEnd;
                 readPosition += readToEnd;
                 readPosition %= buffer.Length;
@@ -85,7 +86,9 @@ namespace NAudio.Utils
                 {
                     // must have wrapped round. Read from start
                     Debug.Assert(readPosition == 0);
-                    Array.Copy(buffer, readPosition, data, offset + bytesRead, count - bytesRead);
+
+                    SpanExtensions.ArrayCopy(buffer, readPosition, data.Slice(bytesRead), count - bytesRead);
+                    //Array.Copy(buffer, readPosition, data, bytesRead, count - bytesRead);
                     readPosition += (count - bytesRead);
                     bytesRead = count;
                 }

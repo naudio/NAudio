@@ -133,10 +133,11 @@ namespace NAudio.Dmo
         /// Retrieves the data in the output buffer
         /// </summary>
         /// <param name="data">buffer to retrieve into</param>
-        /// <param name="offset">offset within that buffer</param>
-        public void RetrieveData(byte[] data, int offset)
+        public unsafe void RetrieveData(Span<byte> data)
         {
-            Marshal.Copy(buffer, data, offset, Length);
+            var source = new Span<byte>((void *)buffer, Length);
+            source.CopyTo(data);
+            //Marshal.Copy(buffer, data, offset, Length);
         }
     }
 }

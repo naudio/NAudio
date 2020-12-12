@@ -33,7 +33,7 @@ namespace NAudioTests.WaveStreams
             var testProvider= new TestWaveProvider(new WaveFormat(44100,16,2));
             VolumeWaveProvider16 vwp = new VolumeWaveProvider16(testProvider);
             byte[] buffer = new byte[20];
-            int bytesRead = vwp.Read(buffer, 0, buffer.Length);
+            int bytesRead = vwp.Read(new Span<byte>(buffer));
             Assert.AreEqual(buffer.Length, bytesRead);
             Assert.AreEqual(new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 }, buffer);
         }
@@ -46,7 +46,7 @@ namespace NAudioTests.WaveStreams
             VolumeWaveProvider16 vwp = new VolumeWaveProvider16(testProvider);
             vwp.Volume = 0.5f;
             byte[] buffer = new byte[4];
-            int bytesRead = vwp.Read(buffer, 0, buffer.Length);
+            int bytesRead = vwp.Read(new Span<byte>(buffer));
             Assert.AreEqual(new byte[] { 50, 50, 50, 50 }, buffer);
         }
 
@@ -58,7 +58,7 @@ namespace NAudioTests.WaveStreams
             VolumeWaveProvider16 vwp = new VolumeWaveProvider16(testProvider);
             vwp.Volume = 0f;
             byte[] buffer = new byte[4];
-            int bytesRead = vwp.Read(buffer, 0, buffer.Length);
+            int bytesRead = vwp.Read(new Span<byte>(buffer));
             Assert.AreEqual(new byte[] { 0, 0, 0, 0 }, buffer);
         }
 
@@ -73,7 +73,7 @@ namespace NAudioTests.WaveStreams
             VolumeWaveProvider16 vwp = new VolumeWaveProvider16(testProvider);
             vwp.Volume = 2f;
             byte[] buffer = new byte[2];
-            int bytesRead = vwp.Read(buffer, 0, buffer.Length);
+            int bytesRead = vwp.Read(new Span<byte>(buffer));
             Assert.AreEqual(BitConverter.GetBytes(sampleValue), buffer);
         }
 
@@ -88,7 +88,7 @@ namespace NAudioTests.WaveStreams
             VolumeWaveProvider16 vwp = new VolumeWaveProvider16(testProvider);
             vwp.Volume = 2f;
             byte[] buffer = new byte[2];
-            int bytesRead = vwp.Read(buffer, 0, buffer.Length);
+            int bytesRead = vwp.Read(new Span<byte>(buffer));
             Assert.AreEqual(BitConverter.GetBytes(sampleValue), buffer);
         }
     }

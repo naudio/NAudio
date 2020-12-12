@@ -11,8 +11,8 @@ namespace NAudioTests.WaveStreams
         public void LeftChannelOnly()
         {
             var stereoStream = new TestSampleProvider(44100,1).ToStereo(1.0f, 0.0f);
-            var buffer = new float[2000];
-            var read = stereoStream.Read(buffer, 0, 2000);
+            var buffer = new Span<float>(new float[2000]);
+            var read = stereoStream.Read(buffer);
             Assert.AreEqual(2000, read);
             for (int n = 0; n < read; n+=2)
             {

@@ -63,9 +63,9 @@ namespace NAudio.Wave.SampleProviders
         /// <summary>
         /// Read from this sample provider
         /// </summary>
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
-            int sampRead = sourceStream.Read(buffer, offset, count);
+            int sampRead = sourceStream.Read(buffer);
             if (pitch == 1f)
             {
                 //Nothing to do.
@@ -75,14 +75,14 @@ namespace NAudio.Wave.SampleProviders
             {
                 var mono = new float[sampRead];
                 var index = 0;
-                for (var sample = offset; sample <= sampRead + offset - 1; sample++)
+                for (var sample = 0; sample <= sampRead - 1; sample++)
                 {
                     mono[index] = buffer[sample];
                     index += 1;
                 }
                 shifterLeft.PitchShift(pitch, sampRead, fftSize, osamp, waveFormat.SampleRate, mono);
                 index = 0;
-                for (var sample = offset; sample <= sampRead + offset - 1; sample++)
+                for (var sample = 0; sample <= sampRead - 1; sample++)
                 {
                     buffer[sample] = Limiter(mono[index]);
                     index += 1;
@@ -94,7 +94,7 @@ namespace NAudio.Wave.SampleProviders
                 var left = new float[(sampRead >> 1)];
                 var right = new float[(sampRead >> 1)];
                 var index = 0;
-                for (var sample = offset; sample <= sampRead + offset - 1; sample += 2)
+                for (var sample = 0; sample <= sampRead - 1; sample += 2)
                 {
                     left[index] = buffer[sample];
                     right[index] = buffer[sample + 1];
@@ -103,7 +103,7 @@ namespace NAudio.Wave.SampleProviders
                 shifterLeft.PitchShift(pitch, sampRead >> 1, fftSize, osamp, waveFormat.SampleRate, left);
                 shifterRight.PitchShift(pitch, sampRead >> 1, fftSize, osamp, waveFormat.SampleRate, right);
                 index = 0;
-                for (var sample = offset; sample <= sampRead + offset - 1; sample += 2)
+                for (var sample = 0; sample <= sampRead - 1; sample += 2)
                 {
                     buffer[sample] = Limiter(left[index]);
                     buffer[sample + 1] = Limiter(right[index]);

@@ -143,12 +143,12 @@ namespace NAudioTests.Acm
             using (var stream = new WaveFormatConversionStream(
                 outputFormat, inputStream))
             {
-                byte[] buffer = new byte[stream.WaveFormat.AverageBytesPerSecond];
+                var buffer = new Span<byte>(new byte[stream.WaveFormat.AverageBytesPerSecond]);
                 int totalRead = 0;
                 int bytesRead;
                 do
                 {
-                    bytesRead = stream.Read(buffer, 0, buffer.Length);
+                    bytesRead = stream.Read(buffer);
                     totalRead += bytesRead;
                 } while (bytesRead > 0);
                 Debug.WriteLine(String.Format("Converted {0}", totalRead));

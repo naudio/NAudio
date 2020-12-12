@@ -1,5 +1,7 @@
-﻿using System;
+﻿using NAudio.Utils;
+using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace NAudio.Wave
@@ -14,6 +16,7 @@ namespace NAudio.Wave
         private List<IWaveProvider> inputs;
         private WaveFormat waveFormat;
         private int bytesPerSample;
+        private byte[] readBuffer;
 
         /// <summary>
         /// Creates a new MixingWaveProvider32
@@ -94,31 +97,32 @@ namespace NAudio.Wave
         /// Reads bytes from this wave stream
         /// </summary>
         /// <param name="buffer">buffer to read into</param>
-        /// <param name="offset">offset into buffer</param>
-        /// <param name="count">number of bytes required</param>
         /// <returns>Number of bytes read.</returns>
         /// <exception cref="ArgumentException">Thrown if an invalid number of bytes requested</exception>
-        public int Read(byte[] buffer, int offset, int count)
+        public int Read(Span<byte> buffer)
         {
+            var count = buffer.Length;
             if (count % bytesPerSample != 0)
                 throw new ArgumentException("Must read an whole number of samples", "count");
 
             // blank the buffer
-            Array.Clear(buffer, offset, count);
+            buffer.Clear();
             int bytesRead = 0;
 
             // sum the channels in
-            byte[] readBuffer = new byte[count];
+            readBuffer = BufferHelpers.Ensure(readBuffer, count);
             lock (inputs)
             {
                 foreach (var input in inputs)
                 {
-                    int readFromThisStream = input.Read(readBuffer, 0, count);
+                    var readSpan = new Span<byte>(readBuffer, 0, count);
+                    int readFromThisStream = input.Read(readSpan);
                     // don't worry if input stream returns less than we requested - may indicate we have got to the end
                     bytesRead = Math.Max(bytesRead, readFromThisStream);
                     if (readFromThisStream > 0)
                     {
-                        Sum32BitAudio(buffer, offset, readBuffer, readFromThisStream);
+                        Sum32BitAudio(MemoryMarshal.Cast<byte,float>(buffer), 
+                            MemoryMarshal.Cast<byte,float>(readSpan), readFromThisStream / 4);
                     }
                 }
             }
@@ -128,18 +132,11 @@ namespace NAudio.Wave
         /// <summary>
         /// Actually performs the mixing
         /// </summary>
-        static unsafe void Sum32BitAudio(byte[] destBuffer, int offset, byte[] sourceBuffer, int bytesRead)
+        static unsafe void Sum32BitAudio(Span<float> destBuffer, Span<float> sourceBuffer, int samplesRead)
         {
-            fixed (byte* pDestBuffer = &destBuffer[offset],
-                      pSourceBuffer = &sourceBuffer[0])
+            for (int n = 0; n < samplesRead; n++)
             {
-                float* pfDestBuffer = (float*)pDestBuffer;
-                float* pfReadBuffer = (float*)pSourceBuffer;
-                int samplesRead = bytesRead / 4;
-                for (int n = 0; n < samplesRead; n++)
-                {
-                    pfDestBuffer[n] += pfReadBuffer[n];
-                }
+                destBuffer[n] += sourceBuffer[n];
             }
         }
 

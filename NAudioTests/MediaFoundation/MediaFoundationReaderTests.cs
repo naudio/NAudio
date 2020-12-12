@@ -17,10 +17,10 @@ namespace NAudioTests.MediaFoundation
             if (!File.Exists(testFile)) Assert.Ignore("Missing test file");
             var reader = new MediaFoundationReader(testFile);
             Console.WriteLine(reader.WaveFormat);
-            var buffer = new byte[reader.WaveFormat.AverageBytesPerSecond];
+            var buffer = new Span<byte>(new byte[reader.WaveFormat.AverageBytesPerSecond]);
             int bytesRead;
             long total = 0;
-            while((bytesRead = reader.Read(buffer, 0, buffer.Length)) > 0)
+            while((bytesRead = reader.Read(buffer)) > 0)
             {
                 total += bytesRead;
             }

@@ -27,7 +27,7 @@ namespace NAudioTests.WaveStreams
                     byte[] b = new byte[wp.WaveFormat.AverageBytesPerSecond];
                     while (true)
                     {
-                        int read = wp.Read(b, 0, b.Length);
+                        int read = wp.Read(new Span<byte>(b));
                         if (read > 0)
                             writer.Write(b, 0, read);
                         else
@@ -63,11 +63,11 @@ namespace NAudioTests.WaveStreams
             var resampler = new WdlResamplingSampleProvider(offset, to);
             //string fileName = "From {0}"
             //WaveFileWriter.CreateWaveFile16(;
-            var buffer = new float[to * channels];
+            var buffer = new Span<float>(new float[to * channels]);
             Debug.WriteLine(String.Format("From {0} to {1}", from, to));
             for (int n = 0; n < 10; n++)
             {
-                var read = resampler.Read(buffer, 0, buffer.Length);
+                var read = resampler.Read(buffer);
                 Debug.WriteLine(String.Format("read {0}", read));
             }
 

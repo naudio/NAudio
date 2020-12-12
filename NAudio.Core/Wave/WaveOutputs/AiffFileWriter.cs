@@ -33,7 +33,7 @@ namespace NAudio.Wave
                 while (sourceProvider.Position < sourceProvider.Length)
                 {
                     int count = Math.Min((int)(sourceProvider.Length - sourceProvider.Position), buffer.Length);
-                    int bytesRead = sourceProvider.Read(buffer, 0, count);
+                    int bytesRead = sourceProvider.Read(new Span<byte>(buffer, 0, count));
 
                     if (bytesRead == 0)
                     {

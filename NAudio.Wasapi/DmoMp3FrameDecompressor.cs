@@ -77,7 +77,7 @@ namespace NAudio.FileFormats.Mp3
             }
 
             // 5. Now get the data out of the output buffer
-            outputBuffer.RetrieveData(dest, destOffset);
+            outputBuffer.RetrieveData(new Span<byte>(dest).Slice(destOffset));
             Debug.Assert(!outputBuffer.MoreDataAvailable, "have not implemented more data available yet");
             
             return outputBuffer.Length;

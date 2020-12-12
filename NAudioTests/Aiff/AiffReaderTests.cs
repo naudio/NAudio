@@ -41,7 +41,7 @@ namespace NAudioTests.Aiff
                     int bytesRead = 0;
                     do
                     {
-                        bytesRead = reader.Read(buffer, 0, buffer.Length);
+                        bytesRead = reader.Read(new Span<byte>(buffer));
                         writer.Write(buffer, 0, bytesRead);
                     } while (bytesRead > 0);
                 }

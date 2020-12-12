@@ -18,13 +18,13 @@ namespace NAudioTests.WaveStreams
             this.ConstValue = -1;
         }
 
-        public int Read(byte[] buffer, int offset, int count)
+        public int Read(Span<byte> buffer)
         {
             int n = 0;
-            while (n < count && Position < length)
+            while (n < buffer.Length && Position < length)
             {
-                buffer[n + offset] = (ConstValue == -1) ? (byte)Position : (byte)ConstValue;
-                n++; Position++;
+                buffer[n++] = (ConstValue == -1) ? (byte)Position : (byte)ConstValue;
+                Position++;
             }
             return n;
         }

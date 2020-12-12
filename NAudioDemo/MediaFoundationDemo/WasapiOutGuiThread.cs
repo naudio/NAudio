@@ -21,7 +21,6 @@ namespace NAudioDemo.MediaFoundationDemo
         private IWaveProvider sourceProvider;
         private int bufferFrameCount;
         private int bytesPerFrame;
-        private byte[] readBuffer;
         private PlaybackState playbackState;
         private WaveFormat outputFormat;
         private ResamplerDmoStream resamplerDmoStream;
@@ -109,16 +108,15 @@ namespace NAudioDemo.MediaFoundationDemo
             }
         }
 
-        private void FillBuffer(IWaveProvider playbackProvider, int frameCount)
+        private unsafe void FillBuffer(IWaveProvider playbackProvider, int frameCount)
         {
             IntPtr buffer = renderClient.GetBuffer(frameCount);
             int readLength = frameCount * bytesPerFrame;
-            int read = playbackProvider.Read(readBuffer, 0, readLength);
+            int read = playbackProvider.Read(new Span<byte>((void *)buffer, readLength));
             if (read == 0)
             {
                 playbackState = PlaybackState.Stopped;
             }
-            Marshal.Copy(readBuffer, 0, buffer, read);
             int actualFrameCount = read / bytesPerFrame;
             /*if (actualFrameCount != frameCount)
             {
@@ -251,7 +249,6 @@ namespace NAudioDemo.MediaFoundationDemo
             // set up the read buffer
             bufferFrameCount = audioClient.BufferSize;
             bytesPerFrame = outputFormat.Channels * outputFormat.BitsPerSample / 8;
-            readBuffer = new byte[bufferFrameCount * bytesPerFrame];
         }
 
         /// <summary>

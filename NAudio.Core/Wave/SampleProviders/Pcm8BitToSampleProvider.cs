@@ -1,4 +1,6 @@
-﻿namespace NAudio.Wave.SampleProviders
+﻿using System;
+
+namespace NAudio.Wave.SampleProviders
 {
     /// <summary>
     /// Converts an IWaveProvider containing 8 bit PCM to an
@@ -19,15 +21,13 @@
         /// Reads samples from this sample provider
         /// </summary>
         /// <param name="buffer">Sample buffer</param>
-        /// <param name="offset">Offset into sample buffer</param>
-        /// <param name="count">Number of samples to read</param>
         /// <returns>Number of samples read</returns>
-        public override int Read(float[] buffer, int offset, int count)
+        public override int Read(Span<float> buffer)
         {
-            int sourceBytesRequired = count;
+            int sourceBytesRequired = buffer.Length;
             EnsureSourceBuffer(sourceBytesRequired);
-            int bytesRead = source.Read(sourceBuffer, 0, sourceBytesRequired);
-            int outIndex = offset;
+            int bytesRead = source.Read(new Span<byte>(sourceBuffer, 0, sourceBytesRequired));
+            int outIndex = 0;
             for (int n = 0; n < bytesRead; n++)
             {
                 buffer[outIndex++] = sourceBuffer[n] / 128f - 1.0f;

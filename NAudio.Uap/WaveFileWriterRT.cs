@@ -53,7 +53,7 @@ namespace NAudio.Wave
                 var buffer = new byte[sourceProvider.WaveFormat.AverageBytesPerSecond * 4];
                 while (true)
                 {
-                    int bytesRead = sourceProvider.Read(buffer, 0, buffer.Length);
+                    int bytesRead = sourceProvider.Read(new Span<byte>(buffer));
                     if (bytesRead == 0)
                     {
                         // end of source provider

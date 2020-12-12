@@ -631,7 +631,7 @@ namespace NAudio.Wave
             else
             {
                 // Read data from stream (Should this be inserted between the lock / unlock?)
-                bytesRead = waveStream.Read(samples, 0, bytesToCopy);
+                bytesRead = waveStream.Read(new Span<byte>(samples, 0, bytesToCopy));
 
                 if (bytesRead == 0)
                 {

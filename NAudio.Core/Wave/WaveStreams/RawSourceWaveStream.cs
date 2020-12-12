@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NAudio.Utils;
+using System;
 using System.IO;
 
 // ReSharper disable once CheckNamespace
@@ -65,11 +66,13 @@ namespace NAudio.Wave
         /// <summary>
         /// Reads data from the stream
         /// </summary>
-        public override int Read(byte[] buffer, int offset, int count)
+        public override int Read(Span<byte> buffer)
         {
             try
             {
-                return sourceStream.Read(buffer, offset, count);
+                // Stream.Read(Span<T> is unfortunately only available in .NET Standard 2.1
+                // use our helper extension method for now
+                return sourceStream.Read(buffer);
             }
             catch (EndOfStreamException)
             {

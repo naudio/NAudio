@@ -48,12 +48,9 @@ namespace NAudio.Wave.SampleProviders
         /// Reads samples from this sample provider
         /// </summary>
         /// <param name="buffer">Sample buffer</param>
-        /// <param name="offset">Offset into sample buffer</param>
-        /// <param name="sampleCount">Number of samples desired</param>
-        /// <returns>Number of samples read</returns>
-        public int Read(float[] buffer, int offset, int sampleCount)
+        public int Read(Span<float> buffer)
         {
-            return volumeProvider.Read(buffer, offset, sampleCount);
+            return volumeProvider.Read(buffer);
         }
 
         /// <summary>

@@ -44,13 +44,13 @@ namespace NAudio.Wave.SampleProviders
         /// <summary>
         /// Reads bytes from this SampleProvider
         /// </summary>
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
-            var sourceSamplesRequired = count * 2;
+            var sourceSamplesRequired = buffer.Length * 2;
             if (sourceBuffer == null || sourceBuffer.Length < sourceSamplesRequired) sourceBuffer = new float[sourceSamplesRequired];
 
-            var sourceSamplesRead = sourceProvider.Read(sourceBuffer, 0, sourceSamplesRequired);
-            var destOffset = offset;
+            var sourceSamplesRead = sourceProvider.Read(new Span<float>(sourceBuffer, 0, sourceSamplesRequired));
+            var destOffset = 0;
             for (var sourceSample = 0; sourceSample < sourceSamplesRead; sourceSample += 2)
             {
                 var left = sourceBuffer[sourceSample];

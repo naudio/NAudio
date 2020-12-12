@@ -72,9 +72,9 @@ namespace MarkHeath.AudioUtils
             }
         }
 
-        public override int Read(byte[] buffer, int offset, int count)
+        public override int Read(Span<byte> buffer)
         {
-            return channelSteam.Read(buffer, offset, count);
+            return channelSteam.Read(buffer);
         }
 
         public override bool HasData(int count)

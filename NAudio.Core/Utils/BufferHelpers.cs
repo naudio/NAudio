@@ -26,6 +26,21 @@
         /// <param name="buffer"></param>
         /// <param name="samplesRequired"></param>
         /// <returns></returns>
+        public static short[] Ensure(short[] buffer, int samplesRequired)
+        {
+            if (buffer == null || buffer.Length < samplesRequired)
+            {
+                buffer = new short[samplesRequired];
+            }
+            return buffer;
+        }
+
+        /// <summary>
+        /// Ensures the buffer is big enough
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name="samplesRequired"></param>
+        /// <returns></returns>
         public static float[] Ensure(float[] buffer, int samplesRequired)
         {
             if (buffer == null || buffer.Length < samplesRequired)

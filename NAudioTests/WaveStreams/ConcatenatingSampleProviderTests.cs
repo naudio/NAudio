@@ -21,7 +21,7 @@ namespace NAudioTests.WaveStreams
             // act
             while (true)
             {
-                var read = concatenator.Read(buffer, 0, buffer.Length);
+                var read = concatenator.Read(new Span<float>(buffer));
                 if (read == 0) break;
                 totalRead += read;
                 Assert.That(totalRead <= expectedLength);
@@ -37,9 +37,9 @@ namespace NAudioTests.WaveStreams
             var input1 = new TestSampleProvider(44100, 2, 50);
             var input2 = new TestSampleProvider(44100, 2, 50);
             var concatenator = new ConcatenatingSampleProvider(new[] { input1, input2 });
-            var buffer = new float[2000];
+            var buffer = new Span<float>(new float[2000]);
             
-            var read = concatenator.Read(buffer, 0, buffer.Length);
+            var read = concatenator.Read(buffer);
             Assert.AreEqual(expectedLength, read, "read == expectedLength");
             Assert.AreEqual(49, buffer[49]);
             Assert.AreEqual(0, buffer[50]);

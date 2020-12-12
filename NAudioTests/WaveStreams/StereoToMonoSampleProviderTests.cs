@@ -1,5 +1,6 @@
 using NAudio.Wave;
 using NUnit.Framework;
+using System;
 
 namespace NAudioTests.WaveStreams
 {
@@ -13,8 +14,8 @@ namespace NAudioTests.WaveStreams
             var stereoSampleProvider = new TestSampleProvider(44100, 2);
             var mono = stereoSampleProvider.ToMono(0f, 1f);
             var samples = 1000;
-            var buffer = new float[samples];
-            var read = mono.Read(buffer, 0, buffer.Length);
+            var buffer = new Span<float>(new float[samples]);
+            var read = mono.Read(buffer);
             Assert.AreEqual(buffer.Length, read, "samples read");
             for (int sample = 0; sample < samples; sample++)
             {
@@ -48,7 +49,7 @@ namespace NAudioTests.WaveStreams
 
             // [10,20) in buffer will be filled with 1
             var buffer = new float[bufferLength];
-            var read = mono.Read(buffer, offset, samples);
+            var read = mono.Read(new Span<float>(buffer, offset, samples));
             Assert.AreEqual(samples, read, "samples read");
 
             for (int i = 0; i < bufferLength; i++)

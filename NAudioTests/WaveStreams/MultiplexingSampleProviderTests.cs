@@ -180,10 +180,9 @@ namespace NAudioTests.WaveStreams
         public void ReadReturnsZeroIfSingleInputHasReachedEnd()
         {
             var input1 = new TestSampleProvider(32000, 1, 0);
-            float[] expected = new float[] { };
             var mp = new MultiplexingSampleProvider(new ISampleProvider[] { input1 }, 1);
-            float[] buffer = new float[10];
-            var read = mp.Read(buffer, 0, buffer.Length);
+            var buffer = new Span<float>(new float[10]);
+            var read = mp.Read(buffer);
             Assert.AreEqual(0, read);
         }
 
@@ -208,7 +207,7 @@ namespace NAudioTests.WaveStreams
             {
                 buffer[n] = 99;
             }
-            var read = mp.Read(buffer, 0, buffer.Length);
+            var read = mp.Read(new Span<float>(buffer, 0, buffer.Length));
             Assert.AreEqual(6, read);
             Assert.AreEqual(expected, buffer);
         }
@@ -225,17 +224,14 @@ namespace NAudioTests.WaveStreams
             mp.ConnectInputToOutput(2, 1);
             mp.ConnectInputToOutput(3, 0);
 
-            float[] buffer = new float[input1.WaveFormat.AverageBytesPerSecond / 4];
-            Stopwatch s = new Stopwatch();
-            var duration = s.Time(() =>
+            var buffer = new Span<float>(new float[input1.WaveFormat.AverageBytesPerSecond / 4]);
+            var s = Stopwatch.StartNew();
+            // read one hour worth of audio
+            for (int n = 0; n < 60 * 60; n++)
             {
-                // read one hour worth of audio
-                for (int n = 0; n < 60 * 60; n++)
-                {
-                    mp.Read(buffer, 0, buffer.Length);
-                }
-            });
-            Console.WriteLine("Performance test took {0}ms", duration);
+                mp.Read(buffer);
+            }
+            Console.WriteLine("Performance test took {0}ms", s.ElapsedMilliseconds);
         }
     }
 }

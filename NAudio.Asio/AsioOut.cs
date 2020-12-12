@@ -290,7 +290,7 @@ namespace NAudio.Wave
 
             if (this.NumberOfOutputChannels > 0)
             {
-                int read = sourceStream.Read(waveBuffer, 0, waveBuffer.Length);
+                int read = sourceStream.Read(new Span<byte>(waveBuffer, 0, waveBuffer.Length));
                 if (read < waveBuffer.Length)
                 {
                     // we have reached the end of the input data - clear out the end

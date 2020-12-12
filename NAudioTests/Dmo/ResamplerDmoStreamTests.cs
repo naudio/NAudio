@@ -45,8 +45,8 @@ namespace NAudioTests.Dmo
                 {
                     // try to read 10 ms;
                     int bytesToRead = resampler.WaveFormat.AverageBytesPerSecond / 100;
-                    byte[] buffer = new byte[bytesToRead];
-                    int count = resampler.Read(buffer, 0, bytesToRead);
+                    var buffer = new Span<byte>(new byte[bytesToRead]);
+                    int count = resampler.Read(buffer);
                     Assert.That(count > 0, "Bytes Read");
                 }
             }
@@ -97,12 +97,12 @@ namespace NAudioTests.Dmo
                 {
                     // try to read 10 ms;
                     int bytesToRead = resampler.WaveFormat.AverageBytesPerSecond / 100;
-                    byte[] buffer = new byte[bytesToRead];
+                    var buffer = new Span<byte>(new byte[bytesToRead]);
                     int count;
                     int total = 0;
                     do
                     {
-                        count = resampler.Read(buffer, 0, bytesToRead);
+                        count = resampler.Read(buffer);
                         total += count;
                         //Assert.AreEqual(count, bytesToRead, "Bytes Read");
                     } while (count > 0);

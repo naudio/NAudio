@@ -32,7 +32,7 @@ namespace NAudioTests.Mp3
                     int total = 0;
                     do
                     {
-                        bytesRead = reader.Read(buffer, 0, buffer.Length);
+                        bytesRead = reader.Read(new Span<byte>(buffer));
                         total += bytesRead;
                     } while (bytesRead > 0);
                     Debug.WriteLine($"Read {total} bytes");

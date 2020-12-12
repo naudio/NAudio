@@ -28,8 +28,8 @@ namespace NAudioTests.WaveStreams
                 Assert.AreEqual(24, reader.WaveFormat.BitsPerSample, "Bits Per Sample");
                 Assert.AreEqual(1, reader.WaveFormat.Channels, "Channels");
                 Assert.AreEqual(testSequence.Length, reader.Length, "File Length");
-                var buffer = new byte[600]; // 24 bit audio, block align is 3
-                int read = reader.Read(buffer, 0, buffer.Length);
+                var buffer = new Span<byte>(new byte[600]); // 24 bit audio, block align is 3
+                int read = reader.Read(buffer);
                 Assert.AreEqual(testSequence.Length, read, "Data Length");
                 for (int n = 0; n < read; n++)
                 {
@@ -60,8 +60,8 @@ namespace NAudioTests.WaveStreams
                 Assert.AreEqual(24, reader.WaveFormat.BitsPerSample, "Bits Per Sample");
                 Assert.AreEqual(1, reader.WaveFormat.Channels, "Channels");
                 Assert.AreEqual(testSequence.Length, reader.Length, "File Length");
-                var buffer = new byte[600]; // 24 bit audio, block align is 3
-                int read = reader.Read(buffer, 0, buffer.Length);
+                var buffer = new Span<byte>(new byte[600]); // 24 bit audio, block align is 3
+                int read = reader.Read(buffer);
                 Assert.AreEqual(testSequence.Length, read, "Data Length");
                 
                 for (int n = 0; n < read; n++)
@@ -86,8 +86,8 @@ namespace NAudioTests.WaveStreams
                 {
                     Assert.AreEqual(waveFormat, reader.WaveFormat, "WaveFormat");
                     Assert.AreEqual(length, reader.Length, "Length");
-                    var buffer = new byte[length + 20];
-                    int read = reader.Read(buffer, 0, buffer.Length);
+                    var buffer = new Span<byte>(new byte[length + 20]);
+                    int read = reader.Read(buffer);
                     Assert.AreEqual(length, read, "Read");
                 }
             }

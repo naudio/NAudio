@@ -212,15 +212,16 @@ namespace NAudio.Wave
                     // footer present
                     byte[] footer = reader.ReadBytes(10);
                 }
+
+                tagEndPosition = input.Position;
+                input.Position = tagStartPosition;
+                rawData = reader.ReadBytes((int)(tagEndPosition - tagStartPosition));
             }
             else
             {
                 input.Position = tagStartPosition;
-                throw new FormatException("Not an ID3v2 tag");
+                ////throw new FormatException("Not an ID3v2 tag");
             }
-            tagEndPosition = input.Position;
-            input.Position = tagStartPosition;
-            rawData = reader.ReadBytes((int)(tagEndPosition - tagStartPosition));
 
         }
 

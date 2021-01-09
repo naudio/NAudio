@@ -245,10 +245,9 @@ namespace NAudio.CoreAudioApi
             }
             while (captureState == CaptureState.Capturing)
             {
-                bool readBuffer = true;
                 if (isUsingEventSync)
                 {
-                    readBuffer = frameEventWaitHandle.WaitOne(waitMilliseconds, false);
+                    frameEventWaitHandle.WaitOne(waitMilliseconds, false);
                 }
                 else
                 {
@@ -257,11 +256,8 @@ namespace NAudio.CoreAudioApi
                 if (captureState != CaptureState.Capturing)
                     break;
 
-                // If still recording and notification is ok
-                if (readBuffer)
-                {
-                    ReadNextPacket(capture);
-                }
+                // If still recording
+                ReadNextPacket(capture);
             }
         }
 

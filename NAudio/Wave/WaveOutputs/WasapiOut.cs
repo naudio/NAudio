@@ -121,18 +121,17 @@ namespace NAudio.Wave
                 while (playbackState != PlaybackState.Stopped)
                 {
                     // If using Event Sync, Wait for notification from AudioClient or Sleep half latency
-                    int indexHandle = 0;
                     if (isUsingEventSync)
                     {
-                        indexHandle = WaitHandle.WaitAny(waitHandles, 3 * latencyMilliseconds, false);
+                        WaitHandle.WaitAny(waitHandles, 3 * latencyMilliseconds, false);
                     }
                     else
                     {
                         Thread.Sleep(latencyMilliseconds / 2);
                     }
 
-                    // If still playing and notification is ok
-                    if (playbackState == PlaybackState.Playing && indexHandle != WaitHandle.WaitTimeout)
+                    // If still playing
+                    if (playbackState == PlaybackState.Playing)
                     {
                         // See how much buffer space is available.
                         int numFramesPadding;

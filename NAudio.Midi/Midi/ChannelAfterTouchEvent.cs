@@ -62,5 +62,21 @@ namespace NAudio.Midi
                 afterTouchPressure = (byte) value;
             }
         }
+
+        /// <summary>
+        /// <see cref="MidiEvent.GetAsShortMessage" />
+        /// </summary>
+        public override int GetAsShortMessage()
+        {
+            return base.GetAsShortMessage() + (afterTouchPressure << 8);
+        }
+
+        /// <summary>
+        /// Describes this channel after-touch event
+        /// </summary>
+        public override string ToString()
+        {
+            return $"{base.ToString()} {afterTouchPressure}";
+        }
     }
 }

@@ -69,7 +69,7 @@ namespace NAudio.CoreAudioApi
         {
             if (audioCaptureClientInterface != null)
             {
-                // althugh GC would do this for us, we want it done now
+                // although GC would do this for us, we want it done now
                 // to let us reopen WASAPI
                 Marshal.ReleaseComObject(audioCaptureClientInterface);
                 audioCaptureClientInterface = null;

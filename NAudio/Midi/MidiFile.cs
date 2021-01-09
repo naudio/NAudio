@@ -248,19 +248,8 @@ namespace NAudio.Midi
             return sb.ToString();
         }
 
-        /// <summary>
-        /// Exports a MIDI file
-        /// </summary>
-        /// <param name="filename">Filename to export to</param>
-        /// <param name="events">Events to export</param>
-        public static void Export(string filename, MidiEventCollection events)
+        private static void ExportBinary(BinaryWriter writer, MidiEventCollection events)
         {
-            if (events.MidiFileType == 0 && events.Tracks > 1)
-            {
-                throw new ArgumentException("Can't export more than one track to a type 0 file");
-            }
-            using (var writer = new BinaryWriter(File.Create(filename)))
-            {
                 writer.Write(Encoding.UTF8.GetBytes("MThd"));
                 writer.Write(SwapUInt32(6)); // chunk size
                 writer.Write(SwapUInt16((ushort)events.MidiFileType));
@@ -294,7 +283,38 @@ namespace NAudio.Midi
                     writer.Write(SwapUInt32(trackChunkLength));
                     writer.BaseStream.Position += trackChunkLength;
                 }
+        }
+
+        private static void ExportCheckTracks(MidiEventCollection events)
+        {
+            if (events.MidiFileType == 0 && events.Tracks > 1)
+            {
+                throw new ArgumentException("Can't export more than one track to a type 0 file");
             }
+        }
+
+        /// <summary>
+        /// Exports a MIDI file
+        /// </summary>
+        /// <param name="filename">Filename to export to</param>
+        /// <param name="events">Events to export</param>
+        public static void Export(string filename, MidiEventCollection events)
+        {
+            ExportCheckTracks(events);
+            using (var writer = new BinaryWriter(File.Create(filename)))
+                ExportBinary(writer, events);
+        }
+
+        /// <summary>
+        /// Exports a MIDI file
+        /// </summary>
+        /// <param name="stream">Stream to work with</param>
+        /// <param name="events">Events to export</param>
+        public static void Export(Stream stream, MidiEventCollection events)
+        {
+            ExportCheckTracks(events);
+            using (var writer = new BinaryWriter(stream))
+                ExportBinary(writer, events);
         }
     }
 }

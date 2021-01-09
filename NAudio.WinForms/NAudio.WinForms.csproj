@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFrameworks>netcoreapp3.1;net472</TargetFrameworks>
     <UseWindowsForms>true</UseWindowsForms>
-    <Version>2.0.0-beta1</Version>
+    <Version>2.0.0-beta2</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Mark Heath</Authors>
     <SignAssembly>true</SignAssembly>

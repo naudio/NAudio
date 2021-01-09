@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;uap10.0.17763</TargetFrameworks>
-    <Version>2.0.0-beta1</Version>
+    <Version>2.0.0-beta2</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Mark Heath</Authors>
     <SignAssembly>true</SignAssembly>

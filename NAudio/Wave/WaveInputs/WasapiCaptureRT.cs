@@ -148,6 +148,14 @@ namespace NAudio.Wave
             if (waveFormat == null)
             {
                 waveFormat = audioClient.MixFormat;
+                if (mix.BitsPerSample == 32)
+                {
+                    waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(mix.SampleRate, mix.Channels);
+                }
+                else
+                {
+                    waveFormat = new WaveFormat(mix.SampleRate, mix.BitsPerSample, mix.Channels);
+                }                
             }
 
             long requestedDuration = REFTIMES_PER_MILLISEC * 100;

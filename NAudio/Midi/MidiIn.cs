@@ -57,6 +57,14 @@ namespace NAudio.Midi
         /// </summary>
         public void Close() 
         {
+            Dispose();
+        }
+
+        /// <summary>
+        /// Closes this MIDI in device
+        /// </summary>
+        public void Dispose() 
+        {
             //  Free up all created and allocated buffers for incoming Sysex messages
             foreach (var lpHeader in SysexBufferHeaders)
             {
@@ -66,15 +74,6 @@ namespace NAudio.Midi
             }
             SysexBufferHeaders = new IntPtr[0];
 
-
-            Dispose();
-        }
-
-        /// <summary>
-        /// Closes this MIDI in device
-        /// </summary>
-        public void Dispose() 
-        {
             GC.KeepAlive(callback);
             Dispose(true);
             GC.SuppressFinalize(this);

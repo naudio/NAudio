@@ -207,8 +207,6 @@ namespace NAudio.Midi
                     Marshal.FreeHGlobal(hdr.lpData);
                     Marshal.FreeHGlobal(lpHeader);
                 }
-                SysexBufferHeaders = new IntPtr[0];
-
                 MidiInterop.midiInClose(hMidiIn);
             }
             disposed = true;

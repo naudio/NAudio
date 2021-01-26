@@ -149,6 +149,10 @@ namespace NAudio.Utils
                 {
                     byteCount -= count;
                     readPosition += count;
+                    if (readPosition < 0)
+                    {
+                        readPosition = buffer.Length + readPosition;
+                    }
                     readPosition %= MaxLength;
                 }
             }

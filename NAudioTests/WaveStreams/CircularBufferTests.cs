@@ -126,7 +126,27 @@ namespace NAudioTests.WaveStreams
             
         }
 
-        public void CheckBuffer(byte[] buffer, int startNumber, int length)
+        [Test]
+        public void CanBackwardReaderIndex()
+        {
+            CircularBuffer circularBuffer = new CircularBuffer(3);
+            var readBuffer = new byte[circularBuffer.MaxLength];
+
+            for (byte i = 0; i < 5; i++)
+            {
+                var b = new byte[] { i };
+                circularBuffer.Write(b, 0, 1);
+                circularBuffer.Read(b, 0, 1);
+            }
+
+            circularBuffer.Advance(-3);
+            circularBuffer.Read(readBuffer, 0, readBuffer.Length);
+
+            CollectionAssert.AreEqual(new byte[] { 2, 3, 4 }, readBuffer);
+        }
+
+
+    public void CheckBuffer(byte[] buffer, int startNumber, int length)
         {
             for (int n = 0; n < length; n++)
             {

@@ -98,7 +98,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="StopwatchExtensions.cs" />
     <Compile Include="Utils\BlockAlignedWaveStream.cs" />
-    <Compile Include="Utils\CircularBufferTests.cs" />
     <Compile Include="Utils\ByteEncodingTests.cs" />
     <Compile Include="Utils\NullWaveStream.cs" />
     <Compile Include="Utils\OSUtils.cs" />

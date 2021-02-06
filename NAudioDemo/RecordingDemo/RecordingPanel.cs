@@ -5,6 +5,7 @@ using System.Linq;
 using System.Windows.Forms;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
+using NAudioDemo.Utils;
 
 namespace NAudioDemo.RecordingDemo
 {
@@ -213,7 +214,7 @@ namespace NAudioDemo.RecordingDemo
         {
             if (listBoxRecordings.SelectedItem != null)
             {
-                Process.Start(Path.Combine(outputFolder, (string)listBoxRecordings.SelectedItem));
+                ProcessHelper.ShellExecute(Path.Combine(outputFolder, (string)listBoxRecordings.SelectedItem));
             }
         }
 
@@ -246,7 +247,7 @@ namespace NAudioDemo.RecordingDemo
 
         private void OnOpenFolderClick(object sender, EventArgs e)
         {
-            Process.Start(outputFolder);
+            ProcessHelper.ShellExecute(outputFolder);
         }
     }
 

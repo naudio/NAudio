@@ -167,9 +167,9 @@ namespace NAudioDemo.VolumeMixerDemo
         private void btnSoundProperties_Click(object sender, EventArgs e)
         {
             if (!devicePanel)
-                System.Diagnostics.Process.Start("control", "mmsys.cpl,,2");
+                Process.Start("control", "mmsys.cpl,,2");
             else
-                System.Diagnostics.Process.Start("control", "mmsys.cpl,,0");
+                Process.Start("control", "mmsys.cpl,,0");
         }
 
         private void tbVolume_MouseCaptureChanged(object sender, EventArgs e)

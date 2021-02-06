@@ -63,7 +63,7 @@ Note that WAV files can contain compressed audio, so as long as you know the cor
 
 ## Converting G.729 audio into a PCM WAV
 
-Suppose we have a .g729 file containing raw audio compressed with G.729. G.729 isn't actually a built-in `WaveFormat` in NAudio (some other common ones like mu and a-law are). But we can use `WaveFormat.CreateCustomFormat` or even derive from `WaveFormat` to define the correct format.
+Suppose we have a `.g729` file containing raw audio compressed with G.729. G.729 isn't actually a built-in `WaveFormat` in NAudio (some other common ones like mu and a-law are). But we can use `WaveFormat.CreateCustomFormat` or even derive from `WaveFormat` to define the correct format.
 
 Now in the previous example we saw how we could create a WAV file that contains the G.729 audio still encoded. But if we wanted it to be PCM, we'd need to use `WaveFormatConversionStream.CreatePcmStream` to look for an  ACM codec that understands the incoming `WaveFormat` and can turn it into PCM. 
 
@@ -89,7 +89,7 @@ using(var converter = WaveFormatConversionStream.CreatePcmStream(reader))
 }
 ```
 
-If it was a format that NAUdio has built-in support for like G.711 a-law, then we'd do it like this:
+If it was a format that NAudio has built-in support for like G.711 a-law, then we'd do it like this:
 
 ```c#
 var inFile = @"c:\users\mheath\desktop\alaw.bin";

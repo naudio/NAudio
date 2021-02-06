@@ -3,6 +3,7 @@ using System.Text;
 using System.Windows.Forms;
 using NAudio.Wave;
 using NAudio.Wave.Compression;
+using NAudioDemo.Utils;
 
 namespace NAudioDemo.AcmDemo
 {
@@ -95,7 +96,7 @@ namespace NAudioDemo.AcmDemo
                 }
                 if (checkBoxAutoLaunchConvertedFile.Checked)
                 {
-                    System.Diagnostics.Process.Start(outputFileName);
+                    ProcessHelper.ShellExecute(outputFileName);
                 }
             }
         }
@@ -122,7 +123,7 @@ namespace NAudioDemo.AcmDemo
                 }
                 if (checkBoxAutoLaunchConvertedFile.Checked)
                 {
-                    System.Diagnostics.Process.Start(outputFileName);
+                    ProcessHelper.ShellExecute(outputFileName);
                 }
             }
         }

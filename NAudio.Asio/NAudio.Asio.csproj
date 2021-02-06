@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Version>2.0.0-beta2</Version>
+    <Version>2.0.0</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Mark Heath</Authors>
     <SignAssembly>true</SignAssembly>
@@ -11,8 +11,9 @@
     <PackageProjectUrl>https://github.com/naudio/NAudio</PackageProjectUrl>
     <PackageTags>C# .NET audio sound</PackageTags>
     <RepositoryUrl>https://github.com/naudio/NAudio</RepositoryUrl>
-    <Copyright>© Mark Heath 2020</Copyright>
+    <Copyright>© Mark Heath 2021</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageIcon>naudio-icon.png</PackageIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,6 +24,13 @@
     <PackageReference Include="Microsoft.Win32.Registry">
       <Version>4.7.0</Version>
     </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\naudio-icon.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
   
 </Project>

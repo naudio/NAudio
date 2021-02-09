@@ -46,6 +46,47 @@ namespace NAudio.MediaFoundation
         internal static extern void MFCreateWaveFormatExFromMFMediaType(IMFMediaType pMFType, ref IntPtr ppWF, ref int pcbSize, int flags = 0);
 
         /// <summary>
+        /// Creates the Media Session in the application's process.
+        /// </summary>
+        [DllImport("mf.dll", SetLastError = true, PreserveSig = false)]
+        public static extern void MFCreateMediaSession(IntPtr pConfiguration, out IMFMediaSession ppMediaSession);
+        /// <summary>
+        /// Creates the source resolver, which is used to create a media source from a URL or byte stream.
+        /// </summary>
+        [DllImport("mf.dll", SetLastError = true, PreserveSig = false)]
+        public static extern void MFCreateSourceResolver(out IMFSourceResolver ppISourceResolver);
+        /// <summary>
+        /// Creates a topology object.
+        /// </summary>
+        [DllImport("mf.dll", SetLastError = true, PreserveSig = false)]
+        public static extern void MFCreateTopology(out IMFTopology ppTopo);
+        /// <summary>
+        /// Creates a topology node.
+        /// </summary>
+        [DllImport("mf.dll", SetLastError = true, PreserveSig = false)]
+        public static extern void MFCreateTopologyNode(uint NodeType, out IMFTopologyNode ppNode);
+        /// <summary>
+        /// Creates an activation object for the enhanced video renderer (EVR) media sink.
+        /// </summary>
+        [DllImport("mf.dll", SetLastError = true, PreserveSig = false)]
+        public static extern void MFCreateVideoRendererActivate(IntPtr hwndVideo, out IMFActivate ppActivate);
+        /// <summary>
+        /// Creates an activation object for the Streaming Audio Renderer (SAR).
+        /// </summary>
+        [DllImport("mf.dll", SetLastError = true, PreserveSig = false)]
+        public static extern void MFCreateAudioRendererActivate(out IMFActivate ppActivate);
+        /// <summary>
+        /// Queries an object for a specified service interface.
+        /// </summary>
+        [DllImport("mf.dll", SetLastError = true, PreserveSig = false)]
+        public static extern void MFGetService([MarshalAs(UnmanagedType.IUnknown)]object punkObject, ref Guid guidService, ref Guid riid, [MarshalAs(UnmanagedType.IUnknown)] out object ppvObject);
+        /// <summary>
+        /// Queries whether a media presentation requires the Protected Media Path (PMP).
+        /// </summary>
+        [DllImport("mf.dll", SetLastError = true, PreserveSig = false)]
+        public static extern void MFRequireProtectedEnvironment(IMFPresentationDescriptor pPresentationDescriptor);
+
+        /// <summary>
         /// Creates the source reader from a URL.
         /// </summary>
         [DllImport("mfreadwrite.dll", ExactSpelling = true, PreserveSig = false)]

@@ -12,7 +12,8 @@ NAudio is an open source .NET audio library written by [Mark Heath](https://mark
   * WaveOut
   * DirectSound
   * ASIO
-  * WASAPI
+  * WASAPI 
+  * MediaFoundation
 * Read audio from many standard file formats 
   * WAV
   * AIFF

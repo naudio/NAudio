@@ -15,17 +15,25 @@ namespace NAudio.MediaFoundation
 		private IMFByteStream m_sourcestream;
 		private IMFClock m_clock;
 		private IMFRateControl m_rate;
+		/// <summary>
+        /// Is media session and topology loaded.
+        /// </summary>
 		public bool Prepared { get; set; } = false;
+		/// <summary>
+        /// Whether to select al stream in the provider.
+        /// </summary>
 		public bool SelectAllStream { get; set; } = false;
 		public event EventHandler<StoppedEventArgs> PlaybackStopped;
 		public PlaybackState PlaybackState { get; private set; }
-
+		/// <summary>
+        /// Processes the media session event.
+        /// </summary>
 		private void ProcessEvent()
 		{
 			while (m_Session != null)
 			{
                 try { 
-					m_Session.GetEvent(1, out IMFMediaEvent _event);
+					m_Session.GetEvent(1, out IMFMediaEvent _event);//requests events and returns immediately
 					_event.GetType(out MediaEventType eventtype);
 					switch (eventtype)
 					{
@@ -33,7 +41,7 @@ namespace NAudio.MediaFoundation
 							PlaybackState = PlaybackState.Stopped;
 							PlaybackStopped(this, new StoppedEventArgs());
 							break;
-						case MediaEventType.MESessionTopologyStatus:
+						case MediaEventType.MESessionTopologyStatus://topology loaded
 							Guid guidManager = typeof(IAudioSessionManager).GUID;
 							(new MMDeviceEnumeratorComObject() as IMMDeviceEnumerator).
 								GetDefaultAudioEndpoint(CoreAudioApi.DataFlow.Render, CoreAudioApi.Role.Multimedia, out IMMDevice endoint);
@@ -45,7 +53,7 @@ namespace NAudio.MediaFoundation
 
 							Guid guid_ratecontrol = typeof(IMFRateControl).GUID;
 							Guid MF_RATE_CONTROL_SERVICE = Guid.Parse("866fa297-b802-4bf8-9dc9-5e3b6a9f53c9");
-							MediaFoundationInterop.MFGetService(m_Session, ref MF_RATE_CONTROL_SERVICE, ref guid_ratecontrol, out object _control);
+							MediaFoundationInterop.MFGetService(m_Session, ref MF_RATE_CONTROL_SERVICE, ref guid_ratecontrol, out object _control);//gets rate control
 							m_rate = _control as IMFRateControl;
 							Prepared = true;
 							break;
@@ -61,6 +69,9 @@ namespace NAudio.MediaFoundation
                 }
 			}
 		}
+		/// <summary>
+        /// The audio format.
+        /// </summary>
 		public WaveFormat OutputWaveFormat
 		{
 			get
@@ -75,7 +86,10 @@ namespace NAudio.MediaFoundation
 				}
 			}
 		}
-
+		/// <summary>
+        /// Loads IWaveProvider.
+        /// </summary>
+        /// <param name="waveProvider">The waveProvider to be loaded.</param>
 		public void Init(IWaveProvider waveProvider)
 		{
 			m_sourcewave= waveProvider;
@@ -87,10 +101,10 @@ namespace NAudio.MediaFoundation
 				byte[] _data = new byte[int.MaxValue];
 				readcount = waveProvider.Read(_data, 0, _data.Length);
 				m_sourcestream.Write(ref _data,_data.Length,out int hasread);
-			} while (readcount>= int.MaxValue);
+			} while (readcount>= int.MaxValue);//Creates a IMFByteStream and fills it with the data in waveProvider.
 			MediaFoundationInterop.MFCreateSourceResolver(out IMFSourceResolver resolver);
-			resolver.CreateObjectFromByteStream(m_sourcestream, "",SourceResolverFlags.MF_RESOLUTION_MEDIASOURCE
-				|SourceResolverFlags.MF_RESOLUTION_CONTENT_DOES_NOT_HAVE_TO_MATCH_EXTENSION_OR_MIME_TYPE, null, out MF_OBJECT_TYPE type, out object _source);
+			resolver.CreateObjectFromByteStream(m_sourcestream, "", (uint)(SourceResolverFlags.MF_RESOLUTION_MEDIASOURCE
+				|SourceResolverFlags.MF_RESOLUTION_CONTENT_DOES_NOT_HAVE_TO_MATCH_EXTENSION_OR_MIME_TYPE), null, out MF_OBJECT_TYPE type, out object _source);//Turns the stream to IMFMediaSource
 			IMFMediaSource source = _source as IMFMediaSource;
 			source.CreatePresentationDescriptor(out IMFPresentationDescriptor descriptor);
 			if (MediaFoundationInterop.MFRequireProtectedEnvironment(descriptor) == 0)
@@ -99,22 +113,28 @@ namespace NAudio.MediaFoundation
 			}
 			MediaFoundationInterop.MFCreateTopology(out IMFTopology topo);
 			descriptor.GetStreamDescriptorCount(out uint sdcount);
-			for (uint i = 0; i < sdcount; i++)
+			for (uint i = 0; i < sdcount; i++)//For each stream in the source,creates renderer and adds to the topology.
 			{
 				descriptor.GetStreamDescriptorByIndex(i, out bool IsSelected, out IMFStreamDescriptor sd);
-				if ((!IsSelected) & SelectAllStream)
-					descriptor.SelectStream(i);
+				if (!IsSelected)
+				{
+					if (SelectAllStream)
+						descriptor.SelectStream(i);
+					else
+						continue;
+				}
 				sd.GetMediaTypeHandler(out IMFMediaTypeHandler typeHandler);
 				typeHandler.GetMajorType(out Guid streamtype);
 				IMFActivate renderer;
 				if (streamtype == MediaTypes.MFMediaType_Audio)
 				{
-					MediaFoundationInterop.MFCreateAudioRendererActivate(out renderer);
+					MediaFoundationInterop.MFCreateAudioRendererActivate(out renderer);//Creates renderer for audio streams
 				}
 				else
 				{
 					continue;
 				}
+				//Creats and equips the topology nodes of the certain stream 
 				MediaFoundationInterop.MFCreateTopologyNode(MF_TOPOLOGY_TYPE.MF_TOPOLOGY_SOURCESTREAM_NODE, out IMFTopologyNode sourcenode);
 				sourcenode.SetUnknown(MediaFoundationAttributes.MF_TOPONODE_SOURCE, source);
 				sourcenode.SetUnknown(MediaFoundationAttributes.MF_TOPONODE_PRESENTATION_DESCRIPTOR, descriptor);
@@ -130,7 +150,9 @@ namespace NAudio.MediaFoundation
 			m_eventthread = new Thread(ProcessEvent);
 			m_eventthread.Start();
 		}
-
+		/// <summary>
+        /// Playback volume.
+        /// </summary>
 		public float Volume
         {
             get
@@ -147,7 +169,9 @@ namespace NAudio.MediaFoundation
 				m_volume.SetMasterVolume(value, Guid.Empty);
             }
         }
-
+		/// <summary>
+        /// Playback rate
+        /// </summary>
 		public float Rate
         {
             get
@@ -164,7 +188,6 @@ namespace NAudio.MediaFoundation
 				m_rate.SetRate(false, value);
 			}
         }
-
 		public void Pause()
 		{
 			if (m_Session == null) throw new InvalidOperationException("This player hasn't initialized yet");
@@ -172,7 +195,6 @@ namespace NAudio.MediaFoundation
 			m_Session.Pause();
 			PlaybackState = PlaybackState.Paused;
 		}
-
 		public void Stop()
 		{
 			if (m_Session == null) throw new InvalidOperationException("This player hasn't initialized yet");
@@ -195,14 +217,14 @@ namespace NAudio.MediaFoundation
         {
 			if(m_Session==null) throw new InvalidOperationException("This player hasn't initialized yet");
 			if (!Prepared) throw new InvalidOperationException("This player is still loading.");
-			m_clock.GetProperties(out MFCLOCK_PROPERTIES clockprop);			
+			m_clock.GetProperties(out MFCLOCK_PROPERTIES clockprop);
 			switch (PlaybackState)
 			{
 				case PlaybackState.Stopped:
 					return 0;
 				default:
                     m_clock.GetCorrelatedTime(0, out long timeofclock, out _);
-					double time = timeofclock * ((double)1 / clockprop.qwClockFrequency);
+					double time = timeofclock * ((double)1 / clockprop.qwClockFrequency);//Gets the real time that passed.
 					return (long)(time * m_sourcewave.WaveFormat.AverageBytesPerSecond);
 			}
 		}

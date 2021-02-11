@@ -16,11 +16,11 @@ namespace NAudio.MediaFoundation
 		/// <summary>
 		/// Creates a media source or a byte stream from a URL. This method is synchronous.
 		/// </summary>
-		void CreateObjectFromURL(string pwszURL, SourceResolverFlags dwFlags, IPropertyStore pProps, out MF_OBJECT_TYPE pObjectType, [MarshalAs(UnmanagedType.IUnknown)]out object ppObject);
+		int CreateObjectFromURL(string pwszURL, uint dwFlags, IPropertyStore pProps, out MF_OBJECT_TYPE pObjectType, [MarshalAs(UnmanagedType.Interface)]out object ppObject);
 		/// <summary>
 		/// Creates a media source from a byte stream. This method is synchronous.
 		/// </summary>
-		void CreateObjectFromByteStream(IMFByteStream pByteStream, string pwszURL, SourceResolverFlags dwFlags,IPropertyStore pProps,out MF_OBJECT_TYPE pObjectType,[MarshalAs(UnmanagedType.IUnknown)]out object ppObject);
+		void CreateObjectFromByteStream(IMFByteStream pByteStream, string pwszURL, uint dwFlags,IPropertyStore pProps,out MF_OBJECT_TYPE pObjectType,[MarshalAs(UnmanagedType.Interface)]out object ppObject);
 		/// <summary>
 		/// Begins an asynchronous request to create a media source or a byte stream from a URL.
 		/// </summary>

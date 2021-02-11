@@ -17,6 +17,6 @@ namespace NAudio.MediaFoundation
 		/// <summary>
 		/// Gets the current playback rate.
 		/// </summary>
-		void GetRate(ref bool pfThin, ref float pflRate);
+		void GetRate(out bool pfThin, out float pflRate);
 	}
 }

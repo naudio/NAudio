@@ -14,6 +14,7 @@ namespace NAudio.MediaFoundation
 		private IWaveProvider m_sourcewave;
 		private IMFByteStream m_sourcestream;
 		private IMFClock m_clock;
+		private IMFRateControl m_rate;
 		public bool Prepared { get; set; } = false;
 		public bool SelectAllStream { get; set; } = false;
 		public event EventHandler<StoppedEventArgs> PlaybackStopped;
@@ -39,7 +40,13 @@ namespace NAudio.MediaFoundation
 							endoint.Activate(ref guidManager, ClsCtx.ALL, IntPtr.Zero, out object _manager);
 							IAudioSessionManager manager = _manager as IAudioSessionManager;
 							manager.GetSimpleAudioVolume(Guid.Empty, 0, out m_volume);
+
 							m_Session.GetClock(out m_clock);
+
+							Guid guid_ratecontrol = typeof(IMFRateControl).GUID;
+							Guid MF_RATE_CONTROL_SERVICE = Guid.Parse("866fa297-b802-4bf8-9dc9-5e3b6a9f53c9");
+							MediaFoundationInterop.MFGetService(m_Session, ref MF_RATE_CONTROL_SERVICE, ref guid_ratecontrol, out object _control);
+							m_rate = _control as IMFRateControl;
 							Prepared = true;
 							break;
 					}
@@ -139,6 +146,23 @@ namespace NAudio.MediaFoundation
 				if (!Prepared) throw new InvalidOperationException("This player is still loading.");
 				m_volume.SetMasterVolume(value, Guid.Empty);
             }
+        }
+
+		public float Rate
+        {
+            get
+            {
+				if (m_Session == null) throw new InvalidOperationException("This player hasn't initialized yet");
+				if (!Prepared) throw new InvalidOperationException("This player is still loading.");
+				m_rate.GetRate(out _, out float _rate);
+				return _rate;
+			}
+            set
+            {
+				if (m_Session == null) throw new InvalidOperationException("This player hasn't initialized yet");
+				if (!Prepared) throw new InvalidOperationException("This player is still loading.");
+				m_rate.SetRate(false, value);
+			}
         }
 
 		public void Pause()

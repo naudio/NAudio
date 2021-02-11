@@ -16,15 +16,15 @@ namespace NAudio.MediaFoundation
 		/// <summary>
 		/// Creates a media source or a byte stream from a URL. This method is synchronous.
 		/// </summary>
-		void CreateObjectFromURL(string pwszURL, uint dwFlags, IPropertyStore pProps, out uint pObjectType, [MarshalAs(UnmanagedType.IUnknown)]out object ppObject);
+		void CreateObjectFromURL(string pwszURL, SourceResolverFlags dwFlags, IPropertyStore pProps, out MF_OBJECT_TYPE pObjectType, [MarshalAs(UnmanagedType.IUnknown)]out object ppObject);
 		/// <summary>
 		/// Creates a media source from a byte stream. This method is synchronous.
 		/// </summary>
-		void CreateObjectFromByteStream(IMFByteStream pByteStream, string pwszURL, uint dwFlags,IPropertyStore pProps,out MF_OBJECT_TYPE pObjectType,[MarshalAs(UnmanagedType.IUnknown)]out object ppObject);
+		void CreateObjectFromByteStream(IMFByteStream pByteStream, string pwszURL, SourceResolverFlags dwFlags,IPropertyStore pProps,out MF_OBJECT_TYPE pObjectType,[MarshalAs(UnmanagedType.IUnknown)]out object ppObject);
 		/// <summary>
 		/// Begins an asynchronous request to create a media source or a byte stream from a URL.
 		/// </summary>
-		void BeginCreateObjectFromURL(string pwszURL, uint dwFlags,IPropertyStore pProps,out IntPtr ppIUnknownCancelCookie,IntPtr pCallback,IntPtr punkState);
+		void BeginCreateObjectFromURL(string pwszURL, SourceResolverFlags dwFlags,IPropertyStore pProps,out IntPtr ppIUnknownCancelCookie,IntPtr pCallback,IntPtr punkState);
 		/// <summary>
 		/// Completes an asynchronous request to create an object from a URL.
 		/// </summary>
@@ -32,7 +32,7 @@ namespace NAudio.MediaFoundation
 		/// <summary>
 		/// Begins an asynchronous request to create a media source from a byte stream.
 		/// </summary>
-		void BeginCreateObjectFromByteStream(IMFByteStream pByteStream,string pwszURL,uint dwFlags,IPropertyStore pProps,out IntPtr ppIUnknownCancelCookie,IntPtr pCallback,IntPtr punkState);
+		void BeginCreateObjectFromByteStream(IMFByteStream pByteStream,string pwszURL, SourceResolverFlags dwFlags,IPropertyStore pProps,out IntPtr ppIUnknownCancelCookie,IntPtr pCallback,IntPtr punkState);
 		/// <summary>
 		/// Completes an asynchronous request to create a media source from a byte stream.
 		/// </summary>
@@ -42,4 +42,14 @@ namespace NAudio.MediaFoundation
 		/// </summary>
 		void CancelObjectCreation(IntPtr pIUnknownCancelCookie);
 	}
+	public enum SourceResolverFlags
+    {
+		MF_RESOLUTION_MEDIASOURCE = 0x00000001,
+		MF_RESOLUTION_BYTESTREAM = 0x00000002,
+		MF_RESOLUTION_CONTENT_DOES_NOT_HAVE_TO_MATCH_EXTENSION_OR_MIME_TYPE = 0x00000010,
+		MF_RESOLUTION_KEEP_BYTE_STREAM_ALIVE_ON_FAIL = 0x00000020,
+		MF_RESOLUTION_READ = 0x00010000,
+		MF_RESOLUTION_WRITE = 0x00020000,
+		MF_RESOLUTION_DISABLE_LOCAL_PLUGINS = 0x00000040
+    }
 }

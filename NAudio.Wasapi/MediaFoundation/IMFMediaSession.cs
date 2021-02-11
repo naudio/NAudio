@@ -60,7 +60,7 @@ namespace NAudio.MediaFoundation
 		/// <summary>
 		/// Retrieves the Media Session's presentation clock.
 		/// </summary>
-		void GetClock([MarshalAs(UnmanagedType.IUnknown)]out object ppClock);
+		void GetClock(out IMFClock ppClock);
 		/// <summary>
 		/// Retrieves the capabilities of the Media Session, based on the current presentation.
 		/// </summary>	

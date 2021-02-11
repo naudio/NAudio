@@ -218,7 +218,6 @@ namespace NAudio.MediaFoundation
         /// </summary>
         [FieldDescription("Audio bits per sample")]
         public static readonly Guid MF_MT_AUDIO_BITS_PER_SAMPLE = new Guid("f2deb57f-40fa-4764-aa33-ed4f2d1ff669");
-
         /// <summary>
         /// Enables the source reader or sink writer to use hardware-based Media Foundation transforms (MFTs).
         /// </summary>
@@ -282,5 +281,18 @@ namespace NAudio.MediaFoundation
         /// </summary>
         [FieldDescription("AAC Audio Profile Level Indication")]
         public static readonly Guid MF_MT_AAC_AUDIO_PROFILE_LEVEL_INDICATION = new Guid("7632f0e6-9538-4d61-acda-ea29c8c14456");
+        /// <summary>
+        /// Contains a pointer to the media source associated with a topology node.
+        /// </summary>
+        public static readonly Guid MF_TOPONODE_SOURCE = Guid.Parse("835c58ec-e075-4bc7-bcba-4de000df9ae6");
+        /// <summary>
+        /// Contains a pointer to the presentation descriptor for the media source.
+        /// </summary>
+        public static readonly Guid MF_TOPONODE_PRESENTATION_DESCRIPTOR = Guid.Parse("835c58ed-e075-4bc7-bcba-4de000df9ae6");
+        /// <summary>
+        /// Contains a pointer to the stream descriptor for the media source.
+        /// </summary>
+        public static readonly Guid MF_TOPONODE_STREAM_DESCRIPTOR = Guid.Parse("835c58ee-e075-4bc7-bcba-4de000df9ae6");
+
     }
 }

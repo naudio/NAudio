@@ -1,0 +1,4 @@
+﻿[*.cs]
+
+# CA1712: Do not prefix enum values with type name
+dotnet_diagnostic.CA1712.severity = none

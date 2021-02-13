@@ -10,16 +10,31 @@ namespace NAudio.MediaFoundation
     {
         public IMFByteStream byteStream;
         public WaveFormat WaveFormat { get; private set; }
+        private long streamlength;
 
         public int Read(byte[] buffer, int offset, int count) {		
             if (count + offset > buffer.Length) throw new ArgumentException("The offset and the count are too large");
             MediaFoundationInterop.MFCreateMemoryBuffer(count, out IMFMediaBuffer mediabuffer);
             mediabuffer.Lock(out IntPtr pbuffer, out int length, out _);
-            byteStream.Read(pbuffer, length, out int readcount);
+            byteStream.GetCurrentPosition(out long pos);
+            long remain = streamlength - pos;
+            int readcount;
+            try
+            {
+                if (remain > length)
+                    byteStream.Read(pbuffer, length, out readcount);
+                else
+                    byteStream.Read(pbuffer, (int)remain, out readcount);
+            }
+            catch
+            {
+                byteStream.SetCurrentPosition(pos);
+                return -1;
+            }
+            mediabuffer.SetCurrentLength(readcount);
             Marshal.Copy(pbuffer, buffer, offset, length);
             if(readcount < count)byteStream.SetCurrentPosition(0);
-            byteStream.GetLength(out long _length);
-            byteStream.GetCurrentPosition(out long p);
+            mediabuffer.Unlock();
             return readcount;
         }
         /// <summary>
@@ -67,6 +82,8 @@ namespace NAudio.MediaFoundation
                     continue;
                 }
             }
+            byteStream.SetCurrentPosition(0);
+            byteStream.GetLength(out streamlength);
         }
     }
 }

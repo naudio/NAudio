@@ -16,10 +16,6 @@ namespace NAudio.MediaFoundation
         private IWaveProvider m_sourcewave;
         private IMFClock m_clock;
         private IMFRateControl m_rate;
-        private PropVariant m_pos = new PropVariant()
-        {
-            vt = 20,//VT_I8
-        };
         /// <summary>
         /// Is media session and topology loaded.
         /// </summary>
@@ -54,7 +50,7 @@ namespace NAudio.MediaFoundation
                             IAudioSessionManager manager = _manager as IAudioSessionManager;
                             manager.GetSimpleAudioVolume(Guid.Empty, 0, out m_volume);
 
-                            //m_Session.GetClock(out m_clock);
+                            m_Session.GetClock(out m_clock);
 
                             Guid guid_ratecontrol = typeof(IMFRateControl).GUID;
                             Guid MF_RATE_CONTROL_SERVICE = Guid.Parse("866fa297-b802-4bf8-9dc9-5e3b6a9f53c9");
@@ -91,10 +87,6 @@ namespace NAudio.MediaFoundation
                 }
             }
         }
-        public void Reset()
-        {
-            m_pos.hVal = 0;
-        }
         /// <summary>
         /// Loads IWaveProvider.
         /// </summary>
@@ -109,6 +101,8 @@ namespace NAudio.MediaFoundation
             do
             {           
                 readcount = waveProvider.Read(_data, 0, _data.Length);
+                if (readcount < 0) 
+                    continue;
                 msByteStrem.Write(_data, 0, readcount);
             } while (readcount >=  _data.Length);//Creates a IMFByteStream and fills it with the data in waveProvider.
             ComStream csByteStream = new ComStream(msByteStrem);
@@ -116,18 +110,9 @@ namespace NAudio.MediaFoundation
             MediaFoundationInterop.MFCreateSourceResolver(out IMFSourceResolver resolver);
             IMFAttributes streamattributes = mfByteStream as IMFAttributes;
             mfByteStream.GetLength(out long _length);
-            object _source;
-            try
-            {
-                resolver.CreateObjectFromByteStream(mfByteStream, null, (uint)(SourceResolverFlags.MF_RESOLUTION_MEDIASOURCE
-                    | SourceResolverFlags.MF_RESOLUTION_KEEP_BYTE_STREAM_ALIVE_ON_FAIL), null, out _, out  _source);//Turns the stream to IMFMediaSource
-            }
-            catch(COMException e)
-            {
-                resolver.CreateObjectFromByteStream(mfByteStream, null, (uint)(SourceResolverFlags.MF_RESOLUTION_MEDIASOURCE
-                    |SourceResolverFlags.MF_RESOLUTION_CONTENT_DOES_NOT_HAVE_TO_MATCH_EXTENSION_OR_MIME_TYPE), null, out _, out _source);
-            }
-            
+            resolver.CreateObjectFromByteStream(mfByteStream, null, (uint)(SourceResolverFlags.MF_RESOLUTION_MEDIASOURCE
+                | SourceResolverFlags.MF_RESOLUTION_CONTENT_DOES_NOT_HAVE_TO_MATCH_EXTENSION_OR_MIME_TYPE), null, out _, out object _source);//Turns the stream to IMFMediaSource
+
             IMFMediaSource source = _source as IMFMediaSource;
             source.CreatePresentationDescriptor(out IMFPresentationDescriptor descriptor);
             MediaFoundationInterop.MFCreateTopology(out IMFTopology topo);
@@ -222,11 +207,27 @@ namespace NAudio.MediaFoundation
             PlaybackState = PlaybackState.Stopped;
             PlaybackStopped(this, new StoppedEventArgs());
         }
+        public void PlayFromBegining()
+        {
+            if (m_Session == null) throw new InvalidOperationException("This player hasn't initialized yet");
+            if (!Prepared) throw new InvalidOperationException("This player is still loading.");
+            PropVariant pos = new PropVariant()
+            {
+                vt = 20,//VT_I8
+                hVal=0
+            };
+            m_Session.Start(Guid.Empty, ref pos);
+            PlaybackState = PlaybackState.Playing;
+        }
         public void Play()
         {
             if (m_Session == null) throw new InvalidOperationException("This player hasn't initialized yet");
             if (!Prepared) throw new InvalidOperationException("This player is still loading.");
-            m_Session.Start(Guid.Empty, ref m_pos);
+            PropVariant pos = new PropVariant()
+            {
+                vt = 0//VT_EMPTY
+            };
+            m_Session.Start(Guid.Empty, ref pos);
             PlaybackState = PlaybackState.Playing;
         }
         public long GetPosition()

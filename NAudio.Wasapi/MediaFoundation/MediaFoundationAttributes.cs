@@ -293,6 +293,10 @@ namespace NAudio.MediaFoundation
         /// Contains a pointer to the stream descriptor for the media source.
         /// </summary>
         public static readonly Guid MF_TOPONODE_STREAM_DESCRIPTOR = Guid.Parse("835c58ee-e075-4bc7-bcba-4de000df9ae6");
+        /// <summary>
+        /// Specifies the MIME type of a byte stream.
+        /// </summary>
+        public static readonly Guid MF_BYTESTREAM_CONTENT_TYPE = new Guid(0xfc358289, 0x3cb6, 0x460c, 0xa4, 0x24, 0xb6, 0x68, 0x12, 0x60, 0x37, 0x5a);
 
     }
 }

@@ -83,7 +83,7 @@ namespace NAudio.MediaFoundation
 		/// <summary>
 		/// Creates a byte stream that is backed by a temporary local file.
 		/// </summary>
-		[DllImport("mf.dll", SetLastError = true, PreserveSig = false)]
+		[DllImport("Mfplat.dll", SetLastError = true, PreserveSig = false)]
 		public static extern void MFCreateTempFile(MF_FILE_ACCESSMODE AccessMode,MF_FILE_OPENMODE OpenMode,MF_FILE_FLAGS fFlags, out IMFByteStream ppIByteStream);
 		/// <summary>
 		/// Creates the source reader from a URL.

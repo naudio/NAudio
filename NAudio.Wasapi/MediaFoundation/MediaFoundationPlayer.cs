@@ -2,240 +2,256 @@ using NAudio.CoreAudioApi.Interfaces;
 using NAudio.Wave;
 using System;
 using System.Collections;
+using System.IO;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 namespace NAudio.MediaFoundation
 {
-	public class MediaFoundationPlayer :IWavePlayer, IWavePosition
-	{
-		private IMFMediaSession m_Session;
-		private Thread m_eventthread ;
-		private ISimpleAudioVolume m_volume;
-		private IWaveProvider m_sourcewave;
-		private IMFByteStream m_sourcestream;
-		private IMFClock m_clock;
-		private IMFRateControl m_rate;
-		/// <summary>
+    public class MediaFoundationPlayer :IWavePlayer, IWavePosition
+    {
+        private IMFMediaSession m_Session;
+        private Thread m_eventthread ;
+        private ISimpleAudioVolume m_volume;
+        private IWaveProvider m_sourcewave;
+        private IMFClock m_clock;
+        private IMFRateControl m_rate;
+        private PropVariant m_pos = new PropVariant()
+        {
+            vt = 20,//VT_I8
+        };
+        /// <summary>
         /// Is media session and topology loaded.
         /// </summary>
-		public bool Prepared { get; set; } = false;
-		/// <summary>
+        public bool Prepared { get; set; } = false;
+        /// <summary>
         /// Whether to select al stream in the provider.
         /// </summary>
-		public bool SelectAllStream { get; set; } = false;
-		public event EventHandler<StoppedEventArgs> PlaybackStopped;
-		public PlaybackState PlaybackState { get; private set; }
-		/// <summary>
+        public bool SelectAllStream { get; set; } = false;
+        public event EventHandler<StoppedEventArgs> PlaybackStopped;
+        public PlaybackState PlaybackState { get; private set; }
+        /// <summary>
         /// Processes the media session event.
         /// </summary>
-		private void ProcessEvent()
-		{
-			while (m_Session != null)
-			{
+        private void ProcessEvent()
+        {
+            while (m_Session != null)
+            {
                 try { 
-					m_Session.GetEvent(1, out IMFMediaEvent _event);//requests events and returns immediately
-					_event.GetType(out MediaEventType eventtype);
-					switch (eventtype)
-					{
-						case MediaEventType.MESessionStopped:
-							PlaybackState = PlaybackState.Stopped;
-							PlaybackStopped(this, new StoppedEventArgs());
-							break;
-						case MediaEventType.MESessionTopologyStatus://topology loaded
-							Guid guidManager = typeof(IAudioSessionManager).GUID;
-							(new MMDeviceEnumeratorComObject() as IMMDeviceEnumerator).
-								GetDefaultAudioEndpoint(CoreAudioApi.DataFlow.Render, CoreAudioApi.Role.Multimedia, out IMMDevice endoint);
-							endoint.Activate(ref guidManager, ClsCtx.ALL, IntPtr.Zero, out object _manager);
-							IAudioSessionManager manager = _manager as IAudioSessionManager;
-							manager.GetSimpleAudioVolume(Guid.Empty, 0, out m_volume);
+                    m_Session.GetEvent(1, out IMFMediaEvent _event);//requests events and returns immediately
+                    _event.GetType(out MediaEventType eventtype);
+                    switch (eventtype)
+                    {
+                        case MediaEventType.MESessionStopped:
+                            PlaybackState = PlaybackState.Stopped;
+                            PlaybackStopped(this, new StoppedEventArgs());
+                            break;
+                        case MediaEventType.MESessionTopologyStatus://topology loaded
+                            Guid guidManager = typeof(IAudioSessionManager).GUID;
+                            (new MMDeviceEnumeratorComObject() as IMMDeviceEnumerator).
+                                GetDefaultAudioEndpoint(CoreAudioApi.DataFlow.Render, CoreAudioApi.Role.Multimedia, out IMMDevice endoint);
+                            endoint.Activate(ref guidManager, ClsCtx.ALL, IntPtr.Zero, out object _manager);
+                            IAudioSessionManager manager = _manager as IAudioSessionManager;
+                            manager.GetSimpleAudioVolume(Guid.Empty, 0, out m_volume);
 
-							m_Session.GetClock(out m_clock);
+                            //m_Session.GetClock(out m_clock);
 
-							Guid guid_ratecontrol = typeof(IMFRateControl).GUID;
-							Guid MF_RATE_CONTROL_SERVICE = Guid.Parse("866fa297-b802-4bf8-9dc9-5e3b6a9f53c9");
-							MediaFoundationInterop.MFGetService(m_Session, ref MF_RATE_CONTROL_SERVICE, ref guid_ratecontrol, out object _control);//gets rate control
-							m_rate = _control as IMFRateControl;
-							Prepared = true;
-							break;
-					}
+                            Guid guid_ratecontrol = typeof(IMFRateControl).GUID;
+                            Guid MF_RATE_CONTROL_SERVICE = Guid.Parse("866fa297-b802-4bf8-9dc9-5e3b6a9f53c9");
+                            MediaFoundationInterop.MFGetService(m_Session, ref MF_RATE_CONTROL_SERVICE, ref guid_ratecontrol, out object _control);//gets rate control
+                            m_rate = _control as IMFRateControl;
+                            Prepared = true;
+                            break;
+                    }
 
-				}
+                }
                 catch (COMException e)
                 {
-					if (e.HResult == MediaFoundationErrors.MF_E_NO_EVENTS_AVAILABLE)
-						continue;
-					else
-						throw e;
+                    if (e.HResult == MediaFoundationErrors.MF_E_NO_EVENTS_AVAILABLE)
+                        continue;
+                    else
+                        throw e;
                 }
-			}
-		}
-		/// <summary>
+            }
+        }
+        /// <summary>
         /// The audio format.
         /// </summary>
-		public WaveFormat OutputWaveFormat
-		{
-			get
-			{
-				try
-				{
-					return m_sourcewave.WaveFormat;
-				}
-				catch (NullReferenceException)
-				{
-					throw new InvalidOperationException("This player hasn't initialized yet");
-				}
-			}
-		}
-		/// <summary>
+        public WaveFormat OutputWaveFormat
+        {
+            get
+            {
+                try
+                {
+                    return m_sourcewave.WaveFormat;
+                }
+                catch (NullReferenceException)
+                {
+                    throw new InvalidOperationException("This player hasn't initialized yet");
+                }
+            }
+        }
+        public void Reset()
+        {
+            m_pos.hVal = 0;
+        }
+        /// <summary>
         /// Loads IWaveProvider.
         /// </summary>
         /// <param name="waveProvider">The waveProvider to be loaded.</param>
-		public void Init(IWaveProvider waveProvider)
-		{
-			m_sourcewave= waveProvider;
-			MediaFoundationInterop.MFCreateTempFile(MF_FILE_ACCESSMODE.MF_ACCESSMODE_READWRITE,
-				MF_FILE_OPENMODE.MF_OPENMODE_DELETE_IF_EXIST, MF_FILE_FLAGS.MF_FILEFLAGS_NONE, out m_sourcestream);
-			int readcount;
-			do
-			{
-				byte[] _data = new byte[int.MaxValue];
-				readcount = waveProvider.Read(_data, 0, _data.Length);
-				m_sourcestream.Write(ref _data,_data.Length,out int hasread);
-			} while (readcount>= int.MaxValue);//Creates a IMFByteStream and fills it with the data in waveProvider.
-			MediaFoundationInterop.MFCreateSourceResolver(out IMFSourceResolver resolver);
-			resolver.CreateObjectFromByteStream(m_sourcestream, "", (uint)(SourceResolverFlags.MF_RESOLUTION_MEDIASOURCE
-				|SourceResolverFlags.MF_RESOLUTION_CONTENT_DOES_NOT_HAVE_TO_MATCH_EXTENSION_OR_MIME_TYPE), null, out MF_OBJECT_TYPE type, out object _source);//Turns the stream to IMFMediaSource
-			IMFMediaSource source = _source as IMFMediaSource;
-			source.CreatePresentationDescriptor(out IMFPresentationDescriptor descriptor);
-			if (MediaFoundationInterop.MFRequireProtectedEnvironment(descriptor) == 0)
-			{
-				throw new ArgumentException("The data in waveProvider is protected.");
-			}
-			MediaFoundationInterop.MFCreateTopology(out IMFTopology topo);
-			descriptor.GetStreamDescriptorCount(out uint sdcount);
-			for (uint i = 0; i < sdcount; i++)//For each stream in the source,creates renderer and adds to the topology.
-			{
-				descriptor.GetStreamDescriptorByIndex(i, out bool IsSelected, out IMFStreamDescriptor sd);
-				if (!IsSelected)
-				{
-					if (SelectAllStream)
-						descriptor.SelectStream(i);
-					else
-						continue;
-				}
-				sd.GetMediaTypeHandler(out IMFMediaTypeHandler typeHandler);
-				typeHandler.GetMajorType(out Guid streamtype);
-				IMFActivate renderer;
-				if (streamtype == MediaTypes.MFMediaType_Audio)
-				{
-					MediaFoundationInterop.MFCreateAudioRendererActivate(out renderer);//Creates renderer for audio streams
-				}
-				else
-				{
-					continue;
-				}
-				//Creats and equips the topology nodes of the certain stream 
-				MediaFoundationInterop.MFCreateTopologyNode(MF_TOPOLOGY_TYPE.MF_TOPOLOGY_SOURCESTREAM_NODE, out IMFTopologyNode sourcenode);
-				sourcenode.SetUnknown(MediaFoundationAttributes.MF_TOPONODE_SOURCE, source);
-				sourcenode.SetUnknown(MediaFoundationAttributes.MF_TOPONODE_PRESENTATION_DESCRIPTOR, descriptor);
-				sourcenode.SetUnknown(MediaFoundationAttributes.MF_TOPONODE_STREAM_DESCRIPTOR, sd);
-				topo.AddNode(sourcenode);
-				MediaFoundationInterop.MFCreateTopologyNode(MF_TOPOLOGY_TYPE.MF_TOPOLOGY_OUTPUT_NODE, out IMFTopologyNode outputnode);
-				outputnode.SetObject(renderer);
-				topo.AddNode(outputnode);
-				sourcenode.ConnectOutput(0, outputnode, 0);
-			}
-			MediaFoundationInterop.MFCreateMediaSession(IntPtr.Zero, out m_Session);
-			m_Session.SetTopology(0, topo);
-			m_eventthread = new Thread(ProcessEvent);
-			m_eventthread.Start();
-		}
-		/// <summary>
+        public void Init(IWaveProvider waveProvider)
+        {
+            MediaFoundationApi.Startup();
+            m_sourcewave = waveProvider;
+            int readcount;
+            MemoryStream msByteStrem = new MemoryStream();
+            byte[] _data = new byte[32767];
+            do
+            {           
+                readcount = waveProvider.Read(_data, 0, _data.Length);
+                msByteStrem.Write(_data, 0, readcount);
+            } while (readcount >=  _data.Length);//Creates a IMFByteStream and fills it with the data in waveProvider.
+            ComStream csByteStream = new ComStream(msByteStrem);
+            IMFByteStream mfByteStream = MediaFoundationApi.CreateByteStream(csByteStream);
+            MediaFoundationInterop.MFCreateSourceResolver(out IMFSourceResolver resolver);
+            IMFAttributes streamattributes = mfByteStream as IMFAttributes;
+            mfByteStream.GetLength(out long _length);
+            object _source;
+            try
+            {
+                resolver.CreateObjectFromByteStream(mfByteStream, null, (uint)(SourceResolverFlags.MF_RESOLUTION_MEDIASOURCE
+                    | SourceResolverFlags.MF_RESOLUTION_KEEP_BYTE_STREAM_ALIVE_ON_FAIL), null, out _, out  _source);//Turns the stream to IMFMediaSource
+            }
+            catch(COMException e)
+            {
+                resolver.CreateObjectFromByteStream(mfByteStream, null, (uint)(SourceResolverFlags.MF_RESOLUTION_MEDIASOURCE
+                    |SourceResolverFlags.MF_RESOLUTION_CONTENT_DOES_NOT_HAVE_TO_MATCH_EXTENSION_OR_MIME_TYPE), null, out _, out _source);
+            }
+            
+            IMFMediaSource source = _source as IMFMediaSource;
+            source.CreatePresentationDescriptor(out IMFPresentationDescriptor descriptor);
+            MediaFoundationInterop.MFCreateTopology(out IMFTopology topo);
+            descriptor.GetStreamDescriptorCount(out uint sdcount);
+            for (uint i = 0; i < sdcount; i++)//For each stream in the source,creates renderer and adds to the topology.
+            {
+                descriptor.GetStreamDescriptorByIndex(i, out bool IsSelected, out IMFStreamDescriptor sd);
+                if (!IsSelected)
+                {
+                    if (SelectAllStream)
+                        descriptor.SelectStream(i);
+                    else
+                        continue;
+                }
+                sd.GetMediaTypeHandler(out IMFMediaTypeHandler typeHandler);
+                typeHandler.GetMajorType(out Guid streamtype);
+                IMFActivate renderer;
+                if (streamtype == MediaTypes.MFMediaType_Audio)
+                {
+                    MediaFoundationInterop.MFCreateAudioRendererActivate(out renderer);//Creates renderer for audio streams
+                }
+                else
+                {
+                    continue;
+                }
+                //Creats and equips the topology nodes of the certain stream 
+                MediaFoundationInterop.MFCreateTopologyNode(MF_TOPOLOGY_TYPE.MF_TOPOLOGY_SOURCESTREAM_NODE, out IMFTopologyNode sourcenode);
+                sourcenode.SetUnknown(MediaFoundationAttributes.MF_TOPONODE_SOURCE, source);
+                sourcenode.SetUnknown(MediaFoundationAttributes.MF_TOPONODE_PRESENTATION_DESCRIPTOR, descriptor);
+                sourcenode.SetUnknown(MediaFoundationAttributes.MF_TOPONODE_STREAM_DESCRIPTOR, sd);
+                topo.AddNode(sourcenode);
+                MediaFoundationInterop.MFCreateTopologyNode(MF_TOPOLOGY_TYPE.MF_TOPOLOGY_OUTPUT_NODE, out IMFTopologyNode outputnode);
+                outputnode.SetObject(renderer);
+                topo.AddNode(outputnode);
+                sourcenode.ConnectOutput(0, outputnode, 0);
+            }
+            MediaFoundationInterop.MFCreateMediaSession(IntPtr.Zero, out m_Session);
+            m_Session.SetTopology(0, topo);
+            m_eventthread = new Thread(ProcessEvent);
+            m_eventthread.Start();
+        }
+        /// <summary>
         /// Playback volume.
         /// </summary>
-		public float Volume
+        public float Volume
         {
             get
             {
-				if (m_Session == null) throw new InvalidOperationException("This player hasn't initialized yet");
-				if (!Prepared) throw new InvalidOperationException("This player is still loading.");
-				m_volume.GetMasterVolume(out float volvalue);
-				return volvalue;
+                if (m_Session == null) throw new InvalidOperationException("This player hasn't initialized yet");
+                if (!Prepared) throw new InvalidOperationException("This player is still loading.");
+                m_volume.GetMasterVolume(out float volvalue);
+                return volvalue;
             }
             set
             {
-				if (m_Session == null) throw new InvalidOperationException("This player hasn't initialized yet");
-				if (!Prepared) throw new InvalidOperationException("This player is still loading.");
-				m_volume.SetMasterVolume(value, Guid.Empty);
+                if (m_Session == null) throw new InvalidOperationException("This player hasn't initialized yet");
+                if (!Prepared) throw new InvalidOperationException("This player is still loading.");
+                m_volume.SetMasterVolume(value, Guid.Empty);
             }
         }
-		/// <summary>
+        /// <summary>
         /// Playback rate
         /// </summary>
-		public float Rate
+        public float Rate
         {
             get
             {
-				if (m_Session == null) throw new InvalidOperationException("This player hasn't initialized yet");
-				if (!Prepared) throw new InvalidOperationException("This player is still loading.");
-				m_rate.GetRate(out _, out float _rate);
-				return _rate;
-			}
+                if (m_Session == null) throw new InvalidOperationException("This player hasn't initialized yet");
+                if (!Prepared) throw new InvalidOperationException("This player is still loading.");
+                m_rate.GetRate(out _, out float _rate);
+                return _rate;
+            }
             set
             {
-				if (m_Session == null) throw new InvalidOperationException("This player hasn't initialized yet");
-				if (!Prepared) throw new InvalidOperationException("This player is still loading.");
-				m_rate.SetRate(false, value);
-			}
+                if (m_Session == null) throw new InvalidOperationException("This player hasn't initialized yet");
+                if (!Prepared) throw new InvalidOperationException("This player is still loading.");
+                m_rate.SetRate(false, value);
+            }
         }
-		public void Pause()
-		{
-			if (m_Session == null) throw new InvalidOperationException("This player hasn't initialized yet");
-			if (!Prepared) throw new InvalidOperationException("This player is still loading.");
-			m_Session.Pause();
-			PlaybackState = PlaybackState.Paused;
-		}
-		public void Stop()
-		{
-			if (m_Session == null) throw new InvalidOperationException("This player hasn't initialized yet");
-			if (!Prepared) throw new InvalidOperationException("This player is still loading.");
-			m_Session.Stop();
-			PlaybackState = PlaybackState.Stopped;
-			PlaybackStopped(this, new StoppedEventArgs());
-		}
-		public void Play()
-		{
-			if (m_Session == null) throw new InvalidOperationException("This player hasn't initialized yet");
-			if (!Prepared) throw new InvalidOperationException("This player is still loading.");
-			PropVariant prop = new PropVariant() { 
-			vt = 0//VT_EMPTY
-			};
-			m_Session.Start(Guid.Empty, ref prop);
-			PlaybackState = PlaybackState.Playing;
-		}
-		public long GetPosition()
+        public void Pause()
         {
-			if(m_Session==null) throw new InvalidOperationException("This player hasn't initialized yet");
-			if (!Prepared) throw new InvalidOperationException("This player is still loading.");
-			m_clock.GetProperties(out MFCLOCK_PROPERTIES clockprop);
-			switch (PlaybackState)
-			{
-				case PlaybackState.Stopped:
-					return 0;
-				default:
+            if (m_Session == null) throw new InvalidOperationException("This player hasn't initialized yet");
+            if (!Prepared) throw new InvalidOperationException("This player is still loading.");
+            m_Session.Pause();
+            PlaybackState = PlaybackState.Paused;
+        }
+        public void Stop()
+        {
+            if (m_Session == null) throw new InvalidOperationException("This player hasn't initialized yet");
+            if (!Prepared) throw new InvalidOperationException("This player is still loading.");
+            m_Session.Stop();
+            PlaybackState = PlaybackState.Stopped;
+            PlaybackStopped(this, new StoppedEventArgs());
+        }
+        public void Play()
+        {
+            if (m_Session == null) throw new InvalidOperationException("This player hasn't initialized yet");
+            if (!Prepared) throw new InvalidOperationException("This player is still loading.");
+            m_Session.Start(Guid.Empty, ref m_pos);
+            PlaybackState = PlaybackState.Playing;
+        }
+        public long GetPosition()
+        {
+            if(m_Session==null) throw new InvalidOperationException("This player hasn't initialized yet");
+            if (!Prepared) throw new InvalidOperationException("This player is still loading.");
+            m_clock.GetProperties(out MFCLOCK_PROPERTIES clockprop);
+            switch (PlaybackState)
+            {
+                case PlaybackState.Stopped:
+                    return 0;
+                default:
                     m_clock.GetCorrelatedTime(0, out long timeofclock, out _);
-					double time = timeofclock * ((double)1 / clockprop.qwClockFrequency);//Gets the real time that passed.
-					return (long)(time * m_sourcewave.WaveFormat.AverageBytesPerSecond);
-			}
-		}
-		public void Dispose()
-		{
-			if (m_Session != null) 
-			{
-				m_Session.Shutdown();
-				m_Session = null; 
-			}
-			GC.SuppressFinalize(this);
-		}
-	}
+                    double time = timeofclock * ((double)1 / clockprop.qwClockFrequency);//Gets the real time that passed.
+                    return (long)(time * m_sourcewave.WaveFormat.AverageBytesPerSecond);
+            }
+        }
+        public void Dispose()
+        {
+            if (m_Session != null) 
+            {
+                m_Session.Shutdown();
+                m_Session = null; 
+            }
+            GC.SuppressFinalize(this);
+        }
+    }
 }

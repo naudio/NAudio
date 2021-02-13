@@ -50,19 +50,19 @@ namespace NAudio.MediaFoundation
         /// Reads data from the stream. 
         /// virtual HRESULT STDMETHODCALLTYPE Read(/*[size_is][out]*/ __RPC__out_ecount_full(cb) BYTE *pb, /*[in]*/ ULONG cb, /*[out]*/ __RPC__out ULONG *pcbRead) = 0;
         /// </summary>
-        void Read(ref byte[] pb, int cb, out int pcbRead);
+        void Read(IntPtr pb, int cb, out int pcbRead);
 
         /// <summary>
         /// Begins an asynchronous read operation from the stream. 
         /// virtual /*[local]*/ HRESULT STDMETHODCALLTYPE BeginRead(/*[out]*/ _Out_writes_bytes_(cb)  BYTE *pb, /*[in]*/ ULONG cb, /*[in]*/ IMFAsyncCallback *pCallback, /*[in]*/ IUnknown *punkState) = 0;
         /// </summary>
-        void BeginRead(ref byte[] pb, int cb, IntPtr pCallback, IntPtr punkState);
+        void BeginRead(IntPtr pb, int cb, IntPtr pCallback, IntPtr punkState);
 
         /// <summary>
         /// Completes an asynchronous read operation. 
         /// virtual /*[local]*/ HRESULT STDMETHODCALLTYPE EndRead(/*[in]*/ IMFAsyncResult *pResult, /*[out]*/ _Out_  ULONG *pcbRead) = 0;
         /// </summary>
-        void EndRead(ref byte[] pResult, out int pcbRead);
+        void EndRead(IntPtr pResult, out int pcbRead);
 
         /// <summary>
         /// Writes data to the stream. 
@@ -80,7 +80,7 @@ namespace NAudio.MediaFoundation
         /// Completes an asynchronous write operation. 
         /// virtual /*[local]*/ HRESULT STDMETHODCALLTYPE EndWrite(/*[in]*/ IMFAsyncResult *pResult, /*[out]*/ _Out_  ULONG *pcbWritten) = 0;
         /// </summary>
-        void EndWrite(ref byte[] pResult, out int pcbWritten);
+        void EndWrite(IntPtr pResult, out int pcbWritten);
         
         /// <summary>
         /// Moves the current position in the stream by a specified offset. 

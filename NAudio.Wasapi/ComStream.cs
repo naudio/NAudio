@@ -84,13 +84,13 @@ namespace NAudio.Wave
             SetLength(libNewSize);
         }
 
-        void IStream.Stat(out System.Runtime.InteropServices.ComTypes.STATSTG pstatstg, int grfStatFlag)
+        void IStream.Stat(out STATSTG pstatstg, int grfStatFlag)
         {
             const int STGM_READ = 0x00000000;
             const int STGM_WRITE = 0x00000001;
             const int STGM_READWRITE = 0x00000002;
 
-            var tmp = new System.Runtime.InteropServices.ComTypes.STATSTG { type = 2, cbSize = Length, grfMode = 0 };
+            var tmp = new STATSTG { type = 2, cbSize = Length, grfMode = 0 };
 
             if (CanWrite && CanRead)
                 tmp.grfMode |= STGM_READWRITE;

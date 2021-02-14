@@ -14,7 +14,7 @@ namespace NAudio.MediaFoundation
         private Thread m_eventthread ;
         private ISimpleAudioVolume m_volume;
         private IWaveProvider m_sourcewave;
-        private IMFClock m_clock;
+        private IMFPresentationClock m_clock;
         private IMFRateControl m_rate;
         /// <summary>
         /// Is media session and topology loaded.
@@ -38,9 +38,9 @@ namespace NAudio.MediaFoundation
                     _event.GetType(out MediaEventType eventtype);
                     switch (eventtype)
                     {
-                        case MediaEventType.MESessionStopped:
+                        case MediaEventType.MESessionEnded :
                             PlaybackState = PlaybackState.Stopped;
-                            PlaybackStopped(this, new StoppedEventArgs());
+                            PlaybackStopped?.Invoke(this, new StoppedEventArgs());
                             break;
                         case MediaEventType.MESessionTopologyStatus://topology loaded
                             Guid guidManager = typeof(IAudioSessionManager).GUID;
@@ -59,6 +59,7 @@ namespace NAudio.MediaFoundation
                             Prepared = true;
                             break;
                     }
+                    _event = null;
 
                 }
                 catch (COMException e)
@@ -67,6 +68,10 @@ namespace NAudio.MediaFoundation
                         continue;
                     else
                         throw e;
+                }
+                catch (ThreadAbortException)
+                {
+                    break;
                 }
             }
         }
@@ -97,21 +102,23 @@ namespace NAudio.MediaFoundation
             m_sourcewave = waveProvider;
             int readcount;
             MemoryStream msByteStrem = new MemoryStream();
-            byte[] _data = new byte[32767];
+            byte[] _data;
             do
-            {           
+            {
+                readcount = 0;
+                _data = new byte[1000000000];
                 readcount = waveProvider.Read(_data, 0, _data.Length);
-                if (readcount < 0) 
+                if (readcount < 0)
                     continue;
                 msByteStrem.Write(_data, 0, readcount);
-            } while (readcount >=  _data.Length);//Creates a IMFByteStream and fills it with the data in waveProvider.
+            } while (readcount >=  _data.Length|readcount<0);//Creates a IMFByteStream and fills it with the data in waveProvider.
             ComStream csByteStream = new ComStream(msByteStrem);
             IMFByteStream mfByteStream = MediaFoundationApi.CreateByteStream(csByteStream);
             MediaFoundationInterop.MFCreateSourceResolver(out IMFSourceResolver resolver);
             IMFAttributes streamattributes = mfByteStream as IMFAttributes;
             mfByteStream.GetLength(out long _length);
-            resolver.CreateObjectFromByteStream(mfByteStream, null, (uint)(SourceResolverFlags.MF_RESOLUTION_MEDIASOURCE
-                | SourceResolverFlags.MF_RESOLUTION_CONTENT_DOES_NOT_HAVE_TO_MATCH_EXTENSION_OR_MIME_TYPE), null, out _, out object _source);//Turns the stream to IMFMediaSource
+            resolver.CreateObjectFromByteStream(mfByteStream, null, SourceResolverFlags.MF_RESOLUTION_MEDIASOURCE
+                | SourceResolverFlags.MF_RESOLUTION_CONTENT_DOES_NOT_HAVE_TO_MATCH_EXTENSION_OR_MIME_TYPE, null, out _, out object _source);//Turns the stream to IMFMediaSource
 
             IMFMediaSource source = _source as IMFMediaSource;
             source.CreatePresentationDescriptor(out IMFPresentationDescriptor descriptor);
@@ -170,6 +177,7 @@ namespace NAudio.MediaFoundation
             {
                 if (m_Session == null) throw new InvalidOperationException("This player hasn't initialized yet");
                 if (!Prepared) throw new InvalidOperationException("This player is still loading.");
+                if (value > 1 | value < 0) throw new ArgumentException("The value is out of range");
                 m_volume.SetMasterVolume(value, Guid.Empty);
             }
         }
@@ -205,7 +213,7 @@ namespace NAudio.MediaFoundation
             if (!Prepared) throw new InvalidOperationException("This player is still loading.");
             m_Session.Stop();
             PlaybackState = PlaybackState.Stopped;
-            PlaybackStopped(this, new StoppedEventArgs());
+            PlaybackStopped?.Invoke(this, new StoppedEventArgs());
         }
         public void PlayFromBegining()
         {
@@ -213,7 +221,7 @@ namespace NAudio.MediaFoundation
             if (!Prepared) throw new InvalidOperationException("This player is still loading.");
             PropVariant pos = new PropVariant()
             {
-                vt = 20,//VT_I8
+                vt = (short)VarEnum.VT_I8,
                 hVal=0
             };
             m_Session.Start(Guid.Empty, ref pos);
@@ -225,7 +233,7 @@ namespace NAudio.MediaFoundation
             if (!Prepared) throw new InvalidOperationException("This player is still loading.");
             PropVariant pos = new PropVariant()
             {
-                vt = 0//VT_EMPTY
+                vt = (short)VarEnum.VT_EMPTY,
             };
             m_Session.Start(Guid.Empty, ref pos);
             PlaybackState = PlaybackState.Playing;
@@ -234,21 +242,21 @@ namespace NAudio.MediaFoundation
         {
             if(m_Session==null) throw new InvalidOperationException("This player hasn't initialized yet");
             if (!Prepared) throw new InvalidOperationException("This player is still loading.");
-            m_clock.GetProperties(out MFCLOCK_PROPERTIES clockprop);
             switch (PlaybackState)
             {
                 case PlaybackState.Stopped:
                     return 0;
                 default:
-                    m_clock.GetCorrelatedTime(0, out long timeofclock, out _);
-                    double time = timeofclock * ((double)1 / clockprop.qwClockFrequency);//Gets the real time that passed.
-                    return (long)(time * m_sourcewave.WaveFormat.AverageBytesPerSecond);
+                    m_clock.GetTime(out long _time);
+                    long timeinsec = _time / 10000000;
+                    return m_sourcewave.WaveFormat.AverageBytesPerSecond * timeinsec;
             }
         }
         public void Dispose()
         {
             if (m_Session != null) 
             {
+                m_eventthread?.Abort();
                 m_Session.Shutdown();
                 m_Session = null; 
             }

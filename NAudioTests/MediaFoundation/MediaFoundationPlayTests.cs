@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 
-namespace NAudio.MediaFoundation
+namespace NAudioTests.MediaFoundation
 {
     [TestFixture()]
     public class MediaFoundationPlayTests
@@ -17,17 +17,12 @@ namespace NAudio.MediaFoundation
         {
             string url = @"G:\Chevy\Music\Unravel.mp3";
             if (!File.Exists(url)) Assert.Ignore("Missing test file");
-            try
-            {
-                MediaFoundationProvider provider = new MediaFoundationProvider(url);
-                MediaFoundationPlayer player = new MediaFoundationPlayer();
-                player.Init(provider);
-                player.Play();
-            }
-            catch
-            {
-                Assert.Fail();
-            }
+            MediaFoundationProvider provider = new MediaFoundationProvider(url);
+            MediaFoundationPlayer player = new MediaFoundationPlayer();
+            player.Init(provider);
+            while (!player.Prepared) { }
+            player.Play();
+
         }
     }
 }

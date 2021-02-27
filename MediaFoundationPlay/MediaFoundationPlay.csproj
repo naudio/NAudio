@@ -9,12 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="NAudio.Core">
-      <HintPath>D:\Chevy\Program\NAudio\NAudio.Wasapi\bin\Debug\netstandard2.0\NAudio.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="NAudio.Wasapi">
-      <HintPath>D:\Chevy\Program\NAudio\NAudio.Wasapi\bin\Debug\netstandard2.0\NAudio.Wasapi.dll</HintPath>
-    </Reference>
+    <ProjectReference Include="..\NAudio.Wasapi\NAudio.Wasapi.csproj" />
   </ItemGroup>
-
 </Project>

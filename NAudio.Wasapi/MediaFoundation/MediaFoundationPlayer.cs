@@ -93,6 +93,55 @@ namespace NAudio.MediaFoundation
             }
         }
         /// <summary>
+        /// Playback volume.
+        /// </summary>
+        public float Volume
+        {
+            get
+            {
+                if (m_Session == null) throw new InvalidOperationException("This player hasn't initialized yet");
+                if (!Prepared) throw new InvalidOperationException("This player is still loading.");
+                m_volume.GetMasterVolume(out float volvalue);
+                return volvalue;
+            }
+            set
+            {
+                if (m_Session == null) throw new InvalidOperationException("This player hasn't initialized yet");
+                if (!Prepared) throw new InvalidOperationException("This player is still loading.");
+                if (value > 1 | value < 0) throw new ArgumentException("The value is out of range");
+                m_volume.SetMasterVolume(value, Guid.Empty);
+            }
+        }
+        /// <summary>
+        /// Playback rate
+        /// </summary>
+        public float Rate
+        {
+            get
+            {
+                if (m_Session == null) throw new InvalidOperationException("This player hasn't initialized yet");
+                if (!Prepared) throw new InvalidOperationException("This player is still loading.");
+                m_rate.GetRate(out _, out float _rate);
+                return _rate;
+            }
+            set
+            {
+                if (m_Session == null) throw new InvalidOperationException("This player hasn't initialized yet");
+                if (!Prepared) throw new InvalidOperationException("This player is still loading.");
+                if (PlaybackState == PlaybackState.Playing) throw new InvalidOperationException("Can't change rate while playing.");
+                if (PlaybackState == PlaybackState.Paused & value * Rate < 0) throw new InvalidOperationException("Can't change playback direction while paused.");
+                if (PlaybackState == PlaybackState.Paused & ((value == 0 & Rate < 0) | (value < 0 & Rate == 0))) throw new InvalidOperationException("Can't switch between reserve playback and stopping paused.");
+                try
+                {
+                    m_rate.SetRate(false, value);
+                }
+                catch (COMException)
+                {
+                    throw new ArgumentOutOfRangeException("Unsupport rate.");
+                }
+            }
+        }
+        /// <summary>
         /// Loads IWaveProvider.
         /// </summary>
         /// <param name="waveProvider">The waveProvider to be loaded.</param>
@@ -106,7 +155,7 @@ namespace NAudio.MediaFoundation
             do
             {
                 readcount = 0;
-                _data = new byte[1000000000];
+                _data = new byte[32767];
                 readcount = waveProvider.Read(_data, 0, _data.Length);
                 if (readcount < 0)
                     continue;
@@ -119,7 +168,6 @@ namespace NAudio.MediaFoundation
             mfByteStream.GetLength(out long _length);
             resolver.CreateObjectFromByteStream(mfByteStream, null, SourceResolverFlags.MF_RESOLUTION_MEDIASOURCE
                 | SourceResolverFlags.MF_RESOLUTION_CONTENT_DOES_NOT_HAVE_TO_MATCH_EXTENSION_OR_MIME_TYPE, null, out _, out object _source);//Turns the stream to IMFMediaSource
-
             IMFMediaSource source = _source as IMFMediaSource;
             source.CreatePresentationDescriptor(out IMFPresentationDescriptor descriptor);
             MediaFoundationInterop.MFCreateTopology(out IMFTopology topo);
@@ -161,45 +209,7 @@ namespace NAudio.MediaFoundation
             m_eventthread = new Thread(ProcessEvent);
             m_eventthread.Start();
         }
-        /// <summary>
-        /// Playback volume.
-        /// </summary>
-        public float Volume
-        {
-            get
-            {
-                if (m_Session == null) throw new InvalidOperationException("This player hasn't initialized yet");
-                if (!Prepared) throw new InvalidOperationException("This player is still loading.");
-                m_volume.GetMasterVolume(out float volvalue);
-                return volvalue;
-            }
-            set
-            {
-                if (m_Session == null) throw new InvalidOperationException("This player hasn't initialized yet");
-                if (!Prepared) throw new InvalidOperationException("This player is still loading.");
-                if (value > 1 | value < 0) throw new ArgumentException("The value is out of range");
-                m_volume.SetMasterVolume(value, Guid.Empty);
-            }
-        }
-        /// <summary>
-        /// Playback rate
-        /// </summary>
-        public float Rate
-        {
-            get
-            {
-                if (m_Session == null) throw new InvalidOperationException("This player hasn't initialized yet");
-                if (!Prepared) throw new InvalidOperationException("This player is still loading.");
-                m_rate.GetRate(out _, out float _rate);
-                return _rate;
-            }
-            set
-            {
-                if (m_Session == null) throw new InvalidOperationException("This player hasn't initialized yet");
-                if (!Prepared) throw new InvalidOperationException("This player is still loading.");
-                m_rate.SetRate(false, value);
-            }
-        }
+       
         public void Pause()
         {
             if (m_Session == null) throw new InvalidOperationException("This player hasn't initialized yet");
@@ -256,9 +266,12 @@ namespace NAudio.MediaFoundation
         {
             if (m_Session != null) 
             {
-                m_eventthread?.Abort();
+                Marshal.FinalReleaseComObject(m_clock);
+                Marshal.FinalReleaseComObject(m_rate);
+                Marshal.FinalReleaseComObject(m_volume);
                 m_Session.Shutdown();
-                m_Session = null; 
+                m_Session = null;
+                m_eventthread?.Join();               
             }
             GC.SuppressFinalize(this);
         }

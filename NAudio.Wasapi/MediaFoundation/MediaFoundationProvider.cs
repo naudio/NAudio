@@ -1,5 +1,6 @@
 ﻿using NAudio.Wave;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -8,36 +9,14 @@ namespace NAudio.MediaFoundation
 {
     public class MediaFoundationProvider : IWaveProvider
     {
-        public IMFByteStream byteStream;
-        public WaveFormat WaveFormat { get; private set; }
         private long streamlength;
-
+        private MemoryStream datastream;
+        public WaveFormat WaveFormat { get; private set; }
+        
         public int Read(byte[] buffer, int offset, int count) {		
             if (count + offset > buffer.Length) throw new ArgumentException("The offset and the count are too large");
-            MediaFoundationInterop.MFCreateMemoryBuffer(count, out IMFMediaBuffer mediabuffer);
-            mediabuffer.Lock(out IntPtr pbuffer, out int length, out _);
-            byteStream.GetCurrentPosition(out long pos);
-            long remain = streamlength - pos;
-            int readcount;
-            try
-            {
-                if (remain > length)
-                    byteStream.Read(pbuffer, length, out readcount);
-                else
-                    byteStream.Read(pbuffer, (int)remain, out readcount);
-            }
-            catch (Exception)
-            {
-                byteStream.SetCurrentPosition(0);
-                byteStream.SetCurrentPosition(pos);
-                return -1;
-            }
-            Marshal.Copy(pbuffer, buffer, offset, length);
-            if(readcount < count)byteStream.SetCurrentPosition(0);
-            mediabuffer.Unlock();
-            GC.SuppressFinalize(mediabuffer);
-            GC.SuppressFinalize(pbuffer);
-            return readcount;
+            return datastream.Read(buffer, offset, count);
+            
         }
         /// <summary>
         /// Initialize the MediaFoundationProvider with specific file.
@@ -49,8 +28,9 @@ namespace NAudio.MediaFoundation
             MediaFoundationInterop.MFCreateSourceResolver(out IMFSourceResolver resolver);
             //Creates both IMFMediaSource and IMFByteStream.Uses the stream for 'Read' method and uses the source to collect format information.
             resolver.CreateObjectFromURL(url, SourceResolverFlags.MF_RESOLUTION_BYTESTREAM|SourceResolverFlags.MF_RESOLUTION_CONTENT_DOES_NOT_HAVE_TO_MATCH_EXTENSION_OR_MIME_TYPE, null, out _, out object _stream);
-            byteStream = _stream as IMFByteStream;
+            IMFByteStream byteStream = _stream as IMFByteStream;
             resolver.CreateObjectFromByteStream(byteStream, null, SourceResolverFlags.MF_RESOLUTION_MEDIASOURCE | SourceResolverFlags.MF_RESOLUTION_CONTENT_DOES_NOT_HAVE_TO_MATCH_EXTENSION_OR_MIME_TYPE, null, out _, out object _source);
+            Marshal.FinalReleaseComObject(resolver);
             IMFMediaSource source = _source as IMFMediaSource;
             source.CreatePresentationDescriptor(out IMFPresentationDescriptor descriptor);
             descriptor.GetStreamDescriptorCount(out uint sdcount);
@@ -83,8 +63,15 @@ namespace NAudio.MediaFoundation
                     continue;
                 }
             }
-            byteStream.SetCurrentPosition(0);
             byteStream.GetLength(out streamlength);
+            byteStream.SetCurrentPosition(0);
+            //Moves all the bytes in IMFByteStream to MemoryStream.
+            MediaFoundationInterop.MFCreateMemoryBuffer(unchecked((int)streamlength), out IMFMediaBuffer mediabuffer);
+            mediabuffer.Lock(out IntPtr pbuffer, out int length, out _);
+            byteStream.Read(pbuffer, length, out _);
+            byte[] buffer = new byte[length];
+            Marshal.Copy(pbuffer, buffer,0, length);
+            datastream = new MemoryStream(buffer);
         }
     }
 }

@@ -31,7 +31,7 @@ namespace NAudio.MediaFoundation
 		/// </summary>
 		[DllImport("mfplat.dll", ExactSpelling = true, PreserveSig = false)]
 		internal static extern void MFCreateMediaType(out IMFMediaType ppMFType);
-		
+
 		/// <summary>
 		/// Initializes a media type from a WAVEFORMATEX structure. 
 		/// </summary>
@@ -74,17 +74,17 @@ namespace NAudio.MediaFoundation
 		/// Queries an object for a specified service interface.
 		/// </summary>
 		[DllImport("mf.dll", SetLastError = true, PreserveSig = false)]
-		public static extern void MFGetService([MarshalAs(UnmanagedType.IUnknown)]object punkObject, ref Guid guidService, ref Guid riid, [MarshalAs(UnmanagedType.IUnknown)] out object ppvObject);
+		public static extern void MFGetService([MarshalAs(UnmanagedType.IUnknown)] object punkObject, ref Guid guidService, ref Guid riid, [MarshalAs(UnmanagedType.IUnknown)] out object ppvObject);
+		/// <summary>
+		/// Enumerates a list of audio or video capture devices.
+		/// </summary>
+		[DllImport("Mf.dll", SetLastError = true, PreserveSig = false)]
+		public static extern void MFEnumDeviceSources(IMFAttributes pAttributes, out IMFActivate[] pppSourceActivate, out uint pcSourceActivate);
 		/// <summary>
 		/// Queries whether a media presentation requires the Protected Media Path (PMP).
 		/// </summary>
 		[DllImport("mf.dll", SetLastError = true, PreserveSig = false)]
 		public static extern int MFRequireProtectedEnvironment(IMFPresentationDescriptor pPresentationDescriptor);
-		/// <summary>
-		/// Creates a byte stream that is backed by a temporary local file.
-		/// </summary>
-		[DllImport("Mfplat.dll", SetLastError = true, PreserveSig = false)]
-		public static extern void MFCreateTempFile(MF_FILE_ACCESSMODE AccessMode,MF_FILE_OPENMODE OpenMode,MF_FILE_FLAGS fFlags, out IMFByteStream ppIByteStream);
 		/// <summary>
 		/// Creates the source reader from a URL.
 		/// </summary>
@@ -97,7 +97,11 @@ namespace NAudio.MediaFoundation
 		/// </summary>
 		[DllImport("mfreadwrite.dll", ExactSpelling = true, PreserveSig = false)]
 		public static extern void MFCreateSourceReaderFromByteStream([In] IMFByteStream pByteStream, [In] IMFAttributes pAttributes, [Out, MarshalAs(UnmanagedType.Interface)] out IMFSourceReader ppSourceReader);
-
+		/// <summary>
+		/// Creates the source reader from a media source.
+		/// </summary>
+		[DllImport("mfreadwrite.dll", ExactSpelling = true, PreserveSig = false)]
+		public static extern void MFCreateSourceReaderFromMediaSource(IMFMediaSource pMediaSource, IMFAttributes pAttributes, out IMFSourceReader ppSourceReader);
 		/// <summary>
 		/// Creates the sink writer from a URL or byte stream.
 		/// </summary>

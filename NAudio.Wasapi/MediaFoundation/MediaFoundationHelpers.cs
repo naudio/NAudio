@@ -163,5 +163,17 @@ namespace NAudio.MediaFoundation
             MediaFoundationInterop.MFCreateSourceReaderFromByteStream(byteStream, null, out IMFSourceReader reader);
             return reader;
         }
+
+        public static IEnumerable<IMFActivate> EnumDeviceSources()
+        {
+            IMFAttributes devtype = CreateAttributes(2);
+            Guid MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_AUDCAP_GUID = new Guid(0x14dd9a1c, 0x7cff, 0x41be, 0xb1, 0xb9, 0xba, 0x1a, 0xc6, 0xec, 0xb5, 0x71);
+            devtype.SetGUID(MediaFoundationAttributes.MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE, MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_AUDCAP_GUID);
+            MediaFoundationInterop.MFEnumDeviceSources(devtype, out IMFActivate[] sources, out _);
+            foreach(var i in sources)
+            {
+                yield return i;
+            }
+        }
     }
 }

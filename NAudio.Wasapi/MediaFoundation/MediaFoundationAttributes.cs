@@ -297,6 +297,13 @@ namespace NAudio.MediaFoundation
         /// Specifies the MIME type of a byte stream.
         /// </summary>
         public static readonly Guid MF_BYTESTREAM_CONTENT_TYPE = new Guid(0xfc358289, 0x3cb6, 0x460c, 0xa4, 0x24, 0xb6, 0x68, 0x12, 0x60, 0x37, 0x5a);
-
+        /// <summary>
+        ///  Specifies a device's type, such as audio capture or video capture.
+        /// </summary>
+        public static readonly Guid MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE = new Guid(0xc60ac5fe, 0x252a, 0x478f, 0xa0, 0xef, 0xbc, 0x8f, 0xa5, 0xf7, 0xca, 0xd3);
+        /// <summary>
+        /// Contains a pointer to the application's callback interface for the source reader.
+        /// </summary>
+        public static readonly Guid MF_SOURCE_READER_ASYNC_CALLBACK = new Guid(0x1e3dbeac, 0xbb43, 0x4c35, 0xb5, 0x07, 0xcd, 0x64, 0x44, 0x64, 0xc9, 0x65);
     }
 }

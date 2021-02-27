@@ -133,6 +133,7 @@ namespace NAudio.MediaFoundation
         }
         /// <summary>
         /// The playback rate.
+        /// Postive values indicate forward playback, negative values indicate reverse playback, and zero indicates stopping.
         /// </summary>
         public float Rate
         {
@@ -145,7 +146,17 @@ namespace NAudio.MediaFoundation
             set
             {
                 if (!IsPrepared) throw new InvalidOperationException("This player is still loading.");
-                m_Rate.SetRate(false, value);
+                if (State == PlaybackState.Playing) throw new InvalidOperationException("Can't change rate while playing.");
+                if (State == PlaybackState.Paused & value * Rate < 0) throw new InvalidOperationException("Can't change playback direction while paused.");
+                if (State == PlaybackState.Paused & ((value ==0&Rate<0)|(value<0&Rate==0))) throw new InvalidOperationException("Can't switch between reserve playback and stopping paused.");
+                try
+                {
+                    m_Rate.SetRate(false, value);
+                }
+                catch(COMException)
+                {
+                    throw new ArgumentOutOfRangeException("Unsupport rate.");
+                }
             }
         }
         /// <summary>
@@ -401,8 +412,13 @@ namespace NAudio.MediaFoundation
         /// </summary>
         public void Close()
         {
-            m_Eventthread?.Abort();
+            Marshal.FinalReleaseComObject(m_Clock);
+            Marshal.FinalReleaseComObject(m_pDescriptor);
+            Marshal.FinalReleaseComObject(m_Rate);
+            Marshal.FinalReleaseComObject(m_Volume);
             m_Session.Shutdown();
+            m_Session = null;
+            m_Eventthread.Join();
             GC.SuppressFinalize(this);
         }
         /// <summary>

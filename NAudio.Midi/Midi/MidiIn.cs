@@ -96,7 +96,7 @@ namespace NAudio.Midi
         /// <summary>
         /// Create a number of buffers and make them available to receive incoming Sysex messages
         /// </summary>
-        /// <param name="bufferSize">The size of each buffer, ideally large enough to hold a complete meaasge from the device</param>
+        /// <param name="bufferSize">The size of each buffer, ideally large enough to hold a complete message from the device</param>
         /// <param name="numberOfBuffers">The number of buffers needed to handle incoming Midi while busy</param>
         public void CreateSysexBuffers(int bufferSize, int numberOfBuffers)
         {
@@ -194,17 +194,23 @@ namespace NAudio.Midi
             {
                 //if(disposing) Components.Dispose();
 
-                //  Reset in order to release any Sysex buffers
-                //  We can't Unprepare and free them until they are flushed out. Neither can we close the handle.
-                MmException.Try(MidiInterop.midiInReset(hMidiIn), "midiInReset");
-
-                //  Free up all created and allocated buffers for incoming Sysex messages
-                foreach (var lpHeader in SysexBufferHeaders)
+                if (SysexBufferHeaders.Length > 0)
                 {
-                    MidiInterop.MIDIHDR hdr = (MidiInterop.MIDIHDR)Marshal.PtrToStructure(lpHeader, typeof(MidiInterop.MIDIHDR));
-                    MmException.Try(MidiInterop.midiInUnprepareHeader(hMidiIn, lpHeader, Marshal.SizeOf(typeof(MidiInterop.MIDIHDR))), "midiInPrepareHeader");
-                    Marshal.FreeHGlobal(hdr.lpData);
-                    Marshal.FreeHGlobal(lpHeader);
+                    //  Reset in order to release any Sysex buffers
+                    //  We can't Unprepare and free them until they are flushed out. Neither can we close the handle.
+                    MmException.Try(MidiInterop.midiInReset(hMidiIn), "midiInReset");
+
+                    //  Free up all created and allocated buffers for incoming Sysex messages
+                    foreach (var lpHeader in SysexBufferHeaders)
+                    {
+                        MidiInterop.MIDIHDR hdr = (MidiInterop.MIDIHDR)Marshal.PtrToStructure(lpHeader, typeof(MidiInterop.MIDIHDR));
+                        MmException.Try(MidiInterop.midiInUnprepareHeader(hMidiIn, lpHeader, Marshal.SizeOf(typeof(MidiInterop.MIDIHDR))), "midiInPrepareHeader");
+                        Marshal.FreeHGlobal(hdr.lpData);
+                        Marshal.FreeHGlobal(lpHeader);
+                    }
+
+                    //  Defensive protection against double disposal
+                    SysexBufferHeaders = new IntPtr[0];
                 }
                 MidiInterop.midiInClose(hMidiIn);
             }

@@ -10,8 +10,8 @@ namespace NAudio.Midi
         /// <summary>
         /// Create a new Sysex MIDI In Message EventArgs
         /// </summary>
-        /// <param name="message"></param>
-        /// <param name="timestamp"></param>
+        /// <param name="sysexBytes">The Sysex byte array received</param>
+        /// <param name="timestamp">Milliseconds since MidiInStart</param>
         public MidiInSysexMessageEventArgs(byte[] sysexBytes, int timestamp)
         {
             this.SysexBytes = sysexBytes;
@@ -25,7 +25,7 @@ namespace NAudio.Midi
 
 
         /// <summary>
-        /// The timestamp in milliseconds for this message
+        /// The timestamp in milliseconds (since MidiInStart) for this message
         /// </summary>
         public int Timestamp { get; private set; }
     }

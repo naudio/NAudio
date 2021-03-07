@@ -82,3 +82,33 @@ When you're done with sending MIDI events, simply `Dispose` the device.
 ```c#
 midiOut.Dispose();
 ```
+
+## Sending and Receiving Sysex message events
+
+Sending a Sysex message can be done using MidiOut.SendBuffer(). It is not necessary to build and send an entire message as a single SendBuffer call as long as you ensure that the calls are not asynchronously interleaved.
+```c#
+private static void SendSysex(byte[] message)
+{
+    midiOut.SendBuffer(new byte[] { 0xF0, 0x00, 0x21, 0x1D, 0x01, 0x01 });
+    midiOut.SendBuffer(message);
+    midiOut.SendBuffer(new byte[] { 0xF7 });
+}
+```
+
+Receiving Sysex messages requires two actions in addition to the midiIn handling above: (1) Allocate a number of buffers each large enough to receive an expected Sysex message from the device. (2) Subscribe to the SysexMessageReceived EventHandler property:
+```c#
+midiIn = new MidiIn(selectedDeviceIndex);
+midiIn.MessageReceived += midiIn_MessageReceived;
+midiIn.ErrorReceived += midiIn_ErrorReceived;
+midiIn.CreateSysexBuffers(BufferSize, NumberOfBuffers);
+midiIn.SysexMessageReceived += midiIn_SysexMessageReceived;
+midiIn.Start();
+```
+
+The second parameter to the SysexMessageReceived EventHandler is of type MidiInSysexMessageEventArgs, which has a SysexBytes byte array property:
+```c#
+static void midiIn_SysexMessageReceived(object sender, MidiInSysexMessageEventArgs e)
+{
+    byte[] sysexMessage = e.SysexBytes;
+    ....
+```

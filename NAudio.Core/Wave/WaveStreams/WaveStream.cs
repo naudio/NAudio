@@ -105,7 +105,7 @@ namespace NAudio.Wave
             }
             set
             {
-                Position = (long) (value.TotalSeconds * WaveFormat.AverageBytesPerSecond);
+                Position = (long) (value.TotalSeconds * WaveFormat.SampleRate) * BlockAlign;
             }
         }
 

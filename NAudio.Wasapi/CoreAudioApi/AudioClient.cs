@@ -17,6 +17,7 @@ namespace NAudio.CoreAudioApi
         private AudioClockClient audioClockClient;
         private AudioStreamVolume audioStreamVolume;
         private AudioClientShareMode shareMode;
+		private AudioSessionControl audioSessionControl;
 
         public AudioClient(IAudioClient audioClientInterface)
         {
@@ -204,6 +205,23 @@ namespace NAudio.CoreAudioApi
         }
 
         /// <summary>
+        /// Gets the AudioSessionControl service
+        /// </summary>
+        public AudioSessionControl AudioSessionControl
+        {
+            get
+            {
+                if (audioSessionControl == null)
+                {
+                    var audioSessionControlGuid = new Guid("F4B1A599-7266-4319-A8CA-E70ACB11E8CD");
+                    Marshal.ThrowExceptionForHR(audioClientInterface.GetService(audioSessionControlGuid, out var audioSessionControlInterface));
+                    audioSessionControl = new AudioSessionControl((IAudioSessionControl)audioSessionControlInterface);
+                }
+                return audioSessionControl;
+            }
+        }
+
+        /// <summary>
         /// Determines whether if the specified output format is supported
         /// </summary>
         /// <param name="shareMode">The share mode.</param>
@@ -328,6 +346,11 @@ namespace NAudio.CoreAudioApi
                 {
                     audioStreamVolume.Dispose();
                     audioStreamVolume = null;
+                }
+                if (audioSessionControl != null)
+                {
+                    audioSessionControl.Dispose();
+                    audioSessionControl = null;
                 }
                 Marshal.ReleaseComObject(audioClientInterface);
                 audioClientInterface = null;

@@ -49,7 +49,7 @@
         /// An audio endpoint device that connects to an audio adapter through a High-Definition Multimedia
         /// Interface (HDMI) connector or a display port.       
         /// </summary>
-        DigitalAudioDisplayDevice,
+        HDMI,
         /// <summary>
         /// An audio endpoint device with unknown physical attributes.
         /// </summary>

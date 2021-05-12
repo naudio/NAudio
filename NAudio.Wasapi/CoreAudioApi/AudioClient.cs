@@ -252,7 +252,7 @@ namespace NAudio.CoreAudioApi
             {
                 return false;
             }
-            if (hresult == (int)AudioClientErrors.UnsupportedFormat)
+            if (hresult == AudioClientErrorCode.UnsupportedFormat)
             {
                 // documentation is confusing as to what this flag means
                 // https://docs.microsoft.com/en-us/windows/desktop/api/audioclient/nf-audioclient-iaudioclient-isformatsupported

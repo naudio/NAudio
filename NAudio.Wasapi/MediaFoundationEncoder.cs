@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.ComTypes;
 using NAudio.MediaFoundation;
 using NAudio.Utils;
 
@@ -87,6 +89,21 @@ namespace NAudio.Wave
         }
 
         /// <summary>
+        /// Helper function to simplify encoding Window Media Audio
+        /// Should be supported on Vista and above (not tested)
+        /// </summary>
+        /// <param name="inputProvider">Input provider, must be PCM</param>
+        /// <param name="outputStream">Output stream</param>
+        /// <param name="desiredBitRate">Desired bitrate. Use GetEncodeBitrates to find the possibilities for your input type</param>
+        public static void EncodeToWma(IWaveProvider inputProvider, Stream outputStream, int desiredBitRate = 192000) {
+            var mediaType = SelectMediaType(AudioSubtypes.MFAudioFormat_WMAudioV8, inputProvider.WaveFormat, desiredBitRate);
+            if (mediaType == null) throw new InvalidOperationException("No suitable WMA encoders available");
+            using (var encoder = new MediaFoundationEncoder(mediaType)) {
+                encoder.Encode(outputStream, inputProvider, TranscodeContainerTypes.MFTranscodeContainerType_ASF);
+            }
+        }
+
+        /// <summary>
         /// Helper function to simplify encoding to MP3
         /// By default, will only be available on Windows 8 and above
         /// </summary>
@@ -100,6 +117,21 @@ namespace NAudio.Wave
             using (var encoder = new MediaFoundationEncoder(mediaType))
             {
                 encoder.Encode(outputFile, inputProvider);
+            }
+        }
+
+        /// <summary>
+        /// Helper function to simplify encoding to MP3
+        /// By default, will only be available on Windows 8 and above
+        /// </summary>
+        /// <param name="inputProvider">Input provider, must be PCM</param>
+        /// <param name="outputStream">Output stream</param>
+        /// <param name="desiredBitRate">Desired bitrate. Use GetEncodeBitrates to find the possibilities for your input type</param>
+        public static void EncodeToMp3(IWaveProvider inputProvider, Stream outputStream, int desiredBitRate = 192000) {
+            var mediaType = SelectMediaType(AudioSubtypes.MFAudioFormat_MP3, inputProvider.WaveFormat, desiredBitRate);
+            if (mediaType == null) throw new InvalidOperationException("No suitable MP3 encoders available");
+            using (var encoder = new MediaFoundationEncoder(mediaType)) {
+                encoder.Encode(outputStream, inputProvider, TranscodeContainerTypes.MFTranscodeContainerType_MP3);
             }
         }
 
@@ -121,6 +153,25 @@ namespace NAudio.Wave
                 // should AAC container have ADTS, or is that just for ADTS?
                 // http://www.hydrogenaudio.org/forums/index.php?showtopic=97442
                 encoder.Encode(outputFile, inputProvider);
+            }
+        }
+
+        /// <summary>
+        /// Helper function to simplify encoding to AAC
+        /// By default, will only be available on Windows 7 and above
+        /// </summary>
+        /// <param name="inputProvider">Input provider, must be PCM</param>
+        /// <param name="outputStream">Output stream</param>
+        /// <param name="desiredBitRate">Desired bitrate. Use GetEncodeBitrates to find the possibilities for your input type</param>
+        public static void EncodeToAac(IWaveProvider inputProvider, Stream outputStream, int desiredBitRate = 192000) {
+            // Information on configuring an AAC media type can be found here:
+            // http://msdn.microsoft.com/en-gb/library/windows/desktop/dd742785%28v=vs.85%29.aspx
+            var mediaType = SelectMediaType(AudioSubtypes.MFAudioFormat_AAC, inputProvider.WaveFormat, desiredBitRate);
+            if (mediaType == null) throw new InvalidOperationException("No suitable AAC encoders available");
+            using (var encoder = new MediaFoundationEncoder(mediaType)) {
+                // should AAC container have ADTS, or is that just for ADTS?
+                // http://www.hydrogenaudio.org/forums/index.php?showtopic=97442
+                encoder.Encode(outputStream, inputProvider, TranscodeContainerTypes.MFTranscodeContainerType_MPEG4);
             }
         }
 
@@ -186,6 +237,33 @@ namespace NAudio.Wave
             }
         }
 
+        /// <summary>
+        /// Encodes a file
+        /// </summary>
+        /// <param name="outputStream">Output stream</param>
+        /// <param name="inputProvider">Input provider (should be PCM, some encoders will also allow IEEE float)</param>
+        /// <param name="transcodeContainerType">One of <see cref="TranscodeContainerTypes"/></param>
+        public void Encode(Stream outputStream, IWaveProvider inputProvider, Guid transcodeContainerType) {
+            if (inputProvider.WaveFormat.Encoding != WaveFormatEncoding.Pcm && inputProvider.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat) {
+                throw new ArgumentException("Encode input format must be PCM or IEEE float");
+            }
+
+            var inputMediaType = new MediaType(inputProvider.WaveFormat);
+
+            var writer = CreateSinkWriter(new ComStream(outputStream), transcodeContainerType);
+            try {
+				writer.AddStream(outputMediaType.MediaFoundationObject, out int streamIndex);
+
+				// n.b. can get 0xC00D36B4 - MF_E_INVALIDMEDIATYPE here
+				writer.SetInputMediaType(streamIndex, inputMediaType.MediaFoundationObject, null);
+
+                PerformEncode(writer, streamIndex, inputProvider);
+            } finally {
+                Marshal.ReleaseComObject(writer);
+                Marshal.ReleaseComObject(inputMediaType.MediaFoundationObject);
+            }
+        }
+
         private static IMFSinkWriter CreateSinkWriter(string outputFile)
         {
             // n.b. could try specifying the container type using attributes, but I think
@@ -214,6 +292,23 @@ namespace NAudio.Wave
             return writer;
         }
 
+        private static IMFSinkWriter CreateSinkWriter(IStream outputStream, Guid TranscodeContainerType) {
+            // n.b. could try specifying the container type using attributes, but I think
+            // it does a decent job of working it out from the file extension 
+            // n.b. AAC encode on Win 8 can have AAC extension, but use MP4 in win 7
+            // http://msdn.microsoft.com/en-gb/library/windows/desktop/dd389284%28v=vs.85%29.aspx
+            IMFSinkWriter writer;
+            var attributes = MediaFoundationApi.CreateAttributes(1);
+            attributes.SetGUID(MediaFoundationAttributes.MF_TRANSCODE_CONTAINERTYPE, TranscodeContainerType);
+            try {
+                MediaFoundationInterop.MFCreateMFByteStreamOnStream(outputStream, out var ppByteStream);
+                MediaFoundationInterop.MFCreateSinkWriterFromURL(null, ppByteStream, attributes, out writer);
+            } finally {
+                Marshal.ReleaseComObject(attributes);
+            }
+            return writer;
+        }
+
         private void PerformEncode(IMFSinkWriter writer, int streamIndex, IWaveProvider inputProvider)
         {
             int maxLength = inputProvider.WaveFormat.AverageBytesPerSecond * 4;
@@ -222,7 +317,7 @@ namespace NAudio.Wave
             writer.BeginWriting();
 
             long position = 0;
-            long duration = 0;
+            long duration;
             do
             {
                 duration = ConvertOneBuffer(writer, streamIndex, inputProvider, position, managedBuffer);

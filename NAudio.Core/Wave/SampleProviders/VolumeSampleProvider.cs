@@ -39,14 +39,14 @@ namespace NAudio.Wave.SampleProviders
             int samplesRead = source.Read(buffer, offset, sampleCount);
             if (Volume != 1f)
             {
-//#if CPU_INTRINSICS
-//                FastPath(buffer, offset, sampleCount);
-//#else
+#if CPU_INTRINSICS
+                FastPath(buffer, offset, sampleCount);
+#else
                 for (int n = 0; n < sampleCount; n++)
                 {
                     buffer[offset + n] *= Volume;
                 }
-//#endif
+#endif
             }
             return samplesRead;
         }

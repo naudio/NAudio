@@ -8,6 +8,7 @@ namespace NAudio.Core.Benchmark
         static void Main(string[] args)
         {
             BenchmarkRunner.Run<Wave.SampleProviders.WaveToSampleProviderBenchmark>();
+            BenchmarkRunner.Run<Wave.SampleProviders.VolumeSampleProviderBenchmark>();
             Console.ReadKey();
         }
     }

@@ -11,7 +11,7 @@ var first = new AudioFileReader("first.mp3");
 var second = new AudioFileReader("second.mp3");
 var third = new AudioFileReader("third.mp3");
 
-var playlist = new ConcatenatingSampleProvider(new[] { first, second, third });)
+var playlist = new ConcatenatingSampleProvider(new[] { first, second, third });
 
 // to play:
 outputDevice.Init(playlist);

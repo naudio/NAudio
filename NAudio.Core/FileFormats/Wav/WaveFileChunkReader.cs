@@ -100,9 +100,9 @@ namespace NAudio.FileFormats.Wav
                 // "If the chunk size is an odd number of bytes, a pad byte with value zero is
                 //  written after ckData. Word aligning improves access speed (for chunks resident in memory)
                 //  and maintains compatibility with EA IFF. The ckSize value does not include the pad byte."
-                if (((chunkLength % 2) != 0) && (br.PeekChar() == 0))
+                if (((chunkLength % 2) != 0) && (br.ReadByte() != 0))
                 {
-                    stream.Position++;
+                    stream.Position--;
                 }
             }
 

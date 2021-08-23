@@ -88,9 +88,9 @@ namespace NAudio.FileFormats.Wav
                     }
                     if (storeAllChunks)
                     {
-                        if (chunkLength > Int32.MaxValue)
-                            throw new InvalidDataException(string.Format("RiffChunk chunk length must be between 0 and {0}.", Int32.MaxValue));
-                        riffChunks.Add(GetRiffChunk(stream, chunkIdentifier, (int)chunkLength));
+                        if (chunkLength > UInt32.MaxValue)
+                            throw new InvalidDataException(string.Format("RiffChunk chunk length must be between 0 and {0}.", UInt32.MaxValue));
+                        riffChunks.Add(GetRiffChunk(stream, chunkIdentifier, chunkLength));
                     }
                     stream.Position += chunkLength;
                 }
@@ -134,7 +134,7 @@ namespace NAudio.FileFormats.Wav
             reader.ReadBytes(chunkSize - 24); // get to the end of this chunk (should parse extra stuff later)
         }
 
-        private static RiffChunk GetRiffChunk(Stream stream, Int32 chunkIdentifier, Int32 chunkLength)
+        private static RiffChunk GetRiffChunk(Stream stream, Int32 chunkIdentifier, UInt32 chunkLength)
         {
             return new RiffChunk(chunkIdentifier, chunkLength, stream.Position);
         }

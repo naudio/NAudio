@@ -12,7 +12,7 @@ namespace NAudio.Wave
         /// <summary>
         /// Creates a RiffChunk object
         /// </summary>
-        public RiffChunk(int identifier, int length, long streamPosition)
+        public RiffChunk(int identifier, UInt32 length, long streamPosition)
         {
             Identifier = identifier;
             Length = length;
@@ -32,7 +32,7 @@ namespace NAudio.Wave
         /// <summary>
         /// The chunk length
         /// </summary>
-        public int Length { get; private set; }
+        public UInt32 Length { get; private set; }
 
         /// <summary>
         /// The stream position this chunk is located at

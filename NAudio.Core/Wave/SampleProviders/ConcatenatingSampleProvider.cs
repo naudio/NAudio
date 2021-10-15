@@ -39,7 +39,7 @@ namespace NAudio.Wave.SampleProviders
             while (read < count && currentProviderIndex < providers.Length)
             {
                 var needed = count - read;
-                var readThisTime = providers[currentProviderIndex].Read(buffer, read, needed);
+                var readThisTime = providers[currentProviderIndex].Read(buffer, offset + read, needed);
                 read += readThisTime;
                 if (readThisTime == 0) currentProviderIndex++;
             }

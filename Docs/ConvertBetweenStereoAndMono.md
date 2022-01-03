@@ -41,8 +41,8 @@ using(var inputReader = new AudioFileReader(stereoFilePath))
 {
     // convert our stereo ISampleProvider to mono
     var mono = new StereoToMonoSampleProvider(inputReader);
-    stereo.LeftVolume = 0.0f; // discard the left channel
-    stereo.RightVolume = 1.0f; // keep the right channel
+    mono.LeftVolume = 0.0f; // discard the left channel
+    mono.RightVolume = 1.0f; // keep the right channel
 
     // can either use this for playback:
     myOutputDevice.Init(mono);

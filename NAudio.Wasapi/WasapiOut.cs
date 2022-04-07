@@ -28,7 +28,7 @@ namespace NAudio.Wave
         private WaveFormat outputFormat;
         private bool dmoResamplerNeeded;
         private readonly SynchronizationContext syncContext;
-        
+
         /// <summary>
         /// Playback Stopped
         /// </summary>
@@ -305,12 +305,12 @@ namespace NAudio.Wave
                 {
                     playThread = new Thread(PlayThread);
                     playbackState = PlaybackState.Playing;
-                    playThread.Start();                    
+                    playThread.Start();
                 }
                 else
                 {
                     playbackState = PlaybackState.Playing;
-                }                
+                }
             }
         }
 
@@ -336,14 +336,10 @@ namespace NAudio.Wave
             {
                 playbackState = PlaybackState.Paused;
             }
-            
+
         }
 
-        /// <summary>
-        /// Initialize for playing the specified wave stream
-        /// </summary>
-        /// <param name="waveProvider">IWaveProvider to play</param>
-        public void Init(IWaveProvider waveProvider)
+        public void Init(IWaveProvider waveProvider, Guid sessionId)
         {
             long latencyRefTimes = latencyMilliseconds * 10000;
             outputFormat = waveProvider.WaveFormat;
@@ -352,7 +348,7 @@ namespace NAudio.Wave
             if (!audioClient.IsFormatSupported(shareMode, outputFormat, out closestSampleRateFormat))
             {
                 // Use closesSampleRateFormat (in sharedMode, it equals usualy to the audioClient.MixFormat)
-                // See documentation : http://msdn.microsoft.com/en-us/library/ms678737(VS.85).aspx 
+                // See documentation : http://msdn.microsoft.com/en-us/library/ms678737(VS.85).aspx
                 // They say : "In shared mode, the audio engine always supports the mix format"
                 // The MixFormat is more likely to be a WaveFormatExtensible.
                 if (closestSampleRateFormat == null)
@@ -396,9 +392,9 @@ namespace NAudio.Wave
                 if (shareMode == AudioClientShareMode.Shared)
                 {
                     // With EventCallBack and Shared, both latencies must be set to 0 (update - not sure this is true anymore)
-                    // 
+                    //
                     audioClient.Initialize(shareMode, AudioClientStreamFlags.EventCallback, latencyRefTimes, 0,
-                        outputFormat, Guid.Empty);
+                        outputFormat, sessionId);
 
                     // Windows 10 returns 0 from stream latency, resulting in maxing out CPU usage later
                     var streamLatency = audioClient.StreamLatency;
@@ -414,7 +410,7 @@ namespace NAudio.Wave
                     {
                         // With EventCallBack and Exclusive, both latencies must equals
                         audioClient.Initialize(shareMode, AudioClientStreamFlags.EventCallback, latencyRefTimes, latencyRefTimes,
-                                            outputFormat, Guid.Empty);
+                                            outputFormat, sessionId);
                     }
                     catch (COMException ex)
                     {
@@ -431,7 +427,7 @@ namespace NAudio.Wave
                         this.audioClient.Dispose();
                         this.audioClient = this.mmDevice.AudioClient;
                         this.audioClient.Initialize(this.shareMode, AudioClientStreamFlags.EventCallback,
-                                            newLatencyRefTimes, newLatencyRefTimes, this.outputFormat, Guid.Empty);
+                                            newLatencyRefTimes, newLatencyRefTimes, this.outputFormat, sessionId);
                     }
                 }
 
@@ -443,11 +439,20 @@ namespace NAudio.Wave
             {
                 // Normal setup for both sharedMode
                 audioClient.Initialize(shareMode, AudioClientStreamFlags.None, latencyRefTimes, 0,
-                                    outputFormat, Guid.Empty);
+                                    outputFormat, sessionId);
             }
 
             // Get the RenderClient
             renderClient = audioClient.AudioRenderClient;
+        }
+
+        /// <summary>
+        /// Initialize for playing the specified wave stream
+        /// </summary>
+        /// <param name="waveProvider">IWaveProvider to play</param>
+        public void Init(IWaveProvider waveProvider)
+        {
+            Init(waveProvider, Guid.Empty);
         }
 
         /// <summary>
@@ -465,7 +470,7 @@ namespace NAudio.Wave
         {
             get
             {
-                return mmDevice.AudioEndpointVolume.MasterVolumeLevelScalar;                                
+                return mmDevice.AudioEndpointVolume.MasterVolumeLevelScalar;
             }
             set
             {
@@ -486,13 +491,13 @@ namespace NAudio.Wave
         /// </exception>
         public AudioStreamVolume AudioStreamVolume
         {
-            get 
+            get
             {
                 if (shareMode == AudioClientShareMode.Exclusive)
                 {
                     throw new InvalidOperationException("AudioStreamVolume is ONLY supported for shared audio streams.");
                 }
-                return audioClient.AudioStreamVolume;  
+                return audioClient.AudioStreamVolume;
             }
         }
 

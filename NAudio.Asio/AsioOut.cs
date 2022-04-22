@@ -151,8 +151,16 @@ namespace NAudio.Wave
             // Get the basic driver
             AsioDriver basicDriver = AsioDriver.GetAsioDriverByName(driverName);
 
-            // Instantiate the extended driver
-            driver = new AsioDriverExt(basicDriver);
+            try
+            {
+                // Instantiate the extended driver
+                driver = new AsioDriverExt(basicDriver);
+            }
+            catch
+            {
+                ReleaseDriver(basicDriver);
+                throw;
+            }
             driver.ResetRequestCallback = OnDriverResetRequest;
             this.ChannelOffset = 0;
         }
@@ -162,6 +170,15 @@ namespace NAudio.Wave
         private void OnDriverResetRequest()
         {
             DriverResetRequest?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>
+        /// Release driver
+        /// </summary>
+        private void ReleaseDriver(AsioDriver driver)
+        {
+            driver.DisposeBuffers();
+            driver.ReleaseComAsioDriver();
         }
 
         /// <summary>

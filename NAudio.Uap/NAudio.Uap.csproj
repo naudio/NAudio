@@ -1,7 +1,8 @@
 ﻿<Project Sdk="MSBuild.Sdk.Extras">
 
   <PropertyGroup>
-    <TargetFramework>uap10.0.17763</TargetFramework>
+    <!-- https://docs.microsoft.com/en-us/windows/uwp/updates-and-versions/choose-a-uwp-version -->
+    <TargetFramework>uap10.0.18362</TargetFramework>
     <Version>2.0.0</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Mark Heath</Authors>

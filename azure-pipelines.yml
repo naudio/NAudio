@@ -5,14 +5,17 @@
 # vmImage options: https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/hosted?view=azure-devops#use-a-microsoft-hosted-agent
 
 pool:
-  vmImage: 'windows-latest'
+  vmImage: 'windows-latest' # https://github.com/actions/virtual-environments/blob/main/images/win/Windows2022-Readme.md
 
 variables:
   solution: '**/*.sln'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
 
-steps:
+steps: 
+# We need the 18362 SDK https://community.chocolatey.org/packages/windows-sdk-10.1#description
+- script: choco install windows-sdk-10.1 --version=10.1.18362.1
+
 - task: NuGetToolInstaller@1
 
 - task: NuGetCommand@2

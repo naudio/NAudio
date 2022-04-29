@@ -4,6 +4,7 @@
  * `IWavePlayer` now has an `OuputWaveFormat` property
  * `WasapiCapture` supports sample rate conversion so you can capture at a sample rate of your choice
  * `WasapiOut` supports built-in sample rate conversion in shared mode
+ * `MediaFoundationEncoder` allows you to encode to a `Stream`
 
 ### 1.9.0 (4 May 2019)
 

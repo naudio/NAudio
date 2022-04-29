@@ -13,9 +13,7 @@ namespace NAudio.Dmo.Effect
     }
 
     [ComImport,
-#if !NETFX_CORE
      System.Security.SuppressUnmanagedCodeSecurity,
-#endif
      Guid("46858c3a-0dc6-45e3-b760-d4eef16cb325"),
      InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     interface IDirectSoundFXWavesReverb

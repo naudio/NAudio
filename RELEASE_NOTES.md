@@ -1,3 +1,10 @@
+### 2.1 (29 Apr 2022)
+
+ * Minimum supported Win 10 version is now uap10.0.18362 (SDK version 1903)
+ * `IWavePlayer` now has an `OuputWaveFormat` property
+ * `WasapiCapture` supports sample rate conversion so you can capture at a sample rate of your choice
+ * `WasapiOut` supports built-in sample rate conversion in shared mode
+
 ### 1.9.0 (4 May 2019)
 
  * Switched to multi-targetting project type

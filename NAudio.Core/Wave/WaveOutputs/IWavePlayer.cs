@@ -46,6 +46,11 @@ namespace NAudio.Wave
         /// reaching the end of the input stream or an error has been encountered during playback
         /// </summary>
         event EventHandler<StoppedEventArgs> PlaybackStopped;
+
+        /// <summary>
+        /// The WaveFormat this device is using for playback
+        /// </summary>
+        WaveFormat OutputWaveFormat { get; }
     }
 
     /// <summary>

@@ -335,7 +335,7 @@ namespace NAudio.Wave
             outputFormat = waveProvider.WaveFormat;
             // first attempt uses the WaveFormat from the WaveStream
             WaveFormatExtensible closestSampleRateFormat;
-            if (!audioClient.IsFormatSupported(shareMode, outputFormat, out closestSampleRateFormat))
+            if (shareMode == AudioClientShareMode.Exclusive && !audioClient.IsFormatSupported(shareMode, outputFormat, out closestSampleRateFormat))
             {
                 // Use closesSampleRateFormat (in sharedMode, it equals usualy to the audioClient.MixFormat)
                 // See documentation : http://msdn.microsoft.com/en-us/library/ms678737(VS.85).aspx 
@@ -393,10 +393,6 @@ namespace NAudio.Wave
                     outputFormat = closestSampleRateFormat;
                 }
 
-                // just check that we can make it.
-                //using (new MediaFoundationResampler(waveProvider, outputFormat))
-                {
-                }
                 this.resamplerNeeded = true;
             }
             else
@@ -404,11 +400,12 @@ namespace NAudio.Wave
                 resamplerNeeded = false;
             }
 
+            
             // Init Shared or Exclusive
             if (shareMode == AudioClientShareMode.Shared)
             {
-                // With EventCallBack and Shared, 
-                audioClient.Initialize(shareMode, AudioClientStreamFlags.EventCallback, latencyRefTimes, 0,
+                audioClient.Initialize(shareMode, AudioClientStreamFlags.EventCallback |
+                    AudioClientStreamFlags.AutoConvertPcm | AudioClientStreamFlags.SrcDefaultQuality, latencyRefTimes, 0,
                                        outputFormat, Guid.Empty);
 
                 // Get back the effective latency from AudioClient. On Windows 10 it can be 0
@@ -417,7 +414,7 @@ namespace NAudio.Wave
             }
             else
             {
-                // With EventCallBack and Exclusive, both latencies must equals
+                // With EventCallBack and Exclusive, both latencies must equal
                 audioClient.Initialize(shareMode, AudioClientStreamFlags.EventCallback, latencyRefTimes, latencyRefTimes,
                                        outputFormat, Guid.Empty);
             }

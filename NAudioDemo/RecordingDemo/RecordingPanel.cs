@@ -124,9 +124,12 @@ namespace NAudioDemo.RecordingDemo
             }
             else if (radioButtonWasapi.Checked)
             {
-                // can't set WaveFormat as WASAPI doesn't support SRC
                 var device = (MMDevice) comboWasapiDevices.SelectedItem;
                 newWaveIn = new WasapiCapture(device);
+                // WASAPI with Sample Rate conversion!
+                var sampleRate = (int)comboBoxSampleRate.SelectedItem;
+                var channels = comboBoxChannels.SelectedIndex + 1;
+                newWaveIn.WaveFormat = new WaveFormat(sampleRate, channels);
             }
             else
             {

@@ -87,12 +87,8 @@ namespace NAudio.Wave
         /// </summary>
         public override string ToString()
         {
-            return String.Format("{0} wBitsPerSample:{1} dwChannelMask:{2} subFormat:{3} extraSize:{4}",
-                base.ToString(),
-                wValidBitsPerSample,
-                dwChannelMask,
-                subFormat,
-                extraSize);
+            return $"WAVE_FORMAT_EXTENSIBLE {AudioMediaSubtypes.GetAudioSubtypeName(subFormat)} " +
+                $"{SampleRate}Hz {Channels} channels {BitsPerSample} bit";
         }
     }
 }

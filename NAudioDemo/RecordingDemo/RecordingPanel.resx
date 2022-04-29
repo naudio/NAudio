@@ -118,6 +118,6 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="label1.Text" xml:space="preserve">
-    <value>This basic recording demo allows you to select a recording device using either WaveIn, WaveInEvent, WaspiCapture or WasapiLoopbackCapture. For waveIn devices you can choose the capture format. It will automatically stop recording after 30 seconds after which you can optionally play back the recorded file.</value>
+    <value>This basic recording demo allows you to select a recording device using either WaveIn, WaveInEvent, WaspiCapture or WasapiLoopbackCapture. For waveIn and WASAPI devices you can choose the capture format. It will automatically stop recording after 30 seconds after which you can optionally play back the recorded file.</value>
   </data>
 </root>

@@ -19,11 +19,13 @@
     <ProjectReference Include="..\NAudio.Core\NAudio.Core.csproj" />
   </ItemGroup>
   
-  <ItemGroup Condition=" '$(TargetFramework)' == 'uap10.0.17763' ">
-    <Compile Remove="MediaFoundationEncoder.cs" />
-    <Compile Remove="MediaFoundationResampler.cs" />
-  </ItemGroup>
-  
+
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'uap10.0.18362' ">
+    <DefineConstants>UAP;NETFX_CORE</DefineConstants>
+  </PropertyGroup>
+
+
   <ItemGroup>
     <None Include="..\naudio-icon.png">
       <Pack>True</Pack>

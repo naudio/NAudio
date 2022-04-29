@@ -253,7 +253,26 @@ namespace NAudio.Wave
                 this.NumberOfOutputChannels = waveProvider.WaveFormat.Channels;
 
                 // Select the correct sample convertor from WaveFormat -> ASIOFormat
-                convertor = AsioSampleConvertor.SelectSampleConvertor(waveProvider.WaveFormat, driver.Capabilities.OutputChannelInfos[0].type);
+                var asioSampleType = driver.Capabilities.OutputChannelInfos[0].type;
+                convertor = AsioSampleConvertor.SelectSampleConvertor(waveProvider.WaveFormat, asioSampleType);
+
+                switch (asioSampleType)
+                {
+                    case AsioSampleType.Float32LSB:
+                        OutputWaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(waveProvider.WaveFormat.SampleRate, waveProvider.WaveFormat.Channels);
+                        break;
+                    case AsioSampleType.Int32LSB:
+                        OutputWaveFormat = new WaveFormat(waveProvider.WaveFormat.SampleRate, 32, waveProvider.WaveFormat.Channels);
+                        break;
+                    case AsioSampleType.Int16LSB:
+                        OutputWaveFormat = new WaveFormat(waveProvider.WaveFormat.SampleRate, 16, waveProvider.WaveFormat.Channels);
+                        break;
+                    case AsioSampleType.Int24LSB:
+                        OutputWaveFormat = new WaveFormat(waveProvider.WaveFormat.SampleRate, 24, waveProvider.WaveFormat.Channels);
+                        break;
+                    default:
+                        throw new NotSupportedException($"{asioSampleType} not currently supported");
+                }
             }
             else
             {
@@ -439,6 +458,9 @@ namespace NAudio.Wave
                 }
             }
         }
+
+        /// <inheritdoc/>
+        public WaveFormat OutputWaveFormat { get; private set; }
 
         private void RaisePlaybackStopped(Exception e)
         {

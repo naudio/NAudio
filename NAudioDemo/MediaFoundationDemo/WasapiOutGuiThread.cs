@@ -177,7 +177,7 @@ namespace NAudioDemo.MediaFoundationDemo
             outputFormat = waveProvider.WaveFormat;
             // first attempt uses the WaveFormat from the WaveStream
             WaveFormatExtensible closestSampleRateFormat;
-            if (!audioClient.IsFormatSupported(shareMode, outputFormat, out closestSampleRateFormat))
+            if (shareMode == AudioClientShareMode.Exclusive && !audioClient.IsFormatSupported(shareMode, outputFormat, out closestSampleRateFormat))
             {
                 // Use closesSampleRateFormat (in sharedMode, it equals usualy to the audioClient.MixFormat)
                 // See documentation : http://msdn.microsoft.com/en-us/library/ms678737(VS.85).aspx 
@@ -241,7 +241,10 @@ namespace NAudioDemo.MediaFoundationDemo
             }
 
             // Normal setup for both sharedMode
-            audioClient.Initialize(shareMode, AudioClientStreamFlags.None, latencyRefTimes, 0,
+            var flags = AudioClientStreamFlags.None;
+            if (shareMode == AudioClientShareMode.Shared)
+                flags = AudioClientStreamFlags.AutoConvertPcm | AudioClientStreamFlags.SrcDefaultQuality;
+            audioClient.Initialize(shareMode, flags, latencyRefTimes, 0,
                                     outputFormat, Guid.Empty);
             
 
@@ -279,6 +282,8 @@ namespace NAudioDemo.MediaFoundationDemo
                 }
             }
         }
+
+        public WaveFormat OutputWaveFormat => outputFormat;
 
         #endregion
 

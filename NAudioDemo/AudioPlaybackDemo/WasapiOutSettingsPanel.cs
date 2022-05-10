@@ -25,16 +25,24 @@ namespace NAudioDemo.AudioPlaybackDemo
             var enumerator = new MMDeviceEnumerator();
             var endPoints = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
             var comboItems = new List<WasapiDeviceComboItem>();
+            var defaultEndPoint = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+            
             foreach (var endPoint in endPoints)
             {
                 var comboItem = new WasapiDeviceComboItem();
                 comboItem.Description = string.Format("{0} ({1})", endPoint.FriendlyName, endPoint.DeviceFriendlyName);
                 comboItem.Device = endPoint;
                 comboItems.Add(comboItem);
+
             }
             comboBoxWaspai.DisplayMember = "Description";
             comboBoxWaspai.ValueMember = "Device";
             comboBoxWaspai.DataSource = comboItems;
+            var defaultItemIndex = comboItems.FindIndex(ci => ci.Device.ID == defaultEndPoint.ID);
+            if (defaultItemIndex != -1)
+            comboBoxWaspai.SelectedIndex = defaultItemIndex;
+
+
         }
 
         public MMDevice SelectedDevice { get { return (MMDevice)comboBoxWaspai.SelectedValue; } }

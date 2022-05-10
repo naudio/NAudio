@@ -32,7 +32,7 @@ namespace NAudioDemo.RecordingDemo
             }
             LoadWaveInDevicesCombo();
             comboBoxSampleRate.DataSource = new[] {8000, 16000, 22050, 32000, 44100, 48000};
-            comboBoxSampleRate.SelectedIndex = 0;
+            comboBoxSampleRate.SelectedIndex = 3;
             comboBoxChannels.DataSource = new[] { "Mono", "Stereo" };
             comboBoxChannels.SelectedIndex = 0;
             outputFolder = Path.Combine(Path.GetTempPath(), "NAudioDemo");
@@ -44,6 +44,7 @@ namespace NAudioDemo.RecordingDemo
             radioButtonWasapiLoopback.CheckedChanged += (s, a) => Cleanup();
             checkBoxEventCallback.CheckedChanged += (s, a) => Cleanup();
             comboWaveInDevice.SelectedIndexChanged += (s, a) => Cleanup();
+            comboBoxSampleRate.SelectedIndexChanged += (s, a) => Cleanup();
             comboBoxChannels.SelectedIndexChanged += (s, a) => Cleanup();
             comboWasapiDevices.SelectedIndexChanged += (s, a) => Cleanup();
             comboWasapiLoopbackDevices.SelectedIndexChanged += (s, a) => Cleanup();
@@ -79,7 +80,9 @@ namespace NAudioDemo.RecordingDemo
         private void OnButtonStartRecordingClick(object sender, EventArgs e)
         {
             if (radioButtonWaveIn.Checked)
+            {
                 Cleanup(); // WaveIn is still unreliable in some circumstances to being reused
+            }
 
             if (captureDevice == null)
             {
@@ -118,25 +121,22 @@ namespace NAudioDemo.RecordingDemo
                 {
                     newWaveIn = new WaveIn() { DeviceNumber = deviceNumber };
                 }
-                var sampleRate = (int)comboBoxSampleRate.SelectedItem;
-                var channels = comboBoxChannels.SelectedIndex + 1;
-                newWaveIn.WaveFormat = new WaveFormat(sampleRate, channels);
             }
             else if (radioButtonWasapi.Checked)
             {
                 var device = (MMDevice) comboWasapiDevices.SelectedItem;
                 newWaveIn = new WasapiCapture(device);
-                // WASAPI with Sample Rate conversion!
-                var sampleRate = (int)comboBoxSampleRate.SelectedItem;
-                var channels = comboBoxChannels.SelectedIndex + 1;
-                newWaveIn.WaveFormat = new WaveFormat(sampleRate, channels);
             }
             else
             {
-                // can't set WaveFormat as WASAPI doesn't support SRC
                 var device = (MMDevice)comboWasapiLoopbackDevices.SelectedItem;
                 newWaveIn = new WasapiLoopbackCapture(device);
             }
+            // Both WASAPI and WaveIn support Sample Rate conversion!
+            var sampleRate = (int)comboBoxSampleRate.SelectedItem;
+            var channels = comboBoxChannels.SelectedIndex + 1;
+            newWaveIn.WaveFormat = new WaveFormat(sampleRate, channels);
+
             newWaveIn.DataAvailable += OnDataAvailable;
             newWaveIn.RecordingStopped += OnRecordingStopped;
             return newWaveIn;
@@ -167,6 +167,8 @@ namespace NAudioDemo.RecordingDemo
         {
             if (captureDevice != null)
             {
+                captureDevice.DataAvailable -= OnDataAvailable;
+                captureDevice.RecordingStopped -= OnRecordingStopped;
                 captureDevice.Dispose();
                 captureDevice = null;
             }

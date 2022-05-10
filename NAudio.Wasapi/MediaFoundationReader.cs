@@ -109,8 +109,7 @@ namespace NAudio.Wave
 
         private WaveFormat GetCurrentWaveFormat(IMFSourceReader reader)
         {
-            IMFMediaType uncompressedMediaType;
-            reader.GetCurrentMediaType(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, out uncompressedMediaType);
+            reader.GetCurrentMediaType(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, out IMFMediaType uncompressedMediaType);
 
             // Two ways to query it, first is to ask for properties (second is to convert into WaveFormatEx using MFCreateWaveFormatExFromMFMediaType)
             var outputMediaType = new MediaType(uncompressedMediaType);
@@ -126,13 +125,12 @@ namespace NAudio.Wave
             if (audioSubType == AudioSubtypes.MFAudioFormat_Float)
                 return WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channels);
             var subTypeDescription = FieldDescriptionHelper.Describe(typeof (AudioSubtypes), audioSubType);
-            throw new InvalidDataException(String.Format("Unsupported audio sub Type {0}", subTypeDescription));
+            throw new InvalidDataException($"Unsupported audio sub Type {subTypeDescription}");
         }
 
         private static MediaType GetCurrentMediaType(IMFSourceReader reader)
         {
-            IMFMediaType mediaType;
-            reader.GetCurrentMediaType(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, out mediaType);
+            reader.GetCurrentMediaType(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, out IMFMediaType mediaType);
             return new MediaType(mediaType);
         }
 
@@ -249,11 +247,8 @@ namespace NAudio.Wave
 
             while (bytesWritten < count)
             {
-                IMFSample pSample;
-                MF_SOURCE_READER_FLAG dwFlags;
-                ulong timestamp;
-                int actualStreamIndex;
-                pReader.ReadSample(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0, out actualStreamIndex, out dwFlags, out timestamp, out pSample);
+                pReader.ReadSample(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0, 
+                    out int actualStreamIndex, out MF_SOURCE_READER_FLAG dwFlags, out ulong timestamp, out IMFSample pSample);
                 if ((dwFlags & MF_SOURCE_READER_FLAG.MF_SOURCE_READERF_ENDOFSTREAM) != 0)
                 {
                     // reached the end of the stream
@@ -267,22 +262,17 @@ namespace NAudio.Wave
                 }
                 else if (dwFlags != 0)
                 {
-                    throw new InvalidOperationException(String.Format("MediaFoundationReadError {0}", dwFlags));
+                    throw new InvalidOperationException($"MediaFoundationReadError {dwFlags}");
                 }
 
-                IMFMediaBuffer pBuffer;
-                pSample.ConvertToContiguousBuffer(out pBuffer);
-                IntPtr pAudioData;
-                int cbBuffer;
-                int pcbMaxLength;
-                pBuffer.Lock(out pAudioData, out pcbMaxLength, out cbBuffer);
+                pSample.ConvertToContiguousBuffer(out IMFMediaBuffer pBuffer);
+                pBuffer.Lock(out IntPtr pAudioData, out int pcbMaxLength, out int cbBuffer);
                 EnsureBuffer(cbBuffer);
                 Marshal.Copy(pAudioData, decoderOutputBuffer, 0, cbBuffer);
                 decoderOutputOffset = 0;
                 decoderOutputCount = cbBuffer;
 
                 bytesWritten += ReadFromDecoderBuffer(buffer, offset + bytesWritten, count - bytesWritten);
-
 
                 pBuffer.Unlock();
                 Marshal.ReleaseComObject(pBuffer);
@@ -353,11 +343,17 @@ namespace NAudio.Wave
             long nsPosition = (10000000L * repositionTo) / waveFormat.AverageBytesPerSecond;
             var pv = PropVariant.FromLong(nsPosition);
             var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(pv));
-            Marshal.StructureToPtr(pv,ptr,false);
-            
-            // should pass in a variant of type VT_I8 which is a long containing time in 100nanosecond units
-            pReader.SetCurrentPosition(Guid.Empty, ptr);
-            Marshal.FreeHGlobal(ptr);
+            try
+            {
+                Marshal.StructureToPtr(pv, ptr, false);
+
+                // should pass in a variant of type VT_I8 which is a long containing time in 100nanosecond units
+                pReader.SetCurrentPosition(Guid.Empty, ptr);
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(ptr);
+            }
             decoderOutputCount = 0;
             decoderOutputOffset = 0;
             position = desiredPosition;

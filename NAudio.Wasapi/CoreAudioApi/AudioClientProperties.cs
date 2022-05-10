@@ -6,7 +6,7 @@ namespace NAudio.CoreAudioApi
     /// <summary>
     /// The AudioClientProperties structure is used to set the parameters that describe the properties of the client's audio stream.
     /// </summary>
-    /// <remarks>http://msdn.microsoft.com/en-us/library/windows/desktop/hh968105(v=vs.85).aspx</remarks>
+    /// <remarks>https://docs.microsoft.com/en-us/windows/win32/api/audioclient/ns-audioclient-audioclientproperties-r1</remarks>
     [StructLayout(LayoutKind.Sequential)]
     public struct AudioClientProperties
     {

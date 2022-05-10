@@ -53,4 +53,66 @@ namespace NAudio.CoreAudioApi
         AutoConvertPcm = 0x80000000,
            
     }
+
+    /// <summary>
+    /// AUDIOCLIENT_ACTIVATION_PARAMS
+    /// https://docs.microsoft.com/en-us/windows/win32/api/audioclientactivationparams/ns-audioclientactivationparams-audioclient_activation_params
+    /// </summary>
+    struct AudioClientActivationParams
+    {
+        public AudioClientActivationType ActivationType;
+        public AudioClientProcessLoopbackParams ProcessLoopbackParams;
+    }
+
+
+    /// <summary>
+    /// AUDIOCLIENT_PROCESS_LOOPBACK_PARAMS
+    /// https://docs.microsoft.com/en-us/windows/win32/api/audioclientactivationparams/ns-audioclientactivationparams-audioclient_process_loopback_params
+    /// </summary>
+    struct AudioClientProcessLoopbackParams
+    {
+        /// <summary>
+        /// AUDIOCLIENT_PROCESS_LOOPBACK_PARAMS
+        /// The ID of the process for which the render streams, and the render streams of its child processes, will be included or excluded when activating the process loopback stream.
+        /// </summary>
+        public uint TargetProcessId;
+        public ProcessLoopbackMode ProcessLoopbackMode;
+    }
+
+    /// <summary>
+    /// PROCESS_LOOPBACK_MODE
+    /// https://docs.microsoft.com/en-us/windows/win32/api/audioclientactivationparams/ne-audioclientactivationparams-process_loopback_mode
+    /// </summary>
+    enum ProcessLoopbackMode
+    {
+
+        /// <summary>
+        /// PROCESS_LOOPBACK_MODE_INCLUDE_TARGET_PROCESS_TREE
+        /// Render streams from the specified process and its child processes are included in the activated process loopback stream.
+        /// </summary>
+        IncludeTargetProcessTree,
+        /// <summary>
+        /// PROCESS_LOOPBACK_MODE_EXCLUDE_TARGET_PROCESS_TREE
+        /// Render streams from the specified process and its child processes are excluded from the activated process loopback stream.
+        /// </summary>
+        ExcludeTargetProcessTree
+    }
+
+    /// <summary>
+    /// AUDIOCLIENT_ACTIVATION_TYPE
+    /// https://docs.microsoft.com/en-us/windows/win32/api/audioclientactivationparams/ne-audioclientactivationparams-audioclient_activation_type
+    /// </summary>
+    enum AudioClientActivationType
+    {
+        /// <summary>
+        /// AUDIOCLIENT_ACTIVATION_TYPE_DEFAULT
+        /// Default activation.
+        /// </summary>
+        Default,
+        /// <summary>
+        /// AUDIOCLIENT_ACTIVATION_TYPE_PROCESS_LOOPBACK
+        /// Process loopback activation, allowing for the inclusion or exclusion of audio rendered by the specified process and its child processes.
+        /// </summary>
+        ProcessLoopback
+    };
 }

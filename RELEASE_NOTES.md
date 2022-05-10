@@ -2,7 +2,7 @@
 
  * Minimum supported Win 10 version is now uap10.0.18362 (SDK version 1903)
  * `IWavePlayer` now has an `OuputWaveFormat` property
- * `WasapiCapture` supports sample rate conversion so you can capture at a sample rate of your choice
+ * `WasapiCapture` and `WasapiLoopbackCapture` support sample rate conversion so you can capture at a sample rate of your choice
  * `WasapiOut` supports built-in sample rate conversion in shared mode
  * `MediaFoundationEncoder` allows you to encode to a `Stream`
 

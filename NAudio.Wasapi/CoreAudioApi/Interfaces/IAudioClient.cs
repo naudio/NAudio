@@ -35,7 +35,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         int IsFormatSupported(
             AudioClientShareMode shareMode,
             [In] WaveFormat pFormat,
-            IntPtr closestMatchFormat);
+            IntPtr closestMatchFormat); // or outIntPtr??
 
         int GetMixFormat(out IntPtr deviceFormatPointer);
 

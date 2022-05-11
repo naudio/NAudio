@@ -1,8 +1,6 @@
 ﻿using NAudio.CoreAudioApi.Interfaces;
 using System;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 
 namespace NAudio.Wasapi.CoreAudioApi.Interfaces
 {

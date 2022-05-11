@@ -9,6 +9,7 @@ namespace NAudio.Wasapi.CoreAudioApi
 
         /// <summary>
         /// Enables Windows Store apps to access preexisting Component Object Model (COM) interfaces in the WASAPI family.
+        /// https://docs.microsoft.com/en-us/windows/win32/api/mmdeviceapi/nf-mmdeviceapi-activateaudiointerfaceasync
         /// </summary>
         /// <param name="deviceInterfacePath">A device interface ID for an audio device. This is normally retrieved from a DeviceInformation object or one of the methods of the MediaDevice class.</param>
         /// <param name="riid">The IID of a COM interface in the WASAPI family, such as IAudioClient.</param>

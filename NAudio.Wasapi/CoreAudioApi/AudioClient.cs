@@ -22,7 +22,7 @@ namespace NAudio.CoreAudioApi
 
         public static async Task<AudioClient> ActivateAsync(string deviceInterfacePath, AudioClientProperties? audioClientProperties)
         {
-            var icbh = new ActivateAudioInterfaceCompletionHandler(
+            var icbh = new ActivateAudioInterfaceCompletionHandler<IAudioClient2>(
                 ac2 =>
                 {
 

@@ -2,6 +2,9 @@
 using System.Threading;
 using System.Runtime.InteropServices;
 using NAudio.Wave;
+using System.Threading.Tasks;
+using NAudio.CoreAudioApi.Interfaces;
+using NAudio.Wasapi.CoreAudioApi;
 
 // for consistency this should be in NAudio.Wave namespace, but left as it is for backwards compatibility
 // ReSharper disable once CheckNamespace
@@ -26,6 +29,7 @@ namespace NAudio.CoreAudioApi
         private readonly bool isUsingEventSync;
         private EventWaitHandle frameEventWaitHandle;
         private readonly int audioBufferMillisecondsLength;
+        private AudioClientStreamFlags audioClientStreamFlags;
 
         /// <summary>
         /// Indicates recorded data is available 
@@ -72,16 +76,79 @@ namespace NAudio.CoreAudioApi
         /// <param name="useEventSync">true if sync is done with event. false use sleep.</param>
         /// <param name="audioBufferMillisecondsLength">Length of the audio buffer in milliseconds. A lower value means lower latency but increased CPU usage.</param>
         public WasapiCapture(MMDevice captureDevice, bool useEventSync, int audioBufferMillisecondsLength)
+            : this(captureDevice.AudioClient, useEventSync, audioBufferMillisecondsLength)
+        {
+        }
+
+
+        private WasapiCapture(AudioClient audioClient, bool useEventSync, int audioBufferMillisecondsLength)
         {
             syncContext = SynchronizationContext.Current;
-            audioClient = captureDevice.AudioClient;
+            this.audioClient = audioClient;
             ShareMode = AudioClientShareMode.Shared;
             isUsingEventSync = useEventSync;
             this.audioBufferMillisecondsLength = audioBufferMillisecondsLength;
-
+            // enable auto-convert PCM
+            this.audioClientStreamFlags = AudioClientStreamFlags.AutoConvertPcm | AudioClientStreamFlags.SrcDefaultQuality;
             waveFormat = audioClient.MixFormat;
-
         }
+
+        public static async Task<WasapiCapture> CreateForProcessCaptureAsync(int processId, bool includeProcessTree)
+        {
+            // https://github.com/microsoft/Windows-classic-samples/blob/main/Samples/ApplicationLoopback/cpp/LoopbackCapture.cpp
+            var activationParams = new AudioClientActivationParams()
+            {
+                ActivationType = AudioClientActivationType.ProcessLoopback,
+                ProcessLoopbackParams = new AudioClientProcessLoopbackParams()
+                {
+                    ProcessLoopbackMode = includeProcessTree ? ProcessLoopbackMode.IncludeTargetProcessTree : 
+                        ProcessLoopbackMode.ExcludeTargetProcessTree,
+                    TargetProcessId = (uint)processId
+                }
+            };
+            var blobData = Marshal.AllocHGlobal(Marshal.SizeOf(activationParams));
+            try
+            {
+                Marshal.StructureToPtr(activationParams, blobData, false);
+                var activateParams = new PropVariant()
+                {
+                    vt = (short)VarEnum.VT_BLOB,
+                    blobVal = new Blob()
+                    {
+                        Length = Marshal.SizeOf(activationParams),
+                        Data = blobData
+                    }
+                };
+                WasapiCapture capture = null;
+                var icbh = new ActivateAudioInterfaceCompletionHandler1(ac2 => { 
+                    var audioClient = new AudioClient(ac2);
+                    capture = new WasapiCapture(audioClient, true, 100);
+                    capture.audioClientStreamFlags |= AudioClientStreamFlags.Loopback;
+                    capture.WaveFormat = new WaveFormat(); // ask for capture at 44.1, stereo 16 bit
+                });
+                var IID_IAudioClient = new Guid("1CB9AD4C-DBFA-4c32-B178-C2F568A703B2");
+                var propVariant = Marshal.AllocHGlobal(Marshal.SizeOf(activateParams));
+                try
+                {
+                    Marshal.StructureToPtr(activateParams, propVariant, false);
+                    NativeMethods.ActivateAudioInterfaceAsync(VIRTUAL_AUDIO_DEVICE_PROCESS_LOOPBACK, IID_IAudioClient, propVariant,
+                        icbh, out var activationOperation);
+                    var audioClientInterface = await icbh;
+                    return capture;
+                }
+                finally
+                {
+                    Marshal.FreeHGlobal(propVariant);
+                }
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(blobData);
+            }
+        }
+        
+        private const string VIRTUAL_AUDIO_DEVICE_PROCESS_LOOPBACK = "VAD\\Process_Loopback";
+
 
         /// <summary>
         /// Share Mode - set before calling StartRecording
@@ -172,8 +239,7 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         protected virtual AudioClientStreamFlags GetAudioClientStreamFlags()
         {
-            // enable auto-convert PCM
-            return AudioClientStreamFlags.AutoConvertPcm | AudioClientStreamFlags.SrcDefaultQuality;
+            return audioClientStreamFlags;
         }
 
         /// <summary>

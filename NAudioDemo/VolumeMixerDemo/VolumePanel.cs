@@ -10,6 +10,8 @@ using NAudio.CoreAudioApi;
 using System.Diagnostics;
 using NAudio.CoreAudioApi.Interfaces;
 using System.Media;
+using NAudio.Wave;
+using System.IO;
 
 namespace NAudioDemo.VolumeMixerDemo
 {
@@ -267,6 +269,63 @@ namespace NAudioDemo.VolumeMixerDemo
 
         public void OnSessionDisconnected(AudioSessionDisconnectReason disconnectReason)
         {
+        }
+
+        private WasapiCapture captureDevice;
+        private WaveFileWriter writer;
+
+        private async void OnRecordClick(object sender, EventArgs e)
+        {
+            if(captureDevice == null)
+            {
+                var processId = (int)session.GetProcessID;
+                var processName = Process.GetProcessById(processId).ProcessName;
+                try
+                {
+                    captureDevice = await WasapiCapture.CreateForProcessCaptureAsync((int)session.GetProcessID, false);
+                    captureDevice.DataAvailable += CaptureDevice_DataAvailable;
+                    captureDevice.StartRecording();
+                    captureDevice.RecordingStopped += CaptureDevice_RecordingStopped;
+                    var file = Path.Combine(Path.GetTempPath(), "NAudioDemo", $"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} {processName}.wav");
+                    writer = new WaveFileWriter(file, captureDevice.WaveFormat);
+                    buttonRecord.Text = "STOP";
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Failed to capture audio from process {processName}\r\n{ex.Message}");
+                    CleanupCapture();
+                }
+            }
+            else
+            {
+                captureDevice.StopRecording(); // WAV File will be completed in recording stopped
+                buttonRecord.Enabled = false;
+            }
+        }
+
+        private void CleanupCapture()
+        {
+            if (captureDevice != null)
+            {
+                captureDevice.DataAvailable -= CaptureDevice_DataAvailable;
+                captureDevice.RecordingStopped -= CaptureDevice_RecordingStopped;
+                captureDevice.Dispose();
+                captureDevice = null;
+            }
+        }
+
+        private void CaptureDevice_RecordingStopped(object sender, StoppedEventArgs e)
+        {
+            writer.Dispose();
+            writer = null;
+            CleanupCapture();
+            buttonRecord.Text = "REC";
+            buttonRecord.Enabled = true;
+        }
+
+        private void CaptureDevice_DataAvailable(object sender, NAudio.Wave.WaveInEventArgs e)
+        {
+            writer.Write(e.Buffer, 0, e.BytesRecorded);
         }
     }
 

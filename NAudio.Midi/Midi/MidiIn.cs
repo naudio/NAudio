@@ -185,7 +185,7 @@ namespace NAudio.Midi
         }
 
         /// <summary>
-        /// Closes the MIDI out device
+        /// Closes the MIDI in device
         /// </summary>
         /// <param name="disposing">True if called from Dispose</param>
         protected virtual void Dispose(bool disposing) 

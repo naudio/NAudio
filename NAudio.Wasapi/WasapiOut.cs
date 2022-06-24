@@ -385,6 +385,9 @@ namespace NAudio.Wave
             }
             sourceProvider = waveProvider;
 
+            var expireFlags = AudioClientStreamFlags.ExpireWhenUnowned |
+                              AudioClientStreamFlags.HideWhenExpired;
+
             // If using EventSync, setup is specific with shareMode
             if (isUsingEventSync)
             {
@@ -393,7 +396,7 @@ namespace NAudio.Wave
                 {
                     // With EventCallBack and Shared, both latencies must be set to 0 (update - not sure this is true anymore)
                     //
-                    audioClient.Initialize(shareMode, AudioClientStreamFlags.EventCallback, latencyRefTimes, 0,
+                    audioClient.Initialize(shareMode, AudioClientStreamFlags.EventCallback | expireFlags, latencyRefTimes, 0,
                         outputFormat, sessionId);
 
                     // Windows 10 returns 0 from stream latency, resulting in maxing out CPU usage later
@@ -409,7 +412,7 @@ namespace NAudio.Wave
                     try
                     {
                         // With EventCallBack and Exclusive, both latencies must equals
-                        audioClient.Initialize(shareMode, AudioClientStreamFlags.EventCallback, latencyRefTimes, latencyRefTimes,
+                        audioClient.Initialize(shareMode, AudioClientStreamFlags.EventCallback | expireFlags, latencyRefTimes, latencyRefTimes,
                                             outputFormat, sessionId);
                     }
                     catch (COMException ex)
@@ -426,7 +429,7 @@ namespace NAudio.Wave
 
                         this.audioClient.Dispose();
                         this.audioClient = this.mmDevice.AudioClient;
-                        this.audioClient.Initialize(this.shareMode, AudioClientStreamFlags.EventCallback,
+                        this.audioClient.Initialize(this.shareMode, AudioClientStreamFlags.EventCallback | expireFlags,
                                             newLatencyRefTimes, newLatencyRefTimes, this.outputFormat, sessionId);
                     }
                 }
@@ -438,7 +441,7 @@ namespace NAudio.Wave
             else
             {
                 // Normal setup for both sharedMode
-                audioClient.Initialize(shareMode, AudioClientStreamFlags.None, latencyRefTimes, 0,
+                audioClient.Initialize(shareMode, expireFlags, latencyRefTimes, 0,
                                     outputFormat, sessionId);
             }
 

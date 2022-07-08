@@ -384,8 +384,8 @@ namespace NAudio.Wave
                     finally
                     {
                         Type Mem = typeof(MemoryStream); 
-                        if (outStream.GetType().Equals(Mem) == false) //   Do not close MemoryStreams. This makes them unavailable to the caller.
-                        {                                                                                       
+                        if (outStream.GetType().Equals(Mem) == false) //   Do not close MemoryStreams. This makes them unavailable to the caller
+                        {                                             //   which defeats the purpose as to why WaveFileWriter was called in the first place.                                           
                           // in a finally block as we don't want the FileStream to run its disposer in
                           // the GC thread if the code above caused an IOException (e.g. due to disk full)
                             outStream.Dispose(); // will close the underlying base stream

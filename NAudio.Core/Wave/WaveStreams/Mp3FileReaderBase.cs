@@ -252,11 +252,15 @@ namespace NAudio.Wave
             Mp3Frame frame = null;
             try
             {
-                frame = Mp3Frame.LoadFromStream(mp3Stream, readData);
-                if (frame != null)
+                if (mp3Stream != null) //  in case we're called after the stream is closed 
                 {
-                    tocIndex++;
+                    frame = Mp3Frame.LoadFromStream(mp3Stream, readData);
+                    if (frame != null)
+                    {
+                        tocIndex++;
+                    }
                 }
+                
             }
             catch (EndOfStreamException)
             {

@@ -383,10 +383,14 @@ namespace NAudio.Wave
                     }
                     finally
                     {
-                        // in a finally block as we don't want the FileStream to run its disposer in
-                        // the GC thread if the code above caused an IOException (e.g. due to disk full)
-                        outStream.Dispose(); // will close the underlying base stream
-                        outStream = null;
+                        Type Mem = typeof(MemoryStream); 
+                        if (outStream.GetType().Equals(Mem) == false) //   Do not close MemoryStreams. This makes them unavailable to the caller.
+                        {                                                                                       
+                          // in a finally block as we don't want the FileStream to run its disposer in
+                          // the GC thread if the code above caused an IOException (e.g. due to disk full)
+                            outStream.Dispose(); // will close the underlying base stream
+                            outStream = null;
+                        }
                     }
                 }
             }

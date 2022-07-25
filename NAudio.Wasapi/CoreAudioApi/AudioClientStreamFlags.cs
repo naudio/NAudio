@@ -28,5 +28,13 @@ namespace NAudio.CoreAudioApi
         /// AUDCLNT_STREAMFLAGS_NOPERSIST     
         /// </summary>
         NoPersist = 0x00080000,
+        /// <summary>
+        /// AUDCLNT_SESSIONFLAGS_EXPIREWHENUNOWNED    
+        /// </summary>
+        ExpireWhenUnowned = 0x10000000,
+        /// /// <summary>
+        /// AUDCLNT_SESSIONFLAGS_DISPLAY_HIDEWHENEXPIRED    
+        /// </summary>
+        HideWhenExpired = 0x40000000
     }
 }

@@ -18,6 +18,7 @@ namespace NAudio.CoreAudioApi
         private readonly IAudioSessionControl audioSessionControlInterface;
         private readonly IAudioSessionControl2 audioSessionControlInterface2;
         private AudioSessionEventsCallback audioSessionEventCallback;
+        private bool isDisposed;
 
         /// <summary>
         /// Constructor.
@@ -41,14 +42,24 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public void Dispose()
         {
+            if (isDisposed)
+            {
+                return;
+            }
+
+            isDisposed = true;
+
             if (audioSessionEventCallback != null)
             {
                 Marshal.ThrowExceptionForHR(audioSessionControlInterface.UnregisterAudioSessionNotification(audioSessionEventCallback));
                 audioSessionEventCallback = null;
             }
+
+            Marshal.ReleaseComObject(audioSessionControlInterface);
+
             GC.SuppressFinalize(this);
         }
-        
+
         /// <summary>
         /// Finalizer
         /// </summary>
@@ -76,6 +87,11 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
+                if (isDisposed)
+                {
+                    return AudioSessionState.AudioSessionStateExpired;
+                }
+
                 Marshal.ThrowExceptionForHR(audioSessionControlInterface.GetState(out var state));
 
                 return state;
@@ -89,13 +105,18 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
+                if (isDisposed)
+                {
+                    return string.Empty;
+                }
+
                 Marshal.ThrowExceptionForHR(audioSessionControlInterface.GetDisplayName(out var displayName));
 
                 return displayName;
             }
             set
             {
-                if (value != String.Empty)
+                if (!isDisposed && value != string.Empty)
                 {
                     Marshal.ThrowExceptionForHR(audioSessionControlInterface.SetDisplayName(value, Guid.Empty));
                 }
@@ -109,13 +130,18 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
+                if (isDisposed)
+                {
+                    return string.Empty;
+                }
+
                 Marshal.ThrowExceptionForHR(audioSessionControlInterface.GetIconPath(out var iconPath));
 
                 return iconPath;
             }
             set
             {
-                if (value != String.Empty)
+                if (!isDisposed && value != string.Empty)
                 {
                     Marshal.ThrowExceptionForHR(audioSessionControlInterface.SetIconPath(value, Guid.Empty));
                 }
@@ -129,6 +155,11 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
+                if (isDisposed)
+                {
+                    return string.Empty;
+                }
+
                 if (audioSessionControlInterface2 == null) throw new InvalidOperationException("Not supported on this version of Windows");
                 Marshal.ThrowExceptionForHR(audioSessionControlInterface2.GetSessionIdentifier(out var str));
                 return str;
@@ -142,6 +173,11 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
+                if (isDisposed)
+                {
+                    return string.Empty;
+                }
+
                 if (audioSessionControlInterface2 == null) throw new InvalidOperationException("Not supported on this version of Windows");
                 Marshal.ThrowExceptionForHR(audioSessionControlInterface2.GetSessionInstanceIdentifier(out var str));
                 return str;
@@ -155,6 +191,11 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
+                if (isDisposed)
+                {
+                    return 0;
+                }
+
                 if (audioSessionControlInterface2 == null) throw new InvalidOperationException("Not supported on this version of Windows");
                 Marshal.ThrowExceptionForHR(audioSessionControlInterface2.GetProcessId(out var pid));
                 return pid;
@@ -168,6 +209,11 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
+                if (isDisposed)
+                {
+                    return false;
+                }
+
                 if (audioSessionControlInterface2 == null) throw new InvalidOperationException("Not supported on this version of Windows");
                 return (audioSessionControlInterface2.IsSystemSoundsSession() == 0);
             }
@@ -179,6 +225,11 @@ namespace NAudio.CoreAudioApi
         /// <returns></returns>
         public Guid GetGroupingParam()
         {
+            if (isDisposed)
+            {
+                return Guid.Empty;
+            }
+
             Marshal.ThrowExceptionForHR(audioSessionControlInterface.GetGroupingParam(out var groupingId));
 
             return groupingId;
@@ -191,6 +242,11 @@ namespace NAudio.CoreAudioApi
         /// <param name="context"></param>
         public void SetGroupingParam(Guid groupingId, Guid context)
         {
+            if (isDisposed)
+            {
+                return;
+            }
+
             Marshal.ThrowExceptionForHR(audioSessionControlInterface.SetGroupingParam(groupingId, context));
         }
 
@@ -200,6 +256,11 @@ namespace NAudio.CoreAudioApi
         /// <param name="eventClient"></param>
         public void RegisterEventClient(IAudioSessionEventsHandler eventClient)
         {
+            if (isDisposed)
+            {
+                return;
+            }
+
             // we could have an array or list of listeners if we like
             audioSessionEventCallback = new AudioSessionEventsCallback(eventClient);
             Marshal.ThrowExceptionForHR(audioSessionControlInterface.RegisterAudioSessionNotification(audioSessionEventCallback));

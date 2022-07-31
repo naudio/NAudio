@@ -176,7 +176,7 @@ namespace NAudioWpfDemo.MediaFoundationEncode
 
         private void Encode()
         {
-            if (string.IsNullOrEmpty(InputFile)||!File.Exists(InputFile))
+            if (String.IsNullOrEmpty(InputFile) || !File.Exists(InputFile))
             {
                 MessageBox.Show("Please select a valid input file to convert");
                 return;
@@ -193,8 +193,16 @@ namespace NAudioWpfDemo.MediaFoundationEncode
                 if (outputUrl == null) return;
                 using (var encoder = new MediaFoundationEncoder(SelectedMediaType.MediaType))
                 {
-                    encoder.Encode(outputUrl, reader);
-                }                    
+                    try
+                    {
+
+                        encoder.Encode(outputUrl, reader);
+                    }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show(e.Message, "Failed to encode");
+                    }
+                }
             }
         }
 

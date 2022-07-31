@@ -57,13 +57,11 @@ namespace NAudio.Wave
                     throw;
                 }
             }
-            int count;
-            availableTypes.GetElementCount(out count);
+            availableTypes.GetElementCount(out int count);
             var mediaTypes = new List<MediaType>(count);
             for (int n = 0; n < count; n++)
             {
-                object mediaTypeObject;
-                availableTypes.GetElement(n, out mediaTypeObject);
+                availableTypes.GetElement(n, out object mediaTypeObject);
                 var mediaType = (IMFMediaType)mediaTypeObject;
                 mediaTypes.Add(new MediaType(mediaType));
             }
@@ -222,8 +220,7 @@ namespace NAudio.Wave
             var writer = CreateSinkWriter(outputFile);
             try
             {
-                int streamIndex;
-                writer.AddStream(outputMediaType.MediaFoundationObject, out streamIndex);
+                writer.AddStream(outputMediaType.MediaFoundationObject, out int streamIndex);
 
                 // n.b. can get 0xC00D36B4 - MF_E_INVALIDMEDIATYPE here
                 writer.SetInputMediaType(streamIndex, inputMediaType.MediaFoundationObject, null);
@@ -232,8 +229,14 @@ namespace NAudio.Wave
             }
             finally
             {
-                Marshal.ReleaseComObject(writer);
-                Marshal.ReleaseComObject(inputMediaType.MediaFoundationObject);
+                if (writer != null)
+                {
+                    Marshal.ReleaseComObject(writer);
+                }
+                if (inputMediaType.MediaFoundationObject != null)
+                {
+                    Marshal.ReleaseComObject(inputMediaType.MediaFoundationObject);
+                }
             }
         }
 
@@ -243,24 +246,35 @@ namespace NAudio.Wave
         /// <param name="outputStream">Output stream</param>
         /// <param name="inputProvider">Input provider (should be PCM, some encoders will also allow IEEE float)</param>
         /// <param name="transcodeContainerType">One of <see cref="TranscodeContainerTypes"/></param>
-        public void Encode(Stream outputStream, IWaveProvider inputProvider, Guid transcodeContainerType) {
-            if (inputProvider.WaveFormat.Encoding != WaveFormatEncoding.Pcm && inputProvider.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat) {
+        public void Encode(Stream outputStream, IWaveProvider inputProvider, Guid transcodeContainerType) 
+        {
+            if (inputProvider.WaveFormat.Encoding != WaveFormatEncoding.Pcm && inputProvider.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat) 
+            {
                 throw new ArgumentException("Encode input format must be PCM or IEEE float");
             }
 
             var inputMediaType = new MediaType(inputProvider.WaveFormat);
 
             var writer = CreateSinkWriter(new ComStream(outputStream), transcodeContainerType);
-            try {
+            try 
+            {
 				writer.AddStream(outputMediaType.MediaFoundationObject, out int streamIndex);
 
 				// n.b. can get 0xC00D36B4 - MF_E_INVALIDMEDIATYPE here
 				writer.SetInputMediaType(streamIndex, inputMediaType.MediaFoundationObject, null);
 
                 PerformEncode(writer, streamIndex, inputProvider);
-            } finally {
-                Marshal.ReleaseComObject(writer);
-                Marshal.ReleaseComObject(inputMediaType.MediaFoundationObject);
+            } 
+            finally 
+            {
+                if (writer != null)
+                {
+                    Marshal.ReleaseComObject(writer);
+                }
+                if (inputMediaType.MediaFoundationObject != null)
+                {
+                    Marshal.ReleaseComObject(inputMediaType.MediaFoundationObject);
+                }
             }
         }
 
@@ -292,7 +306,8 @@ namespace NAudio.Wave
             return writer;
         }
 
-        private static IMFSinkWriter CreateSinkWriter(IStream outputStream, Guid TranscodeContainerType) {
+        private static IMFSinkWriter CreateSinkWriter(IStream outputStream, Guid TranscodeContainerType) 
+        {
             // n.b. could try specifying the container type using attributes, but I think
             // it does a decent job of working it out from the file extension 
             // n.b. AAC encode on Win 8 can have AAC extension, but use MP4 in win 7
@@ -300,10 +315,13 @@ namespace NAudio.Wave
             IMFSinkWriter writer;
             var attributes = MediaFoundationApi.CreateAttributes(1);
             attributes.SetGUID(MediaFoundationAttributes.MF_TRANSCODE_CONTAINERTYPE, TranscodeContainerType);
-            try {
+            try 
+            {
                 MediaFoundationInterop.MFCreateMFByteStreamOnStream(outputStream, out var ppByteStream);
                 MediaFoundationInterop.MFCreateSinkWriterFromURL(null, ppByteStream, attributes, out writer);
-            } finally {
+            } 
+            finally 
+            {
                 Marshal.ReleaseComObject(attributes);
             }
             return writer;
@@ -336,16 +354,13 @@ namespace NAudio.Wave
         private long ConvertOneBuffer(IMFSinkWriter writer, int streamIndex, IWaveProvider inputProvider, long position, byte[] managedBuffer)
         {
             long durationConverted = 0;
-            int maxLength;
             IMFMediaBuffer buffer = MediaFoundationApi.CreateMemoryBuffer(managedBuffer.Length);
-            buffer.GetMaxLength(out maxLength);
+            buffer.GetMaxLength(out var maxLength);
 
             IMFSample sample = MediaFoundationApi.CreateSample();
             sample.AddBuffer(buffer);
 
-            IntPtr ptr;
-            int currentLength;
-            buffer.Lock(out ptr, out maxLength, out currentLength);
+            buffer.Lock(out var ptr, out maxLength, out int currentLength);
             int read = inputProvider.Read(managedBuffer, 0, maxLength);
             if (read > 0)
             {

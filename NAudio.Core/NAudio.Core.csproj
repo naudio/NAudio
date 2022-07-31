@@ -5,6 +5,7 @@
     <Authors>Mark Heath</Authors>
     <Version>2.1.0</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GenerateDocumentationFile Condition=" '$(Configuration)' == 'Release' ">true</GenerateDocumentationFile>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\NAudioStrongNameKey.snk</AssemblyOriginatorKeyFile>
     <PackageProjectUrl>https://github.com/naudio/NAudio</PackageProjectUrl>

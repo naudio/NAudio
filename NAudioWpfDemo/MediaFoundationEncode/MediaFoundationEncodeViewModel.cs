@@ -69,9 +69,11 @@ namespace NAudioWpfDemo.MediaFoundationEncode
             bool isValid = false;
             try
             {
-                using var reader = new MediaFoundationReader(file);
-                InputFormat = reader.WaveFormat.ToString();
-                inputWaveFormat = reader.WaveFormat;
+                using (var reader = new MediaFoundationReader(file))
+                {
+                    InputFormat = reader.WaveFormat.ToString();
+                    inputWaveFormat = reader.WaveFormat;
+                }
                 isValid = true;
             }
             catch (Exception e)
@@ -185,11 +187,15 @@ namespace NAudioWpfDemo.MediaFoundationEncode
                 return;
             }
 
-            using var reader = new MediaFoundationReader(InputFile);
-            string outputUrl = SelectSaveFile(SelectedOutputFormat.Name, SelectedOutputFormat.Extension);
-            if (outputUrl == null) return;
-            using var encoder = new MediaFoundationEncoder(SelectedMediaType.MediaType);
-            encoder.Encode(outputUrl, reader);
+            using (var reader = new MediaFoundationReader(InputFile))
+            {
+                string outputUrl = SelectSaveFile(SelectedOutputFormat.Name, SelectedOutputFormat.Extension);
+                if (outputUrl == null) return;
+                using (var encoder = new MediaFoundationEncoder(SelectedMediaType.MediaType))
+                {
+                    encoder.Encode(outputUrl, reader);
+                }                    
+            }
         }
 
         private string SelectSaveFile(string formatName, string extension)

@@ -5,6 +5,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Version>2.1.0</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GenerateDocumentationFile Condition=" '$(Configuration)' == 'Release' ">true</GenerateDocumentationFile>
     <Authors>Mark Heath</Authors>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\NAudioStrongNameKey.snk</AssemblyOriginatorKeyFile>

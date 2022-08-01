@@ -152,11 +152,14 @@ namespace NAudio.Wave
                     }
                 }
                 Thread.Sleep(latencyMilliseconds / 2);
-                audioClient.Stop();
-                if (playbackState == PlaybackState.Stopped)
+                if (audioClient != null)  //        avoid null reference (probably due to timing issues)
                 {
-                    audioClient.Reset();
-                }
+                    audioClient.Stop();
+                    if (playbackState == PlaybackState.Stopped)
+                    {
+                        audioClient.Reset();
+                    }
+                } 
             }
             catch (Exception e)
             {

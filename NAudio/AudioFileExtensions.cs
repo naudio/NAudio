@@ -1,5 +1,4 @@
 ﻿using System;
-using static NAudio.Wave.AudioFileReader;
 
 namespace NAudio
 {

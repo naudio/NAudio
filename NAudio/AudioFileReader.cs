@@ -44,7 +44,7 @@ namespace NAudio.Wave
         /// Initializes a new instance of AudioFileReader
         /// </summary>
         /// <param name="stream">The stream containing the audio file data</param>
-        /// <param name="fileExt">The extension of audio file, including the period ('.')</param>
+        /// <param name="fileExt">The extension of the audio file, including the period ('.')</param>
         public AudioFileReader(Stream stream, string fileExt)
         {
             lockObject = new object();
@@ -66,7 +66,7 @@ namespace NAudio.Wave
             var fileExt = Path.GetExtension(fileName);
             var fileFormat = audioFileExt.GetFormatFromFileExt(fileExt);
 
-            if (fileFormat == SoundFormatEnum.WAV)
+            if (fileFormat == AudioFileFormatEnum.WAV)
             {
                 readerStream = new WaveFileReader(fileName);
                 if (readerStream.WaveFormat.Encoding != WaveFormatEncoding.Pcm && readerStream.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
@@ -75,14 +75,14 @@ namespace NAudio.Wave
                     readerStream = new BlockAlignReductionStream(readerStream);
                 }
             }
-            else if (fileFormat == SoundFormatEnum.MP3)
+            else if (fileFormat == AudioFileFormatEnum.MP3)
             {
                 if (Environment.OSVersion.Version.Major < 6)
                     readerStream = new Mp3FileReader(fileName);
                 else // make MediaFoundationReader the default for MP3 going forwards
                     readerStream = new MediaFoundationReader(fileName);
             }
-            else if (fileFormat == SoundFormatEnum.AIFF)
+            else if (fileFormat == AudioFileFormatEnum.AIFF)
             {
                 readerStream = new AiffFileReader(fileName);
             }
@@ -109,7 +109,7 @@ namespace NAudio.Wave
             {
                 if (fileExt.StartsWith(".") == false)
                 {
-                    throw new FormatException("File extension expected to start with a period ('.')");
+                    throw new ArgumentOutOfRangeException("File extension expected to start with a period ('.')");
                 }
             }
             else
@@ -119,7 +119,7 @@ namespace NAudio.Wave
 
             var fileFormat = audioFileExt.GetFormatFromFileExt(fileExt);
 
-            if (fileFormat == SoundFormatEnum.WAV)
+            if (fileFormat == AudioFileFormatEnum.WAV)
             {
                 readerStream = new WaveFileReader(stream);
                 if (readerStream.WaveFormat.Encoding != WaveFormatEncoding.Pcm && readerStream.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
@@ -128,14 +128,14 @@ namespace NAudio.Wave
                     readerStream = new BlockAlignReductionStream(readerStream);
                 }
             }
-            else if (fileFormat == SoundFormatEnum.MP3)
+            else if (fileFormat == AudioFileFormatEnum.MP3)
             {
                 if (Environment.OSVersion.Version.Major < 6)
                     readerStream = new Mp3FileReader(stream);
                 else // make MediaFoundationReader the default for MP3 going forwards
                     readerStream = new StreamMediaFoundationReader(stream);
             }
-            else if (fileFormat == SoundFormatEnum.AIFF)
+            else if (fileFormat == AudioFileFormatEnum.AIFF)
             {
                 readerStream = new AiffFileReader(stream);
             }
@@ -147,7 +147,7 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// File Name
+        /// File Name.  Value is null when a stream is used to construct the reader
         /// </summary>
         public string FileName { get; }
 

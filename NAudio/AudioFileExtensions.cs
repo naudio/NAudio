@@ -6,31 +6,32 @@ namespace NAudio
     public class AudioFileExtensions
     {
         /// <summary>
-        /// Converts a sound file extensions to an enumeration value
+        /// Converts a sound file extension to an enumeration value
         /// </summary>
         /// <param name="fileExt">The file extension to convert. Case is ignored. It must include the period ('.').</param>
         /// <returns>The enumeration value</returns>
-        public SoundFormatEnum GetFormatFromFileExt(string fileExt)
+        /// <remarks>Null file extensions will return as 'unknown'</remarks>
+        public AudioFileFormatEnum GetFormatFromFileExt(string fileExt)
         {
             if (fileExt != null)
             {
                 switch (fileExt.ToLower())
                 {
                     case ".mp3":
-                        return SoundFormatEnum.MP3;
+                        return AudioFileFormatEnum.MP3;
                     case ".wav":
-                        return SoundFormatEnum.WAV;
+                        return AudioFileFormatEnum.WAV;
                     case ".aif":
-                        return SoundFormatEnum.AIFF;
+                        return AudioFileFormatEnum.AIFF;
                     case ".aiff":
-                        return SoundFormatEnum.AIFF;
+                        return AudioFileFormatEnum.AIFF;
                     default:
-                        return SoundFormatEnum.Unknown;
+                        return AudioFileFormatEnum.Unknown;
                 }
             }
             else
             {
-                return SoundFormatEnum.Unknown;
+                return AudioFileFormatEnum.Unknown;
             }
         }
     }

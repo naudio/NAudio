@@ -12,7 +12,7 @@ namespace NAudioTests.WaveStreams
 
             var enumVal = converter.GetFormatFromFileExt(".wav");
 
-            Assert.AreEqual(enumVal, SoundFormatEnum.WAV);
+            Assert.AreEqual(enumVal, AudioFileFormatEnum.WAV);
         }
 
         [Test]
@@ -22,7 +22,7 @@ namespace NAudioTests.WaveStreams
 
             var enumVal = converter.GetFormatFromFileExt(".Wav");
 
-            Assert.AreEqual(enumVal, SoundFormatEnum.WAV);
+            Assert.AreEqual(enumVal, AudioFileFormatEnum.WAV);
         }
 
         [Test]
@@ -32,7 +32,7 @@ namespace NAudioTests.WaveStreams
 
             var enumVal = converter.GetFormatFromFileExt(".WAV");
 
-            Assert.AreEqual(enumVal, SoundFormatEnum.WAV);
+            Assert.AreEqual(enumVal, AudioFileFormatEnum.WAV);
         }
 
         [Test]
@@ -42,7 +42,7 @@ namespace NAudioTests.WaveStreams
 
             var enumVal = converter.GetFormatFromFileExt(".mp3");
 
-            Assert.AreEqual(enumVal, SoundFormatEnum.MP3);
+            Assert.AreEqual(enumVal, AudioFileFormatEnum.MP3);
         }
 
         [Test]
@@ -52,7 +52,7 @@ namespace NAudioTests.WaveStreams
 
             var enumVal = converter.GetFormatFromFileExt(".Mp3");
 
-            Assert.AreEqual(enumVal, SoundFormatEnum.MP3);
+            Assert.AreEqual(enumVal, AudioFileFormatEnum.MP3);
         }
 
         [Test]
@@ -62,7 +62,7 @@ namespace NAudioTests.WaveStreams
 
             var enumVal = converter.GetFormatFromFileExt(".MP3");
 
-            Assert.AreEqual(enumVal, SoundFormatEnum.MP3);
+            Assert.AreEqual(enumVal, AudioFileFormatEnum.MP3);
         }
 
         [Test]
@@ -72,7 +72,7 @@ namespace NAudioTests.WaveStreams
 
             var enumVal = converter.GetFormatFromFileExt(".aiff");
 
-            Assert.AreEqual(enumVal, SoundFormatEnum.AIFF);
+            Assert.AreEqual(enumVal, AudioFileFormatEnum.AIFF);
         }
 
         [Test]
@@ -82,7 +82,7 @@ namespace NAudioTests.WaveStreams
 
             var enumVal = converter.GetFormatFromFileExt(".Aiff");
 
-            Assert.AreEqual(enumVal, SoundFormatEnum.AIFF);
+            Assert.AreEqual(enumVal, AudioFileFormatEnum.AIFF);
         }
 
         [Test]
@@ -92,7 +92,7 @@ namespace NAudioTests.WaveStreams
 
             var enumVal = converter.GetFormatFromFileExt(".AIFF");
 
-            Assert.AreEqual(enumVal, SoundFormatEnum.AIFF);
+            Assert.AreEqual(enumVal, AudioFileFormatEnum.AIFF);
         }
 
         [Test]
@@ -102,7 +102,7 @@ namespace NAudioTests.WaveStreams
 
             var enumVal = converter.GetFormatFromFileExt(".aif");
 
-            Assert.AreEqual(enumVal, SoundFormatEnum.AIFF);
+            Assert.AreEqual(enumVal, AudioFileFormatEnum.AIFF);
         }
 
         [Test]
@@ -112,7 +112,7 @@ namespace NAudioTests.WaveStreams
 
             var enumVal = converter.GetFormatFromFileExt(".Aif");
 
-            Assert.AreEqual(enumVal, SoundFormatEnum.AIFF);
+            Assert.AreEqual(enumVal, AudioFileFormatEnum.AIFF);
         }
 
         [Test]
@@ -122,7 +122,7 @@ namespace NAudioTests.WaveStreams
 
             var enumVal = converter.GetFormatFromFileExt(".AIF");
 
-            Assert.AreEqual(enumVal, SoundFormatEnum.AIFF);
+            Assert.AreEqual(enumVal, AudioFileFormatEnum.AIFF);
         }
 
         [Test]
@@ -132,7 +132,7 @@ namespace NAudioTests.WaveStreams
 
             var enumVal = converter.GetFormatFromFileExt(null);
 
-            Assert.AreEqual(enumVal, SoundFormatEnum.Unknown);
+            Assert.AreEqual(enumVal, AudioFileFormatEnum.Unknown);
         }
 
         [Test]
@@ -142,7 +142,7 @@ namespace NAudioTests.WaveStreams
 
             var enumVal = converter.GetFormatFromFileExt("");
 
-            Assert.AreEqual(enumVal, SoundFormatEnum.Unknown);
+            Assert.AreEqual(enumVal, AudioFileFormatEnum.Unknown);
         }
 
         [Test]
@@ -152,7 +152,7 @@ namespace NAudioTests.WaveStreams
 
             var enumVal = converter.GetFormatFromFileExt(".abc");
 
-            Assert.AreEqual(enumVal, SoundFormatEnum.Unknown);
+            Assert.AreEqual(enumVal, AudioFileFormatEnum.Unknown);
         }
     }
 }

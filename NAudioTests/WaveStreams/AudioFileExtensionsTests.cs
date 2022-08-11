@@ -8,9 +8,7 @@ namespace NAudioTests.WaveStreams
         [Test]
         public void LowerCaseWave()
         {
-            var converter = new AudioFileExtensions();
-
-            var enumVal = converter.GetFormatFromFileExt(".wav");
+            var enumVal = ".wav".GetFormatFromFileExt();
 
             Assert.AreEqual(enumVal, AudioFileFormatEnum.WAV);
         }
@@ -18,9 +16,7 @@ namespace NAudioTests.WaveStreams
         [Test]
         public void MixedCaseWave()
         {
-            var converter = new AudioFileExtensions();
-
-            var enumVal = converter.GetFormatFromFileExt(".Wav");
+            var enumVal = ".Wav".GetFormatFromFileExt();
 
             Assert.AreEqual(enumVal, AudioFileFormatEnum.WAV);
         }
@@ -28,9 +24,7 @@ namespace NAudioTests.WaveStreams
         [Test]
         public void UpperCaseWave()
         {
-            var converter = new AudioFileExtensions();
-
-            var enumVal = converter.GetFormatFromFileExt(".WAV");
+            var enumVal = ".WAV".GetFormatFromFileExt();
 
             Assert.AreEqual(enumVal, AudioFileFormatEnum.WAV);
         }
@@ -38,9 +32,7 @@ namespace NAudioTests.WaveStreams
         [Test]
         public void LowerCaseMp3()
         {
-            var converter = new AudioFileExtensions();
-
-            var enumVal = converter.GetFormatFromFileExt(".mp3");
+            var enumVal = ".mp3".GetFormatFromFileExt();
 
             Assert.AreEqual(enumVal, AudioFileFormatEnum.MP3);
         }
@@ -48,9 +40,7 @@ namespace NAudioTests.WaveStreams
         [Test]
         public void MixedCaseMp3()
         {
-            var converter = new AudioFileExtensions();
-
-            var enumVal = converter.GetFormatFromFileExt(".Mp3");
+            var enumVal = ".Mp3".GetFormatFromFileExt();
 
             Assert.AreEqual(enumVal, AudioFileFormatEnum.MP3);
         }
@@ -58,9 +48,7 @@ namespace NAudioTests.WaveStreams
         [Test]
         public void UpperCaseMp3()
         {
-            var converter = new AudioFileExtensions();
-
-            var enumVal = converter.GetFormatFromFileExt(".MP3");
+            var enumVal = ".MP3".GetFormatFromFileExt();
 
             Assert.AreEqual(enumVal, AudioFileFormatEnum.MP3);
         }
@@ -68,9 +56,7 @@ namespace NAudioTests.WaveStreams
         [Test]
         public void LowerCaseAiff()
         {
-            var converter = new AudioFileExtensions();
-
-            var enumVal = converter.GetFormatFromFileExt(".aiff");
+            var enumVal = ".aiff".GetFormatFromFileExt();
 
             Assert.AreEqual(enumVal, AudioFileFormatEnum.AIFF);
         }
@@ -78,9 +64,7 @@ namespace NAudioTests.WaveStreams
         [Test]
         public void MixedCaseAiff()
         {
-            var converter = new AudioFileExtensions();
-
-            var enumVal = converter.GetFormatFromFileExt(".Aiff");
+            var enumVal = ".Aiff".GetFormatFromFileExt();
 
             Assert.AreEqual(enumVal, AudioFileFormatEnum.AIFF);
         }
@@ -88,9 +72,7 @@ namespace NAudioTests.WaveStreams
         [Test]
         public void UpperCaseAiff()
         {
-            var converter = new AudioFileExtensions();
-
-            var enumVal = converter.GetFormatFromFileExt(".AIFF");
+            var enumVal = ".AIFF".GetFormatFromFileExt();
 
             Assert.AreEqual(enumVal, AudioFileFormatEnum.AIFF);
         }
@@ -98,9 +80,7 @@ namespace NAudioTests.WaveStreams
         [Test]
         public void LowerCaseShortAiff()
         {
-            var converter = new AudioFileExtensions();
-
-            var enumVal = converter.GetFormatFromFileExt(".aif");
+            var enumVal = ".aif".GetFormatFromFileExt();
 
             Assert.AreEqual(enumVal, AudioFileFormatEnum.AIFF);
         }
@@ -108,9 +88,7 @@ namespace NAudioTests.WaveStreams
         [Test]
         public void MixedCaseShortAiff()
         {
-            var converter = new AudioFileExtensions();
-
-            var enumVal = converter.GetFormatFromFileExt(".Aif");
+            var enumVal = ".Aif".GetFormatFromFileExt();
 
             Assert.AreEqual(enumVal, AudioFileFormatEnum.AIFF);
         }
@@ -118,9 +96,7 @@ namespace NAudioTests.WaveStreams
         [Test]
         public void UpperCaseShortAiff()
         {
-            var converter = new AudioFileExtensions();
-
-            var enumVal = converter.GetFormatFromFileExt(".AIF");
+            var enumVal = ".AIF".GetFormatFromFileExt();
 
             Assert.AreEqual(enumVal, AudioFileFormatEnum.AIFF);
         }
@@ -128,9 +104,7 @@ namespace NAudioTests.WaveStreams
         [Test]
         public void NullValue()
         {
-            var converter = new AudioFileExtensions();
-
-            var enumVal = converter.GetFormatFromFileExt(null);
+            var enumVal = ((string)null).GetFormatFromFileExt();
 
             Assert.AreEqual(enumVal, AudioFileFormatEnum.Unknown);
         }
@@ -138,9 +112,7 @@ namespace NAudioTests.WaveStreams
         [Test]
         public void EmptyValue()
         {
-            var converter = new AudioFileExtensions();
-
-            var enumVal = converter.GetFormatFromFileExt("");
+            var enumVal = "".GetFormatFromFileExt();
 
             Assert.AreEqual(enumVal, AudioFileFormatEnum.Unknown);
         }
@@ -148,9 +120,7 @@ namespace NAudioTests.WaveStreams
         [Test]
         public void UnknownValue()
         {
-            var converter = new AudioFileExtensions();
-
-            var enumVal = converter.GetFormatFromFileExt(".abc");
+            var enumVal = ".abc".GetFormatFromFileExt();
 
             Assert.AreEqual(enumVal, AudioFileFormatEnum.Unknown);
         }

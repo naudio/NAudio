@@ -2,7 +2,10 @@
 
 namespace NAudio
 {
-    public class AudioFileExtensions
+    /// <summary>
+    /// A collection of string extensions for handling audio file extensions
+    /// </summary>
+    public static class AudioFileExtensions
     {
         /// <summary>
         /// Converts a sound file extension to an enumeration value
@@ -10,7 +13,7 @@ namespace NAudio
         /// <param name="fileExt">The file extension to convert. Case is ignored. It must include the period ('.').</param>
         /// <returns>The enumeration value</returns>
         /// <remarks>Null file extensions will return as 'unknown'</remarks>
-        public AudioFileFormatEnum GetFormatFromFileExt(string fileExt)
+        public static AudioFileFormatEnum GetFormatFromFileExt(this string fileExt)
         {
             if (fileExt != null)
             {

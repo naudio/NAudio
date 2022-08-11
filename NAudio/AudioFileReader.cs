@@ -23,8 +23,6 @@ namespace NAudio.Wave
         private readonly long length;
         private readonly object lockObject;
 
-        private readonly AudioFileExtensions audioFileExt = new AudioFileExtensions();
-
         /// <summary>
         /// Initializes a new instance of AudioFileReader
         /// </summary>
@@ -64,7 +62,7 @@ namespace NAudio.Wave
         private void CreateReaderStreamFromFileName(string fileName)
         {
             var fileExt = Path.GetExtension(fileName);
-            var fileFormat = audioFileExt.GetFormatFromFileExt(fileExt);
+            var fileFormat = fileExt.GetFormatFromFileExt();
 
             if (fileFormat == AudioFileFormatEnum.WAV)
             {
@@ -117,7 +115,7 @@ namespace NAudio.Wave
                 throw new ArgumentNullException(nameof(fileExt));
             }
 
-            var fileFormat = audioFileExt.GetFormatFromFileExt(fileExt);
+            var fileFormat = fileExt.GetFormatFromFileExt();
 
             if (fileFormat == AudioFileFormatEnum.WAV)
             {

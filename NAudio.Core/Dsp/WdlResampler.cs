@@ -28,7 +28,7 @@ using System;
 // default to floats for audio samples
 using WDL_ResampleSample = System.Single; // n.b. default in WDL is double
 
-// default to floats for sinc filter ceofficients
+// default to floats for sinc filter coefficients
 using WDL_SincFilterSample = System.Single; // can also be set to double
 
 namespace NAudio.Dsp

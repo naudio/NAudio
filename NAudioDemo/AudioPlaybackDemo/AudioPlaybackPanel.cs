@@ -116,6 +116,8 @@ namespace NAudioDemo.AudioPlaybackDemo
             try
             {
                 wavePlayer.Init(sampleProvider);
+                // we don't necessarily know the output format until we have initialized
+                textBoxPlaybackFormat.Text = $"{wavePlayer.OutputWaveFormat}";
             }
             catch (Exception initException)
             {
@@ -161,7 +163,6 @@ namespace NAudioDemo.AudioPlaybackDemo
             CloseWaveOut();
             var latency = (int)comboBoxLatency.SelectedItem;
             wavePlayer = SelectedOutputDevicePlugin.CreateDevice(latency);
-            textBoxPlaybackFormat.Text = $"{wavePlayer.OutputWaveFormat}";
             wavePlayer.PlaybackStopped += OnPlaybackStopped;
         }
 

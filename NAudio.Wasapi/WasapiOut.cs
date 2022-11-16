@@ -111,8 +111,13 @@ namespace NAudio.Wave
                 bufferFrameCount = audioClient.BufferSize;
                 bytesPerFrame = OutputWaveFormat.Channels * OutputWaveFormat.BitsPerSample / 8;
                 readBuffer = BufferHelpers.Ensure(readBuffer, bufferFrameCount * bytesPerFrame);
-                FillBuffer(playbackProvider, bufferFrameCount);
-
+                if (FillBuffer(playbackProvider, bufferFrameCount))
+                {
+                    // played a zero length stream - exit immediately
+                    return;
+                }
+                // to calculate buffer duration but does always seem to match latency
+                // var bufferDurationMilliseconds = (bufferFrameCount * 1000) /OutputWaveFormat.SampleRate;
                 // Create WaitHandle for sync
                 var waitHandles = new WaitHandle[] { frameEventWaitHandle };
 
@@ -147,16 +152,26 @@ namespace NAudio.Wave
                         int numFramesAvailable = bufferFrameCount - numFramesPadding;
                         if (numFramesAvailable > 10) // see https://naudio.codeplex.com/workitem/16363
                         {
-                            FillBuffer(playbackProvider, numFramesAvailable);
+                            if (FillBuffer(playbackProvider, numFramesAvailable))
+                            {
+                                // reached the end
+                                break;
+                            }
                         }
                     }
                 }
-                Thread.Sleep(latencyMilliseconds / 2);
-                audioClient.Stop();
-                if (playbackState == PlaybackState.Stopped)
+                if (playbackState == PlaybackState.Playing)
                 {
-                    audioClient.Reset();
+                    // we got here by reaching the end of the input file, so
+                    // let's make sure the last buffer has time to play
+                    // (otherwise the user requested stop, so we'll just stop
+                    // immediately
+                    Thread.Sleep(isUsingEventSync ? latencyMilliseconds : latencyMilliseconds / 2);
                 }
+                audioClient.Stop();
+                // set if we got here by reaching the end
+                playbackState = PlaybackState.Stopped;
+                audioClient.Reset();
             }
             catch (Exception e)
             {
@@ -188,18 +203,35 @@ namespace NAudio.Wave
             }
         }
 
-        private void FillBuffer(IWaveProvider playbackProvider, int frameCount)
+        /// <summary>
+        /// returns true if reached the end
+        /// </summary>
+        private bool FillBuffer(IWaveProvider playbackProvider, int frameCount)
         {
-            var buffer = renderClient.GetBuffer(frameCount);
             var readLength = frameCount * bytesPerFrame;
             int read = playbackProvider.Read(readBuffer, 0, readLength);
             if (read == 0)
             {
-                playbackState = PlaybackState.Stopped;
+                return true;
             }
+            var buffer = renderClient.GetBuffer(frameCount);
             Marshal.Copy(readBuffer, 0, buffer, read);
             if (this.isUsingEventSync && this.shareMode == AudioClientShareMode.Exclusive)
             {
+                if (read < readLength)
+                {
+                    // need to zero the end of the buffer as we have to
+                    // pass frameCount
+                    unsafe
+                    {
+                        byte* pByte = (byte*)buffer;
+                        while(read < readLength)
+                        {
+                            pByte[read++] = 0;
+                        }
+                    }
+                }
+
                 renderClient.ReleaseBuffer(frameCount, AudioClientBufferFlags.None);
             }
             else
@@ -211,6 +243,7 @@ namespace NAudio.Wave
                 }*/
                 renderClient.ReleaseBuffer(actualFrameCount, AudioClientBufferFlags.None);
             }
+            return false;
         }
 
         private WaveFormat GetFallbackFormat()
@@ -331,7 +364,7 @@ namespace NAudio.Wave
         /// <param name="waveProvider">IWaveProvider to play</param>
         public void Init(IWaveProvider waveProvider)
         {
-            long latencyRefTimes = latencyMilliseconds * 10000;
+            long latencyRefTimes = latencyMilliseconds * 10000L;
             OutputWaveFormat = waveProvider.WaveFormat;
 
             // allow auto sample rate conversion - works for shared mode

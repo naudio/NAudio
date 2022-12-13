@@ -1,6 +1,6 @@
 # Render an Audio Wave Form to PNG
 
- NAudio does not include any visualization code in the core library, but it does provid  access to the raw audio samples which you need to render wave-forms.
+ NAudio does not include any visualization code in the core library, but it does provide access to the raw audio samples which you need to render wave-forms.
 
  NAudio does however provide a sample project at GitHub: [NAudio.WaveFormRenderer](https://github.com/naudio/NAudio.WaveFormRenderer) which makes use of `NAudio` and `System.Drawing` to render waveforms in a variety of styles.
 

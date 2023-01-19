@@ -18,6 +18,9 @@ jobs:
               uses: microsoft/setup-msbuild@v1.1
 
             - name: Build package
+              run: dotnet build NAudio\NAudio.csproj --configuration release
+
+            - name: Pack
               run: dotnet pack NAudio\NAudio.csproj --configuration release -p:PackageVersion=2.2.${{ github.run_number }}
 
             - name: Publish package

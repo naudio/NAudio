@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Threading;
 using System.Windows.Forms;
 using NAudio.Wave;
@@ -37,7 +38,7 @@ namespace NAudioDemo.Mp3StreamingDemo
         private IWavePlayer waveOut;
         private volatile StreamingPlaybackState playbackState;
         private volatile bool fullyDownloaded;
-        private HttpWebRequest webRequest;
+        private static HttpClient httpClient;
         private VolumeWaveProvider16 volumeProvider;
 
         delegate void ShowErrorDelegate(string message);
@@ -58,18 +59,15 @@ namespace NAudioDemo.Mp3StreamingDemo
         {
             fullyDownloaded = false;
             var url = (string)state;
-            webRequest = (HttpWebRequest)WebRequest.Create(url);
-            HttpWebResponse resp;
+            if (httpClient == null) httpClient = new HttpClient();
+            Stream stream;
             try
             {
-                resp = (HttpWebResponse)webRequest.GetResponse();
+                stream = httpClient.GetStreamAsync(url).Result;
             }
-            catch(WebException e)
+            catch(Exception e)
             {
-                if (e.Status != WebExceptionStatus.RequestCanceled)
-                {
-                    ShowError(e.Message);
-                }
+                ShowError(e.Message);
                 return;
             }
             var buffer = new byte[16384 * 4]; // needs to be big enough to hold a decompressed frame
@@ -77,9 +75,9 @@ namespace NAudioDemo.Mp3StreamingDemo
             IMp3FrameDecompressor decompressor = null;
             try
             {
-                using (var responseStream = resp.GetResponseStream())
+                using (stream)
                 {
-                    var readFullyStream = new ReadFullyStream(responseStream);
+                    var readFullyStream = new ReadFullyStream(stream);
                     do
                     {
                         if (IsBufferNearlyFull)
@@ -176,7 +174,7 @@ namespace NAudioDemo.Mp3StreamingDemo
             {
                 if (!fullyDownloaded)
                 {
-                    webRequest.Abort();
+                    //webRequest.Abort();
                 }
                 
                 playbackState = StreamingPlaybackState.Stopped;

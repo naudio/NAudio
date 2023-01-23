@@ -1,25 +1,39 @@
 ﻿<Project Sdk="MSBuild.Sdk.Extras">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;uap10.0.17763</TargetFrameworks>
-    <Version>2.0.1-datapath</Version>
+    <TargetFrameworks>netstandard2.0;uap10.0.18362</TargetFrameworks>
+    <Version>2.1.0-datapath</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GenerateDocumentationFile Condition=" '$(Configuration)' == 'Release' ">true</GenerateDocumentationFile>
     <Authors>Mark Heath</Authors>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\NAudioStrongNameKey.snk</AssemblyOriginatorKeyFile>
     <PackageProjectUrl>https://github.com/naudio/NAudio</PackageProjectUrl>
     <PackageTags>C# .NET audio sound</PackageTags>
     <RepositoryUrl>https://github.com/naudio/NAudio</RepositoryUrl>
-    <Copyright>© Mark Heath 2021</Copyright>
+    <Copyright>© Mark Heath 2022</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageIcon>naudio-icon.png</PackageIcon>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <!-- needed for perfomance profiling unit tests -->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+	<DebugType>full</DebugType>
+	<DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\NAudio.Core\NAudio.Core.csproj" />
   </ItemGroup>
+  
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'uap10.0.17763' ">
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'uap10.0.18362' ">
+    <DefineConstants>UAP;NETFX_CORE</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'uap10.0.18362' ">
     <Compile Remove="MediaFoundationEncoder.cs" />
     <Compile Remove="MediaFoundationResampler.cs" />
   </ItemGroup>

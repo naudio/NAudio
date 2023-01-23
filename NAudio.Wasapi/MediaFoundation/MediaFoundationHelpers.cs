@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
-using NAudio.Wave;
 using System.Runtime.InteropServices.ComTypes;
+using NAudio.Wave;
 
 namespace NAudio.MediaFoundation
 {
@@ -22,17 +21,15 @@ namespace NAudio.MediaFoundation
             if (!initialized)
             {
                 var sdkVersion = MediaFoundationInterop.MF_SDK_VERSION;
-#if !NETFX_CORE
+                // Windows Vista check
                 var os = Environment.OSVersion;
                 if (os.Version.Major == 6 && os.Version.Minor == 0)
                     sdkVersion = 1;
-#endif
                 MediaFoundationInterop.MFStartup((sdkVersion << 16) | MediaFoundationInterop.MF_API_VERSION, 0);
                 initialized = true;
             }
         }
 
-#if !NETFX_CORE  
         /// <summary>
         /// Enumerate the installed MediaFoundation transforms in the specified category
         /// </summary>
@@ -56,7 +53,6 @@ namespace NAudio.MediaFoundation
             }
             Marshal.FreeCoTaskMem(interfacesPointer);
         }
-#endif
 
         /// <summary>
         /// uninitializes MediaFoundation
@@ -137,10 +133,9 @@ namespace NAudio.MediaFoundation
         /// <returns>A media foundation byte stream</returns>
         public static IMFByteStream CreateByteStream(object stream)
         {
+            // n.b. UWP apps should use MediaFoundationInterop.MFCreateMFByteStreamOnStreamEx(stream, out byteStream);
             IMFByteStream byteStream;
-#if NETFX_CORE
-            MediaFoundationInterop.MFCreateMFByteStreamOnStreamEx(stream, out byteStream);
-#else
+            
             if (stream is IStream)
             {
                 MediaFoundationInterop.MFCreateMFByteStreamOnStream(stream as IStream, out byteStream);
@@ -149,7 +144,6 @@ namespace NAudio.MediaFoundation
             {
                 throw new ArgumentException("Stream must be IStream in desktop apps");
             }
-#endif
             return byteStream;
         }
 

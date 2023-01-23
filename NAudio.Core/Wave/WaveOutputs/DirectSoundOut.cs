@@ -364,6 +364,9 @@ namespace NAudio.Wave
             }
         }
 
+        /// <inheritdoc/>
+        public WaveFormat OutputWaveFormat => waveFormat;
+
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>

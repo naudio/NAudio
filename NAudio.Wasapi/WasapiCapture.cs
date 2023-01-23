@@ -124,11 +124,6 @@ namespace NAudio.CoreAudioApi
 
             long requestedDuration = ReftimesPerMillisec * audioBufferMillisecondsLength;
 
-            if (!audioClient.IsFormatSupported(ShareMode, waveFormat))
-            {
-                throw new ArgumentException("Unsupported Wave Format");
-            }
-
             var streamFlags = GetAudioClientStreamFlags();
 
             // If using EventSync, setup is specific with shareMode
@@ -177,7 +172,8 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         protected virtual AudioClientStreamFlags GetAudioClientStreamFlags()
         {
-            return AudioClientStreamFlags.None;
+            // enable auto-convert PCM
+            return AudioClientStreamFlags.AutoConvertPcm | AudioClientStreamFlags.SrcDefaultQuality;
         }
 
         /// <summary>

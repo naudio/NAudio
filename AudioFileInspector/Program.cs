@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Windows.Forms;
@@ -16,6 +16,7 @@ namespace AudioFileInspector
         static int Main(string[] args)
         {
             Application.EnableVisualStyles();
+            Application.SetHighDpiMode(HighDpiMode.SystemAware);
             Application.SetCompatibleTextRenderingDefault(false);
 
             var catalog = new AssemblyCatalog(System.Reflection.Assembly.GetExecutingAssembly());            

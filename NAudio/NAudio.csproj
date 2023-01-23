@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <Version>2.0.1</Version>
+    <TargetFrameworks>net472;netcoreapp3.1;net6.0-windows;net6.0</TargetFrameworks>
+    <Version>2.1.0</Version>
     <Authors>Mark Heath &amp; Contributors</Authors>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Description>NAudio, an audio library for .NET</Description>
     <PackageProjectUrl>https://github.com/naudio/NAudio</PackageProjectUrl>
     <PackageTags>C# .NET audio sound</PackageTags>
     <RepositoryUrl>https://github.com/naudio/NAudio</RepositoryUrl>
-    <Copyright>© Mark Heath 2021</Copyright>
+    <Copyright>© Mark Heath 2022</Copyright>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile Condition=" '$(Configuration)' == 'Release' ">true</GenerateDocumentationFile>
     <PackageLicenseFile>license.txt</PackageLicenseFile>
@@ -22,9 +22,12 @@
     <ProjectReference Include="..\NAudio.Core\NAudio.Core.csproj" />
     <ProjectReference Include="..\NAudio.Midi\NAudio.Midi.csproj" />
     <ProjectReference Include="..\NAudio.Wasapi\NAudio.Wasapi.csproj" />
-    <ProjectReference Include="..\NAudio.WinForms\NAudio.WinForms.csproj" />
     <ProjectReference Include="..\NAudio.WinMM\NAudio.WinMM.csproj" />
   </ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' != 'net6.0' ">
+    <ProjectReference Include="..\NAudio.WinForms\NAudio.WinForms.csproj" />
+  </ItemGroup>
+
 
   <ItemGroup>
     <None Include="..\license.txt">

@@ -8,7 +8,7 @@
 
   <Identity
     Name="55d1bf75-37fc-4100-8243-678d1ac6f889"
-    Publisher="CN=Kamen"
+    Publisher="CN=Mark Heath"
     Version="1.0.0.0" />
 
   <mp:PhoneIdentity PhoneProductId="55d1bf75-37fc-4100-8243-678d1ac6f889" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
@@ -38,12 +38,13 @@
         Description="NAudioUniversalDemo"
         BackgroundColor="#464646">
         <uap:SplashScreen Image="Assets\SplashScreen.png" />
+        <uap:DefaultTile/>
       </uap:VisualElements>
     </Application>
   </Applications>
 
   <Capabilities>
     <Capability Name="internetClient" />
-    <DeviceCapability Name="microphone" />
+    <DeviceCapability Name="microphone"/>
   </Capabilities>
 </Package>

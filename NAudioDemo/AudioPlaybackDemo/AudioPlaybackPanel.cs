@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 using NAudio.Wave;
@@ -10,7 +11,7 @@ namespace NAudioDemo.AudioPlaybackDemo
 {
     public partial class AudioPlaybackPanel : UserControl
     {
-        private IWavePlayer waveOut;
+        private IWavePlayer wavePlayer;
         private string fileName;
         private AudioFileReader audioFileReader;
         private Action<float> setVolumeDelegate;
@@ -61,15 +62,15 @@ namespace NAudioDemo.AudioPlaybackDemo
                 return;
             }
 
-            if (waveOut != null)
+            if (wavePlayer != null)
             {
-                if (waveOut.PlaybackState == PlaybackState.Playing)
+                if (wavePlayer.PlaybackState == PlaybackState.Playing)
                 {
                     return;
                 }
-                else if (waveOut.PlaybackState == PlaybackState.Paused)
+                else if (wavePlayer.PlaybackState == PlaybackState.Paused)
                 {
-                    waveOut.Play();
+                    wavePlayer.Play();
                     groupBoxDriverModel.Enabled = false;
                     return;
                 }
@@ -114,7 +115,9 @@ namespace NAudioDemo.AudioPlaybackDemo
 
             try
             {
-                waveOut.Init(sampleProvider);
+                wavePlayer.Init(sampleProvider);
+                // we don't necessarily know the output format until we have initialized
+                textBoxPlaybackFormat.Text = $"{wavePlayer.OutputWaveFormat}";
             }
             catch (Exception initException)
             {
@@ -124,12 +127,13 @@ namespace NAudioDemo.AudioPlaybackDemo
 
             setVolumeDelegate(volumeSlider1.Volume); 
             groupBoxDriverModel.Enabled = false;
-            waveOut.Play();
+            wavePlayer.Play();
         }
 
         private ISampleProvider CreateInputStream(string fileName)
         {
             audioFileReader = new AudioFileReader(fileName);
+            textBoxCurrentFile.Text = $"{Path.GetFileName(fileName)}\r\n{audioFileReader.WaveFormat}";
             
             var sampleChannel = new SampleChannel(audioFileReader, true);
             sampleChannel.PreVolumeMeter+= OnPreVolumeMeter;
@@ -158,8 +162,8 @@ namespace NAudioDemo.AudioPlaybackDemo
         {
             CloseWaveOut();
             var latency = (int)comboBoxLatency.SelectedItem;
-            waveOut = SelectedOutputDevicePlugin.CreateDevice(latency);
-            waveOut.PlaybackStopped += OnPlaybackStopped;
+            wavePlayer = SelectedOutputDevicePlugin.CreateDevice(latency);
+            wavePlayer.PlaybackStopped += OnPlaybackStopped;
         }
 
         void OnPlaybackStopped(object sender, StoppedEventArgs e)
@@ -177,9 +181,9 @@ namespace NAudioDemo.AudioPlaybackDemo
 
         private void CloseWaveOut()
         {
-            if (waveOut != null)
+            if (wavePlayer != null)
             {
-                waveOut.Stop();
+                wavePlayer.Stop();
             }
             if (audioFileReader != null)
             {
@@ -188,10 +192,10 @@ namespace NAudioDemo.AudioPlaybackDemo
                 setVolumeDelegate = null;
                 audioFileReader = null;
             }
-            if (waveOut != null)
+            if (wavePlayer != null)
             {
-                waveOut.Dispose();
-                waveOut = null;
+                wavePlayer.Dispose();
+                wavePlayer = null;
             }
         }
 
@@ -210,11 +214,11 @@ namespace NAudioDemo.AudioPlaybackDemo
 
         private void OnButtonPauseClick(object sender, EventArgs e)
         {
-            if (waveOut != null)
+            if (wavePlayer != null)
             {
-                if (waveOut.PlaybackState == PlaybackState.Playing)
+                if (wavePlayer.PlaybackState == PlaybackState.Playing)
                 {
-                    waveOut.Pause();
+                    wavePlayer.Pause();
                 }
             }
         }
@@ -224,13 +228,13 @@ namespace NAudioDemo.AudioPlaybackDemo
             setVolumeDelegate?.Invoke(volumeSlider1.Volume);
         }
 
-        private void OnButtonStopClick(object sender, EventArgs e) => waveOut?.Stop();
+        private void OnButtonStopClick(object sender, EventArgs e) => wavePlayer?.Stop();
 
         private void OnTimerTick(object sender, EventArgs e)
         {
-            if (waveOut != null && audioFileReader != null)
+            if (wavePlayer != null && audioFileReader != null)
             {
-                TimeSpan currentTime = (waveOut.PlaybackState == PlaybackState.Stopped) ? TimeSpan.Zero : audioFileReader.CurrentTime;
+                TimeSpan currentTime = (wavePlayer.PlaybackState == PlaybackState.Stopped) ? TimeSpan.Zero : audioFileReader.CurrentTime;
                 trackBarPosition.Value = Math.Min(trackBarPosition.Maximum, (int)(100 * currentTime.TotalSeconds / audioFileReader.TotalTime.TotalSeconds));
                 labelCurrentTime.Text = String.Format("{0:00}:{1:00}", (int)currentTime.TotalMinutes,
                     currentTime.Seconds);
@@ -243,7 +247,7 @@ namespace NAudioDemo.AudioPlaybackDemo
 
         private void trackBarPosition_Scroll(object sender, EventArgs e)
         {
-            if (waveOut != null)
+            if (wavePlayer != null)
             {
                 audioFileReader.CurrentTime = TimeSpan.FromSeconds(audioFileReader.TotalTime.TotalSeconds * trackBarPosition.Value / 100.0);
             }
@@ -258,8 +262,10 @@ namespace NAudioDemo.AudioPlaybackDemo
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
                 fileName = openFileDialog.FileName;
+                textBoxCurrentFile.Text = $"{Path.GetFileName(fileName)}";
             }
         }
+
     }
 }
 

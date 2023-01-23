@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using NAudio.CoreAudioApi;
-using NAudio.CoreAudioApi.Interfaces;
 using Windows.Media.Devices;
-using NAudio.Utils;
 using NAudio.Wave.SampleProviders;
 
 namespace NAudio.Wave
@@ -99,32 +96,7 @@ namespace NAudio.Wave
             };
         }
 
-        private async Task Activate()
-        {
-            var icbh = new ActivateAudioInterfaceCompletionHandler(
-                ac2 =>
-                {
-                    
-                    if (this.audioClientProperties != null)
-                    {
-                        IntPtr p = Marshal.AllocHGlobal(Marshal.SizeOf(this.audioClientProperties.Value));
-                        Marshal.StructureToPtr(this.audioClientProperties.Value, p, false);
-                        ac2.SetClientProperties(p);
-                        Marshal.FreeHGlobal(p);
-                        // TODO: consider whether we can marshal this without the need for AllocHGlobal
-                    }
 
-                    /*var wfx = new WaveFormat(44100, 16, 2);
-                int hr = ac2.Initialize(AudioClientShareMode.Shared,
-                               AudioClientStreamFlags.EventCallback | AudioClientStreamFlags.NoPersist,
-                               10000000, 0, wfx, IntPtr.Zero);*/
-                });
-            var IID_IAudioClient2 = new Guid("726778CD-F60A-4eda-82DE-E47610CD78AA");
-            IActivateAudioInterfaceAsyncOperation activationOperation;
-            NativeMethods.ActivateAudioInterfaceAsync(device, IID_IAudioClient2, IntPtr.Zero, icbh, out activationOperation);
-            var audioClient2 = await icbh;
-            audioClient = new AudioClient((IAudioClient)audioClient2);
-        }
 
         private static string GetDefaultAudioEndpoint()
         {
@@ -135,7 +107,7 @@ namespace NAudio.Wave
 
         private async void PlayThread()
         {
-            await Activate();
+            audioClient = await AudioClient.ActivateAsync(device, audioClientProperties);
             var playbackProvider = Init();
             bool isClientRunning = false;
             try
@@ -335,7 +307,7 @@ namespace NAudio.Wave
             outputFormat = waveProvider.WaveFormat;
             // first attempt uses the WaveFormat from the WaveStream
             WaveFormatExtensible closestSampleRateFormat;
-            if (!audioClient.IsFormatSupported(shareMode, outputFormat, out closestSampleRateFormat))
+            if (shareMode == AudioClientShareMode.Exclusive && !audioClient.IsFormatSupported(shareMode, outputFormat, out closestSampleRateFormat))
             {
                 // Use closesSampleRateFormat (in sharedMode, it equals usualy to the audioClient.MixFormat)
                 // See documentation : http://msdn.microsoft.com/en-us/library/ms678737(VS.85).aspx 
@@ -393,10 +365,6 @@ namespace NAudio.Wave
                     outputFormat = closestSampleRateFormat;
                 }
 
-                // just check that we can make it.
-                //using (new MediaFoundationResampler(waveProvider, outputFormat))
-                {
-                }
                 this.resamplerNeeded = true;
             }
             else
@@ -404,11 +372,12 @@ namespace NAudio.Wave
                 resamplerNeeded = false;
             }
 
+            
             // Init Shared or Exclusive
             if (shareMode == AudioClientShareMode.Shared)
             {
-                // With EventCallBack and Shared, 
-                audioClient.Initialize(shareMode, AudioClientStreamFlags.EventCallback, latencyRefTimes, 0,
+                audioClient.Initialize(shareMode, AudioClientStreamFlags.EventCallback |
+                    AudioClientStreamFlags.AutoConvertPcm | AudioClientStreamFlags.SrcDefaultQuality, latencyRefTimes, 0,
                                        outputFormat, Guid.Empty);
 
                 // Get back the effective latency from AudioClient. On Windows 10 it can be 0
@@ -417,7 +386,7 @@ namespace NAudio.Wave
             }
             else
             {
-                // With EventCallBack and Exclusive, both latencies must equals
+                // With EventCallBack and Exclusive, both latencies must equal
                 audioClient.Initialize(shareMode, AudioClientStreamFlags.EventCallback, latencyRefTimes, latencyRefTimes,
                                        outputFormat, Guid.Empty);
             }
@@ -482,21 +451,6 @@ namespace NAudio.Wave
         [DllImport("api-ms-win-core-synch-l1-2-0.dll", ExactSpelling = true, PreserveSig = true, SetLastError = true)]
         public static extern int WaitForSingleObjectEx(IntPtr hEvent, int milliseconds, bool bAlertable);
 
-        /// <summary>
-        /// Enables Windows Store apps to access preexisting Component Object Model (COM) interfaces in the WASAPI family.
-        /// </summary>
-        /// <param name="deviceInterfacePath">A device interface ID for an audio device. This is normally retrieved from a DeviceInformation object or one of the methods of the MediaDevice class.</param>
-        /// <param name="riid">The IID of a COM interface in the WASAPI family, such as IAudioClient.</param>
-        /// <param name="activationParams">Interface-specific activation parameters. For more information, see the pActivationParams parameter in IMMDevice::Activate. </param>
-        /// <param name="completionHandler"></param>
-        /// <param name="activationOperation"></param>
-        [DllImport("Mmdevapi.dll", ExactSpelling = true, PreserveSig = false)]
-        public static extern void ActivateAudioInterfaceAsync(
-            [In, MarshalAs(UnmanagedType.LPWStr)] string deviceInterfacePath,
-            [In, MarshalAs(UnmanagedType.LPStruct)] Guid riid,
-            [In] IntPtr activationParams, // n.b. is actually a pointer to a PropVariant, but we never need to pass anything but null
-            [In] IActivateAudioInterfaceCompletionHandler completionHandler,
-            out IActivateAudioInterfaceAsyncOperation activationOperation);
     }
 
     // trying some ideas from Lucian Wischik (ljw1004):
@@ -510,143 +464,7 @@ namespace NAudio.Wave
         EVENT_ALL_ACCESS = STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE | 0x3
     }
 
-    internal class ActivateAudioInterfaceCompletionHandler :
-        IActivateAudioInterfaceCompletionHandler, IAgileObject
-    {
-        private Action<IAudioClient2> initializeAction;
-        private TaskCompletionSource<IAudioClient2> tcs = new TaskCompletionSource<IAudioClient2>();
 
-        public ActivateAudioInterfaceCompletionHandler(
-            Action<IAudioClient2> initializeAction)
-        {
-            this.initializeAction = initializeAction;
-        }
-
-        public void ActivateCompleted(IActivateAudioInterfaceAsyncOperation activateOperation)
-        {
-            // First get the activation results, and see if anything bad happened then
-            int hr = 0;
-            object unk = null;
-            activateOperation.GetActivateResult(out hr, out unk);
-            if (hr != 0)
-            {
-                tcs.TrySetException(Marshal.GetExceptionForHR(hr, new IntPtr(-1)));
-                return;
-            }
-
-            var pAudioClient = (IAudioClient2) unk;
-
-            // Next try to call the client's (synchronous, blocking) initialization method.
-            try
-            {
-                initializeAction(pAudioClient);
-                tcs.SetResult(pAudioClient);
-            }
-            catch (Exception ex)
-            {
-                tcs.TrySetException(ex);
-            }
-
-
-        }
-
-
-        public TaskAwaiter<IAudioClient2> GetAwaiter()
-        {
-            return tcs.Task.GetAwaiter();
-        }
-    }
-
-    [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("41D949AB-9862-444A-80F6-C261334DA5EB")]
-    interface IActivateAudioInterfaceCompletionHandler
-    {
-        //virtual HRESULT STDMETHODCALLTYPE ActivateCompleted(/*[in]*/ _In_  
-        //   IActivateAudioInterfaceAsyncOperation *activateOperation) = 0;
-        void ActivateCompleted(IActivateAudioInterfaceAsyncOperation activateOperation);
-    }
-
-
-    [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("72A22D78-CDE4-431D-B8CC-843A71199B6D")]
-    interface IActivateAudioInterfaceAsyncOperation
-    {
-        //virtual HRESULT STDMETHODCALLTYPE GetActivateResult(/*[out]*/ _Out_  
-        //  HRESULT *activateResult, /*[out]*/ _Outptr_result_maybenull_  IUnknown **activatedInterface) = 0;
-        void GetActivateResult([Out] out int activateResult,
-                               [Out, MarshalAs(UnmanagedType.IUnknown)] out object activateInterface);
-    }
-
-
-    [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("726778CD-F60A-4eda-82DE-E47610CD78AA")]
-    interface IAudioClient2
-    {
-        [PreserveSig]
-        int Initialize(AudioClientShareMode shareMode,
-                       AudioClientStreamFlags streamFlags,
-                       long hnsBufferDuration, // REFERENCE_TIME
-                       long hnsPeriodicity, // REFERENCE_TIME
-                       [In] WaveFormat pFormat,
-                       [In] IntPtr audioSessionGuid);
-
-        // ref Guid AudioSessionGuid
-
-        /// <summary>
-        /// The GetBufferSize method retrieves the size (maximum capacity) of the endpoint buffer.
-        /// </summary>
-        int GetBufferSize(out uint bufferSize);
-
-        [return: MarshalAs(UnmanagedType.I8)]
-        long GetStreamLatency();
-
-        int GetCurrentPadding(out int currentPadding);
-
-        [PreserveSig]
-        int IsFormatSupported(
-            AudioClientShareMode shareMode,
-            [In] WaveFormat pFormat,
-            out IntPtr closestMatchFormat);
-
-        int GetMixFormat(out IntPtr deviceFormatPointer);
-
-        // REFERENCE_TIME is 64 bit int        
-        int GetDevicePeriod(out long defaultDevicePeriod, out long minimumDevicePeriod);
-
-        int Start();
-
-        int Stop();
-
-        int Reset();
-
-        int SetEventHandle(IntPtr eventHandle);
-
-        /// <summary>
-        /// The GetService method accesses additional services from the audio client object.
-        /// </summary>
-        /// <param name="interfaceId">The interface ID for the requested service.</param>
-        /// <param name="interfacePointer">Pointer to a pointer variable into which the method writes the address of an instance of the requested interface. </param>
-        [PreserveSig]
-        int GetService([In, MarshalAs(UnmanagedType.LPStruct)] Guid interfaceId,
-                       [Out, MarshalAs(UnmanagedType.IUnknown)] out object interfacePointer);
-
-        //virtual HRESULT STDMETHODCALLTYPE IsOffloadCapable(/*[in]*/ _In_  
-        //   AUDIO_STREAM_CATEGORY Category, /*[in]*/ _Out_  BOOL *pbOffloadCapable) = 0;
-        void IsOffloadCapable(int category, out bool pbOffloadCapable);
-        //virtual HRESULT STDMETHODCALLTYPE SetClientProperties(/*[in]*/ _In_  
-        //  const AudioClientProperties *pProperties) = 0;
-        void SetClientProperties([In] IntPtr pProperties);
-        // TODO: try this: void SetClientProperties([In, MarshalAs(UnmanagedType.LPStruct)] AudioClientProperties pProperties);
-        //virtual HRESULT STDMETHODCALLTYPE GetBufferSizeLimits(/*[in]*/ _In_  
-        //   const WAVEFORMATEX *pFormat, /*[in]*/ _In_  BOOL bEventDriven, /*[in]*/ 
-        //  _Out_  REFERENCE_TIME *phnsMinBufferDuration, /*[in]*/ _Out_  
-        //  REFERENCE_TIME *phnsMaxBufferDuration) = 0;
-        void GetBufferSizeLimits(IntPtr pFormat, bool bEventDriven,
-                                 out long phnsMinBufferDuration, out long phnsMaxBufferDuration);
-    }
-
-    [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("94ea2b94-e9cc-49e0-c0ff-ee64ca8f5b90")]
-    interface IAgileObject
-    {
-
-    }
 
 
 }

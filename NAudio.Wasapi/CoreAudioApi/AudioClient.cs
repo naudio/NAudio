@@ -2,6 +2,8 @@
 using NAudio.CoreAudioApi.Interfaces;
 using System.Runtime.InteropServices;
 using NAudio.Wave;
+using System.Threading.Tasks;
+using NAudio.Wasapi.CoreAudioApi;
 
 namespace NAudio.CoreAudioApi
 {
@@ -17,6 +19,39 @@ namespace NAudio.CoreAudioApi
         private AudioClockClient audioClockClient;
         private AudioStreamVolume audioStreamVolume;
         private AudioClientShareMode shareMode;
+
+        public static async Task<AudioClient> ActivateAsync(string deviceInterfacePath, AudioClientProperties? audioClientProperties)
+        {
+            var icbh = new ActivateAudioInterfaceCompletionHandler(
+                ac2 =>
+                {
+
+                    if (audioClientProperties != null)
+                    {
+                        IntPtr p = Marshal.AllocHGlobal(Marshal.SizeOf(audioClientProperties.Value));
+                        try
+                        {
+                            // TODO: consider whether we can marshal this without the need for AllocHGlobal
+                            Marshal.StructureToPtr(audioClientProperties.Value, p, false);
+                            ac2.SetClientProperties(p);
+                        }
+                        finally
+                        {
+                            Marshal.FreeHGlobal(p);
+
+                        }
+                    }
+
+                    /*var wfx = new WaveFormat(44100, 16, 2);
+                int hr = ac2.Initialize(AudioClientShareMode.Shared,
+                               AudioClientStreamFlags.EventCallback | AudioClientStreamFlags.NoPersist,
+                               10000000, 0, wfx, IntPtr.Zero);*/
+                });
+            var IID_IAudioClient2 = new Guid("726778CD-F60A-4eda-82DE-E47610CD78AA");
+            NativeMethods.ActivateAudioInterfaceAsync(deviceInterfacePath, IID_IAudioClient2, IntPtr.Zero, icbh, out var activationOperation);
+            var audioClient2 = await icbh;
+            return new AudioClient((IAudioClient)audioClient2);
+        }
 
         public AudioClient(IAudioClient audioClientInterface)
         {

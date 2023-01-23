@@ -36,22 +36,13 @@ namespace NAudio.Wave
             MMDeviceEnumerator devices = new MMDeviceEnumerator();
             return devices.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
         }
-
-        /// <summary>
-        /// Capturing wave format
-        /// </summary>
-        public override WaveFormat WaveFormat
-        {
-            get { return base.WaveFormat; }
-            set { throw new InvalidOperationException("WaveFormat cannot be set for WASAPI Loopback Capture"); }
-        }
         
         /// <summary>
         /// Specify loopback
         /// </summary>
         protected override AudioClientStreamFlags GetAudioClientStreamFlags()
         {
-            return AudioClientStreamFlags.Loopback;
+            return AudioClientStreamFlags.Loopback | base.GetAudioClientStreamFlags();
         }        
     }
 }

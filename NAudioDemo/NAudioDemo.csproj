@@ -1,32 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project Sdk="MSBuild.Sdk.Extras">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp3.1;net48</TargetFrameworks>
-    <ProductVersion>9.0.30729</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
+    <TargetFrameworks>net6.0-windows</TargetFrameworks>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>NAudioDemo</RootNamespace>
     <AssemblyName>NAudioDemo</AssemblyName>
-    <OldToolsVersion>3.5</OldToolsVersion>
-    <PublishUrl>publish\</PublishUrl>
-    <Install>true</Install>
-    <InstallFrom>Disk</InstallFrom>
-    <UpdateEnabled>false</UpdateEnabled>
-    <UpdateMode>Foreground</UpdateMode>
-    <UpdateInterval>7</UpdateInterval>
-    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
-    <UpdatePeriodically>false</UpdatePeriodically>
-    <UpdateRequired>false</UpdateRequired>
-    <MapFileExtensions>true</MapFileExtensions>
-    <ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
-    <UseApplicationTrust>false</UseApplicationTrust>
-    <BootstrapperEnabled>true</BootstrapperEnabled>
-    <Company>NAudioDemo</Company>
-    <FileVersion>1.0.0.0</FileVersion>
-    <InformationalVersion>1.0.0.0</InformationalVersion>
     <Product>NAudioDemo</Product>
     <Title>NAudioDemo</Title>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
@@ -57,5 +36,4 @@
     <Content Include="Resources\Open.png" />
     <None Include="Resources\Unmute.png" />
   </ItemGroup>
-  <ItemGroup />
 </Project>

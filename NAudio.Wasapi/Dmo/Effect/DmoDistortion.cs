@@ -14,9 +14,7 @@ namespace NAudio.Dmo.Effect
     }
 
     [ComImport,
-#if !NETFX_CORE
      System.Security.SuppressUnmanagedCodeSecurity,
-#endif
      Guid("8ecf4326-455f-4d8b-bda9-8d5d3e9e3e0b"),
      InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     interface IDirectSoundFXDistortion

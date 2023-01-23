@@ -145,7 +145,7 @@ namespace NAudio.Wave.SampleProviders
 
                         multiple = 2*Frequency/waveFormat.SampleRate;
                         sampleSaw = ((nSample*multiple)%2) - 1;
-                        sampleValue = sampleSaw > 0 ? Gain : -Gain;
+                        sampleValue = sampleSaw >= 0 ? Gain : -Gain;
 
                         nSample++;
                         break;

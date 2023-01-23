@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
 using NAudio.MediaFoundation;
@@ -36,16 +35,18 @@ namespace NAudioWpfDemo.MediaFoundationEncode
             SelectInputFileCommand = new DelegateCommand(SelectInputFile);
 
             // TODO: fill this by asking the encoders what they can do
-            OutputFormats = new List<EncoderViewModel>();
-            OutputFormats.Add(new EncoderViewModel() { Name = "AAC", Guid = AudioSubtypes.MFAudioFormat_AAC, Extension=".mp4" }); // Windows 8 can do a .aac extension as well
-            OutputFormats.Add(new EncoderViewModel() { Name = "Windows Media Audio", Guid = AudioSubtypes.MFAudioFormat_WMAudioV8, Extension = ".wma"});
-            OutputFormats.Add(new EncoderViewModel() { Name = "Windows Media Audio Professional", Guid = AudioSubtypes.MFAudioFormat_WMAudioV9, Extension = ".wma" });
-            OutputFormats.Add(new EncoderViewModel() { Name = "MP3", Guid = AudioSubtypes.MFAudioFormat_MP3, Extension = ".mp3" });
-            OutputFormats.Add(new EncoderViewModel() { Name = "Windows Media Audio Voice", Guid = AudioSubtypes.MFAudioFormat_MSP1, Extension = ".wma" });
-            OutputFormats.Add(new EncoderViewModel() { Name = "Windows Media Audio Lossless", Guid = AudioSubtypes.MFAudioFormat_WMAudio_Lossless, Extension = ".wma" });
-            OutputFormats.Add(new EncoderViewModel() { Name = "FLAC", Guid = Guid.Parse("0000f1ac-0000-0010-8000-00aa00389b71"), Extension = ".flac" });
-            OutputFormats.Add(new EncoderViewModel() { Name = "Apple Lossless (ALAC)", Guid = Guid.Parse("63616c61-0000-0010-8000-00aa00389b71"), Extension = ".m4a" });
-            OutputFormats.Add(new EncoderViewModel() { Name = "Fake for testing", Guid = Guid.NewGuid(), Extension = ".xyz" });
+            OutputFormats = new List<EncoderViewModel>
+            {
+                new EncoderViewModel() { Name = "AAC", Guid = AudioSubtypes.MFAudioFormat_AAC, Extension = ".mp4" }, // Windows 8 can do a .aac extension as well
+                new EncoderViewModel() { Name = "Windows Media Audio", Guid = AudioSubtypes.MFAudioFormat_WMAudioV8, Extension = ".wma" },
+                new EncoderViewModel() { Name = "Windows Media Audio Professional", Guid = AudioSubtypes.MFAudioFormat_WMAudioV9, Extension = ".wma" },
+                new EncoderViewModel() { Name = "MP3", Guid = AudioSubtypes.MFAudioFormat_MP3, Extension = ".mp3" },
+                new EncoderViewModel() { Name = "Windows Media Audio Voice", Guid = AudioSubtypes.MFAudioFormat_MSP1, Extension = ".wma" },
+                new EncoderViewModel() { Name = "Windows Media Audio Lossless", Guid = AudioSubtypes.MFAudioFormat_WMAudio_Lossless, Extension = ".wma" },
+                new EncoderViewModel() { Name = "FLAC", Guid = AudioSubtypes.MFAudioFormat_FLAC, Extension = ".flac" },
+                new EncoderViewModel() { Name = "Apple Lossless (ALAC)", Guid = AudioSubtypes.MFAudioFormat_ALAC, Extension = ".m4a" },
+                new EncoderViewModel() { Name = "Fake for testing", Guid = Guid.NewGuid(), Extension = ".xyz" }
+            };
             SelectedOutputFormat = OutputFormats[0];
         }
 
@@ -72,8 +73,8 @@ namespace NAudioWpfDemo.MediaFoundationEncode
                 {
                     InputFormat = reader.WaveFormat.ToString();
                     inputWaveFormat = reader.WaveFormat;
-                    isValid = true;
                 }
+                isValid = true;
             }
             catch (Exception e)
             {
@@ -90,7 +91,7 @@ namespace NAudioWpfDemo.MediaFoundationEncode
                 if (inputFile != value)
                 {
                     inputFile = value;
-                    OnPropertyChanged("InputFile");
+                    OnPropertyChanged(nameof(InputFile));
                 }
             }
         }
@@ -103,7 +104,7 @@ namespace NAudioWpfDemo.MediaFoundationEncode
                 if (inputFormat != value)
                 {
                     inputFormat = value;
-                    OnPropertyChanged("InputFormat");
+                    OnPropertyChanged(nameof(InputFormat));
                 }
             }
         }
@@ -128,7 +129,7 @@ namespace NAudioWpfDemo.MediaFoundationEncode
                 TryGetSupportedMediaTypes();
             }
             FilterSupportedMediaTypes();
-            OnPropertyChanged("SupportedMediaTypes");
+            OnPropertyChanged(nameof(SupportedMediaTypes));
             SelectedMediaType = SupportedMediaTypes.FirstOrDefault();
         }
 
@@ -168,14 +169,14 @@ namespace NAudioWpfDemo.MediaFoundationEncode
                 if (selectedMediaType != value)
                 {
                     selectedMediaType = value;
-                    OnPropertyChanged("SelectedMediaType");
+                    OnPropertyChanged(nameof(SelectedMediaType));
                 }
             }
         }
 
         private void Encode()
         {
-            if (String.IsNullOrEmpty(InputFile)||!File.Exists(InputFile))
+            if (String.IsNullOrEmpty(InputFile) || !File.Exists(InputFile))
             {
                 MessageBox.Show("Please select a valid input file to convert");
                 return;
@@ -192,27 +193,17 @@ namespace NAudioWpfDemo.MediaFoundationEncode
                 if (outputUrl == null) return;
                 using (var encoder = new MediaFoundationEncoder(SelectedMediaType.MediaType))
                 {
-                    encoder.Encode(outputUrl, reader);
+                    try
+                    {
+
+                        encoder.Encode(outputUrl, reader);
+                    }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show(e.Message, "Failed to encode");
+                    }
                 }
             }
-        }
-
-        private IMFSinkWriter CreateSinkWriter(string url)
-        {
-            var factory = (IMFReadWriteClassFactory)(new MFReadWriteClassFactory());
-
-            // Create the attributes
-            IMFAttributes attributes = MediaFoundationApi.CreateAttributes(1);
-            
-            attributes.SetUINT32(MediaFoundationAttributes.MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS, 1);
-
-            object sinkWriterObject;
-            // TODO: need to move the class IDs into their own class for use in cases like this
-            var guidMFSinkWriter = new Guid("a3bbfb17-8273-4e52-9e0e-9739dc887990");
-            var guidIMFSinkWriter = new Guid("3137f1cd-fe5e-4805-a5d8-fb477448cb3d");
-            factory.CreateInstanceFromURL(guidMFSinkWriter, url, attributes, guidIMFSinkWriter, out sinkWriterObject);
-            Marshal.ReleaseComObject(factory);
-            return (IMFSinkWriter)sinkWriterObject;
         }
 
         private string SelectSaveFile(string formatName, string extension)

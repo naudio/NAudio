@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp3.1;net48</TargetFrameworks>
+    <TargetFrameworks>net6.0-windows;net48</TargetFrameworks>
     <OutputType>WinExe</OutputType>
     <RootNamespace>NAudioWpfDemo</RootNamespace>
     <AssemblyName>NAudioWpfDemo</AssemblyName>

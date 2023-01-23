@@ -438,7 +438,7 @@ namespace NAudio.Wave
                     {
                         // With EventCallBack and Exclusive, both latencies must equals
                         audioClient.Initialize(shareMode, AudioClientStreamFlags.EventCallback, latencyRefTimes, latencyRefTimes,
-                                            outputFormat, sessionId);
+                            OutputWaveFormat, sessionId);
                     }
                     catch (COMException ex)
                     {
@@ -455,7 +455,7 @@ namespace NAudio.Wave
                         this.audioClient.Dispose();
                         this.audioClient = this.mmDevice.AudioClient;
                         this.audioClient.Initialize(this.shareMode, AudioClientStreamFlags.EventCallback,
-                                            newLatencyRefTimes, newLatencyRefTimes, this.outputFormat, sessionId);
+                                            newLatencyRefTimes, newLatencyRefTimes, this.OutputWaveFormat, sessionId);
                     }
                 }
 
@@ -467,7 +467,7 @@ namespace NAudio.Wave
             {
                 // Normal setup for both sharedMode
                 audioClient.Initialize(shareMode, AudioClientStreamFlags.None, latencyRefTimes, 0,
-                                    outputFormat, sessionId);
+                    OutputWaveFormat, sessionId);
             }
 
             // Get the RenderClient

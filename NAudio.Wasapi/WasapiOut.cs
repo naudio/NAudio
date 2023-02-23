@@ -411,7 +411,8 @@ namespace NAudio.Wave
             }
 
             flags = flags | AudioClientStreamFlags.ExpireWhenUnowned |
-                    AudioClientStreamFlags.HideWhenExpired;
+                    AudioClientStreamFlags.HideWhenExpired |
+                    AudioClientStreamFlags.CrossProcess;
 
             // If using EventSync, setup is specific with shareMode
             if (isUsingEventSync)

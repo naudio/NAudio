@@ -92,7 +92,8 @@ namespace NAudio.CoreAudioApi.Interfaces
     /// Defined in AudioPolicy.h
     /// </summary>
     [Guid("24918ACC-64B3-37C1-8CA9-74A66E9957A8"),
-        InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
+        ComImport]
     public interface IAudioSessionEvents
     {
         /// <summary>

@@ -4,7 +4,8 @@ using System.Runtime.InteropServices;
 namespace NAudio.CoreAudioApi.Interfaces
 {
     [Guid("D666063F-1587-4E43-81F1-B948E807363F"),
-        InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
+        ComImport]
     interface IMMDevice
     {
         // activationParams is a propvariant

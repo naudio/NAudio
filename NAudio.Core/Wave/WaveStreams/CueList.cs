@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -18,19 +19,24 @@ namespace NAudio.Wave
         /// </summary>
         public int Position { get; }
         /// <summary>
+        /// Cue length in samples
+        /// </summary>
+        public int? Length { get; }
+        /// <summary>
         /// Label of the cue
         /// </summary>
         public string Label { get; }
 
         /// <summary>
-        /// Creates a Cue based on a sample position and label 
+        /// Creates a Cue based on a sample position, length and label 
         /// </summary>
         /// <param name="position"></param>
         /// <param name="label"></param>
-        public Cue(int position, string label)
+        public Cue(int position, int? length, string label)
         {
             Position = position;
-            Label = label??string.Empty;
+            Length = length;
+            Label = label ?? string.Empty;
         }
     }
 
@@ -77,6 +83,19 @@ namespace NAudio.Wave
     ///   Int32 dwIdentifier;
     ///   Char[] dwText;  /* Encoded with extended ASCII */
     /// } LabelChunk;
+    ///
+    /// struct TextWithDataLengthChunk 
+    /// {
+    ///   Int32 chunkID;
+    ///   Int32 chunkSize;
+    ///   Int32 dwIdentifier;
+    ///   Int32 dwSampleLength;
+    ///   Int32 dwPurpose;
+    ///   Int16 wCountry;
+    ///   Int16 wLanguage;
+    ///   Int16 wDialect;
+    ///   Int16 wCodePage;
+    /// } TextWithDataLengthChunk;
     /// </remarks>
     public class CueList
     {
@@ -116,6 +135,23 @@ namespace NAudio.Wave
         }
 
         /// <summary>
+        /// Gets sample length for the embedded cues
+        /// </summary>
+        /// <returns>Array containing the cue lenghts</returns>
+        public int?[] CueLengths
+        {
+            get
+            {
+                int?[] lengths = new int?[cues.Count];
+                for (int i = 0; i < cues.Count; i++)
+                {
+                    lengths[i] = cues[i].Length;
+                }
+                return lengths;
+            }
+        }
+
+        /// <summary>
         /// Gets labels for the embedded cues
         /// </summary>
         /// <returns>Array containing the labels</returns>
@@ -150,24 +186,50 @@ namespace NAudio.Wave
                 positions[cue] = BitConverter.ToInt32(cueChunkData, p + 20);
             }
 
-            string[] labels = new string[cueCount];
-            int labelLength = 0;
+            // Loop listChunkData and extract supported features
+            int listDataPosition = 4;
 
-            var labelChunkId = ChunkIdentifier.ChunkIdentifierToInt32("labl");
-            for (int p = 4; listChunkData.Length - p >= 16; p += labelLength + labelLength % 2 + 12)
+            var lablChunkId = ChunkIdentifier.ChunkIdentifierToInt32("labl");
+            var ltxtChunkId = ChunkIdentifier.ChunkIdentifierToInt32("ltxt");
+
+            string[] labels = new string[cueCount];
+            int?[] lenghts = new int?[cueCount];
+
+            do
             {
-                if (BitConverter.ToInt32(listChunkData, p) == labelChunkId)
+                // Chunk Header
+                int chunkId = BitConverter.ToInt32(listChunkData, listDataPosition);
+                int chunkSize = BitConverter.ToInt32(listChunkData, listDataPosition + 4);
+
+                // Chunk Data
+                if (chunkId == lablChunkId)
                 {
-                    labelLength = BitConverter.ToInt32(listChunkData, p + 4) - 4;
-                    var cueId = BitConverter.ToInt32(listChunkData, p + 8);
+                    // Label (labl)
+                    int labelLength = BitConverter.ToInt32(listChunkData, listDataPosition + 4) - 4;
+                    var cueId = BitConverter.ToInt32(listChunkData, listDataPosition + 8);
                     cue = cueIndex[cueId];
-                    labels[cue] = Encoding.UTF8.GetString(listChunkData, p + 12, labelLength - 1);
+                    labels[cue] = Encoding.UTF8.GetString(listChunkData, listDataPosition + 12, labelLength - 1);
                 }
-            }
+
+                else if (chunkId == ltxtChunkId)
+                {
+                    // Text with Data Length (ltxt)
+                    var cueId = BitConverter.ToInt32(listChunkData, listDataPosition + 8);
+                    lenghts[cue] = BitConverter.ToInt32(listChunkData, listDataPosition + 12);
+                }
+
+                else
+                {
+                    Debug.WriteLine($"Unknown chunkId: {chunkId}");
+                }
+
+                // Header + Chunk Data
+                listDataPosition += 8 + chunkSize;
+            } while (listDataPosition + 7 < listChunkData.Length); // Break when there are less than a full Chunk Header left (chunkId + chunkSize = 8 bytes)
 
             for (int i = 0; i < cueCount; i++)
             {
-                cues.Add(new Cue(positions[i], labels[i]));
+                cues.Add(new Cue(positions[i], lenghts[i], labels[i]));
             }
         }
 

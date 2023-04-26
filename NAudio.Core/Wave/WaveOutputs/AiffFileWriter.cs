@@ -13,7 +13,7 @@ namespace NAudio.Wave
         private BinaryWriter writer;
         private long dataSizePos;
         private long commSampleCountPos;
-        private int dataChunkSize = 8;
+        private long dataChunkSize = 8;
         private WaveFormat format;
         private string filename;
 

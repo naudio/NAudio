@@ -239,7 +239,7 @@ namespace NAudio.Wave
             // Open DirectSound
             lock (this.m_LockObject)
             {
-                directSound = null;
+                Debug.Assert(directSound == null);
                 DirectSoundCreate(ref device, out directSound, IntPtr.Zero);
 
                 if (directSound != null)
@@ -363,6 +363,9 @@ namespace NAudio.Wave
                 //secondaryBuffer.SetVolume(intVol);
             }
         }
+
+        /// <inheritdoc/>
+        public WaveFormat OutputWaveFormat => waveFormat;
 
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
@@ -553,12 +556,19 @@ namespace NAudio.Wave
                     CleanUpSecondaryBuffer();
 
                     secondaryBuffer.Stop();
+                    Marshal.ReleaseComObject(secondaryBuffer);
                     secondaryBuffer = null;
                 }
                 if (primarySoundBuffer != null)
                 {
                     primarySoundBuffer.Stop();
+                    Marshal.ReleaseComObject(primarySoundBuffer);
                     primarySoundBuffer = null;
+                }
+                if (directSound != null)
+                {
+                    Marshal.ReleaseComObject(directSound);
+                    directSound = null;
                 }
             }
         }

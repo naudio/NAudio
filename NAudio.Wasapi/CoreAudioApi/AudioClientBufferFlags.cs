@@ -25,5 +25,5 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         TimestampError = 0x4
 
-    }
+    }    
 }

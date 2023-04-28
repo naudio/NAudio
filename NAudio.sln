@@ -1,19 +1,19 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30717.126
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32602.215
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NAudio", "NAudio\NAudio.csproj", "{DA4F02E3-0B5E-42CD-B8D9-5583FA51D66E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MidiFileConverter", "MidiFileConverter\MidiFileConverter.csproj", "{5B5897BD-A423-4AF8-8A59-1C1372ED77DB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MidiFileConverter", "MidiFileConverter\MidiFileConverter.csproj", "{5B5897BD-A423-4AF8-8A59-1C1372ED77DB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MixDiff", "MixDiff\MixDiff.csproj", "{1293DD10-378A-4370-AEE2-AA1E9E87039B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MixDiff", "MixDiff\MixDiff.csproj", "{1293DD10-378A-4370-AEE2-AA1E9E87039B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NAudioTests", "NAudioTests\NAudioTests.csproj", "{5080281A-F9A1-403F-85C7-0DFF6839B07B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NAudioDemo", "NAudioDemo\NAudioDemo.csproj", "{C37A547B-F31E-45FB-870A-CFA704D06152}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AudioFileInspector", "AudioFileInspector\AudioFileInspector.csproj", "{D29C1659-635C-497B-847E-FE9A5A69ED03}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AudioFileInspector", "AudioFileInspector\AudioFileInspector.csproj", "{D29C1659-635C-497B-847E-FE9A5A69ED03}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NAudioWpfDemo", "NAudioWpfDemo\NAudioWpfDemo.csproj", "{A7B74F85-D353-4ED4-A321-E6E4AD4D7D32}"
 EndProject
@@ -24,6 +24,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		build.ps1 = build.ps1
 		global.json = global.json
 		license.txt = license.txt
+		naudio-logo.png = naudio-logo.png
+		publish.ps1 = publish.ps1
 		README.md = README.md
 		readme.txt = readme.txt
 		RELEASE_NOTES.md = RELEASE_NOTES.md
@@ -80,7 +82,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NAudio.WinForms", "NAudio.W
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NAudio.Core", "NAudio.Core\NAudio.Core.csproj", "{5BFAF13B-0823-4A5D-A9CB-A894EE53E2B2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NAudio.Extras", "NAudio.Extras\NAudio.Extras.csproj", "{E255AB84-8A34-4788-96F8-E46C3FBF3442}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NAudio.Extras", "NAudio.Extras\NAudio.Extras.csproj", "{E255AB84-8A34-4788-96F8-E46C3FBF3442}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

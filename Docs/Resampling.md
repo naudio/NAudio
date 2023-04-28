@@ -1,6 +1,6 @@
 # Resampling Audio
 
-Every now and then you’ll find you need to resample audio with NAudio. For example, to mix files together of different sample rates, you need to get them all to a common sample rate first. Or if you’re playing audio through an API like ASIO or WASAPI, audio must be resampled to match the output device's current sample rate before being to the device. Note that `WasapiOut` in NAudio does include a resampling step on your behalf if needed.
+Every now and then you’ll find you need to resample audio with NAudio. For example, to mix files together of different sample rates, you need to get them all to a common sample rate first. Or if you’re playing audio through an API like ASIO , audio must be resampled to match the output device's current sample rate before being to the device.
 
 There are also some gotchas you need to be aware of when resampling. In particular there is the danger of "aliasing". I explain what this is in my Pluralsight ["Digital Audio Fundamentals"](https://www.shareasale.com/r.cfm?u=1036405&b=611266&m=53701&afftrack=&urllink=www%2Epluralsight%2Ecom%2Fcourses%2Fdigital%2Daudio%2Dfundamentals) course. The main takeaway is that if you lower the sample rate, you really ought to use a low pass filter first, to get rid of high frequencies that cannot correctly.
 

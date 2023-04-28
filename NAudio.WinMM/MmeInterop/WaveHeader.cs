@@ -8,7 +8,7 @@ namespace NAudio.Wave
     /// http://msdn.microsoft.com/en-us/library/dd743837%28VS.85%29.aspx
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
-    public class WaveHeader
+    public sealed class WaveHeader
     {
         /// <summary>pointer to locked data buffer (lpData)</summary>
         public IntPtr dataBuffer;

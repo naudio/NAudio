@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using NAudio.CoreAudioApi;
-using NAudio.CoreAudioApi.Interfaces;
 using System.Threading;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Windows.Devices.Enumeration;
 using Windows.Media.Devices;
+using NAudio.Wasapi.CoreAudioApi;
 
 namespace NAudio.Wave
 {
@@ -131,10 +131,9 @@ namespace NAudio.Wave
             if (captureState == WasapiCaptureState.Disposed) throw new ObjectDisposedException(nameof(WasapiCaptureRT));
             if (captureState != WasapiCaptureState.Uninitialized) throw new InvalidOperationException("Already initialized");
             
-            var icbh = new ActivateAudioInterfaceCompletionHandler(ac2 => InitializeCaptureDevice((IAudioClient)ac2));
-            // must be called on UI thread
-            NativeMethods.ActivateAudioInterfaceAsync(device, IID_IAudioClient2, IntPtr.Zero, icbh, out var activationOperation);
-            audioClient = new AudioClient((IAudioClient)(await icbh));
+            audioClient = await AudioClient.ActivateAsync(device, null);
+            InitializeCaptureDevice();
+
 
             hEvent = NativeMethods.CreateEventExW(IntPtr.Zero, IntPtr.Zero, 0, EventAccess.EVENT_ALL_ACCESS);
             audioClient.SetEventHandle(hEvent);
@@ -142,9 +141,8 @@ namespace NAudio.Wave
             captureState = WasapiCaptureState.Stopped;
         }
 
-        private void InitializeCaptureDevice(IAudioClient audioClientInterface)
+        private void InitializeCaptureDevice()
         {
-            var audioClient = new AudioClient((IAudioClient)audioClientInterface);
             if (waveFormat == null)
             {
                 waveFormat = audioClient.MixFormat;

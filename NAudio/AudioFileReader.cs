@@ -56,7 +56,10 @@ namespace NAudio.Wave
             }
             else if (fileName.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase))
             {
-                readerStream = new Mp3FileReader(fileName);
+                if (Environment.OSVersion.Version.Major < 6)
+                    readerStream = new Mp3FileReader(fileName);
+                else // make MediaFoundationReader the default for MP3 going forwards
+                    readerStream = new MediaFoundationReader(fileName);
             }
             else if (fileName.EndsWith(".aiff", StringComparison.OrdinalIgnoreCase) || fileName.EndsWith(".aif", StringComparison.OrdinalIgnoreCase))
             {

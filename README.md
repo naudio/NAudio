@@ -167,7 +167,7 @@ NAudio was created because the Framework Class Library that shipped with .NET 1.
 
 **Can I Use NAudio in my Project?**
 
-NAudio is licensed under the Microsoft Public License (Ms-PL) which means that you can use it in whatever project you like including commercial projects. Of course we would love it if you share any bug-fixes or enhancements you made to the original NAudio project files.
+NAudio is licensed under the MIT license which means that you can use it in whatever project you like including commercial projects. Of course we would love it if you share any bug-fixes or enhancements you made to the original NAudio project files.
 
 **Is .NET Performance Good Enough for Audio?**
 
@@ -185,7 +185,7 @@ Finally, I am occasionally able to offer paid support for situations where you n
 
 I welcome contributions to NAudio and have accepted many patches, but if you want your code to be included, please familiarise yourself with the following guidelines:
 
-* Your submission must be your own work, and able to be released under the MS-PL license.
+* Your submission must be your own work, and able to be released under the MIT license.
 * You will need to make sure your code conforms to the layout and naming conventions used elsewhere in NAudio.
 * Remember that there are many existing users of NAudio. A patch that changes the public interface is not likely to be accepted.
 * Try to write "clean code" - avoid long functions and long classes. Try to add a new feature by creating a new class rather than putting loads of extra code inside an existing one.

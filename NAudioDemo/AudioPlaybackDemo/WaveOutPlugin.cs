@@ -51,7 +51,7 @@ namespace NAudioDemo.AudioPlaybackDemo
 
         public int Priority
         {
-            get { return 1; } 
+            get { return 2; } 
         }
     }
 }

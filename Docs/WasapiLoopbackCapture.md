@@ -2,7 +2,7 @@
 
 Lots of people ask how they can use NAudio to record the audio being played by another program. The answer is that unfortunately Windows does not provide an API that lets you target the output of one specific program to record. However, with WASAPI loopback capture, you can record all the audio that is being played out of a specific output device.
 
-The audio has to be captured at the `WaveFormat` the device is already using. This will typically be stereo 44.1kHz (sometimes 48kHz) IEEE floating point. Obviously you can manually manipulate the audio after capturing it into another format, but for this example, we'll pass it straight onto the WAV file unchanged.
+Since NAudio 2.1.0, the audio can be captured at a sample rate of your choosing, although it will make sense to match the sound card's format.
 
 Let's start off by selecting a path to record to, creating an instance of `WasapiLoopbackCapture` (uses the default system device, but we can pass any rendering `MMDevice` that we want which we can find with `MMDeviceEnumerator`). We'll also create a `WaveFileWriter` using the capture `WaveFormat`.
 
@@ -11,6 +11,7 @@ var outputFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFol
 Directory.CreateDirectory(outputFolder);
 var outputFilePath = Path.Combine(outputFolder, "recorded.wav");
 var capture = new WasapiLoopbackCapture();
+// optionally we can set the capture waveformat here: e.g. capture.WaveFormat = new WaveFormat(44100, 16,2);
 var writer = new WaveFileWriter(outputFilePath, capture.WaveFormat);
 ```
 

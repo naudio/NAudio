@@ -129,6 +129,7 @@ namespace NAudio.MediaFoundation
                     EndStreamAndDrain();
                     // resampler might have given us a little bit more to return
                     bytesWritten += ReadFromOutputBuffer(buffer.Slice(bytesWritten));
+                    ClearOutputBuffer();
                     break;
                 }
 
@@ -169,12 +170,16 @@ namespace NAudio.MediaFoundation
             {
                 read = ReadFromTransform();
             } while (read > 0);
-            outputBufferCount = 0;
-            outputBufferOffset = 0;
             inputPosition = 0;
             outputPosition = 0;
             transform.ProcessMessage(MFT_MESSAGE_TYPE.MFT_MESSAGE_NOTIFY_END_STREAMING, IntPtr.Zero);
             initializedForStreaming = false;
+        }
+
+        private void ClearOutputBuffer()
+        {
+            outputBufferCount = 0;
+            outputBufferOffset = 0;
         }
 
         /// <summary>
@@ -279,6 +284,7 @@ namespace NAudio.MediaFoundation
             if (initializedForStreaming)
             {
                 EndStreamAndDrain();
+                ClearOutputBuffer();
                 InitializeTransformForStreaming();
             }
         }

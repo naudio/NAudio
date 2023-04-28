@@ -11,9 +11,7 @@ namespace NAudio.Dmo.Effect
     }
 
     [ComImport,
-#if !NETFX_CORE
      System.Security.SuppressUnmanagedCodeSecurity,
-#endif
      Guid("d616f352-d622-11ce-aac5-0020af0b99a3"),
      InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     interface IDirectSoundFXGargle

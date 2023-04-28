@@ -30,11 +30,7 @@ namespace NAudio.Wave
         public Cue(int position, string label)
         {
             Position = position;
-            if (label == null)
-            {
-                label = "";
-            }
-            Label = Regex.Replace(label, @"[^\u0000-\u00FF]", "");
+            Label = label??string.Empty;
         }
     }
 
@@ -189,7 +185,7 @@ namespace NAudio.Wave
             var listChunkLength = 12;
             for (int i = 0; i < Count; i++)
             {
-                var labelChunkLength = this[i].Label.Length + 1;
+                var labelChunkLength = Encoding.UTF8.GetBytes(this[i].Label).Length + 1;
                 listChunkLength += labelChunkLength + labelChunkLength % 2 + 12;
             }
 
@@ -222,11 +218,12 @@ namespace NAudio.Wave
                     writer.Write(adtlTypeId);
                     for (int cue = 0; cue < Count; cue++)
                     {
+                        var labelArray = Encoding.UTF8.GetBytes(this[cue].Label);
                         writer.Write(labelChunkId);
-                        writer.Write(this[cue].Label.Length + 1 + 4);
+                        writer.Write(labelArray.Length + 1 + 4);
                         writer.Write(cue);
-                        writer.Write(Encoding.UTF8.GetBytes(this[cue].Label.ToCharArray()));
-                        if (this[cue].Label.Length % 2 == 0)
+                        writer.Write(labelArray);
+                        if (labelArray.Length % 2 == 0)
                         {
                             writer.Seek(2, SeekOrigin.Current);
                         }

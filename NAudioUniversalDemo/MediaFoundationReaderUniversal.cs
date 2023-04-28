@@ -37,7 +37,7 @@ namespace NAudioUniversalDemo
         protected override IMFSourceReader CreateReader(MediaFoundationReaderSettings settings)
         {
             var fileStream = ((MediaFoundationReaderUniversalSettings) settings).Stream;
-            var byteStream = MediaFoundationApi.CreateByteStream(fileStream);
+            MediaFoundationInterop.MFCreateMFByteStreamOnStreamEx(fileStream, out var byteStream);
             var reader = MediaFoundationApi.CreateSourceReaderFromByteStream(byteStream);
             reader.SetStreamSelection(MediaFoundationInterop.MF_SOURCE_READER_ALL_STREAMS, false);
             reader.SetStreamSelection(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, true);

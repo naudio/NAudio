@@ -35,7 +35,17 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
 
         private void OpenFolder()
         {
-            Process.Start(OutputFolder);
+            ShellExecute(OutputFolder);
+        }
+
+        private static void ShellExecute(string file)
+        {
+            var process = new Process();
+            process.StartInfo = new ProcessStartInfo(file)
+            {
+                UseShellExecute = true
+            };
+            process.Start();
         }
 
         private void Delete()
@@ -59,7 +69,7 @@ namespace NAudioWpfDemo.WasapiCaptureDemo
         {
             if (SelectedRecording != null)
             {
-                Process.Start(Path.Combine(OutputFolder, SelectedRecording));
+                ShellExecute(Path.Combine(OutputFolder, SelectedRecording));
             }
         }
 

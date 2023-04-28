@@ -86,6 +86,17 @@ namespace NAudio.MediaFoundation
         public static readonly Guid MFAudioFormat_Dolby_AC3 = new Guid("e06d802c-db46-11cf-b4d1-00805f6cbbea");
 
         /// <summary>
+        /// Free Lossless Audio Codec (Supported in Windows 10 and later.)
+        /// </summary>
+        public static readonly Guid MFAudioFormat_FLAC = new Guid("0000f1ac-0000-0010-8000-00aa00389b71");
+
+        /// <summary>
+        /// Apple Lossless Audio Codec (Supported in Windows 10 and later.)
+        /// </summary>
+        public static readonly Guid MFAudioFormat_ALAC = new Guid("63616c61-0000-0010-8000-00aa00389b71");
+
+
+        /// <summary>
         /// MPEG-4 and AAC Audio Types
         /// http://msdn.microsoft.com/en-us/library/windows/desktop/dd317599(v=vs.85).aspx
         /// Reference : wmcodecdsp.h

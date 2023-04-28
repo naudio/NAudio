@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 using NAudio.Wave;
+using NAudioDemo.Utils;
 
 namespace NAudioDemo.AsioRecordingDemo
 {
@@ -146,7 +147,7 @@ namespace NAudioDemo.AsioRecordingDemo
         {
             if (listBoxRecordings.SelectedItem != null)
             {
-                Process.Start((string)listBoxRecordings.SelectedItem);
+                ProcessHelper.ShellExecute((string)listBoxRecordings.SelectedItem);
             }
         }
 

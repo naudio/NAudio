@@ -12,9 +12,7 @@ namespace NAudio.Dmo.Effect
     }
 
     [ComImport,
-#if !NETFX_CORE
      System.Security.SuppressUnmanagedCodeSecurity,
-#endif
      Guid("c03ca9fe-fe90-4204-8078-82334cd177da"),
      InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     interface IDirectSoundFxParamEq

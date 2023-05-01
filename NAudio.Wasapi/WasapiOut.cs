@@ -323,7 +323,10 @@ namespace NAudio.Wave
             {
                 if (playbackState == PlaybackState.Stopped)
                 {
-                    playThread = new Thread(PlayThread);
+                    playThread = new Thread(PlayThread)
+                    {
+                        IsBackground = true,
+                    };
                     playbackState = PlaybackState.Playing;
                     playThread.Start();                    
                 }

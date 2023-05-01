@@ -187,7 +187,10 @@ namespace NAudio.CoreAudioApi
             }
             captureState = CaptureState.Starting;
             InitializeCaptureDevice();
-            captureThread = new Thread(() => CaptureThread(audioClient));
+            captureThread = new Thread(() => CaptureThread(audioClient))
+            {
+                IsBackground = true,
+            };
             captureThread.Start();
         }
 

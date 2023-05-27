@@ -101,7 +101,7 @@ namespace NAudio.Wave
         {
             get
             {
-                return TimeSpan.FromSeconds((double)Position / WaveFormat.AverageBytesPerSecond);                
+                return TimeSpan.FromSeconds((double)(Position / WaveFormat.AverageBytesPerSecond));
             }
             set
             {
@@ -116,7 +116,7 @@ namespace NAudio.Wave
         {
             get
             {
-                return TimeSpan.FromSeconds((double) Length / WaveFormat.AverageBytesPerSecond);
+                return TimeSpan.FromSeconds((double)(Length / WaveFormat.AverageBytesPerSecond));
             }
         }
 

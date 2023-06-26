@@ -197,5 +197,48 @@ namespace NAudioTests.WaveStreams
                 File.Delete(tempFilePath);
             }
         }
+
+        [Test]
+        [Category("UnitTest")]
+        public void TestLargeFmtChunk()
+        {
+            // arrange
+            var bytes = new List<byte>();
+            bytes.AddRange(new byte[]
+            {
+                0x52, 0x49, 0x46, 0x46, 0xf8, 0xc1, 0x6e, 0x00, 0x57, 0x41, 0x56, 0x45, 0x66, 0x6d, 0x74, 0x20,
+                0xe4, 0x01, 0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x80, 0x3e, 0x00, 0x00, 0x00, 0xfa, 0x00, 0x00,
+                0x04, 0x00, 0x10
+
+            });
+            for (var i = 0; i < 469; i++)
+            {
+                bytes.Add(0x00);
+            }
+            bytes.AddRange(new byte[]
+            {
+                0x64, 0x61, 0x74, 0x61, 0x00, 0xc0, 0x6e, 0x00
+            });
+            for (var i = 0; i < 7258112; i++)
+            {
+                bytes.Add(0x00);
+            }
+
+            using (var inputStream = new MemoryStream(bytes.ToArray()))
+            {
+                // act
+                var chunkReader = new WaveFileChunkReader();
+                chunkReader.ReadWaveHeader(inputStream);
+
+                // assert
+                Assert.AreEqual(64000, chunkReader.WaveFormat.AverageBytesPerSecond);
+                Assert.AreEqual(16, chunkReader.WaveFormat.BitsPerSample);
+                Assert.AreEqual(2, chunkReader.WaveFormat.Channels);
+                Assert.AreEqual(16000, chunkReader.WaveFormat.SampleRate);
+
+                Assert.AreEqual(512, chunkReader.DataChunkPosition);
+                Assert.AreEqual(7258112, chunkReader.DataChunkLength);
+            }
+        }
     }
 }

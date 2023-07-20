@@ -140,6 +140,11 @@ namespace NAudio.Wave
         }
 
         /// <summary>
+        /// The wave writer
+        /// </summary>
+        public BinaryWriter Writer => writer;
+
+        /// <summary>
         /// The wave file name or null if not applicable
         /// </summary>
         public string Filename => filename;
@@ -353,6 +358,7 @@ namespace NAudio.Wave
                 throw new InvalidOperationException("Only 16, 24 or 32 bit PCM or IEEE float audio data supported");
             }
         }
+
 
         /// <summary>
         /// Ensures data is written to disk

@@ -9,6 +9,7 @@ namespace NAudio.Midi
     public class MidiIn : IDisposable 
     {
         private IntPtr hMidiIn = IntPtr.Zero;
+        private bool disposeIsRunning = false; // true while the Dispose() method run.
         private bool disposed = false;
         private MidiInterop.MidiInCallback callback;
 
@@ -157,9 +158,14 @@ namespace NAudio.Midi
                         var sysexBytes = new byte[hdr.dwBytesRecorded];
                         Marshal.Copy(hdr.lpData, sysexBytes, 0, hdr.dwBytesRecorded);
 
-                        SysexMessageReceived(this, new MidiInSysexMessageEventArgs(sysexBytes, messageParameter2.ToInt32()));
+                        if (sysexBytes.Length!=0) // do not trigger the sysex event if no data in SYSEX message
+                            SysexMessageReceived(this, new MidiInSysexMessageEventArgs(sysexBytes, messageParameter2.ToInt32()));
+                        
                         //  Re-use the buffer - but not if we have no event handler registered as we are closing
-                        MidiInterop.midiInAddBuffer(hMidiIn, messageParameter1, Marshal.SizeOf(typeof(MidiInterop.MIDIHDR)));
+                        //  BUT When disposing the (resetting the MidiIn port), LONGDATA midi message are fired with a zero length.
+                        //  In that case, buffer should no be ReAdd to avoid an inifinite loop of callback as buffer are reused forever.
+                        if (!disposeIsRunning)
+                            MidiInterop.midiInAddBuffer(hMidiIn, messageParameter1, Marshal.SizeOf(typeof(MidiInterop.MIDIHDR)));
                     }
                     break;
                 case MidiInterop.MidiInMessage.LongError:
@@ -185,17 +191,21 @@ namespace NAudio.Midi
         }
 
         /// <summary>
-        /// Closes the MIDI out device
+        /// Closes the MIDI in device
         /// </summary>
         /// <param name="disposing">True if called from Dispose</param>
         protected virtual void Dispose(bool disposing) 
         {
             if(!this.disposed) 
             {
+                disposeIsRunning = true;
                 //if(disposing) Components.Dispose();
 
                 if (SysexBufferHeaders.Length > 0)
                 {
+                    //// When SysexMessageReceived contains event handlers (!=null) , the 'midiInReset' call generate a infinit loop of CallBack call with LONGDATA message having a zero length. 
+                    //SysexMessageReceived = null; // removin all event handler to avoir the infinit loop.
+
                     //  Reset in order to release any Sysex buffers
                     //  We can't Unprepare and free them until they are flushed out. Neither can we close the handle.
                     MmException.Try(MidiInterop.midiInReset(hMidiIn), "midiInReset");
@@ -215,6 +225,7 @@ namespace NAudio.Midi
                 MidiInterop.midiInClose(hMidiIn);
             }
             disposed = true;
+            disposeIsRunning = false;
         }
 
         /// <summary>

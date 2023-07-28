@@ -1,4 +1,4 @@
-# Convert an MP3 File to a WAV FIle
+# Convert an MP3 File to a WAV File
 
 In this article I will show a few ways you can convert an MP3 file into a WAV file with NAudio.
 
@@ -34,12 +34,12 @@ using(var reader = new MediaFoundationReader(infile))
 ```
 
 ## DirectX Media Object
-`Mp3FileReader` allows us to plug in alternative MP3 frame decoders. One option that comes in the box with NAudio is the DirectX Media Object MP3 codec. Again, this can only be used if you have that codec installed on Windows, but it comes with most consumer versions of Windows.
+`Mp3FileReaderBase` allows us to plug in alternative MP3 frame decoders. One option that comes in the box with NAudio is the DirectX Media Object MP3 codec. Again, this can only be used if you have that codec installed on Windows, but it comes with most consumer versions of Windows.
 
 Here's how to use the `DmoMp3FrameDecompressor` as a custom frame decompressor
 
 ```c#
-using(var reader = new Mp3FileReader(infile, wf => new DmoMp3FrameDecompressor(wf)))
+using(var reader = new Mp3FileReaderBase(infile, wf => new DmoMp3FrameDecompressor(wf)))
 {
     WaveFileWriter.CreateWaveFile(outfile, reader);
 }
@@ -49,7 +49,7 @@ using(var reader = new Mp3FileReader(infile, wf => new DmoMp3FrameDecompressor(w
 The final option is to use [NLayer](https://github.com/naudio/NLayer) as the decoder for `Mp3FileReader`. NLayer is a fully managed MP3 decoder, meaning it can run on any version of Windows (or indeed any .NET platform). You'll need the [NLayer.NAudioSupport nuget package](https://www.nuget.org/packages/NLayer.NAudioSupport/). But then you can plug in a fully managed MP3 frame decoder:
 
 ```c#
-using (var reader = new Mp3FileReader(infile, wf => new Mp3FrameDecompressor(wf)))
+using (var reader = new Mp3FileReaderBase(infile, wf => new Mp3FrameDecompressor(wf)))
 {
     WaveFileWriter.CreateWaveFile(outfile, reader);
 }

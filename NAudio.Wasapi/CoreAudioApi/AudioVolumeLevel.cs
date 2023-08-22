@@ -1,16 +1,14 @@
 ﻿using NAudio.CoreAudioApi.Interfaces;
-using NAudio.Wasapi.CoreAudioApi.Interfaces;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace NAudio.Wasapi.CoreAudioApi
 {
+    /// <summary>
+    /// Audio Volume Level
+    /// </summary>
     public class AudioVolumeLevel
     {
         private readonly IAudioVolumeLevel audioVolumeLevelInterface;
-        private bool isLevelRangeRead = false;
-        private float minLevelDb, maxLevelDb, stepping;
 
         internal AudioVolumeLevel(IAudioVolumeLevel audioVolumeLevel)
         {

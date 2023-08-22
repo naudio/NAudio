@@ -1,9 +1,9 @@
-﻿using System;
-using NAudio.CoreAudioApi.Interfaces;
-using System.Runtime.InteropServices;
-using NAudio.Wave;
-using System.Threading.Tasks;
+﻿using NAudio.CoreAudioApi.Interfaces;
 using NAudio.Wasapi.CoreAudioApi;
+using NAudio.Wave;
+using System;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 namespace NAudio.CoreAudioApi
 {
@@ -20,6 +20,9 @@ namespace NAudio.CoreAudioApi
         private AudioStreamVolume audioStreamVolume;
         private AudioClientShareMode shareMode;
 
+        /// <summary>
+        /// Activate Async
+        /// </summary>
         public static async Task<AudioClient> ActivateAsync(string deviceInterfacePath, AudioClientProperties? audioClientProperties)
         {
             var icbh = new ActivateAudioInterfaceCompletionHandler(

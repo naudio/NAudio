@@ -1,11 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Runtime.InteropServices;
 
 namespace NAudio.Wave
 {
-    // http://msdn.microsoft.com/en-us/library/dd757347(v=VS.85).aspx
+    /// <summary>
+    /// MmTime
+    /// http://msdn.microsoft.com/en-us/library/dd757347(v=VS.85).aspx
+    /// </summary>
     [StructLayout(LayoutKind.Explicit)]
     public struct MmTime
     {

@@ -1,3 +1,18 @@
+### 2.2 (22 Aug 2023)
+
+ * `WdlResampler` is now public
+ * WASAPI uses background threads
+ * `MmException` can return function name
+ * `ErrorCodes` provides all the AUDCLNT_E HRESULT values from audioclient.h
+ * `AiffFileWriter` chunk size bugfix
+ * Support for Device Topology API (`IPart`, `IAudioAutoGainControl`, `IAudioMute`, `IAudioVolumeLevel `, `IControlChangeNotify`, `IControlInterface`, `IKsJackDescription`, `IPerChannelDbLevel`)
+ * Add `ComImport` attribute to CoreAudioApi interfaces
+ * Ability to set attribute on `MediaType`, and to specify `MediaFoundationEncode` buffer size
+ * WASAPI stop improvements
+ * FLAC and ALAC added to audio subtypes list
+ * `MediaFoundationEncoder` bugfixes for null reference
+ * Sysex dispose bugfix
+
 ### 2.1 (29 Apr 2022)
 
  * `AudioFileReader` will use `MediaFoundationReader` as the default for MP3s

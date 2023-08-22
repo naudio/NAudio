@@ -1,13 +1,13 @@
 ﻿using NAudio.CoreAudioApi.Interfaces;
 using NAudio.Wasapi.CoreAudioApi;
-using NAudio.Wasapi.CoreAudioApi.Interfaces;
 using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace NAudio.CoreAudioApi
 {
+    /// <summary>
+    /// Audio Part
+    /// </summary>
     public class Part
     {
         private const int E_NOTFOUND = unchecked((int)0x80070490);
@@ -23,6 +23,9 @@ namespace NAudio.CoreAudioApi
             partInterface = part;
         }
 
+        /// <summary>
+        /// Name
+        /// </summary>
         public string Name
         {
             get
@@ -32,6 +35,9 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Local ID
+        /// </summary>
         public uint LocalId
         {
             get
@@ -41,6 +47,9 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Global ID
+        /// </summary>
         public string GlobalId
         {
             get
@@ -50,6 +59,9 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Part Type
+        /// </summary>
         public PartTypeEnum PartType
         {
             get
@@ -59,6 +71,9 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Sub Type
+        /// </summary>
         public Guid GetSubType
         {
             get
@@ -68,6 +83,9 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Control Interface Count
+        /// </summary>
         public uint ControlInterfaceCount
         {
             get
@@ -77,12 +95,18 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Get Control Interface by index
+        /// </summary>
         public IControlInterface GetControlInterface(uint index)
         {
             partInterface.GetControlInterface(index, out var result);
             return result;
         }
 
+        /// <summary>
+        /// Incoming parts list
+        /// </summary>
         public PartsList PartsIncoming
         {
             get
@@ -92,6 +116,9 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Outgoing parts list
+        /// </summary>
         public PartsList PartsOutgoing
         {
             get
@@ -101,6 +128,9 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Device topology
+        /// </summary>
         public DeviceTopology DeviceTopology
         {
             get
@@ -114,6 +144,9 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Audio Volume Level
+        /// </summary>
         public AudioVolumeLevel AudioVolumeLevel
         {
             get
@@ -123,6 +156,9 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Audio Mute
+        /// </summary>
         public AudioMute AudioMute
         {
             get
@@ -132,6 +168,9 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Jack Description
+        /// </summary>
         public KsJackDescription JackDescription
         {
             get

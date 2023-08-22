@@ -3,7 +3,7 @@
   <PropertyGroup>
     <!-- https://docs.microsoft.com/en-us/windows/uwp/updates-and-versions/choose-a-uwp-version -->
     <TargetFramework>uap10.0.18362</TargetFramework>
-    <Version>2.1.0</Version>
+    <Version>2.2.0</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Authors>Mark Heath</Authors>

@@ -1,3 +1,8 @@
+### 2.2.1 (4 Sep 2023)
+
+	* Incorrectly versioned NAudio.Wasapi.dll (was 22.0) retired and replaced with 2.2.1
+	* No other changes
+
 ### 2.2 (22 Aug 2023)
 
  * `WdlResampler` is now public

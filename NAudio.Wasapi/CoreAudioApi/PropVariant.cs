@@ -268,6 +268,9 @@ namespace NAudio.CoreAudioApi.Interfaces
                         }
                     case VarEnum.VT_FILETIME:
                         return DateTime.FromFileTime((((long)filetime.dwHighDateTime) << 32) + filetime.dwLowDateTime);
+                    case VarEnum.VT_EMPTY:
+                        return null;
+                        // I think VT_NULL means a database null, so could return DBNull.Value                    
                 }
                 throw new NotImplementedException("PropVariant " + ve);
             }

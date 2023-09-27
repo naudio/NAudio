@@ -8,9 +8,9 @@ namespace NAudio.SoundFont
     /// </summary>
     public class SoundFont
     {
-        private InfoChunk info;
-        private PresetsChunk presetsChunk;
-        private SampleDataChunk sampleData;
+        private readonly InfoChunk info;
+        private readonly PresetsChunk presetsChunk;
+        private readonly SampleDataChunk sampleData;
 
         /// <summary>
         /// Loads a SoundFont from a file
@@ -30,33 +30,32 @@ namespace NAudio.SoundFont
             using (sfFile) // a bit ugly, done to get Win store to compile
             {
                 RiffChunk riff = RiffChunk.GetTopLevelChunk(new BinaryReader(sfFile));
-                if (riff.ChunkID == "RIFF")
+
+                if (riff.ChunkID != "RIFF")
                 {
-                    string formHeader = riff.ReadChunkID();
-                    if (formHeader != "sfbk")
-                    {
-                        throw new InvalidDataException(String.Format("Not a SoundFont ({0})", formHeader));
-                    }
-                    RiffChunk list = riff.GetNextSubChunk();
-                    if (list.ChunkID == "LIST")
-                    {
-                        //RiffChunk r = list.GetNextSubChunk();
-                        info = new InfoChunk(list);
+                    throw new InvalidDataException("Not a RIFF file");
+                }
 
-                        RiffChunk r = riff.GetNextSubChunk();
-                        sampleData = new SampleDataChunk(r);
+                string formHeader = riff.ReadChunkID();
+                if (formHeader != "sfbk")
+                {
+                    throw new InvalidDataException(String.Format("Not a SoundFont ({0})", formHeader));
+                }
+                RiffChunk list = riff.GetNextSubChunk();
+                if (list.ChunkID == "LIST")
+                {
+                    //RiffChunk r = list.GetNextSubChunk();
+                    info = new InfoChunk(list);
 
-                        r = riff.GetNextSubChunk();
-                        presetsChunk = new PresetsChunk(r);
-                    }
-                    else
-                    {
-                        throw new InvalidDataException(String.Format("Not info list found ({0})", list.ChunkID));
-                    }
+                    RiffChunk r = riff.GetNextSubChunk();
+                    sampleData = new SampleDataChunk(r);
+
+                    r = riff.GetNextSubChunk();
+                    presetsChunk = new PresetsChunk(r);
                 }
                 else
                 {
-                    throw new InvalidDataException("Not a RIFF file");
+                    throw new InvalidDataException(String.Format("Not info list found ({0})", list.ChunkID));
                 }
             }
         }

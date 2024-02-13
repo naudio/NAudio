@@ -4,8 +4,14 @@ using System.Runtime.InteropServices;
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave
 {
+    /// <summary>
+    /// WaveOutUtils
+    /// </summary>
     public static class WaveOutUtils
     {
+        /// <summary>
+        /// Get WaveOut Volume
+        /// </summary>
         public static float GetWaveOutVolume(IntPtr hWaveOut, object lockObject)
         {
             int stereoVolume;
@@ -18,6 +24,9 @@ namespace NAudio.Wave
             return (stereoVolume & 0xFFFF) / (float)0xFFFF;
         }
 
+        /// <summary>
+        /// Set WaveOut Volume
+        /// </summary>
         public static void SetWaveOutVolume(float value, IntPtr hWaveOut, object lockObject)
         {
             if (value < 0) throw new ArgumentOutOfRangeException(nameof(value), "Volume must be between 0.0 and 1.0");
@@ -34,6 +43,9 @@ namespace NAudio.Wave
             MmException.Try(result, "waveOutSetVolume");
         }
 
+        /// <summary>
+        /// Get position in bytes
+        /// </summary>
         public static long GetPositionBytes(IntPtr hWaveOut, object lockObject)
         {
             lock (lockObject)

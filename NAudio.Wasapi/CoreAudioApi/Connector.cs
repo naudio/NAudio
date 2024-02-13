@@ -102,6 +102,9 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Part
+        /// </summary>
         public Part Part
         {
             get

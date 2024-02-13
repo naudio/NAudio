@@ -12,6 +12,9 @@ namespace NAudio.Extras
         private readonly IWavePlayer outputDevice;
         private readonly MixingSampleProvider mixer;
 
+        /// <summary>
+        /// Audio Playback Engine
+        /// </summary>
         public AudioPlaybackEngine(int sampleRate = 44100, int channelCount = 2)
         {
             outputDevice = new WaveOutEvent();
@@ -21,6 +24,9 @@ namespace NAudio.Extras
             outputDevice.Play();
         }
 
+        /// <summary>
+        /// Fire and forget playback of sound
+        /// </summary>
         public void PlaySound(string fileName)
         {
             var input = new AudioFileReader(fileName);
@@ -40,6 +46,9 @@ namespace NAudio.Extras
             throw new NotImplementedException("Not yet implemented this channel count conversion");
         }
 
+        /// <summary>
+        /// Fire and forget playback of a cached sound
+        /// </summary>
         public void PlaySound(CachedSound sound)
         {
             AddMixerInput(new CachedSoundSampleProvider(sound));
@@ -50,6 +59,9 @@ namespace NAudio.Extras
             mixer.AddMixerInput(ConvertToRightChannelCount(input));
         }
 
+        /// <summary>
+        /// Disposes this instance
+        /// </summary>
         public void Dispose()
         {
             outputDevice.Dispose();

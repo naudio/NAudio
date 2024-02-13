@@ -1,10 +1,11 @@
-﻿using NAudio.CoreAudioApi.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System;
+using NAudio.CoreAudioApi.Interfaces;
 
 namespace NAudio.CoreAudioApi
 {
+    /// <summary>
+    /// Parts List
+    /// </summary>
     public class PartsList
     {
         private IPartsList partsListInterface;
@@ -14,6 +15,9 @@ namespace NAudio.CoreAudioApi
             partsListInterface = partsList;
         }
 
+        /// <summary>
+        /// Part count
+        /// </summary>
         public uint Count
         {
             get
@@ -28,6 +32,9 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Get part by index
+        /// </summary>
         public Part this[uint index]
         {
             get

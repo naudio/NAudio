@@ -56,6 +56,10 @@ namespace NAudio.CoreAudioApi
             return new AudioClient((IAudioClient)audioClient2);
         }
 
+        /// <summary>
+        /// Creates a new AudioClient
+        /// </summary>
+        /// <param name="audioClientInterface"></param>
         public AudioClient(IAudioClient audioClientInterface)
         {
             this.audioClientInterface = audioClientInterface;

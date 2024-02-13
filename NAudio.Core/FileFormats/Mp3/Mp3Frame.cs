@@ -36,12 +36,12 @@ namespace NAudio.Wave
             }
         };
 
-        private static readonly int[] sampleRatesVersion1 = new int[] {44100, 48000, 32000};
-        private static readonly int[] sampleRatesVersion2 = new int[] {22050, 24000, 16000};
-        private static readonly int[] sampleRatesVersion25 = new int[] {11025, 12000, 8000};
+        private static readonly int[] sampleRatesVersion1 = new int[] { 44100, 48000, 32000 };
+        private static readonly int[] sampleRatesVersion2 = new int[] { 22050, 24000, 16000 };
+        private static readonly int[] sampleRatesVersion25 = new int[] { 11025, 12000, 8000 };
 
         //private short crc;
-        private const int MaxFrameLength = 16*1024;
+        private const int MaxFrameLength = 16 * 1024;
 
         /// <summary>
         /// Reads an MP3 frame from a stream
@@ -123,90 +123,91 @@ namespace NAudio.Wave
         /// </summary>
         private static bool IsValidHeader(byte[] headerBytes, Mp3Frame frame)
         {
-            if ((headerBytes[0] == 0xFF) && ((headerBytes[1] & 0xE0) == 0xE0))
+            if (headerBytes[0] != 0xFF || (headerBytes[1] & 0xE0) != 0xE0)
             {
-                // TODO: could do with a bitstream class here
-                frame.MpegVersion = (MpegVersion) ((headerBytes[1] & 0x18) >> 3);
-                if (frame.MpegVersion == MpegVersion.Reserved)
-                {
-                    //throw new FormatException("Unsupported MPEG Version");
-                    return false;
-                }
-
-                frame.MpegLayer = (MpegLayer) ((headerBytes[1] & 0x06) >> 1);
-
-                if (frame.MpegLayer == MpegLayer.Reserved)
-                {
-                    return false;
-                }
-                int layerIndex = frame.MpegLayer == MpegLayer.Layer1 ? 0 : frame.MpegLayer == MpegLayer.Layer2 ? 1 : 2;
-                frame.CrcPresent = (headerBytes[1] & 0x01) == 0x00;
-                frame.BitRateIndex = (headerBytes[2] & 0xF0) >> 4;
-                if (frame.BitRateIndex == 15)
-                {
-                    // invalid index
-                    return false;
-                }
-                int versionIndex = frame.MpegVersion == Wave.MpegVersion.Version1 ? 0 : 1;
-                frame.BitRate = bitRates[versionIndex, layerIndex, frame.BitRateIndex]*1000;
-                if (frame.BitRate == 0)
-                {
-                    return false;
-                }
-                int sampleFrequencyIndex = (headerBytes[2] & 0x0C) >> 2;
-                if (sampleFrequencyIndex == 3)
-                {
-                    return false;
-                }
-
-                if (frame.MpegVersion == MpegVersion.Version1)
-                {
-                    frame.SampleRate = sampleRatesVersion1[sampleFrequencyIndex];
-                }
-                else if (frame.MpegVersion == MpegVersion.Version2)
-                {
-                    frame.SampleRate = sampleRatesVersion2[sampleFrequencyIndex];
-                }
-                else
-                {
-                    // mpegVersion == MpegVersion.Version25
-                    frame.SampleRate = sampleRatesVersion25[sampleFrequencyIndex];
-                }
-
-                bool padding = (headerBytes[2] & 0x02) == 0x02;
-                bool privateBit = (headerBytes[2] & 0x01) == 0x01;
-                frame.ChannelMode = (ChannelMode) ((headerBytes[3] & 0xC0) >> 6);
-                frame.ChannelExtension = (headerBytes[3] & 0x30) >> 4;
-                if (frame.ChannelExtension != 0 && frame.ChannelMode != ChannelMode.JointStereo)
-                {
-                    return false;
-                }
-
-
-                frame.Copyright = (headerBytes[3] & 0x08) == 0x08;
-                bool original = (headerBytes[3] & 0x04) == 0x04;
-                int emphasis = (headerBytes[3] & 0x03);
-
-                int nPadding = padding ? 1 : 0;
-
-                frame.SampleCount = samplesPerFrame[versionIndex, layerIndex];
-                int coefficient = frame.SampleCount/8;
-                if (frame.MpegLayer == MpegLayer.Layer1)
-                {
-                    frame.FrameLength = (coefficient*frame.BitRate/frame.SampleRate + nPadding)*4;
-                }
-                else
-                {
-                    frame.FrameLength = (coefficient*frame.BitRate)/frame.SampleRate + nPadding;
-                }
-
-                if (frame.FrameLength > MaxFrameLength)
-                {
-                    return false;
-                }
-                return true;
+                return false;
             }
-            return false;
+
+            // TODO: could do with a bitstream class here
+            frame.MpegVersion = (MpegVersion)((headerBytes[1] & 0x18) >> 3);
+            if (frame.MpegVersion == MpegVersion.Reserved)
+            {
+                //throw new FormatException("Unsupported MPEG Version");
+                return false;
+            }
+
+            frame.MpegLayer = (MpegLayer)((headerBytes[1] & 0x06) >> 1);
+
+            if (frame.MpegLayer == MpegLayer.Reserved)
+            {
+                return false;
+            }
+            int layerIndex = frame.MpegLayer == MpegLayer.Layer1 ? 0 : frame.MpegLayer == MpegLayer.Layer2 ? 1 : 2;
+            frame.CrcPresent = (headerBytes[1] & 0x01) == 0x00;
+            frame.BitRateIndex = (headerBytes[2] & 0xF0) >> 4;
+            if (frame.BitRateIndex == 15)
+            {
+                // invalid index
+                return false;
+            }
+            int versionIndex = frame.MpegVersion == Wave.MpegVersion.Version1 ? 0 : 1;
+            frame.BitRate = bitRates[versionIndex, layerIndex, frame.BitRateIndex] * 1000;
+            if (frame.BitRate == 0)
+            {
+                return false;
+            }
+            int sampleFrequencyIndex = (headerBytes[2] & 0x0C) >> 2;
+            if (sampleFrequencyIndex == 3)
+            {
+                return false;
+            }
+
+            if (frame.MpegVersion == MpegVersion.Version1)
+            {
+                frame.SampleRate = sampleRatesVersion1[sampleFrequencyIndex];
+            }
+            else if (frame.MpegVersion == MpegVersion.Version2)
+            {
+                frame.SampleRate = sampleRatesVersion2[sampleFrequencyIndex];
+            }
+            else
+            {
+                // mpegVersion == MpegVersion.Version25
+                frame.SampleRate = sampleRatesVersion25[sampleFrequencyIndex];
+            }
+
+            bool padding = (headerBytes[2] & 0x02) == 0x02;
+            bool privateBit = (headerBytes[2] & 0x01) == 0x01;
+            frame.ChannelMode = (ChannelMode)((headerBytes[3] & 0xC0) >> 6);
+            frame.ChannelExtension = (headerBytes[3] & 0x30) >> 4;
+            if (frame.ChannelExtension != 0 && frame.ChannelMode != ChannelMode.JointStereo)
+            {
+                return false;
+            }
+
+
+            frame.Copyright = (headerBytes[3] & 0x08) == 0x08;
+            bool original = (headerBytes[3] & 0x04) == 0x04;
+            int emphasis = (headerBytes[3] & 0x03);
+
+            int nPadding = padding ? 1 : 0;
+
+            frame.SampleCount = samplesPerFrame[versionIndex, layerIndex];
+            int coefficient = frame.SampleCount / 8;
+            if (frame.MpegLayer == MpegLayer.Layer1)
+            {
+                frame.FrameLength = (coefficient * frame.BitRate / frame.SampleRate + nPadding) * 4;
+            }
+            else
+            {
+                frame.FrameLength = (coefficient * frame.BitRate) / frame.SampleRate + nPadding;
+            }
+
+            if (frame.FrameLength > MaxFrameLength)
+            {
+                return false;
+            }
+            return true;
         }
 
         /// <summary>

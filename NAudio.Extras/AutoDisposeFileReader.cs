@@ -11,12 +11,19 @@ namespace NAudio.Extras
     {
         private readonly ISampleProvider reader;
         private bool isDisposed;
+
+        /// <summary>
+        /// Creates a new file reader that disposes the source reader when it finishes
+        /// </summary>
         public AutoDisposeFileReader(ISampleProvider reader)
         {
             this.reader = reader;
             WaveFormat = reader.WaveFormat;
         }
 
+        /// <summary>
+        /// Reads samples from this file reader
+        /// </summary>
         public int Read(float[] buffer, int offset, int count)
         {
             if (isDisposed)
@@ -33,6 +40,9 @@ namespace NAudio.Extras
             return read;
         }
 
+        /// <summary>
+        /// The WaveFormat of this file reader
+        /// </summary>
         public WaveFormat WaveFormat { get; }
     }
 }

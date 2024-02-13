@@ -54,6 +54,8 @@ namespace NAudio.CoreAudioApi
            
     }
 
+    /* not currently used
+
     /// <summary>
     /// AUDIOCLIENT_ACTIVATION_PARAMS
     /// https://docs.microsoft.com/en-us/windows/win32/api/audioclientactivationparams/ns-audioclientactivationparams-audioclient_activation_params
@@ -78,6 +80,8 @@ namespace NAudio.CoreAudioApi
         public uint TargetProcessId;
         public ProcessLoopbackMode ProcessLoopbackMode;
     }
+
+    */
 
     /// <summary>
     /// PROCESS_LOOPBACK_MODE

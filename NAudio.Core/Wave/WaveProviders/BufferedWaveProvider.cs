@@ -91,7 +91,7 @@ namespace NAudio.Wave
         {
             // create buffer here to allow user to customise buffer length
             if (circularBuffer == null)
-            { 
+            {
                 circularBuffer = new CircularBuffer(BufferLength);
             }
 
@@ -106,11 +106,11 @@ namespace NAudio.Wave
         /// Reads from this WaveProvider
         /// Will always return count bytes, since we will zero-fill the buffer if not enough available
         /// </summary>
-        public int Read(byte[] buffer, int offset, int count) 
+        public int Read(byte[] buffer, int offset, int count)
         {
             int read = 0;
             if (circularBuffer != null) // not yet created
-            { 
+            {
                 read = circularBuffer.Read(buffer, offset, count);
             }
             if (ReadFully && read < count)
@@ -120,6 +120,21 @@ namespace NAudio.Wave
                 read = count;
             }
             return read;
+        }
+
+        /// <summary>
+        /// Peeks ahead at data in this <see cref="IWaveProvider"/> without affecting the read position.
+        /// </summary>
+        /// <param name="peekOffset">The offset from the current read position where peeking will begin.</param>
+        /// <param name="buffer">The buffer we will read into.</param>
+        /// <param name="offset">The offset into the <paramref name="buffer"/>.</param>
+        /// <param name="count">The number of bytes to read.</param>
+        /// <returns>The number of bytes actually read.</returns>
+        public int Peek(uint peekOffset, byte[] buffer, int offset, int count)
+        {
+            if (circularBuffer == null) { return 0; }
+
+            return circularBuffer.Peek(peekOffset, buffer, offset, count);
         }
 
         /// <summary>

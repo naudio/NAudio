@@ -120,5 +120,61 @@ namespace NAudioTests.WaveStreams
             Assert.AreEqual(20, read);
             Assert.AreEqual(0, buffer[0]);
         }
+
+        [Test]
+        public void FadeInCompleteInvoked()
+        {
+            // given
+            var source = new TestSampleProvider(10, 1); // 10 samples per second
+            source.UseConstValue = true;
+            source.ConstValue = 100;
+            var fade = new FadeInOutSampleProvider(source);
+            var fadeInsCount = 0;
+            fade.FadeInComplete += (sender, e) =>
+            {
+                fadeInsCount++;
+            };
+
+            // when
+            fade.BeginFadeIn(1000);
+            
+            // then
+            float[] buffer = new float[20];
+            int read = fade.Read(buffer, 0, 20);
+            Assert.AreEqual(20, read);
+            Assert.AreEqual(0, buffer[0]); // start of fade-in
+            Assert.AreEqual(50, buffer[5]); // half-way
+            Assert.AreEqual(100, buffer[10]); // fully fade in
+            Assert.AreEqual(100, buffer[15]); // fully fade in
+            Assert.AreEqual(1, fadeInsCount); // we want one-shot event (when fade in was completed once)
+        }
+
+        [Test]
+        public void FadeOutCompleteInvoked()
+        {
+            // given
+            var source = new TestSampleProvider(10, 1); // 10 samples per second
+            source.UseConstValue = true;
+            source.ConstValue = 100;
+            var fade = new FadeInOutSampleProvider(source);
+            var fadeOutsCount = 0;
+            fade.FadeOutComplete += (sender, e) =>
+            {
+                fadeOutsCount++;
+            };
+
+            // when
+            fade.BeginFadeOut(1000);
+
+            // then
+            float[] buffer = new float[20];
+            int read = fade.Read(buffer, 0, 20);
+            Assert.AreEqual(20, read);
+            Assert.AreEqual(100, buffer[0]); // start of fade-out
+            Assert.AreEqual(50, buffer[5]); // half-way
+            Assert.AreEqual(0, buffer[10]); // fully fade out
+            Assert.AreEqual(0, buffer[15]); // fully fade out
+            Assert.AreEqual(1, fadeOutsCount); // we want one-shot event (when fade out was completed once)
+        }
     }
 }

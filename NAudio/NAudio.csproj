@@ -11,7 +11,7 @@
     <Copyright>© Mark Heath 2023</Copyright>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
-    <PackageLicenseFile>license.txt</PackageLicenseFile>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\NAudioStrongNameKey.snk</AssemblyOriginatorKeyFile>
     <PackageIcon>naudio-icon.png</PackageIcon>
@@ -30,10 +30,6 @@
 
 
   <ItemGroup>
-    <None Include="..\license.txt">
-      <Pack>True</Pack>
-      <PackagePath></PackagePath>
-    </None>
     <None Include="..\naudio-icon.png">
       <Pack>True</Pack>
       <PackagePath></PackagePath>

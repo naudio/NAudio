@@ -1,11 +1,11 @@
-﻿using NAudio.CoreAudioApi.Interfaces;
-using NAudio.Wasapi.CoreAudioApi.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System;
+using NAudio.CoreAudioApi.Interfaces;
 
 namespace NAudio.CoreAudioApi
 {
+    /// <summary>
+    /// Audio Mute
+    /// </summary>
     public class AudioMute
     {
         private IAudioMute audioMuteInterface;
@@ -14,6 +14,9 @@ namespace NAudio.CoreAudioApi
             audioMuteInterface = audioMute;
         }
 
+        /// <summary>
+        /// Is Muted
+        /// </summary>
         public bool IsMuted
         {
             get

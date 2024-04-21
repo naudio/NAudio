@@ -193,6 +193,9 @@ namespace NAudio.Wave
                 .FirstOrDefault();
         }
 
+        /// <summary>
+        /// Default read buffer size
+        /// </summary>
         public int DefaultReadBufferSize { get; set; }
         private readonly MediaType outputMediaType;
         private bool disposed;

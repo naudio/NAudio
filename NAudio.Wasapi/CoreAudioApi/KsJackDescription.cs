@@ -2,6 +2,9 @@
 
 namespace NAudio.CoreAudioApi
 {
+    /// <summary>
+    /// KS Jack Description
+    /// </summary>
     public class KsJackDescription
     {
         private readonly IKsJackDescription ksJackDescriptionInterface;
@@ -11,6 +14,9 @@ namespace NAudio.CoreAudioApi
             ksJackDescriptionInterface = ksJackDescription;
         }
 
+        /// <summary>
+        /// Jack count
+        /// </summary>
         public uint Count
         {
             get
@@ -20,6 +26,9 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        /// <summary>
+        /// Get Jack Description by index
+        /// </summary>
         public string this[uint index]
         {
             get

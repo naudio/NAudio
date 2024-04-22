@@ -211,10 +211,11 @@ namespace NAudio.Sdl2
         /// </summary>
         public void Stop()
         {
-            if (_playbackState == PlaybackState.Stopped)
+            if (_playbackState != PlaybackState.Stopped)
             {
                 _playbackState = PlaybackState.Stopped;
                 Sdl2Interop.StopPlaybackDevice(_deviceNumber);
+                Sdl2Interop.ClosePlaybackDevice(_deviceNumber);
             }
         }
 
@@ -247,7 +248,6 @@ namespace NAudio.Sdl2
             if (disposing)
             {
                 Stop();
-                Sdl2Interop.ClosePlaybackDevice(_deviceNumber);
             }
         }
 
@@ -256,8 +256,10 @@ namespace NAudio.Sdl2
         /// </summary>
         private void Resume()
         {
+            var status = Sdl2Interop.StartPlaybackDevice(_deviceNumber);
+            if (status != SDL_AudioStatus.SDL_AUDIO_PLAYING)
+                throw new SdlException("Sdl failed to unpause playback device");
             _playbackState = PlaybackState.Playing;
-            Sdl2Interop.StartPlaybackDevice(_deviceNumber);
             _callbackEvent.Set();
         }
 
@@ -317,8 +319,15 @@ namespace NAudio.Sdl2
                 {
                     if (_playbackState == PlaybackState.Playing)
                     {
-                        Debug.WriteLine("WARNING: WaveOutEvent callback event timeout");
+                        Debug.WriteLine("WARNING: WaveOutSdl callback event timeout");
                     }
+                }
+
+                var deviceStatus = Sdl2Interop.GetDeviceStatus(_deviceNumber);
+                if (_playbackState == PlaybackState.Playing
+                    && deviceStatus != SDL_AudioStatus.SDL_AUDIO_PLAYING)
+                {
+                    throw new SdlException("WaveOutSdl playback unexpected finished");
                 }
 
                 unchecked 

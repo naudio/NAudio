@@ -56,14 +56,13 @@ namespace NAudio.Sdl2.Interop
         /// Starts the audio recording
         /// </summary>
         /// <param name="deviceNumber">Opened device number</param>
-        public static void StartRecordingDevice(uint deviceNumber) => PauseAudioDevice(deviceNumber, Pause.Off);
+        public static SDL_AudioStatus StartRecordingDevice(uint deviceNumber) => PauseAudioDevice(deviceNumber, Pause.Off);
         
-
         /// <summary>
         /// Stop the audio recording
         /// </summary>
         /// <param name="deviceNumber">Device number</param>
-        public static void StopRecordingDevice(uint deviceNumber) => PauseAudioDevice(deviceNumber, Pause.On);
+        public static SDL_AudioStatus StopRecordingDevice(uint deviceNumber) => PauseAudioDevice(deviceNumber, Pause.On);
 
         /// <summary>
         /// Returns the number of bytes of queued audio
@@ -139,13 +138,13 @@ namespace NAudio.Sdl2.Interop
         /// Starts the audio playback
         /// </summary>
         /// <param name="deviceNumber">Opened device number</param>
-        public static void StartPlaybackDevice(uint deviceNumber) => PauseAudioDevice(deviceNumber, Pause.Off);
+        public static SDL_AudioStatus StartPlaybackDevice(uint deviceNumber) => PauseAudioDevice(deviceNumber, Pause.Off);
 
         /// <summary>
         /// Stop the audio playback
         /// </summary>
         /// <param name="deviceNumber">Device number</param>
-        public static void StopPlaybackDevice(uint deviceNumber) => PauseAudioDevice(deviceNumber, Pause.Off);
+        public static SDL_AudioStatus StopPlaybackDevice(uint deviceNumber) => PauseAudioDevice(deviceNumber, Pause.Off);
 
         /// <summary>
         /// Queue more audio
@@ -157,7 +156,10 @@ namespace NAudio.Sdl2.Interop
         public static int QueueAudio(uint deviceNumber, IntPtr dataPtr, uint length)
         {
             InitSdl();
-            return SDL_QueueAudio(deviceNumber, dataPtr, length);
+            var queue = SDL_QueueAudio(deviceNumber, dataPtr, length);
+            if (queue == -1)
+                ThrowSdlError();
+            return queue;
         }
         #endregion
 
@@ -186,10 +188,12 @@ namespace NAudio.Sdl2.Interop
         /// </summary>
         /// <param name="deviceNumber">Device number</param>
         /// <param name="pause">Pause state</param>
-        private static void PauseAudioDevice(uint deviceNumber, int pause)
+        private static SDL_AudioStatus PauseAudioDevice(uint deviceNumber, int pause)
         {
             InitSdl();
             SDL_PauseAudioDevice(deviceNumber, pause);
+            var status = GetDeviceStatus(deviceNumber);
+            return status;
         }
 
         /// <summary>
@@ -224,7 +228,7 @@ namespace NAudio.Sdl2.Interop
             InitSdl();
             var specResult = SDL_GetAudioDeviceSpec(deviceId, isCapture, out var spec);
             if (specResult != 0)
-                throw new SdlException(SDL_GetError());
+                ThrowSdlError();
             return spec;
         }
 
@@ -244,7 +248,7 @@ namespace NAudio.Sdl2.Interop
             InitSdl();
             var deviceId = SDL_OpenAudioDevice(deviceName, isCapture, ref desiredSpec, out obtainedSpec, (int)audioConversion);
             if (deviceId <= 0)
-                throw new SdlException(SDL_GetError());
+                ThrowSdlError();
             return deviceId;
         }
 
@@ -260,6 +264,11 @@ namespace NAudio.Sdl2.Interop
             SDL_CloseAudioDevice(deviceNumber);
         }
 
+        private static void ThrowSdlError()
+        {
+            throw new SdlException(SDL_GetError());
+        }
+
         /// <summary>
         /// Initializing SDL2
         /// </summary>
@@ -270,7 +279,7 @@ namespace NAudio.Sdl2.Interop
                 return;
             var init = SDL_Init(SDL_INIT_AUDIO | SDL_INIT_TIMER);
             if (init != 0)
-                throw new SdlException(SDL_GetError());
+                ThrowSdlError();
             _isInitialized = true;
         }
         #endregion

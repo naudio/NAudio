@@ -62,7 +62,7 @@ namespace NAudioSdl2Demo
         {
             _waveOutPosition ??= Console.GetCursorPosition();
             Console.SetCursorPosition(_waveOutPosition.Value.Left, _waveOutPosition.Value.Top);
-            Console.WriteLine($"WaveInOut position {_waveReader.CurrentTime}/{_waveReader.TotalTime}");
+            Console.WriteLine($"WaveInOut position {_waveReader.CurrentTime.ToString(@"hh\:mm\:ss\.fff")}/{_waveReader.TotalTime.ToString(@"hh\:mm\:ss\.fff")}");
         }
 
         private void ShowDevicesInfo()

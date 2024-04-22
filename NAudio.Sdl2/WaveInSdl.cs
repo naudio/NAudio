@@ -21,7 +21,14 @@ namespace NAudio.Sdl2
         private float _peakLevel;
         private object _pealLevelLock = new object();
 
+        /// <summary>
+        /// Indicates recorded data is available 
+        /// </summary>
         public event EventHandler<WaveInEventArgs> DataAvailable;
+
+        /// <summary>
+        /// Indicates that all recorded data has now been received.
+        /// </summary>
         public event EventHandler<StoppedEventArgs> RecordingStopped;
 
         public WaveInSdl()
@@ -100,7 +107,7 @@ namespace NAudio.Sdl2
                     return _peakLevel;
                 }
             }
-            set
+            private set
             {
                 lock (_pealLevelLock)
                 {
@@ -137,7 +144,9 @@ namespace NAudio.Sdl2
             if (_captureState != CaptureState.Stopped)
                 throw new InvalidOperationException("Already recording");
             _deviceNumber = OpenWaveInSdlDevice();
-            Sdl2Interop.StartRecordingDevice(_deviceNumber);
+            var status = Sdl2Interop.StartRecordingDevice(_deviceNumber);
+            if (status != SDL_AudioStatus.SDL_AUDIO_PLAYING)
+                throw new SdlException("Sdl failed to unpause recording device");
             _captureState = CaptureState.Starting;
             ThreadPool.QueueUserWorkItem((state) => RecordThread(), null);
         }
@@ -250,6 +259,12 @@ namespace NAudio.Sdl2
                 uint size = 0;
                 do
                 {
+                    var deviceStatus = Sdl2Interop.GetDeviceStatus(_deviceNumber);
+                    if (_captureState == CaptureState.Capturing 
+                        && deviceStatus != SDL_AudioStatus.SDL_AUDIO_PLAYING)
+                    {
+                        throw new SdlException("WaveInSdl capturing unexpected finished");
+                    }
                     size = Sdl2Interop.GetQueuedAudioSize(_deviceNumber);
                     if (size >= (frameSize * 2))
                     {

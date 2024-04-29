@@ -1,4 +1,6 @@
-﻿namespace NAudio.Sdl2.Structures
+﻿using System;
+
+namespace NAudio.Sdl2.Structures
 {
     public class WaveOutSdlCapabilities
     {
@@ -12,9 +14,25 @@
         public byte Silence { get; set; }
         public uint Size { get; set; }
 
-        public override string ToString()
+        public string ToString(string separator)
         {
-            return $"DeviceName = {DeviceName}; Bits = {Bits}; Channels = {Channels}; Format = {Format}; Frequency = {Frequency}; Samples = {Samples}; Silence = {Silence}; Size = {Size}";
+            return $"Number = {DeviceNumber}" +
+                   $"{separator}" +
+                   $"Name = {DeviceName}" +
+                   $"{separator}" +
+                   $"Bits = {Bits}" +
+                   $"{separator}" +
+                   $"Channels = {Channels}" +
+                   $"{separator}" +
+                   $"Format = {Format}" +
+                   $"{separator}" +
+                   $"Frequency = {Frequency}" +
+                   $"{separator}" +
+                   $"Samples = {Samples}" +
+                   $"{separator}" +
+                   $"Silence = {Silence}" +
+                   $"{separator}" +
+                   $"Size = {Size}";
         }
     }
 }

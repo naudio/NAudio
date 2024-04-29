@@ -1,26 +1,42 @@
 ﻿using System;
 using NAudio.Sdl2.Structures;
-using SDL2;
-using static SDL2.SDL;
+using static NAudio.Sdl2.Interop.SDL;
 
 namespace NAudio.Sdl2.Interop
 {
-    public static class Sdl2Interop
+    public static class SdlBindingWrapper
     {
         #region Recording Device
+
+        /// <summary>
+        /// Gets the name and preferred format of the default audio recording device
+        /// </summary>
+        /// <param name="deviceName">Device name</param>
+        /// <param name="audioSpec">Audio spec</param>
+        /// <returns></returns>
+        public static int GetRecordingDeviceDefaultAudioInfo(out string deviceName, out SDL_AudioSpec audioSpec)
+        {
+            return GetDefaultAudioInfo(out deviceName, out audioSpec, Device.Capture);
+        }
 
         /// <summary>
         /// Get the number of built-in audio recording devices
         /// </summary>
         /// <returns>Indexes of available devices</returns>
-        public static int GetRecordingDevicesNumber() => GetDevicesNumber(Device.Capture);
+        public static int GetRecordingDevicesNumber()
+        {
+            return GetDevicesNumber(Device.Capture);
+        }
 
         /// <summary>
         /// Get the human-readable name of a specific audio recording device
         /// </summary>
         /// <param name="deviceId">Device id</param>
         /// <returns>Device name</returns>
-        public static string GetRecordingDeviceName(int deviceId) => GetDeviceName(deviceId, Device.Capture);
+        public static string GetRecordingDeviceName(int deviceId)
+        {
+            return GetDeviceName(deviceId, Device.Capture);
+        }
 
         /// <summary>
         /// Get the preferred audio format of a specific audio recording device
@@ -28,7 +44,10 @@ namespace NAudio.Sdl2.Interop
         /// <param name="deviceId">Device id</param>
         /// <returns>Audio spec</returns>
         /// <exception cref="SdlException"></exception>
-        public static SDL_AudioSpec GetRecordingDeviceSpec(int deviceId) => GetDeviceSpec(deviceId, Device.Capture);
+        public static SDL_AudioSpec GetRecordingDeviceAudioSpec(int deviceId)
+        {
+            return GetDeviceAudioSpec(deviceId, Device.Capture);
+        }
 
         /// <summary>
         /// Open a specific audio device
@@ -41,8 +60,14 @@ namespace NAudio.Sdl2.Interop
         /// <para>This DeviceNumber and DeviceId is not interchangeable</para>
         /// </returns>
         /// <exception cref="SdlException"></exception>
-        public static uint OpenRecordingDevice(string deviceName, ref SDL_AudioSpec desiredSpec, out SDL_AudioSpec obtainedSpec, AudioConversion audioConversion) =>
-            OpenDevice(deviceName, Device.Capture, ref desiredSpec, out obtainedSpec, audioConversion);
+        public static uint OpenRecordingDevice(
+            string deviceName,
+            ref SDL_AudioSpec desiredSpec,
+            out SDL_AudioSpec obtainedSpec,
+            AudioConversion audioConversion)
+        {
+            return OpenDevice(deviceName, Device.Capture, ref desiredSpec, out obtainedSpec, audioConversion);
+        }
 
         /// <summary>
         /// <para>Shuts down audio processing and closes the audio device</para>
@@ -50,19 +75,34 @@ namespace NAudio.Sdl2.Interop
         /// so that applications don't drop the last buffer of data they supplied</para>
         /// </summary>
         /// <param name="deviceNumber">Device number</param>
-        public static void CloseRecordingDevice(uint deviceNumber) => CloseDevice(deviceNumber);
+        public static void CloseRecordingDevice(uint deviceNumber)
+        {
+            CloseDevice(deviceNumber);
+        }
 
         /// <summary>
         /// Starts the audio recording
         /// </summary>
         /// <param name="deviceNumber">Opened device number</param>
-        public static SDL_AudioStatus StartRecordingDevice(uint deviceNumber) => PauseAudioDevice(deviceNumber, Pause.Off);
-        
+        public static SDL_AudioStatus StartRecordingDevice(uint deviceNumber)
+        {
+            var status = PauseAudioDevice(deviceNumber, Pause.Off);
+            if (status != SDL_AudioStatus.SDL_AUDIO_PLAYING)
+                throw new SdlException("Failed to start recording device");
+            return status;
+        }
+
         /// <summary>
         /// Stop the audio recording
         /// </summary>
         /// <param name="deviceNumber">Device number</param>
-        public static SDL_AudioStatus StopRecordingDevice(uint deviceNumber) => PauseAudioDevice(deviceNumber, Pause.On);
+        public static SDL_AudioStatus StopRecordingDevice(uint deviceNumber)
+        {
+            var status = PauseAudioDevice(deviceNumber, Pause.On);
+            if (status == SDL_AudioStatus.SDL_AUDIO_PLAYING)
+                throw new SdlException("Failed to stop recording device");
+            return status;
+        }
 
         /// <summary>
         /// Returns the number of bytes of queued audio
@@ -85,24 +125,45 @@ namespace NAudio.Sdl2.Interop
         public static uint DequeueAudio(uint deviceNumber, IntPtr dataBufferPtr, uint dataBufferLength)
         {
             InitSdl();
+            var deviceStatus = GetDeviceStatus(deviceNumber);
+            if (deviceStatus != SDL_AudioStatus.SDL_AUDIO_PLAYING)
+                throw new SdlException("The recording device stopped unexpectedly");
             return SDL_DequeueAudio(deviceNumber, dataBufferPtr, dataBufferLength);
         }
 
         #endregion
 
         #region Playback Device
+
+        /// <summary>
+        /// Gets the name and preferred format of the default audio playback device
+        /// </summary>
+        /// <param name="deviceName">Device name</param>
+        /// <param name="audioSpec">Audio spec</param>
+        /// <returns></returns>
+        public static int GetPlaybackDeviceDefaultAudioInfo(out string deviceName, out SDL_AudioSpec audioSpec)
+        {
+            return GetDefaultAudioInfo(out deviceName, out audioSpec, Device.Playback);
+        }
+
         /// <summary>
         /// Get the number of built-in audio playback devices
         /// </summary>
         /// <returns>Indexes of available devices</returns>
-        public static int GetPlaybackDevicesNumber() => GetDevicesNumber(Device.Playback);
+        public static int GetPlaybackDevicesNumber()
+        {
+            return GetDevicesNumber(Device.Playback);
+        }
 
         /// <summary>
         /// Get the human-readable name of a specific audio playback device
         /// </summary>
         /// <param name="deviceId">Device id</param>
         /// <returns>Device name</returns>
-        public static string GetPlaybackDeviceName(int deviceId) => GetDeviceName(deviceId, Device.Playback);
+        public static string GetPlaybackDeviceName(int deviceId)
+        {
+            return GetDeviceName(deviceId, Device.Playback);
+        }
 
         /// <summary>
         /// Get the preferred audio format of a specific audio playback device
@@ -110,7 +171,10 @@ namespace NAudio.Sdl2.Interop
         /// <param name="deviceId">Device id</param>
         /// <returns>Audio spec</returns>
         /// <exception cref="SdlException"></exception>
-        public static SDL_AudioSpec GetPlaybackDeviceSpec(int deviceId) => GetDeviceSpec(deviceId, Device.Playback);
+        public static SDL_AudioSpec GetPlaybackDeviceAudioSpec(int deviceId)
+        {
+            return GetDeviceAudioSpec(deviceId, Device.Playback);
+        }
 
         /// <summary>
         /// Open a playback audio device
@@ -123,8 +187,15 @@ namespace NAudio.Sdl2.Interop
         /// <para>This DeviceNumber and DeviceId is not interchangeable</para>
         /// </returns>
         /// <exception cref="SdlException"></exception>
-        public static uint OpenPlaybackDevice(string deviceName, ref SDL_AudioSpec desiredSpec, out SDL_AudioSpec obtainedSpec, AudioConversion audioConversion) =>
-                        OpenDevice(deviceName, Device.Playback, ref desiredSpec, out obtainedSpec, audioConversion);
+        public static uint OpenPlaybackDevice(
+            string deviceName,
+            ref SDL_AudioSpec desiredSpec,
+            out SDL_AudioSpec obtainedSpec,
+            AudioConversion audioConversion)
+        {
+            return OpenDevice(deviceName, Device.Playback, ref desiredSpec, out obtainedSpec, audioConversion);
+        }
+                        
 
         /// <summary>
         /// <para>Shuts down audio processing and closes the audio device</para>
@@ -132,19 +203,34 @@ namespace NAudio.Sdl2.Interop
         /// so that applications don't drop the last buffer of data they supplied</para>
         /// </summary>
         /// <param name="deviceNumber">Device number</param>
-        public static void ClosePlaybackDevice(uint deviceNumber) => CloseDevice(deviceNumber);
+        public static void ClosePlaybackDevice(uint deviceNumber)
+        {
+            CloseDevice(deviceNumber);
+        }
 
         /// <summary>
         /// Starts the audio playback
         /// </summary>
         /// <param name="deviceNumber">Opened device number</param>
-        public static SDL_AudioStatus StartPlaybackDevice(uint deviceNumber) => PauseAudioDevice(deviceNumber, Pause.Off);
+        public static SDL_AudioStatus StartPlaybackDevice(uint deviceNumber)
+        {
+            var status = PauseAudioDevice(deviceNumber, Pause.Off);
+            if (status != SDL_AudioStatus.SDL_AUDIO_PLAYING)
+                throw new SdlException("Failed to start playback device");
+            return status;
+        }
 
         /// <summary>
         /// Stop the audio playback
         /// </summary>
         /// <param name="deviceNumber">Device number</param>
-        public static SDL_AudioStatus StopPlaybackDevice(uint deviceNumber) => PauseAudioDevice(deviceNumber, Pause.Off);
+        public static SDL_AudioStatus StopPlaybackDevice(uint deviceNumber)
+        {
+            var status = PauseAudioDevice(deviceNumber, Pause.On);
+            if (status == SDL_AudioStatus.SDL_AUDIO_PLAYING)
+                throw new SdlException("Failed to stop playback device");
+            return status;
+        }
 
         /// <summary>
         /// Queue more audio
@@ -156,9 +242,12 @@ namespace NAudio.Sdl2.Interop
         public static int QueueAudio(uint deviceNumber, IntPtr dataPtr, uint length)
         {
             InitSdl();
+            var deviceStatus = GetDeviceStatus(deviceNumber);
+            if (deviceStatus != SDL_AudioStatus.SDL_AUDIO_PLAYING)
+                throw new SdlException("The playback device stopped unexpectedly");
             var queue = SDL_QueueAudio(deviceNumber, dataPtr, length);
-            if (queue == -1)
-                ThrowSdlError();
+            if (queue == -1) 
+                throw new SdlException(SDL_GetError());
             return queue;
         }
         #endregion
@@ -177,10 +266,31 @@ namespace NAudio.Sdl2.Interop
             return SDL_AUDIO_BITSIZE(audioFormat);
         }
 
+        /// <summary>
+        /// Get current audio state of an audio device
+        /// </summary>
+        /// <param name="deviceNumber"></param>
+        /// <returns></returns>
         public static SDL_AudioStatus GetDeviceStatus(uint deviceNumber)
         {
             InitSdl();
             return SDL_GetAudioDeviceStatus(deviceNumber);
+        }
+
+        /// <summary>
+        /// Get the name and preferred format of the default audio device
+        /// </summary>
+        /// <param name="deviceName">Device name</param>
+        /// <param name="spec">Audio spec</param>
+        /// <param name="isCapture">Is recording device</param>
+        /// <returns></returns>
+        private static int GetDefaultAudioInfo(out string deviceName, out SDL_AudioSpec spec, int isCapture)
+        {
+            InitSdl();
+            var audioInfo = SDL_GetDefaultAudioInfo(out deviceName, out spec, isCapture);
+            if (audioInfo != 0)
+                throw new SdlException(SDL_GetError());
+            return audioInfo;
         }
 
         /// <summary>
@@ -210,6 +320,7 @@ namespace NAudio.Sdl2.Interop
         /// Get the human-readable name of a specific audio device
         /// </summary>
         /// <param name="deviceId">Device id</param>
+        /// <param name="isCapture">Is recording device</param>
         /// <returns>Device name</returns>
         private static string GetDeviceName(int deviceId, int isCapture)
         {
@@ -221,14 +332,14 @@ namespace NAudio.Sdl2.Interop
         /// Get the preferred audio format of a specific audio device
         /// </summary>
         /// <param name="deviceId">Device id</param>
+        /// <param name="isCapture">Is recording device</param>
         /// <returns>Audio spec</returns>
         /// <exception cref="SdlException"></exception>
-        private static SDL_AudioSpec GetDeviceSpec(int deviceId, int isCapture)
+        private static SDL_AudioSpec GetDeviceAudioSpec(int deviceId, int isCapture)
         {
             InitSdl();
             var specResult = SDL_GetAudioDeviceSpec(deviceId, isCapture, out var spec);
-            if (specResult != 0)
-                ThrowSdlError();
+            if (specResult != 0) throw new SdlException(SDL_GetError());
             return spec;
         }
 
@@ -236,6 +347,7 @@ namespace NAudio.Sdl2.Interop
         /// Open a specific audio device
         /// </summary>
         /// <param name="deviceName">Device name</param>
+        /// <param name="isCapture">Is recording device</param>
         /// <param name="desiredSpec">Desired output format</param>
         /// <param name="obtainedSpec">Actual output format</param>
         /// <param name="audioConversion">Enabled conversion features</param>
@@ -247,8 +359,8 @@ namespace NAudio.Sdl2.Interop
         {
             InitSdl();
             var deviceId = SDL_OpenAudioDevice(deviceName, isCapture, ref desiredSpec, out obtainedSpec, (int)audioConversion);
-            if (deviceId <= 0)
-                ThrowSdlError();
+            if (deviceId <= 0) 
+                throw new SdlException(SDL_GetError());
             return deviceId;
         }
 
@@ -264,22 +376,17 @@ namespace NAudio.Sdl2.Interop
             SDL_CloseAudioDevice(deviceNumber);
         }
 
-        private static void ThrowSdlError()
-        {
-            throw new SdlException(SDL_GetError());
-        }
-
         /// <summary>
         /// Initializing SDL2
         /// </summary>
         /// <exception cref="SdlException"></exception>
         private static void InitSdl()
         {
-            if (_isInitialized)
+            if (_isInitialized) 
                 return;
             var init = SDL_Init(SDL_INIT_AUDIO | SDL_INIT_TIMER);
-            if (init != 0)
-                ThrowSdlError();
+            if (init != 0) 
+                throw new SdlException(SDL_GetError());
             _isInitialized = true;
         }
         #endregion

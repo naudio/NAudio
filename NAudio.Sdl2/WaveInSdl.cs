@@ -1,25 +1,29 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using NAudio.CoreAudioApi;
 using NAudio.Sdl2.Structures;
 using NAudio.Sdl2.Interop;
 using NAudio.Wave;
-using static SDL2.SDL;
+using static NAudio.Sdl2.Interop.SDL;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Sdl2
 {
     /// <summary>
-    /// Recording using SDL2 backend
+    /// WaveIn provider via SDL2 backend
     /// </summary>
     public class WaveInSdl : IWaveIn
     {
-        private readonly SynchronizationContext _syncContext;
-        private uint _deviceNumber;
-        private volatile CaptureState _captureState;
-        private float _peakLevel;
-        private object _pealLevelLock = new object();
+        private readonly SynchronizationContext syncContext;
+        private uint deviceNumber;
+        private volatile CaptureState captureState;
+        private float peakLevel;
+        private object peakLevelLock;
+        private ushort frameSize;
+        private uint frameSizeDoubled;
+        private byte[] frameBuffer;
 
         /// <summary>
         /// Indicates recorded data is available 
@@ -31,11 +35,15 @@ namespace NAudio.Sdl2
         /// </summary>
         public event EventHandler<StoppedEventArgs> RecordingStopped;
 
+        /// <summary>
+        /// Prepares a wave input device for recording
+        /// </summary>
         public WaveInSdl()
         {
-            _syncContext = SynchronizationContext.Current;
-            _captureState = CaptureState.Stopped;
-            DeviceId = 0;
+            syncContext = SynchronizationContext.Current;
+            captureState = CaptureState.Stopped;
+            peakLevelLock = new object();
+            DeviceId = -1;
             WaveFormat = new WaveFormat(48000, 16, 1);
             AudioConversion = AudioConversion.None;
             BufferMilliseconds = 100;
@@ -44,7 +52,7 @@ namespace NAudio.Sdl2
         /// <summary>
         /// Returns the number of WaveInSdl devices available in the system
         /// </summary>
-        public static int DeviceCount => Sdl2Interop.GetRecordingDevicesNumber();
+        public static int DeviceCount => SdlBindingWrapper.GetRecordingDevicesNumber();
 
         /// <summary>
         /// Retrieves the capabilities of a WaveInSdl device
@@ -53,25 +61,65 @@ namespace NAudio.Sdl2
         /// <returns>The WaveInSdl device capabilities</returns>
         public static WaveInSdlCapabilities GetCapabilities(int deviceId)
         {
-            var deviceName = Sdl2Interop.GetRecordingDeviceName(deviceId);
-            var deviceSpec = Sdl2Interop.GetRecordingDeviceSpec(deviceId);
-            var deviceBitSize = Sdl2Interop.GetAudioFormatBitSize(deviceSpec.format);
+            var deviceName = SdlBindingWrapper.GetRecordingDeviceName(deviceId);
+            var deviceAudioSpec = SdlBindingWrapper.GetRecordingDeviceAudioSpec(deviceId);
+            var deviceBitSize = SdlBindingWrapper.GetAudioFormatBitSize(deviceAudioSpec.format);
             return new WaveInSdlCapabilities
             {
                 DeviceNumber = deviceId,
                 DeviceName = deviceName,
                 Bits = deviceBitSize,
-                Channels = deviceSpec.channels,
-                Format = deviceSpec.format,
-                Frequency = deviceSpec.freq,
-                Samples = deviceSpec.samples,
-                Silence = deviceSpec.silence,
-                Size = deviceSpec.size
+                Channels = deviceAudioSpec.channels,
+                Format = deviceAudioSpec.format,
+                Frequency = deviceAudioSpec.freq,
+                Samples = deviceAudioSpec.samples,
+                Silence = deviceAudioSpec.silence,
+                Size = deviceAudioSpec.size
             };
         }
 
         /// <summary>
-        /// The device id to use.
+        /// Retrieves the capabilities list of a WaveInSdl devices
+        /// </summary>
+        /// <returns>The WaveInSdlCapabilities list</returns>
+        public static List<WaveInSdlCapabilities> GetCapabilitiesList()
+        {
+            List<WaveInSdlCapabilities> list = new List<WaveInSdlCapabilities>();
+            var deviceCount = WaveInSdl.DeviceCount;
+            for (int index = 0; index < deviceCount; index++)
+            {
+                list.Add(GetCapabilities(index));
+            }
+            return list;
+        }
+
+        /// <summary>
+        /// Retrieves the capabilities of a WaveInSdl default device
+        /// <para>This function is available since SDL 2.24.0</para>
+        /// </summary>
+        /// <returns>The WaveInSdl default device capabilities</returns>
+        public static WaveInSdlCapabilities GetDefaultDeviceCapabilities()
+        {
+            SdlBindingWrapper.GetRecordingDeviceDefaultAudioInfo(out var deviceName, out var deviceAudioSpec);
+            var deviceBitSize = SdlBindingWrapper.GetAudioFormatBitSize(deviceAudioSpec.format);
+            return new WaveInSdlCapabilities
+            {
+                DeviceNumber = -1,
+                DeviceName = deviceName,
+                Bits = deviceBitSize,
+                Channels = deviceAudioSpec.channels,
+                Format = deviceAudioSpec.format,
+                Frequency = deviceAudioSpec.freq,
+                Samples = deviceAudioSpec.samples,
+                Silence = deviceAudioSpec.silence,
+                Size = deviceAudioSpec.size
+            };
+        }
+
+        /// <summary>
+        /// Gets or sets the device id
+        /// <para>This must be between -1 and <see cref="DeviceCount"/> - 1</para>
+        /// <para>-1 means stick to default device</para>
         /// </summary>
         public int DeviceId { get; set; }
 
@@ -102,16 +150,16 @@ namespace NAudio.Sdl2
         {
             get
             {
-                lock (_pealLevelLock)
+                lock (peakLevelLock)
                 {
-                    return _peakLevel;
+                    return peakLevel;
                 }
             }
             private set
             {
-                lock (_pealLevelLock)
+                lock (peakLevelLock)
                 {
-                    _peakLevel = value;
+                    peakLevel = value;
                 }
             }
         }
@@ -123,7 +171,7 @@ namespace NAudio.Sdl2
         {
             get
             {
-                var status = Sdl2Interop.GetDeviceStatus(_deviceNumber);
+                var status = SdlBindingWrapper.GetDeviceStatus(deviceNumber);
                 switch (status)
                 {
                     case SDL_AudioStatus.SDL_AUDIO_PLAYING:
@@ -141,13 +189,11 @@ namespace NAudio.Sdl2
         /// </summary>
         public void StartRecording()
         {
-            if (_captureState != CaptureState.Stopped)
+            if (captureState != CaptureState.Stopped)
                 throw new InvalidOperationException("Already recording");
-            _deviceNumber = OpenWaveInSdlDevice();
-            var status = Sdl2Interop.StartRecordingDevice(_deviceNumber);
-            if (status != SDL_AudioStatus.SDL_AUDIO_PLAYING)
-                throw new SdlException("Sdl failed to unpause recording device");
-            _captureState = CaptureState.Starting;
+            deviceNumber = OpenWaveInSdlDevice();
+            SdlBindingWrapper.StartRecordingDevice(deviceNumber);
+            captureState = CaptureState.Starting;
             ThreadPool.QueueUserWorkItem((state) => RecordThread(), null);
         }
 
@@ -156,11 +202,11 @@ namespace NAudio.Sdl2
         /// </summary>
         public void StopRecording()
         {
-            if (_captureState != CaptureState.Stopped)
+            if (captureState != CaptureState.Stopped)
             {
-                _captureState = CaptureState.Stopping;
-                Sdl2Interop.StopRecordingDevice(_deviceNumber);
-                Sdl2Interop.CloseRecordingDevice(_deviceNumber);
+                captureState = CaptureState.Stopping;
+                SdlBindingWrapper.StopRecordingDevice(deviceNumber);
+                SdlBindingWrapper.CloseRecordingDevice(deviceNumber);
             }
         }
 
@@ -180,7 +226,7 @@ namespace NAudio.Sdl2
         {
             if (disposing)
             {
-                if (_captureState != CaptureState.Stopped)
+                if (captureState != CaptureState.Stopped)
                 {
                     StopRecording();
                 }
@@ -193,18 +239,20 @@ namespace NAudio.Sdl2
         /// <returns></returns>
         private uint OpenWaveInSdlDevice()
         {
-            var bufferSize = BufferMilliseconds * WaveFormat.AverageBytesPerSecond / 1000;
+            frameSize = (ushort)(BufferMilliseconds * WaveFormat.AverageBytesPerSecond / 1000);
+            frameSizeDoubled = (uint)frameSize * 2;
+            frameBuffer = new byte[frameSizeDoubled];
             var desiredSpec = new SDL_AudioSpec();
             desiredSpec.freq = WaveFormat.SampleRate;
             desiredSpec.format = GetAudioDataFormat();
             desiredSpec.channels = (byte)WaveFormat.Channels;
             desiredSpec.silence = 0;
-            desiredSpec.samples = (ushort)bufferSize;
-            var deviceName = Sdl2Interop.GetRecordingDeviceName(DeviceId);
-            var deviceNumber = Sdl2Interop.OpenRecordingDevice(deviceName, ref desiredSpec, out var obtainedSpec, AudioConversion);
-            var bitSize = Sdl2Interop.GetAudioFormatBitSize(obtainedSpec.format);
+            desiredSpec.samples = frameSize;
+            var deviceName = SdlBindingWrapper.GetRecordingDeviceName(DeviceId);
+            var openDeviceNumber = SdlBindingWrapper.OpenRecordingDevice(deviceName, ref desiredSpec, out var obtainedSpec, AudioConversion);
+            var bitSize = SdlBindingWrapper.GetAudioFormatBitSize(obtainedSpec.format);
             ActualWaveFormat = new WaveFormat(obtainedSpec.freq, bitSize, obtainedSpec.channels);
-            return deviceNumber;
+            return openDeviceNumber;
         }
 
         /// <summary>
@@ -242,7 +290,7 @@ namespace NAudio.Sdl2
             }
             finally
             {
-                _captureState = CaptureState.Stopped;
+                captureState = CaptureState.Stopped;
                 RaiseRecordingStoppedEvent(exception);
             }
         }
@@ -252,43 +300,39 @@ namespace NAudio.Sdl2
         /// </summary>
         private unsafe void DoRecording()
         {
-            _captureState = CaptureState.Capturing;
-            uint frameSize = (uint)(BufferMilliseconds * WaveFormat.AverageBytesPerSecond / 1000);
-            while (_captureState == CaptureState.Capturing)
+            captureState = CaptureState.Capturing;
+            while (captureState == CaptureState.Capturing)
             {
                 uint size = 0;
                 do
                 {
-                    var deviceStatus = Sdl2Interop.GetDeviceStatus(_deviceNumber);
-                    if (_captureState == CaptureState.Capturing 
-                        && deviceStatus != SDL_AudioStatus.SDL_AUDIO_PLAYING)
+                    size = SdlBindingWrapper.GetQueuedAudioSize(deviceNumber);
+                    if (size >= frameSizeDoubled)
                     {
-                        throw new SdlException("WaveInSdl capturing unexpected finished");
-                    }
-                    size = Sdl2Interop.GetQueuedAudioSize(_deviceNumber);
-                    if (size >= (frameSize * 2))
-                    {
-                        var bufferSize = frameSize != 0  
-                            ? frameSize * 2 
-                            : size;
-
-                        byte[] buffer = new byte[bufferSize];
+                        byte[] buffer = frameSize != 0 ? frameBuffer : new byte[size];
+                        Array.Clear(buffer, 0, buffer.Length);
 
                         fixed (byte* ptr = &buffer[0])
                         {
-                            uint recordedSize = Sdl2Interop.DequeueAudio(_deviceNumber, (IntPtr)ptr, bufferSize);
+                            uint recordedSize = SdlBindingWrapper.DequeueAudio(deviceNumber, (IntPtr)ptr, (uint)buffer.Length);
                             DataAvailable?.Invoke(this, new WaveInEventArgs(buffer, (int)recordedSize));
                             PeakLevel = GetPeakLevel(buffer);
                         }
 
-                        size -= bufferSize;
+                        size -= (uint)buffer.Length;
                     }
                 } while (size >= frameSize);
             }
         }
 
+        /// <summary>
+        /// Returns peak level
+        /// </summary>
+        /// <param name="buffer">Buffer from which peak is calculated</param>
+        /// <returns>Peak level</returns>
         private float GetPeakLevel(byte[] buffer)
         {
+            // It will always work or not ?
             float max = buffer
                 .Take((int)buffer.Length * 2)
                 .Where((x, i) => i % 2 == 0)
@@ -306,13 +350,13 @@ namespace NAudio.Sdl2
             var handler = RecordingStopped;
             if (handler != null)
             {
-                if (_syncContext == null)
+                if (syncContext == null)
                 {
                     handler(this, new StoppedEventArgs(e));
                 }
                 else
                 {
-                    _syncContext.Post(state => handler(this, new StoppedEventArgs(e)), null);
+                    syncContext.Post(state => handler(this, new StoppedEventArgs(e)), null);
                 }
             }
         }

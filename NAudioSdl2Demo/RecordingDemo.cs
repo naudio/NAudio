@@ -6,80 +6,90 @@ namespace NAudioSdl2Demo
 {
     public class RecordingDemo
     {
-        private WaveFileWriter _waveWriter;
-        private WaveInSdl _waveIn;
-        private CancellationTokenSource _cancellationTokenSource;
-        private (int Left, int Top)? _secondsRecorderPosition;
-        private (int Left, int Top)? _peakLevelPosition;
+        private WaveFileWriter waveWriter;
+        private WaveInSdl waveIn;
+        private double secondsRecorded;
+        private CancellationTokenSource cancellationTokenSource;
 
         public async Task Start()
         {
             Console.Clear();
             Console.WriteLine("*** WaveInSdl Demo ***");
             Console.WriteLine("Devices:");
-            ShowDevicesInfo();
+            var capabilitiesList = WaveInSdl.GetCapabilitiesList();
+            capabilitiesList.Dump();
+
             Console.Write("Choose device id: ");
             var deviceId = Convert.ToInt32(Console.ReadLine());
-            if (deviceId < 0 || deviceId >= WaveOutSdl.DeviceCount)
-                throw new InvalidOperationException("Device id out of range");
+            var deviceCapabilities = capabilitiesList.First(x => x.DeviceNumber == deviceId);
+
             Console.Write("Choose recording time (seconds): ");
-            var maxRecordSeconds = Convert.ToInt32(Console.ReadLine());
+            var recordSeconds = Convert.ToInt32(Console.ReadLine());
+
             Console.Write("Wav file absolute path: ");
             var fileAbsolutePath = Console.ReadLine();
-            _cancellationTokenSource = new CancellationTokenSource();
+
+            cancellationTokenSource = new CancellationTokenSource();
             Console.CancelKeyPress += ConsoleOnCancelKeyPress;
-            _waveIn = new WaveInSdl();
-            _waveIn.AudioConversion = AudioConversion.Any;
-            _waveIn.DeviceId = deviceId;
-            _waveIn.DataAvailable += WaveInOnDataAvailable;
-            _waveWriter = new WaveFileWriter(fileAbsolutePath, _waveIn.WaveFormat);
-            _waveIn.StartRecording();
-            await WaitRecordFinish(maxRecordSeconds);
-            _waveIn.DataAvailable -= WaveInOnDataAvailable;
-            _waveIn.StopRecording();
-            _waveIn.Dispose();
-            _waveWriter.Dispose();
+
+            waveIn = new WaveInSdl();
+            waveIn.WaveFormat = new WaveFormat(deviceCapabilities.Frequency, deviceCapabilities.Bits, deviceCapabilities.Channels);
+            waveIn.AudioConversion = AudioConversion.Any;
+            waveIn.DeviceId = deviceId;
+            waveIn.DataAvailable += WaveInOnDataAvailable;
+            waveWriter = new WaveFileWriter(fileAbsolutePath, waveIn.WaveFormat);
+            waveIn.StartRecording();
+            await waveWriter.WaitEnd(waveIn.BufferMilliseconds, recordSeconds, cancellationTokenSource.Token);
+            waveIn.DataAvailable -= WaveInOnDataAvailable;
+            waveIn.StopRecording();
+            waveIn.Dispose();
+            waveWriter.Dispose();
+
             Console.CancelKeyPress -= ConsoleOnCancelKeyPress;
-        }
-
-        private async Task WaitRecordFinish(int maxRecordSeconds)
-        {
-            var recordSeconds = 0;
-            while (recordSeconds < maxRecordSeconds)
-            {
-                if (_cancellationTokenSource.IsCancellationRequested)
-                {
-                    break;
-                }
-                await Task.Delay(1000);
-                recordSeconds += 1;
-            }
-        }
-
-        private void ConsoleOnCancelKeyPress(object? sender, ConsoleCancelEventArgs e)
-        {
-            _cancellationTokenSource.Cancel();
+            cancellationTokenSource.Dispose();
         }
 
         private void WaveInOnDataAvailable(object? sender, WaveInEventArgs e)
         {
-            _waveWriter.Write(e.Buffer, 0, e.BytesRecorded);
-            _secondsRecorderPosition ??= Console.GetCursorPosition();
-            Console.SetCursorPosition(_secondsRecorderPosition.Value.Left, _secondsRecorderPosition.Value.Top);
-            Console.WriteLine($"WaveInSdl seconds recorded: {_waveWriter.TotalTime.TotalSeconds}");
-            _peakLevelPosition ??= Console.GetCursorPosition();
-            Console.SetCursorPosition(_peakLevelPosition.Value.Left, _peakLevelPosition.Value.Top);
-            Console.WriteLine($"WaveInSdl peak level: {_waveIn.PeakLevel}");
+            secondsRecorded += waveIn.BufferMilliseconds / 1000.0;
+            waveWriter.Write(e.Buffer, 0, e.BytesRecorded);
+            ConsoleHelper.LockCursorPosition("TotalTime");
+            Console.WriteLine($"WaveInSdl seconds recorded: {secondsRecorded.ToString("F1")}");
+            ConsoleHelper.LockCursorPosition("PeakLevel");
+            Console.WriteLine($"WaveInSdl peak level: {(waveIn.PeakLevel * 100).ToString("00.00")}%");
+            
         }
 
-        private void ShowDevicesInfo()
+        private void ConsoleOnCancelKeyPress(object? sender, ConsoleCancelEventArgs e)
         {
-            var deviceNumber = WaveInSdl.DeviceCount;
-            for (int index = 0; index < deviceNumber; index++)
+            e.Cancel = true;
+            cancellationTokenSource.Cancel();
+        }
+    }
+
+    public static class RecordingDemoExtensions
+    {
+        public static async Task WaitEnd(
+            this WaveFileWriter waveWriter,
+            int delay,
+            int recordSeconds,
+            CancellationToken cancellationToken)
+        {
+            while (waveWriter.TotalTime.TotalSeconds < recordSeconds)
             {
-                var deviceCapabilities = WaveInSdl.GetCapabilities(index);
-                Console.WriteLine($"Id: {index}");
-                Console.WriteLine($"Name: {deviceCapabilities.DeviceName}");
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    return;
+                }
+                await Task.Delay(delay);
+            }
+        }
+
+        public static void Dump(this List<WaveInSdlCapabilities> list)
+        {
+            foreach (var device in list)
+            {
+                Console.WriteLine(device.ToString(Environment.NewLine));
                 Console.WriteLine();
             }
         }

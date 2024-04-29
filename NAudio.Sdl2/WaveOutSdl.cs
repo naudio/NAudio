@@ -1,24 +1,28 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using NAudio.Sdl2.Interop;
 using NAudio.Sdl2.Structures;
 using NAudio.Wave;
-using static SDL2.SDL;
+using static NAudio.Sdl2.Interop.SDL;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Sdl2
 {
+    /// <summary>
+    /// WaveOut provider via SDL2 backend
+    /// </summary>
     public class WaveOutSdl : IWavePlayer
     {
-        private readonly SynchronizationContext _syncContext;
-        private IWaveProvider _waveStream;
-        private uint _deviceNumber;
-        private volatile PlaybackState _playbackState;
-        private AutoResetEvent _callbackEvent;
-        private double _adjustLatencyPercent;
-        private ulong _position;
-        private object _positionLock;
+        private readonly SynchronizationContext syncContext;
+        private IWaveProvider waveStream;
+        private uint deviceNumber;
+        private volatile PlaybackState playbackState;
+        private AutoResetEvent callbackEvent;
+        private double adjustLatencyPercent;
+        private ushort frameSize;
+        private byte[] frameBuffer;
 
         /// <summary>
         /// Indicates playback has stopped automatically
@@ -26,15 +30,12 @@ namespace NAudio.Sdl2
         public event EventHandler<StoppedEventArgs> PlaybackStopped;
 
         /// <summary>
-        /// Indicates playback position has changed
+        /// Prepares a wave output device for recording
         /// </summary>
-        public event EventHandler<PositionChangedEventArgs> PositionChanged;
-
         public WaveOutSdl()
         {
-            _syncContext = SynchronizationContext.Current;
-            _positionLock = new object();
-            DeviceId = 0;
+            syncContext = SynchronizationContext.Current;
+            DeviceId = -1;
             AudioConversion = AudioConversion.None;
             DesiredLatency = 300;
             AdjustLatencyPercent = 0.1;
@@ -43,7 +44,7 @@ namespace NAudio.Sdl2
         /// <summary>
         /// Returns the number of WaveOutSdl devices available in the system
         /// </summary>
-        public static int DeviceCount => Sdl2Interop.GetPlaybackDevicesNumber();
+        public static int DeviceCount => SdlBindingWrapper.GetPlaybackDevicesNumber();
 
         /// <summary>
         /// Retrieves the capabilities of a WaveOutSdl device
@@ -52,42 +53,84 @@ namespace NAudio.Sdl2
         /// <returns>The WaveOutSdl device capabilities</returns>
         public static WaveOutSdlCapabilities GetCapabilities(int deviceId)
         {
-            var deviceName = Sdl2Interop.GetPlaybackDeviceName(deviceId);
-            var deviceSpec = Sdl2Interop.GetPlaybackDeviceSpec(deviceId);
-            var deviceBitSize = Sdl2Interop.GetAudioFormatBitSize(deviceSpec.format);
+            var deviceName = SdlBindingWrapper.GetPlaybackDeviceName(deviceId);
+            var deviceAudioSpec = SdlBindingWrapper.GetPlaybackDeviceAudioSpec(deviceId);
+            var deviceBitSize = SdlBindingWrapper.GetAudioFormatBitSize(deviceAudioSpec.format);
             return new WaveOutSdlCapabilities
             {
                 DeviceNumber = deviceId,
                 DeviceName = deviceName,
                 Bits = deviceBitSize,
-                Channels = deviceSpec.channels,
-                Format = deviceSpec.format,
-                Frequency = deviceSpec.freq,
-                Samples = deviceSpec.samples,
-                Silence = deviceSpec.silence,
-                Size = deviceSpec.size
+                Channels = deviceAudioSpec.channels,
+                Format = deviceAudioSpec.format,
+                Frequency = deviceAudioSpec.freq,
+                Samples = deviceAudioSpec.samples,
+                Silence = deviceAudioSpec.silence,
+                Size = deviceAudioSpec.size
             };
         }
 
         /// <summary>
-        /// The device id to use
+        /// Retrieves the capabilities list of a WaveOutSdl devices
+        /// </summary>
+        /// <returns>The WaveOutSdl capabilities list</returns>
+        public static List<WaveOutSdlCapabilities> GetCapabilitiesList()
+        {
+            List<WaveOutSdlCapabilities> list = new List<WaveOutSdlCapabilities>();
+            var deviceCount = WaveInSdl.DeviceCount;
+            for (int index = 0; index < deviceCount; index++)
+            {
+                list.Add(GetCapabilities(index));
+            }
+            return list;
+        }
+
+        /// <summary>
+        /// Retrieves the capabilities of a WaveOutSdl default device
+        /// <para>This function is available since SDL 2.24.0</para>
+        /// </summary>
+        /// <returns>The WaveOutSdl default device capabilities</returns>
+        public static WaveOutSdlCapabilities GetDefaultDeviceCapabilities()
+        {
+            SdlBindingWrapper.GetPlaybackDeviceDefaultAudioInfo(out var deviceName, out var deviceAudioSpec);
+            var deviceBitSize = SdlBindingWrapper.GetAudioFormatBitSize(deviceAudioSpec.format);
+            return new WaveOutSdlCapabilities
+            {
+                DeviceNumber = -1,
+                DeviceName = deviceName,
+                Bits = deviceBitSize,
+                Channels = deviceAudioSpec.channels,
+                Format = deviceAudioSpec.format,
+                Frequency = deviceAudioSpec.freq,
+                Samples = deviceAudioSpec.samples,
+                Silence = deviceAudioSpec.silence,
+                Size = deviceAudioSpec.size
+            };
+        }
+
+        /// <summary>
+        /// Gets or sets the device id
+        /// Should be set before a call to <see cref="Init(IWaveProvider)"/>
+        /// <para>This must be between -1 and <see cref="DeviceCount"/> - 1</para>
+        /// <para>-1 means stick to default device</para>
         /// </summary>
         public int DeviceId { get; set; }
 
         /// <summary>
         /// Gets or sets the desired latency in milliseconds
-        /// <para>Should be set before a call to Init</para>
+        /// <para>Should be set before a call to <see cref="Init(IWaveProvider)"/></para>
         /// </summary>
         public int DesiredLatency { get; set; }
 
         /// <summary>
         /// Gets or sets the desired latency adjustment in percent
+        /// <para>Value must be between 0 and 1</para>
         /// <para>This percent only affects the playback wait</para>
         /// </summary>
         public double AdjustLatencyPercent
         {
-            get => _adjustLatencyPercent;
-            set => _adjustLatencyPercent = value >= 0 && value <= 1
+            get => adjustLatencyPercent;
+            set => adjustLatencyPercent = value >= 0 && value <= 1
                 ? value
                 : throw new Exception("The percent value must be between 0 and 1");
         }
@@ -95,12 +138,16 @@ namespace NAudio.Sdl2
         /// <summary>
         /// Volume for this device 1.0 is full scale
         /// </summary>
-        public float Volume { get; set; }
+        public float Volume
+        {
+            get => throw new SdlException("Volume mixer is not implemented");
+            set => throw new SdlException("Volume mixer is not implemented");
+        }
 
         /// <summary>
         /// Playback State
         /// </summary>
-        public PlaybackState PlaybackState => _playbackState;
+        public PlaybackState PlaybackState => playbackState;
 
         /// <summary>
         /// Gets playback state directly from sdl
@@ -109,7 +156,7 @@ namespace NAudio.Sdl2
         {
             get
             {
-                var status = Sdl2Interop.GetDeviceStatus(_deviceNumber);
+                var status = SdlBindingWrapper.GetDeviceStatus(deviceNumber);
                 switch (status)
                 {
                     case SDL_AudioStatus.SDL_AUDIO_PLAYING:
@@ -125,11 +172,11 @@ namespace NAudio.Sdl2
         /// <summary>
         /// Gets a <see cref="Wave.WaveFormat"/> instance indicating the format the hardware is using.
         /// </summary>
-        public WaveFormat OutputWaveFormat => _waveStream.WaveFormat;
+        public WaveFormat OutputWaveFormat => waveStream.WaveFormat;
 
         /// <summary>
         /// Gets a <see cref="Wave.WaveFormat"/> instance indicating what the format is actually using.
-        /// <para>This property accessible after <see cref="Init(IWaveProvider)" method/></para>
+        /// <para>This property accessible after <see cref="Init(IWaveProvider)"/> call</para>
         /// </summary>
         public WaveFormat ActualOutputWaveFormat { get; private set; }
 
@@ -139,51 +186,30 @@ namespace NAudio.Sdl2
         public AudioConversion AudioConversion { get; set; }
 
         /// <summary>
-        /// Approximate position value in milliseconds
-        /// <para>Return zero if it exceeds the max value</para>
-        /// </summary>
-        public ulong Position
-        {
-            get
-            {
-                lock (_positionLock)
-                {
-                    return _position;
-                }
-            }
-            private set
-            {
-                lock (_positionLock)
-                {
-                    _position = value;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Initialises the WaveOut device
+        /// Initializes the WaveOut device
         /// </summary>
         /// <param name="waveProvider">WaveProvider to play</param>
         public void Init(IWaveProvider waveProvider)
         {
-            if (_playbackState != PlaybackState.Stopped)
+            if (playbackState != PlaybackState.Stopped)
             {
                 throw new InvalidOperationException("Can't re-initialize during playback");
             }
-            _callbackEvent = new AutoResetEvent(false);
-            _waveStream = waveProvider;
-            int bufferSize = waveProvider.WaveFormat.ConvertLatencyToByteSize(DesiredLatency);
+            callbackEvent = new AutoResetEvent(false);
+            waveStream = waveProvider;
+            frameSize = (ushort)waveProvider.WaveFormat.ConvertLatencyToByteSize(DesiredLatency);
+            frameBuffer = new byte[frameSize];
             var desiredSpec = new SDL_AudioSpec();
             desiredSpec.freq = waveProvider.WaveFormat.SampleRate;
             desiredSpec.format = GetAudioDataFormat();
             desiredSpec.channels = (byte)waveProvider.WaveFormat.Channels;
             desiredSpec.silence = 0;
-            desiredSpec.samples = (ushort)bufferSize;
-            var deviceName = Sdl2Interop.GetPlaybackDeviceName(DeviceId);
-            var deviceNumber = Sdl2Interop.OpenPlaybackDevice(deviceName, ref desiredSpec, out var obtainedSpec, AudioConversion);
-            var bitSize = Sdl2Interop.GetAudioFormatBitSize(obtainedSpec.format);
+            desiredSpec.samples = frameSize;
+            var deviceName = SdlBindingWrapper.GetPlaybackDeviceName(DeviceId);
+            var openDeviceNumber = SdlBindingWrapper.OpenPlaybackDevice(deviceName, ref desiredSpec, out var obtainedSpec, AudioConversion);
+            var bitSize = SdlBindingWrapper.GetAudioFormatBitSize(obtainedSpec.format);
             ActualOutputWaveFormat = new WaveFormat(obtainedSpec.freq, bitSize, obtainedSpec.channels);
-            _deviceNumber = deviceNumber;
+            deviceNumber = openDeviceNumber;
         }
 
         /// <summary>
@@ -191,16 +217,16 @@ namespace NAudio.Sdl2
         /// </summary>
         public void Play()
         {
-            if (_waveStream == null)
+            if (waveStream == null)
             {
                 throw new InvalidOperationException("Must call Init first");
             }
-            if (_playbackState == PlaybackState.Stopped)
+            if (playbackState == PlaybackState.Stopped)
             {
                 Resume();
                 ThreadPool.QueueUserWorkItem(state => PlaybackThread(), null);
             }
-            else if (_playbackState == PlaybackState.Paused)
+            else if (playbackState == PlaybackState.Paused)
             {
                 Resume();
             }
@@ -211,11 +237,11 @@ namespace NAudio.Sdl2
         /// </summary>
         public void Stop()
         {
-            if (_playbackState != PlaybackState.Stopped)
+            if (playbackState != PlaybackState.Stopped)
             {
-                _playbackState = PlaybackState.Stopped;
-                Sdl2Interop.StopPlaybackDevice(_deviceNumber);
-                Sdl2Interop.ClosePlaybackDevice(_deviceNumber);
+                playbackState = PlaybackState.Stopped;
+                SdlBindingWrapper.StopPlaybackDevice(deviceNumber);
+                SdlBindingWrapper.ClosePlaybackDevice(deviceNumber);
             }
         }
 
@@ -224,10 +250,10 @@ namespace NAudio.Sdl2
         /// </summary>
         public void Pause()
         {
-            if (_playbackState == PlaybackState.Playing)
+            if (playbackState == PlaybackState.Playing)
             {
-                _playbackState = PlaybackState.Paused;
-                Sdl2Interop.StopPlaybackDevice(_deviceNumber);
+                playbackState = PlaybackState.Paused;
+                SdlBindingWrapper.StopPlaybackDevice(deviceNumber);
             }
         }
 
@@ -256,11 +282,9 @@ namespace NAudio.Sdl2
         /// </summary>
         private void Resume()
         {
-            var status = Sdl2Interop.StartPlaybackDevice(_deviceNumber);
-            if (status != SDL_AudioStatus.SDL_AUDIO_PLAYING)
-                throw new SdlException("Sdl failed to unpause playback device");
-            _playbackState = PlaybackState.Playing;
-            _callbackEvent.Set();
+            SdlBindingWrapper.StartPlaybackDevice(deviceNumber);
+            playbackState = PlaybackState.Playing;
+            callbackEvent.Set();
         }
 
         /// <summary>
@@ -298,7 +322,7 @@ namespace NAudio.Sdl2
             }
             finally
             {
-                _playbackState = PlaybackState.Stopped;
+                playbackState = PlaybackState.Stopped;
                 // we're exiting our background thread
                 RaisePlaybackStoppedEvent(exception);
             }
@@ -309,70 +333,35 @@ namespace NAudio.Sdl2
         /// </summary>
         private unsafe void DoPlayback()
         {
-            while (_playbackState != PlaybackState.Stopped)
+            while (playbackState != PlaybackState.Stopped)
             {
                 // workaround to get rid of stuttering
                 // i assume on different hardware adjusting must be different
                 // is it possible that callbacks will help?
                 var adjustedLatency = DesiredLatency - (int)(DesiredLatency * AdjustLatencyPercent);
-                if (!_callbackEvent.WaitOne(adjustedLatency))
+                if (!callbackEvent.WaitOne(adjustedLatency))
                 {
-                    if (_playbackState == PlaybackState.Playing)
+                    if (playbackState == PlaybackState.Playing)
                     {
                         Debug.WriteLine("WARNING: WaveOutSdl callback event timeout");
                     }
                 }
 
-                var deviceStatus = Sdl2Interop.GetDeviceStatus(_deviceNumber);
-                if (_playbackState == PlaybackState.Playing
-                    && deviceStatus != SDL_AudioStatus.SDL_AUDIO_PLAYING)
+                if (playbackState == PlaybackState.Playing)
                 {
-                    throw new SdlException("WaveOutSdl playback unexpected finished");
-                }
-
-                unchecked 
-                { 
-                    Position += (ulong)DesiredLatency;
-                }
-                
-                RaisePositionChangedEvent(Position);
-
-                if (_playbackState == PlaybackState.Playing)
-                {
-                    uint frameSize = (uint)(DesiredLatency * OutputWaveFormat.AverageBytesPerSecond / 1000);
-                    byte[] frameBuffer = new byte[frameSize];
-                    var readSize = _waveStream.Read(frameBuffer, 0, frameBuffer.Length);
+                    Array.Clear(frameBuffer, 0, frameBuffer.Length);
+                    var readSize = waveStream.Read(frameBuffer, 0, frameBuffer.Length);
 
                     if (readSize == 0)
                     {
-                        _playbackState = PlaybackState.Stopped;
-                        _callbackEvent.Set();
+                        playbackState = PlaybackState.Stopped;
+                        callbackEvent.Set();
                     }
 
                     fixed (byte* ptr = &frameBuffer[0])
                     {
-                        var queue = Sdl2Interop.QueueAudio(_deviceNumber, (IntPtr)ptr, (uint)readSize);
+                        SdlBindingWrapper.QueueAudio(deviceNumber, (IntPtr)ptr, (uint)readSize);
                     }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Raise position changed event
-        /// </summary>
-        /// <param name="e"></param>
-        private void RaisePositionChangedEvent(ulong position)
-        {
-            var handler = PositionChanged;
-            if (handler != null)
-            {
-                if (_syncContext == null)
-                {
-                    handler(this, new PositionChangedEventArgs(position));
-                }
-                else
-                {
-                    _syncContext.Post(state => handler(this, new PositionChangedEventArgs(position)), null);
                 }
             }
         }
@@ -386,13 +375,13 @@ namespace NAudio.Sdl2
             var handler = PlaybackStopped;
             if (handler != null)
             {
-                if (_syncContext == null)
+                if (syncContext == null)
                 {
                     handler(this, new StoppedEventArgs(e));
                 }
                 else
                 {
-                    _syncContext.Post(state => handler(this, new StoppedEventArgs(e)), null);
+                    syncContext.Post(state => handler(this, new StoppedEventArgs(e)), null);
                 }
             }
         }

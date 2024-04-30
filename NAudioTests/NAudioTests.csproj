@@ -6,7 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="Moq" Version="4.15.2" />
-    <PackageReference Include="NAudio.Sdl2.Library" Version="2.30.2" GeneratePathProperty="true" />
+    <PackageReference Include="NAudio.Sdl2.Library" Version="2.30.2" GeneratePathProperty="true" ExcludeAssets="all"/>
     <PackageReference Include="NUnit" Version="3.12.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.17.0" />
   </ItemGroup>

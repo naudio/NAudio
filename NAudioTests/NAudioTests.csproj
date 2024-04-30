@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="Moq" Version="4.15.2" />
+    <PackageReference Include="NAudio.Sdl2.Library" Version="2.30.2" GeneratePathProperty="true" />
     <PackageReference Include="NUnit" Version="3.12.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.17.0" />
   </ItemGroup>
@@ -13,9 +14,24 @@
   <ItemGroup>
     <ProjectReference Include="..\NAudio.Core\NAudio.Core.csproj" />
     <ProjectReference Include="..\NAudio.Midi\NAudio.Midi.csproj" />
+    <ProjectReference Include="..\NAudio.Sdl2\NAudio.Sdl2.csproj" />
     <ProjectReference Include="..\NAudio.Wasapi\NAudio.Wasapi.csproj" />
     <ProjectReference Include="..\NAudio.WinForms\NAudio.WinForms.csproj" />
     <ProjectReference Include="..\NAudio.WinMM\NAudio.WinMM.csproj" />
     <ProjectReference Include="..\NAudio\NAudio.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="C:\Users\alex\.nuget\packages\naudio.sdl2.library\2.0.20\runtimes\win-x64\SDL2.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="C:\Users\alex\.nuget\packages\naudio.sdl2.library\2.0.20\runtimes\win-x64\SDL2.dll" />
+  </ItemGroup>
+
+	<ItemGroup>
+		<None Include="$(PkgNAudio_Sdl2_Library)\runtimes\win-x64\native\SDL2.dll">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
 </Project>

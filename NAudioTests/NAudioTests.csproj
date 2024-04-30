@@ -21,14 +21,6 @@
     <ProjectReference Include="..\NAudio\NAudio.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Remove="C:\Users\alex\.nuget\packages\naudio.sdl2.library\2.0.20\runtimes\win-x64\SDL2.dll" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Remove="C:\Users\alex\.nuget\packages\naudio.sdl2.library\2.0.20\runtimes\win-x64\SDL2.dll" />
-  </ItemGroup>
-
 	<ItemGroup>
 		<None Include="$(PkgNAudio_Sdl2_Library)\runtimes\win-x64\native\SDL2.dll">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

@@ -13,7 +13,7 @@ We can use 'DeviceNumber' property from 'WaveOutSdlCapabilities' instance and se
 ```c#
 var waveOutSdl = new WaveOutSdl() 
 { 
-    DeviceId = waveInSdlCaps.DeviceNumber
+    DeviceId = waveOutSdlCaps.DeviceNumber
 };
 ```
 

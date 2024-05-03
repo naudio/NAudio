@@ -23,6 +23,10 @@ namespace NAudio.Sdl2
         private double adjustLatencyPercent;
         private ushort frameSize;
         private byte[] frameBuffer;
+        private byte[] frameVolumeBuffer;
+        private float volume;
+        private object volumeLock;
+        private SDL_AudioSpec obtainedAudioSpec;
 
         /// <summary>
         /// Indicates playback has stopped automatically
@@ -35,10 +39,12 @@ namespace NAudio.Sdl2
         public WaveOutSdl()
         {
             syncContext = SynchronizationContext.Current;
+            volumeLock = new object();
             DeviceId = -1;
             AudioConversion = AudioConversion.None;
             DesiredLatency = 300;
             AdjustLatencyPercent = 0.1;
+            Volume = 1.28f;
         }
 
         /// <summary>
@@ -136,12 +142,26 @@ namespace NAudio.Sdl2
         }
 
         /// <summary>
-        /// Volume for this device 1.0 is full scale
+        /// Volume for this device ranges from 0 to 1.28
         /// </summary>
         public float Volume
         {
-            get => throw new SdlException("Volume mixer is not implemented");
-            set => throw new SdlException("Volume mixer is not implemented");
+            get
+            {
+                lock (volumeLock)
+                {
+                    return volume;
+                }
+            }
+            set
+            {
+                lock (volumeLock)
+                {
+                    if (value < 0 || value > 1.28f)
+                        throw new SdlException("The playback device volume must be between 0 and 1.28");
+                    volume = value;
+                }
+            }
         }
 
         /// <summary>
@@ -199,6 +219,7 @@ namespace NAudio.Sdl2
             waveStream = waveProvider;
             frameSize = (ushort)waveProvider.WaveFormat.ConvertLatencyToByteSize(DesiredLatency);
             frameBuffer = new byte[frameSize];
+            frameVolumeBuffer = new byte[frameSize];
             var desiredSpec = new SDL_AudioSpec();
             desiredSpec.freq = waveProvider.WaveFormat.SampleRate;
             desiredSpec.format = GetAudioDataFormat();
@@ -206,9 +227,9 @@ namespace NAudio.Sdl2
             desiredSpec.silence = 0;
             desiredSpec.samples = frameSize;
             var deviceName = SdlBindingWrapper.GetPlaybackDeviceName(DeviceId);
-            var openDeviceNumber = SdlBindingWrapper.OpenPlaybackDevice(deviceName, ref desiredSpec, out var obtainedSpec, AudioConversion);
-            var bitSize = SdlBindingWrapper.GetAudioFormatBitSize(obtainedSpec.format);
-            ActualOutputWaveFormat = new WaveFormat(obtainedSpec.freq, bitSize, obtainedSpec.channels);
+            var openDeviceNumber = SdlBindingWrapper.OpenPlaybackDevice(deviceName, ref desiredSpec, out obtainedAudioSpec, AudioConversion);
+            var bitSize = SdlBindingWrapper.GetAudioFormatBitSize(obtainedAudioSpec.format);
+            ActualOutputWaveFormat = new WaveFormat(obtainedAudioSpec.freq, bitSize, obtainedAudioSpec.channels);
             deviceNumber = openDeviceNumber;
         }
 
@@ -358,7 +379,15 @@ namespace NAudio.Sdl2
                         callbackEvent.Set();
                     }
 
-                    fixed (byte* ptr = &frameBuffer[0])
+                    Array.Clear(frameVolumeBuffer, 0, frameVolumeBuffer.Length);
+                    SdlBindingWrapper.ChangePlaybackDeviceVolume(
+                        frameVolumeBuffer, 
+                        frameBuffer,
+                        obtainedAudioSpec.format,
+                        (uint)frameVolumeBuffer.Length,
+                        Volume);
+
+                    fixed (byte* ptr = &frameVolumeBuffer[0])
                     {
                         SdlBindingWrapper.QueueAudio(deviceNumber, (IntPtr)ptr, (uint)readSize);
                     }

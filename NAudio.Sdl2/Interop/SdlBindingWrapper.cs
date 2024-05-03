@@ -136,6 +136,24 @@ namespace NAudio.Sdl2.Interop
         #region Playback Device
 
         /// <summary>
+        /// Adjust volume of the playback device
+        /// </summary>
+        /// <param name="destination">The destination for the mixed audio</param>
+        /// <param name="source">The source audio buffer to be mixed</param>
+        /// <param name="audioFormat">the SDL_AudioFormat structure representing the desired audio format</param>
+        /// <param name="length">The length of the audio buffer in bytes</param>
+        /// <param name="volumeFloat">Audio volume ranges from 0 to 128</param>
+        /// <exception cref="SdlException"></exception>
+        public static void ChangePlaybackDeviceVolume(byte[] destination, byte[] source, ushort audioFormat, uint length, float volumeFloat)
+        {
+            var volume = (int)(volumeFloat * 100);
+            if (volume < 0 || volume > 128)
+                throw new SdlException("The playback device volume must be between 0 and 1.28");
+            InitSdl();
+            SDL_MixAudioFormat(destination, source, audioFormat, length, volume);
+        }
+
+        /// <summary>
         /// Gets the name and preferred format of the default audio playback device
         /// </summary>
         /// <param name="deviceName">Device name</param>

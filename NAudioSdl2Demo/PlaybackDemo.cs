@@ -73,6 +73,7 @@ namespace NAudioSdl2Demo
                 positionChangedCallback(waveReader.CurrentTime, waveReader.TotalTime);
                 await Task.Delay(delay);
             }
+            positionChangedCallback(waveReader.CurrentTime, waveReader.TotalTime);
         }
 
         public static void Dump(this List<WaveOutSdlCapabilities> list)

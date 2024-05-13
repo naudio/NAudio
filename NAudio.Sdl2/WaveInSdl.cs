@@ -59,22 +59,38 @@ namespace NAudio.Sdl2
         /// </summary>
         /// <param name="deviceId">Device to test</param>
         /// <returns>The WaveInSdl device capabilities</returns>
+        /// <remarks>
+        /// This function only returns DeviceNumber and DeviceName on versions below SDL 2.0.16
+        /// <para>Use the <see cref="WaveInSdlCapabilities.IsAudioCapabilitiesValid"/> property to check if all capabilities are available</para>
+        /// </remarks>
         public static WaveInSdlCapabilities GetCapabilities(int deviceId)
         {
             var deviceName = SdlBindingWrapper.GetRecordingDeviceName(deviceId);
-            var deviceAudioSpec = SdlBindingWrapper.GetRecordingDeviceAudioSpec(deviceId);
-            var deviceBitSize = SdlBindingWrapper.GetAudioFormatBitSize(deviceAudioSpec.format);
+            var runtimeSdlVersion = SdlBindingWrapper.GetRuntimeSdlVersion();
+            if (runtimeSdlVersion.major >= 2 && runtimeSdlVersion.minor >= 0 && runtimeSdlVersion.patch >= 16)
+            {
+                var deviceAudioSpec = SdlBindingWrapper.GetRecordingDeviceAudioSpec(deviceId);
+                var deviceBitSize = SdlBindingWrapper.GetAudioFormatBitSize(deviceAudioSpec.format);
+                return new WaveInSdlCapabilities
+                {
+                    DeviceNumber = deviceId,
+                    DeviceName = deviceName,
+                    Bits = deviceBitSize,
+                    Channels = deviceAudioSpec.channels,
+                    Format = deviceAudioSpec.format,
+                    Frequency = deviceAudioSpec.freq,
+                    Samples = deviceAudioSpec.samples,
+                    Silence = deviceAudioSpec.silence,
+                    Size = deviceAudioSpec.size,
+                    IsAudioCapabilitiesValid = true
+                };
+            }
+
             return new WaveInSdlCapabilities
             {
                 DeviceNumber = deviceId,
                 DeviceName = deviceName,
-                Bits = deviceBitSize,
-                Channels = deviceAudioSpec.channels,
-                Format = deviceAudioSpec.format,
-                Frequency = deviceAudioSpec.freq,
-                Samples = deviceAudioSpec.samples,
-                Silence = deviceAudioSpec.silence,
-                Size = deviceAudioSpec.size
+                IsAudioCapabilitiesValid = false
             };
         }
 
@@ -82,6 +98,10 @@ namespace NAudio.Sdl2
         /// Retrieves the capabilities list of a WaveInSdl devices
         /// </summary>
         /// <returns>The WaveInSdlCapabilities list</returns>
+        /// <remarks>
+        /// This function only returns DeviceNumber and DeviceName on versions below SDL 2.0.16
+        /// <para>Use the <see cref="WaveInSdlCapabilities.IsAudioCapabilitiesValid"/> property to check if all capabilities are available</para>
+        /// </remarks>
         public static List<WaveInSdlCapabilities> GetCapabilitiesList()
         {
             List<WaveInSdlCapabilities> list = new List<WaveInSdlCapabilities>();
@@ -95,9 +115,9 @@ namespace NAudio.Sdl2
 
         /// <summary>
         /// Retrieves the capabilities of a WaveInSdl default device
-        /// <para>This function is available since SDL 2.24.0</para>
         /// </summary>
         /// <returns>The WaveInSdl default device capabilities</returns>
+        /// <remarks>This function is available since SDL 2.24.0</remarks>
         public static WaveInSdlCapabilities GetDefaultDeviceCapabilities()
         {
             SdlBindingWrapper.GetRecordingDeviceDefaultAudioInfo(out var deviceName, out var deviceAudioSpec);

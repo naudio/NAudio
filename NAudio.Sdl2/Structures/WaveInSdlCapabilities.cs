@@ -11,6 +11,7 @@
         public ushort Samples { get; set; }
         public byte Silence { get; set; }
         public uint Size { get; set; }
+        public bool IsAudioCapabilitiesValid { get; internal set; }
 
         public string ToString(string separator)
         {
@@ -30,7 +31,9 @@
                    $"{separator}" +
                    $"Silence = {Silence}" +
                    $"{separator}" +
-                   $"Size = {Size}";
+                   $"Size = {Size}" +
+                   $"{separator}" +
+                   $"IsAudioCapabilitiesValid = {IsAudioCapabilitiesValid}";
         }
     }
 }

@@ -274,6 +274,28 @@ namespace NAudio.Sdl2.Interop
         private static bool _isInitialized;
 
         /// <summary>
+        /// Determines the version of compiled SDL
+        /// </summary>
+        /// <returns></returns>
+        public static SDL_version GetCompiledSdlVersion()
+        {
+            InitSdl();
+            SDL_VERSION(out var version);
+            return version;
+        }
+
+        /// <summary>
+        /// Determines the version of SDL at runtime
+        /// </summary>
+        /// <returns></returns>
+        public static SDL_version GetRuntimeSdlVersion()
+        {
+            InitSdl();
+            SDL_GetVersion(out var version);
+            return version;
+        }
+
+        /// <summary>
         /// Get the bit size of specific audio format
         /// </summary>
         /// <param name="audioFormat">Audio format</param>

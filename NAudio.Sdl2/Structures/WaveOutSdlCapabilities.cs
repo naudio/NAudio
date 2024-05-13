@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace NAudio.Sdl2.Structures
+﻿namespace NAudio.Sdl2.Structures
 {
     public class WaveOutSdlCapabilities
     {
@@ -13,6 +11,7 @@ namespace NAudio.Sdl2.Structures
         public ushort Samples { get; set; }
         public byte Silence { get; set; }
         public uint Size { get; set; }
+        public bool IsAudioCapabilitiesValid { get; internal set; }
 
         public string ToString(string separator)
         {
@@ -32,7 +31,9 @@ namespace NAudio.Sdl2.Structures
                    $"{separator}" +
                    $"Silence = {Silence}" +
                    $"{separator}" +
-                   $"Size = {Size}";
+                   $"Size = {Size}" +
+                   $"{separator}" +
+                   $"IsAudioCapabilitiesValid = {IsAudioCapabilitiesValid}";
         }
     }
 }

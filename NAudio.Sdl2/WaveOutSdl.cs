@@ -57,22 +57,38 @@ namespace NAudio.Sdl2
         /// </summary>
         /// <param name="deviceId">Device to test</param>
         /// <returns>The WaveOutSdl device capabilities</returns>
+        /// <remarks>
+        /// This function only returns DeviceNumber and DeviceName on versions below SDL 2.0.16
+        /// <para>Use the <see cref="WaveOutSdlCapabilities.IsAudioCapabilitiesValid"/> property to check if all capabilities are available</para>
+        /// </remarks>
         public static WaveOutSdlCapabilities GetCapabilities(int deviceId)
         {
             var deviceName = SdlBindingWrapper.GetPlaybackDeviceName(deviceId);
-            var deviceAudioSpec = SdlBindingWrapper.GetPlaybackDeviceAudioSpec(deviceId);
-            var deviceBitSize = SdlBindingWrapper.GetAudioFormatBitSize(deviceAudioSpec.format);
+            var runtimeSdlVersion = SdlBindingWrapper.GetRuntimeSdlVersion();
+            if (runtimeSdlVersion.major >= 2 && runtimeSdlVersion.minor >= 0 && runtimeSdlVersion.patch >= 16)
+            {
+                var deviceAudioSpec = SdlBindingWrapper.GetPlaybackDeviceAudioSpec(deviceId);
+                var deviceBitSize = SdlBindingWrapper.GetAudioFormatBitSize(deviceAudioSpec.format);
+                return new WaveOutSdlCapabilities
+                {
+                    DeviceNumber = deviceId,
+                    DeviceName = deviceName,
+                    Bits = deviceBitSize,
+                    Channels = deviceAudioSpec.channels,
+                    Format = deviceAudioSpec.format,
+                    Frequency = deviceAudioSpec.freq,
+                    Samples = deviceAudioSpec.samples,
+                    Silence = deviceAudioSpec.silence,
+                    Size = deviceAudioSpec.size,
+                    IsAudioCapabilitiesValid = true
+                };
+            }
+
             return new WaveOutSdlCapabilities
             {
                 DeviceNumber = deviceId,
                 DeviceName = deviceName,
-                Bits = deviceBitSize,
-                Channels = deviceAudioSpec.channels,
-                Format = deviceAudioSpec.format,
-                Frequency = deviceAudioSpec.freq,
-                Samples = deviceAudioSpec.samples,
-                Silence = deviceAudioSpec.silence,
-                Size = deviceAudioSpec.size
+                IsAudioCapabilitiesValid = false
             };
         }
 
@@ -80,6 +96,10 @@ namespace NAudio.Sdl2
         /// Retrieves the capabilities list of a WaveOutSdl devices
         /// </summary>
         /// <returns>The WaveOutSdl capabilities list</returns>
+        /// <remarks>
+        /// This function only returns DeviceNumber and DeviceName on versions below SDL 2.0.16
+        /// <para>Use the <see cref="WaveOutSdlCapabilities.IsAudioCapabilitiesValid"/> property to check if all capabilities are available</para>
+        /// </remarks>
         public static List<WaveOutSdlCapabilities> GetCapabilitiesList()
         {
             List<WaveOutSdlCapabilities> list = new List<WaveOutSdlCapabilities>();

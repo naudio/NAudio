@@ -44,7 +44,7 @@ namespace NAudio.Sdl2
             captureState = CaptureState.Stopped;
             peakLevelLock = new object();
             DeviceId = -1;
-            WaveFormat = new WaveFormat(48000, 16, 1);
+            WaveFormat = new WaveFormat(44100, 16, 1);
             AudioConversion = AudioConversion.None;
             BufferMilliseconds = 100;
         }
@@ -261,6 +261,11 @@ namespace NAudio.Sdl2
         /// <returns>Audio format</returns>
         private ushort GetAudioDataFormat()
         {
+            if (WaveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
+            {
+                return AUDIO_F32SYS;
+            }
+
             switch (WaveFormat.BitsPerSample)
             {
                 case 8:
@@ -270,7 +275,7 @@ namespace NAudio.Sdl2
                 case 32:
                     return AUDIO_S32SYS;
                 default:
-                    return (ushort)WaveFormat.BitsPerSample;
+                    throw new SdlException("Unsupported bit depth for audio format");
             }
         }
 

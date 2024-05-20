@@ -67,7 +67,9 @@ namespace NAudio.Sdl2
         {
             var deviceName = SdlBindingWrapper.GetRecordingDeviceName(deviceId);
             var runtimeSdlVersion = SdlBindingWrapper.GetRuntimeSdlVersion();
-            if (runtimeSdlVersion.major >= 2 && runtimeSdlVersion.minor >= 0 && runtimeSdlVersion.patch >= 16)
+            var currentVersion = new Version(runtimeSdlVersion.major, runtimeSdlVersion.minor, runtimeSdlVersion.patch);
+            var minimumRequiredVersion = new Version(2, 0, 16);
+            if (currentVersion >= minimumRequiredVersion)
             {
                 var deviceAudioSpec = SdlBindingWrapper.GetRecordingDeviceAudioSpec(deviceId);
                 var deviceBitSize = SdlBindingWrapper.GetAudioFormatBitSize(deviceAudioSpec.format);

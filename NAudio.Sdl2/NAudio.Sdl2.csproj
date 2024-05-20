@@ -14,7 +14,11 @@
 		<Copyright>© Mark Heath 2023</Copyright>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageIcon>naudio-icon.png</PackageIcon>
-		<Authors>alextnull</Authors>
+		<Authors>Mark Heath &amp; alextnull</Authors>
+		<Description>
+			WaveIn and WaveOut cross-platform implementations via SDL2 backend
+			Native libraries distributed via separated package - NAudio.Sdl2.Library
+		</Description>
 	</PropertyGroup>
 
 	<!-- needed for perfomance profiling unit tests -->

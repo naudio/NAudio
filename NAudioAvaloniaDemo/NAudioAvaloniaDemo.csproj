@@ -26,6 +26,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NAudio.Core\NAudio.Core.csproj" />
+    <ProjectReference Include="..\NAudio.Extras\NAudio.Extras.csproj" />
     <ProjectReference Include="..\NAudio.Sdl2\NAudio.Sdl2.csproj" />
+    <ProjectReference Include="..\NAudio.WinMM\NAudio.WinMM.csproj" />
   </ItemGroup>
 </Project>

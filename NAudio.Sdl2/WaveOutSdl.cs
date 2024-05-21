@@ -284,7 +284,15 @@ namespace NAudio.Sdl2
             {
                 playbackState = PlaybackState.Stopped;
                 SdlBindingWrapper.StopPlaybackDevice(deviceNumber);
-                SdlBindingWrapper.ClosePlaybackDevice(deviceNumber);
+                if (frameBuffer != null)
+                {
+                    Array.Clear(frameBuffer, 0, frameBuffer.Length);
+                }
+                if (frameVolumeBuffer != null)
+                {
+                    Array.Clear(frameVolumeBuffer, 0, frameVolumeBuffer.Length);
+                }
+                SdlBindingWrapper.ClearQueuedAudio(deviceNumber);
             }
         }
 
@@ -314,10 +322,9 @@ namespace NAudio.Sdl2
         /// </summary>
         protected virtual void Dispose(bool disposing)
         {
-            if (disposing)
-            {
-                Stop();
-            }
+            Stop();
+            DisposeBuffers();
+            CloseWaveOutSdl();
         }
 
         /// <summary>
@@ -328,6 +335,28 @@ namespace NAudio.Sdl2
             SdlBindingWrapper.StartPlaybackDevice(deviceNumber);
             playbackState = PlaybackState.Playing;
             callbackEvent.Set();
+        }
+
+        /// <summary>
+        /// Closes WaveOutSdl device
+        /// </summary>
+        private void CloseWaveOutSdl()
+        {
+            if (callbackEvent != null)
+            {
+                callbackEvent.Close();
+                callbackEvent = null;
+            }
+            SdlBindingWrapper.ClosePlaybackDevice(deviceNumber);
+        }
+
+        /// <summary>
+        /// Disposes frame buffers
+        /// </summary>
+        private void DisposeBuffers()
+        {
+            frameBuffer = null;
+            frameVolumeBuffer = null;
         }
 
         /// <summary>

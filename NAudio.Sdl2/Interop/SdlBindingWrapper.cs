@@ -268,6 +268,16 @@ namespace NAudio.Sdl2.Interop
                 throw new SdlException(SDL_GetError());
             return queue;
         }
+
+        /// <summary>
+        /// Drop any queued audio data waiting to be sent to the hardware
+        /// </summary>
+        /// <param name="deviceNumber">Device number</param>
+        public static void ClearQueuedAudio(uint deviceNumber)
+        {
+            InitSdl();
+            SDL_ClearQueuedAudio(deviceNumber);
+        }
         #endregion
 
         #region Shared

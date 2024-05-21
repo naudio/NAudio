@@ -284,14 +284,6 @@ namespace NAudio.Sdl2
             {
                 playbackState = PlaybackState.Stopped;
                 SdlBindingWrapper.StopPlaybackDevice(deviceNumber);
-                if (frameBuffer != null)
-                {
-                    Array.Clear(frameBuffer, 0, frameBuffer.Length);
-                }
-                if (frameVolumeBuffer != null)
-                {
-                    Array.Clear(frameVolumeBuffer, 0, frameVolumeBuffer.Length);
-                }
                 SdlBindingWrapper.ClearQueuedAudio(deviceNumber);
             }
         }

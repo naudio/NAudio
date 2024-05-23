@@ -65,7 +65,7 @@ namespace NAudioAvaloniaDemo.AudioPlaybackDemo
             playbackDevice = new WaveOutSdl
             {
                 DesiredLatency = 200, 
-                AudioConversion = AudioConversion.Any
+                AudioConversion = AudioConversion.None
             };
         }
 

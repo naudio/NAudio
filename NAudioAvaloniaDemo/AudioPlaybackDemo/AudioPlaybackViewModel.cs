@@ -112,7 +112,7 @@ namespace NAudioAvaloniaDemo.AudioPlaybackDemo
             if (topLevel == null) return;
             var files = await topLevel.StorageProvider.OpenFilePickerAsync(openOptions);
             if (files.Count == 0) return;
-            var selectedFilePath = files[0].Path.AbsolutePath;
+            var selectedFilePath = files[0].Path.LocalPath;
 
             if (!string.IsNullOrEmpty(selectedFilePath))
             {

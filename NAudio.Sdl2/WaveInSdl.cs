@@ -158,11 +158,21 @@ namespace NAudio.Sdl2
         /// <summary>
         /// WaveFormat we are actually recording in
         /// </summary>
+        /// <remarks>
+        /// <para>This property accessible after <see cref="StartRecording"/> call</para>
+        /// <para>If the <see cref="AudioConversion"/> is set to <see cref="AudioConversion.None"/> then this is the same as <see cref="WaveFormat"/></para>
+        /// </remarks>
         public WaveFormat ActualWaveFormat { get; private set; }
 
         /// <summary>
         /// Audio conversion features
         /// </summary>
+        /// <remarks>
+        /// These flags specify how SDL should behave when a device cannot offer a specific feature<br/>
+        /// If the application requests a feature that the hardware doesn't offer, SDL will always try to get the closest equivalent<br/>
+        /// For example, if you ask for float32 audio format, but the sound card only supports int16, SDL will set the hardware to int16
+        /// <para>If your application can only handle one specific data format, pass a <see cref="AudioConversion.None" /> for <see cref="AudioConversion"/> and let SDL transparently handle any differences</para>
+        /// </remarks>
         public AudioConversion AudioConversion { get; set; }
 
         /// <summary>

@@ -29,7 +29,7 @@ namespace NAudioSdl2Demo
             Console.CancelKeyPress += ConsoleOnCancelKeyPress;
 
             waveOut = new WaveOutSdl();
-            waveOut.AudioConversion = AudioConversion.Any;
+            waveOut.AudioConversion = AudioConversion.None;
             waveOut.DeviceId = deviceId;
             waveReader = new WaveFileReader(fileAbsolutePath);
             waveOut.Init(waveReader);

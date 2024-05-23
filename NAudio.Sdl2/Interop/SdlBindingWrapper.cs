@@ -389,7 +389,8 @@ namespace NAudio.Sdl2.Interop
         {
             InitSdl();
             var specResult = SDL_GetAudioDeviceSpec(deviceId, isCapture, out var spec);
-            if (specResult != 0) throw new SdlException(SDL_GetError());
+            if (specResult != 0) 
+                throw new SdlException(SDL_GetError());
             return spec;
         }
 

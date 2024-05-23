@@ -1,6 +1,7 @@
 ﻿using System;
 using NAudio.Sdl2;
 using NAudio.Sdl2.Structures;
+using NAudio.Wave;
 using NUnit.Framework;
 
 namespace NAudioTests.Sdl2

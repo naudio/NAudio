@@ -105,7 +105,7 @@ namespace NAudio.Sdl2
         public static List<WaveOutSdlCapabilities> GetCapabilitiesList()
         {
             List<WaveOutSdlCapabilities> list = new List<WaveOutSdlCapabilities>();
-            var deviceCount = WaveInSdl.DeviceCount;
+            var deviceCount = WaveOutSdl.DeviceCount;
             for (int index = 0; index < deviceCount; index++)
             {
                 list.Add(GetCapabilities(index));
@@ -132,7 +132,8 @@ namespace NAudio.Sdl2
                 Frequency = deviceAudioSpec.freq,
                 Samples = deviceAudioSpec.samples,
                 Silence = deviceAudioSpec.silence,
-                Size = deviceAudioSpec.size
+                Size = deviceAudioSpec.size,
+                IsAudioCapabilitiesValid = true
             };
         }
 
@@ -160,7 +161,7 @@ namespace NAudio.Sdl2
             get => adjustLatencyPercent;
             set => adjustLatencyPercent = value >= 0 && value <= 1
                 ? value
-                : throw new Exception("The percent value must be between 0 and 1");
+                : throw new SdlException("The percent value must be between 0 and 1");
         }
 
         /// <summary>
@@ -285,6 +286,7 @@ namespace NAudio.Sdl2
                 playbackState = PlaybackState.Stopped;
                 SdlBindingWrapper.StopPlaybackDevice(deviceNumber);
                 SdlBindingWrapper.ClearQueuedAudio(deviceNumber);
+                callbackEvent.Set(); // give the thread a kick, make sure we exit
             }
         }
 
@@ -315,7 +317,10 @@ namespace NAudio.Sdl2
         protected virtual void Dispose(bool disposing)
         {
             Stop();
-            DisposeBuffers();
+            if (disposing)
+            {
+                DisposeBuffers();
+            }
             CloseWaveOutSdl();
         }
 

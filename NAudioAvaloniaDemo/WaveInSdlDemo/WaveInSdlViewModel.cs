@@ -51,7 +51,9 @@ namespace NAudioAvaloniaDemo.WaveInSdlDemo
             try
             {
                 waveInSdl = new WaveInSdl();
-                waveInSdl.WaveFormat = new WaveFormat(sampleRate, bitDepth, channelCount);
+                waveInSdl.WaveFormat = WaveFormatEncoding == WaveFormatEncoding.IeeeFloat
+                    ? WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channelCount)
+                    : new WaveFormat(sampleRate, bitDepth, channelCount);
                 currentFileName = String.Format("NAudioDemo {0:yyy-MM-dd HH-mm-ss}.wav", DateTime.Now);
                 waveInSdl.StartRecording();
                 waveInSdl.RecordingStopped += OnRecordingStopped;
@@ -70,7 +72,7 @@ namespace NAudioAvaloniaDemo.WaveInSdlDemo
         {
             if (writer == null)
             {
-                writer = new WaveFileWriter(Path.Combine(RecordingsViewModel.OutputFolder, 
+                writer = new WaveFileWriter(Path.Combine(RecordingsViewModel.OutputFolder,
                     currentFileName),
                     waveInSdl.WaveFormat);
             }

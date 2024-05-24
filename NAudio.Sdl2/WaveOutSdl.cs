@@ -260,8 +260,7 @@ namespace NAudio.Sdl2
             desiredSpec.samples = frameSize;
             var deviceName = SdlBindingWrapper.GetPlaybackDeviceName(DeviceId);
             var openDeviceNumber = SdlBindingWrapper.OpenPlaybackDevice(deviceName, ref desiredSpec, out obtainedAudioSpec, AudioConversion);
-            var bitSize = SdlBindingWrapper.GetAudioFormatBitSize(obtainedAudioSpec.format);
-            ActualOutputWaveFormat = new WaveFormat(obtainedAudioSpec.freq, bitSize, obtainedAudioSpec.channels);
+            ActualOutputWaveFormat = GetWaveFormat(obtainedAudioSpec);
             deviceNumber = openDeviceNumber;
         }
 
@@ -366,6 +365,24 @@ namespace NAudio.Sdl2
         }
 
         /// <summary>
+        /// Return WaveFormat guessed by <see cref="SDL_AudioSpec"/>
+        /// </summary>
+        /// <param name="spec">Audio spec</param>
+        /// <returns>Wave format</returns>
+        private WaveFormat GetWaveFormat(SDL_AudioSpec spec)
+        {
+            var bitSize = SdlBindingWrapper.GetAudioFormatBitSize(spec.format);
+            if (spec.format == AUDIO_F32
+                || spec.format == AUDIO_F32LSB
+                || spec.format == AUDIO_F32MSB
+                || spec.format == AUDIO_F32SYS)
+            {
+                return WaveFormat.CreateIeeeFloatWaveFormat(spec.freq, spec.channels);
+            }
+            return new WaveFormat(spec.freq, bitSize, spec.channels);
+        }
+
+        /// <summary>
         /// Returns the audio format guessed by <see cref="WaveFormat.BitsPerSample"/>
         /// </summary>
         /// <returns>Audio format</returns>
@@ -438,7 +455,7 @@ namespace NAudio.Sdl2
 
                     Array.Clear(frameVolumeBuffer, 0, frameVolumeBuffer.Length);
                     SdlBindingWrapper.ChangePlaybackDeviceVolume(
-                        frameVolumeBuffer, 
+                        frameVolumeBuffer,
                         frameBuffer,
                         obtainedAudioSpec.format,
                         (uint)frameVolumeBuffer.Length,

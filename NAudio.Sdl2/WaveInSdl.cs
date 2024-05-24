@@ -134,7 +134,8 @@ namespace NAudio.Sdl2
                 Frequency = deviceAudioSpec.freq,
                 Samples = deviceAudioSpec.samples,
                 Silence = deviceAudioSpec.silence,
-                Size = deviceAudioSpec.size
+                Size = deviceAudioSpec.size,
+                IsAudioCapabilitiesValid = true
             };
         }
 
@@ -282,9 +283,26 @@ namespace NAudio.Sdl2
             desiredSpec.samples = frameSize;
             var deviceName = SdlBindingWrapper.GetRecordingDeviceName(DeviceId);
             var openDeviceNumber = SdlBindingWrapper.OpenRecordingDevice(deviceName, ref desiredSpec, out var obtainedSpec, AudioConversion);
-            var bitSize = SdlBindingWrapper.GetAudioFormatBitSize(obtainedSpec.format);
-            ActualWaveFormat = new WaveFormat(obtainedSpec.freq, bitSize, obtainedSpec.channels);
+            ActualWaveFormat = GetWaveFormat(obtainedSpec);
             return openDeviceNumber;
+        }
+
+        /// <summary>
+        /// Return WaveFormat guessed by <see cref="SDL_AudioSpec"/>
+        /// </summary>
+        /// <param name="spec">Audio spec</param>
+        /// <returns>Wave format</returns>
+        private WaveFormat GetWaveFormat(SDL_AudioSpec spec)
+        {
+            var bitSize = SdlBindingWrapper.GetAudioFormatBitSize(spec.format);
+            if (spec.format == AUDIO_F32
+                || spec.format == AUDIO_F32LSB
+                || spec.format == AUDIO_F32MSB
+                || spec.format == AUDIO_F32SYS)
+            {
+                return WaveFormat.CreateIeeeFloatWaveFormat(spec.freq, spec.channels);
+            }
+            return new WaveFormat(spec.freq, bitSize, spec.channels);
         }
 
         /// <summary>
@@ -353,7 +371,7 @@ namespace NAudio.Sdl2
                         {
                             uint recordedSize = SdlBindingWrapper.DequeueAudio(deviceNumber, (IntPtr)ptr, (uint)buffer.Length);
                             DataAvailable?.Invoke(this, new WaveInEventArgs(buffer, (int)recordedSize));
-                            PeakLevel = GetPeakLevel(buffer);
+                            PeakLevel = GetPeakLevel(buffer, (int)recordedSize);
                         }
 
                         size -= (uint)buffer.Length;
@@ -366,15 +384,35 @@ namespace NAudio.Sdl2
         /// Returns peak level
         /// </summary>
         /// <param name="buffer">Buffer from which peak is calculated</param>
+        /// <param name="bytesRecorded">Number of bytes recorded</param>
         /// <returns>Peak level</returns>
-        private float GetPeakLevel(byte[] buffer)
+        private float GetPeakLevel(byte[] buffer, int bytesRecorded)
         {
-            // It will always work or not ?
-            float max = buffer
-                .Take((int)buffer.Length * 2)
-                .Where((x, i) => i % 2 == 0)
-                .Select((y, i) => BitConverter.ToInt16(buffer, i * 2) / 32768f)
-                .Max();
+            // Is this correct at least for 4 bytes aligned buffer bound?
+            float max = 0;
+            var waveBuffer = new WaveBuffer(buffer);
+            if (ActualWaveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
+            {
+                for (int i = 4; i < bytesRecorded / 4; i += 4)
+                {
+                    var sample1 = waveBuffer.FloatBuffer[i - 4];
+                    var sample2 = waveBuffer.FloatBuffer[i - 3];
+                    var sample3 = waveBuffer.FloatBuffer[i - 2];
+                    var sample4 = waveBuffer.FloatBuffer[i - 1];
+                    var sample = Math.Max(Math.Abs(sample1), Math.Max(Math.Abs(sample2), Math.Max(Math.Abs(sample3), Math.Abs(sample4))));
+                    max = Math.Max(sample, max);
+                }
+            }
+            else
+            {
+                for (int i = 2; i < bytesRecorded / 2; i += 2)
+                {
+                    var sample1 = waveBuffer.ShortBuffer[i - 2] / 32768f;
+                    var sample2 = waveBuffer.ShortBuffer[i - 1] / 32768f;
+                    var sample = Math.Max(Math.Abs(sample1), Math.Abs(sample2));
+                    max = Math.Max(sample, max);
+                }
+            }
             return max;
         }
 

@@ -3,7 +3,7 @@
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0</TargetFrameworks>
 		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-		<Version>2.2.4</Version>
+		<Version>2.2.5</Version>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<SignAssembly>true</SignAssembly>

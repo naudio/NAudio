@@ -1,6 +1,5 @@
 ﻿using NAudio.CoreAudioApi.Interfaces;
-using System;
-using System.Linq;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace NAudio.CoreAudioApi
@@ -8,7 +7,7 @@ namespace NAudio.CoreAudioApi
     /// <summary>
     /// Collection of sessions.
     /// </summary>
-    public class SessionCollection
+    public class SessionCollection : IEnumerable<AudioSessionControl>
     {
         readonly IAudioSessionEnumerator audioSessionEnumerator;
 
@@ -42,5 +41,30 @@ namespace NAudio.CoreAudioApi
                 return result;
             }
         }
+
+        #region IEnumerable<MMDevice> Members
+
+        /// <summary>
+        /// Get Enumerator
+        /// </summary>
+        /// <returns>AudioSessionControl enumerator</returns>
+        public IEnumerator<AudioSessionControl> GetEnumerator()
+        {
+            for (int index = 0; index < Count; index++)
+            {
+                yield return this[index];
+            }
+        }
+
+        #endregion
+
+        #region IEnumerable Members
+
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
+        #endregion
     }
 }

@@ -42,7 +42,7 @@ namespace NAudio.CoreAudioApi
             }
         }
 
-        #region IEnumerable<MMDevice> Members
+        #region IEnumerable<AudioSessionControl> Members
 
         /// <summary>
         /// Get Enumerator

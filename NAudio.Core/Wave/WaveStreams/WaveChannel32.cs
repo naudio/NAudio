@@ -1,5 +1,6 @@
-using System;
+using NAudio.Core;
 using NAudio.Wave.SampleProviders;
+using System;
 
 namespace NAudio.Wave
 {
@@ -32,7 +33,7 @@ namespace NAudio.Wave
         {
             PadWithZeroes = true;
 
-            var providers = new ISampleChunkConverter[] 
+            var providers = new ISampleChunkConverter[]
             {
                 new Mono8SampleChunkConverter(),
                 new Stereo8SampleChunkConverter(),
@@ -56,7 +57,7 @@ namespace NAudio.Wave
             {
                 throw new ArgumentException("Unsupported sourceStream format");
             }
-         
+
             // always outputs stereo 32 bit
             waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sourceStream.WaveFormat.SampleRate, 2);
             destBytesPerSample = 8; // includes stereo factoring
@@ -147,7 +148,7 @@ namespace NAudio.Wave
                 // 1. fill with silence
                 if (position < 0)
                 {
-                    bytesWritten = (int) Math.Min(numBytes, 0 - position);
+                    bytesWritten = (int)Math.Min(numBytes, 0 - position);
                     for (int n = 0; n < bytesWritten; n++)
                         destBuffer[n + offset] = 0;
                 }
@@ -185,7 +186,7 @@ namespace NAudio.Wave
         /// If true, Read always returns the number of bytes requested
         /// </summary>
         public bool PadWithZeroes { get; set; }
-      
+
 
         /// <summary>
         /// <see cref="WaveStream.WaveFormat"/>
@@ -223,7 +224,7 @@ namespace NAudio.Wave
             {
                 if (position + count < 0)
                     return false;
-                return (position < length) && (volume != 0);
+                return (position < length) && (!volume.AreEqual(0));
             }
             return false;
         }
@@ -254,7 +255,7 @@ namespace NAudio.Wave
         public event EventHandler<SampleEventArgs> Sample;
 
         // reuse the same object every time to avoid making lots of work for the garbage collector
-        private SampleEventArgs sampleEventArgs = new SampleEventArgs(0,0);
+        private SampleEventArgs sampleEventArgs = new SampleEventArgs(0, 0);
 
         /// <summary>
         /// Raise the sample event (no check for null because it has already been done)

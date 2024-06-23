@@ -1,6 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using NAudio.Core;
+using System;
 
 namespace NAudio.Wave
 {
@@ -55,14 +54,14 @@ namespace NAudio.Wave
         {
             // always read from the source
             int bytesRead = sourceProvider.Read(buffer, offset, count);
-            if (this.volume == 0.0f)
+            if (this.volume.AreEqual(0.0f))
             {
                 for (int n = 0; n < bytesRead; n++)
                 {
                     buffer[offset++] = 0;
                 }
             }
-            else if (this.volume != 1.0f)
+            else if (!this.volume.AreEqual(1.0f))
             {
                 for (int n = 0; n < bytesRead; n += 2)
                 {

@@ -1,0 +1,33 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignHeight="300" d:DesignWidth="300"
+             x:Class="NAudioAvaloniaDemo.AudioPlaybackDemo.AudioPlaybackDemoView">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="2*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <StackPanel Orientation="Horizontal">
+            <Label>Select Visualization: </Label>
+            <ComboBox ItemsSource="{Binding Visualizations}" DisplayMemberBinding="{Binding Name}" SelectedItem="{Binding SelectedVisualization, Mode=TwoWay}" Width="270" />
+        </StackPanel>
+        <ContentPresenter Content="{Binding Visualization}" Grid.Row="1" />
+        <StackPanel Orientation="Horizontal" Grid.Row="2">
+            <Button Command="{Binding OpenFileCommand}" Margin="2" Padding="5" ToolTip.Tip="Open">
+                Open
+            </Button>
+            <Button Command="{Binding StopCommand}" Margin="2" ToolTip.Tip="Stop">
+                <Rectangle Fill="DarkBlue" Width="12" Height="12" Margin="3" RadiusX="2" RadiusY="2"/>
+            </Button>
+            <Button Command="{Binding PauseCommand}" Margin="2" ToolTip.Tip="Pause">
+                <Path Fill="Maroon" Width="12" Height="12" Margin="3" Data="M 0,0 h 1 v 1 h -1 Z M 2,0 h 1 v 1 h -1 Z" Stretch="Fill" StrokeJoin="Round" />
+            </Button>
+            <Button Command="{Binding PlayCommand}" Margin="2" ToolTip.Tip="Play">
+                <Path Fill="DarkGreen" Margin="3" Width="12" Height="12" Data="M 0,0 L 1,1 L 0,2 Z" Stretch="Fill" StrokeJoin="Round"/>
+            </Button>
+        </StackPanel>
+    </Grid>
+</UserControl>

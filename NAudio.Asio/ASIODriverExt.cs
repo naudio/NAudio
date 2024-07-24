@@ -28,7 +28,6 @@ namespace NAudio.Wave.Asio
         private int numberOfOutputChannels;
         private int numberOfInputChannels;
         private AsioFillBufferCallback fillBufferCallback;
-        private int bufferSize;
         private int outputChannelOffset;
         private int inputChannelOffset;
         /// <summary>
@@ -172,10 +171,12 @@ namespace NAudio.Wave.Asio
         /// <summary>
         /// Creates the buffers for playing.
         /// </summary>
-        /// <param name="numberOfOutputChannels">The number of outputs channels.</param>
-        /// <param name="numberOfInputChannels">The number of input channel.</param>
-        /// <param name="useMaxBufferSize">if set to <c>true</c> [use max buffer size] else use Prefered size</param>
-        public int CreateBuffers(int numberOfOutputChannels, int numberOfInputChannels, bool useMaxBufferSize)
+        /// <param name="numberOfOutputChannels"></param>
+        /// <param name="numberOfInputChannels"></param>
+        /// <param name="bufferSize"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public int CreateBuffers(int numberOfOutputChannels, int numberOfInputChannels, int bufferSize = -1)
         {
             if (numberOfOutputChannels < 0 || numberOfOutputChannels > capability.NbOutputChannels)
             {
@@ -216,17 +217,30 @@ namespace NAudio.Wave.Asio
                 bufferInfos[totalIndex].pBuffer1 = IntPtr.Zero;
             }
 
-            if (useMaxBufferSize)
+            bool bufferSizeWentWrong = false;
+            try
             {
-                // use the drivers maximum buffer size
-                bufferSize = capability.BufferMaxSize;
+                bufferSize = EnsureBufferSize(bufferSize);
+                CreateAsioBuffer(nbTotalChannels, bufferSize);
             }
-            else
+            catch
             {
-                // use the drivers preferred buffer size
-                bufferSize = capability.BufferPreferredSize;
+                bufferSizeWentWrong = true;
             }
 
+            if (bufferSizeWentWrong)
+            {
+                bufferSize = capability.BufferPreferredSize;
+                CreateAsioBuffer(nbTotalChannels, bufferSize);
+            }
+
+            // Check if outputReady is supported
+            isOutputReadySupported = (driver.OutputReady() == AsioError.ASE_OK);
+            return bufferSize;
+        }
+
+        private void CreateAsioBuffer(int nbTotalChannels, int bufferSize)
+        {
             unsafe
             {
                 fixed (AsioBufferInfo* infos = &bufferInfos[0])
@@ -237,9 +251,57 @@ namespace NAudio.Wave.Asio
                     driver.CreateBuffers(pOutputBufferInfos, nbTotalChannels, bufferSize, ref callbacks);
                 }
             }
+        }
 
-            // Check if outputReady is supported
-            isOutputReadySupported = (driver.OutputReady() == AsioError.ASE_OK);
+        private int EnsureBufferSize(int bufferSize)
+        {
+            // If a preference was not submitted than go for the preferred size
+            if (bufferSize == -1)
+                bufferSize = capability.BufferPreferredSize;
+            else if (bufferSize < capability.BufferMinSize)
+                bufferSize = capability.BufferMinSize;
+            else if (bufferSize > capability.BufferMaxSize)
+                bufferSize = capability.BufferMaxSize;
+            else
+            {
+                /* BUFFER GRANULARITY
+                 * Calculating a supported buffer size can be made by starting from the minimum supported
+                 * size (capability.BufferMinSize) and adding each time the value of granularity (capability.BufferGranularity).
+                 * With a minimum of 8 and a granularity of 16 we got this possible values:
+                 *      8, 24, 40, 56, 72, 88, 104, etc.. until max size is reached (capability.BufferMaxSize)
+                 */
+
+                // If the requested buffer size is not supported by granularity we choose the closest value supported
+                if ((bufferSize - capability.BufferMinSize) % capability.BufferGranularity != 0)
+                {
+                    int prevBS = -1,
+                        nextBs = -1;
+                    for (int bs = capability.BufferMinSize; bs < capability.BufferMaxSize; bs += capability.BufferGranularity)
+                        if (bs > bufferSize)
+                        {
+                            nextBs = bs;
+                            prevBS = bs - capability.BufferGranularity;
+                            break;
+                        }
+                    if (prevBS == -1 && nextBs == -1)
+                        bufferSize = capability.BufferPreferredSize;
+                    else if (prevBS == -1 && nextBs > 0)
+                        bufferSize = nextBs;
+                    else if (prevBS > 0 && nextBs == -1)
+                        bufferSize = prevBS;
+                    else
+                    {
+                        int diffPrev = bufferSize - prevBS,
+                            diffNext = nextBs - bufferSize;
+                        if (diffPrev == diffNext)
+                            bufferSize = nextBs;
+                        else if (diffPrev < diffNext)
+                            bufferSize = diffPrev;
+                        else if (diffPrev > diffNext)
+                            bufferSize = diffNext;
+                    }
+                }
+            }
             return bufferSize;
         }
 
@@ -285,6 +347,18 @@ namespace NAudio.Wave.Asio
 
             // Get BufferSize
             driver.GetBufferSize(out capability.BufferMinSize, out capability.BufferMaxSize, out capability.BufferPreferredSize, out capability.BufferGranularity);
+        }
+
+        /// <summary>
+        /// Gets the size of the buffer.
+        /// </summary>
+        /// <param name="minSize">Size of the min.</param>
+        /// <param name="maxSize">Size of the max.</param>
+        /// <param name="preferredSize">Size of the preferred.</param>
+        /// <param name="granularity">The granularity.</param>
+        public void GetBufferSize(out int minSize, out int maxSize, out int preferredSize, out int granularity)
+        {
+            driver.GetBufferSize(out minSize, out maxSize, out preferredSize, out granularity);
         }
 
         /// <summary>

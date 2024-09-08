@@ -161,7 +161,6 @@ namespace NAudio.Wave
             BufferUpdate();
             while (avail >= PERIOD_SIZE)
             {
-                Console.WriteLine("avail:{0} read:{1}", avail, "0");
                 AlsaDriverExt.PcmWriteI(Handle, waveBuffer, PERIOD_SIZE);
                 avail = AlsaDriverExt.PcmAvailUpdate(Handle);
             } 

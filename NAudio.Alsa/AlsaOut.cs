@@ -98,6 +98,12 @@ namespace NAudio.Wave
                     OutputWaveFormat = waveProvider.WaveFormat;
                     AlsaDriverExt.PcmHwParamsSetFormat(Handle, hwparams, format);
                 }
+                else if ((error = AlsaDriverExt.PcmHwParamsTestFormat(Handle, hwparams, PCMFormat.SND_PCM_FORMAT_S32_LE)) == 0)
+                {
+                    AlsaDriverExt.PcmHwParamsSetFormat(Handle, hwparams, PCMFormat.SND_PCM_FORMAT_S32_LE);
+                    sourceStream = new SampleToWaveProvider32(new WaveToSampleProvider(waveProvider));
+                    OutputWaveFormat = sourceStream.WaveFormat;
+                }
                 else if ((error = AlsaDriverExt.PcmHwParamsTestFormat(Handle, hwparams, PCMFormat.SND_PCM_FORMAT_S16_LE)) == 0)
                 {
                     AlsaDriverExt.PcmHwParamsSetFormat(Handle, hwparams, PCMFormat.SND_PCM_FORMAT_S16_LE);

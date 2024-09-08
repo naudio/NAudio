@@ -3,7 +3,7 @@ using System;
 
 public abstract class AlsaPcm
 {
-    protected const uint PERIOD_QUANTITY = 4;
+    protected const uint PERIOD_QUANTITY = 8;
     protected const ulong PERIOD_SIZE = 1024;
     protected IntPtr Handle = default;
     protected bool isInitialized = false;

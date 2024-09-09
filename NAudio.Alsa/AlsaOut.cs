@@ -20,8 +20,8 @@ namespace NAudio.Wave
         public PlaybackState PlaybackState
         {
             get => playbackState;
-            set => throw new NotImplementedException("");
         }
+        public bool HasReachedEnd { get; private set; }
         public void Dispose()
         {
             AlsaDriverExt.PcmClose(Handle);
@@ -33,20 +33,43 @@ namespace NAudio.Wave
         }
         public void Play()
         {
-            int error;
-            if ((error = AlsaDriverExt.PcmStart(Handle)) == 0)
+            if (playbackState == PlaybackState.Paused)
             {
-                return;
+                int error;
+                if ((error = AlsaDriverExt.PcmPause(Handle, 0)) == 0)
+                {
+                    playbackState = PlaybackState.Playing;
+                }
             }
-            Console.WriteLine(AlsaDriverExt.ErrorString(error));
+            else if (playbackState != PlaybackState.Playing)
+            {
+                int error;
+                if ((error = AlsaDriverExt.PcmStart(Handle)) == 0)
+                {
+                    playbackState = PlaybackState.Playing;
+                    HasReachedEnd = false;
+                    return;
+                }
+                Console.WriteLine(AlsaDriverExt.ErrorString(error));
+            }
         }
         public void Stop()
         {
-
+            playbackState = PlaybackState.Stopped;
+            AlsaDriverExt.PcmDrop(Handle);
+            HasReachedEnd = false;
+            RaisePlaybackStopped(null); 
         }
         public void Pause()
         {
-
+            if (playbackState == PlaybackState.Playing)
+            {
+                int error;
+                if ((error = AlsaDriverExt.PcmPause(Handle, 1)) == 0)
+                {
+                    playbackState = PlaybackState.Paused;
+                }
+            }
         }
         ~AlsaOut()
         {
@@ -167,7 +190,9 @@ namespace NAudio.Wave
             BufferUpdate();
             while (avail >= PERIOD_SIZE)
             {
-                AlsaDriverExt.PcmWriteI(Handle, waveBuffer, PERIOD_SIZE);
+                if ((error = AlsaDriverExt.PcmWriteI(Handle, waveBuffer, PERIOD_SIZE)) < 0)
+                {
+                }
                 avail = AlsaDriverExt.PcmAvailUpdate(Handle);
             } 
         }
@@ -181,6 +206,15 @@ namespace NAudio.Wave
             if (read == 0)
             {
                 Stop();
+                HasReachedEnd = true;
+            }
+        }
+        private void RaisePlaybackStopped(Exception e)
+        {
+            var handler = PlaybackStopped;
+            if (handler != null)
+            {
+                handler(this, new StoppedEventArgs(e));
             }
         }
     }

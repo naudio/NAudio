@@ -2,16 +2,21 @@
 using NAudio.Wave;
 using NAudio.Wave.Alsa;
 using NAudio.Wave.SampleProviders;
+using System.Threading.Tasks;
 namespace NAudio.Wave
 {
 
     public class AlsaOut : AlsaPcm, IWavePlayer
     {
+        private bool async;
         private IWaveProvider sourceStream;
         private PlaybackState playbackState;
         private byte[] waveBuffer;
+        private byte[][] buffers;
+        private int bufferNum;
         public WaveFormat OutputWaveFormat { get; private set; }
         public event EventHandler<StoppedEventArgs> PlaybackStopped;
+        public int NumberOfBuffers { get; set; } = 2;
         public float Volume 
         {
             get => throw new NotImplementedException("");
@@ -43,14 +48,22 @@ namespace NAudio.Wave
             }
             else if (playbackState != PlaybackState.Playing)
             {
-                int error;
-                if ((error = AlsaDriverExt.PcmStart(Handle)) == 0)
+                if (async) 
+                {
+                    int error;
+                    if ((error = AlsaDriverExt.PcmStart(Handle)) == 0)
+                    {
+                        playbackState = PlaybackState.Playing;
+                        HasReachedEnd = false;
+                        return;
+                    }
+                    Console.WriteLine(AlsaDriverExt.ErrorString(error));
+                }
+                else 
                 {
                     playbackState = PlaybackState.Playing;
-                    HasReachedEnd = false;
-                    return;
+                    PlayPcmSync();
                 }
-                Console.WriteLine(AlsaDriverExt.ErrorString(error));
             }
         }
         public void Stop()
@@ -180,8 +193,44 @@ namespace NAudio.Wave
                 waveBuffer = new byte[buffer_size];
                 AlsaDriverExt.PcmPrepare(Handle);
                 AlsaDriverExt.PcmWriteI(Handle, waveBuffer, 2 * PERIOD_SIZE);
-                AlsaDriverExt.AsyncAddPcmHandler(out IntPtr handler, Handle, PcmCallbackHandler, default);
+                if ((error = AlsaDriverExt.AsyncAddPcmHandler(out IntPtr handler, Handle, PcmCallbackHandler, default)) != 0)
+                {
+                    async = false;
+                    buffers = new byte[NumberOfBuffers][];
+                    for (int i = 0; i < NumberOfBuffers; i++)
+                    {
+                        buffers[i] = new byte[buffer_size];    
+                    }
+                }
+                else
+                {
+                    async = true;
+                }
             }
+        }
+        private void PlayPcmSync()
+        {
+            Task.Run(() => {
+                while (playbackState != PlaybackState.Stopped)
+                {
+                    ulong avail = AlsaDriverExt.PcmAvailUpdate(Handle);
+                    while (avail >= PERIOD_SIZE)
+                    {
+                        BufferUpdate();
+                        SwapBuffers();
+                        int error = AlsaDriverExt.PcmWriteI(Handle, waveBuffer, PERIOD_SIZE);
+                        if (error < 0)
+                        {
+                            Console.WriteLine(AlsaDriverExt.ErrorString(error));
+                        }
+                    }
+                }
+            });
+        }
+        private void SwapBuffers()
+        {
+            bufferNum = ++bufferNum % NumberOfBuffers;
+            waveBuffer = buffers[bufferNum];
         }
         private void PcmCallbackHandler(IntPtr callback)    
         {

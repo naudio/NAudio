@@ -32,18 +32,18 @@ namespace NAudio.Wave.Alsa
             int error;
             card = null;
             IntPtr info = default;
-            AlsaDriverExt.CtlCardInfoMalloc(ref info);
-            if ((error = AlsaDriverExt.CtlOpen(out IntPtr handle, name, 0)) < 0)
+            AlsaInterop.CtlCardInfoMalloc(ref info);
+            if ((error = AlsaInterop.CtlOpen(out IntPtr handle, name, 0)) < 0)
             {
-                AlsaDriverExt.CtlCardInfoFree(info);
-                Console.WriteLine(AlsaDriverExt.ErrorString(error));
+                AlsaInterop.CtlCardInfoFree(info);
+                Console.WriteLine(AlsaInterop.ErrorString(error));
                 return false;
             }
-            if ((error = AlsaDriverExt.CtlCardInfo(handle, info)) < 0)
+            if ((error = AlsaInterop.CtlCardInfo(handle, info)) < 0)
             {
-                AlsaDriverExt.CtlCardInfoFree(info);
-                Console.WriteLine(AlsaDriverExt.ErrorString(error));
-                AlsaDriverExt.CtlClose(handle);
+                AlsaInterop.CtlCardInfoFree(info);
+                Console.WriteLine(AlsaInterop.ErrorString(error));
+                AlsaInterop.CtlClose(handle);
                 return false;
             }
             card = new AlsaCard(handle);
@@ -51,10 +51,10 @@ namespace NAudio.Wave.Alsa
             int dev = -1;
             do 
             {
-                if ((error = AlsaDriverExt.CtlPcmNextDevice(handle, ref dev)) < 0)
+                if ((error = AlsaInterop.CtlPcmNextDevice(handle, ref dev)) < 0)
                 {
-                    AlsaDriverExt.CtlCardInfoFree(info);
-                    Console.WriteLine(AlsaDriverExt.ErrorString(error));
+                    AlsaInterop.CtlCardInfoFree(info);
+                    Console.WriteLine(AlsaInterop.ErrorString(error));
                     return false;
                 }
                 if (dev < 0)
@@ -66,19 +66,19 @@ namespace NAudio.Wave.Alsa
                     card.OutputDevices.Add(device);
                 }
             } while (true);
-            card.Name = AlsaDriverExt.CtlCardInfoGetName(info);
-            card.Index = AlsaDriverExt.CtlCardInfoGetCard(info);
-            card.Id = AlsaDriverExt.CtlCardInfoGetID(info);
-            card.Driver = AlsaDriverExt.CtlCardInfoGetDriver(info);
-            card.LongName = AlsaDriverExt.CtlCardInfoGetLongName(info);
-            card.MixerName = AlsaDriverExt.CtlCardInfoGetMixerName(info); 
-            card.Components = AlsaDriverExt.CtlCardInfoGetComponents(info); 
-            AlsaDriverExt.CtlCardInfoFree(info);
+            card.Name = AlsaInterop.CtlCardInfoGetName(info);
+            card.Index = AlsaInterop.CtlCardInfoGetCard(info);
+            card.Id = AlsaInterop.CtlCardInfoGetID(info);
+            card.Driver = AlsaInterop.CtlCardInfoGetDriver(info);
+            card.LongName = AlsaInterop.CtlCardInfoGetLongName(info);
+            card.MixerName = AlsaInterop.CtlCardInfoGetMixerName(info); 
+            card.Components = AlsaInterop.CtlCardInfoGetComponents(info); 
+            AlsaInterop.CtlCardInfoFree(info);
             return true;
         }
         public void Dispose()
         {
-            AlsaDriverExt.CtlClose(handle);
+            AlsaInterop.CtlClose(handle);
         }
         public override string ToString()
         {

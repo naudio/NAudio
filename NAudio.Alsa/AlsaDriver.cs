@@ -13,7 +13,7 @@ namespace NAudio.Wave.Alsa
         public void EnumerateCards()
         {
             int card = -1;
-            if (AlsaDriverExt.NextCard(ref card) < 0 || card < 0)
+            if (AlsaInterop.NextCard(ref card) < 0 || card < 0)
             {
                 throw new Exception("no soundcards found");
             }
@@ -24,7 +24,7 @@ namespace NAudio.Wave.Alsa
                     _cards.Add(card_obj);
                     Console.WriteLine(name);
                 }
-                AlsaDriverExt.NextCard(ref card);
+                AlsaInterop.NextCard(ref card);
             }
         }
         internal static PCMFormat GetFormat(WaveFormat format)

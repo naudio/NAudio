@@ -2,7 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 namespace NAudio.Wave.Alsa
 {
-    internal class AlsaDriverExt
+    internal class AlsaInterop
     {
         public delegate void PcmCallback(IntPtr handler);
         private const string AlsaLibrary = "libasound";
@@ -112,6 +112,8 @@ namespace NAudio.Wave.Alsa
         internal static unsafe extern int PcmWriteI(IntPtr pcm, byte[] buffer, ulong size);
         [DllImport(AlsaLibrary, EntryPoint = "snd_async_add_pcm_handler")]
         internal static extern int AsyncAddPcmHandler(out IntPtr handler, IntPtr pcm, PcmCallback callback, IntPtr private_data);
+        [DllImport(AlsaLibrary, EntryPoint = "snd_async_handler_get_pcm")]
+        internal static extern IntPtr AsyncHandlerGetPcm(IntPtr handler);
         [DllImport(AlsaLibrary, EntryPoint = "snd_pcm_start")]
         internal static extern int PcmStart(IntPtr pcm);
         [DllImport(AlsaLibrary, EntryPoint = "snd_pcm_drop")]

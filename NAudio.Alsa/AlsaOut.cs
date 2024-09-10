@@ -92,6 +92,23 @@ namespace NAudio.Wave
                 var errorstring = AlsaInterop.ErrorString(error);
                 throw new Exception($"snd_pcm_open: {errorstring}");
             }
+            callback = Callback;
+            ulong buffer_size = PERIOD_SIZE * PERIOD_QUANTITY;
+            if (true || (error = AlsaInterop.AsyncAddPcmHandler(out IntPtr handler, Handle, Callback, default)) != 0)
+            {
+                async = false;
+                buffers = new byte[NumberOfBuffers][];
+                for (int i = 0; i < NumberOfBuffers; i++)
+                {
+                    buffers[i] = new byte[buffer_size];    
+                }
+                waveBuffer = buffers[bufferNum];
+            }
+            else
+            {
+                waveBuffer = new byte[buffer_size];
+                async = true;
+            }
         }
         public AlsaOut() : this("default")
         {
@@ -123,7 +140,6 @@ namespace NAudio.Wave
             int error;
             int dir = 0;
             uint periods = PERIOD_QUANTITY;
-            ulong buffer_size = PERIOD_SIZE * PERIOD_QUANTITY;
             if (isInitialized)
             {
                 throw new InvalidOperationException("Already initialized this PCM");
@@ -179,6 +195,7 @@ namespace NAudio.Wave
                     AlsaInterop.PcmHwParamsFree(hwparams);
                     throw new NotSupportedException("Periods not supported");
                 }
+                ulong buffer_size = (ulong)waveBuffer.Length;
                 if ((AlsaInterop.PcmHwParamsSetBufferSizeNear(Handle, hwparams, ref buffer_size)) != 0)
                 {
                     AlsaInterop.PcmHwParamsFree(hwparams);
@@ -200,23 +217,7 @@ namespace NAudio.Wave
                     throw new NotSupportedException(AlsaInterop.ErrorString(error));
                 }
                 AlsaInterop.PcmSwParamsFree(swparams);
-                waveBuffer = new byte[buffer_size];
                 AlsaInterop.PcmPrepare(Handle);
-                AlsaInterop.PcmWriteI(Handle, waveBuffer, 2 * PERIOD_SIZE);
-                callback = Callback;
-                if ((error = AlsaInterop.AsyncAddPcmHandler(out IntPtr handler, Handle, Callback, default)) != 0)
-                {
-                    async = false;
-                    buffers = new byte[NumberOfBuffers][];
-                    for (int i = 0; i < NumberOfBuffers; i++)
-                    {
-                        buffers[i] = new byte[buffer_size];    
-                    }
-                }
-                else
-                {
-                    async = true;
-                }
             }
         }
         private void PlayPcmSync()

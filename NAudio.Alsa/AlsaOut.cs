@@ -41,10 +41,15 @@ namespace NAudio.Wave
         {
             if (playbackState == PlaybackState.Paused)
             {
+                playbackState = PlaybackState.Playing;
                 int error;
-                if ((error = AlsaInterop.PcmPause(Handle, 0)) == 0)
+                if ((error = AlsaInterop.PcmPause(Handle, 0)) < 0)
                 {
-                    playbackState = PlaybackState.Playing;
+                    throw new Exception(AlsaInterop.ErrorString(error));
+                }
+                if (!async)
+                {
+                    PlayPcmSync();
                 }
             }
             else if (playbackState != PlaybackState.Playing)
@@ -62,6 +67,7 @@ namespace NAudio.Wave
                 else 
                 {
                     playbackState = PlaybackState.Playing;
+                    BufferUpdate();
                     PlayPcmSync();
                 }
             }
@@ -77,10 +83,11 @@ namespace NAudio.Wave
         {
             if (playbackState == PlaybackState.Playing)
             {
+                playbackState = PlaybackState.Paused;
                 int error;
-                if ((error = AlsaInterop.PcmPause(Handle, 1)) == 0)
+                if ((error = AlsaInterop.PcmPause(Handle, 1)) < 0)
                 {
-                    playbackState = PlaybackState.Paused;
+                    throw new Exception(AlsaInterop.ErrorString(error));
                 }
             }
         }
@@ -223,14 +230,14 @@ namespace NAudio.Wave
         private void PlayPcmSync()
         {
             Task.Run(() => {
-                while (playbackState != PlaybackState.Stopped)
+                while (playbackState == PlaybackState.Playing)
                 {
                     ulong avail = AlsaInterop.PcmAvailUpdate(Handle);
                     while (avail >= PERIOD_SIZE)
                     {
-                        BufferUpdate();
                         SwapBuffers();
                         int error = AlsaInterop.PcmWriteI(Handle, waveBuffer, PERIOD_SIZE);
+                        BufferUpdate();
                         if (error < 0)
                         {
                             throw new Exception(AlsaInterop.ErrorString(error));
@@ -249,12 +256,12 @@ namespace NAudio.Wave
         {
             ulong avail = AlsaInterop.PcmAvailUpdate(Handle);
             int error;
-            BufferUpdate();
             while (avail >= PERIOD_SIZE)
             {
                 if ((error = AlsaInterop.PcmWriteI(Handle, waveBuffer, PERIOD_SIZE)) < 0)
                 {
                 }
+                BufferUpdate();
                 avail = AlsaInterop.PcmAvailUpdate(Handle);
             } 
         }

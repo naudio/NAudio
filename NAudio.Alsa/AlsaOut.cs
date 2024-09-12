@@ -159,13 +159,10 @@ namespace NAudio.Wave
             if (waveProvider != null)
             {
                 sourceStream = waveProvider;
-                int desiredSampleRate = waveProvider.WaveFormat.SampleRate;
                 ulong buffer_size = (ulong)waveBuffer.Length;
                 GetHardwareParams();
                 SetInterleavedAccess();
                 SetFormat(waveProvider);
-                SetSampleRate((uint)desiredSampleRate);
-                SetNumberOfChannels((uint)waveProvider.WaveFormat.Channels);
                 SetPeriods(ref periods, ref dir);
                 SetBufferSize(ref buffer_size);
                 SetHardwareParams();
@@ -211,6 +208,9 @@ namespace NAudio.Wave
                 AlsaInterop.PcmHwParamsFree(HwParams);
                 throw new NotSupportedException("Sample type not supported");
             }
+            int desiredSampleRate = waveProvider.WaveFormat.SampleRate;
+            SetSampleRate((uint)desiredSampleRate);
+            SetNumberOfChannels((uint)waveProvider.WaveFormat.Channels);
         }
         private void PlayPcmSync()
         {

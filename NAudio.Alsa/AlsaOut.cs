@@ -169,16 +169,15 @@ namespace NAudio.Wave
                 SetPeriods(ref periods, ref dir);
                 SetBufferSize(ref buffer_size);
                 SetHardwareParams();
-                AlsaInterop.PcmSwParamsMalloc(out IntPtr swparams);
-                AlsaInterop.PcmSwParamsCurrent(Handle, swparams);
-                AlsaInterop.PcmSwParamsSetStartThreshold(Handle, swparams, buffer_size - PERIOD_SIZE);
-                AlsaInterop.PcmSwParamsSetAvailMin(Handle, swparams, PERIOD_SIZE);
-                if ((error = AlsaInterop.PcmSwParams(Handle, swparams)) < 0)
+                GetSoftwareParams();
+                AlsaInterop.PcmSwParamsSetStartThreshold(Handle, SwParams, buffer_size - PERIOD_SIZE);
+                AlsaInterop.PcmSwParamsSetAvailMin(Handle, SwParams, PERIOD_SIZE);
+                if ((error = AlsaInterop.PcmSwParams(Handle, SwParams)) < 0)
                 {
-                    AlsaInterop.PcmSwParamsFree(swparams);
+                    AlsaInterop.PcmSwParamsFree(SwParams);
                     throw new NotSupportedException(AlsaInterop.ErrorString(error));
                 }
-                AlsaInterop.PcmSwParamsFree(swparams);
+                AlsaInterop.PcmSwParamsFree(SwParams);
                 AlsaInterop.PcmPrepare(Handle);
                 if (async)
                 {

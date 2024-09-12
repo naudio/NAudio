@@ -8,6 +8,7 @@ public abstract class AlsaPcm
     protected const ulong PERIOD_SIZE = 1024;
     protected IntPtr Handle = default;
     protected IntPtr HwParams = default;
+    protected IntPtr SwParams = default;
     protected bool isInitialized = false;
     public int Card { get; private set; }
     public uint Device { get; private set; }
@@ -27,6 +28,11 @@ public abstract class AlsaPcm
             AlsaInterop.PcmHwParamsFree(HwParams);
             throw new NotSupportedException(AlsaInterop.ErrorString(error));
         }
+    }
+    protected void GetSoftwareParams()
+    {
+        AlsaInterop.PcmSwParamsMalloc(out SwParams);
+        AlsaInterop.PcmSwParamsCurrent(Handle, SwParams);
     }
     protected void SetInterleavedAccess()
     {

@@ -8,6 +8,7 @@ namespace NAudio.Wave.Alsa
         private const string AlsaLibrary = "libasound";
         [DllImport(AlsaLibrary, EntryPoint = "snd_card_next")]
         internal static extern int NextCard(ref int rcard);
+        [DllImport(AlsaLibrary, EntryPoint = "snd_ctl_open")]
         internal static extern int CtlOpen(out IntPtr ctlp, string name, int mode);
         [DllImport(AlsaLibrary, EntryPoint = "snd_ctl_close")]
         internal static extern int CtlClose(IntPtr ctl);

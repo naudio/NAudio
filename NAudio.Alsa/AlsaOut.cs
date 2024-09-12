@@ -31,6 +31,7 @@ namespace NAudio.Wave
         public void Dispose()
         {
             AlsaInterop.PcmClose(Handle);
+            AlsaInterop.PcmHwParamsFree(HwParams);
         }
 
         public void Init(IWaveProvider waveProvider)
@@ -159,64 +160,15 @@ namespace NAudio.Wave
             {
                 sourceStream = waveProvider;
                 int desiredSampleRate = waveProvider.WaveFormat.SampleRate;
-                AlsaInterop.PcmHwParamsMalloc(out IntPtr hwparams);    
-                AlsaInterop.PcmHwParamsAny(Handle, hwparams);
-                if ((error = AlsaInterop.PcmHwParamsTestAccess(Handle, hwparams, PCMAccess.SND_PCM_ACCESS_RW_INTERLEAVED)) != 0)
-                {
-                    throw new Exception(AlsaInterop.ErrorString(error));
-                }
-                AlsaInterop.PcmHwParamsSetAccess(Handle, hwparams, PCMAccess.SND_PCM_ACCESS_RW_INTERLEAVED);
-                var format = AlsaDriver.GetFormat(waveProvider.WaveFormat);
-                if (AlsaInterop.PcmHwParamsTestFormat(Handle, hwparams, format) == 0)
-                {
-                    OutputWaveFormat = waveProvider.WaveFormat;
-                    AlsaInterop.PcmHwParamsSetFormat(Handle, hwparams, format);
-                }
-                else if ((error = AlsaInterop.PcmHwParamsTestFormat(Handle, hwparams, PCMFormat.SND_PCM_FORMAT_S32_LE)) == 0)
-                {
-                    AlsaInterop.PcmHwParamsSetFormat(Handle, hwparams, PCMFormat.SND_PCM_FORMAT_S32_LE);
-                    sourceStream = new SampleToWaveProvider32(new WaveToSampleProvider(waveProvider));
-                    OutputWaveFormat = sourceStream.WaveFormat;
-                }
-                else if ((error = AlsaInterop.PcmHwParamsTestFormat(Handle, hwparams, PCMFormat.SND_PCM_FORMAT_S16_LE)) == 0)
-                {
-                    AlsaInterop.PcmHwParamsSetFormat(Handle, hwparams, PCMFormat.SND_PCM_FORMAT_S16_LE);
-                    sourceStream = new SampleToWaveProvider16(new WaveToSampleProvider(waveProvider));
-                    OutputWaveFormat = sourceStream.WaveFormat;
-                }
-                else
-                {
-                    AlsaInterop.PcmHwParamsFree(hwparams);
-                    throw new NotSupportedException("Sample type not supported");
-                }
-
-                if ((AlsaInterop.PcmHwParamsSetRate(Handle, hwparams, (uint)waveProvider.WaveFormat.SampleRate, 0)) != 0)
-                {
-                    AlsaInterop.PcmHwParamsFree(hwparams);
-                    throw new NotSupportedException("Sample rate not supported.");
-                }
-                if ((AlsaInterop.PcmHwParamsSetChannels(Handle, hwparams, (uint)waveProvider.WaveFormat.Channels)) != 0)
-                {
-                    AlsaInterop.PcmHwParamsFree(hwparams);
-                    throw new NotSupportedException("Number of channels not supported.");
-                }
-                if ((AlsaInterop.PcmHwParamsSetPeriodsNear(Handle, hwparams, ref periods, ref dir)) != 0)
-                {
-                    AlsaInterop.PcmHwParamsFree(hwparams);
-                    throw new NotSupportedException("Periods not supported");
-                }
                 ulong buffer_size = (ulong)waveBuffer.Length;
-                if ((AlsaInterop.PcmHwParamsSetBufferSizeNear(Handle, hwparams, ref buffer_size)) != 0)
-                {
-                    AlsaInterop.PcmHwParamsFree(hwparams);
-                    throw new NotSupportedException("Buffer Size not supported");
-                }
-                if ((error = AlsaInterop.PcmHwParams(Handle, hwparams)) != 0)
-                {
-                    AlsaInterop.PcmHwParamsFree(hwparams);
-                    throw new NotSupportedException(AlsaInterop.ErrorString(error));
-                }
-                AlsaInterop.PcmHwParamsFree(hwparams);
+                GetHardwareParams();
+                SetInterleavedAccess();
+                SetFormat(waveProvider, HwParams);
+                SetSampleRate((uint)desiredSampleRate);
+                SetNumberOfChannels((uint)waveProvider.WaveFormat.Channels);
+                SetPeriods(ref periods, ref dir);
+                SetBufferSize(ref buffer_size);
+                SetHardwareParams();
                 AlsaInterop.PcmSwParamsMalloc(out IntPtr swparams);
                 AlsaInterop.PcmSwParamsCurrent(Handle, swparams);
                 AlsaInterop.PcmSwParamsSetStartThreshold(Handle, swparams, buffer_size - PERIOD_SIZE);
@@ -232,6 +184,33 @@ namespace NAudio.Wave
                 {
                     AlsaInterop.PcmWriteI(Handle, waveBuffer, 2 * PERIOD_SIZE);
                 }
+            }
+        }
+        public void SetFormat(IWaveProvider waveProvider, IntPtr hwparams)
+        {
+            int error;
+            var format = AlsaDriver.GetFormat(waveProvider.WaveFormat); 
+            if (AlsaInterop.PcmHwParamsTestFormat(Handle, hwparams, format) == 0)
+            {
+                OutputWaveFormat = waveProvider.WaveFormat;
+                AlsaInterop.PcmHwParamsSetFormat(Handle, hwparams, format);
+            }
+            else if ((error = AlsaInterop.PcmHwParamsTestFormat(Handle, hwparams, PCMFormat.SND_PCM_FORMAT_S32_LE)) == 0)
+            {
+                AlsaInterop.PcmHwParamsSetFormat(Handle, hwparams, PCMFormat.SND_PCM_FORMAT_S32_LE);
+                sourceStream = new SampleToWaveProvider32(new WaveToSampleProvider(waveProvider));
+                OutputWaveFormat = sourceStream.WaveFormat;
+            }
+            else if ((error = AlsaInterop.PcmHwParamsTestFormat(Handle, hwparams, PCMFormat.SND_PCM_FORMAT_S16_LE)) == 0)
+            {
+                AlsaInterop.PcmHwParamsSetFormat(Handle, hwparams, PCMFormat.SND_PCM_FORMAT_S16_LE);
+                sourceStream = new SampleToWaveProvider16(new WaveToSampleProvider(waveProvider));
+                OutputWaveFormat = sourceStream.WaveFormat;
+            }
+            else
+            {
+                AlsaInterop.PcmHwParamsFree(hwparams);
+                throw new NotSupportedException("Sample type not supported");
             }
         }
         private void PlayPcmSync()

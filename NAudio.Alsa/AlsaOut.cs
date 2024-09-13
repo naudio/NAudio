@@ -11,8 +11,6 @@ namespace NAudio.Wave
         private IWaveProvider sourceStream;
         private PlaybackState playbackState;
         private AlsaInterop.PcmCallback callback;
-        private byte[] waveBuffer;
-        private byte[][] buffers;
         private int bufferNum;
         public WaveFormat OutputWaveFormat { get; private set; }
         public event EventHandler<StoppedEventArgs> PlaybackStopped;

@@ -1,5 +1,4 @@
 ﻿using System;
-using NAudio.Wave;
 using NAudio.Wave.Alsa;
 using NAudio.Wave.SampleProviders;
 using System.Threading.Tasks;

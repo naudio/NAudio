@@ -1,9 +1,26 @@
 using NAudio.Wave.Alsa;
 using NAudio.Wave;
 using System;
+using System.Collections.Generic;
 
 public abstract class AlsaPcm
 {
+    protected static readonly uint[] rates = 
+    {
+        8000,
+        11025,
+        16000,
+        22050,
+        32000,
+        44100,
+        48000,
+        64000,
+        64000,
+        88200,
+        96000,
+        176400,
+        192000
+    };
     protected const uint PERIOD_QUANTITY = 8;
     protected const ulong PERIOD_SIZE = 1024;
     protected IntPtr Handle = default;
@@ -91,5 +108,135 @@ public abstract class AlsaPcm
     protected static ulong GetSampleSize(WaveFormat format)
     {
         return (ulong)(format.BitsPerSample / 8 * format.Channels);
+    }
+    private static int[] GetValidChannelValues(IntPtr Handle, IntPtr HwParams)
+    {
+        AlsaInterop.PcmHwParamsGetChannelsMin(HwParams, out uint min);
+        AlsaInterop.PcmHwParamsGetChannelsMax(HwParams, out uint max);
+        int[] result = new int[0];
+        for (uint i = min; i <= max; i++)
+        {
+            if (AlsaInterop.PcmHwParamsTestChannels(Handle, HwParams, i) == 0)
+            {
+                int[] newresult = new int[result.Length + 1];
+                Array.Copy(result, newresult, result.Length);
+                newresult[result.Length] = (int)i;
+                result = newresult;
+            }
+        }
+        return result;
+    }
+    private static int[] GetValidSampleRates(IntPtr Handle, IntPtr HwParams)
+    {
+        int[] result = new int[0];
+        for (uint i = 0; i < rates.Length; i++)
+        {
+            var rate = rates[i];
+            if (AlsaInterop.PcmHwParamsTestRate(Handle, HwParams, rate, 0) == 0)
+            {
+                int[] newresult = new int[result.Length + 1];
+                Array.Copy(result, newresult, result.Length);
+                newresult[result.Length] = (int)rates[i];
+                result = newresult;
+            }
+        }
+        return result;
+    }
+    private static PCMFormat[] GetValidFormats(IntPtr Handle, IntPtr HwParams)
+    {
+        PCMFormat[] result = new PCMFormat[0];
+        for (PCMFormat i = 0; i < PCMFormat.SND_PCM_FORMAT_LAST; i++)
+        {
+            if (AlsaInterop.PcmHwParamsTestFormat(Handle, HwParams, i) == 0)
+            {
+                PCMFormat[] newresult = new PCMFormat[result.Length + 1];
+                Array.Copy(result, newresult, result.Length);
+                newresult[result.Length] = i;
+                result = newresult;
+            }
+        }
+        return result;
+    }
+    private static WaveFormat[] GetValidWaveFormats(IntPtr Handle, IntPtr HwParams)
+    {
+        var valid_rates = GetValidSampleRates(Handle, HwParams);
+        var valid_channels = GetValidChannelValues(Handle, HwParams);
+        var valid_formats = GetValidFormats(Handle, HwParams);
+        List<WaveFormat> valid_waveformats = new List<WaveFormat>();
+        for (int i = 0; i < valid_formats.Length; i++)
+        {
+            switch (valid_formats[i])
+            {
+                case PCMFormat.SND_PCM_FORMAT_FLOAT_LE:
+                    for (int j = 0; j < valid_rates.Length; j++)
+                    {
+                        for (int k = 0; k < valid_channels.Length; k++)
+                        {
+                            valid_waveformats.Add(WaveFormat.CreateIeeeFloatWaveFormat(valid_rates[j], valid_channels[k]));
+                        }
+                    }
+                    break;
+                case PCMFormat.SND_PCM_FORMAT_U8:
+                    for (int j = 0; j < valid_rates.Length; j++)
+                    {
+                        for (int k = 0; k < valid_channels.Length; k++)
+                        {
+                            valid_waveformats.Add(new WaveFormat(valid_rates[j], 8, valid_channels[k]));
+                        }
+                    }
+                    break;
+                case PCMFormat.SND_PCM_FORMAT_S16_LE:
+                    for (int j = 0; j < valid_rates.Length; j++)
+                    {
+                        for (int k = 0; k < valid_channels.Length; k++)
+                        {
+                            valid_waveformats.Add(new WaveFormat(valid_rates[j], 16, valid_channels[k]));
+                        }
+                    }
+                    break;
+                case PCMFormat.SND_PCM_FORMAT_S24_3LE:
+                    for (int j = 0; j < valid_rates.Length; j++)
+                    {
+                        for (int k = 0; k < valid_channels.Length; k++)
+                        {
+                            valid_waveformats.Add(new WaveFormat(valid_rates[j], 24, valid_channels[k]));
+                        }
+                    }
+                    break;
+                case PCMFormat.SND_PCM_FORMAT_S32_LE:
+                    for (int j = 0; j < valid_rates.Length; j++)
+                    {
+                        for (int k = 0; k < valid_channels.Length; k++)
+                        {
+                            valid_waveformats.Add(new WaveFormat(valid_rates[j], 32, valid_channels[k]));
+                        }
+                    }
+                    break;
+                case PCMFormat.SND_PCM_FORMAT_A_LAW:
+                    for (int j = 0; j < valid_rates.Length; j++)
+                    {
+                        for (int k = 0; k < valid_channels.Length; k++)
+                        {
+                            valid_waveformats.Add(WaveFormat.CreateALawFormat(valid_rates[j], valid_channels[k]));
+                        }
+                    }
+                    break;
+                case PCMFormat.SND_PCM_FORMAT_MU_LAW:
+                    for (int j = 0; j < valid_rates.Length; j++)
+                    {
+                        for (int k = 0; k < valid_channels.Length; k++)
+                        {
+                            valid_waveformats.Add(WaveFormat.CreateMuLawFormat(valid_rates[j], valid_channels[k]));
+                        }
+                    }
+                    break;
+
+            }
+        }
+        return valid_waveformats.ToArray();
+    }
+    public WaveFormat[] GetValidWaveFormats()
+    {
+        return GetValidWaveFormats(Handle, HwParams);
     }
 }

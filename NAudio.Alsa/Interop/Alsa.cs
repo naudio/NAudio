@@ -122,6 +122,14 @@ namespace NAudio.Wave.Alsa
         internal static extern int PcmPrepare(IntPtr pcm);
         [DllImport(AlsaLibrary, EntryPoint = "snd_pcm_sw_params_set_start_threshold")]
         internal static extern int PcmSwParamsSetStartThreshold(IntPtr pcm, IntPtr swparams, ulong val);
+        [DllImport(AlsaLibrary, EntryPoint = "snd_pcm_hw_params_get_channels_max")]
+        internal static extern int PcmHwParamsGetChannelsMax(IntPtr hwparams, out uint val);
+        [DllImport(AlsaLibrary, EntryPoint = "snd_pcm_hw_params_get_channels_min")]
+        internal static extern int PcmHwParamsGetChannelsMin(IntPtr hwparams, out uint val);
+        [DllImport(AlsaLibrary, EntryPoint = "snd_pcm_hw_params_test_channels")]
+        internal static extern int PcmHwParamsTestChannels(IntPtr pcm, IntPtr hwparams, uint val);
+        [DllImport(AlsaLibrary, EntryPoint = "snd_pcm_hw_params_test_rate")]
+        internal static extern int PcmHwParamsTestRate(IntPtr pcm, IntPtr hwparams, uint val, int dir);
         private static string GetString(IntPtr ptr)
         {
             if (ptr == IntPtr.Zero)

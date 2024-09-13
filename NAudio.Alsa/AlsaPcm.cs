@@ -12,6 +12,7 @@ public abstract class AlsaPcm
     protected byte[] waveBuffer;
     protected byte[][] buffers;
     protected bool isInitialized = false;
+    protected bool isDisposed = false;
     public int Card { get; private set; }
     public uint Device { get; private set; }
     public string Id { get; private set; }
@@ -35,6 +36,15 @@ public abstract class AlsaPcm
     {
         AlsaInterop.PcmSwParamsMalloc(out SwParams);
         AlsaInterop.PcmSwParamsCurrent(Handle, SwParams);
+    }
+    protected void SetSoftwareParams()
+    {
+        int error;
+        if ((error = AlsaInterop.PcmSwParams(Handle, SwParams)) < 0)
+        {
+            AlsaInterop.PcmSwParamsFree(SwParams);
+            throw new NotSupportedException(AlsaInterop.ErrorString(error));
+        }
     }
     protected void SetInterleavedAccess()
     {
@@ -77,5 +87,9 @@ public abstract class AlsaPcm
             AlsaInterop.PcmHwParamsFree(HwParams);
             throw new NotSupportedException("Buffer Size not supported");
         }
+    }
+    protected static ulong GetSampleSize(WaveFormat format)
+    {
+        return (ulong)(format.BitsPerSample / 8 * format.Channels);
     }
 }

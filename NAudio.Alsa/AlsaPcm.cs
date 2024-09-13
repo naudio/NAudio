@@ -2,6 +2,7 @@ using NAudio.Wave.Alsa;
 using NAudio.Wave;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 public abstract class AlsaPcm
 {
@@ -238,5 +239,27 @@ public abstract class AlsaPcm
     public WaveFormat[] GetValidWaveFormats()
     {
         return GetValidWaveFormats(Handle, HwParams);
+    }
+    public WaveFormat GetCurrentWaveFormat()
+    {
+        WaveFormat result = null;
+        var formats = GetValidWaveFormats();
+        if (formats.Length == 1)
+        {
+            result = formats[0];
+        }
+        return result;
+    }
+    public static bool TestWaveFormat(WaveFormat waveFormat, IntPtr Handle)
+    {
+        AlsaInterop.PcmHwParamsMalloc(out IntPtr hwparams);
+        AlsaInterop.PcmHwParamsAny(Handle, hwparams);
+        var result = GetValidWaveFormats(Handle, hwparams).Contains(waveFormat);
+        AlsaInterop.PcmHwParamsFree(hwparams);
+        return result;
+    }
+    public bool TestWaveFormat(WaveFormat waveFormat)
+    {
+        return TestWaveFormat(waveFormat, Handle);
     }
 }

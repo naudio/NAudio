@@ -43,6 +43,8 @@ namespace NAudio.Wave.Alsa
                     {
                         case 32:
                             return PCMFormat.SND_PCM_FORMAT_S32_LE;
+                        case 24:
+                            return PCMFormat.SND_PCM_FORMAT_S24_3LE;
                         case 16:
                             return PCMFormat.SND_PCM_FORMAT_S16_LE;
                         case 8:

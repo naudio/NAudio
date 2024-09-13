@@ -33,8 +33,8 @@ namespace NAudio.Wave
             }
             isDisposed = true;
             AlsaInterop.PcmClose(Handle);
-            AlsaInterop.PcmHwParamsFree(HwParams);
-            AlsaInterop.PcmSwParamsFree(SwParams);
+            if (HwParams != default) AlsaInterop.PcmHwParamsFree(HwParams);
+            if (SwParams != default) AlsaInterop.PcmSwParamsFree(SwParams);
         }
 
         public void Init(IWaveProvider waveProvider)
@@ -124,7 +124,6 @@ namespace NAudio.Wave
                 async = true;
             }
             GetHardwareParams();
-            GetSoftwareParams();
         }
         public AlsaOut() : this("default")
         {
@@ -169,9 +168,10 @@ namespace NAudio.Wave
                 SetFormat(waveProvider);
                 SetPeriods(ref periods, ref dir);
                 SetBufferSize(ref buffer_size);
+                SetHardwareParams();
+                GetSoftwareParams();
                 AlsaInterop.PcmSwParamsSetStartThreshold(Handle, SwParams, buffer_size - PERIOD_SIZE);
                 AlsaInterop.PcmSwParamsSetAvailMin(Handle, SwParams, PERIOD_SIZE);
-                SetHardwareParams();
                 SetSoftwareParams();
                 AlsaInterop.PcmPrepare(Handle);
                 if (async)

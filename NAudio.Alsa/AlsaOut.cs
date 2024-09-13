@@ -10,14 +10,14 @@ namespace NAudio.Wave
         private bool async;
         private IWaveProvider sourceStream;
         private PlaybackState playbackState;
-        private AlsaInterop.PcmCallback callback;
+        private readonly AlsaInterop.PcmCallback callback;
         private int bufferNum;
         public WaveFormat OutputWaveFormat { get; private set; }
         public event EventHandler<StoppedEventArgs> PlaybackStopped;
         public int NumberOfBuffers { get; set; } = 2;
         public float Volume 
         {
-            get => throw new NotImplementedException("");
+            get => 1.0f;
             set => throw new NotImplementedException("");
         }
         public PlaybackState PlaybackState
@@ -27,8 +27,14 @@ namespace NAudio.Wave
         public bool HasReachedEnd { get; private set; }
         public void Dispose()
         {
+            if (isDisposed)
+            {
+                return;
+            }
+            isDisposed = true;
             AlsaInterop.PcmClose(Handle);
             AlsaInterop.PcmHwParamsFree(HwParams);
+            AlsaInterop.PcmSwParamsFree(SwParams);
         }
 
         public void Init(IWaveProvider waveProvider)
@@ -117,6 +123,8 @@ namespace NAudio.Wave
                 waveBuffer = new byte[buffer_size];
                 async = true;
             }
+            GetHardwareParams();
+            GetSoftwareParams();
         }
         public AlsaOut() : this("default")
         {
@@ -157,21 +165,14 @@ namespace NAudio.Wave
             {
                 sourceStream = waveProvider;
                 ulong buffer_size = (ulong)waveBuffer.Length;
-                GetHardwareParams();
                 SetInterleavedAccess();
                 SetFormat(waveProvider);
                 SetPeriods(ref periods, ref dir);
                 SetBufferSize(ref buffer_size);
-                SetHardwareParams();
-                GetSoftwareParams();
                 AlsaInterop.PcmSwParamsSetStartThreshold(Handle, SwParams, buffer_size - PERIOD_SIZE);
                 AlsaInterop.PcmSwParamsSetAvailMin(Handle, SwParams, PERIOD_SIZE);
-                if ((error = AlsaInterop.PcmSwParams(Handle, SwParams)) < 0)
-                {
-                    AlsaInterop.PcmSwParamsFree(SwParams);
-                    throw new NotSupportedException(AlsaInterop.ErrorString(error));
-                }
-                AlsaInterop.PcmSwParamsFree(SwParams);
+                SetHardwareParams();
+                SetSoftwareParams();
                 AlsaInterop.PcmPrepare(Handle);
                 if (async)
                 {

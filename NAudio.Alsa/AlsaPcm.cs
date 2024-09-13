@@ -9,6 +9,8 @@ public abstract class AlsaPcm
     protected IntPtr Handle = default;
     protected IntPtr HwParams = default;
     protected IntPtr SwParams = default;
+    protected byte[] waveBuffer;
+    protected byte[][] buffers;
     protected bool isInitialized = false;
     public int Card { get; private set; }
     public uint Device { get; private set; }

@@ -1,6 +1,7 @@
 using System;
 using NAudio.Wave.Alsa;
 
+[Serializable]
 public class AlsaException : Exception
 {
     public AlsaException(int error) : base(AlsaInterop.ErrorString(error))

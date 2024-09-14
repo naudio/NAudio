@@ -7,11 +7,9 @@ namespace NAudio.Wave
 
     public class AlsaOut : AlsaPcm, IWavePlayer
     {
-        private bool async;
         private IWaveProvider sourceStream;
         private PlaybackState playbackState;
         private readonly AlsaInterop.PcmCallback callback;
-        private int bufferNum;
         public WaveFormat OutputWaveFormat { get; private set; }
         public event EventHandler<StoppedEventArgs> PlaybackStopped;
         public float Volume 
@@ -50,14 +48,14 @@ namespace NAudio.Wave
                 {
                     throw new AlsaException(error);
                 }
-                if (!async)
+                if (!Async)
                 {
                     PlayPcmSync();
                 }
             }
             else if (playbackState != PlaybackState.Playing)
             {
-                if (async) 
+                if (Async) 
                 {
                     int error;
                     if ((error = AlsaInterop.PcmStart(Handle)) < 0)
@@ -107,18 +105,11 @@ namespace NAudio.Wave
             ulong buffer_size = PERIOD_SIZE * PERIOD_QUANTITY;
             if ((error = AlsaInterop.AsyncAddPcmHandler(out IntPtr handler, Handle, callback, default)) != 0)
             {
-                async = false;
-                Buffers = new byte[NumberOfBuffers][];
-                for (int i = 0; i < NumberOfBuffers; i++)
-                {
-                    Buffers[i] = new byte[buffer_size];    
-                }
-                WaveBuffer = Buffers[bufferNum];
+                InitBuffers(false);
             }
             else
             {
-                WaveBuffer = new byte[buffer_size];
-                async = true;
+                InitBuffers(true);
             }
             GetHardwareParams();
         }
@@ -177,7 +168,7 @@ namespace NAudio.Wave
                 }
                 SetSoftwareParams();
                 AlsaInterop.PcmPrepare(Handle);
-                if (async)
+                if (Async)
                 {
                     AlsaInterop.PcmWriteI(Handle, WaveBuffer, 2 * PERIOD_SIZE);
                 }
@@ -227,7 +218,7 @@ namespace NAudio.Wave
             ulong avail = AlsaInterop.PcmAvailUpdate(Handle);
             while (avail >= PERIOD_SIZE)
             {
-                if (!async) SwapBuffers();
+                if (!Async) SwapBuffers();
                 int error = AlsaInterop.PcmWriteI(Handle, WaveBuffer, PERIOD_SIZE);
                 BufferUpdate();
                 if (error < 0)

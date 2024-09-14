@@ -31,7 +31,6 @@ namespace NAudio.Wave
             int error;
             if ((error = AlsaInterop.PcmOpen(out Handle, pcm_name, PCMStream.SND_PCM_STREAM_CAPTURE, 0)) < 0)
             {
-                var errorstring = AlsaInterop.ErrorString(error);
                 throw new AlsaException("snd_pcm_only", error);
             }
             callback = Callback;

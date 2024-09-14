@@ -49,7 +49,7 @@ namespace NAudio.Wave
                 int error;
                 if ((error = AlsaInterop.PcmPause(Handle, 0)) < 0)
                 {
-                    throw new Exception(AlsaInterop.ErrorString(error));
+                    throw new AlsaException(error);
                 }
                 if (!async)
                 {
@@ -63,8 +63,7 @@ namespace NAudio.Wave
                     int error;
                     if ((error = AlsaInterop.PcmStart(Handle)) < 0)
                     {
-                        var errorstring = AlsaInterop.ErrorString(error);
-                        throw new Exception($"snd_pcm_start: {errorstring}");
+                        throw new AlsaException("snd_pcm_start", error);
                     }
                     playbackState = PlaybackState.Playing;
                     HasReachedEnd = false;
@@ -94,7 +93,7 @@ namespace NAudio.Wave
                 int error;
                 if ((error = AlsaInterop.PcmPause(Handle, 1)) < 0)
                 {
-                    throw new Exception(AlsaInterop.ErrorString(error));
+                    throw new AlsaException(error);
                 }
             }
         }
@@ -103,8 +102,7 @@ namespace NAudio.Wave
             int error;
             if ((error = AlsaInterop.PcmOpen(out Handle, pcm_name, PCMStream.SND_PCM_STREAM_PLAYBACK, 0)) < 0)
             {
-                var errorstring = AlsaInterop.ErrorString(error);
-                throw new Exception($"snd_pcm_open: {errorstring}");
+                throw new AlsaException("snd_pcm_open", error);
             }
             callback = Callback;
             ulong buffer_size = PERIOD_SIZE * PERIOD_QUANTITY;
@@ -204,7 +202,7 @@ namespace NAudio.Wave
             else
             {
                 AlsaInterop.PcmHwParamsFree(HwParams);
-                throw new NotSupportedException("Sample type not supported");
+                throw new AlsaException(error);
             }
             int desiredSampleRate = waveProvider.WaveFormat.SampleRate;
             SetSampleRate((uint)desiredSampleRate);
@@ -230,7 +228,7 @@ namespace NAudio.Wave
                 if (error < 0)
                 {
                     playbackState = PlaybackState.Stopped;
-                    RaisePlaybackStopped(new Exception(AlsaInterop.ErrorString(error)));
+                    RaisePlaybackStopped(new AlsaException(error));
                 }
                 avail = AlsaInterop.PcmAvailUpdate(Handle);
             }

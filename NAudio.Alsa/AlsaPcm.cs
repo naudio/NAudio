@@ -37,6 +37,7 @@ public abstract class AlsaPcm
     public string Id { get; private set; }
     public string Name { get; private set; }
     public int NumberOfBuffers { get; set; } = 2;
+    public bool Async { get; private set; }
 
     protected void GetHardwareParams()
     {
@@ -272,5 +273,24 @@ public abstract class AlsaPcm
     {
         BufferNum = ++BufferNum % NumberOfBuffers;
         WaveBuffer = Buffers[BufferNum];
+    }
+    protected void InitBuffers(bool async)
+    {
+        int error;
+        Async = async;
+        ulong buffer_size = PERIOD_SIZE * PERIOD_QUANTITY;
+        if (!async)
+        {
+            Buffers = new byte[NumberOfBuffers][];
+            for (int i = 0; i < NumberOfBuffers; i++)
+            {
+                Buffers[i] = new byte[buffer_size];    
+            }
+            WaveBuffer = Buffers[BufferNum];
+        }
+        else
+        {
+            WaveBuffer = new byte[buffer_size];
+        }
     }
 }

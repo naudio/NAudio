@@ -47,7 +47,7 @@ public abstract class AlsaPcm
         if ((error = AlsaInterop.PcmHwParams(Handle, HwParams)) != 0)
         {
             AlsaInterop.PcmHwParamsFree(HwParams);
-            throw new NotSupportedException(AlsaInterop.ErrorString(error));
+            throw new AlsaException(error);
         }
     }
     protected void GetSoftwareParams()
@@ -61,7 +61,7 @@ public abstract class AlsaPcm
         if ((error = AlsaInterop.PcmSwParams(Handle, SwParams)) < 0)
         {
             AlsaInterop.PcmSwParamsFree(SwParams);
-            throw new NotSupportedException(AlsaInterop.ErrorString(error));
+            throw new AlsaException(error);
         }
     }
     protected void SetInterleavedAccess()
@@ -70,40 +70,44 @@ public abstract class AlsaPcm
         if ((error = AlsaInterop.PcmHwParamsTestAccess(Handle, HwParams, PCMAccess.SND_PCM_ACCESS_RW_INTERLEAVED)) != 0)
         {
             AlsaInterop.PcmHwParamsFree(HwParams);
-            throw new Exception(AlsaInterop.ErrorString(error));
+            throw new AlsaException(error);
         }
         AlsaInterop.PcmHwParamsSetAccess(Handle, HwParams, PCMAccess.SND_PCM_ACCESS_RW_INTERLEAVED);
     }
     protected void SetSampleRate(uint sampleRate)
     {
-        if (AlsaInterop.PcmHwParamsSetRate(Handle, HwParams, sampleRate, 0) != 0)
+        int error;
+        if ((error = AlsaInterop.PcmHwParamsSetRate(Handle, HwParams, sampleRate, 0)) != 0)
         {
             AlsaInterop.PcmHwParamsFree(HwParams);
-            throw new NotSupportedException("Sample rate not supported.");
+            throw new AlsaException(error);
         }
     }
     protected void SetNumberOfChannels(uint numChannels)
     {
-        if (AlsaInterop.PcmHwParamsSetChannels(Handle, HwParams, numChannels) != 0)
+        int error;
+        if ((error = AlsaInterop.PcmHwParamsSetChannels(Handle, HwParams, numChannels)) != 0)
         {
             AlsaInterop.PcmHwParamsFree(HwParams);
-            throw new NotSupportedException("Number of channels not supported.");
+            throw new AlsaException(error);
         }
     }
     protected void SetPeriods(ref uint periods, ref int dir)
     {
-        if (AlsaInterop.PcmHwParamsSetPeriodsNear(Handle, HwParams, ref periods, ref dir) != 0)
+        int error;
+        if ((error = AlsaInterop.PcmHwParamsSetPeriodsNear(Handle, HwParams, ref periods, ref dir)) != 0)
         {
             AlsaInterop.PcmHwParamsFree(HwParams);
-            throw new NotSupportedException("Periods not supported");
+            throw new AlsaException(error);
         }
     }
     protected void SetBufferSize(ref ulong buffer_size)
     {
-        if (AlsaInterop.PcmHwParamsSetBufferSizeNear(Handle, HwParams, ref buffer_size) != 0)
+        int error;
+        if ((error = AlsaInterop.PcmHwParamsSetBufferSizeNear(Handle, HwParams, ref buffer_size)) != 0)
         {
             AlsaInterop.PcmHwParamsFree(HwParams);
-            throw new NotSupportedException("Buffer Size not supported");
+            throw new AlsaException(error);
         }
     }
     protected static ulong GetSampleSize(WaveFormat format)

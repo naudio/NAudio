@@ -27,14 +27,16 @@ public abstract class AlsaPcm
     protected IntPtr Handle = default;
     protected IntPtr HwParams = default;
     protected IntPtr SwParams = default;
-    protected byte[] waveBuffer;
-    protected byte[][] buffers;
+    protected int BufferNum;
+    protected byte[] WaveBuffer;
+    protected byte[][] Buffers;
     protected bool isInitialized = false;
     protected bool isDisposed = false;
     public int Card { get; private set; }
     public uint Device { get; private set; }
     public string Id { get; private set; }
     public string Name { get; private set; }
+    public int NumberOfBuffers { get; set; } = 2;
 
     protected void GetHardwareParams()
     {
@@ -265,5 +267,10 @@ public abstract class AlsaPcm
     public bool TestWaveFormat(WaveFormat waveFormat)
     {
         return TestWaveFormat(waveFormat, Handle);
+    }
+    protected void SwapBuffers()
+    {
+        BufferNum = ++BufferNum % NumberOfBuffers;
+        WaveBuffer = Buffers[BufferNum];
     }
 }

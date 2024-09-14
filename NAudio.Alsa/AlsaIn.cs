@@ -7,7 +7,6 @@ namespace NAudio.Wave
 {
     public class AlsaIn : AlsaPcm, IWaveIn
     {
-        private int numberofbuffers, bufferNum;
         private bool async;
         private AlsaInterop.PcmCallback callback;
         public void StartRecording(){}    
@@ -38,16 +37,16 @@ namespace NAudio.Wave
             if ((error = AlsaInterop.AsyncAddPcmHandler(out IntPtr handler, Handle, callback, default)) != 0)
             {
                 async = false;
-                buffers = new byte[numberofbuffers][];
-                for (int i = 0; i < numberofbuffers; i++)
+                Buffers = new byte[NumberOfBuffers][];
+                for (int i = 0; i < NumberOfBuffers; i++)
                 {
-                    buffers[i] = new byte[buffer_size];    
+                    Buffers[i] = new byte[buffer_size];    
                 }
-                waveBuffer = buffers[bufferNum];
+                WaveBuffer = Buffers[BufferNum];
             }
             else
             {
-                waveBuffer = new byte[buffer_size];
+                WaveBuffer = new byte[buffer_size];
                 async = true;
             }
             GetHardwareParams();

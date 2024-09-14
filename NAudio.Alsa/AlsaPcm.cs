@@ -53,6 +53,10 @@ public abstract class AlsaPcm
 
     protected void GetHardwareParams()
     {
+        if (HwParams != default)
+        {
+            AlsaInterop.PcmHwParamsFree(HwParams);
+        }
         AlsaInterop.PcmHwParamsMalloc(out HwParams);    
         AlsaInterop.PcmHwParamsAny(Handle, HwParams);
     }
@@ -67,6 +71,10 @@ public abstract class AlsaPcm
     }
     protected void GetSoftwareParams()
     {
+        if (SwParams != default)
+        {
+            AlsaInterop.PcmSwParamsFree(SwParams);
+        }
         AlsaInterop.PcmSwParamsMalloc(out SwParams);
         AlsaInterop.PcmSwParamsCurrent(Handle, SwParams);
     }

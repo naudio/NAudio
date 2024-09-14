@@ -104,6 +104,8 @@ namespace NAudio.Wave.Alsa
         internal static extern int PcmSwParamsSetAvailMin(IntPtr pcm, IntPtr swparams, ulong val);
         [DllImport(AlsaLibrary, EntryPoint = "snd_pcm_writei")]
         internal static unsafe extern int PcmWriteI(IntPtr pcm, byte[] buffer, ulong size);
+        [DllImport(AlsaLibrary, EntryPoint = "snd_pcm_readi")]
+        internal static unsafe extern int PcmReadI(IntPtr pcm, byte[] buffer, ulong size);
         [DllImport(AlsaLibrary, EntryPoint = "snd_async_add_pcm_handler")]
         internal static extern int AsyncAddPcmHandler(out IntPtr handler, IntPtr pcm, PcmCallback callback, IntPtr private_data);
         [DllImport(AlsaLibrary, EntryPoint = "snd_async_handler_get_pcm")]

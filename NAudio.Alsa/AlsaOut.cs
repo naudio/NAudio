@@ -168,8 +168,14 @@ namespace NAudio.Wave
                 SetBufferSize(ref buffer_size);
                 SetHardwareParams();
                 GetSoftwareParams();
-                AlsaInterop.PcmSwParamsSetStartThreshold(Handle, SwParams, buffer_size - PERIOD_SIZE);
-                AlsaInterop.PcmSwParamsSetAvailMin(Handle, SwParams, PERIOD_SIZE);
+                if ((error = AlsaInterop.PcmSwParamsSetStartThreshold(Handle, SwParams, buffer_size - PERIOD_SIZE)) < 0)
+                {
+                    throw new AlsaException(error);
+                }
+                if ((error = AlsaInterop.PcmSwParamsSetAvailMin(Handle, SwParams, PERIOD_SIZE)) < 0)
+                {
+                    throw new AlsaException(error);
+                }
                 SetSoftwareParams();
                 AlsaInterop.PcmPrepare(Handle);
                 if (async)

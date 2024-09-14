@@ -105,11 +105,11 @@ namespace NAudio.Wave
             ulong buffer_size = PERIOD_SIZE * PERIOD_QUANTITY;
             if ((error = AlsaInterop.AsyncAddPcmHandler(out IntPtr handler, Handle, callback, default)) != 0)
             {
-                InitBuffers(false);
+                Async = false;
             }
             else
             {
-                InitBuffers(true);
+                Async = true;
             }
             GetHardwareParams();
         }
@@ -151,6 +151,7 @@ namespace NAudio.Wave
             if (waveProvider != null)
             {
                 sourceStream = waveProvider;
+                InitBuffers();
                 ulong buffer_size = (ulong)WaveBuffer.Length;
                 SetInterleavedAccess();
                 SetFormat(waveProvider);

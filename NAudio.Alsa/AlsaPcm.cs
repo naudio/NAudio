@@ -22,6 +22,8 @@ public abstract class AlsaPcm
         176400,
         192000
     };
+    private bool isBufferInit = false;
+    private int numBuffers = 2;
     protected const uint PERIOD_QUANTITY = 8;
     protected const ulong PERIOD_SIZE = 1024;
     protected IntPtr Handle = default;
@@ -36,8 +38,18 @@ public abstract class AlsaPcm
     public uint Device { get; private set; }
     public string Id { get; private set; }
     public string Name { get; private set; }
-    public int NumberOfBuffers { get; set; } = 2;
-    public bool Async { get; private set; }
+    public int NumberOfBuffers
+    {
+        get =>numBuffers;
+        set 
+        {
+            if (!isBufferInit)
+            {
+                numBuffers = value;
+            }
+        }
+    }
+    public bool Async { get; protected set; }
 
     protected void GetHardwareParams()
     {
@@ -274,12 +286,12 @@ public abstract class AlsaPcm
         BufferNum = ++BufferNum % NumberOfBuffers;
         WaveBuffer = Buffers[BufferNum];
     }
-    protected void InitBuffers(bool async)
+    protected void InitBuffers()
     {
+        isBufferInit = true;
         int error;
-        Async = async;
         ulong buffer_size = PERIOD_SIZE * PERIOD_QUANTITY;
-        if (!async)
+        if (!Async)
         {
             Buffers = new byte[NumberOfBuffers][];
             for (int i = 0; i < NumberOfBuffers; i++)

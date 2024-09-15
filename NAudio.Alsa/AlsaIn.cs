@@ -7,7 +7,7 @@ namespace NAudio.Wave
 {
     public class AlsaIn : AlsaPcm, IWaveIn
     {
-        private bool recording, isInitialized;
+        private bool recording;
         private AlsaInterop.PcmCallback callback;
         public void StartRecording()
         {
@@ -15,22 +15,31 @@ namespace NAudio.Wave
             {
                 throw new InvalidOperationException("Already recording");
             }
-            InitRecord(new WaveFormat());
+            InitRecord(WaveFormat);
             int error;
             recording = true;
-            if (Async)
+            if ((error = AlsaInterop.PcmStart(Handle)) < 0)
             {
-                if ((error = AlsaInterop.PcmStart(Handle)) < 0)
-                {
-                    throw new AlsaException("snd_pcm_start", error);
-                }
+                throw new AlsaException("snd_pcm_start", error);
             }
-            else
+            else if (!Async)
             {
                 RecordPcmSync();
             }
         }    
-        public void StopRecording(){}
+        public void StopRecording()
+        {
+            recording = false;
+            int error;
+            if ((error = AlsaInterop.PcmDrop(Handle)) < 0)
+            {
+                RaiseRecordingStopped(new AlsaException(error));
+            }
+            else
+            {
+                RaiseRecordingStopped(null);
+            }
+        }
         public WaveFormat WaveFormat { get; set;}
         public event EventHandler<WaveInEventArgs> DataAvailable;
         public event EventHandler<StoppedEventArgs> RecordingStopped;
@@ -107,17 +116,19 @@ namespace NAudio.Wave
         private void ReadPcm()
         {
             ulong avail = AlsaInterop.PcmAvailUpdate(Handle);
+            int bits_per_frame = WaveFormat.BitsPerSample * WaveFormat.Channels;
+            int frame_bytes = bits_per_frame / 8;
             while (avail >= PERIOD_SIZE)
             {
                 int frames = AlsaInterop.PcmReadI(Handle, WaveBuffer, PERIOD_SIZE);
-                avail = AlsaInterop.PcmAvailUpdate(Handle);
                 if (frames < 0)
                 {
                     recording = false;
                     RaiseRecordingStopped(new AlsaException(frames));
                 }
                 if (!Async) SwapBuffers();
-                RaiseDataAvailable(WaveBuffer, frames);
+                RaiseDataAvailable(WaveBuffer, frames * frame_bytes);
+                avail = AlsaInterop.PcmAvailUpdate(Handle);
             }
         }
         private void RecordPcmSync()

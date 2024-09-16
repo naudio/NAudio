@@ -34,6 +34,7 @@ public abstract class AlsaPcm
     protected byte[][] Buffers;
     protected bool isInitialized = false;
     protected bool isDisposed = false;
+    internal PCMState State { get=> AlsaInterop.PcmState(Handle); }
     public int Card { get; private set; }
     public uint Device { get; private set; }
     public string Id { get; private set; }

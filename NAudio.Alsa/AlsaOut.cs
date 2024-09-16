@@ -172,7 +172,7 @@ namespace NAudio.Wave
                     throw new AlsaException(error);
                 }
                 SetSoftwareParams();
-                _ = State;
+                _ = State; // idk... it doesn't work without this
                 if (Async)
                 {
                     AlsaInterop.PcmWriteI(Handle, WaveBuffer, 2 * PERIOD_SIZE);

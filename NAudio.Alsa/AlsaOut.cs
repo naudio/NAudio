@@ -60,6 +60,10 @@ namespace NAudio.Wave
                     int error;
                     if ((error = AlsaInterop.PcmStart(Handle)) < 0)
                     {
+                        error = AlsaInterop.PcmRecover(Handle, error, 0);
+                    }
+                    if (error < 0)
+                    {
                         throw new AlsaException("snd_pcm_start", error);
                     }
                     playbackState = PlaybackState.Playing;
@@ -168,7 +172,7 @@ namespace NAudio.Wave
                     throw new AlsaException(error);
                 }
                 SetSoftwareParams();
-                AlsaInterop.PcmPrepare(Handle);
+                _ = State;
                 if (Async)
                 {
                     AlsaInterop.PcmWriteI(Handle, WaveBuffer, 2 * PERIOD_SIZE);
@@ -224,8 +228,10 @@ namespace NAudio.Wave
                 BufferUpdate();
                 if (error < 0)
                 {
-                    playbackState = PlaybackState.Stopped;
-                    RaisePlaybackStopped(new AlsaException(error));
+                    if ((error = AlsaInterop.PcmRecover(Handle, error, 0)) < 0)
+                    {
+                        RaisePlaybackStopped(new AlsaException(error));
+                    }
                 }
                 avail = AlsaInterop.PcmAvailUpdate(Handle);
             }

@@ -34,7 +34,6 @@ namespace NAudioSdl2Demo
 
             waveIn = new WaveInSdl();
             waveIn.WaveFormat = new WaveFormat(deviceCapabilities.Frequency, deviceCapabilities.Bits, deviceCapabilities.Channels);
-            waveIn.AudioConversion = AudioConversion.None;
             waveIn.DeviceId = deviceId;
             waveIn.DataAvailable += WaveInOnDataAvailable;
             waveWriter = new WaveFileWriter(fileAbsolutePath, waveIn.WaveFormat);

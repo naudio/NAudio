@@ -4,7 +4,7 @@ using static NAudio.Sdl2.Interop.SDL;
 namespace NAudio.Sdl2.Structures
 {
     [Flags]
-    public enum AudioConversion : uint
+    internal enum AudioConversion : uint
     {
         None = 0,
         Frequency = SDL_AUDIO_ALLOW_FREQUENCY_CHANGE,

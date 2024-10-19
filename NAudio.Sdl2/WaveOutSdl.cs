@@ -41,7 +41,6 @@ namespace NAudio.Sdl2
             syncContext = SynchronizationContext.Current;
             volumeLock = new object();
             DeviceId = -1;
-            AudioConversion = AudioConversion.None;
             DesiredLatency = 300;
             AdjustLatencyPercent = 0.1;
             Volume = 1.28f;
@@ -57,10 +56,6 @@ namespace NAudio.Sdl2
         /// </summary>
         /// <param name="deviceId">Device to test</param>
         /// <returns>The WaveOutSdl device capabilities</returns>
-        /// <remarks>
-        /// This function only returns DeviceNumber and DeviceName on versions below SDL 2.0.16
-        /// <para>Use the <see cref="WaveOutSdlCapabilities.IsAudioCapabilitiesValid"/> property to check if all capabilities are available</para>
-        /// </remarks>
         public static WaveOutSdlCapabilities GetCapabilities(int deviceId)
         {
             var deviceName = SdlBindingWrapper.GetPlaybackDeviceName(deviceId);
@@ -193,49 +188,9 @@ namespace NAudio.Sdl2
         public PlaybackState PlaybackState => playbackState;
 
         /// <summary>
-        /// Gets playback state directly from sdl
-        /// </summary>
-        public PlaybackState SdlState
-        {
-            get
-            {
-                var status = SdlBindingWrapper.GetDeviceStatus(deviceNumber);
-                switch (status)
-                {
-                    case SDL_AudioStatus.SDL_AUDIO_PLAYING:
-                        return PlaybackState.Playing;
-                    case SDL_AudioStatus.SDL_AUDIO_PAUSED:
-                        return PlaybackState.Paused;
-                    default:
-                        return PlaybackState.Stopped;
-                }
-            }
-        }
-
-        /// <summary>
         /// Gets a <see cref="Wave.WaveFormat"/> instance indicating the format the hardware is using.
         /// </summary>
         public WaveFormat OutputWaveFormat => waveStream.WaveFormat;
-
-        /// <summary>
-        /// Gets a <see cref="Wave.WaveFormat"/> instance indicating what the format is actually using.
-        /// </summary>
-        /// <remarks>
-        /// <para>This property accessible after <see cref="Init(IWaveProvider)"/> call</para>
-        /// <para>If the <see cref="AudioConversion"/> is set to <see cref="AudioConversion.None"/> then this is the same as <see cref="OutputWaveFormat"/></para>
-        /// </remarks>
-        public WaveFormat ActualOutputWaveFormat { get; private set; }
-
-        /// <summary>
-        /// Audio conversion features
-        /// </summary>
-        /// <remarks>
-        /// These flags specify how SDL should behave when a device cannot offer a specific feature<br/>
-        /// If the application requests a feature that the hardware doesn't offer, SDL will always try to get the closest equivalent<br/>
-        /// For example, if you ask for float32 audio format, but the sound card only supports int16, SDL will set the hardware to int16
-        /// <para>If your application can only handle one specific data format, pass a <see cref="AudioConversion.None" /> for <see cref="AudioConversion"/> and let SDL transparently handle any differences</para>
-        /// </remarks>
-        public AudioConversion AudioConversion { get; set; }
 
         /// <summary>
         /// Initializes the WaveOut device
@@ -259,8 +214,7 @@ namespace NAudio.Sdl2
             desiredSpec.silence = 0;
             desiredSpec.samples = frameSize;
             var deviceName = SdlBindingWrapper.GetPlaybackDeviceName(DeviceId);
-            var openDeviceNumber = SdlBindingWrapper.OpenPlaybackDevice(deviceName, ref desiredSpec, out obtainedAudioSpec, AudioConversion);
-            ActualOutputWaveFormat = GetWaveFormat(obtainedAudioSpec);
+            var openDeviceNumber = SdlBindingWrapper.OpenPlaybackDevice(deviceName, ref desiredSpec, out obtainedAudioSpec);
             deviceNumber = openDeviceNumber;
         }
 
@@ -365,24 +319,6 @@ namespace NAudio.Sdl2
         }
 
         /// <summary>
-        /// Return WaveFormat guessed by <see cref="SDL_AudioSpec"/>
-        /// </summary>
-        /// <param name="spec">Audio spec</param>
-        /// <returns>Wave format</returns>
-        private WaveFormat GetWaveFormat(SDL_AudioSpec spec)
-        {
-            var bitSize = SdlBindingWrapper.GetAudioFormatBitSize(spec.format);
-            if (spec.format == AUDIO_F32
-                || spec.format == AUDIO_F32LSB
-                || spec.format == AUDIO_F32MSB
-                || spec.format == AUDIO_F32SYS)
-            {
-                return WaveFormat.CreateIeeeFloatWaveFormat(spec.freq, spec.channels);
-            }
-            return new WaveFormat(spec.freq, bitSize, spec.channels);
-        }
-
-        /// <summary>
         /// Returns the audio format guessed by <see cref="WaveFormat.BitsPerSample"/>
         /// </summary>
         /// <returns>Audio format</returns>
@@ -430,9 +366,8 @@ namespace NAudio.Sdl2
         {
             while (playbackState != PlaybackState.Stopped)
             {
-                // workaround to get rid of stuttering
-                // i assume on different hardware adjusting must be different
-                // is it possible that callbacks will help?
+                // Workaround to get rid of stuttering
+                // TODO: SDL_GetQueuedAudioSize is a better approach than the current one
                 var adjustedLatency = DesiredLatency - (int)(DesiredLatency * AdjustLatencyPercent);
                 if (!callbackEvent.WaitOne(adjustedLatency))
                 {

@@ -55,7 +55,6 @@ namespace NAudio.Sdl2.Interop
         /// <param name="deviceName">Device name</param>
         /// <param name="desiredSpec">Desired output format</param>
         /// <param name="obtainedSpec">Actual output format</param>
-        /// <param name="audioConversion">Enabled conversion features</param>
         /// <returns>Device number
         /// <para>This DeviceNumber and DeviceId is not interchangeable</para>
         /// </returns>
@@ -63,10 +62,9 @@ namespace NAudio.Sdl2.Interop
         public static uint OpenRecordingDevice(
             string deviceName,
             ref SDL_AudioSpec desiredSpec,
-            out SDL_AudioSpec obtainedSpec,
-            AudioConversion audioConversion)
+            out SDL_AudioSpec obtainedSpec)
         {
-            return OpenDevice(deviceName, Device.Capture, ref desiredSpec, out obtainedSpec, audioConversion);
+            return OpenDevice(deviceName, Device.Capture, ref desiredSpec, out obtainedSpec);
         }
 
         /// <summary>
@@ -200,7 +198,6 @@ namespace NAudio.Sdl2.Interop
         /// <param name="deviceName">Device name</param>
         /// <param name="desiredSpec">Desired output format</param>
         /// <param name="obtainedSpec">Actual output format</param>
-        /// <param name="audioConversion">Enabled conversion features</param>
         /// <returns>Device number
         /// <para>This DeviceNumber and DeviceId is not interchangeable</para>
         /// </returns>
@@ -208,10 +205,9 @@ namespace NAudio.Sdl2.Interop
         public static uint OpenPlaybackDevice(
             string deviceName,
             ref SDL_AudioSpec desiredSpec,
-            out SDL_AudioSpec obtainedSpec,
-            AudioConversion audioConversion)
+            out SDL_AudioSpec obtainedSpec)
         {
-            return OpenDevice(deviceName, Device.Playback, ref desiredSpec, out obtainedSpec, audioConversion);
+            return OpenDevice(deviceName, Device.Playback, ref desiredSpec, out obtainedSpec);
         }
                         
 
@@ -401,15 +397,14 @@ namespace NAudio.Sdl2.Interop
         /// <param name="isCapture">Is recording device</param>
         /// <param name="desiredSpec">Desired output format</param>
         /// <param name="obtainedSpec">Actual output format</param>
-        /// <param name="audioConversion">Enabled conversion features</param>
         /// <returns>Device number
         /// <para>This DeviceNumber and DeviceId is not interchangeable</para>
         /// </returns>
         /// <exception cref="SdlException"></exception>
-        private static uint OpenDevice(string deviceName, int isCapture, ref SDL_AudioSpec desiredSpec, out SDL_AudioSpec obtainedSpec, AudioConversion audioConversion)
+        private static uint OpenDevice(string deviceName, int isCapture, ref SDL_AudioSpec desiredSpec, out SDL_AudioSpec obtainedSpec)
         {
             InitSdl();
-            var deviceId = SDL_OpenAudioDevice(deviceName, isCapture, ref desiredSpec, out obtainedSpec, (int)audioConversion);
+            var deviceId = SDL_OpenAudioDevice(deviceName, isCapture, ref desiredSpec, out obtainedSpec, (int)AudioConversion.None);
             if (deviceId <= 0) 
                 throw new SdlException(SDL_GetError());
             return deviceId;

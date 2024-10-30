@@ -1,5 +1,5 @@
-﻿using System;
-using NAudio.Wave.Asio;
+﻿using NAudio.Wave.Asio;
+using System;
 using System.Threading;
 
 namespace NAudio.Wave
@@ -27,7 +27,7 @@ namespace NAudio.Wave
         private string driverName;
 
         private readonly SynchronizationContext syncContext;
-        private bool isInitialized;
+        public bool isInitialized;
 
         public int PreferredBufferSize { get { return driver is null ? -1 : driver.Capabilities.BufferPreferredSize; } }
 
@@ -45,6 +45,8 @@ namespace NAudio.Wave
         /// Occurs when the driver settings are changed by the user, e.g. in the control panel.
         /// </summary>
         public event EventHandler DriverResetRequest;
+
+        public int BufferSize => nbSamples;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AsioOut"/> class with the first 
@@ -71,7 +73,7 @@ namespace NAudio.Wave
         /// <param name="driverIndex">Device number (zero based)</param>
         public AsioOut(int driverIndex)
         {
-            this.syncContext = SynchronizationContext.Current; 
+            this.syncContext = SynchronizationContext.Current;
             String[] names = GetDriverNames();
             if (names.Length == 0)
             {
@@ -379,7 +381,7 @@ namespace NAudio.Wave
         /// Automatically stop when the end of the input stream is reached
         /// Disable this if auto-stop is causing hanging issues
         /// </summary>
-        public bool AutoStop { get; set; } 
+        public bool AutoStop { get; set; }
 
         /// <summary>
         /// A flag to let you know that we have reached the end of the input file

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 namespace NAudio.Wave.WaveFormats
 {
@@ -20,9 +17,9 @@ namespace NAudio.Wave.WaveFormats
         short wReserved3;
 
         public WmaWaveFormat(int sampleRate, int bitsPerSample, int channels)
-            : base(sampleRate,bitsPerSample,channels)
+            : base(sampleRate, bitsPerSample, channels)
         {
-            wValidBitsPerSample = (short) bitsPerSample;
+            wValidBitsPerSample = (short)bitsPerSample;
             if (channels == 1)
                 dwChannelMask = 1;
             else if (channels == 2)

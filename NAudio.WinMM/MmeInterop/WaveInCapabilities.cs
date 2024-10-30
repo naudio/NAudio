@@ -1,6 +1,6 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Runtime.InteropServices;
-using Microsoft.Win32;
 
 namespace NAudio.Wave
 {

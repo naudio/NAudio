@@ -1,10 +1,10 @@
-﻿using System;
-using NAudio.CoreAudioApi;
+﻿using NAudio.CoreAudioApi;
 using NAudio.CoreAudioApi.Interfaces;
-using System.Threading;
-using System.Runtime.InteropServices;
 using NAudio.Utils;
+using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Threading;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave
@@ -29,7 +29,7 @@ namespace NAudio.Wave
         private Thread playThread;
         private readonly SynchronizationContext syncContext;
         private bool dmoResamplerNeeded;
-        
+
         /// <summary>
         /// Playback Stopped
         /// </summary>
@@ -225,7 +225,7 @@ namespace NAudio.Wave
                     unsafe
                     {
                         byte* pByte = (byte*)buffer;
-                        while(read < readLength)
+                        while (read < readLength)
                         {
                             pByte[read++] = 0;
                         }
@@ -312,7 +312,7 @@ namespace NAudio.Wave
         /// </summary>
         public WaveFormat OutputWaveFormat { get; private set; }
 
-#region IWavePlayer Members
+        #region IWavePlayer Members
 
         /// <summary>
         /// Begin Playback
@@ -328,12 +328,12 @@ namespace NAudio.Wave
                         IsBackground = true,
                     };
                     playbackState = PlaybackState.Playing;
-                    playThread.Start();                    
+                    playThread.Start();
                 }
                 else
                 {
                     playbackState = PlaybackState.Playing;
-                }                
+                }
             }
         }
 
@@ -358,7 +358,7 @@ namespace NAudio.Wave
             if (playbackState == PlaybackState.Playing)
             {
                 playbackState = PlaybackState.Paused;
-            }            
+            }
         }
 
         /// <summary>
@@ -493,7 +493,7 @@ namespace NAudio.Wave
         {
             get
             {
-                return mmDevice.AudioEndpointVolume.MasterVolumeLevelScalar;                                
+                return mmDevice.AudioEndpointVolume.MasterVolumeLevelScalar;
             }
             set
             {
@@ -514,19 +514,19 @@ namespace NAudio.Wave
         /// </exception>
         public AudioStreamVolume AudioStreamVolume
         {
-            get 
+            get
             {
                 if (shareMode == AudioClientShareMode.Exclusive)
                 {
                     throw new InvalidOperationException("AudioStreamVolume is ONLY supported for shared audio streams.");
                 }
-                return audioClient.AudioStreamVolume;  
+                return audioClient.AudioStreamVolume;
             }
         }
 
-#endregion
+        #endregion
 
-#region IDisposable Members
+        #region IDisposable Members
 
         /// <summary>
         /// Dispose
@@ -543,6 +543,6 @@ namespace NAudio.Wave
             }
         }
 
-#endregion
+        #endregion
     }
 }

@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NAudio.Wave;
-using NAudio.Utils;
+﻿using NAudio.Utils;
+using System;
 
 namespace NAudio.Wave
 {

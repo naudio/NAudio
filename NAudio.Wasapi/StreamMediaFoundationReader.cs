@@ -1,6 +1,6 @@
+using NAudio.MediaFoundation;
 using System;
 using System.IO;
-using NAudio.MediaFoundation;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave

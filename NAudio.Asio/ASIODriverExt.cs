@@ -82,7 +82,7 @@ namespace NAudio.Wave.Asio
                 throw new ArgumentException("Invalid channel offset");
             }
 
-       }
+        }
 
         /// <summary>
         /// Gets the driver used.
@@ -122,7 +122,8 @@ namespace NAudio.Wave.Asio
             try
             {
                 driver.DisposeBuffers();
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 Console.Out.WriteLine(ex.ToString());
             }
@@ -425,10 +426,10 @@ namespace NAudio.Wave.Asio
                         case AsioMessageSelector.kAsioLatenciesChanged:
                             return 0;
                         case AsioMessageSelector.kAsioSupportsTimeInfo:
-//                            return 1; DON'T SUPPORT FOR NOW. NEED MORE TESTING.
+                            //                            return 1; DON'T SUPPORT FOR NOW. NEED MORE TESTING.
                             return 0;
                         case AsioMessageSelector.kAsioSupportsTimeCode:
-//                            return 1; DON'T SUPPORT FOR NOW. NEED MORE TESTING.
+                            //                            return 1; DON'T SUPPORT FOR NOW. NEED MORE TESTING.
                             return 0;
                     }
                     break;

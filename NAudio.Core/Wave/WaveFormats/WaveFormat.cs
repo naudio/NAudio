@@ -1,15 +1,14 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Diagnostics;
-using NAudio.Utils;
 
 namespace NAudio.Wave
 {
     /// <summary>
     /// Represents a Wave file format
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Ansi, Pack=2)]
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 2)]
     public class WaveFormat
     {
         /// <summary>format type</summary>
@@ -30,11 +29,11 @@ namespace NAudio.Wave
         /// <summary>
         /// Creates a new PCM 44.1Khz stereo 16 bit format
         /// </summary>
-        public WaveFormat() : this(44100,16,2)
+        public WaveFormat() : this(44100, 16, 2)
         {
 
         }
-        
+
         /// <summary>
         /// Creates a new 16 bit wave format with the specified sample
         /// rate and channel count
@@ -53,8 +52,8 @@ namespace NAudio.Wave
         /// <returns></returns>
         public int ConvertLatencyToByteSize(int milliseconds)
         {
-            int bytes = (int) ((AverageBytesPerSecond/1000.0)*milliseconds);
-            if ((bytes%BlockAlign) != 0)
+            int bytes = (int)((AverageBytesPerSecond / 1000.0) * milliseconds);
+            if ((bytes % BlockAlign) != 0)
             {
                 // Return the upper BlockAligned
                 bytes = bytes + BlockAlign - (bytes % BlockAlign);
@@ -139,7 +138,7 @@ namespace NAudio.Wave
             wf.channels = (short)channels;
             wf.bitsPerSample = 32;
             wf.sampleRate = sampleRate;
-            wf.blockAlign = (short) (4*channels);
+            wf.blockAlign = (short)(4 * channels);
             wf.averageBytesPerSecond = sampleRate * wf.blockAlign;
             wf.extraSize = 0;
             return wf;
@@ -265,7 +264,7 @@ namespace NAudio.Wave
         public override bool Equals(object obj)
         {
             var other = obj as WaveFormat;
-            if(other != null)
+            if (other != null)
             {
                 return waveFormatTag == other.waveFormatTag &&
                     channels == other.channels &&
@@ -283,12 +282,12 @@ namespace NAudio.Wave
         /// <returns>A hashcode</returns>
         public override int GetHashCode()
         {
-            return (int) waveFormatTag ^ 
-                (int) channels ^ 
-                sampleRate ^ 
-                averageBytesPerSecond ^ 
-                (int) blockAlign ^ 
-                (int) bitsPerSample;
+            return (int)waveFormatTag ^
+                (int)channels ^
+                sampleRate ^
+                averageBytesPerSecond ^
+                (int)blockAlign ^
+                (int)bitsPerSample;
         }
 
         /// <summary>

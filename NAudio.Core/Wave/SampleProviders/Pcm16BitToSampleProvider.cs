@@ -30,7 +30,7 @@ namespace NAudio.Wave.SampleProviders
             EnsureSourceBuffer(sourceBytesRequired);
             int bytesRead = source.Read(sourceBuffer, 0, sourceBytesRequired);
             int outIndex = offset;
-            for(int n = 0; n < bytesRead; n+=2)
+            for (int n = 0; n < bytesRead; n += 2)
             {
                 buffer[outIndex++] = BitConverter.ToInt16(sourceBuffer, n) / 32768f;
             }

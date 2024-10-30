@@ -1,5 +1,5 @@
-﻿using System;
-using NAudio.Wave.SampleProviders;
+﻿using NAudio.Wave.SampleProviders;
+using System;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave
@@ -33,7 +33,7 @@ namespace NAudio.Wave
             CreateReaderStream(fileName);
             sourceBytesPerSample = (readerStream.WaveFormat.BitsPerSample / 8) * readerStream.WaveFormat.Channels;
             sampleChannel = new SampleChannel(readerStream, false);
-            destBytesPerSample = 4*sampleChannel.WaveFormat.Channels;
+            destBytesPerSample = 4 * sampleChannel.WaveFormat.Channels;
             length = SourceToDest(readerStream.Length);
         }
 
@@ -91,7 +91,7 @@ namespace NAudio.Wave
         public override long Position
         {
             get { return SourceToDest(readerStream.Position); }
-            set { lock (lockObject) { readerStream.Position = DestToSource(value); }  }
+            set { lock (lockObject) { readerStream.Position = DestToSource(value); } }
         }
 
         /// <summary>
@@ -130,7 +130,7 @@ namespace NAudio.Wave
         public float Volume
         {
             get { return sampleChannel.Volume; }
-            set { sampleChannel.Volume = value; } 
+            set { sampleChannel.Volume = value; }
         }
 
         /// <summary>
@@ -157,7 +157,8 @@ namespace NAudio.Wave
         {
             if (disposing)
             {
-                if (readerStream != null) {
+                if (readerStream != null)
+                {
                     readerStream.Dispose();
                     readerStream = null;
                 }

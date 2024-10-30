@@ -1,34 +1,33 @@
 using System;
 using System.IO;
-using System.Text;
 
-namespace NAudio.Midi 
+namespace NAudio.Midi
 {
     /// <summary>
     /// Represents a MIDI pitch wheel change event
     /// </summary>
-    public class PitchWheelChangeEvent : MidiEvent 
+    public class PitchWheelChangeEvent : MidiEvent
     {
         private int pitch;
-        
+
         /// <summary>
         /// Reads a pitch wheel change event from a MIDI stream
         /// </summary>
         /// <param name="br">The MIDI stream to read from</param>
-        public PitchWheelChangeEvent(BinaryReader br) 
+        public PitchWheelChangeEvent(BinaryReader br)
         {
             byte b1 = br.ReadByte();
             byte b2 = br.ReadByte();
-            if((b1 & 0x80) != 0) 
+            if ((b1 & 0x80) != 0)
             {
                 // TODO: might be a follow-on				
                 throw new FormatException("Invalid pitchwheelchange byte 1");
             }
-            if((b2 & 0x80) != 0) 
+            if ((b2 & 0x80) != 0)
             {
                 throw new FormatException("Invalid pitchwheelchange byte 2");
             }
-            
+
             pitch = b1 + (b2 << 7); // 0x2000 is normal
         }
 
@@ -43,12 +42,12 @@ namespace NAudio.Midi
         {
             Pitch = pitchWheel;
         }
-        
+
         /// <summary>
         /// Describes this pitch wheel change event
         /// </summary>
         /// <returns>String describing this pitch wheel change event</returns>
-        public override string ToString() 
+        public override string ToString()
         {
             return String.Format("{0} Pitch {1} ({2})",
                 base.ToString(),

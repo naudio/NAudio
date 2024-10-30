@@ -20,8 +20,8 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 
-using System;
 using NAudio.CoreAudioApi.Interfaces;
+using System;
 using System.Runtime.InteropServices;
 
 namespace NAudio.CoreAudioApi
@@ -39,7 +39,8 @@ namespace NAudio.CoreAudioApi
         /// <summary>
         /// GUID to pass to AudioEndpointVolumeCallback
         /// </summary>
-        public Guid NotificationGuid {
+        public Guid NotificationGuid
+        {
             get => notificationGuid;
             set => notificationGuid = value;
         }
@@ -148,7 +149,7 @@ namespace NAudio.CoreAudioApi
             callBack = new AudioEndpointVolumeCallback(this);
             Marshal.ThrowExceptionForHR(audioEndPointVolume.RegisterControlChangeNotify(callBack));
         }
-        
+
         internal void FireNotification(AudioVolumeNotificationData notificationData)
         {
             OnVolumeNotification?.Invoke(notificationData);
@@ -168,7 +169,7 @@ namespace NAudio.CoreAudioApi
             Marshal.ReleaseComObject(audioEndPointVolume);
             GC.SuppressFinalize(this);
         }
-        
+
         /// <summary>
         /// Finalizer
         /// </summary>

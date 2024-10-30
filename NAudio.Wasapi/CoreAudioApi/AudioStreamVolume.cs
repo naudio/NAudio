@@ -68,7 +68,7 @@ namespace NAudio.CoreAudioApi
             CheckChannelIndex(channelIndex, "channelIndex");
 
             uint index;
-            unchecked 
+            unchecked
             {
                 index = (uint)channelIndex;
             }

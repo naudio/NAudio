@@ -1,13 +1,12 @@
 using System;
 using System.Runtime.InteropServices;
-using NAudio.Wave;
 
-namespace NAudio.Midi 
+namespace NAudio.Midi
 {
     /// <summary>
     /// Represents a MIDI out device
     /// </summary>
-    public class MidiOut : IDisposable 
+    public class MidiOut : IDisposable
     {
         private IntPtr hMidiOut = IntPtr.Zero;
         private bool disposed = false;
@@ -16,9 +15,9 @@ namespace NAudio.Midi
         /// <summary>
         /// Gets the number of MIDI devices available in the system
         /// </summary>
-        public static int NumberOfDevices 
+        public static int NumberOfDevices
         {
-            get 
+            get
             {
                 return MidiInterop.midiOutGetNumDevs();
             }
@@ -35,21 +34,21 @@ namespace NAudio.Midi
             return caps;
         }
 
-        
+
         /// <summary>
         /// Opens a specified MIDI out device
         /// </summary>
         /// <param name="deviceNo">The device number</param>
-        public MidiOut(int deviceNo) 
+        public MidiOut(int deviceNo)
         {
             this.callback = new MidiInterop.MidiOutCallback(Callback);
             MmException.Try(MidiInterop.midiOutOpen(out hMidiOut, (IntPtr)deviceNo, callback, IntPtr.Zero, MidiInterop.CALLBACK_FUNCTION), "midiOutOpen");
         }
-        
+
         /// <summary>
         /// Closes this MIDI out device
         /// </summary>
-        public void Close() 
+        public void Close()
         {
             Dispose();
         }
@@ -57,7 +56,7 @@ namespace NAudio.Midi
         /// <summary>
         /// Closes this MIDI out device
         /// </summary>
-        public void Dispose() 
+        public void Dispose()
         {
             GC.KeepAlive(callback);
             Dispose(true);
@@ -67,27 +66,27 @@ namespace NAudio.Midi
         /// <summary>
         /// Gets or sets the volume for this MIDI out device
         /// </summary>
-        public int Volume 
+        public int Volume
         {
             // TODO: Volume can be accessed by device ID
-            get 
+            get
             {
                 int volume = 0;
-                MmException.Try(MidiInterop.midiOutGetVolume(hMidiOut,ref volume),"midiOutGetVolume");
+                MmException.Try(MidiInterop.midiOutGetVolume(hMidiOut, ref volume), "midiOutGetVolume");
                 return volume;
             }
-            set 
+            set
             {
-                MmException.Try(MidiInterop.midiOutSetVolume(hMidiOut,value),"midiOutSetVolume");
+                MmException.Try(MidiInterop.midiOutSetVolume(hMidiOut, value), "midiOutSetVolume");
             }
         }
 
         /// <summary>
         /// Resets the MIDI out device
         /// </summary>
-        public void Reset() 
+        public void Reset()
         {
-            MmException.Try(MidiInterop.midiOutReset(hMidiOut),"midiOutReset");
+            MmException.Try(MidiInterop.midiOutReset(hMidiOut), "midiOutReset");
         }
 
         /// <summary>
@@ -96,27 +95,27 @@ namespace NAudio.Midi
         /// <param name="message">Message</param>
         /// <param name="param1">Parameter 1</param>
         /// <param name="param2">Parameter 2</param>
-        public void SendDriverMessage(int message, int param1, int param2) 
+        public void SendDriverMessage(int message, int param1, int param2)
         {
-            MmException.Try(MidiInterop.midiOutMessage(hMidiOut,message,(IntPtr)param1,(IntPtr)param2),"midiOutMessage");
+            MmException.Try(MidiInterop.midiOutMessage(hMidiOut, message, (IntPtr)param1, (IntPtr)param2), "midiOutMessage");
         }
 
         /// <summary>
         /// Sends a MIDI message to the MIDI out device
         /// </summary>
         /// <param name="message">The message to send</param>
-        public void Send(int message) 
+        public void Send(int message)
         {
-            MmException.Try(MidiInterop.midiOutShortMsg(hMidiOut,message),"midiOutShortMsg");
+            MmException.Try(MidiInterop.midiOutShortMsg(hMidiOut, message), "midiOutShortMsg");
         }
-        
+
         /// <summary>
         /// Closes the MIDI out device
         /// </summary>
         /// <param name="disposing">True if called from Dispose</param>
-        protected virtual void Dispose(bool disposing) 
+        protected virtual void Dispose(bool disposing)
         {
-            if(!this.disposed) 
+            if (!this.disposed)
             {
                 //if(disposing) Components.Dispose();
                 MidiInterop.midiOutClose(hMidiOut);

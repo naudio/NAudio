@@ -1,4 +1,3 @@
-using System;
 using System.Text;
 
 namespace NAudio.Utils
@@ -8,8 +7,8 @@ namespace NAudio.Utils
     /// </summary>
     public class ByteEncoding : Encoding
     {
-        private ByteEncoding() 
-        { 
+        private ByteEncoding()
+        {
         }
 
         /// <summary>

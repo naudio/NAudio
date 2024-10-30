@@ -1,5 +1,5 @@
-using System;
 using NAudio.Utils;
+using System;
 
 namespace NAudio.Wave.SampleProviders
 {
@@ -55,7 +55,7 @@ namespace NAudio.Wave.SampleProviders
                 if (sample32 < -1.0f)
                     sample32 = -1.0f;
 
-                var sample24 = (int) (sample32*8388607.0);
+                var sample24 = (int)(sample32 * 8388607.0);
                 destBuffer[destOffset++] = (byte)(sample24);
                 destBuffer[destOffset++] = (byte)(sample24 >> 8);
                 destBuffer[destOffset++] = (byte)(sample24 >> 16);

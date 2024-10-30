@@ -1,4 +1,4 @@
-﻿﻿// -----------------------------------------
+﻿// -----------------------------------------
 // SoundScribe (TM) and related software.
 // 
 // Copyright (C) 2007-2011 Vannatech
@@ -49,7 +49,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
         int GetDisplayName(
-            [Out] [MarshalAs(UnmanagedType.LPWStr)] out string displayName);
+            [Out][MarshalAs(UnmanagedType.LPWStr)] out string displayName);
 
         /// <summary>
         /// Assigns a display name to the current audio session.
@@ -59,8 +59,8 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
         int SetDisplayName(
-            [In] [MarshalAs(UnmanagedType.LPWStr)] string displayName,
-            [In] [MarshalAs(UnmanagedType.LPStruct)] Guid eventContext);
+            [In][MarshalAs(UnmanagedType.LPWStr)] string displayName,
+            [In][MarshalAs(UnmanagedType.LPStruct)] Guid eventContext);
 
         /// <summary>
         /// Retrieves the path for the display icon for the audio session.
@@ -69,7 +69,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
         int GetIconPath(
-            [Out] [MarshalAs(UnmanagedType.LPWStr)] out string iconPath);
+            [Out][MarshalAs(UnmanagedType.LPWStr)] out string iconPath);
 
         /// <summary>
         /// Assigns a display icon to the current session.
@@ -79,8 +79,8 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
         int SetIconPath(
-            [In] [MarshalAs(UnmanagedType.LPWStr)] string iconPath,
-            [In] [MarshalAs(UnmanagedType.LPStruct)] Guid eventContext);
+            [In][MarshalAs(UnmanagedType.LPWStr)] string iconPath,
+            [In][MarshalAs(UnmanagedType.LPStruct)] Guid eventContext);
 
         /// <summary>
         /// Retrieves the grouping parameter of the audio session.
@@ -99,8 +99,8 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
         int SetGroupingParam(
-            [In] [MarshalAs(UnmanagedType.LPStruct)] Guid groupingId,
-            [In] [MarshalAs(UnmanagedType.LPStruct)] Guid eventContext);
+            [In][MarshalAs(UnmanagedType.LPStruct)] Guid groupingId,
+            [In][MarshalAs(UnmanagedType.LPStruct)] Guid eventContext);
 
         /// <summary>
         /// Registers the client to receive notifications of session events, including changes in the session state.
@@ -147,7 +147,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
         new int GetDisplayName(
-            [Out] [MarshalAs(UnmanagedType.LPWStr)] out string displayName);
+            [Out][MarshalAs(UnmanagedType.LPWStr)] out string displayName);
 
         /// <summary>
         /// Assigns a display name to the current audio session.
@@ -157,8 +157,8 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
         new int SetDisplayName(
-            [In] [MarshalAs(UnmanagedType.LPWStr)] string displayName,
-            [In] [MarshalAs(UnmanagedType.LPStruct)] Guid eventContext);
+            [In][MarshalAs(UnmanagedType.LPWStr)] string displayName,
+            [In][MarshalAs(UnmanagedType.LPStruct)] Guid eventContext);
 
         /// <summary>
         /// Retrieves the path for the display icon for the audio session.
@@ -167,7 +167,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
         new int GetIconPath(
-            [Out] [MarshalAs(UnmanagedType.LPWStr)] out string iconPath);
+            [Out][MarshalAs(UnmanagedType.LPWStr)] out string iconPath);
 
         /// <summary>
         /// Assigns a display icon to the current session.
@@ -177,8 +177,8 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
         new int SetIconPath(
-            [In] [MarshalAs(UnmanagedType.LPWStr)] string iconPath,
-            [In] [MarshalAs(UnmanagedType.LPStruct)] Guid eventContext);
+            [In][MarshalAs(UnmanagedType.LPWStr)] string iconPath,
+            [In][MarshalAs(UnmanagedType.LPStruct)] Guid eventContext);
 
         /// <summary>
         /// Retrieves the grouping parameter of the audio session.
@@ -197,8 +197,8 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
         new int SetGroupingParam(
-            [In] [MarshalAs(UnmanagedType.LPStruct)] Guid groupingId,
-            [In] [MarshalAs(UnmanagedType.LPStruct)] Guid eventContext);
+            [In][MarshalAs(UnmanagedType.LPStruct)] Guid groupingId,
+            [In][MarshalAs(UnmanagedType.LPStruct)] Guid eventContext);
 
         /// <summary>
         /// Registers the client to receive notifications of session events, including changes in the session state.
@@ -217,14 +217,14 @@ namespace NAudio.CoreAudioApi.Interfaces
         [PreserveSig]
         new int UnregisterAudioSessionNotification(
             [In] IAudioSessionEvents client);
-    /// <summary>
+        /// <summary>
         /// Retrieves the identifier for the audio session.
         /// </summary>
         /// <param name="retVal">Receives the session identifier.</param>
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
         int GetSessionIdentifier(
-            [Out] [MarshalAs(UnmanagedType.LPWStr)] out string retVal);
+            [Out][MarshalAs(UnmanagedType.LPWStr)] out string retVal);
 
         /// <summary>
         /// Retrieves the identifier of the audio session instance.
@@ -233,7 +233,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
         int GetSessionInstanceIdentifier(
-            [Out] [MarshalAs(UnmanagedType.LPWStr)] out string retVal);
+            [Out][MarshalAs(UnmanagedType.LPWStr)] out string retVal);
 
         /// <summary>
         /// Retrieves the process identifier of the audio session.

@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.IO;
 
 namespace NAudio.Wave
@@ -16,7 +14,7 @@ namespace NAudio.Wave
         /// Writes a wave file, including a cues chunk
         /// </summary>
         public CueWaveFileWriter(string fileName, WaveFormat waveFormat)
-            : base (fileName, waveFormat)
+            : base(fileName, waveFormat)
         {
         }
 
@@ -42,12 +40,12 @@ namespace NAudio.Wave
                 byte[] cueChunks = cues.GetRiffChunks();
                 int cueChunksSize = cueChunks.Length;
                 w.Seek(0, SeekOrigin.End);
-                
+
                 if (w.BaseStream.Length % 2 == 1)
                 {
                     w.Write((Byte)0x00);
                 }
-                
+
                 w.Write(cues.GetRiffChunks(), 0, cueChunksSize);
                 w.Seek(4, SeekOrigin.Begin);
                 w.Write((int)(w.BaseStream.Length - 8));

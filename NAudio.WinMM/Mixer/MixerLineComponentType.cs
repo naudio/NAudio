@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace NAudio.Mixer
+﻿namespace NAudio.Mixer
 {
     /// <summary>
     /// Mixer Line Component type enumeration
@@ -53,7 +49,7 @@ namespace NAudio.Mixer
         /// Audio line is a destination that will be the final recording source for voice input. This component type is exactly like MIXERLINE_COMPONENTTYPE_DST_WAVEIN but is intended specifically for settings used during voice recording/recognition. Support for this line is optional for a mixer device. Many mixer devices provide only MIXERLINE_COMPONENTTYPE_DST_WAVEIN.
         /// MIXERLINE_COMPONENTTYPE_DST_VOICEIN
         /// </summary>
-        DestinationVoiceIn = 8,                    
+        DestinationVoiceIn = 8,
         /// <summary>
         /// Audio line is a source that cannot be defined by one of the standard component types. A mixer device is required to use this component type for line component types that have not been defined by Microsoft Corporation.
         /// MIXERLINE_COMPONENTTYPE_SRC_UNDEFINED

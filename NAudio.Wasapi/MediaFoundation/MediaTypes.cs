@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NAudio.Utils;
+﻿using NAudio.Utils;
+using System;
 
 namespace NAudio.MediaFoundation
 {

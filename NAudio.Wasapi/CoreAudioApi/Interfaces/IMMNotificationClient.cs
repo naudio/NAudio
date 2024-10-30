@@ -6,7 +6,7 @@ namespace NAudio.CoreAudioApi.Interfaces
     /// <summary>
     /// IMMNotificationClient
     /// </summary>
-    [Guid("7991EEC9-7E89-4D85-8390-6C703CEC60C0"), 
+    [Guid("7991EEC9-7E89-4D85-8390-6C703CEC60C0"),
         InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
         ComImport]
     public interface IMMNotificationClient

@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.IO;
 
 namespace NAudio.Midi
@@ -29,11 +27,11 @@ namespace NAudio.Midi
         {
             // TODO: there is a form of the TrackSequenceNumberEvent that
             // has a length of zero
-            if(length != 2) 
+            if (length != 2)
             {
                 throw new FormatException("Invalid sequence number length");
             }
-            sequenceNumber = (ushort) ((br.ReadByte() << 8) + br.ReadByte());
+            sequenceNumber = (ushort)((br.ReadByte() << 8) + br.ReadByte());
         }
 
         /// <summary>

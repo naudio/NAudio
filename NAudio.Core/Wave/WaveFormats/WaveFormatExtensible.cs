@@ -1,6 +1,6 @@
-﻿using System;
+﻿using NAudio.Dmo;
+using System;
 using System.Runtime.InteropServices;
-using NAudio.Dmo;
 
 namespace NAudio.Wave
 {
@@ -8,7 +8,7 @@ namespace NAudio.Wave
     /// WaveFormatExtensible
     /// http://www.microsoft.com/whdc/device/audio/multichaud.mspx
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 2)]	
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 2)]
     public class WaveFormatExtensible : WaveFormat
     {
         short wValidBitsPerSample; // bits of precision, or is wSamplesPerBlock if wBitsPerSample==0
@@ -30,7 +30,7 @@ namespace NAudio.Wave
         {
             waveFormatTag = WaveFormatEncoding.Extensible;
             extraSize = 22;
-            wValidBitsPerSample = (short) bits;
+            wValidBitsPerSample = (short)bits;
             for (int n = 0; n < channels; n++)
             {
                 dwChannelMask |= (1 << n);
@@ -59,7 +59,7 @@ namespace NAudio.Wave
             if (subFormat == AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT && bitsPerSample == 32)
                 return CreateIeeeFloatWaveFormat(sampleRate, channels);
             if (subFormat == AudioMediaSubtypes.MEDIASUBTYPE_PCM)
-                return new WaveFormat(sampleRate,bitsPerSample,channels);
+                return new WaveFormat(sampleRate, bitsPerSample, channels);
             return this;
             //throw new InvalidOperationException("Not a recognised PCM or IEEE float format");
         }

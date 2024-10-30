@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Threading;
-using System.Runtime.InteropServices;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave
@@ -155,8 +154,8 @@ namespace NAudio.Wave
                         Debug.WriteLine("WARNING: WaveOutEvent callback event timeout");
                     }
                 }
-                    
-                
+
+
                 // requeue any buffers returned to us
                 if (playbackState == PlaybackState.Playing)
                 {
@@ -308,7 +307,7 @@ namespace NAudio.Wave
                 if (hWaveOut != IntPtr.Zero)
                 {
                     WaveInterop.waveOutClose(hWaveOut);
-                    hWaveOut= IntPtr.Zero;
+                    hWaveOut = IntPtr.Zero;
                 }
             }
         }
@@ -334,7 +333,7 @@ namespace NAudio.Wave
             Debug.Assert(false, "WaveOutEvent device was not closed");
         }
 
-#endregion
+        #endregion
 
         private void RaisePlaybackStoppedEvent(Exception e)
         {

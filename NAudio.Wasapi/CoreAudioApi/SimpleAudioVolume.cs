@@ -3,9 +3,9 @@
 // 12/2014
 // -----------------------------------------
 
+using NAudio.CoreAudioApi.Interfaces;
 using System;
 using System.Runtime.InteropServices;
-using NAudio.CoreAudioApi.Interfaces;
 
 namespace NAudio.CoreAudioApi
 {
@@ -34,7 +34,7 @@ namespace NAudio.CoreAudioApi
         {
             GC.SuppressFinalize(this);
         }
-        
+
         /// <summary>
         /// Finalizer
         /// </summary>

@@ -19,6 +19,6 @@ namespace NAudio.MediaFoundation
         /// <summary>
         /// Regenerates the last output sample.
         /// </summary>
-        MFT_PROCESS_OUTPUT_REGENERATE_LAST_OUTPUT = 0x00000002 
+        MFT_PROCESS_OUTPUT_REGENERATE_LAST_OUTPUT = 0x00000002
     }
 }

@@ -13,7 +13,7 @@
         public Pcm24BitToSampleProvider(IWaveProvider source)
             : base(source)
         {
-            
+
         }
 
         /// <summary>

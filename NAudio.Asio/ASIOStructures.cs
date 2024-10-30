@@ -49,7 +49,7 @@ namespace NAudio.Wave.Asio
         /// <returns>the name of the error</returns>
         public static String getErrorName(AsioError error)
         {
-            return Enum.GetName(typeof(AsioError), error);            
+            return Enum.GetName(typeof(AsioError), error);
         }
     }
 

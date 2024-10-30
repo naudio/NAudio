@@ -1,5 +1,5 @@
-﻿using System;
-using NAudio.CoreAudioApi.Interfaces;
+﻿using NAudio.CoreAudioApi.Interfaces;
+using System;
 
 namespace NAudio.CoreAudioApi
 {

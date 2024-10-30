@@ -1,8 +1,8 @@
-﻿using System;
-using System.Runtime.InteropServices;
+﻿using NAudio.CoreAudioApi;
 using NAudio.Mixer;
+using System;
+using System.Runtime.InteropServices;
 using System.Threading;
-using NAudio.CoreAudioApi;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave
@@ -97,7 +97,7 @@ namespace NAudio.Wave
         {
             CloseWaveInDevice();
             MmResult result = WaveInterop.waveInOpenWindow(out waveInHandle, (IntPtr)DeviceNumber, WaveFormat,
-                callbackEvent.SafeWaitHandle.DangerousGetHandle(), 
+                callbackEvent.SafeWaitHandle.DangerousGetHandle(),
                 IntPtr.Zero, WaveInterop.WaveInOutOpenFlags.CallbackEvent);
             MmException.Try(result, "waveInOpen");
             CreateBuffers();

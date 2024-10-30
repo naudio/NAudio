@@ -51,7 +51,7 @@ namespace NAudio.CoreAudioApi
         /// A channel matrixer and a sample rate converter are inserted as necessary to convert between the uncompressed format supplied to IAudioClient::Initialize and the audio engine mix format.
         /// </summary>
         AutoConvertPcm = 0x80000000,
-           
+
     }
 
     /* not currently used

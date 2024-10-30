@@ -20,7 +20,7 @@ namespace NAudio.Utils
         [DllImport("kernel32.dll")]
         public static extern IntPtr GetProcAddress(IntPtr hModule, string procedureName);
 
-        
+
         /// <summary>
         /// Free a library
         /// </summary>

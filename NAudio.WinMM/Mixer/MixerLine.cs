@@ -1,15 +1,14 @@
 // created on 10/12/2002 at 20:37
 using System;
-using System.Runtime.InteropServices;
-using NAudio.Wave;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
-namespace NAudio.Mixer 
+namespace NAudio.Mixer
 {
     /// <summary>
     /// Represents a mixer line (source or destination)
     /// </summary>
-    public class MixerLine 
+    public class MixerLine
     {
         private MixerInterop.MIXERLINE mixerLine;
         private IntPtr mixerHandle;
@@ -21,7 +20,7 @@ namespace NAudio.Mixer
         /// <param name="mixerHandle">Mixer Handle</param>
         /// <param name="destinationIndex">Destination Index</param>
         /// <param name="mixerHandleType">Mixer Handle Type</param>
-        public MixerLine(IntPtr mixerHandle, int destinationIndex, MixerFlags mixerHandleType) 
+        public MixerLine(IntPtr mixerHandle, int destinationIndex, MixerFlags mixerHandleType)
         {
             this.mixerHandle = mixerHandle;
             this.mixerHandleType = mixerHandleType;
@@ -38,7 +37,7 @@ namespace NAudio.Mixer
         /// <param name="destinationIndex">Destination Index</param>
         /// <param name="sourceIndex">Source Index</param>
         /// <param name="mixerHandleType">Flag indicating the meaning of mixerHandle</param>
-        public MixerLine(IntPtr mixerHandle, int destinationIndex, int sourceIndex, MixerFlags mixerHandleType) 
+        public MixerLine(IntPtr mixerHandle, int destinationIndex, int sourceIndex, MixerFlags mixerHandleType)
         {
             this.mixerHandle = mixerHandle;
             this.mixerHandleType = mixerHandleType;
@@ -63,20 +62,20 @@ namespace NAudio.Mixer
         /// <summary>
         /// Mixer Line Name
         /// </summary>
-        public String Name 
+        public String Name
         {
-            get 
+            get
             {
                 return mixerLine.szName;
             }
         }
-        
+
         /// <summary>
         /// Mixer Line short name
         /// </summary>
-        public String ShortName 
+        public String ShortName
         {
-            get 
+            get
             {
                 return mixerLine.szShortName;
             }
@@ -107,9 +106,9 @@ namespace NAudio.Mixer
         /// <summary>
         /// Mixer destination type description
         /// </summary>
-        public String TypeDescription 
+        public String TypeDescription
         {
-            get 
+            get
             {
                 switch (mixerLine.dwComponentType)
                 {
@@ -158,37 +157,37 @@ namespace NAudio.Mixer
                     default:
                         return "Invalid Component Type";
                 }
-            }				
+            }
         }
-        
+
         /// <summary>
         /// Number of channels
         /// </summary>
-        public int Channels 
+        public int Channels
         {
-            get 
+            get
             {
                 return mixerLine.cChannels;
             }
         }
-        
+
         /// <summary>
         /// Number of sources
         /// </summary>
-        public int SourceCount 
+        public int SourceCount
         {
-            get 
+            get
             {
                 return mixerLine.cConnections;
             }
         }
-        
+
         /// <summary>
         /// Number of controls
         /// </summary>
-        public int ControlsCount 
+        public int ControlsCount
         {
-            get 
+            get
             {
                 return mixerLine.cControls;
             }
@@ -230,13 +229,13 @@ namespace NAudio.Mixer
         /// <summary>
         /// Gets the specified source
         /// </summary>
-        public MixerLine GetSource(int sourceIndex) 
+        public MixerLine GetSource(int sourceIndex)
         {
-            if(sourceIndex < 0 || sourceIndex >= SourceCount) 
+            if (sourceIndex < 0 || sourceIndex >= SourceCount)
             {
                 throw new ArgumentOutOfRangeException("sourceIndex");
             }
-            return new MixerLine(mixerHandle, mixerLine.dwDestination, sourceIndex, this.mixerHandleType);			
+            return new MixerLine(mixerHandle, mixerLine.dwDestination, sourceIndex, this.mixerHandleType);
         }
 
         /// <summary>
@@ -280,7 +279,7 @@ namespace NAudio.Mixer
         /// </summary>
         public override string ToString()
         {
-            return String.Format("{0} {1} ({2} controls, ID={3})", 
+            return String.Format("{0} {1} ({2} controls, ID={3})",
                 Name, TypeDescription, ControlsCount, mixerLine.dwLineID);
         }
     }

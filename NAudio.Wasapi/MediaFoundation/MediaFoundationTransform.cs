@@ -1,7 +1,7 @@
-﻿using System;
-using System.Runtime.InteropServices;
-using NAudio.Utils;
+﻿using NAudio.Utils;
 using NAudio.Wave;
+using System;
+using System.Runtime.InteropServices;
 
 namespace NAudio.MediaFoundation
 {
@@ -20,7 +20,7 @@ namespace NAudio.MediaFoundation
         /// </summary>
         protected readonly WaveFormat outputWaveFormat;
         private readonly byte[] sourceBuffer;
-        
+
         private byte[] outputBuffer;
         private int outputBufferOffset;
         private int outputBufferCount;
@@ -114,7 +114,7 @@ namespace NAudio.MediaFoundation
 
             // strategy will be to always read 1 second from the source, and give it to the resampler
             int bytesWritten = 0;
-            
+
             // read in any leftovers from last time
             if (outputBufferCount > 0)
             {
@@ -198,9 +198,9 @@ namespace NAudio.MediaFoundation
             sample.AddBuffer(pBuffer);
             sample.SetSampleTime(outputPosition); // hopefully this is not needed
             outputDataBuffer[0].pSample = sample;
-            
+
             _MFT_PROCESS_OUTPUT_STATUS status;
-            var hr = transform.ProcessOutput(_MFT_PROCESS_OUTPUT_FLAGS.None, 
+            var hr = transform.ProcessOutput(_MFT_PROCESS_OUTPUT_FLAGS.None,
                                              1, outputDataBuffer, out status);
             if (hr == MediaFoundationErrors.MF_E_TRANSFORM_NEED_MORE_INPUT)
             {
@@ -232,7 +232,7 @@ namespace NAudio.MediaFoundation
             Marshal.ReleaseComObject(outputMediaBuffer);
             return outputBufferLength;
         }
-        
+
         private static long BytesToNsPosition(int bytes, WaveFormat waveFormat)
         {
             long nsPosition = (10000000L * bytes) / waveFormat.AverageBytesPerSecond;

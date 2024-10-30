@@ -73,7 +73,7 @@ namespace NAudio.Wave
 
         void IStream.Seek(long dlibMove, int dwOrigin, IntPtr plibNewPosition)
         {
-            SeekOrigin origin = (SeekOrigin) dwOrigin;
+            SeekOrigin origin = (SeekOrigin)dwOrigin;
             long val = Seek(dlibMove, origin);
             if (plibNewPosition != IntPtr.Zero)
                 Marshal.WriteInt64(plibNewPosition, val);

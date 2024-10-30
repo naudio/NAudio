@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.Text;
-using NAudio.CoreAudioApi.Interfaces;
 
 namespace NAudio.MediaFoundation
 {
@@ -167,7 +166,7 @@ namespace NAudio.MediaFoundation
         /// Copies all of the attributes from this object into another attribute store.
         /// </summary>
         new void CopyAllItems([In, MarshalAs(UnmanagedType.Interface)] IMFAttributes pDest);
-        
+
         /// <summary>
         /// Retrieves the event type. 
         /// </summary>
@@ -202,6 +201,6 @@ namespace NAudio.MediaFoundation
         /// virtual HRESULT STDMETHODCALLTYPE GetValue( 
         ///     /* [out] */ __RPC__out PROPVARIANT *pvValue) = 0;
         /// </remarks>
-        void GetValue([Out]IntPtr pvValue);
+        void GetValue([Out] IntPtr pvValue);
     }
 }

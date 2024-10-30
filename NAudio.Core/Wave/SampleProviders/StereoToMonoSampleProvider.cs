@@ -29,7 +29,7 @@ namespace NAudio.Wave.SampleProviders
         /// <summary>
         /// 1.0 to mix the mono source entirely to the left channel
         /// </summary>
-        public float LeftVolume { get; set; } 
+        public float LeftVolume { get; set; }
 
         /// <summary>
         /// 1.0 to mix the mono source entirely to the right channel

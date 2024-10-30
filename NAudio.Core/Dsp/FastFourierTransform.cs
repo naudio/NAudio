@@ -87,7 +87,7 @@ namespace NAudio.Dsp
                 }
             }
         }
-        
+
         /// <summary>
         /// Applies a Hamming Window
         /// </summary>

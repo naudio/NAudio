@@ -1,6 +1,6 @@
-﻿using System;
+﻿using NAudio.CoreAudioApi.Interfaces;
+using System;
 using System.Runtime.InteropServices;
-using NAudio.CoreAudioApi.Interfaces;
 
 namespace NAudio.Dmo
 {
@@ -53,12 +53,12 @@ namespace NAudio.Dmo
         /// </summary>
         public void Dispose()
         {
-            if(propertyStoreInterface != null)
+            if (propertyStoreInterface != null)
             {
                 Marshal.ReleaseComObject(propertyStoreInterface);
                 propertyStoreInterface = null;
             }
-            if(resamplerPropsInterface != null)
+            if (resamplerPropsInterface != null)
             {
                 Marshal.ReleaseComObject(resamplerPropsInterface);
                 resamplerPropsInterface = null;

@@ -1,6 +1,5 @@
-﻿using System;
+﻿using System.IO;
 using System.Runtime.InteropServices;
-using System.IO;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave

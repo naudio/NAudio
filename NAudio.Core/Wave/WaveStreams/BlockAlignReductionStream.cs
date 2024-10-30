@@ -1,5 +1,5 @@
-﻿using System;
-using NAudio.Utils;
+﻿using NAudio.Utils;
+using System;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave

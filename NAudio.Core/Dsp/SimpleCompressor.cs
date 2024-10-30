@@ -1,6 +1,6 @@
 // based on SimpleComp v1.10 © 2006, ChunkWare Music Software, OPEN-SOURCE
-using System;
 using NAudio.Utils;
+using System;
 
 namespace NAudio.Dsp
 {
@@ -34,7 +34,7 @@ namespace NAudio.Dsp
         {
             this.envdB = DC_OFFSET;
         }
-    
+
         // // compressor runtime process
         public void Process(ref double in1, ref double in2)
         {
@@ -47,7 +47,7 @@ namespace NAudio.Dsp
             // if desired, one could use another EnvelopeDetector to smooth
             // the rectified signal.
 
-            double link = Math.Max( rect1, rect2 );	// link channels with greater of 2
+            double link = Math.Max(rect1, rect2);	// link channels with greater of 2
 
             link += DC_OFFSET; // add DC offset to avoid log( 0 )
             double keydB = Decibels.LinearToDecibels(link); // convert linear -> dB
@@ -70,7 +70,7 @@ namespace NAudio.Dsp
             // thereby avoiding denormals. However, to prevent the offset from causing
             // constant gain reduction, we must subtract it from the envelope, yielding
             // a minimum value of 0dB.
-    
+
             // transfer function
             double gr = overdB * (Ratio - 1.0);	// gain reduction (dB)
             gr = Decibels.DecibelsToLinear(gr) * Decibels.DecibelsToLinear(MakeUpGain); // convert dB -> linear

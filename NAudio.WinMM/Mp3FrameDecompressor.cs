@@ -1,5 +1,5 @@
-﻿using System;
-using NAudio.Wave.Compression;
+﻿using NAudio.Wave.Compression;
+using System;
 
 namespace NAudio.Wave
 {
@@ -76,8 +76,8 @@ namespace NAudio.Wave
             if (!disposed)
             {
                 disposed = true;
-				if(conversionStream != null)
-					conversionStream.Dispose();
+                if (conversionStream != null)
+                    conversionStream.Dispose();
                 GC.SuppressFinalize(this);
             }
         }

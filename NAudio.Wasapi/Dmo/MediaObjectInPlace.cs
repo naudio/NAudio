@@ -40,7 +40,7 @@ namespace NAudio.Dmo
             Marshal.Copy(pointer, data, offset, size);
             Marshal.FreeHGlobal(pointer);
 
-            return (DmoInPlaceProcessReturn) result;
+            return (DmoInPlaceProcessReturn)result;
         }
 
         /// <summary>
@@ -69,7 +69,7 @@ namespace NAudio.Dmo
         /// <returns>Media Object</returns>
         public MediaObject GetMediaObject()
         {
-            return new MediaObject((IMediaObject) mediaObjectInPlace);
+            return new MediaObject((IMediaObject)mediaObjectInPlace);
         }
 
         /// <summary>

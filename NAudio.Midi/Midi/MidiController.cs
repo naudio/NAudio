@@ -1,12 +1,10 @@
-using System;
-
 namespace NAudio.Midi
 {
     /// <summary>
     /// MidiController enumeration
     /// http://www.midi.org/techspecs/midimessages.php#3
     /// </summary>
-    public enum MidiController : byte 
+    public enum MidiController : byte
     {
         /// <summary>Bank Select (MSB)</summary>
         BankSelect = 0,

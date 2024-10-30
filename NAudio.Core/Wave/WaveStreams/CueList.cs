@@ -1,9 +1,8 @@
-﻿using System;
+﻿using NAudio.Utils;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using System.Text.RegularExpressions;
-using NAudio.Utils;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave
@@ -30,7 +29,7 @@ namespace NAudio.Wave
         public Cue(int position, string label)
         {
             Position = position;
-            Label = label??string.Empty;
+            Label = label ?? string.Empty;
         }
     }
 

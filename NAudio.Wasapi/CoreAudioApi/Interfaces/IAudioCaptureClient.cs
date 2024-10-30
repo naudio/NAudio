@@ -16,8 +16,8 @@ namespace NAudio.CoreAudioApi.Interfaces
             );*/
 
         int GetBuffer(
-            out IntPtr dataBuffer, 
-            out int numFramesToRead, 
+            out IntPtr dataBuffer,
+            out int numFramesToRead,
             out AudioClientBufferFlags bufferFlags,
             out long devicePosition,
             out long qpcPosition);

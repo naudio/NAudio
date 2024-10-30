@@ -42,9 +42,9 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
         int GetAudioSessionControl(
-            [In, Optional] [MarshalAs(UnmanagedType.LPStruct)] Guid sessionId,
-            [In] [MarshalAs(UnmanagedType.U4)] UInt32 streamFlags,
-            [Out] [MarshalAs(UnmanagedType.Interface)] out IAudioSessionControl sessionControl);
+            [In, Optional][MarshalAs(UnmanagedType.LPStruct)] Guid sessionId,
+            [In][MarshalAs(UnmanagedType.U4)] UInt32 streamFlags,
+            [Out][MarshalAs(UnmanagedType.Interface)] out IAudioSessionControl sessionControl);
 
         /// <summary>
         /// Retrieves a simple audio volume control.
@@ -55,9 +55,9 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
         int GetSimpleAudioVolume(
-            [In, Optional] [MarshalAs(UnmanagedType.LPStruct)] Guid sessionId,
-            [In] [MarshalAs(UnmanagedType.U4)] UInt32 streamFlags,
-            [Out] [MarshalAs(UnmanagedType.Interface)] out ISimpleAudioVolume audioVolume);
+            [In, Optional][MarshalAs(UnmanagedType.LPStruct)] Guid sessionId,
+            [In][MarshalAs(UnmanagedType.U4)] UInt32 streamFlags,
+            [Out][MarshalAs(UnmanagedType.Interface)] out ISimpleAudioVolume audioVolume);
     }
 
 
@@ -75,9 +75,9 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
         new int GetAudioSessionControl(
-            [In, Optional] [MarshalAs(UnmanagedType.LPStruct)] Guid sessionId,
-            [In] [MarshalAs(UnmanagedType.U4)] UInt32 streamFlags,
-            [Out] [MarshalAs(UnmanagedType.Interface)] out IAudioSessionControl sessionControl);
+            [In, Optional][MarshalAs(UnmanagedType.LPStruct)] Guid sessionId,
+            [In][MarshalAs(UnmanagedType.U4)] UInt32 streamFlags,
+            [Out][MarshalAs(UnmanagedType.Interface)] out IAudioSessionControl sessionControl);
 
         /// <summary>
         /// Retrieves a simple audio volume control.
@@ -88,9 +88,9 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
         new int GetSimpleAudioVolume(
-            [In, Optional] [MarshalAs(UnmanagedType.LPStruct)] Guid sessionId,
-            [In] [MarshalAs(UnmanagedType.U4)] UInt32 streamFlags,
-            [Out] [MarshalAs(UnmanagedType.Interface)] out ISimpleAudioVolume audioVolume);
+            [In, Optional][MarshalAs(UnmanagedType.LPStruct)] Guid sessionId,
+            [In][MarshalAs(UnmanagedType.U4)] UInt32 streamFlags,
+            [Out][MarshalAs(UnmanagedType.Interface)] out ISimpleAudioVolume audioVolume);
 
         [PreserveSig]
         int GetSessionEnumerator(out IAudioSessionEnumerator sessionEnum);

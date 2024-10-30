@@ -33,7 +33,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <param name="newVolumes">An array of volumnes cooresponding with each channel index.</param>
         /// <param name="channelIndex">The number of the channel whose volume level changed.</param>
         void OnChannelVolumeChanged(UInt32 channelCount, IntPtr newVolumes, UInt32 channelIndex);
-        
+
         /// <summary>
         /// notification of the client that the grouping parameter for the session has changed
         /// </summary>

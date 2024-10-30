@@ -1,5 +1,5 @@
-﻿using System;
-using NAudio.Utils;
+﻿using NAudio.Utils;
+using System;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave
@@ -91,7 +91,7 @@ namespace NAudio.Wave
         {
             // create buffer here to allow user to customise buffer length
             if (circularBuffer == null)
-            { 
+            {
                 circularBuffer = new CircularBuffer(BufferLength);
             }
 
@@ -106,11 +106,11 @@ namespace NAudio.Wave
         /// Reads from this WaveProvider
         /// Will always return count bytes, since we will zero-fill the buffer if not enough available
         /// </summary>
-        public int Read(byte[] buffer, int offset, int count) 
+        public int Read(byte[] buffer, int offset, int count)
         {
             int read = 0;
             if (circularBuffer != null) // not yet created
-            { 
+            {
                 read = circularBuffer.Read(buffer, offset, count);
             }
             if (ReadFully && read < count)

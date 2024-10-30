@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave
@@ -23,7 +22,7 @@ namespace NAudio.Wave
             this.sourceStream = sourceStream;
             this.waveFormat = waveFormat;
         }
-        
+
         /// <summary>
         /// Initialises a new instance of RawSourceWaveStream
         /// </summary>

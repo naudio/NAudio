@@ -9,8 +9,19 @@ namespace NAudio.Extras
     /// </summary>
     public class CachedSound
     {
+        /// <summary>
+        /// Audio data
+        /// </summary>
         public float[] AudioData { get; }
+
+        /// <summary>
+        /// Format of the audio
+        /// </summary>
         public WaveFormat WaveFormat { get; }
+
+        /// <summary>
+        /// Creates a new CachedSound from a file
+        /// </summary>
         public CachedSound(string audioFileName)
         {
             using (var audioFileReader = new AudioFileReader(audioFileName))

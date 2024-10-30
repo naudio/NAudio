@@ -101,5 +101,16 @@ namespace NAudio.CoreAudioApi
                 return result;
             }
         }
+
+        /// <summary>
+        /// Part
+        /// </summary>
+        public Part Part
+        {
+            get
+            {
+                return new Part(connectorInterface as IPart);
+            }
+        }
     }
 }

@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NUnit.Framework;
-using NAudio.Mixer;
-using System.Diagnostics;
-using NAudio;
+﻿using NAudio.Mixer;
 using NAudio.Wave;
+using NUnit.Framework;
+using System.Diagnostics;
 
 namespace NAudioTests
 {
@@ -32,23 +28,21 @@ namespace NAudioTests
             Mixer mixer = new Mixer(defaultWaveInMixerId);
             foreach (MixerLine destination in mixer.Destinations)
             {
-                Debug.WriteLine(String.Format("DESTINATION: {0} {1} (Type: {2}, Target: {3})",
-                    destination.Name, destination.TypeDescription, destination.ComponentType, destination.TargetName));
+                Debug.WriteLine($"DESTINATION: {destination.Name} {destination.TypeDescription} (Type: {destination.ComponentType}, Target: {destination.TargetName})");
 
                 if (destination.ComponentType == MixerLineComponentType.DestinationWaveIn)
                 {
                     foreach (MixerLine source in destination.Sources)
                     {
-                        Debug.WriteLine(String.Format("{0} {1} (Source: {2}, Target: {3})",
-                            source.Name, source.TypeDescription, source.IsSource, source.TargetName));
+                        Debug.WriteLine($"{source.Name} {source.TypeDescription} (Source: {source.IsSource}, Target: {source.TargetName})");
                         if (source.ComponentType == MixerLineComponentType.SourceMicrophone)
                         {
-                            Debug.WriteLine(String.Format("Found the microphone: {0}", source.Name));
+                            Debug.WriteLine($"Found the microphone: {source.Name}");
                             foreach (MixerControl control in source.Controls)
                             {
                                 if (control.ControlType == MixerControlType.Volume)
                                 {
-                                    Debug.WriteLine(String.Format("Volume Found: {0}", control));
+                                    Debug.WriteLine($"Volume Found: {control}");
                                     UnsignedMixerControl umc = (UnsignedMixerControl)control;
                                     uint originalValue = umc.Value;
                                     umc.Value = umc.MinValue;
@@ -80,7 +74,7 @@ namespace NAudioTests
         private static void ExploreMixerDevice(int deviceIndex)
         {
             Mixer mixer = new Mixer(deviceIndex);
-            Debug.WriteLine(String.Format("Device {0}: {1}",deviceIndex,mixer.Name));
+            Debug.WriteLine($"Device {deviceIndex}: {mixer.Name}");
             Debug.WriteLine("--------------------------------------------");
             int destinations = mixer.DestinationCount;
             Assert.That(destinations > 0, "Expected at least one destination");
@@ -93,12 +87,10 @@ namespace NAudioTests
         private static void ExploreMixerDestination(Mixer mixer, int destinationIndex)
         {
             var destination = mixer.GetDestination(destinationIndex);
-            Debug.WriteLine(String.Format("Destination {0}: {1}", 
-                destinationIndex, destination));
-            int channels = destination.Channels;
+            Debug.WriteLine($"Destination {destinationIndex}: {destination} ({destination.Channels})");
             foreach (MixerControl control in destination.Controls)
             {
-                Debug.WriteLine(String.Format("CONTROL: {0}", control));
+                Debug.WriteLine($"CONTROL: {control}");
             }
             int sources = destination.SourceCount;
             for (int sourceIndex = 0; sourceIndex < sources; sourceIndex++)
@@ -110,11 +102,10 @@ namespace NAudioTests
         private static void ExploreMixerSource(MixerLine destinationLine, int sourceIndex)
         {
             var sourceLine = destinationLine.GetSource(sourceIndex);
-            Debug.WriteLine(String.Format("Source {0}: {1}",
-                sourceIndex, sourceLine));
+            Debug.WriteLine($"Source {sourceIndex}: {sourceLine}");
             foreach (MixerControl control in sourceLine.Controls)
             {
-                Debug.WriteLine(String.Format("CONTROL: {0}", control));
+                Debug.WriteLine($"CONTROL: {control}");
             }
         }
     }

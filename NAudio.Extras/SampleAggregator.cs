@@ -10,16 +10,28 @@ namespace NAudio.Extras
     /// </summary>
     public class SampleAggregator : ISampleProvider
     {
-        // volume
+        /// <summary>
+        /// Raised to indicate the maximum volume level in this period
+        /// </summary>
         public event EventHandler<MaxSampleEventArgs> MaximumCalculated;
         private float maxValue;
         private float minValue;
+        /// <summary>
+        /// Notification count, number of samples between MaximumCalculated events
+        /// </summary>
         public int NotificationCount { get; set; }
         int count;
 
-        // FFT
+        /// <summary>
+        /// Raised to indicate that a block of samples has had an FFT performed on it
+        /// </summary>
         public event EventHandler<FftEventArgs> FftCalculated;
+
+        /// <summary>
+        /// If true, performs an FFT on each block of samples
+        /// </summary>
         public bool PerformFFT { get; set; }
+
         private readonly Complex[] fftBuffer;
         private readonly FftEventArgs fftArgs;
         private int fftPos;
@@ -29,6 +41,11 @@ namespace NAudio.Extras
 
         private readonly int channels;
 
+        /// <summary>
+        /// Creates a new SampleAggregator
+        /// </summary>
+        /// <param name="source">source sample provider</param>
+        /// <param name="fftLength">FFT length, must be a power of 2</param>
         public SampleAggregator(ISampleProvider source, int fftLength = 1024)
         {
             channels = source.WaveFormat.Channels;
@@ -48,7 +65,9 @@ namespace NAudio.Extras
             return (x & (x - 1)) == 0;
         }
 
-
+        /// <summary>
+        /// Reset the volume calculation
+        /// </summary>
         public void Reset()
         {
             count = 0;
@@ -81,8 +100,14 @@ namespace NAudio.Extras
             }
         }
 
+        /// <summary>
+        /// Gets the WaveFormat of this Sample Provider
+        /// </summary>
         public WaveFormat WaveFormat => source.WaveFormat;
 
+        /// <summary>
+        /// Reads samples from this sample provider
+        /// </summary>
         public int Read(float[] buffer, int offset, int count)
         {
             var samplesRead = source.Read(buffer, offset, count);
@@ -95,25 +120,46 @@ namespace NAudio.Extras
         }
     }
 
+    /// <summary>
+    /// Max sample event args
+    /// </summary>
     public class MaxSampleEventArgs : EventArgs
     {
+        /// <summary>
+        /// Creates a new MaxSampleEventArgs
+        /// </summary>
         [DebuggerStepThrough]
         public MaxSampleEventArgs(float minValue, float maxValue)
         {
             MaxSample = maxValue;
             MinSample = minValue;
         }
+        /// <summary>
+        /// Maximum sample value in this period
+        /// </summary>
         public float MaxSample { get; private set; }
+        /// <summary>
+        /// Minimum sample value in this period
+        /// </summary>
         public float MinSample { get; private set; }
     }
 
+    /// <summary>
+    /// FFT Event Args
+    /// </summary>
     public class FftEventArgs : EventArgs
     {
+        /// <summary>
+        /// Creates a new FFTEventArgs
+        /// </summary>
         [DebuggerStepThrough]
         public FftEventArgs(Complex[] result)
         {
             Result = result;
         }
+        /// <summary>
+        /// Result of FFT
+        /// </summary>
         public Complex[] Result { get; private set; }
     }
 }

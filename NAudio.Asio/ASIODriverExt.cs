@@ -30,6 +30,9 @@ namespace NAudio.Wave.Asio
         private AsioFillBufferCallback fillBufferCallback;
         private int outputChannelOffset;
         private int inputChannelOffset;
+        /// <summary>
+        /// Reset Request Callback
+        /// </summary>
         public Action ResetRequestCallback;
 
         /// <summary>

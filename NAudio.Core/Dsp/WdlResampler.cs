@@ -36,7 +36,7 @@ namespace NAudio.Dsp
     /// <summary>
     /// Fully managed resampler, based on Cockos WDL Resampler
     /// </summary>
-    class WdlResampler
+    public class WdlResampler
     {
         private const int WDL_RESAMPLE_MAX_FILTERS = 4;
         private const int WDL_RESAMPLE_MAX_NCH = 64;
@@ -122,6 +122,9 @@ namespace NAudio.Dsp
             if (m_iirfilter != null) m_iirfilter.Reset();
         }
 
+        /// <summary>
+        /// Set input and output rates
+        /// </summary>
         public void SetRates(double rate_in, double rate_out)
         {
             if (rate_in < 1.0) rate_in = 1.0;
@@ -134,7 +137,9 @@ namespace NAudio.Dsp
             }
         }
 
-        // amount of input that has been received but not yet converted to output, in seconds
+        /// <summary>
+        /// amount of input that has been received but not yet converted to output, in seconds
+        /// </summary>
         public double GetCurrentLatency()
         {
             double v = ((double)m_samples_in_rsinbuf - m_filtlatency) / m_sratein;
@@ -210,9 +215,11 @@ namespace NAudio.Dsp
             return sreq;
         }
 
-        // if numsamples_in < the value return by ResamplePrepare(), then it will be flushed to produce all remaining valid samples
-        // do NOT call with nsamples_in greater than the value returned from resamplerprpare()! the extra samples will be ignored.
-        // returns number of samples successfully outputted to out
+        /// <summary>
+        /// if numsamples_in &lt; the value return by ResamplePrepare(), then it will be flushed to produce all remaining valid samples
+        /// do NOT call with nsamples_in greater than the value returned from resamplerprpare()! the extra samples will be ignored.
+        /// returns number of samples successfully outputted to out
+        /// </summary>
         public int ResampleOut(WDL_ResampleSample[] outBuffer, int outBufferIndex, int nsamples_in, int nsamples_out, int nch)
         {
             if (nch > WDL_RESAMPLE_MAX_NCH || nch < 1)

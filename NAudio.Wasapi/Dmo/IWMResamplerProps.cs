@@ -8,7 +8,8 @@ namespace NAudio.Dmo
     /// wmcodecdsp.h
     /// </summary>
     [Guid("E7E9984F-F09F-4da4-903F-6E2E0EFE56B5"),
-        InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
+        ComImport]
     interface IWMResamplerProps
     {
         /// <summary>

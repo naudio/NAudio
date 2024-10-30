@@ -3,15 +3,16 @@
   <PropertyGroup>
     <!-- https://docs.microsoft.com/en-us/windows/uwp/updates-and-versions/choose-a-uwp-version -->
     <TargetFramework>uap10.0.18362</TargetFramework>
-    <Version>2.1.0</Version>
+    <Version>2.2.1</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Authors>Mark Heath</Authors>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\NAudioStrongNameKey.snk</AssemblyOriginatorKeyFile>
     <PackageProjectUrl>https://github.com/naudio/NAudio</PackageProjectUrl>
     <PackageTags>C# .NET audio sound</PackageTags>
     <RepositoryUrl>https://github.com/naudio/NAudio</RepositoryUrl>
-    <Copyright>© Mark Heath 2022</Copyright>
+    <Copyright>© Mark Heath 2023</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageIcon>naudio-icon.png</PackageIcon>
   </PropertyGroup>

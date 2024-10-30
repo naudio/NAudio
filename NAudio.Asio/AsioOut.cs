@@ -363,7 +363,7 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// Gets the latency (in ms) of the playback driver
+        /// Gets the latency (in samples) of the playback driver
         /// </summary>
         public int PlaybackLatency
         {

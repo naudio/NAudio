@@ -53,10 +53,13 @@ wo.Dispose();
 Suppose we have a raw audio file and we know the wave format of the audio in it. Let's say its 8kHz 16 bit mono. We can just open the file with `File.OpenRead` and pass it into a `RawSourceWaveStream`. Then we can convert it to a WAV file with `WaveFileWriter.CreateWaveFile`.
 
 ```c#
-var path = "example.pcm";
-var s = new RawSourceWaveStream(File.OpenRead(path), new WaveFormat(8000,1));
-var outpath = "example.wav";
-WaveFileWriter.CreateWaveFile(outpath, s);
+var inPath = "example.pcm";
+var outPath = "example.wav";
+using(var fileStream = File.OpenRead(inPath))
+{
+    var s = new RawSourceWaveStream(fileStream, new WaveFormat(8000,1));
+    WaveFileWriter.CreateWaveFile(outPath, s);
+}
 ```
 
 Note that WAV files can contain compressed audio, so as long as you know the correct `WaveFormat` structure you can use that. Let's look at a compressed audio example next.

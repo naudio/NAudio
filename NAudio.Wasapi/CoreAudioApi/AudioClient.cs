@@ -1,9 +1,9 @@
-﻿using System;
-using NAudio.CoreAudioApi.Interfaces;
-using System.Runtime.InteropServices;
-using NAudio.Wave;
-using System.Threading.Tasks;
+﻿using NAudio.CoreAudioApi.Interfaces;
 using NAudio.Wasapi.CoreAudioApi;
+using NAudio.Wave;
+using System;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 namespace NAudio.CoreAudioApi
 {
@@ -20,6 +20,9 @@ namespace NAudio.CoreAudioApi
         private AudioStreamVolume audioStreamVolume;
         private AudioClientShareMode shareMode;
 
+        /// <summary>
+        /// Activate Async
+        /// </summary>
         public static async Task<AudioClient> ActivateAsync(string deviceInterfacePath, AudioClientProperties? audioClientProperties)
         {
             var icbh = new ActivateAudioInterfaceCompletionHandler(
@@ -53,6 +56,10 @@ namespace NAudio.CoreAudioApi
             return new AudioClient((IAudioClient)audioClient2);
         }
 
+        /// <summary>
+        /// Creates a new AudioClient
+        /// </summary>
+        /// <param name="audioClientInterface"></param>
         public AudioClient(IAudioClient audioClientInterface)
         {
             this.audioClientInterface = audioClientInterface;
@@ -287,7 +294,7 @@ namespace NAudio.CoreAudioApi
             {
                 return false;
             }
-            if (hresult == (int)AudioClientErrors.UnsupportedFormat)
+            if (hresult == AudioClientErrorCode.UnsupportedFormat)
             {
                 // documentation is confusing as to what this flag means
                 // https://docs.microsoft.com/en-us/windows/desktop/api/audioclient/nf-audioclient-iaudioclient-isformatsupported

@@ -1,12 +1,13 @@
 using System;
 using System.Runtime.InteropServices;
+using static NAudio.Midi.MidiInterop;
 
 namespace NAudio.Midi
 {
     /// <summary>
     /// Represents a MIDI in device
     /// </summary>
-    public class MidiIn : IDisposable 
+    public class MidiIn : IDisposable
     {
         private IntPtr hMidiIn = IntPtr.Zero;
         private bool disposeIsRunning = false; // true while the Dispose() method run.
@@ -34,28 +35,31 @@ namespace NAudio.Midi
         /// <summary>
         /// Gets the number of MIDI input devices available in the system
         /// </summary>
-        public static int NumberOfDevices 
+        public static int NumberOfDevices
         {
-            get 
+            get
             {
                 return MidiInterop.midiInGetNumDevs();
             }
         }
-        
+
         /// <summary>
         /// Opens a specified MIDI in device
         /// </summary>
         /// <param name="deviceNo">The device number</param>
-        public MidiIn(int deviceNo) 
+        public MidiIn(int deviceNo)
         {
-            this.callback = new MidiInterop.MidiInCallback(Callback);
-            MmException.Try(MidiInterop.midiInOpen(out hMidiIn, (IntPtr) deviceNo,this.callback,IntPtr.Zero,MidiInterop.CALLBACK_FUNCTION),"midiInOpen");
+            this.callback = new MidiInterop.MidiInCallback(
+                (IntPtr midiInHandle, MidiInMessage message, IntPtr userData, IntPtr messageParameter1, IntPtr messageParameter2) =>
+                    Callback(midiInHandle, message, userData, messageParameter1, messageParameter2, deviceNo)
+            );
+            MmException.Try(MidiInterop.midiInOpen(out hMidiIn, (IntPtr)deviceNo, this.callback, IntPtr.Zero, MidiInterop.CALLBACK_FUNCTION), "midiInOpen");
         }
-        
+
         /// <summary>
         /// Closes this MIDI in device
         /// </summary>
-        public void Close() 
+        public void Close()
         {
             Dispose();
         }
@@ -63,7 +67,7 @@ namespace NAudio.Midi
         /// <summary>
         /// Closes this MIDI in device
         /// </summary>
-        public void Dispose() 
+        public void Dispose()
         {
             GC.KeepAlive(callback);
             Dispose(true);
@@ -122,9 +126,9 @@ namespace NAudio.Midi
             }
         }
 
-        private void Callback(IntPtr midiInHandle, MidiInterop.MidiInMessage message, IntPtr userData, IntPtr messageParameter1, IntPtr messageParameter2)
+        private void Callback(IntPtr midiInHandle, MidiInterop.MidiInMessage message, IntPtr userData, IntPtr messageParameter1, IntPtr messageParameter2, int deviceNo)
         {
-            switch(message)
+            switch (message)
             {
                 case MidiInterop.MidiInMessage.Open:
                     // message Parameter 1 & 2 are not used
@@ -134,15 +138,15 @@ namespace NAudio.Midi
                     // parameter 2 is milliseconds since MidiInStart
                     if (MessageReceived != null)
                     {
-                        MessageReceived(this, new MidiInMessageEventArgs(messageParameter1.ToInt32(), messageParameter2.ToInt32()));
+                        MessageReceived(this, new MidiInMessageEventArgs(deviceNo, messageParameter1.ToInt32(), messageParameter2.ToInt32()));
                     }
                     break;
                 case MidiInterop.MidiInMessage.Error:
                     // parameter 1 is invalid MIDI message
                     if (ErrorReceived != null)
                     {
-                        ErrorReceived(this, new MidiInMessageEventArgs(messageParameter1.ToInt32(), messageParameter2.ToInt32()));
-                    } 
+                        ErrorReceived(this, new MidiInMessageEventArgs(deviceNo, messageParameter1.ToInt32(), messageParameter2.ToInt32()));
+                    }
                     break;
                 case MidiInterop.MidiInMessage.Close:
                     // message Parameter 1 & 2 are not used
@@ -158,9 +162,9 @@ namespace NAudio.Midi
                         var sysexBytes = new byte[hdr.dwBytesRecorded];
                         Marshal.Copy(hdr.lpData, sysexBytes, 0, hdr.dwBytesRecorded);
 
-                        if (sysexBytes.Length!=0) // do not trigger the sysex event if no data in SYSEX message
+                        if (sysexBytes.Length != 0) // do not trigger the sysex event if no data in SYSEX message
                             SysexMessageReceived(this, new MidiInSysexMessageEventArgs(sysexBytes, messageParameter2.ToInt32()));
-                        
+
                         //  Re-use the buffer - but not if we have no event handler registered as we are closing
                         //  BUT When disposing the (resetting the MidiIn port), LONGDATA midi message are fired with a zero length.
                         //  In that case, buffer should no be ReAdd to avoid an inifinite loop of callback as buffer are reused forever.
@@ -186,7 +190,7 @@ namespace NAudio.Midi
         {
             MidiInCapabilities caps = new MidiInCapabilities();
             int structSize = Marshal.SizeOf(caps);
-            MmException.Try(MidiInterop.midiInGetDevCaps((IntPtr)midiInDeviceNumber,out caps,structSize),"midiInGetDevCaps");
+            MmException.Try(MidiInterop.midiInGetDevCaps((IntPtr)midiInDeviceNumber, out caps, structSize), "midiInGetDevCaps");
             return caps;
         }
 
@@ -194,9 +198,9 @@ namespace NAudio.Midi
         /// Closes the MIDI in device
         /// </summary>
         /// <param name="disposing">True if called from Dispose</param>
-        protected virtual void Dispose(bool disposing) 
+        protected virtual void Dispose(bool disposing)
         {
-            if(!this.disposed) 
+            if (!this.disposed)
             {
                 disposeIsRunning = true;
                 //if(disposing) Components.Dispose();
@@ -233,7 +237,7 @@ namespace NAudio.Midi
         /// </summary>
         ~MidiIn()
         {
-            System.Diagnostics.Debug.Assert(false,"MIDI In was not finalised");
+            System.Diagnostics.Debug.Assert(false, "MIDI In was not finalised");
             Dispose(false);
         }
     }

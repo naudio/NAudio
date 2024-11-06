@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using Microsoft.Maui.ApplicationModel;
 using NAudioAvaloniaDemo.Utils;
 using NAudioAvaloniaDemo.ViewModel;
 
@@ -22,7 +23,6 @@ namespace NAudioAvaloniaDemo.WaveInSdlDemo
         {
             Recordings = new ObservableCollection<string>();
             OutputFolder = Path.Combine(Path.GetTempPath(), "NAudioAvaloniaDemo");
-            Directory.CreateDirectory(OutputFolder);
             foreach (var file in Directory.GetFiles(OutputFolder))
             {
                 Recordings.Add(file);
@@ -38,14 +38,27 @@ namespace NAudioAvaloniaDemo.WaveInSdlDemo
             ShellExecute(OutputFolder);
         }
 
-        private static void ShellExecute(string file)
+        private async void ShellExecute(string file)
         {
-            var process = new Process();
-            process.StartInfo = new ProcessStartInfo(file)
+            try
             {
-                UseShellExecute = true
-            };
-            process.Start();
+                if (OperatingSystem.IsAndroid())
+                {
+                    await Launcher.Default.OpenAsync(new OpenFileRequest("Open", new Microsoft.Maui.Storage.ReadOnlyFile(file)));
+                    return;
+                }
+
+                var process = new Process();
+                process.StartInfo = new ProcessStartInfo(file)
+                {
+                    UseShellExecute = true
+                };
+                process.Start();
+            }
+            catch (Exception e)
+            {
+                await MessageBox.ShowAsync(e.Message);
+            }
         }
 
         private async void Delete()

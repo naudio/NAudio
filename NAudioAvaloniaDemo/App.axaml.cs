@@ -1,5 +1,4 @@
 ﻿using Avalonia;
-using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core.Plugins;
 using Avalonia.Markup.Xaml;
@@ -11,8 +10,6 @@ namespace NAudioAvaloniaDemo
 {
     public partial class App : Application
     {
-        public static Window MainWindow { get; private set; }
-
         public override void Initialize()
         {
             AvaloniaXamlLoader.Load(this);
@@ -24,20 +21,25 @@ namespace NAudioAvaloniaDemo
             // Without this line you will get duplicate validations from both Avalonia and CT
             BindingPlugins.DataValidators.RemoveAt(0);
 
+            var modules = ReflectionHelper.CreateAllInstancesOf<IModule>();
+            var vm = new MainWindowViewModel(modules);
+
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
                 var mainWindow = new MainWindow();
-
-                var modules = ReflectionHelper.CreateAllInstancesOf<IModule>();
-
-                var vm = new MainWindowViewModel(modules);
                 mainWindow.DataContext = vm;
                 mainWindow.Closing += (s, args) => vm.SelectedModule.Deactivate();
                 mainWindow.Show();
 
                 desktop.ShutdownRequested += DesktopOnShutdownRequested;
                 desktop.MainWindow = mainWindow;
-                MainWindow = mainWindow;
+            }
+            else if (ApplicationLifetime is ISingleViewApplicationLifetime singleViewPlatform)
+            {
+                var mainView = new MainView();
+                mainView.DataContext = vm;
+                mainView.Unloaded += (s, args) => vm.SelectedModule.Deactivate();
+                singleViewPlatform.MainView = mainView;
             }
 
             base.OnFrameworkInitializationCompleted();

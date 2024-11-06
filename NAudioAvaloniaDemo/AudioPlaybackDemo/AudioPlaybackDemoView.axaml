@@ -10,9 +10,9 @@
             <RowDefinition Height="2*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <StackPanel Orientation="Horizontal">
+        <StackPanel Orientation="Horizontal" Margin="0 5">
             <Label>Select Visualization: </Label>
-            <ComboBox ItemsSource="{Binding Visualizations}" DisplayMemberBinding="{Binding Name}" SelectedItem="{Binding SelectedVisualization, Mode=TwoWay}" Width="270" />
+            <ComboBox ItemsSource="{Binding Visualizations}" DisplayMemberBinding="{Binding Name}" SelectedItem="{Binding SelectedVisualization, Mode=TwoWay}" Width="250" />
         </StackPanel>
         <ContentPresenter Content="{Binding Visualization}" Grid.Row="1" />
         <StackPanel Orientation="Horizontal" Grid.Row="2">

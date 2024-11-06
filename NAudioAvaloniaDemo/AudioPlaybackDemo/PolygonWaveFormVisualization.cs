@@ -6,7 +6,7 @@ namespace NAudioAvaloniaDemo.AudioPlaybackDemo
     {
         private readonly PolygonWaveFormControl polygonWaveFormControl = new PolygonWaveFormControl();
 
-        public string Name => "Polygon WaveForm Visualization";
+        public string Name => "Polygon WaveForm";
 
         public object Content => polygonWaveFormControl;
 

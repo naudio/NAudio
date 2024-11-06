@@ -4,6 +4,7 @@ using static NAudio.Sdl2.Interop.SDL;
 
 namespace NAudio.Sdl2.Interop
 {
+    // TODO: Make initialization and disposal automatic with reference-counting on the managed side so users don't have to do it manually
     public static class SdlBindingWrapper
     {
         #region Recording Device

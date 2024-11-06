@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using NAudio.Wave.SampleProviders;
 
 // ReSharper disable once CheckNamespace
@@ -38,6 +39,52 @@ namespace NAudio.Wave
         }
 
         /// <summary>
+        /// Initializes a new instance of AudioFileReader
+        /// </summary>
+        /// <param name="fileName">The file name</param>
+        /// <param name="inputStream">The input stream containing an audio file</param>
+        public AudioFileReader(string fileName, Stream inputStream)
+        {
+            lockObject = new object();
+            FileName = fileName;
+            CreateReaderStream(fileName, inputStream);
+            sourceBytesPerSample = (readerStream.WaveFormat.BitsPerSample / 8) * readerStream.WaveFormat.Channels;
+            sampleChannel = new SampleChannel(readerStream, false);
+            destBytesPerSample = 4 * sampleChannel.WaveFormat.Channels;
+            length = SourceToDest(readerStream.Length);
+        }
+
+        private void CreateReaderStream(string fileName, Stream inputStream)
+        {
+            if (fileName.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
+            {
+                readerStream = new WaveFileReader(inputStream);
+                if (readerStream.WaveFormat.Encoding != WaveFormatEncoding.Pcm && readerStream.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
+                {
+                    readerStream = WaveFormatConversionStream.CreatePcmStream(readerStream);
+                    readerStream = new BlockAlignReductionStream(readerStream);
+                }
+                return;
+            }
+            if(fileName.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase))
+            {
+                if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+                    throw new NotSupportedException("Audio file format not supported");
+                if (Environment.OSVersion.Version.Major < 6)
+                    readerStream = new Mp3FileReader(fileName);
+                else // make MediaFoundationReader the default for MP3 going forwards
+                    readerStream = new MediaFoundationReader(fileName);
+                return;
+            }
+            if (fileName.EndsWith(".aiff", StringComparison.OrdinalIgnoreCase) || fileName.EndsWith(".aif", StringComparison.OrdinalIgnoreCase))
+            {
+                readerStream = new AiffFileReader(inputStream);
+                return;
+            }
+            throw new NotSupportedException("Audio file format not supported");
+        }
+
+        /// <summary>
         /// Creates the reader stream, supporting all filetypes in the core NAudio library,
         /// and ensuring we are in PCM format
         /// </summary>
@@ -52,20 +99,27 @@ namespace NAudio.Wave
                     readerStream = WaveFormatConversionStream.CreatePcmStream(readerStream);
                     readerStream = new BlockAlignReductionStream(readerStream);
                 }
+                return;
             }
-            else if (fileName.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase))
+            if (fileName.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase))
             {
+                if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+                    throw new NotSupportedException("Audio file format not supported");
                 if (Environment.OSVersion.Version.Major < 6)
                     readerStream = new Mp3FileReader(fileName);
                 else // make MediaFoundationReader the default for MP3 going forwards
                     readerStream = new MediaFoundationReader(fileName);
+                return;
             }
-            else if (fileName.EndsWith(".aiff", StringComparison.OrdinalIgnoreCase) || fileName.EndsWith(".aif", StringComparison.OrdinalIgnoreCase))
+            if (fileName.EndsWith(".aiff", StringComparison.OrdinalIgnoreCase) || fileName.EndsWith(".aif", StringComparison.OrdinalIgnoreCase))
             {
                 readerStream = new AiffFileReader(fileName);
+                return;
             }
             else
             {
+                if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+                    throw new NotSupportedException("Audio file format not supported");
                 // fall back to media foundation reader, see if that can play it
                 readerStream = new MediaFoundationReader(fileName);
             }

@@ -51,9 +51,14 @@ namespace NAudioAvaloniaDemo.WaveInSdlDemo
             try
             {
                 waveInSdl = new WaveInSdl();
-                waveInSdl.WaveFormat = WaveFormatEncoding == WaveFormatEncoding.IeeeFloat
-                    ? WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channelCount)
-                    : new WaveFormat(sampleRate, bitDepth, channelCount);
+                if (WaveFormatEncoding == WaveFormatEncoding.IeeeFloat)
+                {
+                    waveInSdl.WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channelCount);
+                }
+                else
+                {
+                    waveInSdl.WaveFormat = new WaveFormat(sampleRate, bitDepth, channelCount);
+                }
                 currentFileName = String.Format("NAudioDemo {0:yyy-MM-dd HH-mm-ss}.wav", DateTime.Now);
                 waveInSdl.StartRecording();
                 waveInSdl.RecordingStopped += OnRecordingStopped;
@@ -129,9 +134,9 @@ namespace NAudioAvaloniaDemo.WaveInSdlDemo
         private void GetDefaultRecordingFormat(WaveInSdlCapabilities value)
         {
             WaveFormatEncoding = value.Format == SDL.AUDIO_F32SYS ? WaveFormatEncoding.IeeeFloat : WaveFormatEncoding.Pcm;
-            SampleRate = value.Frequency;
-            BitDepth = value.Bits;
-            ChannelCount = value.Channels;
+            SampleRate = value.Frequency == 0 ? 44100 : value.Frequency;
+            BitDepth = value.Bits == 0 ? 16 : value.Bits;
+            ChannelCount = value.Channels == 0 ? 1 : value.Channels;
             Message = "";
         }
 

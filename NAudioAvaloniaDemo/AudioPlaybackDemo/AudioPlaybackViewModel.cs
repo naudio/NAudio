@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Windows.Input;
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using NAudio.Extras;
+using NAudio.Wave;
 using NAudioAvaloniaDemo.ViewModel;
 
 namespace NAudioAvaloniaDemo.AudioPlaybackDemo
@@ -15,7 +18,7 @@ namespace NAudioAvaloniaDemo.AudioPlaybackDemo
         private readonly AudioPlayback audioPlayback;
         private readonly List<IVisualizationPlugin> visualizations;
         private IVisualizationPlugin selectedVisualization;
-        private string selectedFile;
+        private IStorageFile selectedFile;
 
         public ICommand OpenFileCommand { get; }
         public ICommand PlayCommand { get; }
@@ -93,6 +96,16 @@ namespace NAudioAvaloniaDemo.AudioPlaybackDemo
 
         private async void OpenFile()
         {
+            TopLevel topLevel = null;
+            if (App.Current.ApplicationLifetime is ISingleViewApplicationLifetime lifetime)
+            {
+                topLevel = TopLevel.GetTopLevel(lifetime.MainView);
+            }
+            else if (App.Current.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                topLevel = TopLevel.GetTopLevel(desktop.MainWindow);
+            }
+            if (topLevel == null) return;
             var openOptions = new FilePickerOpenOptions()
             {
                 AllowMultiple = false,
@@ -108,17 +121,12 @@ namespace NAudioAvaloniaDemo.AudioPlaybackDemo
                     }
                 }
             };
-            var topLevel = TopLevel.GetTopLevel(App.MainWindow);
-            if (topLevel == null) return;
             var files = await topLevel.StorageProvider.OpenFilePickerAsync(openOptions);
             if (files.Count == 0) return;
-            var selectedFilePath = files[0].Path.LocalPath;
-
-            if (!string.IsNullOrEmpty(selectedFilePath))
-            {
-                this.selectedFile = selectedFilePath;
-                audioPlayback.Load(this.selectedFile);
-            }
+            var storageFile = files[0];
+            this.selectedFile = storageFile;
+            audioPlayback.Load(this.selectedFile);
+            
         }
 
         private void Play()

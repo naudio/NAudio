@@ -1,33 +1,33 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-	<OutputType>WinExe</OutputType>
-    <Nullable>disable</Nullable>
-    <LangVersion>Latest</LangVersion>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFrameworks>net8.0;net6.0</TargetFrameworks>
+		<OutputType>Library</OutputType>
+		<Nullable>disable</Nullable>
+		<LangVersion>Latest</LangVersion>
+		<UseMauiEssentials>true</UseMauiEssentials>
+	</PropertyGroup>
 
-  
-  <ItemGroup>
-    <AvaloniaResource Include="Assets\**" />
-  </ItemGroup>
+	<ItemGroup>
+		<AvaloniaResource Include="Assets\**" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Avalonia" Version="11.0.10" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.0.10" />
-    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.0.10" />
-	<PackageReference Include="Avalonia.Desktop" Version="11.0.10" />
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+	<ItemGroup>
+		<!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
+		<PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.2.0" />
+		<PackageReference Include="Avalonia" Version="11.2.0" />
+		<PackageReference Include="Avalonia.Themes.Fluent" Version="11.2.0" />
+		<PackageReference Include="Avalonia.Fonts.Inter" Version="11.2.0" />
+		<PackageReference Include="Avalonia.Desktop" Version="11.2.0" />
+		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+		<PackageReference Include="DialogHost.Avalonia" Version="0.8.1" />
+		<PackageReference Include="NAudio.Sdl2.Library" Version="2.30.3" />
+		<PackageReference Include="Microsoft.Maui.Essentials" Version="8.0.21" />
+	</ItemGroup>
 
-    <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
-    <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.0.10" />
-    <PackageReference Include="MessageBox.Avalonia" Version="3.1.5.1" />
-    <PackageReference Include="NAudio.Sdl2.Library" Version="2.30.2" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\NAudio.Core\NAudio.Core.csproj" />
-    <ProjectReference Include="..\NAudio.Extras\NAudio.Extras.csproj" />
-    <ProjectReference Include="..\NAudio.Sdl2\NAudio.Sdl2.csproj" />
-    <ProjectReference Include="..\NAudio.WinMM\NAudio.WinMM.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\NAudio.Core\NAudio.Core.csproj" />
+		<ProjectReference Include="..\NAudio.Extras\NAudio.Extras.csproj" />
+		<ProjectReference Include="..\NAudio.Sdl2\NAudio.Sdl2.csproj" />
+		<ProjectReference Include="..\NAudio.WinMM\NAudio.WinMM.csproj" />
+	</ItemGroup>
 </Project>

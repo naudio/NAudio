@@ -82,15 +82,6 @@ namespace NAudioTests.Sdl2
         }
 
         [Test]
-        public void WaveOutSdlAdjustLatencyPercentOutOfRangeShouldThrow()
-        {
-            WaveOutSdl waveOutSdl = new WaveOutSdl();
-            Assert.Throws<SdlException>(() => waveOutSdl.AdjustLatencyPercent = -1);
-            Assert.Throws<SdlException>(() => waveOutSdl.AdjustLatencyPercent = 2);
-            waveOutSdl.Dispose();
-        }
-
-        [Test]
         public void WaveOutVolumeOutOfRangeShouldThrow()
         {
             WaveOutSdl waveOutSdl = new WaveOutSdl();

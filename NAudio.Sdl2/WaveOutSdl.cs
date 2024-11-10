@@ -42,7 +42,6 @@ namespace NAudio.Sdl2
             volumeLock = new object();
             DeviceId = -1;
             DesiredLatency = 300;
-            AdjustLatencyPercent = 0.1;
             Volume = 1.28f;
         }
 
@@ -145,19 +144,6 @@ namespace NAudio.Sdl2
         /// <para>Should be set before a call to <see cref="Init(IWaveProvider)"/></para>
         /// </summary>
         public int DesiredLatency { get; set; }
-
-        /// <summary>
-        /// Gets or sets the desired latency adjustment in percent
-        /// <para>Value must be between 0 and 1</para>
-        /// <para>This percent only affects the playback wait</para>
-        /// </summary>
-        public double AdjustLatencyPercent
-        {
-            get => adjustLatencyPercent;
-            set => adjustLatencyPercent = value >= 0 && value <= 1
-                ? value
-                : throw new SdlException("The percent value must be between 0 and 1");
-        }
 
         /// <summary>
         /// Volume for this device ranges from 0 to 1.28
@@ -364,12 +350,18 @@ namespace NAudio.Sdl2
         /// </summary>
         private unsafe void DoPlayback()
         {
+            var minimumQueueSize = (uint)(waveStream.WaveFormat.AverageBytesPerSecond / 2.0);
             while (playbackState != PlaybackState.Stopped)
             {
-                // Workaround to get rid of stuttering
-                // TODO: SDL_GetQueuedAudioSize is a better approach than the current one
-                var adjustedLatency = DesiredLatency - (int)(DesiredLatency * AdjustLatencyPercent);
-                if (!callbackEvent.WaitOne(adjustedLatency))
+                var queueSize = SdlBindingWrapper.GetQueuedAudioSize(deviceNumber);
+                if (queueSize < minimumQueueSize)
+                {
+                    if (playbackState == PlaybackState.Playing)
+                    {
+                        Debug.WriteLine("WARNING: WaveOutSdl queueSize is smaller than minimumQueueSize");
+                    }
+                }
+                else if (!callbackEvent.WaitOne(DesiredLatency))
                 {
                     if (playbackState == PlaybackState.Playing)
                     {

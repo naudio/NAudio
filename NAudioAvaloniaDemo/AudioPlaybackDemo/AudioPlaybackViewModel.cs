@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
@@ -96,6 +97,11 @@ namespace NAudioAvaloniaDemo.AudioPlaybackDemo
 
         private async void OpenFile()
         {
+            await OpenFileAsync();
+        }
+
+        private async Task OpenFileAsync()
+        {
             TopLevel topLevel = null;
             if (App.Current.ApplicationLifetime is ISingleViewApplicationLifetime lifetime)
             {
@@ -126,14 +132,13 @@ namespace NAudioAvaloniaDemo.AudioPlaybackDemo
             var storageFile = files[0];
             this.selectedFile = storageFile;
             audioPlayback.Load(this.selectedFile);
-            
         }
 
-        private void Play()
+        private async void Play()
         {
             if (this.selectedFile == null)
             {
-                OpenFile();
+                await OpenFileAsync();
             }
             if (this.selectedFile != null)
             {

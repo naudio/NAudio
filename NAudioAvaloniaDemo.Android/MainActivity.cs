@@ -5,6 +5,7 @@ using Android.OS;
 using Avalonia;
 using Avalonia.Android;
 using Microsoft.Maui.ApplicationModel;
+using System.Threading.Tasks;
 
 namespace NAudioAvaloniaDemo.Android
 {
@@ -21,7 +22,7 @@ namespace NAudioAvaloniaDemo.Android
             base.OnCreate(savedInstanceState);
             Platform.Init(this, savedInstanceState);
             SDLBridge.Load(this);
-            await SDLBridge.RequestPermissions();
+            await RequestPermissions();
         }
 
         protected override void OnDestroy()
@@ -34,6 +35,13 @@ namespace NAudioAvaloniaDemo.Android
         {
             return base.CustomizeAppBuilder(builder)
                 .WithInterFont();
+        }
+
+        private static async Task RequestPermissions()
+        {
+            await Permissions.RequestAsync<Permissions.Microphone>();
+            await Permissions.RequestAsync<Permissions.StorageRead>();
+            await Permissions.RequestAsync<Permissions.StorageWrite>();
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿namespace NAudio.Sdl2.Structures
 {
-    public class WaveOutSdlCapabilities
+    public struct WaveOutSdlCapabilities
     {
         public int DeviceNumber { get; set; }
         public string DeviceName { get; set; }

@@ -2,7 +2,6 @@
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core.Plugins;
 using Avalonia.Markup.Xaml;
-using NAudio.Sdl2.Interop;
 using NAudioAvaloniaDemo.Utils;
 using NAudioAvaloniaDemo.Views;
 
@@ -31,7 +30,6 @@ namespace NAudioAvaloniaDemo
                 mainWindow.Closing += (s, args) => vm.SelectedModule.Deactivate();
                 mainWindow.Show();
 
-                desktop.ShutdownRequested += DesktopOnShutdownRequested;
                 desktop.MainWindow = mainWindow;
             }
             else if (ApplicationLifetime is ISingleViewApplicationLifetime singleViewPlatform)
@@ -43,13 +41,6 @@ namespace NAudioAvaloniaDemo
             }
 
             base.OnFrameworkInitializationCompleted();
-        }
-
-        private void DesktopOnShutdownRequested(object sender, ShutdownRequestedEventArgs e)
-        {
-            // Clean up all initialized subsystems
-            // It is safe to call this function even in the case of errors in initialization
-            SDL.SDL_Quit();
         }
     }
 }

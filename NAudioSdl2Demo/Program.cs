@@ -40,8 +40,6 @@ namespace NAudioSdl2Demo
                 Console.ReadKey();
 
             } while (demoTypeId != -1);
-            // SDL_Quit should always be called before program exit
-            SDL_Quit();
             Console.ReadLine();
         }
     }

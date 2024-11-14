@@ -43,12 +43,28 @@ namespace NAudio.Sdl2
             DeviceId = -1;
             DesiredLatency = 300;
             Volume = 1.28f;
+            SdlBindingWrapper.Initialize();
         }
 
         /// <summary>
         /// Returns the number of WaveOutSdl devices available in the system
         /// </summary>
-        public static int DeviceCount => SdlBindingWrapper.GetPlaybackDevicesNumber();
+        public static int DeviceCount 
+        { 
+            get 
+            {
+                try
+                {
+                    SdlBindingWrapper.Initialize();
+                    var deviceCount = SdlBindingWrapper.GetPlaybackDevicesNumber();
+                    return deviceCount;
+                }
+                finally
+                {
+                    SdlBindingWrapper.Terminate();
+                }
+            } 
+        }
 
         /// <summary>
         /// Retrieves the capabilities of a WaveOutSdl device
@@ -57,35 +73,43 @@ namespace NAudio.Sdl2
         /// <returns>The WaveOutSdl device capabilities</returns>
         public static WaveOutSdlCapabilities GetCapabilities(int deviceId)
         {
-            var deviceName = SdlBindingWrapper.GetPlaybackDeviceName(deviceId);
-            var runtimeSdlVersion = SdlBindingWrapper.GetRuntimeSdlVersion();
-            var currentVersion = new Version(runtimeSdlVersion.major, runtimeSdlVersion.minor, runtimeSdlVersion.patch);
-            var minimumRequiredVersion = new Version(2, 0, 16);
-            if (currentVersion >= minimumRequiredVersion)
+            try
             {
-                var deviceAudioSpec = SdlBindingWrapper.GetPlaybackDeviceAudioSpec(deviceId);
-                var deviceBitSize = SdlBindingWrapper.GetAudioFormatBitSize(deviceAudioSpec.format);
+                SdlBindingWrapper.Initialize();
+                var deviceName = SdlBindingWrapper.GetPlaybackDeviceName(deviceId);
+                var runtimeSdlVersion = SdlBindingWrapper.GetRuntimeSdlVersion();
+                var currentVersion = new Version(runtimeSdlVersion.major, runtimeSdlVersion.minor, runtimeSdlVersion.patch);
+                var minimumRequiredVersion = new Version(2, 0, 16);
+                if (currentVersion >= minimumRequiredVersion)
+                {
+                    var deviceAudioSpec = SdlBindingWrapper.GetPlaybackDeviceAudioSpec(deviceId);
+                    var deviceBitSize = SdlBindingWrapper.GetAudioFormatBitSize(deviceAudioSpec.format);
+                    return new WaveOutSdlCapabilities
+                    {
+                        DeviceNumber = deviceId,
+                        DeviceName = deviceName,
+                        Bits = deviceBitSize,
+                        Channels = deviceAudioSpec.channels,
+                        Format = deviceAudioSpec.format,
+                        Frequency = deviceAudioSpec.freq,
+                        Samples = deviceAudioSpec.samples,
+                        Silence = deviceAudioSpec.silence,
+                        Size = deviceAudioSpec.size,
+                        IsAudioCapabilitiesValid = true
+                    };
+                }
+
                 return new WaveOutSdlCapabilities
                 {
                     DeviceNumber = deviceId,
                     DeviceName = deviceName,
-                    Bits = deviceBitSize,
-                    Channels = deviceAudioSpec.channels,
-                    Format = deviceAudioSpec.format,
-                    Frequency = deviceAudioSpec.freq,
-                    Samples = deviceAudioSpec.samples,
-                    Silence = deviceAudioSpec.silence,
-                    Size = deviceAudioSpec.size,
-                    IsAudioCapabilitiesValid = true
+                    IsAudioCapabilitiesValid = false
                 };
             }
-
-            return new WaveOutSdlCapabilities
+            finally
             {
-                DeviceNumber = deviceId,
-                DeviceName = deviceName,
-                IsAudioCapabilitiesValid = false
-            };
+                SdlBindingWrapper.Terminate();
+            }
         }
 
         /// <summary>
@@ -98,13 +122,21 @@ namespace NAudio.Sdl2
         /// </remarks>
         public static List<WaveOutSdlCapabilities> GetCapabilitiesList()
         {
-            List<WaveOutSdlCapabilities> list = new List<WaveOutSdlCapabilities>();
-            var deviceCount = WaveOutSdl.DeviceCount;
-            for (int index = 0; index < deviceCount; index++)
+            try
             {
-                list.Add(GetCapabilities(index));
+                SdlBindingWrapper.Initialize();
+                List<WaveOutSdlCapabilities> list = new List<WaveOutSdlCapabilities>();
+                var deviceCount = WaveOutSdl.DeviceCount;
+                for (int index = 0; index < deviceCount; index++)
+                {
+                    list.Add(GetCapabilities(index));
+                }
+                return list;
             }
-            return list;
+            finally
+            {
+                SdlBindingWrapper.Terminate();
+            }
         }
 
         /// <summary>
@@ -114,21 +146,29 @@ namespace NAudio.Sdl2
         /// <returns>The WaveOutSdl default device capabilities</returns>
         public static WaveOutSdlCapabilities GetDefaultDeviceCapabilities()
         {
-            SdlBindingWrapper.GetPlaybackDeviceDefaultAudioInfo(out var deviceName, out var deviceAudioSpec);
-            var deviceBitSize = SdlBindingWrapper.GetAudioFormatBitSize(deviceAudioSpec.format);
-            return new WaveOutSdlCapabilities
+            try
             {
-                DeviceNumber = -1,
-                DeviceName = deviceName,
-                Bits = deviceBitSize,
-                Channels = deviceAudioSpec.channels,
-                Format = deviceAudioSpec.format,
-                Frequency = deviceAudioSpec.freq,
-                Samples = deviceAudioSpec.samples,
-                Silence = deviceAudioSpec.silence,
-                Size = deviceAudioSpec.size,
-                IsAudioCapabilitiesValid = true
-            };
+                SdlBindingWrapper.Initialize();
+                SdlBindingWrapper.GetPlaybackDeviceDefaultAudioInfo(out var deviceName, out var deviceAudioSpec);
+                var deviceBitSize = SdlBindingWrapper.GetAudioFormatBitSize(deviceAudioSpec.format);
+                return new WaveOutSdlCapabilities
+                {
+                    DeviceNumber = -1,
+                    DeviceName = deviceName,
+                    Bits = deviceBitSize,
+                    Channels = deviceAudioSpec.channels,
+                    Format = deviceAudioSpec.format,
+                    Frequency = deviceAudioSpec.freq,
+                    Samples = deviceAudioSpec.samples,
+                    Silence = deviceAudioSpec.silence,
+                    Size = deviceAudioSpec.size,
+                    IsAudioCapabilitiesValid = true
+                };
+            }
+            finally
+            {
+                SdlBindingWrapper.Terminate();
+            }
         }
 
         /// <summary>
@@ -264,12 +304,28 @@ namespace NAudio.Sdl2
         /// </summary>
         protected virtual void Dispose(bool disposing)
         {
-            Stop();
-            if (disposing)
+            try
             {
-                DisposeBuffers();
+                Stop();
+                if (disposing)
+                {
+                    DisposeBuffers();
+                }
+                CloseWaveOutSdl();
             }
-            CloseWaveOutSdl();
+            catch
+            {
+            }
+            finally
+            {
+                try
+                {
+                    SdlBindingWrapper.Terminate();
+                }
+                catch
+                {
+                }
+            }
         }
 
         /// <summary>

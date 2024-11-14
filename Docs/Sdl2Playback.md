@@ -40,11 +40,3 @@ And of course we should remember to `Dispose` our instance of `WaveOutSdl` when 
 ```c#
 waveOutSdl.Dispose();
 ```
-
-In addition to cleaning up the `WaveOutSdl` instance, we must clean up SDL2 resources when the application is stopped.
-
-```c#
-// Clean up all initialized subsystems
-// It is safe to call this function even in the case of errors in initialization
-NAudio.Sdl2.Interop.SDL.SDL_Quit();
-```

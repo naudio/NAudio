@@ -40,7 +40,7 @@ namespace NAudioAvaloniaDemo.AudioPlaybackDemo
             {
                 var fileName = storageFile.Name;
                 storageFileStream = await storageFile.OpenReadAsync();
-                var inputStream = new AudioFileReader(fileName, storageFileStream);
+                var inputStream = new AudioFileStreamReader(fileName, storageFileStream);
                 fileStream = inputStream;
                 var aggregator = new SampleAggregator(inputStream);
                 aggregator.NotificationCount = inputStream.WaveFormat.SampleRate / 100;

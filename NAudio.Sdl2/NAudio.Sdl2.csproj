@@ -8,9 +8,9 @@
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<SignAssembly>true</SignAssembly>
 		<AssemblyOriginatorKeyFile>..\NAudioStrongNameKey.snk</AssemblyOriginatorKeyFile>
-		<PackageProjectUrl>https://github.com/naudio/NAudio</PackageProjectUrl>
+		<PackageProjectUrl>https://github.com/alextnull/NAudio</PackageProjectUrl>
 		<PackageTags>C# .NET audio sound</PackageTags>
-		<RepositoryUrl>https://github.com/naudio/NAudio</RepositoryUrl>
+		<RepositoryUrl>https://github.com/alextnull/NAudio</RepositoryUrl>
 		<Copyright>© Mark Heath 2023</Copyright>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageIcon>naudio-icon.png</PackageIcon>

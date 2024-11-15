@@ -3,7 +3,7 @@
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0</TargetFrameworks>
 		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-		<Version>2.2.5</Version>
+		<Version>2.2.6</Version>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<SignAssembly>true</SignAssembly>
@@ -16,9 +16,11 @@
 		<PackageIcon>naudio-icon.png</PackageIcon>
 		<Authors>Mark Heath &amp; alextnull</Authors>
 		<Description>
-			WaveIn and WaveOut cross-platform implementations via SDL2 backend
-			Native libraries distributed via separated package - NAudio.Sdl2.Library
+WaveIn and WaveOut cross-platform implementations via SDL2 backend
+Native libraries distributed via separated package - NAudio.Sdl2.Library
+Android binding libraries distributed via separated package - NAudio.Sdl2.Library.Android
 		</Description>
+		<PackageReleaseNotes>CHANGELOG.md</PackageReleaseNotes>
 	</PropertyGroup>
 
 	<!-- needed for perfomance profiling unit tests -->

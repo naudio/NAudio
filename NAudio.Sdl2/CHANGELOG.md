@@ -3,6 +3,7 @@
 * Remove `AudioConversion`
 * Remove `ActualWaveFormat`
 * Remove `AdjustLatencyPercent`
+* Change `WaveInSdlCapabilities`, `WaveOutSdlCapabilities` classes to structs
 * Added automatic initialization and cleanup of SDL2 resources. `WaveInSdl`, `WaveOutSdl` constructors can throw exceptions
 * Added experimental android support which requires the `NAudio.Sdl2.Library.Android` package. Use the `NAudioAvaloniaDemo.Android` project as an example
 * Changes in NAudioAvaloniaDemo

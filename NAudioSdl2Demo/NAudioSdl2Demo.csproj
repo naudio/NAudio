@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NAudio.Sdl2.Library" Version="2.0.20" />
+    <PackageReference Include="NAudio.Sdl2.Library" Version="2.30.3" />
   </ItemGroup>
 
   <ItemGroup>

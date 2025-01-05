@@ -38,7 +38,7 @@ namespace NAudio.SoundFont
                         throw new InvalidDataException(String.Format("Not a SoundFont ({0})", formHeader));
                     }
                     RiffChunk list = riff.GetNextSubChunk();
-                    if (list.ChunkID == "LIST")
+                    if (list != null && list.ChunkID == "LIST")
                     {
                         //RiffChunk r = list.GetNextSubChunk();
                         info = new InfoChunk(list);

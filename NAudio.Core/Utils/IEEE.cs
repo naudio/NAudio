@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NAudio.Core;
+using System;
 
 
 namespace NAudio.Utils
@@ -56,7 +57,7 @@ namespace NAudio.Utils
                 sign = 0;
             }
 
-            if (num == 0)
+            if (num.AreEqual(0))
             {
                 expon = 0; hiMant = 0; loMant = 0;
             }

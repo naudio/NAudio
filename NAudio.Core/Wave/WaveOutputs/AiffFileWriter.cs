@@ -333,6 +333,8 @@ namespace NAudio.Wave
                         // the GC thread if the code above caused an IOException (e.g. due to disk full)
                         outStream.Dispose(); // will close the underlying base stream
                         outStream = null;
+                        writer.Dispose();
+                        writer = null;
                     }
                 }
             }

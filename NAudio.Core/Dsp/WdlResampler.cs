@@ -23,6 +23,7 @@
 //     3. This notice may not be removed or altered from any source distribution.
 
 
+using NAudio.Core;
 using System;
 
 // default to floats for audio samples
@@ -129,7 +130,7 @@ namespace NAudio.Dsp
         {
             if (rate_in < 1.0) rate_in = 1.0;
             if (rate_out < 1.0) rate_out = 1.0;
-            if (rate_in != m_sratein || rate_out != m_srateout)
+            if (!rate_in.AreEqual(m_sratein) || !rate_out.AreEqual(m_srateout))
             {
                 m_sratein = rate_in;
                 m_srateout = rate_out;
@@ -193,7 +194,7 @@ namespace NAudio.Dsp
 
             if (sreq < 0) sreq = 0;
 
-        again:
+            again:
             Array.Resize(ref m_rsinbuf, (m_samples_in_rsinbuf + sreq) * nch);
 
             int sz = m_rsinbuf.Length / ((nch != 0) ? nch : 1) - m_samples_in_rsinbuf;
@@ -488,7 +489,7 @@ namespace NAudio.Dsp
             int wantsize = m_sincsize;
             int wantinterp = m_sincoversize;
 
-            if (m_filter_ratio != filtpos ||
+            if (!m_filter_ratio.AreEqual(filtpos) ||
                 m_filter_coeffs_size != wantsize ||
                 m_lp_oversize != wantinterp)
             {

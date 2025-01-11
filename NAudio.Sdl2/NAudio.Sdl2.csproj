@@ -1,0 +1,43 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>netstandard2.0</TargetFrameworks>
+		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+		<Version>2.2.6</Version>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<SignAssembly>true</SignAssembly>
+		<AssemblyOriginatorKeyFile>..\NAudioStrongNameKey.snk</AssemblyOriginatorKeyFile>
+		<PackageProjectUrl>https://github.com/alextnull/NAudio</PackageProjectUrl>
+		<PackageTags>C# .NET audio sound</PackageTags>
+		<RepositoryUrl>https://github.com/alextnull/NAudio</RepositoryUrl>
+		<Copyright>© Mark Heath 2023</Copyright>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageIcon>naudio-icon.png</PackageIcon>
+		<Authors>Mark Heath &amp; alextnull</Authors>
+		<Description>
+WaveIn and WaveOut cross-platform implementations via SDL2 backend
+Native libraries distributed via separated package - NAudio.Sdl2.Library
+Android binding libraries distributed via separated package - NAudio.Sdl2.Library.Android
+		</Description>
+		<PackageReleaseNotes>CHANGELOG.md</PackageReleaseNotes>
+	</PropertyGroup>
+
+	<!-- needed for perfomance profiling unit tests -->
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+		<DebugType>full</DebugType>
+		<DebugSymbols>true</DebugSymbols>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\NAudio.Core\NAudio.Core.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="..\naudio-icon.png">
+			<Pack>True</Pack>
+			<PackagePath></PackagePath>
+		</None>
+	</ItemGroup>
+
+</Project>

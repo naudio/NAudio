@@ -1,0 +1,30 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+			 xmlns:dha="clr-namespace:DialogHostAvalonia;assembly=DialogHost.Avalonia"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="NAudioAvaloniaDemo.Views.MainView">
+	<dha:DialogHost>
+		<dha:DialogHost.DialogContent>
+			
+		</dha:DialogHost.DialogContent>
+		<Grid>
+			<Grid.RowDefinitions>
+				<RowDefinition Height="120" />
+				<RowDefinition Height="456*" />
+			</Grid.RowDefinitions>
+			<ListBox Grid.Row="0"
+					 ItemsSource="{Binding Modules}"
+					 SelectedItem="{Binding SelectedModule, Mode=TwoWay}">
+				<ListBox.ItemTemplate>
+					<DataTemplate>
+						<TextBlock Text="{Binding Name}" />
+					</DataTemplate>
+				</ListBox.ItemTemplate>
+			</ListBox>
+			<ContentPresenter x:Name="contentPresenter" Grid.Row="1"
+							  Content="{Binding UserInterface}" />
+		</Grid>
+	</dha:DialogHost>
+</UserControl>

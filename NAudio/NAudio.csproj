@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>net472;netcoreapp3.1;net6.0-windows;net6.0</TargetFrameworks>
-    <Version>2.2.1</Version>
+    <Version>2.2.1-SA</Version>
     <Authors>Mark Heath &amp; Contributors</Authors>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Description>NAudio, an audio library for .NET</Description>

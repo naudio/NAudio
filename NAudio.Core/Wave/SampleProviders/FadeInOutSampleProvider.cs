@@ -1,4 +1,6 @@
-﻿namespace NAudio.Wave.SampleProviders
+﻿using System;
+
+namespace NAudio.Wave.SampleProviders
 {
     /// <summary>
     /// Sample Provider to allow fading in and out
@@ -12,6 +14,16 @@
             FullVolume,
             FadingOut,
         }
+
+        /// <summary>
+        /// Raised when scheduled fade-in is done
+        /// </summary>
+        public event EventHandler FadeInComplete;
+
+        /// <summary>
+        /// Raised when scheduled fade-out is done
+        /// </summary>
+        public event EventHandler FadeOutComplete;
 
         private readonly object lockObject = new object();
         private readonly ISampleProvider source;
@@ -108,6 +120,8 @@
                 if (fadeSamplePosition > fadeSampleCount)
                 {
                     fadeState = FadeState.Silence;
+                    FadeOutComplete?.Invoke(this, EventArgs.Empty);
+
                     // clear out the end
                     ClearBuffer(buffer, sample + offset, sourceSamplesRead - sample);
                     break;
@@ -129,6 +143,8 @@
                 if (fadeSamplePosition > fadeSampleCount)
                 {
                     fadeState = FadeState.FullVolume;
+                    FadeInComplete?.Invoke(this, EventArgs.Empty);
+
                     // no need to multiply any more
                     break;
                 }

@@ -1,6 +1,6 @@
-﻿using System;
+﻿using NAudio.CoreAudioApi.Interfaces;
+using System;
 using System.Runtime.InteropServices;
-using NAudio.CoreAudioApi.Interfaces;
 
 namespace NAudio.Dmo
 {
@@ -16,7 +16,7 @@ namespace NAudio.Dmo
     class WindowsMediaMp3DecoderComObject
     {
     }
-    
+
     /// <summary>
     /// Windows Media MP3 Decoder (as a DMO)
     /// WORK IN PROGRESS - DO NOT USE!
@@ -60,7 +60,7 @@ namespace NAudio.Dmo
         /// </summary>
         public void Dispose()
         {
-            if(propertyStoreInterface != null)
+            if (propertyStoreInterface != null)
             {
                 Marshal.ReleaseComObject(propertyStoreInterface);
                 propertyStoreInterface = null;

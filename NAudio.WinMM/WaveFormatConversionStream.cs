@@ -1,6 +1,6 @@
+using NAudio.Wave.Compression;
 using System;
 using System.Diagnostics;
-using NAudio.Wave.Compression;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave

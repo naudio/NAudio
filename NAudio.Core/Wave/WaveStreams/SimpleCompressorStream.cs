@@ -33,12 +33,12 @@ namespace NAudio.Wave
         public double MakeUpGain
         {
             get => simpleCompressor.MakeUpGain;
-            set 
+            set
             {
                 lock (lockObject)
                 {
                     simpleCompressor.MakeUpGain = value;
-                } 
+                }
             }
         }
 
@@ -48,7 +48,7 @@ namespace NAudio.Wave
         public double Threshold
         {
             get => simpleCompressor.Threshold;
-            set 
+            set
             {
                 lock (lockObject)
                 {
@@ -63,7 +63,7 @@ namespace NAudio.Wave
         public double Ratio
         {
             get => simpleCompressor.Ratio;
-            set 
+            set
             {
                 lock (lockObject)
                 {
@@ -127,10 +127,10 @@ namespace NAudio.Wave
                 int samplesRead = sourceStream.Read(array, offset, count);
                 if (Enabled)
                 {
-                    for (int sample = 0; sample < samplesRead; sample+=channels)
+                    for (int sample = 0; sample < samplesRead; sample += channels)
                     {
-                        double in1 = array[offset+sample];
-                        double in2 = (channels == 1) ? 0 : array[offset+sample+1];
+                        double in1 = array[offset + sample];
+                        double in2 = (channels == 1) ? 0 : array[offset + sample + 1];
                         simpleCompressor.Process(ref in1, ref in2);
                         array[offset + sample] = (float)in1;
                         if (channels > 1)

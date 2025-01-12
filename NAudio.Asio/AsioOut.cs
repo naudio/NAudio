@@ -1,5 +1,5 @@
-﻿using System;
-using NAudio.Wave.Asio;
+﻿using NAudio.Wave.Asio;
+using System;
 using System.Threading;
 
 namespace NAudio.Wave
@@ -27,7 +27,9 @@ namespace NAudio.Wave
         private string driverName;
 
         private readonly SynchronizationContext syncContext;
-        private bool isInitialized;
+        public bool isInitialized;
+
+        public int PreferredBufferSize { get { return driver is null ? -1 : driver.Capabilities.BufferPreferredSize; } }
 
         /// <summary>
         /// Playback Stopped
@@ -43,6 +45,8 @@ namespace NAudio.Wave
         /// Occurs when the driver settings are changed by the user, e.g. in the control panel.
         /// </summary>
         public event EventHandler DriverResetRequest;
+
+        public int BufferSize => nbSamples;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AsioOut"/> class with the first 
@@ -69,7 +73,7 @@ namespace NAudio.Wave
         /// <param name="driverIndex">Device number (zero based)</param>
         public AsioOut(int driverIndex)
         {
-            this.syncContext = SynchronizationContext.Current; 
+            this.syncContext = SynchronizationContext.Current;
             String[] names = GetDriverNames();
             if (names.Length == 0)
             {
@@ -234,10 +238,14 @@ namespace NAudio.Wave
         /// <summary>
         /// Initialises to play, with optional recording
         /// </summary>
-        /// <param name="waveProvider">Source wave provider - set to null for record only</param>
-        /// <param name="recordChannels">Number of channels to record</param>
-        /// <param name="recordOnlySampleRate">Specify sample rate here if only recording, ignored otherwise</param>
-        public void InitRecordAndPlayback(IWaveProvider waveProvider, int recordChannels, int recordOnlySampleRate)
+        /// <param name="waveProvider"></param>
+        /// <param name="recordChannels"></param>
+        /// <param name="recordOnlySampleRate"></param>
+        /// <param name="bufferSize"></param>
+        /// <exception cref="InvalidOperationException"></exception>
+        /// <exception cref="NotSupportedException"></exception>
+        /// <exception cref="ArgumentException"></exception>
+        public void InitRecordAndPlayback(IWaveProvider waveProvider, int recordChannels, int recordOnlySampleRate, int bufferSize = -1)
         {
             if (isInitialized)
             {
@@ -293,8 +301,12 @@ namespace NAudio.Wave
             driver.FillBufferCallback = driver_BufferUpdate;
 
             this.NumberOfInputChannels = recordChannels;
+            UpdateBufferSize(waveProvider, bufferSize);
+        }
+        public void UpdateBufferSize(IWaveProvider waveProvider, int bufferSize = -1)
+        {
             // Used Prefered size of ASIO Buffer
-            nbSamples = driver.CreateBuffers(NumberOfOutputChannels, NumberOfInputChannels, false);
+            nbSamples = driver.CreateBuffers(NumberOfOutputChannels, NumberOfInputChannels, bufferSize);
             driver.SetChannelOffset(ChannelOffset, InputChannelOffset); // will throw an exception if channel offset is too high
 
             if (waveProvider != null)
@@ -369,7 +381,7 @@ namespace NAudio.Wave
         /// Automatically stop when the end of the input stream is reached
         /// Disable this if auto-stop is causing hanging issues
         /// </summary>
-        public bool AutoStop { get; set; } 
+        public bool AutoStop { get; set; }
 
         /// <summary>
         /// A flag to let you know that we have reached the end of the input file
@@ -409,6 +421,11 @@ namespace NAudio.Wave
         /// The maximum number of output channels this ASIO driver supports
         /// </summary>
         public int DriverOutputChannelCount => driver.Capabilities.NbOutputChannels;
+
+        public void GetBufferSize(out int minSize, out int maxSize, out int preferredSize, out int granularity)
+        {
+            driver.GetBufferSize(out minSize, out maxSize, out preferredSize, out granularity);
+        }
 
         /// <summary>
         /// The number of samples per channel, per buffer.

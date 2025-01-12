@@ -39,7 +39,7 @@ namespace NAudio.Wave.SampleProviders
             set
             {
                 if (phase != 0)
-                { 
+                {
                     throw new InvalidOperationException("Can't set DelayBySamples after calling Read");
                 }
                 if (value % WaveFormat.Channels != 0)
@@ -86,7 +86,7 @@ namespace NAudio.Wave.SampleProviders
         {
             get { return SamplesToTimeSpan(skipOverSamples); }
             set { skipOverSamples = TimeSpanToSamples(value); }
-        }        
+        }
 
 
         /// <summary>
@@ -116,7 +116,7 @@ namespace NAudio.Wave.SampleProviders
         {
             get { return SamplesToTimeSpan(takeSamples); }
             set { takeSamples = TimeSpanToSamples(value); }
-        }  
+        }
 
         /// <summary>
         /// Number of samples of silence to insert after playing source
@@ -145,7 +145,7 @@ namespace NAudio.Wave.SampleProviders
         {
             get { return SamplesToTimeSpan(leadOutSamples); }
             set { leadOutSamples = TimeSpanToSamples(value); }
-        }   
+        }
 
         /// <summary>
         /// Creates a new instance of offsetSampleProvider

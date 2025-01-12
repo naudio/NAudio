@@ -246,7 +246,7 @@ namespace NAudio.MediaFoundation
         ///     /* [out] */ DWORD *pdwStatus) = 0;
         /// </remarks>
         [PreserveSig]
-        int ProcessOutput([In] _MFT_PROCESS_OUTPUT_FLAGS dwFlags, 
+        int ProcessOutput([In] _MFT_PROCESS_OUTPUT_FLAGS dwFlags,
                            [In] int cOutputBufferCount,
                            [In, Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 1)] MFT_OUTPUT_DATA_BUFFER[] pOutputSamples,
                            [Out] out _MFT_PROCESS_OUTPUT_STATUS pdwStatus);

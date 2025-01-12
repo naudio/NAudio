@@ -1,5 +1,5 @@
-﻿using System;
-using NAudio.Dmo;
+﻿using NAudio.Dmo;
+using System;
 using System.Diagnostics;
 
 // ReSharper disable once CheckNamespace
@@ -39,7 +39,7 @@ namespace NAudio.Wave
             {
                 throw new ArgumentException("Unsupported Output Stream format", nameof(outputFormat));
             }
-         
+
             dmoResampler.MediaObject.SetOutputWaveFormat(0, outputFormat);
             if (inputStream != null)
             {
@@ -83,13 +83,13 @@ namespace NAudio.Wave
         /// </summary>
         public override long Length
         {
-            get 
+            get
             {
                 if (inputStream == null)
                 {
                     throw new InvalidOperationException("Cannot report length if the input was an IWaveProvider");
                 }
-                return InputToOutputPosition(inputStream.Length); 
+                return InputToOutputPosition(inputStream.Length);
             }
         }
 
@@ -167,7 +167,7 @@ namespace NAudio.Wave
                     Debug.Assert(false, "have not implemented not accepting logic yet");
                 }
             }
-            
+
             position += outputBytesProvided;
             return outputBytesProvided;
         }

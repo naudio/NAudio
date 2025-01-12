@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave

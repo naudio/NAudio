@@ -1,8 +1,8 @@
-﻿using System;
+﻿using NAudio.Wave;
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
-using NAudio.Wave;
 
 namespace NAudio.MediaFoundation
 {
@@ -12,7 +12,7 @@ namespace NAudio.MediaFoundation
     public static class MediaFoundationApi
     {
         private static bool initialized;
-        
+
         /// <summary>
         /// initializes MediaFoundation - only needs to be called once per process
         /// </summary>
@@ -43,8 +43,8 @@ namespace NAudio.MediaFoundation
             for (int n = 0; n < interfaceCount; n++)
             {
                 var ptr =
-                    Marshal.ReadIntPtr(new IntPtr(interfacesPointer.ToInt64() + n*Marshal.SizeOf(interfacesPointer)));
-                interfaces[n] = (IMFActivate) Marshal.GetObjectForIUnknown(ptr);
+                    Marshal.ReadIntPtr(new IntPtr(interfacesPointer.ToInt64() + n * Marshal.SizeOf(interfacesPointer)));
+                interfaces[n] = (IMFActivate)Marshal.GetObjectForIUnknown(ptr);
             }
 
             foreach (var i in interfaces)
@@ -135,7 +135,7 @@ namespace NAudio.MediaFoundation
         {
             // n.b. UWP apps should use MediaFoundationInterop.MFCreateMFByteStreamOnStreamEx(stream, out byteStream);
             IMFByteStream byteStream;
-            
+
             if (stream is IStream)
             {
                 MediaFoundationInterop.MFCreateMFByteStreamOnStream(stream as IStream, out byteStream);

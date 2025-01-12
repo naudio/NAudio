@@ -9,7 +9,7 @@ namespace NAudio.Dmo
     public class AudioMediaSubtypes
     {
         // https://msdn.microsoft.com/en-us/library/windows/desktop/dd317599(v=vs.85).aspx
-        
+
         /// <summary>
         /// PCM
         /// </summary>

@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace NAudio.MediaFoundation
 {
@@ -30,7 +28,7 @@ namespace NAudio.MediaFoundation
         /// Removes an object from the collection.
         /// </summary>
         void RemoveElement([In] int dwElementIndex, [Out, MarshalAs(UnmanagedType.IUnknown)] out object ppUnkElement);
-        
+
         /// <summary>
         /// Removes an object from the collection.
         /// </summary>

@@ -1,5 +1,5 @@
-using System;
 using NAudio.Utils;
+using System;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave
@@ -99,12 +99,12 @@ namespace NAudio.Wave
         {
             lock (lockObject)
             {
-                int count = numBytes*2;
+                int count = numBytes * 2;
                 sourceBuffer = BufferHelpers.Ensure(sourceBuffer, count);
                 int bytesRead = sourceStream.Read(sourceBuffer, 0, count);
                 Convert32To16(destBuffer, offset, sourceBuffer, bytesRead);
-                position += (bytesRead/2);
-                return bytesRead/2;
+                position += (bytesRead / 2);
+                return bytesRead / 2;
             }
         }
 

@@ -1,6 +1,6 @@
-﻿using System;
+﻿using NAudio.Utils;
+using System;
 using System.Runtime.InteropServices;
-using NAudio.Utils;
 
 namespace NAudio.Dmo
 {
@@ -13,7 +13,7 @@ namespace NAudio.Dmo
         private IntPtr buffer;
         private int length;
         private readonly int maxLength;
-        
+
         /// <summary>
         /// Creates a new Media Buffer
         /// </summary>
@@ -108,13 +108,13 @@ namespace NAudio.Dmo
         public int Length
         {
             get { return length; }
-            set 
+            set
             {
                 if (length > maxLength)
                 {
                     throw new ArgumentException("Cannot be greater than maximum buffer size");
                 }
-                length = value; 
+                length = value;
             }
         }
 

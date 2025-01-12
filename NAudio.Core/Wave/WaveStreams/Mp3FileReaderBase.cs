@@ -1,7 +1,7 @@
 using System;
-using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave
@@ -23,7 +23,7 @@ namespace NAudio.Wave
         private Stream mp3Stream;
         private readonly long mp3DataLength;
         private readonly long dataStartPosition;
-        
+
         /// <summary>
         /// The MP3 wave format (n.b. NOT the output format of this stream - see the WaveFormat property)
         /// </summary>
@@ -40,7 +40,7 @@ namespace NAudio.Wave
         private readonly int bytesPerDecodedFrame;
 
         private IMp3FrameDecompressor decompressor;
-        
+
         private readonly byte[] decompressBuffer;
         private int decompressBufferOffset;
         private int decompressLeftovers;
@@ -70,7 +70,7 @@ namespace NAudio.Wave
         public Mp3FileReaderBase(Stream inputStream, FrameDecompressorBuilder frameDecompressorBuilder)
             : this(inputStream, frameDecompressorBuilder, false)
         {
-            
+
         }
 
         /// <summary>
@@ -128,7 +128,7 @@ namespace NAudio.Wave
 
                 // create a temporary MP3 format before we know the real bitrate
                 Mp3WaveFormat = new Mp3WaveFormat(firstFrame.SampleRate,
-                    firstFrame.ChannelMode == ChannelMode.Mono ? 1 : 2, firstFrame.FrameLength, (int) bitRate);
+                    firstFrame.ChannelMode == ChannelMode.Mono ? 1 : 2, firstFrame.FrameLength, (int)bitRate);
 
                 CreateTableOfContents();
                 tocIndex = 0;
@@ -138,16 +138,16 @@ namespace NAudio.Wave
 
                 // Note: in audio, 1 kilobit = 1000 bits.
                 // Calculated as a double to minimize rounding errors
-                bitRate = (mp3DataLength*8.0/TotalSeconds());
+                bitRate = (mp3DataLength * 8.0 / TotalSeconds());
 
                 mp3Stream.Position = dataStartPosition;
 
                 // now we know the real bitrate we can create an accurate MP3 WaveFormat
                 Mp3WaveFormat = new Mp3WaveFormat(firstFrame.SampleRate,
-                    firstFrame.ChannelMode == ChannelMode.Mono ? 1 : 2, firstFrame.FrameLength, (int) bitRate);
+                    firstFrame.ChannelMode == ChannelMode.Mono ? 1 : 2, firstFrame.FrameLength, (int)bitRate);
                 decompressor = frameDecompressorBuilder(Mp3WaveFormat);
                 waveFormat = decompressor.OutputFormat;
-                bytesPerSample = (decompressor.OutputFormat.BitsPerSample)/8*decompressor.OutputFormat.Channels;
+                bytesPerSample = (decompressor.OutputFormat.BitsPerSample) / 8 * decompressor.OutputFormat.Channels;
                 // no MP3 frames have more than 1152 samples in them
                 bytesPerDecodedFrame = 1152 * bytesPerSample;
                 // some MP3s I seem to get double
@@ -246,7 +246,7 @@ namespace NAudio.Wave
         public Mp3Frame ReadNextFrame()
         {
             var frame = ReadNextFrame(true);
-            if (frame != null) position += frame.SampleCount*bytesPerSample;
+            if (frame != null) position += frame.SampleCount * bytesPerSample;
             return frame;
         }
 

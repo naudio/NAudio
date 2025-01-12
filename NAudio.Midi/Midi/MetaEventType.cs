@@ -1,11 +1,9 @@
-using System;
-
 namespace NAudio.Midi
 {
     /// <summary>
     /// MIDI MetaEvent Type
     /// </summary>
-    public enum MetaEventType : byte 
+    public enum MetaEventType : byte
     {
         /// <summary>Track sequence number</summary>
         TrackSequenceNumber = 0x00,

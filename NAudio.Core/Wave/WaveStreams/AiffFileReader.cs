@@ -1,7 +1,7 @@
-﻿using System;
-using System.IO;
+﻿using NAudio.Utils;
+using System;
 using System.Collections.Generic;
-using NAudio.Utils;
+using System.IO;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave
@@ -55,7 +55,7 @@ namespace NAudio.Wave
             dataChunkPosition = -1;
             format = null;
             BinaryReader br = new BinaryReader(stream);
-            
+
             if (ReadChunkName(br) != "FORM")
             {
                 throw new FormatException("Not an AIFF file - no FORM header.");
@@ -88,7 +88,7 @@ namespace NAudio.Wave
                     format = new WaveFormat((int)sampleRate, (int)sampleSize, (int)numChannels);
 
                     if (nextChunk.ChunkLength > 18 && formType == "AIFC")
-                    {   
+                    {
                         // In an AIFC file, the compression format is tacked on to the COMM chunk
                         string compress = new string(br.ReadChars(4)).ToLower();
                         if (compress != "none") throw new FormatException("Compressed AIFC is not supported.");
@@ -113,7 +113,7 @@ namespace NAudio.Wave
                     br.BaseStream.Position += nextChunk.ChunkLength;
                 }
 
-                
+
             }
 
             if (format == null)
@@ -223,14 +223,14 @@ namespace NAudio.Wave
                 // sometimes there is more junk at the end of the file past the data chunk
                 if (Position + count > dataChunkLength)
                 {
-                    count = dataChunkLength - (int) Position;
+                    count = dataChunkLength - (int)Position;
                 }
 
                 // Need to fix the endianness since intel expect little endian, and apple is big endian.
                 byte[] buffer = new byte[count];
                 int length = waveStream.Read(buffer, offset, count);
 
-                int bytesPerSample = WaveFormat.BitsPerSample/8;
+                int bytesPerSample = WaveFormat.BitsPerSample / 8;
                 for (int i = 0; i < length; i += bytesPerSample)
                 {
                     if (WaveFormat.BitsPerSample == 8)
@@ -262,7 +262,7 @@ namespace NAudio.Wave
             }
         }
 
-#region Endian Helpers
+        #region Endian Helpers
         private static uint ConvertInt(byte[] buffer)
         {
             if (buffer.Length != 4) throw new Exception("Incorrect length for long.");
@@ -274,10 +274,10 @@ namespace NAudio.Wave
             if (buffer.Length != 2) throw new Exception("Incorrect length for int.");
             return (short)((buffer[0] << 8) | buffer[1]);
         }
-#endregion
+        #endregion
 
 
-#region AiffChunk
+        #region AiffChunk
         /// <summary>
         /// AIFF Chunk
         /// </summary>
@@ -319,6 +319,6 @@ namespace NAudio.Wave
         {
             return new string(br.ReadChars(4));
         }
-#endregion
+        #endregion
     }
 }

@@ -1,7 +1,7 @@
-﻿using System;
+﻿using NAudio.Mixer;
+using System;
 using System.Runtime.InteropServices;
 using System.Threading;
-using NAudio.Mixer;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave

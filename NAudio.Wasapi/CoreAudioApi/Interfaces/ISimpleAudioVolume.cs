@@ -41,8 +41,8 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
         int SetMasterVolume(
-            [In] [MarshalAs(UnmanagedType.R4)] float levelNorm,
-            [In] [MarshalAs(UnmanagedType.LPStruct)] Guid eventContext);
+            [In][MarshalAs(UnmanagedType.R4)] float levelNorm,
+            [In][MarshalAs(UnmanagedType.LPStruct)] Guid eventContext);
 
         /// <summary>
         /// Retrieves the client volume level for the audio session.
@@ -51,7 +51,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
         int GetMasterVolume(
-            [Out] [MarshalAs(UnmanagedType.R4)] out float levelNorm);
+            [Out][MarshalAs(UnmanagedType.R4)] out float levelNorm);
 
         /// <summary>
         /// Sets the muting state for the audio session.
@@ -61,8 +61,8 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
         int SetMute(
-            [In] [MarshalAs(UnmanagedType.Bool)] bool isMuted,
-            [In] [MarshalAs(UnmanagedType.LPStruct)] Guid eventContext);
+            [In][MarshalAs(UnmanagedType.Bool)] bool isMuted,
+            [In][MarshalAs(UnmanagedType.LPStruct)] Guid eventContext);
 
         /// <summary>
         /// Retrieves the current muting state for the audio session.
@@ -71,6 +71,6 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
         int GetMute(
-            [Out] [MarshalAs(UnmanagedType.Bool)] out bool isMuted);
+            [Out][MarshalAs(UnmanagedType.Bool)] out bool isMuted);
     }
 }

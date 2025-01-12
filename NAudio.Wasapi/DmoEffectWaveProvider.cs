@@ -1,6 +1,6 @@
-﻿using System;
-using NAudio.Dmo;
+﻿using NAudio.Dmo;
 using NAudio.Dmo.Effect;
+using System;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave

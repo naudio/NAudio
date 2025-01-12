@@ -12,8 +12,9 @@ namespace NAudio.Midi
         /// </summary>
         /// <param name="message"></param>
         /// <param name="timestamp"></param>
-        public MidiInMessageEventArgs(int message, int timestamp)
+        public MidiInMessageEventArgs(int deviceNumber, int message, int timestamp)
         {
+            this.DeviceIndex = deviceNumber;
             this.RawMessage = message;
             this.Timestamp = timestamp;
             try
@@ -25,6 +26,8 @@ namespace NAudio.Midi
                 // don't worry too much - might be an invalid message
             }
         }
+
+        public int DeviceIndex { get; private set; }
 
         /// <summary>
         /// The Raw message received from the MIDI In API

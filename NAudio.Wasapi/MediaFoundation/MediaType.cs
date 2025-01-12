@@ -1,7 +1,7 @@
-﻿using System;
-using System.Runtime.InteropServices;
-using NAudio.Utils;
+﻿using NAudio.Utils;
 using NAudio.Wave;
+using System;
+using System.Runtime.InteropServices;
 
 namespace NAudio.MediaFoundation
 {

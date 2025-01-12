@@ -63,7 +63,7 @@ namespace NAudio.Wave.Compression
         // http://msdn.microsoft.com/en-us/library/dd742886%28VS.85%29.aspx
         [DllImport("Msacm32.dll")]
         public static extern MmResult acmDriverClose(IntPtr hAcmDriver, int closeFlags);
-        
+
         // http://msdn.microsoft.com/en-us/library/dd742890%28VS.85%29.aspx
         [DllImport("Msacm32.dll")]
         public static extern MmResult acmDriverEnum(AcmDriverEnumCallback fnCallback, IntPtr dwInstance, AcmDriverEnumFlags flags);
@@ -105,7 +105,7 @@ namespace NAudio.Wave.Compression
             AcmFormatSuggestFlags suggestFlags);
 #endif
 
-        [DllImport("Msacm32.dll",EntryPoint="acmFormatSuggest")]
+        [DllImport("Msacm32.dll", EntryPoint = "acmFormatSuggest")]
         public static extern MmResult acmFormatSuggest2(
             IntPtr hAcmDriver,
             IntPtr sourceFormatPointer,
@@ -152,7 +152,7 @@ namespace NAudio.Wave.Compression
         /// <summary>
         /// A version with pointers for troubleshooting
         /// </summary>
-        [DllImport("Msacm32.dll",EntryPoint="acmStreamOpen")]
+        [DllImport("Msacm32.dll", EntryPoint = "acmStreamOpen")]
         public static extern MmResult acmStreamOpen2(
             out IntPtr hAcmStream,
             IntPtr hAcmDriver,
@@ -178,7 +178,7 @@ namespace NAudio.Wave.Compression
         // http://msdn.microsoft.com/en-us/library/dd742929%28VS.85%29.aspx
         [DllImport("Msacm32.dll")]
         public static extern MmResult acmStreamReset(IntPtr hAcmStream, int resetFlags);
-        
+
         // http://msdn.microsoft.com/en-us/library/dd742931%28VS.85%29.aspx
         [DllImport("Msacm32.dll")]
         public static extern MmResult acmStreamSize(IntPtr hAcmStream, int inputBufferSize, out int outputBufferSize, AcmStreamSizeFlags flags);

@@ -35,7 +35,7 @@ namespace NAudio.Wave.Compression
                 {
                     MmException.Try(AcmInterop.acmStreamOpen2(out streamHandle, IntPtr.Zero, sourceFormatPointer, destFormatPointer, null, IntPtr.Zero, IntPtr.Zero, AcmStreamOpenFlags.NonRealTime), "acmStreamOpen");
                 }
-                finally 
+                finally
                 {
                     Marshal.FreeHGlobal(sourceFormatPointer);
                     Marshal.FreeHGlobal(destFormatPointer);
@@ -122,7 +122,7 @@ namespace NAudio.Wave.Compression
             // create a PCM format
             WaveFormat suggestedFormat = new WaveFormat(compressedFormat.SampleRate, 16, compressedFormat.Channels);
             //MmException.Try(AcmInterop.acmFormatSuggest(IntPtr.Zero, compressedFormat, suggestedFormat, Marshal.SizeOf(suggestedFormat), AcmFormatSuggestFlags.FormatTag), "acmFormatSuggest");
-            
+
 
             IntPtr suggestedFormatPointer = WaveFormat.MarshalToPtr(suggestedFormat);
             IntPtr compressedFormatPointer = WaveFormat.MarshalToPtr(compressedFormat);

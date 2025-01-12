@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
 
 namespace NAudio.Gui
@@ -45,7 +42,7 @@ namespace NAudio.Gui
         /// Current Value
         /// </summary>
         [DefaultValue(-3.0)]
-        public float Amplitude 
+        public float Amplitude
         {
             get { return amplitude; }
             set
@@ -60,7 +57,7 @@ namespace NAudio.Gui
         /// </summary>
         [DefaultValue(-60.0)]
         public float MinDb { get; set; }
-        
+
         /// <summary>
         /// Maximum decibels
         /// </summary>
@@ -80,7 +77,7 @@ namespace NAudio.Gui
         {
             //base.OnPaint(pe);
 
-            
+
             pe.Graphics.DrawRectangle(Pens.Black, 0, 0, this.Width - 1, this.Height - 1);
 
             double db = 20 * Math.Log10(Amplitude);
@@ -103,7 +100,7 @@ namespace NAudio.Gui
                 height = (int)(height * percent);
                 pe.Graphics.FillRectangle(foregroundBrush, 1, this.Height - 1 - height, width, height);
             }
-            
+
             /*
             StringFormat format = new StringFormat();
             format.LineAlignment = StringAlignment.Center;

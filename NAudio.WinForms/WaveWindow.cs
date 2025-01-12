@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Windows.Forms;
 using System.Runtime.InteropServices;
+using System.Windows.Forms;
 
 namespace NAudio.Wave
 {
@@ -16,8 +16,8 @@ namespace NAudio.Wave
         protected override void WndProc(ref Message m)
         {
             WaveInterop.WaveMessage message = (WaveInterop.WaveMessage)m.Msg;
-            
-            switch(message)
+
+            switch (message)
             {
                 case WaveInterop.WaveMessage.WaveOutDone:
                 case WaveInterop.WaveMessage.WaveInData:
@@ -51,8 +51,8 @@ namespace NAudio.Wave
         protected override void WndProc(ref Message m)
         {
             WaveInterop.WaveMessage message = (WaveInterop.WaveMessage)m.Msg;
-            
-            switch(message)
+
+            switch (message)
             {
                 case WaveInterop.WaveMessage.WaveOutDone:
                 case WaveInterop.WaveMessage.WaveInData:

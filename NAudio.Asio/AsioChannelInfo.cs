@@ -15,11 +15,11 @@ namespace NAudio.Wave.Asio
         /// <summary>
         /// Is Input
         /// </summary>
-        public bool isInput; 
+        public bool isInput;
         /// <summary>
         /// Is Active
         /// </summary>
-        public bool isActive; 
+        public bool isActive;
         /// <summary>
         /// Channel Info
         /// </summary>

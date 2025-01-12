@@ -27,7 +27,7 @@ namespace NAudio.MediaFoundation
         /// virtual HRESULT STDMETHODCALLTYPE SetLength(/*[in]*/ QWORD qwLength) = 0;
         /// </summary>
         void SetLength(long qwLength);
-        
+
         /// <summary>
         /// Retrieves the current read or write position in the stream. 
         /// virtual HRESULT STDMETHODCALLTYPE GetCurrentPosition(/*[out]*/ __RPC__out QWORD *pqwPosition) = 0;
@@ -81,7 +81,7 @@ namespace NAudio.MediaFoundation
         /// virtual /*[local]*/ HRESULT STDMETHODCALLTYPE EndWrite(/*[in]*/ IMFAsyncResult *pResult, /*[out]*/ _Out_  ULONG *pcbWritten) = 0;
         /// </summary>
         void EndWrite(IntPtr pResult, ref int pcbWritten);
-        
+
         /// <summary>
         /// Moves the current position in the stream by a specified offset. 
         /// virtual HRESULT STDMETHODCALLTYPE Seek(/*[in]*/ MFBYTESTREAM_SEEK_ORIGIN SeekOrigin, /*[in]*/ LONGLONG llSeekOffset, /*[in]*/ DWORD dwSeekFlags, /*[out]*/ __RPC__out QWORD *pqwCurrentPosition) = 0;

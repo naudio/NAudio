@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace NAudio.Dmo
+﻿namespace NAudio.Dmo
 {
     /// <summary>
     /// Media Object Size Info

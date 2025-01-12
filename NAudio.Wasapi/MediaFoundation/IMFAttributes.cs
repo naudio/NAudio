@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.Text;
-using NAudio.CoreAudioApi.Interfaces;
 
 namespace NAudio.MediaFoundation
 {
@@ -21,17 +20,17 @@ namespace NAudio.MediaFoundation
         /// Retrieves the data type of the value associated with a key.
         /// </summary>
         void GetItemType([In, MarshalAs(UnmanagedType.LPStruct)] Guid guidKey, out int pType);
-        
+
         /// <summary>
         /// Queries whether a stored attribute value equals a specified PROPVARIANT.
         /// </summary>
         void CompareItem([In, MarshalAs(UnmanagedType.LPStruct)] Guid guidKey, IntPtr value, [MarshalAs(UnmanagedType.Bool)] out bool pbResult);
-        
+
         /// <summary>
         /// Compares the attributes on this object with the attributes on another object.
         /// </summary>
         void Compare([MarshalAs(UnmanagedType.Interface)] IMFAttributes pTheirs, int matchType, [MarshalAs(UnmanagedType.Bool)] out bool pbResult);
-        
+
         /// <summary>
         /// Retrieves a UINT32 value associated with a key.
         /// </summary>
@@ -46,7 +45,7 @@ namespace NAudio.MediaFoundation
         /// Retrieves a double value associated with a key.
         /// </summary>
         void GetDouble([In, MarshalAs(UnmanagedType.LPStruct)] Guid guidKey, out double pfValue);
-        
+
         /// <summary>
         /// Retrieves a GUID value associated with a key.
         /// </summary>
@@ -100,7 +99,7 @@ namespace NAudio.MediaFoundation
         /// Removes a key/value pair from the object's attribute list.
         /// </summary>
         void DeleteItem([In, MarshalAs(UnmanagedType.LPStruct)] Guid guidKey);
-        
+
         /// <summary>
         /// Removes all key/value pairs from the object's attribute list.
         /// </summary>
@@ -110,7 +109,7 @@ namespace NAudio.MediaFoundation
         /// Associates a UINT32 value with a key.
         /// </summary>
         void SetUINT32([In, MarshalAs(UnmanagedType.LPStruct)] Guid guidKey, int unValue);
-        
+
         /// <summary>
         /// Associates a UINT64 value with a key.
         /// </summary>
@@ -120,7 +119,7 @@ namespace NAudio.MediaFoundation
         /// Associates a double value with a key.
         /// </summary>
         void SetDouble([In, MarshalAs(UnmanagedType.LPStruct)] Guid guidKey, double fValue);
-        
+
         /// <summary>
         /// Associates a GUID value with a key.
         /// </summary>
@@ -161,7 +160,7 @@ namespace NAudio.MediaFoundation
         /// Retrieves an attribute at the specified index.
         /// </summary>
         void GetItemByIndex(int unIndex, out Guid pGuidKey, [In, Out] IntPtr pValue);
-        
+
         /// <summary>
         /// Copies all of the attributes from this object into another attribute store.
         /// </summary>

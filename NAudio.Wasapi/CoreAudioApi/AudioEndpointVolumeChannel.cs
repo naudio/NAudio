@@ -20,8 +20,8 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 
-using System;
 using NAudio.CoreAudioApi.Interfaces;
+using System;
 using System.Runtime.InteropServices;
 
 namespace NAudio.CoreAudioApi
@@ -58,7 +58,7 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                Marshal.ThrowExceptionForHR(audioEndpointVolume.GetChannelVolumeLevel(channel,out var result));
+                Marshal.ThrowExceptionForHR(audioEndpointVolume.GetChannelVolumeLevel(channel, out var result));
                 return result;
             }
             set

@@ -219,12 +219,12 @@ namespace NAudio.MediaFoundation
         /// Removes a buffer at a specified index from the sample.
         /// </summary>
         void RemoveBufferByIndex(int dwIndex);
-        
+
         /// <summary>
         /// Removes all buffers from the sample.
         /// </summary>
         void RemoveAllBuffers();
-        
+
         /// <summary>
         /// Retrieves the total length of the valid data in all of the buffers in the sample.
         /// </summary>

@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NAudio.Dmo;
+﻿using NAudio.Dmo;
 using NAudio.Wave;
+using System;
 using System.Diagnostics;
 
 namespace NAudio.FileFormats.Mp3
@@ -79,7 +77,7 @@ namespace NAudio.FileFormats.Mp3
             // 5. Now get the data out of the output buffer
             outputBuffer.RetrieveData(dest, destOffset);
             Debug.Assert(!outputBuffer.MoreDataAvailable, "have not implemented more data available yet");
-            
+
             return outputBuffer.Length;
         }
 
@@ -102,7 +100,7 @@ namespace NAudio.FileFormats.Mp3
                 inputMediaBuffer = null;
             }
             outputBuffer.Dispose();
-            if (mp3Decoder!= null)
+            if (mp3Decoder != null)
             {
                 mp3Decoder.Dispose();
                 mp3Decoder = null;

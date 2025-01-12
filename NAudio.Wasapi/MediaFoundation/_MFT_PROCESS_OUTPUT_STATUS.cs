@@ -11,7 +11,7 @@ namespace NAudio.MediaFoundation
         /// <summary>
         /// None
         /// </summary>
-        None = 0, 
+        None = 0,
         /// <summary>
         /// The Media Foundation transform (MFT) has created one or more new output streams.
         /// </summary>

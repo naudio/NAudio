@@ -1,7 +1,7 @@
-﻿using System;
-using System.Threading;
+﻿using NAudio.Wave;
+using System;
 using System.Runtime.InteropServices;
-using NAudio.Wave;
+using System.Threading;
 
 // for consistency this should be in NAudio.Wave namespace, but left as it is for backwards compatibility
 // ReSharper disable once CheckNamespace
@@ -40,7 +40,7 @@ namespace NAudio.CoreAudioApi
         /// <summary>
         /// Initialises a new instance of the WASAPI capture class
         /// </summary>
-        public WasapiCapture() : 
+        public WasapiCapture() :
             this(GetDefaultCaptureDevice())
         {
         }
@@ -60,7 +60,7 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         /// <param name="captureDevice">The capture device.</param>
         /// <param name="useEventSync">true if sync is done with event. false use sleep.</param>
-        public WasapiCapture(MMDevice captureDevice, bool useEventSync) 
+        public WasapiCapture(MMDevice captureDevice, bool useEventSync)
             : this(captureDevice, useEventSync, 100)
         {
         }
@@ -91,12 +91,12 @@ namespace NAudio.CoreAudioApi
         /// <summary>
         /// Current Capturing State
         /// </summary>
-        public CaptureState CaptureState {  get { return captureState; } }
+        public CaptureState CaptureState { get { return captureState; } }
 
         /// <summary>
         /// Capturing wave format
         /// </summary>
-        public virtual WaveFormat WaveFormat 
+        public virtual WaveFormat WaveFormat
         {
             get
             {
@@ -161,7 +161,7 @@ namespace NAudio.CoreAudioApi
             int bufferFrameCount = audioClient.BufferSize;
             bytesPerFrame = waveFormat.Channels * waveFormat.BitsPerSample / 8;
             recordBuffer = new byte[bufferFrameCount * bytesPerFrame];
-            
+
             //Debug.WriteLine(string.Format("record buffer size = {0}", this.recordBuffer.Length));
 
             initialized = true;

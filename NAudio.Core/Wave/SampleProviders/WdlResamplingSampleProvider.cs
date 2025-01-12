@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using NAudio.Dsp;
+﻿using NAudio.Dsp;
 
 namespace NAudio.Wave.SampleProviders
 {

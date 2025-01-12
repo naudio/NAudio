@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Runtime.InteropServices;
 
 namespace NAudio.Midi
@@ -42,29 +40,29 @@ namespace NAudio.Midi
         /// </summary>
         public Manufacturers Manufacturer
         {
-            get 
+            get
             {
                 return (Manufacturers)manufacturerId;
             }
         }
-        
+
         /// <summary>
         /// Gets the product identifier (manufacturer specific)
         /// </summary>
-        public int ProductId 
+        public int ProductId
         {
-            get 
+            get
             {
                 return productId;
             }
         }
-        
+
         /// <summary>
         /// Gets the product name
         /// </summary>
-        public string ProductName 
+        public string ProductName
         {
-            get 
+            get
             {
                 return productName;
             }

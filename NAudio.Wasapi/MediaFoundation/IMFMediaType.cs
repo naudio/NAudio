@@ -181,13 +181,13 @@ namespace NAudio.MediaFoundation
         /// </summary>
         [PreserveSig]
         int IsEqual([In, MarshalAs(UnmanagedType.Interface)] IMFMediaType pIMediaType, ref int pdwFlags);
-        
+
         /// <summary>
         /// Retrieves an alternative representation of the media type.
         /// </summary>
-        
+
         void GetRepresentation([In] Guid guidRepresentation, ref IntPtr ppvRepresentation);
-        
+
         /// <summary>
         /// Frees memory that was allocated by the GetRepresentation method.
         /// </summary>

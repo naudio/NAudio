@@ -1,9 +1,9 @@
-namespace NAudio.Midi 
+namespace NAudio.Midi
 {
     /// <summary>
     /// MIDI command codes
     /// </summary>
-    public enum MidiCommandCode : byte 
+    public enum MidiCommandCode : byte
     {
         /// <summary>Note Off</summary>
         NoteOff = 0x80,

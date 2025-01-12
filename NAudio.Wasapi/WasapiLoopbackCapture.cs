@@ -1,5 +1,4 @@
-﻿using System;
-using NAudio.CoreAudioApi;
+﻿using NAudio.CoreAudioApi;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave
@@ -36,13 +35,13 @@ namespace NAudio.Wave
             MMDeviceEnumerator devices = new MMDeviceEnumerator();
             return devices.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
         }
-        
+
         /// <summary>
         /// Specify loopback
         /// </summary>
         protected override AudioClientStreamFlags GetAudioClientStreamFlags()
         {
             return AudioClientStreamFlags.Loopback | base.GetAudioClientStreamFlags();
-        }        
+        }
     }
 }

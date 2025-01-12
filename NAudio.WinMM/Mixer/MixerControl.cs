@@ -1,8 +1,7 @@
 // created on 10/12/2002 at 21:11
 using System;
-using System.Runtime.InteropServices;
 using System.Collections.Generic;
-using NAudio.Utils;
+using System.Runtime.InteropServices;
 
 namespace NAudio.Mixer
 {
@@ -61,7 +60,7 @@ namespace NAudio.Mixer
                     {
                         Int64 address = pmc.ToInt64() + mixerControlSize * i;
 
-                        var mc = 
+                        var mc =
                             Marshal.PtrToStructure<MixerInterop.MIXERCONTROL>((IntPtr)address);
                         var mixerControl = GetMixerControl(mixerHandle, mixerLine.LineId, mc.dwControlID, mixerLine.Channels,
                                                                                  mixerHandleType);
@@ -69,7 +68,7 @@ namespace NAudio.Mixer
                         controls.Add(mixerControl);
                     }
                 }
-                finally 
+                finally
                 {
                     Marshal.FreeHGlobal(pmc);
                 }
@@ -165,7 +164,7 @@ namespace NAudio.Mixer
 
             if ((mixerControl.fdwControl & MixerInterop.MIXERCONTROL_CONTROLF_MULTIPLE) != 0)
             {
-                mixerControlDetails.hwndOwner = (IntPtr) mixerControl.cMultipleItems;
+                mixerControlDetails.hwndOwner = (IntPtr)mixerControl.cMultipleItems;
             }
             else if (IsCustom)
             {
@@ -197,11 +196,11 @@ namespace NAudio.Mixer
                 // must be custom
                 mixerControlDetails.cbDetails = mixerControl.Metrics.customData;
             }
-            var detailsSize = mixerControlDetails.cbDetails*mixerControlDetails.cChannels;
+            var detailsSize = mixerControlDetails.cbDetails * mixerControlDetails.cChannels;
             if ((mixerControl.fdwControl & MixerInterop.MIXERCONTROL_CONTROLF_MULTIPLE) != 0)
             {
                 // fixing issue 16390 - calculating size correctly for multiple items
-                detailsSize *= (int) mixerControl.cMultipleItems;
+                detailsSize *= (int)mixerControl.cMultipleItems;
             }
             IntPtr buffer = Marshal.AllocCoTaskMem(detailsSize);
             // To copy stuff in:

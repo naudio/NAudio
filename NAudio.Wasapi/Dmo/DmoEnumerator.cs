@@ -35,7 +35,7 @@ namespace NAudio.Dmo
         {
             return GetDmos(DmoGuids.DMOCATEGORY_AUDIO_DECODER);
         }
-        
+
         private static IEnumerable<DmoDescriptor> GetDmos(Guid category)
         {
             IEnumDmo enumDmo;

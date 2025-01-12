@@ -1,7 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using NAudio.Wave;
+using System;
 using System.Runtime.InteropServices;
-using NAudio.Wave;
 using System.Runtime.InteropServices.ComTypes;
 
 namespace NAudio.MediaFoundation
@@ -31,7 +30,7 @@ namespace NAudio.MediaFoundation
         /// </summary>
         [DllImport("mfplat.dll", ExactSpelling = true, PreserveSig = false)]
         internal static extern void MFCreateMediaType(out IMFMediaType ppMFType);
-        
+
         /// <summary>
         /// Initializes a media type from a WAVEFORMATEX structure. 
         /// </summary>
@@ -144,7 +143,7 @@ namespace NAudio.MediaFoundation
         /// Media Foundation Version
         /// </summary>
         public const int MF_VERSION = (MF_SDK_VERSION << 16) | MF_API_VERSION;
-        
+
 
     }
 }

@@ -1,6 +1,6 @@
+using NAudio.Wave.Compression;
 using System;
 using System.Diagnostics;
-using NAudio.Wave.Compression;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave
@@ -31,7 +31,7 @@ namespace NAudio.Wave
             conversionStream = new AcmStream(sourceProvider.WaveFormat, targetFormat);
 
             preferredSourceReadSize = Math.Min(sourceProvider.WaveFormat.AverageBytesPerSecond, conversionStream.SourceBuffer.Length);
-            preferredSourceReadSize -= (preferredSourceReadSize% sourceProvider.WaveFormat.BlockAlign);
+            preferredSourceReadSize -= (preferredSourceReadSize % sourceProvider.WaveFormat.BlockAlign);
         }
 
         /// <summary>
@@ -72,7 +72,7 @@ namespace NAudio.Wave
                 int readFromLeftoverDest = Math.Min(count - bytesRead, leftoverDestBytes);
                 if (readFromLeftoverDest > 0)
                 {
-                    Array.Copy(conversionStream.DestBuffer, leftoverDestOffset, buffer, offset+bytesRead, readFromLeftoverDest);
+                    Array.Copy(conversionStream.DestBuffer, leftoverDestOffset, buffer, offset + bytesRead, readFromLeftoverDest);
                     leftoverDestOffset += readFromLeftoverDest;
                     leftoverDestBytes -= readFromLeftoverDest;
                     bytesRead += readFromLeftoverDest;
@@ -118,7 +118,7 @@ namespace NAudio.Wave
                 {
                     int bytesRequired = count - bytesRead;
                     int toCopy = Math.Min(destBytesConverted, bytesRequired);
-                    
+
                     // save leftovers
                     if (toCopy < destBytesConverted)
                     {

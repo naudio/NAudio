@@ -13,10 +13,10 @@ namespace NAudio.Dsp
         {
         }
 
-        public EnvelopeDetector( double ms, double sampleRate )
+        public EnvelopeDetector(double ms, double sampleRate)
         {
-            System.Diagnostics.Debug.Assert( sampleRate > 0.0 );
-            System.Diagnostics.Debug.Assert( ms > 0.0 );
+            System.Diagnostics.Debug.Assert(sampleRate > 0.0);
+            System.Diagnostics.Debug.Assert(ms > 0.0);
             this.sampleRate = sampleRate;
             this.ms = ms;
             SetCoef();
@@ -25,9 +25,9 @@ namespace NAudio.Dsp
         public double TimeConstant
         {
             get => ms;
-            set 
+            set
             {
-                System.Diagnostics.Debug.Assert( value > 0.0 );
+                System.Diagnostics.Debug.Assert(value > 0.0);
                 this.ms = value;
                 SetCoef();
             }
@@ -38,13 +38,13 @@ namespace NAudio.Dsp
             get => sampleRate;
             set
             {
-                System.Diagnostics.Debug.Assert( value > 0.0 );
+                System.Diagnostics.Debug.Assert(value > 0.0);
                 this.sampleRate = value;
                 SetCoef();
             }
         }
 
-        public double Run( double inValue, double state )
+        public double Run(double inValue, double state)
         {
             return inValue + coeff * (state - inValue);
         }
@@ -59,17 +59,17 @@ namespace NAudio.Dsp
     {
         // DC offset to prevent denormal
         protected const double DC_OFFSET = 1.0E-25;
-        
+
         private readonly EnvelopeDetector attack;
         private readonly EnvelopeDetector release;
 
-        public AttRelEnvelope( double attackMilliseconds, double releaseMilliseconds, double sampleRate )
+        public AttRelEnvelope(double attackMilliseconds, double releaseMilliseconds, double sampleRate)
         {
-            attack = new EnvelopeDetector(attackMilliseconds,sampleRate);
-            release = new EnvelopeDetector(releaseMilliseconds,sampleRate);
+            attack = new EnvelopeDetector(attackMilliseconds, sampleRate);
+            release = new EnvelopeDetector(releaseMilliseconds, sampleRate);
         }
 
-        public double Attack 
+        public double Attack
         {
             get => attack.TimeConstant;
             set => attack.TimeConstant = value;
@@ -93,7 +93,7 @@ namespace NAudio.Dsp
             // positive delta = attack
             // negative delta = release
             // good for linear & log values
-            return inValue > state ? attack.Run( inValue, state ) : release.Run( inValue, state );
+            return inValue > state ? attack.Run(inValue, state) : release.Run(inValue, state);
         }
     }
 }

@@ -21,7 +21,7 @@ namespace NAudio.Dmo
         /// <returns>HRESULT</returns>
         [PreserveSig]
         int SetLength(int length);
-        
+
         /// <summary>
         /// Get Max Length
         /// </summary>
@@ -29,7 +29,7 @@ namespace NAudio.Dmo
         /// <returns>HRESULT</returns>
         [PreserveSig]
         int GetMaxLength(out int maxLength);
-        
+
         /// <summary>
         /// Get Buffer and Length
         /// </summary>

@@ -10,7 +10,7 @@ namespace NAudio.Wave
     public sealed class WaveFormatCustomMarshaler : ICustomMarshaler
     {
         private static WaveFormatCustomMarshaler marshaler = null;
-        
+
         /// <summary>
         /// Gets the instance of this marshaller
         /// </summary>
@@ -30,7 +30,7 @@ namespace NAudio.Wave
         /// </summary>
         public void CleanUpManagedData(object ManagedObj)
         {
-            
+
         }
 
         /// <summary>
@@ -55,7 +55,7 @@ namespace NAudio.Wave
         /// </summary>
         public IntPtr MarshalManagedToNative(object ManagedObj)
         {
-            return WaveFormat.MarshalToPtr((WaveFormat)ManagedObj);            
+            return WaveFormat.MarshalToPtr((WaveFormat)ManagedObj);
         }
 
         /// <summary>

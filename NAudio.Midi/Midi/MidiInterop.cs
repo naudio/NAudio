@@ -262,7 +262,7 @@ namespace NAudio.Midi
             public IntPtr reserved; // DWORD_PTR
             public int dwOffset; // DWORD
             // n.b. MSDN documentation incorrect, see mmsystem.h
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)] 
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
             public IntPtr[] dwReserved; // DWORD_PTR dwReserved[8]
         }
 

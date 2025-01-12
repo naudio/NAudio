@@ -1,7 +1,7 @@
-﻿using System;
-using System.Runtime.InteropServices;
-using NAudio.Dmo;
+﻿using NAudio.Dmo;
 using NAudio.MediaFoundation;
+using System;
+using System.Runtime.InteropServices;
 
 namespace NAudio.Wave
 {
@@ -130,11 +130,11 @@ namespace NAudio.Wave
         public int ResamplerQuality
         {
             get { return resamplerQuality; }
-            set 
-            { 
+            set
+            {
                 if (value < 1 || value > 60)
                     throw new ArgumentOutOfRangeException("Resampler Quality must be between 1 and 60");
-                resamplerQuality = value; 
+                resamplerQuality = value;
             }
         }
 

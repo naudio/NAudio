@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Runtime.InteropServices;
 
 namespace NAudio.Wave.Compression
@@ -36,11 +34,11 @@ namespace NAudio.Wave.Compression
         /// LPCTSTR pszTitle; 
         /// </summary>
         [MarshalAs(UnmanagedType.LPTStr)]
-        public string title; 
+        public string title;
         /// <summary>
         /// TCHAR szFormatTag[ACMFORMATTAGDETAILS_FORMATTAG_CHARS]; 
         /// </summary>
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst=AcmFormatTagDetails.FormatTagDescriptionChars)]
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = AcmFormatTagDetails.FormatTagDescriptionChars)]
         public string formatTagDescription;
         /// <summary>
         /// TCHAR szFormat[ACMFORMATDETAILS_FORMAT_CHARS]; 
@@ -52,7 +50,7 @@ namespace NAudio.Wave.Compression
         /// n.b. can be written into
         /// </summary>
         [MarshalAs(UnmanagedType.LPTStr)]
-        public string name; 
+        public string name;
         /// <summary>
         /// DWORD cchName
         /// Should be at least 128 unless name is zero
@@ -83,7 +81,7 @@ namespace NAudio.Wave.Compression
         /// ACMFORMATCHOOSEHOOKPROC pfnHook; 
         /// </summary>
         public AcmInterop.AcmFormatChooseHookProc windowCallbackFunction;
-    
+
 
     }
 }

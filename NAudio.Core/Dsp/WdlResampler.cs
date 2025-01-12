@@ -193,7 +193,7 @@ namespace NAudio.Dsp
 
             if (sreq < 0) sreq = 0;
 
-        again:
+            again:
             Array.Resize(ref m_rsinbuf, (m_samples_in_rsinbuf + sreq) * nch);
 
             int sz = m_rsinbuf.Length / ((nch != 0) ? nch : 1) - m_samples_in_rsinbuf;

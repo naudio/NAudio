@@ -172,7 +172,7 @@ namespace NAudio.Codecs
 
             outlen = 0;
             rhigh = 0;
-            for (j = 0; j < inputLength; )
+            for (j = 0; j < inputLength;)
             {
                 if (state.Packed)
                 {
@@ -212,13 +212,13 @@ namespace NAudio.Codecs
                         wd2 = qm4[wd1];
                         break;
                 }
-                
+
                 // Block 5L, LOW BAND INVQBL
                 wd2 = (state.Band[0].det * wd2) >> 15;
-                
+
                 // Block 5L, RECONS
                 rlow = state.Band[0].s + wd2;
-                
+
                 // Block 6L, LIMIT
                 if (rlow > 16383)
                     rlow = 16383;
@@ -252,10 +252,10 @@ namespace NAudio.Codecs
                     // Block 2H, INVQAH
                     wd2 = qm2[ihigh];
                     dhigh = (state.Band[1].det * wd2) >> 15;
-                    
+
                     // Block 5H, RECONS
                     rhigh = dhigh + state.Band[1].s;
-                    
+
                     // Block 6H, LIMIT
                     if (rhigh > 16383)
                         rhigh = 16383;
@@ -352,7 +352,7 @@ namespace NAudio.Codecs
 
             g722_bytes = 0;
             xhigh = 0;
-            for (j = 0; j < inputBufferCount; )
+            for (j = 0; j < inputBufferCount;)
             {
                 if (state.ItuTestMode)
                 {

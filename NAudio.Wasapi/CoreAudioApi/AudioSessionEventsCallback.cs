@@ -3,9 +3,9 @@
 // 12/2014
 // -----------------------------------------
 
+using NAudio.CoreAudioApi.Interfaces;
 using System;
 using System.Runtime.InteropServices;
-using NAudio.CoreAudioApi.Interfaces;
 
 namespace NAudio.CoreAudioApi
 {
@@ -32,7 +32,7 @@ namespace NAudio.CoreAudioApi
         /// <param name="eventContext">A user context value that is passed to the notification callback.</param>
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         public int OnDisplayNameChanged(
-            [In] [MarshalAs(UnmanagedType.LPWStr)] string displayName,
+            [In][MarshalAs(UnmanagedType.LPWStr)] string displayName,
             [In] ref Guid eventContext)
         {
             audioSessionEventsHandler.OnDisplayNameChanged(displayName);
@@ -47,7 +47,7 @@ namespace NAudio.CoreAudioApi
         /// <param name="eventContext">A user context value that is passed to the notification callback.</param>
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         public int OnIconPathChanged(
-            [In] [MarshalAs(UnmanagedType.LPWStr)] string iconPath,
+            [In][MarshalAs(UnmanagedType.LPWStr)] string iconPath,
             [In] ref Guid eventContext)
         {
             audioSessionEventsHandler.OnIconPathChanged(iconPath);
@@ -63,8 +63,8 @@ namespace NAudio.CoreAudioApi
         /// <param name="eventContext">A user context value that is passed to the notification callback.</param>
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         public int OnSimpleVolumeChanged(
-            [In] [MarshalAs(UnmanagedType.R4)] float volume,
-            [In] [MarshalAs(UnmanagedType.Bool)] bool isMuted,
+            [In][MarshalAs(UnmanagedType.R4)] float volume,
+            [In][MarshalAs(UnmanagedType.Bool)] bool isMuted,
             [In] ref Guid eventContext)
         {
             audioSessionEventsHandler.OnVolumeChanged(volume, isMuted);
@@ -81,9 +81,9 @@ namespace NAudio.CoreAudioApi
         /// <param name="eventContext">A user context value that is passed to the notification callback.</param>
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         public int OnChannelVolumeChanged(
-            [In] [MarshalAs(UnmanagedType.U4)] UInt32 channelCount,
-            [In] [MarshalAs(UnmanagedType.SysInt)] IntPtr newVolumes, // Pointer to float array
-            [In] [MarshalAs(UnmanagedType.U4)] UInt32 channelIndex,
+            [In][MarshalAs(UnmanagedType.U4)] UInt32 channelCount,
+            [In][MarshalAs(UnmanagedType.SysInt)] IntPtr newVolumes, // Pointer to float array
+            [In][MarshalAs(UnmanagedType.U4)] UInt32 channelIndex,
             [In] ref Guid eventContext)
         {
             audioSessionEventsHandler.OnChannelVolumeChanged(channelCount, newVolumes, channelIndex);

@@ -53,7 +53,7 @@ namespace NAudio.Wave
         /// Gets the float buffer count.
         /// </summary>
         /// <value>The float buffer count.</value>
-        int FloatBufferCount { get;}
+        int FloatBufferCount { get; }
 
         /// <summary>
         /// Gets the short buffer count.

@@ -24,7 +24,7 @@ namespace NAudio.Dmo
     /// <summary>
     /// MP_TYPE
     /// </summary>
-    enum MediaParamType 
+    enum MediaParamType
     {
         /// <summary>
         /// MPT_INT

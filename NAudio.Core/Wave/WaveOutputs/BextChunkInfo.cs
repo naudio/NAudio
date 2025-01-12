@@ -28,7 +28,7 @@ namespace NAudio.Wave
         /// <summary>
         /// Originator Reference (max 32 chars)
         /// </summary>
-        public string OriginatorReference { get; set; } 
+        public string OriginatorReference { get; set; }
         /// <summary>
         /// Originator Date Time
         /// </summary>

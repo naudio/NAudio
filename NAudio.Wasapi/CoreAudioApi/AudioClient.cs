@@ -115,7 +115,7 @@ namespace NAudio.CoreAudioApi
             get
             {
                 Marshal.ThrowExceptionForHR(audioClientInterface.GetBufferSize(out uint bufferSize));
-                return (int) bufferSize;
+                return (int)bufferSize;
             }
         }
 
@@ -210,7 +210,7 @@ namespace NAudio.CoreAudioApi
                 return audioClockClient;
             }
         }
-        
+
         /// <summary>
         /// Gets the AudioRenderClient service
         /// </summary>

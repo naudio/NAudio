@@ -1,9 +1,5 @@
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Drawing;
-using System.Data;
-using System.Text;
 using System.Windows.Forms;
 
 namespace NAudio.Gui
@@ -117,21 +113,21 @@ namespace NAudio.Gui
         /// </summary>
         protected override void OnPaint(PaintEventArgs e)
         {
-            int diameter = Math.Min(this.Width-4,this.Height-4);
-                        
-            Pen potPen = new Pen(ForeColor,3.0f);
+            int diameter = Math.Min(this.Width - 4, this.Height - 4);
+
+            Pen potPen = new Pen(ForeColor, 3.0f);
             potPen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
             System.Drawing.Drawing2D.GraphicsState state = e.Graphics.Save();
             //e.Graphics.TranslateTransform(diameter / 2f, diameter / 2f);
             e.Graphics.TranslateTransform(this.Width / 2, this.Height / 2);
             e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
             e.Graphics.DrawArc(potPen, new Rectangle(diameter / -2, diameter / -2, diameter, diameter), 135, 270);
-            
+
             double percent = (value - minimum) / (maximum - minimum);
             double degrees = 135 + (percent * 270);
             double x = (diameter / 2.0) * Math.Cos(Math.PI * degrees / 180);
             double y = (diameter / 2.0) * Math.Sin(Math.PI * degrees / 180);
-            e.Graphics.DrawLine(potPen, 0, 0, (float) x, (float) y);
+            e.Graphics.DrawLine(potPen, 0, 0, (float)x, (float)y);
             e.Graphics.Restore(state);
             base.OnPaint(e);
         }
@@ -171,7 +167,7 @@ namespace NAudio.Gui
                     newValue = minimum;
                 if (newValue > maximum)
                     newValue = maximum;
-                SetValue(newValue,true);
+                SetValue(newValue, true);
             }
             base.OnMouseMove(e);
         }

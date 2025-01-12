@@ -20,9 +20,9 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 // updated for use in NAudio
+using NAudio.CoreAudioApi.Interfaces;
 using System;
 using System.Runtime.InteropServices;
-using NAudio.CoreAudioApi.Interfaces;
 
 namespace NAudio.CoreAudioApi
 {
@@ -109,7 +109,7 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         /// <param name="client">Object implementing IMMNotificationClient type casted as IMMNotificationClient interface</param>
         /// <returns></returns>
-        public int RegisterEndpointNotificationCallback([In] [MarshalAs(UnmanagedType.Interface)] IMMNotificationClient client)
+        public int RegisterEndpointNotificationCallback([In][MarshalAs(UnmanagedType.Interface)] IMMNotificationClient client)
         {
             return realEnumerator.RegisterEndpointNotificationCallback(client);
         }
@@ -119,7 +119,7 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         /// <param name="client">Object implementing IMMNotificationClient type casted as IMMNotificationClient interface </param>
         /// <returns></returns>
-        public int UnregisterEndpointNotificationCallback([In] [MarshalAs(UnmanagedType.Interface)] IMMNotificationClient client)
+        public int UnregisterEndpointNotificationCallback([In][MarshalAs(UnmanagedType.Interface)] IMMNotificationClient client)
         {
             return realEnumerator.UnregisterEndpointNotificationCallback(client);
         }

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace NAudio.Wave
+﻿namespace NAudio.Wave
 {
     /// <summary>
     /// Base class for creating a 32 bit floating point wave provider

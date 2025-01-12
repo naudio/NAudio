@@ -1,8 +1,8 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
-using Microsoft.Win32;
 
 namespace NAudio.Wave.Asio
 {
@@ -82,7 +82,7 @@ namespace NAudio.Wave.Asio
         /// Gets the name of the driver.
         /// </summary>
         /// <returns></returns>
-        public string GetDriverName() 
+        public string GetDriverName()
         {
             var name = new StringBuilder(256);
             asioDriverVTable.getDriverName(pAsioComObject, name);
@@ -93,7 +93,8 @@ namespace NAudio.Wave.Asio
         /// Gets the driver version.
         /// </summary>
         /// <returns></returns>
-        public int GetDriverVersion() {
+        public int GetDriverVersion()
+        {
             return asioDriverVTable.getDriverVersion(pAsioComObject);
         }
 
@@ -113,7 +114,7 @@ namespace NAudio.Wave.Asio
         /// </summary>
         public void Start()
         {
-            HandleException(asioDriverVTable.start(pAsioComObject),"start");
+            HandleException(asioDriverVTable.start(pAsioComObject), "start");
         }
 
         /// <summary>
@@ -169,8 +170,8 @@ namespace NAudio.Wave.Asio
             if (error == AsioError.ASE_NoClock)
             {
                 return false;
-            } 
-            if ( error == AsioError.ASE_OK )
+            }
+            if (error == AsioError.ASE_OK)
             {
                 return true;
             }
@@ -205,7 +206,7 @@ namespace NAudio.Wave.Asio
         /// <param name="numSources">The num sources.</param>
         public void GetClockSources(out long clocks, int numSources)
         {
-            HandleException(asioDriverVTable.getClockSources(pAsioComObject, out clocks,numSources), "getClockSources");
+            HandleException(asioDriverVTable.getClockSources(pAsioComObject, out clocks, numSources), "getClockSources");
         }
 
         /// <summary>
@@ -235,7 +236,7 @@ namespace NAudio.Wave.Asio
         /// <returns>Channel Info</returns>
         public AsioChannelInfo GetChannelInfo(int channelNumber, bool trueForInputInfo)
         {
-            var info = new AsioChannelInfo {channel = channelNumber, isInput = trueForInputInfo};
+            var info = new AsioChannelInfo { channel = channelNumber, isInput = trueForInputInfo };
             HandleException(asioDriverVTable.getChannelInfo(pAsioComObject, ref info), "getChannelInfo");
             return info;
         }
@@ -331,9 +332,9 @@ namespace NAudio.Wave.Asio
             // because the AsioDriver expect to have the ASIOGuid used for both COM Object and COM interface
             // The CoCreateInstance is working only in STAThread mode.
             int hresult = CoCreateInstance(ref asioGuid, IntPtr.Zero, CLSCTX_INPROC_SERVER, ref asioGuid, out pAsioComObject);
-            if ( hresult != 0 )
+            if (hresult != 0)
             {
-                throw new COMException("Unable to instantiate ASIO. Check if STAThread is set",hresult);
+                throw new COMException("Unable to instantiate ASIO. Check if STAThread is set", hresult);
             }
 
             // The first pointer at the adress of the ASIO Com Object is a pointer to the
@@ -346,7 +347,7 @@ namespace NAudio.Wave.Asio
 
             // This loop is going to retrieve the pointer from the C++ VirtualTable
             // and attach an internal delegate in order to call the method on the COM Object.
-            FieldInfo[] fieldInfos =  typeof (AsioDriverVTable).GetFields();
+            FieldInfo[] fieldInfos = typeof(AsioDriverVTable).GetFields();
             for (int i = 0; i < fieldInfos.Length; i++)
             {
                 FieldInfo fieldInfo = fieldInfos[i];

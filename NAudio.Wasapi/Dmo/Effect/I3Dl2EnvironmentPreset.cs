@@ -23,12 +23,12 @@
         /// <summary>
         /// DSFX_I3DL2_ENVIRONMENT_PRESET_ROOM
         /// </summary>
-        Room= 3,
+        Room = 3,
 
         /// <summary>
         /// DSFX_I3DL2_ENVIRONMENT_PRESET_BATHROOM
         /// </summary>
-        Bathroom= 4,
+        Bathroom = 4,
 
         /// <summary>
         /// DSFX_I3DL2_ENVIRONMENT_PRESET_LIVINGROOM

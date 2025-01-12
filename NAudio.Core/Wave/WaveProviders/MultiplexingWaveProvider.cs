@@ -1,7 +1,7 @@
-﻿using System;
+﻿using NAudio.Utils;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using NAudio.Utils;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave
@@ -26,7 +26,7 @@ namespace NAudio.Wave
         /// <param name="inputs">Input wave providers. Must all be of the same format, but can have any number of channels</param>
         public MultiplexingWaveProvider(IEnumerable<IWaveProvider> inputs) : this(inputs, -1)
         {
-            
+
         }
 
         /// <summary>
@@ -38,8 +38,8 @@ namespace NAudio.Wave
         public MultiplexingWaveProvider(IEnumerable<IWaveProvider> inputs, int numberOfOutputChannels)
         {
             this.inputs = new List<IWaveProvider>(inputs);
-            
-            outputChannelCount = numberOfOutputChannels == -1 ? this.inputs.Sum(i => i.WaveFormat.Channels)  : numberOfOutputChannels;
+
+            outputChannelCount = numberOfOutputChannels == -1 ? this.inputs.Sum(i => i.WaveFormat.Channels) : numberOfOutputChannels;
 
             if (this.inputs.Count == 0)
             {

@@ -1,6 +1,5 @@
-using System;
-using System.Collections.Generic;
 using NAudio.Utils;
+using System.Collections.Generic;
 
 namespace NAudio.Midi
 {
@@ -145,7 +144,7 @@ namespace NAudio.Midi
             }
             else
             {
-                if(originalTrack == 0)
+                if (originalTrack == 0)
                 {
                     // if its a channel based event, lets move it off to
                     // a channel track of its own
@@ -236,7 +235,7 @@ namespace NAudio.Midi
                 int index = 0;
                 while (index < list.Count - 1)
                 {
-                    if(MidiEvent.IsEndTrack(list[index]))
+                    if (MidiEvent.IsEndTrack(list[index]))
                     {
                         list.RemoveAt(index);
                     }
@@ -258,13 +257,13 @@ namespace NAudio.Midi
                 }
                 else
                 {
-                    if(list.Count == 1 && MidiEvent.IsEndTrack(list[0]))
+                    if (list.Count == 1 && MidiEvent.IsEndTrack(list[0]))
                     {
                         RemoveTrack(track);
                     }
                     else
                     {
-                        if(!MidiEvent.IsEndTrack(list[list.Count-1]))
+                        if (!MidiEvent.IsEndTrack(list[list.Count - 1]))
                         {
                             list.Add(new MetaEvent(MetaEventType.EndTrack, 0, list[list.Count - 1].AbsoluteTime));
                         }
@@ -280,7 +279,7 @@ namespace NAudio.Midi
         public IEnumerator<IList<MidiEvent>> GetEnumerator()
         {
             return trackEvents.GetEnumerator();
-            
+
         }
 
         /// <summary>

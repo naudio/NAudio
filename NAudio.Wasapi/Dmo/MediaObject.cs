@@ -1,9 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using NAudio.Utils;
-using System.Runtime.InteropServices;
+﻿using NAudio.Utils;
 using NAudio.Wave;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace NAudio.Dmo
 {
@@ -112,7 +112,7 @@ namespace NAudio.Dmo
             return null;
         }
 
-         /// <summary>
+        /// <summary>
         /// retrieves the media type that was set for an output stream, if any
         /// </summary>
         /// <param name="outputStreamIndex">Output stream index</param>
@@ -151,7 +151,7 @@ namespace NAudio.Dmo
         {
             int typeIndex = 0;
             DmoMediaType? mediaType;
-            while ((mediaType = GetInputType(inputStreamIndex,typeIndex)) != null)
+            while ((mediaType = GetInputType(inputStreamIndex, typeIndex)) != null)
             {
                 yield return mediaType.Value;
                 typeIndex++;
@@ -221,7 +221,7 @@ namespace NAudio.Dmo
         /// <param name="mediaType">Media Type</param>
         public void SetInputType(int inputStreamIndex, DmoMediaType mediaType)
         {
-            if(!SetInputType(inputStreamIndex,mediaType,DmoSetTypeFlags.None))
+            if (!SetInputType(inputStreamIndex, mediaType, DmoSetTypeFlags.None))
             {
                 throw new ArgumentException("Media Type not supported");
             }
@@ -350,7 +350,7 @@ namespace NAudio.Dmo
                 throw new ArgumentException("Media Type not supported");
             }
         }
-        
+
         #endregion
 
         #region Get Input and Output Size Info

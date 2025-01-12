@@ -6,7 +6,7 @@ namespace NAudio.Dmo
     /// <summary>
     /// DMO Output Data Buffer
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack=8)]
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public struct DmoOutputDataBuffer : IDisposable
     {
         [MarshalAs(UnmanagedType.Interface)]

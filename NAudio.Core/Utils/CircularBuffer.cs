@@ -97,6 +97,47 @@ namespace NAudio.Utils
         }
 
         /// <summary>
+        /// Peeks ahead at data in the buffer without advancing the read position.
+        /// </summary>
+        /// <param name="peekOffset">The offset from the current read position where peeking will begin.</param>
+        /// <param name="data">The buffer we will read into.</param>
+        /// <param name="offset">The offset into the <paramref name="data"/> buffer.</param>
+        /// <param name="count">The number of bytes to read.</param>
+        /// <returns>The number of bytes actually read.</returns>
+        public int Peek(uint peekOffset, byte[] data, int offset, int count)
+        {
+            lock (lockObject)
+            {
+                int tmpReadPosition = readPosition + (int)peekOffset;
+                tmpReadPosition %= buffer.Length;
+
+                // The same implementation as Read however we use a local temporary read position variable.
+                if (count > byteCount)
+                {
+                    count = byteCount;
+                }
+                int bytesRead = 0;
+                int readToEnd = Math.Min(buffer.Length - tmpReadPosition, count);
+                Array.Copy(buffer, tmpReadPosition, data, offset, readToEnd);
+                bytesRead += readToEnd;
+                tmpReadPosition += readToEnd;
+                tmpReadPosition %= buffer.Length;
+
+                if (bytesRead < count)
+                {
+                    // must have wrapped round. Read from start
+                    Debug.Assert(tmpReadPosition == 0);
+                    Array.Copy(buffer, tmpReadPosition, data, offset + bytesRead, count - bytesRead);
+                    tmpReadPosition += (count - bytesRead);
+                    bytesRead = count;
+                }
+
+                Debug.Assert(byteCount >= 0);
+                return bytesRead;
+            }
+        }
+
+        /// <summary>
         /// Maximum length of this circular buffer
         /// </summary>
         public int MaxLength => buffer.Length;

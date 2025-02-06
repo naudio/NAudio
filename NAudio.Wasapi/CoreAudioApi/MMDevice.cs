@@ -187,12 +187,10 @@ namespace NAudio.CoreAudioApi
                 {
                     GetPropertyInformation();
                 }
-                if (propertyStore.Contains(PropertyKeys.PKEY_Device_FriendlyName))
-                {
-                    return (string)propertyStore[PropertyKeys.PKEY_Device_FriendlyName].Value;
-                }
-                else
-                    return "Unknown";
+
+                return propertyStore.TryGetValue<string>(PropertyKeys.PKEY_Device_FriendlyName, out var value) 
+                    ? value 
+                    : "Unknown";
             }
         }
 
@@ -207,14 +205,10 @@ namespace NAudio.CoreAudioApi
                 {
                     GetPropertyInformation();
                 }
-                if (propertyStore.Contains(PropertyKeys.PKEY_DeviceInterface_FriendlyName))
-                {
-                    return (string)propertyStore[PropertyKeys.PKEY_DeviceInterface_FriendlyName].Value;
-                }
-                else
-                {
-                    return "Unknown";
-                }
+                
+                return propertyStore.TryGetValue<string>(PropertyKeys.PKEY_DeviceInterface_FriendlyName, out var value)
+                    ? value
+                    : "Unknown";
             }
         }
 
@@ -229,12 +223,10 @@ namespace NAudio.CoreAudioApi
                 {
                     GetPropertyInformation();
                 }
-                if (propertyStore.Contains(PropertyKeys.PKEY_Device_IconPath))
-                {
-                    return (string)propertyStore[PropertyKeys.PKEY_Device_IconPath].Value;
-                }
-
-                return "Unknown";
+                
+                return propertyStore.TryGetValue<string>(PropertyKeys.PKEY_Device_IconPath, out var value)
+                    ? value
+                    : "Unknown";
             }
         }
 
@@ -249,12 +241,10 @@ namespace NAudio.CoreAudioApi
                 {
                     GetPropertyInformation();
                 }
-                if (propertyStore.Contains(PropertyKeys.PKEY_Device_InstanceId))
-                {
-                    return (string)propertyStore[PropertyKeys.PKEY_Device_InstanceId].Value;
-                }
-
-                return "Unknown";
+                
+                return propertyStore.TryGetValue<string>(PropertyKeys.PKEY_Device_InstanceId, out var value)
+                    ? value
+                    : "Unknown";
             }
         }
 

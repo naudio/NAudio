@@ -33,6 +33,8 @@ namespace NAudio.Dmo.Effect
     /// </summary>
     public class DmoChorus : IDmoEffector<DmoChorus.Params>
     {
+        private static readonly Guid ID_Chorus = new Guid("EFE6629C-81F7-4281-BD91-C9D604A95AF6");
+
         /// <summary>
         /// DMO Chorus Params
         /// </summary>
@@ -265,42 +267,36 @@ namespace NAudio.Dmo.Effect
             }
         }
 
-        private readonly MediaObject mediaObject;
-        private readonly MediaObjectInPlace mediaObjectInPlace;
-        private readonly Params effectParams;
-
         /// <summary>
         /// Media Object
         /// </summary>
-        public MediaObject MediaObject => mediaObject;
+        public MediaObject MediaObject { get; }
 
         /// <summary>
         /// Media Object InPlace
         /// </summary>
-        public MediaObjectInPlace MediaObjectInPlace => mediaObjectInPlace;
+        public MediaObjectInPlace MediaObjectInPlace { get; }
 
         /// <summary>
         /// Effect Parameter
         /// </summary>
-        public Params EffectParams => effectParams;
+        public Params EffectParams { get; }
 
         /// <summary>
         /// Create new DMO Chorus
         /// </summary>
         public DmoChorus()
         {
-            var guidChorus = new Guid("EFE6629C-81F7-4281-BD91-C9D604A95AF6");
-
             var targetDescriptor = DmoEnumerator.GetAudioEffectNames().First(descriptor =>
-                Equals(descriptor.Clsid, guidChorus));
+                Equals(descriptor.Clsid, ID_Chorus));
 
             if (targetDescriptor != null)
             {
                 var mediaComObject = Activator.CreateInstance(Type.GetTypeFromCLSID(targetDescriptor.Clsid));
 
-                mediaObject = new MediaObject((IMediaObject) mediaComObject);
-                mediaObjectInPlace = new MediaObjectInPlace((IMediaObjectInPlace) mediaComObject);
-                effectParams = new Params((IDirectSoundFXChorus) mediaComObject);
+                MediaObject = new MediaObject((IMediaObject) mediaComObject);
+                MediaObjectInPlace = new MediaObjectInPlace((IMediaObjectInPlace) mediaComObject);
+                EffectParams = new Params((IDirectSoundFXChorus) mediaComObject);
             }
         }
 
@@ -309,8 +305,8 @@ namespace NAudio.Dmo.Effect
         /// </summary>
         public void Dispose()
         {
-            mediaObjectInPlace?.Dispose();
-            mediaObject?.Dispose();
+            MediaObjectInPlace?.Dispose();
+            MediaObject?.Dispose();
         }
     }
 }

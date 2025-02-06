@@ -33,6 +33,8 @@ namespace NAudio.Dmo.Effect
     /// </summary>
     public class DmoFlanger : IDmoEffector<DmoFlanger.Params>
     {
+        private static readonly Guid Id_Flanger = new Guid("EFCA3D92-DFD8-4672-A603-7420894BAD98");
+
         /// <summary>
         /// DMO Flanger Params
         /// </summary>
@@ -265,42 +267,36 @@ namespace NAudio.Dmo.Effect
             }
         }
 
-        private readonly MediaObject mediaObject;
-        private readonly MediaObjectInPlace mediaObjectInPlace;
-        private readonly Params effectParams;
-
         /// <summary>
         /// Media Object
         /// </summary>
-        public MediaObject MediaObject => mediaObject;
+        public MediaObject MediaObject { get; }
 
         /// <summary>
         /// Media Object InPlace
         /// </summary>
-        public MediaObjectInPlace MediaObjectInPlace => mediaObjectInPlace;
+        public MediaObjectInPlace MediaObjectInPlace { get; }
 
         /// <summary>
         /// Effect Parameter
         /// </summary>
-        public Params EffectParams => effectParams;
+        public Params EffectParams { get; }
 
         /// <summary>
         /// Create new DMO Flanger
         /// </summary>
         public DmoFlanger()
         {
-            var guidFlanger = new Guid("EFCA3D92-DFD8-4672-A603-7420894BAD98");
-
             var targetDescriptor = DmoEnumerator.GetAudioEffectNames().First(descriptor =>
-                Equals(descriptor.Clsid, guidFlanger));
+                Equals(descriptor.Clsid, Id_Flanger));
 
             if (targetDescriptor != null)
             {
                 var mediaComObject = Activator.CreateInstance(Type.GetTypeFromCLSID(targetDescriptor.Clsid));
 
-                mediaObject = new MediaObject((IMediaObject)mediaComObject);
-                mediaObjectInPlace = new MediaObjectInPlace((IMediaObjectInPlace)mediaComObject);
-                effectParams = new Params((IDirectSoundFXFlanger)mediaComObject);
+                MediaObject = new MediaObject((IMediaObject)mediaComObject);
+                MediaObjectInPlace = new MediaObjectInPlace((IMediaObjectInPlace)mediaComObject);
+                EffectParams = new Params((IDirectSoundFXFlanger)mediaComObject);
             }
         }
 
@@ -309,8 +305,8 @@ namespace NAudio.Dmo.Effect
         /// </summary>
         public void Dispose()
         {
-            mediaObjectInPlace?.Dispose();
-            mediaObject?.Dispose();
+            MediaObjectInPlace?.Dispose();
+            MediaObject?.Dispose();
         }
     }
 }

@@ -9,7 +9,7 @@ namespace NAudio.CoreAudioApi.Interfaces
     interface IMMDevice
     {
         // activationParams is a propvariant
-        int Activate(ref Guid id, ClsCtx clsCtx, IntPtr activationParams,
+        int Activate(in Guid id, ClsCtx clsCtx, IntPtr activationParams,
             [MarshalAs(UnmanagedType.IUnknown)] out object interfacePointer);
         
         int OpenPropertyStore(StorageAccessMode stgmAccess, out IPropertyStore properties);

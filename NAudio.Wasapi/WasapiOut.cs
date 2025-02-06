@@ -453,8 +453,8 @@ namespace NAudio.Wave
 
                         // Calculate the new latency.
                         long newLatencyRefTimes = (long)(10000000.0 /
-                            (double)this.OutputWaveFormat.SampleRate *
-                            (double)this.audioClient.BufferSize + 0.5);
+                            this.OutputWaveFormat.SampleRate *
+                            this.audioClient.BufferSize + 0.5);
 
                         this.audioClient.Dispose();
                         this.audioClient = this.mmDevice.AudioClient;

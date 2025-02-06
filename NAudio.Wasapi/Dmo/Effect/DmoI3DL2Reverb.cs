@@ -50,6 +50,8 @@ namespace NAudio.Dmo.Effect
     /// </summary>
     public class DmoI3DL2Reverb : IDmoEffector<DmoI3DL2Reverb.Params>
     {
+        private static readonly Guid Id_I3DL2Reverb = new Guid("EF985E71-D5C7-42D4-BA4D-2D073E2E96F4");
+
         /// <summary>
         /// DMO I3DL2Reverb Params
         /// </summary>
@@ -492,42 +494,36 @@ namespace NAudio.Dmo.Effect
             }
         }
 
-        private readonly MediaObject mediaObject;
-        private readonly MediaObjectInPlace mediaObjectInPlace;
-        private readonly Params effectParams;
-
         /// <summary>
         /// Media Object
         /// </summary>
-        public MediaObject MediaObject => mediaObject;
+        public MediaObject MediaObject { get; }
 
         /// <summary>
         /// Media Object InPlace
         /// </summary>
-        public MediaObjectInPlace MediaObjectInPlace => mediaObjectInPlace;
+        public MediaObjectInPlace MediaObjectInPlace { get; }
 
         /// <summary>
         /// Effect Parameter
         /// </summary>
-        public Params EffectParams => effectParams;
+        public Params EffectParams { get; }
 
         /// <summary>
         /// Create new DMO I3DL2Reverb
         /// </summary>
         public DmoI3DL2Reverb()
         {
-            var guidi3Dl2Reverb = new Guid("EF985E71-D5C7-42D4-BA4D-2D073E2E96F4");
-
             var targetDescriptor = DmoEnumerator.GetAudioEffectNames().First(descriptor =>
-                Equals(descriptor.Clsid, guidi3Dl2Reverb));
+                Equals(descriptor.Clsid, Id_I3DL2Reverb));
 
             if (targetDescriptor != null)
             {
                 var mediaComObject = Activator.CreateInstance(Type.GetTypeFromCLSID(targetDescriptor.Clsid));
 
-                mediaObject = new MediaObject((IMediaObject)mediaComObject);
-                mediaObjectInPlace = new MediaObjectInPlace((IMediaObjectInPlace)mediaComObject);
-                effectParams = new Params((IDirectSoundFXI3DL2Reverb)mediaComObject);
+                MediaObject = new MediaObject((IMediaObject)mediaComObject);
+                MediaObjectInPlace = new MediaObjectInPlace((IMediaObjectInPlace)mediaComObject);
+                EffectParams = new Params((IDirectSoundFXI3DL2Reverb)mediaComObject);
             }
         }
 
@@ -536,8 +532,8 @@ namespace NAudio.Dmo.Effect
         /// </summary>
         public void Dispose()
         {
-            mediaObjectInPlace?.Dispose();
-            mediaObject?.Dispose();
+            MediaObjectInPlace?.Dispose();
+            MediaObject?.Dispose();
         }
     }
 }

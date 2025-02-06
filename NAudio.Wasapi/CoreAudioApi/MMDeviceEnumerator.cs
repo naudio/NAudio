@@ -39,7 +39,7 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public MMDeviceEnumerator()
         {
-            if (System.Environment.OSVersion.Version.Major < 6)
+            if (Environment.OSVersion.Version.Major < 6)
             {
                 throw new NotSupportedException("This functionality is only supported on Windows Vista or newer.");
             }
@@ -66,7 +66,7 @@ namespace NAudio.CoreAudioApi
         /// <returns>Device</returns>
         public MMDevice GetDefaultAudioEndpoint(DataFlow dataFlow, Role role)
         {
-            Marshal.ThrowExceptionForHR(((IMMDeviceEnumerator)realEnumerator).GetDefaultAudioEndpoint(dataFlow, role, out var device));
+            Marshal.ThrowExceptionForHR(realEnumerator.GetDefaultAudioEndpoint(dataFlow, role, out var device));
             return new MMDevice(device);
         }
 
@@ -79,7 +79,7 @@ namespace NAudio.CoreAudioApi
         public bool HasDefaultAudioEndpoint(DataFlow dataFlow, Role role)
         {
             const int E_NOTFOUND = unchecked((int)0x80070490);
-            int hresult = ((IMMDeviceEnumerator)realEnumerator).GetDefaultAudioEndpoint(dataFlow, role, out var device);
+            int hresult = realEnumerator.GetDefaultAudioEndpoint(dataFlow, role, out var device);
             if (hresult == 0x0)
             {
                 Marshal.ReleaseComObject(device);
@@ -100,7 +100,7 @@ namespace NAudio.CoreAudioApi
         /// <returns>Device</returns>
         public MMDevice GetDevice(string id)
         {
-            Marshal.ThrowExceptionForHR(((IMMDeviceEnumerator)realEnumerator).GetDevice(id, out var device));
+            Marshal.ThrowExceptionForHR(realEnumerator.GetDevice(id, out var device));
             return new MMDevice(device);
         }
 

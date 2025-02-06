@@ -84,7 +84,7 @@ namespace NAudio.CoreAudioApi
         /// <summary>
         /// PKEY _Device_IconPath
         /// </summary>
-        public static readonly PropertyKey PKEY_Device_IconPath = new PropertyKey(new Guid(unchecked((int)0x259abffc), unchecked((short)0x50a7), 0x47ce, 0xaf, 0x8, 0x68, 0xc9, 0xa7, 0xd7, 0x33, 0x66), 12);
+        public static readonly PropertyKey PKEY_Device_IconPath = new PropertyKey(new Guid(unchecked(0x259abffc), unchecked(0x50a7), 0x47ce, 0xaf, 0x8, 0x68, 0xc9, 0xa7, 0xd7, 0x33, 0x66), 12);
         /// <summary>
         /// Device description property.
         /// </summary>
@@ -92,11 +92,11 @@ namespace NAudio.CoreAudioApi
         /// <summary>
         /// Id of controller device for endpoint device property.
         /// </summary>
-        public static readonly PropertyKey PKEY_Device_ControllerDeviceId = new PropertyKey(new Guid(unchecked((int)0xb3f8fa53), unchecked((short)0x0004), 0x438e, 0x90, 0x03, 0x51, 0xa4, 0x6e, 0x13, 0x9b, 0xfc), 2);
+        public static readonly PropertyKey PKEY_Device_ControllerDeviceId = new PropertyKey(new Guid(unchecked((int)0xb3f8fa53), unchecked(0x0004), 0x438e, 0x90, 0x03, 0x51, 0xa4, 0x6e, 0x13, 0x9b, 0xfc), 2);
         /// <summary>
         /// Device interface key property.
         /// </summary>
-        public static readonly PropertyKey PKEY_Device_InterfaceKey = new PropertyKey(new Guid(unchecked((int)0x233164c8), unchecked((short)0x1b2c), 0x4c7d, 0xbc, 0x68, 0xb6, 0x71, 0x68, 0x7a, 0x25, 0x67), 1);
+        public static readonly PropertyKey PKEY_Device_InterfaceKey = new PropertyKey(new Guid(unchecked(0x233164c8), unchecked(0x1b2c), 0x4c7d, 0xbc, 0x68, 0xb6, 0x71, 0x68, 0x7a, 0x25, 0x67), 1);
         /// <summary>
         /// System-supplied device instance identification string, assigned by PnP manager, persistent across system restarts.
         /// </summary>

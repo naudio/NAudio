@@ -170,10 +170,15 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                if (propertyStore == null)
-                    GetPropertyInformation();
+                EnsurePropertyStoreExists();
                 return propertyStore;
             }
+        }
+
+        private void EnsurePropertyStoreExists()
+        {
+            if (propertyStore == null)
+                GetPropertyInformation();
         }
 
         /// <summary>
@@ -183,10 +188,7 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                if (propertyStore == null)
-                {
-                    GetPropertyInformation();
-                }
+                EnsurePropertyStoreExists();
 
                 return propertyStore.TryGetValue<string>(PropertyKeys.PKEY_Device_FriendlyName, out var value) 
                     ? value 
@@ -201,10 +203,7 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                if (propertyStore == null)
-                {
-                    GetPropertyInformation();
-                }
+                EnsurePropertyStoreExists();
                 
                 return propertyStore.TryGetValue<string>(PropertyKeys.PKEY_DeviceInterface_FriendlyName, out var value)
                     ? value
@@ -219,10 +218,7 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                if (propertyStore == null)
-                {
-                    GetPropertyInformation();
-                }
+                EnsurePropertyStoreExists();
                 
                 return propertyStore.TryGetValue<string>(PropertyKeys.PKEY_Device_IconPath, out var value)
                     ? value
@@ -237,10 +233,7 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                if (propertyStore == null)
-                {
-                    GetPropertyInformation();
-                }
+                EnsurePropertyStoreExists();
                 
                 return propertyStore.TryGetValue<string>(PropertyKeys.PKEY_Device_InstanceId, out var value)
                     ? value

@@ -101,11 +101,11 @@ namespace NAudio.Wave
         {
             get
             {
-                return TimeSpan.FromSeconds((double)Position / WaveFormat.AverageBytesPerSecond);                
+                return TimeSpan.FromTicks(Position * 1000 / WaveFormat.AverageBytesPerSecond * 10000);
             }
             set
             {
-                Position = (long) (value.TotalSeconds * WaveFormat.AverageBytesPerSecond);
+                Position = value.Ticks / 10000 * WaveFormat.AverageBytesPerSecond / 1000;
             }
         }
 
@@ -116,7 +116,7 @@ namespace NAudio.Wave
         {
             get
             {
-                return TimeSpan.FromSeconds((double) Length / WaveFormat.AverageBytesPerSecond);
+                return TimeSpan.FromTicks(Length * 1000 / WaveFormat.AverageBytesPerSecond * 10000);
             }
         }
 

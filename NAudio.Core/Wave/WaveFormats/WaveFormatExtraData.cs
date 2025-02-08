@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.IO;
+using System.Diagnostics;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave
@@ -38,7 +39,13 @@ namespace NAudio.Wave
 
         internal void ReadExtraData(BinaryReader reader)
         {
-            if (this.extraSize > 0)
+            if (extraSize > extraData.Length)
+            {
+                Debug.WriteLine("Extra data is longer than the extraData buffer and has been discarded");
+                reader.ReadBytes(extraSize);
+                extraSize = 0;
+            }
+            if (extraSize > 0)
             {
                 reader.Read(extraData, 0, extraSize);
             }

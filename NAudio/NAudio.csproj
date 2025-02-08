@@ -24,7 +24,7 @@
     <ProjectReference Include="..\NAudio.Wasapi\NAudio.Wasapi.csproj" />
     <ProjectReference Include="..\NAudio.WinMM\NAudio.WinMM.csproj" />
   </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' != 'net6.0' ">
+  <ItemGroup Condition=" '$(TargetFramework)' != 'net6.0' and '$(OS)' == 'Windows_NT' ">
     <ProjectReference Include="..\NAudio.WinForms\NAudio.WinForms.csproj" />
   </ItemGroup>
 

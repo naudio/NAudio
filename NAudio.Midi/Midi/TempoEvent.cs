@@ -1,24 +1,23 @@
 using System;
 using System.IO;
-using System.Text;
 
-namespace NAudio.Midi 
+namespace NAudio.Midi
 {
     /// <summary>
     /// Represents a MIDI tempo event
     /// </summary>
-    public class TempoEvent : MetaEvent 
+    public class TempoEvent : MetaEvent
     {
         private int microsecondsPerQuarterNote;
-        
+
         /// <summary>
         /// Reads a new tempo event from a MIDI stream
         /// </summary>
         /// <param name="br">The MIDI stream</param>
         /// <param name="length">the data length</param>
-        public TempoEvent(BinaryReader br,int length) 
+        public TempoEvent(BinaryReader br, int length)
         {
-            if(length != 3) 
+            if (length != 3)
             {
                 throw new FormatException("Invalid tempo length");
             }
@@ -31,7 +30,7 @@ namespace NAudio.Midi
         /// <param name="microsecondsPerQuarterNote">Microseconds per quarter note</param>
         /// <param name="absoluteTime">Absolute time</param>
         public TempoEvent(int microsecondsPerQuarterNote, long absoluteTime)
-            : base(MetaEventType.SetTempo,3,absoluteTime)
+            : base(MetaEventType.SetTempo, 3, absoluteTime)
         {
             this.microsecondsPerQuarterNote = microsecondsPerQuarterNote;
         }
@@ -45,7 +44,7 @@ namespace NAudio.Midi
         /// Describes this tempo event
         /// </summary>
         /// <returns>String describing the tempo event</returns>
-        public override string ToString() 
+        public override string ToString()
         {
             return String.Format("{0} {2}bpm ({1})",
                 base.ToString(),
@@ -67,8 +66,8 @@ namespace NAudio.Midi
         /// </summary>
         public double Tempo
         {
-            get { return (60000000.0/microsecondsPerQuarterNote); }
-            set { microsecondsPerQuarterNote = (int) (60000000.0/value); }
+            get { return (60000000.0 / microsecondsPerQuarterNote); }
+            set { microsecondsPerQuarterNote = (int)(60000000.0 / value); }
         }
 
         /// <summary>
@@ -79,9 +78,9 @@ namespace NAudio.Midi
         public override void Export(ref long absoluteTime, BinaryWriter writer)
         {
             base.Export(ref absoluteTime, writer);
-            writer.Write((byte) ((microsecondsPerQuarterNote >> 16) & 0xFF));
-            writer.Write((byte) ((microsecondsPerQuarterNote >> 8) & 0xFF));
-            writer.Write((byte) (microsecondsPerQuarterNote & 0xFF));
+            writer.Write((byte)((microsecondsPerQuarterNote >> 16) & 0xFF));
+            writer.Write((byte)((microsecondsPerQuarterNote >> 8) & 0xFF));
+            writer.Write((byte)(microsecondsPerQuarterNote & 0xFF));
         }
     }
 }

@@ -298,9 +298,9 @@ namespace NAudio.Dmo.Effect
             {
                 var mediaComObject = Activator.CreateInstance(Type.GetTypeFromCLSID(targetDescriptor.Clsid));
 
-                mediaObject = new MediaObject((IMediaObject) mediaComObject);
-                mediaObjectInPlace = new MediaObjectInPlace((IMediaObjectInPlace) mediaComObject);
-                effectParams = new Params((IDirectSoundFXChorus) mediaComObject);
+                mediaObject = new MediaObject((IMediaObject)mediaComObject);
+                mediaObjectInPlace = new MediaObjectInPlace((IMediaObjectInPlace)mediaComObject);
+                effectParams = new Params((IDirectSoundFXChorus)mediaComObject);
             }
         }
 

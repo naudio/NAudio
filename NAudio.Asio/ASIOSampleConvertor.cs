@@ -401,7 +401,7 @@ namespace NAudio.Wave.Asio
             unsafe
             {
                 float* inputSamples = (float*)inputInterleavedBuffer;
-                
+
                 byte*[] samples = new byte*[nbChannels];
                 for (int i = 0; i < nbChannels; i++)
                 {

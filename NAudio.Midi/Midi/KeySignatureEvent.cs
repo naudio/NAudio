@@ -32,8 +32,8 @@ namespace NAudio.Midi
         public KeySignatureEvent(int sharpsFlats, int majorMinor, long absoluteTime)
             : base(MetaEventType.KeySignature, 2, absoluteTime)
         {
-            this.sharpsFlats = (byte) sharpsFlats;
-            this.majorMinor = (byte) majorMinor;
+            this.sharpsFlats = (byte)sharpsFlats;
+            this.majorMinor = (byte)majorMinor;
         }
 
         /// <summary>

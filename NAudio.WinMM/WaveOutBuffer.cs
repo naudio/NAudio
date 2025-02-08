@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace NAudio.Wave 
+namespace NAudio.Wave
 {
     /// <summary>
     /// A buffer of Wave samples for streaming to a Wave Output device

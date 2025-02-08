@@ -10,14 +10,14 @@ namespace NAudio.CoreAudioApi.Interfaces
     {
         int EnumAudioEndpoints(DataFlow dataFlow, DeviceState stateMask,
             out IMMDeviceCollection devices);
-        
+
         [PreserveSig]
         int GetDefaultAudioEndpoint(DataFlow dataFlow, Role role, out IMMDevice endpoint);
-        
+
         int GetDevice(string id, out IMMDevice deviceName);
-        
+
         int RegisterEndpointNotificationCallback(IMMNotificationClient client);
-        
+
         int UnregisterEndpointNotificationCallback(IMMNotificationClient client);
     }
 }

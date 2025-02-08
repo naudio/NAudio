@@ -1,5 +1,5 @@
-﻿using System;
-using NAudio.Wave.SampleProviders;
+﻿using NAudio.Wave.SampleProviders;
+using System;
 
 namespace NAudio.Wave
 {
@@ -70,7 +70,7 @@ namespace NAudio.Wave
         /// <returns>A single sampleprovider to play one after the other</returns>
         public static ISampleProvider FollowedBy(this ISampleProvider sampleProvider, ISampleProvider next)
         {
-            return new ConcatenatingSampleProvider(new[] { sampleProvider, next});
+            return new ConcatenatingSampleProvider(new[] { sampleProvider, next });
         }
 
         /// <summary>
@@ -82,7 +82,7 @@ namespace NAudio.Wave
         /// <returns>A single sample provider</returns>
         public static ISampleProvider FollowedBy(this ISampleProvider sampleProvider, TimeSpan silenceDuration, ISampleProvider next)
         {
-            var silenceAppended = new OffsetSampleProvider(sampleProvider) {LeadOut = silenceDuration};
+            var silenceAppended = new OffsetSampleProvider(sampleProvider) { LeadOut = silenceDuration };
             return new ConcatenatingSampleProvider(new[] { silenceAppended, next });
         }
 
@@ -94,7 +94,7 @@ namespace NAudio.Wave
         /// <returns>A sample provider that skips over the specified amount of time</returns>
         public static ISampleProvider Skip(this ISampleProvider sampleProvider, TimeSpan skipDuration)
         {
-            return new OffsetSampleProvider(sampleProvider) { SkipOver = skipDuration};            
+            return new OffsetSampleProvider(sampleProvider) { SkipOver = skipDuration };
         }
 
         /// <summary>
@@ -117,8 +117,8 @@ namespace NAudio.Wave
         /// <returns>A mono SampleProvider</returns>
         public static ISampleProvider ToMono(this ISampleProvider sourceProvider, float leftVol = 0.5f, float rightVol = 0.5f)
         {
-            if(sourceProvider.WaveFormat.Channels == 1) return sourceProvider;
-            return new StereoToMonoSampleProvider(sourceProvider) {LeftVolume = leftVol, RightVolume = rightVol};
+            if (sourceProvider.WaveFormat.Channels == 1) return sourceProvider;
+            return new StereoToMonoSampleProvider(sourceProvider) { LeftVolume = leftVol, RightVolume = rightVol };
         }
 
         /// <summary>

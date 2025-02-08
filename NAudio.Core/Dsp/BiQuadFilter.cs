@@ -66,11 +66,11 @@ namespace NAudio.Dsp
         private void SetCoefficients(double aa0, double aa1, double aa2, double b0, double b1, double b2)
         {
             // precompute the coefficients
-            a0 = b0/aa0;
-            a1 = b1/aa0;
-            a2 = b2/aa0;
-            a3 = aa1/aa0;
-            a4 = aa2/aa0;
+            a0 = b0 / aa0;
+            a1 = b1 / aa0;
+            a2 = b2 / aa0;
+            a3 = aa1 / aa0;
+            a4 = aa2 / aa0;
         }
 
         /// <summary>
@@ -92,7 +92,7 @@ namespace NAudio.Dsp
             var aa0 = 1 + alpha;
             var aa1 = -2 * cosw0;
             var aa2 = 1 - alpha;
-            SetCoefficients(aa0,aa1,aa2,b0,b1,b2);
+            SetCoefficients(aa0, aa1, aa2, b0, b1, b2);
         }
 
         /// <summary>
@@ -145,7 +145,7 @@ namespace NAudio.Dsp
         public static BiQuadFilter LowPassFilter(float sampleRate, float cutoffFrequency, float q)
         {
             var filter = new BiQuadFilter();
-            filter.SetLowPassFilter(sampleRate,cutoffFrequency,q);
+            filter.SetLowPassFilter(sampleRate, cutoffFrequency, q);
             return filter;
         }
 
@@ -267,7 +267,7 @@ namespace NAudio.Dsp
             var a = Math.Pow(10, dbGain / 40);     // TODO: should we square root this value?
             var alpha = sinw0 / 2 * Math.Sqrt((a + 1 / a) * (1 / shelfSlope - 1) + 2);
             var temp = 2 * Math.Sqrt(a) * alpha;
-            
+
             var b0 = a * ((a + 1) - (a - 1) * cosw0 + temp);
             var b1 = 2 * a * ((a - 1) - (a + 1) * cosw0);
             var b2 = a * ((a + 1) - (a - 1) * cosw0 - temp);
@@ -312,7 +312,7 @@ namespace NAudio.Dsp
 
         private BiQuadFilter(double a0, double a1, double a2, double b0, double b1, double b2)
         {
-            SetCoefficients(a0,a1,a2,b0,b1,b2);
+            SetCoefficients(a0, a1, a2, b0, b1, b2);
 
             // zero initial samples
             x1 = x2 = 0;

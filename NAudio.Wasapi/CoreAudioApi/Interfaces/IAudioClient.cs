@@ -1,6 +1,6 @@
-﻿using System;
+﻿using NAudio.Wave;
+using System;
 using System.Runtime.InteropServices;
-using NAudio.Wave;
 
 namespace NAudio.CoreAudioApi.Interfaces
 {
@@ -8,7 +8,7 @@ namespace NAudio.CoreAudioApi.Interfaces
     /// Windows CoreAudio IAudioClient interface
     /// Defined in AudioClient.h
     /// </summary>
-    [Guid("1CB9AD4C-DBFA-4c32-B178-C2F568A703B2"), 
+    [Guid("1CB9AD4C-DBFA-4c32-B178-C2F568A703B2"),
         InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
         ComImport]
     public interface IAudioClient

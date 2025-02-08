@@ -1,9 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Threading;
-using System.Collections.Generic;
-using System.Diagnostics;
 
 namespace NAudio.Wave
 {
@@ -46,7 +46,8 @@ namespace NAudio.Wave
         /// </summary>
         public static IEnumerable<DirectSoundDeviceInfo> Devices
         {
-            get {
+            get
+            {
                 devices = new List<DirectSoundDeviceInfo>();
                 DirectSoundEnumerate(new DSEnumCallback(EnumCallback), IntPtr.Zero);
                 return devices;
@@ -68,7 +69,7 @@ namespace NAudio.Wave
                 Marshal.Copy(lpGuid, guidBytes, 0, 16);
                 device.Guid = new Guid(guidBytes);
             }
-            device.Description =  Marshal.PtrToStringAnsi(lpcstrDescription);
+            device.Description = Marshal.PtrToStringAnsi(lpcstrDescription);
             if (lpcstrModule != null)
             {
                 device.ModuleName = Marshal.PtrToStringAnsi(lpcstrModule);
@@ -680,7 +681,7 @@ namespace NAudio.Wave
         //----------------------------------------------------------------------------------------------
         // Minimal Native DirectSound COM interop interfaces
         //----------------------------------------------------------------------------------------------
-#region Native DirectSound COM Interface
+        #region Native DirectSound COM Interface
 
         [StructLayout(LayoutKind.Sequential, Pack = 2)]
         internal class BufferDescription
@@ -915,7 +916,7 @@ namespace NAudio.Wave
         /// <returns>HANDLE of the Desktop window</returns>
         [DllImport("user32.dll")]
         private static extern IntPtr GetDesktopWindow();
-#endregion
+        #endregion
     }
 
     /// <summary>

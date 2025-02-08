@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace NAudio.Mixer
-{    
+{
     /// <summary>
     /// Mixer Interop Flags
     /// </summary>
@@ -14,7 +12,7 @@ namespace NAudio.Mixer
         /// <summary>
         /// MIXER_OBJECTF_HANDLE 	= 0x80000000;
         /// </summary>
-        Handle = unchecked ( (int) 0x80000000 ),
+        Handle = unchecked((int)0x80000000),
         /// <summary>
         /// MIXER_OBJECTF_MIXER 	= 0x00000000;
         /// </summary>
@@ -92,7 +90,7 @@ namespace NAudio.Mixer
         /// <summary>
         /// MIXER_GETLINECONTROLSF_ONEBYTYPE    	= 0x00000002;
         /// </summary>
-        OneByType = 2,		
+        OneByType = 2,
         #endregion
 
         /// <summary>

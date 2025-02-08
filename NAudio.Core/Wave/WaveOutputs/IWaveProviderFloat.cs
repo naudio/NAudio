@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace NAudio.Wave
+﻿namespace NAudio.Wave
 {
     /// <summary>
     /// Like IWaveProvider, but makes it much simpler to put together a 32 bit floating

@@ -168,13 +168,13 @@ namespace NAudio.MediaFoundation
         /// <summary>
         /// Creates the object associated with this activation object. 
         /// </summary>
-        void ActivateObject([In, MarshalAs(UnmanagedType.LPStruct)] Guid riid, [Out,MarshalAs(UnmanagedType.Interface)] out object ppv);
-        
+        void ActivateObject([In, MarshalAs(UnmanagedType.LPStruct)] Guid riid, [Out, MarshalAs(UnmanagedType.Interface)] out object ppv);
+
         /// <summary>
         /// Shuts down the created object.
         /// </summary>
         void ShutdownObject();
-        
+
         /// <summary>
         /// Detaches the created object from the activation object.
         /// </summary>

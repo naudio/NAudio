@@ -1,6 +1,6 @@
+using NAudio.Utils;
 using System;
 using System.IO;
-using NAudio.Utils;
 
 namespace NAudio.SoundFont
 {

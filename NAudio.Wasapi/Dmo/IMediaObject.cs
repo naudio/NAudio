@@ -46,7 +46,7 @@ namespace NAudio.Dmo
 
         [PreserveSig]
         int GetOutputSizeInfo(int outputStreamIndex, out int size, out int alignment);
-        
+
         [PreserveSig]
         int GetInputMaxLatency(int inputStreamIndex, out long referenceTimeMaxLatency);
 
@@ -73,7 +73,7 @@ namespace NAudio.Dmo
             long referenceTimeTimestamp, long referenceTimeDuration);
 
         [PreserveSig]
-        int ProcessOutput(DmoProcessOutputFlags flags, 
+        int ProcessOutput(DmoProcessOutputFlags flags,
             int outputBufferCount,
             [In, Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 1)] DmoOutputDataBuffer[] outputBuffers,
             out int statusReserved);

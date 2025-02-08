@@ -1,27 +1,26 @@
 using System;
 using System.IO;
-using System.Text;
 
-namespace NAudio.Midi 
+namespace NAudio.Midi
 {
     /// <summary>
     /// Represents a MIDI time signature event
     /// </summary>
-    public class TimeSignatureEvent : MetaEvent 
+    public class TimeSignatureEvent : MetaEvent
     {
         private byte numerator;
         private byte denominator;
         private byte ticksInMetronomeClick;
         private byte no32ndNotesInQuarterNote;
-        
+
         /// <summary>
         /// Reads a new time signature event from a MIDI stream
         /// </summary>
         /// <param name="br">The MIDI stream</param>
         /// <param name="length">The data length</param>
-        public TimeSignatureEvent(BinaryReader br,int length) 
+        public TimeSignatureEvent(BinaryReader br, int length)
         {
-            if(length != 4) 
+            if (length != 4)
             {
                 throw new FormatException(String.Format("Invalid time signature length: Got {0}, expected 4", length));
             }
@@ -90,41 +89,41 @@ namespace NAudio.Midi
         /// <summary>
         /// The time signature
         /// </summary>
-        public string TimeSignature 
+        public string TimeSignature
         {
-            get 
+            get
             {
-                string den = String.Format("Unknown ({0})",denominator);
-                switch(denominator) 
+                string den = String.Format("Unknown ({0})", denominator);
+                switch (denominator)
                 {
-                case 1:
-                    den = "2";
-                    break;
-                case 2:
-                    den = "4";
-                    break;
-                case 3:
-                    den = "8";
-                    break;
-                case 4:
-                    den = "16";
-                    break;
-                case 5:
-                    den = "32";
-                    break;
+                    case 1:
+                        den = "2";
+                        break;
+                    case 2:
+                        den = "4";
+                        break;
+                    case 3:
+                        den = "8";
+                        break;
+                    case 4:
+                        den = "16";
+                        break;
+                    case 5:
+                        den = "32";
+                        break;
                 }
-                return String.Format("{0}/{1}",numerator,den);
+                return String.Format("{0}/{1}", numerator, den);
             }
         }
-        
+
         /// <summary>
         /// Describes this time signature event
         /// </summary>
         /// <returns>A string describing this event</returns>
-        public override string ToString() 
+        public override string ToString()
         {
             return String.Format("{0} {1} TicksInClick:{2} 32ndsInQuarterNote:{3}",
-                base.ToString(),TimeSignature,ticksInMetronomeClick,no32ndNotesInQuarterNote);
+                base.ToString(), TimeSignature, ticksInMetronomeClick, no32ndNotesInQuarterNote);
         }
 
         /// <summary>

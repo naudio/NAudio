@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 namespace NAudio.Wave
 {
@@ -33,7 +30,7 @@ namespace NAudio.Wave
             this.sampleRate = sampleRate;
             this.channels = (short)channels;
             this.bitsPerSample = (short)bitsPerSample; // TODO: can be 3 or 4
-            this.extraSize = 2;            
+            this.extraSize = 2;
             this.blockAlign = 0; //TODO
             this.averageBytesPerSecond = 0; //TODO
             this.samplesPerBlock = 0; // TODO

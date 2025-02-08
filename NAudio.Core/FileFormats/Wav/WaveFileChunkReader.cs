@@ -1,9 +1,9 @@
-﻿using System;
+﻿using NAudio.Utils;
+using NAudio.Wave;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using NAudio.Utils;
-using NAudio.Wave;
 
 namespace NAudio.FileFormats.Wav
 {
@@ -56,7 +56,7 @@ namespace NAudio.FileFormats.Wav
 
             int dataChunkId = ChunkIdentifier.ChunkIdentifierToInt32("data");
             int formatChunkId = ChunkIdentifier.ChunkIdentifierToInt32("fmt ");
-            
+
             // sometimes a file has more data than is specified after the RIFF header
             long stopPosition = Math.Min(riffSize + 8, stream.Length);
 
@@ -77,7 +77,7 @@ namespace NAudio.FileFormats.Wav
                 else if (chunkIdentifier == formatChunkId)
                 {
                     if (chunkLength > Int32.MaxValue)
-                         throw new InvalidDataException(string.Format("Format chunk length must be between 0 and {0}.", Int32.MaxValue));
+                        throw new InvalidDataException(string.Format("Format chunk length must be between 0 and {0}.", Int32.MaxValue));
                     waveFormat = WaveFormat.FromFormatChunk(br, (int)chunkLength);
                 }
                 else

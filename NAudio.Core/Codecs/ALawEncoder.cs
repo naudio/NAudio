@@ -26,7 +26,7 @@
              7,7,7,7,7,7,7,7,
              7,7,7,7,7,7,7,7
         };
-        
+
         /// <summary>
         /// Encodes a single 16 bit sample to a-law
         /// </summary>

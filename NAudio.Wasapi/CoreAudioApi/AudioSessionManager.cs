@@ -3,9 +3,9 @@
 // 12/2014
 // -----------------------------------------
 
+using NAudio.CoreAudioApi.Interfaces;
 using System;
 using System.Runtime.InteropServices;
-using NAudio.CoreAudioApi.Interfaces;
 
 namespace NAudio.CoreAudioApi
 {
@@ -29,7 +29,7 @@ namespace NAudio.CoreAudioApi
         /// Session created delegate
         /// </summary>
         public delegate void SessionCreatedDelegate(object sender, IAudioSessionControl newSession);
-        
+
         /// <summary>
         /// Occurs when audio session has been added (for example run another program that use audio playback).
         /// </summary>

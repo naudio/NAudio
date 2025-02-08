@@ -1,5 +1,3 @@
-using System;
-
 namespace NAudio.CoreAudioApi.Interfaces
 {
     /// <summary>

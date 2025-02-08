@@ -31,7 +31,7 @@ namespace NAudio.CoreAudioApi.Interfaces
     {
         int GetPeakValue(out float pfPeak);
         int GetMeteringChannelCount(out int pnChannelCount);
-        int GetChannelsPeakValues(int u32ChannelCount, [In]   IntPtr afPeakValues);
+        int GetChannelsPeakValues(int u32ChannelCount, [In] IntPtr afPeakValues);
         int QueryHardwareSupport(out int pdwHardwareSupportMask);
     };
 }

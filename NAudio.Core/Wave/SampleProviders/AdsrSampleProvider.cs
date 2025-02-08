@@ -1,5 +1,5 @@
-﻿using System;
-using NAudio.Dsp;
+﻿using NAudio.Dsp;
+using System;
 
 namespace NAudio.Wave.SampleProviders
 {

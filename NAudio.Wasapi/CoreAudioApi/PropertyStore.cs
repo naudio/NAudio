@@ -20,9 +20,8 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 // this version modified for NAudio from Ray Molenkamp's original
-using System;
-using System.Runtime.InteropServices;
 using NAudio.CoreAudioApi.Interfaces;
+using System.Runtime.InteropServices;
 
 namespace NAudio.CoreAudioApi
 {

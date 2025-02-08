@@ -1,6 +1,6 @@
 // based on SimpleGate v1.10 © 2006, ChunkWare Music Software, OPEN-SOURCE
-using System;
 using NAudio.Utils;
+using System;
 
 namespace NAudio.Dsp
 {
@@ -8,8 +8,8 @@ namespace NAudio.Dsp
     {
         // transfer function
         private double threshdB;	// threshold (dB)
-        private double thresh;		// threshold (linear)
-        
+        private double thresh;      // threshold (linear)
+
         // runtime variables
         private double env;		// over-threshold envelope (linear)
 
@@ -21,23 +21,23 @@ namespace NAudio.Dsp
             env = DC_OFFSET;
         }
 
-        public void Process( ref double in1, ref double in2 )
+        public void Process(ref double in1, ref double in2)
         {
             // in/out pointers are assummed to reference stereo data
 
             // sidechain
 
             // rectify input
-            double rect1 = Math.Abs( in1 );	// n.b. was fabs
-            double rect2 = Math.Abs( in2 ); // n.b. was fabs
+            double rect1 = Math.Abs(in1);	// n.b. was fabs
+            double rect2 = Math.Abs(in2); // n.b. was fabs
 
             // if desired, one could use another EnvelopeDetector to smooth
             // the rectified signal.
 
-            double key = Math.Max( rect1, rect2 );	// link channels with greater of 2
+            double key = Math.Max(rect1, rect2);	// link channels with greater of 2
 
             // threshold
-            double over = ( key > thresh ) ? 1.0 : 0.0;	// key over threshold ( 0.0 or 1.0 )
+            double over = (key > thresh) ? 1.0 : 0.0;	// key over threshold ( 0.0 or 1.0 )
 
             // attack/release
             over += DC_OFFSET;				// add DC offset to avoid denormal
@@ -57,11 +57,11 @@ namespace NAudio.Dsp
             in2 *= over;
         }
 
-        public double Threshold 
+        public double Threshold
         {
             get => threshdB;
-            set 
-            { 
+            set
+            {
                 threshdB = value;
                 thresh = Decibels.DecibelsToLinear(value);
             }

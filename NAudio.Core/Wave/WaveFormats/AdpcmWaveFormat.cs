@@ -8,7 +8,7 @@ namespace NAudio.Wave
     /// Microsoft ADPCM
     /// See http://icculus.org/SDL_sound/downloads/external_documentation/wavecomp.htm
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack=2)]
+    [StructLayout(LayoutKind.Sequential, Pack = 2)]
     public class AdpcmWaveFormat : WaveFormat
     {
         short samplesPerBlock;
@@ -20,7 +20,7 @@ namespace NAudio.Wave
         /// <summary>
         /// Empty constructor needed for marshalling from a pointer
         /// </summary>
-        AdpcmWaveFormat() : this(8000,1)
+        AdpcmWaveFormat() : this(8000, 1)
         {
         }
 
@@ -45,17 +45,17 @@ namespace NAudio.Wave
         /// <param name="sampleRate">Sample Rate</param>
         /// <param name="channels">Channels</param>
         public AdpcmWaveFormat(int sampleRate, int channels) :
-            base(sampleRate,0,channels)
+            base(sampleRate, 0, channels)
         {
             this.waveFormatTag = WaveFormatEncoding.Adpcm;
-            
+
             // TODO: validate sampleRate, bitsPerSample
             this.extraSize = 32;
-            switch(this.sampleRate)
+            switch (this.sampleRate)
             {
-                case 8000: 
+                case 8000:
                 case 11025:
-                    blockAlign = 256; 
+                    blockAlign = 256;
                     break;
                 case 22050:
                     blockAlign = 512;
@@ -67,7 +67,7 @@ namespace NAudio.Wave
             }
 
             this.bitsPerSample = 4;
-            this.samplesPerBlock = (short) ((((blockAlign - (7 * channels)) * 8) / (bitsPerSample * channels)) + 2);
+            this.samplesPerBlock = (short)((((blockAlign - (7 * channels)) * 8) / (bitsPerSample * channels)) + 2);
             this.averageBytesPerSecond =
                 ((this.SampleRate * blockAlign) / samplesPerBlock);
 

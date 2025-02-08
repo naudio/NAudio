@@ -1,4 +1,4 @@
-﻿﻿// -----------------------------------------
+﻿// -----------------------------------------
 // SoundScribe (TM) and related software.
 // 
 // Copyright (C) 2007-2011 Vannatech
@@ -19,7 +19,7 @@
 // milligan22963 - ported to nAudio
 // -----------------------------------------
 
- using System;
+using System;
 using System.Runtime.InteropServices;
 
 namespace NAudio.CoreAudioApi.Interfaces
@@ -104,7 +104,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
         int OnDisplayNameChanged(
-            [In] [MarshalAs(UnmanagedType.LPWStr)] string displayName,
+            [In][MarshalAs(UnmanagedType.LPWStr)] string displayName,
             [In] ref Guid eventContext);
 
         /// <summary>
@@ -115,7 +115,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
         int OnIconPathChanged(
-            [In] [MarshalAs(UnmanagedType.LPWStr)] string iconPath,
+            [In][MarshalAs(UnmanagedType.LPWStr)] string iconPath,
             [In] ref Guid eventContext);
 
         /// <summary>
@@ -127,8 +127,8 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
         int OnSimpleVolumeChanged(
-            [In] [MarshalAs(UnmanagedType.R4)] float volume,
-            [In] [MarshalAs(UnmanagedType.Bool)] bool isMuted,
+            [In][MarshalAs(UnmanagedType.R4)] float volume,
+            [In][MarshalAs(UnmanagedType.Bool)] bool isMuted,
             [In] ref Guid eventContext);
 
         /// <summary>
@@ -141,9 +141,9 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
         int OnChannelVolumeChanged(
-            [In] [MarshalAs(UnmanagedType.U4)] UInt32 channelCount,
-            [In] [MarshalAs(UnmanagedType.SysInt)] IntPtr newVolumes, // Pointer to float array
-            [In] [MarshalAs(UnmanagedType.U4)] UInt32 channelIndex,
+            [In][MarshalAs(UnmanagedType.U4)] UInt32 channelCount,
+            [In][MarshalAs(UnmanagedType.SysInt)] IntPtr newVolumes, // Pointer to float array
+            [In][MarshalAs(UnmanagedType.U4)] UInt32 channelIndex,
             [In] ref Guid eventContext);
 
         /// <summary>

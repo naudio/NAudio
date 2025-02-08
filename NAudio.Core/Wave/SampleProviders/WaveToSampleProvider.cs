@@ -33,7 +33,7 @@ namespace NAudio.Wave.SampleProviders
             int outputIndex = offset;
             unsafe
             {
-                fixed(byte* pBytes = &sourceBuffer[0])
+                fixed (byte* pBytes = &sourceBuffer[0])
                 {
                     float* pFloat = (float*)pBytes;
                     for (int n = 0, i = 0; n < bytesRead; n += 4, i++)

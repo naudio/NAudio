@@ -1,12 +1,10 @@
-using System;
-
 namespace NAudio.Midi
 {
     /// <summary>
     /// Represents the different types of technology used by a MIDI out device
     /// </summary>
     /// <remarks>from mmsystem.h</remarks>
-    public enum MidiOutTechnology 
+    public enum MidiOutTechnology
     {
         /// <summary>The device is a MIDI port</summary>
         MidiPort = 1,

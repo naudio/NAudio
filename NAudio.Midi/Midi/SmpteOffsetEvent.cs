@@ -31,11 +31,11 @@ namespace NAudio.Midi
         /// </summary>
         /// <param name="br">The MIDI stream</param>
         /// <param name="length">The data length</param>
-        public SmpteOffsetEvent(BinaryReader br,int length) 
+        public SmpteOffsetEvent(BinaryReader br, int length)
         {
-            if(length != 5) 
+            if (length != 5)
             {
-                throw new FormatException(String.Format("Invalid SMPTE Offset length: Got {0}, expected 5",length));
+                throw new FormatException(String.Format("Invalid SMPTE Offset length: Got {0}, expected 5", length));
             }
             hours = br.ReadByte();
             minutes = br.ReadByte();
@@ -79,10 +79,10 @@ namespace NAudio.Midi
         /// Describes this time signature event
         /// </summary>
         /// <returns>A string describing this event</returns>
-        public override string ToString() 
+        public override string ToString()
         {
             return String.Format("{0} {1}:{2}:{3}:{4}:{5}",
-                base.ToString(),hours,minutes,seconds,frames,subFrames);
+                base.ToString(), hours, minutes, seconds, frames, subFrames);
         }
 
         /// <summary>

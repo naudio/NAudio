@@ -22,8 +22,8 @@
 // modified for NAudio
 // milligan22963 - updated to include audio session manager
 
-using System;
 using NAudio.CoreAudioApi.Interfaces;
+using System;
 using System.Runtime.InteropServices;
 
 namespace NAudio.CoreAudioApi
@@ -196,9 +196,9 @@ namespace NAudio.CoreAudioApi
             }
         }
 
-       /// <summary>
-       /// Friendly name of device
-       /// </summary>
+        /// <summary>
+        /// Friendly name of device
+        /// </summary>
         public string DeviceFriendlyName
         {
             get
@@ -304,7 +304,7 @@ namespace NAudio.CoreAudioApi
             this.audioSessionManager?.Dispose();
             GC.SuppressFinalize(this);
         }
-        
+
         /// <summary>
         /// Finalizer
         /// </summary>

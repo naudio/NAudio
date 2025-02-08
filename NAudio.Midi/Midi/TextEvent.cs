@@ -2,21 +2,21 @@ using System;
 using System.IO;
 using System.Text;
 
-namespace NAudio.Midi 
+namespace NAudio.Midi
 {
     /// <summary>
     /// Represents a MIDI text event
     /// </summary>
-    public class TextEvent : MetaEvent 
+    public class TextEvent : MetaEvent
     {
         private byte[] data;
-        
+
         /// <summary>
         /// Reads a new text event from a MIDI stream
         /// </summary>
         /// <param name="br">The MIDI stream</param>
         /// <param name="length">The data length</param>
-        public TextEvent(BinaryReader br,int length) 
+        public TextEvent(BinaryReader br, int length)
         {
             data = br.ReadBytes(length);
         }
@@ -44,10 +44,10 @@ namespace NAudio.Midi
         /// </summary>
         public string Text
         {
-            get 
-            { 
+            get
+            {
                 Encoding byteEncoding = NAudio.Utils.ByteEncoding.Instance;
-                return byteEncoding.GetString(data); 
+                return byteEncoding.GetString(data);
             }
             set
             {
@@ -56,7 +56,7 @@ namespace NAudio.Midi
                 metaDataLength = data.Length;
             }
         }
-        
+
         /// <summary>
         /// The raw contents of this text event
         /// </summary>
@@ -77,9 +77,9 @@ namespace NAudio.Midi
         /// Describes this MIDI text event
         /// </summary>
         /// <returns>A string describing this event</returns>
-        public override string ToString() 
+        public override string ToString()
         {
-            return String.Format("{0} {1}",base.ToString(),Text);
+            return String.Format("{0} {1}", base.ToString(), Text);
         }
 
         /// <summary>

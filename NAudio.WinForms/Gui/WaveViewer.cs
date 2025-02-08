@@ -5,6 +5,7 @@ using System.Drawing;
 using System.Data;
 using System.Windows.Forms;
 using NAudio.Wave;
+using System.Drawing.Drawing2D;
 
 namespace NAudio.Gui
 {
@@ -109,8 +110,24 @@ namespace NAudio.Gui
                 int bytesRead;
                 byte[] waveData = new byte[samplesPerPixel*bytesPerSample];
                 waveStream.Position = startPosition + (e.ClipRectangle.Left * bytesPerSample * samplesPerPixel);
-                
-                for(float x = e.ClipRectangle.X; x < e.ClipRectangle.Right; x+=1)
+
+                // This rectangle and the PointF array flips the coordinate system vertically.
+                // It also properly scales the coordinate system so the amplitudes can be plotted directly.
+                // 0 <= X <= this.Width
+                // short.MinValue <= Y <= ushort.MaxValue / 2
+                // The value "(float)ushort.MaxValue" is the total rectangle height. Adding it to the MinValue gives the Y max range "ushort.MaxValue / 2".
+                RectangleF transformRectangle = new RectangleF(0, (float)short.MinValue, this.Width, (float)ushort.MaxValue);
+                PointF[] pts =
+                {
+                        new PointF(0, this.Height),            // upper-left rectangle corner
+                        new PointF(this.Width, this.Height),   // upper-right rectangle corner
+                        new PointF(0, 0),                      // lower-left rectangle corner
+                };
+
+                // Assign the transformation.
+                e.Graphics.Transform = new Matrix(transformRectangle, pts);
+
+                for (float x = e.ClipRectangle.X; x < e.ClipRectangle.Right; x+=1)
                 {
                     short low = 0;
                     short high = 0;
@@ -123,9 +140,7 @@ namespace NAudio.Gui
                         if(sample < low) low = sample;
                         if(sample > high) high = sample;
                     }
-                    float lowPercent = ((((float) low) - short.MinValue) / ushort.MaxValue);
-                    float highPercent = ((((float) high) - short.MinValue) / ushort.MaxValue);
-                    e.Graphics.DrawLine(Pens.Black,x,this.Height * lowPercent,x,this.Height * highPercent);					
+                    e.Graphics.DrawLine(Pens.Black, x, low, x, high);
                 } 
             }
 

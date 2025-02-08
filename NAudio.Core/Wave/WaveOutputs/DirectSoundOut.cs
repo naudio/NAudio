@@ -12,6 +12,7 @@ namespace NAudio.Wave
     /// Contact author: Alexandre Mutel - alexandre_mutel at yahoo.fr
     /// Modified by: Graham "Gee" Plumb
     /// </summary>
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     public class DirectSoundOut : IWavePlayer
     {
         /// <summary>

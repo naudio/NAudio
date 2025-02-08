@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NAudio.Sdl2.Library" Version="2.30.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NAudio.Sdl2\NAudio.Sdl2.csproj" />
+  </ItemGroup>
+
+</Project>

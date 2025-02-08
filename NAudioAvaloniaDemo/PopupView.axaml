@@ -1,0 +1,26 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+			 xmlns:dha="clr-namespace:DialogHostAvalonia;assembly=DialogHost.Avalonia"
+             mc:Ignorable="d" d:DesignWidth="250" d:DesignHeight="150"
+             x:Class="NAudioAvaloniaDemo.Views.PopupView">
+	<Grid MinHeight="150">
+		<StackPanel HorizontalAlignment="Center"
+					VerticalAlignment="Center"
+					MaxWidth="{Binding MaxWidth}"
+					MaxHeight="{Binding MaxHeight}">
+			<TextBlock Text="{Binding Message}"
+					   TextWrapping="Wrap"
+					   HorizontalAlignment="Center"
+					   VerticalAlignment="Center" 
+					   Margin="0 0 0 10"/>
+			<Button Content="OK"
+					Width="100"
+					HorizontalContentAlignment="Center"
+					HorizontalAlignment="Center"
+					VerticalAlignment="Center"
+					Command="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=dha:DialogHost}, Path=CloseDialogCommand}" />
+		</StackPanel>
+	</Grid>
+</UserControl>

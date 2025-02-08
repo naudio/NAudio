@@ -1,19 +1,11 @@
 ﻿using System;
+using System.IO;
+using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 
-// ReSharper disable once CheckNamespace
-namespace NAudio.Wave
+namespace NAudioAvaloniaDemo
 {
-    /// <summary>
-    /// AudioFileReader simplifies opening an audio file in NAudio
-    /// Simply pass in the filename, and it will attempt to open the
-    /// file and set up a conversion path that turns into PCM IEEE float.
-    /// ACM codecs will be used for conversion.
-    /// It provides a volume property and implements both WaveStream and
-    /// ISampleProvider, making it possibly the only stage in your audio
-    /// pipeline necessary for simple playback scenarios
-    /// </summary>
-    public class AudioFileReader : WaveStream, ISampleProvider
+    public class AudioFileStreamReader : WaveStream, ISampleProvider
     {
         private WaveStream readerStream; // the waveStream which we will use for all positioning
         private readonly SampleChannel sampleChannel; // sample provider that gives us most stuff we need
@@ -23,18 +15,64 @@ namespace NAudio.Wave
         private readonly object lockObject;
 
         /// <summary>
-        /// Initializes a new instance of AudioFileReader
+        /// Initializes a new instance of AudioFileStreamReader
         /// </summary>
         /// <param name="fileName">The file to open</param>
-        public AudioFileReader(string fileName)
+        public AudioFileStreamReader(string fileName)
         {
             lockObject = new object();
             FileName = fileName;
             CreateReaderStream(fileName);
             sourceBytesPerSample = (readerStream.WaveFormat.BitsPerSample / 8) * readerStream.WaveFormat.Channels;
             sampleChannel = new SampleChannel(readerStream, false);
+            destBytesPerSample = 4*sampleChannel.WaveFormat.Channels;
+            length = SourceToDest(readerStream.Length);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of AudioFileStreamReader
+        /// </summary>
+        /// <param name="fileName">The file name</param>
+        /// <param name="inputStream">The input stream containing an audio file</param>
+        public AudioFileStreamReader(string fileName, Stream inputStream)
+        {
+            lockObject = new object();
+            FileName = fileName;
+            CreateReaderStream(fileName, inputStream);
+            sourceBytesPerSample = (readerStream.WaveFormat.BitsPerSample / 8) * readerStream.WaveFormat.Channels;
+            sampleChannel = new SampleChannel(readerStream, false);
             destBytesPerSample = 4 * sampleChannel.WaveFormat.Channels;
             length = SourceToDest(readerStream.Length);
+        }
+
+        private void CreateReaderStream(string fileName, Stream inputStream)
+        {
+            if (fileName.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
+            {
+                readerStream = new WaveFileReader(inputStream);
+                if (readerStream.WaveFormat.Encoding != WaveFormatEncoding.Pcm && readerStream.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
+                {
+                    readerStream = WaveFormatConversionStream.CreatePcmStream(readerStream);
+                    readerStream = new BlockAlignReductionStream(readerStream);
+                }
+                return;
+            }
+            if(fileName.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase))
+            {
+                if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+                    throw new NotSupportedException("Audio file format not supported");
+                if (Environment.OSVersion.Version.Major < 6)
+                    readerStream = new Mp3FileReader(fileName);
+                else // make MediaFoundationReader the default for MP3 going forwards
+                    readerStream = new MediaFoundationReader(fileName);
+                return;
+            }
+            if (fileName.EndsWith(".aiff", StringComparison.OrdinalIgnoreCase) || fileName.EndsWith(".aif", StringComparison.OrdinalIgnoreCase))
+            {
+                readerStream = new AiffFileReader(inputStream);
+                return;
+            }
+            throw new NotSupportedException("Audio file format not supported");
         }
 
         /// <summary>
@@ -52,20 +90,27 @@ namespace NAudio.Wave
                     readerStream = WaveFormatConversionStream.CreatePcmStream(readerStream);
                     readerStream = new BlockAlignReductionStream(readerStream);
                 }
+                return;
             }
-            else if (fileName.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase))
+            if (fileName.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase))
             {
+                if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+                    throw new NotSupportedException("Audio file format not supported");
                 if (Environment.OSVersion.Version.Major < 6)
                     readerStream = new Mp3FileReader(fileName);
                 else // make MediaFoundationReader the default for MP3 going forwards
                     readerStream = new MediaFoundationReader(fileName);
+                return;
             }
-            else if (fileName.EndsWith(".aiff", StringComparison.OrdinalIgnoreCase) || fileName.EndsWith(".aif", StringComparison.OrdinalIgnoreCase))
+            if (fileName.EndsWith(".aiff", StringComparison.OrdinalIgnoreCase) || fileName.EndsWith(".aif", StringComparison.OrdinalIgnoreCase))
             {
                 readerStream = new AiffFileReader(fileName);
+                return;
             }
             else
             {
+                if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+                    throw new NotSupportedException("Audio file format not supported");
                 // fall back to media foundation reader, see if that can play it
                 readerStream = new MediaFoundationReader(fileName);
             }
@@ -91,7 +136,7 @@ namespace NAudio.Wave
         public override long Position
         {
             get { return SourceToDest(readerStream.Position); }
-            set { lock (lockObject) { readerStream.Position = DestToSource(value); } }
+            set { lock (lockObject) { readerStream.Position = DestToSource(value); }  }
         }
 
         /// <summary>
@@ -130,7 +175,7 @@ namespace NAudio.Wave
         public float Volume
         {
             get { return sampleChannel.Volume; }
-            set { sampleChannel.Volume = value; }
+            set { sampleChannel.Volume = value; } 
         }
 
         /// <summary>
@@ -157,8 +202,7 @@ namespace NAudio.Wave
         {
             if (disposing)
             {
-                if (readerStream != null)
-                {
+                if (readerStream != null) {
                     readerStream.Dispose();
                     readerStream = null;
                 }

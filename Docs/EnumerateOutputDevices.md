@@ -106,6 +106,29 @@ You can then use the driver name to open the device:
 new AsioOut(driverName);
 ```
 
+# WaveOutSdl
+
+Note that you must install the package with native libraries or distribute them manually (nuget NAudio.Sdl2.Library).
+
+To discover the number of output devices and discover its capabilities you can use `WaveOutSdl.GetCapabilitiesList`.
+
+Note that you can also pass an index of -1 which is the default audio device.
+
+```c#
+var capabilitiesList = WaveOutSdl.GetCapabilitiesList();
+foreach (var caps in capabilitiesList)
+{
+    Console.WriteLine(caps.ToString(Environment.NewLine));
+    Console.WriteLine();
+}
+```
+
+Once you've selected the device you want, you can open it by creating an instance of `WaveOutSdl` and specifying it as the `DeviceId`:
+
+```c#
+var outputDevice = new WaveOutSdl() { DeviceId = DeviceId };
+```
+
 # Management Objects
 
 Finally you can use Windows Management Objects to get hold of details of the sound devices installed. This doesn't map specifically to any of the NAudio output device types, but can be a source of useful information

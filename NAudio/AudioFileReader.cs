@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using NAudio.Wave.SampleProviders;
 
 // ReSharper disable once CheckNamespace
@@ -30,10 +31,26 @@ namespace NAudio.Wave
         {
             lockObject = new object();
             FileName = fileName;
-            CreateReaderStream(fileName);
+            CreateReaderStreamFromFileName(fileName);
             sourceBytesPerSample = (readerStream.WaveFormat.BitsPerSample / 8) * readerStream.WaveFormat.Channels;
             sampleChannel = new SampleChannel(readerStream, false);
             destBytesPerSample = 4*sampleChannel.WaveFormat.Channels;
+            length = SourceToDest(readerStream.Length);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of AudioFileReader
+        /// </summary>
+        /// <param name="stream">The stream containing the audio file data</param>
+        /// <param name="fileExt">The extension of the audio file, including the period ('.')</param>
+        public AudioFileReader(Stream stream, string fileExt)
+        {
+            lockObject = new object();
+            FileName = null;
+            CreateReaderStreamFromStream(stream, fileExt);
+            sourceBytesPerSample = (readerStream.WaveFormat.BitsPerSample / 8) * readerStream.WaveFormat.Channels;
+            sampleChannel = new SampleChannel(readerStream, false);
+            destBytesPerSample = 4 * sampleChannel.WaveFormat.Channels;
             length = SourceToDest(readerStream.Length);
         }
 
@@ -42,9 +59,12 @@ namespace NAudio.Wave
         /// and ensuring we are in PCM format
         /// </summary>
         /// <param name="fileName">File Name</param>
-        private void CreateReaderStream(string fileName)
+        private void CreateReaderStreamFromFileName(string fileName)
         {
-            if (fileName.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
+            var fileExt = Path.GetExtension(fileName);
+            var fileFormat = fileExt.GetFormatFromFileExt();
+
+            if (fileFormat == AudioFileFormatEnum.WAV)
             {
                 readerStream = new WaveFileReader(fileName);
                 if (readerStream.WaveFormat.Encoding != WaveFormatEncoding.Pcm && readerStream.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
@@ -53,14 +73,14 @@ namespace NAudio.Wave
                     readerStream = new BlockAlignReductionStream(readerStream);
                 }
             }
-            else if (fileName.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase))
+            else if (fileFormat == AudioFileFormatEnum.MP3)
             {
                 if (Environment.OSVersion.Version.Major < 6)
                     readerStream = new Mp3FileReader(fileName);
                 else // make MediaFoundationReader the default for MP3 going forwards
                     readerStream = new MediaFoundationReader(fileName);
             }
-            else if (fileName.EndsWith(".aiff", StringComparison.OrdinalIgnoreCase) || fileName.EndsWith(".aif", StringComparison.OrdinalIgnoreCase))
+            else if (fileFormat == AudioFileFormatEnum.AIFF)
             {
                 readerStream = new AiffFileReader(fileName);
             }
@@ -70,8 +90,62 @@ namespace NAudio.Wave
                 readerStream = new MediaFoundationReader(fileName);
             }
         }
+
         /// <summary>
-        /// File Name
+        /// Creates the reader stream, supporting all filetypes in the core NAudio library,
+        /// and ensuring we are in PCM format
+        /// </summary>
+        /// <param name="stream">The stream that contains the audio file data</param>
+        /// <param name="fileExt">The sound file extension including the period ('.').  Example: ".mp3"</param>
+        private void CreateReaderStreamFromStream(Stream stream, string fileExt)
+        {
+            if(stream == null)
+            {
+                throw new ArgumentNullException(nameof(stream));
+            }
+            if (string.IsNullOrEmpty(fileExt) == false)
+            {
+                if (fileExt.StartsWith(".") == false)
+                {
+                    throw new ArgumentOutOfRangeException("File extension expected to start with a period ('.')");
+                }
+            }
+            else
+            {
+                throw new ArgumentNullException(nameof(fileExt));
+            }
+
+            var fileFormat = fileExt.GetFormatFromFileExt();
+
+            if (fileFormat == AudioFileFormatEnum.WAV)
+            {
+                readerStream = new WaveFileReader(stream);
+                if (readerStream.WaveFormat.Encoding != WaveFormatEncoding.Pcm && readerStream.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
+                {
+                    readerStream = WaveFormatConversionStream.CreatePcmStream(readerStream);
+                    readerStream = new BlockAlignReductionStream(readerStream);
+                }
+            }
+            else if (fileFormat == AudioFileFormatEnum.MP3)
+            {
+                if (Environment.OSVersion.Version.Major < 6)
+                    readerStream = new Mp3FileReader(stream);
+                else // make MediaFoundationReader the default for MP3 going forwards
+                    readerStream = new StreamMediaFoundationReader(stream);
+            }
+            else if (fileFormat == AudioFileFormatEnum.AIFF)
+            {
+                readerStream = new AiffFileReader(stream);
+            }
+            else
+            {
+                // fall back to media foundation reader, see if that can play it
+                readerStream = new StreamMediaFoundationReader(stream);
+            }
+        }
+
+        /// <summary>
+        /// File Name.  Value is null when a stream is used to construct the reader
         /// </summary>
         public string FileName { get; }
 

@@ -14,6 +14,14 @@ var fade = new FadeInOutSampleProvider(audio, true);
 fade.BeginFadeIn(2000);
 ```
 
+After fade in is complete, `FadeInComplete` event is triggered:
+```c#
+fade.FadeInComplete += (sender, e) => {
+    Console.WriteLine("Fade in was done!");
+};
+fade.BeginFadeIn(2000);
+```
+
 Now we can pass our `FadeInOutSampleProvider` to an output device and start playing. We'll hear the audio fading in over the first two seconds.
 
 ```c#
@@ -25,6 +33,15 @@ waveOutDevice.Play();
 At some point in the future, we might want to fade out, and we can trigger that with `BeginFadeOut`, again specifying a 2 second fadeout. 
 
 ```c#
+fade.BeginFadeOut(2000);
+```
+
+It also triggers `FadeOutComplete` event, when fade out is complete
+
+```c#
+fade.FadeOutComplete += (sender, e) => {
+    Console.WriteLine("Fade out was done!");
+};
 fade.BeginFadeOut(2000);
 ```
 

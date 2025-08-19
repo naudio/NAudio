@@ -72,7 +72,7 @@ namespace NAudio.FileFormats.Wav
                     {
                         dataChunkLength = chunkLength;
                     }
-                    stream.Position += chunkLength;
+                    stream.Position += dataChunkLength;
                 }
                 else if (chunkIdentifier == formatChunkId)
                 {

@@ -302,14 +302,21 @@ namespace NAudio.Wave
         /// <param name="writer">the output stream</param>
         public virtual void Serialize(BinaryWriter writer)
         {
-            writer.Write((int)(18 + extraSize)); // wave format length
+            // For basic PCM format (extraSize = 0), write only 16 bytes as per WAV specification
+            // For extended formats, write 18 + extraSize bytes
+            writer.Write((int)(extraSize == 0 ? 16 : 18 + extraSize)); // wave format length
             writer.Write((short)Encoding);
             writer.Write((short)Channels);
             writer.Write((int)SampleRate);
             writer.Write((int)AverageBytesPerSecond);
             writer.Write((short)BlockAlign);
             writer.Write((short)BitsPerSample);
-            writer.Write((short)extraSize);
+            
+            // Only write extraSize field for extended formats (when extraSize > 0)
+            if (extraSize > 0)
+            {
+                writer.Write((short)extraSize);
+            }
         }
 
         /// <summary>

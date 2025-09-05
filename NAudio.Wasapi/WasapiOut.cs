@@ -269,15 +269,21 @@ namespace NAudio.Wave
             if (!bitDepthsToTry.Contains(24)) bitDepthsToTry.Add(24);
             if (!bitDepthsToTry.Contains(16)) bitDepthsToTry.Add(16);
 
+            var channelMaskToTry = new List<short>() { 0 };
+            if (channelCountsToTry.Contains(4)) channelMaskToTry.Add(0x33);     //  try FL/FR/BL/BR for 4ch
+
             foreach (var sampleRate in sampleRatesToTry)
             {
                 foreach (var channelCount in channelCountsToTry)
                 {
                     foreach (var bitDepth in bitDepthsToTry)
                     {
-                        var format = new WaveFormatExtensible(sampleRate, bitDepth, channelCount);
-                        if (audioClient.IsFormatSupported(shareMode, format))
-                            return format;
+                        foreach (var channelMask in channelMaskToTry)
+                        {
+                            var format = new WaveFormatExtensible(sampleRate, bitDepth, channelCount, channelMask);
+                            if (audioClient.IsFormatSupported(shareMode, format))
+                                return format;
+                        }
                     }
                 }
             }

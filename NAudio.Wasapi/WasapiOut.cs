@@ -269,7 +269,7 @@ namespace NAudio.Wave
             if (!bitDepthsToTry.Contains(24)) bitDepthsToTry.Add(24);
             if (!bitDepthsToTry.Contains(16)) bitDepthsToTry.Add(16);
 
-            var channelMaskToTry = new List<int>() { 0 };
+            var channelMasksToTry = new List<int>() { 0 };
             // The WaveFormatExtensible constructor covers the following channel masks by default.
             // 0x0003 2.0: FL|FR                      (KSAUDIO_SPEAKER_STEREO)
             // 0x0007 3.0: FL|FR|FC                   (KSAUDIO_SPEAKER_3POINT0)
@@ -278,18 +278,18 @@ namespace NAudio.Wave
             // 0x00FF 7.1: FL|FR|FC|LFE|BL|BR|FLC|FRC (KSAUDIO_SPEAKER_7POINT1_WIDE; obsolete)
             // Add masks for other configurations.
             // Candidates are taken from ksmedia.h in the Windows Driver Kit.
-            if (channelCountsToTry.Contains(1)) channelMaskToTry.Add(0x0004); // 1.0: FC        (KSAUDIO_SPEAKER_MONO)
-            if (channelCountsToTry.Contains(2)) channelMaskToTry.Add(0x000C); // 1.1: FC|LFE    (KSAUDIO_SPEAKER_1POINT1)
-            if (channelCountsToTry.Contains(3)) channelMaskToTry.Add(0x000B); // 2.1: FL|FR|LFE (KSAUDIO_SPEAKER_2POINT1)
+            if (channelCountsToTry.Contains(1)) channelMasksToTry.Add(0x0004); // 1.0: FC        (KSAUDIO_SPEAKER_MONO)
+            if (channelCountsToTry.Contains(2)) channelMasksToTry.Add(0x000C); // 1.1: FC|LFE    (KSAUDIO_SPEAKER_1POINT1)
+            if (channelCountsToTry.Contains(3)) channelMasksToTry.Add(0x000B); // 2.1: FL|FR|LFE (KSAUDIO_SPEAKER_2POINT1)
             if (channelCountsToTry.Contains(4))
             {
-                channelMaskToTry.Add(0x0033); // 4.0: FL|FR|BL|BR (KSAUDIO_SPEAKER_QUAD)
-                channelMaskToTry.Add(0x0107); // 4.0: FL|FR|FC|BC (KSAUDIO_SPEAKER_SURROUND)
+                channelMasksToTry.Add(0x0033); // 4.0: FL|FR|BL|BR (KSAUDIO_SPEAKER_QUAD)
+                channelMasksToTry.Add(0x0107); // 4.0: FL|FR|FC|BC (KSAUDIO_SPEAKER_SURROUND)
             }
-            if (channelCountsToTry.Contains(5)) channelMaskToTry.Add(0x0607); // 5.0: FL|FR|FC|SL|SR           (KSAUDIO_SPEAKER_5POINT0)
-            if (channelCountsToTry.Contains(6)) channelMaskToTry.Add(0x060F); // 5.1: FL|FR|FC|LFE|SL|SR       (KSAUDIO_SPEAKER_5POINT1_SURROUND)
-            if (channelCountsToTry.Contains(7)) channelMaskToTry.Add(0x0637); // 7.0: FL|FR|FC|BL|BR|SL|SR     (KSAUDIO_SPEAKER_7POINT0)
-            if (channelCountsToTry.Contains(8)) channelMaskToTry.Add(0x063F); // 7.1: FL|FR|FC|LFE|BL|BR|SL|SR (KSAUDIO_SPEAKER_7POINT1_SURROUND)
+            if (channelCountsToTry.Contains(5)) channelMasksToTry.Add(0x0607); // 5.0: FL|FR|FC|SL|SR           (KSAUDIO_SPEAKER_5POINT0)
+            if (channelCountsToTry.Contains(6)) channelMasksToTry.Add(0x060F); // 5.1: FL|FR|FC|LFE|SL|SR       (KSAUDIO_SPEAKER_5POINT1_SURROUND)
+            if (channelCountsToTry.Contains(7)) channelMasksToTry.Add(0x0637); // 7.0: FL|FR|FC|BL|BR|SL|SR     (KSAUDIO_SPEAKER_7POINT0)
+            if (channelCountsToTry.Contains(8)) channelMasksToTry.Add(0x063F); // 7.1: FL|FR|FC|LFE|BL|BR|SL|SR (KSAUDIO_SPEAKER_7POINT1_SURROUND)
 
             foreach (var sampleRate in sampleRatesToTry)
             {
@@ -297,7 +297,7 @@ namespace NAudio.Wave
                 {
                     foreach (var bitDepth in bitDepthsToTry)
                     {
-                        foreach (var channelMask in channelMaskToTry)
+                        foreach (var channelMask in channelMasksToTry)
                         {
                             var format = new WaveFormatExtensible(sampleRate, bitDepth, channelCount, channelMask);
                             if (audioClient.IsFormatSupported(shareMode, format))

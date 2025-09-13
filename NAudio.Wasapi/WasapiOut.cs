@@ -269,7 +269,7 @@ namespace NAudio.Wave
             if (!bitDepthsToTry.Contains(24)) bitDepthsToTry.Add(24);
             if (!bitDepthsToTry.Contains(16)) bitDepthsToTry.Add(16);
 
-            var channelMaskToTry = new List<short>() { 0 };
+            var channelMaskToTry = new List<int>() { 0 };
             // The WaveFormatExtensible constructor covers the following channel masks by default.
             // 0x0003 2.0: FL|FR                      (KSAUDIO_SPEAKER_STEREO)
             // 0x0007 3.0: FL|FR|FC                   (KSAUDIO_SPEAKER_3POINT0)

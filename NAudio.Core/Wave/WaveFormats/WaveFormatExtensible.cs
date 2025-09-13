@@ -25,7 +25,7 @@ namespace NAudio.Wave
         /// <summary>
         /// Creates a new WaveFormatExtensible for PCM or IEEE
         /// </summary>
-        public WaveFormatExtensible(int rate, int bits, int channels, short channelMask = 0)
+        public WaveFormatExtensible(int rate, int bits, int channels, int channelMask = 0)
             : base(rate, bits, channels)
         {
             waveFormatTag = WaveFormatEncoding.Extensible;

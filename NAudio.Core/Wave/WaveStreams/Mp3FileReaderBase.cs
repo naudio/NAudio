@@ -73,6 +73,13 @@ namespace NAudio.Wave
             
         }
 
+        /// <summary>
+        /// Constructor that takes an input stream and a frame decompressor builder
+        /// </summary>
+        /// <param name="inputStream">Input stream</param>
+        /// <param name="frameDecompressorBuilder">Factory method to build a frame decompressor</param>
+        /// <param name="ownInputStream">Whether we own the stream and should dispose it</param>
+        /// <exception cref="ArgumentNullException"></exception>
         protected Mp3FileReaderBase(Stream inputStream, FrameDecompressorBuilder frameDecompressorBuilder, bool ownInputStream)
         {
             if (inputStream == null) throw new ArgumentNullException(nameof(inputStream));

@@ -57,9 +57,7 @@ NAudio is an open source .NET audio library written by [Mark Heath](https://mark
 
 The easiest way to install NAudio into your project is to install the latest [NAudio NuGet package](https://www.nuget.org/packages/NAudio/). Prerelease versions of NAudio are also often made available on NuGet.
 
-Alternatively, you can download the latest release in binary format from [here](https://github.com/naudio/NAudio/releases).
-
-NAudio comes with several demo applications which are the quickest way to see how to use the various features of NAudio. You can download compiled demo applications from [here](https://github.com/naudio/NAudio/releases), and explore the source code [here](https://github.com/naudio/NAudio/tree/master/NAudioDemo).
+NAudio comes with several demo applications which are the quickest way to see how to use the various features of NAudio. You can explore the source code [here](https://github.com/naudio/NAudio/tree/master/NAudioDemo).
 
 ## Tutorials
 

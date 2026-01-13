@@ -97,8 +97,14 @@ namespace NAudio.Wave.Compression
                 //Unprepare();
                 SourceBuffer = null;
                 DestBuffer = null;
-                hSourceBuffer.Free();
-                hDestBuffer.Free();
+                if (hSourceBuffer.IsAllocated)
+                {
+                    hSourceBuffer.Free();
+                }
+                if (hDestBuffer.IsAllocated)
+                {
+                    hDestBuffer.Free();
+                }
             }
             disposed = true;
         }

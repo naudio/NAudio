@@ -7,25 +7,22 @@ namespace NAudio
     /// </summary>
     public class MmException : Exception
     {
-        private MmResult result;
-        private string function;
-
         /// <summary>
         /// Creates a new MmException
         /// </summary>
         /// <param name="result">The result returned by the Windows API call</param>
         /// <param name="function">The name of the Windows API that failed</param>
         public MmException(MmResult result, string function)
-            : base(MmException.ErrorMessage(result, function))
+            : base(ErrorMessage(result, function))
         {
-            this.result = result;
-            this.function = function;
+            Result = result;
+            Function = function;
         }
 
 
         private static string ErrorMessage(MmResult result, string function)
         {
-            return String.Format("{0} calling {1}", result, function);
+            return $"{result} calling {function}";
         }
 
         /// <summary>
@@ -42,12 +39,12 @@ namespace NAudio
         /// <summary>
         /// Returns the Windows API result
         /// </summary>
-        public MmResult Result
-        {
-            get
-            {
-                return result;
-            }
-        }
+        public MmResult Result { get; }
+
+        /// <summary>
+        /// The function being called
+        /// </summary>
+        public string Function { get; }
+
     }
 }

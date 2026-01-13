@@ -1,13 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Diagnostics;
 using System.IO;
 using NAudio.Utils;
 using NAudio.Wave;
-using System.Diagnostics;
 
 namespace NAudio.FileFormats.Wav
 {
+    /// <summary>
+    /// Reader of RIFF chunks from a WAV file
+    /// </summary>
     public class WaveFileChunkReader
     {
         private WaveFormat waveFormat;
@@ -19,12 +21,18 @@ namespace NAudio.FileFormats.Wav
         private readonly bool storeAllChunks;
         private long riffSize;
 
+        /// <summary>
+        /// Creates a new WaveFileChunkReader
+        /// </summary>
         public WaveFileChunkReader()
         {
             storeAllChunks = true;
             strictMode = false;
         }
 
+        /// <summary>
+        /// Read the WAV header
+        /// </summary>
         public void ReadWaveHeader(Stream stream)
         {
             this.dataChunkPosition = -1;

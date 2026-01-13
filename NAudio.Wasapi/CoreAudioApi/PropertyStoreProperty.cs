@@ -28,7 +28,7 @@ namespace NAudio.CoreAudioApi
     /// <summary>
     /// Property Store Property
     /// </summary>
-    public class PropertyStoreProperty
+    public struct PropertyStoreProperty
     {
         private PropVariant propertyValue;
 

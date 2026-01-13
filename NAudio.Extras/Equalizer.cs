@@ -18,6 +18,9 @@ namespace NAudio.Extras
         private readonly int bandCount;
         private bool updated;
 
+        /// <summary>
+        /// Creates a new Equalizer
+        /// </summary>
         public Equalizer(ISampleProvider sourceProvider, EqualizerBand[] bands)
         {
             this.sourceProvider = sourceProvider;
@@ -43,14 +46,23 @@ namespace NAudio.Extras
             }
         }
 
+        /// <summary>
+        /// Update the equalizer settings
+        /// </summary>
         public void Update()
         {
             updated = true;
             CreateFilters();
         }
 
+        /// <summary>
+        /// Gets the WaveFormat of this Sample Provider
+        /// </summary>
         public WaveFormat WaveFormat => sourceProvider.WaveFormat;
 
+        /// <summary>
+        /// Reads samples from this Sample Provider
+        /// </summary>
         public int Read(float[] buffer, int offset, int count)
         {
             int samplesRead = sourceProvider.Read(buffer, offset, count);

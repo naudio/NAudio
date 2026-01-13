@@ -12,7 +12,10 @@ _ReSharper*/
 *.ncrunchproject
 *.orig
 *.lock.json
+# Jetbrains
+*.idea
 .vs/
 .fake/
 # cake:
 Tools/
+*.DotSettings

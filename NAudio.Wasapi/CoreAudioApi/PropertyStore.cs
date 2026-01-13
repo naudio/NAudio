@@ -67,15 +67,27 @@ namespace NAudio.CoreAudioApi
         /// <returns>True if found</returns>
         public bool Contains(PropertyKey key)
         {
-            for (int i = 0; i < Count; i++)
-            {
-                PropertyKey ikey = Get(i);
-                if ((ikey.formatId == key.formatId) && (ikey.propertyId == key.propertyId))
-                {
-                    return true;
-                }
-            }
-            return false;
+            var result = storeInterface.GetValue(ref key, out var propVariant);
+            return result >= 0 && (VarEnum)propVariant.vt != VarEnum.VT_EMPTY;
+        }
+
+        /// <summary>
+        /// Checks if the property exists
+        /// </summary>
+        /// <param name="key">Looks for a specific key</param>
+        /// <param name="obj">The value of the property wrapped in a type cast</param>
+        /// <typeparam name="T">The type to cast the property as</typeparam>
+        /// <returns>True if found</returns>
+        public bool TryGetValue<T>(PropertyKey key, out T obj)
+        {
+            obj = default;
+            var result = storeInterface.GetValue(ref key, out var propVariant);
+            
+            if (result < 0 || (VarEnum)propVariant.vt == VarEnum.VT_EMPTY) 
+                return false;
+
+            obj = (T)propVariant.Value;
+            return true;
         }
 
         /// <summary>
@@ -87,16 +99,8 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                for (int i = 0; i < Count; i++)
-                {
-                    PropertyKey ikey = Get(i);
-                    if ((ikey.formatId == key.formatId) && (ikey.propertyId == key.propertyId))
-                    {
-                        Marshal.ThrowExceptionForHR(storeInterface.GetValue(ref ikey, out var result));
-                        return new PropertyStoreProperty(ikey, result);
-                    }
-                }
-                return null;
+                Marshal.ThrowExceptionForHR(storeInterface.GetValue(ref key, out var propVariant));
+                return new PropertyStoreProperty(key, propVariant);
             }
         }
 

@@ -7,7 +7,8 @@ namespace NAudio.CoreAudioApi.Interfaces
     /// Defined in AudioClient.h
     /// </summary>
     [Guid("CD63314F-3FBA-4a1b-812C-EF96358728E7"),
-        InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
+        ComImport]
     internal interface IAudioClock
     {
         [PreserveSig]
@@ -24,7 +25,8 @@ namespace NAudio.CoreAudioApi.Interfaces
     /// Defined in AudioClient.h
     /// </summary>
     [Guid("6f49ff73-6727-49AC-A008-D98CF5E70048"),
-        InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
+        ComImport]
     internal interface IAudioClock2 : IAudioClock
     {
         [PreserveSig]

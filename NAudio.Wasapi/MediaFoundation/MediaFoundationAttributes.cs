@@ -232,6 +232,12 @@ namespace NAudio.MediaFoundation
         public static readonly Guid MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS = new Guid("a634a91c-822b-41b9-a494-4de4643612b0");
 
         /// <summary>
+        /// Specifies whether the sink writer limits the rate of incoming data.
+        /// </summary>
+        [FieldDescription("Disable Sink Writer Throttling")]
+        public static readonly Guid MF_SINK_WRITER_DISABLE_THROTTLING = new Guid("08b845d8-2b74-4afe-9d53-be16d2d5ae4f");
+
+        /// <summary>
         /// Contains additional format data for a media type. 
         /// </summary>
         [FieldDescription("User data")]

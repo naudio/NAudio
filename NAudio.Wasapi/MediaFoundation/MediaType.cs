@@ -86,6 +86,16 @@ namespace NAudio.MediaFoundation
         }
 
         /// <summary>
+        /// Sets a UINT32 attribute on this media type
+        /// </summary>
+        /// <param name="key">Attribute key</param>
+        /// <param name="value">Attribute value (e.g. 1 for TRUE)</param>
+        public void SetUInt32(Guid key, int value)
+        {
+            mediaType.SetUINT32(key, value);
+        }
+
+        /// <summary>
         /// The Sample Rate (valid for audio media types)
         /// </summary>
         public int SampleRate

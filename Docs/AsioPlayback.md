@@ -31,7 +31,7 @@ Next, I call `Init`. This lets us pass the `IWaveProvider` or `ISampleProvider` 
 
 ```c#
 // optionally, change the starting channel for outputting audio:
-asioOut.OutputChannelOffset = 2;  
+asioOut.ChannelOffset = 2;  
 asioOut.Init(mySampleProvider);
 ```
 

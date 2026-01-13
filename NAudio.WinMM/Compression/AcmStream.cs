@@ -175,6 +175,11 @@ namespace NAudio.Wave.Compression
                 bytesToConvert -= (bytesToConvert % sourceFormat.BlockAlign);
             }
 
+            if (streamHeader == null)
+            {
+                throw new ObjectDisposedException("AcmStream has already been disposed");
+            }
+
             return streamHeader.Convert(bytesToConvert, out sourceBytesConverted);
         }
 

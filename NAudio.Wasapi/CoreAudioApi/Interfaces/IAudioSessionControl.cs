@@ -29,7 +29,8 @@ namespace NAudio.CoreAudioApi.Interfaces
     /// Defined in AudioPolicy.h
     /// </summary>
     [Guid("F4B1A599-7266-4319-A8CA-E70ACB11E8CD"),
-     InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+     InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
+     ComImport]
     public interface IAudioSessionControl
     {
         /// <summary>
@@ -126,7 +127,8 @@ namespace NAudio.CoreAudioApi.Interfaces
     /// Defined in AudioPolicy.h
     /// </summary>
     [Guid("bfb7ff88-7239-4fc9-8fa2-07c950be9c6d"),
-     InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+     InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
+     ComImport]
     public interface IAudioSessionControl2 : IAudioSessionControl
     {
         /// <summary>

@@ -25,7 +25,8 @@ using System.Runtime.InteropServices;
 namespace NAudio.CoreAudioApi.Interfaces
 {
     [Guid("5CDF2C82-841E-4546-9722-0CF74078229A"),
-     InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+     InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
+     ComImport]
     internal interface IAudioEndpointVolume
     {
         int RegisterControlChangeNotify(IAudioEndpointVolumeCallback pNotify);

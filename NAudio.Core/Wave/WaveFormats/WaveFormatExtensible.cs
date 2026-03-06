@@ -25,15 +25,22 @@ namespace NAudio.Wave
         /// <summary>
         /// Creates a new WaveFormatExtensible for PCM or IEEE
         /// </summary>
-        public WaveFormatExtensible(int rate, int bits, int channels)
+        public WaveFormatExtensible(int rate, int bits, int channels, int channelMask = 0)
             : base(rate, bits, channels)
         {
             waveFormatTag = WaveFormatEncoding.Extensible;
             extraSize = 22;
             wValidBitsPerSample = (short) bits;
-            for (int n = 0; n < channels; n++)
+            if (channelMask != 0)
             {
-                dwChannelMask |= (1 << n);
+                dwChannelMask = channelMask;
+            }
+            else
+            {
+                for (int n = 0; n < channels; n++)
+                {
+                    dwChannelMask |= (1 << n);
+                }
             }
             if (bits == 32)
             {

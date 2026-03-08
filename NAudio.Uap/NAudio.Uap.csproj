@@ -1,4 +1,4 @@
-﻿<Project Sdk="MSBuild.Sdk.Extras">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <!-- https://docs.microsoft.com/en-us/windows/uwp/updates-and-versions/choose-a-uwp-version -->

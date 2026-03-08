@@ -22,7 +22,7 @@ namespace NAudio
 
         private static string ErrorMessage(MmResult result, string function)
         {
-            return $"{result} calling {function}";
+            return $"Windows MMAPI returned \"{result}\" after call to \"{function}\"";
         }
 
         /// <summary>

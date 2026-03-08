@@ -12,7 +12,7 @@
     <RepositoryUrl>https://github.com/naudio/NAudio</RepositoryUrl>
     <Copyright>© Mark Heath 2023</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Version>2.2.1</Version>
+    <Version>2.2.1-SA</Version>
     <PackageIcon>naudio-icon.png</PackageIcon>
   </PropertyGroup>
 

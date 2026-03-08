@@ -1,7 +1,7 @@
 ﻿<Project Sdk="MSBuild.Sdk.Extras">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;uap10.0.26100</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net9.0-windows10.0.26100</TargetFrameworks>
     <Version>2.2.1</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -27,13 +27,6 @@
     <ProjectReference Include="..\NAudio.Core\NAudio.Core.csproj" />
   </ItemGroup>
   
-
-
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'uap10.0.18362' ">
-    <DefineConstants>UAP;NETFX_CORE</DefineConstants>
-  </PropertyGroup>
-
-
   <ItemGroup>
     <None Include="..\naudio-icon.png">
       <Pack>True</Pack>

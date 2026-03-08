@@ -20,7 +20,16 @@
   <ItemGroup>
     <ProjectReference Include="..\NAudio.WinMM\NAudio.WinMM.csproj" />
   </ItemGroup>
-  
+
+  <!-- Fix for MSB3822/MSB3823: non-string resources on net472 with newer SDKs -->
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net472'">
+    <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
+    <PackageReference Include="System.Resources.Extensions" Version="8.0.0" />
+  </ItemGroup>
+
   <ItemGroup>
     <Compile Update="Gui\Fader.Designer.cs">
       <DesignTime>True</DesignTime>

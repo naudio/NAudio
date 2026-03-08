@@ -1,12 +1,13 @@
-﻿using System;
-using Windows.Storage.Streams;
+﻿using Microsoft.UI.Xaml.Controls;
 using NAudio.CoreAudioApi;
+using NAudio.MediaFoundation;
 using NAudio.Wave;
+using System;
+using System.IO;
 using Windows.Storage;
 using Windows.Storage.Pickers;
-using Windows.UI.Xaml.Controls;
-using System.IO;
-using NAudio.MediaFoundation;
+using Windows.Storage.Streams;
+using WinRT.Interop;
 
 namespace NAudioUniversalDemo
 {
@@ -139,6 +140,8 @@ namespace NAudioUniversalDemo
             reader = null; // will be disposed by player
 
             var picker = new FileOpenPicker();
+            var hwnd = WindowNative.GetWindowHandle(App.CurrentWindow);
+            InitializeWithWindow.Initialize(picker, hwnd);
             picker.SuggestedStartLocation = PickerLocationId.MusicLibrary;
             picker.FileTypeFilter.Add("*");
             var file = await picker.PickSingleFileAsync();
@@ -156,7 +159,7 @@ namespace NAudioUniversalDemo
         public DelegateCommand RecordCommand { get; }
         public DelegateCommand StopRecordingCommand { get; }
 
-        public MediaElement MediaElement { get; set; }
+        public MediaPlayerElement MediaElement { get; set; }
     }
 
 

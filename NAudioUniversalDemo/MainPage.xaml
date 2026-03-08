@@ -23,7 +23,7 @@
                 <Button Content="Stop" Command="{Binding StopRecordingCommand}" Margin="16,0,0,0"/>
             </StackPanel>
             <!-- for experimental media element out -->
-            <MediaElement Name="me" Margin="51,31,-51,-31"></MediaElement>
+            <MediaPlayerElement Name="me" Margin="51,31,-51,-31"></MediaPlayerElement>
         </StackPanel>
     </Grid>
 </Page>

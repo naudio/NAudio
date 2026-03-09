@@ -58,13 +58,17 @@ myRendererSettings.TopHeight = 32;
 myRendererSettings.BottomHeight = 32;
 ```
 
-Now we just need to create our `WaveFormRenderer` and give it a path to the file we want to render, and pass in the peak provider we've chosen and the renderer settings:
+Now we just need to create our `WaveFormRenderer` and create a instance of `AudioFileReader` for the file we want to render, and pass in the peak provider we've chosen and the renderer settings:
 
 ```C#
 var renderer = new WaveFormRenderer();
-var audioFilePath = "myfile.mp3";
-var image = renderer.Render(audioFilePath, myPeakProvider, myRendererSettings);
+var audioFileReader = new AudioFileReader("myfile.mp3");
+var image = renderer.Render(audioFileReader, myPeakProvider, myRendererSettings);
 ```
+
+Note: `AudioFileReader` is able to use one of the following audio filetypes `.mp3`, `.wav`, `aiff` and `aif`. If the audio filetype doesn't match on one of the listed befor, `AudioFileReader` will use the class `MediaFoundationReader` which mostly will end in a exception of `WaveFormRenderer` when try to render the wave.
+Its recommended to convert the audio filetype to one of the listed types befor first.
+
 
 With that image we could render it to a WinForms picturebox:
 ```c#

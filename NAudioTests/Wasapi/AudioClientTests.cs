@@ -5,6 +5,7 @@ using NAudio.CoreAudioApi;
 using NAudio.Wave;
 using System.Diagnostics;
 using NAudioTests.Utils;
+using System.Runtime.InteropServices;
 
 namespace NAudioTests.Wasapi
 {
@@ -38,12 +39,19 @@ namespace NAudioTests.Wasapi
             {
                 WaveFormat waveFormat = new WaveFormat(48000, 16, 2); //audioClient.MixFormat;
                 long refTimesPerSecond = 10000000;
-                audioClient.Initialize(AudioClientShareMode.Exclusive,
-                    AudioClientStreamFlags.None,
-                    refTimesPerSecond / 10,
-                    0,
-                    waveFormat,
-                    Guid.Empty);
+                try 
+                    {
+                    audioClient.Initialize(AudioClientShareMode.Exclusive,
+                        AudioClientStreamFlags.None,
+                        refTimesPerSecond / 10,
+                        0,
+                        waveFormat,
+                        Guid.Empty);
+                }
+                catch (COMException ex) when (ex.ErrorCode == unchecked((int)0x8889000A)) // AUDCLNT_E_DEVICE_IN_USE
+                {
+                    Assert.Ignore("Can't open exclusive mode at the moment as device is in use");
+                }
             }
         }
 

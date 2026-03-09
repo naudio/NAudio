@@ -205,8 +205,14 @@ namespace NAudioTests.Dmo
         public void CanCreateDmoI3DL2Reverb()
         {
             var guid = new Guid("EF985E71-D5C7-42D4-BA4D-2D073E2E96F4");
-            var targetDescriptor = DmoEnumerator.GetAudioEffectNames().First(descriptor =>
+            var targetDescriptor = DmoEnumerator.GetAudioEffectNames().FirstOrDefault(descriptor =>
                 Equals(descriptor.Clsid, guid));
+
+            if (targetDescriptor == null)
+            {
+                Assert.Ignore($"This machine does not have DmoI3DL2Reverb ({guid}) available");
+                return;
+            }
 
             using (var dmoGargle = new DmoI3DL2Reverb())
             {

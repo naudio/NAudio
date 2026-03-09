@@ -79,7 +79,7 @@ To open the device you want, simply pass the device in to the appropriate WASAPI
 
 ```c#
 var outputDevice = new WasapiOut(mmDevice, ...);
-var recordingDevice = new WasapiIn(captureDevice, ...);
+var recordingDevice = new WasapiCapture(captureDevice, ...);
 var loopbackCapture = new WasapiLoopbackCapture(loopbackDevice);
 ```
 

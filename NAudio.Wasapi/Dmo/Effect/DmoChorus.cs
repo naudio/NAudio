@@ -33,7 +33,7 @@ namespace NAudio.Dmo.Effect
     /// </summary>
     public class DmoChorus : IDmoEffector<DmoChorus.Params>
     {
-        private static readonly Guid ID_Chorus = new Guid("EFE6629C-81F7-4281-BD91-C9D604A95AF6");
+        private static readonly Guid Id_Chorus = new Guid("EFE6629C-81F7-4281-BD91-C9D604A95AF6");
 
         /// <summary>
         /// DMO Chorus Params
@@ -288,7 +288,7 @@ namespace NAudio.Dmo.Effect
         public DmoChorus()
         {
             var targetDescriptor = DmoEnumerator.GetAudioEffectNames().First(descriptor =>
-                Equals(descriptor.Clsid, ID_Chorus));
+                Equals(descriptor.Clsid, Id_Chorus));
 
             if (targetDescriptor != null)
             {

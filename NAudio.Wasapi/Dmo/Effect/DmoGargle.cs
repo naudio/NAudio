@@ -28,6 +28,8 @@ namespace NAudio.Dmo.Effect
     /// </summary>
     public class DmoGargle : IDmoEffector<DmoGargle.Params>
     {
+        private static readonly Guid Id_Gargle = new Guid("DAFD8210-5711-4B91-9FE3-F75B7AE279BF");
+
         /// <summary>
         /// DMO Gargle Params
         /// </summary>
@@ -109,42 +111,36 @@ namespace NAudio.Dmo.Effect
             }
         }
 
-        private readonly MediaObject mediaObject;
-        private readonly MediaObjectInPlace mediaObjectInPlace;
-        private readonly Params effectParams;
-
         /// <summary>
         /// Media Object
         /// </summary>
-        public MediaObject MediaObject => mediaObject;
+        public MediaObject MediaObject { get; }
 
         /// <summary>
         /// Media Object InPlace
         /// </summary>
-        public MediaObjectInPlace MediaObjectInPlace => mediaObjectInPlace;
+        public MediaObjectInPlace MediaObjectInPlace { get; }
 
         /// <summary>
         /// Effect Parameter
         /// </summary>
-        public Params EffectParams => effectParams;
+        public Params EffectParams { get; }
 
         /// <summary>
         /// Create new DMO Gargle
         /// </summary>
         public DmoGargle()
         {
-            var guidGargle = new Guid("DAFD8210-5711-4B91-9FE3-F75B7AE279BF");
-
             var targetDescriptor = DmoEnumerator.GetAudioEffectNames().First(descriptor =>
-                Equals(descriptor.Clsid, guidGargle));
+                Equals(descriptor.Clsid, Id_Gargle));
 
             if (targetDescriptor != null)
             {
                 var mediaComObject = Activator.CreateInstance(Type.GetTypeFromCLSID(targetDescriptor.Clsid));
 
-                mediaObject = new MediaObject((IMediaObject) mediaComObject);
-                mediaObjectInPlace = new MediaObjectInPlace((IMediaObjectInPlace) mediaComObject);
-                effectParams = new Params((IDirectSoundFXGargle) mediaComObject);
+                MediaObject = new MediaObject((IMediaObject) mediaComObject);
+                MediaObjectInPlace = new MediaObjectInPlace((IMediaObjectInPlace) mediaComObject);
+                EffectParams = new Params((IDirectSoundFXGargle) mediaComObject);
             }
         }
 
@@ -153,8 +149,8 @@ namespace NAudio.Dmo.Effect
         /// </summary>
         public void Dispose()
         {
-            mediaObjectInPlace?.Dispose();
-            mediaObject?.Dispose();
+            MediaObjectInPlace?.Dispose();
+            MediaObject?.Dispose();
         }
     }
 }

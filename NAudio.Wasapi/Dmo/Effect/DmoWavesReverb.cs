@@ -30,6 +30,8 @@ namespace NAudio.Dmo.Effect
     /// </summary>
     public class DmoWavesReverb : IDmoEffector<DmoWavesReverb.Params>
     {
+        private static readonly Guid Id_WavesReverb = new Guid("87FC0268-9A55-4360-95AA-004A1D9DE26C");
+
         /// <summary>
         /// DMO Reverb Params
         /// </summary>
@@ -178,42 +180,36 @@ namespace NAudio.Dmo.Effect
             }
         }
 
-        private readonly MediaObject mediaObject;
-        private readonly MediaObjectInPlace mediaObjectInPlace;
-        private readonly Params effectParams;
-
         /// <summary>
         /// Media Object
         /// </summary>
-        public MediaObject MediaObject => mediaObject;
+        public MediaObject MediaObject { get; }
 
         /// <summary>
         /// Media Object InPlace
         /// </summary>
-        public MediaObjectInPlace MediaObjectInPlace => mediaObjectInPlace;
+        public MediaObjectInPlace MediaObjectInPlace { get; }
 
         /// <summary>
         /// Effect Parameter
         /// </summary>
-        public Params EffectParams => effectParams;
+        public Params EffectParams { get; }
 
         /// <summary>
         /// Create new DMO WavesReverb
         /// </summary>
         public DmoWavesReverb()
         {
-            var guidWavesReverb = new Guid("87FC0268-9A55-4360-95AA-004A1D9DE26C");
-
             var targetDescriptor = DmoEnumerator.GetAudioEffectNames().First(descriptor =>
-                Equals(descriptor.Clsid, guidWavesReverb));
+                Equals(descriptor.Clsid, Id_WavesReverb));
 
             if (targetDescriptor != null)
             {
                 var mediaComObject = Activator.CreateInstance(Type.GetTypeFromCLSID(targetDescriptor.Clsid));
 
-                mediaObject = new MediaObject((IMediaObject) mediaComObject);
-                mediaObjectInPlace = new MediaObjectInPlace((IMediaObjectInPlace) mediaComObject);
-                effectParams = new Params((IDirectSoundFXWavesReverb) mediaComObject);
+                MediaObject = new MediaObject((IMediaObject) mediaComObject);
+                MediaObjectInPlace = new MediaObjectInPlace((IMediaObjectInPlace) mediaComObject);
+                EffectParams = new Params((IDirectSoundFXWavesReverb) mediaComObject);
             }
         }
 
@@ -222,8 +218,8 @@ namespace NAudio.Dmo.Effect
         /// </summary>
         public void Dispose()
         {
-            mediaObjectInPlace?.Dispose();
-            mediaObject?.Dispose();
+            MediaObjectInPlace?.Dispose();
+            MediaObject?.Dispose();
         }
     }
 }

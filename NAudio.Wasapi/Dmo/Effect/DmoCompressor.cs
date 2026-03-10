@@ -32,6 +32,8 @@ namespace NAudio.Dmo.Effect
     /// </summary>
     public class DmoCompressor : IDmoEffector<DmoCompressor.Params>
     {
+        private static readonly Guid Id_Compressor = new Guid("EF011F79-4000-406D-87AF-BFFB3FC39D57");
+
         /// <summary>
         /// DMO Compressor Params
         /// </summary>
@@ -242,42 +244,36 @@ namespace NAudio.Dmo.Effect
             }
         }
 
-        private readonly MediaObject mediaObject;
-        private readonly MediaObjectInPlace mediaObjectInPlace;
-        private readonly Params effectParams;
-
         /// <summary>
         /// Media Object
         /// </summary>
-        public MediaObject MediaObject => mediaObject;
+        public MediaObject MediaObject { get; }
 
         /// <summary>
         /// Media Object InPlace
         /// </summary>
-        public MediaObjectInPlace MediaObjectInPlace => mediaObjectInPlace;
+        public MediaObjectInPlace MediaObjectInPlace { get; }
 
         /// <summary>
         /// Effect Parameter
         /// </summary>
-        public Params EffectParams => effectParams;
+        public Params EffectParams { get; }
 
         /// <summary>
         /// Create new DMO Compressor
         /// </summary>
         public DmoCompressor()
         {
-            var guidChorus = new Guid("EF011F79-4000-406D-87AF-BFFB3FC39D57");
-
             var targetDescriptor = DmoEnumerator.GetAudioEffectNames().First(descriptor =>
-                Equals(descriptor.Clsid, guidChorus));
+                Equals(descriptor.Clsid, Id_Compressor));
 
             if (targetDescriptor != null)
             {
                 var mediaComObject = Activator.CreateInstance(Type.GetTypeFromCLSID(targetDescriptor.Clsid));
 
-                mediaObject = new MediaObject((IMediaObject)mediaComObject);
-                mediaObjectInPlace = new MediaObjectInPlace((IMediaObjectInPlace)mediaComObject);
-                effectParams = new Params((IDirectSoundFXCompressor)mediaComObject);
+                MediaObject = new MediaObject((IMediaObject)mediaComObject);
+                MediaObjectInPlace = new MediaObjectInPlace((IMediaObjectInPlace)mediaComObject);
+                EffectParams = new Params((IDirectSoundFXCompressor)mediaComObject);
             }
         }
 
@@ -286,8 +282,8 @@ namespace NAudio.Dmo.Effect
         /// </summary>
         public void Dispose()
         {
-            mediaObjectInPlace?.Dispose();
-            mediaObject?.Dispose();
+            MediaObjectInPlace?.Dispose();
+            MediaObject?.Dispose();
         }
     }
 }

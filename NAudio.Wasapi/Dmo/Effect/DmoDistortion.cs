@@ -31,6 +31,8 @@ namespace NAudio.Dmo.Effect
     /// </summary>
     public class DmoDistortion : IDmoEffector<DmoDistortion.Params>
     {
+        private static readonly Guid Id_Distortion = new Guid("EF114C90-CD1D-484E-96E5-09CFAF912A21");
+
         /// <summary>
         /// DMO Distortion Params
         /// </summary>
@@ -210,42 +212,36 @@ namespace NAudio.Dmo.Effect
             }
         }
 
-        private readonly MediaObject mediaObject;
-        private readonly MediaObjectInPlace mediaObjectInPlace;
-        private readonly Params effectParams;
-
         /// <summary>
         /// Media Object
         /// </summary>
-        public MediaObject MediaObject => mediaObject;
+        public MediaObject MediaObject { get; }
 
         /// <summary>
         /// Media Object InPlace
         /// </summary>
-        public MediaObjectInPlace MediaObjectInPlace => mediaObjectInPlace;
+        public MediaObjectInPlace MediaObjectInPlace { get; }
 
         /// <summary>
         /// Effect Parameter
         /// </summary>
-        public Params EffectParams => effectParams;
+        public Params EffectParams { get; }
 
         /// <summary>
         /// Create new DMO Distortion
         /// </summary>
         public DmoDistortion()
         {
-            var guidDistortion = new Guid("EF114C90-CD1D-484E-96E5-09CFAF912A21");
-
             var targetDescriptor = DmoEnumerator.GetAudioEffectNames().First(descriptor =>
-                Equals(descriptor.Clsid, guidDistortion));
+                Equals(descriptor.Clsid, Id_Distortion));
 
             if (targetDescriptor != null)
             {
                 var mediaComObject = Activator.CreateInstance(Type.GetTypeFromCLSID(targetDescriptor.Clsid));
 
-                mediaObject = new MediaObject((IMediaObject)mediaComObject);
-                mediaObjectInPlace = new MediaObjectInPlace((IMediaObjectInPlace)mediaComObject);
-                effectParams = new Params((IDirectSoundFXDistortion)mediaComObject);
+                MediaObject = new MediaObject((IMediaObject)mediaComObject);
+                MediaObjectInPlace = new MediaObjectInPlace((IMediaObjectInPlace)mediaComObject);
+                EffectParams = new Params((IDirectSoundFXDistortion)mediaComObject);
             }
         }
 
@@ -254,8 +250,8 @@ namespace NAudio.Dmo.Effect
         /// </summary>
         public void Dispose()
         {
-            mediaObjectInPlace?.Dispose();
-            mediaObject?.Dispose();
+            MediaObjectInPlace?.Dispose();
+            MediaObject?.Dispose();
         }
     }
 }

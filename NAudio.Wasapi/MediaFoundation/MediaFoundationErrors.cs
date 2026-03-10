@@ -316,7 +316,7 @@ namespace NAudio.MediaFoundation
         ///
         /// This callback and state had already been passed in to this event generator earlier.%0
         ///
-        public const int MF_S_MULTIPLE_BEGIN              = unchecked((int) 0x000D36D8);
+        public const int MF_S_MULTIPLE_BEGIN              = unchecked(0x000D36D8);
 
         ///
         /// MessageId: MF_E_MULTIPLE_BEGIN
@@ -640,7 +640,7 @@ namespace NAudio.MediaFoundation
         ///
         /// The activate could not be created in the remote process for some reason it was replaced with empty one.%0
         ///
-        public const int MF_S_ACTIVATE_REPLACED           = unchecked((int) 0x000D36FD);
+        public const int MF_S_ACTIVATE_REPLACED           = unchecked(0x000D36FD);
 
         ///
         /// MessageId: MF_E_FORMAT_CHANGE_NOT_SUPPORTED
@@ -715,7 +715,7 @@ namespace NAudio.MediaFoundation
         ///
         /// Parsing is still in progress and is not yet complete.%0
         ///
-        public const int MF_S_ASF_PARSEINPROGRESS         = unchecked((int) 0x400D3A98);
+        public const int MF_S_ASF_PARSEINPROGRESS         = unchecked(0x400D3A98);
         #endregion
 
         #region MEDIAFOUNDATION ASF Parsing Error Events
@@ -1093,7 +1093,7 @@ namespace NAudio.MediaFoundation
         ///
         /// The proxy setting is manual.%0
         ///
-        public const int MF_I_MANUAL_PROXY                = unchecked((int) 0x400D4272);
+        public const int MF_I_MANUAL_PROXY                = unchecked(0x400D4272);
 
         ///duplicate removed
         ///MessageId=17011 Severity=Informational Facility=MEDIAFOUNDATION SymbolicName=MF_E_INVALID_REQUEST
@@ -1581,7 +1581,7 @@ namespace NAudio.MediaFoundation
         ///
         /// The sink has not been finalized before shut down. This may cause sink generate a corrupted content.%0
         ///
-        public const int MF_S_SINK_NOT_FINALIZED          = unchecked((int) 0x000D4A42);
+        public const int MF_S_SINK_NOT_FINALIZED          = unchecked(0x000D4A42);
 
         ///
         /// MessageId: MF_E_METADATA_TOO_LONG
@@ -1832,7 +1832,7 @@ namespace NAudio.MediaFoundation
         ///
         /// The context was canceled.%0\n.
         ///
-        public const int MF_S_SEQUENCER_CONTEXT_CANCELED  = unchecked((int) 0x000D61AD);
+        public const int MF_S_SEQUENCER_CONTEXT_CANCELED  = unchecked(0x000D61AD);
 
         ///
         /// MessageId: MF_E_NO_SOURCE_IN_CACHE
@@ -1850,7 +1850,7 @@ namespace NAudio.MediaFoundation
         ///
         /// Cannot update topology flags.%0\n.
         ///
-        public const int MF_S_SEQUENCER_SEGMENT_AT_END_OF_STREAM = unchecked((int) 0x000D61AF);
+        public const int MF_S_SEQUENCER_SEGMENT_AT_END_OF_STREAM = unchecked(0x000D61AF);
         #endregion
         #region Transform errors
 
@@ -2041,7 +2041,7 @@ namespace NAudio.MediaFoundation
         ///
         /// The caller should not propagate this event to downstream components.%0
         ///
-        public const int MF_S_TRANSFORM_DO_NOT_PROPAGATE_EVENT = unchecked((int) 0x000D6D75);
+        public const int MF_S_TRANSFORM_DO_NOT_PROPAGATE_EVENT = unchecked(0x000D6D75);
 
         ///
         /// MessageId: MF_E_UNSUPPORTED_D3D_TYPE
@@ -2152,7 +2152,7 @@ namespace NAudio.MediaFoundation
         ///
         /// Protection for stream is not required.%0
         ///
-        public const int MF_S_PROTECTION_NOT_REQUIRED     = unchecked((int) 0x000D7150);
+        public const int MF_S_PROTECTION_NOT_REQUIRED     = unchecked(0x000D7150);
 
         ///
         /// MessageId: MF_E_COMPONENT_REVOKED
@@ -2350,7 +2350,7 @@ namespace NAudio.MediaFoundation
         ///
         /// Protection for this stream is not guaranteed to be enforced until the MEPolicySet event is fired.%0
         ///
-        public const int MF_S_WAIT_FOR_POLICY_SET         = unchecked((int) 0x000D7168);
+        public const int MF_S_WAIT_FOR_POLICY_SET         = unchecked(0x000D7168);
 
         ///
         /// MessageId: MF_S_VIDEO_DISABLED_WITH_UNKNOWN_SOFTWARE_OUTPUT
@@ -2359,7 +2359,7 @@ namespace NAudio.MediaFoundation
         ///
         /// This video stream is disabled because it is being sent to an unknown software output.%0
         ///
-        public const int MF_S_VIDEO_DISABLED_WITH_UNKNOWN_SOFTWARE_OUTPUT = unchecked((int) 0x000D7169);
+        public const int MF_S_VIDEO_DISABLED_WITH_UNKNOWN_SOFTWARE_OUTPUT = unchecked(0x000D7169);
 
         ///
         /// MessageId: MF_E_GRL_INVALID_FORMAT
@@ -2440,7 +2440,7 @@ namespace NAudio.MediaFoundation
         ///
         /// The Protected Environment is trusted.%0
         ///
-        public const int MF_S_PE_TRUSTED                  = unchecked((int) 0x000D7173);
+        public const int MF_S_PE_TRUSTED                  = unchecked(0x000D7173);
 
         ///
         /// MessageId: MF_E_PE_UNTRUSTED
@@ -2623,7 +2623,7 @@ namespace NAudio.MediaFoundation
         ///
         /// Timer::SetTimer returns this success code if called happened while timer is stopped. Timer is not going to be dispatched until clock is running%0
         ///
-        public const int MF_S_CLOCK_STOPPED               = unchecked((int) 0x000D9C44);
+        public const int MF_S_CLOCK_STOPPED               = unchecked(0x000D9C44);
         #endregion
         #region MF Quality Management errors
 

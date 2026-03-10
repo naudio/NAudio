@@ -44,11 +44,11 @@ namespace NAudio.CoreAudioApi
 
         #region Guids
         // ReSharper disable InconsistentNaming
-        private static Guid IID_IAudioMeterInformation = new Guid("C02216F6-8C67-4B5B-9D00-D008E73E0064");
-        private static Guid IID_IAudioEndpointVolume = new Guid("5CDF2C82-841E-4546-9722-0CF74078229A");
-        private static Guid IID_IAudioClient = new Guid("1CB9AD4C-DBFA-4c32-B178-C2F568A703B2");
-        private static Guid IDD_IAudioSessionManager = new Guid("BFA971F1-4D5E-40BB-935E-967039BFBEE4");
-        private static Guid IDD_IDeviceTopology = new Guid("2A07407E-6497-4A18-9787-32F79BD0D98F");
+        private static readonly Guid IID_IAudioMeterInformation = new Guid("C02216F6-8C67-4B5B-9D00-D008E73E0064");
+        private static readonly Guid IID_IAudioEndpointVolume = new Guid("5CDF2C82-841E-4546-9722-0CF74078229A");
+        private static readonly Guid IID_IAudioClient = new Guid("1CB9AD4C-DBFA-4c32-B178-C2F568A703B2");
+        private static readonly Guid IDD_IAudioSessionManager = new Guid("BFA971F1-4D5E-40BB-935E-967039BFBEE4");
+        private static readonly Guid IDD_IDeviceTopology = new Guid("2A07407E-6497-4A18-9787-32F79BD0D98F");
         // ReSharper restore InconsistentNaming
         #endregion
 
@@ -66,31 +66,31 @@ namespace NAudio.CoreAudioApi
 
         private AudioClient GetAudioClient()
         {
-            Marshal.ThrowExceptionForHR(deviceInterface.Activate(ref IID_IAudioClient, ClsCtx.ALL, IntPtr.Zero, out var result));
+            Marshal.ThrowExceptionForHR(deviceInterface.Activate(IID_IAudioClient, ClsCtx.ALL, IntPtr.Zero, out var result));
             return new AudioClient(result as IAudioClient);
         }
 
         private void GetAudioMeterInformation()
         {
-            Marshal.ThrowExceptionForHR(deviceInterface.Activate(ref IID_IAudioMeterInformation, ClsCtx.ALL, IntPtr.Zero, out var result));
+            Marshal.ThrowExceptionForHR(deviceInterface.Activate(IID_IAudioMeterInformation, ClsCtx.ALL, IntPtr.Zero, out var result));
             audioMeterInformation = new AudioMeterInformation(result as IAudioMeterInformation);
         }
 
         private void GetAudioEndpointVolume()
         {
-            Marshal.ThrowExceptionForHR(deviceInterface.Activate(ref IID_IAudioEndpointVolume, ClsCtx.ALL, IntPtr.Zero, out var result));
+            Marshal.ThrowExceptionForHR(deviceInterface.Activate(IID_IAudioEndpointVolume, ClsCtx.ALL, IntPtr.Zero, out var result));
             audioEndpointVolume = new AudioEndpointVolume(result as IAudioEndpointVolume);
         }
 
         private void GetAudioSessionManager()
         {
-            Marshal.ThrowExceptionForHR(deviceInterface.Activate(ref IDD_IAudioSessionManager, ClsCtx.ALL, IntPtr.Zero, out var result));
+            Marshal.ThrowExceptionForHR(deviceInterface.Activate(IDD_IAudioSessionManager, ClsCtx.ALL, IntPtr.Zero, out var result));
             audioSessionManager = new AudioSessionManager(result as IAudioSessionManager);
         }
 
         private void GetDeviceTopology()
         {
-            Marshal.ThrowExceptionForHR(deviceInterface.Activate(ref IDD_IDeviceTopology, ClsCtx.ALL, IntPtr.Zero, out var result));
+            Marshal.ThrowExceptionForHR(deviceInterface.Activate(IDD_IDeviceTopology, ClsCtx.ALL, IntPtr.Zero, out var result));
             deviceTopology = new DeviceTopology(result as IDeviceTopology);
         }
 

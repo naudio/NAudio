@@ -12,6 +12,11 @@ namespace NAudio.CoreAudioApi
     /// </summary>
     public class AudioClient : IDisposable
     {
+        private static readonly Guid ID_AudioStreamVolume = new Guid("93014887-242D-4068-8A15-CF5E93B90FE3");
+        private static readonly Guid ID_AudioClockClient = new Guid("CD63314F-3FBA-4a1b-812C-EF96358728E7");
+        private static readonly Guid ID_AudioRenderClient = new Guid("F294ACFC-3146-4483-A7BF-ADDCA7C260E2");
+        private static readonly Guid ID_AudioCaptureClient = new Guid("c8adbd64-e71e-48a0-a4de-185c395cd317");
+        private static readonly Guid IID_IAudioClient2 = new Guid("726778CD-F60A-4eda-82DE-E47610CD78AA");
         private IAudioClient audioClientInterface;
         private WaveFormat mixFormat;
         private AudioRenderClient audioRenderClient;
@@ -50,8 +55,7 @@ namespace NAudio.CoreAudioApi
                                AudioClientStreamFlags.EventCallback | AudioClientStreamFlags.NoPersist,
                                10000000, 0, wfx, IntPtr.Zero);*/
                 });
-            var IID_IAudioClient2 = new Guid("726778CD-F60A-4eda-82DE-E47610CD78AA");
-            NativeMethods.ActivateAudioInterfaceAsync(deviceInterfacePath, IID_IAudioClient2, IntPtr.Zero, icbh, out var activationOperation);
+            NativeMethods.ActivateAudioInterfaceAsync(deviceInterfacePath, IID_IAudioClient2, IntPtr.Zero, icbh, out _);
             var audioClient2 = await icbh;
             return new AudioClient((IAudioClient)audioClient2);
         }
@@ -186,8 +190,7 @@ namespace NAudio.CoreAudioApi
                 }
                 if (audioStreamVolume == null)
                 {
-                    var audioStreamVolumeGuid = new Guid("93014887-242D-4068-8A15-CF5E93B90FE3");
-                    Marshal.ThrowExceptionForHR(audioClientInterface.GetService(audioStreamVolumeGuid, out var audioStreamVolumeInterface));
+                    Marshal.ThrowExceptionForHR(audioClientInterface.GetService(ID_AudioStreamVolume, out var audioStreamVolumeInterface));
                     audioStreamVolume = new AudioStreamVolume((IAudioStreamVolume)audioStreamVolumeInterface);
                 }
                 return audioStreamVolume;
@@ -203,8 +206,7 @@ namespace NAudio.CoreAudioApi
             {
                 if (audioClockClient == null)
                 {
-                    var audioClockClientGuid = new Guid("CD63314F-3FBA-4a1b-812C-EF96358728E7");
-                    Marshal.ThrowExceptionForHR(audioClientInterface.GetService(audioClockClientGuid, out var audioClockClientInterface));
+                    Marshal.ThrowExceptionForHR(audioClientInterface.GetService(ID_AudioClockClient, out var audioClockClientInterface));
                     audioClockClient = new AudioClockClient((IAudioClock)audioClockClientInterface);
                 }
                 return audioClockClient;
@@ -220,8 +222,7 @@ namespace NAudio.CoreAudioApi
             {
                 if (audioRenderClient == null)
                 {
-                    var audioRenderClientGuid = new Guid("F294ACFC-3146-4483-A7BF-ADDCA7C260E2");
-                    Marshal.ThrowExceptionForHR(audioClientInterface.GetService(audioRenderClientGuid, out var audioRenderClientInterface));
+                    Marshal.ThrowExceptionForHR(audioClientInterface.GetService(ID_AudioRenderClient, out var audioRenderClientInterface));
                     audioRenderClient = new AudioRenderClient((IAudioRenderClient)audioRenderClientInterface);
                 }
                 return audioRenderClient;
@@ -237,8 +238,7 @@ namespace NAudio.CoreAudioApi
             {
                 if (audioCaptureClient == null)
                 {
-                    var audioCaptureClientGuid = new Guid("c8adbd64-e71e-48a0-a4de-185c395cd317");
-                    Marshal.ThrowExceptionForHR(audioClientInterface.GetService(audioCaptureClientGuid, out var audioCaptureClientInterface));
+                    Marshal.ThrowExceptionForHR(audioClientInterface.GetService(ID_AudioCaptureClient, out var audioCaptureClientInterface));
                     audioCaptureClient = new AudioCaptureClient((IAudioCaptureClient)audioCaptureClientInterface);
                 }
                 return audioCaptureClient;

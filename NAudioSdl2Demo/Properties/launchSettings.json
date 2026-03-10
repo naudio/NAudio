@@ -1,0 +1,16 @@
+{
+  "profiles": {
+    "NAudioSdl2Demo": {
+      "commandName": "Project"
+    },
+    "WSL2": {
+      "commandName": "Executable",
+      "executablePath": "wsl",
+      "commandLineArgs": "dotnet NAudioSdl2Demo.dll"
+    },
+    "WSL": {
+      "commandName": "WSL2",
+      "distributionName": ""
+    }
+  }
+}

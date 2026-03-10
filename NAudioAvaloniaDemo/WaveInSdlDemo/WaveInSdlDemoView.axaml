@@ -1,0 +1,87 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignHeight="462" d:DesignWidth="471"
+			 xmlns:local="clr-namespace:NAudioAvaloniaDemo.WaveInSdlDemo"
+             x:Class="NAudioAvaloniaDemo.WaveInSdlDemo.WaveInSdlDemoView">
+	<UserControl.Styles>
+		<Style Selector="TextBlock">
+			<Setter Property="Height" Value="16" />
+			<Setter Property="Margin" Value="10 5" />
+			<Setter Property="TextWrapping" Value="Wrap" />
+			<Setter Property="MinWidth" Value="100" />
+            <Setter Property="DockPanel.Dock" Value="Left" />
+        </Style>
+		<Style Selector="TextBox">
+            <Setter Property="Height" Value="16" />
+            <Setter Property="Margin" Value="10 5" />
+            <Setter Property="MinWidth" Value="150" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="DockPanel.Dock" Value="Right" />
+        </Style>
+		<Style Selector="ComboBox">
+			<Setter Property="Margin" Value="10 5" />
+			<Setter Property="Height" Value="16" />
+			<Setter Property="HorizontalAlignment" Value="Stretch" />
+			<Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="DockPanel.Dock" Value="Right" />
+        </Style>
+		<Style Selector="ProgressBar">
+			<Setter Property="Minimum" Value="0" />
+			<Setter Property="Maximum" Value="1" />
+			<Setter Property="Height" Value="10" />
+			<Setter Property="Margin" Value="10 5" />
+        </Style>
+        <Style Selector="StackPanel > StackPanel">
+            <Setter Property="Orientation" Value="Horizontal" />
+        </Style>
+		<Style Selector="Button">
+            <Setter Property="Margin" Value="10 5 0 5" />
+			<Setter Property="Width" Value="75" />
+        </Style>
+    </UserControl.Styles>
+    <Grid RowDefinitions="Auto, Auto, *">
+        <StackPanel>
+			<DockPanel>
+				<TextBlock Text="Capture Device" />
+				<ComboBox ItemsSource="{Binding WaveInSdlDevices}" 
+                          SelectedItem="{Binding SelectedDevice}" >
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding DeviceName}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+				</ComboBox>
+            </DockPanel>
+            <ProgressBar Value="{Binding Peak}" />
+
+			<StackPanel>
+				<TextBlock Text="Sample Rate" />
+				<TextBox Text="{Binding SampleRate}" />
+			</StackPanel>
+			<StackPanel>
+				<TextBlock Text="Bit Depth" />
+				<TextBox Text="{Binding BitDepth}" />
+			</StackPanel>
+			<StackPanel>
+				<TextBlock Text="Channel Count" />
+				<TextBox Text="{Binding ChannelCount}" />
+			</StackPanel>
+			<StackPanel>
+				<TextBlock Text="Sample Type" />
+				<ComboBox ItemsSource="{Binding SampleTypes}"
+                          SelectedItem="{Binding WaveFormatEncoding}" />
+			</StackPanel>
+        </StackPanel>
+		<StackPanel Grid.Row="1">
+            <StackPanel>
+                <Button Content="Record" Command="{Binding RecordCommand}" />
+                <Button Content="Stop" Command="{Binding StopCommand}" />
+            </StackPanel>
+		</StackPanel>
+		<Grid Grid.Row="2">
+			<local:RecordingsView DataContext="{Binding RecordingsViewModel}" Margin="5" />
+		</Grid>
+	</Grid>
+</UserControl>

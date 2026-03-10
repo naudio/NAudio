@@ -1,0 +1,27 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignHeight="300" d:DesignWidth="300"
+             x:Class="NAudioAvaloniaDemo.WaveInSdlDemo.RecordingsView">
+	<UserControl.Styles>
+		<Style Selector="ListBox">
+			<Setter Property="Margin" Value="6" />
+        </Style>
+        <Style Selector="Button">
+			<Setter Property="HorizontalAlignment" Value="Left" />
+			<Setter Property="VerticalAlignment" Value="Top" />
+            <Setter Property="Margin" Value="6" />
+            <Setter Property="Width" Value="100" />
+        </Style>
+    </UserControl.Styles>
+    <Grid ColumnDefinitions="*,Auto">
+        <ListBox ItemsSource="{Binding Recordings}" 
+                 SelectedItem="{Binding SelectedRecording}" />
+		<StackPanel Orientation="Vertical" Grid.Column="1">
+			<Button Content="Play" Command="{Binding PlayCommand}" />
+			<Button Content="Delete" Command="{Binding DeleteCommand}" />
+			<Button Content="Open Folder" Command="{Binding OpenFolderCommand}" />
+		</StackPanel>
+	</Grid>
+</UserControl>

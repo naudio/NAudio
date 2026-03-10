@@ -58,7 +58,7 @@ namespace NAudioTests.Wasapi
         [Test]
         public void CanGetAudioRenderClient()
         {
-            Assert.IsNotNull(InitializeClient(AudioClientShareMode.Shared).AudioRenderClient);
+            Assert.That(InitializeClient(AudioClientShareMode.Shared).AudioRenderClient, Is.Not.Null);
         }
 
 
@@ -93,7 +93,7 @@ namespace NAudioTests.Wasapi
         {
             AudioClient client = GetAudioClient();
             WaveFormat defaultFormat = client.MixFormat;
-            Assert.IsTrue(client.IsFormatSupported(AudioClientShareMode.Shared, defaultFormat), "Is Format Supported");
+            Assert.That(client.IsFormatSupported(AudioClientShareMode.Shared, defaultFormat), Is.True, "Is Format Supported");
         }
 
         /* strange as this may seem, WASAPI doesn't seem to like the default format in exclusive mode
@@ -226,7 +226,7 @@ namespace NAudioTests.Wasapi
             MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
             MMDevice defaultAudioEndpoint = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Console);
             AudioClient audioClient = defaultAudioEndpoint.AudioClient;
-            Assert.IsNotNull(audioClient);
+            Assert.That(audioClient, Is.Not.Null);
             return audioClient;
         }
     

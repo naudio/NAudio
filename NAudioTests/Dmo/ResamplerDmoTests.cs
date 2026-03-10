@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NUnit.Framework;
-using NAudio.Dmo;
+﻿using NAudio.Dmo;
 using NAudio.Wave;
-using System.Diagnostics;
 using NAudioTests.Utils;
+using NUnit.Framework;
+using System;
+using System.Diagnostics;
 
 namespace NAudioTests.Dmo
 {
@@ -30,7 +28,7 @@ namespace NAudioTests.Dmo
         public void CanExamineInputTypesOnResampler()
         {
             DmoResampler dmoResampler = new DmoResampler();
-            Assert.AreEqual(dmoResampler.MediaObject.InputStreamCount, 1);
+            Assert.That(dmoResampler.MediaObject.InputStreamCount, Is.EqualTo(1));
             foreach (DmoMediaType mediaType in dmoResampler.MediaObject.GetInputTypes(0))
             {
                 Debug.WriteLine(String.Format("{0}:{1}:{2}",
@@ -45,7 +43,7 @@ namespace NAudioTests.Dmo
         public void CanExamineOutputTypesOnResampler()
         {
             DmoResampler dmoResampler = new DmoResampler();
-            Assert.AreEqual(dmoResampler.MediaObject.OutputStreamCount, 1);
+            Assert.That(dmoResampler.MediaObject.OutputStreamCount, Is.EqualTo(1));
             foreach (DmoMediaType mediaType in dmoResampler.MediaObject.GetOutputTypes(0))
             {
                 Debug.WriteLine(String.Format("{0}:{1}:{2}",
@@ -60,7 +58,7 @@ namespace NAudioTests.Dmo
         public void ResamplerSupports16BitPCM41000Input()
         {
             WaveFormat waveFormat = new WaveFormat(44100, 16, 2);
-            Assert.IsTrue(IsResamplerInputFormatSupported(waveFormat));
+            Assert.That(IsResamplerInputFormatSupported(waveFormat), Is.True);
         }
 
         [Test]
@@ -68,7 +66,7 @@ namespace NAudioTests.Dmo
         public void ResamplerSupports16BitPCM8000Input()
         {
             WaveFormat waveFormat = new WaveFormat(8000, 16, 2);
-            Assert.IsTrue(IsResamplerInputFormatSupported(waveFormat));
+            Assert.That(IsResamplerInputFormatSupported(waveFormat), Is.True);
         }
 
         [Test]
@@ -76,7 +74,7 @@ namespace NAudioTests.Dmo
         public void ResamplerSupportsIEEE44100Input()
         {
             WaveFormat waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(44100, 2);
-            Assert.IsTrue(IsResamplerInputFormatSupported(waveFormat));
+            Assert.That(IsResamplerInputFormatSupported(waveFormat), Is.True);
         }
 
         [Test]
@@ -84,7 +82,7 @@ namespace NAudioTests.Dmo
         public void ResamplerSupportsIEEE8000Input()
         {
             WaveFormat waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(8000, 2);
-            Assert.IsTrue(IsResamplerInputFormatSupported(waveFormat));
+            Assert.That(IsResamplerInputFormatSupported(waveFormat), Is.True);
         }
 
         [Test]
@@ -93,7 +91,7 @@ namespace NAudioTests.Dmo
         {
             WaveFormat inputFormat = WaveFormat.CreateIeeeFloatWaveFormat(8000, 2);
             WaveFormat outputFormat = WaveFormat.CreateIeeeFloatWaveFormat(44100, 2);
-            Assert.IsTrue(IsResamplerConversionSupported(inputFormat, outputFormat));
+            Assert.That(IsResamplerConversionSupported(inputFormat, outputFormat), Is.True);
         }
 
         [Test]
@@ -102,7 +100,7 @@ namespace NAudioTests.Dmo
         {
             WaveFormat inputFormat = WaveFormat.CreateIeeeFloatWaveFormat(44100, 2);
             WaveFormat outputFormat = WaveFormat.CreateIeeeFloatWaveFormat(48000, 2);
-            Assert.IsTrue(IsResamplerConversionSupported(inputFormat, outputFormat));
+            Assert.That(IsResamplerConversionSupported(inputFormat, outputFormat), Is.True);
         }
 
         [Test]
@@ -111,7 +109,7 @@ namespace NAudioTests.Dmo
         {
             WaveFormat inputFormat = new WaveFormat(44100, 16, 2);
             WaveFormat outputFormat = WaveFormat.CreateIeeeFloatWaveFormat(48000, 2);
-            Assert.IsTrue(IsResamplerConversionSupported(inputFormat, outputFormat));
+            Assert.That(IsResamplerConversionSupported(inputFormat, outputFormat), Is.True);
         }
 
         [Test]
@@ -122,10 +120,10 @@ namespace NAudioTests.Dmo
             dmoResampler.MediaObject.SetInputWaveFormat(0, WaveFormat.CreateIeeeFloatWaveFormat(44100, 2));
             dmoResampler.MediaObject.SetOutputWaveFormat(0, WaveFormat.CreateIeeeFloatWaveFormat(48000, 2));
             MediaObjectSizeInfo inputSizeInfo = dmoResampler.MediaObject.GetInputSizeInfo(0);
-            Assert.IsNotNull(inputSizeInfo, "Input Size Info");
+            Assert.That(inputSizeInfo, Is.Not.Null, "Input Size Info");
             Debug.WriteLine(inputSizeInfo.ToString());
             MediaObjectSizeInfo outputSizeInfo = dmoResampler.MediaObject.GetOutputSizeInfo(0);
-            Assert.IsNotNull(outputSizeInfo, "Output Size Info");
+            Assert.That(outputSizeInfo, Is.Not.Null, "Output Size Info");
             Debug.WriteLine(outputSizeInfo.ToString());
         }
 

@@ -19,7 +19,7 @@ namespace NAudioTests.Mp3
             string testDataFolder = @"C:\Users\Mark\Downloads\NAudio";
             if (!Directory.Exists(testDataFolder))
             {
-                Assert.Ignore("{0} not found", testDataFolder);
+                Assert.Ignore($"{testDataFolder} not found");
             }
             foreach (string file in Directory.GetFiles(testDataFolder, "*.mp3"))
             {
@@ -51,11 +51,11 @@ namespace NAudioTests.Mp3
                     var lastPos = mp3FileReader.Position;
                     while ((mp3FileReader.ReadNextFrame()) != null)
                     {
-                        Assert.IsTrue(mp3FileReader.Position > lastPos);
+                        Assert.That(mp3FileReader.Position, Is.GreaterThan(lastPos));
                         lastPos = mp3FileReader.Position;
                     }
-                    Assert.AreEqual(mp3FileReader.Length, mp3FileReader.Position);
-                    Assert.IsTrue(mp3FileReader.Length > 0);
+                    Assert.That(mp3FileReader.Position, Is.EqualTo(mp3FileReader.Length));
+                    Assert.That(mp3FileReader.Length, Is.GreaterThan(0));
                 }
             }
             finally

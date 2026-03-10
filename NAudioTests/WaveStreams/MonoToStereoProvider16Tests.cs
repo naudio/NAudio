@@ -20,15 +20,15 @@ namespace NAudioTests.WaveStreams
             int samples = 1000;
             byte[] buffer = new byte[samples * 2];
             int read = stereo.Read(buffer, 0, buffer.Length);
-            Assert.AreEqual(buffer.Length, read, "bytes read");
+            Assert.That(read, Is.EqualTo(buffer.Length), "bytes read");
             WaveBuffer waveBuffer = new WaveBuffer(buffer);
             short expected = 0;
             for (int sample = 0; sample < samples; sample+=2)
             {
                 short sampleLeft = waveBuffer.ShortBuffer[sample];
                 short sampleRight = waveBuffer.ShortBuffer[sample+1];
-                Assert.AreEqual(expected++, sampleLeft, "sample left");
-                Assert.AreEqual(0, sampleRight, "sample right");
+                Assert.That(sampleLeft, Is.EqualTo(expected++), "sample left");
+                Assert.That(sampleRight, Is.EqualTo(0), "sample right");
             }
         }
     }

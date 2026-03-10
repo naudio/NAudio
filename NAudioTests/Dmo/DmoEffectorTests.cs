@@ -31,15 +31,15 @@ namespace NAudioTests.Dmo
                 if (targetDescriptor == null)
                 {
                     // is not support
-                    Assert.IsNull((object) dmoGargle.MediaObject);
-                    Assert.IsNull((object) dmoGargle.MediaObjectInPlace);
-                    Assert.IsNull((object) dmoGargle.EffectParams);
+                    Assert.That(dmoGargle.MediaObject, Is.Null);
+                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Null);
+                    Assert.That(dmoGargle.EffectParams, Is.Null);
                 }
                 else
                 {
-                    Assert.IsNotNull((object) dmoGargle.MediaObject);
-                    Assert.IsNotNull((object) dmoGargle.MediaObjectInPlace);
-                    Assert.IsNotNull((object) dmoGargle.EffectParams);
+                    Assert.That(dmoGargle.MediaObject, Is.Not.Null);
+                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Not.Null);
+                    Assert.That(dmoGargle.EffectParams, Is.Not.Null);
                 }
             }
         }
@@ -57,15 +57,15 @@ namespace NAudioTests.Dmo
                 if (targetDescriptor == null)
                 {
                     // is not support
-                    Assert.IsNull((object) dmoGargle.MediaObject);
-                    Assert.IsNull((object) dmoGargle.MediaObjectInPlace);
-                    Assert.IsNull((object) dmoGargle.EffectParams);
+                    Assert.That(dmoGargle.MediaObject, Is.Null);
+                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Null);
+                    Assert.That(dmoGargle.EffectParams, Is.Null);
                 }
                 else
                 {
-                    Assert.IsNotNull((object) dmoGargle.MediaObject);
-                    Assert.IsNotNull((object) dmoGargle.MediaObjectInPlace);
-                    Assert.IsNotNull((object) dmoGargle.EffectParams);
+                    Assert.That(dmoGargle.MediaObject, Is.Not.Null);
+                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Not.Null);
+                    Assert.That(dmoGargle.EffectParams, Is.Not.Null);
                 }
             }
         }
@@ -83,15 +83,15 @@ namespace NAudioTests.Dmo
                 if (targetDescriptor == null)
                 {
                     // is not support
-                    Assert.IsNull((object) dmoGargle.MediaObject);
-                    Assert.IsNull((object) dmoGargle.MediaObjectInPlace);
-                    Assert.IsNull((object) dmoGargle.EffectParams);
+                    Assert.That(dmoGargle.MediaObject, Is.Null);
+                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Null);
+                    Assert.That(dmoGargle.EffectParams, Is.Null);
                 }
                 else
                 {
-                    Assert.IsNotNull((object) dmoGargle.MediaObject);
-                    Assert.IsNotNull((object) dmoGargle.MediaObjectInPlace);
-                    Assert.IsNotNull((object) dmoGargle.EffectParams);
+                    Assert.That(dmoGargle.MediaObject, Is.Not.Null);
+                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Not.Null);
+                    Assert.That(dmoGargle.EffectParams, Is.Not.Null);
                 }
             }
         }
@@ -109,15 +109,15 @@ namespace NAudioTests.Dmo
                 if (targetDescriptor == null)
                 {
                     // is not support
-                    Assert.IsNull((object) dmoGargle.MediaObject);
-                    Assert.IsNull((object) dmoGargle.MediaObjectInPlace);
-                    Assert.IsNull((object) dmoGargle.EffectParams);
+                    Assert.That(dmoGargle.MediaObject, Is.Null);
+                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Null);
+                    Assert.That(dmoGargle.EffectParams, Is.Null);
                 }
                 else
                 {
-                    Assert.IsNotNull((object) dmoGargle.MediaObject);
-                    Assert.IsNotNull((object) dmoGargle.MediaObjectInPlace);
-                    Assert.IsNotNull((object) dmoGargle.EffectParams);
+                    Assert.That(dmoGargle.MediaObject, Is.Not.Null);
+                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Not.Null);
+                    Assert.That(dmoGargle.EffectParams, Is.Not.Null);
                 }
             }
         }
@@ -135,15 +135,15 @@ namespace NAudioTests.Dmo
                 if (targetDescriptor == null)
                 {
                     // is not support
-                    Assert.IsNull((object) dmoGargle.MediaObject);
-                    Assert.IsNull((object) dmoGargle.MediaObjectInPlace);
-                    Assert.IsNull((object) dmoGargle.EffectParams);
+                    Assert.That(dmoGargle.MediaObject, Is.Null);
+                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Null);
+                    Assert.That(dmoGargle.EffectParams, Is.Null);
                 }
                 else
                 {
-                    Assert.IsNotNull((object) dmoGargle.MediaObject);
-                    Assert.IsNotNull((object) dmoGargle.MediaObjectInPlace);
-                    Assert.IsNotNull((object) dmoGargle.EffectParams);
+                    Assert.That(dmoGargle.MediaObject, Is.Not.Null);
+                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Not.Null);
+                    Assert.That(dmoGargle.EffectParams, Is.Not.Null);
                 }
             }
         }
@@ -161,15 +161,15 @@ namespace NAudioTests.Dmo
                 if (targetDescriptor == null)
                 {
                     // is not support
-                    Assert.IsNull((object) dmoGargle.MediaObject);
-                    Assert.IsNull((object) dmoGargle.MediaObjectInPlace);
-                    Assert.IsNull((object) dmoGargle.EffectParams);
+                    Assert.That(dmoGargle.MediaObject, Is.Null);
+                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Null);
+                    Assert.That(dmoGargle.EffectParams, Is.Null);
                 }
                 else
                 {
-                    Assert.IsNotNull((object) dmoGargle.MediaObject);
-                    Assert.IsNotNull((object) dmoGargle.MediaObjectInPlace);
-                    Assert.IsNotNull((object) dmoGargle.EffectParams);
+                    Assert.That(dmoGargle.MediaObject, Is.Not.Null);
+                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Not.Null);
+                    Assert.That(dmoGargle.EffectParams, Is.Not.Null);
                 }
             }
         }
@@ -187,15 +187,15 @@ namespace NAudioTests.Dmo
                 if (targetDescriptor == null)
                 {
                     // is not support
-                    Assert.IsNull((object) dmoGargle.MediaObject);
-                    Assert.IsNull((object) dmoGargle.MediaObjectInPlace);
-                    Assert.IsNull((object) dmoGargle.EffectParams);
+                    Assert.That(dmoGargle.MediaObject, Is.Null);
+                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Null);
+                    Assert.That(dmoGargle.EffectParams, Is.Null);
                 }
                 else
                 {
-                    Assert.IsNotNull((object) dmoGargle.MediaObject);
-                    Assert.IsNotNull((object) dmoGargle.MediaObjectInPlace);
-                    Assert.IsNotNull((object) dmoGargle.EffectParams);
+                    Assert.That(dmoGargle.MediaObject, Is.Not.Null);
+                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Not.Null);
+                    Assert.That(dmoGargle.EffectParams, Is.Not.Null);
                 }
             }
         }
@@ -219,15 +219,15 @@ namespace NAudioTests.Dmo
                 if (targetDescriptor == null)
                 {
                     // is not support
-                    Assert.IsNull((object) dmoGargle.MediaObject);
-                    Assert.IsNull((object) dmoGargle.MediaObjectInPlace);
-                    Assert.IsNull((object) dmoGargle.EffectParams);
+                    Assert.That(dmoGargle.MediaObject, Is.Null);
+                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Null);
+                    Assert.That(dmoGargle.EffectParams, Is.Null);
                 }
                 else
                 {
-                    Assert.IsNotNull((object) dmoGargle.MediaObject);
-                    Assert.IsNotNull((object) dmoGargle.MediaObjectInPlace);
-                    Assert.IsNotNull((object) dmoGargle.EffectParams);
+                    Assert.That(dmoGargle.MediaObject, Is.Not.Null);
+                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Not.Null);
+                    Assert.That(dmoGargle.EffectParams, Is.Not.Null);
                 }
             }
         }
@@ -245,15 +245,15 @@ namespace NAudioTests.Dmo
                 if (targetDescriptor == null)
                 {
                     // is not support
-                    Assert.IsNull((object) dmoGargle.MediaObject);
-                    Assert.IsNull((object) dmoGargle.MediaObjectInPlace);
-                    Assert.IsNull((object) dmoGargle.EffectParams);
+                    Assert.That(dmoGargle.MediaObject, Is.Null);
+                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Null);
+                    Assert.That(dmoGargle.EffectParams, Is.Null);
                 }
                 else
                 {
-                    Assert.IsNotNull((object) dmoGargle.MediaObject);
-                    Assert.IsNotNull((object) dmoGargle.MediaObjectInPlace);
-                    Assert.IsNotNull((object) dmoGargle.EffectParams);
+                    Assert.That(dmoGargle.MediaObject, Is.Not.Null);
+                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Not.Null);
+                    Assert.That(dmoGargle.EffectParams, Is.Not.Null);
                 }
             }
         }
@@ -264,12 +264,11 @@ namespace NAudioTests.Dmo
         {
             try
             {
-                //using (var reader = new Mp3FileReader("C:\\Users\\Wind\\Source\\Repos\\source.mp3"))
                 using (WaveStream reader = new NullWaveStream(new WaveFormat(44100, 16, 1), 1000))
                 {
                     using (var effector = new DmoEffectWaveProvider<DmoFlanger, DmoFlanger.Params>(reader))
                     {
-                        Assert.IsNotNull((object) effector.EffectParams);
+                        Assert.That(effector.EffectParams, Is.Not.Null);
                     }
                 }
             }
@@ -283,7 +282,6 @@ namespace NAudioTests.Dmo
         [Category("IntegrationTest")]
         public void CanReadABlockFromDmoEffectWaveProvider()
         {
-            //using (var reader = new Mp3FileReader("C:\\Users\\Wind\\Source\\Repos\\source.mp3"))
             WaveFormat inputFormat = new WaveFormat(44100, 16, 1);
             using (WaveStream reader = new NullWaveStream(inputFormat, inputFormat.AverageBytesPerSecond * 20))
             {
@@ -293,7 +291,7 @@ namespace NAudioTests.Dmo
                     int bytesToRead = effector.WaveFormat.AverageBytesPerSecond / 100;
                     byte[] buffer = new byte[bytesToRead];
                     int count = effector.Read(buffer, 0, bytesToRead);
-                    Assert.That(count > 0, "Bytes Read");
+                    Assert.That(count, Is.GreaterThan(0), "Bytes Read");
                 }
             }
         }

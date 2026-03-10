@@ -12,7 +12,7 @@ namespace NAudioTests.WaveStreams
         {
             var bwp = new BufferedWaveProvider(new WaveFormat(44100, 16, 2));
             bwp.ClearBuffer();
-            Assert.AreEqual(0, bwp.BufferedBytes);
+            Assert.That(bwp.BufferedBytes, Is.EqualTo(0));
         }
         
         [Test]
@@ -22,12 +22,12 @@ namespace NAudioTests.WaveStreams
             var bwp = new BufferedWaveProvider(new WaveFormat(44100, 16, 2));
             var data = Enumerable.Range(1, bytesToBuffer).Select(n => (byte)(n % 256)).ToArray();
             bwp.AddSamples(data, 0, data.Length);
-            Assert.AreEqual(bytesToBuffer, bwp.BufferedBytes);
+            Assert.That(bwp.BufferedBytes, Is.EqualTo(bytesToBuffer));
             var readBuffer = new byte[bytesToBuffer];
             var bytesRead = bwp.Read(readBuffer, 0, bytesToBuffer);
-            Assert.AreEqual(bytesRead, bytesToBuffer);
-            Assert.AreEqual(readBuffer,data);
-            Assert.AreEqual(0, bwp.BufferedBytes);
+            Assert.That(bytesRead, Is.EqualTo(bytesToBuffer));
+            Assert.That(readBuffer, Is.EqualTo(data));
+            Assert.That(bwp.BufferedBytes, Is.EqualTo(0));
         }
 
         [Test]
@@ -37,7 +37,7 @@ namespace NAudioTests.WaveStreams
             bwp.ReadFully = false;
             var buffer = new byte[44100];
             var read = bwp.Read(buffer, 0, buffer.Length);
-            Assert.AreEqual(0, read);
+            Assert.That(read, Is.EqualTo(0));
         }
 
         [Test]
@@ -48,8 +48,8 @@ namespace NAudioTests.WaveStreams
             var buffer = new byte[44100];
             bwp.AddSamples(buffer, 0, 2000);
             var read = bwp.Read(buffer, 0, buffer.Length);
-            Assert.AreEqual(2000, read);
-            Assert.AreEqual(0, bwp.BufferedBytes);
+            Assert.That(read, Is.EqualTo(2000));
+            Assert.That(bwp.BufferedBytes, Is.EqualTo(0));
         }
 
         [Test]
@@ -59,8 +59,8 @@ namespace NAudioTests.WaveStreams
             var buffer = new byte[44100];
             bwp.AddSamples(buffer, 0, 2000);
             var read = bwp.Read(buffer, 0, buffer.Length);
-            Assert.AreEqual(buffer.Length, read);
-            Assert.AreEqual(0, bwp.BufferedBytes);
+            Assert.That(read, Is.EqualTo(buffer.Length));
+            Assert.That(bwp.BufferedBytes, Is.EqualTo(0));
         }
 
         [Test]
@@ -70,8 +70,8 @@ namespace NAudioTests.WaveStreams
             var buffer = new byte[44100];
             bwp.AddSamples(buffer, 0, 5000);
             var read = bwp.Read(buffer, 0, 2000);
-            Assert.AreEqual(2000, read);
-            Assert.AreEqual(3000, bwp.BufferedBytes);
+            Assert.That(read, Is.EqualTo(2000));
+            Assert.That(bwp.BufferedBytes, Is.EqualTo(3000));
         }
 
     }

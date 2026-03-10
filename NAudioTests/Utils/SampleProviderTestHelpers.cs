@@ -16,10 +16,10 @@ namespace NAudioTests.Utils
         {
             var buffer = new float[readSize];
             var read = sampleProvider.Read(buffer, 0, readSize);
-            Assert.AreEqual(expected.Length, read, "Number of samples read");
+            Assert.That(read, Is.EqualTo(expected.Length), "Number of samples read");
             for (int n = 0; n < read; n++)
             {
-                Assert.AreEqual(expected[n], buffer[n], $"Buffer at index {n}");
+                Assert.That(buffer[n], Is.EqualTo(expected[n]), $"Buffer at index {n}");
             }
         }
     }

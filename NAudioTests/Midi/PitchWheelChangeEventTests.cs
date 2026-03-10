@@ -18,7 +18,7 @@ namespace NAudioTests.Midi
             int pitch = 0x3FFF; // 0x2000 is the default
             PitchWheelChangeEvent p = new PitchWheelChangeEvent(0, channel, pitch);
 
-            Assert.AreEqual(0x007F7FE1, p.GetAsShortMessage());
+            Assert.That(p.GetAsShortMessage(), Is.EqualTo(0x007F7FE1));
         }
 
         [Test]
@@ -34,12 +34,12 @@ namespace NAudioTests.Midi
             long time = 0;
             p.Export(ref time, writer);
 
-            Assert.AreEqual(4, ms.Length);
+            Assert.That(ms.Length, Is.EqualTo(4));
             byte[] b = ms.GetBuffer();
-            Assert.AreEqual(0x0, b[0]); // event time
-            Assert.AreEqual(0xE1, b[1]);
-            Assert.AreEqual(0x7D, b[2]);
-            Assert.AreEqual(0x40, b[3]);
+            Assert.That(b[0], Is.EqualTo(0x0)); // event time
+            Assert.That(b[1], Is.EqualTo(0xE1));
+            Assert.That(b[2], Is.EqualTo(0x7D));
+            Assert.That(b[3], Is.EqualTo(0x40));
         }
     }
 }

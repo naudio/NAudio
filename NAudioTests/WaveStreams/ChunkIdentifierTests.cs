@@ -21,7 +21,7 @@ namespace NAudioTests.WaveStreams
         public void CanConvertChunkIndentiferToInt(string chunkIdentifier)
         {
             var x = WaveInterop.mmioStringToFOURCC(chunkIdentifier, 0);
-            Assert.AreEqual(x, ChunkIdentifier.ChunkIdentifierToInt32(chunkIdentifier));
+            Assert.That(ChunkIdentifier.ChunkIdentifierToInt32(chunkIdentifier), Is.EqualTo(x));
         }
 
 

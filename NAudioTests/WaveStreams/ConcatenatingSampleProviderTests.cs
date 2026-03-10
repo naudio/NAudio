@@ -40,10 +40,10 @@ namespace NAudioTests.WaveStreams
             var buffer = new float[2000];
             
             var read = concatenator.Read(buffer, 0, buffer.Length);
-            Assert.AreEqual(expectedLength, read, "read == expectedLength");
-            Assert.AreEqual(49, buffer[49]);
-            Assert.AreEqual(0, buffer[50]);
-            Assert.AreEqual(49, buffer[99]);
+            Assert.That(read, Is.EqualTo(expectedLength), "read == expectedLength");
+            Assert.That(buffer[49], Is.EqualTo(49));
+            Assert.That(buffer[50], Is.EqualTo(0));
+            Assert.That(buffer[99], Is.EqualTo(49));
         }
     }
 }

@@ -65,7 +65,7 @@ namespace NAudioTests.Wasapi
             OSUtils.RequireVista();
             MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
             MMDevice defaultAudioEndpoint = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Console);
-            Assert.IsNotNull(defaultAudioEndpoint);
+            Assert.That(defaultAudioEndpoint, Is.Not.Null);
         }
 
         [Test]
@@ -75,7 +75,7 @@ namespace NAudioTests.Wasapi
             MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
             MMDevice defaultAudioEndpoint = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Console);
             AudioClient audioClient = defaultAudioEndpoint.AudioClient;
-            Assert.IsNotNull(audioClient);
+            Assert.That(audioClient, Is.Not.Null);
         }
 
         [Test]

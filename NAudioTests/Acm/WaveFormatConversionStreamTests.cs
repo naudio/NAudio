@@ -152,7 +152,7 @@ namespace NAudioTests.Acm
                     totalRead += bytesRead;
                 } while (bytesRead > 0);
                 Debug.WriteLine(String.Format("Converted {0}", totalRead));
-                Assert.AreEqual(inputStream.Length, inputStream.Position);
+                Assert.That(inputStream.Position, Is.EqualTo(inputStream.Length));
             }
         }
     }

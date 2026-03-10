@@ -37,7 +37,7 @@ namespace NAudioTests.WaveStreams
             var osp = new OffsetSampleProvider(source) { DelayBy = TimeSpan.FromSeconds(1) };
 
             var expected = Enumerable.Range(0,100).Select(x => 0f)
-                            .Concat(Enumerable.Range(10,10).Select(x => (float)x)).ToArray();
+                            .Concat(Enumerable.Range(10, 10).Select(x => (float)x)).ToArray();
             osp.AssertReadsExpected(expected);
         }
 
@@ -58,8 +58,8 @@ namespace NAudioTests.WaveStreams
             var source = new TestSampleProvider(100, 2) { Position = 10 };
             var osp = new OffsetSampleProvider(source) { DelayBy = TimeSpan.FromSeconds(2.5) };
 
-            Assert.AreEqual(2500, (int) osp.DelayBy.TotalMilliseconds);
-            Assert.AreEqual(500, osp.DelayBySamples);
+            Assert.That((int) osp.DelayBy.TotalMilliseconds, Is.EqualTo(2500));
+            Assert.That(osp.DelayBySamples, Is.EqualTo(500));
         }
 
         [Test]
@@ -95,10 +95,10 @@ namespace NAudioTests.WaveStreams
                 var read = osp.Read(buffer, 0, buffer.Length);
                 totalRead += read;
                 if (read == 0) break;
-                Assert.IsTrue(totalRead <= 480000);
+                Assert.That(totalRead, Is.LessThanOrEqualTo(480000));
 
             }
-            Assert.AreEqual(480000, totalRead);
+            Assert.That(totalRead, Is.EqualTo(480000));
 
         }
 
@@ -133,7 +133,7 @@ namespace NAudioTests.WaveStreams
         {
             var source = new TestSampleProvider(32000, 1, 10);
             var osp = new OffsetSampleProvider(source);
-            Assert.AreEqual(source.WaveFormat, osp.WaveFormat);
+            Assert.That(osp.WaveFormat, Is.EqualTo(source.WaveFormat));
         }
 
 

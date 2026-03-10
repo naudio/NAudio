@@ -27,7 +27,7 @@ namespace NAudioTests.MediaFoundation
             {
                 total += bytesRead;
             }
-            Assert.IsTrue(total > 0);
+            Assert.That(total, Is.GreaterThan(0));
         }
     }
 

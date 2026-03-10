@@ -20,13 +20,13 @@ namespace NAudioTests.WaveStreams
             int samples = 1000;
             byte[] buffer = new byte[samples * 2];
             int read = mono.Read(buffer, 0, buffer.Length);
-            Assert.AreEqual(buffer.Length, read, "bytes read");
+            Assert.That(read, Is.EqualTo(buffer.Length), "bytes read");
             WaveBuffer waveBuffer = new WaveBuffer(buffer);
             short expected = 0;
             for (int sample = 0; sample < samples; sample++)
             {
                 short sampleVal = waveBuffer.ShortBuffer[sample];
-                Assert.AreEqual(expected--, sampleVal, "sample #" + sample.ToString());
+                Assert.That(sampleVal, Is.EqualTo(expected--), "sample #" + sample.ToString());
             }
         }
     }

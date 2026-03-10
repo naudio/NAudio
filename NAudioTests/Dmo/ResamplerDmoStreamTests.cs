@@ -26,9 +26,9 @@ namespace NAudioTests.Dmo
             {
                 using (ResamplerDmoStream resampler = new ResamplerDmoStream(reader, WaveFormat.CreateIeeeFloatWaveFormat(48000,2)))
                 {
-                    Assert.Greater(resampler.Length, reader.Length, "Length");
-                    Assert.AreEqual(0, reader.Position, "Position");
-                    Assert.AreEqual(0, resampler.Position, "Position");            
+                    Assert.That(resampler.Length, Is.GreaterThan(reader.Length), "Length");
+                    Assert.That(reader.Position, Is.EqualTo(0), "Position");
+                    Assert.That(resampler.Position, Is.EqualTo(0), "Position");            
                 }
             }
         }
@@ -47,7 +47,7 @@ namespace NAudioTests.Dmo
                     int bytesToRead = resampler.WaveFormat.AverageBytesPerSecond / 100;
                     byte[] buffer = new byte[bytesToRead];
                     int count = resampler.Read(buffer, 0, bytesToRead);
-                    Assert.That(count > 0, "Bytes Read");
+                    Assert.That(count, Is.GreaterThan(0), "Bytes Read");
                 }
             }
         }

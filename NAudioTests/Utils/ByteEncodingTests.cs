@@ -12,21 +12,21 @@ namespace NAudioTests.Utils
         public void CanDecodeString()
         {
             var b = new byte[] { (byte)'H', (byte)'e', (byte)'l', (byte)'l', (byte)'o', };
-            Assert.AreEqual("Hello", ByteEncoding.Instance.GetString(b));
+            Assert.That(ByteEncoding.Instance.GetString(b), Is.EqualTo("Hello"));
         }
 
         [Test]
         public void CanTruncate()
         {
             var b = new byte[] {(byte) 'H', (byte) 'e', (byte) 'l', (byte) 'l', (byte) 'o', 0};
-            Assert.AreEqual("Hello", ByteEncoding.Instance.GetString(b));
+            Assert.That(ByteEncoding.Instance.GetString(b), Is.EqualTo("Hello"));
         }
 
         [Test]
         public void CanTruncateWithThreeParamOverride()
         {
             var b = new byte[] { (byte)'H', (byte)'e', (byte)'l', (byte)'l', (byte)'o', 0 };
-            Assert.AreEqual("Hello", ByteEncoding.Instance.GetString(b,0,b.Length));
+            Assert.That(ByteEncoding.Instance.GetString(b,0,b.Length), Is.EqualTo("Hello"));
         }
     }
 }

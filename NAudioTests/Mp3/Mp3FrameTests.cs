@@ -29,7 +29,7 @@ namespace NAudioTests.Mp3
         {
             MemoryStream ms = new MemoryStream(ConstructValidMp3Frame());
             Mp3Frame frame = Mp3Frame.LoadFromStream(ms);
-            Assert.IsNotNull(frame);
+            Assert.That(frame, Is.Not.Null);
         }
 
         [TestCase(0)]
@@ -41,7 +41,7 @@ namespace NAudioTests.Mp3
         {
             MemoryStream ms = new MemoryStream(new byte[length]);
             Mp3Frame frame = Mp3Frame.LoadFromStream(ms);
-            Assert.IsNull(frame);
+            Assert.That(frame, Is.Null);
         }
 
         [TestCase(1)]
@@ -55,7 +55,7 @@ namespace NAudioTests.Mp3
             Array.Copy(validMp3Frame, 0, offsetBuffer, offset, validMp3Frame.Length);
             MemoryStream ms = new MemoryStream(offsetBuffer);
             Mp3Frame frame = Mp3Frame.LoadFromStream(ms);
-            Assert.IsNotNull(frame);
+            Assert.That(frame, Is.Not.Null);
         }
     }
 }

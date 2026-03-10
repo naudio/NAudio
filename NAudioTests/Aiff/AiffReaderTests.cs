@@ -18,7 +18,7 @@ namespace NAudioTests.Aiff
             string testFolder = @"C:\Users\Mark\Downloads\NAudio";
             if (!Directory.Exists(testFolder))
             {
-                Assert.Ignore("{0} not found", testFolder);
+                Assert.Ignore($"{testFolder} not found");
             }
 
             foreach (string file in Directory.GetFiles(testFolder, "*.aiff"))

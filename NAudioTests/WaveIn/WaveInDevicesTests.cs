@@ -14,7 +14,7 @@ namespace NAudioTests
         public void CanRequestNumberOfWaveInDevices()
         {
             int deviceCount = WaveIn.DeviceCount;
-            Assert.That(deviceCount > 0, "Expected at least one WaveIn device");
+            Assert.That(deviceCount, Is.GreaterThan(0), "Expected at least one WaveIn device");
         }
         
         [Test]
@@ -23,9 +23,8 @@ namespace NAudioTests
             for (int n = 0; n < WaveIn.DeviceCount; n++)
             {
                 WaveInCapabilities capabilities = WaveIn.GetCapabilities(n);
-                Assert.IsNotNull(capabilities, "Null capabilities");
-                //Assert.That(capabilities.Channels >= 1, "At least one channel"); - seem to get -1 a lot
-                Assert.That(!String.IsNullOrEmpty(capabilities.ProductName), "Needs a name");
+                Assert.That(capabilities, Is.Not.Null, "Null capabilities");
+                Assert.That(String.IsNullOrEmpty(capabilities.ProductName), Is.False, "Needs a name");
             }
         }
 

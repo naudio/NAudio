@@ -24,16 +24,16 @@ namespace NAudioTests.WaveStreams
             ms.Position = 0;
             using (var reader = new WaveFileReader(ms))
             {
-                Assert.AreEqual(16000, reader.WaveFormat.SampleRate, "Sample Rate");
-                Assert.AreEqual(24, reader.WaveFormat.BitsPerSample, "Bits Per Sample");
-                Assert.AreEqual(1, reader.WaveFormat.Channels, "Channels");
-                Assert.AreEqual(testSequence.Length, reader.Length, "File Length");
+                Assert.That(reader.WaveFormat.SampleRate, Is.EqualTo(16000), "Sample Rate");
+                Assert.That(reader.WaveFormat.BitsPerSample, Is.EqualTo(24), "Bits Per Sample");
+                Assert.That(reader.WaveFormat.Channels, Is.EqualTo(1), "Channels");
+                Assert.That(reader.Length, Is.EqualTo(testSequence.Length), "File Length");
                 var buffer = new byte[600]; // 24 bit audio, block align is 3
                 int read = reader.Read(buffer, 0, buffer.Length);
-                Assert.AreEqual(testSequence.Length, read, "Data Length");
+                Assert.That(read, Is.EqualTo(testSequence.Length), "Data Length");
                 for (int n = 0; n < read; n++)
                 {
-                    Assert.AreEqual(testSequence[n], buffer[n], "Byte " + n);
+                    Assert.That(buffer[n], Is.EqualTo(testSequence[n]), $"Byte {n}");
                 }
             }
         }
@@ -56,17 +56,17 @@ namespace NAudioTests.WaveStreams
             ms.Position = 0;
             using (var reader = new WaveFileReader(ms))
             {
-                Assert.AreEqual(16000, reader.WaveFormat.SampleRate, "Sample Rate");
-                Assert.AreEqual(24, reader.WaveFormat.BitsPerSample, "Bits Per Sample");
-                Assert.AreEqual(1, reader.WaveFormat.Channels, "Channels");
-                Assert.AreEqual(testSequence.Length, reader.Length, "File Length");
+                Assert.That(reader.WaveFormat.SampleRate, Is.EqualTo(16000), "Sample Rate");
+                Assert.That(reader.WaveFormat.BitsPerSample, Is.EqualTo(24), "Bits Per Sample");
+                Assert.That(reader.WaveFormat.Channels, Is.EqualTo(1), "Channels");
+                Assert.That(reader.Length, Is.EqualTo(testSequence.Length), "File Length");
                 var buffer = new byte[600]; // 24 bit audio, block align is 3
                 int read = reader.Read(buffer, 0, buffer.Length);
-                Assert.AreEqual(testSequence.Length, read, "Data Length");
+                Assert.That(read, Is.EqualTo(testSequence.Length), "Data Length");
                 
                 for (int n = 0; n < read; n++)
                 {
-                    Assert.AreEqual(testSequence[n], buffer[n], "Byte " + n);
+                    Assert.That(buffer[n], Is.EqualTo(testSequence[n]), $"Byte {n}");
                 }
             }
             writer.Dispose(); // to stop the finalizer from moaning
@@ -84,11 +84,11 @@ namespace NAudioTests.WaveStreams
                 WaveFileWriter.CreateWaveFile(tempFile, new NullWaveStream(waveFormat, length));
                 using (var reader = new WaveFileReader(tempFile))
                 {
-                    Assert.AreEqual(waveFormat, reader.WaveFormat, "WaveFormat");
-                    Assert.AreEqual(length, reader.Length, "Length");
+                    Assert.That(reader.WaveFormat, Is.EqualTo(waveFormat), "WaveFormat");
+                    Assert.That(reader.Length, Is.EqualTo(length), "Length");
                     var buffer = new byte[length + 20];
                     int read = reader.Read(buffer, 0, buffer.Length);
-                    Assert.AreEqual(length, read, "Read");
+                    Assert.That(read, Is.EqualTo(length), "Read");
                 }
             }
             finally
@@ -121,7 +121,7 @@ namespace NAudioTests.WaveStreams
             {
                 var dataLength = Int32.MaxValue + 1001L;
                 WaveFileWriter.CreateWaveFile(tempFile, new NullWaveStream(new WaveFormat(44100,2), dataLength));
-                Assert.AreEqual(dataLength + 46, new FileInfo(tempFile).Length);
+                Assert.That(new FileInfo(tempFile).Length, Is.EqualTo(dataLength + 46));
             }
             finally
             {

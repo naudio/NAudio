@@ -20,6 +20,20 @@ namespace NAudio.CoreAudioApi
         private AudioStreamVolume audioStreamVolume;
         private AudioClientShareMode shareMode;
 
+
+        private static void SetPropertiesForClient(IAudioClient2 client, in AudioClientProperties properties)
+        {
+            var handle = GCHandle.Alloc(properties, GCHandleType.Pinned);
+
+            try
+            {
+                client.SetClientProperties(handle.AddrOfPinnedObject());
+            }
+            finally
+            {
+                handle.Free();
+            }
+        }
         /// <summary>
         /// Activate Async
         /// </summary>
@@ -31,18 +45,7 @@ namespace NAudio.CoreAudioApi
 
                     if (audioClientProperties != null)
                     {
-                        IntPtr p = Marshal.AllocHGlobal(Marshal.SizeOf(audioClientProperties.Value));
-                        try
-                        {
-                            // TODO: consider whether we can marshal this without the need for AllocHGlobal
-                            Marshal.StructureToPtr(audioClientProperties.Value, p, false);
-                            ac2.SetClientProperties(p);
-                        }
-                        finally
-                        {
-                            Marshal.FreeHGlobal(p);
-
-                        }
+                        SetPropertiesForClient(ac2, audioClientProperties.Value);
                     }
 
                     /*var wfx = new WaveFormat(44100, 16, 2);
@@ -51,9 +54,9 @@ namespace NAudio.CoreAudioApi
                                10000000, 0, wfx, IntPtr.Zero);*/
                 });
             var IID_IAudioClient2 = new Guid("726778CD-F60A-4eda-82DE-E47610CD78AA");
-            NativeMethods.ActivateAudioInterfaceAsync(deviceInterfacePath, IID_IAudioClient2, IntPtr.Zero, icbh, out var activationOperation);
+            NativeMethods.ActivateAudioInterfaceAsync(deviceInterfacePath, IID_IAudioClient2, IntPtr.Zero, icbh, out _);
             var audioClient2 = await icbh;
-            return new AudioClient((IAudioClient)audioClient2);
+            return new AudioClient(audioClient2);
         }
 
         /// <summary>

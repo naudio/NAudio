@@ -28,7 +28,7 @@ namespace NAudioWpfDemo.DrumMachineDemo
             var pattern = new DrumPattern(new[] { "Bass Drum" }, 16);
             var sequencer = new PatternSequencer(pattern, new TestKit());
             var mixerInputs = sequencer.GetNextMixerInputs(100);
-            Assert.AreEqual(0, mixerInputs.Count());
+            Assert.That(mixerInputs.Count(), Is.EqualTo(0));
         }
 
         [Test]
@@ -39,8 +39,8 @@ namespace NAudioWpfDemo.DrumMachineDemo
             var sequencer = new PatternSequencer(pattern, new TestKit());
             var mixerInputs = sequencer.GetNextMixerInputs(100);
             
-            Assert.AreEqual(1, mixerInputs.Count());
-            Assert.AreEqual(0, mixerInputs.First().DelayBy);
+            Assert.That(mixerInputs.Count(), Is.EqualTo(1));
+            Assert.That(mixerInputs.First().DelayBy, Is.EqualTo(0));
         }
 
         [Test]
@@ -53,8 +53,8 @@ namespace NAudioWpfDemo.DrumMachineDemo
                        
             var mixerInputs = sequencer.GetNextMixerInputs(2);
 
-            Assert.AreEqual(1, mixerInputs.Count());
-            Assert.AreEqual(1, mixerInputs.First().DelayBy);
+            Assert.That(mixerInputs.Count(), Is.EqualTo(1));
+            Assert.That(mixerInputs.First().DelayBy, Is.EqualTo(1));
         }
 
         private int CalculateSampleRateForTempo(int tempo, int samplesPerStep = 1)
@@ -74,7 +74,7 @@ namespace NAudioWpfDemo.DrumMachineDemo
 
             var mixerInputs = sequencer.GetNextMixerInputs(2);
 
-            Assert.AreEqual(0, mixerInputs.Count());
+            Assert.That(mixerInputs.Count(), Is.EqualTo(0));
         }
 
         [Test]
@@ -86,7 +86,7 @@ namespace NAudioWpfDemo.DrumMachineDemo
 
             var mixerInputs = sequencer.GetNextMixerInputs(32); // twice through
 
-            Assert.AreEqual(2, mixerInputs.Count());
+            Assert.That(mixerInputs.Count(), Is.EqualTo(2));
         }
 
         [Test]
@@ -98,11 +98,11 @@ namespace NAudioWpfDemo.DrumMachineDemo
 
             // first read gets nothing
             var mixerInputs = sequencer.GetNextMixerInputs(1);
-            Assert.AreEqual(0, mixerInputs.Count(), "First read");
+            Assert.That(mixerInputs.Count(), Is.EqualTo(0), "First read");
             
             // second read gets something
             mixerInputs = sequencer.GetNextMixerInputs(1);
-            Assert.AreEqual(1, mixerInputs.Count(), "Second Read");
+            Assert.That(mixerInputs.Count(), Is.EqualTo(1), "Second Read");
         }
 
         [Test]
@@ -114,12 +114,12 @@ namespace NAudioWpfDemo.DrumMachineDemo
 
             // first read gets nothing
             var mixerInputs = sequencer.GetNextMixerInputs(3);
-            Assert.AreEqual(0, mixerInputs.Count(), "First read");
+            Assert.That(mixerInputs.Count(), Is.EqualTo(0), "First read");
 
             // second read gets something
             mixerInputs = sequencer.GetNextMixerInputs(4);
-            Assert.AreEqual(1, mixerInputs.Count(), "Second Read");
-            Assert.AreEqual(3, mixerInputs.First().DelayBy, "DelayBy");
+            Assert.That(mixerInputs.Count(), Is.EqualTo(1), "Second Read");
+            Assert.That(mixerInputs.First().DelayBy, Is.EqualTo(3), "DelayBy");
         }
         
         [Test]
@@ -133,14 +133,14 @@ namespace NAudioWpfDemo.DrumMachineDemo
 
             // first read gets nothing
             var mixerInputs = sequencer.GetNextMixerInputs(3);
-            Assert.AreEqual(0, mixerInputs.Count, "First read");
+            Assert.That(mixerInputs.Count, Is.EqualTo(0), "First read");
 
             // second read gets something
             mixerInputs = sequencer.GetNextMixerInputs(10);
-            Assert.AreEqual(3, mixerInputs.Count, "Second Read");
-            Assert.AreEqual(3, mixerInputs[0].DelayBy, "Inputs[0].DelayBy");
-            Assert.AreEqual(4, mixerInputs[1].DelayBy, "Inputs[1].DelayBy");
-            Assert.AreEqual(5, mixerInputs[2].DelayBy, "Inputs[2].DelayBy");
+            Assert.That(mixerInputs.Count, Is.EqualTo(3), "Second Read");
+            Assert.That(mixerInputs[0].DelayBy, Is.EqualTo(3), "Inputs[0].DelayBy");
+            Assert.That(mixerInputs[1].DelayBy, Is.EqualTo(4), "Inputs[1].DelayBy");
+            Assert.That(mixerInputs[2].DelayBy, Is.EqualTo(5), "Inputs[2].DelayBy");
         }
 
         [Test]
@@ -152,12 +152,12 @@ namespace NAudioWpfDemo.DrumMachineDemo
 
             // read 12 of the 16 steps
             var mixerInputs = sequencer.GetNextMixerInputs(12);
-            Assert.AreEqual(1, mixerInputs.Count, "First read");
+            Assert.That(mixerInputs.Count, Is.EqualTo(1), "First read");
 
             // read 12 more - will wrap around
             mixerInputs = sequencer.GetNextMixerInputs(12);
-            Assert.AreEqual(1, mixerInputs.Count, "Second Read");
-            Assert.AreEqual(4, mixerInputs[0].DelayBy, "Inputs[0].DelayBy");
+            Assert.That(mixerInputs.Count, Is.EqualTo(1), "Second Read");
+            Assert.That(mixerInputs[0].DelayBy, Is.EqualTo(4), "Inputs[0].DelayBy");
         }
 
         [Test]
@@ -170,17 +170,17 @@ namespace NAudioWpfDemo.DrumMachineDemo
 
             // read 12 of the 16 steps (ends at pos 12)
             var mixerInputs = sequencer.GetNextMixerInputs(12);
-            Assert.AreEqual(2, mixerInputs.Count, "First read");
+            Assert.That(mixerInputs.Count, Is.EqualTo(2), "First read");
 
             // read 12 more - will wrap around (ends at pos 8)
             mixerInputs = sequencer.GetNextMixerInputs(12);
-            Assert.AreEqual(1, mixerInputs.Count, "Second Read");
-            Assert.AreEqual(4, mixerInputs[0].DelayBy, "Inputs[0].DelayBy");
+            Assert.That(mixerInputs.Count, Is.EqualTo(1), "Second Read");
+            Assert.That(mixerInputs[0].DelayBy, Is.EqualTo(4), "Inputs[0].DelayBy");
 
             // read 12 more - (start from pos 8, ends at pos 4)
             mixerInputs = sequencer.GetNextMixerInputs(12);
-            Assert.AreEqual(2, mixerInputs[0].DelayBy, "3rd Read Inputs[0].DelayBy");
-            Assert.AreEqual(8, mixerInputs[1].DelayBy, "3rd Read Inputs[1].DelayBy");
+            Assert.That(mixerInputs[0].DelayBy, Is.EqualTo(2), "3rd Read Inputs[0].DelayBy");
+            Assert.That(mixerInputs[1].DelayBy, Is.EqualTo(8), "3rd Read Inputs[1].DelayBy");
         }
 
         [Test]
@@ -195,7 +195,7 @@ namespace NAudioWpfDemo.DrumMachineDemo
 
             var mixerInputs = sequencer.GetNextMixerInputs(16);
             // tempo is half, so only half the beats should get read
-            Assert.AreEqual(8, mixerInputs.Count, "First read");
+            Assert.That(mixerInputs.Count, Is.EqualTo(8), "First read");
         }
 
         [Test]
@@ -210,7 +210,7 @@ namespace NAudioWpfDemo.DrumMachineDemo
 
             var mixerInputs = sequencer.GetNextMixerInputs(16);
             // tempo is half, so only half the beats should get read
-            Assert.AreEqual(2, mixerInputs[1].DelayBy, "First beat DelayBy");
+            Assert.That(mixerInputs[1].DelayBy, Is.EqualTo(2), "First beat DelayBy");
         }
 
         [Test]
@@ -221,7 +221,7 @@ namespace NAudioWpfDemo.DrumMachineDemo
             var sequencer = new PatternSequencer(pattern, new TestKit(CalculateSampleRateForTempo(120)));
             var mixerInputs = sequencer.GetNextMixerInputs(16);
             // tempo is half, so only half the beats should get read
-            Assert.AreEqual(1, mixerInputs.Count);
+            Assert.That(mixerInputs.Count, Is.EqualTo(1));
         }
     }
 }

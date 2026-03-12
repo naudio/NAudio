@@ -1,7 +1,30 @@
+### 2.3.0 (12 Mar 2026)
+
+ * Performance improvements for `PropertyStore` and Core Audio property access (#1206)
+ * Improved multi-channel playback compatibility in WASAPI exclusive mode (#1234)
+ * Fixed a bug that prevented `WasapiCapture` from using exclusive mode (#1122)
+ * Fixed RF64 header parsing in `WaveFileChunkReader.ReadWaveHeader` (#1231)
+ * `PropVariant` now supports `VT_EMPTY` by returning `null` (#1071)
+ * Better exception when calling disposed `AcmStream.Convert` (#1108)
+ * Fixed `AcmStreamHeader` finalizer crash with corrupted data (#1199)
+ * Added `net6.0` targets for `NAudio.Asio` and `NAudio.WinMM` to remove registry dependency (#1139)
+ * Updating TFMs, modernizing the UAP project to WinUI
+ 
 ### 2.2.1 (4 Sep 2023)
 
-	* Incorrectly versioned NAudio.Wasapi.dll (was 22.0) retired and replaced with 2.2.1
-	* No other changes
+ * `WdlResampler` is now public
+ * WASAPI uses background threads
+ * `MmException` can return function name
+ * ErrorCodes provides all the `AUDCLNT_E HRESULT` values from audioclient.h
+ * `AiffFileWriter` chunk size bugfix
+ * Support for Device Topology API (`IPart`, `IAudioAutoGainControl`, `IAudioMute`, `IAudioVolumeLevel`, `IControlChangeNotify`, `IControlInterface`, `IKsJackDescription`, `IPerChannelDbLevel`)
+ * Add `ComImport` attribute to `CoreAudioApi` interfaces
+ * Ability to set attribute on `MediaType`, and to specify `MediaFoundationEncode` buffer size
+ * WASAPI stop improvements
+ * FLAC and ALAC added to audio subtypes list
+ * `MediaFoundationEncoder` bugfixes for null reference
+ * Sysex dispose bugfix
+ * Note: this replaces v2.2.0. Incorrectly versioned NAudio.Wasapi.dll (was 22.0) retired and replaced with 2.2.1
 
 ### 2.2 (22 Aug 2023)
 

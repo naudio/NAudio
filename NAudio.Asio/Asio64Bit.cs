@@ -21,6 +21,20 @@ namespace NAudio.Wave.Asio
         /// least significant bits (Bits 0..31)
         /// </summary>
         public uint lo;
-        // TODO: IMPLEMENT AN EASY WAY TO CONVERT THIS TO double  AND long
+
+        /// <summary>
+        /// Converts to a 64-bit signed integer
+        /// </summary>
+        public long ToInt64() => ((long)hi << 32) | lo;
+
+        /// <summary>
+        /// Converts to a 64-bit unsigned integer
+        /// </summary>
+        public ulong ToUInt64() => ((ulong)hi << 32) | lo;
+
+        /// <summary>
+        /// Converts to a double by reinterpreting the 64-bit integer bits
+        /// </summary>
+        public double ToDouble() => System.BitConverter.Int64BitsToDouble(ToInt64());
     };
 }

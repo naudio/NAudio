@@ -31,7 +31,7 @@ namespace NAudio.Wave
             {
                 cues = new CueList();
             }
-            cues.Add(new Cue(position, label));
+            cues.Add(new Cue(position, null, label));
         }
 
         private void WriteCues(BinaryWriter w)

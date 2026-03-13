@@ -124,7 +124,7 @@ namespace NAudioDemo.Mp3StreamingDemo
                     Debug.WriteLine("Exiting");
                     // was doing this in a finally block, but for some reason
                     // we are hanging on response stream .Dispose so never get there
-                    decompressor.Dispose();
+                    decompressor?.Dispose();
                 }
             }
             finally

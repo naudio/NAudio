@@ -42,6 +42,7 @@ namespace NAudio.Wave
 
         //private short crc;
         private const int MaxFrameLength = 16*1024;
+        private const int ConsecutiveFrameHeadersRequired = 2;
 
         /// <summary>
         /// Reads an MP3 frame from a stream
@@ -60,6 +61,8 @@ namespace NAudio.Wave
         /// <returns>A valid MP3 frame, or null if none found</returns>
         public static Mp3Frame LoadFromStream(Stream input, bool readData)
         {
+            TrySkipId3v2Tag(input);
+
             var frame = new Mp3Frame();
             frame.FileOffset = input.Position;
             byte[] headerBytes = new byte[4];
@@ -69,7 +72,7 @@ namespace NAudio.Wave
                 // reached end of stream, no more MP3 frames
                 return null;
             }
-            while (!IsValidHeader(headerBytes, frame))
+            while (!IsValidHeader(headerBytes, frame) || !IsLikelyAudioFrameSequence(input, frame))
             {
                 // shift down by one and try again
                 headerBytes[0] = headerBytes[1];
@@ -106,6 +109,99 @@ namespace NAudio.Wave
             }
 
             return frame;
+        }
+
+        private static void TrySkipId3v2Tag(Stream input)
+        {
+            if (!input.CanSeek || input.Length - input.Position < 10)
+            {
+                return;
+            }
+
+            long originalPosition = input.Position;
+            byte[] id3Header = new byte[10];
+            int bytesRead = input.Read(id3Header, 0, id3Header.Length);
+            if (bytesRead < id3Header.Length)
+            {
+                input.Position = originalPosition;
+                return;
+            }
+
+            if (id3Header[0] != 'I' || id3Header[1] != 'D' || id3Header[2] != '3')
+            {
+                input.Position = originalPosition;
+                return;
+            }
+
+            if ((id3Header[6] & 0x80) != 0 || (id3Header[7] & 0x80) != 0 || (id3Header[8] & 0x80) != 0 || (id3Header[9] & 0x80) != 0)
+            {
+                input.Position = originalPosition;
+                return;
+            }
+
+            int tagSize = (id3Header[6] << 21) | (id3Header[7] << 14) | (id3Header[8] << 7) | id3Header[9];
+            int footerSize = (id3Header[5] & 0x10) == 0x10 ? 10 : 0;
+            long newPosition = originalPosition + 10 + tagSize + footerSize;
+            if (newPosition > input.Length)
+            {
+                input.Position = originalPosition;
+                return;
+            }
+
+            input.Position = newPosition;
+        }
+
+        private static bool IsLikelyAudioFrameSequence(Stream input, Mp3Frame firstFrame)
+        {
+            if (!input.CanSeek)
+            {
+                return true;
+            }
+
+            long originalPosition = input.Position;
+            long nextFrameOffset = firstFrame.FileOffset;
+            Mp3Frame previousFrame = firstFrame;
+
+            try
+            {
+                for (int n = 0; n < ConsecutiveFrameHeadersRequired; n++)
+                {
+                    nextFrameOffset += previousFrame.FrameLength;
+                    if (nextFrameOffset > input.Length - 4)
+                    {
+                        return true;
+                    }
+
+                    input.Position = nextFrameOffset;
+                    byte[] headerBytes = new byte[4];
+                    int bytesRead = input.Read(headerBytes, 0, headerBytes.Length);
+                    if (bytesRead < headerBytes.Length)
+                    {
+                        return false;
+                    }
+
+                    var nextFrame = new Mp3Frame();
+                    if (!IsValidHeader(headerBytes, nextFrame))
+                    {
+                        return false;
+                    }
+
+                    if (nextFrame.MpegVersion != firstFrame.MpegVersion ||
+                        nextFrame.MpegLayer != firstFrame.MpegLayer ||
+                        nextFrame.SampleRate != firstFrame.SampleRate)
+                    {
+                        return false;
+                    }
+
+                    previousFrame = nextFrame;
+                }
+
+                return true;
+            }
+            finally
+            {
+                input.Position = originalPosition;
+            }
         }
 
 
@@ -186,6 +282,10 @@ namespace NAudio.Wave
                 frame.Copyright = (headerBytes[3] & 0x08) == 0x08;
                 bool original = (headerBytes[3] & 0x04) == 0x04;
                 int emphasis = (headerBytes[3] & 0x03);
+                if (emphasis == 2)
+                {
+                    return false;
+                }
 
                 int nPadding = padding ? 1 : 0;
 

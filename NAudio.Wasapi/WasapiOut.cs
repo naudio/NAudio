@@ -120,6 +120,7 @@ namespace NAudio.Wave
                 // var bufferDurationMilliseconds = (bufferFrameCount * 1000) /OutputWaveFormat.SampleRate;
                 // Create WaitHandle for sync
                 var waitHandles = new WaitHandle[] { frameEventWaitHandle };
+                var reachedEndOfStream = false;
 
                 audioClient.Start();
 
@@ -138,6 +139,15 @@ namespace NAudio.Wave
                     // If still playing
                     if (playbackState == PlaybackState.Playing)
                     {
+                        if (reachedEndOfStream)
+                        {
+                            if (shareMode == AudioClientShareMode.Exclusive || audioClient.CurrentPadding == 0)
+                            {
+                                break;
+                            }
+                            continue;
+                        }
+
                         // See how much buffer space is available.
                         int numFramesPadding;
                         if (isUsingEventSync)
@@ -154,18 +164,15 @@ namespace NAudio.Wave
                         {
                             if (FillBuffer(playbackProvider, numFramesAvailable))
                             {
-                                // reached the end
-                                break;
+                                reachedEndOfStream = true;
                             }
                         }
                     }
                 }
-                if (playbackState == PlaybackState.Playing)
+                if (playbackState == PlaybackState.Playing && reachedEndOfStream && shareMode == AudioClientShareMode.Exclusive)
                 {
-                    // we got here by reaching the end of the input file, so
-                    // let's make sure the last buffer has time to play
-                    // (otherwise the user requested stop, so we'll just stop
-                    // immediately
+                    // reached the end of input in exclusive mode, so keep the existing
+                    // behavior of waiting briefly for the last buffer to play
                     Thread.Sleep(isUsingEventSync ? latencyMilliseconds : latencyMilliseconds / 2);
                 }
                 audioClient.Stop();

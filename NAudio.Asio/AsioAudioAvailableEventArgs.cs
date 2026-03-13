@@ -52,6 +52,7 @@ namespace NAudio.Wave
         /// Converts all the recorded audio into a buffer of 32 bit floating point samples, interleaved by channel
         /// </summary>
         /// <samples>The samples as 32 bit floating point, interleaved</samples>
+        /// <returns>Number of samples written (i.e. SamplesPerBuffer * channel count)</returns>
         public int GetAsInterleavedSamples(float[] samples)
         {
             int channels = InputBuffers.Length;
@@ -105,7 +106,7 @@ namespace NAudio.Wave
                 }
                 else
                 {
-                    throw new NotImplementedException(String.Format("ASIO Sample Type {0} not supported", AsioSampleType));
+                    throw new NotImplementedException($"ASIO Sample Type {AsioSampleType} not supported");
                 }
             }
             return SamplesPerBuffer*channels;

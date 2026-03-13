@@ -28,13 +28,13 @@ namespace NAudio.Wave.Asio
                     switch (waveFormat.BitsPerSample)
                     {
                         case 16:
-                            convertor = (is2Channels) ? (SampleConvertor)ConvertorShortToInt2Channels : (SampleConvertor)ConvertorShortToIntGeneric;
+                            convertor = (is2Channels) ? ConvertorShortToInt2Channels : (SampleConvertor)ConvertorShortToIntGeneric;
                             break;
                         case 32:
                             if (waveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
-                                convertor = (is2Channels) ? (SampleConvertor)ConvertorFloatToInt2Channels : (SampleConvertor)ConvertorFloatToIntGeneric;
+                                convertor = (is2Channels) ? ConvertorFloatToInt2Channels : (SampleConvertor)ConvertorFloatToIntGeneric;
                             else
-                                convertor = (is2Channels) ? (SampleConvertor)ConvertorIntToInt2Channels : (SampleConvertor)ConvertorIntToIntGeneric;
+                                convertor = (is2Channels) ? ConvertorIntToInt2Channels : (SampleConvertor)ConvertorIntToIntGeneric;
                             break;
                     }
                     break;
@@ -42,13 +42,13 @@ namespace NAudio.Wave.Asio
                     switch (waveFormat.BitsPerSample)
                     {
                         case 16:
-                            convertor = (is2Channels) ? (SampleConvertor)ConvertorShortToShort2Channels : (SampleConvertor)ConvertorShortToShortGeneric;
+                            convertor = (is2Channels) ? ConvertorShortToShort2Channels : (SampleConvertor)ConvertorShortToShortGeneric;
                             break;
                         case 32:
                             if (waveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
-                                convertor = (is2Channels) ? (SampleConvertor)ConvertorFloatToShort2Channels : (SampleConvertor)ConvertorFloatToShortGeneric;
+                                convertor = (is2Channels) ? ConvertorFloatToShort2Channels : (SampleConvertor)ConvertorFloatToShortGeneric;
                             else
-                                convertor = (is2Channels) ? (SampleConvertor)ConvertorIntToShort2Channels : (SampleConvertor)ConvertorIntToShortGeneric;
+                                convertor = (is2Channels) ? ConvertorIntToShort2Channels : (SampleConvertor)ConvertorIntToShortGeneric;
                             break;
                     }
                     break;
@@ -289,11 +289,12 @@ namespace NAudio.Wave.Asio
                     samples[i] = (float*)asioOutputBuffers[i];
                 }
 
+                const float int32ToFloatScale = 1.0f / 2147483648.0f;
                 for (int i = 0; i < nbSamples; i++)
                 {
                     for (int j = 0; j < nbChannels; j++)
                     {
-                        *samples[j]++ = *inputSamples++ / (1 << (32 - 1));
+                        *samples[j]++ = *inputSamples++ * int32ToFloatScale;
                     }
                 }
             }

@@ -10,6 +10,29 @@ namespace NAudioTests.WaveStreams
     [Category("UnitTest")]
     public class CircularBufferTests
     {
+
+        [Test]
+        public void PeekingReadsCorrectlyAndDoesntAffectReadPosition()
+        {
+            CircularBuffer circularBuffer = new CircularBuffer(128);
+            for (int i = 0; i < 128; i++)
+            {
+                circularBuffer.Write(new byte[1] { (byte)i }, 0, 1);
+            }
+
+            byte[] peekData = new byte[1];
+            circularBuffer.Peek(100, peekData, 0, 1);
+
+            byte[] regularRead = new byte[1];
+            circularBuffer.Read(regularRead, 0, 1);
+
+            // Confirm data that was peeked is correct.
+            Assert.AreEqual((byte)100, peekData[0]);
+
+            // Confirm data read is from the start as the read position shouldn't have moved.
+            Assert.AreEqual((byte)0, regularRead[0]);
+        }
+
         [Test]
         public void CircularBufferHasMaxLengthAndCount()
         {

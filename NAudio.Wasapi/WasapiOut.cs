@@ -1,10 +1,10 @@
-﻿using System;
-using NAudio.CoreAudioApi;
+﻿using NAudio.CoreAudioApi;
 using NAudio.CoreAudioApi.Interfaces;
-using System.Threading;
-using System.Runtime.InteropServices;
 using NAudio.Utils;
+using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Threading;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave
@@ -24,6 +24,7 @@ namespace NAudio.Wave
         private int bytesPerFrame;
         private readonly bool isUsingEventSync;
         private EventWaitHandle frameEventWaitHandle;
+        private readonly EventWaitHandle stopEventWaitHandle;
         private byte[] readBuffer;
         private volatile PlaybackState playbackState;
         private Thread playThread;
@@ -82,6 +83,7 @@ namespace NAudio.Wave
             isUsingEventSync = useEventSync;
             latencyMilliseconds = latency;
             syncContext = SynchronizationContext.Current;
+            stopEventWaitHandle = new EventWaitHandle(false, EventResetMode.ManualReset);
             OutputWaveFormat = audioClient.MixFormat; // allow the user to query the default format for shared mode streams
         }
 
@@ -119,7 +121,9 @@ namespace NAudio.Wave
                 // to calculate buffer duration but does always seem to match latency
                 // var bufferDurationMilliseconds = (bufferFrameCount * 1000) /OutputWaveFormat.SampleRate;
                 // Create WaitHandle for sync
-                var waitHandles = new WaitHandle[] { frameEventWaitHandle };
+                var waitHandles = isUsingEventSync
+                    ? new WaitHandle[] { frameEventWaitHandle, stopEventWaitHandle }
+                    : null;
                 var reachedEndOfStream = false;
 
                 audioClient.Start();
@@ -133,7 +137,7 @@ namespace NAudio.Wave
                     }
                     else
                     {
-                        Thread.Sleep(latencyMilliseconds / 2);
+                        stopEventWaitHandle.WaitOne(latencyMilliseconds / 2, false);
                     }
 
                     // If still playing
@@ -355,6 +359,7 @@ namespace NAudio.Wave
             {
                 if (playbackState == PlaybackState.Stopped)
                 {
+                    stopEventWaitHandle.Reset();
                     playThread = new Thread(PlayThread)
                     {
                         IsBackground = true,
@@ -377,6 +382,7 @@ namespace NAudio.Wave
             if (playbackState != PlaybackState.Stopped)
             {
                 playbackState = PlaybackState.Stopped;
+                stopEventWaitHandle.Set();
                 playThread.Join();
                 playThread = null;
             }
@@ -573,6 +579,8 @@ namespace NAudio.Wave
                 audioClient = null;
                 renderClient = null;
             }
+
+            stopEventWaitHandle.Dispose();
         }
 
 #endregion

@@ -124,7 +124,7 @@ namespace NAudio.Wave.Asio
             {
                 short* inputSamples = (short*)inputInterleavedBuffer;
                 // Use a trick (short instead of int to avoid any convertion from 16Bit to 32Bit)
-                short*[] samples = new short*[nbChannels];
+                short** samples = stackalloc short*[nbChannels];
                 for (int i = 0; i < nbChannels; i++)
                 {
                     samples[i] = (short*)asioOutputBuffers[i];
@@ -171,7 +171,7 @@ namespace NAudio.Wave.Asio
             unsafe
             {
                 float* inputSamples = (float*)inputInterleavedBuffer;
-                int*[] samples = new int*[nbChannels];
+                int** samples = stackalloc int*[nbChannels];
                 for (int i = 0; i < nbChannels; i++)
                 {
                     samples[i] = (int*)asioOutputBuffers[i];
@@ -215,7 +215,7 @@ namespace NAudio.Wave.Asio
             unsafe
             {
                 int* inputSamples = (int*)inputInterleavedBuffer;
-                int*[] samples = new int*[nbChannels];
+                int** samples = stackalloc int*[nbChannels];
                 for (int i = 0; i < nbChannels; i++)
                 {
                     samples[i] = (int*)asioOutputBuffers[i];
@@ -259,10 +259,10 @@ namespace NAudio.Wave.Asio
             unsafe
             {
                 int* inputSamples = (int*)inputInterleavedBuffer;
-                int*[] samples = new int*[nbChannels];
+                short** samples = stackalloc short*[nbChannels];
                 for (int i = 0; i < nbChannels; i++)
                 {
-                    samples[i] = (int*)asioOutputBuffers[i];
+                    samples[i] = (short*)asioOutputBuffers[i];
                 }
 
                 for (int i = 0; i < nbSamples; i++)
@@ -283,7 +283,7 @@ namespace NAudio.Wave.Asio
             unsafe
             {
                 int* inputSamples = (int*)inputInterleavedBuffer;
-                float*[] samples = new float*[nbChannels];
+                float** samples = stackalloc float*[nbChannels];
                 for (int i = 0; i < nbChannels; i++)
                 {
                     samples[i] = (float*)asioOutputBuffers[i];
@@ -332,7 +332,7 @@ namespace NAudio.Wave.Asio
             {
                 short* inputSamples = (short*)inputInterleavedBuffer;
                 // Use a trick (short instead of int to avoid any convertion from 16Bit to 32Bit)
-                short*[] samples = new short*[nbChannels];
+                short** samples = stackalloc short*[nbChannels];
                 for (int i = 0; i < nbChannels; i++)
                 {
                     samples[i] = (short*)asioOutputBuffers[i];
@@ -347,8 +347,6 @@ namespace NAudio.Wave.Asio
                 }
             }
         }
-
-        /// <summary>
         /// Optimized convertor for 2 channels FLOAT
         /// </summary>
         public static void ConvertorFloatToShort2Channels(IntPtr inputInterleavedBuffer, IntPtr[] asioOutputBuffers, int nbChannels, int nbSamples)
@@ -370,7 +368,7 @@ namespace NAudio.Wave.Asio
         }
 
         /// <summary>
-        /// Generic convertor SHORT
+        /// Generic convertor for SHORT
         /// </summary>
         public static void ConvertorFloatToShortGeneric(IntPtr inputInterleavedBuffer, IntPtr[] asioOutputBuffers, int nbChannels, int nbSamples)
         {
@@ -378,7 +376,7 @@ namespace NAudio.Wave.Asio
             {
                 float* inputSamples = (float*)inputInterleavedBuffer;
                 // Use a trick (short instead of int to avoid any convertion from 16Bit to 32Bit)
-                short*[] samples = new short*[nbChannels];
+                short** samples = stackalloc short*[nbChannels];
                 for (int i = 0; i < nbChannels; i++)
                 {
                     samples[i] = (short*)asioOutputBuffers[i];
@@ -402,8 +400,8 @@ namespace NAudio.Wave.Asio
             unsafe
             {
                 float* inputSamples = (float*)inputInterleavedBuffer;
-                
-                byte*[] samples = new byte*[nbChannels];
+
+                byte** samples = stackalloc byte*[nbChannels];
                 for (int i = 0; i < nbChannels; i++)
                 {
                     samples[i] = (byte*)asioOutputBuffers[i];
@@ -430,7 +428,7 @@ namespace NAudio.Wave.Asio
             unsafe
             {
                 float* inputSamples = (float*)inputInterleavedBuffer;
-                float*[] samples = new float*[nbChannels];
+                float** samples = stackalloc float*[nbChannels];
                 for (int i = 0; i < nbChannels; i++)
                 {
                     samples[i] = (float*)asioOutputBuffers[i];

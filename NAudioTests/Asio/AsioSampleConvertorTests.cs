@@ -117,6 +117,22 @@ namespace NAudioTests.Asio
         }
 
         [Test]
+        public void ConvertorIntToShortGeneric_DownsamplesByTop16Bits()
+        {
+            int[] input = { 65536, -65536, 131072, 196608, -196608, 262144 };
+            short[] c0 = new short[2];
+            short[] c1 = new short[2];
+            short[] c2 = new short[2];
+
+            var convertor = SelectSampleConvertor(new WaveFormat(48000, 32, 3), AsioSampleType.Int16LSB);
+            InvokeConvertor(convertor, input, new Array[] { c0, c1, c2 }, 3, 2);
+
+            Assert.That(c0, Is.EqualTo(new short[] { 1, 3 }));
+            Assert.That(c1, Is.EqualTo(new short[] { -1, -3 }));
+            Assert.That(c2, Is.EqualTo(new short[] { 2, 4 }));
+        }
+
+        [Test]
         public void ConvertorFloatToShortGeneric_ClampsAndConverts()
         {
             float[] input = { -2f, -1f, -0.5f, 0f, 0.5f, 2f };

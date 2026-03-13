@@ -11,6 +11,8 @@ namespace NAudio.MediaFoundation
     /// </summary>
     public abstract class MediaFoundationTransform : IWaveProvider, IDisposable
     {
+        private const int DefaultInputChunkDurationMs = 100;
+
         /// <summary>
         /// The Source Provider
         /// </summary>
@@ -20,7 +22,7 @@ namespace NAudio.MediaFoundation
         /// </summary>
         protected readonly WaveFormat outputWaveFormat;
         private readonly byte[] sourceBuffer;
-        
+
         private byte[] outputBuffer;
         private int outputBufferOffset;
         private int outputBufferCount;
@@ -33,7 +35,7 @@ namespace NAudio.MediaFoundation
 
         /// <summary>
         /// Constructs a new MediaFoundationTransform wrapper
-        /// Will read one second at a time
+        /// Uses a short input chunk size to balance latency and throughput
         /// </summary>
         /// <param name="sourceProvider">The source provider for input data to the transform</param>
         /// <param name="outputFormat">The desired output format</param>
@@ -41,8 +43,20 @@ namespace NAudio.MediaFoundation
         {
             this.outputWaveFormat = outputFormat;
             this.sourceProvider = sourceProvider;
-            sourceBuffer = new byte[sourceProvider.WaveFormat.AverageBytesPerSecond];
+            sourceBuffer = new byte[GetInputChunkSize(sourceProvider.WaveFormat)];
             outputBuffer = new byte[outputWaveFormat.AverageBytesPerSecond + outputWaveFormat.BlockAlign]; // we will grow this buffer if needed, but try to make something big enough
+        }
+
+        private static int GetInputChunkSize(WaveFormat waveFormat)
+        {
+            var blockAlign = Math.Max(1, waveFormat.BlockAlign);
+            var bytesPerChunk = (waveFormat.AverageBytesPerSecond * DefaultInputChunkDurationMs) / 1000;
+            bytesPerChunk -= bytesPerChunk % blockAlign;
+            if (bytesPerChunk < blockAlign)
+            {
+                bytesPerChunk = blockAlign;
+            }
+            return bytesPerChunk;
         }
 
         private void InitializeTransformForStreaming()
@@ -68,6 +82,8 @@ namespace NAudio.MediaFoundation
             if (transform != null)
             {
                 Marshal.ReleaseComObject(transform);
+                transform = null;
+                initializedForStreaming = false;
             }
         }
 
@@ -106,16 +122,19 @@ namespace NAudio.MediaFoundation
         /// <returns>Number of bytes read</returns>
         public int Read(byte[] buffer, int offset, int count)
         {
+            if (disposed)
+            {
+                throw new ObjectDisposedException(GetType().FullName);
+            }
+
             if (transform == null)
             {
                 transform = CreateTransform();
                 InitializeTransformForStreaming();
             }
 
-            // strategy will be to always read 1 second from the source, and give it to the resampler
             int bytesWritten = 0;
-            
-            // read in any leftovers from last time
+
             if (outputBufferCount > 0)
             {
                 bytesWritten += ReadFromOutputBuffer(buffer, offset, count - bytesWritten);
@@ -124,39 +143,30 @@ namespace NAudio.MediaFoundation
             while (bytesWritten < count)
             {
                 var sample = ReadFromSource();
-                if (sample == null) // reached the end of our input
+                if (sample == null)
                 {
-                    // be good citizens and send some end messages:
                     EndStreamAndDrain();
-                    // resampler might have given us a little bit more to return
                     bytesWritten += ReadFromOutputBuffer(buffer, offset + bytesWritten, count - bytesWritten);
                     ClearOutputBuffer();
                     break;
                 }
 
-                // might need to resurrect the stream if the user has read all the way to the end,
-                // and then repositioned the input backwards
                 if (!initializedForStreaming)
                 {
                     InitializeTransformForStreaming();
                 }
 
-                // give the input to the resampler
-                // can get MF_E_NOTACCEPTING if we didn't drain the buffer properly
-                transform.ProcessInput(0, sample, 0);
+                try
+                {
+                    transform.ProcessInput(0, sample, 0);
+                }
+                finally
+                {
+                    Marshal.ReleaseComObject(sample);
+                }
 
-                Marshal.ReleaseComObject(sample);
-
-                int readFromTransform;
-                // n.b. in theory we ought to loop here, although we'd need to be careful as the next time into ReadFromTransform there could
-                // still be some leftover bytes in outputBuffer, which would get overwritten. Only introduce this if we find a transform that 
-                // needs it. For most transforms, alternating read/write should be OK
-                //do
-                //{
-                // keep reading from transform
-                readFromTransform = ReadFromTransform();
+                ReadFromTransform();
                 bytesWritten += ReadFromOutputBuffer(buffer, offset + bytesWritten, count - bytesWritten);
-                //} while (readFromTransform > 0);
             }
 
             return bytesWritten;
@@ -192,45 +202,63 @@ namespace NAudio.MediaFoundation
         private int ReadFromTransform()
         {
             var outputDataBuffer = new MFT_OUTPUT_DATA_BUFFER[1];
-            // we have to create our own for
             var sample = MediaFoundationApi.CreateSample();
             var pBuffer = MediaFoundationApi.CreateMemoryBuffer(outputBuffer.Length);
-            sample.AddBuffer(pBuffer);
-            sample.SetSampleTime(outputPosition); // hopefully this is not needed
-            outputDataBuffer[0].pSample = sample;
-            
-            _MFT_PROCESS_OUTPUT_STATUS status;
-            var hr = transform.ProcessOutput(_MFT_PROCESS_OUTPUT_FLAGS.None, 
-                                             1, outputDataBuffer, out status);
-            if (hr == MediaFoundationErrors.MF_E_TRANSFORM_NEED_MORE_INPUT)
+            IMFMediaBuffer outputMediaBuffer = null;
+            bool outputBufferLocked = false;
+            try
             {
-                Marshal.ReleaseComObject(pBuffer);
-                Marshal.ReleaseComObject(sample);
-                // nothing to read
-                return 0;
-            }
-            else if (hr != 0)
-            {
-                Marshal.ThrowExceptionForHR(hr);
-            }
+                sample.AddBuffer(pBuffer);
+                sample.SetSampleTime(outputPosition); // hopefully this is not needed
+                outputDataBuffer[0].pSample = sample;
 
-            IMFMediaBuffer outputMediaBuffer;
-            outputDataBuffer[0].pSample.ConvertToContiguousBuffer(out outputMediaBuffer);
-            IntPtr pOutputBuffer;
-            int outputBufferLength;
-            int maxSize;
-            outputMediaBuffer.Lock(out pOutputBuffer, out maxSize, out outputBufferLength);
-            outputBuffer = BufferHelpers.Ensure(outputBuffer, outputBufferLength);
-            Marshal.Copy(pOutputBuffer, outputBuffer, 0, outputBufferLength);
-            outputBufferOffset = 0;
-            outputBufferCount = outputBufferLength;
-            outputMediaBuffer.Unlock();
-            outputPosition += BytesToNsPosition(outputBufferCount, WaveFormat); // hopefully not needed
-            Marshal.ReleaseComObject(pBuffer);
-            sample.RemoveAllBuffers(); // needed to fix memory leak in some cases
-            Marshal.ReleaseComObject(sample);
-            Marshal.ReleaseComObject(outputMediaBuffer);
-            return outputBufferLength;
+                var hr = transform.ProcessOutput(_MFT_PROCESS_OUTPUT_FLAGS.None,
+                                                 1, outputDataBuffer, out _MFT_PROCESS_OUTPUT_STATUS status);
+                if (hr == MediaFoundationErrors.MF_E_TRANSFORM_NEED_MORE_INPUT)
+                {
+                    return 0;
+                }
+                if (hr != 0)
+                {
+                    Marshal.ThrowExceptionForHR(hr);
+                }
+
+                outputDataBuffer[0].pSample.ConvertToContiguousBuffer(out outputMediaBuffer);
+                outputMediaBuffer.Lock(out IntPtr pOutputBuffer, out _, out int outputBufferLength);
+                outputBufferLocked = true;
+                outputBuffer = BufferHelpers.Ensure(outputBuffer, outputBufferLength);
+                Marshal.Copy(pOutputBuffer, outputBuffer, 0, outputBufferLength);
+                outputBufferOffset = 0;
+                outputBufferCount = outputBufferLength;
+                outputPosition += BytesToNsPosition(outputBufferCount, WaveFormat); // hopefully not needed
+                return outputBufferLength;
+            }
+            finally
+            {
+                if (outputMediaBuffer != null)
+                {
+                    if (outputBufferLocked)
+                    {
+                        outputMediaBuffer.Unlock();
+                    }
+                    Marshal.ReleaseComObject(outputMediaBuffer);
+                }
+
+                if (outputDataBuffer[0].pEvents != null)
+                {
+                    Marshal.ReleaseComObject(outputDataBuffer[0].pEvents);
+                }
+
+                var returnedSample = outputDataBuffer[0].pSample;
+                if (returnedSample != null && !ReferenceEquals(returnedSample, sample))
+                {
+                    Marshal.ReleaseComObject(returnedSample);
+                }
+
+                sample.RemoveAllBuffers(); // needed to fix memory leak in some cases
+                Marshal.ReleaseComObject(sample);
+                Marshal.ReleaseComObject(pBuffer);
+            }
         }
         
         private static long BytesToNsPosition(int bytes, WaveFormat waveFormat)
@@ -241,27 +269,36 @@ namespace NAudio.MediaFoundation
 
         private IMFSample ReadFromSource()
         {
-            // we always read a full second
             int bytesRead = sourceProvider.Read(sourceBuffer, 0, sourceBuffer.Length);
             if (bytesRead == 0) return null;
 
             var mediaBuffer = MediaFoundationApi.CreateMemoryBuffer(bytesRead);
-            IntPtr pBuffer;
-            int maxLength, currentLength;
-            mediaBuffer.Lock(out pBuffer, out maxLength, out currentLength);
-            Marshal.Copy(sourceBuffer, 0, pBuffer, bytesRead);
-            mediaBuffer.Unlock();
-            mediaBuffer.SetCurrentLength(bytesRead);
+            bool bufferLocked = false;
+            try
+            {
+                mediaBuffer.Lock(out IntPtr pBuffer, out _, out _);
+                bufferLocked = true;
+                Marshal.Copy(sourceBuffer, 0, pBuffer, bytesRead);
+                mediaBuffer.Unlock();
+                bufferLocked = false;
+                mediaBuffer.SetCurrentLength(bytesRead);
 
-            var sample = MediaFoundationApi.CreateSample();
-            sample.AddBuffer(mediaBuffer);
-            // we'll set the time, I don't think it is needed for Resampler, but other MFTs might need it
-            sample.SetSampleTime(inputPosition);
-            long duration = BytesToNsPosition(bytesRead, sourceProvider.WaveFormat);
-            sample.SetSampleDuration(duration);
-            inputPosition += duration;
-            Marshal.ReleaseComObject(mediaBuffer);
-            return sample;
+                var sample = MediaFoundationApi.CreateSample();
+                sample.AddBuffer(mediaBuffer);
+                sample.SetSampleTime(inputPosition);
+                long duration = BytesToNsPosition(bytesRead, sourceProvider.WaveFormat);
+                sample.SetSampleDuration(duration);
+                inputPosition += duration;
+                return sample;
+            }
+            finally
+            {
+                if (bufferLocked)
+                {
+                    mediaBuffer.Unlock();
+                }
+                Marshal.ReleaseComObject(mediaBuffer);
+            }
         }
 
         private int ReadFromOutputBuffer(byte[] buffer, int offset, int needed)

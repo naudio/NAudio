@@ -195,17 +195,33 @@ namespace NAudio.Wave
         /// <param name="count">the number of bytes to write</param>
         public override void Write(byte[] data, int offset, int count)
         {
-            byte[] swappedData = new byte[data.Length];
+            int bytesPerSample = format.BitsPerSample / 8;
 
-            int align = format.BitsPerSample / 8;
-
-            for (int i = 0; i < data.Length; i++)
+            if (bytesPerSample <= 1)
             {
-                int pos = (int)Math.Floor((double)i / align) * align + (align - (i % align) - 1);
-                swappedData[i] = data[pos];
+                outStream.Write(data, offset, count);
+            }
+            else
+            {
+                byte[] swappedData = new byte[count];
+                int completeSampleBytes = count - (count % bytesPerSample);
+
+                for (int sampleStart = 0; sampleStart < completeSampleBytes; sampleStart += bytesPerSample)
+                {
+                    for (int b = 0; b < bytesPerSample; b++)
+                    {
+                        swappedData[sampleStart + b] = data[offset + sampleStart + (bytesPerSample - 1 - b)];
+                    }
+                }
+
+                for (int i = completeSampleBytes; i < count; i++)
+                {
+                    swappedData[i] = data[offset + i];
+                }
+
+                outStream.Write(swappedData, 0, count);
             }
 
-            outStream.Write(swappedData, offset, count);
             dataChunkSize += count;
         }
 
@@ -215,6 +231,21 @@ namespace NAudio.Wave
         /// Writes a single sample to the Aiff file
         /// </summary>
         /// <param name="sample">the sample to write (assumed floating point with 1.0f as max value)</param>
+        private static int ConvertFloatTo32BitPcm(float sample)
+        {
+            if (sample >= 1.0f)
+            {
+                return Int32.MaxValue;
+            }
+
+            if (sample <= -1.0f)
+            {
+                return Int32.MinValue;
+            }
+
+            return (int)(sample * 2147483647.0);
+        }
+
         public void WriteSample(float sample)
         {
             if (WaveFormat.BitsPerSample == 16)
@@ -224,7 +255,7 @@ namespace NAudio.Wave
             }
             else if (WaveFormat.BitsPerSample == 24)
             {
-                var value = BitConverter.GetBytes((Int32)(Int32.MaxValue * sample));
+                var value = BitConverter.GetBytes(ConvertFloatTo32BitPcm(sample));
                 value24[2] = value[1];
                 value24[1] = value[2];
                 value24[0] = value[3];
@@ -233,7 +264,17 @@ namespace NAudio.Wave
             }
             else if (WaveFormat.BitsPerSample == 32 && WaveFormat.Encoding == NAudio.Wave.WaveFormatEncoding.Extensible)
             {
-                writer.Write(SwapEndian(UInt16.MaxValue * (Int32)sample));
+                writer.Write(SwapEndian(ConvertFloatTo32BitPcm(sample)));
+                dataChunkSize += 4;
+            }
+            else if (WaveFormat.BitsPerSample == 32 && WaveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
+            {
+                var value = BitConverter.GetBytes(sample);
+                if (BitConverter.IsLittleEndian)
+                {
+                    Array.Reverse(value);
+                }
+                writer.Write(value);
                 dataChunkSize += 4;
             }
             else
@@ -277,13 +318,12 @@ namespace NAudio.Wave
             // 24 bit PCM data
             else if (WaveFormat.BitsPerSample == 24)
             {
-                byte[] value;
                 for (int sample = 0; sample < count; sample++)
                 {
-                    value = BitConverter.GetBytes(UInt16.MaxValue * (Int32)samples[sample + offset]);
-                    value24[2] = value[1];
-                    value24[1] = value[2];
-                    value24[0] = value[3];
+                    int value = samples[sample + offset] << 8;
+                    value24[0] = (byte)((value >> 16) & 0xFF);
+                    value24[1] = (byte)((value >> 8) & 0xFF);
+                    value24[2] = (byte)(value & 0xFF);
                     writer.Write(value24);
                 }
                 dataChunkSize += (count * 3);
@@ -293,7 +333,8 @@ namespace NAudio.Wave
             {
                 for (int sample = 0; sample < count; sample++)
                 {
-                    writer.Write(SwapEndian(UInt16.MaxValue * (Int32)samples[sample + offset]));
+                    int value = samples[sample + offset] << 16;
+                    writer.Write(SwapEndian(value));
                 }
                 dataChunkSize += (count * 4);
             }

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace NAudio.Wave
 {
@@ -11,9 +10,9 @@ namespace NAudio.Wave
     /// </summary>
     public class MixingWaveProvider32 : IWaveProvider
     {
-        private List<IWaveProvider> inputs;
+        private readonly List<IWaveProvider> inputs;
         private WaveFormat waveFormat;
-        private int bytesPerSample;
+        private readonly int bytesPerSample;
 
         /// <summary>
         /// Creates a new MixingWaveProvider32
@@ -34,6 +33,9 @@ namespace NAudio.Wave
         public MixingWaveProvider32(IEnumerable<IWaveProvider> inputs)
             : this()
         {
+            if (inputs == null)
+                throw new ArgumentNullException("inputs");
+
             foreach (var input in inputs)
             {
                 AddInputStream(input);
@@ -46,26 +48,30 @@ namespace NAudio.Wave
         /// <param name="waveProvider">The wave input to add</param>
         public void AddInputStream(IWaveProvider waveProvider)
         {
-            if (waveProvider.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
-                throw new ArgumentException("Must be IEEE floating point", "waveProvider.WaveFormat");
-            if (waveProvider.WaveFormat.BitsPerSample != 32)
-                throw new ArgumentException("Only 32 bit audio currently supported", "waveProvider.WaveFormat");
+            if (waveProvider == null)
+                throw new ArgumentNullException("waveProvider");
 
-            if (inputs.Count == 0)
-            {
-                // first one - set the format
-                int sampleRate = waveProvider.WaveFormat.SampleRate;
-                int channels = waveProvider.WaveFormat.Channels;
-                this.waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channels);
-            }
-            else
-            {
-                if (!waveProvider.WaveFormat.Equals(waveFormat))
-                    throw new ArgumentException("All incoming channels must have the same format", "waveProvider.WaveFormat");
-            }
+            var inputFormat = waveProvider.WaveFormat;
+            if (inputFormat.Encoding != WaveFormatEncoding.IeeeFloat)
+                throw new ArgumentException("Must be IEEE floating point", "waveProvider.WaveFormat");
+            if (inputFormat.BitsPerSample != 32)
+                throw new ArgumentException("Only 32 bit audio currently supported", "waveProvider.WaveFormat");
 
             lock (inputs)
             {
+                if (inputs.Count == 0)
+                {
+                    // first one - set the format
+                    int sampleRate = inputFormat.SampleRate;
+                    int channels = inputFormat.Channels;
+                    this.waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channels);
+                }
+                else
+                {
+                    if (!inputFormat.Equals(waveFormat))
+                        throw new ArgumentException("All incoming channels must have the same format", "waveProvider.WaveFormat");
+                }
+
                 this.inputs.Add(waveProvider);
             }
         }
@@ -100,6 +106,8 @@ namespace NAudio.Wave
         /// <exception cref="ArgumentException">Thrown if an invalid number of bytes requested</exception>
         public int Read(byte[] buffer, int offset, int count)
         {
+            if (offset % bytesPerSample != 0)
+                throw new ArgumentException("Offset must be on a sample boundary", "offset");
             if (count % bytesPerSample != 0)
                 throw new ArgumentException("Must read an whole number of samples", "count");
 

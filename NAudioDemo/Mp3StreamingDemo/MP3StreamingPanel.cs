@@ -110,9 +110,8 @@ namespace NAudioDemo.Mp3StreamingDemo
                                 // however, the buffered provider doesn't know what sample rate it is working at
                                 // until we have a frame
                                 decompressor = CreateFrameDecompressor(frame);
-                                bufferedWaveProvider = new BufferedWaveProvider(decompressor.OutputFormat);
-                                bufferedWaveProvider.BufferDuration =
-                                    TimeSpan.FromSeconds(20); // allow us to get well ahead of ourselves
+                                bufferedWaveProvider = new BufferedWaveProvider(decompressor.OutputFormat,
+                                    TimeSpan.FromSeconds(20)); // allow us to get well ahead of ourselves
                                 //this.bufferedWaveProvider.BufferedDuration = 250;
                             }
                             int decompressed = decompressor.DecompressFrame(frame, buffer, 0);

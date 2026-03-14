@@ -17,9 +17,7 @@ namespace NAudio.Dsp
             float c1, c2, tx, ty, t1, t2, u1, u2, z;
 
             // Calculate the number of points
-            n = 1;
-            for (i = 0; i < m; i++)
-                n *= 2;
+            n = 1 << m;
 
             // Do the bit reversal
             i2 = n >> 1;
@@ -80,10 +78,11 @@ namespace NAudio.Dsp
             // Scaling for forward transform 
             if (forward)
             {
+                float scale = 1.0f / n;
                 for (i = 0; i < n; i++)
                 {
-                    data[i].X /= n;
-                    data[i].Y /= n;
+                    data[i].X *= scale;
+                    data[i].Y *= scale;
                 }
             }
         }
@@ -115,8 +114,8 @@ namespace NAudio.Dsp
         /// </summary>
         /// <param name="n">Index into frame</param>
         /// <param name="frameSize">Frame size (e.g. 1024)</param>
-        /// <returns>Multiplier for Blackmann-Harris window</returns>
-        public static double BlackmannHarrisWindow(int n, int frameSize)
+        /// <returns>Multiplier for Blackman-Harris window</returns>
+        public static double BlackmanHarrisWindow(int n, int frameSize)
         {
             return 0.35875 - (0.48829 * Math.Cos((2 * Math.PI * n) / (frameSize - 1))) + (0.14128 * Math.Cos((4 * Math.PI * n) / (frameSize - 1))) - (0.01168 * Math.Cos((6 * Math.PI * n) / (frameSize - 1)));
         }

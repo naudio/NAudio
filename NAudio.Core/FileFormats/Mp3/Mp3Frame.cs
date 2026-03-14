@@ -61,7 +61,7 @@ namespace NAudio.Wave
         /// <returns>A valid MP3 frame, or null if none found</returns>
         public static Mp3Frame LoadFromStream(Stream input, bool readData)
         {
-            TrySkipId3v2Tag(input);
+            Id3v2Tag.TrySkipTag(input);
 
             var frame = new Mp3Frame();
             frame.FileOffset = input.Position;
@@ -109,46 +109,6 @@ namespace NAudio.Wave
             }
 
             return frame;
-        }
-
-        private static void TrySkipId3v2Tag(Stream input)
-        {
-            if (!input.CanSeek || input.Length - input.Position < 10)
-            {
-                return;
-            }
-
-            long originalPosition = input.Position;
-            byte[] id3Header = new byte[10];
-            int bytesRead = input.Read(id3Header, 0, id3Header.Length);
-            if (bytesRead < id3Header.Length)
-            {
-                input.Position = originalPosition;
-                return;
-            }
-
-            if (id3Header[0] != 'I' || id3Header[1] != 'D' || id3Header[2] != '3')
-            {
-                input.Position = originalPosition;
-                return;
-            }
-
-            if ((id3Header[6] & 0x80) != 0 || (id3Header[7] & 0x80) != 0 || (id3Header[8] & 0x80) != 0 || (id3Header[9] & 0x80) != 0)
-            {
-                input.Position = originalPosition;
-                return;
-            }
-
-            int tagSize = (id3Header[6] << 21) | (id3Header[7] << 14) | (id3Header[8] << 7) | id3Header[9];
-            int footerSize = (id3Header[5] & 0x10) == 0x10 ? 10 : 0;
-            long newPosition = originalPosition + 10 + tagSize + footerSize;
-            if (newPosition > input.Length)
-            {
-                input.Position = originalPosition;
-                return;
-            }
-
-            input.Position = newPosition;
         }
 
         private static bool IsLikelyAudioFrameSequence(Stream input, Mp3Frame firstFrame)

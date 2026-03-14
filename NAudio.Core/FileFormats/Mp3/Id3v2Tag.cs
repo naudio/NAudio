@@ -129,16 +129,10 @@ namespace NAudio.Wave
         /// <summary>
         /// Creates the Id3v2 tag header and returns is as a byte array.
         /// </summary>
-        /// <param name="frames">The Id3v2 frames that will be included in the file. This is used to calculate the ID3v2 tag size.</param>
+        /// <param name="size">The sum of all frame sizes included in the tag.</param>
         /// <returns></returns>
-        static byte[] CreateId3v2TagHeader(IEnumerable<byte[]> frames)
+        static byte[] CreateId3v2TagHeader(int size)
         {
-            int size = 0;
-            foreach (byte[] frame in frames)
-            {
-                size += frame.Length;
-            }
-
             byte[] tagHeader = ByteArrayExtensions.Concat(
                 Encoding.UTF8.GetBytes("ID3"),
                 new byte[] { 3, 0 }, // version
@@ -155,14 +149,17 @@ namespace NAudio.Wave
         static Stream CreateId3v2TagStream(IEnumerable<KeyValuePair<string, string>> tags)
         {
             List<byte[]> frames = new List<byte[]>();
+            int framesSize = 0;
             foreach (KeyValuePair<string, string> tag in tags)
             {
-                frames.Add(CreateId3v2Frame(tag.Key, tag.Value));
+                byte[] frame = CreateId3v2Frame(tag.Key, tag.Value);
+                frames.Add(frame);
+                framesSize += frame.Length;
             }
 
-            byte[] header = CreateId3v2TagHeader(frames);
+            byte[] header = CreateId3v2TagHeader(framesSize);
 
-            MemoryStream ms = new MemoryStream();
+            MemoryStream ms = new MemoryStream(header.Length + framesSize);
             ms.Write(header, 0, header.Length);
             foreach (byte[] frame in frames)
             {
@@ -175,43 +172,106 @@ namespace NAudio.Wave
 
         #endregion
 
+        public static bool TrySkipTag(Stream input)
+        {
+            if (input == null)
+            {
+                throw new ArgumentNullException("input");
+            }
+
+            if (!input.CanSeek || input.Length - input.Position < 10)
+            {
+                return false;
+            }
+
+            long originalPosition = input.Position;
+            var reader = new BinaryReader(input);
+            int dataLength;
+            int footerLength;
+            if (!TryReadTagHeader(reader, out dataLength, out footerLength))
+            {
+                input.Position = originalPosition;
+                return false;
+            }
+
+            long newPosition = originalPosition + 10 + dataLength + footerLength;
+            if (newPosition > input.Length)
+            {
+                input.Position = originalPosition;
+                return false;
+            }
+
+            input.Position = newPosition;
+            return true;
+        }
+
+        private static int ReadSynchsafeInt32(byte[] bytes, int offset)
+        {
+            return bytes[offset] * (1 << 21)
+                   + bytes[offset + 1] * (1 << 14)
+                   + bytes[offset + 2] * (1 << 7)
+                   + bytes[offset + 3];
+        }
+
+        private static bool TryReadTagHeader(BinaryReader reader, out int dataLength, out int footerLength)
+        {
+            dataLength = 0;
+            footerLength = 0;
+
+            byte[] headerBytes = reader.ReadBytes(10);
+            if (headerBytes.Length < 10)
+            {
+                return false;
+            }
+
+            if (headerBytes[0] != (byte)'I' || headerBytes[1] != (byte)'D' || headerBytes[2] != (byte)'3')
+            {
+                return false;
+            }
+
+            if ((headerBytes[6] & 0x80) != 0 ||
+                (headerBytes[7] & 0x80) != 0 ||
+                (headerBytes[8] & 0x80) != 0 ||
+                (headerBytes[9] & 0x80) != 0)
+            {
+                return false;
+            }
+
+            dataLength = ReadSynchsafeInt32(headerBytes, 6);
+            footerLength = (headerBytes[5] & 0x10) == 0x10 ? 10 : 0;
+            return true;
+        }
+
+        private static void SkipBytes(BinaryReader reader, int bytesToSkip)
+        {
+            if (bytesToSkip <= 0)
+            {
+                return;
+            }
+
+            byte[] buffer = new byte[Math.Min(4096, bytesToSkip)];
+            while (bytesToSkip > 0)
+            {
+                int read = reader.Read(buffer, 0, Math.Min(buffer.Length, bytesToSkip));
+                if (read <= 0)
+                {
+                    break;
+                }
+
+                bytesToSkip -= read;
+            }
+        }
+
         private Id3v2Tag(Stream input)
         {
             tagStartPosition = input.Position;
             var reader = new BinaryReader(input);
-            byte[] headerBytes = reader.ReadBytes(10);
-            if ((headerBytes.Length >= 3) &&
-                (headerBytes[0] == (byte)'I') &&
-                (headerBytes[1] == (byte)'D') &&
-                (headerBytes[2] == '3'))
+            int dataLength;
+            int footerLength;
+            if (TryReadTagHeader(reader, out dataLength, out footerLength))
             {
-
-                // http://www.id3.org/develop.html
-                // OK found an ID3 tag
-                // bytes 3 & 4 are ID3v2 version
-
-                if ((headerBytes[5] & 0x40) == 0x40)
-                {
-                    // extended header present
-                    byte[] extendedHeader = reader.ReadBytes(4);
-                    int extendedHeaderLength = extendedHeader[0] * (1 << 21);
-                    extendedHeaderLength += extendedHeader[1] * (1 << 14);
-                    extendedHeaderLength += extendedHeader[2] * (1 << 7);
-                    extendedHeaderLength += extendedHeader[3];
-                }
-
-                // synchsafe
-                int dataLength = headerBytes[6] * (1 << 21);
-                dataLength += headerBytes[7] * (1 << 14);
-                dataLength += headerBytes[8] * (1 << 7);
-                dataLength += headerBytes[9];
-                byte[] tagData = reader.ReadBytes(dataLength);
-
-                if ((headerBytes[5] & 0x10) == 0x10)
-                {
-                    // footer present
-                    byte[] footer = reader.ReadBytes(10);
-                }
+                SkipBytes(reader, dataLength);
+                SkipBytes(reader, footerLength);
             }
             else
             {

@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Text;
 
 namespace NAudio.Midi
 {
@@ -32,7 +31,7 @@ namespace NAudio.Midi
             int velocity, int duration)
             : base(absoluteTime, channel, MidiCommandCode.NoteOn, noteNumber, velocity)
         {
-            this.OffEvent = new NoteEvent(absoluteTime, channel, MidiCommandCode.NoteOff,
+            OffEvent = new NoteEvent(absoluteTime, channel, MidiCommandCode.NoteOff,
                 noteNumber, 0);
             NoteLength = duration;
         }
@@ -53,15 +52,15 @@ namespace NAudio.Midi
             }
             set
             {
-                if (!MidiEvent.IsNoteOff(value))
+                if (!IsNoteOff(value))
                 {
                     throw new ArgumentException("OffEvent must be a valid MIDI note off event");
                 }
-                if (value.NoteNumber != this.NoteNumber)
+                if (value.NoteNumber != NoteNumber)
                 {
                     throw new ArgumentException("Note Off Event must be for the same note number");
                 }
-                if (value.Channel != this.Channel)
+                if (value.Channel != Channel)
                 {
                     throw new ArgumentException("Note Off Event must be for the same channel");
                 }
@@ -118,7 +117,12 @@ namespace NAudio.Midi
         {
             get
             {
-                return (int)(offEvent.AbsoluteTime - this.AbsoluteTime);
+                if (offEvent == null)
+                {
+                    throw new InvalidOperationException("Cannot get NoteLength when OffEvent is null");
+                }
+
+                return (int)(offEvent.AbsoluteTime - AbsoluteTime);
             }
             set
             {
@@ -126,7 +130,12 @@ namespace NAudio.Midi
                 {
                     throw new ArgumentException("NoteLength must be 0 or greater");
                 }
-                offEvent.AbsoluteTime = this.AbsoluteTime + value;
+                if (offEvent == null)
+                {
+                    throw new InvalidOperationException("Cannot set NoteLength when OffEvent is null");
+                }
+
+                offEvent.AbsoluteTime = AbsoluteTime + value;
             }
         }
 
@@ -137,14 +146,11 @@ namespace NAudio.Midi
         /// </summary>
         public override string ToString()
         {
-            if ((this.Velocity == 0) && (OffEvent == null))
+            if ((Velocity == 0) && (OffEvent == null))
             {
-                return String.Format("{0} (Note Off)",
-                    base.ToString());
+                return $"{base.ToString()} (Note Off)";
             }
-            return String.Format("{0} Len: {1}",
-                base.ToString(),
-                (this.OffEvent == null) ? "?" : this.NoteLength.ToString());
+            return $"{base.ToString()} Len: {((OffEvent == null) ? "?" : NoteLength.ToString())}";
         }
     }
 }

@@ -74,7 +74,7 @@ namespace NAudio.Midi
                 int tracks = SwapUInt16(br.ReadUInt16());
                 deltaTicksPerQuarterNote = SwapUInt16(br.ReadUInt16());
 
-                events = new MidiEventCollection((fileFormat == 0) ? 0 : 1, deltaTicksPerQuarterNote);
+                events = new MidiEventCollection(fileFormat, deltaTicksPerQuarterNote);
                 for (int n = 0; n < tracks; n++)
                 {
                     events.AddTrack();
@@ -84,7 +84,7 @@ namespace NAudio.Midi
                 
                 for(int track = 0; track < tracks; track++) 
                 {
-                    if(fileFormat == 1) 
+                    if(fileFormat != 0) 
                     {
                         absoluteTime = 0;
                     }

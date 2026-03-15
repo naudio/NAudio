@@ -11,8 +11,33 @@ namespace NAudio.Midi
     public class SysexEvent : MidiEvent 
     {
         private byte[] data;
-        //private int length;
-        
+
+        /// <summary>
+        /// Creates a new sysex event
+        /// </summary>
+        public SysexEvent()
+            : base(0, 1, MidiCommandCode.Sysex)
+        {
+            data = Array.Empty<byte>();
+        }
+
+        /// <summary>
+        /// Creates a new sysex event with the specified payload.
+        /// Payload data should not include the 0xF0 status byte or the 0xF7 terminator byte.
+        /// </summary>
+        /// <param name="absoluteTime">Absolute time of this event</param>
+        /// <param name="data">Sysex payload bytes (excluding 0xF0/0xF7)</param>
+        public SysexEvent(long absoluteTime, byte[] data)
+            : base(absoluteTime, 1, MidiCommandCode.Sysex)
+        {
+            if (data == null)
+            {
+                throw new ArgumentNullException("data");
+            }
+
+            this.data = (byte[])data.Clone();
+        }
+
         /// <summary>
         /// Reads a sysex message from a MIDI stream
         /// </summary>
@@ -24,7 +49,7 @@ namespace NAudio.Midi
             //se.length = ReadVarInt(br);
             //se.data = br.ReadBytes(se.length);
 
-            List<byte> sysexData = new List<byte>();
+            var sysexData = new List<byte>();
             bool loop = true;
             while(loop) 
             {
@@ -47,7 +72,12 @@ namespace NAudio.Midi
         /// <summary>
         /// Creates a deep clone of this MIDI event.
         /// </summary>
-        public override MidiEvent Clone() => new SysexEvent { data = (byte[])data?.Clone() };
+        public override MidiEvent Clone()
+        {
+            var clone = (SysexEvent)MemberwiseClone();
+            clone.data = (byte[])data?.Clone();
+            return clone;
+        }
 
         /// <summary>
         /// Describes this sysex message
@@ -55,12 +85,13 @@ namespace NAudio.Midi
         /// <returns>A string describing the sysex message</returns>
         public override string ToString() 
         {
-            StringBuilder sb = new StringBuilder();
-            foreach (byte b in data)
+            var sysexData = data ?? Array.Empty<byte>();
+            var sb = new StringBuilder();
+            foreach (byte b in sysexData)
             {
                 sb.AppendFormat("{0:X2} ", b);
             }
-            return String.Format("{0} Sysex: {1} bytes\r\n{2}",this.AbsoluteTime,data.Length,sb.ToString());
+            return $"{this.AbsoluteTime} Sysex: {sysexData.Length} bytes\r\n{sb}";
         }
         
         /// <summary>
@@ -73,7 +104,8 @@ namespace NAudio.Midi
             base.Export(ref absoluteTime, writer);
             //WriteVarInt(writer,length);
             //writer.Write(data, 0, data.Length);
-            writer.Write(data, 0, data.Length);
+            var sysexData = data ?? Array.Empty<byte>();
+            writer.Write(sysexData, 0, sysexData.Length);
             writer.Write((byte)0xF7);
         }
     }

@@ -386,7 +386,7 @@ namespace NAudio.Midi
             WriteVarInt(writer,(int) (this.absoluteTime - absoluteTime));
             absoluteTime = this.absoluteTime;
             int output = (int) commandCode;
-            if (commandCode != MidiCommandCode.MetaEvent)
+            if (commandCode < MidiCommandCode.Sysex)
             {
                 output += (channel - 1);
             }

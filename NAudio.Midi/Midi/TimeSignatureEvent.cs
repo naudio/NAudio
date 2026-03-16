@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Text;
 
 namespace NAudio.Midi 
 {
@@ -9,24 +8,24 @@ namespace NAudio.Midi
     /// </summary>
     public class TimeSignatureEvent : MetaEvent 
     {
-        private byte numerator;
-        private byte denominator;
-        private byte ticksInMetronomeClick;
-        private byte no32ndNotesInQuarterNote;
+        private readonly byte numerator;
+        private readonly byte denominator;
+        private readonly byte ticksInMetronomeClick;
+        private readonly byte no32ndNotesInQuarterNote;
         
         /// <summary>
         /// Reads a new time signature event from a MIDI stream
         /// </summary>
         /// <param name="br">The MIDI stream</param>
         /// <param name="length">The data length</param>
-        public TimeSignatureEvent(BinaryReader br,int length) 
+        public TimeSignatureEvent(BinaryReader br, int length) 
         {
             if(length != 4) 
             {
-                throw new FormatException(String.Format("Invalid time signature length: Got {0}, expected 4", length));
+                throw new FormatException($"Invalid time signature length: Got {length}, expected 4");
             }
             numerator = br.ReadByte();
-            denominator = br.ReadByte(); //2=quarter, 3=eigth etc
+            denominator = br.ReadByte(); // exponent: denominator is 2^value
             ticksInMetronomeClick = br.ReadByte();
             no32ndNotesInQuarterNote = br.ReadByte();
         }
@@ -43,10 +42,19 @@ namespace NAudio.Midi
             :
             base(MetaEventType.TimeSignature, 4, absoluteTime)
         {
-            this.numerator = (byte)numerator;
-            this.denominator = (byte)denominator;
-            this.ticksInMetronomeClick = (byte)ticksInMetronomeClick;
-            this.no32ndNotesInQuarterNote = (byte)no32ndNotesInQuarterNote;
+            this.numerator = ValidateByteRange(nameof(numerator), numerator);
+            this.denominator = ValidateByteRange(nameof(denominator), denominator);
+            this.ticksInMetronomeClick = ValidateByteRange(nameof(ticksInMetronomeClick), ticksInMetronomeClick);
+            this.no32ndNotesInQuarterNote = ValidateByteRange(nameof(no32ndNotesInQuarterNote), no32ndNotesInQuarterNote);
+        }
+
+        private static byte ValidateByteRange(string parameterName, int value)
+        {
+            if (value < 0 || value > byte.MaxValue)
+            {
+                throw new ArgumentOutOfRangeException(parameterName, value, "Value must be in the range 0-255");
+            }
+            return (byte)value;
         }
 
         /// <summary>
@@ -63,8 +71,7 @@ namespace NAudio.Midi
         }
 
         /// <summary>
-        /// Denominator (Beat unit),
-        /// 1 means 2, 2 means 4 (crochet), 3 means 8 (quaver), 4 means 16 and 5 means 32
+        /// Denominator (Beat unit), stored as power-of-two exponent (dd), where denominator is 2^dd
         /// </summary>
         public int Denominator
         {
@@ -94,26 +101,17 @@ namespace NAudio.Midi
         {
             get 
             {
-                string den = String.Format("Unknown ({0})",denominator);
-                switch(denominator) 
+                string den;
+                if (denominator <= 30)
                 {
-                case 1:
-                    den = "2";
-                    break;
-                case 2:
-                    den = "4";
-                    break;
-                case 3:
-                    den = "8";
-                    break;
-                case 4:
-                    den = "16";
-                    break;
-                case 5:
-                    den = "32";
-                    break;
+                    den = (1 << denominator).ToString();
                 }
-                return String.Format("{0}/{1}",numerator,den);
+                else
+                {
+                    den = $"Unknown ({denominator})";
+                }
+
+                return $"{numerator}/{den}";
             }
         }
         
@@ -123,8 +121,7 @@ namespace NAudio.Midi
         /// <returns>A string describing this event</returns>
         public override string ToString() 
         {
-            return String.Format("{0} {1} TicksInClick:{2} 32ndsInQuarterNote:{3}",
-                base.ToString(),TimeSignature,ticksInMetronomeClick,no32ndNotesInQuarterNote);
+            return $"{base.ToString()} {TimeSignature} TicksInClick:{ticksInMetronomeClick} 32ndsInQuarterNote:{no32ndNotesInQuarterNote}";
         }
 
         /// <summary>

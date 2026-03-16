@@ -99,6 +99,16 @@ namespace NAudioTests.Midi
             }
         }
 
+        [TestCase(-2, 0, "Bb major")]
+        [TestCase(4, 1, "C# minor")]
+        [TestCase(0, 0, "C major")]
+        public void KeyNameReturnsExpectedMusicalKey(int sharpsFlats, int majorMinor, string expected)
+        {
+            var keySignatureEvent = new KeySignatureEvent(sharpsFlats, majorMinor, 0);
+
+            Assert.That(keySignatureEvent.KeyName, Is.EqualTo(expected));
+        }
+
         [Test]
         public void ExportWritesDeltaMetaTypeLengthAndData()
         {
@@ -128,18 +138,18 @@ namespace NAudioTests.Midi
             Assert.That(clone.MetaEventType, Is.EqualTo(keySignatureEvent.MetaEventType));
             Assert.That(clone.SharpsFlats, Is.EqualTo(keySignatureEvent.SharpsFlats));
             Assert.That(clone.MajorMinor, Is.EqualTo(keySignatureEvent.MajorMinor));
+            Assert.That(clone.KeyName, Is.EqualTo(keySignatureEvent.KeyName));
         }
 
         [Test]
-        public void ToStringIncludesKeyValues()
+        public void ToStringIncludesMusicalKeyName()
         {
-            var keySignatureEvent = new KeySignatureEvent(-2, 1, 0);
+            var keySignatureEvent = new KeySignatureEvent(-2, 0, 0);
 
             var text = keySignatureEvent.ToString();
 
             Assert.That(text, Does.Contain("KeySignature"));
-            Assert.That(text, Does.Contain("-2"));
-            Assert.That(text, Does.Contain("1"));
+            Assert.That(text, Does.Contain("Bb major"));
         }
     }
 }

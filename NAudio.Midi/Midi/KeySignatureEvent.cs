@@ -11,6 +11,16 @@ namespace NAudio.Midi
         private readonly byte sharpsFlats;
         private readonly byte majorMinor;
 
+        private static readonly string[] MajorKeyNames =
+        {
+            "Cb", "Gb", "Db", "Ab", "Eb", "Bb", "F", "C", "G", "D", "A", "E", "B", "F#", "C#"
+        };
+
+        private static readonly string[] MinorKeyNames =
+        {
+            "Ab", "Eb", "Bb", "F", "C", "G", "D", "A", "E", "B", "F#", "C#", "G#", "D#", "A#"
+        };
+
         /// <summary>
         /// Reads a new track sequence number event from a MIDI stream
         /// </summary>
@@ -78,12 +88,25 @@ namespace NAudio.Midi
         public int MajorMinor => majorMinor;
 
         /// <summary>
+        /// The musical key name represented by this event (for example Bb major, C# minor)
+        /// </summary>
+        public string KeyName
+        {
+            get
+            {
+                var index = SharpsFlats + 7;
+                var tonic = MajorMinor == 0 ? MajorKeyNames[index] : MinorKeyNames[index];
+                return MajorMinor == 0 ? $"{tonic} major" : $"{tonic} minor";
+            }
+        }
+
+        /// <summary>
         /// Describes this event
         /// </summary>
         /// <returns>String describing the event</returns>
         public override string ToString()
         {
-            return $"{base.ToString()} {SharpsFlats} {majorMinor}";
+            return $"{base.ToString()} {KeyName}";
         }
 
         /// <summary>

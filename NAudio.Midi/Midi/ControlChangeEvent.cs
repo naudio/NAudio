@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Text;
 
 namespace NAudio.Midi 
 {
@@ -28,7 +27,7 @@ namespace NAudio.Midi
             controller = (MidiController) c;
             if((controllerValue & 0x80) != 0) 
             {
-                throw new InvalidDataException(String.Format("Invalid controllerValue {0} for controller {1}, Pos 0x{2:X}", controllerValue, controller, br.BaseStream.Position));
+                throw new InvalidDataException($"Invalid controllerValue {controllerValue} for controller {controller}, Pos 0x{br.BaseStream.Position:X}");
             }
         }
 
@@ -52,10 +51,7 @@ namespace NAudio.Midi
         /// <returns>A string describing this event</returns>
         public override string ToString() 
         {
-            return String.Format("{0} Controller {1} Value {2}",
-                base.ToString(),
-                this.controller,
-                this.controllerValue);
+            return $"{base.ToString()} Controller {this.controller} Value {this.controllerValue}";
         }
 
         /// <summary>

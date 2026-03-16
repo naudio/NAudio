@@ -22,8 +22,22 @@ namespace NAudio.Midi
             {
                 throw new FormatException("Invalid key signature length");
             }
-            sharpsFlats = br.ReadByte(); // sf=sharps/flats (-7=7 flats, 0=key of C,7=7 sharps)
-            majorMinor = br.ReadByte(); // mi=major/minor (0=major, 1=minor)
+
+            var sharpsFlatsByte = br.ReadByte(); // sf=sharps/flats (-7=7 flats, 0=key of C,7=7 sharps)
+            var majorMinorByte = br.ReadByte(); // mi=major/minor (0=major, 1=minor)
+
+            if ((sbyte)sharpsFlatsByte < -7 || (sbyte)sharpsFlatsByte > 7)
+            {
+                throw new FormatException($"Invalid key signature sharps/flats value {(sbyte)sharpsFlatsByte}. Expected range is -7 to 7.");
+            }
+
+            if (majorMinorByte > 1)
+            {
+                throw new FormatException($"Invalid key signature major/minor value {majorMinorByte}. Expected 0 (major) or 1 (minor).");
+            }
+
+            sharpsFlats = sharpsFlatsByte;
+            majorMinor = majorMinorByte;
         }
 
         /// <summary>
@@ -32,8 +46,20 @@ namespace NAudio.Midi
         public KeySignatureEvent(int sharpsFlats, int majorMinor, long absoluteTime)
             : base(MetaEventType.KeySignature, 2, absoluteTime)
         {
-            this.sharpsFlats = (byte) sharpsFlats;
-            this.majorMinor = (byte) majorMinor;
+            if (sharpsFlats < -7 || sharpsFlats > 7)
+            {
+                throw new ArgumentOutOfRangeException(nameof(sharpsFlats), sharpsFlats,
+                    "Sharps/flats value must be in the range -7 to 7.");
+            }
+
+            if (majorMinor < 0 || majorMinor > 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(majorMinor), majorMinor,
+                    "Major/minor value must be 0 (major) or 1 (minor).");
+            }
+
+            this.sharpsFlats = (byte)sharpsFlats;
+            this.majorMinor = (byte)majorMinor;
         }
 
         /// <summary>
@@ -57,7 +83,7 @@ namespace NAudio.Midi
         /// <returns>String describing the event</returns>
         public override string ToString()
         {
-            return String.Format("{0} {1} {2}", base.ToString(), SharpsFlats, majorMinor);
+            return $"{base.ToString()} {SharpsFlats} {majorMinor}";
         }
 
         /// <summary>

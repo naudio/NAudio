@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Text;
 
 namespace NAudio.Midi 
 {
@@ -50,10 +49,7 @@ namespace NAudio.Midi
         /// <returns>String describing this pitch wheel change event</returns>
         public override string ToString() 
         {
-            return String.Format("{0} Pitch {1} ({2})",
-                base.ToString(),
-                this.pitch,
-                this.pitch - 0x2000);
+            return $"{base.ToString()} Pitch {pitch} ({pitch - 0x2000})";
         }
 
         /// <summary>

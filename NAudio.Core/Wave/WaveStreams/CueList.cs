@@ -1,9 +1,8 @@
-﻿using System;
+﻿using NAudio.Utils;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using System.Text.RegularExpressions;
-using NAudio.Utils;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave
@@ -151,18 +150,40 @@ namespace NAudio.Wave
             }
 
             string[] labels = new string[cueCount];
-            int labelLength = 0;
-
             var labelChunkId = ChunkIdentifier.ChunkIdentifierToInt32("labl");
-            for (int p = 4; listChunkData.Length - p >= 16; p += labelLength + labelLength % 2 + 12)
+            var extendedAsciiEncoding = Encoding.GetEncoding(1252); // Windows-1252 (extended ASCII)
+            
+            // Parse list chunk - properly handle all chunk types
+            for (int p = 4; listChunkData.Length - p >= 8; )
             {
-                if (BitConverter.ToInt32(listChunkData, p) == labelChunkId)
+                int chunkId = BitConverter.ToInt32(listChunkData, p);
+                int chunkSize = BitConverter.ToInt32(listChunkData, p + 4);
+                
+                if (chunkId == labelChunkId && chunkSize >= 4 && listChunkData.Length - p >= chunkSize + 8)
                 {
-                    labelLength = BitConverter.ToInt32(listChunkData, p + 4) - 4;
-                    var cueId = BitConverter.ToInt32(listChunkData, p + 8);
-                    cue = cueIndex[cueId];
-                    labels[cue] = Encoding.UTF8.GetString(listChunkData, p + 12, labelLength - 1);
+                    // This is a label chunk - extract the label data
+                    int labelLength = chunkSize - 4; // chunkSize includes the dwIdentifier
+                    if (labelLength > 0 && listChunkData.Length - p - 12 >= labelLength - 1)
+                    {
+                        var cueId = BitConverter.ToInt32(listChunkData, p + 8);
+                        
+                        // Validate that the cue ID exists before accessing the dictionary
+                        if (cueIndex.TryGetValue(cueId, out var cueIndex_value))
+                        {
+                            labels[cueIndex_value] = extendedAsciiEncoding.GetString(listChunkData, p + 12, labelLength - 1);
+                        }
+                    }
                 }
+                
+                // Move to next chunk: account for proper word-alignment padding
+                // chunkSize is the size of the chunk data, add 8 for chunk ID and size fields
+                int chunkTotalSize = chunkSize + 8;
+                // Add padding if chunk data size is odd (word alignment)
+                if (chunkSize % 2 == 1)
+                {
+                    chunkTotalSize += 1;
+                }
+                p += chunkTotalSize;
             }
 
             for (int i = 0; i < cueCount; i++)
@@ -183,10 +204,14 @@ namespace NAudio.Wave
             }
             var cueChunkLength = 12 + 24 * Count;
             var listChunkLength = 12;
+            var extendedAsciiEncoding = Encoding.GetEncoding(1252); // Windows-1252 (extended ASCII)
+            
             for (int i = 0; i < Count; i++)
             {
-                var labelChunkLength = Encoding.UTF8.GetBytes(this[i].Label).Length + 1;
-                listChunkLength += labelChunkLength + labelChunkLength % 2 + 12;
+                var labelChunkLength = extendedAsciiEncoding.GetBytes(this[i].Label).Length + 1; // +1 for null terminator
+                // Add padding for word alignment: if length is odd, add 1 byte padding
+                int paddingLength = (labelChunkLength % 2 == 1) ? 1 : 0;
+                listChunkLength += labelChunkLength + paddingLength + 12;
             }
 
             byte[] chunks = new byte[cueChunkLength + listChunkLength];
@@ -218,18 +243,17 @@ namespace NAudio.Wave
                     writer.Write(adtlTypeId);
                     for (int cue = 0; cue < Count; cue++)
                     {
-                        var labelArray = Encoding.UTF8.GetBytes(this[cue].Label);
+                        var labelArray = extendedAsciiEncoding.GetBytes(this[cue].Label);
                         writer.Write(labelChunkId);
-                        writer.Write(labelArray.Length + 1 + 4);
+                        writer.Write(labelArray.Length + 1 + 4); // +1 for null terminator, +4 for cue ID
                         writer.Write(cue);
                         writer.Write(labelArray);
-                        if (labelArray.Length % 2 == 0)
+                        writer.Write((byte)0); // null terminator
+                        
+                        // Add padding for word alignment if label length (including null terminator) is odd
+                        if ((labelArray.Length + 1) % 2 == 1)
                         {
-                            writer.Seek(2, SeekOrigin.Current);
-                        }
-                        else
-                        {
-                            writer.Seek(1, SeekOrigin.Current);
+                            writer.Write((byte)0);
                         }
                     }
                 }

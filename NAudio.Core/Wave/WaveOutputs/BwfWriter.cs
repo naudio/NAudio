@@ -11,63 +11,75 @@ namespace NAudio.Wave
     public class BwfWriter : IDisposable
     {
         private readonly WaveFormat format;
-        private readonly BinaryWriter writer;
+        private BinaryWriter writer;
         private readonly long dataChunkSizePosition;
         private long dataLength;
         private bool isDisposed;
 
         /// <summary>
-        /// Createa a new BwfWriter
+        /// Creates a new BwfWriter
         /// </summary>
-        /// <param name="filename">Rarget filename</param>
+        /// <param name="filename">Target filename</param>
         /// <param name="format">WaveFormat</param>
         /// <param name="bextChunkInfo">Chunk information</param>
         public BwfWriter(string filename, WaveFormat format, BextChunkInfo bextChunkInfo)
         {
+            if (filename == null) throw new ArgumentNullException(nameof(filename));
+            if (format == null) throw new ArgumentNullException(nameof(format));
+            if (bextChunkInfo == null) throw new ArgumentNullException(nameof(bextChunkInfo));
+
             this.format = format;
-            writer = new BinaryWriter(File.OpenWrite(filename));
-            writer.Write(Encoding.UTF8.GetBytes("RIFF")); // will be updated to RF64 if large 
-            writer.Write(0); // placeholder
-            writer.Write(Encoding.UTF8.GetBytes("WAVE"));
+            try
+            {
+                writer = new BinaryWriter(File.OpenWrite(filename));
+                writer.Write(Encoding.UTF8.GetBytes("RIFF")); // will be updated to RF64 if large 
+                writer.Write(0); // placeholder
+                writer.Write(Encoding.UTF8.GetBytes("WAVE"));
 
-            writer.Write(Encoding.UTF8.GetBytes("JUNK")); // ds64
-            writer.Write(28); // ds64 size
-            writer.Write(0L); // RIFF size
-            writer.Write(0L); // data size
-            writer.Write(0L); // sampleCount size
-            writer.Write(0); // table length
-            // TABLE appears here - to store the sizes of other huge chunks other than
+                writer.Write(Encoding.UTF8.GetBytes("JUNK")); // ds64
+                writer.Write(28); // ds64 size
+                writer.Write(0L); // RIFF size
+                writer.Write(0L); // data size
+                writer.Write(0L); // sampleCount size
+                writer.Write(0); // table length
+                // TABLE appears here - to store the sizes of other huge chunks other than
 
-            // write the broadcast audio extension
-            writer.Write(Encoding.UTF8.GetBytes("bext"));
-            var codingHistory = Encoding.ASCII.GetBytes(bextChunkInfo.CodingHistory ?? "");
-            var bextLength = 602 + codingHistory.Length;
-            if (bextLength % 2 != 0)
-                bextLength++;
-            writer.Write(bextLength); // bext size
-            var bextStart = writer.BaseStream.Position;
-            writer.Write(GetAsBytes(bextChunkInfo.Description, 256));
-            writer.Write(GetAsBytes(bextChunkInfo.Originator, 32));
-            writer.Write(GetAsBytes(bextChunkInfo.OriginatorReference, 32));
-            writer.Write(GetAsBytes(bextChunkInfo.OriginationDate, 10));
-            writer.Write(GetAsBytes(bextChunkInfo.OriginationTime, 8));
-            writer.Write(bextChunkInfo.TimeReference); // 8 bytes long
-            writer.Write(bextChunkInfo.Version); // 2 bytes long
-            writer.Write(GetAsBytes(bextChunkInfo.UniqueMaterialIdentifier, 64));
-            writer.Write(bextChunkInfo.Reserved); // for version 1 this is 190 bytes
-            writer.Write(codingHistory);
-            if (codingHistory.Length % 2 != 0)
-                writer.Write((byte)0);
-            Debug.Assert(writer.BaseStream.Position == bextStart + bextLength, "Invalid bext chunk size");
+                // write the broadcast audio extension
+                writer.Write(Encoding.UTF8.GetBytes("bext"));
+                var codingHistory = Encoding.ASCII.GetBytes(bextChunkInfo.CodingHistory ?? "");
+                var bextLength = 602 + codingHistory.Length;
+                if (bextLength % 2 != 0)
+                    bextLength++;
+                writer.Write(bextLength); // bext size
+                var bextStart = writer.BaseStream.Position;
+                writer.Write(GetAsBytes(bextChunkInfo.Description, 256));
+                writer.Write(GetAsBytes(bextChunkInfo.Originator, 32));
+                writer.Write(GetAsBytes(bextChunkInfo.OriginatorReference, 32));
+                writer.Write(GetAsBytes(bextChunkInfo.OriginationDate, 10));
+                writer.Write(GetAsBytes(bextChunkInfo.OriginationTime, 8));
+                writer.Write(bextChunkInfo.TimeReference); // 8 bytes long
+                writer.Write(bextChunkInfo.Version); // 2 bytes long
+                writer.Write(GetAsBytes(bextChunkInfo.UniqueMaterialIdentifier, 64));
+                writer.Write(bextChunkInfo.Reserved); // for version 1 this is 190 bytes
+                writer.Write(codingHistory);
+                if (codingHistory.Length % 2 != 0)
+                    writer.Write((byte)0);
+                Debug.Assert(writer.BaseStream.Position == bextStart + bextLength, "Invalid bext chunk size");
 
-            // write the format chunk
-            writer.Write(Encoding.UTF8.GetBytes("fmt "));
-            format.Serialize(writer);
+                // write the format chunk
+                writer.Write(Encoding.UTF8.GetBytes("fmt "));
+                format.Serialize(writer);
 
-            writer.Write(Encoding.UTF8.GetBytes("data"));
-            dataChunkSizePosition = writer.BaseStream.Position;
-            writer.Write(-1); // will be overwritten unless this is RF64
-            // now finally the data chunk
+                writer.Write(Encoding.UTF8.GetBytes("data"));
+                dataChunkSizePosition = writer.BaseStream.Position;
+                writer.Write(-1); // will be overwritten unless this is RF64
+                // now finally the data chunk
+            }
+            catch
+            {
+                writer?.Dispose();
+                throw;
+            }
         }
 
         /// <summary>
@@ -75,7 +87,8 @@ namespace NAudio.Wave
         /// </summary>
         public void Write(byte[] buffer, int offset, int count)
         {
-            if (isDisposed) throw new ObjectDisposedException("This BWF Writer already disposed");
+            if (isDisposed) throw new ObjectDisposedException(nameof(BwfWriter));
+            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
             writer.Write(buffer, offset, count);
             dataLength += count;
         }
@@ -85,7 +98,7 @@ namespace NAudio.Wave
         /// </summary>
         public void Flush()
         {
-            if (isDisposed) throw new ObjectDisposedException("This BWF Writer already disposed");
+            if (isDisposed) throw new ObjectDisposedException(nameof(BwfWriter));
             writer.Flush();
             FixUpChunkSizes(true); // here to ensure WAV file created is always playable after Flush
         }
@@ -131,10 +144,26 @@ namespace NAudio.Wave
         /// </summary>
         public void Dispose()
         {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Protected dispose method for proper resource cleanup
+        /// </summary>
+        /// <param name="disposing">True if called from Dispose, false if called from finalizer</param>
+        protected virtual void Dispose(bool disposing)
+        {
             if (!isDisposed)
             {
-                FixUpChunkSizes(false);
-                writer.Dispose();
+                if (disposing)
+                {
+                    if (writer != null)
+                    {
+                        FixUpChunkSizes(false);
+                        writer.Dispose();
+                    }
+                }
                 isDisposed = true;
             }
         }

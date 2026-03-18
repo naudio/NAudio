@@ -59,7 +59,10 @@ namespace NAudio.SoundFont
 					Tools = c.GetDataAsString();
 					break;
 				default:
-					throw new InvalidDataException($"Unknown chunk type {c.ChunkID}");
+					// ignore unknown sub-chunks for forward compatibility
+					// read and discard data to advance the stream position
+					c.GetData();
+					break;
 				}
 			}
 			if(!ifilPresent) 
@@ -141,7 +144,7 @@ namespace NAudio.SoundFont
 				Copyright,
 				CreationDate,
 				Tools,
-				"TODO-fix comments",//Comments,
+				Comments,
 				WaveTableSoundEngine,
 				SoundFontVersion,
 				TargetProduct,

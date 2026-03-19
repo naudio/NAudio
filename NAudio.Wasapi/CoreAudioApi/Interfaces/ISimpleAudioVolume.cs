@@ -1,10 +1,10 @@
-﻿// -----------------------------------------
+// -----------------------------------------
 // SoundScribe (TM) and related software.
-// 
+//
 // Copyright (C) 2007-2011 Vannatech
 // http://www.vannatech.com
 // All rights reserved.
-// 
+//
 // This source code is subject to the MIT License.
 // http://www.opensource.org/licenses/mit-license.php
 //
@@ -21,6 +21,7 @@
 
 using System;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 
 namespace NAudio.CoreAudioApi.Interfaces
 {
@@ -30,8 +31,8 @@ namespace NAudio.CoreAudioApi.Interfaces
     /// </summary>
     [Guid("87CE5498-68D6-44E5-9215-6DA47EF883D8"),
         InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
-        ComImport]
-    internal interface ISimpleAudioVolume
+        GeneratedComInterface]
+    internal partial interface ISimpleAudioVolume
     {
         /// <summary>
         /// Sets the master volume level for the audio session.
@@ -40,9 +41,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <param name="eventContext">A user context value that is passed to the notification callback.</param>
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
-        int SetMasterVolume(
-            [In] [MarshalAs(UnmanagedType.R4)] float levelNorm,
-            [In] [MarshalAs(UnmanagedType.LPStruct)] Guid eventContext);
+        int SetMasterVolume(float levelNorm, in Guid eventContext);
 
         /// <summary>
         /// Retrieves the client volume level for the audio session.
@@ -50,8 +49,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <param name="levelNorm">Receives the volume level expressed as a normalized value between 0.0 and 1.0. </param>
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
-        int GetMasterVolume(
-            [Out] [MarshalAs(UnmanagedType.R4)] out float levelNorm);
+        int GetMasterVolume(out float levelNorm);
 
         /// <summary>
         /// Sets the muting state for the audio session.
@@ -60,9 +58,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <param name="eventContext">A user context value that is passed to the notification callback.</param>
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
-        int SetMute(
-            [In] [MarshalAs(UnmanagedType.Bool)] bool isMuted,
-            [In] [MarshalAs(UnmanagedType.LPStruct)] Guid eventContext);
+        int SetMute([MarshalAs(UnmanagedType.Bool)] bool isMuted, in Guid eventContext);
 
         /// <summary>
         /// Retrieves the current muting state for the audio session.
@@ -70,7 +66,6 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <param name="isMuted">Receives the muting state.</param>
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
-        int GetMute(
-            [Out] [MarshalAs(UnmanagedType.Bool)] out bool isMuted);
+        int GetMute([MarshalAs(UnmanagedType.Bool)] out bool isMuted);
     }
 }

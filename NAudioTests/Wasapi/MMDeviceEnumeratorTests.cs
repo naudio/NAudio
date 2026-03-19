@@ -74,7 +74,7 @@ namespace NAudioTests.Wasapi
             OSUtils.RequireVista();
             MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
             MMDevice defaultAudioEndpoint = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Console);
-            AudioClient audioClient = defaultAudioEndpoint.AudioClient;
+            AudioClient audioClient = defaultAudioEndpoint.CreateAudioClient();
             Assert.That(audioClient, Is.Not.Null);
         }
 
@@ -91,7 +91,7 @@ namespace NAudioTests.Wasapi
             OSUtils.RequireVista();
             var enumerator = new MMDeviceEnumerator();
 
-            var captureClient = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Console).AudioClient;
+            var captureClient = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Console).CreateAudioClient();
 
             var REFTIMES_PER_MILLISEC = 10000;
 

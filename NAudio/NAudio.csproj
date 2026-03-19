@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net472;netcoreapp3.1;net6.0-windows;net6.0</TargetFrameworks>
+    <TargetFrameworks>net472;netcoreapp3.1;net6.0-windows;net6.0;net8.0-windows10.0.19041.0</TargetFrameworks>
     <Version>2.3.0</Version>
     <Authors>Mark Heath &amp; Contributors</Authors>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -27,9 +27,14 @@
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' != 'net6.0' ">
     <ProjectReference Include="..\NAudio.Asio\NAudio.Asio.csproj" />
-    <ProjectReference Include="..\NAudio.Wasapi\NAudio.Wasapi.csproj" />
     <ProjectReference Include="..\NAudio.WinMM\NAudio.WinMM.csproj" />
     <ProjectReference Include="..\NAudio.WinForms\NAudio.WinForms.csproj" />
+  </ItemGroup>
+  <PropertyGroup Condition=" $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0-windows10.0.19041.0')) ">
+    <DefineConstants>$(DefineConstants);WASAPI</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition=" $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0-windows10.0.19041.0')) ">
+    <ProjectReference Include="..\NAudio.Wasapi\NAudio.Wasapi.csproj" />
   </ItemGroup>
 
 

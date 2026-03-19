@@ -1,8 +1,6 @@
-﻿using NAudio.Wasapi.CoreAudioApi.Interfaces;
 using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
+using System.Runtime.InteropServices.Marshalling;
 
 namespace NAudio.CoreAudioApi.Interfaces
 {
@@ -12,53 +10,63 @@ namespace NAudio.CoreAudioApi.Interfaces
     /// </summary>
     [Guid("AE2DE0E4-5BCA-4F2D-AA46-5D13F8FDB3A9"),
         InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
-        ComImport]
-    internal interface IPart
+        GeneratedComInterface]
+    internal partial interface IPart
     {
+        [PreserveSig]
         int GetName(
-            [Out, MarshalAs(UnmanagedType.LPWStr)] out string name);
+            [MarshalAs(UnmanagedType.LPWStr)] out string name);
 
+        [PreserveSig]
         int GetLocalId(
-            [Out] out uint id);
+            out uint id);
 
+        [PreserveSig]
         int GetGlobalId(
-            [Out, MarshalAs(UnmanagedType.LPWStr)] out string id);
+            [MarshalAs(UnmanagedType.LPWStr)] out string id);
 
+        [PreserveSig]
         int GetPartType(
-            [Out] out PartTypeEnum partType);
+            out PartTypeEnum partType);
 
+        [PreserveSig]
         int GetSubType(
             out Guid subType);
 
+        [PreserveSig]
         int GetControlInterfaceCount(
-            [Out] out uint count);
+            out uint count);
 
+        [PreserveSig]
         int GetControlInterface(
-            [In] uint index,
-            [Out, MarshalAs(UnmanagedType.IUnknown)] out IControlInterface controlInterface);
+            uint index,
+            out IntPtr controlInterface);
 
         [PreserveSig]
         int EnumPartsIncoming(
-            [Out] out IPartsList parts);
+            out IntPtr parts);
 
         [PreserveSig]
         int EnumPartsOutgoing(
-            [Out] out IPartsList parts);
+            out IntPtr parts);
 
+        [PreserveSig]
         int GetTopologyObject(
-            [Out] out object topologyObject);
+            out IntPtr topologyObject);
 
         [PreserveSig]
         int Activate(
-            [In] ClsCtx dwClsContext,
-            [In] ref Guid refiid,
-            [MarshalAs(UnmanagedType.IUnknown)] out object interfacePointer);
+            ClsCtx dwClsContext,
+            ref Guid refiid,
+            out IntPtr interfacePointer);
 
+        [PreserveSig]
         int RegisterControlChangeCallback(
-            [In] ref Guid refiid,
-            [In] IControlChangeNotify notify);
+            ref Guid refiid,
+            IntPtr notify);
 
+        [PreserveSig]
         int UnregisterControlChangeCallback(
-            [In] IControlChangeNotify notify);
+            IntPtr notify);
     }
 }

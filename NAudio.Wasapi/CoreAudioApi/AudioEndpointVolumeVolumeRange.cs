@@ -36,7 +36,7 @@ namespace NAudio.CoreAudioApi
 
         internal AudioEndpointVolumeVolumeRange(IAudioEndpointVolume parent)
         {
-            Marshal.ThrowExceptionForHR(parent.GetVolumeRange(out volumeMinDecibels,out volumeMaxDecibels,out volumeIncrementDecibels));
+            CoreAudioException.ThrowIfFailed(parent.GetVolumeRange(out volumeMinDecibels,out volumeMaxDecibels,out volumeIncrementDecibels));
         }
 
         /// <summary>

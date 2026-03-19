@@ -11,13 +11,12 @@ namespace NAudio.CoreAudioApi
     public class AudioClockClient : IDisposable
     {
         IAudioClock audioClockClientInterface;
+        private IntPtr nativePointer;
 
-        internal AudioClockClient(IAudioClock audioClockClientInterface)
+        internal AudioClockClient(IAudioClock audioClockClientInterface, IntPtr nativePointer)
         {
             this.audioClockClientInterface = audioClockClientInterface;
-
-            //Stopwatch.GetTimestamp();
-            //Stopwatch.Frequency
+            this.nativePointer = nativePointer;
         }
 
         /// <summary>
@@ -27,7 +26,7 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                Marshal.ThrowExceptionForHR(audioClockClientInterface.GetCharacteristics(out var characteristics));
+                CoreAudioException.ThrowIfFailed(audioClockClientInterface.GetCharacteristics(out var characteristics));
                 return (int)characteristics;
             }
         }
@@ -39,7 +38,7 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                Marshal.ThrowExceptionForHR(audioClockClientInterface.GetFrequency(out var freq));
+                CoreAudioException.ThrowIfFailed(audioClockClientInterface.GetFrequency(out var freq));
                 return freq;
             }
         }
@@ -51,7 +50,7 @@ namespace NAudio.CoreAudioApi
         {
             var hr = audioClockClientInterface.GetPosition(out position, out qpcPosition);
             if (hr == -1) return false;
-            Marshal.ThrowExceptionForHR(hr);
+            CoreAudioException.ThrowIfFailed(hr);
             return true;
         }
 
@@ -107,12 +106,14 @@ namespace NAudio.CoreAudioApi
         {
             if (audioClockClientInterface != null)
             {
-                // althugh GC would do this for us, we want it done now
-                // to let us reopen WASAPI
-                Marshal.ReleaseComObject(audioClockClientInterface);
                 audioClockClientInterface = null;
-                GC.SuppressFinalize(this);
             }
+            if (nativePointer != IntPtr.Zero)
+            {
+                Marshal.Release(nativePointer);
+                nativePointer = IntPtr.Zero;
+            }
+            GC.SuppressFinalize(this);
         }
 
         #endregion

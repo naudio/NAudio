@@ -39,7 +39,7 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                Marshal.ThrowExceptionForHR(audioMeterInformation.GetMeteringChannelCount(out var result));
+                CoreAudioException.ThrowIfFailed(audioMeterInformation.GetMeteringChannelCount(out var result));
                 return result;
             }
         }
@@ -61,7 +61,7 @@ namespace NAudio.CoreAudioApi
                 }
                 var peakValues = new float[Count];
                 var Params = GCHandle.Alloc(peakValues, GCHandleType.Pinned);
-                Marshal.ThrowExceptionForHR(audioMeterInformation.GetChannelsPeakValues(peakValues.Length, Params.AddrOfPinnedObject()));
+                CoreAudioException.ThrowIfFailed(audioMeterInformation.GetChannelsPeakValues(peakValues.Length, Params.AddrOfPinnedObject()));
                 Params.Free();
                 return peakValues[index];
             }

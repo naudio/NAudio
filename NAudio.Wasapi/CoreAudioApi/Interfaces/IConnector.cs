@@ -1,7 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using System.Runtime.InteropServices;
-using System.Text;
+using System.Runtime.InteropServices.Marshalling;
 
 namespace NAudio.CoreAudioApi.Interfaces
 {
@@ -11,16 +10,24 @@ namespace NAudio.CoreAudioApi.Interfaces
     /// </summary>
     [Guid("9C2C4058-23F5-41DE-877A-DF3AF236A09E"),
         InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
-        ComImport]
-    internal interface IConnector
+        GeneratedComInterface]
+    internal partial interface IConnector
     {
+        [PreserveSig]
         int GetType(out ConnectorType type);
+        [PreserveSig]
         int GetDataFlow(out DataFlow flow);
-        int ConnectTo([In] IConnector connectTo);
+        [PreserveSig]
+        int ConnectTo(IntPtr connectTo);
+        [PreserveSig]
         int Disconnect();
-        int IsConnected(out bool connected);
-        int GetConnectedTo(out IConnector conTo);
+        [PreserveSig]
+        int IsConnected([MarshalAs(UnmanagedType.Bool)] out bool connected);
+        [PreserveSig]
+        int GetConnectedTo(out IntPtr conTo);
+        [PreserveSig]
         int GetConnectorIdConnectedTo([MarshalAs(UnmanagedType.LPWStr)] out string id);
+        [PreserveSig]
         int GetDeviceIdConnectedTo([MarshalAs(UnmanagedType.LPWStr)] out string id);
     }
 }

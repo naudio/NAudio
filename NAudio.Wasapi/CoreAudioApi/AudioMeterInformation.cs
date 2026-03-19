@@ -35,7 +35,7 @@ namespace NAudio.CoreAudioApi
         internal AudioMeterInformation(IAudioMeterInformation realInterface)
         {
             audioMeterInformation = realInterface;
-            Marshal.ThrowExceptionForHR(audioMeterInformation.QueryHardwareSupport(out var hardwareSupp));
+            CoreAudioException.ThrowIfFailed(audioMeterInformation.QueryHardwareSupport(out var hardwareSupp));
             HardwareSupport = (EEndpointHardwareSupport)hardwareSupp;
             PeakValues = new AudioMeterInformationChannels(audioMeterInformation);
 
@@ -58,7 +58,7 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                Marshal.ThrowExceptionForHR(audioMeterInformation.GetPeakValue(out var result));
+                CoreAudioException.ThrowIfFailed(audioMeterInformation.GetPeakValue(out var result));
                 return result;
             }
         }

@@ -59,13 +59,13 @@ namespace NAudio.Wave
             }
             else if (fileName.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase))
             {
-#if NET6_0_OR_GREATER && !WINDOWS
-                throw new InvalidOperationException("MP3 file reading requires Windows for ACM or Media Foundation codecs");
-#else
+#if WASAPI
                 if (Environment.OSVersion.Version.Major < 6)
                     readerStream = new Mp3FileReader(fileName);
                 else // make MediaFoundationReader the default for MP3 going forwards
                     readerStream = new MediaFoundationReader(fileName);
+#else
+                throw new InvalidOperationException("MP3 file reading requires the NAudio.Wasapi package for Media Foundation codecs");
 #endif
             }
             else if (fileName.EndsWith(".aiff", StringComparison.OrdinalIgnoreCase) || fileName.EndsWith(".aif", StringComparison.OrdinalIgnoreCase))
@@ -74,11 +74,11 @@ namespace NAudio.Wave
             }
             else
             {
-#if NET6_0_OR_GREATER && !WINDOWS
-                throw new InvalidOperationException($"Unsupported file format. Media Foundation reader requires Windows.");
-#else
+#if WASAPI
                 // fall back to media foundation reader, see if that can play it
                 readerStream = new MediaFoundationReader(fileName);
+#else
+                throw new InvalidOperationException($"Unsupported file format. Media Foundation reader requires the NAudio.Wasapi package.");
 #endif
             }
         }

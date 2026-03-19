@@ -98,9 +98,11 @@ namespace NAudio.CoreAudioApi
         /// <summary>
         /// Get Control Interface by index
         /// </summary>
-        public IControlInterface GetControlInterface(uint index)
+        internal IControlInterface GetControlInterface(uint index)
         {
-            partInterface.GetControlInterface(index, out var result);
+            partInterface.GetControlInterface(index, out var ptr);
+            var result = (IControlInterface)Marshal.GetObjectForIUnknown(ptr);
+            Marshal.Release(ptr);
             return result;
         }
 
@@ -111,8 +113,14 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                var hr = partInterface.EnumPartsIncoming(out var result);
-                return hr == 0 ? new PartsList(result) : hr == E_NOTFOUND ? new PartsList(null) : throw new InvalidOperationException($"{nameof(IPart.EnumPartsIncoming)} failed (HRESULT: 0x{hr:X8})");
+                var hr = partInterface.EnumPartsIncoming(out var ptr);
+                if (hr == 0)
+                {
+                    var result = (IPartsList)Marshal.GetObjectForIUnknown(ptr);
+                    Marshal.Release(ptr);
+                    return new PartsList(result);
+                }
+                return hr == E_NOTFOUND ? new PartsList(null) : throw new InvalidOperationException($"{nameof(IPart.EnumPartsIncoming)} failed (HRESULT: 0x{hr:X8})");
             }
         }
 
@@ -123,8 +131,14 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                var hr = partInterface.EnumPartsOutgoing(out var result);
-                return hr == 0 ? new PartsList(result) : hr == E_NOTFOUND ? new PartsList(null) : throw new InvalidOperationException($"{nameof(IPart.EnumPartsOutgoing)} failed (HRESULT: 0x{hr:X8})");
+                var hr = partInterface.EnumPartsOutgoing(out var ptr);
+                if (hr == 0)
+                {
+                    var result = (IPartsList)Marshal.GetObjectForIUnknown(ptr);
+                    Marshal.Release(ptr);
+                    return new PartsList(result);
+                }
+                return hr == E_NOTFOUND ? new PartsList(null) : throw new InvalidOperationException($"{nameof(IPart.EnumPartsOutgoing)} failed (HRESULT: 0x{hr:X8})");
             }
         }
 
@@ -151,8 +165,11 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                var hr = partInterface.Activate(ClsCtx.ALL, ref IID_IAudioVolumeLevel, out var result);
-                return hr == 0 ? new AudioVolumeLevel(result as IAudioVolumeLevel) : null;
+                var hr = partInterface.Activate(ClsCtx.ALL, ref IID_IAudioVolumeLevel, out var ptr);
+                if (hr != 0 || ptr == IntPtr.Zero) return null;
+                var result = (IAudioVolumeLevel)Marshal.GetObjectForIUnknown(ptr);
+                Marshal.Release(ptr);
+                return new AudioVolumeLevel(result);
             }
         }
 
@@ -163,8 +180,11 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                var hr = partInterface.Activate(ClsCtx.ALL, ref IID_IAudioMute, out var result);
-                return hr == 0 ? new AudioMute(result as IAudioMute) : null;
+                var hr = partInterface.Activate(ClsCtx.ALL, ref IID_IAudioMute, out var ptr);
+                if (hr != 0 || ptr == IntPtr.Zero) return null;
+                var result = (IAudioMute)Marshal.GetObjectForIUnknown(ptr);
+                Marshal.Release(ptr);
+                return new AudioMute(result);
             }
         }
 
@@ -175,15 +195,20 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                var hr = partInterface.Activate(ClsCtx.ALL, ref IID_IKsJackDescription, out var result);
-                return hr == 0 ? new KsJackDescription(result as IKsJackDescription) : null;
+                var hr = partInterface.Activate(ClsCtx.ALL, ref IID_IKsJackDescription, out var ptr);
+                if (hr != 0 || ptr == IntPtr.Zero) return null;
+                var result = (IKsJackDescription)Marshal.GetObjectForIUnknown(ptr);
+                Marshal.Release(ptr);
+                return new KsJackDescription(result);
             }
         }
 
         private void GetDeviceTopology()
         {
-            Marshal.ThrowExceptionForHR(partInterface.GetTopologyObject(out var result));
-            deviceTopology = new DeviceTopology(result as IDeviceTopology);
+            CoreAudioException.ThrowIfFailed(partInterface.GetTopologyObject(out var ptr));
+            var result = (IDeviceTopology)Marshal.GetObjectForIUnknown(ptr);
+            Marshal.Release(ptr);
+            deviceTopology = new DeviceTopology(result);
         }
     }
 }

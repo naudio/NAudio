@@ -34,14 +34,6 @@ namespace NAudio.CoreAudioApi
         {
             GC.SuppressFinalize(this);
         }
-        
-        /// <summary>
-        /// Finalizer
-        /// </summary>
-        ~SimpleAudioVolume()
-        {
-            Dispose();
-        }
 
         #endregion
 
@@ -53,14 +45,14 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                Marshal.ThrowExceptionForHR(simpleAudioVolume.GetMasterVolume(out var result));
+                CoreAudioException.ThrowIfFailed(simpleAudioVolume.GetMasterVolume(out var result));
                 return result;
             }
             set
             {
                 if ((value >= 0.0) && (value <= 1.0))
                 {
-                    Marshal.ThrowExceptionForHR(simpleAudioVolume.SetMasterVolume(value, Guid.Empty));
+                    CoreAudioException.ThrowIfFailed(simpleAudioVolume.SetMasterVolume(value, Guid.Empty));
                 }
                 // should throw something if out of range
             }
@@ -73,12 +65,12 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                Marshal.ThrowExceptionForHR(simpleAudioVolume.GetMute(out var result));
+                CoreAudioException.ThrowIfFailed(simpleAudioVolume.GetMute(out var result));
                 return result;
             }
             set
             {
-                Marshal.ThrowExceptionForHR(simpleAudioVolume.SetMute(value, Guid.Empty));
+                CoreAudioException.ThrowIfFailed(simpleAudioVolume.SetMute(value, Guid.Empty));
             }
         }
     }

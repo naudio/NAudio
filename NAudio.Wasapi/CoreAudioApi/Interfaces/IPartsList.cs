@@ -1,7 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using System.Runtime.InteropServices;
-using System.Text;
+using System.Runtime.InteropServices.Marshalling;
 
 namespace NAudio.CoreAudioApi.Interfaces
 {
@@ -11,10 +10,12 @@ namespace NAudio.CoreAudioApi.Interfaces
     /// </summary>
     [Guid("6DAA848C-5EB0-45CC-AEA5-998A2CDA1FFB"),
     InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
-    ComImport]
-    internal interface IPartsList
+    GeneratedComInterface]
+    internal partial interface IPartsList
     {
+        [PreserveSig]
         int GetCount(out uint count);
-        int GetPart(uint index, out IPart part);
+        [PreserveSig]
+        int GetPart(uint index, out IntPtr part);
     }
 }

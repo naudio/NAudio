@@ -74,7 +74,7 @@ namespace NAudio.CoreAudioApi
         public WasapiCapture(MMDevice captureDevice, bool useEventSync, int audioBufferMillisecondsLength)
         {
             syncContext = SynchronizationContext.Current;
-            audioClient = captureDevice.AudioClient;
+            audioClient = captureDevice.CreateAudioClient();
             ShareMode = AudioClientShareMode.Shared;
             isUsingEventSync = useEventSync;
             this.audioBufferMillisecondsLength = audioBufferMillisecondsLength;

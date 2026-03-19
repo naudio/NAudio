@@ -40,7 +40,7 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                Marshal.ThrowExceptionForHR(storeInterface.GetCount(out var result));
+                CoreAudioException.ThrowIfFailed(storeInterface.GetCount(out var result));
                 return result;
             }
         }
@@ -55,7 +55,7 @@ namespace NAudio.CoreAudioApi
             get
             {
                 PropertyKey key = Get(index);
-                Marshal.ThrowExceptionForHR(storeInterface.GetValue(ref key, out var result));
+                CoreAudioException.ThrowIfFailed(storeInterface.GetValue(ref key, out var result));
                 return new PropertyStoreProperty(key, result);
             }
         }
@@ -99,7 +99,7 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                Marshal.ThrowExceptionForHR(storeInterface.GetValue(ref key, out var propVariant));
+                CoreAudioException.ThrowIfFailed(storeInterface.GetValue(ref key, out var propVariant));
                 return new PropertyStoreProperty(key, propVariant);
             }
         }
@@ -111,7 +111,7 @@ namespace NAudio.CoreAudioApi
         /// <returns>Property key</returns>
         public PropertyKey Get(int index)
         {
-            Marshal.ThrowExceptionForHR(storeInterface.GetAt(index, out var key));
+            CoreAudioException.ThrowIfFailed(storeInterface.GetAt(index, out var key));
             return key;
         }
 
@@ -123,7 +123,7 @@ namespace NAudio.CoreAudioApi
         public PropVariant GetValue(int index)
         {
             PropertyKey key = Get(index);
-            Marshal.ThrowExceptionForHR(storeInterface.GetValue(ref key, out var result));
+            CoreAudioException.ThrowIfFailed(storeInterface.GetValue(ref key, out var result));
             return result;
         }
 
@@ -134,7 +134,7 @@ namespace NAudio.CoreAudioApi
         /// <param name="value">Value to write.</param>
         public void SetValue(PropertyKey key, PropVariant value)
         {
-            Marshal.ThrowExceptionForHR(storeInterface.SetValue(ref key, ref value));
+            CoreAudioException.ThrowIfFailed(storeInterface.SetValue(ref key, ref value));
         }
 
         /// <summary>
@@ -142,7 +142,7 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public void Commit()
         {
-            Marshal.ThrowExceptionForHR(storeInterface.Commit());
+            CoreAudioException.ThrowIfFailed(storeInterface.Commit());
         }
 
         /// <summary>

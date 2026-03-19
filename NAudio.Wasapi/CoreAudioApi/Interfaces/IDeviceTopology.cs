@@ -1,7 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using System.Runtime.InteropServices;
-using System.Text;
+using System.Runtime.InteropServices.Marshalling;
 
 namespace NAudio.CoreAudioApi.Interfaces
 {
@@ -11,15 +10,22 @@ namespace NAudio.CoreAudioApi.Interfaces
     /// </summary>
     [Guid("2A07407E-6497-4A18-9787-32F79BD0D98F"),
         InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
-        ComImport]
-    internal interface IDeviceTopology
+        GeneratedComInterface]
+    internal partial interface IDeviceTopology
     {
+        [PreserveSig]
         int GetConnectorCount(out uint count);
-        int GetConnector(uint index, out IConnector connector);
+        [PreserveSig]
+        int GetConnector(uint index, out IntPtr connector);
+        [PreserveSig]
         int GetSubunitCount(out uint count);
-        int GetSubunit(uint index, out ISubunit subunit);
-        int GetPartById(uint id, out IPart part);
+        [PreserveSig]
+        int GetSubunit(uint index, out IntPtr subunit);
+        [PreserveSig]
+        int GetPartById(uint id, out IntPtr part);
+        [PreserveSig]
         int GetDeviceId([MarshalAs(UnmanagedType.LPWStr)] out string id);
-        int GetSignalPath(IPart from, IPart to, bool rejectMixedPaths, out IPartsList parts);
+        [PreserveSig]
+        int GetSignalPath(IntPtr from, IntPtr to, [MarshalAs(UnmanagedType.Bool)] bool rejectMixedPaths, out IntPtr parts);
     }
 }

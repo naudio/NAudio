@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 
 namespace NAudio.CoreAudioApi.Interfaces
 {
@@ -8,8 +9,8 @@ namespace NAudio.CoreAudioApi.Interfaces
     /// </summary>
     [Guid("45d37c3f-5140-444a-ae24-400789f3cbf3"),
         InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
-        ComImport]
-    public interface IControlInterface
+        GeneratedComInterface]
+    internal partial interface IControlInterface
     {
     }
 }

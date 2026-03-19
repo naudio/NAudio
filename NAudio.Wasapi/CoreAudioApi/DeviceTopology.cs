@@ -1,6 +1,7 @@
 ﻿using NAudio.CoreAudioApi.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace NAudio.CoreAudioApi
@@ -34,7 +35,9 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public Connector GetConnector(uint index)
         {
-            deviceTopologyInterface.GetConnector(index, out var connectorInterface);
+            deviceTopologyInterface.GetConnector(index, out var ptr);
+            var connectorInterface = (IConnector)Marshal.GetObjectForIUnknown(ptr);
+            Marshal.Release(ptr);
             return new Connector(connectorInterface);
         }
 

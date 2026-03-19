@@ -58,12 +58,12 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                Marshal.ThrowExceptionForHR(audioEndpointVolume.GetChannelVolumeLevel(channel,out var result));
+                CoreAudioException.ThrowIfFailed(audioEndpointVolume.GetChannelVolumeLevel(channel,out var result));
                 return result;
             }
             set
             {
-                Marshal.ThrowExceptionForHR(audioEndpointVolume.SetChannelVolumeLevel(channel, value, ref notificationGuid));
+                CoreAudioException.ThrowIfFailed(audioEndpointVolume.SetChannelVolumeLevel(channel, value, ref notificationGuid));
             }
         }
 
@@ -74,12 +74,12 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                Marshal.ThrowExceptionForHR(audioEndpointVolume.GetChannelVolumeLevelScalar(channel, out var result));
+                CoreAudioException.ThrowIfFailed(audioEndpointVolume.GetChannelVolumeLevelScalar(channel, out var result));
                 return result;
             }
             set
             {
-                Marshal.ThrowExceptionForHR(audioEndpointVolume.SetChannelVolumeLevelScalar(channel, value, ref notificationGuid));
+                CoreAudioException.ThrowIfFailed(audioEndpointVolume.SetChannelVolumeLevelScalar(channel, value, ref notificationGuid));
             }
         }
 

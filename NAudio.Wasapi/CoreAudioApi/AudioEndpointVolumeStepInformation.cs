@@ -35,7 +35,7 @@ namespace NAudio.CoreAudioApi
 
         internal AudioEndpointVolumeStepInformation(IAudioEndpointVolume parent)
         {
-            Marshal.ThrowExceptionForHR(parent.GetVolumeStepInfo(out step, out stepCount));
+            CoreAudioException.ThrowIfFailed(parent.GetVolumeStepInfo(out step, out stepCount));
         }
 
         /// <summary>

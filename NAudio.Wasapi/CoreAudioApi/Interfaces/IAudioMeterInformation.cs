@@ -1,4 +1,4 @@
-﻿/*
+/*
   LICENSE
   -------
   Copyright (C) 2007 Ray Molenkamp
@@ -21,17 +21,22 @@
 */
 using System;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 
 namespace NAudio.CoreAudioApi.Interfaces
 {
     [Guid("C02216F6-8C67-4B5B-9D00-D008E73E0064"),
      InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
-     ComImport]
-    internal interface IAudioMeterInformation
+     GeneratedComInterface]
+    internal partial interface IAudioMeterInformation
     {
+        [PreserveSig]
         int GetPeakValue(out float pfPeak);
+        [PreserveSig]
         int GetMeteringChannelCount(out int pnChannelCount);
-        int GetChannelsPeakValues(int u32ChannelCount, [In]   IntPtr afPeakValues);
+        [PreserveSig]
+        int GetChannelsPeakValues(int u32ChannelCount, IntPtr afPeakValues);
+        [PreserveSig]
         int QueryHardwareSupport(out int pdwHardwareSupportMask);
-    };
+    }
 }

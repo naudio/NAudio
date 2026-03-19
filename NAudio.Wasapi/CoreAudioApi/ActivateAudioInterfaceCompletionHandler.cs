@@ -1,4 +1,4 @@
-﻿using NAudio.CoreAudioApi.Interfaces;
+using NAudio.CoreAudioApi.Interfaces;
 using NAudio.Wasapi.CoreAudioApi.Interfaces;
 using System;
 using System.Runtime.CompilerServices;
@@ -19,17 +19,20 @@ namespace NAudio.Wasapi.CoreAudioApi
             this.initializeAction = initializeAction;
         }
 
-        public void ActivateCompleted(IActivateAudioInterfaceAsyncOperation activateOperation)
+        public void ActivateCompleted(IntPtr activateOperationPtr)
         {
+            var activateOperation = (IActivateAudioInterfaceAsyncOperation)Marshal.GetObjectForIUnknown(activateOperationPtr);
+
             // First get the activation results, and see if anything bad happened then
-            activateOperation.GetActivateResult(out int hr, out object unk);
+            activateOperation.GetActivateResult(out int hr, out var unkPtr);
             if (hr != 0)
             {
                 tcs.TrySetException(Marshal.GetExceptionForHR(hr, new IntPtr(-1)));
                 return;
             }
 
-            var pAudioClient = (IAudioClient2)unk;
+            var pAudioClient = (IAudioClient2)Marshal.GetObjectForIUnknown(unkPtr);
+            Marshal.Release(unkPtr);
 
             // Next try to call the client's (synchronous, blocking) initialization method.
             try
@@ -41,10 +44,7 @@ namespace NAudio.Wasapi.CoreAudioApi
             {
                 tcs.TrySetException(ex);
             }
-
-
         }
-
 
         public TaskAwaiter<IAudioClient2> GetAwaiter()
         {

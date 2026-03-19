@@ -77,7 +77,7 @@ namespace NAudio.Wave
         /// <param name="latency">Desired latency in milliseconds</param>
         public WasapiOut(MMDevice device, AudioClientShareMode shareMode, bool useEventSync, int latency)
         {
-            audioClient = device.AudioClient;
+            audioClient = device.CreateAudioClient();
             mmDevice = device;
             this.shareMode = shareMode;
             isUsingEventSync = useEventSync;
@@ -495,7 +495,7 @@ namespace NAudio.Wave
                             this.audioClient.BufferSize + 0.5);
 
                         this.audioClient.Dispose();
-                        this.audioClient = this.mmDevice.AudioClient;
+                        this.audioClient = this.mmDevice.CreateAudioClient();
                         this.audioClient.Initialize(this.shareMode, AudioClientStreamFlags.EventCallback | flags,
                                             newLatencyRefTimes, newLatencyRefTimes, this.OutputWaveFormat, Guid.Empty);
                     }

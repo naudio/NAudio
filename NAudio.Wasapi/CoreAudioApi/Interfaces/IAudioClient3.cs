@@ -5,13 +5,14 @@ using System.Runtime.InteropServices.Marshalling;
 namespace NAudio.CoreAudioApi.Interfaces
 {
     /// <summary>
-    /// Windows CoreAudio IAudioClient2 interface
-    /// https://docs.microsoft.com/en-us/windows/win32/api/audioclient/nn-audioclient-iaudioclient2
+    /// Windows CoreAudio IAudioClient3 interface
+    /// Provides low-latency shared mode audio streaming.
+    /// https://docs.microsoft.com/en-us/windows/win32/api/audioclient/nn-audioclient-iaudioclient3
     /// </summary>
     [GeneratedComInterface]
-    [Guid("726778CD-F60A-4eda-82DE-E47610CD78AA")]
+    [Guid("7ED4EE07-8E67-4CD4-8C1A-2B7A5987AD42")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    internal partial interface IAudioClient2
+    internal partial interface IAudioClient3
     {
         // ---- IAudioClient methods (must redeclare in vtable order) ----
 
@@ -59,7 +60,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         [PreserveSig]
         int GetService(in Guid interfaceId, out IntPtr interfacePointer);
 
-        // ---- IAudioClient2-specific methods ----
+        // ---- IAudioClient2 methods ----
 
         [PreserveSig]
         int IsOffloadCapable(AudioStreamCategory category, out int pbOffloadCapable);
@@ -70,5 +71,36 @@ namespace NAudio.CoreAudioApi.Interfaces
         [PreserveSig]
         int GetBufferSizeLimits(IntPtr pFormat, [MarshalAs(UnmanagedType.Bool)] bool bEventDriven,
             out long phnsMinBufferDuration, out long phnsMaxBufferDuration);
+
+        // ---- IAudioClient3-specific methods ----
+
+        /// <summary>
+        /// Returns the range of periodicities supported by the engine for the specified stream format.
+        /// </summary>
+        [PreserveSig]
+        int GetSharedModeEnginePeriod(
+            IntPtr pFormat,
+            out uint pDefaultPeriodInFrames,
+            out uint pFundamentalPeriodInFrames,
+            out uint pMinPeriodInFrames,
+            out uint pMaxPeriodInFrames);
+
+        /// <summary>
+        /// Initializes a shared audio stream with the specified periodicity.
+        /// </summary>
+        [PreserveSig]
+        int InitializeSharedAudioStream(
+            AudioClientStreamFlags streamFlags,
+            uint periodInFrames,
+            IntPtr pFormat,
+            in Guid audioSessionGuid);
+
+        /// <summary>
+        /// Returns the current period of the audio engine.
+        /// </summary>
+        [PreserveSig]
+        int GetCurrentSharedModeEnginePeriod(
+            out IntPtr ppFormat,
+            out uint pCurrentPeriodInFrames);
     }
 }

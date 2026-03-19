@@ -47,7 +47,7 @@ namespace NAudioDemo.MediaFoundationDemo
         /// <param name="latency">Latency in milliseconds</param>
         public WasapiOutGuiThread(MMDevice device, AudioClientShareMode shareMode, int latency)
         {
-            audioClient = device.AudioClient;
+            audioClient = device.CreateAudioClient();
             outputFormat = audioClient.MixFormat;
             this.shareMode = shareMode;
             latencyMilliseconds = latency;

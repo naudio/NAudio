@@ -27,7 +27,7 @@ namespace NAudio.CoreAudioApi
             set
             {
                 var guid = Guid.Empty;
-                audioMuteInterface.SetMute(value, guid);
+                audioMuteInterface.SetMute(value, ref guid);
             }
         }
     }

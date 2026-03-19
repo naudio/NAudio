@@ -41,7 +41,7 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                Marshal.ThrowExceptionForHR(audioEndPointVolume.GetChannelCount(out var result));
+                CoreAudioException.ThrowIfFailed(audioEndPointVolume.GetChannelCount(out var result));
                 return result;
             }
         }

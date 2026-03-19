@@ -1,4 +1,4 @@
-﻿using NAudio.CoreAudioApi.Interfaces;
+using NAudio.CoreAudioApi.Interfaces;
 using NAudio.Wasapi.CoreAudioApi;
 using NAudio.Wave;
 using System;
@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace NAudio.CoreAudioApi
 {
     /// <summary>
-    /// Windows CoreAudio AudioClient
+    /// Windows CoreAudio AudioClient. Wraps IAudioClient, IAudioClient2, and IAudioClient3.
     /// </summary>
     public class AudioClient : IDisposable
     {
@@ -18,6 +18,8 @@ namespace NAudio.CoreAudioApi
         private static readonly Guid ID_AudioCaptureClient = new Guid("c8adbd64-e71e-48a0-a4de-185c395cd317");
         private static readonly Guid IID_IAudioClient2 = new Guid("726778CD-F60A-4eda-82DE-E47610CD78AA");
         private IAudioClient audioClientInterface;
+        private readonly IAudioClient2 audioClientInterface2;
+        private readonly IAudioClient3 audioClientInterface3;
         private WaveFormat mixFormat;
         private AudioRenderClient audioRenderClient;
         private AudioCaptureClient audioCaptureClient;
@@ -33,27 +35,19 @@ namespace NAudio.CoreAudioApi
             var icbh = new ActivateAudioInterfaceCompletionHandler(
                 ac2 =>
                 {
-
                     if (audioClientProperties != null)
                     {
                         IntPtr p = Marshal.AllocHGlobal(Marshal.SizeOf(audioClientProperties.Value));
                         try
                         {
-                            // TODO: consider whether we can marshal this without the need for AllocHGlobal
                             Marshal.StructureToPtr(audioClientProperties.Value, p, false);
                             ac2.SetClientProperties(p);
                         }
                         finally
                         {
                             Marshal.FreeHGlobal(p);
-
                         }
                     }
-
-                    /*var wfx = new WaveFormat(44100, 16, 2);
-                int hr = ac2.Initialize(AudioClientShareMode.Shared,
-                               AudioClientStreamFlags.EventCallback | AudioClientStreamFlags.NoPersist,
-                               10000000, 0, wfx, IntPtr.Zero);*/
                 });
             NativeMethods.ActivateAudioInterfaceAsync(deviceInterfacePath, IID_IAudioClient2, IntPtr.Zero, icbh, out _);
             var audioClient2 = await icbh;
@@ -63,11 +57,22 @@ namespace NAudio.CoreAudioApi
         /// <summary>
         /// Creates a new AudioClient
         /// </summary>
-        /// <param name="audioClientInterface"></param>
-        public AudioClient(IAudioClient audioClientInterface)
+        internal AudioClient(IAudioClient audioClientInterface)
         {
             this.audioClientInterface = audioClientInterface;
+            audioClientInterface2 = audioClientInterface as IAudioClient2;
+            audioClientInterface3 = audioClientInterface as IAudioClient3;
         }
+
+        /// <summary>
+        /// Whether this audio client supports IAudioClient2 features (Windows 8+)
+        /// </summary>
+        public bool SupportsAudioClient2 => audioClientInterface2 != null;
+
+        /// <summary>
+        /// Whether this audio client supports IAudioClient3 low-latency features (Windows 10 1607+)
+        /// </summary>
+        public bool SupportsAudioClient3 => audioClientInterface3 != null;
 
         /// <summary>
         /// Retrieves the stream format that the audio engine uses for its internal processing of shared-mode streams.
@@ -79,7 +84,7 @@ namespace NAudio.CoreAudioApi
             {
                 if (mixFormat == null)
                 {
-                    Marshal.ThrowExceptionForHR(audioClientInterface.GetMixFormat(out var waveFormatPointer));
+                    CoreAudioException.ThrowIfFailed(audioClientInterface.GetMixFormat(out var waveFormatPointer));
                     var waveFormat = WaveFormat.MarshalFromPtr(waveFormatPointer);
                     Marshal.FreeCoTaskMem(waveFormatPointer);
                     mixFormat = waveFormat;
@@ -105,8 +110,16 @@ namespace NAudio.CoreAudioApi
             Guid audioSessionGuid)
         {
             this.shareMode = shareMode;
-            int hresult = audioClientInterface.Initialize(shareMode, streamFlags, bufferDuration, periodicity, waveFormat, ref audioSessionGuid);
-            Marshal.ThrowExceptionForHR(hresult);
+            var formatPtr = WaveFormat.MarshalToPtr(waveFormat);
+            try
+            {
+                CoreAudioException.ThrowIfFailed(
+                    audioClientInterface.Initialize(shareMode, streamFlags, bufferDuration, periodicity, formatPtr, in audioSessionGuid));
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(formatPtr);
+            }
             // may have changed the mix format so reset it
             mixFormat = null;
         }
@@ -118,7 +131,7 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                Marshal.ThrowExceptionForHR(audioClientInterface.GetBufferSize(out uint bufferSize));
+                CoreAudioException.ThrowIfFailed(audioClientInterface.GetBufferSize(out uint bufferSize));
                 return (int) bufferSize;
             }
         }
@@ -126,7 +139,14 @@ namespace NAudio.CoreAudioApi
         /// <summary>
         /// Retrieves the maximum latency for the current stream and can be called any time after the stream has been initialized.
         /// </summary>
-        public long StreamLatency => audioClientInterface.GetStreamLatency();
+        public long StreamLatency
+        {
+            get
+            {
+                CoreAudioException.ThrowIfFailed(audioClientInterface.GetStreamLatency(out var latency));
+                return latency;
+            }
+        }
 
         /// <summary>
         /// Retrieves the number of frames of padding in the endpoint buffer (must initialize first)
@@ -135,7 +155,7 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                Marshal.ThrowExceptionForHR(audioClientInterface.GetCurrentPadding(out var currentPadding));
+                CoreAudioException.ThrowIfFailed(audioClientInterface.GetCurrentPadding(out var currentPadding));
                 return currentPadding;
             }
         }
@@ -148,28 +168,23 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                Marshal.ThrowExceptionForHR(audioClientInterface.GetDevicePeriod(out var defaultDevicePeriod, out _));
+                CoreAudioException.ThrowIfFailed(audioClientInterface.GetDevicePeriod(out var defaultDevicePeriod, out _));
                 return defaultDevicePeriod;
             }
         }
 
         /// <summary>
-        /// Gets the minimum device period 
+        /// Gets the minimum device period
         /// (can be called before initialize)
         /// </summary>
         public long MinimumDevicePeriod
         {
             get
             {
-                Marshal.ThrowExceptionForHR(audioClientInterface.GetDevicePeriod(out _, out var minimumDevicePeriod));
+                CoreAudioException.ThrowIfFailed(audioClientInterface.GetDevicePeriod(out _, out var minimumDevicePeriod));
                 return minimumDevicePeriod;
             }
         }
-
-        // TODO: GetService:
-        // IID_IAudioSessionControl
-        // IID_IChannelAudioVolume
-        // IID_ISimpleAudioVolume
 
         /// <summary>
         /// Returns the AudioStreamVolume service for this AudioClient.
@@ -190,8 +205,8 @@ namespace NAudio.CoreAudioApi
                 }
                 if (audioStreamVolume == null)
                 {
-                    Marshal.ThrowExceptionForHR(audioClientInterface.GetService(ID_AudioStreamVolume, out var audioStreamVolumeInterface));
-                    audioStreamVolume = new AudioStreamVolume((IAudioStreamVolume)audioStreamVolumeInterface);
+                    CoreAudioException.ThrowIfFailed(audioClientInterface.GetService(ID_AudioStreamVolume, out var ptr));
+                    audioStreamVolume = new AudioStreamVolume((IAudioStreamVolume)Marshal.GetObjectForIUnknown(ptr), ptr);
                 }
                 return audioStreamVolume;
             }
@@ -206,13 +221,13 @@ namespace NAudio.CoreAudioApi
             {
                 if (audioClockClient == null)
                 {
-                    Marshal.ThrowExceptionForHR(audioClientInterface.GetService(ID_AudioClockClient, out var audioClockClientInterface));
-                    audioClockClient = new AudioClockClient((IAudioClock)audioClockClientInterface);
+                    CoreAudioException.ThrowIfFailed(audioClientInterface.GetService(ID_AudioClockClient, out var ptr));
+                    audioClockClient = new AudioClockClient((IAudioClock)Marshal.GetObjectForIUnknown(ptr), ptr);
                 }
                 return audioClockClient;
             }
         }
-        
+
         /// <summary>
         /// Gets the AudioRenderClient service
         /// </summary>
@@ -222,8 +237,8 @@ namespace NAudio.CoreAudioApi
             {
                 if (audioRenderClient == null)
                 {
-                    Marshal.ThrowExceptionForHR(audioClientInterface.GetService(ID_AudioRenderClient, out var audioRenderClientInterface));
-                    audioRenderClient = new AudioRenderClient((IAudioRenderClient)audioRenderClientInterface);
+                    CoreAudioException.ThrowIfFailed(audioClientInterface.GetService(ID_AudioRenderClient, out var ptr));
+                    audioRenderClient = new AudioRenderClient((IAudioRenderClient)Marshal.GetObjectForIUnknown(ptr), ptr);
                 }
                 return audioRenderClient;
             }
@@ -238,8 +253,8 @@ namespace NAudio.CoreAudioApi
             {
                 if (audioCaptureClient == null)
                 {
-                    Marshal.ThrowExceptionForHR(audioClientInterface.GetService(ID_AudioCaptureClient, out var audioCaptureClientInterface));
-                    audioCaptureClient = new AudioCaptureClient((IAudioCaptureClient)audioCaptureClientInterface);
+                    CoreAudioException.ThrowIfFailed(audioClientInterface.GetService(ID_AudioCaptureClient, out var ptr));
+                    audioCaptureClient = new AudioCaptureClient((IAudioCaptureClient)Marshal.GetObjectForIUnknown(ptr), ptr);
                 }
                 return audioCaptureClient;
             }
@@ -257,11 +272,6 @@ namespace NAudio.CoreAudioApi
             return IsFormatSupported(shareMode, desiredFormat, out _);
         }
 
-        private IntPtr GetPointerToPointer()
-        {
-            return Marshal.AllocHGlobal(Marshal.SizeOf<IntPtr>());
-        }
-
         /// <summary>
         /// Determines if the specified output format is supported in shared mode
         /// </summary>
@@ -271,39 +281,38 @@ namespace NAudio.CoreAudioApi
         /// <returns>True if the format is supported</returns>
         public bool IsFormatSupported(AudioClientShareMode shareMode, WaveFormat desiredFormat, out WaveFormatExtensible closestMatchFormat)
         {
-            IntPtr pointerToPtr = GetPointerToPointer(); // IntPtr.Zero; // Marshal.AllocHGlobal(Marshal.SizeOf<WaveFormatExtensible>());
             closestMatchFormat = null;
-            int hresult = audioClientInterface.IsFormatSupported(shareMode, desiredFormat, pointerToPtr);
+            var formatPtr = WaveFormat.MarshalToPtr(desiredFormat);
+            try
+            {
+                int hresult = audioClientInterface.IsFormatSupported(shareMode, formatPtr, out var closestMatchPtr);
 
-            var closestMatchPtr = Marshal.PtrToStructure<IntPtr>(pointerToPtr);
+                if (closestMatchPtr != IntPtr.Zero)
+                {
+                    closestMatchFormat = Marshal.PtrToStructure<WaveFormatExtensible>(closestMatchPtr);
+                    Marshal.FreeCoTaskMem(closestMatchPtr);
+                }
 
-            if (closestMatchPtr != IntPtr.Zero)
-            {
-                closestMatchFormat = Marshal.PtrToStructure<WaveFormatExtensible>(closestMatchPtr);
-                Marshal.FreeCoTaskMem(closestMatchPtr);
+                // S_OK is 0, S_FALSE = 1
+                if (hresult == 0)
+                {
+                    return true;
+                }
+                if (hresult == 1)
+                {
+                    return false;
+                }
+                if (hresult == AudioClientErrorCode.UnsupportedFormat)
+                {
+                    return false;
+                }
+                CoreAudioException.ThrowIfFailed(hresult);
+                throw new NotSupportedException("Unknown hresult " + hresult);
             }
-            Marshal.FreeHGlobal(pointerToPtr);
-            // S_OK is 0, S_FALSE = 1
-            if (hresult == 0)
+            finally
             {
-
-                // directly supported
-                return true;
+                Marshal.FreeHGlobal(formatPtr);
             }
-            if (hresult == 1)
-            {
-                return false;
-            }
-            if (hresult == AudioClientErrorCode.UnsupportedFormat)
-            {
-                // documentation is confusing as to what this flag means
-                // https://docs.microsoft.com/en-us/windows/desktop/api/audioclient/nf-audioclient-iaudioclient-isformatsupported
-                // "Succeeded but the specified format is not supported in exclusive mode."
-                return false; // shareMode != AudioClientShareMode.Exclusive;
-            }
-            Marshal.ThrowExceptionForHR(hresult);
-            // shouldn't get here
-            throw new NotSupportedException("Unknown hresult " + hresult);
         }
 
         /// <summary>
@@ -311,7 +320,7 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public void Start()
         {
-            audioClientInterface.Start();
+            CoreAudioException.ThrowIfFailed(audioClientInterface.Start());
         }
 
         /// <summary>
@@ -319,7 +328,7 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public void Stop()
         {
-            audioClientInterface.Stop();
+            CoreAudioException.ThrowIfFailed(audioClientInterface.Stop());
         }
 
         /// <summary>
@@ -328,18 +337,71 @@ namespace NAudio.CoreAudioApi
         /// <param name="eventWaitHandle">The Wait Handle to setup</param>
         public void SetEventHandle(IntPtr eventWaitHandle)
         {
-            audioClientInterface.SetEventHandle(eventWaitHandle);
+            CoreAudioException.ThrowIfFailed(audioClientInterface.SetEventHandle(eventWaitHandle));
         }
 
         /// <summary>
         /// Resets the audio stream
-        /// Reset is a control method that the client calls to reset a stopped audio stream. 
-        /// Resetting the stream flushes all pending data and resets the audio clock stream 
+        /// Reset is a control method that the client calls to reset a stopped audio stream.
+        /// Resetting the stream flushes all pending data and resets the audio clock stream
         /// position to 0. This method fails if it is called on a stream that is not stopped
         /// </summary>
         public void Reset()
         {
-            audioClientInterface.Reset();
+            CoreAudioException.ThrowIfFailed(audioClientInterface.Reset());
+        }
+
+        // ---- IAudioClient3 low-latency shared mode ----
+
+        /// <summary>
+        /// Returns the range of periodicities supported by the engine for the specified stream format.
+        /// Requires Windows 10 1607 or later (IAudioClient3).
+        /// </summary>
+        public AudioClientPeriodInfo GetSharedModeEnginePeriod(WaveFormat format)
+        {
+            if (audioClientInterface3 == null)
+                throw new PlatformNotSupportedException("IAudioClient3 requires Windows 10 version 1607 or later.");
+
+            var formatPtr = WaveFormat.MarshalToPtr(format);
+            try
+            {
+                CoreAudioException.ThrowIfFailed(
+                    audioClientInterface3.GetSharedModeEnginePeriod(formatPtr,
+                        out uint defaultPeriod, out uint fundamentalPeriod,
+                        out uint minPeriod, out uint maxPeriod));
+                return new AudioClientPeriodInfo(defaultPeriod, fundamentalPeriod, minPeriod, maxPeriod);
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(formatPtr);
+            }
+        }
+
+        /// <summary>
+        /// Initializes a shared audio stream with the specified periodicity.
+        /// Requires Windows 10 1607 or later (IAudioClient3).
+        /// </summary>
+        public void InitializeSharedAudioStream(
+            AudioClientStreamFlags streamFlags,
+            uint periodInFrames,
+            WaveFormat waveFormat,
+            Guid audioSessionGuid)
+        {
+            if (audioClientInterface3 == null)
+                throw new PlatformNotSupportedException("IAudioClient3 requires Windows 10 version 1607 or later.");
+
+            this.shareMode = AudioClientShareMode.Shared;
+            var formatPtr = WaveFormat.MarshalToPtr(waveFormat);
+            try
+            {
+                CoreAudioException.ThrowIfFailed(
+                    audioClientInterface3.InitializeSharedAudioStream(streamFlags, periodInFrames, formatPtr, in audioSessionGuid));
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(formatPtr);
+            }
+            mixFormat = null;
         }
 
         #region IDisposable Members
@@ -371,12 +433,37 @@ namespace NAudio.CoreAudioApi
                     audioStreamVolume.Dispose();
                     audioStreamVolume = null;
                 }
-                Marshal.ReleaseComObject(audioClientInterface);
                 audioClientInterface = null;
                 GC.SuppressFinalize(this);
             }
         }
 
         #endregion
+    }
+
+    /// <summary>
+    /// Information about the audio engine periodicity for shared mode.
+    /// </summary>
+    public readonly struct AudioClientPeriodInfo
+    {
+        /// <summary>Default period in frames</summary>
+        public uint DefaultPeriodInFrames { get; }
+        /// <summary>Fundamental period in frames (all periods must be multiples of this)</summary>
+        public uint FundamentalPeriodInFrames { get; }
+        /// <summary>Minimum period in frames</summary>
+        public uint MinPeriodInFrames { get; }
+        /// <summary>Maximum period in frames</summary>
+        public uint MaxPeriodInFrames { get; }
+
+        /// <summary>
+        /// Creates a new AudioClientPeriodInfo
+        /// </summary>
+        public AudioClientPeriodInfo(uint defaultPeriod, uint fundamentalPeriod, uint minPeriod, uint maxPeriod)
+        {
+            DefaultPeriodInFrames = defaultPeriod;
+            FundamentalPeriodInFrames = fundamentalPeriod;
+            MinPeriodInFrames = minPeriod;
+            MaxPeriodInFrames = maxPeriod;
+        }
     }
 }

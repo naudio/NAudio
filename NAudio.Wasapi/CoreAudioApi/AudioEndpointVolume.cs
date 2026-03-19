@@ -1,4 +1,4 @@
-﻿/*
+/*
   LICENSE
   -------
   Copyright (C) 2007 Ray Molenkamp
@@ -21,17 +21,22 @@
 */
 
 using System;
+using System.Threading;
 using NAudio.CoreAudioApi.Interfaces;
 using System.Runtime.InteropServices;
 
 namespace NAudio.CoreAudioApi
 {
     /// <summary>
-    /// Audio Endpoint Volume
+    /// Audio Endpoint Volume.
+    /// Volume change notifications from COM arrive on a background thread.
+    /// If a <see cref="SynchronizationContext"/> is captured at construction time,
+    /// notifications are marshaled to that context (e.g. the UI thread).
     /// </summary>
     public class AudioEndpointVolume : IDisposable
     {
         private readonly IAudioEndpointVolume audioEndPointVolume;
+        private readonly SynchronizationContext syncContext;
         private AudioEndpointVolumeCallback callBack;
 
         private Guid notificationGuid = Guid.Empty;
@@ -76,12 +81,12 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                Marshal.ThrowExceptionForHR(audioEndPointVolume.GetMasterVolumeLevel(out var result));
+                CoreAudioException.ThrowIfFailed(audioEndPointVolume.GetMasterVolumeLevel(out var result));
                 return result;
             }
             set
             {
-                Marshal.ThrowExceptionForHR(audioEndPointVolume.SetMasterVolumeLevel(value, ref notificationGuid));
+                CoreAudioException.ThrowIfFailed(audioEndPointVolume.SetMasterVolumeLevel(value, ref notificationGuid));
             }
         }
 
@@ -92,12 +97,12 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                Marshal.ThrowExceptionForHR(audioEndPointVolume.GetMasterVolumeLevelScalar(out var result));
+                CoreAudioException.ThrowIfFailed(audioEndPointVolume.GetMasterVolumeLevelScalar(out var result));
                 return result;
             }
             set
             {
-                Marshal.ThrowExceptionForHR(audioEndPointVolume.SetMasterVolumeLevelScalar(value, ref notificationGuid));
+                CoreAudioException.ThrowIfFailed(audioEndPointVolume.SetMasterVolumeLevelScalar(value, ref notificationGuid));
             }
         }
 
@@ -108,12 +113,12 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                Marshal.ThrowExceptionForHR(audioEndPointVolume.GetMute(out var result));
+                CoreAudioException.ThrowIfFailed(audioEndPointVolume.GetMute(out var result));
                 return result;
             }
             set
             {
-                Marshal.ThrowExceptionForHR(audioEndPointVolume.SetMute(value, ref notificationGuid));
+                CoreAudioException.ThrowIfFailed(audioEndPointVolume.SetMute(value, ref notificationGuid));
             }
         }
 
@@ -122,7 +127,7 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public void VolumeStepUp()
         {
-            Marshal.ThrowExceptionForHR(audioEndPointVolume.VolumeStepUp(ref notificationGuid));
+            CoreAudioException.ThrowIfFailed(audioEndPointVolume.VolumeStepUp(ref notificationGuid));
         }
 
         /// <summary>
@@ -130,7 +135,7 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public void VolumeStepDown()
         {
-            Marshal.ThrowExceptionForHR(audioEndPointVolume.VolumeStepDown(ref notificationGuid));
+            CoreAudioException.ThrowIfFailed(audioEndPointVolume.VolumeStepDown(ref notificationGuid));
         }
 
         /// <summary>
@@ -139,20 +144,35 @@ namespace NAudio.CoreAudioApi
         /// <param name="realEndpointVolume">IAudioEndpointVolume COM interface</param>
         internal AudioEndpointVolume(IAudioEndpointVolume realEndpointVolume)
         {
+            syncContext = SynchronizationContext.Current;
             audioEndPointVolume = realEndpointVolume;
             Channels = new AudioEndpointVolumeChannels(audioEndPointVolume);
             StepInformation = new AudioEndpointVolumeStepInformation(audioEndPointVolume);
-            Marshal.ThrowExceptionForHR(audioEndPointVolume.QueryHardwareSupport(out var hardwareSupp));
+            CoreAudioException.ThrowIfFailed(audioEndPointVolume.QueryHardwareSupport(out var hardwareSupp));
             HardwareSupport = (EEndpointHardwareSupport)hardwareSupp;
             VolumeRange = new AudioEndpointVolumeVolumeRange(audioEndPointVolume);
             callBack = new AudioEndpointVolumeCallback(this);
-            Marshal.ThrowExceptionForHR(audioEndPointVolume.RegisterControlChangeNotify(callBack));
+            var callBackPtr = Marshal.GetComInterfaceForObject<AudioEndpointVolumeCallback, IAudioEndpointVolumeCallback>(callBack);
+            CoreAudioException.ThrowIfFailed(audioEndPointVolume.RegisterControlChangeNotify(callBackPtr));
+            Marshal.Release(callBackPtr);
         }
-        
+
         internal void FireNotification(AudioVolumeNotificationData notificationData)
         {
-            OnVolumeNotification?.Invoke(notificationData);
+            var handler = OnVolumeNotification;
+            if (handler != null)
+            {
+                if (syncContext != null)
+                {
+                    syncContext.Post(_ => handler(notificationData), null);
+                }
+                else
+                {
+                    handler(notificationData);
+                }
+            }
         }
+
         #region IDisposable Members
 
         /// <summary>
@@ -162,19 +182,12 @@ namespace NAudio.CoreAudioApi
         {
             if (callBack != null)
             {
-                Marshal.ThrowExceptionForHR(audioEndPointVolume.UnregisterControlChangeNotify(callBack));
+                var callBackPtr = Marshal.GetComInterfaceForObject<AudioEndpointVolumeCallback, IAudioEndpointVolumeCallback>(callBack);
+                audioEndPointVolume.UnregisterControlChangeNotify(callBackPtr);
+                Marshal.Release(callBackPtr);
                 callBack = null;
             }
-            Marshal.ReleaseComObject(audioEndPointVolume);
             GC.SuppressFinalize(this);
-        }
-        
-        /// <summary>
-        /// Finalizer
-        /// </summary>
-        ~AudioEndpointVolume()
-        {
-            Dispose();
         }
 
         #endregion

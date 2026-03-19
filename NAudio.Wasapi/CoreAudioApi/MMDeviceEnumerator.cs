@@ -43,7 +43,12 @@ namespace NAudio.CoreAudioApi
             {
                 throw new NotSupportedException("This functionality is only supported on Windows Vista or newer.");
             }
-            realEnumerator = new MMDeviceEnumeratorComObject() as IMMDeviceEnumerator;
+            // Activate the COM server via the [ComImport] coclass, then obtain the
+            // [GeneratedComInterface] wrapper via QueryInterface on the raw pointer.
+            var comObj = new MMDeviceEnumeratorComObject();
+            var ptr = Marshal.GetIUnknownForObject(comObj);
+            realEnumerator = (IMMDeviceEnumerator)Marshal.GetObjectForIUnknown(ptr);
+            Marshal.Release(ptr);
         }
 
         /// <summary>
@@ -54,8 +59,8 @@ namespace NAudio.CoreAudioApi
         /// <returns>Device Collection</returns>
         public MMDeviceCollection EnumerateAudioEndPoints(DataFlow dataFlow, DeviceState dwStateMask)
         {
-            Marshal.ThrowExceptionForHR(realEnumerator.EnumAudioEndpoints(dataFlow, dwStateMask, out var result));
-            return new MMDeviceCollection(result);
+            CoreAudioException.ThrowIfFailed(realEnumerator.EnumAudioEndpoints(dataFlow, dwStateMask, out var ptr));
+            return new MMDeviceCollection((IMMDeviceCollection)Marshal.GetObjectForIUnknown(ptr));
         }
 
         /// <summary>
@@ -66,8 +71,8 @@ namespace NAudio.CoreAudioApi
         /// <returns>Device</returns>
         public MMDevice GetDefaultAudioEndpoint(DataFlow dataFlow, Role role)
         {
-            Marshal.ThrowExceptionForHR(realEnumerator.GetDefaultAudioEndpoint(dataFlow, role, out var device));
-            return new MMDevice(device);
+            CoreAudioException.ThrowIfFailed(realEnumerator.GetDefaultAudioEndpoint(dataFlow, role, out var ptr));
+            return new MMDevice((IMMDevice)Marshal.GetObjectForIUnknown(ptr));
         }
 
         /// <summary>
@@ -79,17 +84,43 @@ namespace NAudio.CoreAudioApi
         public bool HasDefaultAudioEndpoint(DataFlow dataFlow, Role role)
         {
             const int E_NOTFOUND = unchecked((int)0x80070490);
-            int hresult = realEnumerator.GetDefaultAudioEndpoint(dataFlow, role, out var device);
+            int hresult = realEnumerator.GetDefaultAudioEndpoint(dataFlow, role, out var ptr);
             if (hresult == 0x0)
             {
-                Marshal.ReleaseComObject(device);
+                Marshal.Release(ptr);
                 return true;
             }
             if (hresult == E_NOTFOUND)
             {
                 return false;
             }
-            Marshal.ThrowExceptionForHR(hresult);
+            CoreAudioException.ThrowIfFailed(hresult);
+            return false;
+        }
+
+        /// <summary>
+        /// Tries to get the default audio endpoint for the specified data flow and role.
+        /// Returns false if no default endpoint exists, without throwing an exception.
+        /// </summary>
+        /// <param name="dataFlow">Data Flow</param>
+        /// <param name="role">Role</param>
+        /// <param name="device">The default device, or null if none exists.</param>
+        /// <returns>True if a default endpoint was found.</returns>
+        public bool TryGetDefaultAudioEndpoint(DataFlow dataFlow, Role role, out MMDevice device)
+        {
+            const int E_NOTFOUND = unchecked((int)0x80070490);
+            int hresult = realEnumerator.GetDefaultAudioEndpoint(dataFlow, role, out var ptr);
+            if (hresult == 0x0)
+            {
+                device = new MMDevice((IMMDevice)Marshal.GetObjectForIUnknown(ptr));
+                return true;
+            }
+            device = null;
+            if (hresult == E_NOTFOUND)
+            {
+                return false;
+            }
+            CoreAudioException.ThrowIfFailed(hresult);
             return false;
         }
 
@@ -100,8 +131,8 @@ namespace NAudio.CoreAudioApi
         /// <returns>Device</returns>
         public MMDevice GetDevice(string id)
         {
-            Marshal.ThrowExceptionForHR(realEnumerator.GetDevice(id, out var device));
-            return new MMDevice(device);
+            CoreAudioException.ThrowIfFailed(realEnumerator.GetDevice(id, out var ptr));
+            return new MMDevice((IMMDevice)Marshal.GetObjectForIUnknown(ptr));
         }
 
         /// <summary>
@@ -109,9 +140,17 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         /// <param name="client">Object implementing IMMNotificationClient type casted as IMMNotificationClient interface</param>
         /// <returns></returns>
-        public int RegisterEndpointNotificationCallback([In] [MarshalAs(UnmanagedType.Interface)] IMMNotificationClient client)
+        public int RegisterEndpointNotificationCallback(IMMNotificationClient client)
         {
-            return realEnumerator.RegisterEndpointNotificationCallback(client);
+            var ptr = Marshal.GetComInterfaceForObject(client, typeof(IMMNotificationClient));
+            try
+            {
+                return realEnumerator.RegisterEndpointNotificationCallback(ptr);
+            }
+            finally
+            {
+                Marshal.Release(ptr);
+            }
         }
 
         /// <summary>
@@ -119,9 +158,17 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         /// <param name="client">Object implementing IMMNotificationClient type casted as IMMNotificationClient interface </param>
         /// <returns></returns>
-        public int UnregisterEndpointNotificationCallback([In] [MarshalAs(UnmanagedType.Interface)] IMMNotificationClient client)
+        public int UnregisterEndpointNotificationCallback(IMMNotificationClient client)
         {
-            return realEnumerator.UnregisterEndpointNotificationCallback(client);
+            var ptr = Marshal.GetComInterfaceForObject(client, typeof(IMMNotificationClient));
+            try
+            {
+                return realEnumerator.UnregisterEndpointNotificationCallback(ptr);
+            }
+            finally
+            {
+                Marshal.Release(ptr);
+            }
         }
 
         /// <inheritdoc/>
@@ -139,12 +186,7 @@ namespace NAudio.CoreAudioApi
         {
             if (disposing)
             {
-                if (realEnumerator != null)
-                {
-                    // although GC would do this for us, we want it done now
-                    Marshal.ReleaseComObject(realEnumerator);
-                    realEnumerator = null;
-                }
+                realEnumerator = null;
             }
         }
     }

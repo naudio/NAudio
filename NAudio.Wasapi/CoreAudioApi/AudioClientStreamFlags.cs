@@ -54,42 +54,50 @@ namespace NAudio.CoreAudioApi
            
     }
 
-    /* not currently used
-
     /// <summary>
     /// AUDIOCLIENT_ACTIVATION_PARAMS
     /// https://docs.microsoft.com/en-us/windows/win32/api/audioclientactivationparams/ns-audioclientactivationparams-audioclient_activation_params
+    /// Used with ActivateAudioInterfaceAsync to capture audio from a specific process (Windows 10 2004+).
     /// </summary>
-    struct AudioClientActivationParams
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    public struct AudioClientActivationParams
     {
+        /// <summary>
+        /// The activation type.
+        /// </summary>
         public AudioClientActivationType ActivationType;
+
+        /// <summary>
+        /// Parameters for process loopback activation.
+        /// </summary>
         public AudioClientProcessLoopbackParams ProcessLoopbackParams;
     }
-
 
     /// <summary>
     /// AUDIOCLIENT_PROCESS_LOOPBACK_PARAMS
     /// https://docs.microsoft.com/en-us/windows/win32/api/audioclientactivationparams/ns-audioclientactivationparams-audioclient_process_loopback_params
     /// </summary>
-    struct AudioClientProcessLoopbackParams
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    public struct AudioClientProcessLoopbackParams
     {
         /// <summary>
-        /// AUDIOCLIENT_PROCESS_LOOPBACK_PARAMS
-        /// The ID of the process for which the render streams, and the render streams of its child processes, will be included or excluded when activating the process loopback stream.
+        /// The ID of the process for which the render streams, and the render streams of its
+        /// child processes, will be included or excluded when activating the process loopback stream.
         /// </summary>
         public uint TargetProcessId;
+
+        /// <summary>
+        /// Whether to include or exclude the target process tree.
+        /// </summary>
         public ProcessLoopbackMode ProcessLoopbackMode;
     }
-
-    */
 
     /// <summary>
     /// PROCESS_LOOPBACK_MODE
     /// https://docs.microsoft.com/en-us/windows/win32/api/audioclientactivationparams/ne-audioclientactivationparams-process_loopback_mode
     /// </summary>
-    enum ProcessLoopbackMode
+    public enum ProcessLoopbackMode
     {
-
         /// <summary>
         /// PROCESS_LOOPBACK_MODE_INCLUDE_TARGET_PROCESS_TREE
         /// Render streams from the specified process and its child processes are included in the activated process loopback stream.
@@ -106,7 +114,7 @@ namespace NAudio.CoreAudioApi
     /// AUDIOCLIENT_ACTIVATION_TYPE
     /// https://docs.microsoft.com/en-us/windows/win32/api/audioclientactivationparams/ne-audioclientactivationparams-audioclient_activation_type
     /// </summary>
-    enum AudioClientActivationType
+    public enum AudioClientActivationType
     {
         /// <summary>
         /// AUDIOCLIENT_ACTIVATION_TYPE_DEFAULT

@@ -225,7 +225,7 @@ namespace NAudioTests.Wasapi
         {
             MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
             MMDevice defaultAudioEndpoint = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Console);
-            AudioClient audioClient = defaultAudioEndpoint.AudioClient;
+            AudioClient audioClient = defaultAudioEndpoint.CreateAudioClient();
             Assert.That(audioClient, Is.Not.Null);
             return audioClient;
         }

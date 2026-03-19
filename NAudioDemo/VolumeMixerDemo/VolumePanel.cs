@@ -208,7 +208,7 @@ namespace NAudioDemo.VolumeMixerDemo
                 if (MuteChanged != null)
                     MuteChanged(null, new MuteEventArgs(Device.AudioEndpointVolume.Mute));
             }
-            btnMuteUnmute.ImageKey = mute ? "Mute.png" : "Unmute.png";
+            btnMuteUnmute.Image = mute ? Properties.Resources.Mute : Properties.Resources.Unmute;
         }
 
         void AudioEndpointVolume_OnVolumeNotification(AudioVolumeNotificationData data)

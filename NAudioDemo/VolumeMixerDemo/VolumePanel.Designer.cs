@@ -29,10 +29,8 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(VolumePanel));
             this.tbVolume = new System.Windows.Forms.TrackBar();
             this.btnMuteUnmute = new System.Windows.Forms.Button();
-            this.ilMuteUnmute = new System.Windows.Forms.ImageList(this.components);
             this.lblName = new System.Windows.Forms.Label();
             this.cmbDevice = new System.Windows.Forms.ComboBox();
             this.btnSoundProperties = new System.Windows.Forms.Button();
@@ -57,21 +55,13 @@
             // btnMuteUnmute
             // 
             this.btnMuteUnmute.FlatAppearance.BorderColor = System.Drawing.Color.White;
-            this.btnMuteUnmute.ImageList = this.ilMuteUnmute;
             this.btnMuteUnmute.Location = new System.Drawing.Point(47, 280);
             this.btnMuteUnmute.Name = "btnMuteUnmute";
             this.btnMuteUnmute.Size = new System.Drawing.Size(28, 28);
             this.btnMuteUnmute.TabIndex = 4;
             this.btnMuteUnmute.UseVisualStyleBackColor = true;
             this.btnMuteUnmute.Click += new System.EventHandler(this.btnMuteUnmute_Click);
-            // 
-            // ilMuteUnmute
-            // 
-            this.ilMuteUnmute.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("ilMuteUnmute.ImageStream")));
-            this.ilMuteUnmute.TransparentColor = System.Drawing.Color.Transparent;
-            this.ilMuteUnmute.Images.SetKeyName(0, "Mute.png");
-            this.ilMuteUnmute.Images.SetKeyName(1, "Unmute.png");
-            // 
+            //
             // lblName
             // 
             this.lblName.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
@@ -137,7 +127,6 @@
         private System.Windows.Forms.Button btnMuteUnmute;
         private System.Windows.Forms.TrackBar tbVolume;
         private System.Windows.Forms.Label lblName;
-        private System.Windows.Forms.ImageList ilMuteUnmute;
         private System.Windows.Forms.ComboBox cmbDevice;
         private System.Windows.Forms.Button btnSoundProperties;
         private System.Windows.Forms.PictureBox pbProcessIcon;

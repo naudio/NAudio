@@ -19,3 +19,4 @@ _ReSharper*/
 # cake:
 Tools/
 *.DotSettings
+.claude/worktrees/

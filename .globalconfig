@@ -1,0 +1,58 @@
+is_global = true
+global_level = 0
+
+# =============================================================================
+# Code Analysis Rules
+# =============================================================================
+
+# Default all code analysis to suggestion - visible in IDE but doesn't break build
+dotnet_analyzer_diagnostic.severity = suggestion
+
+# --- Rules SUPPRESSED (not applicable to this codebase) ---
+
+# CA1707: Identifiers should not contain underscores (test method naming convention)
+dotnet_diagnostic.CA1707.severity = none
+
+# CA1051: Do not declare visible instance fields (interop structs)
+dotnet_diagnostic.CA1051.severity = none
+
+# CA1069: Enum members with same constant value (intentional in Win32 interop enums)
+dotnet_diagnostic.CA1069.severity = none
+
+# CA1708: Identifiers should differ by more than case (existing API)
+dotnet_diagnostic.CA1708.severity = none
+
+# CA1711: Identifiers should not have incorrect suffix (legitimate Stream types)
+dotnet_diagnostic.CA1711.severity = none
+
+# CA1712: Do not prefix enum values with type name (existing API)
+dotnet_diagnostic.CA1712.severity = none
+
+# CA1852: Type can be sealed (too noisy, low value)
+dotnet_diagnostic.CA1852.severity = none
+
+# --- Rules promoted to WARNING (important, fix incrementally) ---
+
+# CA2245: Property assigned to itself (potential bugs)
+dotnet_diagnostic.CA2245.severity = warning
+
+# CA2215: Dispose methods should call base.Dispose
+dotnet_diagnostic.CA2215.severity = warning
+
+# CA2201: Do not raise reserved exception types
+dotnet_diagnostic.CA2201.severity = warning
+
+# CA2208: Instantiate argument exceptions correctly
+dotnet_diagnostic.CA2208.severity = warning
+
+# CA2022: Avoid inexact Stream.Read
+dotnet_diagnostic.CA2022.severity = warning
+
+# CA1816: Call GC.SuppressFinalize correctly
+dotnet_diagnostic.CA1816.severity = warning
+
+# CA1001: Types owning disposable fields should be disposable
+dotnet_diagnostic.CA1001.severity = warning
+
+# CA2020: Prevent behavioral change from IntPtr/UIntPtr
+dotnet_diagnostic.CA2020.severity = warning

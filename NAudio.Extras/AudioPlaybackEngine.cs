@@ -65,6 +65,7 @@ namespace NAudio.Extras
         /// </summary>
         public void Dispose()
         {
+            GC.SuppressFinalize(this);
             outputDevice.Dispose();
         }
     }

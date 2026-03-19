@@ -571,6 +571,7 @@ namespace NAudio.Wave
         /// </summary>
         public void Dispose()
         {
+            GC.SuppressFinalize(this);
             if (audioClient != null)
             {
                 Stop();

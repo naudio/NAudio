@@ -57,7 +57,7 @@ namespace NAudio.Gui
             set
             {
                 if (value >= maximum)
-                    throw new ArgumentOutOfRangeException("Minimum must be less than maximum");
+                    throw new ArgumentOutOfRangeException(nameof(value), "Minimum must be less than maximum");
                 minimum = value;
                 if (Value < minimum)
                     Value = minimum;
@@ -76,7 +76,7 @@ namespace NAudio.Gui
             set
             {
                 if (value <= minimum)
-                    throw new ArgumentOutOfRangeException("Maximum must be greater than minimum");
+                    throw new ArgumentOutOfRangeException(nameof(value), "Maximum must be greater than minimum");
                 maximum = value;
                 if (Value > maximum)
                     Value = maximum;

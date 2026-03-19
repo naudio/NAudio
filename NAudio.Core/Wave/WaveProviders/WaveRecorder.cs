@@ -47,6 +47,7 @@ namespace NAudio.Wave
         /// </summary>
         public void Dispose()
         {
+            GC.SuppressFinalize(this);
             if (writer != null)
             {
                 writer.Dispose();

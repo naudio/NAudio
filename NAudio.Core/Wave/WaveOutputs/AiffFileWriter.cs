@@ -381,6 +381,7 @@ namespace NAudio.Wave
                     }
                 }
             }
+            base.Dispose(disposing);
         }
 
         /// <summary>

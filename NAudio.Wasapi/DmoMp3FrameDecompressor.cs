@@ -96,6 +96,7 @@ namespace NAudio.FileFormats.Mp3
         /// </summary>
         public void Dispose()
         {
+            GC.SuppressFinalize(this);
             if (inputMediaBuffer != null)
             {
                 inputMediaBuffer.Dispose();

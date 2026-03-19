@@ -116,6 +116,7 @@ namespace NAudio.Utils
                 SourceStream.Dispose();
                 SourceStream = null;
             }
+            base.Dispose(disposing);
         }
     }
 }

@@ -184,8 +184,9 @@ namespace NAudio.Wave.Asio
             }
             if (numberOfInputChannels < 0 || numberOfInputChannels > capability.NbInputChannels)
             {
-                throw new ArgumentException("numberOfInputChannels",
-                    $"Invalid number of input channels {numberOfInputChannels}, must be in the range [0,{capability.NbInputChannels}]");
+                throw new ArgumentException(
+                    $"Invalid number of input channels {numberOfInputChannels}, must be in the range [0,{capability.NbInputChannels}]",
+                    nameof(numberOfInputChannels));
             }
 
             // each channel needs a buffer info

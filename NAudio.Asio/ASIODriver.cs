@@ -333,7 +333,7 @@ namespace NAudio.Wave.Asio
             int hresult = CoCreateInstance(ref asioGuid, IntPtr.Zero, CLSCTX_INPROC_SERVER, ref asioGuid, out pAsioComObject);
             if ( hresult != 0 )
             {
-                throw new COMException("Unable to instantiate ASIO. Check if STAThread is set",hresult);
+                throw new InvalidOperationException($"Unable to instantiate ASIO. Check if STAThread is set (HRESULT: 0x{hresult:X8})");
             }
 
             // The first pointer at the adress of the ASIO Com Object is a pointer to the

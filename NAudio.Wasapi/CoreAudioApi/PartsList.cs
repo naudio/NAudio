@@ -41,7 +41,7 @@ namespace NAudio.CoreAudioApi
             {
                 if (partsListInterface == null)
                 {
-                    throw new IndexOutOfRangeException();
+                    throw new ArgumentOutOfRangeException(nameof(index));
                 }
 
                 partsListInterface.GetPart(index, out IPart part);

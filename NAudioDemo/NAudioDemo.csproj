@@ -7,6 +7,7 @@
     <RootNamespace>NAudioDemo</RootNamespace>
     <AssemblyName>NAudioDemo</AssemblyName>
     <Product>NAudioDemo</Product>
+    <NoWarn>$(NoWarn);CA1001</NoWarn> <!-- Demo app: disposal handled by UI lifecycle -->
     <Title>NAudioDemo</Title>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <UseWindowsForms>true</UseWindowsForms>

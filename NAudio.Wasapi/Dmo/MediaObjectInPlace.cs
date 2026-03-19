@@ -77,6 +77,7 @@ namespace NAudio.Dmo
         /// </summary>
         public void Dispose()
         {
+            GC.SuppressFinalize(this);
             if (mediaObjectInPlace != null)
             {
                 Marshal.ReleaseComObject(mediaObjectInPlace);

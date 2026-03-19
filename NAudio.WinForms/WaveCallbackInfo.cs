@@ -5,7 +5,7 @@ namespace NAudio.Wave
     /// <summary>
     /// Wave Callback Info
     /// </summary>
-    public class WaveCallbackInfo
+    public class WaveCallbackInfo : IDisposable
     {
         /// <summary>
         /// Callback Strategy
@@ -110,6 +110,15 @@ namespace NAudio.Wave
                 waveOutWindowNative.ReleaseHandle();
                 waveOutWindowNative = null;
             }
+        }
+
+        /// <summary>
+        /// Disposes this WaveCallbackInfo
+        /// </summary>
+        public void Dispose()
+        {
+            GC.SuppressFinalize(this);
+            Disconnect();
         }
     }
 }

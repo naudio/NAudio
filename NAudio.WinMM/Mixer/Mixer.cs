@@ -28,7 +28,7 @@ namespace NAudio.Mixer
 		{
 			if(mixerIndex < 0 || mixerIndex >= NumberOfDevices) 
 			{
-				throw new ArgumentOutOfRangeException("mixerID");
+				throw new ArgumentOutOfRangeException(nameof(mixerIndex));
 			}
 			caps = new MixerInterop.MIXERCAPS();
 			MmException.Try(MixerInterop.mixerGetDevCaps((IntPtr)mixerIndex,ref caps,Marshal.SizeOf(caps)),"mixerGetDevCaps");

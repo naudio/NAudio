@@ -328,6 +328,7 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public void Dispose()
         {
+            GC.SuppressFinalize(this);
             StopRecording();
             if (captureThread != null)
             {

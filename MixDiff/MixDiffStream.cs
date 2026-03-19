@@ -66,8 +66,8 @@ namespace MarkHeath.AudioUtils
                 }
                 else
                 {
-                    // reset the volume                
-                    Volume = Volume;
+                    // reset the volume
+                    channelSteam.Volume = volume;
                 }
             }
         }

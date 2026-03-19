@@ -282,6 +282,7 @@ namespace NAudio.Dmo.Effect
         /// </summary>
         public void Dispose()
         {
+            GC.SuppressFinalize(this);
             MediaObjectInPlace?.Dispose();
             MediaObject?.Dispose();
         }

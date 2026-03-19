@@ -107,7 +107,7 @@ namespace NAudio.Wave
             set 
             { 
                 if (value < 1 || value > 60)
-                    throw new ArgumentOutOfRangeException("Resampler Quality must be between 1 and 60");
+                    throw new ArgumentOutOfRangeException(nameof(value), "Resampler Quality must be between 1 and 60");
                 resamplerQuality = value; 
             }
         }

@@ -231,7 +231,7 @@ namespace NAudio.Wave
                     {
                         if (NativeMethods.WaitForSingleObjectEx(hEvent, 100, true) != 0)
                         {
-                            throw new Exception("Capture event timeout");
+                            throw new InvalidOperationException("Capture event timeout");
                         }
                     }
 
@@ -341,6 +341,7 @@ namespace NAudio.Wave
         /// </summary>
         public void Dispose()
         {
+            GC.SuppressFinalize(this);
             if (captureState == WasapiCaptureState.Disposed) return;
 
             try

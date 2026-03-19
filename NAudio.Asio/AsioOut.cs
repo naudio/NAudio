@@ -96,6 +96,7 @@ namespace NAudio.Wave
         /// </summary>
         public void Dispose()
         {
+            GC.SuppressFinalize(this);
             if (driver != null)
             {
                 if (playbackState != PlaybackState.Stopped)
@@ -418,7 +419,7 @@ namespace NAudio.Wave
             get
             {
                 if (!isInitialized)
-                    throw new Exception("Not initialized yet. Call this after calling Init");
+                    throw new InvalidOperationException("Not initialized yet. Call this after calling Init");
 
                 return nbSamples;
             }

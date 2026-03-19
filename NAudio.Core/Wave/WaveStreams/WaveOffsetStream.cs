@@ -60,11 +60,11 @@ namespace NAudio.Wave
         /// </summary>
         public TimeSpan StartTime
         {
-            get 
-            { 
-                return startTime; 
+            get
+            {
+                return startTime;
             }
-            set 
+            set
             {
                 lock (lockObject)
                 {
@@ -72,7 +72,7 @@ namespace NAudio.Wave
                     audioStartPosition = (long)(startTime.TotalSeconds * sourceStream.WaveFormat.SampleRate) * bytesPerSample;
                     // fix up our length and position
                     length = audioStartPosition + sourceLengthBytes;
-                    Position = Position;
+                    RepositionSourceStream();
                 }
             }
         }
@@ -93,7 +93,7 @@ namespace NAudio.Wave
                     sourceOffset = value;
                     sourceOffsetBytes = (long)(sourceOffset.TotalSeconds * sourceStream.WaveFormat.SampleRate) * bytesPerSample;
                     // fix up our position
-                    Position = Position;
+                    RepositionSourceStream();
                 }
             }
         }
@@ -115,10 +115,10 @@ namespace NAudio.Wave
                     sourceLengthBytes = (long)(sourceLength.TotalSeconds * sourceStream.WaveFormat.SampleRate) * bytesPerSample;
                     // fix up our length and position
                     length = audioStartPosition + sourceLengthBytes;
-                    Position = Position;
+                    RepositionSourceStream();
                 }
             }
-    
+
         }
 
         /// <summary>
@@ -153,6 +153,20 @@ namespace NAudio.Wave
                     position = value;
                 }
             }
+        }
+
+        /// <summary>
+        /// Repositions the source stream based on current position, sourceOffset, and audioStartPosition.
+        /// Must be called while holding lockObject.
+        /// </summary>
+        private void RepositionSourceStream()
+        {
+            // make sure we don't get out of sync
+            var pos = position - (position % BlockAlign);
+            if (pos < audioStartPosition)
+                sourceStream.Position = sourceOffsetBytes;
+            else
+                sourceStream.Position = sourceOffsetBytes + (pos - audioStartPosition);
         }
 
         /// <summary>

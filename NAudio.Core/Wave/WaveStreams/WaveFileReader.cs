@@ -79,7 +79,11 @@ namespace NAudio.Wave
             long oldPosition = waveStream.Position;
             waveStream.Position = chunk.StreamPosition;
             byte[] data = new byte[chunk.Length];
-            waveStream.Read(data, 0, data.Length);
+            int bytesRead = waveStream.Read(data, 0, data.Length);
+            if (bytesRead < data.Length)
+            {
+                throw new InvalidOperationException($"Could not read chunk data: expected {data.Length} bytes, got {bytesRead}");
+            }
             waveStream.Position = oldPosition;
             return data;
         }

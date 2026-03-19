@@ -81,7 +81,7 @@ namespace NAudioWpfDemo.AudioPlaybackDemo
         {
             if (index < 0 || index >= children.Count)
             {
-                throw new ArgumentOutOfRangeException();
+                throw new ArgumentOutOfRangeException(nameof(index));
             }
 
             return children[index];

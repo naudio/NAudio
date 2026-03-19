@@ -12,10 +12,10 @@ namespace NAudio.CoreAudioApi
     /// <summary>
     /// AudioSessionManager
     /// 
-    /// Designed to manage audio sessions and in particuar the
+    /// Designed to manage audio sessions and in particular the
     /// SimpleAudioVolume interface to adjust a session volume
     /// </summary>
-    public class AudioSessionManager
+    public class AudioSessionManager : IDisposable
     {
         private readonly IAudioSessionManager audioSessionInterface;
         private readonly IAudioSessionManager2 audioSessionInterface2;
@@ -63,7 +63,7 @@ namespace NAudio.CoreAudioApi
 
         /// <summary>
         /// AudioSessionControl object
-        /// for registring for callbacks and other session information
+        /// for registering for callbacks and other session information
         /// </summary>
         public AudioSessionControl AudioSessionControl
         {
@@ -111,9 +111,8 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public void Dispose()
         {
-            UnregisterNotifications();
-
             GC.SuppressFinalize(this);
+            UnregisterNotifications();
         }
 
         private void UnregisterNotifications()

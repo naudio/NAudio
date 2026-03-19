@@ -124,7 +124,7 @@ namespace NAudio.SoundFont
             {
                 if (value == null)
                 {
-                    throw new ArgumentNullException("ChunkID may not be null");
+                    throw new ArgumentNullException(nameof(value), "ChunkID may not be null");
                 }
                 if (value.Length != 4)
                 {

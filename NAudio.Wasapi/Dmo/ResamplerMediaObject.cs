@@ -53,6 +53,7 @@ namespace NAudio.Dmo
         /// </summary>
         public void Dispose()
         {
+            GC.SuppressFinalize(this);
             if(propertyStoreInterface != null)
             {
                 Marshal.ReleaseComObject(propertyStoreInterface);

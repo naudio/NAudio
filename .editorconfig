@@ -1,0 +1,13 @@
+# Top-most EditorConfig file
+root = true
+
+# Default settings for all files
+[*]
+charset = utf-8-bom
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+
+# C# files
+[*.cs]
+indent_size = 4

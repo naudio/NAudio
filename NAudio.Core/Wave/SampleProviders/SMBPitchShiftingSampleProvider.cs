@@ -111,7 +111,7 @@ namespace NAudio.Wave.SampleProviders
                 }
                 return sampRead;
             }
-            throw new Exception("Shifting of more than 2 channels is currently not supported.");
+            throw new InvalidOperationException("Shifting of more than 2 channels is currently not supported.");
         }
 
         /// <summary>

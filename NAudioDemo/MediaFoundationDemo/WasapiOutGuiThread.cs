@@ -294,6 +294,7 @@ namespace NAudioDemo.MediaFoundationDemo
         /// </summary>
         public void Dispose()
         {
+            GC.SuppressFinalize(this);
             if (audioClient != null)
             {
                 Stop();

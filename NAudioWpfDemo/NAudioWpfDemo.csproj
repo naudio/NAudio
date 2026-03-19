@@ -5,6 +5,7 @@
     <RootNamespace>NAudioWpfDemo</RootNamespace>
     <AssemblyName>NAudioWpfDemo</AssemblyName>
     <UseWpf>true</UseWpf>
+    <NoWarn>$(NoWarn);CA1001</NoWarn> <!-- Demo app: disposal handled by Deactivate/UI lifecycle -->
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\NAudio.Extras\NAudio.Extras.csproj" />

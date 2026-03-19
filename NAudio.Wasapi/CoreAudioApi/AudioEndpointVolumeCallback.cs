@@ -56,7 +56,7 @@ namespace NAudio.CoreAudioApi
             //Determine offset in structure of the first float
             var offset = Marshal.OffsetOf<AudioVolumeNotificationDataStruct>("ChannelVolume");
             //Determine offset in memory of the first float
-            var firstFloatPtr = (IntPtr)((long)notifyData + (long)offset);
+            var firstFloatPtr = notifyData + (int)offset;
 
             var voldata = new float[data.nChannels];
             

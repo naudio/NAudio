@@ -265,13 +265,13 @@ namespace NAudio.Wave
 #region Endian Helpers
         private static uint ConvertInt(byte[] buffer)
         {
-            if (buffer.Length != 4) throw new Exception("Incorrect length for long.");
+            if (buffer.Length != 4) throw new InvalidDataException("Incorrect length for long.");
             return (uint)((buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3]);
         }
 
         private static short ConvertShort(byte[] buffer)
         {
-            if (buffer.Length != 2) throw new Exception("Incorrect length for int.");
+            if (buffer.Length != 2) throw new InvalidDataException("Incorrect length for int.");
             return (short)((buffer[0] << 8) | buffer[1]);
         }
 #endregion

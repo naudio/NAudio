@@ -111,7 +111,7 @@ namespace NAudio.Utils
         /// <returns>A C# double precision number that is a close representation of the IEEE extended number.</returns>
         public static double ConvertFromIeeeExtended(byte[] bytes)
         {
-            if (bytes.Length != 10) throw new Exception("Incorrect length for IEEE extended.");
+            if (bytes.Length != 10) throw new ArgumentException("Incorrect length for IEEE extended.", nameof(bytes));
             double f;
             int expon;
             uint hiMant, loMant;

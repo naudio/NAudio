@@ -112,7 +112,7 @@ namespace NAudio.CoreAudioApi
             get
             {
                 var hr = partInterface.EnumPartsIncoming(out var result);
-                return hr == 0 ? new PartsList(result) : hr == E_NOTFOUND ? new PartsList(null) : throw new COMException(nameof(IPart.EnumPartsIncoming), hr);
+                return hr == 0 ? new PartsList(result) : hr == E_NOTFOUND ? new PartsList(null) : throw new InvalidOperationException($"{nameof(IPart.EnumPartsIncoming)} failed (HRESULT: 0x{hr:X8})");
             }
         }
 
@@ -124,7 +124,7 @@ namespace NAudio.CoreAudioApi
             get
             {
                 var hr = partInterface.EnumPartsOutgoing(out var result);
-                return hr == 0 ? new PartsList(result) : hr == E_NOTFOUND ? new PartsList(null) : throw new COMException(nameof(IPart.EnumPartsOutgoing), hr);
+                return hr == 0 ? new PartsList(result) : hr == E_NOTFOUND ? new PartsList(null) : throw new InvalidOperationException($"{nameof(IPart.EnumPartsOutgoing)} failed (HRESULT: 0x{hr:X8})");
             }
         }
 

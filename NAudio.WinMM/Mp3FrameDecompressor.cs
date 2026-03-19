@@ -26,7 +26,6 @@ namespace NAudio.Wave
             catch (Exception)
             {
                 disposed = true;
-                GC.SuppressFinalize(this);
                 throw;
             }
         }

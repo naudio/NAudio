@@ -1,5 +1,11 @@
 <Project>
   <PropertyGroup>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <!-- Enable analyzers but don't set default severities - .globalconfig controls rule severities -->
+    <AnalysisLevel>latest-none</AnalysisLevel>
+    <!-- These rules have existing violations to fix incrementally.
+         Once fixed, remove from here to let them become errors. -->
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);CA2245;CA2201;CA2020;CA1001</WarningsNotAsErrors>
   </PropertyGroup>
 </Project>

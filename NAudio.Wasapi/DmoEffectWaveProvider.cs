@@ -89,6 +89,7 @@ namespace NAudio.Wave
         /// </summary>
         public void Dispose()
         {
+            GC.SuppressFinalize(this);
             if (effector != null)
             {
                 effector.MediaObject.FreeStreamingResources();

@@ -22,7 +22,7 @@ namespace NAudio.Wave
     /// <summary>
     /// WASAPI Out for Windows RT
     /// </summary>
-    public class WasapiOutRT
+    public class WasapiOutRT : IDisposable
     {
         private AudioClient audioClient;
         private readonly string device;
@@ -426,11 +426,13 @@ namespace NAudio.Wave
         /// </summary>
         public void Dispose()
         {
+            GC.SuppressFinalize(this);
             if (audioClient != null)
             {
                 playbackState = WasapiOutState.Disposing;
                 playThreadEvent.Set();
             }
+            playThreadEvent?.Dispose();
         }
     }
 

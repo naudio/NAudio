@@ -5,6 +5,7 @@
     <RootNamespace>MarkHeath.AudioUtils</RootNamespace>
     <Version>0.1.8</Version>
     <UseWindowsForms>true</UseWindowsForms>
+    <NoWarn>$(NoWarn);CA1001</NoWarn> <!-- Demo app: disposal handled by UI lifecycle -->
     <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
   </PropertyGroup>
   <ItemGroup>

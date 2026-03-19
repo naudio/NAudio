@@ -3,6 +3,8 @@ using System.Linq;
 using NAudio.Wave;
 using System.Windows.Forms;
 
+#pragma warning disable CS0618 // Type or member is obsolete
+
 namespace NAudioDemo.AudioPlaybackDemo
 {
     class WasapiOutPlugin : IOutputDevicePlugin

@@ -11,6 +11,7 @@ namespace NAudio.CoreAudioApi
     /// Audio Capture using Wasapi
     /// See http://msdn.microsoft.com/en-us/library/dd370800%28VS.85%29.aspx
     /// </summary>
+    [Obsolete("Use WasapiRecorderBuilder to create a WasapiRecorder instead. WasapiRecorder provides zero-copy buffers, MMCSS thread priority, IAsyncEnumerable capture, and process-specific loopback.")]
     public class WasapiCapture : IWaveIn
     {
         private const long ReftimesPerSec = 10000000;

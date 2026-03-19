@@ -8,6 +8,8 @@ using NAudio.CoreAudioApi;
 using NAudio.Wave;
 using NAudioWpfDemo.ViewModel;
 
+#pragma warning disable CS0618 // Type or member is obsolete
+
 namespace NAudioWpfDemo.WasapiCaptureDemo
 {
     internal class WasapiCaptureViewModel : ViewModelBase, IDisposable

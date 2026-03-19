@@ -7,6 +7,8 @@ using NAudio.CoreAudioApi;
 using NAudio.Wave;
 using NAudioDemo.Utils;
 
+#pragma warning disable CS0618 // Type or member is obsolete
+
 namespace NAudioDemo.RecordingDemo
 {
     public partial class RecordingPanel : UserControl

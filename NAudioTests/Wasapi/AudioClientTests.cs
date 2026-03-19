@@ -7,6 +7,8 @@ using System.Diagnostics;
 using NAudioTests.Utils;
 using System.Runtime.InteropServices;
 
+#pragma warning disable CS0618 // Type or member is obsolete
+
 namespace NAudioTests.Wasapi
 {
     [TestFixture]

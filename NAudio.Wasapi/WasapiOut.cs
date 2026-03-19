@@ -12,6 +12,7 @@ namespace NAudio.Wave
     /// <summary>
     /// Support for playback using Wasapi
     /// </summary>
+    [Obsolete("Use WasapiPlayerBuilder to create a WasapiPlayer instead. WasapiPlayer provides zero-copy buffers, MMCSS thread priority, and IAudioClient3 low-latency support.")]
     public class WasapiOut : IWavePlayer, IWavePosition
     {
         private AudioClient audioClient;

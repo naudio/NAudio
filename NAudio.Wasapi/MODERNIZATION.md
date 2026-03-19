@@ -123,25 +123,47 @@ Specific exception types for common failure modes:
 
 ## What Remains
 
-### Phase 2d: High-level API redesign
-- `WasapiPlayerBuilder` — builder pattern replacing WasapiOut's 4-constructor-overload pattern
-  - MMCSS thread priority integration
-  - AudioStreamCategory support via `AudioClientProperties`
-  - IAudioClient3 low-latency auto-negotiation
-  - Span-based render loop using `RenderBufferLease` and `IAudioSource`
-- `WasapiCaptureBuilder` — builder pattern for capture
-  - Process-specific loopback via `AudioClientActivationParams`
-  - `IAsyncEnumerable<AudioBuffer>` capture pattern
-  - Span-based event args using `CaptureBufferLease`
-- `IAsyncDisposable` on player/capture classes
+### Phase 3: High-level API redesign
 
-### Phase 3: Extended Core Audio APIs
+Existing `WasapiOut` and `WasapiCapture` are kept with `[Obsolete]` attributes pointing to the new APIs. New classes are added alongside to avoid breaking existing code immediately.
+
+**Note:** `IAudioSource` is currently in NAudio.Wasapi but is intended to eventually move to NAudio.Core as the foundation for all playback types (WASAPI, ASIO, WinMM). Similarly, `WaveFormat` (based on WAVEFORMATEX) may eventually be replaced with a platform-agnostic `AudioFormat` descriptor. For now, the new APIs use `WaveFormat` and `IAudioSource` as defined here.
+
+#### 3a: WasapiPlayer (builder + playback engine) — DONE
+- [x] `WasapiPlayerBuilder` — fluent configuration (device, share mode, latency, event sync, audio category, MMCSS task name, low-latency preference)
+- [x] `WasapiPlayer` — the built player, implements `IDisposable` and `IAsyncDisposable`
+- [x] Span-based render loop using `RenderBufferLease` — no `Marshal.Copy`
+- [x] Accept both `IAudioSource` (zero-copy) and `IWaveProvider` (bridged via `WaveProviderAudioSource`)
+- [x] MMCSS thread priority elevation via `AvSetMmThreadCharacteristics` in the audio thread
+- [x] IAudioClient3 low-latency auto-negotiation: `WithLowLatency()` uses `InitializeSharedAudioStream` if available, falls back to standard initialization
+- [x] AudioStreamCategory support via builder's `WithCategory()`
+- [ ] Format auto-negotiation with fallback chain (device mix format, resampling) — not yet implemented, uses source format directly
+
+#### 3b: WasapiRecorder (builder + capture engine) — DONE
+- [x] `WasapiRecorderBuilder` — fluent configuration (device, share mode, format, buffer length, event sync, MMCSS)
+- [x] `WasapiRecorder` — the built recorder, implements `IDisposable` and `IAsyncDisposable`
+- [x] Span-based capture using `CaptureBufferLease` — zero-copy on the synchronous event path
+- [x] `DataAvailable` event via `CaptureDataAvailableHandler(ReadOnlySpan<byte> buffer, AudioClientBufferFlags flags)` — synchronous, zero-alloc
+- [x] `IAsyncEnumerable<AudioBuffer>` via `CaptureAsync()` for async consumption (uses `Marshal.Copy` since Span can't cross yield boundaries)
+- [x] MMCSS thread priority in capture thread
+
+#### 3c: Process-specific loopback capture — PARTIAL
+- [x] `WasapiRecorderBuilder.WithProcessLoopback(uint processId, ProcessLoopbackMode mode)` — builder API defined
+- [x] `AudioClientActivationParams` and `AudioClientProcessLoopbackParams` structs are public and ready
+- [ ] Actual activation via `ActivateAudioInterfaceAsync` with marshaled activation params — not yet implemented (throws `NotImplementedException`)
+
+#### 3d: Deprecate old APIs — DONE
+- [x] `WasapiOut` marked `[Obsolete]` pointing to `WasapiPlayerBuilder`
+- [x] `WasapiCapture` marked `[Obsolete]` pointing to `WasapiRecorderBuilder`
+- [x] `WasapiLoopbackCapture` marked `[Obsolete]` pointing to `WasapiRecorderBuilder`
+
+### Phase 4: Extended Core Audio APIs
 - Spatial Audio (`ISpatialAudioClient`, `ISpatialAudioObject`, etc.) — Win10 1703+
 - Audio Effects Manager (`IAudioEffectsManager`) — Win11+
 - `IChannelAudioVolume` wrapper
 - Volume ducking notifications (`IAudioVolumeDuckNotification`)
 
-### Phase 4: DMO and Media Foundation modernization
+### Phase 5: DMO and Media Foundation modernization
 - The `Dmo/` and `MediaFoundation/` directories in this assembly contain separate Windows APIs (DirectX Media Objects and Media Foundation)
 - These are stable and functional but still use classic `[ComImport]` interop
 - They will be modernized in a future pass, potentially as part of splitting this assembly into `NAudio.Wasapi`, `NAudio.MediaFoundation`, and `NAudio.Dmo`
@@ -160,11 +182,15 @@ These will need to be documented in the migration guide:
 | `AudioClient` constructor is `internal` | Obtain via `MMDevice.CreateAudioClient()` or `AudioClient.ActivateAsync()` |
 | Exceptions are `CoreAudioException` (subclass of `COMException`) | Existing `catch (COMException)` still works; new code can catch specific types |
 | `AudioEndpointVolume` notifications may arrive on different thread | If constructed on UI thread, notifications are posted to UI thread via SynchronizationContext |
+| `WasapiOut` is `[Obsolete]` | Use `new WasapiPlayerBuilder()...Build()` to create a `WasapiPlayer` |
+| `WasapiCapture` is `[Obsolete]` | Use `new WasapiRecorderBuilder()...Build()` to create a `WasapiRecorder` |
+| `WasapiLoopbackCapture` is `[Obsolete]` | Use `WasapiRecorderBuilder` with process loopback or render device |
 
 ## Verification Status
 
-- 836 tests passing (1 pre-existing ASIO test failure unrelated to changes)
+- 836 tests passing, 0 failures (1 pre-existing ASIO test failure unrelated to changes)
 - Manual testing: WASAPI playback and capture confirmed working in demo app
 - All `CoreAudioApi/` wrapper classes use `CoreAudioException.ThrowIfFailed` (zero `Marshal.ThrowExceptionForHR` remaining)
 - All consumed COM interfaces use `[GeneratedComInterface]` (30 interfaces)
 - Callback interfaces correctly remain `[ComImport]` (6 interfaces)
+- New `WasapiPlayer` and `WasapiRecorder` compile and are ready for integration testing

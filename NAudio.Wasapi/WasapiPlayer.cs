@@ -68,7 +68,33 @@ namespace NAudio.Wave
         }
 
         /// <summary>
+        /// The device's preferred mix format (shared mode). This is always supported in shared mode.
+        /// </summary>
+        public WaveFormat DeviceMixFormat => audioClient.MixFormat;
+
+        /// <summary>
+        /// Checks whether the specified format is supported by the device in the current share mode.
+        /// </summary>
+        /// <param name="format">The format to check.</param>
+        /// <param name="closestMatch">In shared mode, the closest supported format if the exact format isn't supported. Always null in exclusive mode.</param>
+        /// <returns>True if the format is supported.</returns>
+        public bool IsFormatSupported(WaveFormat format, out WaveFormatExtensible closestMatch)
+        {
+            return audioClient.IsFormatSupported(shareMode, format, out closestMatch);
+        }
+
+        /// <summary>
+        /// Checks whether the specified format is supported by the device in the current share mode.
+        /// </summary>
+        public bool IsFormatSupported(WaveFormat format)
+        {
+            return audioClient.IsFormatSupported(shareMode, format);
+        }
+
+        /// <summary>
         /// Initialize for playing the specified audio source (zero-copy path).
+        /// In exclusive mode, the source format must be natively supported by the device —
+        /// use <see cref="IsFormatSupported(WaveFormat)"/> to check before calling Init.
         /// </summary>
         public void Init(IAudioSource source)
         {

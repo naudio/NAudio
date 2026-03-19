@@ -137,7 +137,7 @@ Existing `WasapiOut` and `WasapiCapture` are kept with `[Obsolete]` attributes p
 - [x] MMCSS thread priority elevation via `AvSetMmThreadCharacteristics` in the audio thread
 - [x] IAudioClient3 low-latency auto-negotiation: `WithLowLatency()` uses `InitializeSharedAudioStream` if available, falls back to standard initialization
 - [x] AudioStreamCategory support via builder's `WithCategory()`
-- [ ] Format auto-negotiation with fallback chain (device mix format, resampling) — not yet implemented, uses source format directly
+- [x] Format handling: shared mode uses `AutoConvertPcm`. Exclusive mode requires the caller to provide a natively supported format — `IsFormatSupported()` and `DeviceMixFormat` are exposed for callers to query. No built-in resampler (the old WasapiOut's embedded resampler caused threading/latency issues; callers who need SRC should do it upstream)
 
 #### 3b: WasapiRecorder (builder + capture engine) — DONE
 - [x] `WasapiRecorderBuilder` — fluent configuration (device, share mode, format, buffer length, event sync, MMCSS)

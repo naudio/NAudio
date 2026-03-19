@@ -1,4 +1,5 @@
-﻿using System;
+#if WINDOWS
+using System;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 
@@ -68,3 +69,4 @@ namespace NAudio.Extras
         }
     }
 }
+#endif

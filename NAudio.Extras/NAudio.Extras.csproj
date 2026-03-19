@@ -16,10 +16,16 @@
     <PackageIcon>naudio-icon.png</PackageIcon>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(TargetFramework)' != 'net8.0' ">
+    <DefineConstants>$(DefineConstants);WINDOWS</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\NAudio.Core\NAudio.Core.csproj" />
-    <ProjectReference Include="..\NAudio.Wasapi\NAudio.Wasapi.csproj" />
     <ProjectReference Include="..\NAudio\NAudio.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' != 'net8.0' ">
+    <ProjectReference Include="..\NAudio.Wasapi\NAudio.Wasapi.csproj" />
   </ItemGroup>
 
   <ItemGroup>

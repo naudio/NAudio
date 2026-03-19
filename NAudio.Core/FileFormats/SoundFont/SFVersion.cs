@@ -12,11 +12,11 @@ namespace NAudio.SoundFont
         /// <summary>
         /// Major Version
         /// </summary>
-        public short Major { get; set; }
+        public ushort Major { get; set; }
 
         /// <summary>
         /// Minor Version
         /// </summary>
-        public short Minor { get; set; }
+        public ushort Minor { get; set; }
     }
 }

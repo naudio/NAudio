@@ -172,6 +172,11 @@ namespace NAudio.Wave
 
         #endregion
 
+        /// <summary>
+        /// Attempts to skip an ID3v2 tag at the current position in the stream.
+        /// </summary>
+        /// <param name="input">The stream to read from.</param>
+        /// <returns>True if an ID3v2 tag was found and skipped, false otherwise.</returns>
         public static bool TrySkipTag(Stream input)
         {
             if (input == null)

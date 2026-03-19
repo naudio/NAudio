@@ -246,6 +246,10 @@ namespace NAudio.Wave
             return (int)(sample * 2147483647.0);
         }
 
+        /// <summary>
+        /// Writes a single sample to the AIFF file.
+        /// </summary>
+        /// <param name="sample">The sample value, between -1.0f and 1.0f.</param>
         public void WriteSample(float sample)
         {
             if (WaveFormat.BitsPerSample == 16)

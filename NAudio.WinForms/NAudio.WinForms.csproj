@@ -1,7 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;netcoreapp3.1</TargetFrameworks>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <Version>2.3.0</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -21,14 +21,6 @@
     <ProjectReference Include="..\NAudio.WinMM\NAudio.WinMM.csproj" />
   </ItemGroup>
 
-  <!-- Fix for MSB3822/MSB3823: non-string resources on net472 with newer SDKs -->
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net472'">
-    <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
-  </PropertyGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
-    <PackageReference Include="System.Resources.Extensions" Version="8.0.0" />
-  </ItemGroup>
 
   <ItemGroup>
     <Compile Update="Gui\Fader.Designer.cs">

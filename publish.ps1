@@ -8,7 +8,7 @@ if (-not $apiKey)
 }
 
 $packages = "NAudio.Core", "NAudio.Asio", "NAudio.WinForms", "NAudio.Midi", 
-            "NAudio.WinMM", "NAudio.Wasapi", "NAudio.Uap",
+            "NAudio.WinMM", "NAudio.Wasapi",
             "NAudio", "NAudio.Extras"
 
 foreach ($package in $packages)

@@ -20,3 +20,4 @@ _ReSharper*/
 Tools/
 *.DotSettings
 .claude/worktrees/
+.claude/settings.local.json

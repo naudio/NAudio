@@ -3,40 +3,47 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 using NAudio.Midi;
+using Windows.Devices.Enumeration;
 
 namespace NAudioDemo.MidiInDemo
 {
     public partial class MidiInPanel : UserControl
     {
-        MidiIn midiIn;
-        MidiOut midiOut;
-        bool monitoring;
-        List<MidiEvent> events;
-        int midiOutIndex;
+        private IMidiInput midiInput;
+        private IMidiOutput midiOutput;
+        private bool monitoring;
+        private List<MidiEvent> events;
+        private int midiOutIndex;
+        private IReadOnlyList<DeviceInformation> midiInDevices;
+        private IReadOnlyList<DeviceInformation> midiOutDevices;
 
         public MidiInPanel()
         {
             InitializeComponent();
         }
 
-        private void MidiInForm_Load(object sender, EventArgs e)
+        private async void MidiInForm_Load(object sender, EventArgs e)
         {
-            for (int device = 0; device < MidiIn.NumberOfDevices; device++)
+            midiInDevices = await WinRTMidiIn.GetDevicesAsync();
+            foreach (var device in midiInDevices)
             {
-                comboBoxMidiInDevices.Items.Add(MidiIn.DeviceInfo(device).ProductName);
+                comboBoxMidiInDevices.Items.Add(device.Name);
             }
             if (comboBoxMidiInDevices.Items.Count > 0)
             {
                 comboBoxMidiInDevices.SelectedIndex = 0;
             }
-            for (int device = 0; device < MidiOut.NumberOfDevices; device++)
+
+            midiOutDevices = await WinRTMidiOut.GetDevicesAsync();
+            foreach (var device in midiOutDevices)
             {
-                comboBoxMidiOutDevices.Items.Add(MidiOut.DeviceInfo(device).ProductName);
+                comboBoxMidiOutDevices.Items.Add(device.Name);
             }
             if (comboBoxMidiOutDevices.Items.Count > 0)
             {
                 comboBoxMidiOutDevices.SelectedIndex = 0;
             }
+
             events = new List<MidiEvent>();
             for (int note = 50; note < 62; note++)
             {
@@ -46,8 +53,8 @@ namespace NAudioDemo.MidiInDemo
 
         private void AddNoteEvent(int noteNumber)
         {
-            int channel = 2;
-            NoteOnEvent noteOnEvent = new NoteOnEvent(0, channel, noteNumber, 100, 50);
+            int channel = 1;
+            var noteOnEvent = new NoteOnEvent(0, channel, noteNumber, 100, 50);
             events.Add(noteOnEvent);
             events.Add(noteOnEvent.OffEvent);
         }
@@ -64,27 +71,26 @@ namespace NAudioDemo.MidiInDemo
             }
         }
 
-        private void StartMonitoring()
+        private async void StartMonitoring()
         {
-            if (comboBoxMidiInDevices.Items.Count == 0)
+            if (midiInDevices == null || midiInDevices.Count == 0)
             {
                 MessageBox.Show("No MIDI input devices available");
                 return;
             }
-            if (midiIn != null)
+            if (midiInput != null)
             {
-                midiIn.Dispose();
-                midiIn.MessageReceived -= midiIn_MessageReceived;
-                midiIn.ErrorReceived -= midiIn_ErrorReceived;
-                midiIn = null;
+                midiInput.Dispose();
+                midiInput.MessageReceived -= midiIn_MessageReceived;
+                midiInput.ErrorReceived -= midiIn_ErrorReceived;
+                midiInput = null;
             }
-            if (midiIn == null)
-            {
-                midiIn = new MidiIn(comboBoxMidiInDevices.SelectedIndex);
-                midiIn.MessageReceived += midiIn_MessageReceived;
-                midiIn.ErrorReceived += midiIn_ErrorReceived;
-            }
-            midiIn.Start();
+
+            var deviceId = midiInDevices[comboBoxMidiInDevices.SelectedIndex].Id;
+            midiInput = await WinRTMidiIn.CreateAsync(deviceId);
+            midiInput.MessageReceived += midiIn_MessageReceived;
+            midiInput.ErrorReceived += midiIn_ErrorReceived;
+            midiInput.Start();
             monitoring = true;
             buttonMonitor.Text = "Stop";
             comboBoxMidiInDevices.Enabled = false;
@@ -100,7 +106,7 @@ namespace NAudioDemo.MidiInDemo
         {
             if (monitoring)
             {
-                midiIn.Stop();
+                midiInput.Stop();
                 monitoring = false;
                 buttonMonitor.Text = "Monitor";
                 comboBoxMidiInDevices.Enabled = true;
@@ -121,15 +127,15 @@ namespace NAudioDemo.MidiInDemo
         {
             timer1.Enabled = false;
             StopMonitoring();
-            if (midiIn != null)
+            if (midiInput != null)
             {
-                midiIn.Dispose();
-                midiIn = null;
+                midiInput.Dispose();
+                midiInput = null;
             }
-            if (midiOut != null)
+            if (midiOutput != null)
             {
-                midiOut.Dispose();
-                midiOut = null;
+                midiOutput.Dispose();
+                midiOutput = null;
             }
         }
 
@@ -146,22 +152,24 @@ namespace NAudioDemo.MidiInDemo
             }
         }
 
-        private void SendNextMidiOutMessage()
+        private async void SendNextMidiOutMessage()
         {
-            if (midiOut == null)
+            if (midiOutput == null)
             {
-                midiOut = new MidiOut(comboBoxMidiOutDevices.SelectedIndex);
+                if (midiOutDevices == null || midiOutDevices.Count == 0) return;
+                var deviceId = midiOutDevices[comboBoxMidiOutDevices.SelectedIndex].Id;
+                midiOutput = await WinRTMidiOut.CreateAsync(deviceId);
             }
             MidiEvent eventToSend = events[midiOutIndex++];
-            midiOut.Send(eventToSend.GetAsShortMessage());
-            progressLog1.LogMessage(Color.Green, String.Format("Sent {0}", eventToSend));
+            midiOutput.Send(eventToSend.GetAsShortMessage());
+            progressLog1.LogMessage(Color.Green, $"Sent {eventToSend}");
             if (midiOutIndex >= events.Count)
             {
                 midiOutIndex = 0;
             }
         }
     }
-    
+
     public class MidiInPanelPlugin : INAudioDemoPlugin
     {
         public string Name

@@ -4,9 +4,11 @@ using System.Runtime.InteropServices;
 namespace NAudio.Midi
 {
     /// <summary>
-    /// Represents a MIDI in device
+    /// Represents a MIDI in device using the legacy Windows MME API.
+    /// On Windows 10+, consider using WinRTMidiIn instead.
     /// </summary>
-    public class MidiIn : IDisposable 
+    [Obsolete("MidiIn uses the legacy winmm API. Use WinRTMidiIn on net8.0-windows10.0.19041.0 or later.")]
+    public class MidiIn : IDisposable, IMidiInput
     {
         private IntPtr hMidiIn = IntPtr.Zero;
         private bool disposeIsRunning = false; // true while the Dispose() method run.

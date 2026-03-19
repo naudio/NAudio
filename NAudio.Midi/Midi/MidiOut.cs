@@ -5,9 +5,11 @@ using NAudio.Wave;
 namespace NAudio.Midi 
 {
     /// <summary>
-    /// Represents a MIDI out device
+    /// Represents a MIDI out device using the legacy Windows MME API.
+    /// On Windows 10+, consider using WinRTMidiOut instead.
     /// </summary>
-    public class MidiOut : IDisposable 
+    [Obsolete("MidiOut uses the legacy winmm API. Use WinRTMidiOut on net8.0-windows10.0.19041.0 or later.")]
+    public class MidiOut : IDisposable, IMidiOutput
     {
         private IntPtr hMidiOut = IntPtr.Zero;
         private bool disposed = false;

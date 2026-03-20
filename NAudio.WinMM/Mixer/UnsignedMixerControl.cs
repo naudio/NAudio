@@ -53,8 +53,8 @@ namespace NAudio.Mixer
                 for (int channel = 0; channel < nChannels; channel++)
                 {
                     unsignedDetails[channel].dwValue = value;
-                    long pointer = mixerControlDetails.paDetails.ToInt64() + (structSize * channel);                    
-                    Marshal.StructureToPtr(unsignedDetails[channel], (IntPtr)pointer, false);
+                    IntPtr pointer = IntPtr.Add(mixerControlDetails.paDetails, structSize * channel);
+                    Marshal.StructureToPtr(unsignedDetails[channel], pointer, false);
                 }
 				MmException.Try(MixerInterop.mixerSetControlDetails(mixerHandle, ref mixerControlDetails, MixerFlags.Value | mixerHandleType), "mixerSetControlDetails");
                 Marshal.FreeHGlobal(mixerControlDetails.paDetails);

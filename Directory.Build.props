@@ -6,6 +6,6 @@
     <AnalysisLevel>latest-none</AnalysisLevel>
     <!-- These rules have existing violations to fix incrementally.
          Once fixed, remove from here to let them become errors. -->
-    <WarningsNotAsErrors>$(WarningsNotAsErrors);CA2245;CA2201;CA2020;CA1001</WarningsNotAsErrors>
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);CA2245;CA2201;CA1001</WarningsNotAsErrors>
   </PropertyGroup>
 </Project>

@@ -59,10 +59,10 @@ namespace NAudio.Mixer
                     }
                     for (int i = 0; i < mlc.cControls; i++)
                     {
-                        Int64 address = pmc.ToInt64() + mixerControlSize * i;
+                        IntPtr address = IntPtr.Add(pmc, mixerControlSize * i);
 
-                        var mc = 
-                            Marshal.PtrToStructure<MixerInterop.MIXERCONTROL>((IntPtr)address);
+                        var mc =
+                            Marshal.PtrToStructure<MixerInterop.MIXERCONTROL>(address);
                         var mixerControl = GetMixerControl(mixerHandle, mixerLine.LineId, mc.dwControlID, mixerLine.Channels,
                                                                                  mixerHandleType);
 

@@ -143,14 +143,17 @@ namespace NAudio.Wave
                     var nextFrame = new Mp3Frame();
                     if (!IsValidHeader(headerBytes, nextFrame))
                     {
-                        return false;
+                        // If there isn't enough room for another frame of similar size,
+                        // we're likely at the last audio frame and have hit non-audio data
+                        // (e.g. an ID3v1 tag at the end of the file)
+                        return nextFrameOffset + firstFrame.FrameLength >= input.Length;
                     }
 
                     if (nextFrame.MpegVersion != firstFrame.MpegVersion ||
                         nextFrame.MpegLayer != firstFrame.MpegLayer ||
                         nextFrame.SampleRate != firstFrame.SampleRate)
                     {
-                        return false;
+                        return nextFrameOffset + firstFrame.FrameLength >= input.Length;
                     }
 
                     previousFrame = nextFrame;

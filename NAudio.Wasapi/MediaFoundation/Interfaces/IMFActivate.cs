@@ -4,6 +4,13 @@ using System.Runtime.InteropServices.Marshalling;
 
 namespace NAudio.MediaFoundation.Interfaces
 {
+    /// <summary>
+    /// Enables the application to defer the creation of an object. Extends IMFAttributes.
+    /// </summary>
+    /// <remarks>
+    /// Windows SDK: IMFActivate (mfobjects.h).
+    /// https://learn.microsoft.com/windows/win32/api/mfobjects/nn-mfobjects-imfactivate
+    /// </remarks>
     [GeneratedComInterface]
     [Guid("7FEE9E9A-4A89-47a6-899C-B6A53A70FB67")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]

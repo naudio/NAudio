@@ -18,8 +18,8 @@ namespace NAudio.Dmo
     }
     
     /// <summary>
-    /// Windows Media MP3 Decoder (as a DMO)
-    /// WORK IN PROGRESS - DO NOT USE!
+    /// Windows Media MP3 Decoder (as a DMO).
+    /// Used internally by DmoMp3FrameDecompressor.
     /// </summary>
     public class WindowsMediaMp3Decoder : IDisposable
     {
@@ -54,9 +54,7 @@ namespace NAudio.Dmo
         #region IDisposable Members
 
         /// <summary>
-        /// Dispose code - experimental at the moment
-        /// Was added trying to track down why Resampler crashes NUnit
-        /// This code not currently being called by ResamplerDmoStream
+        /// Releases the underlying COM objects.
         /// </summary>
         public void Dispose()
         {

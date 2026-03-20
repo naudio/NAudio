@@ -4,6 +4,13 @@ using System.Runtime.InteropServices.Marshalling;
 
 namespace NAudio.MediaFoundation.Interfaces
 {
+    /// <summary>
+    /// Represents a description of a media format. Extends IMFAttributes.
+    /// </summary>
+    /// <remarks>
+    /// Windows SDK: IMFMediaType (mfobjects.h).
+    /// https://learn.microsoft.com/windows/win32/api/mfobjects/nn-mfobjects-imfmediatype
+    /// </remarks>
     [GeneratedComInterface]
     [Guid("44AE0FA8-EA31-4109-8D2E-4CAE4997C555")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]

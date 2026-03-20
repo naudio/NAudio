@@ -4,6 +4,13 @@ using System.Runtime.InteropServices.Marshalling;
 
 namespace NAudio.MediaFoundation.Interfaces
 {
+    /// <summary>
+    /// Implemented by the Microsoft Media Foundation sink writer object.
+    /// </summary>
+    /// <remarks>
+    /// Windows SDK: IMFSinkWriter (mfreadwrite.h).
+    /// https://learn.microsoft.com/windows/win32/api/mfreadwrite/nn-mfreadwrite-imfsinkwriter
+    /// </remarks>
     [GeneratedComInterface]
     [Guid("3137f1cd-fe5e-4805-a5d8-fb477448cb3d")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]

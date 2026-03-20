@@ -4,6 +4,13 @@ using System.Runtime.InteropServices.Marshalling;
 
 namespace NAudio.MediaFoundation.Interfaces
 {
+    /// <summary>
+    /// Implemented by the Microsoft Media Foundation source reader object.
+    /// </summary>
+    /// <remarks>
+    /// Windows SDK: IMFSourceReader (mfreadwrite.h).
+    /// https://learn.microsoft.com/windows/win32/api/mfreadwrite/nn-mfreadwrite-imfsourcereader
+    /// </remarks>
     [GeneratedComInterface]
     [Guid("70ae66f2-c809-4e4f-8915-bdcb406b7993")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]

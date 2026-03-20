@@ -4,6 +4,13 @@ using System.Runtime.InteropServices.Marshalling;
 
 namespace NAudio.MediaFoundation.Interfaces
 {
+    /// <summary>
+    /// Represents a byte stream from some data source, which might be a local file, a network file, or some other source.
+    /// </summary>
+    /// <remarks>
+    /// Windows SDK: IMFByteStream (mfobjects.h).
+    /// https://learn.microsoft.com/windows/win32/api/mfobjects/nn-mfobjects-imfbytestream
+    /// </remarks>
     [GeneratedComInterface]
     [Guid("ad4c1b00-4bf7-422f-9175-756693d9130d")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]

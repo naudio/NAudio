@@ -5,8 +5,7 @@ using NAudio.Utils;
 namespace NAudio.Dmo
 {
     /// <summary>
-    /// Attempting to implement the COM IMediaBuffer interface as a .NET object
-    /// Not sure what will happen when I pass this to an unmanaged object
+    /// Implements the COM IMediaBuffer interface as a managed object backed by CoTaskMem allocation.
     /// </summary>
     public class MediaBuffer : IMediaBuffer, IDisposable
     {
@@ -37,13 +36,6 @@ namespace NAudio.Dmo
             }
         }
 
-        /// <summary>
-        /// Finalizer
-        /// </summary>
-        ~MediaBuffer()
-        {
-            Dispose();
-        }
 
         #region IMediaBuffer Members
 

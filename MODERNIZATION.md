@@ -214,6 +214,18 @@ Existing `WasapiOut` and `WasapiCapture` are kept with `[Obsolete]` attributes p
 - `IChannelAudioVolume` wrapper
 - Volume ducking notifications (`IAudioVolumeDuckNotification`)
 
+#### Phase 7: IAudioSource as core interface
+- Move `IAudioSource` from `NAudio.Wasapi` to `NAudio.Core` (namespace `NAudio.Wave`) — it must be in core so all audio-producing classes can implement it without circular dependencies
+- Have `WaveStream` implement `IAudioSource` (bridging old and new APIs)
+- Native `IAudioSource` implementation on MF/DMO audio producers:
+  - `MediaFoundationTransform` (and `MediaFoundationResampler`) — can read from MFT output buffer span directly into caller's span, avoiding the intermediate `outputBuffer` copy
+  - `MediaFoundationReader` / `StreamMediaFoundationReader` — enables zero-copy WASAPI playback path
+  - `ResamplerDmoStream` — same zero-copy benefit
+  - `DmoEffectWaveProvider` — same zero-copy benefit
+- Audio consumers (`MediaFoundationEncoder.Encode`, etc.) accept `IAudioSource` alongside `IWaveProvider`
+- `DmoMp3FrameDecompressor` does NOT implement `IAudioSource` — it implements `IMp3FrameDecompressor` (frame-based API, not a streaming source)
+- Consider whether `WaveFormat` should be replaced with a platform-agnostic `AudioFormat` on `IAudioSource`
+
 #### Phase 5: Media Foundation modernization — DONE
 
 **5a: Infrastructure and naming — DONE**
@@ -254,10 +266,27 @@ Existing `WasapiOut` and `WasapiCapture` are kept with `[Obsolete]` attributes p
 - [x] `MediaFoundationApi.EnumerateTransforms` — now returns `IEnumerable<MfActivate>` (wrapper) instead of raw `IMFActivate`
 - [x] All factory methods returning old COM types made `internal`
 
-#### Phase 6: DMO modernization
-- The `Dmo/` directory in this assembly contains DirectX Media Objects interop
-- These are stable and functional but still use classic `[ComImport]` interop
-- They will be modernized in a future pass, potentially as part of splitting this assembly into `NAudio.Wasapi`, `NAudio.MediaFoundation`, and `NAudio.Dmo`
+#### Phase 6: DMO modernization — DONE
+
+**6a: Infrastructure cleanup — DONE**
+
+- [x] Fixed 3 enums with C-style ALL_CAPS members: `DmoInputStatusFlags.DMO_INPUT_STATUSF_ACCEPT_DATA` → `AcceptData`, `DmoEnumFlags.DMO_ENUMF_INCLUDE_KEYED` → `IncludeKeyed`, `MediaParamCurveType.MP_CURVE_*` → PascalCase (`Jump`, `Linear`, `Square`, `InverseSquare`, `Sine`)
+- [x] Removed `MediaBuffer` finalizer (unsafe `Marshal.FreeCoTaskMem` from finalizer thread)
+- [x] Replaced all `Marshal.ThrowExceptionForHR` in `MediaObject` with `MediaFoundationException.ThrowIfFailed` (~10 call sites)
+- [x] Fixed `MediaObject.Dispose()` — removed "experimental, not sure if necessary" comment
+- [x] Fixed `WindowsMediaMp3Decoder` — removed "WORK IN PROGRESS - DO NOT USE" label, cleaned up disposal comment
+- [x] Updated `MediaBuffer` class documentation
+
+**6b: COM interface conversion — DONE**
+
+- [x] Created `Dmo/Interfaces/` subfolder with 5 `[GeneratedComInterface]` interfaces (all `internal partial`, all methods `[PreserveSig]`)
+- [x] `IMediaObject` (23 methods) — `DmoMediaType` struct parameters changed to `IntPtr` (struct contains `IntPtr` fields incompatible with source-generated marshalling)
+- [x] `IMediaObjectInPlace` (3 methods)
+- [x] `IEnumDmo` (4 methods)
+- [x] `IMediaParamInfo` (6 methods) — `MediaParamInfo` struct parameter changed to `IntPtr`
+- [x] `IWMResamplerProps` (2 methods)
+- [x] `IMediaBuffer` kept as `[ComImport]` — it's a callback interface implemented by managed `MediaBuffer` class
+- [x] Old `[ComImport]` interfaces retained for existing consumers (already internal)
 
 ---
 
@@ -305,6 +334,17 @@ These will need to be documented in the migration guide:
 | `MediaFoundationEncoder` finalizer removed | Ensure `Dispose()` is called |
 | `MediaType` now implements `IDisposable` | Call `Dispose()` or use `using` |
 
+### DMO API changes
+
+| Change | Migration |
+| ------ | --------- |
+| `DmoInputStatusFlags.DMO_INPUT_STATUSF_ACCEPT_DATA` renamed | Use `DmoInputStatusFlags.AcceptData` |
+| `DmoEnumFlags.DMO_ENUMF_INCLUDE_KEYED` renamed | Use `DmoEnumFlags.IncludeKeyed` |
+| `MediaParamCurveType.MP_CURVE_*` members renamed | Use PascalCase: `Jump`, `Linear`, `Square`, `InverseSquare`, `Sine` |
+| `MediaBuffer` finalizer removed | Ensure `Dispose()` is called |
+| `MediaObject` errors throw `MediaFoundationException` | Existing `catch (COMException)` still works |
+| `WindowsMediaMp3Decoder` "DO NOT USE" label removed | Class is now properly documented; use `DmoMp3FrameDecompressor` for high-level MP3 decoding |
+
 ---
 
 ## Verification Status
@@ -320,3 +360,7 @@ These will need to be documented in the migration guide:
 - All MF consumer classes (`MediaFoundationReader`, `MediaFoundationEncoder`, `MediaFoundationTransform`, `MediaFoundationResampler`) use `MediaFoundationException.ThrowIfFailed`
 - Finalizers removed from `MediaFoundationTransform` and `MediaFoundationEncoder`
 - All old MF COM interfaces are `internal` — no COM types in the public API surface
+- All 5 consumed DMO COM interfaces have `[GeneratedComInterface]` versions in `Dmo/Interfaces/`
+- `IMediaBuffer` correctly remains `[ComImport]` (callback interface implemented by managed `MediaBuffer` class)
+- `MediaObject` uses `MediaFoundationException.ThrowIfFailed` (zero `Marshal.ThrowExceptionForHR` remaining)
+- `MediaBuffer` finalizer removed

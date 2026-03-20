@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using NAudio.MediaFoundation;
 using NAudio.Utils;
 using System.Runtime.InteropServices;
 using NAudio.Wave;
@@ -465,8 +466,8 @@ namespace NAudio.Dmo
         {
             DmoInputStatusFlags flags;
             int hresult = mediaObject.GetInputStatus(inputStreamIndex, out flags);
-            Marshal.ThrowExceptionForHR(hresult);
-            return (flags & DmoInputStatusFlags.DMO_INPUT_STATUSF_ACCEPT_DATA) == DmoInputStatusFlags.DMO_INPUT_STATUSF_ACCEPT_DATA;
+            MediaFoundationException.ThrowIfFailed(hresult);
+            return (flags & DmoInputStatusFlags.AcceptData) == DmoInputStatusFlags.AcceptData;
         }
 
         // TODO: there are still several IMediaObject functions to be wrapped
@@ -474,8 +475,7 @@ namespace NAudio.Dmo
         #region IDisposable Members
 
         /// <summary>
-        /// Experimental code, not currently being called
-        /// Not sure if it is necessary anyway
+        /// Releases the underlying COM object.
         /// </summary>
         public void Dispose()
         {

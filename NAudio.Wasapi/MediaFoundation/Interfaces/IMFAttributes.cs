@@ -4,6 +4,13 @@ using System.Runtime.InteropServices.Marshalling;
 
 namespace NAudio.MediaFoundation.Interfaces
 {
+    /// <summary>
+    /// Provides a generic way to store key/value pairs on an object.
+    /// </summary>
+    /// <remarks>
+    /// Windows SDK: IMFAttributes (mfobjects.h).
+    /// https://learn.microsoft.com/windows/win32/api/mfobjects/nn-mfobjects-imfattributes
+    /// </remarks>
     [GeneratedComInterface]
     [Guid("2CD2D921-C447-44A7-A13C-4ADABFC247E3")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]

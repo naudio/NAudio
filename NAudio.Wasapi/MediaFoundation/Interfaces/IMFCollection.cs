@@ -4,6 +4,13 @@ using System.Runtime.InteropServices.Marshalling;
 
 namespace NAudio.MediaFoundation.Interfaces
 {
+    /// <summary>
+    /// Represents a generic collection of IUnknown pointers.
+    /// </summary>
+    /// <remarks>
+    /// Windows SDK: IMFCollection (mfobjects.h).
+    /// https://learn.microsoft.com/windows/win32/api/mfobjects/nn-mfobjects-imfcollection
+    /// </remarks>
     [GeneratedComInterface]
     [Guid("5BC8A76B-869A-46A3-9B03-FA218A66AEBE")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]

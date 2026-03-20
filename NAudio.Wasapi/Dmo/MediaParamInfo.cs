@@ -49,16 +49,40 @@ namespace NAudio.Dmo
     }
 
     /// <summary>
-    /// MP_CURVE_TYPE
+    /// Defines the curve types for media parameter transitions.
     /// </summary>
+    /// <remarks>
+    /// Windows SDK name: MP_CURVE_TYPE (medparam.h).
+    /// See https://learn.microsoft.com/windows/win32/api/medparam/ne-medparam-mp_curve_type
+    /// </remarks>
     [Flags]
     internal enum MediaParamCurveType
     {
-        MP_CURVE_JUMP = 0x1,
-        MP_CURVE_LINEAR = 0x2,
-        MP_CURVE_SQUARE = 0x4,
-        MP_CURVE_INVSQUARE = 0x8,
-        MP_CURVE_SINE = 0x10
+        /// <summary>
+        /// Instantaneous jump to the new value.
+        /// </summary>
+        /// <remarks>MP_CURVE_JUMP</remarks>
+        Jump = 0x1,
+        /// <summary>
+        /// Linear interpolation to the new value.
+        /// </summary>
+        /// <remarks>MP_CURVE_LINEAR</remarks>
+        Linear = 0x2,
+        /// <summary>
+        /// Square curve interpolation to the new value.
+        /// </summary>
+        /// <remarks>MP_CURVE_SQUARE</remarks>
+        Square = 0x4,
+        /// <summary>
+        /// Inverse square curve interpolation to the new value.
+        /// </summary>
+        /// <remarks>MP_CURVE_INVSQUARE</remarks>
+        InverseSquare = 0x8,
+        /// <summary>
+        /// Sine curve interpolation to the new value.
+        /// </summary>
+        /// <remarks>MP_CURVE_SINE</remarks>
+        Sine = 0x10
     }
 
 }

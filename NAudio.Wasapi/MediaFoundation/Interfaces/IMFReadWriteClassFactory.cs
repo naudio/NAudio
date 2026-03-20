@@ -4,6 +4,13 @@ using System.Runtime.InteropServices.Marshalling;
 
 namespace NAudio.MediaFoundation.Interfaces
 {
+    /// <summary>
+    /// Creates an instance of the source reader or sink writer.
+    /// </summary>
+    /// <remarks>
+    /// Windows SDK: IMFReadWriteClassFactory (mfreadwrite.h).
+    /// https://learn.microsoft.com/windows/win32/api/mfreadwrite/nn-mfreadwrite-imfreadwriteclassfactory
+    /// </remarks>
     [GeneratedComInterface]
     [Guid("E7FE2E12-661C-40DA-92F9-4F002AB67627")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]

@@ -18,14 +18,6 @@ WaveFileWriter.CreateWaveFile16(testFilePath, new SignalGenerator(44100,2)
 }.Take(TimeSpan.FromSeconds(20)));
 ```
 
-## Initialize Media Foundation
-
-We also need to ensure we've initialized Media Foundation. If we forget this we'll get a `MediaFoundationException` with the message "Media Foundation platform not initialized".
-
-```c#
-MediaFoundationApi.Startup();
-```
-
 ## Converting WAV to WMA
 
 `MediaFoundationEncoder` includes some static helper methods to make encoding very straightforward. Let's create a WMA file first. We just need to call the `EncodeToWma` method, passing in the source audio (a `WaveFileReader` in our case) and the output file path. We can also specify a desired bitrate and it will automatically try to find the bitrate closest to what we ask for.
@@ -83,7 +75,7 @@ using (var reader = new MediaFoundationReader(wmaFilePath))
 
 ## Encoding to a Stream
 
-You can also encode to a `Stream` instead of a file path. This is useful when you want to write to a `MemoryStream` or network stream. You need to specify the container type in this case:
+You can also encode to a `Stream` instead of a file path. This is useful when you want to write to a `MemoryStream` or network stream. All three static helpers (`EncodeToMp3`, `EncodeToAac`, `EncodeToWma`) have overloads that accept a `Stream`:
 
 ```c#
 using (var reader = new WaveFileReader(testFilePath))

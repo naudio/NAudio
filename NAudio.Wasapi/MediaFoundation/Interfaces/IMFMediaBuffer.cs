@@ -4,6 +4,13 @@ using System.Runtime.InteropServices.Marshalling;
 
 namespace NAudio.MediaFoundation.Interfaces
 {
+    /// <summary>
+    /// Represents a block of memory that contains media data.
+    /// </summary>
+    /// <remarks>
+    /// Windows SDK: IMFMediaBuffer (mfobjects.h).
+    /// https://learn.microsoft.com/windows/win32/api/mfobjects/nn-mfobjects-imfmediabuffer
+    /// </remarks>
     [GeneratedComInterface]
     [Guid("045FA593-8799-42b8-BC8D-8968C6453507")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]

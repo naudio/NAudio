@@ -4,6 +4,13 @@ using System.Runtime.InteropServices.Marshalling;
 
 namespace NAudio.MediaFoundation.Interfaces
 {
+    /// <summary>
+    /// Implemented by all Media Foundation Transforms (MFTs).
+    /// </summary>
+    /// <remarks>
+    /// Windows SDK: IMFTransform (mftransform.h).
+    /// https://learn.microsoft.com/windows/win32/api/mftransform/nn-mftransform-imftransform
+    /// </remarks>
     [GeneratedComInterface]
     [Guid("bf94c121-5b05-4e6f-8000-ba598961414d")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]

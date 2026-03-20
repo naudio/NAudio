@@ -30,6 +30,9 @@ steps:
 
 - task: VSTest@2
   inputs:
+    testAssemblyVer2: |
+      **\bin\**\*tests.dll
+      !**\obj\**
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
     testFiltercriteria: 'TestCategory!=IntegrationTest'

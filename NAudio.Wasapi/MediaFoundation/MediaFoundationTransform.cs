@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 using NAudio.Utils;
 using NAudio.Wave;
@@ -6,8 +6,8 @@ using NAudio.Wave;
 namespace NAudio.MediaFoundation
 {
     /// <summary>
-    /// An abstract base class for simplifying working with Media Foundation Transforms
-    /// You need to override the method that actually creates and configures the transform
+    /// An abstract base class for simplifying working with Media Foundation Transforms.
+    /// You need to override the method that actually creates and configures the transform.
     /// </summary>
     public abstract class MediaFoundationTransform : IWaveProvider, IDisposable
     {
@@ -34,8 +34,8 @@ namespace NAudio.MediaFoundation
         private bool initializedForStreaming;
 
         /// <summary>
-        /// Constructs a new MediaFoundationTransform wrapper
-        /// Uses a short input chunk size to balance latency and throughput
+        /// Constructs a new MediaFoundationTransform wrapper.
+        /// Uses a short input chunk size to balance latency and throughput.
         /// </summary>
         /// <param name="sourceProvider">The source provider for input data to the transform</param>
         /// <param name="outputFormat">The desired output format</param>
@@ -44,7 +44,7 @@ namespace NAudio.MediaFoundation
             this.outputWaveFormat = outputFormat;
             this.sourceProvider = sourceProvider;
             sourceBuffer = new byte[GetInputChunkSize(sourceProvider.WaveFormat)];
-            outputBuffer = new byte[outputWaveFormat.AverageBytesPerSecond + outputWaveFormat.BlockAlign]; // we will grow this buffer if needed, but try to make something big enough
+            outputBuffer = new byte[outputWaveFormat.AverageBytesPerSecond + outputWaveFormat.BlockAlign];
         }
 
         private static int GetInputChunkSize(WaveFormat waveFormat)
@@ -61,18 +61,18 @@ namespace NAudio.MediaFoundation
 
         private void InitializeTransformForStreaming()
         {
-            transform.ProcessMessage(MFT_MESSAGE_TYPE.MFT_MESSAGE_COMMAND_FLUSH, IntPtr.Zero);
-            transform.ProcessMessage(MFT_MESSAGE_TYPE.MFT_MESSAGE_NOTIFY_BEGIN_STREAMING, IntPtr.Zero);
-            transform.ProcessMessage(MFT_MESSAGE_TYPE.MFT_MESSAGE_NOTIFY_START_OF_STREAM, IntPtr.Zero);
+            transform.ProcessMessage(MftMessageType.Flush, IntPtr.Zero);
+            transform.ProcessMessage(MftMessageType.NotifyBeginStreaming, IntPtr.Zero);
+            transform.ProcessMessage(MftMessageType.NotifyStartOfStream, IntPtr.Zero);
             initializedForStreaming = true;
         }
 
         /// <summary>
         /// To be implemented by overriding classes. Create the transform object, set up its input and output types,
-        /// and configure any custom properties in here
+        /// and configure any custom properties in here.
         /// </summary>
-        /// <returns>An object implementing IMFTrasform</returns>
-        protected abstract IMFTransform CreateTransform();
+        /// <returns>An object implementing IMFTransform</returns>
+        private protected abstract IMFTransform CreateTransform();
 
         /// <summary>
         /// Disposes this MediaFoundation transform
@@ -101,17 +101,9 @@ namespace NAudio.MediaFoundation
         }
 
         /// <summary>
-        /// Destructor
-        /// </summary>
-        ~MediaFoundationTransform()
-        {
-            Dispose(false);
-        }
-
-        /// <summary>
         /// The output WaveFormat of this Media Foundation Transform
         /// </summary>
-        public WaveFormat WaveFormat { get { return outputWaveFormat; } }
+        public WaveFormat WaveFormat => outputWaveFormat;
 
         /// <summary>
         /// Reads data out of the source, passing it through the transform
@@ -123,9 +115,7 @@ namespace NAudio.MediaFoundation
         public int Read(byte[] buffer, int offset, int count)
         {
             if (disposed)
-            {
                 throw new ObjectDisposedException(GetType().FullName);
-            }
 
             if (transform == null)
             {
@@ -174,8 +164,8 @@ namespace NAudio.MediaFoundation
 
         private void EndStreamAndDrain()
         {
-            transform.ProcessMessage(MFT_MESSAGE_TYPE.MFT_MESSAGE_NOTIFY_END_OF_STREAM, IntPtr.Zero);
-            transform.ProcessMessage(MFT_MESSAGE_TYPE.MFT_MESSAGE_COMMAND_DRAIN, IntPtr.Zero);
+            transform.ProcessMessage(MftMessageType.NotifyEndOfStream, IntPtr.Zero);
+            transform.ProcessMessage(MftMessageType.Drain, IntPtr.Zero);
             int read;
             do
             {
@@ -183,7 +173,7 @@ namespace NAudio.MediaFoundation
             } while (read > 0);
             inputPosition = 0;
             outputPosition = 0;
-            transform.ProcessMessage(MFT_MESSAGE_TYPE.MFT_MESSAGE_NOTIFY_END_STREAMING, IntPtr.Zero);
+            transform.ProcessMessage(MftMessageType.NotifyEndStreaming, IntPtr.Zero);
             initializedForStreaming = false;
         }
 
@@ -193,15 +183,9 @@ namespace NAudio.MediaFoundation
             outputBufferOffset = 0;
         }
 
-        /// <summary>
-        /// Attempts to read from the transform
-        /// Some useful info here:
-        /// http://msdn.microsoft.com/en-gb/library/windows/desktop/aa965264%28v=vs.85%29.aspx#process_data
-        /// </summary>
-        /// <returns></returns>
         private int ReadFromTransform()
         {
-            var outputDataBuffer = new MFT_OUTPUT_DATA_BUFFER[1];
+            var outputDataBuffer = new MftOutputDataBuffer[1];
             var sample = MediaFoundationApi.CreateSample();
             var pBuffer = MediaFoundationApi.CreateMemoryBuffer(outputBuffer.Length);
             IMFMediaBuffer outputMediaBuffer = null;
@@ -209,28 +193,25 @@ namespace NAudio.MediaFoundation
             try
             {
                 sample.AddBuffer(pBuffer);
-                sample.SetSampleTime(outputPosition); // hopefully this is not needed
-                outputDataBuffer[0].pSample = sample;
+                sample.SetSampleTime(outputPosition);
+                outputDataBuffer[0].Sample = sample;
 
-                var hr = transform.ProcessOutput(_MFT_PROCESS_OUTPUT_FLAGS.None,
-                                                 1, outputDataBuffer, out _MFT_PROCESS_OUTPUT_STATUS status);
+                var hr = transform.ProcessOutput(MftProcessOutputFlags.None,
+                                                 1, outputDataBuffer, out MftProcessOutputStatus status);
                 if (hr == MediaFoundationErrors.MF_E_TRANSFORM_NEED_MORE_INPUT)
                 {
                     return 0;
                 }
-                if (hr != 0)
-                {
-                    Marshal.ThrowExceptionForHR(hr);
-                }
+                MediaFoundationException.ThrowIfFailed(hr);
 
-                outputDataBuffer[0].pSample.ConvertToContiguousBuffer(out outputMediaBuffer);
+                outputDataBuffer[0].Sample.ConvertToContiguousBuffer(out outputMediaBuffer);
                 outputMediaBuffer.Lock(out IntPtr pOutputBuffer, out _, out int outputBufferLength);
                 outputBufferLocked = true;
                 outputBuffer = BufferHelpers.Ensure(outputBuffer, outputBufferLength);
                 Marshal.Copy(pOutputBuffer, outputBuffer, 0, outputBufferLength);
                 outputBufferOffset = 0;
                 outputBufferCount = outputBufferLength;
-                outputPosition += BytesToNsPosition(outputBufferCount, WaveFormat); // hopefully not needed
+                outputPosition += BytesToNsPosition(outputBufferCount, WaveFormat);
                 return outputBufferLength;
             }
             finally
@@ -244,27 +225,26 @@ namespace NAudio.MediaFoundation
                     Marshal.ReleaseComObject(outputMediaBuffer);
                 }
 
-                if (outputDataBuffer[0].pEvents != null)
+                if (outputDataBuffer[0].Events != null)
                 {
-                    Marshal.ReleaseComObject(outputDataBuffer[0].pEvents);
+                    Marshal.ReleaseComObject(outputDataBuffer[0].Events);
                 }
 
-                var returnedSample = outputDataBuffer[0].pSample;
+                var returnedSample = outputDataBuffer[0].Sample;
                 if (returnedSample != null && !ReferenceEquals(returnedSample, sample))
                 {
                     Marshal.ReleaseComObject(returnedSample);
                 }
 
-                sample.RemoveAllBuffers(); // needed to fix memory leak in some cases
+                sample.RemoveAllBuffers();
                 Marshal.ReleaseComObject(sample);
                 Marshal.ReleaseComObject(pBuffer);
             }
         }
-        
+
         private static long BytesToNsPosition(int bytes, WaveFormat waveFormat)
         {
-            long nsPosition = (10000000L * bytes) / waveFormat.AverageBytesPerSecond;
-            return nsPosition;
+            return (10000000L * bytes) / waveFormat.AverageBytesPerSecond;
         }
 
         private IMFSample ReadFromSource()

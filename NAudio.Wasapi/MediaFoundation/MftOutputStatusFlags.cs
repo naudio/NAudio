@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace NAudio.MediaFoundation
 {
@@ -6,7 +6,7 @@ namespace NAudio.MediaFoundation
     /// Indicates whether a Media Foundation transform (MFT) can produce output data.
     /// </summary>
     [Flags]
-    public enum _MFT_OUTPUT_STATUS_FLAGS
+    public enum MftOutputStatusFlags
     {
         /// <summary>
         /// None
@@ -15,6 +15,6 @@ namespace NAudio.MediaFoundation
         /// <summary>
         /// There is a sample available for at least one output stream.
         /// </summary>
-        MFT_OUTPUT_STATUS_SAMPLE_READY = 0x00000001
+        SampleReady = 0x00000001
     }
 }

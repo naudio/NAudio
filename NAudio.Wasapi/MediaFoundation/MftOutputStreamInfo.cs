@@ -1,4 +1,4 @@
-﻿using System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 
 namespace NAudio.MediaFoundation
 {
@@ -6,19 +6,19 @@ namespace NAudio.MediaFoundation
     /// Contains information about an output stream on a Media Foundation transform (MFT).
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
-    public struct MFT_OUTPUT_STREAM_INFO 
+    public struct MftOutputStreamInfo
     {
         /// <summary>
-        /// Bitwise OR of zero or more flags from the _MFT_OUTPUT_STREAM_INFO_FLAGS enumeration.
+        /// Bitwise OR of zero or more flags from the MftOutputStreamInfoFlags enumeration.
         /// </summary>
-        public _MFT_OUTPUT_STREAM_INFO_FLAGS dwFlags;
+        public MftOutputStreamInfoFlags Flags;
         /// <summary>
         /// Minimum size of each output buffer, in bytes.
         /// </summary>
-        public int cbSize;
+        public int Size;
         /// <summary>
         /// The memory alignment required for output buffers.
         /// </summary>
-        public int cbAlignment;
+        public int Alignment;
     }
 }

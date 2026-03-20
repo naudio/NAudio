@@ -8,7 +8,7 @@ namespace NAudio.MediaFoundation
     /// http://msdn.microsoft.com/en-gb/library/windows/desktop/ms696261%28v=vs.85%29.aspx
     /// </summary>
     [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("045FA593-8799-42b8-BC8D-8968C6453507")]
-    public interface IMFMediaBuffer
+    internal interface IMFMediaBuffer
     {
         /// <summary>
         /// Gives the caller access to the memory in the buffer.

@@ -11,7 +11,7 @@ namespace NAudio.MediaFoundation
     /// Mfobjects.h
     /// </summary>
     [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("DF598932-F10C-4E39-BBA2-C308F101DAA3")]
-    public interface IMFMediaEvent : IMFAttributes
+    internal interface IMFMediaEvent : IMFAttributes
     {
         /// <summary>
         /// Retrieves the value associated with a key.

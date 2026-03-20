@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace NAudio.MediaFoundation
 {
@@ -6,19 +6,19 @@ namespace NAudio.MediaFoundation
     /// Defines flags for processing output samples in a Media Foundation transform (MFT).
     /// </summary>
     [Flags]
-    public enum _MFT_PROCESS_OUTPUT_FLAGS
+    public enum MftProcessOutputFlags
     {
         /// <summary>
         /// None
         /// </summary>
-        None,
+        None = 0,
         /// <summary>
-        /// Do not produce output for streams in which the pSample member of the MFT_OUTPUT_DATA_BUFFER structure is NULL. 
+        /// Do not produce output for streams in which the sample is null.
         /// </summary>
-        MFT_PROCESS_OUTPUT_DISCARD_WHEN_NO_BUFFER = 0x00000001,
+        DiscardWhenNoBuffer = 0x00000001,
         /// <summary>
         /// Regenerates the last output sample.
         /// </summary>
-        MFT_PROCESS_OUTPUT_REGENERATE_LAST_OUTPUT = 0x00000002 
+        RegenerateLastOutput = 0x00000002
     }
 }

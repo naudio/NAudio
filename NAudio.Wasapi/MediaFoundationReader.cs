@@ -137,10 +137,9 @@ namespace NAudio.Wave
         /// <summary>
         /// Creates the reader (overridable by )
         /// </summary>
-        protected virtual IMFSourceReader CreateReader(MediaFoundationReaderSettings settings)
+        private protected virtual IMFSourceReader CreateReader(MediaFoundationReaderSettings settings)
         {
-            IMFSourceReader reader;
-            MediaFoundationInterop.MFCreateSourceReaderFromURL(file, null, out reader);
+            var reader = MediaFoundationApi.CreateSourceReaderFromUrl(file);
             reader.SetStreamSelection(MediaFoundationInterop.MF_SOURCE_READER_ALL_STREAMS, false);
             reader.SetStreamSelection(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, true);
 
@@ -150,7 +149,7 @@ namespace NAudio.Wave
             partialMediaType.MajorType = MediaTypes.MFMediaType_Audio;
             partialMediaType.SubType = settings.RequestFloatOutput ? AudioSubtypes.MFAudioFormat_Float : AudioSubtypes.MFAudioFormat_PCM;
 
-            var currentMediaType = GetCurrentMediaType(reader);
+            using var currentMediaType = GetCurrentMediaType(reader);
 
             // mono, low sample rate files can go wrong on Windows 10 unless we specify here
             partialMediaType.ChannelCount = currentMediaType.ChannelCount;
@@ -163,7 +162,7 @@ namespace NAudio.Wave
                 reader.SetCurrentMediaType(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, IntPtr.Zero, partialMediaType.MediaFoundationObject);
             }
             catch (COMException ex) when (ex.GetHResult() == MediaFoundationErrors.MF_E_INVALIDMEDIATYPE)
-            {               
+            {
                 // HE-AAC (and v2) seems to halve the samplerate
                 if (currentMediaType.SubType == AudioSubtypes.MFAudioFormat_AAC && currentMediaType.ChannelCount == 1)
                 {
@@ -174,7 +173,6 @@ namespace NAudio.Wave
                 else { throw; }
             }
 
-            Marshal.ReleaseComObject(currentMediaType.MediaFoundationObject);
             return reader;
         }
 
@@ -192,10 +190,7 @@ namespace NAudio.Wave
                     // this doesn't support telling us its duration (might be streaming)
                     return 0;
                 }
-                if (hResult != 0)
-                {
-                    Marshal.ThrowExceptionForHR(hResult);
-                }
+                MediaFoundationException.ThrowIfFailed(hResult);
                 var variant = Marshal.PtrToStructure<PropVariant>(variantPtr);
 
                 var lengthInBytes = (((long)variant.Value) * waveFormat.AverageBytesPerSecond) / 10000000L;
@@ -248,13 +243,13 @@ namespace NAudio.Wave
             while (bytesWritten < count)
             {
                 pReader.ReadSample(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0, 
-                    out int actualStreamIndex, out MF_SOURCE_READER_FLAG dwFlags, out ulong timestamp, out IMFSample pSample);
-                if ((dwFlags & MF_SOURCE_READER_FLAG.MF_SOURCE_READERF_ENDOFSTREAM) != 0)
+                    out int actualStreamIndex, out SourceReaderFlags dwFlags, out ulong timestamp, out IMFSample pSample);
+                if ((dwFlags & SourceReaderFlags.EndOfStream) != 0)
                 {
                     // reached the end of the stream
                     break;
                 }
-                else if ((dwFlags & MF_SOURCE_READER_FLAG.MF_SOURCE_READERF_CURRENTMEDIATYPECHANGED) != 0)
+                else if ((dwFlags & SourceReaderFlags.CurrentMediaTypeChanged) != 0)
                 {
                     waveFormat = GetCurrentWaveFormat(pReader);
                     OnWaveFormatChanged();

@@ -8,7 +8,7 @@ namespace NAudio.MediaFoundation
     /// http://msdn.microsoft.com/en-gb/library/windows/desktop/ms698720%28v=vs.85%29.aspx
     /// </summary>
     [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("ad4c1b00-4bf7-422f-9175-756693d9130d")]
-    public interface IMFByteStream
+    internal interface IMFByteStream
     {
         /// <summary>
         /// Retrieves the characteristics of the byte stream. 

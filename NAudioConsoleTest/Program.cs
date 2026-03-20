@@ -1,3 +1,4 @@
+using NAudioConsoleTest.MediaFoundation;
 using NAudioConsoleTest.Wasapi;
 using Spectre.Console;
 
@@ -9,12 +10,15 @@ while (true)
     var choice = AnsiConsole.Prompt(
         new SelectionPrompt<string>()
             .Title("[bold]Main Menu[/]")
-            .AddChoices("WASAPI", "Exit"));
+            .AddChoices("WASAPI", "Media Foundation", "Exit"));
 
     switch (choice)
     {
         case "WASAPI":
             WasapiMenu.Show();
+            break;
+        case "Media Foundation":
+            MediaFoundationMenu.Show();
             break;
         case "Exit":
             return;

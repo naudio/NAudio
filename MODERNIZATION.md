@@ -214,8 +214,48 @@ Existing `WasapiOut` and `WasapiCapture` are kept with `[Obsolete]` attributes p
 - `IChannelAudioVolume` wrapper
 - Volume ducking notifications (`IAudioVolumeDuckNotification`)
 
-#### Phase 5: DMO and Media Foundation modernization
-- The `Dmo/` and `MediaFoundation/` directories in this assembly contain separate Windows APIs (DirectX Media Objects and Media Foundation)
+#### Phase 5: Media Foundation modernization — DONE
+
+**5a: Infrastructure and naming — DONE**
+- [x] `MediaFoundationException` — `MediaFoundationException : COMException` with `ThrowIfFailed(int hr)` and human-readable messages for ~30 common MF error codes
+- [x] Enum renames — 9 underscore-prefixed enums (`_MFT_ENUM_FLAG`, etc.) renamed to PascalCase (`MftEnumFlags`, etc.) with PascalCase member names. `MF_SOURCE_READER_FLAG` renamed to `SourceReaderFlags`
+- [x] Struct renames — 6 ALL_CAPS structs/enums (`MFT_INPUT_STREAM_INFO`, `MFT_MESSAGE_TYPE`, etc.) renamed to PascalCase (`MftInputStreamInfo`, `MftMessageType`, etc.) with PascalCase field names. `MFT_REGISTER_TYPE_INFO` changed from class to struct
+- [x] `MediaFoundationInterop` changed from `public` to `internal`
+- [x] `MediaFoundationApi.Startup()` — removed obsolete Windows Vista SDK version check
+- [x] `MediaFoundationApi.EnumerateTransforms()` — fixed unsafe IntPtr arithmetic to use `nint`
+- [x] Added `MFAudioFormat_Opus` to `AudioSubtypes` (Win10 1809+)
+- [x] Added `CreateSourceReaderFromUrl`, `CreateSinkWriterFromUrl`, `GetAudioOutputAvailableTypes` methods to `MediaFoundationApi` (replacing direct `MediaFoundationInterop` calls in consumers)
+
+**5b: COM interface conversion — DONE**
+- [x] Created `MediaFoundation/Interfaces/` subfolder with 12 `[GeneratedComInterface]` interfaces (all `internal partial`, all methods `[PreserveSig]`)
+- [x] Tier 1 (standalone): `IMFMediaBuffer` (5 methods), `IMFCollection` (6), `IMFByteStream` (15), `IMFReadWriteClassFactory` (2 + coclass)
+- [x] Tier 2 (IMFAttributes hierarchy, flattened vtables): `IMFAttributes` (30 methods), `IMFMediaType` (35), `IMFMediaEvent` (34), `IMFSample` (44), `IMFActivate` (33)
+- [x] Tier 3 (consumer interfaces): `IMFTransform` (23), `IMFSourceReader` (10), `IMFSinkWriter` (11)
+- [x] All interface parameters that were COM types use `IntPtr` with `Marshal.GetObjectForIUnknown`/`Marshal.GetIUnknownForObject` in wrappers
+- [x] Old `[ComImport]` interfaces retained (still used by existing consumer code) but changed from `public` to `internal`
+
+**5c: Wrapper classes — DONE**
+- [x] `MfMediaBuffer` — wraps `IMFMediaBuffer`. `Lock()` returns `MediaBufferLease` ref struct with `Span<byte>` for zero-copy buffer access. `CurrentLength`/`MaxLength` properties. Deterministic `Marshal.Release(IntPtr)` in Dispose
+- [x] `MfSample` — wraps `IMFSample`. `SampleTime`/`SampleDuration`/`SampleFlags` properties. `AddBuffer`, `ConvertToContiguousBuffer`, `RemoveAllBuffers` methods
+- [x] `MfMediaType` — wraps `IMFMediaType`. `MajorType`, `SubType`, `SampleRate`, `ChannelCount`, `BitsPerSample`, `AverageBytesPerSecond` properties. Attribute get/set helpers
+- [x] `MfSourceReader` — wraps `IMFSourceReader`. `ReadSample`, `SetStreamSelection`, `SetCurrentMediaType`, `Flush` methods
+- [x] `MfSinkWriter` — wraps `IMFSinkWriter`. `AddStream`, `SetInputMediaType`, `BeginWriting`, `WriteSample`, `DoFinalize` methods
+- [x] `MfTransform` — wraps `IMFTransform`. `SetInputType`, `SetOutputType`, `ProcessInput`, `ProcessOutput`, `ProcessMessage` methods
+- [x] `MfActivate` — wraps `IMFActivate`. `ActivateObject`, `ActivateTransform` methods. Attribute enumeration (`AttributeCount`, `GetAttributeByIndex`, `GetBlobAsArrayOf<T>`)
+- [x] `MediaType` upgraded — now implements `IDisposable` with `Marshal.ReleaseComObject` in Dispose. `MediaFoundationObject` made `internal`. Added `AttributeCount`/`GetAttributeByIndex` public methods
+- [x] All wrappers: no finalizers, deterministic `Marshal.Release(IntPtr)`, `MediaFoundationException.ThrowIfFailed`
+
+**5d: Consumer updates — DONE**
+- [x] `MediaFoundationTransform` — removed finalizer. Replaced `Marshal.ThrowExceptionForHR` with `MediaFoundationException.ThrowIfFailed`. `CreateTransform()` changed to `private protected`
+- [x] `MediaFoundationReader` — replaced `Marshal.ThrowExceptionForHR` with `MediaFoundationException.ThrowIfFailed`. `using var` on `MediaType` for proper disposal. `CreateReader()` changed to `private protected`
+- [x] `MediaFoundationEncoder` — removed finalizer. `using var` on `MediaType` for input format. Simplified `Dispose` to use `outputMediaType.Dispose()`
+- [x] `MediaFoundationResampler` — `using` on `MediaType` for input/output format setup (replaces `Marshal.ReleaseComObject`)
+- [x] `StreamMediaFoundationReader` — fixed leaked `MediaType` with `using var`
+- [x] `MediaFoundationApi.EnumerateTransforms` — now returns `IEnumerable<MfActivate>` (wrapper) instead of raw `IMFActivate`
+- [x] All factory methods returning old COM types made `internal`
+
+#### Phase 6: DMO modernization
+- The `Dmo/` directory in this assembly contains DirectX Media Objects interop
 - These are stable and functional but still use classic `[ComImport]` interop
 - They will be modernized in a future pass, potentially as part of splitting this assembly into `NAudio.Wasapi`, `NAudio.MediaFoundation`, and `NAudio.Dmo`
 
@@ -235,6 +275,7 @@ These will need to be documented in the migration guide:
 | NAudio.WinMM no longer supports netstandard2.0 | Use NAudio.WinMM 2.x on .NET Framework |
 
 ### WASAPI API changes
+
 | Change | Migration |
 | ------ | --------- |
 | COM interfaces are `internal` | Use wrapper classes, not raw COM interfaces |
@@ -246,13 +287,36 @@ These will need to be documented in the migration guide:
 | `WasapiCapture` is `[Obsolete]` | Use `new WasapiRecorderBuilder()...Build()` to create a `WasapiRecorder` |
 | `WasapiLoopbackCapture` is `[Obsolete]` | Use `WasapiRecorderBuilder` with process loopback or render device |
 
+### Media Foundation API changes
+
+| Change | Migration |
+| ------ | --------- |
+| All MF COM interfaces (`IMFSourceReader`, `IMFSinkWriter`, etc.) are `internal` | Use wrapper classes (`MfSourceReader`, `MfSinkWriter`, etc.) |
+| `MediaFoundationInterop` is `internal` | Use `MediaFoundationApi` methods instead |
+| `MediaType.MediaFoundationObject` is `internal` | Use `MediaType` properties (`SampleRate`, `SubType`, etc.) |
+| `MediaType(IMFMediaType)` constructor is `internal` | Use `MediaType()` or `MediaType(WaveFormat)` |
+| `MediaFoundationApi.EnumerateTransforms` returns `MfActivate` wrappers | `MfActivate` has `AttributeCount`, `GetAttributeByIndex`, `GetString`, `GetUInt32`, `GetGuid`, `ActivateTransform` |
+| Enums renamed: `_MFT_ENUM_FLAG` → `MftEnumFlags`, etc. | All 9 underscore-prefixed enums renamed to PascalCase with PascalCase members |
+| Structs renamed: `MFT_INPUT_STREAM_INFO` → `MftInputStreamInfo`, etc. | All 6 ALL_CAPS structs renamed to PascalCase with PascalCase fields |
+| `MF_SOURCE_READER_FLAG` → `SourceReaderFlags` | Members renamed: `MF_SOURCE_READERF_ENDOFSTREAM` → `EndOfStream`, etc. |
+| `MFT_MESSAGE_TYPE` → `MftMessageType` | Members renamed: `MFT_MESSAGE_COMMAND_FLUSH` → `Flush`, etc. |
+| MF errors throw `MediaFoundationException` (subclass of `COMException`) | Existing `catch (COMException)` still works; new code can catch `MediaFoundationException` |
+| `MediaFoundationTransform` finalizer removed | Ensure `Dispose()` is called |
+| `MediaFoundationEncoder` finalizer removed | Ensure `Dispose()` is called |
+| `MediaType` now implements `IDisposable` | Call `Dispose()` or use `using` |
+
 ---
 
 ## Verification Status
 
-- 836 tests passing, 0 failures (1 pre-existing ASIO test failure unrelated to changes)
+- 836 tests passing, 0 failures
 - Manual testing: WASAPI playback and capture confirmed working in demo app
 - All `CoreAudioApi/` wrapper classes use `CoreAudioException.ThrowIfFailed` (zero `Marshal.ThrowExceptionForHR` remaining)
-- All consumed COM interfaces use `[GeneratedComInterface]` (30 interfaces)
+- All consumed Core Audio COM interfaces use `[GeneratedComInterface]` (30 interfaces)
 - Callback interfaces correctly remain `[ComImport]` (6 interfaces)
 - New `WasapiPlayer` and `WasapiRecorder` compile and are ready for integration testing
+- All 12 Media Foundation COM interfaces have `[GeneratedComInterface]` versions in `MediaFoundation/Interfaces/`
+- 7 new MF wrapper classes (`MfMediaBuffer`, `MfSample`, `MfMediaType`, `MfSourceReader`, `MfSinkWriter`, `MfTransform`, `MfActivate`) with deterministic COM release
+- All MF consumer classes (`MediaFoundationReader`, `MediaFoundationEncoder`, `MediaFoundationTransform`, `MediaFoundationResampler`) use `MediaFoundationException.ThrowIfFailed`
+- Finalizers removed from `MediaFoundationTransform` and `MediaFoundationEncoder`
+- All old MF COM interfaces are `internal` — no COM types in the public API surface

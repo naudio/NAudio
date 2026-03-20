@@ -12,7 +12,7 @@ namespace NAudio.MediaFoundation
     /// n.b. the goal is to make as much of this internal as possible, and provide
     /// better .NET APIs using the MediaFoundationApi class instead
     /// </summary>
-    public static class MediaFoundationInterop
+    internal static class MediaFoundationInterop
     {
         /// <summary>
         /// Initializes Microsoft Media Foundation.
@@ -82,7 +82,7 @@ namespace NAudio.MediaFoundation
         /// Gets a list of Microsoft Media Foundation transforms (MFTs) that match specified search criteria. 
         /// </summary>
         [DllImport("mfplat.dll", ExactSpelling = true, PreserveSig = false)]
-        public static extern void MFTEnumEx([In] Guid guidCategory, [In] _MFT_ENUM_FLAG flags, [In] MFT_REGISTER_TYPE_INFO pInputType, [In] MFT_REGISTER_TYPE_INFO pOutputType,
+        public static extern void MFTEnumEx([In] Guid guidCategory, [In] MftEnumFlags flags, [In] MftRegisterTypeInfo pInputType, [In] MftRegisterTypeInfo pOutputType,
                                             [Out] out IntPtr pppMFTActivate, [Out] out int pcMFTActivate);
 
         /// <summary>
@@ -112,7 +112,7 @@ namespace NAudio.MediaFoundation
         [DllImport("mf.dll", ExactSpelling = true, PreserveSig = false)]
         public static extern void MFTranscodeGetAudioOutputAvailableTypes(
             [In, MarshalAs(UnmanagedType.LPStruct)] Guid guidSubType,
-            [In] _MFT_ENUM_FLAG dwMFTFlags,
+            [In] MftEnumFlags dwMFTFlags,
             [In] IMFAttributes pCodecConfig,
             [Out, MarshalAs(UnmanagedType.Interface)] out IMFCollection ppAvailableTypes);
 

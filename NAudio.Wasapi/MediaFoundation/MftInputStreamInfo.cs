@@ -1,35 +1,32 @@
-﻿using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace NAudio.MediaFoundation
 {
     /// <summary>
-    /// Contains information about an input stream on a Media Foundation transform (MFT)
+    /// Contains information about an input stream on a Media Foundation transform (MFT).
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
-    public struct MFT_INPUT_STREAM_INFO
+    public struct MftInputStreamInfo
     {
         /// <summary>
         /// Maximum amount of time between an input sample and the corresponding output sample, in 100-nanosecond units.
         /// </summary>
-        public long hnsMaxLatency;
+        public long MaxLatency;
         /// <summary>
-        /// Bitwise OR of zero or more flags from the _MFT_INPUT_STREAM_INFO_FLAGS enumeration.
+        /// Bitwise OR of zero or more flags from the MftInputStreamInfoFlags enumeration.
         /// </summary>
-        public _MFT_INPUT_STREAM_INFO_FLAGS dwFlags;
+        public MftInputStreamInfoFlags Flags;
         /// <summary>
         /// The minimum size of each input buffer, in bytes.
         /// </summary>
-        public int cbSize;
+        public int Size;
         /// <summary>
         /// Maximum amount of input data, in bytes, that the MFT holds to perform lookahead.
         /// </summary>
-        public int cbMaxLookahead;
+        public int MaxLookahead;
         /// <summary>
         /// The memory alignment required for input buffers. If the MFT does not require a specific alignment, the value is zero.
         /// </summary>
-        public int cbAlignment;
+        public int Alignment;
     }
 }

@@ -9,7 +9,7 @@ namespace NAudio.MediaFoundation
     /// Implemented by the Microsoft Media Foundation sink writer object.
     /// </summary>
     [ComImport, Guid("3137f1cd-fe5e-4805-a5d8-fb477448cb3d"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    public interface IMFSinkWriter
+    internal interface IMFSinkWriter
     {
         /// <summary>
         /// Adds a stream to the sink writer.
@@ -54,6 +54,6 @@ namespace NAudio.MediaFoundation
         /// <summary>
         /// Gets statistics about the performance of the sink writer.
         /// </summary>
-        void GetStatistics([In] int dwStreamIndex, [In, Out] MF_SINK_WRITER_STATISTICS pStats);
+        void GetStatistics([In] int dwStreamIndex, [In, Out] SinkWriterStatistics pStats);
     }
 }

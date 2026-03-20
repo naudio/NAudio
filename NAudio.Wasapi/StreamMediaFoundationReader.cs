@@ -24,19 +24,23 @@ namespace NAudio.Wave
         /// <summary>
         /// Creates the reader
         /// </summary>
-        protected override IMFSourceReader CreateReader(MediaFoundationReaderSettings settings)
+        private protected override IMFSourceReader CreateReader(MediaFoundationReaderSettings settings)
         {
-            var ppSourceReader = MediaFoundationApi.CreateSourceReaderFromByteStream(MediaFoundationApi.CreateByteStream(new ComStream(stream)));
+            var byteStream = MediaFoundationApi.CreateByteStream(new ComStream(stream));
+            var reader = MediaFoundationApi.CreateSourceReaderFromByteStream(byteStream);
 
-            ppSourceReader.SetStreamSelection(-2, false);
-            ppSourceReader.SetStreamSelection(-3, true);
-            ppSourceReader.SetCurrentMediaType(-3, IntPtr.Zero, new MediaType
+            reader.SetStreamSelection(MediaFoundationInterop.MF_SOURCE_READER_ALL_STREAMS, false);
+            reader.SetStreamSelection(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, true);
+
+            using var partialMediaType = new MediaType
             {
                 MajorType = MediaTypes.MFMediaType_Audio,
                 SubType = settings.RequestFloatOutput ? AudioSubtypes.MFAudioFormat_Float : AudioSubtypes.MFAudioFormat_PCM
-            }.MediaFoundationObject);
+            };
+            reader.SetCurrentMediaType(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM,
+                IntPtr.Zero, partialMediaType.MediaFoundationObject);
 
-            return ppSourceReader;
+            return reader;
         }
     }
 }

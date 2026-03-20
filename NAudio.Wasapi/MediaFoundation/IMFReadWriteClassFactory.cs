@@ -9,7 +9,7 @@ namespace NAudio.MediaFoundation
     /// Creates an instance of either the sink writer or the source reader.
     /// </summary>
     [ComImport,Guid("E7FE2E12-661C-40DA-92F9-4F002AB67627"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    public interface IMFReadWriteClassFactory
+    internal interface IMFReadWriteClassFactory
     {
         /// <summary>
         /// Creates an instance of the sink writer or source reader, given a URL.
@@ -26,7 +26,7 @@ namespace NAudio.MediaFoundation
     /// CLSID_MFReadWriteClassFactory
     /// </summary>
     [ComImport, Guid("48e2ed0f-98c2-4a37-bed5-166312ddd83f")]
-    public class MFReadWriteClassFactory
+    internal class MFReadWriteClassFactory
     {
     }
 }

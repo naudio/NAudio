@@ -9,22 +9,9 @@ var infile = @"C:\Users\Mark\Desktop\example.mp3";
 var outfile = @"C:\Users\Mark\Desktop\converted.wav";
 ```
 
-## Mp3FileReader
+## MediaFoundationReader (recommended)
 
-The `Mp3FileReader` class uses the ACM MP3 codec that is present on almost all consumer versions of Windows. However, it is important to note that some versions of Windows Server do not have this codec installed without installing the "Desktop Experience" component.
-
-The conversion is straightforward. Open the MP3 file with `Mp3FileReader` and then pass it to `WaveFileWriter.CreateWaveFile` to write the converted PCM audio to a WAV file. This will usually be 44.1kHz 16 bit stereo, but uses whatever format the MP3 decoder emits.
-
-```c#
-using(var reader = new Mp3FileReader(infile))
-{
-    WaveFileWriter.CreateWaveFile(outfile, reader);
-}
-```
-
-## MediaFoundationReader
-
-`MediaFoundationReader` is a flexible class that allows you to read any audio file formats that Media Foundation supports. This typically includes MP3 on most consumer versions of Windows, but also usually supports WMA, AAC, MP4 and others. So unless you need to support Windows XP or are on a version of Windows without any Media Foundation condecs installed, this is a great choice. Usage is very similar to `Mp3FileReader`:
+`MediaFoundationReader` is the recommended approach for reading MP3 files (and many other formats) in NAudio. It uses Media Foundation which is available on all supported versions of Windows. It can read MP3, WMA, AAC, FLAC, Opus and many other formats.
 
 ```c#
 using(var reader = new MediaFoundationReader(infile))
@@ -33,10 +20,22 @@ using(var reader = new MediaFoundationReader(infile))
 }
 ```
 
-## DirectX Media Object
-`Mp3FileReaderBase` allows us to plug in alternative MP3 frame decoders. One option that comes in the box with NAudio is the DirectX Media Object MP3 codec. Again, this can only be used if you have that codec installed on Windows, but it comes with most consumer versions of Windows.
+## Mp3FileReader
 
-Here's how to use the `DmoMp3FrameDecompressor` as a custom frame decompressor
+The `Mp3FileReader` class uses the ACM MP3 codec that is present on most versions of Windows. The conversion is straightforward. Open the MP3 file with `Mp3FileReader` and then pass it to `WaveFileWriter.CreateWaveFile` to write the converted PCM audio to a WAV file. This will usually be 44.1kHz 16 bit stereo, but uses whatever format the MP3 decoder emits.
+
+```c#
+using(var reader = new Mp3FileReader(infile))
+{
+    WaveFileWriter.CreateWaveFile(outfile, reader);
+}
+```
+
+## DirectX Media Object
+
+`Mp3FileReaderBase` allows us to plug in alternative MP3 frame decoders. One option that comes in the box with NAudio is the DirectX Media Object MP3 codec.
+
+Here's how to use the `DmoMp3FrameDecompressor` as a custom frame decompressor:
 
 ```c#
 using(var reader = new Mp3FileReaderBase(infile, wf => new DmoMp3FrameDecompressor(wf)))
@@ -46,7 +45,8 @@ using(var reader = new Mp3FileReaderBase(infile, wf => new DmoMp3FrameDecompress
 ```
 
 ## NLayer
-The final option is to use [NLayer](https://github.com/naudio/NLayer) as the decoder for `Mp3FileReader`. NLayer is a fully managed MP3 decoder, meaning it can run on any version of Windows (or indeed any .NET platform). You'll need the [NLayer.NAudioSupport nuget package](https://www.nuget.org/packages/NLayer.NAudioSupport/). But then you can plug in a fully managed MP3 frame decoder:
+
+The final option is to use [NLayer](https://github.com/naudio/NLayer) as the decoder for `Mp3FileReader`. NLayer is a fully managed MP3 decoder, meaning it can run on any .NET platform including cross-platform scenarios where Windows codecs are not available. You'll need the [NLayer.NAudioSupport NuGet package](https://www.nuget.org/packages/NLayer.NAudioSupport/). Then you can plug in a fully managed MP3 frame decoder:
 
 ```c#
 using (var reader = new Mp3FileReaderBase(infile, wf => new Mp3FrameDecompressor(wf)))
@@ -54,4 +54,3 @@ using (var reader = new Mp3FileReaderBase(infile, wf => new Mp3FrameDecompressor
     WaveFileWriter.CreateWaveFile(outfile, reader);
 }
 ```
-

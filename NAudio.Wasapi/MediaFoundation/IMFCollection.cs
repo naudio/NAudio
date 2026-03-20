@@ -9,7 +9,7 @@ namespace NAudio.MediaFoundation
     /// Represents a generic collection of IUnknown pointers. 
     /// </summary>
     [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("5BC8A76B-869A-46A3-9B03-FA218A66AEBE")]
-    public interface IMFCollection
+    internal interface IMFCollection
     {
         /// <summary>
         /// Retrieves the number of objects in the collection.

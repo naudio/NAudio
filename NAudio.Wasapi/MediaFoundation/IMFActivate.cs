@@ -8,7 +8,7 @@ namespace NAudio.MediaFoundation
     /// IMFActivate, defined in mfobjects.h
     /// </summary>
     [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("7FEE9E9A-4A89-47a6-899C-B6A53A70FB67")]
-    public interface IMFActivate : IMFAttributes
+    internal interface IMFActivate : IMFAttributes
     {
         /// <summary>
         /// Retrieves the value associated with a key.

@@ -8,7 +8,7 @@ namespace NAudio.MediaFoundation
     /// http://msdn.microsoft.com/en-gb/library/windows/desktop/ms702192%28v=vs.85%29.aspx
     /// </summary>
     [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("c40a00f2-b93a-4d80-ae8c-5a1c634f58e4")]
-    public interface IMFSample : IMFAttributes
+    internal interface IMFSample : IMFAttributes
     {
         /// <summary>
         /// Retrieves the value associated with a key.

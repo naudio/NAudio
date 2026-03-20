@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 using System.Text;
 using NAudio.CoreAudioApi.Interfaces;
@@ -11,14 +11,14 @@ namespace NAudioWpfDemo.MediaFoundationEncode
     {
         public MediaTypeViewModel()
         {
-            
+
         }
 
         public MediaTypeViewModel(MediaType mediaType)
         {
             MediaType = mediaType;
             Name = ShortDescription(mediaType);
-            Description = DescribeMediaType(mediaType.MediaFoundationObject);
+            Description = DescribeMediaType(mediaType);
         }
 
         public MediaType MediaType { get; set; }
@@ -33,8 +33,6 @@ namespace NAudioWpfDemo.MediaFoundationEncode
             int channels = mediaType.ChannelCount;
             int bitsPerSample = mediaType.TryGetUInt32(MediaFoundationAttributes.MF_MT_AUDIO_BITS_PER_SAMPLE);
 
-            //int bitsPerSample;
-            //mediaType.GetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_BITS_PER_SAMPLE, out bitsPerSample);
             var shortDescription = new StringBuilder();
             shortDescription.AppendFormat("{0:0.#}kbps, ", (8 * bytesPerSecond) / 1000M);
             shortDescription.AppendFormat("{0:0.#}kHz, ", sampleRate / 1000M);
@@ -51,10 +49,9 @@ namespace NAudioWpfDemo.MediaFoundationEncode
             return shortDescription.ToString();
         }
 
-        private string DescribeMediaType(IMFMediaType mediaType)
+        private string DescribeMediaType(MediaType mediaType)
         {
-            int attributeCount;
-            mediaType.GetCount(out attributeCount);
+            int attributeCount = mediaType.AttributeCount;
             var sb = new StringBuilder();
             for (int n = 0; n < attributeCount; n++)
             {
@@ -63,15 +60,14 @@ namespace NAudioWpfDemo.MediaFoundationEncode
             return sb.ToString();
         }
 
-        private static void DescribeAttribute(IMFMediaType mediaType, int n, StringBuilder sb)
+        private static void DescribeAttribute(MediaType mediaType, int n, StringBuilder sb)
         {
             var variantPtr = Marshal.AllocHGlobal(Marshal.SizeOf<PropVariant>());
             try
             {
-                Guid key;
-                mediaType.GetItemByIndex(n, out key, variantPtr);
+                mediaType.GetAttributeByIndex(n, out var key, variantPtr);
                 var val = Marshal.PtrToStructure<PropVariant>(variantPtr);
-                string propertyName = FieldDescriptionHelper.Describe(typeof (MediaFoundationAttributes), key);
+                string propertyName = FieldDescriptionHelper.Describe(typeof(MediaFoundationAttributes), key);
                 sb.AppendFormat("{0}={1}\r\n", propertyName, val.Value);
             }
             finally

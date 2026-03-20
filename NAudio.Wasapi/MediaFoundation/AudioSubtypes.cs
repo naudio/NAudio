@@ -95,6 +95,12 @@ namespace NAudio.MediaFoundation
         /// </summary>
         public static readonly Guid MFAudioFormat_ALAC = new Guid("63616c61-0000-0010-8000-00aa00389b71");
 
+        /// <summary>
+        /// Opus audio codec (Supported in Windows 10 version 1809 and later.)
+        /// </summary>
+        [FieldDescription("Opus")]
+        public static readonly Guid MFAudioFormat_Opus = new Guid("0000704f-0000-0010-8000-00aa00389b71");
+
 
         /// <summary>
         /// MPEG-4 and AAC Audio Types

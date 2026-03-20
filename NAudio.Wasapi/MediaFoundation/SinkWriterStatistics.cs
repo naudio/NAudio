@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace NAudio.MediaFoundation
 {
@@ -9,71 +6,71 @@ namespace NAudio.MediaFoundation
     /// Contains statistics about the performance of the sink writer.
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
-    public class MF_SINK_WRITER_STATISTICS
+    public struct SinkWriterStatistics
     {
         /// <summary>
         /// The size of the structure, in bytes.
         /// </summary>
-        public int cb;
+        public int Size;
         /// <summary>
         /// The time stamp of the most recent sample given to the sink writer.
         /// </summary>
-        public long llLastTimestampReceived;
+        public long LastTimestampReceived;
         /// <summary>
         /// The time stamp of the most recent sample to be encoded.
         /// </summary>
-        public long llLastTimestampEncoded;
+        public long LastTimestampEncoded;
         /// <summary>
         /// The time stamp of the most recent sample given to the media sink.
         /// </summary>
-        public long llLastTimestampProcessed;
+        public long LastTimestampProcessed;
         /// <summary>
-        /// The time stamp of the most recent stream tick. 
+        /// The time stamp of the most recent stream tick.
         /// </summary>
-        public long llLastStreamTickReceived;
+        public long LastStreamTickReceived;
         /// <summary>
-        /// The system time of the most recent sample request from the media sink. 
+        /// The system time of the most recent sample request from the media sink.
         /// </summary>
-        public long llLastSinkSampleRequest;
+        public long LastSinkSampleRequest;
         /// <summary>
         /// The number of samples received.
         /// </summary>
-        public long qwNumSamplesReceived;
+        public long SamplesReceived;
         /// <summary>
         /// The number of samples encoded.
         /// </summary>
-        public long qwNumSamplesEncoded;
+        public long SamplesEncoded;
         /// <summary>
         /// The number of samples given to the media sink.
         /// </summary>
-        public long qwNumSamplesProcessed;
+        public long SamplesProcessed;
         /// <summary>
         /// The number of stream ticks received.
         /// </summary>
-        public long qwNumStreamTicksReceived;
+        public long StreamTicksReceived;
         /// <summary>
-        /// The amount of data, in bytes, currently waiting to be processed. 
+        /// The amount of data, in bytes, currently waiting to be processed.
         /// </summary>
-        public int dwByteCountQueued;
+        public int ByteCountQueued;
         /// <summary>
         /// The total amount of data, in bytes, that has been sent to the media sink.
         /// </summary>
-        public long qwByteCountProcessed;
+        public long ByteCountProcessed;
         /// <summary>
         /// The number of pending sample requests.
         /// </summary>
-        public int dwNumOutstandingSinkSampleRequests;
+        public int OutstandingSinkSampleRequests;
         /// <summary>
         /// The average rate, in media samples per 100-nanoseconds, at which the application sent samples to the sink writer.
         /// </summary>
-        public int dwAverageSampleRateReceived;
+        public int AverageSampleRateReceived;
         /// <summary>
-        /// The average rate, in media samples per 100-nanoseconds, at which the sink writer sent samples to the encoder
+        /// The average rate, in media samples per 100-nanoseconds, at which the sink writer sent samples to the encoder.
         /// </summary>
-        public int dwAverageSampleRateEncoded;
+        public int AverageSampleRateEncoded;
         /// <summary>
         /// The average rate, in media samples per 100-nanoseconds, at which the sink writer sent samples to the media sink.
         /// </summary>
-        public int dwAverageSampleRateProcessed;
+        public int AverageSampleRateProcessed;
     }
 }

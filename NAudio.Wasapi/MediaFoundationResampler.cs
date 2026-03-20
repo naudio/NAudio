@@ -70,18 +70,20 @@ namespace NAudio.Wave
         /// Creates and configures the actual Resampler transform
         /// </summary>
         /// <returns>A newly created and configured resampler MFT</returns>
-        protected override IMFTransform CreateTransform()
+        private protected override IMFTransform CreateTransform()
         {
             var comObject = CreateResamplerComObject();// new ResamplerMediaComObject();
             var resamplerTransform = (IMFTransform)comObject;
 
-            var inputMediaFormat = MediaFoundationApi.CreateMediaTypeFromWaveFormat(sourceProvider.WaveFormat);
-            resamplerTransform.SetInputType(0, inputMediaFormat, 0);
-            Marshal.ReleaseComObject(inputMediaFormat);
+            using (var inputMediaFormat = new MediaType(sourceProvider.WaveFormat))
+            {
+                resamplerTransform.SetInputType(0, inputMediaFormat.MediaFoundationObject, 0);
+            }
 
-            var outputMediaFormat = MediaFoundationApi.CreateMediaTypeFromWaveFormat(outputWaveFormat);
-            resamplerTransform.SetOutputType(0, outputMediaFormat, 0);
-            Marshal.ReleaseComObject(outputMediaFormat);
+            using (var outputMediaFormat = new MediaType(outputWaveFormat))
+            {
+                resamplerTransform.SetOutputType(0, outputMediaFormat.MediaFoundationObject, 0);
+            }
 
             //MFT_OUTPUT_STREAM_INFO pStreamInfo;
             //resamplerTransform.GetOutputStreamInfo(0, out pStreamInfo);

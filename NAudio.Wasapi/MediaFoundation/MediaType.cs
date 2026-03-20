@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 using NAudio.Utils;
 using NAudio.Wave;
@@ -6,11 +6,10 @@ using NAudio.Wave;
 namespace NAudio.MediaFoundation
 {
     /// <summary>
-    /// Media Type helper class, simplifying working with IMFMediaType
-    /// (will probably change in the future, to inherit from an attributes class)
-    /// Currently does not release the COM object, so you must do that yourself
+    /// Media Type helper class, simplifying working with IMFMediaType.
+    /// Implements IDisposable for proper COM lifetime management.
     /// </summary>
-    public class MediaType
+    public class MediaType : IDisposable
     {
         private readonly IMFMediaType mediaType;
 
@@ -18,7 +17,7 @@ namespace NAudio.MediaFoundation
         /// Wraps an existing IMFMediaType object
         /// </summary>
         /// <param name="mediaType">The IMFMediaType object</param>
-        public MediaType(IMFMediaType mediaType)
+        internal MediaType(IMFMediaType mediaType)
         {
             this.mediaType = mediaType;
         }
@@ -42,24 +41,19 @@ namespace NAudio.MediaFoundation
 
         private int GetUInt32(Guid key)
         {
-            int value;
-            mediaType.GetUINT32(key, out value);
+            mediaType.GetUINT32(key, out int value);
             return value;
         }
 
         private Guid GetGuid(Guid key)
         {
-            Guid value;
-            mediaType.GetGUID(key, out value);
+            mediaType.GetGUID(key, out Guid value);
             return value;
         }
 
         /// <summary>
         /// Tries to get a UINT32 value, returning a default value if it doesn't exist
         /// </summary>
-        /// <param name="key">Attribute key</param>
-        /// <param name="defaultValue">Default value</param>
-        /// <returns>Value or default if key doesn't exist</returns>
         public int TryGetUInt32(Guid key, int defaultValue = -1)
         {
             int intValue = defaultValue;
@@ -88,8 +82,6 @@ namespace NAudio.MediaFoundation
         /// <summary>
         /// Sets a UINT32 attribute on this media type
         /// </summary>
-        /// <param name="key">Attribute key</param>
-        /// <param name="value">Attribute value (e.g. 1 for TRUE)</param>
         public void SetUInt32(Guid key, int value)
         {
             mediaType.SetUINT32(key, value);
@@ -149,12 +141,44 @@ namespace NAudio.MediaFoundation
         }
 
         /// <summary>
-        /// Access to the actual IMFMediaType object
-        /// Use to pass to MF APIs or Marshal.ReleaseComObject when you are finished with it
+        /// Gets the number of attributes set on this media type.
         /// </summary>
-        public IMFMediaType MediaFoundationObject
+        public int AttributeCount
         {
-            get { return mediaType; }
+            get
+            {
+                mediaType.GetCount(out int count);
+                return count;
+            }
+        }
+
+        /// <summary>
+        /// Retrieves an attribute at the specified index.
+        /// </summary>
+        /// <param name="index">Zero-based index of the attribute</param>
+        /// <param name="key">Receives the attribute GUID key</param>
+        /// <param name="valuePtr">Receives the attribute value as a PropVariant. Caller must free with PropVariant.Clear.</param>
+        public void GetAttributeByIndex(int index, out Guid key, IntPtr valuePtr)
+        {
+            mediaType.GetItemByIndex(index, out key, valuePtr);
+        }
+
+        /// <summary>
+        /// Access to the underlying IMFMediaType COM object.
+        /// For internal use - callers should use the wrapper properties instead.
+        /// </summary>
+        internal IMFMediaType MediaFoundationObject => mediaType;
+
+        /// <summary>
+        /// Releases the underlying COM object.
+        /// </summary>
+        public void Dispose()
+        {
+            if (mediaType != null)
+            {
+                Marshal.ReleaseComObject(mediaType);
+            }
+            GC.SuppressFinalize(this);
         }
     }
 }

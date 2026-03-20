@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
@@ -12,50 +12,44 @@ namespace NAudio.MediaFoundation
     public static class MediaFoundationApi
     {
         private static bool initialized;
-        
+
         /// <summary>
-        /// initializes MediaFoundation - only needs to be called once per process
+        /// Initializes Media Foundation - only needs to be called once per process
         /// </summary>
         public static void Startup()
         {
             if (!initialized)
             {
-                var sdkVersion = MediaFoundationInterop.MF_SDK_VERSION;
-                // Windows Vista check
-                var os = Environment.OSVersion;
-                if (os.Version.Major == 6 && os.Version.Minor == 0)
-                    sdkVersion = 1;
-                MediaFoundationInterop.MFStartup((sdkVersion << 16) | MediaFoundationInterop.MF_API_VERSION, 0);
+                MediaFoundationInterop.MFStartup(MediaFoundationInterop.MF_VERSION, 0);
                 initialized = true;
             }
         }
 
         /// <summary>
-        /// Enumerate the installed MediaFoundation transforms in the specified category
+        /// Enumerate the installed Media Foundation transforms in the specified category
         /// </summary>
         /// <param name="category">A category from MediaFoundationTransformCategories</param>
-        /// <returns></returns>
-        public static IEnumerable<IMFActivate> EnumerateTransforms(Guid category)
+        public static IEnumerable<MfActivate> EnumerateTransforms(Guid category)
         {
-            MediaFoundationInterop.MFTEnumEx(category, _MFT_ENUM_FLAG.MFT_ENUM_FLAG_ALL,
+            MediaFoundationInterop.MFTEnumEx(category, MftEnumFlags.All,
                 null, null, out var interfacesPointer, out var interfaceCount);
-            var interfaces = new IMFActivate[interfaceCount];
+            var activates = new MfActivate[interfaceCount];
             for (int n = 0; n < interfaceCount; n++)
             {
-                var ptr =
-                    Marshal.ReadIntPtr(new IntPtr(interfacesPointer.ToInt64() + n*Marshal.SizeOf(interfacesPointer)));
-                interfaces[n] = (IMFActivate) Marshal.GetObjectForIUnknown(ptr);
+                var ptr = Marshal.ReadIntPtr(interfacesPointer + n * nint.Size);
+                var iface = (Interfaces.IMFActivate)Marshal.GetObjectForIUnknown(ptr);
+                activates[n] = new MfActivate(iface, ptr);
             }
 
-            foreach (var i in interfaces)
+            foreach (var a in activates)
             {
-                yield return i;
+                yield return a;
             }
             Marshal.FreeCoTaskMem(interfacesPointer);
         }
 
         /// <summary>
-        /// uninitializes MediaFoundation
+        /// Shuts down Media Foundation
         /// </summary>
         public static void Shutdown()
         {
@@ -69,7 +63,7 @@ namespace NAudio.MediaFoundation
         /// <summary>
         /// Creates a Media type
         /// </summary>
-        public static IMFMediaType CreateMediaType()
+        internal static IMFMediaType CreateMediaType()
         {
             MediaFoundationInterop.MFCreateMediaType(out IMFMediaType mediaType);
             return mediaType;
@@ -78,7 +72,7 @@ namespace NAudio.MediaFoundation
         /// <summary>
         /// Creates a media type from a WaveFormat
         /// </summary>
-        public static IMFMediaType CreateMediaTypeFromWaveFormat(WaveFormat waveFormat)
+        internal static IMFMediaType CreateMediaTypeFromWaveFormat(WaveFormat waveFormat)
         {
             var mediaType = CreateMediaType();
             try
@@ -98,7 +92,7 @@ namespace NAudio.MediaFoundation
         /// </summary>
         /// <param name="bufferSize">Memory buffer size in bytes</param>
         /// <returns>The memory buffer</returns>
-        public static IMFMediaBuffer CreateMemoryBuffer(int bufferSize)
+        internal static IMFMediaBuffer CreateMemoryBuffer(int bufferSize)
         {
             MediaFoundationInterop.MFCreateMemoryBuffer(bufferSize, out IMFMediaBuffer buffer);
             return buffer;
@@ -108,7 +102,7 @@ namespace NAudio.MediaFoundation
         /// Creates a sample object
         /// </summary>
         /// <returns>The sample object</returns>
-        public static IMFSample CreateSample()
+        internal static IMFSample CreateSample()
         {
             MediaFoundationInterop.MFCreateSample(out IMFSample sample);
             return sample;
@@ -119,7 +113,7 @@ namespace NAudio.MediaFoundation
         /// </summary>
         /// <param name="initialSize">Initial size</param>
         /// <returns>The attributes store</returns>
-        public static IMFAttributes CreateAttributes(int initialSize)
+        internal static IMFAttributes CreateAttributes(int initialSize)
         {
             MediaFoundationInterop.MFCreateAttributes(out IMFAttributes attributes, initialSize);
             return attributes;
@@ -127,24 +121,17 @@ namespace NAudio.MediaFoundation
 
         /// <summary>
         /// Creates a media foundation byte stream based on a stream object
-        /// (usable with WinRT streams)
         /// </summary>
-        /// <param name="stream">The input stream</param>
+        /// <param name="stream">The input stream (must implement IStream)</param>
         /// <returns>A media foundation byte stream</returns>
-        public static IMFByteStream CreateByteStream(object stream)
+        internal static IMFByteStream CreateByteStream(object stream)
         {
-            // n.b. UWP apps should use MediaFoundationInterop.MFCreateMFByteStreamOnStreamEx(stream, out byteStream);
-            IMFByteStream byteStream;
-            
-            if (stream is IStream)
+            if (stream is IStream comStream)
             {
-                MediaFoundationInterop.MFCreateMFByteStreamOnStream(stream as IStream, out byteStream);
+                MediaFoundationInterop.MFCreateMFByteStreamOnStream(comStream, out var byteStream);
+                return byteStream;
             }
-            else
-            {
-                throw new ArgumentException("Stream must be IStream in desktop apps");
-            }
-            return byteStream;
+            throw new ArgumentException("Stream must implement IStream", nameof(stream));
         }
 
         /// <summary>
@@ -152,10 +139,48 @@ namespace NAudio.MediaFoundation
         /// </summary>
         /// <param name="byteStream">The byte stream</param>
         /// <returns>A media foundation source reader</returns>
-        public static IMFSourceReader CreateSourceReaderFromByteStream(IMFByteStream byteStream)
+        internal static IMFSourceReader CreateSourceReaderFromByteStream(IMFByteStream byteStream)
         {
             MediaFoundationInterop.MFCreateSourceReaderFromByteStream(byteStream, null, out IMFSourceReader reader);
             return reader;
+        }
+
+        /// <summary>
+        /// Creates a source reader from a URL
+        /// </summary>
+        /// <param name="url">The URL or file path</param>
+        /// <param name="attributes">Optional attributes</param>
+        /// <returns>A media foundation source reader</returns>
+        internal static IMFSourceReader CreateSourceReaderFromUrl(string url, IMFAttributes attributes = null)
+        {
+            MediaFoundationInterop.MFCreateSourceReaderFromURL(url, attributes, out IMFSourceReader reader);
+            return reader;
+        }
+
+        /// <summary>
+        /// Creates a sink writer from a URL
+        /// </summary>
+        /// <param name="outputUrl">The output URL or file path</param>
+        /// <param name="byteStream">Optional byte stream</param>
+        /// <param name="attributes">Optional attributes</param>
+        /// <returns>A media foundation sink writer</returns>
+        internal static IMFSinkWriter CreateSinkWriterFromUrl(string outputUrl, IMFByteStream byteStream = null, IMFAttributes attributes = null)
+        {
+            MediaFoundationInterop.MFCreateSinkWriterFromURL(outputUrl, byteStream, attributes, out IMFSinkWriter writer);
+            return writer;
+        }
+
+        /// <summary>
+        /// Gets a list of output formats from an audio encoder
+        /// </summary>
+        /// <param name="audioSubType">Audio subtype GUID</param>
+        /// <param name="flags">Enumeration flags</param>
+        /// <param name="codecConfig">Optional codec configuration attributes</param>
+        /// <returns>A collection of available output types</returns>
+        internal static IMFCollection GetAudioOutputAvailableTypes(Guid audioSubType, MftEnumFlags flags, IMFAttributes codecConfig = null)
+        {
+            MediaFoundationInterop.MFTranscodeGetAudioOutputAvailableTypes(audioSubType, flags, codecConfig, out IMFCollection availableTypes);
+            return availableTypes;
         }
     }
 }

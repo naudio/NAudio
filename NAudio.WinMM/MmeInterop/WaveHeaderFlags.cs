@@ -8,7 +8,7 @@ namespace NAudio.Wave
     /// Wave Header Flags enumeration
     /// </summary>
     [Flags]
-    public enum WaveHeaderFlags
+    internal enum WaveHeaderFlags
     {
         /// <summary>
         /// WHDR_BEGINLOOP

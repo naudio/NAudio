@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NAudio.Wasapi\NAudio.Wasapi.csproj" />
+    <ProjectReference Include="..\NAudio.WinMM\NAudio.WinMM.csproj" />
     <ProjectReference Include="..\NAudio.Core\NAudio.Core.csproj" />
   </ItemGroup>
 

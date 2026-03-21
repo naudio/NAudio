@@ -1,6 +1,6 @@
 ## Play an Audio File from a Console application
 
-To play a file from a console application, we will use `AudioFileReader` as a simple way of opening our audio file, and `WaveOutEvent` as the output device.
+To play a file from a console application, we will use `AudioFileReader` as a simple way of opening our audio file, and `WaveOut` as the output device.
 
 We simply need to pass the `audioFile` into the `outputDevice` with the `Init` method, and then call `Play`. 
 
@@ -10,7 +10,7 @@ Afterwards, we need to `Dispose` our `audioFile` and `outputDevice`, which in th
 
 ```c#
 using(var audioFile = new AudioFileReader(audioFile))
-using(var outputDevice = new WaveOutEvent())
+using(var outputDevice = new WaveOut())
 {
     outputDevice.Init(audioFile);
     outputDevice.Play();

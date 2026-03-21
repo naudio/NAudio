@@ -6,7 +6,7 @@ namespace NAudio.Wave
     /// <summary>
     /// MME Wave function interop
     /// </summary>
-    public class WaveInterop
+    internal class WaveInterop
     {
         /// <summary>
         /// WaveInOut Open Flags

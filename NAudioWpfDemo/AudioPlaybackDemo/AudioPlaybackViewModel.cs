@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows;
 using System.Windows.Input;
 using Microsoft.Win32;
 using NAudio.Extras;
@@ -71,7 +72,8 @@ namespace NAudioWpfDemo.AudioPlaybackDemo
         {
             if (this.SelectedVisualization != null)
             {
-                this.SelectedVisualization.OnFftCalculated(e.Result);
+                Application.Current?.Dispatcher?.BeginInvoke(() =>
+                    this.SelectedVisualization?.OnFftCalculated(e.Result));
             }
         }
 
@@ -79,7 +81,8 @@ namespace NAudioWpfDemo.AudioPlaybackDemo
         {
             if (this.SelectedVisualization != null)
             {
-                this.SelectedVisualization.OnMaxCalculated(e.MinSample, e.MaxSample);
+                Application.Current?.Dispatcher?.BeginInvoke(() =>
+                    this.SelectedVisualization?.OnMaxCalculated(e.MinSample, e.MaxSample));
             }
         }
 

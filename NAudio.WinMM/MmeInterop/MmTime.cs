@@ -8,7 +8,7 @@ namespace NAudio.Wave
     /// http://msdn.microsoft.com/en-us/library/dd757347(v=VS.85).aspx
     /// </summary>
     [StructLayout(LayoutKind.Explicit)]
-    public struct MmTime
+    internal struct MmTime
     {
         /// <summary>
         /// Time in milliseconds.

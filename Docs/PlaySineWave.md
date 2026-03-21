@@ -12,7 +12,7 @@ var sine20Seconds = new SignalGenerator() {
     Frequency = 500,
     Type = SignalGeneratorType.Sin}
     .Take(TimeSpan.FromSeconds(20));
-using (var wo = new WaveOutEvent())
+using (var wo = new WaveOut())
 {
     wo.Init(sine20Seconds);
     wo.Play();

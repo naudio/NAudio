@@ -10,7 +10,7 @@ using NAudio.Wave.SampleProviders;
 
 public class MainForm : Form
 {
-    private WaveOutEvent outputDevice;
+    private WaveOut outputDevice;
     private AudioFileReader audioFile;
 
     public MainForm()
@@ -43,7 +43,7 @@ public class MainForm : Form
 
 Now we've not defined the button handlers yet, so let's do that. First of all the Play button. The first time we click this, we won't have opened our output device or audio file.
 
-So we'll create an output device of type `WaveOutEvent`. This is only one of several options for sending audio to the soundcard, but its a good choice in many scenarios, due to its ease of use and broad platform support.
+So we'll create an output device of type `WaveOut`. This is only one of several options for sending audio to the soundcard, but its a good choice in many scenarios, due to its ease of use and broad platform support.
 
 We'll also subscribe to the `PlaybackStopped` event, which we can use to do some cleaning up.
 
@@ -58,7 +58,7 @@ private void OnButtonPlayClick(object sender, EventArgs args)
 {
     if (outputDevice == null)
     {
-        outputDevice = new WaveOutEvent();
+        outputDevice = new WaveOut();
         outputDevice.PlaybackStopped += OnPlaybackStopped;
     }
     if (audioFile == null)
@@ -110,7 +110,7 @@ Obviously it is important that when the form is closed we do properly stop playb
 Here's the code
 
 ```c#
-var wo = new WaveOutEvent();
+var wo = new WaveOut();
 var af = new AudioFileReader(@"example.mp3");
 var closing = false;
 wo.PlaybackStopped += (s, a) => { if (closing) { wo.Dispose(); af.Dispose(); } };
@@ -150,7 +150,7 @@ t.Scroll += (s, a) => af.Volume = t.Value / 100f;
 Let's see the revised version of our form:
 
 ```c#
-var wo = new WaveOutEvent();
+var wo = new WaveOut();
 var af = new AudioFileReader(inputFilePath);
 var closing = false;
 wo.PlaybackStopped += (s, a) => { if (closing) { wo.Dispose(); af.Dispose(); } };

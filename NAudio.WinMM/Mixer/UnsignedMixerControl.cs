@@ -29,9 +29,10 @@ namespace NAudio.Mixer
         protected override void GetDetails(IntPtr pDetails)
         {
             unsignedDetails = new MixerInterop.MIXERCONTROLDETAILS_UNSIGNED[nChannels];
+            int structSize = Marshal.SizeOf<MixerInterop.MIXERCONTROLDETAILS_UNSIGNED>();
             for (int channel = 0; channel < nChannels; channel++)
             {
-                unsignedDetails[channel] = Marshal.PtrToStructure<MixerInterop.MIXERCONTROLDETAILS_UNSIGNED>(mixerControlDetails.paDetails);
+                unsignedDetails[channel] = Marshal.PtrToStructure<MixerInterop.MIXERCONTROLDETAILS_UNSIGNED>(IntPtr.Add(pDetails, structSize * channel));
             }
         }
 
@@ -45,19 +46,25 @@ namespace NAudio.Mixer
 				GetControlDetails();
 				return unsignedDetails[0].dwValue;
 			}
-			set 
+			set
 			{
                 int structSize = Marshal.SizeOf(unsignedDetails[0]);
 
                 mixerControlDetails.paDetails = Marshal.AllocHGlobal(structSize * nChannels);
-                for (int channel = 0; channel < nChannels; channel++)
+                try
                 {
-                    unsignedDetails[channel].dwValue = value;
-                    IntPtr pointer = IntPtr.Add(mixerControlDetails.paDetails, structSize * channel);
-                    Marshal.StructureToPtr(unsignedDetails[channel], pointer, false);
+                    for (int channel = 0; channel < nChannels; channel++)
+                    {
+                        unsignedDetails[channel].dwValue = value;
+                        IntPtr pointer = IntPtr.Add(mixerControlDetails.paDetails, structSize * channel);
+                        Marshal.StructureToPtr(unsignedDetails[channel], pointer, false);
+                    }
+                    MmException.Try(MixerInterop.mixerSetControlDetails(mixerHandle, ref mixerControlDetails, MixerFlags.Value | mixerHandleType), "mixerSetControlDetails");
                 }
-				MmException.Try(MixerInterop.mixerSetControlDetails(mixerHandle, ref mixerControlDetails, MixerFlags.Value | mixerHandleType), "mixerSetControlDetails");
-                Marshal.FreeHGlobal(mixerControlDetails.paDetails);
+                finally
+                {
+                    Marshal.FreeHGlobal(mixerControlDetails.paDetails);
+                }
 			}
 		}
 		

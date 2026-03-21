@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using NAudio.Utils;
-using NAudio.Wave;
 using NUnit.Framework;
 
 namespace NAudioTests.WaveStreams
@@ -11,20 +6,16 @@ namespace NAudioTests.WaveStreams
     [TestFixture]
     public class ChunkIdentifierTests
     {
-        [TestCase("WAVE")]
-        [TestCase("data")]
-        [TestCase("fmt ")]
-        [TestCase("RF64")]
-        [TestCase("ds64")]
-        [TestCase("labl")]
-        [TestCase("cue ")]
-        public void CanConvertChunkIndentiferToInt(string chunkIdentifier)
+        [TestCase("WAVE", 0x45564157)]
+        [TestCase("data", 0x61746164)]
+        [TestCase("fmt ", 0x20746D66)]
+        [TestCase("RF64", 0x34364652)]
+        [TestCase("ds64", 0x34367364)]
+        [TestCase("labl", 0x6C62616C)]
+        [TestCase("cue ", 0x20657563)]
+        public void CanConvertChunkIdentifierToInt(string chunkIdentifier, int expected)
         {
-            var x = WaveInterop.mmioStringToFOURCC(chunkIdentifier, 0);
-            Assert.That(ChunkIdentifier.ChunkIdentifierToInt32(chunkIdentifier), Is.EqualTo(x));
+            Assert.That(ChunkIdentifier.ChunkIdentifierToInt32(chunkIdentifier), Is.EqualTo(expected));
         }
-
-
-
     }
 }

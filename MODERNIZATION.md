@@ -288,6 +288,76 @@ Existing `WasapiOut` and `WasapiCapture` are kept with `[Obsolete]` attributes p
 - [x] `IMediaBuffer` kept as `[ComImport]` — it's a callback interface implemented by managed `MediaBuffer` class
 - [x] Old `[ComImport]` interfaces retained for existing consumers (already internal)
 
+#### Phase 8: WinMM modernization (NAudio.WinMM) — IN PROGRESS
+
+**8a: Bug fixes — DONE**
+- [x] Fixed `WaveOutBuffer.Dispose` ordering — `waveOutUnprepareHeader` now called *before* freeing GCHandles (previously the pinned header was freed first, causing undefined behavior)
+- [x] Fixed `SignedMixerControl.GetDetails` — was using `mixerControlDetails.paDetails` instead of the `pDetails` parameter (worked by coincidence since they held the same value)
+- [x] Fixed `UnsignedMixerControl.GetDetails` — now advances pointer per channel instead of reading channel 0's value for all channels
+- [x] Removed no-op `Debug.Assert(true, ...)` from `WaveOutBuffer` and `WaveInBuffer` finalizers (condition was inverted — always passed)
+
+**8b: Memory safety — DONE**
+- [x] Added try-finally around `Marshal.AllocHGlobal`/`Marshal.FreeHGlobal` in `BooleanMixerControl`, `SignedMixerControl`, `UnsignedMixerControl` setters (native memory leaked if P/Invoke threw)
+- [x] Added try-finally to `AcmDriver.ShowFormatChooseDialog` (two `AllocHGlobal` allocations leaked on exception)
+- [x] Fixed `AcmDriver.Dispose` — proper dispose pattern with unconditional `GC.SuppressFinalize`, protected virtual `Dispose(bool)`, and finalizer (previously `SuppressFinalize` was conditional and no finalizer existed)
+- [x] Fixed `WaveInEvent` — added `callbackEvent` disposal and finalizer (previously the `AutoResetEvent` leaked and there was no finalizer despite managing a native `waveInHandle`)
+
+**8c: API consolidation — DONE**
+
+**Decision:** The WinForms `WaveOut`, `WaveIn`, `WaveCallbackInfo`, and `WaveWindow` classes are removed. `WaveOutEvent` and `WaveInEvent` (event-callback based) are the only WinMM playback/recording classes going forward.
+
+**Rationale:** The old `WaveOut`/`WaveIn` classes supported three callback strategies: function callbacks, window callbacks (via `WaveWindow`), and event callbacks. Function callbacks were unreliable (known to cause crashes under load). Window callbacks required WinForms dependencies and a message pump. Event callbacks (`WaveOutEvent`/`WaveInEvent`) are the only strategy that works reliably across all application types (console, WinForms, WPF, headless). Maintaining three callback paths for a legacy API added complexity with no benefit.
+
+**Classes removed:**
+
+| Class | Location | Replacement |
+| ----- | -------- | ----------- |
+| `WaveOut` | NAudio.WinForms | `WaveOutEvent` (NAudio.WinMM) |
+| `WaveIn` | NAudio.WinForms | `WaveInEvent` (NAudio.WinMM) |
+| `WaveCallbackInfo` | NAudio.WinForms | Not needed — `WaveOutEvent`/`WaveInEvent` always use event callbacks |
+| `WaveWindow` / `WaveWindowNative` | NAudio.WinForms | Not needed — window callbacks removed |
+| `WaveCallbackStrategy` enum | NAudio.WinMM | Not needed — only one strategy remains |
+
+**Other changes:**
+- [x] Added `DeviceCount` and `GetCapabilities(int)` static methods to `WaveOutEvent` (previously only on the deleted `WaveOut`)
+- [x] NAudio.WinForms now contains only GUI controls (Fader, PanSlider, Pot, VolumeSlider, VolumeMeter, WaveViewer, WaveformPainter, ProgressLog)
+
+**8d: Public API surface reduction — DONE**
+
+**Decision:** All interop types that are implementation details of `WaveOutEvent`/`WaveInEvent` are now `internal`. Only the high-level classes (`WaveOutEvent`, `WaveInEvent`) and their configuration types (`WaveOutCapabilities`, `WaveInCapabilities`) remain public.
+
+| Type | Previous | Now | Rationale |
+| ---- | -------- | --- | --------- |
+| `WaveInterop` | `public` | `internal` | Raw P/Invoke — consumers should use `WaveOutEvent`/`WaveInEvent` |
+| `WaveHeader` | `public` | `internal` | WAVEHDR interop struct — no public consumer |
+| `WaveHeaderFlags` | `public` | `internal` | Flags for WaveHeader — no public consumer |
+| `WaveOutBuffer` | `public` | `internal` | Buffer management detail of `WaveOutEvent` |
+| `WaveInBuffer` | `public` | `internal` | Buffer management detail of `WaveInEvent` |
+| `WaveOutUtils` | `public` | `internal` | Utility methods used only by `WaveOutEvent` |
+| `MmTime` | `public` | `internal` | MMTIME interop struct — no public consumer |
+
+**8e: WaveOutEvent / WaveInEvent modernization — DONE**
+
+- [x] Added `isDisposed` guard to both `WaveOutEvent` and `WaveInEvent` — prevents crashes on double-dispose
+- [x] `WaveOutEvent.Dispose(bool)` — moved `Stop()` inside `disposing == true` guard. Previously `Stop()` was called from the finalizer path, which took locks and signaled events — both dangerous during finalization
+- [x] Removed ASP.NET `SynchronizationContext` string-name check from `WaveOutEvent` constructor — dead code on .NET 8 (ASP.NET Core has no `SynchronizationContext` by default)
+- [x] Removed `hThis` GCHandle from `WaveOutBuffer` and `WaveInBuffer` — this pinned the buffer object and stored it in `header.userData` for function-callback recovery. With event callbacks, it's never read, so it was wasting memory and preventing GC compaction
+- [x] `WaveOutBuffer.OnDone` — replaced byte-by-byte buffer zeroing loop with `Array.Clear`
+- [x] `WaveOutBuffer.OnDone` — replaced `lock (waveStream)` with a dedicated `waveStreamLock` object to prevent deadlocks if callers also lock on their `IWaveProvider`
+- [x] `WaveInBuffer.Reuse` — removed unnecessary `waveInUnprepareHeader`/`waveInPrepareHeader` cycle. Per the Windows documentation, a prepared buffer can be re-added without re-preparation if the pointer and size haven't changed. This eliminates 2 P/Invoke calls per buffer rotation
+- [x] Removed stale XP-era TODO comment from `WaveInEvent.GetMixerLine`
+- [x] Updated class-level XML doc comments (no longer "Alternative" or "non-gui only")
+- [x] Replaced `ThreadPool.QueueUserWorkItem` with dedicated `Thread` in both `WaveOutEvent` and `WaveInEvent` — audio threads are long-running (entire playback/recording duration) and should not occupy thread pool threads. Dedicated threads are named (`NAudio WaveOut Playback` / `NAudio WaveIn Recording`), set to `IsBackground = true`, and use `ThreadPriority.AboveNormal` for better timing
+- [x] Changed `WaveInEvent` default `WaveFormat` from 8000 Hz / 16-bit / mono to 44100 Hz / 16-bit / stereo — the old default was telephony-era; 44100/16/stereo is what most users expect
+- [x] Replaced `WaveOutEvent.DesiredLatency` with `BufferMilliseconds` (default 100ms) — matches `WaveInEvent`'s property name. `DesiredLatency` was confusing because it specified *total* latency across all buffers, so the actual per-buffer size depended on `NumberOfBuffers`. `BufferMilliseconds` directly specifies each buffer's size, making behavior predictable regardless of buffer count
+- [x] Renamed `WaveOutEvent` → `WaveOut` and `WaveInEvent` → `WaveIn` — now that the old WinForms `WaveOut`/`WaveIn` classes are gone, the "Event" suffix is unnecessary. Obsolete `WaveOutEvent` and `WaveInEvent` shim classes (inheriting from the renamed classes) are provided for migration
+
+### What Remains (WinMM)
+
+- Review ACM compression classes for further cleanup (dispose patterns, naming, visibility)
+- Review Mixer classes for further cleanup
+- Consider whether `WaveFormatConversionStream` should be deprecated in favor of `WaveFormatConversionProvider`
+
 ---
 
 ## Breaking Changes from 2.x
@@ -333,6 +403,26 @@ These will need to be documented in the migration guide:
 | `MediaFoundationTransform` finalizer removed | Ensure `Dispose()` is called |
 | `MediaFoundationEncoder` finalizer removed | Ensure `Dispose()` is called |
 | `MediaType` now implements `IDisposable` | Call `Dispose()` or use `using` |
+
+### WinMM API changes
+
+| Change | Migration |
+| ------ | --------- |
+| `WaveOut` class removed (NAudio.WinForms) | Use `WaveOutEvent` (NAudio.WinMM) — same `IWavePlayer` interface, same `DeviceNumber`/`NumberOfBuffers` properties. `DesiredLatency` replaced by `BufferMilliseconds` |
+| `WaveIn` class removed (NAudio.WinForms) | Use `WaveInEvent` (NAudio.WinMM) — same `IWaveIn` interface |
+| `WaveCallbackInfo` class removed | Not needed — `WaveOutEvent`/`WaveInEvent` always use event callbacks |
+| `WaveWindow` / `WaveWindowNative` classes removed | Not needed — window callbacks removed |
+| `WaveCallbackStrategy` enum removed | Not needed — only event callbacks remain |
+| `WaveOut.DeviceCount` / `WaveOut.GetCapabilities()` | Use `WaveOutEvent.DeviceCount` / `WaveOutEvent.GetCapabilities()` |
+| `WaveIn.DeviceCount` / `WaveIn.GetCapabilities()` | Use `WaveInEvent.DeviceCount` / `WaveInEvent.GetCapabilities()` |
+| `WaveInterop` is `internal` | Use `WaveOutEvent`/`WaveInEvent`, not raw P/Invoke |
+| `WaveHeader`, `WaveHeaderFlags`, `MmTime` are `internal` | These interop types were never intended for direct use |
+| `WaveOutBuffer`, `WaveInBuffer` are `internal` | Buffer management is an implementation detail of `WaveOutEvent`/`WaveInEvent` |
+| `WaveOutUtils` is `internal` | Use `WaveOutEvent.Volume` / `WaveOutEvent.GetPosition()` |
+| `WaveInEvent` default format changed from 8000/16/mono to 44100/16/stereo | Set `WaveFormat` explicitly if you need the old default |
+| `WaveOutEvent.DesiredLatency` replaced by `BufferMilliseconds` | `BufferMilliseconds` specifies the size of each individual buffer (default 100ms). Old `DesiredLatency` was the total across all buffers, which was confusing with `NumberOfBuffers > 1` |
+| `WaveOutEvent` renamed to `WaveOut` | `WaveOutEvent` still exists as an obsolete subclass for migration — update to `WaveOut` |
+| `WaveInEvent` renamed to `WaveIn` | `WaveInEvent` still exists as an obsolete subclass for migration — update to `WaveIn` |
 
 ### DMO API changes
 

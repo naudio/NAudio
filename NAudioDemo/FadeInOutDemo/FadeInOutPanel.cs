@@ -73,7 +73,7 @@ namespace NAudioDemo.FadeInOutDemo
         private void BeginPlayback(string filename)
         {
             Debug.Assert(this.wavePlayer == null);
-            this.wavePlayer = new WaveOutEvent();
+            this.wavePlayer = new WaveOut();
             this.file = new AudioFileReader(filename);
             this.fadeInOut = new FadeInOutSampleProvider(file);
             this.file.Volume = volumeSlider1.Volume;

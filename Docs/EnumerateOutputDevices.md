@@ -2,7 +2,7 @@
 
 The technique you use to enumerate audio devices depends on what audio output (or input) driver type you are using. This article shows the technique for each supported output device.
 
-# WaveOut or WaveOutEvent
+## WaveOut
 
 To discover the number of output devices you can use `WaveOut.DeviceCount`. Then you can call `WaveOut.GetCapabilities` passing in the index of a device to find out its name (and some basic information about its capabilities).
 
@@ -18,13 +18,13 @@ for (int n = -1; n < WaveOut.DeviceCount; n++)
 }
 ```
 
-Once you've selected the device you want, you can open it by creating an instance of `WaveOut` or `WaveOutEvent` and specifying it as the `DeviceNumber`:
+Once you've selected the device you want, you can open it by creating an instance of `WaveOut` and specifying it as the `DeviceNumber`:
 
 ```c#
-var outputDevice = new WaveOutEvent() { DeviceNumber = deviceNumber };
+var outputDevice = new WaveOut() { DeviceNumber = deviceNumber };
 ```
 
-# WaveIn or WaveInEvent
+## WaveIn
 
 Getting details of audio capture devices for `WaveIn` is very similar to for `WaveOut`: 
 
@@ -36,10 +36,10 @@ for (int n = -1; n < WaveIn.DeviceCount; n++)
 }
 ```
 
-Once you've selected the device you want, you can open it by creating an instance of `WaveIn` or `WaveInEvent` and specifying it as the `DeviceNumber`:
+Once you've selected the device you want, you can open it by creating an instance of `WaveIn` and specifying it as the `DeviceNumber`:
 
 ```c#
-var recordingDevice = new WaveInEvent() { DeviceNumber = deviceNumber };
+var recordingDevice = new WaveIn() { DeviceNumber = deviceNumber };
 ```
 
 # DirectSoundOut

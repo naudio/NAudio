@@ -58,7 +58,7 @@ namespace NAudioWpfDemo.AudioPlaybackDemo
 
         private void CreateDevice()
         {
-            playbackDevice = new WaveOut {DesiredLatency = 200};
+            playbackDevice = new WaveOut {BufferMilliseconds = 200};
         }
 
         public void Play()

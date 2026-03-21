@@ -50,8 +50,6 @@ NAudio is an open source .NET audio library written by [Mark Heath](https://mark
   * Send MIDI events
 * An extensible programming model
   * All base classes easily inherited from for you to add your custom components
-* Support for UWP (preliminary)
-  * Create Windows 8 Store apps and Windows Universal apps
 
 ## Getting Started
 

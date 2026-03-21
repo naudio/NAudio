@@ -196,7 +196,7 @@ namespace NAudioWpfDemo.MediaFoundationPlayback
 
         private void CreatePlayer()
         {
-            wavePlayer = new WaveOutEvent();
+            wavePlayer = new WaveOut();
             wavePlayer.PlaybackStopped += WavePlayerOnPlaybackStopped;
         }
 

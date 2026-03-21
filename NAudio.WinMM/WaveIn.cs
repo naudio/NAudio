@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 using NAudio.Mixer;
 using System.Threading;
@@ -8,20 +8,19 @@ using NAudio.CoreAudioApi;
 namespace NAudio.Wave
 {
     /// <summary>
-    /// Recording using waveIn api with event callbacks.
-    /// Use this for recording in non-gui applications
-    /// Events are raised as recorded buffers are made available
+    /// WaveIn recording device using event callbacks
     /// </summary>
-    public class WaveInEvent : IWaveIn
+    public class WaveIn : IWaveIn
     {
         private readonly AutoResetEvent callbackEvent;
         private readonly SynchronizationContext syncContext;
         private IntPtr waveInHandle;
         private volatile CaptureState captureState;
         private WaveInBuffer[] buffers;
+        private bool isDisposed;
 
         /// <summary>
-        /// Indicates recorded data is available 
+        /// Indicates recorded data is available
         /// </summary>
         public event EventHandler<WaveInEventArgs> DataAvailable;
 
@@ -33,12 +32,12 @@ namespace NAudio.Wave
         /// <summary>
         /// Prepares a Wave input device for recording
         /// </summary>
-        public WaveInEvent()
+        public WaveIn()
         {
             callbackEvent = new AutoResetEvent(false);
             syncContext = SynchronizationContext.Current;
             DeviceNumber = 0;
-            WaveFormat = new WaveFormat(8000, 16, 1);
+            WaveFormat = new WaveFormat(44100, 16, 2);
             BufferMilliseconds = 100;
             NumberOfBuffers = 3;
             captureState = CaptureState.Stopped;
@@ -79,7 +78,6 @@ namespace NAudio.Wave
 
         private void CreateBuffers()
         {
-            // Default to three buffers of 100ms each
             int bufferSize = BufferMilliseconds * WaveFormat.AverageBytesPerSecond / 1000;
             if (bufferSize % WaveFormat.BlockAlign != 0)
             {
@@ -97,7 +95,7 @@ namespace NAudio.Wave
         {
             CloseWaveInDevice();
             MmResult result = WaveInterop.waveInOpenWindow(out waveInHandle, (IntPtr)DeviceNumber, WaveFormat,
-                callbackEvent.SafeWaitHandle.DangerousGetHandle(), 
+                callbackEvent.SafeWaitHandle.DangerousGetHandle(),
                 IntPtr.Zero, WaveInterop.WaveInOutOpenFlags.CallbackEvent);
             MmException.Try(result, "waveInOpen");
             CreateBuffers();
@@ -113,7 +111,13 @@ namespace NAudio.Wave
             OpenWaveInDevice();
             MmException.Try(WaveInterop.waveInStart(waveInHandle), "waveInStart");
             captureState = CaptureState.Starting;
-            ThreadPool.QueueUserWorkItem((state) => RecordThread(), null);
+            var recordThread = new Thread(RecordThread)
+            {
+                IsBackground = true,
+                Name = "NAudio WaveIn Recording",
+                Priority = ThreadPriority.AboveNormal
+            };
+            recordThread.Start();
         }
 
         private void RecordThread()
@@ -183,6 +187,7 @@ namespace NAudio.Wave
                 }
             }
         }
+
         /// <summary>
         /// Stop recording
         /// </summary>
@@ -202,13 +207,13 @@ namespace NAudio.Wave
 
         /// <summary>
         /// Gets the current position in bytes from the wave input device.
-        /// it calls directly into waveInGetPosition)
+        /// (calls directly into waveInGetPosition)
         /// </summary>
         /// <returns>Position in bytes</returns>
         public long GetPosition()
         {
             MmTime mmTime = new MmTime();
-            mmTime.wType = MmTime.TIME_BYTES; // request results in bytes, TODO: perhaps make this a little more flexible and support the other types?
+            mmTime.wType = MmTime.TIME_BYTES;
             MmException.Try(WaveInterop.waveInGetPosition(waveInHandle, out mmTime, Marshal.SizeOf(mmTime)), "waveInGetPosition");
 
             if (mmTime.wType != MmTime.TIME_BYTES)
@@ -227,12 +232,16 @@ namespace NAudio.Wave
         /// </summary>
         protected virtual void Dispose(bool disposing)
         {
+            if (isDisposed) return;
+            isDisposed = true;
+
             if (disposing)
             {
                 if (captureState != CaptureState.Stopped)
                     StopRecording();
 
                 CloseWaveInDevice();
+                callbackEvent?.Dispose();
             }
         }
 
@@ -253,11 +262,10 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// Microphone Level
+        /// Gets the mixer line for this recording device
         /// </summary>
         public MixerLine GetMixerLine()
         {
-            // TODO use mixerGetID instead to see if this helps with XP
             MixerLine mixerLine;
             if (waveInHandle != IntPtr.Zero)
             {
@@ -271,6 +279,14 @@ namespace NAudio.Wave
         }
 
         /// <summary>
+        /// Finalizer. Only called when user forgets to call <see cref="Dispose()"/>
+        /// </summary>
+        ~WaveIn()
+        {
+            Dispose(false);
+        }
+
+        /// <summary>
         /// Dispose method
         /// </summary>
         public void Dispose()
@@ -279,5 +295,12 @@ namespace NAudio.Wave
             GC.SuppressFinalize(this);
         }
     }
-}
 
+    /// <summary>
+    /// Obsolete: use <see cref="WaveIn"/> instead (renamed from WaveInEvent to WaveIn in NAudio 3.0)
+    /// </summary>
+    [Obsolete("WaveInEvent has been renamed to WaveIn. Use WaveIn instead.")]
+    public class WaveInEvent : WaveIn
+    {
+    }
+}

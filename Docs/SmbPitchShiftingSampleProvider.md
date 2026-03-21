@@ -16,7 +16,7 @@ var downOneTone = 1.0/upOneTone;
 using (var reader = new MediaFoundationReader(inPath))
 {
     var pitch = new SmbPitchShiftingSampleProvider(reader.ToSampleProvider());
-    using(var device = new WaveOutEvent())
+    using(var device = new WaveOut())
     {
         pitch.PitchFactor = (float)upOneTone; // or downOneTone
         // just playing the first 10 seconds of the file

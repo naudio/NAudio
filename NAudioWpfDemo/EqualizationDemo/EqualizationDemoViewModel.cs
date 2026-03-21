@@ -170,7 +170,7 @@ namespace NAudioWpfDemo.EqualizationDemo
                 selectedFile = openFileDialog.FileName;
                 reader = new AudioFileReader(selectedFile);
                 equalizer = new Equalizer(reader, bands);
-                player = new WaveOutEvent();
+                player = new WaveOut();
                 player.Init(equalizer);
             }
         }

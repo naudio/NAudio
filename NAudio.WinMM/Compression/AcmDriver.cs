@@ -115,35 +115,40 @@ namespace NAudio.Wave.Compression
             formatChoose.selectedWaveFormatByteSize = maxFormatSize;
             formatChoose.title = windowTitle;
             formatChoose.name = null;
-            formatChoose.formatEnumFlags = enumFlags;//AcmFormatEnumFlags.None;
+            formatChoose.formatEnumFlags = enumFlags;
             formatChoose.waveFormatEnumPointer = IntPtr.Zero;
             if (enumFormat != null)
             {
                 IntPtr enumPointer = Marshal.AllocHGlobal(Marshal.SizeOf(enumFormat));
-                Marshal.StructureToPtr(enumFormat,enumPointer,false);
+                Marshal.StructureToPtr(enumFormat, enumPointer, false);
                 formatChoose.waveFormatEnumPointer = enumPointer;
             }
             formatChoose.instanceHandle = IntPtr.Zero;
             formatChoose.templateName = null;
 
-            MmResult result = AcmInterop.acmFormatChoose(ref formatChoose);
-            selectedFormat = null;
-            selectedFormatDescription = null;
-            selectedFormatTagDescription = null;
-            if (result == MmResult.NoError)
+            try
             {
-                selectedFormat = WaveFormat.MarshalFromPtr(formatChoose.selectedWaveFormatPointer);
-                selectedFormatDescription = formatChoose.formatDescription;
-                selectedFormatTagDescription = formatChoose.formatTagDescription;
-            }            
-            
-            Marshal.FreeHGlobal(formatChoose.waveFormatEnumPointer);
-            Marshal.FreeHGlobal(formatChoose.selectedWaveFormatPointer);
-            if(result != MmResult.AcmCancelled && result != MmResult.NoError)
-            {                
-                throw new MmException(result, "acmFormatChoose");
+                MmResult result = AcmInterop.acmFormatChoose(ref formatChoose);
+                selectedFormat = null;
+                selectedFormatDescription = null;
+                selectedFormatTagDescription = null;
+                if (result == MmResult.NoError)
+                {
+                    selectedFormat = WaveFormat.MarshalFromPtr(formatChoose.selectedWaveFormatPointer);
+                    selectedFormatDescription = formatChoose.formatDescription;
+                    selectedFormatTagDescription = formatChoose.formatTagDescription;
+                }
+                if (result != MmResult.AcmCancelled && result != MmResult.NoError)
+                {
+                    throw new MmException(result, "acmFormatChoose");
+                }
+                return result == MmResult.NoError;
             }
-            return result == MmResult.NoError;
+            finally
+            {
+                Marshal.FreeHGlobal(formatChoose.waveFormatEnumPointer);
+                Marshal.FreeHGlobal(formatChoose.selectedWaveFormatPointer);
+            }
             
         }
 
@@ -336,14 +341,30 @@ namespace NAudio.Wave.Compression
         #region IDisposable Members
 
         /// <summary>
+        /// Finalizer. Only called when user forgets to call <see cref="Dispose()"/>
+        /// </summary>
+        ~AcmDriver()
+        {
+            Dispose(false);
+        }
+
+        /// <summary>
         /// Dispose
         /// </summary>
         public void Dispose()
         {
-            if (driverHandle != IntPtr.Zero)
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Dispose pattern
+        /// </summary>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
             {
                 Close();
-                GC.SuppressFinalize(this);
             }
         }
 

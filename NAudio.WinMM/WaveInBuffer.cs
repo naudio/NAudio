@@ -7,7 +7,7 @@ namespace NAudio.Wave
     /// <summary>
     /// A buffer of Wave samples
     /// </summary>
-    public class WaveInBuffer : IDisposable
+    internal class WaveInBuffer : IDisposable
     {
         private readonly WaveHeader header;
         private readonly Int32 bufferSize; // allocated bytes, may not be the same as bytes read
@@ -15,7 +15,6 @@ namespace NAudio.Wave
         private GCHandle hBuffer;
         private IntPtr waveInHandle;
         private GCHandle hHeader; // we need to pin the header structure
-        private GCHandle hThis; // for the user callback
 
         /// <summary>
         /// creates a new wavebuffer
@@ -34,11 +33,8 @@ namespace NAudio.Wave
             header.dataBuffer = hBuffer.AddrOfPinnedObject();
             header.bufferLength = bufferSize;
             header.loops = 1;
-            hThis = GCHandle.Alloc(this);
-            header.userData = (IntPtr)hThis;
 
             MmException.Try(WaveInterop.waveInPrepareHeader(waveInHandle, header, Marshal.SizeOf(header)), "waveInPrepareHeader");
-            //MmException.Try(WaveInterop.waveInAddBuffer(waveInHandle, header, Marshal.SizeOf(header)), "waveInAddBuffer");
         }
 
         /// <summary>
@@ -46,10 +42,6 @@ namespace NAudio.Wave
         /// </summary>
         public void Reuse()
         {
-            // TEST: we might not actually need to bother unpreparing and repreparing
-            MmException.Try(WaveInterop.waveInUnprepareHeader(waveInHandle, header, Marshal.SizeOf(header)), "waveUnprepareHeader");
-            MmException.Try(WaveInterop.waveInPrepareHeader(waveInHandle, header, Marshal.SizeOf(header)), "waveInPrepareHeader");
-            //System.Diagnostics.Debug.Assert(header.bytesRecorded == 0, "bytes recorded was not reset properly");
             MmException.Try(WaveInterop.waveInAddBuffer(waveInHandle, header, Marshal.SizeOf(header)), "waveInAddBuffer");
         }
 
@@ -61,7 +53,6 @@ namespace NAudio.Wave
         ~WaveInBuffer()
         {
             Dispose(false);
-            System.Diagnostics.Debug.Assert(true, "WaveInBuffer was not disposed");
         }
 
         /// <summary>
@@ -92,8 +83,6 @@ namespace NAudio.Wave
                 hHeader.Free();
             if (hBuffer.IsAllocated)
                 hBuffer.Free();
-            if (hThis.IsAllocated)
-                hThis.Free();
 
         }
 

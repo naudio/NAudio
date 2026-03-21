@@ -6,17 +6,17 @@ namespace NAudio.Wave
     /// <summary>
     /// A buffer of Wave samples for streaming to a Wave Output device
     /// </summary>
-    public class WaveOutBuffer : IDisposable
+    internal class WaveOutBuffer : IDisposable
     {
         private readonly WaveHeader header;
         private readonly Int32 bufferSize; // allocated bytes, may not be the same as bytes read
         private readonly byte[] buffer;
         private readonly IWaveProvider waveStream;
         private readonly object waveOutLock;
+        private readonly object waveStreamLock;
         private GCHandle hBuffer;
         private IntPtr hWaveOut;
         private GCHandle hHeader; // we need to pin the header structure
-        private GCHandle hThis; // for the user callback
 
         /// <summary>
         /// creates a new wavebuffer
@@ -33,14 +33,13 @@ namespace NAudio.Wave
             this.hWaveOut = hWaveOut;
             waveStream = bufferFillStream;
             this.waveOutLock = waveOutLock;
+            waveStreamLock = new object();
 
             header = new WaveHeader();
             hHeader = GCHandle.Alloc(header, GCHandleType.Pinned);
             header.dataBuffer = hBuffer.AddrOfPinnedObject();
             header.bufferLength = bufferSize;
             header.loops = 1;
-            hThis = GCHandle.Alloc(this);
-            header.userData = (IntPtr)hThis;
             lock (waveOutLock)
             {
                 MmException.Try(WaveInterop.waveOutPrepareHeader(hWaveOut, header, Marshal.SizeOf(header)), "waveOutPrepareHeader");
@@ -55,7 +54,6 @@ namespace NAudio.Wave
         ~WaveOutBuffer()
         {
             Dispose(false);
-            System.Diagnostics.Debug.Assert(true, "WaveBuffer was not disposed");
         }
 
         /// <summary>
@@ -77,12 +75,6 @@ namespace NAudio.Wave
                 // free managed resources
             }
             // free unmanaged resources
-            if (hHeader.IsAllocated)
-                hHeader.Free();
-            if (hBuffer.IsAllocated)
-                hBuffer.Free();
-            if (hThis.IsAllocated)
-                hThis.Free();
             if (hWaveOut != IntPtr.Zero)
             {
                 lock (waveOutLock)
@@ -91,6 +83,10 @@ namespace NAudio.Wave
                 }
                 hWaveOut = IntPtr.Zero;
             }
+            if (hHeader.IsAllocated)
+                hHeader.Free();
+            if (hBuffer.IsAllocated)
+                hBuffer.Free();
         }
 
         #endregion
@@ -99,7 +95,7 @@ namespace NAudio.Wave
         public bool OnDone()
         {
             int bytes;
-            lock (waveStream)
+            lock (waveStreamLock)
             {
                 bytes = waveStream.Read(buffer, 0, buffer.Length);
             }
@@ -107,9 +103,9 @@ namespace NAudio.Wave
             {
                 return false;
             }
-            for (int n = bytes; n < buffer.Length; n++)
+            if (bytes < buffer.Length)
             {
-                buffer[n] = 0;
+                Array.Clear(buffer, bytes, buffer.Length - bytes);
             }
             WriteToWaveOut();
             return true;

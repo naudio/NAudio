@@ -34,7 +34,7 @@ namespace NAudioDemo.SignalGeneratorDemo
             Disposed += OnGeneratorPanelDisposed;
 
             // Init Audio
-            driverOut = new WaveOutEvent();
+            driverOut = new WaveOut();
             //driverOut = new AsioOut(0);
             wg = new SignalGenerator();
 

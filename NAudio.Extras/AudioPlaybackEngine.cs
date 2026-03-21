@@ -18,7 +18,7 @@ namespace NAudio.Extras
         /// </summary>
         public AudioPlaybackEngine(int sampleRate = 44100, int channelCount = 2)
         {
-            outputDevice = new WaveOutEvent();
+            outputDevice = new WaveOut();
             mixer = new MixingSampleProvider(WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channelCount));
             mixer.ReadFully = true;
             outputDevice.Init(mixer);

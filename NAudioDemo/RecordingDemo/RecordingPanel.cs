@@ -115,14 +115,7 @@ namespace NAudioDemo.RecordingDemo
             if (radioButtonWaveIn.Checked)
             {
                 var deviceNumber = comboWaveInDevice.SelectedIndex - 1;
-                if (checkBoxEventCallback.Checked)
-                {
-                    newWaveIn = new WaveInEvent() { DeviceNumber = deviceNumber };
-                }
-                else
-                {
-                    newWaveIn = new WaveIn() { DeviceNumber = deviceNumber };
-                }
+                newWaveIn = new WaveIn() { DeviceNumber = deviceNumber };
             }
             else if (radioButtonWasapi.Checked)
             {

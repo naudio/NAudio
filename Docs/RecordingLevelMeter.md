@@ -11,7 +11,7 @@ So if you want to allow the user to set up their volume levels before they start
 We won't go into great detail in this article on how to record audio as that's [covered elsewhere](RecordWavFileWinFormsWaveIn.md), but here we'll create a new recording device, subscribe to the data available event, and start capturing audio by calling `StartRecording`.
 
 ```c#
-var waveIn = new WaveInEvent(deviceNumber);
+var waveIn = new WaveIn() { DeviceNumber = deviceNumber };
 waveIn.DataAvailable += OnDataAvailable;
 waveIn.StartRecording();
 ```
@@ -43,7 +43,7 @@ private void OnDataAvailable(object sender, WaveInEventArgs args)
 
 The `WaveInEventArgs.Buffer` property contains the captured audio. Unfortunately this is represented as a byte array. This means that we must convert to samples.
 
-The way this works depends on the bit depth being recorded at. The two most common options are 16 bit signed integers (`short`'s in C#), which is what `WaveIn` and `WaveInEvent` will supply by default. And 32 bit IEEE floating point numbers (`float`'s in C#) which is what `WasapiCapture` or `WasapiLoopbackCapture` will supply by default.
+The way this works depends on the bit depth being recorded at. The two most common options are 16 bit signed integers (`short`'s in C#), which is what `WaveIn` will supply by default. And 32 bit IEEE floating point numbers (`float`'s in C#) which is what `WasapiCapture` or `WasapiLoopbackCapture` will supply by default.
 
 Here's how we might discover the maximum sample value if the incoming audio is 16 bit. Notice that we are simply taking the absolute value of each sample, and we are calculating one maximum value irrespective of whether it is mono or stereo audio. If you wanted, you could calculate the maximum values for each channel separately, by maintaining separate max values for each channel (the samples are interleaved):
 

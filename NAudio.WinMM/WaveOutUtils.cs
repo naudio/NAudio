@@ -7,7 +7,7 @@ namespace NAudio.Wave
     /// <summary>
     /// WaveOutUtils
     /// </summary>
-    public static class WaveOutUtils
+    internal static class WaveOutUtils
     {
         /// <summary>
         /// Get WaveOut Volume

@@ -17,7 +17,7 @@ namespace NAudioTests.Acm
             Assert.That(drivers, Is.Not.Null);
             foreach (AcmDriver driver in drivers)
             {
-                Assert.That((int)driver.DriverId, Is.GreaterThanOrEqualTo(0));
+                Assert.That(driver.DriverId, Is.Not.EqualTo(IntPtr.Zero));
                 Assert.That(driver.ShortName, Is.Not.Null.And.Not.Empty);
                 Debug.WriteLine(driver.LongName);
             }

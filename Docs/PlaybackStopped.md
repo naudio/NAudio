@@ -1,6 +1,6 @@
 # Handling Playback Stopped
 
-In NAudio, you use an implementation of the `IWavePlayer` class to play audio. Examples include `WaveOut`, `WaveOutEvent`, `WasapiOut`, `AsioOut` etc. To specify the audio to be played, you call the `Init` method passing in an `IWaveProvider`. And to start playing you call `Play`.
+In NAudio, you use an implementation of the `IWavePlayer` class to play audio. Examples include `WaveOut`, `WasapiOut`, `AsioOut` etc. To specify the audio to be played, you call the `Init` method passing in an `IWaveProvider`. And to start playing you call `Play`.
 
 ## Manually Stopping Playback
 

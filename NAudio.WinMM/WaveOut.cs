@@ -15,7 +15,7 @@ namespace NAudio.Wave
         private readonly SynchronizationContext syncContext;
         private IntPtr hWaveOut; // WaveOut handle
         private WaveOutBuffer[] buffers;
-        private IWaveProvider waveStream;
+        private IAudioSource waveStream;
         private volatile PlaybackState playbackState;
         private AutoResetEvent callbackEvent;
         private bool isDisposed;
@@ -77,8 +77,8 @@ namespace NAudio.Wave
         /// <summary>
         /// Initialises the WaveOut device
         /// </summary>
-        /// <param name="waveProvider">WaveProvider to play</param>
-        public void Init(IWaveProvider waveProvider)
+        /// <param name="audioSource">Audio source to play</param>
+        public void Init(IAudioSource audioSource)
         {
             if (playbackState != PlaybackState.Stopped)
             {
@@ -95,8 +95,8 @@ namespace NAudio.Wave
 
             callbackEvent = new AutoResetEvent(false);
 
-            waveStream = waveProvider;
-            int bufferSize = waveProvider.WaveFormat.ConvertLatencyToByteSize(BufferMilliseconds);
+            waveStream = audioSource;
+            int bufferSize = audioSource.WaveFormat.ConvertLatencyToByteSize(BufferMilliseconds);
 
             MmResult result;
             lock (waveOutLock)

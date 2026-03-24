@@ -12,7 +12,7 @@ namespace NAudioTests.WaveStreams
         {
             var stereoStream = new TestSampleProvider(44100,1).ToStereo(1.0f, 0.0f);
             var buffer = new float[2000];
-            var read = stereoStream.Read(buffer, 0, 2000);
+            var read = stereoStream.Read(buffer.AsSpan(0, 2000));
             Assert.That(read, Is.EqualTo(2000));
             for (int n = 0; n < read; n+=2)
             {

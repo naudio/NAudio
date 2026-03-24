@@ -47,7 +47,7 @@ static class ResamplerTests
 
                 var buffer = new byte[resampler.WaveFormat.AverageBytesPerSecond];
                 int bytesRead;
-                while ((bytesRead = resampler.Read(buffer, 0, buffer.Length)) > 0)
+                while ((bytesRead = resampler.Read(buffer.AsSpan())) > 0)
                 {
                     writer.Write(buffer, 0, bytesRead);
                     totalBytesWritten += bytesRead;

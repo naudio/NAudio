@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using NAudio.Wave;
 
 namespace NAudio.Extras
 {
-    class CachedSoundSampleProvider : ISampleProvider
+    class CachedSoundSampleProvider : ISampleSource
     {
         private readonly CachedSound cachedSound;
         private long position;
@@ -13,11 +13,11 @@ namespace NAudio.Extras
             this.cachedSound = cachedSound;
         }
 
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
             var availableSamples = cachedSound.AudioData.Length - position;
-            var samplesToCopy = Math.Min(availableSamples, count);
-            Array.Copy(cachedSound.AudioData, position, buffer, offset, samplesToCopy);
+            var samplesToCopy = Math.Min(availableSamples, buffer.Length);
+            cachedSound.AudioData.AsSpan((int)position, (int)samplesToCopy).CopyTo(buffer);
             position += samplesToCopy;
             return (int)samplesToCopy;
         }

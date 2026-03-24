@@ -224,6 +224,27 @@ namespace NAudio.Wave
         /// <returns>Number of bytes read; 0 indicates end of stream</returns>
         public override int Read(byte[] buffer, int offset, int count)
         {
+            return Read(buffer.AsSpan(offset, count));
+        }
+
+        private int ReadFromDecoderBuffer(Span<byte> destination)
+        {
+            int bytesFromDecoderOutput = Math.Min(destination.Length, decoderOutputCount);
+            decoderOutputBuffer.AsSpan(decoderOutputOffset, bytesFromDecoderOutput).CopyTo(destination);
+            decoderOutputOffset += bytesFromDecoderOutput;
+            decoderOutputCount -= bytesFromDecoderOutput;
+            if (decoderOutputCount == 0)
+            {
+                decoderOutputOffset = 0;
+            }
+            return bytesFromDecoderOutput;
+        }
+
+        /// <summary>
+        /// Reads from this wave stream into a span (zero-copy path for WASAPI playback)
+        /// </summary>
+        public override int Read(Span<byte> buffer)
+        {
             if (pReader == null)
             {
                 pReader = CreateReader(settings);
@@ -234,26 +255,23 @@ namespace NAudio.Wave
             }
 
             int bytesWritten = 0;
-            // read in any leftovers from last time
             if (decoderOutputCount > 0)
             {
-                bytesWritten += ReadFromDecoderBuffer(buffer, offset, count - bytesWritten);
+                bytesWritten += ReadFromDecoderBuffer(buffer);
             }
 
-            while (bytesWritten < count)
+            while (bytesWritten < buffer.Length)
             {
-                pReader.ReadSample(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0, 
+                pReader.ReadSample(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0,
                     out int actualStreamIndex, out SourceReaderFlags dwFlags, out ulong timestamp, out IMFSample pSample);
                 if ((dwFlags & SourceReaderFlags.EndOfStream) != 0)
                 {
-                    // reached the end of the stream
                     break;
                 }
                 else if ((dwFlags & SourceReaderFlags.CurrentMediaTypeChanged) != 0)
                 {
                     waveFormat = GetCurrentWaveFormat(pReader);
                     OnWaveFormatChanged();
-                    // carry on, but user must handle the change of format
                 }
                 else if (dwFlags != 0)
                 {
@@ -267,7 +285,7 @@ namespace NAudio.Wave
                 decoderOutputOffset = 0;
                 decoderOutputCount = cbBuffer;
 
-                bytesWritten += ReadFromDecoderBuffer(buffer, offset + bytesWritten, count - bytesWritten);
+                bytesWritten += ReadFromDecoderBuffer(buffer.Slice(bytesWritten));
 
                 pBuffer.Unlock();
                 Marshal.ReleaseComObject(pBuffer);
@@ -275,19 +293,6 @@ namespace NAudio.Wave
             }
             position += bytesWritten;
             return bytesWritten;
-        }
-
-        private int ReadFromDecoderBuffer(byte[] buffer, int offset, int needed)
-        {
-            int bytesFromDecoderOutput = Math.Min(needed, decoderOutputCount);
-            Array.Copy(decoderOutputBuffer, decoderOutputOffset, buffer, offset, bytesFromDecoderOutput);
-            decoderOutputOffset += bytesFromDecoderOutput;
-            decoderOutputCount -= bytesFromDecoderOutput;
-            if (decoderOutputCount == 0)
-            {
-                decoderOutputOffset = 0;
-            }
-            return bytesFromDecoderOutput;
         }
 
         /// <summary>

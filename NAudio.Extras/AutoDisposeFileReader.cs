@@ -1,4 +1,4 @@
-﻿using NAudio.Wave;
+using NAudio.Wave;
 using System;
 
 namespace NAudio.Extras
@@ -7,15 +7,15 @@ namespace NAudio.Extras
     /// <summary>
     /// Used by AudioPlaybackEngine
     /// </summary>
-    public class AutoDisposeFileReader : ISampleProvider
+    public class AutoDisposeFileReader : ISampleSource
     {
-        private readonly ISampleProvider reader;
+        private readonly ISampleSource reader;
         private bool isDisposed;
 
         /// <summary>
         /// Creates a new file reader that disposes the source reader when it finishes
         /// </summary>
-        public AutoDisposeFileReader(ISampleProvider reader)
+        public AutoDisposeFileReader(ISampleSource reader)
         {
             this.reader = reader;
             WaveFormat = reader.WaveFormat;
@@ -24,11 +24,11 @@ namespace NAudio.Extras
         /// <summary>
         /// Reads samples from this file reader
         /// </summary>
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
             if (isDisposed)
                 return 0;
-            int read = reader.Read(buffer, offset, count);
+            int read = reader.Read(buffer);
             if (read == 0)
             {
                 if (reader is IDisposable d)

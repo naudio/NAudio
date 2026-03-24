@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave
@@ -8,7 +7,7 @@ namespace NAudio.Wave
     /// Silence producing wave provider
     /// Useful for playing silence when doing a WASAPI Loopback Capture
     /// </summary>
-    public class SilenceProvider : IWaveProvider
+    public class SilenceProvider : IAudioSource
     {
         /// <summary>
         /// Creates a new silence producing wave provider
@@ -19,10 +18,10 @@ namespace NAudio.Wave
         /// <summary>
         /// Read silence from into the buffer
         /// </summary>
-        public int Read(byte[] buffer, int offset, int count)
+        public int Read(Span<byte> buffer)
         {
-            Array.Clear(buffer, offset, count);
-            return count;
+            buffer.Clear();
+            return buffer.Length;
         }
 
         /// <summary>

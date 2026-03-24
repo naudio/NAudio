@@ -143,7 +143,7 @@ namespace NAudio.Wave
         /// <returns>Bytes read</returns>
         public override int Read(byte[] buffer, int offset, int count)
         {
-            var bytesRead = conversionProvider.Read(buffer, offset, count);
+            var bytesRead = conversionProvider.Read(buffer.AsSpan(offset, count));
             position += bytesRead;
             return bytesRead;
         }

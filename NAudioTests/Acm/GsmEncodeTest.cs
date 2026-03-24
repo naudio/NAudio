@@ -4,6 +4,7 @@ using NUnit.Framework;
 using NAudio.Wave;
 using System.IO;
 using NAudio.Wave.SampleProviders;
+using System.Runtime.InteropServices;
 
 namespace NAudioTests.Acm
 {
@@ -31,12 +32,13 @@ namespace NAudioTests.Acm
                 Gain = 0.25,
                 Type = SignalGeneratorType.Sin
             };
-            var sp = sg.ToWaveProvider16();
+            var sp = sg.ToSampleProvider().ToWaveProvider16();
 
 
             byte[] data = new byte[outFormat.AverageBytesPerSecond * durationInSeconds];
-            var bytesRead = sp.Read(data, 0, data.Length);
-            Assert.That(bytesRead, Is.EqualTo(data.Length));
+            Span<float> floatBuffer = MemoryMarshal.Cast<byte, float>(data);
+            var samplesRead = sg.Read(floatBuffer);
+            Assert.That(samplesRead, Is.EqualTo(floatBuffer.Length));
             return new RawSourceWaveStream(new MemoryStream(data), outFormat);
         }
 

@@ -28,29 +28,26 @@ namespace NAudio.Utils
         /// Write data to the buffer
         /// </summary>
         /// <param name="data">Data to write</param>
-        /// <param name="offset">Offset into data</param>
-        /// <param name="count">Number of bytes to write</param>
         /// <returns>number of bytes written</returns>
-        public int Write(byte[] data, int offset, int count)
+        public int Write(ReadOnlySpan<byte> data)
         {
             lock (lockObject)
             {
+                int count = data.Length;
                 var bytesWritten = 0;
                 if (count > buffer.Length - byteCount)
                 {
                     count = buffer.Length - byteCount;
                 }
-                // write to end
                 int writeToEnd = Math.Min(buffer.Length - writePosition, count);
-                Array.Copy(data, offset, buffer, writePosition, writeToEnd);
+                data.Slice(0, writeToEnd).CopyTo(buffer.AsSpan(writePosition));
                 writePosition += writeToEnd;
                 writePosition %= buffer.Length;
                 bytesWritten += writeToEnd;
                 if (bytesWritten < count)
                 {
                     Debug.Assert(writePosition == 0);
-                    // must have wrapped round. Write to start
-                    Array.Copy(data, offset + bytesWritten, buffer, writePosition, count - bytesWritten);
+                    data.Slice(bytesWritten, count - bytesWritten).CopyTo(buffer.AsSpan(writePosition));
                     writePosition += (count - bytesWritten);
                     bytesWritten = count;
                 }
@@ -62,30 +59,28 @@ namespace NAudio.Utils
         /// <summary>
         /// Read from the buffer
         /// </summary>
-        /// <param name="data">Buffer to read into</param>
-        /// <param name="offset">Offset into read buffer</param>
-        /// <param name="count">Bytes to read</param>
+        /// <param name="data">Span to read into</param>
         /// <returns>Number of bytes actually read</returns>
-        public int Read(byte[] data, int offset, int count)
+        public int Read(Span<byte> data)
         {
             lock (lockObject)
             {
+                int count = data.Length;
                 if (count > byteCount)
                 {
                     count = byteCount;
                 }
                 int bytesRead = 0;
                 int readToEnd = Math.Min(buffer.Length - readPosition, count);
-                Array.Copy(buffer, readPosition, data, offset, readToEnd);
+                buffer.AsSpan(readPosition, readToEnd).CopyTo(data);
                 bytesRead += readToEnd;
                 readPosition += readToEnd;
                 readPosition %= buffer.Length;
 
                 if (bytesRead < count)
                 {
-                    // must have wrapped round. Read from start
                     Debug.Assert(readPosition == 0);
-                    Array.Copy(buffer, readPosition, data, offset + bytesRead, count - bytesRead);
+                    buffer.AsSpan(readPosition, count - bytesRead).CopyTo(data.Slice(bytesRead));
                     readPosition += (count - bytesRead);
                     bytesRead = count;
                 }

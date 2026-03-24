@@ -97,14 +97,14 @@ namespace NAudioTests.MediaFoundation
                 int bytesRead;
                 do
                 {
-                    bytesRead = resampler.Read(buffer, 0, buffer.Length);
+                    bytesRead = resampler.Read(buffer.AsSpan());
                     totalRead += bytesRead;
                     reads++;
                 } while (bytesRead > 0 && reads < 20000);
 
                 Assert.That(reads, Is.LessThan(20000), "Read loop should terminate");
                 Assert.That(totalRead, Is.GreaterThan(0), "Should produce output before ending");
-                Assert.That(resampler.Read(buffer, 0, buffer.Length), Is.EqualTo(0), "Subsequent reads after EOF should return zero");
+                Assert.That(resampler.Read(buffer.AsSpan()), Is.EqualTo(0), "Subsequent reads after EOF should return zero");
             }
         }
 
@@ -117,13 +117,13 @@ namespace NAudioTests.MediaFoundation
                 var first = new byte[4096];
                 var second = new byte[4096];
 
-                var firstRead = resampler.Read(first, 0, first.Length);
+                var firstRead = resampler.Read(first.AsSpan());
                 Assert.That(firstRead, Is.GreaterThan(0));
 
                 source.Position = 0;
                 resampler.Reposition();
 
-                var secondRead = resampler.Read(second, 0, second.Length);
+                var secondRead = resampler.Read(second.AsSpan());
                 Assert.That(secondRead, Is.EqualTo(firstRead));
                 Assert.That(second, Is.EqualTo(first), "After source rewind + reposition, initial output should repeat");
             }
@@ -138,7 +138,7 @@ namespace NAudioTests.MediaFoundation
                 resampler.Dispose();
 
                 var buffer = new byte[1024];
-                Assert.That(() => resampler.Read(buffer, 0, buffer.Length), Throws.TypeOf<ObjectDisposedException>());
+                Assert.That(() => resampler.Read(buffer.AsSpan()), Throws.TypeOf<ObjectDisposedException>());
             }
         }
 
@@ -153,7 +153,7 @@ namespace NAudioTests.MediaFoundation
 
             var sampleCount = (int)(sampleRate * channels * durationSeconds);
             var sampleBuffer = new float[sampleCount];
-            var read = signal.Read(sampleBuffer, 0, sampleBuffer.Length);
+            var read = signal.Read(sampleBuffer.AsSpan());
             Assert.That(read, Is.EqualTo(sampleBuffer.Length));
 
             var bytes = new byte[sampleBuffer.Length * sizeof(float)];
@@ -161,13 +161,13 @@ namespace NAudioTests.MediaFoundation
             return new RawSourceWaveStream(new MemoryStream(bytes), WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channels));
         }
 
-        private static byte[] ReadAllBytes(IWaveProvider provider, int chunkSize)
+        private static byte[] ReadAllBytes(IAudioSource source, int chunkSize)
         {
             var readBuffer = new byte[chunkSize];
             using (var output = new MemoryStream())
             {
                 int bytesRead;
-                while ((bytesRead = provider.Read(readBuffer, 0, readBuffer.Length)) > 0)
+                while ((bytesRead = source.Read(readBuffer.AsSpan())) > 0)
                 {
                     output.Write(readBuffer, 0, bytesRead);
                 }
@@ -235,7 +235,7 @@ namespace NAudioTests.MediaFoundation
             }
         }
 
-        private class InMemoryWaveProvider : IWaveProvider, IDisposable
+        private class InMemoryWaveProvider : IAudioSource, IDisposable
         {
             private readonly RawSourceWaveStream stream;
 
@@ -244,10 +244,7 @@ namespace NAudioTests.MediaFoundation
                 stream = new RawSourceWaveStream(new MemoryStream(bytes), waveFormat);
             }
 
-            public WaveFormat WaveFormat
-            {
-                get { return stream.WaveFormat; }
-            }
+            public WaveFormat WaveFormat => stream.WaveFormat;
 
             public long Position
             {
@@ -255,9 +252,9 @@ namespace NAudioTests.MediaFoundation
                 set { stream.Position = value; }
             }
 
-            public int Read(byte[] buffer, int offset, int count)
+            public int Read(Span<byte> buffer)
             {
-                return stream.Read(buffer, offset, count);
+                return stream.Read(buffer);
             }
 
             public void Dispose()

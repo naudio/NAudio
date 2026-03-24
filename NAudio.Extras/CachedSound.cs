@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using NAudio.Wave;
 
@@ -31,7 +32,7 @@ namespace NAudio.Extras
                 var wholeFile = new List<float>((int)(audioFileReader.Length / 4));
                 var readBuffer = new float[audioFileReader.WaveFormat.SampleRate * audioFileReader.WaveFormat.Channels];
                 int samplesRead;
-                while ((samplesRead = audioFileReader.Read(readBuffer, 0, readBuffer.Length)) > 0)
+                while ((samplesRead = audioFileReader.Read(readBuffer.AsSpan())) > 0)
                 {
                     wholeFile.AddRange(readBuffer.Take(samplesRead));
                 }

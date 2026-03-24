@@ -20,27 +20,21 @@ namespace NAudio.Dmo
         }
 
         /// <summary>
-        /// Processes a block of data.
-        /// The application supplies a pointer to a block of input data. The DMO processes the data in place.
+        /// Processes a block of data in place using a span.
+        /// The data is pinned and passed directly to the DMO, avoiding intermediate copies.
         /// </summary>
-        /// <param name="size">Size of the data, in bytes.</param>
-        /// <param name="offset">offset into buffer</param>
-        /// <param name="data">In/Out Data Buffer</param>
+        /// <param name="data">In/Out Data buffer</param>
         /// <param name="timeStart">Start time of the data.</param>
         /// <param name="inPlaceFlag">DmoInplaceProcessFlags</param>
         /// <returns>Return value when Process is executed with IMediaObjectInPlace</returns>
-        public DmoInPlaceProcessReturn Process(int size, int offset, byte[] data, long timeStart, DmoInPlaceProcessFlags inPlaceFlag)
+        public unsafe DmoInPlaceProcessReturn Process(Span<byte> data, long timeStart, DmoInPlaceProcessFlags inPlaceFlag)
         {
-            var pointer = Marshal.AllocHGlobal(size);
-            Marshal.Copy(data, offset, pointer, size);
-
-            var result = mediaObjectInPlace.Process(size, pointer, timeStart, inPlaceFlag);
-            Marshal.ThrowExceptionForHR(result);
-
-            Marshal.Copy(pointer, data, offset, size);
-            Marshal.FreeHGlobal(pointer);
-
-            return (DmoInPlaceProcessReturn) result;
+            fixed (byte* pData = data)
+            {
+                var result = mediaObjectInPlace.Process(data.Length, (IntPtr)pData, timeStart, inPlaceFlag);
+                Marshal.ThrowExceptionForHR(result);
+                return (DmoInPlaceProcessReturn)result;
+            }
         }
 
         /// <summary>

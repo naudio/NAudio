@@ -53,7 +53,7 @@ static class DmoEffectTests
 
                 var buffer = new byte[echo.WaveFormat.AverageBytesPerSecond];
                 int bytesRead;
-                while ((bytesRead = echo.Read(buffer, 0, buffer.Length)) > 0)
+                while ((bytesRead = echo.Read(buffer.AsSpan())) > 0)
                 {
                     writer.Write(buffer, 0, bytesRead);
                     totalBytesWritten += bytesRead;

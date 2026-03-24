@@ -6,12 +6,12 @@ using NAudio.Wave.Compression;
 namespace NAudio.Wave
 {
     /// <summary>
-    /// IWaveProvider that passes through an ACM Codec
+    /// IAudioSource that passes through an ACM Codec
     /// </summary>
-    public class WaveFormatConversionProvider : IWaveProvider, IDisposable
+    public class WaveFormatConversionProvider : IAudioSource, IDisposable
     {
         private readonly AcmStream conversionStream;
-        private readonly IWaveProvider sourceProvider;
+        private readonly IAudioSource sourceProvider;
         private readonly int preferredSourceReadSize;
         private int leftoverDestBytes;
         private int leftoverDestOffset;
@@ -22,8 +22,8 @@ namespace NAudio.Wave
         /// Create a new WaveFormat conversion stream
         /// </summary>
         /// <param name="targetFormat">Desired output format</param>
-        /// <param name="sourceProvider">Source Provider</param>
-        public WaveFormatConversionProvider(WaveFormat targetFormat, IWaveProvider sourceProvider)
+        /// <param name="sourceProvider">Source audio</param>
+        public WaveFormatConversionProvider(WaveFormat targetFormat, IAudioSource sourceProvider)
         {
             this.sourceProvider = sourceProvider;
             WaveFormat = targetFormat;
@@ -54,11 +54,10 @@ namespace NAudio.Wave
         /// Reads bytes from this stream
         /// </summary>
         /// <param name="buffer">Buffer to read into</param>
-        /// <param name="offset">Offset in buffer to read into</param>
-        /// <param name="count">Number of bytes to read</param>
         /// <returns>Number of bytes read</returns>
-        public int Read(byte[] buffer, int offset, int count)
+        public int Read(Span<byte> buffer)
         {
+            int count = buffer.Length;
             int bytesRead = 0;
             if (count % WaveFormat.BlockAlign != 0)
             {
@@ -72,7 +71,7 @@ namespace NAudio.Wave
                 int readFromLeftoverDest = Math.Min(count - bytesRead, leftoverDestBytes);
                 if (readFromLeftoverDest > 0)
                 {
-                    Array.Copy(conversionStream.DestBuffer, leftoverDestOffset, buffer, offset+bytesRead, readFromLeftoverDest);
+                    conversionStream.DestBuffer.AsSpan(leftoverDestOffset, readFromLeftoverDest).CopyTo(buffer.Slice(bytesRead));
                     leftoverDestOffset += readFromLeftoverDest;
                     leftoverDestBytes -= readFromLeftoverDest;
                     bytesRead += readFromLeftoverDest;
@@ -89,7 +88,7 @@ namespace NAudio.Wave
 
                 // always read our preferred size, we can always keep leftovers for the next call to Read if we get
                 // too much
-                int sourceBytesRead = sourceProvider.Read(conversionStream.SourceBuffer, leftoverSourceBytes, sourceReadSize);
+                int sourceBytesRead = sourceProvider.Read(conversionStream.SourceBuffer.AsSpan(leftoverSourceBytes, sourceReadSize));
                 int sourceBytesAvailable = sourceBytesRead + leftoverSourceBytes;
                 if (sourceBytesAvailable == 0)
                 {
@@ -118,14 +117,14 @@ namespace NAudio.Wave
                 {
                     int bytesRequired = count - bytesRead;
                     int toCopy = Math.Min(destBytesConverted, bytesRequired);
-                    
+
                     // save leftovers
                     if (toCopy < destBytesConverted)
                     {
                         leftoverDestBytes = destBytesConverted - toCopy;
                         leftoverDestOffset = toCopy;
                     }
-                    Array.Copy(conversionStream.DestBuffer, 0, buffer, bytesRead + offset, toCopy);
+                    conversionStream.DestBuffer.AsSpan(0, toCopy).CopyTo(buffer.Slice(bytesRead));
                     bytesRead += toCopy;
                 }
                 else

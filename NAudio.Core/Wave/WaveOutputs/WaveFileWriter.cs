@@ -20,65 +20,61 @@ namespace NAudio.Wave
         private readonly string filename;
 
         /// <summary>
-        /// Creates a 16 bit Wave File from an ISampleProvider
-        /// BEWARE: the source provider must not return data indefinitely
+        /// Creates a 16 bit Wave File from an ISampleSource.
+        /// BEWARE: the source must not return data indefinitely.
         /// </summary>
         /// <param name="filename">The filename to write to</param>
-        /// <param name="sourceProvider">The source sample provider</param>
-        public static void CreateWaveFile16(string filename, ISampleProvider sourceProvider)
+        /// <param name="source">The source sample source</param>
+        public static void CreateWaveFile16(string filename, ISampleSource source)
         {
-            CreateWaveFile(filename, new SampleToWaveProvider16(sourceProvider));
+            CreateWaveFile(filename, new SampleToWaveProvider16(source));
         }
 
         /// <summary>
-        /// Creates a Wave file by reading all the data from a WaveProvider
-        /// BEWARE: the WaveProvider MUST return 0 from its Read method when it is finished,
+        /// Creates a Wave file by reading all the data from an IAudioSource.
+        /// BEWARE: the source MUST return 0 from its Read method when it is finished,
         /// or the Wave File will grow indefinitely.
         /// </summary>
         /// <param name="filename">The filename to use</param>
-        /// <param name="sourceProvider">The source WaveProvider</param>
-        public static void CreateWaveFile(string filename, IWaveProvider sourceProvider)
+        /// <param name="source">The source audio</param>
+        public static void CreateWaveFile(string filename, IAudioSource source)
         {
-            using (var writer = new WaveFileWriter(filename, sourceProvider.WaveFormat))
+            using (var writer = new WaveFileWriter(filename, source.WaveFormat))
             {
-                var buffer = new byte[sourceProvider.WaveFormat.AverageBytesPerSecond * 4];
+                var buffer = new byte[source.WaveFormat.AverageBytesPerSecond * 4];
                 while (true)
                 {
-                    int bytesRead = sourceProvider.Read(buffer, 0, buffer.Length);
+                    int bytesRead = source.Read(buffer.AsSpan());
                     if (bytesRead == 0)
                     {
-                        // end of source provider
                         break;
                     }
-                    // Write will throw exception if WAV file becomes too large
-                    writer.Write(buffer, 0, bytesRead);
+                    writer.Write(buffer.AsSpan(0, bytesRead));
                 }
             }
         }
         
         /// <summary>
-        /// Writes to a stream by reading all the data from a WaveProvider
-        /// BEWARE: the WaveProvider MUST return 0 from its Read method when it is finished,
+        /// Writes to a stream by reading all the data from an IAudioSource.
+        /// BEWARE: the source MUST return 0 from its Read method when it is finished,
         /// or the Wave File will grow indefinitely.
         /// </summary>
         /// <param name="outStream">The stream the method will output to</param>
-        /// <param name="sourceProvider">The source WaveProvider</param>
-        public static void WriteWavFileToStream(Stream outStream, IWaveProvider sourceProvider)
+        /// <param name="source">The source audio</param>
+        public static void WriteWavFileToStream(Stream outStream, IAudioSource source)
         {
-            using (var writer = new WaveFileWriter(new IgnoreDisposeStream(outStream), sourceProvider.WaveFormat)) 
+            using (var writer = new WaveFileWriter(new IgnoreDisposeStream(outStream), source.WaveFormat))
             {
-                var buffer = new byte[sourceProvider.WaveFormat.AverageBytesPerSecond * 4];
-                while(true) 
+                var buffer = new byte[source.WaveFormat.AverageBytesPerSecond * 4];
+                while (true)
                 {
-                    var bytesRead = sourceProvider.Read(buffer, 0, buffer.Length);
-                    if (bytesRead == 0) 
+                    var bytesRead = source.Read(buffer.AsSpan());
+                    if (bytesRead == 0)
                     {
-                        // end of source provider
                         outStream.Flush();
                         break;
                     }
-
-                    writer.Write(buffer, 0, bytesRead);
+                    writer.Write(buffer.AsSpan(0, bytesRead));
                 }
             }
         }
@@ -232,6 +228,18 @@ namespace NAudio.Wave
                 throw new ArgumentException("WAV file too large", nameof(count));
             outStream.Write(data, offset, count);
             dataChunkSize += count;
+        }
+
+        /// <summary>
+        /// Appends bytes to the WaveFile from a span (assumes they are already in the correct format)
+        /// </summary>
+        /// <param name="data">the span containing the wave data</param>
+        public override void Write(ReadOnlySpan<byte> data)
+        {
+            if (outStream.Length + data.Length > UInt32.MaxValue)
+                throw new ArgumentException("WAV file too large");
+            outStream.Write(data);
+            dataChunkSize += data.Length;
         }
 
         private readonly byte[] value24 = new byte[3]; // keep this around to save us creating it every time

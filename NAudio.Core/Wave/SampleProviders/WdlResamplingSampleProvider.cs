@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+using System;
 using NAudio.Dsp;
 
 namespace NAudio.Wave.SampleProviders
@@ -7,11 +6,11 @@ namespace NAudio.Wave.SampleProviders
     /// <summary>
     /// Fully managed resampling sample provider, based on the WDL Resampler
     /// </summary>
-    public class WdlResamplingSampleProvider : ISampleProvider
+    public class WdlResamplingSampleProvider : ISampleSource
     {
         private readonly WdlResampler resampler;
         private readonly WaveFormat outFormat;
-        private readonly ISampleProvider source;
+        private readonly ISampleSource source;
         private readonly int channels;
 
         /// <summary>
@@ -19,7 +18,7 @@ namespace NAudio.Wave.SampleProviders
         /// </summary>
         /// <param name="source">Source to resample</param>
         /// <param name="newSampleRate">Desired output sample rate</param>
-        public WdlResamplingSampleProvider(ISampleProvider source, int newSampleRate)
+        public WdlResamplingSampleProvider(ISampleSource source, int newSampleRate)
         {
             channels = source.WaveFormat.Channels;
             outFormat = WaveFormat.CreateIeeeFloatWaveFormat(newSampleRate, channels);
@@ -35,14 +34,12 @@ namespace NAudio.Wave.SampleProviders
         /// <summary>
         /// Reads from this sample provider
         /// </summary>
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
-            float[] inBuffer;
-            int inBufferOffset;
-            int framesRequested = count / channels;
-            int inNeeded = resampler.ResamplePrepare(framesRequested, outFormat.Channels, out inBuffer, out inBufferOffset);
-            int inAvailable = source.Read(inBuffer, inBufferOffset, inNeeded * channels) / channels;
-            int outAvailable = resampler.ResampleOut(buffer, offset, inAvailable, framesRequested, channels);
+            int framesRequested = buffer.Length / channels;
+            int inNeeded = resampler.ResamplePrepare(framesRequested, outFormat.Channels, out Span<float> inBuffer);
+            int inAvailable = source.Read(inBuffer[..(inNeeded * channels)]) / channels;
+            int outAvailable = resampler.ResampleOut(buffer, inAvailable, framesRequested, channels);
             return outAvailable * channels;
         }
 

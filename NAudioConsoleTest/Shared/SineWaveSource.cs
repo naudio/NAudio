@@ -1,12 +1,13 @@
-using NAudio.Wasapi;
+using System.Runtime.InteropServices;
 using NAudio.Wave;
 
 namespace NAudioConsoleTest.Shared;
 
 /// <summary>
-/// IAudioSource that generates a sine wave. Zero-copy — writes directly into the Span.
+/// Generates a sine wave. Implements ISampleSource (primary) and IAudioSource
+/// for direct use with WASAPI playback.
 /// </summary>
-class SineWaveSource : IAudioSource
+class SineWaveSource : ISampleSource, IAudioSource
 {
     private readonly float frequency;
     private readonly float amplitude;
@@ -26,19 +27,16 @@ class SineWaveSource : IAudioSource
         WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channels);
     }
 
-    public int Read(Span<byte> buffer)
+    public int Read(Span<float> buffer)
     {
-        int samplesRequested = buffer.Length / 4; // 4 bytes per float sample
-        var floatSpan = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, float>(buffer);
-
         double phaseIncrement = 2 * Math.PI * frequency / sampleRate;
 
-        for (int i = 0; i < floatSpan.Length; i += channels)
+        for (int i = 0; i < buffer.Length; i += channels)
         {
             float sample = (float)(amplitude * Math.Sin(phase));
-            for (int ch = 0; ch < channels && (i + ch) < floatSpan.Length; ch++)
+            for (int ch = 0; ch < channels && (i + ch) < buffer.Length; ch++)
             {
-                floatSpan[i + ch] = sample;
+                buffer[i + ch] = sample;
             }
             phase += phaseIncrement;
             if (phase > 2 * Math.PI)
@@ -46,5 +44,12 @@ class SineWaveSource : IAudioSource
         }
 
         return buffer.Length;
+    }
+
+    public int Read(Span<byte> buffer)
+    {
+        var floatSpan = MemoryMarshal.Cast<byte, float>(buffer);
+        int samplesRead = Read(floatSpan);
+        return samplesRead * sizeof(float);
     }
 }

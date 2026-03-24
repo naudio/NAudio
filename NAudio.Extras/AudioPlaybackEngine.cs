@@ -34,7 +34,7 @@ namespace NAudio.Extras
             AddMixerInput(new AutoDisposeFileReader(input));
         }
 
-        private ISampleProvider ConvertToRightChannelCount(ISampleProvider input)
+        private ISampleSource ConvertToRightChannelCount(ISampleSource input)
         {
             if (input.WaveFormat.Channels == mixer.WaveFormat.Channels)
             {
@@ -55,7 +55,7 @@ namespace NAudio.Extras
             AddMixerInput(new CachedSoundSampleProvider(sound));
         }
 
-        private void AddMixerInput(ISampleProvider input)
+        private void AddMixerInput(ISampleSource input)
         {
             mixer.AddMixerInput(ConvertToRightChannelCount(input));
         }

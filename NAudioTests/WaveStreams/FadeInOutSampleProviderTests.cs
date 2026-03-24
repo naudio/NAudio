@@ -1,4 +1,6 @@
-﻿using NAudio.Wave.SampleProviders;
+﻿using System;
+using NAudio.Wave;
+using NAudio.Wave.SampleProviders;
 using NUnit.Framework;
 
 namespace NAudioTests.WaveStreams
@@ -15,7 +17,7 @@ namespace NAudioTests.WaveStreams
             var fade = new FadeInOutSampleProvider(source);
             fade.BeginFadeIn(1000);
             float[] buffer = new float[20];
-            int read = fade.Read(buffer, 0, 20);
+            int read = fade.Read(buffer.AsSpan(0, 20));
             Assert.That(read, Is.EqualTo(20));
             Assert.That(buffer[0], Is.EqualTo(0)); // start of fade-in
             Assert.That(buffer[5], Is.EqualTo(50)); // half-way
@@ -32,7 +34,7 @@ namespace NAudioTests.WaveStreams
             var fade = new FadeInOutSampleProvider(source);
             fade.BeginFadeOut(1000);
             float[] buffer = new float[20];
-            int read = fade.Read(buffer, 0, 20);
+            int read = fade.Read(buffer.AsSpan(0, 20));
             Assert.That(read, Is.EqualTo(20));
             Assert.That(buffer[0], Is.EqualTo(100)); // start of fade-out
             Assert.That(buffer[5], Is.EqualTo(50)); // half-way
@@ -49,21 +51,21 @@ namespace NAudioTests.WaveStreams
             var fade = new FadeInOutSampleProvider(source);
             fade.BeginFadeIn(1000);
             float[] buffer = new float[4];
-            int read = fade.Read(buffer, 0, 4);
+            int read = fade.Read(buffer.AsSpan(0, 4));
             Assert.That(read, Is.EqualTo(4));
             Assert.That(buffer[0], Is.EqualTo(0)); // start of fade-in
             Assert.That(buffer[1], Is.EqualTo(10));
             Assert.That(buffer[2], Is.EqualTo(20).Within(0.0001));
             Assert.That(buffer[3], Is.EqualTo(30).Within(0.0001));
 
-            read = fade.Read(buffer, 0, 4);
+            read = fade.Read(buffer.AsSpan(0, 4));
             Assert.That(read, Is.EqualTo(4));
             Assert.That(buffer[0], Is.EqualTo(40).Within(0.0001));
             Assert.That(buffer[1], Is.EqualTo(50).Within(0.0001));
             Assert.That(buffer[2], Is.EqualTo(60).Within(0.0001));
             Assert.That(buffer[3], Is.EqualTo(70).Within(0.0001));
 
-            read = fade.Read(buffer, 0, 4);
+            read = fade.Read(buffer.AsSpan(0, 4));
             Assert.That(read, Is.EqualTo(4));
             Assert.That(buffer[0], Is.EqualTo(80).Within(0.0001));
             Assert.That(buffer[1], Is.EqualTo(90).Within(0.0001));
@@ -88,7 +90,7 @@ namespace NAudioTests.WaveStreams
             var fade = new FadeInOutSampleProvider(source);
             fade.BeginFadeIn(1000);
             float[] buffer = new float[20];
-            int read = fade.Read(buffer, 0, 20);
+            int read = fade.Read(buffer.AsSpan(0, 20));
             Assert.That(read, Is.EqualTo(20));
             Assert.That(buffer[0], Is.EqualTo(0)); // start of fade-in
             Assert.That(buffer[1], Is.EqualTo(0)); // start of fade-in
@@ -107,12 +109,12 @@ namespace NAudioTests.WaveStreams
             var fade = new FadeInOutSampleProvider(source);
             fade.BeginFadeOut(1000);
             float[] buffer = new float[20];
-            int read = fade.Read(buffer, 0, 20);
+            int read = fade.Read(buffer.AsSpan(0, 20));
             Assert.That(read, Is.EqualTo(20));
             Assert.That(buffer[0], Is.EqualTo(100)); // start of fade-in
             Assert.That(buffer[5], Is.EqualTo(50)); // half-way
             Assert.That(buffer[10], Is.EqualTo(0)); // half-way
-            read = fade.Read(buffer, 0, 20);
+            read = fade.Read(buffer.AsSpan(0, 20));
             Assert.That(read, Is.EqualTo(20));
             Assert.That(buffer[0], Is.EqualTo(0));
         }

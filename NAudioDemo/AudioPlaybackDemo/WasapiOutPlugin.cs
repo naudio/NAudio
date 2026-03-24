@@ -1,9 +1,7 @@
-﻿using System;
-using System.Linq;
-using NAudio.Wave;
+using System;
 using System.Windows.Forms;
-
-#pragma warning disable CS0618 // Type or member is obsolete
+using NAudio.CoreAudioApi;
+using NAudio.Wave;
 
 namespace NAudioDemo.AudioPlaybackDemo
 {
@@ -13,12 +11,19 @@ namespace NAudioDemo.AudioPlaybackDemo
 
         public IWavePlayer CreateDevice(int latency)
         {
-            var wasapi = new WasapiOut(
-                settingsPanel.SelectedDevice,
-                settingsPanel.ShareMode,
-                settingsPanel.UseEventCallback,
-                latency);
-            return wasapi;
+            var builder = new WasapiPlayerBuilder()
+                .WithDevice(settingsPanel.SelectedDevice)
+                .WithLatency(latency);
+
+            if (settingsPanel.ShareMode == AudioClientShareMode.Exclusive)
+                builder.WithExclusiveMode();
+            else
+                builder.WithSharedMode();
+
+            if (settingsPanel.UseEventCallback)
+                builder.WithEventSync();
+
+            return builder.Build();
         }
 
         public UserControl CreateSettingsPanel()
@@ -27,20 +32,10 @@ namespace NAudioDemo.AudioPlaybackDemo
             return settingsPanel;
         }
 
-        public string Name
-        {
-            get { return "WasapiOut"; }
-        }
+        public string Name => "WasapiOut";
 
-        public bool IsAvailable
-        {
-            // supported on Vista and above
-            get { return Environment.OSVersion.Version.Major >= 6; }
-        }
+        public bool IsAvailable => Environment.OSVersion.Version.Major >= 6;
 
-        public int Priority
-        {
-            get { return 1; }
-        }
+        public int Priority => 1;
     }
 }

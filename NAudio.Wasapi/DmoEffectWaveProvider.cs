@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using NAudio.Dmo;
 using NAudio.Dmo.Effect;
 
@@ -6,26 +6,26 @@ using NAudio.Dmo.Effect;
 namespace NAudio.Wave
 {
     /// <summary>
-    /// Provide WaveProvider that can apply effects in real time using DMO.
-    /// 
+    /// Applies DMO effects to an audio source in real time.
+    ///
     /// If the audio thread is running on the STA thread, please generate and operate from the same thread.
     /// If the audio thread is running on the MTA thread, please operate on any MTA thread.
     /// </summary>
     /// <typeparam name="TDmoEffector">Types of DMO effectors to use</typeparam>
     /// <typeparam name="TEffectorParam">Parameters of the effect to be used</typeparam>
-    public class DmoEffectWaveProvider<TDmoEffector, TEffectorParam> : IWaveProvider, IDisposable
+    public class DmoEffectWaveProvider<TDmoEffector, TEffectorParam> : IAudioSource, IDisposable
         where TDmoEffector : IDmoEffector<TEffectorParam>, new()
     {
-        private readonly IWaveProvider inputProvider;
+        private readonly IAudioSource inputSource;
         private readonly IDmoEffector<TEffectorParam> effector;
 
         /// <summary>
         /// Create a new DmoEffectWaveProvider
         /// </summary>
-        /// <param name="inputProvider">Input Stream</param>
-        public DmoEffectWaveProvider(IWaveProvider inputProvider)
+        /// <param name="inputSource">Input audio source</param>
+        public DmoEffectWaveProvider(IAudioSource inputSource)
         {
-            this.inputProvider = inputProvider;
+            this.inputSource = inputSource;
             effector = new TDmoEffector();
 
             var mediaObject = effector.MediaObject;
@@ -35,47 +35,32 @@ namespace NAudio.Wave
                 throw new NotSupportedException(@"Dmo Effector Not Supported: " + nameof(TDmoEffector));
             }
 
-            if (!mediaObject.SupportsInputWaveFormat(0, inputProvider.WaveFormat))
+            if (!mediaObject.SupportsInputWaveFormat(0, inputSource.WaveFormat))
             {
-                throw new ArgumentException(@"Unsupported Input Stream format", nameof(inputProvider));
+                throw new ArgumentException(@"Unsupported Input Stream format", nameof(inputSource));
             }
 
             mediaObject.AllocateStreamingResources();
-            mediaObject.SetInputWaveFormat(0, this.inputProvider.WaveFormat);
-            mediaObject.SetOutputWaveFormat(0, this.inputProvider.WaveFormat);
+            mediaObject.SetInputWaveFormat(0, this.inputSource.WaveFormat);
+            mediaObject.SetOutputWaveFormat(0, this.inputSource.WaveFormat);
         }
 
         /// <summary>
         /// Stream Wave Format
         /// </summary>
-        public WaveFormat WaveFormat => inputProvider.WaveFormat;
+        public WaveFormat WaveFormat => inputSource.WaveFormat;
 
         /// <summary>
-        /// Reads data from input stream
+        /// Reads data from input source with in-place DMO effect processing.
+        /// Pins the span and passes it directly to the DMO, avoiding intermediate copies.
         /// </summary>
-        /// <param name="buffer">buffer</param>
-        /// <param name="offset">offset into buffer</param>
-        /// <param name="count">Bytes required</param>
-        /// <returns>Number of bytes read</returns>
-        public int Read(byte[] buffer, int offset, int count)
+        public int Read(Span<byte> buffer)
         {
-            var readNum = inputProvider.Read(buffer, offset, count);
-
-            if (effector == null)
+            var readNum = inputSource.Read(buffer);
+            if (effector != null && readNum > 0)
             {
-                return readNum;
+                effector.MediaObjectInPlace.Process(buffer.Slice(0, readNum), 0, DmoInPlaceProcessFlags.Normal);
             }
-
-            if (effector.MediaObjectInPlace.Process(readNum, offset, buffer, 0, DmoInPlaceProcessFlags.Normal)
-                == DmoInPlaceProcessReturn.HasEffectTail)
-            {
-                var effectTail = new byte[readNum];
-                while (effector.MediaObjectInPlace.Process(readNum, 0, effectTail, 0, DmoInPlaceProcessFlags.Zero) ==
-                       DmoInPlaceProcessReturn.HasEffectTail)
-                {
-                }
-            }
-
             return readNum;
         }
 

@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System;
 using NAudio.Wave;
 
 namespace NAudioTests.WaveStreams
 {
-    class TestWaveProvider : IWaveProvider
+    class TestWaveProvider : IAudioSource
     {
         private int length;
         public int ConstValue { get; set; }
@@ -18,12 +15,12 @@ namespace NAudioTests.WaveStreams
             this.ConstValue = -1;
         }
 
-        public int Read(byte[] buffer, int offset, int count)
+        public int Read(Span<byte> buffer)
         {
             int n = 0;
-            while (n < count && Position < length)
+            while (n < buffer.Length && Position < length)
             {
-                buffer[n + offset] = (ConstValue == -1) ? (byte)Position : (byte)ConstValue;
+                buffer[n] = (ConstValue == -1) ? (byte)Position : (byte)ConstValue;
                 n++; Position++;
             }
             return n;

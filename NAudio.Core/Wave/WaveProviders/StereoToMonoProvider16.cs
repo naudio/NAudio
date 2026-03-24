@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Runtime.InteropServices;
 using NAudio.Utils;
 
 // ReSharper disable once CheckNamespace
@@ -7,16 +8,16 @@ namespace NAudio.Wave
     /// <summary>
     /// Takes a stereo 16 bit input and turns it mono, allowing you to select left or right channel only or mix them together
     /// </summary>
-    public class StereoToMonoProvider16 : IWaveProvider
+    public class StereoToMonoProvider16 : IAudioSource
     {
-        private readonly IWaveProvider sourceProvider;
+        private readonly IAudioSource sourceProvider;
         private byte[] sourceBuffer;
 
         /// <summary>
         /// Creates a new mono waveprovider based on a stereo input
         /// </summary>
         /// <param name="sourceProvider">Stereo 16 bit PCM input</param>
-        public StereoToMonoProvider16(IWaveProvider sourceProvider)
+        public StereoToMonoProvider16(IAudioSource sourceProvider)
         {
             LeftVolume = 0.5f;
             RightVolume = 0.5f;
@@ -54,26 +55,26 @@ namespace NAudio.Wave
         /// <summary>
         /// Reads bytes from this WaveProvider
         /// </summary>
-        public int Read(byte[] buffer, int offset, int count)
+        public int Read(Span<byte> buffer)
         {
-            int sourceBytesRequired = count * 2;
+            int sourceBytesRequired = buffer.Length * 2;
             sourceBuffer = BufferHelpers.Ensure(sourceBuffer, sourceBytesRequired);
-            WaveBuffer sourceWaveBuffer = new WaveBuffer(sourceBuffer);
-            WaveBuffer destWaveBuffer = new WaveBuffer(buffer);
+            var sourceShortSpan = MemoryMarshal.Cast<byte, short>(sourceBuffer.AsSpan());
+            var destShortSpan = MemoryMarshal.Cast<byte, short>(buffer);
 
-            int sourceBytesRead = sourceProvider.Read(sourceBuffer, 0, sourceBytesRequired);
+            int sourceBytesRead = sourceProvider.Read(sourceBuffer.AsSpan(0, sourceBytesRequired));
             int samplesRead = sourceBytesRead / 2;
-            int destOffset = offset / 2;
+            int destOffset = 0;
             for (int sample = 0; sample < samplesRead; sample+=2)
             {
-                short left = sourceWaveBuffer.ShortBuffer[sample];
-                short right = sourceWaveBuffer.ShortBuffer[sample+1];
+                short left = sourceShortSpan[sample];
+                short right = sourceShortSpan[sample+1];
                 float outSample = (left * LeftVolume) + (right * RightVolume);
                 // hard limiting
                 if (outSample > Int16.MaxValue) outSample = Int16.MaxValue;
                 if (outSample < Int16.MinValue) outSample = Int16.MinValue;
 
-                destWaveBuffer.ShortBuffer[destOffset++] = (short)outSample;
+                destShortSpan[destOffset++] = (short)outSample;
             }
             return sourceBytesRead / 2;
         }

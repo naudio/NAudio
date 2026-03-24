@@ -4,26 +4,26 @@ using NAudio.Utils;
 namespace NAudio.Wave.SampleProviders
 {
     /// <summary>
-    /// Converts a sample provider to 24 bit PCM, optionally clipping and adjusting volume along the way
+    /// Converts a sample source to 24 bit PCM, optionally clipping and adjusting volume along the way
     /// </summary>
-    public class SampleToWaveProvider24 : IWaveProvider
+    public class SampleToWaveProvider24 : IAudioSource
     {
-        private readonly ISampleProvider sourceProvider;
+        private readonly ISampleSource sourceProvider;
         private readonly WaveFormat waveFormat;
         private volatile float volume;
         private float[] sourceBuffer;
 
         /// <summary>
-        /// Converts from an ISampleProvider (IEEE float) to a 16 bit PCM IWaveProvider.
+        /// Converts from an ISampleSource (IEEE float) to a 24 bit PCM IAudioSource.
         /// Number of channels and sample rate remain unchanged.
         /// </summary>
         /// <param name="sourceProvider">The input source provider</param>
-        public SampleToWaveProvider24(ISampleProvider sourceProvider)
+        public SampleToWaveProvider24(ISampleSource sourceProvider)
         {
             if (sourceProvider.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
-                throw new ArgumentException("Input source provider must be IEEE float", "sourceProvider");
+                throw new ArgumentException("Input source provider must be IEEE float", nameof(sourceProvider));
             if (sourceProvider.WaveFormat.BitsPerSample != 32)
-                throw new ArgumentException("Input source provider must be 32 bit", "sourceProvider");
+                throw new ArgumentException("Input source provider must be 32 bit", nameof(sourceProvider));
 
             waveFormat = new WaveFormat(sourceProvider.WaveFormat.SampleRate, 24, sourceProvider.WaveFormat.Channels);
 
@@ -34,17 +34,15 @@ namespace NAudio.Wave.SampleProviders
         /// <summary>
         /// Reads bytes from this wave stream, clipping if necessary
         /// </summary>
-        /// <param name="destBuffer">The destination buffer</param>
-        /// <param name="offset">Offset into the destination buffer</param>
-        /// <param name="numBytes">Number of bytes read</param>
+        /// <param name="buffer">The destination buffer</param>
         /// <returns>Number of bytes read.</returns>
-        public int Read(byte[] destBuffer, int offset, int numBytes)
+        public int Read(Span<byte> buffer)
         {
-            var samplesRequired = numBytes / 3;
+            var samplesRequired = buffer.Length / 3;
             sourceBuffer = BufferHelpers.Ensure(sourceBuffer, samplesRequired);
-            var sourceSamples = sourceProvider.Read(sourceBuffer, 0, samplesRequired);
+            var sourceSamples = sourceProvider.Read(sourceBuffer.AsSpan(0, samplesRequired));
 
-            int destOffset = offset;
+            int destOffset = 0;
             for (var sample = 0; sample < sourceSamples; sample++)
             {
                 // adjust volume
@@ -56,17 +54,17 @@ namespace NAudio.Wave.SampleProviders
                     sample32 = -1.0f;
 
                 var sample24 = (int) (sample32*8388607.0);
-                destBuffer[destOffset++] = (byte)(sample24);
-                destBuffer[destOffset++] = (byte)(sample24 >> 8);
-                destBuffer[destOffset++] = (byte)(sample24 >> 16);
+                buffer[destOffset++] = (byte)(sample24);
+                buffer[destOffset++] = (byte)(sample24 >> 8);
+                buffer[destOffset++] = (byte)(sample24 >> 16);
             }
 
             return sourceSamples * 3;
         }
 
         /// <summary>
-        /// The Format of this IWaveProvider
-        /// <see cref="IWaveProvider.WaveFormat"/>
+        /// The Format of this IAudioSource
+        /// <see cref="IAudioSource.WaveFormat"/>
         /// </summary>
         public WaveFormat WaveFormat
         {

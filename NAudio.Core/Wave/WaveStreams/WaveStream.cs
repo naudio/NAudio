@@ -1,15 +1,16 @@
 // created on 27/12/2002 at 20:20
 using System;
 using System.IO;
-
 // ReSharper disable once CheckNamespace
-namespace NAudio.Wave 
+namespace NAudio.Wave
 {
     /// <summary>
     /// Base class for all WaveStream classes. Derives from stream.
     /// </summary>
-    public abstract class WaveStream : Stream, IWaveProvider
+    public abstract class WaveStream : Stream, IWaveProvider, IAudioSource
     {
+        private byte[] spanBridgeBuffer;
+
         /// <summary>
         /// Retrieves the WaveFormat for this stream
         /// </summary>
@@ -19,6 +20,25 @@ namespace NAudio.Wave
         // base class includes long Length get
         // base class includes Read
         // base class includes Dispose
+
+        /// <summary>
+        /// Reads audio data into the provided span, bridging to the array-based
+        /// <see cref="Stream.Read(byte[], int, int)"/> method.
+        /// Subclasses may override for true zero-copy performance.
+        /// </summary>
+        public override int Read(Span<byte> buffer)
+        {
+            if (spanBridgeBuffer == null || spanBridgeBuffer.Length < buffer.Length)
+            {
+                spanBridgeBuffer = new byte[buffer.Length];
+            }
+            int bytesRead = Read(spanBridgeBuffer, 0, buffer.Length);
+            if (bytesRead > 0)
+            {
+                spanBridgeBuffer.AsSpan(0, bytesRead).CopyTo(buffer);
+            }
+            return bytesRead;
+        }
 
         /// <summary>
         /// We can read from this stream

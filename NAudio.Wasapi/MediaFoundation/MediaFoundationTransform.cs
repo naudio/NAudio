@@ -9,14 +9,14 @@ namespace NAudio.MediaFoundation
     /// An abstract base class for simplifying working with Media Foundation Transforms.
     /// You need to override the method that actually creates and configures the transform.
     /// </summary>
-    public abstract class MediaFoundationTransform : IWaveProvider, IDisposable
+    public abstract class MediaFoundationTransform : IAudioSource, IDisposable
     {
         private const int DefaultInputChunkDurationMs = 100;
 
         /// <summary>
         /// The Source Provider
         /// </summary>
-        protected readonly IWaveProvider sourceProvider;
+        protected readonly IAudioSource sourceProvider;
         /// <summary>
         /// The Output WaveFormat
         /// </summary>
@@ -39,7 +39,7 @@ namespace NAudio.MediaFoundation
         /// </summary>
         /// <param name="sourceProvider">The source provider for input data to the transform</param>
         /// <param name="outputFormat">The desired output format</param>
-        public MediaFoundationTransform(IWaveProvider sourceProvider, WaveFormat outputFormat)
+        public MediaFoundationTransform(IAudioSource sourceProvider, WaveFormat outputFormat)
         {
             this.outputWaveFormat = outputFormat;
             this.sourceProvider = sourceProvider;
@@ -108,11 +108,7 @@ namespace NAudio.MediaFoundation
         /// <summary>
         /// Reads data out of the source, passing it through the transform
         /// </summary>
-        /// <param name="buffer">Output buffer</param>
-        /// <param name="offset">Offset within buffer to write to</param>
-        /// <param name="count">Desired byte count</param>
-        /// <returns>Number of bytes read</returns>
-        public int Read(byte[] buffer, int offset, int count)
+        public int Read(Span<byte> buffer)
         {
             if (disposed)
                 throw new ObjectDisposedException(GetType().FullName);
@@ -127,16 +123,16 @@ namespace NAudio.MediaFoundation
 
             if (outputBufferCount > 0)
             {
-                bytesWritten += ReadFromOutputBuffer(buffer, offset, count - bytesWritten);
+                bytesWritten += ReadFromOutputBuffer(buffer);
             }
 
-            while (bytesWritten < count)
+            while (bytesWritten < buffer.Length)
             {
                 var sample = ReadFromSource();
                 if (sample == null)
                 {
                     EndStreamAndDrain();
-                    bytesWritten += ReadFromOutputBuffer(buffer, offset + bytesWritten, count - bytesWritten);
+                    bytesWritten += ReadFromOutputBuffer(buffer.Slice(bytesWritten));
                     ClearOutputBuffer();
                     break;
                 }
@@ -156,7 +152,7 @@ namespace NAudio.MediaFoundation
                 }
 
                 ReadFromTransform();
-                bytesWritten += ReadFromOutputBuffer(buffer, offset + bytesWritten, count - bytesWritten);
+                bytesWritten += ReadFromOutputBuffer(buffer.Slice(bytesWritten));
             }
 
             return bytesWritten;
@@ -249,7 +245,7 @@ namespace NAudio.MediaFoundation
 
         private IMFSample ReadFromSource()
         {
-            int bytesRead = sourceProvider.Read(sourceBuffer, 0, sourceBuffer.Length);
+            int bytesRead = sourceProvider.Read(sourceBuffer.AsSpan());
             if (bytesRead == 0) return null;
 
             var mediaBuffer = MediaFoundationApi.CreateMemoryBuffer(bytesRead);
@@ -281,10 +277,10 @@ namespace NAudio.MediaFoundation
             }
         }
 
-        private int ReadFromOutputBuffer(byte[] buffer, int offset, int needed)
+        private int ReadFromOutputBuffer(Span<byte> destination)
         {
-            int bytesFromOutputBuffer = Math.Min(needed, outputBufferCount);
-            Array.Copy(outputBuffer, outputBufferOffset, buffer, offset, bytesFromOutputBuffer);
+            int bytesFromOutputBuffer = Math.Min(destination.Length, outputBufferCount);
+            outputBuffer.AsSpan(outputBufferOffset, bytesFromOutputBuffer).CopyTo(destination);
             outputBufferOffset += bytesFromOutputBuffer;
             outputBufferCount -= bytesFromOutputBuffer;
             if (outputBufferCount == 0)

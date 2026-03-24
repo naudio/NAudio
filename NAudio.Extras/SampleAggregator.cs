@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using NAudio.Dsp;
 using NAudio.Wave;
@@ -8,7 +8,7 @@ namespace NAudio.Extras
     /// <summary>
     /// Demo sample provider that performs FFTs
     /// </summary>
-    public class SampleAggregator : ISampleProvider
+    public class SampleAggregator : ISampleSource
     {
         /// <summary>
         /// Raised to indicate the maximum volume level in this period
@@ -37,7 +37,7 @@ namespace NAudio.Extras
         private int fftPos;
         private readonly int fftLength;
         private readonly int m;
-        private readonly ISampleProvider source;
+        private readonly ISampleSource source;
 
         private readonly int channels;
 
@@ -46,7 +46,7 @@ namespace NAudio.Extras
         /// </summary>
         /// <param name="source">source sample provider</param>
         /// <param name="fftLength">FFT length, must be a power of 2</param>
-        public SampleAggregator(ISampleProvider source, int fftLength = 1024)
+        public SampleAggregator(ISampleSource source, int fftLength = 1024)
         {
             channels = source.WaveFormat.Channels;
             if (!IsPowerOfTwo(fftLength))
@@ -108,13 +108,13 @@ namespace NAudio.Extras
         /// <summary>
         /// Reads samples from this sample provider
         /// </summary>
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
-            var samplesRead = source.Read(buffer, offset, count);
+            var samplesRead = source.Read(buffer);
 
             for (int n = 0; n < samplesRead; n+=channels)
             {
-                Add(buffer[n+offset]);
+                Add(buffer[n]);
             }
             return samplesRead;
         }

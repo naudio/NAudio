@@ -26,7 +26,7 @@ namespace NAudioTests.WaveStreams
             var input1 = new FloatArrayWaveProvider(format, 1f, 2f);
             var input2 = new FloatArrayWaveProvider(format, 3f, 4f);
 
-            var mixer = new MixingWaveProvider32(new IWaveProvider[] { input1, input2 });
+            var mixer = new MixingWaveProvider32(new IAudioSource[] { input1, input2 });
 
             Assert.That(mixer.InputCount, Is.EqualTo(2));
             Assert.That(mixer.WaveFormat, Is.EqualTo(format));
@@ -70,30 +70,24 @@ namespace NAudioTests.WaveStreams
         {
             var mixer = new MixingWaveProvider32();
 
-            Assert.Throws<ArgumentException>(() => mixer.Read(new byte[10], 0, 10));
+            Assert.Throws<ArgumentException>(() => mixer.Read(new byte[10].AsSpan()));
         }
 
         [Test]
-        public void ReadWithNoInputsReturnsZeroAndClearsRequestedRegion()
+        public void ReadWithNoInputsReturnsZeroAndClearsBuffer()
         {
             var mixer = new MixingWaveProvider32();
-            var buffer = new byte[16];
+            var buffer = new byte[8];
             for (int i = 0; i < buffer.Length; i++)
             {
                 buffer[i] = 0x7F;
             }
 
-            var read = mixer.Read(buffer, 4, 8);
+            var read = mixer.Read(buffer.AsSpan());
 
             Assert.That(read, Is.EqualTo(0));
-            Assert.That(buffer[0], Is.EqualTo(0x7F));
-            Assert.That(buffer[1], Is.EqualTo(0x7F));
-            Assert.That(buffer[2], Is.EqualTo(0x7F));
-            Assert.That(buffer[3], Is.EqualTo(0x7F));
-            Assert.That(buffer[4], Is.EqualTo(0));
-            Assert.That(buffer[11], Is.EqualTo(0));
-            Assert.That(buffer[12], Is.EqualTo(0x7F));
-            Assert.That(buffer[15], Is.EqualTo(0x7F));
+            Assert.That(buffer[0], Is.EqualTo(0));
+            Assert.That(buffer[7], Is.EqualTo(0));
         }
 
         [Test]
@@ -102,10 +96,10 @@ namespace NAudioTests.WaveStreams
             var format = WaveFormat.CreateIeeeFloatWaveFormat(44100, 1);
             var input1 = new FloatArrayWaveProvider(format, 1f, 2f, 3f, 4f);
             var input2 = new FloatArrayWaveProvider(format, 0.5f, 1.5f, 2.5f, 3.5f);
-            var mixer = new MixingWaveProvider32(new IWaveProvider[] { input1, input2 });
+            var mixer = new MixingWaveProvider32(new IAudioSource[] { input1, input2 });
 
             var buffer = new byte[16];
-            var read = mixer.Read(buffer, 0, buffer.Length);
+            var read = mixer.Read(buffer.AsSpan());
 
             Assert.That(read, Is.EqualTo(16));
             Assert.That(ReadFloats(buffer, 0, read), Is.EqualTo(new[] { 1.5f, 3.5f, 5.5f, 7.5f }));
@@ -117,27 +111,13 @@ namespace NAudioTests.WaveStreams
             var format = WaveFormat.CreateIeeeFloatWaveFormat(44100, 1);
             var shortInput = new FloatArrayWaveProvider(format, 10f, 20f);
             var longInput = new FloatArrayWaveProvider(format, 1f, 2f, 3f, 4f);
-            var mixer = new MixingWaveProvider32(new IWaveProvider[] { shortInput, longInput });
+            var mixer = new MixingWaveProvider32(new IAudioSource[] { shortInput, longInput });
 
             var buffer = new byte[16];
-            var read = mixer.Read(buffer, 0, buffer.Length);
+            var read = mixer.Read(buffer.AsSpan());
 
             Assert.That(read, Is.EqualTo(16));
             Assert.That(ReadFloats(buffer, 0, read), Is.EqualTo(new[] { 11f, 22f, 3f, 4f }));
-        }
-
-        [Test]
-        public void ReadUsesOffsetWhenWritingMixedAudio()
-        {
-            var format = WaveFormat.CreateIeeeFloatWaveFormat(44100, 1);
-            var input = new FloatArrayWaveProvider(format, 10f, 20f);
-            var mixer = new MixingWaveProvider32(new IWaveProvider[] { input });
-
-            var buffer = FloatsToBytes(999f, 999f, 999f, 999f);
-            var read = mixer.Read(buffer, 4, 8);
-
-            Assert.That(read, Is.EqualTo(8));
-            Assert.That(ReadFloats(buffer, 0, buffer.Length), Is.EqualTo(new[] { 999f, 10f, 20f, 999f }));
         }
 
         [Test]
@@ -146,10 +126,10 @@ namespace NAudioTests.WaveStreams
             var format = WaveFormat.CreateIeeeFloatWaveFormat(44100, 1);
             var shortInput = new FloatArrayWaveProvider(format, 100f);
             var longInput = new FloatArrayWaveProvider(format, 1f, 2f, 3f);
-            var mixer = new MixingWaveProvider32(new IWaveProvider[] { shortInput, longInput });
+            var mixer = new MixingWaveProvider32(new IAudioSource[] { shortInput, longInput });
 
             var buffer = new byte[12];
-            var read = mixer.Read(buffer, 0, buffer.Length);
+            var read = mixer.Read(buffer.AsSpan());
 
             Assert.That(read, Is.EqualTo(12));
             Assert.That(ReadFloats(buffer, 0, read), Is.EqualTo(new[] { 101f, 2f, 3f }));
@@ -169,14 +149,6 @@ namespace NAudioTests.WaveStreams
             Assert.Throws<ArgumentNullException>(() => mixer.AddInputStream(null));
         }
 
-        [Test]
-        public void ReadThrowsWhenOffsetIsNotOnSampleBoundary()
-        {
-            var mixer = new MixingWaveProvider32();
-
-            Assert.Throws<ArgumentException>(() => mixer.Read(new byte[12], 2, 8));
-        }
-
         private static float[] ReadFloats(byte[] buffer, int offset, int byteCount)
         {
             var data = new byte[byteCount];
@@ -193,7 +165,7 @@ namespace NAudioTests.WaveStreams
             return bytes;
         }
 
-        private sealed class FloatArrayWaveProvider : IWaveProvider
+        private sealed class FloatArrayWaveProvider : IAudioSource
         {
             private readonly byte[] bytes;
             private int position;
@@ -206,13 +178,13 @@ namespace NAudioTests.WaveStreams
 
             public WaveFormat WaveFormat { get; }
 
-            public int Read(byte[] buffer, int offset, int count)
+            public int Read(Span<byte> buffer)
             {
                 var available = bytes.Length - position;
-                var toCopy = Math.Min(count, available);
+                var toCopy = Math.Min(buffer.Length, available);
                 if (toCopy > 0)
                 {
-                    Buffer.BlockCopy(bytes, position, buffer, offset, toCopy);
+                    bytes.AsSpan(position, toCopy).CopyTo(buffer);
                     position += toCopy;
                 }
                 return toCopy;

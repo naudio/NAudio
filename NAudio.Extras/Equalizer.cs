@@ -1,3 +1,4 @@
+using System;
 using NAudio.Dsp;
 using NAudio.Wave;
 
@@ -9,9 +10,9 @@ namespace NAudio.Extras
     /// Call Update after you've updated the bands
     /// Potentially to be added to NAudio in a future version
     /// </summary>
-    public class Equalizer : ISampleProvider
+    public class Equalizer : ISampleSource
     {
-        private readonly ISampleProvider sourceProvider;
+        private readonly ISampleSource sourceProvider;
         private readonly EqualizerBand[] bands;
         private readonly BiQuadFilter[,] filters;
         private readonly int channels;
@@ -21,7 +22,7 @@ namespace NAudio.Extras
         /// <summary>
         /// Creates a new Equalizer
         /// </summary>
-        public Equalizer(ISampleProvider sourceProvider, EqualizerBand[] bands)
+        public Equalizer(ISampleSource sourceProvider, EqualizerBand[] bands)
         {
             this.sourceProvider = sourceProvider;
             this.bands = bands;
@@ -63,9 +64,9 @@ namespace NAudio.Extras
         /// <summary>
         /// Reads samples from this Sample Provider
         /// </summary>
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
-            int samplesRead = sourceProvider.Read(buffer, offset, count);
+            int samplesRead = sourceProvider.Read(buffer);
 
             if (updated)
             {
@@ -75,11 +76,11 @@ namespace NAudio.Extras
 
             for (int n = 0; n < samplesRead; n++)
             {
-                int ch = n % channels; 
-                
+                int ch = n % channels;
+
                 for (int band = 0; band < bandCount; band++)
                 {
-                    buffer[offset + n] = filters[ch, band].Transform(buffer[offset + n]);
+                    buffer[n] = filters[ch, band].Transform(buffer[n]);
                 }
             }
             return samplesRead;

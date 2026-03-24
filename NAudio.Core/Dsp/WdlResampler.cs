@@ -151,19 +151,16 @@ namespace NAudio.Dsp
         /// <summary>
         /// Prepare
         /// note that it is safe to call ResamplePrepare without calling ResampleOut (the next call of ResamplePrepare will function as normal)
-        /// nb inbuffer was WDL_ResampleSample **, returning a place to put the in buffer, so we return a buffer and offset
         /// </summary>
         /// <param name="out_samples">req_samples is output samples desired if !wantInputDriven, or if wantInputDriven is input samples that we have</param>
-        /// <param name="nch"></param>
-        /// <param name="inbuffer"></param>
-        /// <param name="inbufferOffset"></param>
-        /// <returns>returns number of samples desired (put these into *inbuffer)</returns>
-        public int ResamplePrepare(int out_samples, int nch, out WDL_ResampleSample[] inbuffer, out int inbufferOffset)
+        /// <param name="nch">number of channels</param>
+        /// <param name="inbuffer">a span into the internal buffer where input samples should be written</param>
+        /// <returns>returns number of samples desired (put these into inbuffer)</returns>
+        public int ResamplePrepare(int out_samples, int nch, out Span<WDL_ResampleSample> inbuffer)
         {
             if (nch > WDL_RESAMPLE_MAX_NCH || nch < 1)
             {
-                inbuffer = null;
-                inbufferOffset = 0;
+                inbuffer = default;
                 return 0;
             }
 
@@ -208,8 +205,7 @@ namespace NAudio.Dsp
                 sreq = sz;
             }
 
-            inbuffer = m_rsinbuf;
-            inbufferOffset = m_samples_in_rsinbuf * nch;
+            inbuffer = m_rsinbuf.AsSpan(m_samples_in_rsinbuf * nch, sreq * nch);
 
             m_last_requested = sreq;
             return sreq;
@@ -220,7 +216,7 @@ namespace NAudio.Dsp
         /// do NOT call with nsamples_in greater than the value returned from resamplerprpare()! the extra samples will be ignored.
         /// returns number of samples successfully outputted to out
         /// </summary>
-        public int ResampleOut(WDL_ResampleSample[] outBuffer, int outBufferIndex, int nsamples_in, int nsamples_out, int nch)
+        public int ResampleOut(Span<WDL_ResampleSample> outBuffer, int nsamples_in, int nsamples_out, int nch)
         {
             if (nch > WDL_RESAMPLE_MAX_NCH || nch < 1)
             {
@@ -268,7 +264,7 @@ namespace NAudio.Dsp
             double drspos = m_ratio;
             int localin = 0; // localin is an index into m_rsinbuf
 
-            int outptr = outBufferIndex;  // outptr is an index into  outBuffer;
+            int outptr = 0;  // outptr is an index into  outBuffer;
 
             int ns = nsamples_out;
 
@@ -363,7 +359,7 @@ namespace NAudio.Dsp
                         int ipos = (int)srcpos;
                         if (ipos >= rsinbuf_availtemp) break; // quit decoding, not enough input samples
 
-                        Array.Copy(m_rsinbuf, localin + ipos * nch, outBuffer, outptr, nch);
+                        m_rsinbuf.AsSpan(localin + ipos * nch, nch).CopyTo(outBuffer.Slice(outptr));
                         outptr += nch;
                         srcpos += drspos;
                         ret++;
@@ -535,7 +531,7 @@ namespace NAudio.Dsp
         }
 
         // SincSample(WDL_ResampleSample *outptr, WDL_ResampleSample *inptr, double fracpos, int nch, WDL_SincFilterSample *filter, int filtsz)
-        private void SincSample(WDL_ResampleSample[] outBuffer, int outBufferIndex, WDL_ResampleSample[] inBuffer, int inBufferIndex, double fracpos, int nch, WDL_SincFilterSample[] filter, int filterIndex, int filtsz)
+        private void SincSample(Span<WDL_ResampleSample> outBuffer, int outBufferIndex, WDL_ResampleSample[] inBuffer, int inBufferIndex, double fracpos, int nch, WDL_SincFilterSample[] filter, int filterIndex, int filtsz)
         {
             int oversize = m_lp_oversize;
             fracpos *= oversize;
@@ -561,7 +557,7 @@ namespace NAudio.Dsp
         }
 
         // SincSample1(WDL_ResampleSample* outptr, WDL_ResampleSample* inptr, double fracpos, WDL_SincFilterSample* filter, int filtsz)
-        private void SincSample1(WDL_ResampleSample[] outBuffer, int outBufferIndex, WDL_ResampleSample[] inBuffer, int inBufferIndex, double fracpos, WDL_SincFilterSample[] filter, int filterIndex, int filtsz)
+        private void SincSample1(Span<WDL_ResampleSample> outBuffer, int outBufferIndex, WDL_ResampleSample[] inBuffer, int inBufferIndex, double fracpos, WDL_SincFilterSample[] filter, int filterIndex, int filtsz)
         {
             int oversize = m_lp_oversize;
             fracpos *= oversize;
@@ -584,7 +580,7 @@ namespace NAudio.Dsp
         }
 
         // SincSample2(WDL_ResampleSample* outptr, WDL_ResampleSample* inptr, double fracpos, WDL_SincFilterSample* filter, int filtsz)
-        private void SincSample2(WDL_ResampleSample[] outptr, int outBufferIndex, WDL_ResampleSample[] inBuffer, int inBufferIndex, double fracpos, WDL_SincFilterSample[] filter, int filterIndex, int filtsz)
+        private void SincSample2(Span<WDL_ResampleSample> outptr, int outBufferIndex, WDL_ResampleSample[] inBuffer, int inBufferIndex, double fracpos, WDL_SincFilterSample[] filter, int filterIndex, int filtsz)
         {
             int oversize = m_lp_oversize;
             fracpos *= oversize;
@@ -673,7 +669,7 @@ namespace NAudio.Dsp
 
             }
 
-            public void Apply(WDL_ResampleSample[] inBuffer, int inIndex, WDL_ResampleSample[] outBuffer, int outIndex, int ns, int span, int w)
+            public void Apply(ReadOnlySpan<WDL_ResampleSample> inBuffer, int inIndex, Span<WDL_ResampleSample> outBuffer, int outIndex, int ns, int span, int w)
             {
                 double b0 = m_b0, b1 = m_b1, b2 = m_b2, a1 = m_a1, a2 = m_a2;
 

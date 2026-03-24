@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Runtime.InteropServices;
 using NAudio.Utils;
 
 namespace NAudio.Wave
@@ -6,16 +7,16 @@ namespace NAudio.Wave
     /// <summary>
     /// Converts from mono to stereo, allowing freedom to route all, some, or none of the incoming signal to left or right channels
     /// </summary>
-    public class MonoToStereoProvider16 : IWaveProvider
+    public class MonoToStereoProvider16 : IAudioSource
     {
-        private readonly IWaveProvider sourceProvider;
+        private readonly IAudioSource sourceProvider;
         private byte[] sourceBuffer;
 
         /// <summary>
         /// Creates a new stereo waveprovider based on a mono input
         /// </summary>
         /// <param name="sourceProvider">Mono 16 bit PCM input</param>
-        public MonoToStereoProvider16(IWaveProvider sourceProvider)
+        public MonoToStereoProvider16(IAudioSource sourceProvider)
         {
             if (sourceProvider.WaveFormat.Encoding != WaveFormatEncoding.Pcm)
             {
@@ -53,21 +54,21 @@ namespace NAudio.Wave
         /// <summary>
         /// Reads bytes from this WaveProvider
         /// </summary>
-        public int Read(byte[] buffer, int offset, int count)
+        public int Read(Span<byte> buffer)
         {
-            var sourceBytesRequired = count / 2;
+            var sourceBytesRequired = buffer.Length / 2;
             sourceBuffer = BufferHelpers.Ensure(this.sourceBuffer, sourceBytesRequired);
-            var sourceWaveBuffer = new WaveBuffer(sourceBuffer);
-            var destWaveBuffer = new WaveBuffer(buffer);
+            var sourceShortSpan = MemoryMarshal.Cast<byte, short>(sourceBuffer.AsSpan());
+            var destShortSpan = MemoryMarshal.Cast<byte, short>(buffer);
 
-            var sourceBytesRead = sourceProvider.Read(sourceBuffer, 0, sourceBytesRequired);
+            var sourceBytesRead = sourceProvider.Read(sourceBuffer.AsSpan(0, sourceBytesRequired));
             var samplesRead = sourceBytesRead / 2;
-            var destOffset = offset / 2;
+            int destOffset = 0;
             for (var sample = 0; sample < samplesRead; sample++)
             {
-                short sampleVal = sourceWaveBuffer.ShortBuffer[sample];
-                destWaveBuffer.ShortBuffer[destOffset++] = (short)(LeftVolume * sampleVal);
-                destWaveBuffer.ShortBuffer[destOffset++] = (short)(RightVolume * sampleVal);
+                short sampleVal = sourceShortSpan[sample];
+                destShortSpan[destOffset++] = (short)(LeftVolume * sampleVal);
+                destShortSpan[destOffset++] = (short)(RightVolume * sampleVal);
             }
             return samplesRead * 4;
         }

@@ -1,6 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+using System;
+using System.Runtime.InteropServices;
 using NUnit.Framework;
 using NAudio.Wave;
 
@@ -13,20 +12,20 @@ namespace NAudioTests.WaveStreams
         [Test]
         public void LeftChannelOnly()
         {
-            IWaveProvider monoStream = new TestMonoProvider();
+            IAudioSource monoStream = new TestMonoProvider();
             MonoToStereoProvider16 stereo = new MonoToStereoProvider16(monoStream);
             stereo.LeftVolume = 1.0f;
             stereo.RightVolume = 0.0f;
             int samples = 1000;
             byte[] buffer = new byte[samples * 2];
-            int read = stereo.Read(buffer, 0, buffer.Length);
+            int read = stereo.Read(buffer.AsSpan());
             Assert.That(read, Is.EqualTo(buffer.Length), "bytes read");
-            WaveBuffer waveBuffer = new WaveBuffer(buffer);
+            var shortBuffer = MemoryMarshal.Cast<byte, short>(buffer.AsSpan());
             short expected = 0;
             for (int sample = 0; sample < samples; sample+=2)
             {
-                short sampleLeft = waveBuffer.ShortBuffer[sample];
-                short sampleRight = waveBuffer.ShortBuffer[sample+1];
+                short sampleLeft = shortBuffer[sample];
+                short sampleRight = shortBuffer[sample+1];
                 Assert.That(sampleLeft, Is.EqualTo(expected++), "sample left");
                 Assert.That(sampleRight, Is.EqualTo(0), "sample right");
             }
@@ -38,14 +37,13 @@ namespace NAudioTests.WaveStreams
     {
         short current;
 
-        public override int Read(short[] buffer, int offset, int sampleCount)
+        public override int Read(Span<short> buffer)
         {
-            for (int sample = 0; sample < sampleCount; sample++)
+            for (int sample = 0; sample < buffer.Length; sample++)
             {
-                buffer[offset + sample] = current++;
+                buffer[sample] = current++;
             }
-            return sampleCount;
+            return buffer.Length;
         }
     }
 }
-

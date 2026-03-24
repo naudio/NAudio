@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using NAudio.Wave.SampleProviders;
 
 // ReSharper disable once CheckNamespace
@@ -13,7 +14,7 @@ namespace NAudio.Wave
     /// ISampleProvider, making it possibly the only stage in your audio
     /// pipeline necessary for simple playback scenarios
     /// </summary>
-    public class AudioFileReader : WaveStream, ISampleProvider
+    public class AudioFileReader : WaveStream, ISampleSource
     {
         private WaveStream readerStream; // the waveStream which we will use for all positioning
         private readonly SampleChannel sampleChannel; // sample provider that gives us most stuff we need
@@ -115,24 +116,20 @@ namespace NAudio.Wave
         /// <returns>Number of bytes read</returns>
         public override int Read(byte[] buffer, int offset, int count)
         {
-            var waveBuffer = new WaveBuffer(buffer);
-            int samplesRequired = count / 4;
-            int samplesRead = Read(waveBuffer.FloatBuffer, offset / 4, samplesRequired);
+            var floatSpan = MemoryMarshal.Cast<byte, float>(
+                buffer.AsSpan(offset, count));
+            int samplesRead = Read(floatSpan);
             return samplesRead * 4;
         }
 
         /// <summary>
-        /// Reads audio from this sample provider
+        /// Reads audio samples from this file reader
         /// </summary>
-        /// <param name="buffer">Sample buffer</param>
-        /// <param name="offset">Offset into sample buffer</param>
-        /// <param name="count">Number of samples required</param>
-        /// <returns>Number of samples read</returns>
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
             lock (lockObject)
             {
-                return sampleChannel.Read(buffer, offset, count);
+                return sampleChannel.Read(buffer);
             }
         }
 

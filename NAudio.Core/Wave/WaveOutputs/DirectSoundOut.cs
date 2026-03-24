@@ -27,7 +27,7 @@ namespace NAudio.Wave
         private int desiredLatency;
         private Guid device;
         private byte[] samples;
-        private IWaveProvider waveStream = null;
+        private IAudioSource waveStream = null;
         private IDirectSound directSound = null;
         private IDirectSoundBuffer primarySoundBuffer = null;
         private IDirectSoundBuffer secondaryBuffer = null;
@@ -69,7 +69,7 @@ namespace NAudio.Wave
                 device.Guid = new Guid(guidBytes);
             }
             device.Description =  Marshal.PtrToStringAnsi(lpcstrDescription);
-            if (lpcstrModule != null)
+            if (lpcstrModule != IntPtr.Zero)
             {
                 device.ModuleName = Marshal.PtrToStringAnsi(lpcstrModule);
             }
@@ -167,8 +167,9 @@ namespace NAudio.Wave
                 // No joy - abort the thread!
                 if (notifyThread != null)
                 {
-                    notifyThread.Abort();
                     notifyThread = null;
+                    // Thread.Abort is not supported on .NET 8+; the thread will
+                    // exit on its own when it next checks playbackState.
                 }
             }
         }
@@ -227,11 +228,11 @@ namespace NAudio.Wave
         /// <summary>
         /// Initialise playback
         /// </summary>
-        /// <param name="waveProvider">The waveprovider to be played</param>
-        public void Init(IWaveProvider waveProvider)
+        /// <param name="audioSource">The audio source to be played</param>
+        public void Init(IAudioSource audioSource)
         {
-            this.waveStream = waveProvider;
-            this.waveFormat = waveProvider.WaveFormat;
+            this.waveStream = audioSource;
+            this.waveFormat = audioSource.WaveFormat;
         }
 
         private void InitializeDirectSound()
@@ -641,7 +642,7 @@ namespace NAudio.Wave
             else
             {
                 // Read data from stream (Should this be inserted between the lock / unlock?)
-                bytesRead = waveStream.Read(samples, 0, bytesToCopy);
+                bytesRead = waveStream.Read(samples.AsSpan(0, bytesToCopy));
 
                 if (bytesRead == 0)
                 {

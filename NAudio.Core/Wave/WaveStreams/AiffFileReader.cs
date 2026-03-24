@@ -209,7 +209,7 @@ namespace NAudio.Wave
 
         /// <summary>
         /// Reads bytes from the AIFF File
-        /// <see cref="Stream.Read"/>
+        /// <see cref="Stream.Read(byte[], int, int)"/>
         /// </summary>
         public override int Read(byte[] array, int offset, int count)
         {

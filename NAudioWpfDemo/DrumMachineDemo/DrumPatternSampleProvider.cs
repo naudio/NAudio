@@ -1,9 +1,10 @@
-﻿using NAudio.Wave;
+using System;
+using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 
 namespace NAudioWpfDemo.DrumMachineDemo
 {
-    class DrumPatternSampleProvider : ISampleProvider
+    class DrumPatternSampleProvider : ISampleSource
     {
         private readonly MixingSampleProvider mixer;
         private readonly WaveFormat waveFormat;
@@ -25,16 +26,15 @@ namespace NAudioWpfDemo.DrumMachineDemo
 
         public WaveFormat WaveFormat => waveFormat;
 
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
-            foreach (var mixerInput in sequencer.GetNextMixerInputs(count))
+            foreach (var mixerInput in sequencer.GetNextMixerInputs(buffer.Length))
             {
                 mixer.AddMixerInput(mixerInput);
             }
 
-            // now we just need to read from the mixer
-            var samplesRead = mixer.Read(buffer, offset, count);
-            while (samplesRead < count)
+            var samplesRead = mixer.Read(buffer);
+            while (samplesRead < buffer.Length)
             {
                 buffer[samplesRead++] = 0;
             }

@@ -1,15 +1,15 @@
-﻿using System;
+using System;
 using NAudio.Utils;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave
 {
     /// <summary>
-    /// Provides a buffered store of samples
-    /// Read method will return queued samples or fill buffer with zeroes
-    /// Now backed by a circular buffer
+    /// Provides a buffered store of samples.
+    /// Read method will return queued samples or fill buffer with zeroes.
+    /// Backed by a circular buffer.
     /// </summary>
-    public class BufferedWaveProvider : IWaveProvider
+    public class BufferedWaveProvider : IAudioSource
     {
         private readonly CircularBuffer circularBuffer;
         private readonly WaveFormat waveFormat;
@@ -28,8 +28,8 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// If true, always read the amount of data requested, padding with zeroes if necessary
-        /// By default is set to true
+        /// If true, always read the amount of data requested, padding with zeroes if necessary.
+        /// By default is set to true.
         /// </summary>
         public bool ReadFully { get; set; }
 
@@ -45,8 +45,8 @@ namespace NAudio.Wave
             TimeSpan.FromSeconds((double)circularBuffer.MaxLength / WaveFormat.AverageBytesPerSecond);
 
         /// <summary>
-        /// If true, when the buffer is full, start throwing away data
-        /// if false, AddSamples will throw an exception when buffer is full
+        /// If true, when the buffer is full, start throwing away data.
+        /// If false, AddSamples will throw an exception when buffer is full.
         /// </summary>
         public bool DiscardOnBufferOverflow { get; set; }
 
@@ -67,29 +67,36 @@ namespace NAudio.Wave
         public WaveFormat WaveFormat => waveFormat;
 
         /// <summary>
-        /// Adds samples. Takes a copy of buffer, so that buffer can be reused if necessary
+        /// Adds samples from a span. Takes a copy of the data.
         /// </summary>
-        public void AddSamples(byte[] buffer, int offset, int count)
+        public void AddSamples(ReadOnlySpan<byte> data)
         {
-            var written = circularBuffer.Write(buffer, offset, count);
-            if (written < count && !DiscardOnBufferOverflow)
+            var written = circularBuffer.Write(data);
+            if (written < data.Length && !DiscardOnBufferOverflow)
             {
                 throw new InvalidOperationException("Buffer full");
             }
         }
 
         /// <summary>
-        /// Reads from this WaveProvider
-        /// Will always return count bytes, since we will zero-fill the buffer if not enough available
+        /// Adds samples. Takes a copy of buffer, so that buffer can be reused if necessary.
         /// </summary>
-        public int Read(byte[] buffer, int offset, int count)
+        public void AddSamples(byte[] buffer, int offset, int count)
         {
-            int read = circularBuffer.Read(buffer, offset, count);
-            if (ReadFully && read < count)
+            AddSamples(buffer.AsSpan(offset, count));
+        }
+
+        /// <summary>
+        /// Reads from this audio source.
+        /// Will always return the full span if ReadFully is set, zero-filling if not enough data available.
+        /// </summary>
+        public int Read(Span<byte> buffer)
+        {
+            int read = circularBuffer.Read(buffer);
+            if (ReadFully && read < buffer.Length)
             {
-                // zero the end of the buffer
-                Array.Clear(buffer, offset + read, count - read);
-                read = count;
+                buffer.Slice(read).Clear();
+                read = buffer.Length;
             }
             return read;
         }

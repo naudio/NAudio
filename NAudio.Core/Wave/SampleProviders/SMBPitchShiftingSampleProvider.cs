@@ -9,19 +9,19 @@ namespace NAudio.Wave.SampleProviders
     /// Based on: the port of Stephan M. Bernsee´s pitch shifting class
     /// Port site: https://sites.google.com/site/mikescoderama/pitch-shifting
     /// Test application and github site: https://github.com/Freefall63/NAudio-Pitchshifter
-    /// 
+    ///
     /// NOTE: I strongly advice to add a Limiter for post-processing.
     /// For my needs the FastAttackCompressor1175 provides acceptable results:
     /// https://github.com/Jiyuu/SkypeFX/blob/master/JSNet/FastAttackCompressor1175.cs
     ///
     /// UPDATE: Added a simple Limiter based on the pydirac implementation.
     /// https://github.com/echonest/remix/blob/master/external/pydirac225/source/Dirac_LE.cpp
-    /// 
+    ///
     ///</summary>
-    public class SmbPitchShiftingSampleProvider : ISampleProvider
+    public class SmbPitchShiftingSampleProvider : ISampleSource
     {
         //Shifter objects
-        private readonly ISampleProvider sourceStream;
+        private readonly ISampleSource sourceStream;
         private readonly WaveFormat waveFormat;
         private float pitch = 1f;
         private readonly int fftSize;
@@ -38,7 +38,7 @@ namespace NAudio.Wave.SampleProviders
         /// Creates a new SMB Pitch Shifting Sample Provider with default settings
         /// </summary>
         /// <param name="sourceProvider">Source provider</param>
-        public SmbPitchShiftingSampleProvider(ISampleProvider sourceProvider)
+        public SmbPitchShiftingSampleProvider(ISampleSource sourceProvider)
             : this(sourceProvider, 4096, 4L, 1f)
         {
         }
@@ -50,7 +50,7 @@ namespace NAudio.Wave.SampleProviders
         /// <param name="fftSize">FFT Size (any power of two &lt;= 4096: 4096, 2048, 1024, 512, ...)</param>
         /// <param name="osamp">Oversampling (number of overlapping windows)</param>
         /// <param name="initialPitch">Initial pitch (0.5f = octave down, 1.0f = normal, 2.0f = octave up)</param>
-        public SmbPitchShiftingSampleProvider(ISampleProvider sourceProvider, int fftSize, long osamp,
+        public SmbPitchShiftingSampleProvider(ISampleSource sourceProvider, int fftSize, long osamp,
             float initialPitch)
         {
             sourceStream = sourceProvider;
@@ -63,9 +63,9 @@ namespace NAudio.Wave.SampleProviders
         /// <summary>
         /// Read from this sample provider
         /// </summary>
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
-            int sampRead = sourceStream.Read(buffer, offset, count);
+            int sampRead = sourceStream.Read(buffer);
             if (pitch == 1f)
             {
                 //Nothing to do.
@@ -75,14 +75,14 @@ namespace NAudio.Wave.SampleProviders
             {
                 var mono = new float[sampRead];
                 var index = 0;
-                for (var sample = offset; sample <= sampRead + offset - 1; sample++)
+                for (var sample = 0; sample <= sampRead - 1; sample++)
                 {
                     mono[index] = buffer[sample];
                     index += 1;
                 }
                 shifterLeft.PitchShift(pitch, sampRead, fftSize, osamp, waveFormat.SampleRate, mono);
                 index = 0;
-                for (var sample = offset; sample <= sampRead + offset - 1; sample++)
+                for (var sample = 0; sample <= sampRead - 1; sample++)
                 {
                     buffer[sample] = Limiter(mono[index]);
                     index += 1;
@@ -94,7 +94,7 @@ namespace NAudio.Wave.SampleProviders
                 var left = new float[(sampRead >> 1)];
                 var right = new float[(sampRead >> 1)];
                 var index = 0;
-                for (var sample = offset; sample <= sampRead + offset - 1; sample += 2)
+                for (var sample = 0; sample <= sampRead - 1; sample += 2)
                 {
                     left[index] = buffer[sample];
                     right[index] = buffer[sample + 1];
@@ -103,7 +103,7 @@ namespace NAudio.Wave.SampleProviders
                 shifterLeft.PitchShift(pitch, sampRead >> 1, fftSize, osamp, waveFormat.SampleRate, left);
                 shifterRight.PitchShift(pitch, sampRead >> 1, fftSize, osamp, waveFormat.SampleRate, right);
                 index = 0;
-                for (var sample = offset; sample <= sampRead + offset - 1; sample += 2)
+                for (var sample = 0; sample <= sampRead - 1; sample += 2)
                 {
                     buffer[sample] = Limiter(left[index]);
                     buffer[sample + 1] = Limiter(right[index]);

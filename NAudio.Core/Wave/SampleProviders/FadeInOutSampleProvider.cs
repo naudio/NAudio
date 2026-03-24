@@ -1,9 +1,11 @@
-﻿namespace NAudio.Wave.SampleProviders
+using System;
+
+namespace NAudio.Wave.SampleProviders
 {
     /// <summary>
     /// Sample Provider to allow fading in and out
     /// </summary>
-    public class FadeInOutSampleProvider : ISampleProvider
+    public class FadeInOutSampleProvider : ISampleSource
     {
         enum FadeState
         {
@@ -14,7 +16,7 @@
         }
 
         private readonly object lockObject = new object();
-        private readonly ISampleProvider source;
+        private readonly ISampleSource source;
         private int fadeSamplePosition;
         private int fadeSampleCount;
         private FadeState fadeState;
@@ -24,7 +26,7 @@
         /// </summary>
         /// <param name="source">The source stream with the audio to be faded in or out</param>
         /// <param name="initiallySilent">If true, we start faded out</param>
-        public FadeInOutSampleProvider(ISampleProvider source, bool initiallySilent = false)
+        public FadeInOutSampleProvider(ISampleSource source, bool initiallySilent = false)
         {
             this.source = source;
             fadeState = initiallySilent ? FadeState.Silence : FadeState.FullVolume;
@@ -59,42 +61,30 @@
         }
 
         /// <summary>
-        /// Reads samples from this sample provider
+        /// Reads samples from this sample provider into a span
         /// </summary>
-        /// <param name="buffer">Buffer to read into</param>
-        /// <param name="offset">Offset within buffer to write to</param>
-        /// <param name="count">Number of samples desired</param>
-        /// <returns>Number of samples read</returns>
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
-            int sourceSamplesRead = source.Read(buffer, offset, count);
+            int sourceSamplesRead = source.Read(buffer);
             lock (lockObject)
             {
                 if (fadeState == FadeState.FadingIn)
                 {
-                    FadeIn(buffer, offset, sourceSamplesRead);
+                    FadeIn(buffer, sourceSamplesRead);
                 }
                 else if (fadeState == FadeState.FadingOut)
                 {
-                    FadeOut(buffer, offset, sourceSamplesRead);
+                    FadeOut(buffer, sourceSamplesRead);
                 }
                 else if (fadeState == FadeState.Silence)
                 {
-                    ClearBuffer(buffer, offset, count);
+                    buffer.Clear();
                 }
             }
             return sourceSamplesRead;
         }
 
-        private static void ClearBuffer(float[] buffer, int offset, int count)
-        {
-            for (int n = 0; n < count; n++)
-            {
-                buffer[n + offset] = 0;
-            }
-        }
-
-        private void FadeOut(float[] buffer, int offset, int sourceSamplesRead)
+        private void FadeOut(Span<float> buffer, int sourceSamplesRead)
         {
             int sample = 0;
             while (sample < sourceSamplesRead)
@@ -102,20 +92,19 @@
                 float multiplier = 1.0f - (fadeSamplePosition / (float)fadeSampleCount);
                 for (int ch = 0; ch < source.WaveFormat.Channels; ch++)
                 {
-                    buffer[offset + sample++] *= multiplier;
+                    buffer[sample++] *= multiplier;
                 }
                 fadeSamplePosition++;
                 if (fadeSamplePosition > fadeSampleCount)
                 {
                     fadeState = FadeState.Silence;
-                    // clear out the end
-                    ClearBuffer(buffer, sample + offset, sourceSamplesRead - sample);
+                    buffer.Slice(sample, sourceSamplesRead - sample).Clear();
                     break;
                 }
             }
         }
 
-        private void FadeIn(float[] buffer, int offset, int sourceSamplesRead)
+        private void FadeIn(Span<float> buffer, int sourceSamplesRead)
         {
             int sample = 0;
             while (sample < sourceSamplesRead)
@@ -123,13 +112,12 @@
                 float multiplier = (fadeSamplePosition / (float)fadeSampleCount);
                 for (int ch = 0; ch < source.WaveFormat.Channels; ch++)
                 {
-                    buffer[offset + sample++] *= multiplier;
+                    buffer[sample++] *= multiplier;
                 }
                 fadeSamplePosition++;
                 if (fadeSamplePosition > fadeSampleCount)
                 {
                     fadeState = FadeState.FullVolume;
-                    // no need to multiply any more
                     break;
                 }
             }
@@ -138,9 +126,6 @@
         /// <summary>
         /// WaveFormat of this SampleProvider
         /// </summary>
-        public WaveFormat WaveFormat
-        {
-            get { return source.WaveFormat; }
-        }
+        public WaveFormat WaveFormat => source.WaveFormat;
     }
 }

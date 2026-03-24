@@ -8,7 +8,7 @@
     interface ISampleChunkConverter
     {
         bool Supports(WaveFormat format);
-        void LoadNextChunk(IWaveProvider sourceProvider, int samplePairsRequired);
+        void LoadNextChunk(IAudioSource sourceProvider, int samplePairsRequired);
         bool GetNextSample(out float sampleLeft, out float sampleRight);
     }
 }

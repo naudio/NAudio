@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System;
 using NUnit.Framework;
 using NAudio.Wave;
-using Moq;
 
 namespace NAudioTests.WaveStreams
 {
@@ -33,7 +29,7 @@ namespace NAudioTests.WaveStreams
             var testProvider= new TestWaveProvider(new WaveFormat(44100,16,2));
             VolumeWaveProvider16 vwp = new VolumeWaveProvider16(testProvider);
             byte[] buffer = new byte[20];
-            int bytesRead = vwp.Read(buffer, 0, buffer.Length);
+            int bytesRead = vwp.Read(buffer.AsSpan());
             Assert.That(bytesRead, Is.EqualTo(buffer.Length));
             Assert.That(buffer, Is.EqualTo(new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 }));
         }
@@ -46,7 +42,7 @@ namespace NAudioTests.WaveStreams
             VolumeWaveProvider16 vwp = new VolumeWaveProvider16(testProvider);
             vwp.Volume = 0.5f;
             byte[] buffer = new byte[4];
-            int bytesRead = vwp.Read(buffer, 0, buffer.Length);
+            int bytesRead = vwp.Read(buffer.AsSpan());
             Assert.That(buffer, Is.EqualTo(new byte[] { 50, 50, 50, 50 }));
         }
 
@@ -58,7 +54,7 @@ namespace NAudioTests.WaveStreams
             VolumeWaveProvider16 vwp = new VolumeWaveProvider16(testProvider);
             vwp.Volume = 0f;
             byte[] buffer = new byte[4];
-            int bytesRead = vwp.Read(buffer, 0, buffer.Length);
+            int bytesRead = vwp.Read(buffer.AsSpan());
             Assert.That(buffer, Is.EqualTo(new byte[] { 0, 0, 0, 0 }));
         }
 
@@ -73,7 +69,7 @@ namespace NAudioTests.WaveStreams
             VolumeWaveProvider16 vwp = new VolumeWaveProvider16(testProvider);
             vwp.Volume = 2f;
             byte[] buffer = new byte[2];
-            int bytesRead = vwp.Read(buffer, 0, buffer.Length);
+            int bytesRead = vwp.Read(buffer.AsSpan());
             Assert.That(buffer, Is.EqualTo(BitConverter.GetBytes(sampleValue)));
         }
 
@@ -88,7 +84,7 @@ namespace NAudioTests.WaveStreams
             VolumeWaveProvider16 vwp = new VolumeWaveProvider16(testProvider);
             vwp.Volume = 2f;
             byte[] buffer = new byte[2];
-            int bytesRead = vwp.Read(buffer, 0, buffer.Length);
+            int bytesRead = vwp.Read(buffer.AsSpan());
             Assert.That(buffer, Is.EqualTo(BitConverter.GetBytes(sampleValue)));
         }
     }

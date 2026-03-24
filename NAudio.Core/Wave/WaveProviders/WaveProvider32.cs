@@ -1,20 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+using System;
+using System.Runtime.InteropServices;
 
 namespace NAudio.Wave
 {
     /// <summary>
     /// Base class for creating a 32 bit floating point wave provider
-    /// Can also be used as a base class for an ISampleProvider that can 
-    /// be plugged straight into anything requiring an IWaveProvider
+    /// Can also be used as a base class for an ISampleSource that can
+    /// be plugged straight into anything requiring an IAudioSource
     /// </summary>
-    public abstract class WaveProvider32 : IWaveProvider, ISampleProvider
+    public abstract class WaveProvider32 : IAudioSource, ISampleSource
     {
         private WaveFormat waveFormat;
 
         /// <summary>
-        /// Initializes a new instance of the WaveProvider32 class 
+        /// Initializes a new instance of the WaveProvider32 class
         /// defaulting to 44.1kHz mono
         /// </summary>
         public WaveProvider32()
@@ -41,14 +40,14 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// Implements the Read method of IWaveProvider by delegating to the abstract
-        /// Read method taking a float array
+        /// Implements the Read method of IAudioSource by delegating to the abstract
+        /// Read method taking a float span
         /// </summary>
-        public int Read(byte[] buffer, int offset, int count)
+        int IAudioSource.Read(Span<byte> buffer)
         {
-            WaveBuffer waveBuffer = new WaveBuffer(buffer);
-            int samplesRequired = count / 4;
-            int samplesRead = Read(waveBuffer.FloatBuffer, offset / 4, samplesRequired);
+            var floatSpan = MemoryMarshal.Cast<byte, float>(buffer);
+            int samplesRequired = buffer.Length / 4;
+            int samplesRead = Read(floatSpan.Slice(0, samplesRequired));
             return samplesRead * 4;
         }
 
@@ -56,7 +55,7 @@ namespace NAudio.Wave
         /// Method to override in derived classes
         /// Supply the requested number of samples into the buffer
         /// </summary>
-        public abstract int Read(float[] buffer, int offset, int sampleCount);
+        public abstract int Read(Span<float> buffer);
 
         /// <summary>
         /// The Wave Format

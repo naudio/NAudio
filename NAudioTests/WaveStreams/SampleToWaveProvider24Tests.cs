@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using System.IO;
-using System.Linq;
-using System.Text;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using NUnit.Framework;
@@ -19,7 +16,7 @@ namespace NAudioTests.WaveStreams
             if (!File.Exists(input)) Assert.Ignore("Test file not found");
             using (var reader = new WaveFileReader(input))
             {
-                var sp = reader.ToSampleProvider();
+                var sp = reader.ToSampleProvider().ToSampleSource();
                 var wp24 = new SampleToWaveProvider24(sp);
                 WaveFileWriter.CreateWaveFile(@"C:\Users\Mark\Downloads\Region1-24.wav", wp24);
             }

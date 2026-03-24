@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using NUnit.Framework;
 using NAudio.Wave;
 
@@ -7,15 +6,15 @@ namespace NAudioTests.Utils
 {
     public static class SampleProviderTestHelpers
     {
-        public static void AssertReadsExpected(this ISampleProvider sampleProvider, float[] expected)
+        public static void AssertReadsExpected(this ISampleSource sampleSource, float[] expected)
         {
-            AssertReadsExpected(sampleProvider, expected, expected.Length);
+            AssertReadsExpected(sampleSource, expected, expected.Length);
         }
 
-        public static void AssertReadsExpected(this ISampleProvider sampleProvider, float[] expected, int readSize)
+        public static void AssertReadsExpected(this ISampleSource sampleSource, float[] expected, int readSize)
         {
             var buffer = new float[readSize];
-            var read = sampleProvider.Read(buffer, 0, readSize);
+            var read = sampleSource.Read(buffer.AsSpan());
             Assert.That(read, Is.EqualTo(expected.Length), "Number of samples read");
             for (int n = 0; n < read; n++)
             {

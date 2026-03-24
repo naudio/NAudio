@@ -203,7 +203,7 @@ namespace NAudioWpfDemo.MediaFoundationResample
             MessageBox.Show("Resample complete");
         }
 
-        private void CreateRepositionTestFile(string saveFile, IWaveProvider source, Action reposition)
+        private void CreateRepositionTestFile(string saveFile, IAudioSource source, Action reposition)
         {
             using (var writer = new WaveFileWriter(saveFile, source.WaveFormat))
             {
@@ -212,7 +212,7 @@ namespace NAudioWpfDemo.MediaFoundationResample
                 // read three and a half seconds (half a second is to ensure Resampler has some leftovers to drain)
                 for (int n = 0; n < 7; n++)
                 {
-                    var read = source.Read(buffer, 0, buffer.Length);
+                    var read = source.Read(buffer.AsSpan());
                     writer.Write(buffer, 0, read);
                 }
                 Array.Clear(buffer, 0, buffer.Length);
@@ -226,7 +226,7 @@ namespace NAudioWpfDemo.MediaFoundationResample
                 // now read some more out
                 for (int n = 0; n < 6; n++)
                 {
-                    var read = source.Read(buffer, 0, buffer.Length);
+                    var read = source.Read(buffer.AsSpan());
                     writer.Write(buffer, 0, read);
                 }
             }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -7,16 +7,16 @@ namespace NAudio.Wave.SampleProviders
     /// <summary>
     /// Sample Provider to concatenate multiple sample providers together
     /// </summary>
-    public class ConcatenatingSampleProvider : ISampleProvider
+    public class ConcatenatingSampleProvider : ISampleSource
     {
-        private readonly ISampleProvider[] providers;
+        private readonly ISampleSource[] providers;
         private int currentProviderIndex;
 
         /// <summary>
         /// Creates a new ConcatenatingSampleProvider
         /// </summary>
         /// <param name="providers">The source providers to play one after the other. Must all share the same sample rate and channel count</param>
-        public ConcatenatingSampleProvider(IEnumerable<ISampleProvider> providers)
+        public ConcatenatingSampleProvider(IEnumerable<ISampleSource> providers)
         {
             if (providers == null) throw new ArgumentNullException(nameof(providers));
             this.providers = providers.ToArray();
@@ -33,13 +33,13 @@ namespace NAudio.Wave.SampleProviders
         /// <summary>
         /// Read Samples from this sample provider
         /// </summary>
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
             var read = 0;
-            while (read < count && currentProviderIndex < providers.Length)
+            while (read < buffer.Length && currentProviderIndex < providers.Length)
             {
-                var needed = count - read;
-                var readThisTime = providers[currentProviderIndex].Read(buffer, offset + read, needed);
+                var needed = buffer.Length - read;
+                var readThisTime = providers[currentProviderIndex].Read(buffer.Slice(read, needed));
                 read += readThisTime;
                 if (readThisTime == 0) currentProviderIndex++;
             }

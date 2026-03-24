@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace NAudio.Wave.SampleProviders
 {
@@ -7,7 +7,7 @@ namespace NAudio.Wave.SampleProviders
     /// Sin, Square, Triangle, SawTooth, White Noise, Pink Noise, Sweep.
     /// </summary>
     /// <remarks>
-    /// Posibility to change ISampleProvider
+    /// Posibility to change ISampleSource
     /// Example :
     /// ---------
     /// WaveOut _waveOutGene = new WaveOut();
@@ -18,7 +18,7 @@ namespace NAudio.Wave.SampleProviders
     /// _waveOutGene.Init(wg);
     /// _waveOutGene.Play();
     /// </remarks>
-    public class SignalGenerator : ISampleProvider
+    public class SignalGenerator : ISampleSource
     {
         // Wave format
         private readonly WaveFormat waveFormat;
@@ -113,9 +113,10 @@ namespace NAudio.Wave.SampleProviders
         /// <summary>
         /// Reads from this provider.
         /// </summary>
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
-            int outIndex = offset;
+            int count = buffer.Length;
+            int outIndex = 0;
 
             // Generator current value
             double multiple;

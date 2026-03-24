@@ -1,3 +1,4 @@
+using System;
 using NAudio.Wave;
 using NUnit.Framework;
 
@@ -14,7 +15,7 @@ namespace NAudioTests.WaveStreams
             var mono = stereoSampleProvider.ToMono(0f, 1f);
             var samples = 1000;
             var buffer = new float[samples];
-            var read = mono.Read(buffer, 0, buffer.Length);
+            var read = mono.Read(buffer.AsSpan(0, buffer.Length));
             Assert.That(read, Is.EqualTo(buffer.Length), "samples read");
             for (int sample = 0; sample < samples; sample++)
             {
@@ -48,7 +49,7 @@ namespace NAudioTests.WaveStreams
 
             // [10,20) in buffer will be filled with 1
             var buffer = new float[bufferLength];
-            var read = mono.Read(buffer, offset, samples);
+            var read = mono.Read(buffer.AsSpan(offset, samples));
             Assert.That(read, Is.EqualTo(samples), "samples read");
 
             for (int i = 0; i < bufferLength; i++)

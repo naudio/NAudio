@@ -93,12 +93,12 @@ static class AcmTests
                 var targetFormat = new WaveFormat(targetRate, reader.WaveFormat.BitsPerSample, reader.WaveFormat.Channels);
                 AnsiConsole.MarkupLine($"[grey]Target format:[/] {targetFormat}");
 
-                var resampler = new WaveFormatConversionProvider(targetFormat, reader);
+                using var resampler = new WaveFormatConversionProvider(targetFormat, reader);
                 using var writer = new WaveFileWriter(outputPath, resampler.WaveFormat);
 
                 var buffer = new byte[targetFormat.AverageBytesPerSecond];
                 int bytesRead;
-                while ((bytesRead = resampler.Read(buffer, 0, buffer.Length)) > 0)
+                while ((bytesRead = resampler.Read(buffer.AsSpan())) > 0)
                 {
                     writer.Write(buffer, 0, bytesRead);
                     totalBytes += bytesRead;

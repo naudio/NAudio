@@ -94,24 +94,23 @@ namespace NAudioDemo.AudioPlaybackDemo
             }
             catch (Exception driverCreateException)
             {
-                MessageBox.Show(String.Format("{0}", driverCreateException.Message));
+                MessageBox.Show($"{driverCreateException.Message}");
                 return;
             }
 
-            ISampleProvider sampleProvider;
+            ISampleSource sampleProvider;
             try
             {
                 sampleProvider = CreateInputStream(fileName);
             }
             catch (Exception createException)
             {
-                MessageBox.Show(String.Format("{0}", createException.Message), "Error Loading File");
+                MessageBox.Show($"{createException.Message}", "Error Loading File");
                 return;
             }
 
 
-            labelTotalTime.Text = String.Format("{0:00}:{1:00}", (int)audioFileReader.TotalTime.TotalMinutes,
-                audioFileReader.TotalTime.Seconds);
+            labelTotalTime.Text = $"{(int)audioFileReader.TotalTime.TotalMinutes:00}:{audioFileReader.TotalTime.Seconds:00}";
 
             try
             {
@@ -121,16 +120,16 @@ namespace NAudioDemo.AudioPlaybackDemo
             }
             catch (Exception initException)
             {
-                MessageBox.Show(String.Format("{0}", initException.Message), "Error Initializing Output");
+                MessageBox.Show($"{initException.Message}", "Error Initializing Output");
                 return;
             }
 
-            setVolumeDelegate(volumeSlider1.Volume); 
+            setVolumeDelegate(volumeSlider1.Volume);
             groupBoxDriverModel.Enabled = false;
             wavePlayer.Play();
         }
 
-        private ISampleProvider CreateInputStream(string fileName)
+        private ISampleSource CreateInputStream(string fileName)
         {
             audioFileReader = new AudioFileReader(fileName);
             textBoxCurrentFile.Text = $"{Path.GetFileName(fileName)}\r\n{audioFileReader.WaveFormat}";

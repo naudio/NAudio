@@ -10,7 +10,7 @@ namespace NAudio.Wave
     /// </summary>
     public class ResamplerDmoStream : WaveStream
     {
-        private readonly IWaveProvider inputProvider;
+        private readonly IAudioSource inputProvider;
         private readonly WaveStream inputStream;
         private readonly WaveFormat outputFormat;
         private DmoOutputDataBuffer outputBuffer;
@@ -21,9 +21,9 @@ namespace NAudio.Wave
         /// <summary>
         /// WaveStream to resample using the DMO Resampler
         /// </summary>
-        /// <param name="inputProvider">Input Stream</param>
+        /// <param name="inputProvider">Input audio source</param>
         /// <param name="outputFormat">Desired Output Format</param>
-        public ResamplerDmoStream(IWaveProvider inputProvider, WaveFormat outputFormat)
+        public ResamplerDmoStream(IAudioSource inputProvider, WaveFormat outputFormat)
         {
             this.inputProvider = inputProvider;
             inputStream = inputProvider as WaveStream;
@@ -87,7 +87,7 @@ namespace NAudio.Wave
             {
                 if (inputStream == null)
                 {
-                    throw new InvalidOperationException("Cannot report length if the input was an IWaveProvider");
+                    throw new InvalidOperationException("Cannot report length if the input was not a WaveStream");
                 }
                 return InputToOutputPosition(inputStream.Length); 
             }
@@ -123,31 +123,34 @@ namespace NAudio.Wave
         /// <returns>Number of bytes read</returns>
         public override int Read(byte[] buffer, int offset, int count)
         {
+            return Read(buffer.AsSpan(offset, count));
+        }
+
+        /// <summary>
+        /// Reads resampled data into a span (zero-copy output path)
+        /// </summary>
+        public override int Read(Span<byte> buffer)
+        {
             int outputBytesProvided = 0;
 
-            while (outputBytesProvided < count)
+            while (outputBytesProvided < buffer.Length)
             {
                 if (dmoResampler.MediaObject.IsAcceptingData(0))
                 {
-                    // 1. Read from the input stream 
-                    int inputBytesRequired = (int)OutputToInputPosition(count - outputBytesProvided);
+                    int inputBytesRequired = (int)OutputToInputPosition(buffer.Length - outputBytesProvided);
                     byte[] inputByteArray = new byte[inputBytesRequired];
-                    int inputBytesRead = inputProvider.Read(inputByteArray, 0, inputBytesRequired);
+                    int inputBytesRead = inputProvider.Read(inputByteArray.AsSpan(0, inputBytesRequired));
                     if (inputBytesRead == 0)
                     {
-                        //Debug.WriteLine("ResamplerDmoStream.Read: No input data available");
                         break;
                     }
-                    // 2. copy into our DMO's input buffer
-                    inputMediaBuffer.LoadData(inputByteArray, inputBytesRead);
+                    inputMediaBuffer.LoadData(inputByteArray.AsSpan(0, inputBytesRead));
 
-                    // 3. Give the input buffer to the DMO to process
                     dmoResampler.MediaObject.ProcessInput(0, inputMediaBuffer, DmoInputDataBufferFlags.None, 0, 0);
 
                     outputBuffer.MediaBuffer.SetLength(0);
                     outputBuffer.StatusFlags = DmoOutputDataBufferFlags.None;
 
-                    // 4. Now ask the DMO for some output data
                     dmoResampler.MediaObject.ProcessOutput(DmoProcessOutputFlags.None, 1, new[] { outputBuffer });
 
                     if (outputBuffer.Length == 0)
@@ -156,8 +159,7 @@ namespace NAudio.Wave
                         break;
                     }
 
-                    // 5. Now get the data out of the output buffer
-                    outputBuffer.RetrieveData(buffer, offset + outputBytesProvided);
+                    outputBuffer.RetrieveData(buffer.Slice(outputBytesProvided, outputBuffer.Length));
                     outputBytesProvided += outputBuffer.Length;
 
                     Debug.Assert(!outputBuffer.MoreDataAvailable, "have not implemented more data available yet");
@@ -167,7 +169,7 @@ namespace NAudio.Wave
                     Debug.Assert(false, "have not implemented not accepting logic yet");
                 }
             }
-            
+
             position += outputBytesProvided;
             return outputBytesProvided;
         }

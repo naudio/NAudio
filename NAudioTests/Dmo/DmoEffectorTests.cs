@@ -290,7 +290,7 @@ namespace NAudioTests.Dmo
                     // try to read 10 ms;
                     int bytesToRead = effector.WaveFormat.AverageBytesPerSecond / 100;
                     byte[] buffer = new byte[bytesToRead];
-                    int count = effector.Read(buffer, 0, bytesToRead);
+                    int count = effector.Read(buffer.AsSpan(0, bytesToRead));
                     Assert.That(count, Is.GreaterThan(0), "Bytes Read");
                 }
             }

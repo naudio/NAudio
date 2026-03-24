@@ -1,15 +1,15 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using NAudio.Utils;
 
 namespace NAudio.Wave.SampleProviders
 {
     /// <summary>
-    /// A sample provider mixer, allowing inputs to be added and removed
+    /// A sample source mixer, allowing inputs to be added and removed
     /// </summary>
-    public class MixingSampleProvider : ISampleProvider
+    public class MixingSampleProvider : ISampleSource
     {
-        private readonly List<ISampleProvider> sources;
+        private readonly List<ISampleSource> sources;
         private float[] sourceBuffer;
         private const int MaxInputs = 1024; // protect ourselves against doing something silly
 
@@ -23,7 +23,7 @@ namespace NAudio.Wave.SampleProviders
             {
                 throw new ArgumentException("Mixer wave format must be IEEE float");
             }
-            sources = new List<ISampleProvider>();
+            sources = new List<ISampleSource>();
             WaveFormat = waveFormat;
         }
 
@@ -32,9 +32,9 @@ namespace NAudio.Wave.SampleProviders
         /// </summary>
         /// <param name="sources">Mixer inputs - must all have the same waveformat, and must
         /// all be of the same WaveFormat. There must be at least one input</param>
-        public MixingSampleProvider(IEnumerable<ISampleProvider> sources)
+        public MixingSampleProvider(IEnumerable<ISampleSource> sources)
         {
-            this.sources = new List<ISampleProvider>();
+            this.sources = new List<ISampleSource>();
             foreach (var source in sources)
             {
                 AddMixerInput(source);
@@ -48,7 +48,7 @@ namespace NAudio.Wave.SampleProviders
         /// <summary>
         /// Returns the mixer inputs (read-only - use AddMixerInput to add an input
         /// </summary>
-        public IEnumerable<ISampleProvider> MixerInputs => sources;
+        public IEnumerable<ISampleSource> MixerInputs => sources;
 
         /// <summary>
         /// When set to true, the Read method always returns the number
@@ -60,20 +60,10 @@ namespace NAudio.Wave.SampleProviders
         public bool ReadFully { get; set; }
 
         /// <summary>
-        /// Adds a WaveProvider as a Mixer input.
-        /// Must be PCM or IEEE float already
-        /// </summary>
-        /// <param name="mixerInput">IWaveProvider mixer input</param>
-        public void AddMixerInput(IWaveProvider mixerInput)
-        {
-            AddMixerInput(SampleProviderConverters.ConvertWaveProviderIntoSampleProvider(mixerInput));
-        }
-
-        /// <summary>
         /// Adds a new mixer input
         /// </summary>
         /// <param name="mixerInput">Mixer input</param>
-        public void AddMixerInput(ISampleProvider mixerInput)
+        public void AddMixerInput(ISampleSource mixerInput)
         {
             // we'll just call the lock around add since we are protecting against an AddMixerInput at
             // the same time as a Read, rather than two AddMixerInput calls at the same time
@@ -108,7 +98,7 @@ namespace NAudio.Wave.SampleProviders
         /// Removes a mixer input
         /// </summary>
         /// <param name="mixerInput">Mixer input to remove</param>
-        public void RemoveMixerInput(ISampleProvider mixerInput)
+        public void RemoveMixerInput(ISampleSource mixerInput)
         {
             lock (sources)
             {
@@ -133,37 +123,32 @@ namespace NAudio.Wave.SampleProviders
         public WaveFormat WaveFormat { get; private set; }
 
         /// <summary>
-        /// Reads samples from this sample provider
+        /// Reads samples from this sample provider into a span
         /// </summary>
-        /// <param name="buffer">Sample buffer</param>
-        /// <param name="offset">Offset into sample buffer</param>
-        /// <param name="count">Number of samples required</param>
-        /// <returns>Number of samples read</returns>
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
             int outputSamples = 0;
-            sourceBuffer = BufferHelpers.Ensure(sourceBuffer, count);
+            sourceBuffer = BufferHelpers.Ensure(sourceBuffer, buffer.Length);
             lock (sources)
             {
                 int index = sources.Count - 1;
                 while (index >= 0)
                 {
                     var source = sources[index];
-                    int samplesRead = source.Read(sourceBuffer, 0, count);
-                    int outIndex = offset;
+                    int samplesRead = source.Read(sourceBuffer.AsSpan(0, buffer.Length));
                     for (int n = 0; n < samplesRead; n++)
                     {
                         if (n >= outputSamples)
                         {
-                            buffer[outIndex++] = sourceBuffer[n];
+                            buffer[n] = sourceBuffer[n];
                         }
                         else
                         {
-                            buffer[outIndex++] += sourceBuffer[n];
+                            buffer[n] += sourceBuffer[n];
                         }
                     }
                     outputSamples = Math.Max(samplesRead, outputSamples);
-                    if (samplesRead < count)
+                    if (samplesRead < buffer.Length)
                     {
                         MixerInputEnded?.Invoke(this, new SampleProviderEventArgs(source));
                         sources.RemoveAt(index);
@@ -171,15 +156,10 @@ namespace NAudio.Wave.SampleProviders
                     index--;
                 }
             }
-            // optionally ensure we return a full buffer
-            if (ReadFully && outputSamples < count)
+            if (ReadFully && outputSamples < buffer.Length)
             {
-                int outputIndex = offset + outputSamples;
-                while (outputIndex < offset + count)
-                {
-                    buffer[outputIndex++] = 0;
-                }
-                outputSamples = count;
+                buffer.Slice(outputSamples).Clear();
+                outputSamples = buffer.Length;
             }
             return outputSamples;
         }
@@ -193,14 +173,14 @@ namespace NAudio.Wave.SampleProviders
         /// <summary>
         /// Constructs a new SampleProviderEventArgs
         /// </summary>
-        public SampleProviderEventArgs(ISampleProvider sampleProvider)
+        public SampleProviderEventArgs(ISampleSource sampleSource)
         {
-            SampleProvider = sampleProvider;
+            SampleSource = sampleSource;
         }
 
         /// <summary>
-        /// The Sample Provider
+        /// The Sample Source
         /// </summary>
-        public ISampleProvider SampleProvider { get; private set; }
+        public ISampleSource SampleSource { get; private set; }
     }
 }

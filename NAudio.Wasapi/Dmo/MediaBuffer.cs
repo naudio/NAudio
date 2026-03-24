@@ -106,7 +106,7 @@ namespace NAudio.Dmo
                 {
                     throw new ArgumentException("Cannot be greater than maximum buffer size");
                 }
-                length = value; 
+                length = value;
             }
         }
 
@@ -114,21 +114,20 @@ namespace NAudio.Dmo
         /// Loads data into this buffer
         /// </summary>
         /// <param name="data">Data to load</param>
-        /// <param name="bytes">Number of bytes to load</param>
-        public void LoadData(byte[] data, int bytes)
+        public unsafe void LoadData(ReadOnlySpan<byte> data)
         {
-            this.Length = bytes;
-            Marshal.Copy(data, 0, buffer, bytes);
+            this.Length = data.Length;
+            data.CopyTo(new Span<byte>((void*)buffer, maxLength));
         }
 
         /// <summary>
-        /// Retrieves the data in the output buffer
+        /// Retrieves the data in the output buffer into a span
         /// </summary>
-        /// <param name="data">buffer to retrieve into</param>
-        /// <param name="offset">offset within that buffer</param>
-        public void RetrieveData(byte[] data, int offset)
+        /// <param name="destination">Span to copy data into</param>
+        public unsafe void RetrieveData(Span<byte> destination)
         {
-            Marshal.Copy(buffer, data, offset, Length);
+            int bytesToCopy = Math.Min(Length, destination.Length);
+            new Span<byte>((void*)buffer, bytesToCopy).CopyTo(destination);
         }
     }
 }

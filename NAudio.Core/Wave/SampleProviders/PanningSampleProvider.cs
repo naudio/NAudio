@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using NAudio.Utils;
 
 namespace NAudio.Wave.SampleProviders
@@ -6,9 +6,9 @@ namespace NAudio.Wave.SampleProviders
     /// <summary>
     /// Converts a mono sample provider to stereo, with a customisable pan strategy
     /// </summary>
-    public class PanningSampleProvider : ISampleProvider
+    public class PanningSampleProvider : ISampleSource
     {
-        private readonly ISampleProvider source;
+        private readonly ISampleSource source;
         private float pan;
         private float leftMultiplier;
         private float rightMultiplier;
@@ -20,7 +20,7 @@ namespace NAudio.Wave.SampleProviders
         /// Initialises a new instance of the PanningSampleProvider
         /// </summary>
         /// <param name="source">Source sample provider, must be mono</param>
-        public PanningSampleProvider(ISampleProvider source)
+        public PanningSampleProvider(ISampleSource source)
         {
             if (source.WaveFormat.Channels != 1)
             {
@@ -83,15 +83,14 @@ namespace NAudio.Wave.SampleProviders
         /// Reads samples from this sample provider
         /// </summary>
         /// <param name="buffer">Sample buffer</param>
-        /// <param name="offset">Offset into sample buffer</param>
-        /// <param name="count">Number of samples desired</param>
         /// <returns>Number of samples read</returns>
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
+            int count = buffer.Length;
             int sourceSamplesRequired = count / 2;
             sourceBuffer = BufferHelpers.Ensure(sourceBuffer, sourceSamplesRequired);
-            int sourceSamplesRead = source.Read(sourceBuffer, 0, sourceSamplesRequired);
-            int outIndex = offset;
+            int sourceSamplesRead = source.Read(sourceBuffer.AsSpan(0, sourceSamplesRequired));
+            int outIndex = 0;
             for (int n = 0; n < sourceSamplesRead; n++)
             {
                 buffer[outIndex++] = leftMultiplier * sourceBuffer[n];
@@ -131,7 +130,7 @@ namespace NAudio.Wave.SampleProviders
 
     /// <summary>
     /// Simplistic "balance" control - treating the mono input as if it was stereo
-    /// In the centre, both channels full volume. Opposite channel decays linearly 
+    /// In the centre, both channels full volume. Opposite channel decays linearly
     /// as balance is turned to to one side
     /// </summary>
     public class StereoBalanceStrategy : IPanStrategy

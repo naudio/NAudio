@@ -1,10 +1,9 @@
-﻿using System;
-using System.Linq;
+using System;
 using NAudio.Wave;
 
 namespace NAudioWpfDemo.DrumMachineDemo
 {
-    class MusicSampleProvider : ISampleProvider
+    class MusicSampleProvider : ISampleSource
     {
         private int delayBy;
         private int position;
@@ -21,34 +20,35 @@ namespace NAudioWpfDemo.DrumMachineDemo
         public int DelayBy
         {
             get => delayBy;
-            set 
-            { 
+            set
+            {
                 if (value < 0)
                 {
                     throw new ArgumentException("Cannot delay by negative number of samples");
                 }
-                delayBy = value; 
+                delayBy = value;
             }
         }
 
         public WaveFormat WaveFormat => sampleSource.SampleWaveFormat;
 
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
             int samplesWritten = 0;
             if (position < delayBy)
             {
-                int zeroFill = Math.Min(delayBy - position, count);
-                Array.Clear(buffer, offset, zeroFill);
+                int zeroFill = Math.Min(delayBy - position, buffer.Length);
+                buffer.Slice(0, zeroFill).Clear();
                 position += zeroFill;
                 samplesWritten += zeroFill;
             }
-            if (samplesWritten < count)
+            if (samplesWritten < buffer.Length)
             {
-                int samplesNeeded = count - samplesWritten;
+                int samplesNeeded = buffer.Length - samplesWritten;
                 int samplesAvailable = sampleSource.Length - (position - delayBy);
                 int samplesToCopy = Math.Min(samplesNeeded, samplesAvailable);
-                Array.Copy(sampleSource.SampleData, PositionInSampleSource, buffer, samplesWritten, samplesToCopy);
+                sampleSource.SampleData.AsSpan(PositionInSampleSource, samplesToCopy)
+                    .CopyTo(buffer.Slice(samplesWritten));
                 position += samplesToCopy;
                 samplesWritten += samplesToCopy;
             }

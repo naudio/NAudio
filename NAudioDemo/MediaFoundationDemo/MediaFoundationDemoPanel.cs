@@ -84,7 +84,7 @@ namespace NAudioDemo.MediaFoundationDemo
             {
                 if (radioButtonWasapi.Checked)
                 {
-                    wavePlayer = new WasapiOutGuiThread();
+                    wavePlayer = new WasapiPlayerGuiThread();
                 }
                 else
                 {

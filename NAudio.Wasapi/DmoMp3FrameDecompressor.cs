@@ -53,7 +53,7 @@ namespace NAudio.FileFormats.Mp3
         public int DecompressFrame(Mp3Frame frame, byte[] dest, int destOffset)
         {
             // 1. copy into our DMO's input buffer
-            inputMediaBuffer.LoadData(frame.RawData, frame.FrameLength);
+            inputMediaBuffer.LoadData(frame.RawData.AsSpan(0, frame.FrameLength));
 
             if (reposition)
             {
@@ -77,7 +77,7 @@ namespace NAudio.FileFormats.Mp3
             }
 
             // 5. Now get the data out of the output buffer
-            outputBuffer.RetrieveData(dest, destOffset);
+            outputBuffer.RetrieveData(dest.AsSpan(destOffset));
             Debug.Assert(!outputBuffer.MoreDataAvailable, "have not implemented more data available yet");
             
             return outputBuffer.Length;

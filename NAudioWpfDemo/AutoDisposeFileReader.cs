@@ -1,8 +1,9 @@
-﻿using NAudio.Wave;
+﻿using System;
+using NAudio.Wave;
 
 namespace NAudioWpfDemo.FireAndForgetPlayback
 {
-    class AutoDisposeFileReader : ISampleProvider
+    class AutoDisposeFileReader : ISampleSource
     {
         private readonly AudioFileReader reader;
         private bool isDisposed;
@@ -12,11 +13,11 @@ namespace NAudioWpfDemo.FireAndForgetPlayback
             WaveFormat = reader.WaveFormat;
         }
 
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
             if (isDisposed)
                 return 0;
-            int read = reader.Read(buffer, offset, count);
+            int read = reader.Read(buffer);
             if (read == 0)
             {
                 reader.Dispose();

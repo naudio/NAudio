@@ -5,16 +5,16 @@ namespace NAudio.Wave.SampleProviders
     /// <summary>
     /// Takes a stereo input and turns it to mono
     /// </summary>
-    public class StereoToMonoSampleProvider : ISampleProvider
+    public class StereoToMonoSampleProvider : ISampleSource
     {
-        private readonly ISampleProvider sourceProvider;
+        private readonly ISampleSource sourceProvider;
         private float[] sourceBuffer;
 
         /// <summary>
-        /// Creates a new mono ISampleProvider based on a stereo input
+        /// Creates a new mono ISampleSource based on a stereo input
         /// </summary>
-        /// <param name="sourceProvider">Stereo 16 bit PCM input</param>
-        public StereoToMonoSampleProvider(ISampleProvider sourceProvider)
+        /// <param name="sourceProvider">Stereo input source</param>
+        public StereoToMonoSampleProvider(ISampleSource sourceProvider)
         {
             LeftVolume = 0.5f;
             RightVolume = 0.5f;
@@ -29,7 +29,7 @@ namespace NAudio.Wave.SampleProviders
         /// <summary>
         /// 1.0 to mix the mono source entirely to the left channel
         /// </summary>
-        public float LeftVolume { get; set; } 
+        public float LeftVolume { get; set; }
 
         /// <summary>
         /// 1.0 to mix the mono source entirely to the right channel
@@ -42,22 +42,20 @@ namespace NAudio.Wave.SampleProviders
         public WaveFormat WaveFormat { get; }
 
         /// <summary>
-        /// Reads bytes from this SampleProvider
+        /// Reads samples from this provider into a span
         /// </summary>
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
-            var sourceSamplesRequired = count * 2;
+            var sourceSamplesRequired = buffer.Length * 2;
             if (sourceBuffer == null || sourceBuffer.Length < sourceSamplesRequired) sourceBuffer = new float[sourceSamplesRequired];
 
-            var sourceSamplesRead = sourceProvider.Read(sourceBuffer, 0, sourceSamplesRequired);
-            var destOffset = offset;
+            var sourceSamplesRead = sourceProvider.Read(sourceBuffer.AsSpan(0, sourceSamplesRequired));
+            int destIndex = 0;
             for (var sourceSample = 0; sourceSample < sourceSamplesRead; sourceSample += 2)
             {
                 var left = sourceBuffer[sourceSample];
                 var right = sourceBuffer[sourceSample + 1];
-                var outSample = (left * LeftVolume) + (right * RightVolume);
-
-                buffer[destOffset++] = outSample;
+                buffer[destIndex++] = (left * LeftVolume) + (right * RightVolume);
             }
             return sourceSamplesRead / 2;
         }

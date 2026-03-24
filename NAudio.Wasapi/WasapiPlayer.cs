@@ -1,6 +1,5 @@
 using NAudio.CoreAudioApi;
 using NAudio.CoreAudioApi.Interfaces;
-using NAudio.Wasapi;
 using NAudio.Wasapi.CoreAudioApi;
 using System;
 using System.Runtime.InteropServices;
@@ -13,7 +12,7 @@ namespace NAudio.Wave
     /// Modern WASAPI audio player with zero-copy buffer access, MMCSS thread priority,
     /// and IAudioClient3 low-latency support. Created via <see cref="WasapiPlayerBuilder"/>.
     /// </summary>
-    public class WasapiPlayer : IDisposable, IAsyncDisposable
+    public class WasapiPlayer : IWavePlayer, IAsyncDisposable
     {
         private readonly MMDevice mmDevice;
         private readonly AudioClientShareMode shareMode;
@@ -50,6 +49,19 @@ namespace NAudio.Wave
         /// The output format being sent to the audio device.
         /// </summary>
         public WaveFormat OutputWaveFormat { get; private set; }
+
+        /// <summary>
+        /// Gets or sets the playback volume (0.0 to 1.0) via the device endpoint volume.
+        /// </summary>
+        public float Volume
+        {
+            get => mmDevice.AudioEndpointVolume.MasterVolumeLevelScalar;
+            set
+            {
+                if (value < 0 || value > 1) throw new ArgumentOutOfRangeException(nameof(value), "Volume must be between 0.0 and 1.0");
+                mmDevice.AudioEndpointVolume.MasterVolumeLevelScalar = value;
+            }
+        }
 
         internal WasapiPlayer(MMDevice device, AudioClientShareMode shareMode, bool useEventSync,
             int latencyMilliseconds, AudioStreamCategory? audioCategory, string mmcssTaskName, bool preferLowLatency)
@@ -102,13 +114,6 @@ namespace NAudio.Wave
             InitializeAudioClient(source.WaveFormat);
         }
 
-        /// <summary>
-        /// Initialize for playing the specified wave provider (bridged to IAudioSource).
-        /// </summary>
-        public void Init(IWaveProvider waveProvider)
-        {
-            Init(new WaveProviderAudioSource(waveProvider));
-        }
 
         private void InitializeAudioClient(WaveFormat sourceFormat)
         {

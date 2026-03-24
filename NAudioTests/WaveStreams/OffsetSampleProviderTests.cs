@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Linq;
+using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using NAudioTests.Utils;
 using NUnit.Framework;
@@ -14,7 +15,7 @@ namespace NAudioTests.WaveStreams
         {
             var source = new TestSampleProvider(32000, 1);
             var osp = new OffsetSampleProvider(source);
-            
+
             var expected = new float[] { 0, 1, 2, 3, 4, 5, 6 };
             osp.AssertReadsExpected(expected);
         }
@@ -51,7 +52,7 @@ namespace NAudioTests.WaveStreams
                             .Concat(Enumerable.Range(10, 10).Select(x => (float)x)).ToArray();
             osp.AssertReadsExpected(expected);
         }
-        
+
         [Test]
         public void SettingPreDelayUsingTimeSpanReturnsCorrectTimeSpan()
         {
@@ -92,7 +93,7 @@ namespace NAudioTests.WaveStreams
             var totalRead = 0;
             while (true)
             {
-                var read = osp.Read(buffer, 0, buffer.Length);
+                var read = osp.Read(buffer.AsSpan());
                 totalRead += read;
                 if (read == 0) break;
                 Assert.That(totalRead, Is.LessThanOrEqualTo(480000));
@@ -143,11 +144,11 @@ namespace NAudioTests.WaveStreams
             var source = new TestSampleProvider(32000, 1) {Position = 10};
             var osp = new OffsetSampleProvider(source) {DelayBySamples = 10};
 
-            var expected = new float[] {0, 0, 0, 0, 0,}; 
+            var expected = new float[] {0, 0, 0, 0, 0,};
             osp.AssertReadsExpected(expected);
-            var expected2 = new float[] {0, 0, 0, 0, 0,}; 
+            var expected2 = new float[] {0, 0, 0, 0, 0,};
             osp.AssertReadsExpected(expected2);
-            var expected3 = new float[] {10, 11, 12, 13, 14, 15}; 
+            var expected3 = new float[] {10, 11, 12, 13, 14, 15};
             osp.AssertReadsExpected(expected3);
         }
 
@@ -157,7 +158,7 @@ namespace NAudioTests.WaveStreams
             var source = new TestSampleProvider(32000, 1) { Position = 10 };
             var osp = new OffsetSampleProvider(source) { TakeSamples = 10, LeadOutSamples = 5};
 
-            
+
             var expected = new float[] { 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 0, 0, 0, 0, 0 };
             osp.AssertReadsExpected(expected);
         }
@@ -180,7 +181,7 @@ namespace NAudioTests.WaveStreams
             var source = new TestSampleProvider(32000, 1);
             var osp = new OffsetSampleProvider(source);
             var buffer = new float[10];
-            osp.Read(buffer, 0, buffer.Length);
+            osp.Read(buffer.AsSpan());
 
             Assert.Throws<InvalidOperationException>(() => osp.DelayBySamples = 4);
         }
@@ -191,7 +192,7 @@ namespace NAudioTests.WaveStreams
             var source = new TestSampleProvider(32000, 1);
             var osp = new OffsetSampleProvider(source);
             var buffer = new float[10];
-            osp.Read(buffer, 0, buffer.Length);
+            osp.Read(buffer.AsSpan());
 
             Assert.Throws<InvalidOperationException>(() => osp.LeadOutSamples = 4);
         }
@@ -202,7 +203,7 @@ namespace NAudioTests.WaveStreams
             var source = new TestSampleProvider(32000, 1);
             var osp = new OffsetSampleProvider(source);
             var buffer = new float[10];
-            osp.Read(buffer, 0, buffer.Length);
+            osp.Read(buffer.AsSpan());
 
             Assert.Throws<InvalidOperationException>(() => osp.SkipOverSamples = 4);
         }
@@ -213,7 +214,7 @@ namespace NAudioTests.WaveStreams
             var source = new TestSampleProvider(32000, 1);
             var osp = new OffsetSampleProvider(source);
             var buffer = new float[10];
-            osp.Read(buffer, 0, buffer.Length);
+            osp.Read(buffer.AsSpan());
 
             Assert.Throws<InvalidOperationException>(() => osp.TakeSamples = 4);
         }

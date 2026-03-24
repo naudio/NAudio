@@ -1,17 +1,19 @@
-﻿namespace NAudio.Wave.SampleProviders
+using System;
+
+namespace NAudio.Wave.SampleProviders
 {
     /// <summary>
     /// Very simple sample provider supporting adjustable gain
     /// </summary>
-    public class VolumeSampleProvider : ISampleProvider
+    public class VolumeSampleProvider : ISampleSource
     {
-        private readonly ISampleProvider source;
+        private readonly ISampleSource source;
 
         /// <summary>
         /// Initializes a new instance of VolumeSampleProvider
         /// </summary>
-        /// <param name="source">Source Sample Provider</param>
-        public VolumeSampleProvider(ISampleProvider source)
+        /// <param name="source">Source sample source</param>
+        public VolumeSampleProvider(ISampleSource source)
         {
             this.source = source;
             Volume = 1.0f;
@@ -23,20 +25,16 @@
         public WaveFormat WaveFormat => source.WaveFormat;
 
         /// <summary>
-        /// Reads samples from this sample provider
+        /// Reads samples from this sample provider into a span
         /// </summary>
-        /// <param name="buffer">Sample buffer</param>
-        /// <param name="offset">Offset into sample buffer</param>
-        /// <param name="sampleCount">Number of samples desired</param>
-        /// <returns>Number of samples read</returns>
-        public int Read(float[] buffer, int offset, int sampleCount)
+        public int Read(Span<float> buffer)
         {
-            int samplesRead = source.Read(buffer, offset, sampleCount);
+            int samplesRead = source.Read(buffer);
             if (Volume != 1f)
             {
-                for (int n = 0; n < sampleCount; n++)
+                for (int n = 0; n < samplesRead; n++)
                 {
-                    buffer[offset + n] *= Volume;
+                    buffer[n] *= Volume;
                 }
             }
             return samplesRead;

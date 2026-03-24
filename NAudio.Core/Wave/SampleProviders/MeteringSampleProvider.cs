@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace NAudio.Wave.SampleProviders
 {
@@ -7,9 +7,9 @@ namespace NAudio.Wave.SampleProviders
     /// an event every n samples with the maximum sample value from the period
     /// for metering purposes
     /// </summary>
-    public class MeteringSampleProvider : ISampleProvider
+    public class MeteringSampleProvider : ISampleSource
     {
-        private readonly ISampleProvider source;
+        private readonly ISampleSource source;
 
         private readonly float[] maxSamples;
         private int sampleCount;
@@ -31,17 +31,17 @@ namespace NAudio.Wave.SampleProviders
         /// events per second
         /// </summary>
         /// <param name="source">Source sample provider</param>
-        public MeteringSampleProvider(ISampleProvider source) :
+        public MeteringSampleProvider(ISampleSource source) :
             this(source, source.WaveFormat.SampleRate / 10)
         {
         }
 
         /// <summary>
-        /// Initialises a new instance of MeteringSampleProvider 
+        /// Initialises a new instance of MeteringSampleProvider
         /// </summary>
         /// <param name="source">source sampler provider</param>
         /// <param name="samplesPerNotification">Number of samples between notifications</param>
-        public MeteringSampleProvider(ISampleProvider source, int samplesPerNotification)
+        public MeteringSampleProvider(ISampleSource source, int samplesPerNotification)
         {
             this.source = source;
             channels = source.WaveFormat.Channels;
@@ -59,12 +59,10 @@ namespace NAudio.Wave.SampleProviders
         /// Reads samples from this Sample Provider
         /// </summary>
         /// <param name="buffer">Sample buffer</param>
-        /// <param name="offset">Offset into sample buffer</param>
-        /// <param name="count">Number of samples required</param>
         /// <returns>Number of samples read</returns>
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
-            int samplesRead = source.Read(buffer, offset, count);
+            int samplesRead = source.Read(buffer);
             // only bother if there is an event listener
             if (StreamVolume != null)
             {
@@ -72,7 +70,7 @@ namespace NAudio.Wave.SampleProviders
                 {
                     for (int channel = 0; channel < channels; channel++)
                     {
-                        float sampleValue = Math.Abs(buffer[offset + index + channel]);
+                        float sampleValue = Math.Abs(buffer[index + channel]);
                         maxSamples[channel] = Math.Max(maxSamples[channel], sampleValue);
                     }
                     sampleCount++;

@@ -13,7 +13,7 @@ namespace NAudio.Wave
     /// Support for playback using Wasapi
     /// </summary>
     [Obsolete("Use WasapiPlayerBuilder to create a WasapiPlayer instead. WasapiPlayer provides zero-copy buffers, MMCSS thread priority, and IAudioClient3 low-latency support.")]
-    public class WasapiOut : IWavePlayer, IWavePosition
+    public class WasapiOut : IWavePosition, IDisposable
     {
         private AudioClient audioClient;
         private readonly MMDevice mmDevice;
@@ -107,7 +107,7 @@ namespace NAudio.Wave
             {
                 if (dmoResamplerNeeded)
                 {
-                    resamplerDmoStream = new ResamplerDmoStream(sourceProvider, OutputWaveFormat);
+                    resamplerDmoStream = new ResamplerDmoStream(sourceProvider.ToAudioSource(), OutputWaveFormat);
                     playbackProvider = resamplerDmoStream;
                 }
                 // fill a whole buffer
@@ -435,7 +435,7 @@ namespace NAudio.Wave
                     try
                     {
                         // just check that we can make it.
-                        using (new ResamplerDmoStream(waveProvider, OutputWaveFormat))
+                        using (new ResamplerDmoStream(waveProvider.ToAudioSource(), OutputWaveFormat))
                         {
                         }
                     }
@@ -444,7 +444,7 @@ namespace NAudio.Wave
                         // On Windows 10 some poorly coded drivers return a bad format in to closestSampleRateFormat
                         // In that case, try and fallback as if it provided no closest (e.g. force trying the mix format)
                         OutputWaveFormat = GetFallbackFormat();
-                        using (new ResamplerDmoStream(waveProvider, OutputWaveFormat))
+                        using (new ResamplerDmoStream(waveProvider.ToAudioSource(), OutputWaveFormat))
                         {
                         }
                     }

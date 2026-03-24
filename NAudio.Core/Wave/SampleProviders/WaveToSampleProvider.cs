@@ -1,10 +1,11 @@
-﻿using System;
+using System;
+using System.Runtime.InteropServices;
 
 namespace NAudio.Wave.SampleProviders
 {
     /// <summary>
-    /// Helper class turning an already 32 bit floating point IWaveProvider
-    /// into an ISampleProvider - hopefully not needed for most applications
+    /// Helper class turning an already 32 bit floating point IAudioSource
+    /// into an ISampleSource - hopefully not needed for most applications
     /// </summary>
     public class WaveToSampleProvider : SampleProviderConverterBase
     {
@@ -12,7 +13,7 @@ namespace NAudio.Wave.SampleProviders
         /// Initializes a new instance of the WaveToSampleProvider class
         /// </summary>
         /// <param name="source">Source wave provider, must be IEEE float</param>
-        public WaveToSampleProvider(IWaveProvider source)
+        public WaveToSampleProvider(IAudioSource source)
             : base(source)
         {
             if (source.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
@@ -24,24 +25,14 @@ namespace NAudio.Wave.SampleProviders
         /// <summary>
         /// Reads from this provider
         /// </summary>
-        public override int Read(float[] buffer, int offset, int count)
+        public override int Read(Span<float> buffer)
         {
-            int bytesNeeded = count * 4;
+            int bytesNeeded = buffer.Length * 4;
             EnsureSourceBuffer(bytesNeeded);
-            int bytesRead = source.Read(sourceBuffer, 0, bytesNeeded);
+            int bytesRead = source.Read(sourceBuffer.AsSpan(0, bytesNeeded));
             int samplesRead = bytesRead / 4;
-            int outputIndex = offset;
-            unsafe
-            {
-                fixed(byte* pBytes = &sourceBuffer[0])
-                {
-                    float* pFloat = (float*)pBytes;
-                    for (int n = 0, i = 0; n < bytesRead; n += 4, i++)
-                    {
-                        buffer[outputIndex++] = *(pFloat + i);
-                    }
-                }
-            }
+            var floatSpan = MemoryMarshal.Cast<byte, float>(sourceBuffer.AsSpan(0, bytesRead));
+            floatSpan.Slice(0, samplesRead).CopyTo(buffer);
             return samplesRead;
         }
     }

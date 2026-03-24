@@ -1,16 +1,16 @@
-﻿using System;
+using System;
 
 namespace NAudio.Wave.SampleProviders
 {
     /// <summary>
-    /// Utility class that takes an IWaveProvider input at any bit depth
-    /// and exposes it as an ISampleProvider. Can turn mono inputs into stereo,
-    /// and allows adjusting of volume
+    /// Utility class that takes an IAudioSource input at any bit depth
+    /// and exposes it as an ISampleSource. Can turn mono inputs into stereo,
+    /// and allows adjusting of volume.
     /// (The eventual successor to WaveChannel32)
-    /// This class also serves as an example of how you can link together several simple 
-    /// Sample Providers to form a more useful class.
+    /// This class also serves as an example of how you can link together several simple
+    /// sample sources to form a more useful class.
     /// </summary>
-    public class SampleChannel : ISampleProvider
+    public class SampleChannel : ISampleSource
     {
         private readonly VolumeSampleProvider volumeProvider;
         private readonly MeteringSampleProvider preVolumeMeter;
@@ -19,45 +19,41 @@ namespace NAudio.Wave.SampleProviders
         /// <summary>
         /// Initialises a new instance of SampleChannel
         /// </summary>
-        /// <param name="waveProvider">Source wave provider, must be PCM or IEEE</param>
-        public SampleChannel(IWaveProvider waveProvider)
-            : this(waveProvider, false)
+        /// <param name="audioSource">Source audio, must be PCM or IEEE</param>
+        public SampleChannel(IAudioSource audioSource)
+            : this(audioSource, false)
         {
-
         }
 
         /// <summary>
         /// Initialises a new instance of SampleChannel
         /// </summary>
-        /// <param name="waveProvider">Source wave provider, must be PCM or IEEE</param>
+        /// <param name="audioSource">Source audio, must be PCM or IEEE</param>
         /// <param name="forceStereo">force mono inputs to become stereo</param>
-        public SampleChannel(IWaveProvider waveProvider, bool forceStereo)
+        public SampleChannel(IAudioSource audioSource, bool forceStereo)
         {
-            ISampleProvider sampleProvider = SampleProviderConverters.ConvertWaveProviderIntoSampleProvider(waveProvider);
-            if (sampleProvider.WaveFormat.Channels == 1 && forceStereo)
+            ISampleSource sampleSource = SampleProviderConverters
+                .ConvertAudioSourceIntoSampleSource(audioSource);
+            if (sampleSource.WaveFormat.Channels == 1 && forceStereo)
             {
-                sampleProvider = new MonoToStereoSampleProvider(sampleProvider);
+                sampleSource = new MonoToStereoSampleProvider(sampleSource);
             }
-            waveFormat = sampleProvider.WaveFormat;
+            waveFormat = sampleSource.WaveFormat;
             // let's put the meter before the volume (useful for drawing waveforms)
-            preVolumeMeter = new MeteringSampleProvider(sampleProvider);
+            preVolumeMeter = new MeteringSampleProvider(sampleSource);
             volumeProvider = new VolumeSampleProvider(preVolumeMeter);
         }
 
         /// <summary>
-        /// Reads samples from this sample provider
+        /// Reads samples from this sample source
         /// </summary>
-        /// <param name="buffer">Sample buffer</param>
-        /// <param name="offset">Offset into sample buffer</param>
-        /// <param name="sampleCount">Number of samples desired</param>
-        /// <returns>Number of samples read</returns>
-        public int Read(float[] buffer, int offset, int sampleCount)
+        public int Read(Span<float> buffer)
         {
-            return volumeProvider.Read(buffer, offset, sampleCount);
+            return volumeProvider.Read(buffer);
         }
 
         /// <summary>
-        /// The WaveFormat of this Sample Provider
+        /// The WaveFormat of this Sample Source
         /// </summary>
         public WaveFormat WaveFormat => waveFormat;
 

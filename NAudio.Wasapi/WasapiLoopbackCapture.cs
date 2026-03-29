@@ -28,6 +28,27 @@ namespace NAudio.Wave
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="WasapiLoopbackCapture"/> class.
+        /// </summary>
+        /// <param name="captureDevice">The capture device.</param>
+        /// <param name="useEventSync">true if sync is done with event. false use sleep.</param>
+        public WasapiLoopbackCapture(MMDevice captureDevice, bool useEventSync) :
+            base(captureDevice, useEventSync)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="WasapiLoopbackCapture"/> class.
+        /// </summary>
+        /// <param name="captureDevice">The capture device.</param>
+        /// <param name="useEventSync">true if sync is done with event. false use sleep.</param>
+        /// <param name="audioBufferMillisecondsLength">Length of the audio buffer in milliseconds. A lower value means lower latency but increased CPU usage.</param>
+        public WasapiLoopbackCapture(MMDevice captureDevice, bool useEventSync, int audioBufferMillisecondsLength) :
+            base(captureDevice, useEventSync, audioBufferMillisecondsLength)
+        {
+        }
+
+        /// <summary>
         /// Gets the default audio loopback capture device
         /// </summary>
         /// <returns>The default audio loopback capture device</returns>

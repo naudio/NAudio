@@ -30,7 +30,7 @@ namespace NAudioTests.WaveStreams
         public void WithOneInputReadsToTheEnd()
         {
             var input1 = new TestSampleProvider(44100, 2, 2000);
-            var msp = new MixingSampleProvider(new ISampleSource[] { input1 });
+            var msp = new MixingSampleProvider([input1]);
             var buffer = new float[1000];
             Assert.That(msp.Read(buffer.AsSpan()), Is.EqualTo(buffer.Length));
             // randomly check one value
@@ -41,7 +41,7 @@ namespace NAudioTests.WaveStreams
         public void WithOneInputReturnsSamplesReadIfNotEnoughToFullyRead()
         {
             var input1 = new TestSampleProvider(44100, 2, 800);
-            var msp = new MixingSampleProvider(new ISampleSource[] { input1 });
+            var msp = new MixingSampleProvider([input1]);
             var buffer = new float[1000];
             Assert.That(msp.Read(buffer.AsSpan()), Is.EqualTo(800));
             // randomly check one value
@@ -52,7 +52,7 @@ namespace NAudioTests.WaveStreams
         public void FullyReadCausesPartialBufferToBeZeroedOut()
         {
             var input1 = new TestSampleProvider(44100, 2, 800);
-            var msp = new MixingSampleProvider(new ISampleSource[] { input1 });
+            var msp = new MixingSampleProvider([input1]);
             msp.ReadFully = true;
             // buffer of 1000 floats of value 9999
             var buffer = Enumerable.Range(1,1000).Select(n => 9999f).ToArray();
@@ -70,12 +70,12 @@ namespace NAudioTests.WaveStreams
         {
             var input1 = new TestSampleProvider(44100, 2, 8000);
             var input2 = new TestSampleProvider(44100, 2, 800);
-            var msp = new MixingSampleProvider(new ISampleSource[] { input1, input2 });
-            ISampleSource endedInput = null;
+            var msp = new MixingSampleProvider([input1, input2]);
+            ISampleProvider endedInput = null;
             msp.MixerInputEnded += (s, a) =>
             {
                 Assert.That(endedInput, Is.Null);
-                endedInput = a.SampleSource;
+                endedInput = a.SampleProvider;
             };
             // buffer of 1000 floats of value 9999
             var buffer = Enumerable.Range(1, 1000).Select(n => 9999f).ToArray();

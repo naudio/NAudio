@@ -74,22 +74,19 @@ namespace NAudio.CoreAudioApi
         private void GetAudioMeterInformation()
         {
             CoreAudioException.ThrowIfFailed(deviceInterface.Activate(IID_IAudioMeterInformation, ClsCtx.ALL, IntPtr.Zero, out var ptr));
-            audioMeterInformation = new AudioMeterInformation((IAudioMeterInformation)Marshal.GetObjectForIUnknown(ptr));
-            Marshal.Release(ptr);
+            audioMeterInformation = new AudioMeterInformation(ptr);
         }
 
         private void GetAudioEndpointVolume()
         {
             CoreAudioException.ThrowIfFailed(deviceInterface.Activate(IID_IAudioEndpointVolume, ClsCtx.ALL, IntPtr.Zero, out var ptr));
-            audioEndpointVolume = new AudioEndpointVolume((IAudioEndpointVolume)Marshal.GetObjectForIUnknown(ptr));
-            Marshal.Release(ptr);
+            audioEndpointVolume = new AudioEndpointVolume(ptr);
         }
 
         private void GetAudioSessionManager()
         {
             CoreAudioException.ThrowIfFailed(deviceInterface.Activate(IDD_IAudioSessionManager, ClsCtx.ALL, IntPtr.Zero, out var ptr));
-            audioSessionManager = new AudioSessionManager((IAudioSessionManager)Marshal.GetObjectForIUnknown(ptr));
-            Marshal.Release(ptr);
+            audioSessionManager = new AudioSessionManager(ptr);
         }
 
         private void GetDeviceTopology()
@@ -310,6 +307,7 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public void Dispose()
         {
+            this.audioMeterInformation?.Dispose();
             this.audioEndpointVolume?.Dispose();
             this.audioSessionManager?.Dispose();
             GC.SuppressFinalize(this);

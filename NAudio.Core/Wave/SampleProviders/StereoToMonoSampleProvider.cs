@@ -1,20 +1,21 @@
 using System;
+using NAudio.Utils;
 
 namespace NAudio.Wave.SampleProviders
 {
     /// <summary>
     /// Takes a stereo input and turns it to mono
     /// </summary>
-    public class StereoToMonoSampleProvider : ISampleSource
+    public class StereoToMonoSampleProvider : ISampleProvider
     {
-        private readonly ISampleSource sourceProvider;
+        private readonly ISampleProvider sourceProvider;
         private float[] sourceBuffer;
 
         /// <summary>
-        /// Creates a new mono ISampleSource based on a stereo input
+        /// Creates a new mono ISampleProvider based on a stereo input
         /// </summary>
         /// <param name="sourceProvider">Stereo input source</param>
-        public StereoToMonoSampleProvider(ISampleSource sourceProvider)
+        public StereoToMonoSampleProvider(ISampleProvider sourceProvider)
         {
             LeftVolume = 0.5f;
             RightVolume = 0.5f;
@@ -47,7 +48,7 @@ namespace NAudio.Wave.SampleProviders
         public int Read(Span<float> buffer)
         {
             var sourceSamplesRequired = buffer.Length * 2;
-            if (sourceBuffer == null || sourceBuffer.Length < sourceSamplesRequired) sourceBuffer = new float[sourceSamplesRequired];
+            sourceBuffer = BufferHelpers.Ensure(sourceBuffer, sourceSamplesRequired);
 
             var sourceSamplesRead = sourceProvider.Read(sourceBuffer.AsSpan(0, sourceSamplesRequired));
             int destIndex = 0;

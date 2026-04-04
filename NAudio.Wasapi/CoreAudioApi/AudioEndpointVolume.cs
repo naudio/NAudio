@@ -35,7 +35,8 @@ namespace NAudio.CoreAudioApi
     /// </summary>
     public class AudioEndpointVolume : IDisposable
     {
-        private readonly IAudioEndpointVolume audioEndPointVolume;
+        private IAudioEndpointVolume audioEndPointVolume;
+        private IntPtr nativePointer;
         private readonly SynchronizationContext syncContext;
         private AudioEndpointVolumeCallback callBack;
 
@@ -141,11 +142,12 @@ namespace NAudio.CoreAudioApi
         /// <summary>
         /// Creates a new Audio endpoint volume
         /// </summary>
-        /// <param name="realEndpointVolume">IAudioEndpointVolume COM interface</param>
-        internal AudioEndpointVolume(IAudioEndpointVolume realEndpointVolume)
+        /// <param name="nativePointer">Raw COM pointer — ownership is transferred to this instance</param>
+        internal AudioEndpointVolume(IntPtr nativePointer)
         {
             syncContext = SynchronizationContext.Current;
-            audioEndPointVolume = realEndpointVolume;
+            this.nativePointer = nativePointer;
+            audioEndPointVolume = (IAudioEndpointVolume)Marshal.GetObjectForIUnknown(nativePointer);
             Channels = new AudioEndpointVolumeChannels(audioEndPointVolume);
             StepInformation = new AudioEndpointVolumeStepInformation(audioEndPointVolume);
             CoreAudioException.ThrowIfFailed(audioEndPointVolume.QueryHardwareSupport(out var hardwareSupp));
@@ -186,6 +188,17 @@ namespace NAudio.CoreAudioApi
                 audioEndPointVolume.UnregisterControlChangeNotify(callBackPtr);
                 Marshal.Release(callBackPtr);
                 callBack = null;
+            }
+            if (audioEndPointVolume != null)
+            {
+                audioEndPointVolume = null;
+            }
+            // Deterministic release is important: in exclusive mode the device cannot be
+            // re-opened until all COM references are released.
+            if (nativePointer != IntPtr.Zero)
+            {
+                Marshal.Release(nativePointer);
+                nativePointer = IntPtr.Zero;
             }
             GC.SuppressFinalize(this);
         }

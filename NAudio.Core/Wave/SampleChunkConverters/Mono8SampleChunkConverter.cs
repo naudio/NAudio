@@ -16,7 +16,7 @@ namespace NAudio.Wave.SampleProviders
                 waveFormat.Channels == 1;
         }
 
-        public void LoadNextChunk(IAudioSource source, int samplePairsRequired)
+        public void LoadNextChunk(IWaveProvider source, int samplePairsRequired)
         {
             int sourceBytesRequired = samplePairsRequired;
             sourceBuffer = BufferHelpers.Ensure(sourceBuffer, sourceBytesRequired);

@@ -11,7 +11,7 @@ namespace NAudio.Wave
         private readonly WaveHeader header;
         private readonly Int32 bufferSize; // allocated bytes, may not be the same as bytes read
         private readonly byte[] buffer;
-        private readonly IAudioSource waveStream;
+        private readonly IWaveProvider waveStream;
         private readonly object waveOutLock;
         private readonly object waveStreamLock;
         private GCHandle hBuffer;
@@ -25,7 +25,7 @@ namespace NAudio.Wave
         /// <param name="bufferSize">Buffer size in bytes</param>
         /// <param name="bufferFillStream">Stream to provide more data</param>
         /// <param name="waveOutLock">Lock to protect WaveOut API's from being called on >1 thread</param>
-        public WaveOutBuffer(IntPtr hWaveOut, Int32 bufferSize, IAudioSource bufferFillStream, object waveOutLock)
+        public WaveOutBuffer(IntPtr hWaveOut, Int32 bufferSize, IWaveProvider bufferFillStream, object waveOutLock)
         {
             this.bufferSize = bufferSize;
             buffer = new byte[bufferSize];

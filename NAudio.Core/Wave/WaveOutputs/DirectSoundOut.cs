@@ -27,7 +27,7 @@ namespace NAudio.Wave
         private int desiredLatency;
         private Guid device;
         private byte[] samples;
-        private IAudioSource waveStream = null;
+        private IWaveProvider waveStream = null;
         private IDirectSound directSound = null;
         private IDirectSoundBuffer primarySoundBuffer = null;
         private IDirectSoundBuffer secondaryBuffer = null;
@@ -228,11 +228,11 @@ namespace NAudio.Wave
         /// <summary>
         /// Initialise playback
         /// </summary>
-        /// <param name="audioSource">The audio source to be played</param>
-        public void Init(IAudioSource audioSource)
+        /// <param name="waveProvider">The wave provider to be played</param>
+        public void Init(IWaveProvider waveProvider)
         {
-            this.waveStream = audioSource;
-            this.waveFormat = audioSource.WaveFormat;
+            this.waveStream = waveProvider;
+            this.waveFormat = waveProvider.WaveFormat;
         }
 
         private void InitializeDirectSound()
@@ -610,7 +610,7 @@ namespace NAudio.Wave
                     Marshal.Copy(silence, 0, wavBuffer1, nbSamples1);
                     if (wavBuffer2 != IntPtr.Zero)
                     {
-                        Marshal.Copy(silence, 0, wavBuffer1, nbSamples1);
+                        Marshal.Copy(silence, nbSamples1, wavBuffer2, nbSamples2);
                     }
                 }
 
@@ -667,7 +667,7 @@ namespace NAudio.Wave
                 Marshal.Copy(samples, 0, wavBuffer1, nbSamples1);
                 if (wavBuffer2 != IntPtr.Zero)
                 {
-                    Marshal.Copy(samples, 0, wavBuffer1, nbSamples1);
+                    Marshal.Copy(samples, nbSamples1, wavBuffer2, nbSamples2);
                 }
             }
 

@@ -18,10 +18,10 @@ namespace NAudio.Wave.SampleProviders
     /// https://github.com/echonest/remix/blob/master/external/pydirac225/source/Dirac_LE.cpp
     ///
     ///</summary>
-    public class SmbPitchShiftingSampleProvider : ISampleSource
+    public class SmbPitchShiftingSampleProvider : ISampleProvider
     {
         //Shifter objects
-        private readonly ISampleSource sourceStream;
+        private readonly ISampleProvider sourceStream;
         private readonly WaveFormat waveFormat;
         private float pitch = 1f;
         private readonly int fftSize;
@@ -38,7 +38,7 @@ namespace NAudio.Wave.SampleProviders
         /// Creates a new SMB Pitch Shifting Sample Provider with default settings
         /// </summary>
         /// <param name="sourceProvider">Source provider</param>
-        public SmbPitchShiftingSampleProvider(ISampleSource sourceProvider)
+        public SmbPitchShiftingSampleProvider(ISampleProvider sourceProvider)
             : this(sourceProvider, 4096, 4L, 1f)
         {
         }
@@ -50,7 +50,7 @@ namespace NAudio.Wave.SampleProviders
         /// <param name="fftSize">FFT Size (any power of two &lt;= 4096: 4096, 2048, 1024, 512, ...)</param>
         /// <param name="osamp">Oversampling (number of overlapping windows)</param>
         /// <param name="initialPitch">Initial pitch (0.5f = octave down, 1.0f = normal, 2.0f = octave up)</param>
-        public SmbPitchShiftingSampleProvider(ISampleSource sourceProvider, int fftSize, long osamp,
+        public SmbPitchShiftingSampleProvider(ISampleProvider sourceProvider, int fftSize, long osamp,
             float initialPitch)
         {
             sourceStream = sourceProvider;

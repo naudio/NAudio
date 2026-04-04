@@ -7,7 +7,7 @@ namespace NAudio.Wave
     /// <summary>
     /// Base class for all WaveStream classes. Derives from stream.
     /// </summary>
-    public abstract class WaveStream : Stream, IWaveProvider, IAudioSource
+    public abstract class WaveStream : Stream, IWaveProvider
     {
         private byte[] spanBridgeBuffer;
 

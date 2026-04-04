@@ -9,9 +9,9 @@ namespace NAudio.Wave.SampleProviders
     /// Uses could include swapping left and right channels, turning mono into stereo,
     /// feeding different input sources to different soundcard outputs etc
     /// </summary>
-    public class MultiplexingSampleProvider : ISampleSource
+    public class MultiplexingSampleProvider : ISampleProvider
     {
-        private readonly IList<ISampleSource> inputs;
+        private readonly IList<ISampleProvider> inputs;
         private readonly WaveFormat waveFormat;
         private readonly int outputChannelCount;
         private readonly int inputChannelCount;
@@ -23,9 +23,9 @@ namespace NAudio.Wave.SampleProviders
         /// </summary>
         /// <param name="inputs">Input sample providers. Must all be of the same sample rate, but can have any number of channels</param>
         /// <param name="numberOfOutputChannels">Desired number of output channels.</param>
-        public MultiplexingSampleProvider(IEnumerable<ISampleSource> inputs, int numberOfOutputChannels)
+        public MultiplexingSampleProvider(IEnumerable<ISampleProvider> inputs, int numberOfOutputChannels)
         {
-            this.inputs = new List<ISampleSource>(inputs);
+            this.inputs = new List<ISampleProvider>(inputs);
             outputChannelCount = numberOfOutputChannels;
 
             if (this.inputs.Count == 0)

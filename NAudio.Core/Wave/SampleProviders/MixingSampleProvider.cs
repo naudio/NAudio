@@ -7,9 +7,9 @@ namespace NAudio.Wave.SampleProviders
     /// <summary>
     /// A sample source mixer, allowing inputs to be added and removed
     /// </summary>
-    public class MixingSampleProvider : ISampleSource
+    public class MixingSampleProvider : ISampleProvider
     {
-        private readonly List<ISampleSource> sources;
+        private readonly List<ISampleProvider> sources;
         private float[] sourceBuffer;
         private const int MaxInputs = 1024; // protect ourselves against doing something silly
 
@@ -23,7 +23,7 @@ namespace NAudio.Wave.SampleProviders
             {
                 throw new ArgumentException("Mixer wave format must be IEEE float");
             }
-            sources = new List<ISampleSource>();
+            sources = new List<ISampleProvider>();
             WaveFormat = waveFormat;
         }
 
@@ -32,9 +32,9 @@ namespace NAudio.Wave.SampleProviders
         /// </summary>
         /// <param name="sources">Mixer inputs - must all have the same waveformat, and must
         /// all be of the same WaveFormat. There must be at least one input</param>
-        public MixingSampleProvider(IEnumerable<ISampleSource> sources)
+        public MixingSampleProvider(IEnumerable<ISampleProvider> sources)
         {
-            this.sources = new List<ISampleSource>();
+            this.sources = new List<ISampleProvider>();
             foreach (var source in sources)
             {
                 AddMixerInput(source);
@@ -48,7 +48,7 @@ namespace NAudio.Wave.SampleProviders
         /// <summary>
         /// Returns the mixer inputs (read-only - use AddMixerInput to add an input
         /// </summary>
-        public IEnumerable<ISampleSource> MixerInputs => sources;
+        public IEnumerable<ISampleProvider> MixerInputs => sources;
 
         /// <summary>
         /// When set to true, the Read method always returns the number
@@ -63,7 +63,7 @@ namespace NAudio.Wave.SampleProviders
         /// Adds a new mixer input
         /// </summary>
         /// <param name="mixerInput">Mixer input</param>
-        public void AddMixerInput(ISampleSource mixerInput)
+        public void AddMixerInput(ISampleProvider mixerInput)
         {
             // we'll just call the lock around add since we are protecting against an AddMixerInput at
             // the same time as a Read, rather than two AddMixerInput calls at the same time
@@ -98,7 +98,7 @@ namespace NAudio.Wave.SampleProviders
         /// Removes a mixer input
         /// </summary>
         /// <param name="mixerInput">Mixer input to remove</param>
-        public void RemoveMixerInput(ISampleSource mixerInput)
+        public void RemoveMixerInput(ISampleProvider mixerInput)
         {
             lock (sources)
             {
@@ -173,14 +173,14 @@ namespace NAudio.Wave.SampleProviders
         /// <summary>
         /// Constructs a new SampleProviderEventArgs
         /// </summary>
-        public SampleProviderEventArgs(ISampleSource sampleSource)
+        public SampleProviderEventArgs(ISampleProvider sampleProvider)
         {
-            SampleSource = sampleSource;
+            SampleProvider = sampleProvider;
         }
 
         /// <summary>
-        /// The Sample Source
+        /// The Sample Provider
         /// </summary>
-        public ISampleSource SampleSource { get; private set; }
+        public ISampleProvider SampleProvider { get; private set; }
     }
 }

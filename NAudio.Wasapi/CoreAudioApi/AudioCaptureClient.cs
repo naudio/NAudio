@@ -12,10 +12,10 @@ namespace NAudio.CoreAudioApi
         IAudioCaptureClient audioCaptureClientInterface;
         private IntPtr nativePointer;
 
-        internal AudioCaptureClient(IAudioCaptureClient audioCaptureClientInterface, IntPtr nativePointer)
+        internal AudioCaptureClient(IntPtr nativePointer)
         {
-            this.audioCaptureClientInterface = audioCaptureClientInterface;
             this.nativePointer = nativePointer;
+            audioCaptureClientInterface = (IAudioCaptureClient)Marshal.GetObjectForIUnknown(nativePointer);
         }
 
         /// <summary>

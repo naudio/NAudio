@@ -6,11 +6,11 @@ namespace NAudio.Wave.SampleProviders
     /// <summary>
     /// Fully managed resampling sample provider, based on the WDL Resampler
     /// </summary>
-    public class WdlResamplingSampleProvider : ISampleSource
+    public class WdlResamplingSampleProvider : ISampleProvider
     {
         private readonly WdlResampler resampler;
         private readonly WaveFormat outFormat;
-        private readonly ISampleSource source;
+        private readonly ISampleProvider source;
         private readonly int channels;
 
         /// <summary>
@@ -18,7 +18,7 @@ namespace NAudio.Wave.SampleProviders
         /// </summary>
         /// <param name="source">Source to resample</param>
         /// <param name="newSampleRate">Desired output sample rate</param>
-        public WdlResamplingSampleProvider(ISampleSource source, int newSampleRate)
+        public WdlResamplingSampleProvider(ISampleProvider source, int newSampleRate)
         {
             channels = source.WaveFormat.Channels;
             outFormat = WaveFormat.CreateIeeeFloatWaveFormat(newSampleRate, channels);

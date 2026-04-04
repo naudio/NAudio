@@ -15,54 +15,43 @@ namespace NAudio.Wave.SampleProviders
         /// <returns>A sample provider</returns>
         public static ISampleProvider ConvertWaveProviderIntoSampleProvider(IWaveProvider waveProvider)
         {
-            return ConvertAudioSourceIntoSampleSource(waveProvider.ToAudioSource()).ToSampleProvider();
-        }
-
-        /// <summary>
-        /// Helper function to go from IAudioSource to an ISampleSource
-        /// Must already be PCM or IEEE float
-        /// </summary>
-        /// <param name="audioSource">The AudioSource to convert</param>
-        /// <returns>A sample source</returns>
-        public static ISampleSource ConvertAudioSourceIntoSampleSource(IAudioSource audioSource)
-        {
-            ISampleSource sampleSource;
-            if (audioSource.WaveFormat.Encoding == WaveFormatEncoding.Pcm)
+            ISampleProvider sampleProvider;
+            if (waveProvider.WaveFormat.Encoding == WaveFormatEncoding.Pcm)
             {
                 // go to float
-                if (audioSource.WaveFormat.BitsPerSample == 8)
+                if (waveProvider.WaveFormat.BitsPerSample == 8)
                 {
-                    sampleSource = new Pcm8BitToSampleProvider(audioSource);
+                    sampleProvider = new Pcm8BitToSampleProvider(waveProvider);
                 }
-                else if (audioSource.WaveFormat.BitsPerSample == 16)
+                else if (waveProvider.WaveFormat.BitsPerSample == 16)
                 {
-                    sampleSource = new Pcm16BitToSampleProvider(audioSource);
+                    sampleProvider = new Pcm16BitToSampleProvider(waveProvider);
                 }
-                else if (audioSource.WaveFormat.BitsPerSample == 24)
+                else if (waveProvider.WaveFormat.BitsPerSample == 24)
                 {
-                    sampleSource = new Pcm24BitToSampleProvider(audioSource);
+                    sampleProvider = new Pcm24BitToSampleProvider(waveProvider);
                 }
-                else if (audioSource.WaveFormat.BitsPerSample == 32)
+                else if (waveProvider.WaveFormat.BitsPerSample == 32)
                 {
-                    sampleSource = new Pcm32BitToSampleProvider(audioSource);
+                    sampleProvider = new Pcm32BitToSampleProvider(waveProvider);
                 }
                 else
                 {
                     throw new InvalidOperationException("Unsupported bit depth");
                 }
             }
-            else if (audioSource.WaveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
+            else if (waveProvider.WaveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
             {
-                if (audioSource.WaveFormat.BitsPerSample == 64)
-                    sampleSource = new WaveToSampleProvider64(audioSource);
+                if (waveProvider.WaveFormat.BitsPerSample == 64)
+                    sampleProvider = new WaveToSampleProvider64(waveProvider);
                 else
-                    sampleSource = new WaveToSampleProvider(audioSource);
+                    sampleProvider = new WaveToSampleProvider(waveProvider);
             }
             else
             {
                 throw new ArgumentException("Unsupported source encoding");
             }
-            return sampleSource;
+            return sampleProvider;
         }
     }
 }

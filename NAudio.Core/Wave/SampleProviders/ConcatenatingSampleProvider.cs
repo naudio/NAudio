@@ -7,16 +7,16 @@ namespace NAudio.Wave.SampleProviders
     /// <summary>
     /// Sample Provider to concatenate multiple sample providers together
     /// </summary>
-    public class ConcatenatingSampleProvider : ISampleSource
+    public class ConcatenatingSampleProvider : ISampleProvider
     {
-        private readonly ISampleSource[] providers;
+        private readonly ISampleProvider[] providers;
         private int currentProviderIndex;
 
         /// <summary>
         /// Creates a new ConcatenatingSampleProvider
         /// </summary>
         /// <param name="providers">The source providers to play one after the other. Must all share the same sample rate and channel count</param>
-        public ConcatenatingSampleProvider(IEnumerable<ISampleSource> providers)
+        public ConcatenatingSampleProvider(IEnumerable<ISampleProvider> providers)
         {
             if (providers == null) throw new ArgumentNullException(nameof(providers));
             this.providers = providers.ToArray();

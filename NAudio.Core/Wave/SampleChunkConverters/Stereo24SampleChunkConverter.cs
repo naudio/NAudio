@@ -17,7 +17,7 @@ namespace NAudio.Wave.SampleProviders
         }
 
 
-        public void LoadNextChunk(IAudioSource source, int samplePairsRequired)
+        public void LoadNextChunk(IWaveProvider source, int samplePairsRequired)
         {
             int sourceBytesRequired = samplePairsRequired * 6;
             sourceBuffer = BufferHelpers.Ensure(sourceBuffer, sourceBytesRequired);

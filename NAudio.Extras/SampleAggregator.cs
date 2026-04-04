@@ -8,7 +8,7 @@ namespace NAudio.Extras
     /// <summary>
     /// Demo sample provider that performs FFTs
     /// </summary>
-    public class SampleAggregator : ISampleSource
+    public class SampleAggregator : ISampleProvider
     {
         /// <summary>
         /// Raised to indicate the maximum volume level in this period
@@ -37,7 +37,7 @@ namespace NAudio.Extras
         private int fftPos;
         private readonly int fftLength;
         private readonly int m;
-        private readonly ISampleSource source;
+        private readonly ISampleProvider source;
 
         private readonly int channels;
 
@@ -46,7 +46,7 @@ namespace NAudio.Extras
         /// </summary>
         /// <param name="source">source sample provider</param>
         /// <param name="fftLength">FFT length, must be a power of 2</param>
-        public SampleAggregator(ISampleSource source, int fftLength = 1024)
+        public SampleAggregator(ISampleProvider source, int fftLength = 1024)
         {
             channels = source.WaveFormat.Channels;
             if (!IsPowerOfTwo(fftLength))

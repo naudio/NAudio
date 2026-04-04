@@ -203,7 +203,7 @@ namespace NAudioWpfDemo.MediaFoundationResample
             MessageBox.Show("Resample complete");
         }
 
-        private void CreateRepositionTestFile(string saveFile, IAudioSource source, Action reposition)
+        private void CreateRepositionTestFile(string saveFile, IWaveProvider source, Action reposition)
         {
             using (var writer = new WaveFileWriter(saveFile, source.WaveFormat))
             {

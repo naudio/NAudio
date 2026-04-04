@@ -26,7 +26,7 @@ namespace NAudio.Wave
         /// </summary>
         /// <param name="sourceProvider">Source provider, must be PCM</param>
         /// <param name="outputFormat">Output format, must also be PCM</param>
-        public MediaFoundationResampler(IAudioSource sourceProvider, WaveFormat outputFormat)
+        public MediaFoundationResampler(IWaveProvider sourceProvider, WaveFormat outputFormat)
             : base(sourceProvider, outputFormat)
         {
             if (!IsPcmOrIeeeFloat(sourceProvider.WaveFormat))
@@ -60,7 +60,7 @@ namespace NAudio.Wave
         /// </summary>
         /// <param name="sourceProvider">Source provider</param>
         /// <param name="outputSampleRate">Output sample rate</param>
-        public MediaFoundationResampler(IAudioSource sourceProvider, int outputSampleRate)
+        public MediaFoundationResampler(IWaveProvider sourceProvider, int outputSampleRate)
             : this(sourceProvider, CreateOutputFormat(sourceProvider.WaveFormat, outputSampleRate))
         {
 

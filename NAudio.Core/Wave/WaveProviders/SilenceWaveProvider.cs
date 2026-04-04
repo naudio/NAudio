@@ -7,7 +7,7 @@ namespace NAudio.Wave
     /// Silence producing wave provider
     /// Useful for playing silence when doing a WASAPI Loopback Capture
     /// </summary>
-    public class SilenceProvider : IAudioSource
+    public class SilenceProvider : IWaveProvider
     {
         /// <summary>
         /// Creates a new silence producing wave provider

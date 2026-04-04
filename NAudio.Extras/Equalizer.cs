@@ -10,9 +10,9 @@ namespace NAudio.Extras
     /// Call Update after you've updated the bands
     /// Potentially to be added to NAudio in a future version
     /// </summary>
-    public class Equalizer : ISampleSource
+    public class Equalizer : ISampleProvider
     {
-        private readonly ISampleSource sourceProvider;
+        private readonly ISampleProvider sourceProvider;
         private readonly EqualizerBand[] bands;
         private readonly BiQuadFilter[,] filters;
         private readonly int channels;
@@ -22,7 +22,7 @@ namespace NAudio.Extras
         /// <summary>
         /// Creates a new Equalizer
         /// </summary>
-        public Equalizer(ISampleSource sourceProvider, EqualizerBand[] bands)
+        public Equalizer(ISampleProvider sourceProvider, EqualizerBand[] bands)
         {
             this.sourceProvider = sourceProvider;
             this.bands = bands;

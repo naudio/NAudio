@@ -28,17 +28,35 @@ namespace NAudio.CoreAudioApi
     /// <summary>
     /// Audio Meter Information
     /// </summary>
-    public class AudioMeterInformation
+    public class AudioMeterInformation : IDisposable
     {
-        private readonly IAudioMeterInformation audioMeterInformation;
+        private IAudioMeterInformation audioMeterInformation;
+        private IntPtr nativePointer;
 
-        internal AudioMeterInformation(IAudioMeterInformation realInterface)
+        /// <summary>
+        /// Creates a new AudioMeterInformation wrapper — ownership of the COM pointer is transferred.
+        /// </summary>
+        /// <param name="nativePointer">Raw COM pointer — ownership is transferred to this instance</param>
+        internal AudioMeterInformation(IntPtr nativePointer)
         {
-            audioMeterInformation = realInterface;
+            this.nativePointer = nativePointer;
+            audioMeterInformation = (IAudioMeterInformation)Marshal.GetObjectForIUnknown(nativePointer);
             CoreAudioException.ThrowIfFailed(audioMeterInformation.QueryHardwareSupport(out var hardwareSupp));
             HardwareSupport = (EEndpointHardwareSupport)hardwareSupp;
             PeakValues = new AudioMeterInformationChannels(audioMeterInformation);
+        }
 
+        /// <summary>
+        /// Creates a new AudioMeterInformation wrapper from a borrowed interface (e.g. QI from AudioSessionControl).
+        /// This instance does not own the COM pointer.
+        /// </summary>
+        /// <param name="borrowed">IAudioMeterInformation obtained via QI on an existing RCW</param>
+        internal AudioMeterInformation(IAudioMeterInformation borrowed)
+        {
+            audioMeterInformation = borrowed;
+            CoreAudioException.ThrowIfFailed(audioMeterInformation.QueryHardwareSupport(out var hardwareSupp));
+            HardwareSupport = (EEndpointHardwareSupport)hardwareSupp;
+            PeakValues = new AudioMeterInformationChannels(audioMeterInformation);
         }
 
         /// <summary>
@@ -61,6 +79,23 @@ namespace NAudio.CoreAudioApi
                 CoreAudioException.ThrowIfFailed(audioMeterInformation.GetPeakValue(out var result));
                 return result;
             }
+        }
+
+        /// <summary>
+        /// Dispose
+        /// </summary>
+        public void Dispose()
+        {
+            if (audioMeterInformation != null)
+            {
+                audioMeterInformation = null;
+            }
+            if (nativePointer != IntPtr.Zero)
+            {
+                Marshal.Release(nativePointer);
+                nativePointer = IntPtr.Zero;
+            }
+            GC.SuppressFinalize(this);
         }
     }
 }

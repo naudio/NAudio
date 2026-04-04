@@ -14,28 +14,48 @@ namespace NAudio.CoreAudioApi
     /// </summary>
     public class SimpleAudioVolume : IDisposable
     {
-        private readonly ISimpleAudioVolume simpleAudioVolume;
+        private ISimpleAudioVolume simpleAudioVolume;
+        private IntPtr nativePointer;
 
         /// <summary>
-        /// Creates a new Audio endpoint volume
+        /// Creates a new SimpleAudioVolume wrapper — ownership of the COM pointer is transferred.
         /// </summary>
-        /// <param name="realSimpleVolume">ISimpleAudioVolume COM interface</param>
-        internal SimpleAudioVolume(ISimpleAudioVolume realSimpleVolume)
+        /// <param name="nativePointer">Raw COM pointer — ownership is transferred to this instance</param>
+        internal SimpleAudioVolume(IntPtr nativePointer)
         {
-            simpleAudioVolume = realSimpleVolume;
+            this.nativePointer = nativePointer;
+            simpleAudioVolume = (ISimpleAudioVolume)Marshal.GetObjectForIUnknown(nativePointer);
         }
 
-        #region IDisposable Members
+        /// <summary>
+        /// Creates a new SimpleAudioVolume wrapper from a borrowed interface (e.g. QI from AudioSessionControl).
+        /// This instance does not own the COM pointer.
+        /// </summary>
+        /// <param name="borrowed">ISimpleAudioVolume obtained via QI on an existing RCW</param>
+        internal SimpleAudioVolume(ISimpleAudioVolume borrowed)
+        {
+            simpleAudioVolume = borrowed;
+        }
 
         /// <summary>
         /// Dispose
         /// </summary>
         public void Dispose()
         {
+            if (simpleAudioVolume != null)
+            {
+                simpleAudioVolume = null;
+            }
+            // Deterministic release when we own the native pointer.
+            // When obtained via QI from AudioSessionControl, nativePointer is IntPtr.Zero
+            // and the parent object manages the COM lifetime.
+            if (nativePointer != IntPtr.Zero)
+            {
+                Marshal.Release(nativePointer);
+                nativePointer = IntPtr.Zero;
+            }
             GC.SuppressFinalize(this);
         }
-
-        #endregion
 
         /// <summary>
         /// Allows the user to adjust the volume from

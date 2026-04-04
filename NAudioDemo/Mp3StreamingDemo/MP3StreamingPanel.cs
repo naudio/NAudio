@@ -205,7 +205,7 @@ namespace NAudioDemo.Mp3StreamingDemo
                     Debug.WriteLine("Creating WaveOut Device");
                     waveOut = CreateWaveOut(); 
                     waveOut.PlaybackStopped += OnPlaybackStopped;
-                    volumeProvider = new VolumeWaveProvider16(bufferedWaveProvider.ToWaveProvider().ToAudioSource());
+                    volumeProvider = new VolumeWaveProvider16(bufferedWaveProvider);
                     volumeProvider.Volume = volumeSlider1.Volume;
                     waveOut.Init(volumeProvider);
                     progressBarBuffer.Maximum = (int)bufferedWaveProvider.BufferDuration.TotalMilliseconds;

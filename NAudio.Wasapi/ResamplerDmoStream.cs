@@ -1,5 +1,6 @@
 ﻿using System;
 using NAudio.Dmo;
+using NAudio.Utils;
 using System.Diagnostics;
 
 // ReSharper disable once CheckNamespace
@@ -10,12 +11,13 @@ namespace NAudio.Wave
     /// </summary>
     public class ResamplerDmoStream : WaveStream
     {
-        private readonly IAudioSource inputProvider;
+        private readonly IWaveProvider inputProvider;
         private readonly WaveStream inputStream;
         private readonly WaveFormat outputFormat;
         private DmoOutputDataBuffer outputBuffer;
         private DmoResampler dmoResampler;
         private MediaBuffer inputMediaBuffer;
+        private byte[] inputBuffer;
         private long position;
 
         /// <summary>
@@ -23,7 +25,7 @@ namespace NAudio.Wave
         /// </summary>
         /// <param name="inputProvider">Input audio source</param>
         /// <param name="outputFormat">Desired Output Format</param>
-        public ResamplerDmoStream(IAudioSource inputProvider, WaveFormat outputFormat)
+        public ResamplerDmoStream(IWaveProvider inputProvider, WaveFormat outputFormat)
         {
             this.inputProvider = inputProvider;
             inputStream = inputProvider as WaveStream;
@@ -138,13 +140,13 @@ namespace NAudio.Wave
                 if (dmoResampler.MediaObject.IsAcceptingData(0))
                 {
                     int inputBytesRequired = (int)OutputToInputPosition(buffer.Length - outputBytesProvided);
-                    byte[] inputByteArray = new byte[inputBytesRequired];
-                    int inputBytesRead = inputProvider.Read(inputByteArray.AsSpan(0, inputBytesRequired));
+                    inputBuffer = BufferHelpers.Ensure(inputBuffer, inputBytesRequired);
+                    int inputBytesRead = inputProvider.Read(inputBuffer.AsSpan(0, inputBytesRequired));
                     if (inputBytesRead == 0)
                     {
                         break;
                     }
-                    inputMediaBuffer.LoadData(inputByteArray.AsSpan(0, inputBytesRead));
+                    inputMediaBuffer.LoadData(inputBuffer.AsSpan(0, inputBytesRead));
 
                     dmoResampler.MediaObject.ProcessInput(0, inputMediaBuffer, DmoInputDataBufferFlags.None, 0, 0);
 

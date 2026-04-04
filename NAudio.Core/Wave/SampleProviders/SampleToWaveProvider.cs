@@ -4,18 +4,18 @@ using System.Runtime.InteropServices;
 namespace NAudio.Wave.SampleProviders
 {
     /// <summary>
-    /// Helper class for when you need to convert back to an IAudioSource from
-    /// an ISampleSource. Keeps it as IEEE float
+    /// Helper class for when you need to convert back to an IWaveProvider from
+    /// an ISampleProvider. Keeps it as IEEE float
     /// </summary>
-    public class SampleToWaveProvider : IAudioSource
+    public class SampleToWaveProvider : IWaveProvider
     {
-        private readonly ISampleSource source;
+        private readonly ISampleProvider source;
 
         /// <summary>
         /// Initializes a new instance of the WaveProviderFloatToWaveProvider class
         /// </summary>
         /// <param name="source">Source wave provider</param>
-        public SampleToWaveProvider(ISampleSource source)
+        public SampleToWaveProvider(ISampleProvider source)
         {
             if (source.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
             {

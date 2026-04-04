@@ -19,7 +19,7 @@ namespace NAudio.Wave
     public class AsioOut : IWavePlayer
     {
         private AsioDriverExt driver;
-        private IAudioSource sourceStream;
+        private IWaveProvider sourceStream;
         private PlaybackState playbackState;
         private int nbSamples;
         private byte[] waveBuffer;
@@ -226,50 +226,50 @@ namespace NAudio.Wave
         /// <summary>
         /// Initialises to play
         /// </summary>
-        /// <param name="audioSource">Source audio source</param>
-        public void Init(IAudioSource audioSource)
+        /// <param name="waveProvider">Source audio source</param>
+        public void Init(IWaveProvider waveProvider)
         {
-            InitRecordAndPlayback(audioSource, 0, -1);
+            InitRecordAndPlayback(waveProvider, 0, -1);
         }
 
         /// <summary>
         /// Initialises to play, with optional recording
         /// </summary>
-        /// <param name="audioSource">Source audio source - set to null for record only</param>
+        /// <param name="waveProvider">Source audio source - set to null for record only</param>
         /// <param name="recordChannels">Number of channels to record</param>
         /// <param name="recordOnlySampleRate">Specify sample rate here if only recording, ignored otherwise</param>
-        public void InitRecordAndPlayback(IAudioSource audioSource, int recordChannels, int recordOnlySampleRate)
+        public void InitRecordAndPlayback(IWaveProvider waveProvider, int recordChannels, int recordOnlySampleRate)
         {
             if (isInitialized)
             {
                 throw new InvalidOperationException("Already initialised this instance of AsioOut - dispose and create a new one");
             }
             isInitialized = true;
-            int desiredSampleRate = audioSource != null ? audioSource.WaveFormat.SampleRate : recordOnlySampleRate;
+            int desiredSampleRate = waveProvider != null ? waveProvider.WaveFormat.SampleRate : recordOnlySampleRate;
 
-            if (audioSource != null)
+            if (waveProvider != null)
             {
-                sourceStream = audioSource;
+                sourceStream = waveProvider;
 
-                this.NumberOfOutputChannels = audioSource.WaveFormat.Channels;
+                this.NumberOfOutputChannels = waveProvider.WaveFormat.Channels;
 
                 // Select the correct sample convertor from WaveFormat -> ASIOFormat
                 var asioSampleType = driver.Capabilities.OutputChannelInfos[0].type;
-                convertor = AsioSampleConvertor.SelectSampleConvertor(audioSource.WaveFormat, asioSampleType);
+                convertor = AsioSampleConvertor.SelectSampleConvertor(waveProvider.WaveFormat, asioSampleType);
 
                 switch (asioSampleType)
                 {
                     case AsioSampleType.Float32LSB:
-                        OutputWaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(audioSource.WaveFormat.SampleRate, audioSource.WaveFormat.Channels);
+                        OutputWaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(waveProvider.WaveFormat.SampleRate, waveProvider.WaveFormat.Channels);
                         break;
                     case AsioSampleType.Int32LSB:
-                        OutputWaveFormat = new WaveFormat(audioSource.WaveFormat.SampleRate, 32, audioSource.WaveFormat.Channels);
+                        OutputWaveFormat = new WaveFormat(waveProvider.WaveFormat.SampleRate, 32, waveProvider.WaveFormat.Channels);
                         break;
                     case AsioSampleType.Int16LSB:
-                        OutputWaveFormat = new WaveFormat(audioSource.WaveFormat.SampleRate, 16, audioSource.WaveFormat.Channels);
+                        OutputWaveFormat = new WaveFormat(waveProvider.WaveFormat.SampleRate, 16, waveProvider.WaveFormat.Channels);
                         break;
                     case AsioSampleType.Int24LSB:
-                        OutputWaveFormat = new WaveFormat(audioSource.WaveFormat.SampleRate, 24, audioSource.WaveFormat.Channels);
+                        OutputWaveFormat = new WaveFormat(waveProvider.WaveFormat.SampleRate, 24, waveProvider.WaveFormat.Channels);
                         break;
                     default:
                         throw new NotSupportedException($"{asioSampleType} not currently supported");
@@ -298,10 +298,10 @@ namespace NAudio.Wave
             nbSamples = driver.CreateBuffers(NumberOfOutputChannels, NumberOfInputChannels, false);
             driver.SetChannelOffset(ChannelOffset, InputChannelOffset); // will throw an exception if channel offset is too high
 
-            if (audioSource != null)
+            if (waveProvider != null)
             {
                 // make a buffer big enough to read enough from the sourceStream to fill the ASIO buffers
-                waveBuffer = new byte[nbSamples * NumberOfOutputChannels * audioSource.WaveFormat.BitsPerSample / 8];
+                waveBuffer = new byte[nbSamples * NumberOfOutputChannels * waveProvider.WaveFormat.BitsPerSample / 8];
             }
         }
 

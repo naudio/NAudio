@@ -7,15 +7,15 @@ namespace NAudio.Extras
     /// <summary>
     /// Used by AudioPlaybackEngine
     /// </summary>
-    public class AutoDisposeFileReader : ISampleSource
+    public class AutoDisposeFileReader : ISampleProvider
     {
-        private readonly ISampleSource reader;
+        private readonly ISampleProvider reader;
         private bool isDisposed;
 
         /// <summary>
         /// Creates a new file reader that disposes the source reader when it finishes
         /// </summary>
-        public AutoDisposeFileReader(ISampleSource reader)
+        public AutoDisposeFileReader(ISampleProvider reader)
         {
             this.reader = reader;
             WaveFormat = reader.WaveFormat;

@@ -6,19 +6,19 @@ namespace NAudio.Wave.SampleProviders
     /// <summary>
     /// Converts a sample source to 24 bit PCM, optionally clipping and adjusting volume along the way
     /// </summary>
-    public class SampleToWaveProvider24 : IAudioSource
+    public class SampleToWaveProvider24 : IWaveProvider
     {
-        private readonly ISampleSource sourceProvider;
+        private readonly ISampleProvider sourceProvider;
         private readonly WaveFormat waveFormat;
         private volatile float volume;
         private float[] sourceBuffer;
 
         /// <summary>
-        /// Converts from an ISampleSource (IEEE float) to a 24 bit PCM IAudioSource.
+        /// Converts from an ISampleProvider (IEEE float) to a 24 bit PCM IWaveProvider.
         /// Number of channels and sample rate remain unchanged.
         /// </summary>
         /// <param name="sourceProvider">The input source provider</param>
-        public SampleToWaveProvider24(ISampleSource sourceProvider)
+        public SampleToWaveProvider24(ISampleProvider sourceProvider)
         {
             if (sourceProvider.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
                 throw new ArgumentException("Input source provider must be IEEE float", nameof(sourceProvider));
@@ -63,8 +63,8 @@ namespace NAudio.Wave.SampleProviders
         }
 
         /// <summary>
-        /// The Format of this IAudioSource
-        /// <see cref="IAudioSource.WaveFormat"/>
+        /// The Format of this IWaveProvider
+        /// <see cref="IWaveProvider.WaveFormat"/>
         /// </summary>
         public WaveFormat WaveFormat
         {

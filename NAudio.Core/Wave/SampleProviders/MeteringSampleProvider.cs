@@ -7,9 +7,9 @@ namespace NAudio.Wave.SampleProviders
     /// an event every n samples with the maximum sample value from the period
     /// for metering purposes
     /// </summary>
-    public class MeteringSampleProvider : ISampleSource
+    public class MeteringSampleProvider : ISampleProvider
     {
-        private readonly ISampleSource source;
+        private readonly ISampleProvider source;
 
         private readonly float[] maxSamples;
         private int sampleCount;
@@ -31,7 +31,7 @@ namespace NAudio.Wave.SampleProviders
         /// events per second
         /// </summary>
         /// <param name="source">Source sample provider</param>
-        public MeteringSampleProvider(ISampleSource source) :
+        public MeteringSampleProvider(ISampleProvider source) :
             this(source, source.WaveFormat.SampleRate / 10)
         {
         }
@@ -41,7 +41,7 @@ namespace NAudio.Wave.SampleProviders
         /// </summary>
         /// <param name="source">source sampler provider</param>
         /// <param name="samplesPerNotification">Number of samples between notifications</param>
-        public MeteringSampleProvider(ISampleSource source, int samplesPerNotification)
+        public MeteringSampleProvider(ISampleProvider source, int samplesPerNotification)
         {
             this.source = source;
             channels = source.WaveFormat.Channels;

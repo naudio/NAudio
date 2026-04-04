@@ -2,6 +2,7 @@ using NAudio.CoreAudioApi;
 using NAudio.CoreAudioApi.Interfaces;
 using NAudio.Wasapi.CoreAudioApi;
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,7 +13,7 @@ namespace NAudio.Wave
     /// Modern WASAPI audio player with zero-copy buffer access, MMCSS thread priority,
     /// and IAudioClient3 low-latency support. Created via <see cref="WasapiPlayerBuilder"/>.
     /// </summary>
-    public class WasapiPlayer : IWavePlayer, IAsyncDisposable
+    public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
     {
         private readonly MMDevice mmDevice;
         private readonly AudioClientShareMode shareMode;
@@ -31,7 +32,7 @@ namespace NAudio.Wave
         private EventWaitHandle frameEvent;
         private Thread playThread;
         private volatile PlaybackState playbackState;
-        private IAudioSource audioSource;
+        private IWaveProvider waveProvider;
 
         /// <summary>
         /// Raised when playback stops, either because the source ended or an error occurred.
@@ -50,18 +51,71 @@ namespace NAudio.Wave
         /// </summary>
         public WaveFormat OutputWaveFormat { get; private set; }
 
+        #region Volume
+
         /// <summary>
-        /// Gets or sets the playback volume (0.0 to 1.0) via the device endpoint volume.
+        /// Gets or sets the session volume (0.0 to 1.0). This controls your application's
+        /// volume as shown in the Windows volume mixer, without affecting other applications.
+        /// Delegates to <see cref="SessionVolume"/>.
         /// </summary>
         public float Volume
         {
-            get => mmDevice.AudioEndpointVolume.MasterVolumeLevelScalar;
+            get => SessionVolume.Volume;
             set
             {
                 if (value < 0 || value > 1) throw new ArgumentOutOfRangeException(nameof(value), "Volume must be between 0.0 and 1.0");
-                mmDevice.AudioEndpointVolume.MasterVolumeLevelScalar = value;
+                SessionVolume.Volume = value;
             }
         }
+
+        /// <summary>
+        /// Gets or sets the session mute state. This is the mute toggle for your application
+        /// in the Windows volume mixer. Delegates to <see cref="SessionVolume"/>.
+        /// </summary>
+        public bool IsMuted
+        {
+            get => SessionVolume.Mute;
+            set => SessionVolume.Mute = value;
+        }
+
+        /// <summary>
+        /// Per-session volume and mute control. This is the volume slider shown for your
+        /// application in the Windows volume mixer. Use this for simple volume/mute control
+        /// that only affects your application.
+        /// </summary>
+        public SimpleAudioVolume SessionVolume =>
+            mmDevice.AudioSessionManager.SimpleAudioVolume;
+
+        /// <summary>
+        /// Per-stream, per-channel volume control (0.0 to 1.0 per channel).
+        /// Use this for balance, pan, or independent channel level adjustments.
+        /// Only available in shared mode.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when the player is using exclusive mode, where per-stream volume is not available.
+        /// </exception>
+        public AudioStreamVolume StreamVolume
+        {
+            get
+            {
+                if (shareMode == AudioClientShareMode.Exclusive)
+                    throw new InvalidOperationException(
+                        "StreamVolume is not available in exclusive mode. " +
+                        "Use DeviceVolume for endpoint-level control, or adjust levels in your audio pipeline before playback.");
+                return audioClient.AudioStreamVolume;
+            }
+        }
+
+        /// <summary>
+        /// Device endpoint volume — controls the master volume for the audio device,
+        /// affecting all applications playing through it. Includes per-channel levels,
+        /// mute, volume step control, dB range information, and change notifications.
+        /// Use with care: changes are system-wide and visible to the user.
+        /// Available in both shared and exclusive modes.
+        /// </summary>
+        public AudioEndpointVolume DeviceVolume => mmDevice.AudioEndpointVolume;
+
+        #endregion
 
         internal WasapiPlayer(MMDevice device, AudioClientShareMode shareMode, bool useEventSync,
             int latencyMilliseconds, AudioStreamCategory? audioCategory, string mmcssTaskName, bool preferLowLatency)
@@ -77,6 +131,25 @@ namespace NAudio.Wave
 
             audioClient = device.CreateAudioClient();
             OutputWaveFormat = audioClient.MixFormat;
+        }
+
+        /// <summary>
+        /// Gets the current position in bytes from the wave output device.
+        /// (This is not the same as the position within your reader stream.)
+        /// </summary>
+        public long GetPosition()
+        {
+            if (playbackState == PlaybackState.Stopped)
+                return 0;
+
+            ulong pos;
+            if (playbackState == PlaybackState.Playing)
+                pos = audioClient.AudioClockClient.AdjustedPosition;
+            else
+                audioClient.AudioClockClient.GetPosition(out pos, out _);
+
+            return (long)pos * OutputWaveFormat.AverageBytesPerSecond
+                 / (long)audioClient.AudioClockClient.Frequency;
         }
 
         /// <summary>
@@ -104,13 +177,76 @@ namespace NAudio.Wave
         }
 
         /// <summary>
+        /// Finds a supported exclusive-mode format for this device, trying the preferred format first,
+        /// then falling back through standard sample rates, bit depths, and multi-channel speaker
+        /// configurations from the Windows Driver Kit (ksmedia.h).
+        /// Use this to discover what format to provide to <see cref="Init"/> when using exclusive mode.
+        /// </summary>
+        /// <param name="preferredFormat">The format you'd ideally like to use.</param>
+        /// <returns>A supported <see cref="WaveFormatExtensible"/>, or null if no supported format was found.</returns>
+        public WaveFormatExtensible GetSupportedExclusiveFormat(WaveFormat preferredFormat)
+        {
+            var deviceSampleRate = audioClient.MixFormat.SampleRate;
+            var deviceChannels = audioClient.MixFormat.Channels;
+
+            var sampleRatesToTry = new List<int> { preferredFormat.SampleRate };
+            if (!sampleRatesToTry.Contains(deviceSampleRate)) sampleRatesToTry.Add(deviceSampleRate);
+            if (!sampleRatesToTry.Contains(44100)) sampleRatesToTry.Add(44100);
+            if (!sampleRatesToTry.Contains(48000)) sampleRatesToTry.Add(48000);
+
+            var channelCountsToTry = new List<int> { preferredFormat.Channels };
+            if (!channelCountsToTry.Contains(deviceChannels)) channelCountsToTry.Add(deviceChannels);
+            if (!channelCountsToTry.Contains(2)) channelCountsToTry.Add(2);
+
+            var bitDepthsToTry = new List<int> { preferredFormat.BitsPerSample };
+            if (!bitDepthsToTry.Contains(32)) bitDepthsToTry.Add(32);
+            if (!bitDepthsToTry.Contains(24)) bitDepthsToTry.Add(24);
+            if (!bitDepthsToTry.Contains(16)) bitDepthsToTry.Add(16);
+
+            // Channel mask 0 uses the WaveFormatExtensible default (sequential bit-shift),
+            // which covers stereo, 3.0, 3.1, and the obsolete 5.1/7.1 layouts.
+            // Additional masks from ksmedia.h cover standard speaker configurations.
+            var channelMasksToTry = new List<int> { 0 };
+            if (channelCountsToTry.Contains(1)) channelMasksToTry.Add(0x0004); // 1.0: FC        (KSAUDIO_SPEAKER_MONO)
+            if (channelCountsToTry.Contains(2)) channelMasksToTry.Add(0x000C); // 1.1: FC|LFE    (KSAUDIO_SPEAKER_1POINT1)
+            if (channelCountsToTry.Contains(3)) channelMasksToTry.Add(0x000B); // 2.1: FL|FR|LFE (KSAUDIO_SPEAKER_2POINT1)
+            if (channelCountsToTry.Contains(4))
+            {
+                channelMasksToTry.Add(0x0033); // 4.0: FL|FR|BL|BR (KSAUDIO_SPEAKER_QUAD)
+                channelMasksToTry.Add(0x0107); // 4.0: FL|FR|FC|BC (KSAUDIO_SPEAKER_SURROUND)
+            }
+            if (channelCountsToTry.Contains(5)) channelMasksToTry.Add(0x0607); // 5.0: FL|FR|FC|SL|SR           (KSAUDIO_SPEAKER_5POINT0)
+            if (channelCountsToTry.Contains(6)) channelMasksToTry.Add(0x060F); // 5.1: FL|FR|FC|LFE|SL|SR       (KSAUDIO_SPEAKER_5POINT1_SURROUND)
+            if (channelCountsToTry.Contains(7)) channelMasksToTry.Add(0x0637); // 7.0: FL|FR|FC|BL|BR|SL|SR     (KSAUDIO_SPEAKER_7POINT0)
+            if (channelCountsToTry.Contains(8)) channelMasksToTry.Add(0x063F); // 7.1: FL|FR|FC|LFE|BL|BR|SL|SR (KSAUDIO_SPEAKER_7POINT1_SURROUND)
+
+            foreach (var sampleRate in sampleRatesToTry)
+            {
+                foreach (var channelCount in channelCountsToTry)
+                {
+                    foreach (var bitDepth in bitDepthsToTry)
+                    {
+                        foreach (var channelMask in channelMasksToTry)
+                        {
+                            var format = new WaveFormatExtensible(sampleRate, bitDepth, channelCount, channelMask);
+                            if (audioClient.IsFormatSupported(AudioClientShareMode.Exclusive, format))
+                                return format;
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
         /// Initialize for playing the specified audio source (zero-copy path).
         /// In exclusive mode, the source format must be natively supported by the device —
-        /// use <see cref="IsFormatSupported(WaveFormat)"/> to check before calling Init.
+        /// use <see cref="IsFormatSupported(WaveFormat)"/> or <see cref="GetSupportedExclusiveFormat"/>
+        /// to check before calling Init.
         /// </summary>
-        public void Init(IAudioSource source)
+        public void Init(IWaveProvider source)
         {
-            audioSource = source;
+            waveProvider = source;
             InitializeAudioClient(source.WaveFormat);
         }
 
@@ -353,7 +489,7 @@ namespace NAudio.Wave
         private bool FillBuffer(int frameCount)
         {
             using var lease = renderClient.GetBufferLease(frameCount, bytesPerFrame);
-            int bytesRead = audioSource.Read(lease.Buffer);
+            int bytesRead = waveProvider.Read(lease.Buffer);
             if (bytesRead == 0)
             {
                 lease.Release(0, AudioClientBufferFlags.Silent);
@@ -388,21 +524,18 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// Dispose
+        /// Stops playback (blocking) and releases all resources.
         /// </summary>
         public void Dispose()
         {
             Stop();
-            audioClient?.Dispose();
-            audioClient = null;
-            renderClient = null;
-            stopEvent.Dispose();
-            frameEvent?.Dispose();
+            DisposeCore();
             GC.SuppressFinalize(this);
         }
 
         /// <summary>
-        /// Async dispose — stops playback and releases resources.
+        /// Stops playback without blocking the calling thread, then releases all resources.
+        /// Prefer this over <see cref="Dispose()"/> in async or UI contexts where blocking is undesirable.
         /// </summary>
         public async ValueTask DisposeAsync()
         {
@@ -411,15 +544,22 @@ namespace NAudio.Wave
                 playbackState = PlaybackState.Stopped;
                 stopEvent.Set();
                 if (playThread != null)
+                {
                     await Task.Run(() => playThread.Join());
+                }
                 playThread = null;
             }
+            DisposeCore();
+            GC.SuppressFinalize(this);
+        }
+
+        private void DisposeCore()
+        {
             audioClient?.Dispose();
             audioClient = null;
             renderClient = null;
             stopEvent.Dispose();
             frameEvent?.Dispose();
-            GC.SuppressFinalize(this);
         }
     }
 }

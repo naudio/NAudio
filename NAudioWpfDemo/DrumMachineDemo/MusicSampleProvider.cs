@@ -3,7 +3,7 @@ using NAudio.Wave;
 
 namespace NAudioWpfDemo.DrumMachineDemo
 {
-    class MusicSampleProvider : ISampleSource
+    class MusicSampleProvider : ISampleProvider
     {
         private int delayBy;
         private int position;

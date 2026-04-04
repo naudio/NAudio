@@ -26,7 +26,7 @@ namespace NAudioTests.WaveStreams
             var input1 = new FloatArrayWaveProvider(format, 1f, 2f);
             var input2 = new FloatArrayWaveProvider(format, 3f, 4f);
 
-            var mixer = new MixingWaveProvider32(new IAudioSource[] { input1, input2 });
+            var mixer = new MixingWaveProvider32([input1, input2]);
 
             Assert.That(mixer.InputCount, Is.EqualTo(2));
             Assert.That(mixer.WaveFormat, Is.EqualTo(format));
@@ -96,13 +96,13 @@ namespace NAudioTests.WaveStreams
             var format = WaveFormat.CreateIeeeFloatWaveFormat(44100, 1);
             var input1 = new FloatArrayWaveProvider(format, 1f, 2f, 3f, 4f);
             var input2 = new FloatArrayWaveProvider(format, 0.5f, 1.5f, 2.5f, 3.5f);
-            var mixer = new MixingWaveProvider32(new IAudioSource[] { input1, input2 });
+            var mixer = new MixingWaveProvider32([input1, input2]);
 
             var buffer = new byte[16];
             var read = mixer.Read(buffer.AsSpan());
 
             Assert.That(read, Is.EqualTo(16));
-            Assert.That(ReadFloats(buffer, 0, read), Is.EqualTo(new[] { 1.5f, 3.5f, 5.5f, 7.5f }));
+            Assert.That(ReadFloats(buffer, 0, read), Is.EqualTo([1.5f, 3.5f, 5.5f, 7.5f]));
         }
 
         [Test]
@@ -111,13 +111,13 @@ namespace NAudioTests.WaveStreams
             var format = WaveFormat.CreateIeeeFloatWaveFormat(44100, 1);
             var shortInput = new FloatArrayWaveProvider(format, 10f, 20f);
             var longInput = new FloatArrayWaveProvider(format, 1f, 2f, 3f, 4f);
-            var mixer = new MixingWaveProvider32(new IAudioSource[] { shortInput, longInput });
+            var mixer = new MixingWaveProvider32([shortInput, longInput]);
 
             var buffer = new byte[16];
             var read = mixer.Read(buffer.AsSpan());
 
             Assert.That(read, Is.EqualTo(16));
-            Assert.That(ReadFloats(buffer, 0, read), Is.EqualTo(new[] { 11f, 22f, 3f, 4f }));
+            Assert.That(ReadFloats(buffer, 0, read), Is.EqualTo([11f, 22f, 3f, 4f]));
         }
 
         [Test]
@@ -126,13 +126,13 @@ namespace NAudioTests.WaveStreams
             var format = WaveFormat.CreateIeeeFloatWaveFormat(44100, 1);
             var shortInput = new FloatArrayWaveProvider(format, 100f);
             var longInput = new FloatArrayWaveProvider(format, 1f, 2f, 3f);
-            var mixer = new MixingWaveProvider32(new IAudioSource[] { shortInput, longInput });
+            var mixer = new MixingWaveProvider32([shortInput, longInput]);
 
             var buffer = new byte[12];
             var read = mixer.Read(buffer.AsSpan());
 
             Assert.That(read, Is.EqualTo(12));
-            Assert.That(ReadFloats(buffer, 0, read), Is.EqualTo(new[] { 101f, 2f, 3f }));
+            Assert.That(ReadFloats(buffer, 0, read), Is.EqualTo([101f, 2f, 3f]));
         }
 
         [Test]
@@ -165,7 +165,7 @@ namespace NAudioTests.WaveStreams
             return bytes;
         }
 
-        private sealed class FloatArrayWaveProvider : IAudioSource
+        private sealed class FloatArrayWaveProvider : IWaveProvider
         {
             private readonly byte[] bytes;
             private int position;

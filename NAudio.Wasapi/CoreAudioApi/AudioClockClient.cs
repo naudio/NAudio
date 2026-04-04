@@ -13,10 +13,10 @@ namespace NAudio.CoreAudioApi
         IAudioClock audioClockClientInterface;
         private IntPtr nativePointer;
 
-        internal AudioClockClient(IAudioClock audioClockClientInterface, IntPtr nativePointer)
+        internal AudioClockClient(IntPtr nativePointer)
         {
-            this.audioClockClientInterface = audioClockClientInterface;
             this.nativePointer = nativePointer;
+            audioClockClientInterface = (IAudioClock)Marshal.GetObjectForIUnknown(nativePointer);
         }
 
         /// <summary>

@@ -12,10 +12,10 @@ namespace NAudio.CoreAudioApi
         IAudioRenderClient audioRenderClientInterface;
         private IntPtr nativePointer;
 
-        internal AudioRenderClient(IAudioRenderClient audioRenderClientInterface, IntPtr nativePointer)
+        internal AudioRenderClient(IntPtr nativePointer)
         {
-            this.audioRenderClientInterface = audioRenderClientInterface;
             this.nativePointer = nativePointer;
+            audioRenderClientInterface = (IAudioRenderClient)Marshal.GetObjectForIUnknown(nativePointer);
         }
 
         /// <summary>

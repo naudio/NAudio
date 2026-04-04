@@ -32,13 +32,12 @@ namespace NAudioTests.Acm
                 Gain = 0.25,
                 Type = SignalGeneratorType.Sin
             };
-            var sp = sg.ToSampleProvider().ToWaveProvider16();
+            var sp = sg.ToWaveProvider16();
 
 
             byte[] data = new byte[outFormat.AverageBytesPerSecond * durationInSeconds];
-            Span<float> floatBuffer = MemoryMarshal.Cast<byte, float>(data);
-            var samplesRead = sg.Read(floatBuffer);
-            Assert.That(samplesRead, Is.EqualTo(floatBuffer.Length));
+            var bytesRead = sp.Read(data.AsSpan());
+            Assert.That(bytesRead, Is.EqualTo(data.Length));
             return new RawSourceWaveStream(new MemoryStream(data), outFormat);
         }
 

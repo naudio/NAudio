@@ -3,9 +3,9 @@
 namespace NAudio.Wave
 {
     /// <summary>
-    /// Buffered IAudioSource taking source data from WaveIn
+    /// Buffered IWaveProvider taking source data from WaveIn
     /// </summary>
-    public class WaveInProvider : IAudioSource
+    public class WaveInProvider : IWaveProvider
     {
         private readonly IWaveIn waveIn;
         private readonly BufferedWaveProvider bufferedWaveProvider;

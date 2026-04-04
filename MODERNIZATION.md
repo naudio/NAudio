@@ -36,7 +36,7 @@ This document records the architectural decisions, rationale, and progress for t
 
 | Project | NAudio 2.x TFM(s) | NAudio 3.0 TFM(s) | Rationale |
 | ------- | ------------------ | ------------------ | --------- |
-| NAudio.Core | netstandard2.0 | net8.0 | Moved to net8.0 to unlock `Span<T>` for `IAudioSource`/`ISampleSource` interfaces |
+| NAudio.Core | netstandard2.0 | net8.0 | Moved to net8.0 to unlock `Span<T>` for `IWaveProvider`/`ISampleProvider` interfaces |
 | NAudio.Midi | netstandard2.0 | net8.0 | Follows NAudio.Core (depends on it) |
 | NAudio.Asio | netstandard2.0; net8.0-windows | net8.0-windows | Dropped netstandard2.0 leg (NAudio.Core now requires net8.0). Removed `Microsoft.Win32.Registry` polyfill |
 | NAudio.WinMM | netstandard2.0; net6.0 | net8.0-windows | Windows-only (P/Invoke into winmm.dll). Removed netstandard2.0 and `Microsoft.Win32.Registry` polyfill |
@@ -151,7 +151,7 @@ Specific exception types for common failure modes:
 - Added `WASAPI` conditional define in NAudio umbrella project for `AudioFileReader` MediaFoundation fallback
 - Created `CoreAudioException` hierarchy with human-readable messages for all AUDCLNT_E_* codes
 - Added MMCSS P/Invoke (`AvSetMmThreadCharacteristics`, `AvRevertMmThreadCharacteristics`) to NativeMethods
-- Created `IAudioSource` interface (Span-based provider) with `WaveProviderAudioSource` bridge adapter (initially in NAudio.Wasapi, later moved to NAudio.Core in Phase 7a)
+- `IWaveProvider` interface updated to Span-based `Read(Span<byte>)` signature (moved to NAudio.Core in Phase 7a)
 - Uncommented and made public `AudioClientActivationParams`, `AudioClientProcessLoopbackParams`, `ProcessLoopbackMode`, `AudioClientActivationType` for process-specific loopback capture
 
 #### Phase 2b: COM interface conversion
@@ -176,17 +176,23 @@ Specific exception types for common failure modes:
 
 Existing `WasapiOut` and `WasapiCapture` are kept with `[Obsolete]` attributes pointing to the new APIs. New classes are added alongside to avoid breaking existing code immediately.
 
-**Note:** `IAudioSource` and `ISampleSource` are now in NAudio.Core (namespace `NAudio.Wave`) as the foundation for all playback types (WASAPI, ASIO, WinMM, DirectSound). `WaveFormat` (based on WAVEFORMATEX) may eventually be replaced with a platform-agnostic `AudioFormat` descriptor, but this is deferred.
+**Note:** `IWaveProvider` and `ISampleProvider` are now in NAudio.Core (namespace `NAudio.Wave`) as the foundation for all playback types (WASAPI, ASIO, WinMM, DirectSound). `WaveFormat` (based on WAVEFORMATEX) may eventually be replaced with a platform-agnostic `AudioFormat` descriptor, but this is deferred.
 
 **3a: WasapiPlayer (builder + playback engine) — DONE**
 - [x] `WasapiPlayerBuilder` — fluent configuration (device, share mode, latency, event sync, audio category, MMCSS task name, low-latency preference)
-- [x] `WasapiPlayer` — the built player, implements `IDisposable` and `IAsyncDisposable`
+- [x] `WasapiPlayer` — the built player, implements `IWavePlayer`, `IWavePosition`, `IDisposable` and `IAsyncDisposable`
 - [x] Span-based render loop using `RenderBufferLease` — no `Marshal.Copy`
-- [x] Accept `IAudioSource` (zero-copy). `IWaveProvider` callers use `.ToAudioSource()` extension method
+- [x] Accept `IWaveProvider` (zero-copy Span-based)
 - [x] MMCSS thread priority elevation via `AvSetMmThreadCharacteristics` in the audio thread
 - [x] IAudioClient3 low-latency auto-negotiation: `WithLowLatency()` uses `InitializeSharedAudioStream` if available, falls back to standard initialization
 - [x] AudioStreamCategory support via builder's `WithCategory()`
 - [x] Format handling: shared mode uses `AutoConvertPcm`. Exclusive mode requires the caller to provide a natively supported format — `IsFormatSupported()` and `DeviceMixFormat` are exposed for callers to query. No built-in resampler (the old WasapiOut's embedded resampler caused threading/latency issues; callers who need SRC should do it upstream)
+- [x] `IWavePosition` support — `GetPosition()` reports playback position via `AudioClockClient`
+- [x] Three-tier volume API:
+  - `Volume` / `IsMuted` — simple float + bool properties backed by `SimpleAudioVolume` (session volume). This is the correct default: it controls your app's volume in the Windows mixer without affecting other applications. This fixes the old `WasapiOut` design where `Volume` changed the device endpoint volume system-wide.
+  - `SessionVolume` (`SimpleAudioVolume`) — the backing object for `Volume`/`IsMuted`, exposing the full session volume API
+  - `StreamVolume` (`AudioStreamVolume`) — per-channel volume for balance/pan (shared mode only; throws `InvalidOperationException` in exclusive mode)
+  - `DeviceVolume` (`AudioEndpointVolume`) — device endpoint volume with per-channel levels, mute, step control, dB ranges, and change notifications. Affects all applications on the device.
 
 **3b: WasapiRecorder (builder + capture engine) — DONE**
 - [x] `WasapiRecorderBuilder` — fluent configuration (device, share mode, format, buffer length, event sync, MMCSS)
@@ -214,123 +220,72 @@ Existing `WasapiOut` and `WasapiCapture` are kept with `[Obsolete]` attributes p
 - `IChannelAudioVolume` wrapper
 - Volume ducking notifications (`IAudioVolumeDuckNotification`)
 
-#### Phase 7: IAudioSource / ISampleSource as core interfaces — IN PROGRESS
+#### Phase 7: Span-based IWaveProvider / ISampleProvider — DONE
+
+**Decision:** Rather than introducing separate `IAudioSource` / `ISampleSource` interfaces alongside the originals (with adapter classes bridging them), the existing `IWaveProvider` and `ISampleProvider` interfaces were retrofitted to use `Span<T>` signatures directly. This preserves all existing class names, eliminates the adapter layer, and provides a simpler mental model.
 
 **7a: Foundation — DONE**
 
-**Decision:** NAudio.Core and NAudio.Midi moved from `netstandard2.0` to `net8.0`. NAudio.Asio dropped its `netstandard2.0` leg (now `net8.0-windows` only). This unlocks `Span<T>` in NAudio.Core.
-
-- [x] NAudio.Core TFM: `netstandard2.0` → `net8.0`
+- [x] NAudio.Core TFM: `netstandard2.0` → `net8.0` (unlocks `Span<T>`)
 - [x] NAudio.Midi TFM: `netstandard2.0` → `net8.0`
 - [x] NAudio.Asio TFM: `netstandard2.0;net8.0-windows` → `net8.0-windows`
-- [x] `IAudioSource` moved from `NAudio.Wasapi` (namespace `NAudio.Wasapi`) to `NAudio.Core` (namespace `NAudio.Wave`)
-- [x] `ISampleSource` added to `NAudio.Core` — span-based equivalent of `ISampleProvider` with `int Read(Span<float> buffer)`
-- [x] `WaveStream` implements `IAudioSource` — overrides `Stream.Read(Span<byte>)` with a reusable bridge buffer (avoids the base class's per-call ArrayPool rent/return overhead). Subclasses can override `Read(Span<byte>)` for zero-copy
-- [x] `WasapiPlayer.Init(IWaveProvider)` overload removed — `WaveStream` now implements `IAudioSource` directly, so the overload caused ambiguity. Plain `IWaveProvider` callers use `.ToAudioSource()` extension method
+- [x] `IWaveProvider.Read` signature changed: `Read(byte[] buffer, int offset, int count)` → `Read(Span<byte> buffer)`
+- [x] `ISampleProvider.Read` signature changed: `Read(float[] buffer, int offset, int count)` → `Read(Span<float> buffer)`
+- [x] `IWavePlayer.Init` signature changed: `Init(IWaveProvider waveProvider)` — takes the now-Span-based `IWaveProvider`
+- [x] `WaveStream` implements `IWaveProvider` via `Stream.Read(Span<byte>)` override with a reusable bridge buffer. Subclasses can override `Read(Span<byte>)` for zero-copy. The array-based `Read(byte[], int, int)` remains as a convenience overload (non-interface, from `Stream`)
 - [x] `DirectSoundOut` fixed for net8.0: `Thread.Abort()` removed (not supported), `nint` null check fixed
 
-**Adapter classes (in NAudio.Core):**
+**7b: All implementations use Span-based Read — DONE**
 
-| Adapter | Wraps | As | Location |
-|---------|-------|----|----------|
-| `WaveProviderAudioSource` | `IWaveProvider` | `IAudioSource` | `Wave/WaveProviders/` |
-| `AudioSourceWaveProvider` | `IAudioSource` | `IWaveProvider` | `Wave/WaveProviders/` |
-| `SampleProviderSampleSource` | `ISampleProvider` | `ISampleSource` | `Wave/SampleProviders/` |
-| `SampleSourceSampleProvider` | `ISampleSource` | `ISampleProvider` | `Wave/SampleProviders/` |
-| `SampleSourceAudioSource` | `ISampleSource` | `IAudioSource` | `Wave/SampleProviders/` |
+**Byte-level producers (`IWaveProvider`):**
+- [x] `MediaFoundationTransform` — constructor accepts `IWaveProvider`. `MediaFoundationResampler` inherits this
+- [x] `MediaFoundationReader` — overrides `Read(Span<byte>)` with span-based `ReadFromDecoderBuffer`
+- [x] `ResamplerDmoStream` — overrides `Read(Span<byte>)` using span-based `DmoOutputDataBuffer.RetrieveData(Span<byte>)`
+- [x] `DmoEffectWaveProvider` — reads directly into span and processes in-place via pinned `MediaObjectInPlace.Process(Span<byte>)`
+- [x] `BufferedWaveProvider` — `Read(Span<byte>)` backed by `CircularBuffer`
+- [x] `VolumeWaveProvider16`, `MonoToStereoProvider16`, `StereoToMonoProvider16`, `Wave16toFloatProvider`, `WaveFloatTo16Provider`
+- [x] `MixingWaveProvider32`, `MultiplexingWaveProvider`, `SilenceWaveProvider`, `WaveRecorder`, `WaveInProvider`
+- [x] `WaveFormatConversionProvider` (NAudio.WinMM)
 
-**Extension methods (in `AudioSourceExtensions`):**
-- `IWaveProvider.ToAudioSource()` — returns self if already `IAudioSource`, otherwise wraps
-- `IAudioSource.ToWaveProvider()` — returns self if already `IWaveProvider`, otherwise wraps
-- `ISampleProvider.ToSampleSource()` — returns self if already `ISampleSource`, otherwise wraps
-- `ISampleSource.ToSampleProvider()` — returns self if already `ISampleProvider`, otherwise wraps
-- `ISampleSource.ToAudioSource()` — wraps via `SampleSourceAudioSource` (IEEE float reinterpret, no buffer copy)
+**Sample-level producers (`ISampleProvider`):**
+- [x] `VolumeSampleProvider`, `MixingSampleProvider`, `FadeInOutSampleProvider`, `MonoToStereoSampleProvider`, `StereoToMonoSampleProvider`
+- [x] `MeteringSampleProvider`, `NotifyingSampleProvider`, `PanningSampleProvider`, `OffsetSampleProvider`
+- [x] `MultiplexingSampleProvider`, `ConcatenatingSampleProvider`, `AdsrSampleProvider`, `SmbPitchShiftingSampleProvider`
+- [x] `SignalGenerator`, `WdlResamplingSampleProvider`, `SampleChannel`
+- [x] `SimpleCompressorEffect` (renamed from `SimpleCompressorStream`)
 
-**7b: Non-Stream classes implement only IAudioSource / ISampleSource — DONE**
+**PCM-to-sample converters (`ISampleProvider`, via `SampleProviderConverterBase`):**
+- [x] `Pcm8BitToSampleProvider`, `Pcm16BitToSampleProvider`, `Pcm24BitToSampleProvider`, `Pcm32BitToSampleProvider`
+- [x] `WaveToSampleProvider`, `WaveToSampleProvider64`
 
-**Decision:** Classes that don't inherit from `Stream` should implement only the modern span-based interface (`IAudioSource` or `ISampleSource`), not the legacy array-based interface (`IWaveProvider` or `ISampleProvider`). Legacy callers use the `.ToWaveProvider()` / `.ToSampleProvider()` extension methods to bridge. This avoids dual-implementation and makes the new interfaces the primary identity of each class.
-
-**Byte-level producers (IAudioSource only, IWaveProvider dropped):**
-- [x] `MediaFoundationTransform` — `IAudioSource` only. Constructor accepts `IAudioSource`. Single `Read(Span<byte>)` method. `MediaFoundationResampler` inherits this
-- [x] `MediaFoundationReader` — overrides `Read(Span<byte>)` with span-based `ReadFromDecoderBuffer` (still also implements `IWaveProvider` via `WaveStream` / `Stream` inheritance)
-- [x] `ResamplerDmoStream` — overrides `Read(Span<byte>)` using span-based `DmoOutputDataBuffer.RetrieveData(Span<byte>)` (still `IWaveProvider` via `WaveStream`)
-- [x] `DmoEffectWaveProvider` — `IAudioSource` only. Constructor accepts `IAudioSource`. Reads directly into span and processes in-place via pinned `MediaObjectInPlace.Process(Span<byte>)`
-- [x] `BufferedWaveProvider` — `IAudioSource` only. `Read(Span<byte>)` backed by `CircularBuffer`
-- [x] `VolumeWaveProvider16` — `IAudioSource` only. Constructor accepts `IAudioSource`
-- [x] `MonoToStereoProvider16` — `IAudioSource` only. Constructor accepts `IAudioSource`
-- [x] `StereoToMonoProvider16` — `IAudioSource` only. Constructor accepts `IAudioSource`
-- [x] `Wave16toFloatProvider` — `IAudioSource` only. Constructor accepts `IAudioSource`
-- [x] `WaveFloatTo16Provider` — `IAudioSource` only. Constructor accepts `IAudioSource`
-- [x] `MixingWaveProvider32` — `IAudioSource` only. Constructor accepts `IEnumerable<IAudioSource>`
-- [x] `MultiplexingWaveProvider` — `IAudioSource` only. Constructor accepts `IEnumerable<IAudioSource>`
-- [x] `SilenceWaveProvider` — `IAudioSource` only
-- [x] `WaveRecorder` — `IAudioSource` only. Constructor accepts `IAudioSource`
-- [x] `WaveInProvider` — `IAudioSource` only
-- [x] `WaveFormatConversionProvider` (NAudio.WinMM) — `IAudioSource` only. Constructor accepts `IAudioSource`
-
-**Sample-level producers (ISampleSource only, ISampleProvider dropped):**
-- [x] `VolumeSampleProvider` — `ISampleSource` only. Constructor accepts `ISampleSource`
-- [x] `MixingSampleProvider` — `ISampleSource` only. `AddMixerInput` accepts `ISampleSource`
-- [x] `FadeInOutSampleProvider` — `ISampleSource` only. Constructor accepts `ISampleSource`
-- [x] `MonoToStereoSampleProvider` — `ISampleSource` only. Constructor accepts `ISampleSource`
-- [x] `StereoToMonoSampleProvider` — `ISampleSource` only. Constructor accepts `ISampleSource`
-- [x] `MeteringSampleProvider` — `ISampleSource` only. Constructor accepts `ISampleSource`
-- [x] `NotifyingSampleProvider` — `ISampleSource` only. Constructor accepts `ISampleSource`
-- [x] `PanningSampleProvider` — `ISampleSource` only. Constructor accepts `ISampleSource`
-- [x] `OffsetSampleProvider` — `ISampleSource` only. Constructor accepts `ISampleSource`
-- [x] `MultiplexingSampleProvider` — `ISampleSource` only. Constructor accepts `IEnumerable<ISampleSource>`
-- [x] `ConcatenatingSampleProvider` — `ISampleSource` only. Constructor accepts `IEnumerable<ISampleSource>`
-- [x] `AdsrSampleProvider` — `ISampleSource` only. Constructor accepts `ISampleSource`
-- [x] `SmbPitchShiftingSampleProvider` — `ISampleSource` only. Constructor accepts `ISampleSource`
-- [x] `SignalGenerator` — `ISampleSource` only
-- [x] `WdlResamplingSampleProvider` — `ISampleSource` only. Constructor accepts `ISampleSource`
-- [x] `SampleChannel` — `ISampleSource` only. Constructor accepts `IAudioSource`
-- [x] `SimpleCompressorEffect` (renamed from `SimpleCompressorStream`) — `ISampleSource` only. Constructor accepts `ISampleSource`
-
-**PCM-to-sample converters (ISampleSource only, via SampleProviderConverterBase):**
-
-- [x] `Pcm8BitToSampleProvider` — `ISampleSource` only. Constructor accepts `IAudioSource`
-- [x] `Pcm16BitToSampleProvider` — `ISampleSource` only. Constructor accepts `IAudioSource`
-- [x] `Pcm24BitToSampleProvider` — `ISampleSource` only. Constructor accepts `IAudioSource`
-- [x] `Pcm32BitToSampleProvider` — `ISampleSource` only. Constructor accepts `IAudioSource`
-- [x] `WaveToSampleProvider` — `ISampleSource` only. Constructor accepts `IAudioSource`
-- [x] `WaveToSampleProvider64` — `ISampleSource` only. Constructor accepts `IAudioSource`
-
-**Sample-to-wave converters (IAudioSource only):**
-
-- [x] `SampleToWaveProvider` — `IAudioSource` only. Constructor accepts `ISampleSource`
-- [x] `SampleToWaveProvider16` — `IAudioSource` only. Constructor accepts `ISampleSource`
-- [x] `SampleToWaveProvider24` — `IAudioSource` only. Constructor accepts `ISampleSource`
+**Sample-to-wave converters (`IWaveProvider`):**
+- [x] `SampleToWaveProvider`, `SampleToWaveProvider16`, `SampleToWaveProvider24`
 
 **Base classes:**
-
-- [x] `WaveProvider16` — `IAudioSource` only. Abstract `Read(Span<short>)` method
-- [x] `WaveProvider32` — `IAudioSource` + `ISampleSource`. Abstract `Read(Span<float>)` method
-- [x] `SampleProviderConverterBase` — `ISampleSource` only. Constructor accepts `IAudioSource`
+- [x] `WaveProvider16` — abstract `Read(Span<short>)` method
+- [x] `WaveProvider32` — `IWaveProvider` + `ISampleProvider`. Abstract `Read(Span<float>)` method
+- [x] `SampleProviderConverterBase` — `ISampleProvider`, constructor accepts `IWaveProvider`
 
 **Infrastructure span additions:**
-
-- [x] `MediaBuffer` — `LoadData(ReadOnlySpan<byte>)` and `RetrieveData(Span<byte>)` using `Buffer.MemoryCopy` with pinned spans
-- [x] `DmoOutputDataBuffer` — `RetrieveData(Span<byte>)` forwarding to `MediaBuffer`
-- [x] `MediaObjectInPlace` — `Process(Span<byte>, ...)` pins the span directly (eliminates `AllocHGlobal` + two `Marshal.Copy` calls)
-- [x] `CircularBuffer` — `Read(Span<byte>)` and `Write(ReadOnlySpan<byte>)` span-based overloads
-- [x] `WaveExtensionMethods` — added `ToMono()`, `ToStereo()`, `FollowedBy()`, `Skip()`, `Take()` extensions on `ISampleSource`; added `Init(IWavePlayer, ISampleSource)` and `Init(IWavePlayer, ISampleProvider)` extension methods
+- [x] `MediaBuffer` — `LoadData(ReadOnlySpan<byte>)` and `RetrieveData(Span<byte>)`
+- [x] `DmoOutputDataBuffer` — `RetrieveData(Span<byte>)`
+- [x] `MediaObjectInPlace` — `Process(Span<byte>, ...)` pins the span directly
+- [x] `CircularBuffer` — `Read(Span<byte>)` and `Write(ReadOnlySpan<byte>)`
+- [x] `WaveExtensionMethods` — `ToMono()`, `ToStereo()`, `FollowedBy()`, `Skip()`, `Take()` extensions; `Init(IWavePlayer, ISampleProvider)` extension method
 
 **7c: Consumer updates — DONE**
 
-- [x] `IWavePlayer.Init()` — signature changed from `Init(IWaveProvider)` to `Init(IAudioSource)`. All implementations updated (WaveOut, DirectSoundOut, AsioOut, WasapiPlayer)
-- [x] `MediaFoundationEncoder` — all `Encode` methods and static helpers (`EncodeToMp3`, `EncodeToAac`, `EncodeToWma`) now accept `IAudioSource` instead of `IWaveProvider`. `ConvertOneBuffer` reads directly into the locked `IMFMediaBuffer` via span — eliminates the managed `byte[]` and `Marshal.Copy`. Old `IWaveProvider` callers use `.ToAudioSource()`
-- [x] `WaveFileWriter` — `CreateWaveFile` and `WriteWavFileToStream` accept `IAudioSource`; `CreateWaveFile16` accepts `ISampleSource`; `Write(ReadOnlySpan<byte>)` span-based write path
-- [x] `AudioFileReader` (NAudio umbrella) — implements `ISampleSource` alongside `WaveStream`
-- [x] `SampleProviderConverters` — new `ConvertAudioSourceIntoSampleSource(IAudioSource)` method; legacy `ConvertWaveProviderIntoSampleProvider` bridges through it
-- [x] NAudio.Extras — `AudioPlaybackEngine`, `AutoDisposeFileReader`, `CachedSound`, `CachedSoundSampleProvider`, `Equalizer`, `SampleAggregator` all updated to `ISampleSource`
-- [x] Demo apps — all updated for `IAudioSource`/`ISampleSource` APIs
-- [x] Test helpers — `TestSampleProvider` → `ISampleSource`, `TestWaveProvider` → `IAudioSource`
+- [x] `IWavePlayer.Init(IWaveProvider)` — all implementations updated (WaveOut, DirectSoundOut, AsioOut, WasapiPlayer)
+- [x] `MediaFoundationEncoder` — all `Encode` methods accept `IWaveProvider`. `ConvertOneBuffer` reads directly into locked `IMFMediaBuffer` via span (zero-copy)
+- [x] `WaveFileWriter` — `CreateWaveFile` / `WriteWavFileToStream` accept `IWaveProvider`; `CreateWaveFile16` accepts `ISampleProvider`; `Write(ReadOnlySpan<byte>)` span-based write path
+- [x] `AudioFileReader` — implements `ISampleProvider` alongside `WaveStream`
+- [x] `SampleProviderConverters.ConvertWaveProviderIntoSampleProvider` — single method, no adapter bridging
+- [x] NAudio.Extras — all updated to `ISampleProvider`
+- [x] Demo apps and test helpers — all updated
 
 **Notes:**
-
-- `DmoMp3FrameDecompressor` does NOT implement `IAudioSource` — it implements `IMp3FrameDecompressor` (frame-based API, not a streaming source)
-- `AudioFormat` replacing `WaveFormat` is deferred — orthogonal to span migration and would massively increase scope
+- `DmoMp3FrameDecompressor` does NOT implement `IWaveProvider` — it implements `IMp3FrameDecompressor` (frame-based API)
+- `AudioFormat` replacing `WaveFormat` is deferred — orthogonal to span migration
 
 #### Phase 5: Media Foundation modernization — DONE
 
@@ -489,34 +444,20 @@ These will need to be documented in the migration guide:
 | Exceptions are `CoreAudioException` (subclass of `COMException`) | Existing `catch (COMException)` still works; new code can catch specific types |
 | `AudioEndpointVolume` notifications may arrive on different thread | If constructed on UI thread, notifications are posted to UI thread via SynchronizationContext |
 | `WasapiOut` is `[Obsolete]` | Use `new WasapiPlayerBuilder()...Build()` to create a `WasapiPlayer` |
+| `WasapiPlayer.Volume` uses session volume, not device volume | `Volume` now controls your app's mixer slider (via `SimpleAudioVolume`), not the system-wide device volume. To control device volume, use `DeviceVolume.MasterVolumeLevelScalar`. For per-channel stream control, use `StreamVolume` (shared mode only) |
 | `WasapiCapture` is `[Obsolete]` | Use `new WasapiRecorderBuilder()...Build()` to create a `WasapiRecorder` |
 | `WasapiLoopbackCapture` is `[Obsolete]` | Use `WasapiRecorderBuilder` with process loopback or render device |
-| `IAudioSource` moved from `NAudio.Wasapi` to `NAudio.Wave` namespace (in NAudio.Core) | Update `using` directives: remove `using NAudio.Wasapi`, use `using NAudio.Wave` |
-| `WasapiPlayer.Init(IWaveProvider)` overload removed | Pass a `WaveStream` directly (it now implements `IAudioSource`), or call `.ToAudioSource()` on any `IWaveProvider` |
-
-### IAudioSource / ISampleSource migration
+### IWaveProvider / ISampleProvider migration
 
 | Change | Migration |
 | ------ | --------- |
-| `IWavePlayer.Init()` takes `IAudioSource` instead of `IWaveProvider` | `WaveStream` works directly (implements `IAudioSource`); plain `IWaveProvider` needs `.ToAudioSource()`; `ISampleSource` and `ISampleProvider` can use the `Init()` extension methods in `WaveExtensionMethods` |
+| `IWaveProvider.Read` signature: `Read(byte[], int, int)` → `Read(Span<byte>)` | Change implementations to `int Read(Span<byte> buffer)`. Callers with `byte[]` use `source.Read(buffer.AsSpan(offset, count))` |
+| `ISampleProvider.Read` signature: `Read(float[], int, int)` → `Read(Span<float>)` | Change implementations to `int Read(Span<float> buffer)`. Callers with `float[]` use `source.Read(buffer.AsSpan(offset, count))` |
+| `IWavePlayer.Init()` takes `IWaveProvider` (now Span-based) | `WaveStream` works directly; `ISampleProvider` can use the `Init()` extension method in `WaveExtensionMethods` |
 | `Init(IWavePlayer, ISampleProvider, bool convertTo16Bit)` extension removed | Use `Init(IWavePlayer, ISampleProvider)` (always IEEE float) or convert to 16-bit upstream via `SampleToWaveProvider16` |
-| All sample providers implement `ISampleSource` only (not `ISampleProvider`) | Call `.ToSampleProvider()` if `ISampleProvider` is needed downstream; use `.ToSampleSource()` on `ISampleProvider` inputs to constructors |
-| All non-Stream wave providers implement `IAudioSource` only (not `IWaveProvider`) | Call `.ToWaveProvider()` if `IWaveProvider` is needed downstream; use `.ToAudioSource()` on `IWaveProvider` inputs to constructors |
-| `SampleChannel` constructor takes `IAudioSource` instead of `IWaveProvider` | `WaveStream` works directly; plain `IWaveProvider` needs `.ToAudioSource()` |
-| `WaveFileWriter.CreateWaveFile` / `WriteWavFileToStream` take `IAudioSource` | `WaveStream` works directly; plain `IWaveProvider` needs `.ToAudioSource()` |
-| `WaveFileWriter.CreateWaveFile16` takes `ISampleSource` | Use `.ToSampleSource()` on `ISampleProvider` inputs |
-| `SampleToWaveProvider` / `SampleToWaveProvider16` / `SampleToWaveProvider24` constructors take `ISampleSource` | Use `.ToSampleSource()` on `ISampleProvider` inputs |
 | `WaveProvider32` abstract method changed to `Read(Span<float>)` | Custom subclasses must update their override signature |
 | `WaveProvider16` abstract method changed to `Read(Span<short>)` | Custom subclasses must update their override signature |
-| `SampleProviderConverterBase` constructor takes `IAudioSource` | Use `.ToAudioSource()` on `IWaveProvider` inputs |
-| `BufferedWaveProvider` implements `IAudioSource` (not `IWaveProvider`) | Call `.ToWaveProvider()` if `IWaveProvider` is needed downstream |
-| `WaveFormatConversionProvider` constructor takes `IAudioSource` | Use `.ToAudioSource()` on `IWaveProvider` inputs |
-| `SimpleCompressorStream` renamed to `SimpleCompressorEffect` | Update class name references; now implements `ISampleSource` and takes `ISampleSource` in constructor |
-| `MediaFoundationTransform` no longer implements `IWaveProvider` | Use as `IAudioSource`, or call `.ToWaveProvider()` if needed |
-| `MediaFoundationResampler` constructor takes `IAudioSource` | Call `.ToAudioSource()` on any `IWaveProvider` input |
-| `DmoEffectWaveProvider` no longer implements `IWaveProvider` | Use as `IAudioSource`, or call `.ToWaveProvider()` if needed |
-| `DmoEffectWaveProvider` constructor takes `IAudioSource` | Call `.ToAudioSource()` on any `IWaveProvider` input |
-| `MediaFoundationEncoder.Encode` takes `IAudioSource` | `WaveStream` works directly; plain `IWaveProvider` needs `.ToAudioSource()` |
+| `SimpleCompressorStream` renamed to `SimpleCompressorEffect` | Update class name references; now implements `ISampleProvider` and takes `ISampleProvider` in constructor |
 
 ### Media Foundation API changes
 
@@ -586,9 +527,9 @@ These will need to be documented in the migration guide:
 - `IMediaBuffer` correctly remains `[ComImport]` (callback interface implemented by managed `MediaBuffer` class)
 - `MediaObject` uses `MediaFoundationException.ThrowIfFailed` (zero `Marshal.ThrowExceptionForHR` remaining)
 - `MediaBuffer` finalizer removed
-- All 23 sample providers in NAudio.Core implement `ISampleSource` only (no dual `ISampleProvider` implementations)
-- All 16 non-Stream wave providers implement `IAudioSource` only (no dual `IWaveProvider` implementations)
-- All 5 active output devices (`WaveOut`, `DirectSoundOut`, `AsioOut`, `WasapiPlayer`, `WasapiOut` [deprecated]) accept `IAudioSource` via `Init()`
-- Adapter infrastructure complete: 5 adapter classes + 5 extension methods cover all conversion paths between old and new interfaces
-- `IWaveProvider` and `ISampleProvider` interfaces are unchanged — only used by adapter classes in NAudio.Core
-- `WaveStream` base class implements both `IWaveProvider` and `IAudioSource` — all WaveStream subclasses get IAudioSource support automatically
+- `IWaveProvider` and `ISampleProvider` are now Span-based: `Read(Span<byte>)` and `Read(Span<float>)` respectively
+- All 23 sample providers in NAudio.Core implement `ISampleProvider` with `Read(Span<float>)`
+- All 16 non-Stream wave providers implement `IWaveProvider` with `Read(Span<byte>)`
+- All 5 active output devices (`WaveOut`, `DirectSoundOut`, `AsioOut`, `WasapiPlayer`, `WasapiOut` [deprecated]) accept `IWaveProvider` via `Init()`
+- No adapter classes needed — single set of interfaces throughout the codebase
+- `WaveStream` base class implements `IWaveProvider` via `Stream.Read(Span<byte>)` override

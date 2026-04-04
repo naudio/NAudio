@@ -7,16 +7,16 @@ namespace NAudio.Wave
     /// <summary>
     /// Converts from mono to stereo, allowing freedom to route all, some, or none of the incoming signal to left or right channels
     /// </summary>
-    public class MonoToStereoProvider16 : IAudioSource
+    public class MonoToStereoProvider16 : IWaveProvider
     {
-        private readonly IAudioSource sourceProvider;
+        private readonly IWaveProvider sourceProvider;
         private byte[] sourceBuffer;
 
         /// <summary>
         /// Creates a new stereo waveprovider based on a mono input
         /// </summary>
         /// <param name="sourceProvider">Mono 16 bit PCM input</param>
-        public MonoToStereoProvider16(IAudioSource sourceProvider)
+        public MonoToStereoProvider16(IWaveProvider sourceProvider)
         {
             if (sourceProvider.WaveFormat.Encoding != WaveFormatEncoding.Pcm)
             {

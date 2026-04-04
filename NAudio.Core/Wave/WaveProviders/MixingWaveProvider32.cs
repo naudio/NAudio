@@ -9,9 +9,9 @@ namespace NAudio.Wave
     /// All channels must have the same number of inputs and same sample rate
     /// n.b. Work in Progress - not tested yet
     /// </summary>
-    public class MixingWaveProvider32 : IAudioSource
+    public class MixingWaveProvider32 : IWaveProvider
     {
-        private readonly List<IAudioSource> inputs;
+        private readonly List<IWaveProvider> inputs;
         private WaveFormat waveFormat;
         private readonly int bytesPerSample;
 
@@ -22,7 +22,7 @@ namespace NAudio.Wave
         {
             this.waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(44100, 2);
             this.bytesPerSample = 4;
-            this.inputs = new List<IAudioSource>();
+            this.inputs = new List<IWaveProvider>();
         }
 
         /// <summary>
@@ -31,7 +31,7 @@ namespace NAudio.Wave
         /// <param name="inputs">inputs - must all have the same format.</param>
         /// <exception cref="ArgumentException">Thrown if the input streams are not 32 bit floating point,
         /// or if they have different formats to each other</exception>
-        public MixingWaveProvider32(IEnumerable<IAudioSource> inputs)
+        public MixingWaveProvider32(IEnumerable<IWaveProvider> inputs)
             : this()
         {
             if (inputs == null)
@@ -47,7 +47,7 @@ namespace NAudio.Wave
         /// Add a new input to the mixer
         /// </summary>
         /// <param name="waveProvider">The wave input to add</param>
-        public void AddInputStream(IAudioSource waveProvider)
+        public void AddInputStream(IWaveProvider waveProvider)
         {
             if (waveProvider == null)
                 throw new ArgumentNullException(nameof(waveProvider));
@@ -81,7 +81,7 @@ namespace NAudio.Wave
         /// Remove an input from the mixer
         /// </summary>
         /// <param name="waveProvider">waveProvider to remove</param>
-        public void RemoveInputStream(IAudioSource waveProvider)
+        public void RemoveInputStream(IWaveProvider waveProvider)
         {
             lock (inputs)
             {

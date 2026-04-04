@@ -16,7 +16,7 @@ namespace NAudioTests.WaveStreams
             if (!File.Exists(input)) Assert.Ignore("Test file not found");
             using (var reader = new WaveFileReader(input))
             {
-                var sp = reader.ToSampleProvider().ToSampleSource();
+                var sp = reader.ToSampleProvider();
                 var wp24 = new SampleToWaveProvider24(sp);
                 WaveFileWriter.CreateWaveFile(@"C:\Users\Mark\Downloads\Region1-24.wav", wp24);
             }

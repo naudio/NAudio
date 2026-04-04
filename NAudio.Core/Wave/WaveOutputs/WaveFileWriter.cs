@@ -20,24 +20,24 @@ namespace NAudio.Wave
         private readonly string filename;
 
         /// <summary>
-        /// Creates a 16 bit Wave File from an ISampleSource.
+        /// Creates a 16 bit Wave File from an ISampleProvider.
         /// BEWARE: the source must not return data indefinitely.
         /// </summary>
         /// <param name="filename">The filename to write to</param>
         /// <param name="source">The source sample source</param>
-        public static void CreateWaveFile16(string filename, ISampleSource source)
+        public static void CreateWaveFile16(string filename, ISampleProvider source)
         {
             CreateWaveFile(filename, new SampleToWaveProvider16(source));
         }
 
         /// <summary>
-        /// Creates a Wave file by reading all the data from an IAudioSource.
+        /// Creates a Wave file by reading all the data from an IWaveProvider.
         /// BEWARE: the source MUST return 0 from its Read method when it is finished,
         /// or the Wave File will grow indefinitely.
         /// </summary>
         /// <param name="filename">The filename to use</param>
         /// <param name="source">The source audio</param>
-        public static void CreateWaveFile(string filename, IAudioSource source)
+        public static void CreateWaveFile(string filename, IWaveProvider source)
         {
             using (var writer = new WaveFileWriter(filename, source.WaveFormat))
             {
@@ -55,13 +55,13 @@ namespace NAudio.Wave
         }
         
         /// <summary>
-        /// Writes to a stream by reading all the data from an IAudioSource.
+        /// Writes to a stream by reading all the data from an IWaveProvider.
         /// BEWARE: the source MUST return 0 from its Read method when it is finished,
         /// or the Wave File will grow indefinitely.
         /// </summary>
         /// <param name="outStream">The stream the method will output to</param>
         /// <param name="source">The source audio</param>
-        public static void WriteWavFileToStream(Stream outStream, IAudioSource source)
+        public static void WriteWavFileToStream(Stream outStream, IWaveProvider source)
         {
             using (var writer = new WaveFileWriter(new IgnoreDisposeStream(outStream), source.WaveFormat))
             {

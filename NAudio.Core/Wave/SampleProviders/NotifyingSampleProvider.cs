@@ -5,9 +5,9 @@ namespace NAudio.Wave.SampleProviders
     /// <summary>
     /// Simple class that raises an event on every sample
     /// </summary>
-    public class NotifyingSampleProvider : ISampleSource, ISampleNotifier
+    public class NotifyingSampleProvider : ISampleProvider, ISampleNotifier
     {
-        private readonly ISampleSource source;
+        private readonly ISampleProvider source;
         // try not to give the garbage collector anything to deal with when playing live audio
         private readonly SampleEventArgs sampleArgs = new SampleEventArgs(0, 0);
         private readonly int channels;
@@ -16,7 +16,7 @@ namespace NAudio.Wave.SampleProviders
         /// Initializes a new instance of NotifyingSampleProvider
         /// </summary>
         /// <param name="source">Source Sample Provider</param>
-        public NotifyingSampleProvider(ISampleSource source)
+        public NotifyingSampleProvider(ISampleProvider source)
         {
             this.source = source;
             channels = WaveFormat.Channels;

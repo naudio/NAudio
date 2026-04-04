@@ -3,20 +3,20 @@ using System;
 namespace NAudio.Wave
 {
     /// <summary>
-    /// Utility class to intercept audio from an IAudioSource and
+    /// Utility class to intercept audio from an IWaveProvider and
     /// save it to disk
     /// </summary>
-    public class WaveRecorder : IAudioSource, IDisposable
+    public class WaveRecorder : IWaveProvider, IDisposable
     {
         private WaveFileWriter writer;
-        private IAudioSource source;
+        private IWaveProvider source;
 
         /// <summary>
         /// Constructs a new WaveRecorder
         /// </summary>
         /// <param name="destination">The location to write the WAV file to</param>
         /// <param name="source">The Source Wave Provider</param>
-        public WaveRecorder(IAudioSource source, string destination)
+        public WaveRecorder(IWaveProvider source, string destination)
         {
             this.source = source;
             this.writer = new WaveFileWriter(destination, source.WaveFormat);

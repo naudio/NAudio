@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using NAudio.Wave.SampleProviders;
 
 namespace NAudio.Wave
@@ -19,19 +19,12 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// Allows sending an ISampleSource directly to an IWavePlayer.
-        /// </summary>
-        public static void Init(this IWavePlayer wavePlayer, ISampleSource sampleSource)
-        {
-            wavePlayer.Init(sampleSource.ToAudioSource());
-        }
-
-        /// <summary>
-        /// Allows sending a legacy ISampleProvider directly to an IWavePlayer.
+        /// Allows sending an ISampleProvider directly to an IWavePlayer
+        /// by wrapping it in a SampleToWaveProvider.
         /// </summary>
         public static void Init(this IWavePlayer wavePlayer, ISampleProvider sampleProvider)
         {
-            wavePlayer.Init(sampleProvider.ToSampleSource().ToAudioSource());
+            wavePlayer.Init(new SampleToWaveProvider(sampleProvider));
         }
 
         /// <summary>
@@ -52,32 +45,32 @@ namespace NAudio.Wave
         /// <returns>An IWaveProvider</returns>
         public static IWaveProvider ToWaveProvider(this ISampleProvider sampleProvider)
         {
-            return new AudioSourceWaveProvider(new SampleToWaveProvider(sampleProvider.ToSampleSource()));
+            return new SampleToWaveProvider(sampleProvider);
         }
 
         /// <summary>
-        /// Converts a ISampleProvider to a IWaveProvider but and convert to 16 bit
+        /// Converts a ISampleProvider to a IWaveProvider and convert to 16 bit
         /// </summary>
         /// <param name="sampleProvider">SampleProvider to convert</param>
         /// <returns>A 16 bit IWaveProvider</returns>
         public static IWaveProvider ToWaveProvider16(this ISampleProvider sampleProvider)
         {
-            return new AudioSourceWaveProvider(new SampleToWaveProvider16(sampleProvider.ToSampleSource()));
+            return new SampleToWaveProvider16(sampleProvider);
         }
 
         /// <summary>
-        /// Converts a stereo ISampleSource to mono
+        /// Converts a stereo ISampleProvider to mono
         /// </summary>
-        public static ISampleSource ToMono(this ISampleSource source, float leftVol = 0.5f, float rightVol = 0.5f)
+        public static ISampleProvider ToMono(this ISampleProvider source, float leftVol = 0.5f, float rightVol = 0.5f)
         {
             if (source.WaveFormat.Channels == 1) return source;
             return new StereoToMonoSampleProvider(source) { LeftVolume = leftVol, RightVolume = rightVol };
         }
 
         /// <summary>
-        /// Converts a mono ISampleSource to stereo
+        /// Converts a mono ISampleProvider to stereo
         /// </summary>
-        public static ISampleSource ToStereo(this ISampleSource source, float leftVol = 1.0f, float rightVol = 1.0f)
+        public static ISampleProvider ToStereo(this ISampleProvider source, float leftVol = 1.0f, float rightVol = 1.0f)
         {
             if (source.WaveFormat.Channels == 2) return source;
             return new MonoToStereoSampleProvider(source) { LeftVolume = leftVol, RightVolume = rightVol };
@@ -86,26 +79,26 @@ namespace NAudio.Wave
         /// <summary>
         /// Concatenates one sample source on the end of another with silence inserted
         /// </summary>
-        public static ISampleSource FollowedBy(this ISampleSource sampleSource, TimeSpan silenceDuration, ISampleSource next)
+        public static ISampleProvider FollowedBy(this ISampleProvider sampleProvider, TimeSpan silenceDuration, ISampleProvider next)
         {
-            var silenceAppended = new OffsetSampleProvider(sampleSource) { LeadOut = silenceDuration };
-            return new ConcatenatingSampleProvider(new ISampleSource[] { silenceAppended, next });
+            var silenceAppended = new OffsetSampleProvider(sampleProvider) { LeadOut = silenceDuration };
+            return new ConcatenatingSampleProvider(new ISampleProvider[] { silenceAppended, next });
         }
 
         /// <summary>
         /// Skips over a specified amount of time (by consuming source stream)
         /// </summary>
-        public static ISampleSource Skip(this ISampleSource sampleSource, TimeSpan skipDuration)
+        public static ISampleProvider Skip(this ISampleProvider sampleProvider, TimeSpan skipDuration)
         {
-            return new OffsetSampleProvider(sampleSource) { SkipOver = skipDuration };
+            return new OffsetSampleProvider(sampleProvider) { SkipOver = skipDuration };
         }
 
         /// <summary>
         /// Takes a specified amount of time from the source stream
         /// </summary>
-        public static ISampleSource Take(this ISampleSource sampleSource, TimeSpan takeDuration)
+        public static ISampleProvider Take(this ISampleProvider sampleProvider, TimeSpan takeDuration)
         {
-            return new OffsetSampleProvider(sampleSource) { Take = takeDuration };
+            return new OffsetSampleProvider(sampleProvider) { Take = takeDuration };
         }
     }
 }

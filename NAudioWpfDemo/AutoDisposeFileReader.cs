@@ -3,7 +3,7 @@ using NAudio.Wave;
 
 namespace NAudioWpfDemo.FireAndForgetPlayback
 {
-    class AutoDisposeFileReader : ISampleSource
+    class AutoDisposeFileReader : ISampleProvider
     {
         private readonly AudioFileReader reader;
         private bool isDisposed;

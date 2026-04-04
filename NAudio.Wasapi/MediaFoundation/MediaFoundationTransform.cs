@@ -9,14 +9,14 @@ namespace NAudio.MediaFoundation
     /// An abstract base class for simplifying working with Media Foundation Transforms.
     /// You need to override the method that actually creates and configures the transform.
     /// </summary>
-    public abstract class MediaFoundationTransform : IAudioSource, IDisposable
+    public abstract class MediaFoundationTransform : IWaveProvider, IDisposable
     {
         private const int DefaultInputChunkDurationMs = 100;
 
         /// <summary>
         /// The Source Provider
         /// </summary>
-        protected readonly IAudioSource sourceProvider;
+        protected readonly IWaveProvider sourceProvider;
         /// <summary>
         /// The Output WaveFormat
         /// </summary>
@@ -39,7 +39,7 @@ namespace NAudio.MediaFoundation
         /// </summary>
         /// <param name="sourceProvider">The source provider for input data to the transform</param>
         /// <param name="outputFormat">The desired output format</param>
-        public MediaFoundationTransform(IAudioSource sourceProvider, WaveFormat outputFormat)
+        public MediaFoundationTransform(IWaveProvider sourceProvider, WaveFormat outputFormat)
         {
             this.outputWaveFormat = outputFormat;
             this.sourceProvider = sourceProvider;

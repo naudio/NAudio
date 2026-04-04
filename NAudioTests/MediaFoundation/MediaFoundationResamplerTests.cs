@@ -161,7 +161,7 @@ namespace NAudioTests.MediaFoundation
             return new RawSourceWaveStream(new MemoryStream(bytes), WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channels));
         }
 
-        private static byte[] ReadAllBytes(IAudioSource source, int chunkSize)
+        private static byte[] ReadAllBytes(IWaveProvider source, int chunkSize)
         {
             var readBuffer = new byte[chunkSize];
             using (var output = new MemoryStream())
@@ -235,7 +235,7 @@ namespace NAudioTests.MediaFoundation
             }
         }
 
-        private class InMemoryWaveProvider : IAudioSource, IDisposable
+        private class InMemoryWaveProvider : IWaveProvider, IDisposable
         {
             private readonly RawSourceWaveStream stream;
 

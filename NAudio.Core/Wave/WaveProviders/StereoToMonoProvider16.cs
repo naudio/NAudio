@@ -8,16 +8,16 @@ namespace NAudio.Wave
     /// <summary>
     /// Takes a stereo 16 bit input and turns it mono, allowing you to select left or right channel only or mix them together
     /// </summary>
-    public class StereoToMonoProvider16 : IAudioSource
+    public class StereoToMonoProvider16 : IWaveProvider
     {
-        private readonly IAudioSource sourceProvider;
+        private readonly IWaveProvider sourceProvider;
         private byte[] sourceBuffer;
 
         /// <summary>
         /// Creates a new mono waveprovider based on a stereo input
         /// </summary>
         /// <param name="sourceProvider">Stereo 16 bit PCM input</param>
-        public StereoToMonoProvider16(IAudioSource sourceProvider)
+        public StereoToMonoProvider16(IWaveProvider sourceProvider)
         {
             LeftVolume = 0.5f;
             RightVolume = 0.5f;

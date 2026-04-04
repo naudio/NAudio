@@ -28,14 +28,14 @@ namespace NAudioTests.WaveStreams
         [Test]
         public void ZeroOutputsShouldThrowException()
         {
-            var input1 = new Mock<ISampleSource>();
+            var input1 = new Mock<ISampleProvider>();
             Assert.Throws<ArgumentException>(() => new MultiplexingSampleProvider([input1.Object], 0));
         }
 
         [Test]
         public void InvalidWaveFormatShouldThowException()
         {
-            var input1 = new Mock<ISampleSource>();
+            var input1 = new Mock<ISampleProvider>();
             input1.Setup(x => x.WaveFormat).Returns(new WaveFormat(32000, 16, 1));
             Assert.Throws<ArgumentException>(() => new MultiplexingSampleProvider([input1.Object], 1));
         }
@@ -43,7 +43,7 @@ namespace NAudioTests.WaveStreams
         [Test]
         public void OneInOneOutShouldCopyWaveFormat()
         {
-            var input1 = new Mock<ISampleSource>();
+            var input1 = new Mock<ISampleProvider>();
             var inputWaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(32000, 1);
             input1.Setup(x => x.WaveFormat).Returns(inputWaveFormat);
             var mp = new MultiplexingSampleProvider([input1.Object], 1);
@@ -53,7 +53,7 @@ namespace NAudioTests.WaveStreams
         [Test]
         public void OneInTwoOutShouldCopyWaveFormatButBeStereo()
         {
-            var input1 = new Mock<ISampleSource>();
+            var input1 = new Mock<ISampleProvider>();
             var inputWaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(32000, 1);
             input1.Setup(x => x.WaveFormat).Returns(inputWaveFormat);
             var mp = new MultiplexingSampleProvider([input1.Object], 2);

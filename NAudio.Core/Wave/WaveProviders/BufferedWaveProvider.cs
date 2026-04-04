@@ -9,7 +9,7 @@ namespace NAudio.Wave
     /// Read method will return queued samples or fill buffer with zeroes.
     /// Backed by a circular buffer.
     /// </summary>
-    public class BufferedWaveProvider : IAudioSource
+    public class BufferedWaveProvider : IWaveProvider
     {
         private readonly CircularBuffer circularBuffer;
         private readonly WaveFormat waveFormat;

@@ -5,7 +5,7 @@ namespace NAudio.Wave.SampleProviders
     /// <summary>
     /// Sample Provider to allow fading in and out
     /// </summary>
-    public class FadeInOutSampleProvider : ISampleSource
+    public class FadeInOutSampleProvider : ISampleProvider
     {
         enum FadeState
         {
@@ -16,7 +16,7 @@ namespace NAudio.Wave.SampleProviders
         }
 
         private readonly object lockObject = new object();
-        private readonly ISampleSource source;
+        private readonly ISampleProvider source;
         private int fadeSamplePosition;
         private int fadeSampleCount;
         private FadeState fadeState;
@@ -26,7 +26,7 @@ namespace NAudio.Wave.SampleProviders
         /// </summary>
         /// <param name="source">The source stream with the audio to be faded in or out</param>
         /// <param name="initiallySilent">If true, we start faded out</param>
-        public FadeInOutSampleProvider(ISampleSource source, bool initiallySilent = false)
+        public FadeInOutSampleProvider(ISampleProvider source, bool initiallySilent = false)
         {
             this.source = source;
             fadeState = initiallySilent ? FadeState.Silence : FadeState.FullVolume;

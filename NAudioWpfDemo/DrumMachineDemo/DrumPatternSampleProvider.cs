@@ -4,7 +4,7 @@ using NAudio.Wave.SampleProviders;
 
 namespace NAudioWpfDemo.DrumMachineDemo
 {
-    class DrumPatternSampleProvider : ISampleSource
+    class DrumPatternSampleProvider : ISampleProvider
     {
         private readonly MixingSampleProvider mixer;
         private readonly WaveFormat waveFormat;

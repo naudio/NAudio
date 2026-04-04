@@ -14,7 +14,7 @@ namespace NAudio.Wave
     /// ISampleProvider, making it possibly the only stage in your audio
     /// pipeline necessary for simple playback scenarios
     /// </summary>
-    public class AudioFileReader : WaveStream, ISampleSource
+    public class AudioFileReader : WaveStream, ISampleProvider
     {
         private WaveStream readerStream; // the waveStream which we will use for all positioning
         private readonly SampleChannel sampleChannel; // sample provider that gives us most stuff we need

@@ -12,7 +12,7 @@ namespace NAudioTests.WaveStreams
         [Test]
         public void RightChannelOnly()
         {
-            IAudioSource stereoStream = new TestStereoProvider();
+            IWaveProvider stereoStream = new TestStereoProvider();
             StereoToMonoProvider16 mono = new StereoToMonoProvider16(stereoStream);
             mono.LeftVolume = 0.0f;
             mono.RightVolume = 1.0f;

@@ -11,9 +11,9 @@ namespace NAudio.Wave
     /// Uses could include swapping left and right channels, turning mono into stereo,
     /// feeding different input sources to different soundcard outputs etc
     /// </summary>
-    public class MultiplexingWaveProvider : IAudioSource
+    public class MultiplexingWaveProvider : IWaveProvider
     {
-        private readonly IList<IAudioSource> inputs;
+        private readonly IList<IWaveProvider> inputs;
         private readonly int outputChannelCount;
         private readonly int inputChannelCount;
         private readonly List<int> mappings;
@@ -24,7 +24,7 @@ namespace NAudio.Wave
         /// output channels. Number of outputs is equal to total number of channels in inputs
         /// </summary>
         /// <param name="inputs">Input wave providers. Must all be of the same format, but can have any number of channels</param>
-        public MultiplexingWaveProvider(IEnumerable<IAudioSource> inputs) : this(inputs, -1)
+        public MultiplexingWaveProvider(IEnumerable<IWaveProvider> inputs) : this(inputs, -1)
         {
 
         }
@@ -35,9 +35,9 @@ namespace NAudio.Wave
         /// </summary>
         /// <param name="inputs">Input wave providers. Must all be of the same format, but can have any number of channels</param>
         /// <param name="numberOfOutputChannels">Desired number of output channels. (-1 means use total number of input channels)</param>
-        public MultiplexingWaveProvider(IEnumerable<IAudioSource> inputs, int numberOfOutputChannels)
+        public MultiplexingWaveProvider(IEnumerable<IWaveProvider> inputs, int numberOfOutputChannels)
         {
-            this.inputs = new List<IAudioSource>(inputs);
+            this.inputs = new List<IWaveProvider>(inputs);
 
             outputChannelCount = numberOfOutputChannels == -1 ? this.inputs.Sum(i => i.WaveFormat.Channels)  : numberOfOutputChannels;
 

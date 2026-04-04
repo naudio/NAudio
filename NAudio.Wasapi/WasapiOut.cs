@@ -107,7 +107,7 @@ namespace NAudio.Wave
             {
                 if (dmoResamplerNeeded)
                 {
-                    resamplerDmoStream = new ResamplerDmoStream(sourceProvider.ToAudioSource(), OutputWaveFormat);
+                    resamplerDmoStream = new ResamplerDmoStream(sourceProvider, OutputWaveFormat);
                     playbackProvider = resamplerDmoStream;
                 }
                 // fill a whole buffer
@@ -221,7 +221,7 @@ namespace NAudio.Wave
         private bool FillBuffer(IWaveProvider playbackProvider, int frameCount)
         {
             var readLength = frameCount * bytesPerFrame;
-            int read = playbackProvider.Read(readBuffer, 0, readLength);
+            int read = playbackProvider.Read(readBuffer.AsSpan(0, readLength));
             if (read == 0)
             {
                 return true;
@@ -435,7 +435,7 @@ namespace NAudio.Wave
                     try
                     {
                         // just check that we can make it.
-                        using (new ResamplerDmoStream(waveProvider.ToAudioSource(), OutputWaveFormat))
+                        using (new ResamplerDmoStream(waveProvider, OutputWaveFormat))
                         {
                         }
                     }
@@ -444,7 +444,7 @@ namespace NAudio.Wave
                         // On Windows 10 some poorly coded drivers return a bad format in to closestSampleRateFormat
                         // In that case, try and fallback as if it provided no closest (e.g. force trying the mix format)
                         OutputWaveFormat = GetFallbackFormat();
-                        using (new ResamplerDmoStream(waveProvider.ToAudioSource(), OutputWaveFormat))
+                        using (new ResamplerDmoStream(waveProvider, OutputWaveFormat))
                         {
                         }
                     }

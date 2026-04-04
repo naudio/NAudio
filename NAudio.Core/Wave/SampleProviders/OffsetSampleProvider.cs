@@ -9,9 +9,9 @@ namespace NAudio.Wave.SampleProviders
     /// 3. only play a set amount from the source
     /// 4. insert silence at the end after the source is complete
     /// </summary>
-    public class OffsetSampleProvider : ISampleSource
+    public class OffsetSampleProvider : ISampleProvider
     {
-        private readonly ISampleSource sourceProvider;
+        private readonly ISampleProvider sourceProvider;
         private int phase; // 0 = not started yet, 1 = delay, 2 = skip, 3 = take, 4 = lead_out, 5 = end
         private int phasePos;
         private int delayBySamples;
@@ -151,7 +151,7 @@ namespace NAudio.Wave.SampleProviders
         /// Creates a new instance of offsetSampleProvider
         /// </summary>
         /// <param name="sourceProvider">The Source Sample Provider to read from</param>
-        public OffsetSampleProvider(ISampleSource sourceProvider)
+        public OffsetSampleProvider(ISampleProvider sourceProvider)
         {
             this.sourceProvider = sourceProvider;
         }

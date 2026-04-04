@@ -5,15 +5,15 @@ namespace NAudio.Wave.SampleProviders
     /// <summary>
     /// Very simple sample provider supporting adjustable gain
     /// </summary>
-    public class VolumeSampleProvider : ISampleSource
+    public class VolumeSampleProvider : ISampleProvider
     {
-        private readonly ISampleSource source;
+        private readonly ISampleProvider source;
 
         /// <summary>
         /// Initializes a new instance of VolumeSampleProvider
         /// </summary>
         /// <param name="source">Source sample source</param>
-        public VolumeSampleProvider(ISampleSource source)
+        public VolumeSampleProvider(ISampleProvider source)
         {
             this.source = source;
             Volume = 1.0f;

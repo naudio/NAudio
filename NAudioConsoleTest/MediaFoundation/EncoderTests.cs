@@ -12,7 +12,7 @@ static class EncoderTests
     public static void EncodeToWma() => EncodeFile("WMA", ".wma", MediaFoundationEncoder.EncodeToWma);
 
     private static void EncodeFile(string formatName, string extension,
-        Action<IAudioSource, string, int> encode)
+        Action<IWaveProvider, string, int> encode)
     {
         AnsiConsole.MarkupLine($"[bold]Encode to {formatName}[/]\n");
 

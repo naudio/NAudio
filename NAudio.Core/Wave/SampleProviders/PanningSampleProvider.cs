@@ -6,9 +6,9 @@ namespace NAudio.Wave.SampleProviders
     /// <summary>
     /// Converts a mono sample provider to stereo, with a customisable pan strategy
     /// </summary>
-    public class PanningSampleProvider : ISampleSource
+    public class PanningSampleProvider : ISampleProvider
     {
-        private readonly ISampleSource source;
+        private readonly ISampleProvider source;
         private float pan;
         private float leftMultiplier;
         private float rightMultiplier;
@@ -20,7 +20,7 @@ namespace NAudio.Wave.SampleProviders
         /// Initialises a new instance of the PanningSampleProvider
         /// </summary>
         /// <param name="source">Source sample provider, must be mono</param>
-        public PanningSampleProvider(ISampleSource source)
+        public PanningSampleProvider(ISampleProvider source)
         {
             if (source.WaveFormat.Channels != 1)
             {

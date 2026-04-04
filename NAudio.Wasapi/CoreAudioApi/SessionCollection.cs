@@ -8,13 +8,19 @@ namespace NAudio.CoreAudioApi
     /// <summary>
     /// Collection of sessions.
     /// </summary>
-    public class SessionCollection
+    public class SessionCollection : IDisposable
     {
-        readonly IAudioSessionEnumerator audioSessionEnumerator;
+        private IAudioSessionEnumerator audioSessionEnumerator;
+        private IntPtr nativePointer;
 
-        internal SessionCollection(IAudioSessionEnumerator realEnumerator)
+        /// <summary>
+        /// Creates a new SessionCollection — ownership of the COM pointer is transferred.
+        /// </summary>
+        /// <param name="nativePointer">Raw COM pointer — ownership is transferred to this instance</param>
+        internal SessionCollection(IntPtr nativePointer)
         {
-            audioSessionEnumerator = realEnumerator;
+            this.nativePointer = nativePointer;
+            audioSessionEnumerator = (IAudioSessionEnumerator)Marshal.GetObjectForIUnknown(nativePointer);
         }
 
         /// <summary>
@@ -27,9 +33,7 @@ namespace NAudio.CoreAudioApi
             get
             {
                 CoreAudioException.ThrowIfFailed(audioSessionEnumerator.GetSession(index, out var ptr));
-                var result = (IAudioSessionControl)Marshal.GetObjectForIUnknown(ptr);
-                Marshal.Release(ptr);
-                return new AudioSessionControl(result);
+                return new AudioSessionControl(ptr);
             }
         }
 
@@ -43,6 +47,23 @@ namespace NAudio.CoreAudioApi
                 CoreAudioException.ThrowIfFailed(audioSessionEnumerator.GetCount(out var result));
                 return result;
             }
+        }
+
+        /// <summary>
+        /// Dispose
+        /// </summary>
+        public void Dispose()
+        {
+            if (audioSessionEnumerator != null)
+            {
+                audioSessionEnumerator = null;
+            }
+            if (nativePointer != IntPtr.Zero)
+            {
+                Marshal.Release(nativePointer);
+                nativePointer = IntPtr.Zero;
+            }
+            GC.SuppressFinalize(this);
         }
     }
 }

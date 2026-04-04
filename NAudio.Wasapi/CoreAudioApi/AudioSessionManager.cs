@@ -17,8 +17,9 @@ namespace NAudio.CoreAudioApi
     /// </summary>
     public class AudioSessionManager : IDisposable
     {
-        private readonly IAudioSessionManager audioSessionInterface;
-        private readonly IAudioSessionManager2 audioSessionInterface2;
+        private IAudioSessionManager audioSessionInterface;
+        private IAudioSessionManager2 audioSessionInterface2;
+        private IntPtr nativePointer;
         private AudioSessionNotification audioSessionNotification;
         private SessionCollection sessions;
 
@@ -29,16 +30,21 @@ namespace NAudio.CoreAudioApi
         /// Session created delegate
         /// </summary>
         public delegate void SessionCreatedDelegate(object sender, AudioSessionControl newSession);
-        
+
         /// <summary>
         /// Occurs when audio session has been added (for example run another program that use audio playback).
         /// </summary>
         public event SessionCreatedDelegate OnSessionCreated;
 
-        internal AudioSessionManager(IAudioSessionManager audioSessionManager)
+        /// <summary>
+        /// Creates a new AudioSessionManager — ownership of the COM pointer is transferred.
+        /// </summary>
+        /// <param name="nativePointer">Raw COM pointer — ownership is transferred to this instance</param>
+        internal AudioSessionManager(IntPtr nativePointer)
         {
-            audioSessionInterface = audioSessionManager;
-            audioSessionInterface2 = audioSessionManager as IAudioSessionManager2;
+            this.nativePointer = nativePointer;
+            audioSessionInterface = (IAudioSessionManager)Marshal.GetObjectForIUnknown(nativePointer);
+            audioSessionInterface2 = audioSessionInterface as IAudioSessionManager2;
 
             RefreshSessions();
         }
@@ -54,10 +60,7 @@ namespace NAudio.CoreAudioApi
                 if (simpleAudioVolume == null)
                 {
                     CoreAudioException.ThrowIfFailed(audioSessionInterface.GetSimpleAudioVolume(Guid.Empty, 0, out var ptr));
-                    var simpleAudioInterface = (ISimpleAudioVolume)Marshal.GetObjectForIUnknown(ptr);
-                    Marshal.Release(ptr);
-
-                    simpleAudioVolume = new SimpleAudioVolume(simpleAudioInterface);
+                    simpleAudioVolume = new SimpleAudioVolume(ptr);
                 }
                 return simpleAudioVolume;
             }
@@ -74,10 +77,7 @@ namespace NAudio.CoreAudioApi
                 if (audioSessionControl == null)
                 {
                     CoreAudioException.ThrowIfFailed(audioSessionInterface.GetAudioSessionControl(Guid.Empty, 0, out var ptr));
-                    var audioSessionControlInterface = (IAudioSessionControl)Marshal.GetObjectForIUnknown(ptr);
-                    Marshal.Release(ptr);
-
-                    audioSessionControl = new AudioSessionControl(audioSessionControlInterface);
+                    audioSessionControl = new AudioSessionControl(ptr);
                 }
                 return audioSessionControl;
             }
@@ -98,9 +98,7 @@ namespace NAudio.CoreAudioApi
             if (audioSessionInterface2 != null)
             {
                 CoreAudioException.ThrowIfFailed(audioSessionInterface2.GetSessionEnumerator(out var sessionEnumPtr));
-                var sessionEnum = (IAudioSessionEnumerator)Marshal.GetObjectForIUnknown(sessionEnumPtr);
-                Marshal.Release(sessionEnumPtr);
-                sessions = new SessionCollection(sessionEnum);
+                sessions = new SessionCollection(sessionEnumPtr);
 
                 audioSessionNotification = new AudioSessionNotification(this);
                 var notificationPtr = Marshal.GetComInterfaceForObject<AudioSessionNotification, IAudioSessionNotification>(audioSessionNotification);
@@ -120,11 +118,26 @@ namespace NAudio.CoreAudioApi
         public void Dispose()
         {
             UnregisterNotifications();
+            simpleAudioVolume?.Dispose();
+            simpleAudioVolume = null;
+            audioSessionControl?.Dispose();
+            audioSessionControl = null;
+            if (audioSessionInterface != null)
+            {
+                audioSessionInterface = null;
+                audioSessionInterface2 = null;
+            }
+            if (nativePointer != IntPtr.Zero)
+            {
+                Marshal.Release(nativePointer);
+                nativePointer = IntPtr.Zero;
+            }
             GC.SuppressFinalize(this);
         }
 
         private void UnregisterNotifications()
         {
+            sessions?.Dispose();
             sessions = null;
 
             if (audioSessionNotification != null && audioSessionInterface2 != null)

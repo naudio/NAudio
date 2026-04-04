@@ -3,7 +3,7 @@ using NAudio.Wave;
 
 namespace NAudio.Extras
 {
-    class CachedSoundSampleProvider : ISampleSource
+    class CachedSoundSampleProvider : ISampleProvider
     {
         private readonly CachedSound cachedSound;
         private long position;

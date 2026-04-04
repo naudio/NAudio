@@ -6,7 +6,7 @@ namespace NAudio.Wave
     /// <summary>
     /// Base class for creating a 16 bit wave provider
     /// </summary>
-    public abstract class WaveProvider16 : IAudioSource
+    public abstract class WaveProvider16 : IWaveProvider
     {
         private WaveFormat waveFormat;
 
@@ -38,7 +38,7 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// Implements the Read method of IAudioSource by delegating to the abstract
+        /// Implements the Read method of IWaveProvider by delegating to the abstract
         /// Read method taking a short span
         /// </summary>
         public int Read(Span<byte> buffer)

@@ -15,18 +15,20 @@ namespace NAudio.CoreAudioApi
     /// </summary>
     public class AudioSessionControl : IDisposable
     {
-        private readonly IAudioSessionControl audioSessionControlInterface;
-        private readonly IAudioSessionControl2 audioSessionControlInterface2;
+        private IAudioSessionControl audioSessionControlInterface;
+        private IAudioSessionControl2 audioSessionControlInterface2;
+        private IntPtr nativePointer;
         private AudioSessionEventsCallback audioSessionEventCallback;
 
         /// <summary>
-        /// Constructor.
+        /// Creates a new AudioSessionControl — ownership of the COM pointer is transferred.
         /// </summary>
-        /// <param name="audioSessionControl"></param>
-        internal AudioSessionControl(IAudioSessionControl audioSessionControl)
+        /// <param name="nativePointer">Raw COM pointer — ownership is transferred to this instance</param>
+        internal AudioSessionControl(IntPtr nativePointer)
         {
-            audioSessionControlInterface = audioSessionControl;
-            audioSessionControlInterface2 = audioSessionControl as IAudioSessionControl2;
+            this.nativePointer = nativePointer;
+            audioSessionControlInterface = (IAudioSessionControl)Marshal.GetObjectForIUnknown(nativePointer);
+            audioSessionControlInterface2 = audioSessionControlInterface as IAudioSessionControl2;
 
             if (audioSessionControlInterface is IAudioMeterInformation meters)
                 AudioMeterInformation = new AudioMeterInformation(meters);
@@ -34,7 +36,21 @@ namespace NAudio.CoreAudioApi
                 SimpleAudioVolume = new SimpleAudioVolume(volume);
         }
 
-        #region IDisposable Members
+        /// <summary>
+        /// Creates a new AudioSessionControl from a borrowed interface (e.g. COM callback).
+        /// This instance does not own the COM pointer.
+        /// </summary>
+        /// <param name="borrowed">IAudioSessionControl obtained from a COM callback</param>
+        internal AudioSessionControl(IAudioSessionControl borrowed)
+        {
+            audioSessionControlInterface = borrowed;
+            audioSessionControlInterface2 = borrowed as IAudioSessionControl2;
+
+            if (audioSessionControlInterface is IAudioMeterInformation meters)
+                AudioMeterInformation = new AudioMeterInformation(meters);
+            if (audioSessionControlInterface is ISimpleAudioVolume volume)
+                SimpleAudioVolume = new SimpleAudioVolume(volume);
+        }
 
         /// <summary>
         /// Dispose
@@ -48,10 +64,18 @@ namespace NAudio.CoreAudioApi
                 Marshal.Release(ptr);
                 audioSessionEventCallback = null;
             }
+            if (audioSessionControlInterface != null)
+            {
+                audioSessionControlInterface = null;
+                audioSessionControlInterface2 = null;
+            }
+            if (nativePointer != IntPtr.Zero)
+            {
+                Marshal.Release(nativePointer);
+                nativePointer = IntPtr.Zero;
+            }
             GC.SuppressFinalize(this);
         }
-
-        #endregion
 
         /// <summary>
         /// Audio meter information of the audio session.

@@ -5,10 +5,10 @@ namespace NAudio.Wave
 {
     /// <summary>
     /// Base class for creating a 32 bit floating point wave provider
-    /// Can also be used as a base class for an ISampleSource that can
-    /// be plugged straight into anything requiring an IAudioSource
+    /// Can also be used as a base class for an ISampleProvider that can
+    /// be plugged straight into anything requiring an IWaveProvider
     /// </summary>
-    public abstract class WaveProvider32 : IAudioSource, ISampleSource
+    public abstract class WaveProvider32 : IWaveProvider, ISampleProvider
     {
         private WaveFormat waveFormat;
 
@@ -40,10 +40,10 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// Implements the Read method of IAudioSource by delegating to the abstract
+        /// Implements the Read method of IWaveProvider by delegating to the abstract
         /// Read method taking a float span
         /// </summary>
-        int IAudioSource.Read(Span<byte> buffer)
+        int IWaveProvider.Read(Span<byte> buffer)
         {
             var floatSpan = MemoryMarshal.Cast<byte, float>(buffer);
             int samplesRequired = buffer.Length / 4;

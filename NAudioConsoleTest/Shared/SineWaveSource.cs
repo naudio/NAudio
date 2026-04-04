@@ -4,10 +4,10 @@ using NAudio.Wave;
 namespace NAudioConsoleTest.Shared;
 
 /// <summary>
-/// Generates a sine wave. Implements ISampleSource (primary) and IAudioSource
+/// Generates a sine wave. Implements ISampleProvider (primary) and IWaveProvider
 /// for direct use with WASAPI playback.
 /// </summary>
-class SineWaveSource : ISampleSource, IAudioSource
+class SineWaveSource : ISampleProvider, IWaveProvider
 {
     private readonly float frequency;
     private readonly float amplitude;

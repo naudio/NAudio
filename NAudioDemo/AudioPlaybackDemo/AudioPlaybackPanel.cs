@@ -98,7 +98,7 @@ namespace NAudioDemo.AudioPlaybackDemo
                 return;
             }
 
-            ISampleSource sampleProvider;
+            ISampleProvider sampleProvider;
             try
             {
                 sampleProvider = CreateInputStream(fileName);
@@ -129,7 +129,7 @@ namespace NAudioDemo.AudioPlaybackDemo
             wavePlayer.Play();
         }
 
-        private ISampleSource CreateInputStream(string fileName)
+        private ISampleProvider CreateInputStream(string fileName)
         {
             audioFileReader = new AudioFileReader(fileName);
             textBoxCurrentFile.Text = $"{Path.GetFileName(fileName)}\r\n{audioFileReader.WaveFormat}";

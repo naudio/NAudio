@@ -26,8 +26,8 @@ namespace NAudio.Wave
         /// <summary>
         /// Initialise playback
         /// </summary>
-        /// <param name="audioSource">The audio source to be played</param>
-        void Init(IAudioSource audioSource);
+        /// <param name="waveProvider">The wave provider to be played</param>
+        void Init(IWaveProvider waveProvider);
 
         /// <summary>
         /// The volume 

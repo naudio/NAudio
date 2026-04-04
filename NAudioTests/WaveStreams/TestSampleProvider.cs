@@ -3,7 +3,7 @@ using NAudio.Wave;
 
 namespace NAudioTests.WaveStreams
 {
-    class TestSampleProvider : ISampleSource
+    class TestSampleProvider : ISampleProvider
     {
         private readonly int length;
 

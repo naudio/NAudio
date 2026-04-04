@@ -5,16 +5,16 @@ namespace NAudio.Wave
     /// <summary>
     /// Helper class allowing us to modify the volume of a 16 bit stream without converting to IEEE float
     /// </summary>
-    public class VolumeWaveProvider16 : IAudioSource
+    public class VolumeWaveProvider16 : IWaveProvider
     {
-        private readonly IAudioSource sourceProvider;
+        private readonly IWaveProvider sourceProvider;
         private float volume;
 
         /// <summary>
         /// Constructs a new VolumeWaveProvider16
         /// </summary>
         /// <param name="sourceProvider">Source provider, must be 16 bit PCM</param>
-        public VolumeWaveProvider16(IAudioSource sourceProvider)
+        public VolumeWaveProvider16(IWaveProvider sourceProvider)
         {
             this.Volume = 1.0f;
             this.sourceProvider = sourceProvider;

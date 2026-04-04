@@ -6,12 +6,12 @@ using NAudio.Wave.Compression;
 namespace NAudio.Wave
 {
     /// <summary>
-    /// IAudioSource that passes through an ACM Codec
+    /// IWaveProvider that passes through an ACM Codec
     /// </summary>
-    public class WaveFormatConversionProvider : IAudioSource, IDisposable
+    public class WaveFormatConversionProvider : IWaveProvider, IDisposable
     {
         private readonly AcmStream conversionStream;
-        private readonly IAudioSource sourceProvider;
+        private readonly IWaveProvider sourceProvider;
         private readonly int preferredSourceReadSize;
         private int leftoverDestBytes;
         private int leftoverDestOffset;
@@ -23,7 +23,7 @@ namespace NAudio.Wave
         /// </summary>
         /// <param name="targetFormat">Desired output format</param>
         /// <param name="sourceProvider">Source audio</param>
-        public WaveFormatConversionProvider(WaveFormat targetFormat, IAudioSource sourceProvider)
+        public WaveFormatConversionProvider(WaveFormat targetFormat, IWaveProvider sourceProvider)
         {
             this.sourceProvider = sourceProvider;
             WaveFormat = targetFormat;

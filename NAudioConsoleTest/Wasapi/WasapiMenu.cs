@@ -30,6 +30,7 @@ static class WasapiMenu
                     .AddChoiceGroup("Info", new[]
                     {
                         "List audio devices",
+                        "Explore exclusive mode formats",
                     })
                     .AddChoices("Back"));
 
@@ -57,6 +58,9 @@ static class WasapiMenu
                         break;
                     case "List audio devices":
                         DeviceInfoTest.Run();
+                        break;
+                    case "Explore exclusive mode formats":
+                        ExclusiveFormatExplorer.Run();
                         break;
                     case "Back":
                         return;

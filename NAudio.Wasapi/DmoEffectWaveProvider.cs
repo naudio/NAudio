@@ -13,17 +13,17 @@ namespace NAudio.Wave
     /// </summary>
     /// <typeparam name="TDmoEffector">Types of DMO effectors to use</typeparam>
     /// <typeparam name="TEffectorParam">Parameters of the effect to be used</typeparam>
-    public class DmoEffectWaveProvider<TDmoEffector, TEffectorParam> : IAudioSource, IDisposable
+    public class DmoEffectWaveProvider<TDmoEffector, TEffectorParam> : IWaveProvider, IDisposable
         where TDmoEffector : IDmoEffector<TEffectorParam>, new()
     {
-        private readonly IAudioSource inputSource;
+        private readonly IWaveProvider inputSource;
         private readonly IDmoEffector<TEffectorParam> effector;
 
         /// <summary>
         /// Create a new DmoEffectWaveProvider
         /// </summary>
         /// <param name="inputSource">Input audio source</param>
-        public DmoEffectWaveProvider(IAudioSource inputSource)
+        public DmoEffectWaveProvider(IWaveProvider inputSource)
         {
             this.inputSource = inputSource;
             effector = new TDmoEffector();

@@ -6,9 +6,9 @@ namespace NAudio.Wave.SampleProviders
     /// <summary>
     /// ADSR sample provider allowing you to specify attack, decay, sustain and release values
     /// </summary>
-    public class AdsrSampleProvider : ISampleSource
+    public class AdsrSampleProvider : ISampleProvider
     {
-        private readonly ISampleSource source;
+        private readonly ISampleProvider source;
         private readonly EnvelopeGenerator adsr;
         private float attackSeconds;
         private float releaseSeconds;
@@ -16,7 +16,7 @@ namespace NAudio.Wave.SampleProviders
         /// <summary>
         /// Creates a new AdsrSampleProvider with default values
         /// </summary>
-        public AdsrSampleProvider(ISampleSource source)
+        public AdsrSampleProvider(ISampleProvider source)
         {
             if (source.WaveFormat.Channels > 1) throw new ArgumentException("Currently only supports mono inputs");
             this.source = source;

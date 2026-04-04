@@ -206,7 +206,7 @@ namespace NAudio.CoreAudioApi
                 if (audioStreamVolume == null)
                 {
                     CoreAudioException.ThrowIfFailed(audioClientInterface.GetService(ID_AudioStreamVolume, out var ptr));
-                    audioStreamVolume = new AudioStreamVolume((IAudioStreamVolume)Marshal.GetObjectForIUnknown(ptr), ptr);
+                    audioStreamVolume = new AudioStreamVolume(ptr);
                 }
                 return audioStreamVolume;
             }
@@ -222,7 +222,7 @@ namespace NAudio.CoreAudioApi
                 if (audioClockClient == null)
                 {
                     CoreAudioException.ThrowIfFailed(audioClientInterface.GetService(ID_AudioClockClient, out var ptr));
-                    audioClockClient = new AudioClockClient((IAudioClock)Marshal.GetObjectForIUnknown(ptr), ptr);
+                    audioClockClient = new AudioClockClient(ptr);
                 }
                 return audioClockClient;
             }
@@ -238,7 +238,7 @@ namespace NAudio.CoreAudioApi
                 if (audioRenderClient == null)
                 {
                     CoreAudioException.ThrowIfFailed(audioClientInterface.GetService(ID_AudioRenderClient, out var ptr));
-                    audioRenderClient = new AudioRenderClient((IAudioRenderClient)Marshal.GetObjectForIUnknown(ptr), ptr);
+                    audioRenderClient = new AudioRenderClient(ptr);
                 }
                 return audioRenderClient;
             }
@@ -254,7 +254,7 @@ namespace NAudio.CoreAudioApi
                 if (audioCaptureClient == null)
                 {
                     CoreAudioException.ThrowIfFailed(audioClientInterface.GetService(ID_AudioCaptureClient, out var ptr));
-                    audioCaptureClient = new AudioCaptureClient((IAudioCaptureClient)Marshal.GetObjectForIUnknown(ptr), ptr);
+                    audioCaptureClient = new AudioCaptureClient(ptr);
                 }
                 return audioCaptureClient;
             }

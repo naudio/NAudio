@@ -10,7 +10,7 @@ namespace NAudioDemo.MediaFoundationDemo
     /// (to get round STA/MTA threading issues).
     /// Uses the WinForms Timer; for WPF, a DispatcherTimer would be more appropriate.
     /// Unlike WasapiPlayer, this uses timer-based polling instead of a background thread,
-    /// and uses the zero-copy Span-based IAudioSource interface.
+    /// and uses the zero-copy Span-based IWaveProvider interface.
     /// </summary>
     public class WasapiPlayerGuiThread : IWavePlayer
     {
@@ -19,7 +19,7 @@ namespace NAudioDemo.MediaFoundationDemo
         private readonly int latencyMilliseconds;
         private AudioClient audioClient;
         private AudioRenderClient renderClient;
-        private IAudioSource audioSource;
+        private IWaveProvider waveProvider;
         private int bufferFrameCount;
         private int bytesPerFrame;
         private PlaybackState playbackState;
@@ -103,7 +103,7 @@ namespace NAudioDemo.MediaFoundationDemo
         private bool FillBuffer(int frameCount)
         {
             using var lease = renderClient.GetBufferLease(frameCount, bytesPerFrame);
-            int bytesRead = audioSource.Read(lease.Buffer);
+            int bytesRead = waveProvider.Read(lease.Buffer);
             if (bytesRead == 0)
             {
                 lease.Release(0, AudioClientBufferFlags.Silent);
@@ -155,12 +155,12 @@ namespace NAudioDemo.MediaFoundationDemo
         /// <summary>
         /// Initialize for playing the specified audio source.
         /// </summary>
-        /// <param name="audioSource">IAudioSource to play</param>
-        public void Init(IAudioSource audioSource)
+        /// <param name="waveProvider">IWaveProvider to play</param>
+        public void Init(IWaveProvider waveProvider)
         {
-            this.audioSource = audioSource;
+            this.waveProvider = waveProvider;
             long latencyRefTimes = latencyMilliseconds * 10000L;
-            outputFormat = audioSource.WaveFormat;
+            outputFormat = waveProvider.WaveFormat;
 
             var flags = shareMode == AudioClientShareMode.Shared
                 ? AudioClientStreamFlags.AutoConvertPcm | AudioClientStreamFlags.SrcDefaultQuality

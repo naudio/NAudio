@@ -7,7 +7,7 @@ namespace NAudio.Wave.SampleProviders
     /// Sin, Square, Triangle, SawTooth, White Noise, Pink Noise, Sweep.
     /// </summary>
     /// <remarks>
-    /// Posibility to change ISampleSource
+    /// Posibility to change ISampleProvider
     /// Example :
     /// ---------
     /// WaveOut _waveOutGene = new WaveOut();
@@ -18,7 +18,7 @@ namespace NAudio.Wave.SampleProviders
     /// _waveOutGene.Init(wg);
     /// _waveOutGene.Play();
     /// </remarks>
-    public class SignalGenerator : ISampleSource
+    public class SignalGenerator : ISampleProvider
     {
         // Wave format
         private readonly WaveFormat waveFormat;

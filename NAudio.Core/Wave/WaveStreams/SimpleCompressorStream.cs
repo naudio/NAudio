@@ -6,9 +6,9 @@ namespace NAudio.Wave
     /// <summary>
     /// A simple compressor
     /// </summary>
-    public class SimpleCompressorEffect : ISampleSource
+    public class SimpleCompressorEffect : ISampleProvider
     {
-        private readonly ISampleSource sourceStream;
+        private readonly ISampleProvider sourceStream;
         private readonly SimpleCompressor simpleCompressor;
         private readonly int channels;
         private readonly object lockObject = new object();
@@ -17,7 +17,7 @@ namespace NAudio.Wave
         /// Create a new simple compressor stream
         /// </summary>
         /// <param name="sourceStream">Source stream</param>
-        public SimpleCompressorEffect(ISampleSource sourceStream)
+        public SimpleCompressorEffect(ISampleProvider sourceStream)
         {
             this.sourceStream = sourceStream;
             channels = sourceStream.WaveFormat.Channels;

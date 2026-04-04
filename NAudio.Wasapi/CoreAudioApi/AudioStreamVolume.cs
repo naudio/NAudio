@@ -13,10 +13,10 @@ namespace NAudio.CoreAudioApi
         IAudioStreamVolume audioStreamVolumeInterface;
         private IntPtr nativePointer;
 
-        internal AudioStreamVolume(IAudioStreamVolume audioStreamVolumeInterface, IntPtr nativePointer)
+        internal AudioStreamVolume(IntPtr nativePointer)
         {
-            this.audioStreamVolumeInterface = audioStreamVolumeInterface;
             this.nativePointer = nativePointer;
+            audioStreamVolumeInterface = (IAudioStreamVolume)Marshal.GetObjectForIUnknown(nativePointer);
         }
 
         /// <summary>

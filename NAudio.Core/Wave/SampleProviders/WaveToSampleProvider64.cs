@@ -3,8 +3,8 @@ using System;
 namespace NAudio.Wave.SampleProviders
 {
     /// <summary>
-    /// Helper class turning an already 64 bit floating point IAudioSource
-    /// into an ISampleSource - hopefully not needed for most applications
+    /// Helper class turning an already 64 bit floating point IWaveProvider
+    /// into an ISampleProvider - hopefully not needed for most applications
     /// </summary>
     public class WaveToSampleProvider64 : SampleProviderConverterBase
     {
@@ -12,7 +12,7 @@ namespace NAudio.Wave.SampleProviders
         /// Initializes a new instance of the WaveToSampleProvider class
         /// </summary>
         /// <param name="source">Source wave provider, must be IEEE float</param>
-        public WaveToSampleProvider64(IAudioSource source)
+        public WaveToSampleProvider64(IWaveProvider source)
             : base(source)
         {
             if (source.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)

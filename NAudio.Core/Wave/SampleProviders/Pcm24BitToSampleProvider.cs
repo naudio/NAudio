@@ -3,8 +3,8 @@ using System;
 namespace NAudio.Wave.SampleProviders
 {
     /// <summary>
-    /// Converts an IAudioSource containing 24 bit PCM to an
-    /// ISampleSource
+    /// Converts an IWaveProvider containing 24 bit PCM to an
+    /// ISampleProvider
     /// </summary>
     public class Pcm24BitToSampleProvider : SampleProviderConverterBase
     {
@@ -12,7 +12,7 @@ namespace NAudio.Wave.SampleProviders
         /// Initialises a new instance of Pcm24BitToSampleProvider
         /// </summary>
         /// <param name="source">Source Wave Provider</param>
-        public Pcm24BitToSampleProvider(IAudioSource source)
+        public Pcm24BitToSampleProvider(IWaveProvider source)
             : base(source)
         {
 

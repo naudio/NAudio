@@ -22,17 +22,18 @@ steps:
     packageType: 'sdk'
     version: '10.0.x'
 
-- task: NuGetToolInstaller@1
-
-- task: NuGetCommand@2
+- task: DotNetCoreCLI@2
+  displayName: 'Restore'
   inputs:
-    restoreSolution: '$(solution)'
+    command: 'restore'
+    projects: '$(solution)'
 
-- task: VSBuild@1
+- task: DotNetCoreCLI@2
+  displayName: 'Build'
   inputs:
-    solution: '$(solution)'
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
+    command: 'build'
+    projects: '$(solution)'
+    arguments: '--configuration $(buildConfiguration) --no-restore'
 
 - task: DotNetCoreCLI@2
   displayName: 'Run tests (Microsoft.Testing.Platform)'

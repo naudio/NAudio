@@ -17,6 +17,12 @@ steps:
 - script: choco install windows-sdk-10.1 --version=10.1.18362.1
 
 - task: UseDotNet@2
+  displayName: 'Install .NET 8 runtime'
+  inputs:
+    packageType: 'runtime'
+    version: '8.0.x'
+
+- task: UseDotNet@2
   displayName: 'Install .NET 10 SDK'
   inputs:
     packageType: 'sdk'

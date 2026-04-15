@@ -14,6 +14,7 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Version>2.3.0</Version>
     <PackageIcon>naudio-icon.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' != 'net8.0' ">
@@ -33,6 +34,7 @@
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>
+    <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>

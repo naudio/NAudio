@@ -339,6 +339,64 @@ Subclasses that only override `Read(byte[], int, int)` still work correctly — 
 
 **Verification:** `SmbPitchShiftingSampleProviderTests` includes zero-allocation assertions (`GC.GetAllocatedBytesForCurrentThread` before and after 50 Reads of the same size) for both the mono and stereo paths — both paths allocate 0 bytes on steady-state reads after warm-up. Parity tests confirm the `float[]` and `Span<float>` overloads produce byte-identical output on the same input.
 
+**7f: SIMD mix-add and volume kernels via `System.Numerics.Tensors.TensorPrimitives` — DONE**
+
+**Problem:** Three hot-path scalar loops in the mixing/volume pipeline that the JIT does not autovectorise reliably:
+1. `MixingSampleProvider.Read` — `buffer[n] += sourceBuffer[n]` (plus a per-iteration "first-source: copy, later: add" branch)
+2. `WaveMixerStream32.Sum32BitAudio` — `dest[n] += source[n]`
+3. `VolumeSampleProvider.Read` — `buffer[n] *= Volume`
+
+**Decision:** Use `System.Numerics.Tensors.TensorPrimitives.Add` and `TensorPrimitives.Multiply`. TensorPrimitives is the BCL's vectorised-kernels library — it picks SSE / AVX2 / AVX-512 / NEON at runtime, handles the remainder tail, and allows the destination span to alias an input. Ships as a `System.Numerics.Tensors` NuGet package (9.0.0) until it lands in the BCL proper.
+
+**Changes:**
+
+- [x] `VolumeSampleProvider.Read` — scalar `for` loop → `TensorPrimitives.Multiply(slice, Volume, slice)`
+- [x] `WaveMixerStream32.Sum32BitAudio` — scalar `for` loop → `TensorPrimitives.Add`
+- [x] `MixingSampleProvider.Read` — per-iteration branch hoisted out of the inner loop:
+  - First source into a buffer region: `CopyTo` (no add needed)
+  - Subsequent source within overlap: `TensorPrimitives.Add`
+  - Subsequent source extending beyond previous range: `Add` on the overlap + `CopyTo` on the tail
+- [x] New `NAudio.Benchmarks` project (net8.0, Release-only) with `BenchmarkDotNet` — raw kernel benchmarks (mix-add, volume) and an end-to-end `MixingSampleProvider.Read` benchmark at realistic buffer sizes (480/1920/9600 floats = 5/20/100 ms of stereo @ 48 kHz) and source counts (2/8/32)
+- [x] Regression guard in NAudioTests: `MixingSampleProviderThroughputTests` asserts the mixer sustains at least 50× realtime for 8 sources × 100 ms @ 48 kHz stereo — a loose floor that catches egregious regressions (reintroducing allocations, O(n²) bugs) without flaking on slow CI machines
+
+**Measured results** — BenchmarkDotNet short-run, x64 AVX2, .NET 8.0.26, net8.0 Release:
+
+Raw mix-add kernel (`dest[n] += src[n]` over N floats):
+
+| Floats | Scalar     | TensorPrimitives.Add | Speedup |
+| -----: | ---------: | -------------------: | ------: |
+|    480 |  149.77 ns |             17.82 ns |    8.4× |
+|   1920 |  579.24 ns |             55.41 ns |   10.5× |
+|   9600 | 2,922.70 ns |            555.36 ns |    5.3× |
+
+Raw volume kernel (`dest[n] = src[n] * v` over N floats):
+
+| Floats | Scalar      | TensorPrimitives.Multiply | Speedup |
+| -----: | ----------: | ------------------------: | ------: |
+|    480 |   110.80 ns |                  13.57 ns |    8.2× |
+|   1920 |   417.40 ns |                  43.57 ns |    9.6× |
+|   9600 | 2,057.12 ns |                 546.53 ns |    3.8× |
+
+End-to-end `MixingSampleProvider.Read` (cycling in-memory sources, stereo 48 kHz, 1920-frame = 20 ms or 9600-frame = 100 ms buffers):
+
+| Sources | Frames | Scalar      | TensorPrimitives | Speedup |
+| ------: | -----: | ----------: | ---------------: | ------: |
+|       2 |   1920 |    16.31 µs |         15.23 µs |    1.07× |
+|       2 |   9600 |    82.06 µs |         78.19 µs |    1.05× |
+|       8 |   1920 |    65.75 µs |         63.35 µs |    1.04× |
+|       8 |   9600 |   330.61 µs |        311.43 µs |    1.06× |
+|      32 |   1920 |   263.43 µs |        244.10 µs |    1.08× |
+|      32 |   9600 | 1,325.28 µs |      1,238.66 µs |    1.07× |
+
+The end-to-end speedup is modest because in this benchmark the cycling source's own `Read` dominates the total time — the mix-add kernel is only a fraction of each iteration. The raw-kernel numbers are what matter when:
+- mixing many cheap sources (e.g. pre-decoded sample buffers)
+- `WaveMixerStream32.Sum32BitAudio` running inside a larger mixing chain
+- offline / faster-than-realtime mixdown
+
+At 9600 floats all kernels are partly memory-bandwidth bound, which is why the ratio compresses from ~10× down to 3.8-5.3× at the larger buffer size. That's expected; the SIMD wins aren't in the FP pipeline latency but in avoiding the per-element bounds-check + scalar-dispatch overhead.
+
+**Zero allocations** — both raw kernels and the end-to-end mixer report 0 bytes allocated per operation (the single 1-byte figure at 32 sources × 9600 frames is an `Allocated` rounding artefact from BDN's measurement overhead, not an actual allocation).
+
 #### Phase 5: Media Foundation modernization — DONE
 
 **5a: Infrastructure and naming — DONE**

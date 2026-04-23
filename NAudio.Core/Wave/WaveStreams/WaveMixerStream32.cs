@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Numerics.Tensors;
 using System.Runtime.InteropServices;
 using NAudio.Utils;
 
@@ -178,10 +179,9 @@ namespace NAudio.Wave
         {
             var dest = MemoryMarshal.Cast<byte, float>(destBuffer);
             var source = MemoryMarshal.Cast<byte, float>(sourceBuffer);
-            for (int n = 0; n < source.Length; n++)
-            {
-                dest[n] += source[n];
-            }
+            // The source slice may be shorter than dest (last read underflowed); restrict to what we have.
+            var destSlice = dest.Slice(0, source.Length);
+            TensorPrimitives.Add(destSlice, source, destSlice);
         }
 
         /// <summary>

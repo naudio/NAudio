@@ -1,4 +1,5 @@
 using System;
+using System.Numerics.Tensors;
 
 namespace NAudio.Wave.SampleProviders
 {
@@ -32,10 +33,8 @@ namespace NAudio.Wave.SampleProviders
             int samplesRead = source.Read(buffer);
             if (Volume != 1f)
             {
-                for (int n = 0; n < samplesRead; n++)
-                {
-                    buffer[n] *= Volume;
-                }
+                var slice = buffer.Slice(0, samplesRead);
+                TensorPrimitives.Multiply(slice, Volume, slice);
             }
             return samplesRead;
         }

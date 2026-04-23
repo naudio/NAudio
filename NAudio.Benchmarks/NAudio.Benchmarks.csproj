@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <!-- BenchmarkDotNet requires Release; fail loudly if anyone tries to benchmark Debug. -->
+    <Configurations>Release</Configurations>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+    <!-- Analyzer noise from BenchmarkDotNet's generated runner harness is not our concern. -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
+    <!-- System.Numerics.Tensors ships as a NuGet package until it's incorporated into the BCL. -->
+    <PackageReference Include="System.Numerics.Tensors" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NAudio.Core\NAudio.Core.csproj" />
+  </ItemGroup>
+
+</Project>

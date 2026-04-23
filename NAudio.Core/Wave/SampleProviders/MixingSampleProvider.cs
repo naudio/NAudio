@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Numerics.Tensors;
 using NAudio.Utils;
 
 namespace NAudio.Wave.SampleProviders
@@ -136,15 +137,28 @@ namespace NAudio.Wave.SampleProviders
                 {
                     var source = sources[index];
                     int samplesRead = source.Read(sourceBuffer.AsSpan(0, buffer.Length));
-                    for (int n = 0; n < samplesRead; n++)
+                    if (samplesRead > 0)
                     {
-                        if (n >= outputSamples)
+                        var src = sourceBuffer.AsSpan(0, samplesRead);
+                        var dest = buffer.Slice(0, samplesRead);
+                        if (samplesRead <= outputSamples)
                         {
-                            buffer[n] = sourceBuffer[n];
+                            // Fully overlaps prior output — mix-add.
+                            TensorPrimitives.Add(dest, src, dest);
+                        }
+                        else if (outputSamples == 0)
+                        {
+                            // First source (or only prior sources were empty) — straight copy.
+                            src.CopyTo(dest);
                         }
                         else
                         {
-                            buffer[n] += sourceBuffer[n];
+                            // This source reached further than any previous — mix-add the overlap,
+                            // then copy the tail that no prior source reached.
+                            var overlapSrc = src.Slice(0, outputSamples);
+                            var overlapDest = dest.Slice(0, outputSamples);
+                            TensorPrimitives.Add(overlapDest, overlapSrc, overlapDest);
+                            src.Slice(outputSamples).CopyTo(dest.Slice(outputSamples));
                         }
                     }
                     outputSamples = Math.Max(samplesRead, outputSamples);

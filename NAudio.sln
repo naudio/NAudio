@@ -80,6 +80,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NAudio.Extras", "NAudio.Ext
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NAudioConsoleTest", "NAudioConsoleTest\NAudioConsoleTest.csproj", "{C1FF6E78-8729-4148-BA9B-31D1F4A79047}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NAudio.Benchmarks", "NAudio.Benchmarks\NAudio.Benchmarks.csproj", "{3D8DCA35-7497-4CD7-980E-AF5B92481322}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -304,6 +306,22 @@ Global
 		{C1FF6E78-8729-4148-BA9B-31D1F4A79047}.Release|x64.Build.0 = Release|Any CPU
 		{C1FF6E78-8729-4148-BA9B-31D1F4A79047}.Release|x86.ActiveCfg = Release|Any CPU
 		{C1FF6E78-8729-4148-BA9B-31D1F4A79047}.Release|x86.Build.0 = Release|Any CPU
+		{3D8DCA35-7497-4CD7-980E-AF5B92481322}.Debug|Any CPU.ActiveCfg = Release|Any CPU
+		{3D8DCA35-7497-4CD7-980E-AF5B92481322}.Debug|Any CPU.Build.0 = Release|Any CPU
+		{3D8DCA35-7497-4CD7-980E-AF5B92481322}.Debug|ARM.ActiveCfg = Release|Any CPU
+		{3D8DCA35-7497-4CD7-980E-AF5B92481322}.Debug|ARM.Build.0 = Release|Any CPU
+		{3D8DCA35-7497-4CD7-980E-AF5B92481322}.Debug|x64.ActiveCfg = Release|Any CPU
+		{3D8DCA35-7497-4CD7-980E-AF5B92481322}.Debug|x64.Build.0 = Release|Any CPU
+		{3D8DCA35-7497-4CD7-980E-AF5B92481322}.Debug|x86.ActiveCfg = Release|Any CPU
+		{3D8DCA35-7497-4CD7-980E-AF5B92481322}.Debug|x86.Build.0 = Release|Any CPU
+		{3D8DCA35-7497-4CD7-980E-AF5B92481322}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3D8DCA35-7497-4CD7-980E-AF5B92481322}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3D8DCA35-7497-4CD7-980E-AF5B92481322}.Release|ARM.ActiveCfg = Release|Any CPU
+		{3D8DCA35-7497-4CD7-980E-AF5B92481322}.Release|ARM.Build.0 = Release|Any CPU
+		{3D8DCA35-7497-4CD7-980E-AF5B92481322}.Release|x64.ActiveCfg = Release|Any CPU
+		{3D8DCA35-7497-4CD7-980E-AF5B92481322}.Release|x64.Build.0 = Release|Any CPU
+		{3D8DCA35-7497-4CD7-980E-AF5B92481322}.Release|x86.ActiveCfg = Release|Any CPU
+		{3D8DCA35-7497-4CD7-980E-AF5B92481322}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

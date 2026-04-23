@@ -26,5 +26,10 @@
     <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- TensorPrimitives powers the vectorised mix-add / volume kernels.
+         Ships as a NuGet package until it is incorporated into the BCL. -->
+    <PackageReference Include="System.Numerics.Tensors" Version="9.0.0" />
+  </ItemGroup>
 
 </Project>

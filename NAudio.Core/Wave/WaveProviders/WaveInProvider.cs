@@ -24,7 +24,9 @@ namespace NAudio.Wave
 
         private void OnDataAvailable(object sender, WaveInEventArgs e)
         {
-            bufferedWaveProvider.AddSamples(e.Buffer, 0, e.BytesRecorded);
+            // BufferSpan avoids materialising e.Buffer when the event is backed by a
+            // ReadOnlyMemory<byte> wrapping a native WASAPI buffer (zero-copy capture path).
+            bufferedWaveProvider.AddSamples(e.BufferSpan);
         }
 
         /// <summary>

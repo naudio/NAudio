@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Runtime.InteropServices;
+using NAudio.Utils;
 using NAudio.Wave;
 
 // for consistency this should be in NAudio.Wave namespace, but left as it is for backwards compatibility
@@ -17,7 +18,7 @@ namespace NAudio.CoreAudioApi
         private const long ReftimesPerSec = 10000000;
         private const long ReftimesPerMillisec = 10000;
         private volatile CaptureState captureState;
-        private byte[] recordBuffer;
+        private byte[] silenceBuffer;
         private Thread captureThread;
         private AudioClient audioClient;
         private int bytesPerFrame;
@@ -166,9 +167,10 @@ namespace NAudio.CoreAudioApi
 
             int bufferFrameCount = audioClient.BufferSize;
             bytesPerFrame = waveFormat.Channels * waveFormat.BitsPerSample / 8;
-            recordBuffer = new byte[bufferFrameCount * bytesPerFrame];
-            
-            //Debug.WriteLine(string.Format("record buffer size = {0}", this.recordBuffer.Length));
+            // Silent packets are materialised into this buffer (zero-filled); grown on demand.
+            // Non-silent packets bypass this entirely and are handed to consumers as a
+            // ReadOnlyMemory<byte> wrapping the native WASAPI buffer.
+            silenceBuffer = new byte[bufferFrameCount * bytesPerFrame];
 
             initialized = true;
         }
@@ -289,39 +291,41 @@ namespace NAudio.CoreAudioApi
 
         private void ReadNextPacket(AudioCaptureClient capture)
         {
+            // Fires one DataAvailable event per WASAPI packet. Non-silent packets are handed out
+            // as a ReadOnlyMemory<byte> wrapping the native buffer pointer — no Marshal.Copy into
+            // a managed array. The consumer must finish processing before the handler returns;
+            // after that the native buffer is released and the Memory is invalid (same aliasing
+            // contract as before).
             int packetSize = capture.GetNextPacketSize();
-            int recordBufferOffset = 0;
-            //Debug.WriteLine(string.Format("packet size: {0} samples", packetSize / 4));
-
             while (packetSize != 0)
             {
                 IntPtr buffer = capture.GetBuffer(out int framesAvailable, out AudioClientBufferFlags flags);
-
                 int bytesAvailable = framesAvailable * bytesPerFrame;
 
-                // apparently it is sometimes possible to read more frames than we were expecting?
-                // fix suggested by Michael Feld:
-                int spaceRemaining = Math.Max(0, recordBuffer.Length - recordBufferOffset);
-                if (spaceRemaining < bytesAvailable && recordBufferOffset > 0)
+                try
                 {
-                    DataAvailable?.Invoke(this, new WaveInEventArgs(recordBuffer, recordBufferOffset));
-                    recordBufferOffset = 0;
+                    if ((flags & AudioClientBufferFlags.Silent) == AudioClientBufferFlags.Silent)
+                    {
+                        // Materialise silence in a managed buffer. The zero-fill matters because the
+                        // buffer is reused across packets and a consumer could have written into
+                        // Buffer (it's a byte[]); clear before reuse to guarantee silence semantics.
+                        silenceBuffer = BufferHelpers.Ensure(silenceBuffer, bytesAvailable);
+                        Array.Clear(silenceBuffer, 0, bytesAvailable);
+                        DataAvailable?.Invoke(this, new WaveInEventArgs(silenceBuffer, bytesAvailable));
+                    }
+                    else
+                    {
+                        using var memoryManager = new NativeAudioBufferMemoryManager(buffer, bytesAvailable);
+                        DataAvailable?.Invoke(this, new WaveInEventArgs(memoryManager.Memory));
+                    }
+                }
+                finally
+                {
+                    capture.ReleaseBuffer(framesAvailable);
                 }
 
-                // if not silence...
-                if ((flags & AudioClientBufferFlags.Silent) != AudioClientBufferFlags.Silent)
-                {
-                    Marshal.Copy(buffer, recordBuffer, recordBufferOffset, bytesAvailable);
-                }
-                else
-                {
-                    Array.Clear(recordBuffer, recordBufferOffset, bytesAvailable);
-                }
-                recordBufferOffset += bytesAvailable;
-                capture.ReleaseBuffer(framesAvailable);
                 packetSize = capture.GetNextPacketSize();
             }
-            DataAvailable?.Invoke(this, new WaveInEventArgs(recordBuffer, recordBufferOffset));
         }
 
         /// <summary>

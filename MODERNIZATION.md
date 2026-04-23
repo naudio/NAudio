@@ -464,6 +464,35 @@ Why DIM works here:
 
 **Deferred to a future release:** once NLayer ships a version that overrides the Span method directly, mark the byte[] overload `[Obsolete("Prefer the Span<byte> overload")]` to nudge other third-party implementers. Do not mark it obsolete before then — NLayer's own build would show the warning on every implementing method.
 
+**7i: Zero-copy recording on `WaveInEventArgs` (WASAPI capture path) — DONE**
+
+**Problem:** Every `DataAvailable` event from `WaveIn` / `WasapiCapture` forces consumers onto the `(byte[] Buffer, int BytesRecorded)` triple. For WASAPI capture specifically the cost was worse: `WasapiCapture.ReadNextPacket` did a `Marshal.Copy` from the native WASAPI buffer into a managed `byte[]` *on every packet*, solely because the event signature demanded an array. Consumers then often did nothing but forward those bytes into a `BufferedWaveProvider` or WAV file — never benefiting from the materialisation.
+
+`WasapiRecorder` (the new builder-based API) already bypassed this with its own span-based lease callback — but `WasapiCapture` is still the API most existing users pick, and the `WaveIn` / `WasapiCapture` event surface is what every third-party recording app in the wild uses.
+
+**Decision:** Add a `ReadOnlySpan<byte> BufferSpan` property to `WaveInEventArgs`, sliced to `BytesRecorded`. Add a second constructor that lets a producer hand out captured bytes without first copying into a managed array — used by `WasapiCapture` to skip the `Marshal.Copy` and hand the native WASAPI buffer straight to the event handler. Legacy `Buffer` property stays, with doc updates pointing callers at `BufferSpan` and noting that on the WASAPI zero-copy path reading `Buffer` allocates a fresh byte[] (cached on the event — second read is free).
+
+**Changes:**
+
+- [x] `NAudio.Core/Wave/WaveInputs/WaveInEventArgs.cs` — adds `BufferSpan` and a zero-copy ctor; keeps the existing `(byte[], int)` ctor and `Buffer` property for backward compatibility. Aliasing contract ("do not retain past handler return") documented on every accessor.
+- [x] `NAudio.Wasapi/NativeAudioBufferMemoryManager.cs` — new internal `sealed unsafe MemoryManager<byte>` wrapping a native IntPtr + length. Lifetime is caller-controlled (bound to the `GetBuffer`/`ReleaseBuffer` window on the WASAPI capture client).
+- [x] `NAudio.Wasapi/WasapiCapture.ReadNextPacket` — rewritten. Non-silent packets hand the native WASAPI buffer straight to the handler — no `Marshal.Copy`. Silent packets still materialise into a (renamed) `silenceBuffer` byte[] (zero-filled) because the Silent-flag contract means the consumer expects zeros and we can't overwrite a read-only native buffer. The packet-accumulation + mid-packet-split logic has been retired — now one event per WASAPI packet.
+- [x] `NAudio.Core/Wave/WaveProviders/WaveInProvider.cs` — switched from `AddSamples(e.Buffer, 0, e.BytesRecorded)` to `AddSamples(e.BufferSpan)`. Without this change, the main internal consumer of `WaveInProvider` would have materialised every native-backed event via the legacy `Buffer` property, defeating the zero-copy optimisation.
+- [x] New tests `NAudioTests/WaveStreams/WaveInEventArgsTests.cs` — cover both ctors, verify the byte[] ctor hands back the same array reference from `Buffer`, verify the zero-copy ctor materialises a fresh byte[] via `Buffer` only when no backing array is available, and verify the materialised `Buffer` is cached across repeat accesses.
+
+**Behaviour changes:**
+
+- **WasapiCapture event cadence is now one-event-per-packet** instead of batched-per-capture-cycle. For a typical 10 ms-period capture that usually means the same number of events per second; for unusually large packets it could be more. Consumers that assumed one event per capture cycle may see different timing. Total data and ordering are unchanged.
+- **`e.Buffer` may allocate on WASAPI capture events.** Consumers that still read `e.Buffer` instead of `e.BufferSpan` pay one allocation per event on the WASAPI path (cached per event — second read is free). Recommendation: migrate to `e.BufferSpan`. Performance regression, not correctness.
+- **`e.Buffer.Length` equals `e.BytesRecorded`** on zero-copy events, but may exceed it on byte[]-backed events (unchanged legacy semantics). Code that compares those two is suspect; code that asserts equality may start passing on WASAPI paths where it previously failed.
+
+**What this does *not* touch:**
+
+- WinMM `WaveIn.cs` continues to pass a byte[] (the pinned `WaveHeader` buffer). No reason to change — the array is already native-addressable for WinMM's callback contract.
+- `WasapiRecorder` continues to use its own lease-based `DataAvailable` callback (span-first since inception). It does not flow through `WaveInEventArgs` at all.
+
+**Verification:** Full solution builds with 0 warnings. All 989 tests pass (14 skipped for missing external test files).
+
 #### Phase 5: Media Foundation modernization — DONE
 
 **5a: Infrastructure and naming — DONE**

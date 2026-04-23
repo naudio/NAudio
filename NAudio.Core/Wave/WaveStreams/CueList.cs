@@ -1,4 +1,4 @@
-﻿using NAudio.Utils;
+using NAudio.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -74,7 +74,7 @@ namespace NAudio.Wave
     ///   Int32 chunkID;
     ///   Int32 chunkSize;
     ///   Int32 dwIdentifier;
-    ///   Char[] dwText;  /* Encoded with extended ASCII */
+    ///   Char[] dwText;  /* null-terminated; RIFF does not mandate an encoding — NAudio uses UTF-8 */
     /// } LabelChunk;
     /// </remarks>
     public class CueList
@@ -151,14 +151,13 @@ namespace NAudio.Wave
 
             string[] labels = new string[cueCount];
             var labelChunkId = ChunkIdentifier.ChunkIdentifierToInt32("labl");
-            var extendedAsciiEncoding = Encoding.GetEncoding(1252); // Windows-1252 (extended ASCII)
-            
+
             // Parse list chunk - properly handle all chunk types
             for (int p = 4; listChunkData.Length - p >= 8; )
             {
                 int chunkId = BitConverter.ToInt32(listChunkData, p);
                 int chunkSize = BitConverter.ToInt32(listChunkData, p + 4);
-                
+
                 if (chunkId == labelChunkId && chunkSize >= 4 && listChunkData.Length - p >= chunkSize + 8)
                 {
                     // This is a label chunk - extract the label data
@@ -166,11 +165,11 @@ namespace NAudio.Wave
                     if (labelLength > 0 && listChunkData.Length - p - 12 >= labelLength - 1)
                     {
                         var cueId = BitConverter.ToInt32(listChunkData, p + 8);
-                        
+
                         // Validate that the cue ID exists before accessing the dictionary
                         if (cueIndex.TryGetValue(cueId, out var cueIndex_value))
                         {
-                            labels[cueIndex_value] = extendedAsciiEncoding.GetString(listChunkData, p + 12, labelLength - 1);
+                            labels[cueIndex_value] = Encoding.UTF8.GetString(listChunkData, p + 12, labelLength - 1);
                         }
                     }
                 }
@@ -193,72 +192,52 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// Gets the cues as the concatenated cue and list RIFF chunks.
+        /// Serialises the cue points into the body of a <c>cue </c> RIFF chunk
+        /// (no chunk id / size header).
         /// </summary>
-        /// <returns>RIFF chunks containing the cue data</returns>
-        internal byte[] GetRiffChunks()
+        internal byte[] SerializeCueChunkData()
         {
-            if (Count == 0)
-            {
-                return null;
-            }
-            var cueChunkLength = 12 + 24 * Count;
-            var listChunkLength = 12;
-            var extendedAsciiEncoding = Encoding.GetEncoding(1252); // Windows-1252 (extended ASCII)
-            
+            int dataChunkId = ChunkIdentifier.ChunkIdentifierToInt32("data");
+            using var ms = new MemoryStream();
+            using var w = new BinaryWriter(ms);
+            w.Write(Count);
             for (int i = 0; i < Count; i++)
             {
-                var labelChunkLength = extendedAsciiEncoding.GetBytes(this[i].Label).Length + 1; // +1 for null terminator
-                // Add padding for word alignment: if length is odd, add 1 byte padding
-                int paddingLength = (labelChunkLength % 2 == 1) ? 1 : 0;
-                listChunkLength += labelChunkLength + paddingLength + 12;
+                int position = this[i].Position;
+                w.Write(i);               // dwIdentifier
+                w.Write(position);        // dwPosition
+                w.Write(dataChunkId);     // fccChunk
+                w.Write(0);               // dwChunkStart
+                w.Write(0);               // dwBlockStart
+                w.Write(position);        // dwSampleOffset
             }
+            return ms.ToArray();
+        }
 
-            byte[] chunks = new byte[cueChunkLength + listChunkLength];
-            var cueChunkId = ChunkIdentifier.ChunkIdentifierToInt32("cue ");
-            int dataChunkId = ChunkIdentifier.ChunkIdentifierToInt32("data");
-            int listChunkId = ChunkIdentifier.ChunkIdentifierToInt32("LIST");
-            int adtlTypeId = ChunkIdentifier.ChunkIdentifierToInt32("adtl");
+        /// <summary>
+        /// Serialises the cue labels into the body of a <c>LIST</c> chunk of type <c>adtl</c>
+        /// (no chunk id / size header — starts with the <c>adtl</c> type marker).
+        /// </summary>
+        internal byte[] SerializeAdtlListChunkData()
+        {
             int labelChunkId = ChunkIdentifier.ChunkIdentifierToInt32("labl");
-
-            using (var stream = new MemoryStream(chunks))
+            using var ms = new MemoryStream();
+            using var w = new BinaryWriter(ms);
+            w.Write(Encoding.UTF8.GetBytes("adtl"));
+            for (int i = 0; i < Count; i++)
             {
-                using (var writer = new BinaryWriter(stream))
+                var labelArray = Encoding.UTF8.GetBytes(this[i].Label ?? string.Empty);
+                w.Write(labelChunkId);
+                w.Write(labelArray.Length + 1 + 4); // dwIdentifier + text + null terminator
+                w.Write(i);                         // dwIdentifier (the cue id)
+                w.Write(labelArray);
+                w.Write((byte)0);                   // null terminator
+                if ((labelArray.Length + 1) % 2 == 1)
                 {
-                    writer.Write(cueChunkId);
-                    writer.Write(cueChunkLength - 8);
-                    writer.Write(Count);
-                    for (int cue = 0; cue < Count; cue++)
-                    {
-                        int position = this[cue].Position;
-
-                        writer.Write(cue);
-                        writer.Write(position);
-                        writer.Write(dataChunkId);
-                        writer.Seek(8, SeekOrigin.Current);
-                        writer.Write(position);
-                    }
-                    writer.Write(listChunkId);
-                    writer.Write(listChunkLength - 8);
-                    writer.Write(adtlTypeId);
-                    for (int cue = 0; cue < Count; cue++)
-                    {
-                        var labelArray = extendedAsciiEncoding.GetBytes(this[cue].Label);
-                        writer.Write(labelChunkId);
-                        writer.Write(labelArray.Length + 1 + 4); // +1 for null terminator, +4 for cue ID
-                        writer.Write(cue);
-                        writer.Write(labelArray);
-                        writer.Write((byte)0); // null terminator
-                        
-                        // Add padding for word alignment if label length (including null terminator) is odd
-                        if ((labelArray.Length + 1) % 2 == 1)
-                        {
-                            writer.Write((byte)0);
-                        }
-                    }
+                    w.Write((byte)0);               // word-alignment padding
                 }
             }
-            return chunks;
+            return ms.ToArray();
         }
 
         /// <summary>
@@ -272,32 +251,44 @@ namespace NAudio.Wave
         /// <param name="index"></param>
         /// <returns></returns>
         public Cue this[int index] => cues[index];
+    }
 
+    /// <summary>
+    /// <see cref="IWaveChunkInterpreter{T}"/> that reads the <c>cue</c> and companion <c>LIST/adtl</c>
+    /// chunks from a WAV file and returns a <see cref="CueList"/>.
+    /// Returns <c>null</c> if either chunk is absent.
+    /// </summary>
+    public sealed class CueListInterpreter : IWaveChunkInterpreter<CueList>
+    {
         /// <summary>
-        /// Checks if the cue and list chunks exist and if so, creates a cue list
+        /// Shared stateless instance.
         /// </summary>
-        internal static CueList FromChunks(WaveFileReader reader)
-        {
-            CueList cueList = null;
-            byte[] cueChunkData = null;
-            byte[] listChunkData = null;
+        public static readonly CueListInterpreter Instance = new CueListInterpreter();
 
-            foreach (RiffChunk chunk in reader.ExtraChunks)
+        /// <inheritdoc />
+        public CueList Interpret(WaveChunks chunks)
+        {
+            if (chunks == null) return null;
+            var cueChunk = chunks.Find("cue ");
+            if (cueChunk == null) return null;
+
+            // A WAV file may contain multiple LIST chunks (e.g. INFO metadata alongside adtl labels).
+            // Only the adtl list carries cue labels, so we filter by list type.
+            byte[] listChunkData = null;
+            foreach (var list in chunks.FindAll("LIST"))
             {
-                if (chunk.IdentifierAsString.ToLower() == "cue ")
+                if (list.Length < 4) continue;
+                var data = chunks.GetData(list);
+                if (data.Length >= 4 && data[0] == (byte)'a' && data[1] == (byte)'d' && data[2] == (byte)'t' && data[3] == (byte)'l')
                 {
-                    cueChunkData = reader.GetChunkData(chunk);
-                }
-                else if (chunk.IdentifierAsString.ToLower() == "list")
-                {
-                    listChunkData = reader.GetChunkData(chunk);
+                    listChunkData = data;
+                    break;
                 }
             }
-            if (cueChunkData != null && listChunkData != null)
-            {
-                cueList = new CueList(cueChunkData, listChunkData);
-            }
-            return cueList;
+            if (listChunkData == null) return null;
+
+            var cueChunkData = chunks.GetData(cueChunk);
+            return new CueList(cueChunkData, listChunkData);
         }
     }
 }

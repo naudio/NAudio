@@ -421,6 +421,95 @@ Existing `WasapiOut` and `WasapiCapture` are kept with `[Obsolete]` attributes p
 
 ---
 
+## Phase 9: WAV chunk API redesign — DONE
+
+**Decision:** Replace `WaveFileReader.ExtraChunks` / `GetChunkData` and the `CueWaveFileReader` subclass with a single `Chunks` property on `WaveFileReader` that exposes a `WaveChunks` collection with pluggable interpreters.
+
+**Rationale:** The old design required a reader subclass for each well-known chunk type (e.g. `CueWaveFileReader.Cues`). That doesn't compose — reading both cues and BWF metadata from the same file required writing a custom hybrid reader, and callers had to switch reader type just to ask whether a given chunk was present. The new design uses composition: any number of chunk interpreters can run against a single `WaveFileReader` without inheritance.
+
+**Design:**
+
+```csharp
+public sealed class WaveChunks : IReadOnlyList<RiffChunk>
+{
+    public bool Contains(string chunkId);
+    public RiffChunk Find(string chunkId);
+    public IEnumerable<RiffChunk> FindAll(string chunkId);
+    public byte[] GetData(RiffChunk chunk);                  // lazy read from stream
+    public T Read<T>(IWaveChunkInterpreter<T> interpreter);
+}
+
+public interface IWaveChunkInterpreter<out T>
+{
+    T Interpret(WaveChunks chunks);                          // returns default if required chunks absent
+}
+```
+
+Built-in interpreters ship as extension methods over `WaveChunks`:
+
+```csharp
+using var reader = new WaveFileReader("file.wav");
+CueList           cues = reader.Chunks.ReadCueList();
+BroadcastExtension bwf = reader.Chunks.ReadBroadcastExtension();
+InfoMetadata      info = reader.Chunks.ReadInfoMetadata();
+CustomThing      mine = reader.Chunks.Read(new MyCustomInterpreter());
+```
+
+**Key properties:**
+- **Lazy I/O preserved**: `RiffChunk` still carries `(identifier, length, streamPosition)`. Data is only read from the stream when `GetData` or an interpreter asks for it.
+- **No inheritance, composable**: any combination of interpreters works against one reader.
+- **Interpreters are stateless singletons** (`CueListInterpreter.Instance`, etc.) invoked fresh each time — interpreted results are not cached. Callers hold onto the returned object if they want to reuse it.
+- **No registry / reflection**: extension methods give built-ins one-line call-site ergonomics; user interpreters are discoverable via `IWaveChunkInterpreter<T>`.
+
+**Built-in interpreters shipped:**
+
+| Interpreter | Returns | Source chunks |
+| ----------- | ------- | ------------- |
+| `CueListInterpreter` | `CueList` | `cue ` + `LIST` (with `adtl` type header) |
+| `BextInterpreter` | `BroadcastExtension` | `bext` (EBU Tech 3285 — supports v1 and v2 loudness fields) |
+| `InfoListInterpreter` | `InfoMetadata` | `LIST` (with `INFO` type header) — common tags (`INAM`, `IART`, `ICMT`, `ICOP`, `ICRD`, `IENG`, `IGNR`, `ISFT`, etc.) exposed as named properties; arbitrary ids via indexer |
+
+`CueListInterpreter` and `InfoListInterpreter` both correctly filter `LIST` chunks by type header, so a file with both `adtl` and `INFO` lists is handled.
+
+**Classes removed:**
+
+| Class | Replacement |
+| ----- | ----------- |
+| `CueWaveFileReader` | `new WaveFileReader(...).Chunks.ReadCueList()` |
+| `CueList.FromChunks` (internal) | `CueListInterpreter.Instance.Interpret(chunks)` |
+
+**Writer-side symmetry — DONE.** `WaveFileWriter` now exposes a `ChunkPosition` enum, an `IWaveChunkWriter` interface, and two `AddChunk(...)` overloads that mirror the read-side `IWaveChunkInterpreter<T>` / `WaveChunks.Read` shape. Built-in extension methods (`WriteCueList`, `WriteBroadcastExtension`, `WriteInfoMetadata`) package each DTO into the right chunk(s) at the conventional position. A convenience `AddCue(int position, string label)` stays on `WaveFileWriter` for callers who just want to drop a few markers; it internally buffers a `CueList` and emits it at close time.
+
+```csharp
+using var w = new WaveFileWriter("out.wav", format,
+    new WaveFileWriterOptions { EnableRf64 = true });
+w.WriteBroadcastExtension(bext);         // BeforeData (bext convention)
+w.AddChunk("iXML", xmlBytes, ChunkPosition.BeforeData);
+w.AddCue(1000, "Intro");                 // buffered, written AfterData
+w.Write(audio, 0, audio.Length);
+w.WriteInfoMetadata(info);               // AfterData
+```
+
+**Configuration via `WaveFileWriterOptions`.** All writer configuration lives on a single options class rather than being spread across constructor overloads. Today it holds `EnableRf64` and (test-only) `Rf64PromotionThreshold`; future settings (`WriteFactChunk`, `FileShare`, custom buffer sizes, etc.) can be added as `init` properties without touching the constructor surface. The writer accepts `null` for options as shorthand for "use defaults", so the simple case remains `new WaveFileWriter(path, format)`.
+
+**Header flow:** the writer defers emitting the `data` chunk header until the first `Write`/`WriteSample`/`AddChunk(AfterData)` call. At that point any buffered BeforeData chunks are flushed in order, the `fact` chunk is emitted (if applicable), and the `data` header is written. Attempts to add a BeforeData chunk after audio has started throw `InvalidOperationException`. At close, the data chunk is padded to word alignment, then AfterData chunks and any buffered cues are appended, and header sizes are fixed up.
+
+**RF64 promotion — DONE.** `WaveFileWriter(stream, format, enableRf64: true)` reserves a 28-byte `JUNK` placeholder immediately after the RIFF/WAVE header (per EBU Tech 3306 — `ds64` must be the first chunk after `RIFF`). At close, if the data chunk exceeds 4 GB the writer overwrites `RIFF`→`RF64`, the placeholder `JUNK`→`ds64`, and sets the 32-bit RIFF and data sizes to `0xFFFFFFFF` with the real 64-bit sizes in `ds64`. Small files on an RF64-enabled writer stay as normal RIFF (with a harmless 36-byte `JUNK` chunk). Files written with `enableRf64: false` still throw `ArgumentException` if the audio would exceed 4 GB. A test-only constructor overload (hidden with `[EditorBrowsable(Never)]`) lets tests exercise promotion against a lowered threshold without having to write 4 GB of audio.
+
+**Classes retired in this pass:**
+
+| Class | Replacement |
+| ----- | ----------- |
+| `CueWaveFileWriter` | `new WaveFileWriter(...)` + `AddCue(position, label)` or `WriteCueList(cueList)` |
+| `BwfWriter` | `new WaveFileWriter(..., enableRf64: true)` + `WriteBroadcastExtension(bext)` |
+| `BextChunkInfo` | `BroadcastExtension` (the read-side DTO — now used on both sides, supports v1 and v2) |
+
+The `WaveFileBuilder` test helper was shrunk to just the generic `Build(format, audio, params Chunk[])` primitive for edge-case/malformed-file tests; all happy-path chunk tests now round-trip through the real `WaveFileWriter`, giving reader/writer symmetry coverage in a single assertion.
+
+**Cue label encoding reverted to UTF-8.** An earlier commit (pre-NAudio-3) had switched `CueList`'s label read/write paths from UTF-8 to Windows-1252 on the basis that the sonicspot.com RIFF reference describes `labl` text as *"extended ASCII"*. The RIFF spec itself does not mandate an encoding, and Windows-1252 has two real drawbacks: it requires `CodePagesEncodingProvider` registration on .NET Core (absent registration, any file with a non-ASCII label throws `NotSupportedException` at read time) and it cannot represent characters outside the Windows-1252 range. UTF-8 is the modern convention, works zero-config on every .NET target, and round-trips any character. Tests cover round-tripping of Björk, Ω-section, and 音楽 to prove it.
+
+---
+
 ## Breaking Changes from 2.x
 
 These will need to be documented in the migration guide:
@@ -496,6 +585,25 @@ These will need to be documented in the migration guide:
 | `WaveOutEvent.DesiredLatency` replaced by `BufferMilliseconds` | `BufferMilliseconds` specifies the size of each individual buffer (default 100ms). Old `DesiredLatency` was the total across all buffers, which was confusing with `NumberOfBuffers > 1` |
 | `WaveOutEvent` renamed to `WaveOut` | `WaveOutEvent` still exists as an obsolete subclass for migration — update to `WaveOut` |
 | `WaveInEvent` renamed to `WaveIn` | `WaveInEvent` still exists as an obsolete subclass for migration — update to `WaveIn` |
+
+### WAV chunk API changes
+
+| Change | Migration |
+| ------ | --------- |
+| `WaveFileReader.ExtraChunks` removed | Use `WaveFileReader.Chunks` (returns `WaveChunks`) — same `RiffChunk` elements, now via a richer collection |
+| `WaveFileReader.GetChunkData(RiffChunk)` removed | Use `WaveFileReader.Chunks.GetData(RiffChunk)` — same lazy read semantics |
+| `CueWaveFileReader` removed | `new WaveFileReader(...).Chunks.ReadCueList()` returns a `CueList` (or `null` if absent). No subclass required — works on any `WaveFileReader` |
+| `CueList.FromChunks` (was internal) removed | `CueListInterpreter.Instance.Interpret(chunks)` — or just `chunks.ReadCueList()` |
+| New: `WaveChunks.Find(id)` / `FindAll(id)` / `Contains(id)` | Use these instead of iterating `ExtraChunks` and comparing `IdentifierAsString` |
+| New: `IWaveChunkInterpreter<T>` extension point | Implement to plug in support for additional chunk types without subclassing the reader |
+| New: `BroadcastExtension` + `BextInterpreter` | Unified read/write DTO for BWF `bext` (replaces the old write-only `BextChunkInfo`) |
+| New: `InfoMetadata` + `InfoListInterpreter` | Read and write `LIST/INFO` metadata (artist, title, copyright, etc.) via a single type |
+| `CueWaveFileWriter` removed | `new WaveFileWriter(path, format)` + `AddCue(position, label)` — or `WriteCueList(cueList)` extension for callers that already have a populated `CueList` |
+| `BwfWriter` removed | `new WaveFileWriter(path, format, enableRf64: true)` + `WriteBroadcastExtension(bext)` extension. RF64 promotion now belongs to `WaveFileWriter` rather than being tied to BWF |
+| `BextChunkInfo` removed | `BroadcastExtension` — same fields, plus v2 loudness support and a `ToChunkData()` serialiser. `OriginationDateTime` replaced by separate `OriginationDate`/`OriginationTime` strings (helpers `BroadcastExtension.FormatOriginationDate(DateTime)` / `FormatOriginationTime(DateTime)` match the BWF `yyyy-MM-dd` / `HH:mm:ss` form) |
+| New: `WaveFileWriter.AddChunk(string, byte[], ChunkPosition)` | Low-level entry point for adding arbitrary RIFF chunks before or after the data chunk |
+| New: `WaveFileWriter.AddChunk(IWaveChunkWriter)` | Interface-based entry point (symmetric with `IWaveChunkInterpreter<T>` on the read side) |
+| New: `WaveFileWriterOptions` + constructor overload `WaveFileWriter(stream/path, format, options)` | Single configuration surface; `new WaveFileWriterOptions { EnableRf64 = true }` reserves a `JUNK` placeholder and promotes to `RF64` + `ds64` at close when the data chunk exceeds 4 GB. Passing `null` for options uses defaults |
 
 ### DMO API changes
 

@@ -1,9 +1,8 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using NAudio.FileFormats.Wav;
 
-namespace NAudio.Wave 
+namespace NAudio.Wave
 {
     /// <summary>This class supports the reading of WAV files,
     /// providing a repositionable WaveStream that returns the raw data
@@ -50,7 +49,7 @@ namespace NAudio.Wave
                 waveFormat = chunkReader.WaveFormat;
                 dataPosition = chunkReader.DataChunkPosition;
                 dataChunkLength = chunkReader.DataChunkLength;
-                ExtraChunks = chunkReader.RiffChunks;
+                Chunks = new WaveChunks(inputStream, chunkReader.RiffChunks);
             }
             catch
             {
@@ -67,26 +66,13 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// Gets a list of the additional chunks found in this file
+        /// The non-essential RIFF chunks found in this file (everything except <c>fmt</c> and <c>data</c>).
+        /// Use the returned <see cref="WaveChunks"/> to enumerate chunk metadata, fetch raw bytes via
+        /// <see cref="WaveChunks.GetData"/>, or run an <see cref="IWaveChunkInterpreter{T}"/> —
+        /// the built-in interpreters for cue lists, BWF, and LIST/INFO metadata are exposed as
+        /// extension methods in <see cref="WaveChunksExtensions"/>.
         /// </summary>
-        public List<RiffChunk> ExtraChunks { get; }
-
-        /// <summary>
-        /// Gets the data for the specified chunk
-        /// </summary>
-        public byte[] GetChunkData(RiffChunk chunk)
-        {
-            long oldPosition = waveStream.Position;
-            waveStream.Position = chunk.StreamPosition;
-            byte[] data = new byte[chunk.Length];
-            int bytesRead = waveStream.Read(data, 0, data.Length);
-            if (bytesRead < data.Length)
-            {
-                throw new InvalidOperationException($"Could not read chunk data: expected {data.Length} bytes, got {bytesRead}");
-            }
-            waveStream.Position = oldPosition;
-            return data;
-        }
+        public WaveChunks Chunks { get; }
 
         /// <summary>
         /// Cleans up the resources associated with this WaveFileReader

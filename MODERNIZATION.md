@@ -687,6 +687,26 @@ Overall, for `SampleAggregator`-style workloads (windowed real FFT — the reali
 - [x] Replaced `WaveOutEvent.DesiredLatency` with `BufferMilliseconds` (default 100ms) — matches `WaveInEvent`'s property name. `DesiredLatency` was confusing because it specified *total* latency across all buffers, so the actual per-buffer size depended on `NumberOfBuffers`. `BufferMilliseconds` directly specifies each buffer's size, making behavior predictable regardless of buffer count
 - [x] Renamed `WaveOutEvent` → `WaveOut` and `WaveInEvent` → `WaveIn` — now that the old WinForms `WaveOut`/`WaveIn` classes are gone, the "Event" suffix is unnecessary. Obsolete `WaveOutEvent` and `WaveInEvent` shim classes (inheriting from the renamed classes) are provided for migration
 
+**8f: Window-callback variants restored — DONE**
+
+**Decision:** Reintroduce window-callback playback/capture classes as `WaveOutWindow` and `WaveInWindow` in `NAudio.WinForms` (not in NAudio.WinMM). This restores the `CALLBACK_WINDOW` behaviour from the old `WaveOut`/`WaveIn` without reviving function callbacks and without polluting NAudio.WinMM with a WinForms dependency.
+
+**Rationale:** Phase 8c dropped all three legacy callback strategies in one go. After that shipped, it became clear that the window-callback mode had genuine value for a specific audience: WinForms apps that want `DataAvailable` / `PlaybackStopped` to arrive directly on the UI thread with no manual `SynchronizationContext.Post` per event. The event-callback `WaveIn` / `WaveOut` always delivers buffer events from a dedicated background thread, forcing UI consumers to marshal every event. The function-callback path (which was unreliable under load) is *not* restored — only the window-callback path, which is reliable, is brought back.
+
+**How it's scoped:**
+
+| Aspect | Choice | Why |
+| ------ | ------ | --- |
+| Package | `NAudio.WinForms` | `Form` / `NativeWindow` are WinForms types; they don't belong in NAudio.WinMM |
+| Access to WinMM internals | `[InternalsVisibleTo("NAudio.WinForms", PublicKey=...)]` on NAudio.WinMM | `WaveInterop`, `WaveHeader`, `WaveInBuffer`, `WaveOutBuffer`, `WaveOutUtils` stay `internal` — only the strong-named NAudio.WinForms assembly can reach them |
+| Constructors | `WaveOutWindow()` / `WaveOutWindow(IntPtr hwnd)` (same on `WaveInWindow`) | Replaces the old three-way `WaveCallbackInfo` strategy with two simple overloads — parameterless owns a hidden window, `IntPtr` subclasses an existing window |
+| UI-thread requirement | Ctor throws `InvalidOperationException` if `SynchronizationContext.Current` is null | Make it explicit — function-callback fallback is gone, and callback delivery depends on a running message pump |
+| Buffer identification | Cyclic `nextBufferIndex` field | The old code relied on `WaveHeader.userData` holding a `GCHandle` to the `WaveOutBuffer`, but 8e removed that allocation. MME returns buffers in the order they were queued, so a monotonic index is sufficient |
+| Original features preserved | `IWavePosition.GetPosition` on `WaveOutWindow`; `GetMixerLine` / `GetPosition` on `WaveInWindow` | These survived the original removal and are still useful |
+| `WaveInWindow.DataAvailable` payload | `WaveInEventArgs(byte[], int)` | Matches the event-based `WaveIn` — pinned managed array, zero-copy via `BufferSpan` on the consumer side (the type's own doc calls this the idiomatic WinMM path) |
+
+**Files:** `NAudio.WinForms/WaveWindow.cs` (shared `Form` / `NativeWindow` message-pump hosts and a `WaveCallbackHost` for lifetime management), `NAudio.WinForms/WaveOutWindow.cs`, `NAudio.WinForms/WaveInWindow.cs`. NAudio.WinMM is unchanged except for the `InternalsVisibleTo` attribute.
+
 ### What Remains (WinMM)
 
 - Review ACM compression classes for further cleanup (dispose patterns, naming, visibility)
@@ -844,11 +864,11 @@ These will need to be documented in the migration guide:
 
 | Change | Migration |
 | ------ | --------- |
-| `WaveOut` class removed (NAudio.WinForms) | Use `WaveOutEvent` (NAudio.WinMM) — same `IWavePlayer` interface, same `DeviceNumber`/`NumberOfBuffers` properties. `DesiredLatency` replaced by `BufferMilliseconds` |
-| `WaveIn` class removed (NAudio.WinForms) | Use `WaveInEvent` (NAudio.WinMM) — same `IWaveIn` interface |
-| `WaveCallbackInfo` class removed | Not needed — `WaveOutEvent`/`WaveInEvent` always use event callbacks |
-| `WaveWindow` / `WaveWindowNative` classes removed | Not needed — window callbacks removed |
-| `WaveCallbackStrategy` enum removed | Not needed — only event callbacks remain |
+| `WaveOut` class removed (NAudio.WinForms) | Default: use `WaveOut` (NAudio.WinMM) — event-callback, same `IWavePlayer` interface. If you relied on callbacks arriving on the UI thread (i.e. used `WaveCallbackInfo.NewWindow` / `ExistingWindow`), use `WaveOutWindow` (NAudio.WinForms) — same behaviour under the hood, two constructors (parameterless = owns a hidden window, `IntPtr` = subclasses your window). Function callback mode (`FunctionCallback`) is gone for good — it was never reliable |
+| `WaveIn` class removed (NAudio.WinForms) | Default: use `WaveIn` (NAudio.WinMM) — event-callback, same `IWaveIn` interface. For UI-thread `DataAvailable`, use `WaveInWindow` (NAudio.WinForms) — same two-constructor pattern as `WaveOutWindow` |
+| `WaveCallbackInfo` class removed | The old three-way strategy (`FunctionCallback` / `NewWindow` / `ExistingWindow`) is replaced by picking a class: `WaveOut`/`WaveIn` for event callbacks (no UI thread needed), `WaveOutWindow`/`WaveInWindow` for window callbacks. Function callback mode is permanently gone |
+| `WaveWindow` / `WaveWindowNative` classes removed | Not exposed anymore — the window message pump is an internal detail of `WaveOutWindow`/`WaveInWindow` (both host types live in NAudio.WinForms but are `internal`) |
+| `WaveCallbackStrategy` enum removed | Not needed — strategy is encoded in the chosen class and constructor |
 | `WaveOut.DeviceCount` / `WaveOut.GetCapabilities()` | Use `WaveOutEvent.DeviceCount` / `WaveOutEvent.GetCapabilities()` |
 | `WaveIn.DeviceCount` / `WaveIn.GetCapabilities()` | Use `WaveInEvent.DeviceCount` / `WaveInEvent.GetCapabilities()` |
 | `WaveInterop` is `internal` | Use `WaveOutEvent`/`WaveInEvent`, not raw P/Invoke |

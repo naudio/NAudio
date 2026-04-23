@@ -47,6 +47,7 @@
             this.radioButtonWasapiLoopback = new System.Windows.Forms.RadioButton();
             this.radioButtonWasapi = new System.Windows.Forms.RadioButton();
             this.radioButtonWaveIn = new System.Windows.Forms.RadioButton();
+            this.radioButtonWaveInWindow = new System.Windows.Forms.RadioButton();
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
             this.groupBoxRecordingApi.SuspendLayout();
@@ -154,6 +155,7 @@
             this.groupBoxRecordingApi.Controls.Add(this.radioButtonWasapiLoopback);
             this.groupBoxRecordingApi.Controls.Add(this.radioButtonWasapi);
             this.groupBoxRecordingApi.Controls.Add(this.radioButtonWaveIn);
+            this.groupBoxRecordingApi.Controls.Add(this.radioButtonWaveInWindow);
             this.groupBoxRecordingApi.Location = new System.Drawing.Point(42, 208);
             this.groupBoxRecordingApi.Margin = new System.Windows.Forms.Padding(8, 10, 8, 10);
             this.groupBoxRecordingApi.Name = "groupBoxRecordingApi";
@@ -178,7 +180,7 @@
             this.checkBoxEventCallback.AutoSize = true;
             this.checkBoxEventCallback.Checked = true;
             this.checkBoxEventCallback.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBoxEventCallback.Location = new System.Drawing.Point(400, 99);
+            this.checkBoxEventCallback.Location = new System.Drawing.Point(400, 315);
             this.checkBoxEventCallback.Margin = new System.Windows.Forms.Padding(8, 10, 8, 10);
             this.checkBoxEventCallback.Name = "checkBoxEventCallback";
             this.checkBoxEventCallback.Size = new System.Drawing.Size(259, 45);
@@ -260,6 +262,17 @@
             this.radioButtonWaveIn.TabIndex = 11;
             this.radioButtonWaveIn.Text = "waveIn";
             this.radioButtonWaveIn.UseVisualStyleBackColor = true;
+            //
+            // radioButtonWaveInWindow
+            //
+            this.radioButtonWaveInWindow.AutoSize = true;
+            this.radioButtonWaveInWindow.Location = new System.Drawing.Point(17, 113);
+            this.radioButtonWaveInWindow.Margin = new System.Windows.Forms.Padding(8, 10, 8, 10);
+            this.radioButtonWaveInWindow.Name = "radioButtonWaveInWindow";
+            this.radioButtonWaveInWindow.Size = new System.Drawing.Size(259, 45);
+            this.radioButtonWaveInWindow.TabIndex = 16;
+            this.radioButtonWaveInWindow.Text = "WaveInWindow";
+            this.radioButtonWaveInWindow.UseVisualStyleBackColor = true;
             // 
             // label2
             // 
@@ -320,6 +333,7 @@
         private System.Windows.Forms.RadioButton radioButtonWasapiLoopback;
         private System.Windows.Forms.RadioButton radioButtonWasapi;
         private System.Windows.Forms.RadioButton radioButtonWaveIn;
+        private System.Windows.Forms.RadioButton radioButtonWaveInWindow;
         private System.Windows.Forms.ComboBox comboWaveInDevice;
         private System.Windows.Forms.CheckBox checkBoxEventCallback;
         private System.Windows.Forms.ComboBox comboBoxChannels;

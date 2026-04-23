@@ -41,15 +41,27 @@ namespace NAudioDemo.RecordingDemo
             Directory.CreateDirectory(outputFolder);
 
             // close the device if we change option only
-            radioButtonWasapi.CheckedChanged += (s, a) => Cleanup();
-            radioButtonWaveIn.CheckedChanged += (s, a) => Cleanup();
-            radioButtonWasapiLoopback.CheckedChanged += (s, a) => Cleanup();
+            radioButtonWasapi.CheckedChanged += (s, a) => { UpdateRecordingApiControls(); Cleanup(); };
+            radioButtonWaveIn.CheckedChanged += (s, a) => { UpdateRecordingApiControls(); Cleanup(); };
+            radioButtonWaveInWindow.CheckedChanged += (s, a) => { UpdateRecordingApiControls(); Cleanup(); };
+            radioButtonWasapiLoopback.CheckedChanged += (s, a) => { UpdateRecordingApiControls(); Cleanup(); };
             checkBoxEventCallback.CheckedChanged += (s, a) => Cleanup();
             comboWaveInDevice.SelectedIndexChanged += (s, a) => Cleanup();
             comboBoxSampleRate.SelectedIndexChanged += (s, a) => Cleanup();
             comboBoxChannels.SelectedIndexChanged += (s, a) => Cleanup();
             comboWasapiDevices.SelectedIndexChanged += (s, a) => Cleanup();
             comboWasapiLoopbackDevices.SelectedIndexChanged += (s, a) => Cleanup();
+            UpdateRecordingApiControls();
+        }
+
+        private void UpdateRecordingApiControls()
+        {
+            bool isWaveIn = radioButtonWaveIn.Checked || radioButtonWaveInWindow.Checked;
+            comboWaveInDevice.Enabled = isWaveIn;
+            comboWasapiDevices.Enabled = radioButtonWasapi.Checked;
+            comboWasapiLoopbackDevices.Enabled = radioButtonWasapiLoopback.Checked;
+            // Event Callbacks only applies to WASAPI (useEventSync) — hide it for the waveIn options.
+            checkBoxEventCallback.Visible = radioButtonWasapi.Checked || radioButtonWasapiLoopback.Checked;
         }
 
         void OnRecordingPanelDisposed(object sender, EventArgs e)
@@ -81,7 +93,7 @@ namespace NAudioDemo.RecordingDemo
 
         private void OnButtonStartRecordingClick(object sender, EventArgs e)
         {
-            if (radioButtonWaveIn.Checked)
+            if (radioButtonWaveIn.Checked || radioButtonWaveInWindow.Checked)
             {
                 Cleanup(); // WaveIn is still unreliable in some circumstances to being reused
             }
@@ -117,10 +129,15 @@ namespace NAudioDemo.RecordingDemo
                 var deviceNumber = comboWaveInDevice.SelectedIndex - 1;
                 newWaveIn = new WaveIn() { DeviceNumber = deviceNumber };
             }
+            else if (radioButtonWaveInWindow.Checked)
+            {
+                var deviceNumber = comboWaveInDevice.SelectedIndex - 1;
+                newWaveIn = new WaveInWindow() { DeviceNumber = deviceNumber };
+            }
             else if (radioButtonWasapi.Checked)
             {
                 var device = (MMDevice) comboWasapiDevices.SelectedItem;
-                newWaveIn = new WasapiCapture(device);
+                newWaveIn = new WasapiCapture(device, checkBoxEventCallback.Checked);
             }
             else
             {

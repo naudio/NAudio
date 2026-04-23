@@ -26,6 +26,9 @@
     <AssemblyAttribute Include="System.Runtime.Versioning.SupportedOSPlatformAttribute">
       <_Parameter1>windows</_Parameter1>
     </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>NAudio.WinForms, PublicKey=002400000480000094000000060200000024000052534131000400000100010085bcbc880396e84657fb176fe88819d4ec1ab822087fe020022075848f6be36d27548de50827e60cd106915df2033380ba15ae280131a6bdc99a62e583058e8761f117219ab9c120f1a3c1c4997810c103ee4eb1730ea477eee2bd5d3d366f87dbdc495b819616f9073d0ea119ee0109d1454f1eb010558426b4e75f8204f4aa</_Parameter1>
+    </AssemblyAttribute>
   </ItemGroup>
 
   <ItemGroup>

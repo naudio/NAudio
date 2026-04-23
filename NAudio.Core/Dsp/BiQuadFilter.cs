@@ -52,15 +52,56 @@ namespace NAudio.Dsp
             // compute result
             var result = a0 * inSample + a1 * x1 + a2 * x2 - a3 * y1 - a4 * y2;
 
-            // shift x1 to x2, sample to x1 
+            // shift x1 to x2, sample to x1
             x2 = x1;
             x1 = inSample;
 
-            // shift y1 to y2, result to y1 
+            // shift y1 to y2, result to y1
             y2 = y1;
             y1 = (float)result;
 
             return y1;
+        }
+
+        /// <summary>
+        /// Passes a block of samples through the filter. Equivalent to — and produces byte-identical
+        /// output to — calling <see cref="Transform(float)"/> on each element of
+        /// <paramref name="source"/> in order, but keeps the coefficients and state variables in
+        /// locals so the JIT can hold them in registers across the loop.
+        /// </summary>
+        /// <param name="source">Input samples.</param>
+        /// <param name="destination">Output samples. May be the same span as <paramref name="source"/>
+        /// (in-place filtering) or a separate buffer at least as long as <paramref name="source"/>.</param>
+        /// <remarks>
+        /// A biquad has a forward-only dependency (the next output depends on previous inputs AND
+        /// outputs), so the inner loop can't be vectorised; the speedup over the single-sample form
+        /// comes entirely from not having to reload field values each iteration.
+        /// </remarks>
+        public void Transform(ReadOnlySpan<float> source, Span<float> destination)
+        {
+            if (destination.Length < source.Length)
+                throw new ArgumentException("Destination must be at least as long as source.", nameof(destination));
+
+            // Hoist fields into locals — field reads inside the loop force the JIT to assume they
+            // might be mutated by anything else sharing `this` and prevent register allocation.
+            double la0 = a0, la1 = a1, la2 = a2, la3 = a3, la4 = a4;
+            float lx1 = x1, lx2 = x2, ly1 = y1, ly2 = y2;
+
+            for (int i = 0; i < source.Length; i++)
+            {
+                float inSample = source[i];
+                double result = la0 * inSample + la1 * lx1 + la2 * lx2 - la3 * ly1 - la4 * ly2;
+                lx2 = lx1;
+                lx1 = inSample;
+                ly2 = ly1;
+                ly1 = (float)result;
+                destination[i] = ly1;
+            }
+
+            x1 = lx1;
+            x2 = lx2;
+            y1 = ly1;
+            y2 = ly2;
         }
 
         private void SetCoefficients(double aa0, double aa1, double aa2, double b0, double b1, double b2)

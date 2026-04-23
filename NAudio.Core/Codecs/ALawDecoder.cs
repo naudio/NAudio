@@ -1,4 +1,6 @@
-﻿namespace NAudio.Codecs
+﻿using System;
+
+namespace NAudio.Codecs
 {
     /// <summary>
     /// a-law decoder
@@ -54,6 +56,22 @@
         public static short ALawToLinearSample(byte aLaw)
         {
             return ALawDecompressTable[aLaw];
+        }
+
+        /// <summary>
+        /// Decodes a block of a-law encoded bytes into 16 bit linear samples.
+        /// </summary>
+        /// <param name="source">a-law encoded bytes.</param>
+        /// <param name="destination">Output samples. Must be at least as long as <paramref name="source"/>.</param>
+        public static void Decode(ReadOnlySpan<byte> source, Span<short> destination)
+        {
+            if (destination.Length < source.Length)
+                throw new ArgumentException("Destination must be at least as long as source.", nameof(destination));
+
+            for (int i = 0; i < source.Length; i++)
+            {
+                destination[i] = ALawDecompressTable[source[i]];
+            }
         }
     }
 }

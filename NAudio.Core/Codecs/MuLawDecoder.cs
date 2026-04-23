@@ -1,4 +1,6 @@
-﻿namespace NAudio.Codecs
+﻿using System;
+
+namespace NAudio.Codecs
 {
     /// <summary>
     /// mu-law decoder
@@ -56,5 +58,20 @@
             return MuLawDecompressTable[muLaw];
         }
 
+        /// <summary>
+        /// Decodes a block of mu-law encoded bytes into 16 bit linear samples.
+        /// </summary>
+        /// <param name="source">mu-law encoded bytes.</param>
+        /// <param name="destination">Output samples. Must be at least as long as <paramref name="source"/>.</param>
+        public static void Decode(ReadOnlySpan<byte> source, Span<short> destination)
+        {
+            if (destination.Length < source.Length)
+                throw new ArgumentException("Destination must be at least as long as source.", nameof(destination));
+
+            for (int i = 0; i < source.Length; i++)
+            {
+                destination[i] = MuLawDecompressTable[source[i]];
+            }
+        }
     }
 }

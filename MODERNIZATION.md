@@ -493,6 +493,31 @@ Why DIM works here:
 
 **Verification:** Full solution builds with 0 warnings. All 989 tests pass (14 skipped for missing external test files).
 
+**7j: Batch DSP and codec overloads — DONE**
+
+**Problem:** Two span-hostile fragments of the API forced per-sample virtual calls or static-method dispatch for operations that are naturally batched:
+
+- `BiQuadFilter.Transform(float)` — a biquad IIR is sample-by-sample correct for streaming, but offline processing, EQ chains, and filter-before-downsample flows want to process blocks. Each per-sample call reloads the five coefficients and four state variables from fields.
+- `ALawDecoder.ALawToLinearSample(byte)` / `MuLawDecoder.MuLawToLinearSample(byte)` — table lookups. Anyone decoding a full frame of telephony audio pays a static-method call per byte.
+
+**Decision:** Add batch overloads alongside the single-sample ones. Non-breaking — the existing entry points stay for streaming / one-at-a-time callers.
+
+- `BiQuadFilter.Transform(ReadOnlySpan<float> source, Span<float> destination)`
+- `ALawDecoder.Decode(ReadOnlySpan<byte> source, Span<short> destination)` (static)
+- `MuLawDecoder.Decode(ReadOnlySpan<byte> source, Span<short> destination)` (static)
+
+A biquad has a **forward dependency** (each output depends on the previous two outputs), so the inner loop can't vectorise. The speedup over the single-sample form comes entirely from hoisting the coefficient fields and state variables into locals for the duration of the call — the JIT can then hold them in registers instead of reloading from `this` on every iteration. For the codecs, the batch form gives the JIT a clean indexable lookup loop it can auto-unroll.
+
+**Changes:**
+
+- [x] `NAudio.Core/Dsp/BiQuadFilter.cs` — batch `Transform` overload. Hoists `a0-a4` and `x1/x2/y1/y2` into locals; writes the updated state back to fields once, at the end of the call. Supports in-place operation (source and destination being the same span is safe because the biquad reads `source[i]` before writing `destination[i]`). Throws `ArgumentException` when `destination` is shorter than `source`.
+- [x] `NAudio.Core/Codecs/ALawDecoder.cs` — static batch `Decode`.
+- [x] `NAudio.Core/Codecs/MuLawDecoder.cs` — static batch `Decode`.
+- [x] New `NAudioTests/Dsp/BiQuadFilterTests.cs` — verifies batch output is byte-identical to sample-by-sample output, state survives splitting a batch across multiple calls, in-place operation matches out-of-place, empty input is a no-op, over-short destinations throw.
+- [x] New `NAudioTests/Codecs/ALawDecoderTests.cs` / `MuLawDecoderTests.cs` — batch parity with single-sample form, encode/decode roundtrip across all 256 byte values, over-short destinations throw, larger destinations only write `source.Length` samples.
+
+**Verification:** Full solution builds with 0 warnings. All 1005 tests pass (16 new, 14 skipped for missing external test files).
+
 #### Phase 5: Media Foundation modernization — DONE
 
 **5a: Infrastructure and naming — DONE**

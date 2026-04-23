@@ -1,16 +1,20 @@
 namespace NAudio.Wave
 {
     /// <summary>
-    /// IWaveBuffer interface use to store wave datas. 
+    /// IWaveBuffer interface use to store wave datas.
     /// Data can be manipulated with arrays (<see cref="ByteBuffer"/>,<see cref="FloatBuffer"/>,
     /// <see cref="ShortBuffer"/>,<see cref="IntBuffer"/> ) that are pointing to the same memory buffer.
     /// This is a requirement for all subclasses.
-    /// 
-    /// Use the associated Count property based on the type of buffer to get the number of data in the 
+    ///
+    /// Use the associated Count property based on the type of buffer to get the number of data in the
     /// buffer.
-    /// 
+    ///
     /// <see cref="WaveBuffer"/> for the standard implementation using C# unions.
     /// </summary>
+    /// <remarks>
+    /// Obsolete: see <see cref="WaveBuffer"/>.
+    /// </remarks>
+    [System.Obsolete("Use MemoryMarshal.Cast<byte, T>(span) instead. IWaveBuffer is kept only for backward compatibility.")]
     public interface IWaveBuffer
     {
         /// <summary>

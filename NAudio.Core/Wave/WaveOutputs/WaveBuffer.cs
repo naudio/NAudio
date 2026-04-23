@@ -6,13 +6,20 @@ namespace NAudio.Wave
     /// <summary>
     /// WaveBuffer class use to store wave datas. Data can be manipulated with arrays
     /// (<see cref="ByteBuffer"/>,<see cref="FloatBuffer"/>,<see cref="ShortBuffer"/>,<see cref="IntBuffer"/> ) that are pointing to the
-    /// same memory buffer. Use the associated Count property based on the type of buffer to get the number of 
+    /// same memory buffer. Use the associated Count property based on the type of buffer to get the number of
     /// data in the buffer.
     /// Implicit casting is now supported to float[], byte[], int[], short[].
     /// You must not use Length on returned arrays.
-    /// 
+    ///
     /// n.b. FieldOffset is 8 now to allow it to work natively on 64 bit
     /// </summary>
+    /// <remarks>
+    /// Obsolete: this type was created before Span&lt;T&gt; to alias a single buffer as
+    /// byte[]/float[]/short[]/int[]. Prefer <see cref="System.Runtime.InteropServices.MemoryMarshal.Cast{TFrom,TTo}(System.Span{TFrom})"/>
+    /// (or the <see cref="System.ReadOnlySpan{T}"/> overload) on a byte[] / byte span, which reinterprets
+    /// the memory at zero runtime cost without needing a wrapper object.
+    /// </remarks>
+    [Obsolete("Use MemoryMarshal.Cast<byte, T>(span) on a byte[]/Span<byte> instead. WaveBuffer is kept only for backward compatibility.")]
     [StructLayout(LayoutKind.Explicit, Pack = 2)]
     public class WaveBuffer : IWaveBuffer
     {

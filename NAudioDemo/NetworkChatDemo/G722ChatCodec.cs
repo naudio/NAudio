@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Runtime.InteropServices;
 using NAudio.Wave;
 using NAudio.Codecs;
 using System.Diagnostics;
@@ -34,10 +35,12 @@ namespace NAudioDemo.NetworkChatDemo
             {
                 throw new ArgumentException("G722 does not yet support non-zero offsets");
             }
-            var wb = new WaveBuffer(data);
+            int sampleCount = length / 2;
+            var samples = new short[sampleCount];
+            MemoryMarshal.Cast<byte, short>(data.AsSpan(0, length)).CopyTo(samples);
             int encodedLength = length / 4;
             var outputBuffer = new byte[encodedLength];
-            int encoded = codec.Encode(encoderState, outputBuffer, wb.ShortBuffer, length / 2);
+            int encoded = codec.Encode(encoderState, outputBuffer, samples, sampleCount);
             Debug.Assert(encodedLength == encoded);
             return outputBuffer;
         }
@@ -48,11 +51,12 @@ namespace NAudioDemo.NetworkChatDemo
             {
                 throw new ArgumentException("G722 does not yet support non-zero offsets");
             }
-            int decodedLength = length * 4;
-            var outputBuffer = new byte[decodedLength];
-            var wb = new WaveBuffer(outputBuffer);
-            int decoded = codec.Decode(decoderState, wb.ShortBuffer, data, length);
-            Debug.Assert(decodedLength == decoded * 2);  // because decoded is a number of samples
+            int decodedSampleCount = length * 2;
+            var decodedSamples = new short[decodedSampleCount];
+            int decoded = codec.Decode(decoderState, decodedSamples, data, length);
+            Debug.Assert(decodedSampleCount == decoded);
+            var outputBuffer = new byte[decoded * 2];
+            MemoryMarshal.AsBytes(decodedSamples.AsSpan(0, decoded)).CopyTo(outputBuffer);
             return outputBuffer;
         }
 

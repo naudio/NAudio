@@ -397,6 +397,31 @@ At 9600 floats all kernels are partly memory-bandwidth bound, which is why the r
 
 **Zero allocations** — both raw kernels and the end-to-end mixer report 0 bytes allocated per operation (the single 1-byte figure at 32 sources × 9600 frames is an `Allocated` rounding artefact from BDN's measurement overhead, not an actual allocation).
 
+**7g: WaveBuffer deprecated in favour of `MemoryMarshal.Cast` — DONE**
+
+**Problem:** `NAudio.Wave.WaveBuffer` is a pre-Span union (`[StructLayout(LayoutKind.Explicit)]` with `byte[]` / `float[]` / `short[]` / `int[]` all at `FieldOffset(8)`) used to read the same memory block as different typed arrays. Before `Span<T>` this was the only way to avoid per-sample `BitConverter` calls. It has several drawbacks now:
+- The union trick relies on the CLR laying out managed array references identically across types — an implementation detail, not a language guarantee.
+- It has no non-allocating way to view a subrange; you always operate on the whole underlying array.
+- It is a public heap object with a finalizer-free but still allocating lifecycle per use.
+- `MemoryMarshal.Cast<byte, T>` does the same reinterpretation on a `Span<byte>` at zero runtime cost (inlined to a pointer cast + length shift), supports slicing, and works on pooled/stack-allocated buffers too.
+
+**Decision:** Mark `WaveBuffer` and `IWaveBuffer` `[Obsolete]` (warning, not error — both are in the public API surface and removing them is a breaking change that can wait for a future major version). Remove all internal uses so NAudio's own build is warning-clean.
+
+**Changes:**
+
+- [x] `WaveBuffer` — `[Obsolete("Use MemoryMarshal.Cast<byte, T>(span) instead…")]`
+- [x] `IWaveBuffer` — `[Obsolete(…)]`
+- [x] `Mono16SampleChunkConverter`, `MonoFloatSampleChunkConverter`, `Stereo16SampleChunkConverter`, `StereoFloatSampleChunkConverter` — dropped the `sourceWaveBuffer` field. `GetNextSample` now does `MemoryMarshal.Cast<byte, short>(sourceBuffer)` / `<byte, float>(sourceBuffer)` inline; the cast is a zero-cost reinterpret.
+- [x] `NAudioTests/WaveStreams/SampleChunkConverterMappingTests.cs` — replaced `new WaveBuffer(dest)` with `MemoryMarshal.Cast<byte, float>(dest)` in the assertion helper.
+- [x] `NAudioDemo/NetworkChatDemo/SpeexChatCodec.cs` — switched the running encoder input buffer from `WaveBuffer` to `short[] + int encoderInputSamples`. `FeedSamplesIntoEncoderInputBuffer` uses `MemoryMarshal.Cast<byte, short>` to copy the incoming byte buffer into the short buffer. `Decode` allocates a `short[]` for the decoder output and uses `MemoryMarshal.AsBytes` to copy the result into the returned `byte[]`.
+- [x] `NAudioDemo/NetworkChatDemo/G722ChatCodec.cs` — per-call `WaveBuffer` replaced with a `short[]` allocated locally and populated via `MemoryMarshal.Cast` (encode) or copied back via `MemoryMarshal.AsBytes` (decode).
+
+**Not touched:** `NAudio.WinMM/WaveOutBuffer.cs` and `NAudio.WinMM/WaveInBuffer.cs` contain two doc-comment mentions of "this WaveBuffer" each — these refer colloquially to the containing classes (`WaveOutBuffer` / `WaveInBuffer`), not the `WaveBuffer` type, so no code change is needed.
+
+**Verification:** Full solution builds with 0 warnings after tagging both types `[Obsolete]` — confirming no internal NAudio code still references them. All 978 tests pass (14 skipped for missing external test files).
+
+**Deferred to a future major version:** physically delete `WaveBuffer` and `IWaveBuffer`. They are listed in the "Breaking Changes" section of this document as candidates for a 3.0 cleanup.
+
 #### Phase 5: Media Foundation modernization — DONE
 
 **5a: Infrastructure and naming — DONE**

@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using NAudio.Utils;
 using NAudio.Wave;
 using NUnit.Framework;
@@ -96,8 +97,8 @@ namespace NAudioTests.WaveStreams
             {
                 var dest = new byte[8];
                 var bytesRead = waveChannel.Read(dest, 0, dest.Length);
-                var buffer = new WaveBuffer(dest);
-                return (bytesRead, buffer.FloatBuffer[0], buffer.FloatBuffer[1]);
+                var floats = MemoryMarshal.Cast<byte, float>(dest);
+                return (bytesRead, floats[0], floats[1]);
             }
         }
 

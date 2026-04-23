@@ -12,5 +12,8 @@ namespace NAudioWpfDemo.AudioPlaybackDemo
         // n.b. not great design, need to refactor so visualizations can attach to the playback graph and measure just what they need
         void OnMaxCalculated(float min, float max);
         void OnFftCalculated(Complex[] result);
+
+        /// <summary>Called when the input audio file changes, so the visualization can configure frequency scales etc.</summary>
+        void OnSourceChanged(int sampleRate);
     }
 }

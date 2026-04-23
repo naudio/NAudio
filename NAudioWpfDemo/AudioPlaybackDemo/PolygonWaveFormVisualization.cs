@@ -17,5 +17,10 @@
         {
             // nothing to do
         }
+
+        public void OnSourceChanged(int sampleRate)
+        {
+            // nothing to do — waveform visualization doesn't care about sample rate
+        }
     }
 }

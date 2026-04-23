@@ -20,5 +20,10 @@ namespace NAudioWpfDemo.AudioPlaybackDemo
         {
             spectrumAnalyser.Update(result);
         }
+
+        public void OnSourceChanged(int sampleRate)
+        {
+            spectrumAnalyser.SampleRate = sampleRate;
+        }
     }
 }

@@ -56,6 +56,12 @@ namespace NAudioWpfDemo.AudioPlaybackDemo
                     this.selectedVisualization = value;
                     OnPropertyChanged("SelectedVisualization");
                     OnPropertyChanged("Visualization");
+                    // If a file is already loaded when the user switches visualization, make sure
+                    // the newly-selected one gets the sample rate too.
+                    if (this.selectedVisualization != null && audioPlayback.SampleRate > 0)
+                    {
+                        this.selectedVisualization.OnSourceChanged(audioPlayback.SampleRate);
+                    }
                 }
             }
         }
@@ -95,6 +101,9 @@ namespace NAudioWpfDemo.AudioPlaybackDemo
             {
                 this.selectedFile = openFileDialog.FileName;
                 audioPlayback.Load(this.selectedFile);
+                // Now that we know the sample rate, let the visualization configure itself
+                // (e.g. the spectrum analyser uses it for the frequency x-axis).
+                this.selectedVisualization?.OnSourceChanged(audioPlayback.SampleRate);
             }
         }
 

@@ -14,6 +14,9 @@ namespace NAudioWpfDemo.AudioPlaybackDemo
 
         public event EventHandler<MaxSampleEventArgs> MaximumCalculated;
 
+        /// <summary>Sample rate of the most recently opened file, in Hz. Zero until a file is loaded.</summary>
+        public int SampleRate { get; private set; }
+
         public void Load(string fileName)
         {
             Stop();
@@ -34,11 +37,17 @@ namespace NAudioWpfDemo.AudioPlaybackDemo
             {
                 var inputStream = new AudioFileReader(fileName);
                 fileStream = inputStream;
-                var aggregator = new SampleAggregator(inputStream);
+                SampleRate = inputStream.WaveFormat.SampleRate;
+                // 4096 gives ~10.8 Hz bin spacing at 44.1 kHz. This halves the "stairstep" region
+                // at the bass end of a log-frequency spectrum display (the crossover where each
+                // display band spans one FFT bin moves from ~283 Hz down to ~142 Hz). Trade-off
+                // is a ~93 ms analysis window vs 46 ms at 2048 — fine for a visualiser, music
+                // transients still look lively.
+                var aggregator = new SampleAggregator(inputStream, 4096);
                 aggregator.NotificationCount = inputStream.WaveFormat.SampleRate / 100;
                 aggregator.PerformFFT = true;
                 aggregator.FftCalculated += (s, a) => FftCalculated?.Invoke(this, a);
-                aggregator.MaximumCalculated += (s, a) => MaximumCalculated?.Invoke(this, a); 
+                aggregator.MaximumCalculated += (s, a) => MaximumCalculated?.Invoke(this, a);
                 playbackDevice.Init(aggregator);
             }
             catch (Exception e)

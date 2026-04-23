@@ -1,8 +1,6 @@
-﻿<UserControl x:Class="NAudioWpfDemo.SpectrumAnalyser"
+<UserControl x:Class="NAudioWpfDemo.SpectrumAnalyser"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    >
-    <Canvas Background="Black">
-        <Polyline x:Name="polyline1" Stroke="Yellow" StrokeThickness="1"/>
-    </Canvas>
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- No Background set here: doing so would make the template Border render on top of the
+         OnRender output and hide everything. The black background is painted inside OnRender. -->
 </UserControl>

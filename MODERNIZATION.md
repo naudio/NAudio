@@ -326,6 +326,19 @@ Subclasses that only override `Read(byte[], int, int)` still work correctly — 
 
 **Test coverage:** `WaveStreamSpanReadTests` asserts that (a) each NAudio reader produces identical data when read via `Read(byte[], int, int)` versus `Read(Span<byte>)`, (b) third-party subclasses overriding only the byte[] method continue to work through the bridge, and (c) reflection-based architectural check — every concrete `WaveStream` subclass in the NAudio assemblies overrides `Read(Span<byte>)`.
 
+**7e: SmbPitchShifter span-based API and per-Read allocation removal — DONE**
+
+**Problem:** `SmbPitchShiftingSampleProvider.Read` allocated 1 (mono) or 2 (stereo) `float[]` arrays on **every** Read — real-time playback hits this 50-100 times per second, churning Gen0 unnecessarily.
+
+**Changes:**
+
+- [x] `SmbPitchShifter.PitchShift` and `ShortTimeFourierTransform` gained `Span<float>` overloads. The `float[]` overloads now forward to the span versions via `AsSpan()` — public API preserved, zero-copy path available
+- [x] Internal loop counters changed from `long` to `int` (the buffers are capped at `MAX_FRAME_LENGTH = 16000` so int is always sufficient) — required for `Span<float>` indexing
+- [x] `SmbPitchShiftingSampleProvider.Read` — **mono path** calls `shifterLeft.PitchShift(..., buffer.Slice(0, sampRead))` directly: zero intermediate buffer, limiter runs in place on the caller's span
+- [x] `SmbPitchShiftingSampleProvider.Read` — **stereo path** uses two instance-field `float[]` buffers grown via `BufferHelpers.Ensure` (allocated on first Read at a given size, reused thereafter) for the deinterleave/shift/reinterleave step
+
+**Verification:** `SmbPitchShiftingSampleProviderTests` includes zero-allocation assertions (`GC.GetAllocatedBytesForCurrentThread` before and after 50 Reads of the same size) for both the mono and stereo paths — both paths allocate 0 bytes on steady-state reads after warm-up. Parity tests confirm the `float[]` and `Span<float>` overloads produce byte-identical output on the same input.
+
 #### Phase 5: Media Foundation modernization — DONE
 
 **5a: Infrastructure and naming — DONE**

@@ -1,5 +1,6 @@
 using System;
 using NAudio.Dsp;
+using NAudio.Utils;
 
 namespace NAudio.Wave.SampleProviders
 {
@@ -28,6 +29,10 @@ namespace NAudio.Wave.SampleProviders
         private readonly long osamp;
         private readonly SmbPitchShifter shifterLeft = new SmbPitchShifter();
         private readonly SmbPitchShifter shifterRight = new SmbPitchShifter();
+
+        // Reused across Read calls on the stereo path to avoid per-Read allocations.
+        private float[] leftChannelBuffer;
+        private float[] rightChannelBuffer;
 
         //Limiter constants
         const float LIM_THRESH = 0.95f;
@@ -73,41 +78,36 @@ namespace NAudio.Wave.SampleProviders
             }
             if (waveFormat.Channels == 1)
             {
-                var mono = new float[sampRead];
-                var index = 0;
-                for (var sample = 0; sample <= sampRead - 1; sample++)
-                {
-                    mono[index] = buffer[sample];
-                    index += 1;
-                }
+                // Mono: PitchShift operates in place on the caller's span — no intermediate buffer.
+                var mono = buffer.Slice(0, sampRead);
                 shifterLeft.PitchShift(pitch, sampRead, fftSize, osamp, waveFormat.SampleRate, mono);
-                index = 0;
-                for (var sample = 0; sample <= sampRead - 1; sample++)
+                for (var sample = 0; sample < sampRead; sample++)
                 {
-                    buffer[sample] = Limiter(mono[index]);
-                    index += 1;
+                    mono[sample] = Limiter(mono[sample]);
                 }
                 return sampRead;
             }
             if (waveFormat.Channels == 2)
             {
-                var left = new float[(sampRead >> 1)];
-                var right = new float[(sampRead >> 1)];
-                var index = 0;
-                for (var sample = 0; sample <= sampRead - 1; sample += 2)
+                int perChannel = sampRead >> 1;
+                leftChannelBuffer = BufferHelpers.Ensure(leftChannelBuffer, perChannel);
+                rightChannelBuffer = BufferHelpers.Ensure(rightChannelBuffer, perChannel);
+                var left = leftChannelBuffer.AsSpan(0, perChannel);
+                var right = rightChannelBuffer.AsSpan(0, perChannel);
+
+                // Deinterleave
+                for (int sample = 0, index = 0; sample < sampRead; sample += 2, index++)
                 {
                     left[index] = buffer[sample];
                     right[index] = buffer[sample + 1];
-                    index += 1;
                 }
-                shifterLeft.PitchShift(pitch, sampRead >> 1, fftSize, osamp, waveFormat.SampleRate, left);
-                shifterRight.PitchShift(pitch, sampRead >> 1, fftSize, osamp, waveFormat.SampleRate, right);
-                index = 0;
-                for (var sample = 0; sample <= sampRead - 1; sample += 2)
+                shifterLeft.PitchShift(pitch, perChannel, fftSize, osamp, waveFormat.SampleRate, left);
+                shifterRight.PitchShift(pitch, perChannel, fftSize, osamp, waveFormat.SampleRate, right);
+                // Reinterleave with limiter
+                for (int sample = 0, index = 0; sample < sampRead; sample += 2, index++)
                 {
                     buffer[sample] = Limiter(left[index]);
                     buffer[sample + 1] = Limiter(right[index]);
-                    index += 1;
                 }
                 return sampRead;
             }

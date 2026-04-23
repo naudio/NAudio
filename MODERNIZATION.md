@@ -518,6 +518,49 @@ A biquad has a **forward dependency** (each output depends on the previous two o
 
 **Verification:** Full solution builds with 0 warnings. All 1005 tests pass (16 new, 14 skipped for missing external test files).
 
+**7k: FFT modernisation — real-input specialisation, precomputed windowing, Span-first — DONE**
+
+**Problem:** The static `FastFourierTransform.FFT(bool, int, Complex[])` does a full-size complex FFT even when the input is real audio. Audio callers zero out the imaginary part, which means roughly half the work is on known zeros. Worse, the existing `HammingWindow` / `HannWindow` / `BlackmanHarrisWindow` static methods recompute `cos()` on every call — `SampleAggregator.Add` invoked `HammingWindow(n, fftLength)` per sample per buffer, doing thousands of transcendentals just to apply a window.
+
+**Decision:** Introduce `FftProcessor` — a reusable, fixed-size instance class that specialises for real-input audio and bakes in the window. Keep `FastFourierTransform.FFT` intact for back-compat; add a Span overload as originally scoped.
+
+The real FFT trick: for N real samples, pack pairs of samples `{x[2k], x[2k+1]}` as real/imaginary components of an N/2-point complex sequence, run an N/2-point complex FFT, then an unpack pass recovers the N-point real FFT result. Total work is roughly half of a full complex FFT and output is the canonical N/2+1 half-spectrum (the upper half is the complex conjugate of the lower half by Hermitian symmetry).
+
+**Design choices:**
+
+- **Keep single (float) precision.** PCM audio carries ≤24 bits of signal; float32 gives 24 bits of mantissa — enough. Double would cost 2× memory bandwidth and 2× SIMD throughput for precision beyond the signal content. Not worth the regression.
+- **Precomputed window table** allocated once in the constructor. Windowing becomes `samples[i] * windowTable[i]` — a free multiply rather than a `cos()` call.
+- **No `System.Numerics.Complex` interop** — it's `double` and a reference type, so direct bridging would force precision loss and boxing. Users who need BCL Complex convert explicitly.
+- **No radix-4 / split-radix / SIMD in this round.** The big wins are the real-FFT specialisation and the window table; vectorising the inner FFT kernel has a much higher risk/reward ratio and audio-typical sizes (1024) are already memory-bound. Defer to a future round once there's a clear need.
+
+**Changes:**
+
+- [x] `NAudio.Core/Dsp/Complex.cs` — added `Real`/`Imaginary` property aliases for `X`/`Y`. `[AggressiveInlining]` so the JIT collapses them to field reads. Fields retained for back-compat.
+- [x] `NAudio.Core/Dsp/FastFourierTransform.cs` — added `FFT(bool, int, Span<Complex>)` overload (the original span task). `Complex[]` overload forwards via `AsSpan`.
+- [x] `NAudio.Core/Dsp/FftProcessor.cs` — new `sealed` class. Constructor takes `(int fftSize, FftWindowType window)` and precomputes the window table and real-FFT unpack twiddles. Methods: `RealForward(ReadOnlySpan<float>, Span<Complex>)` emits an N/2+1 half-spectrum; `RealInverse(ReadOnlySpan<Complex>, Span<float>)` recovers the time-domain signal; `ComplexForward`/`ComplexInverse` for callers with genuine complex input. Scaling matches the static FFT (1/N on forward, no scale on inverse, so round-trip is identity). Zero allocations on the steady-state path.
+- [x] `NAudio.Extras/SampleAggregator.cs` — migrated. Per-sample `HammingWindow(fftPos, fftLength)` call is gone; samples are collected into a plain `float[]` buffer and fed to an `FftProcessor` with `FftWindowType.Hamming` when full. Conjugate-symmetric upper half of the `FftEventArgs.Result` buffer is populated after the unpack so the existing `SpectrumAnalyser.xaml.cs` demo (which reads the full N-bin array) keeps working unchanged.
+- [x] New `NAudioTests/Dsp/FftProcessorTests.cs` — 19 tests: parity with full complex FFT on real input (sizes 4/8/16/64/1024 with per-size tolerance scaling), DC/impulse/cosine analytical cases, RealForward→RealInverse round-trip, `ComplexForward` parity with the static FFT, window table behaviour matches manual windowing, constructor and argument validation, zero-allocation assertion on the steady-state path via `GC.GetAllocatedBytesForCurrentThread`.
+- [x] New `NAudio.Benchmarks/FftBenchmarks.cs` — four cases at sizes 256/1024/4096: baseline FFT only, baseline FFT + per-sample window, new real FFT, new real FFT with window table.
+
+**Measured results** (BenchmarkDotNet short-run, .NET 8, x64 AVX2 RyuJIT):
+
+| Size | Baseline FFT only | Baseline FFT + per-sample window | `FftProcessor.RealForward` | `FftProcessor.RealForward` + Hamming |
+| ---: | ----------------: | -------------------------------: | -------------------------: | -----------------------------------: |
+|  256 |      1,639 ns     |         2,714 ns                 |          937 ns (0.57×)    |              959 ns (0.59×)           |
+| 1024 |      7,366 ns     |        11,489 ns                 |        4,232 ns (0.57×)    |            4,240 ns (0.58×)           |
+| 4096 |     32,725 ns     |        50,233 ns                 |       18,023 ns (0.55×)    |           19,199 ns (0.59×)           |
+
+Two things to notice:
+- Real FFT alone is ~**1.75× faster** than the complex FFT — consistent with halving the work (N/2-point FFT plus an O(N) unpack pass).
+- The window table reduces windowing from "~50–67% overhead on top of the FFT" (baseline) to "essentially free" (the `RealForward`-with-window row is only ~3–7% slower than without). Precomputing `0.54 - 0.46·cos(2πn/(N-1))` once beats computing it per sample per call.
+
+Overall, for `SampleAggregator`-style workloads (windowed real FFT — the realistic audio case), the new path is **~2.6× faster** at every size. Zero allocations on steady state on both paths (`MemoryDiagnoser` reports `-` for `Allocated`).
+
+**Deferred (future rounds):**
+- SIMD / radix-4 / split-radix FFT kernel — potentially another 20-40% at larger sizes, but significant implementation risk and uncertain payoff at audio-typical sizes.
+- Consolidating `SmbPitchShifter`'s internal STFT into `FftProcessor` — different storage layout (interleaved float rather than `Complex`), not worth churn in this round.
+- `IMemoryOwner<Complex>` rental for the half-spectrum — only worth it if a consumer wants to avoid the N/2+1 array allocation at spectrum-result time.
+
 #### Phase 5: Media Foundation modernization — DONE
 
 **5a: Infrastructure and naming — DONE**

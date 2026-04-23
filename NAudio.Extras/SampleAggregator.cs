@@ -32,11 +32,13 @@ namespace NAudio.Extras
         /// </summary>
         public bool PerformFFT { get; set; }
 
-        private readonly Complex[] fftBuffer;
+        private readonly Complex[] fftBuffer;       // full-size N-bin result, kept for event-API back-compat
+        private readonly Complex[] halfSpectrum;    // N/2+1-bin output from FftProcessor
+        private readonly float[] sampleBuffer;      // raw time-domain samples; windowing happens inside FftProcessor
         private readonly FftEventArgs fftArgs;
+        private readonly FftProcessor fftProcessor;
         private int fftPos;
         private readonly int fftLength;
-        private readonly int m;
         private readonly ISampleProvider source;
 
         private readonly int channels;
@@ -53,9 +55,11 @@ namespace NAudio.Extras
             {
                 throw new ArgumentException("FFT Length must be a power of two");
             }
-            m = (int)Math.Log(fftLength, 2.0);
             this.fftLength = fftLength;
+            sampleBuffer = new float[fftLength];
+            halfSpectrum = new Complex[fftLength / 2 + 1];
             fftBuffer = new Complex[fftLength];
+            fftProcessor = new FftProcessor(fftLength, FftWindowType.Hamming);
             fftArgs = new FftEventArgs(fftBuffer);
             this.source = source;
         }
@@ -78,14 +82,24 @@ namespace NAudio.Extras
         {
             if (PerformFFT && FftCalculated != null)
             {
-                fftBuffer[fftPos].X = (float)(value * FastFourierTransform.HammingWindow(fftPos, fftLength));
-                fftBuffer[fftPos].Y = 0;
+                sampleBuffer[fftPos] = value;
                 fftPos++;
-                if (fftPos >= fftBuffer.Length)
+                if (fftPos >= fftLength)
                 {
                     fftPos = 0;
-                    // 1024 = 2^10
-                    FastFourierTransform.FFT(true, m, fftBuffer);
+                    fftProcessor.RealForward(sampleBuffer, halfSpectrum);
+                    // Copy the half-spectrum into the full-size result buffer and fill in the
+                    // conjugate-symmetric upper half so consumers that read the full N-bin array
+                    // continue to see the same data they used to get from a full complex FFT.
+                    for (int k = 0; k <= fftLength / 2; k++)
+                    {
+                        fftBuffer[k] = halfSpectrum[k];
+                    }
+                    for (int k = 1; k < fftLength / 2; k++)
+                    {
+                        fftBuffer[fftLength - k].X = halfSpectrum[k].X;
+                        fftBuffer[fftLength - k].Y = -halfSpectrum[k].Y;
+                    }
                     FftCalculated(this, fftArgs);
                 }
             }

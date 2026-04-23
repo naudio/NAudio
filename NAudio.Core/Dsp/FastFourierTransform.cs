@@ -8,10 +8,16 @@ namespace NAudio.Dsp
     public static class FastFourierTransform
     {
         /// <summary>
-        /// This computes an in-place complex-to-complex FFT 
+        /// This computes an in-place complex-to-complex FFT
         /// x and y are the real and imaginary arrays of 2^m points.
         /// </summary>
         public static void FFT(bool forward, int m, Complex[] data)
+            => FFT(forward, m, data.AsSpan());
+
+        /// <summary>
+        /// This computes an in-place complex-to-complex FFT over the first 2^m elements of the span.
+        /// </summary>
+        public static void FFT(bool forward, int m, Span<Complex> data)
         {
             int n, i, i1, j, k, i2, l, l1, l2;
             float c1, c2, tx, ty, t1, t2, u1, u2, z;
@@ -43,7 +49,7 @@ namespace NAudio.Dsp
                 j += k;
             }
 
-            // Compute the FFT 
+            // Compute the FFT
             c1 = -1.0f;
             c2 = 0.0f;
             l2 = 1;
@@ -75,7 +81,7 @@ namespace NAudio.Dsp
                 c1 = (float)Math.Sqrt((1.0f + c1) / 2.0f);
             }
 
-            // Scaling for forward transform 
+            // Scaling for forward transform
             if (forward)
             {
                 float scale = 1.0f / n;

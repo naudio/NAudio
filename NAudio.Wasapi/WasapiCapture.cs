@@ -18,7 +18,6 @@ namespace NAudio.CoreAudioApi
         private const long ReftimesPerSec = 10000000;
         private const long ReftimesPerMillisec = 10000;
         private volatile CaptureState captureState;
-        private byte[] silenceBuffer;
         private Thread captureThread;
         private AudioClient audioClient;
         private int bytesPerFrame;
@@ -165,12 +164,7 @@ namespace NAudio.CoreAudioApi
                 Guid.Empty);
             }
 
-            int bufferFrameCount = audioClient.BufferSize;
             bytesPerFrame = waveFormat.Channels * waveFormat.BitsPerSample / 8;
-            // Silent packets are materialised into this buffer (zero-filled); grown on demand.
-            // Non-silent packets bypass this entirely and are handed to consumers as a
-            // ReadOnlyMemory<byte> wrapping the native WASAPI buffer.
-            silenceBuffer = new byte[bufferFrameCount * bytesPerFrame];
 
             initialized = true;
         }
@@ -291,11 +285,14 @@ namespace NAudio.CoreAudioApi
 
         private void ReadNextPacket(AudioCaptureClient capture)
         {
-            // Fires one DataAvailable event per WASAPI packet. Non-silent packets are handed out
-            // as a ReadOnlyMemory<byte> wrapping the native buffer pointer — no Marshal.Copy into
-            // a managed array. The consumer must finish processing before the handler returns;
-            // after that the native buffer is released and the Memory is invalid (same aliasing
-            // contract as before).
+            // Fires one DataAvailable event per WASAPI packet, each with its own fresh
+            // managed byte[]. Reusing a single buffer across packets is unsafe: loopback
+            // capture commonly drains several packets per wake-up (the render engine
+            // bursts), and a consumer that defers handling (Control.BeginInvoke,
+            // queueing to another thread) would read whichever packet happened to be in
+            // the shared buffer when the handler eventually ran. Per-packet allocations
+            // are a few hundred bytes each and collect in gen0 — a lot cheaper than
+            // garbled audio. Zero-copy capture is available via WasapiRecorder.
             int packetSize = capture.GetNextPacketSize();
             while (packetSize != 0)
             {
@@ -304,20 +301,13 @@ namespace NAudio.CoreAudioApi
 
                 try
                 {
-                    if ((flags & AudioClientBufferFlags.Silent) == AudioClientBufferFlags.Silent)
+                    var packetBuffer = new byte[bytesAvailable];
+                    if ((flags & AudioClientBufferFlags.Silent) != AudioClientBufferFlags.Silent)
                     {
-                        // Materialise silence in a managed buffer. The zero-fill matters because the
-                        // buffer is reused across packets and a consumer could have written into
-                        // Buffer (it's a byte[]); clear before reuse to guarantee silence semantics.
-                        silenceBuffer = BufferHelpers.Ensure(silenceBuffer, bytesAvailable);
-                        Array.Clear(silenceBuffer, 0, bytesAvailable);
-                        DataAvailable?.Invoke(this, new WaveInEventArgs(silenceBuffer, bytesAvailable));
+                        Marshal.Copy(buffer, packetBuffer, 0, bytesAvailable);
                     }
-                    else
-                    {
-                        using var memoryManager = new NativeAudioBufferMemoryManager(buffer, bytesAvailable);
-                        DataAvailable?.Invoke(this, new WaveInEventArgs(memoryManager.Memory));
-                    }
+                    // Silent packets: packetBuffer is already zero-initialised.
+                    DataAvailable?.Invoke(this, new WaveInEventArgs(packetBuffer, bytesAvailable));
                 }
                 finally
                 {

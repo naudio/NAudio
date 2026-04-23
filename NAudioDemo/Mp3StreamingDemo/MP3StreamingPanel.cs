@@ -114,7 +114,7 @@ namespace NAudioDemo.Mp3StreamingDemo
                                     TimeSpan.FromSeconds(20)); // allow us to get well ahead of ourselves
                                 //this.bufferedWaveProvider.BufferedDuration = 250;
                             }
-                            int decompressed = decompressor.DecompressFrame(frame, buffer, 0);
+                            int decompressed = decompressor.DecompressFrame(frame, buffer.AsSpan());
                             //Debug.WriteLine(String.Format("Decompressed a frame {0}", decompressed));
                             bufferedWaveProvider.AddSamples(buffer, 0, decompressed);
                         }

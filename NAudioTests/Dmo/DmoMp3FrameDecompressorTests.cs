@@ -41,7 +41,7 @@ namespace NAudioTests.Dmo
                     var buffer = new byte[reader.WaveFormat.AverageBytesPerSecond];
                     while ((frame = reader.ReadNextFrame()) != null)
                     {
-                        int decompressed = frameDecompressor.DecompressFrame(frame, buffer, 0);
+                        int decompressed = frameDecompressor.DecompressFrame(frame, buffer.AsSpan());
                         Debug.WriteLine($"Decompressed {frame.FrameLength} bytes to {decompressed}");
                     }
                 }

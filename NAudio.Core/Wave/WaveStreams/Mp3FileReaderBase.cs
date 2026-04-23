@@ -385,7 +385,7 @@ namespace NAudio.Wave
                     Mp3Frame frame = ReadNextFrame(true); // internal read - should not advance position
                     if (frame != null)
                     {
-                        int decompressed = decompressor.DecompressFrame(frame, decompressBuffer, 0);
+                        int decompressed = decompressor.DecompressFrame(frame, decompressBuffer.AsSpan());
 
                         if (tocIndex <= targetTocIndex || decompressed == 0)
                         {

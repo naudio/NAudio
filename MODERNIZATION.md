@@ -422,6 +422,48 @@ At 9600 floats all kernels are partly memory-bandwidth bound, which is why the r
 
 **Deferred to a future major version:** physically delete `WaveBuffer` and `IWaveBuffer`. They are listed in the "Breaking Changes" section of this document as candidates for a 3.0 cleanup.
 
+**7h: `IMp3FrameDecompressor.DecompressFrame` span overload via default interface method — DONE**
+
+**Problem:** `IMp3FrameDecompressor.DecompressFrame(Mp3Frame, byte[], int)` pre-dates `Span<T>`. Migrating it is complicated by NLayer — `NLayer.NAudioSupport.Mp3FrameDecompressor` lives in a separate repo (naudio/NLayer), implements this interface, and ships as a dependency of many MP3 consumers. Any addition to the interface that NLayer doesn't already provide would break callers who pull in a pre-update NLayer build.
+
+**Decision:** Add a `DecompressFrame(Mp3Frame, Span<byte>)` overload as a **default interface method (DIM)**. The default implementation routes through the existing byte[] overload via an `ArrayPool<byte>.Shared` rental:
+
+```csharp
+int DecompressFrame(Mp3Frame frame, Span<byte> dest)
+{
+    byte[] rented = ArrayPool<byte>.Shared.Rent(dest.Length);
+    try
+    {
+        int written = DecompressFrame(frame, rented, 0);
+        rented.AsSpan(0, Math.Min(written, dest.Length)).CopyTo(dest);
+        return written;
+    }
+    finally { ArrayPool<byte>.Shared.Return(rented); }
+}
+```
+
+Why DIM works here:
+- **Old NLayer + new NAudio:** NLayer's byte[] method satisfies the interface; calls to the Span overload dispatch to the DIM default, which rents a pool byte[], calls NLayer's existing method, and copies into the caller's Span. Zero breaking change.
+- **Updated NLayer + new NAudio:** NLayer overrides the Span method directly; DIM default is never invoked. Zero pool bounce.
+- **Third-party implementations (any shape):** same graceful degradation — if they haven't overridden the Span method, they still work via routing.
+
+.NET 8+ supports DIMs natively; no TFM changes needed.
+
+**Changes:**
+
+- [x] `IMp3FrameDecompressor` — Span overload added as a DIM. byte[] overload left untouched (still required of all implementers).
+- [x] `AcmMp3FrameDecompressor` (WinMM) — promoted the Span method to be the primary implementation; byte[] overload forwards via `dest.AsSpan(destOffset)`.
+- [x] `DmoMp3FrameDecompressor` (Wasapi) — same: Span-primary, byte[] forwards.
+- [x] `Mp3FileReaderBase.cs:388` — now calls the Span overload. Built-ins dispatch directly; NLayer (pre-update) gets the routed fallback.
+- [x] `NAudioTests/Dmo/DmoMp3FrameDecompressorTests.cs:44` and `NAudioDemo/Mp3StreamingDemo/MP3StreamingPanel.cs:117` — migrated to Span overload.
+- [x] New test `NAudioTests/Mp3/Mp3FrameDecompressorDimRoutingTests.cs` — `LegacyByteArrayOnlyDecompressor` test double mimics an NLayer-shape impl (overrides only the byte[] method) and proves the DIM fallback dispatches correctly, preserves the return value, copies the pool-buffer contents verbatim into the caller's Span, and doesn't leak rentals across many calls.
+
+**Contract reminder:** `dest` must be large enough to hold one frame's PCM output (e.g. MPEG-1 L3 stereo: 1152 samples × 2 channels × 2 bytes = 4608 bytes). This is the same contract as the byte[] overload.
+
+**Verification:** Full solution builds with 0 warnings. All 980 tests pass (14 skipped for missing external test files).
+
+**Deferred to a future release:** once NLayer ships a version that overrides the Span method directly, mark the byte[] overload `[Obsolete("Prefer the Span<byte> overload")]` to nudge other third-party implementers. Do not mark it obsolete before then — NLayer's own build would show the warning on every implementing method.
+
 #### Phase 5: Media Foundation modernization — DONE
 
 **5a: Infrastructure and naming — DONE**

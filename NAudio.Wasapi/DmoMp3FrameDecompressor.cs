@@ -48,9 +48,9 @@ namespace NAudio.FileFormats.Mp3
         public WaveFormat OutputFormat { get { return pcmFormat; } }
 
         /// <summary>
-        /// Decompress a single frame of MP3
+        /// Decompress a single frame of MP3 into the supplied span.
         /// </summary>
-        public int DecompressFrame(Mp3Frame frame, byte[] dest, int destOffset)
+        public int DecompressFrame(Mp3Frame frame, Span<byte> dest)
         {
             // 1. copy into our DMO's input buffer
             inputMediaBuffer.LoadData(frame.RawData.AsSpan(0, frame.FrameLength));
@@ -77,14 +77,20 @@ namespace NAudio.FileFormats.Mp3
             }
 
             // 5. Now get the data out of the output buffer
-            outputBuffer.RetrieveData(dest.AsSpan(destOffset));
+            outputBuffer.RetrieveData(dest);
             Debug.Assert(!outputBuffer.MoreDataAvailable, "have not implemented more data available yet");
-            
+
             return outputBuffer.Length;
         }
 
         /// <summary>
-        /// Alerts us that a reposition has occured so the MP3 decoder needs to reset its state
+        /// Decompress a single frame of MP3.
+        /// </summary>
+        public int DecompressFrame(Mp3Frame frame, byte[] dest, int destOffset)
+            => DecompressFrame(frame, dest.AsSpan(destOffset));
+
+        /// <summary>
+        /// Alerts us that a reposition has occurred so the MP3 decoder needs to reset its state
         /// </summary>
         public void Reset()
         {
@@ -92,7 +98,7 @@ namespace NAudio.FileFormats.Mp3
         }
 
         /// <summary>
-        /// Dispose of this obejct and clean up resources
+        /// Dispose of this object and clean up resources
         /// </summary>
         public void Dispose()
         {

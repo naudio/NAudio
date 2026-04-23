@@ -36,28 +36,30 @@ namespace NAudio.Wave
         public WaveFormat OutputFormat { get { return pcmFormat; } }
 
         /// <summary>
-        /// Decompresses a frame
+        /// Decompresses a frame into the supplied span.
         /// </summary>
-        /// <param name="frame">The MP3 frame</param>
-        /// <param name="dest">destination buffer</param>
-        /// <param name="destOffset">Offset within destination buffer</param>
-        /// <returns>Bytes written into destination buffer</returns>
-        public int DecompressFrame(Mp3Frame frame, byte[] dest, int destOffset)
+        public int DecompressFrame(Mp3Frame frame, Span<byte> dest)
         {
             if (frame == null)
             {
-                throw new ArgumentNullException("frame", "You must provide a non-null Mp3Frame to decompress");
+                throw new ArgumentNullException(nameof(frame), "You must provide a non-null Mp3Frame to decompress");
             }
-            Array.Copy(frame.RawData, conversionStream.SourceBuffer, frame.FrameLength);
+            frame.RawData.AsSpan(0, frame.FrameLength).CopyTo(conversionStream.SourceBuffer);
             int converted = conversionStream.Convert(frame.FrameLength, out int sourceBytesConverted);
             if (sourceBytesConverted != frame.FrameLength)
             {
                 throw new InvalidOperationException(String.Format("Couldn't convert the whole MP3 frame (converted {0}/{1})",
                     sourceBytesConverted, frame.FrameLength));
             }
-            Array.Copy(conversionStream.DestBuffer, 0, dest, destOffset, converted);
+            conversionStream.DestBuffer.AsSpan(0, converted).CopyTo(dest);
             return converted;
         }
+
+        /// <summary>
+        /// Decompresses a frame.
+        /// </summary>
+        public int DecompressFrame(Mp3Frame frame, byte[] dest, int destOffset)
+            => DecompressFrame(frame, dest.AsSpan(destOffset));
 
         /// <summary>
         /// Resets the MP3 Frame Decompressor after a reposition operation

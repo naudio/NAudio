@@ -11,6 +11,7 @@ namespace NAudio.Wasapi
         private MMDevice device;
         private AudioClientShareMode shareMode = AudioClientShareMode.Shared;
         private bool useEventSync = true;
+        private bool useLoopback;
         private int bufferMilliseconds = 100;
         private WaveFormat requestedFormat;
         private string mmcssTaskName;
@@ -59,6 +60,17 @@ namespace NAudio.Wasapi
         public WasapiRecorderBuilder WithPollingSync()
         {
             useEventSync = false;
+            return this;
+        }
+
+        /// <summary>
+        /// Capture audio from a render device in loopback mode (what the device is playing).
+        /// Pass a render endpoint via <see cref="WithDevice"/>; if no device is set the default
+        /// render device is used.
+        /// </summary>
+        public WasapiRecorderBuilder WithLoopbackCapture()
+        {
+            useLoopback = true;
             return this;
         }
 
@@ -119,15 +131,16 @@ namespace NAudio.Wasapi
                     useEventSync, bufferMilliseconds, requestedFormat, mmcssTaskName);
             }
 
-            var actualDevice = device ?? GetDefaultCaptureDevice();
+            var actualDevice = device ?? GetDefaultDevice(useLoopback);
             return new WasapiRecorder(actualDevice, shareMode, useEventSync,
-                bufferMilliseconds, requestedFormat, mmcssTaskName);
+                bufferMilliseconds, requestedFormat, mmcssTaskName, useLoopback);
         }
 
-        private static MMDevice GetDefaultCaptureDevice()
+        private static MMDevice GetDefaultDevice(bool loopback)
         {
             var enumerator = new MMDeviceEnumerator();
-            return enumerator.GetDefaultAudioEndpoint(DataFlow.Capture, Role.Console);
+            var flow = loopback ? DataFlow.Render : DataFlow.Capture;
+            return enumerator.GetDefaultAudioEndpoint(flow, Role.Console);
         }
     }
 }

@@ -23,6 +23,7 @@ namespace NAudio.Wasapi
 
         private readonly AudioClientShareMode shareMode;
         private readonly bool isUsingEventSync;
+        private readonly bool useLoopback;
         private readonly int bufferMilliseconds;
         private readonly string mmcssTaskName;
         private readonly SynchronizationContext syncContext;
@@ -56,11 +57,12 @@ namespace NAudio.Wasapi
         public CaptureState CaptureState => captureState;
 
         internal WasapiRecorder(MMDevice device, AudioClientShareMode shareMode, bool useEventSync,
-            int bufferMilliseconds, WaveFormat requestedFormat, string mmcssTaskName)
+            int bufferMilliseconds, WaveFormat requestedFormat, string mmcssTaskName, bool useLoopback = false)
         {
             syncContext = SynchronizationContext.Current;
             this.shareMode = shareMode;
             isUsingEventSync = useEventSync;
+            this.useLoopback = useLoopback;
             this.bufferMilliseconds = bufferMilliseconds;
             this.mmcssTaskName = mmcssTaskName;
 
@@ -199,6 +201,9 @@ namespace NAudio.Wasapi
             var flags = shareMode == AudioClientShareMode.Shared
                 ? AudioClientStreamFlags.AutoConvertPcm | AudioClientStreamFlags.SrcDefaultQuality
                 : AudioClientStreamFlags.None;
+
+            if (useLoopback)
+                flags |= AudioClientStreamFlags.Loopback;
 
             if (isUsingEventSync)
                 flags |= AudioClientStreamFlags.EventCallback;

@@ -38,16 +38,13 @@
             this.buttonDelete = new System.Windows.Forms.Button();
             this.buttonOpenFolder = new System.Windows.Forms.Button();
             this.groupBoxRecordingApi = new System.Windows.Forms.GroupBox();
-            this.comboWasapiLoopbackDevices = new System.Windows.Forms.ComboBox();
             this.checkBoxEventCallback = new System.Windows.Forms.CheckBox();
             this.comboBoxChannels = new System.Windows.Forms.ComboBox();
             this.comboBoxSampleRate = new System.Windows.Forms.ComboBox();
-            this.comboWaveInDevice = new System.Windows.Forms.ComboBox();
-            this.comboWasapiDevices = new System.Windows.Forms.ComboBox();
-            this.radioButtonWasapiLoopback = new System.Windows.Forms.RadioButton();
-            this.radioButtonWasapi = new System.Windows.Forms.RadioButton();
-            this.radioButtonWaveIn = new System.Windows.Forms.RadioButton();
-            this.radioButtonWaveInWindow = new System.Windows.Forms.RadioButton();
+            this.comboRecordingApi = new System.Windows.Forms.ComboBox();
+            this.comboDevice = new System.Windows.Forms.ComboBox();
+            this.labelApi = new System.Windows.Forms.Label();
+            this.labelDevice = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
             this.groupBoxRecordingApi.SuspendLayout();
@@ -142,20 +139,17 @@
             this.buttonOpenFolder.Text = "Open Folder";
             this.buttonOpenFolder.UseVisualStyleBackColor = true;
             this.buttonOpenFolder.Click += new System.EventHandler(this.OnOpenFolderClick);
-            // 
+            //
             // groupBoxRecordingApi
-            // 
-            this.groupBoxRecordingApi.Controls.Add(this.label3);
-            this.groupBoxRecordingApi.Controls.Add(this.comboWasapiLoopbackDevices);
+            //
+            this.groupBoxRecordingApi.Controls.Add(this.labelApi);
+            this.groupBoxRecordingApi.Controls.Add(this.comboRecordingApi);
+            this.groupBoxRecordingApi.Controls.Add(this.labelDevice);
+            this.groupBoxRecordingApi.Controls.Add(this.comboDevice);
             this.groupBoxRecordingApi.Controls.Add(this.checkBoxEventCallback);
-            this.groupBoxRecordingApi.Controls.Add(this.comboBoxChannels);
+            this.groupBoxRecordingApi.Controls.Add(this.label3);
             this.groupBoxRecordingApi.Controls.Add(this.comboBoxSampleRate);
-            this.groupBoxRecordingApi.Controls.Add(this.comboWaveInDevice);
-            this.groupBoxRecordingApi.Controls.Add(this.comboWasapiDevices);
-            this.groupBoxRecordingApi.Controls.Add(this.radioButtonWasapiLoopback);
-            this.groupBoxRecordingApi.Controls.Add(this.radioButtonWasapi);
-            this.groupBoxRecordingApi.Controls.Add(this.radioButtonWaveIn);
-            this.groupBoxRecordingApi.Controls.Add(this.radioButtonWaveInWindow);
+            this.groupBoxRecordingApi.Controls.Add(this.comboBoxChannels);
             this.groupBoxRecordingApi.Location = new System.Drawing.Point(42, 208);
             this.groupBoxRecordingApi.Margin = new System.Windows.Forms.Padding(8, 10, 8, 10);
             this.groupBoxRecordingApi.Name = "groupBoxRecordingApi";
@@ -164,118 +158,92 @@
             this.groupBoxRecordingApi.TabIndex = 11;
             this.groupBoxRecordingApi.TabStop = false;
             this.groupBoxRecordingApi.Text = "Recording API";
-            // 
-            // comboWasapiLoopbackDevices
-            // 
-            this.comboWasapiLoopbackDevices.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.comboWasapiLoopbackDevices.FormattingEnabled = true;
-            this.comboWasapiLoopbackDevices.Location = new System.Drawing.Point(399, 249);
-            this.comboWasapiLoopbackDevices.Margin = new System.Windows.Forms.Padding(8, 10, 8, 10);
-            this.comboWasapiLoopbackDevices.Name = "comboWasapiLoopbackDevices";
-            this.comboWasapiLoopbackDevices.Size = new System.Drawing.Size(551, 49);
-            this.comboWasapiLoopbackDevices.TabIndex = 14;
-            // 
+            //
+            // labelApi
+            //
+            this.labelApi.AutoSize = true;
+            this.labelApi.Location = new System.Drawing.Point(34, 49);
+            this.labelApi.Margin = new System.Windows.Forms.Padding(8, 0, 8, 0);
+            this.labelApi.Name = "labelApi";
+            this.labelApi.Size = new System.Drawing.Size(60, 41);
+            this.labelApi.TabIndex = 0;
+            this.labelApi.Text = "API";
+            //
+            // comboRecordingApi
+            //
+            this.comboRecordingApi.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboRecordingApi.FormattingEnabled = true;
+            this.comboRecordingApi.Location = new System.Drawing.Point(186, 41);
+            this.comboRecordingApi.Margin = new System.Windows.Forms.Padding(8, 10, 8, 10);
+            this.comboRecordingApi.Name = "comboRecordingApi";
+            this.comboRecordingApi.Size = new System.Drawing.Size(764, 49);
+            this.comboRecordingApi.TabIndex = 1;
+            //
+            // labelDevice
+            //
+            this.labelDevice.AutoSize = true;
+            this.labelDevice.Location = new System.Drawing.Point(34, 121);
+            this.labelDevice.Margin = new System.Windows.Forms.Padding(8, 0, 8, 0);
+            this.labelDevice.Name = "labelDevice";
+            this.labelDevice.Size = new System.Drawing.Size(98, 41);
+            this.labelDevice.TabIndex = 2;
+            this.labelDevice.Text = "Device";
+            //
+            // comboDevice
+            //
+            this.comboDevice.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboDevice.FormattingEnabled = true;
+            this.comboDevice.Location = new System.Drawing.Point(186, 113);
+            this.comboDevice.Margin = new System.Windows.Forms.Padding(8, 10, 8, 10);
+            this.comboDevice.Name = "comboDevice";
+            this.comboDevice.Size = new System.Drawing.Size(764, 49);
+            this.comboDevice.TabIndex = 3;
+            //
             // checkBoxEventCallback
-            // 
+            //
             this.checkBoxEventCallback.AutoSize = true;
             this.checkBoxEventCallback.Checked = true;
             this.checkBoxEventCallback.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBoxEventCallback.Location = new System.Drawing.Point(400, 315);
+            this.checkBoxEventCallback.Location = new System.Drawing.Point(34, 205);
             this.checkBoxEventCallback.Margin = new System.Windows.Forms.Padding(8, 10, 8, 10);
             this.checkBoxEventCallback.Name = "checkBoxEventCallback";
             this.checkBoxEventCallback.Size = new System.Drawing.Size(259, 45);
-            this.checkBoxEventCallback.TabIndex = 13;
+            this.checkBoxEventCallback.TabIndex = 4;
             this.checkBoxEventCallback.Text = "Event Callbacks";
             this.checkBoxEventCallback.UseVisualStyleBackColor = true;
-            // 
-            // comboBoxChannels
-            // 
-            this.comboBoxChannels.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.comboBoxChannels.FormattingEnabled = true;
-            this.comboBoxChannels.Location = new System.Drawing.Point(386, 465);
-            this.comboBoxChannels.Margin = new System.Windows.Forms.Padding(8, 10, 8, 10);
-            this.comboBoxChannels.Name = "comboBoxChannels";
-            this.comboBoxChannels.Size = new System.Drawing.Size(336, 49);
-            this.comboBoxChannels.TabIndex = 12;
-            // 
+            //
             // comboBoxSampleRate
-            // 
+            //
             this.comboBoxSampleRate.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.comboBoxSampleRate.FormattingEnabled = true;
-            this.comboBoxSampleRate.Location = new System.Drawing.Point(34, 465);
+            this.comboBoxSampleRate.Location = new System.Drawing.Point(34, 455);
             this.comboBoxSampleRate.Margin = new System.Windows.Forms.Padding(8, 10, 8, 10);
             this.comboBoxSampleRate.Name = "comboBoxSampleRate";
             this.comboBoxSampleRate.Size = new System.Drawing.Size(336, 49);
-            this.comboBoxSampleRate.TabIndex = 12;
-            // 
-            // comboWaveInDevice
-            // 
-            this.comboWaveInDevice.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.comboWaveInDevice.FormattingEnabled = true;
-            this.comboWaveInDevice.Location = new System.Drawing.Point(400, 41);
-            this.comboWaveInDevice.Margin = new System.Windows.Forms.Padding(8, 10, 8, 10);
-            this.comboWaveInDevice.Name = "comboWaveInDevice";
-            this.comboWaveInDevice.Size = new System.Drawing.Size(550, 49);
-            this.comboWaveInDevice.TabIndex = 12;
-            // 
-            // comboWasapiDevices
-            // 
-            this.comboWasapiDevices.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.comboWasapiDevices.FormattingEnabled = true;
-            this.comboWasapiDevices.Location = new System.Drawing.Point(400, 172);
-            this.comboWasapiDevices.Margin = new System.Windows.Forms.Padding(8, 10, 8, 10);
-            this.comboWasapiDevices.Name = "comboWasapiDevices";
-            this.comboWasapiDevices.Size = new System.Drawing.Size(551, 49);
-            this.comboWasapiDevices.TabIndex = 12;
-            // 
-            // radioButtonWasapiLoopback
-            // 
-            this.radioButtonWasapiLoopback.AutoSize = true;
-            this.radioButtonWasapiLoopback.Location = new System.Drawing.Point(16, 244);
-            this.radioButtonWasapiLoopback.Margin = new System.Windows.Forms.Padding(8, 10, 8, 10);
-            this.radioButtonWasapiLoopback.Name = "radioButtonWasapiLoopback";
-            this.radioButtonWasapiLoopback.Size = new System.Drawing.Size(299, 45);
-            this.radioButtonWasapiLoopback.TabIndex = 8;
-            this.radioButtonWasapiLoopback.Text = "WASAPI Loopback";
-            this.radioButtonWasapiLoopback.UseVisualStyleBackColor = true;
-            // 
-            // radioButtonWasapi
-            // 
-            this.radioButtonWasapi.AutoSize = true;
-            this.radioButtonWasapi.Checked = true;
-            this.radioButtonWasapi.Location = new System.Drawing.Point(16, 172);
-            this.radioButtonWasapi.Margin = new System.Windows.Forms.Padding(8, 10, 8, 10);
-            this.radioButtonWasapi.Name = "radioButtonWasapi";
-            this.radioButtonWasapi.Size = new System.Drawing.Size(161, 45);
-            this.radioButtonWasapi.TabIndex = 9;
-            this.radioButtonWasapi.TabStop = true;
-            this.radioButtonWasapi.Text = "WASAPI";
-            this.radioButtonWasapi.UseVisualStyleBackColor = true;
-            // 
-            // radioButtonWaveIn
-            // 
-            this.radioButtonWaveIn.AutoSize = true;
-            this.radioButtonWaveIn.Location = new System.Drawing.Point(17, 54);
-            this.radioButtonWaveIn.Margin = new System.Windows.Forms.Padding(8, 10, 8, 10);
-            this.radioButtonWaveIn.Name = "radioButtonWaveIn";
-            this.radioButtonWaveIn.Size = new System.Drawing.Size(147, 45);
-            this.radioButtonWaveIn.TabIndex = 11;
-            this.radioButtonWaveIn.Text = "waveIn";
-            this.radioButtonWaveIn.UseVisualStyleBackColor = true;
+            this.comboBoxSampleRate.TabIndex = 6;
             //
-            // radioButtonWaveInWindow
+            // comboBoxChannels
             //
-            this.radioButtonWaveInWindow.AutoSize = true;
-            this.radioButtonWaveInWindow.Location = new System.Drawing.Point(17, 113);
-            this.radioButtonWaveInWindow.Margin = new System.Windows.Forms.Padding(8, 10, 8, 10);
-            this.radioButtonWaveInWindow.Name = "radioButtonWaveInWindow";
-            this.radioButtonWaveInWindow.Size = new System.Drawing.Size(259, 45);
-            this.radioButtonWaveInWindow.TabIndex = 16;
-            this.radioButtonWaveInWindow.Text = "WaveInWindow";
-            this.radioButtonWaveInWindow.UseVisualStyleBackColor = true;
-            // 
+            this.comboBoxChannels.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboBoxChannels.FormattingEnabled = true;
+            this.comboBoxChannels.Location = new System.Drawing.Point(400, 455);
+            this.comboBoxChannels.Margin = new System.Windows.Forms.Padding(8, 10, 8, 10);
+            this.comboBoxChannels.Name = "comboBoxChannels";
+            this.comboBoxChannels.Size = new System.Drawing.Size(336, 49);
+            this.comboBoxChannels.TabIndex = 7;
+            //
+            // label3
+            //
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(34, 392);
+            this.label3.Margin = new System.Windows.Forms.Padding(8, 0, 8, 0);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(225, 41);
+            this.label3.TabIndex = 5;
+            this.label3.Text = "Capture Format";
+            //
             // label2
-            // 
+            //
             this.label2.AutoSize = true;
             this.label2.Location = new System.Drawing.Point(1048, 433);
             this.label2.Margin = new System.Windows.Forms.Padding(8, 0, 8, 0);
@@ -283,16 +251,6 @@
             this.label2.Size = new System.Drawing.Size(283, 41);
             this.label2.TabIndex = 5;
             this.label2.Text = "Recording Progress:";
-            // 
-            // label3
-            // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(34, 392);
-            this.label3.Margin = new System.Windows.Forms.Padding(8, 0, 8, 0);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(225, 41);
-            this.label3.TabIndex = 15;
-            this.label3.Text = "Capture Format";
             // 
             // RecordingPanel
             // 
@@ -329,16 +287,13 @@
         private System.Windows.Forms.Button buttonDelete;
         private System.Windows.Forms.Button buttonOpenFolder;
         private System.Windows.Forms.GroupBox groupBoxRecordingApi;
-        private System.Windows.Forms.ComboBox comboWasapiDevices;
-        private System.Windows.Forms.RadioButton radioButtonWasapiLoopback;
-        private System.Windows.Forms.RadioButton radioButtonWasapi;
-        private System.Windows.Forms.RadioButton radioButtonWaveIn;
-        private System.Windows.Forms.RadioButton radioButtonWaveInWindow;
-        private System.Windows.Forms.ComboBox comboWaveInDevice;
+        private System.Windows.Forms.ComboBox comboRecordingApi;
+        private System.Windows.Forms.ComboBox comboDevice;
+        private System.Windows.Forms.Label labelApi;
+        private System.Windows.Forms.Label labelDevice;
         private System.Windows.Forms.CheckBox checkBoxEventCallback;
         private System.Windows.Forms.ComboBox comboBoxChannels;
         private System.Windows.Forms.ComboBox comboBoxSampleRate;
-        private System.Windows.Forms.ComboBox comboWasapiLoopbackDevices;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label3;
     }

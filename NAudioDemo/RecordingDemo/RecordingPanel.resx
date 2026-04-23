@@ -58,6 +58,6 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="label1.Text" xml:space="preserve">
-    <value>This basic recording demo allows you to select a recording device using either WaveIn, WaveInEvent, WaspiCapture or WasapiLoopbackCapture. For waveIn and WASAPI devices you can choose the capture format. It will automatically stop recording after 30 seconds after which you can optionally play back the recorded file.</value>
+    <value>Records audio via one of several APIs: the WinMM waveIn event (WaveIn) or window callback (WaveInWindow) variants, the legacy WasapiCapture / WasapiLoopbackCapture, or the modern WasapiRecorder (with optional loopback from a render device). The device list updates to match the selected API and defaults to the system default. For WASAPI the capture format defaults to the device's mix format and can be overridden — the engine will convert. Event Callbacks only applies to WASAPI modes. Recording stops automatically after 30 seconds; files are saved under %TEMP%\NAudioDemo.</value>
   </data>
 </root>

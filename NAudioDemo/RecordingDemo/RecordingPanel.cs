@@ -1,157 +1,315 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 using NAudio.CoreAudioApi;
+using NAudio.Wasapi;
 using NAudio.Wave;
 using NAudioDemo.Utils;
 
-#pragma warning disable CS0618 // Type or member is obsolete
+#pragma warning disable CS0618 // WasapiCapture / WasapiLoopbackCapture are intentionally kept in the demo for comparison
 
 namespace NAudioDemo.RecordingDemo
 {
     public partial class RecordingPanel : UserControl
     {
+        private static readonly int[] StandardSampleRates = { 8000, 16000, 22050, 32000, 44100, 48000, 96000 };
+
+        private enum RecordingApi
+        {
+            WaveIn,
+            WaveInWindow,
+            WasapiCaptureLegacy,
+            WasapiLoopbackLegacy,
+            WasapiRecorderCapture,
+            WasapiRecorderLoopback,
+        }
+
+        private sealed class ApiOption
+        {
+            public RecordingApi Api { get; }
+            public string Label { get; }
+            public string FileNamePrefix { get; }
+            public bool IsWasapi { get; }
+            public bool IsLoopback { get; }
+            public bool SupportsEventCallback { get; }
+
+            public ApiOption(RecordingApi api, string label, string fileNamePrefix,
+                bool isWasapi, bool isLoopback, bool supportsEventCallback)
+            {
+                Api = api;
+                Label = label;
+                FileNamePrefix = fileNamePrefix;
+                IsWasapi = isWasapi;
+                IsLoopback = isLoopback;
+                SupportsEventCallback = supportsEventCallback;
+            }
+
+            public override string ToString() => Label;
+        }
+
+        private static readonly ApiOption[] ApiOptions =
+        {
+            new ApiOption(RecordingApi.WaveIn,                 "waveIn (event callback)",          "WaveIn",                false, false, false),
+            new ApiOption(RecordingApi.WaveInWindow,           "waveIn (window callback)",         "WaveInWindow",          false, false, false),
+            new ApiOption(RecordingApi.WasapiCaptureLegacy,    "WasapiCapture (legacy)",           "WasapiCapture",         true,  false, true),
+            new ApiOption(RecordingApi.WasapiLoopbackLegacy,   "WasapiLoopbackCapture (legacy)",   "WasapiLoopbackCapture", true,  true,  false),
+            new ApiOption(RecordingApi.WasapiRecorderCapture,  "WasapiRecorder",                   "WasapiRecorder",        true,  false, true),
+            new ApiOption(RecordingApi.WasapiRecorderLoopback, "WasapiRecorder (Loopback)",        "WasapiRecorderLoopback",true,  true,  false),
+        };
+
+        private sealed class WaveInDeviceItem
+        {
+            public int DeviceNumber { get; }
+            public string DisplayName { get; }
+            public WaveInDeviceItem(int deviceNumber, string productName)
+            {
+                DeviceNumber = deviceNumber;
+                DisplayName = deviceNumber == -1
+                    ? $"Default ({productName})"
+                    : $"Device {deviceNumber} ({productName})";
+            }
+            public override string ToString() => DisplayName;
+        }
+
         private IWaveIn captureDevice;
         private WaveFileWriter writer;
         private string outputFilename;
         private readonly string outputFolder;
+        private readonly MMDeviceEnumerator deviceEnumerator = new MMDeviceEnumerator();
+        private bool populating;
 
         public RecordingPanel()
         {
             InitializeComponent();
             Disposed += OnRecordingPanelDisposed;
-            if (Environment.OSVersion.Version.Major >= 6)
+
+            foreach (var option in ApiOptions)
             {
-                LoadWasapiDevicesCombo();
+                comboRecordingApi.Items.Add(option);
             }
-            else
-            {
-                radioButtonWasapi.Enabled = false;
-                comboWasapiDevices.Enabled = false;
-                radioButtonWasapiLoopback.Enabled = false;
-            }
-            LoadWaveInDevicesCombo();
-            comboBoxSampleRate.DataSource = new[] {8000, 16000, 22050, 32000, 44100, 48000};
-            comboBoxSampleRate.SelectedIndex = 3;
+
+            comboBoxSampleRate.DataSource = StandardSampleRates.ToArray();
+            comboBoxSampleRate.SelectedItem = 44100;
+
             comboBoxChannels.DataSource = new[] { "Mono", "Stereo" };
-            comboBoxChannels.SelectedIndex = 0;
+            comboBoxChannels.SelectedItem = "Stereo";
+
             outputFolder = Path.Combine(Path.GetTempPath(), "NAudioDemo");
             Directory.CreateDirectory(outputFolder);
 
-            // close the device if we change option only
-            radioButtonWasapi.CheckedChanged += (s, a) => { UpdateRecordingApiControls(); Cleanup(); };
-            radioButtonWaveIn.CheckedChanged += (s, a) => { UpdateRecordingApiControls(); Cleanup(); };
-            radioButtonWaveInWindow.CheckedChanged += (s, a) => { UpdateRecordingApiControls(); Cleanup(); };
-            radioButtonWasapiLoopback.CheckedChanged += (s, a) => { UpdateRecordingApiControls(); Cleanup(); };
+            comboRecordingApi.SelectedIndexChanged += (s, a) => OnApiChanged();
+            comboDevice.SelectedIndexChanged += (s, a) => OnDeviceChanged();
             checkBoxEventCallback.CheckedChanged += (s, a) => Cleanup();
-            comboWaveInDevice.SelectedIndexChanged += (s, a) => Cleanup();
             comboBoxSampleRate.SelectedIndexChanged += (s, a) => Cleanup();
             comboBoxChannels.SelectedIndexChanged += (s, a) => Cleanup();
-            comboWasapiDevices.SelectedIndexChanged += (s, a) => Cleanup();
-            comboWasapiLoopbackDevices.SelectedIndexChanged += (s, a) => Cleanup();
-            UpdateRecordingApiControls();
+
+            comboRecordingApi.SelectedIndex = 0; // triggers OnApiChanged -> populates devices
         }
 
-        private void UpdateRecordingApiControls()
+        private ApiOption SelectedApi => (ApiOption)comboRecordingApi.SelectedItem;
+
+        private void OnApiChanged()
         {
-            bool isWaveIn = radioButtonWaveIn.Checked || radioButtonWaveInWindow.Checked;
-            comboWaveInDevice.Enabled = isWaveIn;
-            comboWasapiDevices.Enabled = radioButtonWasapi.Checked;
-            comboWasapiLoopbackDevices.Enabled = radioButtonWasapiLoopback.Checked;
-            // Event Callbacks only applies to WASAPI (useEventSync) — hide it for the waveIn options.
-            checkBoxEventCallback.Visible = radioButtonWasapi.Checked || radioButtonWasapiLoopback.Checked;
+            Cleanup();
+            PopulateDevices();
+            checkBoxEventCallback.Visible = SelectedApi.SupportsEventCallback;
         }
 
-        void OnRecordingPanelDisposed(object sender, EventArgs e)
+        private void OnDeviceChanged()
         {
+            if (populating) return;
+            ApplyDefaultFormatFromDevice();
             Cleanup();
         }
 
-        private void LoadWasapiDevicesCombo()
+        private void PopulateDevices()
         {
-            var deviceEnum = new MMDeviceEnumerator();
-            var devices = deviceEnum.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active).ToList();
+            populating = true;
+            try
+            {
+                comboDevice.DataSource = null;
+                comboDevice.Items.Clear();
+                var api = SelectedApi;
 
-            comboWasapiDevices.DataSource = devices;
-            comboWasapiDevices.DisplayMember = "FriendlyName";
-
-            var renderDevices = deviceEnum.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active).ToList();
-            comboWasapiLoopbackDevices.DataSource = renderDevices;
-            comboWasapiLoopbackDevices.DisplayMember = "FriendlyName";
-
+                if (!api.IsWasapi)
+                {
+                    var devices = Enumerable.Range(-1, WaveIn.DeviceCount + 1)
+                        .Select(n => new WaveInDeviceItem(n, WaveIn.GetCapabilities(n).ProductName))
+                        .ToArray();
+                    comboDevice.DisplayMember = nameof(WaveInDeviceItem.DisplayName);
+                    comboDevice.DataSource = devices;
+                    comboDevice.SelectedIndex = 0; // index 0 is device -1, the default
+                }
+                else
+                {
+                    var flow = api.IsLoopback ? DataFlow.Render : DataFlow.Capture;
+                    var devices = deviceEnumerator.EnumerateAudioEndPoints(flow, DeviceState.Active).ToArray();
+                    comboDevice.DisplayMember = nameof(MMDevice.FriendlyName);
+                    comboDevice.DataSource = devices;
+                    if (devices.Length > 0)
+                    {
+                        try
+                        {
+                            var defaultDevice = deviceEnumerator.GetDefaultAudioEndpoint(flow, Role.Console);
+                            var index = Array.FindIndex(devices, d => d.ID == defaultDevice.ID);
+                            comboDevice.SelectedIndex = Math.Max(0, index);
+                        }
+                        catch
+                        {
+                            comboDevice.SelectedIndex = 0;
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                populating = false;
+            }
+            OnDeviceChanged();
         }
 
-        private void LoadWaveInDevicesCombo()
+        private void ApplyDefaultFormatFromDevice()
         {
-            var devices = Enumerable.Range(-1, WaveIn.DeviceCount + 1).Select(n => WaveIn.GetCapabilities(n)).ToArray();
+            var api = SelectedApi;
+            if (!api.IsWasapi || !(comboDevice.SelectedItem is MMDevice device))
+            {
+                return;
+            }
 
-            comboWaveInDevice.DataSource = devices;
-            comboWaveInDevice.DisplayMember = "ProductName";
+            try
+            {
+                using var audioClient = device.CreateAudioClient();
+                var mix = audioClient.MixFormat;
+                var bestRate = StandardSampleRates
+                    .OrderBy(r => Math.Abs(r - mix.SampleRate))
+                    .ThenBy(r => r == mix.SampleRate ? 0 : 1)
+                    .First();
+                comboBoxSampleRate.SelectedItem = bestRate;
+                comboBoxChannels.SelectedItem = mix.Channels >= 2 ? "Stereo" : "Mono";
+            }
+            catch
+            {
+                // Some devices may fail to activate; leave the current selection alone.
+            }
         }
 
         private void OnButtonStartRecordingClick(object sender, EventArgs e)
         {
-            if (radioButtonWaveIn.Checked || radioButtonWaveInWindow.Checked)
+            // winmm-based devices do not always cope with being re-used across recordings.
+            var api = SelectedApi;
+            if (!api.IsWasapi)
             {
-                Cleanup(); // WaveIn is still unreliable in some circumstances to being reused
+                Cleanup();
             }
 
-            if (captureDevice == null)
+            try
             {
-                captureDevice = CreateWaveInDevice();
+                captureDevice ??= CreateCaptureDevice();
             }
-            // Forcibly turn on the microphone (some programs (Skype) turn it off).
-            var device = (MMDevice)comboWasapiDevices.SelectedItem;
-            device.AudioEndpointVolume.Mute = false;
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Unable to start recording");
+                return;
+            }
 
-            outputFilename = GetFileName();
+            // A loopback render device cannot have its endpoint volume un-muted the way a
+            // capture device can, so skip the forced un-mute when we're on a loopback API.
+            if (api.IsWasapi && !api.IsLoopback && comboDevice.SelectedItem is MMDevice captureMmDevice)
+            {
+                try { captureMmDevice.AudioEndpointVolume.Mute = false; } catch { /* best effort */ }
+            }
+
+            outputFilename = BuildFileName(api);
             writer = new WaveFileWriter(Path.Combine(outputFolder, outputFilename), captureDevice.WaveFormat);
             captureDevice.StartRecording();
             SetControlStates(true);
         }
 
-        private string GetFileName()
+        private IWaveIn CreateCaptureDevice()
         {
-            var deviceName = captureDevice.GetType().Name;
-            var sampleRate = $"{captureDevice.WaveFormat.SampleRate / 1000}kHz";
-            var channels = captureDevice.WaveFormat.Channels == 1 ? "mono" : "stereo";
+            var api = SelectedApi;
+            var sampleRate = (int)comboBoxSampleRate.SelectedItem;
+            var channels = comboBoxChannels.SelectedIndex + 1;
+            var requestedFormat = new WaveFormat(sampleRate, channels);
 
-            return $"{deviceName} {sampleRate} {channels} {DateTime.Now:yyy-MM-dd HH-mm-ss}.wav";
+            IWaveIn device;
+            switch (api.Api)
+            {
+                case RecordingApi.WaveIn:
+                {
+                    var item = (WaveInDeviceItem)comboDevice.SelectedItem;
+                    device = new WaveIn { DeviceNumber = item.DeviceNumber, WaveFormat = requestedFormat };
+                    break;
+                }
+                case RecordingApi.WaveInWindow:
+                {
+                    var item = (WaveInDeviceItem)comboDevice.SelectedItem;
+                    device = new WaveInWindow { DeviceNumber = item.DeviceNumber, WaveFormat = requestedFormat };
+                    break;
+                }
+                case RecordingApi.WasapiCaptureLegacy:
+                {
+                    var mm = (MMDevice)comboDevice.SelectedItem;
+                    var cap = new WasapiCapture(mm, checkBoxEventCallback.Checked) { WaveFormat = requestedFormat };
+                    device = cap;
+                    break;
+                }
+                case RecordingApi.WasapiLoopbackLegacy:
+                {
+                    var mm = (MMDevice)comboDevice.SelectedItem;
+                    var cap = new WasapiLoopbackCapture(mm) { WaveFormat = requestedFormat };
+                    device = cap;
+                    break;
+                }
+                case RecordingApi.WasapiRecorderCapture:
+                {
+                    var mm = (MMDevice)comboDevice.SelectedItem;
+                    var builder = new WasapiRecorderBuilder()
+                        .WithDevice(mm)
+                        .WithFormat(requestedFormat);
+                    _ = checkBoxEventCallback.Checked ? builder.WithEventSync() : builder.WithPollingSync();
+                    device = new WasapiRecorderAdapter(builder.Build());
+                    break;
+                }
+                case RecordingApi.WasapiRecorderLoopback:
+                {
+                    var mm = (MMDevice)comboDevice.SelectedItem;
+                    // Shared-mode loopback does not reliably support event sync — force polling.
+                    var builder = new WasapiRecorderBuilder()
+                        .WithDevice(mm)
+                        .WithLoopbackCapture()
+                        .WithPollingSync()
+                        .WithFormat(requestedFormat);
+                    device = new WasapiRecorderAdapter(builder.Build());
+                    break;
+                }
+                default:
+                    throw new InvalidOperationException($"Unhandled recording API {api.Api}");
+            }
+
+            device.DataAvailable += OnDataAvailable;
+            device.RecordingStopped += OnRecordingStopped;
+            return device;
         }
 
-        private IWaveIn CreateWaveInDevice()
+        private string BuildFileName(ApiOption api)
         {
-            IWaveIn newWaveIn;
-            if (radioButtonWaveIn.Checked)
+            var format = captureDevice?.WaveFormat;
+            string rate, channels;
+            if (format != null)
             {
-                var deviceNumber = comboWaveInDevice.SelectedIndex - 1;
-                newWaveIn = new WaveIn() { DeviceNumber = deviceNumber };
-            }
-            else if (radioButtonWaveInWindow.Checked)
-            {
-                var deviceNumber = comboWaveInDevice.SelectedIndex - 1;
-                newWaveIn = new WaveInWindow() { DeviceNumber = deviceNumber };
-            }
-            else if (radioButtonWasapi.Checked)
-            {
-                var device = (MMDevice) comboWasapiDevices.SelectedItem;
-                newWaveIn = new WasapiCapture(device, checkBoxEventCallback.Checked);
+                rate = $"{format.SampleRate / 1000}kHz";
+                channels = format.Channels == 1 ? "mono" : "stereo";
             }
             else
             {
-                var device = (MMDevice)comboWasapiLoopbackDevices.SelectedItem;
-                newWaveIn = new WasapiLoopbackCapture(device);
+                rate = $"{((int)comboBoxSampleRate.SelectedItem) / 1000}kHz";
+                channels = comboBoxChannels.SelectedIndex == 0 ? "mono" : "stereo";
             }
-            // Both WASAPI and WaveIn support Sample Rate conversion!
-            var sampleRate = (int)comboBoxSampleRate.SelectedItem;
-            var channels = comboBoxChannels.SelectedIndex + 1;
-            newWaveIn.WaveFormat = new WaveFormat(sampleRate, channels);
-
-            newWaveIn.DataAvailable += OnDataAvailable;
-            newWaveIn.RecordingStopped += OnRecordingStopped;
-            return newWaveIn;
+            var eventSuffix = api.SupportsEventCallback && checkBoxEventCallback.Checked ? " event" : string.Empty;
+            return $"{api.FileNamePrefix} {rate} {channels}{eventSuffix} {DateTime.Now:yyyy-MM-dd HH-mm-ss}.wav";
         }
 
         void OnRecordingStopped(object sender, StoppedEventArgs e)
@@ -159,20 +317,28 @@ namespace NAudioDemo.RecordingDemo
             if (InvokeRequired)
             {
                 BeginInvoke(new EventHandler<StoppedEventArgs>(OnRecordingStopped), sender, e);
+                return;
             }
-            else
+
+            FinalizeWaveFile();
+            progressBar1.Value = 0;
+            if (e.Exception != null)
             {
-                FinalizeWaveFile();
-                progressBar1.Value = 0;
-                if (e.Exception != null)
-                {
-                    MessageBox.Show(String.Format("A problem was encountered during recording {0}",
-                                                  e.Exception.Message));
-                }
+                MessageBox.Show(
+                    $"A problem was encountered during recording: {e.Exception.Message}",
+                    "Recording Error");
+            }
+            if (!string.IsNullOrEmpty(outputFilename))
+            {
                 int newItemIndex = listBoxRecordings.Items.Add(outputFilename);
                 listBoxRecordings.SelectedIndex = newItemIndex;
-                SetControlStates(false);
             }
+            SetControlStates(false);
+        }
+
+        private void OnRecordingPanelDisposed(object sender, EventArgs e)
+        {
+            Cleanup();
         }
 
         private void Cleanup()
@@ -197,22 +363,20 @@ namespace NAudioDemo.RecordingDemo
         {
             if (InvokeRequired)
             {
-                //Debug.WriteLine("Data Available");
                 BeginInvoke(new EventHandler<WaveInEventArgs>(OnDataAvailable), sender, e);
+                return;
+            }
+
+            if (writer == null) return;
+            writer.Write(e.Buffer, 0, e.BytesRecorded);
+            int secondsRecorded = (int)(writer.Length / writer.WaveFormat.AverageBytesPerSecond);
+            if (secondsRecorded >= 30)
+            {
+                StopRecording();
             }
             else
             {
-                //Debug.WriteLine("Flushing Data Available");
-                writer.Write(e.Buffer, 0, e.BytesRecorded);
-                int secondsRecorded = (int)(writer.Length / writer.WaveFormat.AverageBytesPerSecond);
-                if (secondsRecorded >= 30)
-                {
-                    StopRecording();
-                }
-                else
-                {
-                    progressBar1.Value = secondsRecorded;
-                }
+                progressBar1.Value = secondsRecorded;
             }
         }
 

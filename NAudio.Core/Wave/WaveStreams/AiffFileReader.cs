@@ -208,11 +208,13 @@ namespace NAudio.Wave
 
 
         /// <summary>
-        /// Reads bytes from the AIFF File
-        /// <see cref="Stream.Read(byte[], int, int)"/>
+        /// Reads bytes from the AIFF File into the provided span.
+        /// AIFF sample data is big-endian on disk; this method swaps to little-endian.
+        /// <see cref="Stream.Read(Span{byte})"/>
         /// </summary>
-        public override int Read(byte[] array, int offset, int count)
+        public override int Read(Span<byte> buffer)
         {
+            int count = buffer.Length;
             if (count % waveFormat.BlockAlign != 0)
             {
                 throw new ArgumentException(
@@ -223,44 +225,53 @@ namespace NAudio.Wave
                 // sometimes there is more junk at the end of the file past the data chunk
                 if (Position + count > dataChunkLength)
                 {
-                    count = dataChunkLength - (int) Position;
+                    count = dataChunkLength - (int)Position;
                 }
 
-                // Need to fix the endianness since intel expect little endian, and apple is big endian.
-                byte[] buffer = new byte[count];
-                int length = waveStream.Read(buffer, offset, count);
+                // Read big-endian source bytes into the caller's span, then swap in place.
+                var dest = buffer.Slice(0, count);
+                int length = waveStream.Read(dest);
+                var read = dest.Slice(0, length);
 
-                int bytesPerSample = WaveFormat.BitsPerSample/8;
-                for (int i = 0; i < length; i += bytesPerSample)
+                int bytesPerSample = WaveFormat.BitsPerSample / 8;
+                switch (WaveFormat.BitsPerSample)
                 {
-                    if (WaveFormat.BitsPerSample == 8)
-                    {
-                        array[i] = buffer[i];
-                    }
-                    else if (WaveFormat.BitsPerSample == 16)
-                    {
-                        array[i + 0] = buffer[i + 1];
-                        array[i + 1] = buffer[i];
-                    }
-                    else if (WaveFormat.BitsPerSample == 24)
-                    {
-                        array[i + 0] = buffer[i + 2];
-                        array[i + 1] = buffer[i + 1];
-                        array[i + 2] = buffer[i + 0];
-                    }
-                    else if (WaveFormat.BitsPerSample == 32)
-                    {
-                        array[i + 0] = buffer[i + 3];
-                        array[i + 1] = buffer[i + 2];
-                        array[i + 2] = buffer[i + 1];
-                        array[i + 3] = buffer[i + 0];
-                    }
-                    else throw new FormatException("Unsupported PCM format.");
+                    case 8:
+                        // no swap required
+                        break;
+                    case 16:
+                        for (int i = 0; i < read.Length; i += bytesPerSample)
+                        {
+                            (read[i], read[i + 1]) = (read[i + 1], read[i]);
+                        }
+                        break;
+                    case 24:
+                        for (int i = 0; i < read.Length; i += bytesPerSample)
+                        {
+                            (read[i], read[i + 2]) = (read[i + 2], read[i]);
+                        }
+                        break;
+                    case 32:
+                        for (int i = 0; i < read.Length; i += bytesPerSample)
+                        {
+                            (read[i], read[i + 3]) = (read[i + 3], read[i]);
+                            (read[i + 1], read[i + 2]) = (read[i + 2], read[i + 1]);
+                        }
+                        break;
+                    default:
+                        throw new FormatException("Unsupported PCM format.");
                 }
 
                 return length;
             }
         }
+
+        /// <summary>
+        /// Reads bytes from the AIFF File.
+        /// <see cref="Stream.Read(byte[], int, int)"/>
+        /// </summary>
+        public override int Read(byte[] array, int offset, int count)
+            => Read(array.AsSpan(offset, count));
 
 #region Endian Helpers
         private static uint ConvertInt(byte[] buffer)

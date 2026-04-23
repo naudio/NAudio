@@ -82,6 +82,22 @@ namespace NAudio.Utils
         }
 
         /// <summary>
+        /// Reads from the underlying stream into the provided span
+        /// </summary>
+        public override int Read(Span<byte> buffer)
+        {
+            return SourceStream.Read(buffer);
+        }
+
+        /// <summary>
+        /// Writes the span to the underlying stream
+        /// </summary>
+        public override void Write(ReadOnlySpan<byte> buffer)
+        {
+            SourceStream.Write(buffer);
+        }
+
+        /// <summary>
         /// Seeks on the underlying stream
         /// </summary>
         public override long Seek(long offset, SeekOrigin origin)

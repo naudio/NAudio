@@ -172,12 +172,9 @@ namespace NAudio.Wave
         /// <summary>
         /// Reads bytes from this wave stream
         /// </summary>
-        /// <param name="destBuffer">The destination buffer</param>
-        /// <param name="offset">Offset into the destination buffer</param>
-        /// <param name="numBytes">Number of bytes read</param>
-        /// <returns>Number of bytes read.</returns>
-        public override int Read(byte[] destBuffer, int offset, int numBytes)
+        public override int Read(Span<byte> destBuffer)
         {
+            int numBytes = destBuffer.Length;
             lock (lockObject)
             {
                 int bytesWritten = 0;
@@ -185,8 +182,7 @@ namespace NAudio.Wave
                 if (position < audioStartPosition)
                 {
                     bytesWritten = (int)Math.Min(numBytes, audioStartPosition - position);
-                    for (int n = 0; n < bytesWritten; n++)
-                        destBuffer[n + offset] = 0;
+                    destBuffer.Slice(0, bytesWritten).Clear();
                 }
                 if (bytesWritten < numBytes)
                 {
@@ -194,16 +190,24 @@ namespace NAudio.Wave
                     int sourceBytesRequired = (int)Math.Min(
                         numBytes - bytesWritten,
                         sourceLengthBytes + sourceOffsetBytes - sourceStream.Position);
-                    int read = sourceStream.Read(destBuffer, bytesWritten + offset, sourceBytesRequired);
+                    int read = sourceStream.Read(destBuffer.Slice(bytesWritten, sourceBytesRequired));
                     bytesWritten += read;
                 }
                 // 3. Fill out with zeroes
-                for (int n = bytesWritten; n < numBytes; n++)
-                    destBuffer[offset + n] = 0;
+                if (bytesWritten < numBytes)
+                {
+                    destBuffer.Slice(bytesWritten, numBytes - bytesWritten).Clear();
+                }
                 position += numBytes;
                 return numBytes;
             }
         }
+
+        /// <summary>
+        /// Reads bytes from this wave stream
+        /// </summary>
+        public override int Read(byte[] destBuffer, int offset, int numBytes)
+            => Read(destBuffer.AsSpan(offset, numBytes));
 
         /// <summary>
         /// <see cref="WaveStream.WaveFormat"/>

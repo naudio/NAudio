@@ -65,17 +65,23 @@ namespace NAudio.Wave
         /// <summary>
         /// Reads data from the stream
         /// </summary>
-        public override int Read(byte[] buffer, int offset, int count)
+        public override int Read(Span<byte> buffer)
         {
             try
             {
-                return sourceStream.Read(buffer, offset, count);
+                return sourceStream.Read(buffer);
             }
             catch (EndOfStreamException)
             {
                 return 0;
             }
         }
+
+        /// <summary>
+        /// Reads data from the stream
+        /// </summary>
+        public override int Read(byte[] buffer, int offset, int count)
+            => Read(buffer.AsSpan(offset, count));
     }
 }
 

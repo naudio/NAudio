@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using NAudio.Utils;
 
 // ReSharper disable once CheckNamespace
@@ -18,8 +19,7 @@ namespace NAudio.Wave
         private readonly object lockObject = new object();
 
         /// <summary>
-        /// The <see cref="Read"/> method reuses the same buffer to prevent
-        /// unnecessary allocations.
+        /// Reused between <c>Read</c> calls to avoid per-read allocations.
         /// </summary>
         private byte[] sourceBuffer;
 
@@ -91,52 +91,50 @@ namespace NAudio.Wave
         /// <summary>
         /// Reads bytes from this wave stream
         /// </summary>
-        /// <param name="destBuffer">Destination buffer</param>
-        /// <param name="offset">Offset into destination buffer</param>
-        /// <param name="numBytes"></param>
-        /// <returns>Number of bytes read.</returns>
-        public override int Read(byte[] destBuffer, int offset, int numBytes)
+        public override int Read(Span<byte> destBuffer)
         {
+            int numBytes = destBuffer.Length;
             lock (lockObject)
             {
-                int count = numBytes*2;
+                int count = numBytes * 2;
                 sourceBuffer = BufferHelpers.Ensure(sourceBuffer, count);
                 int bytesRead = sourceStream.Read(sourceBuffer, 0, count);
-                Convert32To16(destBuffer, offset, sourceBuffer, bytesRead);
-                position += (bytesRead/2);
-                return bytesRead/2;
+                Convert32To16(destBuffer, sourceBuffer, bytesRead);
+                position += (bytesRead / 2);
+                return bytesRead / 2;
             }
         }
 
         /// <summary>
+        /// Reads bytes from this wave stream
+        /// </summary>
+        public override int Read(byte[] destBuffer, int offset, int numBytes)
+            => Read(destBuffer.AsSpan(offset, numBytes));
+
+        /// <summary>
         /// Conversion to 16 bit and clipping
         /// </summary>
-        private unsafe void Convert32To16(byte[] destBuffer, int offset, byte[] source, int bytesRead)
+        private void Convert32To16(Span<byte> destBuffer, byte[] source, int bytesRead)
         {
-            fixed (byte* pDestBuffer = &destBuffer[offset],
-                pSourceBuffer = &source[0])
-            {
-                short* psDestBuffer = (short*)pDestBuffer;
-                float* pfSourceBuffer = (float*)pSourceBuffer;
+            var shorts = MemoryMarshal.Cast<byte, short>(destBuffer);
+            var floats = MemoryMarshal.Cast<byte, float>(source.AsSpan(0, bytesRead));
 
-                int samplesRead = bytesRead / 4;
-                for (int n = 0; n < samplesRead; n++)
+            for (int n = 0; n < floats.Length; n++)
+            {
+                float sampleVal = floats[n] * volume;
+                if (sampleVal > 1.0f)
                 {
-                    float sampleVal = pfSourceBuffer[n] * volume;
-                    if (sampleVal > 1.0f)
-                    {
-                        psDestBuffer[n] = short.MaxValue;
-                        clip = true;
-                    }
-                    else if (sampleVal < -1.0f)
-                    {
-                        psDestBuffer[n] = short.MinValue;
-                        clip = true;
-                    }
-                    else
-                    {
-                        psDestBuffer[n] = (short)(sampleVal * 32767);
-                    }
+                    shorts[n] = short.MaxValue;
+                    clip = true;
+                }
+                else if (sampleVal < -1.0f)
+                {
+                    shorts[n] = short.MinValue;
+                    clip = true;
+                }
+                else
+                {
+                    shorts[n] = (short)(sampleVal * 32767);
                 }
             }
         }

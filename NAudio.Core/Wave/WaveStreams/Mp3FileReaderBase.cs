@@ -341,15 +341,16 @@ namespace NAudio.Wave
         /// <summary>
         /// Reads decompressed PCM data from our MP3 file.
         /// </summary>
-        public override int Read(byte[] sampleBuffer, int offset, int numBytes)
+        public override int Read(Span<byte> sampleBuffer)
         {
+            int numBytes = sampleBuffer.Length;
             int bytesRead = 0;
             lock (repositionLock)
             {
                 if (decompressLeftovers != 0)
                 {
                     int toCopy = Math.Min(decompressLeftovers, numBytes);
-                    Array.Copy(decompressBuffer, decompressBufferOffset, sampleBuffer, offset, toCopy);
+                    decompressBuffer.AsSpan(decompressBufferOffset, toCopy).CopyTo(sampleBuffer);
                     decompressLeftovers -= toCopy;
                     if (decompressLeftovers == 0)
                     {
@@ -360,7 +361,6 @@ namespace NAudio.Wave
                         decompressBufferOffset += toCopy;
                     }
                     bytesRead += toCopy;
-                    offset += toCopy;
                 }
 
                 int targetTocIndex = tocIndex; // the frame index that contains the requested data
@@ -372,7 +372,7 @@ namespace NAudio.Wave
                     // Seek back a few frames of the stream to get the reset decoder decode a few
                     // warm-up frames before reading the requested data. Without the warm-up phase,
                     // the first half of the frame after the reset is attenuated and does not resemble
-                    // the data as it would be when reading sequentially from the beginning, because 
+                    // the data as it would be when reading sequentially from the beginning, because
                     // the decoder is missing the required overlap from the previous frame.
                     tocIndex = Math.Max(0, tocIndex - 3); // no warm-up at the beginning of the stream
                     mp3Stream.Position = tableOfContents[tocIndex].FilePosition;
@@ -390,7 +390,7 @@ namespace NAudio.Wave
                         if (tocIndex <= targetTocIndex || decompressed == 0)
                         {
                             // The first frame after a reset usually does not immediately yield decoded samples.
-                            // Because the next instructions will fail if a buffer offset is set and the frame 
+                            // Because the next instructions will fail if a buffer offset is set and the frame
                             // decoding didn't return data, we skip the part.
                             // We skip the following instructions also after decoding a warm-up frame.
                             continue;
@@ -400,7 +400,7 @@ namespace NAudio.Wave
                         //    for the decoder to return decoded data
                         // 2. We are interested in the second frame of the stream, but because reading the first frame
                         //    as warm-up didn't yield any data (because the decoder needs two frames to return data), we
-                        //    get data from the first and second frame. 
+                        //    get data from the first and second frame.
                         //    This case needs special handling, and we have to purge the data of the first frame.
                         else if (tocIndex == targetTocIndex + 1 && decompressed == bytesPerDecodedFrame * 2)
                         {
@@ -410,7 +410,7 @@ namespace NAudio.Wave
                         }
 
                         int toCopy = Math.Min(decompressed - decompressBufferOffset, numBytes - bytesRead);
-                        Array.Copy(decompressBuffer, decompressBufferOffset, sampleBuffer, offset, toCopy);
+                        decompressBuffer.AsSpan(decompressBufferOffset, toCopy).CopyTo(sampleBuffer.Slice(bytesRead));
                         if ((toCopy + decompressBufferOffset) < decompressed)
                         {
                             decompressBufferOffset = toCopy + decompressBufferOffset;
@@ -422,7 +422,6 @@ namespace NAudio.Wave
                             decompressBufferOffset = 0;
                             decompressLeftovers = 0;
                         }
-                        offset += toCopy;
                         bytesRead += toCopy;
                     }
                     else
@@ -435,6 +434,12 @@ namespace NAudio.Wave
             position += bytesRead;
             return bytesRead;
         }
+
+        /// <summary>
+        /// Reads decompressed PCM data from our MP3 file.
+        /// </summary>
+        public override int Read(byte[] sampleBuffer, int offset, int numBytes)
+            => Read(sampleBuffer.AsSpan(offset, numBytes));
 
         /// <summary>
         /// Xing header if present

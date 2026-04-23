@@ -61,13 +61,14 @@ namespace NAudio.Extras
         /// <summary>
         /// Read data from this stream
         /// </summary>
-        public override int Read(byte[] buffer, int offset, int count)
+        public override int Read(Span<byte> buffer)
         {
+            int count = buffer.Length;
             int read = 0;
             while (read < count)
             {
                 int required = count - read;
-                int readThisTime = sourceStream.Read(buffer, offset + read, required);
+                int readThisTime = sourceStream.Read(buffer.Slice(read, required));
                 if (readThisTime < required)
                 {
                     sourceStream.Position = 0;
@@ -81,6 +82,12 @@ namespace NAudio.Extras
             }
             return read;
         }
+
+        /// <summary>
+        /// Read data from this stream
+        /// </summary>
+        public override int Read(byte[] buffer, int offset, int count)
+            => Read(buffer.AsSpan(offset, count));
 
         /// <summary>
         /// Dispose this WaveStream (disposes the source)

@@ -232,7 +232,7 @@ Existing `WasapiOut` and `WasapiCapture` are kept with `[Obsolete]` attributes p
 - [x] `IWaveProvider.Read` signature changed: `Read(byte[] buffer, int offset, int count)` → `Read(Span<byte> buffer)`
 - [x] `ISampleProvider.Read` signature changed: `Read(float[] buffer, int offset, int count)` → `Read(Span<float> buffer)`
 - [x] `IWavePlayer.Init` signature changed: `Init(IWaveProvider waveProvider)` — takes the now-Span-based `IWaveProvider`
-- [x] `WaveStream` implements `IWaveProvider` via `Stream.Read(Span<byte>)` override with a reusable bridge buffer. Subclasses can override `Read(Span<byte>)` for zero-copy. The array-based `Read(byte[], int, int)` remains as a convenience overload (non-interface, from `Stream`)
+- [x] `WaveStream` implements `IWaveProvider` via `Stream.Read(Span<byte>)`. NAudio's own concrete `WaveStream` subclasses override this directly (see Phase 7d). Third-party subclasses that only override `Read(byte[], int, int)` continue to work via the pooled bridge inherited from `Stream`. The array-based `Read(byte[], int, int)` remains as a convenience overload
 - [x] `DirectSoundOut` fixed for net8.0: `Thread.Abort()` removed (not supported), `nint` null check fixed
 
 **7b: All implementations use Span-based Read — DONE**
@@ -286,6 +286,45 @@ Existing `WasapiOut` and `WasapiCapture` are kept with `[Obsolete]` attributes p
 **Notes:**
 - `DmoMp3FrameDecompressor` does NOT implement `IWaveProvider` — it implements `IMp3FrameDecompressor` (frame-based API)
 - `AudioFormat` replacing `WaveFormat` is deferred — orthogonal to span migration
+
+**7d: WaveStream concrete-reader span overrides — DONE**
+
+**Problem:** After 7a, `WaveStream` provided a `Read(Span<byte>)` override that bridged to the legacy `Read(byte[], int, int)` via a per-instance `spanBridgeBuffer` field. Because no concrete reader actually overrode `Read(Span<byte>)`, every span-based read on a `WaveFileReader`, `Mp3FileReaderBase`, `WaveChannel32`, etc. paid an extra buffer copy. Additionally, `spanBridgeBuffer` was never freed — each `WaveStream` instance grew a buffer to match the largest read it had ever serviced and held it for the stream's lifetime.
+
+**Decision:** Follow the .NET `Stream` convention — `Read(byte[], int, int)` is the baseline override point (abstract on `Stream`), and `Read(Span<byte>)` is virtual with a default bridge that rents from `ArrayPool<byte>.Shared`. NAudio's own readers implement the real logic in `Read(Span<byte>)` and forward the byte[] overload to it; third-party subclasses that only override the byte[] overload keep working unchanged (now via the pooled, freed-after-use `ArrayPool` bridge rather than a retained per-instance buffer).
+
+**Changes:**
+
+- [x] Removed `WaveStream.spanBridgeBuffer` field and the `Read(Span<byte>)` override that used it — the base-class default from `Stream` (ArrayPool-backed, released after each call) takes over for non-overriding subclasses
+- [x] `WaveFileReader` — `Read(Span<byte>)` reads directly from the underlying source stream
+- [x] `AiffFileReader` — `Read(Span<byte>)` reads big-endian source bytes into the caller's span and byte-swaps in place (the old implementation allocated a new byte[] per read for the swap)
+- [x] `RawSourceWaveStream` — `Read(Span<byte>)` forwards directly to the underlying `Stream.Read(Span<byte>)`
+- [x] `WaveChannel32` — `Read(Span<byte>)` uses `MemoryMarshal.Cast<byte, float>` to write float samples without the `WaveBuffer` `[FieldOffset]` union
+- [x] `Wave32To16Stream` — `Read(Span<byte>)` with `MemoryMarshal.Cast` for the 32→16 conversion (removes the `unsafe`/`fixed` block)
+- [x] `WaveOffsetStream` — `Read(Span<byte>)` uses span slicing instead of offset arithmetic
+- [x] `BlockAlignReductionStream` — `Read(Span<byte>)` fills the `CircularBuffer`-backed output span directly
+- [x] `WaveMixerStream32` — `Read(Span<byte>)` pools its per-source read buffer via `BufferHelpers.Ensure` instead of `new byte[count]` every call. `Sum32BitAudio` rewritten to use `MemoryMarshal.Cast<byte, float>`
+- [x] `Mp3FileReaderBase` — `Read(Span<byte>)` uses span-based copies from `decompressBuffer` to the caller's span
+- [x] `WaveFormatConversionStream` — `Read(Span<byte>)` forwards to `WaveFormatConversionProvider.Read(Span<byte>)` (already span-based)
+- [x] `AudioFileReader` — `Read(Span<byte>)` reinterpret-casts to `Span<float>` via `MemoryMarshal.Cast` (no intermediate buffer)
+- [x] `LoopStream` (NAudio.Extras) — `Read(Span<byte>)` with span slicing
+- [x] `IgnoreDisposeStream` — added `Read(Span<byte>)` and `Write(ReadOnlySpan<byte>)` pass-throughs
+- [x] `ComStream` (NAudio.Wasapi) — added `Read(Span<byte>)` and `Write(ReadOnlySpan<byte>)` pass-throughs
+- [x] `MediaFoundationReader`, `ResamplerDmoStream` — already had `Read(Span<byte>)` overrides from Phase 7b
+
+**Convention for third-party `WaveStream` authors:**
+
+Implement your read logic in `Read(Span<byte>)` and forward the byte[] overload:
+
+```csharp
+public override int Read(Span<byte> buffer) { /* real read logic */ }
+public override int Read(byte[] array, int offset, int count)
+    => Read(array.AsSpan(offset, count));
+```
+
+Subclasses that only override `Read(byte[], int, int)` still work correctly — but pay one `ArrayPool<byte>.Shared` rent and one copy per span-based read. The XML doc on `WaveStream` describes the pattern.
+
+**Test coverage:** `WaveStreamSpanReadTests` asserts that (a) each NAudio reader produces identical data when read via `Read(byte[], int, int)` versus `Read(Span<byte>)`, (b) third-party subclasses overriding only the byte[] method continue to work through the bridge, and (c) reflection-based architectural check — every concrete `WaveStream` subclass in the NAudio assemblies overrides `Read(Span<byte>)`.
 
 #### Phase 5: Media Foundation modernization — DONE
 
@@ -638,6 +677,7 @@ These will need to be documented in the migration guide:
 - `IWaveProvider` and `ISampleProvider` are now Span-based: `Read(Span<byte>)` and `Read(Span<float>)` respectively
 - All 23 sample providers in NAudio.Core implement `ISampleProvider` with `Read(Span<float>)`
 - All 16 non-Stream wave providers implement `IWaveProvider` with `Read(Span<byte>)`
+- All concrete `WaveStream` subclasses in NAudio's assemblies override `Read(Span<byte>)` directly (enforced by architectural test) — no bridge copy on the span path
 - All 5 active output devices (`WaveOut`, `DirectSoundOut`, `AsioOut`, `WasapiPlayer`, `WasapiOut` [deprecated]) accept `IWaveProvider` via `Init()`
 - No adapter classes needed — single set of interfaces throughout the codebase
 - `WaveStream` base class implements `IWaveProvider` via `Stream.Read(Span<byte>)` override

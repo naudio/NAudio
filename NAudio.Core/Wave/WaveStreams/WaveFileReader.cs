@@ -157,26 +157,34 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// Reads bytes from the Wave File
-        /// <see cref="Stream.Read(byte[], int, int)"/>
+        /// Reads bytes from the Wave File into the provided span.
+        /// <see cref="Stream.Read(Span{byte})"/>
         /// </summary>
-        public override int Read(byte[] array, int offset, int count)
+        public override int Read(Span<byte> buffer)
         {
-            if (count % waveFormat.BlockAlign != 0)
+            if (buffer.Length % waveFormat.BlockAlign != 0)
             {
                 throw new ArgumentException(
-                    $"Must read complete blocks: requested {count}, block align is {WaveFormat.BlockAlign}");
+                    $"Must read complete blocks: requested {buffer.Length}, block align is {WaveFormat.BlockAlign}");
             }
             lock (lockObject)
             {
                 // sometimes there is more junk at the end of the file past the data chunk
+                int count = buffer.Length;
                 if (Position + count > dataChunkLength)
                 {
-                    count = (int) (dataChunkLength - Position);
+                    count = (int)(dataChunkLength - Position);
                 }
-                return waveStream.Read(array, offset, count);
+                return waveStream.Read(buffer.Slice(0, count));
             }
         }
+
+        /// <summary>
+        /// Reads bytes from the Wave File.
+        /// <see cref="Stream.Read(byte[], int, int)"/>
+        /// </summary>
+        public override int Read(byte[] array, int offset, int count)
+            => Read(array.AsSpan(offset, count));
         
         /// <summary>
         /// Attempts to read the next sample or group of samples as floating point normalised into the range -1.0f to 1.0f

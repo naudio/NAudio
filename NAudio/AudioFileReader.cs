@@ -110,17 +110,18 @@ namespace NAudio.Wave
         /// <summary>
         /// Reads from this wave stream
         /// </summary>
-        /// <param name="buffer">Audio buffer</param>
-        /// <param name="offset">Offset into buffer</param>
-        /// <param name="count">Number of bytes required</param>
-        /// <returns>Number of bytes read</returns>
-        public override int Read(byte[] buffer, int offset, int count)
+        public override int Read(Span<byte> buffer)
         {
-            var floatSpan = MemoryMarshal.Cast<byte, float>(
-                buffer.AsSpan(offset, count));
+            var floatSpan = MemoryMarshal.Cast<byte, float>(buffer);
             int samplesRead = Read(floatSpan);
             return samplesRead * 4;
         }
+
+        /// <summary>
+        /// Reads from this wave stream
+        /// </summary>
+        public override int Read(byte[] buffer, int offset, int count)
+            => Read(buffer.AsSpan(offset, count));
 
         /// <summary>
         /// Reads audio samples from this file reader

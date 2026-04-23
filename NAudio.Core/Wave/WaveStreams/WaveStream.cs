@@ -7,10 +7,30 @@ namespace NAudio.Wave
     /// <summary>
     /// Base class for all WaveStream classes. Derives from stream.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Implementing a WaveStream — which Read method should I override?</b>
+    /// </para>
+    /// <para>
+    /// <see cref="Stream.Read(byte[], int, int)"/> is abstract on <see cref="Stream"/> and must be overridden.
+    /// <see cref="Stream.Read(Span{byte})"/> is virtual — its default implementation rents a buffer from
+    /// <see cref="System.Buffers.ArrayPool{T}.Shared"/>, calls the byte[] overload, and copies into the span.
+    /// This is functionally correct but incurs one pool rent and one extra copy per read.
+    /// </para>
+    /// <para>
+    /// For best performance, implement your read logic in the <c>Read(Span&lt;byte&gt;)</c> overload and
+    /// make the byte[] overload forward to it:
+    /// <code>
+    /// public override int Read(Span&lt;byte&gt; buffer) { /* real read logic */ }
+    /// public override int Read(byte[] array, int offset, int count)
+    ///     =&gt; Read(array.AsSpan(offset, count));
+    /// </code>
+    /// All of NAudio's built-in readers follow this pattern. Legacy subclasses that only override the byte[]
+    /// overload continue to work correctly, but pay the pooled-bridge cost on span-based reads.
+    /// </para>
+    /// </remarks>
     public abstract class WaveStream : Stream, IWaveProvider
     {
-        private byte[] spanBridgeBuffer;
-
         /// <summary>
         /// Retrieves the WaveFormat for this stream
         /// </summary>
@@ -20,25 +40,6 @@ namespace NAudio.Wave
         // base class includes long Length get
         // base class includes Read
         // base class includes Dispose
-
-        /// <summary>
-        /// Reads audio data into the provided span, bridging to the array-based
-        /// <see cref="Stream.Read(byte[], int, int)"/> method.
-        /// Subclasses may override for true zero-copy performance.
-        /// </summary>
-        public override int Read(Span<byte> buffer)
-        {
-            if (spanBridgeBuffer == null || spanBridgeBuffer.Length < buffer.Length)
-            {
-                spanBridgeBuffer = new byte[buffer.Length];
-            }
-            int bytesRead = Read(spanBridgeBuffer, 0, buffer.Length);
-            if (bytesRead > 0)
-            {
-                spanBridgeBuffer.AsSpan(0, bytesRead).CopyTo(buffer);
-            }
-            return bytesRead;
-        }
 
         /// <summary>
         /// We can read from this stream

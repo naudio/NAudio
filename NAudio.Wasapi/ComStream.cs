@@ -127,6 +127,11 @@ namespace NAudio.Wave
             return stream.Read(buffer, offset, count);
         }
 
+        public override int Read(Span<byte> buffer)
+        {
+            return stream.Read(buffer);
+        }
+
         public override long Seek(long offset, SeekOrigin origin)
         {
             return stream.Seek(offset, origin);
@@ -140,6 +145,11 @@ namespace NAudio.Wave
         public override void Write(byte[] buffer, int offset, int count)
         {
             stream.Write(buffer, offset, count);
+        }
+
+        public override void Write(ReadOnlySpan<byte> buffer)
+        {
+            stream.Write(buffer);
         }
 
         protected override void Dispose(bool disposing)

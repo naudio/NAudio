@@ -8,7 +8,7 @@ pool:
   vmImage: 'windows-latest' # https://github.com/actions/virtual-environments/blob/main/images/win/Windows2022-Readme.md
 
 variables:
-  solution: '**/*.sln'
+  solution: 'NAudio.slnx'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
 

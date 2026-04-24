@@ -1,0 +1,32 @@
+<Solution>
+  <Folder Name="/Samples/">
+    <Project Path="AudioFileInspector/AudioFileInspector.csproj" />
+    <Project Path="MidiFileConverter/MidiFileConverter.csproj" />
+    <Project Path="MixDiff/MixDiff.csproj" />
+    <Project Path="NAudioDemo/NAudioDemo.csproj" />
+    <Project Path="NAudioWpfDemo/NAudioWpfDemo.csproj" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path="azure-pipelines.yml" />
+    <File Path="license.txt" />
+    <File Path="MODERNIZATION.md" />
+    <File Path="naudio-logo.png" />
+    <File Path="publish.ps1" />
+    <File Path="README.md" />
+    <File Path="readme.txt" />
+    <File Path="RELEASE_NOTES.md" />
+  </Folder>
+  <Project Path="NAudio.Asio/NAudio.Asio.csproj" />
+  <Project Path="NAudio.Benchmarks/NAudio.Benchmarks.csproj">
+    <BuildType Project="Release" />
+  </Project>
+  <Project Path="NAudio.Core/NAudio.Core.csproj" />
+  <Project Path="NAudio.Extras/NAudio.Extras.csproj" />
+  <Project Path="NAudio.Midi/NAudio.Midi.csproj" />
+  <Project Path="NAudio.Wasapi/NAudio.Wasapi.csproj" />
+  <Project Path="NAudio.WinForms/NAudio.WinForms.csproj" />
+  <Project Path="NAudio.WinMM/NAudio.WinMM.csproj" />
+  <Project Path="NAudio/NAudio.csproj" />
+  <Project Path="NAudioConsoleTest/NAudioConsoleTest.csproj" />
+  <Project Path="NAudioTests/NAudioTests.csproj" />
+</Solution>

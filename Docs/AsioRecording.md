@@ -1,87 +1,146 @@
 # Recording with ASIO
 
-The `AsioOut` class in NAudio allows you to both play back and record audio using an ASIO driver. ASIO is a driver format supported by many popular Digital Audio Workstation (DAW) applications on Windows, and usually offers very low latency for record and playback. 
+NAudio 3's `AsioDevice` exposes a clean recording mode that delivers per-channel `Span<float>` to your event handler — no `IntPtr` arithmetic, no manual sample-format decoding, no interleaving math. This article covers recording only — see [AsioPlayback](AsioPlayback.md), [AsioDuplex](AsioDuplex.md), and [AsioMigration](AsioMigration.md) for related modes and migration guidance.
 
-To use ASIO, you do need a soundcard that has an ASIO driver. Most professional soundcards have ASIO drivers, but you can also try the [ASIO4ALL](http://asio4all.com/) driver which enables ASIO for soundcards that don't have their own native ASIO driver.
+You need a soundcard with an ASIO driver installed. [ASIO4ALL](http://asio4all.com/) is a free fallback for hardware that doesn't ship one.
 
-Often you'll use `AsioOut` to play audio, or to play and record simultaneously. This article covers the scenario where we just want to record audio.
-
-## Opening an ASIO device for recording
-
-To discover the names of the installed ASIO drivers on your system you use `AsioOut.GetDriverNames()`.
-
-We can use one of those driver names to pass to the constructor of `AsioOut`
+## Open the device
 
 ```c#
-var asioOut = new AsioOut(asioDriverName);
+foreach (var name in AsioDevice.GetDriverNames())
+    Console.WriteLine(name);
+
+using var device = AsioDevice.Open("Focusrite USB ASIO");
 ```
 
-## Selecting Recording Channels
+## Pick input channels
 
-We may want to find out how many input channels are available on the device. We can get this with:
-
-```c#
-var inputChannels = asioOut.DriverInputChannelCount;
-```
-
-By default, ASIO will capture all input channels when you record, but if you have a multi-input soundcard, this may be overkill. If you want to select a sub-range of channels to record from, we can set the `InputChannelOffset` to the first channel to record on. And then here I set up a `recordChannelCount` variable which I will use when I start recording. So in this example, I'm recording on channels 4 and 5 (n.b. channel numbers are zero based).
-
-Finally, I call `InitRecordAndPlayback`. This is a little bit ugly and future versions of NAudio may provide a nicer method, but the first parameter supplies the audio to be played. We're just recording, so this is null. The second argument is the number of channels to record (starting from `InputChannelOffset`). And the third argument is the desired sample rate. When we're playing we don;t need this as the sample rate of the input `IWaveProvider` will be used, but since we're just recording, we do need to specify the desired sample rate.
+`AsioRecordingOptions.InputChannels` is an `int[]` of physical channel indices. Entries can be **non-contiguous** — record from channels `[0, 1, 4, 5]` directly without recording the channels in between.
 
 ```c#
-asioOut.InputChannelOffset = 4;
-var recordChannelCount = 2;
-var sampleRate = 44100;
-asioOut.InitRecordAndPlayback(null, recordChannelCount, sampleRate);
-```
-
-## Start Recording
-
-We need to subscribe to the `AudioAvailable` event in order to process audio received in the ASIO buffer callback.
-
-And we kick off recording by calling `Play()`. Yes, again it's not very intuitively named for the scenario in which we're recording only, but it basically tells the ASIO driver to start capturing audio and call us on each buffer swap.
-
-```c#
-asioOut.AudioAvailable += OnAsioOutAudioAvailable;
-asioOut.Play(); // start recording
-```
-
-## Handle received audio
-
-When we receive audio we get access to the raw ASIO buffers in an `AsioAudioAvailableEventArgs` object.
-
-Because ASIO is all about ultimate low latency, NAudio provides direct access to an `IntPtr` array called `InputBuffers` which contains the recorded buffer for each input channel. It also provides a `SamplesPerBuffer` property to tell you how many
-
-But there's still a lot of work to be done. ASIO supports many different recording formats including 24 bit audio where there are 3 bytes per sample. You need to examine the `AsioSampleType` property of the `AsioAudioAvailableEventArgs` to know what format each sample is in.
-
-So it can be a lot of work to access these samples in a meaningful format. NAudio provides a convenience method called `GetAsInterleavedSamples` to read samples from each input channel, turn them into IEEE floating point samples, and interleave them so they could be written to a WAV file. It supports the most common `AsioSampleType` properties, but not all of them. 
-
-Note that this example uses an overload of `GetAsInterleavedSamples` that always returns a new `float[]`. It's better for memory purposes to create your own `float[]` up front and pass that in instead.
-
-Here's the simplest handler for `AudioAvailable` that just gets the audio as floating point samples and writes them to a `WaveFileReader` that we've set up in advance.
-
-```c#
-void OnAsioOutAudioAvailable(object sender, AsioAudioAvailableEventArgs e)
+device.InitRecording(new AsioRecordingOptions
 {
-    var samples = e.GetAsInterleavedSamples();
-    writer.WriteSamples(samples, 0, samples.Length);
-}
+    InputChannels = [0, 1, 4, 5],
+    SampleRate    = device.CurrentSampleRate
+});
 ```
 
-For a real application, you'd probably want to write your own logic in here to access the samples and pass them on to whatever processing logic you need.
-
-## Stop Recording
-
-We stop recording by calling Stop().
+To record every available input:
 
 ```c#
-asioOut.Stop();
+InputChannels = device.Capabilities.AllInputChannels
 ```
 
-As with other NAudio `IWavePlayer` implementations, we'll get a `PlaybackStopped` event firing when the driver stops.
+`device.Capabilities.NbInputChannels` reports how many physical inputs the driver exposes. `device.Capabilities.InputChannelInfos[i].name` gives the driver's name for each (e.g. "Mic 1", "Line 3").
 
-And of course we should remember to `Dispose` our instance of `AsioOut` when we're done with it.
+If you don't pass `SampleRate`, the device runs at whatever rate the driver is currently set to — which `device.CurrentSampleRate` reports. If you pass a specific rate, the driver must support it; check first with `device.IsSampleRateSupported(rate)`.
+
+See [AsioChannelMapping](AsioChannelMapping.md) for the rationale and patterns around non-contiguous channel selection.
+
+## Subscribe to AudioCaptured
+
+Each ASIO buffer-switch raises `AudioCaptured` on the real-time driver thread. The event args expose one `ReadOnlySpan<float>` per selected input, in the same order as `InputChannels`. NAudio handles the native `AsioSampleType` → float conversion (`Int16LSB`, `Int24LSB`, `Int32LSB`, `Float32LSB` are all supported transparently).
 
 ```c#
-asioOut.Dispose();
+device.AudioCaptured += (sender, e) =>
+{
+    // e.GetChannel(i) returns a ReadOnlySpan<float> for the i'th selected input.
+    var ch0 = e.GetChannel(0);   // physical input InputChannels[0]
+    var ch1 = e.GetChannel(1);   // physical input InputChannels[1]
+
+    // Compute RMS, write to a file, push to a ring buffer — anything quick.
+    // The spans are valid only for the duration of this handler.
+};
+
+device.Start();
 ```
+
+The index passed to `GetChannel` is into the **selected-channels array**, not the physical channel number. If `InputChannels = [4, 5]`, then `GetChannel(0)` returns physical input 4 and `GetChannel(1)` returns physical input 5. This matches JUCE/PortAudio conventions and keeps your handler portable across channel selections.
+
+## Real-time thread constraints
+
+The handler runs on the ASIO callback thread. To avoid glitches:
+
+- Don't allocate. Pre-allocate any buffers you need before calling `Start`.
+- Don't perform blocking I/O. Hand the data off to a worker thread or a lock-free queue.
+- Don't call `device.Stop`, `device.Dispose`, or `device.Reinitialize` from inside the handler — `Stop` actively throws `InvalidOperationException` if you try, because the same-thread call would self-deadlock waiting for the callback to return.
+
+The spans returned by `GetChannel` point into library-owned buffers that the device reuses across callbacks. Copy out anything you need to keep beyond the handler's return.
+
+## Save each input to its own WAV file
+
+```c#
+using var device = AsioDevice.Open(driverName);
+int[] channels = [0, 1, 4, 5];
+int sampleRate = device.CurrentSampleRate;
+
+device.InitRecording(new AsioRecordingOptions
+{
+    InputChannels = channels,
+    SampleRate    = sampleRate
+});
+
+var writers = channels
+    .Select(phys => new WaveFileWriter(
+        $"input-{phys}.wav",
+        WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, 1)))
+    .ToArray();
+
+device.AudioCaptured += (s, e) =>
+{
+    for (int i = 0; i < e.ChannelCount; i++)
+        writers[i].WriteSamples(e.GetChannel(i));
+};
+
+device.Stopped += (s, e) =>
+{
+    foreach (var w in writers) w.Dispose();
+};
+
+device.Start();
+Console.ReadLine();
+device.Stop();
+```
+
+## Save selected inputs as a single multi-channel WAV
+
+If you want to interleave the selected inputs into one WAV file:
+
+```c#
+using var writer = new WaveFileWriter(
+    "multi.wav",
+    WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channels.Length));
+
+device.AudioCaptured += (s, e) =>
+{
+    for (int frame = 0; frame < e.Frames; frame++)
+        for (int ch = 0; ch < e.ChannelCount; ch++)
+            writer.WriteSample(e.GetChannel(ch)[frame]);
+};
+```
+
+## The raw escape hatch
+
+If you genuinely need zero-copy access to the driver's native bytes — for example, to memcpy them into a fixed buffer for a downstream codec — `AsioAudioCapturedEventArgs.RawInput(i)` returns an `AsioRawInputBuffer`:
+
+```c#
+device.AudioCaptured += (s, e) =>
+{
+    var raw = e.RawInput(0);            // ref struct
+    ReadOnlySpan<byte> bytes = raw.Bytes;
+    AsioSampleType format = raw.Format; // Int16LSB / Int24LSB / Int32LSB / Float32LSB
+    int frames = raw.Frames;
+    // ... your zero-copy logic ...
+};
+```
+
+The bytes span is valid only for the duration of the handler.
+
+## Stop and dispose
+
+```c#
+device.Stop();
+device.Dispose();   // or wrap the device in `using`
+```
+
+The `Stopped` event fires on the captured `SynchronizationContext` after the callback thread has fully drained, so it's safe for handlers to dispose the device.

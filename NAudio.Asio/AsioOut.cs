@@ -1,33 +1,43 @@
-﻿using System;
+using System;
 using NAudio.Wave.Asio;
 using System.Threading;
 
 namespace NAudio.Wave
 {
     /// <summary>
-    /// ASIO Out Player. New implementation using an internal C# binding.
-    /// 
-    /// This implementation is only supporting Short16Bit and Float32Bit formats and is optimized 
-    /// for 2 outputs channels .
-    /// SampleRate is supported only if AsioDriver is supporting it
-    ///     
-    /// This implementation is probably the first AsioDriver binding fully implemented in C#!
-    /// 
-    /// Original Contributor: Mark Heath 
-    /// New Contributor to C# binding : Alexandre Mutel - email: alexandre_mutel at yahoo.fr
+    /// ASIO Out Player — the original NAudio 2.x entry point for ASIO playback, recording, and duplex.
+    /// Implemented in NAudio 3 as a thin facade over <see cref="AsioDevice"/>: lifecycle, capabilities,
+    /// drain-on-dispose, and synchronization-context dispatch all flow through that class, while AsioOut
+    /// keeps its raw <c>IntPtr</c>-based <see cref="AudioAvailable"/> contract for back-compat consumers.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// New code should target <see cref="AsioDevice"/> directly. It exposes per-channel <c>Span&lt;float&gt;</c>
+    /// for recording and duplex, an explicit <c>Init*</c> mode selection, non-contiguous channel-array routing,
+    /// and a supported <see cref="AsioDevice.Reinitialize"/> path for handling
+    /// <see cref="AsioDevice.DriverResetRequest"/>.
+    /// </para>
+    /// <para>
+    /// Legacy translations:
+    /// <list type="bullet">
+    ///   <item><description><see cref="Init"/> → <see cref="AsioDevice.InitPlayback"/></description></item>
+    ///   <item><description><see cref="InitRecordAndPlayback"/> with a non-null provider → <see cref="AsioDevice.InitDuplex"/></description></item>
+    ///   <item><description><see cref="InitRecordAndPlayback"/> with a null provider → <see cref="AsioDevice.InitRecording"/></description></item>
+    /// </list>
+    /// </para>
+    /// </remarks>
     public class AsioOut : IWavePlayer
     {
-        private AsioDriverExt driver;
+        private AsioDevice device;
         private IWaveProvider sourceStream;
         private PlaybackState playbackState;
         private int nbSamples;
         private byte[] waveBuffer;
         private AsioSampleConvertor.SampleConvertor convertor;
-        private string driverName;
-
-        private readonly SynchronizationContext syncContext;
         private bool isInitialized;
+        // Pause performs a silent driver stop. We forward AsioDevice.Stopped as PlaybackStopped, but Pause
+        // historically did not raise PlaybackStopped — this flag lets the next Stopped event bypass the forward.
+        private bool suppressNextStopped;
 
         /// <summary>
         /// Playback Stopped
@@ -45,7 +55,7 @@ namespace NAudio.Wave
         public event EventHandler DriverResetRequest;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="AsioOut"/> class with the first 
+        /// Initializes a new instance of the <see cref="AsioOut"/> class with the first
         /// available ASIO Driver.
         /// </summary>
         public AsioOut()
@@ -59,8 +69,8 @@ namespace NAudio.Wave
         /// <param name="driverName">Name of the device.</param>
         public AsioOut(string driverName)
         {
-            this.syncContext = SynchronizationContext.Current;
-            InitFromName(driverName);
+            device = AsioDevice.Open(driverName);
+            WireDeviceEvents();
         }
 
         /// <summary>
@@ -69,17 +79,17 @@ namespace NAudio.Wave
         /// <param name="driverIndex">Device number (zero based)</param>
         public AsioOut(int driverIndex)
         {
-            this.syncContext = SynchronizationContext.Current; 
-            String[] names = GetDriverNames();
+            string[] names = GetDriverNames();
             if (names.Length == 0)
             {
                 throw new ArgumentException("There is no ASIO Driver installed on your system");
             }
-            if (driverIndex < 0 || driverIndex > names.Length)
+            if (driverIndex < 0 || driverIndex >= names.Length)
             {
-                throw new ArgumentException(String.Format("Invalid device number. Must be in the range [0,{0}]", names.Length));
+                throw new ArgumentException(string.Format("Invalid device number. Must be in the range [0,{0}]", names.Length - 1));
             }
-            InitFromName(names[driverIndex]);
+            device = AsioDevice.Open(names[driverIndex]);
+            WireDeviceEvents();
         }
 
         /// <summary>
@@ -97,15 +107,10 @@ namespace NAudio.Wave
         public void Dispose()
         {
             GC.SuppressFinalize(this);
-            if (driver != null)
+            if (device != null)
             {
-                if (playbackState != PlaybackState.Stopped)
-                {
-                    driver.Stop();
-                }
-                driver.ResetRequestCallback = null;
-                driver.ReleaseDriver();
-                driver = null;
+                device.Dispose();
+                device = null;
             }
         }
 
@@ -113,10 +118,7 @@ namespace NAudio.Wave
         /// Gets the names of the installed ASIO Driver.
         /// </summary>
         /// <returns>an array of driver names</returns>
-        public static string[] GetDriverNames()
-        {
-            return AsioDriver.GetAsioDriverNames();
-        }
+        public static string[] GetDriverNames() => AsioDevice.GetDriverNames();
 
         /// <summary>
         /// Determines whether ASIO is supported.
@@ -124,10 +126,7 @@ namespace NAudio.Wave
         /// <returns>
         ///     <c>true</c> if ASIO is supported; otherwise, <c>false</c>.
         /// </returns>
-        public static bool isSupported()
-        {
-            return GetDriverNames().Length > 0;
-        }
+        public static bool isSupported() => GetDriverNames().Length > 0;
 
         /// <summary>
         /// Determines whether this driver supports the specified sample rate.
@@ -136,59 +135,30 @@ namespace NAudio.Wave
         /// <returns>
         ///   <c>true</c> if the specified sample rate is supported otherwise, <c>false</c>.
         /// </returns>
-        public bool IsSampleRateSupported(int sampleRate)
+        public bool IsSampleRateSupported(int sampleRate) => device.IsSampleRateSupported(sampleRate);
+
+        private void WireDeviceEvents()
         {
-            return driver.IsSampleRateSupported(sampleRate);
+            device.Stopped += OnDeviceStopped;
+            device.DriverResetRequest += (_, _) => DriverResetRequest?.Invoke(this, EventArgs.Empty);
         }
 
-        /// <summary>
-        /// Inits the driver from the asio driver name.
-        /// </summary>
-        /// <param name="driverName">Name of the driver.</param>
-        private void InitFromName(string driverName)
+        private void OnDeviceStopped(object sender, StoppedEventArgs e)
         {
-            this.driverName = driverName;
-
-            // Get the basic driver
-            AsioDriver basicDriver = AsioDriver.GetAsioDriverByName(driverName);
-
-            try
+            playbackState = PlaybackState.Stopped;
+            HasReachedEnd = false;
+            if (suppressNextStopped)
             {
-                // Instantiate the extended driver
-                driver = new AsioDriverExt(basicDriver);
+                suppressNextStopped = false;
+                return;
             }
-            catch
-            {
-                ReleaseDriver(basicDriver);
-                throw;
-            }
-            driver.ResetRequestCallback = OnDriverResetRequest;
-            this.ChannelOffset = 0;
-        }
-
-
-
-        private void OnDriverResetRequest()
-        {
-            DriverResetRequest?.Invoke(this, EventArgs.Empty);
-        }
-
-        /// <summary>
-        /// Release driver
-        /// </summary>
-        private void ReleaseDriver(AsioDriver driver)
-        {
-            driver.DisposeBuffers();
-            driver.ReleaseComAsioDriver();
+            PlaybackStopped?.Invoke(this, e);
         }
 
         /// <summary>
         /// Shows the control panel
         /// </summary>
-        public void ShowControlPanel()
-        {
-            driver.ShowControlPanel();
-        }
+        public void ShowControlPanel() => device.ShowControlPanel();
 
         /// <summary>
         /// Starts playback
@@ -199,7 +169,7 @@ namespace NAudio.Wave
             {
                 playbackState = PlaybackState.Playing;
                 HasReachedEnd = false;
-                driver.Start();
+                device.Start();
             }
         }
 
@@ -209,9 +179,8 @@ namespace NAudio.Wave
         public void Stop()
         {
             playbackState = PlaybackState.Stopped;
-            driver.Stop();
-            HasReachedEnd = false;
-            RaisePlaybackStopped(null);
+            device.Stop();
+            // OnDeviceStopped clears HasReachedEnd and forwards PlaybackStopped via the captured SynchronizationContext.
         }
 
         /// <summary>
@@ -220,7 +189,9 @@ namespace NAudio.Wave
         public void Pause()
         {
             playbackState = PlaybackState.Paused;
-            driver.Stop();
+            // Pause historically did not raise PlaybackStopped — swallow the next Stopped that this triggers.
+            suppressNextStopped = true;
+            device.Stop();
         }
 
         /// <summary>
@@ -246,6 +217,7 @@ namespace NAudio.Wave
             }
             isInitialized = true;
             int desiredSampleRate = waveProvider != null ? waveProvider.WaveFormat.SampleRate : recordOnlySampleRate;
+            var underlyingDriver = device.UnderlyingDriver;
 
             if (waveProvider != null)
             {
@@ -254,7 +226,7 @@ namespace NAudio.Wave
                 this.NumberOfOutputChannels = waveProvider.WaveFormat.Channels;
 
                 // Select the correct sample convertor from WaveFormat -> ASIOFormat
-                var asioSampleType = driver.Capabilities.OutputChannelInfos[0].type;
+                var asioSampleType = underlyingDriver.Capabilities.OutputChannelInfos[0].type;
                 convertor = AsioSampleConvertor.SelectSampleConvertor(waveProvider.WaveFormat, asioSampleType);
 
                 switch (asioSampleType)
@@ -280,29 +252,27 @@ namespace NAudio.Wave
                 this.NumberOfOutputChannels = 0;
             }
 
-
-            if (!driver.IsSampleRateSupported(desiredSampleRate))
+            if (!underlyingDriver.IsSampleRateSupported(desiredSampleRate))
             {
                 throw new ArgumentException("SampleRate is not supported");
             }
-            if (driver.Capabilities.SampleRate != desiredSampleRate)
+            if (underlyingDriver.Capabilities.SampleRate != desiredSampleRate)
             {
-                driver.SetSampleRate(desiredSampleRate);
+                underlyingDriver.SetSampleRate(desiredSampleRate);
             }
 
-            // Plug the callback
-            driver.FillBufferCallback = driver_BufferUpdate;
-
             this.NumberOfInputChannels = recordChannels;
-            // Used Prefered size of ASIO Buffer
-            nbSamples = driver.CreateBuffers(NumberOfOutputChannels, NumberOfInputChannels, false);
-            driver.SetChannelOffset(ChannelOffset, InputChannelOffset); // will throw an exception if channel offset is too high
+            // Use preferred ASIO buffer size.
+            nbSamples = underlyingDriver.CreateBuffers(NumberOfOutputChannels, NumberOfInputChannels, false);
+            underlyingDriver.SetChannelOffset(ChannelOffset, InputChannelOffset); // throws if offset+count exceeds channel count
 
             if (waveProvider != null)
             {
                 // make a buffer big enough to read enough from the sourceStream to fill the ASIO buffers
                 waveBuffer = new byte[nbSamples * NumberOfOutputChannels * waveProvider.WaveFormat.BitsPerSample / 8];
             }
+
+            device.ConfigureLegacyRawCallback(driver_BufferUpdate);
         }
 
         /// <summary>
@@ -318,7 +288,7 @@ namespace NAudio.Wave
                 if (audioAvailable != null)
                 {
                     var args = new AsioAudioAvailableEventArgs(inputChannels, outputChannels, nbSamples,
-                                                               driver.Capabilities.InputChannelInfos[0].type);
+                                                               device.UnderlyingDriver.Capabilities.InputChannelInfos[0].type);
                     audioAvailable(this, args);
                     if (args.WrittenToOutputBuffers)
                         return;
@@ -337,7 +307,6 @@ namespace NAudio.Wave
                 // Call the convertor
                 unsafe
                 {
-                    // TODO : check if it's better to lock the buffer at initialization?
                     fixed (void* pBuffer = &waveBuffer[0])
                     {
                         convertor(new IntPtr(pBuffer), outputChannels, NumberOfOutputChannels, nbSamples);
@@ -346,9 +315,16 @@ namespace NAudio.Wave
 
                 if (read == 0)
                 {
-                    if (AutoStop)
-                        Stop(); // this can cause hanging issues
                     HasReachedEnd = true;
+                    if (AutoStop)
+                    {
+                        // Phase 0 finding F1 — never call Stop() from inside the buffer-switch callback.
+                        // AsioDevice.Stop would throw InvalidOperationException here; defer to a worker thread.
+                        ThreadPool.QueueUserWorkItem(_ =>
+                        {
+                            try { Stop(); } catch { /* device may already be disposed */ }
+                        });
+                    }
                 }
             }
         }
@@ -356,21 +332,13 @@ namespace NAudio.Wave
         /// <summary>
         /// Gets the latency (in samples) of the playback driver
         /// </summary>
-        public int PlaybackLatency
-        {
-            get
-            {
-                int latency, temp;
-                driver.Driver.GetLatencies(out temp, out latency);
-                return latency;
-            }
-        }
+        public int PlaybackLatency => device.OutputLatencySamples;
 
         /// <summary>
         /// Automatically stop when the end of the input stream is reached
         /// Disable this if auto-stop is causing hanging issues
         /// </summary>
-        public bool AutoStop { get; set; } 
+        public bool AutoStop { get; set; }
 
         /// <summary>
         /// A flag to let you know that we have reached the end of the input file
@@ -387,7 +355,7 @@ namespace NAudio.Wave
         /// <summary>
         /// Driver Name
         /// </summary>
-        public string DriverName => this.driverName;
+        public string DriverName => device.DriverName;
 
         /// <summary>
         /// The number of output channels we are currently using for playback
@@ -404,12 +372,12 @@ namespace NAudio.Wave
         /// <summary>
         /// The maximum number of input channels this ASIO driver supports
         /// </summary>
-        public int DriverInputChannelCount => driver.Capabilities.NbInputChannels;
+        public int DriverInputChannelCount => device.Capabilities.NbInputChannels;
 
         /// <summary>
         /// The maximum number of output channels this ASIO driver supports
         /// </summary>
-        public int DriverOutputChannelCount => driver.Capabilities.NbOutputChannels;
+        public int DriverOutputChannelCount => device.Capabilities.NbOutputChannels;
 
         /// <summary>
         /// The number of samples per channel, per buffer.
@@ -428,7 +396,7 @@ namespace NAudio.Wave
         /// <summary>
         /// By default the first channel on the input WaveProvider is sent to the first ASIO output.
         /// This option sends it to the specified channel number.
-        /// Warning: make sure you don't set it higher than the number of available output channels - 
+        /// Warning: make sure you don't set it higher than the number of available output channels -
         /// the number of source channels.
         /// n.b. Future NAudio may modify this
         /// </summary>
@@ -463,22 +431,6 @@ namespace NAudio.Wave
         /// <inheritdoc/>
         public WaveFormat OutputWaveFormat { get; private set; }
 
-        private void RaisePlaybackStopped(Exception e)
-        {
-            var handler = PlaybackStopped;
-            if (handler != null)
-            {
-                if (syncContext == null)
-                {
-                    handler(this, new StoppedEventArgs(e));
-                }
-                else
-                {
-                    syncContext.Post(state => handler(this, new StoppedEventArgs(e)), null);
-                }
-            }
-        }
-
         /// <summary>
         /// Get the input channel name
         /// </summary>
@@ -486,7 +438,7 @@ namespace NAudio.Wave
         /// <returns>channel name</returns>
         public string AsioInputChannelName(int channel)
         {
-            return channel > DriverInputChannelCount ? "" : driver.Capabilities.InputChannelInfos[channel].name;
+            return channel > DriverInputChannelCount ? "" : device.Capabilities.InputChannelInfos[channel].name;
         }
 
         /// <summary>
@@ -496,7 +448,7 @@ namespace NAudio.Wave
         /// <returns>channel name</returns>
         public string AsioOutputChannelName(int channel)
         {
-            return channel > DriverOutputChannelCount ? "" : driver.Capabilities.OutputChannelInfos[channel].name;
+            return channel > DriverOutputChannelCount ? "" : device.Capabilities.OutputChannelInfos[channel].name;
         }
     }
 }

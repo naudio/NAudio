@@ -72,6 +72,7 @@ NAudio comes with several demo applications which are the quickest way to see ho
 * [Handling playback stopped](Docs/PlaybackStopped.md)
 * [Understanding WaveStream, IWavePlayer and ISampleProvider](Docs/WaveProviders.md)
 * [Playing Audio with ASIO](Docs/AsioPlayback.md)
+* [Migrating from AsioOut to AsioDevice (NAudio 3)](Docs/AsioMigration.md)
 
 ### Working with Codecs
 
@@ -117,6 +118,9 @@ NAudio comes with several demo applications which are the quickest way to see ho
 * [Capturing system audio with WasapiLoopbackCapture](Docs/WasapiLoopbackCapture.md)
 * [Play and Record audio at the same time](http://markheath.net/post/how-to-record-and-play-audio-at-same)
 * [Record Audio with ASIO](Docs/AsioRecording.md)
+* [Duplex Processing with ASIO](Docs/AsioDuplex.md)
+* [ASIO Channel Mapping](Docs/AsioChannelMapping.md)
+* [Handling ASIO Driver Resets](Docs/AsioDriverReset.md)
 
 ### Visualization
 

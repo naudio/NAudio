@@ -1,5 +1,4 @@
-﻿using System;
-using System.Diagnostics;
+using System;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
@@ -11,21 +10,26 @@ namespace NAudioDemo.AsioRecordingDemo
     public partial class AsioRecordingPanel : UserControl
     {
         private WaveFileWriter writer;
-        private AsioOut asioOut;
+        private AsioDevice device;
         private string fileName;
 
         public AsioRecordingPanel()
         {
             InitializeComponent();
             Disposed += OnAsioDirectPanelDisposed;
-            foreach(var device in AsioOut.GetDriverNames())
+            foreach (var driverName in AsioDevice.GetDriverNames())
             {
-                comboBoxAsioDevice.Items.Add(device);
+                comboBoxAsioDevice.Items.Add(driverName);
             }
             if (comboBoxAsioDevice.Items.Count > 0)
             {
+                // Don't trigger the probe during construction — some ASIO drivers can't be opened
+                // while the form is still initializing. Defer it to Load.
+                comboBoxAsioDevice.SelectedIndexChanged -= OnDeviceChanged;
                 comboBoxAsioDevice.SelectedIndex = 0;
+                comboBoxAsioDevice.SelectedIndexChanged += OnDeviceChanged;
             }
+            Load += (_, _) => RefreshChannelList();
         }
 
         void OnAsioDirectPanelDisposed(object sender, EventArgs e)
@@ -35,16 +39,71 @@ namespace NAudioDemo.AsioRecordingDemo
 
         private void Cleanup()
         {
-            if (asioOut != null)
+            if (device != null)
             {
-                asioOut.Dispose();
-                asioOut = null;
+                device.Dispose();
+                device = null;
             }
             if (writer != null)
             {
                 writer.Dispose();
                 writer = null;
             }
+        }
+
+        private void OnDeviceChanged(object sender, EventArgs e)
+        {
+            RefreshChannelList();
+        }
+
+        private void RefreshChannelList()
+        {
+            checkedListBoxChannels.Items.Clear();
+            if (comboBoxAsioDevice.SelectedItem is not string driverName)
+            {
+                labelHelp.Text = "No ASIO drivers installed.";
+                return;
+            }
+
+            try
+            {
+                using var probe = AsioDevice.Open(driverName);
+                int inputs = probe.Capabilities.NbInputChannels;
+                for (int i = 0; i < inputs; i++)
+                {
+                    var info = probe.Capabilities.InputChannelInfos[i];
+                    var label = string.IsNullOrEmpty(info.name)
+                        ? $"Channel {i} ({info.type})"
+                        : $"Channel {i}: {info.name} ({info.type})";
+                    checkedListBoxChannels.Items.Add(label);
+                }
+                if (inputs > 0) checkedListBoxChannels.SetItemChecked(0, true);
+                labelHelp.Text = $"{inputs} input channel(s) — tick the ones you want to record. Non-contiguous selection (e.g. 0 and 3) is supported.";
+            }
+            catch (Exception ex)
+            {
+                // Don't popup — many ASIO drivers fail to open while another app is using them,
+                // and a blocking messagebox during panel load is disruptive. Show an inline hint;
+                // Start() will surface a proper error if the driver is still unavailable.
+                labelHelp.Text = $"Could not probe '{driverName}': {ex.Message}. Close other ASIO apps and re-select the driver.";
+            }
+        }
+
+        private void OnSelectAllClick(object sender, EventArgs e)
+        {
+            for (int i = 0; i < checkedListBoxChannels.Items.Count; i++)
+                checkedListBoxChannels.SetItemChecked(i, true);
+        }
+
+        private void OnSelectNoneClick(object sender, EventArgs e)
+        {
+            for (int i = 0; i < checkedListBoxChannels.Items.Count; i++)
+                checkedListBoxChannels.SetItemChecked(i, false);
+        }
+
+        private int[] GetSelectedChannels()
+        {
+            return checkedListBoxChannels.CheckedIndices.Cast<int>().ToArray();
         }
 
         private void OnButtonStartClick(object sender, EventArgs args)
@@ -56,64 +115,78 @@ namespace NAudioDemo.AsioRecordingDemo
             catch (Exception e)
             {
                 MessageBox.Show(e.Message);
+                Cleanup();
+                SetButtonStates();
             }
-        }
-
-        private int GetUserSpecifiedChannelOffset()
-        {
-            int channelOffset;
-            int.TryParse(textBoxChannelOffset.Text, out channelOffset);
-            return channelOffset;
-        }
-
-        private int GetUserSpecifiedChannelCount()
-        {
-            int channelCount;
-            return int.TryParse(textBoxChannelCount.Text, out channelCount) ? channelCount : 1;
         }
 
         private void Start()
         {
-            // allow change device
-            if (asioOut != null && 
-                (asioOut.DriverName != comboBoxAsioDevice.Text || 
-                asioOut.ChannelOffset != GetUserSpecifiedChannelOffset()))
+            var channels = GetSelectedChannels();
+            if (channels.Length == 0)
             {
-                asioOut.AudioAvailable -= OnAsioOutAudioAvailable;
-                asioOut.Dispose();
-                asioOut = null;
+                MessageBox.Show("Tick at least one input channel to record.");
+                return;
             }
 
-            int recordChannelCount = GetUserSpecifiedChannelCount();
-            
-            // create device if necessary
-            if (asioOut == null)
+            if (device != null && device.DriverName != comboBoxAsioDevice.Text)
             {
-                asioOut = new AsioOut(comboBoxAsioDevice.Text);
-                asioOut.InputChannelOffset = GetUserSpecifiedChannelOffset();
-                asioOut.InitRecordAndPlayback(null, recordChannelCount, 44100);
-                asioOut.AudioAvailable += OnAsioOutAudioAvailable;
+                Cleanup();
             }
-            
+
+            device ??= AsioDevice.Open(comboBoxAsioDevice.Text);
+
+            if (device.State == AsioDeviceState.Unconfigured)
+            {
+                device.InitRecording(new AsioRecordingOptions
+                {
+                    InputChannels = channels,
+                    SampleRate = device.CurrentSampleRate,
+                });
+                device.AudioCaptured += OnAudioCaptured;
+                device.Stopped += OnStopped;
+            }
+
+            var format = WaveFormat.CreateIeeeFloatWaveFormat(device.CurrentSampleRate, channels.Length);
             fileName = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".wav");
-            writer = new WaveFileWriter(fileName, new WaveFormat(44100, recordChannelCount));
-            asioOut.Play();
+            writer = new WaveFileWriter(fileName, format);
+
+            device.Start();
             timer1.Enabled = true;
             SetButtonStates();
         }
 
-        void OnAsioOutAudioAvailable(object sender, AsioAudioAvailableEventArgs e)
+        private void OnAudioCaptured(object sender, AsioAudioCapturedEventArgs e)
         {
-#pragma warning disable 618
-            var samples = e.GetAsInterleavedSamples();
-#pragma warning restore 618
-            writer.WriteSamples(samples, 0, samples.Length);
+            // Interleave per-channel float spans into the WAV writer.
+            var localWriter = writer;
+            if (localWriter == null) return;
+            for (int frame = 0; frame < e.Frames; frame++)
+            {
+                for (int ch = 0; ch < e.ChannelCount; ch++)
+                {
+                    localWriter.WriteSample(e.GetChannel(ch)[frame]);
+                }
+            }
+        }
+
+        private void OnStopped(object sender, StoppedEventArgs e)
+        {
+            if (e.Exception != null)
+            {
+                MessageBox.Show($"Recording stopped with error: {e.Exception.Message}");
+            }
         }
 
         private void SetButtonStates()
         {
-            buttonStart.Enabled = asioOut != null && asioOut.PlaybackState != PlaybackState.Playing;
-            buttonStop.Enabled = asioOut != null && asioOut.PlaybackState == PlaybackState.Playing;
+            bool running = device != null && device.State == AsioDeviceState.Running;
+            buttonStart.Enabled = !running;
+            buttonStop.Enabled = running;
+            comboBoxAsioDevice.Enabled = !running;
+            checkedListBoxChannels.Enabled = !running;
+            buttonSelectAll.Enabled = !running;
+            buttonSelectNone.Enabled = !running;
         }
 
         private void OnButtonStopClick(object sender, EventArgs e)
@@ -123,7 +196,10 @@ namespace NAudioDemo.AsioRecordingDemo
 
         private void Stop()
         {
-            asioOut.Stop();
+            if (device != null && device.State == AsioDeviceState.Running)
+            {
+                device.Stop();
+            }
             if (writer != null)
             {
                 writer.Dispose();
@@ -131,13 +207,21 @@ namespace NAudioDemo.AsioRecordingDemo
             }
             timer1.Enabled = false;
             SetButtonStates();
-            int index = listBoxRecordings.Items.Add(fileName);
-            listBoxRecordings.SelectedIndex = index;
+
+            if (fileName != null && File.Exists(fileName))
+            {
+                int index = listBoxRecordings.Items.Add(fileName);
+                listBoxRecordings.SelectedIndex = index;
+            }
+
+            // Drop the AsioDevice so a new Init* can happen next Start — AsioDevice is single-config.
+            Cleanup();
         }
 
         private void OnTimerTick(object sender, EventArgs e)
         {
-            if (asioOut != null && asioOut.PlaybackState == PlaybackState.Playing && writer.Length > writer.WaveFormat.AverageBytesPerSecond * 30)
+            // Auto-stop at 30 seconds to match the old behaviour.
+            if (writer != null && writer.Length > writer.WaveFormat.AverageBytesPerSecond * 30)
             {
                 Stop();
             }
@@ -160,16 +244,14 @@ namespace NAudioDemo.AsioRecordingDemo
             }
         }
 
-        public string SelectedDeviceName { get { return (string)comboBoxAsioDevice.SelectedItem; } }
+        public string SelectedDeviceName => (string)comboBoxAsioDevice.SelectedItem;
 
         private void OnButtonControlPanelClick(object sender, EventArgs args)
         {
             try
             {
-                using (var asio = new AsioOut(SelectedDeviceName))
-                {
-                    asio.ShowControlPanel();
-                }
+                using var probe = AsioDevice.Open(SelectedDeviceName);
+                probe.ShowControlPanel();
             }
             catch (Exception e)
             {
@@ -180,14 +262,8 @@ namespace NAudioDemo.AsioRecordingDemo
 
     public class AsioRecordingPanelPlugin : INAudioDemoPlugin
     {
-        public string Name
-        {
-            get { return "ASIO Recording"; }
-        }
+        public string Name => "ASIO Recording";
 
-        public Control CreatePanel()
-        {
-            return new AsioRecordingPanel();
-        }
+        public Control CreatePanel() => new AsioRecordingPanel();
     }
 }

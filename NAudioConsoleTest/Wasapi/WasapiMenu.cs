@@ -1,3 +1,4 @@
+using NAudioConsoleTest.Shared;
 using Spectre.Console;
 
 namespace NAudioConsoleTest.Wasapi;
@@ -8,31 +9,21 @@ static class WasapiMenu
     {
         while (true)
         {
-            AnsiConsole.Clear();
-            AnsiConsole.Write(new Rule("[bold blue]WASAPI[/]").LeftJustified());
-            AnsiConsole.MarkupLine("");
+            var choice = Menu.Show("WASAPI",
+                new Menu.Group("Player",
+                    "Play audio file (shared mode)",
+                    "Play audio file (exclusive mode)",
+                    "Play audio file (low latency)",
+                    "Play sine wave"),
+                new Menu.Group("Recorder",
+                    "Record and playback (15s)",
+                    "Record to WAV file"),
+                new Menu.Group("Info",
+                    "List audio devices",
+                    "Explore exclusive mode formats"),
+                new Menu.Group("", "Back"));
 
-            var choice = AnsiConsole.Prompt(
-                new SelectionPrompt<string>()
-                    .Title("Choose a test:")
-                    .AddChoiceGroup("Player", new[]
-                    {
-                        "Play audio file (shared mode)",
-                        "Play audio file (exclusive mode)",
-                        "Play audio file (low latency)",
-                        "Play sine wave",
-                    })
-                    .AddChoiceGroup("Recorder", new[]
-                    {
-                        "Record and playback (15s)",
-                        "Record to WAV file",
-                    })
-                    .AddChoiceGroup("Info", new[]
-                    {
-                        "List audio devices",
-                        "Explore exclusive mode formats",
-                    })
-                    .AddChoices("Back"));
+            if (choice is null or "Back") return;
 
             try
             {
@@ -62,8 +53,6 @@ static class WasapiMenu
                     case "Explore exclusive mode formats":
                         ExclusiveFormatExplorer.Run();
                         break;
-                    case "Back":
-                        return;
                 }
             }
             catch (Exception ex)

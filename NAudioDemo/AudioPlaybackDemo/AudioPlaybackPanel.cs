@@ -133,7 +133,12 @@ namespace NAudioDemo.AudioPlaybackDemo
         {
             audioFileReader = new AudioFileReader(fileName);
             textBoxCurrentFile.Text = $"{Path.GetFileName(fileName)}\r\n{audioFileReader.WaveFormat}";
-            
+
+            // Use total milliseconds as the trackbar's range so dragging is pixel-smooth on long files,
+            // and so click-to-position can land within ~1 second on a typical screen width.
+            trackBarPosition.Maximum = Math.Max(1, (int)audioFileReader.TotalTime.TotalMilliseconds);
+            trackBarPosition.TickStyle = TickStyle.None; // tick rendering scales poorly at high Maximum
+
             var sampleChannel = new SampleChannel(audioFileReader, true);
             sampleChannel.PreVolumeMeter+= OnPreVolumeMeter;
             setVolumeDelegate = vol => sampleChannel.Volume = vol;
@@ -231,10 +236,13 @@ namespace NAudioDemo.AudioPlaybackDemo
 
         private void OnTimerTick(object sender, EventArgs e)
         {
+            // Skip writes while the user is dragging; otherwise the timer fights them on every tick.
+            if (trackBarPosition.IsScrubbing) return;
+
             if (wavePlayer != null && audioFileReader != null)
             {
                 TimeSpan currentTime = (wavePlayer.PlaybackState == PlaybackState.Stopped) ? TimeSpan.Zero : audioFileReader.CurrentTime;
-                trackBarPosition.Value = Math.Min(trackBarPosition.Maximum, (int)(100 * currentTime.TotalSeconds / audioFileReader.TotalTime.TotalSeconds));
+                trackBarPosition.Value = Math.Min(trackBarPosition.Maximum, (int)currentTime.TotalMilliseconds);
                 labelCurrentTime.Text = String.Format("{0:00}:{1:00}", (int)currentTime.TotalMinutes,
                     currentTime.Seconds);
             }
@@ -246,9 +254,9 @@ namespace NAudioDemo.AudioPlaybackDemo
 
         private void trackBarPosition_Scroll(object sender, EventArgs e)
         {
-            if (wavePlayer != null)
+            if (wavePlayer != null && audioFileReader != null)
             {
-                audioFileReader.CurrentTime = TimeSpan.FromSeconds(audioFileReader.TotalTime.TotalSeconds * trackBarPosition.Value / 100.0);
+                audioFileReader.CurrentTime = TimeSpan.FromMilliseconds(trackBarPosition.Value);
             }
         }
 

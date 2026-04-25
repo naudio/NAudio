@@ -99,7 +99,8 @@ static class RecorderTests
             .WithEventSync()
             .Build();
 
-        using var writer = new WaveFileWriter(filePath, recorder.WaveFormat);
+        var writer = new WaveFileWriter(filePath, recorder.WaveFormat);
+        var duration = TimeSpan.Zero;
 
         recorder.DataAvailable += (buffer, flags) =>
         {
@@ -114,17 +115,18 @@ static class RecorderTests
         var completed = RecordingMonitor.MonitorUntilStopped(
             captureDevice.FriendlyName, recorder.StopRecording);
 
-        writer.Flush();
+        // Close the writer NOW, before prompting/waiting — otherwise the file stays locked
+        // while the user is reading the result or trying to open it externally.
+        duration = writer.TotalTime;
+        writer.Dispose();
 
         if (completed)
         {
             AnsiConsole.MarkupLine($"[green]Saved to: {Markup.Escape(filePath)}[/]");
-            AnsiConsole.MarkupLine($"[grey]Size: {new FileInfo(filePath).Length / 1024}KB, Duration: {writer.TotalTime:mm\\:ss\\.f}[/]");
+            AnsiConsole.MarkupLine($"[grey]Size: {new FileInfo(filePath).Length / 1024}KB, Duration: {duration:mm\\:ss\\.f}[/]");
         }
         else
         {
-            // Clean up cancelled recording
-            writer.Dispose();
             if (File.Exists(filePath))
                 File.Delete(filePath);
             AnsiConsole.MarkupLine("[dim]Recording cancelled, file deleted[/]");

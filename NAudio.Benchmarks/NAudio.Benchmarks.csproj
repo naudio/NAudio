@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <!-- BenchmarkDotNet requires Release; fail loudly if anyone tries to benchmark Debug. -->
     <Configurations>Release</Configurations>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NAudio.Core\NAudio.Core.csproj" />
+    <ProjectReference Include="..\NAudio.Asio\NAudio.Asio.csproj" />
   </ItemGroup>
 
 </Project>

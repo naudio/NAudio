@@ -1,3 +1,4 @@
+using NAudioConsoleTest.Shared;
 using Spectre.Console;
 
 namespace NAudioConsoleTest.WinMM;
@@ -8,21 +9,17 @@ static class WinMmMenu
     {
         while (true)
         {
-            AnsiConsole.Clear();
-            AnsiConsole.Write(new Rule("[bold blue]WinMM (Windows Multimedia)[/]").LeftJustified());
-            AnsiConsole.MarkupLine("");
+            var choice = Menu.Show("WinMM (Windows Multimedia)",
+                new Menu.Group("Playback & Recording",
+                    "Play audio file (WaveOut)",
+                    "Record audio (WaveIn)"),
+                new Menu.Group("ACM Compression",
+                    "Decode MP3 (AcmMp3FrameDecompressor)",
+                    "Convert format (WaveFormatConversionProvider)",
+                    "Convert format stream (WaveFormatConversionStream)"),
+                new Menu.Group("", "Back"));
 
-            var choice = AnsiConsole.Prompt(
-                new SelectionPrompt<string>()
-                    .Title("Choose a test:")
-                    .AddChoiceGroup("Playback & Recording",
-                        "Play audio file (WaveOut)",
-                        "Record audio (WaveIn)")
-                    .AddChoiceGroup("ACM Compression",
-                        "Decode MP3 (AcmMp3FrameDecompressor)",
-                        "Convert format (WaveFormatConversionProvider)",
-                        "Convert format stream (WaveFormatConversionStream)")
-                    .AddChoices("Back"));
+            if (choice is null or "Back") return;
 
             try
             {
@@ -43,8 +40,6 @@ static class WinMmMenu
                     case "Convert format stream (WaveFormatConversionStream)":
                         AcmTests.ConvertWithStream();
                         break;
-                    case "Back":
-                        return;
                 }
             }
             catch (Exception ex)

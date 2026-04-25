@@ -44,7 +44,7 @@
             this.labelCurrentTime = new System.Windows.Forms.ToolStripLabel();
             this.toolStripLabel3 = new System.Windows.Forms.ToolStripLabel();
             this.labelTotalTime = new System.Windows.Forms.ToolStripLabel();
-            this.trackBarPosition = new System.Windows.Forms.TrackBar();
+            this.trackBarPosition = new NAudioDemo.Utils.SeekableTrackBar();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
@@ -383,7 +383,7 @@
         private System.Windows.Forms.ToolStripButton buttonPlay;
         private System.Windows.Forms.ToolStripButton buttonPause;
         private System.Windows.Forms.ToolStripButton buttonStop;
-        private System.Windows.Forms.TrackBar trackBarPosition;
+        private NAudioDemo.Utils.SeekableTrackBar trackBarPosition;
         private System.Windows.Forms.Timer timer1;
         private System.Windows.Forms.ToolStripButton toolStripButtonOpenFile;
         private System.Windows.Forms.Label label2;

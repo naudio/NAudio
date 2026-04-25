@@ -31,6 +31,8 @@ namespace NAudio.Wave.Asio
         private int bufferSize;
         private int outputChannelOffset;
         private int inputChannelOffset;
+        private int[] outputChannelIndices;
+        private int[] inputChannelIndices;
         /// <summary>
         /// Reset Request Callback
         /// </summary>
@@ -83,7 +85,38 @@ namespace NAudio.Wave.Asio
                 throw new ArgumentException("Invalid channel offset");
             }
 
-       }
+            // Propagate the contiguous range to the index arrays that the buffer-switch callback reads from.
+            outputChannelIndices = new int[numberOfOutputChannels];
+            inputChannelIndices = new int[numberOfInputChannels];
+            for (int i = 0; i < numberOfOutputChannels; i++) outputChannelIndices[i] = outputChannelOffset + i;
+            for (int i = 0; i < numberOfInputChannels; i++) inputChannelIndices[i] = inputChannelOffset + i;
+        }
+
+        /// <summary>
+        /// Selects arbitrary (non-contiguous) physical channel indices for this session.
+        /// Must be called after <see cref="CreateBuffers(int, int, bool)"/>. The number of entries in each array must match
+        /// the channel counts passed to <c>CreateBuffers</c>.
+        /// </summary>
+        /// <param name="outputChannels">Physical output channel indices. Each must be in <c>[0, NbOutputChannels)</c>.</param>
+        /// <param name="inputChannels">Physical input channel indices. Each must be in <c>[0, NbInputChannels)</c>.</param>
+        public void SetChannelMapping(int[] outputChannels, int[] inputChannels)
+        {
+            outputChannels ??= Array.Empty<int>();
+            inputChannels ??= Array.Empty<int>();
+            if (outputChannels.Length != numberOfOutputChannels)
+                throw new ArgumentException($"Expected {numberOfOutputChannels} output channel indices, got {outputChannels.Length}", nameof(outputChannels));
+            if (inputChannels.Length != numberOfInputChannels)
+                throw new ArgumentException($"Expected {numberOfInputChannels} input channel indices, got {inputChannels.Length}", nameof(inputChannels));
+            for (int i = 0; i < outputChannels.Length; i++)
+                if (outputChannels[i] < 0 || outputChannels[i] >= capability.NbOutputChannels)
+                    throw new ArgumentOutOfRangeException(nameof(outputChannels), $"Output channel index {outputChannels[i]} out of range [0, {capability.NbOutputChannels - 1}]");
+            for (int i = 0; i < inputChannels.Length; i++)
+                if (inputChannels[i] < 0 || inputChannels[i] >= capability.NbInputChannels)
+                    throw new ArgumentOutOfRangeException(nameof(inputChannels), $"Input channel index {inputChannels[i]} out of range [0, {capability.NbInputChannels - 1}]");
+
+            outputChannelIndices = (int[])outputChannels.Clone();
+            inputChannelIndices = (int[])inputChannels.Clone();
+        }
 
         /// <summary>
         /// Gets the driver used.
@@ -113,6 +146,18 @@ namespace NAudio.Wave.Asio
         public void ShowControlPanel()
         {
             driver.ControlPanel();
+        }
+
+        /// <summary>
+        /// Disposes the driver-allocated buffers without releasing the underlying COM driver.
+        /// Used by the <see cref="AsioDevice.Reinitialize"/> path so the same driver instance can be
+        /// re-configured after a sample-rate or buffer-size change without a full <see cref="ReleaseDriver"/> cycle.
+        /// </summary>
+        public void DisposeBuffers()
+        {
+            driver.DisposeBuffers();
+            // Re-read capabilities — buffer-size constraints are unchanged but sample rate may have changed under us.
+            BuildCapabilities();
         }
 
         /// <summary>
@@ -170,12 +215,32 @@ namespace NAudio.Wave.Asio
         public AsioDriverCapability Capabilities => capability;
 
         /// <summary>
+        /// Creates the buffers for playing, requesting a specific buffer size.
+        /// </summary>
+        /// <param name="numberOfOutputChannels">The number of outputs channels.</param>
+        /// <param name="numberOfInputChannels">The number of input channel.</param>
+        /// <param name="requestedBufferSize">Desired ASIO buffer size in frames. Must be within <see cref="AsioDriverCapability.BufferMinSize"/>..<see cref="AsioDriverCapability.BufferMaxSize"/> and respect <see cref="AsioDriverCapability.BufferGranularity"/>.</param>
+        public int CreateBuffers(int numberOfOutputChannels, int numberOfInputChannels, int requestedBufferSize)
+        {
+            if (requestedBufferSize < capability.BufferMinSize || requestedBufferSize > capability.BufferMaxSize)
+                throw new ArgumentOutOfRangeException(nameof(requestedBufferSize),
+                    $"Requested buffer size {requestedBufferSize} is outside the driver's supported range [{capability.BufferMinSize}, {capability.BufferMaxSize}]");
+            return CreateBuffersCore(numberOfOutputChannels, numberOfInputChannels, requestedBufferSize);
+        }
+
+        /// <summary>
         /// Creates the buffers for playing.
         /// </summary>
         /// <param name="numberOfOutputChannels">The number of outputs channels.</param>
         /// <param name="numberOfInputChannels">The number of input channel.</param>
         /// <param name="useMaxBufferSize">if set to <c>true</c> [use max buffer size] else use Prefered size</param>
         public int CreateBuffers(int numberOfOutputChannels, int numberOfInputChannels, bool useMaxBufferSize)
+        {
+            return CreateBuffersCore(numberOfOutputChannels, numberOfInputChannels,
+                useMaxBufferSize ? capability.BufferMaxSize : capability.BufferPreferredSize);
+        }
+
+        private int CreateBuffersCore(int numberOfOutputChannels, int numberOfInputChannels, int requestedBufferSize)
         {
             if (numberOfOutputChannels < 0 || numberOfOutputChannels > capability.NbOutputChannels)
             {
@@ -217,16 +282,7 @@ namespace NAudio.Wave.Asio
                 bufferInfos[totalIndex].pBuffer1 = IntPtr.Zero;
             }
 
-            if (useMaxBufferSize)
-            {
-                // use the drivers maximum buffer size
-                bufferSize = capability.BufferMaxSize;
-            }
-            else
-            {
-                // use the drivers preferred buffer size
-                bufferSize = capability.BufferPreferredSize;
-            }
+            bufferSize = requestedBufferSize;
 
             unsafe
             {
@@ -238,6 +294,13 @@ namespace NAudio.Wave.Asio
                     driver.CreateBuffers(pOutputBufferInfos, nbTotalChannels, bufferSize, ref callbacks);
                 }
             }
+
+            // Default to a contiguous mapping starting at channel 0 — callers replace this via
+            // SetChannelOffset or SetChannelMapping to select a different physical range.
+            outputChannelIndices = new int[numberOfOutputChannels];
+            inputChannelIndices = new int[numberOfInputChannels];
+            for (int i = 0; i < numberOfOutputChannels; i++) outputChannelIndices[i] = i;
+            for (int i = 0; i < numberOfInputChannels; i++) inputChannelIndices[i] = i;
 
             // Check if outputReady is supported
             isOutputReadySupported = (driver.OutputReady() == AsioError.ASE_OK);
@@ -297,12 +360,12 @@ namespace NAudio.Wave.Asio
         {
             for (int i = 0; i < numberOfInputChannels; i++)
             {
-                currentInputBuffers[i] = bufferInfos[i + inputChannelOffset].Buffer(doubleBufferIndex);
+                currentInputBuffers[i] = bufferInfos[inputChannelIndices[i]].Buffer(doubleBufferIndex);
             }
 
             for (int i = 0; i < numberOfOutputChannels; i++)
             {
-                currentOutputBuffers[i] = bufferInfos[i + outputChannelOffset + capability.NbInputChannels].Buffer(doubleBufferIndex);
+                currentOutputBuffers[i] = bufferInfos[outputChannelIndices[i] + capability.NbInputChannels].Buffer(doubleBufferIndex);
             }
 
             fillBufferCallback?.Invoke(currentInputBuffers, currentOutputBuffers);

@@ -1,3 +1,4 @@
+using NAudioConsoleTest.Shared;
 using Spectre.Console;
 
 namespace NAudioConsoleTest.Dmo;
@@ -8,18 +9,14 @@ static class DmoMenu
     {
         while (true)
         {
-            AnsiConsole.Clear();
-            AnsiConsole.Write(new Rule("[bold blue]DMO (DirectX Media Objects)[/]").LeftJustified());
-            AnsiConsole.MarkupLine("");
+            var choice = Menu.Show("DMO (DirectX Media Objects)",
+                new Menu.Group("",
+                    "Resample audio file (ResamplerDmoStream)",
+                    "Decode MP3 (DmoMp3FrameDecompressor)",
+                    "Apply echo effect (DmoEffectWaveProvider)",
+                    "Back"));
 
-            var choice = AnsiConsole.Prompt(
-                new SelectionPrompt<string>()
-                    .Title("Choose a test:")
-                    .AddChoices(
-                        "Resample audio file (ResamplerDmoStream)",
-                        "Decode MP3 (DmoMp3FrameDecompressor)",
-                        "Apply echo effect (DmoEffectWaveProvider)",
-                        "Back"));
+            if (choice is null or "Back") return;
 
             try
             {
@@ -34,8 +31,6 @@ static class DmoMenu
                     case "Apply echo effect (DmoEffectWaveProvider)":
                         DmoEffectTests.ApplyEcho();
                         break;
-                    case "Back":
-                        return;
                 }
             }
             catch (Exception ex)

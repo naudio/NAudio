@@ -1,3 +1,4 @@
+using NAudioConsoleTest.Shared;
 using Spectre.Console;
 
 namespace NAudioConsoleTest.MediaFoundation;
@@ -8,33 +9,21 @@ static class MediaFoundationMenu
     {
         while (true)
         {
-            AnsiConsole.Clear();
-            AnsiConsole.Write(new Rule("[bold blue]Media Foundation[/]").LeftJustified());
-            AnsiConsole.MarkupLine("");
+            var choice = Menu.Show("Media Foundation",
+                new Menu.Group("Reading",
+                    "Read audio file (MediaFoundationReader)",
+                    "Read from stream (StreamMediaFoundationReader)"),
+                new Menu.Group("Encoding",
+                    "Encode to MP3",
+                    "Encode to AAC",
+                    "Encode to WMA"),
+                new Menu.Group("Resampling",
+                    "Resample audio file"),
+                new Menu.Group("Info",
+                    "Enumerate transforms"),
+                new Menu.Group("", "Back"));
 
-            var choice = AnsiConsole.Prompt(
-                new SelectionPrompt<string>()
-                    .Title("Choose a test:")
-                    .AddChoiceGroup("Reading", new[]
-                    {
-                        "Read audio file (MediaFoundationReader)",
-                        "Read from stream (StreamMediaFoundationReader)",
-                    })
-                    .AddChoiceGroup("Encoding", new[]
-                    {
-                        "Encode to MP3",
-                        "Encode to AAC",
-                        "Encode to WMA",
-                    })
-                    .AddChoiceGroup("Resampling", new[]
-                    {
-                        "Resample audio file",
-                    })
-                    .AddChoiceGroup("Info", new[]
-                    {
-                        "Enumerate transforms",
-                    })
-                    .AddChoices("Back"));
+            if (choice is null or "Back") return;
 
             try
             {
@@ -61,8 +50,6 @@ static class MediaFoundationMenu
                     case "Enumerate transforms":
                         TransformEnumerationTests.EnumerateAll();
                         break;
-                    case "Back":
-                        return;
                 }
             }
             catch (Exception ex)

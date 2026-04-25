@@ -1,62 +1,123 @@
 # Playback with ASIO
 
-The `AsioOut` class in NAudio allows you to both play back and record audio using an ASIO driver. ASIO is a driver format supported by many popular Digital Audio Workstation (DAW) applications on Windows, and usually offers very low latency for record and playback. 
+NAudio 3 introduces `AsioDevice`, a redesigned ASIO API that handles playback, recording, and duplex I/O through three explicit configuration modes. This article covers playback only — see [AsioRecording](AsioRecording.md) and [AsioDuplex](AsioDuplex.md) for the other modes, and [AsioMigration](AsioMigration.md) if you're moving from the legacy `AsioOut` class.
 
-To use ASIO, you do need a soundcard that has an ASIO driver. Most professional soundcards have ASIO drivers, but you can also try the [ASIO4ALL](http://asio4all.com/) driver which enables ASIO for soundcards that don't have their own native ASIO driver.
+ASIO is the low-latency driver format supported by most professional Windows audio interfaces and many DAW applications. To use it you need a soundcard with an ASIO driver installed. If your hardware doesn't ship one, [ASIO4ALL](http://asio4all.com/) is a free WDM-to-ASIO shim that works with most consumer soundcards.
 
-The `AsioOut` class is able to play, record or do both simultaneously. This article covers the scenario where we just want to play audio.
+## Open the device
 
-## Opening an ASIO device for playback
-
-To discover the names of the installed ASIO drivers on your system you use `AsioOut.GetDriverNames()`.
-
-We can use one of those driver names to pass to the constructor of `AsioOut`
+Enumerate the installed ASIO drivers and open one by name:
 
 ```c#
-var asioOut = new AsioOut(asioDriverName);
+foreach (var name in AsioDevice.GetDriverNames())
+    Console.WriteLine(name);
+
+using var device = AsioDevice.Open("Focusrite USB ASIO");
 ```
 
-## Selecting Output Channels
+`AsioDevice` implements `IDisposable`. Always wrap it in a `using` statement (or call `Dispose` explicitly) — the underlying COM driver doesn't release until you do.
 
-Pro Audio soundcards often support multiple inputs and outputs. We may want to find out how many output channels are available on the device. We can get this with:
+## Configure for playback
+
+Pass an `IWaveProvider` (or wrap an `ISampleProvider` via `.ToWaveProvider()`) to `InitPlayback`:
 
 ```c#
-var outputChannels = asioOut.DriverOutputChannelCount;
+using var reader = new AudioFileReader("music.wav");
+
+device.InitPlayback(new AsioPlaybackOptions
+{
+    Source = reader
+});
 ```
 
-By default, `AsioOut` will send the audio to the first output channels on your soundcard. So if you play stereo audio through a four channel soundcard, the samples will come out of the first two channels. If you wanted it to come out of different channels you can adjust the `OutputChannelOffset` parameter.
+The source's sample rate must be one the driver supports — `device.IsSampleRateSupported(rate)` answers that. The source's channel count must equal the number of output channels you select (defaults to a contiguous range starting at channel 0).
 
-Next, I call `Init`. This lets us pass the `IWaveProvider` or `ISampleProvider` we want to play. Note that the sample rate of the `WaveFormat` of the input provider must be one supported by the ASIO driver. Usually this means 44.1kHz or higher.
+## Select output channels
 
+`AsioPlaybackOptions.OutputChannels` is an `int[]` of physical channel indices. Source channel `n` is routed to physical output `OutputChannels[n]`. The array can be **non-contiguous** — there's no `ChannelOffset` style restriction.
 
 ```c#
-// optionally, change the starting channel for outputting audio:
-asioOut.ChannelOffset = 2;  
-asioOut.Init(mySampleProvider);
+// Stereo source → physical outputs 4 and 5 (zero-based).
+device.InitPlayback(new AsioPlaybackOptions
+{
+    Source = reader,
+    OutputChannels = [4, 5]
+});
 ```
 
-## Start Playback
-
-As `AsioOut` is an implementation of `IWavePlayer` we just need to call `Play` to start playing.
+To send to every available output:
 
 ```c#
-asioOut.Play(); // start playing
+OutputChannels = device.Capabilities.AllOutputChannels
 ```
 
-Note that since ASIO typically works at very low latencies, it's important that the components that make up your signal chain are able to provide audio fast enough. If the ASIO buffer size is say 10ms, that means that every 10ms you need to generate the next 10ms of audio. If you miss this window, the audio will gitch.
+`device.Capabilities.NbOutputChannels` tells you how many physical outputs the driver exposes; `device.Capabilities.OutputChannelInfos[i].name` gives a human-readable name for each.
 
-## Stop Playback
+See [AsioChannelMapping](AsioChannelMapping.md) for more channel-routing patterns.
 
-We stop recording by calling Stop().
+## Start and stop
 
 ```c#
-asioOut.Stop();
+device.Start();
+// ...
+device.Stop();
 ```
 
-As with other NAudio `IWavePlayer` implementations, we'll get a `PlaybackStopped` event firing when the driver stops.
+`Stop()` raises the `Stopped` event on the captured `SynchronizationContext` (the thread you constructed the device on, typically the UI thread). The handler may safely call `Dispose()` — the device is fully off the ASIO callback thread by the time `Stopped` fires.
 
-And of course we should remember to `Dispose` our instance of `AsioOut` when we're done with it.
+By default the device auto-stops when the source reaches end-of-stream. Set `AutoStopOnEndOfStream = false` in the options if you want the device to keep running on silent buffers after the source runs dry (e.g. so you can swap providers).
+
+## Handle errors and end-of-stream
 
 ```c#
-asioOut.Dispose();
+device.Stopped += (sender, e) =>
+{
+    if (e.Exception is not null)
+        Console.WriteLine($"ASIO faulted: {e.Exception.Message}");
+    else
+        Console.WriteLine("Playback complete.");
+};
+```
+
+`Stopped` fires exactly once per `Start`/`Stop` cycle, with `e.Exception` populated if the source threw or the driver reported an unrecoverable fault.
+
+## Recover from driver settings changes
+
+If the user opens the driver's control panel and changes the sample rate (or any other setting), the driver fires a reset request. The recommended response:
+
+```c#
+device.DriverResetRequest += (_, _) =>
+{
+    device.Stop();
+    device.Reinitialize();
+    device.Start();
+};
+```
+
+`Reinitialize()` re-applies the most recent `InitPlayback` options against the (possibly changed) driver state — see [AsioDriverReset](AsioDriverReset.md) for the full pattern.
+
+## Buffer size and latency
+
+`AsioPlaybackOptions.BufferSize` accepts a frame count, or `null` to use the driver's preferred size. Smaller buffers mean lower latency but more callback overhead. The actual latencies in frames are reported by `device.OutputLatencySamples` after `InitPlayback` succeeds.
+
+The buffer-switch callback runs on the ASIO driver's real-time thread, so any `IWaveProvider` in your chain must produce samples within the buffer duration. Allocations and slow I/O on that thread cause glitches.
+
+## Full example
+
+```c#
+using NAudio.Wave;
+
+using var reader = new AudioFileReader("music.wav");
+using var device = AsioDevice.Open(AsioDevice.GetDriverNames()[0]);
+
+device.InitPlayback(new AsioPlaybackOptions
+{
+    Source = reader,
+    OutputChannels = [0, 1]
+});
+
+var done = new ManualResetEventSlim();
+device.Stopped += (_, _) => done.Set();
+device.Start();
+done.Wait();
 ```

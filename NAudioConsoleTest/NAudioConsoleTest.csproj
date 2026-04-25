@@ -5,6 +5,8 @@
     <TargetFramework>net9.0-windows10.0.26100</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- Required for the legacy-AsioOut duplex passthrough test, which has to read/write driver buffers via raw IntPtr. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,6 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\NAudio.Asio\NAudio.Asio.csproj" />
     <ProjectReference Include="..\NAudio.Wasapi\NAudio.Wasapi.csproj" />
     <ProjectReference Include="..\NAudio.WinMM\NAudio.WinMM.csproj" />
     <ProjectReference Include="..\NAudio.Core\NAudio.Core.csproj" />

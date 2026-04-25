@@ -5,6 +5,9 @@
     <OutputType>Exe</OutputType>
     <EnableNUnitRunner>true</EnableNUnitRunner>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- Strong-named so NAudio.Asio (and other strong-named NAudio assemblies) can grant access to internals via [InternalsVisibleTo]. -->
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\NAudioStrongNameKey.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <ItemGroup>

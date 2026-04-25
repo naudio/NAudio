@@ -124,7 +124,7 @@ device.InitDuplex(new AsioDuplexOptions
 device.Start();
 ```
 
-`AsioProcessBuffers` is a `ref struct` (stack-only, compiler-enforced) carrying `Frames`, `SampleRate`, `InputChannelCount`, `OutputChannelCount`, `SamplePosition`, `SystemTimeNanoseconds`, plus `GetInput(i)`/`GetOutput(i)` for float spans and `RawInput(i)`/`RawOutput(i)` for the zero-copy native-bytes escape hatch. Library-owned output float buffers are zeroed before each callback, so unwritten outputs are silent. See "Timing — sample position and host clock" below for what `SamplePosition` and `SystemTimeNanoseconds` give you.
+`AsioProcessBuffers` is a `ref struct` (stack-only, compiler-enforced) carrying `Frames`, `SampleRate`, `InputChannelCount`, `OutputChannelCount`, `SamplePosition`, `SystemTimeNanoseconds`, `Speed`, `TimeCode`, plus `GetInput(i)`/`GetOutput(i)` for float spans and `RawInput(i)`/`RawOutput(i)` for the zero-copy native-bytes escape hatch. Library-owned output float buffers are zeroed before each callback, so unwritten outputs are silent. See "Timing — sample position, host clock, varispeed, time code" below for what each timing field gives you.
 
 Naming: `Duplex` is the technically correct term and unambiguous about meaning both directions. Alternatives considered (`InitProcessor`, `InitIO`, `InitCallback`, `InitRealtime`, `InitLive`) all overloaded existing terminology.
 
@@ -144,16 +144,21 @@ Formats supported: `Int16LSB`, `Int24LSB`, `Int32LSB`, `Float32LSB`. Other nativ
 
 The `AsioOut.ChannelOffset` / `InputChannelOffset` model is replaced by `InputChannels` / `OutputChannels` arrays of physical channel indices. Allows non-contiguous selection (`[0, 3, 5]`), makes "select all channels" a one-liner via `Capabilities.AllInputChannels` / `AllOutputChannels` (new properties on `AsioDriverCapability`), and matches JUCE/PortAudio expectations.
 
-### Timing — sample position and host clock
+### Timing — sample position, host clock, varispeed, time code
 
-Recording (`AsioAudioCapturedEventArgs`) and duplex (`AsioProcessBuffers`) both expose two driver-reported timing values per callback:
+Recording (`AsioAudioCapturedEventArgs`) and duplex (`AsioProcessBuffers`) both expose four driver-reported timing values per callback:
 
-- **`SamplePosition`** — frames since `Start()`, monotonically increasing. Lets a recording handler stamp every captured frame with an absolute position, splice/concatenate captures correctly after an xrun, or align multi-device recordings. Increments by `Frames` per callback under nominal operation.
-- **`SystemTimeNanoseconds`** — host system time at the moment the driver sampled `SamplePosition`. Pins the audio clock to the host clock at one precise instant per buffer, which is what enables A/V sync, drift correction against `Stopwatch`, and cross-device alignment. The deltas (not the absolute values) are what's portable, since the epoch the driver uses for "system time" is implementation-defined.
+- **`SamplePosition`** (long) — frames since `Start()`, monotonically increasing. Lets a recording handler stamp every captured frame with an absolute position, splice/concatenate captures correctly after an xrun, or align multi-device recordings. Increments by `Frames` per callback under nominal operation.
+- **`SystemTimeNanoseconds`** (long) — host system time at the moment the driver sampled `SamplePosition`. Pins the audio clock to the host clock at one precise instant per buffer, which is what enables A/V sync, drift correction against `Stopwatch`, and cross-device alignment. The deltas (not the absolute values) are what's portable, since the epoch the driver uses for "system time" is implementation-defined.
+- **`Speed`** (double) — varispeed factor (1.0 = nominal). Non-1.0 values appear when the driver is doing pull-up/pull-down (e.g. 29.97 vs 30 fps film transfer) or external rate adaptation.
+- **`TimeCode`** (`AsioTimeCodeInfo?`) — SMPTE/MTC time code from an external source (LTC input, MTC over MIDI). `null` in the common case; populated when the driver is receiving an external timecode stream and reports it as valid for the buffer. Carries `Samples`, `Speed`, and the `Running` / `Reverse` / `OnSpeed` / `Still` transport-state flags.
 
-Both are populated for every recording and duplex callback by calling `ASIOgetSamplePosition` from inside `OnBufferUpdateRecording` / `OnBufferUpdateDuplex`. The driver-side function is non-throwing in the realtime path: on driver error both values are zero and the stream keeps running. Drivers that don't implement `getSamplePosition` will report position `0` indefinitely; the validation test in the console-test menu makes this visible immediately.
+Two callback paths feed these. The host advertises `kAsioSupportsTimeInfo = 1` (and `kAsioSupportsTimeCode = 1`) from `AsioMessageCallBack`, which signals to the driver that it should prefer `bufferSwitchTimeInfo` over plain `bufferSwitch`:
 
-`AsioDevice` does **not** opt in to the richer `bufferSwitchTimeInfo` callback. The plain `bufferSwitch` + `getSamplePosition` path is sufficient for sample position and system time, requires no protocol change, and works across every driver that worked in NAudio 2. Opting in to `kAsioSupportsTimeInfo` would also surface `speed` (varispeed pull-up/pull-down) and SMPTE/MTC `timeCode` (for video sync via external timecode source); see "What remains undone" for why that's deferred.
+- **Rich path** (`bufferSwitchTimeInfo`) — modern drivers call this once per buffer with a pointer to a driver-owned `AsioTime` struct. `AsioDriverExt.ReadTimingInfo` extracts the relevant fields via direct unsafe pointer reads at known offsets (Pack=4 layout) — no `Marshal.PtrToStructure<T>`, because that would marshal the `[ByValTStr]` reserved string fields into managed strings on every callback. Zero allocations in the realtime path. All four values are populated, gated on the `kSamplePositionValid` / `kSystemTimeValid` / `kSpeedValid` / `kTcValid` flag bits; missing fields fall back to `0` / `1.0` / `null` respectively.
+- **Fallback path** (`bufferSwitch`) — for drivers that ignore the time-info opt-in, the plain `bufferSwitch` callback runs and we synthesise the timing info by calling `ASIOgetSamplePosition` from inside the callback. `Speed` defaults to `1.0` and `TimeCode` stays `null` — degraded but correct for the typical no-varispeed, no-external-source case.
+
+In both paths the timing data is staged into `AsioDriverExt.LatestTimingInfo` (an `AsioBufferTimingInfo` struct) before invoking the user callback. `AsioDevice.OnBufferUpdateRecording` and `OnBufferUpdateDuplex` read it once and copy four fields onto the callback context — no per-callback driver call, no marshalling, no allocations.
 
 The playback-only mode does not expose timing. Playback is `Read`-driven and has no per-callback context surface; if a future use case needs it, the playback path can grow a `BufferRendered` event mirroring `AudioCaptured`.
 
@@ -265,22 +270,15 @@ These were settled during the design phase and confirmed in the implementation.
 
 ## What remains undone
 
-Two items from the original plan were deferred. Neither blocks shipping; both can land later if the underlying code is changed.
-
 ### 1. Fake-driver seam for automated F2 / F1 regression tests
 
 `AsioDriverExt` is a concrete class wrapping the COM `AsioDriver`. Constructing an `AsioDevice` requires a real installed ASIO driver, so the F1 (Stop-from-callback), F2 (dispose-during-callback), and F4 (init-failure release) regression scenarios are only testable manually via the `NAudioConsoleTest` smoke menu — they are not in the automated NUnit suite.
 
 A fake-driver seam (extracting `IAsioDriverExt` and making `AsioDevice` constructible against it) would let unit tests drive synthetic buffer callbacks on a background thread and assert the drain / guard / release behavior automatically. The cost is meaningful (~150–250 lines of test infrastructure plus 6–10 unit tests). Skipping for now is defensible because the runtime guards are short, the patterns repeat across three callback paths so a regression that breaks one is unlikely to break all three identically, and the manual smoke tests cover the highest-value scenarios. Worth revisiting when the threading model is materially changed.
 
-### 2. Full ASIO time-info opt-in (`bufferSwitchTimeInfo`)
+### 2. Cross-driver validation of the rich time-info path
 
-`SamplePosition` and `SystemTimeNanoseconds` are populated via `ASIOgetSamplePosition` from inside the plain `bufferSwitch` callback. That covers the highest-value timing data without any protocol change. The richer `bufferSwitchTimeInfo` callback would additionally surface:
-
-- **`speed`** — varispeed factor (1.0 = nominal). Used by drivers doing pull-up/pull-down for film transfer (29.97 vs 30 fps) and by any driver that adapts rate dynamically.
-- **`timeCode`** — SMPTE/MTC time code from an external source (LTC input, MTC over MIDI). The "video sync" use case: the camera's timecode arrives in this field and you can record audio that's frame-locked to picture without external sync hardware.
-
-Wiring it up requires returning `1` from `kAsioSupportsTimeInfo` (currently returns `0` with a "NEED MORE TESTING" comment) and properly implementing `BufferSwitchTimeInfoCallBack` (currently returns `IntPtr.Zero`). The mechanical work is small (~40-60 lines), but the validation cost is real — driver-by-driver testing across at least RME, Focusrite, MOTU, and ASIO4ALL is needed because some older drivers compute the time-info struct incorrectly when the host opts in. Deferring until there's a concrete consumer (video-sync demo, drift-correction recorder) that justifies the testing burden.
+`bufferSwitchTimeInfo` is wired up and tested on at least one modern driver. Drivers that ignore `kAsioSupportsTimeInfo` and fall back to plain `bufferSwitch` are still correct (Tier 1 fallback synthesises position and system time via `getSamplePosition`) but won't surface `Speed` or `TimeCode`. A multi-driver sweep across at least RME, Focusrite, MOTU, ASIO4ALL, and a Realtek shim would build confidence; better done as bug reports come in than upfront. If a particular driver needs investigation, temporarily reinstating per-path counters on `AsioDriverExt` (one increment per callback, exposed as a property) makes "which path is the driver actually using?" trivial to answer.
 
 ### 3. ASIO4ALL integration tests on CI
 

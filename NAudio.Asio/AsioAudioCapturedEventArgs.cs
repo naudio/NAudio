@@ -45,6 +45,18 @@ namespace NAudio.Wave
         public long SystemTimeNanoseconds { get { ThrowIfInvalid(); return context.SystemTimeNanoseconds; } }
 
         /// <summary>
+        /// Varispeed factor reported by the driver (1.0 = nominal). Most drivers report 1.0; non-1.0 values appear
+        /// when the driver is doing pull-up/pull-down (29.97 vs 30 fps film transfer) or external rate adaptation.
+        /// </summary>
+        public double Speed { get { ThrowIfInvalid(); return context.Speed; } }
+
+        /// <summary>
+        /// SMPTE/MTC time code from an external source (LTC input, MTC over MIDI, etc.) corresponding to this buffer.
+        /// <c>null</c> when no external time-code source is connected — the common case.
+        /// </summary>
+        public AsioTimeCodeInfo? TimeCode { get { ThrowIfInvalid(); return context.TimeCode; } }
+
+        /// <summary>
         /// Gets a read-only span of converted float samples for the specified channel.
         /// </summary>
         /// <param name="channelIndex">Zero-based index into the selected-inputs array, not the physical channel index. Valid range: <c>0</c> to <see cref="ChannelCount"/> - 1.</param>

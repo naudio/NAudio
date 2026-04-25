@@ -42,7 +42,9 @@ static class AsioTimingTests
                     SamplePosition: e.SamplePosition,
                     SystemTimeNanoseconds: e.SystemTimeNanoseconds,
                     StopwatchTicks: Stopwatch.GetTimestamp(),
-                    Frames: e.Frames));
+                    Frames: e.Frames,
+                    Speed: e.Speed,
+                    TimeCode: e.TimeCode));
             }
         };
 
@@ -152,6 +154,40 @@ static class AsioTimingTests
         double elapsedSinceStart = (last.StopwatchTicks - stopwatchStart) / (double)Stopwatch.Frequency;
         AnsiConsole.MarkupLine($"\n[grey]Elapsed since Start(): {elapsedSinceStart:0.00} s, captured {arr.Length} callbacks → ~{(arr.Length / elapsedSinceStart):0} cb/s[/]");
 
+        // ---------- Speed and TimeCode (only populated when the driver uses bufferSwitchTimeInfo) ----------
+        AnsiConsole.MarkupLine("\n[bold]Speed and TimeCode:[/]");
+
+
+        // Speed — bucket non-1.0 values so a varispeeding driver shows up.
+        int nonNominalSpeedCount = 0;
+        double minSpeed = double.PositiveInfinity, maxSpeed = double.NegativeInfinity;
+        foreach (var s in arr)
+        {
+            if (Math.Abs(s.Speed - 1.0) > 0.0001) nonNominalSpeedCount++;
+            if (s.Speed < minSpeed) minSpeed = s.Speed;
+            if (s.Speed > maxSpeed) maxSpeed = s.Speed;
+        }
+        AnsiConsole.MarkupLine($"  Speed: range [[{minSpeed:0.0000} .. {maxSpeed:0.0000}]], non-nominal callbacks: {nonNominalSpeedCount} / {arr.Length}");
+
+        // TimeCode — count callbacks where it was reported.
+        int tcCount = 0;
+        AsioTimeCodeInfo lastTc = default;
+        bool sawTc = false;
+        foreach (var s in arr)
+        {
+            if (s.TimeCode is { } tc) { tcCount++; lastTc = tc; sawTc = true; }
+        }
+        if (sawTc)
+        {
+            AnsiConsole.MarkupLine($"  TimeCode: present on {tcCount} / {arr.Length} callbacks");
+            AnsiConsole.MarkupLine($"    Last sample: samples={lastTc.Samples:N0}, speed={lastTc.Speed:0.000}, " +
+                $"running={lastTc.Running}, reverse={lastTc.Reverse}, onSpeed={lastTc.OnSpeed}, still={lastTc.Still}");
+        }
+        else
+        {
+            AnsiConsole.MarkupLine("  TimeCode: not reported (expected — no external SMPTE/MTC source connected)");
+        }
+
         PressAnyKey();
     }
 
@@ -183,5 +219,11 @@ static class AsioTimingTests
         Console.ReadKey(intercept: true);
     }
 
-    private readonly record struct Sample(long SamplePosition, long SystemTimeNanoseconds, long StopwatchTicks, int Frames);
+    private readonly record struct Sample(
+        long SamplePosition,
+        long SystemTimeNanoseconds,
+        long StopwatchTicks,
+        int Frames,
+        double Speed,
+        AsioTimeCodeInfo? TimeCode);
 }

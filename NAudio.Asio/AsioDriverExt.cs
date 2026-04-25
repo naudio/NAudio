@@ -3,6 +3,20 @@
 namespace NAudio.Wave.Asio
 {
     /// <summary>
+    /// Per-buffer timing data captured by <see cref="AsioDriverExt"/> in the buffer-switch callback.
+    /// Populated either from the driver's <c>bufferSwitchTimeInfo</c> <c>AsioTime</c> pointer (rich path)
+    /// or by calling <c>ASIOgetSamplePosition</c> from inside the plain <c>bufferSwitch</c> path. Read by
+    /// <see cref="NAudio.Wave.AsioDevice"/> via <see cref="AsioDriverExt.LatestTimingInfo"/>.
+    /// </summary>
+    internal readonly struct AsioBufferTimingInfo
+    {
+        public long SamplePosition { get; init; }
+        public long SystemTimeNanoseconds { get; init; }
+        public double Speed { get; init; }
+        public NAudio.Wave.AsioTimeCodeInfo? TimeCode { get; init; }
+    }
+
+    /// <summary>
     /// Callback used by the AsioDriverExt to get wave data
     /// </summary>
     public delegate void AsioFillBufferCallback(IntPtr[] inputChannels, IntPtr[] outputChannels);
@@ -33,6 +47,11 @@ namespace NAudio.Wave.Asio
         private int inputChannelOffset;
         private int[] outputChannelIndices;
         private int[] inputChannelIndices;
+
+        // Per-buffer timing snapshot, refreshed at the start of every buffer-switch callback (both the
+        // plain bufferSwitch fallback path and the rich bufferSwitchTimeInfo path) so AsioDevice can read
+        // it during the user callback without re-querying the driver.
+        private AsioBufferTimingInfo latestTimingInfo;
         /// <summary>
         /// Reset Request Callback
         /// </summary>
@@ -155,6 +174,14 @@ namespace NAudio.Wave.Asio
             systemTimeNanoseconds = timeStamp.ToInt64();
             return true;
         }
+
+        /// <summary>
+        /// Per-buffer timing snapshot captured by the most recent buffer-switch callback. AsioDevice
+        /// reads this inside its user-facing callback to surface SamplePosition / SystemTimeNanoseconds /
+        /// Speed / TimeCode without re-querying the driver. Only valid for the duration of a buffer-switch
+        /// callback; reading it from any other context returns whatever the previous callback wrote.
+        /// </summary>
+        internal AsioBufferTimingInfo LatestTimingInfo => latestTimingInfo;
 
         /// <summary>
         /// Starts playing the buffers.
@@ -385,11 +412,30 @@ namespace NAudio.Wave.Asio
 
         /// <summary>
         /// Callback called by the AsioDriver on fill buffer demand. Redirect call to external callback.
+        /// Used as the fallback path: if the driver also calls bufferSwitchTimeInfo, that path runs
+        /// instead and this method is never invoked. We still populate <see cref="latestTimingInfo"/>
+        /// so consumers see correct timestamps regardless of which path the driver chose.
         /// </summary>
         /// <param name="doubleBufferIndex">Index of the double buffer.</param>
         /// <param name="directProcess">if set to <c>true</c> [direct process].</param>
         private void BufferSwitchCallBack(int doubleBufferIndex, bool directProcess)
         {
+            // Populate timing snapshot via getSamplePosition; speed defaults to 1.0, time code stays null.
+            if (driver.TryGetSamplePosition(out var samplePos, out var timeStamp) == AsioError.ASE_OK)
+            {
+                latestTimingInfo = new AsioBufferTimingInfo
+                {
+                    SamplePosition = samplePos.ToInt64(),
+                    SystemTimeNanoseconds = timeStamp.ToInt64(),
+                    Speed = 1.0,
+                    TimeCode = null,
+                };
+            }
+            else
+            {
+                latestTimingInfo = default;
+            }
+
             for (int i = 0; i < numberOfInputChannels; i++)
             {
                 currentInputBuffers[i] = bufferInfos[inputChannelIndices[i]].Buffer(doubleBufferIndex);
@@ -447,11 +493,11 @@ namespace NAudio.Wave.Asio
                         case AsioMessageSelector.kAsioLatenciesChanged:
                             return 0;
                         case AsioMessageSelector.kAsioSupportsTimeInfo:
-//                            return 1; DON'T SUPPORT FOR NOW. NEED MORE TESTING.
-                            return 0;
+                            // We register pbufferSwitchTimeInfo and read AsioTime in the realtime path.
+                            return 1;
                         case AsioMessageSelector.kAsioSupportsTimeCode:
-//                            return 1; DON'T SUPPORT FOR NOW. NEED MORE TESTING.
-                            return 0;
+                            // We surface time code via AsioTimeCodeInfo on AsioProcessBuffers and AsioAudioCapturedEventArgs.
+                            return 1;
                     }
                     break;
                 case AsioMessageSelector.kAsioEngineVersion:
@@ -466,24 +512,116 @@ namespace NAudio.Wave.Asio
                 case AsioMessageSelector.kAsioLatenciesChanged:
                     return 0;
                 case AsioMessageSelector.kAsioSupportsTimeInfo:
-                    return 0;
+                    return 1;
                 case AsioMessageSelector.kAsioSupportsTimeCode:
-                    return 0;
+                    return 1;
             }
             return 0;
         }
 
         /// <summary>
-        /// Buffers switch time info call back.
+        /// Rich buffer-switch callback used when the host advertises <c>kAsioSupportsTimeInfo</c>. Reads the
+        /// driver-provided <c>AsioTime</c> at known offsets to populate <see cref="latestTimingInfo"/> with
+        /// sample position, system time, varispeed factor, and (optionally) external SMPTE/MTC time code,
+        /// then dispatches to the same fillBufferCallback as the plain <c>BufferSwitchCallBack</c> path.
         /// </summary>
-        /// <param name="asioTimeParam">The asio time param.</param>
+        /// <param name="asioTimeParam">Pointer to a driver-owned <c>AsioTime</c> struct, valid for the duration of this callback.</param>
         /// <param name="doubleBufferIndex">Index of the double buffer.</param>
         /// <param name="directProcess">if set to <c>true</c> [direct process].</param>
-        /// <returns></returns>
+        /// <returns>The same pointer the driver provided. Most drivers ignore the return value.</returns>
         private IntPtr BufferSwitchTimeInfoCallBack(IntPtr asioTimeParam, int doubleBufferIndex, bool directProcess)
         {
-            // Check when this is called?
-            return IntPtr.Zero;
+            latestTimingInfo = ReadTimingInfo(asioTimeParam);
+
+            for (int i = 0; i < numberOfInputChannels; i++)
+            {
+                currentInputBuffers[i] = bufferInfos[inputChannelIndices[i]].Buffer(doubleBufferIndex);
+            }
+
+            for (int i = 0; i < numberOfOutputChannels; i++)
+            {
+                currentOutputBuffers[i] = bufferInfos[outputChannelIndices[i] + capability.NbInputChannels].Buffer(doubleBufferIndex);
+            }
+
+            fillBufferCallback?.Invoke(currentInputBuffers, currentOutputBuffers);
+
+            if (isOutputReadySupported)
+            {
+                driver.OutputReady();
+            }
+
+            return asioTimeParam;
+        }
+
+        /// <summary>
+        /// Reads the relevant fields out of a driver-provided <c>AsioTime</c> struct. Done via direct
+        /// pointer reads at known offsets rather than <see cref="System.Runtime.InteropServices.Marshal.PtrToStructure{T}(IntPtr)"/>
+        /// because the C# <c>AsioTime</c> declaration carries <c>[MarshalAs(ByValTStr)]</c> string fields
+        /// that would allocate a managed string per callback — unacceptable in the realtime path.
+        /// </summary>
+        /// <remarks>
+        /// Layout (Pack=4, all fields little-endian on x86/x64):
+        /// <code>
+        /// AsioTime (148 bytes total)
+        ///   reserved[4]                       offset  0..15  (16 bytes, ignored)
+        ///   timeInfo (AsioTimeInfo, 48 bytes) offset 16..63
+        ///     speed          (double)         offset 16
+        ///     systemTime     (Asio64Bit)      offset 24   hi @ +0, lo @ +4
+        ///     samplePosition (Asio64Bit)      offset 32   hi @ +0, lo @ +4
+        ///     sampleRate     (double)         offset 40
+        ///     flags          (int)            offset 48
+        ///     reserved[12]                    offset 52..63 (ignored)
+        ///   timeCode (AsioTimeCode, 84 bytes) offset 64..147
+        ///     speed             (double)      offset 64
+        ///     timeCodeSamples   (Asio64Bit)   offset 72
+        ///     flags             (int)         offset 80
+        ///     future[64]                      offset 84..147 (ignored)
+        /// </code>
+        /// </remarks>
+        private static unsafe AsioBufferTimingInfo ReadTimingInfo(IntPtr asioTimeParam)
+        {
+            var p = (byte*)asioTimeParam;
+
+            // --- AsioTimeInfo (offset 16..63) ---
+            double speed = *(double*)(p + 16);
+            // Asio64Bit reassembled directly: hi at offset+0, lo at offset+4. Same as Asio64Bit.ToInt64().
+            long systemTime = ((long)*(uint*)(p + 24) << 32) | *(uint*)(p + 24 + 4);
+            long samplePosition = ((long)*(uint*)(p + 32) << 32) | *(uint*)(p + 32 + 4);
+            // sampleRate at offset 40 — currently unused; we read it from capabilities instead.
+            var tiFlags = (AsioTimeInfoFlags)(*(int*)(p + 48));
+
+            // --- AsioTimeCode (offset 64..147) ---
+            double tcSpeedField = *(double*)(p + 64);
+            long tcSamples = ((long)*(uint*)(p + 72) << 32) | *(uint*)(p + 72 + 4);
+            var tcFlags = (AsioTimeCodeFlags)(*(int*)(p + 80));
+
+            // Gate fields on validity flags. The SDK guarantees kSamplePositionValid and kSystemTimeValid
+            // are always set when bufferSwitchTimeInfo is called, but defensively check anyway.
+            bool hasSamplePos = (tiFlags & AsioTimeInfoFlags.kSamplePositionValid) != 0;
+            bool hasSystemTime = (tiFlags & AsioTimeInfoFlags.kSystemTimeValid) != 0;
+            bool hasSpeed = (tiFlags & AsioTimeInfoFlags.kSpeedValid) != 0;
+
+            AsioTimeCodeInfo? timeCode = null;
+            if ((tcFlags & AsioTimeCodeFlags.kTcValid) != 0)
+            {
+                timeCode = new AsioTimeCodeInfo
+                {
+                    Samples = tcSamples,
+                    Speed = (tcFlags & AsioTimeCodeFlags.kTcSpeedValid) != 0 ? tcSpeedField : 1.0,
+                    Running = (tcFlags & AsioTimeCodeFlags.kTcRunning) != 0,
+                    Reverse = (tcFlags & AsioTimeCodeFlags.kTcReverse) != 0,
+                    OnSpeed = (tcFlags & AsioTimeCodeFlags.kTcOnspeed) != 0,
+                    Still = (tcFlags & AsioTimeCodeFlags.kTcStill) != 0,
+                };
+            }
+
+            return new AsioBufferTimingInfo
+            {
+                SamplePosition = hasSamplePos ? samplePosition : 0L,
+                SystemTimeNanoseconds = hasSystemTime ? systemTime : 0L,
+                Speed = hasSpeed ? speed : 1.0,
+                TimeCode = timeCode,
+            };
         }
     }
 }

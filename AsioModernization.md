@@ -124,7 +124,7 @@ device.InitDuplex(new AsioDuplexOptions
 device.Start();
 ```
 
-`AsioProcessBuffers` is a `ref struct` (stack-only, compiler-enforced) carrying `Frames`, `SampleRate`, `InputChannelCount`, `OutputChannelCount`, `SamplePosition`, plus `GetInput(i)`/`GetOutput(i)` for float spans and `RawInput(i)`/`RawOutput(i)` for the zero-copy native-bytes escape hatch. Library-owned output float buffers are zeroed before each callback, so unwritten outputs are silent.
+`AsioProcessBuffers` is a `ref struct` (stack-only, compiler-enforced) carrying `Frames`, `SampleRate`, `InputChannelCount`, `OutputChannelCount`, `SamplePosition`, `SystemTimeNanoseconds`, plus `GetInput(i)`/`GetOutput(i)` for float spans and `RawInput(i)`/`RawOutput(i)` for the zero-copy native-bytes escape hatch. Library-owned output float buffers are zeroed before each callback, so unwritten outputs are silent. See "Timing — sample position and host clock" below for what `SamplePosition` and `SystemTimeNanoseconds` give you.
 
 Naming: `Duplex` is the technically correct term and unambiguous about meaning both directions. Alternatives considered (`InitProcessor`, `InitIO`, `InitCallback`, `InitRealtime`, `InitLive`) all overloaded existing terminology.
 
@@ -143,6 +143,19 @@ Formats supported: `Int16LSB`, `Int24LSB`, `Int32LSB`, `Float32LSB`. Other nativ
 ### Channel selection — arrays of indices
 
 The `AsioOut.ChannelOffset` / `InputChannelOffset` model is replaced by `InputChannels` / `OutputChannels` arrays of physical channel indices. Allows non-contiguous selection (`[0, 3, 5]`), makes "select all channels" a one-liner via `Capabilities.AllInputChannels` / `AllOutputChannels` (new properties on `AsioDriverCapability`), and matches JUCE/PortAudio expectations.
+
+### Timing — sample position and host clock
+
+Recording (`AsioAudioCapturedEventArgs`) and duplex (`AsioProcessBuffers`) both expose two driver-reported timing values per callback:
+
+- **`SamplePosition`** — frames since `Start()`, monotonically increasing. Lets a recording handler stamp every captured frame with an absolute position, splice/concatenate captures correctly after an xrun, or align multi-device recordings. Increments by `Frames` per callback under nominal operation.
+- **`SystemTimeNanoseconds`** — host system time at the moment the driver sampled `SamplePosition`. Pins the audio clock to the host clock at one precise instant per buffer, which is what enables A/V sync, drift correction against `Stopwatch`, and cross-device alignment. The deltas (not the absolute values) are what's portable, since the epoch the driver uses for "system time" is implementation-defined.
+
+Both are populated for every recording and duplex callback by calling `ASIOgetSamplePosition` from inside `OnBufferUpdateRecording` / `OnBufferUpdateDuplex`. The driver-side function is non-throwing in the realtime path: on driver error both values are zero and the stream keeps running. Drivers that don't implement `getSamplePosition` will report position `0` indefinitely; the validation test in the console-test menu makes this visible immediately.
+
+`AsioDevice` does **not** opt in to the richer `bufferSwitchTimeInfo` callback. The plain `bufferSwitch` + `getSamplePosition` path is sufficient for sample position and system time, requires no protocol change, and works across every driver that worked in NAudio 2. Opting in to `kAsioSupportsTimeInfo` would also surface `speed` (varispeed pull-up/pull-down) and SMPTE/MTC `timeCode` (for video sync via external timecode source); see "What remains undone" for why that's deferred.
+
+The playback-only mode does not expose timing. Playback is `Read`-driven and has no per-callback context surface; if a future use case needs it, the playback path can grow a `BufferRendered` event mirroring `AudioCaptured`.
 
 ### Lifecycle
 
@@ -183,6 +196,8 @@ A walk of the GitHub issue tracker and `git log` for `NAudio.Asio` surfaced eigh
 | **F6** | `DriverResetRequest` fired but no supported recovery path | `Reinitialize()` caches the last applied options object on each successful `Init*` and re-applies after `Stop()`. Documented `Stop` → `Reinitialize` → `Start` pattern in [Docs/AsioDriverReset.md](Docs/AsioDriverReset.md). |
 | **F7** | Choppy playback at high channel counts due to per-callback allocation | All per-channel float buffers and conversion staging are pre-allocated at `Init*` time. `AsioProcessBuffers` is `ref struct` to discourage user allocations. Gated by a BenchmarkDotNet job at 2/16 channels × 256/1024 frames × Int32LSB/Float32LSB asserting 0 B/op once warm. |
 | **F8** | Borrowed-buffer lifetime footgun (driver-owned native pointers used after the callback returned) | `AsioProcessBuffers`, `AsioRawInputBuffer`, `AsioRawOutputBuffer` are all `ref struct` (compiler-enforced stack-only). `AsioAudioCapturedEventArgs` is a class but its spans point into library buffers that get invalidated by setting `Valid = false` after the handler returns; accessing properties throws if the event args is used outside its handler. |
+| **F9** | `AsioDriver.GetSamplePosition` declared `out long samplePos` but the underlying `ASIOSamples` is `{uint hi; uint lo}` with `hi` at offset 0 — reading 8 bytes as a little-endian int64 produces `(lo << 32) \| hi`, backwards from the SDK layout. The bug was latent because no NAudio code called `GetSamplePosition` until the timing work landed. | Both the public method and the underlying P/Invoke delegate now take `out Asio64Bit` and the wrapper in `AsioDriverExt.TryGetSamplePosition` reassembles via the existing `Asio64Bit.ToInt64()` helper. The validation test in the console-test menu (records 10 s and checks audio-clock vs host-clock drift in milliseconds) catches any regression — wrong byte order would show drift in seconds-per-second, not milliseconds-per-ten-seconds. |
+| **F10** | An ASIO driver whose `Init()` returns `false` and leaves `getErrorMessage()` empty surfaces in NAudio as `InvalidOperationException` with `Message == ""` — the user sees only the type name and has no idea what went wrong. Realtek's HDA-backed shim hits this path frequently. | `AsioDriverExt` now substitutes a diagnostic message when the driver provides nothing, naming the most common causes (x86/x64 bitness mismatch, endpoint held by another app, device disabled). The console-test menu's catch block also defensively renders `(no message)` for any other empty-message exception so the type name is never alone on screen. |
 
 ---
 
@@ -207,6 +222,7 @@ A walk of the GitHub issue tracker and `git log` for `NAudio.Asio` surfaced eigh
 - Recording — record to WAV, show per-channel input levels.
 - Duplex — passthrough with gain and per-channel peak meters.
 - Lifecycle — Reinitialize round-trip.
+- Timing — `AsioTimingTests.ValidateSamplePosition` records 10 s and checks four invariants: `SamplePosition` strictly increasing, Δsamples == `Frames` per callback, `SystemTimeNanoseconds` strictly increasing, and audio-clock vs host-clock drift under 50 ms over the full recording. The drift check is the killer test for byte-order regressions on the `Asio64Bit` → `long` conversion.
 - Regression — Dispose from `Stopped` handler (F1 / F2 path), Stop from `AudioCaptured` callback (F1 guard).
 
 **Benchmarks** (`NAudio.Benchmarks/AsioCallbackBenchmarks.cs`):
@@ -257,7 +273,16 @@ Two items from the original plan were deferred. Neither blocks shipping; both ca
 
 A fake-driver seam (extracting `IAsioDriverExt` and making `AsioDevice` constructible against it) would let unit tests drive synthetic buffer callbacks on a background thread and assert the drain / guard / release behavior automatically. The cost is meaningful (~150–250 lines of test infrastructure plus 6–10 unit tests). Skipping for now is defensible because the runtime guards are short, the patterns repeat across three callback paths so a regression that breaks one is unlikely to break all three identically, and the manual smoke tests cover the highest-value scenarios. Worth revisiting when the threading model is materially changed.
 
-### 2. ASIO4ALL integration tests on CI
+### 2. Full ASIO time-info opt-in (`bufferSwitchTimeInfo`)
+
+`SamplePosition` and `SystemTimeNanoseconds` are populated via `ASIOgetSamplePosition` from inside the plain `bufferSwitch` callback. That covers the highest-value timing data without any protocol change. The richer `bufferSwitchTimeInfo` callback would additionally surface:
+
+- **`speed`** — varispeed factor (1.0 = nominal). Used by drivers doing pull-up/pull-down for film transfer (29.97 vs 30 fps) and by any driver that adapts rate dynamically.
+- **`timeCode`** — SMPTE/MTC time code from an external source (LTC input, MTC over MIDI). The "video sync" use case: the camera's timecode arrives in this field and you can record audio that's frame-locked to picture without external sync hardware.
+
+Wiring it up requires returning `1` from `kAsioSupportsTimeInfo` (currently returns `0` with a "NEED MORE TESTING" comment) and properly implementing `BufferSwitchTimeInfoCallBack` (currently returns `IntPtr.Zero`). The mechanical work is small (~40-60 lines), but the validation cost is real — driver-by-driver testing across at least RME, Focusrite, MOTU, and ASIO4ALL is needed because some older drivers compute the time-info struct incorrectly when the host opts in. Deferring until there's a concrete consumer (video-sync demo, drift-correction recorder) that justifies the testing burden.
+
+### 3. ASIO4ALL integration tests on CI
 
 The plan called for integration tests gated by `NAUDIO_ASIO_INTEGRATION=1` that install ASIO4ALL on the runner, open it, run each of the three modes for ~1 second, and assert `State == Running` plus at least one buffer callback fired. This was never wired up. The manual demo apps and console-test menu cover the equivalent scenarios on developer machines, but there's no CI gate for "real driver still works after refactor".
 

@@ -613,7 +613,7 @@ namespace NAudio.Wave
             {
                 callbackThreadId = Environment.CurrentManagedThreadId;
                 var ctx = recordingContext;
-                ctx.SamplePosition = 0; // TODO: populate from ASIO time info once BufferSwitchTimeInfoCallBack is wired up.
+                driver.TryGetSamplePosition(out ctx.SamplePosition, out ctx.SystemTimeNanoseconds);
                 for (int i = 0; i < ctx.InputChannelCount; i++)
                 {
                     ctx.InputNativeBuffers[i] = inputBuffers[i];
@@ -652,7 +652,7 @@ namespace NAudio.Wave
             {
                 callbackThreadId = Environment.CurrentManagedThreadId;
                 var ctx = duplexContext;
-                ctx.SamplePosition = 0; // TODO: populate from ASIO time info once BufferSwitchTimeInfoCallBack is wired up.
+                driver.TryGetSamplePosition(out ctx.SamplePosition, out ctx.SystemTimeNanoseconds);
 
                 // Snapshot driver pointers and convert native input → library float buffer for each selected input channel.
                 for (int i = 0; i < ctx.InputChannelCount; i++)

@@ -31,9 +31,18 @@ namespace NAudio.Wave
         public int ChannelCount { get { ThrowIfInvalid(); return context.InputChannelCount; } }
 
         /// <summary>
-        /// Position of the first frame in this buffer, in frames since the driver started, as reported by the driver's time info.
+        /// Position of the first frame in this buffer, in frames since the driver started, as reported by the driver.
+        /// Zero if the driver did not report a position for this callback.
         /// </summary>
         public long SamplePosition { get { ThrowIfInvalid(); return context.SamplePosition; } }
+
+        /// <summary>
+        /// Host system time, in nanoseconds, corresponding to <see cref="SamplePosition"/>. This pins the audio clock
+        /// to the host clock at one precise instant per buffer — use it for A/V sync, drift correction against
+        /// <see cref="System.Diagnostics.Stopwatch"/>, or aligning multiple ASIO devices. Zero if the driver did not
+        /// report a timestamp for this callback.
+        /// </summary>
+        public long SystemTimeNanoseconds { get { ThrowIfInvalid(); return context.SystemTimeNanoseconds; } }
 
         /// <summary>
         /// Gets a read-only span of converted float samples for the specified channel.

@@ -23,6 +23,8 @@ static class AsioMenu
                     "Duplex passthrough (input → gain → output)"),
                 new Menu.Group("Lifecycle",
                     "Reinitialize round-trip"),
+                new Menu.Group("Timing",
+                    "Validate SamplePosition + SystemTimeNanoseconds"),
                 new Menu.Group("Regression tests",
                     "Dispose from Stopped handler (F1)",
                     "Stop from AudioCaptured callback (F1 guard)",
@@ -59,6 +61,9 @@ static class AsioMenu
                     case "Reinitialize round-trip":
                         AsioLifecycleTests.ReinitializeRoundTrip();
                         break;
+                    case "Validate SamplePosition + SystemTimeNanoseconds":
+                        AsioTimingTests.ValidateSamplePosition();
+                        break;
                     case "Dispose from Stopped handler (F1)":
                         AsioPlayerTests.DisposeFromStoppedHandler();
                         break;
@@ -72,10 +77,16 @@ static class AsioMenu
             }
             catch (Exception ex)
             {
-                AnsiConsole.MarkupLine($"\n[red]Error: {Markup.Escape(ex.Message)}[/]");
+                // Some ASIO drivers throw with empty Message strings; fall back to "(no message)" so the
+                // user at least sees the exception type and isn't left staring at "Error: ".
+                var message = string.IsNullOrWhiteSpace(ex.Message) ? "(no message)" : ex.Message;
+                AnsiConsole.MarkupLine($"\n[red]Error: {Markup.Escape(message)}[/]");
                 AnsiConsole.MarkupLine($"[dim]{Markup.Escape(ex.GetType().Name)}[/]");
                 if (ex.InnerException != null)
-                    AnsiConsole.MarkupLine($"[dim]Inner: {Markup.Escape(ex.InnerException.Message)}[/]");
+                {
+                    var innerMessage = string.IsNullOrWhiteSpace(ex.InnerException.Message) ? "(no message)" : ex.InnerException.Message;
+                    AnsiConsole.MarkupLine($"[dim]Inner: {Markup.Escape(innerMessage)}[/]");
+                }
                 AnsiConsole.MarkupLine("[dim]Press any key to continue...[/]");
                 Console.ReadKey(intercept: true);
             }

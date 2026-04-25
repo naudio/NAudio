@@ -49,7 +49,16 @@ namespace NAudio.Wave.Asio
 
             if (!driver.Init(IntPtr.Zero))
             {
-                throw new InvalidOperationException(driver.GetErrorMessage());
+                // Many drivers (Realtek shims in particular) leave the error message buffer empty when
+                // Init fails, so fall back to a diagnostic hint that points at the most common causes.
+                var driverMessage = driver.GetErrorMessage();
+                var message = string.IsNullOrWhiteSpace(driverMessage)
+                    ? "ASIO driver Init() returned false and the driver provided no error message. "
+                      + "Common causes: the driver is x86-only and the host process is x64; "
+                      + "the driver is already in use by another application; "
+                      + "or the device backing the driver is disabled. Try the same driver from a 32-bit host to confirm."
+                    : driverMessage;
+                throw new InvalidOperationException(message);
             }
 
             callbacks = new AsioCallbacks();
@@ -123,6 +132,29 @@ namespace NAudio.Wave.Asio
         /// </summary>
         /// <value>The ASIOdriver.</value>
         public AsioDriver Driver => driver;
+
+        /// <summary>
+        /// Asks the driver for the current sample position (frames since <see cref="Start"/>) and the
+        /// host system time (in nanoseconds) at which that position was sampled. Non-throwing — returns
+        /// false if the driver reports an error. Safe to call from the buffer-switch callback.
+        /// </summary>
+        /// <param name="samplePosition">Frames since the driver started.</param>
+        /// <param name="systemTimeNanoseconds">Host system time in nanoseconds corresponding to <paramref name="samplePosition"/>.</param>
+        public bool TryGetSamplePosition(out long samplePosition, out long systemTimeNanoseconds)
+        {
+            // Asio64Bit stores hi at offset 0 and lo at offset 4, so a direct (out long) P/Invoke would
+            // misread the value on little-endian. Read as Asio64Bit and reassemble via ToInt64().
+            var error = driver.TryGetSamplePosition(out var samplePos, out var timeStamp);
+            if (error != AsioError.ASE_OK)
+            {
+                samplePosition = 0;
+                systemTimeNanoseconds = 0;
+                return false;
+            }
+            samplePosition = samplePos.ToInt64();
+            systemTimeNanoseconds = timeStamp.ToInt64();
+            return true;
+        }
 
         /// <summary>
         /// Starts playing the buffers.

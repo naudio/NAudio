@@ -218,13 +218,26 @@ namespace NAudio.Wave.Asio
         }
 
         /// <summary>
-        /// Gets the sample position.
+        /// Gets the current sample position and the host system time (in nanoseconds) at which it was sampled.
         /// </summary>
-        /// <param name="samplePos">The sample pos.</param>
-        /// <param name="timeStamp">The time stamp.</param>
-        public void GetSamplePosition(out long samplePos, ref Asio64Bit timeStamp)
+        /// <param name="samplePos">Sample position since <c>Start()</c>, as a 64-bit ASIO value.</param>
+        /// <param name="timeStamp">System time in nanoseconds corresponding to <paramref name="samplePos"/>.</param>
+        public void GetSamplePosition(out Asio64Bit samplePos, out Asio64Bit timeStamp)
         {
-            HandleException(asioDriverVTable.getSamplePosition(pAsioComObject, out samplePos, ref timeStamp), "getSamplePosition");
+            samplePos = default;
+            timeStamp = default;
+            HandleException(asioDriverVTable.getSamplePosition(pAsioComObject, out samplePos, out timeStamp), "getSamplePosition");
+        }
+
+        /// <summary>
+        /// Non-throwing variant of <see cref="GetSamplePosition"/>, safe to call from the realtime
+        /// buffer-switch callback. Returns the raw <see cref="AsioError"/> instead of throwing.
+        /// </summary>
+        internal AsioError TryGetSamplePosition(out Asio64Bit samplePos, out Asio64Bit timeStamp)
+        {
+            samplePos = default;
+            timeStamp = default;
+            return asioDriverVTable.getSamplePosition(pAsioComObject, out samplePos, out timeStamp);
         }
 
         /// <summary>
@@ -423,7 +436,7 @@ namespace NAudio.Wave.Asio
             public ASIOsetClockSource setClockSource = null;
             //17 virtual ASIOError getSamplePosition(ASIOSamples *sPos, ASIOTimeStamp *tStamp) = 0;
             [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
-            public delegate AsioError ASIOgetSamplePosition(IntPtr _pUnknown, out long samplePos, ref Asio64Bit timeStamp);
+            public delegate AsioError ASIOgetSamplePosition(IntPtr _pUnknown, out Asio64Bit samplePos, out Asio64Bit timeStamp);
             public ASIOgetSamplePosition getSamplePosition = null;
             //18 virtual ASIOError getChannelInfo(ASIOChannelInfo *info) = 0;
             [UnmanagedFunctionPointer(CallingConvention.ThisCall)]

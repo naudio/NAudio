@@ -15,13 +15,13 @@ static class Program
     [STAThread]
     static void Main()
     {
+        var banner = new Rows(
+            new FigletText("NAudio").Color(Color.Blue),
+            new Markup("[dim]Interactive Audio Test Harness[/]"));
+
         while (true)
         {
-            AnsiConsole.Clear();
-            AnsiConsole.Write(new FigletText("NAudio").Color(Color.Blue));
-            AnsiConsole.MarkupLine("[dim]Interactive Audio Test Harness[/]\n");
-
-            var choice = Menu.Show("Main Menu",
+            var choice = Menu.Show("Main Menu", banner,
                 new Menu.Group("", "WASAPI", "ASIO", "WinMM", "Media Foundation", "DMO", "Exit"));
 
             // Escape at the top level exits the app.

@@ -1,4 +1,5 @@
 using Spectre.Console;
+using Spectre.Console.Rendering;
 
 namespace NAudioConsoleTest.Shared;
 
@@ -26,6 +27,9 @@ static class Menu
     /// item string or <c>null</c> if the user pressed Escape.
     /// </summary>
     public static string? Show(string title, params Group[] groups)
+        => Show(title, header: null, groups);
+
+    public static string? Show(string title, IRenderable? header, params Group[] groups)
     {
         // Flatten into (text, isSelectable, groupTitleOrNull) entries.
         // Group titles are headers (not selectable); items are selectable.
@@ -42,32 +46,47 @@ static class Menu
         if (selected < 0) return null;
 
         Console.CursorVisible = false;
+        AnsiConsole.Clear();
+        string? result = null;
+        bool done = false;
         try
         {
-            while (true)
-            {
-                Render(title, entries, selected);
-                var key = Console.ReadKey(intercept: true);
-                switch (key.Key)
+            AnsiConsole.Live(Build(title, header, entries, selected))
+                .AutoClear(false)
+                .Overflow(VerticalOverflow.Ellipsis)
+                .Start(ctx =>
                 {
-                    case ConsoleKey.UpArrow:
-                        selected = FindPrev(entries, selected);
-                        break;
-                    case ConsoleKey.DownArrow:
-                        selected = FindNext(entries, selected);
-                        break;
-                    case ConsoleKey.Home:
-                        selected = FindFirst(entries);
-                        break;
-                    case ConsoleKey.End:
-                        selected = FindLast(entries);
-                        break;
-                    case ConsoleKey.Enter:
-                        return entries[selected].Text;
-                    case ConsoleKey.Escape:
-                        return null;
-                }
-            }
+                    ctx.Refresh();
+                    while (!done)
+                    {
+                        var key = Console.ReadKey(intercept: true);
+                        switch (key.Key)
+                        {
+                            case ConsoleKey.UpArrow:
+                                selected = FindPrev(entries, selected);
+                                break;
+                            case ConsoleKey.DownArrow:
+                                selected = FindNext(entries, selected);
+                                break;
+                            case ConsoleKey.Home:
+                                selected = FindFirst(entries);
+                                break;
+                            case ConsoleKey.End:
+                                selected = FindLast(entries);
+                                break;
+                            case ConsoleKey.Enter:
+                                result = entries[selected].Text;
+                                done = true;
+                                continue;
+                            case ConsoleKey.Escape:
+                                result = null;
+                                done = true;
+                                continue;
+                        }
+                        ctx.UpdateTarget(Build(title, header, entries, selected));
+                    }
+                });
+            return result;
         }
         finally
         {
@@ -75,30 +94,31 @@ static class Menu
         }
     }
 
-    private static void Render(string title, List<(string Text, bool IsItem)> entries, int selected)
+    private static IRenderable Build(string title, IRenderable? header, List<(string Text, bool IsItem)> entries, int selected)
     {
-        AnsiConsole.Clear();
-        AnsiConsole.Write(new Rule($"[bold blue]{Markup.Escape(title)}[/]").LeftJustified());
-        AnsiConsole.MarkupLine("");
-        AnsiConsole.MarkupLine("[dim]↑/↓ navigate  •  Enter select  •  Esc back[/]");
-        AnsiConsole.MarkupLine("");
+        var rows = new List<IRenderable>();
+        if (header is not null)
+        {
+            rows.Add(header);
+            rows.Add(new Markup(""));
+        }
+        rows.Add(new Rule($"[bold blue]{Markup.Escape(title)}[/]").LeftJustified());
+        rows.Add(new Markup(""));
+        rows.Add(new Markup("[dim]↑/↓ navigate  •  Enter select  •  Esc back[/]"));
+        rows.Add(new Markup(""));
 
         for (int i = 0; i < entries.Count; i++)
         {
             var (text, isItem) = entries[i];
             if (!isItem)
-            {
-                AnsiConsole.MarkupLine($"  [yellow]{Markup.Escape(text)}[/]");
-            }
+                rows.Add(new Markup($"  [yellow]{Markup.Escape(text)}[/]"));
             else if (i == selected)
-            {
-                AnsiConsole.MarkupLine($"  [black on cyan]▶ {Markup.Escape(text)}[/]");
-            }
+                rows.Add(new Markup($"  [black on cyan]▶ {Markup.Escape(text)}[/]"));
             else
-            {
-                AnsiConsole.MarkupLine($"    {Markup.Escape(text)}");
-            }
+                rows.Add(new Markup($"    {Markup.Escape(text)}"));
         }
+
+        return new Rows(rows);
     }
 
     private static int FindPrev(List<(string Text, bool IsItem)> entries, int from)

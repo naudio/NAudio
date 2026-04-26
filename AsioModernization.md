@@ -56,6 +56,8 @@ public sealed class AsioDevice : IDisposable
     public event EventHandler<AsioAudioCapturedEventArgs> AudioCaptured;   // recording mode
     public event EventHandler<StoppedEventArgs>            Stopped;
     public event EventHandler                              DriverResetRequest;
+    public event EventHandler                              LatenciesChanged;
+    public event EventHandler                              ResyncOccurred;
 }
 ```
 
@@ -185,6 +187,16 @@ There is no "valid" flag on `AsioClockSource` to filter on; what you see is what
 **Experimental.** The get path is exercised against at least one consumer-class driver (SSL USB returns a single "Computer" entry, and Focusrite returns a single "USB" entry) and the marshalling shape matches the SDK header, but `SetClockSource` has not yet been validated against an interface that exposes multiple selectable sources. Cross-driver coverage of both paths against pro interfaces (RME / MOTU / Apollo / Antelope) is outstanding — bug reports welcome.
 
 Note: `AsioDriver.GetClockSources` was historically declared with a broken `out long clocks` signature that would only have read the first 8 bytes of the first source, and `numSources` was passed by value rather than as the SDK-mandated in/out pointer. The method was never called by any NAudio code, so the fix is non-breaking.
+
+### Driver-initiated messages — buffer size, latencies, resync
+
+The `AsioMessageCallBack` selector dispatch in `AsioDriverExt` historically advertised support only for engine version and reset request, returning `0` for `kAsioBufferSizeChange`, `kAsioLatenciesChanged`, and `kAsioResyncRequest`. With `Reinitialize()` in place those messages are now actionable, so the callback advertises support for all three and `AsioDevice` surfaces them with a hybrid policy:
+
+- **`kAsioBufferSizeChange`** — folded into the existing `DriverResetRequest` event. The recovery path (`Stop` → `Reinitialize` → `Start`) is identical to a sample-rate change: `Reinitialize` re-enters `CreateBuffers`, picks up the driver's new preferred buffer size, and reallocates the per-channel float and staging buffers against it. The new size argument the driver passes (`value`) is dropped — callers read it from `FramesPerBuffer` after recovery.
+- **`kAsioLatenciesChanged`** — surfaced as a separate `LatenciesChanged` event. No buffer rebuild is required; consumers re-read `InputLatencySamples` / `OutputLatencySamples` and refresh any UI that displays them. This matters most after `SetClockSource`, which is one of the things that triggers a latency change.
+- **`kAsioResyncRequest`** — surfaced as `ResyncOccurred`. Informational only — the driver detected a clock dropout / xrun and asked the host to compensate. Apps that surface dropout diagnostics can log it; everyone else can ignore it.
+
+All three events dispatch on the captured `SynchronizationContext`, identical to `DriverResetRequest`. Before this change, control-panel-initiated buffer-size changes were silently corrupting the pre-allocated staging buffers (still sized for the old `framesPerBuffer`); the user had no notification that anything had happened.
 
 ### Lifecycle
 

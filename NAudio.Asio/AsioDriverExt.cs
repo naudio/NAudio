@@ -58,6 +58,26 @@ namespace NAudio.Wave.Asio
         public Action ResetRequestCallback;
 
         /// <summary>
+        /// Raised when the driver signals <c>kAsioBufferSizeChange</c>. The argument is the new
+        /// preferred buffer size in frames as reported by the driver. Recovery requires the same
+        /// <c>Stop</c> → <c>Reinitialize</c> → <c>Start</c> dance as a reset request, so
+        /// <see cref="NAudio.Wave.AsioDevice"/> folds this into its <c>DriverResetRequest</c> event.
+        /// </summary>
+        public Action<int> BufferSizeChangedCallback;
+
+        /// <summary>
+        /// Raised when the driver signals <c>kAsioLatenciesChanged</c>. No buffer rebuild is
+        /// required — consumers typically just re-read <see cref="AsioDriver.GetLatencies"/>.
+        /// </summary>
+        public Action LatenciesChangedCallback;
+
+        /// <summary>
+        /// Raised when the driver signals <c>kAsioResyncRequest</c> (the driver detected a clock
+        /// drop / xrun and is asking the host to resynchronise). Informational — no action required.
+        /// </summary>
+        public Action ResyncRequestCallback;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="AsioDriverExt"/> class based on an already
         /// instantiated AsioDriver instance.
         /// </summary>
@@ -495,14 +515,13 @@ namespace NAudio.Wave.Asio
                         case AsioMessageSelector.kAsioEngineVersion:
                             return 1;
                         case AsioMessageSelector.kAsioResetRequest:
-                            ResetRequestCallback?.Invoke();
-                            return 0;
+                            return 1;
                         case AsioMessageSelector.kAsioBufferSizeChange:
-                            return 0;
+                            return 1;
                         case AsioMessageSelector.kAsioResyncRequest:
-                            return 0;
+                            return 1;
                         case AsioMessageSelector.kAsioLatenciesChanged:
-                            return 0;
+                            return 1;
                         case AsioMessageSelector.kAsioSupportsTimeInfo:
                             // We register pbufferSwitchTimeInfo and read AsioTime in the realtime path.
                             return 1;
@@ -517,11 +536,15 @@ namespace NAudio.Wave.Asio
                     ResetRequestCallback?.Invoke();
                     return 1;
                 case AsioMessageSelector.kAsioBufferSizeChange:
-                    return 0;
+                    // The driver passes the new preferred buffer size in `value`.
+                    BufferSizeChangedCallback?.Invoke(value);
+                    return 1;
                 case AsioMessageSelector.kAsioResyncRequest:
-                    return 0;
+                    ResyncRequestCallback?.Invoke();
+                    return 1;
                 case AsioMessageSelector.kAsioLatenciesChanged:
-                    return 0;
+                    LatenciesChangedCallback?.Invoke();
+                    return 1;
                 case AsioMessageSelector.kAsioSupportsTimeInfo:
                     return 1;
                 case AsioMessageSelector.kAsioSupportsTimeCode:

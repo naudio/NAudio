@@ -2,6 +2,8 @@
 
 ASIO drivers can ask the host to reinitialize. The most common trigger is the user opening the driver's control panel and changing the sample rate, but it can also fire when the driver itself recovers from a fault, when a hardware setting changes, or when the driver wants to renegotiate buffer sizes. NAudio 3 surfaces this through the `DriverResetRequest` event with a supported recovery path: `Stop` → `Reinitialize` → `Start`.
 
+Buffer-size-change requests (`kAsioBufferSizeChange`) are folded into the same event — the driver telling you it wants a new buffer size needs the same recovery as a sample-rate change, since `Reinitialize` rebuilds buffers against whatever the driver's current preferred size is.
+
 ## The event
 
 ```c#
@@ -100,6 +102,27 @@ device.DriverResetRequest += (_, _) =>
 ```
 
 You can also ignore the event entirely. The driver will keep running, but with whatever settings it had before — which may now disagree with the user's expectations. The recommended path is to reinitialize.
+
+## Related driver-message events
+
+`DriverResetRequest` is the event that requires action. Two adjacent driver messages surface separately because they don't:
+
+```c#
+device.LatenciesChanged += (_, _) =>
+{
+    // The driver's reported input/output latency changed (e.g. after SetClockSource).
+    // No buffer rebuild needed — re-read the values and refresh any UI that shows them.
+    Log.Info($"ASIO latency changed: in={device.InputLatencySamples}, out={device.OutputLatencySamples}");
+};
+
+device.ResyncOccurred += (_, _) =>
+{
+    // The driver detected a clock dropout / xrun. Informational only.
+    Log.Warn("ASIO driver reported a resync request (likely a dropout).");
+};
+```
+
+Both fire on the captured `SynchronizationContext`, same as `DriverResetRequest`. Neither requires you to stop or reinitialize the device — the audio engine keeps running.
 
 ## Why the legacy `AsioOut` API didn't have this
 

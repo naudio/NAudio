@@ -109,6 +109,9 @@ namespace NAudio.Wave
                 throw;
             }
             driver.ResetRequestCallback = OnDriverResetRequest;
+            driver.BufferSizeChangedCallback = OnDriverBufferSizeChanged;
+            driver.LatenciesChangedCallback = OnDriverLatenciesChanged;
+            driver.ResyncRequestCallback = OnDriverResyncRequest;
             state = AsioDeviceState.Unconfigured;
         }
 
@@ -225,10 +228,31 @@ namespace NAudio.Wave
 
         /// <summary>
         /// Raised when the driver reports that its settings have changed (e.g. the user opened the control panel and
-        /// altered the sample rate). The recommended response is <see cref="Stop"/> → <see cref="Reinitialize"/> → <see cref="Start"/>.
+        /// altered the sample rate, or the driver requested a buffer-size change). The recommended response is
+        /// <see cref="Stop"/> → <see cref="Reinitialize"/> → <see cref="Start"/>.
         /// Dispatched on the captured <see cref="SynchronizationContext"/>.
         /// </summary>
+        /// <remarks>
+        /// Buffer-size-change requests (<c>kAsioBufferSizeChange</c>) are folded into this event, since the
+        /// recovery path is identical: <see cref="Reinitialize"/> rebuilds the buffers against the driver's
+        /// current preferred size.
+        /// </remarks>
         public event EventHandler DriverResetRequest;
+
+        /// <summary>
+        /// Raised when the driver reports that its input/output latencies have changed (e.g. after a clock-source
+        /// switch via <see cref="SetClockSource"/>). No buffer rebuild is required — the typical response is to
+        /// re-read <see cref="InputLatencySamples"/> / <see cref="OutputLatencySamples"/> and refresh any UI that
+        /// displays them. Dispatched on the captured <see cref="SynchronizationContext"/>.
+        /// </summary>
+        public event EventHandler LatenciesChanged;
+
+        /// <summary>
+        /// Raised when the driver reports a clock dropout / xrun via <c>kAsioResyncRequest</c>. Informational —
+        /// no recovery action is required, but applications that surface dropout diagnostics can log it here.
+        /// Dispatched on the captured <see cref="SynchronizationContext"/>.
+        /// </summary>
+        public event EventHandler ResyncOccurred;
 
         /// <summary>
         /// Raised per ASIO buffer-switch while recording. Dispatched synchronously on the ASIO driver thread for latency reasons;
@@ -609,6 +633,9 @@ namespace NAudio.Wave
                 // After this, the driver promises no more callbacks; releasing the driver is safe.
                 callbackIdle.Wait(TimeSpan.FromSeconds(1));
                 driver.ResetRequestCallback = null;
+                driver.BufferSizeChangedCallback = null;
+                driver.LatenciesChangedCallback = null;
+                driver.ResyncRequestCallback = null;
                 driver.ReleaseDriver();
             }
             finally
@@ -856,7 +883,29 @@ namespace NAudio.Wave
 
         private void OnDriverResetRequest()
         {
-            var handler = DriverResetRequest;
+            DispatchEvent(DriverResetRequest);
+        }
+
+        // Buffer-size-change recovery is identical to a reset (Reinitialize rebuilds buffers against the
+        // driver's current preferred size), so we route it through the same event rather than adding a
+        // separate one. The new size argument is dropped — callers read it from FramesPerBuffer post-recovery.
+        private void OnDriverBufferSizeChanged(int newBufferSize)
+        {
+            DispatchEvent(DriverResetRequest);
+        }
+
+        private void OnDriverLatenciesChanged()
+        {
+            DispatchEvent(LatenciesChanged);
+        }
+
+        private void OnDriverResyncRequest()
+        {
+            DispatchEvent(ResyncOccurred);
+        }
+
+        private void DispatchEvent(EventHandler handler)
+        {
             if (handler is null) return;
             if (syncContext is null)
                 ThreadPool.QueueUserWorkItem(_ => handler(this, EventArgs.Empty));

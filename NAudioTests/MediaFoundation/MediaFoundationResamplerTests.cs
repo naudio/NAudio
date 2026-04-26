@@ -5,6 +5,7 @@ using NUnit.Framework;
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace NAudioTests.MediaFoundation
 {
@@ -126,6 +127,132 @@ namespace NAudioTests.MediaFoundation
                 var secondRead = resampler.Read(second.AsSpan());
                 Assert.That(secondRead, Is.EqualTo(firstRead));
                 Assert.That(second, Is.EqualTo(first), "After source rewind + reposition, initial output should repeat");
+            }
+        }
+
+        [Test]
+        public void Experimental_CanCreateOnOneThreadAndUseOnAnother()
+        {
+            const int inputRate = 44100;
+            const int outputRate = 48000;
+            const double frequency = 1000;
+            const double durationSeconds = 0.5;
+
+            var source = CreateSineWaveSource(inputRate, 1, durationSeconds, frequency);
+            var outputFormat = WaveFormat.CreateIeeeFloatWaveFormat(outputRate, 1);
+
+            MediaFoundationResampler resampler = null;
+            int creationThreadId = -1;
+            Exception createError = null;
+            var createThread = new Thread(() =>
+            {
+                try
+                {
+                    creationThreadId = Environment.CurrentManagedThreadId;
+                    resampler = new MediaFoundationResampler(source, outputFormat);
+                }
+                catch (Exception ex) { createError = ex; }
+            }) { IsBackground = true };
+            createThread.Start();
+            createThread.Join();
+            if (createError != null) throw createError;
+
+            try
+            {
+                byte[] outputBytes = null;
+                int readThreadId = -1;
+                Exception readError = null;
+                var readThread = new Thread(() =>
+                {
+                    try
+                    {
+                        readThreadId = Environment.CurrentManagedThreadId;
+                        outputBytes = ReadAllBytes(resampler, resampler.WaveFormat.AverageBytesPerSecond / 100);
+                    }
+                    catch (Exception ex) { readError = ex; }
+                }) { IsBackground = true };
+                readThread.Start();
+                readThread.Join();
+                if (readError != null) throw readError;
+
+                Assert.That(readThreadId, Is.Not.EqualTo(creationThreadId), "Test invalid: threads must differ");
+                var samples = BytesToFloatSamples(outputBytes);
+                Assert.That(samples.Length, Is.GreaterThan(outputRate / 4), "Expected substantial output samples");
+                var estimated = EstimateFrequencyByPositiveZeroCrossings(samples, outputRate);
+                Assert.That(estimated, Is.InRange(frequency - 30, frequency + 30),
+                    "Resampler created on thread A and read on thread B should still resample correctly");
+            }
+            finally
+            {
+                resampler?.Dispose();
+                source.Dispose();
+            }
+        }
+
+        [Test]
+        public void Experimental_CanCreateOnStaThreadAndUseOnMtaThread()
+        {
+            const int inputRate = 44100;
+            const int outputRate = 48000;
+            const double frequency = 1000;
+            const double durationSeconds = 0.5;
+
+            var source = CreateSineWaveSource(inputRate, 1, durationSeconds, frequency);
+            var outputFormat = WaveFormat.CreateIeeeFloatWaveFormat(outputRate, 1);
+
+            MediaFoundationResampler resampler = null;
+            int creationThreadId = -1;
+            ApartmentState creationApartment = ApartmentState.Unknown;
+            Exception createError = null;
+            var createThread = new Thread(() =>
+            {
+                try
+                {
+                    creationThreadId = Environment.CurrentManagedThreadId;
+                    creationApartment = Thread.CurrentThread.GetApartmentState();
+                    resampler = new MediaFoundationResampler(source, outputFormat);
+                }
+                catch (Exception ex) { createError = ex; }
+            }) { IsBackground = true };
+            createThread.SetApartmentState(ApartmentState.STA);
+            createThread.Start();
+            createThread.Join();
+            if (createError != null) throw createError;
+            Assert.That(creationApartment, Is.EqualTo(ApartmentState.STA), "Create thread should be STA");
+
+            try
+            {
+                byte[] outputBytes = null;
+                int readThreadId = -1;
+                ApartmentState readApartment = ApartmentState.Unknown;
+                Exception readError = null;
+                var readThread = new Thread(() =>
+                {
+                    try
+                    {
+                        readThreadId = Environment.CurrentManagedThreadId;
+                        readApartment = Thread.CurrentThread.GetApartmentState();
+                        outputBytes = ReadAllBytes(resampler, resampler.WaveFormat.AverageBytesPerSecond / 100);
+                    }
+                    catch (Exception ex) { readError = ex; }
+                }) { IsBackground = true };
+                readThread.SetApartmentState(ApartmentState.MTA);
+                readThread.Start();
+                readThread.Join();
+                if (readError != null) throw readError;
+
+                Assert.That(readThreadId, Is.Not.EqualTo(creationThreadId), "Test invalid: threads must differ");
+                Assert.That(readApartment, Is.EqualTo(ApartmentState.MTA), "Read thread should be MTA");
+                var samples = BytesToFloatSamples(outputBytes);
+                Assert.That(samples.Length, Is.GreaterThan(outputRate / 4), "Expected substantial output samples");
+                var estimated = EstimateFrequencyByPositiveZeroCrossings(samples, outputRate);
+                Assert.That(estimated, Is.InRange(frequency - 30, frequency + 30),
+                    "Resampler created on STA thread and read on MTA thread should still resample correctly");
+            }
+            finally
+            {
+                resampler?.Dispose();
+                source.Dispose();
             }
         }
 

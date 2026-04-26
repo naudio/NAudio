@@ -199,22 +199,51 @@ namespace NAudio.Wave.Asio
         }
 
         /// <summary>
-        /// Gets the clock sources.
+        /// Enumerates the clock sources available to the driver (Internal, Word Clock, S/PDIF, ADAT, …).
+        /// Each entry's <see cref="AsioClockSource.IsCurrentSource"/> indicates whether the driver is
+        /// currently locked to it; the <see cref="AsioClockSource.Index"/> is the value to pass to
+        /// <see cref="SetClockSource(int)"/>. The driver may signal <c>kAsioResetRequest</c> in response
+        /// to a clock-source change, which surfaces via <c>AsioDevice.DriverResetRequest</c>.
         /// </summary>
-        /// <param name="clocks">The clocks.</param>
-        /// <param name="numSources">The num sources.</param>
-        public void GetClockSources(out long clocks, int numSources)
+        /// <param name="maxSources">Upper bound on the number of sources to retrieve. 16 is generous —
+        /// even high-end interfaces rarely report more than 8.</param>
+        public AsioClockSource[] GetClockSources(int maxSources = 16)
         {
-            HandleException(asioDriverVTable.getClockSources(pAsioComObject, out clocks,numSources), "getClockSources");
+            if (maxSources <= 0) throw new ArgumentOutOfRangeException(nameof(maxSources));
+            // AsioClockSource carries a [ByValTStr] string field, so it can't be 'fixed' for direct
+            // pinning; allocate native memory, call in, then marshal each entry back as a struct.
+            int structSize = Marshal.SizeOf<AsioClockSource>();
+            IntPtr nativeBuffer = Marshal.AllocHGlobal(structSize * maxSources);
+            try
+            {
+                int numSources = maxSources;
+                HandleException(
+                    asioDriverVTable.getClockSources(pAsioComObject, nativeBuffer, ref numSources),
+                    "getClockSources");
+                if (numSources < 0) numSources = 0;
+                if (numSources > maxSources) numSources = maxSources;
+                var result = new AsioClockSource[numSources];
+                for (int i = 0; i < numSources; i++)
+                {
+                    var entryPtr = IntPtr.Add(nativeBuffer, i * structSize);
+                    result[i] = Marshal.PtrToStructure<AsioClockSource>(entryPtr);
+                }
+                return result;
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(nativeBuffer);
+            }
         }
 
         /// <summary>
-        /// Sets the clock source.
+        /// Sets the clock source. Use one of the <see cref="AsioClockSource.Index"/> values returned
+        /// by <see cref="GetClockSources"/>.
         /// </summary>
-        /// <param name="reference">The reference.</param>
+        /// <param name="reference">Clock source index reported by the driver.</param>
         public void SetClockSource(int reference)
         {
-            HandleException(asioDriverVTable.setClockSource(pAsioComObject, reference), "setClockSources");
+            HandleException(asioDriverVTable.setClockSource(pAsioComObject, reference), "setClockSource");
         }
 
         /// <summary>
@@ -427,8 +456,9 @@ namespace NAudio.Wave.Asio
             public delegate AsioError ASIOsetSampleRate(IntPtr _pUnknown, double sampleRate);
             public ASIOsetSampleRate setSampleRate = null;
             //15 virtual ASIOError getClockSources(ASIOClockSource *clocks, long *numSources) = 0;
+            // numSources is in/out: caller passes array size, driver writes back actual count populated.
             [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
-            public delegate AsioError ASIOgetClockSources(IntPtr _pUnknown, out long clocks, int numSources);
+            public delegate AsioError ASIOgetClockSources(IntPtr _pUnknown, IntPtr clocks, ref int numSources);
             public ASIOgetClockSources getClockSources = null;
             //16 virtual ASIOError setClockSource(long reference) = 0;
             [UnmanagedFunctionPointer(CallingConvention.ThisCall)]

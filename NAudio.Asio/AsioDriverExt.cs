@@ -258,6 +258,17 @@ namespace NAudio.Wave.Asio
         }
 
         /// <summary>
+        /// Enumerates the clock sources reported by the driver (Internal, Word Clock, S/PDIF, ADAT, …).
+        /// </summary>
+        public AsioClockSource[] GetClockSources() => driver.GetClockSources();
+
+        /// <summary>
+        /// Selects the clock source the driver should lock to. The driver may respond with a reset
+        /// request, which surfaces via <c>AsioDevice.DriverResetRequest</c>.
+        /// </summary>
+        public void SetClockSource(int reference) => driver.SetClockSource(reference);
+
+        /// <summary>
         /// Gets or sets the fill buffer callback.
         /// </summary>
         /// <value>The fill buffer callback.</value>

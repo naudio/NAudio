@@ -164,6 +164,30 @@ namespace NAudio.Wave
         }
 
         /// <summary>
+        /// Enumerates the clock sources reported by the driver. Pro interfaces typically expose Internal
+        /// alongside Word Clock, S/PDIF, AES/EBU, and ADAT sync inputs; consumer interfaces usually report
+        /// a single Internal source. The entry whose <see cref="AsioClockSource.IsCurrentSource"/> is non-zero
+        /// is the one the driver is currently locked to.
+        /// </summary>
+        public AsioClockSource[] GetClockSources()
+        {
+            ThrowIfDisposed();
+            return driver.GetClockSources();
+        }
+
+        /// <summary>
+        /// Selects the clock source the driver should lock to. Pass an <see cref="AsioClockSource.Index"/>
+        /// reported by <see cref="GetClockSources"/>. The driver may respond by raising a reset request,
+        /// which surfaces via <see cref="DriverResetRequest"/> — handle it with the standard
+        /// <c>Stop</c> → <c>Reinitialize</c> → <c>Start</c> recovery pattern.
+        /// </summary>
+        public void SetClockSource(int reference)
+        {
+            ThrowIfDisposed();
+            driver.SetClockSource(reference);
+        }
+
+        /// <summary>
         /// Number of audio frames per ASIO buffer for the current configuration. Valid after any successful <c>Init*</c> call.
         /// </summary>
         public int FramesPerBuffer

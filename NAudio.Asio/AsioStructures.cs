@@ -58,6 +58,27 @@ namespace NAudio.Wave.Asio
     // -------------------------------------------------------------------------------
 
 
+    /// <summary>
+    /// One available clock source as reported by <c>ASIOGetClockSources</c>. Pro audio interfaces
+    /// typically expose Internal alongside Word Clock, S/PDIF, AES/EBU, and ADAT sync inputs;
+    /// consumer interfaces usually report a single Internal source.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 4, CharSet = CharSet.Ansi)]
+    public struct AsioClockSource
+    {
+        /// <summary>Reference index passed to <c>SetClockSource</c>.</summary>
+        public int Index;
+        /// <summary>Associated input channel (e.g. the S/PDIF input), or -1 if not channel-bound.</summary>
+        public int AssociatedChannel;
+        /// <summary>Associated channel group, or -1.</summary>
+        public int AssociatedGroup;
+        /// <summary>Non-zero if this is the source the driver is currently locked to.</summary>
+        public int IsCurrentSource;
+        /// <summary>Human-readable name for the source (e.g. "Internal", "Word Clock", "S/PDIF").</summary>
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
+        public string Name;
+    }
+
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
     internal struct AsioBufferInfo
     {

@@ -162,6 +162,30 @@ In both paths the timing data is staged into `AsioDriverExt.LatestTimingInfo` (a
 
 The playback-only mode does not expose timing. Playback is `Read`-driven and has no per-callback context surface; if a future use case needs it, the playback path can grow a `BufferRendered` event mirroring `AudioCaptured`.
 
+### Clock source selection (experimental)
+
+Pro audio interfaces typically expose multiple clock sources (Internal / Word Clock / S/PDIF / AES/EBU / ADAT). NAudio 3 surfaces the ASIO SDK's `getClockSources` / `setClockSource` on `AsioDevice`:
+
+```csharp
+public AsioClockSource[] GetClockSources();
+public void SetClockSource(int reference);
+```
+
+`AsioClockSource` carries `Index` (the value to pass to `SetClockSource`), `Name` (e.g. "Internal", "Word Clock", "S/PDIF"), `AssociatedChannel` / `AssociatedGroup` (input channel or channel group the source rides on, or `-1` for not-applicable per SDK convention), and `IsCurrentSource` (non-zero on the entry the driver is currently locked to).
+
+Two driver-side conventions are observable in practice and worth knowing about:
+
+- Some drivers (e.g. SSL USB) only return sources that are currently usable — ADAT and S/PDIF disappear from the list when no signal is present.
+- Other drivers (RME, MOTU class) report every hardware source unconditionally, leaving lock-state assessment to the host.
+
+There is no "valid" flag on `AsioClockSource` to filter on; what you see is what the driver returned.
+
+`SetClockSource` may cause the driver to raise `kAsioResetRequest`, which surfaces via the existing `DriverResetRequest` event — handle it with the standard `Stop` → `Reinitialize` → `Start` recovery pattern. Internally the get path uses `Marshal.AllocHGlobal` + `Marshal.PtrToStructure<AsioClockSource>` per entry rather than a `fixed` pin, because the struct's `[MarshalAs(ByValTStr, SizeConst=32)]` name field makes it a managed type that can't be directly pinned.
+
+**Experimental.** The get path is exercised against at least one consumer-class driver (SSL USB returns a single "Computer" entry, and Focusrite returns a single "USB" entry) and the marshalling shape matches the SDK header, but `SetClockSource` has not yet been validated against an interface that exposes multiple selectable sources. Cross-driver coverage of both paths against pro interfaces (RME / MOTU / Apollo / Antelope) is outstanding — bug reports welcome.
+
+Note: `AsioDriver.GetClockSources` was historically declared with a broken `out long clocks` signature that would only have read the first 8 bytes of the first source, and `numSources` was passed by value rather than as the SDK-mandated in/out pointer. The method was never called by any NAudio code, so the fix is non-breaking.
+
 ### Lifecycle
 
 - `Init*` can only be called when `State == Unconfigured`. Reconfiguring requires a new instance.

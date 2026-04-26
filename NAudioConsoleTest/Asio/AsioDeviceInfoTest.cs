@@ -77,6 +77,35 @@ static class AsioDeviceInfoTest
             AnsiConsole.MarkupLine($"  {tag} {rate} Hz");
         }
 
+        AnsiConsole.MarkupLine("\n[bold]Clock sources[/]");
+        try
+        {
+            var clocks = device.GetClockSources();
+            if (clocks.Length == 0)
+            {
+                AnsiConsole.MarkupLine("[yellow]Driver reported no clock sources.[/]");
+            }
+            else
+            {
+                var clockTable = new Table()
+                    .AddColumn("Idx").AddColumn("Name").AddColumn("Channel").AddColumn("Group").AddColumn("Current");
+                foreach (var c in clocks)
+                {
+                    clockTable.AddRow(
+                        c.Index.ToString(),
+                        Markup.Escape(c.Name ?? ""),
+                        c.AssociatedChannel.ToString(),
+                        c.AssociatedGroup.ToString(),
+                        c.IsCurrentSource != 0 ? "[green]✓[/]" : "");
+                }
+                AnsiConsole.Write(clockTable);
+            }
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[yellow]Driver does not support clock-source enumeration: {Markup.Escape(ex.Message)}[/]");
+        }
+
         AnsiConsole.MarkupLine("\n[dim]Press any key...[/]");
         Console.ReadKey(intercept: true);
     }

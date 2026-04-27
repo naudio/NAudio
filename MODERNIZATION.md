@@ -900,6 +900,12 @@ These will need to be documented in the migration guide:
 | New: `WaveFileWriter.AddChunk(IWaveChunkWriter)` | Interface-based entry point (symmetric with `IWaveChunkInterpreter<T>` on the read side) |
 | New: `WaveFileWriterOptions` + constructor overload `WaveFileWriter(stream/path, format, options)` | Single configuration surface; `new WaveFileWriterOptions { EnableRf64 = true }` reserves a `JUNK` placeholder and promotes to `RF64` + `ds64` at close when the data chunk exceeds 4 GB. Passing `null` for options uses defaults |
 
+### Sample / demo updates
+
+| Change | Notes |
+| ------ | ----- |
+| NAudioDemo network chat: retired the vendored `Lib/NSpeex/NSpeex.dll` and replaced the three Speex codecs with Opus codecs (Narrow 8 kHz / Wide 16 kHz / Full 48 kHz) via the `Concentus` NuGet package. Roundtrip-tested by `OpusChatCodecTests`. | Speex was deprecated by Xiph in 2012 in favour of Opus; this removes the only binary in the repo |
+
 ### DMO API changes
 
 | Change | Migration |

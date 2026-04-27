@@ -18,7 +18,7 @@ NAudio is an open source .NET audio library written by [Mark Heath](https://mark
   * AIFF
   * MP3 (using ACM, DMO or MFT)
   * G.711 mu-law and a-law
-  * ADPCM, G.722, Speex (using NSpeex)
+  * ADPCM, G.722, Opus (using Concentus)
   * WMA, AAC, MP4 and more others with Media Foundation
 * Convert between various forms of uncompressed audio
   * Change the number of channels - Mono to stereo, stereo to mono

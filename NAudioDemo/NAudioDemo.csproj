@@ -13,11 +13,6 @@
     <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="NSpeex">
-      <HintPath>..\Lib\NSpeex\NSpeex.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\NAudio.Asio\NAudio.Asio.csproj" />
     <ProjectReference Include="..\NAudio.Midi\NAudio.Midi.csproj" />
     <ProjectReference Include="..\NAudio.WinForms\NAudio.WinForms.csproj" />
@@ -36,5 +31,8 @@
     <None Include="Resources\Mute.png" />
     <Content Include="Resources\Open.png" />
     <None Include="Resources\Unmute.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Concentus" Version="2.2.2" />
   </ItemGroup>
 </Project>

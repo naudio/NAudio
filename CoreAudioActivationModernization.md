@@ -113,9 +113,9 @@ Decide per-site, be explicit. The disposal pattern differs.
 
 Suggested order: leaf wrappers first, MMDevice/MMDeviceCollection next, session/topology after, callback-mixing files last.
 
-- [ ] `AudioRenderClient.cs:18` (1)
-- [ ] `AudioCaptureClient.cs:18` (1)
-- [ ] `AudioClockClient.cs:19` (1)
+- [x] `AudioRenderClient.cs:18` (1)
+- [x] `AudioCaptureClient.cs:18` (1)
+- [x] `AudioClockClient.cs:19` (1)
 - [ ] `AudioStreamVolume.cs:19` (1)
 - [ ] `AudioMeterInformation.cs:43` (1)
 - [ ] `SimpleAudioVolume.cs:27` (1)
@@ -188,3 +188,4 @@ Must remain green:
 | 2026-04-28 | Branch created | `naudio3dev-coreaudio-activation` from `naudio3dev` |
 | 2026-04-28 | Headline activation fix landed | `MMDeviceEnumerator..ctor` migrated to `ComActivation.CreateInstance<IMMDeviceEnumerator>(...)`; `Dispose(bool)` now does `((object)realEnumerator is ComObject co) co.FinalRelease()`; `Interfaces/MMDeviceEnumeratorComObject.cs` deleted. Build clean. NAudioTests: 1170 passed / 14 skipped (missing local files) / 0 failed across all 1184 tests. |
 | 2026-04-28 | AOT smoke checkpoint | `dotnet publish -p:PublishTrimmed=true -p:BuiltInComInteropSupport=false`: publish has zero IL2026/IL3050 warnings; runtime no longer throws `NotSupportedException` from `MMDeviceEnumerator..ctor` line 48. Next crash now lands at `EnumerateAudioEndPoints` line 66 — a `Marshal.GetObjectForIUnknown` bridge site, which is exactly the sweep work captured in the call-site inventory above. Under `BuiltInComInteropSupport=true`: also zero warnings at publish time (better than the prompt anticipated — trim graph from this smoke entry point doesn't pull MediaFoundation paths). PublishAot blocked on local VS toolchain (vswhere/link.exe), unrelated to this work. |
+| 2026-04-28 | Leaf wrappers migrated | `AudioRenderClient`, `AudioCaptureClient`, `AudioClockClient` now project via `ComActivation.ComWrappers.GetOrCreateObjectForComInstance(ptr, UniqueInstance)`, release the input IntPtr immediately, and dispose via `((object)field is ComObject co) co.FinalRelease()`. The dual-pointer (`nativePointer` + RCW) pattern is gone — single ownership through the wrapper. NAudioTests: 1170/14/0 (no regressions). |

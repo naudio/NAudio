@@ -1,6 +1,8 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 using NAudio.CoreAudioApi.Interfaces;
+using NAudio.Wasapi.CoreAudioApi;
 
 namespace NAudio.CoreAudioApi
 {
@@ -10,12 +12,18 @@ namespace NAudio.CoreAudioApi
     public class AudioCaptureClient : IDisposable
     {
         IAudioCaptureClient audioCaptureClientInterface;
-        private IntPtr nativePointer;
 
         internal AudioCaptureClient(IntPtr nativePointer)
         {
-            this.nativePointer = nativePointer;
-            audioCaptureClientInterface = (IAudioCaptureClient)Marshal.GetObjectForIUnknown(nativePointer);
+            try
+            {
+                audioCaptureClientInterface = (IAudioCaptureClient)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    nativePointer, CreateObjectFlags.UniqueInstance);
+            }
+            finally
+            {
+                Marshal.Release(nativePointer);
+            }
         }
 
         /// <summary>
@@ -86,12 +94,11 @@ namespace NAudio.CoreAudioApi
         {
             if (audioCaptureClientInterface != null)
             {
+                if ((object)audioCaptureClientInterface is ComObject co)
+                {
+                    co.FinalRelease();
+                }
                 audioCaptureClientInterface = null;
-            }
-            if (nativePointer != IntPtr.Zero)
-            {
-                Marshal.Release(nativePointer);
-                nativePointer = IntPtr.Zero;
             }
             GC.SuppressFinalize(this);
         }

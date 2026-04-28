@@ -1,7 +1,9 @@
 ﻿using System;
 using NAudio.CoreAudioApi.Interfaces;
+using NAudio.Wasapi.CoreAudioApi;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 
 namespace NAudio.CoreAudioApi
 {
@@ -11,12 +13,18 @@ namespace NAudio.CoreAudioApi
     public class AudioClockClient : IDisposable
     {
         IAudioClock audioClockClientInterface;
-        private IntPtr nativePointer;
 
         internal AudioClockClient(IntPtr nativePointer)
         {
-            this.nativePointer = nativePointer;
-            audioClockClientInterface = (IAudioClock)Marshal.GetObjectForIUnknown(nativePointer);
+            try
+            {
+                audioClockClientInterface = (IAudioClock)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    nativePointer, CreateObjectFlags.UniqueInstance);
+            }
+            finally
+            {
+                Marshal.Release(nativePointer);
+            }
         }
 
         /// <summary>
@@ -106,12 +114,11 @@ namespace NAudio.CoreAudioApi
         {
             if (audioClockClientInterface != null)
             {
+                if ((object)audioClockClientInterface is ComObject co)
+                {
+                    co.FinalRelease();
+                }
                 audioClockClientInterface = null;
-            }
-            if (nativePointer != IntPtr.Zero)
-            {
-                Marshal.Release(nativePointer);
-                nativePointer = IntPtr.Zero;
             }
             GC.SuppressFinalize(this);
         }

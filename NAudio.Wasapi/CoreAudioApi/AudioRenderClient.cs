@@ -1,6 +1,8 @@
 using System;
 using NAudio.CoreAudioApi.Interfaces;
+using NAudio.Wasapi.CoreAudioApi;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 
 namespace NAudio.CoreAudioApi
 {
@@ -10,12 +12,18 @@ namespace NAudio.CoreAudioApi
     public class AudioRenderClient : IDisposable
     {
         IAudioRenderClient audioRenderClientInterface;
-        private IntPtr nativePointer;
 
         internal AudioRenderClient(IntPtr nativePointer)
         {
-            this.nativePointer = nativePointer;
-            audioRenderClientInterface = (IAudioRenderClient)Marshal.GetObjectForIUnknown(nativePointer);
+            try
+            {
+                audioRenderClientInterface = (IAudioRenderClient)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    nativePointer, CreateObjectFlags.UniqueInstance);
+            }
+            finally
+            {
+                Marshal.Release(nativePointer);
+            }
         }
 
         /// <summary>
@@ -58,18 +66,16 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public void Dispose()
         {
+            // Deterministic release is important: in exclusive mode the device cannot be
+            // re-opened until all COM references are released. (Never do this from a
+            // finalizer — the COM runtime may already be torn down.)
             if (audioRenderClientInterface != null)
             {
+                if ((object)audioRenderClientInterface is ComObject co)
+                {
+                    co.FinalRelease();
+                }
                 audioRenderClientInterface = null;
-            }
-            // Deterministic release is important: in exclusive mode the device cannot be
-            // re-opened until all COM references are released.  Marshal.Release on the raw
-            // IntPtr works with both classic RCWs and [GeneratedComInterface] wrappers.
-            // (Never do this from a finalizer — the COM runtime may already be torn down.)
-            if (nativePointer != IntPtr.Zero)
-            {
-                Marshal.Release(nativePointer);
-                nativePointer = IntPtr.Zero;
             }
             GC.SuppressFinalize(this);
         }

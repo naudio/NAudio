@@ -434,6 +434,22 @@ namespace NAudio.CoreAudioApi
                     audioStreamVolume.Dispose();
                     audioStreamVolume = null;
                 }
+                // FinalRelease the IAudioClient2/3 views first in case DICASTABLE
+                // produced separate ComWrappers instances per QI'd IID rather than
+                // aliasing audioClientInterface. If they're aliases (same underlying
+                // wrapper as audioClientInterface), the second/third FinalRelease is
+                // a no-op — FinalRelease is idempotent. If they're distinct wrappers,
+                // each holds its own QI'd refcount that would otherwise leak and have
+                // its finalizer release the same underlying COM object on the GC
+                // thread, racing with subsequent COM activity on the same endpoint.
+                if (audioClientInterface3 != null && (object)audioClientInterface3 is ComObject co3)
+                {
+                    co3.FinalRelease();
+                }
+                if (audioClientInterface2 != null && (object)audioClientInterface2 is ComObject co2)
+                {
+                    co2.FinalRelease();
+                }
                 if ((object)audioClientInterface is ComObject co)
                 {
                     co.FinalRelease();

@@ -5,25 +5,23 @@ using NAudio.Wave;
 
 namespace NAudioDemo.AudioPlaybackDemo
 {
+    /// <summary>
+    /// Plugin exposing the legacy <see cref="WasapiOut"/> API. Listed alongside
+    /// <see cref="WasapiPlayerPlugin"/> so users can A/B the two code paths.
+    /// </summary>
     class WasapiOutPlugin : IOutputDevicePlugin
     {
         WasapiOutSettingsPanel settingsPanel;
 
         public IWavePlayer CreateDevice(int latency)
         {
-            var builder = new WasapiPlayerBuilder()
-                .WithDevice(settingsPanel.SelectedDevice)
-                .WithLatency(latency);
-
-            if (settingsPanel.ShareMode == AudioClientShareMode.Exclusive)
-                builder.WithExclusiveMode();
-            else
-                builder.WithSharedMode();
-
-            if (settingsPanel.UseEventCallback)
-                builder.WithEventSync();
-
-            return builder.Build();
+#pragma warning disable CS0618 // legacy WasapiOut is intentionally exercised here
+            return new WasapiOut(
+                settingsPanel.SelectedDevice,
+                settingsPanel.ShareMode,
+                settingsPanel.UseEventCallback,
+                latency);
+#pragma warning restore CS0618
         }
 
         public UserControl CreateSettingsPanel()
@@ -32,10 +30,10 @@ namespace NAudioDemo.AudioPlaybackDemo
             return settingsPanel;
         }
 
-        public string Name => "WasapiOut";
+        public string Name => "WasapiOut (legacy)";
 
         public bool IsAvailable => Environment.OSVersion.Version.Major >= 6;
 
-        public int Priority => 1;
+        public int Priority => 2;
     }
 }

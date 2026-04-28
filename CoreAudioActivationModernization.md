@@ -181,6 +181,243 @@ Must remain green:
 
 ---
 
+## Next steps — pre-merge investigation plan
+
+> **Status: HOLD merge of Phase 2e until at least step 1 below is complete.** The
+> `WrapUnique` suppression empirically prevents the demo crash, but we don't yet
+> understand the underlying mechanism, and we haven't confirmed
+> `StrategyBasedComWrappers` is even the right primitive for an AOT-friendly
+> classic-COM consumer. Shipping the unmask-when-we-don't-understand-the-mask
+> position into NAudio 3 is uncomfortable for a foundational library.
+
+### What we know going in
+
+The investigation captured in the 2026-04-28 progress log entry produced these
+concrete findings; a future session should start from these rather than
+re-deriving them.
+
+#### Two distinct bugs, not one
+
+1. **Bug A (FIXED)** — `AudioClient.Dispose`'s defensive triple `FinalRelease`
+   from commit 9adbdf4 was self-inflicted. DICASTABLE returns the *same*
+   `ComObject` for `audioClientInterface as IAudioClient2/3`, and although
+   `ComObject.FinalRelease` is documented idempotent, calling it three times on
+   the alias empirically AVs in `Marshal.Release`. Single `FinalRelease` works.
+
+2. **Bug B (MASKED)** — a separate finalizer-thread AV (or `Invalid Program:
+   UnmanagedCallersOnly` fast-fail on a freed trampoline). Surfaces when
+   `StrategyBasedComWrappers`' generated wrapper finalizer runs on the GC
+   thread for some wrapper whose `_unknown` (or cached QI'd vtable) is no
+   longer valid. `GC.SuppressFinalize(wrapper)` inside `WrapUnique` masks it.
+   Mechanism not yet identified.
+
+#### CoreAudio interface agility matrix
+
+From `NAudioTests/Wasapi/IAgileObjectProbeTests` — probes each wrapper with
+`ComWrappers.TryGetComInstance` + `Marshal.QueryInterface` for `IAgileObject`,
+plus a vtable-dispatch on `IMarshal::GetUnmarshalClass` to detect FTM
+aggregation. Run from an MTA test thread:
+
+| Interface | IAgileObject | IMarshal | Effective status |
+| --- | --- | --- | --- |
+| `IMMDeviceEnumerator` | no | FTM | functionally agile |
+| `IMMDeviceCollection` | no | none | apartment-affine (no PSR) |
+| `IMMDevice` | no | none | apartment-affine (no PSR) |
+| `IPropertyStore` | no | none | apartment-affine (no PSR) |
+| `IDeviceTopology` | no | none | apartment-affine (no PSR) |
+| `IAudioEndpointVolume` | no | FTM | functionally agile |
+| `IAudioClient` | YES | FTM | truly agile |
+| `IAudioRenderClient` | YES | FTM | truly agile |
+| `IAudioClockClient` | YES | FTM | truly agile |
+| `IAudioSessionManager` | YES | FTM | truly agile |
+| `IAudioSessionEnumerator` | YES | FTM | truly agile |
+| `IAudioSessionControl` | YES | FTM | truly agile |
+
+#### The apartment-Release hypothesis is FALSIFIED
+
+The natural hypothesis ("non-agile object Released on the wrong apartment from
+the GC finalizer thread") doesn't survive the matrix above. The four
+apartment-affine-looking interfaces (`IMMDeviceCollection`, `IMMDevice`,
+`IPropertyStore`, `IDeviceTopology`) have *neither* `IAgileObject` *nor*
+`IMarshal` *nor* a registered proxy/stub class — confirmed by
+`RoGetAgileReference` returning `REGDB_E_IIDNOTREG`. There is no defined
+cross-apartment marshaling path for these IIDs at all. Yet classic RCW
+released them safely from the finalizer thread for years, which means their
+`Release` is implemented as a thread-safe `InterlockedDecrement` and apartment
+crossing isn't the issue.
+
+The remaining hypothesis is a **use-after-free on a cached QI'd vtable inside
+`StrategyBasedComWrappers`'s default cache strategy** — but this is a guess,
+not evidence. Future session needs to confirm or refute it.
+
+### The plan, ordered by leverage
+
+#### 1. CsWin32 / first-party-pattern spike (highest leverage)
+
+[Microsoft.Windows.CsWin32](https://github.com/microsoft/CsWin32) generates
+AOT-friendly P/Invoke + COM bindings from Win32 metadata. Generate
+`IMMDeviceEnumerator` + `IMMDevice` + `IAudioClient` via CsWin32 in a sandbox
+project. Look at:
+
+- How does the generated code wrap `IUnknown*`? `ComPtr<T>`-style? Custom
+  `ComWrappers` subclass? Something else?
+- How does it handle `Dispose` / finalization?
+- How does it project `[ComImport]`-style multi-vtable scenarios (the things
+  we need for the seven Phase 2f callback interfaces)?
+- How does it handle DICASTABLE-style `as IFoo2` casts — same wrapper, distinct
+  wrapper, or no support?
+- How does it do CCWs (managed objects implementing COM interfaces, e.g.
+  `IMMNotificationClient` callback)?
+
+If the CsWin32 pattern is materially different and looks more correct, that's
+the strong signal that we're hand-rolling an inferior approach. Decision
+point: switch to CsWin32-generated wrappers, or stay on hand-written
+`[GeneratedComInterface]` and accept what we have.
+
+Also check whether the **Windows App SDK (WinAppSDK)** ships AOT-targeted
+CoreAudio bindings — if so, that's another reference implementation to
+compare.
+
+**Estimated effort:** 2–3 hours.
+**Output:** "use CsWin32" / "stay on `[GeneratedComInterface]`" decision with
+reasoning.
+
+#### 2. Search dotnet/runtime for known issues
+
+30-minute task. Search [dotnet/runtime issues](https://github.com/dotnet/runtime/issues)
+for:
+
+- `StrategyBasedComWrappers UniqueInstance finalizer`
+- `[GeneratedComInterface] DICASTABLE FinalRelease`
+- `ComObject.Finalize AccessViolationException`
+- `ComWrappers cache strategy use-after-free`
+
+Also check the .NET 9 release notes / breaking changes for `ComWrappers`
+behavior changes — there were some between .NET 8 and 9.
+
+If our crash class is a known issue, the path forward becomes whatever the
+runtime team recommends. If not, our minimal repro (once we have one) is a
+candidate for filing.
+
+**Estimated effort:** 30 minutes.
+**Output:** linked issue numbers (if any) and runtime-team-recommended
+mitigation.
+
+#### 3. Build a deterministic headless repro
+
+The current `WrapUniqueCrashRepro` test is `[Explicit]` because it doesn't
+trip the demo crash even with `WrapUnique` suppression off. The most likely
+missing ingredient is a real WinForms message pump on the STA thread —
+`Application.Run` against a hidden `Form`, post the player + dispose +
+mixer-construct sequence as queued operations, exit the pump when done.
+NUnit's bare `[Apartment(STA)]` thread doesn't pump.
+
+Once we have a deterministic crash repro, every other downstream activity
+(bisect, root-cause confirmation, regression test) becomes vastly cheaper.
+Worth doing regardless of which architectural direction step 1 points to.
+
+**Estimated effort:** 2 hours.
+**Output:** a non-`[Explicit]` test that fast-fails the runner *without*
+`WrapUnique` and runs cleanly *with* it.
+
+#### 4. Bisect WrapUnique against the demo
+
+With `MiniDumpInstaller` already in NAudioDemo (committed in `c8a4916`), this
+is now a 30-minute exercise: comment out `GC.SuppressFinalize(wrapper)` for
+specific call sites only — agile types first per the matrix above — rebuild,
+run the demo, see if it crashes. The minimum subset that must keep
+suppression IS the actual bug surface.
+
+Strong prior: the four apartment-affine-looking types
+(`IMMDevice`/`IMMDeviceCollection`/`IPropertyStore`/`IDeviceTopology`) are
+where suppression is load-bearing; the eight FTM/agile types are
+over-suppression that costs an avoidable leak on missed Dispose.
+
+If the bisect confirms the prior, narrow `WrapUnique` accordingly and update
+the agile-type call sites to use plain
+`comWrappers.GetOrCreateObjectForComInstance` — no leak, no crash.
+
+**Estimated effort:** 30 minutes.
+**Output:** narrowed suppression set, restored finalizer behavior for agile
+types.
+
+#### 5. Confirm the cached-vtable hypothesis
+
+With the bisected minimum set in hand, instrument `ComObject.FinalRelease` (or
+write a debug-build wrapper) to log the `_unknown` pointer value just before
+it would be Released. Compare to known-still-live wrapper pointers. If the
+AV's IntPtr matches a still-live wrapper's `_unknown`, we have a use-after-
+free *across two wrappers for the same underlying COM object*. If it's a
+freed-then-reallocated address, we have a deeper `StrategyBasedComWrappers`
+cache-strategy issue.
+
+This is the diagnostic that answers "what is `WrapUnique` actually masking".
+Without it, the rationale comment stays at "use-after-free, mechanism
+unknown".
+
+**Estimated effort:** 1–2 hours, plus whatever follows from what we find.
+**Output:** named root cause for Bug B, ideally pointing at a fix that
+removes the need for `WrapUnique` entirely.
+
+#### 6. Audit existing CCW-direction interop
+
+Independent of the wrapper-direction work above, the code review you asked
+about. Specific surfaces:
+
+- **Multi-vtable CCWs.**
+  `Marshal.GetComInterfaceForObject<T1, T2>(callback)` is used in
+  `AudioEndpointVolume`, `AudioSessionControl`, `AudioSessionManager`,
+  `MMDeviceEnumerator`. Each takes a managed callback and produces an
+  `IUnknown*` for native consumption. With `BuiltInComInteropSupport=false`
+  (the AOT goal) this fails — we need
+  `ComWrappers.GetOrCreateComInterfaceForObject` for the CCW direction too.
+  The seven Phase 2f callback interfaces are all in this category.
+- **CCW lifetime vs subscription.** When
+  `RegisterAudioSessionNotification(callbackPtr)` runs, the COM object holds a
+  ref to the CCW. If the user forgets `UnRegisterEventClient` *and* the
+  wrapper is finalized, what happens? Currently `WrapUnique` masks the
+  symptom; once we narrow suppression, we need the lifetime contract to be
+  explicit and the docs to reflect it.
+- **`IMMNotificationClient` registration.** Same shape as multi-vtable CCWs.
+- **`AudioRenderClient.GetBufferLease` hot path.** `ref struct` lease pattern.
+  Confirm there's no `[GeneratedComInterface]` method-call quirk where the
+  JIT-emitted dispatch produces additional vtable QIs we're not accounting
+  for.
+- **The seven Phase 2f callback interfaces.** Survey the migration path to
+  confirm it's clear before we ship Phase 2e — if any are blocked by .NET
+  source generator limitations, we want to know now, not after.
+
+**Estimated effort:** 3–4 hours for a thorough pass.
+**Output:** Phase 2f scoping doc; AOT readiness assessment.
+
+### Decision gates before merging Phase 2e
+
+Don't merge until:
+
+- Step 1 produces a "stay on current approach" decision, **OR** points at
+  CsWin32 / WinAppSDK pattern as a clear replacement (in which case we hold
+  and re-do Phase 2e on the better foundation).
+- Step 2 either finds a known issue + recommended workaround, or confirms our
+  scenario isn't already filed (in which case we plan to file it).
+- We have **either** step 5's named root cause, **or** an explicit
+  hold-our-nose statement in the rationale comment that says "we shipped
+  WrapUnique without understanding it because: \<concrete reason\>" — not
+  just "empirically works".
+
+### What's already in place to support the work
+
+- `ComActivation.WrapUnique` rationale comment with the falsified hypothesis
+  and the remaining candidate documented.
+- `AudioClient.Dispose` rationale comment for the single-FinalRelease fix.
+- `NAudioTests/Wasapi/IAgileObjectProbeTests` — agility matrix probe.
+- `NAudioTests/Wasapi/WrapUniqueCrashRepro` — `[Explicit]` repro harness with
+  notes on what was tried; starting point for step 3.
+- `NAudioDemo/MiniDumpInstaller` — vectored exception handler + minidump
+  writer + log file at `%LOCALAPPDATA%\NAudioDemo\dumps\`. Already validated
+  against the manual repro; ready for step 4's bisect work.
+
+---
+
 ## Progress log
 
 | Date | Step | Notes |

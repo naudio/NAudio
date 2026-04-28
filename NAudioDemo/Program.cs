@@ -11,6 +11,8 @@ namespace NAudioDemo
         [STAThread]
         static void Main()
         {
+            MiniDumpInstaller.Install();
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 

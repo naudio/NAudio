@@ -120,8 +120,8 @@ Suggested order: leaf wrappers first, MMDevice/MMDeviceCollection next, session/
 - [x] `AudioMeterInformation.cs:43` (1) — Ray Molenkamp header removed, docs refreshed; dual-ctor handled with `ownsInterface` flag
 - [x] `SimpleAudioVolume.cs:27` (1) — dual-ctor handled with `ownsInterface` flag
 - [x] `MMDevice.cs:64, 71, 95` (3) — IPropertyStore, IAudioClient, IDeviceTopology. Ray Molenkamp header removed; class summary doc refreshed. AudioClient.Dispose updated to FinalRelease the wrapper (was a leak waiting to happen under ComWrappers — classic RCWs auto-released on GC, ComWrappers UniqueInstance does not). Confirmed `audioClientInterface as IAudioClient2/3` cross-casts work via `IDynamicInterfaceCastable` emitted by the GeneratedComInterface source generator.
-- [ ] `MMDeviceCollection.cs:59` (1)
-- [ ] `MMDeviceEnumerator.cs:63, 75, 115, 135` (4) — IMMDeviceCollection, IMMDevice ×3
+- [x] `MMDeviceCollection.cs` indexer (1) — now also implements `IDisposable` to release the underlying `IMMDeviceCollection`. Was an existing leak under classic RCW (mostly hidden by GC); now deterministic.
+- [x] `MMDeviceEnumerator.cs` remaining 4 sites (`EnumerateAudioEndPoints`, `GetDefaultAudioEndpoint`, `TryGetDefaultAudioEndpoint`, `GetDevice`). Helper `WrapDevicePointer` consolidates the IMMDevice projection. `MMDevice.Dispose` now FinalReleases its `deviceInterface` (was leaking — `readonly` field never released). Confirmed `(IMMEndpoint)deviceInterface` cross-cast at MMDevice.DataFlow works via DICASTABLE.
 - [ ] `AudioSessionManager.cs:46` (1)
 - [ ] `AudioSessionControl.cs:30` (1)
 - [ ] `SessionCollection.cs:23` (1)

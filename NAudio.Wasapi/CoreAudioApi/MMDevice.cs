@@ -15,7 +15,7 @@ namespace NAudio.CoreAudioApi
     public class MMDevice : IDisposable
     {
         #region Variables
-        private readonly IMMDevice deviceInterface;
+        private IMMDevice deviceInterface;
         private PropertyStore propertyStore;
         private AudioMeterInformation audioMeterInformation;
         private AudioEndpointVolume audioEndpointVolume;
@@ -313,9 +313,20 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public void Dispose()
         {
-            this.audioMeterInformation?.Dispose();
-            this.audioEndpointVolume?.Dispose();
-            this.audioSessionManager?.Dispose();
+            audioMeterInformation?.Dispose();
+            audioMeterInformation = null;
+            audioEndpointVolume?.Dispose();
+            audioEndpointVolume = null;
+            audioSessionManager?.Dispose();
+            audioSessionManager = null;
+            if (deviceInterface != null)
+            {
+                if ((object)deviceInterface is ComObject co)
+                {
+                    co.FinalRelease();
+                }
+                deviceInterface = null;
+            }
             GC.SuppressFinalize(this);
         }
     }

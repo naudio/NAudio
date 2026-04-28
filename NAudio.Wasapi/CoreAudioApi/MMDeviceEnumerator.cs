@@ -45,7 +45,16 @@ namespace NAudio.CoreAudioApi
         public MMDeviceCollection EnumerateAudioEndPoints(DataFlow dataFlow, DeviceState dwStateMask)
         {
             CoreAudioException.ThrowIfFailed(realEnumerator.EnumAudioEndpoints(dataFlow, dwStateMask, out var ptr));
-            return new MMDeviceCollection((IMMDeviceCollection)Marshal.GetObjectForIUnknown(ptr));
+            try
+            {
+                var collection = (IMMDeviceCollection)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    ptr, CreateObjectFlags.UniqueInstance);
+                return new MMDeviceCollection(collection);
+            }
+            finally
+            {
+                Marshal.Release(ptr);
+            }
         }
 
         /// <summary>
@@ -58,7 +67,7 @@ namespace NAudio.CoreAudioApi
         public MMDevice GetDefaultAudioEndpoint(DataFlow dataFlow, Role role)
         {
             CoreAudioException.ThrowIfFailed(realEnumerator.GetDefaultAudioEndpoint(dataFlow, role, out var ptr));
-            return new MMDevice((IMMDevice)Marshal.GetObjectForIUnknown(ptr));
+            return WrapDevicePointer(ptr);
         }
 
         /// <summary>
@@ -95,7 +104,7 @@ namespace NAudio.CoreAudioApi
             int hresult = realEnumerator.GetDefaultAudioEndpoint(dataFlow, role, out var ptr);
             if (hresult == 0x0)
             {
-                device = new MMDevice((IMMDevice)Marshal.GetObjectForIUnknown(ptr));
+                device = WrapDevicePointer(ptr);
                 return true;
             }
             device = null;
@@ -113,7 +122,25 @@ namespace NAudio.CoreAudioApi
         public MMDevice GetDevice(string id)
         {
             CoreAudioException.ThrowIfFailed(realEnumerator.GetDevice(id, out var ptr));
-            return new MMDevice((IMMDevice)Marshal.GetObjectForIUnknown(ptr));
+            return WrapDevicePointer(ptr);
+        }
+
+        /// <summary>
+        /// Wraps a fresh <c>IMMDevice*</c> from the enumerator into an <see cref="MMDevice"/>,
+        /// projecting via ComWrappers (UniqueInstance) and releasing the input pointer.
+        /// </summary>
+        private static MMDevice WrapDevicePointer(IntPtr ptr)
+        {
+            try
+            {
+                var device = (IMMDevice)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    ptr, CreateObjectFlags.UniqueInstance);
+                return new MMDevice(device);
+            }
+            finally
+            {
+                Marshal.Release(ptr);
+            }
         }
 
         /// <summary>

@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 using NAudio.CoreAudioApi.Interfaces;
+using NAudio.Wasapi.CoreAudioApi;
 
 namespace NAudio.CoreAudioApi
 {
@@ -9,11 +11,12 @@ namespace NAudio.CoreAudioApi
     /// A snapshot of audio endpoints returned by
     /// <see cref="MMDeviceEnumerator.EnumerateAudioEndPoints"/>. Indexable and enumerable;
     /// each access materialises a fresh <see cref="MMDevice"/> wrapper around the same
-    /// underlying COM endpoint.
+    /// underlying COM endpoint. Dispose when finished to release the underlying
+    /// <c>IMMDeviceCollection</c>.
     /// </summary>
-    public class MMDeviceCollection : IEnumerable<MMDevice>
+    public class MMDeviceCollection : IEnumerable<MMDevice>, IDisposable
     {
-        private readonly IMMDeviceCollection mmDeviceCollection;
+        private IMMDeviceCollection mmDeviceCollection;
 
         /// <summary>
         /// Number of endpoints in this collection.
@@ -36,7 +39,16 @@ namespace NAudio.CoreAudioApi
             get
             {
                 CoreAudioException.ThrowIfFailed(mmDeviceCollection.Item(index, out var ptr));
-                return new MMDevice((IMMDevice)Marshal.GetObjectForIUnknown(ptr));
+                try
+                {
+                    var device = (IMMDevice)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                        ptr, CreateObjectFlags.UniqueInstance);
+                    return new MMDevice(device);
+                }
+                finally
+                {
+                    Marshal.Release(ptr);
+                }
             }
         }
 
@@ -56,5 +68,22 @@ namespace NAudio.CoreAudioApi
 
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
             => GetEnumerator();
+
+        /// <summary>
+        /// Releases the underlying <c>IMMDeviceCollection</c>. Iterators previously
+        /// obtained from this collection should no longer be used after disposal.
+        /// </summary>
+        public void Dispose()
+        {
+            if (mmDeviceCollection != null)
+            {
+                if ((object)mmDeviceCollection is ComObject co)
+                {
+                    co.FinalRelease();
+                }
+                mmDeviceCollection = null;
+            }
+            GC.SuppressFinalize(this);
+        }
     }
 }

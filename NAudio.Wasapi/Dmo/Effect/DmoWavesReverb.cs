@@ -200,17 +200,8 @@ namespace NAudio.Dmo.Effect
         /// </summary>
         public DmoWavesReverb()
         {
-            var targetDescriptor = DmoEnumerator.GetAudioEffectNames().First(descriptor =>
-                Equals(descriptor.Clsid, Id_WavesReverb));
-
-            if (targetDescriptor != null)
-            {
-                var mediaComObject = Activator.CreateInstance(Type.GetTypeFromCLSID(targetDescriptor.Clsid));
-
-                MediaObject = new MediaObject((IMediaObject) mediaComObject);
-                MediaObjectInPlace = new MediaObjectInPlace((IMediaObjectInPlace) mediaComObject);
-                EffectParams = new Params((IDirectSoundFXWavesReverb) mediaComObject);
-            }
+            (MediaObject, MediaObjectInPlace, var fx) = DmoEffectActivation.Activate<IDirectSoundFXWavesReverb>(Id_WavesReverb);
+            EffectParams = new Params(fx);
         }
 
         /// <summary>

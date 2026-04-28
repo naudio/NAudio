@@ -264,17 +264,8 @@ namespace NAudio.Dmo.Effect
         /// </summary>
         public DmoCompressor()
         {
-            var targetDescriptor = DmoEnumerator.GetAudioEffectNames().First(descriptor =>
-                Equals(descriptor.Clsid, Id_Compressor));
-
-            if (targetDescriptor != null)
-            {
-                var mediaComObject = Activator.CreateInstance(Type.GetTypeFromCLSID(targetDescriptor.Clsid));
-
-                MediaObject = new MediaObject((IMediaObject)mediaComObject);
-                MediaObjectInPlace = new MediaObjectInPlace((IMediaObjectInPlace)mediaComObject);
-                EffectParams = new Params((IDirectSoundFXCompressor)mediaComObject);
-            }
+            (MediaObject, MediaObjectInPlace, var fx) = DmoEffectActivation.Activate<IDirectSoundFXCompressor>(Id_Compressor);
+            EffectParams = new Params(fx);
         }
 
         /// <summary>

@@ -6,6 +6,22 @@ namespace NAudio.Wasapi.CoreAudioApi
 {
     static partial class NativeMethods
     {
+        public const int CLSCTX_INPROC_SERVER = 0x1;
+
+        /// <summary>
+        /// Creates a single uninitialized object of the class associated with a specified CLSID.
+        /// Used to activate COM objects directly (without going through the legacy
+        /// <c>[ComImport]</c> coclass / RCW path) so that the resulting interface pointer
+        /// can be projected via <see cref="System.Runtime.InteropServices.Marshalling.StrategyBasedComWrappers"/>.
+        /// </summary>
+        [LibraryImport("ole32.dll")]
+        public static partial int CoCreateInstance(
+            in Guid rclsid,
+            IntPtr pUnkOuter,
+            int dwClsContext,
+            in Guid riid,
+            out IntPtr ppv);
+
         /// <summary>
         /// Enables Windows Store apps to access preexisting Component Object Model (COM) interfaces in the WASAPI family.
         /// </summary>

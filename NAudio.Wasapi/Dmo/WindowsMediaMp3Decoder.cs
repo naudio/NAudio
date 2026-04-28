@@ -1,5 +1,7 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
+using NAudio.Dmo.Interfaces;
+using NAudio.Wasapi.CoreAudioApi;
 
 namespace NAudio.Dmo
 {
@@ -7,46 +9,46 @@ namespace NAudio.Dmo
     // CLSID_CMP3DecMediaObject
 
     /// <summary>
-    /// implements IMediaObject  (DirectX Media Object)
-    /// implements IMFTransform (Media Foundation Transform)
-    /// On Windows XP, it is always an MM (if present at all)
+    /// Legacy <c>[ComImport]</c> coclass marker for the Windows Media MP3 Decoder DMO.
+    /// Retained as documentation; activation now goes via <see cref="ComActivation"/>.
     /// </summary>
     [ComImport, Guid("bbeea841-0a63-4f52-a7ab-a9b3a84ed38a")]
     class WindowsMediaMp3DecoderComObject
     {
     }
-    
+
     /// <summary>
     /// Windows Media MP3 Decoder (as a DMO).
     /// Used internally by DmoMp3FrameDecompressor.
     /// </summary>
     public class WindowsMediaMp3Decoder : IDisposable
     {
+        // CLSID_CMP3DecMediaObject
+        private static readonly Guid Mp3DecoderClsid = new Guid("bbeea841-0a63-4f52-a7ab-a9b3a84ed38a");
+        // IID_IMediaObject — mediaobj.h
+        private static readonly Guid IID_IMediaObject = new Guid("d8ad0f58-5494-4102-97c5-ec798e59bcf4");
+
         MediaObject mediaObject;
-        //IWMResamplerProps resamplerPropsInterface;
-        WindowsMediaMp3DecoderComObject mediaComObject;
 
         /// <summary>
-        /// Creates a new Resampler based on the DMO Resampler
+        /// Creates a new Windows Media MP3 Decoder.
         /// </summary>
+        /// <remarks>
+        /// Activation goes via <see cref="ComActivation.CreateInstance{T}"/> rather than
+        /// the legacy <c>[ComImport]</c> coclass path. The resulting wrapper is
+        /// thread-agile, so the decoder can be constructed on one thread and consumed
+        /// on another.
+        /// </remarks>
         public WindowsMediaMp3Decoder()
         {
-            mediaComObject = new WindowsMediaMp3DecoderComObject();
-            mediaObject = new MediaObject((IMediaObject)mediaComObject);
-            //resamplerPropsInterface = (IWMResamplerProps)mediaComObject;
+            var comInterface = ComActivation.CreateInstance<IMediaObject>(Mp3DecoderClsid, IID_IMediaObject);
+            mediaObject = new MediaObject(comInterface);
         }
 
         /// <summary>
         /// Media Object
         /// </summary>
-        public MediaObject MediaObject
-        {
-            get
-            {
-                return mediaObject;
-            }
-        }
-
+        public MediaObject MediaObject => mediaObject;
 
         #region IDisposable Members
 
@@ -56,24 +58,13 @@ namespace NAudio.Dmo
         public void Dispose()
         {
             GC.SuppressFinalize(this);
-            /*if(resamplerPropsInterface != null)
-            {
-                Marshal.ReleaseComObject(resamplerPropsInterface);
-                resamplerPropsInterface = null;
-            }*/
             if (mediaObject != null)
             {
                 mediaObject.Dispose();
                 mediaObject = null;
             }
-            if (mediaComObject != null)
-            {
-                Marshal.ReleaseComObject(mediaComObject);
-                mediaComObject = null;
-            }
         }
 
         #endregion
     }
-
 }

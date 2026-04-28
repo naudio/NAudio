@@ -1,16 +1,15 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
+using NAudio.Dmo.Interfaces;
+using NAudio.Wasapi.CoreAudioApi;
 
 namespace NAudio.Dmo
 {
     /// <summary>
-    /// From wmcodecsdp.h
-    /// Implements:
-    /// - IMediaObject 
-    /// - IMFTransform (Media foundation - we will leave this for now as there is loads of MF stuff)
-    /// - IPropertyStore 
-    /// - IWMResamplerProps 
-    /// Can resample PCM or IEEE
+    /// Legacy <c>[ComImport]</c> coclass for the resampler DMO.
+    /// Retained for <see cref="NAudio.Wave.MediaFoundationResampler"/>, which still
+    /// activates the resampler this way to obtain the legacy <c>IMFTransform</c> /
+    /// <c>IWMResamplerProps</c> interfaces. <see cref="DmoResampler"/> no longer uses it.
     /// </summary>
     [ComImport, Guid("f447b69e-1884-4a7e-8055-346f74d6edb3")]
     class ResamplerMediaComObject
@@ -22,18 +21,26 @@ namespace NAudio.Dmo
     /// </summary>
     public class DmoResampler : IDisposable
     {
+        // CLSID_CResamplerMediaObject — wmcodecdsp.h
+        private static readonly Guid ResamplerClsid = new Guid("f447b69e-1884-4a7e-8055-346f74d6edb3");
+        // IID_IMediaObject — mediaobj.h
+        private static readonly Guid IID_IMediaObject = new Guid("d8ad0f58-5494-4102-97c5-ec798e59bcf4");
+
         MediaObject mediaObject;
-        IWMResamplerProps resamplerPropsInterface;
-        ResamplerMediaComObject mediaComObject;
 
         /// <summary>
-        /// Creates a new Resampler based on the DMO Resampler
+        /// Creates a new Resampler based on the DMO Resampler.
         /// </summary>
+        /// <remarks>
+        /// Activation goes via <see cref="ComActivation.CreateInstance{T}"/> rather than
+        /// the legacy <c>[ComImport]</c> coclass / RCW path. The resulting wrapper is
+        /// thread-agile, so a <see cref="DmoResampler"/> constructed on (e.g.) a WPF
+        /// STA thread can be safely consumed from a background MTA audio thread.
+        /// </remarks>
         public DmoResampler()
         {
-            mediaComObject = new ResamplerMediaComObject();
-            mediaObject = new MediaObject((IMediaObject)mediaComObject);
-            resamplerPropsInterface = (IWMResamplerProps)mediaComObject;
+            var comInterface = ComActivation.CreateInstance<IMediaObject>(ResamplerClsid, IID_IMediaObject);
+            mediaObject = new MediaObject(comInterface);
         }
 
         /// <summary>
@@ -44,27 +51,15 @@ namespace NAudio.Dmo
         #region IDisposable Members
 
         /// <summary>
-        /// Dispose code - experimental at the moment
-        /// Was added trying to track down why Resampler crashes NUnit
-        /// This code not currently being called by ResamplerDmoStream
+        /// Releases the underlying COM object.
         /// </summary>
         public void Dispose()
         {
             GC.SuppressFinalize(this);
-            if(resamplerPropsInterface != null)
-            {
-                Marshal.ReleaseComObject(resamplerPropsInterface);
-                resamplerPropsInterface = null;
-            }
             if (mediaObject != null)
             {
                 mediaObject.Dispose();
                 mediaObject = null;
-            }
-            if (mediaComObject != null)
-            {
-                Marshal.ReleaseComObject(mediaComObject);
-                mediaComObject = null;
             }
         }
 

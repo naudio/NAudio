@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 using NAudio.Utils;
 
 namespace NAudio.Dmo
@@ -7,7 +8,8 @@ namespace NAudio.Dmo
     /// <summary>
     /// Implements the COM IMediaBuffer interface as a managed object backed by CoTaskMem allocation.
     /// </summary>
-    public class MediaBuffer : IMediaBuffer, IDisposable
+    [GeneratedComClass]
+    public partial class MediaBuffer : IMediaBuffer, IDisposable
     {
         private IntPtr buffer;
         private int length;
@@ -44,9 +46,8 @@ namespace NAudio.Dmo
         /// </summary>
         /// <param name="length">length</param>
         /// <returns>HRESULT</returns>
-        int IMediaBuffer.SetLength(int length)
+        public int SetLength(int length)
         {
-            //System.Diagnostics.Debug.WriteLine(String.Format("Set Length {0}", length));
             if (length > maxLength)
             {
                 return HResult.E_INVALIDARG;
@@ -60,9 +61,8 @@ namespace NAudio.Dmo
         /// </summary>
         /// <param name="maxLength">Max length (output parameter)</param>
         /// <returns>HRESULT</returns>
-        int IMediaBuffer.GetMaxLength(out int maxLength)
+        public int GetMaxLength(out int maxLength)
         {
-            //System.Diagnostics.Debug.WriteLine("Get Max Length");
             maxLength = this.maxLength;
             return HResult.S_OK;
         }
@@ -73,11 +73,8 @@ namespace NAudio.Dmo
         /// <param name="bufferPointerPointer">Pointer to variable into which buffer pointer should be written</param>
         /// <param name="validDataLengthPointer">Pointer to variable into which valid data length should be written</param>
         /// <returns>HRESULT</returns>
-        int IMediaBuffer.GetBufferAndLength(IntPtr bufferPointerPointer, IntPtr validDataLengthPointer)
+        public int GetBufferAndLength(IntPtr bufferPointerPointer, IntPtr validDataLengthPointer)
         {
-
-            //System.Diagnostics.Debug.WriteLine(String.Format("Get Buffer and Length {0},{1}",
-            //    bufferPointerPointer,validDataLengthPointer));
             if (bufferPointerPointer != IntPtr.Zero)
             {
                 Marshal.WriteIntPtr(bufferPointerPointer, this.buffer);
@@ -85,11 +82,8 @@ namespace NAudio.Dmo
             if (validDataLengthPointer != IntPtr.Zero)
             {
                 Marshal.WriteInt32(validDataLengthPointer, this.length);
-
             }
-            //System.Diagnostics.Debug.WriteLine("Finished Getting Buffer and Length");
             return HResult.S_OK;
-
         }
 
         #endregion

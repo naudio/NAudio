@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using NAudio.Wave;
 using System.Runtime.InteropServices;
 
@@ -6,20 +6,28 @@ namespace NAudio.Dmo
 {
     /// <summary>
     /// http://msdn.microsoft.com/en-us/library/aa929922.aspx
-    /// DMO_MEDIA_TYPE 
+    /// DMO_MEDIA_TYPE
     /// </summary>
+    /// <remarks>
+    /// Field types match the COM ABI exactly so the struct can be pinned and
+    /// passed to <see cref="System.Runtime.InteropServices.Marshalling.GeneratedComInterfaceAttribute"/>
+    /// methods that take an <see cref="IntPtr"/> without going through the legacy
+    /// runtime marshaller. Booleans are <c>int</c> (matching Win32 <c>BOOL</c>) for
+    /// the same reason — they are projected as <c>bool</c> via properties.
+    /// </remarks>
+    [StructLayout(LayoutKind.Sequential)]
     public struct DmoMediaType
     {
         Guid majortype;
         Guid subtype;
-        bool bFixedSizeSamples;
-        bool bTemporalCompression;
+        int bFixedSizeSamples;
+        int bTemporalCompression;
         int lSampleSize;
         Guid formattype;
         IntPtr pUnk; // not used
         int cbFormat;
-        IntPtr pbFormat; 
-        
+        IntPtr pbFormat;
+
         /// <summary>
         /// Major type
         /// </summary>
@@ -53,7 +61,7 @@ namespace NAudio.Dmo
         /// <summary>
         /// Fixed size samples
         /// </summary>
-        public bool FixedSizeSamples => bFixedSizeSamples;
+        public bool FixedSizeSamples => bFixedSizeSamples != 0;
 
         /// <summary>
         /// Sample size
@@ -90,11 +98,11 @@ namespace NAudio.Dmo
 
         /// <summary>
         /// Gets the structure as a Wave format (if it is one)
-        /// </summary>        
+        /// </summary>
         public WaveFormat GetWaveFormat()
         {
             if (formattype == DmoMediaTypeGuids.FORMAT_WaveFormatEx)
-            {                
+            {
                 return WaveFormat.MarshalFromPtr(pbFormat);
             }
             throw new InvalidOperationException("Not a WaveFormat type");
@@ -107,7 +115,7 @@ namespace NAudio.Dmo
         public void SetWaveFormat(WaveFormat waveFormat)
         {
             majortype = MediaTypes.MEDIATYPE_Audio;
-            
+
             var wfe = waveFormat as WaveFormatExtensible;
             if (wfe != null)
             {
@@ -130,7 +138,7 @@ namespace NAudio.Dmo
                         throw new ArgumentException($"Not a supported encoding {waveFormat.Encoding}");
                 }
             }
-            bFixedSizeSamples = SubType == AudioMediaSubtypes.MEDIASUBTYPE_PCM || SubType == AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT;
+            bFixedSizeSamples = (SubType == AudioMediaSubtypes.MEDIASUBTYPE_PCM || SubType == AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT) ? 1 : 0;
             formattype = DmoMediaTypeGuids.FORMAT_WaveFormatEx;
             if (cbFormat < Marshal.SizeOf(waveFormat))
                 throw new InvalidOperationException("Not enough memory assigned for a WaveFormat structure");

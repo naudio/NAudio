@@ -1,18 +1,23 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 
 namespace NAudio.Dmo
 {
     /// <summary>
-    /// IMediaBuffer Interface
+    /// IMediaBuffer Interface.
     /// </summary>
-    [ComImport,
-#if !WINDOWS_UWP
-    System.Security.SuppressUnmanagedCodeSecurity,
-#endif
-    Guid("59eff8b9-938c-4a26-82f2-95cb84cdc837"),
-    InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    public interface IMediaBuffer
+    /// <remarks>
+    /// Implemented by the managed <see cref="MediaBuffer"/> class as a callback
+    /// surface for DMOs. Source-generated COM (<see cref="GeneratedComInterfaceAttribute"/>)
+    /// is used so that CCWs created via
+    /// <see cref="System.Runtime.InteropServices.Marshalling.StrategyBasedComWrappers"/>
+    /// are compatible with the modern <c>IMediaObject</c> dispatch path.
+    /// </remarks>
+    [GeneratedComInterface]
+    [Guid("59eff8b9-938c-4a26-82f2-95cb84cdc837")]
+    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    public partial interface IMediaBuffer
     {
         /// <summary>
         /// Set Length
@@ -21,7 +26,7 @@ namespace NAudio.Dmo
         /// <returns>HRESULT</returns>
         [PreserveSig]
         int SetLength(int length);
-        
+
         /// <summary>
         /// Get Max Length
         /// </summary>
@@ -29,7 +34,7 @@ namespace NAudio.Dmo
         /// <returns>HRESULT</returns>
         [PreserveSig]
         int GetMaxLength(out int maxLength);
-        
+
         /// <summary>
         /// Get Buffer and Length
         /// </summary>

@@ -287,17 +287,8 @@ namespace NAudio.Dmo.Effect
         /// </summary>
         public DmoChorus()
         {
-            var targetDescriptor = DmoEnumerator.GetAudioEffectNames().First(descriptor =>
-                Equals(descriptor.Clsid, Id_Chorus));
-
-            if (targetDescriptor != null)
-            {
-                var mediaComObject = Activator.CreateInstance(Type.GetTypeFromCLSID(targetDescriptor.Clsid));
-
-                MediaObject = new MediaObject((IMediaObject) mediaComObject);
-                MediaObjectInPlace = new MediaObjectInPlace((IMediaObjectInPlace) mediaComObject);
-                EffectParams = new Params((IDirectSoundFXChorus) mediaComObject);
-            }
+            (MediaObject, MediaObjectInPlace, var fx) = DmoEffectActivation.Activate<IDirectSoundFXChorus>(Id_Chorus);
+            EffectParams = new Params(fx);
         }
 
         /// <summary>

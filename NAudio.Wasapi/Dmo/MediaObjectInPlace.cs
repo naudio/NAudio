@@ -1,5 +1,8 @@
-﻿using System;
+using System;
+using NAudio.Dmo.Interfaces;
+using NAudio.Wasapi.CoreAudioApi;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 
 namespace NAudio.Dmo
 {
@@ -31,7 +34,7 @@ namespace NAudio.Dmo
         {
             fixed (byte* pData = data)
             {
-                var result = mediaObjectInPlace.Process(data.Length, (IntPtr)pData, timeStart, inPlaceFlag);
+                var result = mediaObjectInPlace.Process(data.Length, (IntPtr)pData, timeStart, (int)inPlaceFlag);
                 Marshal.ThrowExceptionForHR(result);
                 return (DmoInPlaceProcessReturn)result;
             }
@@ -43,8 +46,17 @@ namespace NAudio.Dmo
         /// <returns>Copyed MediaObjectInPlace</returns>
         public MediaObjectInPlace Clone()
         {
-            Marshal.ThrowExceptionForHR(this.mediaObjectInPlace.Clone(out var cloneObj));
-            return new MediaObjectInPlace(cloneObj);
+            Marshal.ThrowExceptionForHR(this.mediaObjectInPlace.Clone(out IntPtr clonePtr));
+            try
+            {
+                var clone = (IMediaObjectInPlace)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    clonePtr, CreateObjectFlags.UniqueInstance);
+                return new MediaObjectInPlace(clone);
+            }
+            finally
+            {
+                Marshal.Release(clonePtr);
+            }
         }
 
         /// <summary>
@@ -63,7 +75,7 @@ namespace NAudio.Dmo
         /// <returns>Media Object</returns>
         public MediaObject GetMediaObject()
         {
-            return new MediaObject((IMediaObject) mediaObjectInPlace);
+            return new MediaObject((IMediaObject)mediaObjectInPlace);
         }
 
         /// <summary>
@@ -74,7 +86,10 @@ namespace NAudio.Dmo
             GC.SuppressFinalize(this);
             if (mediaObjectInPlace != null)
             {
-                Marshal.ReleaseComObject(mediaObjectInPlace);
+                if (mediaObjectInPlace is IDisposable disposable)
+                {
+                    disposable.Dispose();
+                }
                 mediaObjectInPlace = null;
             }
         }

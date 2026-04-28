@@ -514,17 +514,8 @@ namespace NAudio.Dmo.Effect
         /// </summary>
         public DmoI3DL2Reverb()
         {
-            var targetDescriptor = DmoEnumerator.GetAudioEffectNames().First(descriptor =>
-                Equals(descriptor.Clsid, Id_I3DL2Reverb));
-
-            if (targetDescriptor != null)
-            {
-                var mediaComObject = Activator.CreateInstance(Type.GetTypeFromCLSID(targetDescriptor.Clsid));
-
-                MediaObject = new MediaObject((IMediaObject)mediaComObject);
-                MediaObjectInPlace = new MediaObjectInPlace((IMediaObjectInPlace)mediaComObject);
-                EffectParams = new Params((IDirectSoundFXI3DL2Reverb)mediaComObject);
-            }
+            (MediaObject, MediaObjectInPlace, var fx) = DmoEffectActivation.Activate<IDirectSoundFXI3DL2Reverb>(Id_I3DL2Reverb);
+            EffectParams = new Params(fx);
         }
 
         /// <summary>

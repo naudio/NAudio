@@ -168,17 +168,8 @@ namespace NAudio.Dmo.Effect
         /// </summary>
         public DmoParamEq()
         {
-            var targetDescriptor = DmoEnumerator.GetAudioEffectNames().First(descriptor =>
-                Equals(descriptor.Clsid, Id_ParamEq));
-
-            if (targetDescriptor != null)
-            {
-                var mediaComObject = Activator.CreateInstance(Type.GetTypeFromCLSID(targetDescriptor.Clsid));
-
-                MediaObject = new MediaObject((IMediaObject) mediaComObject);
-                MediaObjectInPlace = new MediaObjectInPlace((IMediaObjectInPlace) mediaComObject);
-                EffectParams = new Params((IDirectSoundFxParamEq) mediaComObject);
-            }
+            (MediaObject, MediaObjectInPlace, var fx) = DmoEffectActivation.Activate<IDirectSoundFxParamEq>(Id_ParamEq);
+            EffectParams = new Params(fx);
         }
 
         /// <summary>

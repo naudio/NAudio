@@ -287,17 +287,8 @@ namespace NAudio.Dmo.Effect
         /// </summary>
         public DmoFlanger()
         {
-            var targetDescriptor = DmoEnumerator.GetAudioEffectNames().First(descriptor =>
-                Equals(descriptor.Clsid, Id_Flanger));
-
-            if (targetDescriptor != null)
-            {
-                var mediaComObject = Activator.CreateInstance(Type.GetTypeFromCLSID(targetDescriptor.Clsid));
-
-                MediaObject = new MediaObject((IMediaObject)mediaComObject);
-                MediaObjectInPlace = new MediaObjectInPlace((IMediaObjectInPlace)mediaComObject);
-                EffectParams = new Params((IDirectSoundFXFlanger)mediaComObject);
-            }
+            (MediaObject, MediaObjectInPlace, var fx) = DmoEffectActivation.Activate<IDirectSoundFXFlanger>(Id_Flanger);
+            EffectParams = new Params(fx);
         }
 
         /// <summary>

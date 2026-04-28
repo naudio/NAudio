@@ -1,8 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using NAudio.Dmo.Interfaces;
 using NAudio.MediaFoundation;
 using NAudio.Utils;
+using NAudio.Wasapi.CoreAudioApi;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 using NAudio.Wave;
 using System.Diagnostics;
 
@@ -16,6 +19,18 @@ namespace NAudio.Dmo
         private IMediaObject mediaObject;
         private readonly int inputStreams;
         private readonly int outputStreams;
+
+        // Mirror of DMO_OUTPUT_DATA_BUFFER with a raw IUnknown* in place of the
+        // managed IMediaBuffer reference, so it can be pinned and passed by
+        // pointer to the modern IMediaObject.ProcessOutput signature.
+        [StructLayout(LayoutKind.Sequential, Pack = 8)]
+        private struct RawDmoOutputDataBuffer
+        {
+            public IntPtr pBuffer;
+            public DmoOutputDataBufferFlags dwStatus;
+            public long rtTimestamp;
+            public long referenceTimeDuration;
+        }
 
         #region Construction
 
@@ -35,18 +50,12 @@ namespace NAudio.Dmo
         /// <summary>
         /// Number of input streams
         /// </summary>
-        public int InputStreamCount
-        {
-            get { return inputStreams; }
-        }
+        public int InputStreamCount => inputStreams;
 
         /// <summary>
         /// Number of output streams
         /// </summary>
-        public int OutputStreamCount
-        {
-            get { return outputStreams; }
-        }
+        public int OutputStreamCount => outputStreams;
         #endregion
 
         #region Get Input and Output Types
@@ -57,28 +66,20 @@ namespace NAudio.Dmo
         /// <param name="inputStream">Input stream index</param>
         /// <param name="inputTypeIndex">Input type index</param>
         /// <returns>DMO Media Type or null if there are no more input types</returns>
-        public DmoMediaType? GetInputType(int inputStream, int inputTypeIndex)
+        public unsafe DmoMediaType? GetInputType(int inputStream, int inputTypeIndex)
         {
-            try
+            DmoMediaType mediaType = default;
+            int hresult = mediaObject.GetInputType(inputStream, inputTypeIndex, (IntPtr)(&mediaType));
+            if (hresult == HResult.S_OK)
             {
-                DmoMediaType mediaType;
-                int hresult = mediaObject.GetInputType(inputStream, inputTypeIndex, out mediaType);
-                if (hresult == HResult.S_OK)
-                {
-                    // this frees the format (if present)
-                    // we should therefore come up with a way of marshaling the format
-                    // into a completely managed structure
-                    DmoInterop.MoFreeMediaType(ref mediaType);
-                    return mediaType;
-                }
+                DmoInterop.MoFreeMediaType(ref mediaType);
+                return mediaType;
             }
-            catch (COMException e)
+            if (hresult == (int)DmoHResults.DMO_E_NO_MORE_ITEMS)
             {
-                if (e.GetHResult() != (int)DmoHResults.DMO_E_NO_MORE_ITEMS)
-                {
-                    throw;
-                }
+                return null;
             }
+            MediaFoundationException.ThrowIfFailed(hresult);
             return null;
         }
 
@@ -88,59 +89,42 @@ namespace NAudio.Dmo
         /// <param name="outputStream">The output stream</param>
         /// <param name="outputTypeIndex">Output type index</param>
         /// <returns>DMO Media Type or null if no more available</returns>
-        public DmoMediaType? GetOutputType(int outputStream, int outputTypeIndex)
+        public unsafe DmoMediaType? GetOutputType(int outputStream, int outputTypeIndex)
         {
-            try
+            DmoMediaType mediaType = default;
+            int hresult = mediaObject.GetOutputType(outputStream, outputTypeIndex, (IntPtr)(&mediaType));
+            if (hresult == HResult.S_OK)
             {
-                DmoMediaType mediaType;
-                int hresult = mediaObject.GetOutputType(outputStream, outputTypeIndex, out mediaType);
-                if (hresult == HResult.S_OK)
-                {
-                    // this frees the format (if present)
-                    // we should therefore come up with a way of marshaling the format
-                    // into a completely managed structure
-                    DmoInterop.MoFreeMediaType(ref mediaType);
-                    return mediaType;
-                }
+                DmoInterop.MoFreeMediaType(ref mediaType);
+                return mediaType;
             }
-            catch (COMException e)
+            if (hresult == (int)DmoHResults.DMO_E_NO_MORE_ITEMS)
             {
-                if (e.GetHResult() != (int)DmoHResults.DMO_E_NO_MORE_ITEMS)
-                {
-                    throw;
-                }
+                return null;
             }
+            MediaFoundationException.ThrowIfFailed(hresult);
             return null;
         }
 
-         /// <summary>
+        /// <summary>
         /// retrieves the media type that was set for an output stream, if any
         /// </summary>
         /// <param name="outputStreamIndex">Output stream index</param>
         /// <returns>DMO Media Type or null if no more available</returns>
-        public DmoMediaType GetOutputCurrentType(int outputStreamIndex)
+        public unsafe DmoMediaType GetOutputCurrentType(int outputStreamIndex)
         {
-            DmoMediaType mediaType;
-            int hresult = mediaObject.GetOutputCurrentType(outputStreamIndex, out mediaType);
+            DmoMediaType mediaType = default;
+            int hresult = mediaObject.GetOutputCurrentType(outputStreamIndex, (IntPtr)(&mediaType));
             if (hresult == HResult.S_OK)
             {
-                // this frees the format (if present)
-                // we should therefore come up with a way of marshaling the format
-                // into a completely managed structure
                 DmoInterop.MoFreeMediaType(ref mediaType);
                 return mediaType;
             }
-            else
+            if (hresult == (int)DmoHResults.DMO_E_TYPE_NOT_SET)
             {
-                if (hresult == (int)DmoHResults.DMO_E_TYPE_NOT_SET)
-                {
-                    throw new InvalidOperationException("Media type was not set.");
-                }
-                else
-                {
-                    throw Marshal.GetExceptionForHR(hresult);
-                }
+                throw new InvalidOperationException("Media type was not set.");
             }
+            throw Marshal.GetExceptionForHR(hresult);
         }
 
         /// <summary>
@@ -152,7 +136,7 @@ namespace NAudio.Dmo
         {
             int typeIndex = 0;
             DmoMediaType? mediaType;
-            while ((mediaType = GetInputType(inputStreamIndex,typeIndex)) != null)
+            while ((mediaType = GetInputType(inputStreamIndex, typeIndex)) != null)
             {
                 yield return mediaType.Value;
                 typeIndex++;
@@ -187,18 +171,16 @@ namespace NAudio.Dmo
         /// <returns>true if supports</returns>
         public bool SupportsInputType(int inputStreamIndex, DmoMediaType mediaType)
         {
-            return SetInputType(inputStreamIndex, mediaType, DmoSetTypeFlags.DMO_SET_TYPEF_TEST_ONLY);
+            return SetInputType(inputStreamIndex, ref mediaType, DmoSetTypeFlags.DMO_SET_TYPEF_TEST_ONLY);
         }
 
-        /// <summary>
-        /// Sets the input type helper method
-        /// </summary>
-        /// <param name="inputStreamIndex">Input stream index</param>
-        /// <param name="mediaType">Media type</param>
-        /// <param name="flags">Flags (can be used to test rather than set)</param>
-        private bool SetInputType(int inputStreamIndex, DmoMediaType mediaType, DmoSetTypeFlags flags)
+        private unsafe bool SetInputType(int inputStreamIndex, ref DmoMediaType mediaType, DmoSetTypeFlags flags)
         {
-            int hResult = mediaObject.SetInputType(inputStreamIndex, ref mediaType, flags);
+            int hResult;
+            fixed (DmoMediaType* p = &mediaType)
+            {
+                hResult = mediaObject.SetInputType(inputStreamIndex, (IntPtr)p, (int)flags);
+            }
             if (hResult != HResult.S_OK)
             {
                 if (hResult == (int)DmoHResults.DMO_E_INVALIDSTREAMINDEX)
@@ -222,7 +204,7 @@ namespace NAudio.Dmo
         /// <param name="mediaType">Media Type</param>
         public void SetInputType(int inputStreamIndex, DmoMediaType mediaType)
         {
-            if(!SetInputType(inputStreamIndex,mediaType,DmoSetTypeFlags.None))
+            if (!SetInputType(inputStreamIndex, ref mediaType, DmoSetTypeFlags.None))
             {
                 throw new ArgumentException("Media Type not supported");
             }
@@ -236,7 +218,7 @@ namespace NAudio.Dmo
         public void SetInputWaveFormat(int inputStreamIndex, WaveFormat waveFormat)
         {
             DmoMediaType mediaType = CreateDmoMediaTypeForWaveFormat(waveFormat);
-            bool set = SetInputType(inputStreamIndex, mediaType, DmoSetTypeFlags.None);
+            bool set = SetInputType(inputStreamIndex, ref mediaType, DmoSetTypeFlags.None);
             DmoInterop.MoFreeMediaType(ref mediaType);
             if (!set)
             {
@@ -253,7 +235,7 @@ namespace NAudio.Dmo
         public bool SupportsInputWaveFormat(int inputStreamIndex, WaveFormat waveFormat)
         {
             DmoMediaType mediaType = CreateDmoMediaTypeForWaveFormat(waveFormat);
-            bool supported = SetInputType(inputStreamIndex, mediaType, DmoSetTypeFlags.DMO_SET_TYPEF_TEST_ONLY);
+            bool supported = SetInputType(inputStreamIndex, ref mediaType, DmoSetTypeFlags.DMO_SET_TYPEF_TEST_ONLY);
             DmoInterop.MoFreeMediaType(ref mediaType);
             return supported;
         }
@@ -283,7 +265,7 @@ namespace NAudio.Dmo
         /// <returns>True if supported</returns>
         public bool SupportsOutputType(int outputStreamIndex, DmoMediaType mediaType)
         {
-            return SetOutputType(outputStreamIndex, mediaType, DmoSetTypeFlags.DMO_SET_TYPEF_TEST_ONLY);
+            return SetOutputType(outputStreamIndex, ref mediaType, DmoSetTypeFlags.DMO_SET_TYPEF_TEST_ONLY);
         }
 
         /// <summary>
@@ -296,29 +278,27 @@ namespace NAudio.Dmo
         public bool SupportsOutputWaveFormat(int outputStreamIndex, WaveFormat waveFormat)
         {
             DmoMediaType mediaType = CreateDmoMediaTypeForWaveFormat(waveFormat);
-            bool supported = SetOutputType(outputStreamIndex, mediaType, DmoSetTypeFlags.DMO_SET_TYPEF_TEST_ONLY);
+            bool supported = SetOutputType(outputStreamIndex, ref mediaType, DmoSetTypeFlags.DMO_SET_TYPEF_TEST_ONLY);
             DmoInterop.MoFreeMediaType(ref mediaType);
             return supported;
         }
 
-        /// <summary>
-        /// Helper method to call SetOutputType
-        /// </summary>
-        private bool SetOutputType(int outputStreamIndex, DmoMediaType mediaType, DmoSetTypeFlags flags)
+        private unsafe bool SetOutputType(int outputStreamIndex, ref DmoMediaType mediaType, DmoSetTypeFlags flags)
         {
-            int hresult = mediaObject.SetOutputType(outputStreamIndex, ref mediaType, flags);
+            int hresult;
+            fixed (DmoMediaType* p = &mediaType)
+            {
+                hresult = mediaObject.SetOutputType(outputStreamIndex, (IntPtr)p, (int)flags);
+            }
             if (hresult == (int)DmoHResults.DMO_E_TYPE_NOT_ACCEPTED)
             {
                 return false;
             }
-            else if (hresult == HResult.S_OK)
+            if (hresult == HResult.S_OK)
             {
                 return true;
             }
-            else
-            {
-                throw Marshal.GetExceptionForHR(hresult);
-            }
+            throw Marshal.GetExceptionForHR(hresult);
         }
 
         /// <summary>
@@ -329,7 +309,7 @@ namespace NAudio.Dmo
         /// <param name="mediaType">Media type to set</param>
         public void SetOutputType(int outputStreamIndex, DmoMediaType mediaType)
         {
-            if (!SetOutputType(outputStreamIndex, mediaType, DmoSetTypeFlags.None))
+            if (!SetOutputType(outputStreamIndex, ref mediaType, DmoSetTypeFlags.None))
             {
                 throw new ArgumentException("Media Type not supported");
             }
@@ -344,14 +324,14 @@ namespace NAudio.Dmo
         public void SetOutputWaveFormat(int outputStreamIndex, WaveFormat waveFormat)
         {
             DmoMediaType mediaType = CreateDmoMediaTypeForWaveFormat(waveFormat);
-            bool succeeded = SetOutputType(outputStreamIndex, mediaType, DmoSetTypeFlags.None);
+            bool succeeded = SetOutputType(outputStreamIndex, ref mediaType, DmoSetTypeFlags.None);
             DmoInterop.MoFreeMediaType(ref mediaType);
             if (!succeeded)
             {
                 throw new ArgumentException("Media Type not supported");
             }
         }
-        
+
         #endregion
 
         #region Get Input and Output Size Info
@@ -362,10 +342,7 @@ namespace NAudio.Dmo
         /// <returns>Input Size Info</returns>
         public MediaObjectSizeInfo GetInputSizeInfo(int inputStreamIndex)
         {
-            int size;
-            int maxLookahead;
-            int alignment;
-            Marshal.ThrowExceptionForHR(mediaObject.GetInputSizeInfo(inputStreamIndex, out size, out maxLookahead, out alignment));
+            MediaFoundationException.ThrowIfFailed(mediaObject.GetInputSizeInfo(inputStreamIndex, out int size, out int maxLookahead, out int alignment));
             return new MediaObjectSizeInfo(size, maxLookahead, alignment);
         }
 
@@ -376,9 +353,7 @@ namespace NAudio.Dmo
         /// <returns>Output Size Info</returns>
         public MediaObjectSizeInfo GetOutputSizeInfo(int outputStreamIndex)
         {
-            int size;
-            int alignment;
-            Marshal.ThrowExceptionForHR(mediaObject.GetOutputSizeInfo(outputStreamIndex, out size, out alignment));
+            MediaFoundationException.ThrowIfFailed(mediaObject.GetOutputSizeInfo(outputStreamIndex, out int size, out int alignment));
             return new MediaObjectSizeInfo(size, 0, alignment);
         }
 
@@ -396,8 +371,35 @@ namespace NAudio.Dmo
         public void ProcessInput(int inputStreamIndex, IMediaBuffer mediaBuffer, DmoInputDataBufferFlags flags,
             long timestamp, long duration)
         {
-            Marshal.ThrowExceptionForHR(mediaObject.ProcessInput(inputStreamIndex, mediaBuffer, flags, timestamp, duration));
+            // Source-generated CCWs use per-interface tearoffs, so the IUnknown*
+            // returned by GetOrCreateComInterfaceForObject is NOT the same pointer
+            // as the IMediaBuffer* the native DMO expects. We must QI explicitly
+            // before passing to ProcessInput, otherwise native dereferences a
+            // mismatched vtable and crashes the process.
+            IntPtr unknown = ComActivation.ComWrappers.GetOrCreateComInterfaceForObject(
+                mediaBuffer, CreateComInterfaceFlags.None);
+            try
+            {
+                Marshal.ThrowExceptionForHR(
+                    Marshal.QueryInterface(unknown, in IID_IMediaBuffer, out IntPtr mbPtr));
+                try
+                {
+                    MediaFoundationException.ThrowIfFailed(
+                        mediaObject.ProcessInput(inputStreamIndex, mbPtr, (int)flags, timestamp, duration));
+                }
+                finally
+                {
+                    Marshal.Release(mbPtr);
+                }
+            }
+            finally
+            {
+                Marshal.Release(unknown);
+            }
         }
+
+        // IID_IMediaBuffer (mediaobj.h)
+        private static readonly Guid IID_IMediaBuffer = new Guid("59eff8b9-938c-4a26-82f2-95cb84cdc837");
 
         /// <summary>
         /// Process Output
@@ -405,10 +407,63 @@ namespace NAudio.Dmo
         /// <param name="flags">Flags</param>
         /// <param name="outputBufferCount">Output buffer count</param>
         /// <param name="outputBuffers">Output buffers</param>
-        public void ProcessOutput(DmoProcessOutputFlags flags, int outputBufferCount, DmoOutputDataBuffer[] outputBuffers)
+        public unsafe void ProcessOutput(DmoProcessOutputFlags flags, int outputBufferCount, DmoOutputDataBuffer[] outputBuffers)
         {
-            int reserved;
-            Marshal.ThrowExceptionForHR(mediaObject.ProcessOutput(flags, outputBufferCount, outputBuffers, out reserved));
+            if (outputBuffers is null) throw new ArgumentNullException(nameof(outputBuffers));
+            if (outputBufferCount > outputBuffers.Length) throw new ArgumentOutOfRangeException(nameof(outputBufferCount));
+
+            // Build a blittable mirror with raw IUnknown* pointers so we can pin
+            // and pass it to the modern IntPtr-typed ProcessOutput signature.
+            Span<RawDmoOutputDataBuffer> raw = outputBufferCount <= 4
+                ? stackalloc RawDmoOutputDataBuffer[outputBufferCount]
+                : new RawDmoOutputDataBuffer[outputBufferCount];
+
+            Span<IntPtr> unknowns = outputBufferCount <= 4
+                ? stackalloc IntPtr[outputBufferCount]
+                : new IntPtr[outputBufferCount];
+
+            try
+            {
+                for (int i = 0; i < outputBufferCount; i++)
+                {
+                    IntPtr u = ComActivation.ComWrappers.GetOrCreateComInterfaceForObject(
+                        outputBuffers[i].MediaBuffer, CreateComInterfaceFlags.None);
+                    try
+                    {
+                        Marshal.ThrowExceptionForHR(
+                            Marshal.QueryInterface(u, in IID_IMediaBuffer, out unknowns[i]));
+                    }
+                    finally
+                    {
+                        Marshal.Release(u);
+                    }
+                    raw[i].pBuffer = unknowns[i];
+                    raw[i].dwStatus = outputBuffers[i].StatusFlags;
+                    raw[i].rtTimestamp = outputBuffers[i].Timestamp;
+                    raw[i].referenceTimeDuration = outputBuffers[i].Duration;
+                }
+
+                int hr;
+                fixed (RawDmoOutputDataBuffer* p = raw)
+                {
+                    hr = mediaObject.ProcessOutput((int)flags, outputBufferCount, (IntPtr)p, out _);
+                }
+                MediaFoundationException.ThrowIfFailed(hr);
+
+                for (int i = 0; i < outputBufferCount; i++)
+                {
+                    outputBuffers[i].StatusFlags = raw[i].dwStatus;
+                    outputBuffers[i].Timestamp = raw[i].rtTimestamp;
+                    outputBuffers[i].Duration = raw[i].referenceTimeDuration;
+                }
+            }
+            finally
+            {
+                for (int i = 0; i < outputBufferCount; i++)
+                {
+                    if (unknowns[i] != IntPtr.Zero) Marshal.Release(unknowns[i]);
+                }
+            }
         }
         #endregion
 
@@ -417,7 +472,7 @@ namespace NAudio.Dmo
         /// </summary>
         public void AllocateStreamingResources()
         {
-            Marshal.ThrowExceptionForHR(mediaObject.AllocateStreamingResources());
+            MediaFoundationException.ThrowIfFailed(mediaObject.AllocateStreamingResources());
         }
 
         /// <summary>
@@ -425,7 +480,7 @@ namespace NAudio.Dmo
         /// </summary>
         public void FreeStreamingResources()
         {
-            Marshal.ThrowExceptionForHR(mediaObject.FreeStreamingResources());
+            MediaFoundationException.ThrowIfFailed(mediaObject.FreeStreamingResources());
         }
 
         /// <summary>
@@ -435,8 +490,7 @@ namespace NAudio.Dmo
         /// <returns>Maximum input latency as a ref-time</returns>
         public long GetInputMaxLatency(int inputStreamIndex)
         {
-            long maxLatency;
-            Marshal.ThrowExceptionForHR(mediaObject.GetInputMaxLatency(inputStreamIndex, out maxLatency));
+            MediaFoundationException.ThrowIfFailed(mediaObject.GetInputMaxLatency(inputStreamIndex, out long maxLatency));
             return maxLatency;
         }
 
@@ -445,7 +499,7 @@ namespace NAudio.Dmo
         /// </summary>
         public void Flush()
         {
-            Marshal.ThrowExceptionForHR(mediaObject.Flush());
+            MediaFoundationException.ThrowIfFailed(mediaObject.Flush());
         }
 
         /// <summary>
@@ -454,7 +508,7 @@ namespace NAudio.Dmo
         /// <param name="inputStreamIndex">Input Stream index</param>
         public void Discontinuity(int inputStreamIndex)
         {
-            Marshal.ThrowExceptionForHR(mediaObject.Discontinuity(inputStreamIndex));
+            MediaFoundationException.ThrowIfFailed(mediaObject.Discontinuity(inputStreamIndex));
         }
 
         /// <summary>
@@ -464,10 +518,9 @@ namespace NAudio.Dmo
         /// <returns>true if accepting data</returns>
         public bool IsAcceptingData(int inputStreamIndex)
         {
-            DmoInputStatusFlags flags;
-            int hresult = mediaObject.GetInputStatus(inputStreamIndex, out flags);
+            int hresult = mediaObject.GetInputStatus(inputStreamIndex, out int flags);
             MediaFoundationException.ThrowIfFailed(hresult);
-            return (flags & DmoInputStatusFlags.AcceptData) == DmoInputStatusFlags.AcceptData;
+            return ((DmoInputStatusFlags)flags & DmoInputStatusFlags.AcceptData) == DmoInputStatusFlags.AcceptData;
         }
 
         // TODO: there are still several IMediaObject functions to be wrapped
@@ -482,7 +535,10 @@ namespace NAudio.Dmo
             GC.SuppressFinalize(this);
             if (mediaObject != null)
             {
-                Marshal.ReleaseComObject(mediaObject);
+                if (mediaObject is IDisposable disposable)
+                {
+                    disposable.Dispose();
+                }
                 mediaObject = null;
             }
         }

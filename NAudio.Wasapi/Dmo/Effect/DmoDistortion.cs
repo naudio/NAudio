@@ -232,17 +232,8 @@ namespace NAudio.Dmo.Effect
         /// </summary>
         public DmoDistortion()
         {
-            var targetDescriptor = DmoEnumerator.GetAudioEffectNames().First(descriptor =>
-                Equals(descriptor.Clsid, Id_Distortion));
-
-            if (targetDescriptor != null)
-            {
-                var mediaComObject = Activator.CreateInstance(Type.GetTypeFromCLSID(targetDescriptor.Clsid));
-
-                MediaObject = new MediaObject((IMediaObject)mediaComObject);
-                MediaObjectInPlace = new MediaObjectInPlace((IMediaObjectInPlace)mediaComObject);
-                EffectParams = new Params((IDirectSoundFXDistortion)mediaComObject);
-            }
+            (MediaObject, MediaObjectInPlace, var fx) = DmoEffectActivation.Activate<IDirectSoundFXDistortion>(Id_Distortion);
+            EffectParams = new Params(fx);
         }
 
         /// <summary>

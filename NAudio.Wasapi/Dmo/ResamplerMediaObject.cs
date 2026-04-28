@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using NAudio.CoreAudioApi.Interfaces;
 
 namespace NAudio.Dmo
 {
@@ -24,7 +23,6 @@ namespace NAudio.Dmo
     public class DmoResampler : IDisposable
     {
         MediaObject mediaObject;
-        IPropertyStore propertyStoreInterface;
         IWMResamplerProps resamplerPropsInterface;
         ResamplerMediaComObject mediaComObject;
 
@@ -35,7 +33,6 @@ namespace NAudio.Dmo
         {
             mediaComObject = new ResamplerMediaComObject();
             mediaObject = new MediaObject((IMediaObject)mediaComObject);
-            propertyStoreInterface = (IPropertyStore)mediaComObject;
             resamplerPropsInterface = (IWMResamplerProps)mediaComObject;
         }
 
@@ -54,11 +51,6 @@ namespace NAudio.Dmo
         public void Dispose()
         {
             GC.SuppressFinalize(this);
-            if(propertyStoreInterface != null)
-            {
-                Marshal.ReleaseComObject(propertyStoreInterface);
-                propertyStoreInterface = null;
-            }
             if(resamplerPropsInterface != null)
             {
                 Marshal.ReleaseComObject(resamplerPropsInterface);

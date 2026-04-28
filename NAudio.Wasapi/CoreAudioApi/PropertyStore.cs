@@ -1,27 +1,4 @@
-﻿/*
-  LICENSE
-  -------
-  Copyright (C) 2007 Ray Molenkamp
-
-  This source code is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any damages
-  arising from the use of this source code or the software it produces.
-
-  Permission is granted to anyone to use this source code for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
-
-  1. The origin of this source code must not be misrepresented; you must not
-     claim that you wrote the original source code.  If you use this source code
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original source code.
-  3. This notice may not be removed or altered from any source distribution.
-*/
-// this version modified for NAudio from Ray Molenkamp's original
 using System;
-using System.Runtime.InteropServices;
 using NAudio.CoreAudioApi.Interfaces;
 
 namespace NAudio.CoreAudioApi
@@ -55,8 +32,7 @@ namespace NAudio.CoreAudioApi
             get
             {
                 PropertyKey key = Get(index);
-                CoreAudioException.ThrowIfFailed(storeInterface.GetValue(ref key, out var result));
-                return new PropertyStoreProperty(key, result);
+                return ReadProperty(key, (in PropertyKey k, in PropVariant pv) => new PropertyStoreProperty(k, pv.Value));
             }
         }
 
@@ -67,8 +43,7 @@ namespace NAudio.CoreAudioApi
         /// <returns>True if found</returns>
         public bool Contains(PropertyKey key)
         {
-            var result = storeInterface.GetValue(ref key, out var propVariant);
-            return result >= 0 && (VarEnum)propVariant.vt != VarEnum.VT_EMPTY;
+            return TryReadProperty(key, (in PropertyKey _, in PropVariant pv) => pv.DataType != VarType.VT_EMPTY, out var present) && present;
         }
 
         /// <summary>
@@ -80,14 +55,13 @@ namespace NAudio.CoreAudioApi
         /// <returns>True if found</returns>
         public bool TryGetValue<T>(PropertyKey key, out T obj)
         {
+            if (TryReadProperty(key, (in PropertyKey _, in PropVariant pv) => pv.Value, out var value) && value != null)
+            {
+                obj = (T)value;
+                return true;
+            }
             obj = default;
-            var result = storeInterface.GetValue(ref key, out var propVariant);
-            
-            if (result < 0 || (VarEnum)propVariant.vt == VarEnum.VT_EMPTY) 
-                return false;
-
-            obj = (T)propVariant.Value;
-            return true;
+            return false;
         }
 
         /// <summary>
@@ -99,13 +73,12 @@ namespace NAudio.CoreAudioApi
         {
             get
             {
-                CoreAudioException.ThrowIfFailed(storeInterface.GetValue(ref key, out var propVariant));
-                return new PropertyStoreProperty(key, propVariant);
+                return ReadProperty(key, (in PropertyKey k, in PropVariant pv) => new PropertyStoreProperty(k, pv.Value));
             }
         }
 
         /// <summary>
-        /// Gets property key at sepecified index
+        /// Gets property key at specified index
         /// </summary>
         /// <param name="index">Index</param>
         /// <returns>Property key</returns>
@@ -116,15 +89,17 @@ namespace NAudio.CoreAudioApi
         }
 
         /// <summary>
-        /// Gets property value at specified index
+        /// Gets property value at specified index. The returned struct's pointer-typed fields
+        /// (LPWSTR/BLOB/CLSID) are not safe to read — use the indexer overloads instead, which
+        /// resolve the value before clearing the underlying COM-allocated memory.
         /// </summary>
         /// <param name="index">Index</param>
         /// <returns>Property value</returns>
+        [Obsolete("Returned PropVariant may contain dangling pointers. Use this[int] which resolves the value safely.")]
         public PropVariant GetValue(int index)
         {
             PropertyKey key = Get(index);
-            CoreAudioException.ThrowIfFailed(storeInterface.GetValue(ref key, out var result));
-            return result;
+            return ReadProperty(key, (in PropertyKey _, in PropVariant pv) => pv);
         }
 
         /// <summary>
@@ -134,7 +109,11 @@ namespace NAudio.CoreAudioApi
         /// <param name="value">Value to write.</param>
         public void SetValue(PropertyKey key, PropVariant value)
         {
-            CoreAudioException.ThrowIfFailed(storeInterface.SetValue(ref key, ref value));
+            unsafe
+            {
+                PropVariant local = value;
+                CoreAudioException.ThrowIfFailed(storeInterface.SetValue(in key, (IntPtr)(&local)));
+            }
         }
 
         /// <summary>
@@ -153,6 +132,49 @@ namespace NAudio.CoreAudioApi
         {
             storeInterface = store;
         }
+
+        private delegate T PropVariantProjection<T>(in PropertyKey key, in PropVariant value);
+
+        private T ReadProperty<T>(PropertyKey key, PropVariantProjection<T> project)
+        {
+            unsafe
+            {
+                PropVariant buffer = default;
+                IntPtr ptr = (IntPtr)(&buffer);
+                CoreAudioException.ThrowIfFailed(storeInterface.GetValue(in key, ptr));
+                try
+                {
+                    return project(in key, in buffer);
+                }
+                finally
+                {
+                    PropVariant.Clear(ptr);
+                }
+            }
+        }
+
+        private bool TryReadProperty<T>(PropertyKey key, PropVariantProjection<T> project, out T result)
+        {
+            unsafe
+            {
+                PropVariant buffer = default;
+                IntPtr ptr = (IntPtr)(&buffer);
+                int hr = storeInterface.GetValue(in key, ptr);
+                try
+                {
+                    if (hr < 0)
+                    {
+                        result = default;
+                        return false;
+                    }
+                    result = project(in key, in buffer);
+                    return true;
+                }
+                finally
+                {
+                    PropVariant.Clear(ptr);
+                }
+            }
+        }
     }
 }
-

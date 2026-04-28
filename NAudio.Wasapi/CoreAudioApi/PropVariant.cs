@@ -19,9 +19,7 @@
      misrepresented as being the original source code.
   3. This notice may not be removed or altered from any source distribution.
 */
-// adapted for use in NAudio 
-
-#pragma warning disable CS0618 // 'VarEnum' is obsolete: 'Marshalling VARIANTs may be unavailable in future releases.'
+// adapted for use in NAudio
 
 using System;
 using System.IO;
@@ -185,7 +183,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// </summary>
         public static PropVariant FromLong(long value)
         {
-            return new PropVariant() {vt = (short) VarEnum.VT_I8, hVal = value};
+            return new PropVariant() {vt = (short) VarType.VT_I8, hVal = value};
         }
 
         /// <summary>
@@ -223,7 +221,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <summary>
         /// Gets the type of data in this PropVariant
         /// </summary>
-        public VarEnum DataType => (VarEnum) vt;
+        public VarType DataType => (VarType) (ushort) vt;
 
         /// <summary>
         /// Property value
@@ -232,31 +230,31 @@ namespace NAudio.CoreAudioApi.Interfaces
         {
             get
             {
-                VarEnum ve = DataType;
+                VarType ve = DataType;
                 switch (ve)
                 {
-                    case VarEnum.VT_I1:
+                    case VarType.VT_I1:
                         return bVal;
-                    case VarEnum.VT_I2:
+                    case VarType.VT_I2:
                         return iVal;
-                    case VarEnum.VT_I4:
+                    case VarType.VT_I4:
                         return lVal;
-                    case VarEnum.VT_I8:
+                    case VarType.VT_I8:
                         return hVal;
-                    case VarEnum.VT_INT:
+                    case VarType.VT_INT:
                         return iVal;
-                    case VarEnum.VT_UI4:
+                    case VarType.VT_UI4:
                         return ulVal;
-                    case VarEnum.VT_UI8:
+                    case VarType.VT_UI8:
                         return uhVal;
-                    case VarEnum.VT_LPWSTR:
+                    case VarType.VT_LPWSTR:
                         return Marshal.PtrToStringUni(pointerValue);
-                    case VarEnum.VT_BLOB:
-                    case VarEnum.VT_VECTOR | VarEnum.VT_UI1:
+                    case VarType.VT_BLOB:
+                    case VarType.VT_VECTOR | VarType.VT_UI1:
                         return GetBlob();
-                    case VarEnum.VT_CLSID:
+                    case VarType.VT_CLSID:
                         return Marshal.PtrToStructure<Guid>(pointerValue);
-                    case VarEnum.VT_BOOL:
+                    case VarType.VT_BOOL:
                         switch (boolVal)
                         {
                             case -1:
@@ -266,22 +264,26 @@ namespace NAudio.CoreAudioApi.Interfaces
                             default:
                                 throw new NotSupportedException("PropVariant VT_BOOL must be either -1 or 0");
                         }
-                    case VarEnum.VT_FILETIME:
+                    case VarType.VT_FILETIME:
                         return DateTime.FromFileTime((((long)filetime.dwHighDateTime) << 32) + filetime.dwLowDateTime);
-                    case VarEnum.VT_EMPTY:
+                    case VarType.VT_EMPTY:
                         return null;
-                        // I think VT_NULL means a database null, so could return DBNull.Value                    
+                        // I think VT_NULL means a database null, so could return DBNull.Value
                 }
                 throw new NotImplementedException("PropVariant " + ve);
             }
         }
 
         /// <summary>
-        /// Clears with a known pointer
+        /// Calls ole32!PropVariantClear on an unmanaged PROPVARIANT buffer to release any
+        /// COM-allocated resources (LPWSTR, BLOB, CLSID) and zero out the variant type.
         /// </summary>
         public static void Clear(IntPtr ptr)
         {
-            PropVariantNative.PropVariantClear(ptr);
+            PropVariantClear(ptr);
         }
+
+        [DllImport("ole32.dll")]
+        private static extern int PropVariantClear(IntPtr pvar);
     }
 }

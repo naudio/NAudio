@@ -12,7 +12,7 @@ using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
 
 namespace NAudioWpfDemo.MediaFoundationEncode
 {
-    internal class MediaFoundationEncodeViewModel : ViewModelBase, IDisposable
+    internal class MediaFoundationEncodeViewModel : ViewModelBase
     {
         private readonly Dictionary<Guid, List<MediaTypeViewModel>> allMediaTypes;
         private EncoderViewModel selectedOutputFormat;
@@ -28,7 +28,6 @@ namespace NAudioWpfDemo.MediaFoundationEncode
 
         public MediaFoundationEncodeViewModel()
         {
-            MediaFoundationApi.Startup();
             allMediaTypes = new Dictionary<Guid, List<MediaTypeViewModel>>();
             SupportedMediaTypes = new List<MediaTypeViewModel>();
             EncodeCommand = new DelegateCommand(Encode);
@@ -215,10 +214,6 @@ namespace NAudioWpfDemo.MediaFoundationEncode
             return (sfd.ShowDialog() == true) ? sfd.FileName : null;
         }
 
-        public void Dispose()
-        {
-            MediaFoundationApi.Shutdown();
-        }
     }
 
     enum AacPayloadType

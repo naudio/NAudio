@@ -10,11 +10,10 @@ using NAudioWpfDemo.ViewModel;
 
 namespace NAudioWpfDemo.EnumMediaFoundationTransforms
 {
-    class EnumMftViewModel : ViewModelBase, IDisposable
+    class EnumMftViewModel : ViewModelBase
     {
         public EnumMftViewModel()
         {
-            MediaFoundationApi.Startup();
             EnumerateCommand = new DelegateCommand(Enumerate);
         }
 
@@ -36,7 +35,10 @@ namespace NAudioWpfDemo.EnumMediaFoundationTransforms
         {
             foreach (var mft in transforms)
             {
-                Transforms.Add(DescribeMft(type, mft));
+                using (mft)
+                {
+                    Transforms.Add(DescribeMft(type, mft));
+                }
             }
         }
 
@@ -80,7 +82,7 @@ namespace NAudioWpfDemo.EnumMediaFoundationTransforms
                         FieldDescriptionHelper.Describe(typeof(MediaFoundationTransformCategories), (Guid)value.Value));
                     sb.AppendLine();
                 }
-                else if (value.DataType == (VarEnum.VT_VECTOR | VarEnum.VT_UI1))
+                else if (value.DataType == (VarType.VT_VECTOR | VarType.VT_UI1))
                 {
                     var b = (byte[])value.Value;
                     sb.AppendFormat("{0}: Blob of {1} bytes", propertyName, b.Length);
@@ -99,9 +101,5 @@ namespace NAudioWpfDemo.EnumMediaFoundationTransforms
             }
         }
 
-        public void Dispose()
-        {
-            MediaFoundationApi.Shutdown();
-        }
     }
 }

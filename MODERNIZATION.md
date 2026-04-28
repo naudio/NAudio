@@ -82,7 +82,7 @@ This document records the architectural decisions, rationale, and progress for t
 
 #### 1. `[GeneratedComInterface]` for consumed interfaces, `[ComImport]` for callbacks
 
-**Decision:** 30 COM interfaces that NAudio *calls into* (obtained from Windows) were converted to `[GeneratedComInterface]`. 8 interfaces remain as `[ComImport]`:
+**Decision:** 31 COM interfaces that NAudio *calls into* (obtained from Windows) were converted to `[GeneratedComInterface]`. 7 interfaces remain as `[ComImport]`:
 
 | Interface | Reason for staying `[ComImport]` |
 | --------- | -------------------------------- |
@@ -92,8 +92,9 @@ This document records the architectural decisions, rationale, and progress for t
 | `IAudioSessionNotification` | Implemented by managed code as callback |
 | `IControlChangeNotify` | Implemented by managed code as callback |
 | `IActivateAudioInterfaceCompletionHandler` | Implemented by managed code as callback |
-| `IPropertyStore` | Uses `PropVariant` with `[StructLayout(LayoutKind.Explicit)]` — not compatible with source-generated marshaling |
 | `MMDeviceEnumeratorComObject` | COM coclass for activation, not an interface |
+
+`IPropertyStore` was migrated in Phase 2d (see below) — `GetValue` / `SetValue` now take an `IntPtr` to an unmanaged PROPVARIANT buffer, with the caller using `Unsafe.Read<PropVariant>` / `Unsafe.Write` and `PropVariantClear` for ownership. This also fixed a pre-existing leak where COM-allocated string/blob memory was never released.
 
 **Rationale:** `[GeneratedComInterface]` is designed for calling *into* COM objects, not for implementing interfaces that COM calls *back into*. The two systems coexist correctly at runtime — confirmed by 836 passing tests and manual testing of the demo app.
 
@@ -171,6 +172,14 @@ Specific exception types for common failure modes:
 - `AudioEndpointVolume`: SynchronizationContext for event marshaling, callback registration via `Marshal.GetComInterfaceForObject`
 - `AudioSessionControl`, `AudioSessionManager`: callback registration/unregistration updated for IntPtr pattern
 - All 14 CoreAudioApi wrapper files migrated from `Marshal.ThrowExceptionForHR` to `CoreAudioException.ThrowIfFailed` (50 call sites)
+
+#### Phase 2d: IPropertyStore migration
+
+- `IPropertyStore` converted to `[GeneratedComInterface]` with `IntPtr` PROPVARIANT parameters; `PropertyStore` now allocates a stack PROPVARIANT, calls the COM method, projects via `Unsafe.Read<PropVariant>`, and calls `PropVariantClear` in a `finally` block — closing a pre-existing leak of COM-allocated LPWSTR/BLOB/CLSID memory
+- `PropertyStoreProperty.Value` now stores the resolved managed object (string, uint, byte[], Guid, ...) rather than a `PropVariant` struct, so callers cannot hold dangling pointers after Clear
+- `PropertyStore.GetValue(int) → PropVariant` marked `[Obsolete]` (returned struct may contain dangling pointers for VT_LPWSTR/VT_BLOB/VT_CLSID); the indexer overloads are the safe replacement
+- Dead `propertyStoreInterface` fields removed from `WindowsMediaMp3Decoder` and `DmoResampler` (assigned but never used)
+- `<IsAotCompatible>true</IsAotCompatible>` not yet enabled — the seven remaining `[ComImport]` callback interfaces still need migration to `[GeneratedComInterface]` + `[GeneratedComClass]` (or explicit suppressions) before the project flag is meaningful
 
 #### Phase 3: High-level API redesign
 

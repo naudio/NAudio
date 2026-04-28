@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.InteropServices;
 using NAudio.Dmo.Interfaces;
 using NAudio.Wasapi.CoreAudioApi;
 
@@ -7,15 +6,6 @@ namespace NAudio.Dmo
 {
     // http://msdn.microsoft.com/en-us/library/ff819509%28VS.85%29.aspx
     // CLSID_CMP3DecMediaObject
-
-    /// <summary>
-    /// Legacy <c>[ComImport]</c> coclass marker for the Windows Media MP3 Decoder DMO.
-    /// Retained as documentation; activation now goes via <see cref="ComActivation"/>.
-    /// </summary>
-    [ComImport, Guid("bbeea841-0a63-4f52-a7ab-a9b3a84ed38a")]
-    class WindowsMediaMp3DecoderComObject
-    {
-    }
 
     /// <summary>
     /// Windows Media MP3 Decoder (as a DMO).

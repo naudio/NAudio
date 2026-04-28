@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using NAudio.Dmo;
+using System.Runtime.InteropServices.Marshalling;
 using NAudio.MediaFoundation;
+using NAudio.Wasapi.CoreAudioApi;
 
 namespace NAudio.Wave
 {
@@ -10,6 +11,9 @@ namespace NAudio.Wave
     /// </summary>
     public class MediaFoundationResampler : MediaFoundationTransform
     {
+        // CLSID_CResamplerMediaObject — wmcodecdsp.h
+        private static readonly Guid ResamplerClsid = new Guid("f447b69e-1884-4a7e-8055-346f74d6edb3");
+
         private int resamplerQuality;
 
         private static bool IsPcmOrIeeeFloat(WaveFormat waveFormat)
@@ -36,23 +40,11 @@ namespace NAudio.Wave
             MediaFoundationApi.Startup();
             ResamplerQuality = 60; // maximum quality
 
-            // n.b. we will create the resampler COM object on demand in the Read method, 
-            // to avoid threading issues but just
-            // so we can check it exists on the system we'll make one so it will throw an 
-            // exception if not exists
-            var comObject = CreateResamplerComObject();
-            FreeComObject(comObject);
-        }
-
-
-        private void FreeComObject(object comObject)
-        {
-            Marshal.ReleaseComObject(comObject);
-        }
-
-        private object CreateResamplerComObject()
-        {
-            return new ResamplerMediaComObject();
+            // We create the actual transform on demand in the Read method, to avoid
+            // apartment-affinity issues. Probe here so a missing resampler DLL fails
+            // fast at construction time rather than at first read.
+            IntPtr probe = ComActivation.CoCreateInstance(ResamplerClsid, ComActivation.IID_IUnknown);
+            Marshal.Release(probe);
         }
 
         /// <summary>
@@ -72,31 +64,43 @@ namespace NAudio.Wave
         /// <returns>A newly created and configured resampler MFT</returns>
         private protected override IMFTransform CreateTransform()
         {
-            var comObject = CreateResamplerComObject();// new ResamplerMediaComObject();
-            var resamplerTransform = (IMFTransform)comObject;
-
-            using (var inputMediaFormat = new MediaType(sourceProvider.WaveFormat))
+            // Activate via raw CoCreateInstance, then project IMFTransform via the legacy
+            // COM marshaller (MediaFoundationTransform.transform is still typed as the
+            // legacy [ComImport] IMFTransform) and IWMResamplerProps via the modern
+            // ComWrappers path. Both views share the same underlying COM object.
+            IntPtr unknown = ComActivation.CoCreateInstance(ResamplerClsid, ComActivation.IID_IUnknown);
+            try
             {
-                resamplerTransform.SetInputType(0, inputMediaFormat.MediaFoundationObject, 0);
-            }
+                var resamplerTransform = (IMFTransform)Marshal.GetObjectForIUnknown(unknown);
 
-            using (var outputMediaFormat = new MediaType(outputWaveFormat))
+                using (var inputMediaFormat = new MediaType(sourceProvider.WaveFormat))
+                {
+                    resamplerTransform.SetInputType(0, inputMediaFormat.MediaFoundationObject, 0);
+                }
+
+                using (var outputMediaFormat = new MediaType(outputWaveFormat))
+                {
+                    resamplerTransform.SetOutputType(0, outputMediaFormat.MediaFoundationObject, 0);
+                }
+
+                var props = (NAudio.Dmo.Interfaces.IWMResamplerProps)ComActivation.ComWrappers
+                    .GetOrCreateObjectForComInstance(unknown, CreateObjectFlags.UniqueInstance);
+                try
+                {
+                    // 60 is the best quality, 1 is linear interpolation
+                    props.SetHalfFilterLength(ResamplerQuality);
+                }
+                finally
+                {
+                    ((ComObject)(object)props).FinalRelease();
+                }
+
+                return resamplerTransform;
+            }
+            finally
             {
-                resamplerTransform.SetOutputType(0, outputMediaFormat.MediaFoundationObject, 0);
+                Marshal.Release(unknown);
             }
-
-            //MFT_OUTPUT_STREAM_INFO pStreamInfo;
-            //resamplerTransform.GetOutputStreamInfo(0, out pStreamInfo);
-            // if pStreamInfo.dwFlags is 0, then it means we have to provide samples
-
-            // setup quality
-            var resamplerProps = (IWMResamplerProps)comObject;
-            // 60 is the best quality, 1 is linear interpolation
-            resamplerProps.SetHalfFilterLength(ResamplerQuality);
-            // may also be able to set this using MFPKEY_WMRESAMP_CHANNELMTX on the
-            // IPropertyStore interface.
-            // looks like we can also adjust the LPF with MFPKEY_WMRESAMP_LOWPASS_BANDWIDTH
-            return resamplerTransform;
         }
 
         /// <summary>

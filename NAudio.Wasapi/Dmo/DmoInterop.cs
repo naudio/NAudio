@@ -14,7 +14,7 @@ namespace NAudio.Dmo
             [In] DmoPartialMediaType[] inTypesArray,
             int outTypes,
             [In] DmoPartialMediaType[] outTypesArray,
-            out IEnumDmo enumDmo);
+            out IntPtr enumDmo);
 
         [DllImport("msdmo.dll")]
         public static extern int MoFreeMediaType(

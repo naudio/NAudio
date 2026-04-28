@@ -1,5 +1,7 @@
 # NAudio.Wasapi DMO Modernization
 
+> **Status: DONE** (Phase 6c in [MODERNIZATION.md](MODERNIZATION.md)). Activation and dispatch are now `[GeneratedComInterface]`-based; `Experimental_CanCreateOnStaThreadAndUseOnMtaThread` passes; consumer test buckets (DMO, MediaFoundation, Mp3, Wasapi) remain green; `IPropertyStore`/`PropertyStore`/`PropVariant`/`MMDevice` are unchanged in the migration. The notes below were the working plan and are kept for context — see [MODERNIZATION.md](MODERNIZATION.md) Phase 6 for the canonical record.
+
 This document captures the design, motivation, and verification plan for finishing the modernization of the `NAudio.Wasapi/Dmo` folder so that it matches the rest of NAudio.Wasapi (CoreAudioApi, MediaFoundation). It is a sub-plan of the broader [MODERNIZATION.md](MODERNIZATION.md).
 
 ---

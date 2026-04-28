@@ -535,9 +535,9 @@ namespace NAudio.Dmo
             GC.SuppressFinalize(this);
             if (mediaObject != null)
             {
-                if (mediaObject is IDisposable disposable)
+                if ((object)mediaObject is ComObject comObject)
                 {
-                    disposable.Dispose();
+                    comObject.FinalRelease();
                 }
                 mediaObject = null;
             }

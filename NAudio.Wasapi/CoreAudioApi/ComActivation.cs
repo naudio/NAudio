@@ -29,6 +29,11 @@ namespace NAudio.Wasapi.CoreAudioApi
         private static readonly StrategyBasedComWrappers comWrappers = new();
 
         /// <summary>
+        /// IID_IUnknown.
+        /// </summary>
+        public static readonly Guid IID_IUnknown = new Guid("00000000-0000-0000-C000-000000000046");
+
+        /// <summary>
         /// The shared <see cref="StrategyBasedComWrappers"/> used for both managed-to-native
         /// and native-to-managed projection of NAudio COM objects.
         /// </summary>

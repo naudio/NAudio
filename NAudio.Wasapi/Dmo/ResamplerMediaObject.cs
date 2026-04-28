@@ -1,21 +1,9 @@
 using System;
-using System.Runtime.InteropServices;
 using NAudio.Dmo.Interfaces;
 using NAudio.Wasapi.CoreAudioApi;
 
 namespace NAudio.Dmo
 {
-    /// <summary>
-    /// Legacy <c>[ComImport]</c> coclass for the resampler DMO.
-    /// Retained for <see cref="NAudio.Wave.MediaFoundationResampler"/>, which still
-    /// activates the resampler this way to obtain the legacy <c>IMFTransform</c> /
-    /// <c>IWMResamplerProps</c> interfaces. <see cref="DmoResampler"/> no longer uses it.
-    /// </summary>
-    [ComImport, Guid("f447b69e-1884-4a7e-8055-346f74d6edb3")]
-    class ResamplerMediaComObject
-    {
-    }
-
     /// <summary>
     /// DMO Resampler
     /// </summary>

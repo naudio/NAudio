@@ -59,6 +59,8 @@ namespace NAudio.Dmo
             }
         }
 
+
+
         /// <summary>
         /// Retrieves the latency introduced by this DMO.
         /// </summary>
@@ -86,9 +88,9 @@ namespace NAudio.Dmo
             GC.SuppressFinalize(this);
             if (mediaObjectInPlace != null)
             {
-                if (mediaObjectInPlace is IDisposable disposable)
+                if ((object)mediaObjectInPlace is ComObject comObject)
                 {
-                    disposable.Dispose();
+                    comObject.FinalRelease();
                 }
                 mediaObjectInPlace = null;
             }

@@ -633,8 +633,19 @@ Overall, for `SampleAggregator`-style workloads (windowed real FFT — the reali
 - [x] `IEnumDmo` (4 methods)
 - [x] `IMediaParamInfo` (6 methods) — `MediaParamInfo` struct parameter changed to `IntPtr`
 - [x] `IWMResamplerProps` (2 methods)
-- [x] `IMediaBuffer` kept as `[ComImport]` — it's a callback interface implemented by managed `MediaBuffer` class
-- [x] Old `[ComImport]` interfaces retained for existing consumers (already internal)
+- [x] `IMediaBuffer` upgraded to `[GeneratedComInterface]` + `MediaBuffer` to `[GeneratedComClass]` so callback CCWs are produced by the same `StrategyBasedComWrappers` instance as the activated DMO — mixing legacy `Marshal.GetIUnknownForObject` CCWs with the source-generated dispatcher crashes the CLR
+
+**6c: Activation modernization — DONE** ([DmoModernization.md](DmoModernization.md))
+
+- [x] New `ComActivation` helper centralises `CoCreateInstance` + `StrategyBasedComWrappers.GetOrCreateObjectForComInstance(UniqueInstance)` — Phase 2e (CoreAudio activation) will reuse it
+- [x] `DmoResampler` and `WindowsMediaMp3Decoder` activate via `ComActivation`, producing thread-agile wrappers (constructed-on-STA-used-on-MTA scenario now works — was failing with `InvalidComObjectException`)
+- [x] `DmoMediaType` field types changed `bool` → `int` so the struct is blittable and can be pinned for the modern `IntPtr`-typed signatures
+- [x] `MediaObject.ProcessInput` / `ProcessOutput` explicitly `Marshal.QueryInterface` for `IID_IMediaBuffer` before passing the pointer to native — `StrategyBasedComWrappers`' multi-vtable CCWs return distinct pointers per interface, unlike legacy CCWs where `IUnknown*` and `IMediaBuffer*` shared a pointer
+- [x] All nine effect classes activate via shared `DmoEffectActivation` helper. `IDirectSoundFX*` per-effect property interfaces stay `[ComImport]` per scope — effects obtain the modern wrappers for `IMediaObject`/`IMediaObjectInPlace` and a legacy RCW for `IDirectSoundFX*` via `Marshal.QueryInterface` on the same underlying COM object
+- [x] `MediaFoundationResampler` probe + `CreateTransform` use `ComActivation`. `IMFTransform` projection still uses `Marshal.GetObjectForIUnknown` (the `MediaFoundationTransform` base type is part of a separate Phase-5 modernization scope); `IWMResamplerProps` uses the modern `[GeneratedComInterface]` partial
+- [x] `DmoEnumerator` uses modern `IEnumDmo`
+- [x] All legacy `[ComImport]` declarations under `NAudio.Wasapi/Dmo/` deleted: `IMediaObject.cs`, `IMediaObjectInPlace.cs`, `IWMResamplerProps.cs`, `IEnumDmo.cs`, `IMediaParamInfo.cs`, `ResamplerMediaComObject` and `WindowsMediaMp3DecoderComObject` coclasses. `IPropertyStore` (deliberately out of scope) and `IDirectSoundFX*` (per-effect, deferred) remain
+- [x] Disposal switched from `Marshal.ReleaseComObject` to `ComObject.FinalRelease()` for source-generated wrappers
 
 #### Phase 8: WinMM modernization (NAudio.WinMM) — IN PROGRESS
 

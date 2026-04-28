@@ -3,6 +3,7 @@ using NAudio.Wasapi.CoreAudioApi;
 using NAudio.Wave;
 using System;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 using System.Threading.Tasks;
 
 namespace NAudio.CoreAudioApi
@@ -432,6 +433,10 @@ namespace NAudio.CoreAudioApi
                 {
                     audioStreamVolume.Dispose();
                     audioStreamVolume = null;
+                }
+                if ((object)audioClientInterface is ComObject co)
+                {
+                    co.FinalRelease();
                 }
                 audioClientInterface = null;
                 GC.SuppressFinalize(this);

@@ -1,35 +1,16 @@
-﻿/*
-  LICENSE
-  -------
-  Copyright (C) 2007 Ray Molenkamp
-
-  This source code is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any damages
-  arising from the use of this source code or the software it produces.
-
-  Permission is granted to anyone to use this source code for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
-
-  1. The origin of this source code must not be misrepresented; you must not
-     claim that you wrote the original source code.  If you use this source code
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original source code.
-  3. This notice may not be removed or altered from any source distribution.
-*/
-// modified for NAudio
-// milligan22963 - updated to include audio session manager
-
-using System;
+﻿using System;
 using NAudio.CoreAudioApi.Interfaces;
+using NAudio.Wasapi.CoreAudioApi;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 
 namespace NAudio.CoreAudioApi
 {
     /// <summary>
-    /// MM Device
+    /// A single Core Audio endpoint (<c>IMMDevice</c>) — render or capture, and one of
+    /// the four <see cref="DeviceState"/> values. Provides access to the property store,
+    /// session manager, endpoint volume, peak meter, device topology, and audio clients.
+    /// Obtain instances from <see cref="MMDeviceEnumerator"/>.
     /// </summary>
     public class MMDevice : IDisposable
     {
@@ -61,14 +42,31 @@ namespace NAudio.CoreAudioApi
         public void GetPropertyInformation(StorageAccessMode stgmAccess = StorageAccessMode.Read)
         {
             CoreAudioException.ThrowIfFailed(deviceInterface.OpenPropertyStore(stgmAccess, out var ptr));
-            propertyStore = new PropertyStore((IPropertyStore)Marshal.GetObjectForIUnknown(ptr));
-            Marshal.Release(ptr);
+            try
+            {
+                var store = (IPropertyStore)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    ptr, CreateObjectFlags.UniqueInstance);
+                propertyStore = new PropertyStore(store);
+            }
+            finally
+            {
+                Marshal.Release(ptr);
+            }
         }
 
         private AudioClient GetAudioClient()
         {
             CoreAudioException.ThrowIfFailed(deviceInterface.Activate(IID_IAudioClient, ClsCtx.ALL, IntPtr.Zero, out var ptr));
-            return new AudioClient((IAudioClient)Marshal.GetObjectForIUnknown(ptr));
+            try
+            {
+                var client = (IAudioClient)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    ptr, CreateObjectFlags.UniqueInstance);
+                return new AudioClient(client);
+            }
+            finally
+            {
+                Marshal.Release(ptr);
+            }
         }
 
         private void GetAudioMeterInformation()
@@ -92,8 +90,16 @@ namespace NAudio.CoreAudioApi
         private void GetDeviceTopology()
         {
             CoreAudioException.ThrowIfFailed(deviceInterface.Activate(IDD_IDeviceTopology, ClsCtx.ALL, IntPtr.Zero, out var ptr));
-            deviceTopology = new DeviceTopology((IDeviceTopology)Marshal.GetObjectForIUnknown(ptr));
-            Marshal.Release(ptr);
+            try
+            {
+                var topology = (IDeviceTopology)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    ptr, CreateObjectFlags.UniqueInstance);
+                deviceTopology = new DeviceTopology(topology);
+            }
+            finally
+            {
+                Marshal.Release(ptr);
+            }
         }
 
         #endregion

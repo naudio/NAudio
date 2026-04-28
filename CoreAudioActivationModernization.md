@@ -119,7 +119,7 @@ Suggested order: leaf wrappers first, MMDevice/MMDeviceCollection next, session/
 - [x] `AudioStreamVolume.cs:19` (1)
 - [x] `AudioMeterInformation.cs:43` (1) — Ray Molenkamp header removed, docs refreshed; dual-ctor handled with `ownsInterface` flag
 - [x] `SimpleAudioVolume.cs:27` (1) — dual-ctor handled with `ownsInterface` flag
-- [ ] `MMDevice.cs:64, 71, 95` (3) — IPropertyStore, IAudioClient, IDeviceTopology
+- [x] `MMDevice.cs:64, 71, 95` (3) — IPropertyStore, IAudioClient, IDeviceTopology. Ray Molenkamp header removed; class summary doc refreshed. AudioClient.Dispose updated to FinalRelease the wrapper (was a leak waiting to happen under ComWrappers — classic RCWs auto-released on GC, ComWrappers UniqueInstance does not). Confirmed `audioClientInterface as IAudioClient2/3` cross-casts work via `IDynamicInterfaceCastable` emitted by the GeneratedComInterface source generator.
 - [ ] `MMDeviceCollection.cs:59` (1)
 - [ ] `MMDeviceEnumerator.cs:63, 75, 115, 135` (4) — IMMDeviceCollection, IMMDevice ×3
 - [ ] `AudioSessionManager.cs:46` (1)

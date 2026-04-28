@@ -24,8 +24,7 @@ namespace NAudio.CoreAudioApi
         {
             try
             {
-                audioMeterInformation = (IAudioMeterInformation)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
-                    nativePointer, CreateObjectFlags.UniqueInstance);
+                audioMeterInformation = ComActivation.WrapUnique<IAudioMeterInformation>(nativePointer);
             }
             finally
             {

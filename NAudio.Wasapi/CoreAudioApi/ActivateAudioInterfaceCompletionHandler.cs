@@ -25,8 +25,7 @@ namespace NAudio.Wasapi.CoreAudioApi
             // activateOperationPtr is a borrowed callback parameter — we don't own it.
             // GetOrCreateObjectForComInstance (UniqueInstance) takes its own QI'd ref,
             // which we must FinalRelease before returning to keep ref counts balanced.
-            var activateOperation = (IActivateAudioInterfaceAsyncOperation)ComActivation.ComWrappers
-                .GetOrCreateObjectForComInstance(activateOperationPtr, CreateObjectFlags.UniqueInstance);
+            var activateOperation = ComActivation.WrapUnique<IActivateAudioInterfaceAsyncOperation>(activateOperationPtr);
             try
             {
                 // First get the activation results, and see if anything bad happened then
@@ -40,8 +39,7 @@ namespace NAudio.Wasapi.CoreAudioApi
                 IAudioClient2 pAudioClient;
                 try
                 {
-                    pAudioClient = (IAudioClient2)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
-                        unkPtr, CreateObjectFlags.UniqueInstance);
+                    pAudioClient = ComActivation.WrapUnique<IAudioClient2>(unkPtr);
                 }
                 finally
                 {

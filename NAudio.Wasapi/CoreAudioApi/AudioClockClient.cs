@@ -18,8 +18,7 @@ namespace NAudio.CoreAudioApi
         {
             try
             {
-                audioClockClientInterface = (IAudioClock)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
-                    nativePointer, CreateObjectFlags.UniqueInstance);
+                audioClockClientInterface = ComActivation.WrapUnique<IAudioClock>(nativePointer);
             }
             finally
             {

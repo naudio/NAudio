@@ -44,9 +44,7 @@ namespace NAudio.CoreAudioApi
             CoreAudioException.ThrowIfFailed(deviceInterface.OpenPropertyStore(stgmAccess, out var ptr));
             try
             {
-                var store = (IPropertyStore)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
-                    ptr, CreateObjectFlags.UniqueInstance);
-                propertyStore = new PropertyStore(store);
+                propertyStore = new PropertyStore(ComActivation.WrapUnique<IPropertyStore>(ptr));
             }
             finally
             {
@@ -59,9 +57,7 @@ namespace NAudio.CoreAudioApi
             CoreAudioException.ThrowIfFailed(deviceInterface.Activate(IID_IAudioClient, ClsCtx.ALL, IntPtr.Zero, out var ptr));
             try
             {
-                var client = (IAudioClient)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
-                    ptr, CreateObjectFlags.UniqueInstance);
-                return new AudioClient(client);
+                return new AudioClient(ComActivation.WrapUnique<IAudioClient>(ptr));
             }
             finally
             {
@@ -92,9 +88,7 @@ namespace NAudio.CoreAudioApi
             CoreAudioException.ThrowIfFailed(deviceInterface.Activate(IDD_IDeviceTopology, ClsCtx.ALL, IntPtr.Zero, out var ptr));
             try
             {
-                var topology = (IDeviceTopology)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
-                    ptr, CreateObjectFlags.UniqueInstance);
-                deviceTopology = new DeviceTopology(topology);
+                deviceTopology = new DeviceTopology(ComActivation.WrapUnique<IDeviceTopology>(ptr));
             }
             finally
             {

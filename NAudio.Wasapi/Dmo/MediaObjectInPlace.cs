@@ -49,9 +49,7 @@ namespace NAudio.Dmo
             Marshal.ThrowExceptionForHR(this.mediaObjectInPlace.Clone(out IntPtr clonePtr));
             try
             {
-                var clone = (IMediaObjectInPlace)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
-                    clonePtr, CreateObjectFlags.UniqueInstance);
-                return new MediaObjectInPlace(clone);
+                return new MediaObjectInPlace(ComActivation.WrapUnique<IMediaObjectInPlace>(clonePtr));
             }
             finally
             {

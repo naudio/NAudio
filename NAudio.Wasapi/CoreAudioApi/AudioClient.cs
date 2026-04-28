@@ -434,22 +434,17 @@ namespace NAudio.CoreAudioApi
                     audioStreamVolume.Dispose();
                     audioStreamVolume = null;
                 }
-                // FinalRelease the IAudioClient2/3 views first in case DICASTABLE
-                // produced separate ComWrappers instances per QI'd IID rather than
-                // aliasing audioClientInterface. If they're aliases (same underlying
-                // wrapper as audioClientInterface), the second/third FinalRelease is
-                // a no-op — FinalRelease is idempotent. If they're distinct wrappers,
-                // each holds its own QI'd refcount that would otherwise leak and have
-                // its finalizer release the same underlying COM object on the GC
-                // thread, racing with subsequent COM activity on the same endpoint.
-                if (audioClientInterface3 != null && (object)audioClientInterface3 is ComObject co3)
-                {
-                    co3.FinalRelease();
-                }
-                if (audioClientInterface2 != null && (object)audioClientInterface2 is ComObject co2)
-                {
-                    co2.FinalRelease();
-                }
+                // Single FinalRelease on audioClientInterface only — do NOT separately
+                // FinalRelease audioClientInterface2 / audioClientInterface3.
+                //
+                // Why: `audioClientInterface as IAudioClient2/3` goes through DICASTABLE
+                // and returns the SAME ComObject as audioClientInterface (same _unknown,
+                // QI'd vtable cached internally). Although ComObject.FinalRelease is
+                // documented as idempotent, calling it multiple times on the aliased
+                // ComObject empirically AVs the second time through Marshal.Release —
+                // captured via NAudioDemo's MiniDumpInstaller during the manual
+                // WasapiPlayer → Volume Mixer repro. The single-call path releases the
+                // _unknown plus the cached QI'd vtables in one shot and works correctly.
                 if ((object)audioClientInterface is ComObject co)
                 {
                     co.FinalRelease();

@@ -17,8 +17,7 @@ namespace NAudio.CoreAudioApi
         {
             try
             {
-                audioCaptureClientInterface = (IAudioCaptureClient)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
-                    nativePointer, CreateObjectFlags.UniqueInstance);
+                audioCaptureClientInterface = ComActivation.WrapUnique<IAudioCaptureClient>(nativePointer);
             }
             finally
             {

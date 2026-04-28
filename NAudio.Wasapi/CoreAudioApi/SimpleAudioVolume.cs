@@ -27,8 +27,7 @@ namespace NAudio.CoreAudioApi
         {
             try
             {
-                simpleAudioVolume = (ISimpleAudioVolume)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
-                    nativePointer, CreateObjectFlags.UniqueInstance);
+                simpleAudioVolume = ComActivation.WrapUnique<ISimpleAudioVolume>(nativePointer);
             }
             finally
             {

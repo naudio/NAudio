@@ -87,9 +87,7 @@ namespace NAudio.CoreAudioApi
                 connectorInterface.GetConnectedTo(out var ptr);
                 try
                 {
-                    var result = (IConnector)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
-                        ptr, CreateObjectFlags.UniqueInstance);
-                    return new Connector(result);
+                    return new Connector(ComActivation.WrapUnique<IConnector>(ptr));
                 }
                 finally
                 {

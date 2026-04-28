@@ -1,29 +1,9 @@
-/*
-  LICENSE
-  -------
-  Copyright (C) 2007 Ray Molenkamp
-
-  This source code is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any damages
-  arising from the use of this source code or the software it produces.
-
-  Permission is granted to anyone to use this source code for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
-
-  1. The origin of this source code must not be misrepresented; you must not
-     claim that you wrote the original source code.  If you use this source code
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original source code.
-  3. This notice may not be removed or altered from any source distribution.
-*/
-
 using System;
 using System.Threading;
-using NAudio.CoreAudioApi.Interfaces;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
+using NAudio.CoreAudioApi.Interfaces;
+using NAudio.Wasapi.CoreAudioApi;
 
 namespace NAudio.CoreAudioApi
 {
@@ -36,7 +16,6 @@ namespace NAudio.CoreAudioApi
     public class AudioEndpointVolume : IDisposable
     {
         private IAudioEndpointVolume audioEndPointVolume;
-        private IntPtr nativePointer;
         private readonly SynchronizationContext syncContext;
         private AudioEndpointVolumeCallback callBack;
 
@@ -146,8 +125,15 @@ namespace NAudio.CoreAudioApi
         internal AudioEndpointVolume(IntPtr nativePointer)
         {
             syncContext = SynchronizationContext.Current;
-            this.nativePointer = nativePointer;
-            audioEndPointVolume = (IAudioEndpointVolume)Marshal.GetObjectForIUnknown(nativePointer);
+            try
+            {
+                audioEndPointVolume = (IAudioEndpointVolume)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    nativePointer, CreateObjectFlags.UniqueInstance);
+            }
+            finally
+            {
+                Marshal.Release(nativePointer);
+            }
             Channels = new AudioEndpointVolumeChannels(audioEndPointVolume);
             StepInformation = new AudioEndpointVolumeStepInformation(audioEndPointVolume);
             CoreAudioException.ThrowIfFailed(audioEndPointVolume.QueryHardwareSupport(out var hardwareSupp));
@@ -189,16 +175,15 @@ namespace NAudio.CoreAudioApi
                 Marshal.Release(callBackPtr);
                 callBack = null;
             }
-            if (audioEndPointVolume != null)
-            {
-                audioEndPointVolume = null;
-            }
             // Deterministic release is important: in exclusive mode the device cannot be
             // re-opened until all COM references are released.
-            if (nativePointer != IntPtr.Zero)
+            if (audioEndPointVolume != null)
             {
-                Marshal.Release(nativePointer);
-                nativePointer = IntPtr.Zero;
+                if ((object)audioEndPointVolume is ComObject co)
+                {
+                    co.FinalRelease();
+                }
+                audioEndPointVolume = null;
             }
             GC.SuppressFinalize(this);
         }

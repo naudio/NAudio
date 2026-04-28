@@ -1,7 +1,9 @@
 ﻿using NAudio.CoreAudioApi.Interfaces;
+using NAudio.Wasapi.CoreAudioApi;
 using System;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 
 namespace NAudio.CoreAudioApi
 {
@@ -11,7 +13,6 @@ namespace NAudio.CoreAudioApi
     public class SessionCollection : IDisposable
     {
         private IAudioSessionEnumerator audioSessionEnumerator;
-        private IntPtr nativePointer;
 
         /// <summary>
         /// Creates a new SessionCollection — ownership of the COM pointer is transferred.
@@ -19,8 +20,15 @@ namespace NAudio.CoreAudioApi
         /// <param name="nativePointer">Raw COM pointer — ownership is transferred to this instance</param>
         internal SessionCollection(IntPtr nativePointer)
         {
-            this.nativePointer = nativePointer;
-            audioSessionEnumerator = (IAudioSessionEnumerator)Marshal.GetObjectForIUnknown(nativePointer);
+            try
+            {
+                audioSessionEnumerator = (IAudioSessionEnumerator)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    nativePointer, CreateObjectFlags.UniqueInstance);
+            }
+            finally
+            {
+                Marshal.Release(nativePointer);
+            }
         }
 
         /// <summary>
@@ -56,12 +64,11 @@ namespace NAudio.CoreAudioApi
         {
             if (audioSessionEnumerator != null)
             {
+                if ((object)audioSessionEnumerator is ComObject co)
+                {
+                    co.FinalRelease();
+                }
                 audioSessionEnumerator = null;
-            }
-            if (nativePointer != IntPtr.Zero)
-            {
-                Marshal.Release(nativePointer);
-                nativePointer = IntPtr.Zero;
             }
             GC.SuppressFinalize(this);
         }

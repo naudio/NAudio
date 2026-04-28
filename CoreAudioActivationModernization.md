@@ -122,13 +122,13 @@ Suggested order: leaf wrappers first, MMDevice/MMDeviceCollection next, session/
 - [x] `MMDevice.cs:64, 71, 95` (3) — IPropertyStore, IAudioClient, IDeviceTopology. Ray Molenkamp header removed; class summary doc refreshed. AudioClient.Dispose updated to FinalRelease the wrapper (was a leak waiting to happen under ComWrappers — classic RCWs auto-released on GC, ComWrappers UniqueInstance does not). Confirmed `audioClientInterface as IAudioClient2/3` cross-casts work via `IDynamicInterfaceCastable` emitted by the GeneratedComInterface source generator.
 - [x] `MMDeviceCollection.cs` indexer (1) — now also implements `IDisposable` to release the underlying `IMMDeviceCollection`. Was an existing leak under classic RCW (mostly hidden by GC); now deterministic.
 - [x] `MMDeviceEnumerator.cs` remaining 4 sites (`EnumerateAudioEndPoints`, `GetDefaultAudioEndpoint`, `TryGetDefaultAudioEndpoint`, `GetDevice`). Helper `WrapDevicePointer` consolidates the IMMDevice projection. `MMDevice.Dispose` now FinalReleases its `deviceInterface` (was leaking — `readonly` field never released). Confirmed `(IMMEndpoint)deviceInterface` cross-cast at MMDevice.DataFlow works via DICASTABLE.
-- [ ] `AudioSessionManager.cs:46` (1)
-- [ ] `AudioSessionControl.cs:30` (1)
-- [ ] `SessionCollection.cs:23` (1)
-- [ ] `DeviceTopology.cs:39` (1)
-- [ ] `Connector.cs:86` (1)
-- [ ] `Part.cs:104, 119, 137, 170, 185, 200, 209` (7) — IControlInterface, IPartsList ×2, IAudioVolumeLevel, IAudioMute, IKsJackDescription, IDeviceTopology
-- [ ] `PartsList.cs:49` (1)
+- [x] `AudioSessionManager.cs:46` (1) — `as IAudioSessionManager2` cross-cast preserved (DICASTABLE-confirmed); Dispose now FinalReleases the wrapper.
+- [x] `AudioSessionControl.cs:30` (1) — dual-ctor with `ownsInterface` flag; `is IAudioMeterInformation` / `is ISimpleAudioVolume` borrowed-RCW pattern preserved (relies on DICASTABLE — works with both classic and ComWrappers underlying interfaces).
+- [x] `SessionCollection.cs:23` (1) — Dispose now FinalReleases.
+- [x] `DeviceTopology.cs:39` (1)
+- [x] `Connector.cs:86` (1)
+- [x] `Part.cs:104, 119, 137, 170, 185, 200, 209` (7) — consolidated into `WrapAndRelease<T>` helper.
+- [x] `PartsList.cs:49` (1)
 - [ ] `AudioEndpointVolume.cs:150` (1) — mixes with callback registration
 - [ ] `ActivateAudioInterfaceCompletionHandler.cs:24, 34` (2) — Phase 2f-adjacent; verify the callback boundary stays sound
 

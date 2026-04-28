@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 using NAudio.CoreAudioApi.Interfaces;
+using NAudio.Wasapi.CoreAudioApi;
 
 namespace NAudio.CoreAudioApi
 {
@@ -46,9 +48,16 @@ namespace NAudio.CoreAudioApi
                 }
 
                 partsListInterface.GetPart(index, out var ptr);
-                var part = (IPart)Marshal.GetObjectForIUnknown(ptr);
-                Marshal.Release(ptr);
-                return new Part(part);
+                try
+                {
+                    var part = (IPart)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                        ptr, CreateObjectFlags.UniqueInstance);
+                    return new Part(part);
+                }
+                finally
+                {
+                    Marshal.Release(ptr);
+                }
             }
         }
     }

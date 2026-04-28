@@ -5,7 +5,9 @@
 
 using System;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 using NAudio.CoreAudioApi.Interfaces;
+using NAudio.Wasapi.CoreAudioApi;
 
 namespace NAudio.CoreAudioApi
 {
@@ -17,7 +19,7 @@ namespace NAudio.CoreAudioApi
     {
         private IAudioSessionControl audioSessionControlInterface;
         private IAudioSessionControl2 audioSessionControlInterface2;
-        private IntPtr nativePointer;
+        private readonly bool ownsInterface;
         private AudioSessionEventsCallback audioSessionEventCallback;
 
         /// <summary>
@@ -26,8 +28,16 @@ namespace NAudio.CoreAudioApi
         /// <param name="nativePointer">Raw COM pointer — ownership is transferred to this instance</param>
         internal AudioSessionControl(IntPtr nativePointer)
         {
-            this.nativePointer = nativePointer;
-            audioSessionControlInterface = (IAudioSessionControl)Marshal.GetObjectForIUnknown(nativePointer);
+            try
+            {
+                audioSessionControlInterface = (IAudioSessionControl)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    nativePointer, CreateObjectFlags.UniqueInstance);
+            }
+            finally
+            {
+                Marshal.Release(nativePointer);
+            }
+            ownsInterface = true;
             audioSessionControlInterface2 = audioSessionControlInterface as IAudioSessionControl2;
 
             if (audioSessionControlInterface is IAudioMeterInformation meters)
@@ -45,6 +55,7 @@ namespace NAudio.CoreAudioApi
         {
             audioSessionControlInterface = borrowed;
             audioSessionControlInterface2 = borrowed as IAudioSessionControl2;
+            ownsInterface = false;
 
             if (audioSessionControlInterface is IAudioMeterInformation meters)
                 AudioMeterInformation = new AudioMeterInformation(meters);
@@ -66,13 +77,12 @@ namespace NAudio.CoreAudioApi
             }
             if (audioSessionControlInterface != null)
             {
+                if (ownsInterface && (object)audioSessionControlInterface is ComObject co)
+                {
+                    co.FinalRelease();
+                }
                 audioSessionControlInterface = null;
                 audioSessionControlInterface2 = null;
-            }
-            if (nativePointer != IntPtr.Zero)
-            {
-                Marshal.Release(nativePointer);
-                nativePointer = IntPtr.Zero;
             }
             GC.SuppressFinalize(this);
         }

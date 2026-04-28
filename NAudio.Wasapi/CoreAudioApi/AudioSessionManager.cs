@@ -5,7 +5,9 @@
 
 using System;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 using NAudio.CoreAudioApi.Interfaces;
+using NAudio.Wasapi.CoreAudioApi;
 
 namespace NAudio.CoreAudioApi
 {
@@ -19,7 +21,6 @@ namespace NAudio.CoreAudioApi
     {
         private IAudioSessionManager audioSessionInterface;
         private IAudioSessionManager2 audioSessionInterface2;
-        private IntPtr nativePointer;
         private AudioSessionNotification audioSessionNotification;
         private SessionCollection sessions;
 
@@ -42,8 +43,15 @@ namespace NAudio.CoreAudioApi
         /// <param name="nativePointer">Raw COM pointer — ownership is transferred to this instance</param>
         internal AudioSessionManager(IntPtr nativePointer)
         {
-            this.nativePointer = nativePointer;
-            audioSessionInterface = (IAudioSessionManager)Marshal.GetObjectForIUnknown(nativePointer);
+            try
+            {
+                audioSessionInterface = (IAudioSessionManager)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    nativePointer, CreateObjectFlags.UniqueInstance);
+            }
+            finally
+            {
+                Marshal.Release(nativePointer);
+            }
             audioSessionInterface2 = audioSessionInterface as IAudioSessionManager2;
 
             RefreshSessions();
@@ -124,13 +132,12 @@ namespace NAudio.CoreAudioApi
             audioSessionControl = null;
             if (audioSessionInterface != null)
             {
+                if ((object)audioSessionInterface is ComObject co)
+                {
+                    co.FinalRelease();
+                }
                 audioSessionInterface = null;
                 audioSessionInterface2 = null;
-            }
-            if (nativePointer != IntPtr.Zero)
-            {
-                Marshal.Release(nativePointer);
-                nativePointer = IntPtr.Zero;
             }
             GC.SuppressFinalize(this);
         }

@@ -5,7 +5,9 @@
 
 using System;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 using NAudio.CoreAudioApi.Interfaces;
+using NAudio.Wasapi.CoreAudioApi;
 
 namespace NAudio.CoreAudioApi
 {
@@ -15,7 +17,7 @@ namespace NAudio.CoreAudioApi
     public class SimpleAudioVolume : IDisposable
     {
         private ISimpleAudioVolume simpleAudioVolume;
-        private IntPtr nativePointer;
+        private readonly bool ownsInterface;
 
         /// <summary>
         /// Creates a new SimpleAudioVolume wrapper — ownership of the COM pointer is transferred.
@@ -23,8 +25,16 @@ namespace NAudio.CoreAudioApi
         /// <param name="nativePointer">Raw COM pointer — ownership is transferred to this instance</param>
         internal SimpleAudioVolume(IntPtr nativePointer)
         {
-            this.nativePointer = nativePointer;
-            simpleAudioVolume = (ISimpleAudioVolume)Marshal.GetObjectForIUnknown(nativePointer);
+            try
+            {
+                simpleAudioVolume = (ISimpleAudioVolume)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    nativePointer, CreateObjectFlags.UniqueInstance);
+            }
+            finally
+            {
+                Marshal.Release(nativePointer);
+            }
+            ownsInterface = true;
         }
 
         /// <summary>
@@ -35,24 +45,22 @@ namespace NAudio.CoreAudioApi
         internal SimpleAudioVolume(ISimpleAudioVolume borrowed)
         {
             simpleAudioVolume = borrowed;
+            ownsInterface = false;
         }
 
         /// <summary>
-        /// Dispose
+        /// Releases the underlying COM reference when this wrapper owns it.
+        /// Borrowed wrappers (constructed from a parent's RCW) do not release.
         /// </summary>
         public void Dispose()
         {
             if (simpleAudioVolume != null)
             {
+                if (ownsInterface && (object)simpleAudioVolume is ComObject co)
+                {
+                    co.FinalRelease();
+                }
                 simpleAudioVolume = null;
-            }
-            // Deterministic release when we own the native pointer.
-            // When obtained via QI from AudioSessionControl, nativePointer is IntPtr.Zero
-            // and the parent object manages the COM lifetime.
-            if (nativePointer != IntPtr.Zero)
-            {
-                Marshal.Release(nativePointer);
-                nativePointer = IntPtr.Zero;
             }
             GC.SuppressFinalize(this);
         }

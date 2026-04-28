@@ -116,9 +116,9 @@ Suggested order: leaf wrappers first, MMDevice/MMDeviceCollection next, session/
 - [x] `AudioRenderClient.cs:18` (1)
 - [x] `AudioCaptureClient.cs:18` (1)
 - [x] `AudioClockClient.cs:19` (1)
-- [ ] `AudioStreamVolume.cs:19` (1)
-- [ ] `AudioMeterInformation.cs:43` (1)
-- [ ] `SimpleAudioVolume.cs:27` (1)
+- [x] `AudioStreamVolume.cs:19` (1)
+- [x] `AudioMeterInformation.cs:43` (1) — Ray Molenkamp header removed, docs refreshed; dual-ctor handled with `ownsInterface` flag
+- [x] `SimpleAudioVolume.cs:27` (1) — dual-ctor handled with `ownsInterface` flag
 - [ ] `MMDevice.cs:64, 71, 95` (3) — IPropertyStore, IAudioClient, IDeviceTopology
 - [ ] `MMDeviceCollection.cs:59` (1)
 - [ ] `MMDeviceEnumerator.cs:63, 75, 115, 135` (4) — IMMDeviceCollection, IMMDevice ×3

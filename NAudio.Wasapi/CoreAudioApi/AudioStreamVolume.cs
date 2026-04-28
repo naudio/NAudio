@@ -1,7 +1,9 @@
 ﻿using NAudio.CoreAudioApi.Interfaces;
+using NAudio.Wasapi.CoreAudioApi;
 using System;
 using System.Globalization;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 
 namespace NAudio.CoreAudioApi
 {
@@ -11,12 +13,18 @@ namespace NAudio.CoreAudioApi
     public class AudioStreamVolume : IDisposable
     {
         IAudioStreamVolume audioStreamVolumeInterface;
-        private IntPtr nativePointer;
 
         internal AudioStreamVolume(IntPtr nativePointer)
         {
-            this.nativePointer = nativePointer;
-            audioStreamVolumeInterface = (IAudioStreamVolume)Marshal.GetObjectForIUnknown(nativePointer);
+            try
+            {
+                audioStreamVolumeInterface = (IAudioStreamVolume)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    nativePointer, CreateObjectFlags.UniqueInstance);
+            }
+            finally
+            {
+                Marshal.Release(nativePointer);
+            }
         }
 
         /// <summary>
@@ -141,12 +149,11 @@ namespace NAudio.CoreAudioApi
         {
             if (audioStreamVolumeInterface != null)
             {
+                if ((object)audioStreamVolumeInterface is ComObject co)
+                {
+                    co.FinalRelease();
+                }
                 audioStreamVolumeInterface = null;
-            }
-            if (nativePointer != IntPtr.Zero)
-            {
-                Marshal.Release(nativePointer);
-                nativePointer = IntPtr.Zero;
             }
             GC.SuppressFinalize(this);
         }

@@ -1,76 +1,72 @@
-﻿/*
-  LICENSE
-  -------
-  Copyright (C) 2007 Ray Molenkamp
-
-  This source code is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any damages
-  arising from the use of this source code or the software it produces.
-
-  Permission is granted to anyone to use this source code for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
-
-  1. The origin of this source code must not be misrepresented; you must not
-     claim that you wrote the original source code.  If you use this source code
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original source code.
-  3. This notice may not be removed or altered from any source distribution.
-*/
 using System;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 using NAudio.CoreAudioApi.Interfaces;
+using NAudio.Wasapi.CoreAudioApi;
 
 namespace NAudio.CoreAudioApi
 {
     /// <summary>
-    /// Audio Meter Information
+    /// Wrapper for <c>IAudioMeterInformation</c>. Reports the master peak value and
+    /// per-channel peak values for an audio stream or endpoint.
     /// </summary>
     public class AudioMeterInformation : IDisposable
     {
         private IAudioMeterInformation audioMeterInformation;
-        private IntPtr nativePointer;
+        private readonly bool ownsInterface;
 
         /// <summary>
-        /// Creates a new AudioMeterInformation wrapper — ownership of the COM pointer is transferred.
+        /// Wraps a freshly activated <c>IAudioMeterInformation</c>. The supplied COM
+        /// pointer is consumed: this instance owns the lifetime and releases it on
+        /// <see cref="Dispose"/>.
         /// </summary>
-        /// <param name="nativePointer">Raw COM pointer — ownership is transferred to this instance</param>
         internal AudioMeterInformation(IntPtr nativePointer)
         {
-            this.nativePointer = nativePointer;
-            audioMeterInformation = (IAudioMeterInformation)Marshal.GetObjectForIUnknown(nativePointer);
+            try
+            {
+                audioMeterInformation = (IAudioMeterInformation)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    nativePointer, CreateObjectFlags.UniqueInstance);
+            }
+            finally
+            {
+                Marshal.Release(nativePointer);
+            }
+            ownsInterface = true;
+
             CoreAudioException.ThrowIfFailed(audioMeterInformation.QueryHardwareSupport(out var hardwareSupp));
             HardwareSupport = (EEndpointHardwareSupport)hardwareSupp;
             PeakValues = new AudioMeterInformationChannels(audioMeterInformation);
         }
 
         /// <summary>
-        /// Creates a new AudioMeterInformation wrapper from a borrowed interface (e.g. QI from AudioSessionControl).
-        /// This instance does not own the COM pointer.
+        /// Wraps an <c>IAudioMeterInformation</c> obtained via QI on an existing RCW
+        /// (typically from an <c>AudioSessionControl</c>). The parent owns the
+        /// lifetime; this instance does not release on disposal.
         /// </summary>
-        /// <param name="borrowed">IAudioMeterInformation obtained via QI on an existing RCW</param>
         internal AudioMeterInformation(IAudioMeterInformation borrowed)
         {
             audioMeterInformation = borrowed;
+            ownsInterface = false;
+
             CoreAudioException.ThrowIfFailed(audioMeterInformation.QueryHardwareSupport(out var hardwareSupp));
             HardwareSupport = (EEndpointHardwareSupport)hardwareSupp;
             PeakValues = new AudioMeterInformationChannels(audioMeterInformation);
         }
 
         /// <summary>
-        /// Peak Values
+        /// Per-channel peak values for the metered stream.
         /// </summary>
         public AudioMeterInformationChannels PeakValues { get; }
 
         /// <summary>
-        /// Hardware Support
+        /// Bitmask describing which metering features the underlying hardware supports
+        /// (peak meter, RMS meter, hardware-accelerated metering).
         /// </summary>
         public EEndpointHardwareSupport HardwareSupport { get; }
 
         /// <summary>
-        /// Master Peak Value
+        /// Master peak value across all channels of the metered stream, in the
+        /// normalized range <c>0.0</c> to <c>1.0</c>.
         /// </summary>
         public float MasterPeakValue
         {
@@ -82,18 +78,18 @@ namespace NAudio.CoreAudioApi
         }
 
         /// <summary>
-        /// Dispose
+        /// Releases the underlying COM reference when this wrapper owns it.
+        /// Borrowed wrappers (constructed from a parent's RCW) do not release.
         /// </summary>
         public void Dispose()
         {
             if (audioMeterInformation != null)
             {
+                if (ownsInterface && (object)audioMeterInformation is ComObject co)
+                {
+                    co.FinalRelease();
+                }
                 audioMeterInformation = null;
-            }
-            if (nativePointer != IntPtr.Zero)
-            {
-                Marshal.Release(nativePointer);
-                nativePointer = IntPtr.Zero;
             }
             GC.SuppressFinalize(this);
         }

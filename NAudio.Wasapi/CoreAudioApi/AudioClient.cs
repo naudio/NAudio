@@ -434,17 +434,10 @@ namespace NAudio.CoreAudioApi
                     audioStreamVolume.Dispose();
                     audioStreamVolume = null;
                 }
-                // Single FinalRelease on audioClientInterface only — do NOT separately
-                // FinalRelease audioClientInterface2 / audioClientInterface3.
-                //
-                // Why: `audioClientInterface as IAudioClient2/3` goes through DICASTABLE
-                // and returns the SAME ComObject as audioClientInterface (same _unknown,
-                // QI'd vtable cached internally). Although ComObject.FinalRelease is
-                // documented as idempotent, calling it multiple times on the aliased
-                // ComObject empirically AVs the second time through Marshal.Release —
-                // captured via NAudioDemo's MiniDumpInstaller during the manual
-                // WasapiPlayer → Volume Mixer repro. The single-call path releases the
-                // _unknown plus the cached QI'd vtables in one shot and works correctly.
+                // audioClientInterface2 / audioClientInterface3 are the same ComObject
+                // as audioClientInterface (DICASTABLE returns the same wrapper for
+                // cross-casts), so a single FinalRelease releases all three views.
+                // Releasing each separately would double-free.
                 if ((object)audioClientInterface is ComObject co)
                 {
                     co.FinalRelease();

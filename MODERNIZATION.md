@@ -178,8 +178,11 @@ Specific exception types for common failure modes:
 - `IPropertyStore` converted to `[GeneratedComInterface]` with `IntPtr` PROPVARIANT parameters; `PropertyStore` now allocates a stack PROPVARIANT, calls the COM method, projects via `Unsafe.Read<PropVariant>`, and calls `PropVariantClear` in a `finally` block — closing a pre-existing leak of COM-allocated LPWSTR/BLOB/CLSID memory
 - `PropertyStoreProperty.Value` now stores the resolved managed object (string, uint, byte[], Guid, ...) rather than a `PropVariant` struct, so callers cannot hold dangling pointers after Clear
 - `PropertyStore.GetValue(int) → PropVariant` marked `[Obsolete]` (returned struct may contain dangling pointers for VT_LPWSTR/VT_BLOB/VT_CLSID); the indexer overloads are the safe replacement
-- Dead `propertyStoreInterface` fields removed from `WindowsMediaMp3Decoder` and `DmoResampler` (assigned but never used)
-- `<IsAotCompatible>true</IsAotCompatible>` not yet enabled — the seven remaining `[ComImport]` callback interfaces still need migration to `[GeneratedComInterface]` + `[GeneratedComClass]` (or explicit suppressions) before the project flag is meaningful
+- New `NAudio.CoreAudioApi.Interfaces.VarType` enum replaces `System.Runtime.InteropServices.VarEnum` (`SYSLIB0050`-obsolete) on `PropVariant.DataType` and in switch logic — values match the COM ABI so it's interchangeable with `PROPVARIANT.vt`. Both `#pragma warning disable CS0618` suppressions for `VarEnum` are removed
+- `PropVariantNative` class folded into `PropVariant` itself as a private `[DllImport]` (the dead `WINDOWS_UWP` branch and the unused `ref PropVariant` overload are removed); `PropVariant.Clear(IntPtr)` remains the public API
+- Dead `propertyStoreInterface` fields removed from `WindowsMediaMp3Decoder` and `DmoResampler` (assigned but never used — they aliased the same coclass already released elsewhere)
+- AOT smoke-tested with `dotnet publish -p:PublishTrimmed=true`: `IPropertyStore`/`PropVariant` paths produce zero IL2026/IL2050/IL3050 warnings; remaining trim/AOT blockers are in the `[ComImport]` activation pattern (`MMDeviceEnumeratorComObject`) and the pervasive `Marshal.GetObjectForIUnknown` bridging — to be addressed in a follow-up Phase 2e
+- `<IsAotCompatible>true</IsAotCompatible>` deliberately not yet enabled — Phase 2e (CoreAudio activation via raw `CoCreateInstance` + `StrategyBasedComWrappers`) and the seven remaining `[ComImport]` callback interfaces (Phase 2f) still need to land first
 
 #### Phase 3: High-level API redesign
 
@@ -840,6 +843,11 @@ These will need to be documented in the migration guide:
 | `WasapiPlayer.Volume` uses session volume, not device volume | `Volume` now controls your app's mixer slider (via `SimpleAudioVolume`), not the system-wide device volume. To control device volume, use `DeviceVolume.MasterVolumeLevelScalar`. For per-channel stream control, use `StreamVolume` (shared mode only) |
 | `WasapiCapture` is `[Obsolete]` | Use `new WasapiRecorderBuilder()...Build()` to create a `WasapiRecorder` |
 | `WasapiLoopbackCapture` is `[Obsolete]` | Use `WasapiRecorderBuilder` with process loopback or render device |
+| `PropertyStoreProperty.Value` type changed from `PropVariant` to `object` | `Value` now exposes the resolved managed value (string, uint, byte[], Guid, …). Cast to the expected type. The previous `PropVariant` exposed pointer fields (LPWSTR/BLOB/CLSID) that were unsafe to read after the underlying COM-allocated memory was cleared |
+| `PropVariant.DataType` returns `NAudio.CoreAudioApi.Interfaces.VarType` instead of `System.Runtime.InteropServices.VarEnum` | `VarType` is a NAudio-defined `[Flags]` enum with the COM-ABI `VT_*` values. It's a binary break, but `VarEnum` is `[Obsolete]` (`SYSLIB0050`) so callers were already on a deprecated path. Bitwise operations (`VT_VECTOR \| VT_UI1`) keep the same numeric values |
+| `PropertyStore.GetValue(int)` is `[Obsolete]` | Returned `PropVariant` may carry dangling pointers for VT_LPWSTR/VT_BLOB/VT_CLSID. Use the `PropertyStore[int]` or `PropertyStore[PropertyKey]` indexers, which resolve the value before clearing the underlying buffer |
+| `PropVariantNative` class removed | Internal cleanup — call `PropVariant.Clear(IntPtr)` directly (the public API is unchanged) |
+
 ### IWaveProvider / ISampleProvider migration
 
 | Change | Migration |
@@ -933,7 +941,7 @@ These will need to be documented in the migration guide:
 - 834 tests passing, 0 failures, 12 skipped (skipped tests require specific hardware or files)
 - Manual testing: WASAPI playback and capture confirmed working in demo app
 - All `CoreAudioApi/` wrapper classes use `CoreAudioException.ThrowIfFailed` (zero `Marshal.ThrowExceptionForHR` remaining)
-- All consumed Core Audio COM interfaces use `[GeneratedComInterface]` (30 interfaces)
+- All consumed Core Audio COM interfaces use `[GeneratedComInterface]` (31 interfaces — including `IPropertyStore` from Phase 2d)
 - Callback interfaces correctly remain `[ComImport]` (6 interfaces)
 - New `WasapiPlayer` and `WasapiRecorder` compile and are ready for integration testing
 - All 12 Media Foundation COM interfaces have `[GeneratedComInterface]` versions in `MediaFoundation/Interfaces/`

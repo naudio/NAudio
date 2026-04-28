@@ -17,7 +17,8 @@ namespace NAudio.CoreAudioApi
         {
             try
             {
-                audioRenderClientInterface = ComActivation.WrapUnique<IAudioRenderClient>(nativePointer);
+                audioRenderClientInterface = (IAudioRenderClient)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    nativePointer, CreateObjectFlags.UniqueInstance);
             }
             finally
             {

@@ -41,7 +41,8 @@ namespace NAudio.CoreAudioApi
                 CoreAudioException.ThrowIfFailed(mmDeviceCollection.Item(index, out var ptr));
                 try
                 {
-                    return new MMDevice(ComActivation.WrapUnique<IMMDevice>(ptr));
+                    return new MMDevice((IMMDevice)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                        ptr, CreateObjectFlags.UniqueInstance));
                 }
                 finally
                 {

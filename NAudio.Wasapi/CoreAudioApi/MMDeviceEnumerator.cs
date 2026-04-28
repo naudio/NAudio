@@ -47,7 +47,8 @@ namespace NAudio.CoreAudioApi
             CoreAudioException.ThrowIfFailed(realEnumerator.EnumAudioEndpoints(dataFlow, dwStateMask, out var ptr));
             try
             {
-                return new MMDeviceCollection(ComActivation.WrapUnique<IMMDeviceCollection>(ptr));
+                return new MMDeviceCollection((IMMDeviceCollection)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    ptr, CreateObjectFlags.UniqueInstance));
             }
             finally
             {
@@ -131,7 +132,8 @@ namespace NAudio.CoreAudioApi
         {
             try
             {
-                return new MMDevice(ComActivation.WrapUnique<IMMDevice>(ptr));
+                return new MMDevice((IMMDevice)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    ptr, CreateObjectFlags.UniqueInstance));
             }
             finally
             {

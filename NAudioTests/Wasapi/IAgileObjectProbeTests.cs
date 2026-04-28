@@ -12,13 +12,13 @@ using NUnit.Framework;
 namespace NAudioTests.Wasapi
 {
     /// <summary>
-    /// Diagnostic probe for the WrapUnique apartment-marshaling hypothesis. For each
-    /// CoreAudio wrapper that NAudio currently produces via ComWrappers, extracts the
-    /// underlying IUnknown* and QIs for IID_IAgileObject. Objects that respond E_NOINTERFACE
-    /// are apartment-affine, which means calling Release on them from the GC finalizer
-    /// thread (always MTA) when they were activated on an STA thread is undefined behavior
-    /// — the working hypothesis for the __fastfail crash that the WrapUnique +
-    /// GC.SuppressFinalize change masks.
+    /// Diagnostic probe that records, for each CoreAudio wrapper NAudio produces via
+    /// ComWrappers, whether the underlying COM object exposes <c>IAgileObject</c> /
+    /// <c>IMarshal</c> / a registered proxy-stub. Originally written to test the
+    /// apartment-marshaling hypothesis for the .NET 8 finalizer crash; that crash was
+    /// later root-caused to dotnet/runtime PR #110007 (DICASTABLE CastCache poisoning,
+    /// fixed in .NET 9) and the floor TFM was bumped accordingly. Kept around as a
+    /// reusable diagnostic for any future apartment-related question.
     /// </summary>
     [TestFixture]
     [Category("IntegrationTest")]

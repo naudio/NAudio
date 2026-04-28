@@ -83,7 +83,8 @@ namespace NAudio.Wave
                     resamplerTransform.SetOutputType(0, outputMediaFormat.MediaFoundationObject, 0);
                 }
 
-                var props = ComActivation.WrapUnique<NAudio.Dmo.Interfaces.IWMResamplerProps>(unknown);
+                var props = (NAudio.Dmo.Interfaces.IWMResamplerProps)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    unknown, CreateObjectFlags.UniqueInstance);
                 try
                 {
                     // 60 is the best quality, 1 is linear interpolation

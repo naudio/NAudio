@@ -22,7 +22,8 @@ namespace NAudio.CoreAudioApi
         {
             try
             {
-                audioSessionEnumerator = ComActivation.WrapUnique<IAudioSessionEnumerator>(nativePointer);
+                audioSessionEnumerator = (IAudioSessionEnumerator)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    nativePointer, CreateObjectFlags.UniqueInstance);
             }
             finally
             {

@@ -50,7 +50,8 @@ namespace NAudio.CoreAudioApi
                 partsListInterface.GetPart(index, out var ptr);
                 try
                 {
-                    return new Part(ComActivation.WrapUnique<IPart>(ptr));
+                    return new Part((IPart)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                        ptr, CreateObjectFlags.UniqueInstance));
                 }
                 finally
                 {

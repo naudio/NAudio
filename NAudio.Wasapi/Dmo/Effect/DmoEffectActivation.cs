@@ -35,8 +35,10 @@ namespace NAudio.Dmo.Effect
             IntPtr unknown = ComActivation.CoCreateInstance(clsid, IID_IMediaObject);
             try
             {
-                var imo = ComActivation.WrapUnique<IMediaObject>(unknown);
-                var imoip = ComActivation.WrapUnique<IMediaObjectInPlace>(unknown);
+                var imo = (IMediaObject)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    unknown, CreateObjectFlags.UniqueInstance);
+                var imoip = (IMediaObjectInPlace)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    unknown, CreateObjectFlags.UniqueInstance);
 
                 Guid fxIid = typeof(TFx).GUID;
                 int hr = Marshal.QueryInterface(unknown, in fxIid, out IntPtr fxPtr);

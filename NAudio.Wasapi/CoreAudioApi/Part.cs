@@ -31,7 +31,8 @@ namespace NAudio.CoreAudioApi
         {
             try
             {
-                return ComActivation.WrapUnique<T>(ptr);
+                return (T)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    ptr, CreateObjectFlags.UniqueInstance);
             }
             finally
             {

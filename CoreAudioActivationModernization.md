@@ -1,6 +1,16 @@
 # CoreAudio Activation + ComWrappers Bridging Modernization
 
-> **Status: IN PROGRESS** (Phase 2e in [MODERNIZATION.md](MODERNIZATION.md)). Working branch: `naudio3dev-coreaudio-activation`.
+> **Status: COMPLETE** (Phase 2e in [MODERNIZATION.md](MODERNIZATION.md)). Working branch: `naudio3dev-coreaudio-activation`.
+>
+> Resolution: the finalizer-thread fast-fail that motivated the `WrapUnique` /
+> `GC.SuppressFinalize` band-aid was root-caused to a .NET 8 ComWrappers
+> regression in `IDynamicInterfaceCastable`'s CastCache
+> ([dotnet/runtime#90234](https://github.com/dotnet/runtime/issues/90234), fixed
+> in .NET 9 via [PR #110007](https://github.com/dotnet/runtime/pull/110007)). The
+> NAudio 3 floor TFM was bumped from net8.0 to net9.0 across all projects, and
+> `WrapUnique` was deleted — call sites now project COM pointers directly via
+> `(T)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(ptr, CreateObjectFlags.UniqueInstance)`.
+> See "Resolution" section below for the diagnostic narrative.
 
 This document tracks the working plan and progress for Phase 2e — migrating `NAudio.Wasapi/CoreAudioApi/` off the legacy `[ComImport]` activation pattern (`new SomeComObject()`) and the classic-RCW `Marshal.GetObjectForIUnknown` bridge, replacing both with raw `CoCreateInstance` + the shared `StrategyBasedComWrappers` instance owned by `ComActivation`.
 
@@ -181,14 +191,75 @@ Must remain green:
 
 ---
 
-## Next steps — pre-merge investigation plan
+## Resolution
 
-> **Status: HOLD merge of Phase 2e until at least step 1 below is complete.** The
-> `WrapUnique` suppression empirically prevents the demo crash, but we don't yet
-> understand the underlying mechanism, and we haven't confirmed
-> `StrategyBasedComWrappers` is even the right primitive for an AOT-friendly
-> classic-COM consumer. Shipping the unmask-when-we-don't-understand-the-mask
-> position into NAudio 3 is uncomfortable for a foundational library.
+**Root cause: a .NET 8 ComWrappers regression, not anything wrong with NAudio's
+projection code.** [dotnet/runtime#90234](https://github.com/dotnet/runtime/issues/90234)
+poisoned `IDynamicInterfaceCastable`'s CastCache in .NET 8 — cached vtable
+slots from cross-casts (`audioClient as IAudioClient2`, `(IMMEndpoint)deviceInterface`,
+etc.) could point at freed native memory by the time the GC finalizer ran on
+them, triggering the fast-fail `Invalid Program: attempted to call a
+UnmanagedCallersOnly method from managed code`. Fixed in .NET 9 by
+[PR #110007](https://github.com/dotnet/runtime/pull/110007).
+
+**How we got there:** the `ComObject.Finalize` AV reproduced reliably in
+NAudioDemo (WasapiPlayer → stop → Volume Mixer), masked successfully by
+`GC.SuppressFinalize(wrapper)` inside a `WrapUnique` helper. Multiple sessions
+failed to identify the mechanism; the doc's earlier "Next steps" plan
+(CsWin32 spike, Application Verifier, headless repro, bisect, vtable-cache
+diagnostics) was preparation for a deeper investigation. The breakthrough was
+two changes in approach:
+
+1. **Capture the actual fast-fail message.** Removing the `SuppressFinalize`
+   band-aid and watching the console output revealed the exact CLR fast-fail
+   string. That string is searchable and immediately led to runtime issues
+   [#79971](https://github.com/dotnet/runtime/issues/79971) (mechanism),
+   [#96901](https://github.com/dotnet/runtime/issues/96901)
+   (UniqueComInterfaceMarshaller double-release),
+   [#125221](https://github.com/dotnet/runtime/issues/125221) (OleDb finalizer
+   AV), and finally PR #110007.
+2. **A/B test on a newer runtime.** With NAudioDemo temporarily targeting
+   `net10.0-windows10.0.19041.0` and `SuppressFinalize` removed, the manual
+   repro ran cleanly across 4 attempts. With net8 it fast-failed on the first
+   attempt. That single test confirmed the runtime fix was the cause.
+
+**Decisions made:**
+
+- **NAudio 3 floor TFM bumped from net8.0 to net9.0** across all projects
+  (NAudio.Core, NAudio.Midi, NAudio.Asio, NAudio.WinMM, NAudio.WinForms,
+  NAudio.Wasapi, NAudio.Extras, NAudio (umbrella), NAudioDemo, NAudioWpfDemo,
+  AudioFileInspector, MidiFileConverter, MixDiff, NAudio.Benchmarks).
+- **`WrapUnique` deleted** — call sites now project COM pointers directly via
+  `(T)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(ptr, CreateObjectFlags.UniqueInstance)`.
+  Without the band-aid, missed `Dispose` falls back to the wrapper's finalizer,
+  which (on net9+) correctly releases the COM ref instead of fast-failing.
+- **`AudioClient.Dispose` keeps the single-`FinalRelease` fix.** That bug
+  (Bug A in the original two-bug taxonomy) was a separate, self-inflicted
+  triple-FinalRelease via the DICASTABLE-aliased `audioClientInterface3 / 2 /
+  interface` references. Single FinalRelease on the aliased ComObject is
+  sufficient and correct.
+- **`WrapUniqueCrashRepro.cs` deleted** — the band-aid it tested no longer
+  exists.
+- **`IAgileObjectProbeTests` retained** — the agility-matrix probe is a useful
+  generic diagnostic for any future apartment-related question, even though
+  the apartment-marshaling hypothesis it was originally written to test was
+  falsified.
+
+**What was tried during the long investigation that didn't land:**
+
+- `Application Verifier` / page heap on `NAudioDemo.exe` — would have given a
+  cleaner stack but we never needed it; the fast-fail message was enough.
+- Custom `ComWrappers` subclass with our own non-caching strategy — would have
+  worked around the runtime bug too, but at the cost of carrying forever.
+- Headless repro via `Application.Run` + hidden Form — `WrapUniqueCrashRepro`
+  in its current `[Explicit]` form does not trip the crash because it lacks a
+  WinForms message pump. With `net9` as the floor this is moot.
+
+### Pre-merge investigation plan (historical — superseded by the resolution above)
+
+The original plan that motivated the deep investigation is preserved here for
+context. Each item is now either resolved by the .NET 9 floor or made moot by
+the simplification of removing `WrapUnique`.
 
 ### What we know going in
 
@@ -428,3 +499,4 @@ Don't merge until:
 | 2026-04-28 | Leaf wrappers migrated | `AudioRenderClient`, `AudioCaptureClient`, `AudioClockClient` now project via `ComActivation.ComWrappers.GetOrCreateObjectForComInstance(ptr, UniqueInstance)`, release the input IntPtr immediately, and dispose via `((object)field is ComObject co) co.FinalRelease()`. The dual-pointer (`nativePointer` + RCW) pattern is gone — single ownership through the wrapper. NAudioTests: 1170/14/0 (no regressions). |
 | 2026-04-28 | Phase 2e narrow scope COMPLETE | All 30 CoreAudio bridge sites migrated. AOT smoke (`PublishTrimmed=true -p:BuiltInComInteropSupport=false`) now runs end-to-end: 7 active render endpoints enumerated, all property paths (VT_LPWSTR / VT_UI4 / VT_BLOB) read correctly. NAudioTests: 1170/14/0. DICASTABLE-confirmed cross-casts: `audioClientInterface as IAudioClient2/3`, `audioSessionInterface as IAudioSessionManager2`, `audioSessionControlInterface as IAudioSessionControl2 / IAudioMeterInformation / ISimpleAudioVolume`, `connectorInterface as IPart`, `(IMMEndpoint)deviceInterface`. Closed pre-existing under-release leaks: `MMDevice.deviceInterface`, `MMDeviceCollection.mmDeviceCollection`, `AudioClient.audioClientInterface`, `AudioSessionManager.audioSessionInterface`, `SessionCollection.audioSessionEnumerator`. Manual smoke testing of NAudioDemo / NAudioWpfDemo still TODO before merge. |
 | 2026-04-28 | GC-safety investigation | NAudioDemo manual repro (WasapiPlayer playback → stop → Volume Mixer) fast-fails with two distinct bugs that were getting conflated: (1) `AudioClient.Dispose`'s defensive triple-`FinalRelease` from earlier commit 9adbdf4 was self-inflicted — DICASTABLE returns the same `ComObject` for all three IAudioClient/2/3 references, and calling `FinalRelease` repeatedly on the alias AVs in `Marshal.Release`. (2) A separate finalizer-thread AV class on whichever wrapper goes through `ComObject.Finalize` first — captured via `MiniDumpInstaller` console + log scaffolding in NAudioDemo. Apartment-Release hypothesis falsified: `IAgileObjectProbeTests` shows 4 of 12 CoreAudio interfaces have no agile / no FTM / no PSR (so classic RCW couldn't have marshaled either), implying their `Release` is just `InterlockedDecrement` and apartment isn't the issue. Likely cause is a use-after-free on a cached QI'd vtable inside `StrategyBasedComWrappers`. Fixes applied: single `FinalRelease` in `AudioClient.Dispose` (closes Bug A), `WrapUnique`'s `GC.SuppressFinalize` retained (masks Bug B). New diagnostic tests: `IAgileObjectProbeTests` (agility matrix), `WrapUniqueCrashRepro` (`[Explicit]` — does not yet trip the demo crash headlessly). Comments in `ComActivation.WrapUnique` and `AudioClient.Dispose` updated with full rationale. |
+| 2026-04-28 | Phase 2e RESOLVED — .NET 9 floor + `WrapUnique` removed | Captured the actual fast-fail message by removing `GC.SuppressFinalize` and watching console output: `Invalid Program: attempted to call a UnmanagedCallersOnly method from managed code`. That string led to dotnet/runtime issues #79971, #96901, #125221, and finally PR #110007 — `IDynamicInterfaceCastable` CastCache poisoning regressed in .NET 8 (#90234), fixed in .NET 9. A/B test confirmed: NAudioDemo on `net10.0-windows10.0.19041.0` runs cleanly across multiple repros with `SuppressFinalize` removed; on net8 it fast-fails on the first attempt. Bumped NAudio 3 floor TFM from net8.0 to net9.0 across all 14 projects (NAudio.Core, NAudio.Midi, NAudio.Asio, NAudio.WinMM, NAudio.WinForms, NAudio.Wasapi, NAudio.Extras, NAudio, NAudio.Benchmarks, NAudioDemo, NAudioWpfDemo, AudioFileInspector, MidiFileConverter, MixDiff). Deleted `ComActivation.WrapUnique`, `WrapUniqueCrashRepro.cs`, and the temp net10 retarget. Inlined `(T)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(ptr, CreateObjectFlags.UniqueInstance)` at all 25+ call sites. Build clean. NAudioTests: 1171 passed / 15 skipped (missing local files) / 0 failed across all 1186 tests. Updated `MODERNIZATION.md` "Target Framework Decisions" with the bump rationale and runtime issue links. |

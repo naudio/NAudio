@@ -127,7 +127,8 @@ namespace NAudio.CoreAudioApi
             syncContext = SynchronizationContext.Current;
             try
             {
-                audioEndPointVolume = ComActivation.WrapUnique<IAudioEndpointVolume>(nativePointer);
+                audioEndPointVolume = (IAudioEndpointVolume)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    nativePointer, CreateObjectFlags.UniqueInstance);
             }
             finally
             {

@@ -7,7 +7,7 @@ This document records the architectural decisions, rationale, and progress for t
 ## Goals
 
 ### Overall
-- Establish .NET 8 as the minimum supported platform for NAudio 3.0
+- Establish .NET 9 as the minimum supported platform for NAudio 3.0
 - Drop legacy targets (netstandard2.0, .NET Framework, netcoreapp3.1, .NET 6) across all projects
 - Simplify the project structure by retiring projects that no longer have a distinct purpose
 - Use the `Microsoft.NET.Sdk` for all projects (drop `Microsoft.NET.Sdk.WindowsDesktop`)
@@ -24,28 +24,30 @@ This document records the architectural decisions, rationale, and progress for t
 
 ## Target Framework Decisions
 
-### Minimum platform: .NET 8
+### Minimum platform: .NET 9
 
-**Decision:** NAudio 3.0 requires .NET 8 as a minimum. All legacy targets have been removed.
+**Decision:** NAudio 3.0 requires .NET 9 as a minimum. All legacy targets have been removed.
 
-**Rationale:** .NET 8 is LTS (supported until November 2026). It unlocks `[GeneratedComInterface]` (source-generated COM interop), `Span<T>` in interop signatures, and trimming support. There is no multi-targeting for .NET 9 — consumers on .NET 9+ will reference the net8.0 builds without issue.
+**Rationale:** .NET 9 unlocks `[GeneratedComInterface]` (source-generated COM interop), `Span<T>` in interop signatures, and trimming support — and, crucially, fixes a `IDynamicInterfaceCastable` CastCache poisoning bug that affected ComWrappers cross-casts under .NET 8 (see below).
 
-**Migration impact:** Users on .NET Framework, .NET 6, or .NET 7 should stay on NAudio 2.x.
+**Why not net8.0:** the original plan was net8.0 (LTS), and the CoreAudio modernization initially shipped on it. During Phase 2e a finalizer-thread fast-fail (`Invalid Program: attempted to call a UnmanagedCallersOnly method from managed code`) was reproduced reliably in NAudioDemo. Root cause: [dotnet/runtime#90234](https://github.com/dotnet/runtime/issues/90234) regressed `IDynamicInterfaceCastable`'s CastCache in .NET 8, causing cached vtable slots from cross-casts (e.g. `audioClient as IAudioClient2`, `(IMMEndpoint)deviceInterface`) to point at freed native memory by the time the GC finalizer ran on them. The fix shipped in .NET 9 via [dotnet/runtime PR #110007](https://github.com/dotnet/runtime/pull/110007). Confirmed via A/B test: on net10 NAudioDemo runs cleanly; on net8 the same code fast-fails. Bumping the floor to net9 retires the workaround entirely (`WrapUnique`'s `GC.SuppressFinalize` was deleted) and lets the wrapper finalizer release the COM ref correctly when callers miss `Dispose`. Related runtime issues that informed the decision: [#96901](https://github.com/dotnet/runtime/issues/96901) (UniqueComInterfaceMarshaller double-release), [#125221](https://github.com/dotnet/runtime/issues/125221) (OleDb finalizer AV), [#100645](https://github.com/dotnet/runtime/issues/100645) (deterministic Release in ComWrappers).
+
+**Migration impact:** Users on .NET Framework, .NET 6, .NET 7, or .NET 8 should stay on NAudio 2.x.
 
 ### Per-project TFMs
 
 | Project | NAudio 2.x TFM(s) | NAudio 3.0 TFM(s) | Rationale |
 | ------- | ------------------ | ------------------ | --------- |
-| NAudio.Core | netstandard2.0 | net8.0 | Moved to net8.0 to unlock `Span<T>` for `IWaveProvider`/`ISampleProvider` interfaces |
-| NAudio.Midi | netstandard2.0 | net8.0 | Follows NAudio.Core (depends on it) |
-| NAudio.Asio | netstandard2.0; net8.0-windows | net8.0-windows | Dropped netstandard2.0 leg (NAudio.Core now requires net8.0). Removed `Microsoft.Win32.Registry` polyfill |
-| NAudio.WinMM | netstandard2.0; net6.0 | net8.0-windows | Windows-only (P/Invoke into winmm.dll). Removed netstandard2.0 and `Microsoft.Win32.Registry` polyfill |
-| NAudio.WinForms | net472; netcoreapp3.1 | net8.0-windows | Windows-only WinForms controls. Removed net472 workarounds (`GenerateResourceUsePreserializedResources`, `System.Resources.Extensions`). SDK changed from `Microsoft.NET.Sdk.WindowsDesktop` to `Microsoft.NET.Sdk` |
-| NAudio.Wasapi | netstandard2.0 | net8.0-windows10.0.19041.0 | Windows 10 2004 (build 19041) minimum required for process-specific loopback capture. Single target — no separate net9.0 build needed |
-| NAudio.Extras | net472; netcoreapp3.1; net8.0-windows10.0.19041.0; net8.0 | net8.0; net8.0-windows10.0.19041.0 | Dual target: cross-platform core + Windows-specific `AudioPlaybackEngine` (gated by `WINDOWS` define) |
-| NAudio (umbrella) | net472; netcoreapp3.1; net6.0-windows; net6.0; net8.0-windows10.0.19041.0 | net8.0; net8.0-windows10.0.19041.0 | Dual target: cross-platform (Core + Midi) + Windows (WinMM, WinForms, ASIO, WASAPI). SDK changed from `Microsoft.NET.Sdk.WindowsDesktop` to `Microsoft.NET.Sdk` |
+| NAudio.Core | netstandard2.0 | net9.0 | Moved to net9.0 to unlock `Span<T>` for `IWaveProvider`/`ISampleProvider` interfaces and align with the .NET 9 floor |
+| NAudio.Midi | netstandard2.0 | net9.0 | Follows NAudio.Core (depends on it) |
+| NAudio.Asio | netstandard2.0; net8.0-windows | net9.0-windows | Dropped netstandard2.0 leg. Removed `Microsoft.Win32.Registry` polyfill |
+| NAudio.WinMM | netstandard2.0; net6.0 | net9.0-windows | Windows-only (P/Invoke into winmm.dll). Removed netstandard2.0 and `Microsoft.Win32.Registry` polyfill |
+| NAudio.WinForms | net472; netcoreapp3.1 | net9.0-windows | Windows-only WinForms controls. Removed net472 workarounds. SDK changed from `Microsoft.NET.Sdk.WindowsDesktop` to `Microsoft.NET.Sdk` |
+| NAudio.Wasapi | netstandard2.0 | net9.0-windows10.0.19041.0 | Windows 10 2004 (build 19041) minimum required for process-specific loopback capture. .NET 9 minimum to dodge the .NET 8 ComWrappers DICASTABLE CastCache regression — see "Minimum platform" above |
+| NAudio.Extras | net472; netcoreapp3.1; net8.0-windows10.0.19041.0; net8.0 | net9.0; net9.0-windows10.0.19041.0 | Dual target: cross-platform core + Windows-specific `AudioPlaybackEngine` (gated by `WINDOWS` define) |
+| NAudio (umbrella) | net472; netcoreapp3.1; net6.0-windows; net6.0; net8.0-windows10.0.19041.0 | net9.0; net9.0-windows10.0.19041.0 | Dual target: cross-platform (Core + Midi) + Windows (WinMM, WinForms, ASIO, WASAPI). SDK changed from `Microsoft.NET.Sdk.WindowsDesktop` to `Microsoft.NET.Sdk` |
 | NAudio.Uap | net9.0-windows10.0.26100 | **Retired** | See "NAudio.Uap project retirement" below |
-| NAudioWpfDemo | net8.0-windows10.0.19041.0 | net8.0-windows10.0.19041.0 | Demo app. SDK changed from `Microsoft.NET.Sdk.WindowsDesktop` to `Microsoft.NET.Sdk` |
+| NAudioWpfDemo | net8.0-windows10.0.19041.0 | net9.0-windows10.0.19041.0 | Demo app. SDK changed from `Microsoft.NET.Sdk.WindowsDesktop` to `Microsoft.NET.Sdk` |
 | NAudioConsoleTest | net9.0-windows10.0.26100 | net9.0-windows10.0.26100 | Test console app |
 
 ---
@@ -183,6 +185,14 @@ Specific exception types for common failure modes:
 - Dead `propertyStoreInterface` fields removed from `WindowsMediaMp3Decoder` and `DmoResampler` (assigned but never used — they aliased the same coclass already released elsewhere)
 - AOT smoke-tested with `dotnet publish -p:PublishTrimmed=true`: `IPropertyStore`/`PropVariant` paths produce zero IL2026/IL2050/IL3050 warnings; remaining trim/AOT blockers are in the `[ComImport]` activation pattern (`MMDeviceEnumeratorComObject`) and the pervasive `Marshal.GetObjectForIUnknown` bridging — to be addressed in a follow-up Phase 2e
 - `<IsAotCompatible>true</IsAotCompatible>` deliberately not yet enabled — Phase 2e (CoreAudio activation via raw `CoCreateInstance` + `StrategyBasedComWrappers`) and the seven remaining `[ComImport]` callback interfaces (Phase 2f) still need to land first
+
+#### Phase 2e: CoreAudio activation + ComWrappers bridging
+
+- All 30 `Marshal.GetObjectForIUnknown` bridge sites in `CoreAudioApi/` migrated to `ComActivation.ComWrappers.GetOrCreateObjectForComInstance(ptr, CreateObjectFlags.UniqueInstance)`. Headline AOT activation crash (`MMDeviceEnumerator..ctor` throwing `NotSupportedException` under `BuiltInComInteropSupport=false`) is gone; `dotnet publish -p:PublishTrimmed=true -p:BuiltInComInteropSupport=false` runs the demo end-to-end with zero IL2026/IL3050 warnings.
+- Closed five pre-existing under-release leaks that classic RCWs were hiding via finalizer: `MMDevice.deviceInterface`, `MMDeviceCollection.mmDeviceCollection`, `AudioClient.audioClientInterface`, `AudioSessionManager.audioSessionInterface`, `SessionCollection.audioSessionEnumerator` — all now FinalRelease the wrapper deterministically on Dispose.
+- DICASTABLE-confirmed cross-casts (same `ComObject` returned, no second wrapper allocated): `audioClientInterface as IAudioClient2/3`, `audioSessionInterface as IAudioSessionManager2`, `audioSessionControlInterface as IAudioSessionControl2 / IAudioMeterInformation / ISimpleAudioVolume`, `(IMMEndpoint)deviceInterface`, `connectorInterface as IPart`. The classic borrowed-RCW pattern in `AudioMeterInformation` / `SimpleAudioVolume` is preserved.
+- Investigation that drove the .NET 9 floor decision: NAudioDemo's `WasapiPlayer → Volume Mixer` repro consistently fast-failed with `Invalid Program: attempted to call a UnmanagedCallersOnly method from managed code` on the GC finalizer thread under .NET 8. The crash is silent to vectored exception handlers (`__fastfail` skips user-mode SEH dispatch) so a `MiniDumpInstaller` based on `AddVectoredExceptionHandler` + `SetUnhandledExceptionFilter` could capture the console fast-fail message but not write a dump. Root-cause traced through [dotnet/runtime#79971](https://github.com/dotnet/runtime/issues/79971) (the exact UCO message), [#96901](https://github.com/dotnet/runtime/issues/96901) (UniqueComInterfaceMarshaller double-release), [#125221](https://github.com/dotnet/runtime/issues/125221) (OleDb finalizer AV), to [PR #110007](https://github.com/dotnet/runtime/pull/110007) — `IDynamicInterfaceCastable` CastCache poisoning, regressed in .NET 8 via [#90234](https://github.com/dotnet/runtime/issues/90234), fixed in .NET 9. Confirmed via A/B test: temp-bumping NAudioDemo to net10 with `GC.SuppressFinalize` removed runs cleanly across multiple repros; net8 fast-fails. Bumping the floor to net9 retired the workaround entirely (`WrapUnique`'s `GC.SuppressFinalize`-on-construct band-aid was deleted; call sites now project directly via `(T)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(...)`).
+- `<IsAotCompatible>true</IsAotCompatible>` still pending — needs Phase 2f (the seven `[ComImport]` callback interfaces) before it can be flipped.
 
 #### Phase 3: High-level API redesign
 
@@ -835,8 +845,8 @@ These will need to be documented in the migration guide:
 ### Platform requirements
 | Change | Migration |
 | ------ | --------- |
-| Minimum target is net8.0 across all projects (including NAudio.Core and NAudio.Midi) | .NET Framework / .NET 6-7 users stay on NAudio 2.x |
-| NAudio.Wasapi requires net8.0-windows10.0.19041.0 | Windows 10 2004 or later |
+| Minimum target is net9.0 across all projects (including NAudio.Core and NAudio.Midi) | .NET Framework / .NET 6-8 users stay on NAudio 2.x. The .NET 9 floor avoids a .NET 8 ComWrappers DICASTABLE CastCache regression — see "Minimum platform" in *Target Framework Decisions* |
+| NAudio.Wasapi requires net9.0-windows10.0.19041.0 | Windows 10 2004 or later, .NET 9 or later |
 | NAudio.Uap package is removed | Use `WasapiPlayerBuilder` / `WasapiRecorderBuilder` from NAudio.Wasapi |
 | NAudio.WinForms no longer supports net472 | Use NAudio.WinForms 2.x on .NET Framework |
 | NAudio.WinMM no longer supports netstandard2.0 | Use NAudio.WinMM 2.x on .NET Framework |

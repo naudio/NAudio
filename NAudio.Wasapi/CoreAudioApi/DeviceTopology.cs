@@ -40,7 +40,8 @@ namespace NAudio.CoreAudioApi
             deviceTopologyInterface.GetConnector(index, out var ptr);
             try
             {
-                return new Connector(ComActivation.WrapUnique<IConnector>(ptr));
+                return new Connector((IConnector)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    ptr, CreateObjectFlags.UniqueInstance));
             }
             finally
             {

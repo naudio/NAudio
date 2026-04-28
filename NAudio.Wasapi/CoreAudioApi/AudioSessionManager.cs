@@ -45,7 +45,8 @@ namespace NAudio.CoreAudioApi
         {
             try
             {
-                audioSessionInterface = ComActivation.WrapUnique<IAudioSessionManager>(nativePointer);
+                audioSessionInterface = (IAudioSessionManager)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    nativePointer, CreateObjectFlags.UniqueInstance);
             }
             finally
             {

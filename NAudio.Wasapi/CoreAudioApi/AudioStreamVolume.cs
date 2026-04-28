@@ -18,7 +18,8 @@ namespace NAudio.CoreAudioApi
         {
             try
             {
-                audioStreamVolumeInterface = ComActivation.WrapUnique<IAudioStreamVolume>(nativePointer);
+                audioStreamVolumeInterface = (IAudioStreamVolume)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    nativePointer, CreateObjectFlags.UniqueInstance);
             }
             finally
             {

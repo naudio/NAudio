@@ -43,7 +43,8 @@ namespace NAudio.Dmo
         {
             int hresult = DmoInterop.DMOEnum(ref category, DmoEnumFlags.None, 0, null, 0, null, out IntPtr enumPtr);
             Marshal.ThrowExceptionForHR(hresult);
-            var enumDmo = ComActivation.WrapUnique<IEnumDmo>(enumPtr);
+            var enumDmo = (IEnumDmo)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                enumPtr, CreateObjectFlags.UniqueInstance);
             Marshal.Release(enumPtr);
             try
             {

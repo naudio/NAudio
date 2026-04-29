@@ -25,16 +25,18 @@
 
 using System;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 using NAudio.CoreAudioApi.Interfaces;
 using NAudio.Utils;
 
 namespace NAudio.CoreAudioApi
 {
     // This class implements the IAudioEndpointVolumeCallback interface,
-    // it is implemented in this class because implementing it on AudioEndpointVolume 
-    // (where the functionality is really wanted, would cause the OnNotify function 
-    // to show up in the public API. 
-    internal class AudioEndpointVolumeCallback : IAudioEndpointVolumeCallback
+    // it is implemented in this class because implementing it on AudioEndpointVolume
+    // (where the functionality is really wanted, would cause the OnNotify function
+    // to show up in the public API.
+    [GeneratedComClass]
+    internal partial class AudioEndpointVolumeCallback : IAudioEndpointVolumeCallback
     {
         private readonly AudioEndpointVolume parent;
         

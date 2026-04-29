@@ -140,9 +140,15 @@ namespace NAudio.CoreAudioApi
             HardwareSupport = (EEndpointHardwareSupport)hardwareSupp;
             VolumeRange = new AudioEndpointVolumeVolumeRange(audioEndPointVolume);
             callBack = new AudioEndpointVolumeCallback(this);
-            var callBackPtr = Marshal.GetComInterfaceForObject<AudioEndpointVolumeCallback, IAudioEndpointVolumeCallback>(callBack);
-            CoreAudioException.ThrowIfFailed(audioEndPointVolume.RegisterControlChangeNotify(callBackPtr));
-            Marshal.Release(callBackPtr);
+            var callBackPtr = ComActivation.ComWrappers.GetOrCreateComInterfaceForObject(callBack, CreateComInterfaceFlags.None);
+            try
+            {
+                CoreAudioException.ThrowIfFailed(audioEndPointVolume.RegisterControlChangeNotify(callBackPtr));
+            }
+            finally
+            {
+                Marshal.Release(callBackPtr);
+            }
         }
 
         internal void FireNotification(AudioVolumeNotificationData notificationData)
@@ -170,9 +176,15 @@ namespace NAudio.CoreAudioApi
         {
             if (callBack != null)
             {
-                var callBackPtr = Marshal.GetComInterfaceForObject<AudioEndpointVolumeCallback, IAudioEndpointVolumeCallback>(callBack);
-                audioEndPointVolume.UnregisterControlChangeNotify(callBackPtr);
-                Marshal.Release(callBackPtr);
+                var callBackPtr = ComActivation.ComWrappers.GetOrCreateComInterfaceForObject(callBack, CreateComInterfaceFlags.None);
+                try
+                {
+                    audioEndPointVolume.UnregisterControlChangeNotify(callBackPtr);
+                }
+                finally
+                {
+                    Marshal.Release(callBackPtr);
+                }
                 callBack = null;
             }
             // Deterministic release is important: in exclusive mode the device cannot be

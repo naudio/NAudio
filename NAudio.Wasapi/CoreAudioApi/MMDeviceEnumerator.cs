@@ -148,7 +148,7 @@ namespace NAudio.CoreAudioApi
         /// <returns>The HRESULT from the underlying COM call.</returns>
         public int RegisterEndpointNotificationCallback(IMMNotificationClient client)
         {
-            var ptr = Marshal.GetComInterfaceForObject(client, typeof(IMMNotificationClient));
+            var ptr = ComActivation.ComWrappers.GetOrCreateComInterfaceForObject(client, CreateComInterfaceFlags.None);
             try
             {
                 return realEnumerator.RegisterEndpointNotificationCallback(ptr);
@@ -165,7 +165,7 @@ namespace NAudio.CoreAudioApi
         /// <returns>The HRESULT from the underlying COM call.</returns>
         public int UnregisterEndpointNotificationCallback(IMMNotificationClient client)
         {
-            var ptr = Marshal.GetComInterfaceForObject(client, typeof(IMMNotificationClient));
+            var ptr = ComActivation.ComWrappers.GetOrCreateComInterfaceForObject(client, CreateComInterfaceFlags.None);
             try
             {
                 return realEnumerator.UnregisterEndpointNotificationCallback(ptr);

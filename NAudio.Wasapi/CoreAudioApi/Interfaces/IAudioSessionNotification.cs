@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 
 namespace NAudio.CoreAudioApi.Interfaces
 {
@@ -7,10 +8,10 @@ namespace NAudio.CoreAudioApi.Interfaces
     /// Windows CoreAudio IAudioSessionNotification interface
     /// Defined in AudioPolicy.h
     /// </summary>
-    [Guid("641DD20B-4D41-49CC-ABA3-174B9477BB08"),
-    InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
-    ComImport]
-    internal interface IAudioSessionNotification
+    [GeneratedComInterface,
+    Guid("641DD20B-4D41-49CC-ABA3-174B9477BB08"),
+    InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    internal partial interface IAudioSessionNotification
     {
 
         /// <summary>

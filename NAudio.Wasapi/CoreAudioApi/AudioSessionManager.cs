@@ -109,9 +109,15 @@ namespace NAudio.CoreAudioApi
                 sessions = new SessionCollection(sessionEnumPtr);
 
                 audioSessionNotification = new AudioSessionNotification(this);
-                var notificationPtr = Marshal.GetComInterfaceForObject<AudioSessionNotification, IAudioSessionNotification>(audioSessionNotification);
-                CoreAudioException.ThrowIfFailed(audioSessionInterface2.RegisterSessionNotification(notificationPtr));
-                Marshal.Release(notificationPtr);
+                var notificationPtr = ComActivation.ComWrappers.GetOrCreateComInterfaceForObject(audioSessionNotification, CreateComInterfaceFlags.None);
+                try
+                {
+                    CoreAudioException.ThrowIfFailed(audioSessionInterface2.RegisterSessionNotification(notificationPtr));
+                }
+                finally
+                {
+                    Marshal.Release(notificationPtr);
+                }
             }
         }
 
@@ -149,9 +155,15 @@ namespace NAudio.CoreAudioApi
 
             if (audioSessionNotification != null && audioSessionInterface2 != null)
             {
-                var notificationPtr = Marshal.GetComInterfaceForObject<AudioSessionNotification, IAudioSessionNotification>(audioSessionNotification);
-                audioSessionInterface2.UnregisterSessionNotification(notificationPtr);
-                Marshal.Release(notificationPtr);
+                var notificationPtr = ComActivation.ComWrappers.GetOrCreateComInterfaceForObject(audioSessionNotification, CreateComInterfaceFlags.None);
+                try
+                {
+                    audioSessionInterface2.UnregisterSessionNotification(notificationPtr);
+                }
+                finally
+                {
+                    Marshal.Release(notificationPtr);
+                }
                 audioSessionNotification = null;
             }
         }

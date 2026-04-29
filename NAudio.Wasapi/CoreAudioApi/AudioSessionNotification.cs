@@ -1,9 +1,11 @@
 ﻿using NAudio.CoreAudioApi.Interfaces;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 
 namespace NAudio.CoreAudioApi
 {
-    internal class AudioSessionNotification : IAudioSessionNotification
+    [GeneratedComClass]
+    internal partial class AudioSessionNotification : IAudioSessionNotification
     {
         private AudioSessionManager parent;
 

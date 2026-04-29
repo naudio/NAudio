@@ -16,12 +16,16 @@ namespace NAudioTests.Asio
 
         [TestCase(AsioSampleType.Int32LSB, 16, false, 2, "ConvertorShortToInt2Channels")]
         [TestCase(AsioSampleType.Int32LSB, 16, false, 3, "ConvertorShortToIntGeneric")]
+        [TestCase(AsioSampleType.Int32LSB, 24, false, 2, "Convertor24ToIntGeneric")]
         [TestCase(AsioSampleType.Int32LSB, 32, false, 2, "ConvertorIntToInt2Channels")]
         [TestCase(AsioSampleType.Int32LSB, 32, true, 3, "ConvertorFloatToIntGeneric")]
         [TestCase(AsioSampleType.Int16LSB, 16, false, 2, "ConvertorShortToShort2Channels")]
+        [TestCase(AsioSampleType.Int16LSB, 24, false, 2, "Convertor24ToShortGeneric")]
         [TestCase(AsioSampleType.Int16LSB, 32, true, 3, "ConvertorFloatToShortGeneric")]
         [TestCase(AsioSampleType.Int16LSB, 32, false, 3, "ConvertorIntToShortGeneric")]
+        [TestCase(AsioSampleType.Int24LSB, 24, false, 2, "Convertor24To24Generic")]
         [TestCase(AsioSampleType.Int24LSB, 32, true, 2, "ConverterFloatTo24LSBGeneric")]
+        [TestCase(AsioSampleType.Float32LSB, 24, false, 2, "Convertor24ToFloatGeneric")]
         [TestCase(AsioSampleType.Float32LSB, 32, true, 3, "ConverterFloatToFloatGeneric")]
         [TestCase(AsioSampleType.Float32LSB, 32, false, 3, "ConvertorIntToFloatGeneric")]
         public void SelectSampleConvertor_ReturnsExpectedMethod(AsioSampleType asioType, int bitsPerSample, bool ieeeFloat, int channels, string expectedMethod)
@@ -40,6 +44,100 @@ namespace NAudioTests.Asio
         {
             var waveFormat = new WaveFormat(48000, 16, 2);
             Assert.Throws<TargetInvocationException>(() => SelectSampleConvertor(waveFormat, AsioSampleType.Int32MSB));
+        }
+
+        [Test]
+        public void SelectSampleConvertor_ThrowsForUnsupportedBitsPerSample()
+        {
+            // Guards against the BitsPerSample inner switch silently falling through and returning a null delegate
+            // (the original cause of the NRE in issue #1239 for 24-bit input).
+            var waveFormat = new WaveFormat(48000, 20, 2);
+            Assert.Throws<TargetInvocationException>(() => SelectSampleConvertor(waveFormat, AsioSampleType.Int32LSB));
+        }
+
+        [Test]
+        public void Convertor24ToIntGeneric_PlacesSampleInUpper24BitsOfInt32()
+        {
+            // Two stereo samples of 24-bit little-endian PCM. Top byte carries the sign.
+            byte[] input =
+            {
+                0xFF, 0xFF, 0x7F, // L sample 0: +0x7FFFFF
+                0x00, 0x00, 0x80, // R sample 0: -0x800000
+                0x00, 0x00, 0x00, // L sample 1: 0
+                0xFF, 0xFF, 0xFF, // R sample 1: -1
+            };
+            int[] left = new int[2];
+            int[] right = new int[2];
+
+            var convertor = SelectSampleConvertor(new WaveFormat(48000, 24, 2), AsioSampleType.Int32LSB);
+            InvokeConvertor(convertor, input, new Array[] { left, right }, 2, 2);
+
+            Assert.That(left, Is.EqualTo(new[] { 0x7FFFFF00, 0 }));
+            Assert.That(right, Is.EqualTo(new[] { unchecked((int)0x80000000), unchecked((int)0xFFFFFF00) }));
+        }
+
+        [Test]
+        public void Convertor24ToShortGeneric_TakesUpper16Bits()
+        {
+            byte[] input =
+            {
+                0xFF, 0xFF, 0x7F, // +0x7FFFFF -> 0x7FFF
+                0x00, 0x00, 0x80, // -0x800000 -> -32768
+                0x12, 0x34, 0x56, // +0x563412 -> 0x5634
+                0xEE, 0xCC, 0xAA, // -0x553312 -> 0xAACC (sign extended)
+            };
+            short[] left = new short[2];
+            short[] right = new short[2];
+
+            var convertor = SelectSampleConvertor(new WaveFormat(48000, 24, 2), AsioSampleType.Int16LSB);
+            InvokeConvertor(convertor, input, new Array[] { left, right }, 2, 2);
+
+            Assert.That(left, Is.EqualTo(new short[] { 0x7FFF, 0x5634 }));
+            Assert.That(right, Is.EqualTo(new short[] { unchecked((short)0x8000), unchecked((short)0xAACC) }));
+        }
+
+        [Test]
+        public void Convertor24To24Generic_DeinterleavesByteForByte()
+        {
+            byte[] input =
+            {
+                0x11, 0x22, 0x33,
+                0x44, 0x55, 0x66,
+                0xAA, 0xBB, 0xCC,
+                0xDD, 0xEE, 0xFF,
+            };
+            byte[] left = new byte[6];
+            byte[] right = new byte[6];
+
+            var convertor = SelectSampleConvertor(new WaveFormat(48000, 24, 2), AsioSampleType.Int24LSB);
+            InvokeConvertor(convertor, input, new Array[] { left, right }, 2, 2);
+
+            Assert.That(left, Is.EqualTo(new byte[] { 0x11, 0x22, 0x33, 0xAA, 0xBB, 0xCC }));
+            Assert.That(right, Is.EqualTo(new byte[] { 0x44, 0x55, 0x66, 0xDD, 0xEE, 0xFF }));
+        }
+
+        [Test]
+        public void Convertor24ToFloatGeneric_NormalizesToMinusOneToOneRange()
+        {
+            byte[] input =
+            {
+                0xFF, 0xFF, 0x7F, // +0x7FFFFF -> ~+1
+                0x00, 0x00, 0x80, // -0x800000 -> -1
+                0x00, 0x00, 0x00, //  0
+            };
+            float[] c0 = new float[1];
+            float[] c1 = new float[1];
+            float[] c2 = new float[1];
+
+            var convertor = SelectSampleConvertor(new WaveFormat(48000, 24, 3), AsioSampleType.Float32LSB);
+            InvokeConvertor(convertor, input, new Array[] { c0, c1, c2 }, 3, 1);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(c0[0], Is.EqualTo(0.99999988f).Within(1e-6));
+                Assert.That(c1[0], Is.EqualTo(-1f).Within(1e-6));
+                Assert.That(c2[0], Is.EqualTo(0f).Within(1e-6));
+            });
         }
 
         [Test]

@@ -70,9 +70,15 @@ namespace NAudio.CoreAudioApi
         {
             if (audioSessionEventCallback != null)
             {
-                var ptr = Marshal.GetComInterfaceForObject<AudioSessionEventsCallback, IAudioSessionEvents>(audioSessionEventCallback);
-                audioSessionControlInterface.UnregisterAudioSessionNotification(ptr);
-                Marshal.Release(ptr);
+                var ptr = ComActivation.ComWrappers.GetOrCreateComInterfaceForObject(audioSessionEventCallback, CreateComInterfaceFlags.None);
+                try
+                {
+                    audioSessionControlInterface.UnregisterAudioSessionNotification(ptr);
+                }
+                finally
+                {
+                    Marshal.Release(ptr);
+                }
                 audioSessionEventCallback = null;
             }
             if (audioSessionControlInterface != null)
@@ -230,9 +236,15 @@ namespace NAudio.CoreAudioApi
         {
             // we could have an array or list of listeners if we like
             audioSessionEventCallback = new AudioSessionEventsCallback(eventClient);
-            var ptr = Marshal.GetComInterfaceForObject<AudioSessionEventsCallback, IAudioSessionEvents>(audioSessionEventCallback);
-            CoreAudioException.ThrowIfFailed(audioSessionControlInterface.RegisterAudioSessionNotification(ptr));
-            Marshal.Release(ptr);
+            var ptr = ComActivation.ComWrappers.GetOrCreateComInterfaceForObject(audioSessionEventCallback, CreateComInterfaceFlags.None);
+            try
+            {
+                CoreAudioException.ThrowIfFailed(audioSessionControlInterface.RegisterAudioSessionNotification(ptr));
+            }
+            finally
+            {
+                Marshal.Release(ptr);
+            }
         }
 
         /// <summary>
@@ -244,9 +256,15 @@ namespace NAudio.CoreAudioApi
             // if one is registered, let it go
             if (audioSessionEventCallback != null)
             {
-                var ptr = Marshal.GetComInterfaceForObject<AudioSessionEventsCallback, IAudioSessionEvents>(audioSessionEventCallback);
-                CoreAudioException.ThrowIfFailed(audioSessionControlInterface.UnregisterAudioSessionNotification(ptr));
-                Marshal.Release(ptr);
+                var ptr = ComActivation.ComWrappers.GetOrCreateComInterfaceForObject(audioSessionEventCallback, CreateComInterfaceFlags.None);
+                try
+                {
+                    CoreAudioException.ThrowIfFailed(audioSessionControlInterface.UnregisterAudioSessionNotification(ptr));
+                }
+                finally
+                {
+                    Marshal.Release(ptr);
+                }
                 audioSessionEventCallback = null;
             }
         }

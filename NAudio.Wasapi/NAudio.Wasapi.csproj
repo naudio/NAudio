@@ -16,6 +16,7 @@
     <PackageIcon>naudio-icon.png</PackageIcon>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
 
   <!-- needed for perfomance profiling unit tests -->

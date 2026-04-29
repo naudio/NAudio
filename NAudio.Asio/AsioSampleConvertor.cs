@@ -30,6 +30,9 @@ namespace NAudio.Wave.Asio
                         case 16:
                             convertor = (is2Channels) ? ConvertorShortToInt2Channels : (SampleConvertor)ConvertorShortToIntGeneric;
                             break;
+                        case 24:
+                            convertor = Convertor24ToIntGeneric;
+                            break;
                         case 32:
                             if (waveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
                                 convertor = (is2Channels) ? ConvertorFloatToInt2Channels : (SampleConvertor)ConvertorFloatToIntGeneric;
@@ -44,6 +47,9 @@ namespace NAudio.Wave.Asio
                         case 16:
                             convertor = (is2Channels) ? ConvertorShortToShort2Channels : (SampleConvertor)ConvertorShortToShortGeneric;
                             break;
+                        case 24:
+                            convertor = Convertor24ToShortGeneric;
+                            break;
                         case 32:
                             if (waveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
                                 convertor = (is2Channels) ? ConvertorFloatToShort2Channels : (SampleConvertor)ConvertorFloatToShortGeneric;
@@ -57,6 +63,9 @@ namespace NAudio.Wave.Asio
                     {
                         case 16:
                             throw new ArgumentException("Not a supported conversion");
+                        case 24:
+                            convertor = Convertor24To24Generic;
+                            break;
                         case 32:
                             if (waveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
                                 convertor = ConverterFloatTo24LSBGeneric;
@@ -70,6 +79,9 @@ namespace NAudio.Wave.Asio
                     {
                         case 16:
                             throw new ArgumentException("Not a supported conversion");
+                        case 24:
+                            convertor = Convertor24ToFloatGeneric;
+                            break;
                         case 32:
                             if (waveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
                                 convertor = ConverterFloatToFloatGeneric;
@@ -84,6 +96,9 @@ namespace NAudio.Wave.Asio
                         String.Format("ASIO Buffer Type {0} is not yet supported.",
                                       Enum.GetName(typeof(AsioSampleType), asioType)));
             }
+            if (convertor == null)
+                throw new ArgumentException(
+                    $"Not a supported conversion ({waveFormat.BitsPerSample}-bit {waveFormat.Encoding} -> {asioType})");
             return convertor;
         }
 
@@ -389,6 +404,113 @@ namespace NAudio.Wave.Asio
                     for (int j = 0; j < nbChannels; j++)
                     {
                         *(samples[j]++) = clampToShort(*inputSamples++);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Generic convertor 24-bit PCM input to Int32LSB ASIO output
+        /// </summary>
+        public static void Convertor24ToIntGeneric(IntPtr inputInterleavedBuffer, IntPtr[] asioOutputBuffers, int nbChannels, int nbSamples)
+        {
+            unsafe
+            {
+                byte* inputSamples = (byte*)inputInterleavedBuffer;
+                int** samples = stackalloc int*[nbChannels];
+                for (int i = 0; i < nbChannels; i++)
+                {
+                    samples[i] = (int*)asioOutputBuffers[i];
+                }
+
+                for (int i = 0; i < nbSamples; i++)
+                {
+                    for (int j = 0; j < nbChannels; j++)
+                    {
+                        // 24-bit little-endian PCM with sign bit in the top byte; place into upper 24 bits of Int32
+                        int sample = (inputSamples[0] << 8) | (inputSamples[1] << 16) | (((sbyte)inputSamples[2]) << 24);
+                        *samples[j]++ = sample;
+                        inputSamples += 3;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Generic convertor 24-bit PCM input to Int16LSB ASIO output
+        /// </summary>
+        public static void Convertor24ToShortGeneric(IntPtr inputInterleavedBuffer, IntPtr[] asioOutputBuffers, int nbChannels, int nbSamples)
+        {
+            unsafe
+            {
+                byte* inputSamples = (byte*)inputInterleavedBuffer;
+                short** samples = stackalloc short*[nbChannels];
+                for (int i = 0; i < nbChannels; i++)
+                {
+                    samples[i] = (short*)asioOutputBuffers[i];
+                }
+
+                for (int i = 0; i < nbSamples; i++)
+                {
+                    for (int j = 0; j < nbChannels; j++)
+                    {
+                        // Take the upper 16 bits of the 24-bit sample (top byte is signed MSB)
+                        *samples[j]++ = (short)((inputSamples[1]) | (((sbyte)inputSamples[2]) << 8));
+                        inputSamples += 3;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Generic convertor 24-bit PCM input to Int24LSB ASIO output
+        /// </summary>
+        public static void Convertor24To24Generic(IntPtr inputInterleavedBuffer, IntPtr[] asioOutputBuffers, int nbChannels, int nbSamples)
+        {
+            unsafe
+            {
+                byte* inputSamples = (byte*)inputInterleavedBuffer;
+                byte** samples = stackalloc byte*[nbChannels];
+                for (int i = 0; i < nbChannels; i++)
+                {
+                    samples[i] = (byte*)asioOutputBuffers[i];
+                }
+
+                for (int i = 0; i < nbSamples; i++)
+                {
+                    for (int j = 0; j < nbChannels; j++)
+                    {
+                        *(samples[j]++) = inputSamples[0];
+                        *(samples[j]++) = inputSamples[1];
+                        *(samples[j]++) = inputSamples[2];
+                        inputSamples += 3;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Generic convertor 24-bit PCM input to Float32LSB ASIO output
+        /// </summary>
+        public static void Convertor24ToFloatGeneric(IntPtr inputInterleavedBuffer, IntPtr[] asioOutputBuffers, int nbChannels, int nbSamples)
+        {
+            unsafe
+            {
+                byte* inputSamples = (byte*)inputInterleavedBuffer;
+                float** samples = stackalloc float*[nbChannels];
+                for (int i = 0; i < nbChannels; i++)
+                {
+                    samples[i] = (float*)asioOutputBuffers[i];
+                }
+
+                const float int24ToFloatScale = 1.0f / 8388608.0f;
+                for (int i = 0; i < nbSamples; i++)
+                {
+                    for (int j = 0; j < nbChannels; j++)
+                    {
+                        int sample = (inputSamples[0]) | (inputSamples[1] << 8) | (((sbyte)inputSamples[2]) << 16);
+                        *samples[j]++ = sample * int24ToFloatScale;
+                        inputSamples += 3;
                     }
                 }
             }

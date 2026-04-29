@@ -98,9 +98,7 @@ namespace NAudio.Wave.Asio
             }
             if (convertor == null)
                 throw new ArgumentException(
-                    String.Format("Not a supported conversion ({0}-bit {1} -> {2})",
-                                  waveFormat.BitsPerSample, waveFormat.Encoding,
-                                  Enum.GetName(typeof(AsioSampleType), asioType)));
+                    $"Not a supported conversion ({waveFormat.BitsPerSample}-bit {waveFormat.Encoding} -> {asioType})");
             return convertor;
         }
 

@@ -95,17 +95,20 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// The current position in the stream in Time format
+        /// The current position in the stream in Time format.
+        /// On set, the resulting byte position is rounded down to a multiple of
+        /// <see cref="BlockAlign"/> so the stream stays on a valid block boundary.
         /// </summary>
         public virtual TimeSpan CurrentTime
         {
             get
             {
-                return TimeSpan.FromSeconds((double)Position / WaveFormat.AverageBytesPerSecond);                
+                return TimeSpan.FromSeconds((double)Position / WaveFormat.AverageBytesPerSecond);
             }
             set
             {
-                Position = (long) (value.TotalSeconds * WaveFormat.AverageBytesPerSecond);
+                long bytePosition = (long)(value.TotalSeconds * WaveFormat.AverageBytesPerSecond);
+                Position = bytePosition - (bytePosition % BlockAlign);
             }
         }
 

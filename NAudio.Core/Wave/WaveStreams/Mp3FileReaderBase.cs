@@ -2,6 +2,8 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave
@@ -36,6 +38,9 @@ namespace NAudio.Wave
         private int tocIndex;
 
         private long totalSamples;
+        private bool isLengthExact;
+        private long scannedToFilePosition;
+        private long scannedToSamplePosition;
         private readonly int bytesPerSample;
         private readonly int bytesPerDecodedFrame;
 
@@ -94,7 +99,6 @@ namespace NAudio.Wave
                 var firstFrame = Mp3Frame.LoadFromStream(mp3Stream);
                 if (firstFrame == null)
                     throw new InvalidDataException("Invalid MP3 file - no MP3 Frames Detected");
-                double bitRate = firstFrame.BitRate;
                 xingHeader = XingHeader.LoadXingHeader(firstFrame);
                 // If the header exists, we can skip over it when decoding the rest of the file
                 if (xingHeader != null) dataStartPosition = mp3Stream.Position;
@@ -124,27 +128,16 @@ namespace NAudio.Wave
                     mp3DataLength -= 128;
                 }
 
-                mp3Stream.Position = dataStartPosition;
-
-                // create a temporary MP3 format before we know the real bitrate
+                // Bitrate on Mp3WaveFormat is informational; ACM/DMO/MFT/NLayer decoders
+                // read frame-by-frame and ignore it. Use the first frame's bitrate rather
+                // than averaging — averaging required a full file scan.
                 Mp3WaveFormat = new Mp3WaveFormat(firstFrame.SampleRate,
-                    firstFrame.ChannelMode == ChannelMode.Mono ? 1 : 2, firstFrame.FrameLength, (int) bitRate);
+                    firstFrame.ChannelMode == ChannelMode.Mono ? 1 : 2, firstFrame.FrameLength, firstFrame.BitRate);
 
-                CreateTableOfContents();
-                tocIndex = 0;
-
-                // [Bit rate in Kilobits/sec] = [Length in kbits] / [time in seconds] 
-                //                            = [Length in bits ] / [time in milliseconds]
-
-                // Note: in audio, 1 kilobit = 1000 bits.
-                // Calculated as a double to minimize rounding errors
-                bitRate = (mp3DataLength*8.0/TotalSeconds());
+                SeedTableOfContents(firstFrame);
+                EstimateTotalSamples(firstFrame);
 
                 mp3Stream.Position = dataStartPosition;
-
-                // now we know the real bitrate we can create an accurate MP3 WaveFormat
-                Mp3WaveFormat = new Mp3WaveFormat(firstFrame.SampleRate,
-                    firstFrame.ChannelMode == ChannelMode.Mono ? 1 : 2, firstFrame.FrameLength, (int) bitRate);
                 decompressor = frameDecompressorBuilder(Mp3WaveFormat);
                 waveFormat = decompressor.OutputFormat;
                 bytesPerSample = (decompressor.OutputFormat.BitsPerSample)/8*decompressor.OutputFormat.Channels;
@@ -167,35 +160,95 @@ namespace NAudio.Wave
         /// <returns>An MP3 Frame decompressor</returns>
         public delegate IMp3FrameDecompressor FrameDecompressorBuilder(WaveFormat mp3Format);
 
-        private void CreateTableOfContents()
+        private void SeedTableOfContents(Mp3Frame firstFrame)
         {
+            tableOfContents = new List<Mp3Index>();
+            var index = new Mp3Index
+            {
+                FilePosition = firstFrame.FileOffset,
+                SamplePosition = 0,
+                SampleCount = firstFrame.SampleCount,
+                ByteCount = firstFrame.FrameLength,
+            };
+            tableOfContents.Add(index);
+            scannedToFilePosition = firstFrame.FileOffset + firstFrame.FrameLength;
+            scannedToSamplePosition = firstFrame.SampleCount;
+            tocIndex = 0;
+        }
+
+        private void EstimateTotalSamples(Mp3Frame firstFrame)
+        {
+            if (xingHeader != null && xingHeader.Frames > 0)
+            {
+                totalSamples = (long)xingHeader.Frames * firstFrame.SampleCount;
+                isLengthExact = true;
+            }
+            else
+            {
+                // duration_seconds = mp3DataLength * 8 / firstFrame.BitRate
+                // total_samples    = duration_seconds * sampleRate
+                // Exact for CBR, approximate for headerless VBR.
+                totalSamples = (long)((double)mp3DataLength * 8.0 * firstFrame.SampleRate / firstFrame.BitRate);
+                isLengthExact = false;
+            }
+        }
+
+        // Caller must hold repositionLock. Saves and restores mp3Stream.Position.
+        // Scans frame headers (no PCM data) appending to TOC until scannedToSamplePosition >=
+        // targetSamplePosition or EOF is reached. On EOF, isLengthExact is set true and
+        // totalSamples is replaced with the exact frame-summed value.
+        private void ExtendTableOfContentsTo(long targetSamplePosition, CancellationToken cancellationToken)
+        {
+            if (isLengthExact) return;
+            if (scannedToSamplePosition >= targetSamplePosition) return;
+
+            long savedPosition = mp3Stream.Position;
             try
             {
-                // Just a guess at how many entries we'll need so the internal array need not resize very much
-                // 400 bytes per frame is probably a good enough approximation.
-                tableOfContents = new List<Mp3Index>((int)(mp3DataLength / 400));
-                Mp3Frame frame;
-                do
+                mp3Stream.Position = scannedToFilePosition;
+                while (scannedToSamplePosition < targetSamplePosition)
                 {
-                    var index = new Mp3Index();
-                    index.FilePosition = mp3Stream.Position;
-                    index.SamplePosition = totalSamples;
-                    frame = ReadNextFrame(false);
-                    if (frame != null)
+                    cancellationToken.ThrowIfCancellationRequested();
+                    Mp3Frame frame;
+                    try
                     {
-                        ValidateFrameFormat(frame);
-
-                        totalSamples += frame.SampleCount;
-                        index.SampleCount = frame.SampleCount;
-                        index.ByteCount = (int)(mp3Stream.Position - index.FilePosition);
-                        tableOfContents.Add(index);
+                        frame = Mp3Frame.LoadFromStream(mp3Stream, readData: false);
                     }
-                } while (frame != null);
+                    catch (EndOfStreamException)
+                    {
+                        frame = null;
+                    }
+                    if (frame == null)
+                    {
+                        isLengthExact = true;
+                        totalSamples = scannedToSamplePosition;
+                        break;
+                    }
+                    ValidateFrameFormat(frame);
+                    AppendIfNewFrame(frame);
+                }
             }
-            catch (EndOfStreamException)
+            finally
             {
-                // not necessarily a problem
+                mp3Stream.Position = savedPosition;
             }
+        }
+
+        // Append a TOC entry for a frame iff it falls past our scanned region.
+        // Idempotent for frames already covered (returns without appending).
+        private void AppendIfNewFrame(Mp3Frame frame)
+        {
+            if (frame.FileOffset < scannedToFilePosition) return;
+            var entry = new Mp3Index
+            {
+                FilePosition = frame.FileOffset,
+                SamplePosition = scannedToSamplePosition,
+                SampleCount = frame.SampleCount,
+                ByteCount = (int)(mp3Stream.Position - frame.FileOffset),
+            };
+            tableOfContents.Add(entry);
+            scannedToFilePosition = mp3Stream.Position;
+            scannedToSamplePosition += frame.SampleCount;
         }
 
         private void ValidateFrameFormat(Mp3Frame frame)
@@ -217,14 +270,6 @@ namespace NAudio.Wave
                         frame.ChannelMode, Mp3WaveFormat.Channels);
                 throw new InvalidOperationException(message);
             }
-        }
-
-        /// <summary>
-        /// Gets the total length of this file in milliseconds.
-        /// </summary>
-        private double TotalSeconds()
-        {
-            return (double)totalSamples / Mp3WaveFormat.SampleRate;
         }
 
         /// <summary>
@@ -262,7 +307,14 @@ namespace NAudio.Wave
                 frame = Mp3Frame.LoadFromStream(mp3Stream, readData);
                 if (frame != null)
                 {
+                    AppendIfNewFrame(frame);
                     tocIndex++;
+                }
+                else if (!isLengthExact)
+                {
+                    // EOF reached during sequential read — we now know the exact length.
+                    isLengthExact = true;
+                    totalSamples = scannedToSamplePosition;
                 }
             }
             catch (EndOfStreamException)
@@ -275,10 +327,45 @@ namespace NAudio.Wave
 
         /// <summary>
         /// This is the length in bytes of data available to be read out from the Read method
-        /// (i.e. the decompressed MP3 length)
-        /// n.b. this may return 0 for files whose length is unknown
+        /// (i.e. the decompressed MP3 length).
         /// </summary>
+        /// <remarks>
+        /// Length is exact when the MP3 has a Xing/Info <c>Frames</c> field (most VBR encoders
+        /// write one), or for CBR files (computed from the first frame's bitrate). For headerless
+        /// VBR files Length is an estimate until enough of the file has been read sequentially or
+        /// <see cref="EnsureExactLengthAsync"/> has run. Check <see cref="IsLengthExact"/> to
+        /// disambiguate.
+        /// </remarks>
         public override long Length => totalSamples * bytesPerSample;
+
+        /// <summary>
+        /// Returns <c>true</c> if <see cref="Length"/> reflects the exact frame-summed sample
+        /// count, <c>false</c> if it is an estimate from the first frame's bitrate. False is
+        /// only possible for headerless VBR files; CBR files and VBR files with a Xing/Info
+        /// header report <c>true</c> immediately after the constructor returns.
+        /// </summary>
+        public bool IsLengthExact => isLengthExact;
+
+        /// <summary>
+        /// Forces a full scan of the MP3 frame index so <see cref="Length"/> reports the exact
+        /// frame-summed sample count and <see cref="IsLengthExact"/> returns <c>true</c>.
+        /// No-op (returns a completed task) if Length is already exact. Safe to call concurrently
+        /// with Read and <see cref="Position"/> changes; scan is serialised against playback by
+        /// the same internal lock. Restores the current playback position when complete.
+        /// </summary>
+        /// <param name="cancellationToken">Token observed between frames during the scan.</param>
+        public Task EnsureExactLengthAsync(CancellationToken cancellationToken = default)
+        {
+            if (isLengthExact) return Task.CompletedTask;
+            return Task.Run(() =>
+            {
+                lock (repositionLock)
+                {
+                    if (isLengthExact) return;
+                    ExtendTableOfContentsTo(long.MaxValue, cancellationToken);
+                }
+            }, cancellationToken);
+        }
 
         /// <summary>
         /// <see cref="WaveStream.WaveFormat"/>
@@ -300,6 +387,17 @@ namespace NAudio.Wave
                 {
                     value = Math.Max(Math.Min(value, Length), 0);
                     var samplePosition = value / bytesPerSample;
+
+                    // If the target is past our scanned region, extend the TOC forward.
+                    // After extending, totalSamples may shrink (estimate was high vs. real EOF),
+                    // so re-clamp against the now-exact Length.
+                    if (samplePosition > scannedToSamplePosition && !isLengthExact)
+                    {
+                        ExtendTableOfContentsTo(samplePosition, CancellationToken.None);
+                        value = Math.Max(Math.Min(value, Length), 0);
+                        samplePosition = value / bytesPerSample;
+                    }
+
                     Mp3Index mp3Index = null;
                     for (int index = 0; index < tableOfContents.Count; index++)
                     {

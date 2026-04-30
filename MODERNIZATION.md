@@ -302,6 +302,41 @@ Branch `naudio3dev-directsound-migration`. Closes [GitHub issue #1191](https://g
 - AOT story for the remaining sister assemblies (`NAudio.WinMM`, `NAudio.Midi`, `NAudio.Asio`). The `AcmDriver` port to `NativeLibrary` lands incidentally; the broader MMSYS surface audit is its own phase.
 - Full `PublishAot=true` validation from a VS Developer Command Prompt (same proxy argument as Phase 2e′ — trimmed-only run is a strong signal for the same dispatch shape).
 
+#### Phase 2h: Mp3FileReader lazy table-of-contents ([Tools/prompts/phase-2h-mp3filereader-lazy-toc.md](Tools/prompts/phase-2h-mp3filereader-lazy-toc.md))
+
+Branch `naudio3dev`. Closes [GitHub issue #1119](https://github.com/naudio/NAudio/issues/1119) — opening a multi-hour MP3 over a network share blocked for seconds because the constructor walked every frame in the file to build the table-of-contents (TOC). Now the TOC is built opportunistically: seeded with the first frame at construction, extended as `Read` consumes frames or as `Position` is set forward past the scanned tail. Total length is reported from the Xing/Info `Frames` field when present (free, exact for any encoder that wrote one), or estimated from the first frame's bitrate (exact for CBR, approximate for headerless VBR), with a new opt-in `EnsureExactLengthAsync` for the rare consumer who needs an exact duration on a headerless VBR file without playing it.
+
+**Scope (single-file change in `NAudio.Core`, no API moves):**
+
+- **`Mp3FileReaderBase` constructor no longer scans the file.** The old `CreateTableOfContents()` (which read every frame header in the file before returning) is replaced by `SeedTableOfContents(firstFrame)` (one entry) plus `EstimateTotalSamples(firstFrame)`. Open time is now bounded by ID3v2 read + first-frame parse + Xing detection + ID3v1 read, independent of file size.
+- **`Length` is best-estimate by default.** Tier 1: Xing/Info `Frames` field (most VBR encoders write one) → exact. Tier 2: `mp3DataLength × 8 × sampleRate / firstFrameBitRate` → exact for CBR, approximate for headerless VBR. Tier 3: replaced with the exact frame-summed value once a sequential read reaches EOF or `EnsureExactLengthAsync` runs. **Behavioural breaking change** for callers who relied on `Length` being exact for headerless VBR — see migration note below.
+- **New `IsLengthExact { get; }` property.** Returns `true` if `Length` is the exact frame-summed value, `false` if it is an estimate. Lets consumers decide whether to call `EnsureExactLengthAsync`.
+- **New `EnsureExactLengthAsync(CancellationToken)` method.** Async-only (the operation is pure I/O on a potentially large or networked file; sync would be a UI-thread footgun). Idempotent (returns `Task.CompletedTask` if already exact). Restores `Position` after scanning. Safe to call concurrently with `Read` / `Position` set — guarded by the same `repositionLock` that already serialises playback and seek.
+- **`ReadNextFrame` and the `Position` setter extend the TOC inline.** When a `Read` consumes a frame past `scannedToFilePosition`, a TOC entry is appended (zero extra I/O — the frame is already being read). When `Position` is set past `scannedToSamplePosition`, the setter calls `ExtendTableOfContentsTo(target)` first, scanning forward frame-by-frame and appending entries until reaching the target or EOF; backward seeks within the scanned region use the existing TOC lookup unchanged.
+- **`Mp3WaveFormat.AverageBytesPerSecond` now reflects the first frame's bitrate, not the file-wide average.** The averaged value required a full file scan; ACM/DMO/MFT/NLayer decoders read frame-by-frame and ignore this field, so the visible behaviour change is informational metadata only.
+- **Dead code removed:** `CreateTableOfContents()`, the private `TotalSeconds()` helper, the redundant second `Mp3WaveFormat` allocation, and an unused `bitRate` local that the old code overwrote anyway.
+
+**Test infrastructure additions:**
+
+- `NAudioTests/Utils/CountingStream.cs` — `Stream` wrapper that counts bytes returned from `Read`. Used by `Constructor_DoesNotScanEntireFile` / `Constructor_ReadCount_IsIndependentOfFileSize` to assert bounded constructor I/O.
+- `TestFileBuilder.CreateMp3FileWithInfoHeader(...)` — generates a CBR MP3 then injects a synthetic Info tag (with Frames flag + true audio-frame count) into the first frame. Needed because the `MediaFoundationEncoder.EncodeToMp3` path produces CBR MP3s without any Xing/Info tag, so the existing `CreateMp3File` actually exercises the *headerless* path. The injection helper computes the Xing offset from MPEG version × channel mode and writes only the Frames field — enough for the reader to short-circuit to "exact".
+
+**Verification:**
+
+- `dotnet build NAudio.slnx -c Release` clean: zero warnings, zero errors.
+- `NAudioTests` full run: 1192 / 1192 succeeded, 13 skipped, 1 pre-existing hardware failure (`CanInitializeInExclusiveMode` — WASAPI exclusive-mode test, unrelated). New `Mp3FileReaderLazyTocTests` (12 tests) all pass: bounded constructor I/O, IsLengthExact for tagged vs headerless, EnsureExactLengthAsync correctness/idempotency/cancellation, sequential-read flips IsLengthExact at EOF, forward-seek-past-tail produces identical PCM, backward-seek-within-tail produces identical PCM, concurrent Read + EnsureExactLengthAsync is safe, ReadNextFrame still advances Position. Existing `Mp3FileReaderTests` (`ReadFrameAdvancesPosition`, `CopesWithZeroLengthMp3`) unchanged.
+
+**Breaking changes:**
+
+- `Mp3FileReaderBase.Length` (and therefore `Mp3FileReader.Length`, `WaveStream.TotalTime`) is no longer guaranteed exact immediately after the constructor returns for **headerless VBR** MP3s. CBR files and VBR files with a Xing/Info header (the vast majority in the wild) are unaffected — `Length` is exact on open. **Migration:** check `IsLengthExact` and call `await reader.EnsureExactLengthAsync()` if exact length is required before playback. For UI progress bars and similar consumers, the estimate is within a few percent and updates to exact automatically once the file plays through.
+- `Mp3WaveFormat.AverageBytesPerSecond` is the first frame's bitrate rather than the file-wide average. Informational only — no decoder branches on this field.
+
+**Out of scope (deferred to subsequent phases):**
+
+- Async I/O all the way down. `EnsureExactLengthAsync` wraps the sync `Mp3Frame.LoadFromStream` parser in `Task.Run`; replumbing through `Stream.ReadAsync` would require parser changes orthogonal to this phase.
+- Binary-search lookup in `Position` setter. The TOC is sorted by `SamplePosition` — log-n binary search would be a real improvement on multi-hour files. Trivial follow-up.
+- `IProgress<double>`-reporting overload of `EnsureExactLengthAsync` for waveform-display tools that want to show a loading indicator. Defer until a real consumer asks.
+
 #### Phase 3: High-level API redesign
 
 Existing `WasapiOut` and `WasapiCapture` are kept with `[Obsolete]` attributes pointing to the new APIs. New classes are added alongside to avoid breaking existing code immediately.

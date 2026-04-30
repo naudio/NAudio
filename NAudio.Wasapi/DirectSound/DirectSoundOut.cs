@@ -360,9 +360,10 @@ namespace NAudio.Wave
                     int hr = Marshal.QueryInterface(secondaryBufferPtr, in iidNotify, out IntPtr notifyPtr);
                     DirectSoundException.ThrowIfFailed(hr);
 
+                    IDirectSoundNotify notify = null;
                     try
                     {
-                        var notify = (IDirectSoundNotify)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                        notify = (IDirectSoundNotify)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
                             notifyPtr, CreateObjectFlags.UniqueInstance);
 
                         frameEventWaitHandle1 = new EventWaitHandle(false, EventResetMode.AutoReset);
@@ -386,12 +387,18 @@ namespace NAudio.Wave
                         {
                             pinNotifies.Free();
                         }
-
-                        // Notify wrapper is single-use; release immediately.
-                        ((ComObject)(object)notify).FinalRelease();
                     }
                     finally
                     {
+                        // Notify wrapper is single-use — release on every path so that a
+                        // SetNotificationPositions failure (or a projection failure that
+                        // left notify null) cannot leak resources. ComObject's finalizer
+                        // would eventually run for a leaked wrapper, but deterministic
+                        // release is the contract here.
+                        if (notify != null)
+                        {
+                            ((ComObject)(object)notify).FinalRelease();
+                        }
                         Marshal.Release(notifyPtr);
                     }
                 }

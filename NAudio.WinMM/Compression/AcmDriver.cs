@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
-using NAudio.Utils;
 
 namespace NAudio.Wave.Compression
 {
@@ -43,22 +42,20 @@ namespace NAudio.Wave.Compression
         /// <returns>Handle to the driver</returns>
         public static AcmDriver AddLocalDriver(string driverFile)
         {
-            IntPtr handle = NativeMethods.LoadLibrary(driverFile);
-            if (handle == IntPtr.Zero)
+            if (!NativeLibrary.TryLoad(driverFile, out IntPtr handle))
             {
                 throw new ArgumentException("Failed to load driver file");
             }
-            var driverProc = NativeMethods.GetProcAddress(handle, "DriverProc");
-            if (driverProc == IntPtr.Zero)
+            if (!NativeLibrary.TryGetExport(handle, "DriverProc", out IntPtr driverProc))
             {
-                NativeMethods.FreeLibrary(handle);
+                NativeLibrary.Free(handle);
                 throw new ArgumentException("Failed to discover DriverProc");
             }
             var result = AcmInterop.acmDriverAdd(out IntPtr driverHandle,
                 handle, driverProc, 0, AcmDriverAddFlags.Function);
             if (result != MmResult.NoError)
             {
-                NativeMethods.FreeLibrary(handle);
+                NativeLibrary.Free(handle);
                 throw new MmException(result, "acmDriverAdd");
             }
             var driver = new AcmDriver(driverHandle);
@@ -82,7 +79,7 @@ namespace NAudio.Wave.Compression
                 throw new ArgumentException("Please pass in the AcmDriver returned by the AddLocalDriver method");
             }
             var removeResult = AcmInterop.acmDriverRemove(localDriver.driverId, 0); // gets stored as a driver Id
-            NativeMethods.FreeLibrary(localDriver.localDllHandle);
+            NativeLibrary.Free(localDriver.localDllHandle);
             MmException.Try(removeResult, "acmDriverRemove");
         }
 

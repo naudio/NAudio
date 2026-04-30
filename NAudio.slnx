@@ -8,7 +8,7 @@
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path="azure-pipelines.yml" />
-    <File Path="license.txt" />
+    <File Path="LICENSE" />
     <File Path="MODERNIZATION.md" />
     <File Path="naudio-logo.png" />
     <File Path="publish.ps1" />

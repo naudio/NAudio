@@ -21,6 +21,9 @@ static class WasapiMenu
                 new Menu.Group("Info",
                     "List audio devices",
                     "Explore exclusive mode formats"),
+                new Menu.Group("Callbacks",
+                    "Watch device notifications",
+                    "Stress endpoint volume callbacks"),
                 new Menu.Group("", "Back"));
 
             if (choice is null or "Back") return;
@@ -52,6 +55,12 @@ static class WasapiMenu
                         break;
                     case "Explore exclusive mode formats":
                         ExclusiveFormatExplorer.Run();
+                        break;
+                    case "Watch device notifications":
+                        DeviceNotificationWatcher.Run();
+                        break;
+                    case "Stress endpoint volume callbacks":
+                        VolumeCallbackStressTest.Run();
                         break;
                 }
             }

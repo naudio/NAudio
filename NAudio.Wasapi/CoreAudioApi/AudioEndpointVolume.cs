@@ -15,6 +15,8 @@ namespace NAudio.CoreAudioApi
     /// </summary>
     public class AudioEndpointVolume : IDisposable
     {
+        private static readonly Guid IID_IAudioEndpointVolumeCallback = new Guid("657804FA-D6AD-4496-8A60-352752AF4F89");
+
         private IAudioEndpointVolume audioEndPointVolume;
         private readonly SynchronizationContext syncContext;
         private AudioEndpointVolumeCallback callBack;
@@ -140,9 +142,15 @@ namespace NAudio.CoreAudioApi
             HardwareSupport = (EEndpointHardwareSupport)hardwareSupp;
             VolumeRange = new AudioEndpointVolumeVolumeRange(audioEndPointVolume);
             callBack = new AudioEndpointVolumeCallback(this);
-            var callBackPtr = Marshal.GetComInterfaceForObject<AudioEndpointVolumeCallback, IAudioEndpointVolumeCallback>(callBack);
-            CoreAudioException.ThrowIfFailed(audioEndPointVolume.RegisterControlChangeNotify(callBackPtr));
-            Marshal.Release(callBackPtr);
+            var callBackPtr = QueryCallbackInterface(callBack);
+            try
+            {
+                CoreAudioException.ThrowIfFailed(audioEndPointVolume.RegisterControlChangeNotify(callBackPtr));
+            }
+            finally
+            {
+                Marshal.Release(callBackPtr);
+            }
         }
 
         internal void FireNotification(AudioVolumeNotificationData notificationData)
@@ -161,6 +169,26 @@ namespace NAudio.CoreAudioApi
             }
         }
 
+        // ComWrappers CCWs return a distinct IntPtr per interface (including a separate
+        // vtable for IUnknown). WASAPI's RegisterControlChangeNotify expects a pointer
+        // whose vtable starts with the IAudioEndpointVolumeCallback methods, not IUnknown,
+        // so QI for the specific IID before handing the pointer to native — passing the
+        // raw IUnknown pointer dispatches against the wrong vtable and access-violates on
+        // the worker thread.
+        private static IntPtr QueryCallbackInterface(AudioEndpointVolumeCallback callback)
+        {
+            var unknownPtr = ComActivation.ComWrappers.GetOrCreateComInterfaceForObject(callback, CreateComInterfaceFlags.None);
+            try
+            {
+                Marshal.ThrowExceptionForHR(Marshal.QueryInterface(unknownPtr, in IID_IAudioEndpointVolumeCallback, out var ifacePtr));
+                return ifacePtr;
+            }
+            finally
+            {
+                Marshal.Release(unknownPtr);
+            }
+        }
+
         #region IDisposable Members
 
         /// <summary>
@@ -170,9 +198,15 @@ namespace NAudio.CoreAudioApi
         {
             if (callBack != null)
             {
-                var callBackPtr = Marshal.GetComInterfaceForObject<AudioEndpointVolumeCallback, IAudioEndpointVolumeCallback>(callBack);
-                audioEndPointVolume.UnregisterControlChangeNotify(callBackPtr);
-                Marshal.Release(callBackPtr);
+                var callBackPtr = QueryCallbackInterface(callBack);
+                try
+                {
+                    audioEndPointVolume.UnregisterControlChangeNotify(callBackPtr);
+                }
+                finally
+                {
+                    Marshal.Release(callBackPtr);
+                }
                 callBack = null;
             }
             // Deterministic release is important: in exclusive mode the device cannot be

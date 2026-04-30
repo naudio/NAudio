@@ -27,6 +27,7 @@
   <Project Path="NAudio.WinForms/NAudio.WinForms.csproj" />
   <Project Path="NAudio.WinMM/NAudio.WinMM.csproj" />
   <Project Path="NAudio/NAudio.csproj" />
+  <Project Path="NAudioAotSmokeTest/NAudioAotSmokeTest.csproj" />
   <Project Path="NAudioConsoleTest/NAudioConsoleTest.csproj" />
   <Project Path="NAudioTests/NAudioTests.csproj" />
 </Solution>

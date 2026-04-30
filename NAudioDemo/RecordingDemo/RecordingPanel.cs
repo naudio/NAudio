@@ -78,12 +78,15 @@ namespace NAudioDemo.RecordingDemo
         private string outputFilename;
         private readonly string outputFolder;
         private readonly MMDeviceEnumerator deviceEnumerator = new MMDeviceEnumerator();
+        private readonly DeviceChangeNotifier deviceChangeNotifier;
         private bool populating;
 
         public RecordingPanel()
         {
             InitializeComponent();
             Disposed += OnRecordingPanelDisposed;
+            deviceChangeNotifier = new DeviceChangeNotifier(deviceEnumerator);
+            deviceChangeNotifier.DevicesChanged += OnDevicesChanged;
 
             foreach (var option in ApiOptions)
             {
@@ -336,8 +339,40 @@ namespace NAudioDemo.RecordingDemo
             SetControlStates(false);
         }
 
+        private void OnDevicesChanged()
+        {
+            // Preserve the current selection by ID (WASAPI path) or device number (WaveIn path)
+            // across re-enumeration. If the selected device has been removed, fall back to the default.
+            var api = SelectedApi;
+            if (!api.IsWasapi)
+            {
+                var prev = (comboDevice.SelectedItem as WaveInDeviceItem)?.DeviceNumber;
+                PopulateDevices();
+                if (prev.HasValue)
+                {
+                    var idx = -1;
+                    for (int i = 0; i < comboDevice.Items.Count; i++)
+                    {
+                        if (((WaveInDeviceItem)comboDevice.Items[i]).DeviceNumber == prev.Value) { idx = i; break; }
+                    }
+                    if (idx >= 0) comboDevice.SelectedIndex = idx;
+                }
+            }
+            else
+            {
+                var prevId = (comboDevice.SelectedItem as MMDevice)?.ID;
+                PopulateDevices();
+                if (prevId != null && comboDevice.DataSource is MMDevice[] arr)
+                {
+                    var idx = Array.FindIndex(arr, d => d.ID == prevId);
+                    if (idx >= 0) comboDevice.SelectedIndex = idx;
+                }
+            }
+        }
+
         private void OnRecordingPanelDisposed(object sender, EventArgs e)
         {
+            deviceChangeNotifier?.Dispose();
             Cleanup();
         }
 

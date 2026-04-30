@@ -18,6 +18,8 @@ namespace NAudio.CoreAudioApi
         private static readonly Guid CLSID_MMDeviceEnumerator = new Guid("BCDE0395-E52F-467C-8E3D-C4579291692E");
         // IID_IMMDeviceEnumerator — mmdeviceapi.h
         private static readonly Guid IID_IMMDeviceEnumerator = new Guid("A95664D2-9614-4F35-A746-DE8DB63617E6");
+        // IID_IMMNotificationClient — mmdeviceapi.h
+        private static readonly Guid IID_IMMNotificationClient = new Guid("7991EEC9-7E89-4D85-8390-6C703CEC60C0");
 
         private IMMDeviceEnumerator realEnumerator;
 
@@ -148,7 +150,7 @@ namespace NAudio.CoreAudioApi
         /// <returns>The HRESULT from the underlying COM call.</returns>
         public int RegisterEndpointNotificationCallback(IMMNotificationClient client)
         {
-            var ptr = Marshal.GetComInterfaceForObject(client, typeof(IMMNotificationClient));
+            var ptr = QueryNotificationClientInterface(client);
             try
             {
                 return realEnumerator.RegisterEndpointNotificationCallback(ptr);
@@ -165,7 +167,7 @@ namespace NAudio.CoreAudioApi
         /// <returns>The HRESULT from the underlying COM call.</returns>
         public int UnregisterEndpointNotificationCallback(IMMNotificationClient client)
         {
-            var ptr = Marshal.GetComInterfaceForObject(client, typeof(IMMNotificationClient));
+            var ptr = QueryNotificationClientInterface(client);
             try
             {
                 return realEnumerator.UnregisterEndpointNotificationCallback(ptr);
@@ -173,6 +175,23 @@ namespace NAudio.CoreAudioApi
             finally
             {
                 Marshal.Release(ptr);
+            }
+        }
+
+        // ComWrappers CCWs return a distinct IntPtr per interface (and a separate vtable
+        // for IUnknown). RegisterEndpointNotificationCallback expects an IMMNotificationClient*,
+        // so QI for the specific IID instead of passing the IUnknown CCW pointer directly.
+        private static IntPtr QueryNotificationClientInterface(IMMNotificationClient client)
+        {
+            var unknownPtr = ComActivation.ComWrappers.GetOrCreateComInterfaceForObject(client, CreateComInterfaceFlags.None);
+            try
+            {
+                Marshal.ThrowExceptionForHR(Marshal.QueryInterface(unknownPtr, in IID_IMMNotificationClient, out var ifacePtr));
+                return ifacePtr;
+            }
+            finally
+            {
+                Marshal.Release(unknownPtr);
             }
         }
 

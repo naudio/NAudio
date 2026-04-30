@@ -19,8 +19,9 @@
 // milligan22963 - ported to nAudio
 // -----------------------------------------
 
- using System;
+using System;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 
 namespace NAudio.CoreAudioApi.Interfaces
 {
@@ -91,10 +92,10 @@ namespace NAudio.CoreAudioApi.Interfaces
     /// Windows CoreAudio IAudioSessionControl interface
     /// Defined in AudioPolicy.h
     /// </summary>
-    [Guid("24918ACC-64B3-37C1-8CA9-74A66E9957A8"),
-        InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
-        ComImport]
-    public interface IAudioSessionEvents
+    [GeneratedComInterface(StringMarshalling = StringMarshalling.Utf16),
+        Guid("24918ACC-64B3-37C1-8CA9-74A66E9957A8"),
+        InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    public partial interface IAudioSessionEvents
     {
         /// <summary>
         /// Notifies the client that the display name for the session has changed.
@@ -104,8 +105,8 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
         int OnDisplayNameChanged(
-            [In] [MarshalAs(UnmanagedType.LPWStr)] string displayName,
-            [In] ref Guid eventContext);
+            string displayName,
+            ref Guid eventContext);
 
         /// <summary>
         /// Notifies the client that the display icon for the session has changed.
@@ -115,21 +116,21 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
         int OnIconPathChanged(
-            [In] [MarshalAs(UnmanagedType.LPWStr)] string iconPath,
-            [In] ref Guid eventContext);
+            string iconPath,
+            ref Guid eventContext);
 
         /// <summary>
         /// Notifies the client that the volume level or muting state of the session has changed.
         /// </summary>
         /// <param name="volume">The new volume level for the audio session.</param>
-        /// <param name="isMuted">The new muting state.</param>
+        /// <param name="isMuted">The new muting state (Win32 BOOL — 0 or non-zero).</param>
         /// <param name="eventContext">A user context value that is passed to the notification callback.</param>
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
         int OnSimpleVolumeChanged(
-            [In] [MarshalAs(UnmanagedType.R4)] float volume,
-            [In] [MarshalAs(UnmanagedType.Bool)] bool isMuted,
-            [In] ref Guid eventContext);
+            float volume,
+            int isMuted,
+            ref Guid eventContext);
 
         /// <summary>
         /// Notifies the client that the volume level of an audio channel in the session submix has changed.
@@ -141,10 +142,10 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
         int OnChannelVolumeChanged(
-            [In] [MarshalAs(UnmanagedType.U4)] UInt32 channelCount,
-            [In] [MarshalAs(UnmanagedType.SysInt)] IntPtr newVolumes, // Pointer to float array
-            [In] [MarshalAs(UnmanagedType.U4)] UInt32 channelIndex,
-            [In] ref Guid eventContext);
+            uint channelCount,
+            IntPtr newVolumes,
+            uint channelIndex,
+            ref Guid eventContext);
 
         /// <summary>
         /// Notifies the client that the grouping parameter for the session has changed.
@@ -154,8 +155,8 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
         int OnGroupingParamChanged(
-            [In] ref Guid groupingId,
-            [In] ref Guid eventContext);
+            ref Guid groupingId,
+            ref Guid eventContext);
 
         /// <summary>
         /// Notifies the client that the stream-activity state of the session has changed.
@@ -164,7 +165,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
         int OnStateChanged(
-            [In] AudioSessionState state);
+            AudioSessionState state);
 
         /// <summary>
         /// Notifies the client that the session has been disconnected.
@@ -173,6 +174,6 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
         int OnSessionDisconnected(
-            [In] AudioSessionDisconnectReason disconnectReason);
+            AudioSessionDisconnectReason disconnectReason);
     }
 }

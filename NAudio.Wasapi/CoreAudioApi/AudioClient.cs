@@ -18,6 +18,7 @@ namespace NAudio.CoreAudioApi
         private static readonly Guid ID_AudioRenderClient = new Guid("F294ACFC-3146-4483-A7BF-ADDCA7C260E2");
         private static readonly Guid ID_AudioCaptureClient = new Guid("c8adbd64-e71e-48a0-a4de-185c395cd317");
         private static readonly Guid IID_IAudioClient2 = new Guid("726778CD-F60A-4eda-82DE-E47610CD78AA");
+        private static readonly Guid IID_IActivateAudioInterfaceCompletionHandler = new Guid("41D949AB-9862-444A-80F6-C261334DA5EB");
         private IAudioClient audioClientInterface;
         private readonly IAudioClient2 audioClientInterface2;
         private readonly IAudioClient3 audioClientInterface3;
@@ -50,7 +51,28 @@ namespace NAudio.CoreAudioApi
                         }
                     }
                 });
-            NativeMethods.ActivateAudioInterfaceAsync(deviceInterfacePath, IID_IAudioClient2, IntPtr.Zero, icbh, out _);
+            // Multi-vtable CCW hazard: GetOrCreateComInterfaceForObject returns the IUnknown
+            // vtable pointer; the WASAPI runtime expects an IActivateAudioInterfaceCompletionHandler
+            // pointer. QI for the specific IID before handing the pointer to native, otherwise
+            // it dereferences the wrong vtable (STATUS_STACK_BUFFER_OVERRUN).
+            var unknownPtr = ComActivation.ComWrappers.GetOrCreateComInterfaceForObject(icbh, CreateComInterfaceFlags.None);
+            try
+            {
+                Marshal.ThrowExceptionForHR(Marshal.QueryInterface(unknownPtr, in IID_IActivateAudioInterfaceCompletionHandler, out var handlerPtr));
+                try
+                {
+                    Marshal.ThrowExceptionForHR(NativeMethods.ActivateAudioInterfaceAsync(deviceInterfacePath, IID_IAudioClient2, IntPtr.Zero, handlerPtr, out var operationPtr));
+                    Marshal.Release(operationPtr);
+                }
+                finally
+                {
+                    Marshal.Release(handlerPtr);
+                }
+            }
+            finally
+            {
+                Marshal.Release(unknownPtr);
+            }
             var audioClient2 = await icbh;
             return new AudioClient((IAudioClient)audioClient2);
         }

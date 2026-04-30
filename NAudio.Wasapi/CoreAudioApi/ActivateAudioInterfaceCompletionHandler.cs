@@ -8,7 +8,8 @@ using System.Threading.Tasks;
 
 namespace NAudio.Wasapi.CoreAudioApi
 {
-    internal class ActivateAudioInterfaceCompletionHandler :
+    [GeneratedComClass]
+    internal partial class ActivateAudioInterfaceCompletionHandler :
     IActivateAudioInterfaceCompletionHandler, IAgileObject
     {
         private Action<IAudioClient2> initializeAction;

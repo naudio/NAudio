@@ -1,4 +1,6 @@
 using System;
+using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 using NAudio.Utils;
 using NAudio.Wasapi.CoreAudioApi;
 using NAudio.Wave;
@@ -165,14 +167,39 @@ namespace NAudio.MediaFoundation
         internal IntPtr MediaFoundationObject => nativePointer;
 
         /// <summary>
+        /// Finalizer — runs only if Dispose was not called. Releases the native IntPtr ref;
+        /// the source-generated RCW has its own ComObject finalizer that releases its ref
+        /// independently.
+        /// </summary>
+        ~MediaType() => Dispose(disposing: false);
+
+        /// <summary>
         /// Releases the underlying COM object.
         /// </summary>
         public void Dispose()
         {
-            ComActivation.ReleaseBoth(mediaType, nativePointer);
-            mediaType = null;
-            nativePointer = IntPtr.Zero;
+            Dispose(disposing: true);
             GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Releases the native IntPtr ref unconditionally. When called from
+        /// <see cref="Dispose()"/> (disposing=true) also calls <c>FinalRelease</c> on the
+        /// RCW; the finalizer path leaves the RCW alone because <c>ComObject</c> has its own
+        /// finalizer with no defined ordering relative to ours.
+        /// </summary>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (nativePointer != IntPtr.Zero)
+            {
+                Marshal.Release(nativePointer);
+                nativePointer = IntPtr.Zero;
+            }
+            if (disposing && mediaType != null)
+            {
+                ((ComObject)(object)mediaType).FinalRelease();
+                mediaType = null;
+            }
         }
     }
 }

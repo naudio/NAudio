@@ -171,21 +171,39 @@ namespace NAudio.MediaFoundation
         public int AverageBytesPerSecond => GetUInt32(MediaFoundationAttributes.MF_MT_AUDIO_AVG_BYTES_PER_SECOND);
 
         /// <summary>
+        /// Finalizer — runs only if Dispose was not called. Releases the native IntPtr ref;
+        /// the source-generated RCW has its own ComObject finalizer that releases its ref
+        /// independently.
+        /// </summary>
+        ~MfMediaType() => Dispose(disposing: false);
+
+        /// <summary>
         /// Dispose
         /// </summary>
         public void Dispose()
         {
-            if (mediaTypeInterface != null)
-            {
-                ((ComObject)(object)mediaTypeInterface).FinalRelease();
-                mediaTypeInterface = null;
-            }
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Releases the native IntPtr ref unconditionally. When called from
+        /// <see cref="Dispose()"/> (disposing=true) also calls <c>FinalRelease</c> on the
+        /// RCW; the finalizer path leaves the RCW alone because <c>ComObject</c> has its own
+        /// finalizer with no defined ordering relative to ours.
+        /// </summary>
+        protected virtual void Dispose(bool disposing)
+        {
             if (nativePointer != IntPtr.Zero)
             {
                 Marshal.Release(nativePointer);
                 nativePointer = IntPtr.Zero;
             }
-            GC.SuppressFinalize(this);
+            if (disposing && mediaTypeInterface != null)
+            {
+                ((ComObject)(object)mediaTypeInterface).FinalRelease();
+                mediaTypeInterface = null;
+            }
         }
     }
 }

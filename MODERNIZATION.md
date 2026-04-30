@@ -321,6 +321,18 @@ Branch `naudio3dev`. Closes [GitHub issue #1119](https://github.com/naudio/NAudi
 - `NAudioTests/Utils/CountingStream.cs` — `Stream` wrapper that counts bytes returned from `Read`. Used by `Constructor_DoesNotScanEntireFile` / `Constructor_ReadCount_IsIndependentOfFileSize` to assert bounded constructor I/O.
 - `TestFileBuilder.CreateMp3FileWithInfoHeader(...)` — generates a CBR MP3 then injects a synthetic Info tag (with Frames flag + true audio-frame count) into the first frame. Needed because the `MediaFoundationEncoder.EncodeToMp3` path produces CBR MP3s without any Xing/Info tag, so the existing `CreateMp3File` actually exercises the *headerless* path. The injection helper computes the Xing offset from MPEG version × channel mode and writes only the Frames field — enough for the reader to short-circuit to "exact".
 
+**Reposition path: queued + scrub-debounced (also in Phase 2h):**
+
+The `Position` setter no longer does stream I/O / TOC extension / decoder reset on the calling thread. It clamps the value, stores it as `pendingPosition`, updates `position` (so the getter returns the just-set value — UI scrub timers don't fight the user's drag), and timestamps the call. The actual seek work runs under `repositionLock` on the audio thread inside `Read(Span<byte>)` via a new private `ApplyPendingReposition()`. Net effects:
+
+- UI thread is no longer blocked on `mp3Stream.Position = ...` or `ExtendTableOfContentsTo` during scrubbing.
+- Multiple `Position` writes between Reads naturally coalesce — only the latest target is applied.
+- Decoder.Reset and warm-up frames happen on the audio thread, not the UI thread.
+
+A debounce on top hides the per-reposition bit-reservoir warm-up click that was audible during slider scrubs under low-latency outputs (WASAPI period ~10 ms, mouse-moves ~16 ms — basically every scrub event ended up in a separate Read with its own warm-up artifact, producing audible chop). Two consecutive `Position` writes within `ScrubDetectionWindowMs` (30 ms) put the reader into scrub mode; while in scrub mode, `Read` returns silence (zero-fill) until `SettleWindowMs` (50 ms) has elapsed since the latest `Position` write. **A single `Position` write applies immediately on the next Read** — clicks stay snappy, only true rapid-fire scrubs are silenced. UX matches `MediaFoundationReader`'s scrub feel (which sounds clean for the same reason — its underlying MFTransform doesn't emit audio mid-seek).
+
+`Mp3FileReaderBase.ReadNextFrame()` (the public per-frame API) applies pending repositions but does not debounce — debounce is for the playback `Read(Span)` path only; programmatic frame walkers should be deterministic.
+
 **Verification:**
 
 - `dotnet build NAudio.slnx -c Release` clean: zero warnings, zero errors.

@@ -52,6 +52,18 @@ namespace NAudio.Wave
         private bool repositionedFlag;
 
         private long position; // decompressed data position tracker
+        private long? pendingPosition; // queued reposition target; applied on the next Read
+        private long lastRepositionTickCount = -1;
+        private bool inScrubMode;
+
+        // Two Position writes arriving within ScrubDetectionWindowMs are treated as the
+        // start of an interactive scrub. While in scrub mode, Read returns silence until
+        // SettleWindowMs has elapsed since the latest Position write — gives the user a
+        // chance to release the slider before audio resumes. Hides the per-reposition
+        // bit-reservoir warm-up artifact that's audible under low-latency outputs (WASAPI).
+        // A single Position write applies immediately on the next Read — clicks stay snappy.
+        private const int ScrubDetectionWindowMs = 30;
+        private const int SettleWindowMs = 50;
 
         private readonly object repositionLock = new object();
 
@@ -290,9 +302,13 @@ namespace NAudio.Wave
         /// <returns>Next mp3 frame, or null if EOF</returns>
         public Mp3Frame ReadNextFrame()
         {
-            var frame = ReadNextFrame(true);
-            if (frame != null) position += frame.SampleCount*bytesPerSample;
-            return frame;
+            lock (repositionLock)
+            {
+                ApplyPendingReposition();
+                var frame = ReadNextFrame(true);
+                if (frame != null) position += frame.SampleCount * bytesPerSample;
+                return frame;
+            }
         }
 
         /// <summary>
@@ -383,57 +399,78 @@ namespace NAudio.Wave
             }
             set
             {
+                // Queue the reposition; the audio thread applies it on its next Read.
+                // Decouples the UI thread from stream I/O / TOC extension / decoder reset,
+                // and naturally coalesces rapid scrub events: only the latest queued target
+                // is acted on. The getter returns the just-set value so UI scrub timers
+                // don't fight the user's drag.
                 lock (repositionLock)
                 {
                     value = Math.Max(Math.Min(value, Length), 0);
-                    var samplePosition = value / bytesPerSample;
-
-                    // If the target is past our scanned region, extend the TOC forward.
-                    // After extending, totalSamples may shrink (estimate was high vs. real EOF),
-                    // so re-clamp against the now-exact Length.
-                    if (samplePosition > scannedToSamplePosition && !isLengthExact)
+                    var now = Environment.TickCount64;
+                    if (lastRepositionTickCount >= 0 && now - lastRepositionTickCount < ScrubDetectionWindowMs)
                     {
-                        ExtendTableOfContentsTo(samplePosition, CancellationToken.None);
-                        value = Math.Max(Math.Min(value, Length), 0);
-                        samplePosition = value / bytesPerSample;
+                        inScrubMode = true;
                     }
-
-                    Mp3Index mp3Index = null;
-                    for (int index = 0; index < tableOfContents.Count; index++)
-                    {
-                        if (tableOfContents[index].SamplePosition + tableOfContents[index].SampleCount > samplePosition)
-                        {
-                            mp3Index = tableOfContents[index];
-                            tocIndex = index;
-                            break;
-                        }
-                    }
-
-                    decompressBufferOffset = 0;
-                    decompressLeftovers = 0;
-                    repositionedFlag = true;
-
-                    if (mp3Index != null)
-                    {
-                        // perform the reposition
-                        mp3Stream.Position = mp3Index.FilePosition;
-
-                        // set the offset into the buffer (that is yet to be populated in Read())
-                        var frameOffset = samplePosition - mp3Index.SamplePosition;
-                        if (frameOffset > 0)
-                        {
-                            decompressBufferOffset = (int)frameOffset * bytesPerSample;
-                        }
-                    }
-                    else
-                    {
-                        // we are repositioning to the end of the data
-                        mp3Stream.Position = mp3DataLength + dataStartPosition;
-                    }
-
+                    pendingPosition = value;
                     position = value;
+                    lastRepositionTickCount = now;
                 }
             }
+        }
+
+        // Caller must hold repositionLock. Drains any queued Position change: extends the
+        // TOC if the target is past the scanned tail, looks up the target frame, seeks the
+        // input stream, and primes the decompress-buffer offset for sub-frame seek. The
+        // actual decoder.Reset + warm-up frames happen in Read via repositionedFlag.
+        private void ApplyPendingReposition()
+        {
+            if (pendingPosition is not long target) return;
+            pendingPosition = null;
+
+            // Re-clamp: Length may have changed since the setter was called (e.g. concurrent
+            // EnsureExactLengthAsync, or our own ExtendTableOfContentsTo below shrinking the
+            // estimate to the real EOF).
+            target = Math.Max(Math.Min(target, Length), 0);
+            var samplePosition = target / bytesPerSample;
+
+            if (samplePosition > scannedToSamplePosition && !isLengthExact)
+            {
+                ExtendTableOfContentsTo(samplePosition, CancellationToken.None);
+                target = Math.Max(Math.Min(target, Length), 0);
+                samplePosition = target / bytesPerSample;
+            }
+
+            Mp3Index mp3Index = null;
+            for (int index = 0; index < tableOfContents.Count; index++)
+            {
+                if (tableOfContents[index].SamplePosition + tableOfContents[index].SampleCount > samplePosition)
+                {
+                    mp3Index = tableOfContents[index];
+                    tocIndex = index;
+                    break;
+                }
+            }
+
+            decompressBufferOffset = 0;
+            decompressLeftovers = 0;
+            repositionedFlag = true;
+
+            if (mp3Index != null)
+            {
+                mp3Stream.Position = mp3Index.FilePosition;
+                var frameOffset = samplePosition - mp3Index.SamplePosition;
+                if (frameOffset > 0)
+                {
+                    decompressBufferOffset = (int)frameOffset * bytesPerSample;
+                }
+            }
+            else
+            {
+                mp3Stream.Position = mp3DataLength + dataStartPosition;
+            }
+
+            position = target;
         }
 
         /// <summary>
@@ -445,6 +482,20 @@ namespace NAudio.Wave
             int bytesRead = 0;
             lock (repositionLock)
             {
+                if (pendingPosition.HasValue && inScrubMode)
+                {
+                    // While scrubbing rapidly, hold silence until repositions stop for
+                    // SettleWindowMs. Avoids emitting a fragment-of-audio-with-warm-up-click
+                    // for every mouse-move event under low-latency output.
+                    var elapsed = Environment.TickCount64 - lastRepositionTickCount;
+                    if (elapsed < SettleWindowMs)
+                    {
+                        sampleBuffer.Clear();
+                        return numBytes;
+                    }
+                    inScrubMode = false;
+                }
+                ApplyPendingReposition();
                 if (decompressLeftovers != 0)
                 {
                     int toCopy = Math.Min(decompressLeftovers, numBytes);

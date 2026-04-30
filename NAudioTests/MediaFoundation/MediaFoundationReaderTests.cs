@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using NAudio.MediaFoundation;
 using NAudio.Wave;
+using NAudio.Wave.SampleProviders;
 using NUnit.Framework;
 using NUnit.Framework.Internal;
 
@@ -13,6 +14,37 @@ namespace NAudioTests.MediaFoundation
     [Category("IntegrationTest")]
     public class MediaFoundationReaderTests
     {
+        // Round-trips a generated signal through MediaFoundationEncoder.EncodeToMp3(Stream)
+        // and StreamMediaFoundationReader. Both legs go through ComStream's source-generated
+        // CCW path (Phase 2e' Step 5), so this test is the runtime check for the
+        // QI-for-IID hazard (Phase 2f H3): if the IUnknown-vs-IStream vtable mismatch
+        // recurred, MFCreateMFByteStreamOnStream would AV on the first IStream::Stat or
+        // IStream::Seek invocation rather than failing visibly here.
+        [Test]
+        public void CanRoundTripStreamThroughMediaFoundationCcwPath()
+        {
+            MediaFoundationApi.Startup();
+
+            using var encoded = new MemoryStream();
+            var signal = new SignalGenerator(44100, 2) { Frequency = 1000, Gain = 0.25 }
+                .Take(TimeSpan.FromSeconds(2));
+            MediaFoundationEncoder.EncodeToMp3(signal.ToWaveProvider(), encoded, 96000);
+            Assert.That(encoded.Length, Is.GreaterThan(0), "encode-to-stream produced no bytes");
+
+            encoded.Position = 0;
+            using var reader = new StreamMediaFoundationReader(encoded);
+            Assert.That(reader.WaveFormat.SampleRate, Is.GreaterThan(0));
+
+            var buffer = new byte[reader.WaveFormat.AverageBytesPerSecond];
+            long total = 0;
+            int bytesRead;
+            while ((bytesRead = reader.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                total += bytesRead;
+            }
+            Assert.That(total, Is.GreaterThan(0), "read-from-stream produced no bytes");
+        }
+
         [Test]
         public void CanReadAnAac()
         {

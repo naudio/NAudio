@@ -1,15 +1,35 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.ComTypes;
+using System.Runtime.InteropServices.Marshalling;
+using NAudio.MediaFoundation.Interfaces;
+using NAudio.Utils;
 
 namespace NAudio.Wave
 {
     /// <summary>
-    /// Implementation of Com IStream
+    /// Source-generated CCW that adapts a managed <see cref="Stream"/> to the COM
+    /// <c>IStream</c> interface, for handing off to native Media Foundation via
+    /// <c>MFCreateMFByteStreamOnStream</c>.
     /// </summary>
-    class ComStream : Stream, IStream
+    /// <remarks>
+    /// Phase 2e' Step 5 migrated this class from <c>[ComImport] ComTypes.IStream</c> to a
+    /// source-generated <c>NAudio.MediaFoundation.Interfaces.IStream</c> so the CCW dispatch
+    /// is whole-program-analysable and the type works under
+    /// <c>BuiltInComInteropSupport=false</c>. The previous <c>byte[]</c>-typed Read/Write
+    /// parameters are now raw <see cref="IntPtr"/>; the Stat method writes a
+    /// <see cref="StorageStat"/> blob via <see cref="Marshal.StructureToPtr{T}(T, IntPtr, bool)"/>.
+    ///
+    /// CCW-handoff hazard (Phase 2f H3): callers passing this CCW to native typed as
+    /// <c>IStream*</c> MUST <c>Marshal.QueryInterface</c> for <c>IID_IStream</c> first —
+    /// see <see cref="NAudio.MediaFoundation.MediaFoundationApi.CreateByteStream(ComStream)"/>.
+    /// </remarks>
+    [GeneratedComClass]
+    internal partial class ComStream : Stream, IStream
     {
+        // STG_E_INVALIDFUNCTION (winerror.h)
+        private const int STG_E_INVALIDFUNCTION = unchecked((int)0x80030001);
+
         private Stream stream;
 
         public override bool CanRead => stream.CanRead;
@@ -40,82 +60,109 @@ namespace NAudio.Wave
             this.stream = stream;
         }
 
-        void IStream.Clone(out IStream ppstm)
-        {
-            ppstm = null;
-        }
+        // === IStream implementation ===
 
-        void IStream.Commit(int grfCommitFlags)
-        {
-            stream.Flush();
-        }
-
-        void IStream.CopyTo(IStream pstm, long cb, IntPtr pcbRead, IntPtr pcbWritten)
-        {
-        }
-
-        void IStream.LockRegion(long libOffset, long cb, int dwLockType)
-        {
-        }
-
-        void IStream.Read(byte[] pv, int cb, IntPtr pcbRead)
+        public unsafe int Read(IntPtr pv, int cb, IntPtr pcbRead)
         {
             if (!CanRead)
-                throw new InvalidOperationException("Stream is not readable.");
-            int val = Read(pv, 0, cb);
+                return STG_E_INVALIDFUNCTION;
+            int val = stream.Read(new Span<byte>((void*)pv, cb));
             if (pcbRead != IntPtr.Zero)
                 Marshal.WriteInt32(pcbRead, val);
+            return HResult.S_OK;
         }
 
-        void IStream.Revert()
+        public unsafe int Write(IntPtr pv, int cb, IntPtr pcbWritten)
         {
+            if (!CanWrite)
+                return STG_E_INVALIDFUNCTION;
+            stream.Write(new ReadOnlySpan<byte>((void*)pv, cb));
+            if (pcbWritten != IntPtr.Zero)
+                Marshal.WriteInt32(pcbWritten, cb);
+            return HResult.S_OK;
         }
 
-        void IStream.Seek(long dlibMove, int dwOrigin, IntPtr plibNewPosition)
+        public int Seek(long dlibMove, int dwOrigin, IntPtr plibNewPosition)
         {
-            SeekOrigin origin = (SeekOrigin) dwOrigin;
-            long val = Seek(dlibMove, origin);
+            SeekOrigin origin = (SeekOrigin)dwOrigin;
+            long val = stream.Seek(dlibMove, origin);
             if (plibNewPosition != IntPtr.Zero)
                 Marshal.WriteInt64(plibNewPosition, val);
+            return HResult.S_OK;
         }
 
-        void IStream.SetSize(long libNewSize)
+        public int SetSize(long libNewSize)
         {
-            SetLength(libNewSize);
+            stream.SetLength(libNewSize);
+            return HResult.S_OK;
         }
 
-        void IStream.Stat(out System.Runtime.InteropServices.ComTypes.STATSTG pstatstg, int grfStatFlag)
+        public int CopyTo(IntPtr pstm, long cb, IntPtr pcbRead, IntPtr pcbWritten)
+        {
+            // Not implemented in original — preserve behaviour (return S_OK with zero counts).
+            if (pcbRead != IntPtr.Zero) Marshal.WriteInt64(pcbRead, 0);
+            if (pcbWritten != IntPtr.Zero) Marshal.WriteInt64(pcbWritten, 0);
+            return HResult.S_OK;
+        }
+
+        public int Commit(int grfCommitFlags)
+        {
+            stream.Flush();
+            return HResult.S_OK;
+        }
+
+        public int Revert()
+        {
+            return HResult.S_OK;
+        }
+
+        public int LockRegion(long libOffset, long cb, int dwLockType)
+        {
+            return HResult.S_OK;
+        }
+
+        public int UnlockRegion(long libOffset, long cb, int dwLockType)
+        {
+            return HResult.S_OK;
+        }
+
+        public int Stat(IntPtr pstatstg, int grfStatFlag)
         {
             const int STGM_READ = 0x00000000;
             const int STGM_WRITE = 0x00000001;
             const int STGM_READWRITE = 0x00000002;
+            const int STGTY_STREAM = 2;
 
-            var tmp = new System.Runtime.InteropServices.ComTypes.STATSTG { type = 2, cbSize = Length, grfMode = 0 };
+            if (pstatstg == IntPtr.Zero)
+                return HResult.E_INVALIDARG;
+
+            var stat = new StorageStat
+            {
+                pwcsName = IntPtr.Zero,
+                type = STGTY_STREAM,
+                cbSize = Length,
+            };
 
             if (CanWrite && CanRead)
-                tmp.grfMode |= STGM_READWRITE;
+                stat.grfMode |= STGM_READWRITE;
             else if (CanRead)
-                tmp.grfMode |= STGM_READ;
+                stat.grfMode |= STGM_READ;
             else if (CanWrite)
-                tmp.grfMode |= STGM_WRITE;
+                stat.grfMode |= STGM_WRITE;
             else
-                throw new ObjectDisposedException("Stream");
+                return STG_E_INVALIDFUNCTION;
 
-            pstatstg = tmp;
+            Marshal.StructureToPtr(stat, pstatstg, false);
+            return HResult.S_OK;
         }
 
-        void IStream.UnlockRegion(long libOffset, long cb, int dwLockType)
+        public int Clone(out IntPtr ppstm)
         {
+            ppstm = IntPtr.Zero;
+            return STG_E_INVALIDFUNCTION;
         }
 
-        void IStream.Write(byte[] pv, int cb, IntPtr pcbWritten)
-        {
-            if (!CanWrite)
-                throw new InvalidOperationException("Stream is not writeable.");
-            Write(pv, 0, cb);
-            if (pcbWritten != IntPtr.Zero)
-                Marshal.WriteInt32(pcbWritten, cb);
-        }
+        // === Stream overrides (unchanged) ===
 
         public override void Flush()
         {

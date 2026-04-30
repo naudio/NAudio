@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.ComTypes;
 using System.Runtime.InteropServices.Marshalling;
 using NAudio.MediaFoundation;
 using NAudio.Utils;
@@ -304,7 +303,7 @@ namespace NAudio.Wave
             return writer;
         }
 
-        private static Interfaces.IMFSinkWriter CreateSinkWriter(IStream outputStream, Guid transcodeContainerType)
+        private static Interfaces.IMFSinkWriter CreateSinkWriter(ComStream outputStream, Guid transcodeContainerType)
         {
             // n.b. could try specifying the container type using attributes, but I think
             // it does a decent job of working it out from the file extension

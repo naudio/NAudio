@@ -131,27 +131,38 @@ namespace NAudio.MediaFoundation
             return (ptr, rcw);
         }
 
-        /// <summary>
-        /// Creates a media foundation byte stream wrapping a managed Stream that implements IStream.
-        /// </summary>
-        /// <param name="stream">Object implementing <see cref="IStream"/> (typically <c>ComStream</c>).</param>
-        internal static (IntPtr Ptr, Interfaces.IMFByteStream Rcw) CreateByteStream(object stream)
-        {
-            if (stream is not IStream comStream)
-            {
-                throw new ArgumentException("Stream must implement IStream", nameof(stream));
-            }
+        // IID_IStream (objidl.h)
+        private static readonly Guid IID_IStream = new Guid("0000000C-0000-0000-C000-000000000046");
 
-            // Phase 2e' note: this path goes through built-in COM interop because
-            // ComStream implements ComTypes.IStream ([ComImport]). Phase 2e' Step 5
-            // migrates ComStream to [GeneratedComClass] + Phase 2f QI-for-IID.
-            IntPtr unkPtr = Marshal.GetIUnknownForObject(comStream);
+        /// <summary>
+        /// Creates a media foundation byte stream wrapping a managed <see cref="ComStream"/>.
+        /// Applies the Phase 2f QI-for-IID rule: the IUnknown returned by
+        /// <c>ComWrappers.GetOrCreateComInterfaceForObject</c> is NOT the IStream vtable.
+        /// We <c>QueryInterface</c> for <c>IID_IStream</c> before handing the pointer to native,
+        /// otherwise the resampler / source reader / sink writer would dispatch against the
+        /// wrong vtable and AV on first byte-stream call.
+        /// </summary>
+        internal static (IntPtr Ptr, Interfaces.IMFByteStream Rcw) CreateByteStream(NAudio.Wave.ComStream comStream)
+        {
+            if (comStream is null) throw new ArgumentNullException(nameof(comStream));
+
+            IntPtr unkPtr = ComActivation.ComWrappers.GetOrCreateComInterfaceForObject(
+                comStream, CreateComInterfaceFlags.None);
             try
             {
-                MediaFoundationInterop.MFCreateMFByteStreamOnStream(unkPtr, out var bsPtr);
-                var rcw = (Interfaces.IMFByteStream)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
-                    bsPtr, CreateObjectFlags.UniqueInstance);
-                return (bsPtr, rcw);
+                Marshal.ThrowExceptionForHR(
+                    Marshal.QueryInterface(unkPtr, in IID_IStream, out IntPtr streamPtr));
+                try
+                {
+                    MediaFoundationInterop.MFCreateMFByteStreamOnStream(streamPtr, out var bsPtr);
+                    var rcw = (Interfaces.IMFByteStream)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                        bsPtr, CreateObjectFlags.UniqueInstance);
+                    return (bsPtr, rcw);
+                }
+                finally
+                {
+                    Marshal.Release(streamPtr);
+                }
             }
             finally
             {

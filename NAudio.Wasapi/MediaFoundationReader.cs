@@ -386,7 +386,7 @@ namespace NAudio.Wave
 
         private void Reposition(long desiredPosition)
         {
-            long nsPosition = (10000000L * repositionTo) / waveFormat.AverageBytesPerSecond;
+            long nsPosition = (10000000L * desiredPosition) / waveFormat.AverageBytesPerSecond;
             var pv = PropVariant.FromLong(nsPosition);
             var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(pv));
             try

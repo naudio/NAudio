@@ -12,11 +12,13 @@ static class MediaFoundationMenu
             var choice = Menu.Show("Media Foundation",
                 new Menu.Group("Reading",
                     "Read audio file (MediaFoundationReader)",
+                    "Read audio file with immediate reposition (RepositionInRead=false)",
                     "Read from stream (StreamMediaFoundationReader)"),
                 new Menu.Group("Encoding",
                     "Encode to MP3",
                     "Encode to AAC",
-                    "Encode to WMA"),
+                    "Encode to WMA",
+                    "Round-trip encode through MemoryStream (MP3 + AAC + WMA)"),
                 new Menu.Group("Resampling",
                     "Resample audio file"),
                 new Menu.Group("Info",
@@ -32,6 +34,9 @@ static class MediaFoundationMenu
                     case "Read audio file (MediaFoundationReader)":
                         ReaderTests.ReadAudioFile();
                         break;
+                    case "Read audio file with immediate reposition (RepositionInRead=false)":
+                        ReaderTests.ReadAudioFileWithImmediateReposition();
+                        break;
                     case "Read from stream (StreamMediaFoundationReader)":
                         ReaderTests.ReadFromStream();
                         break;
@@ -43,6 +48,9 @@ static class MediaFoundationMenu
                         break;
                     case "Encode to WMA":
                         EncoderTests.EncodeToWma();
+                        break;
+                    case "Round-trip encode through MemoryStream (MP3 + AAC + WMA)":
+                        EncoderTests.RoundTripThroughMemoryStream();
                         break;
                     case "Resample audio file":
                         ResamplerTests.ResampleFile();

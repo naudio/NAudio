@@ -32,7 +32,8 @@ namespace NAudio.MediaFoundation
         {
             if (!initialized)
             {
-                MediaFoundationInterop.MFStartup(MediaFoundationInterop.MF_VERSION, 0);
+                MediaFoundationException.ThrowIfFailed(
+                    MediaFoundationInterop.MFStartup(MediaFoundationInterop.MF_VERSION, 0));
                 initialized = true;
             }
         }
@@ -73,7 +74,7 @@ namespace NAudio.MediaFoundation
         {
             if (initialized)
             {
-                MediaFoundationInterop.MFShutdown();
+                MediaFoundationException.ThrowIfFailed(MediaFoundationInterop.MFShutdown());
                 initialized = false;
             }
         }
@@ -105,7 +106,7 @@ namespace NAudio.MediaFoundation
         /// </summary>
         internal static (IntPtr Ptr, Interfaces.IMFMediaType Rcw) CreateMediaType()
         {
-            MediaFoundationInterop.MFCreateMediaType(out var ptr);
+            MediaFoundationException.ThrowIfFailed(MediaFoundationInterop.MFCreateMediaType(out var ptr));
             var rcw = ProjectFresh<Interfaces.IMFMediaType>(ptr);
             return (ptr, rcw);
         }
@@ -134,7 +135,7 @@ namespace NAudio.MediaFoundation
         /// <param name="bufferSize">Memory buffer size in bytes</param>
         internal static (IntPtr Ptr, Interfaces.IMFMediaBuffer Rcw) CreateMemoryBuffer(int bufferSize)
         {
-            MediaFoundationInterop.MFCreateMemoryBuffer(bufferSize, out var ptr);
+            MediaFoundationException.ThrowIfFailed(MediaFoundationInterop.MFCreateMemoryBuffer(bufferSize, out var ptr));
             var rcw = ProjectFresh<Interfaces.IMFMediaBuffer>(ptr);
             return (ptr, rcw);
         }
@@ -144,7 +145,7 @@ namespace NAudio.MediaFoundation
         /// </summary>
         internal static (IntPtr Ptr, Interfaces.IMFSample Rcw) CreateSample()
         {
-            MediaFoundationInterop.MFCreateSample(out var ptr);
+            MediaFoundationException.ThrowIfFailed(MediaFoundationInterop.MFCreateSample(out var ptr));
             var rcw = ProjectFresh<Interfaces.IMFSample>(ptr);
             return (ptr, rcw);
         }
@@ -155,7 +156,7 @@ namespace NAudio.MediaFoundation
         /// <param name="initialSize">Initial size</param>
         internal static (IntPtr Ptr, Interfaces.IMFAttributes Rcw) CreateAttributes(int initialSize)
         {
-            MediaFoundationInterop.MFCreateAttributes(out var ptr, initialSize);
+            MediaFoundationException.ThrowIfFailed(MediaFoundationInterop.MFCreateAttributes(out var ptr, initialSize));
             var rcw = ProjectFresh<Interfaces.IMFAttributes>(ptr);
             return (ptr, rcw);
         }
@@ -186,7 +187,8 @@ namespace NAudio.MediaFoundation
                     Marshal.QueryInterface(unkPtr, in IID_IStream, out IntPtr streamPtr));
                 try
                 {
-                    MediaFoundationInterop.MFCreateMFByteStreamOnStream(streamPtr, out var bsPtr);
+                    MediaFoundationException.ThrowIfFailed(
+                        MediaFoundationInterop.MFCreateMFByteStreamOnStream(streamPtr, out var bsPtr));
                     return bsPtr;
                 }
                 finally
@@ -205,7 +207,8 @@ namespace NAudio.MediaFoundation
         /// </summary>
         internal static Interfaces.IMFSourceReader CreateSourceReaderFromByteStream(IntPtr byteStreamPtr)
         {
-            MediaFoundationInterop.MFCreateSourceReaderFromByteStream(byteStreamPtr, IntPtr.Zero, out var ptr);
+            MediaFoundationException.ThrowIfFailed(
+                MediaFoundationInterop.MFCreateSourceReaderFromByteStream(byteStreamPtr, IntPtr.Zero, out var ptr));
             var rcw = ProjectFresh<Interfaces.IMFSourceReader>(ptr);
             Marshal.Release(ptr);
             return rcw;
@@ -216,7 +219,8 @@ namespace NAudio.MediaFoundation
         /// </summary>
         internal static Interfaces.IMFSourceReader CreateSourceReaderFromUrl(string url, IntPtr attributesPtr = default)
         {
-            MediaFoundationInterop.MFCreateSourceReaderFromURL(url, attributesPtr, out var ptr);
+            MediaFoundationException.ThrowIfFailed(
+                MediaFoundationInterop.MFCreateSourceReaderFromURL(url, attributesPtr, out var ptr));
             var rcw = ProjectFresh<Interfaces.IMFSourceReader>(ptr);
             Marshal.Release(ptr);
             return rcw;
@@ -227,7 +231,8 @@ namespace NAudio.MediaFoundation
         /// </summary>
         internal static Interfaces.IMFSinkWriter CreateSinkWriterFromUrl(string outputUrl, IntPtr byteStreamPtr = default, IntPtr attributesPtr = default)
         {
-            MediaFoundationInterop.MFCreateSinkWriterFromURL(outputUrl, byteStreamPtr, attributesPtr, out var ptr);
+            MediaFoundationException.ThrowIfFailed(
+                MediaFoundationInterop.MFCreateSinkWriterFromURL(outputUrl, byteStreamPtr, attributesPtr, out var ptr));
             var rcw = ProjectFresh<Interfaces.IMFSinkWriter>(ptr);
             Marshal.Release(ptr);
             return rcw;
@@ -241,7 +246,8 @@ namespace NAudio.MediaFoundation
         /// <param name="codecConfigPtr">Optional codec configuration attributes (IntPtr to IMFAttributes), or IntPtr.Zero.</param>
         internal static Interfaces.IMFCollection GetAudioOutputAvailableTypes(Guid audioSubType, MftEnumFlags flags, IntPtr codecConfigPtr = default)
         {
-            MediaFoundationInterop.MFTranscodeGetAudioOutputAvailableTypes(audioSubType, flags, codecConfigPtr, out var ptr);
+            MediaFoundationException.ThrowIfFailed(
+                MediaFoundationInterop.MFTranscodeGetAudioOutputAvailableTypes(in audioSubType, flags, codecConfigPtr, out var ptr));
             var rcw = ProjectFresh<Interfaces.IMFCollection>(ptr);
             Marshal.Release(ptr);
             return rcw;

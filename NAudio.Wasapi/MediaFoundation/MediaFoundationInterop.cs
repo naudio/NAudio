@@ -10,29 +10,51 @@ namespace NAudio.MediaFoundation
     /// n.b. the goal is to make as much of this internal as possible, and provide
     /// better .NET APIs using the MediaFoundationApi class instead
     /// </summary>
-    internal static class MediaFoundationInterop
+    /// <remarks>
+    /// Blittable signatures use <see cref="LibraryImportAttribute"/> for source-generated
+    /// p/invoke stubs (smaller AOT footprint, no JIT-time stub generation, fully-static
+    /// trim-analyzer view). The two signatures that still take managed reference-type
+    /// parameters (<see cref="MFInitMediaTypeFromWaveFormatEx"/> with <c>WaveFormat</c>,
+    /// <see cref="MFTEnumEx"/> with <c>MftRegisterTypeInfo</c>) remain on
+    /// <see cref="DllImportAttribute"/> until those types get blittable representations
+    /// or custom marshallers — non-trivial design work, not a mechanical conversion.
+    ///
+    /// All <c>[LibraryImport]</c> declarations return <c>int</c> (HRESULT). Callers must
+    /// wrap with <c>MediaFoundationException.ThrowIfFailed(...)</c> — this replaces the
+    /// previous <c>PreserveSig=false</c> auto-throw behaviour of <c>[DllImport]</c>
+    /// (which is unavailable under <c>[LibraryImport]</c>). <c>MediaFoundationException</c>
+    /// derives from <c>COMException</c>, so existing <c>catch (COMException)</c> blocks
+    /// keep working.
+    /// </remarks>
+    internal static partial class MediaFoundationInterop
     {
         /// <summary>
         /// Initializes Microsoft Media Foundation.
         /// </summary>
-        [DllImport("mfplat.dll", ExactSpelling = true, PreserveSig = false)]
-        public static extern void MFStartup(int version, int dwFlags = 0);
+        [LibraryImport("mfplat.dll")]
+        public static partial int MFStartup(int version, int dwFlags = 0);
 
         /// <summary>
         /// Shuts down the Microsoft Media Foundation platform
         /// </summary>
-        [DllImport("mfplat.dll", ExactSpelling = true, PreserveSig = false)]
-        public static extern void MFShutdown();
+        [LibraryImport("mfplat.dll")]
+        public static partial int MFShutdown();
 
         /// <summary>
         /// Creates an empty media type.
         /// </summary>
-        [DllImport("mfplat.dll", ExactSpelling = true, PreserveSig = false)]
-        internal static extern void MFCreateMediaType(out IntPtr ppMFType);
+        [LibraryImport("mfplat.dll")]
+        internal static partial int MFCreateMediaType(out IntPtr ppMFType);
 
         /// <summary>
         /// Initializes a media type from a WAVEFORMATEX structure.
         /// </summary>
+        /// <remarks>
+        /// Stays on <c>[DllImport]</c> because <c>WaveFormat</c> is a managed reference
+        /// type. Migrating to <c>[LibraryImport]</c> requires either a blittable
+        /// <c>WaveFormatEx</c> struct or a custom marshaller — design discussion
+        /// pending (see follow-up note in MODERNIZATION.md).
+        /// </remarks>
         [DllImport("mfplat.dll", ExactSpelling = true, PreserveSig = false)]
         internal static extern void MFInitMediaTypeFromWaveFormatEx([In] IntPtr pMFType, [In] WaveFormat pWaveFormat, [In] int cbBufSize);
 
@@ -40,28 +62,32 @@ namespace NAudio.MediaFoundation
         /// Converts a Media Foundation audio media type to a WAVEFORMATEX structure.
         /// </summary>
         /// TODO: try making second parameter out WaveFormatExtraData
-        [DllImport("mfplat.dll", ExactSpelling = true, PreserveSig = false)]
-        internal static extern void MFCreateWaveFormatExFromMFMediaType(IntPtr pMFType, ref IntPtr ppWF, ref int pcbSize, int flags = 0);
+        [LibraryImport("mfplat.dll")]
+        internal static partial int MFCreateWaveFormatExFromMFMediaType(IntPtr pMFType, ref IntPtr ppWF, ref int pcbSize, int flags = 0);
 
         /// <summary>
         /// Creates the source reader from a URL.
         /// </summary>
-        [DllImport("mfreadwrite.dll", ExactSpelling = true, PreserveSig = false)]
-        public static extern void MFCreateSourceReaderFromURL([In, MarshalAs(UnmanagedType.LPWStr)] string pwszURL, [In] IntPtr pAttributes,
-                                                                out IntPtr ppSourceReader);
+        [LibraryImport("mfreadwrite.dll", StringMarshalling = StringMarshalling.Utf16)]
+        public static partial int MFCreateSourceReaderFromURL(string pwszURL, IntPtr pAttributes,
+                                                              out IntPtr ppSourceReader);
 
         /// <summary>
         /// Creates the source reader from a byte stream.
         /// </summary>
-        [DllImport("mfreadwrite.dll", ExactSpelling = true, PreserveSig = false)]
-        public static extern void MFCreateSourceReaderFromByteStream([In] IntPtr pByteStream, [In] IntPtr pAttributes, out IntPtr ppSourceReader);
+        [LibraryImport("mfreadwrite.dll")]
+        public static partial int MFCreateSourceReaderFromByteStream(IntPtr pByteStream, IntPtr pAttributes, out IntPtr ppSourceReader);
 
         /// <summary>
         /// Creates the sink writer from a URL or byte stream.
         /// </summary>
-        [DllImport("mfreadwrite.dll", ExactSpelling = true, PreserveSig = false)]
-        public static extern void MFCreateSinkWriterFromURL([In, MarshalAs(UnmanagedType.LPWStr)] string pwszOutputURL,
-                                                           [In] IntPtr pByteStream, [In] IntPtr pAttributes, out IntPtr ppSinkWriter);
+        /// <remarks>
+        /// <paramref name="pwszOutputURL"/> may be <c>null</c> when supplying a byte stream;
+        /// the source-generated stub passes a null pointer to native in that case.
+        /// </remarks>
+        [LibraryImport("mfreadwrite.dll", StringMarshalling = StringMarshalling.Utf16)]
+        public static partial int MFCreateSinkWriterFromURL(string pwszOutputURL,
+                                                            IntPtr pByteStream, IntPtr pAttributes, out IntPtr ppSinkWriter);
 
         /// <summary>
         /// Creates a Microsoft Media Foundation byte stream that wraps an IStream object.
@@ -72,12 +98,16 @@ namespace NAudio.MediaFoundation
         /// the QI'd IStream pointer the caller has already produced via ComWrappers; see
         /// MediaFoundationApi.CreateByteStream and the Phase 2f QI-for-IID pattern.
         /// </remarks>
-        [DllImport("mfplat.dll", ExactSpelling = true, PreserveSig = false)]
-        public static extern void MFCreateMFByteStreamOnStream([In] IntPtr punkStream, out IntPtr ppByteStream);
+        [LibraryImport("mfplat.dll")]
+        public static partial int MFCreateMFByteStreamOnStream(IntPtr punkStream, out IntPtr ppByteStream);
 
         /// <summary>
         /// Gets a list of Microsoft Media Foundation transforms (MFTs) that match specified search criteria.
         /// </summary>
+        /// <remarks>
+        /// Stays on <c>[DllImport]</c> because <c>MftRegisterTypeInfo</c> is a managed
+        /// reference type. Same rationale as <see cref="MFInitMediaTypeFromWaveFormatEx"/>.
+        /// </remarks>
         [DllImport("mfplat.dll", ExactSpelling = true, PreserveSig = false)]
         public static extern void MFTEnumEx([In] Guid guidCategory, [In] MftEnumFlags flags, [In] MftRegisterTypeInfo pInputType, [In] MftRegisterTypeInfo pOutputType,
                                             out IntPtr pppMFTActivate, out int pcMFTActivate);
@@ -85,32 +115,29 @@ namespace NAudio.MediaFoundation
         /// <summary>
         /// Creates an empty media sample.
         /// </summary>
-        [DllImport("mfplat.dll", ExactSpelling = true, PreserveSig = false)]
-        internal static extern void MFCreateSample(out IntPtr ppIMFSample);
+        [LibraryImport("mfplat.dll")]
+        internal static partial int MFCreateSample(out IntPtr ppIMFSample);
 
         /// <summary>
         /// Allocates system memory and creates a media buffer to manage it.
         /// </summary>
-        [DllImport("mfplat.dll", ExactSpelling = true, PreserveSig = false)]
-        internal static extern void MFCreateMemoryBuffer(
-            int cbMaxLength, out IntPtr ppBuffer);
+        [LibraryImport("mfplat.dll")]
+        internal static partial int MFCreateMemoryBuffer(int cbMaxLength, out IntPtr ppBuffer);
 
         /// <summary>
         /// Creates an empty attribute store.
         /// </summary>
-        [DllImport("mfplat.dll", ExactSpelling = true, PreserveSig = false)]
-        internal static extern void MFCreateAttributes(
-            out IntPtr ppMFAttributes,
-            [In] int cInitialSize);
+        [LibraryImport("mfplat.dll")]
+        internal static partial int MFCreateAttributes(out IntPtr ppMFAttributes, int cInitialSize);
 
         /// <summary>
         /// Gets a list of output formats from an audio encoder.
         /// </summary>
-        [DllImport("mf.dll", ExactSpelling = true, PreserveSig = false)]
-        public static extern void MFTranscodeGetAudioOutputAvailableTypes(
-            [In, MarshalAs(UnmanagedType.LPStruct)] Guid guidSubType,
-            [In] MftEnumFlags dwMFTFlags,
-            [In] IntPtr pCodecConfig,
+        [LibraryImport("mf.dll")]
+        public static partial int MFTranscodeGetAudioOutputAvailableTypes(
+            in Guid guidSubType,
+            MftEnumFlags dwMFTFlags,
+            IntPtr pCodecConfig,
             out IntPtr ppAvailableTypes);
 
         /// <summary>

@@ -71,6 +71,21 @@ namespace NAudio.Dsp
             a2 = b2/aa0;
             a3 = aa1/aa0;
             a4 = aa2/aa0;
+
+            // reset state so a previously divergent run (Infinity/NaN latched into
+            // y1/y2) cannot survive a coefficient change and permanently kill the filter
+            x1 = x2 = 0;
+            y1 = y2 = 0;
+        }
+
+        private static void ValidateParameters(float sampleRate, float frequency, string frequencyParamName, float qOrSlope, string qOrSlopeParamName)
+        {
+            if (sampleRate <= 0)
+                throw new ArgumentOutOfRangeException(nameof(sampleRate), "Sample rate must be positive");
+            if (frequency <= 0 || frequency >= sampleRate / 2)
+                throw new ArgumentOutOfRangeException(frequencyParamName, $"Frequency must be greater than 0 and less than sampleRate/2 (Nyquist = {sampleRate / 2} Hz)");
+            if (qOrSlope <= 0)
+                throw new ArgumentOutOfRangeException(qOrSlopeParamName, $"{qOrSlopeParamName} must be positive");
         }
 
         /// <summary>
@@ -81,6 +96,7 @@ namespace NAudio.Dsp
         /// <param name="q">Bandwidth</param>
         public void SetLowPassFilter(float sampleRate, float cutoffFrequency, float q)
         {
+            ValidateParameters(sampleRate, cutoffFrequency, nameof(cutoffFrequency), q, nameof(q));
             // H(s) = 1 / (s^2 + s/Q + 1)
             var w0 = 2 * Math.PI * cutoffFrequency / sampleRate;
             var cosw0 = Math.Cos(w0);
@@ -104,6 +120,7 @@ namespace NAudio.Dsp
         /// <param name="dbGain">Gain in decibels</param>
         public void SetPeakingEq(float sampleRate, float centreFrequency, float q, float dbGain)
         {
+            ValidateParameters(sampleRate, centreFrequency, nameof(centreFrequency), q, nameof(q));
             // H(s) = (s^2 + s*(A/Q) + 1) / (s^2 + s/(A*Q) + 1)
             var w0 = 2 * Math.PI * centreFrequency / sampleRate;
             var cosw0 = Math.Cos(w0);
@@ -125,6 +142,7 @@ namespace NAudio.Dsp
         /// </summary>
         public void SetHighPassFilter(float sampleRate, float cutoffFrequency, float q)
         {
+            ValidateParameters(sampleRate, cutoffFrequency, nameof(cutoffFrequency), q, nameof(q));
             // H(s) = s^2 / (s^2 + s/Q + 1)
             var w0 = 2 * Math.PI * cutoffFrequency / sampleRate;
             var cosw0 = Math.Cos(w0);
@@ -164,6 +182,7 @@ namespace NAudio.Dsp
         /// </summary>
         public static BiQuadFilter BandPassFilterConstantSkirtGain(float sampleRate, float centreFrequency, float q)
         {
+            ValidateParameters(sampleRate, centreFrequency, nameof(centreFrequency), q, nameof(q));
             // H(s) = s / (s^2 + s/Q + 1)  (constant skirt gain, peak gain = Q)
             var w0 = 2 * Math.PI * centreFrequency / sampleRate;
             var cosw0 = Math.Cos(w0);
@@ -184,6 +203,7 @@ namespace NAudio.Dsp
         /// </summary>
         public static BiQuadFilter BandPassFilterConstantPeakGain(float sampleRate, float centreFrequency, float q)
         {
+            ValidateParameters(sampleRate, centreFrequency, nameof(centreFrequency), q, nameof(q));
             // H(s) = (s/Q) / (s^2 + s/Q + 1)      (constant 0 dB peak gain)
             var w0 = 2 * Math.PI * centreFrequency / sampleRate;
             var cosw0 = Math.Cos(w0);
@@ -204,6 +224,7 @@ namespace NAudio.Dsp
         /// </summary>
         public static BiQuadFilter NotchFilter(float sampleRate, float centreFrequency, float q)
         {
+            ValidateParameters(sampleRate, centreFrequency, nameof(centreFrequency), q, nameof(q));
             // H(s) = (s^2 + 1) / (s^2 + s/Q + 1)
             var w0 = 2 * Math.PI * centreFrequency / sampleRate;
             var cosw0 = Math.Cos(w0);
@@ -224,6 +245,7 @@ namespace NAudio.Dsp
         /// </summary>
         public static BiQuadFilter AllPassFilter(float sampleRate, float centreFrequency, float q)
         {
+            ValidateParameters(sampleRate, centreFrequency, nameof(centreFrequency), q, nameof(q));
             //H(s) = (s^2 - s/Q + 1) / (s^2 + s/Q + 1)
             var w0 = 2 * Math.PI * centreFrequency / sampleRate;
             var cosw0 = Math.Cos(w0);
@@ -261,6 +283,7 @@ namespace NAudio.Dsp
         /// <param name="dbGain">Gain in decibels</param>
         public static BiQuadFilter LowShelf(float sampleRate, float cutoffFrequency, float shelfSlope, float dbGain)
         {
+            ValidateParameters(sampleRate, cutoffFrequency, nameof(cutoffFrequency), shelfSlope, nameof(shelfSlope));
             var w0 = 2 * Math.PI * cutoffFrequency / sampleRate;
             var cosw0 = Math.Cos(w0);
             var sinw0 = Math.Sin(w0);
@@ -287,6 +310,7 @@ namespace NAudio.Dsp
         /// <returns></returns>
         public static BiQuadFilter HighShelf(float sampleRate, float cutoffFrequency, float shelfSlope, float dbGain)
         {
+            ValidateParameters(sampleRate, cutoffFrequency, nameof(cutoffFrequency), shelfSlope, nameof(shelfSlope));
             var w0 = 2 * Math.PI * cutoffFrequency / sampleRate;
             var cosw0 = Math.Cos(w0);
             var sinw0 = Math.Sin(w0);

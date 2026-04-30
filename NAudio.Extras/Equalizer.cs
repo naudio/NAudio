@@ -33,15 +33,25 @@ namespace NAudio.Extras
 
         private void CreateFilters()
         {
+            var sampleRate = sourceProvider.WaveFormat.SampleRate;
+            var nyquist = sampleRate / 2.0f;
             for (int bandIndex = 0; bandIndex < bandCount; bandIndex++)
             {
                 var band = bands[bandIndex];
+                // Bands outside (0, Nyquist) or with non-positive bandwidth would make BiQuadFilter
+                // throw or go unstable; skip them so a single out-of-range band doesn't kill playback.
+                var bandUsable = band.Frequency > 0 && band.Frequency < nyquist && band.Bandwidth > 0;
                 for (int n = 0; n < channels; n++)
                 {
+                    if (!bandUsable)
+                    {
+                        filters[n, bandIndex] = null;
+                        continue;
+                    }
                     if (filters[n, bandIndex] == null)
-                        filters[n, bandIndex] = BiQuadFilter.PeakingEQ(sourceProvider.WaveFormat.SampleRate, band.Frequency, band.Bandwidth, band.Gain);
+                        filters[n, bandIndex] = BiQuadFilter.PeakingEQ(sampleRate, band.Frequency, band.Bandwidth, band.Gain);
                     else
-                        filters[n, bandIndex].SetPeakingEq(sourceProvider.WaveFormat.SampleRate, band.Frequency, band.Bandwidth, band.Gain);
+                        filters[n, bandIndex].SetPeakingEq(sampleRate, band.Frequency, band.Bandwidth, band.Gain);
                 }
             }
         }
@@ -79,7 +89,9 @@ namespace NAudio.Extras
                 
                 for (int band = 0; band < bandCount; band++)
                 {
-                    buffer[offset + n] = filters[ch, band].Transform(buffer[offset + n]);
+                    var filter = filters[ch, band];
+                    if (filter != null)
+                        buffer[offset + n] = filter.Transform(buffer[offset + n]);
                 }
             }
             return samplesRead;

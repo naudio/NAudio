@@ -150,7 +150,7 @@ namespace NAudioWpfDemo.EqualizationDemo
                 if (bands[7].Gain != value)
                 {
                     bands[7].Gain = value;
-                    OnPropertyChanged("Band7");
+                    OnPropertyChanged("Band8");
                 }
             }
         }

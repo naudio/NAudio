@@ -75,26 +75,15 @@ A finalizer-thread fast-fail (`Invalid Program: attempted to call a UnmanagedCal
 
 ---
 
-## Phase 2e′ — MediaFoundation bridge sweep (deferred)
+## ~~Phase 2e′ — MediaFoundation bridge sweep~~ (resolved 2026-04-30)
 
-These ~12 sites still use `Marshal.GetObjectForIUnknown`:
-
-| File | Sites | Notes |
-| --- | --- | --- |
-| `NAudio.Wasapi/MediaFoundation/MediaFoundationHelpers.cs:40` | 1 | `IMFActivate` projection in enumeration |
-| `NAudio.Wasapi/MediaFoundation/MfSample.cs:96, 116` | 2 | `IMFMediaBuffer` from `GetBufferByIndex` / `ConvertToContiguousBuffer` |
-| `NAudio.Wasapi/MediaFoundation/MfActivate.cs:44` | 1 | `IMFTransform` from `IMFActivate::ActivateObject` |
-| `NAudio.Wasapi/MediaFoundation/MfTransform.cs:78, 91, 125, 137` | 4 | `IMFMediaType` getters |
-| `NAudio.Wasapi/MediaFoundation/MfSourceReader.cs:50, 62, 112` | 3 | `IMFMediaType` and `IMFSample` |
-| `NAudio.Wasapi/MediaFoundationResampler.cs:74` | 1 | Bridges activated `IUnknown*` onto legacy `[ComImport] IMFTransform` because `MediaFoundationTransform.transform` is typed as the legacy interface |
-
-The dominant blocker is **`MediaFoundationTransform.transform` being typed as legacy `[ComImport] IMFTransform`**. Migrating the field to `[GeneratedComInterface]` cascades through `MediaFoundationResampler`, `MediaFoundationReader`, `MediaFoundationEncoder`, `StreamMediaFoundationReader`, and `MfActivate`.
+Resolved by branch `naudio3dev-mediafoundation-bridge`. See [MediaFoundationActivationModernization.md](MediaFoundationActivationModernization.md) for the full record. Net result: zero `[ComImport]` declarations in `NAudio.Wasapi/MediaFoundation/`, zero `Marshal.GetObjectForIUnknown` in MediaFoundation territory, ComStream migrated to `[GeneratedComClass]` with the Phase 2f QI-for-IID rule applied at the byte-stream native handoff, and `<IsAotCompatible>true</IsAotCompatible>` is now on `NAudio.Wasapi.csproj` validated by `NAudioAotSmokeTest` running encode-to-stream + read-from-stream + resampler under `PublishTrimmed=true` + `BuiltInComInteropSupport=false`.
 
 ---
 
 ## Out of scope (deliberately deferred)
 
-- `MediaFoundation/` bridge sweep + `MediaFoundationTransform.transform` field type — Phase 2e′ above.
+- ~~`MediaFoundation/` bridge sweep + `MediaFoundationTransform.transform` field type~~ — resolved 2026-04-30 by Phase 2e′.
 - ~~`IMMDevice.OpenPropertyStore` trimming AV~~ — resolved as a side-effect of Phase 2e. The original AV almost certainly lived at the seam between the legacy COM activation path (classic-RCW bridging via `Marshal.GetObjectForIUnknown`) and the source-generated `[GeneratedComInterface] IMMDevice` vtable, where the trimmer ate metadata at the boundary. Phase 2e replaced both ends of that seam with raw `CoCreateInstance` + `StrategyBasedComWrappers.GetOrCreateObjectForComInstance`, so the boundary no longer exists. Verified 2026-04-30: `dotnet publish ... -p:PublishTrimmed=true -p:TrimMode=partial -p:BuiltInComInteropSupport=true` runs NAudioAotSmokeTest end-to-end — `OpenPropertyStore` reads VT_LPWSTR / VT_UI4 / VT_BLOB on every endpoint without an AV.
 - `<IsAotCompatible>true</IsAotCompatible>` on `NAudio.Wasapi.csproj` — gated on Phase 2e′. The CoreAudio path is genuinely AOT-correct (verified by Phase 2f's `PublishAot=true` NAudioAotSmokeTest run, both RCW and CCW directions), but the analyzer is silent about the unmigrated MediaFoundation `Marshal.GetObjectForIUnknown` calls — `Marshal.GetObjectForIUnknown` carries no `[RequiresUnreferencedCode]`/`[RequiresDynamicCode]` annotation, so a clean compile-time analysis is not the same as runtime correctness under `BuiltInComInteropSupport=false`. Flip the flag once Phase 2e′ closes that gap.
 - AOT story for sister assemblies (`NAudio.Core`, `NAudio.WinMM`, `NAudio.Midi`, `NAudio.Asio`) — untouched. Core/WinMM/Midi probably small audits each (no COM); ASIO is multi-phase like WASAPI.
@@ -115,3 +104,4 @@ The dominant blocker is **`MediaFoundationTransform.transform` being typed as le
 | 2026-04-30 | Phase 2f test-harness coverage added | `NAudioDemo` gains a Device Notifications plugin panel (live `IMMNotificationClient` event log + endpoint list) and self-refreshing device combos on Recording / WASAPI playback panels (preserving selection by ID). Volume Mixer subscribes to `OnSessionCreated` and adds new session panels live. `NAudioConsoleTest` WASAPI menu adds "Watch device notifications" and "Stress endpoint volume callbacks". `Tools/NAudioAotSmokeTest` extended to exercise CCW direction in addition to RCW direction. |
 | 2026-04-30 | Phase 2f `PublishAot=true` validation | NAudioAotSmokeTest published with `PublishAot=true` + `BuiltInComInteropSupport=false`: 7 endpoints enumerated with full property reads (VT_LPWSTR / VT_UI4 / VT_BLOB), `IMMNotificationClient` registers HR=0, four master-volume changes drove four `OnVolumeNotification` callbacks, clean exit. CoreAudio path is genuinely AOT-correct (whole-program CCW + RCW dispatch). |
 | 2026-04-30 | `<IsAotCompatible>` flag flip reverted | The MediaFoundation paths in `NAudio.Wasapi` are still on legacy `Marshal.GetObjectForIUnknown` and would fail at runtime under `BuiltInComInteropSupport=false`; the analyzer doesn't flag them because `Marshal.GetObjectForIUnknown` is not annotated with `[RequiresUnreferencedCode]`. Setting `IsAotCompatible=true` now would overstate readiness. Defer the flip until Phase 2e′ lands. |
+| 2026-04-30 | Phase 2e′ landed — `<IsAotCompatible>` honestly on | Branch `naudio3dev-mediafoundation-bridge`. MediaFoundation surface (12 bridge sites + 14 p/invoke parameters across 11 declarations + 22 ReleaseComObject sites + 5-file type cascade + ComStream CCW direction) migrated to source-generated COM. ComStream applies the Phase 2f QI-for-IID rule before handing the CCW pointer to native MFCreateMFByteStreamOnStream. 13 legacy `[ComImport]` IMF\*.cs files deleted (-1492 lines). `<IsAotCompatible>true</IsAotCompatible>` set on `NAudio.Wasapi.csproj`. NAudioAotSmokeTest extended with a third "MediaFoundation round-trip" section (encode→stream→decode→resample); under `PublishTrimmed=true` + `BuiltInComInteropSupport=false` all three sections pass end-to-end. NAudioTests: 1180 / 14 skipped / 0 failed (one new test added). See [MediaFoundationActivationModernization.md](MediaFoundationActivationModernization.md). |

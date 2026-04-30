@@ -16,13 +16,7 @@
     <PackageIcon>naudio-icon.png</PackageIcon>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <!-- IsAotCompatible deliberately deferred: the analyzer is happy and the
-         CoreAudio path is genuinely AOT-correct (verified by AotSmoke under
-         PublishAot=true with BuiltInComInteropSupport=false, exercising both
-         RCW and CCW directions). The MediaFoundation paths in this assembly
-         still use the legacy [ComImport] / Marshal.GetObjectForIUnknown
-         bridge, which fails at runtime under BuiltInComInteropSupport=false.
-         Flip the flag once Phase 2e' lands. -->
+    <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
 
   <!-- needed for perfomance profiling unit tests -->

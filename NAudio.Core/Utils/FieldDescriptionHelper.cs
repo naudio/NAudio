@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace NAudio.Utils
@@ -11,7 +12,9 @@ namespace NAudio.Utils
         /// <summary>
         /// Describes the Guid  by looking for a FieldDescription attribute on the specified class
         /// </summary>
-        public static string Describe(Type t, Guid guid)
+        public static string Describe(
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] Type t,
+            Guid guid)
         {
             // when we go to .NET 3.5, use LINQ for this
             foreach (var f in t

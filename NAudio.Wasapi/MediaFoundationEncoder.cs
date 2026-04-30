@@ -7,7 +7,7 @@ using System.Runtime.InteropServices.Marshalling;
 using NAudio.MediaFoundation;
 using NAudio.Utils;
 using NAudio.Wasapi.CoreAudioApi;
-using Interfaces = NAudio.MediaFoundation.Interfaces;
+using NAudio.MediaFoundation.Interfaces;
 
 namespace NAudio.Wave
 {
@@ -42,7 +42,7 @@ namespace NAudio.Wave
         public static MediaType[] GetOutputMediaTypes(Guid audioSubtype)
         {
             MediaFoundationApi.Startup();
-            Interfaces.IMFCollection availableTypes;
+            IMFCollection availableTypes;
             try
             {
                 availableTypes = MediaFoundationApi.GetAudioOutputAvailableTypes(
@@ -67,7 +67,7 @@ namespace NAudio.Wave
                 for (int n = 0; n < count; n++)
                 {
                     MediaFoundationException.ThrowIfFailed(availableTypes.GetElement(n, out IntPtr mediaTypePtr));
-                    var mediaTypeRcw = (Interfaces.IMFMediaType)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    var mediaTypeRcw = (IMFMediaType)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
                         mediaTypePtr, CreateObjectFlags.UniqueInstance);
                     mediaTypes.Add(new MediaType(mediaTypePtr, mediaTypeRcw));
                 }
@@ -270,13 +270,13 @@ namespace NAudio.Wave
             }
         }
 
-        private static Interfaces.IMFSinkWriter CreateSinkWriter(string outputFile)
+        private static IMFSinkWriter CreateSinkWriter(string outputFile)
         {
             // n.b. could try specifying the container type using attributes, but I think
             // it does a decent job of working it out from the file extension
             // n.b. AAC encode on Win 8 can have AAC extension, but use MP4 in win 7
             // http://msdn.microsoft.com/en-gb/library/windows/desktop/dd389284%28v=vs.85%29.aspx
-            Interfaces.IMFSinkWriter writer;
+            IMFSinkWriter writer;
             var (attributesPtr, attributes) = MediaFoundationApi.CreateAttributes(1);
             try
             {
@@ -303,16 +303,16 @@ namespace NAudio.Wave
             return writer;
         }
 
-        private static Interfaces.IMFSinkWriter CreateSinkWriter(ComStream outputStream, Guid transcodeContainerType)
+        private static IMFSinkWriter CreateSinkWriter(ComStream outputStream, Guid transcodeContainerType)
         {
             // n.b. could try specifying the container type using attributes, but I think
             // it does a decent job of working it out from the file extension
             // n.b. AAC encode on Win 8 can have AAC extension, but use MP4 in win 7
             // http://msdn.microsoft.com/en-gb/library/windows/desktop/dd389284%28v=vs.85%29.aspx
-            Interfaces.IMFSinkWriter writer;
+            IMFSinkWriter writer;
             var (attributesPtr, attributes) = MediaFoundationApi.CreateAttributes(1);
             IntPtr byteStreamPtr = IntPtr.Zero;
-            Interfaces.IMFByteStream byteStreamRcw = null;
+            IMFByteStream byteStreamRcw = null;
             try
             {
                 MediaFoundationException.ThrowIfFailed(
@@ -330,7 +330,7 @@ namespace NAudio.Wave
             return writer;
         }
 
-        private void PerformEncode(Interfaces.IMFSinkWriter writer, int streamIndex, IWaveProvider inputSource)
+        private void PerformEncode(IMFSinkWriter writer, int streamIndex, IWaveProvider inputSource)
         {
             int bufferSize = DefaultReadBufferSize > 0
                 ? DefaultReadBufferSize
@@ -355,7 +355,7 @@ namespace NAudio.Wave
             return nsPosition;
         }
 
-        private unsafe long ConvertOneBuffer(Interfaces.IMFSinkWriter writer, int streamIndex, IWaveProvider inputSource, long position, int bufferSize)
+        private unsafe long ConvertOneBuffer(IMFSinkWriter writer, int streamIndex, IWaveProvider inputSource, long position, int bufferSize)
         {
             long durationConverted = 0;
             var (bufferPtr, buffer) = MediaFoundationApi.CreateMemoryBuffer(bufferSize);

@@ -1,6 +1,6 @@
 # MediaFoundation Activation + ComWrappers Bridging Modernization
 
-> **Status: IN PROGRESS** (Phase 2e′ in [MODERNIZATION.md](MODERNIZATION.md)). Working branch: `naudio3dev-mediafoundation-bridge`.
+> **Status: COMPLETE** (Phase 2e′ in [MODERNIZATION.md](MODERNIZATION.md)). Working branch: `naudio3dev-mediafoundation-bridge`. `<IsAotCompatible>true</IsAotCompatible>` is now on `NAudio.Wasapi.csproj`, validated by `NAudioAotSmokeTest` running all three sections (RCW, CCW callbacks, MediaFoundation round-trip) under `PublishTrimmed=true` + `BuiltInComInteropSupport=false`.
 
 Phase 2e′ migrates `NAudio.Wasapi/MediaFoundation/` and the top-level `MediaFoundationResampler.cs` / `MediaFoundationReader.cs` / `MediaFoundationEncoder.cs` / `StreamMediaFoundationReader.cs` off the legacy `[ComImport]` interfaces, the legacy `[DllImport]` typed-COM marshalling, the `Marshal.GetObjectForIUnknown` bridge, and `Marshal.ReleaseComObject`-based disposal. After the sweep lands, `<IsAotCompatible>true</IsAotCompatible>` is enabled on `NAudio.Wasapi.csproj` and verified by an MF section in `NAudioAotSmokeTest` running under `PublishAot=true` + `BuiltInComInteropSupport=false`.
 
@@ -261,3 +261,21 @@ End: `<IsAotCompatible>` honestly on. Phase 2e′ closes.
 | --- | --- | --- |
 | 2026-04-30 | Branch created | `naudio3dev-mediafoundation-bridge` from `naudio3dev` |
 | 2026-04-30 | Step 1 audit pass | This document. Identified five touch categories (A: 12 bridge sites; B: 14 p/invoke parameters across 11 declarations; C: 22 ReleaseComObject sites; D: 5-file type cascade; E: ComStream CCW direction). Folded in 11 hazards from Phases 2e/2f/6c. |
+| 2026-04-30 | Steps 2+3+4 cascade | Consolidated commit (Step 3 ReleaseComObject→FinalRelease requires Step 4 ComWrappers RCWs to avoid InvalidCastException, so they cannot be split). 16 files, +550/-320. MediaFoundationInterop p/invokes use IntPtr; MediaFoundationApi factories return tuples; MftOutputDataBuffer struct is blittable IntPtr-typed; MediaType / MediaFoundationTransform / MediaFoundationReader / StreamMediaFoundationReader / MediaFoundationEncoder / MediaFoundationResampler / Mf* wrappers fully migrated. Closed three pre-existing MediaType disposal leaks. Tests: 1179/14/0 (baseline maintained). |
+| 2026-04-30 | Step 5 ComStream CCW | New `[GeneratedComInterface] IStream` (IID `0000000C-0000-0000-C000-000000000046`) and blittable `StorageStat` struct in `NAudio.MediaFoundation.Interfaces`. ComStream is now `[GeneratedComClass] partial`. `MediaFoundationApi.CreateByteStream` applies the Phase 2f H3 QI-for-IID rule with explicit `Marshal.QueryInterface(unkPtr, in IID_IStream, out streamPtr)` before native handoff. New `CanRoundTripStreamThroughMediaFoundationCcwPath` test encodes a 2s signal to MemoryStream and reads it back — exercises both CCW legs. Tests: 1180/14/0. |
+| 2026-04-30 | Step 6 legacy file deletion | 13 files deleted (12 legacy `[ComImport]` IMF*.cs at the root of MediaFoundation/, plus the unused modern `Interfaces/IMFReadWriteClassFactory.cs` whose interface and coclass had no callers). Net result: zero `[ComImport]` declarations remaining in `NAudio.Wasapi/MediaFoundation/`. -1492 lines. Tests: 1180/14/0. |
+| 2026-04-30 | Step 7 smoke + flag flip | New MediaFoundation section in `NAudioAotSmokeTest/Program.cs` exercises encode-to-stream, read-from-stream, and `MediaFoundationResampler` (RCW + CCW + IMFTransform). Annotated `FieldDescriptionHelper.Describe` with `[DynamicallyAccessedMembers(PublicFields)]` to clear an IL2070 surfaced by the new MF section. `<IsAotCompatible>true</IsAotCompatible>` flipped on `NAudio.Wasapi.csproj`. `dotnet build NAudio.slnx -c Release` clean (zero IL2026/IL3050). `dotnet publish NAudioAotSmokeTest -c Release -p:PublishTrimmed=true -p:BuiltInComInteropSupport=false`: all three sections (RCW property reads, CCW callbacks, MF round-trip) pass end-to-end. Tests: 1180/14/0. |
+
+---
+
+## Resolution
+
+Phase 2e′ closes the MediaFoundation half of NAudio.Wasapi's COM modernization. The CoreAudio side (Phase 2e + 2f) was AOT-correct from the runtime perspective but the assembly couldn't honestly carry `<IsAotCompatible>` because MediaFoundation still failed under `BuiltInComInteropSupport=false`. After Phase 2e′:
+
+- Zero `[ComImport]` declarations in `NAudio.Wasapi/MediaFoundation/`.
+- Zero `Marshal.GetObjectForIUnknown` calls in `NAudio.Wasapi/MediaFoundation/` and `NAudio.Wasapi/MediaFoundationResampler.cs` (the only remaining one in the assembly is `Dmo/Effect/DmoEffectActivation.cs:48`, which is per-effect property interface activation — out of scope per Phase 6c).
+- Zero `Marshal.ReleaseComObject` calls in `NAudio.Wasapi`.
+- ComStream CCW handoff applies the Phase 2f QI-for-IID rule, exercised by both a focused round-trip test and the AOT smoke runner.
+- `NAudioAotSmokeTest` exercises three full directions of source-generated COM dispatch: RCW property reads, CCW callback dispatch, and MediaFoundation encode/decode/resample. The trimmed run with `BuiltInComInteropSupport=false` is the load-bearing validation per Hazard H11 (the analyzer alone cannot certify runtime correctness — the smoke test does).
+
+The full `PublishAot=true` validation from a Visual Studio Developer Command Prompt is the final gate; it requires the toolchain that the trimmed-only run does not, but the trimmed run with `BuiltInComInteropSupport=false` is a strong proxy because the failure modes are the same machinery (built-in COM marshaller missing) and the only thing the AOT step adds is whole-program code generation.

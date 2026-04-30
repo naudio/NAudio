@@ -7,7 +7,7 @@ using NAudio.CoreAudioApi.Interfaces;
 using NAudio.MediaFoundation;
 using NAudio.Utils;
 using NAudio.Wasapi.CoreAudioApi;
-using Interfaces = NAudio.MediaFoundation.Interfaces;
+using NAudio.MediaFoundation.Interfaces;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave
@@ -24,7 +24,7 @@ namespace NAudio.Wave
         private long length;
         private MediaFoundationReaderSettings settings;
         private readonly string file;
-        private Interfaces.IMFSourceReader pReader;
+        private IMFSourceReader pReader;
 
         private long position;
 
@@ -111,11 +111,11 @@ namespace NAudio.Wave
             }
         }
 
-        private WaveFormat GetCurrentWaveFormat(Interfaces.IMFSourceReader reader)
+        private WaveFormat GetCurrentWaveFormat(IMFSourceReader reader)
         {
             MediaFoundationException.ThrowIfFailed(
                 reader.GetCurrentMediaType(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, out IntPtr mediaTypePtr));
-            var rcw = (Interfaces.IMFMediaType)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(mediaTypePtr, CreateObjectFlags.UniqueInstance);
+            var rcw = (IMFMediaType)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(mediaTypePtr, CreateObjectFlags.UniqueInstance);
             using var outputMediaType = new MediaType(mediaTypePtr, rcw);
 
             // Two ways to query it, first is to ask for properties (second is to convert into WaveFormatEx using MFCreateWaveFormatExFromMFMediaType)
@@ -134,18 +134,18 @@ namespace NAudio.Wave
             throw new InvalidDataException($"Unsupported audio sub Type {subTypeDescription}");
         }
 
-        private static MediaType GetCurrentMediaType(Interfaces.IMFSourceReader reader)
+        private static MediaType GetCurrentMediaType(IMFSourceReader reader)
         {
             MediaFoundationException.ThrowIfFailed(
                 reader.GetCurrentMediaType(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, out IntPtr mediaTypePtr));
-            var rcw = (Interfaces.IMFMediaType)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(mediaTypePtr, CreateObjectFlags.UniqueInstance);
+            var rcw = (IMFMediaType)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(mediaTypePtr, CreateObjectFlags.UniqueInstance);
             return new MediaType(mediaTypePtr, rcw);
         }
 
         /// <summary>
         /// Creates the reader (overridable by )
         /// </summary>
-        private protected virtual Interfaces.IMFSourceReader CreateReader(MediaFoundationReaderSettings settings)
+        private protected virtual IMFSourceReader CreateReader(MediaFoundationReaderSettings settings)
         {
             var reader = MediaFoundationApi.CreateSourceReaderFromUrl(file);
             MediaFoundationException.ThrowIfFailed(
@@ -198,7 +198,7 @@ namespace NAudio.Wave
             return reader;
         }
 
-        private long GetLength(Interfaces.IMFSourceReader reader)
+        private long GetLength(IMFSourceReader reader)
         {
             var variantPtr = Marshal.AllocHGlobal(Marshal.SizeOf<PropVariant>());
             try
@@ -309,14 +309,14 @@ namespace NAudio.Wave
                     continue;
                 }
 
-                var pSample = (Interfaces.IMFSample)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(pSamplePtr, CreateObjectFlags.UniqueInstance);
+                var pSample = (IMFSample)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(pSamplePtr, CreateObjectFlags.UniqueInstance);
                 IntPtr pBufferPtr = IntPtr.Zero;
-                Interfaces.IMFMediaBuffer pBuffer = null;
+                IMFMediaBuffer pBuffer = null;
                 bool bufferLocked = false;
                 try
                 {
                     MediaFoundationException.ThrowIfFailed(pSample.ConvertToContiguousBuffer(out pBufferPtr));
-                    pBuffer = (Interfaces.IMFMediaBuffer)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(pBufferPtr, CreateObjectFlags.UniqueInstance);
+                    pBuffer = (IMFMediaBuffer)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(pBufferPtr, CreateObjectFlags.UniqueInstance);
                     MediaFoundationException.ThrowIfFailed(pBuffer.Lock(out IntPtr pAudioData, out int pcbMaxLength, out int cbBuffer));
                     bufferLocked = true;
                     EnsureBuffer(cbBuffer);

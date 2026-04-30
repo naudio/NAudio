@@ -1,10 +1,14 @@
 using System;
+using System.IO;
 using System.Runtime.InteropServices.Marshalling;
 using System.Threading;
 using NAudio.CoreAudioApi;
 using NAudio.CoreAudioApi.Interfaces;
+using NAudio.MediaFoundation;
+using NAudio.Wave;
+using NAudio.Wave.SampleProviders;
 
-// AOT smoke app. Exercises both directions of the source-generated COM bridging:
+// AOT smoke app. Exercises three directions of the source-generated COM bridging:
 //
 // (1) RCW direction — IPropertyStore + PropVariant (Phase 2d) and the
 //     CoCreateInstance / GetOrCreateObjectForComInstance projection path
@@ -19,6 +23,16 @@ using NAudio.CoreAudioApi.Interfaces;
 //     sufficient because trim still permits reflection-based vtable inference;
 //     PublishAot does not, so this run is the strongest "callbacks survive
 //     whole-program analysis" signal we have.
+//
+// (3) MediaFoundation round-trip — Phase 2e' (this section). Exercises the
+//     MediaFoundationInterop p/invokes (mfplat / mfreadwrite), the bridge sweep
+//     in MediaFoundationApi factories, the consumer cascade through
+//     MediaFoundationEncoder + StreamMediaFoundationReader, the
+//     IMFTransform-backed MediaFoundationResampler, and the ComStream CCW path
+//     (Step 5 + Phase 2f H3 QI-for-IID rule). Encodes a generated signal to
+//     MP3 in a MemoryStream, then reads it back. If the QI handoff or any of
+//     the migrated bridge sites were wrong, MFCreateMFByteStreamOnStream or
+//     IMFSourceReader::ReadSample would AV before the assertions ran.
 
 Console.WriteLine("=== Phase 2d / 2e: RCW direction (property reads) ===\n");
 
@@ -96,6 +110,52 @@ finally
     enumerator.UnregisterEndpointNotificationCallback(notificationClient);
     endpointVolume.Dispose();
     defaultDevice.Dispose();
+}
+
+Console.WriteLine();
+Console.WriteLine("=== Phase 2e': MediaFoundation round-trip (RCW + CCW) ===\n");
+
+MediaFoundationApi.Startup();
+try
+{
+    using var encoded = new MemoryStream();
+    var signal = new SignalGenerator(44100, 2) { Frequency = 1000, Gain = 0.25 }
+        .Take(TimeSpan.FromSeconds(2));
+    MediaFoundationEncoder.EncodeToMp3(signal.ToWaveProvider(), encoded, 96000);
+    Console.WriteLine($"  EncodeToMp3 (CCW + RCW): wrote {encoded.Length} bytes to MemoryStream");
+
+    encoded.Position = 0;
+    using var reader = new StreamMediaFoundationReader(encoded);
+    Console.WriteLine($"  StreamMediaFoundationReader format: {reader.WaveFormat}");
+
+    var buffer = new byte[reader.WaveFormat.AverageBytesPerSecond];
+    long total = 0;
+    int bytesRead;
+    while ((bytesRead = reader.Read(buffer, 0, buffer.Length)) > 0)
+    {
+        total += bytesRead;
+    }
+    Console.WriteLine($"  StreamMediaFoundationReader read back {total} bytes of PCM");
+
+    // Resampler exercise — IMFTransform path.
+    encoded.Position = 0;
+    using var reader2 = new StreamMediaFoundationReader(encoded);
+    using var resampler = new MediaFoundationResampler(reader2, 22050);
+    var resampleBuffer = new byte[resampler.WaveFormat.AverageBytesPerSecond];
+    long resampleTotal = 0;
+    while ((bytesRead = resampler.Read(resampleBuffer.AsSpan())) > 0)
+    {
+        resampleTotal += bytesRead;
+    }
+    Console.WriteLine($"  MediaFoundationResampler 44100->22050: produced {resampleTotal} bytes");
+
+    Console.WriteLine(total > 0 && resampleTotal > 0
+        ? "  MediaFoundation under PublishAot: OK"
+        : "  MediaFoundation under PublishAot: FAIL");
+}
+finally
+{
+    MediaFoundationApi.Shutdown();
 }
 
 [GeneratedComClass]

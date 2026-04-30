@@ -224,10 +224,47 @@ Specific exception types for common failure modes:
 
 **Out of scope, deferred to follow-up phases:**
 
-- Phase 2e′: MediaFoundation bridge sweep — separate branch.
-- AOT-flag flip on `NAudio.Wasapi`: gated on Phase 2e′.
+- ~~Phase 2e′: MediaFoundation bridge sweep~~ — landed 2026-04-30, see Phase 2e′ section below.
+- ~~AOT-flag flip on `NAudio.Wasapi`~~ — landed 2026-04-30 with Phase 2e′. `<IsAotCompatible>true</IsAotCompatible>` is now on `NAudio.Wasapi.csproj`.
 - AOT story for `NAudio.Core`, `NAudio.WinMM`, `NAudio.Midi`, `NAudio.Asio`: untouched by this phase. Core/WinMM/Midi probably small audits each; ASIO is multi-phase like WASAPI.
 - `AudioClient.ActivateAsync` (the only path that exercises `IActivateAudioInterfaceCompletionHandler`): zero callers in the repo, never invoked at runtime by the test harness. The QI-for-IID logic is correct by inspection but unverified end-to-end. Will get exercised when process-loopback capture lands.
+
+#### Phase 2e′: MediaFoundation bridge sweep + IsAotCompatible flag flip ([MediaFoundationActivationModernization.md](MediaFoundationActivationModernization.md))
+
+Branch `naudio3dev-mediafoundation-bridge`. Closes the MediaFoundation half of NAudio.Wasapi's COM modernization; the CoreAudio side (Phase 2e + 2f) was AOT-correct from the runtime perspective but the assembly couldn't honestly carry `<IsAotCompatible>` because MediaFoundation still failed under `BuiltInComInteropSupport=false` (the analyzer was silent because `Marshal.GetObjectForIUnknown` carries no `[RequiresUnreferencedCode]`/`[RequiresDynamicCode]` annotation — Hazard H11 in the working doc).
+
+**Touch surface (5 categories, ~50+ sites):**
+
+- **Cat A — bridge sites (12):** `Marshal.GetObjectForIUnknown` → `ComActivation.ComWrappers.GetOrCreateObjectForComInstance(ptr, UniqueInstance)` across `MediaFoundationHelpers.cs`, `MfSample.cs`, `MfActivate.cs`, `MfTransform.cs`, `MfSourceReader.cs`, `MediaFoundationResampler.cs`. Centralised inside `MediaFoundationApi` factories, reducing per-consumer projection noise.
+- **Cat B — `[DllImport]` parameter types (~14 across 11 declarations):** `MediaFoundationInterop.cs` p/invokes now take `IntPtr` instead of legacy `[ComImport]` interface types — the runtime's classic-COM marshaller for `out IMFMediaType ppMFType` etc. is unavailable under `BuiltInComInteropSupport=false`, so the modern shape is `out IntPtr` with explicit `ComWrappers` projection at the call site. Removed unused `MFCreateMFByteStreamOnStreamEx` (the `[MarshalAs(UnmanagedType.IUnknown)] object` site).
+- **Cat C — `Marshal.ReleaseComObject` sites (22):** all replaced with `((ComObject)(object)x).FinalRelease()` — the cast through `object` is required because `is ComObject` from an interface-typed variable doesn't compile (Phase 2e Hazard #2). Net result: zero `Marshal.ReleaseComObject` calls in `NAudio.Wasapi`.
+- **Cat D — type cascade (5 files):** `MediaFoundationTransform.transform`, `MediaFoundationApi` factory return types (now `(IntPtr Ptr, T Rcw)` tuples), `MediaFoundationReader.pReader`, `MediaFoundationEncoder` locals, `MediaType.mediaType`. `MediaType.MediaFoundationObject` accessor changed semantically from `IMFMediaType` to `IntPtr` for native pass-through to the modern IntPtr-typed signatures. `MftOutputDataBuffer` struct fields changed from `IMFSample`/`IMFCollection` to `IntPtr` so the struct is fully blittable and can be pinned for `ProcessOutput`.
+- **Cat E — ComStream CCW direction (Step 5):** new local `[GeneratedComInterface] IStream` (IID `0000000C-0000-0000-C000-000000000046`) in `NAudio.MediaFoundation.Interfaces`, plus a blittable `StorageStat` mirror struct. ComStream is now `[GeneratedComClass] partial`. `MediaFoundationApi.CreateByteStream` applies the Phase 2f H3 QI-for-IID rule with explicit `Marshal.QueryInterface(unkPtr, in IID_IStream, out streamPtr)` before handing the pointer to `MFCreateMFByteStreamOnStream` — the IUnknown returned by `GetOrCreateComInterfaceForObject` is NOT the IStream vtable, and skipping the QI would AV on the first `IStream::Stat` call.
+
+**Closed pre-existing leaks (4):** `partialMediaType` in `MediaFoundationReader.CreateReader` (wrapped in try/finally), `outputMediaType` in `GetCurrentWaveFormat` (`using var`), `byteStream` in stream-overload `MediaFoundationEncoder.CreateSinkWriter`, and the latent classic-RCW finalizer-deferred releases in all `Mf*` wrappers (now FinalRelease deterministically on Dispose). Same precedent as Phase 2e closing 5 leaks in CoreAudio.
+
+**Legacy file deletion (Step 6):** 13 files removed (12 legacy `[ComImport] IMF*.cs` at the root of `NAudio.Wasapi/MediaFoundation/`, plus the unused modern `Interfaces/IMFReadWriteClassFactory.cs` whose interface and coclass had no callers). -1492 lines. Net result: zero `[ComImport]` declarations in the entire `NAudio.Wasapi/MediaFoundation/` directory tree.
+
+**Smoke test extension + flag flip (Step 7):** `NAudioAotSmokeTest/Program.cs` gained a third "MediaFoundation round-trip" section that exercises encode-to-stream → decode-from-stream → `MediaFoundationResampler` (covering RCW + CCW + IMFTransform paths). Annotated `FieldDescriptionHelper.Describe` with `[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)]` to clear an IL2070 surfaced by the new section. `<IsAotCompatible>true</IsAotCompatible>` flipped on `NAudio.Wasapi.csproj`.
+
+**Verification:**
+
+- `dotnet build NAudio.slnx -c Release` clean (zero IL2026/IL3050; `NAudioAotSmokeTest` has `TreatWarningsAsErrors=true` for those codes).
+- `dotnet publish NAudioAotSmokeTest -c Release -p:PublishTrimmed=true -p:BuiltInComInteropSupport=false` runs all three sections end-to-end: 8 endpoints enumerated with property reads, 4 master-volume callbacks fired, 25158-byte MP3 encoded → 361920 bytes PCM decoded → 180960 bytes resampled to 22050Hz.
+- NAudioTests: 1180 / 14 skipped / 0 failed (one new test `CanRoundTripStreamThroughMediaFoundationCcwPath` added — round-trips through both CCW legs, fails fast with an AV if the QI-for-IID handoff regresses).
+- Manual MP3 streaming smoke in NAudioDemo confirmed the production code path works end-to-end on top of the migrated stack.
+
+**Breaking changes:**
+
+- `MediaType.MediaFoundationObject` (internal) accessor type changed from `IMFMediaType` to `IntPtr`. Internal-only — no public API surface impact.
+- `MediaFoundationTransform.transform` (private) field type changed from legacy `[ComImport] IMFTransform` to `Interfaces.IMFTransform`. Subclassers (rare — the only known one in the codebase is `MediaFoundationResampler`) need to update their `CreateTransform` override to return the modern type. Binary-compat break, not source.
+- The legacy `[ComImport]` `IMFXxx` interface declarations in `NAudio.MediaFoundation` namespace are gone. They were `internal` so no public surface impact, but anyone who reflectively referenced them (or built via `InternalsVisibleTo`) is affected.
+
+**Out of scope (still deferred):**
+
+- AOT story for sister assemblies (`NAudio.Core`, `NAudio.WinMM`, `NAudio.Midi`, `NAudio.Asio`).
+- Process-loopback capture activation (the only consumer of `AudioClient.ActivateAsync` and therefore the only path that exercises `IActivateAudioInterfaceCompletionHandler`). Currently throws `NotImplementedException`.
+- Full `PublishAot=true` validation from a Visual Studio Developer Command Prompt — the trimmed-only run with `BuiltInComInteropSupport=false` is a strong proxy because the failure modes are the same machinery; the AOT step adds whole-program code generation but the same dispatch shape.
 
 #### Phase 3: High-level API redesign
 

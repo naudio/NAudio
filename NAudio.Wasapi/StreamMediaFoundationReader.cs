@@ -3,7 +3,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 using NAudio.MediaFoundation;
-using Interfaces = NAudio.MediaFoundation.Interfaces;
+using NAudio.MediaFoundation.Interfaces;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave
@@ -27,7 +27,7 @@ namespace NAudio.Wave
         /// <summary>
         /// Creates the reader
         /// </summary>
-        private protected override Interfaces.IMFSourceReader CreateReader(MediaFoundationReaderSettings settings)
+        private protected override IMFSourceReader CreateReader(MediaFoundationReaderSettings settings)
         {
             var (byteStreamPtr, byteStreamRcw) = MediaFoundationApi.CreateByteStream(new ComStream(stream));
             try

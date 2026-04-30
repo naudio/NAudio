@@ -4,7 +4,7 @@ using System.Runtime.InteropServices.Marshalling;
 using NAudio.Dmo.Interfaces;
 using NAudio.MediaFoundation;
 using NAudio.Wasapi.CoreAudioApi;
-using Interfaces = NAudio.MediaFoundation.Interfaces;
+using NAudio.MediaFoundation.Interfaces;
 
 namespace NAudio.Wave
 {
@@ -64,15 +64,14 @@ namespace NAudio.Wave
         /// Creates and configures the actual Resampler transform
         /// </summary>
         /// <returns>A newly created and configured resampler MFT</returns>
-        private protected override Interfaces.IMFTransform CreateTransform()
+        private protected override IMFTransform CreateTransform()
         {
-            // Activate via raw CoCreateInstance, then project IMFTransform via the legacy
-            // COM marshaller (Step 4 will switch this to ComWrappers) and IWMResamplerProps
-            // via the modern ComWrappers path. Both views share the same underlying COM object.
+            // Activate via raw CoCreateInstance, then project IMFTransform and
+            // IWMResamplerProps via ComWrappers. Both views share the same underlying COM object.
             IntPtr unknown = ComActivation.CoCreateInstance(ResamplerClsid, ComActivation.IID_IUnknown);
             try
             {
-                var resamplerTransform = (Interfaces.IMFTransform)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                var resamplerTransform = (IMFTransform)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
                     unknown, CreateObjectFlags.UniqueInstance);
 
                 using (var inputMediaFormat = new MediaType(sourceProvider.WaveFormat))

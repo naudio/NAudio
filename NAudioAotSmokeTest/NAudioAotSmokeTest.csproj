@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
+    <RootNamespace>NAudioAotSmokeTest</RootNamespace>
+    <AssemblyName>NAudioAotSmokeTest</AssemblyName>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PublishAot>true</PublishAot>
+    <IsAotCompatible>true</IsAotCompatible>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <!-- Surface every trim/AOT warning rather than the per-assembly summary IL2104, so
+         a regression that introduces e.g. a reflection-based vtable lookup or a new
+         [RequiresUnreferencedCode] call against NAudio.Wasapi or NAudio.Core fails
+         CI loudly with the offending symbol named. -->
+    <TrimmerSingleWarn>false</TrimmerSingleWarn>
+    <!-- The whole point of this project is to act as a CI canary for trim/AOT
+         regressions in the source-generated COM bridging. Treat the warnings as
+         errors so a Phase 2-era regression breaks the PR build immediately. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- Phase 2e migrated CoreAudio activation off [ComImport] coclasses, and Phase 2f
+         migrated the seven callback interfaces. Run without built-in COM interop so the
+         smoke verifies the source-generated CCW/RCW path stands on its own. -->
+    <BuiltInComInteropSupport>false</BuiltInComInteropSupport>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NAudio.Wasapi\NAudio.Wasapi.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Treat NAudio.* as trimmable so the trim analyzer reports IL2026/IL2046/etc. against
+         them by symbol, rather than collapsing each assembly into a single IL2104. -->
+    <TrimmableAssembly Include="NAudio.Wasapi" />
+    <TrimmableAssembly Include="NAudio.Core" />
+  </ItemGroup>
+
+</Project>

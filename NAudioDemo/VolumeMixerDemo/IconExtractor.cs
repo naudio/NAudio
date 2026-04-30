@@ -11,12 +11,14 @@ namespace NAudioDemo.VolumeMixerDemo
     {
         public static Icon Extract(string file, int number, bool largeIcon)
         {
-            IntPtr large;
-            IntPtr small;
-            ExtractIconEx(file, number, out large, out small, 1);
+            if (ExtractIconEx(file, number, out IntPtr large, out IntPtr small, 1) <= 0)
+                return null;
             try
             {
-                return Icon.FromHandle(largeIcon ? large : small);
+                var wanted = largeIcon ? large : small;
+                var unused = largeIcon ? small : large;
+                if (unused != IntPtr.Zero) DestroyIcon(unused);
+                return wanted == IntPtr.Zero ? null : Icon.FromHandle(wanted);
             }
             catch
             {
@@ -26,5 +28,8 @@ namespace NAudioDemo.VolumeMixerDemo
 
         [DllImport("Shell32.dll")]
         private static extern int ExtractIconEx(string sFile, int iIndex, out IntPtr piLargeVersion, out IntPtr piSmallVersion, int amountIcons);
+
+        [DllImport("User32.dll")]
+        private static extern bool DestroyIcon(IntPtr hIcon);
     }
 }

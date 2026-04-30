@@ -30,6 +30,13 @@ namespace NAudio.MediaFoundation
         internal Interfaces.IMFMediaBuffer NativeInterface => bufferInterface;
 
         /// <summary>
+        /// True until <see cref="Dispose()"/> nulls out the underlying COM interface.
+        /// Used by <see cref="MediaBufferLease"/> to no-op its <c>Unlock</c> if the
+        /// owning buffer was disposed before the lease (which would otherwise NRE).
+        /// </summary>
+        internal bool IsAlive => bufferInterface != null;
+
+        /// <summary>
         /// Locks the buffer and returns a lease providing Span access.
         /// Must be disposed to unlock the buffer.
         /// </summary>
@@ -139,14 +146,20 @@ namespace NAudio.MediaFoundation
         }
 
         /// <summary>
-        /// Unlocks the buffer.
+        /// Unlocks the buffer. Tolerates two forms of misuse:
+        /// (1) double-dispose of the lease — owner is captured + nulled atomically so
+        ///     the second call is a no-op;
+        /// (2) the owning <see cref="MfMediaBuffer"/> being disposed before the lease —
+        ///     the IsAlive check skips Unlock because the COM object is being torn down
+        ///     anyway and Unlock on a null interface would NullReferenceException.
         /// </summary>
         public void Dispose()
         {
-            if (owner != null)
+            var capturedOwner = owner;
+            owner = null;
+            if (capturedOwner != null && capturedOwner.IsAlive)
             {
-                owner.Unlock();
-                owner = null;
+                capturedOwner.Unlock();
             }
         }
     }

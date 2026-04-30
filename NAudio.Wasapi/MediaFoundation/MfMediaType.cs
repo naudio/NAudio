@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 
 namespace NAudio.MediaFoundation
 {
@@ -174,7 +175,11 @@ namespace NAudio.MediaFoundation
         /// </summary>
         public void Dispose()
         {
-            mediaTypeInterface = null;
+            if (mediaTypeInterface != null)
+            {
+                ((ComObject)(object)mediaTypeInterface).FinalRelease();
+                mediaTypeInterface = null;
+            }
             if (nativePointer != IntPtr.Zero)
             {
                 Marshal.Release(nativePointer);

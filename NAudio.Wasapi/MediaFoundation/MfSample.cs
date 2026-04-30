@@ -1,5 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
+using NAudio.Wasapi.CoreAudioApi;
 
 namespace NAudio.MediaFoundation
 {
@@ -93,7 +95,8 @@ namespace NAudio.MediaFoundation
         public MfMediaBuffer GetBufferByIndex(int index)
         {
             MediaFoundationException.ThrowIfFailed(sampleInterface.GetBufferByIndex(index, out var bufferPtr));
-            var bufferInterface = (Interfaces.IMFMediaBuffer)Marshal.GetObjectForIUnknown(bufferPtr);
+            var bufferInterface = (Interfaces.IMFMediaBuffer)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                bufferPtr, CreateObjectFlags.UniqueInstance);
             return new MfMediaBuffer(bufferInterface, bufferPtr);
         }
 
@@ -113,7 +116,8 @@ namespace NAudio.MediaFoundation
         public MfMediaBuffer ConvertToContiguousBuffer()
         {
             MediaFoundationException.ThrowIfFailed(sampleInterface.ConvertToContiguousBuffer(out var bufferPtr));
-            var bufferInterface = (Interfaces.IMFMediaBuffer)Marshal.GetObjectForIUnknown(bufferPtr);
+            var bufferInterface = (Interfaces.IMFMediaBuffer)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                bufferPtr, CreateObjectFlags.UniqueInstance);
             return new MfMediaBuffer(bufferInterface, bufferPtr);
         }
 
@@ -148,7 +152,11 @@ namespace NAudio.MediaFoundation
         /// </summary>
         public void Dispose()
         {
-            sampleInterface = null;
+            if (sampleInterface != null)
+            {
+                ((ComObject)(object)sampleInterface).FinalRelease();
+                sampleInterface = null;
+            }
             if (nativePointer != IntPtr.Zero)
             {
                 Marshal.Release(nativePointer);

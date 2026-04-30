@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.InteropServices;
 
 namespace NAudio.MediaFoundation
@@ -18,19 +19,20 @@ namespace NAudio.MediaFoundation
         /// <remarks>dwStreamID</remarks>
         public int StreamId;
         /// <summary>
-        /// Pointer to the IMFSample interface.
+        /// Pointer to the IMFSample interface (raw COM IUnknown*).
         /// </summary>
         /// <remarks>pSample</remarks>
-        public IMFSample Sample;
+        public IntPtr Sample;
         /// <summary>
         /// Before calling ProcessOutput, set this member to zero.
         /// </summary>
         /// <remarks>dwStatus</remarks>
         public MftOutputDataBufferFlags Status;
         /// <summary>
-        /// Before calling ProcessOutput, set this member to null.
+        /// Pointer to an IMFCollection of MF_EVENT objects (raw COM IUnknown*).
+        /// Before calling ProcessOutput, set to IntPtr.Zero.
         /// </summary>
         /// <remarks>pEvents</remarks>
-        public IMFCollection Events;
+        public IntPtr Events;
     }
 }

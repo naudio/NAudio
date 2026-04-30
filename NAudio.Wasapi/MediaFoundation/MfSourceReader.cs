@@ -1,5 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
+using NAudio.Wasapi.CoreAudioApi;
 
 namespace NAudio.MediaFoundation
 {
@@ -47,7 +49,7 @@ namespace NAudio.MediaFoundation
         public MfMediaType GetNativeMediaType(int streamIndex, int mediaTypeIndex)
         {
             MediaFoundationException.ThrowIfFailed(readerInterface.GetNativeMediaType(streamIndex, mediaTypeIndex, out var mediaTypePtr));
-            var mediaTypeInterface = (Interfaces.IMFMediaType)Marshal.GetObjectForIUnknown(mediaTypePtr);
+            var mediaTypeInterface = (Interfaces.IMFMediaType)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(mediaTypePtr, CreateObjectFlags.UniqueInstance);
             return new MfMediaType(mediaTypeInterface, mediaTypePtr);
         }
 
@@ -59,7 +61,7 @@ namespace NAudio.MediaFoundation
         public MfMediaType GetCurrentMediaType(int streamIndex)
         {
             MediaFoundationException.ThrowIfFailed(readerInterface.GetCurrentMediaType(streamIndex, out var mediaTypePtr));
-            var mediaTypeInterface = (Interfaces.IMFMediaType)Marshal.GetObjectForIUnknown(mediaTypePtr);
+            var mediaTypeInterface = (Interfaces.IMFMediaType)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(mediaTypePtr, CreateObjectFlags.UniqueInstance);
             return new MfMediaType(mediaTypeInterface, mediaTypePtr);
         }
 
@@ -109,7 +111,7 @@ namespace NAudio.MediaFoundation
             streamFlags = (SourceReaderFlags)flags;
             if (samplePtr == IntPtr.Zero)
                 return null;
-            var sampleInterface = (Interfaces.IMFSample)Marshal.GetObjectForIUnknown(samplePtr);
+            var sampleInterface = (Interfaces.IMFSample)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(samplePtr, CreateObjectFlags.UniqueInstance);
             return new MfSample(sampleInterface, samplePtr);
         }
 
@@ -127,7 +129,11 @@ namespace NAudio.MediaFoundation
         /// </summary>
         public void Dispose()
         {
-            readerInterface = null;
+            if (readerInterface != null)
+            {
+                ((ComObject)(object)readerInterface).FinalRelease();
+                readerInterface = null;
+            }
             if (nativePointer != IntPtr.Zero)
             {
                 Marshal.Release(nativePointer);

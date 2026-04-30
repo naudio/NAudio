@@ -1,8 +1,10 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
+using NAudio.Dmo.Interfaces;
 using NAudio.MediaFoundation;
 using NAudio.Wasapi.CoreAudioApi;
+using Interfaces = NAudio.MediaFoundation.Interfaces;
 
 namespace NAudio.Wave
 {
@@ -62,28 +64,30 @@ namespace NAudio.Wave
         /// Creates and configures the actual Resampler transform
         /// </summary>
         /// <returns>A newly created and configured resampler MFT</returns>
-        private protected override IMFTransform CreateTransform()
+        private protected override Interfaces.IMFTransform CreateTransform()
         {
             // Activate via raw CoCreateInstance, then project IMFTransform via the legacy
-            // COM marshaller (MediaFoundationTransform.transform is still typed as the
-            // legacy [ComImport] IMFTransform) and IWMResamplerProps via the modern
-            // ComWrappers path. Both views share the same underlying COM object.
+            // COM marshaller (Step 4 will switch this to ComWrappers) and IWMResamplerProps
+            // via the modern ComWrappers path. Both views share the same underlying COM object.
             IntPtr unknown = ComActivation.CoCreateInstance(ResamplerClsid, ComActivation.IID_IUnknown);
             try
             {
-                var resamplerTransform = (IMFTransform)Marshal.GetObjectForIUnknown(unknown);
+                var resamplerTransform = (Interfaces.IMFTransform)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    unknown, CreateObjectFlags.UniqueInstance);
 
                 using (var inputMediaFormat = new MediaType(sourceProvider.WaveFormat))
                 {
-                    resamplerTransform.SetInputType(0, inputMediaFormat.MediaFoundationObject, 0);
+                    MediaFoundationException.ThrowIfFailed(
+                        resamplerTransform.SetInputType(0, inputMediaFormat.MediaFoundationObject, 0));
                 }
 
                 using (var outputMediaFormat = new MediaType(outputWaveFormat))
                 {
-                    resamplerTransform.SetOutputType(0, outputMediaFormat.MediaFoundationObject, 0);
+                    MediaFoundationException.ThrowIfFailed(
+                        resamplerTransform.SetOutputType(0, outputMediaFormat.MediaFoundationObject, 0));
                 }
 
-                var props = (NAudio.Dmo.Interfaces.IWMResamplerProps)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                var props = (IWMResamplerProps)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
                     unknown, CreateObjectFlags.UniqueInstance);
                 try
                 {
@@ -110,11 +114,11 @@ namespace NAudio.Wave
         public int ResamplerQuality
         {
             get { return resamplerQuality; }
-            set 
-            { 
+            set
+            {
                 if (value < 1 || value > 60)
                     throw new ArgumentOutOfRangeException(nameof(value), "Resampler Quality must be between 1 and 60");
-                resamplerQuality = value; 
+                resamplerQuality = value;
             }
         }
 

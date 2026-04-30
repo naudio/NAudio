@@ -1,5 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
+using NAudio.Wasapi.CoreAudioApi;
 
 namespace NAudio.MediaFoundation
 {
@@ -41,7 +43,8 @@ namespace NAudio.MediaFoundation
         {
             var iid = new Guid("bf94c121-5b05-4e6f-8000-ba598961414d"); // IID_IMFTransform
             MediaFoundationException.ThrowIfFailed(activateInterface.ActivateObject(iid, out var ppv));
-            var transformInterface = (Interfaces.IMFTransform)Marshal.GetObjectForIUnknown(ppv);
+            var transformInterface = (Interfaces.IMFTransform)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                ppv, CreateObjectFlags.UniqueInstance);
             return new MfTransform(transformInterface, ppv);
         }
 
@@ -154,7 +157,11 @@ namespace NAudio.MediaFoundation
         /// </summary>
         public void Dispose()
         {
-            activateInterface = null;
+            if (activateInterface != null)
+            {
+                ((ComObject)(object)activateInterface).FinalRelease();
+                activateInterface = null;
+            }
             if (nativePointer != IntPtr.Zero)
             {
                 Marshal.Release(nativePointer);

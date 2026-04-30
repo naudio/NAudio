@@ -1,5 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
+using NAudio.Wasapi.CoreAudioApi;
 
 namespace NAudio.MediaFoundation
 {
@@ -75,7 +77,7 @@ namespace NAudio.MediaFoundation
         public MfMediaType GetInputAvailableType(int inputStreamId, int typeIndex)
         {
             MediaFoundationException.ThrowIfFailed(transformInterface.GetInputAvailableType(inputStreamId, typeIndex, out var mediaTypePtr));
-            var mediaTypeInterface = (Interfaces.IMFMediaType)Marshal.GetObjectForIUnknown(mediaTypePtr);
+            var mediaTypeInterface = (Interfaces.IMFMediaType)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(mediaTypePtr, CreateObjectFlags.UniqueInstance);
             return new MfMediaType(mediaTypeInterface, mediaTypePtr);
         }
 
@@ -88,7 +90,7 @@ namespace NAudio.MediaFoundation
         public MfMediaType GetOutputAvailableType(int outputStreamId, int typeIndex)
         {
             MediaFoundationException.ThrowIfFailed(transformInterface.GetOutputAvailableType(outputStreamId, typeIndex, out var mediaTypePtr));
-            var mediaTypeInterface = (Interfaces.IMFMediaType)Marshal.GetObjectForIUnknown(mediaTypePtr);
+            var mediaTypeInterface = (Interfaces.IMFMediaType)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(mediaTypePtr, CreateObjectFlags.UniqueInstance);
             return new MfMediaType(mediaTypeInterface, mediaTypePtr);
         }
 
@@ -122,7 +124,7 @@ namespace NAudio.MediaFoundation
         public MfMediaType GetInputCurrentType(int inputStreamId)
         {
             MediaFoundationException.ThrowIfFailed(transformInterface.GetInputCurrentType(inputStreamId, out var mediaTypePtr));
-            var mediaTypeInterface = (Interfaces.IMFMediaType)Marshal.GetObjectForIUnknown(mediaTypePtr);
+            var mediaTypeInterface = (Interfaces.IMFMediaType)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(mediaTypePtr, CreateObjectFlags.UniqueInstance);
             return new MfMediaType(mediaTypeInterface, mediaTypePtr);
         }
 
@@ -134,7 +136,7 @@ namespace NAudio.MediaFoundation
         public MfMediaType GetOutputCurrentType(int outputStreamId)
         {
             MediaFoundationException.ThrowIfFailed(transformInterface.GetOutputCurrentType(outputStreamId, out var mediaTypePtr));
-            var mediaTypeInterface = (Interfaces.IMFMediaType)Marshal.GetObjectForIUnknown(mediaTypePtr);
+            var mediaTypeInterface = (Interfaces.IMFMediaType)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(mediaTypePtr, CreateObjectFlags.UniqueInstance);
             return new MfMediaType(mediaTypeInterface, mediaTypePtr);
         }
 
@@ -197,7 +199,11 @@ namespace NAudio.MediaFoundation
         /// </summary>
         public void Dispose()
         {
-            transformInterface = null;
+            if (transformInterface != null)
+            {
+                ((ComObject)(object)transformInterface).FinalRelease();
+                transformInterface = null;
+            }
             if (nativePointer != IntPtr.Zero)
             {
                 Marshal.Release(nativePointer);

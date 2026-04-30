@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
+using System.Runtime.InteropServices.Marshalling;
+using NAudio.Wasapi.CoreAudioApi;
 using NAudio.Wave;
 
 namespace NAudio.MediaFoundation
@@ -37,7 +39,8 @@ namespace NAudio.MediaFoundation
             for (int n = 0; n < interfaceCount; n++)
             {
                 var ptr = Marshal.ReadIntPtr(interfacesPointer + n * nint.Size);
-                var iface = (Interfaces.IMFActivate)Marshal.GetObjectForIUnknown(ptr);
+                var iface = (Interfaces.IMFActivate)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    ptr, CreateObjectFlags.UniqueInstance);
                 activates[n] = new MfActivate(iface, ptr);
             }
 
@@ -61,113 +64,150 @@ namespace NAudio.MediaFoundation
         }
 
         /// <summary>
-        /// Creates a Media type
+        /// Creates a Media type. Returns both the raw COM pointer (for passing to native APIs that
+        /// take an IntPtr-typed IMFMediaType, e.g. <c>IMFTransform::SetInputType</c>) and the
+        /// source-generated RCW (for typed attribute reads). Caller owns both refs and must release
+        /// both: <c>((ComObject)(object)Rcw).FinalRelease(); Marshal.Release(Ptr);</c>.
         /// </summary>
-        internal static IMFMediaType CreateMediaType()
+        internal static (IntPtr Ptr, Interfaces.IMFMediaType Rcw) CreateMediaType()
         {
-            MediaFoundationInterop.MFCreateMediaType(out IMFMediaType mediaType);
-            return mediaType;
+            MediaFoundationInterop.MFCreateMediaType(out var ptr);
+            var rcw = (Interfaces.IMFMediaType)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                ptr, CreateObjectFlags.UniqueInstance);
+            return (ptr, rcw);
         }
 
         /// <summary>
         /// Creates a media type from a WaveFormat
         /// </summary>
-        internal static IMFMediaType CreateMediaTypeFromWaveFormat(WaveFormat waveFormat)
+        internal static (IntPtr Ptr, Interfaces.IMFMediaType Rcw) CreateMediaTypeFromWaveFormat(WaveFormat waveFormat)
         {
-            var mediaType = CreateMediaType();
+            var (ptr, rcw) = CreateMediaType();
             try
             {
-                MediaFoundationInterop.MFInitMediaTypeFromWaveFormatEx(mediaType, waveFormat, Marshal.SizeOf(waveFormat));
+                MediaFoundationInterop.MFInitMediaTypeFromWaveFormatEx(ptr, waveFormat, Marshal.SizeOf(waveFormat));
+                return (ptr, rcw);
             }
-            catch (Exception)
+            catch
             {
-                Marshal.ReleaseComObject(mediaType);
+                if (rcw != null) ((ComObject)(object)rcw).FinalRelease();
+                Marshal.Release(ptr);
                 throw;
             }
-            return mediaType;
         }
 
         /// <summary>
         /// Creates a memory buffer of the specified size
         /// </summary>
         /// <param name="bufferSize">Memory buffer size in bytes</param>
-        /// <returns>The memory buffer</returns>
-        internal static IMFMediaBuffer CreateMemoryBuffer(int bufferSize)
+        internal static (IntPtr Ptr, Interfaces.IMFMediaBuffer Rcw) CreateMemoryBuffer(int bufferSize)
         {
-            MediaFoundationInterop.MFCreateMemoryBuffer(bufferSize, out IMFMediaBuffer buffer);
-            return buffer;
+            MediaFoundationInterop.MFCreateMemoryBuffer(bufferSize, out var ptr);
+            var rcw = (Interfaces.IMFMediaBuffer)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                ptr, CreateObjectFlags.UniqueInstance);
+            return (ptr, rcw);
         }
 
         /// <summary>
         /// Creates a sample object
         /// </summary>
-        /// <returns>The sample object</returns>
-        internal static IMFSample CreateSample()
+        internal static (IntPtr Ptr, Interfaces.IMFSample Rcw) CreateSample()
         {
-            MediaFoundationInterop.MFCreateSample(out IMFSample sample);
-            return sample;
+            MediaFoundationInterop.MFCreateSample(out var ptr);
+            var rcw = (Interfaces.IMFSample)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                ptr, CreateObjectFlags.UniqueInstance);
+            return (ptr, rcw);
         }
 
         /// <summary>
         /// Creates a new attributes store
         /// </summary>
         /// <param name="initialSize">Initial size</param>
-        /// <returns>The attributes store</returns>
-        internal static IMFAttributes CreateAttributes(int initialSize)
+        internal static (IntPtr Ptr, Interfaces.IMFAttributes Rcw) CreateAttributes(int initialSize)
         {
-            MediaFoundationInterop.MFCreateAttributes(out IMFAttributes attributes, initialSize);
-            return attributes;
+            MediaFoundationInterop.MFCreateAttributes(out var ptr, initialSize);
+            var rcw = (Interfaces.IMFAttributes)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                ptr, CreateObjectFlags.UniqueInstance);
+            return (ptr, rcw);
         }
 
         /// <summary>
-        /// Creates a media foundation byte stream based on a stream object
+        /// Creates a media foundation byte stream wrapping a managed Stream that implements IStream.
         /// </summary>
-        /// <param name="stream">The input stream (must implement IStream)</param>
-        /// <returns>A media foundation byte stream</returns>
-        internal static IMFByteStream CreateByteStream(object stream)
+        /// <param name="stream">Object implementing <see cref="IStream"/> (typically <c>ComStream</c>).</param>
+        internal static (IntPtr Ptr, Interfaces.IMFByteStream Rcw) CreateByteStream(object stream)
         {
-            if (stream is IStream comStream)
+            if (stream is not IStream comStream)
             {
-                MediaFoundationInterop.MFCreateMFByteStreamOnStream(comStream, out var byteStream);
-                return byteStream;
+                throw new ArgumentException("Stream must implement IStream", nameof(stream));
             }
-            throw new ArgumentException("Stream must implement IStream", nameof(stream));
+
+            // Phase 2e' note: this path goes through built-in COM interop because
+            // ComStream implements ComTypes.IStream ([ComImport]). Phase 2e' Step 5
+            // migrates ComStream to [GeneratedComClass] + Phase 2f QI-for-IID.
+            IntPtr unkPtr = Marshal.GetIUnknownForObject(comStream);
+            try
+            {
+                MediaFoundationInterop.MFCreateMFByteStreamOnStream(unkPtr, out var bsPtr);
+                var rcw = (Interfaces.IMFByteStream)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    bsPtr, CreateObjectFlags.UniqueInstance);
+                return (bsPtr, rcw);
+            }
+            finally
+            {
+                Marshal.Release(unkPtr);
+            }
         }
 
         /// <summary>
         /// Creates a source reader based on a byte stream
         /// </summary>
-        /// <param name="byteStream">The byte stream</param>
-        /// <returns>A media foundation source reader</returns>
-        internal static IMFSourceReader CreateSourceReaderFromByteStream(IMFByteStream byteStream)
+        internal static Interfaces.IMFSourceReader CreateSourceReaderFromByteStream(IntPtr byteStreamPtr)
         {
-            MediaFoundationInterop.MFCreateSourceReaderFromByteStream(byteStream, null, out IMFSourceReader reader);
-            return reader;
+            MediaFoundationInterop.MFCreateSourceReaderFromByteStream(byteStreamPtr, IntPtr.Zero, out var ptr);
+            try
+            {
+                return (Interfaces.IMFSourceReader)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    ptr, CreateObjectFlags.UniqueInstance);
+            }
+            finally
+            {
+                Marshal.Release(ptr);
+            }
         }
 
         /// <summary>
         /// Creates a source reader from a URL
         /// </summary>
-        /// <param name="url">The URL or file path</param>
-        /// <param name="attributes">Optional attributes</param>
-        /// <returns>A media foundation source reader</returns>
-        internal static IMFSourceReader CreateSourceReaderFromUrl(string url, IMFAttributes attributes = null)
+        internal static Interfaces.IMFSourceReader CreateSourceReaderFromUrl(string url, IntPtr attributesPtr = default)
         {
-            MediaFoundationInterop.MFCreateSourceReaderFromURL(url, attributes, out IMFSourceReader reader);
-            return reader;
+            MediaFoundationInterop.MFCreateSourceReaderFromURL(url, attributesPtr, out var ptr);
+            try
+            {
+                return (Interfaces.IMFSourceReader)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    ptr, CreateObjectFlags.UniqueInstance);
+            }
+            finally
+            {
+                Marshal.Release(ptr);
+            }
         }
 
         /// <summary>
         /// Creates a sink writer from a URL
         /// </summary>
-        /// <param name="outputUrl">The output URL or file path</param>
-        /// <param name="byteStream">Optional byte stream</param>
-        /// <param name="attributes">Optional attributes</param>
-        /// <returns>A media foundation sink writer</returns>
-        internal static IMFSinkWriter CreateSinkWriterFromUrl(string outputUrl, IMFByteStream byteStream = null, IMFAttributes attributes = null)
+        internal static Interfaces.IMFSinkWriter CreateSinkWriterFromUrl(string outputUrl, IntPtr byteStreamPtr = default, IntPtr attributesPtr = default)
         {
-            MediaFoundationInterop.MFCreateSinkWriterFromURL(outputUrl, byteStream, attributes, out IMFSinkWriter writer);
-            return writer;
+            MediaFoundationInterop.MFCreateSinkWriterFromURL(outputUrl, byteStreamPtr, attributesPtr, out var ptr);
+            try
+            {
+                return (Interfaces.IMFSinkWriter)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    ptr, CreateObjectFlags.UniqueInstance);
+            }
+            finally
+            {
+                Marshal.Release(ptr);
+            }
         }
 
         /// <summary>
@@ -175,12 +215,19 @@ namespace NAudio.MediaFoundation
         /// </summary>
         /// <param name="audioSubType">Audio subtype GUID</param>
         /// <param name="flags">Enumeration flags</param>
-        /// <param name="codecConfig">Optional codec configuration attributes</param>
-        /// <returns>A collection of available output types</returns>
-        internal static IMFCollection GetAudioOutputAvailableTypes(Guid audioSubType, MftEnumFlags flags, IMFAttributes codecConfig = null)
+        /// <param name="codecConfigPtr">Optional codec configuration attributes (IntPtr to IMFAttributes), or IntPtr.Zero.</param>
+        internal static Interfaces.IMFCollection GetAudioOutputAvailableTypes(Guid audioSubType, MftEnumFlags flags, IntPtr codecConfigPtr = default)
         {
-            MediaFoundationInterop.MFTranscodeGetAudioOutputAvailableTypes(audioSubType, flags, codecConfig, out IMFCollection availableTypes);
-            return availableTypes;
+            MediaFoundationInterop.MFTranscodeGetAudioOutputAvailableTypes(audioSubType, flags, codecConfigPtr, out var ptr);
+            try
+            {
+                return (Interfaces.IMFCollection)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    ptr, CreateObjectFlags.UniqueInstance);
+            }
+            finally
+            {
+                Marshal.Release(ptr);
+            }
         }
     }
 }

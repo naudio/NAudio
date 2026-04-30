@@ -1,6 +1,8 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 using NAudio.Utils;
+using NAudio.Wasapi.CoreAudioApi;
 using NAudio.Wave;
 
 namespace NAudio.MediaFoundation
@@ -27,7 +29,7 @@ namespace NAudio.MediaFoundation
         private int outputBufferOffset;
         private int outputBufferCount;
 
-        private IMFTransform transform;
+        private Interfaces.IMFTransform transform;
         private bool disposed;
         private long inputPosition; // in ref-time, so we can timestamp the input samples
         private long outputPosition; // also in ref-time
@@ -61,9 +63,9 @@ namespace NAudio.MediaFoundation
 
         private void InitializeTransformForStreaming()
         {
-            transform.ProcessMessage(MftMessageType.Flush, IntPtr.Zero);
-            transform.ProcessMessage(MftMessageType.NotifyBeginStreaming, IntPtr.Zero);
-            transform.ProcessMessage(MftMessageType.NotifyStartOfStream, IntPtr.Zero);
+            MediaFoundationException.ThrowIfFailed(transform.ProcessMessage((int)MftMessageType.Flush, IntPtr.Zero));
+            MediaFoundationException.ThrowIfFailed(transform.ProcessMessage((int)MftMessageType.NotifyBeginStreaming, IntPtr.Zero));
+            MediaFoundationException.ThrowIfFailed(transform.ProcessMessage((int)MftMessageType.NotifyStartOfStream, IntPtr.Zero));
             initializedForStreaming = true;
         }
 
@@ -72,7 +74,7 @@ namespace NAudio.MediaFoundation
         /// and configure any custom properties in here.
         /// </summary>
         /// <returns>An object implementing IMFTransform</returns>
-        private protected abstract IMFTransform CreateTransform();
+        private protected abstract Interfaces.IMFTransform CreateTransform();
 
         /// <summary>
         /// Disposes this MediaFoundation transform
@@ -81,7 +83,7 @@ namespace NAudio.MediaFoundation
         {
             if (transform != null)
             {
-                Marshal.ReleaseComObject(transform);
+                ((ComObject)(object)transform).FinalRelease();
                 transform = null;
                 initializedForStreaming = false;
             }
@@ -128,8 +130,8 @@ namespace NAudio.MediaFoundation
 
             while (bytesWritten < buffer.Length)
             {
-                var sample = ReadFromSource();
-                if (sample == null)
+                var (samplePtr, sample) = ReadFromSource();
+                if (samplePtr == IntPtr.Zero)
                 {
                     EndStreamAndDrain();
                     bytesWritten += ReadFromOutputBuffer(buffer.Slice(bytesWritten));
@@ -144,11 +146,12 @@ namespace NAudio.MediaFoundation
 
                 try
                 {
-                    transform.ProcessInput(0, sample, 0);
+                    MediaFoundationException.ThrowIfFailed(transform.ProcessInput(0, samplePtr, 0));
                 }
                 finally
                 {
-                    Marshal.ReleaseComObject(sample);
+                    ((ComObject)(object)sample).FinalRelease();
+                    Marshal.Release(samplePtr);
                 }
 
                 ReadFromTransform();
@@ -160,8 +163,8 @@ namespace NAudio.MediaFoundation
 
         private void EndStreamAndDrain()
         {
-            transform.ProcessMessage(MftMessageType.NotifyEndOfStream, IntPtr.Zero);
-            transform.ProcessMessage(MftMessageType.Drain, IntPtr.Zero);
+            MediaFoundationException.ThrowIfFailed(transform.ProcessMessage((int)MftMessageType.NotifyEndOfStream, IntPtr.Zero));
+            MediaFoundationException.ThrowIfFailed(transform.ProcessMessage((int)MftMessageType.Drain, IntPtr.Zero));
             int read;
             do
             {
@@ -169,7 +172,7 @@ namespace NAudio.MediaFoundation
             } while (read > 0);
             inputPosition = 0;
             outputPosition = 0;
-            transform.ProcessMessage(MftMessageType.NotifyEndStreaming, IntPtr.Zero);
+            MediaFoundationException.ThrowIfFailed(transform.ProcessMessage((int)MftMessageType.NotifyEndStreaming, IntPtr.Zero));
             initializedForStreaming = false;
         }
 
@@ -182,26 +185,52 @@ namespace NAudio.MediaFoundation
         private int ReadFromTransform()
         {
             var outputDataBuffer = new MftOutputDataBuffer[1];
-            var sample = MediaFoundationApi.CreateSample();
-            var pBuffer = MediaFoundationApi.CreateMemoryBuffer(outputBuffer.Length);
-            IMFMediaBuffer outputMediaBuffer = null;
+            var (samplePtr, sample) = MediaFoundationApi.CreateSample();
+            var (pBufferPtr, pBuffer) = MediaFoundationApi.CreateMemoryBuffer(outputBuffer.Length);
+            IntPtr returnedSamplePtr = IntPtr.Zero;
+            Interfaces.IMFSample returnedSample = null;
+            bool returnedSampleIsReplacement = false;
+            IntPtr outputMediaBufferPtr = IntPtr.Zero;
+            Interfaces.IMFMediaBuffer outputMediaBuffer = null;
             bool outputBufferLocked = false;
             try
             {
-                sample.AddBuffer(pBuffer);
-                sample.SetSampleTime(outputPosition);
-                outputDataBuffer[0].Sample = sample;
+                MediaFoundationException.ThrowIfFailed(sample.AddBuffer(pBufferPtr));
+                MediaFoundationException.ThrowIfFailed(sample.SetSampleTime(outputPosition));
+                outputDataBuffer[0].Sample = samplePtr;
 
-                var hr = transform.ProcessOutput(MftProcessOutputFlags.None,
-                                                 1, outputDataBuffer, out MftProcessOutputStatus status);
+                int hr;
+                GCHandle handle = GCHandle.Alloc(outputDataBuffer, GCHandleType.Pinned);
+                try
+                {
+                    // Fourth out param is MFT_PROCESS_OUTPUT_STATUS (NewStreams flag); unused here.
+                    // The per-buffer outputDataBuffer[0].Status is updated by the MFT through the
+                    // pinned pointer.
+                    hr = transform.ProcessOutput((int)MftProcessOutputFlags.None,
+                                                 1, handle.AddrOfPinnedObject(), out _);
+                }
+                finally
+                {
+                    handle.Free();
+                }
+
+                returnedSamplePtr = outputDataBuffer[0].Sample;
+                returnedSampleIsReplacement = (returnedSamplePtr != IntPtr.Zero && returnedSamplePtr != samplePtr);
+                returnedSample = returnedSampleIsReplacement
+                    ? (Interfaces.IMFSample)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                        returnedSamplePtr, CreateObjectFlags.UniqueInstance)
+                    : sample;
+
                 if (hr == MediaFoundationErrors.MF_E_TRANSFORM_NEED_MORE_INPUT)
                 {
                     return 0;
                 }
                 MediaFoundationException.ThrowIfFailed(hr);
 
-                outputDataBuffer[0].Sample.ConvertToContiguousBuffer(out outputMediaBuffer);
-                outputMediaBuffer.Lock(out IntPtr pOutputBuffer, out _, out int outputBufferLength);
+                MediaFoundationException.ThrowIfFailed(returnedSample.ConvertToContiguousBuffer(out outputMediaBufferPtr));
+                outputMediaBuffer = (Interfaces.IMFMediaBuffer)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    outputMediaBufferPtr, CreateObjectFlags.UniqueInstance);
+                MediaFoundationException.ThrowIfFailed(outputMediaBuffer.Lock(out IntPtr pOutputBuffer, out _, out int outputBufferLength));
                 outputBufferLocked = true;
                 outputBuffer = BufferHelpers.Ensure(outputBuffer, outputBufferLength);
                 Marshal.Copy(pOutputBuffer, outputBuffer, 0, outputBufferLength);
@@ -216,25 +245,32 @@ namespace NAudio.MediaFoundation
                 {
                     if (outputBufferLocked)
                     {
-                        outputMediaBuffer.Unlock();
+                        MediaFoundationException.ThrowIfFailed(outputMediaBuffer.Unlock());
                     }
-                    Marshal.ReleaseComObject(outputMediaBuffer);
+                    ((ComObject)(object)outputMediaBuffer).FinalRelease();
                 }
-
-                if (outputDataBuffer[0].Events != null)
+                if (outputMediaBufferPtr != IntPtr.Zero)
                 {
-                    Marshal.ReleaseComObject(outputDataBuffer[0].Events);
+                    Marshal.Release(outputMediaBufferPtr);
                 }
 
-                var returnedSample = outputDataBuffer[0].Sample;
-                if (returnedSample != null && !ReferenceEquals(returnedSample, sample))
+                IntPtr eventsPtr = outputDataBuffer[0].Events;
+                if (eventsPtr != IntPtr.Zero)
                 {
-                    Marshal.ReleaseComObject(returnedSample);
+                    Marshal.Release(eventsPtr);
                 }
 
-                sample.RemoveAllBuffers();
-                Marshal.ReleaseComObject(sample);
-                Marshal.ReleaseComObject(pBuffer);
+                if (returnedSampleIsReplacement && returnedSample != null)
+                {
+                    ((ComObject)(object)returnedSample).FinalRelease();
+                    Marshal.Release(returnedSamplePtr);
+                }
+
+                MediaFoundationException.ThrowIfFailed(sample.RemoveAllBuffers());
+                ((ComObject)(object)sample).FinalRelease();
+                Marshal.Release(samplePtr);
+                ((ComObject)(object)pBuffer).FinalRelease();
+                Marshal.Release(pBufferPtr);
             }
         }
 
@@ -243,37 +279,38 @@ namespace NAudio.MediaFoundation
             return (10000000L * bytes) / waveFormat.AverageBytesPerSecond;
         }
 
-        private IMFSample ReadFromSource()
+        private (IntPtr Ptr, Interfaces.IMFSample Rcw) ReadFromSource()
         {
             int bytesRead = sourceProvider.Read(sourceBuffer.AsSpan());
-            if (bytesRead == 0) return null;
+            if (bytesRead == 0) return (IntPtr.Zero, null);
 
-            var mediaBuffer = MediaFoundationApi.CreateMemoryBuffer(bytesRead);
+            var (mediaBufferPtr, mediaBuffer) = MediaFoundationApi.CreateMemoryBuffer(bytesRead);
             bool bufferLocked = false;
             try
             {
-                mediaBuffer.Lock(out IntPtr pBuffer, out _, out _);
+                MediaFoundationException.ThrowIfFailed(mediaBuffer.Lock(out IntPtr pBuffer, out _, out _));
                 bufferLocked = true;
                 Marshal.Copy(sourceBuffer, 0, pBuffer, bytesRead);
-                mediaBuffer.Unlock();
+                MediaFoundationException.ThrowIfFailed(mediaBuffer.Unlock());
                 bufferLocked = false;
-                mediaBuffer.SetCurrentLength(bytesRead);
+                MediaFoundationException.ThrowIfFailed(mediaBuffer.SetCurrentLength(bytesRead));
 
-                var sample = MediaFoundationApi.CreateSample();
-                sample.AddBuffer(mediaBuffer);
-                sample.SetSampleTime(inputPosition);
+                var (samplePtr, sample) = MediaFoundationApi.CreateSample();
+                MediaFoundationException.ThrowIfFailed(sample.AddBuffer(mediaBufferPtr));
+                MediaFoundationException.ThrowIfFailed(sample.SetSampleTime(inputPosition));
                 long duration = BytesToNsPosition(bytesRead, sourceProvider.WaveFormat);
-                sample.SetSampleDuration(duration);
+                MediaFoundationException.ThrowIfFailed(sample.SetSampleDuration(duration));
                 inputPosition += duration;
-                return sample;
+                return (samplePtr, sample);
             }
             finally
             {
                 if (bufferLocked)
                 {
-                    mediaBuffer.Unlock();
+                    MediaFoundationException.ThrowIfFailed(mediaBuffer.Unlock());
                 }
-                Marshal.ReleaseComObject(mediaBuffer);
+                ((ComObject)(object)mediaBuffer).FinalRelease();
+                Marshal.Release(mediaBufferPtr);
             }
         }
 

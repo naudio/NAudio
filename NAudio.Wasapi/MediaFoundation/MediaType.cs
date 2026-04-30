@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 using NAudio.Utils;
 using NAudio.Wave;
 
@@ -11,15 +12,18 @@ namespace NAudio.MediaFoundation
     /// </summary>
     public class MediaType : IDisposable
     {
-        private readonly IMFMediaType mediaType;
+        private Interfaces.IMFMediaType mediaType;
+        private IntPtr nativePointer;
 
         /// <summary>
-        /// Wraps an existing IMFMediaType object
+        /// Wraps an existing IMFMediaType object. Caller transfers ownership of both refs.
         /// </summary>
-        /// <param name="mediaType">The IMFMediaType object</param>
-        internal MediaType(IMFMediaType mediaType)
+        /// <param name="ptr">The native COM pointer (one ref).</param>
+        /// <param name="rcw">The source-generated RCW for the same object (one ref).</param>
+        internal MediaType(IntPtr ptr, Interfaces.IMFMediaType rcw)
         {
-            this.mediaType = mediaType;
+            this.nativePointer = ptr;
+            this.mediaType = rcw;
         }
 
         /// <summary>
@@ -27,7 +31,7 @@ namespace NAudio.MediaFoundation
         /// </summary>
         public MediaType()
         {
-            mediaType = MediaFoundationApi.CreateMediaType();
+            (nativePointer, mediaType) = MediaFoundationApi.CreateMediaType();
         }
 
         /// <summary>
@@ -36,18 +40,18 @@ namespace NAudio.MediaFoundation
         /// <param name="waveFormat">WaveFormat</param>
         public MediaType(WaveFormat waveFormat)
         {
-            mediaType = MediaFoundationApi.CreateMediaTypeFromWaveFormat(waveFormat);
+            (nativePointer, mediaType) = MediaFoundationApi.CreateMediaTypeFromWaveFormat(waveFormat);
         }
 
         private int GetUInt32(Guid key)
         {
-            mediaType.GetUINT32(key, out int value);
+            MediaFoundationException.ThrowIfFailed(mediaType.GetUINT32(key, out int value));
             return value;
         }
 
         private Guid GetGuid(Guid key)
         {
-            mediaType.GetGUID(key, out Guid value);
+            MediaFoundationException.ThrowIfFailed(mediaType.GetGUID(key, out Guid value));
             return value;
         }
 
@@ -56,26 +60,16 @@ namespace NAudio.MediaFoundation
         /// </summary>
         public int TryGetUInt32(Guid key, int defaultValue = -1)
         {
-            int intValue = defaultValue;
-            try
+            int hr = mediaType.GetUINT32(key, out int intValue);
+            if (hr == MediaFoundationErrors.MF_E_ATTRIBUTENOTFOUND)
             {
-                mediaType.GetUINT32(key, out intValue);
+                return defaultValue;
             }
-            catch (COMException exception)
+            if (hr == MediaFoundationErrors.MF_E_INVALIDTYPE)
             {
-                if (exception.GetHResult() == MediaFoundationErrors.MF_E_ATTRIBUTENOTFOUND)
-                {
-                    // not a problem, return the default
-                }
-                else if (exception.GetHResult() == MediaFoundationErrors.MF_E_INVALIDTYPE)
-                {
-                    throw new ArgumentException("Not a UINT32 parameter");
-                }
-                else
-                {
-                    throw;
-                }
+                throw new ArgumentException("Not a UINT32 parameter");
             }
+            MediaFoundationException.ThrowIfFailed(hr);
             return intValue;
         }
 
@@ -84,7 +78,7 @@ namespace NAudio.MediaFoundation
         /// </summary>
         public void SetUInt32(Guid key, int value)
         {
-            mediaType.SetUINT32(key, value);
+            MediaFoundationException.ThrowIfFailed(mediaType.SetUINT32(key, value));
         }
 
         /// <summary>
@@ -93,7 +87,7 @@ namespace NAudio.MediaFoundation
         public int SampleRate
         {
             get { return GetUInt32(MediaFoundationAttributes.MF_MT_AUDIO_SAMPLES_PER_SECOND); }
-            set { mediaType.SetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_SAMPLES_PER_SECOND, value); }
+            set { SetUInt32(MediaFoundationAttributes.MF_MT_AUDIO_SAMPLES_PER_SECOND, value); }
         }
 
         /// <summary>
@@ -102,7 +96,7 @@ namespace NAudio.MediaFoundation
         public int ChannelCount
         {
             get { return GetUInt32(MediaFoundationAttributes.MF_MT_AUDIO_NUM_CHANNELS); }
-            set { mediaType.SetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_NUM_CHANNELS, value); }
+            set { SetUInt32(MediaFoundationAttributes.MF_MT_AUDIO_NUM_CHANNELS, value); }
         }
 
         /// <summary>
@@ -111,7 +105,7 @@ namespace NAudio.MediaFoundation
         public int BitsPerSample
         {
             get { return GetUInt32(MediaFoundationAttributes.MF_MT_AUDIO_BITS_PER_SAMPLE); }
-            set { mediaType.SetUINT32(MediaFoundationAttributes.MF_MT_AUDIO_BITS_PER_SAMPLE, value); }
+            set { SetUInt32(MediaFoundationAttributes.MF_MT_AUDIO_BITS_PER_SAMPLE, value); }
         }
 
         /// <summary>
@@ -128,7 +122,7 @@ namespace NAudio.MediaFoundation
         public Guid SubType
         {
             get { return GetGuid(MediaFoundationAttributes.MF_MT_SUBTYPE); }
-            set { mediaType.SetGUID(MediaFoundationAttributes.MF_MT_SUBTYPE, value); }
+            set { MediaFoundationException.ThrowIfFailed(mediaType.SetGUID(MediaFoundationAttributes.MF_MT_SUBTYPE, value)); }
         }
 
         /// <summary>
@@ -137,7 +131,7 @@ namespace NAudio.MediaFoundation
         public Guid MajorType
         {
             get { return GetGuid(MediaFoundationAttributes.MF_MT_MAJOR_TYPE); }
-            set { mediaType.SetGUID(MediaFoundationAttributes.MF_MT_MAJOR_TYPE, value); }
+            set { MediaFoundationException.ThrowIfFailed(mediaType.SetGUID(MediaFoundationAttributes.MF_MT_MAJOR_TYPE, value)); }
         }
 
         /// <summary>
@@ -147,7 +141,7 @@ namespace NAudio.MediaFoundation
         {
             get
             {
-                mediaType.GetCount(out int count);
+                MediaFoundationException.ThrowIfFailed(mediaType.GetCount(out int count));
                 return count;
             }
         }
@@ -160,14 +154,16 @@ namespace NAudio.MediaFoundation
         /// <param name="valuePtr">Receives the attribute value as a PropVariant. Caller must free with PropVariant.Clear.</param>
         public void GetAttributeByIndex(int index, out Guid key, IntPtr valuePtr)
         {
-            mediaType.GetItemByIndex(index, out key, valuePtr);
+            MediaFoundationException.ThrowIfFailed(mediaType.GetItemByIndex(index, out key, valuePtr));
         }
 
         /// <summary>
-        /// Access to the underlying IMFMediaType COM object.
+        /// Native COM pointer for the underlying IMFMediaType, for passing to APIs that take an
+        /// IntPtr-typed media-type parameter (e.g. <c>IMFTransform::SetInputType</c>,
+        /// <c>IMFSourceReader::SetCurrentMediaType</c>, <c>IMFSinkWriter::AddStream</c>).
         /// For internal use - callers should use the wrapper properties instead.
         /// </summary>
-        internal IMFMediaType MediaFoundationObject => mediaType;
+        internal IntPtr MediaFoundationObject => nativePointer;
 
         /// <summary>
         /// Releases the underlying COM object.
@@ -176,7 +172,13 @@ namespace NAudio.MediaFoundation
         {
             if (mediaType != null)
             {
-                Marshal.ReleaseComObject(mediaType);
+                ((ComObject)(object)mediaType).FinalRelease();
+                mediaType = null;
+            }
+            if (nativePointer != IntPtr.Zero)
+            {
+                Marshal.Release(nativePointer);
+                nativePointer = IntPtr.Zero;
             }
             GC.SuppressFinalize(this);
         }

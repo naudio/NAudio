@@ -1,11 +1,14 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
+using System.Runtime.InteropServices.Marshalling;
 using NAudio.MediaFoundation;
 using NAudio.Utils;
+using NAudio.Wasapi.CoreAudioApi;
+using Interfaces = NAudio.MediaFoundation.Interfaces;
 
 namespace NAudio.Wave
 {
@@ -33,14 +36,14 @@ namespace NAudio.Wave
         }
 
         /// <summary>
-        /// Gets all the available media types for a particular 
+        /// Gets all the available media types for a particular
         /// </summary>
         /// <param name="audioSubtype">Audio subtype - a value from the AudioSubtypes class</param>
         /// <returns>An array of available media types that can be encoded with this subtype</returns>
         public static MediaType[] GetOutputMediaTypes(Guid audioSubtype)
         {
             MediaFoundationApi.Startup();
-            IMFCollection availableTypes;
+            Interfaces.IMFCollection availableTypes;
             try
             {
                 availableTypes = MediaFoundationApi.GetAudioOutputAvailableTypes(
@@ -58,16 +61,23 @@ namespace NAudio.Wave
                     throw;
                 }
             }
-            availableTypes.GetElementCount(out int count);
-            var mediaTypes = new List<MediaType>(count);
-            for (int n = 0; n < count; n++)
+            try
             {
-                availableTypes.GetElement(n, out object mediaTypeObject);
-                var mediaType = (IMFMediaType)mediaTypeObject;
-                mediaTypes.Add(new MediaType(mediaType));
+                MediaFoundationException.ThrowIfFailed(availableTypes.GetElementCount(out int count));
+                var mediaTypes = new List<MediaType>(count);
+                for (int n = 0; n < count; n++)
+                {
+                    MediaFoundationException.ThrowIfFailed(availableTypes.GetElement(n, out IntPtr mediaTypePtr));
+                    var mediaTypeRcw = (Interfaces.IMFMediaType)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                        mediaTypePtr, CreateObjectFlags.UniqueInstance);
+                    mediaTypes.Add(new MediaType(mediaTypePtr, mediaTypeRcw));
+                }
+                return mediaTypes.ToArray();
             }
-            Marshal.ReleaseComObject(availableTypes);
-            return mediaTypes.ToArray();
+            finally
+            {
+                ((ComObject)(object)availableTypes).FinalRelease();
+            }
         }
 
         /// <summary>
@@ -219,13 +229,15 @@ namespace NAudio.Wave
             var writer = CreateSinkWriter(outputFile);
             try
             {
-                writer.AddStream(outputMediaType.MediaFoundationObject, out int streamIndex);
-                writer.SetInputMediaType(streamIndex, inputMediaType.MediaFoundationObject, null);
+                MediaFoundationException.ThrowIfFailed(
+                    writer.AddStream(outputMediaType.MediaFoundationObject, out int streamIndex));
+                MediaFoundationException.ThrowIfFailed(
+                    writer.SetInputMediaType(streamIndex, inputMediaType.MediaFoundationObject, IntPtr.Zero));
                 PerformEncode(writer, streamIndex, inputSource);
             }
             finally
             {
-                Marshal.ReleaseComObject(writer);
+                ((ComObject)(object)writer).FinalRelease();
             }
         }
 
@@ -247,74 +259,85 @@ namespace NAudio.Wave
             var writer = CreateSinkWriter(new ComStream(outputStream), transcodeContainerType);
             try
             {
-                writer.AddStream(outputMediaType.MediaFoundationObject, out int streamIndex);
-                writer.SetInputMediaType(streamIndex, inputMediaType.MediaFoundationObject, null);
+                MediaFoundationException.ThrowIfFailed(
+                    writer.AddStream(outputMediaType.MediaFoundationObject, out int streamIndex));
+                MediaFoundationException.ThrowIfFailed(
+                    writer.SetInputMediaType(streamIndex, inputMediaType.MediaFoundationObject, IntPtr.Zero));
                 PerformEncode(writer, streamIndex, inputSource);
             }
             finally
             {
-                Marshal.ReleaseComObject(writer);
+                ((ComObject)(object)writer).FinalRelease();
             }
         }
 
-        private static IMFSinkWriter CreateSinkWriter(string outputFile)
+        private static Interfaces.IMFSinkWriter CreateSinkWriter(string outputFile)
         {
             // n.b. could try specifying the container type using attributes, but I think
-            // it does a decent job of working it out from the file extension 
+            // it does a decent job of working it out from the file extension
             // n.b. AAC encode on Win 8 can have AAC extension, but use MP4 in win 7
             // http://msdn.microsoft.com/en-gb/library/windows/desktop/dd389284%28v=vs.85%29.aspx
-            IMFSinkWriter writer;
-            var attributes = MediaFoundationApi.CreateAttributes(1);
-            attributes.SetUINT32(MediaFoundationAttributes.MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS, 1);
-        
+            Interfaces.IMFSinkWriter writer;
+            var (attributesPtr, attributes) = MediaFoundationApi.CreateAttributes(1);
             try
             {
-                writer = MediaFoundationApi.CreateSinkWriterFromUrl(outputFile, null, attributes);
-            }
-            catch (COMException e)
-            {
-                if (e.GetHResult() == MediaFoundationErrors.MF_E_NOT_FOUND)
+                MediaFoundationException.ThrowIfFailed(
+                    attributes.SetUINT32(MediaFoundationAttributes.MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS, 1));
+                try
                 {
-                    throw new ArgumentException("Was not able to create a sink writer for this file extension");
+                    writer = MediaFoundationApi.CreateSinkWriterFromUrl(outputFile, IntPtr.Zero, attributesPtr);
                 }
-                throw;
+                catch (COMException e)
+                {
+                    if (e.GetHResult() == MediaFoundationErrors.MF_E_NOT_FOUND)
+                    {
+                        throw new ArgumentException("Was not able to create a sink writer for this file extension");
+                    }
+                    throw;
+                }
             }
             finally
             {
-                Marshal.ReleaseComObject(attributes);
+                ((ComObject)(object)attributes).FinalRelease();
+                Marshal.Release(attributesPtr);
             }
             return writer;
         }
 
-        private static IMFSinkWriter CreateSinkWriter(IStream outputStream, Guid TranscodeContainerType) 
+        private static Interfaces.IMFSinkWriter CreateSinkWriter(IStream outputStream, Guid transcodeContainerType)
         {
             // n.b. could try specifying the container type using attributes, but I think
-            // it does a decent job of working it out from the file extension 
+            // it does a decent job of working it out from the file extension
             // n.b. AAC encode on Win 8 can have AAC extension, but use MP4 in win 7
             // http://msdn.microsoft.com/en-gb/library/windows/desktop/dd389284%28v=vs.85%29.aspx
-            IMFSinkWriter writer;
-            var attributes = MediaFoundationApi.CreateAttributes(1);
-            attributes.SetGUID(MediaFoundationAttributes.MF_TRANSCODE_CONTAINERTYPE, TranscodeContainerType);
-
+            Interfaces.IMFSinkWriter writer;
+            var (attributesPtr, attributes) = MediaFoundationApi.CreateAttributes(1);
+            IntPtr byteStreamPtr = IntPtr.Zero;
+            Interfaces.IMFByteStream byteStreamRcw = null;
             try
             {
-                var ppByteStream = MediaFoundationApi.CreateByteStream(outputStream);
-                writer = MediaFoundationApi.CreateSinkWriterFromUrl(null, ppByteStream, attributes);
-            } 
-            finally 
+                MediaFoundationException.ThrowIfFailed(
+                    attributes.SetGUID(MediaFoundationAttributes.MF_TRANSCODE_CONTAINERTYPE, transcodeContainerType));
+                (byteStreamPtr, byteStreamRcw) = MediaFoundationApi.CreateByteStream(outputStream);
+                writer = MediaFoundationApi.CreateSinkWriterFromUrl(null, byteStreamPtr, attributesPtr);
+            }
+            finally
             {
-                Marshal.ReleaseComObject(attributes);
+                if (byteStreamRcw != null) ((ComObject)(object)byteStreamRcw).FinalRelease();
+                if (byteStreamPtr != IntPtr.Zero) Marshal.Release(byteStreamPtr);
+                ((ComObject)(object)attributes).FinalRelease();
+                Marshal.Release(attributesPtr);
             }
             return writer;
         }
 
-        private void PerformEncode(IMFSinkWriter writer, int streamIndex, IWaveProvider inputSource)
+        private void PerformEncode(Interfaces.IMFSinkWriter writer, int streamIndex, IWaveProvider inputSource)
         {
             int bufferSize = DefaultReadBufferSize > 0
                 ? DefaultReadBufferSize
                 : inputSource.WaveFormat.AverageBytesPerSecond * 4;
 
-            writer.BeginWriting();
+            MediaFoundationException.ThrowIfFailed(writer.BeginWriting());
 
             long position = 0;
             long duration;
@@ -324,7 +347,7 @@ namespace NAudio.Wave
                 position += duration;
             } while (duration > 0);
 
-            writer.DoFinalize();
+            MediaFoundationException.ThrowIfFailed(writer.DoFinalize());
         }
 
         private static long BytesToNsPosition(int bytes, WaveFormat waveFormat)
@@ -333,35 +356,41 @@ namespace NAudio.Wave
             return nsPosition;
         }
 
-        private unsafe long ConvertOneBuffer(IMFSinkWriter writer, int streamIndex, IWaveProvider inputSource, long position, int bufferSize)
+        private unsafe long ConvertOneBuffer(Interfaces.IMFSinkWriter writer, int streamIndex, IWaveProvider inputSource, long position, int bufferSize)
         {
             long durationConverted = 0;
-            IMFMediaBuffer buffer = MediaFoundationApi.CreateMemoryBuffer(bufferSize);
-
-            IMFSample sample = MediaFoundationApi.CreateSample();
-            sample.AddBuffer(buffer);
-
-            buffer.Lock(out var ptr, out int maxLength, out int currentLength);
-            // Read directly into the locked MF buffer via span — no intermediate managed array
-            var span = new Span<byte>((void*)ptr, maxLength);
-            int read = inputSource.Read(span);
-            if (read > 0)
+            var (bufferPtr, buffer) = MediaFoundationApi.CreateMemoryBuffer(bufferSize);
+            var (samplePtr, sample) = MediaFoundationApi.CreateSample();
+            try
             {
-                durationConverted = BytesToNsPosition(read, inputSource.WaveFormat);
-                buffer.SetCurrentLength(read);
-                buffer.Unlock();
-                sample.SetSampleTime(position);
-                sample.SetSampleDuration(durationConverted);
-                writer.WriteSample(streamIndex, sample);
-            }
-            else
-            {
-                buffer.Unlock();
-            }
+                MediaFoundationException.ThrowIfFailed(sample.AddBuffer(bufferPtr));
 
-            Marshal.ReleaseComObject(sample);
-            Marshal.ReleaseComObject(buffer);
-            return durationConverted;
+                MediaFoundationException.ThrowIfFailed(buffer.Lock(out var ptr, out int maxLength, out int currentLength));
+                // Read directly into the locked MF buffer via span — no intermediate managed array
+                var span = new Span<byte>((void*)ptr, maxLength);
+                int read = inputSource.Read(span);
+                if (read > 0)
+                {
+                    durationConverted = BytesToNsPosition(read, inputSource.WaveFormat);
+                    MediaFoundationException.ThrowIfFailed(buffer.SetCurrentLength(read));
+                    MediaFoundationException.ThrowIfFailed(buffer.Unlock());
+                    MediaFoundationException.ThrowIfFailed(sample.SetSampleTime(position));
+                    MediaFoundationException.ThrowIfFailed(sample.SetSampleDuration(durationConverted));
+                    MediaFoundationException.ThrowIfFailed(writer.WriteSample(streamIndex, samplePtr));
+                }
+                else
+                {
+                    MediaFoundationException.ThrowIfFailed(buffer.Unlock());
+                }
+                return durationConverted;
+            }
+            finally
+            {
+                ((ComObject)(object)sample).FinalRelease();
+                Marshal.Release(samplePtr);
+                ((ComObject)(object)buffer).FinalRelease();
+                Marshal.Release(bufferPtr);
+            }
         }
 
         /// <summary>

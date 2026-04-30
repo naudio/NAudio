@@ -266,6 +266,42 @@ Branch `naudio3dev-mediafoundation-bridge`. Closes the MediaFoundation half of N
 - Process-loopback capture activation (the only consumer of `AudioClient.ActivateAsync` and therefore the only path that exercises `IActivateAudioInterfaceCompletionHandler`). Currently throws `NotImplementedException`.
 - Full `PublishAot=true` validation from a Visual Studio Developer Command Prompt — the trimmed-only run with `BuiltInComInteropSupport=false` is a strong proxy because the failure modes are the same machinery; the AOT step adds whole-program code generation but the same dispatch shape.
 
+#### Phase 2g: DirectSoundOut migration + NAudio.Core AOT enablement ([DirectSoundActivationModernization.md](DirectSoundActivationModernization.md))
+
+Branch `naudio3dev-directsound-migration`. Closes [GitHub issue #1191](https://github.com/naudio/NAudio/issues/1191) — `DirectSoundOut` was failing under `<PublishTrimmed>true</PublishTrimmed>` because the trimmer strips `System.StubHelpers.InterfaceMarshaler` (the type the legacy `[ComImport] [Out, MarshalAs(UnmanagedType.Interface)] out IDirectSound` marshalling depends on). Also enables `<IsAotCompatible>true</IsAotCompatible>` on `NAudio.Core.csproj` — the move and an incidental `NativeMethods.cs` deletion left `NAudio.Core` with zero P/Invokes and zero COM interop.
+
+**Scope (single-file migration, no cascade):**
+
+- **DirectSoundOut moves assemblies** — `NAudio.Core/Wave/WaveOutputs/DirectSoundOut.cs` → `NAudio.Wasapi/DirectSound/DirectSoundOut.cs`. DirectSoundOut had zero internal references in `NAudio.Core` (it implemented `IWavePlayer` from `NAudio.Core` but nothing consumed it back), so the cut was clean. `namespace NAudio.Wave` preserved; the `NAudio` meta-package already references both assemblies so consumers of the meta-package see no API change. **Breaking change** for direct consumers of `NAudio.Core` who use `DirectSoundOut` — they now need a `NAudio.Wasapi` package reference.
+- **3 `[ComImport]` interfaces → `[GeneratedComInterface]`** (`IDirectSound`, `IDirectSoundBuffer`, `IDirectSoundNotify`) broken out into `NAudio.Wasapi/DirectSound/Interfaces/`. All slots `[PreserveSig] int` returning HRESULT. Unused vtable slots declared with `IntPtr` placeholders — in particular, `IDirectSoundBuffer.SetFormat`'s `WAVEFORMATEX` parameter (a managed-reference-type-at-a-COM-boundary hazard) is dead code; the wave format reaches the secondary buffer via `BufferDescription.lpwfxFormat` (pinned `GCHandle`).
+- **4 `[DllImport]` P/Invokes → `[LibraryImport]`** (`DirectSoundCreate`, `DirectSoundEnumerate`, `GetDesktopWindow`, plus the previously-elided `DirectSoundCaptureCreate` was never declared). `DirectSoundCreate` switches from `out IDirectSound` (the failing-under-trim path) to `out IntPtr` + `ComActivation.ComWrappers` projection.
+- **`DSEnumCallback` delegate → `[UnmanagedCallersOnly]` static thunk + C# function pointer** (`delegate* unmanaged[Stdcall]<...>`). Zero allocation, no GCHandle pinning, no `Marshal.GetFunctionPointerForDelegate` indirection — fully AOT-clean dispatch.
+- **3 `Marshal.ReleaseComObject` sites → `((ComObject)(object)x).FinalRelease()`** in `StopPlayback` (Phase 2e Hazard #2 cast-through-object pattern).
+- **QI cascade `IDirectSoundBuffer → IDirectSoundNotify`** (Phase 2g-specific, similar shape to Phase 2f H3 ComStream → IStream): source-gen RCWs do not auto-QI on a sibling-interface cast. Resolved with explicit `Marshal.QueryInterface(secondaryBufferPtr, in IID_IDirectSoundNotify, out notifyPtr)` from the secondary buffer's raw `IUnknown`, projection of `notifyPtr`, and deterministic release after `SetNotificationPositions` returns. Wrapped in try/finally so a `SetNotificationPositions` failure cannot leak the wrapper.
+- **`BufferDescription` / `BufferCaps` class → struct** (separate, low-risk commit before the source-gen migration). Both are blittable (no string fields), declared `[StructLayout(LayoutKind.Sequential, Pack = 2)]`. Interface signatures changed from `[In] BufferDescription` to `in BufferDescription`, etc. Eliminates the managed-reference-at-a-`[GeneratedComInterface]`-boundary hazard.
+- **`DirectSoundException : COMException`** introduced parallel to `MediaFoundationException`. Existing `catch (COMException)` consumers keep working because the `[ComImport]` interfaces previously auto-threw `COMException` on failure HRESULTs.
+- **`NAudio.Core/Utils/NativeMethods.cs` deleted** (incidental). Held three kernel32 P/Invokes (`LoadLibrary`/`GetProcAddress`/`FreeLibrary`); only consumer was `AcmDriver` in `NAudio.WinMM`. Replaced with `System.Runtime.InteropServices.NativeLibrary` (`TryLoad` / `TryGetExport` / `Free`) — cross-platform, AOT/trim-clean. Without this deletion, the headline claim "NAudio.Core has no Windows-specific code" would have been false. **Breaking change** for any external consumer of `NAudio.Utils.NativeMethods` (was public; should have been internal — no documented consumer).
+
+**Smoke test extension + flag flip:** `NAudioAotSmokeTest/Program.cs` gained a fourth section "DirectSound playback (RCW direction + QI cascade)" that enumerates devices (exercising the `[UnmanagedCallersOnly]` thunk) then drives a 250 ms silent-gain Init/Play/Stop/Dispose cycle (exercising the QI cascade and the playback notification thread). `<IsAotCompatible>true</IsAotCompatible>` flipped on `NAudio.Core.csproj`. `NAudioConsoleTest` gained a DirectSound menu (List devices, Play tone) for manual verification.
+
+**Verification:**
+
+- `dotnet build NAudio.slnx -c Release` clean (zero IL2026/IL3050 against `NAudio.Core` and `NAudio.Wasapi`).
+- `dotnet publish NAudioAotSmokeTest -c Release -p:PublishAot=false -p:PublishTrimmed=true -p:BuiltInComInteropSupport=false` runs all four sections end-to-end. DirectSound section enumerated 8 devices and completed Init/Play/Stop/Dispose without exception — the exact path issue #1191 was failing on.
+- NAudioTests: 1071 / 1073 (2 skipped, 0 failed), DirectSound `CanEnumerateDevices` integration test passes — exercises the `[UnmanagedCallersOnly]` enumeration path.
+
+**Breaking changes:**
+
+- `DirectSoundOut` and `DirectSoundDeviceInfo` moved from `NAudio.Core.dll` to `NAudio.Wasapi.dll`. `namespace NAudio.Wave` preserved. Consumers of the `NAudio` meta-package see no change; direct consumers of `NAudio.Core` need to add a `NAudio.Wasapi` package reference. Type-forwarding is not viable — would invert the `Core ← Wasapi` dependency direction.
+- `NAudio.Utils.NativeMethods` (held three kernel32 P/Invokes) deleted. Was public but should have been internal. Migrate to `System.Runtime.InteropServices.NativeLibrary`.
+- `BufferDescription` / `BufferCaps` (internal) changed from `class` to `struct`. Internal-only — no public API surface impact.
+- The legacy `[ComImport]` `IDirectSound*` interface declarations under the inner `DirectSoundOut.NativeDirectSoundCOMInterface` region are gone. They were nested-private within `DirectSoundOut`, so no public surface impact.
+
+**Out of scope (still deferred):**
+
+- AOT story for the remaining sister assemblies (`NAudio.WinMM`, `NAudio.Midi`, `NAudio.Asio`). The `AcmDriver` port to `NativeLibrary` lands incidentally; the broader MMSYS surface audit is its own phase.
+- Full `PublishAot=true` validation from a VS Developer Command Prompt (same proxy argument as Phase 2e′ — trimmed-only run is a strong signal for the same dispatch shape).
+
 #### Phase 3: High-level API redesign
 
 Existing `WasapiOut` and `WasapiCapture` are kept with `[Obsolete]` attributes pointing to the new APIs. New classes are added alongside to avoid breaking existing code immediately.

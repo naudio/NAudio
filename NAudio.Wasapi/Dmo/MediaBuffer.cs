@@ -26,15 +26,30 @@ namespace NAudio.Dmo
         }
 
         /// <summary>
+        /// Finalizer — frees the unmanaged buffer if Dispose was not called.
+        /// </summary>
+        ~MediaBuffer() => Dispose(disposing: false);
+
+        /// <summary>
         /// Dispose and free memory for buffer
         /// </summary>
         public void Dispose()
+        {
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Releases the unmanaged CoTaskMem buffer. Called from both <see cref="Dispose()"/>
+        /// and the finalizer; <see cref="Marshal.FreeCoTaskMem"/> is safe to call from a
+        /// finalizer thread.
+        /// </summary>
+        protected virtual void Dispose(bool disposing)
         {
             if (buffer != IntPtr.Zero)
             {
                 Marshal.FreeCoTaskMem(buffer);
                 buffer = IntPtr.Zero;
-                GC.SuppressFinalize(this);
             }
         }
 

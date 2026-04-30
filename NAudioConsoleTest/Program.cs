@@ -1,4 +1,5 @@
 using NAudioConsoleTest.Asio;
+using NAudioConsoleTest.DirectSound;
 using NAudioConsoleTest.Dmo;
 using NAudioConsoleTest.MediaFoundation;
 using NAudioConsoleTest.Shared;
@@ -22,7 +23,7 @@ static class Program
         while (true)
         {
             var choice = Menu.Show("Main Menu", banner,
-                new Menu.Group("", "WASAPI", "ASIO", "WinMM", "Media Foundation", "DMO", "Exit"));
+                new Menu.Group("", "WASAPI", "ASIO", "WinMM", "DirectSound", "Media Foundation", "DMO", "Exit"));
 
             // Escape at the top level exits the app.
             if (choice is null) return;
@@ -37,6 +38,9 @@ static class Program
                     break;
                 case "WinMM":
                     WinMmMenu.Show();
+                    break;
+                case "DirectSound":
+                    DirectSoundMenu.Show();
                     break;
                 case "Media Foundation":
                     MediaFoundationMenu.Show();

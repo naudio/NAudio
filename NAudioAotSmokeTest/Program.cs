@@ -33,6 +33,17 @@ using NAudio.Wave.SampleProviders;
 //     MP3 in a MemoryStream, then reads it back. If the QI handoff or any of
 //     the migrated bridge sites were wrong, MFCreateMFByteStreamOnStream or
 //     IMFSourceReader::ReadSample would AV before the assertions ran.
+//
+// (4) DirectSound playback — Phase 2g (this section). Exercises the three
+//     [GeneratedComInterface]-migrated DirectSound interfaces (IDirectSound,
+//     IDirectSoundBuffer, IDirectSoundNotify), the QI cascade between
+//     IDirectSoundBuffer and IDirectSoundNotify, the [LibraryImport]
+//     DirectSoundCreate / DirectSoundEnumerate path, and the
+//     [UnmanagedCallersOnly] enumeration thunk. Constructs a DirectSoundOut,
+//     drives a brief silent playback, and disposes — issue #1191's failure
+//     under PublishTrimmed (StubHelpers.InterfaceMarshaler stripped) is
+//     precisely this path; if the migration regressed it, this section would
+//     AV before reporting OK.
 
 Console.WriteLine("=== Phase 2d / 2e: RCW direction (property reads) ===\n");
 
@@ -157,6 +168,37 @@ finally
 {
     MediaFoundationApi.Shutdown();
 }
+
+Console.WriteLine();
+Console.WriteLine("=== Phase 2g: DirectSound playback (RCW direction + QI cascade) ===\n");
+
+// Enumerate first — exercises the [UnmanagedCallersOnly] EnumCallbackThunk via
+// DirectSoundEnumerate's function-pointer callback parameter.
+int dsoundDeviceCount = 0;
+foreach (var dsoundDevice in DirectSoundOut.Devices)
+{
+    Console.WriteLine($"  DirectSound device: {dsoundDevice.Description} ({dsoundDevice.Guid})");
+    dsoundDeviceCount++;
+}
+Console.WriteLine($"  Enumerated {dsoundDeviceCount} DirectSound device(s).");
+
+// Drive a brief silent playback — exercises DirectSoundCreate, IDirectSound,
+// IDirectSoundBuffer (primary + secondary), and the QI cascade to
+// IDirectSoundNotify. A silent SignalGenerator at zero gain keeps CI silent.
+using (var dsoundOut = new DirectSoundOut(40))
+{
+    var silentSignal = new SignalGenerator(44100, 2) { Frequency = 440, Gain = 0.0 }
+        .Take(TimeSpan.FromMilliseconds(500))
+        .ToWaveProvider();
+    dsoundOut.Init(silentSignal);
+    dsoundOut.Play();
+    Thread.Sleep(250);
+    Console.WriteLine($"  DirectSoundOut PlaybackState while playing: {dsoundOut.PlaybackState}");
+    dsoundOut.Stop();
+    Thread.Sleep(150);
+    Console.WriteLine($"  DirectSoundOut PlaybackState after Stop:    {dsoundOut.PlaybackState}");
+}
+Console.WriteLine("  DirectSound playback under PublishAot: OK");
 
 [GeneratedComClass]
 partial class SmokeNotificationClient : IMMNotificationClient

@@ -30,7 +30,7 @@ namespace NAudio.CoreAudioApi
         /// <summary>
         /// Notifies the client that the display name for the session has changed.
         /// </summary>
-        public int OnDisplayNameChanged(string displayName, in Guid eventContext)
+        public int OnDisplayNameChanged(string displayName, ref Guid eventContext)
         {
             audioSessionEventsHandler.OnDisplayNameChanged(displayName);
             return 0;
@@ -39,7 +39,7 @@ namespace NAudio.CoreAudioApi
         /// <summary>
         /// Notifies the client that the display icon for the session has changed.
         /// </summary>
-        public int OnIconPathChanged(string iconPath, in Guid eventContext)
+        public int OnIconPathChanged(string iconPath, ref Guid eventContext)
         {
             audioSessionEventsHandler.OnIconPathChanged(iconPath);
             return 0;
@@ -48,7 +48,7 @@ namespace NAudio.CoreAudioApi
         /// <summary>
         /// Notifies the client that the volume level or muting state of the session has changed.
         /// </summary>
-        public int OnSimpleVolumeChanged(float volume, int isMuted, in Guid eventContext)
+        public int OnSimpleVolumeChanged(float volume, int isMuted, ref Guid eventContext)
         {
             audioSessionEventsHandler.OnVolumeChanged(volume, isMuted != 0);
             return 0;
@@ -57,7 +57,7 @@ namespace NAudio.CoreAudioApi
         /// <summary>
         /// Notifies the client that the volume level of an audio channel in the session submix has changed.
         /// </summary>
-        public int OnChannelVolumeChanged(uint channelCount, IntPtr newVolumes, uint channelIndex, in Guid eventContext)
+        public int OnChannelVolumeChanged(uint channelCount, IntPtr newVolumes, uint channelIndex, ref Guid eventContext)
         {
             audioSessionEventsHandler.OnChannelVolumeChanged(channelCount, newVolumes, channelIndex);
             return 0;
@@ -66,12 +66,9 @@ namespace NAudio.CoreAudioApi
         /// <summary>
         /// Notifies the client that the grouping parameter for the session has changed.
         /// </summary>
-        public int OnGroupingParamChanged(in Guid groupingId, in Guid eventContext)
+        public int OnGroupingParamChanged(ref Guid groupingId, ref Guid eventContext)
         {
-            // OnGroupingParamChanged on the handler takes ref Guid for legacy reasons —
-            // copy through a local since `in` parameters can't be passed as `ref`.
-            Guid local = groupingId;
-            audioSessionEventsHandler.OnGroupingParamChanged(ref local);
+            audioSessionEventsHandler.OnGroupingParamChanged(ref groupingId);
             return 0;
         }
 

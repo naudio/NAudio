@@ -106,7 +106,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         [PreserveSig]
         int OnDisplayNameChanged(
             string displayName,
-            in Guid eventContext);
+            ref Guid eventContext);
 
         /// <summary>
         /// Notifies the client that the display icon for the session has changed.
@@ -117,7 +117,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         [PreserveSig]
         int OnIconPathChanged(
             string iconPath,
-            in Guid eventContext);
+            ref Guid eventContext);
 
         /// <summary>
         /// Notifies the client that the volume level or muting state of the session has changed.
@@ -130,7 +130,7 @@ namespace NAudio.CoreAudioApi.Interfaces
         int OnSimpleVolumeChanged(
             float volume,
             int isMuted,
-            in Guid eventContext);
+            ref Guid eventContext);
 
         /// <summary>
         /// Notifies the client that the volume level of an audio channel in the session submix has changed.
@@ -145,7 +145,7 @@ namespace NAudio.CoreAudioApi.Interfaces
             uint channelCount,
             IntPtr newVolumes,
             uint channelIndex,
-            in Guid eventContext);
+            ref Guid eventContext);
 
         /// <summary>
         /// Notifies the client that the grouping parameter for the session has changed.
@@ -155,8 +155,8 @@ namespace NAudio.CoreAudioApi.Interfaces
         /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
         [PreserveSig]
         int OnGroupingParamChanged(
-            in Guid groupingId,
-            in Guid eventContext);
+            ref Guid groupingId,
+            ref Guid eventContext);
 
         /// <summary>
         /// Notifies the client that the stream-activity state of the session has changed.

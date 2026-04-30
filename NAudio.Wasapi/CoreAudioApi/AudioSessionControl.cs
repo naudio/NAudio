@@ -17,10 +17,30 @@ namespace NAudio.CoreAudioApi
     /// </summary>
     public class AudioSessionControl : IDisposable
     {
+        private static readonly Guid IID_IAudioSessionEvents = new Guid("24918ACC-64B3-37C1-8CA9-74A66E9957A8");
+
         private IAudioSessionControl audioSessionControlInterface;
         private IAudioSessionControl2 audioSessionControlInterface2;
         private readonly bool ownsInterface;
         private AudioSessionEventsCallback audioSessionEventCallback;
+
+        // ComWrappers CCWs return a distinct IntPtr per interface (and a separate vtable
+        // for IUnknown). Registration APIs that expect IAudioSessionEvents* must receive
+        // the QI'd interface pointer, not the raw IUnknown — passing IUnknown dispatches
+        // against the wrong vtable on the WASAPI worker thread (STATUS_ACCESS_VIOLATION).
+        private static IntPtr QueryEventsInterface(AudioSessionEventsCallback callback)
+        {
+            var unknownPtr = ComActivation.ComWrappers.GetOrCreateComInterfaceForObject(callback, CreateComInterfaceFlags.None);
+            try
+            {
+                Marshal.ThrowExceptionForHR(Marshal.QueryInterface(unknownPtr, in IID_IAudioSessionEvents, out var ifacePtr));
+                return ifacePtr;
+            }
+            finally
+            {
+                Marshal.Release(unknownPtr);
+            }
+        }
 
         /// <summary>
         /// Creates a new AudioSessionControl — ownership of the COM pointer is transferred.
@@ -70,7 +90,7 @@ namespace NAudio.CoreAudioApi
         {
             if (audioSessionEventCallback != null)
             {
-                var ptr = ComActivation.ComWrappers.GetOrCreateComInterfaceForObject(audioSessionEventCallback, CreateComInterfaceFlags.None);
+                var ptr = QueryEventsInterface(audioSessionEventCallback);
                 try
                 {
                     audioSessionControlInterface.UnregisterAudioSessionNotification(ptr);
@@ -236,7 +256,7 @@ namespace NAudio.CoreAudioApi
         {
             // we could have an array or list of listeners if we like
             audioSessionEventCallback = new AudioSessionEventsCallback(eventClient);
-            var ptr = ComActivation.ComWrappers.GetOrCreateComInterfaceForObject(audioSessionEventCallback, CreateComInterfaceFlags.None);
+            var ptr = QueryEventsInterface(audioSessionEventCallback);
             try
             {
                 CoreAudioException.ThrowIfFailed(audioSessionControlInterface.RegisterAudioSessionNotification(ptr));
@@ -256,7 +276,7 @@ namespace NAudio.CoreAudioApi
             // if one is registered, let it go
             if (audioSessionEventCallback != null)
             {
-                var ptr = ComActivation.ComWrappers.GetOrCreateComInterfaceForObject(audioSessionEventCallback, CreateComInterfaceFlags.None);
+                var ptr = QueryEventsInterface(audioSessionEventCallback);
                 try
                 {
                     CoreAudioException.ThrowIfFailed(audioSessionControlInterface.UnregisterAudioSessionNotification(ptr));

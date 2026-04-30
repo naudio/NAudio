@@ -48,20 +48,20 @@ namespace NAudio.CoreAudioApi
         public void OnNotify(IntPtr notifyData)
         {
             //Since AUDIO_VOLUME_NOTIFICATION_DATA is dynamic in length based on the
-            //number of audio channels available we cannot just call PtrToStructure 
+            //number of audio channels available we cannot just call PtrToStructure
             //to get all data, thats why it is split up into two steps, first the static
             //data is marshalled into the data structure, then with some IntPtr math the
             //remaining floats are read from memory.
             //
             var data = Marshal.PtrToStructure<AudioVolumeNotificationDataStruct>(notifyData);
-            
+
             //Determine offset in structure of the first float
             var offset = Marshal.OffsetOf<AudioVolumeNotificationDataStruct>("ChannelVolume");
             //Determine offset in memory of the first float
             var firstFloatPtr = notifyData + (int)offset;
 
             var voldata = new float[data.nChannels];
-            
+
             //Read all floats from memory.
             for (int i = 0; i < data.nChannels; i++)
             {

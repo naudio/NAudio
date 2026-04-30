@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.Marshalling;
 using NAudio.MediaFoundation;
 using NAudio.MediaFoundation.Interfaces;
 
@@ -29,7 +28,7 @@ namespace NAudio.Wave
         /// </summary>
         private protected override IMFSourceReader CreateReader(MediaFoundationReaderSettings settings)
         {
-            var (byteStreamPtr, byteStreamRcw) = MediaFoundationApi.CreateByteStream(new ComStream(stream));
+            IntPtr byteStreamPtr = MediaFoundationApi.CreateByteStream(new ComStream(stream));
             try
             {
                 var reader = MediaFoundationApi.CreateSourceReaderFromByteStream(byteStreamPtr);
@@ -52,8 +51,7 @@ namespace NAudio.Wave
             }
             finally
             {
-                // Source reader AddRef'd the byte stream internally; we can drop our refs.
-                ((ComObject)(object)byteStreamRcw).FinalRelease();
+                // Source reader AddRef'd the byte stream internally; we drop our ref.
                 Marshal.Release(byteStreamPtr);
             }
         }

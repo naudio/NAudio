@@ -309,12 +309,13 @@ namespace NAudio.Wave
                     continue;
                 }
 
-                var pSample = (IMFSample)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(pSamplePtr, CreateObjectFlags.UniqueInstance);
+                IMFSample pSample = null;
                 IntPtr pBufferPtr = IntPtr.Zero;
                 IMFMediaBuffer pBuffer = null;
                 bool bufferLocked = false;
                 try
                 {
+                    pSample = (IMFSample)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(pSamplePtr, CreateObjectFlags.UniqueInstance);
                     MediaFoundationException.ThrowIfFailed(pSample.ConvertToContiguousBuffer(out pBufferPtr));
                     pBuffer = (IMFMediaBuffer)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(pBufferPtr, CreateObjectFlags.UniqueInstance);
                     MediaFoundationException.ThrowIfFailed(pBuffer.Lock(out IntPtr pAudioData, out int pcbMaxLength, out int cbBuffer));
@@ -328,20 +329,12 @@ namespace NAudio.Wave
                 }
                 finally
                 {
-                    if (pBuffer != null)
+                    if (pBuffer != null && bufferLocked)
                     {
-                        if (bufferLocked)
-                        {
-                            MediaFoundationException.ThrowIfFailed(pBuffer.Unlock());
-                        }
-                        ((ComObject)(object)pBuffer).FinalRelease();
+                        MediaFoundationException.ThrowIfFailed(pBuffer.Unlock());
                     }
-                    if (pBufferPtr != IntPtr.Zero)
-                    {
-                        Marshal.Release(pBufferPtr);
-                    }
-                    ((ComObject)(object)pSample).FinalRelease();
-                    Marshal.Release(pSamplePtr);
+                    ComActivation.ReleaseBoth(pBuffer, pBufferPtr);
+                    ComActivation.ReleaseBoth(pSample, pSamplePtr);
                 }
             }
             position += bytesWritten;

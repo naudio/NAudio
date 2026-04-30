@@ -297,8 +297,7 @@ namespace NAudio.Wave
             }
             finally
             {
-                ((ComObject)(object)attributes).FinalRelease();
-                Marshal.Release(attributesPtr);
+                ComActivation.ReleaseBoth(attributes, attributesPtr);
             }
             return writer;
         }
@@ -312,20 +311,17 @@ namespace NAudio.Wave
             IMFSinkWriter writer;
             var (attributesPtr, attributes) = MediaFoundationApi.CreateAttributes(1);
             IntPtr byteStreamPtr = IntPtr.Zero;
-            IMFByteStream byteStreamRcw = null;
             try
             {
                 MediaFoundationException.ThrowIfFailed(
                     attributes.SetGUID(MediaFoundationAttributes.MF_TRANSCODE_CONTAINERTYPE, transcodeContainerType));
-                (byteStreamPtr, byteStreamRcw) = MediaFoundationApi.CreateByteStream(outputStream);
+                byteStreamPtr = MediaFoundationApi.CreateByteStream(outputStream);
                 writer = MediaFoundationApi.CreateSinkWriterFromUrl(null, byteStreamPtr, attributesPtr);
             }
             finally
             {
-                if (byteStreamRcw != null) ((ComObject)(object)byteStreamRcw).FinalRelease();
                 if (byteStreamPtr != IntPtr.Zero) Marshal.Release(byteStreamPtr);
-                ((ComObject)(object)attributes).FinalRelease();
-                Marshal.Release(attributesPtr);
+                ComActivation.ReleaseBoth(attributes, attributesPtr);
             }
             return writer;
         }
@@ -385,10 +381,8 @@ namespace NAudio.Wave
             }
             finally
             {
-                ((ComObject)(object)sample).FinalRelease();
-                Marshal.Release(samplePtr);
-                ((ComObject)(object)buffer).FinalRelease();
-                Marshal.Release(bufferPtr);
+                ComActivation.ReleaseBoth(sample, samplePtr);
+                ComActivation.ReleaseBoth(buffer, bufferPtr);
             }
         }
 

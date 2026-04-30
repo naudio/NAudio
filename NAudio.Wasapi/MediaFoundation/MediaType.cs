@@ -1,7 +1,6 @@
 using System;
-using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.Marshalling;
 using NAudio.Utils;
+using NAudio.Wasapi.CoreAudioApi;
 using NAudio.Wave;
 
 namespace NAudio.MediaFoundation
@@ -170,16 +169,9 @@ namespace NAudio.MediaFoundation
         /// </summary>
         public void Dispose()
         {
-            if (mediaType != null)
-            {
-                ((ComObject)(object)mediaType).FinalRelease();
-                mediaType = null;
-            }
-            if (nativePointer != IntPtr.Zero)
-            {
-                Marshal.Release(nativePointer);
-                nativePointer = IntPtr.Zero;
-            }
+            ComActivation.ReleaseBoth(mediaType, nativePointer);
+            mediaType = null;
+            nativePointer = IntPtr.Zero;
             GC.SuppressFinalize(this);
         }
     }

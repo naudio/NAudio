@@ -150,8 +150,7 @@ namespace NAudio.MediaFoundation
                 }
                 finally
                 {
-                    ((ComObject)(object)sample).FinalRelease();
-                    Marshal.Release(samplePtr);
+                    ComActivation.ReleaseBoth(sample, samplePtr);
                 }
 
                 ReadFromTransform();
@@ -241,18 +240,11 @@ namespace NAudio.MediaFoundation
             }
             finally
             {
-                if (outputMediaBuffer != null)
+                if (outputMediaBuffer != null && outputBufferLocked)
                 {
-                    if (outputBufferLocked)
-                    {
-                        MediaFoundationException.ThrowIfFailed(outputMediaBuffer.Unlock());
-                    }
-                    ((ComObject)(object)outputMediaBuffer).FinalRelease();
+                    MediaFoundationException.ThrowIfFailed(outputMediaBuffer.Unlock());
                 }
-                if (outputMediaBufferPtr != IntPtr.Zero)
-                {
-                    Marshal.Release(outputMediaBufferPtr);
-                }
+                ComActivation.ReleaseBoth(outputMediaBuffer, outputMediaBufferPtr);
 
                 IntPtr eventsPtr = outputDataBuffer[0].Events;
                 if (eventsPtr != IntPtr.Zero)
@@ -260,17 +252,14 @@ namespace NAudio.MediaFoundation
                     Marshal.Release(eventsPtr);
                 }
 
-                if (returnedSampleIsReplacement && returnedSample != null)
+                if (returnedSampleIsReplacement)
                 {
-                    ((ComObject)(object)returnedSample).FinalRelease();
-                    Marshal.Release(returnedSamplePtr);
+                    ComActivation.ReleaseBoth(returnedSample, returnedSamplePtr);
                 }
 
                 MediaFoundationException.ThrowIfFailed(sample.RemoveAllBuffers());
-                ((ComObject)(object)sample).FinalRelease();
-                Marshal.Release(samplePtr);
-                ((ComObject)(object)pBuffer).FinalRelease();
-                Marshal.Release(pBufferPtr);
+                ComActivation.ReleaseBoth(sample, samplePtr);
+                ComActivation.ReleaseBoth(pBuffer, pBufferPtr);
             }
         }
 
@@ -286,6 +275,8 @@ namespace NAudio.MediaFoundation
 
             var (mediaBufferPtr, mediaBuffer) = MediaFoundationApi.CreateMemoryBuffer(bytesRead);
             bool bufferLocked = false;
+            IntPtr samplePtr = IntPtr.Zero;
+            Interfaces.IMFSample sample = null;
             try
             {
                 MediaFoundationException.ThrowIfFailed(mediaBuffer.Lock(out IntPtr pBuffer, out _, out _));
@@ -295,13 +286,16 @@ namespace NAudio.MediaFoundation
                 bufferLocked = false;
                 MediaFoundationException.ThrowIfFailed(mediaBuffer.SetCurrentLength(bytesRead));
 
-                var (samplePtr, sample) = MediaFoundationApi.CreateSample();
+                (samplePtr, sample) = MediaFoundationApi.CreateSample();
                 MediaFoundationException.ThrowIfFailed(sample.AddBuffer(mediaBufferPtr));
                 MediaFoundationException.ThrowIfFailed(sample.SetSampleTime(inputPosition));
                 long duration = BytesToNsPosition(bytesRead, sourceProvider.WaveFormat);
                 MediaFoundationException.ThrowIfFailed(sample.SetSampleDuration(duration));
                 inputPosition += duration;
-                return (samplePtr, sample);
+                var result = (samplePtr, sample);
+                samplePtr = IntPtr.Zero; // ownership transferred to caller
+                sample = null;
+                return result;
             }
             finally
             {
@@ -309,8 +303,8 @@ namespace NAudio.MediaFoundation
                 {
                     MediaFoundationException.ThrowIfFailed(mediaBuffer.Unlock());
                 }
-                ((ComObject)(object)mediaBuffer).FinalRelease();
-                Marshal.Release(mediaBufferPtr);
+                ComActivation.ReleaseBoth(mediaBuffer, mediaBufferPtr);
+                ComActivation.ReleaseBoth(sample, samplePtr);
             }
         }
 

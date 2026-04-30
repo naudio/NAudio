@@ -73,6 +73,27 @@ namespace NAudio.Wasapi.CoreAudioApi
         }
 
         /// <summary>
+        /// Releases both halves of a "raw IntPtr + source-generated RCW" pair acquired
+        /// from the MediaFoundation factory helpers (<see cref="System.IntPtr"/> from the
+        /// p/invoke + <see cref="StrategyBasedComWrappers"/>-projected RCW). Centralises the
+        /// <c>((ComObject)(object)rcw).FinalRelease()</c> dance — direct
+        /// <c>rcw is ComObject</c> from an interface-typed variable does not compile (Phase
+        /// 2e Hazard #2), so the cast through <see cref="object"/> is required.
+        /// </summary>
+        public static void ReleaseBoth<TInterface>(TInterface rcw, IntPtr ptr)
+            where TInterface : class
+        {
+            if (rcw != null)
+            {
+                ((ComObject)(object)rcw).FinalRelease();
+            }
+            if (ptr != IntPtr.Zero)
+            {
+                Marshal.Release(ptr);
+            }
+        }
+
+        /// <summary>
         /// Performs the raw <c>CoCreateInstance</c> P/Invoke and throws on failure.
         /// </summary>
         public static IntPtr CoCreateInstance(Guid clsid, Guid iid)

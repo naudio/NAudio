@@ -15,7 +15,7 @@ namespace NAudio.Wave
     /// Contact author: Alexandre Mutel - alexandre_mutel at yahoo.fr
     /// Modified by: Graham "Gee" Plumb
     /// </summary>
-    public class DirectSoundOut : IWavePlayer
+    public partial class DirectSoundOut : IWavePlayer
     {
         /// <summary>
         /// Playback Stopped
@@ -47,18 +47,27 @@ namespace NAudio.Wave
         /// <summary>
         /// Gets the DirectSound output devices in the system
         /// </summary>
-        public static IEnumerable<DirectSoundDeviceInfo> Devices
+        public static unsafe IEnumerable<DirectSoundDeviceInfo> Devices
         {
-            get {
+            get
+            {
                 devices = new List<DirectSoundDeviceInfo>();
-                DirectSoundEnumerate(new DSEnumCallback(EnumCallback), IntPtr.Zero);
+                delegate* unmanaged[Stdcall]<IntPtr, IntPtr, IntPtr, IntPtr, int> thunk = &EnumCallbackThunk;
+                DirectSoundException.ThrowIfFailed(
+                    DirectSoundEnumerate((IntPtr)thunk, IntPtr.Zero));
                 return devices;
             }
         }
 
         private static List<DirectSoundDeviceInfo> devices;
 
-        private static bool EnumCallback(IntPtr lpGuid, IntPtr lpcstrDescription, IntPtr lpcstrModule, IntPtr lpContext)
+        // BOOL-returning [UnmanagedCallersOnly] thunk invoked from native by
+        // DirectSoundEnumerate. Replaces the old delegate-based callback so the
+        // dispatch is zero-allocation and fully AOT-clean — Marshal.GetFunctionPointerForDelegate
+        // is supported under AOT but a static unmanaged callback avoids the delegate
+        // pinning + indirection entirely.
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(System.Runtime.CompilerServices.CallConvStdcall) })]
+        private static int EnumCallbackThunk(IntPtr lpGuid, IntPtr lpcstrDescription, IntPtr lpcstrModule, IntPtr lpContext)
         {
             var device = new DirectSoundDeviceInfo();
             if (lpGuid == IntPtr.Zero)
@@ -71,13 +80,13 @@ namespace NAudio.Wave
                 Marshal.Copy(lpGuid, guidBytes, 0, 16);
                 device.Guid = new Guid(guidBytes);
             }
-            device.Description =  Marshal.PtrToStringAnsi(lpcstrDescription);
+            device.Description = Marshal.PtrToStringAnsi(lpcstrDescription);
             if (lpcstrModule != IntPtr.Zero)
             {
                 device.ModuleName = Marshal.PtrToStringAnsi(lpcstrModule);
             }
             devices.Add(device);
-            return true;
+            return 1; // BOOL TRUE — continue enumeration
         }
 
 
@@ -736,8 +745,9 @@ namespace NAudio.Wave
         /// Instanciate DirectSound from the DLL. Returns the raw IUnknown pointer; caller must
         /// project via <see cref="ComActivation.ComWrappers"/> and release the original ref.
         /// </summary>
-        [DllImport("dsound.dll", EntryPoint = "DirectSoundCreate", SetLastError = true, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
-        private static extern int DirectSoundCreate(in Guid GUID, out IntPtr directSound, IntPtr pUnkOuter);
+        [LibraryImport("dsound.dll", EntryPoint = "DirectSoundCreate")]
+        [UnmanagedCallConv(CallConvs = new[] { typeof(System.Runtime.CompilerServices.CallConvStdcall) })]
+        private static partial int DirectSoundCreate(in Guid GUID, out IntPtr directSound, IntPtr pUnkOuter);
 
 
         /// <summary>
@@ -761,30 +771,22 @@ namespace NAudio.Wave
         public static readonly Guid DSDEVID_DefaultVoiceCapture = new Guid("DEF00003-9C6D-47ED-AAF1-4DDA8F2B5C03");
 
         /// <summary>
-        /// The DSEnumCallback function is an application-defined callback function that enumerates the DirectSound drivers.
-        /// The system calls this function in response to the application's call to the DirectSoundEnumerate or DirectSoundCaptureEnumerate function.
-        /// </summary>
-        /// <param name="lpGuid">Address of the GUID that identifies the device being enumerated, or NULL for the primary device. This value can be passed to the DirectSoundCreate8 or DirectSoundCaptureCreate8 function to create a device object for that driver. </param>
-        /// <param name="lpcstrDescription">Address of a null-terminated string that provides a textual description of the DirectSound device. </param>
-        /// <param name="lpcstrModule">Address of a null-terminated string that specifies the module name of the DirectSound driver corresponding to this device. </param>
-        /// <param name="lpContext">Address of application-defined data. This is the pointer passed to DirectSoundEnumerate or DirectSoundCaptureEnumerate as the lpContext parameter. </param>
-        /// <returns>Returns TRUE to continue enumerating drivers, or FALSE to stop.</returns>
-        delegate bool DSEnumCallback(IntPtr lpGuid, IntPtr lpcstrDescription, IntPtr lpcstrModule, IntPtr lpContext);
-
-        /// <summary>
         /// The DirectSoundEnumerate function enumerates the DirectSound drivers installed in the system.
+        /// The first argument is a pointer to a <c>DSEnumCallback</c> function — supplied here as
+        /// an <see cref="UnmanagedCallersOnlyAttribute"/> static thunk via C# function-pointer syntax.
         /// </summary>
-        /// <param name="lpDSEnumCallback">callback function</param>
+        /// <param name="lpDSEnumCallback">function pointer to callback</param>
         /// <param name="lpContext">User context</param>
-        [DllImport("dsound.dll", EntryPoint = "DirectSoundEnumerateA", SetLastError = true, CharSet = CharSet.Unicode, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
-        static extern void DirectSoundEnumerate(DSEnumCallback lpDSEnumCallback, IntPtr lpContext);
+        [LibraryImport("dsound.dll", EntryPoint = "DirectSoundEnumerateA")]
+        [UnmanagedCallConv(CallConvs = new[] { typeof(System.Runtime.CompilerServices.CallConvStdcall) })]
+        private static partial int DirectSoundEnumerate(IntPtr lpDSEnumCallback, IntPtr lpContext);
 
         /// <summary>
         /// Gets the HANDLE of the desktop window.
         /// </summary>
         /// <returns>HANDLE of the Desktop window</returns>
-        [DllImport("user32.dll")]
-        private static extern IntPtr GetDesktopWindow();
+        [LibraryImport("user32.dll")]
+        private static partial IntPtr GetDesktopWindow();
     }
 
     /// <summary>

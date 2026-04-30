@@ -253,17 +253,19 @@ namespace NAudio.Wave
                     // -------------------------------------------------------------------------------------
 
                     // Fill BufferDescription for PrimaryBuffer
-                    BufferDescription bufferDesc = new BufferDescription();
-                    bufferDesc.dwSize = Marshal.SizeOf(bufferDesc);
-                    bufferDesc.dwBufferBytes = 0;
-                    bufferDesc.dwFlags = DirectSoundBufferCaps.DSBCAPS_PRIMARYBUFFER;
-                    bufferDesc.dwReserved = 0;
-                    bufferDesc.lpwfxFormat = IntPtr.Zero;
-                    bufferDesc.guidAlgo = Guid.Empty;
+                    var bufferDesc = new BufferDescription
+                    {
+                        dwSize = Marshal.SizeOf<BufferDescription>(),
+                        dwBufferBytes = 0,
+                        dwFlags = DirectSoundBufferCaps.DSBCAPS_PRIMARYBUFFER,
+                        dwReserved = 0,
+                        lpwfxFormat = IntPtr.Zero,
+                        guidAlgo = Guid.Empty,
+                    };
 
                     object soundBufferObj;
                     // Create PrimaryBuffer
-                    directSound.CreateSoundBuffer(bufferDesc, out soundBufferObj, IntPtr.Zero);
+                    directSound.CreateSoundBuffer(in bufferDesc, out soundBufferObj, IntPtr.Zero);
                     primarySoundBuffer = (IDirectSoundBuffer)soundBufferObj;
 
                     // Play & Loop on the PrimarySound Buffer 
@@ -277,29 +279,30 @@ namespace NAudio.Wave
                     samplesFrameSize = MsToBytes(desiredLatency);
 
                     // Fill BufferDescription for SecondaryBuffer
-                    BufferDescription bufferDesc2 = new BufferDescription();
-                    bufferDesc2.dwSize = Marshal.SizeOf(bufferDesc2);
-                    bufferDesc2.dwBufferBytes = (uint)(samplesFrameSize * 2);
-                    bufferDesc2.dwFlags = DirectSoundBufferCaps.DSBCAPS_GETCURRENTPOSITION2
-                        | DirectSoundBufferCaps.DSBCAPS_CTRLPOSITIONNOTIFY
-                        | DirectSoundBufferCaps.DSBCAPS_GLOBALFOCUS
-                        | DirectSoundBufferCaps.DSBCAPS_CTRLVOLUME
-                        | DirectSoundBufferCaps.DSBCAPS_STICKYFOCUS
-                        | DirectSoundBufferCaps.DSBCAPS_GETCURRENTPOSITION2;
-                    bufferDesc2.dwReserved = 0;
                     GCHandle handleOnWaveFormat = GCHandle.Alloc(waveFormat, GCHandleType.Pinned); // Ptr to waveFormat
-                    bufferDesc2.lpwfxFormat = handleOnWaveFormat.AddrOfPinnedObject(); // set Ptr to waveFormat
-                    bufferDesc2.guidAlgo = Guid.Empty;
+                    var bufferDesc2 = new BufferDescription
+                    {
+                        dwSize = Marshal.SizeOf<BufferDescription>(),
+                        dwBufferBytes = (uint)(samplesFrameSize * 2),
+                        dwFlags = DirectSoundBufferCaps.DSBCAPS_GETCURRENTPOSITION2
+                            | DirectSoundBufferCaps.DSBCAPS_CTRLPOSITIONNOTIFY
+                            | DirectSoundBufferCaps.DSBCAPS_GLOBALFOCUS
+                            | DirectSoundBufferCaps.DSBCAPS_CTRLVOLUME
+                            | DirectSoundBufferCaps.DSBCAPS_STICKYFOCUS
+                            | DirectSoundBufferCaps.DSBCAPS_GETCURRENTPOSITION2,
+                        dwReserved = 0,
+                        lpwfxFormat = handleOnWaveFormat.AddrOfPinnedObject(), // Ptr to waveFormat
+                        guidAlgo = Guid.Empty,
+                    };
 
                     // Create SecondaryBuffer
-                    directSound.CreateSoundBuffer(bufferDesc2, out soundBufferObj, IntPtr.Zero);
+                    directSound.CreateSoundBuffer(in bufferDesc2, out soundBufferObj, IntPtr.Zero);
                     secondaryBuffer = (IDirectSoundBuffer)soundBufferObj;
                     handleOnWaveFormat.Free();
 
                     // Get effective SecondaryBuffer size
-                    BufferCaps dsbCaps = new BufferCaps();
-                    dsbCaps.dwSize = Marshal.SizeOf(dsbCaps);
-                    secondaryBuffer.GetCaps(dsbCaps);
+                    var dsbCaps = new BufferCaps { dwSize = Marshal.SizeOf<BufferCaps>() };
+                    secondaryBuffer.GetCaps(ref dsbCaps);
 
                     nextSamplesWriteIndex = 0;
                     samplesTotalSize = dsbCaps.dwBufferBytes;
@@ -684,7 +687,7 @@ namespace NAudio.Wave
 #region Native DirectSound COM Interface
 
         [StructLayout(LayoutKind.Sequential, Pack = 2)]
-        internal class BufferDescription
+        internal struct BufferDescription
         {
             public int dwSize;
             [MarshalAs(UnmanagedType.U4)]
@@ -696,7 +699,7 @@ namespace NAudio.Wave
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 2)]
-        internal class BufferCaps
+        internal struct BufferCaps
         {
             public int dwSize;
             public int dwFlags;
@@ -780,7 +783,7 @@ namespace NAudio.Wave
         internal interface IDirectSound
         {
             //STDMETHOD(CreateSoundBuffer)    (THIS_ LPCDSBUFFERDESC pcDSBufferDesc, LPDIRECTSOUNDBUFFER *ppDSBuffer, LPUNKNOWN pUnkOuter) PURE;
-            void CreateSoundBuffer([In] BufferDescription desc, [Out, MarshalAs(UnmanagedType.Interface)] out object dsDSoundBuffer, IntPtr pUnkOuter);
+            void CreateSoundBuffer([In] in BufferDescription desc, [Out, MarshalAs(UnmanagedType.Interface)] out object dsDSoundBuffer, IntPtr pUnkOuter);
             //STDMETHOD(GetCaps)              (THIS_ LPDSCAPS pDSCaps) PURE;
             void GetCaps(IntPtr caps);
             //STDMETHOD(DuplicateSoundBuffer) (THIS_ LPDIRECTSOUNDBUFFER pDSBufferOriginal, LPDIRECTSOUNDBUFFER *ppDSBufferDuplicate) PURE;
@@ -808,7 +811,7 @@ namespace NAudio.Wave
         internal interface IDirectSoundBuffer
         {
             //    STDMETHOD(GetCaps)              (THIS_ LPDSBCAPS pDSBufferCaps) PURE;
-            void GetCaps([MarshalAs(UnmanagedType.LPStruct)] BufferCaps pBufferCaps);
+            void GetCaps(ref BufferCaps pBufferCaps);
             //    STDMETHOD(GetCurrentPosition)   (THIS_ LPDWORD pdwCurrentPlayCursor, LPDWORD pdwCurrentWriteCursor) PURE;
             void GetCurrentPosition([Out] out uint currentPlayCursor, [Out] out uint currentWriteCursor);
             //    STDMETHOD(GetFormat)            (THIS_ LPWAVEFORMATEX pwfxFormat, DWORD dwSizeAllocated, LPDWORD pdwSizeWritten) PURE;
@@ -825,7 +828,7 @@ namespace NAudio.Wave
             [return: MarshalAs(UnmanagedType.U4)]
             DirectSoundBufferStatus GetStatus();
             //    STDMETHOD(Initialize)           (THIS_ LPDIRECTSOUND pDirectSound, LPCDSBUFFERDESC pcDSBufferDesc) PURE;
-            void Initialize([In, MarshalAs(UnmanagedType.Interface)] IDirectSound directSound, [In] BufferDescription desc);
+            void Initialize([In, MarshalAs(UnmanagedType.Interface)] IDirectSound directSound, [In] in BufferDescription desc);
             //    STDMETHOD(Lock)                 (THIS_ DWORD dwOffset, DWORD dwBytes, LPVOID *ppvAudioPtr1, LPDWORD pdwAudioBytes1,
             //                                           LPVOID *ppvAudioPtr2, LPDWORD pdwAudioBytes2, DWORD dwFlags) PURE;
             void Lock(int dwOffset, uint dwBytes, [Out] out IntPtr audioPtr1, [Out] out int audioBytes1, [Out] out IntPtr audioPtr2, [Out] out int audioBytes2, [MarshalAs(UnmanagedType.U4)] DirectSoundBufferLockFlag dwFlags);

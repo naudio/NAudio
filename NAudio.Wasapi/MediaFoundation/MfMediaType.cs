@@ -6,8 +6,9 @@ namespace NAudio.MediaFoundation
 {
     /// <summary>
     /// Wrapper for IMFMediaType providing managed access to media type attributes.
+    /// Internal until the high-level API solidifies (see MODERNIZATION.md Phase 3).
     /// </summary>
-    public class MfMediaType : IDisposable
+    internal class MfMediaType : IDisposable
     {
         private Interfaces.IMFMediaType mediaTypeInterface;
         private IntPtr nativePointer;

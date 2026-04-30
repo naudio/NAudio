@@ -7,8 +7,9 @@ namespace NAudio.MediaFoundation
 {
     /// <summary>
     /// Wrapper for IMFSourceReader providing managed access to media source reading.
+    /// Internal until the high-level API solidifies (see MODERNIZATION.md Phase 3).
     /// </summary>
-    public class MfSourceReader : IDisposable
+    internal class MfSourceReader : IDisposable
     {
         private Interfaces.IMFSourceReader readerInterface;
         private IntPtr nativePointer;

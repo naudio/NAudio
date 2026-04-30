@@ -6,8 +6,9 @@ namespace NAudio.MediaFoundation
 {
     /// <summary>
     /// Wrapper for IMFSinkWriter providing managed access to media sink writing.
+    /// Internal until the high-level API solidifies (see MODERNIZATION.md Phase 3).
     /// </summary>
-    public class MfSinkWriter : IDisposable
+    internal class MfSinkWriter : IDisposable
     {
         private Interfaces.IMFSinkWriter writerInterface;
         private IntPtr nativePointer;

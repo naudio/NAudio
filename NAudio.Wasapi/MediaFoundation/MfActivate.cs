@@ -37,9 +37,11 @@ namespace NAudio.MediaFoundation
 
         /// <summary>
         /// Activates the object as an IMFTransform and returns an MfTransform wrapper.
+        /// Internal until <see cref="MfTransform"/> is part of the public surface
+        /// (see MODERNIZATION.md Phase 3).
         /// </summary>
         /// <returns>The activated transform.</returns>
-        public MfTransform ActivateTransform()
+        internal MfTransform ActivateTransform()
         {
             var iid = new Guid("bf94c121-5b05-4e6f-8000-ba598961414d"); // IID_IMFTransform
             MediaFoundationException.ThrowIfFailed(activateInterface.ActivateObject(iid, out var ppv));

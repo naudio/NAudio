@@ -6,8 +6,9 @@ namespace NAudio.MediaFoundation
 {
     /// <summary>
     /// Wrapper for IMFMediaBuffer providing Span-based buffer access.
+    /// Internal until the high-level API solidifies (see MODERNIZATION.md Phase 3).
     /// </summary>
-    public class MfMediaBuffer : IDisposable
+    internal class MfMediaBuffer : IDisposable
     {
         private Interfaces.IMFMediaBuffer bufferInterface;
         private IntPtr nativePointer;
@@ -108,8 +109,9 @@ namespace NAudio.MediaFoundation
     /// <summary>
     /// Provides Span-based access to a locked IMFMediaBuffer.
     /// Must be disposed to unlock the buffer.
+    /// Internal until the high-level API solidifies (see MODERNIZATION.md Phase 3).
     /// </summary>
-    public ref struct MediaBufferLease
+    internal ref struct MediaBufferLease
     {
         private MfMediaBuffer owner;
 

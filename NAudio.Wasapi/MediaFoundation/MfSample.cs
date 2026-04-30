@@ -7,8 +7,9 @@ namespace NAudio.MediaFoundation
 {
     /// <summary>
     /// Wrapper for IMFSample providing managed access to media samples.
+    /// Internal until the high-level API solidifies (see MODERNIZATION.md Phase 3).
     /// </summary>
-    public class MfSample : IDisposable
+    internal class MfSample : IDisposable
     {
         private Interfaces.IMFSample sampleInterface;
         private IntPtr nativePointer;

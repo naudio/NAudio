@@ -7,8 +7,9 @@ namespace NAudio.MediaFoundation
 {
     /// <summary>
     /// Wrapper for IMFTransform providing managed access to Media Foundation transforms.
+    /// Internal until the high-level API solidifies (see MODERNIZATION.md Phase 3).
     /// </summary>
-    public class MfTransform : IDisposable
+    internal class MfTransform : IDisposable
     {
         private Interfaces.IMFTransform transformInterface;
         private IntPtr nativePointer;

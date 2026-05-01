@@ -9,15 +9,15 @@ namespace NAudio.Utils
     public static partial class HResult
     {
         /// <inheritdoc cref="CommonHResults.S_OK"/>
-        [Obsolete("Should use CommonHResults.S_OK")]
+        // [Obsolete("Should use CommonHResults.S_OK", false)]
         public const int S_OK = CommonHResults.S_OK;
         
         /// <inheritdoc cref="CommonHResults.S_FALSE"/>
-        [Obsolete("Should use CommonHResults.S_FALSE")]
+        // [Obsolete("Should use CommonHResults.S_FALSE", false)]
         public const int S_FALSE = CommonHResults.S_FALSE;
 
         /// <inheritdoc cref="CommonHResults.E_INVALIDARG"/>
-        [Obsolete("Should use CommonHResults.E_INVALIDARG")]
+        // [Obsolete("Should use CommonHResults.E_INVALIDARG", false)]
         public const int E_INVALIDARG = CommonHResults.E_INVALIDARG;
 
         /// <summary>

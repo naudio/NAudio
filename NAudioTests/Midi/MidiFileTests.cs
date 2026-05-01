@@ -135,6 +135,39 @@ namespace NAudioTests.Midi
         }
 
         [Test]
+        public void RunningStatusSurvivesAcrossMetaEvents()
+        {
+            // Issue #205: a meta event embedded between channel-voice messages must not
+            // clobber running status, otherwise the next high-bit-clear byte gets reparsed
+            // as a meta event type.
+            var track = new byte[]
+            {
+                0x00, 0x90, 0x3C, 0x64,             // NoteOn ch1 note 0x3C vel 100 (sets running status)
+                0x00, 0xFF, 0x01, 0x01, (byte)'x',  // Text meta event "x"
+                0x00, 0x40, 0x64,                   // running-status NoteOn ch1 note 0x40 vel 100
+                0x00, 0x3C, 0x00,                   // running-status NoteOn vel 0 (note off for 0x3C)
+                0x00, 0x40, 0x00,                   // running-status NoteOn vel 0 (note off for 0x40)
+                0x00, 0xFF, 0x2F, 0x00              // EndTrack
+            };
+            var bytes = CreateMidiFileBytes(0, 480, track);
+
+            using (var stream = new MemoryStream(bytes))
+            {
+                var midiFile = new MidiFile(stream, true);
+
+                Assert.That(midiFile.Events[0].Count, Is.EqualTo(6));
+                Assert.That(midiFile.Events[0][0], Is.TypeOf<NoteOnEvent>());
+                Assert.That(midiFile.Events[0][1], Is.TypeOf<TextEvent>());
+                Assert.That(midiFile.Events[0][2], Is.TypeOf<NoteOnEvent>());
+
+                var runningNoteOn = (NoteEvent)midiFile.Events[0][2];
+                Assert.That(runningNoteOn.NoteNumber, Is.EqualTo(0x40));
+                Assert.That(runningNoteOn.Velocity, Is.EqualTo(0x64));
+                Assert.That(runningNoteOn.Channel, Is.EqualTo(1));
+            }
+        }
+
+        [Test]
         public void Type1TracksUseIndependentAbsoluteTimeBases()
         {
             var track1 = new byte[]

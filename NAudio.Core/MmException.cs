@@ -1,11 +1,11 @@
-using System;
+﻿using System;
 
 namespace NAudio
 {
     /// <summary>
-    /// Summary description for MmException.
+    /// Exception created and thrown when a WinMM error is occurred.
     /// </summary>
-    public class MmException : Exception
+    public class MmException : NAudioException
     {
         /// <summary>
         /// Creates a new MmException
@@ -19,11 +19,7 @@ namespace NAudio
             Function = function;
         }
 
-
-        private static string ErrorMessage(MmResult result, string function)
-        {
-            return $"{result} calling {function}";
-        }
+        private static string ErrorMessage(MmResult result, string function) => $"{result} calling {function}";
 
         /// <summary>
         /// Helper function to automatically raise an exception on failure

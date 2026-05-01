@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
@@ -10,7 +10,7 @@ namespace NAudio.Wave
     /// Represents a Wave file format
     /// </summary>
     [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Ansi, Pack=2)]
-    public class WaveFormat
+    public class WaveFormat : IAudioFormat
     {
         /// <summary>format type</summary>
         protected WaveFormatEncoding waveFormatTag;
@@ -264,17 +264,13 @@ namespace NAudio.Wave
         /// <returns>True if the objects are the same</returns>
         public override bool Equals(object obj)
         {
-            var other = obj as WaveFormat;
-            if(other != null)
-            {
-                return waveFormatTag == other.waveFormatTag &&
+            return obj is WaveFormat other && 
+                    waveFormatTag == other.waveFormatTag &&
                     channels == other.channels &&
                     sampleRate == other.sampleRate &&
                     averageBytesPerSecond == other.averageBytesPerSecond &&
                     blockAlign == other.blockAlign &&
                     bitsPerSample == other.bitsPerSample;
-            }
-            return false;
         }
 
         /// <summary>
@@ -343,5 +339,8 @@ namespace NAudio.Wave
         /// except for compressed formats which store extra data after the WAVEFORMATEX header
         /// </summary>
         public int ExtraSize => extraSize;
+
+        /// <inheritdoc />
+        public ChannelType[] ChannelLayout => CommonChannelTypes.CreateLayoutFromNumberOfChannels(Channels);
     }
 }

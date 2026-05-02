@@ -61,6 +61,32 @@ using (var reader = new WaveFileReader(testFilePath))
 }
 ```
 
+## Encoding to FLAC
+
+Windows 10 and later include a FLAC (Free Lossless Audio Codec) encoder. FLAC is lossless, so there is no bitrate to choose — `EncodeToFlac` is a simple helper analogous to `EncodeToMp3` / `EncodeToAac` / `EncodeToWma`:
+
+```c#
+var flacFilePath = Path.Combine(outputFolder, "test.flac");
+using (var reader = new WaveFileReader(testFilePath))
+{
+    MediaFoundationEncoder.EncodeToFlac(reader, flacFilePath);
+}
+```
+
+Some Windows SKUs only advertise 24-bit output media types for FLAC at certain sample rates. The helper prefers a media type whose bit depth matches the input but falls back to the first rate/channels match if no exact bps match exists. For best results, supply PCM input at 16- or 24-bit depending on what the encoder offers for your sample rate.
+
+## Apple Lossless (ALAC) is not supported
+
+Windows 10+ ships an ALAC encoder MFT, but using it via the MP4 sink writer is impractical. Microsoft does not document the encoder, and the MP4 sink rejects every codec-private layout we've tried (bare 24-byte `ALACSpecificConfig`, FFmpeg's 36-byte `'alac'`-FullBox wrapper) with `MF_E_SINK_HEADERS_NOT_FOUND` (`0xC00D4A45`) at the first `WriteSample`. NAudio therefore does not provide an `EncodeToAlac` helper. ALAC playback through `MediaFoundationReader` works fine; it's only encode that's blocked. If you need ALAC encoding, look at FFmpeg or a dedicated ALAC encoder library.
+
+## Opus is read-only on Windows
+
+Windows 10 1903+ and Windows 11 ship a Media Foundation **decoder** for Opus, but no encoder. `MediaFoundationEncoder.GetOutputMediaTypes(AudioSubtypes.MFAudioFormat_Opus)` returns an empty array on every stock Windows install, and there is no `MFTranscodeContainerType_Opus` in the platform headers. As a result NAudio does not provide an `EncodeToOpus` helper — it would always throw "no suitable encoders".
+
+Opus **playback** works through `MediaFoundationReader` for `.mka` (Matroska) and `.webm` containers carrying Opus tracks, and is exposed through `AudioFileReader` and the demo apps just like any other format.
+
+If you need Opus **encoding** in .NET, the recommended option is the [Concentus](https://github.com/lostromb/concentus) pure-managed port of `libopus` (NuGet: `Concentus`). It supports both encoding and decoding, and the companion [Concentus.OggFile](https://github.com/lostromb/concentus.oggfile) package handles the Ogg container around encoded frames. NAudio integration is straightforward — feed PCM samples from any `IWaveProvider` / `ISampleProvider` into a `Concentus.OpusEncoder` and write the encoded packets out via `OpusOggWriteStream`.
+
 ## Converting from other input formats
 
 We've used `WaveFileReader` in all our examples so far. But we can use the same technique using `MediaFoundationReader`. This will allow us to convert files of a whole variety of types (MP3, WMA, AAC, FLAC, Opus, etc.) into anything we have an encoder for. Let's convert our WMA file into AAC:

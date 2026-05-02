@@ -52,7 +52,7 @@ namespace NAudioWpfDemo.MediaFoundationEncode
         private void SelectInputFile()
         {
             var ofd = new OpenFileDialog();
-            ofd.Filter = "Audio files|*.mp3;*.wav;*.wma;*.aiff;*.aac";
+            ofd.Filter = "Audio files|*.mp3;*.wav;*.wma;*.aiff;*.aac;*.mp4;*.m4a;*.flac;*.opus;*.ogg;*.mka;*.webm";
             if (ofd.ShowDialog() == true)
             {
                 if (TryOpenInputFile(ofd.FileName))

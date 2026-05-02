@@ -83,6 +83,23 @@ namespace NAudio.MediaFoundation
         }
 
         /// <summary>
+        /// Sets a byte-blob attribute on this media type. Used for codec-private
+        /// configuration data (e.g. <c>MF_MT_USER_DATA</c> carrying the ALAC magic
+        /// cookie or AAC <c>HEAACWAVEINFO</c>).
+        /// </summary>
+        public void SetBlob(Guid key, ReadOnlySpan<byte> value)
+        {
+            unsafe
+            {
+                fixed (byte* p = value)
+                {
+                    MediaFoundationException.ThrowIfFailed(
+                        mediaType.SetBlob(key, (IntPtr)p, value.Length));
+                }
+            }
+        }
+
+        /// <summary>
         /// The Sample Rate (valid for audio media types)
         /// </summary>
         public int SampleRate

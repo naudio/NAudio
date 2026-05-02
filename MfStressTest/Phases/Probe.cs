@@ -24,15 +24,21 @@ internal static class Probe
         // streamCapable=false skips the (codec, Stream) combo in the breadth matrix.
         // WMA stream-based decoding consistently returns MF_E_ASF_INVALIDDATA at high
         // volume in our testing - documented as a known issue (see README "Known
-        // issues"). WMA file-based reading still gets exercised below. FLAC/ALAC
-        // streaming would need a TranscodeContainerType GUID we don't yet expose.
+        // issues"). WMA file-based reading still gets exercised below. FLAC streaming
+        // would need a TranscodeContainerType GUID we don't yet expose.
+        // ALAC and OPUS are included for visibility but not exercised:
+        //   - ALAC: Windows ships an encoder MFT but the MP4 sink rejects every
+        //     codec-private layout we've tried (bare 24-byte ALACSpecificConfig and
+        //     FFmpeg's 36-byte 'alac'-FullBox wrapper) with MF_E_SINK_HEADERS_NOT_FOUND.
+        //     Microsoft's encoder is undocumented. See Tools/prompts/flac-opus-alac-fix.md.
+        //   - OPUS: decoder MFT only; GetOutputMediaTypes returns 0.
         var probe = new[]
         {
             ("MP3",  AudioSubtypes.MFAudioFormat_MP3,       "mp3",  TranscodeContainerTypes.MFTranscodeContainerType_MP3,   true),
             ("WMA",  AudioSubtypes.MFAudioFormat_WMAudioV8, "wma",  TranscodeContainerTypes.MFTranscodeContainerType_ASF,   false),
             ("AAC",  AudioSubtypes.MFAudioFormat_AAC,       "mp4",  TranscodeContainerTypes.MFTranscodeContainerType_MPEG4, true),
             ("FLAC", AudioSubtypes.MFAudioFormat_FLAC,      "flac", Guid.Empty,                                              false),
-            ("ALAC", AudioSubtypes.MFAudioFormat_ALAC,      "m4a",  Guid.Empty,                                              false),
+            ("OPUS", AudioSubtypes.MFAudioFormat_Opus,      "opus", Guid.Empty,                                              false),
         };
 
         var available = new List<CodecSpec>();
@@ -69,13 +75,14 @@ internal static class Probe
             if (sink == Sink.Stream && !codec.StreamCapable) continue;
             attempted++;
             var combo = new Combo(codec, rate, ch, sink);
-            if (TryBreadthRound(tempDir, combo))
+            string? skipReason = null;
+            if (TryBreadthRound(tempDir, combo, out skipReason))
             {
                 combos.Add(combo);
                 succeeded++;
                 if (o.Verbose) Console.WriteLine($"  OK   {combo}");
             }
-            else if (o.Verbose) Console.WriteLine($"  skip {combo}");
+            else if (o.Verbose) Console.WriteLine($"  skip {combo}: {skipReason}");
         }
 
         Console.WriteLine($"  breadth: {succeeded}/{attempted} combos OK in {sw.Elapsed.TotalSeconds:F1}s");
@@ -83,7 +90,7 @@ internal static class Probe
         return combos;
     }
 
-    static bool TryBreadthRound(string tempDir, Combo combo)
+    static bool TryBreadthRound(string tempDir, Combo combo, out string? skipReason)
     {
         try
         {
@@ -92,13 +99,15 @@ internal static class Probe
             Watchdog.Beat("breadth-decode", 0, combo);
             MfPrimitives.DecodeOne(encoded, combo, repositionFraction: 0.0, alsoResample: true, targetRate: 22050);
             MfPrimitives.DisposeEncoded(encoded);
+            skipReason = null;
             return true;
         }
         // Per-combo failures are expected (codec/bitrate/format not supported here);
-        // skip silently. Anything else propagates.
-        catch (InvalidOperationException) { return false; }
-        catch (NAudio.MediaFoundation.MediaFoundationException) { return false; }
-        catch (COMException) { return false; }
-        catch (ArgumentException) { return false; }
+        // skip but report the reason so silently-skipped classes (e.g. FLAC/ALAC
+        // bps mismatch) are debuggable under --verbose.
+        catch (InvalidOperationException ex) { skipReason = $"{ex.GetType().Name}: {ex.Message}"; return false; }
+        catch (NAudio.MediaFoundation.MediaFoundationException ex) { skipReason = $"MediaFoundationException 0x{ex.HResult:X8}: {ex.Message}"; return false; }
+        catch (COMException ex) { skipReason = $"COMException 0x{ex.HResult:X8}: {ex.Message}"; return false; }
+        catch (ArgumentException ex) { skipReason = $"ArgumentException: {ex.Message}"; return false; }
     }
 }

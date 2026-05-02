@@ -128,5 +128,3 @@ public class SrcBenchmarks
         }
     }
 }
-</content>
-</invoke>

@@ -191,5 +191,3 @@ namespace NAudioTests.Dsp
         }
     }
 }
-</content>
-</invoke>

@@ -205,5 +205,3 @@ namespace NAudio.Dsp
         }
     }
 }
-</content>
-</invoke>

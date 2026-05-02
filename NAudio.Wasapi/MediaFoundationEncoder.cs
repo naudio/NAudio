@@ -26,12 +26,20 @@ namespace NAudio.Wave
         /// <returns>An array of available bitrates in average bits per second</returns>
         public static int[] GetEncodeBitrates(Guid audioSubtype, int sampleRate, int channels)
         {
-            return GetOutputMediaTypes(audioSubtype)
-                .Where(mt => mt.SampleRate == sampleRate && mt.ChannelCount == channels)
-                .Select(mt => mt.AverageBytesPerSecond*8)
-                .Distinct()
-                .OrderBy(br => br)
-                .ToArray();
+            var mediaTypes = GetOutputMediaTypes(audioSubtype);
+            try
+            {
+                return mediaTypes
+                    .Where(mt => mt.SampleRate == sampleRate && mt.ChannelCount == channels)
+                    .Select(mt => mt.AverageBytesPerSecond * 8)
+                    .Distinct()
+                    .OrderBy(br => br)
+                    .ToArray();
+            }
+            finally
+            {
+                foreach (var mt in mediaTypes) mt.Dispose();
+            }
         }
 
         /// <summary>
@@ -186,12 +194,26 @@ namespace NAudio.Wave
         public static MediaType SelectMediaType(Guid audioSubtype, WaveFormat inputFormat, int desiredBitRate)
         {
             MediaFoundationApi.Startup();
-            return GetOutputMediaTypes(audioSubtype)
-                .Where(mt => mt.SampleRate == inputFormat.SampleRate && mt.ChannelCount == inputFormat.Channels)
-                .Select(mt => new { MediaType = mt, Delta = Math.Abs(desiredBitRate - mt.AverageBytesPerSecond * 8) } )
-                .OrderBy(mt => mt.Delta)
-                .Select(mt => mt.MediaType)
-                .FirstOrDefault();
+            var allTypes = GetOutputMediaTypes(audioSubtype);
+            try
+            {
+                var selected = allTypes
+                    .Where(mt => mt.SampleRate == inputFormat.SampleRate && mt.ChannelCount == inputFormat.Channels)
+                    .Select(mt => new { MediaType = mt, Delta = Math.Abs(desiredBitRate - mt.AverageBytesPerSecond * 8) })
+                    .OrderBy(mt => mt.Delta)
+                    .Select(mt => mt.MediaType)
+                    .FirstOrDefault();
+                foreach (var mt in allTypes)
+                {
+                    if (!ReferenceEquals(mt, selected)) mt.Dispose();
+                }
+                return selected;
+            }
+            catch
+            {
+                foreach (var mt in allTypes) mt.Dispose();
+                throw;
+            }
         }
 
         /// <summary>

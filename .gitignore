@@ -21,4 +21,10 @@ Tools/
 *.DotSettings
 .claude/worktrees/
 .claude/settings.local.json
+.claude/scheduled_tasks.lock
+.claude/scheduled_tasks/
 BenchmarkDotNet.Artifacts/
+MfStressTest/dumps/
+# procdump.exe (used by MfStressTest watchdog) writes a 0-byte log to the
+# target process's working directory each time it captures a dump.
+myeasylog.log

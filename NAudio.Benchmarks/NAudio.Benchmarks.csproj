@@ -10,6 +10,10 @@
     <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
     <!-- Analyzer noise from BenchmarkDotNet's generated runner harness is not our concern. -->
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <!-- Strong-named so NAudio.Core can grant InternalsVisibleTo for benchmarking
+         internal types (e.g. ArDftResampler during the spike phase). -->
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\NAudioStrongNameKey.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <ItemGroup>

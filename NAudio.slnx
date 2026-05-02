@@ -30,4 +30,7 @@
   <Project Path="NAudioAotSmokeTest/NAudioAotSmokeTest.csproj" />
   <Project Path="NAudioConsoleTest/NAudioConsoleTest.csproj" />
   <Project Path="NAudioTests/NAudioTests.csproj" />
+  <Project Path="MfStressTest/MfStressTest.csproj">
+    <BuildType Project="Release" />
+  </Project>
 </Solution>

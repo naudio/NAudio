@@ -54,9 +54,12 @@ for the major MF code paths.
 ## What it exercises
 
 - **Encode**: `MediaFoundationEncoder.EncodeToMp3`, `EncodeToWma`,
-  `EncodeToAac`, plus the raw `Encode(...)` path for FLAC and ALAC. Both file
-  and `MemoryStream` sinks. Multiple sample rates (22050, 44100, 48000) and
-  channel counts (1, 2). Both PCM16 and IEEE-float input occasionally.
+  `EncodeToAac`, `EncodeToFlac`. Both file and `MemoryStream` sinks (FLAC is
+  file-only). Multiple sample rates (22050, 44100, 48000) and channel counts
+  (1, 2). Both PCM16 and IEEE-float input occasionally. For FLAC the harness
+  peeks at the encoder's advertised output media types and rebuilds a 24-bit
+  PCM source if 16-bit isn't offered for the (rate, channels) combo — some
+  Windows SKUs only advertise 24-bit FLAC for some rates.
 - **Decode**: every encoded clip is read back through `MediaFoundationReader`
   and `StreamMediaFoundationReader`. Roughly half of soak iterations also
   reposition mid-stream and continue reading.
@@ -340,12 +343,19 @@ internally.
 
 Currently NOT covered (deliberate omissions / future work):
 
-- **OPUS codec**: no GUID in `AudioSubtypes.cs` yet (Windows 10 1903+ ships an
-  OPUS encoder). Prompt to add it: `Tools/prompts/flac-opus-alac-fix.md`.
-- **FLAC / ALAC encode coverage**: present in the codec probe but the
-  raw-Encode media-type selector is too narrow (filters on rate + channels,
-  ignores bits-per-sample), so they're skipped during soak. Same prompt as
-  above.
+- **OPUS encode coverage**: OPUS is in the probe table for visibility but
+  Windows 10/11 has only an OPUS decoder MFT, no encoder
+  (`GetOutputMediaTypes(MFAudioFormat_Opus)` returns empty). Decode-only
+  coverage would need a fixture file, which conflicts with the harness's
+  fully-synthesized design — see `Docs/MediaFoundationEncoder.md` for the
+  decode-only story and Concentus as the third-party alternative for
+  encoding.
+- **ALAC encode coverage**: Windows ships an ALAC encoder MFT but the MP4
+  sink rejects every codec-private layout we tried (bare 24-byte
+  `ALACSpecificConfig` and FFmpeg's 36-byte `'alac'`-FullBox wrapper) with
+  `MF_E_SINK_HEADERS_NOT_FOUND` (`0xC00D4A45`). Microsoft's encoder is
+  undocumented, so we'd be guessing at the format. Walked back —
+  `Docs/MediaFoundationEncoder.md` documents this as not supported.
 - **CCW/RCW refcount instrumentation**: separate tool if/when needed.
 - **NAudio 2 backport**: a useful future experiment is running this same
   harness against NAudio 2's pre-`GeneratedComInterface` Media Foundation

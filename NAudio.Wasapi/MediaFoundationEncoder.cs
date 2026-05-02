@@ -58,15 +58,17 @@ namespace NAudio.Wave
             }
             catch (COMException c)
             {
-                if (c.GetHResult() == MediaFoundationErrors.MF_E_NOT_FOUND)
+                int hr = c.GetHResult();
+                // Windows returns MF_E_TOPO_CODEC_NOT_FOUND for audio subtypes that have
+                // no encoder MFT registered (e.g. OPUS on Windows 10/11 — it's a decode-only
+                // format in MF). Older Windows or other lookup failures surface as MF_E_NOT_FOUND.
+                // Either way it means "no encoder available", so return empty.
+                if (hr == MediaFoundationErrors.MF_E_NOT_FOUND ||
+                    hr == MediaFoundationErrors.MF_E_TOPO_CODEC_NOT_FOUND)
                 {
-                    // Don't worry if we didn't find any - just means no encoder available for this type
                     return new MediaType[0];
                 }
-                else
-                {
-                    throw;
-                }
+                throw;
             }
             try
             {
@@ -181,6 +183,56 @@ namespace NAudio.Wave
             if (mediaType == null) throw new InvalidOperationException("No suitable AAC encoders available");
             using (var encoder = new MediaFoundationEncoder(mediaType)) {
                 encoder.Encode(outputStream, inputSource, TranscodeContainerTypes.MFTranscodeContainerType_MPEG4);
+            }
+        }
+
+        /// <summary>
+        /// Helper function to simplify encoding to FLAC (Free Lossless Audio Codec).
+        /// Available on Windows 10 and above. FLAC is lossless, so there is no bitrate
+        /// to choose - the encoder media type is selected to match the input's sample
+        /// rate, channels, and (where possible) bit depth. If the encoder only offers
+        /// a different bit depth for the input rate/channels, the closest available is
+        /// used; supply PCM input at that depth for best results.
+        /// </summary>
+        /// <param name="inputSource">Input audio source, must be PCM</param>
+        /// <param name="outputFile">Output file path, should end with .flac</param>
+        public static void EncodeToFlac(IWaveProvider inputSource, string outputFile)
+        {
+            var mediaType = SelectLosslessMediaType(AudioSubtypes.MFAudioFormat_FLAC, inputSource.WaveFormat);
+            if (mediaType == null) throw new InvalidOperationException("No suitable FLAC encoders available");
+            using var encoder = new MediaFoundationEncoder(mediaType);
+            encoder.Encode(outputFile, inputSource);
+        }
+
+        /// <summary>
+        /// Picks the encoder media type for a lossless codec (currently FLAC). Prefers
+        /// an exact match on rate, channels, and bps; falls back to rate + channels
+        /// if no bps match exists. Disposes the rejected media types and returns
+        /// null if nothing matches.
+        /// </summary>
+        private static MediaType SelectLosslessMediaType(Guid audioSubtype, WaveFormat inputFormat)
+        {
+            MediaFoundationApi.Startup();
+            var allTypes = GetOutputMediaTypes(audioSubtype);
+            try
+            {
+                var selected = allTypes.FirstOrDefault(mt =>
+                    mt.SampleRate == inputFormat.SampleRate
+                    && mt.ChannelCount == inputFormat.Channels
+                    && mt.BitsPerSample == inputFormat.BitsPerSample)
+                    ?? allTypes.FirstOrDefault(mt =>
+                        mt.SampleRate == inputFormat.SampleRate
+                        && mt.ChannelCount == inputFormat.Channels);
+                foreach (var mt in allTypes)
+                {
+                    if (!ReferenceEquals(mt, selected)) mt.Dispose();
+                }
+                return selected;
+            }
+            catch
+            {
+                foreach (var mt in allTypes) mt.Dispose();
+                throw;
             }
         }
 

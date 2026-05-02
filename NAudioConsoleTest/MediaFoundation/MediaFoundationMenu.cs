@@ -18,6 +18,7 @@ static class MediaFoundationMenu
                     "Encode to MP3",
                     "Encode to AAC",
                     "Encode to WMA",
+                    "Encode to FLAC",
                     "Round-trip encode through MemoryStream (MP3 + AAC + WMA)"),
                 new Menu.Group("Resampling",
                     "Resample audio file"),
@@ -48,6 +49,9 @@ static class MediaFoundationMenu
                         break;
                     case "Encode to WMA":
                         EncoderTests.EncodeToWma();
+                        break;
+                    case "Encode to FLAC":
+                        EncoderTests.EncodeToFlac();
                         break;
                     case "Round-trip encode through MemoryStream (MP3 + AAC + WMA)":
                         EncoderTests.RoundTripThroughMemoryStream();

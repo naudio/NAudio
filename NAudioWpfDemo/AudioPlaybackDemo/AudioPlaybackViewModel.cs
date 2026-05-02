@@ -95,7 +95,7 @@ namespace NAudioWpfDemo.AudioPlaybackDemo
         private void OpenFile()
         {
             OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "All Supported Files (*.wav;*.mp3)|*.wav;*.mp3|All Files (*.*)|*.*";
+            openFileDialog.Filter = "All Supported Files|*.wav;*.aiff;*.mp3;*.wma;*.aac;*.mp4;*.m4a;*.flac;*.opus;*.ogg;*.mka;*.webm|All Files (*.*)|*.*";
             bool? result = openFileDialog.ShowDialog();
             if (result.HasValue && result.Value)
             {

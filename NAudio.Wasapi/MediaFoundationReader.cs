@@ -298,6 +298,16 @@ namespace NAudio.Wave
                     waveFormat = GetCurrentWaveFormat(pReader);
                     OnWaveFormatChanged();
                 }
+                else if ((dwFlags & (SourceReaderFlags.StreamTick | SourceReaderFlags.NewStream
+                                     | SourceReaderFlags.NativeMediaTypeChanged | SourceReaderFlags.AllEffectsRemoved)) != 0)
+                {
+                    // Non-fatal informational flags. Per MS docs each of these can be
+                    // returned with a null sample; the caller should release any sample
+                    // pointer and call ReadSample again. Treating them as errors caused
+                    // legitimate gap / new-stream signals to abort the read.
+                    if (pSamplePtr != IntPtr.Zero) Marshal.Release(pSamplePtr);
+                    continue;
+                }
                 else if (dwFlags != 0)
                 {
                     if (pSamplePtr != IntPtr.Zero) Marshal.Release(pSamplePtr);

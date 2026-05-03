@@ -37,6 +37,27 @@ namespace NAudio.Utils
         }
 
         /// <summary>
+        /// Reads a signed byte from the stream. <br />
+        /// This method enforces that the stream must have at least one byte left, or an <see cref="EndOfStreamException"/> is thrown.
+        /// </summary>
+        /// <param name="stream">The <see cref="Stream"/> to read from.</param>
+        /// <returns>The read byte.</returns>
+        /// <exception cref="IOException">An I/O exception was occurred.</exception>
+        /// <exception cref="EndOfStreamException">The stream was ended before this method was called.</exception>
+        public static sbyte ReadSByte(Stream stream)
+        {
+            int rb = stream.ReadByte();
+            if (rb == -1)
+            {
+                throw new EndOfStreamException();
+            }
+            else
+            {
+                return unchecked((sbyte)rb); // Just do the conversion directly.
+            }
+        }
+
+        /// <summary>
         /// Computes the buffer sizes when dispatching requests regarding methods related to data 
         /// streams that are instructed to read a fixed number of bytes, and are using temporary buffers. <br />
         /// You pass in the actual number of bytes read or to write, the total number of bytes to read or write, and the actual size of the buffer. <br />
@@ -509,6 +530,7 @@ namespace NAudio.Utils
         /// <param name="enc">The character encoding under which the string will be read back.</param>
         /// <param name="nbytes">The number of bytes comprising the string data</param>
         /// <returns>The read string.</returns>
+        /// <exception cref="IOException">An I/O exception was occurred.</exception>
         /// <exception cref="ArgumentNullException"><paramref name="enc"/> was <see langword="null"/>.</exception>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="nbytes"/> was negative.</exception>
         public static System.Text.StringBuilder ReadStringAsBuilder(Stream stream, System.Text.Encoding enc, long nbytes)
@@ -595,10 +617,152 @@ namespace NAudio.Utils
         /// <param name="enc">The character encoding under which the string will be read back.</param>
         /// <param name="nbytes">The number of bytes comprising the string data</param>
         /// <returns>The read string.</returns>
+        /// <exception cref="IOException">An I/O exception was occurred.</exception>
         /// <exception cref="ArgumentNullException"><paramref name="enc"/> was <see langword="null"/>.</exception>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="nbytes"/> was negative.</exception>
         public static System.String ReadString(Stream stream, System.Text.Encoding enc, long nbytes) => ReadStringAsBuilder(stream, enc, nbytes).ToString();
 
         #endregion
+
+        #region Enums
+
+        /// <summary>
+        /// Reads an enumeration value from the specified stream, that has been encoded using the little-endian endianness.
+        /// </summary>
+        /// <typeparam name="T">The type of the enumeration to decode. Used to get type information and size.</typeparam>
+        /// <param name="stream">The data stream to read the specified enumeration value from.</param>
+        /// <returns>The read enumeration value interpreted as a value of type <typeparamref name="T"/>.</returns>
+        /// <exception cref="IOException">An I/O exception was occurred.</exception>
+        /// <exception cref="EndOfStreamException">The stream was ended before this method was called.</exception>
+        public static unsafe T ReadEnumValueLittleEndian<T>(Stream stream)
+            where T : unmanaged, Enum
+        {
+            // An Enum cannot be more than 8 bytes, so create a Span on the stack.
+            Span<byte> bytes = stackalloc byte[sizeof(T)];
+            stream.ReadExactly(bytes);
+            if (!BitConverter.IsLittleEndian) { bytes.Reverse(); }
+            return Unsafe.ReadUnaligned<T>(ref bytes.GetPinnableReference());
+        }
+
+        /// <summary>
+        /// Writes an enumeration value to the specified stream, that will be encoded using the little-endian endianness.
+        /// </summary>
+        /// <typeparam name="T">The type of the enumeration to encode. Used to get type information and size.</typeparam>
+        /// <param name="stream">The data stream to read the specified enumeration value from.</param>
+        /// <param name="value">The enumeration value to write.</param>
+        /// <exception cref="IOException">An I/O exception was occurred.</exception>
+        public static unsafe void WriteEnumValueLittleEndian<T>(Stream stream, T value)
+            where T : unmanaged, Enum
+        {
+            Span<byte> bytes = MemoryMarshal.CreateSpan(ref Unsafe.As<T, byte>(ref value), sizeof(T));
+            if (!BitConverter.IsLittleEndian) { bytes.Reverse(); }
+            stream.Write(bytes);
+        }
+
+        /// <summary>
+        /// Reads an enumeration value from the specified stream, that has been encoded using the big-endian endianness.
+        /// </summary>
+        /// <typeparam name="T">The type of the enumeration to decode. Used to get type information and size.</typeparam>
+        /// <param name="stream">The data stream to read the specified enumeration value from.</param>
+        /// <returns>The read enumeration value interpreted as a value of type <typeparamref name="T"/>.</returns>
+        /// <exception cref="IOException">An I/O exception was occurred.</exception>
+        /// <exception cref="EndOfStreamException">The stream was ended before this method was called.</exception>
+        public static unsafe T ReadEnumValueBigEndian<T>(Stream stream)
+            where T : unmanaged, Enum
+        {
+            // An Enum cannot be more than 8 bytes, so create a Span on the stack.
+            Span<byte> bytes = stackalloc byte[sizeof(T)];
+            stream.ReadExactly(bytes);
+            if (BitConverter.IsLittleEndian) { bytes.Reverse(); }
+            return Unsafe.ReadUnaligned<T>(ref bytes.GetPinnableReference());
+        }
+
+        /// <summary>
+        /// Writes an enumeration value to the specified stream, that will be encoded using the big-endian endianness.
+        /// </summary>
+        /// <typeparam name="T">The type of the enumeration to encode. Used to get type information and size.</typeparam>
+        /// <param name="stream">The data stream to read the specified enumeration value from.</param>
+        /// <param name="value">The enumeration value to write.</param>
+        /// <exception cref="IOException">An I/O exception was occurred.</exception>
+        public static unsafe void WriteEnumValueBigEndian<T>(Stream stream, T value)
+            where T : unmanaged, Enum
+        {
+            Span<byte> bytes = MemoryMarshal.CreateSpan(ref Unsafe.As<T, byte>(ref value), sizeof(T));
+            if (BitConverter.IsLittleEndian) { bytes.Reverse(); }
+            stream.Write(bytes);
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Reads the specified number of bytes from the specified data stream.
+        /// </summary>
+        /// <param name="stream">The data stream to read bytes from</param>
+        /// <param name="count">Number of bytes actually read from the stream.</param>
+        /// <returns>The data that were read. It's Length property provides how many bytes were actually read from the stream.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="count"/> is a negative value.</exception>
+        // Copied from BinaryReader.
+        public static byte[] ReadBytes(Stream stream, int count)
+        {
+            ArgumentOutOfRangeException.ThrowIfNegative(count);
+
+            if (count == 0)
+            {
+                return Array.Empty<byte>();
+            }
+            else
+            {
+                byte[] result = new byte[count];
+                int numRead = stream.ReadAtLeast(result, result.Length, throwOnEndOfStream: false);
+
+                if (numRead != result.Length)
+                {
+                    // Trim array. This should happen on EOF & possibly net streams.
+                    result = result[..numRead];
+                }
+
+                return result;
+            }
+        }
+
+        /// <summary>
+        /// Data alignment helper. Used by many classes that need to pad data in the streams.
+        /// </summary>
+        /// <param name="align">The alignment, in bytes, to apply in the data. Must be multiples of 2</param>
+        /// <param name="length">The length, in bytes, of the data where the alignment will be applied to.</param>
+        /// <returns>The number of bytes to add in order to achieve the alignment specified by <paramref name="align"/>.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="align"/> was not a number fully divisible by 2.</exception>
+        public static int PadAlignment(int align, int length)
+        {
+            if ((align & 1) == 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(align), "The align parameter must always be multiples of 2.");
+            }
+            else
+            {
+                int misalignment = length & (align - 1);
+                return (misalignment == 0) ? 0 : align - misalignment;
+            }
+        }
+
+        /// <summary>
+        /// Data alignment helper. Used by many classes that need to pad data in the streams.
+        /// </summary>
+        /// <param name="align">The alignment, in bytes, to apply in the data. Must be multiples of 2</param>
+        /// <param name="length">The length, in bytes, of the data where the alignment will be applied to.</param>
+        /// <returns>The number of bytes to add in order to achieve the alignment specified by <paramref name="align"/>.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="align"/> was not a number fully divisible by 2.</exception>
+        public static uint PadAlignment(uint align, uint length)
+        {
+            if ((align & 1) == 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(align), "The align parameter must always be multiples of 2.");
+            }
+            else
+            {
+                uint misalignment = length & (align - 1);
+                return (misalignment == 0) ? 0 : align - misalignment;
+            }
+        }
     }
 }

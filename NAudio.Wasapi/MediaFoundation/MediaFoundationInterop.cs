@@ -1,5 +1,6 @@
-using System;
+﻿using System;
 using System.Runtime.InteropServices;
+using NAudio.MediaFoundation.Interfaces;
 using NAudio.Wave;
 
 namespace NAudio.MediaFoundation
@@ -112,6 +113,18 @@ namespace NAudio.MediaFoundation
         public static extern void MFTEnumEx([In] Guid guidCategory, [In] MftEnumFlags flags, [In] MftRegisterTypeInfo pInputType, [In] MftRegisterTypeInfo pOutputType,
                                             out IntPtr pppMFTActivate, out int pcMFTActivate);
 
+        [LibraryImport("mfplat.dll")]
+        internal static partial int MFAllocateWorkQueueEx(uint type, out uint work_queue_id); // returns: HRESULT
+
+        [LibraryImport("mfplat.dll")]
+        internal static partial int MFPutWorkItem(uint dwQueue, Interfaces.IMFAsyncCallback pCallback, IntPtr pState); // returns: HRESULT
+
+        [LibraryImport("mfplat.dll")]
+        internal static partial int MFUnlockWorkQueue(uint dwQueue);
+
+        [LibraryImport("mfplat.dll")]
+        internal static partial int MFInvokeCallback(IMFAsyncResult presult);
+
         /// <summary>
         /// Creates an empty media sample.
         /// </summary>
@@ -169,6 +182,20 @@ namespace NAudio.MediaFoundation
         /// </summary>
         public const int MF_VERSION = (MF_SDK_VERSION << 16) | MF_API_VERSION;
 
+        /// <summary>
+        /// Create a work queue without a message loop
+        /// </summary>
+        public const uint MF_STANDARD_WORKQUEUE = 0;
+        /// <summary>
+        /// Create a work queue with a message loop.
+        /// </summary>
+        public const uint MF_WINDOW_WORKQUEUE = 1;
+        /// <summary>
+        /// Create a multithreaded work queue. <br />
+        /// This type of work queue uses a thread pool to dispatch work items.  <br />
+        /// The caller is responsible for serializing the work items.
+        /// </summary>
+        public const uint MF_MULTITHREADED_WORKQUEUE = 2;
 
     }
 }

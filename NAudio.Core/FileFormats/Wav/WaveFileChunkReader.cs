@@ -1,7 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
+using System.Diagnostics;
+using System.Collections.Generic;
+
 using NAudio.Utils;
 using NAudio.Wave;
 
@@ -22,6 +23,11 @@ namespace NAudio.FileFormats.Wav
         private long riffSize;
 
         /// <summary>
+        /// Gets the size, in bytes, of a RIFF chunk.
+        /// </summary>
+        public const int ChunkHeaderSize = 8;
+
+        /// <summary>
         /// Creates a new WaveFileChunkReader
         /// </summary>
         public WaveFileChunkReader()
@@ -40,32 +46,28 @@ namespace NAudio.FileFormats.Wav
             this.riffChunks = new List<RiffChunk>();
             this.dataChunkLength = 0;
 
-            var br = new BinaryReader(stream);
-            ReadRiffHeader(br);
-            this.riffSize = br.ReadUInt32(); // read the file size (minus 8 bytes)
+            ReadRiffHeader(stream);
+            this.riffSize = StreamUtils.ReadUIntLittleEndian(stream); // read the file size (minus 8 bytes)
 
-            if (br.ReadInt32() != ChunkIdentifier.ChunkIdentifierToInt32("WAVE"))
+            if (StreamUtils.ReadIntLittleEndian(stream) != ChunkIdentifier.ChunkIdentifierToInt32("WAVE"))
             {
                 throw new FormatException("Not a WAVE file - no WAVE header");
             }
 
             if (isRf64)
             {
-                ReadDs64Chunk(br);
+                ReadDs64Chunk(stream);
             }
 
-            int dataChunkId = ChunkIdentifier.ChunkIdentifierToInt32("data");
-            int formatChunkId = ChunkIdentifier.ChunkIdentifierToInt32("fmt ");
-            
             // sometimes a file has more data than is specified after the RIFF header
-            long stopPosition = Math.Min(riffSize + 8, stream.Length);
+            long stopPosition = Math.Min(riffSize + ChunkHeaderSize, stream.Length);
 
             // this -8 is so we can be sure that there are at least 8 bytes for a chunk id and length
-            while (stream.Position <= stopPosition - 8)
+            while (stream.Position <= stopPosition - ChunkHeaderSize)
             {
-                Int32 chunkIdentifier = br.ReadInt32();
-                var chunkLength = br.ReadUInt32();
-                if (chunkIdentifier == dataChunkId)
+                Int32 chunkIdentifier = StreamUtils.ReadIntLittleEndian(stream);
+                var chunkLength = StreamUtils.ReadUIntLittleEndian(stream);
+                if (chunkIdentifier == ChunkIdentifier.DataChunkIdentifier)
                 {
                     dataChunkPosition = stream.Position;
                     if (!isRf64) // we already know the dataChunkLength if this is an RF64 file
@@ -74,11 +76,11 @@ namespace NAudio.FileFormats.Wav
                     }
                     stream.Position += dataChunkLength;
                 }
-                else if (chunkIdentifier == formatChunkId)
+                else if (chunkIdentifier == ChunkIdentifier.FormatChunkIdentifier)
                 {
                     if (chunkLength > Int32.MaxValue)
                          throw new InvalidDataException(string.Format("Format chunk length must be between 0 and {0}.", Int32.MaxValue));
-                    waveFormat = WaveFormat.FromFormatChunk(br, (int)chunkLength);
+                    waveFormat = WaveFormat.FromFormatChunk(new BinaryReader(stream), (int)chunkLength);
                 }
                 else
                 {
@@ -108,9 +110,9 @@ namespace NAudio.FileFormats.Wav
                 // "If the chunk size is an odd number of bytes, a pad byte with value zero is
                 //  written after ckData. Word aligning improves access speed (for chunks resident in memory)
                 //  and maintains compatibility with EA IFF. The ckSize value does not include the pad byte."
-                if (((chunkLength % 2) != 0) && (br.PeekChar() == 0))
+                if ((chunkLength % 2) != 0)
                 {
-                    stream.Position++;
+                    stream.Position += (stream.ReadByte() == 0) ? 1 : 0;
                 }
             }
 
@@ -125,21 +127,20 @@ namespace NAudio.FileFormats.Wav
         }
 
         /// <summary>
-        /// http://tech.ebu.ch/docs/tech/tech3306-2009.pdf
+        /// See <see href="https://tech.ebu.ch/docs/tech/tech3306v1_0.pdf"/> for more information.
         /// </summary>
-        private void ReadDs64Chunk(BinaryReader reader)
+        private void ReadDs64Chunk(Stream stream)
         {
-            int ds64ChunkId = ChunkIdentifier.ChunkIdentifierToInt32("ds64");
-            int chunkId = reader.ReadInt32();
-            if (chunkId != ds64ChunkId)
+            int chunkId = StreamUtils.ReadIntLittleEndian(stream);
+            if (chunkId != ChunkIdentifier.DS64ChunkIdentifier)
             {
                 throw new FormatException("Invalid RF64 WAV file - No ds64 chunk found");
             }
-            int chunkSize = reader.ReadInt32();
-            this.riffSize = reader.ReadInt64();
-            this.dataChunkLength = reader.ReadInt64();
-            long sampleCount = reader.ReadInt64(); // replaces the value in the fact chunk
-            reader.ReadBytes(chunkSize - 24); // get to the end of this chunk (should parse extra stuff later)
+            uint chunkSize = StreamUtils.ReadUIntLittleEndian(stream); // Chunk size is uint, not int. See A.2 section, page 12.
+            this.riffSize = StreamUtils.ReadLongLittleEndian(stream);
+            this.dataChunkLength = StreamUtils.ReadLongLittleEndian(stream);
+            long sampleCount = StreamUtils.ReadLongLittleEndian(stream); // replaces the value in the fact chunk
+            StreamUtils.ReadBytes(stream, (int)(chunkSize - 24L)); // get to the end of this chunk (should parse extra stuff later)
         }
 
         private static RiffChunk GetRiffChunk(Stream stream, Int32 chunkIdentifier, Int32 chunkLength)
@@ -147,9 +148,9 @@ namespace NAudio.FileFormats.Wav
             return new RiffChunk(chunkIdentifier, chunkLength, stream.Position);
         }
 
-        private void ReadRiffHeader(BinaryReader br)
+        private void ReadRiffHeader(Stream stream)
         {
-            int header = br.ReadInt32();
+            int header = StreamUtils.ReadIntLittleEndian(stream);
             if (header == ChunkIdentifier.ChunkIdentifierToInt32("RF64"))
             {
                 this.isRf64 = true;

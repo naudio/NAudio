@@ -50,6 +50,16 @@ for the major MF code paths.
   `MediaFoundationReader.Read`: handle `STREAMTICK` / `NEWSTREAM` /
   `NativeMediaTypeChanged` / `AllEffectsRemoved` flags as informational
   (continue) rather than fatal (throw).
+- **NAudio 2 baseline confirms the hangs are pre-existing, not a
+  modernization regression.** A trimmed copy of this harness (FLAC + OPUS
+  dropped, `Span<byte>` reads → `byte[]`, `MediaFoundationException` →
+  `COMException`, `MediaType.Dispose()` calls removed) was run against
+  commit `4ee4d07` — the last commit before any Span / GeneratedComInterface
+  / MF wrapper changes. 3 × 180s soaks at `--threads 4` reproduced both
+  hang classes at essentially the same rate as HEAD: stream-based hangs on
+  seeds 42 (MP3) and 99 (AAC), and a HIGH-severity file-based hang on seed
+  7 (WMA). The NAudio 3 modernization is therefore in the clear: the bug
+  is in Windows / MF itself, not in the new COM interop layer.
 
 ## What it exercises
 

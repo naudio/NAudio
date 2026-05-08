@@ -142,7 +142,7 @@ namespace NAudio.Dsp
         /// </summary>
         public double GetCurrentLatency()
         {
-            double v = ((double)m_samples_in_rsinbuf - m_filtlatency) / m_sratein;
+            double v = ((double)m_samples_in_rsinbuf - m_filtlatency - m_fracpos) / m_sratein;
 
             if (v < 0.0) v = 0.0;
             return v;
@@ -461,6 +461,7 @@ namespace NAudio.Dsp
             }
 
             int isrcpos = (int)srcpos;
+            if (isrcpos > m_samples_in_rsinbuf) isrcpos = m_samples_in_rsinbuf;
             m_fracpos = srcpos - isrcpos;
             m_samples_in_rsinbuf -= isrcpos;
             if (m_samples_in_rsinbuf <= 0)
@@ -469,7 +470,6 @@ namespace NAudio.Dsp
             }
             else
             {
-                // TODO: bug here
                 Array.Copy(m_rsinbuf, localin + isrcpos * nch, m_rsinbuf, localin, m_samples_in_rsinbuf * nch);
             }
 
@@ -510,7 +510,7 @@ namespace NAudio.Dsp
                     int x;
                     for (x = -hsz; x < hsz + m_lp_oversize; x++)
                     {
-                        double val = 0.35875 - 0.48829 * Math.Cos(windowpos) + 0.14128 * Math.Cos(2 * windowpos) - 0.01168 * Math.Cos(6 * windowpos); // blackman-harris
+                        double val = 0.35875 - 0.48829 * Math.Cos(windowpos) + 0.14128 * Math.Cos(2 * windowpos) - 0.01168 * Math.Cos(3 * windowpos); // blackman-harris
                         if (x != 0) val *= Math.Sin(sincpos) / sincpos;
 
                         windowpos += dwindowpos;

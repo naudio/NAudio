@@ -10,6 +10,7 @@ namespace NAudioTests.Wasapi
 {
     [TestFixture]
     [Category("IntegrationTest")]
+    [Platform("Win")] // runtime safety net — file is also excluded from the non-Windows TFM in NAudioTests.csproj
     public class MMDeviceEnumeratorTests
     {
         [Test]

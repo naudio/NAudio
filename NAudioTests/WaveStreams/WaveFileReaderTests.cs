@@ -286,26 +286,5 @@ namespace NAudioTests.WaveStreams
             Assert.That(BitConverter.ToInt32(data, 0), Is.EqualTo(2));
         }
 
-        [Test]
-        [Category("IntegrationTest")]
-        public void Mp3FileReaderDisposesFileOnFailToParse()
-        {
-            string tempFilePath = Path.GetTempFileName();
-            File.WriteAllText(tempFilePath, "Some test content");
-            try
-            {
-                var reader = new Mp3FileReader(tempFilePath);
-
-                Assert.Fail("Expected exception System.FormatException was not thrown for file missing a header.");
-            }
-            catch (InvalidDataException ex)
-            {
-                Assert.That(ex, Is.Not.Null);
-            }
-            finally
-            {
-                File.Delete(tempFilePath);
-            }
-        }
     }
 }

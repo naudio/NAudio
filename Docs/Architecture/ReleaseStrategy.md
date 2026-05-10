@@ -12,8 +12,8 @@
 | 1. Merge `origin/master` into `naudio3dev` | ✅ done | Auto-merged via ORT strategy with no conflicts. The expected `Mp3FileReader` clash didn't materialise — master's MP3 sample-rate fix touched different lines from the lazy-TOC work. Local tests post-merge: 2037/0/6. Pushed. |
 | 2. Land build workflow on `naudio3dev` | ✅ done | Workflow merged. Azure Pipelines kept running in parallel as a safety net per step 12. |
 | 3. Centralize version in `Directory.Build.props` | ✅ done | `<VersionPrefix>3.0.0</VersionPrefix>` set at root, `<Version>2.3.0</Version>` removed from all 8 NAudio package csprojs. All NAudio packages now build as `*.3.0.0.nupkg`. Tool/sample apps keep their own explicit `<Version>`. |
-| 4. Release-notes plumbing + labels + `CLAUDE.md` | ⏳ in progress | Adds `.github/release.yml`, `.github/PULL_REQUEST_TEMPLATE.md`, `CLAUDE.md`, and an `### Unreleased` placeholder section in `RELEASE_NOTES.md`. Two new labels (`breaking`, `release-notes-skip`) need to be created in the GitHub UI alongside this PR. |
-| 5. Backfill `RELEASE_NOTES.md` | not started | |
+| 4. Release-notes plumbing + labels + `CLAUDE.md` | ✅ done | PR #1269 merged. `.github/release.yml`, `.github/PULL_REQUEST_TEMPLATE.md`, `CLAUDE.md`, and `### Unreleased` placeholder all live. `breaking` and `release-notes-skip` labels added in the UI. |
+| 5. Backfill `RELEASE_NOTES.md` | ⏳ in progress | Walked `git log v2.3.0..naudio3dev` (174 commits), categorised user-visible changes into Breaking / New features / Performance / Reliability / Modernisation / Packaging sub-sections with ~60 bullets. |
 | 6. Release workflow | not started | |
 | 7. NuGet trusted publishing + smoke test | not started | |
 | 8. Branch flip + protection | not started | |
@@ -165,7 +165,7 @@ Goal: prove that GitHub Actions can build and test NAudio with the same coverage
 
 **Outcome:** PR #1268 merged. All 8 NAudio packages now produce `*.3.0.0.nupkg` from a single `<VersionPrefix>` declaration. Tool/sample apps left untouched and continue to override with their own explicit `<Version>`.
 
-### Phase 4 — Add release-notes plumbing and contributor docs
+### Phase 4 — Add release-notes plumbing and contributor docs ✅
 
 17. Add `.github/release.yml` configuring the auto-changelog categories.
 18. Add `.github/PULL_REQUEST_TEMPLATE.md` with the release-notes checkbox.
@@ -173,7 +173,7 @@ Goal: prove that GitHub Actions can build and test NAudio with the same coverage
 20. In the GitHub UI, create the `breaking` and `release-notes-skip` labels.
 21. PR + merge.
 
-**Exit criterion:** new PRs see the template; auto-changelog will categorize correctly when invoked.
+**Outcome:** PR #1269 merged. Plumbing in place; new PRs render the template, the auto-changelog config will categorise correctly when invoked, and `CLAUDE.md` documents the release-notes process for AI agents.
 
 ### Phase 5 — Backfill `RELEASE_NOTES.md`
 

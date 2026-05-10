@@ -1,13 +1,22 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
+    <!-- Multi-targeted so the cross-platform NAudio surface can be tested under `dotnet test -f net10.0`
+         on Linux/macOS (e.g. for Claude agents in a Linux sandbox), while Windows still runs the full
+         suite by default (both TFMs are exercised when `dotnet test` runs without -f). -->
+    <TargetFrameworks>net10.0-windows10.0.19041.0;net10.0</TargetFrameworks>
     <OutputType>Exe</OutputType>
     <EnableNUnitRunner>true</EnableNUnitRunner>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <!-- Strong-named so NAudio.Asio (and other strong-named NAudio assemblies) can grant access to internals via [InternalsVisibleTo]. -->
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\NAudioStrongNameKey.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+
+  <!-- Single switch driving every Windows-only ItemGroup below. -->
+  <PropertyGroup>
+    <IsWindowsTarget>false</IsWindowsTarget>
+    <IsWindowsTarget Condition="'$([MSBuild]::GetTargetPlatformIdentifier($(TargetFramework)))' == 'windows'">true</IsWindowsTarget>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,13 +33,32 @@
     <Compile Include="..\NAudioDemo\NetworkChatDemo\OpusChatCodec.cs" Link="Codecs\Linked\OpusChatCodec.cs" />
   </ItemGroup>
 
+  <!-- Cross-platform NAudio assemblies — referenced under every TFM. -->
   <ItemGroup>
-    <ProjectReference Include="..\NAudio.Asio\NAudio.Asio.csproj" />
     <ProjectReference Include="..\NAudio.Core\NAudio.Core.csproj" />
     <ProjectReference Include="..\NAudio.Midi\NAudio.Midi.csproj" />
+    <ProjectReference Include="..\NAudio\NAudio.csproj" />
+  </ItemGroup>
+
+  <!-- Windows-only NAudio assemblies — only referenced under the -windows TFM. -->
+  <ItemGroup Condition="'$(IsWindowsTarget)' == 'true'">
+    <ProjectReference Include="..\NAudio.Asio\NAudio.Asio.csproj" />
     <ProjectReference Include="..\NAudio.Wasapi\NAudio.Wasapi.csproj" />
     <ProjectReference Include="..\NAudio.WinForms\NAudio.WinForms.csproj" />
     <ProjectReference Include="..\NAudio.WinMM\NAudio.WinMM.csproj" />
-    <ProjectReference Include="..\NAudio\NAudio.csproj" />
+  </ItemGroup>
+
+  <!-- Tests that exercise Windows-only NAudio APIs are excluded from the cross-platform TFM. -->
+  <ItemGroup Condition="'$(IsWindowsTarget)' != 'true'">
+    <Compile Remove="Acm\**" />
+    <Compile Remove="Asio\**" />
+    <Compile Remove="DirectSound\**" />
+    <Compile Remove="Dmo\**" />
+    <Compile Remove="MediaFoundation\**" />
+    <Compile Remove="Mixer\**" />
+    <Compile Remove="Wasapi\**" />
+    <Compile Remove="WaveIn\**" />
+    <Compile Remove="Mp3\Mp3FileReaderTests.cs" />
+    <Compile Remove="Utils\TestFileBuilder.cs" />
   </ItemGroup>
 </Project>

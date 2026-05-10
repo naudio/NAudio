@@ -286,15 +286,16 @@ namespace NAudioTests.WaveStreams
         [Test]
         public void AllNAudioWaveStreamSubclasses_OverrideSpanRead()
         {
-            var assembliesToCheck = new[]
-            {
-                typeof(WaveFileReader).Assembly,           // NAudio.Core
-                typeof(WaveFormatConversionStream).Assembly, // NAudio.WinMM
-                typeof(AudioFileReader).Assembly,          // NAudio umbrella
-            };
+            // Walk every NAudio.* assembly directly referenced by the test project. Adding a new
+            // NAudio package doesn't require editing this test, and the cross-platform TFM
+            // naturally sees fewer assemblies (no WinMM/Asio/Wasapi/WinForms) than the Windows TFM.
+            var assembliesToCheck = typeof(WaveStreamSpanReadTests).Assembly
+                .GetReferencedAssemblies()
+                .Where(name => name.Name?.StartsWith("NAudio", StringComparison.Ordinal) == true)
+                .Select(Assembly.Load)
+                .ToArray();
 
             var spanReadSig = new[] { typeof(Span<byte>) };
-            var byteArrayReadSig = new[] { typeof(byte[]), typeof(int), typeof(int) };
 
             // Classes we know don't need to override (or physically can't — they're abstract-ish bases).
             // Keep this list tight and justified.

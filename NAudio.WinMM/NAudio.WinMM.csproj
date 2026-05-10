@@ -33,6 +33,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NAudio.Core\NAudio.Core.csproj" />
+    <ProjectReference Include="..\NAudio.Midi\NAudio.Midi.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -144,11 +144,26 @@ Work that is **deferred from the first round, but still candidate for NAudio 3**
 
 4. **Behaviour / API hygiene work flagged in `Docs/Architecture/MODERNIZATION.md`.** Anything that would mean editing code (slimming `WasapiOut`'s built-in resampler, applying `[Obsolete]` annotations, removing legacy types) is its own concern, separate from the structural work above.
 
-## Suggested execution order — first round
-
-1. **Move legacy MIDI + win32 types into `NAudio.WinMM`.** Move `MidiIn` / `MidiOut` / `MidiInCapabilities` / `MidiOutCapabilities` / `MidiInterop` from `NAudio.Midi` into `NAudio.WinMM` (preserve namespace `NAudio.Midi`; add the `NAudio.Midi` `ProjectReference` to `NAudio.WinMM` so relocated types can still see `MidiEvent` / `MidiInMessageEventArgs`). Move `MmResult` / `MmException` / `Manufacturers` from `NAudio.Core` into `NAudio.WinMM` (preserve namespace `NAudio`). Add `<IsAotCompatible>true</IsAotCompatible>` to `NAudio.Midi.csproj` once the winmm types are gone. After this step `NAudio.Midi` is portable (`net9.0`) and contains only message types + file I/O.
-2. **Validate consumer projects build cleanly.** Build the full solution and confirm `NAudioDemo`, `NAudioConsoleTest`, `NAudioTests`, `NAudioWpfDemo`, `MidiFileConverter`, `NAudio.Extras`, `MfStressTest`, `AudioFileInspector`, `MixDiff`, `NAudioAotSmokeTest`, and the benchmarks all still compile and run. Capture any consuming-side fix required (added `PackageReference`s, namespace surprises, transitive-dep gaps) in `MODERNIZATION.md` — these are the seed entries for the v2 → v3 migration guide. The sample apps are deliberately doing double duty here as a real-world signal of upgrade impact.
-3. **Multi-target the `NAudio` meta-package** — confirm/preserve the `net9.0;net9.0-windows10.0.19041.0` TFM set with the appropriate dep subsets per the §"Meta-package" section. (Most of the multi-targeting is already in place; this step is more "verify and tidy" than "introduce.")
-4. **Document everything** in `MODERNIZATION.md` and `RELEASE_NOTES.md`. Add a top-level migration guide for v2 → v3, populated from the gotchas captured in step 2.
+## Execution status — first round
 
 Each step is a separate commit with its own validation. Once the first round is committed and stable, attempt the §"Subsequent phases" items in order — each is independent and any can be backed out without disturbing the rest.
+
+### 1. Move legacy MIDI + win32 types into `NAudio.WinMM` — **Done (2026-05-10)**
+
+Move `MidiIn` / `MidiOut` / `MidiInCapabilities` / `MidiOutCapabilities` / `MidiInterop` from `NAudio.Midi` into `NAudio.WinMM` (preserve namespace `NAudio.Midi`; add the `NAudio.Midi` `ProjectReference` to `NAudio.WinMM` so relocated types can still see `MidiEvent` / `MidiInMessageEventArgs`). Move `MmResult` / `MmException` / `Manufacturers` from `NAudio.Core` into `NAudio.WinMM` (preserve namespace `NAudio`). Add `<IsAotCompatible>true</IsAotCompatible>` to `NAudio.Midi.csproj` once the winmm types are gone. After this step `NAudio.Midi` is portable (`net9.0`) and contains only message types + file I/O.
+
+**Result:** Eight files relocated as pure `git mv` renames (zero content edits). `NAudio.WinMM.csproj` gained the `NAudio.Midi` `ProjectReference`; `NAudio.Midi.csproj` gained `<IsAotCompatible>true</IsAotCompatible>`. All 19 projects in the solution build clean (0 warnings, 0 errors) on a non-incremental rebuild — including `NAudioAotSmokeTest`, which confirms the AOT opt-in did not introduce trim warnings. No consumer-side `PackageReference` adjustments were required: every sample/tool that used the moved types either already references `NAudio.WinMM` directly or pulls it transitively via the `NAudio` meta-package's Windows leg.
+
+### 2. Validate consumer projects build & run cleanly — **Done (2026-05-10)**
+
+Build the full solution and confirm `NAudioDemo`, `NAudioConsoleTest`, `NAudioTests`, `NAudioWpfDemo`, `MidiFileConverter`, `NAudio.Extras`, `MfStressTest`, `AudioFileInspector`, `MixDiff`, `NAudioAotSmokeTest`, and the benchmarks all still compile and run. Capture any consuming-side fix required (added `PackageReference`s, namespace surprises, transitive-dep gaps) in `MODERNIZATION.md` — these are the seed entries for the v2 → v3 migration guide. The sample apps are deliberately doing double duty here as a real-world signal of upgrade impact.
+
+**Result:** Compile-side validation green from step 1 (full clean rebuild, 0 warnings / 0 errors). Runtime smoke pass confirmed — including the `NAudioDemo` MIDI panel, the only non-test consumer of the relocated `MidiIn` / `MidiOut`. Nothing to capture in `MODERNIZATION.md` yet: the structural moves were fully transparent to every consumer in this repo, no `PackageReference` adjustments, no namespace surprises, no transitive-dep gaps.
+
+### 3. Verify the multi-targeted `NAudio` meta-package — **Pending**
+
+Confirm/preserve the `net9.0;net9.0-windows10.0.19041.0` TFM set with the appropriate dep subsets per the §"Meta-package" section. (Most of the multi-targeting is already in place; this step is more "verify and tidy" than "introduce.")
+
+### 4. Document everything — **Pending**
+
+Update `MODERNIZATION.md` and `RELEASE_NOTES.md`. Add a top-level migration guide for v2 → v3, populated from the gotchas captured in step 2.

@@ -10,8 +10,8 @@
 | --- | --- | --- |
 | 0. Validate GitHub Actions | ✅ done | Green build on `windows-latest`. 2028 passing / 0 failed / 7 skipped, 1m49s (Azure was 2m51s). Draft PR closed unmerged; throwaway branch `ci/validate-github-actions` retained for reference. |
 | 1. Merge `origin/master` into `naudio3dev` | ✅ done | Auto-merged via ORT strategy with no conflicts. The expected `Mp3FileReader` clash didn't materialise — master's MP3 sample-rate fix touched different lines from the lazy-TOC work. Local tests post-merge: 2037/0/6. Pushed. |
-| 2. Land build workflow on `naudio3dev` | ⏳ in progress | YAML already validated in Phase 0 — reintroduced with an added `push: branches: [naudio3dev]` trigger. PR will exercise the workflow on its own diff before merging. |
-| 3. Centralize version in `Directory.Build.props` | not started | |
+| 2. Land build workflow on `naudio3dev` | ✅ done | Workflow merged. Azure Pipelines kept running in parallel as a safety net per step 12. |
+| 3. Centralize version in `Directory.Build.props` | ⏳ in progress | `<VersionPrefix>3.0.0</VersionPrefix>` set at root, `<Version>2.3.0</Version>` removed from all 8 NAudio package csprojs. Tool/sample apps (MixDiff, AudioFileInspector, MidiFileConverter) keep their own explicit `<Version>` which still overrides. Local build now produces `*.3.0.0.nupkg`. |
 | 4. Release-notes plumbing + labels + `CLAUDE.md` | not started | |
 | 5. Backfill `RELEASE_NOTES.md` | not started | |
 | 6. Release workflow | not started | |
@@ -148,13 +148,13 @@ Goal: prove that GitHub Actions can build and test NAudio with the same coverage
 
 **Outcome:** clean ORT-strategy merge with zero conflicts. Auto-merged files: `BiQuadFilter.cs`, `WaveStream.cs`, `MidiEvent.cs`, `MidiFile.cs`. New files: `WaveStreamTests.cs`, additions to `MidiFileTests.cs`. Local test run post-merge: 2037 passing / 0 failed / 6 skipped — the +9 vs Phase 0 corresponds to the new regression tests from master.
 
-### Phase 2 — Land the build workflow on `naudio3dev`
+### Phase 2 — Land the build workflow on `naudio3dev` ✅
 
 10. Open a real PR adding `.github/workflows/build.yml` (the validated version from phase 0, with `--project` arg fix and no `setup-dotnet`). Add `push: branches: [naudio3dev]` to the existing `pull_request` and `workflow_dispatch` triggers so post-merge pushes also run CI.
 11. Merge.
 12. Optional: leave Azure Pipelines running in parallel for one or two more PRs as a safety net before deleting in phase 9.
 
-**Exit criterion:** every push to `naudio3dev` runs CI on GitHub Actions.
+**Outcome:** PR opened, CI green on the PR's own diff, merged. Azure Pipelines kept running in parallel as the safety net per step 12; will be retired in phase 9.
 
 ### Phase 3 — Centralize the version
 

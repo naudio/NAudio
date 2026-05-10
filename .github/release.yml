@@ -1,0 +1,28 @@
+# Configuration for the auto-generated changelog produced by
+# `gh release create --generate-notes` and the GitHub Releases UI.
+# PRs are categorised by their labels; the maintainer applies labels
+# at review/merge time. Untagged PRs fall into "Other changes".
+# See Docs/Architecture/ReleaseStrategy.md for the broader release flow.
+changelog:
+  exclude:
+    labels:
+      - release-notes-skip
+  categories:
+    - title: Breaking changes
+      labels:
+        - breaking
+    - title: New features
+      labels:
+        - enhancement
+        - feature
+    - title: Bug fixes
+      labels:
+        - bug
+        - bugfix
+    - title: Documentation
+      labels:
+        - documentation
+        - docs
+    - title: Other changes
+      labels:
+        - "*"

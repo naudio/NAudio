@@ -13,8 +13,8 @@
 | 2. Land build workflow on `naudio3dev` | ✅ done | Workflow merged. Azure Pipelines kept running in parallel as a safety net per step 12. |
 | 3. Centralize version in `Directory.Build.props` | ✅ done | `<VersionPrefix>3.0.0</VersionPrefix>` set at root, `<Version>2.3.0</Version>` removed from all 8 NAudio package csprojs. All NAudio packages now build as `*.3.0.0.nupkg`. Tool/sample apps keep their own explicit `<Version>`. |
 | 4. Release-notes plumbing + labels + `CLAUDE.md` | ✅ done | PR #1269 merged. `.github/release.yml`, `.github/PULL_REQUEST_TEMPLATE.md`, `CLAUDE.md`, and `### Unreleased` placeholder all live. `breaking` and `release-notes-skip` labels added in the UI. |
-| 5. Backfill `RELEASE_NOTES.md` | ⏳ in progress | Walked `git log v2.3.0..naudio3dev` (174 commits), categorised user-visible changes into Breaking / New features / Performance / Reliability / Modernisation / Packaging sub-sections with ~60 bullets. |
-| 6. Release workflow | not started | |
+| 5. Backfill `RELEASE_NOTES.md` | ✅ done | PR #1270 merged. ~60 categorised bullets across six sub-sections under `### Unreleased`, ready for the maintainer to curate further as PRs land. |
+| 6. Release workflow | ⏳ in progress | `.github/workflows/release.yml` drafted with two triggers (`workflow_dispatch` for previews, `push tags v*` for finals), version resolution from `<VersionPrefix>`, validation guards, pack of all 8 NAudio packages, NuGet trusted-publishing push, and a final-only GitHub Release with body extracted from `RELEASE_NOTES.md`. NuGet auth wiring will be exercised end-to-end in Phase 7. |
 | 7. NuGet trusted publishing + smoke test | not started | |
 | 8. Branch flip + protection | not started | |
 | 9. First public preview + retire Azure Pipelines | not started | |
@@ -175,14 +175,14 @@ Goal: prove that GitHub Actions can build and test NAudio with the same coverage
 
 **Outcome:** PR #1269 merged. Plumbing in place; new PRs render the template, the auto-changelog config will categorise correctly when invoked, and `CLAUDE.md` documents the release-notes process for AI agents.
 
-### Phase 5 — Backfill `RELEASE_NOTES.md`
+### Phase 5 — Backfill `RELEASE_NOTES.md` ✅
 
-22. Walk `git log master..naudio3dev` (now empty after phase 1, so use the divergence point — roughly the post-2.3.0 commits on `naudio3dev`).
+22. Walk `git log v2.3.0..naudio3dev` (174 commits).
 23. Group commits into themes: WASAPI modernization, NAudio 3 layout, MF reliability, AOT compatibility, ACM hardening, Mp3FileReader lazy-TOC, DirectSound modernization, etc.
-24. Draft an `### Unreleased` section at the top of `RELEASE_NOTES.md` with one bullet per user-visible change. Estimate: 30–40 bullets.
+24. Draft an `### Unreleased` section at the top of `RELEASE_NOTES.md` with one bullet per user-visible change.
 25. PR + merge.
 
-**Exit criterion:** `RELEASE_NOTES.md` reflects everything landed on `naudio3dev` since 2.3.0.
+**Outcome:** PR #1270 merged. ~60 bullets under `### Unreleased` organised into six sub-sections (Breaking changes, New features, Performance, Reliability and bug fixes, Modernisation, Packaging). Bullets carry no PR numbers — those can be added selectively before final release.
 
 ### Phase 6 — Add the release workflow
 

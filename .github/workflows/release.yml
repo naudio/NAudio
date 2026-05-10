@@ -1,0 +1,191 @@
+name: release
+
+# Two triggers:
+#   - workflow_dispatch (manual): cuts a pre-release. By default produces
+#     "<VersionPrefix>-preview.<run_number>"; an optional `milestone` input
+#     overrides the suffix (e.g. "alpha.1", "beta.2", "rc.1").
+#   - push of a v* tag: cuts a final release matching <VersionPrefix>.
+# See Docs/Architecture/ReleaseStrategy.md for the broader release flow.
+on:
+  workflow_dispatch:
+    inputs:
+      milestone:
+        description: "Optional pre-release label (e.g. alpha.1, beta.2, rc.1). Leave blank for auto preview.<run_number>."
+        required: false
+        type: string
+  push:
+    tags: ['v*']
+
+permissions:
+  id-token: write    # for NuGet trusted publishing (OIDC)
+  contents: write    # for `gh release create`
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history so gh release --generate-notes can diff against the previous tag
+
+      # Dispatch must come from main (or naudio3dev during the rollout).
+      # Tag pushes are unrestricted because the tag itself is the gate.
+      - name: Verify branch (dispatch only)
+        if: github.event_name == 'workflow_dispatch'
+        shell: pwsh
+        run: |
+          $allowed = @('refs/heads/main', 'refs/heads/naudio3dev')
+          if ($env:GITHUB_REF -notin $allowed) {
+            Write-Error "Release dispatch must be from main or naudio3dev (got $env:GITHUB_REF)."
+            exit 1
+          }
+
+      - name: Determine version
+        id: version
+        shell: pwsh
+        run: |
+          [xml]$props = Get-Content Directory.Build.props
+          $prefix = $props.Project.PropertyGroup.VersionPrefix
+          if (-not $prefix) {
+            Write-Error "VersionPrefix not found in Directory.Build.props"
+            exit 1
+          }
+
+          if ($env:GITHUB_REF -like 'refs/tags/v*') {
+            $tagVersion = $env:GITHUB_REF -replace 'refs/tags/v',''
+            if ($tagVersion -ne $prefix) {
+              Write-Error "Tag v$tagVersion does not match VersionPrefix $prefix in Directory.Build.props. Bump the prefix and retag."
+              exit 1
+            }
+            $version = $tagVersion
+            $packArgs = ""
+            $isFinal = 'true'
+          } else {
+            $milestone = '${{ inputs.milestone }}'
+            if ([string]::IsNullOrWhiteSpace($milestone)) {
+              $suffix = "preview.${{ github.run_number }}"
+            } else {
+              $suffix = $milestone.Trim()
+            }
+            $version = "$prefix-$suffix"
+            $packArgs = "-p:VersionSuffix=$suffix"
+            $isFinal = 'false'
+          }
+
+          Write-Host "Resolved version: $version (is_final=$isFinal)"
+          "version=$version"     | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "is_final=$isFinal"    | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "pack_args=$packArgs"  | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Validate RELEASE_NOTES.md has a matching section (final only)
+        if: steps.version.outputs.is_final == 'true'
+        shell: pwsh
+        run: |
+          $version = '${{ steps.version.outputs.version }}'
+          $pattern = "^### $([regex]::Escape($version))(\s|$)"
+          if (-not (Select-String -Path RELEASE_NOTES.md -Pattern $pattern -Quiet)) {
+            Write-Error "RELEASE_NOTES.md has no '### $version (...)' section. Rename '### Unreleased' to '### $version (DD MMM YYYY)' before tagging."
+            exit 1
+          }
+
+      - name: Restore
+        run: dotnet restore NAudio.slnx
+
+      - name: Build
+        run: dotnet build NAudio.slnx --configuration Release --no-restore ${{ steps.version.outputs.pack_args }}
+
+      - name: Test
+        run: >
+          dotnet test --project NAudioTests/NAudioTests.csproj
+          --configuration Release
+          --no-build
+          --filter "TestCategory!=IntegrationTest"
+
+      # Pack the 8 NAudio NuGet packages explicitly so we don't accidentally
+      # ship the tool/sample apps. Tools (MixDiff, AudioFileInspector,
+      # MidiFileConverter) keep their own <Version> in csproj but we never
+      # publish them to NuGet.
+      - name: Pack
+        shell: pwsh
+        run: |
+          $packages = @(
+            'NAudio.Core',
+            'NAudio.Asio',
+            'NAudio.WinForms',
+            'NAudio.Midi',
+            'NAudio.WinMM',
+            'NAudio.Wasapi',
+            'NAudio',
+            'NAudio.Extras'
+          )
+          New-Item -ItemType Directory -Force -Path artifacts | Out-Null
+          foreach ($pkg in $packages) {
+            dotnet pack "$pkg/$pkg.csproj" `
+              --configuration Release `
+              --no-build `
+              --output artifacts `
+              ${{ steps.version.outputs.pack_args }}
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+
+      - name: Upload package artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nupkg-${{ steps.version.outputs.version }}
+          path: artifacts/*.nupkg
+          if-no-files-found: error
+
+      # NuGet trusted publishing via OIDC. The trusted-publisher policy
+      # is configured on NuGet.org per Phase 7 of the release strategy.
+      # If this step needs adjustment after Phase 7's smoke test, update
+      # here — the rest of the workflow is independent of the auth method.
+      - name: NuGet login (trusted publishing)
+        id: nuget-login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ vars.NUGET_USER }}
+
+      - name: Push to NuGet
+        run: >
+          dotnet nuget push artifacts/*.nupkg
+          --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
+
+      # GitHub Release only on final tag-driven runs. Pre-releases just
+      # ship to NuGet — no GitHub Release noise for every preview.
+      - name: Extract RELEASE_NOTES.md section (final only)
+        if: steps.version.outputs.is_final == 'true'
+        shell: pwsh
+        run: |
+          $version = '${{ steps.version.outputs.version }}'
+          $lines = Get-Content RELEASE_NOTES.md
+          $start = -1
+          $end = $lines.Length
+          for ($i = 0; $i -lt $lines.Length; $i++) {
+            if ($lines[$i] -match "^### $([regex]::Escape($version))(\s|$)") {
+              $start = $i + 1
+            } elseif ($start -ge 0 -and $lines[$i] -match "^### ") {
+              $end = $i
+              break
+            }
+          }
+          if ($start -lt 0) {
+            Write-Error "Could not extract '### $version' section."
+            exit 1
+          }
+          $body = ($lines[$start..($end - 1)] -join "`n").Trim()
+          $body | Out-File -FilePath release-body.md -Encoding utf8
+
+      - name: Create GitHub Release (final only)
+        if: steps.version.outputs.is_final == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          gh release create "v${{ steps.version.outputs.version }}" `
+            --title "NAudio ${{ steps.version.outputs.version }}" `
+            --notes-file release-body.md `
+            --verify-tag

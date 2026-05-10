@@ -146,12 +146,29 @@ jobs:
         with:
           user: ${{ vars.NUGET_USER }}
 
+      # dotnet nuget push does not expand globs on its own, and PowerShell
+      # does not expand wildcards in arguments to external commands. So loop
+      # over the artifacts explicitly. This also gives per-package error
+      # reporting.
       - name: Push to NuGet
-        run: >
-          dotnet nuget push artifacts/*.nupkg
-          --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
-          --source https://api.nuget.org/v3/index.json
-          --skip-duplicate
+        shell: pwsh
+        run: |
+          $packages = Get-ChildItem -Path artifacts -Filter *.nupkg
+          if (-not $packages) {
+            Write-Error "No .nupkg files found in artifacts/"
+            exit 1
+          }
+          foreach ($pkg in $packages) {
+            Write-Host "Pushing $($pkg.Name)"
+            dotnet nuget push $pkg.FullName `
+              --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }} `
+              --source https://api.nuget.org/v3/index.json `
+              --skip-duplicate
+            if ($LASTEXITCODE -ne 0) {
+              Write-Error "Failed to push $($pkg.Name)"
+              exit $LASTEXITCODE
+            }
+          }
 
       # GitHub Release only on final tag-driven runs. Pre-releases just
       # ship to NuGet — no GitHub Release noise for every preview.

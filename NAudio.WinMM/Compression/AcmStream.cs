@@ -7,6 +7,15 @@ namespace NAudio.Wave.Compression
     /// AcmStream encapsulates an Audio Compression Manager Stream
     /// used to convert audio from one format to another
     /// </summary>
+    /// <remarks>
+    /// We have observed access violations inside <c>msacm32.dll</c> when ACM
+    /// calls are issued concurrently from multiple threads. It isn't clear
+    /// whether every ACM codec is affected or only some, but as a defensive
+    /// measure NAudio serialises every msacm32 P/Invoke through a single
+    /// process-wide lock. As a result ACM operations are effectively
+    /// single-threaded across the process. For high-throughput scenarios
+    /// consider Media Foundation or DMO-based decoders/encoders instead.
+    /// </remarks>
     public class AcmStream : IDisposable
     {
         private IntPtr streamHandle;
@@ -35,7 +44,7 @@ namespace NAudio.Wave.Compression
                 {
                     MmException.Try(AcmInterop.acmStreamOpen2(out streamHandle, IntPtr.Zero, sourceFormatPointer, destFormatPointer, null, IntPtr.Zero, IntPtr.Zero, AcmStreamOpenFlags.NonRealTime), "acmStreamOpen");
                 }
-                finally 
+                finally
                 {
                     Marshal.FreeHGlobal(sourceFormatPointer);
                     Marshal.FreeHGlobal(destFormatPointer);

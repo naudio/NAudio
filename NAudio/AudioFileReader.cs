@@ -50,7 +50,7 @@ namespace NAudio.Wave
                 readerStream = new WaveFileReader(fileName);
                 if (readerStream.WaveFormat.Encoding != WaveFormatEncoding.Pcm && readerStream.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
                 {
-#if NET6_0_OR_GREATER && !WINDOWS
+#if !WINDOWS
                     throw new InvalidOperationException("WAV files with non-PCM encoding require Windows for ACM codec conversion");
 #else
                     readerStream = WaveFormatConversionStream.CreatePcmStream(readerStream);

@@ -75,7 +75,7 @@ These all follow the same per-backend pattern, so adding them later doesn't requ
 
 | Package | Target | Contents |
 |---|---|---|
-| `NAudio` | `net9.0;net9.0-windows10.0.19041.0` (multi-targeted) | TFM-conditional `PackageReference` set: `net9.0` pulls Core + Midi only; the Windows leg pulls the win32 stack (Core + Midi + Wasapi + WinMM + WinForms — note `Wasapi` still bundles MediaFoundation/DMO/DirectSound, and `WinMM` brings legacy `MidiIn`/`MidiOut` along). ASIO stays opt-in (separate package) because most users don't want it. When `NAudio.Midi.WinRT` lands later, the new package is referenced from the existing Windows leg (the 19041 TFM already exposes WinRT MIDI projections) — purely additive, no new TFM required. |
+| `NAudio` | `net9.0;net9.0-windows10.0.19041.0` (multi-targeted) | TFM-conditional `PackageReference` set: `net9.0` pulls Core + Midi only; the Windows leg pulls the full win32 stack (Core + Midi + Asio + Wasapi + WinMM + WinForms — note `Wasapi` still bundles MediaFoundation/DMO/DirectSound, and `WinMM` brings legacy `MidiIn`/`MidiOut` along). Mirrors the v2 meta-package shape so existing Windows consumers don't need to add `PackageReference`s on upgrade. When `NAudio.Midi.WinRT` lands later, the new package is referenced from the existing Windows leg (the 19041 TFM already exposes WinRT MIDI projections) — purely additive, no new TFM required. |
 
 **Why `net9.0-windows10.0.19041.0` and not `net9.0-windows`?** `NAudio.Wasapi` already targets `net9.0-windows10.0.19041.0` because process-loopback capture (`ActivateAudioInterfaceAsync` + `AUDIOCLIENT_PROCESS_LOOPBACK_PARAMS`) needs that floor. The Windows-leg TFM has to match or be higher than its dependencies, and Windows 10 2004 (May 2020) is the practical minimum for any NAudio 3 consumer anyway — anyone older can stay on NAudio 2.x. The constituent packages `NAudio.WinMM`, `NAudio.Asio`, and `NAudio.WinForms` continue to target `net9.0-windows` themselves (they have no 19041 dependency), so they remain individually consumable on lower Windows versions when referenced directly without the meta-package.
 
@@ -105,7 +105,7 @@ The only ways to break the cycle (a third "common" assembly, or leaving the type
 
 | Consumer scenario | Action required |
 |---|---|
-| Uses `NAudio` meta-package on Windows | None — new transitive deps come in automatically. |
+| Uses `NAudio` meta-package on Windows | None — new transitive deps (`NAudio.WinMM` for relocated MIDI/Mm* types) come in automatically. |
 | Uses `NAudio` meta-package on Linux/macOS (currently broken anyway) | Add `NAudio.Alsa` (or other backend) explicitly when v3 lands and that package is published. |
 | References specific packages today (`NAudio.Wasapi`, `NAudio.WinMM`, `NAudio.Midi`) | `NAudio.Wasapi` is unchanged in scope — no new packages needed for MF/DMO/DirectSound users. Legacy `MidiIn` / `MidiOut` users now need `NAudio.WinMM` (likely already referenced if they were doing playback). |
 | Catches `MmException` or references `MmResult` / `Manufacturers` | These types now live in `NAudio.WinMM`. Source code unchanged — namespace `NAudio` is preserved. Anyone catching `MmException` is already a winmm consumer, so the package is almost certainly already referenced. |
@@ -160,10 +160,14 @@ Build the full solution and confirm `NAudioDemo`, `NAudioConsoleTest`, `NAudioTe
 
 **Result:** Compile-side validation green from step 1 (full clean rebuild, 0 warnings / 0 errors). Runtime smoke pass confirmed — including the `NAudioDemo` MIDI panel, the only non-test consumer of the relocated `MidiIn` / `MidiOut`. Nothing to capture in `MODERNIZATION.md` yet: the structural moves were fully transparent to every consumer in this repo, no `PackageReference` adjustments, no namespace surprises, no transitive-dep gaps.
 
-### 3. Verify the multi-targeted `NAudio` meta-package — **Pending**
+### 3. Verify the multi-targeted `NAudio` meta-package — **Done (2026-05-10)**
 
 Confirm/preserve the `net9.0;net9.0-windows10.0.19041.0` TFM set with the appropriate dep subsets per the §"Meta-package" section. (Most of the multi-targeting is already in place; this step is more "verify and tidy" than "introduce.")
 
-### 4. Document everything — **Pending**
+**Result:** TFM set already correct (`net9.0;net9.0-windows10.0.19041.0`). Portable-leg dep set already correct (Core + Midi only). Windows-leg dep set already correct (Core + Midi + Asio + Wasapi + WinMM + WinForms). No csproj changes required. An earlier draft of this plan proposed removing `NAudio.Asio` from the meta-package on a "most users don't want it" rationale, but that argument didn't hold up next to keeping `NAudio.WinForms` in (equally niche in 2026), and removing it would have forced existing v2 meta-package consumers of `AsioOut` to add a new `PackageReference` on upgrade for no real upside — §"Meta-package" updated to reflect the kept-in decision. Solution rebuilds clean across all 19 projects (0 warnings, 0 errors).
+
+### 4. Document everything — **Done in MODERNIZATION.md (2026-05-10); RELEASE_NOTES.md deferred**
 
 Update `MODERNIZATION.md` and `RELEASE_NOTES.md`. Add a top-level migration guide for v2 → v3, populated from the gotchas captured in step 2.
+
+**Result:** `MODERNIZATION.md` updated — added a *Phase 10: Assembly layout reshape (NAudio 3 first round) — DONE* section, an *Assembly layout reshape (winmm consolidation)* subsection inside Breaking Changes, and refreshed the NAudio.Midi row of the per-project TFMs table. Both new sections defer to this layout plan for the full design rather than duplicating it. `RELEASE_NOTES.md` is intentionally not touched in this round — it will be populated from `MODERNIZATION.md` closer to the v3 preview cut.

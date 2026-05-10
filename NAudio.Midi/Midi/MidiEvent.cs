@@ -88,9 +88,11 @@ namespace NAudio.Midi
         /// Constructs a MidiEvent from a BinaryStream
         /// </summary>
         /// <param name="br">The binary stream of MIDI data</param>
-        /// <param name="previous">The previous MIDI event (pass null for first event)</param>
+        /// <param name="previous">The previous channel-voice MIDI event used to resolve
+        /// running status. Pass null if no channel-voice event has been read yet; meta and
+        /// sysex events do not update running status and should not be passed here.</param>
         /// <returns>A new MidiEvent</returns>
-        public static MidiEvent ReadNextEvent(BinaryReader br, MidiEvent previous) 
+        public static MidiEvent ReadNextEvent(BinaryReader br, MidiEvent previous)
         {
             int deltaTime = ReadVarInt(br);
             MidiCommandCode commandCode;

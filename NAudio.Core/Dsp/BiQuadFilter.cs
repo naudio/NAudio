@@ -119,7 +119,11 @@ namespace NAudio.Dsp
         /// </summary>
         /// <param name="sampleRate">Sample Rate</param>
         /// <param name="cutoffFrequency">Cut-off Frequency</param>
-        /// <param name="q">Bandwidth</param>
+        /// <param name="q">Q (quality factor). Use 1/sqrt(2) ≈ 0.707 for a Butterworth response
+        /// (maximally flat passband, no peaking) — the recommended default for a clean low-pass.
+        /// Larger values produce a resonant peak at the cutoff; smaller values give a more
+        /// gradual roll-off into the cutoff. The slope above the cutoff is ~12 dB/octave
+        /// regardless of Q — cascade biquads in series for a steeper roll-off.</param>
         public void SetLowPassFilter(float sampleRate, float cutoffFrequency, float q)
         {
             // H(s) = 1 / (s^2 + s/Q + 1)
@@ -141,7 +145,8 @@ namespace NAudio.Dsp
         /// </summary>
         /// <param name="sampleRate">Sample Rate</param>
         /// <param name="centreFrequency">Centre Frequency</param>
-        /// <param name="q">Bandwidth (Q)</param>
+        /// <param name="q">Q (quality factor). Higher Q gives a narrower peak around the centre
+        /// frequency; lower Q gives a wider, gentler bell.</param>
         /// <param name="dbGain">Gain in decibels</param>
         public void SetPeakingEq(float sampleRate, float centreFrequency, float q, float dbGain)
         {
@@ -164,6 +169,13 @@ namespace NAudio.Dsp
         /// <summary>
         /// Set this as a high pass filter
         /// </summary>
+        /// <param name="sampleRate">Sample Rate</param>
+        /// <param name="cutoffFrequency">Cut-off Frequency</param>
+        /// <param name="q">Q (quality factor). Use 1/sqrt(2) ≈ 0.707 for a Butterworth response
+        /// (maximally flat passband, no peaking) — the recommended default for a clean high-pass.
+        /// Larger values produce a resonant peak at the cutoff; smaller values give a more
+        /// gradual roll-off into the cutoff. The slope below the cutoff is ~12 dB/octave
+        /// regardless of Q — cascade biquads in series for a steeper roll-off.</param>
         public void SetHighPassFilter(float sampleRate, float cutoffFrequency, float q)
         {
             // H(s) = s^2 / (s^2 + s/Q + 1)
@@ -183,6 +195,11 @@ namespace NAudio.Dsp
         /// <summary>
         /// Create a low pass filter
         /// </summary>
+        /// <param name="sampleRate">Sample Rate</param>
+        /// <param name="cutoffFrequency">Cut-off Frequency</param>
+        /// <param name="q">Q (quality factor). Use 1/sqrt(2) ≈ 0.707 for a Butterworth response
+        /// (maximally flat passband, no peaking). The slope above the cutoff is ~12 dB/octave
+        /// regardless of Q — cascade biquads in series for a steeper roll-off.</param>
         public static BiQuadFilter LowPassFilter(float sampleRate, float cutoffFrequency, float q)
         {
             var filter = new BiQuadFilter();
@@ -193,6 +210,11 @@ namespace NAudio.Dsp
         /// <summary>
         /// Create a High pass filter
         /// </summary>
+        /// <param name="sampleRate">Sample Rate</param>
+        /// <param name="cutoffFrequency">Cut-off Frequency</param>
+        /// <param name="q">Q (quality factor). Use 1/sqrt(2) ≈ 0.707 for a Butterworth response
+        /// (maximally flat passband, no peaking). The slope below the cutoff is ~12 dB/octave
+        /// regardless of Q — cascade biquads in series for a steeper roll-off.</param>
         public static BiQuadFilter HighPassFilter(float sampleRate, float cutoffFrequency, float q)
         {
             var filter = new BiQuadFilter();
@@ -203,6 +225,10 @@ namespace NAudio.Dsp
         /// <summary>
         /// Create a bandpass filter with constant skirt gain
         /// </summary>
+        /// <param name="sampleRate">Sample Rate</param>
+        /// <param name="centreFrequency">Centre Frequency</param>
+        /// <param name="q">Q (quality factor). Higher Q gives a narrower band; lower Q gives a
+        /// wider band. Peak gain at the centre frequency equals Q.</param>
         public static BiQuadFilter BandPassFilterConstantSkirtGain(float sampleRate, float centreFrequency, float q)
         {
             // H(s) = s / (s^2 + s/Q + 1)  (constant skirt gain, peak gain = Q)
@@ -223,6 +249,10 @@ namespace NAudio.Dsp
         /// <summary>
         /// Create a bandpass filter with constant peak gain
         /// </summary>
+        /// <param name="sampleRate">Sample Rate</param>
+        /// <param name="centreFrequency">Centre Frequency</param>
+        /// <param name="q">Q (quality factor). Higher Q gives a narrower band; lower Q gives a
+        /// wider band. Peak gain at the centre frequency is 0 dB regardless of Q.</param>
         public static BiQuadFilter BandPassFilterConstantPeakGain(float sampleRate, float centreFrequency, float q)
         {
             // H(s) = (s/Q) / (s^2 + s/Q + 1)      (constant 0 dB peak gain)
@@ -243,6 +273,10 @@ namespace NAudio.Dsp
         /// <summary>
         /// Creates a notch filter
         /// </summary>
+        /// <param name="sampleRate">Sample Rate</param>
+        /// <param name="centreFrequency">Centre Frequency</param>
+        /// <param name="q">Q (quality factor). Higher Q gives a narrower notch; lower Q gives a
+        /// wider notch.</param>
         public static BiQuadFilter NotchFilter(float sampleRate, float centreFrequency, float q)
         {
             // H(s) = (s^2 + 1) / (s^2 + s/Q + 1)
@@ -261,8 +295,12 @@ namespace NAudio.Dsp
         }
 
         /// <summary>
-        /// Creaes an all pass filter
+        /// Creates an all pass filter
         /// </summary>
+        /// <param name="sampleRate">Sample Rate</param>
+        /// <param name="centreFrequency">Centre Frequency</param>
+        /// <param name="q">Q (quality factor). Controls how sharply the phase transitions
+        /// around the centre frequency.</param>
         public static BiQuadFilter AllPassFilter(float sampleRate, float centreFrequency, float q)
         {
             //H(s) = (s^2 - s/Q + 1) / (s^2 + s/Q + 1)
@@ -283,6 +321,11 @@ namespace NAudio.Dsp
         /// <summary>
         /// Create a Peaking EQ
         /// </summary>
+        /// <param name="sampleRate">Sample Rate</param>
+        /// <param name="centreFrequency">Centre Frequency</param>
+        /// <param name="q">Q (quality factor). Higher Q gives a narrower peak around the centre
+        /// frequency; lower Q gives a wider, gentler bell.</param>
+        /// <param name="dbGain">Gain in decibels</param>
         public static BiQuadFilter PeakingEQ(float sampleRate, float centreFrequency, float q, float dbGain)
         {
             var filter = new BiQuadFilter();

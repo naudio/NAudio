@@ -97,12 +97,16 @@ namespace NAudio.Midi
 
                     long startPos = br.BaseStream.Position;
                     MidiEvent me = null;
+                    // Only channel-voice messages (NoteOn/Off, ControlChange, etc.) establish
+                    // running status; meta and sysex events leave the running status anchor intact
+                    // (issue #205).
+                    MidiEvent runningStatus = null;
                     var outstandingNoteOns = new List<NoteOnEvent>();
-                    while(br.BaseStream.Position < startPos + chunkSize) 
+                    while(br.BaseStream.Position < startPos + chunkSize)
                     {
                         try
                         {
-                            me = MidiEvent.ReadNextEvent(br, me);
+                            me = MidiEvent.ReadNextEvent(br, runningStatus);
                         }
                         catch (InvalidDataException)
                         {
@@ -115,6 +119,10 @@ namespace NAudio.Midi
                             continue;
                         }
 
+                        if (me.CommandCode < MidiCommandCode.Sysex)
+                        {
+                            runningStatus = me;
+                        }
                         absoluteTime += me.DeltaTime;
                         me.AbsoluteTime = absoluteTime;
                         events[track].Add(me);

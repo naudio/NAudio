@@ -236,21 +236,25 @@ namespace NAudio.Wave.Compression
 
             // Free your own state (unmanaged objects).
 
+            // Capture and clear the handle fields BEFORE the native close calls so a
+            // throw or AV in msacm32 does not leave them set for the finalizer to
+            // re-close. See https://github.com/naudio/NAudio/issues/355.
             if (streamHandle != IntPtr.Zero)
             {
-                MmResult result = AcmInterop.acmStreamClose(streamHandle, 0);
+                IntPtr handle = streamHandle;
                 streamHandle = IntPtr.Zero;
+                MmResult result = AcmInterop.acmStreamClose(handle, 0);
                 if (result != MmResult.NoError)
                 {
                     throw new MmException(result, "acmStreamClose");
                 }
 
             }
-            // Set large fields to null.
             if (driverHandle != IntPtr.Zero)
             {
-                AcmInterop.acmDriverClose(driverHandle, 0);
+                IntPtr handle = driverHandle;
                 driverHandle = IntPtr.Zero;
+                AcmInterop.acmDriverClose(handle, 0);
             }
         }
 

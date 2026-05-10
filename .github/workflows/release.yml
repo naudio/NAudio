@@ -30,15 +30,14 @@ jobs:
         with:
           fetch-depth: 0   # full history so gh release --generate-notes can diff against the previous tag
 
-      # Dispatch must come from main (or naudio3dev during the rollout).
-      # Tag pushes are unrestricted because the tag itself is the gate.
+      # Dispatch must come from main. Tag pushes are unrestricted because
+      # the tag itself is the gate.
       - name: Verify branch (dispatch only)
         if: github.event_name == 'workflow_dispatch'
         shell: pwsh
         run: |
-          $allowed = @('refs/heads/main', 'refs/heads/naudio3dev')
-          if ($env:GITHUB_REF -notin $allowed) {
-            Write-Error "Release dispatch must be from main or naudio3dev (got $env:GITHUB_REF)."
+          if ($env:GITHUB_REF -ne 'refs/heads/main') {
+            Write-Error "Release dispatch must be from main (got $env:GITHUB_REF)."
             exit 1
           }
 

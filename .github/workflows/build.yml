@@ -15,11 +15,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup .NET 10 SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
-
       - name: Restore
         run: dotnet restore NAudio.slnx
 
@@ -28,7 +23,7 @@ jobs:
 
       - name: Test
         run: >
-          dotnet test NAudioTests/NAudioTests.csproj
+          dotnet test --project NAudioTests/NAudioTests.csproj
           --configuration Release
           --no-build
           --filter "TestCategory!=IntegrationTest"

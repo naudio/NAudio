@@ -1,0 +1,44 @@
+name: build
+
+# Phase 0 validation workflow: mirror the Azure Pipelines build/test on
+# GitHub-hosted windows-latest. Triggered on PRs (so a draft PR exercises it)
+# and via manual dispatch (so the maintainer can re-run on demand).
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore NAudio.slnx
+
+      - name: Build
+        run: dotnet build NAudio.slnx --configuration Release --no-restore
+
+      - name: Test
+        run: >
+          dotnet test NAudioTests/NAudioTests.csproj
+          --configuration Release
+          --no-build
+          --filter "TestCategory!=IntegrationTest"
+          --report-trx
+          --results-directory ${{ runner.temp }}/TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: ${{ runner.temp }}/TestResults/*.trx
+          if-no-files-found: warn

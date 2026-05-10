@@ -6,6 +6,83 @@ Bullets land here as PRs merge. The maintainer renames this section to
 Docs/Architecture/ReleaseStrategy.md for the release-notes process.
 -->
 
+#### Breaking changes
+
+ * `IWaveProvider.Read` signature changed from `Read(byte[], int, int)` to `Read(Span<byte>)`. Existing callers with `byte[]` migrate via `source.Read(buffer.AsSpan(offset, count))`; implementations override `Read(Span<byte>)`
+ * `ISampleProvider.Read` signature changed from `Read(float[], int, int)` to `Read(Span<float>)` (same migration pattern)
+ * `MidiIn`, `MidiOut`, `MidiInCapabilities`, and `MidiOutCapabilities` moved from `NAudio.Midi` to `NAudio.WinMM` — all `winmm.dll` interop now lives in one assembly
+ * `MmResult`, `MmException`, and `Manufacturers` moved from `NAudio.Core` to `NAudio.WinMM`
+ * `DirectSoundOut` moved from `NAudio.Core` to `NAudio.Wasapi` (DirectSound has always been Windows-only)
+ * `NAudio.Midi` is now cross-platform — its `net9.0` target no longer P/Invokes `winmm.dll`
+ * `WasapiOut`, `WasapiCapture`, and `WasapiLoopbackCapture` are now `[Obsolete]` in favour of the new `WasapiPlayer` / `WasapiRecorder` APIs (the legacy types still ship and continue to work)
+ * `WaveOut` and `WaveIn` now default to event-driven callbacks; the legacy window-based variants are renamed `WaveOutWindow` / `WaveInWindow` and live in `NAudio.WinForms`
+ * `WaveInEventArgs` now fires one event per WASAPI packet (previously batched). A new `BufferSpan` property exposes the data without copying through the existing `Buffer` byte array
+ * Several `Mf*` Media Foundation wrapper types are now `internal` — only `MfActivate` and `MediaType` remain public
+ * `BufferedWaveProvider` buffer duration is now set in the constructor (default 5 seconds); `BufferLength` and `BufferDuration` are read-only
+ * `WaveBuffer` is deprecated — use `MemoryMarshal.Cast` instead
+ * `MMDevice.AudioClient` is `[Obsolete]` because it created a new instance per access; use `MMDevice.CreateAudioClient()`
+ * `PropertyStore[int]` now resolves `PropVariant` values safely; the indexer that returned the raw `PropVariant` is `[Obsolete]`
+ * Minimum target framework is now `net9.0` (previously supported legacy .NET Framework and .NET Standard 2.0)
+ * `CueWaveFileReader` removed - use `new WaveFileReader(...).Chunks.ReadCueList()` to get a `CueList`
+
+#### New features
+
+ * **WASAPI:** new high-level `WasapiPlayer` and `WasapiRecorder` classes, built via `WasapiPlayerBuilder` / `WasapiRecorderBuilder`. Adds `IAudioClient3` low-latency support, MMCSS thread priority, `IAsyncDisposable`, zero-copy buffer access, and process-specific loopback via `WasapiRecorderBuilder.WithProcessLoopback()`
+ * **ASIO:** new `AsioDevice` class replacing `AsioOut` as the primary ASIO interface. Adds explicit `InitPlayback` / `InitRecording` / `InitDuplex` modes, non-contiguous channel selection, per-channel `Span<float>` callbacks, `Reinitialize()` for driver-reset recovery, and per-buffer timing fields (`SamplePosition`, `SystemTimeNanoseconds`, `Speed`, SMPTE `TimeCode`)
+ * **ASIO events:** `LatenciesChanged` and `ResyncOccurred` surfaced separately; buffer-size changes routed through `DriverResetRequest`
+ * **Media Foundation:** `MediaFoundationEncoder.EncodeToFlac` for lossless FLAC output. The FLAC/ALAC selector now falls back correctly on rate + channels
+ * **WinForms:** `WaveOutWindow` and `WaveInWindow` available as window-callback variants of the modernised event-driven `WaveOut` / `WaveIn`
+ * **DSP:** new `FftProcessor` with real-input specialisation and precomputed windowing
+ * **WAV chunks:** new `IWaveChunkInterpreter<T>` extension point, with built-in interpreters for cue lists, BWF `bext` (v1 and v2), and LIST/INFO metadata. RF64 promotion is now an explicit `WaveFileWriterOption`
+ * **`Span<T>` overloads:** added on `BiQuadFilter.Transform`, `ALawDecoder.Decode`, `MuLawDecoder.Decode`, and `IMp3FrameDecompressor.DecompressFrame` (default interface method preserves backward compatibility with `NLayer` and other third-party decoders)
+ * **WPF demos:** spectrum analyser rewritten with corrected dB formula (20·log₁₀), log-frequency mapping, real-input full-scale calibration, bars instead of polylines, peak-decay markers, and per-band smoothing. New `LiveWaveformControl` with configurable render styles, vertical scaling, and fill-between rendering
+ * **WAV recording demo:** added loopback support and a multi-API device combo with provenance embedding
+
+#### Performance
+
+ * Vectorised mix-add and volume kernels via `System.Numerics.Tensors` — significantly faster on AVX2 hardware for typical buffer sizes
+ * Eliminated per-`Read` allocations in `SmbPitchShiftingSampleProvider`
+ * `WaveStream.Read(Span<byte>)` overridden directly on every concrete reader (no intermediate byte-array copy)
+ * `WasapiCapture` capture path is now zero-copy via the native WASAPI buffer span
+ * `BiQuadFilter` state and coefficient fields hoisted to locals in batch loops for register retention
+ * `Mp3FileReader` now builds its table-of-contents lazily on first seek instead of eagerly during construction; the `Position` setter no longer blocks; rapid scrub seeks debounce and silence output
+
+#### Reliability and bug fixes
+
+ * `AcmInterop`: serialised all `msacm32` P/Invokes process-wide via a reentrant lock — fixes process-killing access violations under concurrent ACM access
+ * `AcmStream`: fixed double-close in finalizer by zeroing the handle field before close
+ * `MediaFoundationReader`: informational source-reader flags (`STREAMTICK`, `NEWSTREAM`, `NativeMediaTypeChanged`, `AllEffectsRemoved`) are now non-fatal instead of aborting reads
+ * `MediaFoundationReader.Reposition`: fixed using a stale field instead of the parameter (seeks would default to stream start)
+ * `MediaFoundationEncoder`: unselected `MediaType` instances are now disposed to prevent finalizer-thread COM ref leaks
+ * `Mp3FileReader`: fixed false sample-rate-change errors near end of file
+ * MP3 frame parsing: more robust against false frame detections from album art and trailing metadata
+ * `MidiFile`: preserved running-status across meta events (fixes "Read too far" errors when meta events interrupt running-status sequences)
+ * `WaveStream.CurrentTime` setter: now lands on a block boundary, preventing garbage audio on seek in custom readers
+ * `IconExtractor.Extract`: now guards against null icon handles from `ExtractIconEx`
+ * `DirectSoundOut.InitializeDirectSound`: wrapped notification setup in try/finally to prevent COM ref leak on `SetNotificationPositions` failure
+ * ASIO: implemented missing `Asio64Bit` conversions (Int24LSB and Float32LSB output sample types)
+ * ASIO: fixed byte-order bug in `AsioDriver.GetSamplePosition` for `Asio64Bit` reassembly
+ * `WdlResampler`: backported three upstream Cockos WDL bug fixes (latency calculation, `ResampleOut` clamping, Blackman-Harris window correction)
+ * `MediaBufferLease`: hardened against out-of-order disposal
+ * Added finalizers to DMO `MediaBuffer` and the `Mf*` wrappers that hold (RCW, IntPtr) pairs to prevent COM ref leaks
+ * Clarified `BiQuadFilter` `q` parameter docs (#1264)
+
+#### Modernisation (Native AOT, source-generated COM)
+
+ * `NAudio.Core`, `NAudio.Midi`, and `NAudio.Wasapi` are now `IsAotCompatible=true`. AOT compatibility is exercised end-to-end by `NAudioAotSmokeTest` in CI
+ * Most COM interop migrated from `[ComImport]` to `[GeneratedComInterface]` / `ComWrappers`. Affected interfaces include the WASAPI / Core Audio activation chain (`IActivateAudioInterfaceCompletionHandler`, `IMMNotificationClient`, `IAudioSessionNotification`, `IAudioSessionEvents`, `IAudioEndpointVolumeCallback`, `IAgileObject`, `IPropertyStore`), the Media Foundation cascade, the DMO interfaces, DirectSound, and the `ComStream` CCW (now source-generated `IStream`)
+ * DirectSound P/Invokes migrated to `[LibraryImport]` with `[UnmanagedCallersOnly]` thunks; `BufferDescription` and `BufferCaps` converted from class to struct
+ * `AcmDriver` ported from legacy `NativeMethods` to `NativeLibrary`
+ * Most `MediaFoundationInterop` blittable P/Invokes migrated to `[LibraryImport]`
+
+#### Packaging and dependencies
+
+ * Each NAudio package now ships its own README in the NuGet payload
+ * Replaced vendored NSpeex (deprecated) with Opus (Concentus) in the network chat demo; added round-trip unit tests
+ * Test project migrated from VSTest to `Microsoft.Testing.Platform`
+ * Migrated to the modern `.slnx` solution format
+ * Renamed `license.txt` to `LICENSE` for GitHub license detection; refreshed copyright year to 2008–2026
+
 ### 2.3.0 (12 Mar 2026)
 
  * Performance improvements for `PropertyStore` and Core Audio property access (#1206)

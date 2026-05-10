@@ -1,4 +1,4 @@
-#if NET6_0_OR_GREATER && !WINDOWS
+#if !WINDOWS
 // Mp3FileReader requires AcmMp3FrameDecompressor which is Windows-only
 // Use Mp3FileReaderBase with a custom decompressor on non-Windows platforms
 #else

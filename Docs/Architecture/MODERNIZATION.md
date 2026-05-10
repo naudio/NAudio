@@ -39,7 +39,7 @@ This document records the architectural decisions, rationale, and progress for t
 | Project | NAudio 2.x TFM(s) | NAudio 3.0 TFM(s) | Rationale |
 | ------- | ------------------ | ------------------ | --------- |
 | NAudio.Core | netstandard2.0 | net9.0 | Moved to net9.0 to unlock `Span<T>` for `IWaveProvider`/`ISampleProvider` interfaces and align with the .NET 9 floor |
-| NAudio.Midi | netstandard2.0 | net9.0 | Follows NAudio.Core (depends on it) |
+| NAudio.Midi | netstandard2.0 | net9.0 | Follows NAudio.Core (depends on it). NAudio 3 first round: `MidiIn`/`MidiOut`/capabilities/`MidiInterop` relocated to NAudio.WinMM, leaving NAudio.Midi as pure portable message types + file I/O — opted in to `<IsAotCompatible>true</IsAotCompatible>`. See *Phase 10* below |
 | NAudio.Asio | netstandard2.0; net8.0-windows | net9.0-windows | Dropped netstandard2.0 leg. Removed `Microsoft.Win32.Registry` polyfill |
 | NAudio.WinMM | netstandard2.0; net6.0 | net9.0-windows | Windows-only (P/Invoke into winmm.dll). Removed netstandard2.0 and `Microsoft.Win32.Registry` polyfill |
 | NAudio.WinForms | net472; netcoreapp3.1 | net9.0-windows | Windows-only WinForms controls. Removed net472 workarounds. SDK changed from `Microsoft.NET.Sdk.WindowsDesktop` to `Microsoft.NET.Sdk` |
@@ -993,6 +993,28 @@ The `WaveFileBuilder` test helper was shrunk to just the generic `Build(format, 
 
 ---
 
+## Phase 10: Assembly layout reshape (NAudio 3 first round) — DONE
+
+**Decision:** Consolidate all `winmm.dll` interop into `NAudio.WinMM` so the cross-platform surface is honestly cross-platform. `NAudio.Midi` becomes 100% portable + AOT-compatible; `NAudio.Core` sheds the win32-shaped types it never used.
+
+See [`NAudio3AssemblyLayoutPlan.md`](NAudio3AssemblyLayoutPlan.md) for the full design — problems with the v2.x layout, design principles, the proposed v3 layout, the complete type-move table, the migration impact analysis, and the subsequent-phase candidates that are *not* in this round. This entry only summarizes what shipped.
+
+**First-round scope:**
+
+- Eight types relocated as pure file moves (no source edits, namespaces preserved):
+  - `MmResult`, `MmException`, `Manufacturers` — `NAudio.Core` → `NAudio.WinMM` (namespace `NAudio` preserved)
+  - `MidiIn`, `MidiOut`, `MidiInCapabilities`, `MidiOutCapabilities`, `MidiInterop` — `NAudio.Midi` → `NAudio.WinMM` (namespace `NAudio.Midi` preserved)
+- `NAudio.WinMM` gained a `ProjectReference` to `NAudio.Midi` so the relocated `MidiIn` / `MidiOut` can still see `MidiEvent` / `MidiInMessageEventArgs` (which stay portable). Dependency graph: `NAudio.Core` ← `NAudio.Midi` ← `NAudio.WinMM`. No cycles, so no `[TypeForwardedTo]` shims are possible — namespace preservation does the source-compatibility work instead (see the layout plan's §"Type moves" for the cycle analysis).
+- `NAudio.Midi` opted in to `<IsAotCompatible>true</IsAotCompatible>` now that it has no winmm interop.
+- `NAudio` meta-package layout verified: `net9.0;net9.0-windows10.0.19041.0`, with the Windows leg pulling Core + Midi + Asio + Wasapi + WinMM + WinForms — kept identical to the v2 meta-package shape so existing Windows consumers don't need to add references on upgrade. TFM-conditional gates switched from the brittle `'$(TargetFramework)' != 'net9.0'` to the idiomatic `'$(TargetPlatformIdentifier)' == 'windows'` (also applied to `NAudio.Extras.csproj`); the WASAPI gate stays as `IsTargetFrameworkCompatible(..., 'net9.0-windows10.0.19041.0')` because it asserts the version floor, not just the platform.
+- `#if NET6_0_OR_GREATER && !WINDOWS` simplified to `#if !WINDOWS` in `Mp3FileReader.cs` and `AudioFileReader.cs` — the .NET 6 bound is dead with the .NET 9 floor.
+
+**Validation:** full clean rebuild green across all 19 projects (0 warnings, 0 errors); AOT smoke test passes (confirms NAudio.Midi's AOT opt-in introduced no trim warnings); NAudioDemo MIDI panels run unchanged. No consumer-side `PackageReference` adjustments were required in-repo: every sample/tool that uses the moved types either references `NAudio.WinMM` directly or pulls it transitively via the meta-package's Windows leg.
+
+**Subsequent phases** (deferred from the first round, candidates for NAudio 3 but not committed): finishing the WinRT MIDI backend (`NAudio.Midi.WinRT`), splitting `NAudio.Wasapi` into per-API packages (`NAudio.Wasapi` / `NAudio.MediaFoundation` / `NAudio.Dmo` / `NAudio.DirectSound`), rehousing `NAudio.Extras` contents. See the layout plan's §"Subsequent phases" for the trade-off analysis on each.
+
+---
+
 ## Breaking Changes from 2.x
 
 These will need to be documented in the migration guide:
@@ -1005,6 +1027,16 @@ These will need to be documented in the migration guide:
 | NAudio.Uap package is removed | Use `WasapiPlayerBuilder` / `WasapiRecorderBuilder` from NAudio.Wasapi |
 | NAudio.WinForms no longer supports net472 | Use NAudio.WinForms 2.x on .NET Framework |
 | NAudio.WinMM no longer supports netstandard2.0 | Use NAudio.WinMM 2.x on .NET Framework |
+
+### Assembly layout reshape (winmm consolidation)
+
+Source code is unchanged — namespaces are preserved across all moves. The break is at the assembly level only: direct package consumers may need to add a `<PackageReference Include="NAudio.WinMM" />`. Meta-package consumers get the moves transitively. See *Phase 10* above and the full migration impact table in [`NAudio3AssemblyLayoutPlan.md`](NAudio3AssemblyLayoutPlan.md).
+
+| Change | Migration |
+| ------ | --------- |
+| `MmResult`, `MmException`, `Manufacturers` moved from `NAudio.Core` to `NAudio.WinMM` (namespace `NAudio` preserved) | Source unchanged. Anyone catching `MmException` is already a winmm consumer, so the `NAudio.WinMM` package is almost certainly already referenced |
+| `MidiIn`, `MidiOut`, `MidiInCapabilities`, `MidiOutCapabilities`, `MidiInterop` moved from `NAudio.Midi` to `NAudio.WinMM` (namespace `NAudio.Midi` preserved) | Source unchanged. MIDI-only consumers who use live `MidiIn`/`MidiOut` need to add `<PackageReference Include="NAudio.WinMM" />`. The portable `NAudio.Midi` package alone still provides `MidiEvent`/`MidiFile` and the rest of the message types |
+| `NAudio.Midi` is now `IsAotCompatible=true` | No action — additive |
 
 ### WASAPI API changes
 

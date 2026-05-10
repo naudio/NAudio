@@ -1,3 +1,11 @@
+### Unreleased
+
+<!--
+Bullets land here as PRs merge. The maintainer renames this section to
+"### 3.0.0 (date)" at release time. See CLAUDE.md and
+Docs/Architecture/ReleaseStrategy.md for the release-notes process.
+-->
+
 ### 2.3.0 (12 Mar 2026)
 
  * Performance improvements for `PropertyStore` and Core Audio property access (#1206)

@@ -1,5 +1,9 @@
 <Project>
   <PropertyGroup>
+    <!-- Lockstep version for all NAudio NuGet packages. CI overrides
+         <VersionSuffix> on pre-release builds (e.g. preview.NN). Sample/tool
+         apps with their own <Version> in the csproj override this. -->
+    <VersionPrefix>3.0.0</VersionPrefix>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <!-- Enable analyzers but don't set default severities - .globalconfig controls rule severities -->

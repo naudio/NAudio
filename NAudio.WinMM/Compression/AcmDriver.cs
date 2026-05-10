@@ -8,6 +8,15 @@ namespace NAudio.Wave.Compression
     /// <summary>
     /// Represents an installed ACM Driver
     /// </summary>
+    /// <remarks>
+    /// We have observed access violations inside <c>msacm32.dll</c> when ACM
+    /// calls are issued concurrently from multiple threads. It isn't clear
+    /// whether every ACM codec is affected or only some, but as a defensive
+    /// measure NAudio serialises every msacm32 P/Invoke through a single
+    /// process-wide lock. Driver enumeration, format enumeration and other
+    /// operations on this type therefore block any concurrent ACM work for
+    /// their duration.
+    /// </remarks>
     public class AcmDriver : IDisposable
     {
         private static List<AcmDriver> drivers;

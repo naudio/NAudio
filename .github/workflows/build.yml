@@ -1,0 +1,42 @@
+name: build
+
+# Build & test on every PR, every push to naudio3dev (the NAudio 3 dev branch),
+# and on demand. The .NET 10 SDK is preinstalled on windows-latest, so no
+# explicit setup-dotnet step is needed today — see Docs/Architecture/ReleaseStrategy.md
+# for the trade-off if the runner image ever rotates and drops it.
+on:
+  pull_request:
+  push:
+    branches: [naudio3dev]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Restore
+        run: dotnet restore NAudio.slnx
+
+      - name: Build
+        run: dotnet build NAudio.slnx --configuration Release --no-restore
+
+      - name: Test
+        run: >
+          dotnet test --project NAudioTests/NAudioTests.csproj
+          --configuration Release
+          --no-build
+          --filter "TestCategory!=IntegrationTest"
+          --report-trx
+          --results-directory ${{ runner.temp }}/TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: ${{ runner.temp }}/TestResults/*.trx
+          if-no-files-found: warn

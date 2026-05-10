@@ -9,8 +9,8 @@
 | Phase | State | Notes |
 | --- | --- | --- |
 | 0. Validate GitHub Actions | ✅ done | Green build on `windows-latest`. 2028 passing / 0 failed / 7 skipped, 1m49s (Azure was 2m51s). Draft PR closed unmerged; throwaway branch `ci/validate-github-actions` retained for reference. |
-| 1. Merge `origin/master` into `naudio3dev` | ⏳ in progress | |
-| 2. Land build workflow on `naudio3dev` | not started | YAML already validated in Phase 0 — reintroduce as-is. |
+| 1. Merge `origin/master` into `naudio3dev` | ✅ done | Auto-merged via ORT strategy with no conflicts. The expected `Mp3FileReader` clash didn't materialise — master's MP3 sample-rate fix touched different lines from the lazy-TOC work. Local tests post-merge: 2037/0/6. Pushed. |
+| 2. Land build workflow on `naudio3dev` | ⏳ in progress | YAML already validated in Phase 0 — reintroduced with an added `push: branches: [naudio3dev]` trigger. PR will exercise the workflow on its own diff before merging. |
 | 3. Centralize version in `Directory.Build.props` | not started | |
 | 4. Release-notes plumbing + labels + `CLAUDE.md` | not started | |
 | 5. Backfill `RELEASE_NOTES.md` | not started | |
@@ -139,14 +139,14 @@ Goal: prove that GitHub Actions can build and test NAudio with the same coverage
 
 **Outcome:** green build on `windows-latest`. 2028 passing / 0 failed / 7 skipped, 1m49s (Azure baseline was 2m51s). Two YAML adjustments made during validation: dropped the now-redundant `setup-dotnet` step (.NET 10 is preinstalled), and switched to `dotnet test --project ...` to match the .NET 10 CLI's stricter argument parsing — see "Findings carried forward from Phase 0" above. Draft PR closed unmerged.
 
-### Phase 1 — Bring `naudio3dev` up to date with `master`
+### Phase 1 — Bring `naudio3dev` up to date with `master` ✅
 
 6. `git fetch origin`.
 7. `git checkout naudio3dev`, `git merge origin/master`. Resolve conflicts. Likely affected files: `Mp3FileReader.cs` (overlaps with the lazy-TOC work), possibly `WaveStream.cs` (block-alignment fix), and MIDI files (running-status fix). Conflicts in `RELEASE_NOTES.md` are unlikely because `master` hasn't touched it since 2.3.0 shipped.
 8. Run the full test suite locally to confirm the merge is sound.
 9. Push `naudio3dev`.
 
-**Exit criterion:** `naudio3dev` contains all of `origin/master`'s commits; tests pass.
+**Outcome:** clean ORT-strategy merge with zero conflicts. Auto-merged files: `BiQuadFilter.cs`, `WaveStream.cs`, `MidiEvent.cs`, `MidiFile.cs`. New files: `WaveStreamTests.cs`, additions to `MidiFileTests.cs`. Local test run post-merge: 2037 passing / 0 failed / 6 skipped — the +9 vs Phase 0 corresponds to the new regression tests from master.
 
 ### Phase 2 — Land the build workflow on `naudio3dev`
 

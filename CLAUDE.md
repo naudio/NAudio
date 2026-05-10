@@ -4,7 +4,7 @@ This file gives AI agents (Claude, etc.) the conventions for contributing to NAu
 
 ## Orientation
 
-- **NAudio 3 is in pre-release on the `naudio3dev` branch** (renamed to `main` in a future phase). NAudio 2 maintenance happens on `master` (renamed to `release/2.x` in the same future phase). Default to targeting `naudio3dev` unless explicitly told otherwise.
+- **NAudio 3 development happens on `main`.** NAudio 2 maintenance happens on `release/2.x`. Default to targeting `main` unless explicitly told otherwise. `main` and `release/*` are protected — all changes go through PRs.
 - **Architecture docs** in [Docs/Architecture/](Docs/Architecture/) are the source of truth for cross-cutting decisions:
   - [ReleaseStrategy.md](Docs/Architecture/ReleaseStrategy.md) — release/branch/version flow
   - [NAudio3AssemblyLayoutPlan.md](Docs/Architecture/NAudio3AssemblyLayoutPlan.md) — package structure

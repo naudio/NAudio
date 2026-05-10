@@ -2,7 +2,7 @@
 
 **Goal:** Replace the current manual `publish.ps1` flow with an automated GitHub Actions pipeline that publishes both regular pre-release builds (cheap, frequent, on demand) and final releases (tag-driven, with GitHub Releases attached). Rebrand `naudio3dev` as the default branch, retire NAudio 2 to a maintenance branch, and put a lightweight discipline around release notes that keeps the maintainer in control without blocking PRs.
 
-**Branch:** work continues on `naudio3dev` until step 8 of the plan, at which point it is renamed to `main`.
+**Branch:** work continues on `main` (renamed from `naudio3dev` in step 8). NAudio 2 maintenance lives on `release/2.x` (renamed from `master`). Both are protected; all changes via PR.
 
 ## Status
 
@@ -14,9 +14,9 @@
 | 3. Centralize version in `Directory.Build.props` | ✅ done | `<VersionPrefix>3.0.0</VersionPrefix>` set at root, `<Version>2.3.0</Version>` removed from all 8 NAudio package csprojs. All NAudio packages now build as `*.3.0.0.nupkg`. Tool/sample apps keep their own explicit `<Version>`. |
 | 4. Release-notes plumbing + labels + `CLAUDE.md` | ✅ done | PR #1269 merged. `.github/release.yml`, `.github/PULL_REQUEST_TEMPLATE.md`, `CLAUDE.md`, and `### Unreleased` placeholder all live. `breaking` and `release-notes-skip` labels added in the UI. |
 | 5. Backfill `RELEASE_NOTES.md` | ✅ done | PR #1270 merged. ~60 categorised bullets across six sub-sections under `### Unreleased`, ready for the maintainer to curate further as PRs land. |
-| 6. Release workflow | ⏳ in progress | `.github/workflows/release.yml` drafted with two triggers (`workflow_dispatch` for previews, `push tags v*` for finals), version resolution from `<VersionPrefix>`, validation guards, pack of all 8 NAudio packages, NuGet trusted-publishing push, and a final-only GitHub Release with body extracted from `RELEASE_NOTES.md`. NuGet auth wiring will be exercised end-to-end in Phase 7. |
-| 7. NuGet trusted publishing + smoke test | not started | |
-| 8. Branch flip + protection | not started | |
+| 6. Release workflow | ✅ done | PR #1271 merged. Two triggers (`workflow_dispatch` for previews, `push tags v*` for finals), version resolution from `<VersionPrefix>`, validation guards, pack of all 8 NAudio packages, NuGet trusted-publishing push, and a final-only GitHub Release with body extracted from `RELEASE_NOTES.md`. |
+| 7. NuGet trusted publishing + smoke test | ⏳ in progress | Reordered to follow Phase 8 because `workflow_dispatch` only shows in the GitHub UI for workflows on the default branch; the smoke test couldn't run until the rename. |
+| 8. Branch flip + protection | ⏳ in progress | `master` → `release/2.x` and `naudio3dev` → `main` done; `main` is default; ruleset "Protected branches" applied to default + `release/*` (require PR, require `build` status check, require linear history, block force-push, block deletion). Cleanup PR pending to update workflow files and doc/README links. |
 | 9. First public preview + retire Azure Pipelines | not started | |
 | 10. First final release | future | |
 
@@ -210,20 +210,23 @@ Goal: prove that GitHub Actions can build and test NAudio with the same coverage
 
 **Exit criterion:** a valid pre-release exists on NuGet.org and installs cleanly into a test project.
 
-### Phase 8 — Branch flip and protection
+### Phase 8 — Branch flip and protection ⏳
 
-34. In GitHub Settings → Branches, **rename `master` → `release/2.x`**. Confirm any open PRs are re-targeted (they probably aren't any).
+> **Note on order:** in practice this phase ran *before* Phase 7. The Phase 7 smoke test requires `workflow_dispatch` to be visible in the GitHub UI, which only happens for workflows on the default branch. The rename to `main` was therefore prerequisite, not subsequent.
+
+34. In GitHub Settings → Branches, **rename `master` → `release/2.x`**. Confirm any open PRs are re-targeted (open PRs against `master` follow automatically).
 35. In GitHub Settings → Branches, **rename `naudio3dev` → `main`**. Confirm open PRs are re-targeted.
 36. In GitHub Settings → General, set `main` as the default branch.
-37. Add branch protection rules to `main`:
-    - Require pull request reviews before merging (1 approval).
-    - Require status checks to pass before merging — select the build workflow.
-    - Require linear history (recommended).
-    - Block direct pushes (apply to administrators too — the maintainer included).
-38. Add the same protection to `release/2.x`.
-39. Notify any active contributors to update their local clones (`git branch -m master main`, `git fetch`, `git branch -u origin/main main`, `git remote set-head origin -a`).
+37. Add a Ruleset "Protected branches" targeting Default + `release/*`:
+    - Require a pull request before merging (approvals: 0 for solo).
+    - Require status checks to pass — `build`.
+    - Require linear history.
+    - Block force pushes; restrict deletions.
+    - Disable "Allow merge commits" in repo settings (incompatible with linear history).
+38. Cleanup PR follow-up: update `build.yml` push trigger to `[main]`, drop `naudio3dev` from `release.yml` branch allowlist, refresh `CLAUDE.md` and `README.md` links, update `ReleaseStrategy.md` status.
+39. Notify any active contributors to update their local clones (`git fetch origin --prune`, `git branch -m naudio3dev main`, `git branch -u origin/main main`, `git remote set-head origin -a`).
 
-**Exit criterion:** `main` is the default; both protected branches block direct pushes; CI is required on every PR.
+**Exit criterion:** `main` is the default; both protected branches block direct pushes; CI is required on every PR; the cleanup PR has merged so workflow files reflect the new branch names.
 
 ### Phase 9 — Cut a real preview and retire the old flow
 

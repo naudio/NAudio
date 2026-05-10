@@ -1,6 +1,6 @@
 # NAudio
 
-[![GitHub](https://img.shields.io/github/license/naudio/NAudio)](https://github.com/naudio/NAudio/blob/master/LICENSE) [![Nuget](https://img.shields.io/nuget/v/NAudio)](https://www.nuget.org/packages/NAudio/) [![Build Status](https://dev.azure.com/naudio/NAudio/_apis/build/status/naudio.NAudio)](https://dev.azure.com/naudio/NAudio/_build)
+[![GitHub](https://img.shields.io/github/license/naudio/NAudio)](https://github.com/naudio/NAudio/blob/main/LICENSE) [![Nuget](https://img.shields.io/nuget/v/NAudio)](https://www.nuget.org/packages/NAudio/) [![Build Status](https://dev.azure.com/naudio/NAudio/_apis/build/status/naudio.NAudio)](https://dev.azure.com/naudio/NAudio/_build)
 
 NAudio is an open source .NET audio library written by [Mark Heath](https://markheath.net)
 
@@ -55,7 +55,7 @@ NAudio is an open source .NET audio library written by [Mark Heath](https://mark
 
 The easiest way to install NAudio into your project is to install the latest [NAudio NuGet package](https://www.nuget.org/packages/NAudio/). Prerelease versions of NAudio are also often made available on NuGet.
 
-NAudio comes with several demo applications which are the quickest way to see how to use the various features of NAudio. You can explore the source code [here](https://github.com/naudio/NAudio/tree/master/NAudioDemo).
+NAudio comes with several demo applications which are the quickest way to see how to use the various features of NAudio. You can explore the source code [here](https://github.com/naudio/NAudio/tree/main/NAudioDemo).
 
 ## Tutorials
 
@@ -153,7 +153,7 @@ To be successful developing applications that process digital audio, there are s
 
 ## How do I...?
 
-The best way to learn how to use NAudio is to download the source code and look at the two demo applications - [NAudioDemo](https://github.com/naudio/NAudio/tree/master/NAudioDemo) and [NAudioWpfDemo](https://github.com/naudio/NAudio/tree/master/NAudioWpfDemo). These demonstrate several of the key capabilities of the NAudio framework. They also have the advantage of being kept up to date, whilst some of the tutorials you will find on the internet refer to old versions of NAudio.
+The best way to learn how to use NAudio is to download the source code and look at the two demo applications - [NAudioDemo](https://github.com/naudio/NAudio/tree/main/NAudioDemo) and [NAudioWpfDemo](https://github.com/naudio/NAudio/tree/main/NAudioWpfDemo). These demonstrate several of the key capabilities of the NAudio framework. They also have the advantage of being kept up to date, whilst some of the tutorials you will find on the internet refer to old versions of NAudio.
 
 ## FAQ
 

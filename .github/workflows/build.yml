@@ -1,13 +1,13 @@
 name: build
 
-# Build & test on every PR, every push to naudio3dev (the NAudio 3 dev branch),
-# and on demand. The .NET 10 SDK is preinstalled on windows-latest, so no
-# explicit setup-dotnet step is needed today — see Docs/Architecture/ReleaseStrategy.md
-# for the trade-off if the runner image ever rotates and drops it.
+# Build & test on every PR, every push to main, and on demand. The .NET 10
+# SDK is preinstalled on windows-latest, so no explicit setup-dotnet step is
+# needed today — see Docs/Architecture/ReleaseStrategy.md for the trade-off
+# if the runner image ever rotates and drops it.
 on:
   pull_request:
   push:
-    branches: [naudio3dev]
+    branches: [main]
   workflow_dispatch:
 
 jobs:

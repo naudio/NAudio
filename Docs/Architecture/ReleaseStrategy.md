@@ -17,8 +17,9 @@
 | 6. Release workflow | ✅ done | PR #1271 merged. Two triggers (`workflow_dispatch` for previews, `push tags v*` for finals), version resolution from `<VersionPrefix>`, validation guards, pack of all 8 NAudio packages, NuGet trusted-publishing push, and a final-only GitHub Release with body extracted from `RELEASE_NOTES.md`. |
 | 7. NuGet trusted publishing + smoke test | ✅ done | Trusted publisher configured on NuGet.org; `vars.NUGET_USER` set in repo. First dispatch (`preview.1`) burned at the push step on a PowerShell glob-expansion bug, fixed in PR #1273. Re-dispatch shipped all 8 packages as `3.0.0-preview.2`. |
 | 8. Branch flip + protection | ✅ done | `master` → `release/2.x` and `naudio3dev` → `main`. `main` is default. Ruleset "Protected branches" on default + `release/*` (require PR, require `build` status check, require linear history, block force-push, block deletion). Cleanup PR #1272 followed up workflow files and doc/README links. |
-| 9. First public preview + retire Azure Pipelines | ⏳ in progress | `3.0.0-preview.2` already shipped to NuGet as part of Phase 7's smoke test (counts as step 40). This phase's cleanup PR deletes `azure-pipelines.yml` and `publish.ps1`, drops `<GeneratePackageOnBuild>true</GeneratePackageOnBuild>` from all 8 NAudio package csprojs, swaps the Azure Pipelines build badge in `README.md` for a GitHub Actions one, and refreshes the seven per-package READMEs to mention `net9.0` instead of `net8.0`. Announcement to contributors is a separate manual step (see §"Communication" below). |
-| 10. First final release | future | |
+| 9. First public preview + retire Azure Pipelines | ✅ done | `3.0.0-preview.2` shipped to NuGet via the new flow. PR #1274 deleted `azure-pipelines.yml` and `publish.ps1`, dropped `<GeneratePackageOnBuild>` from all 8 NAudio packages, refreshed badges and READMEs, and consolidated duplicated csproj boilerplate into `Directory.Build.props` and `Directory.Build.targets`. Contributor announcement and stale-PR triage remain as non-blocking manual steps (see §"Communication"). Azure DevOps cleanup is in §"Retiring Azure DevOps". |
+| 10. SourceLink + symbol packages + deterministic CI | ⏳ in progress | Adds `<PublishRepositoryUrl>`, `<EmbedUntrackedSources>`, `<IncludeSymbols>`, `<SymbolPackageFormat>snupkg`, and a CI-only `<ContinuousIntegrationBuild>` to `Directory.Build.props`. .NET 8+ ships SourceLink in the SDK so no `Microsoft.SourceLink.GitHub` PackageReference is needed. Release workflow updated to upload both `.nupkg` and `.snupkg` artifacts; `dotnet nuget push` auto-pushes symbol packages alongside their nupkg. |
+| 11. First final 3.0.0 release | future | |
 
 ### Findings carried forward from Phase 0
 
@@ -258,9 +259,28 @@ When the time comes for `3.0.0` proper:
 46. Update `<VersionPrefix>` to `3.0.0` (no suffix needed — handled by the workflow).
 47. Push tag `v3.0.0`. The release workflow does the rest.
 
+## Retiring Azure DevOps
+
+The `azure-pipelines.yml` and `publish.ps1` files are gone in Phase 9, but the Azure DevOps project at `dev.azure.com/naudio` and its associated GitHub access still exist. Recommended order:
+
+### GitHub side
+
+1. Settings → Integrations → Installed GitHub Apps → uninstall the **Azure Pipelines** app if present.
+2. Settings → Webhooks → delete any pointing at `dev.azure.com`.
+3. Settings → Branches → Ruleset → required status checks → confirm no Azure Pipelines check is required (would block PRs indefinitely).
+4. Personal settings → Applications → Authorized OAuth Apps → revoke **Azure DevOps** / **Azure Pipelines** if present.
+
+### Azure DevOps side
+
+1. Pipelines → NAudio pipeline → `...` menu → **Disable** (preserves history) or **Delete**.
+2. Project Settings → Service connections → delete any GitHub connection.
+3. *(Optional)* Project Settings → Overview → **Delete project** — recoverable for 28 days, then permanently gone. Frees the `naudio` name in the ADO org.
+
+The pragmatic path: disable the pipeline first, wait a couple of weeks, then delete the project.
+
 ## Out of scope
 
 - Migrating CHANGELOG generation tooling beyond the GitHub built-in (`.github/release.yml`). If we outgrow it, swap in something heavier later.
 - Per-package independent versioning. Lockstep is the chosen model; revisit only if it becomes painful.
-- Symbol packages (`snupkg`) and SourceLink — recommended best practices, but tracked separately so they don't bloat this rollout.
 - Automatic changelog enforcement via CI block. Explicitly rejected as friction without value.
+- Appending the auto-generated PR list to GitHub Release bodies. `gh release create` makes `--notes-file` and `--generate-notes` mutually exclusive; adding both would require fetching auto-notes via `gh api` and concatenating. Possible follow-up if the curated notes alone prove insufficient.

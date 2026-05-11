@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace NAudio.Midi
 {
@@ -10,9 +10,9 @@ namespace NAudio.Midi
         /// <summary>
         /// Create a new Sysex MIDI In Message EventArgs
         /// </summary>
-        /// <param name="sysexBytes">The Sysex byte array received</param>
-        /// <param name="timestamp">Milliseconds since MidiInStart</param>
-        public MidiInSysexMessageEventArgs(byte[] sysexBytes, int timestamp)
+        /// <param name="sysexBytes">The Sysex byte array received.</param>
+        /// <param name="timestamp">The timestamp at which the message was received.</param>
+        public MidiInSysexMessageEventArgs(byte[] sysexBytes, TimeSpan timestamp)
         {
             this.SysexBytes = sysexBytes;
             this.Timestamp = timestamp;
@@ -23,10 +23,10 @@ namespace NAudio.Midi
         /// </summary>
         public byte[] SysexBytes { get; private set; }
 
-
         /// <summary>
-        /// The timestamp in milliseconds (since MidiInStart) for this message
+        /// The timestamp at which this message was received, measured from
+        /// when the input device was opened/started.
         /// </summary>
-        public int Timestamp { get; private set; }
+        public TimeSpan Timestamp { get; private set; }
     }
 }

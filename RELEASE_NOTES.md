@@ -14,6 +14,8 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * `MmResult`, `MmException`, and `Manufacturers` moved from `NAudio.Core` to `NAudio.WinMM`
  * `DirectSoundOut` moved from `NAudio.Core` to `NAudio.Wasapi` (DirectSound has always been Windows-only)
  * `NAudio.Midi` is now cross-platform — its `net9.0` target no longer P/Invokes `winmm.dll`
+ * `MidiInMessageEventArgs.Timestamp` and `MidiInSysexMessageEventArgs.Timestamp` are now `TimeSpan` (previously `int` milliseconds) — preserves full WinRT 100 ns resolution on the WinRT backend
+ * `MidiIn.CreateSysexBuffers` removed — `MidiIn` now allocates sysex receive buffers automatically inside `Start()`
  * `WasapiOut`, `WasapiCapture`, and `WasapiLoopbackCapture` are now `[Obsolete]` in favour of the new `WasapiPlayer` / `WasapiRecorder` APIs (the legacy types still ship and continue to work)
  * `WaveOut` and `WaveIn` now default to event-driven callbacks; the legacy window-based variants are renamed `WaveOutWindow` / `WaveInWindow` and live in `NAudio.WinForms`
  * `WaveInEventArgs` now fires one event per WASAPI packet (previously batched). A new `BufferSpan` property exposes the data without copying through the existing `Buffer` byte array
@@ -35,6 +37,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * **DSP:** new `FftProcessor` with real-input specialisation and precomputed windowing
  * **WAV chunks:** new `IWaveChunkInterpreter<T>` extension point, with built-in interpreters for cue lists, BWF `bext` (v1 and v2), and LIST/INFO metadata. RF64 promotion is now an explicit `WaveFileWriterOption`
  * **`Span<T>` overloads:** added on `BiQuadFilter.Transform`, `ALawDecoder.Decode`, `MuLawDecoder.Decode`, and `IMp3FrameDecompressor.DecompressFrame` (default interface method preserves backward compatibility with `NLayer` and other third-party decoders)
+ * **MIDI:** new `WinRTMidiIn` / `WinRTMidiOut` classes in `NAudio.Wasapi` backed by `Windows.Devices.Midi`, with `MidiMessageConverter` for interop with the WinRT MIDI types. New `IMidiInput` / `IMidiOutput` interfaces (with a `Send(MidiEvent)` extension) let callers write backend-agnostic code; legacy `MidiIn` / `MidiOut` also implement them
 
 #### Demo apps and Test Harnesses
 

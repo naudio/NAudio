@@ -4,14 +4,12 @@
 
 This design fixes two of the inherited problems from NAudio 1.x/2.x: `NAudio.Midi` mixing portable file I/O with winmm-only `MidiIn`/`MidiOut`, and `NAudio.Core` carrying Win32-shaped types (`MmResult`, `MmException`, `Manufacturers`) it never used. The first round of work covers exactly those two problems plus a multi-targeted meta-package — the bits we're already certain about. Other v3 candidates (splitting `NAudio.Wasapi`, landing `NAudio.Midi.WinRT`, rehousing `NAudio.Extras`) are sequenced as **subsequent phases** (see §"Subsequent phases") to be attempted *after* the first round is committed. They're not definitely-out-of-scope for NAudio 3 — but each is a separate piece of work that may run into unexpected coupling or homeless types, and we want the option to back any of them out without rolling back the certain wins.
 
-**Branch:** continues on `naudio3dev`.
-
 ## Problems with the current layout
 
 1. **`NAudio.Midi` is dishonestly portable.** It targets `net9.0` (no platform suffix) but `MidiIn` / `MidiOut` P/Invoke `winmm.dll`, so a Linux consumer who only wants `.mid` file parsing still gets a `DllNotFoundException` waiting to happen if they reach for the wrong type.
 2. **`NAudio.Core` carries Win32-shaped types it doesn't use.** `MmResult`, `MmException`, and the `Manufacturers` enum are all winmm/MIDI concepts. They're consumed only by `NAudio.WinMM`, `NAudio.Midi`, and `NAudio.WinForms` — never by `NAudio.Core` itself. Their presence in Core is a historical accident from the era when everything lived in one assembly.
 3. **No coherent meta-package story.** `NAudio` is currently a Windows umbrella by accident, not by design. Cross-platform users have no clear "pick this" recommendation, and the package's transitive deps include things they cannot use.
-4. **`NAudio.Wasapi` is misnamed.** It contains four distinct Windows APIs — WASAPI/CoreAudio, Media Foundation, DMO, and DirectSound — each with its own SDK history, deprecation curve, and audience. A user who only wants WASAPI playback in 2026 drags in MF codecs and DMO interop they will never call. *(Acknowledged but **deferred** beyond the first round — see §"Subsequent phases".)*
+4. **`NAudio.Wasapi` is misnamed.** It contains four distinct Windows APIs — WASAPI/CoreAudio, Media Foundation, DMO, and DirectSound (and also currently the WinRT Midi)— each with its own SDK history, deprecation curve, and audience. *(Acknowledged but **deferred** beyond the first round — see §"Subsequent phases".)*
 
 ## Design principles
 
@@ -113,36 +111,21 @@ The only ways to break the cycle (a third "common" assembly, or leaving the type
 
 ## Resolved decisions
 
-1. **Meta-package versioning: lockstep, not independent.** The `NAudio` meta-package and every constituent package share a single version number, bumped together on every release. Rationale:
-   - **One number for users to talk about.** "I'm on NAudio 3.2.0" is a coherent statement; "I'm on NAudio 3.0.0 with NAudio.Wasapi 3.4.1 and NAudio.Midi 3.1.0" is not. Lockstep matches the historical NAudio experience and matches how comparable .NET ecosystem packages behave (e.g. `Microsoft.AspNetCore.App` constituents move in lockstep).
-   - **Avoids dependency-resolution surprises.** Independent versioning makes it easy to ship a Wasapi bump that nobody picks up because the meta-package still pins the old version. Lockstep means a release of any constituent forces a meta-package bump that pulls everyone forward.
-   - **Trivial to enforce.** A single `<Version>` property in `Directory.Build.props` (or a shared `Version.props`) wins this without ceremony — already the pattern NAudio uses today (everything is at `2.3.0`).
-   - **Cost is small.** Yes, you publish unchanged-content packages on every release. NuGet handles that fine and storage is cheap. The clarity gain dwarfs the cost.
-
-2. **Legacy winmm MIDI is the only MIDI device backend in the first round.** `MidiInCapabilities` and `MidiOutCapabilities` (with their `Manufacturer` property) remain `NAudio.WinMM`-specific. They stay shipped, unmodified, in `NAudio.WinMM`. The future direction is `IMidiInput` / `IMidiOutput` + a WinRT backend, but neither piece lands until the WinRT phase is attempted (see §"Subsequent phases").
-
-3. **`NAudio.WinForms` is keeping its future.** WinForms remains widely used and the package isn't going away. Its long-term value will increasingly skew from playback (where `WasapiPlayer` is the better answer) toward the custom UI controls it provides.
-
-## Out of scope for the first round
-
-- **Versioning.** Every project still has `<Version>2.3.0</Version>`. The first round does **not** bump versions — it's purely a structural reorg landing on `naudio3dev`. Pre-release versioning strategy (e.g. `3.0.0-preview.N`), centralising the property into `Directory.Build.props`, and any NuGet publish automation are tracked as a separate follow-on design step, run before the first NAudio 3 preview is published.
-- **NuGet publishes.** No package pushes happen during the first round. Local `dotnet pack` output is fine for validation; `GeneratePackageOnBuild` already produces `.nupkg`s in each project's `bin/` for inspection.
+1. **`NAudio.WinForms` is keeping its future.** WinForms remains widely used and the package isn't going away. Its long-term value will increasingly skew from playback (where `WasapiPlayer` is the better answer) toward the custom UI controls it provides.
 
 ## Subsequent phases
 
 Work that is **deferred from the first round, but still candidate for NAudio 3**. Each is a separate piece of work to attempt after the first round is committed; any that surfaces unexpected coupling, homeless types, or test-coverage gaps should be backed out without rolling back the first-round changes. Listed in roughly the order they should be attempted (cheapest first), but each is independent.
 
-1. **Land `NAudio.Midi.WinRT`.** Finish and test the prototype on the [`winrtmidi`](https://github.com/naudio/NAudio/tree/winrtmidi) branch. Promote `IMidiInput` / `IMidiOutput` / `MidiMessageConverter` into the portable `NAudio.Midi` assembly. Have legacy `MidiIn` / `MidiOut` (in `NAudio.WinMM`) implement `IMidiInput` / `IMidiOutput`. Ship `WinRTMidiIn` / `WinRTMidiOut` in a new `NAudio.Midi.WinRT` package targeting `net9.0-windows10.0.19041.0`. Add the new package to the meta-package's existing Windows leg (already at `net9.0-windows10.0.19041.0`, so no new TFM required). Risk: prototype isn't finished or tested, async device enumeration semantics may surprise consumers used to the synchronous winmm API.
-
-2. **Split `NAudio.Wasapi` into per-API packages.** Carve the current kitchen-sink assembly into `NAudio.Wasapi` (CoreAudio only), `NAudio.MediaFoundation`, `NAudio.Dmo`, and `NAudio.DirectSound`. Resolves the long-standing "I only want WASAPI but I get MF codec interop too" complaint. Considerations:
+1. **Split `NAudio.Wasapi` into per-API packages.** IMPORTANT: This step not yet certain - for NAudio3 we may accept that this package contains several Windows audio APIs and just has an odd name. Potentially in the future carve the current kitchen-sink assembly into `NAudio.Wasapi` (CoreAudio only), `NAudio.MediaFoundation`, `NAudio.Dmo`, `NAudio.Midi.WinRT`, and `NAudio.DirectSound`. Resolves the long-standing "I only want WASAPI but I get MF codec interop too" complaint. Considerations:
    - Direct package consumers may need new `<PackageReference>` entries (mitigated for source-level compatibility by namespace stability).
    - The previous `NAudio.Wasapi` will need `[TypeForwardedTo]` shims for at least one release so consumers don't get duplicate-type errors during the transition.
    - Meta-package consumers should be unaffected.
    - Risk: tighter-than-expected coupling between the four APIs (e.g. shared COM helpers), which would either force ugly internals-visible-to plumbing or push the split out further.
 
-3. **Rehouse `NAudio.Extras` contents.** Audit the package and move each piece to its most appropriate assembly (Core, Wasapi, WinMM, etc.). Risk: some items may have no natural home and should stay where they are — this is an evaluate-then-decide phase, not a foregone conclusion. If the audit comes back inconclusive, leave `NAudio.Extras` as-is.
+2. **Rehouse `NAudio.Extras` contents.** Audit the package and move each piece to its most appropriate assembly (Core, Wasapi, WinMM, etc.). Risk: some items may have no natural home and should stay where they are — this is an evaluate-then-decide phase, not a foregone conclusion. If the audit comes back inconclusive, leave `NAudio.Extras` as-is.
 
-4. **Behaviour / API hygiene work flagged in `Docs/Architecture/MODERNIZATION.md`.** Anything that would mean editing code (slimming `WasapiOut`'s built-in resampler, applying `[Obsolete]` annotations, removing legacy types) is its own concern, separate from the structural work above.
+3. **Behaviour / API hygiene work flagged in `Docs/Architecture/MODERNIZATION.md`.** Anything that would mean editing code (slimming `WasapiOut`'s built-in resampler, applying `[Obsolete]` annotations, removing legacy types) is its own concern, separate from the structural work above.
 
 ## Execution status — first round
 

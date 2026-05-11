@@ -78,15 +78,51 @@ jobs:
           "is_final=$isFinal"    | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           "pack_args=$packArgs"  | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
-      - name: Validate RELEASE_NOTES.md has a matching section (final only)
-        if: steps.version.outputs.is_final == 'true'
+      # Extract the right section from RELEASE_NOTES.md into release-body.md.
+      # Final releases use the '### <version>' section (and must have one,
+      # else fail-fast). Pre-releases use the '### Unreleased' section if it
+      # exists; otherwise the file is just empty and the package ships with
+      # no release notes. The same release-body.md feeds both the pack step
+      # (via -p:PackageReleaseNotesFile so NuGet displays the notes on the
+      # package page) and the GitHub Release body (finals only).
+      - name: Extract RELEASE_NOTES.md section
         shell: pwsh
         run: |
           $version = '${{ steps.version.outputs.version }}'
-          $pattern = "^### $([regex]::Escape($version))(\s|$)"
-          if (-not (Select-String -Path RELEASE_NOTES.md -Pattern $pattern -Quiet)) {
-            Write-Error "RELEASE_NOTES.md has no '### $version (...)' section. Rename '### Unreleased' to '### $version (DD MMM YYYY)' before tagging."
-            exit 1
+          $isFinal = '${{ steps.version.outputs.is_final }}' -eq 'true'
+
+          if ($isFinal) {
+            $pattern = "^### $([regex]::Escape($version))(\s|$)"
+            $label = "### $version"
+          } else {
+            $pattern = "^### Unreleased(\s|$)"
+            $label = "### Unreleased"
+          }
+
+          $lines = Get-Content RELEASE_NOTES.md
+          $start = -1
+          $end = $lines.Length
+          for ($i = 0; $i -lt $lines.Length; $i++) {
+            if ($lines[$i] -match $pattern) {
+              $start = $i + 1
+            } elseif ($start -ge 0 -and $lines[$i] -match "^### ") {
+              $end = $i
+              break
+            }
+          }
+
+          if ($start -lt 0) {
+            if ($isFinal) {
+              Write-Error "RELEASE_NOTES.md has no '$label (...)' section. Rename '### Unreleased' to '### $version (DD MMM YYYY)' before tagging."
+              exit 1
+            } else {
+              Write-Warning "RELEASE_NOTES.md has no '$label' section; package release notes will be empty."
+              "" | Out-File -FilePath release-body.md -Encoding utf8
+            }
+          } else {
+            $body = ($lines[$start..($end - 1)] -join "`n").Trim()
+            $body | Out-File -FilePath release-body.md -Encoding utf8
+            Write-Host "Extracted '$label' ($($body.Length) chars) to release-body.md."
           }
 
       - name: Restore
@@ -119,12 +155,14 @@ jobs:
             'NAudio',
             'NAudio.Extras'
           )
+          $notesPath = Join-Path $env:GITHUB_WORKSPACE "release-body.md"
           New-Item -ItemType Directory -Force -Path artifacts | Out-Null
           foreach ($pkg in $packages) {
             dotnet pack "$pkg/$pkg.csproj" `
               --configuration Release `
               --no-build `
               --output artifacts `
+              -p:PackageReleaseNotesFile="$notesPath" `
               ${{ steps.version.outputs.pack_args }}
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
@@ -175,30 +213,9 @@ jobs:
           }
 
       # GitHub Release only on final tag-driven runs. Pre-releases just
-      # ship to NuGet — no GitHub Release noise for every preview.
-      - name: Extract RELEASE_NOTES.md section (final only)
-        if: steps.version.outputs.is_final == 'true'
-        shell: pwsh
-        run: |
-          $version = '${{ steps.version.outputs.version }}'
-          $lines = Get-Content RELEASE_NOTES.md
-          $start = -1
-          $end = $lines.Length
-          for ($i = 0; $i -lt $lines.Length; $i++) {
-            if ($lines[$i] -match "^### $([regex]::Escape($version))(\s|$)") {
-              $start = $i + 1
-            } elseif ($start -ge 0 -and $lines[$i] -match "^### ") {
-              $end = $i
-              break
-            }
-          }
-          if ($start -lt 0) {
-            Write-Error "Could not extract '### $version' section."
-            exit 1
-          }
-          $body = ($lines[$start..($end - 1)] -join "`n").Trim()
-          $body | Out-File -FilePath release-body.md -Encoding utf8
-
+      # ship to NuGet — no GitHub Release noise for every preview. The
+      # release-body.md file was already produced by the earlier
+      # "Extract RELEASE_NOTES.md section" step.
       - name: Create GitHub Release (final only)
         if: steps.version.outputs.is_final == 'true'
         env:

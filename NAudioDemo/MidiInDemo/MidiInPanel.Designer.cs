@@ -35,6 +35,7 @@ namespace NAudioDemo.MidiInDemo
             this.checkBoxFilterAutoSensing = new System.Windows.Forms.CheckBox();
             this.progressLog1 = new NAudio.Utils.ProgressLog();
             this.buttonClearLog = new System.Windows.Forms.Button();
+            this.buttonRefreshDevices = new System.Windows.Forms.Button();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.checkBoxMidiOutMessages = new System.Windows.Forms.CheckBox();
             this.comboBoxMidiOutDevices = new System.Windows.Forms.ComboBox();
@@ -73,6 +74,8 @@ namespace NAudioDemo.MidiInDemo
             // checkBoxFilterAutoSensing
             // 
             this.checkBoxFilterAutoSensing.AutoSize = true;
+            this.checkBoxFilterAutoSensing.Checked = true;
+            this.checkBoxFilterAutoSensing.CheckState = System.Windows.Forms.CheckState.Checked;
             this.checkBoxFilterAutoSensing.Location = new System.Drawing.Point(384, 47);
             this.checkBoxFilterAutoSensing.Name = "checkBoxFilterAutoSensing";
             this.checkBoxFilterAutoSensing.Size = new System.Drawing.Size(114, 17);
@@ -91,16 +94,26 @@ namespace NAudioDemo.MidiInDemo
             this.progressLog1.Padding = new System.Windows.Forms.Padding(1);
             this.progressLog1.Size = new System.Drawing.Size(486, 258);
             this.progressLog1.TabIndex = 3;
-            // 
+            //
             // buttonClearLog
-            // 
-            this.buttonClearLog.Location = new System.Drawing.Point(94, 41);
+            //
+            this.buttonClearLog.Location = new System.Drawing.Point(175, 41);
             this.buttonClearLog.Name = "buttonClearLog";
             this.buttonClearLog.Size = new System.Drawing.Size(75, 23);
             this.buttonClearLog.TabIndex = 5;
             this.buttonClearLog.Text = "Clear Log";
             this.buttonClearLog.UseVisualStyleBackColor = true;
             this.buttonClearLog.Click += new System.EventHandler(this.buttonClearLog_Click);
+            //
+            // buttonRefreshDevices
+            //
+            this.buttonRefreshDevices.Location = new System.Drawing.Point(94, 41);
+            this.buttonRefreshDevices.Name = "buttonRefreshDevices";
+            this.buttonRefreshDevices.Size = new System.Drawing.Size(75, 23);
+            this.buttonRefreshDevices.TabIndex = 7;
+            this.buttonRefreshDevices.Text = "Refresh";
+            this.buttonRefreshDevices.UseVisualStyleBackColor = true;
+            this.buttonRefreshDevices.Click += new System.EventHandler(this.buttonRefreshDevices_Click);
             // 
             // groupBox1
             // 
@@ -124,6 +137,7 @@ namespace NAudioDemo.MidiInDemo
             this.checkBoxMidiOutMessages.TabIndex = 0;
             this.checkBoxMidiOutMessages.Text = "Send Test MIDI Out Messages";
             this.checkBoxMidiOutMessages.UseVisualStyleBackColor = true;
+            this.checkBoxMidiOutMessages.CheckedChanged += new System.EventHandler(this.checkBoxMidiOutMessages_CheckedChanged);
             // 
             // comboBoxMidiOutDevices
             // 
@@ -146,6 +160,7 @@ namespace NAudioDemo.MidiInDemo
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(510, 399);
             this.Controls.Add(this.groupBox1);
+            this.Controls.Add(this.buttonRefreshDevices);
             this.Controls.Add(this.buttonClearLog);
             this.Controls.Add(this.checkBoxFilterAutoSensing);
             this.Controls.Add(this.progressLog1);
@@ -171,6 +186,7 @@ namespace NAudioDemo.MidiInDemo
         private NAudio.Utils.ProgressLog progressLog1;
         private System.Windows.Forms.CheckBox checkBoxFilterAutoSensing;
         private System.Windows.Forms.Button buttonClearLog;
+        private System.Windows.Forms.Button buttonRefreshDevices;
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.CheckBox checkBoxMidiOutMessages;
         private System.Windows.Forms.ComboBox comboBoxMidiOutDevices;

@@ -11,6 +11,7 @@ namespace NAudioDemo.MidiInDemo
         MidiIn midiIn;
         MidiOut midiOut;
         bool monitoring;
+        bool sendingMidiOut;
         List<MidiEvent> events;
         int midiOutIndex;
 
@@ -21,22 +22,7 @@ namespace NAudioDemo.MidiInDemo
 
         private void MidiInForm_Load(object sender, EventArgs e)
         {
-            for (int device = 0; device < MidiIn.NumberOfDevices; device++)
-            {
-                comboBoxMidiInDevices.Items.Add(MidiIn.DeviceInfo(device).ProductName);
-            }
-            if (comboBoxMidiInDevices.Items.Count > 0)
-            {
-                comboBoxMidiInDevices.SelectedIndex = 0;
-            }
-            for (int device = 0; device < MidiOut.NumberOfDevices; device++)
-            {
-                comboBoxMidiOutDevices.Items.Add(MidiOut.DeviceInfo(device).ProductName);
-            }
-            if (comboBoxMidiOutDevices.Items.Count > 0)
-            {
-                comboBoxMidiOutDevices.SelectedIndex = 0;
-            }
+            PopulateDeviceLists();
             events = new List<MidiEvent>();
             for (int note = 50; note < 62; note++)
             {
@@ -44,9 +30,37 @@ namespace NAudioDemo.MidiInDemo
             }
         }
 
+        private void PopulateDeviceLists()
+        {
+            string selectedIn = comboBoxMidiInDevices.SelectedItem as string;
+            string selectedOut = comboBoxMidiOutDevices.SelectedItem as string;
+
+            comboBoxMidiInDevices.Items.Clear();
+            for (int device = 0; device < MidiIn.NumberOfDevices; device++)
+            {
+                comboBoxMidiInDevices.Items.Add(MidiIn.DeviceInfo(device).ProductName);
+            }
+            if (comboBoxMidiInDevices.Items.Count > 0)
+            {
+                int index = selectedIn != null ? comboBoxMidiInDevices.Items.IndexOf(selectedIn) : -1;
+                comboBoxMidiInDevices.SelectedIndex = index >= 0 ? index : 0;
+            }
+
+            comboBoxMidiOutDevices.Items.Clear();
+            for (int device = 0; device < MidiOut.NumberOfDevices; device++)
+            {
+                comboBoxMidiOutDevices.Items.Add(MidiOut.DeviceInfo(device).ProductName);
+            }
+            if (comboBoxMidiOutDevices.Items.Count > 0)
+            {
+                int index = selectedOut != null ? comboBoxMidiOutDevices.Items.IndexOf(selectedOut) : -1;
+                comboBoxMidiOutDevices.SelectedIndex = index >= 0 ? index : 0;
+            }
+        }
+
         private void AddNoteEvent(int noteNumber)
         {
-            int channel = 2;
+            int channel = 1;
             NoteOnEvent noteOnEvent = new NoteOnEvent(0, channel, noteNumber, 100, 50);
             events.Add(noteOnEvent);
             events.Add(noteOnEvent.OffEvent);
@@ -73,21 +87,18 @@ namespace NAudioDemo.MidiInDemo
             }
             if (midiIn != null)
             {
-                midiIn.Dispose();
                 midiIn.MessageReceived -= midiIn_MessageReceived;
                 midiIn.ErrorReceived -= midiIn_ErrorReceived;
+                midiIn.Dispose();
                 midiIn = null;
             }
-            if (midiIn == null)
-            {
-                midiIn = new MidiIn(comboBoxMidiInDevices.SelectedIndex);
-                midiIn.MessageReceived += midiIn_MessageReceived;
-                midiIn.ErrorReceived += midiIn_ErrorReceived;
-            }
+            midiIn = new MidiIn(comboBoxMidiInDevices.SelectedIndex);
+            midiIn.MessageReceived += midiIn_MessageReceived;
+            midiIn.ErrorReceived += midiIn_ErrorReceived;
             midiIn.Start();
             monitoring = true;
             buttonMonitor.Text = "Stop";
-            comboBoxMidiInDevices.Enabled = false;
+            UpdateDeviceListEnabledState();
         }
 
         void midiIn_ErrorReceived(object sender, MidiInMessageEventArgs e)
@@ -98,13 +109,17 @@ namespace NAudioDemo.MidiInDemo
 
         private void StopMonitoring()
         {
-            if (monitoring)
+            if (monitoring && midiIn != null)
             {
                 midiIn.Stop();
-                monitoring = false;
-                buttonMonitor.Text = "Monitor";
-                comboBoxMidiInDevices.Enabled = true;
+                midiIn.MessageReceived -= midiIn_MessageReceived;
+                midiIn.ErrorReceived -= midiIn_ErrorReceived;
+                midiIn.Dispose();
+                midiIn = null;
             }
+            monitoring = false;
+            buttonMonitor.Text = "Monitor";
+            UpdateDeviceListEnabledState();
         }
 
         void midiIn_MessageReceived(object sender, MidiInMessageEventArgs e)
@@ -121,16 +136,7 @@ namespace NAudioDemo.MidiInDemo
         {
             timer1.Enabled = false;
             StopMonitoring();
-            if (midiIn != null)
-            {
-                midiIn.Dispose();
-                midiIn = null;
-            }
-            if (midiOut != null)
-            {
-                midiOut.Dispose();
-                midiOut = null;
-            }
+            StopSendingMidiOut();
         }
 
         private void buttonClearLog_Click(object sender, EventArgs e)
@@ -138,9 +144,64 @@ namespace NAudioDemo.MidiInDemo
             progressLog1.ClearLog();
         }
 
-        private void timer1_Tick(object sender, EventArgs e)
+        private void buttonRefreshDevices_Click(object sender, EventArgs e)
+        {
+            PopulateDeviceLists();
+        }
+
+        private void checkBoxMidiOutMessages_CheckedChanged(object sender, EventArgs e)
         {
             if (checkBoxMidiOutMessages.Checked)
+            {
+                StartSendingMidiOut();
+            }
+            else
+            {
+                StopSendingMidiOut();
+            }
+        }
+
+        private void StartSendingMidiOut()
+        {
+            if (comboBoxMidiOutDevices.Items.Count == 0)
+            {
+                MessageBox.Show("No MIDI output devices available");
+                checkBoxMidiOutMessages.Checked = false;
+                return;
+            }
+            if (midiOut == null)
+            {
+                midiOut = new MidiOut(comboBoxMidiOutDevices.SelectedIndex);
+            }
+            midiOutIndex = 0;
+            sendingMidiOut = true;
+            UpdateDeviceListEnabledState();
+        }
+
+        private void StopSendingMidiOut()
+        {
+            sendingMidiOut = false;
+            if (midiOut != null)
+            {
+                // Make sure any currently playing note is silenced.
+                midiOut.Reset();
+                midiOut.Dispose();
+                midiOut = null;
+            }
+            midiOutIndex = 0;
+            UpdateDeviceListEnabledState();
+        }
+
+        private void UpdateDeviceListEnabledState()
+        {
+            comboBoxMidiInDevices.Enabled = !monitoring;
+            comboBoxMidiOutDevices.Enabled = !sendingMidiOut;
+            buttonRefreshDevices.Enabled = !monitoring && !sendingMidiOut;
+        }
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            if (sendingMidiOut)
             {
                 SendNextMidiOutMessage();
             }
@@ -148,10 +209,7 @@ namespace NAudioDemo.MidiInDemo
 
         private void SendNextMidiOutMessage()
         {
-            if (midiOut == null)
-            {
-                midiOut = new MidiOut(comboBoxMidiOutDevices.SelectedIndex);
-            }
+            if (midiOut == null) return;
             MidiEvent eventToSend = events[midiOutIndex++];
             midiOut.Send(eventToSend.GetAsShortMessage());
             progressLog1.LogMessage(Color.Green, String.Format("Sent {0}", eventToSend));
@@ -161,7 +219,7 @@ namespace NAudioDemo.MidiInDemo
             }
         }
     }
-    
+
     public class MidiInPanelPlugin : INAudioDemoPlugin
     {
         public string Name

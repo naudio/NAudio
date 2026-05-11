@@ -35,9 +35,16 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * **DSP:** new `FftProcessor` with real-input specialisation and precomputed windowing
  * **WAV chunks:** new `IWaveChunkInterpreter<T>` extension point, with built-in interpreters for cue lists, BWF `bext` (v1 and v2), and LIST/INFO metadata. RF64 promotion is now an explicit `WaveFileWriterOption`
  * **`Span<T>` overloads:** added on `BiQuadFilter.Transform`, `ALawDecoder.Decode`, `MuLawDecoder.Decode`, and `IMp3FrameDecompressor.DecompressFrame` (default interface method preserves backward compatibility with `NLayer` and other third-party decoders)
+
+#### Demo apps and Test Harnesses
+
+ * **NAudioConsoleTest:** new CLI test harness for driving various NAudio features without the need for GUI.
  * **WPF demos:** spectrum analyser rewritten with corrected dB formula (20·log₁₀), log-frequency mapping, real-input full-scale calibration, bars instead of polylines, peak-decay markers, and per-band smoothing. New `LiveWaveformControl` with configurable render styles, vertical scaling, and fill-between rendering
  * **WAV recording demo:** added loopback support and a multi-API device combo with provenance embedding
-
+ * **MIDI In demo:** Refresh button for hot-plugged devices, device combos disabled while in use, test MIDI Out plays on channel 1 (was 2), Filter Auto-Sensing on by default, stopping test output now sends note-off so notes don't hang, and cleaner panel disposal
+ * **MfStressTest:** Reliability tests for the new Media Foundation interop implementation in NAudio 3.
+ * Replaced vendored NSpeex (deprecated) with Opus (Concentus) in the network chat demo; added round-trip unit tests
+ 
 #### Performance
 
  * Vectorised mix-add and volume kernels via `System.Numerics.Tensors` — significantly faster on AVX2 hardware for typical buffer sizes
@@ -69,7 +76,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
 
 #### Modernisation (Native AOT, source-generated COM)
 
- * `NAudio.Core`, `NAudio.Midi`, and `NAudio.Wasapi` are now `IsAotCompatible=true`. AOT compatibility is exercised end-to-end by `NAudioAotSmokeTest` in CI
+ * `NAudio.Core`, `NAudio.Midi`, and `NAudio.Wasapi` are now `IsAotCompatible=true`. AOT compatibility is enforced at build-time by `NAudioAotSmokeTest`, which fails CI on any new trim or AOT analyzer warning
  * Most COM interop migrated from `[ComImport]` to `[GeneratedComInterface]` / `ComWrappers`. Affected interfaces include the WASAPI / Core Audio activation chain (`IActivateAudioInterfaceCompletionHandler`, `IMMNotificationClient`, `IAudioSessionNotification`, `IAudioSessionEvents`, `IAudioEndpointVolumeCallback`, `IAgileObject`, `IPropertyStore`), the Media Foundation cascade, the DMO interfaces, DirectSound, and the `ComStream` CCW (now source-generated `IStream`)
  * DirectSound P/Invokes migrated to `[LibraryImport]` with `[UnmanagedCallersOnly]` thunks; `BufferDescription` and `BufferCaps` converted from class to struct
  * `AcmDriver` ported from legacy `NativeMethods` to `NativeLibrary`
@@ -78,7 +85,6 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
 #### Packaging and dependencies
 
  * Each NAudio package now ships its own README in the NuGet payload
- * Replaced vendored NSpeex (deprecated) with Opus (Concentus) in the network chat demo; added round-trip unit tests
  * Test project migrated from VSTest to `Microsoft.Testing.Platform`
  * Migrated to the modern `.slnx` solution format
  * Renamed `license.txt` to `LICENSE` for GitHub license detection; refreshed copyright year to 2008–2026

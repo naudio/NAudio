@@ -1,6 +1,6 @@
 # NAudio
 
-[![GitHub](https://img.shields.io/github/license/naudio/NAudio)](https://github.com/naudio/NAudio/blob/main/LICENSE) [![Nuget](https://img.shields.io/nuget/v/NAudio)](https://www.nuget.org/packages/NAudio/) [![Build Status](https://dev.azure.com/naudio/NAudio/_apis/build/status/naudio.NAudio)](https://dev.azure.com/naudio/NAudio/_build)
+[![GitHub](https://img.shields.io/github/license/naudio/NAudio)](https://github.com/naudio/NAudio/blob/main/LICENSE) [![Nuget](https://img.shields.io/nuget/v/NAudio)](https://www.nuget.org/packages/NAudio/) [![Build](https://github.com/naudio/NAudio/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/naudio/NAudio/actions/workflows/build.yml)
 
 NAudio is an open source .NET audio library written by [Mark Heath](https://markheath.net)
 

@@ -15,9 +15,9 @@
 | 4. Release-notes plumbing + labels + `CLAUDE.md` | ✅ done | PR #1269 merged. `.github/release.yml`, `.github/PULL_REQUEST_TEMPLATE.md`, `CLAUDE.md`, and `### Unreleased` placeholder all live. `breaking` and `release-notes-skip` labels added in the UI. |
 | 5. Backfill `RELEASE_NOTES.md` | ✅ done | PR #1270 merged. ~60 categorised bullets across six sub-sections under `### Unreleased`, ready for the maintainer to curate further as PRs land. |
 | 6. Release workflow | ✅ done | PR #1271 merged. Two triggers (`workflow_dispatch` for previews, `push tags v*` for finals), version resolution from `<VersionPrefix>`, validation guards, pack of all 8 NAudio packages, NuGet trusted-publishing push, and a final-only GitHub Release with body extracted from `RELEASE_NOTES.md`. |
-| 7. NuGet trusted publishing + smoke test | ⏳ in progress | Reordered to follow Phase 8 because `workflow_dispatch` only shows in the GitHub UI for workflows on the default branch; the smoke test couldn't run until the rename. |
-| 8. Branch flip + protection | ⏳ in progress | `master` → `release/2.x` and `naudio3dev` → `main` done; `main` is default; ruleset "Protected branches" applied to default + `release/*` (require PR, require `build` status check, require linear history, block force-push, block deletion). Cleanup PR pending to update workflow files and doc/README links. |
-| 9. First public preview + retire Azure Pipelines | not started | |
+| 7. NuGet trusted publishing + smoke test | ✅ done | Trusted publisher configured on NuGet.org; `vars.NUGET_USER` set in repo. First dispatch (`preview.1`) burned at the push step on a PowerShell glob-expansion bug, fixed in PR #1273. Re-dispatch shipped all 8 packages as `3.0.0-preview.2`. |
+| 8. Branch flip + protection | ✅ done | `master` → `release/2.x` and `naudio3dev` → `main`. `main` is default. Ruleset "Protected branches" on default + `release/*` (require PR, require `build` status check, require linear history, block force-push, block deletion). Cleanup PR #1272 followed up workflow files and doc/README links. |
+| 9. First public preview + retire Azure Pipelines | ⏳ in progress | `3.0.0-preview.2` already shipped to NuGet as part of Phase 7's smoke test (counts as step 40). This phase's cleanup PR deletes `azure-pipelines.yml` and `publish.ps1`, drops `<GeneratePackageOnBuild>true</GeneratePackageOnBuild>` from all 8 NAudio package csprojs, swaps the Azure Pipelines build badge in `README.md` for a GitHub Actions one, and refreshes the seven per-package READMEs to mention `net9.0` instead of `net8.0`. Announcement to contributors is a separate manual step (see §"Communication" below). |
 | 10. First final release | future | |
 
 ### Findings carried forward from Phase 0
@@ -228,15 +228,27 @@ Goal: prove that GitHub Actions can build and test NAudio with the same coverage
 
 **Exit criterion:** `main` is the default; both protected branches block direct pushes; CI is required on every PR; the cleanup PR has merged so workflow files reflect the new branch names.
 
-### Phase 9 — Cut a real preview and retire the old flow
+### Phase 9 — Cut a real preview and retire the old flow ⏳
 
-40. Cut `3.0.0-preview.1` via the release workflow. This is the first preview that ships from `main`.
-41. Announce the preview on the project's usual channels.
+40. Cut `3.0.0-preview.1` via the release workflow. This is the first preview that ships from `main`. *(Done as a side-effect of Phase 7's smoke test — actually shipped as `preview.2` because `preview.1` was burned on the glob-expansion bug.)*
+41. Announce the preview on the project's usual channels. *(Pending manual step; see Communication below.)*
 42. Delete `azure-pipelines.yml`.
 43. Delete `publish.ps1`.
-44. Update the README to point contributors at the new flow.
+44. Remove `<GeneratePackageOnBuild>true</GeneratePackageOnBuild>` from all 8 NAudio package csprojs — the release workflow now packs explicitly, and leaving it on accumulates stale `.nupkg` files in `bin/Release/`.
+45. Swap the Azure Pipelines build badge in `README.md` for a GitHub Actions badge.
+46. Refresh per-package READMEs that still reference `net8.0` (NAudio.Core, Asio, Wasapi, WinMM, WinForms, Midi, Extras) to `net9.0`.
 
 **Exit criterion:** the old flow no longer exists in the repo; the new flow has produced a publicly available pre-release.
+
+## Communication
+
+Branch-rename auto-banner only mentions the `naudio3dev → main` step, which most upstream contributors never saw. The real story for them is `master → release/2.x` plus the appearance of `main`. Notify in three places:
+
+1. Pinned GitHub Discussion or Issue with the full migration guide (case A: PR currently against `master`; case B: local fork no PR; case C: brand new clone).
+2. Short notice in `README.md` linking to the discussion.
+3. Comment on each open PR auto-retargeted to `release/2.x` clarifying whether the PR should stay on `release/2.x` or rebase against `main`.
+
+This is a manual step that does not block Phase 9's cleanup PR.
 
 ### Phase 10 — First final release (separate, not part of this rollout)
 

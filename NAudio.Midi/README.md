@@ -2,7 +2,7 @@
 
 [![Nuget](https://img.shields.io/nuget/v/NAudio.Midi)](https://www.nuget.org/packages/NAudio.Midi/)
 
-MIDI support for [NAudio](https://github.com/naudio/NAudio). Cross-platform (`net8.0`) — contains the MIDI event model and MIDI file reader/writer.
+MIDI support for [NAudio](https://github.com/naudio/NAudio). Cross-platform (`net9.0`) — contains the MIDI event model and MIDI file reader/writer.
 
 ## What's included
 

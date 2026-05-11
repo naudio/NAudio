@@ -2,7 +2,7 @@
 
 [![Nuget](https://img.shields.io/nuget/v/NAudio.Wasapi)](https://www.nuget.org/packages/NAudio.Wasapi/)
 
-WASAPI, Media Foundation, and DMO support for [NAudio](https://github.com/naudio/NAudio). Windows-only (`net8.0-windows10.0.19041.0`).
+WASAPI, Media Foundation, and DMO support for [NAudio](https://github.com/naudio/NAudio). Windows-only (`net9.0-windows10.0.19041.0`).
 
 ## What's included
 

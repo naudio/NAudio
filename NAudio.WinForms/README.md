@@ -2,7 +2,7 @@
 
 [![Nuget](https://img.shields.io/nuget/v/NAudio.WinForms)](https://www.nuget.org/packages/NAudio.WinForms/)
 
-Windows Forms controls for [NAudio](https://github.com/naudio/NAudio). Windows-only (`net8.0-windows`, `UseWindowsForms=true`).
+Windows Forms controls for [NAudio](https://github.com/naudio/NAudio). Windows-only (`net9.0-windows`, `UseWindowsForms=true`).
 
 ## What's included
 

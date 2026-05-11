@@ -3,7 +3,6 @@
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <Authors>Mark Heath</Authors>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\NAudioStrongNameKey.snk</AssemblyOriginatorKeyFile>

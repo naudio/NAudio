@@ -4,7 +4,6 @@
     <TargetFrameworks>net9.0;net9.0-windows10.0.19041.0</TargetFrameworks>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\NAudioStrongNameKey.snk</AssemblyOriginatorKeyFile>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Authors>Mark Heath</Authors>
     <PackageProjectUrl>https://github.com/naudio/NAudio</PackageProjectUrl>

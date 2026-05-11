@@ -1,0 +1,17 @@
+<Project>
+  <!--
+    Common pack-time items for NAudio NuGet packages. The icon is anchored
+    to the repo root via $(MSBuildThisFileDirectory) so it resolves
+    correctly from any csproj depth. The README include is conditional on
+    a README.md sitting next to the csproj — NAudio packages each have
+    their own per-package README; tool/test projects don't, so the
+    conditional include is silently inert for them.
+  -->
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)naudio-icon.png" Pack="true" PackagePath="" Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup Condition="Exists('$(MSBuildProjectDirectory)\README.md')">
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+</Project>

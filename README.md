@@ -6,6 +6,18 @@ NAudio is an open source .NET audio library written by [Mark Heath](https://mark
 
 ![NAudio logo](naudio-logo.png)
 
+## NAudio 3 pre-release
+
+NAudio 3 is now available as a pre-release on NuGet:
+
+```sh
+dotnet add package NAudio --prerelease
+```
+
+NAudio 2 remains the stable channel and will receive critical bug fixes if necessary.
+
+**For existing contributors:** the default branch has moved from `master` to `main` to make room for NAudio 3 development. NAudio 2 maintenance now lives on `release/2.x` (formerly `master`). Open PRs that targeted `master` have been automatically retargeted to `release/2.x` — if your change is intended for NAudio 3, it will need to be rebased against `main` and update the PR target (I'm hoping to review open PRs in the near future to decide which ones should be kept).
+
 ## Features
 
 * Play back audio using a variety of APIs

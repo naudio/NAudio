@@ -3,15 +3,6 @@
   <PropertyGroup>
     <TargetFramework>net9.0-windows</TargetFramework>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\NAudioStrongNameKey.snk</AssemblyOriginatorKeyFile>
-    <PackageProjectUrl>https://github.com/naudio/NAudio</PackageProjectUrl>
-    <PackageTags>C# .NET audio sound</PackageTags>
-    <RepositoryUrl>https://github.com/naudio/NAudio</RepositoryUrl>
-    <Copyright>© Mark Heath 2026</Copyright>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageIcon>naudio-icon.png</PackageIcon>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
 	<!-- needed for perfomance profiling unit tests -->
@@ -32,14 +23,6 @@
   <ItemGroup>
     <ProjectReference Include="..\NAudio.Core\NAudio.Core.csproj" />
     <ProjectReference Include="..\NAudio.Midi\NAudio.Midi.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="..\naudio-icon.png">
-      <Pack>True</Pack>
-      <PackagePath></PackagePath>
-    </None>
-    <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>

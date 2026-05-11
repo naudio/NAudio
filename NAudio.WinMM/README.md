@@ -6,8 +6,8 @@ Windows Multimedia (WinMM / `winmm.dll`) bindings for [NAudio](https://github.co
 
 ## What's included
 
-- **Playback** — `WaveOut`, `WaveOutEvent` for playing audio via the legacy WinMM API
-- **Recording** — `WaveIn`, `WaveInEvent` for capturing audio from input devices
+- **Playback** — `WaveOut` for playing audio via the legacy WinMM API. The window-callback variant lives in [NAudio.WinForms](https://www.nuget.org/packages/NAudio.WinForms/) as `WaveOutWindow`
+- **Recording** — `WaveIn` for capturing audio from input devices. The window-callback variant is `WaveInWindow` in `NAudio.WinForms`
 - **MIDI I/O** — `MidiIn` / `MidiOut` for sending and receiving live MIDI messages
 - **ACM** — Audio Compression Manager wrappers: `AcmStream`, `AcmMp3FrameDecompressor`, driver enumeration
 - Device enumeration and capability queries for WinMM audio and MIDI devices

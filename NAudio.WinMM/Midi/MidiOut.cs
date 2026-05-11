@@ -5,9 +5,9 @@ using NAudio.Wave;
 namespace NAudio.Midi 
 {
     /// <summary>
-    /// Represents a MIDI out device
+    /// Represents a MIDI out device backed by the legacy winmm <c>midiOut*</c> API.
     /// </summary>
-    public class MidiOut : IDisposable 
+    public class MidiOut : IMidiOutput
     {
         private IntPtr hMidiOut = IntPtr.Zero;
         private bool disposed = false;

@@ -1,19 +1,50 @@
 # Sending and Receiving MIDI Events
 
-NAudio allows you to send and receive MIDI events from MIDI devices using the `MidiIn` and `MidiOut` classes.
+NAudio ships two MIDI backends on Windows. Both implement the same `IMidiInput` / `IMidiOutput` interfaces (in `NAudio.Midi`), so application code can target the interfaces and switch backends with one line of construction.
 
-## Enumerating MIDI Devices
+| Backend | Package | Class | Notes |
+| --- | --- | --- | --- |
+| WinRT (`Windows.Devices.Midi`) | `NAudio.Wasapi` | `WinRTMidiIn`, `WinRTMidiOut` | Recommended. Async device enumeration, full `TimeSpan` timestamp resolution. Requires `net9.0-windows10.0.19041.0` or later. |
+| Legacy winmm (`midiIn*` / `midiOut*`) | `NAudio.WinMM` | `MidiIn`, `MidiOut` | Synchronous, index-based device enumeration. Timestamps are millisecond-resolution. Also fires an `ErrorReceived` event for malformed messages. |
 
-To discover how many devices are present in your system, you can use `MidiIn.NumberOfDevices` and `MidiOut.NumberOfDevices`. Then you can ask for information about each device using `MidiIn.DeviceInfo(index)` and `MidiOut.DeviceInfo(index)`. The `ProductName` property is most useful as it can be used to populate a combo box allowing users to select the device they want.
+Application code can be backend-agnostic by referencing only the interfaces:
+
+```c#
+void Monitor(IMidiInput input)
+{
+    input.MessageReceived += (s, e) => Console.WriteLine($"{e.Timestamp:c} {e.MidiEvent}");
+    input.Start();
+}
+```
+
+## Enumerating MIDI devices
+
+### WinRT backend
+
+Device enumeration is asynchronous and returns `DeviceInformation` objects with `Id` and `Name` properties:
+
+```c#
+var inDevices = await WinRTMidiIn.GetDevicesAsync();
+foreach (var device in inDevices)
+{
+    comboBoxMidiInDevices.Items.Add(device.Name);
+}
+
+var outDevices = await WinRTMidiOut.GetDevicesAsync();
+foreach (var device in outDevices)
+{
+    comboBoxMidiOutDevices.Items.Add(device.Name);
+}
+```
+
+### Legacy winmm backend
+
+Synchronous, index-based:
 
 ```c#
 for (int device = 0; device < MidiIn.NumberOfDevices; device++)
 {
     comboBoxMidiInDevices.Items.Add(MidiIn.DeviceInfo(device).ProductName);
-}
-if (comboBoxMidiInDevices.Items.Count > 0)
-{
-    comboBoxMidiInDevices.SelectedIndex = 0;
 }
 for (int device = 0; device < MidiOut.NumberOfDevices; device++)
 {
@@ -23,32 +54,41 @@ for (int device = 0; device < MidiOut.NumberOfDevices; device++)
 
 ## Receiving MIDI events
 
-To start monitoring incoming MIDI messages we create a new instance of `MidiIn` passing in the selected device index (zero based). Then we subscribe to the `MessageReceived` and `ErrorReceived` properties. Then we call `Start` to actually start receiving messages from the device.
+### Opening a WinRT input port
 
 ```c#
-midiIn = new MidiIn(selectedDeviceIndex);
+IMidiInput midiIn = await WinRTMidiIn.CreateAsync(inDevices[selectedIndex].Id);
 midiIn.MessageReceived += midiIn_MessageReceived;
-midiIn.ErrorReceived += midiIn_ErrorReceived;
+midiIn.SysexMessageReceived += midiIn_SysexMessageReceived;
 midiIn.Start();
 ```
 
-Both event handlers provide us with a `MidiInMessageEventArgs` which provides a `Timestamp` (in milliseconds), the parsed `MidiEvent` as well as the `RawMessage` (which can be useful if NAudio couldn't interpret the message)
+### Opening a legacy winmm input port
 
 ```c#
-void midiIn_ErrorReceived(object sender, MidiInMessageEventArgs e)
-{
-    log.WriteError(String.Format("Time {0} Message 0x{1:X8} Event {2}",
-        e.Timestamp, e.RawMessage, e.MidiEvent));
-}
+IMidiInput midiIn = new MidiIn(selectedDeviceIndex);
+midiIn.MessageReceived += midiIn_MessageReceived;
+midiIn.SysexMessageReceived += midiIn_SysexMessageReceived;
+((MidiIn)midiIn).ErrorReceived += midiIn_ErrorReceived; // legacy-only event for malformed messages
+midiIn.Start();
+```
 
+### Handling messages
+
+Both backends deliver short messages as `MidiInMessageEventArgs`, which exposes a parsed `MidiEvent`, the original 32-bit `RawMessage`, and a `TimeSpan` `Timestamp` measured from when the port was opened:
+
+```c#
 void midiIn_MessageReceived(object sender, MidiInMessageEventArgs e)
 {
-    log.WriteInfo(String.Format("Time {0} Message 0x{1:X8} Event {2}",
-        e.Timestamp, e.RawMessage, e.MidiEvent));
+    Console.WriteLine($"Time {e.Timestamp:c} Message 0x{e.RawMessage:X8} Event {e.MidiEvent}");
 }
 ```
 
-To stop monitoring, simply call `Stop` on the MIDI in device. And also `Dispose` the device if you are finished with it.
+> **Note on timestamps:** the WinRT backend preserves the underlying 100 ns resolution. The winmm backend reports millisecond resolution because `winmm.dll` only delivers milliseconds in its callback.
+>
+> **Threading:** both backends raise `MessageReceived` on a non-UI thread. If you need to update WinForms / WPF controls in the handler, marshal back to the UI thread (e.g. `Control.Invoke`, `Dispatcher.Invoke`).
+
+To stop monitoring, call `Stop` and then `Dispose`:
 
 ```c#
 midiIn.Stop();
@@ -57,58 +97,65 @@ midiIn.Dispose();
 
 ## Sending MIDI events
 
-Sending MIDI events makes use of `MidiOut`. First, create an instance of `MidiOut` passing in the desired device number:
+Once a device is open, the same code works for either backend:
 
 ```c#
-midiOut = new MidiOut(comboBoxMidiOutDevices.SelectedIndex);
+var noteOnEvent = new NoteOnEvent(0, channel: 1, noteNumber: 60, velocity: 100, duration: 50);
+midiOut.Send(noteOnEvent); // extension method — calls GetAsShortMessage internally
 ```
 
-Then you can create any MIDI messages using classes derived from `MidiEvent`. For example, you could create a `NoteOnEvent`. Note that timestamps and durations are ignored in this scenario - they only apply to events in a MIDI file.
+`Send(MidiEvent)` is an extension method on `IMidiOutput` that handles short MIDI messages. For sysex, use `SendBuffer` (see below).
+
+Opening the device:
 
 ```c#
-int channel = 1;
-int noteNumber = 50;
-var noteOnEvent = new NoteOnEvent(0, channel, noteNumber, 100, 50);
+// WinRT:
+IMidiOutput midiOut = await WinRTMidiOut.CreateAsync(outDevices[selectedIndex].Id);
+
+// Legacy:
+IMidiOutput midiOut = new MidiOut(comboBoxMidiOutDevices.SelectedIndex);
 ```
 
-To send the MIDI event, we need to call `GetAsShortMessage` on the `MidiEvent` and pass the resulting value to `MidiOut.Send`
-
-```c#
-midiOut.Send(noteOnEvent.GetAsShortMessage());
-```
-
-When you're done with sending MIDI events, simply `Dispose` the device.
+When finished:
 
 ```c#
 midiOut.Dispose();
 ```
 
-## Sending and Receiving Sysex message events
+## Sending and Receiving Sysex Messages
 
-Sending a Sysex message can be done using MidiOut.SendBuffer(). It is not necessary to build and send an entire message as a single SendBuffer call as long as you ensure that the calls are not asynchronously interleaved.
+### Sending
+
+Sysex is sent via `SendBuffer` and works the same on both backends:
+
 ```c#
-private static void SendSysex(byte[] message)
-{
-    midiOut.SendBuffer(new byte[] { 0xF0, 0x00, 0x21, 0x1D, 0x01, 0x01 });
-    midiOut.SendBuffer(message);
-    midiOut.SendBuffer(new byte[] { 0xF7 });
-}
+byte[] message = { 0xF0, 0x7E, 0x7F, 0x09, 0x01, 0xF7 };
+midiOut.SendBuffer(message);
 ```
 
-Receiving Sysex messages requires two actions in addition to the midiIn handling above: (1) Allocate a number of buffers each large enough to receive an expected Sysex message from the device. (2) Subscribe to the SysexMessageReceived EventHandler property:
-```c#
-midiIn = new MidiIn(selectedDeviceIndex);
-midiIn.MessageReceived += midiIn_MessageReceived;
-midiIn.ErrorReceived += midiIn_ErrorReceived;
-midiIn.CreateSysexBuffers(BufferSize, NumberOfBuffers);
-midiIn.SysexMessageReceived += midiIn_SysexMessageReceived;
-midiIn.Start();
-```
+On the winmm backend it's safe to break a long sysex message across multiple `SendBuffer` calls *as long as the calls are not asynchronously interleaved*. The WinRT backend expects the framing bytes (`0xF0` … `0xF7`) in a single buffer.
 
-The second parameter to the SysexMessageReceived EventHandler is of type MidiInSysexMessageEventArgs, which has a SysexBytes byte array property:
+### Receiving
+
+Subscribe to `SysexMessageReceived`. Both backends automatically allocate any receive buffers they need — the legacy winmm backend allocates 4 × 4 KB buffers internally when `Start()` is called:
+
 ```c#
-static void midiIn_SysexMessageReceived(object sender, MidiInSysexMessageEventArgs e)
+midiIn.SysexMessageReceived += (s, e) =>
 {
     byte[] sysexMessage = e.SysexBytes;
-    ....
+    Console.WriteLine($"Sysex {sysexMessage.Length} bytes at {e.Timestamp:c}");
+};
+```
+
+## Converting between NAudio and WinRT MIDI types
+
+`MidiMessageConverter` (in `NAudio.Wasapi`) provides bidirectional conversion between NAudio `MidiEvent` types and the WinRT `IMidiMessage` types from `Windows.Devices.Midi`. This is useful if you want to drop down to `Windows.Devices.Midi` directly (e.g. to use a WinRT-only feature) while keeping the rest of your code in NAudio:
+
+```c#
+// NAudio event → WinRT message
+var noteOn = new NoteOnEvent(0, 1, 60, 100, 50);
+IMidiMessage winRtMessage = MidiMessageConverter.ToWinRTMessage(noteOn.GetAsShortMessage());
+
+// WinRT message → NAudio event
+MidiEvent midiEvent = MidiMessageConverter.ToMidiEvent(winRtMessage);
 ```

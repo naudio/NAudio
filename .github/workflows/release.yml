@@ -133,7 +133,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: nupkg-${{ steps.version.outputs.version }}
-          path: artifacts/*.nupkg
+          path: |
+            artifacts/*.nupkg
+            artifacts/*.snupkg
           if-no-files-found: error
 
       # NuGet trusted publishing via OIDC. The trusted-publisher policy
@@ -149,11 +151,13 @@ jobs:
       # dotnet nuget push does not expand globs on its own, and PowerShell
       # does not expand wildcards in arguments to external commands. So loop
       # over the artifacts explicitly. This also gives per-package error
-      # reporting.
+      # reporting. We iterate .nupkg files only; the matching .snupkg
+      # symbol packages sitting next to each .nupkg are pushed automatically
+      # by `dotnet nuget push` in the same call.
       - name: Push to NuGet
         shell: pwsh
         run: |
-          $packages = Get-ChildItem -Path artifacts -Filter *.nupkg
+          $packages = Get-ChildItem -Path "artifacts\*.nupkg"
           if (-not $packages) {
             Write-Error "No .nupkg files found in artifacts/"
             exit 1

@@ -10,9 +10,9 @@ namespace NAudio.Midi
         /// <summary>
         /// Create a new MIDI In Message EventArgs
         /// </summary>
-        /// <param name="message"></param>
-        /// <param name="timestamp"></param>
-        public MidiInMessageEventArgs(int message, int timestamp)
+        /// <param name="message">The raw short MIDI message (status, data1, data2 packed into a 32-bit int).</param>
+        /// <param name="timestamp">The timestamp at which the message was received.</param>
+        public MidiInMessageEventArgs(int message, TimeSpan timestamp)
         {
             this.RawMessage = message;
             this.Timestamp = timestamp;
@@ -37,8 +37,9 @@ namespace NAudio.Midi
         public MidiEvent MidiEvent { get; private set; }
 
         /// <summary>
-        /// The timestamp in milliseconds for this message
+        /// The timestamp at which this message was received, measured from
+        /// when the input device was opened/started.
         /// </summary>
-        public int Timestamp { get; private set; }
+        public TimeSpan Timestamp { get; private set; }
     }
 }

@@ -29,6 +29,8 @@ namespace NAudioDemo.MidiInDemo
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            this.comboBoxBackend = new System.Windows.Forms.ComboBox();
+            this.labelBackend = new System.Windows.Forms.Label();
             this.comboBoxMidiInDevices = new System.Windows.Forms.ComboBox();
             this.labelDevice = new System.Windows.Forms.Label();
             this.buttonMonitor = new System.Windows.Forms.Button();
@@ -42,9 +44,28 @@ namespace NAudioDemo.MidiInDemo
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
-            // 
+            //
+            // labelBackend
+            //
+            this.labelBackend.AutoSize = true;
+            this.labelBackend.Location = new System.Drawing.Point(282, 16);
+            this.labelBackend.Name = "labelBackend";
+            this.labelBackend.Size = new System.Drawing.Size(53, 13);
+            this.labelBackend.TabIndex = 8;
+            this.labelBackend.Text = "Backend:";
+            //
+            // comboBoxBackend
+            //
+            this.comboBoxBackend.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboBoxBackend.FormattingEnabled = true;
+            this.comboBoxBackend.Location = new System.Drawing.Point(338, 12);
+            this.comboBoxBackend.Name = "comboBoxBackend";
+            this.comboBoxBackend.Size = new System.Drawing.Size(160, 21);
+            this.comboBoxBackend.TabIndex = 9;
+            this.comboBoxBackend.SelectedIndexChanged += new System.EventHandler(this.OnComboBoxBackendSelectedIndexChanged);
+            //
             // comboBoxMidiInDevices
-            // 
+            //
             this.comboBoxMidiInDevices.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.comboBoxMidiInDevices.FormattingEnabled = true;
             this.comboBoxMidiInDevices.Location = new System.Drawing.Point(94, 12);
@@ -69,7 +90,7 @@ namespace NAudioDemo.MidiInDemo
             this.buttonMonitor.TabIndex = 2;
             this.buttonMonitor.Text = "Monitor";
             this.buttonMonitor.UseVisualStyleBackColor = true;
-            this.buttonMonitor.Click += new System.EventHandler(this.buttonMonitor_Click);
+            this.buttonMonitor.Click += new System.EventHandler(this.OnButtonMonitorClick);
             // 
             // checkBoxFilterAutoSensing
             // 
@@ -103,7 +124,7 @@ namespace NAudioDemo.MidiInDemo
             this.buttonClearLog.TabIndex = 5;
             this.buttonClearLog.Text = "Clear Log";
             this.buttonClearLog.UseVisualStyleBackColor = true;
-            this.buttonClearLog.Click += new System.EventHandler(this.buttonClearLog_Click);
+            this.buttonClearLog.Click += new System.EventHandler(this.OnButtonClearLogClick);
             //
             // buttonRefreshDevices
             //
@@ -113,7 +134,7 @@ namespace NAudioDemo.MidiInDemo
             this.buttonRefreshDevices.TabIndex = 7;
             this.buttonRefreshDevices.Text = "Refresh";
             this.buttonRefreshDevices.UseVisualStyleBackColor = true;
-            this.buttonRefreshDevices.Click += new System.EventHandler(this.buttonRefreshDevices_Click);
+            this.buttonRefreshDevices.Click += new System.EventHandler(this.OnButtonRefreshDevicesClick);
             // 
             // groupBox1
             // 
@@ -137,7 +158,7 @@ namespace NAudioDemo.MidiInDemo
             this.checkBoxMidiOutMessages.TabIndex = 0;
             this.checkBoxMidiOutMessages.Text = "Send Test MIDI Out Messages";
             this.checkBoxMidiOutMessages.UseVisualStyleBackColor = true;
-            this.checkBoxMidiOutMessages.CheckedChanged += new System.EventHandler(this.checkBoxMidiOutMessages_CheckedChanged);
+            this.checkBoxMidiOutMessages.CheckedChanged += new System.EventHandler(this.OnCheckBoxMidiOutMessagesCheckedChanged);
             // 
             // comboBoxMidiOutDevices
             // 
@@ -152,7 +173,7 @@ namespace NAudioDemo.MidiInDemo
             // 
             this.timer1.Enabled = true;
             this.timer1.Interval = 1000;
-            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
+            this.timer1.Tick += new System.EventHandler(this.OnTimer1Tick);
             // 
             // MidiInForm
             // 
@@ -167,6 +188,8 @@ namespace NAudioDemo.MidiInDemo
             this.Controls.Add(this.buttonMonitor);
             this.Controls.Add(this.labelDevice);
             this.Controls.Add(this.comboBoxMidiInDevices);
+            this.Controls.Add(this.labelBackend);
+            this.Controls.Add(this.comboBoxBackend);
             this.Name = "MidiInForm";
             this.Text = "MIDI In Sample";
             this.Disposed += this.MidiInPanel_Disposed;
@@ -191,5 +214,7 @@ namespace NAudioDemo.MidiInDemo
         private System.Windows.Forms.CheckBox checkBoxMidiOutMessages;
         private System.Windows.Forms.ComboBox comboBoxMidiOutDevices;
         private System.Windows.Forms.Timer timer1;
+        private System.Windows.Forms.ComboBox comboBoxBackend;
+        private System.Windows.Forms.Label labelBackend;
     }
 }

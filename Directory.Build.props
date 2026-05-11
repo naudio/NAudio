@@ -25,6 +25,19 @@
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)NAudioStrongNameKey.snk</AssemblyOriginatorKeyFile>
 
+    <!-- SourceLink + symbol packages + reproducible CI builds.
+         .NET 8+ ships SourceLink in the SDK; PublishRepositoryUrl=true
+         activates it for GitHub-hosted repos without any PackageReference.
+         Symbol packages (.snupkg) sit next to .nupkg and are pushed
+         alongside automatically by `dotnet nuget push`. CI sets
+         ContinuousIntegrationBuild=true for reproducible binaries; local
+         dev builds keep absolute paths for easier debugging. -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <!-- Enable analyzers but don't set default severities - .globalconfig controls rule severities -->

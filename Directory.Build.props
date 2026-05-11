@@ -4,6 +4,27 @@
          <VersionSuffix> on pre-release builds (e.g. preview.NN). Sample/tool
          apps with their own <Version> in the csproj override this. -->
     <VersionPrefix>3.0.0</VersionPrefix>
+
+    <!-- Common NuGet package metadata. Per-package csprojs override
+         individual properties when needed (e.g. the NAudio meta-package
+         sets its own <Authors>Mark Heath &amp; Contributors</Authors>). -->
+    <Authors>Mark Heath</Authors>
+    <Copyright>© Mark Heath 2026</Copyright>
+    <PackageProjectUrl>https://github.com/naudio/NAudio</PackageProjectUrl>
+    <PackageTags>C# .NET audio sound</PackageTags>
+    <RepositoryUrl>https://github.com/naudio/NAudio</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageIcon>naudio-icon.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+
+    <!-- Strong naming. The .snk lives at the repo root, anchored via
+         $(MSBuildThisFileDirectory) so csprojs at any depth resolve it.
+         Tool/demo projects inherit this; the key is checked into the repo
+         so signing succeeds across the board. If a specific project ever
+         needs to opt out, set <SignAssembly>false</SignAssembly> in its csproj. -->
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)NAudioStrongNameKey.snk</AssemblyOriginatorKeyFile>
+
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <!-- Enable analyzers but don't set default severities - .globalconfig controls rule severities -->

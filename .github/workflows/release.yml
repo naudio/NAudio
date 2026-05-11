@@ -120,7 +120,10 @@ jobs:
               "" | Out-File -FilePath release-body.md -Encoding utf8
             }
           } else {
-            $body = ($lines[$start..($end - 1)] -join "`n").Trim()
+            $body = $lines[$start..($end - 1)] -join "`n"
+            # Strip HTML comments — useful for contributors editing
+            # RELEASE_NOTES.md but noisy on the NuGet page / GitHub Release.
+            $body = [regex]::Replace($body, '<!--[\s\S]*?-->', '').Trim()
             $body | Out-File -FilePath release-body.md -Encoding utf8
             Write-Host "Extracted '$label' ($($body.Length) chars) to release-body.md."
           }

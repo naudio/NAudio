@@ -41,7 +41,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
 
 #### Demo apps and Test Harnesses
 
- * **NAudioConsoleTest:** new CLI test harness for driving various NAudio features without the need for GUI.
+ * **NAudioConsoleTest:** new CLI test harness for driving various NAudio features without the need for GUI. Includes `run-batch` for JSON-driven test plans and `diagnose` for capturing a structured host audio snapshot (OS, ASIO drivers, WASAPI/WinMM/DirectSound devices, NAudio assembly versions).
  * **WPF demos:** spectrum analyser rewritten with corrected dB formula (20·log₁₀), log-frequency mapping, real-input full-scale calibration, bars instead of polylines, peak-decay markers, and per-band smoothing. New `LiveWaveformControl` with configurable render styles, vertical scaling, and fill-between rendering
  * **WAV recording demo:** added loopback support and a multi-API device combo with provenance embedding
  * **MIDI In demo:** Refresh button for hot-plugged devices, device combos disabled while in use, test MIDI Out plays on channel 1 (was 2), Filter Auto-Sensing on by default, stopping test output now sends note-off so notes don't hang, and cleaner panel disposal

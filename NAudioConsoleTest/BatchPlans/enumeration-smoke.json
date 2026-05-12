@@ -1,0 +1,11 @@
+{
+  "name": "Enumeration smoke",
+  "stopOnFail": false,
+  "timeoutSeconds": 30,
+  "tests": [
+    { "id": "Asio.ListDrivers" },
+    { "id": "Wasapi.ListDevices" },
+    { "id": "DirectSound.ListDevices" },
+    { "id": "MediaFoundation.EnumerateTransforms" }
+  ]
+}

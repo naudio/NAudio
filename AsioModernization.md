@@ -256,15 +256,15 @@ A walk of the GitHub issue tracker and `git log` for `NAudio.Asio` surfaced eigh
 - `AsioSampleConvertorTests` — covers the legacy `IWaveProvider` → `AsioSampleType` selection used by the AsioOut facade.
 - `AsioOutPublicSurfaceTests` — reflection-based snapshot of the NAudio 2.x AsioOut public surface.
 
-**Manual / smoke tests** (`NAudioConsoleTest/Asio/AsioMenu.cs`):
+**Manual / smoke tests** (`NAudioConsoleTest/Asio/Tests/` — see [NAudioConsoleTest/README.md](NAudioConsoleTest/README.md) for the CLI / batch harness):
 
-- Info — list drivers, show capabilities.
-- Playback — play audio file, play short test tone.
-- Recording — record to WAV, show per-channel input levels.
-- Duplex — passthrough with gain and per-channel peak meters.
-- Lifecycle — Reinitialize round-trip.
-- Timing — `AsioTimingTests.ValidateSamplePosition` records 10 s and checks four invariants: `SamplePosition` strictly increasing, Δsamples == `Frames` per callback, `SystemTimeNanoseconds` strictly increasing, and audio-clock vs host-clock drift under 50 ms over the full recording. The drift check is the killer test for byte-order regressions on the `Asio64Bit` → `long` conversion.
-- Regression — Dispose from `Stopped` handler (F1 / F2 path), Stop from `AudioCaptured` callback (F1 guard).
+- Info — `Asio.ListDrivers`, `Asio.ShowCapabilities`.
+- Playback — `Asio.PlayAudioFile`, `Asio.PlayShortTestTone`.
+- Recording — `Asio.RecordToWav`, `Asio.ShowChannelLevels`.
+- Duplex — `Asio.DuplexPassthrough` (and `Asio.LegacyDuplexPassthrough` for the AsioOut facade).
+- Lifecycle — `Asio.ReinitializeRoundTrip`.
+- Timing — `Asio.ValidateSamplePosition` records 10 s and checks four invariants: `SamplePosition` strictly increasing, Δsamples == `Frames` per callback, `SystemTimeNanoseconds` strictly increasing, and audio-clock vs host-clock drift under 50 ms over the full recording. The drift check is the killer test for byte-order regressions on the `Asio64Bit` → `long` conversion.
+- Regression — `Asio.DisposeFromStoppedHandler` (F1 / F2 path), `Asio.StopFromCallbackGuard` (F1 guard).
 
 **Benchmarks** (`NAudio.Benchmarks/AsioCallbackBenchmarks.cs`):
 

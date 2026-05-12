@@ -1,0 +1,23 @@
+// Sample ASIO functional plan. Copy this file and replace the driver name to match an
+// installed ASIO device on your machine. Verify available channel counts first with:
+//     NAudioConsoleTest describe Asio.ShowCapabilities
+{
+  "name": "ASIO functional sample",
+  "stopOnFail": false,
+  "timeoutSeconds": 60,
+  "tests": [
+    { "id": "Asio.ListDrivers" },
+    {
+      "id": "Asio.ShowCapabilities",
+      "params": { "driver": "Focusrite USB ASIO" }
+    },
+    {
+      "id": "Asio.ValidateSamplePosition",
+      "params": { "driver": "Focusrite USB ASIO", "duration": "5s" }
+    },
+    {
+      "id": "Asio.ShowChannelLevels",
+      "params": { "driver": "Focusrite USB ASIO", "inputChannels": "0,1", "duration": "3s" }
+    }
+  ]
+}

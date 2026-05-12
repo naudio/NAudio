@@ -1,11 +1,5 @@
-using NAudioConsoleTest.Asio;
-using NAudioConsoleTest.DirectSound;
-using NAudioConsoleTest.Dmo;
-using NAudioConsoleTest.Dsp;
-using NAudioConsoleTest.MediaFoundation;
 using NAudioConsoleTest.Shared;
-using NAudioConsoleTest.Wasapi;
-using NAudioConsoleTest.WinMM;
+using NAudioConsoleTest.Shared.Testing;
 using Spectre.Console;
 
 namespace NAudioConsoleTest;
@@ -15,8 +9,13 @@ static class Program
     // ASIO drivers are COM objects that require the calling thread to be in an STA apartment.
     // Without [STAThread] the first AsioDevice.Open call fails on most native drivers.
     [STAThread]
-    static void Main()
+    static int Main(string[] args)
     {
+        TestRegistration.RegisterAll();
+
+        if (CliDispatcher.TryHandle(args, out var cliExitCode))
+            return cliExitCode;
+
         var banner = new Rows(
             new FigletText("NAudio").Color(Color.Blue),
             new Markup("[dim]Interactive Audio Test Harness[/]"));
@@ -27,33 +26,33 @@ static class Program
                 new Menu.Group("", "WASAPI", "ASIO", "WinMM", "DirectSound", "Media Foundation", "DMO", "DSP", "Exit"));
 
             // Escape at the top level exits the app.
-            if (choice is null) return;
+            if (choice is null) return 0;
 
             switch (choice)
             {
                 case "WASAPI":
-                    WasapiMenu.Show();
+                    MenuRenderer.Show("WASAPI");
                     break;
                 case "ASIO":
-                    AsioMenu.Show();
+                    MenuRenderer.Show("ASIO (AsioDevice — NAudio 3)");
                     break;
                 case "WinMM":
-                    WinMmMenu.Show();
+                    MenuRenderer.Show("WinMM (Windows Multimedia)");
                     break;
                 case "DirectSound":
-                    DirectSoundMenu.Show();
+                    MenuRenderer.Show("DirectSound");
                     break;
                 case "Media Foundation":
-                    MediaFoundationMenu.Show();
+                    MenuRenderer.Show("Media Foundation");
                     break;
                 case "DMO":
-                    DmoMenu.Show();
+                    MenuRenderer.Show("DMO (DirectX Media Objects)");
                     break;
                 case "DSP":
-                    DspMenu.Show();
+                    MenuRenderer.Show("DSP");
                     break;
                 case "Exit":
-                    return;
+                    return 0;
             }
         }
     }

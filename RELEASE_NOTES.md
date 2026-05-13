@@ -76,6 +76,8 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * `MediaBufferLease`: hardened against out-of-order disposal
  * Added finalizers to DMO `MediaBuffer` and the `Mf*` wrappers that hold (RCW, IntPtr) pairs to prevent COM ref leaks
  * Clarified `BiQuadFilter` `q` parameter docs (#1264)
+ * `WaveFileReader` / `AiffFileReader`: malformed headers that declared `BlockAlign=0` now throw `InvalidDataException` from the constructor instead of `DivideByZeroException` from the `Position` setter (#1254)
+ * `AiffFileReader.Read`: truncated `SSND` chunks no longer trigger `IndexOutOfRangeException` in the byte-swap loop — the read count is rounded down to a whole block (#1254)
 
 #### Modernisation (Native AOT, source-generated COM)
 

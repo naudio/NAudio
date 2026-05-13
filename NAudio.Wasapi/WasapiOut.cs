@@ -165,7 +165,7 @@ namespace NAudio.Wave
                             numFramesPadding = audioClient.CurrentPadding;
                         }
                         int numFramesAvailable = bufferFrameCount - numFramesPadding;
-                        if (numFramesAvailable > 10) // see https://naudio.codeplex.com/workitem/16363
+                        if (numFramesAvailable > 10)
                         {
                             if (FillBuffer(playbackProvider, numFramesAvailable))
                             {

@@ -76,6 +76,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * `MediaBufferLease`: hardened against out-of-order disposal
  * Added finalizers to DMO `MediaBuffer` and the `Mf*` wrappers that hold (RCW, IntPtr) pairs to prevent COM ref leaks
  * Clarified `BiQuadFilter` `q` parameter docs (#1264)
+ * Removed dead `naudio.codeplex.com` links from README, MixDiff Help menu, and source comments (CodePlex was shut down by Microsoft in 2017) (#985)
 
 #### Modernisation (Native AOT, source-generated COM)
 

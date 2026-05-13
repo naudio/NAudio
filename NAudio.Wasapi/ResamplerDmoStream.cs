@@ -15,6 +15,7 @@ namespace NAudio.Wave
         private readonly WaveStream inputStream;
         private readonly WaveFormat outputFormat;
         private DmoOutputDataBuffer outputBuffer;
+        private DmoOutputDataBuffer[] outputBufferArray;
         private DmoResampler dmoResampler;
         private MediaBuffer inputMediaBuffer;
         private byte[] inputBuffer;
@@ -49,6 +50,7 @@ namespace NAudio.Wave
             }
             inputMediaBuffer = new MediaBuffer(inputProvider.WaveFormat.AverageBytesPerSecond);
             outputBuffer = new DmoOutputDataBuffer(outputFormat.AverageBytesPerSecond);
+            outputBufferArray = new[] { outputBuffer };
         }
 
         /// <summary>
@@ -153,7 +155,10 @@ namespace NAudio.Wave
                     outputBuffer.MediaBuffer.SetLength(0);
                     outputBuffer.StatusFlags = DmoOutputDataBufferFlags.None;
 
-                    dmoResampler.MediaObject.ProcessOutput(DmoProcessOutputFlags.None, 1, new[] { outputBuffer });
+                    // DmoOutputDataBuffer is a struct; copy current state into the cached
+                    // single-element array so ProcessOutput sees the freshly reset flags.
+                    outputBufferArray[0] = outputBuffer;
+                    dmoResampler.MediaObject.ProcessOutput(DmoProcessOutputFlags.None, 1, outputBufferArray);
 
                     if (outputBuffer.Length == 0)
                     {

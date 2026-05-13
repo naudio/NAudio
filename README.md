@@ -103,7 +103,6 @@ NAudio comes with several demo applications which are the quickest way to see ho
 * [Merge MP3 Files](http://markheath.net/post/merging-mp3-files-with-naudio-in-c-and)
 * [Convert an AIFF file to WAV](http://markheath.net/post/how-to-convert-aiff-files-to-wav-using)
 * [Use the WavFileWriter class](http://markheath.net/post/how-to-use-wavefilewriter)
-* [Create an ID3v2 tag](http://naudio.codeplex.com/wikipage?title=Create%20an%20ID3v2%20Tag)
 
 ### Manipulating audio
 
@@ -149,7 +148,6 @@ NAudio comes with several demo applications which are the quickest way to see ho
 
 Additional sources of documentation for NAudio are:
 
-* [Original Documentation on CodePlex](http://naudio.codeplex.com/documentation)
 * [NAudio articles on Mark Heath's blog](http://markheath.net/category/naudio)
 
 ## NAudio Training Courses

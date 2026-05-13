@@ -6,7 +6,7 @@ namespace NAudio.Wave
 {
     /// <summary>
     /// WASAPI Loopback Capture
-    /// based on a contribution from "Pygmy" - http://naudio.codeplex.com/discussions/203605
+    /// based on a contribution from "Pygmy"
     /// </summary>
     [Obsolete("Use WasapiRecorderBuilder.WithProcessLoopback() for process-specific loopback, or configure a WasapiRecorder with a render device for system-wide loopback.")]
     public class WasapiLoopbackCapture : WasapiCapture

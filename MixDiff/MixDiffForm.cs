@@ -451,7 +451,7 @@ namespace MarkHeath.AudioUtils
         {
             try
             {
-                System.Diagnostics.Process.Start("http://www.codeplex.com/naudio/Wiki/View.aspx?title=MixDiff");
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://github.com/naudio/NAudio") { UseShellExecute = true });
             }
             catch (Exception)
             {

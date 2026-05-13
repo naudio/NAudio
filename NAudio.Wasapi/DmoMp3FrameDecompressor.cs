@@ -16,6 +16,7 @@ namespace NAudio.FileFormats.Mp3
         private WaveFormat pcmFormat;
         private MediaBuffer inputMediaBuffer;
         private DmoOutputDataBuffer outputBuffer;
+        private DmoOutputDataBuffer[] outputBufferArray;
         private bool reposition;
 
         /// <summary>
@@ -40,6 +41,7 @@ namespace NAudio.FileFormats.Mp3
             // a second is more than enough to decompress a frame at a time
             inputMediaBuffer = new MediaBuffer(sourceFormat.AverageBytesPerSecond);
             outputBuffer = new DmoOutputDataBuffer(pcmFormat.AverageBytesPerSecond);
+            outputBufferArray = new[] { outputBuffer };
         }
 
         /// <summary>
@@ -67,8 +69,11 @@ namespace NAudio.FileFormats.Mp3
             outputBuffer.MediaBuffer.SetLength(0);
             outputBuffer.StatusFlags = DmoOutputDataBufferFlags.None;
 
-            // 3. Now ask the DMO for some output data
-            mp3Decoder.MediaObject.ProcessOutput(DmoProcessOutputFlags.None, 1, new[] { outputBuffer });
+            // 3. Now ask the DMO for some output data.
+            // DmoOutputDataBuffer is a struct; refresh the cached single-element
+            // array slot so ProcessOutput sees the freshly reset flags.
+            outputBufferArray[0] = outputBuffer;
+            mp3Decoder.MediaObject.ProcessOutput(DmoProcessOutputFlags.None, 1, outputBufferArray);
 
             if (outputBuffer.Length == 0)
             {

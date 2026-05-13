@@ -56,6 +56,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * `WasapiCapture` capture path is now zero-copy via the native WASAPI buffer span
  * `BiQuadFilter` state and coefficient fields hoisted to locals in batch loops for register retention
  * `Mp3FileReader` now builds its table-of-contents lazily on first seek instead of eagerly during construction; the `Position` setter no longer blocks; rapid scrub seeks debounce and silence output
+ * Eliminated per-`Read` allocations in `ResamplerDmoStream` (cached input buffer and output-buffer array) (#971)
 
 #### Reliability and bug fixes
 

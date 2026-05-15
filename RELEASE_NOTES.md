@@ -69,6 +69,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * MP3 frame parsing: more robust against false frame detections from album art and trailing metadata
  * `MidiFile`: preserved running-status across meta events (fixes "Read too far" errors when meta events interrupt running-status sequences)
  * `WaveStream.CurrentTime` setter: now lands on a block boundary, preventing garbage audio on seek in custom readers
+ * `BlockAlignReductionStream.Position` setter: now validates the incoming value instead of the stale current position, so a block-aligned seek after an arbitrary-length read no longer wrongly throws "Position must be block aligned" (#368)
  * `IconExtractor.Extract`: now guards against null icon handles from `ExtractIconEx`
  * `DirectSoundOut.InitializeDirectSound`: wrapped notification setup in try/finally to prevent COM ref leak on `SetNotificationPositions` failure
  * ASIO: implemented missing `Asio64Bit` conversions (Int24LSB and Float32LSB output sample types)

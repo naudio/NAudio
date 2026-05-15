@@ -8,15 +8,12 @@ using NUnit.Framework;
 namespace NAudioTests.WaveStreams
 {
     /// <summary>
-    /// Regression coverage for issue #959: the word-alignment pad-byte check used
-    /// <c>BinaryReader.PeekChar()</c>, which decodes bytes as UTF-8 and threw
-    /// <see cref="ArgumentException"/> on non-text data after an odd-length chunk.
-    /// Also covers the end-of-stream gap that the originally proposed fix in PR #828
-    /// would have introduced (<c>BinaryReader.ReadByte()</c> throws at EOF).
+    /// Tests for <see cref="NAudio.FileFormats.Wav.WaveFileChunkReader"/>, exercised
+    /// through <see cref="WaveFileReader"/> against hand-built RIFF streams.
     /// </summary>
     [TestFixture]
     [Category("UnitTest")]
-    public class WaveFileChunkReaderPeekCharTests
+    public class WaveFileChunkReaderTests
     {
         private static WaveFormat DefaultFormat => new WaveFormat(8000, 16, 1);
 

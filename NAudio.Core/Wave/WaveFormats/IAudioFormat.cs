@@ -31,8 +31,11 @@ namespace NAudio.Wave
         /// There might be cases that the sample might not be a multiple of 8 bits, 
         /// which in such case the sample size is extended to the closest power of two.
         /// </summary>
-        /// <remarks>The default implementation of the getter is <c><see cref="BitsPerSample"/> * 8</c>.</remarks>
-        virtual int BlockAlign => BitsPerSample * 8;
+        /// <remarks>
+        /// The default implementation of the getter is <c><see cref="BitsPerSample"/> / 8</c>. <br />
+        /// Where the <see cref="BitsPerSample"/> is rounded to the closest power of 2.
+        /// </remarks>
+        virtual int BlockAlign => checked((int)(System.Numerics.BitOperations.RoundUpToPowerOf2((uint)BitsPerSample) / 8U));
 
         /// <summary>
         /// Gets an estimate of how many bytes are required to store a single second of audio data.

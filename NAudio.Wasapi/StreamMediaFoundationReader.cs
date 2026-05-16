@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using NAudio.MediaFoundation;
@@ -28,7 +28,7 @@ namespace NAudio.Wave
         /// </summary>
         private protected override IMFSourceReader CreateReader(MediaFoundationReaderSettings settings)
         {
-            IntPtr byteStreamPtr = MediaFoundationApi.CreateByteStream(new ComStream(stream));
+            IntPtr byteStreamPtr = MediaFoundationApi.CreateByteStream(new MFByteStreamFromStream(stream));
             try
             {
                 var reader = MediaFoundationApi.CreateSourceReaderFromByteStream(byteStreamPtr);

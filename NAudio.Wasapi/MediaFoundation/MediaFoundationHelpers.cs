@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
@@ -163,6 +163,7 @@ namespace NAudio.MediaFoundation
 
         // IID_IStream (objidl.h)
         private static readonly Guid IID_IStream = new Guid("0000000C-0000-0000-C000-000000000046");
+        private static readonly Guid IID_IMFByteStream = new("ad4c1b00-4bf7-422f-9175-756693d9130d");
 
         /// <summary>
         /// Creates a media foundation byte stream wrapping a managed <see cref="ComStream"/>.
@@ -199,6 +200,23 @@ namespace NAudio.MediaFoundation
             finally
             {
                 Marshal.Release(unkPtr);
+            }
+        }
+
+        internal static IntPtr CreateByteStream(MFByteStreamFromStream stream)
+        {
+            ArgumentNullException.ThrowIfNull(stream);
+
+            IntPtr unknown = ComActivation.ComWrappers.GetOrCreateComInterfaceForObject(stream, CreateComInterfaceFlags.None);
+
+            try
+            {
+                Marshal.ThrowExceptionForHR(Marshal.QueryInterface(unknown, in IID_IMFByteStream, out IntPtr streamPtr));
+                return streamPtr;
+            }
+            finally
+            {
+                Marshal.Release(unknown);
             }
         }
 

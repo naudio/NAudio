@@ -32,11 +32,18 @@ namespace NAudio.Alsa.Tests
             }
         }
 
-        /// <summary>A short finite tone used to drive playback tests.</summary>
+        /// <summary>A finite sine tone used to drive playback tests.</summary>
         protected sealed class ToneProvider : IWaveProvider
         {
-            private long remaining = 44100L * 4 / 4; // ~0.25s stereo s16
+            private long remaining;
             private double phase;
+
+            /// <param name="seconds">Tone duration (default ~0.25 s).</param>
+            public ToneProvider(double seconds = 0.25)
+            {
+                // align to a stereo-16 frame (4 bytes)
+                remaining = (long)(WaveFormat.AverageBytesPerSecond * seconds) & ~3;
+            }
 
             public WaveFormat WaveFormat { get; } = new(44100, 16, 2);
 

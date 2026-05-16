@@ -21,18 +21,24 @@ namespace NAudio.Wave.Alsa
         /// Creates a new <see cref="AlsaException"/> from an ALSA error code,
         /// prefixed with the name of the failing call.
         /// </summary>
-        /// <param name="function">The libasound function that failed.</param>
         /// <param name="errorCode">The negative error code returned by libasound.</param>
-        public AlsaException(string function, int errorCode)
+        /// <param name="function">The libasound function that failed.</param>
+        public AlsaException(int errorCode, string function)
             : base($"{function}: {AlsaInterop.ErrorString(errorCode)}")
         {
             ErrorCode = errorCode;
+            Function = function;
         }
 
         /// <summary>
         /// The raw ALSA error code (a negative <c>errno</c>-style value).
         /// </summary>
         public int ErrorCode { get; }
+
+        /// <summary>
+        /// The libasound function that failed, or <c>null</c> when not supplied.
+        /// </summary>
+        public string Function { get; }
 
         /// <summary>
         /// Throws an <see cref="AlsaException"/> if <paramref name="errorCode"/>
@@ -44,7 +50,7 @@ namespace NAudio.Wave.Alsa
         {
             if (errorCode < 0)
             {
-                throw new AlsaException(function, errorCode);
+                throw new AlsaException(errorCode, function);
             }
         }
     }

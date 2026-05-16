@@ -189,7 +189,16 @@ namespace NAudio.Wave.Alsa
             {
                 ObjectDisposedException.ThrowIf(disposed, this);
                 running = true;
-                worker = new Thread(() => loop()) { Name = name, IsBackground = true };
+                worker = new Thread(() => loop())
+                {
+                    Name = name,
+                    IsBackground = true,
+                    // Matches NAudio's WinMM WaveOut/WaveIn. On Linux this is
+                    // a nice() bump (no root needed); glitch-free audio under
+                    // heavy load still wants RT scheduling (rtkit/SCHED_FIFO),
+                    // which is the caller's/system's concern.
+                    Priority = ThreadPriority.AboveNormal,
+                };
                 worker.Start();
             }
         }

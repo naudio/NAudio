@@ -52,6 +52,10 @@ foreach (var device in AlsaDeviceEnumerator.GetCaptureDevices())
 ```
 
 The `WaveInEventArgs` buffer is reused on the next callback, so write or
-copy it before the handler returns. The recording format must be one
-the device supports (8/16/24/32-bit PCM or 32-bit IEEE float); an
-unsupported format throws an `AlsaException`.
+copy it before the handler returns. The recording format must be a PCM
+or IEEE-float `WaveFormat` (8/16/24/32-bit PCM or 32-bit float): a
+`WaveFormat` with no ALSA mapping throws `NotSupportedException` from
+`StartRecording`, and a device that cannot be opened with the requested
+parameters throws an `AlsaException`. Prefer `default` or a `plughw:`
+device for arbitrary rates/formats — a bare `hw:` device only accepts
+formats and sample rates it natively supports.

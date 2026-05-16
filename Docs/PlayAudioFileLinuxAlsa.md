@@ -32,8 +32,12 @@ using (var outputDevice = new AlsaOut())          // default device
 }
 ```
 
-To play to a specific device, pass an ALSA PCM name to the constructor
-(`new AlsaOut("hw:0")`), or pick one from the enumerator:
+To play to a specific device, pass an ALSA PCM name to the constructor,
+or pick one from the enumerator. Prefer `default` or a `plughw:` name
+for arbitrary sample rates/formats — those go through ALSA's plug layer,
+which converts; a bare `hw:` device only accepts rates and formats it
+supports natively (the backend negotiates the nearest rate but will not
+resample):
 
 ```c#
 foreach (var device in AlsaDeviceEnumerator.GetPlaybackDevices())

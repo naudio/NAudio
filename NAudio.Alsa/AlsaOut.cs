@@ -218,6 +218,14 @@ namespace NAudio.Wave.Alsa
                     int read = source.Read(buffer);
                     if (read == 0)
                     {
+                        // Natural end of stream: let the device play out its
+                        // queued frames. An explicit Stop() has already set
+                        // Running false + dropped, so skip the drain there.
+                        if (pcm.Running)
+                        {
+                            AlsaInterop.PcmDrain(pcm.Pcm);
+                        }
+
                         break;
                     }
 
@@ -237,7 +245,7 @@ namespace NAudio.Wave.Alsa
                             int recovered = AlsaInterop.PcmRecover(pcm.Pcm, (int)written, 1);
                             if (recovered < 0)
                             {
-                                throw new AlsaException("snd_pcm_writei", (int)written);
+                                throw new AlsaException((int)written, "snd_pcm_writei");
                             }
 
                             continue;

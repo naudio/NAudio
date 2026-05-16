@@ -99,6 +99,34 @@ namespace NAudio.Alsa.Tests
             Assert.That(Task.WaitAll(workers, TimeSpan.FromSeconds(5)), Is.True);
         }
 
+        // Endless silence: the "null" PCM never rate-limits, so a finite
+        // source would reach end-of-stream before Pause() is observed.
+        private sealed class EndlessProvider : IWaveProvider
+        {
+            public WaveFormat WaveFormat { get; } = new(44100, 16, 2);
+
+            public int Read(Span<byte> buffer)
+            {
+                buffer.Clear();
+                return buffer.Length;
+            }
+        }
+
+        [Test]
+        public void PauseThenPlayTransitionsState()
+        {
+            using var outp = new AlsaOut("null");
+            outp.Init(new EndlessProvider());
+            outp.Play();
+            Assert.That(outp.PlaybackState, Is.EqualTo(PlaybackState.Playing));
+            outp.Pause();
+            Assert.That(outp.PlaybackState, Is.EqualTo(PlaybackState.Paused));
+            outp.Play();
+            Assert.That(outp.PlaybackState, Is.EqualTo(PlaybackState.Playing));
+            outp.Stop();
+            Assert.That(outp.PlaybackState, Is.EqualTo(PlaybackState.Stopped));
+        }
+
         [Test]
         public void DisposeIsIdempotentAndReInitWorks()
         {

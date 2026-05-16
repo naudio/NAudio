@@ -19,6 +19,7 @@ namespace NAudio.Alsa.Tests
         {
             var ex = Assert.Throws<AlsaException>(() => AlsaException.ThrowIfError(-22, "snd_pcm_open"));
             Assert.That(ex.ErrorCode, Is.EqualTo(-22));
+            Assert.That(ex.Function, Is.EqualTo("snd_pcm_open"));
             Assert.That(ex.Message, Does.Contain("snd_pcm_open"));
         }
 

@@ -93,7 +93,7 @@ namespace NAudio.Wave.Alsa
                         int recovered = AlsaInterop.PcmRecover(pcm.Pcm, (int)read, 1);
                         if (recovered < 0)
                         {
-                            throw new AlsaException("snd_pcm_readi", (int)read);
+                            throw new AlsaException((int)read, "snd_pcm_readi");
                         }
 
                         AlsaException.ThrowIfError(AlsaInterop.PcmStart(pcm.Pcm), "snd_pcm_start");

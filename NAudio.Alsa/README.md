@@ -19,7 +19,8 @@ automatically (you do **not** need the `-dev` package). Install the ALSA
 runtime if it is missing:
 
 ```sh
-sudo apt install libasound2     # Debian/Ubuntu
+sudo apt install libasound2t64  # Ubuntu 24.04+ (renamed from libasound2 in the t64 transition)
+sudo apt install libasound2     # older Debian/Ubuntu
 ```
 
 This package is **not** pulled in by the `NAudio` meta-package (there is

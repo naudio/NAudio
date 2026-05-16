@@ -16,8 +16,17 @@ Inside the Ubuntu shell:
 
 ```bash
 sudo apt update
-sudo apt install -y dotnet-sdk-9.0 libasound2 libasound2-plugins alsa-utils
+# Ubuntu 24.04 "noble" (the current WSL2 default):
+sudo apt install -y dotnet-sdk-9.0 libasound2t64 libasound2-plugins alsa-utils
+# Older Ubuntu / Debian: the package is libasound2 (not -t64)
 ```
+
+> **Ubuntu 24.04 quirk:** the runtime library package was renamed
+> `libasound2` → `libasound2t64` as part of Ubuntu's 64-bit `time_t`
+> ABI transition. `apt install libasound2` fails on noble; use
+> `libasound2t64`. This is only the Debian *package* name — the shared
+> object is still `libasound.so.2`, so the `NativeLibrary` resolver and
+> the code are unaffected.
 
 `libasound2-plugins` is required — it provides the `pulse` PCM that
 routes ALSA to WSLg. Prove WSLg audio works *before* testing NAudio:

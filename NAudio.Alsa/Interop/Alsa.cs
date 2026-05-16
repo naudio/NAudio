@@ -18,6 +18,7 @@ namespace NAudio.Wave.Alsa
     internal static partial class AlsaInterop
     {
         private const string AlsaLibrary = "libasound";
+        private const string LibC = "libc";
 
         [ModuleInitializer]
         internal static void RegisterResolver()
@@ -27,12 +28,19 @@ namespace NAudio.Wave.Alsa
 
         private static IntPtr Resolve(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
         {
-            if (libraryName != AlsaLibrary)
+            string[] candidates = libraryName switch
+            {
+                AlsaLibrary => new[] { "libasound.so.2", "libasound.so", "libasound" },
+                LibC => new[] { "libc.so.6", "libc.so", "libc" },
+                _ => null,
+            };
+
+            if (candidates == null)
             {
                 return IntPtr.Zero;
             }
 
-            foreach (var candidate in new[] { "libasound.so.2", "libasound.so", "libasound" })
+            foreach (var candidate in candidates)
             {
                 if (NativeLibrary.TryLoad(candidate, assembly, searchPath, out var handle))
                 {
@@ -86,6 +94,21 @@ namespace NAudio.Wave.Alsa
 
         [LibraryImport(AlsaLibrary, EntryPoint = "snd_ctl_pcm_next_device")]
         internal static partial int CtlPcmNextDevice(IntPtr ctl, ref int device);
+
+        // --- Device-name hints (enumeration) -----------------------------
+
+        [LibraryImport(AlsaLibrary, EntryPoint = "snd_device_name_hint", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial int DeviceNameHint(int card, string iface, out IntPtr hints);
+
+        // Returns a strdup'd ASCII string the caller must release with libc free().
+        [LibraryImport(AlsaLibrary, EntryPoint = "snd_device_name_get_hint", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr DeviceNameGetHint(IntPtr hint, string id);
+
+        [LibraryImport(AlsaLibrary, EntryPoint = "snd_device_name_free_hint")]
+        internal static partial int DeviceNameFreeHint(IntPtr hints);
+
+        [LibraryImport(LibC, EntryPoint = "free")]
+        internal static partial void Free(IntPtr ptr);
 
         // --- PCM lifecycle ------------------------------------------------
 
@@ -209,6 +232,29 @@ namespace NAudio.Wave.Alsa
             => ptr == IntPtr.Zero ? string.Empty : Marshal.PtrToStringUTF8(ptr) ?? string.Empty;
 
         internal static string ErrorString(int error) => GetString(StrError(error));
+
+        /// <summary>
+        /// Reads a hint field (<c>NAME</c>/<c>DESC</c>/<c>IOID</c>) and frees
+        /// the strdup'd result with libc <c>free</c>. Returns <c>null</c> when
+        /// the field is absent (notably <c>IOID</c>, meaning bidirectional).
+        /// </summary>
+        internal static string DeviceNameGetHintString(IntPtr hint, string id)
+        {
+            var ptr = DeviceNameGetHint(hint, id);
+            if (ptr == IntPtr.Zero)
+            {
+                return null;
+            }
+
+            try
+            {
+                return Marshal.PtrToStringUTF8(ptr);
+            }
+            finally
+            {
+                Free(ptr);
+            }
+        }
 
         internal static string CtlCardInfoGetId(IntPtr info) => GetString(CtlCardInfoGetIdPtr(info));
 

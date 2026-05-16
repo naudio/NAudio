@@ -92,6 +92,8 @@ namespace NAudio.Wave.Alsa
         [LibraryImport(AlsaLibrary, EntryPoint = "snd_pcm_open", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial int PcmOpen(out IntPtr pcm, string name, PCMStream stream, int mode);
 
+        // Raw close used only by SafePcmHandle.ReleaseHandle; everywhere else
+        // the handle's lifetime is owned by the SafeHandle.
         [LibraryImport(AlsaLibrary, EntryPoint = "snd_pcm_close")]
         internal static partial int PcmClose(IntPtr pcm);
 

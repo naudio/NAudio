@@ -9,17 +9,18 @@ needs `libasound` — `sudo apt install libasound2`):
 dotnet add package NAudio.Alsa
 ```
 
-Playback works exactly like the other NAudio output devices: open the
-file with `AudioFileReader`, pass it to `AlsaOut.Init`, then `Play`.
-`Play` is non-blocking, so we wait until playback finishes. The `using`
-blocks dispose the reader and the device (which stops the streaming
-thread and closes the ALSA handle).
+`AlsaOut` plays any `IWaveProvider`, so the format you can play depends
+on the **reader** you give it. Note that `AudioFileReader`,
+`Mp3FileReader` and `MediaFoundationReader` are Windows-only — on Linux
+only the cross-platform `NAudio.Core` readers are available
+(`WaveFileReader`, `AiffFileReader`, `RawSourceWaveStream`). So for a WAV
+file, use `WaveFileReader`:
 
 ```c#
 using NAudio.Wave;
 using NAudio.Wave.Alsa;
 
-using (var audioFile = new AudioFileReader("test.wav"))
+using (var audioFile = new WaveFileReader("test.wav"))
 using (var outputDevice = new AlsaOut())          // default device
 {
     outputDevice.Init(audioFile);
@@ -42,7 +43,25 @@ foreach (var device in AlsaDeviceEnumerator.GetPlaybackDevices())
 // var outputDevice = new AlsaOut("sysdefault:CARD=PCH");
 ```
 
+### Playing compressed formats
+
+There is no Linux equivalent of `MediaFoundationReader` yet, so MP3,
+AAC/M4A, FLAC, Ogg and Opus are not decoded out of the box. MP3 works if
+you plug a fully-managed frame decompressor such as
+[NLayer](https://github.com/naudio/NLayer) into `Mp3FileReaderBase`:
+
+```c#
+// dotnet add package NLayer.NAudioSupport
+using NLayer.NAudioSupport;
+
+using var mp3 = new Mp3FileReaderBase("test.mp3",
+    waveFormat => new Mp3FrameDecompressor(waveFormat));
+using var outputDevice = new AlsaOut();
+outputDevice.Init(mp3);
+outputDevice.Play();
+```
+
 `AlsaOut.Volume` is a software gain (`1.0f` = unity), so you can set it
-before or during playback. To be notified when playback ends or fails,
-handle `PlaybackStopped` — its `Exception` is `null` on a normal end of
+before or during playback. Handle `PlaybackStopped` to be notified when
+playback ends or fails — its `Exception` is `null` on a normal end of
 stream or an explicit `Stop()`.

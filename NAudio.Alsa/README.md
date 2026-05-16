@@ -29,18 +29,49 @@ no `net9.0-linux` TFM). Reference it explicitly:
 dotnet add package NAudio.Alsa
 ```
 
-## Play an audio file
+## Supported input formats
+
+`AlsaOut` plays any `IWaveProvider`, so it is format-agnostic — what you
+can play depends on which **decoder** you feed it. On Linux only the
+cross-platform `NAudio.Core` readers are available (`MediaFoundationReader`
+and the bundled `Mp3FileReader` / `AudioFileReader` are Windows-only):
+
+| Format | Reader | Status |
+|---|---|---|
+| WAV (PCM / IEEE float) | `WaveFileReader` | ✅ supported |
+| AIFF (uncompressed PCM) | `AiffFileReader` | ✅ supported |
+| Raw PCM | `RawSourceWaveStream` | ✅ supported |
+| MP3 | `Mp3FileReaderBase` + a managed `IMp3FrameDecompressor` (e.g. [NLayer](https://github.com/naudio/NLayer)) | ⚠️ not bundled — you supply the decompressor |
+| AAC / M4A / ALAC / WMA / FLAC / Ogg / Opus | — | ❌ no cross-platform decoder yet |
+
+There is currently no Linux equivalent of `MediaFoundationReader`; a
+cross-platform decoder package is planned separately.
+
+## Play a WAV file
 
 ```c#
 using NAudio.Wave;
 using NAudio.Wave.Alsa;
 
-using var audioFile = new AudioFileReader("test.wav");
-using var output = new AlsaOut();          // or new AlsaOut("hw:0")
-output.Init(audioFile);
+using (var audioFile = new WaveFileReader("test.wav"))
+using (var outputDevice = new AlsaOut())          // default device
+{
+    outputDevice.Init(audioFile);
+    outputDevice.Play();
+    while (outputDevice.PlaybackState == PlaybackState.Playing)
+        Thread.Sleep(200);
+}
+```
+
+Play MP3 by wiring a managed decompressor into `Mp3FileReaderBase`:
+
+```c#
+// using NLayer.NAudioSupport;  // dotnet add package NLayer.NAudioSupport
+using var mp3 = new Mp3FileReaderBase("test.mp3",
+    waveFormat => new Mp3FrameDecompressor(waveFormat));
+using var output = new AlsaOut();
+output.Init(mp3);
 output.Play();
-while (output.PlaybackState == PlaybackState.Playing)
-    Thread.Sleep(200);
 ```
 
 ## Record to a WAV file

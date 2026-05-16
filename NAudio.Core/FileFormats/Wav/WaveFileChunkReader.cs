@@ -108,9 +108,16 @@ namespace NAudio.FileFormats.Wav
                 // "If the chunk size is an odd number of bytes, a pad byte with value zero is
                 //  written after ckData. Word aligning improves access speed (for chunks resident in memory)
                 //  and maintains compatibility with EA IFF. The ckSize value does not include the pad byte."
-                if (((chunkLength % 2) != 0) && (br.PeekChar() == 0))
+                if (((chunkLength % 2) != 0) && stream.Position < stream.Length)
                 {
-                    stream.Position++;
+                    // Read the pad byte directly. BinaryReader.PeekChar() decodes bytes as
+                    // UTF-8 and throws on non-text data (see issue #959); ReadByte() does not.
+                    if (br.ReadByte() != 0)
+                    {
+                        // Not a pad byte: this file isn't word-aligned. Put the byte back so
+                        // it's read as the start of the next chunk.
+                        stream.Position--;
+                    }
                 }
             }
 

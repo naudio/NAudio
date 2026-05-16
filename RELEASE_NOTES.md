@@ -77,6 +77,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * `WdlResampler`: backported three upstream Cockos WDL bug fixes (latency calculation, `ResampleOut` clamping, Blackman-Harris window correction)
  * `MediaBufferLease`: hardened against out-of-order disposal
  * Added finalizers to DMO `MediaBuffer` and the `Mf*` wrappers that hold (RCW, IntPtr) pairs to prevent COM ref leaks
+ * `WaveFileChunkReader`: fixed `ArgumentException` parsing WAV files whose odd-length chunks are followed by non-UTF-8 bytes — the word-alignment pad-byte check no longer decodes via `BinaryReader.PeekChar()`, and is now guarded against end-of-stream (#959)
  * Clarified `BiQuadFilter` `q` parameter docs (#1264)
  * Removed dead `naudio.codeplex.com` links from README, MixDiff Help menu, and source comments (CodePlex was shut down by Microsoft in 2017) (#985)
 

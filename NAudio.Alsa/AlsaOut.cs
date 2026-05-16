@@ -130,7 +130,7 @@ namespace NAudio.Wave.Alsa
                     case PlaybackState.Paused:
                         if (pausedViaHardware)
                         {
-                            AlsaInterop.PcmPause(pcm.Pcm, 0);
+                            pcm.Pause(0);
                         }
                         else
                         {
@@ -161,11 +161,11 @@ namespace NAudio.Wave.Alsa
 
                 playbackState = PlaybackState.Paused;
                 resumeGate.Reset();
-                int paused = AlsaInterop.PcmPause(pcm.Pcm, 1);
+                int paused = pcm.Pause(1);
                 pausedViaHardware = paused >= 0;
                 if (!pausedViaHardware)
                 {
-                    AlsaInterop.PcmDrop(pcm.Pcm);
+                    pcm.Drop();
                 }
             }
         }

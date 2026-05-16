@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using NAudio.Wave;
 using NAudio.Wave.Alsa;
 using NUnit.Framework;
@@ -53,6 +54,49 @@ namespace NAudio.Alsa.Tests
             outp.Stop();
             Assert.That(stopped.Wait(TimeSpan.FromSeconds(3)), Is.True);
             Assert.That(error, Is.Null);
+        }
+
+        [Test]
+        public void StopFromPlaybackStoppedHandlerDoesNotDeadlock()
+        {
+            using var outp = new AlsaOut("null");
+            var done = new ManualResetEventSlim();
+            outp.PlaybackStopped += (_, _) =>
+            {
+                outp.Stop();    // re-entrant control call from the event
+                done.Set();
+            };
+            outp.Init(new ToneProvider());
+            outp.Play();
+            Assert.That(done.Wait(TimeSpan.FromSeconds(5)), Is.True, "deadlocked in PlaybackStopped");
+        }
+
+        [Test]
+        public void ConcurrentControlAndDisposeIsSafe()
+        {
+            // Hammer the control plane from several threads while another
+            // disposes — exercises the gate vs handle-close race (#2).
+            var outp = new AlsaOut("null");
+            outp.Init(new ToneProvider());
+            outp.Play();
+            using var cts = new CancellationTokenSource();
+            var workers = new Task[4];
+            for (int i = 0; i < workers.Length; i++)
+            {
+                workers[i] = Task.Run(() =>
+                {
+                    while (!cts.IsCancellationRequested)
+                    {
+                        try { outp.Pause(); outp.Play(); outp.Stop(); }
+                        catch (ObjectDisposedException) { return; }
+                    }
+                });
+            }
+
+            Thread.Sleep(150);
+            Assert.DoesNotThrow(outp.Dispose);
+            cts.Cancel();
+            Assert.That(Task.WaitAll(workers, TimeSpan.FromSeconds(5)), Is.True);
         }
 
         [Test]

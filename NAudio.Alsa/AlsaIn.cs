@@ -96,7 +96,7 @@ namespace NAudio.Wave.Alsa
                             throw new AlsaException("snd_pcm_readi", (int)read);
                         }
 
-                        AlsaInterop.PcmStart(pcm.Pcm);
+                        AlsaException.ThrowIfError(AlsaInterop.PcmStart(pcm.Pcm), "snd_pcm_start");
                         continue;
                     }
 

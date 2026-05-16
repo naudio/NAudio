@@ -176,8 +176,11 @@ namespace NAudio.Wave.Alsa
         [LibraryImport(AlsaLibrary, EntryPoint = "snd_pcm_hw_params_set_format")]
         internal static partial int PcmHwParamsSetFormat(IntPtr pcm, IntPtr hwparams, PCMFormat format);
 
-        [LibraryImport(AlsaLibrary, EntryPoint = "snd_pcm_hw_params_set_rate")]
-        internal static partial int PcmHwParamsSetRate(IntPtr pcm, IntPtr hwparams, uint val, int dir);
+        // _near (not the exact _set_rate): real hw: devices reject a rate
+        // they cannot deliver exactly. snd_pcm_hw_params_set_rate_near
+        // picks the closest supported rate (in/out via ref).
+        [LibraryImport(AlsaLibrary, EntryPoint = "snd_pcm_hw_params_set_rate_near")]
+        internal static partial int PcmHwParamsSetRateNear(IntPtr pcm, IntPtr hwparams, ref uint val, ref int dir);
 
         [LibraryImport(AlsaLibrary, EntryPoint = "snd_pcm_hw_params_test_rate")]
         internal static partial int PcmHwParamsTestRate(IntPtr pcm, IntPtr hwparams, uint val, int dir);

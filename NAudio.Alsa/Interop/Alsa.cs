@@ -106,20 +106,11 @@ namespace NAudio.Wave.Alsa
         [LibraryImport(AlsaLibrary, EntryPoint = "snd_pcm_drop")]
         internal static partial int PcmDrop(IntPtr pcm);
 
-        [LibraryImport(AlsaLibrary, EntryPoint = "snd_pcm_drain")]
-        internal static partial int PcmDrain(IntPtr pcm);
-
         [LibraryImport(AlsaLibrary, EntryPoint = "snd_pcm_pause")]
         internal static partial int PcmPause(IntPtr pcm, int enable);
 
-        [LibraryImport(AlsaLibrary, EntryPoint = "snd_pcm_state")]
-        internal static partial PCMState PcmState(IntPtr pcm);
-
         [LibraryImport(AlsaLibrary, EntryPoint = "snd_pcm_recover")]
         internal static partial int PcmRecover(IntPtr pcm, int err, int silent);
-
-        [LibraryImport(AlsaLibrary, EntryPoint = "snd_pcm_wait")]
-        internal static partial int PcmWait(IntPtr pcm, int timeout);
 
         // snd_pcm_avail_update / writei / readi return snd_pcm_sframes_t
         // (ssize_t, pointer-sized signed). Declaring them as int/ulong (as the
@@ -186,9 +177,6 @@ namespace NAudio.Wave.Alsa
         // snd_pcm_uframes_t* -> ref nuint (the PoC used ref ulong, wrong on 32-bit).
         [LibraryImport(AlsaLibrary, EntryPoint = "snd_pcm_hw_params_set_buffer_size_near")]
         internal static partial int PcmHwParamsSetBufferSizeNear(IntPtr pcm, IntPtr hwparams, ref nuint val);
-
-        [LibraryImport(AlsaLibrary, EntryPoint = "snd_pcm_hw_params_can_pause")]
-        internal static partial int PcmHwParamsCanPause(IntPtr hwparams);
 
         // --- Software parameters -----------------------------------------
 

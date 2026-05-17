@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Numerics.Tensors;
 using NAudio.Dsp;
 using NAudio.Wave;
@@ -9,8 +10,16 @@ namespace NAudio.Effects
     /// Applies a gain (volume) to the signal, expressed in decibels or as a linear
     /// multiplier. Gain changes are smoothed so automating the level never clicks.
     /// </summary>
-    public sealed class GainEffect : AudioEffect
+    public sealed class GainEffect : AudioEffect, IParameterized
     {
+        private IReadOnlyList<EffectParameter> parameters;
+
+        /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
+        public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
+        {
+            EffectParameter.Continuous("Gain", "dB", -60f, 24f, () => GainDb, v => GainDb = v)
+        };
+
         private readonly ParameterSmoother gain = new ParameterSmoother();
         private float linearGain = 1f;
 

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using NAudio.Dsp;
 using NAudio.Wave;
 
@@ -10,8 +11,20 @@ namespace NAudio.Effects
     /// division. A one-pole damping filter in the feedback path darkens successive
     /// repeats. In ping-pong mode (stereo) the echoes bounce between channels.
     /// </summary>
-    public sealed class DelayEffect : AudioEffect
+    public sealed class DelayEffect : AudioEffect, IParameterized
     {
+        private IReadOnlyList<EffectParameter> parameters;
+
+        /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
+        public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
+        {
+            EffectParameter.Continuous("Delay", "ms", 1f, 2000f, () => DelayMilliseconds, v => DelayMilliseconds = v),
+            EffectParameter.Continuous("Feedback", "", 0f, 0.99f, () => Feedback, v => Feedback = v),
+            EffectParameter.Continuous("Damping", "", 0f, 1f, () => Damping, v => Damping = v),
+            EffectParameter.Toggle("Ping-Pong", () => PingPong, v => PingPong = v),
+            EffectParameter.Toggle("Tempo Sync", () => TempoSync, v => TempoSync = v)
+        };
+
         private const double MaxDelaySeconds = 5.0;
 
         private DelayLine[] lines = Array.Empty<DelayLine>();

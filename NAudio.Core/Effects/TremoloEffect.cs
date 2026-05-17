@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using NAudio.Dsp;
 using NAudio.Wave;
 
@@ -9,8 +10,20 @@ namespace NAudio.Effects
     /// stereo signal it instead sweeps the signal between the speakers (constant-power
     /// auto-pan).
     /// </summary>
-    public sealed class TremoloEffect : AudioEffect
+    public sealed class TremoloEffect : AudioEffect, IParameterized
     {
+        private IReadOnlyList<EffectParameter> parameters;
+
+        /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
+        public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
+        {
+            EffectParameter.Continuous("Depth", "", 0f, 1f, () => Depth, v => Depth = v),
+            EffectParameter.Continuous("Rate", "Hz", 0.1f, 20f, () => RateHz, v => RateHz = v),
+            EffectParameter.Choice("Waveform", new[] { "Sine", "Triangle", "Sawtooth", "Square", "Sample & Hold" },
+                () => (int)Waveform, i => Waveform = (LfoWaveform)i),
+            EffectParameter.Toggle("Auto-Pan", () => AutoPan, v => AutoPan = v)
+        };
+
         private Lfo lfo;
 
         /// <summary>Modulation depth, 0 (no effect) to 1 (full). Default 0.5.</summary>

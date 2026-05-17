@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using NAudio.Dsp;
 using NAudio.Wave;
 
@@ -21,8 +22,23 @@ namespace NAudio.Effects
     /// channels) so the stereo image is preserved. Exposes the live gain reduction for
     /// metering.
     /// </summary>
-    public sealed class CompressorEffect : AudioEffect
+    public sealed class CompressorEffect : AudioEffect, IParameterized
     {
+        private IReadOnlyList<EffectParameter> parameters;
+
+        /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
+        public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
+        {
+            EffectParameter.Continuous("Threshold", "dB", -60f, 0f, () => ThresholdDb, v => ThresholdDb = v),
+            EffectParameter.Continuous("Ratio", "", 1f, 20f, () => Ratio, v => Ratio = v),
+            EffectParameter.Continuous("Knee", "dB", 0f, 24f, () => KneeDb, v => KneeDb = v),
+            EffectParameter.Continuous("Attack", "ms", 0.1f, 200f, () => AttackMs, v => AttackMs = v),
+            EffectParameter.Continuous("Release", "ms", 5f, 1000f, () => ReleaseMs, v => ReleaseMs = v),
+            EffectParameter.Continuous("Make-up", "dB", 0f, 24f, () => MakeUpGainDb, v => MakeUpGainDb = v),
+            EffectParameter.Choice("Detector", new[] { "Peak", "RMS" }, () => (int)Detector, i => Detector = (DetectorMode)i),
+            EffectParameter.Meter("Gain Reduction", "dB", 0f, 24f, () => GainReductionDb)
+        };
+
         private EnvelopeFollower reductionFollower;
         private float msEnvelope;
         private float rmsCoefficient;

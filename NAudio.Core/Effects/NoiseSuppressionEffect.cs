@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using NAudio.Dsp;
 using NAudio.Wave;
 
@@ -13,8 +14,18 @@ namespace NAudio.Effects
     /// suppressor; an ML tier (RNNoise) remains a future evaluation. Reports its frame
     /// size as latency.
     /// </summary>
-    public sealed class NoiseSuppressionEffect : AudioEffect
+    public sealed class NoiseSuppressionEffect : AudioEffect, IParameterized
     {
+        private IReadOnlyList<EffectParameter> parameters;
+
+        /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
+        public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
+        {
+            EffectParameter.Continuous("Aggressiveness", "", 0.5f, 4f, () => Aggressiveness, v => Aggressiveness = v),
+            EffectParameter.Continuous("Spectral Floor", "", 0f, 0.5f, () => SpectralFloor, v => SpectralFloor = v),
+            EffectParameter.Continuous("Noise Adapt", "", 0.001f, 0.5f, () => NoiseAdaptation, v => NoiseAdaptation = v)
+        };
+
         private FftProcessor fft;
         private VoiceActivityDetector vad;
         private float[] window;        // sqrt-Hann, analysis = synthesis (product = Hann, COLA at 50%)

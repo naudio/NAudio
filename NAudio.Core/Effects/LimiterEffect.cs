@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using NAudio.Dsp;
 using NAudio.Wave;
 
@@ -14,8 +15,20 @@ namespace NAudio.Effects
     /// a smooth release. Reports its look-ahead as
     /// <see cref="AudioEffect.LatencySamples"/> for delay compensation.
     /// </summary>
-    public sealed class LimiterEffect : AudioEffect
+    public sealed class LimiterEffect : AudioEffect, IParameterized
     {
+        private IReadOnlyList<EffectParameter> parameters;
+
+        /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
+        public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
+        {
+            EffectParameter.Continuous("Ceiling", "dB", -24f, 0f, () => CeilingDb, v => CeilingDb = v),
+            EffectParameter.Continuous("Release", "ms", 1f, 500f, () => ReleaseMs, v => ReleaseMs = v),
+            EffectParameter.Continuous("Look-ahead", "ms", 0.1f, 20f, () => LookaheadMs, v => LookaheadMs = v),
+            EffectParameter.Toggle("True Peak", () => TruePeak, v => TruePeak = v),
+            EffectParameter.Meter("Gain Reduction", "dB", 0f, 24f, () => GainReductionDb)
+        };
+
         private DelayLine[] delays = Array.Empty<DelayLine>();
         private Oversampler[] detectors = Array.Empty<Oversampler>();
         private float peakEnvelope;

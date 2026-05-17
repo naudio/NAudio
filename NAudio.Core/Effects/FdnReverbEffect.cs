@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using NAudio.Dsp;
 using NAudio.Wave;
 
@@ -12,8 +13,22 @@ namespace NAudio.Effects
     /// The flagship quality reverb. (Algorithm/topology reference only — original
     /// implementation.)
     /// </summary>
-    public sealed class FdnReverbEffect : AudioEffect
+    public sealed class FdnReverbEffect : AudioEffect, IParameterized
     {
+        private IReadOnlyList<EffectParameter> parameters;
+
+        /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
+        public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
+        {
+            EffectParameter.Continuous("Decay", "s", 0.1f, 10f, () => DecaySeconds, v => DecaySeconds = v),
+            EffectParameter.Continuous("Size", "", 0.1f, 2f, () => Size, v => Size = v),
+            EffectParameter.Continuous("Damping", "", 0f, 1f, () => Damping, v => Damping = v),
+            EffectParameter.Continuous("Mod Depth", "ms", 0f, 5f, () => ModulationDepthMs, v => ModulationDepthMs = v),
+            EffectParameter.Continuous("Mod Rate", "Hz", 0.05f, 5f, () => ModulationRateHz, v => ModulationRateHz = v),
+            EffectParameter.Continuous("Pre-Delay", "ms", 0f, 200f, () => PreDelayMs, v => PreDelayMs = v),
+            EffectParameter.Continuous("Width", "", 0f, 1f, () => Width, v => Width = v)
+        };
+
         private const int Lines = 8;
 
         // Mutually-incommensurate base delays (ms) — primes-ish to avoid resonances.

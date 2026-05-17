@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using NAudio.Dsp;
 using NAudio.Wave;
 
@@ -24,8 +25,22 @@ namespace NAudio.Effects
     /// output trim. Optional 2× or 4× oversampling moves the harmonics the non-linearity
     /// generates above the audible band before they can alias back down.
     /// </summary>
-    public sealed class SaturationEffect : AudioEffect
+    public sealed class SaturationEffect : AudioEffect, IParameterized
     {
+        private IReadOnlyList<EffectParameter> parameters;
+
+        /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
+        public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
+        {
+            EffectParameter.Continuous("Drive", "dB", 0f, 36f, () => DriveDb, v => DriveDb = v),
+            EffectParameter.Continuous("Output", "dB", -24f, 24f, () => OutputGainDb, v => OutputGainDb = v),
+            EffectParameter.Choice("Curve", new[] { "Tanh", "Cubic", "ArcTan", "Hard Clip" },
+                () => (int)Curve, i => Curve = (SaturationCurve)i),
+            EffectParameter.Choice("Oversample", new[] { "1x", "2x", "4x" },
+                () => OversampleFactor == 4 ? 2 : OversampleFactor == 2 ? 1 : 0,
+                i => OversampleFactor = i == 2 ? 4 : i == 1 ? 2 : 1)
+        };
+
         private Oversampler[] oversamplers = Array.Empty<Oversampler>();
         private int oversampleFactor = 2;
 

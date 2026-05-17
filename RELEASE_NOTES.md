@@ -47,6 +47,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * **DSP:** new `NAudio.Dsp.LinkwitzRileyCrossover` (LR4 multiband split) building block
  * **Effects:** `TransientShaperEffect` (dual-envelope attack/sustain shaping), split-band `DeEsserEffect`, and `MultibandCompressorEffect` (configurable LR4 bands, per-band threshold/ratio/attack/release/make-up with metering)
  * **Effects:** `PitchShiftEffect` — framework-integrated pitch shifting (per-channel Bernsee phase-vocoder), semitone control with FFT latency reporting
+ * **Effects:** optional `IParameterized` / `EffectParameter` model — effects can expose their controls (continuous/toggle/choice/meter) as a uniform list for generic UIs, presets and automation, without changing `IAudioEffect`; wired on the common effects
  * **Effects:** `SaturationEffect` (tanh/cubic/arctan/hard-clip wave-shaper with drive, output trim and optional 2×/4× oversampling) and `BitCrusherEffect` (bit-depth + sample-rate reduction); plus a reusable `NAudio.Dsp.Oversampler`
  * **Effects:** time/modulation — `DelayEffect` (tempo-syncable, feedback damping, ping-pong), `ChorusEffect`, `FlangerEffect`, `PhaserEffect`, `TremoloEffect` (with auto-pan); plus reusable `NAudio.Dsp.Lfo` and `NoteDivision`/`TempoTime` tempo helpers
  * **Effects:** `ConvolutionReverbEffect` (partitioned FFT convolution, mono or per-channel IR, reports latency) replacing the removed `ImpulseResponseConvolution`; plus a reusable `NAudio.Dsp.PartitionedConvolver`

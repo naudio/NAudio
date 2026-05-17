@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using NAudio.Dsp;
 using NAudio.Wave;
 
@@ -11,8 +12,18 @@ namespace NAudio.Effects
     /// dependable sound — the lightweight baseline reverb. Reimplemented idiomatically
     /// (denormal-safe, allocation-free steady state); not a transliteration.
     /// </summary>
-    public sealed class ReverbEffect : AudioEffect
+    public sealed class ReverbEffect : AudioEffect, IParameterized
     {
+        private IReadOnlyList<EffectParameter> parameters;
+
+        /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
+        public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
+        {
+            EffectParameter.Continuous("Room Size", "", 0f, 1f, () => RoomSize, v => RoomSize = v),
+            EffectParameter.Continuous("Damping", "", 0f, 1f, () => Damping, v => Damping = v),
+            EffectParameter.Continuous("Width", "", 0f, 1f, () => Width, v => Width = v)
+        };
+
         private const float FixedGain = 0.015f;
         private const float ScaleRoom = 0.28f;
         private const float OffsetRoom = 0.7f;

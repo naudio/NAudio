@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using NAudio.Dsp;
 using NAudio.Wave;
 
@@ -10,8 +11,16 @@ namespace NAudio.Effects
     /// changes are smoothed. Only stereo signals are affected; other channel counts
     /// pass through unchanged.
     /// </summary>
-    public sealed class StereoWidthEffect : AudioEffect
+    public sealed class StereoWidthEffect : AudioEffect, IParameterized
     {
+        private IReadOnlyList<EffectParameter> parameters;
+
+        /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
+        public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
+        {
+            EffectParameter.Continuous("Width", "", 0f, 2f, () => Width, v => Width = v)
+        };
+
         private readonly ParameterSmoother width = new ParameterSmoother();
         private float widthValue = 1f;
 

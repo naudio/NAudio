@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using NAudio.Dsp;
 using NAudio.Wave;
 
@@ -9,8 +10,16 @@ namespace NAudio.Effects
     /// through 0 (centre) to +1 (hard right). Pan changes are smoothed. Only stereo
     /// signals are affected; other channel counts pass through unchanged.
     /// </summary>
-    public sealed class PanEffect : AudioEffect
+    public sealed class PanEffect : AudioEffect, IParameterized
     {
+        private IReadOnlyList<EffectParameter> parameters;
+
+        /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
+        public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
+        {
+            EffectParameter.Continuous("Pan", "", -1f, 1f, () => Pan, v => Pan = v)
+        };
+
         private const float QuarterPi = MathF.PI / 4f;
 
         private readonly ParameterSmoother pan = new ParameterSmoother();

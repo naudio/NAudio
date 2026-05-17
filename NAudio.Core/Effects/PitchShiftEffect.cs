@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using NAudio.Dsp;
 using NAudio.Wave;
 
@@ -11,8 +12,16 @@ namespace NAudio.Effects
     /// separate future evaluation. Introduces FFT-frame latency
     /// (<see cref="AudioEffect.LatencySamples"/>).
     /// </summary>
-    public sealed class PitchShiftEffect : AudioEffect
+    public sealed class PitchShiftEffect : AudioEffect, IParameterized
     {
+        private IReadOnlyList<EffectParameter> parameters;
+
+        /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
+        public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
+        {
+            EffectParameter.Continuous("Pitch", "st", -12f, 12f, () => PitchSemitones, v => PitchSemitones = v)
+        };
+
         private SmbPitchShifter[] shifters = Array.Empty<SmbPitchShifter>();
         private float[][] scratch = Array.Empty<float[]>();
         private float semitones;

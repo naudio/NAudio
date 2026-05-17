@@ -23,7 +23,9 @@ namespace NAudio.MediaFoundation
     /// </remarks>
     public static class MediaFoundationApi
     {
-        private static bool initialized;
+        // Let's be sure that the static initializer assigns the below variables to correct initial values.
+        private static bool initialized = false;
+        private static uint queue_token = 0U;
 
         /// <summary>
         /// Initializes Media Foundation - only needs to be called once per process
@@ -33,10 +35,32 @@ namespace NAudio.MediaFoundation
             if (!initialized)
             {
                 MediaFoundationException.ThrowIfFailed(
-                    MediaFoundationInterop.MFStartup(MediaFoundationInterop.MF_VERSION, 0));
+                    MediaFoundationInterop.MFStartup(MediaFoundationInterop.MF_VERSION, 0)
+                );
+                queue_token = CreateWorkQueue(WorkQueueType.Standard);
                 initialized = true;
             }
         }
+
+        /// <summary>
+        /// Shuts down Media Foundation
+        /// </summary>
+        public static void Shutdown()
+        {
+            if (initialized)
+            {
+                MediaFoundationException.ThrowIfFailed(MediaFoundationInterop.MFShutdown());
+                ReleaseWorkQueue(queue_token);
+                queue_token = 0U;
+                initialized = false;
+            }
+        }
+
+        /// <summary>
+        /// Provides a standard Media Foundation work queue token used by NAudio <br />
+        /// Currently used by the async methods on our byte stream wrapper, leaving it here for additional features if so required.
+        /// </summary>
+        public static uint AllocatedWorkQueueToken => queue_token;
 
         /// <summary>
         /// Enumerate the installed Media Foundation transforms in the specified category
@@ -64,18 +88,6 @@ namespace NAudio.MediaFoundation
             foreach (var a in activates)
             {
                 yield return a;
-            }
-        }
-
-        /// <summary>
-        /// Shuts down Media Foundation
-        /// </summary>
-        public static void Shutdown()
-        {
-            if (initialized)
-            {
-                MediaFoundationException.ThrowIfFailed(MediaFoundationInterop.MFShutdown());
-                initialized = false;
             }
         }
 
@@ -164,6 +176,8 @@ namespace NAudio.MediaFoundation
         // IID_IStream (objidl.h)
         private static readonly Guid IID_IStream = new Guid("0000000C-0000-0000-C000-000000000046");
         private static readonly Guid IID_IMFByteStream = new("ad4c1b00-4bf7-422f-9175-756693d9130d");
+        private static readonly Guid IID_IMFAsyncResult = new("ac6b7889-0740-4d51-8619-905994a55cc6");
+        private static readonly Guid IID_IMFAsyncCallback = new("a27003cf-2354-4f2a-8d6a-ab7cff15437e");
 
         /// <summary>
         /// Creates a media foundation byte stream wrapping a managed <see cref="ComStream"/>.
@@ -270,5 +284,107 @@ namespace NAudio.MediaFoundation
             Marshal.Release(ptr);
             return rcw;
         }
+
+        /// <summary>
+        /// Creates an <see cref="Interfaces.IMFAsyncResult"/> object from an caller-implemented <see cref="Interfaces.IMFAsyncCallback"/>.
+        /// </summary>
+        /// <param name="callback">The callback.</param>
+        /// <param name="p_object">Optional. Object to be passed to the async result.</param>
+        /// <param name="p_state">Optional. State object to be passed to the async result.</param>
+        /// <returns>A new <see cref="Interfaces.IMFAsyncResult"/> instance.</returns>
+        internal static Interfaces.IMFAsyncResult CreateAsyncResult(Interfaces.IMFAsyncCallback callback, IntPtr p_object = default, IntPtr p_state = default)
+        {
+            ArgumentNullException.ThrowIfNull(callback);
+
+            IntPtr translated_callback = ComActivation.ComWrappers.GetOrCreateComInterfaceForObject(callback, CreateComInterfaceFlags.None);
+
+            // mdcdi1315: TODO: Test whether the below is valid.
+            try
+            {
+                Marshal.ThrowExceptionForHR(Marshal.QueryInterface(translated_callback, in IID_IMFAsyncCallback, out IntPtr callback_pointer));
+                int hr = MediaFoundationInterop.MFCreateAsyncResult(p_object, callback_pointer, p_state, out IntPtr result);
+                if (hr < 0)
+                {
+                    Marshal.Release(callback_pointer);
+                    throw new MediaFoundationException(hr);
+                }
+                else
+                {
+                    var rcw = ProjectFresh<Interfaces.IMFAsyncResult>(result);
+                    Marshal.Release(result);
+                    return rcw;
+                }
+            }
+            finally
+            {
+                Marshal.Release(translated_callback);
+            }
+        }
+
+        /// <summary>
+        /// Puts a work item to the specified Media Foundation work queue.
+        /// </summary>
+        /// <param name="queue">The work queue token identifying the work queue to put the work item to.</param>
+        /// <param name="callback">The callback defining the work to call later</param>
+        /// <param name="p_state">Optional. A state object representing the state of the current call.</param>
+        /// <returns>HRESULT value indicating whether the work item was inserted to the specified work queue.</returns>
+        internal static int PutWorkItem(uint queue, Interfaces.IMFAsyncCallback callback, IntPtr p_state)
+        {
+            ArgumentNullException.ThrowIfNull(callback);
+
+            IntPtr translated_callback = ComActivation.ComWrappers.GetOrCreateComInterfaceForObject(callback, CreateComInterfaceFlags.None);
+
+            try
+            {
+                Marshal.ThrowExceptionForHR(Marshal.QueryInterface(translated_callback, in IID_IMFAsyncCallback, out IntPtr callback_pointer));
+                return MediaFoundationInterop.MFPutWorkItem(queue, callback_pointer, p_state);
+            }
+            finally
+            {
+                Marshal.Release(translated_callback);
+            }
+        }
+
+        /// <summary>
+        /// Puts a work item to the NAudio's Media Foundation work queue (Can be queried by <see cref="AllocatedWorkQueueToken"/> property)
+        /// </summary>
+        /// <param name="callback">The callback defining the work to call later</param>
+        /// <param name="p_state">Optional. A state object representing the state of the current call.</param>
+        /// <returns>HRESULT value indicating whether the work item was inserted to the NAudio work queue.</returns>
+        internal static int PutWorkItem(Interfaces.IMFAsyncCallback callback, IntPtr p_state) => PutWorkItem(queue_token, callback, p_state);
+
+        internal static int InvokeCallback(Interfaces.IMFAsyncResult result)
+        {
+            ArgumentNullException.ThrowIfNull(result);
+
+            IntPtr translated_callback = ComActivation.ComWrappers.GetOrCreateComInterfaceForObject(result, CreateComInterfaceFlags.None);
+
+            try
+            {
+                Marshal.ThrowExceptionForHR(Marshal.QueryInterface(translated_callback, in IID_IMFAsyncResult, out IntPtr result_pointer));
+                return MediaFoundationInterop.MFInvokeCallback(result_pointer);
+            }
+            finally
+            {
+                Marshal.Release(translated_callback);
+            }
+        }
+
+        /// <summary>
+        /// Creates a work queue of the specified type.
+        /// </summary>
+        /// <param name="type">The type of the work queue to create (Standard, Window, Multi-threaded)</param>
+        /// <returns>Queue token, can be subsequently used to put work items or dispose it by calling <see cref="ReleaseWorkQueue(uint)"/>.</returns>
+        internal static uint CreateWorkQueue(WorkQueueType type)
+        {
+            MediaFoundationException.ThrowIfFailed(MediaFoundationInterop.MFAllocateWorkQueueEx((uint)type, out uint work_queue_id));
+            return work_queue_id;
+        }
+
+        /// <summary>Disposes a previously created work queue.</summary>
+        /// <param name="queue_token">Token returned by the <see cref="CreateWorkQueue(WorkQueueType)"/> method.</param>
+        internal static void ReleaseWorkQueue(uint queue_token) => MediaFoundationException.ThrowIfFailed(MediaFoundationInterop.MFUnlockWorkQueue(queue_token));
+
+
     }
 }

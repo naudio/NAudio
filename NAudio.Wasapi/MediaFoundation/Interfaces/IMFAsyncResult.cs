@@ -10,7 +10,7 @@ namespace NAudio.MediaFoundation.Interfaces
     ///     This interface is used to represent the result from an asynchronous operation. <br />
     ///     For most Media Foundation components and applications that need to 
     ///     create an <see cref="IMFAsyncResult"/> implementation, 
-    ///     CreateAsyncResult(object, IMFAsyncCallback, object)
+    ///     <see cref="MediaFoundationApi.CreateAsyncResult(IMFAsyncCallback, nint, nint)"/>
     ///     , which instantiates the MF implementation of this interface, will suffice. <br />
     ///     Any implementation of <see cref="IMFAsyncResult"/> must inherit from the
     ///     MFASYNCRESULT structure defined in mfapi.h

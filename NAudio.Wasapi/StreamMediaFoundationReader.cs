@@ -8,19 +8,41 @@ using NAudio.MediaFoundation.Interfaces;
 namespace NAudio.Wave
 {
     /// <summary>
-    /// MediaFoundationReader supporting reading from a stream
+    /// MediaFoundationReader supporting reading from a stream <br />
+    /// Will only work in Windows Vista and above. <br />
+    /// Automatically converts to PCM. <br />
+    /// If it is a video file with multiple audio streams, it will pick out the first audio stream.
     /// </summary>
     public class StreamMediaFoundationReader : MediaFoundationReader
     {
         private readonly Stream stream;
+        private readonly MFByteStreamFromStream wrapper;
 
         /// <summary>
         /// Constructs a new media foundation reader from a stream
         /// </summary>
+        /// <param name="stream">The data stream to initialize the reader from.</param>
+        /// <param name="settings">Optional. Additional options that affect how the reader reads data.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="stream"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentException"><paramref name="stream"/> is unreadable, or unseekable.</exception>
         public StreamMediaFoundationReader(Stream stream, MediaFoundationReaderSettings settings = null)
         {
-            this.stream = stream;
-            Init(settings);
+            ArgumentNullException.ThrowIfNull(stream);
+            if (!stream.CanRead)
+            {
+                throw new ArgumentException("Stream must be readable.", nameof(stream));
+            }
+            else if (!stream.CanSeek)
+            {
+                throw new ArgumentException("Stream must be seekable.", nameof(stream));
+            }
+            else
+            {
+                this.stream = stream;
+                // Prepare the stream wrapper ahead-of-time.
+                this.wrapper = new MFByteStreamFromStream(stream);
+                Init(settings);
+            }
         }
 
         /// <summary>
@@ -28,7 +50,8 @@ namespace NAudio.Wave
         /// </summary>
         private protected override IMFSourceReader CreateReader(MediaFoundationReaderSettings settings)
         {
-            IntPtr byteStreamPtr = MediaFoundationApi.CreateByteStream(new MFByteStreamFromStream(stream));
+            IntPtr byteStreamPtr = MediaFoundationApi.CreateByteStream(wrapper);
+            wrapper.ResetPosition();
             try
             {
                 var reader = MediaFoundationApi.CreateSourceReaderFromByteStream(byteStreamPtr);
@@ -53,6 +76,35 @@ namespace NAudio.Wave
             {
                 // Source reader AddRef'd the byte stream internally; we drop our ref.
                 Marshal.Release(byteStreamPtr);
+            }
+        }
+
+        /// <summary>
+        /// Cleanup the wrapper implementation
+        /// </summary>
+        protected override void Dispose(bool disposing)
+        {
+            try
+            {
+                base.Dispose(disposing);
+            }
+            finally
+            {
+                if (disposing)
+                {
+                    // Now we know that the reader is disposed, so we can dispose our wrapper and the stream as well.
+                    // Also serialize access here.
+                    System.Threading.Monitor.Enter(this);
+                    try
+                    {
+                        wrapper.Dispose();
+                    }
+                    finally
+                    {
+                        stream.Dispose();
+                        System.Threading.Monitor.Exit(this);
+                    }
+                }
             }
         }
     }

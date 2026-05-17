@@ -5,8 +5,10 @@ using System.Threading;
 using System.Runtime.CompilerServices;
 
 using NAudio.Utils;
+using NAudio.Wasapi.CoreAudioApi;
 using NAudio.MediaFoundation.Interfaces;
 
+using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 
 namespace NAudio.MediaFoundation
@@ -17,21 +19,20 @@ namespace NAudio.MediaFoundation
     /// Note: The caller is responsible for freeing the stream that is wrapped.
     /// </summary>
     [GeneratedComClass]
-    internal sealed partial class MFByteStreamFromStream : IMFByteStream
+    internal sealed partial class MFByteStreamFromStream : IMFByteStream, IMFAttributes, IDisposable
     {
-        private uint queue_token;
         private readonly Stream stream;
         private readonly long wrapper_init_pos;
         private volatile AsyncWorkData asyncdata;
+        private IntPtr natively_allocated_attributes_ptr;
+        private IMFAttributes natively_allocated_attributes;
 
         public MFByteStreamFromStream(Stream stream)
         {
-            MediaFoundationException.ThrowIfFailed(
-                MediaFoundationInterop.MFAllocateWorkQueueEx(MediaFoundationInterop.MF_STANDARD_WORKQUEUE, out queue_token)
-            );
             asyncdata = null;
             this.stream = stream;
             try { wrapper_init_pos = stream.Position; } catch { wrapper_init_pos = 0; }
+            (natively_allocated_attributes_ptr, natively_allocated_attributes) = MediaFoundationApi.CreateAttributes(1);
         }
 
         // Asyncronous work data for an asyncronous request.
@@ -50,20 +51,19 @@ namespace NAudio.MediaFoundation
             }
         }
 
-        public int Close()
-        {
-            // Possibly this is what done by the IStream -> IMFByteStream wrapper provided by Microsoft
-            // This valid but flaky technique also allows us to double-initialize the Media Foundation reader
-            try { stream.Position = wrapper_init_pos; } catch { }
-            if (queue_token != 0U)
-            {
-                int result = MediaFoundationInterop.MFUnlockWorkQueue(queue_token);
-                queue_token = 0U;
-                return result;
-            }
-            else
-                return CommonHResults.S_OK;
-        }
+        #region IMFByteStream Interface Implementation
+
+        // mdcdi1315: Do not trust this.
+        // Main rationale for deciding to not trust this are two reasons:
+        // 1. In some of my tests this can be avoided to be called by the source reader,
+        // and as such the reader initializes successfully the first time,
+        // but when reading from the audio thread, it fails with an exception.
+        // I uncovered this from my own app and fails in 30% of cases.
+        // Most notable on complex file formats, such as FLAC.
+        // Specifically, it fails with 'The URL of the given bytestream is unsupported', flagging that the stream has not been repositioned.
+        // 2. Any source reader and sink writer may fail to properly implement this in the native code,
+        // due to an omission or so, so let's try to be a bit less error-prone.
+        public int Close() => CommonHResults.S_OK;
 
         public int Flush()
         {
@@ -71,30 +71,30 @@ namespace NAudio.MediaFoundation
             {
                 stream.Flush();
             }
-            catch (System.IO.IOException)
+            catch (IOException)
             {
-                return CommonHResults.E_FAIL;
+                // Flush is called during writing only, so IOException here could be mapped to STG_E_WRITEFAULT.
+                return CommonHResults.STG_E_WRITEFAULT;
             }
             return CommonHResults.S_OK;
         }
 
         public int GetCapabilities(out int pdwCapabilities)
         {
-            int cps = 0;
+            pdwCapabilities = 0;
             if (stream.CanSeek)
             {
-                cps |= IMFByteStream.MFBYTESTREAM_CAPABILITY_IS_SEEKABLE;
+                pdwCapabilities |= IMFByteStream.MFBYTESTREAM_CAPABILITY_IS_SEEKABLE;
             }
             if (stream.CanWrite)
             {
-                cps |= IMFByteStream.MFBYTESTREAM_CAPABILITY_IS_WRITABLE;
+                pdwCapabilities |= IMFByteStream.MFBYTESTREAM_CAPABILITY_IS_WRITABLE;
             }
             if (stream.CanRead)
             {
-                cps |= IMFByteStream.MFBYTESTREAM_CAPABILITY_IS_READABLE;
-                cps |= IMFByteStream.MFBYTESTREAM_CAPABILITY_DOES_NOT_USE_NETWORK;
+                pdwCapabilities |= IMFByteStream.MFBYTESTREAM_CAPABILITY_IS_READABLE;
+                pdwCapabilities |= IMFByteStream.MFBYTESTREAM_CAPABILITY_DOES_NOT_USE_NETWORK;
             }
-            pdwCapabilities = cps;
             return CommonHResults.S_OK;
         }
 
@@ -103,6 +103,11 @@ namespace NAudio.MediaFoundation
             try
             {
                 pqwPosition = stream.Position;
+            }
+            catch (IOException)
+            {
+                pqwPosition = 0L;
+                return CommonHResults.STG_E_SEEKERROR;
             }
             catch (NotSupportedException)
             {
@@ -137,7 +142,7 @@ namespace NAudio.MediaFoundation
                 pfEndOfStream = 0;
                 return CommonHResults.E_FAIL;
             }
-            catch (System.IO.IOException)
+            catch (IOException)
             {
                 pfEndOfStream = 0;
                 return CommonHResults.STG_E_SEEKERROR;
@@ -164,7 +169,7 @@ namespace NAudio.MediaFoundation
                 }
                 return CommonHResults.S_OK;
             }
-            catch (System.IO.IOException)
+            catch (IOException)
             {
                 pqwCurrentPosition = 0;
                 return CommonHResults.STG_E_SEEKERROR;
@@ -180,9 +185,9 @@ namespace NAudio.MediaFoundation
         {
             try
             {
-                _ = stream.Seek(qwPosition, System.IO.SeekOrigin.Begin);
+                _ = stream.Seek(qwPosition, SeekOrigin.Begin);
             }
-            catch (System.IO.IOException)
+            catch (IOException)
             {
                 return CommonHResults.STG_E_SEEKERROR;
             }
@@ -203,7 +208,7 @@ namespace NAudio.MediaFoundation
             {
                 return CommonHResults.E_FAIL;
             }
-            catch (System.IO.IOException)
+            catch (IOException)
             {
                 return CommonHResults.STG_E_WRITEFAULT;
             }
@@ -212,43 +217,49 @@ namespace NAudio.MediaFoundation
 
         public unsafe int Write(nint pb, int cb, out int pcbWritten)
         {
-            byte[] rented = System.Buffers.ArrayPool<byte>.Shared.Rent(cb);
+            byte[] rented = null;
             try
             {
+                rented = System.Buffers.ArrayPool<byte>.Shared.Rent(cb);
                 Unsafe.CopyBlockUnaligned(ref rented[0], ref Unsafe.AsRef<byte>(pb.ToPointer()), (uint)cb);
                 stream.Write(rented.AsSpan(0, pcbWritten = cb));
                 return CommonHResults.S_OK;
-            }
-            catch (System.IO.IOException)
-            {
-                pcbWritten = 0;
-                return CommonHResults.E_FAIL;
             }
             catch (OutOfMemoryException)
             {
                 pcbWritten = 0;
                 return CommonHResults.E_OUTOFMEMORY;
             }
+            catch (IOException)
+            {
+                pcbWritten = 0;
+                return CommonHResults.STG_E_WRITEFAULT;
+            }
             catch (NotSupportedException)
             {
                 pcbWritten = 0;
-                return CommonHResults.STG_E_READFAULT;
+                return CommonHResults.STG_E_WRITEFAULT;
             }
             catch
             {
                 pcbWritten = 0;
                 return CommonHResults.E_FAIL;
-            } finally
+            }
+            finally
             {
-                System.Buffers.ArrayPool<byte>.Shared.Return(rented);
+                if (rented is not null)
+                {
+                    System.Buffers.ArrayPool<byte>.Shared.Return(rented);
+                }
             }
         }
 
         public unsafe int Read(nint pb, int cb, out int pcbRead)
         {
-            byte[] rented = System.Buffers.ArrayPool<byte>.Shared.Rent(cb);
+            byte[] rented = null;
             try
             {
+                rented = System.Buffers.ArrayPool<byte>.Shared.Rent(cb);
                 int read = stream.Read(rented);
                 if (read == 0)
                 {
@@ -261,11 +272,6 @@ namespace NAudio.MediaFoundation
                 }
                 return CommonHResults.S_OK;
             }
-            catch (System.IO.IOException)
-            {
-                pcbRead = 0;
-                return CommonHResults.E_FAIL;
-            }
             catch (OutOfMemoryException)
             {
                 pcbRead = 0;
@@ -276,13 +282,22 @@ namespace NAudio.MediaFoundation
                 pcbRead = 0;
                 return CommonHResults.STG_E_READFAULT;
             }
+            catch (IOException)
+            {
+                pcbRead = 0;
+                return CommonHResults.STG_E_READFAULT;
+            }
             catch
             {
                 pcbRead = 0;
                 return CommonHResults.E_FAIL;
-            } finally
+            }
+            finally
             {
-                System.Buffers.ArrayPool<byte>.Shared.Return(rented);
+                if (rented is not null)
+                {
+                    System.Buffers.ArrayPool<byte>.Shared.Return(rented);
+                }
             }
         }
 
@@ -304,29 +319,30 @@ namespace NAudio.MediaFoundation
                 sp.Return(temp);
                 return CommonHResults.E_ILLEGAL_METHOD_CALL;
             }
-            return MediaFoundationInterop.MFPutWorkItem(queue_token, pCallback, punkState);
+            return MediaFoundationApi.PutWorkItem(pCallback, punkState);
         }
 
-        public unsafe int EndRead(nint pResult, out int pcbRead)
+        public unsafe int EndRead(IMFAsyncResult pResult, out int pcbRead)
         {
             AsyncWorkData d = Interlocked.Exchange(ref asyncdata, null); // This will immediately null the field so that the next async operation can be queued
             if (d is null) // Invalid to call without context
             {
                 pcbRead = 0;
+                // mdcdi1315: This is invalid case, should not be passed through the result.
                 return CommonHResults.E_ILLEGAL_METHOD_CALL; 
             }
             try
             {
                 // Calling the heavy method inside the async execution.
                 // Note that I do not call the Stream's dedicated ReadAsync method since we are already into an asyncronous context.
-                pcbRead = stream.Read(d.AllocatedDotNetBuffer, 0, d.DataSize);
+                pcbRead = stream.Read(d.AllocatedDotNetBuffer.AsSpan(0, d.DataSize));
                 fixed (byte* p = d.AllocatedDotNetBuffer)
                 {
                     Unsafe.CopyBlockUnaligned(d.NativePointer.ToPointer(), p, (uint)pcbRead);
                 }
                 return CommonHResults.S_OK;
             }
-            catch (System.IO.IOException)
+            catch (IOException)
             {
                 pcbRead = 0;
                 return CommonHResults.STG_E_READFAULT;
@@ -360,16 +376,17 @@ namespace NAudio.MediaFoundation
                 sp.Return(temp);
                 return CommonHResults.E_ILLEGAL_METHOD_CALL;
             }
-            return MediaFoundationInterop.MFPutWorkItem(queue_token, pCallback, punkState);
+            return MediaFoundationApi.PutWorkItem(pCallback, punkState);
         }
 
-        public unsafe int EndWrite(nint pResult, out int pcbWritten)
+        public unsafe int EndWrite(IMFAsyncResult pResult, out int pcbWritten)
         {
             AsyncWorkData d = Interlocked.Exchange(ref asyncdata, null); // This will immediately null the field so that the next async operation can be queued
             if (d is null) // Invalid to call without context
             {
                 pcbWritten = 0;
-                return CommonHResults.E_ILLEGAL_METHOD_CALL; 
+                // mdcdi1315: This is invalid case, should not be passed through the result.
+                return CommonHResults.E_ILLEGAL_METHOD_CALL;
             }
             try
             {
@@ -381,22 +398,117 @@ namespace NAudio.MediaFoundation
                 // Calling the heavy method inside the async execution.
                 // Note that I do not call the Stream's dedicated WriteAsync method since we are already into an asyncronous context.
                 stream.Write(d.AllocatedDotNetBuffer.AsSpan(0, pcbWritten));
-                return CommonHResults.S_OK;
             }
-            catch (System.IO.IOException)
+            catch (IOException)
             {
                 pcbWritten = 0;
-                return CommonHResults.E_FAIL;
+                pResult.SetStatus(CommonHResults.E_FAIL);
             }
             catch (NotSupportedException)
             {
                 pcbWritten = 0;
-                return CommonHResults.STG_E_WRITEFAULT;
+                pResult.SetStatus(CommonHResults.STG_E_WRITEFAULT);
             }
             finally
             {
                 // Either case or failure this buffer will be returned to the array pool
                 System.Buffers.ArrayPool<byte>.Shared.Return(d.AllocatedDotNetBuffer);
+            }
+            pResult.SetStatus(CommonHResults.S_OK);
+            return CommonHResults.S_OK;
+        }
+
+        #endregion
+
+        #region IMFAttributes Interface Implementation
+
+        public int GetItem(in Guid guidKey, nint pValue) => natively_allocated_attributes.GetItem(guidKey, pValue);
+
+        public int GetItemType(in Guid guidKey, out int pType) => natively_allocated_attributes.GetItemType(guidKey, out pType);
+
+        public int CompareItem(in Guid guidKey, nint value, out int pbResult) => natively_allocated_attributes.CompareItem(guidKey, value, out pbResult);
+
+        public int Compare(nint pTheirs, int matchType, out int pbResult) => natively_allocated_attributes.Compare(pTheirs, matchType, out pbResult);
+
+        public int GetUINT32(in Guid guidKey, out int punValue) => natively_allocated_attributes.GetUINT32(guidKey, out punValue);
+
+        public int GetUINT64(in Guid guidKey, out long punValue) => natively_allocated_attributes.GetUINT64(guidKey, out punValue);
+
+        public int GetDouble(in Guid guidKey, out double pfValue) => natively_allocated_attributes.GetDouble(guidKey, out pfValue);
+
+        public int GetGUID(in Guid guidKey, out Guid pguidValue) => natively_allocated_attributes.GetGUID(guidKey, out pguidValue);
+
+        public int GetStringLength(in Guid guidKey, out int pcchLength) => natively_allocated_attributes.GetStringLength(guidKey, out pcchLength);
+
+        public int GetString(in Guid guidKey, nint pwszValue, int cchBufSize, out int pcchLength) => natively_allocated_attributes.GetString(guidKey, pwszValue, cchBufSize, out pcchLength);
+
+        public int GetAllocatedString(in Guid guidKey, out nint ppwszValue, out int pcchLength) => natively_allocated_attributes.GetAllocatedString(guidKey, out ppwszValue, out pcchLength);
+
+        public int GetBlobSize(in Guid guidKey, out int pcbBlobSize) => natively_allocated_attributes.GetBlobSize(guidKey, out pcbBlobSize);
+
+        public int GetBlob(in Guid guidKey, nint pBuf, int cbBufSize, out int pcbBlobSize) => natively_allocated_attributes.GetBlob(guidKey, pBuf, cbBufSize, out pcbBlobSize);
+
+        public int GetAllocatedBlob(in Guid guidKey, out nint ppBuf, out int pcbSize) => natively_allocated_attributes.GetAllocatedBlob(guidKey, out ppBuf, out pcbSize);
+
+        public int GetUnknown(in Guid guidKey, in Guid riid, out nint ppv) => natively_allocated_attributes.GetUnknown(guidKey, riid, out ppv);
+
+        public int SetItem(in Guid guidKey, nint value) => natively_allocated_attributes.SetItem(guidKey, value);
+
+        public int DeleteItem(in Guid guidKey) => natively_allocated_attributes.DeleteItem(guidKey);
+
+        public int DeleteAllItems() => natively_allocated_attributes.DeleteAllItems();
+
+        public int SetUINT32(in Guid guidKey, int unValue) => natively_allocated_attributes.SetUINT32(guidKey, unValue);
+
+        public int SetUINT64(in Guid guidKey, long unValue) => natively_allocated_attributes.SetUINT64(guidKey, unValue);
+
+        public int SetDouble(in Guid guidKey, double fValue) => natively_allocated_attributes.SetDouble(guidKey, fValue);
+
+        public int SetGUID(in Guid guidKey, in Guid guidValue) => natively_allocated_attributes.SetGUID(guidKey, guidValue);
+
+        public int SetString(in Guid guidKey, [MarshalAs(UnmanagedType.LPWStr)] string wszValue) => natively_allocated_attributes.SetString(guidKey, wszValue);
+
+        public int SetBlob(in Guid guidKey, nint pBuf, int cbBufSize) => natively_allocated_attributes.SetBlob(guidKey, pBuf, cbBufSize);
+
+        public int SetUnknown(in Guid guidKey, nint pUnknown) => natively_allocated_attributes.SetUnknown(guidKey, pUnknown);
+
+        public int LockStore() => natively_allocated_attributes.LockStore();
+
+        public int UnlockStore() => natively_allocated_attributes.UnlockStore();
+
+        public int GetCount(out int pcItems) => natively_allocated_attributes.GetCount(out pcItems);
+
+        public int GetItemByIndex(int unIndex, out Guid pGuidKey, nint pValue) => natively_allocated_attributes.GetItemByIndex(unIndex, out pGuidKey, pValue);
+
+        public int CopyAllItems(nint pDest) => natively_allocated_attributes.CopyAllItems(pDest);
+
+        #endregion
+
+        // Resets the position of the wrapper to the position captured during when the wrapper was initializing.
+        // This allows us to double-initialize the Media Foundation source reader (and any other object that uses this).
+        public void ResetPosition()
+        {
+            try { stream.Position = wrapper_init_pos; } catch { }
+        }
+
+        // Releases the natively allocated IMFAttributes instance required to be exposed for the source reader.
+        public void Dispose()
+        {
+            // Serialize access to this method - it can be sensitive.
+            // Do not use the lock statement as it is flagged by C# as 'do not use for new designs'.
+            Monitor.Enter(this);
+            try
+            {
+                if (natively_allocated_attributes_ptr != IntPtr.Zero)
+                {
+                    ComActivation.ReleaseBoth(natively_allocated_attributes, natively_allocated_attributes_ptr);
+                    natively_allocated_attributes = null;
+                    natively_allocated_attributes_ptr = IntPtr.Zero;
+                }
+            }
+            finally
+            {
+                Monitor.Exit(this);
             }
         }
     }

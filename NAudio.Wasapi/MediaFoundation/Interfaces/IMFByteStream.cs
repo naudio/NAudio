@@ -106,7 +106,7 @@ namespace NAudio.MediaFoundation.Interfaces
         int BeginRead(IntPtr pb, int cb, IMFAsyncCallback pCallback, IntPtr punkState);
 
         [PreserveSig]
-        int EndRead(IntPtr pResult, out int pcbRead);
+        int EndRead(IMFAsyncResult pResult, out int pcbRead);
 
         [PreserveSig]
         int Write(IntPtr pb, int cb, out int pcbWritten);
@@ -115,7 +115,7 @@ namespace NAudio.MediaFoundation.Interfaces
         int BeginWrite(IntPtr pb, int cb, IMFAsyncCallback pCallback, IntPtr punkState);
 
         [PreserveSig]
-        int EndWrite(IntPtr pResult, out int pcbWritten);
+        int EndWrite(IMFAsyncResult pResult, out int pcbWritten);
 
         [PreserveSig]
         int Seek(int seekOrigin, long llSeekOffset, int dwSeekFlags, out long pqwCurrentPosition);

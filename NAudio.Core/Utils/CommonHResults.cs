@@ -63,7 +63,7 @@ namespace NAudio.Utils
         public const int E_ILLEGAL_METHOD_CALL = unchecked((int)0x8000000E);
 
         /// <summary>String not null terminated.</summary>
-        public const uint E_STRING_NOT_NULL_TERMINATED = unchecked((System.UInt32)0x80000017E);
+        public const int E_STRING_NOT_NULL_TERMINATED = unchecked((int)0x80000017E);
 
         /// <summary>A delegate was assigned when not allowed.</summary>
         public const int E_ILLEGAL_DELEGATE_ASSIGNMENT = unchecked((int)0x80000018);

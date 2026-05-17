@@ -62,9 +62,15 @@ remains a deliberate future evaluation; AEC stays Phase 5. 91 Effects unit tests
 **Update (Phase 4 wave a landed):** reusable `NAudio.Dsp.LinkwitzRileyCrossover` (LR4)
 and the true-peak `LimiterEffect` upgrade (oversampled inter-sample-peak detection, on by
 default) — closes the Phase-1 isolated-transient-overshoot caveat. 98 Effects unit tests
-pass on `net10.0`; `NAudio.Core` builds clean. Remaining Phase 4: (b) transient shaper +
-de-esser, (c) multiband compressor, (d) `PitchShiftEffect` (SMB wrapper; Signalsmith port
-deferred).
+pass on `net10.0`; `NAudio.Core` builds clean.
+
+**Update (Phase 4 waves b–d landed — Phase 4 complete):** `TransientShaperEffect`,
+split-band `DeEsserEffect`, `MultibandCompressorEffect` (configurable LR4 bands), and
+`PitchShiftEffect` (Bernsee phase-vocoder wrapped in the framework; the Signalsmith
+high-quality tier remains a deliberate separate future evaluation, not built). 109
+Effects unit tests pass on `net10.0`; `NAudio.Core` builds clean. Phases 1–4 of the
+music suite are done. Remaining roadmap: Phase 5 (AEC — its own milestone) and the
+cross-cutting live-input evaluation demo (design-TBD, paired with VST3 hosting).
 
 **Goal:** Ship a high-quality, pure-C#, cross-platform effects suite as a first-class part of
 NAudio 3. Two audiences:

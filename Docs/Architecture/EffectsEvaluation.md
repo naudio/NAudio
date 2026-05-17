@@ -38,8 +38,14 @@ reusable `NAudio.Dsp.Oversampler`. 55 Effects unit tests pass on `net10.0`.
 feedback damping, ping-pong), `ChorusEffect`, `FlangerEffect`, `PhaserEffect`,
 `TremoloEffect` (+ auto-pan), plus reusable `NAudio.Dsp.Lfo` and `NoteDivision`/
 `TempoTime`. **70 Effects unit tests pass on `net10.0`; `NAudio.Core` builds clean.**
-Phase 1 (the core music-effects suite) is done. Next up per the roadmap: Phase 2
-(reverb — partitioned-convolution on `FftProcessor`, then algorithmic FDN).
+Phase 1 (the core music-effects suite) is done.
+
+**Update (Phase 2 wave a landed):** `ConvolutionReverbEffect` + reusable
+`NAudio.Dsp.PartitionedConvolver` (uniformly-partitioned overlap-save FFT convolution on
+`FftProcessor`), replacing the removed `ImpulseResponseConvolution`. Numerically verified
+against direct convolution. 77 Effects unit tests pass on `net10.0`; `NAudio.Core` builds
+clean. Remaining Phase 2 waves: (b) Freeverb-inspired Schroeder–Moorer reverb,
+(c) Signalsmith-referenced FDN reverb.
 
 **Goal:** Ship a high-quality, pure-C#, cross-platform effects suite as a first-class part of
 NAudio 3. Two audiences:
@@ -344,6 +350,22 @@ Each phase is independently shippable and independently back-out-able, mirroring
 
 - **Phase 5 — Acoustic echo cancellation.** Its own milestone. Target a Speex-MDF-class
   port first; WebRTC AEC3 only if there is sustained demand and maintenance appetite.
+
+### Live monitoring demo (cross-cutting tooling — design TBD)
+
+A planned deliverable, not tied to one phase: a GUI demo (WPF/NAudioDemo) that runs a
+**live input → effect chain → output** path so effects can be auditioned on real guitar
+or microphone input. This is the primary *subjective* quality-evaluation tool — the
+"real listening test" the cross-cutting note below calls for — and should be slotted in
+once there is a usable effect set (Phase 1 already qualifies; revisit after Phase 2).
+**It needs its own design discussion before implementation.** Open questions: low-latency
+backend choice per-OS (WASAPI exclusive / ASIO on Windows), buffer-size/latency controls,
+feedback-safety (mute-on-start, output≠input device), per-effect parameter UI, and chain
+ordering. **It may also be the foundation for testing the in-progress VST3 hosting
+work (separate branch)** — the same live input→chain→output harness can host a VST3
+plugin in place of (or alongside) a native `IAudioEffect`, so the host abstraction should
+be designed with both in mind. Treat the VST3 linkage as an explicit design input when
+that discussion happens.
 
 Cross-cutting, every phase: allocation-free steady state, AOT/trim-safe, `Span<float>`,
 numerical-correctness unit tests (the repo already does this — e.g. `BiQuadFilterTests`,

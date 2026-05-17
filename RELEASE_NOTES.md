@@ -46,6 +46,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * **Effects:** dynamics — `CompressorEffect` (soft knee, peak/RMS detector, channel-linked), `LimiterEffect` (brick-wall with look-ahead, reports latency), and `GateEffect` (gate/downward-expander with hysteresis and hold); all expose live `GainReductionDb` for metering
  * **Effects:** `SaturationEffect` (tanh/cubic/arctan/hard-clip wave-shaper with drive, output trim and optional 2×/4× oversampling) and `BitCrusherEffect` (bit-depth + sample-rate reduction); plus a reusable `NAudio.Dsp.Oversampler`
  * **Effects:** time/modulation — `DelayEffect` (tempo-syncable, feedback damping, ping-pong), `ChorusEffect`, `FlangerEffect`, `PhaserEffect`, `TremoloEffect` (with auto-pan); plus reusable `NAudio.Dsp.Lfo` and `NoteDivision`/`TempoTime` tempo helpers
+ * **Effects:** `ConvolutionReverbEffect` (partitioned FFT convolution, mono or per-channel IR, reports latency) replacing the removed `ImpulseResponseConvolution`; plus a reusable `NAudio.Dsp.PartitionedConvolver`
 
 #### Demo apps and Test Harnesses
 

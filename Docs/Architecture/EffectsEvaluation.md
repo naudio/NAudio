@@ -44,8 +44,13 @@ Phase 1 (the core music-effects suite) is done.
 `NAudio.Dsp.PartitionedConvolver` (uniformly-partitioned overlap-save FFT convolution on
 `FftProcessor`), replacing the removed `ImpulseResponseConvolution`. Numerically verified
 against direct convolution. 77 Effects unit tests pass on `net10.0`; `NAudio.Core` builds
-clean. Remaining Phase 2 waves: (b) Freeverb-inspired Schroeder–Moorer reverb,
-(c) Signalsmith-referenced FDN reverb.
+clean.
+
+**Update (Phase 2 waves b+c landed — Phase 2 complete):** `ReverbEffect`
+(Freeverb-inspired Schroeder–Moorer baseline) and `FdnReverbEffect` (Signalsmith-style
+modulated feedback-delay network — the flagship). 83 Effects unit tests pass on
+`net10.0`; `NAudio.Core` builds clean. Phase 2 (reverb) is done. Next per the roadmap:
+Phase 3 (voice comms — DC/HPF, comms gate, VAD, AGC, spectral noise suppression).
 
 **Goal:** Ship a high-quality, pure-C#, cross-platform effects suite as a first-class part of
 NAudio 3. Two audiences:

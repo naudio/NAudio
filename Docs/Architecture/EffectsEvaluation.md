@@ -1,7 +1,14 @@
 # NAudio 3 — Audio effects suite: evaluation & strategy
 
-**Status:** Evaluation / proposal. No code changes yet — this document exists to decide
-*what* we build, *what* we port, and *in what order*, before any effect lands.
+**Status:** Evaluation / proposal. No effect code yet — this document decides *what* we
+build, *what* we port, and *in what order*, before any effect lands.
+
+**Update (post PR #1259):** PR #1259 ("Fix BiQuadFilter NaN-latch and make Equalizer
+Nyquist-aware", issue #190) has merged to `main` and is now on this branch. It hardens
+`BiQuadFilter` (parameter validation + state reset on retune) and makes `Equalizer`
+crash/Nyquist-safe — see §2.1/§2.2 for the re-evaluation and the new framework
+consequence in §3. The maintainer has **confirmed** the Phase 0 design decisions (§3.1)
+and **confirmed deletion** (not salvage) of the weak dynamics + dead convolution code (§2.1).
 
 **Goal:** Ship a high-quality, pure-C#, cross-platform effects suite as a first-class part of
 NAudio 3. Two audiences:
@@ -51,12 +58,14 @@ per-effect breakdown, and a phased roadmap follow.
    `SmbPitchShifter`, `WdlResampler`, the ChunkWare dynamics) — we formalise that convention
    with a `NOTICE`/`THIRD-PARTY-NOTICES.txt` file.
 
-5. **Most of what we already ship is keepable** (`BiQuadFilter`, `FftProcessor` /
-   `FastFourierTransform`, `WdlResampler`, `SmbPitchShifter`, `EnvelopeGenerator`), some
-   needs a rewrite (`SimpleCompressor`/`SimpleGate`/`EnvelopeDetector` — dated, `internal`,
-   `double`, stereo-hardwired), one is a toy that must be replaced
-   (`ImpulseResponseConvolution`), and the Windows-only DMO effects are explicitly *not* the
-   answer for a cross-platform suite (they stay as a Windows convenience).
+5. **Most of what we already ship is keepable** (`BiQuadFilter` — now hardened by #1259,
+   `FftProcessor` / `FastFourierTransform`, `WdlResampler`, `SmbPitchShifter`,
+   `EnvelopeGenerator`). The weak ChunkWare dynamics
+   (`SimpleCompressor`/`SimpleGate`/`EnvelopeDetector`/`AttRelEnvelope`) and the dead
+   `ImpulseResponseConvolution` are **deleted, not salvaged** (confirmed) — the new
+   dynamics and convolution code is written clean from scratch. The Windows-only DMO
+   effects are explicitly *not* the answer for a cross-platform suite (they stay as a
+   Windows convenience).
 
 ---
 
@@ -66,22 +75,22 @@ per-effect breakdown, and a phased roadmap follow.
 
 | Component | Verdict | Notes |
 |---|---|---|
-| `BiQuadFilter` | **Keep, extend** | RBJ Audio-EQ-Cookbook, correct, `public`, `float` state / `double` coeffs, already has a `Span<float>` block overload. Strong foundation for all filtering/EQ. Inconsistent factory surface (`SetX` instance methods vs `static X(...)`); no coefficient smoothing. The `// TODO: should we square root this value?` comments are unfounded doubt — `A = 10^(dBgain/40)` is the correct cookbook form; delete the comments. |
+| `BiQuadFilter` | **Keep** | RBJ Audio-EQ-Cookbook, correct, `public`, `float` state / `double` coeffs, `Span<float>` block overload. **PR #1259 already did the robustness work** I'd scoped into Phase 0: parameter validation (positive sample rate, `0 < f < Nyquist`, positive Q/slope) on the instance setters *and* static factories, plus a NaN/Inf-latch fix (`SetCoefficients` now zeroes `x1/x2/y1/y2`), with `BiQuadFilterValidationTests`. Residual, now low-priority: (a) 3 stale `// TODO: should we square root this value?` comments remain — unfounded, `A = 10^(dBgain/40)` is the correct cookbook form, delete them; (b) factory-surface asymmetry — only LP/HP/peaking have in-place `Set*`; notch/bandpass/shelf are static-only, so they can't be retuned in place. **New consequence:** see §3 — `SetCoefficients` now *resets state by design*, so click-free retuning must be solved at the effect layer (A/B crossfade), not inside the filter. |
 | `FastFourierTransform` + `FftProcessor` | **Keep** | `FftProcessor` is modern, real-input-specialised, zero-alloc steady state, windowed. This is the engine for spectral effects, partitioned-convolution reverb, FFT noise suppression, and pitch/time work. |
 | `WdlResampler` | **Keep** | Cockos WDL, used with permission, high quality. Pitch/time and SRC building block. |
 | `SmbPitchShifter` / `SmbPitchShiftingSampleProvider` | **Keep** | Bernsee STFT phase-vocoder pitch-shift with built-in limiter. Usable now; quality ceiling below Signalsmith (see §5) but fine as the default. |
 | `EnvelopeGenerator` / `AdsrSampleProvider` | **Keep, make synth-facing** | EarLevel ADSR. Directly reusable by the future synth. `AdsrSampleProvider` is mono-only — generalise when the synth work starts. |
-| `EnvelopeDetector` / `AttRelEnvelope` | **Rewrite & expose** | `internal`, `double`. The attack/release follower is a core dynamics + synth primitive — it should be a clean `public` `float` building block. |
-| `SimpleCompressor` / `SimpleGate` | **Rewrite** | ChunkWare SimpleComp/SimpleGate 2006. `internal`, `double`, `Process(ref double in1, ref double in2)` hard-wired to stereo, no soft knee, no peak/RMS choice, no lookahead, basic gain computer. Functional but not "high quality" by 2026 expectations. |
-| `SimpleCompressorEffect` (was `SimpleCompressorStream`) | **Replace** | The only public dynamics entry point. Hard-codes bizarre defaults (`Threshold = 16`, `Ratio = 6`, `MakeUpGain = 16`), `lock` on every `Read`. Superseded by the rewritten dynamics block. |
-| `ImpulseResponseConvolution` | **Replace** | O(n·m) time-domain mono convolution that destructively normalises and allocates. Unusable for real-time. Replace with partitioned/overlap-add FFT convolution on top of `FftProcessor`. |
+| `EnvelopeDetector` / `AttRelEnvelope` | **Delete** (confirmed) | `internal`, `double`, zero consumers once the ChunkWare dynamics go. We do *not* keep/refactor it — Phase 0 writes a clean `public float` attack/release follower from scratch. |
+| `SimpleCompressor` / `SimpleGate` | **Delete** (confirmed) | ChunkWare SimpleComp/SimpleGate 2006. Both `internal`; `SimpleGate` has **no public surface at all**, `SimpleCompressor` is reachable only via `SimpleCompressorEffect`. `double`, `Process(ref double in1, ref double in2)` hard-wired to stereo, no soft knee/RMS/lookahead. Not worth salvaging — deleted, replaced by the new from-scratch dynamics. Internal removals → no RELEASE_NOTES entry. |
+| `SimpleCompressorEffect` (was `SimpleCompressorStream`) | **Delete** (confirmed) | The only **public** dynamics entry point; hard-codes odd defaults, `lock` per `Read`. No consumers in repo. **Public breaking removal → RELEASE_NOTES `#### Breaking changes` bullet.** |
+| `ImpulseResponseConvolution` | **Delete** (confirmed) | **Public**, but a toy: O(n·m) time-domain mono convolution that destructively normalises and allocates. No consumers in repo. Deleted now; partitioned/overlap-add FFT convolution (on `FftProcessor`) arrives in Phase 2. **Public breaking removal → RELEASE_NOTES bullet.** |
 | `VolumeSampleProvider`, `FadeInOutSampleProvider`, `MeteringSampleProvider` | **Keep** | Already idiomatic (`VolumeSampleProvider` uses `TensorPrimitives`). Good pattern templates. |
 
 ### 2.2 `NAudio.Extras`
 
 | Component | Verdict | Notes |
 |---|---|---|
-| `Equalizer` / `EqualizerBand` | **Move to Core, fix** | Multi-band peaking EQ over `BiQuadFilter`. Two real defects: `Update()` *recreates* the filter objects, zeroing their state → audible clicks/pops on every parameter change; same settings forced on all channels. Should move into the Core effects namespace, gain shelving bands, per-channel state, and smoothed coefficient updates. |
+| `Equalizer` / `EqualizerBand` | **Move to Core, feature-rebuild** | Multi-band peaking EQ over `BiQuadFilter`. **PR #1259 already fixed the correctness/safety defect** (out-of-Nyquist or non-positive bands are now skipped instead of throwing/destabilising — with a demo bugfix). The remaining work is *features*, not crash-safety: move into the Core effects namespace, add shelving bands, per-channel state, and **click-free retuning**. The click problem is now *sharper*, not gone — even reusing a filter, `SetPeakingEq` zeroes its state (by #1259 design), so click-free EQ requires the §3 A/B-crossfade pattern, not in-place coefficient mutation. |
 
 ### 2.3 Windows-only — `NAudio.Wasapi/Dmo/Effect/`
 
@@ -107,9 +116,25 @@ There is **no effect abstraction**. Effects are individual classes implementing
 
 ---
 
-## 3. The framework (decide this first)
+## 3. The framework (decided)
 
-Two layers, cleanly separated:
+### 3.1 Confirmed design decisions
+
+The maintainer has confirmed these — they are locked for Phase 0:
+
+- **Home:** new effects live in a `NAudio.Effects` namespace inside **`NAudio.Core`**
+  (cross-platform, AOT-safe). `NAudio.Dsp` stays the low-level primitive namespace.
+- **Abstraction:** ship both `IAudioEffect` *and* a thin abstract `AudioEffect` base that
+  provides click-free `Bypass` and dry/wet `Mix` for free; effects override `ProcessBlock`.
+- **Buffer layout:** interleaved `Span<float>` is the contract (consistent with
+  `ISampleProvider`); effects deinterleave internally only if they must.
+- **Config:** `Configure(WaveFormat)` (reusable across format changes, chain-friendly),
+  not sample-rate/channels baked into constructors. Effects are **channel-agnostic by
+  design** — never hard-wire stereo (the exact mistake in the deleted ChunkWare code).
+- **Explicitly deferred:** no automation / plugin / graph framework; no per-sample method
+  on the *interface* (the synth uses concrete kernel types directly).
+
+### 3.2 Two layers, cleanly separated
 
 **Layer 1 — DSP kernels (the synth/sampler building blocks).** Plain classes, no source
 reference. Sample-rate and channel aware. In-place block processing on the caller's buffer,
@@ -126,9 +151,17 @@ public interface IAudioEffect
 ```
 
 - Parameters are plain typed properties: a small set with good defaults up front, advanced
-  properties available but not required. A shared one-pole `ParameterSmoother` makes every
-  parameter change click-free by construction (this is the central fix for the `Equalizer`
-  bug, applied once).
+  properties available but not required. A shared one-pole `ParameterSmoother` makes
+  *scalar* parameter changes (gain, mix, drive) click-free by construction.
+- **Biquad/coefficient retuning needs more than a smoother.** PR #1259 made
+  `BiQuadFilter.SetCoefficients` *reset filter state on every change* (a deliberate
+  NaN-recovery tradeoff). So a running filter cannot be retuned click-free in place, and
+  smoothing the *parameter* doesn't help — the discontinuity is in the state reset. The
+  framework therefore provides an **A/B filter crossfade** helper: keep two filter
+  instances, retune the idle one, equal-power crossfade over a few ms. Every
+  filter-based/automatable effect (parametric EQ, auto-wah, dynamic EQ, modulated
+  filters) uses this. This is the corrected "central fix" for the `Equalizer` click,
+  replacing the parameter-smoothing assumption in the original draft.
 - Allocation-free steady state, AOT/trim-safe (no reflection — `NAudio.Core` is
   `IsAotCompatible`), `float` throughout, `Span<float>`, vectorise via `TensorPrimitives`
   where the algorithm allows (gain, mix, waveshaping) — matching the existing
@@ -199,7 +232,7 @@ algorithm/paper, not transliterate). "Port" = adapt a specific permissive implem
 | Effect | Complexity | Decision | Reference | Notes |
 |---|---|---|---|---|
 | Gain / trim / pan / width | trivial (~30) | **Build** | — | `VolumeSampleProvider` exists; add pan, stereo width, mono-maker, channel matrix. |
-| Parametric / shelving EQ | low (~150) | **Build** | RBJ cookbook (have it) | Relocate+fix `Equalizer`; multi-band, shelves, per-channel, smoothed. |
+| Parametric / shelving EQ | low (~150) | **Build** | RBJ cookbook (have it) | Relocate `Equalizer` to Core; multi-band, shelves, per-channel. Crash/Nyquist-safety done by #1259; click-free retune via the §3.2 A/B crossfade. |
 | Graphic EQ | low | **Build** | — | Fixed bands over the parametric core. |
 | Compressor | low-med (~250) | **Build** | DaisySP/Airwindows as sanity ref | Soft knee, peak/RMS detector, optional lookahead, sidechain input, gain-reduction meter. Replaces ChunkWare. |
 | Limiter (brick-wall) | medium (~300) | **Build** | DaisySP limiter | Lookahead + true-peak (oversampled) detection — the part that needs care. |
@@ -238,11 +271,29 @@ Pragmatic ordering: framework, then cheap-and-high-value, then the hard speciali
 Each phase is independently shippable and independently back-out-able, mirroring the
 "first round / subsequent phases" discipline used in `NAudio3AssemblyLayoutPlan.md`.
 
-- **Phase 0 — Framework & primitive cleanup.** `IAudioEffect` + `EffectSampleProvider` +
-  `EffectChain` + `ParameterSmoother` + denormal/delay-line helpers. Promote
-  `EnvelopeDetector`/`AttRelEnvelope` to clean `public float`. Tidy `BiQuadFilter`'s factory
-  surface and remove the stale `TODO` comments. *No new effects yet.* This unblocks
-  everything and is low-risk.
+- **Phase 0 — Framework & cleanup (scope confirmed; *no new effects*).**
+  1. **Delete** `SimpleGate`, `SimpleCompressor`, `SimpleCompressorEffect`,
+     `ImpulseResponseConvolution`, and the now-orphaned `EnvelopeDetector` /
+     `AttRelEnvelope`. Verified zero in-repo consumers. Add two
+     `#### Breaking changes` bullets to `RELEASE_NOTES.md` for the public pair
+     (`SimpleCompressorEffect`, `ImpulseResponseConvolution`); the four internal types
+     need no entry.
+  2. **`IAudioEffect`** + thin abstract **`AudioEffect`** base (click-free `Bypass` +
+     dry/wet `Mix`), **`EffectSampleProvider`**, **`EffectChain`** — per the §3.1
+     confirmed decisions (`NAudio.Effects` in `NAudio.Core`, interleaved `Span<float>`,
+     `Configure(WaveFormat)`, channel-agnostic).
+  3. **Shared helpers:** `ParameterSmoother` (scalar one-pole), **A/B filter-crossfade
+     helper** (the corrected click-free-retune fix — see §3.2), denormal-safe
+     delay-line / feedback primitive.
+  4. **Clean `public float` attack/release envelope follower**, written from scratch
+     (replacing the deleted internal one) — the shared dynamics + synth building block.
+  5. **`BiQuadFilter` residual only:** delete the 3 stale `// TODO: should we square
+     root` comments. The validation/NaN-latch hardening is **already done by #1259** —
+     dropped from scope. The factory-surface asymmetry (no in-place `Set*` for
+     notch/bandpass/shelf) is **deferred** — the just-merged, just-tested file isn't
+     worth re-churning for cosmetics until an effect actually needs in-place shelf retune.
+
+  Low-risk, unblocks everything else.
 
 - **Phase 1 — Core music effects (all build-from-scratch).** EQ (relocated+fixed from
   `Extras`), compressor, limiter, gate/expander, saturation/waveshaper, bitcrush, delay

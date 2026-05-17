@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsAotCompatible>true</IsAotCompatible>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Description>Cross-platform audio file reading and writing for NAudio via libsndfile (WAV, AIFF, FLAC, Ogg/Vorbis, Opus, MP3). Requires a system libsndfile (Debian libsndfile1, Homebrew libsndfile, vcpkg/official Windows build).</Description>
+  </PropertyGroup>
+
+  <!-- Deliberately NO [SupportedOSPlatform]: libsndfile is portable
+       (Linux/macOS/Windows/BSD) and this is a file codec/I-O layer, not a
+       device backend. Unlike NAudio.Alsa it is honestly cross-platform. -->
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>NAudio.SoundFile.Tests, PublicKey=002400000480000094000000060200000024000052534131000400000100010085bcbc880396e84657fb176fe88819d4ec1ab822087fe020022075848f6be36d27548de50827e60cd106915df2033380ba15ae280131a6bdc99a62e583058e8761f117219ab9c120f1a3c1c4997810c103ee4eb1730ea477eee2bd5d3d366f87dbdc495b819616f9073d0ea119ee0109d1454f1eb010558426b4e75f8204f4aa</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NAudio.Core\NAudio.Core.csproj" />
+  </ItemGroup>
+
+</Project>

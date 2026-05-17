@@ -340,22 +340,23 @@ namespace NAudio.MediaFoundation
                 {
                     Unsafe.CopyBlockUnaligned(d.NativePointer.ToPointer(), p, (uint)pcbRead);
                 }
-                return CommonHResults.S_OK;
+                pResult.SetStatus(CommonHResults.S_OK);
             }
             catch (IOException)
             {
                 pcbRead = 0;
-                return CommonHResults.STG_E_READFAULT;
+                pResult.SetStatus(CommonHResults.STG_E_READFAULT);
             }
             catch
             {
                 pcbRead = 0;
-                return CommonHResults.E_FAIL;
+                pResult.SetStatus(CommonHResults.E_FAIL);
             }
             finally
             {
                 System.Buffers.ArrayPool<byte>.Shared.Return(d.AllocatedDotNetBuffer);
             }
+            return CommonHResults.S_OK;
         }
 
         public int BeginWrite(nint pb, int cb, IMFAsyncCallback pCallback, nint punkState)
@@ -398,6 +399,7 @@ namespace NAudio.MediaFoundation
                 // Calling the heavy method inside the async execution.
                 // Note that I do not call the Stream's dedicated WriteAsync method since we are already into an asyncronous context.
                 stream.Write(d.AllocatedDotNetBuffer.AsSpan(0, pcbWritten));
+                pResult.SetStatus(CommonHResults.S_OK);
             }
             catch (IOException)
             {
@@ -414,7 +416,6 @@ namespace NAudio.MediaFoundation
                 // Either case or failure this buffer will be returned to the array pool
                 System.Buffers.ArrayPool<byte>.Shared.Return(d.AllocatedDotNetBuffer);
             }
-            pResult.SetStatus(CommonHResults.S_OK);
             return CommonHResults.S_OK;
         }
 

@@ -59,6 +59,13 @@ delivered in Phase 1 and are reused, not duplicated. The ML quality tier (RNNois
 remains a deliberate future evaluation; AEC stays Phase 5. 91 Effects unit tests pass on
 `net10.0`; `NAudio.Core` builds clean.
 
+**Update (Phase 4 wave a landed):** reusable `NAudio.Dsp.LinkwitzRileyCrossover` (LR4)
+and the true-peak `LimiterEffect` upgrade (oversampled inter-sample-peak detection, on by
+default) — closes the Phase-1 isolated-transient-overshoot caveat. 98 Effects unit tests
+pass on `net10.0`; `NAudio.Core` builds clean. Remaining Phase 4: (b) transient shaper +
+de-esser, (c) multiband compressor, (d) `PitchShiftEffect` (SMB wrapper; Signalsmith port
+deferred).
+
 **Goal:** Ship a high-quality, pure-C#, cross-platform effects suite as a first-class part of
 NAudio 3. Two audiences:
 

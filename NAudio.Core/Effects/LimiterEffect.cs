@@ -5,16 +5,19 @@ using NAudio.Wave;
 namespace NAudio.Effects
 {
     /// <summary>
-    /// Brick-wall peak limiter with look-ahead. The signal is delayed by the look-ahead
-    /// time while a channel-linked peak detector sees the audio early, so gain is
-    /// already reduced by the time a transient reaches the output — no overshoot, no
-    /// audible pumping from a hard catch. Gain recovers with a smooth release.
-    /// Reports its look-ahead as <see cref="AudioEffect.LatencySamples"/> for delay
-    /// compensation.
+    /// Brick-wall peak limiter with look-ahead and optional true-peak (inter-sample)
+    /// detection. The signal is delayed by the look-ahead time while a channel-linked
+    /// peak detector sees the audio early, so gain is already reduced by the time a
+    /// transient reaches the output — no overshoot, no audible pumping from a hard
+    /// catch. With <see cref="TruePeak"/> enabled the detector measures the oversampled
+    /// signal, so reconstruction (inter-sample) peaks are caught too. Gain recovers with
+    /// a smooth release. Reports its look-ahead as
+    /// <see cref="AudioEffect.LatencySamples"/> for delay compensation.
     /// </summary>
     public sealed class LimiterEffect : AudioEffect
     {
         private DelayLine[] delays = Array.Empty<DelayLine>();
+        private Oversampler[] detectors = Array.Empty<Oversampler>();
         private float peakEnvelope;
         private float releaseCoefficient;
         private int lookaheadSamples = 1;
@@ -22,6 +25,8 @@ namespace NAudio.Effects
         private float ceilingLinear = 0.966f;
         private float releaseMs = 50f;
         private float lookaheadMs = 5f;
+        private bool truePeak = true;
+        private int oversampleFactor = 4;
 
         /// <summary>Output ceiling in dBFS (peaks are held at or below this). Default -0.3 dB.</summary>
         public float CeilingDb
@@ -59,6 +64,35 @@ namespace NAudio.Effects
             }
         }
 
+        /// <summary>
+        /// When true, detect inter-sample (true) peaks on the oversampled signal so
+        /// reconstruction overshoot cannot exceed the ceiling. Default true.
+        /// </summary>
+        public bool TruePeak
+        {
+            get => truePeak;
+            set
+            {
+                truePeak = value;
+                if (WaveFormat != null)
+                    BuildDetectors();
+            }
+        }
+
+        /// <summary>Oversampling factor for true-peak detection: 1, 2 or 4. Default 4.</summary>
+        public int OversampleFactor
+        {
+            get => oversampleFactor;
+            set
+            {
+                if (value != 1 && value != 2 && value != 4)
+                    throw new ArgumentOutOfRangeException(nameof(value), "Factor must be 1, 2 or 4");
+                oversampleFactor = value;
+                if (WaveFormat != null)
+                    BuildDetectors();
+            }
+        }
+
         /// <summary>The most recent gain reduction in dB (≥ 0), for metering.</summary>
         public float GainReductionDb { get; private set; }
 
@@ -72,23 +106,51 @@ namespace NAudio.Effects
             delays = new DelayLine[format.Channels];
             for (var ch = 0; ch < format.Channels; ch++)
                 delays[ch] = new DelayLine(lookaheadSamples + 1);
+            BuildDetectors();
             peakEnvelope = 0f;
             GainReductionDb = 0f;
             RecomputeRelease();
+        }
+
+        private void BuildDetectors()
+        {
+            if (!truePeak || oversampleFactor == 1)
+            {
+                detectors = Array.Empty<Oversampler>();
+                return;
+            }
+            detectors = new Oversampler[Channels];
+            for (var ch = 0; ch < Channels; ch++)
+                detectors[ch] = new Oversampler(oversampleFactor, SampleRate);
         }
 
         /// <inheritdoc />
         protected override void ProcessBlock(Span<float> buffer)
         {
             var channels = Channels;
+            var useTruePeak = detectors.Length == channels;
+            Span<float> work = stackalloc float[4];
             for (var i = 0; i + channels <= buffer.Length; i += channels)
             {
                 var peak = 0f;
                 for (var ch = 0; ch < channels; ch++)
                 {
-                    var a = MathF.Abs(buffer[i + ch]);
-                    if (a > peak)
-                        peak = a;
+                    if (useTruePeak)
+                    {
+                        detectors[ch].Upsample(buffer[i + ch], work);
+                        for (var k = 0; k < oversampleFactor; k++)
+                        {
+                            var u = MathF.Abs(work[k]);
+                            if (u > peak)
+                                peak = u;
+                        }
+                    }
+                    else
+                    {
+                        var a = MathF.Abs(buffer[i + ch]);
+                        if (a > peak)
+                            peak = a;
+                    }
                 }
 
                 // Instant attack, smoothed release: the peak is seen `lookahead`
@@ -111,6 +173,8 @@ namespace NAudio.Effects
             base.Reset();
             foreach (var delay in delays)
                 delay.Reset();
+            foreach (var detector in detectors)
+                detector.Reset();
             peakEnvelope = 0f;
             GainReductionDb = 0f;
         }

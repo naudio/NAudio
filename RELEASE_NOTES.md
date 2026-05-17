@@ -45,6 +45,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * **Effects:** first effect set — `GainEffect`, `PanEffect`, `StereoWidthEffect`, `MonoMakerEffect` (bass-mono), `DcBlockerEffect`, a multi-band per-channel `Equalizer` (peaking/shelf/pass/notch/band-pass/all-pass, click-free retune), and a 10/31-band `GraphicEqualizer`
  * **Effects:** dynamics — `CompressorEffect` (soft knee, peak/RMS detector, channel-linked), `LimiterEffect` (brick-wall with look-ahead and optional true-peak/inter-sample detection), and `GateEffect` (gate/downward-expander with hysteresis and hold); all expose live `GainReductionDb` for metering
  * **DSP:** new `NAudio.Dsp.LinkwitzRileyCrossover` (LR4 multiband split) building block
+ * **Effects:** `TransientShaperEffect` (dual-envelope attack/sustain shaping) and split-band `DeEsserEffect`
  * **Effects:** `SaturationEffect` (tanh/cubic/arctan/hard-clip wave-shaper with drive, output trim and optional 2×/4× oversampling) and `BitCrusherEffect` (bit-depth + sample-rate reduction); plus a reusable `NAudio.Dsp.Oversampler`
  * **Effects:** time/modulation — `DelayEffect` (tempo-syncable, feedback damping, ping-pong), `ChorusEffect`, `FlangerEffect`, `PhaserEffect`, `TremoloEffect` (with auto-pan); plus reusable `NAudio.Dsp.Lfo` and `NoteDivision`/`TempoTime` tempo helpers
  * **Effects:** `ConvolutionReverbEffect` (partitioned FFT convolution, mono or per-channel IR, reports latency) replacing the removed `ImpulseResponseConvolution`; plus a reusable `NAudio.Dsp.PartitionedConvolver`

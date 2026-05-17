@@ -1,0 +1,94 @@
+using System;
+using NAudio.Dsp;
+using NAudio.Wave;
+
+namespace NAudio.Effects
+{
+    /// <summary>
+    /// Split-band de-esser. A Linkwitz–Riley crossover separates the sibilant high band,
+    /// which is compressed when it exceeds the threshold; the low band passes through
+    /// untouched and the two are recombined. More transparent than wideband ducking
+    /// because only the harsh band is attenuated. Detection is channel-linked.
+    /// </summary>
+    public sealed class DeEsserEffect : AudioEffect
+    {
+        private LinkwitzRileyCrossover[] crossovers = Array.Empty<LinkwitzRileyCrossover>();
+        private EnvelopeFollower reductionFollower;
+        private float[] low = Array.Empty<float>();
+        private float[] high = Array.Empty<float>();
+
+        /// <summary>Crossover frequency separating the sibilant band, in Hz. Default 6000.</summary>
+        public float CrossoverFrequency { get; set; } = 6000f;
+
+        /// <summary>Sibilant-band threshold in dBFS. Default -30 dB.</summary>
+        public float ThresholdDb { get; set; } = -30f;
+
+        /// <summary>Compression ratio applied to the sibilant band (≥ 1). Default 4.</summary>
+        public float Ratio { get; set; } = 4f;
+
+        /// <summary>Attack time in milliseconds. Default 1 ms.</summary>
+        public float AttackMs { get; set; } = 1f;
+
+        /// <summary>Release time in milliseconds. Default 60 ms.</summary>
+        public float ReleaseMs { get; set; } = 60f;
+
+        /// <summary>The most recent sibilant-band gain reduction in dB (≥ 0), for metering.</summary>
+        public float GainReductionDb { get; private set; }
+
+        /// <inheritdoc />
+        protected override void OnConfigure(WaveFormat format)
+        {
+            var freq = Math.Clamp(CrossoverFrequency, 1000f, format.SampleRate * 0.5f - 1f);
+            crossovers = new LinkwitzRileyCrossover[format.Channels];
+            for (var ch = 0; ch < format.Channels; ch++)
+                crossovers[ch] = new LinkwitzRileyCrossover(format.SampleRate, freq);
+            reductionFollower = new EnvelopeFollower(AttackMs, ReleaseMs, format.SampleRate);
+            low = new float[format.Channels];
+            high = new float[format.Channels];
+        }
+
+        /// <inheritdoc />
+        protected override void ProcessBlock(Span<float> buffer)
+        {
+            var channels = Channels;
+            reductionFollower.AttackMilliseconds = AttackMs;
+            reductionFollower.ReleaseMilliseconds = ReleaseMs;
+            var ratio = Ratio < 1f ? 1f : Ratio;
+            Span<float> bands = stackalloc float[2];
+
+            for (var i = 0; i + channels <= buffer.Length; i += channels)
+            {
+                var sibilantPeak = 0f;
+                for (var ch = 0; ch < channels; ch++)
+                {
+                    crossovers[ch].Process(buffer[i + ch], bands);
+                    low[ch] = bands[0];
+                    high[ch] = bands[1];
+                    var a = MathF.Abs(bands[1]);
+                    if (a > sibilantPeak)
+                        sibilantPeak = a;
+                }
+
+                var keyDb = 20f * MathF.Log10(sibilantPeak < 1e-9f ? 1e-9f : sibilantPeak);
+                var over = keyDb - ThresholdDb;
+                var targetReduction = over > 0f ? over - over / ratio : 0f;
+                var reduction = reductionFollower.ProcessRectified(targetReduction);
+                GainReductionDb = reduction;
+
+                var gain = MathF.Pow(10f, -reduction * (1f / 20f));
+                for (var ch = 0; ch < channels; ch++)
+                    buffer[i + ch] = low[ch] + high[ch] * gain;
+            }
+        }
+
+        /// <inheritdoc />
+        public override void Reset()
+        {
+            base.Reset();
+            foreach (var crossover in crossovers)
+                crossover.Reset();
+            reductionFollower?.Reset();
+            GainReductionDb = 0f;
+        }
+    }
+}

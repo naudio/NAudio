@@ -32,8 +32,14 @@ hold). 46 Effects unit tests pass on `net10.0`; `NAudio.Core` builds clean.
 
 **Update (Phase 1 wave c landed):** `SaturationEffect` (4 curves, drive/trim, optional
 2×/4× oversampling), `BitCrusherEffect` (bit-depth + sample-rate reduction), and the
-reusable `NAudio.Dsp.Oversampler`. 55 Effects unit tests pass on `net10.0`. Remaining
-Phase 1 wave: (d) delay/modulation (with tempo-division sync).
+reusable `NAudio.Dsp.Oversampler`. 55 Effects unit tests pass on `net10.0`.
+
+**Update (Phase 1 wave d landed — Phase 1 complete):** `DelayEffect` (tempo-syncable,
+feedback damping, ping-pong), `ChorusEffect`, `FlangerEffect`, `PhaserEffect`,
+`TremoloEffect` (+ auto-pan), plus reusable `NAudio.Dsp.Lfo` and `NoteDivision`/
+`TempoTime`. **70 Effects unit tests pass on `net10.0`; `NAudio.Core` builds clean.**
+Phase 1 (the core music-effects suite) is done. Next up per the roadmap: Phase 2
+(reverb — partitioned-convolution on `FftProcessor`, then algorithmic FDN).
 
 **Goal:** Ship a high-quality, pure-C#, cross-platform effects suite as a first-class part of
 NAudio 3. Two audiences:

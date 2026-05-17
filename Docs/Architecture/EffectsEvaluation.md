@@ -23,8 +23,13 @@ updated. `NAudio.Core` builds clean (0/0) and 19 new unit tests pass on `net10.0
 `CrossfadingBiQuadFilter.ReplaceStandby`), and `GraphicEqualizer` (10/31-band). The old
 `NAudio.Extras` `Equalizer`/`EqualizerBand` are deleted and the WPF EqualizationDemo moved
 to the new API. 37 Effects unit tests pass on `net10.0`; `NAudio.Core` and `NAudio.Extras`
-build clean. Remaining Phase 1 waves: (b) dynamics, (c) saturation/bitcrush,
-(d) delay/modulation (with tempo-division sync).
+build clean.
+
+**Update (Phase 1 wave b landed):** dynamics shipped — `CompressorEffect`
+(soft-knee, peak/RMS, channel-linked, GR metering), `LimiterEffect` (look-ahead
+brick-wall, reports `LatencySamples`), `GateEffect` (gate/expander with hysteresis +
+hold). 46 Effects unit tests pass on `net10.0`; `NAudio.Core` builds clean. Remaining
+Phase 1 waves: (c) saturation/bitcrush, (d) delay/modulation (with tempo-division sync).
 
 **Goal:** Ship a high-quality, pure-C#, cross-platform effects suite as a first-class part of
 NAudio 3. Two audiences:

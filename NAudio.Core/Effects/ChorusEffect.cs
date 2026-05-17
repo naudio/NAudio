@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using NAudio.Dsp;
 using NAudio.Wave;
 
@@ -8,8 +9,19 @@ namespace NAudio.Effects
     /// Chorus: a short LFO-modulated delay mixed with the dry signal to thicken and
     /// detune it. Classic single-LFO design applied to every channel.
     /// </summary>
-    public sealed class ChorusEffect : AudioEffect
+    public sealed class ChorusEffect : AudioEffect, IParameterized
     {
+        private IReadOnlyList<EffectParameter> parameters;
+
+        /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
+        public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
+        {
+            EffectParameter.Continuous("Base Delay", "ms", 1f, 50f, () => BaseDelayMs, v => BaseDelayMs = v),
+            EffectParameter.Continuous("Depth", "ms", 0f, 30f, () => DepthMs, v => DepthMs = v),
+            EffectParameter.Continuous("Rate", "Hz", 0.05f, 10f, () => RateHz, v => RateHz = v),
+            EffectParameter.Continuous("Feedback", "", 0f, 0.95f, () => Feedback, v => Feedback = v)
+        };
+
         private Lfo lfo;
         private DelayLine[] lines = Array.Empty<DelayLine>();
 

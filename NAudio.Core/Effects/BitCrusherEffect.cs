@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using NAudio.Wave;
 
 namespace NAudio.Effects
@@ -8,8 +9,17 @@ namespace NAudio.Effects
     /// effective sample rate via sample-and-hold decimation. Per-channel state keeps a
     /// stereo image coherent.
     /// </summary>
-    public sealed class BitCrusherEffect : AudioEffect
+    public sealed class BitCrusherEffect : AudioEffect, IParameterized
     {
+        private IReadOnlyList<EffectParameter> parameters;
+
+        /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
+        public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
+        {
+            EffectParameter.Continuous("Bit Depth", "bits", 1f, 32f, () => BitDepth, v => BitDepth = (int)MathF.Round(v)),
+            EffectParameter.Continuous("Downsample", "x", 1f, 50f, () => SampleRateReduction, v => SampleRateReduction = (int)MathF.Round(v))
+        };
+
         private float[] held = Array.Empty<float>();
         private int counter;
         private int bitDepth = 8;

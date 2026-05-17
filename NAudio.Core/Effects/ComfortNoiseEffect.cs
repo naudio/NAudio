@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using NAudio.Wave;
 
 namespace NAudio.Effects
@@ -8,8 +9,17 @@ namespace NAudio.Effects
     /// gate or noise suppressor so processed silence is not unnaturally "dead" — a small
     /// comfort-noise floor keeps the channel sounding live. Deterministic generator.
     /// </summary>
-    public sealed class ComfortNoiseEffect : AudioEffect
+    public sealed class ComfortNoiseEffect : AudioEffect, IParameterized
     {
+        private IReadOnlyList<EffectParameter> parameters;
+
+        /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
+        public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
+        {
+            EffectParameter.Continuous("Level", "dB", -90f, -20f, () => LevelDb, v => LevelDb = v),
+            EffectParameter.Continuous("Tone", "", 0f, 1f, () => Tone, v => Tone = v)
+        };
+
         private uint rngState = 0x6D2B79F5;
         private float[] toneState = Array.Empty<float>();
 

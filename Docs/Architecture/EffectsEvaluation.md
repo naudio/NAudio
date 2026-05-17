@@ -413,9 +413,14 @@ seed for VST3-host testing. Design decided:
 `RealtimeEffectsDemo` module: `RealtimeAudioEngine` (ASIO duplex, atomic effect-array
 snapshot, feedback auto-mute), VM/view/plugin, mono→stereo, starts muted with headphone
 warning. WPF demo compiles clean (`EnableWindowsTargeting`); runtime validation is
-CI/Windows. Wave C next: chain editor (auto-panels from `IParameterized` + Bypass/Mix,
-add/remove/reorder), WAV-file source, offline render; plus the mechanical wiring of the
-remaining simple effects.
+CI/Windows. **Wave C done** — `IParameterized` wired across all 23 simple effects;
+WPF chain editor (catalog add, remove, reorder, generic auto-panels from the parameter
+model + Bypass/Mix, live meters), WAV-file playback and offline render through the
+chain. WPF demo compiles clean; runtime is CI/Windows. **The real-time effects harness
+is complete** — the subjective-quality evaluation tool is ready, and the same
+parameter/chain model is the foundation for the future VST3-host UI. EQ/multiband
+(dynamic band lists) and convolution-reverb IR are deliberately excluded from the
+generic catalog (need bespoke UI).
 
 Cross-cutting, every phase: allocation-free steady state, AOT/trim-safe, `Span<float>`,
 numerical-correctness unit tests (the repo already does this — e.g. `BiQuadFilterTests`,

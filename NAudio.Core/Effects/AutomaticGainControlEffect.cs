@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using NAudio.Dsp;
 using NAudio.Wave;
 
@@ -11,8 +12,22 @@ namespace NAudio.Effects
     /// while no voice is present so background noise is not amplified in pauses. Pair
     /// with a <see cref="LimiterEffect"/> downstream for a brick-wall safety ceiling.
     /// </summary>
-    public sealed class AutomaticGainControlEffect : AudioEffect
+    public sealed class AutomaticGainControlEffect : AudioEffect, IParameterized
     {
+        private IReadOnlyList<EffectParameter> parameters;
+
+        /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
+        public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
+        {
+            EffectParameter.Continuous("Target", "dB", -40f, 0f, () => TargetDb, v => TargetDb = v),
+            EffectParameter.Continuous("Max Gain", "dB", 0f, 40f, () => MaxGainDb, v => MaxGainDb = v),
+            EffectParameter.Continuous("Min Gain", "dB", -40f, 0f, () => MinGainDb, v => MinGainDb = v),
+            EffectParameter.Continuous("Attack", "ms", 1f, 500f, () => AttackMs, v => AttackMs = v),
+            EffectParameter.Continuous("Release", "ms", 10f, 2000f, () => ReleaseMs, v => ReleaseMs = v),
+            EffectParameter.Toggle("Voice Detect", () => UseVoiceDetection, v => UseVoiceDetection = v),
+            EffectParameter.Meter("Gain", "dB", -40f, 40f, () => GainDb)
+        };
+
         private VoiceActivityDetector vad;
         private float meanSquare;
         private float rmsCoefficient;

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using NAudio.Dsp;
 using NAudio.Wave;
 
@@ -9,8 +10,20 @@ namespace NAudio.Effects
     /// by an LFO, with feedback. Mixing the phase-shifted signal with the dry signal
     /// creates moving notches in the spectrum.
     /// </summary>
-    public sealed class PhaserEffect : AudioEffect
+    public sealed class PhaserEffect : AudioEffect, IParameterized
     {
+        private IReadOnlyList<EffectParameter> parameters;
+
+        /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
+        public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
+        {
+            EffectParameter.Continuous("Stages", "", 1f, 24f, () => Stages, v => Stages = (int)MathF.Round(v)),
+            EffectParameter.Continuous("Min Freq", "Hz", 50f, 2000f, () => MinFrequency, v => MinFrequency = v),
+            EffectParameter.Continuous("Max Freq", "Hz", 200f, 8000f, () => MaxFrequency, v => MaxFrequency = v),
+            EffectParameter.Continuous("Rate", "Hz", 0.05f, 5f, () => RateHz, v => RateHz = v),
+            EffectParameter.Continuous("Feedback", "", -0.95f, 0.95f, () => Feedback, v => Feedback = v)
+        };
+
         private Lfo lfo;
         private float[,] apX;   // per-channel, per-stage previous input
         private float[,] apY;   // per-channel, per-stage previous output

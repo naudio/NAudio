@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using NAudio.Dsp;
 using NAudio.Wave;
 
@@ -11,8 +12,16 @@ namespace NAudio.Effects
     /// untouched. Frequency changes crossfade so they do not click. Only stereo signals
     /// are affected; other channel counts pass through unchanged.
     /// </summary>
-    public sealed class MonoMakerEffect : AudioEffect
+    public sealed class MonoMakerEffect : AudioEffect, IParameterized
     {
+        private IReadOnlyList<EffectParameter> parameters;
+
+        /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
+        public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
+        {
+            EffectParameter.Continuous("Frequency", "Hz", 20f, 1000f, () => Frequency, v => Frequency = v)
+        };
+
         private CrossfadingBiQuadFilter sideLowPass;
         private float frequency = 120f;
 

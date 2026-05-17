@@ -103,7 +103,10 @@ namespace NAudioTests.Effects
                 new CompressorEffect(), new LimiterEffect(), new GateEffect(),
                 new SaturationEffect(), new DelayEffect(), new TremoloEffect(),
                 new ReverbEffect(), new FdnReverbEffect(), new NoiseSuppressionEffect(),
-                new PitchShiftEffect()
+                new PitchShiftEffect(), new ChorusEffect(), new FlangerEffect(),
+                new PhaserEffect(), new BitCrusherEffect(), new DcBlockerEffect(),
+                new MonoMakerEffect(), new AutomaticGainControlEffect(),
+                new TransientShaperEffect(), new DeEsserEffect(), new ComfortNoiseEffect()
             };
 
             foreach (var effect in effects)

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using NAudio.Dsp;
 using NAudio.Wave;
 
@@ -11,8 +12,19 @@ namespace NAudio.Effects
     /// <see cref="SustainDb"/> the sustain portion, independent of input level.
     /// Detection is channel-linked so the stereo image is preserved.
     /// </summary>
-    public sealed class TransientShaperEffect : AudioEffect
+    public sealed class TransientShaperEffect : AudioEffect, IParameterized
     {
+        private IReadOnlyList<EffectParameter> parameters;
+
+        /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
+        public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
+        {
+            EffectParameter.Continuous("Attack", "dB", -20f, 20f, () => AttackDb, v => AttackDb = v),
+            EffectParameter.Continuous("Sustain", "dB", -20f, 20f, () => SustainDb, v => SustainDb = v),
+            EffectParameter.Continuous("Fast", "ms", 0.1f, 20f, () => FastMs, v => FastMs = v),
+            EffectParameter.Continuous("Slow", "ms", 10f, 500f, () => SlowMs, v => SlowMs = v)
+        };
+
         private EnvelopeFollower fast;
         private EnvelopeFollower slow;
 

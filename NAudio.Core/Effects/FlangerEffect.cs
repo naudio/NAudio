@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using NAudio.Dsp;
 using NAudio.Wave;
 
@@ -9,8 +10,19 @@ namespace NAudio.Effects
     /// sweeping comb-filter "jet" effect. Feedback may be negative for an inverted
     /// (hollow) comb.
     /// </summary>
-    public sealed class FlangerEffect : AudioEffect
+    public sealed class FlangerEffect : AudioEffect, IParameterized
     {
+        private IReadOnlyList<EffectParameter> parameters;
+
+        /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
+        public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
+        {
+            EffectParameter.Continuous("Base Delay", "ms", 0.5f, 10f, () => BaseDelayMs, v => BaseDelayMs = v),
+            EffectParameter.Continuous("Depth", "ms", 0f, 5f, () => DepthMs, v => DepthMs = v),
+            EffectParameter.Continuous("Rate", "Hz", 0.05f, 5f, () => RateHz, v => RateHz = v),
+            EffectParameter.Continuous("Feedback", "", -0.95f, 0.95f, () => Feedback, v => Feedback = v)
+        };
+
         private Lfo lfo;
         private DelayLine[] lines = Array.Empty<DelayLine>();
 

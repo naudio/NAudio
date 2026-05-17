@@ -48,6 +48,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * **Effects:** time/modulation — `DelayEffect` (tempo-syncable, feedback damping, ping-pong), `ChorusEffect`, `FlangerEffect`, `PhaserEffect`, `TremoloEffect` (with auto-pan); plus reusable `NAudio.Dsp.Lfo` and `NoteDivision`/`TempoTime` tempo helpers
  * **Effects:** `ConvolutionReverbEffect` (partitioned FFT convolution, mono or per-channel IR, reports latency) replacing the removed `ImpulseResponseConvolution`; plus a reusable `NAudio.Dsp.PartitionedConvolver`
  * **Effects:** algorithmic reverbs — `ReverbEffect` (lightweight Freeverb-style Schroeder–Moorer) and `FdnReverbEffect` (modulated feedback-delay-network with RT60, size, damping and width controls)
+ * **Effects:** voice comms — `AutomaticGainControlEffect` (VAD-gated leveller), `NoiseSuppressionEffect` (STFT spectral suppression), `ComfortNoiseEffect`, plus a reusable `NAudio.Dsp.VoiceActivityDetector` (DC/rumble removal and a comms gate are already covered by `DcBlockerEffect` / `GateEffect`)
 
 #### Demo apps and Test Harnesses
 

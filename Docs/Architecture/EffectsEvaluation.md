@@ -49,8 +49,15 @@ clean.
 **Update (Phase 2 waves b+c landed — Phase 2 complete):** `ReverbEffect`
 (Freeverb-inspired Schroeder–Moorer baseline) and `FdnReverbEffect` (Signalsmith-style
 modulated feedback-delay network — the flagship). 83 Effects unit tests pass on
-`net10.0`; `NAudio.Core` builds clean. Phase 2 (reverb) is done. Next per the roadmap:
-Phase 3 (voice comms — DC/HPF, comms gate, VAD, AGC, spectral noise suppression).
+`net10.0`; `NAudio.Core` builds clean. Phase 2 (reverb) is done.
+
+**Update (Phase 3 landed — voice comms):** `VoiceActivityDetector` (NAudio.Dsp),
+`AutomaticGainControlEffect` (VAD-gated leveller), `NoiseSuppressionEffect` (sqrt-Hann
+WOLA STFT spectral subtraction, VAD-gated noise tracking) and `ComfortNoiseEffect`.
+DC/rumble HPF (`DcBlockerEffect`) and the comms gate (`GateEffect`) were already
+delivered in Phase 1 and are reused, not duplicated. The ML quality tier (RNNoise port)
+remains a deliberate future evaluation; AEC stays Phase 5. 91 Effects unit tests pass on
+`net10.0`; `NAudio.Core` builds clean.
 
 **Goal:** Ship a high-quality, pure-C#, cross-platform effects suite as a first-class part of
 NAudio 3. Two audiences:

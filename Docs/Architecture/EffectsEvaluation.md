@@ -10,6 +10,14 @@ crash/Nyquist-safe — see §2.1/§2.2 for the re-evaluation and the new framewo
 consequence in §3. The maintainer has **confirmed** the Phase 0 design decisions (§3.1)
 and **confirmed deletion** (not salvage) of the weak dynamics + dead convolution code (§2.1).
 
+**Update (Phase 0 landed):** Phase 0 is implemented on branch `naudio3-effects`: the six
+weak/dead types deleted, the `NAudio.Effects` framework (`IAudioEffect`, `AudioEffect`,
+`EffectSampleProvider`, `EffectChain`) and the `NAudio.Dsp` primitives
+(`ParameterSmoother`, `EnvelopeFollower`, `DelayLine`, `DenormalGuard`,
+`CrossfadingBiQuadFilter`) added, the stale `BiQuadFilter` `TODO`s removed, RELEASE_NOTES
+updated. `NAudio.Core` builds clean (0/0) and 19 new unit tests pass on `net10.0`. Phase 1
+(the first real effects) is the next step.
+
 **Goal:** Ship a high-quality, pure-C#, cross-platform effects suite as a first-class part of
 NAudio 3. Two audiences:
 

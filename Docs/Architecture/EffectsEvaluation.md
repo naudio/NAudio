@@ -28,8 +28,12 @@ build clean.
 **Update (Phase 1 wave b landed):** dynamics shipped — `CompressorEffect`
 (soft-knee, peak/RMS, channel-linked, GR metering), `LimiterEffect` (look-ahead
 brick-wall, reports `LatencySamples`), `GateEffect` (gate/expander with hysteresis +
-hold). 46 Effects unit tests pass on `net10.0`; `NAudio.Core` builds clean. Remaining
-Phase 1 waves: (c) saturation/bitcrush, (d) delay/modulation (with tempo-division sync).
+hold). 46 Effects unit tests pass on `net10.0`; `NAudio.Core` builds clean.
+
+**Update (Phase 1 wave c landed):** `SaturationEffect` (4 curves, drive/trim, optional
+2×/4× oversampling), `BitCrusherEffect` (bit-depth + sample-rate reduction), and the
+reusable `NAudio.Dsp.Oversampler`. 55 Effects unit tests pass on `net10.0`. Remaining
+Phase 1 wave: (d) delay/modulation (with tempo-division sync).
 
 **Goal:** Ship a high-quality, pure-C#, cross-platform effects suite as a first-class part of
 NAudio 3. Two audiences:

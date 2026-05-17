@@ -41,7 +41,9 @@ namespace NAudio.SoundFile
             IntPtr raw = SndFileInterop.Open(path, SndFileInterop.SFM_READ, ref info);
             SoundFileException.ThrowIfOpenFailed(raw, "sf_open");
             handle = new SafeSndFileHandle(raw);
-            (waveFormat, blockAlign, lengthBytes, seekable) = Describe(info);
+            (waveFormat, blockAlign, seekable) = Describe(info);
+            lengthBytes = DetermineLength(raw, info, blockAlign, seekable);
+            Tags = SoundFileTags.ReadFrom(raw);
         }
 
         /// <summary>
@@ -51,6 +53,7 @@ namespace NAudio.SoundFile
         /// </summary>
         /// <param name="inputStream">A readable stream positioned at the start of the audio file.</param>
         /// <exception cref="SoundFileException">The stream could not be opened or decoded.</exception>
+        /// <exception cref="ArgumentException"><paramref name="inputStream"/> is not readable.</exception>
         public SoundFileReader(Stream inputStream)
         {
             ArgumentNullException.ThrowIfNull(inputStream);
@@ -59,7 +62,7 @@ namespace NAudio.SoundFile
                 throw new ArgumentException("Stream must be readable", nameof(inputStream));
             }
 
-            virtualIo = new StreamVirtualIo(inputStream, ownsStream: false);
+            virtualIo = new StreamVirtualIo(inputStream);
             vtable = StreamVirtualIo.CreateVtable();
             var info = new SfInfo();
             IntPtr raw = SndFileInterop.OpenVirtual(ref vtable, SndFileInterop.SFM_READ, ref info, virtualIo.UserData);
@@ -69,23 +72,52 @@ namespace NAudio.SoundFile
                 SoundFileException.ThrowIfOpenFailed(raw, "sf_open_virtual");
             }
             handle = new SafeSndFileHandle(raw);
-            (waveFormat, blockAlign, lengthBytes, seekable) = Describe(info);
+            (waveFormat, blockAlign, seekable) = Describe(info);
+            lengthBytes = DetermineLength(raw, info, blockAlign, seekable);
+            Tags = SoundFileTags.ReadFrom(raw);
         }
 
-        private static (WaveFormat, int, long, bool) Describe(SfInfo info)
+        private static (WaveFormat, int, bool) Describe(SfInfo info)
         {
             var format = WaveFormat.CreateIeeeFloatWaveFormat(info.SampleRate, info.Channels);
-            int align = info.Channels * sizeof(float);
-            long bytes = info.Frames > 0 ? info.Frames * align : 0;
-            return (format, align, bytes, info.Seekable != 0);
+            return (format, info.Channels * sizeof(float), info.Seekable != 0);
         }
+
+        // libsndfile reports SF_INFO.frames for most formats, but some
+        // streamed Ogg/MP3 inputs report 0/-1. When the source is seekable
+        // we can still recover the exact length with a seek-to-end probe.
+        private static long DetermineLength(IntPtr h, SfInfo info, int blockAlign, bool seekable)
+        {
+            if (info.Frames > 0)
+            {
+                return info.Frames * blockAlign;
+            }
+            if (seekable)
+            {
+                long end = SndFileInterop.Seek(h, 0, SndFileInterop.SEEK_END);
+                SndFileInterop.Seek(h, 0, SndFileInterop.SEEK_SET);
+                if (end > 0)
+                {
+                    return end * blockAlign;
+                }
+            }
+            return 0;
+        }
+
+        /// <summary>
+        /// Embedded string metadata (title/artist/album/…), or empty fields
+        /// when the format/file carries none.
+        /// </summary>
+        public SoundFileTags Tags { get; }
 
         /// <inheritdoc />
         public override WaveFormat WaveFormat => waveFormat;
 
         /// <summary>
         /// Length of the decoded audio in bytes (32-bit float samples), or 0
-        /// when libsndfile cannot report the frame count up front.
+        /// when the source is non-seekable and libsndfile cannot report the
+        /// frame count up front (some streamed Ogg/MP3). Check
+        /// <see cref="CanSeek"/> before relying on this for streamed input.
         /// </summary>
         public override long Length => lengthBytes;
 
@@ -96,9 +128,10 @@ namespace NAudio.SoundFile
         /// Position in the decoded float stream, in bytes. Setting requires a
         /// seekable source.
         /// </summary>
+        /// <exception cref="InvalidOperationException">The source is not seekable.</exception>
         public override long Position
         {
-            get => positionFrames * blockAlign;
+            get { lock (lockObject) { return positionFrames * blockAlign; } }
             set
             {
                 if (!seekable)
@@ -113,7 +146,7 @@ namespace NAudio.SoundFile
                     {
                         SoundFileException.ThrowIfError(Handle, "sf_seek");
                     }
-                    positionFrames = result < 0 ? frame : result;
+                    positionFrames = result;
                 }
             }
         }
@@ -143,11 +176,17 @@ namespace NAudio.SoundFile
             }
             lock (lockObject)
             {
-                long got = SndFileInterop.ReadFloat(Handle, buffer, frames);
-                if (got < 0)
+                IntPtr h = Handle;
+                long got = SndFileInterop.ReadFloat(h, buffer, frames);
+                // A backing-stream failure is recorded by the vio callback
+                // (it cannot throw across the native boundary); surface it
+                // before treating a short read as clean EOF.
+                virtualIo?.ThrowIfFaulted();
+                // sf_readf_* never returns negative: a short/zero count is
+                // either clean EOF or a decode error flagged via sf_error.
+                if (got < frames)
                 {
-                    SoundFileException.ThrowIfError(Handle, "sf_readf_float");
-                    return 0;
+                    SoundFileException.ThrowIfError(h, "sf_readf_float");
                 }
                 positionFrames += got;
                 return (int)got * channels;
@@ -166,11 +205,17 @@ namespace NAudio.SoundFile
         /// <inheritdoc />
         protected override void Dispose(bool disposing)
         {
-            if (disposing && !disposed)
+            if (disposing)
             {
-                disposed = true;
-                handle?.Dispose();
-                virtualIo?.Dispose();
+                lock (lockObject)
+                {
+                    if (!disposed)
+                    {
+                        disposed = true;
+                        handle?.Dispose();
+                        virtualIo?.Dispose();
+                    }
+                }
             }
             base.Dispose(disposing);
         }

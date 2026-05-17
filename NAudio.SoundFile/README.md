@@ -71,15 +71,28 @@ Console.WriteLine($"{reader.WaveFormat} {reader.TotalTime}");
 ## Write FLAC / Ogg / Opus
 
 ```c#
-using var mp3 = new SoundFileReader("in.wav");
-SoundFileWriter.CreateSoundFile("out.flac", mp3,
-    SoundFileMajorFormat.Flac,
-    new SoundFileWriterOptions { CompressionLevel = 0.8 });
+using (var source = new SoundFileReader("in.wav"))
+    SoundFileWriter.CreateSoundFile("out.flac", source,
+        SoundFileMajorFormat.Flac,
+        new SoundFileWriterOptions { CompressionLevel = 0.8 });
 
-// Ogg Vorbis at VBR quality 0.6
-SoundFileWriter.CreateSoundFile("out.ogg", mp3,
-    SoundFileMajorFormat.OggVorbis,
-    new SoundFileWriterOptions { VbrQuality = 0.6 });
+// Ogg Vorbis at VBR quality 0.6, with tags
+using (var source = new SoundFileReader("in.wav"))
+    SoundFileWriter.CreateSoundFile("out.ogg", source,
+        SoundFileMajorFormat.OggVorbis,
+        new SoundFileWriterOptions
+        {
+            VbrQuality = 0.6,
+            Tags = new SoundFileTags { Title = "Demo", Artist = "NAudio" }
+        });
+```
+
+Read embedded metadata back:
+
+```c#
+using var reader = new SoundFileReader("song.flac");
+Console.WriteLine($"{reader.Tags.Artist} – {reader.Tags.Title}");
+Console.WriteLine(SoundFileCapabilities.LibraryVersion);
 ```
 
 The output format is also inferred from the extension:

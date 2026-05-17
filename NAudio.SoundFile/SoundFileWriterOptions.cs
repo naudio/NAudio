@@ -31,5 +31,21 @@ namespace NAudio.SoundFile
         /// <c>SFC_SET_COMPRESSION_LEVEL</c> after the file is opened.
         /// </summary>
         public double? CompressionLevel { get; set; }
+
+        /// <summary>
+        /// Clip out-of-range samples when converting float input to an
+        /// integer subtype (e.g. PCM 16/24). <c>true</c> by default — without
+        /// it, libsndfile <em>wraps</em> a sample above 1.0 into loud
+        /// distortion. Turn off only if you have a specific reason.
+        /// </summary>
+        public bool Clipping { get; set; } = true;
+
+        /// <summary>
+        /// Metadata (title/artist/album/…) to embed. Written before the
+        /// first audio frame. Codec support varies (Vorbis comments for
+        /// FLAC/Ogg/Opus, a limited LIST/INFO set for WAV/AIFF); unsupported
+        /// fields are silently ignored. <c>null</c> writes no tags.
+        /// </summary>
+        public SoundFileTags Tags { get; set; }
     }
 }

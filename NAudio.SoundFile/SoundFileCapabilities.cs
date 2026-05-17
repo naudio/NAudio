@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace NAudio.SoundFile
@@ -37,6 +38,13 @@ namespace NAudio.SoundFile
     public static class SoundFileCapabilities
     {
         /// <summary>
+        /// The version string of the loaded libsndfile (e.g.
+        /// <c>"libsndfile-1.2.2"</c>) — useful for diagnostics, since codec
+        /// availability is build-dependent.
+        /// </summary>
+        public static string LibraryVersion => SndFileInterop.LibraryVersion();
+
+        /// <summary>
         /// Whether the libsndfile build can write the given format/subtype
         /// combination (uses <c>sf_format_check</c> at 48 kHz stereo).
         /// </summary>
@@ -71,7 +79,7 @@ namespace NAudio.SoundFile
             for (int i = 0; i < count; i++)
             {
                 var fi = new SfFormatInfo { Format = i };
-                if (SndFileInterop.CommandFormatInfo(IntPtr.Zero, SndFileInterop.SFC_GET_FORMAT_MAJOR, ref fi, Marshal.SizeOf<SfFormatInfo>()) != 0)
+                if (SndFileInterop.CommandFormatInfo(IntPtr.Zero, SndFileInterop.SFC_GET_FORMAT_MAJOR, ref fi, Unsafe.SizeOf<SfFormatInfo>()) != 0)
                 {
                     continue;
                 }

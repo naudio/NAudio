@@ -20,6 +20,20 @@ namespace NAudio.SoundFile
         }
 
         /// <summary>
+        /// Creates a new <see cref="SoundFileException"/> wrapping an
+        /// underlying failure (e.g. a backing-stream I/O exception that
+        /// could not propagate through the native callback boundary).
+        /// </summary>
+        /// <param name="message">Description of the failure.</param>
+        /// <param name="errorCode">The libsndfile error number, or 0.</param>
+        /// <param name="innerException">The original exception.</param>
+        public SoundFileException(string message, int errorCode, Exception innerException)
+            : base(message, innerException)
+        {
+            ErrorCode = errorCode;
+        }
+
+        /// <summary>
         /// Creates a new <see cref="SoundFileException"/> from a message and
         /// error code, prefixed with the name of the failing call.
         /// </summary>

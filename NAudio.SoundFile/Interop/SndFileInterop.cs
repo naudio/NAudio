@@ -38,8 +38,25 @@ namespace NAudio.SoundFile
         internal const int SFC_GET_FORMAT_MAJOR = 0x1031;
         internal const int SFC_GET_FORMAT_SUBTYPE_COUNT = 0x1032;
         internal const int SFC_GET_FORMAT_SUBTYPE = 0x1033;
+        internal const int SFC_SET_CLIPPING = 0x10C0;
         internal const int SFC_SET_VBR_ENCODING_QUALITY = 0x1300;
         internal const int SFC_SET_COMPRESSION_LEVEL = 0x1301;
+
+        // sf_set_string / sf_get_string field selectors.
+        internal const int SF_STR_TITLE = 0x01;
+        internal const int SF_STR_COPYRIGHT = 0x02;
+        internal const int SF_STR_SOFTWARE = 0x03;
+        internal const int SF_STR_ARTIST = 0x04;
+        internal const int SF_STR_COMMENT = 0x05;
+        internal const int SF_STR_DATE = 0x06;
+        internal const int SF_STR_ALBUM = 0x07;
+        internal const int SF_STR_LICENSE = 0x08;
+        internal const int SF_STR_TRACKNUMBER = 0x09;
+        internal const int SF_STR_GENRE = 0x10;
+
+        // SF_TRUE, passed as the datasize argument for boolean sf_command
+        // selectors like SFC_SET_CLIPPING.
+        internal const int SF_TRUE = 1;
 
         [ModuleInitializer]
         internal static void RegisterResolver()
@@ -136,6 +153,34 @@ namespace NAudio.SoundFile
 
         [LibraryImport(Library, EntryPoint = "sf_command")]
         internal static partial int CommandSetDouble(IntPtr sndfile, int command, ref double data, int dataSize);
+
+        // For boolean/no-data selectors (e.g. SFC_SET_CLIPPING) where the
+        // flag is carried in the dataSize argument and data is NULL.
+        [LibraryImport(Library, EntryPoint = "sf_command")]
+        internal static partial int Command(IntPtr sndfile, int command, IntPtr data, int dataSize);
+
+        // --- Version / metadata ------------------------------------------
+
+        [LibraryImport(Library, EntryPoint = "sf_version_string")]
+        private static partial IntPtr VersionString();
+
+        internal static string LibraryVersion()
+        {
+            var ptr = VersionString();
+            return ptr == IntPtr.Zero ? string.Empty : Marshal.PtrToStringUTF8(ptr) ?? string.Empty;
+        }
+
+        [LibraryImport(Library, EntryPoint = "sf_get_string")]
+        private static partial IntPtr GetStringRaw(IntPtr sndfile, int strType);
+
+        [LibraryImport(Library, EntryPoint = "sf_set_string", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial int SetString(IntPtr sndfile, int strType, string value);
+
+        internal static string GetString(IntPtr sndfile, int strType)
+        {
+            var ptr = GetStringRaw(sndfile, strType);
+            return ptr == IntPtr.Zero ? null : Marshal.PtrToStringUTF8(ptr);
+        }
     }
 
     /// <summary>
@@ -174,10 +219,10 @@ namespace NAudio.SoundFile
     [StructLayout(LayoutKind.Sequential)]
     internal unsafe struct SfVirtualIo
     {
-        public delegate* unmanaged<IntPtr, long> GetFileLen;
-        public delegate* unmanaged<long, int, IntPtr, long> Seek;
-        public delegate* unmanaged<IntPtr, long, IntPtr, long> Read;
-        public delegate* unmanaged<IntPtr, long, IntPtr, long> Write;
-        public delegate* unmanaged<IntPtr, long> Tell;
+        public delegate* unmanaged[Cdecl]<IntPtr, long> GetFileLen;
+        public delegate* unmanaged[Cdecl]<long, int, IntPtr, long> Seek;
+        public delegate* unmanaged[Cdecl]<IntPtr, long, IntPtr, long> Read;
+        public delegate* unmanaged[Cdecl]<IntPtr, long, IntPtr, long> Write;
+        public delegate* unmanaged[Cdecl]<IntPtr, long> Tell;
     }
 }

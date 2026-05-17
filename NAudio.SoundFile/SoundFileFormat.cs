@@ -21,7 +21,7 @@ namespace NAudio.SoundFile
         Caf,
         /// <summary>Sony Wave64.</summary>
         W64,
-        /// <summary>Headerless raw PCM (a subtype must be supplied).</summary>
+        /// <summary>Headerless raw PCM (defaults to 16-bit PCM if no subtype is set).</summary>
         Raw,
         /// <summary>FLAC (requires libsndfile built with libFLAC).</summary>
         Flac,
@@ -147,6 +147,10 @@ namespace NAudio.SoundFile
                 : SubtypeToNative(subtype);
             return MajorToNative(major) | nativeSubtype;
         }
+
+        /// <summary>Whether the subtype is Opus (rate-restricted by the codec).</summary>
+        public static bool IsOpus(int rawFormat)
+            => (rawFormat & SndFileInterop.SF_FORMAT_SUBMASK) == SF_FORMAT_OPUS;
 
         /// <summary>
         /// Whether the container needs a seekable target to finalise (its

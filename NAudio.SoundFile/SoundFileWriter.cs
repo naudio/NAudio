@@ -16,9 +16,10 @@ namespace NAudio.SoundFile
     /// <remarks>
     /// The input <see cref="WaveFormat"/> must be 16-bit PCM or 32-bit IEEE
     /// float — the two container types NAudio pipelines naturally produce.
-    /// libsndfile transcodes that into the chosen output subtype. Which
-    /// codecs are available depends on the system libsndfile build — see
-    /// <see cref="SoundFileCapabilities"/>.
+    /// libsndfile transcodes that into the chosen output subtype (clipping
+    /// out-of-range float by default; see <see cref="SoundFileWriterOptions.Clipping"/>).
+    /// Which codecs are available depends on the system libsndfile build —
+    /// see <see cref="SoundFileCapabilities"/>.
     /// </remarks>
     public sealed class SoundFileWriter : Stream
     {
@@ -28,9 +29,11 @@ namespace NAudio.SoundFile
         private readonly WaveFormat sourceFormat;
         private readonly ItemType itemType;
         private readonly int channels;
+        private readonly int frameBytes;
         private readonly SafeSndFileHandle handle;
         private readonly StreamVirtualIo virtualIo;
         private SfVirtualIo vtable;
+        private byte[] carry = [];
         private long bytesWritten;
         private bool disposed;
 
@@ -87,7 +90,7 @@ namespace NAudio.SoundFile
         public static void WriteSoundFileToStream(Stream outStream, IWaveProvider source, SoundFileMajorFormat major, SoundFileWriterOptions options)
         {
             ArgumentNullException.ThrowIfNull(source);
-            using (var writer = new SoundFileWriter(new IgnoreDisposeStream(outStream), source.WaveFormat, major, options))
+            using (var writer = new SoundFileWriter(outStream, source.WaveFormat, major, options))
             {
                 Pump(source, writer);
             }
@@ -116,6 +119,8 @@ namespace NAudio.SoundFile
         /// </summary>
         /// <param name="path">Output path.</param>
         /// <param name="sourceFormat">Format of the bytes you will write (16-bit PCM or 32-bit IEEE float).</param>
+        /// <exception cref="ArgumentException">The extension is unknown, or libsndfile rejects the format.</exception>
+        /// <exception cref="NotSupportedException"><paramref name="sourceFormat"/> is not 16-bit PCM or 32-bit float.</exception>
         public SoundFileWriter(string path, WaveFormat sourceFormat)
             : this(path, sourceFormat, SoundFileFormatMap.InferMajorFromExtension(Guard(path)), null)
         {
@@ -128,8 +133,27 @@ namespace NAudio.SoundFile
         /// <param name="sourceFormat">Format of the bytes you will write (16-bit PCM or 32-bit IEEE float).</param>
         /// <param name="major">The container / codec to produce.</param>
         /// <param name="options">Encoder options, or <c>null</c> for defaults.</param>
+        /// <exception cref="ArgumentException">libsndfile rejects the format/rate/channel combination.</exception>
+        /// <exception cref="NotSupportedException"><paramref name="sourceFormat"/> is not 16-bit PCM or 32-bit float.</exception>
         public SoundFileWriter(string path, WaveFormat sourceFormat, SoundFileMajorFormat major, SoundFileWriterOptions options = null)
             : this(path, sourceFormat, BuildFormat(major, options), options)
+        {
+        }
+
+        /// <summary>
+        /// Creates a writer to a stream in an explicit format. The stream is
+        /// <em>not</em> disposed by the writer (the caller owns it). Streamed
+        /// formats (FLAC/Ogg/Opus/MP3) work on non-seekable streams; WAV/AIFF
+        /// need a seekable stream to back-patch their header.
+        /// </summary>
+        /// <param name="outStream">Destination stream.</param>
+        /// <param name="sourceFormat">Format of the bytes you will write (16-bit PCM or 32-bit IEEE float).</param>
+        /// <param name="major">The container / codec to produce.</param>
+        /// <param name="options">Encoder options, or <c>null</c> for defaults.</param>
+        /// <exception cref="ArgumentException">The stream can't satisfy the format, or libsndfile rejects it.</exception>
+        /// <exception cref="NotSupportedException"><paramref name="sourceFormat"/> is not 16-bit PCM or 32-bit float.</exception>
+        public SoundFileWriter(Stream outStream, WaveFormat sourceFormat, SoundFileMajorFormat major, SoundFileWriterOptions options = null)
+            : this(outStream, sourceFormat, BuildFormat(major, options), options)
         {
         }
 
@@ -141,31 +165,9 @@ namespace NAudio.SoundFile
         /// <param name="sourceFormat">Format of the bytes you will write (16-bit PCM or 32-bit IEEE float).</param>
         /// <param name="rawFormat">A libsndfile <c>SF_FORMAT_*</c> bitfield (major | subtype).</param>
         /// <param name="options">Encoder options, or <c>null</c> for defaults.</param>
-        public SoundFileWriter(string path, WaveFormat sourceFormat, int rawFormat, SoundFileWriterOptions options = null)
-        {
-            ArgumentNullException.ThrowIfNull(path);
-            (this.sourceFormat, itemType, channels) = Validate(sourceFormat);
-            var info = MakeInfo(sourceFormat, rawFormat);
-            IntPtr raw = SndFileInterop.Open(path, SndFileInterop.SFM_WRITE, ref info);
-            SoundFileException.ThrowIfOpenFailed(raw, "sf_open");
-            handle = new SafeSndFileHandle(raw);
-            ApplyOptions(options);
-        }
-
-        /// <summary>
-        /// Creates a writer to a stream in an explicit format. The stream is
-        /// <em>not</em> disposed by the writer (the caller owns it). Streamed
-        /// formats (FLAC/Ogg/Opus) work on non-seekable streams; WAV/AIFF
-        /// need a seekable stream to back-patch their header.
-        /// </summary>
-        /// <param name="outStream">Destination stream.</param>
-        /// <param name="sourceFormat">Format of the bytes you will write (16-bit PCM or 32-bit IEEE float).</param>
-        /// <param name="major">The container / codec to produce.</param>
-        /// <param name="options">Encoder options, or <c>null</c> for defaults.</param>
-        public SoundFileWriter(Stream outStream, WaveFormat sourceFormat, SoundFileMajorFormat major, SoundFileWriterOptions options = null)
-            : this(outStream, sourceFormat, BuildFormat(major, options), options)
-        {
-        }
+        /// <returns>A new writer.</returns>
+        public static SoundFileWriter FromRawFormat(string path, WaveFormat sourceFormat, int rawFormat, SoundFileWriterOptions options = null)
+            => new(path, sourceFormat, rawFormat, options);
 
         /// <summary>
         /// Creates a writer to a stream using a raw libsndfile format
@@ -175,14 +177,29 @@ namespace NAudio.SoundFile
         /// <param name="sourceFormat">Format of the bytes you will write (16-bit PCM or 32-bit IEEE float).</param>
         /// <param name="rawFormat">A libsndfile <c>SF_FORMAT_*</c> bitfield (major | subtype).</param>
         /// <param name="options">Encoder options, or <c>null</c> for defaults.</param>
-        public SoundFileWriter(Stream outStream, WaveFormat sourceFormat, int rawFormat, SoundFileWriterOptions options = null)
+        /// <returns>A new writer.</returns>
+        public static SoundFileWriter FromRawFormat(Stream outStream, WaveFormat sourceFormat, int rawFormat, SoundFileWriterOptions options = null)
+            => new(outStream, sourceFormat, rawFormat, options);
+
+        private SoundFileWriter(string path, WaveFormat sourceFormat, int rawFormat, SoundFileWriterOptions options)
+        {
+            ArgumentNullException.ThrowIfNull(path);
+            (this.sourceFormat, itemType, channels, frameBytes) = Validate(sourceFormat);
+            var info = MakeValidatedInfo(sourceFormat, rawFormat);
+            IntPtr raw = SndFileInterop.Open(path, SndFileInterop.SFM_WRITE, ref info);
+            SoundFileException.ThrowIfOpenFailed(raw, "sf_open");
+            handle = new SafeSndFileHandle(raw);
+            ApplyOptions(options);
+        }
+
+        private SoundFileWriter(Stream outStream, WaveFormat sourceFormat, int rawFormat, SoundFileWriterOptions options)
         {
             ArgumentNullException.ThrowIfNull(outStream);
             if (!outStream.CanWrite)
             {
                 throw new ArgumentException("Stream must be writable", nameof(outStream));
             }
-            (this.sourceFormat, itemType, channels) = Validate(sourceFormat);
+            (this.sourceFormat, itemType, channels, frameBytes) = Validate(sourceFormat);
 
             if (!outStream.CanSeek && SoundFileFormatMap.MajorNeedsSeekableStream(rawFormat))
             {
@@ -192,17 +209,9 @@ namespace NAudio.SoundFile
                     nameof(outStream));
             }
 
-            bool ownsStream = outStream is IgnoreDisposeStream ids && !ids.IgnoreDispose;
-            virtualIo = new StreamVirtualIo(outStream, ownsStream);
+            virtualIo = new StreamVirtualIo(outStream);
             vtable = StreamVirtualIo.CreateVtable();
-            var info = MakeInfo(sourceFormat, rawFormat);
-            if (SndFileInterop.FormatCheck(ref info) == 0)
-            {
-                virtualIo.Dispose();
-                throw new ArgumentException(
-                    $"libsndfile rejected format 0x{rawFormat:X} at {sourceFormat.SampleRate} Hz / {sourceFormat.Channels} ch",
-                    nameof(rawFormat));
-            }
+            var info = MakeValidatedInfo(sourceFormat, rawFormat);
             IntPtr raw = SndFileInterop.OpenVirtual(ref vtable, SndFileInterop.SFM_WRITE, ref info, virtualIo.UserData);
             if (raw == IntPtr.Zero)
             {
@@ -222,45 +231,89 @@ namespace NAudio.SoundFile
         private static int BuildFormat(SoundFileMajorFormat major, SoundFileWriterOptions options)
             => SoundFileFormatMap.BuildFormat(major, options?.Subtype ?? SoundFileSubtype.Default);
 
-        private static (WaveFormat, ItemType, int) Validate(WaveFormat format)
+        private static (WaveFormat, ItemType, int, int) Validate(WaveFormat format)
         {
             ArgumentNullException.ThrowIfNull(format);
             if (format.Encoding == WaveFormatEncoding.IeeeFloat && format.BitsPerSample == 32)
             {
-                return (format, ItemType.Float, format.Channels);
+                return (format, ItemType.Float, format.Channels, format.Channels * sizeof(float));
             }
             if (format.Encoding == WaveFormatEncoding.Pcm && format.BitsPerSample == 16)
             {
-                return (format, ItemType.Short, format.Channels);
+                return (format, ItemType.Short, format.Channels, format.Channels * sizeof(short));
             }
             throw new NotSupportedException(
                 "SoundFileWriter accepts 16-bit PCM or 32-bit IEEE float input. " +
                 "Convert with SampleToWaveProvider16 or .ToSampleProvider() first.");
         }
 
-        private static SfInfo MakeInfo(WaveFormat format, int rawFormat) => new()
+        private static SfInfo MakeValidatedInfo(WaveFormat format, int rawFormat)
         {
-            SampleRate = format.SampleRate,
-            Channels = format.Channels,
-            Format = rawFormat
-        };
+            if (SoundFileFormatMap.IsOpus(rawFormat) &&
+                format.SampleRate is not (8000 or 12000 or 16000 or 24000 or 48000))
+            {
+                throw new ArgumentException(
+                    $"Opus only supports 8/12/16/24/48 kHz; got {format.SampleRate} Hz. " +
+                    "Resample before encoding.",
+                    nameof(format));
+            }
+
+            var info = new SfInfo
+            {
+                SampleRate = format.SampleRate,
+                Channels = format.Channels,
+                Format = rawFormat
+            };
+            if (SndFileInterop.FormatCheck(ref info) == 0)
+            {
+                throw new ArgumentException(
+                    $"libsndfile rejected format 0x{rawFormat:X} at {format.SampleRate} Hz / {format.Channels} ch " +
+                    "(unsupported combination or codec not built into this libsndfile)",
+                    nameof(rawFormat));
+            }
+            return info;
+        }
 
         private void ApplyOptions(SoundFileWriterOptions options)
         {
+            IntPtr h = handle.DangerousGetHandle();
+
+            // Clip out-of-range float (default on); without it libsndfile
+            // wraps a >1.0 sample into loud distortion.
+            bool clip = options?.Clipping ?? true;
+            SndFileInterop.Command(h, SndFileInterop.SFC_SET_CLIPPING,
+                IntPtr.Zero, clip ? SndFileInterop.SF_TRUE : 0);
+
             if (options == null)
             {
                 return;
             }
-            IntPtr h = handle.DangerousGetHandle();
+
             if (options.VbrQuality is { } q)
             {
                 double v = q;
-                SndFileInterop.CommandSetDouble(h, SndFileInterop.SFC_SET_VBR_ENCODING_QUALITY, ref v, sizeof(double));
+                if (SndFileInterop.CommandSetDouble(h, SndFileInterop.SFC_SET_VBR_ENCODING_QUALITY, ref v, sizeof(double)) != SndFileInterop.SF_TRUE)
+                {
+                    throw new SoundFileException(
+                        $"libsndfile rejected VBR quality {q} for this codec", 0);
+                }
             }
             if (options.CompressionLevel is { } c)
             {
                 double v = c;
-                SndFileInterop.CommandSetDouble(h, SndFileInterop.SFC_SET_COMPRESSION_LEVEL, ref v, sizeof(double));
+                if (SndFileInterop.CommandSetDouble(h, SndFileInterop.SFC_SET_COMPRESSION_LEVEL, ref v, sizeof(double)) != SndFileInterop.SF_TRUE)
+                {
+                    throw new SoundFileException(
+                        $"libsndfile rejected compression level {c} for this codec", 0);
+                }
+            }
+            if (options.Tags is { IsEmpty: false } tags)
+            {
+                foreach (var (selector, value) in tags.NonNull())
+                {
+                    // Codec may not support a given field; that is not fatal.
+                    SndFileInterop.SetString(h, selector, value);
+                }
             }
         }
 
@@ -276,13 +329,13 @@ namespace NAudio.SoundFile
         /// <inheritdoc />
         public override bool CanSeek => false;
 
-        /// <summary>Number of source bytes written so far.</summary>
+        /// <summary>Number of source bytes accepted so far.</summary>
         public override long Length => bytesWritten;
 
         /// <inheritdoc />
         public override long Position
         {
-            get => bytesWritten;
+            get { lock (lockObject) { return bytesWritten; } }
             set => throw new InvalidOperationException("Cannot reposition a SoundFileWriter");
         }
 
@@ -302,40 +355,65 @@ namespace NAudio.SoundFile
         public override void Write(byte[] buffer, int offset, int count)
             => Write(buffer.AsSpan(offset, count));
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Appends source-format bytes. Sub-frame remainders are carried over
+        /// between calls, so callers may write arbitrary chunk sizes.
+        /// </summary>
+        /// <param name="buffer">Bytes in the constructor's input format.</param>
+        /// <exception cref="SoundFileException">The encoder failed.</exception>
         public override void Write(ReadOnlySpan<byte> buffer)
         {
             lock (lockObject)
             {
                 IntPtr h = Handle;
-                long frames;
-                long got;
-                if (itemType == ItemType.Short)
+
+                // Prepend any sub-frame remainder from the previous call.
+                if (carry.Length > 0)
                 {
-                    var items = MemoryMarshal.Cast<byte, short>(buffer);
-                    frames = items.Length / channels;
-                    got = frames == 0 ? 0 : SndFileInterop.WriteShort(h, items, frames);
+                    var joined = new byte[carry.Length + buffer.Length];
+                    carry.CopyTo(joined, 0);
+                    buffer.CopyTo(joined.AsSpan(carry.Length));
+                    WriteFrames(h, joined);
                 }
                 else
                 {
-                    var items = MemoryMarshal.Cast<byte, float>(buffer);
-                    frames = items.Length / channels;
-                    got = frames == 0 ? 0 : SndFileInterop.WriteFloat(h, items, frames);
-                }
-                if (got < frames)
-                {
-                    SoundFileException.ThrowIfError(h, "sf_writef");
+                    WriteFrames(h, buffer);
                 }
                 bytesWritten += buffer.Length;
             }
         }
 
+        // Writes the whole-frame prefix of data; stashes the (< one frame)
+        // tail in 'carry' for the next call. Caller holds lockObject.
+        private void WriteFrames(IntPtr h, ReadOnlySpan<byte> data)
+        {
+            int whole = data.Length - data.Length % frameBytes;
+            int remainder = data.Length - whole;
+
+            if (whole > 0)
+            {
+                long frames = whole / frameBytes;
+                long got = itemType == ItemType.Short
+                    ? SndFileInterop.WriteShort(h, MemoryMarshal.Cast<byte, short>(data[..whole]), frames)
+                    : SndFileInterop.WriteFloat(h, MemoryMarshal.Cast<byte, float>(data[..whole]), frames);
+                virtualIo?.ThrowIfFaulted();
+                if (got < frames)
+                {
+                    SoundFileException.ThrowIfError(h, "sf_writef");
+                }
+            }
+
+            carry = remainder == 0 ? [] : data[whole..].ToArray();
+        }
+
         /// <summary>
         /// Writes 32-bit float samples (interleaved by channel). Works
         /// regardless of the declared input format; libsndfile converts to
-        /// the output subtype.
+        /// the output subtype. Sample count should be a multiple of the
+        /// channel count.
         /// </summary>
         /// <param name="samples">Interleaved float samples.</param>
+        /// <exception cref="SoundFileException">The encoder failed.</exception>
         public void WriteSamples(ReadOnlySpan<float> samples)
         {
             lock (lockObject)
@@ -351,7 +429,7 @@ namespace NAudio.SoundFile
                 {
                     SoundFileException.ThrowIfError(h, "sf_writef_float");
                 }
-                bytesWritten += samples.Length * sizeof(float);
+                bytesWritten += frames * channels * sizeof(float);
             }
         }
 
@@ -363,6 +441,7 @@ namespace NAudio.SoundFile
                 if (!disposed)
                 {
                     SndFileInterop.WriteSync(handle.DangerousGetHandle());
+                    virtualIo?.ThrowIfFaulted();
                 }
             }
         }
@@ -379,14 +458,29 @@ namespace NAudio.SoundFile
         /// <inheritdoc />
         protected override void Dispose(bool disposing)
         {
-            if (disposing && !disposed)
+            if (disposing)
             {
-                disposed = true;
-                // sf_close finalises the encoder and (for the stream path)
-                // flushes trailing bytes through the vio write callback, so
-                // it must run before the GCHandle/stream are released.
-                handle?.Dispose();
-                virtualIo?.Dispose();
+                lock (lockObject)
+                {
+                    if (!disposed)
+                    {
+                        disposed = true;
+                        // sf_close finalises the encoder and (for the stream
+                        // path) flushes trailing bytes through the vio write
+                        // callback, so it must run before the GCHandle is
+                        // released. A flush failure at close (e.g. disk full)
+                        // is surfaced rather than silently truncating output.
+                        try
+                        {
+                            handle?.Dispose();
+                            virtualIo?.ThrowIfFaulted();
+                        }
+                        finally
+                        {
+                            virtualIo?.Dispose();
+                        }
+                    }
+                }
             }
             base.Dispose(disposing);
         }

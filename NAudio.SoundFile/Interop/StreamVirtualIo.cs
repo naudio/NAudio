@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace NAudio.SoundFile
@@ -22,14 +23,16 @@ namespace NAudio.SoundFile
     internal sealed unsafe class StreamVirtualIo : IDisposable
     {
         private readonly Stream stream;
-        private readonly bool ownsStream;
         private GCHandle selfHandle;
+        private Exception pending;
         private bool disposed;
 
-        public StreamVirtualIo(Stream stream, bool ownsStream)
+        // The caller always owns the backing stream (NAudio convention,
+        // matching WaveFileReader's Stream constructor) — this adapter
+        // never disposes it.
+        public StreamVirtualIo(Stream stream)
         {
             this.stream = stream;
-            this.ownsStream = ownsStream;
             selfHandle = GCHandle.Alloc(this);
         }
 
@@ -52,26 +55,50 @@ namespace NAudio.SoundFile
         private static StreamVirtualIo FromUserData(IntPtr userData)
             => (StreamVirtualIo)GCHandle.FromIntPtr(userData).Target;
 
-        [UnmanagedCallersOnly]
+        // Records the first failure so it can be rethrown on the managed
+        // side after the sf_* call returns. Exceptions cannot cross the
+        // native boundary and libsndfile has no "callback errored" return
+        // convention, so we stop cleanly (EOF) and surface later. Only
+        // Read/Write are faulted: a non-seekable stream legitimately fails
+        // Seek/Tell/GetFileLen and libsndfile copes with those returning -1
+        // (that is exactly how streamable FLAC/Ogg/Opus output works).
+        private void Fault(Exception ex) => pending ??= ex;
+
+        /// <summary>
+        /// Rethrows the first exception a callback captured, if any. Called
+        /// by the reader/writer after each native operation so a stream
+        /// failure mid-decode is not silently mistaken for end-of-file.
+        /// </summary>
+        public void ThrowIfFaulted()
+        {
+            var ex = pending;
+            if (ex != null)
+            {
+                pending = null;
+                throw new SoundFileException($"Backing stream failed: {ex.Message}", 0, ex);
+            }
+        }
+
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
         private static long GetFileLenCb(IntPtr userData)
         {
+            var self = FromUserData(userData);
             try
             {
-                var self = FromUserData(userData);
                 return self.stream.CanSeek ? self.stream.Length : -1;
             }
             catch
             {
-                return -1;
+                return -1; // optional capability; libsndfile copes
             }
         }
 
-        [UnmanagedCallersOnly]
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
         private static long SeekCb(long offset, int whence, IntPtr userData)
         {
+            var self = FromUserData(userData);
             try
             {
-                var self = FromUserData(userData);
                 if (!self.stream.CanSeek)
                 {
                     return -1;
@@ -93,16 +120,16 @@ namespace NAudio.SoundFile
             }
             catch
             {
-                return -1;
+                return -1; // optional capability; libsndfile copes
             }
         }
 
-        [UnmanagedCallersOnly]
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
         private static long ReadCb(IntPtr ptr, long count, IntPtr userData)
         {
+            var self = FromUserData(userData);
             try
             {
-                var self = FromUserData(userData);
                 long total = 0;
                 while (total < count)
                 {
@@ -117,18 +144,19 @@ namespace NAudio.SoundFile
                 }
                 return total;
             }
-            catch
+            catch (Exception ex)
             {
-                return -1;
+                self.Fault(ex);
+                return 0; // present as EOF; ThrowIfFaulted surfaces the real cause
             }
         }
 
-        [UnmanagedCallersOnly]
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
         private static long WriteCb(IntPtr ptr, long count, IntPtr userData)
         {
+            var self = FromUserData(userData);
             try
             {
-                var self = FromUserData(userData);
                 long total = 0;
                 while (total < count)
                 {
@@ -139,22 +167,24 @@ namespace NAudio.SoundFile
                 }
                 return total;
             }
-            catch
+            catch (Exception ex)
             {
-                return -1;
+                self.Fault(ex);
+                return 0; // short write → libsndfile errors; cause surfaced later
             }
         }
 
-        [UnmanagedCallersOnly]
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
         private static long TellCb(IntPtr userData)
         {
+            var self = FromUserData(userData);
             try
             {
-                return FromUserData(userData).stream.Position;
+                return self.stream.Position;
             }
             catch
             {
-                return -1;
+                return -1; // optional capability; libsndfile copes
             }
         }
 
@@ -169,10 +199,6 @@ namespace NAudio.SoundFile
             if (selfHandle.IsAllocated)
             {
                 selfHandle.Free();
-            }
-            if (ownsStream)
-            {
-                stream.Dispose();
             }
         }
     }

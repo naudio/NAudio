@@ -48,6 +48,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * **Effects:** `TransientShaperEffect` (dual-envelope attack/sustain shaping), split-band `DeEsserEffect`, and `MultibandCompressorEffect` (configurable LR4 bands, per-band threshold/ratio/attack/release/make-up with metering)
  * **Effects:** `PitchShiftEffect` — framework-integrated pitch shifting (per-channel Bernsee phase-vocoder), semitone control with FFT latency reporting
  * **Effects:** optional `IParameterized` / `EffectParameter` model — effects can expose their controls (continuous/toggle/choice/meter) as a uniform list for generic UIs, presets and automation, without changing `IAudioEffect`; wired on the common effects
+ * **Effects:** new `ParameterDispatchQueue` / `IParameterDispatch` — a lock-free single-producer/single-consumer queue that defers `EffectParameter` writes from a control thread and applies them on the audio thread at a block boundary, so live parameter edits never race the realtime callback
  * **Effects:** `SaturationEffect` (tanh/cubic/arctan/hard-clip wave-shaper with drive, output trim and optional 2×/4× oversampling) and `BitCrusherEffect` (bit-depth + sample-rate reduction); plus a reusable `NAudio.Dsp.Oversampler`
  * **Effects:** time/modulation — `DelayEffect` (tempo-syncable, feedback damping, ping-pong), `ChorusEffect`, `FlangerEffect`, `PhaserEffect`, `TremoloEffect` (with auto-pan); plus reusable `NAudio.Dsp.Lfo` and `NoteDivision`/`TempoTime` tempo helpers
  * **Effects:** `ConvolutionReverbEffect` (partitioned FFT convolution, mono or per-channel IR, reports latency) replacing the removed `ImpulseResponseConvolution`; plus a reusable `NAudio.Dsp.PartitionedConvolver`
@@ -56,7 +57,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
 
 #### Demo apps and Test Harnesses
 
- * **WPF demo:** new **Realtime Effects** module — full-duplex `AsioDevice` monitor (driver + mono/stereo input) with feedback safety (starts muted, headphone warning, runaway auto-mute), an add/remove/reorder effect-chain editor with auto-generated parameter panels (knobs/toggles/choices/meters + Bypass/Mix) driven by `IParameterized`, and WAV-file playback / offline render through the chain
+ * **WPF demo:** new **Realtime Effects** module — full-duplex `AsioDevice` monitor (driver + mono/stereo input) with feedback safety (starts muted, headphone warning, runaway auto-mute), an add/remove/reorder effect-chain editor with auto-generated parameter panels (knobs/toggles/choices/meters + Bypass/Mix) driven by `IParameterized`, and WAV-file playback / offline render through the chain. Live parameter edits are marshalled to the audio thread via `ParameterDispatchQueue`, newly added effects are pre-warmed off the audio thread, and ASIO monitoring and file playback/render are mutually exclusive (the chain is shared)
  * **NAudioConsoleTest:** new CLI test harness for driving various NAudio features without the need for GUI. Includes `run-batch` for JSON-driven test plans and `diagnose` for capturing a structured host audio snapshot (OS, ASIO drivers, WASAPI/WinMM/DirectSound devices, NAudio assembly versions).
  * **WPF demos:** spectrum analyser rewritten with corrected dB formula (20·log₁₀), log-frequency mapping, real-input full-scale calibration, bars instead of polylines, peak-decay markers, and per-band smoothing. New `LiveWaveformControl` with configurable render styles, vertical scaling, and fill-between rendering
  * **WAV recording demo:** added loopback support and a multi-API device combo with provenance embedding
@@ -94,6 +95,9 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * `MediaBufferLease`: hardened against out-of-order disposal
  * Added finalizers to DMO `MediaBuffer` and the `Mf*` wrappers that hold (RCW, IntPtr) pairs to prevent COM ref leaks
  * `WaveFileChunkReader`: fixed `ArgumentException` parsing WAV files whose odd-length chunks are followed by non-UTF-8 bytes — the word-alignment pad-byte check no longer decodes via `BinaryReader.PeekChar()`, and is now guarded against end-of-stream (#959)
+ * `LimiterEffect`: fixed look-ahead overshoot on isolated transients — the gain is now a sliding-window minimum of the required gain over the look-ahead window (held until the delayed transient has passed) instead of a release envelope evaluated at input time, which could recover before the transient emerged
+ * `DelayLine`: a fractional read at exactly `MaxDelaySamples` no longer wraps to the newest sample (the line keeps one extra internal sample); the public contract is unchanged
+ * `ReverbEffect` (Freeverb): comb damping is now sample-rate invariant — the damping cutoff (hence high-frequency decay) no longer brightens at higher sample rates
  * Clarified `BiQuadFilter` `q` parameter docs (#1264)
  * Removed dead `naudio.codeplex.com` links from README, MixDiff Help menu, and source comments (CodePlex was shut down by Microsoft in 2017) (#985)
 

@@ -76,6 +76,12 @@ namespace NAudio.Effects
             var channels = Channels;
             var feedback = RoomSize * ScaleRoom + OffsetRoom;
             var damp1 = Damping * ScaleDamp;
+            // The comb lengths scale with sample rate (so the decay time is already
+            // stable), but this damping one-pole is per-sample, so re-map its
+            // coefficient to keep the damping cutoff frequency — hence the
+            // high-frequency decay — sample-rate invariant.
+            if (SampleRate != 44100 && damp1 > 0f)
+                damp1 = MathF.Pow(damp1, 44100f / SampleRate);
             var width = Math.Clamp(Width, 0f, 1f);
             var wet1 = width * 0.5f + 0.5f;
             var wet2 = (1f - width) * 0.5f;

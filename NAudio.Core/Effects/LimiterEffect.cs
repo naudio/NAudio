@@ -31,7 +31,14 @@ namespace NAudio.Effects
 
         private DelayLine[] delays = Array.Empty<DelayLine>();
         private Oversampler[] detectors = Array.Empty<Oversampler>();
-        private float peakEnvelope;
+        // Monotonic-increasing ring deque holding the required gain for each sample
+        // in the look-ahead window; the front is the minimum over the window.
+        private float[] dqGain = Array.Empty<float>();
+        private long[] dqPos = Array.Empty<long>();
+        private int dqHead;
+        private int dqTail;
+        private long position;
+        private float smoothedGain = 1f;
         private float releaseCoefficient;
         private int lookaheadSamples = 1;
         private float ceilingDb = -0.3f;
@@ -120,7 +127,15 @@ namespace NAudio.Effects
             for (var ch = 0; ch < format.Channels; ch++)
                 delays[ch] = new DelayLine(lookaheadSamples + 1);
             BuildDetectors();
-            peakEnvelope = 0f;
+            // Window spans the look-ahead sample plus its L predecessors (L+1
+            // entries); +1 more for the ring's reserved empty slot.
+            var capacity = lookaheadSamples + 2;
+            dqGain = new float[capacity];
+            dqPos = new long[capacity];
+            dqHead = 0;
+            dqTail = 0;
+            position = 0;
+            smoothedGain = 1f;
             GainReductionDb = 0f;
             RecomputeRelease();
         }
@@ -142,14 +157,23 @@ namespace NAudio.Effects
         {
             var channels = Channels;
             var useTruePeak = detectors.Length == channels;
+            var capacity = dqGain.Length;
             Span<float> work = stackalloc float[4];
             for (var i = 0; i + channels <= buffer.Length; i += channels)
             {
                 var peak = 0f;
                 for (var ch = 0; ch < channels; ch++)
                 {
+                    var sample = MathF.Abs(buffer[i + ch]);
+                    if (sample > peak)
+                        peak = sample;
                     if (useTruePeak)
                     {
+                        // Inter-sample peaks on top of — never instead of — the
+                        // raw sample peak: a band-limited upsampler attenuates
+                        // near-Nyquist content, so the oversampled magnitude can
+                        // read below the actual sample and must not lower the
+                        // detected peak.
                         detectors[ch].Upsample(buffer[i + ch], work);
                         for (var k = 0; k < oversampleFactor; k++)
                         {
@@ -158,25 +182,48 @@ namespace NAudio.Effects
                                 peak = u;
                         }
                     }
-                    else
-                    {
-                        var a = MathF.Abs(buffer[i + ch]);
-                        if (a > peak)
-                            peak = a;
-                    }
                 }
 
-                // Instant attack, smoothed release: the peak is seen `lookahead`
-                // samples before the (delayed) sample it belongs to is output.
-                peakEnvelope = MathF.Max(peak, peakEnvelope * releaseCoefficient);
-                var gain = peakEnvelope > ceilingLinear ? ceilingLinear / peakEnvelope : 1f;
-                GainReductionDb = gain < 1f ? -20f * MathF.Log10(gain) : 0f;
+                var requiredGain = peak > ceilingLinear ? ceilingLinear / peak : 1f;
+
+                // Sliding-window minimum of the required gain over the look-ahead
+                // window. Because the signal is delayed by the same window, the
+                // gain is already at its lowest needed value by the time a loud
+                // sample reaches the output — provably no overshoot, while a
+                // releasing detector evaluated at input time (the old design)
+                // could recover before the delayed transient emerged.
+                while (dqHead != dqTail)
+                {
+                    var back = dqTail == 0 ? capacity - 1 : dqTail - 1;
+                    if (dqGain[back] >= requiredGain)
+                        dqTail = back; // dominated — drop it
+                    else
+                        break;
+                }
+                dqGain[dqTail] = requiredGain;
+                dqPos[dqTail] = position;
+                dqTail = dqTail + 1 == capacity ? 0 : dqTail + 1;
+
+                while (dqPos[dqHead] < position - lookaheadSamples)
+                    dqHead = dqHead + 1 == capacity ? 0 : dqHead + 1;
+
+                var windowMinGain = dqGain[dqHead];
+
+                // Instant attack is safe (the whole window's minimum is known
+                // now); recover with a click-free release.
+                if (windowMinGain < smoothedGain)
+                    smoothedGain = windowMinGain;
+                else
+                    smoothedGain = windowMinGain + (smoothedGain - windowMinGain) * releaseCoefficient;
+
+                GainReductionDb = smoothedGain < 1f ? -20f * MathF.Log10(smoothedGain) : 0f;
 
                 for (var ch = 0; ch < channels; ch++)
                 {
                     delays[ch].Write(buffer[i + ch]);
-                    buffer[i + ch] = delays[ch].Read(lookaheadSamples + 1) * gain;
+                    buffer[i + ch] = delays[ch].Read(lookaheadSamples + 1) * smoothedGain;
                 }
+                position++;
             }
         }
 
@@ -188,7 +235,10 @@ namespace NAudio.Effects
                 delay.Reset();
             foreach (var detector in detectors)
                 detector.Reset();
-            peakEnvelope = 0f;
+            dqHead = 0;
+            dqTail = 0;
+            position = 0;
+            smoothedGain = 1f;
             GainReductionDb = 0f;
         }
 

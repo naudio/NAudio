@@ -14,6 +14,8 @@ namespace NAudioWpfDemo.RealtimeEffectsDemo
     {
         private AsioDevice device;
         private float[] scratch = Array.Empty<float>();
+        private float[] prewarm = Array.Empty<float>();
+        private IAudioEffect[] attached = Array.Empty<IAudioEffect>();
         private volatile IAudioEffect[] effects = Array.Empty<IAudioEffect>();
         private volatile bool muted = true;
         private volatile bool autoMuted;
@@ -24,6 +26,13 @@ namespace NAudioWpfDemo.RealtimeEffectsDemo
         public bool IsRunning => device != null && device.State == AsioDeviceState.Running;
 
         public int SampleRate { get; private set; }
+
+        /// <summary>
+        /// Carries parameter edits from the UI thread to the audio thread. Drained
+        /// at the top of every ASIO block so setters run where there is no
+        /// concurrent reader.
+        /// </summary>
+        public ParameterDispatchQueue Parameters { get; } = new ParameterDispatchQueue();
 
         /// <summary>When true the output is silenced (feedback-safe default).</summary>
         public bool Muted
@@ -37,9 +46,62 @@ namespace NAudioWpfDemo.RealtimeEffectsDemo
 
         /// <summary>
         /// Replaces the processing chain. The effects must already be configured for the
-        /// engine's sample rate and stereo. Thread-safe against the audio callback.
+        /// engine's sample rate and stereo. Thread-safe against the audio callback:
+        /// newly added effects are warmed (one silent block, off the audio thread) so
+        /// their one-time buffer sizing never lands on the ASIO callback, and their
+        /// parameters are routed through <see cref="Parameters"/> before the chain is
+        /// published so a UI edit can never race the audio thread inline.
         /// </summary>
-        public void SetEffects(IAudioEffect[] chain) => effects = chain ?? Array.Empty<IAudioEffect>();
+        public void SetEffects(IAudioEffect[] chain)
+        {
+            chain ??= Array.Empty<IAudioEffect>();
+
+            if (IsRunning)
+            {
+                foreach (var e in chain)
+                    if (!Contains(attached, e))
+                        Prewarm(e);
+                foreach (var e in chain)
+                    if (e is IParameterized p)
+                        Parameters.Attach(p);
+
+                effects = chain; // atomic publish to the audio thread
+
+                foreach (var e in attached)
+                    if (!Contains(chain, e) && e is IParameterized p)
+                        Parameters.Detach(p);
+                attached = chain;
+            }
+            else
+            {
+                effects = chain;
+                Unbind();
+            }
+        }
+
+        private void Prewarm(IAudioEffect effect)
+        {
+            if (prewarm.Length == 0)
+                return;
+            Array.Clear(prewarm, 0, prewarm.Length);
+            effect.Process(prewarm.AsSpan());
+        }
+
+        private void Unbind()
+        {
+            foreach (var e in attached)
+                if (e is IParameterized p)
+                    Parameters.Detach(p);
+            attached = Array.Empty<IAudioEffect>();
+        }
+
+        private static bool Contains(IAudioEffect[] array, IAudioEffect effect)
+        {
+            foreach (var e in array)
+                if (ReferenceEquals(e, effect))
+                    return true;
+            return false;
+        }
 
         /// <summary>Returns true once if a feedback auto-mute fired since the last call.</summary>
         public bool ConsumeAutoMuted()
@@ -68,6 +130,7 @@ namespace NAudioWpfDemo.RealtimeEffectsDemo
 
             SampleRate = device.CurrentSampleRate;
             scratch = new float[device.FramesPerBuffer * 2];
+            prewarm = new float[device.FramesPerBuffer * 2];
             muted = true;
             autoMuted = false;
             runawaySamples = 0;
@@ -84,11 +147,14 @@ namespace NAudioWpfDemo.RealtimeEffectsDemo
                 device.Dispose();
                 device = null;
             }
+            Unbind();
             outputLevel = 0f;
         }
 
         private void OnBuffer(in AsioProcessBuffers buffers)
         {
+            Parameters.Drain(); // apply pending UI edits on the audio thread, pre-block
+
             var frames = buffers.Frames;
             var samples = frames * 2;
             var buffer = scratch;

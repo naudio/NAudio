@@ -11,6 +11,7 @@ namespace NAudio.Dsp
     public sealed class DelayLine
     {
         private readonly float[] buffer;
+        private readonly int maxDelay;
         private int writeIndex;
 
         /// <summary>
@@ -22,13 +23,17 @@ namespace NAudio.Dsp
         {
             if (maxDelaySamples < 1)
                 throw new ArgumentOutOfRangeException(nameof(maxDelaySamples), "Maximum delay must be at least 1 sample");
-            buffer = new float[maxDelaySamples];
+            maxDelay = maxDelaySamples;
+            // One extra slot so a fractional read at exactly MaxDelaySamples still
+            // has a valid older neighbour to interpolate against (otherwise it
+            // would wrap to the newest sample and glitch).
+            buffer = new float[maxDelaySamples + 1];
         }
 
         /// <summary>
         /// Maximum delay in samples this line can produce.
         /// </summary>
-        public int MaxDelaySamples => buffer.Length;
+        public int MaxDelaySamples => maxDelay;
 
         /// <summary>
         /// Writes one sample into the line, advancing the write head.
@@ -47,7 +52,7 @@ namespace NAudio.Dsp
         /// <param name="delaySamples">Delay in samples, from 1 to <see cref="MaxDelaySamples"/>.</param>
         public float Read(int delaySamples)
         {
-            if (delaySamples < 1 || delaySamples > buffer.Length)
+            if (delaySamples < 1 || delaySamples > maxDelay)
                 throw new ArgumentOutOfRangeException(nameof(delaySamples));
             var index = writeIndex - delaySamples;
             if (index < 0)
@@ -62,7 +67,7 @@ namespace NAudio.Dsp
         /// <param name="delaySamples">Delay in samples (may be fractional), from 1 to <see cref="MaxDelaySamples"/>.</param>
         public float Read(float delaySamples)
         {
-            if (delaySamples < 1f || delaySamples > buffer.Length)
+            if (delaySamples < 1f || delaySamples > maxDelay)
                 throw new ArgumentOutOfRangeException(nameof(delaySamples));
             var whole = (int)delaySamples;
             var fraction = delaySamples - whole;

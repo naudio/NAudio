@@ -129,6 +129,59 @@ namespace NAudioTests.Effects
             Assert.That(peak, Is.LessThan(ceiling * 1.05f));
         }
 
+        [Test]
+        public void IsolatedTransientDoesNotOvershootTheCeiling()
+        {
+            // Definitive look-ahead test. A single loud burst in otherwise quiet
+            // audio: the old design ran the detector's release at input time and
+            // applied it to the delayed output, so the reduction could recover
+            // before the delayed transient emerged → overshoot. The window-minimum
+            // design must hold the gain down until the transient has passed.
+            const int sr = 48000;
+            const int burstAt = 24000;
+            const int burstLen = 12;
+
+            static float[] MakeSignal()
+            {
+                var b = new float[sr];
+                for (var i = 0; i < b.Length; i++)
+                    b[i] = 0.02f * MathF.Sin(i * (2f * MathF.PI * 200f / sr));
+                for (var i = burstAt; i < burstAt + burstLen; i++)
+                    b[i] = 1.0f; // a broadband full-scale pulse, not a Nyquist burst
+                return b;
+            }
+
+            // Sample-peak path: exact, must never exceed the linear ceiling.
+            var samplePeak = new LimiterEffect { TruePeak = false }; // default -0.3 dB
+            samplePeak.Configure(Mono);
+            var ceiling = MathF.Pow(10f, -0.3f / 20f);
+            var a = MakeSignal();
+            samplePeak.Process(a);
+
+            float peakOut = 0f;
+            foreach (var s in a)
+            {
+                Assert.That(float.IsFinite(s), Is.True);
+                peakOut = MathF.Max(peakOut, MathF.Abs(s));
+            }
+            Assert.That(peakOut, Is.LessThanOrEqualTo(ceiling * 1.0005f),
+                "sample-peak limiter overshot on an isolated transient");
+            Assert.That(samplePeak.GainReductionDb, Is.GreaterThan(0f),
+                "limiter did not engage on the transient");
+
+            // True-peak path: inter-sample reconstruction must also stay bounded.
+            var truePeak = new LimiterEffect { TruePeak = true, OversampleFactor = 4 };
+            truePeak.Configure(Mono);
+            var b = MakeSignal();
+            truePeak.Process(b);
+            foreach (var s in b)
+            {
+                Assert.That(float.IsFinite(s), Is.True);
+                Assert.That(MathF.Abs(s), Is.LessThanOrEqualTo(ceiling * 1.01f),
+                    "true-peak limiter overshot on an isolated transient");
+            }
+        }
+
         private static float SampleToDb(float linear) => 20f * MathF.Log10(linear);
     }
 }

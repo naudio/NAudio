@@ -240,6 +240,71 @@ helpers so every effect inherits it.
 
 **This layer is the prerequisite for everything in §6 and is the cheapest high-value work.**
 
+### 3.3 Thread model for parameter edits — block-boundary dispatch (decided)
+
+A live effect is mutated on exactly one thread: the audio thread, at a block
+boundary. Off-thread callers (the harness UI, later automation/presets) never
+touch effect state directly while the effect is running.
+
+- `EffectParameter` gains an optional dispatch sink. When a sink is installed,
+  the `Value` setter clamps the value and **posts** `(parameter, value)` to a
+  pre-allocated, lock-free single-producer/single-consumer ring
+  (`ParameterDispatchQueue`) instead of invoking the effect's setter inline.
+  With no sink (the `EffectChain`, offline render, unit tests — all
+  single-threaded) it applies inline exactly as before, so the model stays
+  opt-in and additive and `IAudioEffect` is unchanged.
+- The realtime engine owns the queue, `Attach`es it to every parameter of the
+  effects it adopts (and `Detach`es on stop/replace), and calls `Drain()` once
+  at the top of each ASIO block, *before* DSP. Pending setters then run on the
+  audio thread, so coefficient recomputation, delay-buffer resizes and the
+  `CrossfadingBiQuadFilter` swap all execute where there is no concurrent
+  reader. This is the ASIO buffer acting as the "parameter block" boundary.
+- Consequence: `CrossfadingBiQuadFilter`'s unsynchronised swap and the
+  delay-buffer-resize race are **safe by construction** — there is no
+  cross-thread access left to harden per-primitive. The queue is bounded
+  (drops the oldest pending write on overflow; the next edit of a parameter
+  supersedes it) — a slider drag emits far fewer events per second than blocks
+  are processed, so it never backs up in practice.
+- `Bypass`/`Mix` stay direct writes: single `bool`/`float` fields (atomic per
+  ECMA, no torn read) whose transitions the base class already ramps
+  click-free, so deferring them buys nothing.
+
+This is the recorded resolution of the "live parameter edit race" review
+finding and the load-bearing decision for the future VST3 host (same model,
+same queue).
+
+### 3.4 Milestone 1 — realtime & correctness hardening (in progress)
+
+Done before the first Windows clone-and-listen, on `naudio3-effects`:
+
+1. **Parameter dispatch** (§3.3): `IParameterDispatch` + `ParameterDispatchQueue`,
+   `EffectParameter` deferral, engine attach/detach/drain.
+2. **No audio-thread allocation in the harness:** the engine pre-warms each
+   newly added effect with one silent block off the audio thread, so
+   `AudioEffect`'s one-time dry-buffer sizing never lands on the ASIO callback.
+3. **`DelayLine` fractional-read boundary:** the line now keeps one extra
+   internal sample so a fractional read at exactly `MaxDelaySamples`
+   interpolates against the correct older neighbour instead of wrapping to the
+   newest sample. Public contract (`MaxDelaySamples`, valid range) unchanged.
+4. **Freeverb damping is sample-rate invariant:** the comb damping one-pole
+   coefficient is re-mapped by `pow(a, 44100/sampleRate)` so the damping
+   *cutoff frequency* (hence the high-frequency decay) no longer shifts with
+   sample rate. Comb/all-pass lengths already scale, so the low-frequency
+   decay time was already stable.
+5. **Look-ahead limiter is now provably brick-wall:** the old design ran the
+   peak detector's *release* at input time and applied that envelope to the
+   delayed output, so an isolated short transient could release below the
+   ceiling before its delayed copy emerged → overshoot. Replaced with a
+   sliding-window minimum of the required gain over the look-ahead window
+   (allocation-free monotonic deque) + click-free release; an
+   isolated-transient unit test pins no-overshoot. *Known residual quality
+   trait, documented not a bug:* a brief look-ahead "pre-dip" on the quiet
+   audio preceding a transient — inherent to instant-attack look-ahead
+   limiting.
+6. **Harness file-vs-live mutual exclusion:** ASIO monitoring and file
+   playback/render can no longer run the shared effect instances on two audio
+   threads at once.
+
 ---
 
 ## 4. Port vs build — the decision framework
@@ -420,7 +485,9 @@ chain. WPF demo compiles clean; runtime is CI/Windows. **The real-time effects h
 is complete** — the subjective-quality evaluation tool is ready, and the same
 parameter/chain model is the foundation for the future VST3-host UI. EQ/multiband
 (dynamic band lists) and convolution-reverb IR are deliberately excluded from the
-generic catalog (need bespoke UI).
+generic catalog (need bespoke UI). **Milestone 1 (realtime & correctness
+hardening) is being applied before the first Windows listen — see §3.4** for the
+parameter-dispatch thread model and the limiter / DelayLine / Freeverb fixes.
 
 Cross-cutting, every phase: allocation-free steady state, AOT/trim-safe, `Span<float>`,
 numerical-correctness unit tests (the repo already does this — e.g. `BiQuadFilterTests`,

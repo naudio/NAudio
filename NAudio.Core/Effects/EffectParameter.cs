@@ -30,6 +30,7 @@ namespace NAudio.Effects
     {
         private readonly Func<float> getter;
         private readonly Action<float> setter; // null ⇒ read-only (Meter)
+        private volatile IParameterDispatch dispatch;
 
         private EffectParameter(string name, EffectParameterKind kind, string unit,
             float minimum, float maximum, IReadOnlyList<string> choices,
@@ -73,7 +74,10 @@ namespace NAudio.Effects
         /// <summary>
         /// The live value, read from / written to the underlying effect property.
         /// Writes are clamped to [<see cref="Minimum"/>, <see cref="Maximum"/>]; writes
-        /// to a meter are ignored.
+        /// to a meter are ignored. If a dispatch has been attached (the effect is
+        /// running behind an audio thread) the clamped write is deferred and applied
+        /// at the next block boundary on the audio thread; otherwise it is applied
+        /// inline. See <see cref="ParameterDispatchQueue"/>.
         /// </summary>
         public float Value
         {
@@ -83,9 +87,26 @@ namespace NAudio.Effects
                 if (setter == null)
                     return;
                 var v = value < Minimum ? Minimum : value > Maximum ? Maximum : value;
-                setter(v);
+                var d = dispatch;
+                if (d != null)
+                    d.Post(this, v);
+                else
+                    setter(v);
             }
         }
+
+        /// <summary>
+        /// Routes writes through <paramref name="value"/> (deferred to the audio
+        /// thread) or, when null, restores inline application. Internal: only a
+        /// <see cref="ParameterDispatchQueue"/> manages this.
+        /// </summary>
+        internal void SetDispatch(IParameterDispatch value) => dispatch = value;
+
+        /// <summary>
+        /// Applies an already-clamped value directly to the effect. Called on the
+        /// audio thread by <see cref="ParameterDispatchQueue.Drain"/>.
+        /// </summary>
+        internal void ApplyDeferred(float value) => setter?.Invoke(value);
 
         /// <summary>Creates a continuous numeric parameter.</summary>
         public static EffectParameter Continuous(string name, string unit, float minimum,

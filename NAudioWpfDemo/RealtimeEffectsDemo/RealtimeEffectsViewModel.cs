@@ -175,6 +175,10 @@ namespace NAudioWpfDemo.RealtimeEffectsDemo
                          "Output is muted — enable monitoring to listen.";
                 StartCommand.IsEnabled = false;
                 StopCommand.IsEnabled = true;
+                // The chain is shared; don't let the file path drive it on a
+                // second audio thread while ASIO owns it.
+                PlayFileCommand.IsEnabled = false;
+                RenderCommand.IsEnabled = false;
             }
             catch (Exception ex)
             {
@@ -189,6 +193,9 @@ namespace NAudioWpfDemo.RealtimeEffectsDemo
             OutputLevel = 0;
             StartCommand.IsEnabled = Drivers.Count > 0;
             StopCommand.IsEnabled = false;
+            var hasFile = !string.IsNullOrEmpty(inputFilePath);
+            PlayFileCommand.IsEnabled = hasFile;
+            RenderCommand.IsEnabled = hasFile;
             Status = "Stopped.";
         }
 
@@ -209,6 +216,11 @@ namespace NAudioWpfDemo.RealtimeEffectsDemo
 
         private void PlayFile()
         {
+            if (engine.IsRunning)
+            {
+                Status = "Stop ASIO monitoring before playing a file through the chain.";
+                return;
+            }
             StopFile();
             try
             {
@@ -221,6 +233,7 @@ namespace NAudioWpfDemo.RealtimeEffectsDemo
                 filePlayer.Play();
                 PlayFileCommand.IsEnabled = false;
                 StopFileCommand.IsEnabled = true;
+                StartCommand.IsEnabled = false;
                 Status = "Playing file through the chain.";
             }
             catch (Exception ex)
@@ -237,10 +250,16 @@ namespace NAudioWpfDemo.RealtimeEffectsDemo
             fileReader = null;
             PlayFileCommand.IsEnabled = !string.IsNullOrEmpty(inputFilePath);
             StopFileCommand.IsEnabled = false;
+            StartCommand.IsEnabled = Drivers.Count > 0 && !engine.IsRunning;
         }
 
         private void RenderToFile()
         {
+            if (engine.IsRunning)
+            {
+                Status = "Stop ASIO monitoring before rendering through the chain.";
+                return;
+            }
             var dialog = new SaveFileDialog { Filter = "WAV file (*.wav)|*.wav" };
             if (dialog.ShowDialog() != true)
                 return;

@@ -2,7 +2,6 @@
 using System;
 using System.IO;
 using System.Threading;
-using System.Runtime.CompilerServices;
 
 using NAudio.Utils;
 using NAudio.Wasapi.CoreAudioApi;
@@ -39,13 +38,11 @@ namespace NAudio.MediaFoundation
         // These data are both used for R/W operations.
         private sealed class AsyncWorkData
         {
-            public byte[] AllocatedDotNetBuffer;
             public IntPtr NativePointer;
             public int DataSize;
 
-            public AsyncWorkData(byte[] buffer, IntPtr native, int cb)
+            public AsyncWorkData(IntPtr native, int cb)
             {
-                AllocatedDotNetBuffer = buffer;
                 NativePointer = native;
                 DataSize = cb;
             }
@@ -217,12 +214,9 @@ namespace NAudio.MediaFoundation
 
         public unsafe int Write(nint pb, int cb, out int pcbWritten)
         {
-            byte[] rented = null;
             try
             {
-                rented = System.Buffers.ArrayPool<byte>.Shared.Rent(cb);
-                Unsafe.CopyBlockUnaligned(ref rented[0], ref Unsafe.AsRef<byte>(pb.ToPointer()), (uint)cb);
-                stream.Write(rented.AsSpan(0, pcbWritten = cb));
+                stream.Write(new ReadOnlySpan<byte>(pb.ToPointer(), pcbWritten = cb));
                 return CommonHResults.S_OK;
             }
             catch (OutOfMemoryException)
@@ -244,32 +238,14 @@ namespace NAudio.MediaFoundation
             {
                 pcbWritten = 0;
                 return CommonHResults.E_FAIL;
-            }
-            finally
-            {
-                if (rented is not null)
-                {
-                    System.Buffers.ArrayPool<byte>.Shared.Return(rented);
-                }
             }
         }
 
         public unsafe int Read(nint pb, int cb, out int pcbRead)
         {
-            byte[] rented = null;
             try
             {
-                rented = System.Buffers.ArrayPool<byte>.Shared.Rent(cb);
-                int read = stream.Read(rented);
-                if (read == 0)
-                {
-                    pcbRead = 0;
-                }
-                else
-                {
-                    Unsafe.CopyBlockUnaligned(ref Unsafe.AsRef<byte>(pb.ToPointer()), ref rented[0], (uint)read);
-                    pcbRead = read;
-                }
+                pcbRead = stream.Read(new Span<byte>(pb.ToPointer(), cb));
                 return CommonHResults.S_OK;
             }
             catch (OutOfMemoryException)
@@ -292,34 +268,13 @@ namespace NAudio.MediaFoundation
                 pcbRead = 0;
                 return CommonHResults.E_FAIL;
             }
-            finally
-            {
-                if (rented is not null)
-                {
-                    System.Buffers.ArrayPool<byte>.Shared.Return(rented);
-                }
-            }
         }
 
         public int BeginRead(nint pb, int cb, IMFAsyncCallback pCallback, nint punkState)
         {
-            byte[] temp;
-            var sp = System.Buffers.ArrayPool<byte>.Shared;
-            try
-            {
-                temp = sp.Rent(cb);
-            }
-            catch (OutOfMemoryException)
-            {
-                // Fail fast
-                return CommonHResults.E_OUTOFMEMORY;
-            }
-            if (Interlocked.CompareExchange(ref asyncdata, new AsyncWorkData(temp, pb, cb), null) != null)
-            {
-                sp.Return(temp);
-                return CommonHResults.E_ILLEGAL_METHOD_CALL;
-            }
-            return MediaFoundationApi.PutWorkItem(pCallback, punkState);
+            return Interlocked.CompareExchange(ref asyncdata, new AsyncWorkData(pb, cb), null) is null ?
+                 MediaFoundationApi.PutWorkItem(pCallback, punkState)
+                 : CommonHResults.E_ILLEGAL_METHOD_CALL;
         }
 
         public unsafe int EndRead(IMFAsyncResult pResult, out int pcbRead)
@@ -335,11 +290,7 @@ namespace NAudio.MediaFoundation
             {
                 // Calling the heavy method inside the async execution.
                 // Note that I do not call the Stream's dedicated ReadAsync method since we are already into an asyncronous context.
-                pcbRead = stream.Read(d.AllocatedDotNetBuffer.AsSpan(0, d.DataSize));
-                fixed (byte* p = d.AllocatedDotNetBuffer)
-                {
-                    Unsafe.CopyBlockUnaligned(d.NativePointer.ToPointer(), p, (uint)pcbRead);
-                }
+                pcbRead = stream.Read(new Span<byte>(d.NativePointer.ToPointer(), d.DataSize));
                 pResult.SetStatus(CommonHResults.S_OK);
             }
             catch (IOException)
@@ -352,33 +303,13 @@ namespace NAudio.MediaFoundation
                 pcbRead = 0;
                 pResult.SetStatus(CommonHResults.E_FAIL);
             }
-            finally
-            {
-                System.Buffers.ArrayPool<byte>.Shared.Return(d.AllocatedDotNetBuffer);
-            }
             return CommonHResults.S_OK;
         }
 
         public int BeginWrite(nint pb, int cb, IMFAsyncCallback pCallback, nint punkState)
-        {
-            byte[] temp;
-            var sp = System.Buffers.ArrayPool<byte>.Shared;
-            try
-            {
-                temp = sp.Rent(cb);
-            }
-            catch (OutOfMemoryException)
-            {
-                // Fail fast
-                return CommonHResults.E_OUTOFMEMORY;
-            }
-            if (Interlocked.CompareExchange(ref asyncdata, new AsyncWorkData(temp, pb, cb), null) != null)
-            {
-                sp.Return(temp);
-                return CommonHResults.E_ILLEGAL_METHOD_CALL;
-            }
-            return MediaFoundationApi.PutWorkItem(pCallback, punkState);
-        }
+            => Interlocked.CompareExchange(ref asyncdata, new AsyncWorkData(pb, cb), null) is null
+                ? MediaFoundationApi.PutWorkItem(pCallback, punkState)
+                : CommonHResults.E_ILLEGAL_METHOD_CALL;
 
         public unsafe int EndWrite(IMFAsyncResult pResult, out int pcbWritten)
         {
@@ -391,14 +322,9 @@ namespace NAudio.MediaFoundation
             }
             try
             {
-                pcbWritten = d.DataSize;
-                fixed (byte* pc = d.AllocatedDotNetBuffer)
-                {
-                    Unsafe.CopyBlockUnaligned(d.NativePointer.ToPointer(), pc, (uint)pcbWritten);
-                }
                 // Calling the heavy method inside the async execution.
                 // Note that I do not call the Stream's dedicated WriteAsync method since we are already into an asyncronous context.
-                stream.Write(d.AllocatedDotNetBuffer.AsSpan(0, pcbWritten));
+                stream.Write(new ReadOnlySpan<byte>(d.NativePointer.ToPointer(), pcbWritten = d.DataSize));
                 pResult.SetStatus(CommonHResults.S_OK);
             }
             catch (IOException)
@@ -410,11 +336,6 @@ namespace NAudio.MediaFoundation
             {
                 pcbWritten = 0;
                 pResult.SetStatus(CommonHResults.STG_E_WRITEFAULT);
-            }
-            finally
-            {
-                // Either case or failure this buffer will be returned to the array pool
-                System.Buffers.ArrayPool<byte>.Shared.Return(d.AllocatedDotNetBuffer);
             }
             return CommonHResults.S_OK;
         }

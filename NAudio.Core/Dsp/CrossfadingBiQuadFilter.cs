@@ -41,9 +41,23 @@ namespace NAudio.Dsp
 
         /// <summary>
         /// The filter that stages the next settings. Reconfigure this (via its
-        /// <c>Set…</c> methods) before calling <see cref="BeginCrossfade"/>.
+        /// <c>Set…</c> methods) before calling <see cref="BeginCrossfade"/>, or replace
+        /// it wholesale with <see cref="ReplaceStandby"/> for filter shapes that have no
+        /// in-place setter (shelves, notch, band-pass, all-pass).
         /// </summary>
         public BiQuadFilter Standby => standby;
+
+        /// <summary>
+        /// Swaps in a freshly-built filter as the next settings. Use this when retuning
+        /// to a shape that has no in-place <c>Set…</c> method (build it with the
+        /// <see cref="BiQuadFilter"/> factories), then call <see cref="BeginCrossfade"/>.
+        /// Intended for parameter-change events, not the audio thread's steady state.
+        /// </summary>
+        public void ReplaceStandby(BiQuadFilter filter)
+        {
+            ArgumentNullException.ThrowIfNull(filter);
+            standby = filter;
+        }
 
         /// <summary>
         /// True while a retune crossfade is in progress.

@@ -28,6 +28,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * `CueWaveFileReader` removed - use `new WaveFileReader(...).Chunks.ReadCueList()` to get a `CueList`
  * `SimpleCompressorEffect` (formerly `SimpleCompressorStream`) removed, along with the internal ChunkWare `SimpleCompressor` / `SimpleGate` / `EnvelopeDetector` — superseded by the new `NAudio.Effects` framework; high-quality dynamics effects follow in a later NAudio 3 phase
  * `ImpulseResponseConvolution` removed — it was an unusable O(n²) time-domain stub; FFT-based convolution will replace it in a later NAudio 3 phase
+ * `NAudio.Extras.Equalizer` and `NAudio.Extras.EqualizerBand` removed — replaced by `NAudio.Effects.Equalizer` / `EqualizerBand` in `NAudio.Core`. The new EQ is per-channel, click-free when retuned, and adds shelves/pass/notch/band-pass/all-pass shapes. Band API changed: `Bandwidth`/`Gain` → `Q`/`GainDb` (or `ShelfSlope`), and the equaliser is an `IAudioEffect` (wrap with `EffectSampleProvider` instead of passing a source to the constructor)
 
 #### New features
 
@@ -41,6 +42,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * **`Span<T>` overloads:** added on `BiQuadFilter.Transform`, `ALawDecoder.Decode`, `MuLawDecoder.Decode`, and `IMp3FrameDecompressor.DecompressFrame` (default interface method preserves backward compatibility with `NLayer` and other third-party decoders)
  * **MIDI:** new `WinRTMidiIn` / `WinRTMidiOut` classes in `NAudio.Wasapi` backed by `Windows.Devices.Midi`, with `MidiMessageConverter` for interop with the WinRT MIDI types. New `IMidiInput` / `IMidiOutput` interfaces (with a `Send(MidiEvent)` extension) let callers write backend-agnostic code; legacy `MidiIn` / `MidiOut` also implement them
  * **Effects:** new cross-platform `NAudio.Effects` framework — `IAudioEffect`, an `AudioEffect` base with click-free bypass and dry/wet mix, `EffectSampleProvider`, and `EffectChain`; plus reusable `NAudio.Dsp` building blocks `EnvelopeFollower`, `ParameterSmoother`, `DelayLine`, and `CrossfadingBiQuadFilter`
+ * **Effects:** first effect set — `GainEffect`, `PanEffect`, `StereoWidthEffect`, `MonoMakerEffect` (bass-mono), `DcBlockerEffect`, a multi-band per-channel `Equalizer` (peaking/shelf/pass/notch/band-pass/all-pass, click-free retune), and a 10/31-band `GraphicEqualizer`
 
 #### Demo apps and Test Harnesses
 

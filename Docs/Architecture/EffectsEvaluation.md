@@ -15,8 +15,16 @@ weak/dead types deleted, the `NAudio.Effects` framework (`IAudioEffect`, `AudioE
 `EffectSampleProvider`, `EffectChain`) and the `NAudio.Dsp` primitives
 (`ParameterSmoother`, `EnvelopeFollower`, `DelayLine`, `DenormalGuard`,
 `CrossfadingBiQuadFilter`) added, the stale `BiQuadFilter` `TODO`s removed, RELEASE_NOTES
-updated. `NAudio.Core` builds clean (0/0) and 19 new unit tests pass on `net10.0`. Phase 1
-(the first real effects) is the next step.
+updated. `NAudio.Core` builds clean (0/0) and 19 new unit tests pass on `net10.0`.
+
+**Update (Phase 1 wave a landed):** utility + EQ shipped — `GainEffect`, `PanEffect`,
+`StereoWidthEffect`, `MonoMakerEffect`, `DcBlockerEffect`, a per-channel multi-band
+`Equalizer` (peaking/shelf/pass/notch/band-pass/all-pass, click-free retune via
+`CrossfadingBiQuadFilter.ReplaceStandby`), and `GraphicEqualizer` (10/31-band). The old
+`NAudio.Extras` `Equalizer`/`EqualizerBand` are deleted and the WPF EqualizationDemo moved
+to the new API. 37 Effects unit tests pass on `net10.0`; `NAudio.Core` and `NAudio.Extras`
+build clean. Remaining Phase 1 waves: (b) dynamics, (c) saturation/bitcrush,
+(d) delay/modulation (with tempo-division sync).
 
 **Goal:** Ship a high-quality, pure-C#, cross-platform effects suite as a first-class part of
 NAudio 3. Two audiences:

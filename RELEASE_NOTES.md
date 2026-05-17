@@ -56,6 +56,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
 
 #### Demo apps and Test Harnesses
 
+ * **WPF demo:** new **Realtime Effects** module — full-duplex `AsioDevice` monitor (driver + mono/stereo input selection) with feedback safety (starts muted, headphone warning, runaway auto-mute) and a real-time-safe effect-chain host; the effect-chain editor and file/offline-render follow
  * **NAudioConsoleTest:** new CLI test harness for driving various NAudio features without the need for GUI. Includes `run-batch` for JSON-driven test plans and `diagnose` for capturing a structured host audio snapshot (OS, ASIO drivers, WASAPI/WinMM/DirectSound devices, NAudio assembly versions).
  * **WPF demos:** spectrum analyser rewritten with corrected dB formula (20·log₁₀), log-frequency mapping, real-input full-scale calibration, bars instead of polylines, peak-decay markers, and per-band smoothing. New `LiveWaveformControl` with configurable render styles, vertical scaling, and fill-between rendering
  * **WAV recording demo:** added loopback support and a multi-API device combo with provenance embedding

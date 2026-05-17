@@ -409,6 +409,14 @@ seed for VST3-host testing. Design decided:
   offline render. Waves B/C are compile-validated in the Linux sandbox
   (`EnableWindowsTargeting`); runtime is CI/Windows.
 
+**Status:** Wave A done (parameter model, 116 tests). **Wave B done** — WPF
+`RealtimeEffectsDemo` module: `RealtimeAudioEngine` (ASIO duplex, atomic effect-array
+snapshot, feedback auto-mute), VM/view/plugin, mono→stereo, starts muted with headphone
+warning. WPF demo compiles clean (`EnableWindowsTargeting`); runtime validation is
+CI/Windows. Wave C next: chain editor (auto-panels from `IParameterized` + Bypass/Mix,
+add/remove/reorder), WAV-file source, offline render; plus the mechanical wiring of the
+remaining simple effects.
+
 Cross-cutting, every phase: allocation-free steady state, AOT/trim-safe, `Span<float>`,
 numerical-correctness unit tests (the repo already does this — e.g. `BiQuadFilterTests`,
 `FftProcessorTests`), and a demo entry in `NAudioWpfDemo`/`NAudioDemo`. Subjective audio

@@ -1,0 +1,55 @@
+<UserControl x:Class="NAudioWpfDemo.RealtimeEffectsDemo.RealtimeEffectsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="380" d:DesignWidth="460">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+            <TextBlock Text="ASIO driver:" VerticalAlignment="Center" Width="90" />
+            <ComboBox Width="220" ItemsSource="{Binding Drivers}"
+                      SelectedItem="{Binding SelectedDriver, Mode=TwoWay}" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
+            <TextBlock Text="Input:" VerticalAlignment="Center" Width="90" />
+            <ComboBox Width="220" SelectedIndex="{Binding InputChannelsIndex, Mode=TwoWay}">
+                <ComboBoxItem Content="Mono (channel 1, duplicated to stereo)" />
+                <ComboBoxItem Content="Stereo (channels 1 + 2)" />
+            </ComboBox>
+        </StackPanel>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,8">
+            <Button Content="Start" Width="80" Margin="0,0,8,0" Command="{Binding StartCommand}" />
+            <Button Content="Stop" Width="80" Command="{Binding StopCommand}" />
+        </StackPanel>
+
+        <CheckBox Grid.Row="3" Margin="0,4,0,2"
+                  Content="Enable monitoring (let audio pass through to the output)"
+                  IsChecked="{Binding Monitoring, Mode=TwoWay}" />
+        <TextBlock Grid.Row="4" Margin="0,0,0,8" TextWrapping="Wrap" Foreground="#B00020"
+                   Text="⚠ Use headphones. Monitoring a microphone through speakers will feed back. Output starts muted and auto-mutes if a runaway level is detected." />
+
+        <Border Grid.Row="5" BorderBrush="#CCCCCC" BorderThickness="1" Padding="8" Margin="0,4">
+            <TextBlock Foreground="#808080" TextWrapping="Wrap"
+                       Text="Effect chain editor appears here (next step). For now this is a clean input → output monitor path to verify duplex audio." />
+        </Border>
+
+        <StackPanel Grid.Row="6" Margin="0,8,0,0">
+            <TextBlock Text="Output level" Margin="0,0,0,2" />
+            <ProgressBar Height="16" Minimum="0" Maximum="1" Value="{Binding OutputLevel, Mode=OneWay}" />
+            <TextBlock Margin="0,8,0,0" TextWrapping="Wrap" Text="{Binding Status}" />
+        </StackPanel>
+    </Grid>
+</UserControl>

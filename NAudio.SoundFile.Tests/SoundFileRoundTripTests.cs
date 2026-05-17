@@ -119,6 +119,51 @@ namespace NAudio.SoundFile.Tests
         }
 
         [Test]
+        public void OpusRoundTripWhenSupported()
+        {
+            RequireFormat(SoundFileMajorFormat.Opus);
+            var path = Path.Combine(tempDir, "tone.opus");
+            // Opus only supports 8/12/16/24/48 kHz.
+            var tone = new TonePcm16(48000, 0.5);
+
+            SoundFileWriter.CreateSoundFile(path, tone, SoundFileMajorFormat.Opus,
+                new SoundFileWriterOptions { VbrQuality = 0.7 });
+
+            using var reader = new SoundFileReader(path);
+            var (frames, data, format) = ReadAll(reader);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(format.SampleRate, Is.EqualTo(48000));
+                // Opus has ~6.5 ms lookahead + frame padding; allow slack.
+                Assert.That(frames, Is.EqualTo(24000).Within(8192));
+                Assert.That(Rms(data), Is.GreaterThan(0.02));
+            });
+        }
+
+        [Test]
+        public void Mp3RoundTripWhenSupported()
+        {
+            RequireFormat(SoundFileMajorFormat.Mp3);
+            var path = Path.Combine(tempDir, "tone.mp3");
+            var tone = new TonePcm16(44100, 0.5);
+
+            SoundFileWriter.CreateSoundFile(path, tone, SoundFileMajorFormat.Mp3,
+                new SoundFileWriterOptions { VbrQuality = 0.5 });
+
+            using var reader = new SoundFileReader(path);
+            var (frames, data, format) = ReadAll(reader);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(format.SampleRate, Is.EqualTo(44100));
+                // MP3 (LAME) encoder/decoder delay + padding ~ a few thousand.
+                Assert.That(frames, Is.EqualTo(22050).Within(8192));
+                Assert.That(Rms(data), Is.GreaterThan(0.02));
+            });
+        }
+
+        [Test]
         public void ExtensionIsInferredFromPath()
         {
             RequireFormat(SoundFileMajorFormat.Flac);

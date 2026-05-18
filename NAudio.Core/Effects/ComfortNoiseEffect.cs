@@ -20,7 +20,9 @@ namespace NAudio.Effects
             EffectParameter.Continuous("Tone", "", 0f, 1f, () => Tone, v => Tone = v)
         };
 
-        private uint rngState = 0x6D2B79F5;
+        private const uint InitialRngState = 0x6D2B79F5;
+
+        private uint rngState = InitialRngState;
         private float[] toneState = Array.Empty<float>();
 
         /// <summary>Noise level in dBFS. Default -60 dB.</summary>
@@ -59,6 +61,7 @@ namespace NAudio.Effects
         {
             base.Reset();
             Array.Clear(toneState);
+            rngState = InitialRngState; // a true reset is reproducible
         }
 
         private float NextNoise()

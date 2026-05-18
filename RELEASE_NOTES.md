@@ -52,6 +52,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * **Effects:** `DelayEffect` now exposes `Tempo`/`Division` as parameters and a read-only `EffectiveDelayMilliseconds`, so a tempo-synced delay shows the time it resolves to; ping-pong now bounces a mono/centred source between channels
  * **Effects:** `BitCrusherEffect` sample-rate reduction is now set as a target rate (`TargetSampleRate`, e.g. 22.05/16/8 kHz) rather than an integer factor, with an optional `Smoothing` low-pass for a softer "vintage" tone (default keeps the gritty aliased sound)
  * **Effects:** `TremoloEffect` Square and Sample &amp; Hold waveforms no longer click — the modulator is edge-smoothed
+ * **DSP:** new `BiQuadFilter.ResetState()` — clears the filter's sample history without changing coefficients (for reusing a filter on a new signal / effect `Reset()`)
  * **Effects:** `SaturationEffect` (tanh/cubic/arctan/hard-clip wave-shaper with drive, output trim and optional 2×/4× oversampling) and `BitCrusherEffect` (bit-depth + sample-rate reduction); plus a reusable `NAudio.Dsp.Oversampler`
  * **Effects:** time/modulation — `DelayEffect` (tempo-syncable, feedback damping, ping-pong), `ChorusEffect`, `FlangerEffect`, `PhaserEffect`, `TremoloEffect` (with auto-pan); plus reusable `NAudio.Dsp.Lfo` and `NoteDivision`/`TempoTime` tempo helpers
  * **Effects:** `ConvolutionReverbEffect` (partitioned FFT convolution, mono or per-channel IR, reports latency) replacing the removed `ImpulseResponseConvolution`; plus a reusable `NAudio.Dsp.PartitionedConvolver`
@@ -101,6 +102,8 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * `LimiterEffect`: fixed look-ahead overshoot on isolated transients — the gain is now a sliding-window minimum of the required gain over the look-ahead window (held until the delayed transient has passed) instead of a release envelope evaluated at input time, which could recover before the transient emerged
  * `DelayLine`: a fractional read at exactly `MaxDelaySamples` no longer wraps to the newest sample (the line keeps one extra internal sample); the public contract is unchanged
  * `ReverbEffect` (Freeverb): comb damping is now sample-rate invariant — the damping cutoff (hence high-frequency decay) no longer brightens at higher sample rates
+ * `CrossfadingBiQuadFilter.Reset()` now clears both wrapped filters' sample history (not just the crossfade), so `Equalizer` and `GraphicEqualizer` `Reset()` fully reset instead of retaining filter state from the previous signal
+ * `ComfortNoiseEffect.Reset()` now re-seeds its noise generator, so a reset effect is reproducible
  * `EffectParameter`: while a dispatch is attached, the getter now returns the just-requested value optimistically so a two-way-bound UI control no longer snaps back (or needs a second click) before the audio thread has applied the edit
  * Clarified `BiQuadFilter` `q` parameter docs (#1264)
  * Removed dead `naudio.codeplex.com` links from README, MixDiff Help menu, and source comments (CodePlex was shut down by Microsoft in 2017) (#985)

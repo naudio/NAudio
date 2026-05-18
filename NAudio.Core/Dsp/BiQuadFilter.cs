@@ -104,6 +104,18 @@ namespace NAudio.Dsp
             y2 = ly2;
         }
 
+        /// <summary>
+        /// Clears the filter's sample history (the x/y delay elements) without
+        /// changing its coefficients, so the next input is filtered as if from
+        /// silence. Use when reusing a filter on a new, unrelated signal (e.g. an
+        /// effect's <c>Reset()</c>).
+        /// </summary>
+        public void ResetState()
+        {
+            x1 = x2 = 0f;
+            y1 = y2 = 0f;
+        }
+
         private void SetCoefficients(double aa0, double aa1, double aa2, double b0, double b1, double b2)
         {
             // precompute the coefficients

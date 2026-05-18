@@ -78,6 +78,58 @@ namespace NAudioTests.Effects
                 Assert.That(float.IsFinite(s), Is.True);
         }
 
+        // Autocorrelation fundamental detector with parabolic interpolation for
+        // sub-sample (sub-cent) period accuracy.
+        private static float DetectHz(float[] b, int start, int end)
+        {
+            const int sr = 48000;
+            var minLag = sr / 700;  // up to ~700 Hz
+            var maxLag = sr / 80;   // down to ~80 Hz
+            double best = double.NegativeInfinity;
+            var bestLag = minLag;
+            for (var lag = minLag; lag <= maxLag; lag++)
+            {
+                double acc = 0;
+                for (var i = start; i < end; i++)
+                    acc += b[i] * (double)b[i - lag];
+                if (acc > best)
+                {
+                    best = acc;
+                    bestLag = lag;
+                }
+            }
+
+            double Corr(int lag)
+            {
+                double acc = 0;
+                for (var i = start; i < end; i++)
+                    acc += b[i] * (double)b[i - lag];
+                return acc;
+            }
+
+            double ym1 = Corr(bestLag - 1), y0 = best, yp1 = Corr(bestLag + 1);
+            var denom = ym1 - 2 * y0 + yp1;
+            var delta = denom != 0 ? 0.5 * (ym1 - yp1) / denom : 0.0;
+            return (float)(sr / (bestLag + delta));
+        }
+
+        [TestCase(12f, 440f)]   // octave up
+        [TestCase(-12f, 110f)]  // octave down
+        [TestCase(7f, 329.628f)] // a fifth up
+        public void ShiftedPitchIsAccurateWithinCents(float semitones, float expectedHz)
+        {
+            var fx = new PitchShiftEffect { PitchSemitones = semitones };
+            fx.Configure(Mono);
+            var buffer = Sine(24000, 220f); // 0.5 s
+            fx.Process(buffer);
+
+            // Skip the FFT latency / warm-up region.
+            var detected = DetectHz(buffer, 12000, 23000);
+            var cents = 1200f * MathF.Log2(detected / expectedHz);
+            Assert.That(MathF.Abs(cents), Is.LessThan(50f),
+                $"shift {semitones} st → {detected:0.0} Hz (expected {expectedHz:0.0}, {cents:0} cents off)");
+        }
+
         [Test]
         public void ValidatesParametersAndClampsRange()
         {

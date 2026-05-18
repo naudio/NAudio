@@ -328,6 +328,36 @@ From the first Windows monitoring session, addressed on `naudio3-effects`:
   inaudible by definition (M/S side signal is zero) — a pseudo-stereo /
   dimension effect is the right tool and is on the missing-effects roadmap.
 
+### 3.6 Milestone 2 — test-net hardening (done)
+
+The review found the effects suite was mostly smoke ("runs, stays finite")
+rather than correctness. Added, all in the fast per-build run:
+
+- **`Reset()` determinism net** over every effect (run → `Reset()` → run same
+  signal → assert identical, 0.5 s buffers). This caught two real bugs the
+  ~30 untested `Reset()` overrides were hiding: `CrossfadingBiQuadFilter.Reset()`
+  never cleared the wrapped biquad history (so `Equalizer`/`GraphicEqualizer`
+  carried filter state across `Reset()`), and `ComfortNoiseEffect.Reset()`
+  didn't re-seed its RNG. Fixed both (added `BiQuadFilter.ResetState()`).
+- **No-allocation net:** representative effect per mechanism asserts zero
+  managed bytes/`Process` after warm-up — pins the alloc-free claim now that
+  Milestone 1's prewarm makes it true.
+- **`DenormalGuard` net:** flush boundaries, plus a reverb-tail assertion that
+  a decaying feedback path never emits a subnormal float.
+- **Pitch accuracy:** autocorrelation + parabolic interpolation, asserting the
+  shifted fundamental is within 50 cents for ±octave and a fifth (replaces the
+  old zero-crossing/RMS proxies).
+- Reverb/FDN decay ordering was already covered by existing tests; a precise
+  cross-sample-rate spectral regression for the Milestone 1 Freeverb damping
+  fix is deliberately *not* added to the fast suite (fragile/expensive) —
+  Integration-only if ever needed.
+
+**Runtime discipline outcome:** buffers capped at 0.5 s, pitch limited to 3
+cases, no-alloc to 6 effects. Suite went 184 → 222 tests; per-run wall-time
+variance on the same tests (≈3–6 s) already swamps the added cost (the 35
+heaviest new tests execute in well under 1 s excluding fixed host startup), so
+nothing needed `IntegrationTest`.
+
 ---
 
 ## 4. Port vs build — the decision framework

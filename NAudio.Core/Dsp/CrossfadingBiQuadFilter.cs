@@ -103,9 +103,15 @@ namespace NAudio.Dsp
         }
 
         /// <summary>
-        /// Cancels any crossfade in progress, leaving the active filter authoritative.
-        /// Does not clear filter state.
+        /// Cancels any crossfade in progress and clears both wrapped filters'
+        /// sample history, so the next input is filtered as if from silence.
+        /// Coefficients are left unchanged.
         /// </summary>
-        public void Reset() => crossfadePosition = -1;
+        public void Reset()
+        {
+            crossfadePosition = -1;
+            active.ResetState();
+            standby.ResetState();
+        }
     }
 }

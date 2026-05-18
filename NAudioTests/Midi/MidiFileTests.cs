@@ -63,6 +63,70 @@ namespace NAudioTests.Midi
         }
 
         [Test]
+        public void ReadsRiffRmidWrappedFile()
+        {
+            var track = new byte[]
+            {
+                0x00, 0x90, 0x3C, 0x64,
+                0x0A, 0x80, 0x3C, 0x40,
+                0x00, 0xFF, 0x2F, 0x00
+            };
+            var midi = CreateMidiFileBytes(0, 480, track);
+            var rmid = WrapInRiffRmid(midi);
+
+            using (var stream = new MemoryStream(rmid))
+            {
+                var midiFile = new MidiFile(stream, true);
+
+                Assert.That(midiFile.FileFormat, Is.EqualTo(0));
+                Assert.That(midiFile.DeltaTicksPerQuarterNote, Is.EqualTo(480));
+                Assert.That(midiFile.Tracks, Is.EqualTo(1));
+                Assert.That(midiFile.Events[0].Count, Is.EqualTo(3));
+            }
+        }
+
+        [Test]
+        public void ReadsRiffRmidWithOtherChunksBeforeData()
+        {
+            var track = new byte[]
+            {
+                0x00, 0x90, 0x3C, 0x64,
+                0x0A, 0x80, 0x3C, 0x40,
+                0x00, 0xFF, 0x2F, 0x00
+            };
+            var midi = CreateMidiFileBytes(1, 120, track);
+            // An odd-length leading chunk exercises RIFF word-alignment padding.
+            var infoChunk = ("IART", Encoding.ASCII.GetBytes("abc"));
+            var rmid = WrapInRiffRmid(midi, infoChunk);
+
+            using (var stream = new MemoryStream(rmid))
+            {
+                var midiFile = new MidiFile(stream, true);
+
+                Assert.That(midiFile.FileFormat, Is.EqualTo(1));
+                Assert.That(midiFile.DeltaTicksPerQuarterNote, Is.EqualTo(120));
+                Assert.That(midiFile.Events[0].Count, Is.EqualTo(3));
+            }
+        }
+
+        [Test]
+        public void RejectsNonRmidRiffFile()
+        {
+            using (var stream = new MemoryStream())
+            {
+                using (var writer = new BinaryWriter(stream, Encoding.ASCII, true))
+                {
+                    writer.Write(Encoding.ASCII.GetBytes("RIFF"));
+                    writer.Write(4u);
+                    writer.Write(Encoding.ASCII.GetBytes("WAVE"));
+                    writer.Flush();
+                }
+                stream.Position = 0;
+                Assert.Throws<FormatException>(() => new MidiFile(stream, true));
+            }
+        }
+
+        [Test]
         public void StrictCheckingRejectsUnmatchedNoteOn()
         {
             var track = new byte[]
@@ -313,6 +377,39 @@ namespace NAudioTests.Midi
 
                 writer.Flush();
                 return stream.ToArray();
+            }
+        }
+
+        private static byte[] WrapInRiffRmid(byte[] midi, params (string id, byte[] data)[] extraChunks)
+        {
+            using (var body = new MemoryStream())
+            {
+                void WriteChunk(string id, byte[] data)
+                {
+                    body.Write(Encoding.ASCII.GetBytes(id), 0, 4);
+                    body.Write(BitConverter.GetBytes((uint)data.Length), 0, 4); // RIFF sizes are little-endian
+                    body.Write(data, 0, data.Length);
+                    if ((data.Length & 1) == 1)
+                    {
+                        body.WriteByte(0); // word-alignment pad byte
+                    }
+                }
+
+                body.Write(Encoding.ASCII.GetBytes("RMID"), 0, 4);
+                foreach (var (id, data) in extraChunks)
+                {
+                    WriteChunk(id, data);
+                }
+                WriteChunk("data", midi);
+
+                var bodyBytes = body.ToArray();
+                using (var stream = new MemoryStream())
+                {
+                    stream.Write(Encoding.ASCII.GetBytes("RIFF"), 0, 4);
+                    stream.Write(BitConverter.GetBytes((uint)bodyBytes.Length), 0, 4);
+                    stream.Write(bodyBytes, 0, bodyBytes.Length);
+                    return stream.ToArray();
+                }
             }
         }
 

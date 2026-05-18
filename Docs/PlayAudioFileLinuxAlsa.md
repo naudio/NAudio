@@ -10,11 +10,12 @@ dotnet add package NAudio.Alsa
 ```
 
 `AlsaOut` plays any `IWaveProvider`, so the format you can play depends
-on the **reader** you give it. Note that `AudioFileReader`,
-`Mp3FileReader` and `MediaFoundationReader` are Windows-only — on Linux
-only the cross-platform `NAudio.Core` readers are available
-(`WaveFileReader`, `AiffFileReader`, `RawSourceWaveStream`). So for a WAV
-file, use `WaveFileReader`:
+on the **reader** you give it. `AudioFileReader`, `Mp3FileReader` and
+`MediaFoundationReader` are Windows-only; on Linux use the cross-platform
+`NAudio.Core` readers (`WaveFileReader`, `AiffFileReader`,
+`RawSourceWaveStream`) for PCM, and the `NAudio.SoundFile` package's
+`SoundFileReader` for FLAC/Ogg/Opus/MP3 (see below). So for a WAV file,
+use `WaveFileReader`:
 
 ```c#
 using NAudio.Wave;
@@ -49,9 +50,27 @@ foreach (var device in AlsaDeviceEnumerator.GetPlaybackDevices())
 
 ### Playing compressed formats
 
-There is no Linux equivalent of `MediaFoundationReader` yet, so MP3,
-AAC/M4A, FLAC, Ogg and Opus are not decoded out of the box. MP3 works if
-you plug a fully-managed frame decompressor such as
+The cross-platform [`NAudio.SoundFile`](../NAudio.SoundFile/README.md)
+package is the Linux equivalent of `MediaFoundationReader`: its
+`SoundFileReader` (a `WaveStream` / `ISampleProvider` over libsndfile)
+decodes FLAC, Ogg-Vorbis, Opus and MP3. It needs a system libsndfile
+(`sudo apt install libsndfile1`); `SoundFileCapabilities` reports which
+codecs the installed build supports:
+
+```c#
+// dotnet add package NAudio.SoundFile
+using NAudio.SoundFile;
+
+using var audioFile = new SoundFileReader("test.flac");
+using var outputDevice = new AlsaOut();
+outputDevice.Init(audioFile);
+outputDevice.Play();
+```
+
+(AAC/M4A/ALAC/WMA remain out of scope — that is FFmpeg territory.)
+
+Alternatively, MP3 alone can be played with no native dependency by
+plugging a fully-managed frame decompressor such as
 [NLayer](https://github.com/naudio/NLayer) into `Mp3FileReaderBase`:
 
 ```c#

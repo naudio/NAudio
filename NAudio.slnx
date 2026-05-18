@@ -16,6 +16,8 @@
     <File Path="readme.txt" />
     <File Path="RELEASE_NOTES.md" />
   </Folder>
+  <Project Path="NAudio.Alsa/NAudio.Alsa.csproj" />
+  <Project Path="NAudio.Alsa.Tests/NAudio.Alsa.Tests.csproj" />
   <Project Path="NAudio.Asio/NAudio.Asio.csproj" />
   <Project Path="NAudio.Benchmarks/NAudio.Benchmarks.csproj">
     <BuildType Project="Release" />

@@ -114,7 +114,8 @@ namespace NAudioTests.Effects
         [Test]
         public void SampleRateReductionHoldsSamples()
         {
-            var crusher = new BitCrusherEffect { BitDepth = 16, SampleRateReduction = 4 };
+            // 48 kHz / 12 kHz target ⇒ hold factor 4.
+            var crusher = new BitCrusherEffect { BitDepth = 16, TargetSampleRate = 12000 };
             crusher.Configure(Stereo);
 
             var buffer = new float[2 * 8];
@@ -150,7 +151,57 @@ namespace NAudioTests.Effects
         {
             var crusher = new BitCrusherEffect();
             Assert.Throws<ArgumentOutOfRangeException>(() => crusher.BitDepth = 0);
-            Assert.Throws<ArgumentOutOfRangeException>(() => crusher.SampleRateReduction = 0);
+            Assert.Throws<ArgumentOutOfRangeException>(() => crusher.BitDepth = 33);
+            // A target rate of 0 (or negative) is valid and means "no reduction".
+            crusher.TargetSampleRate = 0;
+            Assert.That(crusher.TargetSampleRate, Is.EqualTo(0));
+            crusher.TargetSampleRate = -5;
+            Assert.That(crusher.TargetSampleRate, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void TargetRateOffPassesSamplesThrough()
+        {
+            var crusher = new BitCrusherEffect { BitDepth = 32, TargetSampleRate = 0 };
+            crusher.Configure(WaveFormat.CreateIeeeFloatWaveFormat(48000, 1));
+
+            var input = new float[64];
+            for (var i = 0; i < input.Length; i++)
+                input[i] = MathF.Sin(i * 0.3f);
+            var buffer = (float[])input.Clone();
+            crusher.Process(buffer);
+
+            for (var i = 0; i < buffer.Length; i++)
+                Assert.That(buffer[i], Is.EqualTo(input[i]).Within(1e-3f));
+        }
+
+        [Test]
+        public void SmoothingReducesHarshnessOfDecimation()
+        {
+            var format = WaveFormat.CreateIeeeFloatWaveFormat(48000, 1);
+            var input = new float[4096];
+            for (var i = 0; i < input.Length; i++)
+                input[i] = MathF.Sin(i * 0.07f);
+
+            var raw = new BitCrusherEffect { BitDepth = 16, TargetSampleRate = 6000, Smoothing = false };
+            raw.Configure(format);
+            var a = (float[])input.Clone();
+            raw.Process(a);
+
+            var smooth = new BitCrusherEffect { BitDepth = 16, TargetSampleRate = 6000, Smoothing = true };
+            smooth.Configure(format);
+            var b = (float[])input.Clone();
+            smooth.Process(b);
+
+            // The smoothed path must differ from the raw sample-and-hold and stay finite.
+            var different = false;
+            for (var i = 1024; i < input.Length; i++)
+            {
+                Assert.That(float.IsFinite(b[i]), Is.True);
+                if (MathF.Abs(a[i] - b[i]) > 1e-3f)
+                    different = true;
+            }
+            Assert.That(different, Is.True);
         }
     }
 }

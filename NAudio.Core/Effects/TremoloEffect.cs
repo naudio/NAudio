@@ -25,6 +25,10 @@ namespace NAudio.Effects
         };
 
         private Lfo lfo;
+        // Rounds the step edges of the Square / Sample-and-Hold LFO so amplitude
+        // modulation doesn't click; ~3 ms barely touches the smooth waveforms at
+        // LFO rates (corner ≈ 50 Hz, well above the 20 Hz max rate).
+        private readonly ParameterSmoother modSmoother = new ParameterSmoother();
 
         /// <summary>Modulation depth, 0 (no effect) to 1 (full). Default 0.5.</summary>
         public float Depth { get; set; } = 0.5f;
@@ -48,6 +52,8 @@ namespace NAudio.Effects
         protected override void OnConfigure(WaveFormat format)
         {
             lfo = new Lfo(format.SampleRate);
+            modSmoother.Configure(format.SampleRate, 3f);
+            modSmoother.Reset(0f);
         }
 
         /// <inheritdoc />
@@ -61,7 +67,8 @@ namespace NAudio.Effects
 
             for (var i = 0; i + channels <= buffer.Length; i += channels)
             {
-                var osc = lfo.Process();
+                modSmoother.SetTarget(lfo.Process());
+                var osc = modSmoother.Process();
                 if (autoPan)
                 {
                     var theta = (osc * 0.5f + 0.5f) * (MathF.PI / 2f);
@@ -83,6 +90,7 @@ namespace NAudio.Effects
         {
             base.Reset();
             lfo?.Reset();
+            modSmoother.Reset(0f);
         }
     }
 }

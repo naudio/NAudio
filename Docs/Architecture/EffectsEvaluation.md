@@ -305,6 +305,29 @@ Done before the first Windows clone-and-listen, on `naudio3-effects`:
    playback/render can no longer run the shared effect instances on two audio
    threads at once.
 
+### 3.5 First-listen feedback follow-up (in progress)
+
+From the first Windows monitoring session, addressed on `naudio3-effects`:
+
+- **Optimistic parameter read (regression fix):** the §3.3 deferral made a
+  two-way-bound UI control re-read the pre-edit value and snap back (toggles
+  needed two clicks). `EffectParameter.Value` now returns the just-requested
+  value while a dispatch is attached, applied for real on the next drain.
+- **Delay tempo sync was opaque:** `Tempo`/`Division` are now parameters and a
+  read-only `EffectiveDelayMilliseconds` shows what the chosen division
+  resolves to. **Ping-pong** now sums to mono and injects one line so a
+  centred/mono source actually bounces L↔R.
+- **Tremolo Square / S&H clicked:** the modulator is edge-smoothed (~3 ms,
+  inaudible on the smooth waveforms at LFO rates).
+- **BitCrusher decimation re-parameterised:** target sample rate (Choice list)
+  instead of an integer factor, with an optional `Smoothing` low-pass; the
+  aliased sample-and-hold remains the default character.
+- **ASIO input offset:** mono/stereo capture can start from any base channel
+  (guitar on input 2, stereo pair on 5+6, …).
+- **Expected, documented (no change):** stereo-width on a mono source is
+  inaudible by definition (M/S side signal is zero) — a pseudo-stereo /
+  dimension effect is the right tool and is on the missing-effects roadmap.
+
 ---
 
 ## 4. Port vs build — the decision framework

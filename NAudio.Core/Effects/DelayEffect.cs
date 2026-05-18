@@ -15,14 +15,25 @@ namespace NAudio.Effects
     {
         private IReadOnlyList<EffectParameter> parameters;
 
+        private static readonly string[] DivisionLabels =
+        {
+            "Whole", "Half", "Quarter", "Eighth", "Sixteenth", "1/32",
+            "Dotted Half", "Dotted Quarter", "Dotted Eighth",
+            "Triplet Quarter", "Triplet Eighth", "Triplet 16th"
+        };
+
         /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
         public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
         {
             EffectParameter.Continuous("Delay", "ms", 1f, 2000f, () => DelayMilliseconds, v => DelayMilliseconds = v),
             EffectParameter.Continuous("Feedback", "", 0f, 0.99f, () => Feedback, v => Feedback = v),
             EffectParameter.Continuous("Damping", "", 0f, 1f, () => Damping, v => Damping = v),
+            EffectParameter.Toggle("Tempo Sync", () => TempoSync, v => TempoSync = v),
+            EffectParameter.Continuous("Tempo", "BPM", 40f, 300f, () => (float)Bpm, v => Bpm = v),
+            EffectParameter.Choice("Division", DivisionLabels,
+                () => (int)Division, i => Division = (NoteDivision)i),
             EffectParameter.Toggle("Ping-Pong", () => PingPong, v => PingPong = v),
-            EffectParameter.Toggle("Tempo Sync", () => TempoSync, v => TempoSync = v)
+            EffectParameter.Meter("Actual Delay", "ms", 0f, 5000f, () => EffectiveDelayMilliseconds)
         };
 
         private const double MaxDelaySeconds = 5.0;
@@ -50,6 +61,14 @@ namespace NAudio.Effects
 
         /// <summary>When true (and stereo), echoes alternate between left and right.</summary>
         public bool PingPong { get; set; }
+
+        /// <summary>
+        /// The delay time actually in effect, in milliseconds — the tempo-derived
+        /// time when <see cref="TempoSync"/> is on, otherwise <see cref="DelayMilliseconds"/>.
+        /// Read-only; useful for showing what a chosen tempo/division resolves to.
+        /// </summary>
+        public float EffectiveDelayMilliseconds =>
+            (float)((TempoSync ? TempoTime.Seconds(Bpm, Division) : DelayMilliseconds * 0.001) * 1000.0);
 
         /// <summary>
         /// Creates a delay with a sensible default wet/dry mix.
@@ -89,9 +108,12 @@ namespace NAudio.Effects
                     var dr = lines[1].Read(delaySamples);
                     dampState[0] += dampCoeff * (dl - dampState[0]);
                     dampState[1] += dampCoeff * (dr - dampState[1]);
-                    // Cross the feedback so repeats bounce L↔R.
-                    lines[0].Write(buffer[i] + dampState[1] * feedback);
-                    lines[1].Write(buffer[i + 1] + dampState[0] * feedback);
+                    // Inject the (mono-summed) input into the left line only and
+                    // cross the feedback, so even a mono/centred source bounces
+                    // L→R→L instead of staying centred.
+                    var mono = (buffer[i] + buffer[i + 1]) * 0.5f;
+                    lines[0].Write(mono + dampState[1] * feedback);
+                    lines[1].Write(dampState[0] * feedback);
                     buffer[i] = dl;
                     buffer[i + 1] = dr;
                 }

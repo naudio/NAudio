@@ -94,6 +94,10 @@
                 <ComboBoxItem Content="Mono in" />
                 <ComboBoxItem Content="Stereo in" />
             </ComboBox>
+            <TextBlock Text="from ch" VerticalAlignment="Center" Margin="8,0,4,0" />
+            <TextBox Width="40" VerticalAlignment="Center"
+                     Text="{Binding InputChannelOffset, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                     ToolTip="First ASIO input channel (1-based). E.g. 2 for a guitar on input 2; 5 for a stereo pair on 5+6." />
             <Button Content="Start" Width="64" Margin="8,0,4,0" Command="{Binding StartCommand}" />
             <Button Content="Stop" Width="64" Command="{Binding StopCommand}" />
         </StackPanel>

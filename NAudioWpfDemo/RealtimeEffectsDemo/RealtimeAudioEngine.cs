@@ -112,13 +112,25 @@ namespace NAudioWpfDemo.RealtimeEffectsDemo
             return true;
         }
 
-        public void Start(string driverName, int inputChannelCount)
+        public void Start(string driverName, int inputChannelCount, int inputChannelOffset = 0)
         {
             Stop();
             inputChannels = inputChannelCount <= 1 ? 1 : 2;
             device = AsioDevice.Open(driverName);
             var capabilities = device.Capabilities;
-            var inputs = inputChannels == 1 ? new[] { 0 } : new[] { 0, 1 };
+            var offset = inputChannelOffset < 0 ? 0 : inputChannelOffset;
+            if (offset + inputChannels > capabilities.NbInputChannels)
+            {
+                var asked = inputChannels == 2 ? $"{offset + 1}+{offset + 2}" : $"{offset + 1}";
+                device.Dispose();
+                device = null;
+                throw new ArgumentException(
+                    $"Input channel {asked} not available — the driver exposes " +
+                    $"{capabilities.NbInputChannels} input channel(s).");
+            }
+            var inputs = inputChannels == 1
+                ? new[] { offset }
+                : new[] { offset, offset + 1 };
             var outputs = capabilities.NbOutputChannels >= 2 ? new[] { 0, 1 } : new[] { 0 };
 
             device.InitDuplex(new AsioDuplexOptions

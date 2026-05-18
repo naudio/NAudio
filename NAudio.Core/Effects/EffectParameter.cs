@@ -31,6 +31,8 @@ namespace NAudio.Effects
         private readonly Func<float> getter;
         private readonly Action<float> setter; // null ⇒ read-only (Meter)
         private volatile IParameterDispatch dispatch;
+        private float pendingValue;
+        private bool hasPending;
 
         private EffectParameter(string name, EffectParameterKind kind, string unit,
             float minimum, float maximum, IReadOnlyList<string> choices,
@@ -76,12 +78,14 @@ namespace NAudio.Effects
         /// Writes are clamped to [<see cref="Minimum"/>, <see cref="Maximum"/>]; writes
         /// to a meter are ignored. If a dispatch has been attached (the effect is
         /// running behind an audio thread) the clamped write is deferred and applied
-        /// at the next block boundary on the audio thread; otherwise it is applied
+        /// at the next block boundary on the audio thread; the getter then returns
+        /// that just-requested value (optimistically) so a UI bound two-way does not
+        /// snap back before the audio thread has applied it. Otherwise it is applied
         /// inline. See <see cref="ParameterDispatchQueue"/>.
         /// </summary>
         public float Value
         {
-            get => getter();
+            get => dispatch != null && hasPending ? pendingValue : getter();
             set
             {
                 if (setter == null)
@@ -89,18 +93,31 @@ namespace NAudio.Effects
                 var v = value < Minimum ? Minimum : value > Maximum ? Maximum : value;
                 var d = dispatch;
                 if (d != null)
+                {
+                    pendingValue = v;
+                    hasPending = true;
                     d.Post(this, v);
+                }
                 else
+                {
+                    hasPending = false;
                     setter(v);
+                }
             }
         }
 
         /// <summary>
         /// Routes writes through <paramref name="value"/> (deferred to the audio
         /// thread) or, when null, restores inline application. Internal: only a
-        /// <see cref="ParameterDispatchQueue"/> manages this.
+        /// <see cref="ParameterDispatchQueue"/> manages this. Clears any optimistic
+        /// pending value so the getter reflects the effect's real state until the
+        /// next edit.
         /// </summary>
-        internal void SetDispatch(IParameterDispatch value) => dispatch = value;
+        internal void SetDispatch(IParameterDispatch value)
+        {
+            hasPending = false;
+            dispatch = value;
+        }
 
         /// <summary>
         /// Applies an already-clamped value directly to the effect. Called on the

@@ -91,6 +91,29 @@ namespace NAudioTests.Effects
         }
 
         [Test]
+        public void ValueReflectsTheRequestedValueImmediatelyWhenAttached()
+        {
+            var gain = new GainEffect();
+            var queue = new ParameterDispatchQueue();
+            queue.Attach(gain);
+            var p = Gain(gain);
+
+            p.Value = -6f;
+            // Optimistic read: the parameter reports the requested value before
+            // the drain (so a two-way-bound UI control does not snap back), even
+            // though the effect property has not changed yet.
+            Assert.That(p.Value, Is.EqualTo(-6f).Within(1e-3f));
+            Assert.That(gain.GainDb, Is.EqualTo(0f).Within(1e-3f));
+
+            queue.Drain();
+            Assert.That(p.Value, Is.EqualTo(-6f).Within(1e-3f));
+            Assert.That(gain.GainDb, Is.EqualTo(-6f).Within(1e-3f));
+
+            queue.Detach(gain);
+            Assert.That(p.Value, Is.EqualTo(-6f).Within(1e-3f));
+        }
+
+        [Test]
         public void InlineWhenNoQueueIsAttached()
         {
             var gain = new GainEffect();

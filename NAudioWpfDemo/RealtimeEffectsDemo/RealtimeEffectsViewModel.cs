@@ -14,6 +14,7 @@ namespace NAudioWpfDemo.RealtimeEffectsDemo
         private readonly DispatcherTimer timer;
         private string selectedDriver;
         private int inputChannelsIndex = 1;
+        private int inputChannelOffset = 1;
         private int selectedEffectIndex;
         private bool monitoring;
         private double outputLevel;
@@ -68,6 +69,18 @@ namespace NAudioWpfDemo.RealtimeEffectsDemo
         {
             get => inputChannelsIndex;
             set { inputChannelsIndex = value; OnPropertyChanged(nameof(InputChannelsIndex)); }
+        }
+
+        /// <summary>First ASIO input channel to use (1-based; e.g. 2 for a guitar
+        /// on input 2, or 5 for a stereo pair on 5+6).</summary>
+        public int InputChannelOffset
+        {
+            get => inputChannelOffset;
+            set
+            {
+                inputChannelOffset = value < 1 ? 1 : value;
+                OnPropertyChanged(nameof(InputChannelOffset));
+            }
         }
 
         public int SelectedEffectIndex
@@ -168,7 +181,7 @@ namespace NAudioWpfDemo.RealtimeEffectsDemo
                 return;
             try
             {
-                engine.Start(selectedDriver, inputChannelsIndex == 0 ? 1 : 2);
+                engine.Start(selectedDriver, inputChannelsIndex == 0 ? 1 : 2, inputChannelOffset - 1);
                 RebuildLiveChain();
                 Monitoring = false;
                 Status = $"Running on '{selectedDriver}' at {engine.SampleRate} Hz. " +

@@ -121,6 +121,56 @@ namespace NAudioTests.Effects
             foreach (var s in buffer)
                 Assert.That(float.IsFinite(s), Is.True);
         }
+
+        [Test]
+        public void EffectiveDelayReportsTheTempoSyncedTime()
+        {
+            // 1/4 note at 120 BPM = 0.5 s = 500 ms.
+            var delay = new DelayEffect { TempoSync = true, Bpm = 120, Division = NoteDivision.Quarter };
+            Assert.That(delay.EffectiveDelayMilliseconds, Is.EqualTo(500f).Within(0.5f));
+
+            delay.TempoSync = false;
+            delay.DelayMilliseconds = 250f;
+            Assert.That(delay.EffectiveDelayMilliseconds, Is.EqualTo(250f).Within(0.5f));
+        }
+
+        [Test]
+        public void PingPongBouncesAMonoSourceBetweenChannels()
+        {
+            var stereo = WaveFormat.CreateIeeeFloatWaveFormat(48000, 2);
+            var delay = new DelayEffect
+            {
+                PingPong = true,
+                DelayMilliseconds = 5f, // 240 samples @ 48 kHz
+                Feedback = 0.6f,
+                Mix = 1f
+            };
+            delay.Configure(stereo);
+
+            var buffer = new float[2048 * 2];
+            buffer[0] = 1f; // a centred (mono) impulse
+            buffer[1] = 1f;
+            delay.Process(buffer);
+
+            static (float l, float r) Energy(float[] b, int from, int to)
+            {
+                float l = 0f, r = 0f;
+                for (var f = from; f < to; f++)
+                {
+                    l += MathF.Abs(b[f * 2]);
+                    r += MathF.Abs(b[f * 2 + 1]);
+                }
+                return (l, r);
+            }
+
+            var first = Energy(buffer, 220, 280);   // ~1st echo
+            var second = Energy(buffer, 460, 520);   // ~2nd echo
+
+            // First echo predominantly on the left, second predominantly on the
+            // right — i.e. it actually ping-pongs from a mono source.
+            Assert.That(first.l, Is.GreaterThan(first.r * 5f));
+            Assert.That(second.r, Is.GreaterThan(second.l * 5f));
+        }
     }
 
     [TestFixture]

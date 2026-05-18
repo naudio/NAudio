@@ -127,3 +127,9 @@ format).
 - The wrapper is MIT; libsndfile itself is LGPL-2.1+ and supplied by the
   user as a system library (no binary is shipped) — the same model as
   `NAudio.Alsa`.
+
+## Tutorial
+
+For a worked walkthrough (reading, encoding, format conversion, streams,
+tags, capability detection) see
+[Cross-platform audio file reading and writing with NAudio.SoundFile](../Docs/CrossPlatformAudioFilesWithSoundFile.md).

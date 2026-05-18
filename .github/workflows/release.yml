@@ -141,10 +141,13 @@ jobs:
           --no-build
           --filter "TestCategory!=IntegrationTest"
 
-      # Pack the 8 NAudio NuGet packages explicitly so we don't accidentally
+      # Pack the NAudio NuGet packages explicitly so we don't accidentally
       # ship the tool/sample apps. Tools (MixDiff, AudioFileInspector,
       # MidiFileConverter) keep their own <Version> in csproj but we never
-      # publish them to NuGet.
+      # publish them to NuGet. NAudio.Alsa and NAudio.SoundFile are the
+      # cross-platform backend/codec packages — net9.0 (no -windows TFM),
+      # so they build and pack fine on the windows-latest runner; their
+      # *.Tests projects are IsPackable=false and excluded here.
       - name: Pack
         shell: pwsh
         run: |
@@ -155,6 +158,8 @@ jobs:
             'NAudio.Midi',
             'NAudio.WinMM',
             'NAudio.Wasapi',
+            'NAudio.Alsa',
+            'NAudio.SoundFile',
             'NAudio',
             'NAudio.Extras'
           )

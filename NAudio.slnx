@@ -16,6 +16,8 @@
     <File Path="readme.txt" />
     <File Path="RELEASE_NOTES.md" />
   </Folder>
+  <Project Path="NAudio.Alsa/NAudio.Alsa.csproj" />
+  <Project Path="NAudio.Alsa.Tests/NAudio.Alsa.Tests.csproj" />
   <Project Path="NAudio.Asio/NAudio.Asio.csproj" />
   <Project Path="NAudio.Benchmarks/NAudio.Benchmarks.csproj">
     <BuildType Project="Release" />
@@ -23,6 +25,8 @@
   <Project Path="NAudio.Core/NAudio.Core.csproj" />
   <Project Path="NAudio.Extras/NAudio.Extras.csproj" />
   <Project Path="NAudio.Midi/NAudio.Midi.csproj" />
+  <Project Path="NAudio.SoundFile/NAudio.SoundFile.csproj" />
+  <Project Path="NAudio.SoundFile.Tests/NAudio.SoundFile.Tests.csproj" />
   <Project Path="NAudio.Wasapi/NAudio.Wasapi.csproj" />
   <Project Path="NAudio.WinForms/NAudio.WinForms.csproj" />
   <Project Path="NAudio.WinMM/NAudio.WinMM.csproj" />

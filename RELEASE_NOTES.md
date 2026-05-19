@@ -29,6 +29,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
 
 #### New features
 
+ * **NAudio.SoundFile:** new cross-platform `SoundFileReader` / `SoundFileWriter` wrapping libsndfile — reads and writes WAV/AIFF/FLAC/Ogg-Vorbis/Opus/MP3 on Linux, macOS and Windows (the first cross-platform FLAC/Vorbis/Opus *encoder* in NAudio). `SoundFileReader` is a `WaveStream` and `ISampleProvider`; both reader and writer also work over a `System.IO.Stream`. Requires a system libsndfile; `SoundFileCapabilities` reports which codecs the build supports (#1289)
  * **WASAPI:** new high-level `WasapiPlayer` and `WasapiRecorder` classes, built via `WasapiPlayerBuilder` / `WasapiRecorderBuilder`. Adds `IAudioClient3` low-latency support, MMCSS thread priority, `IAsyncDisposable`, zero-copy buffer access, and process-specific loopback via `WasapiRecorderBuilder.WithProcessLoopback()`
  * **ASIO:** new `AsioDevice` class replacing `AsioOut` as the primary ASIO interface. Adds explicit `InitPlayback` / `InitRecording` / `InitDuplex` modes, non-contiguous channel selection, per-channel `Span<float>` callbacks, `Reinitialize()` for driver-reset recovery, and per-buffer timing fields (`SamplePosition`, `SystemTimeNanoseconds`, `Speed`, SMPTE `TimeCode`)
  * **ASIO events:** `LatenciesChanged` and `ResyncOccurred` surfaced separately; buffer-size changes routed through `DriverResetRequest`
@@ -38,6 +39,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * **WAV chunks:** new `IWaveChunkInterpreter<T>` extension point, with built-in interpreters for cue lists, BWF `bext` (v1 and v2), and LIST/INFO metadata. RF64 promotion is now an explicit `WaveFileWriterOption`
  * **`Span<T>` overloads:** added on `BiQuadFilter.Transform`, `ALawDecoder.Decode`, `MuLawDecoder.Decode`, and `IMp3FrameDecompressor.DecompressFrame` (default interface method preserves backward compatibility with `NLayer` and other third-party decoders)
  * **MIDI:** new `WinRTMidiIn` / `WinRTMidiOut` classes in `NAudio.Wasapi` backed by `Windows.Devices.Midi`, with `MidiMessageConverter` for interop with the WinRT MIDI types. New `IMidiInput` / `IMidiOutput` interfaces (with a `Send(MidiEvent)` extension) let callers write backend-agnostic code; legacy `MidiIn` / `MidiOut` also implement them
+ * **ALSA (Linux):** new `NAudio.Alsa` package — `AlsaOut` (`IWavePlayer`) and `AlsaIn` (`IWaveIn`) backed by `libasound`, plus `AlsaDeviceEnumerator`. Linux-only (`[SupportedOSPlatform("linux")]`, AOT-compatible `[LibraryImport]`); reference it explicitly, it is not part of the `NAudio` meta-package (#1182)
 
 #### Demo apps and Test Harnesses
 
@@ -80,6 +82,9 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * `WaveFileChunkReader`: fixed `ArgumentException` parsing WAV files whose odd-length chunks are followed by non-UTF-8 bytes — the word-alignment pad-byte check no longer decodes via `BinaryReader.PeekChar()`, and is now guarded against end-of-stream (#959)
  * Clarified `BiQuadFilter` `q` parameter docs (#1264)
  * Removed dead `naudio.codeplex.com` links from README, MixDiff Help menu, and source comments (CodePlex was shut down by Microsoft in 2017) (#985)
+ * `AudioClient.Dispose`: made idempotent and safe against concurrent/re-entrant disposal — fixes an intermittent `NullReferenceException` from the COM interop layer when a WASAPI capture or playback wrapper is disposed more than once (#1183)
+ * `WaveFileReader` / `AiffFileReader`: malformed headers that declared `BlockAlign=0` now throw `InvalidDataException` from the constructor instead of `DivideByZeroException` from the `Position` setter (#1254)
+ * `AiffFileReader.Read`: truncated `SSND` chunks no longer trigger `IndexOutOfRangeException` in the byte-swap loop — the read count is rounded down to a whole block (#1254)
 
 #### Modernisation (Native AOT, source-generated COM)
 

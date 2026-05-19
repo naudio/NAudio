@@ -47,6 +47,11 @@ namespace NAudio.Wave
             {
                 chunkReader.ReadWaveHeader(inputStream);
                 waveFormat = chunkReader.WaveFormat;
+                if (waveFormat.BlockAlign <= 0)
+                {
+                    throw new InvalidDataException(
+                        $"Invalid WAV file - block align is {waveFormat.BlockAlign}.");
+                }
                 dataPosition = chunkReader.DataChunkPosition;
                 dataChunkLength = chunkReader.DataChunkLength;
                 Chunks = new WaveChunks(inputStream, chunkReader.RiffChunks);

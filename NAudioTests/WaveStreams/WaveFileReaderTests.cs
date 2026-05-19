@@ -269,6 +269,28 @@ namespace NAudioTests.WaveStreams
             Assert.That(a, Is.Not.SameAs(b)); // fresh array each call
         }
 
+        // Regression: fuzz-found WAV where the fmt chunk declares nBlockAlign=0.
+        // The Position setter used to throw DivideByZeroException during
+        // construction. See issue #1254.
+        [Test]
+        [Category("UnitTest")]
+        public void MalformedWavWithZeroBlockAlignThrowsInvalidData()
+        {
+            // 67-byte WAV: fmt { format=0x3301, channels=0x0001, BlockAlign=0 }
+            byte[] payload = new byte[]
+            {
+                0x52,0x49,0x46,0x46, 0x28,0x00,0x00,0x00, 0x57,0x41,0x56,0x45, 0x66,0x6d,0x74,0x20,
+                0x10,0x00,0x00,0x00, 0x01,0x33,0x01,0x00, 0x40,0x1f,0x00,0x00, 0x40,0x1f,0x00,0x40,
+                0x00,0x00,0x08,0x00, 0x64,0x61,0x74,0x61, 0xe4,0x00,0x00,0x00, 0x00,0x57,0x41,0x56,
+                0x45,0x66,0x6d,0x74, 0x20,0x10,0x00,0x00, 0x00,0x01,0x33,0x01, 0x00,0x40,0x1f,0x00,
+                0x00,0x00,0x01
+            };
+            Assert.That(payload.Length, Is.EqualTo(67));
+
+            Assert.Throws<InvalidDataException>(
+                () => { using var _ = new WaveFileReader(new MemoryStream(payload)); });
+        }
+
         [Test]
         [Category("UnitTest")]
         public void UnknownChunkOfTypeFactDoesNotBreakReader()

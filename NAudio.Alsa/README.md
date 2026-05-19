@@ -33,20 +33,25 @@ dotnet add package NAudio.Alsa
 ## Supported input formats
 
 `AlsaOut` plays any `IWaveProvider`, so it is format-agnostic — what you
-can play depends on which **decoder** you feed it. On Linux only the
-cross-platform `NAudio.Core` readers are available (`MediaFoundationReader`
-and the bundled `Mp3FileReader` / `AudioFileReader` are Windows-only):
+can play depends on which **decoder** you feed it. `MediaFoundationReader`
+and the bundled `Mp3FileReader` / `AudioFileReader` are Windows-only, but
+the cross-platform [`NAudio.SoundFile`](../NAudio.SoundFile/README.md)
+package (libsndfile) decodes the compressed/free codecs on Linux:
 
 | Format | Reader | Status |
 |---|---|---|
 | WAV (PCM / IEEE float) | `WaveFileReader` | ✅ supported |
 | AIFF (uncompressed PCM) | `AiffFileReader` | ✅ supported |
 | Raw PCM | `RawSourceWaveStream` | ✅ supported |
-| MP3 | `Mp3FileReaderBase` + a managed `IMp3FrameDecompressor` (e.g. [NLayer](https://github.com/naudio/NLayer)) | ⚠️ not bundled — you supply the decompressor |
-| AAC / M4A / ALAC / WMA / FLAC / Ogg / Opus | — | ❌ no cross-platform decoder yet |
+| FLAC / Ogg-Vorbis / Opus | `SoundFileReader` (`NAudio.SoundFile`) | ✅ supported (needs system libsndfile) |
+| MP3 | `SoundFileReader` (libsndfile ≥ 1.1), or `Mp3FileReaderBase` + a managed `IMp3FrameDecompressor` (e.g. [NLayer](https://github.com/naudio/NLayer)) | ✅ / ⚠️ |
+| AAC / M4A / ALAC / WMA | — | ❌ no cross-platform decoder (FFmpeg territory) |
 
-There is currently no Linux equivalent of `MediaFoundationReader`; a
-cross-platform decoder package is planned separately.
+`SoundFileReader` is the cross-platform `MediaFoundationReader`-style
+decoder (it is a `WaveStream` / `ISampleProvider`); add the
+`NAudio.SoundFile` package and a system libsndfile to play FLAC/Ogg/Opus/
+MP3 through `AlsaOut`. `NAudio.SoundFile` also **encodes** those formats,
+so it pairs with `AlsaIn` to capture straight to FLAC/Ogg/Opus.
 
 ## Play a WAV file
 
@@ -64,7 +69,20 @@ using (var outputDevice = new AlsaOut())          // default device
 }
 ```
 
-Play MP3 by wiring a managed decompressor into `Mp3FileReaderBase`:
+Play FLAC/Ogg/Opus/MP3 with `SoundFileReader` (cross-platform, needs a
+system libsndfile — `dotnet add package NAudio.SoundFile`):
+
+```c#
+using NAudio.SoundFile;
+
+using var audioFile = new SoundFileReader("test.flac");
+using var output = new AlsaOut();
+output.Init(audioFile);
+output.Play();
+```
+
+Or play MP3 by wiring a managed decompressor into `Mp3FileReaderBase`
+(no native dependency):
 
 ```c#
 // using NLayer.NAudioSupport;  // dotnet add package NLayer.NAudioSupport
@@ -88,6 +106,9 @@ input.StartRecording();
 Thread.Sleep(5000);
 input.StopRecording();
 ```
+
+Swap `WaveFileWriter` for `NAudio.SoundFile`'s `SoundFileWriter` to
+capture straight to FLAC/Ogg-Vorbis/Opus instead of WAV.
 
 ## Enumerate devices
 

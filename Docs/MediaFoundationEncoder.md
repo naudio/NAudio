@@ -85,7 +85,7 @@ Windows 10 1903+ and Windows 11 ship a Media Foundation **decoder** for Opus, bu
 
 Opus **playback** works through `MediaFoundationReader` for `.mka` (Matroska) and `.webm` containers carrying Opus tracks, and is exposed through `AudioFileReader` and the demo apps just like any other format.
 
-If you need Opus **encoding** in .NET, the recommended option is the [Concentus](https://github.com/lostromb/concentus) pure-managed port of `libopus` (NuGet: `Concentus`). It supports both encoding and decoding, and the companion [Concentus.OggFile](https://github.com/lostromb/concentus.oggfile) package handles the Ogg container around encoded frames. NAudio integration is straightforward — feed PCM samples from any `IWaveProvider` / `ISampleProvider` into a `Concentus.OpusEncoder` and write the encoded packets out via `OpusOggWriteStream`.
+For cross-platform Opus (and FLAC/Ogg-Vorbis) **encoding** — including on Windows — the simplest option is the `NAudio.SoundFile` package (libsndfile); see [Cross-platform audio file reading and writing with NAudio.SoundFile](CrossPlatformAudioFilesWithSoundFile.md). Alternatively, the pure-managed [Concentus](https://github.com/lostromb/concentus) port of `libopus` (NuGet: `Concentus`) has no native dependency. It supports both encoding and decoding, and the companion [Concentus.OggFile](https://github.com/lostromb/concentus.oggfile) package handles the Ogg container around encoded frames. NAudio integration is straightforward — feed PCM samples from any `IWaveProvider` / `ISampleProvider` into a `Concentus.OpusEncoder` and write the encoded packets out via `OpusOggWriteStream`.
 
 ## Converting from other input formats
 

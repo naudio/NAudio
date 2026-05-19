@@ -3,6 +3,7 @@ using NAudioConsoleTest.DirectSound.Tests;
 using NAudioConsoleTest.Dmo.Tests;
 using NAudioConsoleTest.Dsp.Tests;
 using NAudioConsoleTest.MediaFoundation.Tests;
+using NAudioConsoleTest.SoundFile.Tests;
 using NAudioConsoleTest.Wasapi.Tests;
 using NAudioConsoleTest.WinMM.Tests;
 
@@ -39,6 +40,12 @@ static class TestRegistration
         TestRegistry.Register(new MediaFoundationRoundTripTest());
         TestRegistry.Register(new MediaFoundationResampleFileTest());
         TestRegistry.Register(new MediaFoundationEnumerateTransformsTest());
+
+        TestRegistry.Register(new SoundFileShowCapabilitiesTest());
+        TestRegistry.Register(new SoundFilePlayFileTest());
+        TestRegistry.Register(new SoundFileTranscodeTest());
+        TestRegistry.Register(new SoundFileRoundTripTest());
+        TestRegistry.Register(new SoundFileStreamRoundTripTest());
 
         TestRegistry.Register(new WasapiListDevicesTest());
         TestRegistry.Register(new WasapiExclusiveQuickScanTest());

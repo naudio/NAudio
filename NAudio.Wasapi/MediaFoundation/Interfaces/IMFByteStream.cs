@@ -103,19 +103,19 @@ namespace NAudio.MediaFoundation.Interfaces
         int Read(IntPtr pb, int cb, out int pcbRead);
 
         [PreserveSig]
-        int BeginRead(IntPtr pb, int cb, IMFAsyncCallback pCallback, IntPtr punkState);
+        int BeginRead(IntPtr pb, int cb, IntPtr pCallback, IntPtr punkState);
 
         [PreserveSig]
-        int EndRead(IMFAsyncResult pResult, out int pcbRead);
+        int EndRead(IntPtr pResult, out int pcbRead);
 
         [PreserveSig]
         int Write(IntPtr pb, int cb, out int pcbWritten);
 
         [PreserveSig]
-        int BeginWrite(IntPtr pb, int cb, IMFAsyncCallback pCallback, IntPtr punkState);
+        int BeginWrite(IntPtr pb, int cb, IntPtr pCallback, IntPtr punkState);
 
         [PreserveSig]
-        int EndWrite(IMFAsyncResult pResult, out int pcbWritten);
+        int EndWrite(IntPtr pResult, out int pcbWritten);
 
         [PreserveSig]
         int Seek(int seekOrigin, long llSeekOffset, int dwSeekFlags, out long pqwCurrentPosition);

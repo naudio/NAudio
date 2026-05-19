@@ -144,7 +144,7 @@ namespace NAudio.MediaFoundation
         internal static partial int MFAllocateWorkQueueEx(uint type, out uint work_queue_id); // returns: HRESULT
 
         [LibraryImport("mfplat.dll")]
-        internal static partial int MFPutWorkItem(uint dwQueue, IntPtr callback, IntPtr pState); // returns: HRESULT
+        internal static partial int MFPutWorkItem(uint dwQueue, IntPtr result, IntPtr pState); // returns: HRESULT
 
         [LibraryImport("mfplat.dll")]
         internal static partial int MFUnlockWorkQueue(uint dwQueue);
@@ -152,8 +152,12 @@ namespace NAudio.MediaFoundation
         [LibraryImport("mfplat.dll")]
         internal static partial int MFInvokeCallback(IntPtr result);
 
+        [PreserveSig]
         [LibraryImport("mfplat.dll")]
         internal static partial int MFCreateAsyncResult(IntPtr punkobject, IntPtr callback, IntPtr punkstate, out IntPtr async_result);
+
+        [LibraryImport("mfplat.dll")]
+        internal static partial int MFPutWorkItemEx(uint dwQueue, IntPtr result);
 
         /// <summary>
         /// All streams

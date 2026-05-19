@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 namespace NAudio.MediaFoundation
 {
@@ -29,7 +29,7 @@ namespace NAudio.MediaFoundation
         /// </summary>
         public static void ThrowIfFailed(int hresult)
         {
-            if (hresult < 0)
+            if (NAudio.Utils.HResult.IsError(hresult))
                 throw new MediaFoundationException(hresult);
         }
 

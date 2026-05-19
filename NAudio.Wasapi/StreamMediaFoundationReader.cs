@@ -38,9 +38,7 @@ namespace NAudio.Wave
             }
             else
             {
-                this.stream = stream;
-                // Prepare the stream wrapper ahead-of-time.
-                this.wrapper = new MFByteStreamFromStream(stream);
+                wrapper = new MFByteStreamFromStream(this.stream = stream);
                 Init(settings);
             }
         }
@@ -51,9 +49,9 @@ namespace NAudio.Wave
         private protected override IMFSourceReader CreateReader(MediaFoundationReaderSettings settings)
         {
             IntPtr byteStreamPtr = MediaFoundationApi.CreateByteStream(wrapper);
-            wrapper.ResetPosition();
             try
             {
+                wrapper.ResetPosition();
                 var reader = MediaFoundationApi.CreateSourceReaderFromByteStream(byteStreamPtr);
 
                 MediaFoundationException.ThrowIfFailed(
@@ -101,8 +99,14 @@ namespace NAudio.Wave
                     }
                     finally
                     {
-                        stream.Dispose();
-                        System.Threading.Monitor.Exit(this);
+                        try
+                        {
+                            stream.Dispose();
+                        }
+                        finally
+                        {
+                            System.Threading.Monitor.Exit(this);
+                        }
                     }
                 }
             }

@@ -2,13 +2,15 @@
 using System;
 using System.IO;
 using System.Threading;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices.Marshalling;
 
 using NAudio.Utils;
 using NAudio.Wasapi.CoreAudioApi;
+using NAudio.Utils.FileFormatDiscovery;
 using NAudio.MediaFoundation.Interfaces;
-
-using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.Marshalling;
 
 namespace NAudio.MediaFoundation
 {
@@ -17,34 +19,29 @@ namespace NAudio.MediaFoundation
     /// Newer implementation that does not utilize the IStream -> IMFByteStream shim. <br />
     /// Note: The caller is responsible for freeing the stream that is wrapped.
     /// </summary>
+    // mdcdi1315: Helpful link for async handling: https://learn.microsoft.com/en-us/windows/win32/medfound/writing-an-asynchronous-method .
     [GeneratedComClass]
     internal sealed partial class MFByteStreamFromStream : IMFByteStream, IMFAttributes, IDisposable
     {
         private readonly Stream stream;
         private readonly long wrapper_init_pos;
-        private volatile AsyncWorkData asyncdata;
         private IntPtr natively_allocated_attributes_ptr;
         private IMFAttributes natively_allocated_attributes;
+        private readonly Dictionary<IntPtr, int> r_w_calls_async_results; // Used as lookup for determining which size to retrieve in async call contexts and where.
 
-        public MFByteStreamFromStream(Stream stream)
+        public unsafe MFByteStreamFromStream(Stream stream)
         {
-            asyncdata = null;
             this.stream = stream;
+            r_w_calls_async_results = new();
             try { wrapper_init_pos = stream.Position; } catch { wrapper_init_pos = 0; }
             (natively_allocated_attributes_ptr, natively_allocated_attributes) = MediaFoundationApi.CreateAttributes(1);
-        }
-
-        // Asyncronous work data for an asyncronous request.
-        // These data are both used for R/W operations.
-        private sealed class AsyncWorkData
-        {
-            public IntPtr NativePointer;
-            public int DataSize;
-
-            public AsyncWorkData(IntPtr native, int cb)
+            // The only way for the below to throw an exception is a critical one,
+            // which eitherwise will terminate soon the process, so we are OK and we do not need EH for this.
+            AudioFileFormat fmt = new AudioFileFormatFinder().AddDefaultFileFormats().FindFormat(this.stream);
+            if (fmt is not null)
             {
-                NativePointer = native;
-                DataSize = cb;
+                Guid t = MfByteStreamAttributes.ContentType;
+                natively_allocated_attributes.SetString(t, fmt.MimeType);
             }
         }
 
@@ -60,39 +57,41 @@ namespace NAudio.MediaFoundation
         // Specifically, it fails with 'The URL of the given bytestream is unsupported', flagging that the stream has not been repositioned.
         // 2. Any source reader and sink writer may fail to properly implement this in the native code,
         // due to an omission or so, so let's try to be a bit less error-prone.
-        public int Close() => CommonHResults.S_OK;
+        public int Close() => HResult.S_OK;
 
         public int Flush()
         {
             try
             {
-                stream.Flush();
+                // Only relevant when writing, ignore if unwritable
+                if (stream.CanWrite) { stream.Flush(); }
             }
             catch (IOException)
             {
                 // Flush is called during writing only, so IOException here could be mapped to STG_E_WRITEFAULT.
-                return CommonHResults.STG_E_WRITEFAULT;
+                return HResult.STG_E_WRITEFAULT;
             }
-            return CommonHResults.S_OK;
+            return HResult.S_OK;
         }
 
         public int GetCapabilities(out int pdwCapabilities)
         {
-            pdwCapabilities = 0;
+            int c = 0;
             if (stream.CanSeek)
             {
-                pdwCapabilities |= IMFByteStream.MFBYTESTREAM_CAPABILITY_IS_SEEKABLE;
+                c |= IMFByteStream.MFBYTESTREAM_CAPABILITY_IS_SEEKABLE;
             }
             if (stream.CanWrite)
             {
-                pdwCapabilities |= IMFByteStream.MFBYTESTREAM_CAPABILITY_IS_WRITABLE;
+                c |= IMFByteStream.MFBYTESTREAM_CAPABILITY_IS_WRITABLE;
             }
             if (stream.CanRead)
             {
-                pdwCapabilities |= IMFByteStream.MFBYTESTREAM_CAPABILITY_IS_READABLE;
-                pdwCapabilities |= IMFByteStream.MFBYTESTREAM_CAPABILITY_DOES_NOT_USE_NETWORK;
+                c |= IMFByteStream.MFBYTESTREAM_CAPABILITY_IS_READABLE;
+                c |= IMFByteStream.MFBYTESTREAM_CAPABILITY_DOES_NOT_USE_NETWORK;
             }
-            return CommonHResults.S_OK;
+            pdwCapabilities = c;
+            return HResult.S_OK;
         }
 
         public int GetCurrentPosition(out long pqwPosition)
@@ -104,14 +103,14 @@ namespace NAudio.MediaFoundation
             catch (IOException)
             {
                 pqwPosition = 0L;
-                return CommonHResults.STG_E_SEEKERROR;
+                return HResult.STG_E_SEEKERROR;
             }
             catch (NotSupportedException)
             {
                 pqwPosition = 0L;
-                return CommonHResults.E_FAIL;
+                return HResult.E_FAIL;
             }
-            return CommonHResults.S_OK;
+            return HResult.S_OK;
         }
 
         public int GetLength(out long pqwLength)
@@ -125,7 +124,7 @@ namespace NAudio.MediaFoundation
                 pqwLength = 0L;
                 return MediaFoundationErrors.MF_E_BYTESTREAM_UNKNOWN_LENGTH;
             }
-            return CommonHResults.S_OK;
+            return HResult.S_OK;
         }
 
         public int IsEndOfStream(out int pfEndOfStream)
@@ -137,14 +136,14 @@ namespace NAudio.MediaFoundation
             catch (NotSupportedException)
             {
                 pfEndOfStream = 0;
-                return CommonHResults.E_FAIL;
+                return HResult.STG_E_UNIMPLEMENTEDFUNCTION;
             }
             catch (IOException)
             {
                 pfEndOfStream = 0;
-                return CommonHResults.STG_E_SEEKERROR;
+                return HResult.STG_E_SEEKERROR;
             }
-            return CommonHResults.S_OK;
+            return HResult.S_OK;
         }
 
         public int Seek(int seekOrigin, long llSeekOffset, int dwSeekFlags, out long pqwCurrentPosition)
@@ -162,19 +161,19 @@ namespace NAudio.MediaFoundation
                 else
                 {
                     pqwCurrentPosition = 0;
-                    return CommonHResults.E_INVALIDARG;
+                    return HResult.E_INVALIDARG;
                 }
-                return CommonHResults.S_OK;
+                return HResult.S_OK;
             }
             catch (IOException)
             {
                 pqwCurrentPosition = 0;
-                return CommonHResults.STG_E_SEEKERROR;
+                return HResult.STG_E_SEEKERROR;
             }
             catch (NotSupportedException)
             {
                 pqwCurrentPosition = 0;
-                return CommonHResults.E_FAIL;
+                return HResult.STG_E_UNIMPLEMENTEDFUNCTION;
             }
         }
 
@@ -186,13 +185,13 @@ namespace NAudio.MediaFoundation
             }
             catch (IOException)
             {
-                return CommonHResults.STG_E_SEEKERROR;
+                return HResult.STG_E_SEEKERROR;
             }
             catch (NotSupportedException)
             {
-                return CommonHResults.E_FAIL;
+                return HResult.STG_E_UNIMPLEMENTEDFUNCTION;
             }
-            return CommonHResults.S_OK;
+            return HResult.S_OK;
         }
 
         public int SetLength(long qwLength)
@@ -203,141 +202,161 @@ namespace NAudio.MediaFoundation
             }
             catch (NotSupportedException)
             {
-                return CommonHResults.E_FAIL;
+                return HResult.STG_E_UNIMPLEMENTEDFUNCTION;
             }
             catch (IOException)
             {
-                return CommonHResults.STG_E_WRITEFAULT;
+                return HResult.STG_E_WRITEFAULT;
             }
-            return CommonHResults.S_OK;
+            return HResult.S_OK;
         }
 
         public unsafe int Write(nint pb, int cb, out int pcbWritten)
         {
+            if (pb == IntPtr.Zero)
+            {
+                pcbWritten = 0;
+                return HResult.STG_E_INVALIDPOINTER;
+            }
+            else if (cb < 0)
+            {
+                pcbWritten = 0;
+                return HResult.E_INVALIDARG;
+            }
             try
             {
                 stream.Write(new ReadOnlySpan<byte>(pb.ToPointer(), pcbWritten = cb));
-                return CommonHResults.S_OK;
+                return HResult.S_OK;
             }
-            catch (OutOfMemoryException)
+            catch (Exception e)
             {
                 pcbWritten = 0;
-                return CommonHResults.E_OUTOFMEMORY;
-            }
-            catch (IOException)
-            {
-                pcbWritten = 0;
-                return CommonHResults.STG_E_WRITEFAULT;
-            }
-            catch (NotSupportedException)
-            {
-                pcbWritten = 0;
-                return CommonHResults.STG_E_WRITEFAULT;
-            }
-            catch
-            {
-                pcbWritten = 0;
-                return CommonHResults.E_FAIL;
+                return e switch
+                {
+                    OutOfMemoryException => HResult.E_OUTOFMEMORY,
+                    IOException => HResult.STG_E_WRITEFAULT,
+                    UnauthorizedAccessException => HResult.STG_E_ACCESSDENIED,
+                    NotImplementedException or NotSupportedException => HResult.STG_E_UNIMPLEMENTEDFUNCTION,
+                    _ => HResult.E_FAIL,
+                };
             }
         }
 
         public unsafe int Read(nint pb, int cb, out int pcbRead)
         {
+            if (pb == IntPtr.Zero)
+            {
+                pcbRead = 0;
+                return HResult.STG_E_INVALIDPOINTER;
+            }
+            else if (cb < 0)
+            {
+                pcbRead = 0;
+                return HResult.E_INVALIDARG;
+            }
             try
             {
                 pcbRead = stream.Read(new Span<byte>(pb.ToPointer(), cb));
-                return CommonHResults.S_OK;
+                return HResult.S_OK;
             }
-            catch (OutOfMemoryException)
+            catch (Exception e)
             {
                 pcbRead = 0;
-                return CommonHResults.E_OUTOFMEMORY;
-            }
-            catch (NotSupportedException)
-            {
-                pcbRead = 0;
-                return CommonHResults.STG_E_READFAULT;
-            }
-            catch (IOException)
-            {
-                pcbRead = 0;
-                return CommonHResults.STG_E_READFAULT;
-            }
-            catch
-            {
-                pcbRead = 0;
-                return CommonHResults.E_FAIL;
+                return e switch
+                {
+                    OutOfMemoryException => HResult.E_OUTOFMEMORY,
+                    IOException => HResult.STG_E_READFAULT,
+                    UnauthorizedAccessException => HResult.STG_E_ACCESSDENIED,
+                    NotImplementedException or NotSupportedException => HResult.STG_E_UNIMPLEMENTEDFUNCTION,
+                    _ => HResult.E_FAIL,
+                };
             }
         }
 
-        public int BeginRead(nint pb, int cb, IMFAsyncCallback pCallback, nint punkState)
+        public int BeginRead(nint pb, int cb, IntPtr pCallback, nint punkState)
         {
-            return Interlocked.CompareExchange(ref asyncdata, new AsyncWorkData(pb, cb), null) is null ?
-                 MediaFoundationApi.PutWorkItem(pCallback, punkState)
-                 : CommonHResults.E_ILLEGAL_METHOD_CALL;
+            if (pb == IntPtr.Zero || pCallback == IntPtr.Zero)
+            {
+                return HResult.STG_E_INVALIDPOINTER;
+            }
+            else
+            {
+                return CreateAsyncCall(pb, cb, pCallback, punkState, true);
+            }
         }
 
-        public unsafe int EndRead(IMFAsyncResult pResult, out int pcbRead)
+        public unsafe int EndRead(IntPtr result, out int pcbRead)
         {
-            AsyncWorkData d = Interlocked.Exchange(ref asyncdata, null); // This will immediately null the field so that the next async operation can be queued
-            if (d is null) // Invalid to call without context
-            {
-                pcbRead = 0;
-                // mdcdi1315: This is invalid case, should not be passed through the result.
-                return CommonHResults.E_ILLEGAL_METHOD_CALL; 
-            }
+            pcbRead = GetCallResultSize(result);
+            var rt = MediaFoundationApi.QueryAndCreateInterfaceInstance<IMFAsyncResult>(result);
             try
             {
-                // Calling the heavy method inside the async execution.
-                // Note that I do not call the Stream's dedicated ReadAsync method since we are already into an asyncronous context.
-                pcbRead = stream.Read(new Span<byte>(d.NativePointer.ToPointer(), d.DataSize));
-                pResult.SetStatus(CommonHResults.S_OK);
+                return rt.GetStatus();
             }
-            catch (IOException)
+            finally
             {
-                pcbRead = 0;
-                pResult.SetStatus(CommonHResults.STG_E_READFAULT);
+                ComActivation.ReleaseBoth(rt, IntPtr.Zero);
             }
-            catch
-            {
-                pcbRead = 0;
-                pResult.SetStatus(CommonHResults.E_FAIL);
-            }
-            return CommonHResults.S_OK;
         }
 
-        public int BeginWrite(nint pb, int cb, IMFAsyncCallback pCallback, nint punkState)
-            => Interlocked.CompareExchange(ref asyncdata, new AsyncWorkData(pb, cb), null) is null
-                ? MediaFoundationApi.PutWorkItem(pCallback, punkState)
-                : CommonHResults.E_ILLEGAL_METHOD_CALL;
-
-        public unsafe int EndWrite(IMFAsyncResult pResult, out int pcbWritten)
+        public int BeginWrite(nint pb, int cb, IntPtr pCallback, nint punkState)
         {
-            AsyncWorkData d = Interlocked.Exchange(ref asyncdata, null); // This will immediately null the field so that the next async operation can be queued
-            if (d is null) // Invalid to call without context
+            if (pb == IntPtr.Zero || pCallback == IntPtr.Zero)
             {
-                pcbWritten = 0;
-                // mdcdi1315: This is invalid case, should not be passed through the result.
-                return CommonHResults.E_ILLEGAL_METHOD_CALL;
+                return HResult.STG_E_INVALIDPOINTER;
             }
+            else
+            {
+                return CreateAsyncCall(pb, cb, pCallback, punkState, false);
+            }
+        }
+
+        public unsafe int EndWrite(IntPtr result, out int pcbWritten)
+        {
+            pcbWritten = GetCallResultSize(result);
+            var rt = MediaFoundationApi.QueryAndCreateInterfaceInstance<IMFAsyncResult>(result);
             try
             {
-                // Calling the heavy method inside the async execution.
-                // Note that I do not call the Stream's dedicated WriteAsync method since we are already into an asyncronous context.
-                stream.Write(new ReadOnlySpan<byte>(d.NativePointer.ToPointer(), pcbWritten = d.DataSize));
-                pResult.SetStatus(CommonHResults.S_OK);
+                return rt.GetStatus();
             }
-            catch (IOException)
+            finally
             {
-                pcbWritten = 0;
-                pResult.SetStatus(CommonHResults.E_FAIL);
+                ComActivation.ReleaseBoth(rt, IntPtr.Zero);
             }
-            catch (NotSupportedException)
+        }
+
+        // Some notes regarding how this works, provided here for future contributors:
+        // -> 1. You cannot implement custom IMFAsyncResult objects, as those are incompatible with the work queue feature of MF.
+        // This happens because CreateAsyncResult returns a COM object that is of type MFASYNCRESULT, which is what work queues support.
+        // However, we cannot port the MFASYNCRESULT structure, as it's implementation details are private and fragile.
+        // If you avoid this, you get access violation errors due to this. Even MS docs suggest you to use MFASYNCRESULT instead.
+        // -> 2. To come around the limitations due to number 1 above, a custom IMFAsyncCallback had to be created to support the reading/writing
+        // and then call the callback provided by the callback COM object.
+        // -> 3. This method frees the async results once we have made our way to be enqueued into the work queue.
+        // The ptr pointer is only held by our custom async result, which is also released, once our result is also released.
+        // See Invoke method in MFByteStreamOnStreamAsyncCallback for more info.
+        private int CreateAsyncCall(nint pb, int cb, nint callback, nint state, bool read_mode)
+        {
+            IntPtr ptr, ptr2 = IntPtr.Zero;
+            IMFAsyncResult result = null, result2 = null;
+            try
             {
-                pcbWritten = 0;
-                pResult.SetStatus(CommonHResults.STG_E_WRITEFAULT);
+                // Do not free 'ptr', seems that CreateAsyncResult does not call AddRef to them.
+                (ptr, result) = MediaFoundationApi.CreateAsyncResult(callback, default, state);
+                (ptr2, result2) = MediaFoundationApi.CreateAsyncResult(
+                    new MFByteStreamOnStreamAsyncCallback(this, pb, cb, read_mode), ptr, state
+                );
+                return MediaFoundationApi.PutWorkItem(ptr2);
             }
-            return CommonHResults.S_OK;
+            catch (COMException cex)
+            {
+                return cex.GetHResult();
+            }
+            finally
+            {
+                ComActivation.ReleaseBoth(result2, ptr2);
+                ComActivation.ReleaseBoth(result, IntPtr.Zero);
+            }
         }
 
         #endregion
@@ -406,6 +425,41 @@ namespace NAudio.MediaFoundation
 
         #endregion
 
+        private int GetCallResultSize(IntPtr p_callback)
+        {
+            Monitor.Enter(this);
+            try
+            {
+                if (r_w_calls_async_results.Remove(p_callback, out int size))
+                {
+                    return size;
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+            finally
+            {
+                Monitor.Exit(this);
+            }
+        }
+
+        // Sets the data read/written for a given async call.
+        // Used for providing that in EndRead/Write contexts.
+        public void SetAsyncCallSize(IntPtr p_result, int size)
+        {
+            Monitor.Enter(this);
+            try
+            {
+                r_w_calls_async_results[p_result] = size;
+            }
+            finally
+            {
+                Monitor.Exit(this);
+            }
+        }
+
         // Resets the position of the wrapper to the position captured during when the wrapper was initializing.
         // This allows us to double-initialize the Media Foundation source reader (and any other object that uses this).
         public void ResetPosition()
@@ -427,6 +481,8 @@ namespace NAudio.MediaFoundation
                     natively_allocated_attributes = null;
                     natively_allocated_attributes_ptr = IntPtr.Zero;
                 }
+                // Make any still queued methods to fail.
+                r_w_calls_async_results.Clear();
             }
             finally
             {

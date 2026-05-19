@@ -466,12 +466,21 @@ namespace NAudio.Wave
         /// </summary>
         public void Dispose()
         {
-            if (!disposed)
+            System.Threading.Monitor.Enter(this);
+            try
             {
-                disposed = true;
-                outputMediaType.Dispose();
+                // Serialize access to 'disposed'.
+                if (!disposed)
+                {
+                    disposed = true;
+                    outputMediaType.Dispose();
+                }
+                GC.SuppressFinalize(this);
             }
-            GC.SuppressFinalize(this);
+            finally
+            {
+                System.Threading.Monitor.Exit(this);
+            }
         }
     }
 }

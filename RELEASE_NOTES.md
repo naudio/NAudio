@@ -82,6 +82,8 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * Clarified `BiQuadFilter` `q` parameter docs (#1264)
  * Removed dead `naudio.codeplex.com` links from README, MixDiff Help menu, and source comments (CodePlex was shut down by Microsoft in 2017) (#985)
  * `AudioClient.Dispose`: made idempotent and safe against concurrent/re-entrant disposal — fixes an intermittent `NullReferenceException` from the COM interop layer when a WASAPI capture or playback wrapper is disposed more than once (#1183)
+ * `WaveFileReader` / `AiffFileReader`: malformed headers that declared `BlockAlign=0` now throw `InvalidDataException` from the constructor instead of `DivideByZeroException` from the `Position` setter (#1254)
+ * `AiffFileReader.Read`: truncated `SSND` chunks no longer trigger `IndexOutOfRangeException` in the byte-swap loop — the read count is rounded down to a whole block (#1254)
 
 #### Modernisation (Native AOT, source-generated COM)
 

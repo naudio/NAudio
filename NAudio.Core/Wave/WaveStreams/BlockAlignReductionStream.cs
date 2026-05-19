@@ -80,7 +80,7 @@ namespace NAudio.Wave
                 {
                     if (position != value)
                     {
-                        if (position % BlockAlign != 0)
+                        if (value % BlockAlign != 0)
                             throw new ArgumentException("Position must be block aligned");
                         long sourcePosition = value - (value % sourceStream.BlockAlign);
                         if (sourceStream.Position != sourcePosition)

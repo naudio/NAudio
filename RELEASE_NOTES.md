@@ -38,6 +38,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * **WAV chunks:** new `IWaveChunkInterpreter<T>` extension point, with built-in interpreters for cue lists, BWF `bext` (v1 and v2), and LIST/INFO metadata. RF64 promotion is now an explicit `WaveFileWriterOption`
  * **`Span<T>` overloads:** added on `BiQuadFilter.Transform`, `ALawDecoder.Decode`, `MuLawDecoder.Decode`, and `IMp3FrameDecompressor.DecompressFrame` (default interface method preserves backward compatibility with `NLayer` and other third-party decoders)
  * **MIDI:** new `WinRTMidiIn` / `WinRTMidiOut` classes in `NAudio.Wasapi` backed by `Windows.Devices.Midi`, with `MidiMessageConverter` for interop with the WinRT MIDI types. New `IMidiInput` / `IMidiOutput` interfaces (with a `Send(MidiEvent)` extension) let callers write backend-agnostic code; legacy `MidiIn` / `MidiOut` also implement them
+ * **ALSA (Linux):** new `NAudio.Alsa` package — `AlsaOut` (`IWavePlayer`) and `AlsaIn` (`IWaveIn`) backed by `libasound`, plus `AlsaDeviceEnumerator`. Linux-only (`[SupportedOSPlatform("linux")]`, AOT-compatible `[LibraryImport]`); reference it explicitly, it is not part of the `NAudio` meta-package (#1182)
 
 #### Demo apps and Test Harnesses
 
@@ -56,6 +57,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * `WasapiCapture` capture path is now zero-copy via the native WASAPI buffer span
  * `BiQuadFilter` state and coefficient fields hoisted to locals in batch loops for register retention
  * `Mp3FileReader` now builds its table-of-contents lazily on first seek instead of eagerly during construction; the `Position` setter no longer blocks; rapid scrub seeks debounce and silence output
+ * Eliminated per-`Read` allocations in `ResamplerDmoStream` and `DmoMp3FrameDecompressor` (cached input buffer and output-buffer array) (#971)
 
 #### Reliability and bug fixes
 
@@ -68,6 +70,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * MP3 frame parsing: more robust against false frame detections from album art and trailing metadata
  * `MidiFile`: preserved running-status across meta events (fixes "Read too far" errors when meta events interrupt running-status sequences)
  * `WaveStream.CurrentTime` setter: now lands on a block boundary, preventing garbage audio on seek in custom readers
+ * `BlockAlignReductionStream.Position` setter: now validates the incoming value instead of the stale current position, so a block-aligned seek after an arbitrary-length read no longer wrongly throws "Position must be block aligned" (#368)
  * `IconExtractor.Extract`: now guards against null icon handles from `ExtractIconEx`
  * `DirectSoundOut.InitializeDirectSound`: wrapped notification setup in try/finally to prevent COM ref leak on `SetNotificationPositions` failure
  * ASIO: implemented missing `Asio64Bit` conversions (Int24LSB and Float32LSB output sample types)
@@ -75,7 +78,10 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * `WdlResampler`: backported three upstream Cockos WDL bug fixes (latency calculation, `ResampleOut` clamping, Blackman-Harris window correction)
  * `MediaBufferLease`: hardened against out-of-order disposal
  * Added finalizers to DMO `MediaBuffer` and the `Mf*` wrappers that hold (RCW, IntPtr) pairs to prevent COM ref leaks
+ * `WaveFileChunkReader`: fixed `ArgumentException` parsing WAV files whose odd-length chunks are followed by non-UTF-8 bytes — the word-alignment pad-byte check no longer decodes via `BinaryReader.PeekChar()`, and is now guarded against end-of-stream (#959)
  * Clarified `BiQuadFilter` `q` parameter docs (#1264)
+ * Removed dead `naudio.codeplex.com` links from README, MixDiff Help menu, and source comments (CodePlex was shut down by Microsoft in 2017) (#985)
+ * `AudioClient.Dispose`: made idempotent and safe against concurrent/re-entrant disposal — fixes an intermittent `NullReferenceException` from the COM interop layer when a WASAPI capture or playback wrapper is disposed more than once (#1183)
  * `WaveFileReader` / `AiffFileReader`: malformed headers that declared `BlockAlign=0` now throw `InvalidDataException` from the constructor instead of `DivideByZeroException` from the `Position` setter (#1254)
  * `AiffFileReader.Read`: truncated `SSND` chunks no longer trigger `IndexOutOfRangeException` in the byte-swap loop — the read count is rounded down to a whole block (#1254)
 

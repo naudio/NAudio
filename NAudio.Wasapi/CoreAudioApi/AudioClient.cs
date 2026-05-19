@@ -4,6 +4,7 @@ using NAudio.Wave;
 using System;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace NAudio.CoreAudioApi
@@ -28,6 +29,7 @@ namespace NAudio.CoreAudioApi
         private AudioClockClient audioClockClient;
         private AudioStreamVolume audioStreamVolume;
         private AudioClientShareMode shareMode;
+        private int disposed;
 
         /// <summary>
         /// Activate Async
@@ -434,6 +436,14 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public void Dispose()
         {
+            // Idempotent and safe against concurrent/re-entrant disposal: WASAPI capture
+            // and playback wrappers can race a teardown thread against their worker
+            // thread's stop path, and a second COM release here previously surfaced as a
+            // NullReferenceException out of the interop layer (issue #1183).
+            if (Interlocked.Exchange(ref disposed, 1) != 0)
+            {
+                return;
+            }
             if (audioClientInterface != null)
             {
                 if (audioClockClient != null)

@@ -2,9 +2,7 @@
 using System;
 using System.IO;
 using System.Threading;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices.Marshalling;
 
 using NAudio.Utils;
@@ -27,12 +25,10 @@ namespace NAudio.MediaFoundation
         private readonly long wrapper_init_pos;
         private IntPtr natively_allocated_attributes_ptr;
         private IMFAttributes natively_allocated_attributes;
-        private readonly Dictionary<IntPtr, int> r_w_calls_async_results; // Used as lookup for determining which size to retrieve in async call contexts and where.
 
         public unsafe MFByteStreamFromStream(Stream stream)
         {
             this.stream = stream;
-            r_w_calls_async_results = new();
             try { wrapper_init_pos = stream.Position; } catch { wrapper_init_pos = 0; }
             (natively_allocated_attributes_ptr, natively_allocated_attributes) = MediaFoundationApi.CreateAttributes(1);
             // The only way for the below to throw an exception is a critical one,
@@ -48,14 +44,8 @@ namespace NAudio.MediaFoundation
         #region IMFByteStream Interface Implementation
 
         // mdcdi1315: Do not trust this.
-        // Main rationale for deciding to not trust this are two reasons:
-        // 1. In some of my tests this can be avoided to be called by the source reader,
-        // and as such the reader initializes successfully the first time,
-        // but when reading from the audio thread, it fails with an exception.
-        // I uncovered this from my own app and fails in 30% of cases.
-        // Most notable on complex file formats, such as FLAC.
-        // Specifically, it fails with 'The URL of the given bytestream is unsupported', flagging that the stream has not been repositioned.
-        // 2. Any source reader and sink writer may fail to properly implement this in the native code,
+        // Main rationale for deciding to not trust this is this:
+        // Any source reader and sink writer may fail to properly implement this in the native code,
         // due to an omission or so, so let's try to be a bit less error-prone.
         public int Close() => HResult.S_OK;
 
@@ -285,19 +275,7 @@ namespace NAudio.MediaFoundation
             }
         }
 
-        public unsafe int EndRead(IntPtr result, out int pcbRead)
-        {
-            pcbRead = GetCallResultSize(result);
-            var rt = MediaFoundationApi.QueryAndCreateInterfaceInstance<IMFAsyncResult>(result);
-            try
-            {
-                return rt.GetStatus();
-            }
-            finally
-            {
-                ComActivation.ReleaseBoth(rt, IntPtr.Zero);
-            }
-        }
+        public int EndRead(IntPtr result, out int pcbRead) => FinalizeAsyncCall(result, out pcbRead);
 
         public int BeginWrite(nint pb, int cb, IntPtr pCallback, nint punkState)
         {
@@ -311,19 +289,7 @@ namespace NAudio.MediaFoundation
             }
         }
 
-        public unsafe int EndWrite(IntPtr result, out int pcbWritten)
-        {
-            pcbWritten = GetCallResultSize(result);
-            var rt = MediaFoundationApi.QueryAndCreateInterfaceInstance<IMFAsyncResult>(result);
-            try
-            {
-                return rt.GetStatus();
-            }
-            finally
-            {
-                ComActivation.ReleaseBoth(rt, IntPtr.Zero);
-            }
-        }
+        public int EndWrite(IntPtr result, out int pcbWritten) => FinalizeAsyncCall(result, out pcbWritten);
 
         // Some notes regarding how this works, provided here for future contributors:
         // -> 1. You cannot implement custom IMFAsyncResult objects, as those are incompatible with the work queue feature of MF.
@@ -335,16 +301,23 @@ namespace NAudio.MediaFoundation
         // -> 3. This method frees the async results once we have made our way to be enqueued into the work queue.
         // The ptr pointer is only held by our custom async result, which is also released, once our result is also released.
         // See Invoke method in MFByteStreamOnStreamAsyncCallback for more info.
-        private int CreateAsyncCall(nint pb, int cb, nint callback, nint state, bool read_mode)
+        private int CreateAsyncCall(nint pb, int cb, nint callback, nint state, bool readMode)
         {
             IntPtr ptr, ptr2 = IntPtr.Zero;
             IMFAsyncResult result = null, result2 = null;
             try
             {
                 // Do not free 'ptr', seems that CreateAsyncResult does not call AddRef to them.
-                (ptr, result) = MediaFoundationApi.CreateAsyncResult(callback, default, state);
+                (ptr, result) = MediaFoundationApi.CreateAsyncResult(
+                    callback,
+                    ComActivation.ComWrappers.GetOrCreateComInterfaceForObject(
+                        new MfByteStreamAsyncCallSizeHandler(),
+                        CreateComInterfaceFlags.None
+                    ),
+                    state
+                );
                 (ptr2, result2) = MediaFoundationApi.CreateAsyncResult(
-                    new MFByteStreamOnStreamAsyncCallback(this, pb, cb, read_mode), ptr, state
+                    new MFByteStreamOnStreamAsyncCallback(readMode ? new(Read) : new(Write), pb, cb), ptr, state
                 );
                 return MediaFoundationApi.PutWorkItem(ptr2);
             }
@@ -356,6 +329,39 @@ namespace NAudio.MediaFoundation
             {
                 ComActivation.ReleaseBoth(result2, ptr2);
                 ComActivation.ReleaseBoth(result, IntPtr.Zero);
+            }
+        }
+
+        private int FinalizeAsyncCall(nint result, out int readOrWritten)
+        {
+            var rt = MediaFoundationApi.QueryAndCreateInterfaceInstance<IMFAsyncResult>(result);
+            try
+            {
+                int hr = rt.GetObject(out nint sizeObject);
+
+                if (HResult.IsError(hr))
+                {
+                    readOrWritten = 0;
+                    return hr;
+                }
+                else
+                {
+                    IMfByteStreamAsyncCallSizeHandler handler = null;
+                    try
+                    {
+                        handler = (IMfByteStreamAsyncCallSizeHandler)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(sizeObject, CreateObjectFlags.UniqueInstance);
+                        readOrWritten = handler.GetDataSize();
+                        return rt.GetStatus();
+                    }
+                    finally
+                    {
+                        ComActivation.ReleaseBoth(handler, sizeObject);
+                    }
+                }
+            }
+            finally
+            {
+                ComActivation.ReleaseBoth(rt, IntPtr.Zero);
             }
         }
 
@@ -425,41 +431,6 @@ namespace NAudio.MediaFoundation
 
         #endregion
 
-        private int GetCallResultSize(IntPtr p_callback)
-        {
-            Monitor.Enter(this);
-            try
-            {
-                if (r_w_calls_async_results.Remove(p_callback, out int size))
-                {
-                    return size;
-                }
-                else
-                {
-                    return 0;
-                }
-            }
-            finally
-            {
-                Monitor.Exit(this);
-            }
-        }
-
-        // Sets the data read/written for a given async call.
-        // Used for providing that in EndRead/Write contexts.
-        public void SetAsyncCallSize(IntPtr p_result, int size)
-        {
-            Monitor.Enter(this);
-            try
-            {
-                r_w_calls_async_results[p_result] = size;
-            }
-            finally
-            {
-                Monitor.Exit(this);
-            }
-        }
-
         // Resets the position of the wrapper to the position captured during when the wrapper was initializing.
         // This allows us to double-initialize the Media Foundation source reader (and any other object that uses this).
         public void ResetPosition()
@@ -481,8 +452,6 @@ namespace NAudio.MediaFoundation
                     natively_allocated_attributes = null;
                     natively_allocated_attributes_ptr = IntPtr.Zero;
                 }
-                // Make any still queued methods to fail.
-                r_w_calls_async_results.Clear();
             }
             finally
             {

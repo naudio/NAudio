@@ -7,7 +7,7 @@ namespace NAudio.Utils.FileFormatDiscovery
     /// <summary>
     /// Free Lossless Audio Codec file format.
     /// </summary>
-    public sealed class FLACFileFormat : AudioFileFormat
+    internal sealed class FLACFileFormat : AudioFileFormat
     {
         private FLACFileFormat() { }
 

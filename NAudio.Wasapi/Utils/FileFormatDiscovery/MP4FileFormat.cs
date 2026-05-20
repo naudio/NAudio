@@ -7,7 +7,7 @@ namespace NAudio.Utils.FileFormatDiscovery
     /// <summary>
     /// MPEG 4 container file format.
     /// </summary>
-    public sealed class MP4FileFormat : AudioFileFormat
+    internal sealed class MP4FileFormat : AudioFileFormat
     {
         private MP4FileFormat() { }
 

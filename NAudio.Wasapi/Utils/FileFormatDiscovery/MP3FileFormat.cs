@@ -7,7 +7,7 @@ namespace NAudio.Utils.FileFormatDiscovery
     /// <summary>
     /// MPEG Layer 3 file format.
     /// </summary>
-    public sealed class MP3FileFormat : AudioFileFormat
+    internal sealed class MP3FileFormat : AudioFileFormat
     {
         private MP3FileFormat() { }
 

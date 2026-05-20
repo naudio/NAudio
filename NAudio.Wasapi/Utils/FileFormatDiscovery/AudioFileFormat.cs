@@ -10,7 +10,7 @@ namespace NAudio.Utils.FileFormatDiscovery
     /// Defines a way for determining whether a data stream is of a specified audio file format. <br />
     /// Derivants of this class define the finder implementation and must be singletons.
     /// </summary>
-    public abstract class AudioFileFormat : IEquatable<AudioFileFormat>
+    internal abstract class AudioFileFormat : IEquatable<AudioFileFormat>
     {
         /// <summary>
         /// Gets the MIME type name for this audio file format.

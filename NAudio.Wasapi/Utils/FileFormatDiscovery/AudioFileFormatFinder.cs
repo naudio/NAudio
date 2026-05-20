@@ -16,7 +16,7 @@ namespace NAudio.Utils.FileFormatDiscovery
     /// </list>
     /// This class adopts and enforces the builder pattern.
     /// </summary>
-    public sealed class AudioFileFormatFinder
+    internal sealed class AudioFileFormatFinder
     {
         private static readonly List<AudioFileFormat> default_file_formats;
 

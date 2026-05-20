@@ -309,7 +309,7 @@ namespace NAudio.MediaFoundation
 
             try
             {
-                Marshal.ThrowExceptionForHR(Marshal.QueryInterface(p_data, in IID_IMFAsyncCallback, out IntPtr to_be_replaced));
+                Marshal.ThrowExceptionForHR(Marshal.QueryInterface(p_data, in iid, out IntPtr to_be_replaced));
                 Marshal.Release(p_data);
                 return to_be_replaced;
             }

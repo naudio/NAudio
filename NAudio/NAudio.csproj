@@ -26,6 +26,9 @@
   <ItemGroup Condition=" $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net9.0-windows10.0.19041.0')) ">
     <ProjectReference Include="..\NAudio.Wasapi\NAudio.Wasapi.csproj" />
   </ItemGroup>
+  <ItemGroup Condition=" '$(TargetPlatformIdentifier)' == 'windows' ">
+    <ProjectReference Include="..\NAudio.Dmo\NAudio.Dmo.csproj" />
+  </ItemGroup>
 
 
 </Project>

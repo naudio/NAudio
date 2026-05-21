@@ -5,8 +5,14 @@ from an ALSA capture device. Add the package (the runtime needs
 `libasound` — `sudo apt install libasound2`):
 
 ```sh
-dotnet add package NAudio.Alsa
+dotnet add package NAudio.Linux.Alsa
 ```
+
+> The package id is currently `NAudio.Linux.Alsa` because the `NAudio.Alsa`
+> name on nuget.org is held by a third party. We intend (but cannot
+> guarantee) to move to `NAudio.Alsa` once that name is reclaimed. The
+> assembly name and namespaces are `NAudio.Alsa` either way, so your code
+> does not change.
 
 Recording follows the standard NAudio pattern: set the `WaveFormat`,
 subscribe to `DataAvailable` and write the captured bytes to a

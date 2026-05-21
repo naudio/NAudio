@@ -329,7 +329,7 @@ namespace NAudio.Wave
             }
 
             using var inputMediaType = new MediaType(inputSource.WaveFormat);
-            using var wrapper = new MFByteStreamFromStream(outputStream);
+            using var wrapper = new MfByteStreamFromStream(outputStream);
             var writer = CreateSinkWriter(wrapper, transcodeContainerType);
             try
             {
@@ -377,7 +377,7 @@ namespace NAudio.Wave
             return writer;
         }
 
-        private static IMFSinkWriter CreateSinkWriter(MFByteStreamFromStream outputStream, Guid transcodeContainerType)
+        private static IMFSinkWriter CreateSinkWriter(MfByteStreamFromStream outputStream, Guid transcodeContainerType)
         {
             // n.b. could try specifying the container type using attributes, but I think
             // it does a decent job of working it out from the file extension

@@ -16,7 +16,7 @@ namespace NAudio.Wave
     public class StreamMediaFoundationReader : MediaFoundationReader
     {
         private readonly Stream stream;
-        private readonly MFByteStreamFromStream wrapper;
+        private readonly MfByteStreamFromStream wrapper;
 
         /// <summary>
         /// Constructs a new media foundation reader from a stream
@@ -38,7 +38,7 @@ namespace NAudio.Wave
             }
             else
             {
-                wrapper = new MFByteStreamFromStream(this.stream = stream);
+                wrapper = new MfByteStreamFromStream(this.stream = stream);
                 Init(settings);
             }
         }

@@ -7,14 +7,14 @@ namespace NAudio.Utils.FileFormatDiscovery
     /// <summary>
     /// MPEG Layer 3 file format.
     /// </summary>
-    internal sealed class MP3FileFormat : AudioFileFormat
+    internal sealed class Mp3FileFormat : AudioFileFormat
     {
-        private MP3FileFormat() { }
+        private Mp3FileFormat() { }
 
         /// <summary>
-        /// Gets the single and only instance of the <see cref="MP3FileFormat"/> class.
+        /// Gets the single and only instance of the <see cref="Mp3FileFormat"/> class.
         /// </summary>
-        public static readonly MP3FileFormat Instance = new();
+        public static readonly Mp3FileFormat Instance = new();
 
         /// <inheritdoc />
         public override string MimeTypeName => "mp3";

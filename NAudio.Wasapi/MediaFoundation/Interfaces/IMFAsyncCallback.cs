@@ -56,6 +56,6 @@ namespace NAudio.MediaFoundation.Interfaces
         ///     Pointer to an async result object
         /// </param>
         [PreserveSig]
-        int Invoke(IMFAsyncResult pAsyncResult); // returns: HRESULT
+        int Invoke(nint pAsyncResult); // returns: HRESULT
     }
 }

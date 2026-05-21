@@ -19,25 +19,25 @@ namespace NAudio.MediaFoundation
     /// </summary>
     // mdcdi1315: Helpful link for async handling: https://learn.microsoft.com/en-us/windows/win32/medfound/writing-an-asynchronous-method .
     [GeneratedComClass]
-    internal sealed partial class MFByteStreamFromStream : IMFByteStream, IMFAttributes, IDisposable
+    internal sealed partial class MfByteStreamFromStream : IMFByteStream, IMFAttributes, IDisposable
     {
         private readonly Stream stream;
-        private readonly long wrapper_init_pos;
-        private IntPtr natively_allocated_attributes_ptr;
-        private IMFAttributes natively_allocated_attributes;
+        private readonly long wrapperInitialPosition;
+        private IntPtr nativeAttributesPtr;
+        private IMFAttributes nativeAttributesRcw;
 
-        public unsafe MFByteStreamFromStream(Stream stream)
+        public unsafe MfByteStreamFromStream(Stream stream)
         {
             this.stream = stream;
-            try { wrapper_init_pos = stream.Position; } catch { wrapper_init_pos = 0; }
-            (natively_allocated_attributes_ptr, natively_allocated_attributes) = MediaFoundationApi.CreateAttributes(1);
+            try { wrapperInitialPosition = stream.Position; } catch { wrapperInitialPosition = 0; }
+            (nativeAttributesPtr, nativeAttributesRcw) = MediaFoundationApi.CreateAttributes(1);
             // The only way for the below to throw an exception is a critical one,
             // which eitherwise will terminate soon the process, so we are OK and we do not need EH for this.
             AudioFileFormat fmt = new AudioFileFormatFinder().AddDefaultFileFormats().FindFormat(this.stream);
             if (fmt is not null)
             {
                 Guid t = MfByteStreamAttributes.ContentType;
-                natively_allocated_attributes.SetString(t, fmt.MimeType);
+                nativeAttributesRcw.SetString(t, fmt.MimeType);
             }
         }
 
@@ -275,7 +275,18 @@ namespace NAudio.MediaFoundation
             }
         }
 
-        public int EndRead(IntPtr result, out int pcbRead) => FinalizeAsyncCall(result, out pcbRead);
+        public int EndRead(IntPtr result, out int pcbRead)
+        {
+            if (result == IntPtr.Zero)
+            {
+                pcbRead = 0;
+                return HResult.STG_E_INVALIDPOINTER;
+            }
+            else
+            {
+                return FinalizeAsyncCall(result, out pcbRead);
+            }
+        }
 
         public int BeginWrite(nint pb, int cb, IntPtr pCallback, nint punkState)
         {
@@ -289,7 +300,18 @@ namespace NAudio.MediaFoundation
             }
         }
 
-        public int EndWrite(IntPtr result, out int pcbWritten) => FinalizeAsyncCall(result, out pcbWritten);
+        public int EndWrite(IntPtr result, out int pcbWritten)
+        {
+            if (result == IntPtr.Zero)
+            {
+                pcbWritten = 0;
+                return HResult.STG_E_INVALIDPOINTER;
+            }
+            else
+            {
+                return FinalizeAsyncCall(result, out pcbWritten);
+            }
+        }
 
         // Some notes regarding how this works, provided here for future contributors:
         // -> 1. You cannot implement custom IMFAsyncResult objects, as those are incompatible with the work queue feature of MF.
@@ -300,14 +322,13 @@ namespace NAudio.MediaFoundation
         // and then call the callback provided by the callback COM object.
         // -> 3. This method frees the async results once we have made our way to be enqueued into the work queue.
         // The ptr pointer is only held by our custom async result, which is also released, once our result is also released.
-        // See Invoke method in MFByteStreamOnStreamAsyncCallback for more info.
+        // See Invoke method in MfByteStreamOnStreamAsyncCallback for more info.
         private int CreateAsyncCall(nint pb, int cb, nint callback, nint state, bool readMode)
         {
-            IntPtr ptr, ptr2 = IntPtr.Zero;
+            IntPtr ptr = IntPtr.Zero, ptr2 = IntPtr.Zero;
             IMFAsyncResult result = null, result2 = null;
             try
             {
-                // Do not free 'ptr', seems that CreateAsyncResult does not call AddRef to them.
                 (ptr, result) = MediaFoundationApi.CreateAsyncResult(
                     callback,
                     ComActivation.ComWrappers.GetOrCreateComInterfaceForObject(
@@ -317,7 +338,7 @@ namespace NAudio.MediaFoundation
                     state
                 );
                 (ptr2, result2) = MediaFoundationApi.CreateAsyncResult(
-                    new MFByteStreamOnStreamAsyncCallback(readMode ? new(Read) : new(Write), pb, cb), ptr, state
+                    new MfByteStreamOnStreamAsyncCallback(readMode ? new(Read) : new(Write), pb, cb), ptr, state
                 );
                 return MediaFoundationApi.PutWorkItem(ptr2);
             }
@@ -328,16 +349,19 @@ namespace NAudio.MediaFoundation
             finally
             {
                 ComActivation.ReleaseBoth(result2, ptr2);
-                ComActivation.ReleaseBoth(result, IntPtr.Zero);
+                ComActivation.ReleaseBoth(result, ptr);
             }
         }
 
+        // Obtains the read or written bytes from the call and returns them to readOrWritten parameter.
+        // Additionally, the result value is the HRESULT of our wrapped call.
         private int FinalizeAsyncCall(nint result, out int readOrWritten)
         {
-            var rt = MediaFoundationApi.QueryAndCreateInterfaceInstance<IMFAsyncResult>(result);
+            IMFAsyncResult wrappedResult = (IMFAsyncResult)ComActivation.
+                ComWrappers.GetOrCreateObjectForComInstance(result, CreateObjectFlags.UniqueInstance);
             try
             {
-                int hr = rt.GetObject(out nint sizeObject);
+                int hr = wrappedResult.GetObject(out nint sizeObject);
 
                 if (HResult.IsError(hr))
                 {
@@ -351,7 +375,7 @@ namespace NAudio.MediaFoundation
                     {
                         handler = (IMfByteStreamAsyncCallSizeHandler)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(sizeObject, CreateObjectFlags.UniqueInstance);
                         readOrWritten = handler.GetDataSize();
-                        return rt.GetStatus();
+                        return wrappedResult.GetStatus();
                     }
                     finally
                     {
@@ -361,7 +385,7 @@ namespace NAudio.MediaFoundation
             }
             finally
             {
-                ComActivation.ReleaseBoth(rt, IntPtr.Zero);
+                ComActivation.ReleaseBoth(wrappedResult, IntPtr.Zero);
             }
         }
 
@@ -369,65 +393,65 @@ namespace NAudio.MediaFoundation
 
         #region IMFAttributes Interface Implementation
 
-        public int GetItem(in Guid guidKey, nint pValue) => natively_allocated_attributes.GetItem(guidKey, pValue);
+        public int GetItem(in Guid guidKey, nint pValue) => nativeAttributesRcw.GetItem(guidKey, pValue);
 
-        public int GetItemType(in Guid guidKey, out int pType) => natively_allocated_attributes.GetItemType(guidKey, out pType);
+        public int GetItemType(in Guid guidKey, out int pType) => nativeAttributesRcw.GetItemType(guidKey, out pType);
 
-        public int CompareItem(in Guid guidKey, nint value, out int pbResult) => natively_allocated_attributes.CompareItem(guidKey, value, out pbResult);
+        public int CompareItem(in Guid guidKey, nint value, out int pbResult) => nativeAttributesRcw.CompareItem(guidKey, value, out pbResult);
 
-        public int Compare(nint pTheirs, int matchType, out int pbResult) => natively_allocated_attributes.Compare(pTheirs, matchType, out pbResult);
+        public int Compare(nint pTheirs, int matchType, out int pbResult) => nativeAttributesRcw.Compare(pTheirs, matchType, out pbResult);
 
-        public int GetUINT32(in Guid guidKey, out int punValue) => natively_allocated_attributes.GetUINT32(guidKey, out punValue);
+        public int GetUINT32(in Guid guidKey, out int punValue) => nativeAttributesRcw.GetUINT32(guidKey, out punValue);
 
-        public int GetUINT64(in Guid guidKey, out long punValue) => natively_allocated_attributes.GetUINT64(guidKey, out punValue);
+        public int GetUINT64(in Guid guidKey, out long punValue) => nativeAttributesRcw.GetUINT64(guidKey, out punValue);
 
-        public int GetDouble(in Guid guidKey, out double pfValue) => natively_allocated_attributes.GetDouble(guidKey, out pfValue);
+        public int GetDouble(in Guid guidKey, out double pfValue) => nativeAttributesRcw.GetDouble(guidKey, out pfValue);
 
-        public int GetGUID(in Guid guidKey, out Guid pguidValue) => natively_allocated_attributes.GetGUID(guidKey, out pguidValue);
+        public int GetGUID(in Guid guidKey, out Guid pguidValue) => nativeAttributesRcw.GetGUID(guidKey, out pguidValue);
 
-        public int GetStringLength(in Guid guidKey, out int pcchLength) => natively_allocated_attributes.GetStringLength(guidKey, out pcchLength);
+        public int GetStringLength(in Guid guidKey, out int pcchLength) => nativeAttributesRcw.GetStringLength(guidKey, out pcchLength);
 
-        public int GetString(in Guid guidKey, nint pwszValue, int cchBufSize, out int pcchLength) => natively_allocated_attributes.GetString(guidKey, pwszValue, cchBufSize, out pcchLength);
+        public int GetString(in Guid guidKey, nint pwszValue, int cchBufSize, out int pcchLength) => nativeAttributesRcw.GetString(guidKey, pwszValue, cchBufSize, out pcchLength);
 
-        public int GetAllocatedString(in Guid guidKey, out nint ppwszValue, out int pcchLength) => natively_allocated_attributes.GetAllocatedString(guidKey, out ppwszValue, out pcchLength);
+        public int GetAllocatedString(in Guid guidKey, out nint ppwszValue, out int pcchLength) => nativeAttributesRcw.GetAllocatedString(guidKey, out ppwszValue, out pcchLength);
 
-        public int GetBlobSize(in Guid guidKey, out int pcbBlobSize) => natively_allocated_attributes.GetBlobSize(guidKey, out pcbBlobSize);
+        public int GetBlobSize(in Guid guidKey, out int pcbBlobSize) => nativeAttributesRcw.GetBlobSize(guidKey, out pcbBlobSize);
 
-        public int GetBlob(in Guid guidKey, nint pBuf, int cbBufSize, out int pcbBlobSize) => natively_allocated_attributes.GetBlob(guidKey, pBuf, cbBufSize, out pcbBlobSize);
+        public int GetBlob(in Guid guidKey, nint pBuf, int cbBufSize, out int pcbBlobSize) => nativeAttributesRcw.GetBlob(guidKey, pBuf, cbBufSize, out pcbBlobSize);
 
-        public int GetAllocatedBlob(in Guid guidKey, out nint ppBuf, out int pcbSize) => natively_allocated_attributes.GetAllocatedBlob(guidKey, out ppBuf, out pcbSize);
+        public int GetAllocatedBlob(in Guid guidKey, out nint ppBuf, out int pcbSize) => nativeAttributesRcw.GetAllocatedBlob(guidKey, out ppBuf, out pcbSize);
 
-        public int GetUnknown(in Guid guidKey, in Guid riid, out nint ppv) => natively_allocated_attributes.GetUnknown(guidKey, riid, out ppv);
+        public int GetUnknown(in Guid guidKey, in Guid riid, out nint ppv) => nativeAttributesRcw.GetUnknown(guidKey, riid, out ppv);
 
-        public int SetItem(in Guid guidKey, nint value) => natively_allocated_attributes.SetItem(guidKey, value);
+        public int SetItem(in Guid guidKey, nint value) => nativeAttributesRcw.SetItem(guidKey, value);
 
-        public int DeleteItem(in Guid guidKey) => natively_allocated_attributes.DeleteItem(guidKey);
+        public int DeleteItem(in Guid guidKey) => nativeAttributesRcw.DeleteItem(guidKey);
 
-        public int DeleteAllItems() => natively_allocated_attributes.DeleteAllItems();
+        public int DeleteAllItems() => nativeAttributesRcw.DeleteAllItems();
 
-        public int SetUINT32(in Guid guidKey, int unValue) => natively_allocated_attributes.SetUINT32(guidKey, unValue);
+        public int SetUINT32(in Guid guidKey, int unValue) => nativeAttributesRcw.SetUINT32(guidKey, unValue);
 
-        public int SetUINT64(in Guid guidKey, long unValue) => natively_allocated_attributes.SetUINT64(guidKey, unValue);
+        public int SetUINT64(in Guid guidKey, long unValue) => nativeAttributesRcw.SetUINT64(guidKey, unValue);
 
-        public int SetDouble(in Guid guidKey, double fValue) => natively_allocated_attributes.SetDouble(guidKey, fValue);
+        public int SetDouble(in Guid guidKey, double fValue) => nativeAttributesRcw.SetDouble(guidKey, fValue);
 
-        public int SetGUID(in Guid guidKey, in Guid guidValue) => natively_allocated_attributes.SetGUID(guidKey, guidValue);
+        public int SetGUID(in Guid guidKey, in Guid guidValue) => nativeAttributesRcw.SetGUID(guidKey, guidValue);
 
-        public int SetString(in Guid guidKey, [MarshalAs(UnmanagedType.LPWStr)] string wszValue) => natively_allocated_attributes.SetString(guidKey, wszValue);
+        public int SetString(in Guid guidKey, [MarshalAs(UnmanagedType.LPWStr)] string wszValue) => nativeAttributesRcw.SetString(guidKey, wszValue);
 
-        public int SetBlob(in Guid guidKey, nint pBuf, int cbBufSize) => natively_allocated_attributes.SetBlob(guidKey, pBuf, cbBufSize);
+        public int SetBlob(in Guid guidKey, nint pBuf, int cbBufSize) => nativeAttributesRcw.SetBlob(guidKey, pBuf, cbBufSize);
 
-        public int SetUnknown(in Guid guidKey, nint pUnknown) => natively_allocated_attributes.SetUnknown(guidKey, pUnknown);
+        public int SetUnknown(in Guid guidKey, nint pUnknown) => nativeAttributesRcw.SetUnknown(guidKey, pUnknown);
 
-        public int LockStore() => natively_allocated_attributes.LockStore();
+        public int LockStore() => nativeAttributesRcw.LockStore();
 
-        public int UnlockStore() => natively_allocated_attributes.UnlockStore();
+        public int UnlockStore() => nativeAttributesRcw.UnlockStore();
 
-        public int GetCount(out int pcItems) => natively_allocated_attributes.GetCount(out pcItems);
+        public int GetCount(out int pcItems) => nativeAttributesRcw.GetCount(out pcItems);
 
-        public int GetItemByIndex(int unIndex, out Guid pGuidKey, nint pValue) => natively_allocated_attributes.GetItemByIndex(unIndex, out pGuidKey, pValue);
+        public int GetItemByIndex(int unIndex, out Guid pGuidKey, nint pValue) => nativeAttributesRcw.GetItemByIndex(unIndex, out pGuidKey, pValue);
 
-        public int CopyAllItems(nint pDest) => natively_allocated_attributes.CopyAllItems(pDest);
+        public int CopyAllItems(nint pDest) => nativeAttributesRcw.CopyAllItems(pDest);
 
         #endregion
 
@@ -435,7 +459,7 @@ namespace NAudio.MediaFoundation
         // This allows us to double-initialize the Media Foundation source reader (and any other object that uses this).
         public void ResetPosition()
         {
-            try { stream.Position = wrapper_init_pos; } catch { }
+            try { stream.Position = wrapperInitialPosition; } catch { }
         }
 
         // Releases the natively allocated IMFAttributes instance required to be exposed for the source reader.
@@ -446,11 +470,11 @@ namespace NAudio.MediaFoundation
             Monitor.Enter(this);
             try
             {
-                if (natively_allocated_attributes_ptr != IntPtr.Zero)
+                if (nativeAttributesPtr != IntPtr.Zero)
                 {
-                    ComActivation.ReleaseBoth(natively_allocated_attributes, natively_allocated_attributes_ptr);
-                    natively_allocated_attributes = null;
-                    natively_allocated_attributes_ptr = IntPtr.Zero;
+                    ComActivation.ReleaseBoth(nativeAttributesRcw, nativeAttributesPtr);
+                    nativeAttributesRcw = null;
+                    nativeAttributesPtr = IntPtr.Zero;
                 }
             }
             finally

@@ -1,8 +1,9 @@
 ﻿using System;
 using System.IO;
+using System.Threading;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+using System.Diagnostics.CodeAnalysis;
 
 namespace NAudio.Utils.FileFormatDiscovery
 {
@@ -23,9 +24,9 @@ namespace NAudio.Utils.FileFormatDiscovery
         static AudioFileFormatFinder()
         {
             default_file_formats = new(10);
-            default_file_formats.Add(MP3FileFormat.Instance);
-            default_file_formats.Add(MP4FileFormat.Instance);
-            default_file_formats.Add(FLACFileFormat.Instance);
+            default_file_formats.Add(Mp3FileFormat.Instance);
+            default_file_formats.Add(Mp4FileFormat.Instance);
+            default_file_formats.Add(FlacFileFormat.Instance);
         }
 
         /// <summary>
@@ -37,7 +38,15 @@ namespace NAudio.Utils.FileFormatDiscovery
         public static void AddDefaultFileFormat(AudioFileFormat format)
         {
             ArgumentNullException.ThrowIfNull(format);
-            default_file_formats.Add(format);
+            Monitor.Enter(default_file_formats);
+            try
+            {
+                default_file_formats.Add(format);
+            }
+            finally
+            {
+                Monitor.Exit(default_file_formats);
+            }
         }
 
         private readonly List<AudioFileFormat> file_formats_to_test;
@@ -54,7 +63,15 @@ namespace NAudio.Utils.FileFormatDiscovery
         [return: NotNull]
         public AudioFileFormatFinder AddDefaultFileFormats()
         {
-            file_formats_to_test.AddRange(default_file_formats);
+            Monitor.Enter(default_file_formats);
+            try
+            {
+                file_formats_to_test.AddRange(default_file_formats);
+            }
+            finally
+            {
+                Monitor.Exit(default_file_formats);
+            }
             return this;
         }
 

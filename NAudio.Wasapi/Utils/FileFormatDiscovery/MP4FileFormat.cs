@@ -7,14 +7,14 @@ namespace NAudio.Utils.FileFormatDiscovery
     /// <summary>
     /// MPEG 4 container file format.
     /// </summary>
-    internal sealed class MP4FileFormat : AudioFileFormat
+    internal sealed class Mp4FileFormat : AudioFileFormat
     {
-        private MP4FileFormat() { }
+        private Mp4FileFormat() { }
 
         /// <summary>
-        /// Gets the single and only instance of the <see cref="MP4FileFormat"/> class.
+        /// Gets the single and only instance of the <see cref="Mp4FileFormat"/> class.
         /// </summary>
-        public static readonly MP4FileFormat Instance = new();
+        public static readonly Mp4FileFormat Instance = new();
 
         /// <inheritdoc />
         public override string MimeTypeName => "mp4";

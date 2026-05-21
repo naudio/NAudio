@@ -7,14 +7,14 @@ namespace NAudio.Utils.FileFormatDiscovery
     /// <summary>
     /// Free Lossless Audio Codec file format.
     /// </summary>
-    internal sealed class FLACFileFormat : AudioFileFormat
+    internal sealed class FlacFileFormat : AudioFileFormat
     {
-        private FLACFileFormat() { }
+        private FlacFileFormat() { }
 
         /// <summary>
-        /// Gets the single and only instance of the <see cref="FLACFileFormat"/> class.
+        /// Gets the single and only instance of the <see cref="FlacFileFormat"/> class.
         /// </summary>
-        public static readonly FLACFileFormat Instance = new();
+        public static readonly FlacFileFormat Instance = new();
 
         /// <inheritdoc />
         public override string MimeTypeName => "flac";

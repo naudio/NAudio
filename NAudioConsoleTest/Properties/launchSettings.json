@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "NAudioConsoleTest": {
-      "commandName": "Project",
-      "nativeDebugging": true
-    }
-  }
-}

@@ -1,4 +1,5 @@
 ﻿
+using System;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 
@@ -9,7 +10,7 @@ using NAudio.MediaFoundation.Interfaces;
 namespace NAudio.MediaFoundation
 {
     [GeneratedComClass]
-    internal sealed partial class MFByteStreamOnStreamAsyncCallback : IMFAsyncCallback
+    internal sealed partial class MfByteStreamOnStreamAsyncCallback : IMFAsyncCallback
     {
         private readonly int size;
         private readonly nint pointer;
@@ -18,7 +19,7 @@ namespace NAudio.MediaFoundation
         // Read/Write method reference to be called when the below Invoke implementation gets called.
         public delegate int Callback(nint pointer, int size, out int sizeOut);
 
-        public MFByteStreamOnStreamAsyncCallback(Callback callback, nint pointer, int size)
+        public MfByteStreamOnStreamAsyncCallback(Callback callback, nint pointer, int size)
         {
             this.size = size;
             this.pointer = pointer;
@@ -32,10 +33,9 @@ namespace NAudio.MediaFoundation
             return HResult.S_OK;
         }
 
-        // Note: Here using the marshalled result works as expected,
-        // because we are into an RCW which is not even managed by us.
-        public int Invoke(IMFAsyncResult result)
+        public int Invoke(IntPtr resultComObject)
         {
+            IMFAsyncResult result = (IMFAsyncResult)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(resultComObject, CreateObjectFlags.UniqueInstance);
             try
             {
                 int hr = callbackToCall.Invoke(pointer, size, out int dataSize);
@@ -86,6 +86,10 @@ namespace NAudio.MediaFoundation
             catch (COMException cex)
             {
                 return cex.GetHResult();
+            }
+            finally
+            {
+                ComActivation.ReleaseBoth(result, IntPtr.Zero);
             }
         }
     }

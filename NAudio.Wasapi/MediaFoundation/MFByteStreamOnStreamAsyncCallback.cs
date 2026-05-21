@@ -33,50 +33,57 @@ namespace NAudio.MediaFoundation
             return HResult.S_OK;
         }
 
-        public int Invoke(IntPtr resultComObject)
+        public int Invoke(IntPtr resultObjectPtr)
         {
-            IMFAsyncResult result = (IMFAsyncResult)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(resultComObject, CreateObjectFlags.UniqueInstance);
+            IMFAsyncResult currentResult = (IMFAsyncResult)ComActivation
+                .ComWrappers
+                .GetOrCreateObjectForComInstance(resultObjectPtr, CreateObjectFlags.UniqueInstance);
             try
             {
                 int hr = callbackToCall.Invoke(pointer, size, out int dataSize);
-                result.SetStatus(hr);
+                currentResult.SetStatus(hr);
                 if (HResult.IsError(hr))
                 {
                     hr = HResult.E_UNEXPECTED;
                 }
                 else
                 {
-                    hr = result.GetObject(out nint resultPointer);
+                    hr = currentResult.GetObject(out nint innerResultPointer);
                     if (!HResult.IsError(hr))
                     {
-                        IMFAsyncResult innerResult = null;
-                        IMfByteStreamAsyncCallSizeHandler handler = null;
+                        IMFAsyncResult innerResultWrapper = null;
+                        IMfByteStreamAsyncCallSizeHandler sizeHandler = null;
                         try
                         {
-                            innerResult = (IMFAsyncResult)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(resultPointer, CreateObjectFlags.UniqueInstance);
+                            innerResultWrapper = (IMFAsyncResult)ComActivation
+                                .ComWrappers
+                                .GetOrCreateObjectForComInstance(innerResultPointer, CreateObjectFlags.UniqueInstance);
 
-                            hr = innerResult.GetObject(out nint sizeObject);
+                            hr = innerResultWrapper.GetObject(out nint sizeHandlerPtr);
 
                             if (!HResult.IsError(hr))
                             {
                                 try
                                 {
-                                    handler = (IMfByteStreamAsyncCallSizeHandler)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(sizeObject, CreateObjectFlags.UniqueInstance);
-                                    handler.SetDataSize(dataSize);
+                                    sizeHandler = (IMfByteStreamAsyncCallSizeHandler)
+                                        ComActivation
+                                        .ComWrappers
+                                        .GetOrCreateObjectForComInstance(sizeHandlerPtr, CreateObjectFlags.UniqueInstance);
+                                    sizeHandler.SetDataSize(dataSize);
                                 }
                                 finally
                                 {
-                                    ComActivation.ReleaseBoth(handler, sizeObject);
+                                    ComActivation.ReleaseBoth(sizeHandler, sizeHandlerPtr);
                                 }
 
-                                hr = MediaFoundationApi.InvokeCallback(resultPointer);
+                                hr = MediaFoundationApi.InvokeCallback(innerResultPointer);
                             }
                         }
                         finally
                         {
                             // https://learn.microsoft.com/en-us/windows/win32/api/mfobjects/nf-mfobjects-imfasyncresult-getobject#parameters says:
                             // "If the value is not NULL, the caller must release the interface."
-                            ComActivation.ReleaseBoth(innerResult, resultPointer);
+                            ComActivation.ReleaseBoth(innerResultWrapper, innerResultPointer);
                         }
                     }
                 }
@@ -89,7 +96,7 @@ namespace NAudio.MediaFoundation
             }
             finally
             {
-                ComActivation.ReleaseBoth(result, IntPtr.Zero);
+                ComActivation.ReleaseBoth(currentResult, IntPtr.Zero);
             }
         }
     }

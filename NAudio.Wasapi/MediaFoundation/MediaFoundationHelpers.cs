@@ -195,48 +195,8 @@ namespace NAudio.MediaFoundation
             return (ptr, rcw);
         }
 
-        // IID_IStream (objidl.h)
-        private static readonly Guid IID_IStream = new Guid("0000000C-0000-0000-C000-000000000046");
         private static readonly Guid IID_IMFByteStream = new("ad4c1b00-4bf7-422f-9175-756693d9130d");
         private static readonly Guid IID_IMFAsyncCallback = new("a27003cf-2354-4f2a-8d6a-ab7cff15437e");
-
-        /// <summary>
-        /// Creates a media foundation byte stream wrapping a managed <see cref="ComStream"/>.
-        /// Applies the Phase 2f QI-for-IID rule: the IUnknown returned by
-        /// <c>ComWrappers.GetOrCreateComInterfaceForObject</c> is NOT the IStream vtable.
-        /// We <c>QueryInterface</c> for <c>IID_IStream</c> before handing the pointer to native,
-        /// otherwise the resampler / source reader / sink writer would dispatch against the
-        /// wrong vtable and AV on first byte-stream call.
-        /// Returns the raw IntPtr only — the IMFByteStream RCW is never used by the caller
-        /// (the pointer is immediately handed to <see cref="CreateSourceReaderFromByteStream"/>
-        /// or <see cref="CreateSinkWriterFromUrl"/>, which AddRef internally).
-        /// </summary>
-        internal static IntPtr CreateByteStream(NAudio.Wave.ComStream comStream)
-        {
-            if (comStream is null) throw new ArgumentNullException(nameof(comStream));
-
-            IntPtr unkPtr = ComActivation.ComWrappers.GetOrCreateComInterfaceForObject(
-                comStream, CreateComInterfaceFlags.None);
-            try
-            {
-                Marshal.ThrowExceptionForHR(
-                    Marshal.QueryInterface(unkPtr, in IID_IStream, out IntPtr streamPtr));
-                try
-                {
-                    MediaFoundationException.ThrowIfFailed(
-                        MediaFoundationInterop.MFCreateMFByteStreamOnStream(streamPtr, out var bsPtr));
-                    return bsPtr;
-                }
-                finally
-                {
-                    Marshal.Release(streamPtr);
-                }
-            }
-            finally
-            {
-                Marshal.Release(unkPtr);
-            }
-        }
 
         internal static unsafe IntPtr CreateByteStream(MfByteStreamFromStream stream)
         {
@@ -308,21 +268,23 @@ namespace NAudio.MediaFoundation
         /// Creates an <see cref="IMFAsyncResult"/> object from an caller-implemented <see cref="IMFAsyncCallback"/>.
         /// </summary>
         /// <param name="callback">The callback.</param>
-        /// <param name="pObject">Optional. Object to be passed to the async result.</param>
-        /// <param name="pState">Optional. State object to be passed to the async result.</param>
+        /// <param name="ptrObject">Optional. Object to be passed to the async result.</param>
+        /// <param name="ptrState">Optional. State object to be passed to the async result.</param>
         /// <returns>A new <see cref="IMFAsyncResult"/> instance.</returns>
-        internal static unsafe (IntPtr pointer, IMFAsyncResult Rcw) CreateAsyncResult(IMFAsyncCallback callback, nint pObject = default, IntPtr pState = default)
+        internal static unsafe (IntPtr pointer, IMFAsyncResult Rcw) CreateAsyncResult(IMFAsyncCallback callback, IntPtr ptrObject = default, IntPtr ptrState = default)
         {
             ArgumentNullException.ThrowIfNull(callback);
 
-            nint pCreatedObjectTemp = ComActivation.ComWrappers.GetOrCreateComInterfaceForObject(callback, CreateComInterfaceFlags.None);
+            IntPtr pCreatedObjectTemp = ComActivation
+                .ComWrappers
+                .GetOrCreateComInterfaceForObject(callback, CreateComInterfaceFlags.None);
 
             try
             {
-                Marshal.ThrowExceptionForHR(Marshal.QueryInterface(pCreatedObjectTemp, in IID_IMFAsyncCallback, out nint pCallbackObject));
+                Marshal.ThrowExceptionForHR(Marshal.QueryInterface(pCreatedObjectTemp, in IID_IMFAsyncCallback, out IntPtr pCallbackObject));
                 try
                 {
-                    MediaFoundationException.ThrowIfFailed(MediaFoundationInterop.MFCreateAsyncResult(pObject, pCallbackObject, pState, out nint asyncResult));
+                    MediaFoundationException.ThrowIfFailed(MediaFoundationInterop.MFCreateAsyncResult(ptrObject, pCallbackObject, ptrState, out IntPtr asyncResult));
                     return (asyncResult, ProjectFresh<IMFAsyncResult>(asyncResult));
                 }
                 finally
@@ -337,17 +299,17 @@ namespace NAudio.MediaFoundation
         }
 
         /// <summary>
-        /// Creates an <see cref="IMFAsyncResult"/> object from an caller-implemented <see cref="IMFAsyncCallback"/>.
+        /// Creates an <see cref="IMFAsyncResult"/> object from the specified <see cref="IMFAsyncCallback"/> object.
         /// </summary>
-        /// <param name="callback">The callback.</param>
-        /// <param name="p_object">Optional. Object to be passed to the async result.</param>
-        /// <param name="p_state">Optional. State object to be passed to the async result.</param>
+        /// <param name="callback">A <see cref="IMFAsyncCallback"/> pointer that represents the callback.</param>
+        /// <param name="ptrObject">Optional. Object to be passed to the async result.</param>
+        /// <param name="ptrState">Optional. State object to be passed to the async result.</param>
         /// <returns>A new <see cref="IMFAsyncResult"/> instance.</returns>
-        internal static unsafe (nint pointer, IMFAsyncResult Rcw) CreateAsyncResult(IntPtr callback, IntPtr p_object = default, IntPtr p_state = default)
+        internal static unsafe (IntPtr pointer, IMFAsyncResult Rcw) CreateAsyncResult(IntPtr callback, IntPtr ptrObject = default, IntPtr ptrState = default)
         {
-            ArgumentNullException.ThrowIfNull(callback);
+            ArgumentNullException.ThrowIfNull(callback.ToPointer());
 
-            int hr = MediaFoundationInterop.MFCreateAsyncResult(p_object, callback, p_state, out nint result);
+            int hr = MediaFoundationInterop.MFCreateAsyncResult(ptrObject, callback, ptrState, out IntPtr result);
             if (NAudio.Utils.HResult.IsError(hr))
             {
                 throw new MediaFoundationException(hr);
@@ -363,50 +325,50 @@ namespace NAudio.MediaFoundation
         /// </summary>
         /// <param name="queue">The work queue token identifying the work queue to put the work item to.</param>
         /// <param name="callback">The callback object defining the work to call later</param>
-        /// <param name="p_state">Optional. A state object representing the state of the current call.</param>
+        /// <param name="ptrState">Optional. A state object representing the state of the current call.</param>
         /// <returns>HRESULT value indicating whether the work item was inserted to the specified work queue.</returns>
-        internal static unsafe int PutWorkItem(uint queue, nint callback, IntPtr p_state)
+        internal static unsafe int PutWorkItem(uint queue, IntPtr callback, IntPtr ptrState)
         {
             ArgumentNullException.ThrowIfNull(callback.ToPointer(), nameof(callback));
-            return MediaFoundationInterop.MFPutWorkItem(queue, callback, p_state);
+            return MediaFoundationInterop.MFPutWorkItem(queue, callback, ptrState);
         }
 
         /// <summary>
         /// Puts a work item to the specified Media Foundation work queue.
         /// </summary>
         /// <param name="queue">The work queue token identifying the work queue to put the work item to.</param>
-        /// <param name="result">The result object defining the work to call later</param>
+        /// <param name="ptrResult">The result object defining the work to call later</param>
         /// <returns>HRESULT value indicating whether the work item was inserted to the specified work queue.</returns>
-        internal static unsafe int PutWorkItem(uint queue, nint result)
+        internal static unsafe int PutWorkItem(uint queue, IntPtr ptrResult)
         {
-            ArgumentNullException.ThrowIfNull(result.ToPointer(), nameof(result));
-            return MediaFoundationInterop.MFPutWorkItemEx(queue, result);
+            ArgumentNullException.ThrowIfNull(ptrResult.ToPointer(), nameof(ptrResult));
+            return MediaFoundationInterop.MFPutWorkItemEx(queue, ptrResult);
         }
 
         /// <summary>
         /// Puts a work item to the NAudio's Media Foundation work queue (Can be queried by <see cref="AllocatedWorkQueueToken"/> property)
         /// </summary>
         /// <param name="callback">The callback object defining the work to call later</param>
-        /// <param name="p_state">Optional. A state object representing the state of the current call.</param>
+        /// <param name="ptrState">Optional. A state object representing the state of the current call.</param>
         /// <returns>HRESULT value indicating whether the work item was inserted to the NAudio work queue.</returns>
-        internal static int PutWorkItem(IntPtr callback, nint p_state) => PutWorkItem(queue_token, callback, p_state);
+        internal static int PutWorkItem(IntPtr callback, IntPtr ptrState) => PutWorkItem(queue_token, callback, ptrState);
 
         /// <summary>
         /// Puts a work item to the NAudio's Media Foundation work queue (Can be queried by <see cref="AllocatedWorkQueueToken"/> property)
         /// </summary>
-        /// <param name="result">The result object defining the work to call later</param>
+        /// <param name="ptrResult">The result object defining the work to call later</param>
         /// <returns>HRESULT value indicating whether the work item was inserted to the NAudio work queue.</returns>
-        internal static int PutWorkItem(nint result) => PutWorkItem(queue_token, result);
+        internal static int PutWorkItem(IntPtr ptrResult) => PutWorkItem(queue_token, ptrResult);
 
         /// <summary>
         /// Invokes a callback to any available Media Foundation work queue.
         /// </summary>
-        /// <param name="result">The result object defining the work to call later</param>
+        /// <param name="ptrResult">The result object defining the work to call later</param>
         /// <returns>HRESULT value indicating whether the work item was inserted to any work queue.</returns>
-        internal static unsafe int InvokeCallback(nint result)
+        internal static unsafe int InvokeCallback(IntPtr ptrResult)
         {
-            ArgumentNullException.ThrowIfNull(result.ToPointer(), nameof(result));
-            return MediaFoundationInterop.MFInvokeCallback(result);
+            ArgumentNullException.ThrowIfNull(ptrResult.ToPointer(), nameof(ptrResult));
+            return MediaFoundationInterop.MFInvokeCallback(ptrResult);
         }
 
         /// <summary>
@@ -416,7 +378,7 @@ namespace NAudio.MediaFoundation
         /// <returns>Queue token, can be subsequently used to put work items or dispose it by calling <see cref="ReleaseWorkQueue(uint)"/>.</returns>
         internal static uint CreateWorkQueue(WorkQueueType type)
         {
-            MediaFoundationException.ThrowIfFailed(MediaFoundationInterop.MFAllocateWorkQueueEx((uint)type, out uint work_queue_id));
+            MediaFoundationException.ThrowIfFailed(MediaFoundationInterop.MFAllocateWorkQueueEx(type, out uint work_queue_id));
             return work_queue_id;
         }
 

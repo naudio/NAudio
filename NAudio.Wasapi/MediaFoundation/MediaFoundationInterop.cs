@@ -90,18 +90,6 @@ namespace NAudio.MediaFoundation
                                                             IntPtr pByteStream, IntPtr pAttributes, out IntPtr ppSinkWriter);
 
         /// <summary>
-        /// Creates a Microsoft Media Foundation byte stream that wraps an IStream object.
-        /// </summary>
-        /// <remarks>
-        /// The classic MFCreateMFByteStreamOnStream P/Invoke took a typed [In] IStream parameter,
-        /// which under BuiltInComInteropSupport=false cannot be marshalled. The modern shape takes
-        /// the QI'd IStream pointer the caller has already produced via ComWrappers; see
-        /// MediaFoundationApi.CreateByteStream and the Phase 2f QI-for-IID pattern.
-        /// </remarks>
-        [LibraryImport("mfplat.dll")]
-        public static partial int MFCreateMFByteStreamOnStream(IntPtr punkStream, out IntPtr ppByteStream);
-
-        /// <summary>
         /// Gets a list of Microsoft Media Foundation transforms (MFTs) that match specified search criteria.
         /// </summary>
         /// <remarks>
@@ -140,24 +128,98 @@ namespace NAudio.MediaFoundation
             IntPtr pCodecConfig,
             out IntPtr ppAvailableTypes);
 
+        /// <summary>
+        /// Creates a new Media Foundation work queue of the specified type.
+        /// </summary>
+        /// <param name="type">
+        /// The type of work queue to create. 
+        /// See the <see cref="WorkQueueType"/> enumeration for more information.
+        /// </param>
+        /// <param name="workQueueToken">The allocated work queue token.</param>
+        /// <returns><c>HRESULT</c> indicating success or failure.</returns>
         [LibraryImport("mfplat.dll")]
-        internal static partial int MFAllocateWorkQueueEx(uint type, out uint work_queue_id); // returns: HRESULT
+        internal static partial int MFAllocateWorkQueueEx(WorkQueueType type, out uint workQueueToken); // returns: HRESULT
 
-        [LibraryImport("mfplat.dll")]
-        internal static partial int MFPutWorkItem(uint dwQueue, IntPtr result, IntPtr pState); // returns: HRESULT
-
+        /// <summary>
+        /// Destroys a previously created Media Foundation work queue.
+        /// </summary>
+        /// <param name="dwQueue">The token that represents the work queue to destroy.</param>
+        /// <returns><c>HRESULT</c> indicating success or failure.</returns>
         [LibraryImport("mfplat.dll")]
         internal static partial int MFUnlockWorkQueue(uint dwQueue);
 
+        /// <summary>
+        /// Puts a work queue item to the specified queue. <br />
+        /// This function accepts an <see cref="Interfaces.IMFAsyncCallback"/> object,
+        /// and a state object to use.
+        /// </summary>
+        /// <param name="dwQueue">The work queue where to put the work queue item.</param>
+        /// <param name="callbackPtr">
+        /// The <see cref="Interfaces.IMFAsyncCallback"/> object 
+        /// that is the callback to be called by the work queue.
+        /// </param>
+        /// <param name="statePtr">
+        /// Optional. 
+        /// An object inheriting from <c>IUnknown</c> providing state.
+        /// </param>
+        /// <returns><c>HRESULT</c> indicating success or failure.</returns>
         [LibraryImport("mfplat.dll")]
-        internal static partial int MFInvokeCallback(IntPtr result);
+        internal static partial int MFPutWorkItem(uint dwQueue, IntPtr callbackPtr, IntPtr statePtr); // returns: HRESULT
 
-        [PreserveSig]
+        /// <summary>
+        /// Invokes the specified callback to any of the Media Foundation work queues.
+        /// </summary>
+        /// <param name="resultPtr">
+        /// The <see cref="Interfaces.IMFAsyncResult"/>
+        /// object that is the callback to be invoked.
+        /// </param>
+        /// <returns><c>HRESULT</c> indicating success or failure.</returns>
         [LibraryImport("mfplat.dll")]
-        internal static partial int MFCreateAsyncResult(IntPtr punkobject, IntPtr callback, IntPtr punkstate, out IntPtr async_result);
+        internal static partial int MFInvokeCallback(IntPtr resultPtr);
 
+        /// <summary>
+        /// Puts a work queue item to the specified queue. <br />
+        /// This function accepts an <see cref="Interfaces.IMFAsyncResult"/> object, 
+        /// created via the <see cref="MFCreateAsyncResult"/> function.
+        /// </summary>
+        /// <remarks>
+        /// Creating a custom implementation of the <see cref="Interfaces.IMFAsyncResult"/> 
+        /// and passing that here will not work because all work queues depend on the 
+        /// <see href="https://learn.microsoft.com/en-us/windows/win32/api/mfapi/ns-mfapi-mfasyncresult">MFASYNCRESULT</see>
+        /// structure. But it does not make really sense why to create a custom IMFAsyncResult implementation.
+        /// </remarks>
+        /// <param name="dwQueue">The work queue where to put the work queue item.</param>
+        /// <param name="resultPtr">
+        /// The <see cref="Interfaces.IMFAsyncResult"/> object 
+        /// that is the callback to be called by the work queue.
+        /// </param>
+        /// <returns><c>HRESULT</c> indicating success or failure.</returns>
         [LibraryImport("mfplat.dll")]
-        internal static partial int MFPutWorkItemEx(uint dwQueue, IntPtr result);
+        internal static partial int MFPutWorkItemEx(uint dwQueue, IntPtr resultPtr);
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="Interfaces.IMFAsyncResult"/> object,
+        /// that is compatible with the Media Foundation's work queues.
+        /// </summary>
+        /// <param name="ptrObject">
+        /// Optional. 
+        /// An object inheriting from <c>IUnknown</c> providing application-defined data.
+        /// </param>
+        /// <param name="callbackPtr">
+        /// An instance of the <see cref="Interfaces.IMFAsyncCallback"/> 
+        /// which defines which callback to call.
+        /// </param>
+        /// <param name="ptrState">
+        /// Optional.
+        /// An object inheriting from <c>IUnknown</c> providing state.
+        /// </param>
+        /// <param name="asyncResultPtr">
+        /// If a call of this function succeeds, this parameter contains 
+        /// the created <see cref="Interfaces.IMFAsyncResult"/> object.
+        /// </param>
+        /// <returns><c>HRESULT</c> indicating success or failure.</returns>
+        [LibraryImport("mfplat.dll")]
+        internal static partial int MFCreateAsyncResult(IntPtr ptrObject, IntPtr callbackPtr, IntPtr ptrState, out IntPtr asyncResultPtr);
 
         /// <summary>
         /// All streams

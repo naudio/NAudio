@@ -25,9 +25,9 @@ namespace NAudio.Utils.FileFormatDiscovery
             ArgumentNullException.ThrowIfNull(stream);
             byte[] header = new byte[4];
             stream.ReadExactly(header);
-            fixed (byte* hdr = header)
+            fixed (byte* hdrPointer = header)
             {
-                return new string((sbyte*)hdr, 0, 4) == "fLaC";
+                return new string((sbyte*)hdrPointer, 0, 4) == "fLaC";
             }
         }
     }

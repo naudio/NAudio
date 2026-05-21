@@ -17,7 +17,7 @@ namespace NAudio.MediaFoundation
     /// Newer implementation that does not utilize the IStream -> IMFByteStream shim. <br />
     /// Note: The caller is responsible for freeing the stream that is wrapped.
     /// </summary>
-    // mdcdi1315: Helpful link for async handling: https://learn.microsoft.com/en-us/windows/win32/medfound/writing-an-asynchronous-method .
+    // Helpful link for async handling: https://learn.microsoft.com/en-us/windows/win32/medfound/writing-an-asynchronous-method .
     [GeneratedComClass]
     internal sealed partial class MfByteStreamFromStream : IMFByteStream, IMFAttributes, IDisposable
     {
@@ -325,22 +325,27 @@ namespace NAudio.MediaFoundation
         // See Invoke method in MfByteStreamOnStreamAsyncCallback for more info.
         private int CreateAsyncCall(nint pb, int cb, nint callback, nint state, bool readMode)
         {
-            IntPtr ptr = IntPtr.Zero, ptr2 = IntPtr.Zero;
-            IMFAsyncResult result = null, result2 = null;
+            IntPtr sizeHandlerCcw = IntPtr.Zero,
+                completionResultPtr = IntPtr.Zero,
+                workItemPtr = IntPtr.Zero;
+            IMFAsyncResult completionResult = null, workItem = null;
             try
             {
-                (ptr, result) = MediaFoundationApi.CreateAsyncResult(
-                    callback,
-                    ComActivation.ComWrappers.GetOrCreateComInterfaceForObject(
-                        new MfByteStreamAsyncCallSizeHandler(),
-                        CreateComInterfaceFlags.None
-                    ),
-                    state
-                );
-                (ptr2, result2) = MediaFoundationApi.CreateAsyncResult(
-                    new MfByteStreamOnStreamAsyncCallback(readMode ? new(Read) : new(Write), pb, cb), ptr, state
-                );
-                return MediaFoundationApi.PutWorkItem(ptr2);
+                // We own this CCW ref; MFCreateAsyncResult AddRefs it as pObject, so it must be released
+                // here or the CCW (and the managed handler it pins) leaks once per BeginRead/BeginWrite.
+                sizeHandlerCcw = ComActivation.ComWrappers.GetOrCreateComInterfaceForObject(
+                    new MfByteStreamAsyncCallSizeHandler(),
+                    CreateComInterfaceFlags.None);
+
+                (completionResultPtr, completionResult) = MediaFoundationApi.CreateAsyncResult(
+                    callback, sizeHandlerCcw, state);
+
+                (workItemPtr, workItem) = MediaFoundationApi.CreateAsyncResult(
+                    new MfByteStreamOnStreamAsyncCallback(readMode ? new(Read) : new(Write), pb, cb),
+                    completionResultPtr,
+                    state);
+
+                return MediaFoundationApi.PutWorkItem(workItemPtr);
             }
             catch (COMException cex)
             {
@@ -348,8 +353,12 @@ namespace NAudio.MediaFoundation
             }
             finally
             {
-                ComActivation.ReleaseBoth(result2, ptr2);
-                ComActivation.ReleaseBoth(result, ptr);
+                ComActivation.ReleaseBoth(workItem, workItemPtr);
+                ComActivation.ReleaseBoth(completionResult, completionResultPtr);
+                if (sizeHandlerCcw != IntPtr.Zero)
+                {
+                    Marshal.Release(sizeHandlerCcw);
+                }
             }
         }
 
@@ -357,11 +366,11 @@ namespace NAudio.MediaFoundation
         // Additionally, the result value is the HRESULT of our wrapped call.
         private int FinalizeAsyncCall(nint result, out int readOrWritten)
         {
-            IMFAsyncResult wrappedResult = (IMFAsyncResult)ComActivation.
+            IMFAsyncResult resultCcw = (IMFAsyncResult)ComActivation.
                 ComWrappers.GetOrCreateObjectForComInstance(result, CreateObjectFlags.UniqueInstance);
             try
             {
-                int hr = wrappedResult.GetObject(out nint sizeObject);
+                int hr = resultCcw.GetObject(out nint sizeObject);
 
                 if (HResult.IsError(hr))
                 {
@@ -373,9 +382,11 @@ namespace NAudio.MediaFoundation
                     IMfByteStreamAsyncCallSizeHandler handler = null;
                     try
                     {
-                        handler = (IMfByteStreamAsyncCallSizeHandler)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(sizeObject, CreateObjectFlags.UniqueInstance);
+                        handler = (IMfByteStreamAsyncCallSizeHandler)ComActivation
+                            .ComWrappers
+                            .GetOrCreateObjectForComInstance(sizeObject, CreateObjectFlags.UniqueInstance);
                         readOrWritten = handler.GetDataSize();
-                        return wrappedResult.GetStatus();
+                        return resultCcw.GetStatus();
                     }
                     finally
                     {
@@ -385,7 +396,7 @@ namespace NAudio.MediaFoundation
             }
             finally
             {
-                ComActivation.ReleaseBoth(wrappedResult, IntPtr.Zero);
+                ComActivation.ReleaseBoth(resultCcw, IntPtr.Zero);
             }
         }
 

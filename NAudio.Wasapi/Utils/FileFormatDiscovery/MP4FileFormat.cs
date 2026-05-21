@@ -26,9 +26,9 @@ namespace NAudio.Utils.FileFormatDiscovery
             byte[] header = new byte[4];
             stream.ReadExactly(header); // Size of the header
             stream.ReadExactly(header); // Identifier type, must be ftyp
-            fixed (byte* hdr = header)
+            fixed (byte* hdrPointer = header)
             {
-                return new string((sbyte*)hdr, 0, 4) == "ftyp";
+                return new string((sbyte*)hdrPointer, 0, 4) == "ftyp";
             }
         }
     }

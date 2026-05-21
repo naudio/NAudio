@@ -19,14 +19,14 @@ namespace NAudio.Utils.FileFormatDiscovery
     /// </summary>
     internal sealed class AudioFileFormatFinder
     {
-        private static readonly List<AudioFileFormat> default_file_formats;
+        private static readonly List<AudioFileFormat> defaultFileFormatsRegistry;
 
         static AudioFileFormatFinder()
         {
-            default_file_formats = new(10);
-            default_file_formats.Add(Mp3FileFormat.Instance);
-            default_file_formats.Add(Mp4FileFormat.Instance);
-            default_file_formats.Add(FlacFileFormat.Instance);
+            defaultFileFormatsRegistry = new(10);
+            defaultFileFormatsRegistry.Add(Mp3FileFormat.Instance);
+            defaultFileFormatsRegistry.Add(Mp4FileFormat.Instance);
+            defaultFileFormatsRegistry.Add(FlacFileFormat.Instance);
         }
 
         /// <summary>
@@ -38,23 +38,23 @@ namespace NAudio.Utils.FileFormatDiscovery
         public static void AddDefaultFileFormat(AudioFileFormat format)
         {
             ArgumentNullException.ThrowIfNull(format);
-            Monitor.Enter(default_file_formats);
+            Monitor.Enter(defaultFileFormatsRegistry);
             try
             {
-                default_file_formats.Add(format);
+                defaultFileFormatsRegistry.Add(format);
             }
             finally
             {
-                Monitor.Exit(default_file_formats);
+                Monitor.Exit(defaultFileFormatsRegistry);
             }
         }
 
-        private readonly List<AudioFileFormat> file_formats_to_test;
+        private readonly List<AudioFileFormat> fileFormatsToTry;
 
         /// <summary>
         /// Initializes a new and empty instance of the <see cref="AudioFileFormatFinder"/> class.
         /// </summary>
-        public AudioFileFormatFinder() => file_formats_to_test = new(10);
+        public AudioFileFormatFinder() => fileFormatsToTry = new(10);
 
         /// <summary>
         /// Adds to the current file format finder the default file formats that are added using the <see cref="AddDefaultFileFormat(AudioFileFormat)"/> method.
@@ -63,14 +63,14 @@ namespace NAudio.Utils.FileFormatDiscovery
         [return: NotNull]
         public AudioFileFormatFinder AddDefaultFileFormats()
         {
-            Monitor.Enter(default_file_formats);
+            Monitor.Enter(defaultFileFormatsRegistry);
             try
             {
-                file_formats_to_test.AddRange(default_file_formats);
+                fileFormatsToTry.AddRange(defaultFileFormatsRegistry);
             }
             finally
             {
-                Monitor.Exit(default_file_formats);
+                Monitor.Exit(defaultFileFormatsRegistry);
             }
             return this;
         }
@@ -85,7 +85,7 @@ namespace NAudio.Utils.FileFormatDiscovery
         public AudioFileFormatFinder AddFileFormatToTest(AudioFileFormat format)
         {
             ArgumentNullException.ThrowIfNull(format);
-            file_formats_to_test.Add(format);
+            fileFormatsToTry.Add(format);
             return this;
         }
 
@@ -99,7 +99,7 @@ namespace NAudio.Utils.FileFormatDiscovery
         public AudioFileFormatFinder AddFileFormatsToTest(params AudioFileFormat[] formats)
         {
             ArgumentNullException.ThrowIfNull(formats);
-            file_formats_to_test.AddRange(formats);
+            fileFormatsToTry.AddRange(formats);
             return this;
         }
 
@@ -108,7 +108,7 @@ namespace NAudio.Utils.FileFormatDiscovery
         [return: NotNull]
         public AudioFileFormatFinder ClearFileFormats()
         {
-            file_formats_to_test.Clear();
+            fileFormatsToTry.Clear();
             return this;
         }
 
@@ -144,7 +144,7 @@ namespace NAudio.Utils.FileFormatDiscovery
                 long initial_position = stream.Position;
                 try
                 {
-                    foreach (AudioFileFormat fmt in file_formats_to_test)
+                    foreach (AudioFileFormat fmt in fileFormatsToTry)
                     {
                         stream.Position = initial_position;
                         try

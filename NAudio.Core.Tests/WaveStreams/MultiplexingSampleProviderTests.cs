@@ -1,14 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using NAudioTests.Utils;
+using NAudio.Core.Tests.Utils;
 using NUnit.Framework;
 using NAudio.Wave.SampleProviders;
 using NAudio.Wave;
 using System.Diagnostics;
 using Moq;
 
-namespace NAudioTests.WaveStreams
+namespace NAudio.Core.Tests.WaveStreams
 {
     [TestFixture]
     public class MultiplexingSampleProviderTests

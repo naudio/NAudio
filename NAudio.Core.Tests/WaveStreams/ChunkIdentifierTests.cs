@@ -1,7 +1,7 @@
 using NAudio.Utils;
 using NUnit.Framework;
 
-namespace NAudioTests.WaveStreams
+namespace NAudio.Core.Tests.WaveStreams
 {
     [TestFixture]
     public class ChunkIdentifierTests

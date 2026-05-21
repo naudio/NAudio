@@ -4,7 +4,7 @@ using NAudio.Wave;
 using System.Diagnostics;
 using Moq;
 
-namespace NAudioTests.WaveStreams
+namespace NAudio.Core.Tests.WaveStreams
 {
     [TestFixture]
     public class MultiplexingWaveProviderTests

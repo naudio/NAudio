@@ -4,10 +4,10 @@ using System.Linq;
 using System.Reflection;
 using NAudio.Utils;
 using NAudio.Wave;
-using NAudioTests.Utils;
+using NAudio.Tests.Shared;
 using NUnit.Framework;
 
-namespace NAudioTests.WaveStreams
+namespace NAudio.Core.Tests.WaveStreams
 {
     /// <summary>
     /// Parity and architectural tests for the Span-based Read path on WaveStream subclasses.

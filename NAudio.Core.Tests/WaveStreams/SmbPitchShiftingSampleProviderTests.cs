@@ -2,10 +2,10 @@ using System;
 using NAudio.Dsp;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
-using NAudioTests.WaveStreams;
+using NAudio.Core.Tests.WaveStreams;
 using NUnit.Framework;
 
-namespace NAudioTests.Dsp
+namespace NAudio.Core.Tests.Dsp
 {
     /// <summary>
     /// Covers the Span-based rewrite of <see cref="SmbPitchShifter"/> and the

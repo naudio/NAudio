@@ -1,7 +1,7 @@
 using System;
 using NAudio.Wave;
 
-namespace NAudioTests.Utils
+namespace NAudio.Core.Tests.Utils
 {
     /// <summary>
     /// Test-only <see cref="IMp3FrameDecompressor"/> that does not invoke any real codec

@@ -1,7 +1,7 @@
 using NAudio.Wave;
 using NUnit.Framework;
 
-namespace NAudioTests.Asio
+namespace NAudio.Windows.Tests.Asio
 {
     [TestFixture]
     [Category("UnitTest")]

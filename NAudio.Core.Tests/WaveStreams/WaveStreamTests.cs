@@ -1,9 +1,9 @@
 using System;
 using NAudio.Wave;
-using NAudioTests.Utils;
+using NAudio.Tests.Shared;
 using NUnit.Framework;
 
-namespace NAudioTests.WaveStreams
+namespace NAudio.Core.Tests.WaveStreams
 {
     [TestFixture]
     [Category("UnitTest")]

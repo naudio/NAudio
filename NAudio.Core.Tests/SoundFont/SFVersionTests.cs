@@ -2,7 +2,7 @@ using System.IO;
 using NAudio.SoundFont;
 using NUnit.Framework;
 
-namespace NAudioTests.SoundFont
+namespace NAudio.Core.Tests.SoundFont
 {
     [TestFixture]
     [Category("UnitTest")]

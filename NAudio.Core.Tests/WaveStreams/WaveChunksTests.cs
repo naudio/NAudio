@@ -3,10 +3,10 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using NAudio.Wave;
-using NAudioTests.Utils;
+using NAudio.Core.Tests.Utils;
 using NUnit.Framework;
 
-namespace NAudioTests.WaveStreams
+namespace NAudio.Core.Tests.WaveStreams
 {
     [TestFixture]
     [Category("UnitTest")]

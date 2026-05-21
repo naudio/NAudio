@@ -1,12 +1,12 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
 using NAudio.Wave;
-using NAudioTests.Utils;
+using NAudio.Core.Tests.Utils;
 using System.IO;
 
-namespace NAudioTests.WaveStreams
+namespace NAudio.Core.Tests.WaveStreams
 {
     [TestFixture]
     public class WaveChannel32Tests

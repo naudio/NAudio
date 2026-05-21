@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -8,7 +8,7 @@ using NAudio.Wave.SampleProviders;
 using NUnit.Framework;
 using NUnit.Framework.Internal;
 
-namespace NAudioTests.MediaFoundation
+namespace NAudio.Windows.Tests.MediaFoundation
 {
     [TestFixture]
     [Category("IntegrationTest")]

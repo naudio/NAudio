@@ -4,7 +4,7 @@ using NAudio.Midi;
 using NUnit.Framework;
 using Windows.Devices.Midi;
 
-namespace NAudioTests.Wasapi.Midi
+namespace NAudio.Windows.Tests.Wasapi.Midi
 {
     [TestFixture]
     [Category("UnitTest")]

@@ -5,7 +5,7 @@ using System.Text;
 using NAudio.Midi;
 using NUnit.Framework;
 
-namespace NAudioTests.Midi
+namespace NAudio.Core.Tests.Midi
 {
     [TestFixture]
     [Category("UnitTest")]

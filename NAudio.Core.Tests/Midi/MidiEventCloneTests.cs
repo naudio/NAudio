@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using NAudio.Midi;
 using NUnit.Framework;
 
-namespace NAudioTests.Midi
+namespace NAudio.Core.Tests.Midi
 {
     [TestFixture]
     public class MidiEventCloneTests

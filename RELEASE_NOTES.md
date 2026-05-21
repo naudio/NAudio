@@ -17,6 +17,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * `MidiInMessageEventArgs.Timestamp` and `MidiInSysexMessageEventArgs.Timestamp` are now `TimeSpan` (previously `int` milliseconds) — preserves full WinRT 100 ns resolution on the WinRT backend
  * `MidiIn.CreateSysexBuffers` removed — `MidiIn` now allocates sysex receive buffers automatically inside `Start()`
  * `WasapiOut`, `WasapiCapture`, and `WasapiLoopbackCapture` are now `[Obsolete]` in favour of the new `WasapiPlayer` / `WasapiRecorder` APIs (the legacy types still ship and continue to work)
+ * `WasapiOut`'s embedded DMO resampler removed. Exclusive-mode callers whose source format is not natively supported now get a `NotSupportedException` from `Init` instead of silent on-the-fly resampling. Resample upstream (e.g. with `MediaFoundationResampler`), use shared mode (which still auto-converts via `AutoConvertPcm`), or switch to `WasapiPlayerBuilder`. Removes `NAudio.Wasapi`'s only intra-assembly dependency on DMO.
  * `WaveOut` and `WaveIn` now default to event-driven callbacks; the legacy window-based variants are renamed `WaveOutWindow` / `WaveInWindow` and live in `NAudio.WinForms`
  * `WaveInEventArgs` now fires one event per WASAPI packet (previously batched). A new `BufferSpan` property exposes the data without copying through the existing `Buffer` byte array
  * Several `Mf*` Media Foundation wrapper types are now `internal` — only `MfActivate` and `MediaType` remain public

@@ -10,6 +10,10 @@
     <EnableNUnitRunner>true</EnableNUnitRunner>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <IsPackable>false</IsPackable>
+    <!-- When libsndfile is absent every fixture self-skips via OneTimeSetUp,
+         which MTP treats as exit code 8/9. Ignore those so `dotnet test`
+         doesn't fail on machines without the native library. -->
+    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --ignore-exit-code 8;9</TestingPlatformCommandLineArguments>
   </PropertyGroup>
 
   <ItemGroup>

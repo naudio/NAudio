@@ -127,6 +127,17 @@ Work that is **deferred from the first round, but still candidate for NAudio 3**
 
 3. **Behaviour / API hygiene work flagged in `Docs/Architecture/MODERNIZATION.md`.** Anything that would mean editing code (slimming `WasapiOut`'s built-in resampler, applying `[Obsolete]` annotations, removing legacy types) is its own concern, separate from the structural work above.
 
+4. **Consider splitting `NAudio.Effects` into its own package.** The effects framework and ~27 effect classes currently live in `NAudio.Core` (see `EffectsEvaluation.md` §3.1). This is a **packaging-tidiness question, not a runtime one**: the effects are AOT-clean and use no reflection, so consumers who publish trimmed/AOT apps and don't use them already get them trimmed out. The motivation for a split is:
+   - The shipped `NAudio.Core.dll` / NuGet is physically larger; non-trimmed consumers (library authors, framework-dependent deployments) ship it all.
+   - API-surface / IntelliSense noise for users who only want the wave/format/stream core.
+
+   Counter-arguments before pulling the trigger:
+   - Effects are a headline NAudio 3 feature; most consumers probably *do* want them, in which case a separate package buys nothing and just complicates referencing.
+   - The meta-package would mask the split for typical consumers anyway.
+   - The IL trimmer already handles the runtime side cleanly.
+
+   If pursued: same mechanics as the other splits — new `NAudio.Effects` package, `[TypeForwardedTo]` shims in `NAudio.Core` for at least one release, meta-package adds the new dependency. Treat as a low-priority evaluate-then-decide phase; defensible to leave as-is.
+
 ## Execution status — first round
 
 Each step is a separate commit with its own validation. Once the first round is committed and stable, attempt the §"Subsequent phases" items in order — each is independent and any can be backed out without disturbing the rest.

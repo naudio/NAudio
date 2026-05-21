@@ -382,6 +382,36 @@ own effect" pattern, three small wrappers live in
 Convolution reverb is left for now — its IR-setup-as-input doesn't fit the
 fixed-parameter facade, and is better served by a dedicated UI later.
 
+### 3.8 Open consideration — effects on positionable streams
+
+**Nothing decided.** Before NAudio 3 ships, the long-standing "positionable
+`WaveStream` vs non-positional `IWaveProvider` / `ISampleProvider`" tension is
+worth a dedicated design pass — the seek-vs-decorator dance (you reposition
+the file reader, but the player reads from the decorated end of the chain) is
+a recurring pain point. The solution may or may not involve the effects model.
+
+*One* option on the table is to let a `WaveStream` host effects directly, so
+seeks happen on the same object the player reads from. The minimal shape of
+that path would lift `IAudioEffect`, `IParameterized`, `EffectParameter` and
+`EffectParameterKind` into a foundational namespace (e.g. `NAudio.Wave`),
+leaving `NAudio.Effects` as concrete implementations + the `AudioEffect` base
++ `EffectChain` + the realtime dispatch. Open questions if this path is taken:
+
+- Attach via a new opt-in `IEffectsHost`-style interface that
+  `AudioFileReader` and friends implement, or extend `WaveStream` itself?
+  (Leaning opt-in — avoids disturbing every third-party `WaveStream` subclass.)
+- Sample-format bridge: scope cleanly to `ISampleProvider` sources (float), or
+  also PCM-int `WaveStream`s with internal conversion?
+- `Position` / `Length` semantics with effect latency (pitch shift,
+  convolution) and reverb tails extending past input EOF.
+
+The broader design pass may equally land on a different solution — `EffectChain`
+smart enough to forward `WaveStream` methods through, a unified positionable-
+provider abstraction, or something else entirely. Recorded here *only* as one
+option, not a chosen direction. The decorator pattern (file → chain → player,
+or any non-`WaveStream` source like a mic / synth / network) stays valid in
+every scenario; this would be additive convenience for the seekable case.
+
 ---
 
 ## 4. Port vs build — the decision framework

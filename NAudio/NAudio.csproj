@@ -17,6 +17,7 @@
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetPlatformIdentifier)' == 'windows' ">
     <ProjectReference Include="..\NAudio.Asio\NAudio.Asio.csproj" />
+    <ProjectReference Include="..\NAudio.Dmo\NAudio.Dmo.csproj" />
     <ProjectReference Include="..\NAudio.WinMM\NAudio.WinMM.csproj" />
     <ProjectReference Include="..\NAudio.WinForms\NAudio.WinForms.csproj" />
   </ItemGroup>
@@ -25,9 +26,6 @@
   </PropertyGroup>
   <ItemGroup Condition=" $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net9.0-windows10.0.19041.0')) ">
     <ProjectReference Include="..\NAudio.Wasapi\NAudio.Wasapi.csproj" />
-  </ItemGroup>
-  <ItemGroup Condition=" '$(TargetPlatformIdentifier)' == 'windows' ">
-    <ProjectReference Include="..\NAudio.Dmo\NAudio.Dmo.csproj" />
   </ItemGroup>
 
 

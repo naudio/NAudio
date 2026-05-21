@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net9.0-windows</TargetFramework>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Description>winmm.dll-based Windows audio APIs (WaveOut, WaveIn, MidiIn, MidiOut, ACM) for the NAudio audio library.</Description>
   </PropertyGroup>
 
 	<!-- needed for perfomance profiling unit tests -->

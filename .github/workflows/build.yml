@@ -25,8 +25,12 @@ jobs:
         run: dotnet build NAudio.slnx --configuration Release --no-restore
 
       - name: Test
+        # `dotnet test` against the slnx runs every test project. On
+        # Windows that's NAudio.Core.Tests + NAudio.Windows.Tests plus
+        # the SoundFile/Alsa suites (which self-skip when their native
+        # deps are absent).
         run: >
-          dotnet test --project NAudioTests/NAudioTests.csproj
+          dotnet test NAudio.slnx
           --configuration Release
           --no-build
           --filter "TestCategory!=IntegrationTest"

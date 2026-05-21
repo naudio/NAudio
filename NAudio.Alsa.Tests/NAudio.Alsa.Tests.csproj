@@ -9,6 +9,12 @@
     <EnableNUnitRunner>true</EnableNUnitRunner>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <IsPackable>false</IsPackable>
+    <!-- On non-Linux machines this assembly contains zero runnable tests
+         (MTP exit code 8). Treat that as success so `dotnet test` on
+         Windows/macOS doesn't fail the whole solution run. MTP-based
+         `dotnet test` insists every project be a runnable Exe, so there
+         is no clean "drop out of discovery" gate to use instead. -->
+    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --ignore-exit-code 8</TestingPlatformCommandLineArguments>
   </PropertyGroup>
 
   <ItemGroup>

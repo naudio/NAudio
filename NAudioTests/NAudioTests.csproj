@@ -43,6 +43,7 @@
   <!-- Windows-only NAudio assemblies — only referenced under the -windows TFM. -->
   <ItemGroup Condition="'$(IsWindowsTarget)' == 'true'">
     <ProjectReference Include="..\NAudio.Asio\NAudio.Asio.csproj" />
+    <ProjectReference Include="..\NAudio.Dmo\NAudio.Dmo.csproj" />
     <ProjectReference Include="..\NAudio.Wasapi\NAudio.Wasapi.csproj" />
     <ProjectReference Include="..\NAudio.WinForms\NAudio.WinForms.csproj" />
     <ProjectReference Include="..\NAudio.WinMM\NAudio.WinMM.csproj" />

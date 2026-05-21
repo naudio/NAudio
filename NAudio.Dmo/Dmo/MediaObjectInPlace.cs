@@ -1,6 +1,6 @@
 using System;
 using NAudio.Dmo.Interfaces;
-using NAudio.Wasapi.CoreAudioApi;
+using NAudio.Dmo.Interop;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 

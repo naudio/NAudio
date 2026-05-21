@@ -2,10 +2,12 @@ using System;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 
-namespace NAudio.Dmo.Interfaces
+namespace NAudio.MediaFoundation.Interfaces
 {
     /// <summary>
-    /// Sets properties on the audio resampler DSP.
+    /// Sets properties on the audio resampler DSP. The wmcodecdsp resampler is
+    /// exposed via Media Foundation as a transform — this interface lives here
+    /// alongside its sole consumer, <c>MediaFoundationResampler</c>.
     /// </summary>
     /// <remarks>
     /// Windows SDK: IWMResamplerProps (wmcodecdsp.h).

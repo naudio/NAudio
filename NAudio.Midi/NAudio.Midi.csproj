@@ -4,6 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <IsAotCompatible>true</IsAotCompatible>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Description>Cross-platform MIDI file reading and writing, MIDI message types, and SMPTE timing for the NAudio audio library.</Description>
   </PropertyGroup>
 
   <ItemGroup>

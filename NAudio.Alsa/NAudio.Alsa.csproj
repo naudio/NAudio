@@ -5,6 +5,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <IsAotCompatible>true</IsAotCompatible>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Description>ALSA playback and capture for Linux via libasound for the NAudio audio library.</Description>
   </PropertyGroup>
 
   <ItemGroup>

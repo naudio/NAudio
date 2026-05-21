@@ -105,6 +105,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * `NAudio.Alsa.Tests` and `NAudio.SoundFile.Tests` now ignore MTP exit codes 8/9 so `dotnet test` succeeds on machines where the suite legitimately runs zero tests (ALSA off-Linux) or self-skips (libsndfile absent)
  * Migrated to the modern `.slnx` solution format
  * Renamed `license.txt` to `LICENSE` for GitHub license detection; refreshed copyright year to 2008–2026
+ * Added per-package `<Description>` metadata to every shipping NAudio NuGet package so each clearly identifies itself as part of the NAudio family
 
 ### 2.3.0 (12 Mar 2026)
 

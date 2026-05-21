@@ -358,6 +358,30 @@ variance on the same tests (≈3–6 s) already swamps the added cost (the 35
 heaviest new tests execute in well under 1 s excluding fixed host startup), so
 nothing needed `IntegrationTest`.
 
+### 3.7 Demo-only composed effects (smoke test + composition example)
+
+The four effects intentionally excluded from the harness catalogue (parametric
+`Equalizer`, `GraphicEqualizer`, `MultibandCompressorEffect`,
+`ConvolutionReverbEffect`) need bespoke UI because they have dynamic band lists
+or an IR setup. To close the smoke-test gap *and* demonstrate the "compose your
+own effect" pattern, three small wrappers live in
+`NAudioWpfDemo/RealtimeEffectsDemo/CustomEffects/` (user code, not toolkit):
+
+- **`SevenBandEqEffect`** — fixed BOSS GE-7 style 7-band peaking EQ
+  (100/200/400/800/1.6k/3.2k/6.4k Hz) by containment on `Equalizer`. Setters
+  write `band.GainDb` and call `Update()` for the click-free retune crossfade.
+- **`FilterEffect`** — HPF + LPF with selectable 12 / 24 dB-per-octave slope,
+  built directly from `BiQuadFilter` and `CrossfadingBiQuadFilter` (proper
+  Butterworth Q values for the 24 dB/oct cascade). Shows the lower-level
+  composition pattern.
+- **`ThreeBandCompressorEffect`** — fixed 3-band compressor at 250 Hz / 2.5 kHz
+  crossovers by containment on `MultibandCompressorEffect`, exposing per-band
+  threshold/ratio plus gain-reduction meters (attack/release/make-up fixed at
+  sensible per-band defaults).
+
+Convolution reverb is left for now — its IR-setup-as-input doesn't fit the
+fixed-parameter facade, and is better served by a dedicated UI later.
+
 ---
 
 ## 4. Port vs build — the decision framework

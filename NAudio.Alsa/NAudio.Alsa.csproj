@@ -6,6 +6,10 @@
     <IsAotCompatible>true</IsAotCompatible>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Description>ALSA playback and capture for Linux via libasound for the NAudio audio library.</Description>
+    <!-- Temporary package id: the "NAudio.Alsa" name on nuget.org is held by
+         a third party. Published as NAudio.Linux.Alsa until that name is
+         reclaimed. AssemblyName and namespaces stay NAudio.Alsa. -->
+    <PackageId>NAudio.Linux.Alsa</PackageId>
   </PropertyGroup>
 
   <ItemGroup>

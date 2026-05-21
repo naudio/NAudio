@@ -106,6 +106,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * Migrated to the modern `.slnx` solution format
  * Renamed `license.txt` to `LICENSE` for GitHub license detection; refreshed copyright year to 2008–2026
  * Added per-package `<Description>` metadata to every shipping NAudio NuGet package so each clearly identifies itself as part of the NAudio family
+ * ALSA backend ships as `NAudio.Linux.Alsa` on NuGet (temporary id while the `NAudio.Alsa` name is reclaimed); assembly name and namespaces are unchanged
 
 ### 2.3.0 (12 Mar 2026)
 

@@ -2,7 +2,7 @@ using System;
 using NAudio.Codecs;
 using NUnit.Framework;
 
-namespace NAudioTests.Codecs
+namespace NAudio.Core.Tests.Codecs
 {
     [TestFixture]
     [Category("UnitTest")]

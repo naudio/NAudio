@@ -4,10 +4,10 @@ using System.Linq;
 using System.Text;
 using NAudio.FileFormats.Wav;
 using NAudio.Wave;
-using NAudioTests.Utils;
+using NAudio.Core.Tests.Utils;
 using NUnit.Framework;
 
-namespace NAudioTests.WaveStreams
+namespace NAudio.Core.Tests.WaveStreams
 {
     /// <summary>
     /// Tests for <see cref="NAudio.FileFormats.Wav.WaveFileChunkReader"/>, exercised

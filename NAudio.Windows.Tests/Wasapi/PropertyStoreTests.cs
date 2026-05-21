@@ -1,10 +1,10 @@
 using System;
 using System.Diagnostics;
 using NAudio.CoreAudioApi;
-using NAudioTests.Utils;
+using NAudio.Windows.Tests.Utils;
 using NUnit.Framework;
 
-namespace NAudioTests.Wasapi
+namespace NAudio.Windows.Tests.Wasapi
 {
     [TestFixture]
     [Category("IntegrationTest")]

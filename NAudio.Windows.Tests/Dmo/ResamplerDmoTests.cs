@@ -1,14 +1,14 @@
-﻿using NAudio.Dmo;
+using NAudio.Dmo;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
-using NAudioTests.Utils;
+using NAudio.Windows.Tests.Utils;
 using NUnit.Framework;
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
 
-namespace NAudioTests.Dmo
+namespace NAudio.Windows.Tests.Dmo
 {
     [TestFixture]
     public class ResamplerDmoTests

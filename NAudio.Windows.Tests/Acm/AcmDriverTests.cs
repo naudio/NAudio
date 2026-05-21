@@ -1,10 +1,10 @@
-﻿using NAudio.Wave.Compression;
+using NAudio.Wave.Compression;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace NAudioTests.Acm
+namespace NAudio.Windows.Tests.Acm
 {
     [TestFixture]
     [Category("IntegrationTest")]

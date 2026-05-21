@@ -10,9 +10,6 @@
     <OutputType>Exe</OutputType>
     <EnableNUnitRunner>true</EnableNUnitRunner>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <!-- Test sources still live in the NAudioTests.* namespaces; keeping
-         the root namespace stable avoids a giant rename diff. -->
-    <RootNamespace>NAudioTests</RootNamespace>
     <!-- Strong-naming inherited from Directory.Build.props. NAudio.Asio
          grants this assembly InternalsVisibleTo, so the friend assembly
          name + public key in NAudio.Asio.csproj must stay in sync. -->

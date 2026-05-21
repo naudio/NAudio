@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace NAudioTests.Utils
+namespace NAudio.Core.Tests.Utils
 {
     /// <summary>
     /// Wraps an inner stream and counts the number of bytes returned by Read calls.

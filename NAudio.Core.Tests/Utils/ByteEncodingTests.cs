@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Linq;
 using NAudio.Utils;
 using NUnit.Framework;
 
-namespace NAudioTests.Utils
+namespace NAudio.Core.Tests.Utils
 {
     [TestFixture]
     public class ByteEncodingTests

@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
 using NAudio.Wave;
 
-namespace NAudioTests
+namespace NAudio.Windows.Tests
 {
     [TestFixture]
     [Category("IntegrationTest")]

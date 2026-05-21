@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using NUnit.Framework;
 using NAudio.Wave;
@@ -6,7 +6,7 @@ using System.IO;
 using NAudio.Wave.SampleProviders;
 using System.Runtime.InteropServices;
 
-namespace NAudioTests.Acm
+namespace NAudio.Windows.Tests.Acm
 {
     [TestFixture]
     public class GsmEncodeTest

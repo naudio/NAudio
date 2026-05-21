@@ -2,7 +2,7 @@ using System;
 using NAudio.Dsp;
 using NUnit.Framework;
 
-namespace NAudioTests.Dsp
+namespace NAudio.Core.Tests.Dsp
 {
     [TestFixture]
     [Category("UnitTest")]

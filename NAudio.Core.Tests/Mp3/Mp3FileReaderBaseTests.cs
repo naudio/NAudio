@@ -1,9 +1,9 @@
 using System.IO;
 using NAudio.Wave;
-using NAudioTests.Utils;
+using NAudio.Core.Tests.Utils;
 using NUnit.Framework;
 
-namespace NAudioTests.Mp3
+namespace NAudio.Core.Tests.Mp3
 {
     [TestFixture]
     public class Mp3FileReaderBaseTests

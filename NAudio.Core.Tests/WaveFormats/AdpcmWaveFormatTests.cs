@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
 using System.Runtime.InteropServices;
 using NAudio.Wave;
 
-namespace NAudioTests.WaveFormats
+namespace NAudio.Core.Tests.WaveFormats
 {
     [TestFixture]
     [Category("UnitTest")]

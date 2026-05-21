@@ -1,13 +1,13 @@
-﻿using System;
+using System;
 using NUnit.Framework;
 using System.IO;
 using NAudio.Wave;
 using System.Diagnostics;
 using NAudio.MediaFoundation;
 using NAudio.Wave.SampleProviders;
-using NAudioTests.Utils;
+using NAudio.Windows.Tests.Utils;
 
-namespace NAudioTests.Mp3
+namespace NAudio.Windows.Tests.Mp3
 {
     [TestFixture]
     public class Mp3FileReaderTests

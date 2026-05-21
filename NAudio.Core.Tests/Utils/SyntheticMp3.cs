@@ -1,6 +1,6 @@
 using System;
 
-namespace NAudioTests.Utils
+namespace NAudio.Core.Tests.Utils
 {
     /// <summary>
     /// Generates valid MPEG-1 Layer III frame bytes in memory: 96 kbps, 44.1 kHz, stereo,

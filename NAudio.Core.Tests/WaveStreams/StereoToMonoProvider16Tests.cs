@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using NUnit.Framework;
 using NAudio.Wave;
 
-namespace NAudioTests.WaveStreams
+namespace NAudio.Core.Tests.WaveStreams
 {
     [TestFixture]
     [Category("UnitTest")]

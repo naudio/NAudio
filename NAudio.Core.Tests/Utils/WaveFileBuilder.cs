@@ -3,7 +3,7 @@ using System.IO;
 using System.Text;
 using NAudio.Wave;
 
-namespace NAudioTests.Utils
+namespace NAudio.Core.Tests.Utils
 {
     /// <summary>
     /// Hand-builds a RIFF/WAVE byte stream with arbitrary extra chunks. Used by chunk-reader

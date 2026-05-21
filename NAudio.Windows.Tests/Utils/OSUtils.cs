@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 using NUnit.Framework;
 
-namespace NAudioTests.Utils
+namespace NAudio.Windows.Tests.Utils
 {
     static class OSUtils
     {

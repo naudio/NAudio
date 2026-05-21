@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
 using NAudio.Wave;
 using System.Diagnostics;
 
-namespace NAudioTests.DirectSound
+namespace NAudio.Windows.Tests.DirectSound
 {
     [TestFixture]
     public class DirectSoundTests

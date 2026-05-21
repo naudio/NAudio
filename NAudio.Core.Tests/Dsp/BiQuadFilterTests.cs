@@ -2,7 +2,7 @@ using System;
 using NAudio.Dsp;
 using NUnit.Framework;
 
-namespace NAudioTests.Dsp
+namespace NAudio.Core.Tests.Dsp
 {
     /// <summary>
     /// Covers the batch <see cref="BiQuadFilter.Transform(ReadOnlySpan{float}, Span{float})"/>

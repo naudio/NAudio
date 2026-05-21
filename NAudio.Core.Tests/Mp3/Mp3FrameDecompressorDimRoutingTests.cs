@@ -2,7 +2,7 @@ using System;
 using NAudio.Wave;
 using NUnit.Framework;
 
-namespace NAudioTests.Mp3
+namespace NAudio.Core.Tests.Mp3
 {
     /// <summary>
     /// Verifies that <see cref="IMp3FrameDecompressor.DecompressFrame(Mp3Frame, Span{byte})"/>'s

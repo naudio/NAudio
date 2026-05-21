@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 using NAudio.Wave;
 
-namespace NAudioTests.Utils
+namespace NAudio.Tests.Shared
 {
     class NullWaveStream : WaveStream
     {

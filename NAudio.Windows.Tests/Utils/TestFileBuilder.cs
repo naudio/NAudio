@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.IO;
 using NAudio.MediaFoundation;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 
-namespace NAudioTests.Utils
+namespace NAudio.Windows.Tests.Utils
 {
     static class TestFileBuilder
     {

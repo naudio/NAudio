@@ -1,8 +1,8 @@
-﻿using NAudio.Wave;
+using NAudio.Wave;
 using NUnit.Framework;
 using System.IO;
 
-namespace NAudioTests.WaveStreams
+namespace NAudio.Core.Tests.WaveStreams
 {
     [TestFixture]
     public class AudioFileReaderTests

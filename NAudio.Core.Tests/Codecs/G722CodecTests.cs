@@ -3,7 +3,7 @@ using System.Linq;
 using NAudio.Codecs;
 using NUnit.Framework;
 
-namespace NAudioTests.Codecs
+namespace NAudio.Core.Tests.Codecs
 {
     [TestFixture]
     public class G722CodecTests

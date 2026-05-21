@@ -6,9 +6,9 @@ using NUnit.Framework;
 using System.Diagnostics;
 using System;
 using NAudio.FileFormats.Wav;
-using NAudioTests.Utils;
+using NAudio.Core.Tests.Utils;
 
-namespace NAudioTests.WaveStreams
+namespace NAudio.Core.Tests.WaveStreams
 {
     [TestFixture]
     public class WaveFileReaderTests

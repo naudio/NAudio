@@ -2,7 +2,7 @@ using System;
 using NUnit.Framework;
 using NAudio.Wave;
 
-namespace NAudioTests.WaveStreams
+namespace NAudio.Core.Tests.WaveStreams
 {
     [TestFixture]
     public class VolumeWaveProvider16Tests

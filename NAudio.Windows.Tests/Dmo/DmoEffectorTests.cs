@@ -1,13 +1,14 @@
-﻿using NAudio.Dmo;
+using NAudio.Dmo;
 using NAudio.Dmo.Effect;
-using NAudioTests.Utils;
+using NAudio.Tests.Shared;
+using NAudio.Windows.Tests.Utils;
 using NUnit.Framework;
 using System;
 using System.Diagnostics;
 using System.Linq;
 using NAudio.Wave;
 
-namespace NAudioTests.Dmo
+namespace NAudio.Windows.Tests.Dmo
 {
     [TestFixture]
     public class DmoEffectorTests

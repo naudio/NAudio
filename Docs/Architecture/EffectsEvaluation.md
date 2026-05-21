@@ -379,8 +379,14 @@ own effect" pattern, three small wrappers live in
   threshold/ratio plus gain-reduction meters (attack/release/make-up fixed at
   sensible per-band defaults).
 
-Convolution reverb is left for now — its IR-setup-as-input doesn't fit the
-fixed-parameter facade, and is better served by a dedicated UI later.
+Convolution reverb is covered by a separate, dedicated **Convolution Reverb**
+WPF demo module — its IR-setup-as-input doesn't fit the fixed-parameter
+facade. The module is an offline test bench: pick an input file and a folder
+of impulse responses, render single-IR or batch-all, with IR auto-resampled to
+the input rate (`WdlResamplingSampleProvider`) and peak-normalised to -3 dBFS.
+Output is latency-compensated and tail-flushed; each render reports Nx
+real-time and added tail length. Output WAVs land in a temp folder browsable
+from the panel (matching the `WasapiCaptureDemo` Play/Delete/Open pattern).
 
 ### 3.8 Open consideration — effects on positionable streams
 

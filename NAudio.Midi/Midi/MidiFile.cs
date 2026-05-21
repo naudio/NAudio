@@ -59,7 +59,14 @@ namespace NAudio.Midi
             try 
             {
                 string chunkHeader = Encoding.UTF8.GetString(br.ReadBytes(4));
-                if(chunkHeader != "MThd") 
+                if (chunkHeader == "RIFF")
+                {
+                    // RIFF-RMID wrapper: a standard MIDI file embedded in a RIFF container
+                    // (issue #1236). Skip the wrapper so the inner SMF is read as normal.
+                    SeekToRmidMidiData(br);
+                    chunkHeader = Encoding.UTF8.GetString(br.ReadBytes(4));
+                }
+                if(chunkHeader != "MThd")
                 {
                     throw new FormatException("Not a MIDI file - header chunk missing");
                 }
@@ -223,7 +230,53 @@ namespace NAudio.Midi
             }
         }
         
-        private static uint SwapUInt32(uint i) 
+        private static void SeekToRmidMidiData(BinaryReader br)
+        {
+            // "RIFF" has already been consumed. Layout:
+            //   'RIFF' <uint32 LE size> 'RMID' { <subChunkId> <uint32 LE size> <payload, word-aligned> }*
+            // The standard MIDI file lives in the 'data' sub-chunk; any other chunks
+            // (e.g. 'INFO' metadata or an embedded 'DLS ' soundbank) are skipped.
+            br.ReadUInt32(); // overall RIFF size - not needed
+            string formType = Encoding.UTF8.GetString(br.ReadBytes(4));
+            if (formType != "RMID")
+            {
+                throw new FormatException($"Not a MIDI file - unsupported RIFF form type '{formType}'");
+            }
+            while (true)
+            {
+                byte[] idBytes = br.ReadBytes(4);
+                if (idBytes.Length < 4)
+                {
+                    throw new FormatException("Not a MIDI file - RIFF-RMID 'data' chunk missing");
+                }
+                uint subChunkSize = br.ReadUInt32(); // RIFF sizes are little-endian
+                if (Encoding.UTF8.GetString(idBytes) == "data")
+                {
+                    // The embedded standard MIDI file (starting with 'MThd') begins here.
+                    return;
+                }
+                // RIFF chunks are word-aligned: an odd-length chunk is followed by a pad byte.
+                long toSkip = subChunkSize + (subChunkSize & 1);
+                if (br.BaseStream.CanSeek)
+                {
+                    br.BaseStream.Seek(toSkip, SeekOrigin.Current);
+                }
+                else
+                {
+                    while (toSkip > 0)
+                    {
+                        int chunk = (int)Math.Min(toSkip, 8192);
+                        if (br.Read(new byte[chunk], 0, chunk) <= 0)
+                        {
+                            throw new FormatException("Not a MIDI file - RIFF-RMID 'data' chunk missing");
+                        }
+                        toSkip -= chunk;
+                    }
+                }
+            }
+        }
+
+        private static uint SwapUInt32(uint i)
         {
             return ((i & 0xFF000000) >> 24) | ((i & 0x00FF0000) >> 8) | ((i & 0x0000FF00) << 8) | ((i & 0x000000FF) << 24);
         }

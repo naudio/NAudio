@@ -12,7 +12,8 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * `ISampleProvider.Read` signature changed from `Read(float[], int, int)` to `Read(Span<float>)` (same migration pattern)
  * `MidiIn`, `MidiOut`, `MidiInCapabilities`, and `MidiOutCapabilities` moved from `NAudio.Midi` to `NAudio.WinMM` — all `winmm.dll` interop now lives in one assembly
  * `MmResult`, `MmException`, and `Manufacturers` moved from `NAudio.Core` to `NAudio.WinMM`
- * `DirectSoundOut` moved from `NAudio.Core` to `NAudio.Wasapi` (DirectSound has always been Windows-only)
+ * `DirectSoundOut` moved from `NAudio.Core` to `NAudio.Wasapi` (DirectSound has always been Windows-only), and then to the new `NAudio.Dmo` package — see below
+ * **New `NAudio.Dmo` package.** DMO effects (echo, chorus, reverb, etc.), the DMO MP3 decoder (`DmoMp3FrameDecompressor`), the DMO resampler (`ResamplerDmoStream`), and `DirectSoundOut` carved out of `NAudio.Wasapi`. Namespaces preserved (`NAudio.Dmo`, `NAudio.Dmo.Effect`, `NAudio.Wave` for `DirectSoundOut`). Meta-package consumers see no change — `NAudio.Dmo` comes in transitively. Direct `NAudio.Wasapi` consumers who use the DMO/DirectSound types now need an explicit `<PackageReference Include="NAudio.Dmo" />`.
  * `NAudio.Midi` is now cross-platform — its `net9.0` target no longer P/Invokes `winmm.dll`
  * `MidiInMessageEventArgs.Timestamp` and `MidiInSysexMessageEventArgs.Timestamp` are now `TimeSpan` (previously `int` milliseconds) — preserves full WinRT 100 ns resolution on the WinRT backend
  * `MidiIn.CreateSysexBuffers` removed — `MidiIn` now allocates sysex receive buffers automatically inside `Start()`

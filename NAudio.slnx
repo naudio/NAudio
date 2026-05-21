@@ -23,6 +23,7 @@
     <BuildType Project="Release" />
   </Project>
   <Project Path="NAudio.Core/NAudio.Core.csproj" />
+  <Project Path="NAudio.Dmo/NAudio.Dmo.csproj" />
   <Project Path="NAudio.Extras/NAudio.Extras.csproj" />
   <Project Path="NAudio.Midi/NAudio.Midi.csproj" />
   <Project Path="NAudio.SoundFile/NAudio.SoundFile.csproj" />

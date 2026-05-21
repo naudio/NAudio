@@ -1,37 +1,33 @@
 using System;
 using NAudio.Dmo.Interfaces;
-using NAudio.Wasapi.CoreAudioApi;
+using NAudio.Dmo.Interop;
 
 namespace NAudio.Dmo
 {
-    // http://msdn.microsoft.com/en-us/library/ff819509%28VS.85%29.aspx
-    // CLSID_CMP3DecMediaObject
-
     /// <summary>
-    /// Windows Media MP3 Decoder (as a DMO).
-    /// Used internally by DmoMp3FrameDecompressor.
+    /// DMO Resampler
     /// </summary>
-    public class WindowsMediaMp3Decoder : IDisposable
+    public class DmoResampler : IDisposable
     {
-        // CLSID_CMP3DecMediaObject
-        private static readonly Guid Mp3DecoderClsid = new Guid("bbeea841-0a63-4f52-a7ab-a9b3a84ed38a");
+        // CLSID_CResamplerMediaObject — wmcodecdsp.h
+        private static readonly Guid ResamplerClsid = new Guid("f447b69e-1884-4a7e-8055-346f74d6edb3");
         // IID_IMediaObject — mediaobj.h
         private static readonly Guid IID_IMediaObject = new Guid("d8ad0f58-5494-4102-97c5-ec798e59bcf4");
 
         MediaObject mediaObject;
 
         /// <summary>
-        /// Creates a new Windows Media MP3 Decoder.
+        /// Creates a new Resampler based on the DMO Resampler.
         /// </summary>
         /// <remarks>
         /// Activation goes via <see cref="ComActivation.CreateInstance{T}"/> rather than
-        /// the legacy <c>[ComImport]</c> coclass path. The resulting wrapper is
-        /// thread-agile, so the decoder can be constructed on one thread and consumed
-        /// on another.
+        /// the legacy <c>[ComImport]</c> coclass / RCW path. The resulting wrapper is
+        /// thread-agile, so a <see cref="DmoResampler"/> constructed on (e.g.) a WPF
+        /// STA thread can be safely consumed from a background MTA audio thread.
         /// </remarks>
-        public WindowsMediaMp3Decoder()
+        public DmoResampler()
         {
-            var comInterface = ComActivation.CreateInstance<IMediaObject>(Mp3DecoderClsid, IID_IMediaObject);
+            var comInterface = ComActivation.CreateInstance<IMediaObject>(ResamplerClsid, IID_IMediaObject);
             mediaObject = new MediaObject(comInterface);
         }
 
@@ -43,7 +39,7 @@ namespace NAudio.Dmo
         #region IDisposable Members
 
         /// <summary>
-        /// Releases the underlying COM objects.
+        /// Releases the underlying COM object.
         /// </summary>
         public void Dispose()
         {

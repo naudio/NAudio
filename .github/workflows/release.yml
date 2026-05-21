@@ -158,6 +158,7 @@ jobs:
             'NAudio.Midi',
             'NAudio.WinMM',
             'NAudio.Wasapi',
+            'NAudio.Dmo',
             'NAudio.Alsa',
             'NAudio.SoundFile',
             'NAudio',

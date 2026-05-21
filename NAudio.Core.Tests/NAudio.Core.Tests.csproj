@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Cross-platform half of the old NAudioTests suite. Single TFM so we
+         don't double-run on Windows; targets net10.0 (no -windows) so the
+         project runs on Linux/macOS too. -->
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <EnableNUnitRunner>true</EnableNUnitRunner>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- Test sources still live in the NAudioTests.* namespaces; keeping
+         the root namespace stable avoids a giant rename diff. -->
+    <RootNamespace>NAudioTests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Moq" Version="4.20.72" />
+    <PackageReference Include="NUnit" Version="4.5.1" />
+    <PackageReference Include="NUnit3TestAdapter" Version="6.1.0" />
+    <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" Version="2.2.1" />
+    <PackageReference Include="Concentus" Version="2.2.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Link the demo's network-chat codec sources so we can roundtrip-test them without referencing the WinForms exe. -->
+    <Compile Include="..\NAudioDemo\NetworkChatDemo\INetworkChatCodec.cs" Link="Codecs\Linked\INetworkChatCodec.cs" />
+    <Compile Include="..\NAudioDemo\NetworkChatDemo\OpusChatCodec.cs" Link="Codecs\Linked\OpusChatCodec.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NAudio.Core\NAudio.Core.csproj" />
+    <ProjectReference Include="..\NAudio.Midi\NAudio.Midi.csproj" />
+    <ProjectReference Include="..\NAudio\NAudio.csproj" />
+  </ItemGroup>
+
+</Project>

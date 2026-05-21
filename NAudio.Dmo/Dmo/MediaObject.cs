@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
 using NAudio.Dmo.Interfaces;
-using NAudio.MediaFoundation;
+using NAudio.Dmo.Interop;
 using NAudio.Utils;
-using NAudio.Wasapi.CoreAudioApi;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 using NAudio.Wave;
@@ -79,7 +78,7 @@ namespace NAudio.Dmo
             {
                 return null;
             }
-            MediaFoundationException.ThrowIfFailed(hresult);
+            Marshal.ThrowExceptionForHR(hresult);
             return null;
         }
 
@@ -102,7 +101,7 @@ namespace NAudio.Dmo
             {
                 return null;
             }
-            MediaFoundationException.ThrowIfFailed(hresult);
+            Marshal.ThrowExceptionForHR(hresult);
             return null;
         }
 
@@ -342,7 +341,7 @@ namespace NAudio.Dmo
         /// <returns>Input Size Info</returns>
         public MediaObjectSizeInfo GetInputSizeInfo(int inputStreamIndex)
         {
-            MediaFoundationException.ThrowIfFailed(mediaObject.GetInputSizeInfo(inputStreamIndex, out int size, out int maxLookahead, out int alignment));
+            Marshal.ThrowExceptionForHR(mediaObject.GetInputSizeInfo(inputStreamIndex, out int size, out int maxLookahead, out int alignment));
             return new MediaObjectSizeInfo(size, maxLookahead, alignment);
         }
 
@@ -353,7 +352,7 @@ namespace NAudio.Dmo
         /// <returns>Output Size Info</returns>
         public MediaObjectSizeInfo GetOutputSizeInfo(int outputStreamIndex)
         {
-            MediaFoundationException.ThrowIfFailed(mediaObject.GetOutputSizeInfo(outputStreamIndex, out int size, out int alignment));
+            Marshal.ThrowExceptionForHR(mediaObject.GetOutputSizeInfo(outputStreamIndex, out int size, out int alignment));
             return new MediaObjectSizeInfo(size, 0, alignment);
         }
 
@@ -384,7 +383,7 @@ namespace NAudio.Dmo
                     Marshal.QueryInterface(unknown, in IID_IMediaBuffer, out IntPtr mbPtr));
                 try
                 {
-                    MediaFoundationException.ThrowIfFailed(
+                    Marshal.ThrowExceptionForHR(
                         mediaObject.ProcessInput(inputStreamIndex, mbPtr, (int)flags, timestamp, duration));
                 }
                 finally
@@ -448,7 +447,7 @@ namespace NAudio.Dmo
                 {
                     hr = mediaObject.ProcessOutput((int)flags, outputBufferCount, (IntPtr)p, out _);
                 }
-                MediaFoundationException.ThrowIfFailed(hr);
+                Marshal.ThrowExceptionForHR(hr);
 
                 for (int i = 0; i < outputBufferCount; i++)
                 {
@@ -472,7 +471,7 @@ namespace NAudio.Dmo
         /// </summary>
         public void AllocateStreamingResources()
         {
-            MediaFoundationException.ThrowIfFailed(mediaObject.AllocateStreamingResources());
+            Marshal.ThrowExceptionForHR(mediaObject.AllocateStreamingResources());
         }
 
         /// <summary>
@@ -480,7 +479,7 @@ namespace NAudio.Dmo
         /// </summary>
         public void FreeStreamingResources()
         {
-            MediaFoundationException.ThrowIfFailed(mediaObject.FreeStreamingResources());
+            Marshal.ThrowExceptionForHR(mediaObject.FreeStreamingResources());
         }
 
         /// <summary>
@@ -490,7 +489,7 @@ namespace NAudio.Dmo
         /// <returns>Maximum input latency as a ref-time</returns>
         public long GetInputMaxLatency(int inputStreamIndex)
         {
-            MediaFoundationException.ThrowIfFailed(mediaObject.GetInputMaxLatency(inputStreamIndex, out long maxLatency));
+            Marshal.ThrowExceptionForHR(mediaObject.GetInputMaxLatency(inputStreamIndex, out long maxLatency));
             return maxLatency;
         }
 
@@ -499,7 +498,7 @@ namespace NAudio.Dmo
         /// </summary>
         public void Flush()
         {
-            MediaFoundationException.ThrowIfFailed(mediaObject.Flush());
+            Marshal.ThrowExceptionForHR(mediaObject.Flush());
         }
 
         /// <summary>
@@ -508,7 +507,7 @@ namespace NAudio.Dmo
         /// <param name="inputStreamIndex">Input Stream index</param>
         public void Discontinuity(int inputStreamIndex)
         {
-            MediaFoundationException.ThrowIfFailed(mediaObject.Discontinuity(inputStreamIndex));
+            Marshal.ThrowExceptionForHR(mediaObject.Discontinuity(inputStreamIndex));
         }
 
         /// <summary>
@@ -519,7 +518,7 @@ namespace NAudio.Dmo
         public bool IsAcceptingData(int inputStreamIndex)
         {
             int hresult = mediaObject.GetInputStatus(inputStreamIndex, out int flags);
-            MediaFoundationException.ThrowIfFailed(hresult);
+            Marshal.ThrowExceptionForHR(hresult);
             return ((DmoInputStatusFlags)flags & DmoInputStatusFlags.AcceptData) == DmoInputStatusFlags.AcceptData;
         }
 

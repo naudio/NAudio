@@ -2,7 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 using NAudio.Dmo.Interfaces;
-using NAudio.Wasapi.CoreAudioApi;
+using NAudio.Dmo.Interop;
 
 namespace NAudio.Dmo.Effect
 {

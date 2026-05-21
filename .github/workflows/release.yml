@@ -136,7 +136,7 @@ jobs:
 
       - name: Test
         run: >
-          dotnet test --project NAudioTests/NAudioTests.csproj
+          dotnet test NAudio.slnx
           --configuration Release
           --no-build
           --filter "TestCategory!=IntegrationTest"
@@ -158,6 +158,7 @@ jobs:
             'NAudio.Midi',
             'NAudio.WinMM',
             'NAudio.Wasapi',
+            'NAudio.Dmo',
             'NAudio.Alsa',
             'NAudio.SoundFile',
             'NAudio',

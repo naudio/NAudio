@@ -27,12 +27,14 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NAudio.Wasapi\NAudio.Wasapi.csproj" />
+    <ProjectReference Include="..\NAudio.Dmo\NAudio.Dmo.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <!-- Treat NAudio.* as trimmable so the trim analyzer reports IL2026/IL2046/etc. against
          them by symbol, rather than collapsing each assembly into a single IL2104. -->
     <TrimmableAssembly Include="NAudio.Wasapi" />
+    <TrimmableAssembly Include="NAudio.Dmo" />
     <TrimmableAssembly Include="NAudio.Core" />
   </ItemGroup>
 

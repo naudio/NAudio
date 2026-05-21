@@ -23,17 +23,19 @@
     <BuildType Project="Release" />
   </Project>
   <Project Path="NAudio.Core/NAudio.Core.csproj" />
+  <Project Path="NAudio.Core.Tests/NAudio.Core.Tests.csproj" />
+  <Project Path="NAudio.Dmo/NAudio.Dmo.csproj" />
   <Project Path="NAudio.Extras/NAudio.Extras.csproj" />
   <Project Path="NAudio.Midi/NAudio.Midi.csproj" />
   <Project Path="NAudio.SoundFile/NAudio.SoundFile.csproj" />
   <Project Path="NAudio.SoundFile.Tests/NAudio.SoundFile.Tests.csproj" />
   <Project Path="NAudio.Wasapi/NAudio.Wasapi.csproj" />
+  <Project Path="NAudio.Windows.Tests/NAudio.Windows.Tests.csproj" />
   <Project Path="NAudio.WinForms/NAudio.WinForms.csproj" />
   <Project Path="NAudio.WinMM/NAudio.WinMM.csproj" />
   <Project Path="NAudio/NAudio.csproj" />
   <Project Path="NAudioAotSmokeTest/NAudioAotSmokeTest.csproj" />
   <Project Path="NAudioConsoleTest/NAudioConsoleTest.csproj" />
-  <Project Path="NAudioTests/NAudioTests.csproj" />
   <Project Path="MfStressTest/MfStressTest.csproj">
     <BuildType Project="Release" />
   </Project>

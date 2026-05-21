@@ -5,7 +5,7 @@ using System.Security;
 using System.Threading;
 using System.Collections.Generic;
 using System.Diagnostics;
-using NAudio.Wasapi.CoreAudioApi;
+using NAudio.Dmo.Interop;
 using NAudio.Wave.DirectSoundInterop;
 
 namespace NAudio.Wave

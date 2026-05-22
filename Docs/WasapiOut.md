@@ -1,5 +1,7 @@
 # Working with WasapiOut
 
+> **Legacy:** `WasapiOut` is retained for backwards compatibility. For new code, prefer [`WasapiPlayer`](WasapiPlayer.md), the modern WASAPI playback device introduced in NAudio 3. It offers zero-copy buffering, MMCSS thread priority, `IAudioClient3` low-latency shared mode, async disposal, and a fluent builder.
+
 `WasapiOut` is an implementation of `IWavePlayer` that uses the WASAPI audio API under the hood. WASAPI was introduced with Windows Vista, meaning it will be supported on most versions of Windows, but not XP.
 
 ## Configuring WasapiOut

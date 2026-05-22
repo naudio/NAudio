@@ -91,10 +91,10 @@ enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
 
 # ASIO
 
-You can discover the registered ASIO drivers on your system with `AsioOut.GetDriverNames`. There is no guarantee that the associated soundcard is currently connected to the system.
+You can discover the registered ASIO drivers on your system with `AsioDevice.GetDriverNames`. There is no guarantee that the associated soundcard is currently connected to the system.
 
 ```c#
-foreach (var asio in AsioOut.GetDriverNames())
+foreach (var asio in AsioDevice.GetDriverNames())
 {
     Console.WriteLine(asio);
 }
@@ -103,8 +103,10 @@ foreach (var asio in AsioOut.GetDriverNames())
 You can then use the driver name to open the device:
 
 ```c#
-new AsioOut(driverName);
+using var device = AsioDevice.Open(driverName);
 ```
+
+(`AsioDevice` is the NAudio 3 ASIO API. The legacy `AsioOut` class still works — see [Migrating from AsioOut to AsioDevice](AsioMigration.md).)
 
 # Management Objects
 

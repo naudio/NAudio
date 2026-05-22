@@ -65,6 +65,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
 
 #### Reliability and bug fixes
 
+ * `WaveViewer`: fixed waveform rendering upside-down (#801, #818)
  * `AcmInterop`: serialised all `msacm32` P/Invokes process-wide via a reentrant lock — fixes process-killing access violations under concurrent ACM access
  * `AcmStream`: fixed double-close in finalizer by zeroing the handle field before close
  * `MediaFoundationReader`: informational source-reader flags (`STREAMTICK`, `NEWSTREAM`, `NativeMediaTypeChanged`, `AllEffectsRemoved`) are now non-fatal instead of aborting reads

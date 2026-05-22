@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace NAudio.Wave
 {
@@ -180,6 +181,14 @@ namespace NAudio.Wave
         /// </summary>
         [DllImport("winmm.dll", CharSet = CharSet.Auto)]
         public static extern MmResult waveOutGetDevCaps(IntPtr deviceID, out WaveOutCapabilities waveOutCaps, int waveOutCapsSize);
+
+        // https://learn.microsoft.com/en-us/windows/win32/api/mmeapi/nf-mmeapi-waveoutgeterrortext
+        /// <summary>
+        /// Retrieves a textual description of an MME error. The MMSYSERR error codes are
+        /// shared across the MME APIs, so this also resolves waveIn and (standard) midi errors.
+        /// </summary>
+        [DllImport("winmm.dll", CharSet = CharSet.Auto)]
+        public static extern MmResult waveOutGetErrorText(MmResult mmrError, StringBuilder pszText, uint cchText);
 
         /// <summary>
         /// Get number of WaveIn devices

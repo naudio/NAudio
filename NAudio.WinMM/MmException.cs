@@ -1,4 +1,6 @@
 using System;
+using System.Text;
+using NAudio.Wave;
 
 namespace NAudio
 {
@@ -20,9 +22,26 @@ namespace NAudio
         }
 
 
+        // MAXERRORLENGTH from mmsystem.h
+        private const int ErrorTextMaxLength = 256;
+
+        private static string GetErrorText(MmResult result)
+        {
+            var buffer = new StringBuilder(ErrorTextMaxLength);
+            if (WaveInterop.waveOutGetErrorText(result, buffer, (uint)buffer.Capacity) == MmResult.NoError)
+            {
+                return buffer.ToString();
+            }
+
+            return string.Empty;
+        }
+
         private static string ErrorMessage(MmResult result, string function)
         {
-            return $"{result} calling {function}";
+            var errorText = GetErrorText(result);
+            return errorText.Length > 0
+                ? $"{result} calling {function}: {errorText}"
+                : $"{result} calling {function}";
         }
 
         /// <summary>

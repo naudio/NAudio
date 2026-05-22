@@ -125,7 +125,7 @@ namespace NAudio.Gui
                     }
                     float lowPercent = ((((float) low) - short.MinValue) / ushort.MaxValue);
                     float highPercent = ((((float) high) - short.MinValue) / ushort.MaxValue);
-                    e.Graphics.DrawLine(Pens.Black,x,this.Height * lowPercent,x,this.Height * highPercent);					
+                    e.Graphics.DrawLine(Pens.Black,x,this.Height * (1 - lowPercent),x,this.Height * (1 - highPercent));
                 } 
             }
 

@@ -89,6 +89,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * `WaveFileReader` / `AiffFileReader`: malformed headers that declared `BlockAlign=0` now throw `InvalidDataException` from the constructor instead of `DivideByZeroException` from the `Position` setter (#1254)
  * `AiffFileReader.Read`: truncated `SSND` chunks no longer trigger `IndexOutOfRangeException` in the byte-swap loop — the read count is rounded down to a whole block (#1254)
  * `AudioEndpointVolume.OnVolumeNotification`: fixed per-channel volume notification returning channel 0's volume for every channel — the read pointer was not advanced per channel (#351)
+ * `MmException`: error messages now append a human-readable description of the `MmResult` via `waveOutGetErrorText`, e.g. `NoDriver calling waveOutSetVolume: No device driver is present` (#1192)
 
 #### Modernisation (Native AOT, source-generated COM)
 

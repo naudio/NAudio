@@ -88,6 +88,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * `AudioClient.Dispose`: made idempotent and safe against concurrent/re-entrant disposal — fixes an intermittent `NullReferenceException` from the COM interop layer when a WASAPI capture or playback wrapper is disposed more than once (#1183)
  * `WaveFileReader` / `AiffFileReader`: malformed headers that declared `BlockAlign=0` now throw `InvalidDataException` from the constructor instead of `DivideByZeroException` from the `Position` setter (#1254)
  * `AiffFileReader.Read`: truncated `SSND` chunks no longer trigger `IndexOutOfRangeException` in the byte-swap loop — the read count is rounded down to a whole block (#1254)
+ * `Id3v2Tag.ReadTag`: no longer throws and catches a `FormatException` for MP3 streams without an ID3v2 tag — the header check now returns `null` directly (#265)
 
 #### Modernisation (Native AOT, source-generated COM)
 

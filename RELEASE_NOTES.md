@@ -89,6 +89,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * `WaveFileReader` / `AiffFileReader`: malformed headers that declared `BlockAlign=0` now throw `InvalidDataException` from the constructor instead of `DivideByZeroException` from the `Position` setter (#1254)
  * `AiffFileReader.Read`: truncated `SSND` chunks no longer trigger `IndexOutOfRangeException` in the byte-swap loop — the read count is rounded down to a whole block (#1254)
  * `AudioEndpointVolume.OnVolumeNotification`: fixed per-channel volume notification returning channel 0's volume for every channel — the read pointer was not advanced per channel (#351)
+ * `WaveFileReader`: fixed `ArgumentException` reading WAV files whose `fmt` chunk declares more extra (`cbSize`) bytes than the fixed 100-byte buffer holds — the surplus is now discarded instead of throwing (#482)
 
 #### Modernisation (Native AOT, source-generated COM)
 

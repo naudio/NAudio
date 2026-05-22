@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using NAudio.Utils;
 using NAudio.Wave;
 using NUnit.Framework;
@@ -289,6 +290,55 @@ namespace NAudio.Core.Tests.WaveStreams
 
             Assert.Throws<InvalidDataException>(
                 () => { using var _ = new WaveFileReader(new MemoryStream(payload)); });
+        }
+
+        // Regression: a fmt chunk can declare more extra (cbSize) bytes than NAudio's fixed
+        // 100-byte buffer. The reader used to throw ArgumentException; it must now discard the
+        // surplus and carry on reading the rest of the file. See issue #482.
+        [Test]
+        [Category("UnitTest")]
+        public void OversizedFmtExtraDataIsDiscardedNotThrown()
+        {
+            const int extraSize = 200; // larger than WaveFormatExtraData's 100-byte buffer
+            var audio = new byte[] { 1, 0, 2, 0, 3, 0, 4, 0 };
+
+            using var ms = new MemoryStream();
+            using (var w = new BinaryWriter(ms, Encoding.ASCII, leaveOpen: true))
+            {
+                w.Write(Encoding.ASCII.GetBytes("RIFF"));
+                w.Write(0); // RIFF size placeholder, patched below
+                w.Write(Encoding.ASCII.GetBytes("WAVE"));
+
+                w.Write(Encoding.ASCII.GetBytes("fmt "));
+                w.Write(18 + extraSize);      // fmt chunk length
+                w.Write((short)1);            // PCM
+                w.Write((short)2);            // channels
+                w.Write(16000);               // sample rate
+                w.Write(64000);               // average bytes per second
+                w.Write((short)4);            // block align
+                w.Write((short)16);           // bits per sample
+                w.Write((short)extraSize);    // cbSize
+                w.Write(new byte[extraSize]); // oversized extra data
+
+                w.Write(Encoding.ASCII.GetBytes("data"));
+                w.Write(audio.Length);
+                w.Write(audio);
+
+                long fileLength = ms.Length;
+                ms.Position = 4;
+                w.Write((uint)(fileLength - 8));
+            }
+            ms.Position = 0;
+
+            var chunkReader = new WaveFileChunkReader();
+            chunkReader.ReadWaveHeader(ms);
+
+            Assert.That(chunkReader.WaveFormat.Channels, Is.EqualTo(2));
+            Assert.That(chunkReader.WaveFormat.SampleRate, Is.EqualTo(16000));
+            Assert.That(chunkReader.WaveFormat.BitsPerSample, Is.EqualTo(16));
+            Assert.That(chunkReader.WaveFormat.AverageBytesPerSecond, Is.EqualTo(64000));
+            Assert.That(chunkReader.WaveFormat.ExtraSize, Is.EqualTo(0)); // surplus discarded
+            Assert.That(chunkReader.DataChunkLength, Is.EqualTo(audio.Length));
         }
 
         [Test]

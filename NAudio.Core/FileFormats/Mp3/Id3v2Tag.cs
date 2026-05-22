@@ -20,14 +20,17 @@ namespace NAudio.Wave
         /// </summary>
         public static Id3v2Tag ReadTag(Stream input)
         {
-            try
+            long tagStartPosition = input.Position;
+            var reader = new BinaryReader(input);
+            int dataLength;
+            int footerLength;
+            if (!TryReadTagHeader(reader, out dataLength, out footerLength))
             {
-                return new Id3v2Tag(input);
-            }
-            catch (FormatException)
-            {
+                input.Position = tagStartPosition;
                 return null;
             }
+
+            return new Id3v2Tag(input, reader, tagStartPosition, dataLength, footerLength);
         }
 
         #region Id3v2 Creation from key-value pairs
@@ -267,26 +270,14 @@ namespace NAudio.Wave
             }
         }
 
-        private Id3v2Tag(Stream input)
+        private Id3v2Tag(Stream input, BinaryReader reader, long startPosition, int dataLength, int footerLength)
         {
-            tagStartPosition = input.Position;
-            var reader = new BinaryReader(input);
-            int dataLength;
-            int footerLength;
-            if (TryReadTagHeader(reader, out dataLength, out footerLength))
-            {
-                SkipBytes(reader, dataLength);
-                SkipBytes(reader, footerLength);
-            }
-            else
-            {
-                input.Position = tagStartPosition;
-                throw new FormatException("Not an ID3v2 tag");
-            }
+            tagStartPosition = startPosition;
+            SkipBytes(reader, dataLength);
+            SkipBytes(reader, footerLength);
             tagEndPosition = input.Position;
             input.Position = tagStartPosition;
             rawData = reader.ReadBytes((int)(tagEndPosition - tagStartPosition));
-
         }
 
         /// <summary>

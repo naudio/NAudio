@@ -90,6 +90,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * `AiffFileReader.Read`: truncated `SSND` chunks no longer trigger `IndexOutOfRangeException` in the byte-swap loop — the read count is rounded down to a whole block (#1254)
  * `AudioEndpointVolume.OnVolumeNotification`: fixed per-channel volume notification returning channel 0's volume for every channel — the read pointer was not advanced per channel (#351)
  * `MmException`: error messages now append a human-readable description of the `MmResult` via `waveOutGetErrorText`, e.g. `NoDriver calling waveOutSetVolume: No device driver is present` (#1192)
+ * `Id3v2Tag.ReadTag`: no longer throws and catches a `FormatException` for MP3 streams without an ID3v2 tag — the header check now returns `null` directly (#265)
 
 #### Modernisation (Native AOT, source-generated COM)
 

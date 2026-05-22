@@ -69,6 +69,16 @@ namespace NAudio.Core.Tests.Mp3
         }
 
         [Test]
+        public void ReadTagDoesNotThrowForNonId3Data()
+        {
+            var bytes = new byte[] { 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0 };
+            using (var stream = new MemoryStream(bytes))
+            {
+                Assert.That(() => Id3v2Tag.ReadTag(stream), Throws.Nothing);
+            }
+        }
+
+        [Test]
         public void ReadTagParsesHeaderOnlyTag()
         {
             var data = BuildTag(new byte[0]);

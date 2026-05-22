@@ -75,12 +75,12 @@ foreach (var wasapi in enumerator.EnumerateAudioEndPoints(DataFlow.All, DeviceSt
 }
 ```
 
-To open the device you want, simply pass the device in to the appropriate WASAPI class depending on if you are playing back or recording...
+To open the device you want, pass the device in to the appropriate WASAPI builder depending on whether you are playing back or recording...
 
 ```c#
-var outputDevice = new WasapiOut(mmDevice, ...);
-var recordingDevice = new WasapiCapture(captureDevice, ...);
-var loopbackCapture = new WasapiLoopbackCapture(loopbackDevice);
+var outputDevice = new WasapiPlayerBuilder().WithDevice(mmDevice).Build();
+var recordingDevice = new WasapiRecorderBuilder().WithDevice(captureDevice).Build();
+var loopbackCapture = new WasapiRecorderBuilder().WithDevice(loopbackDevice).WithLoopbackCapture().Build();
 ```
 
 You can also use the MMEnumerator to request what the default device is for a number of different scenarios (playback or record, and voice, multimedia or 'console'):

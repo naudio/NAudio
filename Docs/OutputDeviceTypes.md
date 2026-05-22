@@ -14,9 +14,11 @@ You may notice a `Volume` property on the interface that is marked as `[Obsolete
 
 Finally there is a `PlaybackState` property that can report `Stopped`, `Playing` or `Paused`. Be careful with Stopped though, since if you call the `Stop` method, the `PlaybackState` will immediately go to `Stopped` but it may be a few milliseconds before any background playback threads have actually exited.
 
-## WasapiOut
+## WASAPI
 
 WASAPI is the recommended audio output API on modern Windows. It is the native audio API from Windows Vista onwards and offers the best combination of features, performance and audio quality.
+
+In NAudio 3 the WASAPI playback device is [`WasapiPlayer`](WasapiPlayer.md), created via `WasapiPlayerBuilder`. (The older `WasapiOut` class is still available but is now considered legacy — see [its article](WasapiOut.md).)
 
 In shared mode (the default), WASAPI handles sample rate conversion automatically — you can pass in audio at any sample rate and it will be resampled to match the device's configured format. This makes it just as easy to use as `WaveOut`, while offering lower latency and better audio quality.
 
@@ -38,7 +40,7 @@ You can also set `BufferMilliseconds`, which specifies the duration of each buff
 
 ## DirectSoundOut
 
-DirectSound is another legacy API that can be used as an alternative to `WaveOut`. It is simple and widely supported, but offers no particular advantage over `WaveOut` or `WasapiOut` on modern systems.
+DirectSound is another legacy API that can be used as an alternative to `WaveOut`. It is simple and widely supported, but offers no particular advantage over `WaveOut` or WASAPI (`WasapiPlayer`) on modern systems.
 
 To select a specific device with `DirectSoundOut`, you can call the static `DirectSoundOut.Devices` property which will let you get at the GUID for each device, which you can pass into the `DirectSoundOut` constructor. Like `WaveOut`, you can adjust the latency (overall buffer size).
 

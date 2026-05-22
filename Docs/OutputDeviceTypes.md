@@ -14,9 +14,11 @@ You may notice a `Volume` property on the interface that is marked as `[Obsolete
 
 Finally there is a `PlaybackState` property that can report `Stopped`, `Playing` or `Paused`. Be careful with Stopped though, since if you call the `Stop` method, the `PlaybackState` will immediately go to `Stopped` but it may be a few milliseconds before any background playback threads have actually exited.
 
-## WasapiOut
+## WASAPI
 
 WASAPI is the recommended audio output API on modern Windows. It is the native audio API from Windows Vista onwards and offers the best combination of features, performance and audio quality.
+
+In NAudio 3 the WASAPI playback device is [`WasapiPlayer`](WasapiPlayer.md), created via `WasapiPlayerBuilder`. (The older `WasapiOut` class is still available but is now considered legacy — see [its article](WasapiOut.md).)
 
 In shared mode (the default), WASAPI handles sample rate conversion automatically — you can pass in audio at any sample rate and it will be resampled to match the device's configured format. This makes it just as easy to use as `WaveOut`, while offering lower latency and better audio quality.
 
@@ -38,18 +40,20 @@ You can also set `BufferMilliseconds`, which specifies the duration of each buff
 
 ## DirectSoundOut
 
-DirectSound is another legacy API that can be used as an alternative to `WaveOut`. It is simple and widely supported, but offers no particular advantage over `WaveOut` or `WasapiOut` on modern systems.
+DirectSound is another legacy API that can be used as an alternative to `WaveOut`. It is simple and widely supported, but offers no particular advantage over `WaveOut` or WASAPI (`WasapiPlayer`) on modern systems.
 
 To select a specific device with `DirectSoundOut`, you can call the static `DirectSoundOut.Devices` property which will let you get at the GUID for each device, which you can pass into the `DirectSoundOut` constructor. Like `WaveOut`, you can adjust the latency (overall buffer size).
 
 `DirectSoundOut` uses a background thread waiting to fill buffers (same as `WaveOut`). This is a reliable and uncomplicated mechanism, but as with any callback mechanism that uses a background thread, you must take responsibility yourself for ensuring that repositions do not happen at the same time as reads (although some of NAudio's built-in WaveStreams can protect you from getting this wrong).
 
-## AsioOut
+## ASIO
 
 ASIO is the de-facto standard for audio interface drivers for recording studios. All professional audio interfaces for Windows will come with ASIO drivers that are designed to operate at the lowest latencies possible. ASIO is a good choice for professional audio applications requiring very low latency and direct hardware access.
 
-ASIO Out devices are selected by name. Use the `AsioOut.GetDriverNames()` to see what devices are available on your system. Note that this will return all installed ASIO drivers. It does not necessarily mean that the soundcard is currently connected in the case of an external audio interface, so `Init` can fail for that reason.
+In NAudio 3 the ASIO device is [`AsioDevice`](AsioPlayback.md), which adds explicit playback/recording/duplex modes, non-contiguous channel selection, and per-channel `Span<float>` callbacks. (The older `AsioOut` class still works as a thin facade over `AsioDevice` — see [Migrating from AsioOut to AsioDevice](AsioMigration.md).)
+
+ASIO devices are selected by name. Use `AsioDevice.GetDriverNames()` to see what devices are available on your system. Note that this will return all installed ASIO drivers. It does not necessarily mean that the soundcard is currently connected in the case of an external audio interface, so initialization can fail for that reason.
 
 ASIO drivers support their own customised settings GUI. You can access this by calling `ShowControlPanel()`. Latencies are usually set within the control panel and are typically specified in samples. Remember that if you try to work at a really low latency, your input IWaveProvider's `Init` function needs to be really fast.
 
-ASIO drivers can process data in a whole host of native WAV formats (e.g. big endian vs little endian, 16, 24, 32 bit ints, IEEE floats etc), not all of which are currently supported by NAudio. If ASIO Out doesn't work with your soundcard, create an issue on the NAudio GitHub page, as it is fairly easy to add support for another format.
+ASIO drivers can process data in a whole host of native WAV formats (e.g. big endian vs little endian, 16, 24, 32 bit ints, IEEE floats etc), not all of which are currently supported by NAudio. If ASIO doesn't work with your soundcard, create an issue on the NAudio GitHub page, as it is fairly easy to add support for another format.

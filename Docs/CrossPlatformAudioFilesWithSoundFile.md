@@ -33,7 +33,7 @@ using NAudio.Wave;
 using var reader = new SoundFileReader("song.flac");
 Console.WriteLine($"{reader.WaveFormat} {reader.TotalTime}");
 
-using var output = new WasapiOut();   // or AlsaOut on Linux
+using var output = new WasapiPlayerBuilder().Build();   // or AlsaOut on Linux
 output.Init(reader);
 output.Play();
 while (output.PlaybackState == PlaybackState.Playing)

@@ -27,14 +27,8 @@ This package is **not** pulled in by the `NAudio` meta-package (there is
 no `net9.0-linux` TFM). Reference it explicitly:
 
 ```sh
-dotnet add package NAudio.Linux.Alsa
+dotnet add package NAudio.Alsa
 ```
-
-> **Package id note:** this ships as `NAudio.Linux.Alsa` because the
-> `NAudio.Alsa` name on nuget.org is held by a third party. We intend (but
-> cannot guarantee) to move to `NAudio.Alsa` once that name is reclaimed.
-> The assembly name and namespaces are `NAudio.Alsa` regardless, so your
-> code does not change.
 
 ## Supported input formats
 

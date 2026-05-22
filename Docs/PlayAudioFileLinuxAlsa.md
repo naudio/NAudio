@@ -6,14 +6,8 @@ explicitly (it is not part of the `NAudio` meta-package, and the runtime
 needs `libasound` — `sudo apt install libasound2`):
 
 ```sh
-dotnet add package NAudio.Linux.Alsa
+dotnet add package NAudio.Alsa
 ```
-
-> The package id is currently `NAudio.Linux.Alsa` because the `NAudio.Alsa`
-> name on nuget.org is held by a third party. We intend (but cannot
-> guarantee) to move to `NAudio.Alsa` once that name is reclaimed. The
-> assembly name and namespaces are `NAudio.Alsa` either way, so your code
-> does not change.
 
 `AlsaOut` plays any `IWaveProvider`, so the format you can play depends
 on the **reader** you give it. `AudioFileReader`, `Mp3FileReader` and

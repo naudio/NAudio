@@ -111,6 +111,6 @@ In both our examples, we calulated `max` as a floating point value between 0.0f 
 progressBar.Value = 100 * max;
 ```
 
-Note that you are updating the UI in the `OnDataAvailable` callback. NAudio will attempt to call this on the UI context if there is one. 
+Note that you are updating the UI in the `OnDataAvailable` callback. `WaveIn` marshals this event back onto the synchronization context that was active when `StartRecording` was called, so if you start recording from the UI thread you can update controls directly. Other capture classes such as `WasapiCapture` and `WasapiLoopbackCapture` raise `DataAvailable` on a background thread, so you'll need to marshal to the UI thread yourself (e.g. `Control.Invoke` in WinForms or `Dispatcher.Invoke` in WPF) before updating a control. 
 
 Also, this approach means that the frequency of meter updates will match the size of recording buffers. This is the simplest approach, and normally works just fine as there will usually be at least 10 buffers per second which is usually adequate for a volume meter.

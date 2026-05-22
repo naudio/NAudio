@@ -62,11 +62,9 @@ namespace NAudio.CoreAudioApi
 
             var voldata = new float[data.nChannels];
 
-            //Read all floats from memory.
-            for (int i = 0; i < data.nChannels; i++)
-            {
-                voldata[i] = Marshal.PtrToStructure<float>(firstFloatPtr);
-            }
+            //Read all floats from memory. The per-channel volumes are laid out
+            //contiguously starting at firstFloatPtr.
+            Marshal.Copy(firstFloatPtr, voldata, 0, (int)data.nChannels);
 
             //Create combined structure and Fire Event in parent class.
             var notificationData = new AudioVolumeNotificationData(data.guidEventContext, data.bMuted, data.fMasterVolume, voldata, data.guidEventContext);

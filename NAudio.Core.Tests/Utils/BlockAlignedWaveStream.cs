@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using NAudio.Wave;
 
-namespace NAudioTests.Utils
+namespace NAudio.Core.Tests.Utils
 {
     class BlockAlignedWaveStream : WaveStream
     {

@@ -5,7 +5,7 @@ using System.Reflection;
 using NAudio.Wave;
 using NUnit.Framework;
 
-namespace NAudioTests.Asio
+namespace NAudio.Windows.Tests.Asio
 {
     /// <summary>
     /// Pins the NAudio 2.x public surface of <see cref="AsioOut"/>. The class was rebuilt as a facade over

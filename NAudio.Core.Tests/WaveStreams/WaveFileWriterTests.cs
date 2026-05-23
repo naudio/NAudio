@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using NUnit.Framework;
 using NAudio.Wave;
 using System.IO;
 using NAudio.Utils;
-using NAudioTests.Utils;
+using NAudio.Tests.Shared;
 
-namespace NAudioTests.WaveStreams
+namespace NAudio.Core.Tests.WaveStreams
 {
     [TestFixture]
     [Category("UnitTest")]

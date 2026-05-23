@@ -1,13 +1,13 @@
-﻿using System;
+using System;
 using NUnit.Framework;
 using NAudio.FileFormats.Mp3;
 using NAudio.Wave;
 using NAudio.Dmo;
 using System.Diagnostics;
 using System.IO;
-using NAudioTests.Utils;
+using NAudio.Windows.Tests.Utils;
 
-namespace NAudioTests.Dmo
+namespace NAudio.Windows.Tests.Dmo
 {
     [TestFixture]
     public class DmoMp3FrameDecompressorTests

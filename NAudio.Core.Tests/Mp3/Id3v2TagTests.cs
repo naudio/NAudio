@@ -5,7 +5,7 @@ using System.Text;
 using NAudio.Wave;
 using NUnit.Framework;
 
-namespace NAudioTests.Mp3
+namespace NAudio.Core.Tests.Mp3
 {
     [TestFixture]
     [Category("UnitTest")]
@@ -65,6 +65,16 @@ namespace NAudioTests.Mp3
 
                 Assert.That(tag, Is.Null);
                 Assert.That(stream.Position, Is.EqualTo(start));
+            }
+        }
+
+        [Test]
+        public void ReadTagDoesNotThrowForNonId3Data()
+        {
+            var bytes = new byte[] { 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0 };
+            using (var stream = new MemoryStream(bytes))
+            {
+                Assert.That(() => Id3v2Tag.ReadTag(stream), Throws.Nothing);
             }
         }
 

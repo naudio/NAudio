@@ -2,10 +2,10 @@ using System;
 using System.IO;
 using NAudio.Utils;
 using NAudio.Wave;
-using NAudioTests.Utils;
+using NAudio.Tests.Shared;
 using NUnit.Framework;
 
-namespace NAudioTests.Aiff
+namespace NAudio.Core.Tests.Aiff
 {
     [TestFixture]
     [Category("UnitTest")]

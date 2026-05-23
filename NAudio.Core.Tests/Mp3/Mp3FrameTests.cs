@@ -1,9 +1,9 @@
-﻿using NAudio.Wave;
+using NAudio.Wave;
 using NUnit.Framework;
 using System;
 using System.IO;
 
-namespace NAudioTests.Mp3
+namespace NAudio.Core.Tests.Mp3
 {
     [TestFixture]
     [Category("UnitTest")]

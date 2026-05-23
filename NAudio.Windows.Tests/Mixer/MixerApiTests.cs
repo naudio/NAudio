@@ -1,10 +1,16 @@
-﻿using NAudio.Mixer;
+using NAudio.Mixer;
 using NAudio.Wave;
 using NUnit.Framework;
 using System.Diagnostics;
 
-namespace NAudioTests
+namespace NAudio.Windows.Tests
 {
+    // The Mixer alias must live inside the namespace so it wins over the
+    // outer-namespace walk-up, which would otherwise resolve bare `Mixer`
+    // to the NAudio.Mixer *namespace* (sub-namespace of NAudio) instead
+    // of the type. Other types from NAudio.Mixer come in via the using above.
+    using Mixer = NAudio.Mixer.Mixer;
+
     [TestFixture]
     [Category("IntegrationTest")]
     public class MixerApiTests

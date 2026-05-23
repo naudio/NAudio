@@ -2,10 +2,10 @@ using System;
 using System.Linq;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
-using NAudioTests.Utils;
+using NAudio.Core.Tests.Utils;
 using NUnit.Framework;
 
-namespace NAudioTests.WaveStreams
+namespace NAudio.Core.Tests.WaveStreams
 {
     [TestFixture]
     public class OffsetSampleProviderTests

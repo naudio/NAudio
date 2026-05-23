@@ -2,7 +2,7 @@ using NAudio.Wave;
 using NUnit.Framework;
 using System;
 
-namespace NAudioTests.WaveStreams
+namespace NAudio.Core.Tests.WaveStreams
 {
     [TestFixture]
     public class CueListTests

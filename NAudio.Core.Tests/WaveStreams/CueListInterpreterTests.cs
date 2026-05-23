@@ -2,10 +2,10 @@ using System;
 using System.IO;
 using NAudio.Utils;
 using NAudio.Wave;
-using NAudioTests.Utils;
+using NAudio.Core.Tests.Utils;
 using NUnit.Framework;
 
-namespace NAudioTests.WaveStreams
+namespace NAudio.Core.Tests.WaveStreams
 {
     [TestFixture]
     [Category("UnitTest")]
@@ -47,9 +47,10 @@ namespace NAudioTests.WaveStreams
         }
 
         [Test]
-        public void ReturnsNullWhenCuePresentButNoLabels()
+        public void ReadsLabellessCueListWhenCuePresentButNoLabels()
         {
-            // Orphan "cue " chunk (no companion LIST/adtl) — use AddChunk at the byte level.
+            // Orphan "cue " chunk (no companion LIST/adtl), e.g. unnamed markers from Wavosaur (#549).
+            // The cue must still be returned, with an empty label.
             var cueBytes = BuildOrphanCueChunkBody(cueId: 1, samplePosition: 100);
             var ms = new MemoryStream();
             using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format))
@@ -59,13 +60,18 @@ namespace NAudioTests.WaveStreams
             }
             ms.Position = 0;
             using var reader = new WaveFileReader(ms);
-            Assert.That(reader.Chunks.Read(CueListInterpreter.Instance), Is.Null);
+            var cues = reader.Chunks.Read(CueListInterpreter.Instance);
+            Assert.That(cues, Is.Not.Null);
+            Assert.That(cues.Count, Is.EqualTo(1));
+            Assert.That(cues[0].Position, Is.EqualTo(100));
+            Assert.That(cues[0].Label, Is.EqualTo(string.Empty));
         }
 
         [Test]
-        public void ReturnsNullWhenOnlyInfoListIsPresent()
+        public void ReadsLabellessCueListWhenOnlyInfoListIsPresent()
         {
-            // cue chunk + LIST/INFO (no adtl) — the interpreter must not mistake INFO for adtl.
+            // cue chunk + LIST/INFO (no adtl) — the interpreter must not mistake INFO for adtl,
+            // but should still return the cue with an empty label rather than null (#549).
             var cueBytes = BuildOrphanCueChunkBody(cueId: 1, samplePosition: 100);
             var info = new InfoMetadata();
             info.Set("INAM", "Title");
@@ -79,7 +85,11 @@ namespace NAudioTests.WaveStreams
             }
             ms.Position = 0;
             using var reader = new WaveFileReader(ms);
-            Assert.That(reader.Chunks.Read(CueListInterpreter.Instance), Is.Null);
+            var cues = reader.Chunks.Read(CueListInterpreter.Instance);
+            Assert.That(cues, Is.Not.Null);
+            Assert.That(cues.Count, Is.EqualTo(1));
+            Assert.That(cues[0].Position, Is.EqualTo(100));
+            Assert.That(cues[0].Label, Is.EqualTo(string.Empty));
         }
 
         [Test]

@@ -4,7 +4,7 @@ using NAudio.Wave;
 using NAudio.Wave.Asio;
 using NUnit.Framework;
 
-namespace NAudioTests.Asio
+namespace NAudio.Windows.Tests.Asio
 {
     /// <summary>
     /// Tests for <see cref="AsioAudioCapturedEventArgs"/> — most importantly the use-after-callback guard

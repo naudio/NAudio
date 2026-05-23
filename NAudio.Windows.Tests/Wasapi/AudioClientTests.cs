@@ -1,15 +1,15 @@
-﻿using System;
+using System;
 using System.Threading;
 using NUnit.Framework;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
 using System.Diagnostics;
-using NAudioTests.Utils;
+using NAudio.Windows.Tests.Utils;
 using System.Runtime.InteropServices;
 
 #pragma warning disable CS0618 // Type or member is obsolete
 
-namespace NAudioTests.Wasapi
+namespace NAudio.Windows.Tests.Wasapi
 {
     [TestFixture]
     [Category("IntegrationTest")]

@@ -1,13 +1,13 @@
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
-using NAudioTests.Utils;
+using NAudio.Windows.Tests.Utils;
 using NUnit.Framework;
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 
-namespace NAudioTests.MediaFoundation
+namespace NAudio.Windows.Tests.MediaFoundation
 {
     [TestFixture]
     [Category("IntegrationTest")]

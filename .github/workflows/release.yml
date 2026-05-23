@@ -136,7 +136,7 @@ jobs:
 
       - name: Test
         run: >
-          dotnet test NAudio.slnx
+          dotnet test --solution NAudio.slnx
           --configuration Release
           --no-build
           --filter "TestCategory!=IntegrationTest"

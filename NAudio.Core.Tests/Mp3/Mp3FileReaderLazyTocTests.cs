@@ -3,10 +3,10 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using NAudio.Wave;
-using NAudioTests.Utils;
+using NAudio.Core.Tests.Utils;
 using NUnit.Framework;
 
-namespace NAudioTests.Mp3
+namespace NAudio.Core.Tests.Mp3
 {
     // Tests use a synthetic in-memory MP3 byte stream and a fake codec-free decompressor —
     // see acm-av-investigation.md. Going via TestFileBuilder.CreateMp3File (which calls

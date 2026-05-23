@@ -5,7 +5,7 @@ using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using NUnit.Framework;
 
-namespace NAudioTests.WaveStreams
+namespace NAudio.Core.Tests.WaveStreams
 {
     /// <summary>
     /// Tests validating correctness of the Span-first IWaveProvider / ISampleProvider transition.

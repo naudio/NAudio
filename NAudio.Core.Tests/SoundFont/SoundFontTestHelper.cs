@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace NAudioTests.SoundFont
+namespace NAudio.Core.Tests.SoundFont
 {
     /// <summary>
     /// Helper class for building binary SF2 test data.

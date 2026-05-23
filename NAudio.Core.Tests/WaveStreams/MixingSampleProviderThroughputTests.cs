@@ -4,7 +4,7 @@ using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using NUnit.Framework;
 
-namespace NAudioTests.WaveStreams
+namespace NAudio.Core.Tests.WaveStreams
 {
     /// <summary>
     /// Lightweight in-test throughput check for <see cref="MixingSampleProvider"/>. Not a precise

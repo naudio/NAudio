@@ -4,6 +4,7 @@
     <TargetFramework>net9.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Description>Windows Forms audio controls and window-callback variants of WaveOut/WaveIn for the NAudio audio library.</Description>
   </PropertyGroup>
   
   <ItemGroup>

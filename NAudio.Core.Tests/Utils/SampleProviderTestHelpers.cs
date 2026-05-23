@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using NUnit.Framework;
 using NAudio.Wave;
 
-namespace NAudioTests.Utils
+namespace NAudio.Core.Tests.Utils
 {
     public static class SampleProviderTestHelpers
     {

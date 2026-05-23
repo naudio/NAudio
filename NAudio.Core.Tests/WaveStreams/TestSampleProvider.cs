@@ -1,7 +1,7 @@
 using System;
 using NAudio.Wave;
 
-namespace NAudioTests.WaveStreams
+namespace NAudio.Core.Tests.WaveStreams
 {
     class TestSampleProvider : ISampleProvider
     {

@@ -3,7 +3,7 @@ using System.Linq;
 using NAudioDemo.NetworkChatDemo;
 using NUnit.Framework;
 
-namespace NAudioTests.Codecs
+namespace NAudio.Core.Tests.Codecs
 {
     [TestFixture]
     // Internal because the codec types under test are linked-in internals of NAudioDemo.

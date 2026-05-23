@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
@@ -6,7 +6,7 @@ using System.IO;
 using NAudio.Wave;
 using System.Diagnostics;
 
-namespace NAudioTests.Aiff
+namespace NAudio.Core.Tests.Aiff
 {
     [TestFixture]
     public class AiffReaderTests

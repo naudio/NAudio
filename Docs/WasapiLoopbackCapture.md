@@ -1,5 +1,7 @@
 # Record Soundcard Output with WasapiLoopbackCapture
 
+> **Legacy:** `WasapiCapture` and `WasapiLoopbackCapture` are retained for backwards compatibility. For new code, prefer [`WasapiRecorder`](WasapiRecorder.md), the modern WASAPI capture device introduced in NAudio 3. It offers zero-copy capture, MMCSS thread priority, `IAsyncEnumerable` support, async disposal, and a fluent builder — including loopback capture via `WithLoopbackCapture()`.
+
 Lots of people ask how they can use NAudio to record the audio being played by another program. The answer is that unfortunately Windows does not provide an API that lets you target the output of one specific program to record. However, with WASAPI loopback capture, you can record all the audio that is being played out of a specific output device.
 
 Since NAudio 2.1.0, the audio can be captured at a sample rate of your choosing, although it will make sense to match the sound card's format.

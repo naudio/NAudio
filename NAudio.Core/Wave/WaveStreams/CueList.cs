@@ -152,8 +152,10 @@ namespace NAudio.Wave
             string[] labels = new string[cueCount];
             var labelChunkId = ChunkIdentifier.ChunkIdentifierToInt32("labl");
 
-            // Parse list chunk - properly handle all chunk types
-            for (int p = 4; listChunkData.Length - p >= 8; )
+            // Parse list chunk - properly handle all chunk types.
+            // listChunkData may be null when the file has cue points but no adtl labels
+            // (e.g. unnamed markers written by Wavosaur); in that case the cues keep empty labels.
+            for (int p = 4; listChunkData != null && listChunkData.Length - p >= 8; )
             {
                 int chunkId = BitConverter.ToInt32(listChunkData, p);
                 int chunkSize = BitConverter.ToInt32(listChunkData, p + 4);
@@ -256,7 +258,8 @@ namespace NAudio.Wave
     /// <summary>
     /// <see cref="IWaveChunkInterpreter{T}"/> that reads the <c>cue</c> and companion <c>LIST/adtl</c>
     /// chunks from a WAV file and returns a <see cref="CueList"/>.
-    /// Returns <c>null</c> if either chunk is absent.
+    /// Returns <c>null</c> only when no <c>cue </c> chunk is present. When a <c>cue </c> chunk
+    /// exists without a companion <c>LIST/adtl</c> label chunk, the cues are returned with empty labels.
     /// </summary>
     public sealed class CueListInterpreter : IWaveChunkInterpreter<CueList>
     {
@@ -285,8 +288,9 @@ namespace NAudio.Wave
                     break;
                 }
             }
-            if (listChunkData == null) return null;
 
+            // listChunkData may be null here: the file has cue points but no adtl labels
+            // (e.g. unnamed markers). The cues are still returned, with empty labels.
             var cueChunkData = chunks.GetData(cueChunk);
             return new CueList(cueChunkData, listChunkData);
         }

@@ -1,16 +1,16 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
 using NAudio.CoreAudioApi;
 using System.Diagnostics;
-using NAudioTests.Utils;
+using NAudio.Windows.Tests.Utils;
 
-namespace NAudioTests.Wasapi
+namespace NAudio.Windows.Tests.Wasapi
 {
     [TestFixture]
     [Category("IntegrationTest")]
-    [Platform("Win")] // runtime safety net — file is also excluded from the non-Windows TFM in NAudioTests.csproj
+    [Platform("Win")] // runtime safety net . NAudio.Windows.Tests only targets a -windows TFM, but [Platform] keeps it honest on any future test host
     public class MMDeviceEnumeratorTests
     {
         [Test]

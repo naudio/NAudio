@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Linq;
 using NAudio.Wave;
 using NUnit.Framework;
 
-namespace NAudioTests.WaveStreams
+namespace NAudio.Core.Tests.WaveStreams
 {
     [TestFixture]
     public class BufferedWaveProviderTests

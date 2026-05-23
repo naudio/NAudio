@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using NAudio.Wave;
 using NUnit.Framework;
 
-namespace NAudioTests.WaveStreams
+namespace NAudio.Core.Tests.WaveStreams
 {
     /// <summary>
     /// Exercises the two ctors of <see cref="WaveInEventArgs"/> and verifies the accessor

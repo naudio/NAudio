@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 using NAudio.CoreAudioApi;
-using NAudio.Wasapi;
 using NAudio.Wave;
 using NAudioDemo.Utils;
 

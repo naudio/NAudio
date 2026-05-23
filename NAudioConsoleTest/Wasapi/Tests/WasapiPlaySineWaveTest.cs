@@ -1,5 +1,4 @@
 using NAudio.CoreAudioApi;
-using NAudio.Wasapi;
 using NAudio.Wave;
 using NAudioConsoleTest.Shared;
 using NAudioConsoleTest.Shared.Testing;

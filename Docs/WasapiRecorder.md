@@ -13,7 +13,7 @@
 You create a `WasapiRecorder` through `WasapiRecorderBuilder`. With no configuration, it captures from the default capture device (microphone) in shared mode with event synchronization:
 
 ```c#
-using NAudio.Wasapi;
+using NAudio.Wave;
 
 var recorder = new WasapiRecorderBuilder().Build();
 ```
@@ -38,7 +38,6 @@ In shared mode the engine converts to the format you request via `WithFormat`. I
 The zero-copy path uses the `DataAvailable` event. The span is **only valid for the duration of the callback** — if you need to keep the data (e.g. to write to a file), copy it out. Here we record to a WAV file:
 
 ```c#
-using NAudio.Wasapi;
 using NAudio.Wave;
 
 var recorder = new WasapiRecorderBuilder().Build();

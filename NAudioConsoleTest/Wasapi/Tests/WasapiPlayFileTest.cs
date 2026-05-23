@@ -1,5 +1,4 @@
 using NAudio.CoreAudioApi;
-using NAudio.Wasapi;
 using NAudio.Wave;
 using NAudioConsoleTest.Shared.Testing;
 using Spectre.Console;

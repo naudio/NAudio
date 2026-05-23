@@ -4,6 +4,7 @@
 // -----------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 using NAudio.CoreAudioApi.Interfaces;
@@ -22,7 +23,8 @@ namespace NAudio.CoreAudioApi
         private IAudioSessionControl audioSessionControlInterface;
         private IAudioSessionControl2 audioSessionControlInterface2;
         private readonly bool ownsInterface;
-        private AudioSessionEventsCallback audioSessionEventCallback;
+        private readonly Dictionary<IAudioSessionEventsHandler, AudioSessionEventsCallback> audioSessionEventCallbacks = new();
+        private readonly object eventCallbackLock = new();
 
         // ComWrappers CCWs return a distinct IntPtr per interface (and a separate vtable
         // for IUnknown). Registration APIs that expect IAudioSessionEvents* must receive
@@ -88,18 +90,21 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public void Dispose()
         {
-            if (audioSessionEventCallback != null)
+            lock (eventCallbackLock)
             {
-                var ptr = QueryEventsInterface(audioSessionEventCallback);
-                try
+                foreach (var callback in audioSessionEventCallbacks.Values)
                 {
-                    audioSessionControlInterface.UnregisterAudioSessionNotification(ptr);
+                    var ptr = QueryEventsInterface(callback);
+                    try
+                    {
+                        audioSessionControlInterface.UnregisterAudioSessionNotification(ptr);
+                    }
+                    finally
+                    {
+                        Marshal.Release(ptr);
+                    }
                 }
-                finally
-                {
-                    Marshal.Release(ptr);
-                }
-                audioSessionEventCallback = null;
+                audioSessionEventCallbacks.Clear();
             }
             if (audioSessionControlInterface != null)
             {
@@ -249,34 +254,46 @@ namespace NAudio.CoreAudioApi
         }
 
         /// <summary>
-        /// Registers an even client for callbacks
+        /// Registers an event client for callbacks. Multiple clients can be registered;
+        /// registering a client that is already registered has no effect.
         /// </summary>
-        /// <param name="eventClient"></param>
+        /// <param name="eventClient">The handler to register.</param>
         public void RegisterEventClient(IAudioSessionEventsHandler eventClient)
         {
-            // we could have an array or list of listeners if we like
-            audioSessionEventCallback = new AudioSessionEventsCallback(eventClient);
-            var ptr = QueryEventsInterface(audioSessionEventCallback);
-            try
+            lock (eventCallbackLock)
             {
-                CoreAudioException.ThrowIfFailed(audioSessionControlInterface.RegisterAudioSessionNotification(ptr));
-            }
-            finally
-            {
-                Marshal.Release(ptr);
+                if (audioSessionEventCallbacks.ContainsKey(eventClient))
+                {
+                    return;
+                }
+                var callback = new AudioSessionEventsCallback(eventClient);
+                var ptr = QueryEventsInterface(callback);
+                try
+                {
+                    CoreAudioException.ThrowIfFailed(audioSessionControlInterface.RegisterAudioSessionNotification(ptr));
+                }
+                finally
+                {
+                    Marshal.Release(ptr);
+                }
+                audioSessionEventCallbacks.Add(eventClient, callback);
             }
         }
 
         /// <summary>
-        /// Unregisters an event client from receiving callbacks
+        /// Unregisters an event client from receiving callbacks. Unregistering a client that
+        /// is not registered has no effect.
         /// </summary>
-        /// <param name="eventClient"></param>
+        /// <param name="eventClient">The handler to unregister.</param>
         public void UnRegisterEventClient(IAudioSessionEventsHandler eventClient)
         {
-            // if one is registered, let it go
-            if (audioSessionEventCallback != null)
+            lock (eventCallbackLock)
             {
-                var ptr = QueryEventsInterface(audioSessionEventCallback);
+                if (!audioSessionEventCallbacks.TryGetValue(eventClient, out var callback))
+                {
+                    return;
+                }
+                var ptr = QueryEventsInterface(callback);
                 try
                 {
                     CoreAudioException.ThrowIfFailed(audioSessionControlInterface.UnregisterAudioSessionNotification(ptr));
@@ -285,7 +302,7 @@ namespace NAudio.CoreAudioApi
                 {
                     Marshal.Release(ptr);
                 }
-                audioSessionEventCallback = null;
+                audioSessionEventCallbacks.Remove(eventClient);
             }
         }
     }

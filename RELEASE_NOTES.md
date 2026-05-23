@@ -66,6 +66,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
 
 #### Reliability and bug fixes
 
+ * `AudioSessionControl`: now supports multiple registered event clients. `RegisterEventClient` no longer leaks a prior registration, and `UnRegisterEventClient` now honours its `eventClient` argument instead of unregistering whichever handler happened to be stored (#1263)
  * `CueListInterpreter`: fixed returning null for WAV files with cue points but no labels (e.g. unnamed Wavosaur markers); cues are now returned with empty labels (#549)
  * `WaveViewer`: fixed waveform rendering upside-down (#801, #818)
  * `AcmInterop`: serialised all `msacm32` P/Invokes process-wide via a reentrant lock — fixes process-killing access violations under concurrent ACM access

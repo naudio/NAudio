@@ -306,6 +306,33 @@ namespace NAudioTests.Effects
             }
         }
 
+        // One-sample delay: carries the previous input across blocks, and clears that
+        // carried state on Reset — lets tests observe whether Reset reached the effect.
+        private sealed class OneSampleDelayEffect : AudioEffect
+        {
+            private float last;
+
+            protected override void OnConfigure(WaveFormat format)
+            {
+            }
+
+            protected override void ProcessBlock(Span<float> buffer)
+            {
+                for (var i = 0; i < buffer.Length; i++)
+                {
+                    var current = buffer[i];
+                    buffer[i] = last;
+                    last = current;
+                }
+            }
+
+            public override void Reset()
+            {
+                base.Reset();
+                last = 0f;
+            }
+        }
+
         // Adds a fixed amount; lets tests assert on chain order by the resulting offset.
         private sealed class AddConstantEffect : AudioEffect
         {
@@ -417,6 +444,24 @@ namespace NAudioTests.Effects
             Assert.Throws<ArgumentOutOfRangeException>(() => chain.Insert(2, new DoublingEffect()));
             Assert.Throws<ArgumentOutOfRangeException>(() => chain.RemoveAt(1));
             Assert.Throws<ArgumentOutOfRangeException>(() => chain.Move(0, 1));
+        }
+
+        [Test]
+        public void ResetClearsEachEffectsState()
+        {
+            var source = new ConstantProvider(MonoFloat, 1f);
+            var chain = new EffectChain(source).Add(new OneSampleDelayEffect());
+
+            var buffer = new float[4];
+            chain.Read(buffer); // primes the delay: out [0,1,1,1], carried sample = 1
+
+            chain.Read(buffer); // carries state across the block boundary
+            Assert.That(buffer[0], Is.EqualTo(1f), "carried state should surface without a reset");
+
+            chain.Reset();
+            Array.Clear(buffer, 0, buffer.Length);
+            chain.Read(buffer); // state cleared, so the first sample is the initial 0 again
+            Assert.That(buffer[0], Is.EqualTo(0f), "Reset should clear the effect's carried state");
         }
 
         [Test]

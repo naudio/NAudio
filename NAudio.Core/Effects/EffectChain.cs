@@ -127,6 +127,18 @@ namespace NAudio.Effects
             }
         }
 
+        /// <summary>
+        /// Resets every effect in the chain, clearing their internal state (delay lines,
+        /// filter history, reverb tails) without changing the chain or its configuration.
+        /// Use when reusing the chain on a new signal, e.g. after seeking the source.
+        /// </summary>
+        public void Reset()
+        {
+            var chain = effects;
+            for (var i = 0; i < chain.Length; i++)
+                chain[i].Reset();
+        }
+
         /// <inheritdoc />
         public WaveFormat WaveFormat => source.WaveFormat;
 

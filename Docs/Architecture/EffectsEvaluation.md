@@ -396,35 +396,78 @@ Output is latency-compensated and tail-flushed; each render reports Nx
 real-time and added tail length. Output WAVs land in a temp folder browsable
 from the panel (matching the `WasapiCaptureDemo` Play/Delete/Open pattern).
 
-### 3.8 Open consideration — effects on positionable streams
+### 3.8 Effects on positionable streams — position-preserving decorators (leading direction)
 
-**Nothing decided.** Before NAudio 3 ships, the long-standing "positionable
-`WaveStream` vs non-positional `IWaveProvider` / `ISampleProvider`" tension is
-worth a dedicated design pass — the seek-vs-decorator dance (you reposition
-the file reader, but the player reads from the decorated end of the chain) is
-a recurring pain point. The solution may or may not involve the effects model.
+**The long-standing problem.** "Positionable `WaveStream` vs non-positional
+`IWaveProvider` / `ISampleProvider`" is a recurring pain point: the seek-vs-decorator
+dance — you reposition the file reader, but the player reads from the *decorated end* of
+the chain, so seeks and the read head are on different objects. Worth resolving before
+NAudio 3 ships.
 
-*One* option on the table is to let a `WaveStream` host effects directly, so
-seeks happen on the same object the player reads from. The minimal shape of
-that path would lift `IAudioEffect`, `IParameterized`, `EffectParameter` and
-`EffectParameterKind` into a foundational namespace (e.g. `NAudio.Wave`),
-leaving `NAudio.Effects` as concrete implementations + the `AudioEffect` base
-+ `EffectChain` + the realtime dispatch. Open questions if this path is taken:
+**Leading direction (not 100% locked — expected to be delivered incrementally and refined
+as the wrinkles below are met).** Keep the decorator model, but make the decorators
+**position-preserving**: when the source is a `WaveStream`, return an adapter that is
+*both* a `WaveStream` and an `ISampleProvider`. It forwards `Position`/`Length` down to
+the seekable source while `Read` pulls through the effect chain — so the object the player
+reads from *is* the object you seek. `AudioFileReader` (already a `WaveStream` that also
+implements `ISampleProvider`) is the proven precedent for the dual-interface shape.
 
-- Attach via a new opt-in `IEffectsHost`-style interface that
-  `AudioFileReader` and friends implement, or extend `WaveStream` itself?
-  (Leaning opt-in — avoids disturbing every third-party `WaveStream` subclass.)
-- Sample-format bridge: scope cleanly to `ISampleProvider` sources (float), or
-  also PCM-int `WaveStream`s with internal conversion?
-- `Position` / `Length` semantics with effect latency (pitch shift,
-  convolution) and reverb tails extending past input EOF.
+This is preferred over the previously-floated alternative of letting `WaveStream` host
+effects directly (or a new base class to inherit), because it is **additive and opt-in and
+keeps `IAudioEffect` / `EffectChain` out of Core's fundamental playback contract** — the
+adapters depend on the effects layer, never the reverse. `WaveStream` is untouched; no
+`IEffectsHost`, no lifting of the effect interfaces into `NAudio.Wave`.
 
-The broader design pass may equally land on a different solution — `EffectChain`
-smart enough to forward `WaveStream` methods through, a unified positionable-
-provider abstraction, or something else entirely. Recorded here *only* as one
-option, not a chosen direction. The decorator pattern (file → chain → player,
-or any non-`WaveStream` source like a mic / synth / network) stays valid in
-every scenario; this would be additive convenience for the seekable case.
+**Entry points (chosen):** `waveStream.AddEffect(effect)` and
+`waveStream.AddEffects(params IAudioEffect[])` — the effects are passed in and the
+`EffectChain` is built *internally* on `source.ToSampleProvider()`. This sidesteps
+`EffectChain`'s current source-at-construction coupling (passing a pre-bound chain would be
+awkward). Mirror overloads on `ISampleProvider` return a plain `ISampleProvider` (you can't
+synthesise positionability from a non-positionable source).
+
+**Generalising to the other decorators.** The same idea extends to the existing
+single-source, time-linear transforms (`Skip` = affine offset, `Take` = clamped `Length`,
+`ToMono`/`ToStereo` = channel-ratio remap, resample = rate-ratio remap): when handed a
+`WaveStream` they can return a positionable adapter instead of a bare `ISampleProvider`.
+Rather than an adapter class per transform, collapse them into **one generic
+`PositionPreservingSampleProvider : WaveStream, ISampleProvider`** parameterised by the
+root `WaveStream`, the built pipeline, a position-mapping function, and an optional
+`onSeek` reset hook. **Boundary:** position-preservation only makes sense for *single-source*
+transforms — fan-in (`MixingSampleProvider`, `Concatenate`/`FollowedBy` of multiple
+sources) has no single source position to forward and stays plain `ISampleProvider`.
+
+**Doors this opens** (secondary motivations, not required for v1): `Skip`/`Take` can be
+implemented more efficiently when the source is seekable (seek instead of read-and-discard),
+and it gives a cleaner foundation for improving NAudio's currently-poor looping support
+(a loop is a seek back to a mark on the same object the player reads from).
+
+**Known wrinkles / limitations to handle as it matures (intrinsic to *any* seekable-effects
+solution, not caused by this approach):**
+
+- **Byte↔sample position mapping.** `WaveStream.Position`/`Length` are bytes in the source
+  format; the pipeline is float. Trivial 1:1 for a float source like `AudioFileReader`;
+  a bytes-per-frame ratio (and frame-aligned `set`) for a PCM source. A future
+  sample-denominated `AudioFormat` would make this much cleaner.
+- **Latency offset.** Forwarding `Position` reports the source read head, not the output
+  position — off by `chain.LatencySamples` for pitch/convolution/look-ahead effects.
+  Acceptable for a playback cursor; optionally subtract the latency.
+- **Tails past EOF.** Reverb/decay output continues after the source hits `Length`, which a
+  position-forwarder can't express. `Length`/`CurrentTime` are therefore approximate for
+  latency/tail effects — the one genuinely unsolvable-in-general case, shared by every
+  approach.
+- **Seek resets effect state.** The `Position` setter must clear delay lines / filter
+  history / reverb buffers or pre-seek audio bleeds through. Needs a small new
+  `EffectChain.Reset()` (iterate `Effects`, call each `Reset()`).
+- **Ownership/disposal** of the wrapped source (a `leaveOpen`-style flag or a clear
+  convention).
+
+**Follow-up items:** add `EffectChain.Reset()`; decide the `EffectChain` source-coupling
+question (the `AddEffect(s)`-builds-internally entry points avoid it for this feature, but
+it may still be worth decoupling the effect *list* from its bound source more broadly).
+
+The plain decorator pattern (file → chain → player, or any non-`WaveStream` source like a
+mic / synth / network) stays valid in every scenario; this is additive convenience for the
+seekable case.
 
 ---
 

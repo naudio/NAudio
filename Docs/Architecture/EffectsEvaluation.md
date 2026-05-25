@@ -1,84 +1,12 @@
 # NAudio 3 — Audio effects suite: evaluation & strategy
 
-**Status:** Evaluation / proposal. No effect code yet — this document decides *what* we
-build, *what* we port, and *in what order*, before any effect lands.
-
-**Update (post PR #1259):** PR #1259 ("Fix BiQuadFilter NaN-latch and make Equalizer
-Nyquist-aware", issue #190) has merged to `main` and is now on this branch. It hardens
-`BiQuadFilter` (parameter validation + state reset on retune) and makes `Equalizer`
-crash/Nyquist-safe — see §2.1/§2.2 for the re-evaluation and the new framework
-consequence in §3. The maintainer has **confirmed** the Phase 0 design decisions (§3.1)
-and **confirmed deletion** (not salvage) of the weak dynamics + dead convolution code (§2.1).
-
-**Update (Phase 0 landed):** Phase 0 is implemented on branch `naudio3-effects`: the six
-weak/dead types deleted, the `NAudio.Effects` framework (`IAudioEffect`, `AudioEffect`,
-`EffectSampleProvider`, `EffectChain`) and the `NAudio.Dsp` primitives
-(`ParameterSmoother`, `EnvelopeFollower`, `DelayLine`, `DenormalGuard`,
-`CrossfadingBiQuadFilter`) added, the stale `BiQuadFilter` `TODO`s removed, RELEASE_NOTES
-updated. `NAudio.Core` builds clean (0/0) and 19 new unit tests pass on `net10.0`.
-
-**Update (Phase 1 wave a landed):** utility + EQ shipped — `GainEffect`, `PanEffect`,
-`StereoWidthEffect`, `MonoMakerEffect`, `DcBlockerEffect`, a per-channel multi-band
-`Equalizer` (peaking/shelf/pass/notch/band-pass/all-pass, click-free retune via
-`CrossfadingBiQuadFilter.ReplaceStandby`), and `GraphicEqualizer` (10/31-band). The old
-`NAudio.Extras` `Equalizer`/`EqualizerBand` are deleted and the WPF EqualizationDemo moved
-to the new API. 37 Effects unit tests pass on `net10.0`; `NAudio.Core` and `NAudio.Extras`
-build clean.
-
-**Update (Phase 1 wave b landed):** dynamics shipped — `CompressorEffect`
-(soft-knee, peak/RMS, channel-linked, GR metering), `LimiterEffect` (look-ahead
-brick-wall, reports `LatencySamples`), `GateEffect` (gate/expander with hysteresis +
-hold). 46 Effects unit tests pass on `net10.0`; `NAudio.Core` builds clean.
-
-**Update (Phase 1 wave c landed):** `SaturationEffect` (4 curves, drive/trim, optional
-2×/4× oversampling), `BitCrusherEffect` (bit-depth + sample-rate reduction), and the
-reusable `NAudio.Dsp.Oversampler`. 55 Effects unit tests pass on `net10.0`.
-
-**Update (Phase 1 wave d landed — Phase 1 complete):** `DelayEffect` (tempo-syncable,
-feedback damping, ping-pong), `ChorusEffect`, `FlangerEffect`, `PhaserEffect`,
-`TremoloEffect` (+ auto-pan), plus reusable `NAudio.Dsp.Lfo` and `NoteDivision`/
-`TempoTime`. **70 Effects unit tests pass on `net10.0`; `NAudio.Core` builds clean.**
-Phase 1 (the core music-effects suite) is done.
-
-**Update (Phase 2 wave a landed):** `ConvolutionReverbEffect` + reusable
-`NAudio.Dsp.PartitionedConvolver` (uniformly-partitioned overlap-save FFT convolution on
-`FftProcessor`), replacing the removed `ImpulseResponseConvolution`. Numerically verified
-against direct convolution. 77 Effects unit tests pass on `net10.0`; `NAudio.Core` builds
-clean.
-
-**Update (Phase 2 waves b+c landed — Phase 2 complete):** `ReverbEffect`
-(Freeverb-inspired Schroeder–Moorer baseline) and `FdnReverbEffect` (Signalsmith-style
-modulated feedback-delay network — the flagship). 83 Effects unit tests pass on
-`net10.0`; `NAudio.Core` builds clean. Phase 2 (reverb) is done.
-
-**Update (Phase 3 landed — voice comms):** `VoiceActivityDetector` (NAudio.Dsp),
-`AutomaticGainControlEffect` (VAD-gated leveller), `NoiseSuppressionEffect` (sqrt-Hann
-WOLA STFT spectral subtraction, VAD-gated noise tracking) and `ComfortNoiseEffect`.
-DC/rumble HPF (`DcBlockerEffect`) and the comms gate (`GateEffect`) were already
-delivered in Phase 1 and are reused, not duplicated. The ML quality tier (RNNoise port)
-remains a deliberate future evaluation; AEC stays Phase 5. 91 Effects unit tests pass on
-`net10.0`; `NAudio.Core` builds clean.
-
-**Update (Phase 4 wave a landed):** reusable `NAudio.Dsp.LinkwitzRileyCrossover` (LR4)
-and the true-peak `LimiterEffect` upgrade (oversampled inter-sample-peak detection, on by
-default) — closes the Phase-1 isolated-transient-overshoot caveat. 98 Effects unit tests
-pass on `net10.0`; `NAudio.Core` builds clean.
-
-**Update (Phase 4 waves b–d landed — Phase 4 complete):** `TransientShaperEffect`,
-split-band `DeEsserEffect`, `MultibandCompressorEffect` (configurable LR4 bands), and
-`PitchShiftEffect` (Bernsee phase-vocoder wrapped in the framework; the Signalsmith
-high-quality tier remains a deliberate separate future evaluation, not built). 109
-Effects unit tests pass on `net10.0`; `NAudio.Core` builds clean. Phases 1–4 of the
-music suite are done. Remaining roadmap: Phase 5 (AEC — its own milestone) and the
-cross-cutting live-input evaluation demo (design-TBD, paired with VST3 hosting).
-
-**Update (EffectChain made live-editable):** `EffectChain` now supports `Insert`,
-`RemoveAt`, and `Move` alongside `Add`, via copy-on-write over a volatile array — edits
-publish a new chain atomically, so add/remove/reorder is heard on the next block without
-resetting the other effects' state, and `Read` stays lock-free. This fixed a Realtime
-Effects harness bug where the WAV-playback path kept applying a removed effect (it had
-snapshotted the chain once at play time); the harness file path now uses `EffectChain`
-directly and the demo-only `SwappableEffectProvider` was deleted.
+**Status:** Implemented on branch `naudio3-effects`. Phases 0–4 of the music suite and the
+Phase 3 voice-comms core are done — the `NAudio.Effects` framework, ~27 effects, and the
+`NAudio.Dsp` primitives, with unit tests. Remaining roadmap: Phase 5 (AEC — its own
+milestone, §6) and the seekable-effects work (§3.8). Deliberately deferred quality tiers:
+RNNoise ML noise suppression and a Signalsmith pitch/time mode. This document records the
+*design*; per-wave landing notes and running test counts have been dropped — see the git
+history and `RELEASE_NOTES.md` for the changelog.
 
 **Goal:** Ship a high-quality, pure-C#, cross-platform effects suite as a first-class part of
 NAudio 3. Two audiences:
@@ -640,20 +568,10 @@ seed for VST3-host testing. Design decided:
   offline render. Waves B/C are compile-validated in the Linux sandbox
   (`EnableWindowsTargeting`); runtime is CI/Windows.
 
-**Status:** Wave A done (parameter model, 116 tests). **Wave B done** — WPF
-`RealtimeEffectsDemo` module: `RealtimeAudioEngine` (ASIO duplex, atomic effect-array
-snapshot, feedback auto-mute), VM/view/plugin, mono→stereo, starts muted with headphone
-warning. WPF demo compiles clean (`EnableWindowsTargeting`); runtime validation is
-CI/Windows. **Wave C done** — `IParameterized` wired across all 23 simple effects;
-WPF chain editor (catalog add, remove, reorder, generic auto-panels from the parameter
-model + Bypass/Mix, live meters), WAV-file playback and offline render through the
-chain. WPF demo compiles clean; runtime is CI/Windows. **The real-time effects harness
-is complete** — the subjective-quality evaluation tool is ready, and the same
-parameter/chain model is the foundation for the future VST3-host UI. EQ/multiband
-(dynamic band lists) and convolution-reverb IR are deliberately excluded from the
-generic catalog (need bespoke UI). **Milestone 1 (realtime & correctness
-hardening) is being applied before the first Windows listen — see §3.4** for the
-parameter-dispatch thread model and the limiter / DelayLine / Freeverb fixes.
+**Status:** Complete. The `RealtimeEffectsDemo` module is both the subjective-quality
+evaluation tool and the foundation for the future VST3-host UI; the realtime & correctness
+hardening of §3.4 is in place. EQ/multiband (dynamic band lists) and convolution-reverb IR
+are deliberately excluded from the generic catalog (they need bespoke UI).
 
 Cross-cutting, every phase: allocation-free steady state, AOT/trim-safe, `Span<float>`,
 numerical-correctness unit tests (the repo already does this — e.g. `BiQuadFilterTests`,
@@ -678,14 +596,3 @@ non-automatable acceptance step.
   shared helpers, test on the headless CI runner.
 - **DMO effects are not a migration target.** They stay Windows-only; the managed suite is
   a parallel, cross-platform offering, not a reimplementation obligation.
-
----
-
-## 8. Bottom line
-
-Build the framework, build the ~70% that is small textbook DSP (it is genuinely less work
-than porting and yields cleaner, AOT-safe, synth-reusable code), and reserve porting for the
-few genuinely hard, well-served-by-permissive-references areas: reverb and the voice-comms
-stack. Licensing does not constrain the realistic choices. The work is large but cleanly
-phasable, and Phase 0 + Phase 1 alone would already give NAudio a credible, modern,
-cross-platform effects suite out of the box.

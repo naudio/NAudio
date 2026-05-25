@@ -27,7 +27,10 @@ namespace NAudio.Effects
 
         /// <summary>
         /// Dry/wet mix: 0 = fully dry (effect inaudible), 1 = fully wet. Changes are
-        /// ramped, so moving this while audio flows does not click.
+        /// ramped, so moving this while audio flows does not click. Note: for effects that
+        /// report a non-zero <see cref="LatencySamples"/> (e.g. pitch shift, convolution),
+        /// the captured dry signal is not delay-compensated, so a partial mix blends the
+        /// dry against the latency-delayed wet signal.
         /// </summary>
         public float Mix
         {
@@ -105,10 +108,14 @@ namespace NAudio.Effects
                 return;
             }
 
-            for (var i = 0; i < buffer.Length; i++)
+            // Advance the mix coefficient once per frame so the ramp time is independent
+            // of channel count, then apply it to every channel of that frame.
+            var channels = Channels;
+            for (var i = 0; i + channels <= buffer.Length; i += channels)
             {
                 var m = mixSmoother.Process();
-                buffer[i] = dry[i] + (buffer[i] - dry[i]) * m;
+                for (var ch = 0; ch < channels; ch++)
+                    buffer[i + ch] = dry[i + ch] + (buffer[i + ch] - dry[i + ch]) * m;
             }
         }
 

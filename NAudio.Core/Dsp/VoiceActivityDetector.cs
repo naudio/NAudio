@@ -13,6 +13,7 @@ namespace NAudio.Dsp
     public sealed class VoiceActivityDetector
     {
         private readonly int frameSamples;
+        private readonly float frameMs;
         private double sumSquares;
         private int frameFill;
         private float noiseFloorDb = -90f;
@@ -33,7 +34,8 @@ namespace NAudio.Dsp
             if (frameMilliseconds <= 0f)
                 throw new ArgumentOutOfRangeException(nameof(frameMilliseconds), "Frame length must be positive");
             frameSamples = Math.Max(1, (int)(frameMilliseconds * 0.001f * sampleRate));
-            hangoverFrames = Math.Max(1, (int)(200f / frameMilliseconds));
+            frameMs = frameSamples * 1000f / sampleRate;
+            hangoverFrames = Math.Max(1, (int)(200f / frameMs));
         }
 
         /// <summary>Margin in dB above the noise floor that counts as speech. Default 9 dB.</summary>
@@ -42,8 +44,8 @@ namespace NAudio.Dsp
         /// <summary>Hangover time in milliseconds (decision held after speech ends). Default 200 ms.</summary>
         public float HangoverMs
         {
-            get => hangoverFrames * 1000f / Math.Max(1, frameSamples);
-            set => hangoverFrames = Math.Max(1, (int)(value * 0.001f * Math.Max(1, frameSamples)));
+            get => hangoverFrames * frameMs;
+            set => hangoverFrames = Math.Max(1, (int)MathF.Round(value / frameMs));
         }
 
         /// <summary>The current adaptive noise floor estimate in dBFS.</summary>

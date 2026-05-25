@@ -73,13 +73,15 @@ namespace NAudio.Effects
             var bandCount = bands.Count;
             if (bandCount == 0)
                 return;
-            for (var i = 0; i < buffer.Length; i++)
+            for (var i = 0; i + channels <= buffer.Length; i += channels)
             {
-                var ch = i % channels;
-                var sample = buffer[i];
-                for (var band = 0; band < bandCount; band++)
-                    sample = filters[ch, band].Transform(sample);
-                buffer[i] = sample;
+                for (var ch = 0; ch < channels; ch++)
+                {
+                    var sample = buffer[i + ch];
+                    for (var band = 0; band < bandCount; band++)
+                        sample = filters[ch, band].Transform(sample);
+                    buffer[i + ch] = sample;
+                }
             }
         }
 

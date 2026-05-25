@@ -31,6 +31,7 @@ namespace NAudio.Effects
         private VoiceActivityDetector vad;
         private float meanSquare;
         private float rmsCoefficient;
+        private float rmsWindowMs = 50f;
         private float gainDb;
         private float attackCoefficient;
         private float releaseCoefficient;
@@ -47,7 +48,16 @@ namespace NAudio.Effects
         public float MinGainDb { get; set; } = -20f;
 
         /// <summary>RMS detector window in milliseconds. Default 50 ms.</summary>
-        public float RmsWindowMs { get; set; } = 50f;
+        public float RmsWindowMs
+        {
+            get => rmsWindowMs;
+            set
+            {
+                rmsWindowMs = value;
+                if (WaveFormat != null)
+                    rmsCoefficient = 1f - MathF.Exp(-1f / (rmsWindowMs * 0.001f * SampleRate));
+            }
+        }
 
         /// <summary>When true, gain is held while no voice is detected. Default true.</summary>
         public bool UseVoiceDetection { get; set; } = true;
@@ -73,7 +83,7 @@ namespace NAudio.Effects
         protected override void OnConfigure(WaveFormat format)
         {
             vad = new VoiceActivityDetector(format.SampleRate);
-            rmsCoefficient = 1f - MathF.Exp(-1f / (RmsWindowMs * 0.001f * format.SampleRate));
+            rmsCoefficient = 1f - MathF.Exp(-1f / (rmsWindowMs * 0.001f * format.SampleRate));
             meanSquare = 0f;
             gainDb = 0f;
             RecomputeTimes();

@@ -31,8 +31,19 @@ namespace NAudio.Effects
         private float[] low = Array.Empty<float>();
         private float[] high = Array.Empty<float>();
 
+        private float crossoverFrequency = 6000f;
+
         /// <summary>Crossover frequency separating the sibilant band, in Hz. Default 6000.</summary>
-        public float CrossoverFrequency { get; set; } = 6000f;
+        public float CrossoverFrequency
+        {
+            get => crossoverFrequency;
+            set
+            {
+                crossoverFrequency = value;
+                if (WaveFormat != null)
+                    BuildCrossovers();
+            }
+        }
 
         /// <summary>Sibilant-band threshold in dBFS. Default -30 dB.</summary>
         public float ThresholdDb { get; set; } = -30f;
@@ -52,13 +63,19 @@ namespace NAudio.Effects
         /// <inheritdoc />
         protected override void OnConfigure(WaveFormat format)
         {
-            var freq = Math.Clamp(CrossoverFrequency, 1000f, format.SampleRate * 0.5f - 1f);
-            crossovers = new LinkwitzRileyCrossover[format.Channels];
-            for (var ch = 0; ch < format.Channels; ch++)
-                crossovers[ch] = new LinkwitzRileyCrossover(format.SampleRate, freq);
+            BuildCrossovers();
             reductionFollower = new EnvelopeFollower(AttackMs, ReleaseMs, format.SampleRate);
             low = new float[format.Channels];
             high = new float[format.Channels];
+        }
+
+        private void BuildCrossovers()
+        {
+            var freq = Math.Clamp(crossoverFrequency, 1000f, SampleRate * 0.5f - 1f);
+            var built = new LinkwitzRileyCrossover[Channels];
+            for (var ch = 0; ch < Channels; ch++)
+                built[ch] = new LinkwitzRileyCrossover(SampleRate, freq);
+            crossovers = built;
         }
 
         /// <inheritdoc />

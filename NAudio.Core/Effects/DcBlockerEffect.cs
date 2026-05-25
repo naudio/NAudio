@@ -52,14 +52,16 @@ namespace NAudio.Effects
         protected override void ProcessBlock(Span<float> buffer)
         {
             var channels = Channels;
-            for (var i = 0; i < buffer.Length; i++)
+            for (var i = 0; i + channels <= buffer.Length; i += channels)
             {
-                var ch = i % channels;
-                var x = buffer[i];
-                var y = x - x1[ch] + r * y1[ch];
-                x1[ch] = x;
-                y1[ch] = DenormalGuard.Flush(y);
-                buffer[i] = y;
+                for (var ch = 0; ch < channels; ch++)
+                {
+                    var x = buffer[i + ch];
+                    var y = x - x1[ch] + r * y1[ch];
+                    x1[ch] = x;
+                    y1[ch] = DenormalGuard.Flush(y);
+                    buffer[i + ch] = y;
+                }
             }
         }
 

@@ -42,6 +42,7 @@ namespace NAudio.Effects
         private EnvelopeFollower reductionFollower;
         private float msEnvelope;
         private float rmsCoefficient;
+        private float rmsWindowMs = 10f;
         private float attackMs = 10f;
         private float releaseMs = 100f;
 
@@ -61,7 +62,16 @@ namespace NAudio.Effects
         public DetectorMode Detector { get; set; } = DetectorMode.Peak;
 
         /// <summary>RMS averaging window in milliseconds (used when <see cref="Detector"/> is RMS). Default 10 ms.</summary>
-        public float RmsWindowMs { get; set; } = 10f;
+        public float RmsWindowMs
+        {
+            get => rmsWindowMs;
+            set
+            {
+                rmsWindowMs = value;
+                if (WaveFormat != null)
+                    rmsCoefficient = 1f - MathF.Exp(-1f / (rmsWindowMs * 0.001f * SampleRate));
+            }
+        }
 
         /// <summary>Attack time in milliseconds. Default 10 ms.</summary>
         public float AttackMs
@@ -94,7 +104,7 @@ namespace NAudio.Effects
         protected override void OnConfigure(WaveFormat format)
         {
             reductionFollower = new EnvelopeFollower(attackMs, releaseMs, format.SampleRate);
-            rmsCoefficient = 1f - MathF.Exp(-1f / (RmsWindowMs * 0.001f * format.SampleRate));
+            rmsCoefficient = 1f - MathF.Exp(-1f / (rmsWindowMs * 0.001f * format.SampleRate));
             msEnvelope = 0f;
             GainReductionDb = 0f;
         }

@@ -72,6 +72,14 @@ Effects unit tests pass on `net10.0`; `NAudio.Core` builds clean. Phases 1–4 o
 music suite are done. Remaining roadmap: Phase 5 (AEC — its own milestone) and the
 cross-cutting live-input evaluation demo (design-TBD, paired with VST3 hosting).
 
+**Update (EffectChain made live-editable):** `EffectChain` now supports `Insert`,
+`RemoveAt`, and `Move` alongside `Add`, via copy-on-write over a volatile array — edits
+publish a new chain atomically, so add/remove/reorder is heard on the next block without
+resetting the other effects' state, and `Read` stays lock-free. This fixed a Realtime
+Effects harness bug where the WAV-playback path kept applying a removed effect (it had
+snapshotted the chain once at play time); the harness file path now uses `EffectChain`
+directly and the demo-only `SwappableEffectProvider` was deleted.
+
 **Goal:** Ship a high-quality, pure-C#, cross-platform effects suite as a first-class part of
 NAudio 3. Two audiences:
 
@@ -273,7 +281,7 @@ This is the recorded resolution of the "live parameter edit race" review
 finding and the load-bearing decision for the future VST3 host (same model,
 same queue).
 
-### 3.4 Milestone 1 — realtime & correctness hardening (in progress)
+### 3.4 Milestone 1 — realtime & correctness hardening (done)
 
 Done before the first Windows clone-and-listen, on `naudio3-effects`:
 
@@ -305,7 +313,7 @@ Done before the first Windows clone-and-listen, on `naudio3-effects`:
    playback/render can no longer run the shared effect instances on two audio
    threads at once.
 
-### 3.5 First-listen feedback follow-up (in progress)
+### 3.5 First-listen feedback follow-up (done)
 
 From the first Windows monitoring session, addressed on `naudio3-effects`:
 
@@ -574,9 +582,11 @@ seed for VST3-host testing. Design decided:
   `AudioEffect` base, so per-effect parameter lists exclude them. Convolution IR is
   *not* forced into the model — it is a setup input handled specially by the harness.
 - **Harness:** `AsioDevice.InitDuplex` (driver + 1/2 input-channel selection; mono
-  duplicated to stereo; stereo out). Realtime callback is alloc-free; the chain is an
-  **atomic snapshot** (`IAudioEffect[]` swapped by reference) since `EffectChain`'s list
-  is not mutation-safe during `Read`. **Feedback safety:** starts muted, explicit
+  duplicated to stereo; stereo out). Realtime callback is alloc-free; the ASIO engine
+  holds the chain as an **atomic snapshot** (`IAudioEffect[]` swapped by reference). The
+  file-playback path uses `EffectChain`, which is now itself safely mutable during `Read`
+  (copy-on-write `Insert`/`RemoveAt`/`Move`), so add/remove/reorder is heard live there
+  too. **Feedback safety:** starts muted, explicit
   Monitor toggle, runaway-level auto-mute, warn if input device == output device.
   **Sources:** live ASIO input *or* a WAV file → same chain → real-time monitor *or*
   offline render-to-WAV (offline path needs no ASIO; latency-compensated via

@@ -306,6 +306,24 @@ namespace NAudioTests.Effects
             }
         }
 
+        // Adds a fixed amount; lets tests assert on chain order by the resulting offset.
+        private sealed class AddConstantEffect : AudioEffect
+        {
+            private readonly float amount;
+
+            public AddConstantEffect(float amount) => this.amount = amount;
+
+            protected override void OnConfigure(WaveFormat format)
+            {
+            }
+
+            protected override void ProcessBlock(Span<float> buffer)
+            {
+                for (var i = 0; i < buffer.Length; i++)
+                    buffer[i] += amount;
+            }
+        }
+
         private static WaveFormat MonoFloat => WaveFormat.CreateIeeeFloatWaveFormat(48000, 1);
 
         [Test]
@@ -337,6 +355,110 @@ namespace NAudioTests.Effects
             Assert.That(chain.LatencySamples, Is.EqualTo(0));
             foreach (var sample in buffer)
                 Assert.That(sample, Is.EqualTo(4f));
+        }
+
+        [Test]
+        public void InsertPlacesEffectAtIndexAndIsConfigured()
+        {
+            var source = new ConstantProvider(MonoFloat, 1f);
+            var chain = new EffectChain(source).Add(new DoublingEffect());
+            chain.Insert(0, new AddConstantEffect(1f)); // (1 + 1) * 2 = 4
+
+            var buffer = new float[8];
+            chain.Read(buffer);
+
+            Assert.That(chain.Effects, Has.Count.EqualTo(2));
+            foreach (var sample in buffer)
+                Assert.That(sample, Is.EqualTo(4f));
+        }
+
+        [Test]
+        public void RemoveAtDropsTheEffectFromProcessing()
+        {
+            var source = new ConstantProvider(MonoFloat, 1f);
+            var chain = new EffectChain(source)
+                .Add(new DoublingEffect())
+                .Add(new AddConstantEffect(1f)); // (1 * 2) + 1 = 3
+
+            chain.RemoveAt(1); // leaves just the doubling effect → 2
+
+            var buffer = new float[8];
+            chain.Read(buffer);
+
+            Assert.That(chain.Effects, Has.Count.EqualTo(1));
+            foreach (var sample in buffer)
+                Assert.That(sample, Is.EqualTo(2f));
+        }
+
+        [Test]
+        public void MoveReordersEffects()
+        {
+            var source = new ConstantProvider(MonoFloat, 1f);
+            var chain = new EffectChain(source)
+                .Add(new DoublingEffect())
+                .Add(new AddConstantEffect(1f)); // [Double, Add1] → (1 * 2) + 1 = 3
+
+            chain.Move(0, 1); // [Add1, Double] → (1 + 1) * 2 = 4
+
+            var buffer = new float[8];
+            chain.Read(buffer);
+
+            foreach (var sample in buffer)
+                Assert.That(sample, Is.EqualTo(4f));
+        }
+
+        [Test]
+        public void EditsValidateIndices()
+        {
+            var source = new ConstantProvider(MonoFloat, 1f);
+            var chain = new EffectChain(source).Add(new DoublingEffect());
+
+            Assert.Throws<ArgumentNullException>(() => chain.Add(null));
+            Assert.Throws<ArgumentOutOfRangeException>(() => chain.Insert(2, new DoublingEffect()));
+            Assert.Throws<ArgumentOutOfRangeException>(() => chain.RemoveAt(1));
+            Assert.Throws<ArgumentOutOfRangeException>(() => chain.Move(0, 1));
+        }
+
+        [Test]
+        public void EditingWhileReadingIsThreadSafe()
+        {
+            var source = new ConstantProvider(MonoFloat, 0.1f);
+            var chain = new EffectChain(source).Add(new DoublingEffect());
+
+            var stop = false;
+            Exception readerError = null;
+            var reader = new System.Threading.Thread(() =>
+            {
+                try
+                {
+                    var buffer = new float[256];
+                    while (!System.Threading.Volatile.Read(ref stop))
+                    {
+                        chain.Read(buffer);
+                        foreach (var sample in buffer)
+                            if (!float.IsFinite(sample))
+                                throw new InvalidOperationException("non-finite sample");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    readerError = ex;
+                }
+            });
+            reader.Start();
+
+            for (var i = 0; i < 2000; i++)
+            {
+                chain.Add(new AddConstantEffect(0.01f));
+                if (chain.Effects.Count > 1)
+                    chain.Move(0, chain.Effects.Count - 1);
+                chain.RemoveAt(chain.Effects.Count - 1);
+            }
+
+            System.Threading.Volatile.Write(ref stop, true);
+            reader.Join();
+
+            Assert.That(readerError, Is.Null);
         }
     }
 }

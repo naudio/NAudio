@@ -22,6 +22,8 @@ namespace NAudioWpfDemo.RealtimeEffectsDemo
         private string inputFilePath;
         private IWavePlayer filePlayer;
         private AudioFileReader fileReader;
+        private EffectChain fileChain;
+        private IAudioEffect[] liveChain = Array.Empty<IAudioEffect>();
 
         public RealtimeEffectsViewModel()
         {
@@ -133,12 +135,15 @@ namespace NAudioWpfDemo.RealtimeEffectsDemo
             var entry = EffectCatalog.Entries[selectedEffectIndex];
             var slot = new EffectSlotViewModel(entry.Name, entry.Create(), Remove, MoveUp, MoveDown);
             Chain.Add(slot);
+            fileChain?.Add(slot.Effect); // configures at the file rate and appends atomically
             RebuildLiveChain();
         }
 
         private void Remove(EffectSlotViewModel slot)
         {
+            var i = Chain.IndexOf(slot);
             Chain.Remove(slot);
+            fileChain?.RemoveAt(i);
             RebuildLiveChain();
         }
 
@@ -148,6 +153,7 @@ namespace NAudioWpfDemo.RealtimeEffectsDemo
             if (i > 0)
             {
                 Chain.Move(i, i - 1);
+                fileChain?.Move(i, i - 1);
                 RebuildLiveChain();
             }
         }
@@ -158,21 +164,48 @@ namespace NAudioWpfDemo.RealtimeEffectsDemo
             if (i >= 0 && i < Chain.Count - 1)
             {
                 Chain.Move(i, i + 1);
+                fileChain?.Move(i, i + 1);
                 RebuildLiveChain();
             }
         }
 
-        private void RebuildLiveChain()
+        /// <summary>
+        /// Rebuilds the effect array from <see cref="Chain"/> and publishes it to the ASIO
+        /// engine, which picks it up atomically so an add/remove/reorder is heard on the next
+        /// audio block. No-op when ASIO is not running: the file player has its own
+        /// <see cref="EffectChain"/> (edited incrementally in the chain commands), and a
+        /// fully-stopped chain is rebuilt by <see cref="Start"/> when ASIO next comes up.
+        /// </summary>
+        /// <param name="reconfigureAll">
+        /// When true every effect is reconfigured for the engine format — used at
+        /// <see cref="Start"/>, where the format may have changed (e.g. from the idle default
+        /// to the ASIO sample rate) and the array is republished before the callback reads it.
+        /// During live edits this is false: only genuinely new effects are configured, because
+        /// re-<see cref="IAudioEffect.Configure"/>-ing an effect the audio thread is currently
+        /// processing would race it.
+        /// </param>
+        private void RebuildLiveChain(bool reconfigureAll = false)
         {
-            var sampleRate = engine.IsRunning ? engine.SampleRate : 48000;
-            var format = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, 2);
+            if (!engine.IsRunning)
+                return;
+            var format = WaveFormat.CreateIeeeFloatWaveFormat(engine.SampleRate, 2);
             var array = new IAudioEffect[Chain.Count];
             for (var i = 0; i < Chain.Count; i++)
             {
                 array[i] = Chain[i].Effect;
-                array[i].Configure(format);
+                if (reconfigureAll || !Contains(liveChain, array[i]))
+                    array[i].Configure(format);
             }
             engine.SetEffects(array);
+            liveChain = array;
+        }
+
+        private static bool Contains(IAudioEffect[] array, IAudioEffect effect)
+        {
+            foreach (var e in array)
+                if (ReferenceEquals(e, effect))
+                    return true;
+            return false;
         }
 
         private void Start()
@@ -182,7 +215,7 @@ namespace NAudioWpfDemo.RealtimeEffectsDemo
             try
             {
                 engine.Start(selectedDriver, inputChannelsIndex == 0 ? 1 : 2, inputChannelOffset - 1);
-                RebuildLiveChain();
+                RebuildLiveChain(reconfigureAll: true);
                 Monitoring = false;
                 Status = $"Running on '{selectedDriver}' at {engine.SampleRate} Hz. " +
                          "Output is muted — enable monitoring to listen.";
@@ -202,6 +235,7 @@ namespace NAudioWpfDemo.RealtimeEffectsDemo
         private void Stop()
         {
             engine.Stop();
+            liveChain = Array.Empty<IAudioEffect>();
             Monitoring = false;
             OutputLevel = 0;
             StartCommand.IsEnabled = Drivers.Count > 0;
@@ -238,11 +272,13 @@ namespace NAudioWpfDemo.RealtimeEffectsDemo
             try
             {
                 fileReader = new AudioFileReader(inputFilePath);
-                var chain = new EffectChain(fileReader);
+                // EffectChain.Add configures each effect for the file's format; later
+                // Add/RemoveAt/Move edits are applied live and picked up atomically.
+                fileChain = new EffectChain(fileReader);
                 foreach (var slot in Chain)
-                    chain.Add(slot.Effect);
+                    fileChain.Add(slot.Effect);
                 filePlayer = new WaveOut();
-                filePlayer.Init(chain);
+                filePlayer.Init(fileChain);
                 filePlayer.Play();
                 PlayFileCommand.IsEnabled = false;
                 StopFileCommand.IsEnabled = true;
@@ -259,8 +295,10 @@ namespace NAudioWpfDemo.RealtimeEffectsDemo
         {
             filePlayer?.Dispose();
             filePlayer = null;
+            fileChain = null;
             fileReader?.Dispose();
             fileReader = null;
+            liveChain = Array.Empty<IAudioEffect>();
             PlayFileCommand.IsEnabled = !string.IsNullOrEmpty(inputFilePath);
             StopFileCommand.IsEnabled = false;
             StartCommand.IsEnabled = Drivers.Count > 0 && !engine.IsRunning;

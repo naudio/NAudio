@@ -26,16 +26,14 @@ namespace NAudio.Effects
         private float cutoffHz = 20f;
 
         /// <summary>
-        /// Approximate -3 dB cut-off in Hz (default 20 Hz). Must be positive.
+        /// Approximate -3 dB cut-off in Hz (default 20 Hz). Negative values are clamped to 0.
         /// </summary>
         public float CutoffFrequency
         {
             get => cutoffHz;
             set
             {
-                if (value <= 0f)
-                    throw new ArgumentOutOfRangeException(nameof(value), "Cut-off frequency must be positive");
-                cutoffHz = value;
+                cutoffHz = value < 0f ? 0f : value;
                 RecomputePole();
             }
         }

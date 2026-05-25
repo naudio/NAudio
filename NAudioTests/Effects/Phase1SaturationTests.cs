@@ -150,8 +150,10 @@ namespace NAudioTests.Effects
         public void ValidatesParameters()
         {
             var crusher = new BitCrusherEffect();
-            Assert.Throws<ArgumentOutOfRangeException>(() => crusher.BitDepth = 0);
-            Assert.Throws<ArgumentOutOfRangeException>(() => crusher.BitDepth = 33);
+            crusher.BitDepth = 0;
+            Assert.That(crusher.BitDepth, Is.EqualTo(1));
+            crusher.BitDepth = 33;
+            Assert.That(crusher.BitDepth, Is.EqualTo(32));
             // A target rate of 0 (or negative) is valid and means "no reduction".
             crusher.TargetSampleRate = 0;
             Assert.That(crusher.TargetSampleRate, Is.EqualTo(0));

@@ -98,11 +98,11 @@ All of these live in `NAudio.Effects`. Parameter units are shown in brackets; ev
 
 | Effect | Key parameters |
 | --- | --- |
-| `DelayEffect` | `DelayMilliseconds`, `Feedback` (0 … <1), `Damping` (0–1), `PingPong`, `TempoSync` + `Bpm` + `Division` (`NoteDivision`); `EffectiveDelayMilliseconds` meter. |
-| `ChorusEffect` | `BaseDelayMs`, `DepthMs`, `RateHz`, `Feedback`. `SyncRateToTempo(bpm, division)`. |
-| `FlangerEffect` | `BaseDelayMs`, `DepthMs`, `RateHz`, `Feedback` (may be negative). `SyncRateToTempo(...)`. |
-| `PhaserEffect` | `Stages` (1–24), `MinFrequency`, `MaxFrequency` (Hz), `RateHz`, `Feedback`. `SyncRateToTempo(...)`. |
-| `TremoloEffect` | `Depth` (0–1), `RateHz`, `Waveform` (`LfoWaveform`), `AutoPan`. `SyncRateToTempo(...)`. |
+| `DelayEffect` | `DelayMs`, `Feedback` (0 … <1), `Damping` (0–1), `PingPong`, `TempoSync` + `Tempo` + `Division` (`NoteDivision`); `EffectiveDelayMs` meter. |
+| `ChorusEffect` | `BaseDelayMs`, `DepthMs`, `RateHz`, `Feedback`. `SyncToTempo(bpm, division)`. |
+| `FlangerEffect` | `BaseDelayMs`, `DepthMs`, `RateHz`, `Feedback` (may be negative). `SyncToTempo(...)`. |
+| `PhaserEffect` | `Stages` (1–24), `MinFrequency`, `MaxFrequency` (Hz), `RateHz`, `Feedback`. `SyncToTempo(...)`. |
+| `TremoloEffect` | `Depth` (0–1), `RateHz`, `Waveform` (`LfoWaveform`), `AutoPan`. `SyncToTempo(...)`. |
 
 ### Reverb
 

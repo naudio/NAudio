@@ -25,15 +25,15 @@ namespace NAudio.Effects
         /// <summary>Generic parameter list (excludes Bypass/Mix, which are on the base).</summary>
         public IReadOnlyList<EffectParameter> Parameters => parameters ??= new[]
         {
-            EffectParameter.Continuous("Delay", "ms", 1f, 2000f, () => DelayMilliseconds, v => DelayMilliseconds = v),
+            EffectParameter.Continuous("Delay", "ms", 1f, 2000f, () => DelayMs, v => DelayMs = v),
             EffectParameter.Continuous("Feedback", "", 0f, 0.99f, () => Feedback, v => Feedback = v),
             EffectParameter.Continuous("Damping", "", 0f, 1f, () => Damping, v => Damping = v),
             EffectParameter.Toggle("Tempo Sync", () => TempoSync, v => TempoSync = v),
-            EffectParameter.Continuous("Tempo", "BPM", 40f, 300f, () => (float)Bpm, v => Bpm = v),
+            EffectParameter.Continuous("Tempo", "BPM", 40f, 300f, () => (float)Tempo, v => Tempo = v),
             EffectParameter.Choice("Division", DivisionLabels,
                 () => (int)Division, i => Division = (NoteDivision)i),
             EffectParameter.Toggle("Ping-Pong", () => PingPong, v => PingPong = v),
-            EffectParameter.Meter("Actual Delay", "ms", 0f, 5000f, () => EffectiveDelayMilliseconds)
+            EffectParameter.Meter("Actual Delay", "ms", 0f, 5000f, () => EffectiveDelayMs)
         };
 
         private const double MaxDelaySeconds = 5.0;
@@ -42,7 +42,7 @@ namespace NAudio.Effects
         private float[] dampState = Array.Empty<float>();
 
         /// <summary>Delay time in milliseconds (used when <see cref="TempoSync"/> is false). Default 350 ms.</summary>
-        public float DelayMilliseconds { get; set; } = 350f;
+        public float DelayMs { get; set; } = 350f;
 
         /// <summary>Feedback amount, 0 to &lt; 1. Default 0.4.</summary>
         public float Feedback { get; set; } = 0.4f;
@@ -50,11 +50,11 @@ namespace NAudio.Effects
         /// <summary>Feedback-path damping, 0 (bright) to 1 (dark). Default 0.</summary>
         public float Damping { get; set; }
 
-        /// <summary>When true the delay time follows <see cref="Bpm"/> and <see cref="Division"/>.</summary>
+        /// <summary>When true the delay time follows <see cref="Tempo"/> and <see cref="Division"/>.</summary>
         public bool TempoSync { get; set; }
 
         /// <summary>Tempo in BPM, used when <see cref="TempoSync"/> is true. Default 120.</summary>
-        public double Bpm { get; set; } = 120.0;
+        public double Tempo { get; set; } = 120.0;
 
         /// <summary>Note division, used when <see cref="TempoSync"/> is true. Default quarter note.</summary>
         public NoteDivision Division { get; set; } = NoteDivision.Quarter;
@@ -64,11 +64,11 @@ namespace NAudio.Effects
 
         /// <summary>
         /// The delay time actually in effect, in milliseconds — the tempo-derived
-        /// time when <see cref="TempoSync"/> is on, otherwise <see cref="DelayMilliseconds"/>.
+        /// time when <see cref="TempoSync"/> is on, otherwise <see cref="DelayMs"/>.
         /// Read-only; useful for showing what a chosen tempo/division resolves to.
         /// </summary>
-        public float EffectiveDelayMilliseconds =>
-            (float)((TempoSync ? TempoTime.Seconds(Bpm, Division) : DelayMilliseconds * 0.001) * 1000.0);
+        public float EffectiveDelayMs =>
+            (float)((TempoSync ? TempoTime.Seconds(Tempo, Division) : DelayMs * 0.001) * 1000.0);
 
         /// <summary>
         /// Creates a delay with a sensible default wet/dry mix.
@@ -92,7 +92,7 @@ namespace NAudio.Effects
         protected override void ProcessBlock(Span<float> buffer)
         {
             var channels = Channels;
-            var seconds = TempoSync ? TempoTime.Seconds(Bpm, Division) : DelayMilliseconds * 0.001;
+            var seconds = TempoSync ? TempoTime.Seconds(Tempo, Division) : DelayMs * 0.001;
             var maxSamples = lines[0].MaxDelaySamples;
             var delaySamples = (float)Math.Clamp(seconds * SampleRate, 1.0, maxSamples - 1.0);
             var feedback = Math.Clamp(Feedback, 0f, 0.99f);

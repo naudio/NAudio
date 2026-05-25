@@ -49,7 +49,7 @@ namespace NAudio.Effects
         /// <summary>
         /// Locks <see cref="RateHz"/> to a tempo and note division.
         /// </summary>
-        public void SyncRateToTempo(double bpm, NoteDivision division)
+        public void SyncToTempo(double bpm, NoteDivision division)
             => RateHz = (float)TempoTime.Hertz(bpm, division);
 
         /// <inheritdoc />

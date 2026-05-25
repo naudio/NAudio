@@ -41,12 +41,7 @@ namespace NAudio.Effects
         public int BitDepth
         {
             get => bitDepth;
-            set
-            {
-                if (value < 1 || value > 32)
-                    throw new ArgumentOutOfRangeException(nameof(value), "Bit depth must be 1–32");
-                bitDepth = value;
-            }
+            set => bitDepth = value < 1 ? 1 : value > 32 ? 32 : value;
         }
 
         /// <summary>

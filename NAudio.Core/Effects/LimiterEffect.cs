@@ -65,9 +65,7 @@ namespace NAudio.Effects
             get => releaseMs;
             set
             {
-                if (value <= 0f)
-                    throw new ArgumentOutOfRangeException(nameof(value), "Release time must be positive");
-                releaseMs = value;
+                releaseMs = value < 0f ? 0f : value;
                 RecomputeRelease();
             }
         }
@@ -76,12 +74,7 @@ namespace NAudio.Effects
         public float LookaheadMs
         {
             get => lookaheadMs;
-            set
-            {
-                if (value <= 0f)
-                    throw new ArgumentOutOfRangeException(nameof(value), "Look-ahead must be positive");
-                lookaheadMs = value;
-            }
+            set => lookaheadMs = value < 0f ? 0f : value;
         }
 
         /// <summary>
@@ -105,9 +98,7 @@ namespace NAudio.Effects
             get => oversampleFactor;
             set
             {
-                if (value != 1 && value != 2 && value != 4)
-                    throw new ArgumentOutOfRangeException(nameof(value), "Factor must be 1, 2 or 4");
-                oversampleFactor = value;
+                oversampleFactor = value >= 4 ? 4 : value >= 2 ? 2 : 1;
                 if (WaveFormat != null)
                     BuildDetectors();
             }

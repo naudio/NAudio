@@ -59,9 +59,7 @@ namespace NAudio.Effects
             get => oversampleFactor;
             set
             {
-                if (value != 1 && value != 2 && value != 4)
-                    throw new ArgumentOutOfRangeException(nameof(value), "Factor must be 1, 2 or 4");
-                oversampleFactor = value;
+                oversampleFactor = value >= 4 ? 4 : value >= 2 ? 2 : 1;
                 if (WaveFormat != null)
                     BuildOversamplers();
             }

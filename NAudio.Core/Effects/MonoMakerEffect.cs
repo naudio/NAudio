@@ -26,16 +26,15 @@ namespace NAudio.Effects
         private float frequency = 120f;
 
         /// <summary>
-        /// Frequencies below this (Hz) are made mono. Default 120 Hz. Must be positive.
+        /// Frequencies below this (Hz) are made mono. Default 120 Hz. Values below 1 Hz are
+        /// clamped to 1 Hz.
         /// </summary>
         public float Frequency
         {
             get => frequency;
             set
             {
-                if (value <= 0f)
-                    throw new ArgumentOutOfRangeException(nameof(value), "Frequency must be positive");
-                frequency = value;
+                frequency = value < 1f ? 1f : value;
                 if (sideLowPass != null)
                 {
                     sideLowPass.ReplaceStandby(

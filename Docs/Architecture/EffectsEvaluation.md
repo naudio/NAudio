@@ -250,7 +250,7 @@ From the first Windows monitoring session, addressed on `naudio3-effects`:
   needed two clicks). `EffectParameter.Value` now returns the just-requested
   value while a dispatch is attached, applied for real on the next drain.
 - **Delay tempo sync was opaque:** `Tempo`/`Division` are now parameters and a
-  read-only `EffectiveDelayMilliseconds` shows what the chosen division
+  read-only `EffectiveDelayMs` shows what the chosen division
   resolves to. **Ping-pong** now sums to mono and injects one line so a
   centred/mono source actually bounces L↔R.
 - **Tremolo Square / S&H clicked:** the modulator is edge-smoothed (~3 ms,

@@ -139,10 +139,11 @@ namespace NAudioTests.Effects
         }
 
         [Test]
-        public void RejectsNonPositiveCutoff()
+        public void ClampsNegativeCutoffToZero()
         {
             var effect = new DcBlockerEffect();
-            Assert.Throws<ArgumentOutOfRangeException>(() => effect.CutoffFrequency = 0f);
+            effect.CutoffFrequency = -5f;
+            Assert.That(effect.CutoffFrequency, Is.EqualTo(0f));
         }
     }
 

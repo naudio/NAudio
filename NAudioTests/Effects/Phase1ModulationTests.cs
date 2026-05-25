@@ -11,7 +11,7 @@ namespace NAudioTests.Effects
     public class TempoTimeTests
     {
         [Test]
-        public void QuarterNoteAt120BpmIsHalfASecond()
+        public void QuarterNoteAt120TempoIsHalfASecond()
         {
             Assert.That(TempoTime.Seconds(120.0, NoteDivision.Quarter), Is.EqualTo(0.5).Within(1e-12));
             Assert.That(TempoTime.Hertz(120.0, NoteDivision.Quarter), Is.EqualTo(2.0).Within(1e-12));
@@ -91,7 +91,7 @@ namespace NAudioTests.Effects
         [Test]
         public void ProducesADelayedEcho()
         {
-            var delay = new DelayEffect { DelayMilliseconds = 10f, Feedback = 0f, Mix = 0.5f };
+            var delay = new DelayEffect { DelayMs = 10f, Feedback = 0f, Mix = 0.5f };
             delay.Configure(Mono);
 
             var buffer = new float[2048];
@@ -110,7 +110,7 @@ namespace NAudioTests.Effects
         [Test]
         public void TempoSyncRunsCleanly()
         {
-            var delay = new DelayEffect { TempoSync = true, Bpm = 120, Division = NoteDivision.Sixteenth };
+            var delay = new DelayEffect { TempoSync = true, Tempo = 120, Division = NoteDivision.Sixteenth };
             delay.Configure(Mono);
 
             var buffer = new float[4096];
@@ -126,12 +126,12 @@ namespace NAudioTests.Effects
         public void EffectiveDelayReportsTheTempoSyncedTime()
         {
             // 1/4 note at 120 BPM = 0.5 s = 500 ms.
-            var delay = new DelayEffect { TempoSync = true, Bpm = 120, Division = NoteDivision.Quarter };
-            Assert.That(delay.EffectiveDelayMilliseconds, Is.EqualTo(500f).Within(0.5f));
+            var delay = new DelayEffect { TempoSync = true, Tempo = 120, Division = NoteDivision.Quarter };
+            Assert.That(delay.EffectiveDelayMs, Is.EqualTo(500f).Within(0.5f));
 
             delay.TempoSync = false;
-            delay.DelayMilliseconds = 250f;
-            Assert.That(delay.EffectiveDelayMilliseconds, Is.EqualTo(250f).Within(0.5f));
+            delay.DelayMs = 250f;
+            Assert.That(delay.EffectiveDelayMs, Is.EqualTo(250f).Within(0.5f));
         }
 
         [Test]
@@ -141,7 +141,7 @@ namespace NAudioTests.Effects
             var delay = new DelayEffect
             {
                 PingPong = true,
-                DelayMilliseconds = 5f, // 240 samples @ 48 kHz
+                DelayMs = 5f, // 240 samples @ 48 kHz
                 Feedback = 0.6f,
                 Mix = 1f
             };
@@ -228,8 +228,10 @@ namespace NAudioTests.Effects
             foreach (var s in buffer)
                 Assert.That(float.IsFinite(s), Is.True);
 
-            Assert.Throws<ArgumentOutOfRangeException>(() => fx.Stages = 0);
-            Assert.Throws<ArgumentOutOfRangeException>(() => fx.Stages = 25);
+            fx.Stages = 0;
+            Assert.That(fx.Stages, Is.EqualTo(1));
+            fx.Stages = 25;
+            Assert.That(fx.Stages, Is.EqualTo(24));
         }
 
         [Test]

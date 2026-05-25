@@ -36,9 +36,7 @@ namespace NAudio.Effects
             get => stages;
             set
             {
-                if (value < 1 || value > 24)
-                    throw new ArgumentOutOfRangeException(nameof(value), "Stages must be 1–24");
-                stages = value;
+                stages = value < 1 ? 1 : value > 24 ? 24 : value;
                 if (WaveFormat != null)
                     AllocateState();
             }
@@ -67,7 +65,7 @@ namespace NAudio.Effects
         /// <summary>
         /// Locks <see cref="RateHz"/> to a tempo and note division.
         /// </summary>
-        public void SyncRateToTempo(double bpm, NoteDivision division)
+        public void SyncToTempo(double bpm, NoteDivision division)
             => RateHz = (float)TempoTime.Hertz(bpm, division);
 
         /// <inheritdoc />

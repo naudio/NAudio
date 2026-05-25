@@ -120,11 +120,13 @@ namespace NAudioTests.Effects
         }
 
         [Test]
-        public void RejectsNonPositiveTimes()
+        public void ClampsNegativeTimesToZero()
         {
             var limiter = new LimiterEffect();
-            Assert.Throws<ArgumentOutOfRangeException>(() => limiter.ReleaseMs = 0f);
-            Assert.Throws<ArgumentOutOfRangeException>(() => limiter.LookaheadMs = 0f);
+            limiter.ReleaseMs = -5f;
+            Assert.That(limiter.ReleaseMs, Is.EqualTo(0f));
+            limiter.LookaheadMs = -5f;
+            Assert.That(limiter.LookaheadMs, Is.EqualTo(0f));
         }
     }
 

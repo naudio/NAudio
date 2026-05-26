@@ -1,6 +1,5 @@
 using System;
 using NAudio.CoreAudioApi;
-using NAudio.Wasapi;
 using NAudio.Wave;
 
 namespace NAudioDemo.RecordingDemo

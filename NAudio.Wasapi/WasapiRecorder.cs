@@ -1,7 +1,6 @@
 using NAudio.CoreAudioApi;
 using NAudio.CoreAudioApi.Interfaces;
 using NAudio.Wasapi.CoreAudioApi;
-using NAudio.Wave;
 using System;
 using System.Buffers;
 using System.Collections.Generic;
@@ -10,7 +9,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace NAudio.Wasapi
+namespace NAudio.Wave
 {
     /// <summary>
     /// Modern WASAPI audio recorder with zero-copy buffer access, MMCSS thread priority,

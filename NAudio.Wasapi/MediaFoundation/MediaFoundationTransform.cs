@@ -240,9 +240,12 @@ namespace NAudio.MediaFoundation
             }
             finally
             {
+                // Capture the hresults but defer throwing until every COM object has been
+                // released, otherwise a failed Unlock/RemoveAllBuffers would leak the rest.
+                int unlockHr = 0;
                 if (outputMediaBuffer != null && outputBufferLocked)
                 {
-                    MediaFoundationException.ThrowIfFailed(outputMediaBuffer.Unlock());
+                    unlockHr = outputMediaBuffer.Unlock();
                 }
                 ComActivation.ReleaseBoth(outputMediaBuffer, outputMediaBufferPtr);
 
@@ -257,9 +260,12 @@ namespace NAudio.MediaFoundation
                     ComActivation.ReleaseBoth(returnedSample, returnedSamplePtr);
                 }
 
-                MediaFoundationException.ThrowIfFailed(sample.RemoveAllBuffers());
+                int removeBuffersHr = sample.RemoveAllBuffers();
                 ComActivation.ReleaseBoth(sample, samplePtr);
                 ComActivation.ReleaseBoth(pBuffer, pBufferPtr);
+
+                MediaFoundationException.ThrowIfFailed(unlockHr);
+                MediaFoundationException.ThrowIfFailed(removeBuffersHr);
             }
         }
 
@@ -299,12 +305,16 @@ namespace NAudio.MediaFoundation
             }
             finally
             {
+                // Capture the hresult but defer throwing until the COM objects have been
+                // released, otherwise a failed Unlock would leak the buffer and the sample.
+                int unlockHr = 0;
                 if (bufferLocked)
                 {
-                    MediaFoundationException.ThrowIfFailed(mediaBuffer.Unlock());
+                    unlockHr = mediaBuffer.Unlock();
                 }
                 ComActivation.ReleaseBoth(mediaBuffer, mediaBufferPtr);
                 ComActivation.ReleaseBoth(sample, samplePtr);
+                MediaFoundationException.ThrowIfFailed(unlockHr);
             }
         }
 

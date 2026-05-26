@@ -56,3 +56,28 @@ dotnet_diagnostic.CA1001.severity = warning
 
 # CA2020: Prevent behavioral change from IntPtr/UIntPtr
 dotnet_diagnostic.CA2020.severity = warning
+
+# --- Rules promoted to ERROR (genuine breakage, not style) ---
+# Source-generated COM interop diagnostics that mean the code is actually
+# broken (fails at runtime or fails to generate), as opposed to the IDE*
+# style rules and the incremental migration recommendations (SYSLIB1054
+# DllImport->LibraryImport, SYSLIB1096 ComImport->GeneratedComInterface)
+# which stay at suggestion. These must never regress silently again.
+
+# SYSLIB1090: Invalid GeneratedComInterfaceAttribute usage
+dotnet_diagnostic.SYSLIB1090.severity = error
+
+# SYSLIB1091: Methods split across partial declarations -> unreliable vtable offsets
+dotnet_diagnostic.SYSLIB1091.severity = error
+
+# SYSLIB1093: COM interface generation analysis failed
+dotnet_diagnostic.SYSLIB1093.severity = error
+
+# SYSLIB1094: Base COM interface failed to generate source
+dotnet_diagnostic.SYSLIB1094.severity = error
+
+# SYSLIB1095: Invalid GeneratedComClassAttribute usage
+dotnet_diagnostic.SYSLIB1095.severity = error
+
+# SYSLIB1099: Marshal COM interop APIs do not support source-generated COM and fail at runtime
+dotnet_diagnostic.SYSLIB1099.severity = error

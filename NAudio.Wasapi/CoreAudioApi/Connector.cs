@@ -22,7 +22,8 @@ namespace NAudio.CoreAudioApi
         /// </summary>
         public void ConnectTo(Connector other)
         {
-            var ptr = Marshal.GetComInterfaceForObject(other.connectorInterface, typeof(IConnector));
+            var ptr = ComActivation.ComWrappers.GetOrCreateComInterfaceForObject(
+                other.connectorInterface, CreateComInterfaceFlags.None);
             try
             {
                 connectorInterface.ConnectTo(ptr);

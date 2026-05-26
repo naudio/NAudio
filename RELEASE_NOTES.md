@@ -102,6 +102,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
 
  * `NAudio.Core`, `NAudio.Midi`, and `NAudio.Wasapi` are now `IsAotCompatible=true`. AOT compatibility is enforced at build-time by `NAudioAotSmokeTest`, which fails CI on any new trim or AOT analyzer warning
  * Most COM interop migrated from `[ComImport]` to `[GeneratedComInterface]` / `ComWrappers`. Affected interfaces include the WASAPI / Core Audio activation chain (`IActivateAudioInterfaceCompletionHandler`, `IMMNotificationClient`, `IAudioSessionNotification`, `IAudioSessionEvents`, `IAudioEndpointVolumeCallback`, `IAgileObject`, `IPropertyStore`), the Media Foundation cascade, the DMO interfaces, DirectSound, and the `ComStream` CCW (now source-generated `IStream`)
+ * `Connector.ConnectTo`: fixed a source-generated COM leftover — it now projects the target connector via `ComWrappers` instead of `Marshal.GetComInterfaceForObject`, which is unsupported for `[GeneratedComInterface]` types and would fail at runtime (SYSLIB1099) (#1311)
  * DirectSound P/Invokes migrated to `[LibraryImport]` with `[UnmanagedCallersOnly]` thunks; `BufferDescription` and `BufferCaps` converted from class to struct
  * `AcmDriver` ported from legacy `NativeMethods` to `NativeLibrary`
  * Most `MediaFoundationInterop` blittable P/Invokes migrated to `[LibraryImport]`

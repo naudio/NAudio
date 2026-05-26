@@ -5,6 +5,7 @@
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <IsAotCompatible>true</IsAotCompatible>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Description>WASAPI playback and capture (including loopback and process loopback) and WinRT MIDI for the NAudio audio library.</Description>
   </PropertyGroup>
 
   <!-- needed for perfomance profiling unit tests -->

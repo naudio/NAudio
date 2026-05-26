@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- net10.0 so `dotnet test` runs it on Linux (or Claude's sandbox).
+         Not run by the Windows CI job, which only tests NAudioTests; this
+         project still compiles as part of NAudio.slnx. It self-skips when
+         libsndfile (or a given codec) is absent, so it is safe anywhere. -->
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <EnableNUnitRunner>true</EnableNUnitRunner>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsPackable>false</IsPackable>
+    <!-- When libsndfile is absent every fixture self-skips via OneTimeSetUp,
+         which MTP treats as exit code 8/9. Ignore those so `dotnet test`
+         doesn't fail on machines without the native library. -->
+    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --ignore-exit-code 8;9</TestingPlatformCommandLineArguments>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NUnit" Version="4.5.1" />
+    <PackageReference Include="NUnit3TestAdapter" Version="6.1.0" />
+    <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" Version="2.2.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NAudio.SoundFile\NAudio.SoundFile.csproj" />
+    <ProjectReference Include="..\NAudio.Core\NAudio.Core.csproj" />
+  </ItemGroup>
+
+</Project>

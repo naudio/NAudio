@@ -23,7 +23,7 @@ static class Program
         while (true)
         {
             var choice = Menu.Show("Main Menu", banner,
-                new Menu.Group("", "WASAPI", "ASIO", "WinMM", "DirectSound", "Media Foundation", "DMO", "DSP", "Exit"));
+                new Menu.Group("", "WASAPI", "ASIO", "WinMM", "DirectSound", "Media Foundation", "Sound File", "DMO", "DSP", "Exit"));
 
             // Escape at the top level exits the app.
             if (choice is null) return 0;
@@ -44,6 +44,9 @@ static class Program
                     break;
                 case "Media Foundation":
                     MenuRenderer.Show("Media Foundation");
+                    break;
+                case "Sound File":
+                    MenuRenderer.Show("Sound File (libsndfile)");
                     break;
                 case "DMO":
                     MenuRenderer.Show("DMO (DirectX Media Objects)");

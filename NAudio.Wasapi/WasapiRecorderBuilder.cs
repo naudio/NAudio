@@ -1,7 +1,6 @@
 using NAudio.CoreAudioApi;
-using NAudio.Wave;
 
-namespace NAudio.Wasapi
+namespace NAudio.Wave
 {
     /// <summary>
     /// Fluent builder for creating a <see cref="WasapiRecorder"/>.

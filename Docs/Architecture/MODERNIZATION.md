@@ -43,7 +43,8 @@ This document records the architectural decisions, rationale, and progress for t
 | NAudio.Asio | netstandard2.0; net8.0-windows | net9.0-windows | Dropped netstandard2.0 leg. Removed `Microsoft.Win32.Registry` polyfill |
 | NAudio.WinMM | netstandard2.0; net6.0 | net9.0-windows | Windows-only (P/Invoke into winmm.dll). Removed netstandard2.0 and `Microsoft.Win32.Registry` polyfill |
 | NAudio.WinForms | net472; netcoreapp3.1 | net9.0-windows | Windows-only WinForms controls. Removed net472 workarounds. SDK changed from `Microsoft.NET.Sdk.WindowsDesktop` to `Microsoft.NET.Sdk` |
-| NAudio.Wasapi | netstandard2.0 | net9.0-windows10.0.19041.0 | Windows 10 2004 (build 19041) minimum required for process-specific loopback capture. .NET 9 minimum to dodge the .NET 8 ComWrappers DICASTABLE CastCache regression — see "Minimum platform" above |
+| NAudio.Wasapi | netstandard2.0 | net9.0-windows10.0.19041.0 | Windows 10 2004 (build 19041) minimum required for process-specific loopback capture. .NET 9 minimum to dodge the .NET 8 ComWrappers DICASTABLE CastCache regression — see "Minimum platform" above. NAudio 3 second round: DMO and DirectSound carved out into `NAudio.Dmo` — see *Phase 11* |
+| NAudio.Dmo | — (new) | net9.0-windows | New in NAudio 3 second round. Carved out of NAudio.Wasapi: DMO effects, DMO MP3 decoder, DMO resampler, DMO enumeration, and DirectSound. No 19041 floor — DMO/DirectSound only need vanilla Windows COM. See *Phase 11* below |
 | NAudio.Extras | net472; netcoreapp3.1; net8.0-windows10.0.19041.0; net8.0 | net9.0; net9.0-windows10.0.19041.0 | Dual target: cross-platform core + Windows-specific `AudioPlaybackEngine` (gated by `WINDOWS` define) |
 | NAudio (umbrella) | net472; netcoreapp3.1; net6.0-windows; net6.0; net8.0-windows10.0.19041.0 | net9.0; net9.0-windows10.0.19041.0 | Dual target: cross-platform (Core + Midi) + Windows (WinMM, WinForms, ASIO, WASAPI). SDK changed from `Microsoft.NET.Sdk.WindowsDesktop` to `Microsoft.NET.Sdk` |
 | NAudio.Uap | net9.0-windows10.0.26100 | **Retired** | See "NAudio.Uap project retirement" below |
@@ -1011,7 +1012,43 @@ See [`NAudio3AssemblyLayoutPlan.md`](NAudio3AssemblyLayoutPlan.md) for the full 
 
 **Validation:** full clean rebuild green across all 19 projects (0 warnings, 0 errors); AOT smoke test passes (confirms NAudio.Midi's AOT opt-in introduced no trim warnings); NAudioDemo MIDI panels run unchanged. No consumer-side `PackageReference` adjustments were required in-repo: every sample/tool that uses the moved types either references `NAudio.WinMM` directly or pulls it transitively via the meta-package's Windows leg.
 
-**Subsequent phases** (deferred from the first round, candidates for NAudio 3 but not committed): finishing the WinRT MIDI backend (`NAudio.Midi.WinRT`), splitting `NAudio.Wasapi` into per-API packages (`NAudio.Wasapi` / `NAudio.MediaFoundation` / `NAudio.Dmo` / `NAudio.DirectSound`), rehousing `NAudio.Extras` contents. See the layout plan's §"Subsequent phases" for the trade-off analysis on each.
+**Subsequent phases** (deferred from the first round, candidates for NAudio 3 but not committed): finishing the WinRT MIDI backend (`NAudio.Midi.WinRT`), splitting `NAudio.Wasapi` into per-API packages — *partially landed in Phase 11 below: DMO + DirectSound carved out into `NAudio.Dmo`. A further MediaFoundation split is no longer planned for NAudio 3.* — and rehousing `NAudio.Extras` contents. See the layout plan's §"Subsequent phases" for the trade-off analysis on each.
+
+---
+
+## Phase 11: Carve `NAudio.Dmo` out of `NAudio.Wasapi` (NAudio 3 second round) — DONE
+
+**Decision:** Split the legacy DMO and DirectSound APIs out of the kitchen-sink `NAudio.Wasapi` assembly into a dedicated `NAudio.Dmo` package. Stops the long-standing "I only want WASAPI but I get DMO interop too" issue without proliferating packages — DMO and DirectSound combine into one new assembly rather than two tiny ones, because both are obsolescence candidates and grouping them keeps the eventual deprecation surface compact.
+
+See [`NAudio3AssemblyLayoutPlan.md`](NAudio3AssemblyLayoutPlan.md) §"Execution status — second round" for the full step-by-step record; this entry just summarises what shipped.
+
+**Scope:**
+
+- `NAudio.Wasapi/Dmo/` (~45 files) → `NAudio.Dmo/Dmo/`. Namespaces `NAudio.Dmo`, `NAudio.Dmo.Effect`, `NAudio.Dmo.Interfaces` preserved.
+- `NAudio.Wasapi/DirectSound/` (6 files: `DirectSoundOut`, `DirectSoundException`, four `[GeneratedComInterface]` declarations) → `NAudio.Dmo/DirectSound/`. Namespace `NAudio.Wave` (for `DirectSoundOut`) preserved.
+- Three root-level Dmo wrappers in `NAudio.Wasapi/` — `DmoMp3FrameDecompressor.cs`, `DmoEffectWaveProvider.cs`, `ResamplerDmoStream.cs` — relocated to `NAudio.Dmo/`.
+- `IWMResamplerProps` (consumed only by `MediaFoundationResampler`, despite living under `Dmo/Interfaces/`) moved to `NAudio.Wasapi/MediaFoundation/Interfaces/` and renamespaced to `NAudio.MediaFoundation.Interfaces`. Internal interface, source-private.
+- Embedded resampler removed from `WasapiOut`: the old exclusive-mode path that wrapped the source in `ResamplerDmoStream` is gone — exclusive-mode callers whose format is not natively supported now get a `NotSupportedException` with a message pointing at `MediaFoundationResampler`, shared mode (which still auto-converts), or `WasapiPlayerBuilder`. This was the only intra-assembly DMO dependency in `NAudio.Wasapi`.
+
+**Severed couplings:**
+
+- `ComActivation` (the shared `internal static partial class` used by every COM-activation site in `NAudio.Wasapi`) duplicated as `NAudio.Dmo/Interop/ComActivation.cs` rather than hosted in a third "common" assembly. ~110 lines of duplication — cheaper than the dependency-graph node a shared package would add.
+- The 12 `MediaFoundationException.ThrowIfFailed(hr)` sites in `MediaObject.cs` replaced with `Marshal.ThrowExceptionForHR(hr)`. DMO HRESULTs weren't in the MF exception's message lookup table anyway, so the runtime surface is unchanged.
+
+**Wire-up:**
+
+- `NAudio.Dmo` added to `NAudio.slnx`.
+- Meta-package's Windows leg gains a `<ProjectReference>` to `NAudio.Dmo` (gated by `'$(TargetPlatformIdentifier)' == 'windows'`). Meta-package consumers see no change.
+- `release.yml` packs list extended with `'NAudio.Dmo'`.
+- In-repo direct consumers of the moved types (`NAudioTests`, `NAudioConsoleTest`, `NAudioAotSmokeTest`) gained explicit `NAudio.Dmo` `<ProjectReference>`s. `NAudioDemo` is unchanged — it picks up the new package transitively via the meta-package.
+- `NAudio.Wasapi/README.md` rewritten to reflect the slimmer scope (WASAPI + Media Foundation; pointer to `NAudio.Dmo` for DMO/DirectSound).
+
+**Validation:** structural change only — no behaviour change to the DMO / DirectSound / MediaFoundation code paths themselves. The one behaviour change is `WasapiOut`'s removed resampler, called out separately in *Breaking Changes*. Solution rebuild is expected to be clean; consumer-side impact is one `<PackageReference>` line for direct `NAudio.Wasapi` consumers of the moved types.
+
+**Out of scope:**
+
+- `[TypeForwardedTo]` shims from `NAudio.Wasapi` to `NAudio.Dmo`. Technically possible (the cycle problem doesn't apply once `WasapiOut` stops using `ResamplerDmoStream`), but deliberately omitted — NAudio 3 is a clean break, and forwarders would carry the legacy surface forward for no real upside.
+- The `AudioMediaSubtypes` namespace quirk (`NAudio.Core` and `NAudio.Dmo` now both contribute to namespace `NAudio.Dmo`). Legal, minor smell. Future cleanup candidate but a public-API rename, so out of scope here.
 
 ---
 
@@ -1037,6 +1074,16 @@ Source code is unchanged — namespaces are preserved across all moves. The brea
 | `MmResult`, `MmException`, `Manufacturers` moved from `NAudio.Core` to `NAudio.WinMM` (namespace `NAudio` preserved) | Source unchanged. Anyone catching `MmException` is already a winmm consumer, so the `NAudio.WinMM` package is almost certainly already referenced |
 | `MidiIn`, `MidiOut`, `MidiInCapabilities`, `MidiOutCapabilities`, `MidiInterop` moved from `NAudio.Midi` to `NAudio.WinMM` (namespace `NAudio.Midi` preserved) | Source unchanged. MIDI-only consumers who use live `MidiIn`/`MidiOut` need to add `<PackageReference Include="NAudio.WinMM" />`. The portable `NAudio.Midi` package alone still provides `MidiEvent`/`MidiFile` and the rest of the message types |
 | `NAudio.Midi` is now `IsAotCompatible=true` | No action — additive |
+
+### Assembly layout reshape (DMO + DirectSound split)
+
+Second-round split. Source code is unchanged — namespaces preserved across all moves. Direct `NAudio.Wasapi` consumers of the moved types need one new `<PackageReference Include="NAudio.Dmo" />`. Meta-package consumers see no change. See *Phase 11* above and [`NAudio3AssemblyLayoutPlan.md`](NAudio3AssemblyLayoutPlan.md) §"Execution status — second round" for the full record.
+
+| Change | Migration |
+| ------ | --------- |
+| DMO types (`DmoMp3FrameDecompressor`, `DmoEffectWaveProvider`, `ResamplerDmoStream`, `DmoEnumerator`, the nine `Dmo*` effect classes, `MediaObject` / `MediaObjectInPlace` / `ResamplerMediaObject` / `WindowsMediaMp3Decoder`, and the supporting enums/structs) moved from `NAudio.Wasapi` to `NAudio.Dmo` (namespaces `NAudio.Dmo`, `NAudio.Dmo.Effect`, `NAudio.Dmo.Interfaces` preserved) | Source unchanged. Direct `NAudio.Wasapi` consumers add `<PackageReference Include="NAudio.Dmo" />` |
+| `DirectSoundOut` and `DirectSoundException` moved from `NAudio.Wasapi` to `NAudio.Dmo` (namespace `NAudio.Wave` preserved) | Same as above — add `NAudio.Dmo` package reference. `DirectSoundOut` previously moved from `NAudio.Core` to `NAudio.Wasapi` in Phase 2g, then to `NAudio.Dmo` here |
+| `WasapiOut`'s embedded DMO resampler removed. Exclusive-mode callers whose source format is not natively supported now get a `NotSupportedException` from `Init` instead of silent on-the-fly resampling | Resample upstream (`MediaFoundationResampler`), use shared mode (which still auto-converts via `AutoConvertPcm`), or switch to `WasapiPlayerBuilder` |
 
 ### WASAPI API changes
 

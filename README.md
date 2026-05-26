@@ -78,7 +78,8 @@ NAudio comes with several demo applications which are the quickest way to see ho
 * [Playing Audio from a URL](Docs/PlayAudioFromUrl.md)
 * [Choose an audio output device type](Docs/OutputDeviceTypes.md)
 * [Enumerate and select Output Devices](Docs/EnumerateOutputDevices.md)
-* [Creating and configuring a WasapiOut device](Docs/WasapiOut.md)
+* [Playing audio with WasapiPlayer (recommended for WASAPI)](Docs/WasapiPlayer.md)
+* [Creating and configuring a WasapiOut device (legacy)](Docs/WasapiOut.md)
 * [Implement "Fire and Forget" Playback (e.g. game sound effects)](http://markheath.net/post/fire-and-forget-audio-playback-with)
 * [Play streaming MP3](http://markheath.net/post/how-to-play-back-streaming-mp3-using)
 * [Handling playback stopped](Docs/PlaybackStopped.md)
@@ -127,7 +128,8 @@ NAudio comes with several demo applications which are the quickest way to see ho
 ### Recording
 
 * [Recording a WAV file from a WinForms application](Docs/RecordWavFileWinFormsWaveIn.md)
-* [Capturing system audio with WasapiLoopbackCapture](Docs/WasapiLoopbackCapture.md)
+* [Recording audio with WasapiRecorder (recommended for WASAPI)](Docs/WasapiRecorder.md)
+* [Capturing system audio with WasapiLoopbackCapture (legacy)](Docs/WasapiLoopbackCapture.md)
 * [Play and Record audio at the same time](http://markheath.net/post/how-to-record-and-play-audio-at-same)
 * [Record Audio with ASIO](Docs/AsioRecording.md)
 * [Duplex Processing with ASIO](Docs/AsioDuplex.md)

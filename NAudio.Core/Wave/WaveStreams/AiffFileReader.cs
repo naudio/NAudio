@@ -39,6 +39,11 @@ namespace NAudio.Wave
         {
             waveStream = inputStream;
             ReadAiffHeader(waveStream, out waveFormat, out dataPosition, out dataChunkLength, chunks);
+            if (waveFormat.BlockAlign <= 0)
+            {
+                throw new InvalidDataException(
+                    $"Invalid AIFF file - block align is {waveFormat.BlockAlign} (channels={waveFormat.Channels}, bitsPerSample={waveFormat.BitsPerSample}).");
+            }
             Position = 0;
         }
 
@@ -226,6 +231,10 @@ namespace NAudio.Wave
                 if (Position + count > dataChunkLength)
                 {
                     count = dataChunkLength - (int)Position;
+                    // dataChunkLength itself may not be a whole number of blocks
+                    // (truncated/malformed SSND); the byte-swap loops below assume
+                    // complete samples, so round down to the nearest block.
+                    count -= count % waveFormat.BlockAlign;
                 }
 
                 // Read big-endian source bytes into the caller's span, then swap in place.

@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFrameworks>net9.0;net9.0-windows10.0.19041.0</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Description>Optional extras (extra demo/sample providers and helpers) for the NAudio audio library.</Description>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(TargetPlatformIdentifier)' == 'windows' ">

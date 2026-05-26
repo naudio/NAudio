@@ -75,12 +75,12 @@ foreach (var wasapi in enumerator.EnumerateAudioEndPoints(DataFlow.All, DeviceSt
 }
 ```
 
-To open the device you want, simply pass the device in to the appropriate WASAPI class depending on if you are playing back or recording...
+To open the device you want, pass the device in to the appropriate WASAPI builder depending on whether you are playing back or recording...
 
 ```c#
-var outputDevice = new WasapiOut(mmDevice, ...);
-var recordingDevice = new WasapiCapture(captureDevice, ...);
-var loopbackCapture = new WasapiLoopbackCapture(loopbackDevice);
+var outputDevice = new WasapiPlayerBuilder().WithDevice(mmDevice).Build();
+var recordingDevice = new WasapiRecorderBuilder().WithDevice(captureDevice).Build();
+var loopbackCapture = new WasapiRecorderBuilder().WithDevice(loopbackDevice).WithLoopbackCapture().Build();
 ```
 
 You can also use the MMEnumerator to request what the default device is for a number of different scenarios (playback or record, and voice, multimedia or 'console'):
@@ -91,10 +91,10 @@ enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
 
 # ASIO
 
-You can discover the registered ASIO drivers on your system with `AsioOut.GetDriverNames`. There is no guarantee that the associated soundcard is currently connected to the system.
+You can discover the registered ASIO drivers on your system with `AsioDevice.GetDriverNames`. There is no guarantee that the associated soundcard is currently connected to the system.
 
 ```c#
-foreach (var asio in AsioOut.GetDriverNames())
+foreach (var asio in AsioDevice.GetDriverNames())
 {
     Console.WriteLine(asio);
 }
@@ -103,8 +103,10 @@ foreach (var asio in AsioOut.GetDriverNames())
 You can then use the driver name to open the device:
 
 ```c#
-new AsioOut(driverName);
+using var device = AsioDevice.Open(driverName);
 ```
+
+(`AsioDevice` is the NAudio 3 ASIO API. The legacy `AsioOut` class still works — see [Migrating from AsioOut to AsioDevice](AsioMigration.md).)
 
 # Management Objects
 

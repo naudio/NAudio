@@ -25,8 +25,13 @@ jobs:
         run: dotnet build NAudio.slnx --configuration Release --no-restore
 
       - name: Test
+        # `dotnet test` against the slnx runs every test project. On
+        # Windows that's NAudio.Core.Tests + NAudio.Windows.Tests plus
+        # the SoundFile/Alsa suites (which self-skip when their native
+        # deps are absent). The --solution flag is required by newer
+        # .NET 10 SDK patches; positional arg form errors out.
         run: >
-          dotnet test --project NAudioTests/NAudioTests.csproj
+          dotnet test --solution NAudio.slnx
           --configuration Release
           --no-build
           --filter "TestCategory!=IntegrationTest"

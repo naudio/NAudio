@@ -10,7 +10,7 @@ Directory.CreateDirectory(outputFolder);
 var outputFilePath = Path.Combine(outputFolder,"recorded.wav");
 ```
 
-Next, let's create the recording device. I'm going to use `WaveIn` in this case. We could also use `WasapiCapture`.
+Next, let's create the recording device. I'm going to use `WaveIn` in this case. We could also use [`WasapiRecorder`](WasapiRecorder.md) for WASAPI capture.
 
 ```c#
 var waveIn = new WaveIn();

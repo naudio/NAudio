@@ -2,7 +2,7 @@
 using System.IO;
 using NAudio.Wave;
 
-namespace NAudio.Utils.FileFormatDiscovery
+namespace NAudio.MediaFoundation.FileFormatDiscovery
 {
     /// <summary>
     /// MPEG Layer 3 file format.

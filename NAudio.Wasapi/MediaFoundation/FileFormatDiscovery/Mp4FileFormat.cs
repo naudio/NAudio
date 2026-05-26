@@ -1,8 +1,7 @@
-﻿
-using System;
+﻿using System;
 using System.IO;
 
-namespace NAudio.Utils.FileFormatDiscovery
+namespace NAudio.MediaFoundation.FileFormatDiscovery
 {
     /// <summary>
     /// MPEG 4 container file format.

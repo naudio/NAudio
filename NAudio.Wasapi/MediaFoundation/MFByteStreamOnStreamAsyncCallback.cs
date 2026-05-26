@@ -28,8 +28,9 @@ namespace NAudio.MediaFoundation
 
         public int GetParameters(out uint pdwFlags, out uint pdwQueue)
         {
+            // Let's be sure that our callback will be invoked on the multi-threaded queue.
             pdwFlags = 0;
-            pdwQueue = MediaFoundationApi.AllocatedWorkQueueToken;
+            pdwQueue = MediaFoundationInterop.MFASYNC_CALLBACK_QUEUE_MULTITHREADED;
             return HResult.S_OK;
         }
 
@@ -40,55 +41,52 @@ namespace NAudio.MediaFoundation
                 .GetOrCreateObjectForComInstance(resultObjectPtr, CreateObjectFlags.UniqueInstance);
             try
             {
-                int hr = callbackToCall.Invoke(pointer, size, out int dataSize);
-                currentResult.SetStatus(hr);
-                if (HResult.IsError(hr))
+                int callbackHResult = callbackToCall.Invoke(pointer, size, out int dataSize);
+                
+                currentResult.SetStatus(callbackHResult);
+
+                int result = currentResult.GetObject(out nint innerResultPointer);
+                if (!HResult.IsError(result))
                 {
-                    hr = HResult.E_UNEXPECTED;
-                }
-                else
-                {
-                    hr = currentResult.GetObject(out nint innerResultPointer);
-                    if (!HResult.IsError(hr))
+                    IMFAsyncResult innerResultWrapper = null;
+                    IMfByteStreamAsyncCallSizeHandler sizeHandler = null;
+                    try
                     {
-                        IMFAsyncResult innerResultWrapper = null;
-                        IMfByteStreamAsyncCallSizeHandler sizeHandler = null;
-                        try
+                        innerResultWrapper = (IMFAsyncResult)ComActivation
+                            .ComWrappers
+                            .GetOrCreateObjectForComInstance(innerResultPointer, CreateObjectFlags.UniqueInstance);
+
+                        innerResultWrapper.SetStatus(callbackHResult);
+
+                        result = innerResultWrapper.GetObject(out nint sizeHandlerPtr);
+
+                        if (!HResult.IsError(result))
                         {
-                            innerResultWrapper = (IMFAsyncResult)ComActivation
-                                .ComWrappers
-                                .GetOrCreateObjectForComInstance(innerResultPointer, CreateObjectFlags.UniqueInstance);
-
-                            hr = innerResultWrapper.GetObject(out nint sizeHandlerPtr);
-
-                            if (!HResult.IsError(hr))
+                            try
                             {
-                                try
-                                {
-                                    sizeHandler = (IMfByteStreamAsyncCallSizeHandler)
-                                        ComActivation
-                                        .ComWrappers
-                                        .GetOrCreateObjectForComInstance(sizeHandlerPtr, CreateObjectFlags.UniqueInstance);
-                                    sizeHandler.SetDataSize(dataSize);
-                                }
-                                finally
-                                {
-                                    ComActivation.ReleaseBoth(sizeHandler, sizeHandlerPtr);
-                                }
-
-                                hr = MediaFoundationApi.InvokeCallback(innerResultPointer);
+                                sizeHandler = (IMfByteStreamAsyncCallSizeHandler)
+                                    ComActivation
+                                    .ComWrappers
+                                    .GetOrCreateObjectForComInstance(sizeHandlerPtr, CreateObjectFlags.UniqueInstance);
+                                sizeHandler.SetDataSize(dataSize);
                             }
+                            finally
+                            {
+                                ComActivation.ReleaseBoth(sizeHandler, sizeHandlerPtr);
+                            }
+
+                            return MediaFoundationApi.InvokeCallback(innerResultPointer);
                         }
-                        finally
-                        {
-                            // https://learn.microsoft.com/en-us/windows/win32/api/mfobjects/nf-mfobjects-imfasyncresult-getobject#parameters says:
-                            // "If the value is not NULL, the caller must release the interface."
-                            ComActivation.ReleaseBoth(innerResultWrapper, innerResultPointer);
-                        }
+                    }
+                    finally
+                    {
+                        // https://learn.microsoft.com/en-us/windows/win32/api/mfobjects/nf-mfobjects-imfasyncresult-getobject#parameters says:
+                        // "If the value is not NULL, the caller must release the interface."
+                        ComActivation.ReleaseBoth(innerResultWrapper, innerResultPointer);
                     }
                 }
 
-                return hr;
+                return result;
             }
             catch (COMException cex)
             {

@@ -249,5 +249,25 @@ namespace NAudio.MediaFoundation
         /// Media Foundation Version
         /// </summary>
         public const int MF_VERSION = (MF_SDK_VERSION << 16) | MF_API_VERSION;
+
+        #region Common work queue tokens
+
+        /// <summary>
+        /// In most cases, applications should use <see cref="MFASYNC_CALLBACK_QUEUE_MULTITHREADED"/>. <br />
+        /// This work queue is used for synchronous operations.Using the standard work queue may run the risk of deadlocking. <br />
+        /// Applications can create a private synchronous queue on top of the multithreaded queue by using <see href="https://learn.microsoft.com/en-us/windows/desktop/api/mfapi/nf-mfapi-mfallocateserialworkqueue">MFAllocateSerialWorkQueue</see>.
+        /// </summary>
+        public const uint MFASYNC_CALLBACK_QUEUE_STANDARD = 0x00000001;
+
+        /// <summary>
+        /// This multithreaded work queue should be used in most cases. <br />
+        /// This work queue is used for asynchronous operations throughout Media Foundation.
+        /// </summary>
+        public const uint MFASYNC_CALLBACK_QUEUE_MULTITHREADED = 0x00000005;
+
+        /// <summary>Undefined work queue.</summary>
+        public const uint MFASYNC_CALLBACK_QUEUE_UNDEFINED = 0x00000000;
+
+        #endregion
     }
 }

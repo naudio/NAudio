@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Diagnostics.CodeAnalysis;
 
-namespace NAudio.Utils.FileFormatDiscovery
+namespace NAudio.MediaFoundation.FileFormatDiscovery
 {
     /// <summary>
     /// Audio file format finder. <br />
@@ -23,7 +23,7 @@ namespace NAudio.Utils.FileFormatDiscovery
 
         static AudioFileFormatFinder()
         {
-            defaultFileFormatsRegistry = new(10);
+            defaultFileFormatsRegistry = new(3);
             defaultFileFormatsRegistry.Add(Mp3FileFormat.Instance);
             defaultFileFormatsRegistry.Add(Mp4FileFormat.Instance);
             defaultFileFormatsRegistry.Add(FlacFileFormat.Instance);

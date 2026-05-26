@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 #pragma warning disable CS0659 // AudioFileFormat is not overriding GetHashCode
 
-namespace NAudio.Utils.FileFormatDiscovery
+namespace NAudio.MediaFoundation.FileFormatDiscovery
 {
     /// <summary>
     /// Defines a way for determining whether a data stream is of a specified audio file format. <br />
@@ -22,7 +22,7 @@ namespace NAudio.Utils.FileFormatDiscovery
         /// </summary>
         /// <param name="stream">The data stream.</param>
         /// <returns>A <see cref="bool"/> value determining whether specified file is the audio file format represented by the instance.</returns>
-        /// <exception cref="System.ArgumentNullException"><paramref name="stream"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="stream"/> is <see langword="null"/>.</exception>
         public abstract bool IsFormat(Stream stream);
 
         /// <summary>

@@ -7,8 +7,8 @@ using System.Runtime.InteropServices.Marshalling;
 
 using NAudio.Utils;
 using NAudio.Wasapi.CoreAudioApi;
-using NAudio.Utils.FileFormatDiscovery;
 using NAudio.MediaFoundation.Interfaces;
+using NAudio.MediaFoundation.FileFormatDiscovery;
 
 namespace NAudio.MediaFoundation
 {

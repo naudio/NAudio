@@ -27,7 +27,6 @@ namespace NAudio.MediaFoundation
     {
         // Let's be sure that the static initializer assigns the below variables to correct initial values.
         private static bool initialized = false;
-        private static uint queue_token = 0U;
 
         /// <summary>
         /// Initializes Media Foundation - only needs to be called once per process
@@ -36,19 +35,8 @@ namespace NAudio.MediaFoundation
         {
             if (!initialized)
             {
-                MediaFoundationException.ThrowIfFailed(
-                        MediaFoundationInterop.MFStartup(MediaFoundationInterop.MF_VERSION, 0)
-                );
-                try
-                {
-                    queue_token = CreateWorkQueue(WorkQueueType.MultiThreaded);
-                    initialized = true;
-                }
-                catch
-                {
-                    MediaFoundationException.ThrowIfFailed(MediaFoundationInterop.MFShutdown());
-                    throw;
-                }
+                MediaFoundationException.ThrowIfFailed(MediaFoundationInterop.MFStartup(MediaFoundationInterop.MF_VERSION, 0));
+                initialized = true;
             }
         }
 
@@ -59,30 +47,10 @@ namespace NAudio.MediaFoundation
         {
             if (initialized)
             {
-                try
-                {
-                    MediaFoundationException.ThrowIfFailed(MediaFoundationInterop.MFShutdown());
-                }
-                finally
-                {
-                    try
-                    {
-                        ReleaseWorkQueue(queue_token);
-                    }
-                    finally
-                    {
-                        queue_token = 0U;
-                        initialized = false;
-                    }
-                }
+                MediaFoundationException.ThrowIfFailed(MediaFoundationInterop.MFShutdown());
+                initialized = false;
             }
         }
-
-        /// <summary>
-        /// Provides a standard Media Foundation work queue token used by NAudio <br />
-        /// Currently used by the async methods on our byte stream wrapper, leaving it here for additional features if so required.
-        /// </summary>
-        public static uint AllocatedWorkQueueToken => queue_token;
 
         /// <summary>
         /// Enumerate the installed Media Foundation transforms in the specified category
@@ -195,16 +163,28 @@ namespace NAudio.MediaFoundation
             return (ptr, rcw);
         }
 
+        // See mfobjects.h header file.
         private static readonly Guid IID_IMFByteStream = new("ad4c1b00-4bf7-422f-9175-756693d9130d");
         private static readonly Guid IID_IMFAsyncCallback = new("a27003cf-2354-4f2a-8d6a-ab7cff15437e");
 
+        /// <summary>
+        /// Creates a <see cref="IMFByteStream"/> object constructed
+        /// through an object of the <see cref="MfByteStreamFromStream"/> class, 
+        /// which acts as a full wrapper for a <see cref="System.IO.Stream"/> instance.
+        /// </summary>
+        /// <param name="stream">The <see cref="MfByteStreamFromStream"/> instance.</param>
+        /// <returns>A COM object of type <see cref="IMFByteStream"/>.</returns>
         internal static unsafe IntPtr CreateByteStream(MfByteStreamFromStream stream)
         {
             ArgumentNullException.ThrowIfNull(stream);
-            IntPtr unkPtr = ComActivation.ComWrappers.GetOrCreateComInterfaceForObject(stream, CreateComInterfaceFlags.None);
+            IntPtr unkPtr = ComActivation
+                .ComWrappers
+                .GetOrCreateComInterfaceForObject(stream, CreateComInterfaceFlags.None);
             try
             {
-                Marshal.ThrowExceptionForHR(Marshal.QueryInterface(unkPtr, in IID_IMFByteStream, out IntPtr streamPtr));
+                Marshal.ThrowExceptionForHR(
+                    Marshal.QueryInterface(unkPtr, in IID_IMFByteStream, out IntPtr streamPtr)
+                );
                 return streamPtr;
             }
             finally
@@ -281,10 +261,14 @@ namespace NAudio.MediaFoundation
 
             try
             {
-                Marshal.ThrowExceptionForHR(Marshal.QueryInterface(pCreatedObjectTemp, in IID_IMFAsyncCallback, out IntPtr pCallbackObject));
+                Marshal.ThrowExceptionForHR(
+                    Marshal.QueryInterface(pCreatedObjectTemp, in IID_IMFAsyncCallback, out IntPtr pCallbackObject)
+                );
                 try
                 {
-                    MediaFoundationException.ThrowIfFailed(MediaFoundationInterop.MFCreateAsyncResult(ptrObject, pCallbackObject, ptrState, out IntPtr asyncResult));
+                    MediaFoundationException.ThrowIfFailed(
+                        MediaFoundationInterop.MFCreateAsyncResult(ptrObject, pCallbackObject, ptrState, out IntPtr asyncResult)
+                    );
                     return (asyncResult, ProjectFresh<IMFAsyncResult>(asyncResult));
                 }
                 finally
@@ -346,19 +330,19 @@ namespace NAudio.MediaFoundation
         }
 
         /// <summary>
-        /// Puts a work item to the NAudio's Media Foundation work queue (Can be queried by <see cref="AllocatedWorkQueueToken"/> property)
+        /// Puts a work item to the default multi-threaded Media Foundation work queue (Is the <see cref="MediaFoundationInterop.MFASYNC_CALLBACK_QUEUE_MULTITHREADED"/> value)
         /// </summary>
         /// <param name="callback">The callback object defining the work to call later</param>
         /// <param name="ptrState">Optional. A state object representing the state of the current call.</param>
-        /// <returns>HRESULT value indicating whether the work item was inserted to the NAudio work queue.</returns>
-        internal static int PutWorkItem(IntPtr callback, IntPtr ptrState) => PutWorkItem(queue_token, callback, ptrState);
+        /// <returns>HRESULT value indicating whether the work item was inserted to the default multi-threaded work queue.</returns>
+        internal static int PutWorkItem(IntPtr callback, IntPtr ptrState) => PutWorkItem(MediaFoundationInterop.MFASYNC_CALLBACK_QUEUE_MULTITHREADED, callback, ptrState);
 
         /// <summary>
-        /// Puts a work item to the NAudio's Media Foundation work queue (Can be queried by <see cref="AllocatedWorkQueueToken"/> property)
+        /// Puts a work item to the default multi-threaded Media Foundation work queue (Is the <see cref="MediaFoundationInterop.MFASYNC_CALLBACK_QUEUE_MULTITHREADED"/> value)
         /// </summary>
         /// <param name="ptrResult">The result object defining the work to call later</param>
-        /// <returns>HRESULT value indicating whether the work item was inserted to the NAudio work queue.</returns>
-        internal static int PutWorkItem(IntPtr ptrResult) => PutWorkItem(queue_token, ptrResult);
+        /// <returns>HRESULT value indicating whether the work item was inserted to the default multi-threaded work queue.</returns>
+        internal static int PutWorkItem(IntPtr ptrResult) => PutWorkItem(MediaFoundationInterop.MFASYNC_CALLBACK_QUEUE_MULTITHREADED, ptrResult);
 
         /// <summary>
         /// Invokes a callback to any available Media Foundation work queue.

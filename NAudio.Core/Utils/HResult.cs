@@ -165,10 +165,10 @@ namespace NAudio.Utils
         /// Provides a value whether the specified <c>HRESULT</c> is actually an error code. <br />
         /// This corresponds to the <c>IS_ERROR(x)</c> macro.
         /// </summary>
-        /// <param name="h_result">The <c>HRESULT</c> code to test against.</param>
-        /// <returns>A <see cref="bool"/> value whether the specified <paramref name="h_result"/> is an error or not.</returns>
+        /// <param name="hResult">The <c>HRESULT</c> code to test against.</param>
+        /// <returns>A <see cref="bool"/> value whether the specified <paramref name="hResult"/> is an error or not.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool IsError(int h_result) => h_result < 0;
+        public static bool IsError(int hResult) => hResult < 0;
 
         /// <summary>
         /// Helper to deal with the fact that in Win Store apps,

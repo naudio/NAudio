@@ -251,7 +251,7 @@ namespace NAudio.Wave
                     // extensible just has some extra bits after the PCM header
                     return $"{bitsPerSample} bit PCM: {sampleRate}Hz {channels} channels";
                 case WaveFormatEncoding.IeeeFloat:
-                    return $"{bitsPerSample} bit IEEFloat: {sampleRate}Hz {channels} channels";
+                    return $"{bitsPerSample} bit IEEEFloat: {sampleRate}Hz {channels} channels";
                 default:
                     return waveFormatTag.ToString();
             }

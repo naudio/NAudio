@@ -90,7 +90,7 @@ namespace NAudio.Wave
             {
                 if (disposing)
                 {
-                    // Now we know that the reader is disposed, so we can dispose our wrapper and the stream as well.
+                    // Now we know that the reader is disposed, so we can dispose our wrapper as well.
                     // Also serialize access here.
                     System.Threading.Monitor.Enter(this);
                     try
@@ -99,14 +99,7 @@ namespace NAudio.Wave
                     }
                     finally
                     {
-                        try
-                        {
-                            stream.Dispose();
-                        }
-                        finally
-                        {
-                            System.Threading.Monitor.Exit(this);
-                        }
+                        System.Threading.Monitor.Exit(this);
                     }
                 }
             }

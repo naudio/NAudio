@@ -47,6 +47,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * **ALSA (Linux):** new `NAudio.Alsa` package — `AlsaOut` (`IWavePlayer`) and `AlsaIn` (`IWaveIn`) backed by `libasound`, plus `AlsaDeviceEnumerator`. Linux-only (`[SupportedOSPlatform("linux")]`, AOT-compatible `[LibraryImport]`); reference it explicitly, it is not part of the `NAudio` meta-package (#1182)
  * **Docs:** added `WasapiPlayer` and `WasapiRecorder` tutorials; the legacy `WasapiOut` and `WasapiLoopbackCapture` docs now point to them
  * **Core:** `NAudio.Utils.HResult` gained constants for common COM/storage HRESULTs plus an `IsError` helper (#1288)
+ * **Sample providers:** new `ChannelMixerSampleProvider` remixes a source's channels through an arbitrary mixing matrix (downmix, upmix, weighted routing), with ready-made matrices in `ChannelMixMatrix` (mono↔stereo, stereo→5.1, etc.). Thanks to @antiduh (#982)
 
 #### Demo apps and Test Harnesses
 

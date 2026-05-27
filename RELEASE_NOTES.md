@@ -28,6 +28,8 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * `PropertyStore[int]` now resolves `PropVariant` values safely; the indexer that returned the raw `PropVariant` is `[Obsolete]`
  * Minimum target framework is now `net9.0` (previously supported legacy .NET Framework and .NET Standard 2.0)
  * `CueWaveFileReader` removed - use `new WaveFileReader(...).Chunks.ReadCueList()` to get a `CueList`
+ * `StreamMediaFoundationReader` now throws `ArgumentException` for non-readable or non-seekable streams instead of failing later (#1288)
+ * Corrected `HResult.E_INVALIDARG` to `0x80070057` (was the legacy `0x80000003`) and deprecated `HResult.MAKE_HRESULT` in favour of `MakeHResult` (#1288)
 
 #### New features
 
@@ -44,6 +46,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * **MIDI:** `MidiFile` now reads RIFF-RMID (`.rmi`) files by unwrapping the RIFF container and parsing the embedded standard MIDI file (#1236)
  * **ALSA (Linux):** new `NAudio.Alsa` package — `AlsaOut` (`IWavePlayer`) and `AlsaIn` (`IWaveIn`) backed by `libasound`, plus `AlsaDeviceEnumerator`. Linux-only (`[SupportedOSPlatform("linux")]`, AOT-compatible `[LibraryImport]`); reference it explicitly, it is not part of the `NAudio` meta-package (#1182)
  * **Docs:** added `WasapiPlayer` and `WasapiRecorder` tutorials; the legacy `WasapiOut` and `WasapiLoopbackCapture` docs now point to them
+ * **Core:** `NAudio.Utils.HResult` gained constants for common COM/storage HRESULTs plus an `IsError` helper (#1288)
 
 #### Demo apps and Test Harnesses
 
@@ -74,6 +77,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * `MediaFoundationReader`: informational source-reader flags (`STREAMTICK`, `NEWSTREAM`, `NativeMediaTypeChanged`, `AllEffectsRemoved`) are now non-fatal instead of aborting reads
  * `MediaFoundationReader.Reposition`: fixed using a stale field instead of the parameter (seeks would default to stream start)
  * `MediaFoundationEncoder`: unselected `MediaType` instances are now disposed to prevent finalizer-thread COM ref leaks
+ * `StreamMediaFoundationReader` and stream-based `MediaFoundationEncoder` encoding now use a direct managed `IMFByteStream` wrapper instead of the `IStream`→`IMFByteStream` shim, improving reliability of reading and encoding audio through .NET streams (#1288)
  * `Mp3FileReader`: fixed false sample-rate-change errors near end of file
  * MP3 frame parsing: more robust against false frame detections from album art and trailing metadata
  * `MidiFile`: preserved running-status across meta events (fixes "Read too far" errors when meta events interrupt running-status sequences)

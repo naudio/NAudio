@@ -2,7 +2,7 @@ using System;
 using NAudio.Wave;
 using NUnit.Framework;
 
-namespace NAudio.Core.Tests.WaveStreams
+namespace NAudio.Windows.Tests.Wave
 {
     /// <summary>
     /// Exercises the pure-managed surface of <see cref="IWaveLatency"/> on the WinMM

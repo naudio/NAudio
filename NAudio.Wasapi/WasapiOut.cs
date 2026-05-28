@@ -289,9 +289,10 @@ namespace NAudio.Wave
                     playThread = new Thread(PlayThread)
                     {
                         IsBackground = true,
+                        Name = "NAudio WasapiOut Playback",
                     };
                     playbackState = PlaybackState.Playing;
-                    playThread.Start();                    
+                    playThread.Start();
                 }
                 else
                 {

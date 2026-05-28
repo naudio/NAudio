@@ -104,6 +104,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * `Id3v2Tag.ReadTag`: no longer throws and catches a `FormatException` for MP3 streams without an ID3v2 tag — the header check now returns `null` directly (#265)
  * `WaveFileReader`: fixed `ArgumentException` reading WAV files whose `fmt` chunk declares more extra (`cbSize`) bytes than the fixed 100-byte buffer holds — the surplus is now discarded instead of throwing (#482)
  * `MediaFoundationTransform`: cleanup `finally` blocks no longer leak COM objects when `Unlock`/`RemoveAllBuffers` fails — hresults are captured and thrown only after every buffer/sample has been released (#1293)
+ * Named the background threads created by `DirectSoundOut`, `WasapiOut`, `WasapiCapture`, `WasapiPlayer`, and `WasapiRecorder` so they show meaningful names in debuggers and profilers (#557)
 
 #### Modernisation (Native AOT, source-generated COM)
 

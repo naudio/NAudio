@@ -105,7 +105,7 @@ namespace NAudio.Wave
 
             captureState = CaptureState.Starting;
             InitializeAudioClient();
-            captureThread = new Thread(CaptureThread) { IsBackground = true };
+            captureThread = new Thread(CaptureThread) { IsBackground = true, Name = "NAudio WasapiRecorder Capture" };
             captureThread.Start();
         }
 

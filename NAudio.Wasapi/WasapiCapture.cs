@@ -199,6 +199,7 @@ namespace NAudio.CoreAudioApi
             captureThread = new Thread(() => CaptureThread(audioClient))
             {
                 IsBackground = true,
+                Name = "NAudio WasapiCapture Recording",
             };
             captureThread.Start();
         }

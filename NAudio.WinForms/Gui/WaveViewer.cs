@@ -1,9 +1,8 @@
 using System;
-using System.Collections;
 using System.ComponentModel;
 using System.Drawing;
-using System.Data;
 using System.Windows.Forms;
+using NAudio.Utils;
 using NAudio.Wave;
 
 namespace NAudio.Gui
@@ -11,16 +10,20 @@ namespace NAudio.Gui
     /// <summary>
     /// Control for viewing waveforms
     /// </summary>
-    public class WaveViewer : System.Windows.Forms.UserControl
+    public class WaveViewer : UserControl
     {
-        /// <summary> 
+        /// <summary>
         /// Required designer variable.
         /// </summary>
-        private System.ComponentModel.Container components = null;
+        private Container components = null;
         private WaveStream waveStream;
+        private ISampleProvider sampleProvider;
         private int samplesPerPixel = 128;
         private long startPosition;
-        private int bytesPerSample;
+        private int bytesPerSampleFrame;
+        private int channels;
+        private float[] readBuffer;
+
         /// <summary>
         /// Creates a new WaveViewer control
         /// </summary>
@@ -28,8 +31,7 @@ namespace NAudio.Gui
         {
             // This call is required by the Windows.Forms Form Designer.
             InitializeComponent();
-            this.DoubleBuffered = true;			
-
+            DoubleBuffered = true;
         }
 
         /// <summary>
@@ -46,9 +48,15 @@ namespace NAudio.Gui
                 waveStream = value;
                 if (waveStream != null)
                 {
-                    bytesPerSample = (waveStream.WaveFormat.BitsPerSample / 8) * waveStream.WaveFormat.Channels;
+                    channels = waveStream.WaveFormat.Channels;
+                    bytesPerSampleFrame = (waveStream.WaveFormat.BitsPerSample / 8) * channels;
+                    sampleProvider = waveStream.ToSampleProvider();
                 }
-                this.Invalidate();
+                else
+                {
+                    sampleProvider = null;
+                }
+                Invalidate();
             }
         }
 
@@ -64,7 +72,7 @@ namespace NAudio.Gui
             set
             {
                 samplesPerPixel = value;
-                this.Invalidate();
+                Invalidate();
             }
         }
 
@@ -83,19 +91,16 @@ namespace NAudio.Gui
             }
         }
 
-        /// <summary> 
+        /// <summary>
         /// Clean up any resources being used.
         /// </summary>
-        protected override void Dispose( bool disposing )
+        protected override void Dispose(bool disposing)
         {
-            if( disposing )
+            if (disposing)
             {
-                if(components != null)
-                {
-                    components.Dispose();
-                }
+                components?.Dispose();
             }
-            base.Dispose( disposing );
+            base.Dispose(disposing);
         }
 
         /// <summary>
@@ -103,44 +108,43 @@ namespace NAudio.Gui
         /// </summary>
         protected override void OnPaint(PaintEventArgs e)
         {
-            if(waveStream != null)
+            if (sampleProvider != null)
             {
-                waveStream.Position = 0;
-                int bytesRead;
-                byte[] waveData = new byte[samplesPerPixel*bytesPerSample];
-                waveStream.Position = startPosition + (e.ClipRectangle.Left * bytesPerSample * samplesPerPixel);
-                
-                for(float x = e.ClipRectangle.X; x < e.ClipRectangle.Right; x+=1)
+                int samplesPerColumn = samplesPerPixel * channels;
+                waveStream.Position = startPosition + (e.ClipRectangle.Left * bytesPerSampleFrame * samplesPerPixel);
+                readBuffer = BufferHelpers.Ensure(readBuffer, samplesPerColumn);
+
+                for (float x = e.ClipRectangle.X; x < e.ClipRectangle.Right; x += 1)
                 {
-                    short low = 0;
-                    short high = 0;
-                    bytesRead = waveStream.Read(waveData, 0, samplesPerPixel * bytesPerSample);
-                    if(bytesRead == 0)
+                    float low = 0;
+                    float high = 0;
+                    int samplesRead = sampleProvider.Read(readBuffer.AsSpan(0, samplesPerColumn));
+                    if (samplesRead == 0)
                         break;
-                    for(int n = 0; n < bytesRead; n+=2)
+                    for (int n = 0; n < samplesRead; n++)
                     {
-                        short sample = BitConverter.ToInt16(waveData, n);
-                        if(sample < low) low = sample;
-                        if(sample > high) high = sample;
+                        float sample = readBuffer[n];
+                        if (sample < low) low = sample;
+                        if (sample > high) high = sample;
                     }
-                    float lowPercent = ((((float) low) - short.MinValue) / ushort.MaxValue);
-                    float highPercent = ((((float) high) - short.MinValue) / ushort.MaxValue);
-                    e.Graphics.DrawLine(Pens.Black,x,this.Height * (1 - lowPercent),x,this.Height * (1 - highPercent));
-                } 
+                    float lowPercent = (low + 1f) / 2f;
+                    float highPercent = (high + 1f) / 2f;
+                    e.Graphics.DrawLine(Pens.Black, x, Height * (1 - lowPercent), x, Height * (1 - highPercent));
+                }
             }
 
-            base.OnPaint (e);
+            base.OnPaint(e);
         }
 
 
         #region Component Designer generated code
-        /// <summary> 
-        /// Required method for Designer support - do not modify 
+        /// <summary>
+        /// Required method for Designer support - do not modify
         /// the contents of this method with the code editor.
         /// </summary>
         private void InitializeComponent()
         {
-            components = new System.ComponentModel.Container();
+            components = new Container();
         }
         #endregion
     }

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
 using NAudio.Mixer;
@@ -12,7 +13,7 @@ namespace NAudio.Wave
     /// want recording callbacks to arrive on the UI thread without any manual marshaling. For
     /// background-thread capture use <see cref="WaveIn"/> in the NAudio.WinMM package instead.
     /// </summary>
-    public class WaveInWindow : IWaveIn
+    public class WaveInWindow : IWaveIn, IWaveLatency
     {
         private readonly SynchronizationContext syncContext;
         private readonly WaveInterop.WaveCallback callback;
@@ -22,6 +23,8 @@ namespace NAudio.Wave
         private WaveInBuffer[] buffers;
         private int nextBufferIndex;
         private bool isDisposed;
+        // Stopwatch ticks of the most recently delivered buffer. long.MinValue = none yet.
+        private long lastBufferDeliveredTimestamp = long.MinValue;
 
         /// <summary>
         /// Indicates recorded data is available.
@@ -103,6 +106,27 @@ namespace NAudio.Wave
         /// Format being recorded.
         /// </summary>
         public WaveFormat WaveFormat { get; set; }
+
+        /// <inheritdoc/>
+        /// <remarks>
+        /// Mirrors <see cref="WaveIn"/>: in steady state every queued buffer plus half of the one
+        /// currently being filled by the driver sits between the microphone and the application.
+        /// </remarks>
+        public TimeSpan AverageLatency =>
+            TimeSpan.FromMilliseconds(BufferMilliseconds * (NumberOfBuffers - 0.5));
+
+        /// <inheritdoc/>
+        public TimeSpan CurrentLatency
+        {
+            get
+            {
+                long last = Volatile.Read(ref lastBufferDeliveredTimestamp);
+                if (last == long.MinValue) return AverageLatency;
+                long elapsed = Stopwatch.GetTimestamp() - last;
+                var sinceDelivery = TimeSpan.FromSeconds(elapsed / (double)Stopwatch.Frequency);
+                return sinceDelivery + TimeSpan.FromMilliseconds(BufferMilliseconds / 2.0);
+            }
+        }
 
         private void CreateBuffers()
         {
@@ -223,6 +247,7 @@ namespace NAudio.Wave
             var buffer = buffers[nextBufferIndex];
             nextBufferIndex = (nextBufferIndex + 1) % buffers.Length;
 
+            Volatile.Write(ref lastBufferDeliveredTimestamp, Stopwatch.GetTimestamp());
             RaiseDataAvailable(buffer);
             try
             {

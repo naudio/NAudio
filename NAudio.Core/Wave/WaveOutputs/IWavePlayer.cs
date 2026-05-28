@@ -71,14 +71,15 @@ namespace NAudio.Wave
     }
 
     /// <summary>
-    /// Interface for wave players (and, in principle, wave inputs) that can report the latency
-    /// between a sample entering the output pipeline and emerging from the audio hardware.
-    /// Implement this alongside <see cref="IWavePlayer"/> to let downstream code synchronise
-    /// visualisations, lighting, video, or any other time-aligned consumer with audible output.
+    /// Interface for audio players and captures that can report the latency between a sample
+    /// entering the audio pipeline and emerging from (or being delivered by) the hardware.
+    /// Implement alongside <see cref="IWavePlayer"/> or <see cref="IWaveIn"/> to let downstream
+    /// code synchronise visualisations, lighting, video, recording timecode, or any other
+    /// time-aligned consumer with audible output or captured input.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Latency values are only meaningful during uninterrupted playback. When the device is
+    /// Latency values are only meaningful during uninterrupted operation. When the device is
     /// stopped or paused, or when an underrun has occurred, implementations should return their
     /// best steady-state estimate rather than throw — consumers driving visualisations need a
     /// stable value to fall back on.
@@ -88,6 +89,14 @@ namespace NAudio.Wave
     /// pipeline (it changes only when buffer settings change), so it is the right value for
     /// scheduling. <see cref="CurrentLatency"/> describes the live state of the pipeline at this
     /// instant and is the right value for drift detection or per-frame correction.
+    /// </para>
+    /// <para>
+    /// <see cref="CurrentLatency"/> may be computed either as the forward queue depth (e.g. WASAPI
+    /// <c>GetCurrentPadding</c> divided by sample rate — "if I queued a sample now, this is how
+    /// long until I'd hear it") or as the wall-clock age of the sample currently at the play /
+    /// capture head (timestamping each buffer fill). The two values converge in steady state and
+    /// diverge only under irregular feed patterns; this interface deliberately permits either,
+    /// so implementations can use whichever the underlying driver exposes most cheaply.
     /// </para>
     /// <para>
     /// For drivers whose buffer scheduling is fully predictable (notably ASIO, which always swaps

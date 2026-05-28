@@ -13,7 +13,7 @@ namespace NAudio.CoreAudioApi
     /// See http://msdn.microsoft.com/en-us/library/dd370800%28VS.85%29.aspx
     /// </summary>
     [Obsolete("Use WasapiRecorderBuilder to create a WasapiRecorder instead. WasapiRecorder provides zero-copy buffers, MMCSS thread priority, IAsyncEnumerable capture, and process-specific loopback.")]
-    public class WasapiCapture : IWaveIn
+    public class WasapiCapture : IWaveIn, IWaveLatency
     {
         private const long ReftimesPerSec = 10000000;
         private const long ReftimesPerMillisec = 10000;
@@ -88,6 +88,38 @@ namespace NAudio.CoreAudioApi
         /// Share Mode - set before calling StartRecording
         /// </summary>
         public AudioClientShareMode ShareMode { get; set; }
+
+        /// <inheritdoc/>
+        /// <remarks>
+        /// The requested capture buffer length. Read at <see cref="StartRecording"/> time, so
+        /// reflects what the engine actually negotiated for the period.
+        /// </remarks>
+        public TimeSpan AverageLatency => TimeSpan.FromMilliseconds(audioBufferMillisecondsLength);
+
+        /// <inheritdoc/>
+        /// <remarks>
+        /// Derived from <c>IAudioClient::GetCurrentPadding</c>, which on a capture stream reports
+        /// the number of frames available to read — i.e. the age of the oldest captured sample
+        /// still in the endpoint buffer. Returns <see cref="AverageLatency"/> when not recording
+        /// or if the audio client has not yet been initialised.
+        /// </remarks>
+        public TimeSpan CurrentLatency
+        {
+            get
+            {
+                if (captureState != CaptureState.Capturing || !initialized || audioClient == null)
+                    return AverageLatency;
+                try
+                {
+                    int padding = audioClient.CurrentPadding;
+                    return TimeSpan.FromSeconds(padding / (double)waveFormat.SampleRate);
+                }
+                catch
+                {
+                    return AverageLatency;
+                }
+            }
+        }
 
         /// <summary>
         /// Current Capturing State

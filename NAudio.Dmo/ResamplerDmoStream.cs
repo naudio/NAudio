@@ -1,7 +1,6 @@
-﻿using System;
+using System;
 using NAudio.Dmo;
 using NAudio.Utils;
-using System.Diagnostics;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave
@@ -19,6 +18,10 @@ namespace NAudio.Wave
         private DmoResampler dmoResampler;
         private MediaBuffer inputMediaBuffer;
         private byte[] inputBuffer;
+        private byte[] outputStaging;
+        private int outputStagingOffset;
+        private int outputStagingCount;
+        private bool endOfStreamSignaled;
         private long position;
 
         /// <summary>
@@ -42,7 +45,7 @@ namespace NAudio.Wave
             {
                 throw new ArgumentException("Unsupported Output Stream format", nameof(outputFormat));
             }
-         
+
             dmoResampler.MediaObject.SetOutputWaveFormat(0, outputFormat);
             if (inputStream != null)
             {
@@ -87,13 +90,13 @@ namespace NAudio.Wave
         /// </summary>
         public override long Length
         {
-            get 
+            get
             {
                 if (inputStream == null)
                 {
                     throw new InvalidOperationException("Cannot report length if the input was not a WaveStream");
                 }
-                return InputToOutputPosition(inputStream.Length); 
+                return InputToOutputPosition(inputStream.Length);
             }
         }
 
@@ -114,7 +117,14 @@ namespace NAudio.Wave
                 }
                 inputStream.Position = OutputToInputPosition(value);
                 position = InputToOutputPosition(inputStream.Position);
+                // Discontinuity puts the DMO into drain-only mode until its buffered
+                // output is flushed; do that here and discard, so the next Read starts
+                // cleanly from the new input position rather than emitting old-position tail.
                 dmoResampler.MediaObject.Discontinuity(0);
+                DrainAndDiscard();
+                outputStagingOffset = 0;
+                outputStagingCount = 0;
+                endOfStreamSignaled = false;
             }
         }
 
@@ -139,46 +149,103 @@ namespace NAudio.Wave
 
             while (outputBytesProvided < buffer.Length)
             {
-                if (dmoResampler.MediaObject.IsAcceptingData(0))
+                if (outputStagingCount > 0)
                 {
-                    int inputBytesRequired = (int)OutputToInputPosition(buffer.Length - outputBytesProvided);
-                    inputBuffer = BufferHelpers.Ensure(inputBuffer, inputBytesRequired);
-                    int inputBytesRead = inputProvider.Read(inputBuffer.AsSpan(0, inputBytesRequired));
-                    if (inputBytesRead == 0)
-                    {
-                        break;
-                    }
-                    inputMediaBuffer.LoadData(inputBuffer.AsSpan(0, inputBytesRead));
-
-                    dmoResampler.MediaObject.ProcessInput(0, inputMediaBuffer, DmoInputDataBufferFlags.None, 0, 0);
-
-                    outputBuffer.MediaBuffer.SetLength(0);
-                    outputBuffer.StatusFlags = DmoOutputDataBufferFlags.None;
-
-                    // DmoOutputDataBuffer is a struct; copy current state into the cached
-                    // single-element array so ProcessOutput sees the freshly reset flags.
-                    outputBufferArray[0] = outputBuffer;
-                    dmoResampler.MediaObject.ProcessOutput(DmoProcessOutputFlags.None, 1, outputBufferArray);
-
-                    if (outputBuffer.Length == 0)
-                    {
-                        Debug.WriteLine("ResamplerDmoStream.Read: No output data available");
-                        break;
-                    }
-
-                    outputBuffer.RetrieveData(buffer.Slice(outputBytesProvided, outputBuffer.Length));
-                    outputBytesProvided += outputBuffer.Length;
-
-                    Debug.Assert(!outputBuffer.MoreDataAvailable, "have not implemented more data available yet");
+                    outputBytesProvided += ConsumeStaging(buffer.Slice(outputBytesProvided));
+                    continue;
                 }
-                else
+
+                if (DrainOnceIntoStaging() > 0)
                 {
-                    Debug.Assert(false, "have not implemented not accepting logic yet");
+                    continue;
                 }
+
+                if (endOfStreamSignaled)
+                {
+                    break;
+                }
+
+                if (!dmoResampler.MediaObject.IsAcceptingData(0))
+                {
+                    // Defensive break: with the Position setter draining on seek and
+                    // the EOS path handled below, the DMO should always accept input
+                    // here. Spinning would replicate the historic infinite-loop bug.
+                    break;
+                }
+
+                int inputBytesRequired = (int)OutputToInputPosition(buffer.Length - outputBytesProvided);
+                int blockAlign = inputProvider.WaveFormat.BlockAlign;
+                if (inputBytesRequired < blockAlign)
+                {
+                    // For tiny remaining output sizes the block-aligned input request
+                    // can round to zero; upstream would then return 0 and look like EOS.
+                    // Ask for at least one block - any output overrun lives in staging.
+                    inputBytesRequired = blockAlign;
+                }
+                inputBuffer = BufferHelpers.Ensure(inputBuffer, inputBytesRequired);
+                int inputBytesRead = inputProvider.Read(inputBuffer.AsSpan(0, inputBytesRequired));
+                if (inputBytesRead == 0)
+                {
+                    // Upstream EOS - tell the DMO so it flushes the tail samples still
+                    // inside its resampler kernel; the next iteration drains them.
+                    dmoResampler.MediaObject.Discontinuity(0);
+                    endOfStreamSignaled = true;
+                    continue;
+                }
+                inputMediaBuffer.LoadData(inputBuffer.AsSpan(0, inputBytesRead));
+                dmoResampler.MediaObject.ProcessInput(0, inputMediaBuffer, DmoInputDataBufferFlags.None, 0, 0);
             }
 
             position += outputBytesProvided;
             return outputBytesProvided;
+        }
+
+        private int DrainOnceIntoStaging()
+        {
+            outputBuffer.MediaBuffer.SetLength(0);
+            outputBuffer.StatusFlags = DmoOutputDataBufferFlags.None;
+            // DmoOutputDataBuffer is a struct; copy current state into the cached
+            // single-element array so ProcessOutput sees the freshly reset flags.
+            outputBufferArray[0] = outputBuffer;
+            dmoResampler.MediaObject.ProcessOutput(DmoProcessOutputFlags.None, 1, outputBufferArray);
+
+            int produced = outputBuffer.Length;
+            if (produced == 0)
+            {
+                return 0;
+            }
+
+            outputStaging = BufferHelpers.Ensure(outputStaging, produced);
+            outputBuffer.RetrieveData(outputStaging.AsSpan(0, produced));
+            outputStagingOffset = 0;
+            outputStagingCount = produced;
+            return produced;
+        }
+
+        private int ConsumeStaging(Span<byte> destination)
+        {
+            int n = Math.Min(outputStagingCount, destination.Length);
+            if (n == 0)
+            {
+                return 0;
+            }
+            outputStaging.AsSpan(outputStagingOffset, n).CopyTo(destination);
+            outputStagingOffset += n;
+            outputStagingCount -= n;
+            if (outputStagingCount == 0)
+            {
+                outputStagingOffset = 0;
+            }
+            return n;
+        }
+
+        private void DrainAndDiscard()
+        {
+            while (DrainOnceIntoStaging() > 0)
+            {
+                outputStagingOffset = 0;
+                outputStagingCount = 0;
+            }
         }
 
         /// <summary>

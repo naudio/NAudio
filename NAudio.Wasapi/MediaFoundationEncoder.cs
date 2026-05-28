@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -329,7 +329,8 @@ namespace NAudio.Wave
             }
 
             using var inputMediaType = new MediaType(inputSource.WaveFormat);
-            var writer = CreateSinkWriter(new ComStream(outputStream), transcodeContainerType);
+            using var wrapper = new MfByteStreamFromStream(outputStream);
+            var writer = CreateSinkWriter(wrapper, transcodeContainerType);
             try
             {
                 MediaFoundationException.ThrowIfFailed(
@@ -376,7 +377,7 @@ namespace NAudio.Wave
             return writer;
         }
 
-        private static IMFSinkWriter CreateSinkWriter(ComStream outputStream, Guid transcodeContainerType)
+        private static IMFSinkWriter CreateSinkWriter(MfByteStreamFromStream outputStream, Guid transcodeContainerType)
         {
             // n.b. could try specifying the container type using attributes, but I think
             // it does a decent job of working it out from the file extension
@@ -427,11 +428,14 @@ namespace NAudio.Wave
 
         private unsafe long ConvertOneBuffer(IMFSinkWriter writer, int streamIndex, IWaveProvider inputSource, long position, int bufferSize)
         {
+            IMFSample sample = null;
             long durationConverted = 0;
+            IntPtr samplePtr = IntPtr.Zero;
+            
             var (bufferPtr, buffer) = MediaFoundationApi.CreateMemoryBuffer(bufferSize);
-            var (samplePtr, sample) = MediaFoundationApi.CreateSample();
             try
             {
+                (samplePtr, sample) = MediaFoundationApi.CreateSample();
                 MediaFoundationException.ThrowIfFailed(sample.AddBuffer(bufferPtr));
 
                 MediaFoundationException.ThrowIfFailed(buffer.Lock(out var ptr, out int maxLength, out int currentLength));
@@ -465,12 +469,21 @@ namespace NAudio.Wave
         /// </summary>
         public void Dispose()
         {
-            if (!disposed)
+            System.Threading.Monitor.Enter(this);
+            try
             {
-                disposed = true;
-                outputMediaType.Dispose();
+                // Serialize access to 'disposed'.
+                if (!disposed)
+                {
+                    disposed = true;
+                    outputMediaType.Dispose();
+                }
+                GC.SuppressFinalize(this);
             }
-            GC.SuppressFinalize(this);
+            finally
+            {
+                System.Threading.Monitor.Exit(this);
+            }
         }
     }
 }

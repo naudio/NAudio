@@ -251,7 +251,7 @@ namespace NAudio.Wave
                     // extensible just has some extra bits after the PCM header
                     return $"{bitsPerSample} bit PCM: {sampleRate}Hz {channels} channels";
                 case WaveFormatEncoding.IeeeFloat:
-                    return $"{bitsPerSample} bit IEEFloat: {sampleRate}Hz {channels} channels";
+                    return $"{bitsPerSample} bit IEEEFloat: {sampleRate}Hz {channels} channels";
                 default:
                     return waveFormatTag.ToString();
             }
@@ -302,14 +302,21 @@ namespace NAudio.Wave
         /// <param name="writer">the output stream</param>
         public virtual void Serialize(BinaryWriter writer)
         {
-            writer.Write((int)(18 + extraSize)); // wave format length
+            // Canonical PCM uses the 16-byte PCMWAVEFORMAT layout with no cbSize field.
+            // The cbSize field only belongs to WAVEFORMATEX (non-PCM). We still guard on
+            // extraSize so a PCM-tagged subclass that carries extra data stays well-formed.
+            bool writeExtraSize = !(Encoding == WaveFormatEncoding.Pcm && extraSize == 0);
+            writer.Write((int)(writeExtraSize ? 18 + extraSize : 16)); // wave format length
             writer.Write((short)Encoding);
             writer.Write((short)Channels);
             writer.Write((int)SampleRate);
             writer.Write((int)AverageBytesPerSecond);
             writer.Write((short)BlockAlign);
             writer.Write((short)BitsPerSample);
-            writer.Write((short)extraSize);
+            if (writeExtraSize)
+            {
+                writer.Write((short)extraSize);
+            }
         }
 
         /// <summary>

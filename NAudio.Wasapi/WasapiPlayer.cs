@@ -373,7 +373,7 @@ namespace NAudio.Wave
                 if (playbackState == PlaybackState.Stopped)
                 {
                     stopEvent.Reset();
-                    playThread = new Thread(PlayThread) { IsBackground = true };
+                    playThread = new Thread(PlayThread) { IsBackground = true, Name = "NAudio WasapiPlayer Playback" };
                     playbackState = PlaybackState.Playing;
                     playThread.Start();
                 }

@@ -48,6 +48,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * **Docs:** added `WasapiPlayer` and `WasapiRecorder` tutorials; the legacy `WasapiOut` and `WasapiLoopbackCapture` docs now point to them
  * **Core:** `NAudio.Utils.HResult` gained constants for common COM/storage HRESULTs plus an `IsError` helper (#1288)
  * **Sample providers:** new `ChannelMixerSampleProvider` remixes a source's channels through an arbitrary mixing matrix (downmix, upmix, weighted routing), with ready-made matrices in `ChannelMixMatrix` (mono↔stereo, stereo→5.1, etc.). Thanks to @antiduh (#982)
+ * **Latency reporting:** new `IWaveLatency` interface exposes `AverageLatency` and `CurrentLatency` for downstream A/V sync. Implemented on `WaveOut`, `WaveOutWindow`, `WasapiOut`, `WasapiPlayer`, and `AsioOut` (#601)
 
 #### Demo apps and Test Harnesses
 

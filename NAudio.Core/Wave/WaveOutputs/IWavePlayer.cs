@@ -69,4 +69,48 @@ namespace NAudio.Wave
         /// </summary>
         WaveFormat OutputWaveFormat { get; }
     }
+
+    /// <summary>
+    /// Interface for wave players (and, in principle, wave inputs) that can report the latency
+    /// between a sample entering the output pipeline and emerging from the audio hardware.
+    /// Implement this alongside <see cref="IWavePlayer"/> to let downstream code synchronise
+    /// visualisations, lighting, video, or any other time-aligned consumer with audible output.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Latency values are only meaningful during uninterrupted playback. When the device is
+    /// stopped or paused, or when an underrun has occurred, implementations should return their
+    /// best steady-state estimate rather than throw — consumers driving visualisations need a
+    /// stable value to fall back on.
+    /// </para>
+    /// <para>
+    /// The two properties answer different questions. <see cref="AverageLatency"/> describes the
+    /// pipeline (it changes only when buffer settings change), so it is the right value for
+    /// scheduling. <see cref="CurrentLatency"/> describes the live state of the pipeline at this
+    /// instant and is the right value for drift detection or per-frame correction.
+    /// </para>
+    /// <para>
+    /// For drivers whose buffer scheduling is fully predictable (notably ASIO, which always swaps
+    /// fixed-size buffers at regular intervals), <see cref="CurrentLatency"/> may simply return
+    /// <see cref="AverageLatency"/>. The approximation is exact to within half a buffer.
+    /// </para>
+    /// </remarks>
+    public interface IWaveLatency
+    {
+        /// <summary>
+        /// The steady-state latency from a sample being queued for output to it being emitted by
+        /// the audio hardware, assuming uninterrupted playback. This is a property of the buffer
+        /// configuration and the driver, not of the current playback state.
+        /// </summary>
+        TimeSpan AverageLatency { get; }
+
+        /// <summary>
+        /// The time that has elapsed since the sample currently emerging from the hardware was
+        /// queued for output. In steady state this is approximately equal to
+        /// <see cref="AverageLatency"/>; it differs during start-up, after an underrun, or when
+        /// the host is filling buffers irregularly. Implementations that cannot meaningfully
+        /// distinguish from the average are permitted to return <see cref="AverageLatency"/>.
+        /// </summary>
+        TimeSpan CurrentLatency { get; }
+    }
 }

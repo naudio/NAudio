@@ -1,5 +1,7 @@
 using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace NAudio.Wave 
 {
@@ -17,6 +19,10 @@ namespace NAudio.Wave
         private GCHandle hBuffer;
         private IntPtr hWaveOut;
         private GCHandle hHeader; // we need to pin the header structure
+        // Stopwatch ticks recorded when this buffer was last submitted to the device. Used by
+        // IWaveLatency.CurrentLatency to estimate how stale the audio at the play head is.
+        // long.MinValue means "never written" so the consumer can ignore this buffer.
+        private long filledTimestamp = long.MinValue;
 
         /// <summary>
         /// creates a new wavebuffer
@@ -108,8 +114,15 @@ namespace NAudio.Wave
                 Array.Clear(buffer, bytes, buffer.Length - bytes);
             }
             WriteToWaveOut();
+            Volatile.Write(ref filledTimestamp, Stopwatch.GetTimestamp());
             return true;
         }
+
+        /// <summary>
+        /// Stopwatch timestamp recorded when this buffer was last submitted to the device, or
+        /// <see cref="long.MinValue"/> if it has never been submitted.
+        /// </summary>
+        public long FilledTimestamp => Volatile.Read(ref filledTimestamp);
 
         /// <summary>
         /// Whether the header's in queue flag is set

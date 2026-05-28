@@ -13,7 +13,7 @@ namespace NAudio.Wave
     /// without any manual marshaling. For background-thread playback use
     /// <see cref="WaveOut"/> in the NAudio.WinMM package instead.
     /// </summary>
-    public class WaveOutWindow : IWavePlayer, IWavePosition
+    public class WaveOutWindow : IWavePlayer, IWavePosition, IWaveLatency
     {
         private readonly object waveOutLock = new object();
         private readonly SynchronizationContext syncContext;
@@ -229,6 +229,42 @@ namespace NAudio.Wave
         /// The format the hardware is using.
         /// </summary>
         public WaveFormat OutputWaveFormat => waveStream.WaveFormat;
+
+        /// <inheritdoc/>
+        /// <remarks>
+        /// Mirrors the calculation in <see cref="WaveOut"/>: in steady state every queued buffer
+        /// plus half of the one currently playing sits between the application and the speaker.
+        /// </remarks>
+        public TimeSpan AverageLatency
+        {
+            get
+            {
+                int perBufferMs = (DesiredLatency + NumberOfBuffers - 1) / NumberOfBuffers;
+                return TimeSpan.FromMilliseconds(perBufferMs * (NumberOfBuffers - 0.5));
+            }
+        }
+
+        /// <inheritdoc/>
+        public TimeSpan CurrentLatency
+        {
+            get
+            {
+                var current = buffers;
+                if (current == null) return AverageLatency;
+
+                long oldest = long.MaxValue;
+                foreach (var buffer in current)
+                {
+                    if (!buffer.InQueue) continue;
+                    long ts = buffer.FilledTimestamp;
+                    if (ts != long.MinValue && ts < oldest) oldest = ts;
+                }
+                if (oldest == long.MaxValue) return AverageLatency;
+
+                long elapsed = Stopwatch.GetTimestamp() - oldest;
+                return TimeSpan.FromSeconds(elapsed / (double)Stopwatch.Frequency);
+            }
+        }
 
         /// <summary>
         /// Playback state.

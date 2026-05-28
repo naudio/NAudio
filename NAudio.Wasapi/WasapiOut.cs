@@ -12,7 +12,7 @@ namespace NAudio.Wave
     /// Support for playback using Wasapi
     /// </summary>
     [Obsolete("Use WasapiPlayerBuilder to create a WasapiPlayer instead. WasapiPlayer provides zero-copy buffers, MMCSS thread priority, and IAudioClient3 low-latency support.")]
-    public class WasapiOut : IWavePlayer, IWavePosition
+    public class WasapiOut : IWavePlayer, IWavePosition, IWaveLatency
     {
         private AudioClient audioClient;
         private readonly MMDevice mmDevice;
@@ -273,6 +273,38 @@ namespace NAudio.Wave
         /// Gets a <see cref="Wave.WaveFormat"/> instance indicating the format the hardware is using.
         /// </summary>
         public WaveFormat OutputWaveFormat { get; private set; }
+
+        /// <inheritdoc/>
+        /// <remarks>
+        /// Uses the latency reported by <c>IAudioClient::GetStreamLatency</c> at <see cref="Init"/>
+        /// time, falling back to the requested latency if the driver reported zero (as some
+        /// Windows 10 builds do in shared mode).
+        /// </remarks>
+        public TimeSpan AverageLatency => TimeSpan.FromMilliseconds(latencyMilliseconds);
+
+        /// <inheritdoc/>
+        /// <remarks>
+        /// Derived from <c>IAudioClient::GetCurrentPadding</c>: the count of frames still in the
+        /// endpoint buffer corresponds directly to the delay between the most-recently-written
+        /// sample and the play head. Returns <see cref="AverageLatency"/> when not playing.
+        /// </remarks>
+        public TimeSpan CurrentLatency
+        {
+            get
+            {
+                if (playbackState == PlaybackState.Stopped || OutputWaveFormat == null)
+                    return AverageLatency;
+                try
+                {
+                    int padding = audioClient.CurrentPadding;
+                    return TimeSpan.FromSeconds(padding / (double)OutputWaveFormat.SampleRate);
+                }
+                catch
+                {
+                    return AverageLatency;
+                }
+            }
+        }
 
 #region IWavePlayer Members
 

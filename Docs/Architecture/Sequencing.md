@@ -157,3 +157,42 @@ Anyone working on VST3 hosting should glance over the following and push back if
 2. **Event payload type for VST3.** A raw 32-bit MIDI message (matching `IMidiOutput.Send(int)`) is the obvious common payload between MIDI-out and VST3 sinks. VST3 also supports note-expression / parameter-change events that don't fit a 3-byte MIDI message — does the POC need those in the first cut, or is "MIDI bytes only" acceptable for now?
 3. **Sample-offset units.** The timeline produces offsets in samples-into-current-buffer at the consumer's sample rate. VST3 wants the same. Confirm no conversion shim is needed.
 4. **Block size constraints.** Does the VST3 host need to be in control of the block size (e.g. for plugin `setupProcessing` constraints), or is it happy to render whatever block size `WasapiOut` pulls? The latter is simpler from the sequencer's side.
+
+## Notes for the VST3 POC reviewer
+
+A few practical notes alongside the open questions, so the POC author can plan around the current state of the code rather than have to read it to find out.
+
+### The dispatch loop needs factoring out before VST3 can reuse it
+
+`SequencedSampleProvider<T>` is currently hardwired to a `MixingSampleProvider` sink and exposes its per-buffer event-query logic only via a `dispatcher` callback. That fits an audio-mixer consumer (drum machine, sampler) but not a VST3 instrument provider, which needs to take the same `(event, frameOffset)` stream and pack it into the plugin's `process()` event input alongside an updated `ProcessContext` — no mixer involved.
+
+Before the VST3 strand can land, expect to refactor `DispatchEventsForBuffer` into a reusable shape — most likely a small `EventBufferQuery<T>` (or similar) that takes `Transport`, `EventTimeline<T>`, `IPositionTransform`, a buffer frame count, and yields `(event, frameOffset)` pairs. Both `SequencedSampleProvider<T>` and a new `Vst3InstrumentProvider` would consume it. The math doesn't change; only the entry point does.
+
+### `ProcessContext` field mapping
+
+VST3 plugins read process context every block. Mapping from the sequencing layer is straightforward:
+
+| VST3 `ProcessContext` field | Source |
+|---|---|
+| `tempo` | `transport.TempoMap.BpmAtTicks(transport.CurrentTicks)` |
+| `timeSigNumerator` / `timeSigDenominator` | `timeSignatureMap.SignatureAt(transport.CurrentTicks)` |
+| `projectTimeSamples` | `transport.CurrentFrames` |
+| `projectTimeMusic` (in quarter notes) | `transport.CurrentTicks / (double)MusicalTime.CanonicalPpq` |
+| `barPositionMusic` (in quarter notes) | derive from `timeSignatureMap.FromTicks(transport.CurrentTicks)` — start-of-bar tick converted to quarter notes |
+| `cycleStartMusic` / `cycleEndMusic` | `transport.Loop` if set, expressed in quarter notes |
+| `state` | combine `kPlaying` from `transport.IsPlaying`, `kCycleActive` from `transport.Loop`, plus the `kTempoValid` / `kTimeSigValid` / etc. flags as appropriate |
+
+`samplesToNextClock` (24 PPQN MIDI clock alignment) is the only field that doesn't fall out of the existing types and would need its own helper. Out of scope for the first cut unless the POC needs it.
+
+### "Render MIDI through VST3 to WAV" — end-to-end shape
+
+The intended flow once both strands are present:
+
+1. Load `.mid` via `MidiFile`, then **rescale ticks** from the file's `DeltaTicksPerQuarterNote` to the canonical PPQ: `canonicalTick = fileTick * MusicalTime.CanonicalPpq / fileDeltaTicksPerQuarterNote`. Apply this everywhere (events, tempo events, time-sig events).
+2. Build `StaticTempoMap` from the file's `TempoEvent`s (post-rescale), and `TimeSignatureMap` from the `TimeSignatureEvent`s.
+3. Build an `EventTimeline<MidiEvent>` (or whatever payload type the open question lands on) from the file's note/control/etc. events.
+4. Construct a `Vst3InstrumentProvider : ISampleProvider` wrapping the plugin instance, holding the `Transport`, the timeline, and the position transform. Its `Read` calls the (refactored) `EventBufferQuery` to get events for the upcoming buffer, populates `ProcessContext`, calls `plugin.process()`, and copies the plugin's audio output into the read buffer.
+5. Drive it with the same offline render loop the drum machine already uses (`WaveFileWriter` pulling until `EventTimeline.LastTick + release-tail margin` has been passed). The live-playback path is identical except `WasapiOut` does the pulling instead.
+
+So the VST3 work doesn't have to wait for MIDI-file ingestion — you can hand-build an `EventTimeline` in tests to drive the plugin while the ingestion path lands in parallel.
+

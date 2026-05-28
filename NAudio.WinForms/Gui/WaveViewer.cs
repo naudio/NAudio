@@ -1,6 +1,8 @@
+using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
+using NAudio.Utils;
 using NAudio.Wave;
 
 namespace NAudio.Gui
@@ -20,6 +22,7 @@ namespace NAudio.Gui
         private long startPosition;
         private int bytesPerSampleFrame;
         private int channels;
+        private float[] readBuffer;
 
         /// <summary>
         /// Creates a new WaveViewer control
@@ -107,19 +110,20 @@ namespace NAudio.Gui
         {
             if (sampleProvider != null)
             {
+                int samplesPerColumn = samplesPerPixel * channels;
                 waveStream.Position = startPosition + (e.ClipRectangle.Left * bytesPerSampleFrame * samplesPerPixel);
-                float[] buffer = new float[samplesPerPixel * channels];
+                readBuffer = BufferHelpers.Ensure(readBuffer, samplesPerColumn);
 
                 for (float x = e.ClipRectangle.X; x < e.ClipRectangle.Right; x += 1)
                 {
                     float low = 0;
                     float high = 0;
-                    int samplesRead = sampleProvider.Read(buffer);
+                    int samplesRead = sampleProvider.Read(readBuffer.AsSpan(0, samplesPerColumn));
                     if (samplesRead == 0)
                         break;
                     for (int n = 0; n < samplesRead; n++)
                     {
-                        float sample = buffer[n];
+                        float sample = readBuffer[n];
                         if (sample < low) low = sample;
                         if (sample > high) high = sample;
                     }

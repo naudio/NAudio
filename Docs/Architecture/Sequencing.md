@@ -9,7 +9,7 @@ This document captures the decisions and the plan so that work-in-progress consu
 | Phase | State | Notes |
 | --- | --- | --- |
 | 0. Design + this doc | ✅ done | Decisions captured below. Branch: `feature/sequencing-core`. |
-| 1. Core primitives + drum-machine demo rebuilt on them | future | See §"Milestone 1". |
+| 1. Core primitives + drum-machine demo rebuilt on them | ✅ done | Primitives in `NAudio.Core/Sequencing/`; 58 unit tests passing in `NAudio.Core.Tests/Sequencing/`. Drum-machine demo carries both engines side by side with a "Use legacy PatternSequencer" toggle, a swing knob, and a Render-to-WAV command. |
 | 2. MIDI-file ingestion → `StaticTempoMap` + `EventTimeline` | future | Unlocks "render `.mid` to WAV". |
 | 3. SoundFont / sfz sampler consumer | future | Likely also lands a leaner `ScheduledMixer`. |
 | 4. Wall-clock driver + `IMidiOutput` sink (WinMM + WinRT) | future | The non-audio consumer. |
@@ -130,7 +130,7 @@ All under `NAudio.Core/Sequencing/`:
 ## Milestone 1
 
 1. The types above in `NAudio.Core/Sequencing/`, with `OffsetSampleProvider`-based dispatch.
-2. xUnit tests in `NAudio.Core.Tests` for `StaticTempoMap` / `LiveTempoMap` / `TimeSignatureMap` / `EventTimeline` / `SwingTransform` (pure math — fast, deterministic, run on Linux).
+2. NUnit tests in `NAudio.Core.Tests` for `StaticTempoMap` / `LiveTempoMap` / `TimeSignatureMap` / `EventTimeline` / `SwingTransform` / `Transport` / `SequencedSampleProvider` (pure math — fast, deterministic, run on Linux).
 3. Drum-machine demo rebuilt on the new primitives, exercising:
    - Live tempo change during playback.
    - Swing knob (proves the over-scan + filter ordering).

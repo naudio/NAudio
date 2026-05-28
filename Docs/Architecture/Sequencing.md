@@ -10,7 +10,7 @@ This document captures the decisions and the plan so that work-in-progress consu
 | --- | --- | --- |
 | 0. Design + this doc | ✅ done | Decisions captured below. Branch: `feature/sequencing-core`. |
 | 1. Core primitives + drum-machine demo rebuilt on them | ✅ done | Primitives in `NAudio.Core/Sequencing/`; 58 unit tests passing in `NAudio.Core.Tests/Sequencing/`. Drum-machine demo now uses the sequencing primitives exclusively (the old `PatternSequencer` is gone), has a swing knob, a Render-to-WAV command, and a hi-hat choke group via `FadeInOutSampleProvider`. |
-| 2. MIDI-file ingestion → `StaticTempoMap` + `EventTimeline` | future | Unlocks "render `.mid` to WAV". |
+| 2. MIDI-file ingestion → `StaticTempoMap` + `EventTimeline<MidiEvent>` + `EventBufferQuery<T>` factoring + `ITempoMap.NextChangeAfter` + `MusicalTime.RescaleFromPpq` helper | future | Unlocks "render `.mid` to WAV" and is the prerequisite for VST3 offline render. See §"Confirmed with the VST3 POC". |
 | 3. SoundFont / sfz sampler consumer | future | Likely also lands a leaner `ScheduledMixer`. |
 | 4. Wall-clock driver + `IMidiOutput` sink (WinMM + WinRT) | future | The non-audio consumer. |
 | 5. VST3 offline render glue | future | Falls out as the intersection of (2) + a working VST3 host. |
@@ -149,14 +149,22 @@ All under `NAudio.Core/Sequencing/`:
 - Sampler (SoundFont / sfz) — large feature in its own right; the sequencing slice of it is small.
 - VST3 glue — the VST3 hosting work proceeds independently real-time first; the offline-render-through-VST3 use case is the intersection of (2) above and a working VST3 host, and gets wired last.
 
-## Open questions for the VST3 POC
+## Confirmed with the VST3 POC
 
-Anyone working on VST3 hosting should glance over the following and push back if any of them are inconvenient:
+After review by the VST3 hosting POC author, the four open questions above are answered as follows:
 
-1. **`ProcessContext` population.** Does the VST3 host want the `Transport` + `ITempoMap` injected directly so it can read tempo / bar position / project time at process-block boundaries, or would it prefer a narrower per-block "context snapshot" struct passed in?
-2. **Event payload type for VST3.** A raw 32-bit MIDI message (matching `IMidiOutput.Send(int)`) is the obvious common payload between MIDI-out and VST3 sinks. VST3 also supports note-expression / parameter-change events that don't fit a 3-byte MIDI message — does the POC need those in the first cut, or is "MIDI bytes only" acceptable for now?
-3. **Sample-offset units.** The timeline produces offsets in samples-into-current-buffer at the consumer's sample rate. VST3 wants the same. Confirm no conversion shim is needed.
-4. **Block size constraints.** Does the VST3 host need to be in control of the block size (e.g. for plugin `setupProcessing` constraints), or is it happy to render whatever block size `WasapiOut` pulls? The latter is simpler from the sequencer's side.
+1. **`ProcessContext` population.** Inject `Transport` + `ITempoMap` + `TimeSignatureMap` directly into the VST3 consumer; it reads them at block start. A separate snapshot struct would just add copying.
+2. **Event payload type.** Use `NAudio.Midi.MidiEvent` as the common payload between the VST3 sink and the `IMidiOutput` sink. Translating to VST3's structured `NoteOnEvent` (float velocity, noteId, tuning, channel) is much cleaner from a structured type, and SysEx → `DataEvent` needs byte arrays — both awkward with a packed 32-bit MIDI int. The packed-int payload remains useful for lightweight sample-trigger consumers (like the drum machine, which still uses `EventTimeline<int>`); it's just not the right common payload for the MIDI-aware sinks.
+3. **Sample-offset units.** Confirmed identical to VST3's `IEventList.sampleOffset` — no conversion shim.
+4. **Block size control.** VST3 doesn't drive block size. The host negotiates a `maxSamplesPerBlock` at `setupProcessing` (e.g. 4096) and splits incoming buffers internally if they exceed it. The sequencer renders whatever its puller asks for.
+
+Three additional shape decisions came out of the same review:
+
+5. **`EventBufferQuery<T>` is stateless on an arbitrary `[startFrame, endFrameExclusive)` range**, not on "since the last call". Required because the VST3 consumer may split a single WASAPI pull into multiple `process()` calls when the plugin's `maxSamplesPerBlock` is smaller than the host buffer. `SequencedSampleProvider<T>` becomes a thin wrapper that calls the query with `[Transport.CurrentFrames, Transport.CurrentFrames + frames)` and routes the dispatched events into its `MixingSampleProvider`.
+6. **`ITempoMap.NextChangeAfter(long tick)`** lands as a new interface method (returning `long?` or `long.MaxValue` for "no further change"). VST3's `ProcessContext.tempo` is single-valued per block, so the consumer needs this to decide whether to split a block at a tempo-change boundary or to use the start-of-block tempo and accept tiny inaccuracy. Implementations are trivial for both `StaticTempoMap` (binary search for next segment) and `LiveTempoMap` (last appended segment's start, or none).
+7. **PPQ rescaling lives on `MusicalTime`.** Add `MusicalTime.RescaleFromPpq(long fileTick, int fileDeltaTicksPerQuarterNote)` implementing `fileTick * CanonicalPpq / fileDeltaTicksPerQuarterNote` so MIDI-file ingestion and any other rescaling caller share one implementation. Apply it to every tick — event absolute times, tempo events, time-sig events.
+
+These three are the API additions that need to land alongside the milestone-2 work (MIDI-file ingestion + `EventBufferQuery<T>` factoring); none of them disturb anything already shipped in milestone 1.
 
 ## Notes for the VST3 POC reviewer
 
@@ -166,7 +174,7 @@ A few practical notes alongside the open questions, so the POC author can plan a
 
 `SequencedSampleProvider<T>` is currently hardwired to a `MixingSampleProvider` sink and exposes its per-buffer event-query logic only via a `dispatcher` callback. That fits an audio-mixer consumer (drum machine, sampler) but not a VST3 instrument provider, which needs to take the same `(event, frameOffset)` stream and pack it into the plugin's `process()` event input alongside an updated `ProcessContext` — no mixer involved.
 
-Before the VST3 strand can land, expect to refactor `DispatchEventsForBuffer` into a reusable shape — most likely a small `EventBufferQuery<T>` (or similar) that takes `Transport`, `EventTimeline<T>`, `IPositionTransform`, a buffer frame count, and yields `(event, frameOffset)` pairs. Both `SequencedSampleProvider<T>` and a new `Vst3InstrumentProvider` would consume it. The math doesn't change; only the entry point does.
+Before the VST3 strand can land, refactor `DispatchEventsForBuffer` into a reusable `EventBufferQuery<T>` (or similar) that takes `EventTimeline<T>`, `ITempoMap`, `IPositionTransform`, and an arbitrary `[startFrame, endFrameExclusive)` range, yielding `(event, frameOffset)` pairs. **Stateless by design** — see decision 5 in "Confirmed with the VST3 POC" above. `SequencedSampleProvider<T>` becomes a thin wrapper that supplies the range from `Transport.CurrentFrames` and routes the dispatched events into its `MixingSampleProvider`.
 
 ### `ProcessContext` field mapping
 
@@ -190,7 +198,7 @@ The intended flow once both strands are present:
 
 1. Load `.mid` via `MidiFile`, then **rescale ticks** from the file's `DeltaTicksPerQuarterNote` to the canonical PPQ: `canonicalTick = fileTick * MusicalTime.CanonicalPpq / fileDeltaTicksPerQuarterNote`. Apply this everywhere (events, tempo events, time-sig events).
 2. Build `StaticTempoMap` from the file's `TempoEvent`s (post-rescale), and `TimeSignatureMap` from the `TimeSignatureEvent`s.
-3. Build an `EventTimeline<MidiEvent>` (or whatever payload type the open question lands on) from the file's note/control/etc. events.
+3. Build an `EventTimeline<MidiEvent>` from the file's note/control/SysEx events (`NAudio.Midi.MidiEvent` is the confirmed common payload between the VST3 and `IMidiOutput` sinks — see decision 2 above).
 4. Construct a `Vst3InstrumentProvider : ISampleProvider` wrapping the plugin instance, holding the `Transport`, the timeline, and the position transform. Its `Read` calls the (refactored) `EventBufferQuery` to get events for the upcoming buffer, populates `ProcessContext`, calls `plugin.process()`, and copies the plugin's audio output into the read buffer.
 5. Drive it with the same offline render loop the drum machine already uses (`WaveFileWriter` pulling until `EventTimeline.LastTick + release-tail margin` has been passed). The live-playback path is identical except `WasapiOut` does the pulling instead.
 

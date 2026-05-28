@@ -14,11 +14,9 @@ namespace NAudioWpfDemo.DrumMachineDemo
 
         private IWavePlayer waveOut;
         private readonly DrumPattern pattern;
-        private DrumPatternSampleProvider legacyEngine;
-        private SequencedDrumPatternSampleProvider sequencingEngine;
+        private DrumPatternSampleProvider engine;
         private int tempo;
         private double swing;
-        private bool useLegacyEngine;
 
         public ICommand PlayCommand { get; }
         public ICommand StopCommand { get; }
@@ -38,17 +36,9 @@ namespace NAudioWpfDemo.DrumMachineDemo
         {
             if (waveOut != null) Stop();
             waveOut = new WaveOut();
-            if (useLegacyEngine)
-            {
-                legacyEngine = new DrumPatternSampleProvider(pattern) { Tempo = tempo };
-                waveOut.Init(legacyEngine);
-            }
-            else
-            {
-                sequencingEngine = new SequencedDrumPatternSampleProvider(pattern, new DrumKit(), tempo) { Swing = swing };
-                sequencingEngine.Transport.Play();
-                waveOut.Init(sequencingEngine);
-            }
+            engine = new DrumPatternSampleProvider(pattern, new DrumKit(), tempo) { Swing = swing };
+            engine.Transport.Play();
+            waveOut.Init(engine);
             waveOut.Play();
         }
 
@@ -56,11 +46,10 @@ namespace NAudioWpfDemo.DrumMachineDemo
         {
             if (waveOut != null)
             {
-                sequencingEngine?.Transport.Stop();
+                engine?.Transport.Stop();
                 waveOut.Dispose();
                 waveOut = null;
-                legacyEngine = null;
-                sequencingEngine = null;
+                engine = null;
             }
         }
 
@@ -74,20 +63,19 @@ namespace NAudioWpfDemo.DrumMachineDemo
             };
             if (dialog.ShowDialog() != true) return;
 
-            // Always renders through the sequencing engine — that's the point of having an offline path.
-            var engine = new SequencedDrumPatternSampleProvider(pattern, new DrumKit(), tempo) { Swing = swing };
-            engine.Transport.Play();
+            var offline = new DrumPatternSampleProvider(pattern, new DrumKit(), tempo) { Swing = swing };
+            offline.Transport.Play();
 
-            long totalSamples = (long)OfflineRenderSeconds * engine.WaveFormat.SampleRate * engine.WaveFormat.Channels;
-            var buffer = new float[engine.WaveFormat.SampleRate * engine.WaveFormat.Channels];
+            long totalSamples = (long)OfflineRenderSeconds * offline.WaveFormat.SampleRate * offline.WaveFormat.Channels;
+            var buffer = new float[offline.WaveFormat.SampleRate * offline.WaveFormat.Channels];
             try
             {
-                using var writer = new WaveFileWriter(dialog.FileName, engine.WaveFormat);
+                using var writer = new WaveFileWriter(dialog.FileName, offline.WaveFormat);
                 long written = 0;
                 while (written < totalSamples)
                 {
                     int toRead = (int)Math.Min(buffer.Length, totalSamples - written);
-                    int read = engine.Read(buffer.AsSpan(0, toRead));
+                    int read = offline.Read(buffer.AsSpan(0, toRead));
                     if (read == 0) break;
                     writer.WriteSamples(buffer, 0, read);
                     written += read;
@@ -108,13 +96,12 @@ namespace NAudioWpfDemo.DrumMachineDemo
             {
                 if (tempo == value) return;
                 tempo = value;
-                if (legacyEngine != null) legacyEngine.Tempo = value;
-                if (sequencingEngine != null) sequencingEngine.Tempo = value;
+                if (engine != null) engine.Tempo = value;
                 OnPropertyChanged(nameof(Tempo));
             }
         }
 
-        /// <summary>Swing amount, 0..0.5. Only applies to the sequencing engine.</summary>
+        /// <summary>Swing amount, 0..0.5.</summary>
         public double Swing
         {
             get => swing;
@@ -122,21 +109,8 @@ namespace NAudioWpfDemo.DrumMachineDemo
             {
                 if (swing == value) return;
                 swing = value;
-                if (sequencingEngine != null) sequencingEngine.Swing = value;
+                if (engine != null) engine.Swing = value;
                 OnPropertyChanged(nameof(Swing));
-            }
-        }
-
-        /// <summary>When true, plays through the original PatternSequencer. When false (default), plays
-        /// through the new NAudio.Sequencing engine. Toggle while stopped to A/B them.</summary>
-        public bool UseLegacyEngine
-        {
-            get => useLegacyEngine;
-            set
-            {
-                if (useLegacyEngine == value) return;
-                useLegacyEngine = value;
-                OnPropertyChanged(nameof(UseLegacyEngine));
             }
         }
     }

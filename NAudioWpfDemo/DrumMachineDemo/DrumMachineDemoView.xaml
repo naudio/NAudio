@@ -25,9 +25,6 @@
         <StackPanel Grid.Row="1" Orientation="Horizontal">
             <Button Content="Render to WAV..." Command="{Binding RenderToWavCommand}" Margin="6" Width="120"
                     ToolTip="Renders 8 seconds of the current pattern to a WAV file via the offline sample-driven path." />
-            <CheckBox Content="Use legacy PatternSequencer" IsChecked="{Binding UseLegacyEngine, Mode=TwoWay}"
-                      VerticalAlignment="Center" Margin="20,6,6,6"
-                      ToolTip="Toggle while stopped to A/B the new NAudio.Sequencing engine against the original. Swing has no effect on the legacy engine." />
         </StackPanel>
         <my:DrumPatternEditor Grid.Row="2" HorizontalAlignment="Left" Margin="20" x:Name="drumPatternEditor1" VerticalAlignment="Top" />
     </Grid>

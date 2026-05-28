@@ -9,7 +9,7 @@ This document captures the decisions and the plan so that work-in-progress consu
 | Phase | State | Notes |
 | --- | --- | --- |
 | 0. Design + this doc | ✅ done | Decisions captured below. Branch: `feature/sequencing-core`. |
-| 1. Core primitives + drum-machine demo rebuilt on them | ✅ done | Primitives in `NAudio.Core/Sequencing/`; 58 unit tests passing in `NAudio.Core.Tests/Sequencing/`. Drum-machine demo carries both engines side by side with a "Use legacy PatternSequencer" toggle, a swing knob, and a Render-to-WAV command. |
+| 1. Core primitives + drum-machine demo rebuilt on them | ✅ done | Primitives in `NAudio.Core/Sequencing/`; 58 unit tests passing in `NAudio.Core.Tests/Sequencing/`. Drum-machine demo now uses the sequencing primitives exclusively (the old `PatternSequencer` is gone), has a swing knob, a Render-to-WAV command, and a hi-hat choke group via `FadeInOutSampleProvider`. |
 | 2. MIDI-file ingestion → `StaticTempoMap` + `EventTimeline` | future | Unlocks "render `.mid` to WAV". |
 | 3. SoundFont / sfz sampler consumer | future | Likely also lands a leaner `ScheduledMixer`. |
 | 4. Wall-clock driver + `IMidiOutput` sink (WinMM + WinRT) | future | The non-audio consumer. |
@@ -145,6 +145,7 @@ All under `NAudio.Core/Sequencing/`:
 - The `ScheduledMixer` allocation-conscious replacement for per-trigger `OffsetSampleProvider`. Lands ahead of the sampler consumer.
 - Wall-clock driver + `IMidiOutput` sink. Interface-shaped in milestone 1 only if it costs nothing.
 - Continuous linear tempo ramps (`LinearBpm` segment kind).
+- A proper voice manager — what choke groups, polyphony limits, voice stealing, and release-tail handling all belong to. Sink-side concern, lands with the sampler. The drum machine's hi-hat choke today uses `FadeInOutSampleProvider` directly from the dispatcher: it fades cleanly but leaves the silenced voice in the mixer until the underlying sample naturally ends. Acceptable for the demo (short kit samples, one ringing voice per group at most); the voice manager will replace it.
 - Sampler (SoundFont / sfz) — large feature in its own right; the sequencing slice of it is small.
 - VST3 glue — the VST3 hosting work proceeds independently real-time first; the offline-render-through-VST3 use case is the intersection of (2) above and a working VST3 host, and gets wired last.
 

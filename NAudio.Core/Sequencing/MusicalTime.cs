@@ -27,5 +27,19 @@ namespace NAudio.Sequencing
 
         /// <summary>Ticks per quarter-note triplet at the canonical PPQ.</summary>
         public static long QuarterTripletTicks => CanonicalPpq * 2L / 3L;
+
+        /// <summary>
+        /// Converts a tick value from an external PPQ (e.g. a MIDI file's <c>DeltaTicksPerQuarterNote</c>)
+        /// to the canonical PPQ used by the sequencing layer. Apply at the ingestion boundary to event
+        /// absolute times, tempo events, and time-signature events alike.
+        /// </summary>
+        public static long RescaleFromPpq(long fileTick, int fileDeltaTicksPerQuarterNote)
+        {
+            if (fileDeltaTicksPerQuarterNote <= 0)
+                throw new System.ArgumentOutOfRangeException(nameof(fileDeltaTicksPerQuarterNote), "PPQ must be positive.");
+            if (fileTick < 0)
+                throw new System.ArgumentOutOfRangeException(nameof(fileTick), "Ticks must not be negative.");
+            return fileTick * CanonicalPpq / fileDeltaTicksPerQuarterNote;
+        }
     }
 }

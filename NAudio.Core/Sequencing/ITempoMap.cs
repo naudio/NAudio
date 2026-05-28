@@ -15,5 +15,16 @@ namespace NAudio.Sequencing
 
         /// <summary>The tempo in BPM in force at the given tick.</summary>
         double BpmAtTicks(long ticks);
+
+        /// <summary>
+        /// The tick at which the next tempo change occurs after <paramref name="tick"/>, or null
+        /// if no further change is recorded (for a live map, no further change has been scheduled yet).
+        /// </summary>
+        /// <remarks>
+        /// Consumers that need a single tempo per process block (e.g. a VST3 host populating
+        /// <c>ProcessContext.tempo</c>) use this to decide whether to split a block at the
+        /// tempo-change boundary or to use the start-of-block tempo and accept the inaccuracy.
+        /// </remarks>
+        long? NextChangeAfter(long tick);
     }
 }

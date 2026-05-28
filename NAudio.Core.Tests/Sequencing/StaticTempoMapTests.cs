@@ -58,5 +58,39 @@ namespace NAudio.Core.Tests.Sequencing
         {
             Assert.Throws<ArgumentException>(() => new StaticTempoMap(new[] { (0L, 120.0), (100L, 90.0), (100L, 60.0) }));
         }
+
+        [Test]
+        public void NextChangeAfter_SingleSegment_Returns_Null()
+        {
+            var map = new StaticTempoMap(120);
+            Assert.That(map.NextChangeAfter(0), Is.Null);
+            Assert.That(map.NextChangeAfter(1_000_000), Is.Null);
+        }
+
+        [Test]
+        public void NextChangeAfter_BeforeFirstChange_Returns_That_Change()
+        {
+            var oneBar = MusicalTime.CanonicalPpq * 4L;
+            var map = new StaticTempoMap(new[] { (0L, 120.0), (oneBar, 60.0), (oneBar * 2L, 90.0) });
+            Assert.That(map.NextChangeAfter(0), Is.EqualTo(oneBar));
+            Assert.That(map.NextChangeAfter(oneBar - 1), Is.EqualTo(oneBar));
+        }
+
+        [Test]
+        public void NextChangeAfter_AtSegmentStart_Returns_Following_Segment()
+        {
+            var oneBar = MusicalTime.CanonicalPpq * 4L;
+            var map = new StaticTempoMap(new[] { (0L, 120.0), (oneBar, 60.0), (oneBar * 2L, 90.0) });
+            Assert.That(map.NextChangeAfter(oneBar), Is.EqualTo(oneBar * 2L));
+        }
+
+        [Test]
+        public void NextChangeAfter_AfterLastChange_Returns_Null()
+        {
+            var oneBar = MusicalTime.CanonicalPpq * 4L;
+            var map = new StaticTempoMap(new[] { (0L, 120.0), (oneBar, 60.0) });
+            Assert.That(map.NextChangeAfter(oneBar), Is.Null);
+            Assert.That(map.NextChangeAfter(oneBar * 10L), Is.Null);
+        }
     }
 }

@@ -86,5 +86,21 @@ namespace NAudio.Core.Tests.Sequencing
             Assert.That(map.BpmAtTicks(MusicalTime.CanonicalPpq * 4L), Is.EqualTo(90));
             Assert.That(map.BpmAtTicks(MusicalTime.CanonicalPpq * 8L), Is.EqualTo(90));
         }
+
+        [Test]
+        public void NextChangeAfter_BeforeAnySetTempo_Returns_Null()
+        {
+            var map = new LiveTempoMap(120);
+            Assert.That(map.NextChangeAfter(0), Is.Null);
+        }
+
+        [Test]
+        public void NextChangeAfter_ReturnsScheduledChange()
+        {
+            var map = new LiveTempoMap(120);
+            map.SetTempo(60, MusicalTime.CanonicalPpq * 4L);
+            Assert.That(map.NextChangeAfter(0), Is.EqualTo(MusicalTime.CanonicalPpq * 4L));
+            Assert.That(map.NextChangeAfter(MusicalTime.CanonicalPpq * 4L), Is.Null);
+        }
     }
 }

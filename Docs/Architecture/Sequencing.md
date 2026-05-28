@@ -10,7 +10,8 @@ This document captures the decisions and the plan so that work-in-progress consu
 | --- | --- | --- |
 | 0. Design + this doc | ✅ done | Decisions captured below. Branch: `feature/sequencing-core`. |
 | 1. Core primitives + drum-machine demo rebuilt on them | ✅ done | Primitives in `NAudio.Core/Sequencing/`; 58 unit tests passing in `NAudio.Core.Tests/Sequencing/`. Drum-machine demo now uses the sequencing primitives exclusively (the old `PatternSequencer` is gone), has a swing knob, a Render-to-WAV command, and a hi-hat choke group via `FadeInOutSampleProvider`. |
-| 2. MIDI-file ingestion → `StaticTempoMap` + `EventTimeline<MidiEvent>` + `EventBufferQuery<T>` factoring + `ITempoMap.NextChangeAfter` + `MusicalTime.RescaleFromPpq` helper | future | Unlocks "render `.mid` to WAV" and is the prerequisite for VST3 offline render. See §"Confirmed with the VST3 POC". |
+| 2a. VST3 prep — `EventBufferQuery` factoring + `ITempoMap.NextChangeAfter` + `MusicalTime.RescaleFromPpq` | ✅ done | The three API additions identified in the VST3 POC review. `SequencedSampleProvider<T>` is now a thin wrapper over `EventBufferQuery`. 77 sequencing tests passing. |
+| 2b. MIDI-file ingestion → `StaticTempoMap` + `TimeSignatureMap` + `EventTimeline<MidiEvent>` from `MidiFile` | future | Unlocks "render `.mid` to WAV" and is the prerequisite for VST3 offline render. |
 | 3. SoundFont / sfz sampler consumer | future | Likely also lands a leaner `ScheduledMixer`. |
 | 4. Wall-clock driver + `IMidiOutput` sink (WinMM + WinRT) | future | The non-audio consumer. |
 | 5. VST3 offline render glue | future | Falls out as the intersection of (2) + a working VST3 host. |

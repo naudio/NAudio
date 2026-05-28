@@ -85,6 +85,17 @@ namespace NAudio.Sequencing
             return FindByTicks(segs, ticks).Bpm;
         }
 
+        /// <inheritdoc/>
+        public long? NextChangeAfter(long tick)
+        {
+            var segs = segments;
+            for (int i = 0; i < segs.Length; i++)
+            {
+                if (segs[i].StartTick > tick) return segs[i].StartTick;
+            }
+            return null;
+        }
+
         private static Segment FindByTicks(Segment[] segs, long ticks)
         {
             for (int i = segs.Length - 1; i >= 0; i--)

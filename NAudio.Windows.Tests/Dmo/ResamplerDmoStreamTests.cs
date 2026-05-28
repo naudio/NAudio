@@ -112,6 +112,69 @@ namespace NAudio.Windows.Tests.Dmo
             }
         }
 
+        [Test]
+        [Category("IntegrationTest")]
+        [CancelAfter(5000)]
+        public void CanReadAfterSeekingBackToStart()
+        {
+            // Regression: setting Position calls Discontinuity which used to wedge the next
+            // Read in an infinite loop because the "not accepting data" branch was a no-op.
+            WaveFormat inputFormat = new WaveFormat(44100, 16, 1);
+            using (WaveStream reader = new NullWaveStream(inputFormat, inputFormat.AverageBytesPerSecond * 5))
+            {
+                using (ResamplerDmoStream resampler = new ResamplerDmoStream(reader, WaveFormat.CreateIeeeFloatWaveFormat(48000, 2)))
+                {
+                    int bytesToRead = resampler.WaveFormat.AverageBytesPerSecond / 100;
+                    byte[] buffer = new byte[bytesToRead];
+
+                    int first = resampler.Read(buffer, 0, bytesToRead);
+                    Assert.That(first, Is.GreaterThan(0), "Bytes Read before seek");
+
+                    resampler.Position = 0;
+                    Assert.That(resampler.Position, Is.EqualTo(0), "Position after seek");
+
+                    int second = resampler.Read(buffer, 0, bytesToRead);
+                    Assert.That(second, Is.GreaterThan(0), "Bytes Read after seek");
+                }
+            }
+        }
+
+        [Test]
+        [Category("IntegrationTest")]
+        public void DrainsTailSamplesAtEndOfStream()
+        {
+            // Regression: at EOS the resampler used to break out of Read without telling
+            // the DMO, losing the ~32-sample tail still inside its quality-30 kernel.
+            WaveFormat inputFormat = new WaveFormat(44100, 16, 2);
+            WaveFormat outputFormat = WaveFormat.CreateIeeeFloatWaveFormat(48000, 2);
+            using (WaveStream reader = new NullWaveStream(inputFormat, inputFormat.AverageBytesPerSecond * 2))
+            {
+                using (ResamplerDmoStream resampler = new ResamplerDmoStream(reader, outputFormat))
+                {
+                    long expected = resampler.Length;
+                    int bytesToRead = outputFormat.AverageBytesPerSecond / 100;
+                    byte[] buffer = new byte[bytesToRead];
+                    long total = 0;
+                    int count;
+                    do
+                    {
+                        count = resampler.Read(buffer, 0, bytesToRead);
+                        total += count;
+                    } while (count > 0);
+
+                    // Allow one output block of slack - the DMO's resampler kernel rounds
+                    // off the very last samples, and one BlockAlign is within that tolerance.
+                    Assert.That(total, Is.GreaterThanOrEqualTo(expected - outputFormat.BlockAlign),
+                        $"Drained total {total} should match expected length {expected} within one BlockAlign");
+                    Assert.That(total, Is.LessThanOrEqualTo(expected + outputFormat.BlockAlign),
+                        $"Drained total {total} should not exceed expected length {expected} by more than one BlockAlign");
+
+                    int afterEos = resampler.Read(buffer, 0, bytesToRead);
+                    Assert.That(afterEos, Is.EqualTo(0), "Reads after EOS should return 0");
+                }
+            }
+        }
+
         /*[Test]
         public void CanResampleToWav()
         {

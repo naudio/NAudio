@@ -1,4 +1,4 @@
-### Unreleased
+﻿### Unreleased
 
 <!--
 Bullets land here as PRs merge. The maintainer renames this section to
@@ -77,8 +77,10 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * `AcmInterop`: serialised all `msacm32` P/Invokes process-wide via a reentrant lock — fixes process-killing access violations under concurrent ACM access
  * `AcmStream`: fixed double-close in finalizer by zeroing the handle field before close
  * `MediaFoundationReader`: informational source-reader flags (`STREAMTICK`, `NEWSTREAM`, `NativeMediaTypeChanged`, `AllEffectsRemoved`) are now non-fatal instead of aborting reads
+ * `MediaFoundationReader`: cleanup `finally` block on `Read` no longer leaks COM objects when `Unlock` fails — the hresult is captured and thrown only after both the buffer and the sample have been freed.
  * `MediaFoundationReader.Reposition`: fixed using a stale field instead of the parameter (seeks would default to stream start)
  * `MediaFoundationEncoder`: unselected `MediaType` instances are now disposed to prevent finalizer-thread COM ref leaks
+ * `MediaFoundationEncoder`: In the `ConvertOneBuffer` method, there was a small possibility that if the sample creation was failed, the previously allocated buffer COM object would have been leaked.
  * `StreamMediaFoundationReader` and stream-based `MediaFoundationEncoder` encoding now use a direct managed `IMFByteStream` wrapper instead of the `IStream`→`IMFByteStream` shim, improving reliability of reading and encoding audio through .NET streams (#1288)
  * `Mp3FileReader`: fixed false sample-rate-change errors near end of file
  * `WaveFormat.Serialize`: PCM formats now write the canonical 16-byte `fmt ` chunk (no `cbSize` field) instead of 18 bytes, matching the `PCMWAVEFORMAT` layout (#934, #1098)

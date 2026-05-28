@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using NAudio.Sequencing;
 using NAudio.Wave;
-using NAudio.Wave.SampleProviders;
 
 namespace NAudioWpfDemo.DrumMachineDemo
 {
@@ -11,12 +10,6 @@ namespace NAudioWpfDemo.DrumMachineDemo
     /// swing knobs, supports a hi-hat choke group, and serves as both the live-playback source
     /// and the offline render source (driven by either <c>WaveOut</c> or a render loop).
     /// </summary>
-    /// <remarks>
-    /// Choked voices are faded out via <see cref="FadeInOutSampleProvider"/> but remain in the mixer
-    /// (emitting silence) until their underlying sample naturally ends. With short kit samples this
-    /// is fine; a proper voice manager that drops faded voices immediately will land alongside the
-    /// future SoundFont/sfz sampler.
-    /// </remarks>
     class DrumPatternSampleProvider : ISampleProvider
     {
         private static readonly long Sixteenth = MusicalTime.TicksPerDivision(16);
@@ -35,12 +28,14 @@ namespace NAudioWpfDemo.DrumMachineDemo
         private readonly LiveTempoMap tempoMap;
         private readonly SwingTransform swing;
         private readonly SequencedSampleProvider<int> sequencer;
-        private readonly Dictionary<int, FadeInOutSampleProvider> activeChokeVoices = new();
+        private readonly Dictionary<int, ChokeableVoice> activeChokeVoices = new();
+        private readonly int chokeFadeFrames;
 
         public DrumPatternSampleProvider(DrumPattern pattern, DrumKit drumKit, int initialTempo)
         {
             this.pattern = pattern;
             this.drumKit = drumKit;
+            chokeFadeFrames = (int)(ChokeFadeMs * drumKit.WaveFormat.SampleRate / 1000);
 
             tempoMap = new LiveTempoMap(initialTempo);
             var transport = new Transport(tempoMap, drumKit.WaveFormat.SampleRate)
@@ -105,9 +100,12 @@ namespace NAudioWpfDemo.DrumMachineDemo
             {
                 if (activeChokeVoices.TryGetValue(group, out var previous))
                 {
-                    previous.BeginFadeOut(ChokeFadeMs);
+                    // Defer the fade to the new voice's onset frame within the upcoming buffer —
+                    // not to sample 0, which would silence the previous voice before the new one
+                    // even starts (visible only with large buffers, e.g. the offline render path).
+                    previous.BeginChoke(frameOffset, chokeFadeFrames);
                 }
-                var chokeable = new FadeInOutSampleProvider(voice);
+                var chokeable = new ChokeableVoice(voice);
                 activeChokeVoices[group] = chokeable;
                 sequencer.Mixer.AddMixerInput(chokeable);
             }

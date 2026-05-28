@@ -145,7 +145,7 @@ All under `NAudio.Core/Sequencing/`:
 - The `ScheduledMixer` allocation-conscious replacement for per-trigger `OffsetSampleProvider`. Lands ahead of the sampler consumer.
 - Wall-clock driver + `IMidiOutput` sink. Interface-shaped in milestone 1 only if it costs nothing.
 - Continuous linear tempo ramps (`LinearBpm` segment kind).
-- A proper voice manager — what choke groups, polyphony limits, voice stealing, and release-tail handling all belong to. Sink-side concern, lands with the sampler. The drum machine's hi-hat choke today uses `FadeInOutSampleProvider` directly from the dispatcher: it fades cleanly but leaves the silenced voice in the mixer until the underlying sample naturally ends. Acceptable for the demo (short kit samples, one ringing voice per group at most); the voice manager will replace it.
+- A proper voice manager — what choke groups, polyphony limits, voice stealing, and release-tail handling all belong to. Sink-side concern, lands with the sampler. The drum machine's hi-hat choke today uses a small local `ChokeableVoice` wrapper from the dispatcher (deferred per-frame fade-out, truncates the source when the fade completes so the mixer drops the voice). It's the right shape for the demo but doesn't generalise to SoundFont/sfz `exclusiveClass` semantics, polyphony, or release tails — that all lives in the voice manager.
 - Sampler (SoundFont / sfz) — large feature in its own right; the sequencing slice of it is small.
 - VST3 glue — the VST3 hosting work proceeds independently real-time first; the offline-render-through-VST3 use case is the intersection of (2) above and a working VST3 host, and gets wired last.
 

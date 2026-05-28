@@ -15,7 +15,7 @@ namespace NAudio.Wave.Alsa
     /// recovers from xruns; it is always joined before the device handle is
     /// closed.
     /// </remarks>
-    public sealed class AlsaOut : IWavePlayer
+    public sealed class AlsaOut : IWavePlayer, IWaveLatency
     {
         private static readonly PCMFormat[] PreferredFormats =
         {
@@ -54,6 +54,40 @@ namespace NAudio.Wave.Alsa
 
         /// <inheritdoc />
         public WaveFormat OutputWaveFormat { get; private set; }
+
+        /// <inheritdoc/>
+        /// <remarks>
+        /// The ALSA ring buffer is sized as <c>PeriodFrames × Periods</c> at configuration time,
+        /// so the steady-state delay between writing a sample and the card consuming it is the
+        /// full buffer's worth of frames.
+        /// </remarks>
+        public TimeSpan AverageLatency
+        {
+            get
+            {
+                if (OutputWaveFormat == null) return TimeSpan.Zero;
+                long frames = (long)AlsaPcm.PeriodFrames * AlsaPcm.Periods;
+                return TimeSpan.FromSeconds(frames / (double)OutputWaveFormat.SampleRate);
+            }
+        }
+
+        /// <inheritdoc/>
+        /// <remarks>
+        /// Uses <c>snd_pcm_delay</c>, which reports exactly the number of frames currently in
+        /// flight between the application and the audio hardware. Falls back to
+        /// <see cref="AverageLatency"/> when not playing or if the call fails.
+        /// </remarks>
+        public TimeSpan CurrentLatency
+        {
+            get
+            {
+                if (playbackState != PlaybackState.Playing || OutputWaveFormat == null)
+                    return AverageLatency;
+                if (AlsaInterop.PcmDelay(pcm.Pcm, out nint delayFrames) < 0 || delayFrames < 0)
+                    return AverageLatency;
+                return TimeSpan.FromSeconds(delayFrames / (double)OutputWaveFormat.SampleRate);
+            }
+        }
 
         /// <inheritdoc />
         public event EventHandler<StoppedEventArgs> PlaybackStopped;

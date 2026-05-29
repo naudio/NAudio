@@ -26,18 +26,21 @@ namespace NAudio.MediaFoundation
         private IntPtr nativeAttributesPtr;
         private IMFAttributes nativeAttributesRcw;
 
-        public unsafe MfByteStreamFromStream(Stream stream)
+        public MfByteStreamFromStream(Stream stream, bool detectContentType = true)
         {
             this.stream = stream;
             try { wrapperInitialPosition = stream.Position; } catch { wrapperInitialPosition = 0; }
             (nativeAttributesPtr, nativeAttributesRcw) = MediaFoundationApi.CreateAttributes(1);
-            // The only way for the below to throw an exception is a critical one,
-            // which eitherwise will terminate soon the process, so we are OK and we do not need EH for this.
-            AudioFileFormat fmt = new AudioFileFormatFinder().AddDefaultFileFormats().FindFormat(this.stream);
-            if (fmt is not null)
+            if (detectContentType)
             {
-                Guid t = MfByteStreamAttributes.ContentType;
-                nativeAttributesRcw.SetString(t, fmt.MimeType);
+                // The only way for the below to throw an exception is a critical one,
+                // which eitherwise will terminate soon the process, so we are OK and we do not need EH for this.
+                AudioFileFormat fmt = new AudioFileFormatFinder().AddDefaultFileFormats().FindFormat(this.stream);
+                if (fmt is not null)
+                {
+                    Guid t = MfByteStreamAttributes.ContentType;
+                    nativeAttributesRcw.SetString(t, fmt.MimeType);
+                }
             }
         }
 

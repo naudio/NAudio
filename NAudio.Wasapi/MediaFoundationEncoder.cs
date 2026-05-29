@@ -329,7 +329,7 @@ namespace NAudio.Wave
             }
 
             using var inputMediaType = new MediaType(inputSource.WaveFormat);
-            using var wrapper = new MfByteStreamFromStream(outputStream);
+            using var wrapper = new MfByteStreamFromStream(outputStream, false);
             var writer = CreateSinkWriter(wrapper, transcodeContainerType);
             try
             {
@@ -428,11 +428,14 @@ namespace NAudio.Wave
 
         private unsafe long ConvertOneBuffer(IMFSinkWriter writer, int streamIndex, IWaveProvider inputSource, long position, int bufferSize)
         {
+            IMFSample sample = null;
             long durationConverted = 0;
+            IntPtr samplePtr = IntPtr.Zero;
+            
             var (bufferPtr, buffer) = MediaFoundationApi.CreateMemoryBuffer(bufferSize);
-            var (samplePtr, sample) = MediaFoundationApi.CreateSample();
             try
             {
+                (samplePtr, sample) = MediaFoundationApi.CreateSample();
                 MediaFoundationException.ThrowIfFailed(sample.AddBuffer(bufferPtr));
 
                 MediaFoundationException.ThrowIfFailed(buffer.Lock(out var ptr, out int maxLength, out int currentLength));

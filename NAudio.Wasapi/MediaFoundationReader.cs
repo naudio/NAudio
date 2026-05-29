@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -339,12 +339,16 @@ namespace NAudio.Wave
                 }
                 finally
                 {
+                    // Capture the hresult but defer throwing until every COM object has been
+                    // released, otherwise a failed Unlock would leak the buffer and the sample.
+                    int unlockHr = 0;
                     if (pBuffer != null && bufferLocked)
                     {
-                        MediaFoundationException.ThrowIfFailed(pBuffer.Unlock());
+                        unlockHr = pBuffer.Unlock();
                     }
                     ComActivation.ReleaseBoth(pBuffer, pBufferPtr);
                     ComActivation.ReleaseBoth(pSample, pSamplePtr);
+                    MediaFoundationException.ThrowIfFailed(unlockHr);
                 }
             }
             position += bytesWritten;

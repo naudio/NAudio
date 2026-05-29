@@ -1,4 +1,4 @@
-### Unreleased
+﻿### Unreleased
 
 <!--
 Bullets land here as PRs merge. The maintainer renames this section to
@@ -30,6 +30,9 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * `CueWaveFileReader` removed - use `new WaveFileReader(...).Chunks.ReadCueList()` to get a `CueList`
  * `StreamMediaFoundationReader` now throws `ArgumentException` for non-readable or non-seekable streams instead of failing later (#1288)
  * Corrected `HResult.E_INVALIDARG` to `0x80070057` (was the legacy `0x80000003`) and deprecated `HResult.MAKE_HRESULT` in favour of `MakeHResult` (#1288)
+ * `SimpleCompressorEffect` (formerly `SimpleCompressorStream`) removed, along with the internal ChunkWare `SimpleCompressor` / `SimpleGate` / `EnvelopeDetector` — superseded by the new `NAudio.Effects` framework; high-quality dynamics effects follow in a later NAudio 3 phase
+ * `ImpulseResponseConvolution` removed — it was an unusable O(n²) time-domain stub; FFT-based convolution will replace it in a later NAudio 3 phase
+ * `NAudio.Extras.Equalizer` and `NAudio.Extras.EqualizerBand` removed — replaced by `NAudio.Effects.Equalizer` / `EqualizerBand` in `NAudio.Core`. The new EQ is per-channel, click-free when retuned, and adds shelves/pass/notch/band-pass/all-pass shapes. Band API changed: `Bandwidth`/`Gain` → `Q`/`GainDb` (or `ShelfSlope`), and the equaliser is an `IAudioEffect` (wrap with `EffectSampleProvider` instead of passing a source to the constructor)
 
 #### New features
 
@@ -46,12 +49,26 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * **MIDI:** new `WinRTMidiIn` / `WinRTMidiOut` classes in `NAudio.Wasapi` backed by `Windows.Devices.Midi`, with `MidiMessageConverter` for interop with the WinRT MIDI types. New `IMidiInput` / `IMidiOutput` interfaces (with a `Send(MidiEvent)` extension) let callers write backend-agnostic code; legacy `MidiIn` / `MidiOut` also implement them
  * **MIDI:** `MidiFile` now reads RIFF-RMID (`.rmi`) files by unwrapping the RIFF container and parsing the embedded standard MIDI file (#1236)
  * **ALSA (Linux):** new `NAudio.Alsa` package — `AlsaOut` (`IWavePlayer`) and `AlsaIn` (`IWaveIn`) backed by `libasound`, plus `AlsaDeviceEnumerator`. Linux-only (`[SupportedOSPlatform("linux")]`, AOT-compatible `[LibraryImport]`); reference it explicitly, it is not part of the `NAudio` meta-package (#1182)
+ * **Effects:** new cross-platform `NAudio.Effects` framework — `IAudioEffect`, an `AudioEffect` base with click-free bypass and dry/wet mix, `EffectSampleProvider`, and `EffectChain`. The chain is editable while it plays (`Add`/`Insert`/`RemoveAt`/`Move` publish a new chain atomically on the next block without resetting the other effects; `Read` stays lock-free) and exposes `Reset()` to clear all effect state (delay lines, filter history, reverb tails) for reuse after a seek
+ * **Effects:** an optional `IParameterized` / `EffectParameter` model lets effects expose their controls (continuous/toggle/choice/meter) as a uniform list for generic UIs, presets and automation without changing `IAudioEffect`; live edits are marshalled to the audio thread by a lock-free `ParameterDispatchQueue` / `IParameterDispatch` so parameter writes never race the realtime callback
+ * **Effects — EQ & filtering:** a per-channel multi-band `Equalizer` (peaking/shelf/pass/notch/band-pass/all-pass, click-free retune), a 10/31-band `GraphicEqualizer`, `MonoMakerEffect` (bass-mono) and `DcBlockerEffect`
+ * **Effects — level & stereo:** `GainEffect`, `PanEffect` and `StereoWidthEffect`
+ * **Effects — dynamics:** `CompressorEffect` (soft knee, peak/RMS detector, channel-linked), `LimiterEffect` (brick-wall with look-ahead and optional true-peak/inter-sample detection), `GateEffect` (gate/downward-expander with hysteresis and hold), `TransientShaperEffect` (dual-envelope attack/sustain shaping), split-band `DeEsserEffect`, and `MultibandCompressorEffect` (configurable LR4 bands, per-band threshold/ratio/attack/release/make-up); all expose live `GainReductionDb` for metering
+ * **Effects — saturation & lo-fi:** `SaturationEffect` (tanh/cubic/arctan/hard-clip wave-shaper with drive, output trim and optional 2×/4× oversampling) and `BitCrusherEffect` (bit-depth plus target-sample-rate reduction, e.g. 22.05/16/8 kHz, with an optional smoothing low-pass)
+ * **Effects — delay & modulation:** `DelayEffect` (tempo-syncable with read-only `EffectiveDelayMs`, feedback damping, ping-pong), `ChorusEffect`, `FlangerEffect`, `PhaserEffect` and `TremoloEffect` (with auto-pan)
+ * **Effects — reverb:** `ConvolutionReverbEffect` (partitioned FFT convolution, mono or per-channel IR, reports latency, replacing the removed `ImpulseResponseConvolution`), `ReverbEffect` (lightweight Freeverb-style Schroeder–Moorer) and `FdnReverbEffect` (modulated feedback-delay network with RT60, size, damping and width)
+ * **Effects — pitch:** `PitchShiftEffect` — framework-integrated per-channel phase-vocoder pitch shifting with semitone control and FFT latency reporting
+ * **Effects — voice comms:** `AutomaticGainControlEffect` (VAD-gated leveller), `NoiseSuppressionEffect` (STFT spectral suppression) and `ComfortNoiseEffect`
+ * **DSP:** new reusable building blocks underpinning the effects suite — `EnvelopeFollower`, `ParameterSmoother`, `DelayLine`, `CrossfadingBiQuadFilter`, `Lfo` (with `NoteDivision`/`TempoTime` tempo helpers), `Oversampler`, `LinkwitzRileyCrossover`, `PartitionedConvolver`, `VoiceActivityDetector`, plus `BiQuadFilter.ResetState()`
+ * **Docs:** added an Audio Effects guide (`Docs/AudioEffects.md`) covering the suite, chains, dry/wet & bypass, the parameter model and writing your own effect
  * **Docs:** added `WasapiPlayer` and `WasapiRecorder` tutorials; the legacy `WasapiOut` and `WasapiLoopbackCapture` docs now point to them
  * **Core:** `NAudio.Utils.HResult` gained constants for common COM/storage HRESULTs plus an `IsError` helper (#1288)
  * **Sample providers:** new `ChannelMixerSampleProvider` remixes a source's channels through an arbitrary mixing matrix (downmix, upmix, weighted routing), with ready-made matrices in `ChannelMixMatrix` (mono↔stereo, stereo→5.1, etc.). Thanks to @antiduh (#982)
 
 #### Demo apps and Test Harnesses
 
+ * **WPF demo:** new **Convolution Reverb** module — offline test bench for `ConvolutionReverbEffect`: pick an input file and a folder of impulse responses, render single-IR or batch-all, with IR auto-resample to the input rate and peak-normalisation to -3 dBFS, latency-compensated output, full tail flush, and per-render Nx-real-time + tail-length reporting. Renders land in a temp folder with Play/Delete/Open-folder commands
+ * **WPF demo:** new **Realtime Effects** module — full-duplex `AsioDevice` monitor (driver + mono/stereo input) with feedback safety (starts muted, headphone warning, runaway auto-mute), an add/remove/reorder effect-chain editor with auto-generated parameter panels (knobs/toggles/choices/meters + Bypass/Mix) driven by `IParameterized`, and WAV-file playback / offline render through the chain. Live parameter edits are marshalled to the audio thread via `ParameterDispatchQueue`, newly added effects are pre-warmed off the audio thread, and ASIO monitoring and file playback/render are mutually exclusive (the chain is shared). An input-channel offset selector allows mono/stereo capture from any base channel (e.g. a guitar on input 2, or a stereo pair on 5+6). Three demo-only effects (`SevenBandEqEffect`, `FilterEffect`, `ThreeBandCompressorEffect`) composed from the toolkit's `Equalizer` / `CrossfadingBiQuadFilter` / `MultibandCompressorEffect` primitives are wired into the harness — they smoke-test the underlying DSP and show how to build fixed-parameter effects on top of the dynamic-band primitives
  * **NAudioConsoleTest:** new CLI test harness for driving various NAudio features without the need for GUI. Includes `run-batch` for JSON-driven test plans and `diagnose` for capturing a structured host audio snapshot (OS, ASIO drivers, WASAPI/WinMM/DirectSound devices, NAudio assembly versions).
  * **WPF demos:** spectrum analyser rewritten with corrected dB formula (20·log₁₀), log-frequency mapping, real-input full-scale calibration, bars instead of polylines, peak-decay markers, and per-band smoothing. New `LiveWaveformControl` with configurable render styles, vertical scaling, and fill-between rendering
  * **WAV recording demo:** added loopback support and a multi-API device combo with provenance embedding
@@ -75,11 +92,14 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * `AudioSessionControl`: now supports multiple registered event clients. `RegisterEventClient` no longer leaks a prior registration, and `UnRegisterEventClient` now honours its `eventClient` argument instead of unregistering whichever handler happened to be stored (#1263)
  * `CueListInterpreter`: fixed returning null for WAV files with cue points but no labels (e.g. unnamed Wavosaur markers); cues are now returned with empty labels (#549)
  * `WaveViewer`: fixed waveform rendering upside-down (#801, #818)
+ * `WaveViewer`: now renders correctly for any source format — the legacy renderer hard-coded a 16-bit PCM byte walk, so feeding it an `AudioFileReader` (or any non-16-bit `WaveStream`) produced a garbled waveform. Rendering now goes through `ToSampleProvider()` and operates on floats (#564)
  * `AcmInterop`: serialised all `msacm32` P/Invokes process-wide via a reentrant lock — fixes process-killing access violations under concurrent ACM access
  * `AcmStream`: fixed double-close in finalizer by zeroing the handle field before close
  * `MediaFoundationReader`: informational source-reader flags (`STREAMTICK`, `NEWSTREAM`, `NativeMediaTypeChanged`, `AllEffectsRemoved`) are now non-fatal instead of aborting reads
+ * `MediaFoundationReader`: cleanup `finally` block on `Read` no longer leaks COM objects when `Unlock` fails — the hresult is captured and thrown only after both the buffer and the sample have been freed.
  * `MediaFoundationReader.Reposition`: fixed using a stale field instead of the parameter (seeks would default to stream start)
  * `MediaFoundationEncoder`: unselected `MediaType` instances are now disposed to prevent finalizer-thread COM ref leaks
+ * `MediaFoundationEncoder`: In the `ConvertOneBuffer` method, there was a small possibility that if the sample creation was failed, the previously allocated buffer COM object would have been leaked.
  * `StreamMediaFoundationReader` and stream-based `MediaFoundationEncoder` encoding now use a direct managed `IMFByteStream` wrapper instead of the `IStream`→`IMFByteStream` shim, improving reliability of reading and encoding audio through .NET streams (#1288)
  * `Mp3FileReader`: fixed false sample-rate-change errors near end of file
  * `WaveFormat.Serialize`: PCM formats now write the canonical 16-byte `fmt ` chunk (no `cbSize` field) instead of 18 bytes, matching the `PCMWAVEFORMAT` layout (#934, #1098)
@@ -105,6 +125,8 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * `Id3v2Tag.ReadTag`: no longer throws and catches a `FormatException` for MP3 streams without an ID3v2 tag — the header check now returns `null` directly (#265)
  * `WaveFileReader`: fixed `ArgumentException` reading WAV files whose `fmt` chunk declares more extra (`cbSize`) bytes than the fixed 100-byte buffer holds — the surplus is now discarded instead of throwing (#482)
  * `MediaFoundationTransform`: cleanup `finally` blocks no longer leak COM objects when `Unlock`/`RemoveAllBuffers` fails — hresults are captured and thrown only after every buffer/sample has been released (#1293)
+ * `ResamplerDmoStream`: fixed infinite loop on `Read` after setting `Position`, and the loss of the resampler kernel's tail samples (~32 at the default quality of 30) when the input reaches end-of-stream. The DMO is now drained via `ProcessOutput` after `Discontinuity` — on seek the drained bytes are discarded so playback resumes from the new position, on EOS they're returned to the caller and subsequent reads return 0 cleanly (#607, #608)
+ * Named the background threads created by `DirectSoundOut`, `WasapiOut`, `WasapiCapture`, `WasapiPlayer`, and `WasapiRecorder` so they show meaningful names in debuggers and profilers (#557)
 
 #### Modernisation (Native AOT, source-generated COM)
 

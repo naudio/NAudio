@@ -2,7 +2,7 @@
 using System.ComponentModel;
 using System.Windows.Input;
 using Microsoft.Win32;
-using NAudio.Extras;
+using NAudio.Effects;
 using NAudio.Wave;
 using NAudioWpfDemo.ViewModel;
 
@@ -29,14 +29,14 @@ namespace NAudioWpfDemo.EqualizationDemo
             PauseCommand = new DelegateCommand(Pause);
             bands = new EqualizerBand[]
                     {
-                        new EqualizerBand {Bandwidth = 0.8f, Frequency = 100, Gain = 0},
-                        new EqualizerBand {Bandwidth = 0.8f, Frequency = 200, Gain = 0},
-                        new EqualizerBand {Bandwidth = 0.8f, Frequency = 400, Gain = 0},
-                        new EqualizerBand {Bandwidth = 0.8f, Frequency = 800, Gain = 0},
-                        new EqualizerBand {Bandwidth = 0.8f, Frequency = 1200, Gain = 0},
-                        new EqualizerBand {Bandwidth = 0.8f, Frequency = 2400, Gain = 0},
-                        new EqualizerBand {Bandwidth = 0.8f, Frequency = 4800, Gain = 0},
-                        new EqualizerBand {Bandwidth = 0.8f, Frequency = 9600, Gain = 0},
+                        new EqualizerBand {Q = 0.8f, Frequency = 100, GainDb = 0},
+                        new EqualizerBand {Q = 0.8f, Frequency = 200, GainDb = 0},
+                        new EqualizerBand {Q = 0.8f, Frequency = 400, GainDb = 0},
+                        new EqualizerBand {Q = 0.8f, Frequency = 800, GainDb = 0},
+                        new EqualizerBand {Q = 0.8f, Frequency = 1200, GainDb = 0},
+                        new EqualizerBand {Q = 0.8f, Frequency = 2400, GainDb = 0},
+                        new EqualizerBand {Q = 0.8f, Frequency = 4800, GainDb = 0},
+                        new EqualizerBand {Q = 0.8f, Frequency = 9600, GainDb = 0},
                     };
             this.PropertyChanged += OnPropertyChanged;
         }
@@ -52,12 +52,12 @@ namespace NAudioWpfDemo.EqualizationDemo
 
         public float Band1
         {
-            get => bands[0].Gain;
+            get => bands[0].GainDb;
             set
             {
-                if (bands[0].Gain != value)
+                if (bands[0].GainDb != value)
                 {
-                    bands[0].Gain = value;
+                    bands[0].GainDb = value;
                     OnPropertyChanged("Band1");
                 }
             }
@@ -65,12 +65,12 @@ namespace NAudioWpfDemo.EqualizationDemo
 
         public float Band2
         {
-            get => bands[1].Gain;
+            get => bands[1].GainDb;
             set
             {
-                if (bands[1].Gain != value)
+                if (bands[1].GainDb != value)
                 {
-                    bands[1].Gain = value;
+                    bands[1].GainDb = value;
                     OnPropertyChanged("Band2");
                 }
             }
@@ -78,12 +78,12 @@ namespace NAudioWpfDemo.EqualizationDemo
 
         public float Band3
         {
-            get => bands[2].Gain;
+            get => bands[2].GainDb;
             set
             {
-                if (bands[2].Gain != value)
+                if (bands[2].GainDb != value)
                 {
-                    bands[2].Gain = value;
+                    bands[2].GainDb = value;
                     OnPropertyChanged("Band3");
                 }
             }
@@ -91,12 +91,12 @@ namespace NAudioWpfDemo.EqualizationDemo
 
         public float Band4
         {
-            get => bands[3].Gain;
+            get => bands[3].GainDb;
             set
             {
-                if (bands[3].Gain != value)
+                if (bands[3].GainDb != value)
                 {
-                    bands[3].Gain = value;
+                    bands[3].GainDb = value;
                     OnPropertyChanged("Band4");
                 }
             }
@@ -104,12 +104,12 @@ namespace NAudioWpfDemo.EqualizationDemo
 
         public float Band5
         {
-            get => bands[4].Gain;
+            get => bands[4].GainDb;
             set
             {
-                if (bands[4].Gain != value)
+                if (bands[4].GainDb != value)
                 {
-                    bands[4].Gain = value;
+                    bands[4].GainDb = value;
                     OnPropertyChanged("Band5");
                 }
             }
@@ -117,12 +117,12 @@ namespace NAudioWpfDemo.EqualizationDemo
 
         public float Band6
         {
-            get => bands[5].Gain;
+            get => bands[5].GainDb;
             set
             {
-                if (bands[5].Gain != value)
+                if (bands[5].GainDb != value)
                 {
-                    bands[5].Gain = value;
+                    bands[5].GainDb = value;
                     OnPropertyChanged("Band6");
                 }
             }
@@ -131,12 +131,12 @@ namespace NAudioWpfDemo.EqualizationDemo
 
         public float Band7
         {
-            get => bands[6].Gain;
+            get => bands[6].GainDb;
             set
             {
-                if (bands[6].Gain != value)
+                if (bands[6].GainDb != value)
                 {
-                    bands[6].Gain = value;
+                    bands[6].GainDb = value;
                     OnPropertyChanged("Band7");
                 }
             }
@@ -144,12 +144,12 @@ namespace NAudioWpfDemo.EqualizationDemo
 
         public float Band8
         {
-            get => bands[7].Gain;
+            get => bands[7].GainDb;
             set
             {
-                if (bands[7].Gain != value)
+                if (bands[7].GainDb != value)
                 {
-                    bands[7].Gain = value;
+                    bands[7].GainDb = value;
                     OnPropertyChanged("Band8");
                 }
             }
@@ -169,9 +169,9 @@ namespace NAudioWpfDemo.EqualizationDemo
             {
                 selectedFile = openFileDialog.FileName;
                 reader = new AudioFileReader(selectedFile);
-                equalizer = new Equalizer(reader, bands);
+                equalizer = new Equalizer(bands);
                 player = new WaveOut();
-                player.Init(equalizer);
+                player.Init(new EffectSampleProvider(reader, equalizer));
             }
         }
 

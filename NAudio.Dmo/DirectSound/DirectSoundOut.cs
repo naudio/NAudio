@@ -154,6 +154,7 @@ namespace NAudio.Wave
                 // put this back to highest when we are confident we don't have any bugs in the thread proc
                 notifyThread.Priority = ThreadPriority.Normal;
                 notifyThread.IsBackground = true;
+                notifyThread.Name = "NAudio DirectSoundOut Playback";
                 notifyThread.Start();
             }
 

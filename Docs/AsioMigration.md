@@ -193,6 +193,6 @@ A small number of behaviors don't have a 1:1 mapping:
 
 ## Breaking changes within `AsioOut` itself
 
-`AsioOut`'s public surface is byte-for-byte identical to NAudio 2.x — there are no breaking changes. A snapshot test in `NAudioTests` ([AsioOutPublicSurfaceTests](../NAudioTests/Asio/AsioOutPublicSurfaceTests.cs)) pins this; if a future change breaks the surface, the test catches it.
+`AsioOut`'s public surface is byte-for-byte identical to NAudio 2.x — there are no breaking changes. A snapshot test in `NAudio.Windows.Tests` ([AsioOutPublicSurfaceTests](https://github.com/naudio/NAudio/blob/main/NAudio.Windows.Tests/Asio/AsioOutPublicSurfaceTests.cs)) pins this; if a future change breaks the surface, the test catches it.
 
 The internal implementation routes through `AsioDevice`, picking up the F1 (auto-stop deadlock) and F2 (dispose drain) fixes, but the contract you call against is unchanged.

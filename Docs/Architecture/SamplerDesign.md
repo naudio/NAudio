@@ -119,11 +119,21 @@ warranted.** Targeted work only:
 - **Writing** stays out of scope (`SoundFont.cs` — `// TODO: save`) — a separate
   feature, not needed to *play* anything.
 
-The parser exposes the file's *structure*; the sampler adds a **resolved
-instrument** layer on top that flattens preset-zone + instrument-zone generators
-(with correct additive-vs-absolute accumulation per SF2.04 §9.4, global zones,
-and the default modulators) into the Layer-2 model. That resolution layer is new
-code in `NAudio.Sampler`, not a parser change.
+The parser exposes the file's *structure*; on top of it sits a **resolved
+instrument** layer (`SoundFontInstrumentResolver` / `SoundFontRegion` /
+`SoundFontGenerators`) that flattens preset-zone + instrument-zone generators
+(with correct absolute-vs-additive accumulation per SF2.04 §9.4, global zones,
+default generator values, and key/velocity-range intersection) into a flat list
+of playable regions. `Preset.ResolveRegions()` is the entry point.
+
+**This resolution layer lives in `NAudio.Core` (`NAudio.SoundFont`), not
+`NAudio.Sampler`** — an earlier draft placed it in the sampler package, but it
+is pure SoundFont interpretation with no synthesis dependency, useful to anyone
+reading/inspecting/converting SF2 files, so by the "generally-useful code goes
+in Core" principle it belongs beside the parser. The format-neutral sampler
+model (§3.1) becomes a thin projection of `SoundFontRegion`; modulator
+*resolution* (the default + file modulator routings) stays with the synth engine
+since it is synthesis-facing.
 
 ### 4.2 SFZ — build from scratch
 

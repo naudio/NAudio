@@ -104,6 +104,18 @@ namespace NAudio.Dsp
             y2 = ly2;
         }
 
+        /// <summary>
+        /// Clears the filter's sample history (the x/y delay elements) without
+        /// changing its coefficients, so the next input is filtered as if from
+        /// silence. Use when reusing a filter on a new, unrelated signal (e.g. an
+        /// effect's <c>Reset()</c>).
+        /// </summary>
+        public void ResetState()
+        {
+            x1 = x2 = 0f;
+            y1 = y2 = 0f;
+        }
+
         private void SetCoefficients(double aa0, double aa1, double aa2, double b0, double b1, double b2)
         {
             // precompute the coefficients
@@ -172,7 +184,7 @@ namespace NAudio.Dsp
             var cosw0 = Math.Cos(w0);
             var sinw0 = Math.Sin(w0);
             var alpha = sinw0 / (2 * q);
-            var a = Math.Pow(10, dbGain / 40);     // TODO: should we square root this value?
+            var a = Math.Pow(10, dbGain / 40);
 
             var b0 = 1 + alpha * a;
             var b1 = -2 * cosw0;
@@ -371,7 +383,7 @@ namespace NAudio.Dsp
             var w0 = 2 * Math.PI * cutoffFrequency / sampleRate;
             var cosw0 = Math.Cos(w0);
             var sinw0 = Math.Sin(w0);
-            var a = Math.Pow(10, dbGain / 40);     // TODO: should we square root this value?
+            var a = Math.Pow(10, dbGain / 40);
             var alpha = sinw0 / 2 * Math.Sqrt((a + 1 / a) * (1 / shelfSlope - 1) + 2);
             var temp = 2 * Math.Sqrt(a) * alpha;
             
@@ -398,7 +410,7 @@ namespace NAudio.Dsp
             var w0 = 2 * Math.PI * cutoffFrequency / sampleRate;
             var cosw0 = Math.Cos(w0);
             var sinw0 = Math.Sin(w0);
-            var a = Math.Pow(10, dbGain / 40);     // TODO: should we square root this value?
+            var a = Math.Pow(10, dbGain / 40);
             var alpha = sinw0 / 2 * Math.Sqrt((a + 1 / a) * (1 / shelfSlope - 1) + 2);
             var temp = 2 * Math.Sqrt(a) * alpha;
 

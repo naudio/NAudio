@@ -1,0 +1,61 @@
+<UserControl x:Class="NAudioWpfDemo.ConvolutionReverbDemo.ConvolutionReverbDemoView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="640" d:DesignWidth="560">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" FontWeight="Bold" Margin="0,0,0,6"
+                   Text="Convolution reverb test bench — offline render"/>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,4">
+            <Button Content="Choose input…" Width="120" Command="{Binding ChooseInputCommand}"/>
+            <TextBlock Text="{Binding InputFilePath}" Margin="8,0" VerticalAlignment="Center"
+                       TextTrimming="CharacterEllipsis" MaxWidth="380"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,4">
+            <Button Content="Choose IR folder…" Width="120" Command="{Binding ChooseIrFolderCommand}"/>
+            <TextBlock Text="{Binding IrFolderPath}" Margin="8,0" VerticalAlignment="Center"
+                       TextTrimming="CharacterEllipsis" MaxWidth="380"/>
+        </StackPanel>
+
+        <ListBox Grid.Row="3" ItemsSource="{Binding Irs}"
+                 SelectedItem="{Binding SelectedIr, Mode=TwoWay}"
+                 Margin="0,4"/>
+
+        <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,4">
+            <Button Content="Process selected" Width="140" Margin="0,0,8,0"
+                    Command="{Binding ProcessSelectedCommand}"/>
+            <Button Content="Process all IRs" Width="140"
+                    Command="{Binding ProcessAllCommand}"/>
+        </StackPanel>
+
+        <TextBlock Grid.Row="5" Text="{Binding Status}" Margin="0,4" TextWrapping="Wrap"/>
+
+        <TextBlock Grid.Row="6" Text="Renders (in temp folder)" FontWeight="Bold" Margin="0,8,0,2"/>
+
+        <ListBox Grid.Row="7" ItemsSource="{Binding Renders}"
+                 SelectedItem="{Binding SelectedRender, Mode=TwoWay}"
+                 Margin="0,0,0,4"/>
+
+        <StackPanel Grid.Row="8" Orientation="Horizontal">
+            <Button Content="Play" Width="60" Margin="0,0,4,0" Command="{Binding PlayRenderCommand}"/>
+            <Button Content="Delete" Width="60" Margin="0,0,4,0" Command="{Binding DeleteRenderCommand}"/>
+            <Button Content="Open folder" Width="100" Command="{Binding OpenOutputFolderCommand}"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

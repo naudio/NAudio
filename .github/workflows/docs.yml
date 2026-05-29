@@ -46,7 +46,7 @@ jobs:
         run: dotnet tool update -g docfx
 
       - name: Build docs
-        run: docfx docfx.json
+        run: docfx docfx.json --warningsAsErrors
 
       - name: Upload Pages artifact
         # Only needed for the deploy job, which only runs on main.

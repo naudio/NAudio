@@ -1,6 +1,4 @@
-﻿// for consistency this should be in NAudio.Wave namespace, but left as it is for backwards compatibility
-// ReSharper disable once CheckNamespace
-namespace NAudio.CoreAudioApi
+﻿namespace NAudio.Wave
 {
     /// <summary>
     /// Represents state of a capture device

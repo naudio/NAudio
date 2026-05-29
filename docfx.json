@@ -81,7 +81,8 @@
     "output": "_site",
     "template": [
       "default",
-      "modern"
+      "modern",
+      "templates/naudio"
     ],
     "globalMetadata": {
       "_appName": "NAudio",

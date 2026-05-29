@@ -11,6 +11,7 @@ on:
       - 'index.md'
       - 'api/index.md'
       - '.github/workflows/docs.yml'
+      - '.github/scripts/check-docs-toc.sh'
   pull_request:
     paths:
       - 'Docs/**'
@@ -19,6 +20,7 @@ on:
       - 'index.md'
       - 'api/index.md'
       - '.github/workflows/docs.yml'
+      - '.github/scripts/check-docs-toc.sh'
   workflow_dispatch:
 
 # Allow only one concurrent deployment, skipping runs queued between the run
@@ -36,6 +38,10 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+
+      - name: Check every tutorial is in the TOC
+        shell: bash
+        run: ./.github/scripts/check-docs-toc.sh
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4

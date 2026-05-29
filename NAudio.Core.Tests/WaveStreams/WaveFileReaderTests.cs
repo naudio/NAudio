@@ -6,7 +6,6 @@ using NAudio.Wave;
 using NUnit.Framework;
 using System.Diagnostics;
 using System;
-using NAudio.FileFormats.Wav;
 using NAudio.Core.Tests.Utils;
 
 namespace NAudio.Core.Tests.WaveStreams

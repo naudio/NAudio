@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
-using NAudio.FileFormats.Wav;
 using NAudio.Wave;
 using NAudio.Core.Tests.Utils;
 using NUnit.Framework;
@@ -10,7 +9,7 @@ using NUnit.Framework;
 namespace NAudio.Core.Tests.WaveStreams
 {
     /// <summary>
-    /// Tests for <see cref="NAudio.FileFormats.Wav.WaveFileChunkReader"/>, exercised
+    /// Tests for <see cref="NAudio.Wave.WaveFileChunkReader"/>, exercised
     /// through <see cref="WaveFileReader"/> against hand-built RIFF streams.
     /// </summary>
     [TestFixture]

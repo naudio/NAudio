@@ -277,12 +277,22 @@ Sequenced cheapest-useful-first:
 
 1. **DSP primitives → `NAudio.Core`:** interpolating sample reader, DAHDSR,
    LFO/filter extensions, note/cents/cB/timecent math. Pure, unit-testable.
+   **DONE.**
 2. **SF2 resolved-instrument model** + finish `sm24` and modulator-field parsing
-   in the parser.
+   in the parser. **DONE** (resolved model in `NAudio.Core/FileFormats/SoundFont`).
 3. **`NAudio.Sampler` engine v1:** voice, voice manager, generator accumulation,
    channel state, loop modes — *no modulators yet* (default attenuation/pan/
    filter only). Drum one-shots + GM melodic playable as an `ISampleProvider`.
+   **DONE.** New `NAudio.Sampler` package: `SoundFontSampler` (`ISampleProvider`),
+   internal `SamplerVoice` (pitch from root-key/tune, the three loop modes,
+   DAHDSR amp envelope, static per-voice low-pass, velocity/attenuation gain,
+   equal-power pan), `MidiChannelState` (program/bank, pitch-bend, sustain
+   pedal, volume/expression), voice stealing and exclusive-class choke. Verified
+   by deterministic offline-render tests (pitch ratio, looping, release decay,
+   sustain pedal, choke, pan, key-range, polyphony).
 4. **Modulator engine** (default + file modulators) — the "sounds correct" PR.
+   Will also replace the provisional velocity→gain curve with the SF2 default
+   velocity→attenuation modulator and add the mod envelope + LFOs.
 5. **Effects send-bus** (reverb/chorus sends) reusing `NAudio.Effects`.
 6. **MIDI-file → `EventTimeline` ingestion** (closes the sequencer gap) →
    enables the offline render demo.

@@ -294,6 +294,16 @@ modulator transforms. Mark anything needing real hardware
 - **SoundFont *writing*** and SFZ export — separate authoring feature.
 - **Disk streaming for large libraries** — v1 loads samples into memory
   (`CachedSound`-style). Streamed voices are a later optimisation.
+- **Windowed-sinc interpolation tier** for `InterpolatingSampleReader`. The
+  shipped reader offers None/Linear/Hermite, with Hermite as the transparent
+  default. A table-driven windowed-sinc (e.g. Lanczos/Blackman, 8–32 taps) is a
+  higher-quality option worth adding *if* demand appears — it mainly helps
+  extreme *upward* pitch shifts (imaging near Nyquist) and offline rendering,
+  where the extra taps per sample are affordable. Cost: more CPU and a wider
+  read window, so the loop-boundary wrap needs more guard samples either side of
+  the loop points. `WdlResampler` already has a windowed-sinc kernel that can
+  serve as the math reference (it is fixed-ratio/block-based, so it can't be
+  dropped into the per-sample varying-rate reader directly).
 - **Advanced SFZ (flex EGs, `<curve>`, full ARIA set)** — Tier 3, demand-driven.
 - **Built-in algorithmic-reverb send default** — start by routing to the
   existing `ReverbEffect`/`FdnReverbEffect`; a sampler-tuned default is polish.

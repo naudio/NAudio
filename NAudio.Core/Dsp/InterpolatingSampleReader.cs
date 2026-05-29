@@ -89,7 +89,12 @@ namespace NAudio.Dsp
         None,
         /// <summary>Two-point linear interpolation.</summary>
         Linear,
-        /// <summary>Four-point cubic Hermite interpolation — highest quality.</summary>
+        /// <summary>
+        /// Four-point cubic Hermite interpolation — the recommended default,
+        /// transparent for downward and moderate pitch shifts. A higher-quality
+        /// windowed-sinc option may be added later for extreme upward shifts
+        /// (see Docs/Architecture/SamplerDesign.md §11).
+        /// </summary>
         Hermite
     }
 
@@ -119,7 +124,10 @@ namespace NAudio.Dsp
             position = source.Start;
         }
 
-        /// <summary>Interpolation quality. Defaults to <see cref="InterpolationQuality.Hermite"/>.</summary>
+        /// <summary>
+        /// Interpolation quality. Defaults to <see cref="InterpolationQuality.Hermite"/>,
+        /// the recommended general-purpose setting.
+        /// </summary>
         public InterpolationQuality Quality { get; set; } = InterpolationQuality.Hermite;
 
         /// <summary>The current fractional read position, in source sample indices.</summary>

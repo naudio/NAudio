@@ -168,6 +168,15 @@ namespace NAudio.Core.Tests.SoundFont
             return ListChunk("sdta", Chunk("smpl", rawSampleData));
         }
 
+        /// <summary>
+        /// Builds an sdta LIST chunk containing both a smpl sub-chunk (16-bit high
+        /// bytes) and an sm24 sub-chunk (the low 8 bits of each 24-bit sample).
+        /// </summary>
+        public static byte[] BuildSdta24List(byte[] rawSampleData, byte[] sm24Data)
+        {
+            return ListChunk("sdta", Chunk("smpl", rawSampleData), Chunk("sm24", sm24Data));
+        }
+
         #endregion
 
         #region pdta record helpers

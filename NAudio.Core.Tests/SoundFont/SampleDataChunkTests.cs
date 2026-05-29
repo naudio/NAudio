@@ -18,6 +18,51 @@ namespace NAudio.Core.Tests.SoundFont
             Assert.That(sf.SampleData.Length, Is.GreaterThan(0));
         }
 
+        [Test]
+        public void SixteenBitSoundFontHasNo24BitData()
+        {
+            var sf2 = SoundFontTestHelper.BuildMinimalSoundFont();
+            var sf = new NAudio.SoundFont.SoundFont(new MemoryStream(sf2));
+
+            Assert.That(sf.Has24BitSamples, Is.False);
+            Assert.That(sf.SampleData24, Is.Null);
+        }
+
+        [Test]
+        public void LoadsSm24LowByteDataWhenPresent()
+        {
+            // 4 samples => 8 bytes of smpl (high 16 bits) + 4 bytes of sm24 (low 8 bits)
+            var smpl = new byte[] { 0x00, 0x10, 0x00, 0x20, 0x00, 0x30, 0x00, 0x40 };
+            var sm24 = new byte[] { 0xAA, 0xBB, 0xCC, 0xDD };
+
+            var info = SoundFontTestHelper.BuildInfoList();
+            var sdta = SoundFontTestHelper.BuildSdta24List(smpl, sm24);
+            var pdta = SoundFontTestHelper.BuildMinimalPdtaList(sampleEnd: 3);
+            var sf2 = SoundFontTestHelper.BuildSoundFont(info, sdta, pdta);
+            var sf = new NAudio.SoundFont.SoundFont(new MemoryStream(sf2));
+
+            Assert.That(sf.Has24BitSamples, Is.True);
+            Assert.That(sf.SampleData, Is.EqualTo(smpl));
+            Assert.That(sf.SampleData24, Is.EqualTo(sm24));
+        }
+
+        [Test]
+        public void IgnoresSm24ChunkThatDoesNotPairWithSmpl()
+        {
+            // sm24 too short to be one byte per 16-bit sample => ignored
+            var smpl = new byte[] { 0x00, 0x10, 0x00, 0x20, 0x00, 0x30, 0x00, 0x40 };
+            var sm24 = new byte[] { 0xAA }; // only 1 byte for 4 samples
+
+            var info = SoundFontTestHelper.BuildInfoList();
+            var sdta = SoundFontTestHelper.BuildSdta24List(smpl, sm24);
+            var pdta = SoundFontTestHelper.BuildMinimalPdtaList(sampleEnd: 3);
+            var sf2 = SoundFontTestHelper.BuildSoundFont(info, sdta, pdta);
+            var sf = new NAudio.SoundFont.SoundFont(new MemoryStream(sf2));
+
+            Assert.That(sf.Has24BitSamples, Is.False);
+            Assert.That(sf.SampleData24, Is.Null);
+        }
+
         #region Spec violation tests (HIGH severity)
 
         [Test]

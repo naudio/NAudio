@@ -35,7 +35,7 @@ namespace NAudio.SoundFont
                     string formHeader = riff.ReadChunkID();
                     if (formHeader != "sfbk")
                     {
-                        throw new InvalidDataException(String.Format("Not a SoundFont ({0})", formHeader));
+                        throw new InvalidDataException($"Not a SoundFont ({formHeader})");
                     }
                     RiffChunk list = riff.GetNextSubChunk();
                     if (list.ChunkID == "LIST")
@@ -51,7 +51,7 @@ namespace NAudio.SoundFont
                     }
                     else
                     {
-                        throw new InvalidDataException(String.Format("Not info list found ({0})", list.ChunkID));
+                        throw new InvalidDataException($"No info list found ({list.ChunkID})");
                     }
                 }
                 else
@@ -82,17 +82,29 @@ namespace NAudio.SoundFont
         public SampleHeader[] SampleHeaders => presetsChunk.SampleHeaders;
 
         /// <summary>
-        /// The Sample Data
+        /// The Sample Data (the high 16 bits of each sample). For 24-bit
+        /// SoundFonts the least-significant 8 bits are in <see cref="SampleData24"/>.
         /// </summary>
         public byte[] SampleData => sampleData.SampleData;
+
+        /// <summary>
+        /// The optional 24-bit extension data (one byte per sample, the low 8
+        /// bits of each sample), or null if the SoundFont contains only 16-bit
+        /// samples. Pairs one byte with each 16-bit sample in <see cref="SampleData"/>.
+        /// </summary>
+        public byte[] SampleData24 => sampleData.SampleData24;
+
+        /// <summary>
+        /// Whether this SoundFont carries 24-bit sample data (an sm24 sub-chunk).
+        /// </summary>
+        public bool Has24BitSamples => sampleData.SampleData24 != null;
 
         /// <summary>
         /// <see cref="Object.ToString"/>
         /// </summary>
         public override string ToString()
         {
-            return String.Format("Info Chunk:\r\n{0}\r\nPresets Chunk:\r\n{1}",
-                                    info, presetsChunk);
+            return $"Info Chunk:\r\n{info}\r\nPresets Chunk:\r\n{presetsChunk}";
         }
 
         // TODO: save / save as function

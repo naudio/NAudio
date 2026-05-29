@@ -8,49 +8,47 @@ namespace NAudio.SoundFont
         /// <summary>
         /// The sample name
         /// </summary>
-        public string SampleName;
+        public string SampleName { get; set; }
         /// <summary>
         /// Start offset
         /// </summary>
-        public uint Start;
+        public uint Start { get; set; }
         /// <summary>
         /// End offset
         /// </summary>
-        public uint End;
+        public uint End { get; set; }
         /// <summary>
         /// Start loop point
         /// </summary>
-        public uint StartLoop;
+        public uint StartLoop { get; set; }
         /// <summary>
         /// End loop point
         /// </summary>
-        public uint EndLoop;
+        public uint EndLoop { get; set; }
         /// <summary>
         /// Sample Rate
         /// </summary>
-        public uint SampleRate;
+        public uint SampleRate { get; set; }
         /// <summary>
         /// Original pitch
         /// </summary>
-        public byte OriginalPitch;
+        public byte OriginalPitch { get; set; }
         /// <summary>
         /// Pitch correction
         /// </summary>
-        public sbyte PitchCorrection;
+        public sbyte PitchCorrection { get; set; }
         /// <summary>
         /// Sample Link
         /// </summary>
-        public ushort SampleLink;
+        public ushort SampleLink { get; set; }
         /// <summary>
         /// SoundFont Sample Link Type
         /// </summary>
-        public SFSampleLink SFSampleLink;
+        public SFSampleLink SFSampleLink { get; set; }
 
         /// <summary>
         /// <see cref="object.ToString"/>
         /// </summary>
         public override string ToString() => SampleName;
-
     }
 }
-

@@ -49,14 +49,28 @@ namespace NAudio.Sequencing
         /// <inheritdoc/>
         public long Transform(long nominalTick)
         {
-            var rem = nominalTick % gridTicks;
+            // Snapshot both mutable fields once so a UI-thread Amount change can't make a single call
+            // see a value of Amount inconsistent with the GridTicks (or with what MaxShiftTicks just
+            // returned). Cross-call drift across a swing-knob move is unavoidable for mutable state
+            // and audibly imperceptible.
+            var localAmount = amount;
+            var localGrid = gridTicks;
+            var rem = nominalTick % localGrid;
             if (rem != 0) return nominalTick;
-            var gridPos = nominalTick / gridTicks;
+            var gridPos = nominalTick / localGrid;
             if ((gridPos & 1L) == 0) return nominalTick;
-            return nominalTick + (long)(amount * gridTicks);
+            return nominalTick + (long)(localAmount * localGrid);
         }
 
         /// <inheritdoc/>
-        public long MaxShiftTicks => (long)(amount * gridTicks) + 1;
+        public long MaxShiftTicks
+        {
+            get
+            {
+                var localAmount = amount;
+                var localGrid = gridTicks;
+                return (long)(localAmount * localGrid) + 1;
+            }
+        }
     }
 }

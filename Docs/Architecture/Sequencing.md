@@ -161,11 +161,11 @@ After review by the VST3 hosting POC author, the four open questions above are a
 
 Three additional shape decisions came out of the same review:
 
-5. **`EventBufferQuery<T>` is stateless on an arbitrary `[startFrame, endFrameExclusive)` range**, not on "since the last call". Required because the VST3 consumer may split a single WASAPI pull into multiple `process()` calls when the plugin's `maxSamplesPerBlock` is smaller than the host buffer. `SequencedSampleProvider<T>` becomes a thin wrapper that calls the query with `[Transport.CurrentFrames, Transport.CurrentFrames + frames)` and routes the dispatched events into its `MixingSampleProvider`.
+5. **`EventBufferQuery.Query<T>` is stateless on an arbitrary `[startFrame, endFrameExclusive)` range**, not on "since the last call". Required because the VST3 consumer may split a single WASAPI pull into multiple `process()` calls when the plugin's `maxSamplesPerBlock` is smaller than the host buffer. `SequencedSampleProvider<T>` becomes a thin wrapper that calls the query with `[Transport.CurrentFrames, Transport.CurrentFrames + frames)` and routes the dispatched events into its `MixingSampleProvider`.
 6. **`ITempoMap.NextChangeAfter(long tick)`** lands as a new interface method (returning `long?` or `long.MaxValue` for "no further change"). VST3's `ProcessContext.tempo` is single-valued per block, so the consumer needs this to decide whether to split a block at a tempo-change boundary or to use the start-of-block tempo and accept tiny inaccuracy. Implementations are trivial for both `StaticTempoMap` (binary search for next segment) and `LiveTempoMap` (last appended segment's start, or none).
 7. **PPQ rescaling lives on `MusicalTime`.** Add `MusicalTime.RescaleFromPpq(long fileTick, int fileDeltaTicksPerQuarterNote)` implementing `fileTick * CanonicalPpq / fileDeltaTicksPerQuarterNote` so MIDI-file ingestion and any other rescaling caller share one implementation. Apply it to every tick — event absolute times, tempo events, time-sig events.
 
-These three are the API additions that need to land alongside the milestone-2 work (MIDI-file ingestion + `EventBufferQuery<T>` factoring); none of them disturb anything already shipped in milestone 1.
+These three are the API additions that need to land alongside the milestone-2 work (MIDI-file ingestion + `EventBufferQuery.Query<T>` factoring); none of them disturb anything already shipped in milestone 1.
 
 ## Notes for the VST3 POC reviewer
 
@@ -175,7 +175,7 @@ A few practical notes alongside the open questions, so the POC author can plan a
 
 `SequencedSampleProvider<T>` is currently hardwired to a `MixingSampleProvider` sink and exposes its per-buffer event-query logic only via a `dispatcher` callback. That fits an audio-mixer consumer (drum machine, sampler) but not a VST3 instrument provider, which needs to take the same `(event, frameOffset)` stream and pack it into the plugin's `process()` event input alongside an updated `ProcessContext` — no mixer involved.
 
-Before the VST3 strand can land, refactor `DispatchEventsForBuffer` into a reusable `EventBufferQuery<T>` (or similar) that takes `EventTimeline<T>`, `ITempoMap`, `IPositionTransform`, and an arbitrary `[startFrame, endFrameExclusive)` range, yielding `(event, frameOffset)` pairs. **Stateless by design** — see decision 5 in "Confirmed with the VST3 POC" above. `SequencedSampleProvider<T>` becomes a thin wrapper that supplies the range from `Transport.CurrentFrames` and routes the dispatched events into its `MixingSampleProvider`.
+Before the VST3 strand can land, refactor `DispatchEventsForBuffer` into a reusable `EventBufferQuery.Query<T>` (or similar) that takes `EventTimeline<T>`, `ITempoMap`, `IPositionTransform`, and an arbitrary `[startFrame, endFrameExclusive)` range, yielding `(event, frameOffset)` pairs. **Stateless by design** — see decision 5 in "Confirmed with the VST3 POC" above. `SequencedSampleProvider<T>` becomes a thin wrapper that supplies the range from `Transport.CurrentFrames` and routes the dispatched events into its `MixingSampleProvider`.
 
 ### `ProcessContext` field mapping
 

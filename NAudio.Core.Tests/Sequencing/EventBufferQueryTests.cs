@@ -107,6 +107,38 @@ namespace NAudio.Core.Tests.Sequencing
         }
 
         [Test]
+        public void Looped_Query_Excludes_Event_At_Exact_LoopEnd_Tick()
+        {
+            // LoopRegion is documented half-open: events at tick == loop.EndTick belong to the next
+            // iteration's StartTick, not the current iteration's end. Placing an event there must not
+            // fire on every iteration.
+            var loopLen = MusicalTime.CanonicalPpq * 4L;
+            var timeline = new EventTimeline<int>();
+            timeline.Add(loopLen, 99); // event at exactly loop.EndTick
+            var (log, dispatch) = NewLog();
+
+            EventBufferQuery.Query(timeline, new StaticTempoMap(120), Identity, new LoopRegion(0, loopLen),
+                                   0, 192000, SampleRate, dispatch);
+            Assert.That(log.Count, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void Looped_Query_Excludes_Event_Past_LoopEnd_Tick()
+        {
+            // Events placed nominally past loop.EndTick are unreachable loop content; they must not
+            // fire each iteration even though they sit within the timeline-query over-scan window of
+            // a prior implementation.
+            var loopLen = MusicalTime.CanonicalPpq * 4L;
+            var timeline = new EventTimeline<int>();
+            timeline.Add(loopLen + 5, 99);
+            var (log, dispatch) = NewLog();
+
+            EventBufferQuery.Query(timeline, new StaticTempoMap(120), Identity, new LoopRegion(0, loopLen),
+                                   0, 192000, SampleRate, dispatch);
+            Assert.That(log.Count, Is.EqualTo(0));
+        }
+
+        [Test]
         public void Throws_On_Null_Args()
         {
             var t = new EventTimeline<int>();

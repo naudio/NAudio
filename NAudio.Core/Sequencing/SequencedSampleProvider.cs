@@ -29,7 +29,7 @@ namespace NAudio.Sequencing
         /// <param name="audioFormat">Mixer output format. Must be IEEE float.</param>
         /// <param name="dispatcher">Invoked for each event whose effective fire-frame lands inside the upcoming buffer.
         /// The integer is the frame offset within the buffer (0 = first frame). The dispatcher typically
-        /// wraps the payload's audio in an <see cref="OffsetSampleProvider"/> set to <c>DelayBy = frameOffset * channels</c>
+        /// wraps the payload's audio in an <see cref="OffsetSampleProvider"/> set to <c>DelayBySamples = frameOffset * channels</c>
         /// and adds it to <see cref="Mixer"/>. The <see cref="SequencerEvent{T}.Tick"/> on the dispatched event is the
         /// effective tick (after the transform, and after loop iteration translation when looping).</param>
         public SequencedSampleProvider(Transport transport, EventTimeline<T> timeline,

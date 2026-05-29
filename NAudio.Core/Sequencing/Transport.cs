@@ -6,14 +6,16 @@ namespace NAudio.Sequencing
     /// <summary>
     /// Tracks playback position for the sequencing layer. Position is held in both audio frames
     /// (the master, since the audio device pulls a frame count) and canonical ticks (derived from
-    /// the tempo map). Mutating methods (<see cref="Play"/>, <see cref="Stop"/>, <see cref="SeekTicks"/>,
-    /// <see cref="SeekFrames"/>) are safe to call from any thread, but coarse-grained: a seek issued
-    /// while a buffer is being rendered takes effect on the next buffer.
+    /// the tempo map). Position-mutating methods (<see cref="AdvanceByFrames"/>, <see cref="SeekTicks"/>,
+    /// <see cref="SeekFrames"/>) serialise on an internal lock so a UI-thread seek can't race with
+    /// the audio-thread advance. Position reads (<see cref="CurrentFrames"/>, <see cref="CurrentTicks"/>)
+    /// remain lock-free.
     /// </summary>
     public sealed class Transport
     {
         private readonly ITempoMap tempoMap;
         private readonly int sampleRate;
+        private readonly object mutationLock = new();
         private long currentFrames;
         private long currentTicks;
         private int isPlaying;
@@ -55,18 +57,24 @@ namespace NAudio.Sequencing
         public void SeekTicks(long ticks)
         {
             if (ticks < 0) throw new ArgumentOutOfRangeException(nameof(ticks), "Ticks must not be negative.");
-            var frames = (long)(tempoMap.SecondsFromTicks(ticks) * sampleRate);
-            Interlocked.Exchange(ref currentTicks, ticks);
-            Interlocked.Exchange(ref currentFrames, frames);
+            lock (mutationLock)
+            {
+                var frames = (long)(tempoMap.SecondsFromTicks(ticks) * sampleRate);
+                Interlocked.Exchange(ref currentTicks, ticks);
+                Interlocked.Exchange(ref currentFrames, frames);
+            }
         }
 
         /// <summary>Seeks the playhead to the given frame.</summary>
         public void SeekFrames(long frames)
         {
             if (frames < 0) throw new ArgumentOutOfRangeException(nameof(frames), "Frames must not be negative.");
-            var ticks = tempoMap.TicksFromSeconds((double)frames / sampleRate);
-            Interlocked.Exchange(ref currentFrames, frames);
-            Interlocked.Exchange(ref currentTicks, ticks);
+            lock (mutationLock)
+            {
+                var ticks = tempoMap.TicksFromSeconds((double)frames / sampleRate);
+                Interlocked.Exchange(ref currentFrames, frames);
+                Interlocked.Exchange(ref currentTicks, ticks);
+            }
         }
 
         /// <summary>
@@ -78,10 +86,13 @@ namespace NAudio.Sequencing
         {
             if (frames < 0) throw new ArgumentOutOfRangeException(nameof(frames), "Frames must not be negative.");
             if (frames == 0) return;
-            var newFrames = Interlocked.Read(ref currentFrames) + frames;
-            var newTicks = tempoMap.TicksFromSeconds((double)newFrames / sampleRate);
-            Interlocked.Exchange(ref currentFrames, newFrames);
-            Interlocked.Exchange(ref currentTicks, newTicks);
+            lock (mutationLock)
+            {
+                var newFrames = Interlocked.Read(ref currentFrames) + frames;
+                var newTicks = tempoMap.TicksFromSeconds((double)newFrames / sampleRate);
+                Interlocked.Exchange(ref currentFrames, newFrames);
+                Interlocked.Exchange(ref currentTicks, newTicks);
+            }
         }
     }
 }

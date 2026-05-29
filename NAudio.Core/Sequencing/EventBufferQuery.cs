@@ -96,9 +96,11 @@ namespace NAudio.Sequencing
 
             long loopLen = loop.LengthTicks;
             long iteration = (absStartTick - loop.StartTick) / loopLen;
-            long queryStart = Math.Max(0, loop.StartTick - maxShift - 1);
-            long queryEnd = loop.EndTick + maxShift + 2;
-            var candidates = timeline.EventsInRange(queryStart, queryEnd);
+            // Query strictly within the loop's half-open tick range. Events at exactly loop.EndTick
+            // belong to the next iteration's StartTick, not the current iteration — no over-scan on
+            // either side: the frame filter below is the authoritative bound, and swing-forward shifts
+            // of events nominally inside the loop can still land past loop.EndTick and fire correctly.
+            var candidates = timeline.EventsInRange(loop.StartTick, loop.EndTick);
 
             for (long n = 0; n < MaxLoopIterationsPerCall; n++)
             {

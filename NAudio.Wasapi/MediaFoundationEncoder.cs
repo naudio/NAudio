@@ -329,7 +329,7 @@ namespace NAudio.Wave
             }
 
             using var inputMediaType = new MediaType(inputSource.WaveFormat);
-            using var wrapper = new MfByteStreamFromStream(outputStream);
+            using var wrapper = new MfByteStreamFromStream(outputStream, false);
             var writer = CreateSinkWriter(wrapper, transcodeContainerType);
             try
             {

@@ -1,0 +1,290 @@
+using System;
+
+namespace NAudio.Dsp
+{
+    /// <summary>
+    /// Six-stage DAHDSR (Delay, Attack, Hold, Decay, Sustain, Release) envelope
+    /// generator. This generalises the four-stage <see cref="EnvelopeGenerator"/>
+    /// with the extra Delay and Hold stages that SoundFont and SFZ instruments
+    /// require, and a seconds-based API (stage durations are set in seconds rather
+    /// than raw rates). The output is a linear amplitude/modulation multiplier in
+    /// the range [0, 1].
+    ///
+    /// The attack is convex (an exponential approach toward an over-shoot target),
+    /// matching the SoundFont volume-envelope attack shape; decay and release are
+    /// exponential approaches toward their targets. Designed for allocation-free
+    /// real-time use.
+    /// </summary>
+    public class DahdsrEnvelope
+    {
+        /// <summary>
+        /// Stages of the DAHDSR envelope.
+        /// </summary>
+        public enum EnvelopeStage
+        {
+            /// <summary>Idle (before the gate opens, output 0).</summary>
+            Idle = 0,
+            /// <summary>Delay (output held at 0 for the delay time).</summary>
+            Delay,
+            /// <summary>Attack (rising toward 1).</summary>
+            Attack,
+            /// <summary>Hold (output held at 1 for the hold time).</summary>
+            Hold,
+            /// <summary>Decay (falling toward the sustain level).</summary>
+            Decay,
+            /// <summary>Sustain (held at the sustain level until the gate closes).</summary>
+            Sustain,
+            /// <summary>Release (falling toward 0 after the gate closes).</summary>
+            Release,
+            /// <summary>Finished (release complete, output 0).</summary>
+            Finished
+        }
+
+        private readonly float sampleRate;
+
+        private float delaySeconds;
+        private float attackSeconds;
+        private float holdSeconds;
+        private float decaySeconds;
+        private float sustainLevel = 1f;
+        private float releaseSeconds;
+
+        private EnvelopeStage stage = EnvelopeStage.Idle;
+        private float output;
+        private int stageSampleCounter;
+
+        // attack overshoot target ratio gives the convex attack curve
+        private const float TargetRatioAttack = 0.3f;
+        // small target ratio for decay/release gives a near-exponential fall
+        private const float TargetRatioDecayRelease = 0.0001f;
+        // output below this during release is treated as finished
+        private const float ReleaseFloor = 0.00001f; // ~ -100 dB
+
+        private float attackCoef;
+        private float attackBase;
+        private float decayCoef;
+        private float decayBase;
+        private float releaseCoef;
+        private float releaseBase;
+
+        /// <summary>
+        /// Creates a DAHDSR envelope for the given sample rate.
+        /// </summary>
+        /// <param name="sampleRate">Sample rate in Hz.</param>
+        public DahdsrEnvelope(float sampleRate)
+        {
+            if (sampleRate <= 0) throw new ArgumentOutOfRangeException(nameof(sampleRate));
+            this.sampleRate = sampleRate;
+            RecalculateAttack();
+            RecalculateDecay();
+            RecalculateRelease();
+        }
+
+        /// <summary>Delay time in seconds (output held at 0 before the attack begins).</summary>
+        public float DelaySeconds
+        {
+            get => delaySeconds;
+            set => delaySeconds = Math.Max(0f, value);
+        }
+
+        /// <summary>Attack time in seconds (time to rise from 0 to 1).</summary>
+        public float AttackSeconds
+        {
+            get => attackSeconds;
+            set { attackSeconds = Math.Max(0f, value); RecalculateAttack(); }
+        }
+
+        /// <summary>Hold time in seconds (output held at 1 after the attack completes).</summary>
+        public float HoldSeconds
+        {
+            get => holdSeconds;
+            set => holdSeconds = Math.Max(0f, value);
+        }
+
+        /// <summary>Decay time in seconds (time to fall from 1 toward the sustain level).</summary>
+        public float DecaySeconds
+        {
+            get => decaySeconds;
+            set { decaySeconds = Math.Max(0f, value); RecalculateDecay(); }
+        }
+
+        /// <summary>Sustain level in the range [0, 1].</summary>
+        public float SustainLevel
+        {
+            get => sustainLevel;
+            set { sustainLevel = Math.Clamp(value, 0f, 1f); RecalculateDecay(); }
+        }
+
+        /// <summary>Release time in seconds (time to fall from the current level toward 0).</summary>
+        public float ReleaseSeconds
+        {
+            get => releaseSeconds;
+            set { releaseSeconds = Math.Max(0f, value); RecalculateRelease(); }
+        }
+
+        /// <summary>The current envelope stage.</summary>
+        public EnvelopeStage Stage => stage;
+
+        /// <summary>The most recent output value.</summary>
+        public float Output => output;
+
+        /// <summary>True once the envelope has completed its release and gone idle.</summary>
+        public bool IsFinished => stage == EnvelopeStage.Finished || stage == EnvelopeStage.Idle;
+
+        /// <summary>
+        /// Opens (note on) or closes (note off) the gate. Opening restarts the
+        /// envelope from its delay stage; closing moves to the release stage
+        /// unless the envelope is already idle/finished.
+        /// </summary>
+        public void Gate(bool on)
+        {
+            if (on)
+            {
+                stage = EnvelopeStage.Delay;
+                stageSampleCounter = SecondsToSamples(delaySeconds);
+                // a zero delay is consumed within the first Process call (see the
+                // stage loop there), so the attack starts on the very first sample
+            }
+            else if (stage != EnvelopeStage.Idle && stage != EnvelopeStage.Finished)
+            {
+                stage = EnvelopeStage.Release;
+            }
+        }
+
+        /// <summary>
+        /// Resets the envelope to idle with an output of 0.
+        /// </summary>
+        public void Reset()
+        {
+            stage = EnvelopeStage.Idle;
+            output = 0f;
+            stageSampleCounter = 0;
+        }
+
+        /// <summary>
+        /// Advances the envelope by one sample and returns the new output value.
+        /// </summary>
+        public float Process()
+        {
+            // Loop so that zero-duration stages (e.g. a zero delay before a zero
+            // attack) advance within a single call rather than each costing a
+            // sample. Only the Delay->Attack and Hold->Decay transitions loop;
+            // every other branch returns, so this runs at most a few iterations.
+            while (true)
+            {
+                switch (stage)
+                {
+                    case EnvelopeStage.Idle:
+                    case EnvelopeStage.Finished:
+                        return output;
+                    case EnvelopeStage.Delay:
+                        if (stageSampleCounter > 0)
+                        {
+                            stageSampleCounter--;
+                            output = 0f;
+                            return output;
+                        }
+                        stage = EnvelopeStage.Attack;
+                        continue;
+                    case EnvelopeStage.Attack:
+                        if (attackSeconds <= 0f)
+                        {
+                            output = 1f;
+                            EnterHold();
+                        }
+                        else
+                        {
+                            output = attackBase + output * attackCoef;
+                            if (output >= 1f)
+                            {
+                                output = 1f;
+                                EnterHold();
+                            }
+                        }
+                        return output;
+                    case EnvelopeStage.Hold:
+                        if (stageSampleCounter > 0)
+                        {
+                            stageSampleCounter--;
+                            output = 1f;
+                            return output;
+                        }
+                        stage = EnvelopeStage.Decay;
+                        continue;
+                    case EnvelopeStage.Decay:
+                        if (decaySeconds <= 0f)
+                        {
+                            output = sustainLevel;
+                            stage = EnvelopeStage.Sustain;
+                        }
+                        else
+                        {
+                            output = decayBase + output * decayCoef;
+                            if (output <= sustainLevel)
+                            {
+                                output = sustainLevel;
+                                stage = EnvelopeStage.Sustain;
+                            }
+                        }
+                        return output;
+                    case EnvelopeStage.Sustain:
+                        output = sustainLevel;
+                        return output;
+                    default: // Release
+                        if (releaseSeconds <= 0f)
+                        {
+                            output = 0f;
+                            stage = EnvelopeStage.Finished;
+                        }
+                        else
+                        {
+                            output = releaseBase + output * releaseCoef;
+                            if (output <= ReleaseFloor)
+                            {
+                                output = 0f;
+                                stage = EnvelopeStage.Finished;
+                            }
+                        }
+                        return output;
+                }
+            }
+        }
+
+        private void EnterHold()
+        {
+            stage = EnvelopeStage.Hold;
+            stageSampleCounter = SecondsToSamples(holdSeconds);
+        }
+
+        private int SecondsToSamples(float seconds)
+        {
+            return (int)(seconds * sampleRate);
+        }
+
+        private void RecalculateAttack()
+        {
+            float rate = Math.Max(1f, attackSeconds * sampleRate);
+            attackCoef = CalcCoef(rate, TargetRatioAttack);
+            attackBase = (1f + TargetRatioAttack) * (1f - attackCoef);
+        }
+
+        private void RecalculateDecay()
+        {
+            float rate = Math.Max(1f, decaySeconds * sampleRate);
+            decayCoef = CalcCoef(rate, TargetRatioDecayRelease);
+            decayBase = (sustainLevel - TargetRatioDecayRelease) * (1f - decayCoef);
+        }
+
+        private void RecalculateRelease()
+        {
+            float rate = Math.Max(1f, releaseSeconds * sampleRate);
+            releaseCoef = CalcCoef(rate, TargetRatioDecayRelease);
+            releaseBase = -TargetRatioDecayRelease * (1f - releaseCoef);
+        }
+
+        private static float CalcCoef(float rate, float targetRatio)
+        {
+            return (float)Math.Exp(-Math.Log((1.0 + targetRatio) / targetRatio) / rate);
+        }
+    }
+}

@@ -32,6 +32,8 @@ namespace NAudio.Dsp
         private float sampleHoldValue;
         private int sampleRate;
         private float frequencyHz = 1f;
+        private float delaySeconds;
+        private int delayCounter;
 
         /// <summary>
         /// Creates an LFO.
@@ -80,10 +82,31 @@ namespace NAudio.Dsp
             => FrequencyHz = (float)TempoTime.Hertz(bpm, division);
 
         /// <summary>
+        /// An optional delay in seconds before the LFO starts oscillating. During
+        /// the delay <see cref="Process"/> outputs 0 (the bipolar neutral value),
+        /// matching the SoundFont/SFZ LFO delay behaviour. The delay is re-armed
+        /// by <see cref="Reset"/>.
+        /// </summary>
+        public float DelaySeconds
+        {
+            get => delaySeconds;
+            set
+            {
+                delaySeconds = value < 0f ? 0f : value;
+                delayCounter = (int)(delaySeconds * sampleRate);
+            }
+        }
+
+        /// <summary>
         /// Advances one sample and returns the next oscillator value in [-1, 1].
         /// </summary>
         public float Process()
         {
+            if (delayCounter > 0)
+            {
+                delayCounter--;
+                return 0f;
+            }
             float value;
             switch (Waveform)
             {
@@ -121,6 +144,7 @@ namespace NAudio.Dsp
             phase = 0f;
             rngState = 0x9E3779B9;
             sampleHoldValue = NextRandom();
+            delayCounter = (int)(delaySeconds * sampleRate);
         }
 
         private void RecomputeIncrement() => increment = frequencyHz / sampleRate;

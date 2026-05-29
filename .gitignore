@@ -30,3 +30,7 @@ MfStressTest/dumps/
 # procdump.exe (used by MfStressTest watchdog) writes a 0-byte log to the
 # target process's working directory each time it captures a dump.
 myeasylog.log
+# DocFX generated output
+_site/
+api/*.yml
+api/.manifest

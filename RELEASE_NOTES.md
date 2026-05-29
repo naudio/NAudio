@@ -144,6 +144,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * Migrated to the modern `.slnx` solution format
  * Renamed `license.txt` to `LICENSE` for GitHub license detection; refreshed copyright year to 2008–2026
  * Added per-package `<Description>` metadata to every shipping NAudio NuGet package so each clearly identifies itself as part of the NAudio family
+ * Added a DocFX documentation site (tutorials + API reference) published to GitHub Pages, built automatically from `Docs/` and the source XML comments
 
 ### 2.3.0 (12 Mar 2026)
 

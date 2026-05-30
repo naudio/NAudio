@@ -3,14 +3,13 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using NAudio.Utils;
-using NAudio.Wave;
 
-namespace NAudio.FileFormats.Wav
+namespace NAudio.Wave
 {
     /// <summary>
     /// Reader of RIFF chunks from a WAV file
     /// </summary>
-    public class WaveFileChunkReader
+    internal class WaveFileChunkReader
     {
         private WaveFormat waveFormat;
         private long dataChunkPosition;

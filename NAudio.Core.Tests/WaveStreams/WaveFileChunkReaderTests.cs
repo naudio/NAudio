@@ -1,8 +1,6 @@
 using System;
 using System.IO;
-using System.Linq;
 using System.Text;
-using NAudio.FileFormats.Wav;
 using NAudio.Wave;
 using NAudio.Core.Tests.Utils;
 using NUnit.Framework;
@@ -10,8 +8,8 @@ using NUnit.Framework;
 namespace NAudio.Core.Tests.WaveStreams
 {
     /// <summary>
-    /// Tests for <see cref="NAudio.FileFormats.Wav.WaveFileChunkReader"/>, exercised
-    /// through <see cref="WaveFileReader"/> against hand-built RIFF streams.
+    /// Tests for WAV RIFF chunk parsing, exercised through the public
+    /// <see cref="WaveFileReader"/> surface against hand-built RIFF streams.
     /// </summary>
     [TestFixture]
     [Category("UnitTest")]
@@ -135,28 +133,28 @@ namespace NAudio.Core.Tests.WaveStreams
         public void NotARiffOrRf64FileThrowsFormatException()
         {
             var bytes = Riff("JUNK", w => { Fourcc(w, "WAVE"); WriteFmt(w); WriteChunk(w, "data", new byte[] { 0, 0 }); });
-            Assert.That(() => Read(bytes), Throws.TypeOf<FormatException>().With.Message.Contain("RIFF"));
+            Assert.That(() => OpenReader(bytes), Throws.TypeOf<FormatException>().With.Message.Contain("RIFF"));
         }
 
         [Test]
         public void RiffWithoutWaveHeaderThrowsFormatException()
         {
             var bytes = Riff("RIFF", w => { Fourcc(w, "XXXX"); WriteFmt(w); WriteChunk(w, "data", new byte[] { 0, 0 }); });
-            Assert.That(() => Read(bytes), Throws.TypeOf<FormatException>().With.Message.Contain("WAVE"));
+            Assert.That(() => OpenReader(bytes), Throws.TypeOf<FormatException>().With.Message.Contain("WAVE"));
         }
 
         [Test]
         public void MissingFmtChunkThrowsFormatException()
         {
             var bytes = Riff("RIFF", w => { Fourcc(w, "WAVE"); WriteChunk(w, "data", new byte[] { 0, 0, 0, 0 }); });
-            Assert.That(() => Read(bytes), Throws.TypeOf<FormatException>().With.Message.Contain("fmt"));
+            Assert.That(() => OpenReader(bytes), Throws.TypeOf<FormatException>().With.Message.Contain("fmt"));
         }
 
         [Test]
         public void MissingDataChunkThrowsFormatException()
         {
             var bytes = Riff("RIFF", w => { Fourcc(w, "WAVE"); WriteFmt(w); });
-            Assert.That(() => Read(bytes), Throws.TypeOf<FormatException>().With.Message.Contain("data"));
+            Assert.That(() => OpenReader(bytes), Throws.TypeOf<FormatException>().With.Message.Contain("data"));
         }
 
         [Test]
@@ -170,7 +168,7 @@ namespace NAudio.Core.Tests.WaveStreams
                 Fourcc(w, "data");
                 w.Write(0u);
             });
-            Assert.That(() => Read(bytes), Throws.TypeOf<InvalidDataException>());
+            Assert.That(() => OpenReader(bytes), Throws.TypeOf<InvalidDataException>());
         }
 
         // --- RF64 ----------------------------------------------------------
@@ -180,7 +178,7 @@ namespace NAudio.Core.Tests.WaveStreams
         {
             var bytes = Riff("RF64", w => { Fourcc(w, "WAVE"); WriteChunk(w, "junk", new byte[] { 0, 0, 0, 0 }); },
                 riffSizeOverride: 0xFFFFFFFF);
-            Assert.That(() => Read(bytes), Throws.TypeOf<FormatException>().With.Message.Contain("ds64"));
+            Assert.That(() => OpenReader(bytes), Throws.TypeOf<FormatException>().With.Message.Contain("ds64"));
         }
 
         [Test]
@@ -204,8 +202,8 @@ namespace NAudio.Core.Tests.WaveStreams
                 w.Write(audio);
             }, riffSizeOverride: 0xFFFFFFFF);
 
-            var r = Read(bytes);
-            Assert.That(r.DataChunkLength, Is.EqualTo(audio.Length));
+            using var r = OpenReader(bytes);
+            Assert.That(r.Length, Is.EqualTo(audio.Length));
             Assert.That(r.WaveFormat, Is.Not.Null);
         }
 
@@ -224,9 +222,9 @@ namespace NAudio.Core.Tests.WaveStreams
                 w.Write(new byte[] { 9, 9 });
             });
 
-            var r = Read(bytes);
+            using var r = OpenReader(bytes);
             Assert.That(r.WaveFormat, Is.Not.Null);
-            Assert.That(r.DataChunkLength, Is.EqualTo(4));
+            Assert.That(r.Length, Is.EqualTo(4));
         }
 
         [Test]
@@ -239,7 +237,7 @@ namespace NAudio.Core.Tests.WaveStreams
                 w.Write(0x7FFFFFFEu);          // breaks the loop before fmt/data are seen
                 w.Write(new byte[] { 0, 0 });
             });
-            Assert.That(() => Read(bytes), Throws.TypeOf<FormatException>());
+            Assert.That(() => OpenReader(bytes), Throws.TypeOf<FormatException>());
         }
 
         // --- riffSize boundary handling ------------------------------------
@@ -261,9 +259,9 @@ namespace NAudio.Core.Tests.WaveStreams
                 w.Write((uint)(covered - 8));
             }
 
-            var r = Read(ms.ToArray());
+            using var r = OpenReader(ms.ToArray());
             Assert.That(r.WaveFormat, Is.Not.Null);
-            Assert.That(r.RiffChunks.Any(c => c.IdentifierAsString == "extr"), Is.False);
+            Assert.That(r.Chunks.Contains("extr"), Is.False);
         }
 
         [Test]
@@ -276,9 +274,9 @@ namespace NAudio.Core.Tests.WaveStreams
                 WriteChunk(w, "data", new byte[] { 1, 2, 3, 4 });
             }, riffSizeOverride: 0xFFFFFF00u);
 
-            var r = Read(bytes);
+            using var r = OpenReader(bytes);
             Assert.That(r.WaveFormat, Is.Not.Null);
-            Assert.That(r.DataChunkLength, Is.EqualTo(4));
+            Assert.That(r.Length, Is.EqualTo(4));
         }
 
         // --- Chunk ordering ------------------------------------------------
@@ -286,18 +284,23 @@ namespace NAudio.Core.Tests.WaveStreams
         [Test]
         public void FmtChunkAfterDataChunkStillParses()
         {
+            var audio = new byte[] { 1, 2, 3, 4 };
             var bytes = Riff("RIFF", w =>
             {
                 Fourcc(w, "WAVE");
-                WriteChunk(w, "data", new byte[] { 1, 2, 3, 4 });
+                WriteChunk(w, "data", audio);
                 WriteFmt(w);
             });
 
-            var r = Read(bytes);
+            using var r = OpenReader(bytes);
             Assert.That(r.WaveFormat, Is.Not.Null);
             Assert.That(r.WaveFormat.SampleRate, Is.EqualTo(8000));
-            Assert.That(r.DataChunkLength, Is.EqualTo(4));
-            Assert.That(r.DataChunkPosition, Is.GreaterThan(0));
+            Assert.That(r.Length, Is.EqualTo(audio.Length));
+
+            // The data chunk position was located correctly: the audio reads back intact.
+            var buffer = new byte[audio.Length];
+            Assert.That(r.Read(buffer, 0, buffer.Length), Is.EqualTo(audio.Length));
+            Assert.That(buffer, Is.EqualTo(audio));
         }
 
         // --- Builders ------------------------------------------------------
@@ -332,11 +335,7 @@ namespace NAudio.Core.Tests.WaveStreams
             DefaultFormat.Serialize(w);
         }
 
-        private static WaveFileChunkReader Read(byte[] bytes)
-        {
-            var reader = new WaveFileChunkReader();
-            reader.ReadWaveHeader(new MemoryStream(bytes));
-            return reader;
-        }
+        private static WaveFileReader OpenReader(byte[] bytes)
+            => new WaveFileReader(new MemoryStream(bytes));
     }
 }

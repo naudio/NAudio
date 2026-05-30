@@ -9,6 +9,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
 #### Breaking changes
 
  * `WaveFileChunkReader` is now `internal` (and moved from `NAudio.FileFormats.Wav` to `NAudio.Wave`) — it was internal plumbing for `WaveFileReader`. Read custom RIFF chunks via `WaveFileReader.Chunks` (`WaveChunks` / `RiffChunk` / `IWaveChunkInterpreter<T>`) instead
+ * `CaptureState` enum moved from `NAudio.CoreAudioApi` to `NAudio.Wave` — it's a backend-agnostic capture-state type used by `WaveIn`, `WasapiCapture`, and `WasapiRecorder`, and was only in `NAudio.CoreAudioApi` for historical reasons. Code that named the type via `using NAudio.CoreAudioApi;` now needs `using NAudio.Wave;`
  * `IWaveProvider.Read` signature changed from `Read(byte[], int, int)` to `Read(Span<byte>)`. Existing callers with `byte[]` migrate via `source.Read(buffer.AsSpan(offset, count))`; implementations override `Read(Span<byte>)`
  * `ISampleProvider.Read` signature changed from `Read(float[], int, int)` to `Read(Span<float>)` (same migration pattern)
  * `MidiIn`, `MidiOut`, `MidiInCapabilities`, and `MidiOutCapabilities` moved from `NAudio.Midi` to `NAudio.WinMM` — all `winmm.dll` interop now lives in one assembly

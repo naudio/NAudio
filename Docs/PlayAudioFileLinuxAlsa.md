@@ -50,7 +50,7 @@ foreach (var device in AlsaDeviceEnumerator.GetPlaybackDevices())
 
 ### Playing compressed formats
 
-The cross-platform [`NAudio.SoundFile`](../NAudio.SoundFile/README.md)
+The cross-platform [`NAudio.SoundFile`](https://github.com/naudio/NAudio/blob/main/NAudio.SoundFile/README.md)
 package is the Linux equivalent of `MediaFoundationReader`: its
 `SoundFileReader` (a `WaveStream` / `ISampleProvider` over libsndfile)
 decodes FLAC, Ogg-Vorbis, Opus and MP3. It needs a system libsndfile

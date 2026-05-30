@@ -1,0 +1,100 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dotnet/docfx/main/schemas/docfx.schema.json",
+  "metadata": [
+    {
+      "src": [
+        {
+          "src": ".",
+          "files": [
+            "NAudio.Core/NAudio.Core.csproj",
+            "NAudio.Midi/NAudio.Midi.csproj",
+            "NAudio.SoundFile/NAudio.SoundFile.csproj",
+            "NAudio.Alsa/NAudio.Alsa.csproj",
+            "NAudio.Extras/NAudio.Extras.csproj"
+          ]
+        }
+      ],
+      "dest": "api",
+      "namespaceLayout": "nested",
+      "memberLayout": "samePage",
+      "properties": {
+        "EnableWindowsTargeting": "true",
+        "TargetFramework": "net9.0"
+      }
+    },
+    {
+      "src": [
+        {
+          "src": ".",
+          "files": [
+            "NAudio.Asio/NAudio.Asio.csproj",
+            "NAudio.WinMM/NAudio.WinMM.csproj",
+            "NAudio.Dmo/NAudio.Dmo.csproj",
+            "NAudio.WinForms/NAudio.WinForms.csproj",
+            "NAudio.Wasapi/NAudio.Wasapi.csproj"
+          ]
+        }
+      ],
+      "dest": "api",
+      "namespaceLayout": "nested",
+      "memberLayout": "samePage",
+      "properties": {
+        "EnableWindowsTargeting": "true"
+      }
+    }
+  ],
+  "build": {
+    "content": [
+      {
+        "files": [
+          "**/*.{md,yml}"
+        ],
+        "src": "api",
+        "dest": "api"
+      },
+      {
+        "files": [
+          "toc.yml",
+          "index.md"
+        ]
+      },
+      {
+        "files": [
+          "**/*.md",
+          "**/toc.yml"
+        ],
+        "exclude": [
+          "Architecture/**"
+        ],
+        "src": "Docs",
+        "dest": "docs"
+      }
+    ],
+    "resource": [
+      {
+        "files": [
+          "naudio-logo.png",
+          "naudio-icon.png"
+        ]
+      }
+    ],
+    "output": "_site",
+    "template": [
+      "default",
+      "modern",
+      "templates/naudio"
+    ],
+    "globalMetadata": {
+      "_appName": "NAudio",
+      "_appTitle": "NAudio",
+      "_appLogoPath": "naudio-icon.png",
+      "_appFaviconPath": "naudio-icon.png",
+      "_enableSearch": true,
+      "_disableContribution": false,
+      "_gitContribute": {
+        "repo": "https://github.com/naudio/NAudio",
+        "branch": "main"
+      }
+    }
+  }
+}

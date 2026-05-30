@@ -21,6 +21,10 @@ When you make a **user-visible change** — new public API, behaviour change, bu
 
 **Skip the release-notes entry only for:** purely internal refactors, test-only changes, dependency bumps with no observable effect, docs/comment fixes. If unsure whether a change is user-visible, **add the entry** and let the maintainer remove it if not needed.
 
+## Documentation site
+
+Tutorials live in [Docs/](Docs/) as Markdown and are published to a DocFX site on GitHub Pages by [.github/workflows/docs.yml](.github/workflows/docs.yml); the API reference is generated automatically from the source XML doc comments. When you **add a new tutorial**, also add an entry for it in [Docs/toc.yml](Docs/toc.yml) so it appears in the sidebar — a CI check fails the build if any `Docs/*.md` is missing from the TOC (an unlisted page still builds but is orphaned from the navigation). Internal `Docs/Architecture/` docs are excluded from the published site.
+
 ## PR labelling
 
 When opening a PR (where you have permission), apply one of: `breaking`, `enhancement`, `bug`, `documentation`. These feed the auto-generated changelog at release time. Use `release-notes-skip` for PRs that should not appear in the changelog at all.

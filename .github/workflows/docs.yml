@@ -1,0 +1,78 @@
+name: Docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Docs/**'
+      - 'NAudio.*/**/*.cs'
+      - 'docfx.json'
+      - 'toc.yml'
+      - 'index.md'
+      - 'api/index.md'
+      - '.github/workflows/docs.yml'
+      - '.github/scripts/check-docs-toc.sh'
+  pull_request:
+    paths:
+      - 'Docs/**'
+      - 'docfx.json'
+      - 'toc.yml'
+      - 'index.md'
+      - 'api/index.md'
+      - '.github/workflows/docs.yml'
+      - '.github/scripts/check-docs-toc.sh'
+  workflow_dispatch:
+
+# Allow only one concurrent deployment, skipping runs queued between the run
+# in-progress and latest queued. Do not cancel in-progress runs.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # windows-latest so the Windows-only projects (WASAPI, ASIO, WinMM, DMO,
+    # WinForms) generate API metadata without EnableWindowsTargeting shims.
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check every tutorial is in the TOC
+        shell: bash
+        run: ./.github/scripts/check-docs-toc.sh
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Install DocFX
+        run: dotnet tool update -g docfx
+
+      - name: Build docs
+        run: docfx docfx.json --warningsAsErrors
+
+      - name: Upload Pages artifact
+        # Only needed for the deploy job, which only runs on main.
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    # Publish to GitHub Pages only from main.
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

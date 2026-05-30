@@ -27,12 +27,12 @@ Playing an audio file is just a few lines:
 using NAudio.Wave;
 
 using var audioFile = new AudioFileReader("myfile.mp3");
-using var outputDevice = new WaveOutEvent();
-outputDevice.Init(audioFile);
-outputDevice.Play();
-while (outputDevice.PlaybackState == PlaybackState.Playing)
+using var player = new WasapiPlayerBuilder().Build();
+player.Init(audioFile);
+player.Play();
+while (player.PlaybackState == PlaybackState.Playing)
 {
-    Thread.Sleep(1000);
+    Thread.Sleep(500);
 }
 ```
 

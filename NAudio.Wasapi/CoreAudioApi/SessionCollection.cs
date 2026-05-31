@@ -1,5 +1,4 @@
 ﻿using NAudio.CoreAudioApi.Interfaces;
-using NAudio.Wasapi.CoreAudioApi;
 using System;
 using System.Linq;
 using System.Runtime.InteropServices;

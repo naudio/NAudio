@@ -1,6 +1,5 @@
 using System;
 using NUnit.Framework;
-using NAudio.FileFormats.Mp3;
 using NAudio.Wave;
 using NAudio.Dmo;
 using System.Diagnostics;

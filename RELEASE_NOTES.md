@@ -8,6 +8,8 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
 
 #### Breaking changes
 
+ * `AudioVolumeLevel` moved from `NAudio.Wasapi.CoreAudioApi` to `NAudio.CoreAudioApi` — it now lives in the same namespace as the rest of the WASAPI/Core Audio API (`MMDevice`, `Part`, `DeviceTopology`, etc.) that it's returned from. The parallel `NAudio.Wasapi.CoreAudioApi` namespace (which otherwise held only internal COM-activation plumbing) is gone
+ * `DmoMp3FrameDecompressor` moved from `NAudio.FileFormats.Mp3` to `NAudio.Dmo` — it's a DMO wrapper and now shares the namespace of the `NAudio.Dmo` assembly it ships in (alongside `DmoEffectWaveProvider`, `ResamplerDmoStream`, etc.)
  * `WaveFileChunkReader` is now `internal` (and moved from `NAudio.FileFormats.Wav` to `NAudio.Wave`) — it was internal plumbing for `WaveFileReader`. Read custom RIFF chunks via `WaveFileReader.Chunks` (`WaveChunks` / `RiffChunk` / `IWaveChunkInterpreter<T>`) instead
  * `CaptureState` enum moved from `NAudio.CoreAudioApi` to `NAudio.Wave` — it's a backend-agnostic capture-state type used by `WaveIn`, `WasapiCapture`, and `WasapiRecorder`, and was only in `NAudio.CoreAudioApi` for historical reasons. Code that named the type via `using NAudio.CoreAudioApi;` now needs `using NAudio.Wave;`
  * `IWaveProvider.Read` signature changed from `Read(byte[], int, int)` to `Read(Span<byte>)`. Existing callers with `byte[]` migrate via `source.Read(buffer.AsSpan(offset, count))`; implementations override `Read(Span<byte>)`

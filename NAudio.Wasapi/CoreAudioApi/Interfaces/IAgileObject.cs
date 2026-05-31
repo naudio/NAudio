@@ -2,7 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 
-namespace NAudio.Wasapi.CoreAudioApi.Interfaces
+namespace NAudio.CoreAudioApi.Interfaces
 {
     /// <summary>
     /// Marks a COM object as agile (free-threaded), indicating it can be called from any apartment.

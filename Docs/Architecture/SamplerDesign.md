@@ -247,6 +247,17 @@ sample-accurately by the sequencing core. **Dependency:** the sequencing PR
 `MidiFile`→`EventTimeline` loader (using the `MusicalTime.RescaleFromPpq`
 boundary helper they added for exactly this). Discrete, well-bounded task.
 
+**Decision (scheduling): build this on the sequencer, not a standalone
+tick-walk.** A self-contained offline renderer is tempting (it would be
+independently mergeable and give audible output sooner), but offline render is
+the one consumer that doesn't exercise the sequencer's real-time value
+(`Transport`, `EventBufferQuery`, `SequencedSampleProvider`), so a standalone
+version would duplicate the tick→time math only to be superseded. We instead
+**wait for #1324 to merge to `main`**, then build the `MidiFile`→`EventTimeline`
+ingestion (step 6) on top of it, giving offline render, live playback and the
+VST3 host one canonical timing model. The cost is no audible output from the
+sampler until the sequencer lands.
+
 ### 8.3 Single-sample / recording keyboard instrument
 Open a WAV (or record a snippet via the capture stack), auto-map it across the
 keyboard at a chosen root key, **display the waveform**, and adjust

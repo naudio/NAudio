@@ -2,7 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 
-namespace NAudio.Wasapi.CoreAudioApi.Interfaces
+namespace NAudio.CoreAudioApi.Interfaces
 {
     /// <summary>
     /// Represents an asynchronous operation activating a WASAPI interface and provides a method to retrieve the results of the activation.

@@ -6,7 +6,7 @@ using System.Runtime.InteropServices.Marshalling;
 using NAudio.CoreAudioApi.Interfaces;
 using NAudio.MediaFoundation;
 using NAudio.Utils;
-using NAudio.Wasapi.CoreAudioApi;
+using NAudio.CoreAudioApi;
 using NAudio.MediaFoundation.Interfaces;
 
 // ReSharper disable once CheckNamespace

@@ -1,8 +1,8 @@
-﻿using NAudio.Wasapi.CoreAudioApi.Interfaces;
+﻿using NAudio.CoreAudioApi.Interfaces;
 using System;
 using System.Runtime.InteropServices;
 
-namespace NAudio.Wasapi.CoreAudioApi
+namespace NAudio.CoreAudioApi
 {
     static partial class NativeMethods
     {

@@ -1,6 +1,5 @@
 using NAudio.CoreAudioApi;
 using NAudio.CoreAudioApi.Interfaces;
-using NAudio.Wasapi.CoreAudioApi;
 using System;
 using System.Buffers;
 using System.Collections.Generic;

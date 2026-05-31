@@ -1,7 +1,7 @@
 ﻿using NAudio.CoreAudioApi.Interfaces;
 using System;
 
-namespace NAudio.Wasapi.CoreAudioApi
+namespace NAudio.CoreAudioApi
 {
     /// <summary>
     /// Audio Volume Level

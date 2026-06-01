@@ -1,6 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net9.0;net9.0-windows10.0.19041.0</TargetFrameworks>
+    <!-- During docs generation (DocsBuild=true) collapse to the net9.0 surface so
+         DocFX's metadata step can load this project: it is pulled in transitively by
+         NAudio.Extras, and DocFX cannot read a multi-targeted project. The Windows
+         backends are documented directly from their own projects, so nothing is lost. -->
+    <TargetFrameworks Condition=" '$(DocsBuild)' != 'true' ">net9.0;net9.0-windows10.0.19041.0</TargetFrameworks>
+    <TargetFramework Condition=" '$(DocsBuild)' == 'true' ">net9.0</TargetFramework>
     <Authors>Mark Heath &amp; Contributors</Authors>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Description>NAudio is an open source .NET audio library — playback and recording, file readers and writers, MIDI, DSP and effects, with platform-specific backends auto-selected by target framework.</Description>

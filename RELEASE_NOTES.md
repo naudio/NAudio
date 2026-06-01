@@ -149,6 +149,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * Renamed `license.txt` to `LICENSE` for GitHub license detection; refreshed copyright year to 2008–2026
  * Added per-package `<Description>` metadata to every shipping NAudio NuGet package so each clearly identifies itself as part of the NAudio family
  * Added a DocFX documentation site (tutorials + API reference) published to GitHub Pages, built automatically from `Docs/` and the source XML comments
+ * Fixed the published API reference dropping the cross-platform namespaces (`NAudio.Effects`, `NAudio.Dsp`, `NAudio.Codecs`, `NAudio.SoundFont`, etc.) from the navigation — DocFX's two metadata blocks both wrote to the same destination, so the second overwrote the first's table of contents. The projects are now documented from a single metadata block
 
 ### 2.3.0 (12 Mar 2026)
 

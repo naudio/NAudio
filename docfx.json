@@ -10,23 +10,7 @@
             "NAudio.Midi/NAudio.Midi.csproj",
             "NAudio.SoundFile/NAudio.SoundFile.csproj",
             "NAudio.Alsa/NAudio.Alsa.csproj",
-            "NAudio.Extras/NAudio.Extras.csproj"
-          ]
-        }
-      ],
-      "dest": "api",
-      "namespaceLayout": "nested",
-      "memberLayout": "samePage",
-      "properties": {
-        "EnableWindowsTargeting": "true",
-        "TargetFramework": "net9.0"
-      }
-    },
-    {
-      "src": [
-        {
-          "src": ".",
-          "files": [
+            "NAudio.Extras/NAudio.Extras.csproj",
             "NAudio.Asio/NAudio.Asio.csproj",
             "NAudio.WinMM/NAudio.WinMM.csproj",
             "NAudio.Dmo/NAudio.Dmo.csproj",
@@ -39,7 +23,8 @@
       "namespaceLayout": "nested",
       "memberLayout": "samePage",
       "properties": {
-        "EnableWindowsTargeting": "true"
+        "EnableWindowsTargeting": "true",
+        "DocsBuild": "true"
       }
     }
   ],

@@ -1,7 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net9.0;net9.0-windows10.0.19041.0</TargetFrameworks>
+    <!-- DocFX's metadata step cannot load a multi-targeted project (it reads the
+         reference-less outer build), so collapse to the net9.0 surface when the docs
+         site is being generated. This lets every project sit in one DocFX metadata
+         block, which is what keeps the API table-of-contents unified. -->
+    <TargetFrameworks Condition=" '$(DocsBuild)' != 'true' ">net9.0;net9.0-windows10.0.19041.0</TargetFrameworks>
+    <TargetFramework Condition=" '$(DocsBuild)' == 'true' ">net9.0</TargetFramework>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Description>Optional extras (extra demo/sample providers and helpers) for the NAudio audio library.</Description>
   </PropertyGroup>

@@ -25,9 +25,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Core-only references keep this project cross-platform: it does not pull in
+         the NAudio meta-package (which cross-targets a Windows TFM), so building on
+         Linux/macOS no longer needs -p:EnableWindowsTargeting=true. AudioFileReader
+         lives in the meta-package, so its tests live in NAudio.Windows.Tests. -->
     <ProjectReference Include="..\NAudio.Core\NAudio.Core.csproj" />
     <ProjectReference Include="..\NAudio.Midi\NAudio.Midi.csproj" />
-    <ProjectReference Include="..\NAudio\NAudio.csproj" />
   </ItemGroup>
 
 </Project>

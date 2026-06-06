@@ -37,12 +37,14 @@ Package versions are centralised in [Directory.Build.props](Directory.Build.prop
 
 Some cloud and CI environments start without a .NET SDK on the PATH — this isn't a property of the repo but of the host. The default Anthropic cloud-agent sandbox is one example, and other infrastructure (GitHub Copilot agents, fresh CI runners, etc.) may differ now or in the future. So **first check whether `dotnet` is available**; only install it if it isn't. On Debian/Ubuntu, install .NET 10 via apt: add Microsoft's feed with `wget -q https://packages.microsoft.com/config/ubuntu/24.04/packages-microsoft-prod.deb -O /tmp/ms.deb && sudo dpkg -i /tmp/ms.deb && sudo apt-get update`, then `sudo apt-get install -y dotnet-sdk-10.0` (the SDK builds the `net9.0` libraries fine).
 
-Because `NAudio.Core.Tests` references the `NAudio` meta-package, which pulls in Windows-only projects (`NAudio.WinForms`, `NAudio.Wasapi`), you must pass `-p:EnableWindowsTargeting=true` on Linux or the build fails with `NETSDK1100`. Build and run the cross-platform tests with:
+`NAudio.Core.Tests` only references the cross-platform projects (`NAudio.Core`, `NAudio.Midi`), so it builds and runs on Linux/macOS without any extra flags. Build and run the cross-platform tests with:
 
 ```
-dotnet build NAudio.Core.Tests/NAudio.Core.Tests.csproj -p:EnableWindowsTargeting=true
-dotnet test --project NAudio.Core.Tests/NAudio.Core.Tests.csproj -p:EnableWindowsTargeting=true --filter "TestCategory!=IntegrationTest"
+dotnet build NAudio.Core.Tests/NAudio.Core.Tests.csproj
+dotnet test --project NAudio.Core.Tests/NAudio.Core.Tests.csproj --filter "TestCategory!=IntegrationTest"
 ```
+
+(`NAudio.Windows.Tests` references the `NAudio` meta-package and the Windows backends, so it targets a Windows TFM — building it on Linux still needs `-p:EnableWindowsTargeting=true`, and it can only run on Windows. Tests that exercise the meta-package's `AudioFileReader` live there for this reason.)
 
 The `TestCategory!=IntegrationTest` filter skips tests needing real audio hardware; note that .NET 10's `dotnet test` wants `--project` rather than a positional path.
 

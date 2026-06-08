@@ -93,18 +93,18 @@ namespace NAudio.Sampler
             gen[GeneratorEnum.Pan] = (short)Math.Round(region.Pan * 500.0);
 
             // amplitude envelope (seconds -> timecents; sustain fraction -> attenuation cB)
-            gen[GeneratorEnum.DelayVolumeEnvelope] = ToTimecents(region.AmpegDelay);
-            gen[GeneratorEnum.AttackVolumeEnvelope] = ToTimecents(region.AmpegAttack);
-            gen[GeneratorEnum.HoldVolumeEnvelope] = ToTimecents(region.AmpegHold);
-            gen[GeneratorEnum.DecayVolumeEnvelope] = ToTimecents(region.AmpegDecay);
-            gen[GeneratorEnum.ReleaseVolumeEnvelope] = ToTimecents(region.AmpegRelease);
-            gen[GeneratorEnum.SustainVolumeEnvelope] = SustainCentibels(region.AmpegSustain);
+            gen[GeneratorEnum.DelayVolumeEnvelope] = GeneratorUnits.ToTimecents(region.AmpegDelay);
+            gen[GeneratorEnum.AttackVolumeEnvelope] = GeneratorUnits.ToTimecents(region.AmpegAttack);
+            gen[GeneratorEnum.HoldVolumeEnvelope] = GeneratorUnits.ToTimecents(region.AmpegHold);
+            gen[GeneratorEnum.DecayVolumeEnvelope] = GeneratorUnits.ToTimecents(region.AmpegDecay);
+            gen[GeneratorEnum.ReleaseVolumeEnvelope] = GeneratorUnits.ToTimecents(region.AmpegRelease);
+            gen[GeneratorEnum.SustainVolumeEnvelope] = GeneratorUnits.SustainCentibels(region.AmpegSustain);
 
             // filter: only low-pass is honoured by the voice today
             if (region.HasCutoff && region.CutoffHz > 0 && region.FilterType == SfzFilterType.LowPass)
             {
                 gen[GeneratorEnum.InitialFilterCutoffFrequency] =
-                    (short)Math.Round(SynthMath.HertzToAbsoluteCents(region.CutoffHz));
+                    GeneratorUnits.Clamp16(SynthMath.HertzToAbsoluteCents(region.CutoffHz));
                 gen[GeneratorEnum.InitialFilterQ] = (short)Math.Round(region.ResonanceDb * 10.0);
             }
 
@@ -126,22 +126,6 @@ namespace NAudio.Sampler
                 case SfzLoopMode.LoopSustain: return (int)SampleMode.LoopAndContinue;
                 default: return (int)SampleMode.NoLoop; // no_loop and one_shot
             }
-        }
-
-        // 0 (or less) seconds -> ~1 ms (the SF2 minimum), so an instant SFZ stage
-        // does not become a 1-second default via the timecent round-trip
-        private static short ToTimecents(float seconds) =>
-            seconds <= 0f ? (short)-12000 : Clamp16(SynthMath.SecondsToTimecents(seconds));
-
-        // sustain fraction (0..1) -> attenuation centibels (gain = 10^(-cB/200))
-        private static short SustainCentibels(float sustain) =>
-            sustain <= 0f ? (short)1440 : Clamp16(-200.0 * Math.Log10(sustain));
-
-        private static short Clamp16(double value)
-        {
-            if (value > short.MaxValue) return short.MaxValue;
-            if (value < short.MinValue) return short.MinValue;
-            return (short)Math.Round(value);
         }
 
         private static int Clamp(int value, int lo, int hi) => value < lo ? lo : value > hi ? hi : value;

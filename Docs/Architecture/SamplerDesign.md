@@ -378,7 +378,16 @@ Sequenced cheapest-useful-first:
    note-off — see §11.1), FLAC/Ogg sample loading via `NAudio.SoundFile`, then
    Tier 2 opcodes (keyswitches, round-robin, CC gating, crossfades, extra
    LFOs/EGs).
-8. **Single-sample instrument + auto-mapper** model.
+8. **Single-sample instrument + auto-mapper** model. **DONE (model).**
+   `SingleSampleInstrument` takes one mono buffer (loaded WAV or a recorded
+   snippet), auto-maps it across the keyboard at a chosen root key, and exposes
+   editable start/end, loop start/end and mode, tuning, gain, pan, velocity
+   tracking and an amplitude envelope — projecting onto the same neutral
+   `SamplerRegion`. `SingleSampleSampler` plays it through the shared
+   `SamplerEngine` and rebuilds the region per note so edits are heard on the
+   next note; `SingleSampleSampler.FromWaveFile` is the one-liner entry point.
+   The shared `WaveSampleLoader` (mono down-mix) now backs both this and the SFZ
+   WAV loader. The interactive waveform/loop editor UI is the step-9 demo.
 9. **Demos:** live MIDI, offline render, single-sample/recording editor.
 
 **Testing.** Lean on deterministic offline render → golden-WAV comparisons (the
@@ -406,6 +415,16 @@ modulator transforms. Mark anything needing real hardware
   serve as the math reference (it is fixed-ratio/block-based, so it can't be
   dropped into the per-sample varying-rate reader directly).
 - **Advanced SFZ (flex EGs, `<curve>`, full ARIA set)** — Tier 3, demand-driven.
+- **SFZ Tier 2** — the next tranche of opcodes once Tier 1 is solid: keyswitches
+  (`sw_lokey`/`sw_hikey`/`sw_last`/`sw_default`), round-robin
+  (`seq_position`/`seq_length`), random layers (`lorand`/`hirand`), CC gating
+  (`locc`/`hicc`, `on_loccN`/`on_hiccN`), key/velocity crossfades (`xfin_*`/
+  `xfout_*`), `rt_decay`, the filter/pitch EGs and the `amplfo_*`/`fillfo_*`/
+  `pitchlfo_*` LFOs, `eq1/2/3_*`, and `effect1`/`effect2` sends. Maps onto the
+  same modulation/region model the SF2 side already uses.
+- **SFZ Tier-1 finish** — the documented Tier-1 shortcuts in §11.1 (stereo
+  samples, release/first/legato triggers, high/band-pass filters, cross-group
+  `off_by`, one-shot note-off, FLAC/Ogg loading).
 - **Built-in algorithmic-reverb send default** — start by routing to the
   existing `ReverbEffect`/`FdnReverbEffect`; a sampler-tuned default is polish.
 

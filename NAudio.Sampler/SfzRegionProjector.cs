@@ -67,6 +67,16 @@ namespace NAudio.Sampler
                 LowRandom = region.LowRandom,
                 HighRandom = region.HighRandom,
                 CcGates = region.CcGates,
+                KeyFadeInLow = region.KeyFadeInLow,
+                KeyFadeInHigh = region.KeyFadeInHigh,
+                KeyFadeOutLow = region.KeyFadeOutLow,
+                KeyFadeOutHigh = region.KeyFadeOutHigh,
+                VelocityFadeInLow = region.VelocityFadeInLow,
+                VelocityFadeInHigh = region.VelocityFadeInHigh,
+                VelocityFadeOutLow = region.VelocityFadeOutLow,
+                VelocityFadeOutHigh = region.VelocityFadeOutHigh,
+                KeyFadeCurve = MapCrossfadeCurve(region.KeyFadeCurve),
+                VelocityFadeCurve = MapCrossfadeCurve(region.VelocityFadeCurve),
                 LoKey = (byte)Clamp(region.LoKey, 0, 127),
                 HiKey = (byte)Clamp(region.HiKey, 0, 127),
                 LoVelocity = (byte)Clamp(region.LoVel, 0, 127),
@@ -84,6 +94,9 @@ namespace NAudio.Sampler
                 default: return SamplerFilterType.LowPass;
             }
         }
+
+        private static SamplerCrossfadeCurve MapCrossfadeCurve(SfzCrossfadeCurve curve) =>
+            curve == SfzCrossfadeCurve.Linear ? SamplerCrossfadeCurve.Linear : SamplerCrossfadeCurve.Power;
 
         private static SamplerTrigger MapTrigger(SfzTrigger trigger)
         {

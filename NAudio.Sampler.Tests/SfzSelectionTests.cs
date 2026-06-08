@@ -98,6 +98,55 @@ namespace NAudio.Sampler.Tests
             Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(4));
         }
 
+        // ---- crossfades ----
+
+        [Test]
+        public void NoCrossfadeIsUnityGain()
+        {
+            Assert.That(new SamplerRegion().CrossfadeGain(60, 100), Is.EqualTo(1f));
+        }
+
+        [Test]
+        public void VelocityCrossfadeInLinearRamps()
+        {
+            var r = new SamplerRegion
+            {
+                VelocityFadeInLow = 0,
+                VelocityFadeInHigh = 100,
+                VelocityFadeCurve = SamplerCrossfadeCurve.Linear
+            };
+            Assert.That(r.CrossfadeGain(60, 0), Is.EqualTo(0f).Within(1e-6f));
+            Assert.That(r.CrossfadeGain(60, 50), Is.EqualTo(0.5f).Within(1e-6f));
+            Assert.That(r.CrossfadeGain(60, 100), Is.EqualTo(1f).Within(1e-6f));
+        }
+
+        [Test]
+        public void PowerCrossfadesSumToConstantPower()
+        {
+            // two layers crossfading over the same velocity span with the power curve
+            var fadingOut = new SamplerRegion { VelocityFadeOutLow = 0, VelocityFadeOutHigh = 100, VelocityFadeCurve = SamplerCrossfadeCurve.Power };
+            var fadingIn = new SamplerRegion { VelocityFadeInLow = 0, VelocityFadeInHigh = 100, VelocityFadeCurve = SamplerCrossfadeCurve.Power };
+
+            for (int v = 0; v <= 100; v += 10)
+            {
+                float a = fadingOut.CrossfadeGain(60, v);
+                float b = fadingIn.CrossfadeGain(60, v);
+                Assert.That(a * a + b * b, Is.EqualTo(1f).Within(1e-5f), $"constant power at velocity {v}");
+            }
+        }
+
+        [Test]
+        public void CrossfadeGatesAndAttenuatesByVelocity()
+        {
+            var sampler = Build("<region> sample=a.wav loop_mode=loop_continuous xfin_lovel=64 xfin_hivel=127 xf_velcurve=gain");
+
+            sampler.NoteOn(0, 60, 32);  // below the fade-in -> gain 0 -> no voice
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(0));
+
+            sampler.NoteOn(0, 62, 127); // at the top -> full gain -> sounds
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(1));
+        }
+
         [Test]
         public void CcGatingControlsWhetherARegionSounds()
         {

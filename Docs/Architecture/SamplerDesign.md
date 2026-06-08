@@ -432,11 +432,13 @@ modulator transforms. Mark anything needing real hardware
   serve as the math reference (it is fixed-ratio/block-based, so it can't be
   dropped into the per-sample varying-rate reader directly).
 - **Advanced SFZ (flex EGs, `<curve>`, full ARIA set)** — Tier 3, demand-driven.
-- **SFZ Tier 2** — **note-on selection done** (keyswitches `sw_lokey`/`sw_hikey`/
-  `sw_last`/`sw_default`, round-robin `seq_length`/`seq_position`, random layers
-  `lorand`/`hirand`, CC gating `loccN`/`hiccN`), gated in the shared engine.
-  **Remaining:** `on_loccN`/`on_hiccN` (CC-triggered notes), key/velocity
-  crossfades (`xfin_*`/`xfout_*`/`xf_*curve`), `rt_decay`, the filter/pitch EGs
+- **SFZ Tier 2** — **note-on selection and crossfades done**: keyswitches
+  (`sw_lokey`/`sw_hikey`/`sw_last`/`sw_default`), round-robin (`seq_length`/
+  `seq_position`), random layers (`lorand`/`hirand`), CC gating (`loccN`/`hiccN`),
+  and key/velocity crossfades (`xfin_*`/`xfout_*` with `xf_keycurve`/
+  `xf_velcurve`, linear or equal-power) — all gated/scaled in the shared engine
+  (a zero-gain crossfade layer doesn't spawn a voice). **Remaining:**
+  `on_loccN`/`on_hiccN` (CC-triggered notes), `rt_decay`, the filter/pitch EGs
   and `amplfo_*`/`fillfo_*`/`pitchlfo_*` LFOs, `eq1/2/3_*`, and `effect1`/
   `effect2` sends — these map onto the same modulation/region model the SF2 side
   already uses.

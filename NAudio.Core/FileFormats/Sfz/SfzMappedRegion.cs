@@ -38,6 +38,15 @@ namespace NAudio.Sfz
         Normal
     }
 
+    /// <summary>The curve a crossfade uses (SFZ <c>xf_keycurve</c>/<c>xf_velcurve</c>).</summary>
+    public enum SfzCrossfadeCurve
+    {
+        /// <summary>Linear (SFZ <c>gain</c>).</summary>
+        Linear,
+        /// <summary>Equal-power (SFZ <c>power</c>, the default).</summary>
+        Power
+    }
+
     /// <summary>The filter family selected by SFZ <c>fil_type</c>.</summary>
     public enum SfzFilterType
     {
@@ -161,6 +170,27 @@ namespace NAudio.Sfz
         /// <summary>CC value windows that must all hold for the region to sound (<c>loccN</c>/<c>hiccN</c>).</summary>
         public IReadOnlyList<(int Controller, int Low, int High)> CcGates { get; private set; }
 
+        /// <summary>Key crossfade-in low/high (<c>xfin_lokey</c>/<c>xfin_hikey</c>), or −1.</summary>
+        public int KeyFadeInLow { get; private set; } = -1;
+        /// <summary>Key crossfade-in high.</summary>
+        public int KeyFadeInHigh { get; private set; } = -1;
+        /// <summary>Key crossfade-out low/high (<c>xfout_lokey</c>/<c>xfout_hikey</c>), or −1.</summary>
+        public int KeyFadeOutLow { get; private set; } = -1;
+        /// <summary>Key crossfade-out high.</summary>
+        public int KeyFadeOutHigh { get; private set; } = -1;
+        /// <summary>Velocity crossfade-in low/high (<c>xfin_lovel</c>/<c>xfin_hivel</c>), or −1.</summary>
+        public int VelocityFadeInLow { get; private set; } = -1;
+        /// <summary>Velocity crossfade-in high.</summary>
+        public int VelocityFadeInHigh { get; private set; } = -1;
+        /// <summary>Velocity crossfade-out low/high (<c>xfout_lovel</c>/<c>xfout_hivel</c>), or −1.</summary>
+        public int VelocityFadeOutLow { get; private set; } = -1;
+        /// <summary>Velocity crossfade-out high.</summary>
+        public int VelocityFadeOutHigh { get; private set; } = -1;
+        /// <summary>Key-crossfade curve (<c>xf_keycurve</c>, default power).</summary>
+        public SfzCrossfadeCurve KeyFadeCurve { get; private set; } = SfzCrossfadeCurve.Power;
+        /// <summary>Velocity-crossfade curve (<c>xf_velcurve</c>, default power).</summary>
+        public SfzCrossfadeCurve VelocityFadeCurve { get; private set; } = SfzCrossfadeCurve.Power;
+
         /// <summary>
         /// Interprets a parsed <see cref="SfzRegion"/>'s opcodes. The
         /// <paramref name="noteOffset"/> and <paramref name="octaveOffset"/> (from
@@ -231,6 +261,18 @@ namespace NAudio.Sfz
             r.HighRandom = region.GetFloat("hirand", 1f);
             r.CcGates = BuildCcGates(region);
 
+            // key/velocity crossfades
+            if (region.Has("xfin_lokey")) r.KeyFadeInLow = Clamp(Key(region, "xfin_lokey", 0) + keyShift);
+            if (region.Has("xfin_hikey")) r.KeyFadeInHigh = Clamp(Key(region, "xfin_hikey", 0) + keyShift);
+            if (region.Has("xfout_lokey")) r.KeyFadeOutLow = Clamp(Key(region, "xfout_lokey", 0) + keyShift);
+            if (region.Has("xfout_hikey")) r.KeyFadeOutHigh = Clamp(Key(region, "xfout_hikey", 0) + keyShift);
+            if (region.Has("xfin_lovel")) r.VelocityFadeInLow = region.GetInt("xfin_lovel", -1);
+            if (region.Has("xfin_hivel")) r.VelocityFadeInHigh = region.GetInt("xfin_hivel", -1);
+            if (region.Has("xfout_lovel")) r.VelocityFadeOutLow = region.GetInt("xfout_lovel", -1);
+            if (region.Has("xfout_hivel")) r.VelocityFadeOutHigh = region.GetInt("xfout_hivel", -1);
+            r.KeyFadeCurve = ParseCrossfadeCurve(region.GetString("xf_keycurve"));
+            r.VelocityFadeCurve = ParseCrossfadeCurve(region.GetString("xf_velcurve"));
+
             return r;
         }
 
@@ -290,6 +332,9 @@ namespace NAudio.Sfz
                 default: return SfzTrigger.Attack;
             }
         }
+
+        private static SfzCrossfadeCurve ParseCrossfadeCurve(string value) =>
+            value == "gain" ? SfzCrossfadeCurve.Linear : SfzCrossfadeCurve.Power;
 
         private static SfzOffMode ParseOffMode(string value) =>
             value == "normal" ? SfzOffMode.Normal : SfzOffMode.Fast;

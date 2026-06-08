@@ -184,6 +184,18 @@ namespace NAudio.Core.Tests.Sfz
         }
 
         [Test]
+        public void CrossfadeOpcodesMap()
+        {
+            var r = MapFirst("<region> sample=a.wav xfin_lovel=20 xfin_hivel=80 xfout_lokey=c4 xfout_hikey=c5 xf_velcurve=gain");
+            Assert.That(r.VelocityFadeInLow, Is.EqualTo(20));
+            Assert.That(r.VelocityFadeInHigh, Is.EqualTo(80));
+            Assert.That(r.KeyFadeOutLow, Is.EqualTo(60));  // c4
+            Assert.That(r.KeyFadeOutHigh, Is.EqualTo(72)); // c5
+            Assert.That(r.VelocityFadeCurve, Is.EqualTo(SfzCrossfadeCurve.Linear)); // "gain"
+            Assert.That(r.KeyFadeCurve, Is.EqualTo(SfzCrossfadeCurve.Power));        // default
+        }
+
+        [Test]
         public void RandomDefaultsToFullRange()
         {
             var r = MapFirst("<region> sample=a.wav");

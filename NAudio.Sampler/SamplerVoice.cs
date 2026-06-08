@@ -56,6 +56,7 @@ namespace NAudio.Sampler
         private double baseFilterCents;     // initial filter cutoff (absolute cents)
         private double baseAttenuationCb;   // initial attenuation (centibels)
         private double velocityAttenuationCb; // velocity->amplitude tracking (centibels, SFZ amp_veltrack)
+        private float regionGain = 1f;        // static per-note gain (SFZ key/velocity crossfade)
         private double basePan;             // pan generator (0.1% units, ±500)
         private double baseReverbSend;      // reverb send (0.1% units, 0..1000)
         private double baseChorusSend;      // chorus send (0.1% units, 0..1000)
@@ -114,8 +115,9 @@ namespace NAudio.Sampler
         /// Returns false if the region's sample addressing is unusable.
         /// </summary>
         public bool Start(SamplerRegion region, MidiChannelState channelState,
-            int channel, int note, int velocity, long order)
+            int channel, int note, int velocity, long order, float regionGain = 1f)
         {
+            this.regionGain = regionGain;
             var gen = region.Generators;
             var sample = region.Sample;
 
@@ -335,7 +337,7 @@ namespace NAudio.Sampler
             double attenuation = baseAttenuationCb + velocityAttenuationCb
                 + modulation[(int)GeneratorEnum.InitialAttenuation];
             if (attenuation < 0.0) attenuation = 0.0;
-            staticGain = (float)SynthMath.AttenuationCentibelsToGain(attenuation);
+            staticGain = (float)SynthMath.AttenuationCentibelsToGain(attenuation) * regionGain;
 
             SetPan(basePan + modulation[(int)GeneratorEnum.Pan]);
         }

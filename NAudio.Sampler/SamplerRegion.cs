@@ -103,6 +103,29 @@ namespace NAudio.Sampler
         /// (SFZ <c>loccN</c>/<c>hiccN</c>); empty = ungated.</summary>
         public IReadOnlyList<(int Controller, int Low, int High)> CcGates { get; init; }
 
+        // ---- Tier-2 key/velocity crossfades (SFZ xfin_*/xfout_*); -1 = no fade on that edge ----
+
+        /// <summary>Key crossfade-in range low/high (SFZ <c>xfin_lokey</c>/<c>xfin_hikey</c>).</summary>
+        public int KeyFadeInLow { get; init; } = -1;
+        /// <summary>Key crossfade-in range high.</summary>
+        public int KeyFadeInHigh { get; init; } = -1;
+        /// <summary>Key crossfade-out range low (SFZ <c>xfout_lokey</c>/<c>xfout_hikey</c>).</summary>
+        public int KeyFadeOutLow { get; init; } = -1;
+        /// <summary>Key crossfade-out range high.</summary>
+        public int KeyFadeOutHigh { get; init; } = -1;
+        /// <summary>Velocity crossfade-in range low/high (SFZ <c>xfin_lovel</c>/<c>xfin_hivel</c>).</summary>
+        public int VelocityFadeInLow { get; init; } = -1;
+        /// <summary>Velocity crossfade-in range high.</summary>
+        public int VelocityFadeInHigh { get; init; } = -1;
+        /// <summary>Velocity crossfade-out range low (SFZ <c>xfout_lovel</c>/<c>xfout_hivel</c>).</summary>
+        public int VelocityFadeOutLow { get; init; } = -1;
+        /// <summary>Velocity crossfade-out range high.</summary>
+        public int VelocityFadeOutHigh { get; init; } = -1;
+        /// <summary>The key-crossfade curve (SFZ <c>xf_keycurve</c>).</summary>
+        public SamplerCrossfadeCurve KeyFadeCurve { get; init; }
+        /// <summary>The velocity-crossfade curve (SFZ <c>xf_velcurve</c>).</summary>
+        public SamplerCrossfadeCurve VelocityFadeCurve { get; init; }
+
         // rotating counter for round-robin; advanced each time the region is an
         // otherwise-eligible candidate
         private int sequenceCounter;
@@ -138,5 +161,38 @@ namespace NAudio.Sampler
             sequenceCounter++;
             return match;
         }
+
+        /// <summary>
+        /// The key/velocity crossfade gain (0..1) for this note: the key fade and
+        /// velocity fade gains multiplied. 1 when no crossfade is defined; 0 means
+        /// the layer is silent here (the engine treats that as a gate).
+        /// </summary>
+        public float CrossfadeGain(int key, int velocity) =>
+            FadeGain(key, KeyFadeInLow, KeyFadeInHigh, KeyFadeOutLow, KeyFadeOutHigh, KeyFadeCurve) *
+            FadeGain(velocity, VelocityFadeInLow, VelocityFadeInHigh, VelocityFadeOutLow, VelocityFadeOutHigh, VelocityFadeCurve);
+
+        private static float FadeGain(int value, int inLow, int inHigh, int outLow, int outHigh, SamplerCrossfadeCurve curve) =>
+            Curve(FadeInPosition(value, inLow, inHigh), curve) * Curve(FadeOutPosition(value, outLow, outHigh), curve);
+
+        // 0 below the range, ramps to 1 across it; 1 when no fade-in is set
+        private static float FadeInPosition(int value, int low, int high)
+        {
+            if (low < 0 || high < 0) return 1f;
+            if (value <= low) return 0f;
+            if (value >= high) return 1f;
+            return (value - low) / (float)(high - low);
+        }
+
+        // 1 below the range, ramps to 0 across it; 1 when no fade-out is set
+        private static float FadeOutPosition(int value, int low, int high)
+        {
+            if (low < 0 || high < 0) return 1f;
+            if (value <= low) return 1f;
+            if (value >= high) return 0f;
+            return 1f - (value - low) / (float)(high - low);
+        }
+
+        private static float Curve(float position, SamplerCrossfadeCurve curve) =>
+            curve == SamplerCrossfadeCurve.Power ? (float)System.Math.Sqrt(position) : position;
     }
 }

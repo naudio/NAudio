@@ -165,14 +165,24 @@ namespace NAudio.Sampler
                     if (!region.PassesRandom(random)) continue;
                     if (!region.PassesSequence()) continue; // advances the round-robin counter
 
-                    if (region.OffByGroup != 0) ChokeGroup(region.OffByGroup, channel);
-
-                    var voice = AcquireVoice();
-                    voice.Start(region, state, channel, note, velocity, startOrder++);
+                    StartVoice(region, state, channel, note, velocity);
                 }
             }
 
             heldNotes[channel][note] = velocity; // remember the key is down (for legato / release)
+        }
+
+        // gates on the key/velocity crossfade gain (silent layers don't spawn a
+        // voice), chokes the off_by group, and starts a voice with that gain
+        private void StartVoice(SamplerRegion region, MidiChannelState state, int channel, int note, int velocity)
+        {
+            float crossfadeGain = region.CrossfadeGain(note, velocity);
+            if (crossfadeGain <= 0f) return;
+
+            if (region.OffByGroup != 0) ChokeGroup(region.OffByGroup, channel);
+
+            var voice = AcquireVoice();
+            voice.Start(region, state, channel, note, velocity, startOrder++, crossfadeGain);
         }
 
         /// <summary>
@@ -237,10 +247,7 @@ namespace NAudio.Sampler
                 if (region.Trigger != SamplerTrigger.Release) continue;
                 if (!region.Matches(note, velocity)) continue;
 
-                if (region.OffByGroup != 0) ChokeGroup(region.OffByGroup, channel);
-
-                var voice = AcquireVoice();
-                voice.Start(region, state, channel, note, velocity, startOrder++);
+                StartVoice(region, state, channel, note, velocity);
             }
         }
 

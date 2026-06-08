@@ -343,7 +343,7 @@ Sequenced cheapest-useful-first:
    Verified by `SendBus` unit tests and reverb-send/tail render tests.
 6. **MIDI-file → `EventTimeline` ingestion** (closes the sequencer gap) →
    enables the offline render demo.
-7. **SFZ parser + mapping** (Tier 1, then Tier 2). **In progress.**
+7. **SFZ parser + mapping** (Tier 1, then Tier 2). **Tier 1 DONE.**
    **7a DONE — text/structure layer** (`NAudio.Core/FileFormats/Sfz`,
    namespace `NAudio.Sfz`): `SfzParser` handles `//` and `/* */` comments, the
    `#define`/`$variable` preprocessor, `#include` (via a pluggable
@@ -361,11 +361,23 @@ Sequenced cheapest-useful-first:
    sustain 0–1), `cutoff`/`resonance`/`fil_type`, `loop_mode`/offsets,
    `trigger`, `group`/`off_by`/`off_mode`, `amp_veltrack`, `polyphony`. Pure and
    unit-tested; the SFZ counterpart to the SoundFont generator model.
-   **Remaining:** 7c — a small format-neutral region/sample-reference model that
-   both `SoundFontRegion` and `SfzMappedRegion` project onto, external sample
-   loading (WAV now, FLAC/Ogg via `NAudio.SoundFile`), and `SamplerVoice`
-   consuming the neutral model so it plays SFZ as well as SF2; then Tier 2
-   opcodes (keyswitches, round-robin, CC gating, crossfades, the extra LFOs/EGs).
+   **7c DONE — neutral model, sample loading, engine integration:**
+   `SampleData` + `SamplerRegion` are the format-neutral region the voice plays
+   (parameters carried as `SoundFontGenerators` in engine units); `SamplerVoice`
+   reads only that, with an SFZ `amp_veltrack` velocity term. SoundFont and SFZ
+   both project onto it: `SoundFontSampler` slices the shared sample pool;
+   `SfzRegionProjector` + `ISfzSampleLoader`/`FileSfzSampleLoader` load each SFZ
+   sample (WAV, mono-downmixed) and translate the opcodes to generators. The
+   shared voice management (pool, stealing, choke, sustain, channel state,
+   reverb/chorus sends, the `Read`/MIDI loop) lives in a `SamplerEngine` base;
+   `SoundFontSampler` and the new `SfzSampler` subclass it and only supply the
+   regions for a note. SFZ plays end-to-end as an `ISampleProvider`
+   (`SfzSampler.FromFile`).
+   **Remaining:** Tier-1 polish (release/first/legato triggers, true stereo
+   samples, high/band-pass filters, cross-group `off_by`, one-shot ignoring
+   note-off — see §11.1), FLAC/Ogg sample loading via `NAudio.SoundFile`, then
+   Tier 2 opcodes (keyswitches, round-robin, CC gating, crossfades, extra
+   LFOs/EGs).
 8. **Single-sample instrument + auto-mapper** model.
 9. **Demos:** live MIDI, offline render, single-sample/recording editor.
 
@@ -418,6 +430,12 @@ forgotten:
   feed audio through `InterpolatingSampleReader` (found via a reverb-send test
   that used a 4-frame one-shot). Normal-length and looped samples are
   unaffected; the reader's end/guard handling for tiny one-shots wants a look.
+- **SFZ Tier-1 gaps (step 7c):** regions with a `release`/`first`/`legato`
+  trigger are dropped (only `attack` plays); stereo samples are down-mixed to
+  mono (the voice is mono-source + pan); only low-pass `fil_type` is honoured;
+  `off_by` maps to an exclusive class only when `group == off_by`; `one_shot`
+  loop mode still respects note-off rather than always playing to the end; and
+  only WAV samples load (FLAC/Ogg await `NAudio.SoundFile`).
 - **(Closed)** ~~Reverb/chorus sends evaluated but not rendered~~ — done in
   step 5 (the send-bus).
 

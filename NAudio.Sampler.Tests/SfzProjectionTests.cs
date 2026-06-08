@@ -201,6 +201,16 @@ namespace NAudio.Sampler.Tests
         }
 
         [Test]
+        public void EqBandsMapForNonFlatBandsOnly()
+        {
+            var r = ProjectFirst("<region> sample=a.wav eq1_freq=800 eq1_gain=6 eq2_gain=-3", ConstantSample());
+            Assert.That(r.EqBands, Has.Count.EqualTo(2)); // eq1 + eq2 have gain; eq3 is flat
+            Assert.That(r.EqBands[0].FrequencyHz, Is.EqualTo(800f));
+            Assert.That(r.EqBands[0].GainDb, Is.EqualTo(6f));
+            Assert.That(r.EqBands[1].GainDb, Is.EqualTo(-3f));
+        }
+
+        [Test]
         public void EffectSendsMapToReverbAndChorus()
         {
             var g = ProjectFirst("<region> sample=a.wav effect1=50 effect2=25", ConstantSample()).Generators;

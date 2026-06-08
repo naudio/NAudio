@@ -37,6 +37,8 @@ namespace NAudio.Sampler
         private readonly Lfo vibratoLfo;
         private BiQuadFilter filter;        // mono / left channel
         private BiQuadFilter filterRight;   // right channel (stereo only)
+        private BiQuadFilter[] eqLeft;      // per-region peaking-EQ bands (null = flat)
+        private BiQuadFilter[] eqRight;     // EQ bands for the right channel (stereo only)
 
         private double baseIncrement;   // sourceRate / outputRate
         private double pitchRatio;      // from key vs root + tuning
@@ -187,6 +189,7 @@ namespace NAudio.Sampler
             // note-on velocity and the channel's current controllers
             UpdateModulation(channelState);
             ConfigureFilter(gen);
+            ConfigureEq(region.EqBands);
 
             Channel = channel;
             Note = note;
@@ -283,12 +286,19 @@ namespace NAudio.Sampler
                 {
                     float sL = reader.Read(increment);
                     if (reader.Ended) { IsActive = false; return; }
-                    float sR = stereo ? readerRight.Read(increment) : sL;
-                    if (filterActive)
+                    if (filterActive) sL = filter.Transform(sL);
+                    if (eqLeft != null)
+                        for (int b = 0; b < eqLeft.Length; b++) sL = eqLeft[b].Transform(sL);
+
+                    float sR;
+                    if (stereo)
                     {
-                        sL = filter.Transform(sL);
-                        sR = stereo ? filterRight.Transform(sR) : sL;
+                        sR = readerRight.Read(increment);
+                        if (filterActive) sR = filterRight.Transform(sR);
+                        if (eqRight != null)
+                            for (int b = 0; b < eqRight.Length; b++) sR = eqRight[b].Transform(sR);
                     }
+                    else sR = sL;
 
                     float envGain = ampEnvelope.Process() * staticGain * volGain;
                     float left = sL * envGain * leftGain;
@@ -445,6 +455,21 @@ namespace NAudio.Sampler
             {
                 filter = null;
                 filterRight = null;
+            }
+        }
+
+        private void ConfigureEq(System.Collections.Generic.IReadOnlyList<SamplerEqBand> bands)
+        {
+            if (bands == null || bands.Count == 0) { eqLeft = null; eqRight = null; return; }
+
+            eqLeft = new BiQuadFilter[bands.Count];
+            eqRight = stereo ? new BiQuadFilter[bands.Count] : null;
+            for (int i = 0; i < bands.Count; i++)
+            {
+                var band = bands[i];
+                float hz = (float)Math.Clamp(band.FrequencyHz, 20.0, nyquist * 0.95);
+                eqLeft[i] = BiQuadFilter.PeakingEQ(outputSampleRate, hz, band.Q, band.GainDb);
+                if (stereo) eqRight[i] = BiQuadFilter.PeakingEQ(outputSampleRate, hz, band.Q, band.GainDb);
             }
         }
 

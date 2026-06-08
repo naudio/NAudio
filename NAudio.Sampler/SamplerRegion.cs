@@ -113,6 +113,9 @@ namespace NAudio.Sampler
         /// <summary>Whether this region is triggered by a CC rather than by a key.</summary>
         public bool IsCcTriggered => OnCcTriggers != null;
 
+        /// <summary>Peaking-EQ bands applied to the voice (SFZ <c>eqN_*</c>); null = flat.</summary>
+        public IReadOnlyList<SamplerEqBand> EqBands { get; init; }
+
         // ---- Tier-2 key/velocity crossfades (SFZ xfin_*/xfout_*); -1 = no fade on that edge ----
 
         /// <summary>Key crossfade-in range low/high (SFZ <c>xfin_lokey</c>/<c>xfin_hikey</c>).</summary>

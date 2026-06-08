@@ -354,7 +354,8 @@ Sequenced cheapest-useful-first:
    to a float buffer or a WAV file, faster than real time and with no audio
    hardware. This is the first end-to-end "MIDI in → audio out", verified by a
    deterministic timing test (silence before the note, sound during).
-7. **SFZ parser + mapping** (Tier 1, then Tier 2). **Tier 1 DONE.**
+7. **SFZ parser + mapping** (Tier 1, then Tier 2). **Tier 1 + Tier 2 DONE**
+   (bar FLAC/Ogg sample loading; see §11.1).
    **7a DONE — text/structure layer** (`NAudio.Core/FileFormats/Sfz`,
    namespace `NAudio.Sfz`): `SfzParser` handles `//` and `/* */` comments, the
    `#define`/`$variable` preprocessor, `#include` (via a pluggable
@@ -444,8 +445,9 @@ modulator transforms. Mark anything needing real hardware
   reverb/chorus buses (the same path as SF2's reverb/chorus sends).
   `rt_decay` attenuates release samples by held time, and `on_loccN`/`on_hiccN`
   trigger a region when the controller rises into range (played at its root key,
-  excluded from key triggering). **Remaining:** per-region `eq1/2/3_*` (needs
-  per-voice EQ state — a voice change).
+  excluded from key triggering). Per-region `eq1/2/3_*` add up to three
+  peaking-EQ bands in the voice's signal chain (per channel, bandwidth→Q).
+  **Tier 2 complete** bar the shared Tier-1 sample-loading gap (FLAC/Ogg).
 - **SFZ Tier-1 finish** — done except FLAC/Ogg sample loading via
   `NAudio.SoundFile` (§11.1); triggers, one-shot, directional `off_by`, all
   `fil_type` shapes and stereo samples are in.

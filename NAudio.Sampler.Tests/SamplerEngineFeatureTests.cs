@@ -122,6 +122,18 @@ namespace NAudio.Sampler.Tests
             Assert.That(passed, Is.GreaterThan(0.2f), "a notch elsewhere passes the tone");
         }
 
+        [Test]
+        public void EqBandBoostsAndCutsItsCentreFrequency()
+        {
+            const double tone = 1000.0;
+            float flat = SineSteadyPeak("<region> sample=a.wav key=60 loop_mode=loop_continuous", tone);
+            float boosted = SineSteadyPeak("<region> sample=a.wav key=60 loop_mode=loop_continuous eq1_freq=1000 eq1_gain=12", tone);
+            float cut = SineSteadyPeak("<region> sample=a.wav key=60 loop_mode=loop_continuous eq1_freq=1000 eq1_gain=-12", tone);
+
+            Assert.That(boosted, Is.GreaterThan(flat * 1.5f), "+12 dB EQ at the tone boosts it");
+            Assert.That(cut, Is.LessThan(flat * 0.75f), "-12 dB EQ at the tone cuts it");
+        }
+
         private static float SineSteadyPeak(string sfz, double frequency)
         {
             var sampler = new SfzSampler(SfzParser.Parse(sfz), new SineLoader(frequency, SampleRate / 2), SampleRate, 8);

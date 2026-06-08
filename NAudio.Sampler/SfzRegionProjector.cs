@@ -69,6 +69,7 @@ namespace NAudio.Sampler
                 CcGates = region.CcGates,
                 ReleaseDecayDbPerSecond = region.Region.GetFloat("rt_decay", 0f),
                 OnCcTriggers = BuildOnCcTriggers(region.Region),
+                EqBands = BuildEqBands(region.Region),
                 KeyFadeInLow = region.KeyFadeInLow,
                 KeyFadeInHigh = region.KeyFadeInHigh,
                 KeyFadeOutLow = region.KeyFadeOutLow,
@@ -95,6 +96,36 @@ namespace NAudio.Sampler
                 case SfzFilterType.BandReject: return SamplerFilterType.BandReject;
                 default: return SamplerFilterType.LowPass;
             }
+        }
+
+        // SFZ has up to three EQ bands (eq1/eq2/eq3); only bands with a non-zero
+        // gain are applied. Default centre frequencies are 50/500/5000 Hz.
+        private static IReadOnlyList<SamplerEqBand> BuildEqBands(NAudio.Sfz.SfzRegion region)
+        {
+            List<SamplerEqBand> bands = null;
+            AddEqBand(region, "eq1", 50f, ref bands);
+            AddEqBand(region, "eq2", 500f, ref bands);
+            AddEqBand(region, "eq3", 5000f, ref bands);
+            return bands;
+        }
+
+        private static void AddEqBand(NAudio.Sfz.SfzRegion region, string prefix, float defaultFreq,
+            ref List<SamplerEqBand> bands)
+        {
+            float gain = region.GetFloat(prefix + "_gain", 0f);
+            if (gain == 0f) return; // flat band -> no-op
+            float freq = region.GetFloat(prefix + "_freq", defaultFreq);
+            float bandwidth = region.GetFloat(prefix + "_bw", 1f);
+            bands ??= new List<SamplerEqBand>(3);
+            bands.Add(new SamplerEqBand(freq, gain, BandwidthToQ(bandwidth)));
+        }
+
+        // octave bandwidth -> peaking-filter Q
+        private static float BandwidthToQ(float bandwidth)
+        {
+            if (bandwidth <= 0f) bandwidth = 1f;
+            double t = Math.Pow(2.0, bandwidth);
+            return (float)(Math.Sqrt(t) / (t - 1.0));
         }
 
         // Collects on_loccN/on_hiccN opcodes into per-controller trigger windows.

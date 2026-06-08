@@ -400,6 +400,12 @@ Sequenced cheapest-useful-first:
    The shared `WaveSampleLoader` (mono down-mix) now backs both this and the SFZ
    WAV loader. The interactive waveform/loop editor UI is the step-9 demo.
 9. **Demos:** live MIDI, offline render, single-sample/recording editor.
+   **In progress.** A `SoundFont / MIDI Player` panel in `NAudioWpfDemo`
+   (`SamplerDemo/`) loads a `.sf2` + `.mid`, and either plays them live
+   (`SequencedMidiInstrument` → `WaveOut`) or renders to a WAV
+   (`OfflineMidiRenderer`). **Remaining:** a live-`MidiIn` keyboard player
+   (real-time MIDI input) and the interactive single-sample waveform/loop-point
+   editor (the step-8 model is ready to bind a UI to).
 
 **Testing.** Lean on deterministic offline render → golden-WAV comparisons (the
 drum demo's "render matches live playback" path in #1324 is the model), plus

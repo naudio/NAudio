@@ -189,6 +189,18 @@ namespace NAudio.Sampler.Tests
         }
 
         [Test]
+        public void RtDecayAndOnCcTriggerMap()
+        {
+            var decay = ProjectFirst("<region> sample=a.wav trigger=release rt_decay=18", ConstantSample());
+            Assert.That(decay.ReleaseDecayDbPerSecond, Is.EqualTo(18f));
+            Assert.That(decay.IsCcTriggered, Is.False);
+
+            var ccTrig = ProjectFirst("<region> sample=a.wav on_locc20=64 on_hicc20=127", ConstantSample());
+            Assert.That(ccTrig.IsCcTriggered, Is.True);
+            Assert.That(ccTrig.OnCcTriggers, Has.Member((20, 64, 127)));
+        }
+
+        [Test]
         public void EffectSendsMapToReverbAndChorus()
         {
             var g = ProjectFirst("<region> sample=a.wav effect1=50 effect2=25", ConstantSample()).Generators;

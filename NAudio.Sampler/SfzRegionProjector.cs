@@ -67,6 +67,8 @@ namespace NAudio.Sampler
                 LowRandom = region.LowRandom,
                 HighRandom = region.HighRandom,
                 CcGates = region.CcGates,
+                ReleaseDecayDbPerSecond = region.Region.GetFloat("rt_decay", 0f),
+                OnCcTriggers = BuildOnCcTriggers(region.Region),
                 KeyFadeInLow = region.KeyFadeInLow,
                 KeyFadeInHigh = region.KeyFadeInHigh,
                 KeyFadeOutLow = region.KeyFadeOutLow,
@@ -93,6 +95,29 @@ namespace NAudio.Sampler
                 case SfzFilterType.BandReject: return SamplerFilterType.BandReject;
                 default: return SamplerFilterType.LowPass;
             }
+        }
+
+        // Collects on_loccN/on_hiccN opcodes into per-controller trigger windows.
+        private static IReadOnlyList<(int Controller, int Low, int High)> BuildOnCcTriggers(NAudio.Sfz.SfzRegion region)
+        {
+            Dictionary<int, (int Low, int High)> triggers = null;
+            foreach (var pair in region.Opcodes)
+            {
+                bool low = pair.Key.StartsWith("on_locc");
+                bool high = pair.Key.StartsWith("on_hicc");
+                if (!low && !high) continue;
+                if (!int.TryParse(pair.Key.Substring(7), out int cc)) continue;
+                if (!int.TryParse(pair.Value, out int value)) continue;
+
+                triggers ??= new Dictionary<int, (int, int)>();
+                var current = triggers.TryGetValue(cc, out var g) ? g : (Low: 0, High: 127);
+                triggers[cc] = low ? (value, current.High) : (current.Low, value);
+            }
+
+            if (triggers == null) return null;
+            var result = new List<(int, int, int)>(triggers.Count);
+            foreach (var pair in triggers) result.Add((pair.Key, pair.Value.Low, pair.Value.High));
+            return result;
         }
 
         private static SamplerCrossfadeCurve MapCrossfadeCurve(SfzCrossfadeCurve curve) =>

@@ -26,13 +26,14 @@ namespace NAudio.Sampler
         private readonly SendBus reverbBus;
         private readonly SendBus chorusBus;
         private readonly HashSet<(int channel, int note)> sustainedNotes = new();
-        // keys currently held down per channel (note -> note-on velocity), for
-        // legato/first triggers and release-trigger velocity
-        private readonly Dictionary<int, int>[] heldNotes;
+        // keys currently held down per channel (note -> note-on velocity and the
+        // frame it started), for legato/first triggers and release rt_decay
+        private readonly Dictionary<int, (int Velocity, long OnFrame)>[] heldNotes;
         // last keyswitch key pressed per channel (-1 = none yet)
         private readonly int[] lastSwitch;
         private readonly Random rng = new();
         private long startOrder;
+        private long framesRendered; // a sample clock for rt_decay held-time
         private float masterGain = 1f;
 
         /// <summary>The live controller state for each of the 16 MIDI channels.</summary>
@@ -49,12 +50,12 @@ namespace NAudio.Sampler
                 voices[i] = new SamplerVoice(sampleRate);
 
             Channels = new MidiChannelState[16];
-            heldNotes = new Dictionary<int, int>[16];
+            heldNotes = new Dictionary<int, (int, long)>[16];
             lastSwitch = new int[16];
             for (int i = 0; i < Channels.Length; i++)
             {
                 Channels[i] = new MidiChannelState();
-                heldNotes[i] = new Dictionary<int, int>();
+                heldNotes[i] = new Dictionary<int, (int, long)>();
                 lastSwitch[i] = -1;
             }
 
@@ -158,6 +159,7 @@ namespace NAudio.Sampler
             {
                 foreach (var region in regions)
                 {
+                    if (region.IsCcTriggered) continue; // CC-triggered, not key-triggered
                     if (!region.Matches(note, velocity)) continue;
                     if (!PlaysOnNoteOn(region.Trigger, legato)) continue;
                     if (!KeyswitchActive(region, channel)) continue;
@@ -169,20 +171,21 @@ namespace NAudio.Sampler
                 }
             }
 
-            heldNotes[channel][note] = velocity; // remember the key is down (for legato / release)
+            heldNotes[channel][note] = (velocity, framesRendered); // key down (for legato / release rt_decay)
         }
 
         // gates on the key/velocity crossfade gain (silent layers don't spawn a
-        // voice), chokes the off_by group, and starts a voice with that gain
-        private void StartVoice(SamplerRegion region, MidiChannelState state, int channel, int note, int velocity)
+        // voice), chokes the off_by group, and starts a voice scaled by the
+        // crossfade and any extra (e.g. release rt_decay) gain
+        private void StartVoice(SamplerRegion region, MidiChannelState state, int channel, int note, int velocity, float extraGain = 1f)
         {
-            float crossfadeGain = region.CrossfadeGain(note, velocity);
-            if (crossfadeGain <= 0f) return;
+            float gain = region.CrossfadeGain(note, velocity) * extraGain;
+            if (gain <= 0f) return;
 
             if (region.OffByGroup != 0) ChokeGroup(region.OffByGroup, channel);
 
             var voice = AcquireVoice();
-            voice.Start(region, state, channel, note, velocity, startOrder++, crossfadeGain);
+            voice.Start(region, state, channel, note, velocity, startOrder++, gain);
         }
 
         /// <summary>
@@ -218,12 +221,8 @@ namespace NAudio.Sampler
         {
             if ((uint)channel >= 16) return;
 
-            // fire release-triggered regions for this key (using its note-on velocity)
-            if (heldNotes[channel].TryGetValue(note, out int heldVelocity))
-            {
-                FireReleaseTriggers(channel, note, heldVelocity);
-                heldNotes[channel].Remove(note);
-            }
+            bool tracked = heldNotes[channel].TryGetValue(note, out var held);
+            if (tracked) heldNotes[channel].Remove(note);
 
             if (Channels[channel].SustainPedal)
             {
@@ -231,12 +230,22 @@ namespace NAudio.Sampler
                 return;
             }
 
+            // release the sounding voices for this key first...
             foreach (var v in voices)
                 if (v.IsActive && v.IsHeld && !v.IgnoreNoteOff && v.Channel == channel && v.Note == note)
                     v.Release();
+
+            // ...then fire release-triggered regions (on the same note), so this
+            // note-off doesn't immediately release the release voices it just started.
+            // Attenuate them by how long the key was held (rt_decay).
+            if (tracked)
+            {
+                double heldSeconds = (framesRendered - held.OnFrame) / (double)WaveFormat.SampleRate;
+                FireReleaseTriggers(channel, note, held.Velocity, heldSeconds);
+            }
         }
 
-        private void FireReleaseTriggers(int channel, int note, int velocity)
+        private void FireReleaseTriggers(int channel, int note, int velocity, double heldSeconds)
         {
             var state = Channels[channel];
             var regions = GetRegionsForNoteOn(state);
@@ -247,7 +256,24 @@ namespace NAudio.Sampler
                 if (region.Trigger != SamplerTrigger.Release) continue;
                 if (!region.Matches(note, velocity)) continue;
 
-                StartVoice(region, state, channel, note, velocity);
+                StartVoice(region, state, channel, note, velocity, region.ReleaseDecayGain(heldSeconds));
+            }
+        }
+
+        // starts any CC-triggered regions whose on_loccN/on_hiccN window the
+        // controller has just risen into, playing them at the region's root key
+        private void FireOnCcTriggers(int channel, MidiChannelState state, int cc, int oldValue, int newValue)
+        {
+            var regions = GetRegionsForNoteOn(state);
+            if (regions == null) return;
+
+            foreach (var region in regions)
+            {
+                if (!region.IsCcTriggered) continue;
+                if (!region.TriggeredByCcChange(cc, oldValue, newValue)) continue;
+
+                int note = region.Sample.RootKey;
+                StartVoice(region, state, channel, note, Math.Clamp(newValue, 1, 127));
             }
         }
 
@@ -294,6 +320,7 @@ namespace NAudio.Sampler
 
                 written += frames * 2;
                 framesRemaining -= frames;
+                framesRendered += frames; // sample clock for rt_decay held-time
             }
 
             // a sampler is an instrument: always returns a full (mostly silent) buffer
@@ -304,8 +331,12 @@ namespace NAudio.Sampler
         {
             var state = Channels[channel];
 
-            // store every controller so the modulator engine can read it as a source
-            state.SetController((int)controller, value);
+            // store every controller so the modulator engine can read it as a source,
+            // remembering the previous value to detect on_cc trigger edges
+            int cc = (int)controller;
+            int previous = state.Controller(cc);
+            state.SetController(cc, value);
+            if (value != previous) FireOnCcTriggers(channel, state, cc, previous, value);
 
             switch (controller)
             {

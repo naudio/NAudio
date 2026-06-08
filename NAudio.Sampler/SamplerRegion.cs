@@ -103,6 +103,16 @@ namespace NAudio.Sampler
         /// (SFZ <c>loccN</c>/<c>hiccN</c>); empty = ungated.</summary>
         public IReadOnlyList<(int Controller, int Low, int High)> CcGates { get; init; }
 
+        /// <summary>Release-trigger decay in dB per second of held time (SFZ <c>rt_decay</c>); 0 = none.</summary>
+        public float ReleaseDecayDbPerSecond { get; init; }
+
+        /// <summary>CC windows that <em>trigger</em> the region when the CC rises into them
+        /// (SFZ <c>on_loccN</c>/<c>on_hiccN</c>); null = key-triggered as usual.</summary>
+        public IReadOnlyList<(int Controller, int Low, int High)> OnCcTriggers { get; init; }
+
+        /// <summary>Whether this region is triggered by a CC rather than by a key.</summary>
+        public bool IsCcTriggered => OnCcTriggers != null;
+
         // ---- Tier-2 key/velocity crossfades (SFZ xfin_*/xfout_*); -1 = no fade on that edge ----
 
         /// <summary>Key crossfade-in range low/high (SFZ <c>xfin_lokey</c>/<c>xfin_hikey</c>).</summary>
@@ -194,5 +204,32 @@ namespace NAudio.Sampler
 
         private static float Curve(float position, SamplerCrossfadeCurve curve) =>
             curve == SamplerCrossfadeCurve.Power ? (float)System.Math.Sqrt(position) : position;
+
+        /// <summary>
+        /// The release-trigger gain after a key was held <paramref name="heldSeconds"/>
+        /// (SFZ <c>rt_decay</c>): 1 with no decay, falling by the dB-per-second rate.
+        /// </summary>
+        public float ReleaseDecayGain(double heldSeconds)
+        {
+            if (ReleaseDecayDbPerSecond <= 0f) return 1f;
+            return (float)System.Math.Pow(10.0, -ReleaseDecayDbPerSecond * heldSeconds / 20.0);
+        }
+
+        /// <summary>
+        /// Whether a CC change should trigger this region: a configured
+        /// <c>on_loccN</c>/<c>on_hiccN</c> window the controller has just risen into.
+        /// </summary>
+        public bool TriggeredByCcChange(int controller, int oldValue, int newValue)
+        {
+            if (OnCcTriggers == null) return false;
+            foreach (var t in OnCcTriggers)
+            {
+                if (t.Controller != controller) continue;
+                bool wasInside = oldValue >= t.Low && oldValue <= t.High;
+                bool isInside = newValue >= t.Low && newValue <= t.High;
+                if (!wasInside && isInside) return true;
+            }
+            return false;
+        }
     }
 }

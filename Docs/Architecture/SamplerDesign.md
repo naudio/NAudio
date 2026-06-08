@@ -442,8 +442,10 @@ modulator transforms. Mark anything needing real hardware
   filter EG wins) with independent depths — a dedicated source per SFZ EG/LFO is
   the upgrade if a bank needs it. `effect1`/`effect2` sends route to the shared
   reverb/chorus buses (the same path as SF2's reverb/chorus sends).
-  **Remaining:** `on_loccN`/`on_hiccN` (CC-triggered notes), `rt_decay`, and
-  per-region `eq1/2/3_*` (needs per-voice EQ state — a voice change).
+  `rt_decay` attenuates release samples by held time, and `on_loccN`/`on_hiccN`
+  trigger a region when the controller rises into range (played at its root key,
+  excluded from key triggering). **Remaining:** per-region `eq1/2/3_*` (needs
+  per-voice EQ state — a voice change).
 - **SFZ Tier-1 finish** — done except FLAC/Ogg sample loading via
   `NAudio.SoundFile` (§11.1); triggers, one-shot, directional `off_by`, all
   `fil_type` shapes and stereo samples are in.

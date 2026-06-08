@@ -1,4 +1,5 @@
 using System;
+using NAudio.Midi;
 using NAudio.Sampler;
 using NAudio.Sfz;
 using NUnit.Framework;
@@ -131,6 +132,45 @@ namespace NAudio.Sampler.Tests
             float peak = 0;
             foreach (var s in buffer) peak = Math.Max(peak, Math.Abs(s));
             return peak;
+        }
+
+        [Test]
+        public void ReleaseTriggerDecaysWithHoldTime()
+        {
+            // a longer hold attenuates the release sample more (rt_decay dB/sec)
+            float shortHold = ReleasePeak(0.1);
+            float longHold = ReleasePeak(1.0);
+            Assert.That(shortHold, Is.GreaterThan(0.05f));
+            Assert.That(longHold, Is.LessThan(shortHold * 0.5f), "release should be quieter after a longer hold");
+        }
+
+        private static float ReleasePeak(double holdSeconds)
+        {
+            var sampler = Build("<region> sample=a.wav loop_mode=loop_continuous trigger=release rt_decay=24");
+            sampler.NoteOn(0, 60, 127);
+            Render(sampler, (int)(holdSeconds * SampleRate)); // hold (silent: release region doesn't sound yet)
+            sampler.NoteOff(0, 60);                            // fire the release with rt_decay applied
+
+            var buffer = new float[512 * 2];
+            sampler.Read(buffer);
+            float peak = 0;
+            foreach (var s in buffer) peak = Math.Max(peak, Math.Abs(s));
+            return peak;
+        }
+
+        [Test]
+        public void OnCcTriggersOnRisingEdgeOnly()
+        {
+            var sampler = Build("<region> sample=a.wav loop_mode=loop_continuous on_locc20=64 on_hicc20=127");
+
+            sampler.NoteOn(0, 60, 127); // CC-triggered region ignores note-on
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(0));
+
+            sampler.ProcessMidiEvent(new ControlChangeEvent(0, 1, (MidiController)20, 100)); // rises into range
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(1));
+
+            sampler.ProcessMidiEvent(new ControlChangeEvent(0, 1, (MidiController)20, 120)); // still in range -> no new trigger
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(1));
         }
 
         [Test]

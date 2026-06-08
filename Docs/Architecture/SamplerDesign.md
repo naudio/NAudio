@@ -343,7 +343,22 @@ Sequenced cheapest-useful-first:
    Verified by `SendBus` unit tests and reverb-send/tail render tests.
 6. **MIDI-file → `EventTimeline` ingestion** (closes the sequencer gap) →
    enables the offline render demo.
-7. **SFZ parser + mapping** (Tier 1, then Tier 2).
+7. **SFZ parser + mapping** (Tier 1, then Tier 2). **In progress.**
+   **7a DONE — text/structure layer** (`NAudio.Core/FileFormats/Sfz`,
+   namespace `NAudio.Sfz`): `SfzParser` handles `//` and `/* */` comments, the
+   `#define`/`$variable` preprocessor, `#include` (via a pluggable
+   `ISfzIncludeResolver`, default `FileSfzIncludeResolver`), the section grammar
+   (including sample paths with spaces and multiple opcodes per line), and
+   flattens the `<global>`/`<master>`/`<group>`/`<region>` hierarchy into
+   `SfzRegion`s with merged opcodes and typed accessors. `<control>`
+   `default_path` (applied in document order), `note_offset` and `octave_offset`
+   are surfaced on `SfzInstrument`. Pure text, no engine dependency, unit-tested.
+   **Remaining:** 7b — opcode *semantics* (key/vel ranges incl. note-name
+   parsing, `pitch_keycenter`/`tune`/`transpose`, `ampeg_*`, `cutoff`/
+   `resonance`, loop modes, `group`/`off_by`, velocity tracking…) mapped onto the
+   format-neutral region model; 7c — external sample loading (WAV now,
+   FLAC/Ogg via `NAudio.SoundFile`) and voice-engine integration so the existing
+   `SamplerVoice` plays SFZ regions; then Tier 2 opcodes.
 8. **Single-sample instrument + auto-mapper** model.
 9. **Demos:** live MIDI, offline render, single-sample/recording editor.
 

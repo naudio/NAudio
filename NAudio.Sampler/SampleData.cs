@@ -9,8 +9,14 @@ namespace NAudio.Sampler
     /// </summary>
     internal sealed class SampleData
     {
-        /// <summary>The sample buffer (mono, -1..1). May be shared by many regions (SF2 pool).</summary>
+        /// <summary>The sample buffer (mono, or the left channel of a stereo sample; -1..1). May be shared by many regions (SF2 pool).</summary>
         public float[] Data { get; init; }
+
+        /// <summary>The right channel of a stereo sample, or null for mono. Same bounds/loop as <see cref="Data"/>.</summary>
+        public float[] DataRight { get; init; }
+
+        /// <summary>Whether this is a stereo sample (has a right channel).</summary>
+        public bool IsStereo => DataRight != null;
 
         /// <summary>First sample index (inclusive) of the region within <see cref="Data"/>.</summary>
         public int Start { get; init; }

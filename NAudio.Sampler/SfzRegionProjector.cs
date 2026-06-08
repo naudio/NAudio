@@ -44,7 +44,7 @@ namespace NAudio.Sampler
         public static SamplerRegion Project(SfzMappedRegion region, ISfzSampleLoader loader)
         {
             if (region.Sample == null) return null;
-            if (!loader.TryLoad(region.Sample, out var data, out var sampleRate)) return null;
+            if (!loader.TryLoad(region.Sample, out var data, out var dataRight, out var sampleRate)) return null;
 
             int length = data.Length;
             int start = Clamp(region.Offset, 0, length);
@@ -55,6 +55,7 @@ namespace NAudio.Sampler
             var sample = new SampleData
             {
                 Data = data,
+                DataRight = dataRight,
                 SampleRate = sampleRate,
                 RootKey = region.PitchKeycenter,
                 PitchCorrectionCents = 0,

@@ -17,26 +17,34 @@ namespace NAudio.Sampler
     public sealed class SingleSampleInstrument
     {
         private readonly float[] data;
+        private readonly float[] dataRight;
         private readonly int sampleRate;
 
         /// <summary>
-        /// Creates an instrument from a mono sample buffer, mapped across the whole
+        /// Creates an instrument from a sample buffer, mapped across the whole
         /// keyboard at the given root key.
         /// </summary>
-        /// <param name="data">The mono sample (-1..1).</param>
+        /// <param name="data">The sample, or the left channel of a stereo sample (-1..1).</param>
         /// <param name="sampleRate">The sample's recording rate in Hz.</param>
         /// <param name="rootKey">The MIDI key that plays it at recorded pitch (default 60).</param>
-        public SingleSampleInstrument(float[] data, int sampleRate, int rootKey = 60)
+        /// <param name="dataRight">The right channel of a stereo sample, or null for mono.</param>
+        public SingleSampleInstrument(float[] data, int sampleRate, int rootKey = 60, float[] dataRight = null)
         {
             this.data = data ?? throw new ArgumentNullException(nameof(data));
             if (data.Length == 0) throw new ArgumentException("Sample is empty", nameof(data));
             if (sampleRate <= 0) throw new ArgumentOutOfRangeException(nameof(sampleRate));
+            if (dataRight != null && dataRight.Length != data.Length)
+                throw new ArgumentException("Right channel length must match the left channel.", nameof(dataRight));
 
             this.sampleRate = sampleRate;
+            this.dataRight = dataRight;
             RootKey = rootKey;
             End = data.Length;
             LoopEnd = data.Length;
         }
+
+        /// <summary>Whether the loaded sample is stereo.</summary>
+        public bool IsStereo => dataRight != null;
 
         /// <summary>The sample's recording rate in Hz.</summary>
         public int SampleRate => sampleRate;
@@ -120,6 +128,7 @@ namespace NAudio.Sampler
                 Sample = new SampleData
                 {
                     Data = data,
+                    DataRight = dataRight,
                     SampleRate = sampleRate,
                     RootKey = RootKey,
                     PitchCorrectionCents = 0,

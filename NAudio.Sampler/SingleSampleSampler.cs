@@ -30,9 +30,9 @@ namespace NAudio.Sampler
             int sampleRate = 44100, int maxVoices = 32)
         {
             if (path == null) throw new ArgumentNullException(nameof(path));
-            if (!WaveSampleLoader.TryLoad(path, out var data, out var rate))
+            if (!WaveSampleLoader.TryLoad(path, out var left, out var right, out var rate))
                 throw new InvalidOperationException($"Could not load WAV sample '{path}'");
-            return new SingleSampleSampler(new SingleSampleInstrument(data, rate, rootKey), sampleRate, maxVoices);
+            return new SingleSampleSampler(new SingleSampleInstrument(left, rate, rootKey, right), sampleRate, maxVoices);
         }
 
         /// <summary>The instrument being played. Mutate its properties to edit it live.</summary>

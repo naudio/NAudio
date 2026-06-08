@@ -16,15 +16,19 @@ namespace NAudio.Sampler.Tests
     {
         private const int SampleRate = 44100;
 
-        // a loader that hands back a fixed buffer for any path
+        // a loader that hands back fixed buffers for any path
         private sealed class StubLoader : ISfzSampleLoader
         {
             private readonly float[] data;
+            private readonly float[] dataRight;
             private readonly int rate;
-            public StubLoader(float[] data, int rate) { this.data = data; this.rate = rate; }
-            public bool TryLoad(string path, out float[] d, out int sampleRate)
+            public StubLoader(float[] data, int rate, float[] dataRight = null)
             {
-                d = data; sampleRate = rate; return data != null;
+                this.data = data; this.rate = rate; this.dataRight = dataRight;
+            }
+            public bool TryLoad(string path, out float[] left, out float[] right, out int sampleRate)
+            {
+                left = data; right = dataRight; sampleRate = rate; return data != null;
             }
         }
 
@@ -146,6 +150,26 @@ namespace NAudio.Sampler.Tests
         {
             var r = ProjectFirst("<region> sample=a.wav key=60 loop_mode=loop_continuous", ConstantSample(0.5f));
             Assert.That(RenderPeak(r, 60, 127), Is.GreaterThan(0.1f));
+        }
+
+        [Test]
+        public void StereoSampleKeepsChannelsSeparate()
+        {
+            // left = +0.5, right = -0.5: a down-mix would cancel to silence, so
+            // opposite-sign output channels prove the two channels stay independent
+            var loader = new StubLoader(Filled(0.5f, 16), SampleRate, Filled(-0.5f, 16));
+            var r = ProjectFirst("<region> sample=a.wav key=60 loop_mode=loop_continuous pan=0", loader);
+            Assert.That(r.Sample.IsStereo, Is.True);
+
+            var voice = new SamplerVoice(SampleRate);
+            var channel = new MidiChannelState();
+            voice.Start(r, channel, 0, 60, 127, 0);
+            var buffer = new float[256 * 2];
+            voice.Mix(buffer, new float[256 * 2], new float[256 * 2], 256, channel);
+
+            // a settled late frame: left positive, right negative
+            Assert.That(buffer[200 * 2], Is.GreaterThan(0.05f));
+            Assert.That(buffer[200 * 2 + 1], Is.LessThan(-0.05f));
         }
 
         [Test]

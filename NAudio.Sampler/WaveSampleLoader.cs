@@ -6,31 +6,33 @@ using NAudio.Wave;
 namespace NAudio.Sampler
 {
     /// <summary>
-    /// Loads a WAV file into a mono float buffer for the sampler, down-mixing
-    /// multi-channel files. Shared by the SFZ sample loader and the single-sample
-    /// instrument. (FLAC/Ogg support will arrive via NAudio.SoundFile.)
+    /// Loads a WAV file into mono or stereo float channels for the sampler.
+    /// Shared by the SFZ sample loader and the single-sample instrument.
+    /// (FLAC/Ogg support will arrive via NAudio.SoundFile.)
     /// </summary>
     public static class WaveSampleLoader
     {
         /// <summary>
-        /// Reads a WAV file into a mono float buffer. Returns false if the file
-        /// does not exist or contains no samples.
+        /// Reads a WAV file into channel buffers: <paramref name="left"/> is the
+        /// left/mono channel and <paramref name="right"/> is the right channel, or
+        /// null for a mono file. Channels beyond the first two are ignored.
+        /// Returns false if the file is missing or empty.
         /// </summary>
-        public static bool TryLoad(string path, out float[] data, out int sampleRate)
+        public static bool TryLoad(string path, out float[] left, out float[] right, out int sampleRate)
         {
-            data = null;
+            left = null;
+            right = null;
             sampleRate = 0;
             if (string.IsNullOrEmpty(path) || !File.Exists(path)) return false;
 
             using var reader = new WaveFileReader(path);
-            return TryLoad(reader, out data, out sampleRate);
+            return TryLoad(reader, out left, out right, out sampleRate);
         }
 
         /// <summary>
-        /// Reads a WAV stream into a mono float buffer. Returns false if it
-        /// contains no samples.
+        /// Reads a WAV stream into channel buffers (see the path overload).
         /// </summary>
-        public static bool TryLoad(WaveFileReader reader, out float[] data, out int sampleRate)
+        public static bool TryLoad(WaveFileReader reader, out float[] left, out float[] right, out int sampleRate)
         {
             if (reader == null) throw new ArgumentNullException(nameof(reader));
 
@@ -38,27 +40,27 @@ namespace NAudio.Sampler
             int channels = reader.WaveFormat.Channels;
             var sampleProvider = reader.ToSampleProvider();
 
-            var samples = new List<float>((int)(reader.Length / 2));
+            var interleaved = new List<float>((int)(reader.Length / 2));
             var buffer = new float[8192];
             int read;
             while ((read = sampleProvider.Read(buffer.AsSpan(0, buffer.Length))) > 0)
-                for (int i = 0; i < read; i++) samples.Add(buffer[i]);
+                for (int i = 0; i < read; i++) interleaved.Add(buffer[i]);
 
-            data = channels <= 1 ? samples.ToArray() : DownmixToMono(samples, channels);
-            return data.Length > 0;
+            int frames = channels > 0 ? interleaved.Count / channels : 0;
+            left = null;
+            right = null;
+            if (frames == 0) return false;
+
+            left = ExtractChannel(interleaved, channels, 0, frames);
+            if (channels >= 2) right = ExtractChannel(interleaved, channels, 1, frames);
+            return true;
         }
 
-        private static float[] DownmixToMono(List<float> interleaved, int channels)
+        private static float[] ExtractChannel(List<float> interleaved, int channels, int channel, int frames)
         {
-            int frames = interleaved.Count / channels;
-            var mono = new float[frames];
-            for (int f = 0; f < frames; f++)
-            {
-                float sum = 0f;
-                for (int c = 0; c < channels; c++) sum += interleaved[f * channels + c];
-                mono[f] = sum / channels;
-            }
-            return mono;
+            var data = new float[frames];
+            for (int f = 0; f < frames; f++) data[f] = interleaved[f * channels + channel];
+            return data;
         }
     }
 }

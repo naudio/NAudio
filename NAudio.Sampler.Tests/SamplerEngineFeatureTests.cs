@@ -20,10 +20,11 @@ namespace NAudio.Sampler.Tests
         {
             private readonly int length;
             public ConstantLoader(int length) => this.length = length;
-            public bool TryLoad(string path, out float[] data, out int sampleRate)
+            public bool TryLoad(string path, out float[] left, out float[] right, out int sampleRate)
             {
-                data = new float[length];
-                for (int i = 0; i < length; i++) data[i] = 0.5f;
+                left = new float[length];
+                for (int i = 0; i < length; i++) left[i] = 0.5f;
+                right = null;
                 sampleRate = SampleRate;
                 return true;
             }

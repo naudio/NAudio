@@ -17,11 +17,12 @@ namespace NAudio.Sampler.Tests
 
         private sealed class StubLoader : ISfzSampleLoader
         {
-            public bool TryLoad(string path, out float[] data, out int sampleRate)
+            public bool TryLoad(string path, out float[] left, out float[] right, out int sampleRate)
             {
-                // a half-scale, 8-sample buffer for every requested path
-                data = new float[8];
-                for (int i = 0; i < data.Length; i++) data[i] = 0.5f;
+                // a half-scale, 8-sample mono buffer for every requested path
+                left = new float[8];
+                for (int i = 0; i < left.Length; i++) left[i] = 0.5f;
+                right = null;
                 sampleRate = SampleRate;
                 return true;
             }

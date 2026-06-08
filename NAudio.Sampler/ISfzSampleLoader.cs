@@ -11,10 +11,12 @@ namespace NAudio.Sampler
     public interface ISfzSampleLoader
     {
         /// <summary>
-        /// Loads the sample at <paramref name="path"/> (as written in the SFZ).
+        /// Loads the sample at <paramref name="path"/> (as written in the SFZ) into
+        /// channel buffers: <paramref name="left"/> is the left/mono channel and
+        /// <paramref name="right"/> is the right channel, or null for a mono sample.
         /// Returns false if it cannot be found or decoded.
         /// </summary>
-        bool TryLoad(string path, out float[] data, out int sampleRate);
+        bool TryLoad(string path, out float[] left, out float[] right, out int sampleRate);
     }
 
     /// <summary>
@@ -34,9 +36,10 @@ namespace NAudio.Sampler
         }
 
         /// <inheritdoc />
-        public bool TryLoad(string path, out float[] data, out int sampleRate)
+        public bool TryLoad(string path, out float[] left, out float[] right, out int sampleRate)
         {
-            data = null;
+            left = null;
+            right = null;
             sampleRate = 0;
             if (string.IsNullOrEmpty(path)) return false;
 
@@ -47,7 +50,7 @@ namespace NAudio.Sampler
             // WAV only for now; an unknown/undecodable file falls through to false
             if (!full.EndsWith(".wav", StringComparison.OrdinalIgnoreCase)) return false;
 
-            return WaveSampleLoader.TryLoad(full, out data, out sampleRate);
+            return WaveSampleLoader.TryLoad(full, out left, out right, out sampleRate);
         }
     }
 }

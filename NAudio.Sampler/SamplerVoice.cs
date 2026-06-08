@@ -28,12 +28,15 @@ namespace NAudio.Sampler
         private readonly int outputSampleRate;
         private readonly double nyquist;
 
-        private InterpolatingSampleReader reader;
+        private InterpolatingSampleReader reader;       // mono / left channel
+        private InterpolatingSampleReader readerRight;  // right channel (stereo only), advanced in lockstep
+        private bool stereo;
         private readonly DahdsrEnvelope ampEnvelope;
         private readonly DahdsrEnvelope modEnvelope;
         private readonly Lfo modLfo;
         private readonly Lfo vibratoLfo;
-        private BiQuadFilter filter;
+        private BiQuadFilter filter;        // mono / left channel
+        private BiQuadFilter filterRight;   // right channel (stereo only)
 
         private double baseIncrement;   // sourceRate / outputRate
         private double pitchRatio;      // from key vs root + tuning
@@ -130,11 +133,18 @@ namespace NAudio.Sampler
                 loopMode = LoopMode.None; // malformed loop points — play as one-shot
             }
 
-            var source = new SampleSource(sample.Data, sample.SampleRate, loopMode,
-                start, end,
-                loopMode == LoopMode.None ? null : loopStart,
-                loopMode == LoopMode.None ? null : loopEnd);
-            reader = new InterpolatingSampleReader(source);
+            int? loopStartOrNull = loopMode == LoopMode.None ? null : loopStart;
+            int? loopEndOrNull = loopMode == LoopMode.None ? null : loopEnd;
+            reader = new InterpolatingSampleReader(
+                new SampleSource(sample.Data, sample.SampleRate, loopMode, start, end, loopStartOrNull, loopEndOrNull));
+
+            // a stereo sample runs a second reader over the right channel in
+            // lockstep (same bounds, loop and increment), so the core reader stays mono
+            stereo = sample.IsStereo && sample.DataRight.Length >= end;
+            readerRight = stereo
+                ? new InterpolatingSampleReader(
+                    new SampleSource(sample.DataRight, sample.SampleRate, loopMode, start, end, loopStartOrNull, loopEndOrNull))
+                : null;
 
             // pitch: cents from played key vs root, plus tuning generators
             int effectiveKey = gen.KeyNumberOverride >= 0 ? gen.KeyNumberOverride : note;
@@ -196,6 +206,7 @@ namespace NAudio.Sampler
             ampEnvelope.Gate(false);
             modEnvelope.Gate(false);
             reader.Release();
+            readerRight?.Release();
         }
 
         /// <summary>
@@ -210,6 +221,7 @@ namespace NAudio.Sampler
             ampEnvelope.Gate(false);
             modEnvelope.Gate(false);
             reader.Release();
+            readerRight?.Release();
         }
 
         /// <summary>
@@ -261,23 +273,24 @@ namespace NAudio.Sampler
                         + modEnvFilter * modEnvValue
                         + modLfoFilter * modLfoValue;
                     double hz = Math.Clamp(SynthMath.AbsoluteCentsToHertz(fc), 20.0, nyquist * 0.95);
-                    switch (filterType)
-                    {
-                        case SamplerFilterType.HighPass: filter.UpdateHighPassFilter(outputSampleRate, (float)hz, filterQ); break;
-                        case SamplerFilterType.BandPass: filter.UpdateBandPassFilter(outputSampleRate, (float)hz, filterQ); break;
-                        default: filter.UpdateLowPassFilter(outputSampleRate, (float)hz, filterQ); break;
-                    }
+                    RetuneFilter(filter, (float)hz);
+                    if (stereo) RetuneFilter(filterRight, (float)hz);
                 }
 
                 for (int i = 0; i < sub; i++)
                 {
-                    float s = reader.Read(increment);
+                    float sL = reader.Read(increment);
                     if (reader.Ended) { IsActive = false; return; }
-                    if (filterActive) s = filter.Transform(s);
+                    float sR = stereo ? readerRight.Read(increment) : sL;
+                    if (filterActive)
+                    {
+                        sL = filter.Transform(sL);
+                        sR = stereo ? filterRight.Transform(sR) : sL;
+                    }
 
-                    float value = s * ampEnvelope.Process() * staticGain * volGain;
-                    float left = value * leftGain;
-                    float right = value * rightGain;
+                    float envGain = ampEnvelope.Process() * staticGain * volGain;
+                    float left = sL * envGain * leftGain;
+                    float right = sR * envGain * rightGain;
                     buffer[pos * 2] += left;
                     buffer[pos * 2 + 1] += right;
                     if (reverbSendGain > 0f)
@@ -421,17 +434,32 @@ namespace NAudio.Sampler
             if (filterActive)
             {
                 double hz = Math.Clamp(effectiveHz, 20.0, nyquist * 0.95);
-                // fresh filter resets state (safe at note start)
-                filter = filterType switch
-                {
-                    SamplerFilterType.HighPass => BiQuadFilter.HighPassFilter(outputSampleRate, (float)hz, filterQ),
-                    SamplerFilterType.BandPass => BiQuadFilter.BandPassFilterConstantPeakGain(outputSampleRate, (float)hz, filterQ),
-                    _ => BiQuadFilter.LowPassFilter(outputSampleRate, (float)hz, filterQ)
-                };
+                // fresh filter resets state (safe at note start); a stereo voice
+                // filters each channel with its own state
+                filter = CreateFilter((float)hz);
+                filterRight = stereo ? CreateFilter((float)hz) : null;
             }
             else
             {
                 filter = null;
+                filterRight = null;
+            }
+        }
+
+        private BiQuadFilter CreateFilter(float hz) => filterType switch
+        {
+            SamplerFilterType.HighPass => BiQuadFilter.HighPassFilter(outputSampleRate, hz, filterQ),
+            SamplerFilterType.BandPass => BiQuadFilter.BandPassFilterConstantPeakGain(outputSampleRate, hz, filterQ),
+            _ => BiQuadFilter.LowPassFilter(outputSampleRate, hz, filterQ)
+        };
+
+        private void RetuneFilter(BiQuadFilter f, float hz)
+        {
+            switch (filterType)
+            {
+                case SamplerFilterType.HighPass: f.UpdateHighPassFilter(outputSampleRate, hz, filterQ); break;
+                case SamplerFilterType.BandPass: f.UpdateBandPassFilter(outputSampleRate, hz, filterQ); break;
+                default: f.UpdateLowPassFilter(outputSampleRate, hz, filterQ); break;
             }
         }
 

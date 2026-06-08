@@ -129,23 +129,24 @@ namespace NAudio.Sampler.Tests
         }
 
         [Test]
-        public void WaveSampleLoaderDownmixesStereoToMono()
+        public void WaveSampleLoaderSplitsStereoChannels()
         {
             string path = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".wav");
             try
             {
                 using (var writer = new WaveFileWriter(path, new WaveFormat(SampleRate, 16, 2)))
                 {
-                    var block = new short[200]; // 100 frames L/R
+                    var block = new short[200]; // 100 frames: left ~0.5, right 0
                     for (int i = 0; i < block.Length; i += 2) { block[i] = 16384; block[i + 1] = 0; }
                     writer.WriteSamples(block, 0, block.Length);
                 }
 
-                Assert.That(WaveSampleLoader.TryLoad(path, out var data, out var rate), Is.True);
+                Assert.That(WaveSampleLoader.TryLoad(path, out var left, out var right, out var rate), Is.True);
                 Assert.That(rate, Is.EqualTo(SampleRate));
-                Assert.That(data.Length, Is.EqualTo(100));
-                // average of ~0.5 (left) and 0 (right) ≈ 0.25
-                Assert.That(data[0], Is.EqualTo(0.25f).Within(0.01f));
+                Assert.That(left.Length, Is.EqualTo(100));
+                Assert.That(right, Is.Not.Null);
+                Assert.That(left[0], Is.EqualTo(0.5f).Within(0.01f));
+                Assert.That(right[0], Is.EqualTo(0f).Within(0.01f));
             }
             finally
             {

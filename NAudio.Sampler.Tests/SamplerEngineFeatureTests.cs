@@ -134,6 +134,29 @@ namespace NAudio.Sampler.Tests
         }
 
         [Test]
+        public void Effect1SendAddsReverbWet()
+        {
+            // a full effect1 send routes through the shared reverb bus, adding wet
+            // energy the dry-only render doesn't have
+            float withSend = TotalEnergy("<region> sample=a.wav key=60 loop_mode=loop_continuous effect1=100");
+            float noSend = TotalEnergy("<region> sample=a.wav key=60 loop_mode=loop_continuous");
+
+            Assert.That(noSend, Is.GreaterThan(0f));
+            Assert.That(withSend, Is.GreaterThan(noSend * 1.05f), "the reverb send should add wet energy");
+        }
+
+        private static float TotalEnergy(string sfz)
+        {
+            var sampler = Build(sfz);
+            sampler.NoteOn(0, 60, 127);
+            var buffer = new float[4096 * 2];
+            sampler.Read(buffer);
+            float energy = 0;
+            foreach (var s in buffer) energy += Math.Abs(s);
+            return energy;
+        }
+
+        [Test]
         public void AmpLfoModulatesAmplitude()
         {
             // a constant sample with a deep amp LFO (tremolo) -> the output level

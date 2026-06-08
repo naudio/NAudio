@@ -189,6 +189,14 @@ namespace NAudio.Sampler.Tests
         }
 
         [Test]
+        public void EffectSendsMapToReverbAndChorus()
+        {
+            var g = ProjectFirst("<region> sample=a.wav effect1=50 effect2=25", ConstantSample()).Generators;
+            Assert.That(g[GeneratorEnum.ReverbEffectsSend], Is.EqualTo(500)); // 50% -> 500 tenths
+            Assert.That(g[GeneratorEnum.ChorusEffectsSend], Is.EqualTo(250));
+        }
+
+        [Test]
         public void StereoSampleKeepsChannelsSeparate()
         {
             // left = +0.5, right = -0.5: a down-mix would cancel to silence, so

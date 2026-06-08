@@ -440,8 +440,10 @@ modulator transforms. Mark anything needing real hardware
   envelope are each one source, so a region using both amp+filter LFOs (or both
   filter+pitch EGs) with different rates/shapes shares the rate/shape (amp LFO /
   filter EG wins) with independent depths — a dedicated source per SFZ EG/LFO is
-  the upgrade if a bank needs it. **Remaining:** `on_loccN`/`on_hiccN`
-  (CC-triggered notes), `rt_decay`, `eq1/2/3_*`, and `effect1`/`effect2` sends.
+  the upgrade if a bank needs it. `effect1`/`effect2` sends route to the shared
+  reverb/chorus buses (the same path as SF2's reverb/chorus sends).
+  **Remaining:** `on_loccN`/`on_hiccN` (CC-triggered notes), `rt_decay`, and
+  per-region `eq1/2/3_*` (needs per-voice EQ state — a voice change).
 - **SFZ Tier-1 finish** — done except FLAC/Ogg sample loading via
   `NAudio.SoundFile` (§11.1); triggers, one-shot, directional `off_by`, all
   `fil_type` shapes and stereo samples are in.

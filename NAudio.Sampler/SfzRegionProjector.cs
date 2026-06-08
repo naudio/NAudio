@@ -140,6 +140,11 @@ namespace NAudio.Sampler
             }
 
             gen[GeneratorEnum.SampleModes] = (short)MapLoopMode(region.LoopMode);
+
+            // effect sends: effect1 -> reverb bus, effect2 -> chorus bus (0..100% -> 0.1% units)
+            gen[GeneratorEnum.ReverbEffectsSend] = GeneratorUnits.Clamp16(region.Region.GetFloat("effect1", 0) * 10.0);
+            gen[GeneratorEnum.ChorusEffectsSend] = GeneratorUnits.Clamp16(region.Region.GetFloat("effect2", 0) * 10.0);
+
             ApplyModulation(region, gen);
             return gen;
         }

@@ -5,18 +5,19 @@ using NAudio.SoundFont;
 namespace NAudio.Sampler
 {
     /// <summary>
-    /// A single playing note: one <see cref="SoundFontRegion"/>'s sample read at
+    /// A single playing note: one <see cref="SamplerRegion"/>'s sample read at
     /// the pitch for the played key, shaped by a DAHDSR amplitude envelope, a
     /// resonant low-pass filter, two LFOs (modulation + vibrato) and a
     /// modulation envelope, and panned into the stereo output. Internal — owned
-    /// and pooled by <see cref="SoundFontSampler"/>.
+    /// and pooled by <see cref="SoundFontSampler"/>. The voice is format-neutral:
+    /// it reads only the <see cref="SamplerRegion"/>, so SoundFont and SFZ play
+    /// through the same engine.
     ///
     /// Continuous modulation (LFO/mod-env → pitch, filter cutoff and volume) is
     /// computed at a control rate (every <see cref="ControlBlock"/> samples) so
     /// the per-sample loop stays cheap; the modulation sources themselves advance
-    /// every sample so their phase stays accurate. The SF2 modulator <em>list</em>
-    /// (file-defined and the other default modulators that map MIDI controllers
-    /// to destinations) is a later step.
+    /// every sample so their phase stays accurate. The SF2 modulator list is
+    /// evaluated here too (against the region's <see cref="ModulatorSet"/>).
     /// </summary>
     internal sealed class SamplerVoice
     {
@@ -24,7 +25,6 @@ namespace NAudio.Sampler
         // recomputed this often (~1.5 ms at 44.1 kHz), the sources advance per sample
         private const int ControlBlock = 64;
 
-        private readonly float[] samplePool;
         private readonly int outputSampleRate;
         private readonly double nyquist;
 
@@ -51,6 +51,7 @@ namespace NAudio.Sampler
         private double baseModLfoToVolume;  // centibels
         private double baseFilterCents;     // initial filter cutoff (absolute cents)
         private double baseAttenuationCb;   // initial attenuation (centibels)
+        private double velocityAttenuationCb; // velocity->amplitude tracking (centibels, SFZ amp_veltrack)
         private double basePan;             // pan generator (0.1% units, ±500)
         private double baseReverbSend;      // reverb send (0.1% units, 0..1000)
         private double baseChorusSend;      // chorus send (0.1% units, 0..1000)
@@ -69,10 +70,9 @@ namespace NAudio.Sampler
         private float vibratoLfoValue;
         private float modEnvValue;
 
-        /// <summary>Creates a voice bound to a shared sample pool and output rate.</summary>
-        public SamplerVoice(float[] samplePool, int outputSampleRate)
+        /// <summary>Creates a voice for the given output rate.</summary>
+        public SamplerVoice(int outputSampleRate)
         {
-            this.samplePool = samplePool;
             this.outputSampleRate = outputSampleRate;
             nyquist = outputSampleRate / 2.0;
             ampEnvelope = new DahdsrEnvelope(outputSampleRate);
@@ -106,18 +106,18 @@ namespace NAudio.Sampler
         /// Starts this voice playing a region for a given key and velocity.
         /// Returns false if the region's sample addressing is unusable.
         /// </summary>
-        public bool Start(SoundFontRegion region, ModulatorSet modulators, MidiChannelState channelState,
+        public bool Start(SamplerRegion region, MidiChannelState channelState,
             int channel, int note, int velocity, long order)
         {
             var gen = region.Generators;
             var sample = region.Sample;
 
-            int start = (int)sample.Start + gen.StartAddressOffset;
-            int end = (int)sample.End + gen.EndAddressOffset;
-            int loopStart = (int)sample.StartLoop + gen.StartLoopAddressOffset;
-            int loopEnd = (int)sample.EndLoop + gen.EndLoopAddressOffset;
+            int start = sample.Start + gen.StartAddressOffset;
+            int end = sample.End + gen.EndAddressOffset;
+            int loopStart = sample.LoopStart + gen.StartLoopAddressOffset;
+            int loopEnd = sample.LoopEnd + gen.EndLoopAddressOffset;
 
-            if (start < 0 || end > samplePool.Length || start >= end) return false;
+            if (start < 0 || end > sample.Data.Length || start >= end) return false;
 
             var loopMode = MapLoopMode(gen.SampleModes);
             if (loopMode != LoopMode.None &&
@@ -126,7 +126,7 @@ namespace NAudio.Sampler
                 loopMode = LoopMode.None; // malformed loop points — play as one-shot
             }
 
-            var source = new SampleSource(samplePool, (int)sample.SampleRate, loopMode,
+            var source = new SampleSource(sample.Data, sample.SampleRate, loopMode,
                 start, end,
                 loopMode == LoopMode.None ? null : loopStart,
                 loopMode == LoopMode.None ? null : loopEnd);
@@ -134,20 +134,21 @@ namespace NAudio.Sampler
 
             // pitch: cents from played key vs root, plus tuning generators
             int effectiveKey = gen.KeyNumberOverride >= 0 ? gen.KeyNumberOverride : note;
-            int rootKey = gen.OverridingRootKey >= 0 ? gen.OverridingRootKey : sample.OriginalPitch;
+            int rootKey = gen.OverridingRootKey >= 0 ? gen.OverridingRootKey : sample.RootKey;
             double scaleTuning = gen[GeneratorEnum.ScaleTuning];
             double cents = (effectiveKey - rootKey) * scaleTuning
                 + gen[GeneratorEnum.CoarseTune] * 100.0
                 + gen[GeneratorEnum.FineTune]
-                + sample.PitchCorrection;
+                + sample.PitchCorrectionCents;
             pitchRatio = SynthMath.CentsToRatio(cents);
             baseIncrement = (double)sample.SampleRate / outputSampleRate;
 
             // the velocity/key the modulators see (overrides take precedence)
             int effectiveVelocity = gen.VelocityOverride >= 0 ? gen.VelocityOverride : velocity;
-            this.modulators = modulators;
+            this.modulators = region.Modulators;
             this.velocity = effectiveVelocity;
             this.key = effectiveKey;
+            velocityAttenuationCb = VelocityAttenuation(region.VelocityTrackingPercent, effectiveVelocity);
 
             // base (generator) values; the SF2 modulators add to these. The
             // velocity->attenuation and velocity->filter default modulators
@@ -302,15 +303,30 @@ namespace NAudio.Sampler
         private void UpdateModulation(MidiChannelState channel)
         {
             Array.Clear(modulation, 0, modulation.Length);
-            modulators.Accumulate(channel, velocity, key, modulation);
+            modulators?.Accumulate(channel, velocity, key, modulation);
 
             // attenuation only attenuates: clamp so a modulator can't push the
-            // voice above unity gain
-            double attenuation = baseAttenuationCb + modulation[(int)GeneratorEnum.InitialAttenuation];
+            // voice above unity gain. velocityAttenuationCb is the SFZ velocity
+            // tracking; for SoundFont it is 0 (velocity drives the modulator instead).
+            double attenuation = baseAttenuationCb + velocityAttenuationCb
+                + modulation[(int)GeneratorEnum.InitialAttenuation];
             if (attenuation < 0.0) attenuation = 0.0;
             staticGain = (float)SynthMath.AttenuationCentibelsToGain(attenuation);
 
             SetPan(basePan + modulation[(int)GeneratorEnum.Pan]);
+        }
+
+        /// <summary>
+        /// Velocity-to-amplitude attenuation in centibels for an SFZ
+        /// <c>amp_veltrack</c> percentage: 0 at full velocity, increasing as
+        /// velocity drops (the same ~40·log10 law SoundFont's velocity→attenuation
+        /// default modulator uses). Returns 0 when tracking is disabled.
+        /// </summary>
+        private static double VelocityAttenuation(float percent, int velocity)
+        {
+            if (percent == 0f) return 0.0;
+            int v = velocity < 1 ? 1 : velocity;
+            return 4.0 * percent * Math.Log10(127.0 / v);
         }
 
         private static float SendGain(double tenthsOfPercent)

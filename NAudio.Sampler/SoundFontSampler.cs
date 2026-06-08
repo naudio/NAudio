@@ -35,8 +35,8 @@ namespace NAudio.Sampler
         // preset lookup keyed by (bank<<16 | program); regions resolved lazily
         private readonly Dictionary<int, IReadOnlyList<SoundFontRegion>> regionCache = new();
 
-        // resolved (default + file) modulator set per region, built on first use
-        private readonly Dictionary<SoundFontRegion, ModulatorSet> modulatorCache = new();
+        // neutral region (sample + generators + modulators) per SF2 region, built on first use
+        private readonly Dictionary<SoundFontRegion, SamplerRegion> samplerRegionCache = new();
 
         private long startOrder;
         private float masterGain = 1f;
@@ -60,7 +60,7 @@ namespace NAudio.Sampler
 
             voices = new SamplerVoice[maxVoices];
             for (int i = 0; i < voices.Length; i++)
-                voices[i] = new SamplerVoice(samplePool, sampleRate);
+                voices[i] = new SamplerVoice(sampleRate);
 
             channels = new MidiChannelState[16];
             for (int i = 0; i < channels.Length; i++)
@@ -173,16 +173,41 @@ namespace NAudio.Sampler
                 if (exclusiveClass != 0) ChokeExclusiveClass(exclusiveClass, channel);
 
                 var voice = AcquireVoice();
-                voice.Start(region, GetModulators(region), state, channel, note, velocity, startOrder++);
+                voice.Start(GetSamplerRegion(region), state, channel, note, velocity, startOrder++);
             }
         }
 
-        private ModulatorSet GetModulators(SoundFontRegion region)
+        // projects a resolved SoundFont region onto the format-neutral region the
+        // voice plays: the shared sample pool sliced by the sample header, the
+        // generators as-is, and the combined (default + file) modulator list
+        private SamplerRegion GetSamplerRegion(SoundFontRegion region)
         {
-            if (modulatorCache.TryGetValue(region, out var set)) return set;
-            set = ModulatorSet.Build(region);
-            modulatorCache[region] = set;
-            return set;
+            if (samplerRegionCache.TryGetValue(region, out var samplerRegion)) return samplerRegion;
+
+            var sh = region.Sample;
+            samplerRegion = new SamplerRegion
+            {
+                Sample = new SampleData
+                {
+                    Data = samplePool,
+                    Start = (int)sh.Start,
+                    End = (int)sh.End,
+                    LoopStart = (int)sh.StartLoop,
+                    LoopEnd = (int)sh.EndLoop,
+                    SampleRate = (int)sh.SampleRate,
+                    RootKey = sh.OriginalPitch,
+                    PitchCorrectionCents = sh.PitchCorrection
+                },
+                Generators = region.Generators,
+                Modulators = ModulatorSet.Build(region),
+                VelocityTrackingPercent = 0f, // SF2 velocity is driven by the modulator list
+                LoKey = region.LowKey,
+                HiKey = region.HighKey,
+                LoVelocity = region.LowVelocity,
+                HiVelocity = region.HighVelocity
+            };
+            samplerRegionCache[region] = samplerRegion;
+            return samplerRegion;
         }
 
         /// <summary>

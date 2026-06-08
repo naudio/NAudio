@@ -17,7 +17,7 @@ namespace NAudioWpfDemo.LiveSamplerDemo
     /// device and/or the on-screen keyboard. Incoming events are fed to a
     /// <see cref="SamplerEngine"/> through a <see cref="LiveMidiInstrument"/> (which
     /// marshals them onto the audio thread) and rendered straight to the speakers
-    /// via <see cref="WaveOut"/>.
+    /// via <see cref="WasapiPlayer"/>.
     /// </summary>
     class LiveSamplerDemoViewModel : ViewModelBase, IDisposable
     {
@@ -153,8 +153,11 @@ namespace NAudioWpfDemo.LiveSamplerDemo
                 sampler.MasterGain = (float)masterVolume;
                 instrument = new LiveMidiInstrument(sampler);
 
-                waveOut = new WaveOut();
-                waveOut.Init(instrument);
+                // WasapiPlayer (shared mode, low latency where the device supports
+                // IAudioClient3) is the modern playback path; it auto-converts the
+                // sampler's 44.1 kHz float stereo to the device mix format
+                waveOut = new WasapiPlayerBuilder().WithLowLatency().Build();
+                waveOut.Init(instrument.ToWaveProvider());
                 waveOut.Play();
 
                 if (selectedDevice != null)

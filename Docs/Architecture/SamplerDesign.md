@@ -237,8 +237,10 @@ None of this exists anywhere in NAudio today; it is the heart of the feature.
 
 ### 8.1 Live MIDI player
 `WinRTMidiIn` (the modern `Windows.Devices.Midi` backend, from `NAudio.Wasapi`) →
-sampler engine → `WaveOut`. Load an SF2 or SFZ, pick a MIDI input device, play
-from an attached keyboard. Subjective-quality and latency evaluation tool.
+sampler engine → `WasapiPlayer` (the modern WASAPI playback path, low-latency
+where the device supports `IAudioClient3`). Load an SF2 or SFZ, pick a MIDI input
+device, play from an attached keyboard. Subjective-quality and latency
+evaluation tool.
 **DONE.** The reusable bridge is `NAudio.Sampler.LiveMidiInstrument`: it wraps a
 `SamplerEngine` as an `ISampleProvider` and exposes a thread-safe `Send`
 (plus `NoteOn`/`NoteOff`) that queues events lock-free and drains them on the

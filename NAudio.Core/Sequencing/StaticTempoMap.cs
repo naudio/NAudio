@@ -9,9 +9,9 @@ namespace NAudio.Sequencing
     /// map (a MIDI file, an edited DAW project). Lookups are O(log n) over the segment list.
     /// </summary>
     /// <remarks>
-    /// Continuous tempo ramps (accelerando / ritardando) are not yet supported. The segment record
-    /// reserves a <see cref="TempoChangeKind"/> field so they can be added later without breaking the API.
-    /// Real-world MIDI files almost always represent ramps as many small stepped changes anyway.
+    /// Only stepped tempo changes are supported in v1. Real-world MIDI files almost always represent
+    /// continuous ramps (accelerando / ritardando) as many small stepped changes, which this handles
+    /// directly. First-class linear ramps can be added later as a non-breaking extension.
     /// </remarks>
     public sealed class StaticTempoMap : ITempoMap
     {
@@ -101,15 +101,6 @@ namespace NAudio.Sequencing
                 else hi = mid - 1;
             }
             return segments[lo];
-        }
-
-        /// <summary>The kind of tempo change at a segment boundary. Only <see cref="Step"/> is implemented today.</summary>
-        public enum TempoChangeKind
-        {
-            /// <summary>An instant tempo change at the segment boundary.</summary>
-            Step = 0,
-            /// <summary>A linear BPM ramp from this segment's tempo to the next segment's tempo. Not yet implemented.</summary>
-            LinearBpm = 1,
         }
 
         private readonly struct Segment

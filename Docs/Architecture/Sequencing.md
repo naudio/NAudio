@@ -64,9 +64,7 @@ Internally everything is stored as `long` ticks at a single canonical PPQN (prop
 
 ### 4. Tempo ramps: design-only, not implemented
 
-The `ITempoMap` API carries a "segment kind" enum (`Step`, future `LinearBpm`) from the start so continuous ramps can be added later without breaking the public API. The first cut implements only stepped tempo changes. Real-world ramps in MIDI files are almost always faked as many small step changes, which the first cut handles fine.
-
-When `LinearBpm` lands, the tick ↔ seconds conversion for a ramp segment uses the closed-form integral; design notes belong with that future PR, not this one.
+Only stepped tempo changes are supported in v1. Real-world ramps in MIDI files are almost always represented as many small step changes, which `StaticTempoMap` handles directly. First-class linear ramps (with the closed-form tick ↔ seconds integral they'd need) can be added later as a non-breaking extension; design notes belong with that future PR, not this one.
 
 ### 5. Two `ITempoMap` implementations
 

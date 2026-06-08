@@ -47,7 +47,12 @@ namespace NAudio.SoundFont
                 var presetKeyRange = GetRange(presetZone, GeneratorEnum.KeyRange, globalPreset);
                 var presetVelRange = GetRange(presetZone, GeneratorEnum.VelocityRange, globalPreset);
 
-                ResolveInstrument(instrument, presetOffsets, presetKeyRange, presetVelRange, regions);
+                // preset-level modulators: global zone first, then this zone, so a
+                // local modulator supersedes an identically-routed global one (§9.5)
+                var presetModulators = CombineModulators(globalPreset, presetZone);
+
+                ResolveInstrument(instrument, presetOffsets, presetKeyRange, presetVelRange,
+                    presetModulators, regions);
             }
 
             return regions;
@@ -55,7 +60,7 @@ namespace NAudio.SoundFont
 
         private static void ResolveInstrument(Instrument instrument,
             SoundFontGenerators presetOffsets, Range presetKeyRange, Range presetVelRange,
-            List<SoundFontRegion> regions)
+            IReadOnlyList<Modulator> presetModulators, List<SoundFontRegion> regions)
         {
             var globalInstrument = TryGetGlobalZone(instrument.Zones, GeneratorEnum.SampleID);
 
@@ -79,10 +84,35 @@ namespace NAudio.SoundFont
 
                 if (keyRange.IsEmpty || velRange.IsEmpty) continue;
 
+                var instrumentModulators = CombineModulators(globalInstrument, instrumentZone);
+
                 regions.Add(new SoundFontRegion(sample, generators,
                     (byte)keyRange.Low, (byte)keyRange.High,
-                    (byte)velRange.Low, (byte)velRange.High));
+                    (byte)velRange.Low, (byte)velRange.High,
+                    instrumentModulators, presetModulators));
             }
+        }
+
+        /// <summary>
+        /// Concatenates a global zone's modulators (if any) and a local zone's,
+        /// global first, for the §9.5 combination the synthesiser performs (later
+        /// entries supersede earlier ones with identical routing). Returns null
+        /// when neither zone has modulators, so the region keeps its empty default.
+        /// </summary>
+        private static IReadOnlyList<Modulator> CombineModulators(Zone globalZone, Zone localZone)
+        {
+            var global = globalZone?.Modulators;
+            var local = localZone?.Modulators;
+            bool hasGlobal = global != null && global.Length > 0;
+            bool hasLocal = local != null && local.Length > 0;
+            if (!hasGlobal && !hasLocal) return null;
+            if (!hasGlobal) return local;
+            if (!hasLocal) return global;
+
+            var combined = new Modulator[global.Length + local.Length];
+            global.CopyTo(combined, 0);
+            local.CopyTo(combined, global.Length);
+            return combined;
         }
 
         private static Instrument FindInstrument(Zone zone)

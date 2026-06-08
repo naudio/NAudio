@@ -67,8 +67,14 @@ namespace NAudio.SoundFont
     /// </summary>
     public class ModulatorType
     {
-        internal ModulatorType(ushort raw)
+        /// <summary>
+        /// Decodes a 16-bit SoundFont modulator source enumeration. Public so the
+        /// synthesiser can build the implicit default modulators (SoundFont 2.04
+        /// §8.4) and so callers can construct modulator routings programmatically.
+        /// </summary>
+        public ModulatorType(ushort raw)
         {
+            RawValue = raw;
             Polarity = (raw & 0x0200) == 0x0200;
             Direction = (raw & 0x0100) == 0x0100;
             IsMidiContinuousController = (raw & 0x0080) == 0x0080;
@@ -76,6 +82,12 @@ namespace NAudio.SoundFont
             ControllerSource = (ControllerSourceEnum)(raw & 0x007F);
             MidiContinuousControllerNumber = (ushort)(raw & 0x007F);
         }
+
+        /// <summary>
+        /// The raw 16-bit source enumeration this type was decoded from. Used to
+        /// test two modulators for identity (SoundFont 2.04 §9.5).
+        /// </summary>
+        public ushort RawValue { get; }
 
         /// <summary>
         /// Polarity: false = unipolar (0..1), true = bipolar (-1..1).

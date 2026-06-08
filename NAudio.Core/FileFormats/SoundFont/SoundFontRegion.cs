@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace NAudio.SoundFont
 {
     /// <summary>
@@ -12,8 +15,12 @@ namespace NAudio.SoundFont
     /// </summary>
     public sealed class SoundFontRegion
     {
+        private static readonly Modulator[] NoModulators = Array.Empty<Modulator>();
+
         internal SoundFontRegion(SampleHeader sample, SoundFontGenerators generators,
-            byte lowKey, byte highKey, byte lowVelocity, byte highVelocity)
+            byte lowKey, byte highKey, byte lowVelocity, byte highVelocity,
+            IReadOnlyList<Modulator> instrumentModulators = null,
+            IReadOnlyList<Modulator> presetModulators = null)
         {
             Sample = sample;
             Generators = generators;
@@ -21,6 +28,8 @@ namespace NAudio.SoundFont
             HighKey = highKey;
             LowVelocity = lowVelocity;
             HighVelocity = highVelocity;
+            InstrumentModulators = instrumentModulators ?? NoModulators;
+            PresetModulators = presetModulators ?? NoModulators;
         }
 
         /// <summary>The sample this region plays.</summary>
@@ -28,6 +37,25 @@ namespace NAudio.SoundFont
 
         /// <summary>The accumulated generator values that apply to this region.</summary>
         public SoundFontGenerators Generators { get; }
+
+        /// <summary>
+        /// The instrument-level modulators that apply to this region (the global
+        /// instrument zone's modulators followed by the local zone's), in the
+        /// order they should be combined — later entries supersede earlier ones
+        /// with identical routing (SoundFont 2.04 §9.5). These are <em>absolute</em>
+        /// modulators: they replace the implicit default modulators of the same
+        /// routing. Modulator <em>resolution</em> (merging with the defaults and
+        /// evaluating against live controllers) is the synthesiser's job.
+        /// </summary>
+        public IReadOnlyList<Modulator> InstrumentModulators { get; }
+
+        /// <summary>
+        /// The preset-level modulators that apply to this region (global preset
+        /// zone followed by local), ordered for §9.5 combination. These are
+        /// <em>additive</em>: their effect is summed on top of the instrument-level
+        /// result rather than replacing it.
+        /// </summary>
+        public IReadOnlyList<Modulator> PresetModulators { get; }
 
         /// <summary>Lowest MIDI key (inclusive) this region responds to.</summary>
         public byte LowKey { get; }

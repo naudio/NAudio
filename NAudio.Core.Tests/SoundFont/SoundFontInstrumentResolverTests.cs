@@ -113,6 +113,33 @@ namespace NAudio.Core.Tests.SoundFont
             Assert.That(gens.SampleModes, Is.EqualTo(SampleMode.LoopContinuously));
         }
 
+        [Test]
+        public void RegionCarriesInstrumentModulators()
+        {
+            // the rich font puts a CC1 -> filter cutoff modulator (amount 1200) on
+            // the first instrument zone; the resolver should surface it on the region
+            var sf = LoadRich();
+            var region = sf.Instruments
+                .SelectMany(i => sf.Presets) // any preset whose region uses that instrument
+                .SelectMany(p => p.ResolveRegions())
+                .First(r => r.InstrumentModulators.Count > 0);
+
+            var modulator = region.InstrumentModulators
+                .First(m => m.SourceModulationData.IsMidiContinuousController);
+            Assert.That(modulator.SourceModulationData.MidiContinuousControllerNumber, Is.EqualTo(1));
+            Assert.That(modulator.DestinationGenerator, Is.EqualTo(GeneratorEnum.InitialFilterCutoffFrequency));
+            Assert.That(modulator.Amount, Is.EqualTo(1200));
+        }
+
+        [Test]
+        public void RegionWithoutFileModulatorsHasEmptyModulatorLists()
+        {
+            var sf = LoadCustom(instrumentPan: 0, presetPan: 0);
+            var region = sf.Presets[0].ResolveRegions()[0];
+            Assert.That(region.InstrumentModulators, Is.Empty);
+            Assert.That(region.PresetModulators, Is.Empty);
+        }
+
         private static NAudio.SoundFont.SoundFont LoadRich()
         {
             return new NAudio.SoundFont.SoundFont(

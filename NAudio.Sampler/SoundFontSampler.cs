@@ -32,6 +32,9 @@ namespace NAudio.Sampler
         // preset lookup keyed by (bank<<16 | program); regions resolved lazily
         private readonly Dictionary<int, IReadOnlyList<SoundFontRegion>> regionCache = new();
 
+        // resolved (default + file) modulator set per region, built on first use
+        private readonly Dictionary<SoundFontRegion, ModulatorSet> modulatorCache = new();
+
         private long startOrder;
         private float masterGain = 1f;
 
@@ -115,6 +118,9 @@ namespace NAudio.Sampler
                 case PitchWheelChangeEvent pitch:
                     channels[channel].PitchBend = pitch.Pitch;
                     break;
+                case ChannelAfterTouchEvent aftertouch:
+                    channels[channel].ChannelPressure = aftertouch.AfterTouchPressure;
+                    break;
                 case PatchChangeEvent patch:
                     channels[channel].Program = patch.Patch;
                     break;
@@ -142,8 +148,16 @@ namespace NAudio.Sampler
                 if (exclusiveClass != 0) ChokeExclusiveClass(exclusiveClass, channel);
 
                 var voice = AcquireVoice();
-                voice.Start(region, channel, note, velocity, startOrder++);
+                voice.Start(region, GetModulators(region), state, channel, note, velocity, startOrder++);
             }
+        }
+
+        private ModulatorSet GetModulators(SoundFontRegion region)
+        {
+            if (modulatorCache.TryGetValue(region, out var set)) return set;
+            set = ModulatorSet.Build(region);
+            modulatorCache[region] = set;
+            return set;
         }
 
         /// <summary>
@@ -194,8 +208,7 @@ namespace NAudio.Sampler
                 foreach (var v in voices)
                 {
                     if (!v.IsActive) continue;
-                    double bend = channels[v.Channel].PitchBendRatio;
-                    v.Mix(block, frames, bend);
+                    v.Mix(block, frames, channels[v.Channel]);
                 }
 
                 float g = masterGain;
@@ -214,14 +227,14 @@ namespace NAudio.Sampler
         private void ControlChange(int channel, MidiController controller, int value)
         {
             var state = channels[channel];
+
+            // store every controller so the modulator engine can read it as a
+            // source (CC1 mod wheel, CC7 volume, CC10 pan, CC11 expression,
+            // CC91/CC93 sends, etc.)
+            state.SetController((int)controller, value);
+
             switch (controller)
             {
-                case MidiController.MainVolume:
-                    state.Volume = value / 127f;
-                    break;
-                case MidiController.Expression:
-                    state.Expression = value / 127f;
-                    break;
                 case MidiController.Sustain:
                     bool down = value >= 64;
                     state.SustainPedal = down;

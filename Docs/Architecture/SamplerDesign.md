@@ -311,15 +311,27 @@ Sequenced cheapest-useful-first:
    advance per sample; the filter is retuned per block via the new
    state-preserving `BiQuadFilter.UpdateLowPassFilter` (added to `NAudio.Core`
    so it serves any modulated filter). Verified by render tests (vibrato,
-   tremolo, mod-env filter sweep). **Part B DEFERRED:** the SF2 modulator
-   *list* — file-defined modulators plus the remaining default modulators that
-   map MIDI controllers/velocity/key to generator destinations through the
-   linear/concave/convex/switch transform curves. This needs the resolver to
-   carry zone modulators into `SoundFontRegion` and a runtime modulator type
-   (the parser's `ModulatorType` ctor is `internal`). The single most important
-   default modulator, velocity→attenuation, is already approximated by the
-   provisional `v*v` gain curve in `SamplerVoice`; Part B replaces it with the
-   spec curve.
+   tremolo, mod-env filter sweep). **Part B DONE:** the SF2 modulator *list* —
+   the resolver now carries zone modulators onto `SoundFontRegion`
+   (`InstrumentModulators`/`PresetModulators`, global+local concatenated for the
+   §9.5 combination), the parser's `ModulatorType` ctor is public and exposes
+   `RawValue`, and `NAudio.Sampler` adds the engine: the implicit default
+   modulators (§8.4), file-defined modulators merged per §9.5 (local supersedes
+   global by identical routing; instrument modulators are absolute and replace
+   defaults, preset modulators are additive), the four source curves
+   (`SoundFontModulatorMath`, linear/concave/convex/switch with direction +
+   polarity) and the `Linear`/`AbsoluteValue` transforms. Modulators are
+   evaluated at control rate against live MIDI controllers (velocity, key,
+   CC1/7/10/11/91/93, channel pressure, pitch wheel) and summed per destination
+   onto the generator values for attenuation, filter cutoff, pan and the
+   pitch/filter/volume routings. The provisional `v*v` velocity curve is gone,
+   replaced by the §8.4.1 velocity→attenuation default modulator (whose concave
+   shape, by construction, reproduces the old near-square-law response).
+   **Deferred within Part B:** the pitch-wheel default modulator (§8.4.10) is
+   realised by the channel pitch-bend path rather than the modulator list (one
+   source of truth for bend); reverb/chorus send destinations are evaluated but
+   not yet rendered (await the §5 send-bus); poly-pressure and NRPN sources are
+   not yet tracked.
 5. **Effects send-bus** (reverb/chorus sends) reusing `NAudio.Effects`.
 6. **MIDI-file → `EventTimeline` ingestion** (closes the sequencer gap) →
    enables the offline render demo.

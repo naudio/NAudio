@@ -439,9 +439,9 @@ modulator transforms. Mark anything needing real hardware
   `xfout_*`), `rt_decay`, the filter/pitch EGs and the `amplfo_*`/`fillfo_*`/
   `pitchlfo_*` LFOs, `eq1/2/3_*`, and `effect1`/`effect2` sends. Maps onto the
   same modulation/region model the SF2 side already uses.
-- **SFZ Tier-1 finish** — mostly done (triggers, one-shot, directional `off_by`,
-  high/band-pass filters, stereo samples). Remaining (§11.1): FLAC/Ogg loading
-  via `NAudio.SoundFile`, and band-reject `fil_type`.
+- **SFZ Tier-1 finish** — done except FLAC/Ogg sample loading via
+  `NAudio.SoundFile` (§11.1); triggers, one-shot, directional `off_by`, all
+  `fil_type` shapes and stereo samples are in.
 - **Built-in algorithmic-reverb send default** — start by routing to the
   existing `ReverbEffect`/`FdnReverbEffect`; a sampler-tuned default is polish.
 
@@ -466,13 +466,13 @@ forgotten:
   feed audio through `InterpolatingSampleReader` (found via a reverb-send test
   that used a 4-frame one-shot). Normal-length and looped samples are
   unaffected; the reader's end/guard handling for tiny one-shots wants a look.
-- **SFZ Tier-1 gaps:** the remaining shortcuts are: only WAV loads (FLAC/Ogg
-  await `NAudio.SoundFile`, which needs a system libsndfile) and `fil_type`
-  band-reject leaves the filter open (low/high/band-pass are honoured). *Done in
-  the Tier-1 finish:* release/first/legato triggers, one-shot note-off,
-  directional `off_by` choke groups, high/band-pass filters, and **stereo
-  samples** (the voice runs a second interpolating reader over the right channel
-  in lockstep, with an independent per-channel filter, and pans as a balance).
+- **SFZ Tier-1 gaps:** the only remaining shortcut is sample loading — just WAV
+  for now (FLAC/Ogg await `NAudio.SoundFile`, which needs a system libsndfile).
+  *Done in the Tier-1 finish:* release/first/legato triggers, one-shot note-off,
+  directional `off_by` choke groups, all four `fil_type` shapes
+  (low/high/band-pass and band-reject), and **stereo samples** (the voice runs a
+  second interpolating reader over the right channel in lockstep, with an
+  independent per-channel filter, and pans as a balance).
 - **(Closed)** ~~Reverb/chorus sends evaluated but not rendered~~ — done in
   step 5 (the send-bus).
 

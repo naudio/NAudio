@@ -237,6 +237,23 @@ namespace NAudio.Dsp
             UpdateNormalisedCoefficients(1 + alpha, -2 * cosw0, 1 - alpha, alpha, 0, -alpha);
         }
 
+        /// <summary>
+        /// Retunes this filter as a notch (band-reject) without clearing its delay state, so it
+        /// can be modulated per block/sample without a click.
+        /// </summary>
+        /// <param name="sampleRate">Sample rate.</param>
+        /// <param name="centreFrequency">New centre frequency.</param>
+        /// <param name="q">New Q (quality factor).</param>
+        public void UpdateNotchFilter(float sampleRate, float centreFrequency, float q)
+        {
+            ValidateParameters(sampleRate, centreFrequency, nameof(centreFrequency), q, nameof(q));
+            var w0 = 2 * Math.PI * centreFrequency / sampleRate;
+            var cosw0 = Math.Cos(w0);
+            var alpha = Math.Sin(w0) / (2 * q);
+
+            UpdateNormalisedCoefficients(1 + alpha, -2 * cosw0, 1 - alpha, 1, -2 * cosw0, 1);
+        }
+
         // recompute coefficients only — preserve x1/x2/y1/y2 (state-preserving retune)
         private void UpdateNormalisedCoefficients(double aa0, double aa1, double aa2,
             double b0, double b1, double b2)

@@ -450,6 +450,7 @@ namespace NAudio.Sampler
         {
             SamplerFilterType.HighPass => BiQuadFilter.HighPassFilter(outputSampleRate, hz, filterQ),
             SamplerFilterType.BandPass => BiQuadFilter.BandPassFilterConstantPeakGain(outputSampleRate, hz, filterQ),
+            SamplerFilterType.BandReject => BiQuadFilter.NotchFilter(outputSampleRate, hz, filterQ),
             _ => BiQuadFilter.LowPassFilter(outputSampleRate, hz, filterQ)
         };
 
@@ -459,6 +460,7 @@ namespace NAudio.Sampler
             {
                 case SamplerFilterType.HighPass: f.UpdateHighPassFilter(outputSampleRate, hz, filterQ); break;
                 case SamplerFilterType.BandPass: f.UpdateBandPassFilter(outputSampleRate, hz, filterQ); break;
+                case SamplerFilterType.BandReject: f.UpdateNotchFilter(outputSampleRate, hz, filterQ); break;
                 default: f.UpdateLowPassFilter(outputSampleRate, hz, filterQ); break;
             }
         }

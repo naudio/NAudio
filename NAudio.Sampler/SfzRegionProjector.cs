@@ -89,7 +89,8 @@ namespace NAudio.Sampler
             {
                 case SfzFilterType.HighPass: return SamplerFilterType.HighPass;
                 case SfzFilterType.BandPass: return SamplerFilterType.BandPass;
-                default: return SamplerFilterType.LowPass; // low-pass; band-reject not yet supported
+                case SfzFilterType.BandReject: return SamplerFilterType.BandReject;
+                default: return SamplerFilterType.LowPass;
             }
         }
 
@@ -126,9 +127,8 @@ namespace NAudio.Sampler
             gen[GeneratorEnum.ReleaseVolumeEnvelope] = GeneratorUnits.ToTimecents(region.AmpegRelease);
             gen[GeneratorEnum.SustainVolumeEnvelope] = GeneratorUnits.SustainCentibels(region.AmpegSustain);
 
-            // filter cutoff/resonance (the voice applies the shape from FilterType);
-            // band-reject is not yet supported, so it leaves the filter open
-            if (region.HasCutoff && region.CutoffHz > 0 && region.FilterType != SfzFilterType.BandReject)
+            // filter cutoff/resonance (the voice applies the shape from FilterType)
+            if (region.HasCutoff && region.CutoffHz > 0)
             {
                 gen[GeneratorEnum.InitialFilterCutoffFrequency] =
                     GeneratorUnits.Clamp16(SynthMath.HertzToAbsoluteCents(region.CutoffHz));

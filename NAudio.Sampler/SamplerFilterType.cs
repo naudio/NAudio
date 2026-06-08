@@ -11,6 +11,8 @@ namespace NAudio.Sampler
         /// <summary>High-pass (SFZ <c>hpf_*</c>).</summary>
         HighPass,
         /// <summary>Band-pass (SFZ <c>bpf_*</c>).</summary>
-        BandPass
+        BandPass,
+        /// <summary>Band-reject / notch (SFZ <c>brf_*</c>).</summary>
+        BandReject
     }
 }

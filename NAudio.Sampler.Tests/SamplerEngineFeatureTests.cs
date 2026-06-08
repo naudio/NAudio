@@ -92,6 +92,47 @@ namespace NAudio.Sampler.Tests
             Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(1), "only the group-2 voice should remain");
         }
 
+        // a one-shot sine tone, so a notch at its frequency can be heard to remove it
+        private sealed class SineLoader : ISfzSampleLoader
+        {
+            private readonly double frequency;
+            private readonly int length;
+            public SineLoader(double frequency, int length) { this.frequency = frequency; this.length = length; }
+            public bool TryLoad(string path, out float[] left, out float[] right, out int sampleRate)
+            {
+                left = new float[length];
+                for (int i = 0; i < length; i++)
+                    left[i] = 0.5f * (float)Math.Sin(2 * Math.PI * frequency * i / SampleRate);
+                right = null;
+                sampleRate = SampleRate;
+                return true;
+            }
+        }
+
+        [Test]
+        public void BandRejectFilterRemovesItsCentreFrequency()
+        {
+            // a 441 Hz tone: a notch at 441 Hz removes it; a notch far away passes it
+            const double tone = 441.0;
+            float removed = SineSteadyPeak($"<region> sample=a.wav key=60 cutoff=441 fil_type=brf_2p", tone);
+            float passed = SineSteadyPeak($"<region> sample=a.wav key=60 cutoff=8000 fil_type=brf_2p", tone);
+
+            Assert.That(removed, Is.LessThan(0.1f), "the notch removes a tone at its centre");
+            Assert.That(passed, Is.GreaterThan(0.2f), "a notch elsewhere passes the tone");
+        }
+
+        private static float SineSteadyPeak(string sfz, double frequency)
+        {
+            var sampler = new SfzSampler(SfzParser.Parse(sfz), new SineLoader(frequency, SampleRate / 2), SampleRate, 8);
+            sampler.NoteOn(0, 60, 127);
+            var buffer = new float[2048 * 2];
+            sampler.Read(buffer); // let the filter settle
+            sampler.Read(buffer);
+            float peak = 0;
+            foreach (var s in buffer) peak = Math.Max(peak, Math.Abs(s));
+            return peak;
+        }
+
         [Test]
         public void HighPassFilterRemovesDc()
         {

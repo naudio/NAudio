@@ -96,6 +96,20 @@ namespace NAudio.Core.Tests.Dsp
         }
 
         [Test]
+        public void UpdateNotchFilterMatchesFreshFilterWhenStateIsZero()
+        {
+            var input = GenerateTestSignal(256);
+            var updated = BiQuadFilter.LowPassFilter(44100f, 1000f, 0.707f);
+            updated.ResetState();
+            updated.UpdateNotchFilter(44100f, 2000f, 1.0f);
+
+            var fresh = BiQuadFilter.NotchFilter(44100f, 2000f, 1.0f);
+
+            for (int i = 0; i < input.Length; i++)
+                Assert.That(updated.Transform(input[i]), Is.EqualTo(fresh.Transform(input[i])).Within(1e-6f));
+        }
+
+        [Test]
         public void BatchTransformMatchesSingleSampleTransform()
         {
             var input = GenerateTestSignal(1024);

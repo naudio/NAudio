@@ -1,4 +1,5 @@
 using System;
+using NAudio.Dsp;
 using NAudio.Sampler;
 using NAudio.Sfz;
 using NAudio.SoundFont;
@@ -150,6 +151,41 @@ namespace NAudio.Sampler.Tests
         {
             var r = ProjectFirst("<region> sample=a.wav key=60 loop_mode=loop_continuous", ConstantSample(0.5f));
             Assert.That(RenderPeak(r, 60, 127), Is.GreaterThan(0.1f));
+        }
+
+        [Test]
+        public void PitchLfoMapsToVibrato()
+        {
+            var g = ProjectFirst("<region> sample=a.wav pitchlfo_freq=5 pitchlfo_depth=50", ConstantSample()).Generators;
+            Assert.That(g[GeneratorEnum.VibratoLFOToPitch], Is.EqualTo(50));
+            Assert.That(g[GeneratorEnum.FrequencyVibratoLFO],
+                Is.EqualTo((short)Math.Round(SynthMath.HertzToAbsoluteCents(5))));
+        }
+
+        [Test]
+        public void AmpLfoMapsToModulationLfoVolume()
+        {
+            var g = ProjectFirst("<region> sample=a.wav amplfo_freq=4 amplfo_depth=6", ConstantSample()).Generators;
+            Assert.That(g[GeneratorEnum.ModulationLFOToVolume], Is.EqualTo(60)); // 6 dB -> 60 cB
+            Assert.That(g[GeneratorEnum.FrequencyModulationLFO],
+                Is.EqualTo((short)Math.Round(SynthMath.HertzToAbsoluteCents(4))));
+        }
+
+        [Test]
+        public void FilterEgMapsToModulationEnvelopeFilter()
+        {
+            var g = ProjectFirst("<region> sample=a.wav fileg_depth=1200 fileg_attack=0.1 fileg_sustain=50", ConstantSample()).Generators;
+            Assert.That(g[GeneratorEnum.ModulationEnvelopeToFilterCutoffFrequency], Is.EqualTo(1200));
+            Assert.That(g[GeneratorEnum.SustainModulationEnvelope], Is.EqualTo(500)); // 1000 - 10*50
+            Assert.That(g[GeneratorEnum.AttackModulationEnvelope],
+                Is.EqualTo((short)Math.Round(SynthMath.SecondsToTimecents(0.1))));
+        }
+
+        [Test]
+        public void PitchEgMapsToModulationEnvelopePitch()
+        {
+            var g = ProjectFirst("<region> sample=a.wav pitcheg_depth=200", ConstantSample()).Generators;
+            Assert.That(g[GeneratorEnum.ModulationEnvelopeToPitch], Is.EqualTo(200));
         }
 
         [Test]

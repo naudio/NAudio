@@ -134,6 +134,27 @@ namespace NAudio.Sampler.Tests
         }
 
         [Test]
+        public void AmpLfoModulatesAmplitude()
+        {
+            // a constant sample with a deep amp LFO (tremolo) -> the output level
+            // swings over the LFO cycle rather than staying flat
+            var sampler = Build("<region> sample=a.wav key=60 loop_mode=loop_continuous amplfo_freq=8 amplfo_depth=12");
+            sampler.NoteOn(0, 60, 127);
+
+            var buffer = new float[8820 * 2]; // ~200 ms, > one 8 Hz cycle
+            sampler.Read(buffer);
+
+            float min = float.MaxValue, max = 0f;
+            for (int f = 1000; f < 8820; f++) // skip the attack transient
+            {
+                float a = Math.Abs(buffer[f * 2]);
+                if (a < min) min = a;
+                if (a > max) max = a;
+            }
+            Assert.That(max, Is.GreaterThan(min * 2f), "tremolo should swing the level");
+        }
+
+        [Test]
         public void HighPassFilterRemovesDc()
         {
             // a constant (DC) sample through a high-pass settles to ~0; through a

@@ -432,16 +432,16 @@ modulator transforms. Mark anything needing real hardware
   serve as the math reference (it is fixed-ratio/block-based, so it can't be
   dropped into the per-sample varying-rate reader directly).
 - **Advanced SFZ (flex EGs, `<curve>`, full ARIA set)** — Tier 3, demand-driven.
-- **SFZ Tier 2** — **note-on selection and crossfades done**: keyswitches
-  (`sw_lokey`/`sw_hikey`/`sw_last`/`sw_default`), round-robin (`seq_length`/
-  `seq_position`), random layers (`lorand`/`hirand`), CC gating (`loccN`/`hiccN`),
-  and key/velocity crossfades (`xfin_*`/`xfout_*` with `xf_keycurve`/
-  `xf_velcurve`, linear or equal-power) — all gated/scaled in the shared engine
-  (a zero-gain crossfade layer doesn't spawn a voice). **Remaining:**
-  `on_loccN`/`on_hiccN` (CC-triggered notes), `rt_decay`, the filter/pitch EGs
-  and `amplfo_*`/`fillfo_*`/`pitchlfo_*` LFOs, `eq1/2/3_*`, and `effect1`/
-  `effect2` sends — these map onto the same modulation/region model the SF2 side
-  already uses.
+- **SFZ Tier 2** — **selection, crossfades and per-region EGs/LFOs done**:
+  keyswitches, round-robin, random layers, CC gating, key/velocity crossfades,
+  and the modulation EGs/LFOs (`pitchlfo_*` → vibrato, `amplfo_*`/`fillfo_*` →
+  the mod LFO, `fileg_*`/`pitcheg_*` → the mod envelope) projected onto the
+  voice's existing modulation slots — no voice change. The mod LFO and mod
+  envelope are each one source, so a region using both amp+filter LFOs (or both
+  filter+pitch EGs) with different rates/shapes shares the rate/shape (amp LFO /
+  filter EG wins) with independent depths — a dedicated source per SFZ EG/LFO is
+  the upgrade if a bank needs it. **Remaining:** `on_loccN`/`on_hiccN`
+  (CC-triggered notes), `rt_decay`, `eq1/2/3_*`, and `effect1`/`effect2` sends.
 - **SFZ Tier-1 finish** — done except FLAC/Ogg sample loading via
   `NAudio.SoundFile` (§11.1); triggers, one-shot, directional `off_by`, all
   `fil_type` shapes and stereo samples are in.

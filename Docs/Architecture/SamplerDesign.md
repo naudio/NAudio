@@ -375,6 +375,30 @@ modulator transforms. Mark anything needing real hardware
 - **Built-in algorithmic-reverb send default** — start by routing to the
   existing `ReverbEffect`/`FdnReverbEffect`; a sampler-tuned default is polish.
 
+### 11.1 Carried-forward implementation gaps
+
+Small, deliberate shortcuts taken in shipped steps, tracked here so they are not
+forgotten:
+
+- **Pitch-wheel modulation (§8.4.10)** is realised by the channel pitch-bend
+  path (`MidiChannelState.PitchBendRatio`), *not* the modulator list. Two
+  consequences: a *file-defined* modulator whose destination is initial pitch is
+  ignored, and pitch-bend range is the channel default rather than driven by the
+  pitch-wheel-sensitivity RPN as a modulator amount source. Revisit if a bank
+  relies on a custom pitch modulator.
+- **Poly (per-note) pressure** as a modulator source is not tracked — it
+  evaluates as 0. Channel pressure, velocity, key, CC and pitch-wheel sources
+  all work. **NRPN** is likewise not yet decoded.
+- **Modulator destinations outside `GeneratorEnum`** (e.g. the SF2 "initial
+  pitch" virtual destination) are ignored by the engine — only real generator
+  destinations are summed.
+- **Very short one-shot samples** (a handful of frames, non-looped) can fail to
+  feed audio through `InterpolatingSampleReader` (found via a reverb-send test
+  that used a 4-frame one-shot). Normal-length and looped samples are
+  unaffected; the reader's end/guard handling for tiny one-shots wants a look.
+- **(Closed)** ~~Reverb/chorus sends evaluated but not rendered~~ — done in
+  step 5 (the send-bus).
+
 ## 12. Non-goals for NAudio 3
 
 - A full DAW / arrangement layer — the sequencing core schedules; the sampler

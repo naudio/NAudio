@@ -179,6 +179,59 @@ namespace NAudio.Sampler.Tests
                 "the velocity->attenuation default modulator should make 127 much louder than 40");
         }
 
+        [Test]
+        public void ReverbSendAddsWetSignalToTheOutput()
+        {
+            // a sustained looped note: with a full reverb send the shared reverb's
+            // wet return adds energy on top of the dry mix
+            float withSend = TotalEnergy(reverbSend: 1000);
+            float noSend = TotalEnergy(reverbSend: 0);
+
+            Assert.That(noSend, Is.GreaterThan(0f), "the dry voice should produce sound");
+            Assert.That(withSend, Is.GreaterThan(noSend * 1.05f),
+                "a full reverb send should add audible wet energy");
+        }
+
+        [Test]
+        public void ReverbTailContinuesAfterTheNoteIsReleased()
+        {
+            var sampler = new SoundFontSampler(MakeLoopedReverbFont(reverbSend: 1000), SampleRate);
+            sampler.NoteOn(0, 60, 127);
+            var warm = new float[256 * 2];
+            sampler.Read(warm);          // let the reverb build up
+            sampler.AllSoundOff();        // choke the dry voice with a short fade
+
+            // render past the choke fade; remaining energy is the reverb tail
+            var tail = new float[8192 * 2];
+            sampler.Read(tail);
+            float late = 0;
+            for (int i = tail.Length / 2; i < tail.Length; i++) late += Math.Abs(tail[i]);
+            Assert.That(late, Is.GreaterThan(1e-3f), "the reverb tail should outlast the note");
+        }
+
+        private static NAudio.SoundFont.SoundFont MakeLoopedReverbFont(int reverbSend)
+        {
+            var data = new byte[8];
+            for (int i = 0; i < 4; i++) { data[i * 2] = 0x00; data[i * 2 + 1] = 0x40; } // 0.5 fs
+            var igen = SoundFontTestBuilder.Chunk("igen", SoundFontTestBuilder.Concat(
+                SoundFontTestBuilder.Gen((ushort)GeneratorEnum.ReverbEffectsSend, (ushort)reverbSend),
+                SoundFontTestBuilder.Gen(54, 1),   // loop continuously
+                SoundFontTestBuilder.Gen(58, 60),  // root key
+                SoundFontTestBuilder.Gen(53, 0)));  // sampleID
+            return SoundFontTestBuilder.BuildSingleRegion(data, igen, 0, 4, 0, 4, SampleRate, 60);
+        }
+
+        private static float TotalEnergy(int reverbSend)
+        {
+            var sampler = new SoundFontSampler(MakeLoopedReverbFont(reverbSend), SampleRate);
+            sampler.NoteOn(0, 60, 127);
+            var buffer = new float[4096 * 2];
+            sampler.Read(buffer);
+            float energy = 0;
+            foreach (var s in buffer) energy += Math.Abs(s);
+            return energy;
+        }
+
         private static float RenderPeak(int velocity)
         {
             // constant-amplitude looped instrument at root key, instant attack

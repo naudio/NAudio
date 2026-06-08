@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using NAudio.Effects;
 using NAudio.Midi;
 using NAudio.SoundFont;
 using NAudio.Wave;
@@ -28,6 +29,8 @@ namespace NAudio.Sampler
         private readonly SamplerVoice[] voices;
         private readonly MidiChannelState[] channels;
         private readonly float[] mixBuffer;
+        private readonly SendBus reverbBus;
+        private readonly SendBus chorusBus;
 
         // preset lookup keyed by (bank<<16 | program); regions resolved lazily
         private readonly Dictionary<int, IReadOnlyList<SoundFontRegion>> regionCache = new();
@@ -67,10 +70,32 @@ namespace NAudio.Sampler
 
             mixBuffer = new float[MaxFramesPerBlock * 2];
             WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, 2);
+
+            // shared reverb/chorus send buses: SF2 reverbEffectsSend/chorusEffectsSend
+            // (and the CC91/CC93 default modulators) feed these per voice
+            Reverb = new ReverbEffect();
+            Chorus = new ChorusEffect();
+            reverbBus = new SendBus(Reverb);
+            chorusBus = new SendBus(Chorus);
+            reverbBus.Configure(WaveFormat, MaxFramesPerBlock);
+            chorusBus.Configure(WaveFormat, MaxFramesPerBlock);
         }
 
         /// <summary>The output format: 32-bit float stereo at the configured sample rate.</summary>
         public WaveFormat WaveFormat { get; }
+
+        /// <summary>
+        /// The shared reverb effect that voices feed through their reverb send
+        /// (SF2 <c>reverbEffectsSend</c> / CC91). Tweak its parameters or
+        /// <see cref="AudioEffect.Bypass"/> it to taste.
+        /// </summary>
+        public ReverbEffect Reverb { get; }
+
+        /// <summary>
+        /// The shared chorus effect that voices feed through their chorus send
+        /// (SF2 <c>chorusEffectsSend</c> / CC93).
+        /// </summary>
+        public ChorusEffect Chorus { get; }
 
         /// <summary>Master output gain applied after mixing all voices. Default 1.</summary>
         public float MasterGain
@@ -204,12 +229,18 @@ namespace NAudio.Sampler
                 int frames = Math.Min(framesRemaining, MaxFramesPerBlock);
                 var block = mixBuffer.AsSpan(0, frames * 2);
                 block.Clear();
+                var reverbSend = reverbBus.PrepareSend(frames);
+                var chorusSend = chorusBus.PrepareSend(frames);
 
                 foreach (var v in voices)
                 {
                     if (!v.IsActive) continue;
-                    v.Mix(block, frames, channels[v.Channel]);
+                    v.Mix(block, reverbSend, chorusSend, frames, channels[v.Channel]);
                 }
+
+                // run the shared effects and return the wet signal into the mix
+                reverbBus.ProcessReturn(block, frames);
+                chorusBus.ProcessReturn(block, frames);
 
                 float g = masterGain;
                 for (int i = 0; i < frames * 2; i++)

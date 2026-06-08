@@ -52,6 +52,8 @@ namespace NAudio.Sampler
         private double baseFilterCents;     // initial filter cutoff (absolute cents)
         private double baseAttenuationCb;   // initial attenuation (centibels)
         private double basePan;             // pan generator (0.1% units, ±500)
+        private double baseReverbSend;      // reverb send (0.1% units, 0..1000)
+        private double baseChorusSend;      // chorus send (0.1% units, 0..1000)
         private float filterQ;
         private bool filterActive;
 
@@ -206,9 +208,13 @@ namespace NAudio.Sampler
         /// <summary>
         /// Mixes this voice into an interleaved stereo buffer for a block of
         /// frames, reading the channel's live controllers (pitch-bend and the SF2
-        /// modulator sources) at control rate.
+        /// modulator sources) at control rate. A portion of the voice's signal,
+        /// set by the reverb/chorus send levels, is also added to the
+        /// <paramref name="reverbSend"/> and <paramref name="chorusSend"/> buffers
+        /// (the same length as <paramref name="buffer"/>).
         /// </summary>
-        public void Mix(Span<float> buffer, int frames, MidiChannelState channel)
+        public void Mix(Span<float> buffer, Span<float> reverbSend, Span<float> chorusSend,
+            int frames, MidiChannelState channel)
         {
             if (!IsActive) return;
 
@@ -222,6 +228,10 @@ namespace NAudio.Sampler
                 // re-evaluate the SF2 modulators and recompute modulation-derived
                 // parameters at control rate
                 UpdateModulation(channel);
+
+                // reverb/chorus send levels: 0.1% units (0..1000) -> 0..1 gain
+                float reverbSendGain = SendGain(baseReverbSend + modulation[(int)GeneratorEnum.ReverbEffectsSend]);
+                float chorusSendGain = SendGain(baseChorusSend + modulation[(int)GeneratorEnum.ChorusEffectsSend]);
 
                 double vibToPitch = baseVibLfoToPitch + modulation[(int)GeneratorEnum.VibratoLFOToPitch];
                 double modLfoPitch = baseModLfoToPitch + modulation[(int)GeneratorEnum.ModulationLFOToPitch];
@@ -254,8 +264,20 @@ namespace NAudio.Sampler
                     if (filterActive) s = filter.Transform(s);
 
                     float value = s * ampEnvelope.Process() * staticGain * volGain;
-                    buffer[pos * 2] += value * leftGain;
-                    buffer[pos * 2 + 1] += value * rightGain;
+                    float left = value * leftGain;
+                    float right = value * rightGain;
+                    buffer[pos * 2] += left;
+                    buffer[pos * 2 + 1] += right;
+                    if (reverbSendGain > 0f)
+                    {
+                        reverbSend[pos * 2] += left * reverbSendGain;
+                        reverbSend[pos * 2 + 1] += right * reverbSendGain;
+                    }
+                    if (chorusSendGain > 0f)
+                    {
+                        chorusSend[pos * 2] += left * chorusSendGain;
+                        chorusSend[pos * 2 + 1] += right * chorusSendGain;
+                    }
                     pos++;
 
                     // advance the modulation sources every sample (keeps phase accurate)
@@ -289,6 +311,12 @@ namespace NAudio.Sampler
             staticGain = (float)SynthMath.AttenuationCentibelsToGain(attenuation);
 
             SetPan(basePan + modulation[(int)GeneratorEnum.Pan]);
+        }
+
+        private static float SendGain(double tenthsOfPercent)
+        {
+            float g = (float)(tenthsOfPercent / 1000.0);
+            return g < 0f ? 0f : g > 1f ? 1f : g;
         }
 
         private void SetPan(double panValue)
@@ -346,6 +374,8 @@ namespace NAudio.Sampler
             baseModEnvToFilter = gen[GeneratorEnum.ModulationEnvelopeToFilterCutoffFrequency];
             baseModLfoToVolume = gen[GeneratorEnum.ModulationLFOToVolume];
             baseFilterCents = gen[GeneratorEnum.InitialFilterCutoffFrequency];
+            baseReverbSend = gen[GeneratorEnum.ReverbEffectsSend];
+            baseChorusSend = gen[GeneratorEnum.ChorusEffectsSend];
         }
 
         private void ConfigureFilter(SoundFontGenerators gen)

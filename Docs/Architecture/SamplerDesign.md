@@ -333,6 +333,14 @@ Sequenced cheapest-useful-first:
    not yet rendered (await the §5 send-bus); poly-pressure and NRPN sources are
    not yet tracked.
 5. **Effects send-bus** (reverb/chorus sends) reusing `NAudio.Effects`.
+   **DONE.** New generic `NAudio.Effects.SendBus` (shared effect with a send
+   buffer and wet return); `SoundFontSampler` owns one reverb (`ReverbEffect`)
+   and one chorus (`ChorusEffect`) bus, each voice mixes a portion of its panned
+   signal into them per the SF2 `reverbEffectsSend`/`chorusEffectsSend`
+   generators (and the CC91/CC93 default modulators, now consumed), and the wet
+   return is summed into the mix each block so tails outlast the notes. The
+   effects are exposed (`SoundFontSampler.Reverb`/`Chorus`) for tuning or bypass.
+   Verified by `SendBus` unit tests and reverb-send/tail render tests.
 6. **MIDI-file → `EventTimeline` ingestion** (closes the sequencer gap) →
    enables the offline render demo.
 7. **SFZ parser + mapping** (Tier 1, then Tier 2).

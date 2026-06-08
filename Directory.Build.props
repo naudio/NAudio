@@ -38,6 +38,16 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
 
+    <!-- SBOM generation. Microsoft.Sbom.Targets (the MSBuild wrapper over
+         microsoft/sbom-tool) embeds an SPDX 2.2 manifest inside each packed
+         .nupkg under /_manifest/spdx_2.2/, alongside its SHA-256 — so every
+         package carries a Software Bill of Materials to whoever downloads it
+         from NuGet, no separate artifact to chase. Gated to Release so local
+         Debug builds/packs stay fast; CI and the release workflow both build
+         Release, so published packages always carry an SBOM. The PackageReference
+         lives in the ItemGroup below. -->
+    <GenerateSBOM Condition="'$(Configuration)' == 'Release'">true</GenerateSBOM>
+
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <!-- Enable analyzers but don't set default severities - .globalconfig controls rule severities -->
@@ -46,4 +56,12 @@
          Once fixed, remove from here to let them become errors. -->
     <WarningsNotAsErrors>$(WarningsNotAsErrors);CA2245;CA2201;CA1001</WarningsNotAsErrors>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Build/pack-time only: contributes no runtime assemblies and does not
+         flow to consumers (PrivateAssets=all). Its targets only do work during
+         `pack` when GenerateSBOM is true, so test and sample/tool projects that
+         are never packed to NuGet are unaffected. -->
+    <PackageReference Include="Microsoft.Sbom.Targets" Version="4.1.5" PrivateAssets="all" />
+  </ItemGroup>
 </Project>

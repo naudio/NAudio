@@ -342,7 +342,18 @@ Sequenced cheapest-useful-first:
    effects are exposed (`SoundFontSampler.Reverb`/`Chorus`) for tuning or bypass.
    Verified by `SendBus` unit tests and reverb-send/tail render tests.
 6. **MIDI-file → `EventTimeline` ingestion** (closes the sequencer gap) →
-   enables the offline render demo.
+   enables the offline render demo. **DONE.** Now that the sequencer (#1324) is
+   on `main`: `MidiFileSequence` loads a `MidiFile` onto an
+   `EventTimeline<MidiEvent>` at the canonical PPQ (`MusicalTime.RescaleFromPpq`)
+   and builds a `StaticTempoMap` from its `SetTempo` events;
+   `SequencedMidiInstrument` drives a `SamplerEngine` from a `Transport`,
+   dispatching each block's MIDI events to the sampler at their exact frame
+   offset (rendering the sampler in segments between events, so timing is
+   sample-accurate within the block — not block-quantised like the
+   dispatcher-spawns-a-provider model). `OfflineMidiRenderer` renders a sequence
+   to a float buffer or a WAV file, faster than real time and with no audio
+   hardware. This is the first end-to-end "MIDI in → audio out", verified by a
+   deterministic timing test (silence before the note, sound during).
 7. **SFZ parser + mapping** (Tier 1, then Tier 2). **Tier 1 DONE.**
    **7a DONE — text/structure layer** (`NAudio.Core/FileFormats/Sfz`,
    namespace `NAudio.Sfz`): `SfzParser` handles `//` and `/* */` comments, the

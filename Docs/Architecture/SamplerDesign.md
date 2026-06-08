@@ -353,12 +353,19 @@ Sequenced cheapest-useful-first:
    `SfzRegion`s with merged opcodes and typed accessors. `<control>`
    `default_path` (applied in document order), `note_offset` and `octave_offset`
    are surfaced on `SfzInstrument`. Pure text, no engine dependency, unit-tested.
-   **Remaining:** 7b — opcode *semantics* (key/vel ranges incl. note-name
-   parsing, `pitch_keycenter`/`tune`/`transpose`, `ampeg_*`, `cutoff`/
-   `resonance`, loop modes, `group`/`off_by`, velocity tracking…) mapped onto the
-   format-neutral region model; 7c — external sample loading (WAV now,
-   FLAC/Ogg via `NAudio.SoundFile`) and voice-engine integration so the existing
-   `SamplerVoice` plays SFZ regions; then Tier 2 opcodes.
+   **7b DONE — opcode semantics** (`SfzMappedRegion`, `SfzNoteName`): the
+   Tier-1 opcodes interpreted into typed, engine-ready values — key/velocity
+   ranges (note names like `c#4` resolved with the c4=60 convention and the
+   `note_offset`/`octave_offset` shifts applied), `pitch_keycenter`/`tune`/
+   `transpose`/`pitch_keytrack`, `volume` (dB), `pan` (±1), `ampeg_*` (seconds,
+   sustain 0–1), `cutoff`/`resonance`/`fil_type`, `loop_mode`/offsets,
+   `trigger`, `group`/`off_by`/`off_mode`, `amp_veltrack`, `polyphony`. Pure and
+   unit-tested; the SFZ counterpart to the SoundFont generator model.
+   **Remaining:** 7c — a small format-neutral region/sample-reference model that
+   both `SoundFontRegion` and `SfzMappedRegion` project onto, external sample
+   loading (WAV now, FLAC/Ogg via `NAudio.SoundFile`), and `SamplerVoice`
+   consuming the neutral model so it plays SFZ as well as SF2; then Tier 2
+   opcodes (keyswitches, round-robin, CC gating, crossfades, the extra LFOs/EGs).
 8. **Single-sample instrument + auto-mapper** model.
 9. **Demos:** live MIDI, offline render, single-sample/recording editor.
 

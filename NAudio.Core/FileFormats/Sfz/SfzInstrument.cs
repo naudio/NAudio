@@ -37,5 +37,18 @@ namespace NAudio.Sfz
 
         /// <summary>The <c>octave_offset</c> from <c>&lt;control&gt;</c> (default 0).</summary>
         public int OctaveOffset { get; }
+
+        /// <summary>
+        /// Interprets every region's opcodes into typed
+        /// <see cref="SfzMappedRegion"/>s, applying this instrument's
+        /// note/octave offsets.
+        /// </summary>
+        public IReadOnlyList<SfzMappedRegion> MapRegions()
+        {
+            var mapped = new List<SfzMappedRegion>(Regions.Count);
+            foreach (var region in Regions)
+                mapped.Add(SfzMappedRegion.Map(region, NoteOffset, OctaveOffset));
+            return mapped;
+        }
     }
 }

@@ -142,6 +142,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
 #### Packaging and dependencies
 
  * Each NAudio package now ships its own README in the NuGet payload
+ * Each NAudio package now embeds an SPDX 2.2 Software Bill of Materials (SBOM) under `/_manifest/spdx_2.2/` in its `.nupkg`, generated at pack time via `Microsoft.Sbom.Targets`
  * Test project migrated from VSTest to `Microsoft.Testing.Platform`
  * `NAudioTests` split into `NAudio.Core.Tests` (cross-platform, `net10.0`) and `NAudio.Windows.Tests` (Windows-only, `net10.0-windows`) — eliminates the dual-TFM double-run on Windows CI and lets non-Windows devs run just the cross-platform suite
  * `NAudio.Alsa.Tests` and `NAudio.SoundFile.Tests` now ignore MTP exit codes 8/9 so `dotnet test` succeeds on machines where the suite legitimately runs zero tests (ALSA off-Linux) or self-skips (libsndfile absent)

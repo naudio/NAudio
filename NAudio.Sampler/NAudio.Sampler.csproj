@@ -16,6 +16,7 @@
   <ItemGroup>
     <ProjectReference Include="..\NAudio.Core\NAudio.Core.csproj" />
     <ProjectReference Include="..\NAudio.Midi\NAudio.Midi.csproj" />
+    <ProjectReference Include="..\NAudio.SoundFile\NAudio.SoundFile.csproj" />
   </ItemGroup>
 
 </Project>

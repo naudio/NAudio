@@ -354,8 +354,8 @@ Sequenced cheapest-useful-first:
    to a float buffer or a WAV file, faster than real time and with no audio
    hardware. This is the first end-to-end "MIDI in → audio out", verified by a
    deterministic timing test (silence before the note, sound during).
-7. **SFZ parser + mapping** (Tier 1, then Tier 2). **Tier 1 + Tier 2 DONE**
-   (bar FLAC/Ogg sample loading; see §11.1).
+7. **SFZ parser + mapping** (Tier 1, then Tier 2). **DONE** — full Tier 1 and
+   Tier 2, WAV + FLAC/Ogg loading (FLAC/Ogg via `NAudio.SoundFile`).
    **7a DONE — text/structure layer** (`NAudio.Core/FileFormats/Sfz`,
    namespace `NAudio.Sfz`): `SfzParser` handles `//` and `/* */` comments, the
    `#define`/`$variable` preprocessor, `#include` (via a pluggable
@@ -385,11 +385,8 @@ Sequenced cheapest-useful-first:
    `SoundFontSampler` and the new `SfzSampler` subclass it and only supply the
    regions for a note. SFZ plays end-to-end as an `ISampleProvider`
    (`SfzSampler.FromFile`).
-   **Remaining:** Tier-1 polish (release/first/legato triggers, true stereo
-   samples, high/band-pass filters, cross-group `off_by`, one-shot ignoring
-   note-off — see §11.1), FLAC/Ogg sample loading via `NAudio.SoundFile`, then
-   Tier 2 opcodes (keyswitches, round-robin, CC gating, crossfades, extra
-   LFOs/EGs).
+   The Tier-1 finish, FLAC/Ogg loading and all Tier-2 opcodes followed on this
+   base (see §11.1 and the Tier-2 notes); SFZ is now complete.
 8. **Single-sample instrument + auto-mapper** model. **DONE (model).**
    `SingleSampleInstrument` takes one mono buffer (loaded WAV or a recorded
    snippet), auto-maps it across the keyboard at a chosen root key, and exposes
@@ -447,10 +444,8 @@ modulator transforms. Mark anything needing real hardware
   trigger a region when the controller rises into range (played at its root key,
   excluded from key triggering). Per-region `eq1/2/3_*` add up to three
   peaking-EQ bands in the voice's signal chain (per channel, bandwidth→Q).
-  **Tier 2 complete** bar the shared Tier-1 sample-loading gap (FLAC/Ogg).
-- **SFZ Tier-1 finish** — done except FLAC/Ogg sample loading via
-  `NAudio.SoundFile` (§11.1); triggers, one-shot, directional `off_by`, all
-  `fil_type` shapes and stereo samples are in.
+  **SFZ Tier 1 and Tier 2 are complete** (see §11.1 for the Tier-1 summary,
+  including WAV + FLAC/Ogg sample loading).
 - **Built-in algorithmic-reverb send default** — start by routing to the
   existing `ReverbEffect`/`FdnReverbEffect`; a sampler-tuned default is polish.
 
@@ -475,13 +470,19 @@ forgotten:
   feed audio through `InterpolatingSampleReader` (found via a reverb-send test
   that used a 4-frame one-shot). Normal-length and looped samples are
   unaffected; the reader's end/guard handling for tiny one-shots wants a look.
-- **SFZ Tier-1 gaps:** the only remaining shortcut is sample loading — just WAV
-  for now (FLAC/Ogg await `NAudio.SoundFile`, which needs a system libsndfile).
-  *Done in the Tier-1 finish:* release/first/legato triggers, one-shot note-off,
-  directional `off_by` choke groups, all four `fil_type` shapes
-  (low/high/band-pass and band-reject), and **stereo samples** (the voice runs a
+- **SFZ Tier 1 — complete.** Includes release/first/legato triggers, one-shot
+  note-off, directional `off_by` choke groups, all four `fil_type` shapes
+  (low/high/band-pass and band-reject), **stereo samples** (the voice runs a
   second interpolating reader over the right channel in lockstep, with an
-  independent per-channel filter, and pans as a balance).
+  independent per-channel filter, and pans as a balance), and **WAV + FLAC/Ogg/
+  Opus sample loading** — every sample is decoded fully into memory (the
+  random-access form the voice plays); WAV is read directly and other formats
+  through `NAudio.SoundFile` (libsndfile), failing gracefully (region skipped)
+  when libsndfile is absent. **Note:** FLAC/Ogg decoding has only been
+  validated against the in-memory read path with a stub provider in this
+  environment (no system libsndfile here); exercise it on a libsndfile box.
+  *Future:* disk streaming for very large libraries (§11) — decode fully into
+  RAM is the v1 choice (glitch-free; ~2× the 16-bit footprint in float).
 - **(Closed)** ~~Reverb/chorus sends evaluated but not rendered~~ — done in
   step 5 (the send-bus).
 

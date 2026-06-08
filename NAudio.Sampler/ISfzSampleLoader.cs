@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using NAudio.SoundFile;
 
 namespace NAudio.Sampler
 {
@@ -21,9 +22,10 @@ namespace NAudio.Sampler
 
     /// <summary>
     /// Loads SFZ samples from disk, resolving relative paths against a base
-    /// directory. Currently decodes WAV (via <see cref="WaveSampleLoader"/>),
-    /// down-mixing multi-channel files to mono; other formats return false until
-    /// a decoder is wired in.
+    /// directory and decoding each fully into memory. WAV is read directly;
+    /// other formats (FLAC, Ogg-Vorbis, Opus, …) decode through
+    /// <c>NAudio.SoundFile</c> (libsndfile). If libsndfile is unavailable or the
+    /// file cannot be decoded, the load fails gracefully (the region is skipped).
     /// </summary>
     public sealed class FileSfzSampleLoader : ISfzSampleLoader
     {
@@ -46,11 +48,22 @@ namespace NAudio.Sampler
             var normalised = path.Replace('\\', Path.DirectorySeparatorChar)
                                  .Replace('/', Path.DirectorySeparatorChar);
             var full = Path.IsPathRooted(normalised) ? normalised : Path.Combine(baseDirectory, normalised);
+            if (!File.Exists(full)) return false;
 
-            // WAV only for now; an unknown/undecodable file falls through to false
-            if (!full.EndsWith(".wav", StringComparison.OrdinalIgnoreCase)) return false;
+            // WAV reads directly; FLAC/Ogg/Opus/etc. go through libsndfile
+            if (full.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
+                return WaveSampleLoader.TryLoad(full, out left, out right, out sampleRate);
 
-            return WaveSampleLoader.TryLoad(full, out left, out right, out sampleRate);
+            try
+            {
+                using var reader = new SoundFileReader(full);
+                return WaveSampleLoader.TryLoad(reader, out left, out right, out sampleRate);
+            }
+            catch (Exception)
+            {
+                // libsndfile missing, or an unsupported/corrupt file — skip the region
+                return false;
+            }
         }
     }
 }

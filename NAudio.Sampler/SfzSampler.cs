@@ -15,13 +15,16 @@ namespace NAudio.Sampler
     /// sends).
     ///
     /// An SFZ file is a single instrument (no banks/programs), so every channel
-    /// plays the same region set. Tier-1 opcode coverage applies (see
-    /// <see cref="SfzRegionProjector"/>): regions with a missing sample or a
-    /// non-attack trigger are dropped at load time.
+    /// plays the same region set. Regions whose sample is missing are dropped at
+    /// load time. Note-on selection (keyswitches, round-robin, random layers, CC
+    /// gating) and the Tier-1 opcode coverage are applied by the engine and
+    /// <see cref="SfzRegionProjector"/>.
     /// </summary>
     public sealed class SfzSampler : SamplerEngine
     {
         private readonly IReadOnlyList<SamplerRegion> regions;
+        private readonly int keyswitchLow;   // > keyswitchHigh when the instrument has no keyswitches
+        private readonly int keyswitchHigh;
 
         /// <summary>
         /// Creates a sampler for a parsed SFZ instrument, loading its samples via
@@ -33,7 +36,24 @@ namespace NAudio.Sampler
         {
             if (instrument == null) throw new ArgumentNullException(nameof(instrument));
             if (loader == null) throw new ArgumentNullException(nameof(loader));
-            regions = SfzRegionProjector.ProjectAll(instrument, loader);
+
+            var playable = new List<SamplerRegion>();
+            int low = int.MaxValue, high = int.MinValue;
+            foreach (var mapped in instrument.MapRegions())
+            {
+                // a region's sw_lokey/sw_hikey contributes to the keyswitch range
+                if (mapped.KeyswitchLow >= 0 && mapped.KeyswitchHigh >= 0)
+                {
+                    low = Math.Min(low, mapped.KeyswitchLow);
+                    high = Math.Max(high, mapped.KeyswitchHigh);
+                }
+                var region = SfzRegionProjector.Project(mapped, loader);
+                if (region != null) playable.Add(region);
+            }
+
+            regions = playable;
+            keyswitchLow = low;
+            keyswitchHigh = high;
         }
 
         /// <summary>
@@ -53,5 +73,8 @@ namespace NAudio.Sampler
 
         /// <inheritdoc />
         private protected override IReadOnlyList<SamplerRegion> GetRegionsForNoteOn(MidiChannelState channel) => regions;
+
+        /// <inheritdoc />
+        private protected override bool IsKeyswitch(int key) => key >= keyswitchLow && key <= keyswitchHigh;
     }
 }

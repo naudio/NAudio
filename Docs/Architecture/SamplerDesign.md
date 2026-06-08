@@ -432,13 +432,14 @@ modulator transforms. Mark anything needing real hardware
   serve as the math reference (it is fixed-ratio/block-based, so it can't be
   dropped into the per-sample varying-rate reader directly).
 - **Advanced SFZ (flex EGs, `<curve>`, full ARIA set)** — Tier 3, demand-driven.
-- **SFZ Tier 2** — the next tranche of opcodes once Tier 1 is solid: keyswitches
-  (`sw_lokey`/`sw_hikey`/`sw_last`/`sw_default`), round-robin
-  (`seq_position`/`seq_length`), random layers (`lorand`/`hirand`), CC gating
-  (`locc`/`hicc`, `on_loccN`/`on_hiccN`), key/velocity crossfades (`xfin_*`/
-  `xfout_*`), `rt_decay`, the filter/pitch EGs and the `amplfo_*`/`fillfo_*`/
-  `pitchlfo_*` LFOs, `eq1/2/3_*`, and `effect1`/`effect2` sends. Maps onto the
-  same modulation/region model the SF2 side already uses.
+- **SFZ Tier 2** — **note-on selection done** (keyswitches `sw_lokey`/`sw_hikey`/
+  `sw_last`/`sw_default`, round-robin `seq_length`/`seq_position`, random layers
+  `lorand`/`hirand`, CC gating `loccN`/`hiccN`), gated in the shared engine.
+  **Remaining:** `on_loccN`/`on_hiccN` (CC-triggered notes), key/velocity
+  crossfades (`xfin_*`/`xfout_*`/`xf_*curve`), `rt_decay`, the filter/pitch EGs
+  and `amplfo_*`/`fillfo_*`/`pitchlfo_*` LFOs, `eq1/2/3_*`, and `effect1`/
+  `effect2` sends — these map onto the same modulation/region model the SF2 side
+  already uses.
 - **SFZ Tier-1 finish** — done except FLAC/Ogg sample loading via
   `NAudio.SoundFile` (§11.1); triggers, one-shot, directional `off_by`, all
   `fil_type` shapes and stereo samples are in.

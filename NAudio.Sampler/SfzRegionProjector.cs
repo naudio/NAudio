@@ -22,22 +22,6 @@ namespace NAudio.Sampler
     internal static class SfzRegionProjector
     {
         /// <summary>
-        /// Maps and projects every region of an instrument, loading samples via
-        /// <paramref name="loader"/>. Regions whose sample is missing or that use
-        /// an unsupported trigger are skipped.
-        /// </summary>
-        public static List<SamplerRegion> ProjectAll(SfzInstrument instrument, ISfzSampleLoader loader)
-        {
-            var result = new List<SamplerRegion>();
-            foreach (var mapped in instrument.MapRegions())
-            {
-                var region = Project(mapped, loader);
-                if (region != null) result.Add(region);
-            }
-            return result;
-        }
-
-        /// <summary>
         /// Projects one mapped region, or returns null if it has no sample or the
         /// sample cannot be loaded.
         /// </summary>
@@ -76,6 +60,13 @@ namespace NAudio.Sampler
                 IgnoreNoteOff = region.LoopMode == SfzLoopMode.OneShot,
                 Group = region.Group,
                 OffByGroup = region.OffBy,
+                KeyswitchLast = region.KeyswitchLast,
+                KeyswitchDefault = region.KeyswitchDefault,
+                SequenceLength = region.SequenceLength,
+                SequencePosition = region.SequencePosition,
+                LowRandom = region.LowRandom,
+                HighRandom = region.HighRandom,
+                CcGates = region.CcGates,
                 LoKey = (byte)Clamp(region.LoKey, 0, 127),
                 HiKey = (byte)Clamp(region.HiKey, 0, 127),
                 LoVelocity = (byte)Clamp(region.LoVel, 0, 127),

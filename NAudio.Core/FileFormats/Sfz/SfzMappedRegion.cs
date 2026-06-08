@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using System.Globalization;
+
 namespace NAudio.Sfz
 {
     /// <summary>SFZ <c>loop_mode</c> values.</summary>
@@ -139,6 +142,25 @@ namespace NAudio.Sfz
         /// <summary>Maximum simultaneous voices (<c>polyphony</c>, −1 = unlimited).</summary>
         public int Polyphony { get; private set; }
 
+        /// <summary>Lowest keyswitch key (<c>sw_lokey</c>), or −1 if no keyswitch range.</summary>
+        public int KeyswitchLow { get; private set; } = -1;
+        /// <summary>Highest keyswitch key (<c>sw_hikey</c>), or −1.</summary>
+        public int KeyswitchHigh { get; private set; } = -1;
+        /// <summary>The keyswitch that must have been pressed last (<c>sw_last</c>), or −1.</summary>
+        public int KeyswitchLast { get; private set; } = -1;
+        /// <summary>The keyswitch active before any is pressed (<c>sw_default</c>), or −1.</summary>
+        public int KeyswitchDefault { get; private set; } = -1;
+        /// <summary>Round-robin length (<c>seq_length</c>, default 1 = none).</summary>
+        public int SequenceLength { get; private set; } = 1;
+        /// <summary>This region's 1-based round-robin slot (<c>seq_position</c>, default 1).</summary>
+        public int SequencePosition { get; private set; } = 1;
+        /// <summary>Low end of the random window (<c>lorand</c>, default 0).</summary>
+        public float LowRandom { get; private set; }
+        /// <summary>High end of the random window (<c>hirand</c>, default 1).</summary>
+        public float HighRandom { get; private set; } = 1f;
+        /// <summary>CC value windows that must all hold for the region to sound (<c>loccN</c>/<c>hiccN</c>).</summary>
+        public IReadOnlyList<(int Controller, int Low, int High)> CcGates { get; private set; }
+
         /// <summary>
         /// Interprets a parsed <see cref="SfzRegion"/>'s opcodes. The
         /// <paramref name="noteOffset"/> and <paramref name="octaveOffset"/> (from
@@ -198,7 +220,43 @@ namespace NAudio.Sfz
             r.OffMode = ParseOffMode(region.GetString("off_mode"));
             r.Polyphony = region.GetInt("polyphony", -1);
 
+            // Tier-2 note-on selection
+            if (region.Has("sw_lokey")) r.KeyswitchLow = Clamp(Key(region, "sw_lokey", 0) + keyShift);
+            if (region.Has("sw_hikey")) r.KeyswitchHigh = Clamp(Key(region, "sw_hikey", 127) + keyShift);
+            if (region.Has("sw_last")) r.KeyswitchLast = Clamp(Key(region, "sw_last", 0) + keyShift);
+            if (region.Has("sw_default")) r.KeyswitchDefault = Clamp(Key(region, "sw_default", 0) + keyShift);
+            r.SequenceLength = region.GetInt("seq_length", 1);
+            r.SequencePosition = region.GetInt("seq_position", 1);
+            r.LowRandom = region.GetFloat("lorand", 0f);
+            r.HighRandom = region.GetFloat("hirand", 1f);
+            r.CcGates = BuildCcGates(region);
+
             return r;
+        }
+
+        // Collects loccN/hiccN opcodes into per-controller [low, high] windows.
+        private static IReadOnlyList<(int Controller, int Low, int High)> BuildCcGates(SfzRegion region)
+        {
+            Dictionary<int, (int Low, int High)> gates = null;
+            foreach (var pair in region.Opcodes)
+            {
+                bool low = pair.Key.StartsWith("locc");
+                bool high = pair.Key.StartsWith("hicc");
+                if (!low && !high) continue;
+                if (!int.TryParse(pair.Key.Substring(4), NumberStyles.Integer, CultureInfo.InvariantCulture, out int cc))
+                    continue;
+                if (!int.TryParse(pair.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int value))
+                    continue;
+
+                gates ??= new Dictionary<int, (int, int)>();
+                var current = gates.TryGetValue(cc, out var g) ? g : (Low: 0, High: 127);
+                gates[cc] = low ? (value, current.High) : (current.Low, value);
+            }
+
+            if (gates == null) return null;
+            var result = new List<(int, int, int)>(gates.Count);
+            foreach (var pair in gates) result.Add((pair.Key, pair.Value.Low, pair.Value.High));
+            return result;
         }
 
         /// <summary>Whether this region should sound for the given key and velocity.</summary>

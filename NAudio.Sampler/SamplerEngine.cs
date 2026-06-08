@@ -29,6 +29,9 @@ namespace NAudio.Sampler
         // keys currently held down per channel (note -> note-on velocity), for
         // legato/first triggers and release-trigger velocity
         private readonly Dictionary<int, int>[] heldNotes;
+        // last keyswitch key pressed per channel (-1 = none yet)
+        private readonly int[] lastSwitch;
+        private readonly Random rng = new();
         private long startOrder;
         private float masterGain = 1f;
 
@@ -47,10 +50,12 @@ namespace NAudio.Sampler
 
             Channels = new MidiChannelState[16];
             heldNotes = new Dictionary<int, int>[16];
+            lastSwitch = new int[16];
             for (int i = 0; i < Channels.Length; i++)
             {
                 Channels[i] = new MidiChannelState();
                 heldNotes[i] = new Dictionary<int, int>();
+                lastSwitch[i] = -1;
             }
 
             mixBuffer = new float[MaxFramesPerBlock * 2];
@@ -139,11 +144,15 @@ namespace NAudio.Sampler
             if ((uint)channel >= 16) return;
             if (velocity <= 0) { NoteOff(channel, note); return; }
 
+            // a press in the keyswitch range selects the active articulation and makes no sound
+            if (IsKeyswitch(note)) { lastSwitch[channel] = note; return; }
+
             var state = Channels[channel];
             var regions = GetRegionsForNoteOn(state);
 
             // "first" plays only when no other key is held; "legato" only when one is
             bool legato = heldNotes[channel].Count > 0;
+            double random = rng.NextDouble(); // one draw per note-on, so layers select consistently
 
             if (regions != null)
             {
@@ -151,6 +160,10 @@ namespace NAudio.Sampler
                 {
                     if (!region.Matches(note, velocity)) continue;
                     if (!PlaysOnNoteOn(region.Trigger, legato)) continue;
+                    if (!KeyswitchActive(region, channel)) continue;
+                    if (!region.PassesCcGates(state)) continue;
+                    if (!region.PassesRandom(random)) continue;
+                    if (!region.PassesSequence()) continue; // advances the round-robin counter
 
                     if (region.OffByGroup != 0) ChokeGroup(region.OffByGroup, channel);
 
@@ -160,6 +173,20 @@ namespace NAudio.Sampler
             }
 
             heldNotes[channel][note] = velocity; // remember the key is down (for legato / release)
+        }
+
+        /// <summary>
+        /// Whether a key acts as a keyswitch (selects an articulation) rather than
+        /// sounding a note. Default false; SFZ overrides it with its keyswitch range.
+        /// </summary>
+        private protected virtual bool IsKeyswitch(int key) => false;
+
+        private bool KeyswitchActive(SamplerRegion region, int channel)
+        {
+            if (region.KeyswitchLast < 0) return true; // region has no keyswitch requirement
+            int last = lastSwitch[channel];
+            if (last < 0) last = region.KeyswitchDefault; // nothing pressed yet -> the default
+            return last == region.KeyswitchLast;
         }
 
         private static bool PlaysOnNoteOn(SamplerTrigger trigger, bool legato)

@@ -153,5 +153,43 @@ namespace NAudio.Core.Tests.Sfz
             var withControl = SfzParser.Parse("<control> octave_offset=1\n<region> sample=a.wav key=c4");
             Assert.That(withControl.MapRegions()[0].PitchKeycenter, Is.EqualTo(72));
         }
+
+        [Test]
+        public void KeyswitchOpcodesMap()
+        {
+            var r = MapFirst("<region> sample=a.wav sw_lokey=c0 sw_hikey=d0 sw_last=c0 sw_default=d0");
+            Assert.That(r.KeyswitchLow, Is.EqualTo(12));   // c0 = 12
+            Assert.That(r.KeyswitchHigh, Is.EqualTo(14));  // d0 = 14
+            Assert.That(r.KeyswitchLast, Is.EqualTo(12));
+            Assert.That(r.KeyswitchDefault, Is.EqualTo(14));
+        }
+
+        [Test]
+        public void RoundRobinAndRandomOpcodesMap()
+        {
+            var r = MapFirst("<region> sample=a.wav seq_length=3 seq_position=2 lorand=0.25 hirand=0.75");
+            Assert.That(r.SequenceLength, Is.EqualTo(3));
+            Assert.That(r.SequencePosition, Is.EqualTo(2));
+            Assert.That(r.LowRandom, Is.EqualTo(0.25f));
+            Assert.That(r.HighRandom, Is.EqualTo(0.75f));
+        }
+
+        [Test]
+        public void CcGatesAreCollectedPerController()
+        {
+            var r = MapFirst("<region> sample=a.wav locc1=64 hicc1=127 hicc74=100");
+            Assert.That(r.CcGates, Has.Count.EqualTo(2));
+            Assert.That(r.CcGates, Has.Member((1, 64, 127)));
+            Assert.That(r.CcGates, Has.Member((74, 0, 100))); // missing locc defaults to 0
+        }
+
+        [Test]
+        public void RandomDefaultsToFullRange()
+        {
+            var r = MapFirst("<region> sample=a.wav");
+            Assert.That(r.LowRandom, Is.EqualTo(0f));
+            Assert.That(r.HighRandom, Is.EqualTo(1f));
+            Assert.That(r.SequenceLength, Is.EqualTo(1));
+        }
     }
 }

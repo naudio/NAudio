@@ -24,6 +24,50 @@ namespace NAudio.Core.Tests.Dsp
         }
 
         [Test]
+        public void UpdateLowPassFilterPreservesState()
+        {
+            // SetLowPassFilter resets state; UpdateLowPassFilter must not. Run a
+            // filter, then retune by each method to the SAME coefficients: the
+            // updated filter keeps its history (output continues smoothly), the
+            // re-set filter clears it (output jumps).
+            var input = GenerateTestSignal(512);
+
+            var updated = BiQuadFilter.LowPassFilter(44100f, 1000f, 0.707f);
+            var reset = BiQuadFilter.LowPassFilter(44100f, 1000f, 0.707f);
+            for (int i = 0; i < 256; i++)
+            {
+                updated.Transform(input[i]);
+                reset.Transform(input[i]);
+            }
+
+            // retune both to a new cutoff (same target for both)
+            updated.UpdateLowPassFilter(44100f, 2000f, 0.707f);
+            reset.SetLowPassFilter(44100f, 2000f, 0.707f);
+
+            float updatedNext = updated.Transform(input[256]);
+            float resetNext = reset.Transform(input[256]);
+
+            // the reset filter starts from zero state, the updated one carries
+            // history, so the immediate outputs differ
+            Assert.That(updatedNext, Is.Not.EqualTo(resetNext));
+        }
+
+        [Test]
+        public void UpdateLowPassFilterMatchesFreshFilterWhenStateIsZero()
+        {
+            // from a clean state, Update and Set must produce identical output
+            var input = GenerateTestSignal(256);
+            var updated = BiQuadFilter.LowPassFilter(44100f, 1000f, 0.707f);
+            updated.ResetState();
+            updated.UpdateLowPassFilter(44100f, 3000f, 1.0f);
+
+            var fresh = BiQuadFilter.LowPassFilter(44100f, 3000f, 1.0f);
+
+            for (int i = 0; i < input.Length; i++)
+                Assert.That(updated.Transform(input[i]), Is.EqualTo(fresh.Transform(input[i])).Within(1e-6f));
+        }
+
+        [Test]
         public void BatchTransformMatchesSingleSampleTransform()
         {
             var input = GenerateTestSignal(1024);

@@ -6,17 +6,33 @@ namespace NAudio.Sampler
 {
     /// <summary>
     /// A single playing note: one <see cref="SoundFontRegion"/>'s sample read at
-    /// the pitch for the played key, shaped by a DAHDSR amplitude envelope, an
-    /// optional static low-pass filter, and panned into the stereo output.
-    /// Internal — owned and pooled by <see cref="SoundFontSampler"/>.
+    /// the pitch for the played key, shaped by a DAHDSR amplitude envelope, a
+    /// resonant low-pass filter, two LFOs (modulation + vibrato) and a
+    /// modulation envelope, and panned into the stereo output. Internal — owned
+    /// and pooled by <see cref="SoundFontSampler"/>.
+    ///
+    /// Continuous modulation (LFO/mod-env → pitch, filter cutoff and volume) is
+    /// computed at a control rate (every <see cref="ControlBlock"/> samples) so
+    /// the per-sample loop stays cheap; the modulation sources themselves advance
+    /// every sample so their phase stays accurate. The SF2 modulator <em>list</em>
+    /// (file-defined and the other default modulators that map MIDI controllers
+    /// to destinations) is a later step.
     /// </summary>
     internal sealed class SamplerVoice
     {
+        // control-rate block: modulation-derived increments/coefficients are
+        // recomputed this often (~1.5 ms at 44.1 kHz), the sources advance per sample
+        private const int ControlBlock = 64;
+
         private readonly float[] samplePool;
         private readonly int outputSampleRate;
+        private readonly double nyquist;
 
         private InterpolatingSampleReader reader;
         private readonly DahdsrEnvelope ampEnvelope;
+        private readonly DahdsrEnvelope modEnvelope;
+        private readonly Lfo modLfo;
+        private readonly Lfo vibratoLfo;
         private BiQuadFilter filter;
 
         private double baseIncrement;   // sourceRate / outputRate
@@ -25,12 +41,32 @@ namespace NAudio.Sampler
         private float rightGain;
         private float staticGain;       // attenuation * velocity
 
+        // modulation routing amounts (from generators)
+        private double modLfoToPitch;       // cents
+        private double vibLfoToPitch;       // cents
+        private double modEnvToPitch;       // cents
+        private double modLfoToFilter;      // cents
+        private double modEnvToFilter;      // cents
+        private double modLfoToVolume;      // centibels
+        private double baseFilterCents;
+        private float filterQ;
+        private bool filterActive;
+
+        // latest modulation-source values (bipolar -1..1 for LFOs, 0..1 for env)
+        private float modLfoValue;
+        private float vibratoLfoValue;
+        private float modEnvValue;
+
         /// <summary>Creates a voice bound to a shared sample pool and output rate.</summary>
         public SamplerVoice(float[] samplePool, int outputSampleRate)
         {
             this.samplePool = samplePool;
             this.outputSampleRate = outputSampleRate;
+            nyquist = outputSampleRate / 2.0;
             ampEnvelope = new DahdsrEnvelope(outputSampleRate);
+            modEnvelope = new DahdsrEnvelope(outputSampleRate);
+            modLfo = new Lfo(outputSampleRate) { Waveform = LfoWaveform.Triangle };
+            vibratoLfo = new Lfo(outputSampleRate) { Waveform = LfoWaveform.Triangle };
         }
 
         /// <summary>Whether this voice is currently producing sound.</summary>
@@ -94,15 +130,25 @@ namespace NAudio.Sampler
             pitchRatio = SynthMath.CentsToRatio(cents);
             baseIncrement = (double)sample.SampleRate / outputSampleRate;
 
-            // amplitude: initial attenuation (cB) and a provisional velocity curve
+            // amplitude: initial attenuation (cB) and a provisional velocity curve.
+            // This v*v curve approximates the SF2 default velocity->attenuation
+            // modulator; it is replaced by the real modulator when the modulator
+            // list lands.
             int effectiveVelocity = gen.VelocityOverride >= 0 ? gen.VelocityOverride : velocity;
             double attenuationGain = SynthMath.AttenuationCentibelsToGain(gen[GeneratorEnum.InitialAttenuation]);
             float v = effectiveVelocity / 127f;
-            staticGain = (float)(attenuationGain * v * v); // concave-ish; refined when the modulator engine lands
+            staticGain = (float)(attenuationGain * v * v);
 
             SetPan(gen[GeneratorEnum.Pan]);
-            ConfigureEnvelope(gen);
+            ConfigureAmpEnvelope(gen);
+            ConfigureModEnvelope(gen);
+            ConfigureLfos(gen);
+            ConfigureModulationAmounts(gen);
             ConfigureFilter(gen);
+
+            modLfoValue = 0f;
+            vibratoLfoValue = 0f;
+            modEnvValue = 0f;
 
             Channel = channel;
             Note = note;
@@ -111,6 +157,7 @@ namespace NAudio.Sampler
             IsHeld = true;
             IsActive = true;
             ampEnvelope.Gate(true);
+            modEnvelope.Gate(true);
             return true;
         }
 
@@ -120,6 +167,7 @@ namespace NAudio.Sampler
             if (!IsActive) return;
             IsHeld = false;
             ampEnvelope.Gate(false);
+            modEnvelope.Gate(false);
             reader.Release();
         }
 
@@ -133,6 +181,7 @@ namespace NAudio.Sampler
             IsHeld = false;
             ampEnvelope.ReleaseSeconds = 0.005f;
             ampEnvelope.Gate(false);
+            modEnvelope.Gate(false);
             reader.Release();
         }
 
@@ -143,27 +192,53 @@ namespace NAudio.Sampler
         public void Mix(Span<float> buffer, int frames, double pitchBendRatio)
         {
             if (!IsActive) return;
-            double increment = baseIncrement * pitchRatio * pitchBendRatio;
 
-            for (int f = 0; f < frames; f++)
+            int pos = 0;
+            int remaining = frames;
+            while (remaining > 0)
             {
-                float s = reader.Read(increment);
-                if (reader.Ended)
-                {
-                    IsActive = false;
-                    return;
-                }
-                if (filter != null) s = filter.Transform(s);
+                int sub = Math.Min(ControlBlock, remaining);
 
-                float value = s * ampEnvelope.Process() * staticGain;
-                buffer[f * 2] += value * leftGain;
-                buffer[f * 2 + 1] += value * rightGain;
+                // recompute modulation-derived parameters at control rate
+                double pitchCents = modLfoToPitch * modLfoValue
+                    + vibLfoToPitch * vibratoLfoValue
+                    + modEnvToPitch * modEnvValue;
+                double increment = baseIncrement * pitchRatio * pitchBendRatio
+                    * SynthMath.CentsToRatio(pitchCents);
 
-                if (ampEnvelope.IsFinished)
+                float volGain = modLfoToVolume != 0.0
+                    ? (float)SynthMath.CentibelsToGain(modLfoToVolume * modLfoValue)
+                    : 1f;
+
+                if (filterActive)
                 {
-                    IsActive = false;
-                    return;
+                    double fc = baseFilterCents
+                        + modEnvToFilter * modEnvValue
+                        + modLfoToFilter * modLfoValue;
+                    double hz = Math.Clamp(SynthMath.AbsoluteCentsToHertz(fc), 20.0, nyquist * 0.95);
+                    filter.UpdateLowPassFilter(outputSampleRate, (float)hz, filterQ);
                 }
+
+                for (int i = 0; i < sub; i++)
+                {
+                    float s = reader.Read(increment);
+                    if (reader.Ended) { IsActive = false; return; }
+                    if (filterActive) s = filter.Transform(s);
+
+                    float value = s * ampEnvelope.Process() * staticGain * volGain;
+                    buffer[pos * 2] += value * leftGain;
+                    buffer[pos * 2 + 1] += value * rightGain;
+                    pos++;
+
+                    // advance the modulation sources every sample (keeps phase accurate)
+                    modLfoValue = modLfo.Process();
+                    vibratoLfoValue = vibratoLfo.Process();
+                    modEnvValue = modEnvelope.Process();
+
+                    if (ampEnvelope.IsFinished) { IsActive = false; return; }
+                }
+
+                remaining -= sub;
             }
         }
 
@@ -176,7 +251,7 @@ namespace NAudio.Sampler
             rightGain = (float)Math.Sin(angle);
         }
 
-        private void ConfigureEnvelope(SoundFontGenerators gen)
+        private void ConfigureAmpEnvelope(SoundFontGenerators gen)
         {
             ampEnvelope.Reset();
             ampEnvelope.DelaySeconds = (float)SynthMath.TimecentsToSeconds(gen[GeneratorEnum.DelayVolumeEnvelope]);
@@ -189,17 +264,60 @@ namespace NAudio.Sampler
             ampEnvelope.SustainLevel = (float)Math.Clamp(sustain, 0.0, 1.0);
         }
 
+        private void ConfigureModEnvelope(SoundFontGenerators gen)
+        {
+            modEnvelope.Reset();
+            modEnvelope.DelaySeconds = (float)SynthMath.TimecentsToSeconds(gen[GeneratorEnum.DelayModulationEnvelope]);
+            modEnvelope.AttackSeconds = (float)SynthMath.TimecentsToSeconds(gen[GeneratorEnum.AttackModulationEnvelope]);
+            modEnvelope.HoldSeconds = (float)SynthMath.TimecentsToSeconds(gen[GeneratorEnum.HoldModulationEnvelope]);
+            modEnvelope.DecaySeconds = (float)SynthMath.TimecentsToSeconds(gen[GeneratorEnum.DecayModulationEnvelope]);
+            modEnvelope.ReleaseSeconds = (float)SynthMath.TimecentsToSeconds(gen[GeneratorEnum.ReleaseModulationEnvelope]);
+            // sustainModEnv is in 0.1% units of full scale, decreasing from full
+            double permille = gen[GeneratorEnum.SustainModulationEnvelope];
+            modEnvelope.SustainLevel = (float)Math.Clamp(1.0 - permille / 1000.0, 0.0, 1.0);
+        }
+
+        private void ConfigureLfos(SoundFontGenerators gen)
+        {
+            modLfo.FrequencyHz = (float)SynthMath.AbsoluteCentsToHertz(gen[GeneratorEnum.FrequencyModulationLFO]);
+            modLfo.DelaySeconds = (float)SynthMath.TimecentsToSeconds(gen[GeneratorEnum.DelayModulationLFO]);
+            modLfo.Reset();
+
+            vibratoLfo.FrequencyHz = (float)SynthMath.AbsoluteCentsToHertz(gen[GeneratorEnum.FrequencyVibratoLFO]);
+            vibratoLfo.DelaySeconds = (float)SynthMath.TimecentsToSeconds(gen[GeneratorEnum.DelayVibratoLFO]);
+            vibratoLfo.Reset();
+        }
+
+        private void ConfigureModulationAmounts(SoundFontGenerators gen)
+        {
+            modLfoToPitch = gen[GeneratorEnum.ModulationLFOToPitch];
+            vibLfoToPitch = gen[GeneratorEnum.VibratoLFOToPitch];
+            modEnvToPitch = gen[GeneratorEnum.ModulationEnvelopeToPitch];
+            modLfoToFilter = gen[GeneratorEnum.ModulationLFOToFilterCutoffFrequency];
+            modEnvToFilter = gen[GeneratorEnum.ModulationEnvelopeToFilterCutoffFrequency];
+            modLfoToVolume = gen[GeneratorEnum.ModulationLFOToVolume];
+        }
+
         private void ConfigureFilter(SoundFontGenerators gen)
         {
-            double cutoffHz = SynthMath.AbsoluteCentsToHertz(gen[GeneratorEnum.InitialFilterCutoffFrequency]);
-            double nyquist = outputSampleRate / 2.0;
-            if (cutoffHz >= nyquist * 0.95)
+            baseFilterCents = gen[GeneratorEnum.InitialFilterCutoffFrequency];
+            filterQ = Math.Max(0.5f, (float)SynthMath.ResonanceCentibelsToQ(gen[GeneratorEnum.InitialFilterQ]));
+
+            double baseHz = SynthMath.AbsoluteCentsToHertz(baseFilterCents);
+            // engage the filter if the base cutoff is audible, or if anything
+            // modulates the cutoff (which could bring it down into range)
+            filterActive = baseHz < nyquist * 0.95 || modLfoToFilter != 0.0 || modEnvToFilter != 0.0;
+
+            if (filterActive)
             {
-                filter = null; // effectively open — skip filtering
-                return;
+                double hz = Math.Clamp(baseHz, 20.0, nyquist * 0.95);
+                // fresh filter: SetLowPassFilter resets state (safe at note start)
+                filter = BiQuadFilter.LowPassFilter(outputSampleRate, (float)hz, filterQ);
             }
-            float q = (float)SynthMath.ResonanceCentibelsToQ(gen[GeneratorEnum.InitialFilterQ]);
-            filter = BiQuadFilter.LowPassFilter(outputSampleRate, (float)Math.Max(20.0, cutoffHz), Math.Max(0.5f, q));
+            else
+            {
+                filter = null;
+            }
         }
 
         private static LoopMode MapLoopMode(SampleMode mode) => mode switch

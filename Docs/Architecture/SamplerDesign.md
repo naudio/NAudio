@@ -302,8 +302,24 @@ Sequenced cheapest-useful-first:
    by deterministic offline-render tests (pitch ratio, looping, release decay,
    sustain pedal, choke, pan, key-range, polyphony).
 4. **Modulator engine** (default + file modulators) — the "sounds correct" PR.
-   Will also replace the provisional velocity→gain curve with the SF2 default
-   velocity→attenuation modulator and add the mod envelope + LFOs.
+   **Part A DONE:** continuous *generator-driven* modulation — the two per-voice
+   LFOs (modulation + vibrato, using `Lfo`'s start-delay) and a second
+   `DahdsrEnvelope` as the modulation envelope, routed to pitch
+   (`modLfoToPitch`, `vibLfoToPitch`, `modEnvToPitch`), filter cutoff
+   (`modLfoToFilterFc`, `modEnvToFilterFc`) and volume (`modLfoToVolume`).
+   Modulation runs at a control rate (64-sample sub-blocks) while the sources
+   advance per sample; the filter is retuned per block via the new
+   state-preserving `BiQuadFilter.UpdateLowPassFilter` (added to `NAudio.Core`
+   so it serves any modulated filter). Verified by render tests (vibrato,
+   tremolo, mod-env filter sweep). **Part B DEFERRED:** the SF2 modulator
+   *list* — file-defined modulators plus the remaining default modulators that
+   map MIDI controllers/velocity/key to generator destinations through the
+   linear/concave/convex/switch transform curves. This needs the resolver to
+   carry zone modulators into `SoundFontRegion` and a runtime modulator type
+   (the parser's `ModulatorType` ctor is `internal`). The single most important
+   default modulator, velocity→attenuation, is already approximated by the
+   provisional `v*v` gain curve in `SamplerVoice`; Part B replaces it with the
+   spec curve.
 5. **Effects send-bus** (reverb/chorus sends) reusing `NAudio.Effects`.
 6. **MIDI-file → `EventTimeline` ingestion** (closes the sequencer gap) →
    enables the offline render demo.

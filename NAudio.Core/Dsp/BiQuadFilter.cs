@@ -169,6 +169,40 @@ namespace NAudio.Dsp
         }
 
         /// <summary>
+        /// Retunes this filter to a new low-pass cutoff and Q <em>without</em>
+        /// clearing its sample history, so a running filter can be modulated
+        /// every sample/block (e.g. a synth filter envelope or LFO, an auto-wah)
+        /// without the click that <see cref="SetLowPassFilter"/> causes by
+        /// resetting state. Use only on an already-running, non-divergent filter;
+        /// for a fresh filter or after a seek use <see cref="SetLowPassFilter"/>
+        /// (or <see cref="ResetState"/>) so latched NaN/Infinity can't survive.
+        /// </summary>
+        /// <param name="sampleRate">Sample rate.</param>
+        /// <param name="cutoffFrequency">New cut-off frequency.</param>
+        /// <param name="q">New Q (quality factor).</param>
+        public void UpdateLowPassFilter(float sampleRate, float cutoffFrequency, float q)
+        {
+            ValidateParameters(sampleRate, cutoffFrequency, nameof(cutoffFrequency), q, nameof(q));
+            var w0 = 2 * Math.PI * cutoffFrequency / sampleRate;
+            var cosw0 = Math.Cos(w0);
+            var alpha = Math.Sin(w0) / (2 * q);
+
+            var b0 = (1 - cosw0) / 2;
+            var b1 = 1 - cosw0;
+            var b2 = (1 - cosw0) / 2;
+            var aa0 = 1 + alpha;
+            var aa1 = -2 * cosw0;
+            var aa2 = 1 - alpha;
+
+            // recompute coefficients only — preserve x1/x2/y1/y2
+            a0 = b0 / aa0;
+            a1 = b1 / aa0;
+            a2 = b2 / aa0;
+            a3 = aa1 / aa0;
+            a4 = aa2 / aa0;
+        }
+
+        /// <summary>
         /// Set this up as a peaking EQ
         /// </summary>
         /// <param name="sampleRate">Sample Rate</param>

@@ -236,9 +236,19 @@ None of this exists anywhere in NAudio today; it is the heart of the feature.
 ## 8. Demos (Layer 3)
 
 ### 8.1 Live MIDI player
-`MidiIn` (from `NAudio.WinMM`) → sampler engine → `WasapiPlayer`. Load an SF2 or
-SFZ, pick a program, play from an attached MIDI keyboard. Subjective-quality and
-latency evaluation tool.
+`WinRTMidiIn` (the modern `Windows.Devices.Midi` backend, from `NAudio.Wasapi`) →
+sampler engine → `WaveOut`. Load an SF2 or SFZ, pick a MIDI input device, play
+from an attached keyboard. Subjective-quality and latency evaluation tool.
+**DONE.** The reusable bridge is `NAudio.Sampler.LiveMidiInstrument`: it wraps a
+`SamplerEngine` as an `ISampleProvider` and exposes a thread-safe `Send`
+(plus `NoteOn`/`NoteOff`) that queues events lock-free and drains them on the
+audio thread, so the (single-threaded) engine is never touched from the MIDI
+callback thread. The "Live MIDI Sampler" panel in `NAudioWpfDemo`
+(`LiveSamplerDemo/`) wraps it with an SF2/SFZ instrument picker, a `WinRTMidiIn`
+device dropdown, master volume, a panic (all-sound-off) button and a clickable
+on-screen `PianoControl` — so it plays even with no hardware MIDI device, and
+hardware input lights the on-screen keys. The bridge is unit-tested headless;
+the WPF panel needs Windows + an audio device.
 
 ### 8.2 Offline MIDI-file → WAV render
 `MidiFile` → `EventTimeline` → sampler engine → `WaveFileWriter`, driven
@@ -398,12 +408,14 @@ Sequenced cheapest-useful-first:
    The shared `WaveSampleLoader` (mono down-mix) now backs both this and the SFZ
    WAV loader. The interactive waveform/loop editor UI is the step-9 demo.
 9. **Demos:** live MIDI, offline render, single-sample/recording editor.
-   **In progress.** A `SoundFont / MIDI Player` panel in `NAudioWpfDemo`
-   (`SamplerDemo/`) loads a `.sf2` + `.mid`, and either plays them live
+   **In progress.** Two `NAudioWpfDemo` panels: a `SoundFont / MIDI Player`
+   (`SamplerDemo/`) loads a `.sf2` + `.mid` and either plays them
    (`SequencedMidiInstrument` → `WaveOut`) or renders to a WAV
-   (`OfflineMidiRenderer`). **Remaining:** a live-`MidiIn` keyboard player
-   (real-time MIDI input) and the interactive single-sample waveform/loop-point
-   editor (the step-8 model is ready to bind a UI to).
+   (`OfflineMidiRenderer`); and a `Live MIDI Sampler` (`LiveSamplerDemo/`) plays
+   an SF2 or SFZ live from a `WinRTMidiIn` device and/or an on-screen keyboard
+   via the new `LiveMidiInstrument` bridge (see §8.1). **Remaining:** the
+   interactive single-sample waveform/loop-point editor (the step-8 model is
+   ready to bind a UI to).
 
 **Testing.** Lean on deterministic offline render → golden-WAV comparisons (the
 drum demo's "render matches live playback" path in #1324 is the model), plus

@@ -1,0 +1,55 @@
+<UserControl x:Class="NAudioWpfDemo.LiveSamplerDemo.LiveSamplerDemoView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:NAudioWpfDemo.LiveSamplerDemo"
+             mc:Ignorable="d" d:DesignHeight="320" d:DesignWidth="660">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <TextBlock Grid.Row="0" Grid.Column="0" Text="Instrument:" VerticalAlignment="Center" Margin="6" />
+        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding InstrumentPath}" IsReadOnly="True"
+                 IsEnabled="{Binding IsStopped}" Margin="6" VerticalAlignment="Center" />
+        <Button Grid.Row="0" Grid.Column="2" Content="Browse..." Command="{Binding BrowseInstrumentCommand}"
+                IsEnabled="{Binding IsStopped}" Width="90" Margin="6" />
+
+        <TextBlock Grid.Row="1" Grid.Column="0" Text="MIDI input:" VerticalAlignment="Center" Margin="6" />
+        <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding MidiInputDevices}"
+                  SelectedItem="{Binding SelectedDevice}" IsEnabled="{Binding IsStopped}"
+                  Margin="6" VerticalAlignment="Center" />
+        <Button Grid.Row="1" Grid.Column="2" Content="Refresh" Command="{Binding RefreshDevicesCommand}"
+                IsEnabled="{Binding IsStopped}" Width="90" Margin="6"
+                ToolTip="Re-scan for MIDI input devices. You can also play with no device using the on-screen keyboard." />
+
+        <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Orientation="Horizontal" Margin="0,6,0,6">
+            <Button Content="Start" Command="{Binding StartCommand}" IsEnabled="{Binding IsStopped}" Width="80" Margin="6" />
+            <Button Content="Stop" Command="{Binding StopCommand}" IsEnabled="{Binding IsRunning}" Width="80" Margin="6" />
+            <Button Content="Panic" Command="{Binding PanicCommand}" IsEnabled="{Binding IsRunning}" Width="70" Margin="6"
+                    ToolTip="All sound off — silences every voice immediately." />
+            <TextBlock Text="Volume" VerticalAlignment="Center" Margin="16,0,4,0" />
+            <Slider Minimum="0" Maximum="1" Value="{Binding MasterVolume}" Width="120" VerticalAlignment="Center" />
+            <TextBlock VerticalAlignment="Center" Margin="16,0,0,0"
+                       Text="{Binding ActiveVoiceCount, StringFormat='Voices: {0}'}" />
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3" HorizontalScrollBarVisibility="Auto"
+                      VerticalScrollBarVisibility="Disabled" Margin="6">
+            <local:PianoControl x:Name="piano" HorizontalAlignment="Left" />
+        </ScrollViewer>
+
+        <TextBlock Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3" Text="{Binding Status}"
+                   TextWrapping="Wrap" Margin="6,12,6,6" Foreground="#555" />
+    </Grid>
+</UserControl>

@@ -49,6 +49,7 @@ namespace NAudio.Sampler
         private double baseModLfoToFilter;  // cents
         private double baseModEnvToFilter;  // cents
         private double baseModLfoToVolume;  // centibels
+        private SamplerFilterType filterType; // low/high/band pass
         private double baseFilterCents;     // initial filter cutoff (absolute cents)
         private double baseAttenuationCb;   // initial attenuation (centibels)
         private double velocityAttenuationCb; // velocity->amplitude tracking (centibels, SFZ amp_veltrack)
@@ -90,8 +91,11 @@ namespace NAudio.Sampler
         /// <summary>The MIDI note that triggered this voice.</summary>
         public int Note { get; private set; }
 
-        /// <summary>The region's exclusive (choke) class, or 0 for none.</summary>
-        public int ExclusiveClass { get; private set; }
+        /// <summary>The region's choke group, or 0 for none.</summary>
+        public int Group { get; private set; }
+
+        /// <summary>Whether this voice ignores note-off and plays to the end (one-shot).</summary>
+        public bool IgnoreNoteOff { get; private set; }
 
         /// <summary>Whether the note is being held (gate open, before note-off).</summary>
         public bool IsHeld { get; private set; }
@@ -148,6 +152,7 @@ namespace NAudio.Sampler
             this.modulators = region.Modulators;
             this.velocity = effectiveVelocity;
             this.key = effectiveKey;
+            this.filterType = region.FilterType;
             velocityAttenuationCb = VelocityAttenuation(region.VelocityTrackingPercent, effectiveVelocity);
 
             // base (generator) values; the SF2 modulators add to these. The
@@ -173,7 +178,8 @@ namespace NAudio.Sampler
 
             Channel = channel;
             Note = note;
-            ExclusiveClass = gen.ExclusiveClass;
+            Group = region.Group;
+            IgnoreNoteOff = region.IgnoreNoteOff;
             StartOrder = order;
             IsHeld = true;
             IsActive = true;
@@ -255,7 +261,12 @@ namespace NAudio.Sampler
                         + modEnvFilter * modEnvValue
                         + modLfoFilter * modLfoValue;
                     double hz = Math.Clamp(SynthMath.AbsoluteCentsToHertz(fc), 20.0, nyquist * 0.95);
-                    filter.UpdateLowPassFilter(outputSampleRate, (float)hz, filterQ);
+                    switch (filterType)
+                    {
+                        case SamplerFilterType.HighPass: filter.UpdateHighPassFilter(outputSampleRate, (float)hz, filterQ); break;
+                        case SamplerFilterType.BandPass: filter.UpdateBandPassFilter(outputSampleRate, (float)hz, filterQ); break;
+                        default: filter.UpdateLowPassFilter(outputSampleRate, (float)hz, filterQ); break;
+                    }
                 }
 
                 for (int i = 0; i < sub; i++)
@@ -410,8 +421,13 @@ namespace NAudio.Sampler
             if (filterActive)
             {
                 double hz = Math.Clamp(effectiveHz, 20.0, nyquist * 0.95);
-                // fresh filter: SetLowPassFilter resets state (safe at note start)
-                filter = BiQuadFilter.LowPassFilter(outputSampleRate, (float)hz, filterQ);
+                // fresh filter resets state (safe at note start)
+                filter = filterType switch
+                {
+                    SamplerFilterType.HighPass => BiQuadFilter.HighPassFilter(outputSampleRate, (float)hz, filterQ),
+                    SamplerFilterType.BandPass => BiQuadFilter.BandPassFilterConstantPeakGain(outputSampleRate, (float)hz, filterQ),
+                    _ => BiQuadFilter.LowPassFilter(outputSampleRate, (float)hz, filterQ)
+                };
             }
             else
             {

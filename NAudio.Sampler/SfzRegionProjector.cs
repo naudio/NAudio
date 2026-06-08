@@ -38,13 +38,12 @@ namespace NAudio.Sampler
         }
 
         /// <summary>
-        /// Projects one mapped region, or returns null if it has no sample, the
-        /// sample cannot be loaded, or its trigger is not <c>attack</c> (the only
-        /// trigger the engine plays today).
+        /// Projects one mapped region, or returns null if it has no sample or the
+        /// sample cannot be loaded.
         /// </summary>
         public static SamplerRegion Project(SfzMappedRegion region, ISfzSampleLoader loader)
         {
-            if (region.Sample == null || region.Trigger != SfzTrigger.Attack) return null;
+            if (region.Sample == null) return null;
             if (!loader.TryLoad(region.Sample, out var data, out var sampleRate)) return null;
 
             int length = data.Length;
@@ -71,11 +70,37 @@ namespace NAudio.Sampler
                 Generators = BuildGenerators(region),
                 Modulators = null, // SFZ Tier 1 has no SF2-style modulators
                 VelocityTrackingPercent = region.AmpVelTrack,
+                FilterType = MapFilterType(region.FilterType),
+                Trigger = MapTrigger(region.Trigger),
+                IgnoreNoteOff = region.LoopMode == SfzLoopMode.OneShot,
+                Group = region.Group,
+                OffByGroup = region.OffBy,
                 LoKey = (byte)Clamp(region.LoKey, 0, 127),
                 HiKey = (byte)Clamp(region.HiKey, 0, 127),
                 LoVelocity = (byte)Clamp(region.LoVel, 0, 127),
                 HiVelocity = (byte)Clamp(region.HiVel, 0, 127)
             };
+        }
+
+        private static SamplerFilterType MapFilterType(SfzFilterType type)
+        {
+            switch (type)
+            {
+                case SfzFilterType.HighPass: return SamplerFilterType.HighPass;
+                case SfzFilterType.BandPass: return SamplerFilterType.BandPass;
+                default: return SamplerFilterType.LowPass; // low-pass; band-reject not yet supported
+            }
+        }
+
+        private static SamplerTrigger MapTrigger(SfzTrigger trigger)
+        {
+            switch (trigger)
+            {
+                case SfzTrigger.Release: return SamplerTrigger.Release;
+                case SfzTrigger.First: return SamplerTrigger.First;
+                case SfzTrigger.Legato: return SamplerTrigger.Legato;
+                default: return SamplerTrigger.Attack;
+            }
         }
 
         private static SoundFontGenerators BuildGenerators(SfzMappedRegion region)
@@ -100,8 +125,9 @@ namespace NAudio.Sampler
             gen[GeneratorEnum.ReleaseVolumeEnvelope] = GeneratorUnits.ToTimecents(region.AmpegRelease);
             gen[GeneratorEnum.SustainVolumeEnvelope] = GeneratorUnits.SustainCentibels(region.AmpegSustain);
 
-            // filter: only low-pass is honoured by the voice today
-            if (region.HasCutoff && region.CutoffHz > 0 && region.FilterType == SfzFilterType.LowPass)
+            // filter cutoff/resonance (the voice applies the shape from FilterType);
+            // band-reject is not yet supported, so it leaves the filter open
+            if (region.HasCutoff && region.CutoffHz > 0 && region.FilterType != SfzFilterType.BandReject)
             {
                 gen[GeneratorEnum.InitialFilterCutoffFrequency] =
                     GeneratorUnits.Clamp16(SynthMath.HertzToAbsoluteCents(region.CutoffHz));
@@ -109,12 +135,6 @@ namespace NAudio.Sampler
             }
 
             gen[GeneratorEnum.SampleModes] = (short)MapLoopMode(region.LoopMode);
-
-            // group/off_by maps cleanly to an exclusive class only in the common
-            // mutually-exclusive case (e.g. open/closed hi-hat share group==off_by)
-            if (region.Group != 0 && region.Group == region.OffBy)
-                gen[GeneratorEnum.ExclusiveClass] = (short)region.Group;
-
             return gen;
         }
 

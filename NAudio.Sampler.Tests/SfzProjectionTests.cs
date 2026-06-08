@@ -61,18 +61,34 @@ namespace NAudio.Sampler.Tests
         }
 
         [Test]
-        public void LoopModeAndExclusiveGroupMap()
+        public void LoopModeAndGroupsMap()
         {
             var r = ProjectFirst("<region> sample=a.wav loop_mode=loop_continuous group=1 off_by=1", ConstantSample());
             Assert.That(r.Generators[GeneratorEnum.SampleModes], Is.EqualTo((short)SampleMode.LoopContinuously));
-            Assert.That(r.Generators[GeneratorEnum.ExclusiveClass], Is.EqualTo(1));
+            Assert.That(r.Group, Is.EqualTo(1));
+            Assert.That(r.OffByGroup, Is.EqualTo(1));
         }
 
         [Test]
-        public void CrossGroupOffByIsNotMappedToExclusiveClass()
+        public void CrossGroupOffByIsPreservedDirectionally()
         {
             var r = ProjectFirst("<region> sample=a.wav group=1 off_by=2", ConstantSample());
-            Assert.That(r.Generators[GeneratorEnum.ExclusiveClass], Is.EqualTo(0));
+            Assert.That(r.Group, Is.EqualTo(1));
+            Assert.That(r.OffByGroup, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void FilterAndTriggerMap()
+        {
+            var hp = ProjectFirst("<region> sample=a.wav cutoff=500 fil_type=hpf_2p", ConstantSample());
+            Assert.That(hp.FilterType, Is.EqualTo(SamplerFilterType.HighPass));
+
+            var rel = ProjectFirst("<region> sample=a.wav trigger=release", ConstantSample());
+            Assert.That(rel, Is.Not.Null);
+            Assert.That(rel.Trigger, Is.EqualTo(SamplerTrigger.Release));
+
+            var oneShot = ProjectFirst("<region> sample=a.wav loop_mode=one_shot", ConstantSample());
+            Assert.That(oneShot.IgnoreNoteOff, Is.True);
         }
 
         [Test]
@@ -95,11 +111,6 @@ namespace NAudio.Sampler.Tests
             Assert.That(r.Sample.End, Is.EqualTo(8));
         }
 
-        [Test]
-        public void ReleaseTriggerIsSkipped()
-        {
-            Assert.That(ProjectFirst("<region> sample=a.wav trigger=release", ConstantSample()), Is.Null);
-        }
 
         [Test]
         public void RegionWithoutSampleIsSkipped()

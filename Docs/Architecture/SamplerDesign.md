@@ -439,9 +439,10 @@ modulator transforms. Mark anything needing real hardware
   `xfout_*`), `rt_decay`, the filter/pitch EGs and the `amplfo_*`/`fillfo_*`/
   `pitchlfo_*` LFOs, `eq1/2/3_*`, and `effect1`/`effect2` sends. Maps onto the
   same modulation/region model the SF2 side already uses.
-- **SFZ Tier-1 finish** — the documented Tier-1 shortcuts in §11.1 (stereo
-  samples, release/first/legato triggers, high/band-pass filters, cross-group
-  `off_by`, one-shot note-off, FLAC/Ogg loading).
+- **SFZ Tier-1 finish** — mostly done (triggers, one-shot, directional `off_by`,
+  high/band-pass filters). Remaining (§11.1): stereo-sample playback (needs the
+  interpolating reader to go stereo), FLAC/Ogg loading via `NAudio.SoundFile`,
+  and band-reject `fil_type`.
 - **Built-in algorithmic-reverb send default** — start by routing to the
   existing `ReverbEffect`/`FdnReverbEffect`; a sampler-tuned default is polish.
 
@@ -466,12 +467,12 @@ forgotten:
   feed audio through `InterpolatingSampleReader` (found via a reverb-send test
   that used a 4-frame one-shot). Normal-length and looped samples are
   unaffected; the reader's end/guard handling for tiny one-shots wants a look.
-- **SFZ Tier-1 gaps (step 7c):** regions with a `release`/`first`/`legato`
-  trigger are dropped (only `attack` plays); stereo samples are down-mixed to
-  mono (the voice is mono-source + pan); only low-pass `fil_type` is honoured;
-  `off_by` maps to an exclusive class only when `group == off_by`; `one_shot`
-  loop mode still respects note-off rather than always playing to the end; and
-  only WAV samples load (FLAC/Ogg await `NAudio.SoundFile`).
+- **SFZ Tier-1 gaps:** the remaining shortcuts after the Tier-1 finish are:
+  stereo samples are down-mixed to mono (the voice is mono-source + pan); only
+  WAV loads (FLAC/Ogg await `NAudio.SoundFile`, which needs a system libsndfile);
+  and `fil_type` band-reject leaves the filter open (low/high/band-pass are
+  honoured). *Done in the Tier-1 finish:* release/first/legato triggers, one-shot
+  note-off, directional `off_by` choke groups, and high/band-pass filters.
 - **(Closed)** ~~Reverb/chorus sends evaluated but not rendered~~ — done in
   step 5 (the send-bus).
 

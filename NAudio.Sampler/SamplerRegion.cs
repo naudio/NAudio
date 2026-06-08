@@ -35,6 +35,31 @@ namespace NAudio.Sampler
         /// </summary>
         public float VelocityTrackingPercent { get; init; }
 
+        /// <summary>The resonant filter shape (default low-pass).</summary>
+        public SamplerFilterType FilterType { get; init; }
+
+        /// <summary>
+        /// How a triggered region treats note-off: false (default) follows the amp
+        /// envelope's release; true (SFZ <c>loop_mode=one_shot</c>) plays to the end
+        /// of the sample regardless of note-off.
+        /// </summary>
+        public bool IgnoreNoteOff { get; init; }
+
+        /// <summary>
+        /// The group whose sounding voices this region silences when it starts
+        /// (SFZ <c>off_by</c>); 0 for none. For a self-choking group (SoundFont
+        /// <c>exclusiveClass</c>) <see cref="Group"/> and this are equal.
+        /// </summary>
+        public int OffByGroup { get; init; }
+
+        /// <summary>
+        /// When the region triggers (SFZ <c>trigger</c>). Note-on triggers
+        /// (<see cref="SamplerTrigger.Attack"/>/<see cref="SamplerTrigger.First"/>/
+        /// <see cref="SamplerTrigger.Legato"/>) sound on note-on; <see cref="SamplerTrigger.Release"/>
+        /// sounds on note-off.
+        /// </summary>
+        public SamplerTrigger Trigger { get; init; }
+
         /// <summary>Lowest MIDI key (inclusive) this region responds to.</summary>
         public byte LoKey { get; init; }
         /// <summary>Highest MIDI key (inclusive) this region responds to.</summary>
@@ -44,8 +69,13 @@ namespace NAudio.Sampler
         /// <summary>Highest velocity (inclusive) this region responds to.</summary>
         public byte HiVelocity { get; init; }
 
-        /// <summary>The exclusive (choke) class, or 0 for none.</summary>
-        public int ExclusiveClass => Generators.ExclusiveClass;
+        /// <summary>
+        /// The choke group this region's voices belong to (SoundFont
+        /// <c>exclusiveClass</c>, SFZ <c>group</c>); 0 for none. A starting voice
+        /// silences sounding voices whose <see cref="Group"/> equals some region's
+        /// <see cref="OffByGroup"/>.
+        /// </summary>
+        public int Group { get; init; }
 
         /// <summary>Whether this region should sound for the given key and velocity.</summary>
         public bool Matches(int key, int velocity) =>

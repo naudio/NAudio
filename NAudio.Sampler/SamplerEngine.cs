@@ -26,6 +26,9 @@ namespace NAudio.Sampler
         private readonly SendBus reverbBus;
         private readonly SendBus chorusBus;
         private readonly HashSet<(int channel, int note)> sustainedNotes = new();
+        // keys currently held down per channel (note -> note-on velocity), for
+        // legato/first triggers and release-trigger velocity
+        private readonly Dictionary<int, int>[] heldNotes;
         private long startOrder;
         private float masterGain = 1f;
 
@@ -43,8 +46,12 @@ namespace NAudio.Sampler
                 voices[i] = new SamplerVoice(sampleRate);
 
             Channels = new MidiChannelState[16];
+            heldNotes = new Dictionary<int, int>[16];
             for (int i = 0; i < Channels.Length; i++)
+            {
                 Channels[i] = new MidiChannelState();
+                heldNotes[i] = new Dictionary<int, int>();
+            }
 
             mixBuffer = new float[MaxFramesPerBlock * 2];
             WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, 2);
@@ -134,16 +141,35 @@ namespace NAudio.Sampler
 
             var state = Channels[channel];
             var regions = GetRegionsForNoteOn(state);
-            if (regions == null) return;
 
-            foreach (var region in regions)
+            // "first" plays only when no other key is held; "legato" only when one is
+            bool legato = heldNotes[channel].Count > 0;
+
+            if (regions != null)
             {
-                if (!region.Matches(note, velocity)) continue;
+                foreach (var region in regions)
+                {
+                    if (!region.Matches(note, velocity)) continue;
+                    if (!PlaysOnNoteOn(region.Trigger, legato)) continue;
 
-                if (region.ExclusiveClass != 0) ChokeExclusiveClass(region.ExclusiveClass, channel);
+                    if (region.OffByGroup != 0) ChokeGroup(region.OffByGroup, channel);
 
-                var voice = AcquireVoice();
-                voice.Start(region, state, channel, note, velocity, startOrder++);
+                    var voice = AcquireVoice();
+                    voice.Start(region, state, channel, note, velocity, startOrder++);
+                }
+            }
+
+            heldNotes[channel][note] = velocity; // remember the key is down (for legato / release)
+        }
+
+        private static bool PlaysOnNoteOn(SamplerTrigger trigger, bool legato)
+        {
+            switch (trigger)
+            {
+                case SamplerTrigger.Attack: return true;
+                case SamplerTrigger.First: return !legato;
+                case SamplerTrigger.Legato: return legato;
+                default: return false; // Release plays on note-off
             }
         }
 
@@ -155,6 +181,13 @@ namespace NAudio.Sampler
         {
             if ((uint)channel >= 16) return;
 
+            // fire release-triggered regions for this key (using its note-on velocity)
+            if (heldNotes[channel].TryGetValue(note, out int heldVelocity))
+            {
+                FireReleaseTriggers(channel, note, heldVelocity);
+                heldNotes[channel].Remove(note);
+            }
+
             if (Channels[channel].SustainPedal)
             {
                 sustainedNotes.Add((channel, note));
@@ -162,8 +195,26 @@ namespace NAudio.Sampler
             }
 
             foreach (var v in voices)
-                if (v.IsActive && v.IsHeld && v.Channel == channel && v.Note == note)
+                if (v.IsActive && v.IsHeld && !v.IgnoreNoteOff && v.Channel == channel && v.Note == note)
                     v.Release();
+        }
+
+        private void FireReleaseTriggers(int channel, int note, int velocity)
+        {
+            var state = Channels[channel];
+            var regions = GetRegionsForNoteOn(state);
+            if (regions == null) return;
+
+            foreach (var region in regions)
+            {
+                if (region.Trigger != SamplerTrigger.Release) continue;
+                if (!region.Matches(note, velocity)) continue;
+
+                if (region.OffByGroup != 0) ChokeGroup(region.OffByGroup, channel);
+
+                var voice = AcquireVoice();
+                voice.Start(region, state, channel, note, velocity, startOrder++);
+            }
         }
 
         /// <summary>Stops every sounding voice immediately (with a short fade).</summary>
@@ -175,7 +226,8 @@ namespace NAudio.Sampler
         /// <summary>Releases all held notes on every channel.</summary>
         public void AllNotesOff()
         {
-            foreach (var v in voices) if (v.IsActive && v.IsHeld) v.Release();
+            foreach (var v in voices) if (v.IsActive && v.IsHeld && !v.IgnoreNoteOff) v.Release();
+            foreach (var held in heldNotes) held.Clear();
         }
 
         /// <inheritdoc />
@@ -249,16 +301,17 @@ namespace NAudio.Sampler
         private void ReleaseSustainedNotes(int channel)
         {
             foreach (var v in voices)
-                if (v.IsActive && v.IsHeld && v.Channel == channel &&
+                if (v.IsActive && v.IsHeld && !v.IgnoreNoteOff && v.Channel == channel &&
                     sustainedNotes.Contains((channel, v.Note)))
                     v.Release();
             sustainedNotes.RemoveWhere(k => k.channel == channel);
         }
 
-        private void ChokeExclusiveClass(int exclusiveClass, int channel)
+        // silence sounding voices belonging to the given choke group on a channel
+        private void ChokeGroup(int group, int channel)
         {
             foreach (var v in voices)
-                if (v.IsActive && v.ExclusiveClass == exclusiveClass && v.Channel == channel)
+                if (v.IsActive && v.Group == group && v.Channel == channel)
                     v.Choke();
         }
 

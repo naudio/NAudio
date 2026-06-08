@@ -79,6 +79,9 @@ namespace NAudio.Sampler
                     Generators = region.Generators,
                     Modulators = ModulatorSet.Build(region),
                     VelocityTrackingPercent = 0f, // SF2 velocity is driven by the modulator list
+                    // exclusiveClass is a self-choking group (a note silences others in its class)
+                    Group = region.Generators.ExclusiveClass,
+                    OffByGroup = region.Generators.ExclusiveClass,
                     LoKey = region.LowKey,
                     HiKey = region.HighKey,
                     LoVelocity = region.LowVelocity,

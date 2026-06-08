@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using NAudio.Dmo;
 using NAudio.Wave;
 using System.Diagnostics;
 
-namespace NAudio.FileFormats.Mp3
+namespace NAudio.Dmo
 {
     /// <summary>
     /// MP3 Frame decompressor using the Windows Media MP3 Decoder DMO object

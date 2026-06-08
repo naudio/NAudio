@@ -8,6 +8,10 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
 
 #### Breaking changes
 
+ * `AudioVolumeLevel` moved from `NAudio.Wasapi.CoreAudioApi` to `NAudio.CoreAudioApi` — it now lives in the same namespace as the rest of the WASAPI/Core Audio API (`MMDevice`, `Part`, `DeviceTopology`, etc.) that it's returned from. The parallel `NAudio.Wasapi.CoreAudioApi` namespace (which otherwise held only internal COM-activation plumbing) is gone
+ * `DmoMp3FrameDecompressor` moved from `NAudio.FileFormats.Mp3` to `NAudio.Dmo` — it's a DMO wrapper and now shares the namespace of the `NAudio.Dmo` assembly it ships in (alongside `DmoEffectWaveProvider`, `ResamplerDmoStream`, etc.)
+ * `WaveFileChunkReader` is now `internal` (and moved from `NAudio.FileFormats.Wav` to `NAudio.Wave`) — it was internal plumbing for `WaveFileReader`. Read custom RIFF chunks via `WaveFileReader.Chunks` (`WaveChunks` / `RiffChunk` / `IWaveChunkInterpreter<T>`) instead
+ * `CaptureState` enum moved from `NAudio.CoreAudioApi` to `NAudio.Wave` — it's a backend-agnostic capture-state type used by `WaveIn`, `WasapiCapture`, and `WasapiRecorder`, and was only in `NAudio.CoreAudioApi` for historical reasons. Code that named the type via `using NAudio.CoreAudioApi;` now needs `using NAudio.Wave;`
  * `IWaveProvider.Read` signature changed from `Read(byte[], int, int)` to `Read(Span<byte>)`. Existing callers with `byte[]` migrate via `source.Read(buffer.AsSpan(offset, count))`; implementations override `Read(Span<byte>)`
  * `ISampleProvider.Read` signature changed from `Read(float[], int, int)` to `Read(Span<float>)` (same migration pattern)
  * `MidiIn`, `MidiOut`, `MidiInCapabilities`, and `MidiOutCapabilities` moved from `NAudio.Midi` to `NAudio.WinMM` — all `winmm.dll` interop now lives in one assembly
@@ -51,6 +55,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * **DSP:** `BiQuadFilter.UpdateLowPassFilter` retunes a running filter without clearing its state, so a filter can be modulated per block/sample without the click that `SetLowPassFilter` causes by resetting state
  * **WASAPI:** new high-level `WasapiPlayer` and `WasapiRecorder` classes, built via `WasapiPlayerBuilder` / `WasapiRecorderBuilder`. Adds `IAudioClient3` low-latency support, MMCSS thread priority, `IAsyncDisposable`, zero-copy buffer access, and process-specific loopback via `WasapiRecorderBuilder.WithProcessLoopback()`
  * **ASIO:** new `AsioDevice` class replacing `AsioOut` as the primary ASIO interface. Adds explicit `InitPlayback` / `InitRecording` / `InitDuplex` modes, non-contiguous channel selection, per-channel `Span<float>` callbacks, `Reinitialize()` for driver-reset recovery, and per-buffer timing fields (`SamplePosition`, `SystemTimeNanoseconds`, `Speed`, SMPTE `TimeCode`)
+ * **Sequencing:** new `NAudio.Sequencing` namespace in `NAudio.Core` with portable primitives for scheduling musical events — `ITempoMap` (with `LiveTempoMap` and `StaticTempoMap` implementations, plus `NextChangeAfter` for in-block tempo-split decisions), `TimeSignatureMap`, `Transport`, `EventTimeline<T>`, `SwingTransform`, the stateless `EventBufferQuery` per-buffer dispatcher, a `SequencedSampleProvider<T>` audio bridge that dispatches events with sample-accurate offsets, and a `MusicalTime.RescaleFromPpq` helper for the MIDI-file ingestion boundary. See `Docs/Architecture/Sequencing.md`
  * **ASIO events:** `LatenciesChanged` and `ResyncOccurred` surfaced separately; buffer-size changes routed through `DriverResetRequest`
  * **Media Foundation:** `MediaFoundationEncoder.EncodeToFlac` for lossless FLAC output. The FLAC/ALAC selector now falls back correctly on rate + channels
  * **WinForms:** `WaveOutWindow` and `WaveInWindow` available as window-callback variants of the modernised event-driven `WaveOut` / `WaveIn`
@@ -83,6 +88,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * **NAudioConsoleTest:** new CLI test harness for driving various NAudio features without the need for GUI. Includes `run-batch` for JSON-driven test plans and `diagnose` for capturing a structured host audio snapshot (OS, ASIO drivers, WASAPI/WinMM/DirectSound devices, NAudio assembly versions).
  * **WPF demos:** spectrum analyser rewritten with corrected dB formula (20·log₁₀), log-frequency mapping, real-input full-scale calibration, bars instead of polylines, peak-decay markers, and per-band smoothing. New `LiveWaveformControl` with configurable render styles, vertical scaling, and fill-between rendering
  * **WAV recording demo:** added loopback support and a multi-API device combo with provenance embedding
+ * **Drum machine demo:** rebuilt on top of the new `NAudio.Sequencing` primitives. Adds a swing knob, a "Render to WAV" command exercising the offline sample-driven path, and a hi-hat choke group (closed and open hats cut each other with a 10 ms fade-out)
  * **MIDI In demo:** Refresh button for hot-plugged devices, device combos disabled while in use, test MIDI Out plays on channel 1 (was 2), Filter Auto-Sensing on by default, stopping test output now sends note-off so notes don't hang, and cleaner panel disposal
  * **MfStressTest:** Reliability tests for the new Media Foundation interop implementation in NAudio 3.
  * Replaced vendored NSpeex (deprecated) with Opus (Concentus) in the network chat demo; added round-trip unit tests
@@ -150,12 +156,15 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
 #### Packaging and dependencies
 
  * Each NAudio package now ships its own README in the NuGet payload
+ * Each NAudio package now embeds an SPDX 2.2 Software Bill of Materials (SBOM) under `/_manifest/spdx_2.2/` in its `.nupkg`, generated at pack time via `Microsoft.Sbom.Targets`
  * Test project migrated from VSTest to `Microsoft.Testing.Platform`
  * `NAudioTests` split into `NAudio.Core.Tests` (cross-platform, `net10.0`) and `NAudio.Windows.Tests` (Windows-only, `net10.0-windows`) — eliminates the dual-TFM double-run on Windows CI and lets non-Windows devs run just the cross-platform suite
  * `NAudio.Alsa.Tests` and `NAudio.SoundFile.Tests` now ignore MTP exit codes 8/9 so `dotnet test` succeeds on machines where the suite legitimately runs zero tests (ALSA off-Linux) or self-skips (libsndfile absent)
  * Migrated to the modern `.slnx` solution format
  * Renamed `license.txt` to `LICENSE` for GitHub license detection; refreshed copyright year to 2008–2026
  * Added per-package `<Description>` metadata to every shipping NAudio NuGet package so each clearly identifies itself as part of the NAudio family
+ * Added a DocFX documentation site (tutorials + API reference) published to GitHub Pages, built automatically from `Docs/` and the source XML comments
+ * Fixed the published API reference dropping the cross-platform namespaces (`NAudio.Effects`, `NAudio.Dsp`, `NAudio.Codecs`, `NAudio.SoundFont`, etc.) from the navigation — DocFX's two metadata blocks both wrote to the same destination, so the second overwrote the first's table of contents. The projects are now documented from a single metadata block
 
 ### 2.3.0 (12 Mar 2026)
 

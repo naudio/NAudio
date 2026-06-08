@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using NAudio.FileFormats.Wav;
 
 namespace NAudio.Wave
 {

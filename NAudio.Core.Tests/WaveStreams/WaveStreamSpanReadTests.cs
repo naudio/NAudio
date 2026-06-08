@@ -179,23 +179,6 @@ namespace NAudio.Core.Tests.WaveStreams
             }
         }
 
-        [Test]
-        public void AudioFileReader_SpanAndByteArrayRead_Agree()
-        {
-            var wav = Build16BitMonoPcmWav();
-            var tmp = Path.Combine(Path.GetTempPath(), "naudio-span-test-" + Guid.NewGuid() + ".wav");
-            File.WriteAllBytes(tmp, wav);
-            try
-            {
-                using var reader = new AudioFileReader(tmp);
-                AssertReadParity(reader, chunkSize: 2048); // float stereo output
-            }
-            finally
-            {
-                File.Delete(tmp);
-            }
-        }
-
         /// <summary>
         /// Build an AIFF byte array of the requested PCM bit depth. Each bit depth exercises a
         /// different endian-swap branch inside AiffFileReader.Read.

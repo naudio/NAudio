@@ -1,0 +1,100 @@
+- name: Playback
+  items:
+    - name: Play an audio file (console)
+      href: PlayAudioFileConsoleApp.md
+    - name: Play an audio file (WinForms)
+      href: PlayAudioFileWinForms.md
+    - name: Play audio from a URL
+      href: PlayAudioFromUrl.md
+    - name: Choose an output device type
+      href: OutputDeviceTypes.md
+    - name: Enumerate and select output devices
+      href: EnumerateOutputDevices.md
+    - name: Play audio with WasapiPlayer (recommended)
+      href: WasapiPlayer.md
+    - name: Configure a WasapiOut device (legacy)
+      href: WasapiOut.md
+    - name: Handling playback stopped
+      href: PlaybackStopped.md
+    - name: WaveStream, IWavePlayer and ISampleProvider
+      href: WaveProviders.md
+    - name: Play audio with ASIO
+      href: AsioPlayback.md
+    - name: Migrating from AsioOut to AsioDevice
+      href: AsioMigration.md
+- name: Working with codecs
+  items:
+    - name: Convert MP3 to WAV
+      href: ConvertMp3ToWav.md
+    - name: Encode with MediaFoundationEncoder
+      href: MediaFoundationEncoder.md
+    - name: Enumerate Media Foundation Transforms
+      href: EnumerateMediaFoundationTransforms.md
+    - name: Enumerate ACM codecs
+      href: EnumerateAcmDrivers.md
+- name: Working with audio files
+  items:
+    - name: Mix two audio files to WAV
+      href: MixTwoAudioFilesToWav.md
+- name: Manipulating audio
+  items:
+    - name: Convert between mono and stereo
+      href: ConvertBetweenStereoAndMono.md
+    - name: Concatenating audio
+      href: ConcatenatingAudio.md
+    - name: Skip and take with OffsetSampleProvider
+      href: OffsetSampleProvider.md
+    - name: Resample audio
+      href: Resampling.md
+    - name: Using RawSourceWaveStream
+      href: RawSourceWaveStream.md
+    - name: Pitch shifting with SmbPitchShiftingSampleProvider
+      href: SmbPitchShiftingSampleProvider.md
+    - name: Fade audio in and out
+      href: FadeInOutSampleProvider.md
+    - name: Apply audio effects with NAudio.Effects
+      href: AudioEffects.md
+- name: Generating audio
+  items:
+    - name: Play sine waves and other signals
+      href: PlaySineWave.md
+- name: Recording
+  items:
+    - name: Record a WAV file (WinForms)
+      href: RecordWavFileWinFormsWaveIn.md
+    - name: Record with WasapiRecorder (recommended)
+      href: WasapiRecorder.md
+    - name: Capture system audio with WasapiLoopbackCapture (legacy)
+      href: WasapiLoopbackCapture.md
+    - name: Record audio with ASIO
+      href: AsioRecording.md
+    - name: Duplex processing with ASIO
+      href: AsioDuplex.md
+    - name: ASIO channel mapping
+      href: AsioChannelMapping.md
+    - name: Handling ASIO driver resets
+      href: AsioDriverReset.md
+- name: Visualization
+  items:
+    - name: Waveform rendering to PNG
+      href: WaveFormRendering.md
+    - name: Implement a recording level meter
+      href: RecordingLevelMeter.md
+- name: MIDI
+  items:
+    - name: Sending and receiving MIDI events
+      href: MidiInAndOut.md
+    - name: Exploring MIDI files with MidiFile
+      href: MidiFile.md
+    - name: MIDI event types
+      href: MidiEvent.md
+- name: Cross-platform & Linux
+  items:
+    - name: Cross-platform audio files with SoundFile
+      href: CrossPlatformAudioFilesWithSoundFile.md
+    - name: Play an audio file on Linux (ALSA)
+      href: PlayAudioFileLinuxAlsa.md
+    - name: Record an audio file on Linux (ALSA)
+      href: RecordAudioFileLinuxAlsa.md
+    - name: Validating ALSA on Linux
+      href: ValidatingAlsaOnLinux.md

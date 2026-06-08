@@ -1,12 +1,11 @@
 using NAudio.CoreAudioApi.Interfaces;
-using NAudio.Wasapi.CoreAudioApi.Interfaces;
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 using System.Threading.Tasks;
 
-namespace NAudio.Wasapi.CoreAudioApi
+namespace NAudio.CoreAudioApi
 {
     [GeneratedComClass]
     internal partial class ActivateAudioInterfaceCompletionHandler :

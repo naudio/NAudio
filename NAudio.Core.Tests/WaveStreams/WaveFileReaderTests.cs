@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using NAudio.Utils;
@@ -6,7 +5,6 @@ using NAudio.Wave;
 using NUnit.Framework;
 using System.Diagnostics;
 using System;
-using NAudio.FileFormats.Wav;
 using NAudio.Core.Tests.Utils;
 
 namespace NAudio.Core.Tests.WaveStreams
@@ -35,21 +33,16 @@ namespace NAudio.Core.Tests.WaveStreams
                 0x00, 0x00, 0x00, 0x00, // Subchunk2Size = 0
             };
             using (var inputStream = new MemoryStream(fileContents))
+            using (var reader = new WaveFileReader(inputStream))
             {
-                // act
-                var chunks = new List<RiffChunk>();
-                var chunkReader = new WaveFileChunkReader();
-                chunkReader.ReadWaveHeader(inputStream);
+                Assert.That(reader.WaveFormat.AverageBytesPerSecond, Is.EqualTo(16000));
+                Assert.That(reader.WaveFormat.BitsPerSample, Is.EqualTo(8));
+                Assert.That(reader.WaveFormat.Channels, Is.EqualTo(2));
+                Assert.That(reader.WaveFormat.SampleRate, Is.EqualTo(8000));
 
-                // assert
-                Assert.That(chunkReader.WaveFormat.AverageBytesPerSecond, Is.EqualTo(16000));
-                Assert.That(chunkReader.WaveFormat.BitsPerSample, Is.EqualTo(8));
-                Assert.That(chunkReader.WaveFormat.Channels, Is.EqualTo(2));
-                Assert.That(chunkReader.WaveFormat.SampleRate, Is.EqualTo(8000));
-
-                Assert.That(chunkReader.DataChunkPosition, Is.EqualTo(46));
-                Assert.That(chunkReader.DataChunkLength, Is.EqualTo(0));
-                Assert.That(chunks.Count, Is.EqualTo(0));
+                // empty-but-valid WAV: no audio samples and no extra chunks
+                Assert.That(reader.Length, Is.EqualTo(0));
+                Assert.That(reader.Chunks.Count, Is.EqualTo(0));
             }
         }
 
@@ -330,15 +323,14 @@ namespace NAudio.Core.Tests.WaveStreams
             }
             ms.Position = 0;
 
-            var chunkReader = new WaveFileChunkReader();
-            chunkReader.ReadWaveHeader(ms);
+            using var reader = new WaveFileReader(ms);
 
-            Assert.That(chunkReader.WaveFormat.Channels, Is.EqualTo(2));
-            Assert.That(chunkReader.WaveFormat.SampleRate, Is.EqualTo(16000));
-            Assert.That(chunkReader.WaveFormat.BitsPerSample, Is.EqualTo(16));
-            Assert.That(chunkReader.WaveFormat.AverageBytesPerSecond, Is.EqualTo(64000));
-            Assert.That(chunkReader.WaveFormat.ExtraSize, Is.EqualTo(0)); // surplus discarded
-            Assert.That(chunkReader.DataChunkLength, Is.EqualTo(audio.Length));
+            Assert.That(reader.WaveFormat.Channels, Is.EqualTo(2));
+            Assert.That(reader.WaveFormat.SampleRate, Is.EqualTo(16000));
+            Assert.That(reader.WaveFormat.BitsPerSample, Is.EqualTo(16));
+            Assert.That(reader.WaveFormat.AverageBytesPerSecond, Is.EqualTo(64000));
+            Assert.That(reader.WaveFormat.ExtraSize, Is.EqualTo(0)); // surplus discarded
+            Assert.That(reader.Length, Is.EqualTo(audio.Length));
         }
 
         [Test]

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Runtime.InteropServices;
 
-namespace NAudio.Wave.WaveFormats
+namespace NAudio.Wave
 {
     /// <summary>
     /// The WMA wave format. 

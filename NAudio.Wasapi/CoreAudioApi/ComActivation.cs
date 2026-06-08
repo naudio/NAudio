@@ -2,7 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 
-namespace NAudio.Wasapi.CoreAudioApi
+namespace NAudio.CoreAudioApi
 {
     /// <summary>
     /// Activates COM objects via raw <c>CoCreateInstance</c> and projects them onto

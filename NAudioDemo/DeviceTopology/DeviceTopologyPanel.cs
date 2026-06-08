@@ -11,7 +11,6 @@ using System.Windows.Forms;
 
 using NAudio.CoreAudioApi;
 using NAudio.CoreAudioApi.Interfaces;
-using NAudio.Wasapi.CoreAudioApi;
 
 namespace NAudioDemo.DeviceTopology
 {

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 using NAudio.Wave;
-using NAudio.Wasapi.CoreAudioApi;
+using NAudio.CoreAudioApi;
 using NAudio.MediaFoundation.Interfaces;
 
 namespace NAudio.MediaFoundation

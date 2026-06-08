@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
-using NAudio.Wasapi.CoreAudioApi;
+using NAudio.CoreAudioApi;
 
 namespace NAudio.CoreAudioApi.Interfaces
 {

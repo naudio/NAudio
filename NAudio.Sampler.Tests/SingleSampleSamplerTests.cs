@@ -41,6 +41,38 @@ namespace NAudio.Sampler.Tests
         }
 
         [Test]
+        public void OneShotEndRampsOutInsteadOfClicking()
+        {
+            // A one-shot whose End falls on a non-zero sample (e.g. an edited End
+            // marker mid-waveform) must fade out over a few ms, not hard-cut — a
+            // hard cut steps from the steady level straight to zero in one sample.
+            var instrument = new SingleSampleInstrument(Constant(0.5f, 1500), SampleRate, rootKey: 60)
+            {
+                LoopMode = LoopMode.None,
+                Start = 0,
+                End = 1000 // truncate before the data ends, on a non-zero sample
+            };
+            var sampler = new SingleSampleSampler(instrument, SampleRate);
+            sampler.NoteOn(0, 60, 127);
+
+            var buffer = new float[2000 * 2];
+            sampler.Read(buffer);
+
+            float steady = Math.Abs(buffer[300 * 2]); // left channel, well past the ~1 ms attack
+            Assert.That(steady, Is.GreaterThan(0.05f), "expected audible steady level before End");
+
+            // largest single-sample downward step on the left channel: a hard cut
+            // would drop by ~steady in one sample; the de-click ramp drops gradually
+            float maxDrop = 0f;
+            for (int i = 1; i < 2000; i++)
+            {
+                float step = Math.Abs(buffer[(i - 1) * 2]) - Math.Abs(buffer[i * 2]);
+                if (step > maxDrop) maxDrop = step;
+            }
+            Assert.That(maxDrop, Is.LessThan(steady * 0.5f), "output should ramp out, not cliff-cut at End");
+        }
+
+        [Test]
         public void AutoMapsAcrossTheWholeKeyboard()
         {
             var sampler = Looping(out _);

@@ -121,8 +121,9 @@ namespace NAudio.Sampler.Tests
         {
             // A non-looping ramp sample played at root vs an octave up: the
             // octave-up voice should reach the end of the sample (go silent)
-            // in roughly half the frames.
-            var rampSf = BuildRampInstrument(rootKey: 60, points: 200, loop: false);
+            // in roughly half the frames. The sample is long so the fixed (pitch-
+            // independent) de-click tail at the end is small relative to the body.
+            var rampSf = BuildRampInstrument(rootKey: 60, points: 2000, loop: false);
 
             int FramesUntilSilent(int note)
             {
@@ -162,8 +163,9 @@ namespace NAudio.Sampler.Tests
         {
             var sampler = NewSampler(BuildConstantInstrument(loop: false));
             sampler.NoteOn(0, 60, 127);
-            // 4 samples at root pitch -> voice ends almost immediately
-            Render(sampler, 64);
+            // 4 samples at root pitch -> the voice ends quickly, after the brief
+            // (~5 ms) de-click ramp that smooths the cut at the sample's end
+            Render(sampler, 512);
             Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(0));
         }
 

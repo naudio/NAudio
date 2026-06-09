@@ -77,6 +77,16 @@ namespace NAudio.Sampler
         private float vibratoLfoValue;
         private float modEnvValue;
 
+        // when a one-shot sample reaches its end mid-signal, ramp the last output
+        // down to zero over a few ms rather than hard-cutting (which clicks if the
+        // end falls on a non-zero sample, e.g. an edited End marker)
+        private const float DeclickThreshold = 0.001f; // ~-60 dBFS: below this a hard stop is inaudible
+        private bool declicking;
+        private float declickGain;
+        private float declickStep;
+        private float declickL;
+        private float declickR;
+
         /// <summary>Creates a voice for the given output rate.</summary>
         public SamplerVoice(int outputSampleRate)
         {
@@ -86,6 +96,7 @@ namespace NAudio.Sampler
             modEnvelope = new DahdsrEnvelope(outputSampleRate);
             modLfo = new Lfo(outputSampleRate) { Waveform = LfoWaveform.Triangle };
             vibratoLfo = new Lfo(outputSampleRate) { Waveform = LfoWaveform.Triangle };
+            declickStep = 1f / Math.Max(1, (int)(outputSampleRate * 0.005)); // ~5 ms de-click
         }
 
         /// <summary>Whether this voice is currently producing sound.</summary>
@@ -197,6 +208,10 @@ namespace NAudio.Sampler
             IgnoreNoteOff = region.IgnoreNoteOff;
             StartOrder = order;
             IsHeld = true;
+            declicking = false;
+            declickL = 0f;
+            declickR = 0f;
+
             IsActive = true;
             ampEnvelope.Gate(true);
             modEnvelope.Gate(true);
@@ -284,25 +299,64 @@ namespace NAudio.Sampler
 
                 for (int i = 0; i < sub; i++)
                 {
-                    float sL = reader.Read(increment);
-                    if (reader.Ended) { IsActive = false; return; }
-                    if (filterActive) sL = filter.Transform(sL);
-                    if (eqLeft != null)
-                        for (int b = 0; b < eqLeft.Length; b++) sL = eqLeft[b].Transform(sL);
+                    float left, right;
 
-                    float sR;
-                    if (stereo)
+                    if (declicking)
                     {
-                        sR = readerRight.Read(increment);
-                        if (filterActive) sR = filterRight.Transform(sR);
-                        if (eqRight != null)
-                            for (int b = 0; b < eqRight.Length; b++) sR = eqRight[b].Transform(sR);
+                        // fading the last output to zero after a one-shot reached End
+                        left = declickL * declickGain;
+                        right = declickR * declickGain;
+                        declickGain -= declickStep;
                     }
-                    else sR = sL;
+                    else
+                    {
+                        float sL = reader.Read(increment);
+                        if (reader.Ended)
+                        {
+                            // one-shot reached End. If it ends on a non-trivial value
+                            // (e.g. an edited End mid-waveform), ramp the last output
+                            // down over a few ms instead of cutting hard (which
+                            // clicks); a sample that already ends near zero (most
+                            // well-formed content) just stops, with no added tail.
+                            if (Math.Abs(declickL) <= DeclickThreshold && Math.Abs(declickR) <= DeclickThreshold)
+                            {
+                                IsActive = false;
+                                return;
+                            }
+                            declicking = true;
+                            declickGain = 1f - declickStep;
+                            left = declickL * declickGain;
+                            right = declickR * declickGain;
+                        }
+                        else
+                        {
+                            if (filterActive) sL = filter.Transform(sL);
+                            if (eqLeft != null)
+                                for (int b = 0; b < eqLeft.Length; b++) sL = eqLeft[b].Transform(sL);
 
-                    float envGain = ampEnvelope.Process() * staticGain * volGain;
-                    float left = sL * envGain * leftGain;
-                    float right = sR * envGain * rightGain;
+                            float sR;
+                            if (stereo)
+                            {
+                                sR = readerRight.Read(increment);
+                                if (filterActive) sR = filterRight.Transform(sR);
+                                if (eqRight != null)
+                                    for (int b = 0; b < eqRight.Length; b++) sR = eqRight[b].Transform(sR);
+                            }
+                            else sR = sL;
+
+                            float envGain = ampEnvelope.Process() * staticGain * volGain;
+                            left = sL * envGain * leftGain;
+                            right = sR * envGain * rightGain;
+                            declickL = left;   // remember the last output for a future de-click
+                            declickR = right;
+
+                            // advance the modulation sources every sample (keeps phase accurate)
+                            modLfoValue = modLfo.Process();
+                            vibratoLfoValue = vibratoLfo.Process();
+                            modEnvValue = modEnvelope.Process();
+                        }
+                    }
+
                     buffer[pos * 2] += left;
                     buffer[pos * 2 + 1] += right;
                     if (reverbSendGain > 0f)
@@ -317,12 +371,11 @@ namespace NAudio.Sampler
                     }
                     pos++;
 
-                    // advance the modulation sources every sample (keeps phase accurate)
-                    modLfoValue = modLfo.Process();
-                    vibratoLfoValue = vibratoLfo.Process();
-                    modEnvValue = modEnvelope.Process();
-
-                    if (ampEnvelope.IsFinished) { IsActive = false; return; }
+                    if (declicking)
+                    {
+                        if (declickGain <= 0f) { IsActive = false; return; }
+                    }
+                    else if (ampEnvelope.IsFinished) { IsActive = false; return; }
                 }
 
                 remaining -= sub;

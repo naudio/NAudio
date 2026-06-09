@@ -66,7 +66,13 @@ namespace NAudio.SoundFont
                 riffFile.BaseStream.Position++;
             }
 
-            if (riffFile.BaseStream.Position + 8 < DataOffset + ChunkSize)
+            // A sub-chunk needs at least its 8-byte header to be readable; an empty
+            // (zero-data) chunk fills exactly to the parent's end, so this must be
+            // "<=", not "<". With "<" an empty trailing chunk — e.g. the empty smpl
+            // of a ROM-based SoundFont (sdta = "sdta" + an 8-byte, zero-length smpl
+            // header) — is skipped, leaving the stream 8 bytes short and misaligning
+            // every following chunk ("Not a presets data chunk (LIST)").
+            if (riffFile.BaseStream.Position + 8 <= DataOffset + ChunkSize)
             {
                 RiffChunk chunk = new RiffChunk(riffFile);
                 chunk.ReadChunk();

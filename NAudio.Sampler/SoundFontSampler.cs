@@ -63,6 +63,13 @@ namespace NAudio.Sampler
             foreach (var region in regions)
             {
                 var sh = region.Sample;
+
+                // Skip regions whose sample data isn't present/valid rather than
+                // letting the voice's reader throw on an out-of-range slice. This is
+                // what makes ROM-based SoundFonts (samples in hardware ROM, so smpl
+                // is empty) load and play as silence instead of failing.
+                if (sh.Start >= sh.End || sh.End > samplePool.Length) continue;
+
                 result.Add(new SamplerRegion
                 {
                     Sample = new SampleData

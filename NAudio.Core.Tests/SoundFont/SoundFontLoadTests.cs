@@ -180,6 +180,29 @@ namespace NAudio.Core.Tests.SoundFont
         }
 
         [Test]
+        public void LoadsRomBasedSoundFontWithEmptySmpl()
+        {
+            // ROM-based SoundFonts (samples in an EMU8000/AWE32 wavetable ROM, not
+            // embedded) carry an empty smpl chunk, so the sdta LIST is just
+            // "sdta" + an 8-byte zero-length smpl header (size 12). The empty smpl
+            // sits exactly at the list boundary; the reader must still consume it,
+            // or the stream misaligns and pdta loading fails with
+            // "Not a presets data chunk (LIST)".
+            var info = SoundFontTestHelper.BuildInfoList();
+            var sdta = SoundFontTestHelper.BuildSdtaList(new byte[0]); // empty smpl
+            var pdta = SoundFontTestHelper.BuildMinimalPdtaList();
+            var sf2 = SoundFontTestHelper.BuildSoundFont(info, sdta, pdta);
+
+            var sf = new NAudio.SoundFont.SoundFont(new MemoryStream(sf2));
+
+            Assert.That(sf.SampleData, Is.Not.Null);
+            Assert.That(sf.SampleData.Length, Is.EqualTo(0));
+            Assert.That(sf.Presets.Length, Is.GreaterThan(0));
+            Assert.That(sf.Instruments.Length, Is.GreaterThan(0));
+            Assert.That(sf.SampleHeaders.Length, Is.GreaterThan(0));
+        }
+
+        [Test]
         public void ToStringIncludesInfoAndPresets()
         {
             var sf2 = SoundFontTestHelper.BuildMinimalSoundFont();

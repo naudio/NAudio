@@ -68,6 +68,26 @@ namespace NAudio.Sampler.Tests
         }
 
         [Test]
+        public void RomBasedFontWithEmptySamplesPlaysSilentlyWithoutThrowing()
+        {
+            // A ROM-based SoundFont has an empty smpl chunk but sample headers
+            // whose ranges point into the (absent) ROM. Loading must succeed, and
+            // playing a note must produce silence rather than throwing on an
+            // out-of-range sample slice.
+            var igen = SoundFontTestBuilder.Chunk("igen", SoundFontTestBuilder.Concat(
+                SoundFontTestBuilder.Gen(58, 60), // overridingRootKey
+                SoundFontTestBuilder.Gen(53, 0))); // SampleID
+            var sf = SoundFontTestBuilder.BuildSingleRegion(new byte[0], igen,
+                sampleStart: 0, sampleEnd: 1000, loopStart: 0, loopEnd: 1000,
+                sampleRate: SampleRate, originalPitch: 60);
+            var sampler = NewSampler(sf);
+
+            Assert.DoesNotThrow(() => sampler.NoteOn(0, 60, 127));
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(0));
+            Assert.That(Peak(Render(sampler, 256)), Is.EqualTo(0f));
+        }
+
+        [Test]
         public void NoteOnProducesAudio()
         {
             var sampler = NewSampler(BuildConstantInstrument());

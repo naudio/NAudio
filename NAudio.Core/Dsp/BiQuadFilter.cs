@@ -264,6 +264,10 @@ namespace NAudio.Dsp
             a3 = aa1 / aa0;
             a4 = aa2 / aa0;
         }
+
+        /// <summary>
+        /// Set this up as a peaking EQ
+        /// </summary>
         /// <param name="sampleRate">Sample Rate</param>
         /// <param name="centreFrequency">Centre Frequency</param>
         /// <param name="q">Q (quality factor). Higher Q gives a narrower peak around the centre

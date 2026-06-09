@@ -61,7 +61,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource Label}" Text="Root key" />
@@ -83,6 +83,11 @@
                 <TextBlock Grid.Row="4" Grid.Column="0" Style="{StaticResource Label}" Text="Loop mode" />
                 <ComboBox Grid.Row="4" Grid.Column="1" Margin="6,3" ItemsSource="{Binding LoopModes}"
                           SelectedItem="{Binding LoopMode}" IsEnabled="{Binding Loaded}" />
+
+                <TextBlock Grid.Row="5" Grid.Column="0" Style="{StaticResource Label}" Text="Loop xfade (ms)"
+                           ToolTip="Crossfades the loop seam to remove the click when the loop points don't match. Needs a loop start with some audio before it." />
+                <Slider   Grid.Row="5" Grid.Column="1" Minimum="0" Maximum="100" Value="{Binding LoopCrossfadeMs}" />
+                <TextBlock Grid.Row="5" Grid.Column="2" Style="{StaticResource Label}" Text="{Binding LoopCrossfadeMs, StringFormat={}{0:N0}}" />
             </Grid>
 
             <Grid Grid.Column="1">

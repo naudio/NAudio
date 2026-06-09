@@ -94,6 +94,12 @@ namespace NAudioWpfDemo.SampleEditorDemo
 
         public LoopMode[] LoopModes { get; } = (LoopMode[])Enum.GetValues(typeof(LoopMode));
 
+        public double LoopCrossfadeMs
+        {
+            get => (Inst?.LoopCrossfadeSeconds ?? 0) * 1000.0;
+            set { if (Inst != null) { Inst.LoopCrossfadeSeconds = (float)(value / 1000.0); OnPropertyChanged(nameof(LoopCrossfadeMs)); } }
+        }
+
         public double AttackSeconds
         {
             get => Inst?.AttackSeconds ?? 0;
@@ -253,6 +259,7 @@ namespace NAudioWpfDemo.SampleEditorDemo
             OnPropertyChanged(nameof(VolumeDb));
             OnPropertyChanged(nameof(Pan));
             OnPropertyChanged(nameof(LoopMode));
+            OnPropertyChanged(nameof(LoopCrossfadeMs));
             OnPropertyChanged(nameof(AttackSeconds));
             OnPropertyChanged(nameof(HoldSeconds));
             OnPropertyChanged(nameof(DecaySeconds));

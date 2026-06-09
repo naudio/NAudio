@@ -150,15 +150,16 @@ namespace NAudio.Sampler
 
             int? loopStartOrNull = loopMode == LoopMode.None ? null : loopStart;
             int? loopEndOrNull = loopMode == LoopMode.None ? null : loopEnd;
+            int crossfade = loopMode == LoopMode.None ? 0 : sample.CrossfadeSamples;
             reader = new InterpolatingSampleReader(
-                new SampleSource(sample.Data, sample.SampleRate, loopMode, start, end, loopStartOrNull, loopEndOrNull));
+                new SampleSource(sample.Data, sample.SampleRate, loopMode, start, end, loopStartOrNull, loopEndOrNull, crossfade));
 
             // a stereo sample runs a second reader over the right channel in
             // lockstep (same bounds, loop and increment), so the core reader stays mono
             stereo = sample.IsStereo && sample.DataRight.Length >= end;
             readerRight = stereo
                 ? new InterpolatingSampleReader(
-                    new SampleSource(sample.DataRight, sample.SampleRate, loopMode, start, end, loopStartOrNull, loopEndOrNull))
+                    new SampleSource(sample.DataRight, sample.SampleRate, loopMode, start, end, loopStartOrNull, loopEndOrNull, crossfade))
                 : null;
 
             // pitch: cents from played key vs root, plus tuning generators

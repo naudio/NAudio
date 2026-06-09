@@ -15,6 +15,36 @@ namespace NAudio.Core.Tests
         }
 
         [Test]
+        public void LoopCrossfadeSmoothsTheSeam()
+        {
+            // a ramp 0..199; loop [50,150) so the values at the seam differ wildly
+            // (~149 vs ~50). Without a crossfade the wrap steps by ~99; the
+            // crossfade blends the approach to LoopEnd into the lead-in before
+            // LoopStart, so the largest step shrinks dramatically.
+            var data = Ramp(200);
+
+            float MaxStep(int crossfade)
+            {
+                var reader = new InterpolatingSampleReader(
+                    new SampleSource(data, 44100, LoopMode.Continuous, 0, 200, 50, 150, crossfade));
+                float prev = reader.Read(1.0);
+                float max = 0f;
+                for (int i = 0; i < 400; i++)
+                {
+                    float cur = reader.Read(1.0);
+                    max = Math.Max(max, Math.Abs(cur - prev));
+                    prev = cur;
+                }
+                return max;
+            }
+
+            float hardStep = MaxStep(0);
+            float fadedStep = MaxStep(20);
+            Assert.That(hardStep, Is.GreaterThan(50f), "expected a large seam discontinuity without a crossfade");
+            Assert.That(fadedStep, Is.LessThan(hardStep / 5f), "crossfade should greatly reduce the seam step");
+        }
+
+        [Test]
         public void ConstantDataReadsConstantAtAnyIncrement()
         {
             var data = new float[16];

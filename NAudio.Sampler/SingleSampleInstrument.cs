@@ -83,6 +83,12 @@ namespace NAudio.Sampler
         public int LoopStart { get; set; }
         /// <summary>Loop end in frames (default the sample length).</summary>
         public int LoopEnd { get; set; }
+        /// <summary>
+        /// Loop-seam crossfade length in seconds (default 0). Smooths the loop wrap
+        /// when the loop points don't fall on matching samples. Limited by the audio
+        /// before <see cref="LoopStart"/>, so set a loop start that has some lead-in.
+        /// </summary>
+        public float LoopCrossfadeSeconds { get; set; }
 
         /// <summary>Amplitude-envelope delay in seconds (default 0).</summary>
         public float DelaySeconds { get; set; }
@@ -135,7 +141,8 @@ namespace NAudio.Sampler
                     Start = start,
                     End = end,
                     LoopStart = loopStart,
-                    LoopEnd = loopEnd
+                    LoopEnd = loopEnd,
+                    CrossfadeSamples = (int)(Math.Max(0f, LoopCrossfadeSeconds) * sampleRate)
                 },
                 Generators = gen,
                 Modulators = null,

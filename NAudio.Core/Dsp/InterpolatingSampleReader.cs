@@ -49,6 +49,15 @@ namespace NAudio.Dsp
         public LoopMode LoopMode { get; }
 
         /// <summary>
+        /// Length, in samples, of the crossfade applied at the loop seam (0 = none).
+        /// As the read position approaches <see cref="LoopEnd"/> the outgoing audio
+        /// is blended into the lead-in before <see cref="LoopStart"/>, so the loop
+        /// wraps without the click an abrupt jump between mismatched samples causes.
+        /// Clamped to the data available before the loop and to the loop length.
+        /// </summary>
+        public int CrossfadeSamples { get; }
+
+        /// <summary>
         /// Creates a sample source.
         /// </summary>
         /// <param name="data">Mono sample data.</param>
@@ -58,8 +67,10 @@ namespace NAudio.Dsp
         /// <param name="end">End playable sample index (exclusive), or null for the full length.</param>
         /// <param name="loopStart">Loop start sample index, or null for <paramref name="start"/>.</param>
         /// <param name="loopEnd">Loop end sample index (exclusive), or null for <paramref name="end"/>.</param>
+        /// <param name="crossfadeSamples">Loop-seam crossfade length in samples (0 = none).</param>
         public SampleSource(float[] data, int sampleRate, LoopMode loopMode = LoopMode.None,
-            int? start = null, int? end = null, int? loopStart = null, int? loopEnd = null)
+            int? start = null, int? end = null, int? loopStart = null, int? loopEnd = null,
+            int crossfadeSamples = 0)
         {
             Data = data ?? throw new ArgumentNullException(nameof(data));
             if (sampleRate <= 0) throw new ArgumentOutOfRangeException(nameof(sampleRate));
@@ -76,6 +87,13 @@ namespace NAudio.Dsp
             {
                 if (LoopStart < Start || LoopEnd > End || LoopStart >= LoopEnd)
                     throw new ArgumentException("Invalid loop points for sample data");
+
+                // the incoming side reads from [LoopStart - xfade, LoopStart), so the
+                // crossfade can be no longer than the lead-in before the loop, nor
+                // than the loop itself
+                int maxByLeadIn = LoopStart - Start;
+                int maxByLoop = LoopEnd - LoopStart - 1;
+                CrossfadeSamples = Math.Max(0, Math.Min(crossfadeSamples, Math.Min(maxByLeadIn, maxByLoop)));
             }
         }
     }
@@ -114,6 +132,7 @@ namespace NAudio.Dsp
         private double position;
         private bool released;
         private bool ended;
+        private bool hasLooped; // true once the read position has wrapped at least once
 
         /// <summary>
         /// Creates a reader positioned at the start of the source.
@@ -159,10 +178,33 @@ namespace NAudio.Dsp
         {
             if (ended) return 0f;
 
-            float sample = Interpolate(position);
+            float sample = CurrentSample();
             position += increment;
             WrapOrEnd();
             return sample;
+        }
+
+        // the sample at the current position, with the loop-seam crossfade applied
+        // when enabled and within the crossfade zone before LoopEnd
+        private float CurrentSample()
+        {
+            int xfade = source.CrossfadeSamples;
+            if (xfade > 0 && LoopActive)
+            {
+                double zoneStart = source.LoopEnd - xfade;
+                if (position >= zoneStart)
+                {
+                    double t = (position - zoneStart) / xfade; // 0 at zone start, ->1 at LoopEnd
+                    double loopLength = source.LoopEnd - source.LoopStart;
+                    // outgoing: the tail of the loop (uses the normal loop-wrapping read).
+                    // incoming: the lead-in just before LoopStart, read raw (no loop wrap,
+                    // which would otherwise fold it back onto the outgoing tail).
+                    float outgoing = Interpolate(position);
+                    float incoming = Interpolate(position - loopLength, loopWrap: false);
+                    return (float)(outgoing * (1.0 - t) + incoming * t);
+                }
+            }
+            return Interpolate(position);
         }
 
         /// <summary>
@@ -178,7 +220,7 @@ namespace NAudio.Dsp
             for (int i = 0; i < buffer.Length; i++)
             {
                 if (ended) break;
-                buffer[i] = Interpolate(position);
+                buffer[i] = CurrentSample();
                 position += increment;
                 WrapOrEnd();
                 written++;
@@ -195,6 +237,7 @@ namespace NAudio.Dsp
                 while (position >= source.LoopEnd)
                 {
                     position -= loopLength;
+                    hasLooped = true;
                 }
             }
             else if (position >= source.End)
@@ -203,7 +246,7 @@ namespace NAudio.Dsp
             }
         }
 
-        private float Interpolate(double pos)
+        private float Interpolate(double pos, bool loopWrap = true)
         {
             int i = (int)Math.Floor(pos);
             float frac = (float)(pos - i);
@@ -211,19 +254,19 @@ namespace NAudio.Dsp
             switch (Quality)
             {
                 case InterpolationQuality.None:
-                    return SampleAt(i);
+                    return SampleAt(i, loopWrap);
                 case InterpolationQuality.Linear:
                 {
-                    float a = SampleAt(i);
-                    float b = SampleAt(i + 1);
+                    float a = SampleAt(i, loopWrap);
+                    float b = SampleAt(i + 1, loopWrap);
                     return a + (b - a) * frac;
                 }
                 default: // Hermite (4-point, 3rd-order)
                 {
-                    float xm1 = SampleAt(i - 1);
-                    float x0 = SampleAt(i);
-                    float x1 = SampleAt(i + 1);
-                    float x2 = SampleAt(i + 2);
+                    float xm1 = SampleAt(i - 1, loopWrap);
+                    float x0 = SampleAt(i, loopWrap);
+                    float x1 = SampleAt(i + 1, loopWrap);
+                    float x2 = SampleAt(i + 2, loopWrap);
 
                     float c = (x1 - xm1) * 0.5f;
                     float v = x0 - x1;
@@ -241,26 +284,30 @@ namespace NAudio.Dsp
         /// across the loop boundary is continuous, and clamping to the playable
         /// extent otherwise.
         /// </summary>
-        private float SampleAt(int index)
+        private float SampleAt(int index, bool loopWrap = true)
         {
-            if (LoopActive)
+            if (loopWrap && LoopActive)
             {
                 int loopLength = source.LoopEnd - source.LoopStart;
                 if (index >= source.LoopEnd)
                 {
+                    // lookahead past the loop end wraps to the loop start for seam continuity
                     index = source.LoopStart + (index - source.LoopStart) % loopLength;
                 }
-                else if (index < source.LoopStart)
+                else if (index < source.LoopStart && hasLooped)
                 {
+                    // wrap a look-back before the loop start to the loop end — but only
+                    // once we're actually looping. On the first pass, indices in
+                    // [Start, LoopStart) are the real lead-in/attack and must read raw.
                     int offset = (source.LoopStart - index) % loopLength;
                     index = offset == 0 ? source.LoopStart : source.LoopEnd - offset;
                 }
             }
-            else
-            {
-                if (index < source.Start) index = source.Start;
-                else if (index >= source.End) index = source.End - 1;
-            }
+
+            // clamp to the playable extent (covers non-looping reads, the pre-loop
+            // lead-in, and the raw crossfade incoming read)
+            if (index < source.Start) index = source.Start;
+            else if (index >= source.End) index = source.End - 1;
             return source.Data[index];
         }
     }

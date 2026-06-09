@@ -38,5 +38,11 @@ namespace NAudio.Sampler
 
         /// <summary>A fixed pitch correction for the recording, in cents.</summary>
         public double PitchCorrectionCents { get; init; }
+
+        /// <summary>
+        /// Loop-seam crossfade length in samples (0 = none). Smooths the loop wrap
+        /// for arbitrary loop points; left 0 for SoundFont/SFZ (authored loops).
+        /// </summary>
+        public int CrossfadeSamples { get; init; }
     }
 }

@@ -117,6 +117,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
 
 #### Reliability and bug fixes
 
+ * `SoundFont`: fixed loading fonts that contain an odd-sized RIFF chunk (e.g. an odd-length INFO string, or an `sm24` chunk). The reader ignored the mandatory word-alignment pad byte after an odd-sized chunk, so every subsequent chunk misaligned and loading failed with "Not a presets data chunk (LIST)". `RiffChunk` now skips the pad byte
  * `AudioSessionControl`: now supports multiple registered event clients. `RegisterEventClient` no longer leaks a prior registration, and `UnRegisterEventClient` now honours its `eventClient` argument instead of unregistering whichever handler happened to be stored (#1263)
  * `CueListInterpreter`: fixed returning null for WAV files with cue points but no labels (e.g. unnamed Wavosaur markers); cues are now returned with empty labels (#549)
  * `WaveViewer`: fixed waveform rendering upside-down (#801, #818)

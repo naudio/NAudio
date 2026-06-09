@@ -55,6 +55,17 @@ namespace NAudio.SoundFont
         /// <returns>the new chunk</returns>
         public RiffChunk GetNextSubChunk()
         {
+            // RIFF chunks are word-aligned: a chunk with an odd size is followed
+            // by a pad byte that is NOT counted in its size. Skip it so the next
+            // sub-chunk header is read at its true (even) boundary — otherwise a
+            // single odd-sized chunk (e.g. an odd-length INFO string, or sm24)
+            // misaligns every subsequent chunk. Skipping it here on the call that
+            // returns null also leaves the parent stream aligned for its next read.
+            if ((riffFile.BaseStream.Position & 1) != 0)
+            {
+                riffFile.BaseStream.Position++;
+            }
+
             if (riffFile.BaseStream.Position + 8 < DataOffset + ChunkSize)
             {
                 RiffChunk chunk = new RiffChunk(riffFile);

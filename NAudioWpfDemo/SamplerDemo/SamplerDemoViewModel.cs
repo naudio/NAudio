@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using Microsoft.Win32;
@@ -105,7 +106,7 @@ namespace NAudioWpfDemo.SamplerDemo
             }
         }
 
-        private void RenderToWav()
+        private async void RenderToWav()
         {
             if (!FilesReady()) return;
             var dialog = new SaveFileDialog
@@ -116,17 +117,39 @@ namespace NAudioWpfDemo.SamplerDemo
             };
             if (dialog.ShowDialog() != true) return;
 
+            // capture the paths so the background thread doesn't touch UI-bound state
+            string outputPath = dialog.FileName;
+            string sf = soundFontPath, mid = midiFilePath;
+
+            // render off the UI thread so a long SoundFont/MIDI render doesn't freeze
+            // the window; disable Play/Render while it runs
+            SetCommandsEnabled(false);
+            Status = $"Rendering {Path.GetFileName(mid)} to {Path.GetFileName(outputPath)}...";
             try
             {
-                var sequence = MidiFileSequence.FromFile(midiFilePath);
-                OfflineMidiRenderer.RenderToWaveFile(sequence, CreateSampler(), dialog.FileName);
-                Status = $"Rendered to {Path.GetFileName(dialog.FileName)}";
+                await Task.Run(() =>
+                {
+                    var sequence = MidiFileSequence.FromFile(mid);
+                    var sampler = new SoundFontSampler(new NAudio.SoundFont.SoundFont(sf), SampleRate);
+                    OfflineMidiRenderer.RenderToWaveFile(sequence, sampler, outputPath);
+                });
+                Status = $"Rendered to {Path.GetFileName(outputPath)}";
             }
             catch (Exception ex)
             {
                 Status = $"Render failed: {ex.Message}";
                 MessageBox.Show(ex.ToString(), "Render error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+            finally
+            {
+                SetCommandsEnabled(true);
+            }
+        }
+
+        private void SetCommandsEnabled(bool enabled)
+        {
+            ((DelegateCommand)PlayCommand).IsEnabled = enabled;
+            ((DelegateCommand)RenderToWavCommand).IsEnabled = enabled;
         }
 
         private SoundFontSampler CreateSampler() =>

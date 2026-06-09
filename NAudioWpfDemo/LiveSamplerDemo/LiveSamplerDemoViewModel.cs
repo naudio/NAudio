@@ -8,6 +8,7 @@ using Microsoft.Win32;
 using NAudio.Midi;
 using NAudio.Sampler;
 using NAudio.Wave;
+using NAudioWpfDemo.Utils;
 using NAudioWpfDemo.ViewModel;
 
 namespace NAudioWpfDemo.LiveSamplerDemo
@@ -153,11 +154,10 @@ namespace NAudioWpfDemo.LiveSamplerDemo
                 sampler.MasterGain = (float)masterVolume;
                 instrument = new LiveMidiInstrument(sampler);
 
-                // WasapiPlayer (shared mode, low latency where the device supports
-                // IAudioClient3) is the modern playback path; it auto-converts the
-                // sampler's 44.1 kHz float stereo to the device mix format
-                waveOut = new WasapiPlayerBuilder().WithLowLatency().Build();
-                waveOut.Init(instrument.ToWaveProvider());
+                // prefer the modern WASAPI player (auto-converts the sampler's
+                // 44.1 kHz float stereo to the device mix format), falling back to
+                // WaveOut if WASAPI can't initialise on this device
+                waveOut = SamplerPlayback.Create(instrument, OnPlaybackError);
                 waveOut.Play();
 
                 if (selectedDevice != null)
@@ -207,6 +207,13 @@ namespace NAudioWpfDemo.LiveSamplerDemo
             // route through the queue so it lands on the audio thread like every
             // other event: all sound off (CC120) cuts even ringing release tails
             instrument?.Send(new ControlChangeEvent(0, 1, (MidiController)120, 0));
+        }
+
+        private void OnPlaybackError(Exception ex)
+        {
+            Stop();
+            Status = $"Playback stopped: {ex.Message}";
+            MessageBox.Show(ex.ToString(), "Playback error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
         /// <summary>Plays a note from the on-screen keyboard (UI thread).</summary>

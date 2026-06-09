@@ -7,6 +7,7 @@ using NAudio.Dsp;
 using NAudio.Sampler;
 using NAudio.SoundFile;
 using NAudio.Wave;
+using NAudioWpfDemo.Utils;
 using NAudioWpfDemo.ViewModel;
 
 namespace NAudioWpfDemo.SampleEditorDemo
@@ -199,8 +200,7 @@ namespace NAudioWpfDemo.SampleEditorDemo
                 sampler = new SingleSampleSampler(instrument, SampleRate);
                 live = new LiveMidiInstrument(sampler);
 
-                waveOut = new WasapiPlayerBuilder().WithLowLatency().Build();
-                waveOut.Init(live.ToWaveProvider());
+                waveOut = SamplerPlayback.Create(live, OnPlaybackError);
                 waveOut.Play();
 
                 WaveformSamples = BuildMono(left, right);
@@ -260,6 +260,12 @@ namespace NAudioWpfDemo.SampleEditorDemo
             OnPropertyChanged(nameof(ReleaseSeconds));
             foreach (var name in new[] { nameof(StartIndex), nameof(EndIndex), nameof(LoopStartIndex), nameof(LoopEndIndex) })
                 SetMarkerProperty(name, 0);
+        }
+
+        private void OnPlaybackError(Exception ex)
+        {
+            Status = $"Playback stopped: {ex.Message}";
+            MessageBox.Show(ex.ToString(), "Playback error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
         private void Stop()

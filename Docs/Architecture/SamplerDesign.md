@@ -276,7 +276,14 @@ keyboard at a chosen root key, **display the waveform**, and adjust
 **start / end / loop-start / loop-end** and loop mode interactively — hearing the
 change immediately because edits flow into the live resolved instrument. The
 simplest producer of the format-neutral model, and a useful instrument by
-itself. WPF demo, consistent with the existing demo suite.
+itself. WPF demo, consistent with the existing demo suite. **DONE.** The
+`Single-Sample Editor` panel (`NAudioWpfDemo/SampleEditorDemo/`) loads a
+WAV/FLAC/Ogg into a `SingleSampleSampler`, draws it in a reusable
+`WaveformControl` with four draggable markers (start/end/loop-start/loop-end)
+over a shaded loop region, and exposes root key, tune, volume, pan, loop mode and
+the amplitude envelope (A/H/D/S/R). It auditions through the same
+`PianoControl` → `LiveMidiInstrument` → `WasapiPlayer` path as §8.1, so every
+edit is heard on the next note (the engine rebuilds the region per note-on).
 
 ## 9. Port vs. build, and licence policy
 
@@ -410,14 +417,15 @@ Sequenced cheapest-useful-first:
    The shared `WaveSampleLoader` (mono down-mix) now backs both this and the SFZ
    WAV loader. The interactive waveform/loop editor UI is the step-9 demo.
 9. **Demos:** live MIDI, offline render, single-sample/recording editor.
-   **In progress.** Two `NAudioWpfDemo` panels: a `SoundFont / MIDI Player`
+   **DONE.** Three `NAudioWpfDemo` panels: a `SoundFont / MIDI Player`
    (`SamplerDemo/`) loads a `.sf2` + `.mid` and either plays them
    (`SequencedMidiInstrument` → `WaveOut`) or renders to a WAV
-   (`OfflineMidiRenderer`); and a `Live MIDI Sampler` (`LiveSamplerDemo/`) plays
+   (`OfflineMidiRenderer`); a `Live MIDI Sampler` (`LiveSamplerDemo/`) plays
    an SF2 or SFZ live from a `WinRTMidiIn` device and/or an on-screen keyboard
-   via the new `LiveMidiInstrument` bridge (see §8.1). **Remaining:** the
-   interactive single-sample waveform/loop-point editor (the step-8 model is
-   ready to bind a UI to).
+   via the new `LiveMidiInstrument` bridge (see §8.1); and a `Single-Sample
+   Editor` (`SampleEditorDemo/`) with a draggable-marker waveform editor (see
+   §8.3). The only remaining demo idea is optional recording-into-the-editor via
+   the capture stack.
 
 **Testing.** Lean on deterministic offline render → golden-WAV comparisons (the
 drum demo's "render matches live playback" path in #1324 is the model), plus

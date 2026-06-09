@@ -15,6 +15,8 @@
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="Margin" Value="6,3" />
             <Setter Property="IsEnabled" Value="{Binding Loaded}" />
+            <!-- click the track to jump to that value, rather than stepping by LargeChange -->
+            <Setter Property="IsMoveToPointEnabled" Value="True" />
         </Style>
     </UserControl.Resources>
     <Grid Margin="10">

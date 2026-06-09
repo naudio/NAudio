@@ -39,7 +39,7 @@
             <Button Content="Panic" Command="{Binding PanicCommand}" IsEnabled="{Binding IsRunning}" Width="70" Margin="6"
                     ToolTip="All sound off — silences every voice immediately." />
             <TextBlock Text="Volume" VerticalAlignment="Center" Margin="16,0,4,0" />
-            <Slider Minimum="0" Maximum="1" Value="{Binding MasterVolume}" Width="120" VerticalAlignment="Center" />
+            <Slider Minimum="0" Maximum="1" Value="{Binding MasterVolume}" IsMoveToPointEnabled="True" Width="120" VerticalAlignment="Center" />
             <TextBlock VerticalAlignment="Center" Margin="16,0,0,0"
                        Text="{Binding ActiveVoiceCount, StringFormat='Voices: {0}'}" />
         </StackPanel>

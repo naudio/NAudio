@@ -37,7 +37,7 @@
 
         <TextBlock Grid.Row="3" Grid.Column="0" Text="Volume:" VerticalAlignment="Center" Margin="6" />
         <Slider Grid.Row="3" Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding Volume}"
-                VerticalAlignment="Center" Margin="6" />
+                IsMoveToPointEnabled="True" VerticalAlignment="Center" Margin="6" />
         <TextBlock Grid.Row="3" Grid.Column="2" VerticalAlignment="Center" Margin="6" Width="90"
                    Text="{Binding Volume, StringFormat='{}{0:P0}'}" />
 

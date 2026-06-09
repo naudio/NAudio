@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 using Microsoft.Win32;
 using NAudio.Sampler;
 using NAudio.Sequencing;
@@ -15,16 +16,26 @@ namespace NAudioWpfDemo.SamplerDemo
     /// Loads a SoundFont (.sf2) and a MIDI file (.mid) and plays the MIDI through
     /// the SoundFont via <see cref="SoundFontSampler"/>, either live
     /// (<see cref="SequencedMidiInstrument"/> → <see cref="WaveOut"/>) or rendered
-    /// offline to a WAV (<see cref="OfflineMidiRenderer"/>).
+    /// offline to a WAV (<see cref="OfflineMidiRenderer"/>). A volume slider and a
+    /// draggable position bar (seeking via the <see cref="Transport"/>) are wired in
+    /// during live playback.
     /// </summary>
     class SamplerDemoViewModel : ViewModelBase, IDisposable
     {
         private const int SampleRate = 44100;
 
         private IWavePlayer waveOut;
+        private Transport transport;
+        private SoundFontSampler sampler;
+        private readonly DispatcherTimer positionTimer;
+
         private string soundFontPath;
         private string midiFilePath;
         private string status = "Choose a SoundFont (.sf2) and a MIDI file (.mid), then Play or Render.";
+        private double volume = 1.0;
+        private double positionSeconds;
+        private double durationSeconds;
+        private bool suppressSeek; // true while the timer updates the position (so it doesn't seek)
 
         public ICommand BrowseSoundFontCommand { get; }
         public ICommand BrowseMidiCommand { get; }
@@ -39,6 +50,9 @@ namespace NAudioWpfDemo.SamplerDemo
             PlayCommand = new DelegateCommand(Play);
             StopCommand = new DelegateCommand(Stop);
             RenderToWavCommand = new DelegateCommand(RenderToWav);
+
+            positionTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
+            positionTimer.Tick += (_, _) => UpdatePosition();
         }
 
         public string SoundFontPath
@@ -59,6 +73,43 @@ namespace NAudioWpfDemo.SamplerDemo
             set { status = value; OnPropertyChanged(nameof(Status)); }
         }
 
+        /// <summary>Output volume, 0..1, applied live to the playing sampler.</summary>
+        public double Volume
+        {
+            get => volume;
+            set
+            {
+                volume = value;
+                OnPropertyChanged(nameof(Volume));
+                if (sampler != null) sampler.MasterGain = (float)value;
+            }
+        }
+
+        /// <summary>Current playback position in seconds. Setting it (e.g. dragging the bar) seeks.</summary>
+        public double PositionSeconds
+        {
+            get => positionSeconds;
+            set
+            {
+                positionSeconds = value;
+                OnPropertyChanged(nameof(PositionSeconds));
+                OnPropertyChanged(nameof(PositionText));
+                if (!suppressSeek) Seek(value);
+            }
+        }
+
+        /// <summary>Total length of the loaded MIDI file in seconds (the position bar's range).</summary>
+        public double DurationSeconds
+        {
+            get => durationSeconds;
+            set { durationSeconds = value; OnPropertyChanged(nameof(DurationSeconds)); OnPropertyChanged(nameof(PositionText)); }
+        }
+
+        public string PositionText => $"{Format(positionSeconds)} / {Format(durationSeconds)}";
+
+        private static string Format(double seconds) =>
+            TimeSpan.FromSeconds(Math.Max(0, seconds)).ToString(@"m\:ss");
+
         private void BrowseSoundFont()
         {
             var dialog = new OpenFileDialog { Filter = "SoundFont (*.sf2)|*.sf2|All files (*.*)|*.*" };
@@ -78,14 +129,21 @@ namespace NAudioWpfDemo.SamplerDemo
             try
             {
                 var sequence = MidiFileSequence.FromFile(midiFilePath);
-                var sampler = CreateSampler();
-                var transport = new Transport(sequence.TempoMap, sampler.WaveFormat.SampleRate);
+                sampler = CreateSampler();
+                sampler.MasterGain = (float)volume;
+                transport = new Transport(sequence.TempoMap, sampler.WaveFormat.SampleRate);
                 var instrument = new SequencedMidiInstrument(transport, sequence.Timeline, sampler);
+
+                DurationSeconds = sequence.DurationFrames(SampleRate, tailSeconds: 1.0) / (double)SampleRate;
+                suppressSeek = true;
+                PositionSeconds = 0;
+                suppressSeek = false;
 
                 transport.Play();
                 waveOut = new WaveOut();
                 waveOut.Init(instrument);
                 waveOut.Play();
+                positionTimer.Start();
                 Status = $"Playing {Path.GetFileName(midiFilePath)} through {Path.GetFileName(soundFontPath)}";
             }
             catch (Exception ex)
@@ -98,12 +156,35 @@ namespace NAudioWpfDemo.SamplerDemo
 
         private void Stop()
         {
+            positionTimer.Stop();
             if (waveOut != null)
             {
                 waveOut.Dispose();
                 waveOut = null;
                 Status = "Stopped.";
             }
+            transport = null;
+            sampler = null;
+        }
+
+        // moves the transport to a new position; silences sounding voices so a
+        // seek doesn't leave notes hanging (their note-offs were before/after the jump)
+        private void Seek(double seconds)
+        {
+            if (transport == null) return;
+            transport.SeekFrames((long)(Math.Max(0, seconds) * SampleRate));
+            sampler?.AllSoundOff();
+        }
+
+        // reflects the transport's position on the bar; auto-stops at the end
+        private void UpdatePosition()
+        {
+            if (transport == null) return;
+            double pos = transport.CurrentFrames / (double)SampleRate;
+            suppressSeek = true;
+            PositionSeconds = pos;
+            suppressSeek = false;
+            if (durationSeconds > 0 && pos >= durationSeconds) Stop();
         }
 
         private async void RenderToWav()
@@ -130,8 +211,8 @@ namespace NAudioWpfDemo.SamplerDemo
                 await Task.Run(() =>
                 {
                     var sequence = MidiFileSequence.FromFile(mid);
-                    var sampler = new SoundFontSampler(new NAudio.SoundFont.SoundFont(sf), SampleRate);
-                    OfflineMidiRenderer.RenderToWaveFile(sequence, sampler, outputPath);
+                    var renderSampler = new SoundFontSampler(new NAudio.SoundFont.SoundFont(sf), SampleRate);
+                    OfflineMidiRenderer.RenderToWaveFile(sequence, renderSampler, outputPath);
                 });
                 Status = $"Rendered to {Path.GetFileName(outputPath)}";
             }

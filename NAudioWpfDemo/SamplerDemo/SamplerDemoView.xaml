@@ -10,6 +10,8 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
@@ -33,7 +35,21 @@
                     ToolTip="Renders the whole MIDI file through the SoundFont to a WAV via the offline path." />
         </StackPanel>
 
-        <TextBlock Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3" Text="{Binding Status}"
+        <TextBlock Grid.Row="3" Grid.Column="0" Text="Volume:" VerticalAlignment="Center" Margin="6" />
+        <Slider Grid.Row="3" Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding Volume}"
+                VerticalAlignment="Center" Margin="6" />
+        <TextBlock Grid.Row="3" Grid.Column="2" VerticalAlignment="Center" Margin="6" Width="90"
+                   Text="{Binding Volume, StringFormat='{}{0:P0}'}" />
+
+        <TextBlock Grid.Row="4" Grid.Column="0" Text="Position:" VerticalAlignment="Center" Margin="6" />
+        <Slider Grid.Row="4" Grid.Column="1" Minimum="0" Maximum="{Binding DurationSeconds}"
+                Value="{Binding PositionSeconds}" IsMoveToPointEnabled="True"
+                VerticalAlignment="Center" Margin="6"
+                ToolTip="Drag or click to seek — exercises Transport.SeekFrames." />
+        <TextBlock Grid.Row="4" Grid.Column="2" VerticalAlignment="Center" Margin="6" Width="90"
+                   Text="{Binding PositionText}" />
+
+        <TextBlock Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="3" Text="{Binding Status}"
                    TextWrapping="Wrap" Margin="6,12,6,6" VerticalAlignment="Top" Foreground="#555" />
     </Grid>
 </UserControl>

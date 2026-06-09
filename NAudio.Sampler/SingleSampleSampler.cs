@@ -39,7 +39,7 @@ namespace NAudio.Sampler
         public SingleSampleInstrument Instrument { get; }
 
         /// <inheritdoc />
-        private protected override IReadOnlyList<SamplerRegion> GetRegionsForNoteOn(MidiChannelState channel)
+        private protected override IReadOnlyList<SamplerRegion> GetRegionsForNoteOn(int channel, MidiChannelState state)
         {
             // rebuild from the (possibly just-edited) instrument so live changes
             // to loop points, tuning, gain etc. take effect on the next note

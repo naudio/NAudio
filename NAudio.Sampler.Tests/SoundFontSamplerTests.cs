@@ -117,6 +117,44 @@ namespace NAudio.Sampler.Tests
         }
 
         [Test]
+        public void PercussionChannelResolvesAgainstBank128EvenAfterBankSelect()
+        {
+            // GM channel 10 (index 9) is percussion: a kit lives in bank 128, and
+            // note numbers pick the drum. A stray bank-select on the drum track
+            // (sequencers commonly send CC0=0) must not drop it to a melodic bank.
+            var igen = SoundFontTestBuilder.Chunk("igen", SoundFontTestBuilder.Concat(
+                SoundFontTestBuilder.Gen(54, 1),  // sampleModes = loop (so it sustains audibly)
+                SoundFontTestBuilder.Gen(58, 60), // overridingRootKey
+                SoundFontTestBuilder.Gen(53, 0))); // SampleID
+            var data = new byte[8];
+            for (int i = 0; i < 4; i++) { data[i * 2] = 0x00; data[i * 2 + 1] = 0x40; } // ~0.5
+            var sf = SoundFontTestBuilder.BuildSingleRegion(data, igen,
+                sampleStart: 0, sampleEnd: 4, loopStart: 0, loopEnd: 4,
+                sampleRate: SampleRate, originalPitch: 60, bank: 128);
+            var sampler = NewSampler(sf);
+
+            sampler.ProcessMidiEvent(new ControlChangeEvent(0, 10, MidiController.BankSelect, 0));
+            sampler.NoteOn(9, 60, 127);
+
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(1));
+            Assert.That(Peak(Render(sampler, 256)), Is.GreaterThan(0.1f));
+        }
+
+        [Test]
+        public void PercussionChannelDoesNotPlayMelodicPresets()
+        {
+            // a SoundFont with only a melodic (bank 0) preset: the drum channel must
+            // stay silent rather than play the melodic preset chromatically
+            var sampler = NewSampler(BuildConstantInstrument()); // bank 0 preset
+            sampler.NoteOn(9, 60, 127);
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(0));
+
+            // ...while the same note on a melodic channel does play
+            sampler.NoteOn(0, 60, 127);
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(1));
+        }
+
+        [Test]
         public void HigherNotePlaysFasterThanRoot()
         {
             // A non-looping ramp sample played at root vs an octave up: the

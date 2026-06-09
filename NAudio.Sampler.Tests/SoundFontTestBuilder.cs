@@ -151,10 +151,11 @@ namespace NAudio.Sampler.Tests
         /// caller-supplied igen chunk, one sample header, and the given sample data.
         /// </summary>
         public static NAudio.SoundFont.SoundFont BuildSingleRegion(byte[] sampleData, byte[] igen,
-            uint sampleStart, uint sampleEnd, uint loopStart, uint loopEnd, uint sampleRate, byte originalPitch)
+            uint sampleStart, uint sampleEnd, uint loopStart, uint loopEnd, uint sampleRate, byte originalPitch,
+            ushort bank = 0)
         {
             var phdr = Chunk("phdr", Concat(
-                PresetHeader("P", 0, 0, 0),
+                PresetHeader("P", 0, bank, 0),
                 PresetHeader("EOP", 0, 0, 1)));
             var pbag = Chunk("pbag", Concat(Bag(0, 0), Bag(1, 0)));
             var pmod = Chunk("pmod", Modulator());

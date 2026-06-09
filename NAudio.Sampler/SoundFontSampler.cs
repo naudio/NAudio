@@ -37,21 +37,50 @@ namespace NAudio.Sampler
         {
             this.soundFont = soundFont ?? throw new ArgumentNullException(nameof(soundFont));
             samplePool = ConvertSampleData(soundFont);
-            // GM: channel 10 (index 9) is the percussion bank
-            Channels[9].Bank = 128;
         }
 
+        /// <summary>The SoundFont bank holding GM percussion kits.</summary>
+        public const int PercussionBank = 128;
+
+        /// <summary>
+        /// The MIDI channel (0-based) treated as the GM percussion channel: its
+        /// notes always resolve against the percussion bank (<see cref="PercussionBank"/> = 128),
+        /// regardless of any bank-select messages — note numbers pick the drum, not
+        /// a pitch. Defaults to 9 (MIDI channel 10). Set to -1 to disable, e.g. for
+        /// a non-GM SoundFont with no percussion bank.
+        /// </summary>
+        public int PercussionChannel { get; set; } = 9;
+
         /// <inheritdoc />
-        private protected override IReadOnlyList<SamplerRegion> GetRegionsForNoteOn(MidiChannelState channel)
+        private protected override IReadOnlyList<SamplerRegion> GetRegionsForNoteOn(int channel, MidiChannelState state)
         {
-            int key = (channel.Bank << 16) | channel.Program;
+            // GM channel 10 is always percussion: force bank 128 so a stray
+            // bank-select on the drum track can't drop it onto a melodic preset
+            bool percussion = channel == PercussionChannel;
+            int bank = percussion ? PercussionBank : state.Bank;
+
+            int key = (bank << 16) | state.Program;
             if (regionCache.TryGetValue(key, out var cached)) return cached;
 
-            var preset = FindPreset(channel.Bank, channel.Program);
+            var preset = percussion ? FindPercussionPreset(state.Program) : FindPreset(bank, state.Program);
             var resolved = preset?.ResolveRegions();
             IReadOnlyList<SamplerRegion> regions = resolved == null ? null : Project(resolved);
             regionCache[key] = regions;
             return regions;
+        }
+
+        // a percussion kit must come from the percussion bank — never fall back to
+        // a melodic preset. Prefer the requested kit, else the Standard Kit (program 0).
+        private Preset FindPercussionPreset(int program)
+        {
+            Preset standardKit = null;
+            foreach (var p in soundFont.Presets)
+            {
+                if (p.Bank != PercussionBank) continue;
+                if (p.PatchNumber == program) return p;
+                if (p.PatchNumber == 0) standardKit ??= p;
+            }
+            return standardKit;
         }
 
         // projects each resolved SoundFont region onto the format-neutral region the

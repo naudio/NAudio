@@ -101,7 +101,7 @@ namespace NAudio.Sampler
         /// The candidate regions a note on the given channel might play; the engine
         /// filters them by key/velocity. Return null for "no instrument".
         /// </summary>
-        private protected abstract IReadOnlyList<SamplerRegion> GetRegionsForNoteOn(MidiChannelState channel);
+        private protected abstract IReadOnlyList<SamplerRegion> GetRegionsForNoteOn(int channel, MidiChannelState state);
 
         /// <summary>
         /// Dispatches a MIDI event (note on/off, control change, pitch-bend,
@@ -149,7 +149,7 @@ namespace NAudio.Sampler
             if (IsKeyswitch(note)) { lastSwitch[channel] = note; return; }
 
             var state = Channels[channel];
-            var regions = GetRegionsForNoteOn(state);
+            var regions = GetRegionsForNoteOn(channel, state);
 
             // "first" plays only when no other key is held; "legato" only when one is
             bool legato = heldNotes[channel].Count > 0;
@@ -248,7 +248,7 @@ namespace NAudio.Sampler
         private void FireReleaseTriggers(int channel, int note, int velocity, double heldSeconds)
         {
             var state = Channels[channel];
-            var regions = GetRegionsForNoteOn(state);
+            var regions = GetRegionsForNoteOn(channel, state);
             if (regions == null) return;
 
             foreach (var region in regions)
@@ -264,7 +264,7 @@ namespace NAudio.Sampler
         // controller has just risen into, playing them at the region's root key
         private void FireOnCcTriggers(int channel, MidiChannelState state, int cc, int oldValue, int newValue)
         {
-            var regions = GetRegionsForNoteOn(state);
+            var regions = GetRegionsForNoteOn(channel, state);
             if (regions == null) return;
 
             foreach (var region in regions)

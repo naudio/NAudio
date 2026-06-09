@@ -72,7 +72,7 @@ namespace NAudio.Sampler
         public int RegionCount => regions.Count;
 
         /// <inheritdoc />
-        private protected override IReadOnlyList<SamplerRegion> GetRegionsForNoteOn(MidiChannelState channel) => regions;
+        private protected override IReadOnlyList<SamplerRegion> GetRegionsForNoteOn(int channel, MidiChannelState state) => regions;
 
         /// <inheritdoc />
         private protected override bool IsKeyswitch(int key) => key >= keyswitchLow && key <= keyswitchHigh;

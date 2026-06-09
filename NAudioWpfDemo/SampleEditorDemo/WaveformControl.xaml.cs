@@ -13,13 +13,18 @@ namespace NAudioWpfDemo.SampleEditorDemo
 
     /// <summary>
     /// Draws a (mono) waveform with four draggable markers — sample start/end and
-    /// loop start/end — and a shaded loop region. Marker positions are sample
-    /// indices; <see cref="MarkerMoved"/> fires as the user drags. The host sets the
-    /// sample and the marker values; the control is otherwise self-contained.
+    /// loop start/end — and a shaded loop region. Each marker has a triangular grab
+    /// handle: start/end handles sit at the top, loop handles at the bottom, so the
+    /// loop and sample markers don't fight for the same grab zone when they overlap.
+    /// Hit-testing keys off the cursor's vertical half: clicks in the top half move
+    /// start/end, clicks in the bottom half move the loop points. Marker positions
+    /// are sample indices; <see cref="MarkerMoved"/> fires as the user drags.
     /// </summary>
     public partial class WaveformControl : UserControl
     {
-        private const double HitTolerance = 6; // px either side of a marker line to grab it
+        private const double HandleHalfWidth = 6;
+        private const double HandleHeight = 11;
+        private const double HitTolerance = 9; // px either side of a handle to grab it
 
         private float[] samples = Array.Empty<float>();
         private int sampleLength;
@@ -30,7 +35,12 @@ namespace NAudioWpfDemo.SampleEditorDemo
             [SampleMarker.LoopStart] = 0,
             [SampleMarker.LoopEnd] = 0
         };
+        private Rectangle loopRegion;
         private SampleMarker? dragging;
+
+        private static readonly Brush StartBrush = Brushes.LimeGreen;
+        private static readonly Brush EndBrush = Brushes.OrangeRed;
+        private static readonly Brush LoopBrush = Brushes.DarkOrange;
 
         /// <summary>Raised while a marker is dragged, with its new sample index.</summary>
         public event Action<SampleMarker, int> MarkerMoved;
@@ -53,7 +63,7 @@ namespace NAudioWpfDemo.SampleEditorDemo
         public void SetMarker(SampleMarker marker, int sampleIndex)
         {
             markers[marker] = Clamp(sampleIndex);
-            UpdateMarkers();
+            UpdateOverlays();
         }
 
         private int Clamp(int index) => index < 0 ? 0 : index > sampleLength ? sampleLength : index;
@@ -64,22 +74,17 @@ namespace NAudioWpfDemo.SampleEditorDemo
         private int XToIndex(double x) =>
             sampleLength <= 0 ? 0 : Clamp((int)Math.Round(x / canvas.ActualWidth * sampleLength));
 
+        private static bool IsLoop(SampleMarker m) => m == SampleMarker.LoopStart || m == SampleMarker.LoopEnd;
+
         private void Redraw()
         {
             canvas.Children.Clear();
+            loopRegion = null;
             double w = canvas.ActualWidth, h = canvas.ActualHeight;
             if (w <= 0 || h <= 0) return;
 
             // shaded loop region (drawn first, beneath the waveform)
-            double loopX1 = IndexToX(markers[SampleMarker.LoopStart]);
-            double loopX2 = IndexToX(markers[SampleMarker.LoopEnd]);
-            var loopRegion = new Rectangle
-            {
-                Width = Math.Max(0, loopX2 - loopX1),
-                Height = h,
-                Fill = new SolidColorBrush(Color.FromArgb(40, 255, 165, 0))
-            };
-            Canvas.SetLeft(loopRegion, loopX1);
+            loopRegion = new Rectangle { Height = h, Fill = new SolidColorBrush(Color.FromArgb(40, 255, 165, 0)) };
             canvas.Children.Add(loopRegion);
 
             // waveform: one vertical min..max bar per pixel column
@@ -113,40 +118,66 @@ namespace NAudioWpfDemo.SampleEditorDemo
                 canvas.Children.Add(new Path { Data = geometry, Stroke = Brushes.SteelBlue, StrokeThickness = 1 });
             }
 
-            UpdateMarkers();
+            UpdateOverlays();
         }
 
-        private void UpdateMarkers()
+        // repositions the loop shading and redraws the marker lines + handles; lighter
+        // than a full Redraw so it can run on every drag move
+        private void UpdateOverlays()
         {
-            // markers are redrawn together with the waveform; remove the old lines first
-            for (int i = canvas.Children.Count - 1; i >= 0; i--)
-                if (canvas.Children[i] is Line) canvas.Children.RemoveAt(i);
+            double w = canvas.ActualWidth, h = canvas.ActualHeight;
+            if (w <= 0 || h <= 0) return;
 
-            AddMarkerLine(SampleMarker.Start, Brushes.LimeGreen);
-            AddMarkerLine(SampleMarker.End, Brushes.OrangeRed);
-            AddMarkerLine(SampleMarker.LoopStart, Brushes.DarkOrange);
-            AddMarkerLine(SampleMarker.LoopEnd, Brushes.DarkOrange);
+            // remove the previous marker visuals (the waveform/loop region stay)
+            for (int i = canvas.Children.Count - 1; i >= 0; i--)
+                if (canvas.Children[i] is Line or Polygon) canvas.Children.RemoveAt(i);
+
+            if (loopRegion != null)
+            {
+                double lx1 = IndexToX(markers[SampleMarker.LoopStart]);
+                double lx2 = IndexToX(markers[SampleMarker.LoopEnd]);
+                Canvas.SetLeft(loopRegion, lx1);
+                loopRegion.Width = Math.Max(0, lx2 - lx1);
+            }
+
+            AddMarker(SampleMarker.Start, StartBrush);
+            AddMarker(SampleMarker.End, EndBrush);
+            AddMarker(SampleMarker.LoopStart, LoopBrush);
+            AddMarker(SampleMarker.LoopEnd, LoopBrush);
         }
 
-        private void AddMarkerLine(SampleMarker marker, Brush brush)
+        private void AddMarker(SampleMarker marker, Brush brush)
         {
             double x = IndexToX(markers[marker]);
-            var line = new Line
+            double h = canvas.ActualHeight;
+
+            canvas.Children.Add(new Line
             {
-                X1 = x, X2 = x, Y1 = 0, Y2 = canvas.ActualHeight,
-                Stroke = brush, StrokeThickness = 2
-            };
-            canvas.Children.Add(line);
+                X1 = x, X2 = x, Y1 = 0, Y2 = h,
+                Stroke = brush, StrokeThickness = 1.5
+            });
+
+            // triangle grab handle: start/end at the top, loop points at the bottom
+            var handle = new Polygon { Fill = brush, Stroke = Brushes.Black, StrokeThickness = 0.5 };
+            handle.Points = IsLoop(marker)
+                ? new PointCollection { new(x - HandleHalfWidth, h), new(x + HandleHalfWidth, h), new(x, h - HandleHeight) }
+                : new PointCollection { new(x - HandleHalfWidth, 0), new(x + HandleHalfWidth, 0), new(x, HandleHeight) };
+            canvas.Children.Add(handle);
         }
 
-        private SampleMarker? HitTest(double x)
+        private SampleMarker? HitTest(Point p)
         {
+            // top half grabs the sample start/end handles, bottom half the loop handles
+            var candidates = p.Y < canvas.ActualHeight / 2
+                ? new[] { SampleMarker.Start, SampleMarker.End }
+                : new[] { SampleMarker.LoopStart, SampleMarker.LoopEnd };
+
             SampleMarker? best = null;
             double bestDist = HitTolerance;
-            foreach (var kv in markers)
+            foreach (var marker in candidates)
             {
-                double dist = Math.Abs(IndexToX(kv.Value) - x);
-                if (dist <= bestDist) { bestDist = dist; best = kv.Key; }
+                double dist = Math.Abs(IndexToX(markers[marker]) - p.X);
+                if (dist <= bestDist) { bestDist = dist; best = marker; }
             }
             return best;
         }
@@ -154,7 +185,7 @@ namespace NAudioWpfDemo.SampleEditorDemo
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
         {
             base.OnMouseLeftButtonDown(e);
-            dragging = HitTest(e.GetPosition(canvas).X);
+            dragging = HitTest(e.GetPosition(canvas));
             if (dragging != null) CaptureMouse();
         }
 
@@ -164,7 +195,7 @@ namespace NAudioWpfDemo.SampleEditorDemo
             if (dragging == null || e.LeftButton != MouseButtonState.Pressed) return;
             int index = XToIndex(e.GetPosition(canvas).X);
             markers[dragging.Value] = index;
-            UpdateMarkers();
+            UpdateOverlays();
             MarkerMoved?.Invoke(dragging.Value, index);
         }
 

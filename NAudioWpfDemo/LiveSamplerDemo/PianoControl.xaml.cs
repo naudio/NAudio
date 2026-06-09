@@ -24,11 +24,31 @@ namespace NAudioWpfDemo.LiveSamplerDemo
         private static readonly Brush WhiteBrush = Brushes.White;
         private static readonly Brush BlackBrush = Brushes.Black;
         private static readonly Brush PressedBrush = Brushes.SteelBlue;
+        private static readonly Brush RootBrush = new SolidColorBrush(Color.FromRgb(0xFF, 0xC1, 0x07)); // amber
 
         private readonly Dictionary<int, Rectangle> keys = new();
         // hit-test order: black keys first, since they sit on top of the whites
         private readonly List<(int Note, Rect Bounds, bool Black)> hitOrder = new();
+        private readonly HashSet<int> pressedNotes = new();
         private int draggingNote = -1;
+        private int rootKey = -1;
+
+        /// <summary>
+        /// A note to mark as the instrument's root key (highlighted), or -1 for
+        /// none. Lets a host (e.g. the single-sample editor) show which key plays
+        /// the sample at its native pitch. The highlight yields to a pressed key.
+        /// </summary>
+        public int RootKey
+        {
+            get => rootKey;
+            set
+            {
+                int old = rootKey;
+                rootKey = value;
+                RefreshKey(old);
+                RefreshKey(rootKey);
+            }
+        }
 
         /// <summary>Lowest MIDI note shown (default C2 = 36).</summary>
         public int StartNote { get; set; } = 36;
@@ -69,7 +89,7 @@ namespace NAudioWpfDemo.LiveSamplerDemo
             for (int note = StartNote; note <= EndNote; note++)
             {
                 if (IsBlack(note)) continue;
-                AddKey(note, x, 0, WhiteWidth - 1, WhiteHeight, WhiteBrush, false);
+                AddKey(note, x, 0, WhiteWidth - 1, WhiteHeight, false);
                 whiteX[note] = x;
                 x += WhiteWidth;
             }
@@ -80,19 +100,19 @@ namespace NAudioWpfDemo.LiveSamplerDemo
                 if (!IsBlack(note)) continue;
                 if (!whiteX.TryGetValue(note - 1, out double leftX)) continue;
                 double bx = leftX + WhiteWidth - BlackWidth / 2;
-                AddKey(note, bx, 0, BlackWidth, BlackHeight, BlackBrush, true);
+                AddKey(note, bx, 0, BlackWidth, BlackHeight, true);
             }
 
             keyCanvas.Width = x;
         }
 
-        private void AddKey(int note, double x, double y, double w, double h, Brush fill, bool black)
+        private void AddKey(int note, double x, double y, double w, double h, bool black)
         {
             var rect = new Rectangle
             {
                 Width = w,
                 Height = h,
-                Fill = fill,
+                Fill = ResolveFill(note),
                 Stroke = Brushes.DimGray,
                 StrokeThickness = 1
             };
@@ -110,10 +130,21 @@ namespace NAudioWpfDemo.LiveSamplerDemo
             return -1;
         }
 
+        // a pressed key wins, then the root-key highlight, then the natural colour
+        private Brush ResolveFill(int note) =>
+            pressedNotes.Contains(note) ? PressedBrush
+            : note == rootKey ? RootBrush
+            : IsBlack(note) ? BlackBrush : WhiteBrush;
+
+        private void RefreshKey(int note)
+        {
+            if (keys.TryGetValue(note, out var rect)) rect.Fill = ResolveFill(note);
+        }
+
         private void SetPressed(int note, bool pressed)
         {
-            if (!keys.TryGetValue(note, out var rect)) return;
-            rect.Fill = pressed ? PressedBrush : (IsBlack(note) ? BlackBrush : WhiteBrush);
+            if (pressed) pressedNotes.Add(note); else pressedNotes.Remove(note);
+            RefreshKey(note);
         }
 
         /// <summary>

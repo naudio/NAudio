@@ -41,6 +41,8 @@ namespace NAudioWpfDemo.SampleEditorDemo
         private static readonly Brush StartBrush = Brushes.LimeGreen;
         private static readonly Brush EndBrush = Brushes.OrangeRed;
         private static readonly Brush LoopBrush = Brushes.DarkOrange;
+        private static readonly Brush PlayheadBrush = Brushes.DodgerBlue;
+        private const string PlayheadTag = "playhead";
 
         /// <summary>Raised while a marker is dragged, with its new sample index.</summary>
         public event Action<SampleMarker, int> MarkerMoved;
@@ -64,6 +66,32 @@ namespace NAudioWpfDemo.SampleEditorDemo
         {
             markers[marker] = Clamp(sampleIndex);
             UpdateOverlays();
+        }
+
+        /// <summary>
+        /// Draws a playback-position line for each active voice (one per element of
+        /// <paramref name="positions"/> up to <paramref name="count"/>, in source
+        /// sample indices). Cheap enough to call at UI frame rate.
+        /// </summary>
+        public void SetPlayheads(double[] positions, int count)
+        {
+            // clear the previous playhead lines (leave the waveform/markers alone)
+            for (int i = canvas.Children.Count - 1; i >= 0; i--)
+                if (canvas.Children[i] is Line line && Equals(line.Tag, PlayheadTag))
+                    canvas.Children.RemoveAt(i);
+
+            double h = canvas.ActualHeight;
+            if (h <= 0 || positions == null) return;
+            for (int i = 0; i < count && i < positions.Length; i++)
+            {
+                double x = sampleLength <= 0 ? 0 : positions[i] / sampleLength * canvas.ActualWidth;
+                canvas.Children.Add(new Line
+                {
+                    X1 = x, X2 = x, Y1 = 0, Y2 = h,
+                    Stroke = PlayheadBrush, StrokeThickness = 1, Tag = PlayheadTag,
+                    IsHitTestVisible = false
+                });
+            }
         }
 
         private int Clamp(int index) => index < 0 ? 0 : index > sampleLength ? sampleLength : index;
@@ -128,9 +156,14 @@ namespace NAudioWpfDemo.SampleEditorDemo
             double w = canvas.ActualWidth, h = canvas.ActualHeight;
             if (w <= 0 || h <= 0) return;
 
-            // remove the previous marker visuals (the waveform/loop region stay)
+            // remove the previous marker visuals (the waveform/loop region and the
+            // playback playheads stay — playheads are tagged and owned by SetPlayheads)
             for (int i = canvas.Children.Count - 1; i >= 0; i--)
-                if (canvas.Children[i] is Line or Polygon) canvas.Children.RemoveAt(i);
+            {
+                var child = canvas.Children[i];
+                if (child is Polygon || (child is Line line && !Equals(line.Tag, PlayheadTag)))
+                    canvas.Children.RemoveAt(i);
+            }
 
             if (loopRegion != null)
             {

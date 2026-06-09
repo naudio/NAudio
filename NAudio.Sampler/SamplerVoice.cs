@@ -102,6 +102,13 @@ namespace NAudio.Sampler
         /// <summary>Whether this voice is currently producing sound.</summary>
         public bool IsActive { get; private set; }
 
+        /// <summary>
+        /// The reader's current source-sample read position (for UI playback
+        /// indicators). The audio thread updates it every sample; a cross-thread
+        /// read may be momentarily stale, which is harmless for display.
+        /// </summary>
+        internal double SamplePosition => reader == null ? 0.0 : reader.Position;
+
         /// <summary>The MIDI channel that triggered this voice.</summary>
         public int Channel { get; private set; }
 

@@ -98,6 +98,24 @@ namespace NAudio.Sampler
         }
 
         /// <summary>
+        /// Copies each active voice's current source-sample read position into
+        /// <paramref name="destination"/> (up to its length), returning the count
+        /// written. For UI playback indicators — allocation-free and cheap; safe to
+        /// call from the UI thread (a momentarily stale read is harmless).
+        /// </summary>
+        public int GetActivePlaybackPositions(double[] destination)
+        {
+            if (destination == null) return 0;
+            int n = 0;
+            foreach (var v in voices)
+            {
+                if (n >= destination.Length) break;
+                if (v.IsActive) destination[n++] = v.SamplePosition;
+            }
+            return n;
+        }
+
+        /// <summary>
         /// The candidate regions a note on the given channel might play; the engine
         /// filters them by key/velocity. Return null for "no instrument".
         /// </summary>

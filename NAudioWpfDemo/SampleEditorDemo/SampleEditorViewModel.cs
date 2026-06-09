@@ -180,6 +180,12 @@ namespace NAudioWpfDemo.SampleEditorDemo
         /// <summary>Stops a note from the on-screen keyboard.</summary>
         public void StopNote(int note) => live?.NoteOff(0, note);
 
+        /// <summary>
+        /// Fills <paramref name="dest"/> with the source-sample read position of each
+        /// sounding voice (for the waveform playback indicator), returning the count.
+        /// </summary>
+        public int ReadPlaybackPositions(double[] dest) => sampler?.GetActivePlaybackPositions(dest) ?? 0;
+
         private void Load()
         {
             var dialog = new OpenFileDialog

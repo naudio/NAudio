@@ -5,6 +5,21 @@ using NAudio.SoundFont;
 namespace NAudio.Sampler
 {
     /// <summary>
+    /// How a region's sounding voices are silenced when choked by their group
+    /// (SFZ <c>off_mode</c>): a fast ~5 ms anti-click cut (the default, and the
+    /// SoundFont <c>exclusiveClass</c> behaviour) or a normal release through
+    /// the voice's own amplitude-envelope release. ARIA's <c>off_mode=time</c>
+    /// (+<c>off_time</c>) is not supported and is treated as fast.
+    /// </summary>
+    internal enum SamplerOffMode
+    {
+        /// <summary>Cut quickly with a short anti-click fade (the default).</summary>
+        Fast,
+        /// <summary>Release through the voice's own amp-envelope release (SFZ <c>off_mode=normal</c>).</summary>
+        Normal
+    }
+
+    /// <summary>
     /// The format-neutral region the voice engine plays: a <see cref="SampleData"/>
     /// reference plus a resolved parameter set (carried as
     /// <see cref="SoundFontGenerators"/> in engine units — the neutral currency,
@@ -61,6 +76,23 @@ namespace NAudio.Sampler
         /// <c>exclusiveClass</c>) <see cref="Group"/> and this are equal.
         /// </summary>
         public int OffByGroup { get; init; }
+
+        /// <summary>
+        /// How this region's voices are silenced when their group is choked
+        /// (SFZ <c>off_mode</c>): fast cut (the default — also SoundFont
+        /// <c>exclusiveClass</c> semantics) or release through the voice's own
+        /// amp-envelope release.
+        /// </summary>
+        public SamplerOffMode OffMode { get; init; }
+
+        /// <summary>
+        /// Maximum voices that may sound simultaneously on this region (SFZ
+        /// <c>polyphony</c>); 0 = unlimited. Striking the region beyond the cap
+        /// silences the oldest of its sounding voices (honouring
+        /// <see cref="OffMode"/>). The cap is per region instance, so same-key
+        /// layered regions each carry their own.
+        /// </summary>
+        public int Polyphony { get; init; }
 
         /// <summary>
         /// When the region triggers (SFZ <c>trigger</c>). Note-on triggers

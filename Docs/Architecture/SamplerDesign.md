@@ -500,9 +500,14 @@ forgotten:
   CC101/CC100 select, CC6/CC38 set semitones + cents, RPN null and an NRPN
   selection deselect — feeding `PitchBendRangeSemitones` (untouched by Reset
   All Controllers per RP-015).
-- **Poly (per-note) pressure** as a modulator source is not tracked — it
-  evaluates as 0. Channel pressure, velocity, key, CC and pitch-wheel sources
-  all work. **NRPN** is likewise not yet decoded.
+- **Poly (per-note) pressure** as a modulator source is not tracked — a
+  modulator naming it is now *disabled entirely* per SF2.04 §7.4 (the same
+  treatment as unknown source enumerations and the §8.2.2-prohibited CC
+  numbers), rather than evaluating as a bogus constant 0 (which made a
+  *bipolar* poly-pressure source contribute −1 × amount forever). Revisit by
+  tracking per-note pressure if a bank needs it. Channel pressure, velocity,
+  key, CC, pitch-wheel and pitch-wheel-sensitivity (RPN 0) sources all work.
+  **NRPN** is likewise not yet decoded.
 - **Modulator destinations outside `GeneratorEnum`** (e.g. the SF2 "initial
   pitch" virtual destination) are ignored by the engine — only real generator
   destinations are summed.

@@ -74,6 +74,11 @@ namespace NAudio.Sampler
         /// <summary>The SoundFont bank holding GM percussion kits.</summary>
         public const int PercussionBank = 128;
 
+        // GS marks a rhythm part by selecting bank MSB 120 on any channel;
+        // XG uses MSB 127 for its drum-kit banks
+        private const int GsRhythmBankMsb = 120;
+        private const int XgRhythmBankMsb = 127;
+
         /// <summary>
         /// The MIDI channel (0-based) treated as the GM percussion channel: its
         /// notes always resolve against the percussion bank (<see cref="PercussionBank"/> = 128),
@@ -83,12 +88,31 @@ namespace NAudio.Sampler
         /// </summary>
         public int PercussionChannel { get; set; } = 9;
 
+        /// <summary>
+        /// Whether a channel whose selected bank MSB (CC0) is 120 or 127 resolves
+        /// its notes against the percussion bank, exactly like the forced
+        /// percussion channel. Roland GS selects rhythm parts with bank MSB 120
+        /// on any channel and Yamaha XG uses MSB 127 for its drum kits, so
+        /// honouring those two values lets GS/XG-authored MIDI files play drums
+        /// on channels other than 10. Default true. This is a heuristic on the
+        /// bank number alone: full GS/XG mode detection via SysEx (GS Reset /
+        /// XG System On, part-mode messages) remains unsupported. Normal
+        /// variation banks (e.g. CC0 = 8) are unaffected.
+        /// </summary>
+        public bool TreatGsXgDrumBanksAsPercussion { get; set; } = true;
+
         /// <inheritdoc />
         private protected override IReadOnlyList<SamplerRegion> GetRegionsForNoteOn(int channel, MidiChannelState state)
         {
             // GM channel 10 is always percussion: force bank 128 so a stray
-            // bank-select on the drum track can't drop it onto a melodic preset
-            bool percussion = channel == PercussionChannel;
+            // bank-select on the drum track can't drop it onto a melodic preset.
+            // A GS (CC0 = 120) or XG (CC0 = 127) rhythm-bank selection makes any
+            // other channel percussion too while the heuristic is enabled —
+            // resolving through the same forced-percussion path (and cache key
+            // shape), so the prewarm and cache-collision protections hold.
+            bool percussion = channel == PercussionChannel ||
+                (TreatGsXgDrumBanksAsPercussion &&
+                 (state.Bank == GsRhythmBankMsb || state.Bank == XgRhythmBankMsb));
             int bank = percussion ? PercussionBank : state.Bank;
 
             // the forced-percussion path resolves differently from a melodic lookup,
@@ -149,7 +173,9 @@ namespace NAudio.Sampler
                     Generators = region.Generators,
                     Modulators = ModulatorSet.Build(region),
                     VelocityTrackingPercent = 0f, // SF2 velocity is driven by the modulator list
-                    // exclusiveClass is a self-choking group (a note silences others in its class)
+                    // exclusiveClass is a self-choking group (a note silences others
+                    // in its class); OffMode stays Fast and Polyphony 0 (the
+                    // defaults) — SF2 has neither concept
                     Group = region.Generators.ExclusiveClass,
                     OffByGroup = region.Generators.ExclusiveClass,
                     LoKey = region.LowKey,

@@ -19,9 +19,10 @@ namespace NAudio.Sampler
     ///
     /// Tier 1 and Tier 2 are fully honoured by the engine: stereo samples,
     /// <c>release</c>/<c>first</c>/<c>legato</c> triggers, all four
-    /// <c>fil_type</c> shapes, cross-group <c>off_by</c> chokes, note-on
-    /// selection (keyswitches, round-robin, random, CC gates), crossfades,
-    /// per-region EGs/LFOs, EQ bands and effect sends.
+    /// <c>fil_type</c> shapes, cross-group <c>off_by</c> chokes (with
+    /// <c>off_mode</c>), per-region <c>polyphony</c> caps, note-on selection
+    /// (keyswitches, round-robin, random, CC gates), crossfades, per-region
+    /// EGs/LFOs, EQ bands and effect sends.
     /// </summary>
     internal static class SfzRegionProjector
     {
@@ -89,6 +90,10 @@ namespace NAudio.Sampler
                 IgnoreNoteOff = loopMode == SfzLoopMode.OneShot,
                 Group = region.Group,
                 OffByGroup = region.OffBy,
+                // off_mode=normal releases a choked voice via its own ampeg_release;
+                // anything else (fast, or ARIA's unsupported time) is the fast cut
+                OffMode = region.OffMode == SfzOffMode.Normal ? SamplerOffMode.Normal : SamplerOffMode.Fast,
+                Polyphony = Math.Max(0, region.Polyphony), // parsed −1 = absent = unlimited
                 KeyswitchLast = region.KeyswitchLast,
                 KeyswitchDefault = region.KeyswitchDefault,
                 SequenceLength = region.SequenceLength,

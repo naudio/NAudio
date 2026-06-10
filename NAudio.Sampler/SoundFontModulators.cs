@@ -69,12 +69,30 @@ namespace NAudio.Sampler
         /// Evaluates a modulator source: normalises <paramref name="raw"/> against
         /// <paramref name="max"/>, applies the source's direction, curve and
         /// polarity, and returns the multiplier — [0, 1] for a unipolar source,
-        /// [-1, 1] for a bipolar one.
+        /// [-1, 1] for a bipolar one. Bipolar concave/convex follow the §8.2.4
+        /// figures: zero at the controller centre, odd-symmetric to ±1 at the
+        /// extremes (matching FluidSynth's reading of the spec).
         /// </summary>
         public static double EvaluateSource(ModulatorType source, double raw, double max)
         {
             double u = max <= 0.0 ? 0.0 : raw / max;
             if (u < 0.0) u = 0.0; else if (u > 1.0) u = 1.0;
+
+            if (source.Polarity &&
+                (source.SourceType == SourceTypeEnum.Concave || source.SourceType == SourceTypeEnum.Convex))
+            {
+                // SF2.04 §8.2.4: the bipolar concave/convex curves are zero at the
+                // controller centre and odd-symmetric — sign(2u−1)·curve(|2u−1|),
+                // with the negative direction mirroring the sign. The unipolar
+                // 2·curve(u)−1 mapping (correct for linear/switch) is wrong here:
+                // it left a bipolar-concave source at ≈ −0.75 at centre.
+                double b = 2.0 * u - 1.0;
+                double value = b >= 0.0
+                    ? Curve(source.SourceType, b)
+                    : -Curve(source.SourceType, -b);
+                return source.Direction ? -value : value;
+            }
+
             double d = source.Direction ? 1.0 - u : u;
             double c = Curve(source.SourceType, d);
             return source.Polarity ? (2.0 * c - 1.0) : c;
@@ -219,8 +237,8 @@ namespace NAudio.Sampler
         }
 
         // whether both sources are fixed for the lifetime of a note (velocity,
-        // key number, "no controller" constants; per-note poly pressure is not
-        // tracked and evaluates as the constant 0)
+        // key number, "no controller" constants); unknown/unsupported sources
+        // never get here — Build rejects their modulators outright (§7.4)
         private static bool IsStaticModulator(Modulator m) =>
             IsStaticSource(m.SourceModulationData) && IsStaticSource(m.SourceModulationAmount);
 
@@ -234,7 +252,7 @@ namespace NAudio.Sampler
                 case ControllerSourceEnum.PitchWheelSensitivity:
                     return false;
                 default:
-                    return true; // velocity, key, no-controller, poly pressure, reserved (= constant 1)
+                    return true; // velocity, key, no-controller
             }
         }
 
@@ -253,7 +271,8 @@ namespace NAudio.Sampler
         }
 
         // Replace an identically-routed entry (the more-local modulator wins), or
-        // append. Skips modulators with a reserved source-type bit set (§8.2.4).
+        // append. Skips modulators with a reserved source-type bit set (§8.2.4)
+        // or an unknown/unsupported source enumeration (§7.4, §8.2).
         private static void Merge(List<Modulator> list, Modulator m)
         {
             if (!IsUsable(m)) return;
@@ -264,10 +283,62 @@ namespace NAudio.Sampler
             list.Add(m);
         }
 
+        // SF2.04 §7.4: "If the source enumerator contains an illegal or
+        // unsupported value, the modulator should be ignored." Applies to both
+        // the primary and the amount source — a junk enumeration must disable
+        // the modulator, not degenerate into a constant offset of its amount.
         private static bool IsUsable(Modulator m) =>
             m.SourceModulationData != null && m.SourceModulationAmount != null &&
             SoundFontModulatorMath.IsKnownSourceType(m.SourceModulationData.SourceType) &&
-            SoundFontModulatorMath.IsKnownSourceType(m.SourceModulationAmount.SourceType);
+            SoundFontModulatorMath.IsKnownSourceType(m.SourceModulationAmount.SourceType) &&
+            IsSupportedSource(m.SourceModulationData) &&
+            IsSupportedSource(m.SourceModulationAmount);
+
+        private static bool IsSupportedSource(ModulatorType source)
+        {
+            if (source.IsMidiContinuousController)
+                return IsAllowedCcSource(source.MidiContinuousControllerNumber);
+            switch (source.ControllerSource)
+            {
+                case ControllerSourceEnum.NoController: // the constant 1 — §9.5.1 default amount-source behaviour
+                case ControllerSourceEnum.NoteOnVelocity:
+                case ControllerSourceEnum.NoteOnKeyNumber:
+                case ControllerSourceEnum.ChannelPressure:
+                case ControllerSourceEnum.PitchWheel:
+                case ControllerSourceEnum.PitchWheelSensitivity:
+                    return true;
+                default:
+                    // Poly pressure (10) is defined by §8.2.1 but per-note pressure
+                    // is not tracked yet, so a modulator naming it is disabled until
+                    // it is (previously it evaluated as a bogus constant 0 — a
+                    // bipolar source then contributed −1 × amount forever). The
+                    // Link source (127) is unsupported, and any other value is an
+                    // unknown enumeration; all must be ignored per §7.4/§8.2.
+                    return false;
+            }
+        }
+
+        // SF2.04 §8.2.2 prohibits the CCs with reserved channel-level meanings as
+        // modulator sources: 0/32 (bank select), 6/38 (data entry), 98–101
+        // (NRPN/RPN select) and 120–127 (channel mode messages). A modulator
+        // naming one must be ignored entirely.
+        private static bool IsAllowedCcSource(int cc)
+        {
+            switch (cc)
+            {
+                case 0:
+                case 6:
+                case 32:
+                case 38:
+                case 98:
+                case 99:
+                case 100:
+                case 101:
+                    return false;
+                default:
+                    return cc < 120; // 120–127 prohibited; >127 cannot occur (7-bit field)
+            }
+        }
 
         /// <summary>
         /// Sums every modulator's output into <paramref name="byDestination"/>,
@@ -346,10 +417,14 @@ namespace NAudio.Sampler
                     case ControllerSourceEnum.NoteOnKeyNumber: raw = key; break;
                     case ControllerSourceEnum.ChannelPressure: raw = channel.ChannelPressure; break;
                     case ControllerSourceEnum.PitchWheel: raw = channel.PitchBend; max = 16383.0; break;
+                    // pitch-bend sensitivity (RPN 0, decoded by MidiChannelState)
+                    // normalised over the spec's 0..127 semitone span
                     case ControllerSourceEnum.PitchWheelSensitivity: raw = channel.PitchBendRangeSemitones; break;
-                    // poly pressure is not tracked per-note yet; treat as 0
-                    case ControllerSourceEnum.PolyPressure: raw = 0.0; break;
-                    default: return 1.0;
+                    default:
+                        // unreachable: Build rejects modulators whose source is
+                        // unknown or unsupported (poly pressure, Link, reserved
+                        // values) per §7.4 — contribute nothing if ever hit
+                        return 0.0;
                 }
             }
 

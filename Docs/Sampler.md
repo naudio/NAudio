@@ -53,7 +53,7 @@ The sampler consumes MIDI through `ProcessMidiEvent(MidiEvent)` (plus the `NoteO
 `SoundFontSampler` is multi-timbral: all 16 MIDI channels play simultaneously, each with its own program, bank, controllers and pitch bend. Channel numbers on the `NoteOn`/`NoteOff`/`AllSoundOff` style methods are zero-based (0–15).
 
 * **Bank select** follows SF2 semantics: the bank-select MSB (CC0) selects the SoundFont bank (SF2 `wBank`, 0–127). The LSB (CC32) is tracked but does not affect preset selection. A program in a missing bank falls back to bank 0 (GS "capital tone" style), then to any other melodic bank — never to a percussion kit.
-* **Percussion** lives in SF2 bank 128 (`SoundFontSampler.PercussionBank`). The channel identified by the `PercussionChannel` property (default 9, i.e. MIDI channel 10) always resolves against the percussion bank regardless of bank-select messages: note numbers pick drums, the program picks the kit (falling back to the Standard Kit). Set `PercussionChannel = -1` to disable this for a non-GM bank.
+* **Percussion** lives in SF2 bank 128 (`SoundFontSampler.PercussionBank`). The channel identified by the `PercussionChannel` property (default 9, i.e. MIDI channel 10) always resolves against the percussion bank regardless of bank-select messages: note numbers pick drums, the program picks the kit (falling back to the Standard Kit). Set `PercussionChannel = -1` to disable this for a non-GM bank. In addition, a channel whose bank MSB is 120 (the GS rhythm-part convention) or 127 (XG drum kits) resolves against the percussion bank too — disable via `TreatGsXgDrumBanksAsPercussion = false`.
 
 ### Master gain and effects
 
@@ -196,7 +196,7 @@ The sampler targets a documented, useful subset of each format: SFZ v1 plus comm
 * **Amplitude:** `volume` (boosts above 0 dB included), `pan`, `amp_veltrack` (including negative values), `ampeg_delay`/`ampeg_attack`/`ampeg_hold`/`ampeg_decay`/`ampeg_sustain`/`ampeg_release`
 * **Filter:** `cutoff`, `resonance`, `fil_type` — all four families: low-pass (`lpf_*`), high-pass (`hpf_*`), band-pass (`bpf_*`) and band-reject (`brf_*`). The filter is always **2-pole**: the 1-pole/4-pole/6-pole variants (`lpf_1p`, `lpf_4p`, …) are accepted but play with the 2-pole shape
 * **Sample playback:** `offset`, `end` (inclusive, per the spec; an explicit `end=-1` disables the region), `loop_mode`/`loopmode` (`no_loop`, `one_shot`, `loop_continuous`, `loop_sustain`), `loop_start`/`loop_end` (inclusive; aliases `loopstart`/`loopend`), WAV `smpl`-chunk loop points as the default loop
-* **Triggers and groups:** `trigger` (`attack`/`release`/`first`/`legato`), `rt_decay` (release samples attenuated by held time), `group`/`off_by` (directional choke groups)
+* **Triggers and groups:** `trigger` (`attack`/`release`/`first`/`legato`), `rt_decay` (release samples attenuated by held time), `group`/`off_by` (directional choke groups), `off_mode` (`fast` cuts a choked voice with a ~5 ms fade; `normal` releases it through its own `ampeg_release`; ARIA's `off_mode=time`+`off_time` is not supported and is treated as `fast`), `polyphony` (per-region voice cap — striking beyond it silences the region's oldest voice, honouring its `off_mode`)
 * **Note-on selection:** keyswitches (`sw_lokey`/`sw_hikey`/`sw_last`/`sw_default` — keyswitch presses make no sound), round-robin (`seq_length`/`seq_position`), random layers (`lorand`/`hirand`, one draw per note-on so layers select consistently), CC gating (`loccN`/`hiccN`), CC triggers (`on_loccN`/`on_hiccN` — the region plays at its root key when the controller rises into the window)
 * **Crossfades:** `xfin_lokey`/`xfin_hikey`, `xfout_lokey`/`xfout_hikey`, `xfin_lovel`/`xfin_hivel`, `xfout_lovel`/`xfout_hivel`, with `xf_keycurve`/`xf_velcurve` (`gain` or `power`); a layer faded to zero doesn't spawn a voice
 * **Modulation:** `pitchlfo_freq`/`pitchlfo_depth`/`pitchlfo_delay` (vibrato), `amplfo_*` (tremolo), `fillfo_*` (filter LFO), `fileg_*` (filter envelope: delay/attack/hold/decay/sustain/release plus depth) and `pitcheg_*` (pitch envelope) — see the shared-source note below
@@ -208,8 +208,6 @@ One engine limitation to know about: the modulation LFO and modulation envelope 
 
 **Not supported** (parsed where noted, but not honoured):
 
-* `off_mode` — a choked region always cuts with a fast (~5 ms) fade; `off_mode=normal` (release via the amp envelope) is not honoured
-* `polyphony` — per-region voice caps are not enforced; only the engine-wide `maxVoices` limit applies
 * `amp_velcurve_N` velocity-curve points
 * ARIA/SFZ v2 flex EGs (`eg01_*`, …) and `<curve>` tables
 * `set_ccN` initial controller values
@@ -237,8 +235,8 @@ One engine limitation to know about: the modulation LFO and modulation envelope 
 * The filter is a single 2-pole biquad low-pass. This matches the spec's intent but is not bit-compatible with any particular hardware or reference synth.
 * Attenuation is **spec-literal**: `initialAttenuation` centibels are applied exactly as written. FluidSynth (and synths that copy it) scales attenuation by 0.4× to emulate EMU hardware, so banks voiced against FluidSynth may play quieter here than you are used to. Compensate with `MasterGain` if needed.
 * Pitch-wheel handling is realised by the channel pitch-bend path rather than the modulator list, so a *file-defined* modulator whose destination is initial pitch is ignored.
-* Poly (per-note key) pressure and NRPN modulator sources are not tracked — they evaluate as zero. Channel pressure, velocity, key number, CC and pitch wheel sources all work.
-* GS/XG-style drum-bank selection (selecting a percussion kit on a channel other than the percussion channel via bank select) is not supported; percussion is fixed to `PercussionChannel`.
+* Poly (per-note key) pressure is not tracked, so a modulator sourced from it is disabled (ignored entirely, as SF2.04 §7.4 requires for unsupported sources — the same treatment as unknown source enumerations and the §8.2.2-prohibited CC numbers). NRPNs are likewise not decoded. Channel pressure, velocity, key number, CC, pitch wheel and pitch-wheel-sensitivity (RPN 0) sources all work.
+* GS/XG drum-bank selection is supported as a heuristic: a channel whose bank MSB (CC0) is 120 (GS rhythm part) or 127 (XG drum kit) resolves notes against the percussion bank, like the forced `PercussionChannel`. Gated by `SoundFontSampler.TreatGsXgDrumBanksAsPercussion` (default true). Full GS/XG mode detection via SysEx (GS Reset / XG System On, part-mode messages) is not supported.
 * Modulator destinations outside the real generator set (e.g. the "initial pitch" virtual destination) are ignored.
 * SoundFonts whose samples live in hardware ROM load and play as silence (their regions are skipped).
 
@@ -251,7 +249,7 @@ The engine understands these channel messages (anything else is ignored):
 * **Pitch bend** — with the bend range set by **RPN 0** (pitch-bend sensitivity); the default range is ±2 semitones
 * **Channel pressure** (aftertouch) — an SF2 modulator source (vibrato depth by default)
 * **Control change:**
-  * CC0 / CC32 — bank select MSB/LSB (MSB selects the SF2 bank; the LSB is tracked but unused)
+  * CC0 / CC32 — bank select MSB/LSB (MSB selects the SF2 bank; MSB 120/127 selects the percussion bank on any channel via the GS/XG drum-bank heuristic, unless disabled; the LSB is tracked but unused)
   * CC1 — modulation wheel (vibrato depth via the SF2 default modulator)
   * CC7 — channel volume
   * CC10 — pan

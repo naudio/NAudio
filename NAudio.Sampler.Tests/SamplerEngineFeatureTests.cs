@@ -132,6 +132,126 @@ namespace NAudio.Sampler.Tests
             Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(1), "only the group-2 voice should remain");
         }
 
+        [Test]
+        public void OffModeNormalReleasesTheChokedVoiceThroughItsOwnRelease()
+        {
+            // off_mode=normal: a group-choked voice releases through its own
+            // ampeg_release (2 s here) instead of the ~5 ms fast cut. Region 2
+            // (the choker) is a short one-shot (64 samples, no loop), so past its
+            // end the only audible voice is the released group-1 note — still
+            // sounding well beyond the fast-fade window, and decaying.
+            var sampler = Build(
+                "<region> sample=a.wav lokey=60 hikey=60 loop_mode=loop_continuous group=1 off_mode=normal ampeg_release=2\n" +
+                "<region> sample=b.wav lokey=62 hikey=62 group=2 off_by=1");
+
+            sampler.NoteOn(0, 60, 100);
+            Render(sampler, 1024);       // settle at sustain
+            sampler.NoteOn(0, 62, 100);  // chokes group 1 -> normal release
+
+            // 4096 frames ≈ 93 ms, far beyond the ~220-frame (5 ms) fast cut and
+            // the choker's 64-frame one-shot
+            var early = new float[4096 * 2];
+            sampler.Read(early);
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(1),
+                "the choked off_mode=normal voice must still be releasing, not cut");
+            float earlyPeak = TailPeak(early);
+            Assert.That(earlyPeak, Is.GreaterThan(0.05f),
+                "still audible well past the 5 ms fast-fade window");
+
+            var late = new float[4096 * 2];
+            sampler.Read(late);
+            float latePeak = TailPeak(late);
+            Assert.That(latePeak, Is.GreaterThan(0f).And.LessThan(earlyPeak),
+                "and decaying through its own 2 s amp release");
+        }
+
+        // peak over the second half of an interleaved buffer (skips transients)
+        private static float TailPeak(float[] interleaved)
+        {
+            float peak = 0;
+            for (int i = interleaved.Length / 2; i < interleaved.Length; i++)
+                peak = Math.Max(peak, Math.Abs(interleaved[i]));
+            return peak;
+        }
+
+        // ---- per-region polyphony caps (SFZ `polyphony`) ----
+
+        [Test]
+        public void PolyphonyOneSilencesTheOldestAndTheNewNoteSurvives()
+        {
+            // one region across the keyboard with polyphony=1: a second key must
+            // silence the first note and keep the NEW one. A looped 441 Hz sine
+            // rooted at key 60 plays ~882 Hz at key 72, so the survivor is
+            // identified by its zero-crossing rate.
+            var sampler = new SfzSampler(
+                SfzParser.Parse("<region> sample=a.wav lokey=0 hikey=127 pitch_keycenter=60 loop_mode=loop_continuous polyphony=1"),
+                new SineLoader(441.0, SampleRate / 2), SampleRate, maxVoices: 8);
+
+            sampler.NoteOn(0, 60, 100);
+            Render(sampler, 1024);
+            sampler.NoteOn(0, 72, 100); // over the cap: the oldest (key 60) goes
+            Render(sampler, 2048);      // past the choke fade
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(1),
+                "polyphony=1 must leave a single voice sounding");
+
+            var tail = new float[4096 * 2];
+            sampler.Read(tail);
+            // 4096 frames at 882 Hz ≈ 164 zero crossings; at 441 Hz ≈ 82
+            Assert.That(ZeroCrossings(tail), Is.GreaterThan(120),
+                "the survivor must be the NEW (key-72) note, not the old one");
+        }
+
+        private static int ZeroCrossings(float[] interleaved)
+        {
+            int crossings = 0;
+            float previous = interleaved[0];
+            for (int f = 1; f < interleaved.Length / 2; f++)
+            {
+                float current = interleaved[f * 2];
+                if ((previous < 0 && current >= 0) || (previous > 0 && current <= 0)) crossings++;
+                previous = current;
+            }
+            return crossings;
+        }
+
+        [Test]
+        public void PolyphonyTwoSilencesOnlyTheOldest()
+        {
+            var sampler = Build("<region> sample=a.wav lokey=0 hikey=127 loop_mode=loop_continuous polyphony=2");
+
+            sampler.NoteOn(0, 60, 100);
+            sampler.NoteOn(0, 62, 100);
+            Render(sampler, 512);
+            sampler.NoteOn(0, 64, 100); // at the cap: exactly the oldest (60) goes
+            Render(sampler, 2048);      // past the choke fade
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(2), "only the oldest is silenced");
+
+            // releasing the two newest keys empties the engine — proving the
+            // survivors are exactly notes 62 and 64 (had 60 wrongly survived,
+            // it would still be held and sounding)
+            sampler.NoteOff(0, 62);
+            sampler.NoteOff(0, 64);
+            Render(sampler, 4096);
+            Assert.That(sampler.ActiveVoiceCount, Is.Zero,
+                "the silenced voice must have been the oldest note (60)");
+        }
+
+        [Test]
+        public void LayeredRegionsEachWithPolyphonyOneBothStartFromOneNoteOn()
+        {
+            // same-key layers are DIFFERENT regions: the cap counts voices per
+            // region (reference identity), so one note-on starting both layers
+            // must not let one layer's cap choke the other
+            var sampler = Build(
+                "<region> sample=a.wav key=60 loop_mode=loop_continuous polyphony=1\n" +
+                "<region> sample=b.wav key=60 loop_mode=loop_continuous polyphony=1");
+
+            sampler.NoteOn(0, 60, 100);
+            Render(sampler, 2048);
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(2),
+                "both layers play from one note-on; the caps are per region");
+        }
+
         // a one-shot sine tone, so a notch at its frequency can be heard to remove it
         private sealed class SineLoader : ISfzSampleLoader
         {

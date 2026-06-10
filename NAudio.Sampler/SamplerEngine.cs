@@ -249,17 +249,49 @@ namespace NAudio.Sampler
 
         // gates on the key/velocity crossfade gain (silent layers don't spawn a
         // voice), chokes the off_by group (sparing voices started by the same
-        // dispatch), and starts a voice scaled by the crossfade and any extra
-        // (e.g. release rt_decay) gain
+        // dispatch), enforces the region's polyphony cap, and starts a voice
+        // scaled by the crossfade and any extra (e.g. release rt_decay) gain
         private void StartVoice(SamplerRegion region, MidiChannelState state, int channel, int note, int velocity, long dispatchOrder, float extraGain = 1f)
         {
             float gain = region.CrossfadeGain(note, velocity) * extraGain;
             if (gain <= 0f) return;
 
             if (region.OffByGroup != 0) ChokeGroup(region.OffByGroup, channel, dispatchOrder);
+            if (region.Polyphony > 0) EnforceRegionPolyphony(region);
 
             var voice = AcquireVoice();
             voice.Start(region, state, channel, note, velocity, startOrder++, gain);
+        }
+
+        // SFZ `polyphony`: cap the voices simultaneously sounding on one region
+        // (reference identity, so same-key layered regions each carry their own
+        // cap and never choke each other). The cap applies to voices already
+        // sounding before this start; the same-dispatch exemption used for group
+        // chokes deliberately does NOT apply — a region starts at most one voice
+        // per dispatch, so there are no sibling layers of its own to spare.
+        // Silences the oldest voices (by start order) until the new voice fits,
+        // honouring the region's off_mode like a group choke. Allocation-free
+        // O(voices) scans, as the note-on path requires.
+        private void EnforceRegionPolyphony(SamplerRegion region)
+        {
+            int sounding = 0;
+            foreach (var v in voices)
+                if (v.IsActive && v.Region == region)
+                    sounding++;
+
+            int excess = sounding - region.Polyphony + 1; // room for the voice about to start
+            long silencedThrough = long.MinValue;
+            while (excess-- > 0)
+            {
+                SamplerVoice oldest = null;
+                foreach (var v in voices)
+                    if (v.IsActive && v.Region == region && v.StartOrder > silencedThrough &&
+                        (oldest == null || v.StartOrder < oldest.StartOrder))
+                        oldest = v;
+                if (oldest == null) break;
+                silencedThrough = oldest.StartOrder; // don't pick the same voice twice
+                Silence(oldest);
+            }
         }
 
         /// <summary>
@@ -500,12 +532,23 @@ namespace NAudio.Sampler
 
         // silence sounding voices belonging to the given choke group on a channel,
         // sparing voices started at or after startedSince (a note-on must not choke
-        // the sibling layers it is itself starting)
+        // the sibling layers it is itself starting); each victim is silenced per
+        // its own region's off_mode
         private void ChokeGroup(int group, int channel, long startedSince)
         {
             foreach (var v in voices)
                 if (v.IsActive && v.Group == group && v.Channel == channel && v.StartOrder < startedSince)
-                    v.Choke();
+                    Silence(v);
+        }
+
+        // SFZ off_mode: a choked voice either cuts fast (~5 ms anti-click fade —
+        // the default, and SoundFont exclusiveClass semantics) or releases
+        // through its own amp-envelope release (off_mode=normal). ARIA's
+        // off_mode=time is unsupported and projected as fast.
+        private static void Silence(SamplerVoice voice)
+        {
+            if (voice.Region.OffMode == SamplerOffMode.Normal) voice.Release();
+            else voice.Choke();
         }
 
         private SamplerVoice AcquireVoice()

@@ -154,6 +154,64 @@ namespace NAudio.Sampler.Tests
             Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(1));
         }
 
+        // ---- GS/XG drum-bank heuristic (bank MSB 120 / 127 selects percussion) ----
+
+        // a font whose ONLY preset is a bank-128 percussion kit: a melodic
+        // channel can play it only through a percussion-bank resolution
+        private static NAudio.SoundFont.SoundFont BuildPercussionOnlyFont()
+        {
+            var igen = SoundFontTestBuilder.Chunk("igen", SoundFontTestBuilder.Concat(
+                SoundFontTestBuilder.Gen(54, 1),   // loop (sustains audibly)
+                SoundFontTestBuilder.Gen(58, 60),  // overridingRootKey
+                SoundFontTestBuilder.Gen(53, 0))); // SampleID
+            var data = new byte[8];
+            for (int i = 0; i < 4; i++) { data[i * 2] = 0x00; data[i * 2 + 1] = 0x40; } // ~0.5
+            return SoundFontTestBuilder.BuildSingleRegion(data, igen,
+                sampleStart: 0, sampleEnd: 4, loopStart: 0, loopEnd: 4,
+                sampleRate: SampleRate, originalPitch: 60, bank: 128);
+        }
+
+        [TestCase(120, TestName = "GsRhythmBankMsb120PlaysThePercussionKitOnAMelodicChannel")]
+        [TestCase(127, TestName = "XgDrumBankMsb127PlaysThePercussionKitOnAMelodicChannel")]
+        public void GsXgDrumBankMsbPlaysThePercussionKitOnAMelodicChannel(int bankMsb)
+        {
+            // GS selects rhythm parts with CC0 (bank MSB) = 120 on any channel;
+            // XG uses MSB 127 — both must resolve against the percussion bank
+            var sampler = NewSampler(BuildPercussionOnlyFont());
+            sampler.ProcessMidiEvent(new ControlChangeEvent(0, 1, MidiController.BankSelect, bankMsb));
+            sampler.NoteOn(0, 60, 127); // channel 0: NOT the GM percussion channel
+
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(1), "the kit must play via the drum-bank heuristic");
+            Assert.That(Peak(Render(sampler, 256)), Is.GreaterThan(0.1f));
+        }
+
+        [Test]
+        public void GsXgDrumBankHeuristicCanBeDisabled()
+        {
+            // with the heuristic off, CC0=120 follows the normal melodic bank
+            // rules (bank 120 missing, no bank-0/melodic fallback exists, and a
+            // melodic lookup never falls back to the percussion bank) -> silence
+            var sampler = NewSampler(BuildPercussionOnlyFont());
+            sampler.TreatGsXgDrumBanksAsPercussion = false;
+            sampler.ProcessMidiEvent(new ControlChangeEvent(0, 1, MidiController.BankSelect, 120));
+            sampler.NoteOn(0, 60, 127);
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(0),
+                "with the heuristic disabled the melodic bank rules apply");
+        }
+
+        [Test]
+        public void NormalVariationBankIsNotTreatedAsPercussion()
+        {
+            // CC0=8 is an ordinary GS variation bank: it must NOT trip the
+            // drum-bank heuristic (this font has no melodic preset to fall
+            // back to, so a percussion resolution would be the only way to sound)
+            var sampler = NewSampler(BuildPercussionOnlyFont());
+            sampler.ProcessMidiEvent(new ControlChangeEvent(0, 1, MidiController.BankSelect, 8));
+            sampler.NoteOn(0, 60, 127);
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(0),
+                "a normal variation bank must not select the percussion bank");
+        }
+
         [Test]
         public void HigherNotePlaysFasterThanRoot()
         {

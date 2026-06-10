@@ -216,6 +216,13 @@ namespace NAudio.Sampler
         /// <summary>The region's choke group, or 0 for none.</summary>
         public int Group { get; private set; }
 
+        /// <summary>
+        /// The region this voice is playing — read by the engine for the choke
+        /// behaviour (SFZ <c>off_mode</c>) and the per-region <c>polyphony</c>
+        /// cap (counted by reference identity). Null only before the first Start.
+        /// </summary>
+        public SamplerRegion Region { get; private set; }
+
         /// <summary>Whether this voice ignores note-off and plays to the end (one-shot).</summary>
         public bool IgnoreNoteOff { get; private set; }
 
@@ -336,6 +343,7 @@ namespace NAudio.Sampler
             Channel = channel;
             Note = note;
             Group = region.Group;
+            Region = region;
             IgnoreNoteOff = region.IgnoreNoteOff;
             StartOrder = order;
             IsHeld = true;

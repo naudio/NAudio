@@ -132,6 +132,15 @@ namespace NAudio.Core.Tests.Sfz
             Assert.That(r.Trigger, Is.EqualTo(SfzTrigger.Release));
         }
 
+        [TestCase("fast", SfzOffMode.Fast)]
+        [TestCase("normal", SfzOffMode.Normal)]
+        [TestCase("time", SfzOffMode.Fast)] // ARIA off_mode=time is unsupported and treated as fast
+        public void OffModeMapping(string value, SfzOffMode expected)
+        {
+            var r = MapFirst($"<region> sample=a.wav off_mode={value}");
+            Assert.That(r.OffMode, Is.EqualTo(expected));
+        }
+
         [Test]
         public void MatchesKeyAndVelocity()
         {

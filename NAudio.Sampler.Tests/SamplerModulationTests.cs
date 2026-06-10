@@ -268,6 +268,54 @@ namespace NAudio.Sampler.Tests
         }
 
         [Test]
+        public void FileModulatorOnOpenCutoffEngagesTheFilterWhenTheCcDrops()
+        {
+            // A region whose base cutoff is fully open (the 13500-cent default)
+            // but which carries a file modulator CC74 -> initialFilterFc
+            // (negative direction, -9600 cents at CC74 = 0): the open cutoff
+            // alone would bypass the filter, but the channel-driven routing must
+            // keep it engaged so dropping CC74 darkens the tone. This was a real
+            // bug — the activation rule only looked at the cutoff and the
+            // LFO/mod-env generators, so a brightness CC on an open-cutoff region
+            // never engaged the filter. The 32 kHz output rate puts the open
+            // cutoff (~19.9 kHz) beyond the old rule's Nyquist guard, which is
+            // where the old code failed (at 44.1 kHz it scraped by only because
+            // the lax guard engaged the filter on every open-cutoff voice).
+            const int outputRate = 32000;
+            const int points = 256;
+            var data = new byte[points * 2];
+            for (int i = 0; i < points; i++)
+            {
+                short val = (short)(16000 * Math.Sin(2 * Math.PI * i / points)); // ~172 Hz tone
+                data[i * 2] = (byte)(val & 0xFF);
+                data[i * 2 + 1] = (byte)((val >> 8) & 0xFF);
+            }
+            var igen = SoundFontTestBuilder.Chunk("igen", SoundFontTestBuilder.Concat(
+                SoundFontTestBuilder.Gen(GenSampleModes, 1),
+                SoundFontTestBuilder.Gen(GenRootKey, 60),
+                SoundFontTestBuilder.Gen(GenSampleId, 0)));
+            // source 0x01CA: CC74, unipolar, linear, max-to-min (127 -> 0, 0 -> 1)
+            var cc74ToCutoff = SoundFontTestBuilder.Mod(0x01CA, GenInitialFilterFc, -9600);
+            var sf = SoundFontTestBuilder.BuildSingleRegion(data, igen, 0, points, 0, points,
+                SampleRate, 60, instrumentModulators: cc74ToCutoff);
+
+            var sampler = new SoundFontSampler(sf, outputRate, 8);
+            sampler.ProcessMidiEvent(new NAudio.Midi.ControlChangeEvent(0, 1, (NAudio.Midi.MidiController)74, 127));
+            sampler.NoteOn(0, 60, 127); // full velocity: no velocity->cutoff attenuation either
+
+            var bright = Render(sampler, outputRate / 4);
+            sampler.ProcessMidiEvent(new NAudio.Midi.ControlChangeEvent(0, 1, (NAudio.Midi.MidiController)74, 0));
+            var dark = Render(sampler, outputRate / 4);
+
+            // skip the first half of each window (attack / filter settling)
+            float brightRms = Rms(bright, bright.Length / 2, bright.Length);
+            float darkRms = Rms(dark, dark.Length / 2, dark.Length);
+            Assert.That(brightRms, Is.GreaterThan(0.1f), "the open-cutoff note should pass the tone");
+            Assert.That(darkRms, Is.LessThan(brightRms * 0.5f),
+                "dropping CC74 must darken the note through the file modulator");
+        }
+
+        [Test]
         public void NoModulationGeneratorsMatchesStaticVoice()
         {
             // an instrument with no modulation generators should still play

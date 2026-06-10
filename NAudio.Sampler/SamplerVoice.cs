@@ -96,6 +96,19 @@ namespace NAudio.Sampler
         private int key;
         // per-control-block modulator output, summed by GeneratorEnum destination
         private readonly double[] modulation = new double[(int)GeneratorEnum.UnusedEnd + 1];
+        // the note-fixed (velocity/key/constant) modulator contributions,
+        // evaluated once at Start; each refresh copies this baseline and
+        // re-accumulates only the channel-dependent modulators on top
+        private readonly double[] staticModulation = new double[(int)GeneratorEnum.UnusedEnd + 1];
+        // change-gating for the modulator refresh: re-evaluate only when the
+        // channel state stamp moved (or a refresh was explicitly requested)
+        private int lastChannelVersion;
+        private bool modulationRefreshPending;
+        private double lastPanValue = double.NaN;     // skip the pan cos/sin while unchanged
+        private double lastFilterCents = double.NaN;  // last cutoff the filters were tuned to
+        private double lastPitchCents = double.NaN;   // caches the 2^x in the increment
+        private double pitchModRatio = 1.0;
+        private bool filterModulated; // the cutoff/Q can change after note-on
 
         // latest modulation-source values (bipolar -1..1 for LFOs, 0..1 for env)
         private float modLfoValue;
@@ -281,13 +294,27 @@ namespace NAudio.Sampler
             modLfoValue = 0f;
             vibratoLfoValue = 0f;
             modEnvValue = 0f;
+            lastPanValue = double.NaN;   // a NaN cache never equals, forcing the first computation
+            lastPitchCents = double.NaN;
+
+            // the note-fixed modulator contributions (velocity/key/constants) are
+            // evaluated once into the baseline; refreshes only re-run the
+            // channel-dependent modulators on top of it
+            Array.Clear(staticModulation, 0, staticModulation.Length);
+            modulators?.AccumulateStatic(channelState, effectiveVelocity, effectiveKey, staticModulation);
 
             // evaluate the modulators once up front so the initial gain, pan and
             // filter state (and the decision to engage the filter) reflect the
             // note-on velocity and the channel's current controllers
+            modulationRefreshPending = true;
             UpdateModulation(channelState);
             ConfigureFilter(gen);
             ConfigureEq(region.EqBands);
+            // ConfigureFilter set filterGainComp after the gain above was derived
+            // (matching the old per-block recompute, where the first control block
+            // corrected it); request a refresh so the first evaluation re-derives
+            // the static gain with the fresh compensation
+            modulationRefreshPending = true;
 
             Channel = channel;
             Note = note;
@@ -396,13 +423,23 @@ namespace NAudio.Sampler
             double pitchCents = modLfoPitch * modLfoValue
                 + vibToPitch * vibratoLfoValue
                 + modEnvPitch * modEnvValue;
-            currentIncrement = baseIncrement * pitchRatio * channel.PitchBendRatio
-                * SynthMath.CentsToRatio(pitchCents);
+            // the 2^x is the expensive part; recompute it only when the summed
+            // modulation moved (an unmodulated voice keeps pitchCents == 0)
+            if (pitchCents != lastPitchCents)
+            {
+                lastPitchCents = pitchCents;
+                pitchModRatio = SynthMath.CentsToRatio(pitchCents);
+            }
+            currentIncrement = baseIncrement * pitchRatio * channel.PitchBendRatio * pitchModRatio;
 
             double volCb = (baseModLfoToVolume + modulation[(int)GeneratorEnum.ModulationLFOToVolume]) * modLfoValue;
             currentVolGain = volCb != 0.0 ? (float)SynthMath.CentibelsToGain(volCb) : 1f;
 
-            if (filterActive)
+            // retune the filter only when something can still move the cutoff
+            // (LFO/mod-env routings or a channel-driven modulator) AND it moved by
+            // an audible amount; a half-cent is far below hearing, and skipping
+            // the retune leaves the previous (identical-sounding) coefficients
+            if (filterActive && filterModulated)
             {
                 double modLfoFilter = baseModLfoToFilter + modulation[(int)GeneratorEnum.ModulationLFOToFilterCutoffFrequency];
                 double modEnvFilter = baseModEnvToFilter + modulation[(int)GeneratorEnum.ModulationEnvelopeToFilterCutoffFrequency];
@@ -410,9 +447,13 @@ namespace NAudio.Sampler
                     + modulation[(int)GeneratorEnum.InitialFilterCutoffFrequency]
                     + modEnvFilter * modEnvValue
                     + modLfoFilter * modLfoValue;
-                double hz = Math.Clamp(SynthMath.AbsoluteCentsToHertz(fc), 20.0, nyquist * 0.95);
-                RetuneFilter(filter, (float)hz);
-                if (stereo) RetuneFilter(filterRight, (float)hz);
+                if (Math.Abs(fc - lastFilterCents) >= 0.5)
+                {
+                    lastFilterCents = fc;
+                    double hz = Math.Clamp(SynthMath.AbsoluteCentsToHertz(fc), 20.0, nyquist * 0.95);
+                    RetuneFilter(filter, (float)hz);
+                    if (stereo) RetuneFilter(filterRight, (float)hz);
+                }
             }
 
             controlCountdown = ControlBlock;
@@ -586,12 +627,25 @@ namespace NAudio.Sampler
         /// controllers and the voice's note state, then applies the immediate
         /// (per-sample-loop) results: the initial-attenuation gain and the pan.
         /// The pitch/filter/volume routing deltas are read straight from
-        /// <see cref="modulation"/> by <see cref="Mix"/>.
+        /// <see cref="modulation"/> by <see cref="EvaluateControl"/>. Skipped
+        /// entirely while the channel state is unchanged (its outputs are pure
+        /// functions of the channel state and the note-fixed baseline).
         /// </summary>
         private void UpdateModulation(MidiChannelState channel)
         {
-            Array.Clear(modulation, 0, modulation.Length);
-            modulators?.Accumulate(channel, velocity, key, modulation);
+            int channelVersion = channel.Version;
+            if (!modulationRefreshPending)
+            {
+                // with no channel-dependent modulators the set is note-fixed and
+                // can never change after the Start-time evaluation
+                if (modulators == null || !modulators.HasDynamicModulators) return;
+                if (channelVersion == lastChannelVersion) return;
+            }
+            modulationRefreshPending = false;
+            lastChannelVersion = channelVersion;
+
+            Array.Copy(staticModulation, modulation, modulation.Length);
+            modulators?.AccumulateDynamic(channel, velocity, key, modulation);
 
             // attenuation only attenuates: clamp so a modulator can't push the
             // voice above unity gain (SF2 spec). Gains that may legitimately
@@ -636,6 +690,11 @@ namespace NAudio.Sampler
 
         private void SetPan(double panValue)
         {
+            // the cos/sin pair only needs recomputing when the pan moved (the
+            // NaN sentinel set at Start never compares equal)
+            if (panValue == lastPanValue) return;
+            lastPanValue = panValue;
+
             // SF2 pan: -500 = hard left, +500 = hard right, in 0.1% units
             float pan = Math.Clamp((float)(panValue / 500.0), -1f, 1f);
             double angle = (pan + 1.0) * (Math.PI / 4.0); // equal-power
@@ -714,6 +773,12 @@ namespace NAudio.Sampler
             baseChorusSend = gen[GeneratorEnum.ChorusEffectsSend];
         }
 
+        // SF2.04 §8.1.3: initialFilterCutoffFrequency's default of 13500 cents
+        // means "filter open"; a base cutoff at or beyond this (less rounding
+        // headroom) passes the audible band untouched, so the filter is bypassed
+        // unless something can still pull the cutoff down
+        private const double OpenFilterCents = 13490.0;
+
         private void ConfigureFilter(SoundFontGenerators gen)
         {
             // initialFilterQ is clamped to the spec range 0..960 cB (a malformed
@@ -728,9 +793,20 @@ namespace NAudio.Sampler
             // cutoff for velocities below maximum
             double effectiveCents = baseFilterCents + modulation[(int)GeneratorEnum.InitialFilterCutoffFrequency];
             double effectiveHz = SynthMath.AbsoluteCentsToHertz(effectiveCents);
-            // engage the filter if the (modulated) cutoff is audible, or if an LFO
-            // or the mod-envelope can bring it down into range later
-            filterActive = effectiveHz < nyquist * 0.95 || baseModLfoToFilter != 0.0 || baseModEnvToFilter != 0.0;
+
+            // whether anything can move the cutoff after note-on: LFO/mod-env
+            // routings from the generators, or a channel-driven (CC/bend/pressure)
+            // modulator targeting the filter
+            filterModulated = baseModLfoToFilter != 0.0 || baseModEnvToFilter != 0.0
+                || (modulators != null && modulators.HasDynamicFilterRouting);
+
+            // Engage the filter if the (note-on modulated) cutoff is audibly below
+            // both the Nyquist guard and the SF2 "open" value, or if modulation
+            // can bring it down into range later. The dynamic-routing term matters
+            // even with an open base cutoff: a file modulator like CC74->cutoff on
+            // an open region must engage when the controller drops.
+            filterActive = (effectiveHz < nyquist * 0.95 && effectiveCents < OpenFilterCents)
+                || filterModulated;
 
             if (filterActive)
             {
@@ -740,6 +816,7 @@ namespace NAudio.Sampler
                 // into the static gain (UpdateModulation re-reads it each block).
                 filterGainComp = (float)Math.Pow(10.0, -(resonanceCb / 10.0) / 2.0 / 20.0);
                 double hz = Math.Clamp(effectiveHz, 20.0, nyquist * 0.95);
+                lastFilterCents = effectiveCents; // the control-rate retune skips while unmoved
                 // retune the persistent filters and clear their sample history so
                 // the note starts from a fresh filter state (no inherited ringing
                 // or latched NaN from a previous note); a stereo voice filters

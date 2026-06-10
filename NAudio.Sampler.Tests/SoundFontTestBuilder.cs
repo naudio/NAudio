@@ -81,6 +81,24 @@ namespace NAudio.Sampler.Tests
             return new byte[10];
         }
 
+        /// <summary>
+        /// A single file-modulator record (sfModList: source, destination, amount,
+        /// amount source, transform — SF2.04 §7.4), for the instrument-modulator
+        /// parameter of <see cref="BuildSingleRegion"/>.
+        /// </summary>
+        public static byte[] Mod(ushort sourceOper, ushort destOper, short amount,
+            ushort amountSourceOper = 0, ushort transformOper = 0)
+        {
+            using var ms = new MemoryStream();
+            using var bw = new BinaryWriter(ms);
+            bw.Write(sourceOper);
+            bw.Write(destOper);
+            bw.Write(amount);
+            bw.Write(amountSourceOper);
+            bw.Write(transformOper);
+            return ms.ToArray();
+        }
+
         private static byte[] PresetHeader(string name, ushort preset, ushort bank, ushort bagNdx)
         {
             using var ms = new MemoryStream();
@@ -148,12 +166,15 @@ namespace NAudio.Sampler.Tests
 
         /// <summary>
         /// Builds a single-preset, single-instrument, single-region SF2 with the
-        /// caller-supplied igen chunk, one sample header, and the given sample data.
+        /// caller-supplied igen chunk, one sample header, and the given sample
+        /// data. Optional concatenated <see cref="Mod"/> records become the
+        /// zone's instrument modulators.
         /// </summary>
         public static NAudio.SoundFont.SoundFont BuildSingleRegion(byte[] sampleData, byte[] igen,
             uint sampleStart, uint sampleEnd, uint loopStart, uint loopEnd, uint sampleRate, byte originalPitch,
-            ushort bank = 0)
+            ushort bank = 0, byte[] instrumentModulators = null)
         {
+            ushort modCount = (ushort)((instrumentModulators?.Length ?? 0) / 10);
             var phdr = Chunk("phdr", Concat(
                 PresetHeader("P", 0, bank, 0),
                 PresetHeader("EOP", 0, 0, 1)));
@@ -163,8 +184,8 @@ namespace NAudio.Sampler.Tests
             var inst = Chunk("inst", Concat(
                 InstrumentRecord("I", 0),
                 InstrumentRecord("EOI", 1)));
-            var ibag = Chunk("ibag", Concat(Bag(0, 0), Bag(GenCount(igen), 0)));
-            var imod = Chunk("imod", Modulator());
+            var ibag = Chunk("ibag", Concat(Bag(0, 0), Bag(GenCount(igen), modCount)));
+            var imod = Chunk("imod", Concat(instrumentModulators ?? Array.Empty<byte>(), Modulator()));
             var shdr = Chunk("shdr", Concat(
                 SampleHeader("S", sampleStart, sampleEnd, loopStart, loopEnd, sampleRate, originalPitch),
                 new byte[46]));

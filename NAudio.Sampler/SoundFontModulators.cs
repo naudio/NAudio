@@ -157,10 +157,85 @@ namespace NAudio.Sampler
     internal sealed class ModulatorSet
     {
         private readonly Modulator[] modulators;
+        // Per-modulator pass assignment, computed once at Build: a modulator is
+        // evaluated in the static pass (once, at note-on) when its sources are
+        // note-fixed (velocity/key/constant) AND every contributor to its
+        // destination is too — otherwise it joins the dynamic pass, which is
+        // re-run only when the channel state changes. Keeping a mixed
+        // destination's static contributors in the dynamic pass preserves the
+        // original per-destination summation order exactly, so splitting the
+        // passes cannot drift the double-precision sums.
+        private readonly bool[] staticPass;
+
+        /// <summary>
+        /// Whether any modulator reads a live channel source (CC, pitch wheel,
+        /// bend range, channel pressure). When false the whole set is note-fixed
+        /// and never needs re-evaluating after note-on.
+        /// </summary>
+        public bool HasDynamicModulators { get; }
+
+        /// <summary>
+        /// Whether a dynamic (channel-driven) modulator routes into the filter
+        /// (initialFilterFc or initialFilterQ) with a non-zero amount — i.e. the
+        /// filter cutoff can change after note-on through the modulator list.
+        /// Used both to skip retunes and to force the filter ACTIVE even when the
+        /// note-on cutoff is fully open (a CC-driven brightness modulator must be
+        /// able to pull an open cutoff down later).
+        /// </summary>
+        public bool HasDynamicFilterRouting { get; }
 
         private ModulatorSet(Modulator[] modulators)
         {
             this.modulators = modulators;
+            staticPass = new bool[modulators.Length];
+
+            // a destination is "mixed" if any contributor reads channel state;
+            // its static contributors must then sum in the dynamic pass to keep
+            // the original (flat list) summation order per destination
+            Span<bool> destinationDynamic = stackalloc bool[(int)GeneratorEnum.UnusedEnd + 1];
+            bool anyDynamic = false;
+            bool dynamicFilter = false;
+            foreach (var m in modulators)
+            {
+                if (IsStaticModulator(m)) continue;
+                anyDynamic = true;
+                int destination = (int)m.DestinationGenerator;
+                if ((uint)destination < (uint)destinationDynamic.Length) destinationDynamic[destination] = true;
+                if (m.Amount != 0 &&
+                    (m.DestinationGenerator == GeneratorEnum.InitialFilterCutoffFrequency ||
+                     m.DestinationGenerator == GeneratorEnum.InitialFilterQ))
+                {
+                    dynamicFilter = true;
+                }
+            }
+            for (int i = 0; i < modulators.Length; i++)
+            {
+                int destination = (int)modulators[i].DestinationGenerator;
+                bool mixedDestination = (uint)destination < (uint)destinationDynamic.Length && destinationDynamic[destination];
+                staticPass[i] = IsStaticModulator(modulators[i]) && !mixedDestination;
+            }
+            HasDynamicModulators = anyDynamic;
+            HasDynamicFilterRouting = dynamicFilter;
+        }
+
+        // whether both sources are fixed for the lifetime of a note (velocity,
+        // key number, "no controller" constants; per-note poly pressure is not
+        // tracked and evaluates as the constant 0)
+        private static bool IsStaticModulator(Modulator m) =>
+            IsStaticSource(m.SourceModulationData) && IsStaticSource(m.SourceModulationAmount);
+
+        private static bool IsStaticSource(ModulatorType source)
+        {
+            if (source.IsMidiContinuousController) return false;
+            switch (source.ControllerSource)
+            {
+                case ControllerSourceEnum.ChannelPressure:
+                case ControllerSourceEnum.PitchWheel:
+                case ControllerSourceEnum.PitchWheelSensitivity:
+                    return false;
+                default:
+                    return true; // velocity, key, no-controller, poly pressure, reserved (= constant 1)
+            }
         }
 
         public static ModulatorSet Build(SoundFontRegion region)
@@ -197,23 +272,53 @@ namespace NAudio.Sampler
         /// <summary>
         /// Sums every modulator's output into <paramref name="byDestination"/>,
         /// indexed by <see cref="GeneratorEnum"/>. The caller clears the array and
-        /// then reads the destination slots it cares about. Evaluated at control
-        /// rate against the channel's live controllers and the voice's fixed
-        /// note-on velocity and key.
+        /// then reads the destination slots it cares about. Equivalent to the
+        /// static pass plus the dynamic pass; kept for callers (and tests) that
+        /// want a single full evaluation.
         /// </summary>
         public void Accumulate(MidiChannelState channel, int velocity, int key, double[] byDestination)
         {
-            foreach (var m in modulators)
-            {
-                int destination = (int)m.DestinationGenerator;
-                if ((uint)destination >= (uint)byDestination.Length) continue; // unsupported destination
+            for (int i = 0; i < modulators.Length; i++)
+                AccumulateOne(modulators[i], channel, velocity, key, byDestination);
+        }
 
-                double primary = SourceValue(m.SourceModulationData, channel, velocity, key);
-                double secondary = SourceValue(m.SourceModulationAmount, channel, velocity, key);
-                double value = m.Amount * primary * secondary;
-                if (m.SourceTransform == TransformEnum.AbsoluteValue) value = Math.Abs(value);
-                byDestination[destination] += value;
-            }
+        /// <summary>
+        /// Sums the note-fixed modulators (the static pass) into
+        /// <paramref name="byDestination"/>. Evaluated once at note-on into the
+        /// voice's baseline; the channel is read only for pass-irrelevant sources
+        /// and never changes the result.
+        /// </summary>
+        public void AccumulateStatic(MidiChannelState channel, int velocity, int key, double[] byDestination)
+        {
+            for (int i = 0; i < modulators.Length; i++)
+                if (staticPass[i])
+                    AccumulateOne(modulators[i], channel, velocity, key, byDestination);
+        }
+
+        /// <summary>
+        /// Sums the channel-dependent modulators (the dynamic pass, including the
+        /// static contributors of mixed destinations — see the pass-assignment
+        /// comment) on top of the static baseline. Re-run only when
+        /// <see cref="MidiChannelState.Version"/> changed.
+        /// </summary>
+        public void AccumulateDynamic(MidiChannelState channel, int velocity, int key, double[] byDestination)
+        {
+            for (int i = 0; i < modulators.Length; i++)
+                if (!staticPass[i])
+                    AccumulateOne(modulators[i], channel, velocity, key, byDestination);
+        }
+
+        private static void AccumulateOne(Modulator m, MidiChannelState channel, int velocity, int key,
+            double[] byDestination)
+        {
+            int destination = (int)m.DestinationGenerator;
+            if ((uint)destination >= (uint)byDestination.Length) return; // unsupported destination
+
+            double primary = SourceValue(m.SourceModulationData, channel, velocity, key);
+            double secondary = SourceValue(m.SourceModulationAmount, channel, velocity, key);
+            double value = m.Amount * primary * secondary;
+            if (m.SourceTransform == TransformEnum.AbsoluteValue) value = Math.Abs(value);
+            byDestination[destination] += value;
         }
 
         private static double SourceValue(ModulatorType source, MidiChannelState channel, int velocity, int key)

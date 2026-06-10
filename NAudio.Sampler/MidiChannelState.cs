@@ -21,6 +21,14 @@ namespace NAudio.Sampler
 
         private readonly byte[] controllers = new byte[128];
 
+        // monotonic change stamp + cached pitch-bend ratio (see Version below)
+        private int version;
+        private int pitchBend = 8192;
+        private int channelPressure;
+        private double pitchBendRangeSemitones = 2.0;
+        private double pitchBendRatio = 1.0;
+        private bool pitchBendRatioValid = true; // 8192 at range 2 is ratio 1
+
         // ---- RPN/NRPN data-entry state ----
         // CC101/100 select a registered parameter (MSB/LSB), CC6/38 write to it.
         // Power-on state is RPN null (127,127) = nothing selected, so data entry
@@ -52,17 +60,37 @@ namespace NAudio.Sampler
         public int Program { get; set; }
 
         /// <summary>
+        /// A monotonic change stamp covering every input the modulator engine can
+        /// read as a source (continuous controllers, pitch bend and its range,
+        /// channel pressure). Voices compare it at control rate and skip
+        /// re-evaluating their modulator list while nothing has changed.
+        /// </summary>
+        public int Version => version;
+
+        /// <summary>
         /// Pitch-bend range in semitones (RPN 0: data MSB semitones + data LSB
         /// cents/100). Default 2. Set via the RPN data-entry methods below; not
         /// reset by Reset All Controllers (RP-015).
         /// </summary>
-        public double PitchBendRangeSemitones { get; set; } = 2.0;
+        public double PitchBendRangeSemitones
+        {
+            get => pitchBendRangeSemitones;
+            set { pitchBendRangeSemitones = value; version++; pitchBendRatioValid = false; }
+        }
 
         /// <summary>Raw 14-bit pitch-bend value, centred at 8192.</summary>
-        public int PitchBend { get; set; } = 8192;
+        public int PitchBend
+        {
+            get => pitchBend;
+            set { pitchBend = value; version++; pitchBendRatioValid = false; }
+        }
 
         /// <summary>Channel pressure (aftertouch), 0..127.</summary>
-        public int ChannelPressure { get; set; }
+        public int ChannelPressure
+        {
+            get => channelPressure;
+            set { channelPressure = value; version++; }
+        }
 
         /// <summary>Whether the sustain pedal (CC64) is down.</summary>
         public bool SustainPedal { get; set; }
@@ -73,12 +101,31 @@ namespace NAudio.Sampler
         /// <summary>Stores the value (0..127) of a MIDI continuous controller.</summary>
         public void SetController(int cc, int value)
         {
-            if ((uint)cc < (uint)controllers.Length) controllers[cc] = (byte)value;
+            if ((uint)cc < (uint)controllers.Length)
+            {
+                controllers[cc] = (byte)value;
+                version++;
+            }
         }
 
-        /// <summary>The frequency ratio for the current pitch-bend and range.</summary>
-        public double PitchBendRatio =>
-            SynthMath.CentsToRatio((PitchBend - 8192) / 8192.0 * PitchBendRangeSemitones * 100.0);
+        /// <summary>
+        /// The frequency ratio for the current pitch-bend and range. Cached: the
+        /// underlying 2^x is recomputed only when the bend or its range changes,
+        /// not per control block per voice.
+        /// </summary>
+        public double PitchBendRatio
+        {
+            get
+            {
+                if (!pitchBendRatioValid)
+                {
+                    pitchBendRatio = SynthMath.CentsToRatio(
+                        (pitchBend - 8192) / 8192.0 * pitchBendRangeSemitones * 100.0);
+                    pitchBendRatioValid = true;
+                }
+                return pitchBendRatio;
+            }
+        }
 
         /// <summary>Selects the RPN MSB (CC101), clearing any NRPN selection.</summary>
         public void SelectRpnMsb(int value)
@@ -155,6 +202,7 @@ namespace NAudio.Sampler
             PitchBend = 8192;
             ChannelPressure = 0;
             SustainPedal = false;
+            version++; // the direct controller-array writes above must stamp too
         }
     }
 }

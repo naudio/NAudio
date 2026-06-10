@@ -96,7 +96,18 @@ namespace NAudio.Sampler
             chorusBus = new SendBus(Chorus);
             reverbBus.Configure(WaveFormat, MaxFramesPerBlock);
             chorusBus.Configure(WaveFormat, MaxFramesPerBlock);
+            // a conservative bound on either effect's audible tail: once nothing
+            // has been sent for this long, the bus skips its effect entirely
+            // until a voice sends again
+            reverbBus.IdleTimeoutFrames = sampleRate * 5;
+            chorusBus.IdleTimeoutFrames = sampleRate * 5;
         }
+
+        /// <summary>Whether the reverb bus is idle-skipping its effect (for tests).</summary>
+        internal bool IsReverbBusIdle => reverbBus.IsIdle;
+
+        /// <summary>Whether the chorus bus is idle-skipping its effect (for tests).</summary>
+        internal bool IsChorusBusIdle => chorusBus.IsIdle;
 
         /// <summary>The output format: 32-bit float stereo at the configured sample rate.</summary>
         public WaveFormat WaveFormat { get; }
@@ -379,14 +390,18 @@ namespace NAudio.Sampler
                 var reverbSend = reverbBus.PrepareSend(frames);
                 var chorusSend = chorusBus.PrepareSend(frames);
 
+                var sends = VoiceSendActivity.None;
                 foreach (var v in voices)
                 {
                     if (!v.IsActive) continue;
-                    v.Mix(block, reverbSend, chorusSend, frames, Channels[v.Channel]);
+                    sends |= v.Mix(block, reverbSend, chorusSend, frames, Channels[v.Channel]);
                 }
 
-                reverbBus.ProcessReturn(block, frames);
-                chorusBus.ProcessReturn(block, frames);
+                // each bus learns whether anything was sent this block, so an
+                // effect whose input has been silent past its tail window is
+                // skipped instead of processing silence forever
+                reverbBus.ProcessReturn(block, frames, (sends & VoiceSendActivity.Reverb) != 0);
+                chorusBus.ProcessReturn(block, frames, (sends & VoiceSendActivity.Chorus) != 0);
 
                 float g = masterGain;
                 for (int i = 0; i < frames * 2; i++)

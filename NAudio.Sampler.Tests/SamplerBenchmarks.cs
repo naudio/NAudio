@@ -39,7 +39,10 @@ namespace NAudio.Sampler.Tests
                 SoundFontTestBuilder.Gen(6, 25),                                // vibLfoToPitch
                 SoundFontTestBuilder.Gen(24, unchecked((ushort)(short)-1200)),  // freqVibLfo ~4 Hz
                 SoundFontTestBuilder.Gen(10, 1200),                             // modLfoToFilterFc
-                SoundFontTestBuilder.Gen(91, 200),                              // reverb send 20%
+                // NB: was Gen(91, ...) historically — generator 91 doesn't exist,
+                // so the font never actually sent to the reverb; 16 is the real
+                // SF2 reverbEffectsSend, making the send path part of the workload
+                SoundFontTestBuilder.Gen(16, 200),                              // reverbEffectsSend 20%
                 SoundFontTestBuilder.Gen(54, 1),                                // loop
                 SoundFontTestBuilder.Gen(58, 60),                               // root key
                 SoundFontTestBuilder.Gen(53, 0)));                              // sampleID

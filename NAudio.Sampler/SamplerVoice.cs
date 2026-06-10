@@ -5,6 +5,23 @@ using NAudio.SoundFont;
 namespace NAudio.Sampler
 {
     /// <summary>
+    /// Which send buses a voice wrote into during a <see cref="SamplerVoice.Mix"/>
+    /// call. The engine ORs these across voices to know whether each bus received
+    /// input this block (so an idle bus can skip its effect without scanning the
+    /// send buffers).
+    /// </summary>
+    [Flags]
+    internal enum VoiceSendActivity : byte
+    {
+        /// <summary>No send written.</summary>
+        None = 0,
+        /// <summary>The reverb send received signal.</summary>
+        Reverb = 1,
+        /// <summary>The chorus send received signal.</summary>
+        Chorus = 2
+    }
+
+    /// <summary>
     /// A single playing note: one <see cref="SamplerRegion"/>'s sample read at
     /// the pitch for the played key, shaped by a DAHDSR amplitude envelope, a
     /// resonant low-pass filter, two LFOs (modulation + vibrato) and a
@@ -366,37 +383,66 @@ namespace NAudio.Sampler
         /// modulator sources) at control rate. A portion of the voice's signal,
         /// set by the reverb/chorus send levels, is also added to the
         /// <paramref name="reverbSend"/> and <paramref name="chorusSend"/> buffers
-        /// (the same length as <paramref name="buffer"/>).
+        /// (the same length as <paramref name="buffer"/>). Returns which send
+        /// buses the voice wrote into, so the engine can idle-skip unused ones.
         /// </summary>
-        public void Mix(Span<float> buffer, Span<float> reverbSend, Span<float> chorusSend,
+        public VoiceSendActivity Mix(Span<float> buffer, Span<float> reverbSend, Span<float> chorusSend,
             int frames, MidiChannelState channel)
         {
-            if (!IsActive) return;
+            var activity = VoiceSendActivity.None;
+            if (!IsActive) return activity;
 
             int pos = 0;
             int remaining = frames;
             while (remaining > 0)
             {
-                if (controlCountdown == 0) EvaluateControl(channel);
+                if (controlCountdown == 0)
+                {
+                    EvaluateControl(channel);
+                    // reaped at the block boundary (inaudible-sustain check)
+                    if (!IsActive) return activity;
+                }
 
                 int sub = Math.Min(controlCountdown, remaining);
+                if (currentReverbSendGain > 0f) activity |= VoiceSendActivity.Reverb;
+                if (currentChorusSendGain > 0f) activity |= VoiceSendActivity.Chorus;
                 bool alive = RenderSpan(buffer, reverbSend, chorusSend, ref pos, sub);
                 controlCountdown -= sub;
                 samplesSinceEval += sub;
                 remaining -= sub;
-                if (!alive) { IsActive = false; return; }
+                if (!alive) { IsActive = false; return activity; }
             }
+            return activity;
         }
+
+        // The DahdsrEnvelope treats -100 dB as silence; a voice whose volume
+        // envelope sits in Sustain at or below this can never become audible
+        // again on its own (the sustain level is the ceiling until note-off), so
+        // it is reaped rather than rendered forever. Deliberately based on the
+        // envelope alone — never on staticGain or controller values, so an
+        // expression-silenced (CC11 = 0) note survives and swells back up.
+        private const float SustainSilenceFloor = 1e-5f;
 
         /// <summary>
         /// The control-rate evaluation, run every <see cref="ControlBlock"/> voice
         /// samples: advances the modulation sources to "now", re-evaluates the SF2
         /// modulators against the channel's live controllers, and recomputes the
         /// modulation-derived parameters (pitch increment, tremolo gain, send
-        /// gains, filter tuning) used until the next evaluation.
+        /// gains, filter tuning) used until the next evaluation. Also reaps a
+        /// voice whose volume envelope has decayed to effective silence in
+        /// Sustain (e.g. a looped region with a fully attenuated sustain level),
+        /// which would otherwise render inaudibly until note-off.
         /// </summary>
         private void EvaluateControl(MidiChannelState channel)
         {
+            if (ampEnvelope.Stage == DahdsrEnvelope.EnvelopeStage.Sustain
+                && ampEnvelope.Output < SustainSilenceFloor
+                && !declicking && stealFadeGain <= 0f)
+            {
+                IsActive = false;
+                return;
+            }
+
             // one Advance(n) per source replaces n Process() calls; P1 guarantees
             // the resulting value and state are bit-identical to per-sample
             // stepping, so the values read below match the old per-sample path.

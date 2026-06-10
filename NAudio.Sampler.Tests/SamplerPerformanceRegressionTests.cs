@@ -1,6 +1,8 @@
 using System;
+using NAudio.Effects;
 using NAudio.Sampler;
 using NAudio.Sfz;
+using NAudio.Wave;
 using NUnit.Framework;
 
 namespace NAudio.Sampler.Tests
@@ -36,7 +38,7 @@ namespace NAudio.Sampler.Tests
                 SoundFontTestBuilder.Gen(6, 25),                                // vibLfoToPitch
                 SoundFontTestBuilder.Gen(24, unchecked((ushort)(short)-1200)),  // freqVibLfo ~4 Hz
                 SoundFontTestBuilder.Gen(10, 1200),                             // modLfoToFilterFc
-                SoundFontTestBuilder.Gen(91, 200),                              // reverb send 20%
+                SoundFontTestBuilder.Gen(16, 200),                              // reverbEffectsSend 20%
                 SoundFontTestBuilder.Gen(54, 1),                                // loop
                 SoundFontTestBuilder.Gen(58, 60),                               // root key
                 SoundFontTestBuilder.Gen(53, 0)));                              // sampleID
@@ -184,6 +186,131 @@ namespace NAudio.Sampler.Tests
                 embeddedLoop = null;
                 return true;
             }
+        }
+
+        // ---- send-bus idle skip (the reverb/chorus must not run on silence forever) ----
+
+        private sealed class CountingEffect : IAudioEffect
+        {
+            public int ProcessCalls;
+            public void Configure(WaveFormat format) { }
+            public void Process(Span<float> buffer) => ProcessCalls++;
+            public void Reset() { }
+            public int LatencySamples => 0;
+        }
+
+        [Test]
+        public void SendBusSkipsItsEffectAfterTheTailWindowElapses()
+        {
+            var effect = new CountingEffect();
+            var bus = new SendBus(effect);
+            bus.Configure(WaveFormat.CreateIeeeFloatWaveFormat(SampleRate, 2), 512);
+            bus.IdleTimeoutFrames = 1024; // a 2-block tail window
+
+            var mix = new float[512 * 2];
+
+            // a fresh bus has no tail: silent input never invokes the effect
+            Assert.That(bus.IsIdle, Is.True);
+            bus.PrepareSend(512);
+            bus.ProcessReturn(mix, 512, inputWritten: false);
+            Assert.That(effect.ProcessCalls, Is.Zero, "a never-fed bus must not run its effect");
+
+            // written input runs the effect and arms the tail window...
+            bus.PrepareSend(512);
+            bus.ProcessReturn(mix, 512, inputWritten: true);
+            Assert.That(effect.ProcessCalls, Is.EqualTo(1));
+            Assert.That(bus.IsIdle, Is.False);
+
+            // ...which keeps the effect running for the window after input stops...
+            for (int i = 0; i < 2; i++)
+            {
+                bus.PrepareSend(512);
+                bus.ProcessReturn(mix, 512, inputWritten: false);
+            }
+            Assert.That(effect.ProcessCalls, Is.EqualTo(3), "the tail window keeps the effect running");
+
+            // ...then skips until input is written again
+            bus.PrepareSend(512);
+            bus.ProcessReturn(mix, 512, inputWritten: false);
+            Assert.That(effect.ProcessCalls, Is.EqualTo(3), "past the tail window the effect is skipped");
+            Assert.That(bus.IsIdle, Is.True);
+
+            bus.PrepareSend(512);
+            bus.ProcessReturn(mix, 512, inputWritten: true);
+            Assert.That(effect.ProcessCalls, Is.EqualTo(4), "new input wakes the effect again");
+        }
+
+        [Test]
+        public void SamplerWithNoSendActivityKeepsItsEffectBusesIdle()
+        {
+            // BuildBusyFont has a reverb send but no chorus send: rendering a note
+            // must wake only the reverb bus; the chorus bus stays idle from the
+            // first block (a fresh bus has no tail to flush)
+            var sampler = new SoundFontSampler(BuildBusyFont(), SampleRate, 8) { PercussionChannel = -1 };
+            Assert.That(sampler.IsReverbBusIdle, Is.True);
+            Assert.That(sampler.IsChorusBusIdle, Is.True);
+
+            sampler.NoteOn(0, 60, 100);
+            sampler.Read(new float[1024 * 2]);
+            Assert.That(sampler.IsReverbBusIdle, Is.False, "the reverb send must wake its bus");
+            Assert.That(sampler.IsChorusBusIdle, Is.True, "nothing ever feeds the chorus bus");
+        }
+
+        // ---- reaping voices whose volume envelope decayed to silence in sustain ----
+
+        /// <summary>A looped instrument that decays to a fully attenuated sustain.</summary>
+        private static NAudio.SoundFont.SoundFont BuildSilentSustainFont()
+        {
+            var data = new byte[8];
+            for (int i = 0; i < 4; i++) { data[i * 2] = 0x00; data[i * 2 + 1] = 0x40; } // 0.5 fs
+            var igen = SoundFontTestBuilder.Chunk("igen", SoundFontTestBuilder.Concat(
+                SoundFontTestBuilder.Gen(36, unchecked((ushort)(short)-3000)), // decayVolEnv ~0.18 s
+                SoundFontTestBuilder.Gen(37, 1440),                            // sustainVolEnv: full attenuation
+                SoundFontTestBuilder.Gen(54, 1),                               // loop continuously
+                SoundFontTestBuilder.Gen(58, 60),
+                SoundFontTestBuilder.Gen(53, 0)));
+            return SoundFontTestBuilder.BuildSingleRegion(data, igen, 0, 4, 0, 4, SampleRate, 60);
+        }
+
+        [Test]
+        public void LoopedVoiceWithSilentSustainIsReapedAfterItsDecay()
+        {
+            // sustainVolEnv at full attenuation: once the decay completes the
+            // envelope can never recover until note-off, so the voice must be
+            // freed instead of looping inaudibly forever
+            var sampler = new SoundFontSampler(BuildSilentSustainFont(), SampleRate, 8);
+            sampler.NoteOn(0, 60, 127);
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(1));
+
+            sampler.Read(new float[SampleRate / 2 * 2]); // 0.5 s, well past the ~0.18 s decay
+            Assert.That(sampler.ActiveVoiceCount, Is.Zero,
+                "a silent-sustain looped voice must be reaped shortly after its decay");
+        }
+
+        [Test]
+        public void ExpressionSilencedVoiceIsNotReapedAndSwellsBack()
+        {
+            // CC11 = 0 silences the voice through the modulator gain, NOT the
+            // envelope — the reap predicate must ignore controller state so the
+            // note can swell back in when expression rises
+            var sf = BuildBusyFont();
+            var sampler = new SoundFontSampler(sf, SampleRate, 8) { PercussionChannel = -1 };
+            sampler.ProcessMidiEvent(new NAudio.Midi.ControlChangeEvent(0, 1, NAudio.Midi.MidiController.Expression, 0));
+            sampler.NoteOn(0, 60, 100);
+
+            var silent = new float[SampleRate * 2];
+            sampler.Read(silent); // a full second of expression silence
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(1), "an expression-silenced note must survive");
+            float peakSilent = 0;
+            foreach (var s in silent) peakSilent = Math.Max(peakSilent, Math.Abs(s));
+            Assert.That(peakSilent, Is.LessThan(1e-4f), "CC11 = 0 should render (near) silence");
+
+            sampler.ProcessMidiEvent(new NAudio.Midi.ControlChangeEvent(0, 1, NAudio.Midi.MidiController.Expression, 127));
+            var swelled = new float[4096 * 2];
+            sampler.Read(swelled);
+            float peak = 0;
+            foreach (var s in swelled) peak = Math.Max(peak, Math.Abs(s));
+            Assert.That(peak, Is.GreaterThan(0.05f), "the note must swell back when CC11 rises");
         }
 
         [Test]

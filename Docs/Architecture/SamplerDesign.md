@@ -241,11 +241,11 @@ sampler engine → `WasapiPlayer` (the modern WASAPI playback path, low-latency
 where the device supports `IAudioClient3`). Load an SF2 or SFZ, pick a MIDI input
 device, play from an attached keyboard. Subjective-quality and latency
 evaluation tool.
-**DONE.** The reusable bridge is `NAudio.Sampler.LiveMidiInstrument`: it wraps a
-`SamplerEngine` as an `ISampleProvider` and exposes a thread-safe `Send`
-(plus `NoteOn`/`NoteOff`) that queues events lock-free and drains them on the
-audio thread, so the (single-threaded) engine is never touched from the MIDI
-callback thread. The "Live MIDI Sampler" panel in `NAudioWpfDemo`
+**DONE.** The reusable bridge is `NAudio.Midi.LiveMidiInstrument`: it wraps any
+`IMidiInstrument` (the sampler engine implements it) as an `ISampleProvider` and
+exposes a thread-safe `Send` (plus `NoteOn`/`NoteOff`) that queues events
+lock-free and drains them on the audio thread, so the (single-threaded) engine
+is never touched from the MIDI callback thread. The "Live MIDI Sampler" panel in `NAudioWpfDemo`
 (`LiveSamplerDemo/`) wraps it with an SF2/SFZ instrument picker, a `WinRTMidiIn`
 device dropdown, master volume, a panic (all-sound-off) button and a clickable
 on-screen `PianoControl` — so it plays even with no hardware MIDI device, and
@@ -365,14 +365,21 @@ Sequenced cheapest-useful-first:
    on `main`: `MidiFileSequence` loads a `MidiFile` onto an
    `EventTimeline<MidiEvent>` at the canonical PPQ (`MusicalTime.RescaleFromPpq`)
    and builds a `StaticTempoMap` from its `SetTempo` events;
-   `SequencedMidiInstrument` drives a `SamplerEngine` from a `Transport`,
-   dispatching each block's MIDI events to the sampler at their exact frame
-   offset (rendering the sampler in segments between events, so timing is
+   `SequencedMidiPlayer` drives an instrument from a `Transport`,
+   dispatching each block's MIDI events to the instrument at their exact frame
+   offset (rendering the instrument in segments between events, so timing is
    sample-accurate within the block — not block-quantised like the
    dispatcher-spawns-a-provider model). `OfflineMidiRenderer` renders a sequence
    to a float buffer or a WAV file, faster than real time and with no audio
    hardware. This is the first end-to-end "MIDI in → audio out", verified by a
    deterministic timing test (silence before the note, sound during).
+   **Shared with the VST3 host:** these pieces live in `NAudio.Midi` (not
+   `NAudio.Sampler`) behind the `IMidiInstrument` seam — an `ISampleProvider`
+   that consumes MIDI via `ProcessMidiEvent` plus `AllSoundOff`. `SamplerEngine`
+   implements it, and a hosted VST instrument adapter can implement the same
+   interface to reuse `MidiFileSequence`, `SequencedMidiPlayer`,
+   `OfflineMidiRenderer` and `LiveMidiInstrument` unchanged (`NAudio.Core`
+   stays MIDI-agnostic, so `NAudio.Midi` is the natural shared home).
 7. **SFZ parser + mapping** (Tier 1, then Tier 2). **DONE** — full Tier 1 and
    Tier 2, WAV + FLAC/Ogg loading (FLAC/Ogg via `NAudio.SoundFile`).
    **7a DONE — text/structure layer** (`NAudio.Core/FileFormats/Sfz`,
@@ -419,7 +426,7 @@ Sequenced cheapest-useful-first:
 9. **Demos:** live MIDI, offline render, single-sample/recording editor.
    **DONE.** Three `NAudioWpfDemo` panels: a `SoundFont / MIDI Player`
    (`SamplerDemo/`) loads a `.sf2` + `.mid` and either plays them
-   (`SequencedMidiInstrument` → `WaveOut`) or renders to a WAV
+   (`SequencedMidiPlayer` → `WaveOut`) or renders to a WAV
    (`OfflineMidiRenderer`); a `Live MIDI Sampler` (`LiveSamplerDemo/`) plays
    an SF2 or SFZ live from a `WinRTMidiIn` device and/or an on-screen keyboard
    via the new `LiveMidiInstrument` bridge (see §8.1); and a `Single-Sample
@@ -435,9 +442,18 @@ modulator transforms. Mark anything needing real hardware
 
 ## 11. Deferred / open work
 
+- **Engine subclassing is internal for v1 (deliberate).** `SamplerEngine` is
+  `public abstract`, but its abstract region supply is `private protected` and
+  the format-neutral region model (`SamplerRegion`/`SampleData`) is `internal`,
+  so external code cannot add instrument formats by subclassing yet. The neutral
+  model's shape is still settling (it currently carries parameters in SF2
+  generator units); publishing it would freeze that prematurely. Widening to
+  `protected` + public model later is non-breaking — narrowing back would not
+  be. External composition happens at the `IMidiInstrument` seam instead.
 - **DLS, Kontakt, EXS, Decent Sampler and other formats** — out of scope; SF2 +
   SFZ cover the open-format need. A new front-end onto the resolved model is the
-  extension point if demand appears.
+  extension point if demand appears (inside `NAudio.Sampler` for now — see the
+  subclassing note above).
 - **SoundFont *writing*** and SFZ export — separate authoring feature.
 - **Disk streaming for large libraries** — v1 loads samples into memory
   (`CachedSound`-style). Streamed voices are a later optimisation.

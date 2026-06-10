@@ -299,5 +299,50 @@ namespace NAudio.Sampler.Tests
             foreach (var s in buffer) peak = Math.Max(peak, Math.Abs(s));
             return peak;
         }
+
+        [Test]
+        public void ResonanceBoostIsGainCompensated()
+        {
+            // SF2.04 §8.1.2 gen 8: the voice attenuates its output by half the
+            // resonance dB, so a resonant peak at the cutoff rises by only half
+            // the nominal resonance over the level. A 441 Hz tone at a 441 Hz
+            // cutoff with resonance=20 dB peaks ~Q (+17 dB) but is compensated
+            // by -10 dB; against the Butterworth (-3 dB) flat response that is
+            // ~+10 dB (~3.2x), well under the uncompensated ~10x.
+            const double tone = 441.0;
+            float flat = SineSteadyPeak("<region> sample=a.wav key=60 cutoff=441", tone);
+            float resonant = SineSteadyPeak("<region> sample=a.wav key=60 cutoff=441 resonance=20", tone);
+
+            Assert.That(resonant, Is.GreaterThan(flat * 1.5f), "resonance at the tone should still boost it");
+            Assert.That(resonant, Is.LessThan(flat * 5f),
+                "half the resonance dB must be compensated out of the voice gain");
+        }
+
+        [Test]
+        public void MalformedHugeResonanceStaysFiniteAndBounded()
+        {
+            // resonance=2000 (20000 cB) is far outside the SF2 0..960 cB range:
+            // the clamp must keep Q finite (alpha > 0) so the filter neither
+            // rings forever nor produces NaN/Inf, even driven right at cutoff
+            var sampler = new SfzSampler(
+                SfzParser.Parse("<region> sample=a.wav key=60 cutoff=441 resonance=2000"),
+                new SineLoader(441.0, SampleRate / 2), SampleRate, 8);
+            sampler.NoteOn(0, 60, 127);
+
+            var buffer = new float[4096 * 2];
+            float peak = 0;
+            bool finite = true;
+            for (int block = 0; block < 2; block++)
+            {
+                sampler.Read(buffer);
+                foreach (var s in buffer)
+                {
+                    finite &= float.IsFinite(s);
+                    peak = Math.Max(peak, Math.Abs(s));
+                }
+            }
+            Assert.That(finite, Is.True, "the filtered output must stay finite");
+            Assert.That(peak, Is.LessThan(2f), "a clamped, gain-compensated Q must not blow the level up");
+        }
     }
 }

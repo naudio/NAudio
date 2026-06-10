@@ -28,6 +28,7 @@ namespace NAudio.Dsp
     {
         private uint rngState = 0x9E3779B9;
         private float phase;
+        private float startPhase;
         private float increment;
         private float sampleHoldValue;
         private int sampleRate;
@@ -80,6 +81,28 @@ namespace NAudio.Dsp
         /// </summary>
         public void SyncToTempo(double bpm, NoteDivision division)
             => FrequencyHz = (float)TempoTime.Hertz(bpm, division);
+
+        /// <summary>
+        /// The phase, as a fraction of a cycle in [0, 1), that the oscillator
+        /// starts from. Setting it moves the current phase there immediately
+        /// (like <see cref="Reset"/>, which also re-applies it); values outside
+        /// [0, 1) wrap. The default of 0 keeps the historical behaviour (triangle
+        /// and square start at +1, sine and sawtooth rising through their zero /
+        /// minimum). Because the phase does not advance during
+        /// <see cref="DelaySeconds"/>, the first sample after the delay expires
+        /// is taken at this phase — a SoundFont LFO (SF2.04 §8.1.2 gens 21/23)
+        /// "begins its upward ramp from zero" when its delay elapses, which for
+        /// the triangle waveform is a start phase of 0.75.
+        /// </summary>
+        public float StartPhase
+        {
+            get => startPhase;
+            set
+            {
+                startPhase = value - MathF.Floor(value); // wrap into [0, 1)
+                phase = startPhase;
+            }
+        }
 
         /// <summary>
         /// An optional delay in seconds before the LFO starts oscillating. During
@@ -137,11 +160,12 @@ namespace NAudio.Dsp
         }
 
         /// <summary>
-        /// Resets the phase (and re-seeds the sample-and-hold generator).
+        /// Resets the phase to <see cref="StartPhase"/> (and re-seeds the
+        /// sample-and-hold generator).
         /// </summary>
         public void Reset()
         {
-            phase = 0f;
+            phase = startPhase;
             rngState = 0x9E3779B9;
             sampleHoldValue = NextRandom();
             delayCounter = (int)(delaySeconds * sampleRate);

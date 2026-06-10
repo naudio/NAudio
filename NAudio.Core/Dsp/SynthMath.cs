@@ -124,12 +124,17 @@ namespace NAudio.Dsp
 
         /// <summary>
         /// Converts a SoundFont filter resonance (initialFilterQ) in centibels to
-        /// a linear biquad Q value. The centibel value is the peak gain above DC,
-        /// so Q (linear) = 10^(cB/200).
+        /// a linear biquad Q value. The input is clamped to the spec range of
+        /// 0..960 cB (SF2.04 §8.1.2 gen 8) so malformed values cannot reach
+        /// float infinity. 0 cB means a flat, non-resonant response, so the
+        /// mapping subtracts 3.01 dB before converting —
+        /// Q = 10^((cB/10 - 3.01)/20) — giving the Butterworth Q of ~0.707 at
+        /// 0 cB (the convention FluidSynth also documents for this generator).
         /// </summary>
         public static double ResonanceCentibelsToQ(double centibels)
         {
-            return Math.Pow(10.0, centibels / 200.0);
+            double cb = Math.Clamp(centibels, 0.0, 960.0);
+            return Math.Pow(10.0, (cb / 10.0 - 3.01) / 20.0);
         }
     }
 }

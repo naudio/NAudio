@@ -87,6 +87,45 @@ namespace NAudio.Sampler.Tests
         }
 
         [Test]
+        public void VibratoStartsFromZeroAfterItsDelay()
+        {
+            // SF2.04 §8.1.2 (gens 21/23): when the vibrato LFO's delay expires it
+            // "begins its upward ramp from zero", so the pitch modulation must
+            // grow gradually from the delay point — not step instantly to full
+            // depth (which clicks on every delayed-vibrato note). A smooth looped
+            // sine sample maps read position to value, so a pitch offset shows up
+            // as divergence from the vibrato-free render.
+            const double delaySeconds = 0.05;
+            var withVibrato = new SoundFontSampler(BuildSineMod(
+                (GenVibLfoToPitch, unchecked((ushort)(short)600)), // +/-600 cents
+                (GenFreqVibLfo, AbsoluteCents(5.0)),               // 5 Hz
+                (GenDelayVibLfo, Timecents(delaySeconds))), SampleRate, 8);
+            var noVibrato = new SoundFontSampler(BuildSineMod(), SampleRate, 8);
+
+            withVibrato.NoteOn(0, 60, 127);
+            noVibrato.NoteOn(0, 60, 127);
+            int delayFrames = (int)(delaySeconds * SampleRate) + 16; // just past expiry (+ timecent rounding slack)
+            int total = delayFrames + 1400;
+            var modulated = Render(withVibrato, total);
+            var reference = Render(noVibrato, total);
+
+            float MaxDiff(int from, int to)
+            {
+                float d = 0;
+                for (int f = from; f < to; f++)
+                    d = Math.Max(d, Math.Abs(modulated[f * 2] - reference[f * 2]));
+                return d;
+            }
+
+            Assert.That(MaxDiff(0, delayFrames - 32), Is.LessThan(1e-6f),
+                "no pitch modulation during the vibrato delay");
+            Assert.That(MaxDiff(delayFrames, delayFrames + 128), Is.LessThan(0.1f),
+                "right after the delay the LFO must still be near zero — no instant full-depth pitch step");
+            Assert.That(MaxDiff(delayFrames, total), Is.GreaterThan(0.1f),
+                "the vibrato should grow to an audible pitch bend over the following cycle");
+        }
+
+        [Test]
         public void TremoloLfoModulatesVolume()
         {
             // modLfoToVolume in centibels: -600 cB swing => audible tremolo.
@@ -154,6 +193,29 @@ namespace NAudio.Sampler.Tests
             for (int i = 0; i < points; i++)
             {
                 short val = (short)((i - points / 2) * 200); // bright, bipolar ramp
+                data[i * 2] = (byte)(val & 0xFF);
+                data[i * 2 + 1] = (byte)((val >> 8) & 0xFF);
+            }
+            var gens = new System.Collections.Generic.List<byte[]>();
+            foreach (var (oper, amount) in extra)
+                gens.Add(SoundFontTestBuilder.Gen(oper, amount));
+            gens.Add(SoundFontTestBuilder.Gen(GenSampleModes, 1)); // loop
+            gens.Add(SoundFontTestBuilder.Gen(GenRootKey, 60));
+            gens.Add(SoundFontTestBuilder.Gen(GenSampleId, 0));
+            var igen = SoundFontTestBuilder.Chunk("igen", SoundFontTestBuilder.Concat(gens.ToArray()));
+            return SoundFontTestBuilder.BuildSingleRegion(data, igen, 0, points, 0, points, SampleRate, 60);
+        }
+
+        // looped single-cycle sine instrument: smooth across the loop seam, so a
+        // small read-position offset produces only a small output difference
+        // (unlike the ramp, whose loop wrap is a discontinuity)
+        private static NAudio.SoundFont.SoundFont BuildSineMod(params (ushort oper, ushort amount)[] extra)
+        {
+            const int points = 256;
+            var data = new byte[points * 2];
+            for (int i = 0; i < points; i++)
+            {
+                short val = (short)(16000 * Math.Sin(2 * Math.PI * i / points));
                 data[i * 2] = (byte)(val & 0xFF);
                 data[i * 2 + 1] = (byte)((val >> 8) & 0xFF);
             }

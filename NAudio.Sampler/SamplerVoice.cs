@@ -25,6 +25,18 @@ namespace NAudio.Sampler
         // recomputed this often (~1.5 ms at 44.1 kHz), the sources advance per sample
         private const int ControlBlock = 64;
 
+        // SF2.04 §8.1.2 (gens 21/23): when its delay expires an LFO "begins its
+        // upward ramp from zero" — for the triangle waveform (which is +1 at
+        // phase 0) the zero-and-rising point is phase 0.75
+        private const float TriangleZeroRisingPhase = 0.75f;
+
+        // sane LFO frequency bounds: the SF2 frequency generators top out around
+        // 110 Hz (4500 absolute cents); clamping keeps a malformed generator from
+        // producing a per-sample phase increment >= 1, which would push the
+        // triangle outside [-1, 1] and run away
+        private const double MinLfoHz = 0.001;
+        private const double MaxLfoHz = 100.0;
+
         private readonly int outputSampleRate;
         private readonly double nyquist;
 
@@ -64,6 +76,7 @@ namespace NAudio.Sampler
         private double baseChorusSend;      // chorus send (0.1% units, 0..1000)
         private float filterQ;
         private bool filterActive;
+        private float filterGainComp = 1f;  // resonance gain compensation (SF2 §8.1.2 gen 8)
 
         // the resolved SF2 modulator list and the fixed note state it reads
         private ModulatorSet modulators;
@@ -92,10 +105,16 @@ namespace NAudio.Sampler
         {
             this.outputSampleRate = outputSampleRate;
             nyquist = outputSampleRate / 2.0;
+            // the volume envelope keeps the default exponential (constant-dB)
+            // decay/release; the modulation envelope ramps linearly in value
+            // (SF2.04 §8.1.2 gens 28/30 vs 36/38)
             ampEnvelope = new DahdsrEnvelope(outputSampleRate);
-            modEnvelope = new DahdsrEnvelope(outputSampleRate);
-            modLfo = new Lfo(outputSampleRate) { Waveform = LfoWaveform.Triangle };
-            vibratoLfo = new Lfo(outputSampleRate) { Waveform = LfoWaveform.Triangle };
+            modEnvelope = new DahdsrEnvelope(outputSampleRate)
+            {
+                DecayReleaseShape = DahdsrEnvelope.RampShape.Linear
+            };
+            modLfo = new Lfo(outputSampleRate) { Waveform = LfoWaveform.Triangle, StartPhase = TriangleZeroRisingPhase };
+            vibratoLfo = new Lfo(outputSampleRate) { Waveform = LfoWaveform.Triangle, StartPhase = TriangleZeroRisingPhase };
             declickStep = 1f / Math.Max(1, (int)(outputSampleRate * 0.005)); // ~5 ms de-click
         }
 
@@ -412,7 +431,8 @@ namespace NAudio.Sampler
             double attenuation = baseAttenuationCb
                 + modulation[(int)GeneratorEnum.InitialAttenuation];
             if (attenuation < 0.0) attenuation = 0.0;
-            staticGain = (float)SynthMath.AttenuationCentibelsToGain(attenuation) * regionGain * velocityGain;
+            staticGain = (float)SynthMath.AttenuationCentibelsToGain(attenuation)
+                * regionGain * velocityGain * filterGainComp;
 
             SetPan(basePan + modulation[(int)GeneratorEnum.Pan]);
         }
@@ -481,11 +501,15 @@ namespace NAudio.Sampler
 
         private void ConfigureLfos(SoundFontGenerators gen)
         {
-            modLfo.FrequencyHz = (float)SynthMath.AbsoluteCentsToHertz(gen[GeneratorEnum.FrequencyModulationLFO]);
+            // frequencies are clamped to a sane LFO range so a malformed
+            // freqModLfo/freqVibLfo generator can't run the oscillator away
+            modLfo.FrequencyHz = (float)Math.Clamp(
+                SynthMath.AbsoluteCentsToHertz(gen[GeneratorEnum.FrequencyModulationLFO]), MinLfoHz, MaxLfoHz);
             modLfo.DelaySeconds = (float)SynthMath.TimecentsToSeconds(gen[GeneratorEnum.DelayModulationLFO]);
             modLfo.Reset();
 
-            vibratoLfo.FrequencyHz = (float)SynthMath.AbsoluteCentsToHertz(gen[GeneratorEnum.FrequencyVibratoLFO]);
+            vibratoLfo.FrequencyHz = (float)Math.Clamp(
+                SynthMath.AbsoluteCentsToHertz(gen[GeneratorEnum.FrequencyVibratoLFO]), MinLfoHz, MaxLfoHz);
             vibratoLfo.DelaySeconds = (float)SynthMath.TimecentsToSeconds(gen[GeneratorEnum.DelayVibratoLFO]);
             vibratoLfo.Reset();
         }
@@ -505,7 +529,12 @@ namespace NAudio.Sampler
 
         private void ConfigureFilter(SoundFontGenerators gen)
         {
-            filterQ = Math.Max(0.5f, (float)SynthMath.ResonanceCentibelsToQ(gen[GeneratorEnum.InitialFilterQ]));
+            // initialFilterQ is clamped to the spec range 0..960 cB (a malformed
+            // value would otherwise reach float infinity, making alpha = 0 and a
+            // filter that rings forever); 0 cB maps to the flat Butterworth
+            // response (Q ~0.707) — see SynthMath.ResonanceCentibelsToQ
+            double resonanceCb = Math.Clamp((double)gen[GeneratorEnum.InitialFilterQ], 0.0, 960.0);
+            filterQ = (float)SynthMath.ResonanceCentibelsToQ(resonanceCb);
 
             // effective cutoff includes the modulators evaluated at note-on — most
             // importantly the velocity->filter default modulator, which lowers the
@@ -518,6 +547,11 @@ namespace NAudio.Sampler
 
             if (filterActive)
             {
+                // SF2.04 §8.1.2 gen 8: the filter gain at DC is reduced by half
+                // the resonance dB (100 cB resonance -> DC 5 dB below unity), so
+                // raising the resonance doesn't raise the perceived level. Folded
+                // into the static gain (UpdateModulation re-reads it each block).
+                filterGainComp = (float)Math.Pow(10.0, -(resonanceCb / 10.0) / 2.0 / 20.0);
                 double hz = Math.Clamp(effectiveHz, 20.0, nyquist * 0.95);
                 // fresh filter resets state (safe at note start); a stereo voice
                 // filters each channel with its own state
@@ -526,6 +560,7 @@ namespace NAudio.Sampler
             }
             else
             {
+                filterGainComp = 1f;
                 filter = null;
                 filterRight = null;
             }

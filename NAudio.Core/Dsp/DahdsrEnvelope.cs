@@ -11,9 +11,15 @@ namespace NAudio.Dsp
     /// the range [0, 1].
     ///
     /// The attack is convex (an exponential approach toward an over-shoot target),
-    /// matching the SoundFont volume-envelope attack shape; decay and release are
-    /// exponential approaches toward their targets. Designed for allocation-free
-    /// real-time use.
+    /// matching the SoundFont volume-envelope attack shape. Decay and release are
+    /// constant-rate ramps following the SoundFont "time for a 100% change"
+    /// semantic (SF2.04 §8.1.2): the stage time sets the ramp's <i>rate</i>, and
+    /// the level the ramp runs to (the sustain level for decay, silence for
+    /// release) <i>truncates</i> it, so a smaller change completes proportionally
+    /// sooner. The ramp shape is selectable via <see cref="DecayReleaseShape"/>:
+    /// exponential in amplitude (a constant fall in dB — the volume-envelope
+    /// shape, gens 36/38) or linear in value (the modulation-envelope shape,
+    /// gens 28/30). Designed for allocation-free real-time use.
     /// </summary>
     public class DahdsrEnvelope
     {
@@ -40,6 +46,23 @@ namespace NAudio.Dsp
             Finished
         }
 
+        /// <summary>
+        /// The shape of the decay and release ramps (see <see cref="DecayReleaseShape"/>).
+        /// </summary>
+        public enum RampShape
+        {
+            /// <summary>
+            /// Exponential in amplitude — a constant fall in dB per unit time,
+            /// the SoundFont volume-envelope shape (SF2.04 §8.1.2 gens 36/38).
+            /// </summary>
+            Exponential = 0,
+            /// <summary>
+            /// Linear in value — the SoundFont modulation-envelope shape
+            /// (SF2.04 §8.1.2 gens 28/30).
+            /// </summary>
+            Linear
+        }
+
         private readonly float sampleRate;
 
         private float delaySeconds;
@@ -55,17 +78,17 @@ namespace NAudio.Dsp
 
         // attack overshoot target ratio gives the convex attack curve
         private const float TargetRatioAttack = 0.3f;
-        // small target ratio for decay/release gives a near-exponential fall
-        private const float TargetRatioDecayRelease = 0.0001f;
-        // output below this during release is treated as finished
-        private const float ReleaseFloor = 0.00001f; // ~ -100 dB
+        // the SF2 convention treats -100 dB as silence: the full decay/release
+        // travel is 100 dB, and output below this floor is finished/at-sustain
+        private const float SilenceFloor = 0.00001f; // -100 dB
+        private const float FullScaleDecibels = 100f;
 
         private float attackCoef;
         private float attackBase;
-        private float decayCoef;
-        private float decayBase;
-        private float releaseCoef;
-        private float releaseBase;
+        private float decayFactor;   // per-sample amplitude ratio (exponential shape)
+        private float decayStep;     // per-sample fall (linear shape)
+        private float releaseFactor;
+        private float releaseStep;
 
         /// <summary>
         /// Creates a DAHDSR envelope for the given sample rate.
@@ -101,7 +124,14 @@ namespace NAudio.Dsp
             set => holdSeconds = Math.Max(0f, value);
         }
 
-        /// <summary>Decay time in seconds (time to fall from 1 toward the sustain level).</summary>
+        /// <summary>
+        /// Decay time in seconds. Per the SoundFont semantic (SF2.04 §8.1.2 gens
+        /// 36/28) this is the time for a 100% change — full scale down to -100 dB
+        /// (exponential shape) or to zero (linear shape) — and sets the ramp's
+        /// <i>rate</i>; the sustain level truncates the ramp, so a high sustain is
+        /// reached proportionally sooner (e.g. a 2 s decay to a -1 dB sustain
+        /// completes in 2 s x 1/100 = 20 ms).
+        /// </summary>
         public float DecaySeconds
         {
             get => decaySeconds;
@@ -112,15 +142,28 @@ namespace NAudio.Dsp
         public float SustainLevel
         {
             get => sustainLevel;
-            set { sustainLevel = Math.Clamp(value, 0f, 1f); RecalculateDecay(); }
+            set => sustainLevel = Math.Clamp(value, 0f, 1f);
         }
 
-        /// <summary>Release time in seconds (time to fall from the current level toward 0).</summary>
+        /// <summary>
+        /// Release time in seconds. Like the decay this is the time for a 100%
+        /// change (SF2.04 §8.1.2 gens 38/30), so it sets the ramp's <i>rate</i>
+        /// and releasing from below full scale completes proportionally sooner —
+        /// e.g. releasing from a -20 dB sustain takes (80/100) x ReleaseSeconds
+        /// with the exponential shape.
+        /// </summary>
         public float ReleaseSeconds
         {
             get => releaseSeconds;
             set { releaseSeconds = Math.Max(0f, value); RecalculateRelease(); }
         }
+
+        /// <summary>
+        /// The shape of the decay and release ramps: exponential in amplitude
+        /// (constant dB rate — the SF2 volume-envelope shape, the default) or
+        /// linear in value (the SF2 modulation-envelope shape).
+        /// </summary>
+        public RampShape DecayReleaseShape { get; set; } = RampShape.Exponential;
 
         /// <summary>The current envelope stage.</summary>
         public EnvelopeStage Stage => stage;
@@ -219,8 +262,13 @@ namespace NAudio.Dsp
                         }
                         else
                         {
-                            output = decayBase + output * decayCoef;
-                            if (output <= sustainLevel)
+                            // constant-rate ramp truncated by the sustain level
+                            // (SF2.04 §8.1.2 gens 36/28); a sustain below the
+                            // -100 dB floor ends the ramp at the floor
+                            output = DecayReleaseShape == RampShape.Linear
+                                ? output - decayStep
+                                : output * decayFactor;
+                            if (output <= sustainLevel || output <= SilenceFloor)
                             {
                                 output = sustainLevel;
                                 stage = EnvelopeStage.Sustain;
@@ -238,8 +286,12 @@ namespace NAudio.Dsp
                         }
                         else
                         {
-                            output = releaseBase + output * releaseCoef;
-                            if (output <= ReleaseFloor)
+                            // constant-rate ramp from the current level toward
+                            // silence (SF2.04 §8.1.2 gens 38/30)
+                            output = DecayReleaseShape == RampShape.Linear
+                                ? output - releaseStep
+                                : output * releaseFactor;
+                            if (output <= SilenceFloor)
                             {
                                 output = 0f;
                                 stage = EnvelopeStage.Finished;
@@ -270,16 +322,18 @@ namespace NAudio.Dsp
 
         private void RecalculateDecay()
         {
-            float rate = Math.Max(1f, decaySeconds * sampleRate);
-            decayCoef = CalcCoef(rate, TargetRatioDecayRelease);
-            decayBase = (sustainLevel - TargetRatioDecayRelease) * (1f - decayCoef);
+            float samples = Math.Max(1f, decaySeconds * sampleRate);
+            // exponential: a constant FullScaleDecibels fall over decaySeconds
+            decayFactor = (float)Math.Pow(10.0, -FullScaleDecibels / 20.0 / samples);
+            // linear: a full-scale (1.0) fall over decaySeconds
+            decayStep = 1f / samples;
         }
 
         private void RecalculateRelease()
         {
-            float rate = Math.Max(1f, releaseSeconds * sampleRate);
-            releaseCoef = CalcCoef(rate, TargetRatioDecayRelease);
-            releaseBase = -TargetRatioDecayRelease * (1f - releaseCoef);
+            float samples = Math.Max(1f, releaseSeconds * sampleRate);
+            releaseFactor = (float)Math.Pow(10.0, -FullScaleDecibels / 20.0 / samples);
+            releaseStep = 1f / samples;
         }
 
         private static float CalcCoef(float rate, float targetRatio)

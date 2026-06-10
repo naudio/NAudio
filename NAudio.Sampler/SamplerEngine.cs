@@ -364,10 +364,24 @@ namespace NAudio.Sampler
             var releases = RegionIndex.For(regions).ReleaseTriggered;
             if (releases.Length == 0) return;
 
+            // Release triggers pass the same selection gates as note-on —
+            // keyswitch state, CC windows, random layers and round-robin — read
+            // against the channel state as it is NOW, at note-off time (the
+            // correct semantic: a keyswitched instrument fires only the active
+            // articulation's release samples, and a CC-gated release region
+            // honours the controller at release). One fresh random draw per
+            // release dispatch, shared across its candidates like NoteOn; the
+            // sequence counters advance for matching release regions only here,
+            // so attack and release round-robins rotate independently.
             long dispatch = startOrder; // this dispatch's voices are exempt from its chokes
+            double random = rng.NextDouble();
             foreach (var region in releases)
             {
                 if (!region.Matches(note, velocity)) continue;
+                if (!KeyswitchActive(region, channel)) continue;
+                if (!region.PassesCcGates(state)) continue;
+                if (!region.PassesRandom(random)) continue;
+                if (!region.PassesSequence()) continue; // advances the round-robin counter
 
                 StartVoice(region, state, channel, note, velocity, dispatch, region.ReleaseDecayGain(heldSeconds));
             }
@@ -401,11 +415,43 @@ namespace NAudio.Sampler
             foreach (var v in voices) v.Choke();
         }
 
-        /// <summary>Releases all held notes on every channel.</summary>
+        /// <summary>
+        /// Releases all held notes on every channel, honouring each channel's
+        /// sustain pedal: per the MIDI 1.0 spec, All Notes Off (CC123) behaves as
+        /// if a note-off were received for each note, so notes on a channel whose
+        /// damper pedal is down keep ringing (parked) until pedal-up — which then
+        /// also fires their release triggers, like an ordinary pedalled note-off.
+        /// One-shot and release-triggered voices ignore note-off and are
+        /// unaffected; use <see cref="AllSoundOff"/> to silence everything.
+        /// </summary>
         public void AllNotesOff()
         {
-            foreach (var v in voices) if (v.IsActive && v.IsHeld && !v.IgnoreNoteOff) v.Release();
-            foreach (var held in heldNotes) held.Clear();
+            for (int channel = 0; channel < Channels.Length; channel++)
+                AllNotesOff(channel);
+        }
+
+        // The per-channel form: CC123 is a channel-mode message, so the
+        // ControlChange path releases only its own channel's notes (the public
+        // parameterless method remains the all-channels variant).
+        private void AllNotesOff(int channel)
+        {
+            var held = heldNotes[channel];
+
+            if (Channels[channel].SustainPedal)
+            {
+                // pedal down: park each note exactly as NoteOff would — keeping
+                // the note-on velocity/frame so the pedal-up release still fires
+                // release triggers with the right rt_decay held time
+                foreach (var entry in held)
+                    sustainedNotes[(channel, entry.Key)] = entry.Value;
+                held.Clear();
+                return;
+            }
+
+            foreach (var v in voices)
+                if (v.IsActive && v.IsHeld && !v.IgnoreNoteOff && v.Channel == channel)
+                    v.Release();
+            held.Clear();
         }
 
         /// <inheritdoc />
@@ -488,7 +534,7 @@ namespace NAudio.Sampler
                     state.SelectRpnMsb(value);
                     break;
                 case MidiController.AllNotesOff:
-                    AllNotesOff();
+                    AllNotesOff(channel); // channel-mode message: this channel only
                     break;
                 case (MidiController)120: // All Sound Off (not in the MidiController enum)
                     AllSoundOff();

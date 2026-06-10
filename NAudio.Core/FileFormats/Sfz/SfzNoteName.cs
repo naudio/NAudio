@@ -4,8 +4,10 @@ namespace NAudio.Sfz
 {
     /// <summary>
     /// Parses SFZ key values, which may be a MIDI note number (0–127) or a note
-    /// name such as <c>c4</c>, <c>c#3</c> or <c>db5</c>. SFZ uses the convention
-    /// that middle C (<c>c4</c>) is MIDI note 60, so <c>c-1</c> is 0.
+    /// name such as <c>c4</c>, <c>c#3</c> or <c>db5</c> — case-insensitive, in
+    /// both the letter and the flat (<c>Db4</c>, <c>dB4</c> and <c>DB4</c> all
+    /// equal <c>db4</c>). SFZ uses the convention that middle C (<c>c4</c>) is
+    /// MIDI note 60, so <c>c-1</c> is 0.
     /// </summary>
     public static class SfzNoteName
     {
@@ -31,9 +33,11 @@ namespace NAudio.Sfz
             int semitone = LetterSemitone[letter - 'a'];
             i++;
 
-            if (i < text.Length && (text[i] == '#' || text[i] == 'b'))
+            // the accidental is case-insensitive like the note letter ('B' = 'b')
+            char accidental = i < text.Length ? char.ToLowerInvariant(text[i]) : '\0';
+            if (accidental == '#' || accidental == 'b')
             {
-                semitone += text[i] == '#' ? 1 : -1;
+                semitone += accidental == '#' ? 1 : -1;
                 i++;
             }
 

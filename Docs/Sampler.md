@@ -191,12 +191,12 @@ The sampler targets a documented, useful subset of each format: SFZ v1 plus comm
 
 **Supported:**
 
-* **Mapping and selection:** `sample`, `lokey`/`hikey`/`key`, `lovel`/`hivel` — with note names (`c#4`, c4 = 60) accepted wherever a key is expected; `<control>` `default_path`, `note_offset`, `octave_offset`
+* **Mapping and selection:** `sample`, `lokey`/`hikey`/`key`, `lovel`/`hivel` — with note names (`c#4`/`db4`, case-insensitive, c4 = 60) accepted wherever a key is expected. `key` supplies defaults for whichever of `lokey`/`hikey`/`pitch_keycenter` are not explicitly present; an explicit opcode always wins regardless of where it is written (a pragmatic deviation from strict document-order semantics, since opcodes merge across the hierarchy). `<control>` `default_path`, `note_offset`, `octave_offset`, and `set_ccN` initial controller values (seeded silently into every channel at load — visible to `loccN`/`hiccN` gates and modulator sources, without edge-firing `on_loccN` trigger regions)
 * **Pitch:** `pitch_keycenter`, `tune` (alias `pitch`), `transpose`, `pitch_keytrack`
 * **Amplitude:** `volume` (boosts above 0 dB included), `pan`, `amp_veltrack` (including negative values), `amp_velcurve_N` velocity-curve points (undefined velocities are linearly interpolated; the curve replaces the default velocity-squared term inside the `amp_veltrack` law), `ampeg_delay`/`ampeg_attack`/`ampeg_hold`/`ampeg_decay`/`ampeg_sustain`/`ampeg_release`
 * **Filter:** `cutoff`, `resonance`, `fil_type` — all four families: low-pass (`lpf_*`), high-pass (`hpf_*`), band-pass (`bpf_*`) and band-reject (`brf_*`). The filter is always **2-pole**: the 1-pole/4-pole/6-pole variants (`lpf_1p`, `lpf_4p`, …) are accepted but play with the 2-pole shape
 * **Sample playback:** `offset`, `end` (inclusive, per the spec; an explicit `end=-1` disables the region), `loop_mode`/`loopmode` (`no_loop`, `one_shot`, `loop_continuous`, `loop_sustain`), `loop_start`/`loop_end` (inclusive; aliases `loopstart`/`loopend`), WAV `smpl`-chunk loop points as the default loop
-* **Triggers and groups:** `trigger` (`attack`/`release`/`first`/`legato`), `rt_decay` (release samples attenuated by held time), `group`/`off_by` (directional choke groups), `off_mode` (`fast` cuts a choked voice with a ~5 ms fade; `normal` releases it through its own `ampeg_release`; ARIA's `off_mode=time`+`off_time` is not supported and is treated as `fast`), `polyphony` (per-region voice cap — striking beyond it silences the region's oldest voice, honouring its `off_mode`)
+* **Triggers and groups:** `trigger` (`attack`/`release`/`first`/`legato`), `rt_decay` (release samples attenuated by held time), `group`/`off_by` (directional choke groups), `off_mode` (`fast` cuts a choked voice with a ~5 ms fade; `normal` releases it through its own `ampeg_release`; ARIA's `off_mode=time`+`off_time` is not supported and is treated as `fast`), `polyphony` (per-region voice cap — striking beyond it silences the region's oldest voice, honouring its `off_mode`). Release regions pass the same note-on selection gates (keyswitches, `loccN`/`hiccN`, `lorand`/`hirand`, round-robin), evaluated against the channel state at note-off time, and release voices are fire-and-forget: like one-shots they ignore later note-offs and play to their own envelope or sample end — a *looped* release sample therefore rings until its envelope, a choke or All Sound Off ends it
 * **Note-on selection:** keyswitches (`sw_lokey`/`sw_hikey`/`sw_last`/`sw_default` — keyswitch presses make no sound), round-robin (`seq_length`/`seq_position`), random layers (`lorand`/`hirand`, one draw per note-on so layers select consistently), CC gating (`loccN`/`hiccN`), CC triggers (`on_loccN`/`on_hiccN` — the region plays at its root key when the controller rises into the window)
 * **Crossfades:** `xfin_lokey`/`xfin_hikey`, `xfout_lokey`/`xfout_hikey`, `xfin_lovel`/`xfin_hivel`, `xfout_lovel`/`xfout_hivel`, with `xf_keycurve`/`xf_velcurve` (`gain` or `power`); a layer faded to zero doesn't spawn a voice
 * **Modulation:** `pitchlfo_freq`/`pitchlfo_depth`/`pitchlfo_delay` (vibrato), `amplfo_*` (tremolo), `fillfo_*` (filter LFO), `fileg_*` (filter envelope: delay/attack/hold/decay/sustain/release plus depth) and `pitcheg_*` (pitch envelope) — see the shared-source note below
@@ -209,7 +209,6 @@ One engine limitation to know about: the modulation LFO and modulation envelope 
 **Not supported** (parsed where noted, but not honoured):
 
 * ARIA/SFZ v2 flex EGs (`eg01_*`, …) and `<curve>` tables
-* `set_ccN` initial controller values
 * loop-crossfade opcodes
 * disk streaming — every sample decodes fully into memory
 
@@ -258,7 +257,7 @@ The engine understands these channel messages (anything else is ignored):
   * CC91 / CC93 — reverb / chorus send level
   * CC120 — all sound off (immediate, with a short anti-click fade)
   * CC121 — reset all controllers
-  * CC123 — all notes off (notes release naturally)
+  * CC123 — all notes off, per channel (notes release naturally; per the MIDI spec it acts like a note-off for each note, so with the sustain pedal down the channel's notes keep ringing until pedal-up)
   * Every other controller's value is stored and visible to SF2 file-defined modulators and SFZ CC gates/triggers, even though it has no hard-wired meaning
 
 Sysex and meta events are not consumed by the engine (`MidiFileSequence` drops them when loading a file, except Set Tempo which builds the tempo map), and polyphonic key pressure is ignored.

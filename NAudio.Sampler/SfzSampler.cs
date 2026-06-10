@@ -54,6 +54,21 @@ namespace NAudio.Sampler
             regions = playable;
             keyswitchLow = low;
             keyswitchHigh = high;
+
+            // <control> set_ccN seeds every channel's controller state (an SFZ
+            // file is one instrument on all 16 channels). Applied silently —
+            // straight into the stored state rather than through the engine's
+            // ControlChange path — because a load-time "change" from the 0
+            // default must not edge-fire on_loccN/on_hiccN trigger regions;
+            // seeding the stored value also keeps later real CC changes'
+            // previous-value edge detection consistent. The values are visible
+            // to loccN/hiccN gates and any modulator sources immediately.
+            if (instrument.InitialControllerValues != null)
+            {
+                foreach (var channel in Channels)
+                    foreach (var (controller, value) in instrument.InitialControllerValues)
+                        channel.SetController(controller, value);
+            }
         }
 
         /// <summary>

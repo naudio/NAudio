@@ -13,7 +13,11 @@ namespace NAudio.Core.Tests.Sfz
         [TestCase("C4", 60)]
         [TestCase("a4", 69)]
         [TestCase("c#4", 61)]
-        [TestCase("db4", 61)]
+        [TestCase("C#4", 61)]
+        [TestCase("db4", 61)]  // the accidental is case-insensitive like the letter
+        [TestCase("dB4", 61)]
+        [TestCase("Db4", 61)]
+        [TestCase("DB4", 61)]
         [TestCase("c-1", 0)]
         [TestCase("g9", 127)]
         public void ParsesNumbersAndNoteNames(string text, int expected)
@@ -66,6 +70,29 @@ namespace NAudio.Core.Tests.Sfz
             Assert.That(r.LoKey, Is.EqualTo(60));
             Assert.That(r.HiKey, Is.EqualTo(60));
             Assert.That(r.PitchKeycenter, Is.EqualTo(60));
+        }
+
+        [Test]
+        public void ExplicitKeyRangeBeatsAnInheritedKey()
+        {
+            // the merged opcode set has lost document order, so `key` acts as a
+            // default for whichever of lokey/hikey/pitch_keycenter are not
+            // explicitly present — an explicit opcode always wins, whatever the
+            // order (a deliberate deviation from strict last-wins semantics)
+            var instrument = SfzParser.Parse("<group> key=36\n<region> sample=a.wav lokey=35 hikey=37");
+            var r = SfzMappedRegion.Map(instrument.Regions[0]);
+            Assert.That(r.LoKey, Is.EqualTo(35));
+            Assert.That(r.HiKey, Is.EqualTo(37));
+            Assert.That(r.PitchKeycenter, Is.EqualTo(36), "key still supplies the unspecified keycenter");
+        }
+
+        [Test]
+        public void ExplicitPitchKeycenterBeatsKey()
+        {
+            var r = MapFirst("<region> sample=a.wav key=36 pitch_keycenter=48");
+            Assert.That(r.LoKey, Is.EqualTo(36));
+            Assert.That(r.HiKey, Is.EqualTo(36));
+            Assert.That(r.PitchKeycenter, Is.EqualTo(48));
         }
 
         [Test]

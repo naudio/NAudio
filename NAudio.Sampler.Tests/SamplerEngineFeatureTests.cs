@@ -91,6 +91,95 @@ namespace NAudio.Sampler.Tests
         }
 
         [Test]
+        public void NextNoteOffDoesNotTouchAPriorReleaseVoice()
+        {
+            // release voices are fire-and-forget: their note-off has already
+            // happened, so a LATER note-off on the same key must not release
+            // (and, with the default instant ampeg_release, kill) the release
+            // voice the previous note-off started
+            var sampler = Build("<region> sample=rel.wav key=60 trigger=release loop_mode=loop_continuous");
+
+            sampler.NoteOn(0, 60, 100);
+            sampler.NoteOff(0, 60); // starts the first (looped) release voice
+            Render(sampler, 512);
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(1));
+
+            sampler.NoteOn(0, 60, 100); // re-strike and release the same key
+            sampler.NoteOff(0, 60);
+            Render(sampler, 4096);
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(2),
+                "note-on/off on the key must not release or kill the prior release voice");
+        }
+
+        [Test]
+        public void NonLoopedReleaseSamplePlaysToItsEndExactlyOnce()
+        {
+            var sampler = Build("<region> sample=rel.wav key=60 trigger=release", length: 2048);
+
+            sampler.NoteOn(0, 60, 100);
+            sampler.NoteOff(0, 60);
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(1), "the release sample fires once");
+            Render(sampler, 1024);
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(1), "and plays through unhindered");
+            Render(sampler, 4096);
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(0), "then ends at its sample end");
+        }
+
+        [Test]
+        public void AllNotesOffSparesReleaseVoicesLikeOneShots()
+        {
+            // CC123 behaves like per-note note-offs, which release voices ignore;
+            // All SOUND Off (CC120) is what silences them
+            var sampler = Build("<region> sample=rel.wav key=60 trigger=release loop_mode=loop_continuous");
+            sampler.NoteOn(0, 60, 100);
+            sampler.NoteOff(0, 60);
+            sampler.AllNotesOff();
+            Render(sampler, 4096);
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(1),
+                "All Notes Off must not kill a sounding release voice");
+
+            sampler.AllSoundOff();
+            Render(sampler, 2048);
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(0), "All Sound Off chokes it");
+        }
+
+        [Test]
+        public void AllNotesOffWithPedalDownParksNotesUntilPedalUp()
+        {
+            // MIDI 1.0 (CC123): All Notes Off behaves as if a note-off were
+            // received for each sounding note — so with the damper pedal down the
+            // notes keep ringing until pedal-up, which is also when their release
+            // triggers fire (same as an ordinary pedalled note-off)
+            var sampler = Build(
+                "<region> sample=a.wav key=60 loop_mode=loop_continuous\n" +
+                "<region> sample=rel.wav key=60 trigger=release loop_mode=loop_continuous");
+
+            sampler.ProcessMidiEvent(new ControlChangeEvent(0, 1, MidiController.Sustain, 127));
+            sampler.NoteOn(0, 60, 100);
+            sampler.ProcessMidiEvent(new ControlChangeEvent(0, 1, MidiController.AllNotesOff, 0));
+            Render(sampler, 2048);
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(1),
+                "the pedal must hold the note through CC123");
+
+            sampler.ProcessMidiEvent(new ControlChangeEvent(0, 1, MidiController.Sustain, 0));
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(2),
+                "pedal-up releases the parked note and fires its release trigger");
+            Render(sampler, 4096); // the released attack voice dies; the looped release voice remains
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void AllNotesOffWithoutPedalReleasesImmediately()
+        {
+            var sampler = Build("<region> sample=a.wav key=60 loop_mode=loop_continuous");
+            sampler.NoteOn(0, 60, 100);
+            sampler.ProcessMidiEvent(new ControlChangeEvent(0, 1, MidiController.AllNotesOff, 0));
+            Render(sampler, 4096);
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(0),
+                "without the pedal CC123 releases notes straight away");
+        }
+
+        [Test]
         public void OneShotIgnoresNoteOff()
         {
             // long, non-looped one-shot: note-off must not stop it

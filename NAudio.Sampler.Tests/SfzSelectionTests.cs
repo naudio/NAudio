@@ -1,3 +1,4 @@
+using System;
 using NAudio.Midi;
 using NAudio.Sampler;
 using NAudio.Sfz;
@@ -32,6 +33,9 @@ namespace NAudio.Sampler.Tests
 
         private static SfzSampler Build(string sfz) =>
             new SfzSampler(SfzParser.Parse(sfz), new ConstantLoader(), SampleRate, maxVoices: 32);
+
+        private static void Render(SfzSampler sampler, int frames) =>
+            sampler.Read(new float[frames * 2]);
 
         // ---- gate predicates (unit) ----
 
@@ -98,6 +102,119 @@ namespace NAudio.Sampler.Tests
 
             // exactly one of the two variants per note-on (not both, not zero)
             Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(4));
+        }
+
+        // ---- release-trigger selection gates ----
+
+        [Test]
+        public void ReleaseTriggersHonourTheActiveKeyswitch()
+        {
+            // a keyswitched instrument: each articulation carries its own release
+            // sample, and a note-off must fire only the ACTIVE articulation's —
+            // not every articulation's on every note-off
+            var sampler = Build(@"
+<region> sample=a.wav key=60 sw_lokey=0 sw_hikey=1 sw_last=0
+<region> sample=a_rel.wav key=60 sw_lokey=0 sw_hikey=1 sw_last=0 trigger=release loop_mode=loop_continuous
+<region> sample=b.wav key=60 sw_lokey=0 sw_hikey=1 sw_last=1
+<region> sample=b_rel.wav key=60 sw_lokey=0 sw_hikey=1 sw_last=1 trigger=release loop_mode=loop_continuous");
+
+            sampler.NoteOn(0, 0, 100);  // select articulation 0 (keyswitch, silent)
+            sampler.NoteOn(0, 60, 100);
+            Render(sampler, 2048);      // the short non-looped attack sample plays out
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(0));
+
+            sampler.NoteOff(0, 60);
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(1),
+                "only the active articulation's release sample fires");
+        }
+
+        [Test]
+        public void ReleaseTriggersHonourCcGates()
+        {
+            // the CC gate is read against the channel state at note-off time
+            var sampler = Build(
+                "<region> sample=a.wav key=60\n" +
+                "<region> sample=rel.wav key=60 trigger=release locc20=64 hicc20=127 loop_mode=loop_continuous");
+
+            sampler.NoteOn(0, 60, 100);
+            sampler.NoteOff(0, 60); // CC20 defaults to 0 -> the release region is gated out
+            Render(sampler, 4096);  // the released attack voice dies away
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(0),
+                "a CC-gated release region must not fire while its gate fails");
+
+            sampler.ProcessMidiEvent(new ControlChangeEvent(0, 1, (MidiController)20, 100));
+            sampler.NoteOn(0, 60, 100);
+            sampler.NoteOff(0, 60); // the gate now holds at note-off
+            Render(sampler, 4096);  // the attack tail dies; the looped release voice remains
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void ReleaseTriggersAdvanceRoundRobin()
+        {
+            // two release variants in a 2-step round-robin: each note-off fires
+            // exactly one of them, and successive note-offs alternate (the second
+            // variant is -20 dB so the alternation is audible in the peak)
+            var sampler = Build(@"
+<region> sample=a.wav key=60
+<region> sample=r1.wav key=60 trigger=release seq_length=2 seq_position=1 loop_mode=loop_continuous
+<region> sample=r2.wav key=60 trigger=release seq_length=2 seq_position=2 volume=-20 loop_mode=loop_continuous");
+
+            float first = ReleaseCyclePeak(sampler);  // fires seq_position=1 (full level)
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(1),
+                "exactly one release variant per note-off");
+            sampler.AllSoundOff();
+            Render(sampler, 2048); // past the choke fade
+
+            float second = ReleaseCyclePeak(sampler); // fires seq_position=2 (-20 dB)
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(1));
+            Assert.That(second, Is.LessThan(first * 0.5f),
+                "successive note-offs must alternate the release variants");
+        }
+
+        // plays and releases key 60, returning the post-note-off peak (the short
+        // non-looped attack sample has already played out, so only the looped
+        // release voice sounds in the measured block)
+        private static float ReleaseCyclePeak(SfzSampler sampler)
+        {
+            sampler.NoteOn(0, 60, 127);
+            Render(sampler, 1024);
+            sampler.NoteOff(0, 60);
+            var buffer = new float[2048 * 2];
+            sampler.Read(buffer);
+            float peak = 0;
+            foreach (var s in buffer) peak = Math.Max(peak, Math.Abs(s));
+            return peak;
+        }
+
+        // ---- <control> set_ccN initial controller values ----
+
+        [Test]
+        public void SetCcSeedsControllerStateSoCcGatedRegionsSoundByDefault()
+        {
+            // locc/hicc gates read controller values that default to 0, so a
+            // gated region is silent until set_ccN seeds the channel state
+            var sampler = Build(
+                "<control> set_cc20=100\n" +
+                "<region> sample=a.wav loop_mode=loop_continuous locc20=50 hicc20=127");
+
+            sampler.NoteOn(0, 60, 100);
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(1),
+                "set_cc20=100 must satisfy the locc20=50/hicc20=127 gate at load");
+        }
+
+        [Test]
+        public void SetCcDoesNotFireOnCcTriggerRegionsAtLoad()
+        {
+            // the initial values are applied silently to the channel state —
+            // visible to gates and modulator sources, but not a controller
+            // *change*, so they must not edge-fire on_locc/on_hicc regions
+            var sampler = Build(
+                "<control> set_cc20=100\n" +
+                "<region> sample=a.wav loop_mode=loop_continuous on_locc20=64 on_hicc20=127");
+
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(0),
+                "seeding CC20 inside the trigger window must not fire the region at load");
         }
 
         // ---- crossfades ----

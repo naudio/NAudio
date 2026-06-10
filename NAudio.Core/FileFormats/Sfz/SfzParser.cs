@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -12,6 +13,11 @@ namespace NAudio.Sfz
     /// <c>#include</c>, the section headers and the <c>opcode=value</c> grammar
     /// (including sample paths that contain spaces), then flattens the
     /// global/master/group/region hierarchy into playable regions.
+    ///
+    /// A <c>&lt;</c> always starts a header, even without surrounding
+    /// whitespace (<c>&lt;group&gt;&lt;region&gt;</c>,
+    /// <c>&lt;region&gt;sample=a.wav</c>), matching real players' behaviour;
+    /// consequently a sample path may contain spaces but never <c>&lt;</c>.
     ///
     /// This is the text/structure layer only — opcode <em>semantics</em> (key
     /// ranges, tuning, envelopes…) and external sample loading are applied by
@@ -113,7 +119,7 @@ namespace NAudio.Sfz
         private static List<SfzSection> ParseSections(string text)
         {
             var sections = new List<SfzSection>();
-            var tokens = text.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+            var tokens = Tokenize(text);
 
             SfzHeader currentHeader = SfzHeader.Unknown;
             string currentHeaderText = null;
@@ -126,7 +132,7 @@ namespace NAudio.Sfz
                     sections.Add(new SfzSection(currentHeader, currentHeaderText, currentOpcodes));
             }
 
-            for (int i = 0; i < tokens.Length; i++)
+            for (int i = 0; i < tokens.Count; i++)
             {
                 var token = tokens[i];
                 if (token.Length > 2 && token[0] == '<' && token[token.Length - 1] == '>')
@@ -147,7 +153,7 @@ namespace NAudio.Sfz
 
                 // a value (e.g. a sample path) may contain spaces: keep appending
                 // following tokens until the next opcode or header
-                while (i + 1 < tokens.Length && !IsHeaderOrOpcode(tokens[i + 1]))
+                while (i + 1 < tokens.Count && !IsHeaderOrOpcode(tokens[i + 1]))
                 {
                     value.Append(' ').Append(tokens[i + 1]);
                     i++;
@@ -167,6 +173,38 @@ namespace NAudio.Sfz
 
             Commit();
             return sections;
+        }
+
+        // Splits the text into header and opcode tokens. Whitespace separates
+        // tokens as usual, but '<' also STARTS a new token wherever it appears
+        // and the '>' closing a header ends one: real players treat '<' as a
+        // hard delimiter, so "<group><region>" is two headers and
+        // "<region>sample=a.wav" is a header followed by an opcode (previously
+        // both collapsed into junk tokens and the headers were silently lost).
+        // The trade-off is that a sample path can never contain '<' — which
+        // real-world files already avoid precisely because players split there.
+        private static List<string> Tokenize(string text)
+        {
+            var tokens = new List<string>();
+            foreach (var chunk in text.Split((char[])null, StringSplitOptions.RemoveEmptyEntries))
+            {
+                int start = 0;
+                for (int i = 0; i < chunk.Length; i++)
+                {
+                    if (chunk[i] == '<' && i > start)
+                    {
+                        tokens.Add(chunk.Substring(start, i - start)); // the text before the '<'
+                        start = i;
+                    }
+                    else if (chunk[i] == '>' && chunk[start] == '<')
+                    {
+                        tokens.Add(chunk.Substring(start, i - start + 1)); // the <header>
+                        start = i + 1;
+                    }
+                }
+                if (start < chunk.Length) tokens.Add(chunk.Substring(start));
+            }
+            return tokens;
         }
 
         private static bool IsHeaderOrOpcode(string token)
@@ -204,6 +242,7 @@ namespace NAudio.Sfz
             string defaultPath = null;
             int noteOffset = 0;
             int octaveOffset = 0;
+            Dictionary<int, int> setCc = null;
 
             foreach (var section in sections)
             {
@@ -216,6 +255,7 @@ namespace NAudio.Sfz
                             int.TryParse(no, out var noVal)) noteOffset = noVal;
                         if (section.Opcodes.TryGetValue("octave_offset", out var oo) &&
                             int.TryParse(oo, out var ooVal)) octaveOffset = ooVal;
+                        CollectSetCc(section.Opcodes, ref setCc);
                         break;
                     case SfzHeader.Global:
                         Merge(global, section.Opcodes);
@@ -233,7 +273,35 @@ namespace NAudio.Sfz
                 }
             }
 
-            return new SfzInstrument(regions, sections, defaultPath, noteOffset, octaveOffset);
+            List<(int Controller, int Value)> initialCc = null;
+            if (setCc != null)
+            {
+                initialCc = new List<(int, int)>(setCc.Count);
+                foreach (var pair in setCc) initialCc.Add((pair.Key, pair.Value));
+            }
+
+            return new SfzInstrument(regions, sections, defaultPath, noteOffset, octaveOffset, initialCc);
+        }
+
+        // <control> set_ccN=v: initial MIDI controller values, e.g. seeding a
+        // loccN/hiccN gate whose controller would otherwise default to 0. Later
+        // control sections override earlier ones per controller; out-of-range
+        // controller numbers are ignored and values clamp to the MIDI 0..127.
+        private static void CollectSetCc(IReadOnlyDictionary<string, string> opcodes, ref Dictionary<int, int> setCc)
+        {
+            const string prefix = "set_cc";
+            foreach (var pair in opcodes)
+            {
+                if (!pair.Key.StartsWith(prefix, StringComparison.Ordinal)) continue;
+                if (!int.TryParse(pair.Key.Substring(prefix.Length), NumberStyles.Integer, CultureInfo.InvariantCulture, out int cc))
+                    continue;
+                if (cc < 0 || cc > 127) continue;
+                if (!int.TryParse(pair.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int value))
+                    continue;
+
+                setCc ??= new Dictionary<int, int>();
+                setCc[cc] = Math.Clamp(value, 0, 127);
+            }
         }
 
         private static SfzRegion BuildRegion(

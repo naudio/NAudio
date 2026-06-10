@@ -10,13 +10,15 @@ namespace NAudio.Sfz
     public sealed class SfzInstrument
     {
         internal SfzInstrument(IReadOnlyList<SfzRegion> regions, IReadOnlyList<SfzSection> sections,
-            string defaultPath, int noteOffset, int octaveOffset)
+            string defaultPath, int noteOffset, int octaveOffset,
+            IReadOnlyList<(int Controller, int Value)> initialControllerValues = null)
         {
             Regions = regions;
             Sections = sections;
             DefaultPath = defaultPath;
             NoteOffset = noteOffset;
             OctaveOffset = octaveOffset;
+            InitialControllerValues = initialControllerValues;
         }
 
         /// <summary>The playable regions, with their opcodes fully merged.</summary>
@@ -37,6 +39,18 @@ namespace NAudio.Sfz
 
         /// <summary>The <c>octave_offset</c> from <c>&lt;control&gt;</c> (default 0).</summary>
         public int OctaveOffset { get; }
+
+        /// <summary>
+        /// Initial MIDI controller values from <c>&lt;control&gt;</c>
+        /// <c>set_ccN</c> opcodes (values clamped to 0–127; the last setting per
+        /// controller wins), or null when the file sets none. A player should
+        /// seed each channel's controller state with these at load time — they
+        /// matter because <c>loccN</c>/<c>hiccN</c> gating reads controllers
+        /// that otherwise default to 0 — without treating them as controller
+        /// <em>changes</em> (so <c>on_loccN</c>/<c>on_hiccN</c> trigger regions
+        /// must not fire from them).
+        /// </summary>
+        public IReadOnlyList<(int Controller, int Value)> InitialControllerValues { get; }
 
         /// <summary>
         /// Interprets every region's opcodes into typed

@@ -344,7 +344,14 @@ namespace NAudio.Sampler
             Note = note;
             Group = region.Group;
             Region = region;
-            IgnoreNoteOff = region.IgnoreNoteOff;
+            // One-shots ignore note-off by definition; release-triggered voices
+            // are fire-and-forget too — their note-off has already happened, so
+            // a LATER note-off (or pedal-up, or All Notes Off) on the same key
+            // must not release them. Like one-shots they end at their own
+            // envelope/sample end, a choke-group cut, voice stealing or All
+            // Sound Off (CC120); a looped release sample therefore rings until
+            // one of those ends it.
+            IgnoreNoteOff = region.IgnoreNoteOff || region.Trigger == SamplerTrigger.Release;
             StartOrder = order;
             IsHeld = true;
             declicking = false;

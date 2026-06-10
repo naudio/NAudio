@@ -107,7 +107,9 @@ namespace NAudio.Sampler
         /// When the region triggers (SFZ <c>trigger</c>). Note-on triggers
         /// (<see cref="SamplerTrigger.Attack"/>/<see cref="SamplerTrigger.First"/>/
         /// <see cref="SamplerTrigger.Legato"/>) sound on note-on; <see cref="SamplerTrigger.Release"/>
-        /// sounds on note-off.
+        /// sounds on note-off — and its voices are fire-and-forget (the voice
+        /// treats them as <see cref="IgnoreNoteOff"/>, since their note-off has
+        /// already happened).
         /// </summary>
         public SamplerTrigger Trigger { get; init; }
 

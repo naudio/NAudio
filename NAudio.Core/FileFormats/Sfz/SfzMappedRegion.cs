@@ -277,6 +277,17 @@ namespace NAudio.Sfz
         /// notes; here that is realised by shifting the explicitly specified
         /// key-valued opcodes the opposite way.
         /// </summary>
+        /// <remarks>
+        /// <c>key</c> versus explicit <c>lokey</c>/<c>hikey</c>/<c>pitch_keycenter</c>:
+        /// strict SFZ semantics apply opcodes in document order (the later one
+        /// wins), but the merged opcode set this maps from no longer carries that
+        /// order. This mapping deliberately deviates with a pragmatic rule:
+        /// <c>key</c> supplies defaults for whichever of the three are <em>not</em>
+        /// explicitly present, and an explicit opcode always wins regardless of
+        /// where it was written — so <c>&lt;group&gt; key=36 &lt;region&gt;
+        /// lokey=35 hikey=37</c> keeps the region's range, with the keycenter
+        /// defaulting from <c>key</c>.
+        /// </remarks>
         public static SfzMappedRegion Map(SfzRegion region, int noteOffset = 0, int octaveOffset = 0)
         {
             var r = new SfzMappedRegion(region);
@@ -286,19 +297,20 @@ namespace NAudio.Sfz
             // every key-valued opcode *down* by the offset — hence the negation.
             int keyShift = -(noteOffset + 12 * octaveOffset);
 
-            // key range: `key` sets all three; otherwise lokey/hikey/pitch_keycenter
-            if (region.Has("key"))
-            {
-                int k = Clamp(Key(region, "key", 60) + keyShift);
-                r.LoKey = r.HiKey = r.PitchKeycenter = k;
-            }
-            else
-            {
-                r.LoKey = region.Has("lokey") ? Clamp(Key(region, "lokey", 0) + keyShift) : 0;
-                r.HiKey = region.Has("hikey") ? Clamp(Key(region, "hikey", 127) + keyShift) : 127;
-                r.PitchKeycenter = region.Has("pitch_keycenter")
-                    ? Clamp(Key(region, "pitch_keycenter", 60) + keyShift) : 60;
-            }
+            // Key range: `key` is shorthand for lokey + hikey + pitch_keycenter.
+            // The merged opcode dictionary has lost document order, so the strict
+            // "later opcode wins" rule between `key` and the explicit opcodes
+            // cannot be applied here; instead (a deliberate deviation — see the
+            // XML remarks) `key` provides the default for whichever of the three
+            // are NOT explicitly present, and an explicit opcode always wins.
+            bool hasKey = region.Has("key");
+            int keyValue = hasKey ? Clamp(Key(region, "key", 60) + keyShift) : 0;
+            r.LoKey = region.Has("lokey") ? Clamp(Key(region, "lokey", 0) + keyShift)
+                : hasKey ? keyValue : 0;
+            r.HiKey = region.Has("hikey") ? Clamp(Key(region, "hikey", 127) + keyShift)
+                : hasKey ? keyValue : 127;
+            r.PitchKeycenter = region.Has("pitch_keycenter") ? Clamp(Key(region, "pitch_keycenter", 60) + keyShift)
+                : hasKey ? keyValue : 60;
 
             r.LoVel = region.GetInt("lovel", 0);
             r.HiVel = region.GetInt("hivel", 127);

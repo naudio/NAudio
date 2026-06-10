@@ -188,11 +188,67 @@ namespace NAudio.Core.Tests.Sfz
         }
 
         [Test]
+        public void SetCcInitialControllerValuesAreCaptured()
+        {
+            var sfz = "<control> set_cc20=100 set_cc7=90\n<region> sample=a.wav";
+            var instrument = SfzParser.Parse(sfz);
+            Assert.That(instrument.InitialControllerValues, Has.Count.EqualTo(2));
+            Assert.That(instrument.InitialControllerValues, Has.Member((20, 100)));
+            Assert.That(instrument.InitialControllerValues, Has.Member((7, 90)));
+
+            Assert.That(SfzParser.Parse("<region> sample=a.wav").InitialControllerValues, Is.Null);
+        }
+
+        [Test]
+        public void SetCcLaterControlSectionsWinAndMalformedEntriesAreIgnored()
+        {
+            var sfz = @"
+<control> set_cc20=10 set_cc999=64 set_ccx=64 set_cc7=200
+<control> set_cc20=90
+<region> sample=a.wav";
+            var instrument = SfzParser.Parse(sfz);
+            Assert.That(instrument.InitialControllerValues, Has.Count.EqualTo(2));
+            Assert.That(instrument.InitialControllerValues, Has.Member((20, 90)), "the later section wins");
+            Assert.That(instrument.InitialControllerValues, Has.Member((7, 127)), "values clamp to MIDI 0..127");
+        }
+
+        [Test]
         public void SectionsArePreservedInOrder()
         {
             var sfz = "<global> volume=0\n<group> pan=0\n<region> sample=a.wav";
             var headers = SfzParser.Parse(sfz).Sections.Select(s => s.Header).ToArray();
             Assert.That(headers, Is.EqualTo(new[] { SfzHeader.Global, SfzHeader.Group, SfzHeader.Region }));
+        }
+
+        [Test]
+        public void HeaderAdjacentToAnOpcodeIsStillAHeader()
+        {
+            // real players treat '<' as a delimiter wherever it appears, so a
+            // header written with no whitespace before its first opcode must not
+            // collapse into a junk opcode key (silently dropping the region)
+            var instrument = SfzParser.Parse("<region>sample=a.wav");
+            Assert.That(instrument.Regions, Has.Count.EqualTo(1));
+            Assert.That(instrument.Regions[0].Sample, Is.EqualTo("a.wav"));
+        }
+
+        [Test]
+        public void AdjacentHeadersAreSeparateSections()
+        {
+            var instrument = SfzParser.Parse("<group><region>sample=a.wav");
+            Assert.That(instrument.Sections.Select(s => s.Header),
+                Is.EqualTo(new[] { SfzHeader.Group, SfzHeader.Region }));
+            Assert.That(instrument.Regions, Has.Count.EqualTo(1));
+            Assert.That(instrument.Regions[0].Sample, Is.EqualTo("a.wav"));
+        }
+
+        [Test]
+        public void MixedLineWithUnspacedHeadersParsesHeadersAndOpcodes()
+        {
+            var instrument = SfzParser.Parse("<group>key=36 <region>sample=a.wav");
+            Assert.That(instrument.Regions, Has.Count.EqualTo(1));
+            var region = instrument.Regions[0];
+            Assert.That(region.Sample, Is.EqualTo("a.wav"));
+            Assert.That(region.GetInt("key", -1), Is.EqualTo(36)); // inherited from the group
         }
 
         [Test]

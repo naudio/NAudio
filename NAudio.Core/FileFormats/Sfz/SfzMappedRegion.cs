@@ -61,11 +61,35 @@ namespace NAudio.Sfz
     }
 
     /// <summary>
-    /// An SFZ region with its Tier-1 opcodes interpreted into typed,
+    /// One per-region SFZ EQ band (<c>eqN_freq</c>/<c>eqN_bw</c>/<c>eqN_gain</c>):
+    /// a centre frequency in Hz, a bandwidth in octaves and a gain in dB.
+    /// </summary>
+    public readonly struct SfzEqBand
+    {
+        /// <summary>Creates one EQ band.</summary>
+        public SfzEqBand(float frequencyHz, float bandwidthOctaves, float gainDb)
+        {
+            FrequencyHz = frequencyHz;
+            BandwidthOctaves = bandwidthOctaves;
+            GainDb = gainDb;
+        }
+
+        /// <summary>Centre frequency in Hz (<c>eqN_freq</c>; the spec defaults are 50/500/5000 Hz for bands 1/2/3).</summary>
+        public float FrequencyHz { get; }
+        /// <summary>Bandwidth in octaves (<c>eqN_bw</c>, default 1).</summary>
+        public float BandwidthOctaves { get; }
+        /// <summary>Gain in dB (<c>eqN_gain</c>, default 0 — a flat, no-op band).</summary>
+        public float GainDb { get; }
+    }
+
+    /// <summary>
+    /// An SFZ region with its Tier-1 and Tier-2 opcodes interpreted into typed,
     /// engine-ready synthesis parameters: absolute key/velocity ranges (note
     /// names resolved, offsets applied), tuning in cents, volume in dB, pan
     /// normalised to ±1, the amplitude envelope in seconds, the filter, loop
-    /// behaviour, sample offsets, and group/trigger routing.
+    /// behaviour, sample offsets, group/trigger routing, note-on selection
+    /// (keyswitches, round-robin, random and CC windows), crossfades, the
+    /// per-region LFOs/EGs and EQ bands, effect sends and release decay.
     ///
     /// This is the SFZ semantic layer, the counterpart to the SoundFont
     /// generator model. It does not load samples or touch the voice engine —
@@ -212,6 +236,32 @@ namespace NAudio.Sfz
         /// <summary>Velocity-crossfade curve (<c>xf_velcurve</c>, default power).</summary>
         public SfzCrossfadeCurve VelocityFadeCurve { get; private set; } = SfzCrossfadeCurve.Power;
 
+        /// <summary>Release-trigger decay in dB per second the note was held (<c>rt_decay</c>, default 0).</summary>
+        public float ReleaseDecayDbPerSecond { get; private set; }
+        /// <summary>Send level to the first effect bus as a percentage (<c>effect1</c>, default 0).</summary>
+        public float Effect1Percent { get; private set; }
+        /// <summary>Send level to the second effect bus as a percentage (<c>effect2</c>, default 0).</summary>
+        public float Effect2Percent { get; private set; }
+        /// <summary>CC value windows that <em>trigger</em> the region when the controller
+        /// rises into them (<c>on_loccN</c>/<c>on_hiccN</c>); null when the region is
+        /// not CC-triggered.</summary>
+        public IReadOnlyList<(int Controller, int Low, int High)> OnCcTriggers { get; private set; }
+        /// <summary>The EQ bands the region specifies (<c>eq1_*</c>/<c>eq2_*</c>/<c>eq3_*</c>),
+        /// with unspecified members defaulted (centre frequency 50/500/5000 Hz by band,
+        /// bandwidth 1 octave, gain 0); null when no EQ opcode is present.</summary>
+        public IReadOnlyList<SfzEqBand> EqBands { get; private set; }
+
+        /// <summary>Amplitude (tremolo) LFO (<c>amplfo_freq</c>/<c>amplfo_depth</c>/<c>amplfo_delay</c>; depth in dB).</summary>
+        public SfzLfo AmpLfo { get; private set; }
+        /// <summary>Filter-cutoff LFO (<c>fillfo_freq</c>/<c>fillfo_depth</c>/<c>fillfo_delay</c>; depth in cents).</summary>
+        public SfzLfo FilterLfo { get; private set; }
+        /// <summary>Pitch (vibrato) LFO (<c>pitchlfo_freq</c>/<c>pitchlfo_depth</c>/<c>pitchlfo_delay</c>; depth in cents).</summary>
+        public SfzLfo PitchLfo { get; private set; }
+        /// <summary>Filter-cutoff modulation envelope (<c>fileg_*</c>; depth in cents).</summary>
+        public SfzModulationEnvelope FilterEg { get; private set; }
+        /// <summary>Pitch modulation envelope (<c>pitcheg_*</c>; depth in cents).</summary>
+        public SfzModulationEnvelope PitchEg { get; private set; }
+
         /// <summary>
         /// Interprets a parsed <see cref="SfzRegion"/>'s opcodes. The
         /// <paramref name="noteOffset"/> and <paramref name="octaveOffset"/> (from
@@ -303,7 +353,83 @@ namespace NAudio.Sfz
             r.KeyFadeCurve = ParseCrossfadeCurve(region.GetString("xf_keycurve"));
             r.VelocityFadeCurve = ParseCrossfadeCurve(region.GetString("xf_velcurve"));
 
+            // Tier-2 modulation, EQ, effect sends, release decay and CC triggers
+            r.ReleaseDecayDbPerSecond = region.GetFloat("rt_decay", 0);
+            r.Effect1Percent = region.GetFloat("effect1", 0);
+            r.Effect2Percent = region.GetFloat("effect2", 0);
+            r.OnCcTriggers = BuildOnCcTriggers(region);
+            r.EqBands = BuildEqBands(region);
+            r.AmpLfo = BuildLfo(region, "amplfo");
+            r.FilterLfo = BuildLfo(region, "fillfo");
+            r.PitchLfo = BuildLfo(region, "pitchlfo");
+            r.FilterEg = BuildModulationEnvelope(region, "fileg");
+            r.PitchEg = BuildModulationEnvelope(region, "pitcheg");
+
             return r;
+        }
+
+        private static SfzLfo BuildLfo(SfzRegion region, string prefix) =>
+            new SfzLfo(
+                region.GetFloat(prefix + "_freq", 0),
+                region.GetFloat(prefix + "_depth", 0),
+                region.GetFloat(prefix + "_delay", 0));
+
+        private static SfzModulationEnvelope BuildModulationEnvelope(SfzRegion region, string prefix) =>
+            new SfzModulationEnvelope(
+                region.GetFloat(prefix + "_delay", 0),
+                region.GetFloat(prefix + "_attack", 0),
+                region.GetFloat(prefix + "_hold", 0),
+                region.GetFloat(prefix + "_decay", 0),
+                region.GetFloat(prefix + "_sustain", 100f),
+                region.GetFloat(prefix + "_release", 0),
+                region.GetFloat(prefix + "_depth", 0));
+
+        // Collects the eqN_* opcodes into typed bands: a band appears when any of
+        // its three opcodes is present, with the spec defaults for the rest.
+        private static IReadOnlyList<SfzEqBand> BuildEqBands(SfzRegion region)
+        {
+            List<SfzEqBand> bands = null;
+            AddEqBand(region, "eq1", 50f, ref bands);
+            AddEqBand(region, "eq2", 500f, ref bands);
+            AddEqBand(region, "eq3", 5000f, ref bands);
+            return bands;
+        }
+
+        private static void AddEqBand(SfzRegion region, string prefix, float defaultFreq,
+            ref List<SfzEqBand> bands)
+        {
+            if (!region.Has(prefix + "_freq") && !region.Has(prefix + "_bw") && !region.Has(prefix + "_gain"))
+                return;
+            bands ??= new List<SfzEqBand>(3);
+            bands.Add(new SfzEqBand(
+                region.GetFloat(prefix + "_freq", defaultFreq),
+                region.GetFloat(prefix + "_bw", 1f),
+                region.GetFloat(prefix + "_gain", 0f)));
+        }
+
+        // Collects on_loccN/on_hiccN opcodes into per-controller trigger windows.
+        private static IReadOnlyList<(int Controller, int Low, int High)> BuildOnCcTriggers(SfzRegion region)
+        {
+            Dictionary<int, (int Low, int High)> triggers = null;
+            foreach (var pair in region.Opcodes)
+            {
+                bool low = pair.Key.StartsWith("on_locc");
+                bool high = pair.Key.StartsWith("on_hicc");
+                if (!low && !high) continue;
+                if (!int.TryParse(pair.Key.Substring(7), NumberStyles.Integer, CultureInfo.InvariantCulture, out int cc))
+                    continue;
+                if (!int.TryParse(pair.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int value))
+                    continue;
+
+                triggers ??= new Dictionary<int, (int, int)>();
+                var current = triggers.TryGetValue(cc, out var g) ? g : (Low: 0, High: 127);
+                triggers[cc] = low ? (value, current.High) : (current.Low, value);
+            }
+
+            if (triggers == null) return null;
+            var result = new List<(int, int, int)>(triggers.Count);
+            foreach (var pair in triggers) result.Add((pair.Key, pair.Value.Low, pair.Value.High));
+            return result;
         }
 
         // Collects loccN/hiccN opcodes into per-controller [low, high] windows.

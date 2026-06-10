@@ -101,9 +101,9 @@ namespace NAudio.Sampler
                 LowRandom = region.LowRandom,
                 HighRandom = region.HighRandom,
                 CcGates = region.CcGates,
-                ReleaseDecayDbPerSecond = region.Region.GetFloat("rt_decay", 0f),
-                OnCcTriggers = BuildOnCcTriggers(region.Region),
-                EqBands = BuildEqBands(region.Region),
+                ReleaseDecayDbPerSecond = region.ReleaseDecayDbPerSecond,
+                OnCcTriggers = region.OnCcTriggers,
+                EqBands = BuildEqBands(region.EqBands),
                 KeyFadeInLow = region.KeyFadeInLow,
                 KeyFadeInHigh = region.KeyFadeInHigh,
                 KeyFadeOutLow = region.KeyFadeOutLow,
@@ -133,25 +133,20 @@ namespace NAudio.Sampler
         }
 
         // SFZ has up to three EQ bands (eq1/eq2/eq3); only bands with a non-zero
-        // gain are applied. Default centre frequencies are 50/500/5000 Hz.
-        private static IReadOnlyList<SamplerEqBand> BuildEqBands(NAudio.Sfz.SfzRegion region)
+        // gain are applied (a flat band is a no-op). The semantic layer supplies
+        // the bands in natural units; the octave bandwidth becomes the peaking
+        // filter's Q here.
+        private static IReadOnlyList<SamplerEqBand> BuildEqBands(IReadOnlyList<SfzEqBand> bands)
         {
-            List<SamplerEqBand> bands = null;
-            AddEqBand(region, "eq1", 50f, ref bands);
-            AddEqBand(region, "eq2", 500f, ref bands);
-            AddEqBand(region, "eq3", 5000f, ref bands);
-            return bands;
-        }
-
-        private static void AddEqBand(NAudio.Sfz.SfzRegion region, string prefix, float defaultFreq,
-            ref List<SamplerEqBand> bands)
-        {
-            float gain = region.GetFloat(prefix + "_gain", 0f);
-            if (gain == 0f) return; // flat band -> no-op
-            float freq = region.GetFloat(prefix + "_freq", defaultFreq);
-            float bandwidth = region.GetFloat(prefix + "_bw", 1f);
-            bands ??= new List<SamplerEqBand>(3);
-            bands.Add(new SamplerEqBand(freq, gain, BandwidthToQ(bandwidth)));
+            if (bands == null) return null;
+            List<SamplerEqBand> result = null;
+            foreach (var band in bands)
+            {
+                if (band.GainDb == 0f) continue; // flat band -> no-op
+                result ??= new List<SamplerEqBand>(3);
+                result.Add(new SamplerEqBand(band.FrequencyHz, band.GainDb, BandwidthToQ(band.BandwidthOctaves)));
+            }
+            return result;
         }
 
         // octave bandwidth -> peaking-filter Q
@@ -160,29 +155,6 @@ namespace NAudio.Sampler
             if (bandwidth <= 0f) bandwidth = 1f;
             double t = Math.Pow(2.0, bandwidth);
             return (float)(Math.Sqrt(t) / (t - 1.0));
-        }
-
-        // Collects on_loccN/on_hiccN opcodes into per-controller trigger windows.
-        private static IReadOnlyList<(int Controller, int Low, int High)> BuildOnCcTriggers(NAudio.Sfz.SfzRegion region)
-        {
-            Dictionary<int, (int Low, int High)> triggers = null;
-            foreach (var pair in region.Opcodes)
-            {
-                bool low = pair.Key.StartsWith("on_locc");
-                bool high = pair.Key.StartsWith("on_hicc");
-                if (!low && !high) continue;
-                if (!int.TryParse(pair.Key.Substring(7), out int cc)) continue;
-                if (!int.TryParse(pair.Value, out int value)) continue;
-
-                triggers ??= new Dictionary<int, (int, int)>();
-                var current = triggers.TryGetValue(cc, out var g) ? g : (Low: 0, High: 127);
-                triggers[cc] = low ? (value, current.High) : (current.Low, value);
-            }
-
-            if (triggers == null) return null;
-            var result = new List<(int, int, int)>(triggers.Count);
-            foreach (var pair in triggers) result.Add((pair.Key, pair.Value.Low, pair.Value.High));
-            return result;
         }
 
         private static SamplerCrossfadeCurve MapCrossfadeCurve(SfzCrossfadeCurve curve) =>
@@ -236,8 +208,8 @@ namespace NAudio.Sampler
             gen[GeneratorEnum.SampleModes] = (short)MapLoopMode(loopMode);
 
             // effect sends: effect1 -> reverb bus, effect2 -> chorus bus (0..100% -> 0.1% units)
-            gen[GeneratorEnum.ReverbEffectsSend] = GeneratorUnits.Clamp16(region.Region.GetFloat("effect1", 0) * 10.0);
-            gen[GeneratorEnum.ChorusEffectsSend] = GeneratorUnits.Clamp16(region.Region.GetFloat("effect2", 0) * 10.0);
+            gen[GeneratorEnum.ReverbEffectsSend] = GeneratorUnits.Clamp16(region.Effect1Percent * 10.0);
+            gen[GeneratorEnum.ChorusEffectsSend] = GeneratorUnits.Clamp16(region.Effect2Percent * 10.0);
 
             ApplyModulation(region, gen);
             return gen;
@@ -251,53 +223,42 @@ namespace NAudio.Sampler
         // (the amp LFO / filter EG wins) while keeping independent depths.
         private static void ApplyModulation(SfzMappedRegion region, SoundFontGenerators gen)
         {
-            var r = region.Region;
-
             // pitch LFO (vibrato) -> dedicated vibrato LFO slot
-            float pitchLfoFreq = r.GetFloat("pitchlfo_freq", 0);
-            float pitchLfoDepth = r.GetFloat("pitchlfo_depth", 0); // cents
-            if (pitchLfoFreq > 0 && pitchLfoDepth != 0)
+            var pitchLfo = region.PitchLfo;
+            if (pitchLfo.IsActive)
             {
-                gen[GeneratorEnum.VibratoLFOToPitch] = GeneratorUnits.Clamp16(pitchLfoDepth);
-                gen[GeneratorEnum.FrequencyVibratoLFO] = GeneratorUnits.Clamp16(SynthMath.HertzToAbsoluteCents(pitchLfoFreq));
-                gen[GeneratorEnum.DelayVibratoLFO] = GeneratorUnits.ToTimecents(r.GetFloat("pitchlfo_delay", 0));
+                gen[GeneratorEnum.VibratoLFOToPitch] = GeneratorUnits.Clamp16(pitchLfo.Depth); // cents
+                gen[GeneratorEnum.FrequencyVibratoLFO] = GeneratorUnits.Clamp16(SynthMath.HertzToAbsoluteCents(pitchLfo.FrequencyHz));
+                gen[GeneratorEnum.DelayVibratoLFO] = GeneratorUnits.ToTimecents(pitchLfo.DelaySeconds);
             }
 
             // amp LFO (tremolo) + filter LFO (wah) -> the shared modulation LFO
-            float ampLfoFreq = r.GetFloat("amplfo_freq", 0);
-            float ampLfoDepthDb = r.GetFloat("amplfo_depth", 0);
-            float filLfoFreq = r.GetFloat("fillfo_freq", 0);
-            float filLfoDepth = r.GetFloat("fillfo_depth", 0); // cents
-            bool ampLfo = ampLfoFreq > 0 && ampLfoDepthDb != 0;
-            bool filLfo = filLfoFreq > 0 && filLfoDepth != 0;
-            if (ampLfo || filLfo)
+            var ampLfo = region.AmpLfo;
+            var filterLfo = region.FilterLfo;
+            if (ampLfo.IsActive || filterLfo.IsActive)
             {
-                float freq = ampLfo ? ampLfoFreq : filLfoFreq;       // amp LFO rate wins if both
-                float delay = ampLfo ? r.GetFloat("amplfo_delay", 0) : r.GetFloat("fillfo_delay", 0);
-                gen[GeneratorEnum.FrequencyModulationLFO] = GeneratorUnits.Clamp16(SynthMath.HertzToAbsoluteCents(freq));
-                gen[GeneratorEnum.DelayModulationLFO] = GeneratorUnits.ToTimecents(delay);
-                if (ampLfo) gen[GeneratorEnum.ModulationLFOToVolume] = GeneratorUnits.Clamp16(ampLfoDepthDb * 10.0); // dB -> cB
-                if (filLfo) gen[GeneratorEnum.ModulationLFOToFilterCutoffFrequency] = GeneratorUnits.Clamp16(filLfoDepth);
+                var shared = ampLfo.IsActive ? ampLfo : filterLfo; // amp LFO rate/delay win if both
+                gen[GeneratorEnum.FrequencyModulationLFO] = GeneratorUnits.Clamp16(SynthMath.HertzToAbsoluteCents(shared.FrequencyHz));
+                gen[GeneratorEnum.DelayModulationLFO] = GeneratorUnits.ToTimecents(shared.DelaySeconds);
+                if (ampLfo.IsActive) gen[GeneratorEnum.ModulationLFOToVolume] = GeneratorUnits.Clamp16(ampLfo.Depth * 10.0); // dB -> cB
+                if (filterLfo.IsActive) gen[GeneratorEnum.ModulationLFOToFilterCutoffFrequency] = GeneratorUnits.Clamp16(filterLfo.Depth); // cents
             }
 
             // filter EG + pitch EG -> the shared modulation envelope
-            float filEgDepth = r.GetFloat("fileg_depth", 0);    // cents
-            float pitchEgDepth = r.GetFloat("pitcheg_depth", 0); // cents
-            bool filEg = filEgDepth != 0;
-            bool pitchEg = pitchEgDepth != 0;
-            if (filEg || pitchEg)
+            var filterEg = region.FilterEg;
+            var pitchEg = region.PitchEg;
+            if (filterEg.IsActive || pitchEg.IsActive)
             {
-                string p = filEg ? "fileg" : "pitcheg"; // filter EG shape wins if both
-                gen[GeneratorEnum.DelayModulationEnvelope] = GeneratorUnits.ToTimecents(r.GetFloat(p + "_delay", 0));
-                gen[GeneratorEnum.AttackModulationEnvelope] = GeneratorUnits.ToTimecents(r.GetFloat(p + "_attack", 0));
-                gen[GeneratorEnum.HoldModulationEnvelope] = GeneratorUnits.ToTimecents(r.GetFloat(p + "_hold", 0));
-                gen[GeneratorEnum.DecayModulationEnvelope] = GeneratorUnits.ToTimecents(r.GetFloat(p + "_decay", 0));
-                gen[GeneratorEnum.ReleaseModulationEnvelope] = GeneratorUnits.ToTimecents(r.GetFloat(p + "_release", 0));
+                var shape = filterEg.IsActive ? filterEg : pitchEg; // filter EG shape wins if both
+                gen[GeneratorEnum.DelayModulationEnvelope] = GeneratorUnits.ToTimecents(shape.DelaySeconds);
+                gen[GeneratorEnum.AttackModulationEnvelope] = GeneratorUnits.ToTimecents(shape.AttackSeconds);
+                gen[GeneratorEnum.HoldModulationEnvelope] = GeneratorUnits.ToTimecents(shape.HoldSeconds);
+                gen[GeneratorEnum.DecayModulationEnvelope] = GeneratorUnits.ToTimecents(shape.DecaySeconds);
+                gen[GeneratorEnum.ReleaseModulationEnvelope] = GeneratorUnits.ToTimecents(shape.ReleaseSeconds);
                 // mod-env sustain generator is 0.1% "decreasing": level = 1 - permille/1000
-                float sustainPercent = r.GetFloat(p + "_sustain", 100f);
-                gen[GeneratorEnum.SustainModulationEnvelope] = GeneratorUnits.Clamp16(1000.0 - 10.0 * sustainPercent);
-                if (filEg) gen[GeneratorEnum.ModulationEnvelopeToFilterCutoffFrequency] = GeneratorUnits.Clamp16(filEgDepth);
-                if (pitchEg) gen[GeneratorEnum.ModulationEnvelopeToPitch] = GeneratorUnits.Clamp16(pitchEgDepth);
+                gen[GeneratorEnum.SustainModulationEnvelope] = GeneratorUnits.Clamp16(1000.0 - 10.0 * shape.SustainPercent);
+                if (filterEg.IsActive) gen[GeneratorEnum.ModulationEnvelopeToFilterCutoffFrequency] = GeneratorUnits.Clamp16(filterEg.DepthCents);
+                if (pitchEg.IsActive) gen[GeneratorEnum.ModulationEnvelopeToPitch] = GeneratorUnits.Clamp16(pitchEg.DepthCents);
             }
         }
 

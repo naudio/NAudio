@@ -257,5 +257,84 @@ namespace NAudio.Core.Tests.Sfz
             Assert.That(r.HighRandom, Is.EqualTo(1f));
             Assert.That(r.SequenceLength, Is.EqualTo(1));
         }
+
+        [Test]
+        public void ReleaseDecayAndEffectSendsMap()
+        {
+            var r = MapFirst("<region> sample=a.wav rt_decay=18 effect1=50 effect2=25");
+            Assert.That(r.ReleaseDecayDbPerSecond, Is.EqualTo(18f));
+            Assert.That(r.Effect1Percent, Is.EqualTo(50f));
+            Assert.That(r.Effect2Percent, Is.EqualTo(25f));
+
+            var defaults = MapFirst("<region> sample=a.wav");
+            Assert.That(defaults.ReleaseDecayDbPerSecond, Is.EqualTo(0f));
+            Assert.That(defaults.Effect1Percent, Is.EqualTo(0f));
+            Assert.That(defaults.Effect2Percent, Is.EqualTo(0f));
+        }
+
+        [Test]
+        public void OnCcTriggersAreCollectedPerController()
+        {
+            var r = MapFirst("<region> sample=a.wav on_locc20=64 on_hicc20=127 on_hicc64=100");
+            Assert.That(r.OnCcTriggers, Has.Count.EqualTo(2));
+            Assert.That(r.OnCcTriggers, Has.Member((20, 64, 127)));
+            Assert.That(r.OnCcTriggers, Has.Member((64, 0, 100))); // missing on_locc defaults to 0
+
+            Assert.That(MapFirst("<region> sample=a.wav").OnCcTriggers, Is.Null);
+        }
+
+        [Test]
+        public void EqBandsCollectSpecifiedBandsWithDefaults()
+        {
+            var r = MapFirst("<region> sample=a.wav eq1_freq=800 eq1_gain=6 eq2_gain=-3 eq3_bw=2");
+            Assert.That(r.EqBands, Has.Count.EqualTo(3));
+            Assert.That(r.EqBands[0].FrequencyHz, Is.EqualTo(800f));
+            Assert.That(r.EqBands[0].BandwidthOctaves, Is.EqualTo(1f)); // default bandwidth
+            Assert.That(r.EqBands[0].GainDb, Is.EqualTo(6f));
+            Assert.That(r.EqBands[1].FrequencyHz, Is.EqualTo(500f));    // band-2 default centre
+            Assert.That(r.EqBands[1].GainDb, Is.EqualTo(-3f));
+            Assert.That(r.EqBands[2].FrequencyHz, Is.EqualTo(5000f));   // band-3 default centre
+            Assert.That(r.EqBands[2].BandwidthOctaves, Is.EqualTo(2f));
+            Assert.That(r.EqBands[2].GainDb, Is.EqualTo(0f), "no gain opcode -> a flat band");
+
+            Assert.That(MapFirst("<region> sample=a.wav").EqBands, Is.Null);
+        }
+
+        [Test]
+        public void LfoOpcodesMapToTypedSettings()
+        {
+            var r = MapFirst("<region> sample=a.wav amplfo_freq=4 amplfo_depth=6 amplfo_delay=0.5 pitchlfo_freq=5 pitchlfo_depth=50");
+            Assert.That(r.AmpLfo.FrequencyHz, Is.EqualTo(4f));
+            Assert.That(r.AmpLfo.Depth, Is.EqualTo(6f));
+            Assert.That(r.AmpLfo.DelaySeconds, Is.EqualTo(0.5f));
+            Assert.That(r.AmpLfo.IsActive, Is.True);
+            Assert.That(r.PitchLfo.FrequencyHz, Is.EqualTo(5f));
+            Assert.That(r.PitchLfo.Depth, Is.EqualTo(50f));
+            Assert.That(r.PitchLfo.DelaySeconds, Is.EqualTo(0f));
+            Assert.That(r.PitchLfo.IsActive, Is.True);
+            Assert.That(r.FilterLfo.IsActive, Is.False, "no fillfo opcodes -> inactive");
+
+            // a depth with no rate modulates nothing (and vice versa)
+            var partial = MapFirst("<region> sample=a.wav fillfo_depth=1200");
+            Assert.That(partial.FilterLfo.Depth, Is.EqualTo(1200f));
+            Assert.That(partial.FilterLfo.IsActive, Is.False);
+        }
+
+        [Test]
+        public void ModulationEnvelopeOpcodesMapToTypedSettings()
+        {
+            var r = MapFirst("<region> sample=a.wav fileg_depth=1200 fileg_attack=0.1 fileg_sustain=50 pitcheg_depth=200");
+            Assert.That(r.FilterEg.DepthCents, Is.EqualTo(1200f));
+            Assert.That(r.FilterEg.AttackSeconds, Is.EqualTo(0.1f));
+            Assert.That(r.FilterEg.SustainPercent, Is.EqualTo(50f));
+            Assert.That(r.FilterEg.IsActive, Is.True);
+            Assert.That(r.PitchEg.DepthCents, Is.EqualTo(200f));
+            Assert.That(r.PitchEg.SustainPercent, Is.EqualTo(100f), "sustain defaults to 100%");
+            Assert.That(r.PitchEg.IsActive, Is.True);
+
+            var depthless = MapFirst("<region> sample=a.wav fileg_attack=0.2");
+            Assert.That(depthless.FilterEg.AttackSeconds, Is.EqualTo(0.2f));
+            Assert.That(depthless.FilterEg.IsActive, Is.False, "an EG without depth modulates nothing");
+        }
     }
 }

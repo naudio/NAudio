@@ -3,6 +3,7 @@ using System.IO;
 using NAudio.Dsp;
 using NAudio.Midi;
 using NAudio.Sampler;
+using NAudio.Sequencing;
 using NUnit.Framework;
 
 namespace NAudio.Sampler.Tests
@@ -133,6 +134,51 @@ namespace NAudio.Sampler.Tests
                 File.Delete(midi);
                 if (File.Exists(wav)) File.Delete(wav);
             }
+        }
+
+        [Test]
+        public void SteadyStateSequencedPlaybackReadDoesNotAllocate()
+        {
+            // The whole sequenced-playback hot path end-to-end: a one-bar MIDI pattern looped by
+            // the transport, so every SequencedMidiPlayer.Read queries the timeline (through the
+            // lock-free snapshot), dispatches note events and renders the sampler. After warm-up
+            // (JIT, voice pool, pending-list capacity) it must allocate nothing per Read.
+            string path = WriteMidiFile(col =>
+            {
+                var t = col[0];
+                t.Add(new TempoEvent(500000, 0)); // 120 bpm
+                for (int i = 0; i < 8; i++)       // eighth notes filling the bar (ppq 480)
+                {
+                    t.Add(new NoteOnEvent(i * 240, 1, 60 + i % 4, 100, 0));
+                    t.Add(new NoteEvent(i * 240 + 120, 1, MidiCommandCode.NoteOff, 60 + i % 4, 0));
+                }
+            });
+            try
+            {
+                var seq = MidiFileSequence.FromFile(path);
+                var instrument = new SingleSampleInstrument(Constant(0.5f, 64), SampleRate, rootKey: 60)
+                {
+                    LoopMode = LoopMode.Continuous,
+                    LoopEnd = 64
+                };
+                var sampler = new SingleSampleSampler(instrument, SampleRate);
+                var transport = new Transport(seq.TempoMap, SampleRate)
+                {
+                    Loop = new LoopRegion(0, MusicalTime.CanonicalPpq * 4L) // loop the bar forever
+                };
+                var player = new SequencedMidiPlayer(transport, seq.Timeline, sampler);
+                transport.Play();
+                var buffer = new float[1024 * 2];
+
+                for (int i = 0; i < 400; i++) player.Read(buffer); // warm-up: ~4.6 loop iterations
+
+                long before = GC.GetAllocatedBytesForCurrentThread();
+                for (int i = 0; i < 400; i++) player.Read(buffer);
+                long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+
+                Assert.That(allocated, Is.Zero, "steady-state sequenced playback Read must be allocation-free");
+            }
+            finally { File.Delete(path); }
         }
 
         private static float[] Constant(float value, int length)

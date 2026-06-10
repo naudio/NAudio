@@ -14,6 +14,8 @@ namespace NAudio.Sequencing
     /// downstream <c>process()</c> calls if the plugin's max block size is smaller. The dispatcher
     /// receives each event with its effective absolute tick (after the position transform and, in a
     /// loop, after iteration translation) and a sample-accurate frame offset relative to <c>startFrame</c>.
+    /// Queries are audio-thread friendly: they run over the timeline's lock-free immutable snapshot
+    /// (see <see cref="EventTimeline{T}.EventsInRangeSpan"/>) and perform no heap allocations.
     /// </remarks>
     public static class EventBufferQuery
     {
@@ -64,12 +66,13 @@ namespace NAudio.Sequencing
         private static void QueryAbsolute<T>(
             EventTimeline<T> timeline, ITempoMap tempoMap, IPositionTransform transform,
             long absStartTick, long absEndTick, long startFrame, long endFrameExcl,
-            int sampleRate, long maxShift, Action<SequencerEvent<T>, int> dispatcher)
+            int sampleRate, long maxShift, Action<SequencerEvent<T>, int> dispatcher,
+            long nominalEndTickClamp = long.MaxValue)
         {
             long queryStart = Math.Max(0, absStartTick - maxShift - 1);
-            long queryEnd = absEndTick + maxShift + 2;
-            var candidates = timeline.EventsInRange(queryStart, queryEnd);
-            for (int i = 0; i < candidates.Count; i++)
+            long queryEnd = Math.Min(absEndTick + maxShift + 2, nominalEndTickClamp);
+            var candidates = timeline.EventsInRangeSpan(queryStart, queryEnd);
+            for (int i = 0; i < candidates.Length; i++)
             {
                 var ev = candidates[i];
                 long effective = transform.Transform(ev.Tick);
@@ -87,9 +90,16 @@ namespace NAudio.Sequencing
         {
             if (absStartTick < loop.StartTick)
             {
+                // Pre-roll: dispatch the section before the loop entry. Clamp the nominal tick
+                // over-scan at loop.StartTick — events nominally at/after the loop start are loop
+                // content and are dispatched (at any swung frame, including swung backward into the
+                // pre-roll frames) by the iteration walk below; without the clamp an event at
+                // exactly loop.StartTick would fire twice when a buffer spans the loop entry.
+                // Swung-forward pre-roll events keep firing: the frame bounds stay the buffer's.
                 QueryAbsolute(timeline, tempoMap, transform,
                               absStartTick, Math.Min(absEndTick, loop.StartTick),
-                              startFrame, endFrameExcl, sampleRate, maxShift, dispatcher);
+                              startFrame, endFrameExcl, sampleRate, maxShift, dispatcher,
+                              nominalEndTickClamp: loop.StartTick);
                 if (absEndTick <= loop.StartTick) return;
                 absStartTick = loop.StartTick;
             }
@@ -100,7 +110,7 @@ namespace NAudio.Sequencing
             // belong to the next iteration's StartTick, not the current iteration — no over-scan on
             // either side: the frame filter below is the authoritative bound, and swing-forward shifts
             // of events nominally inside the loop can still land past loop.EndTick and fire correctly.
-            var candidates = timeline.EventsInRange(loop.StartTick, loop.EndTick);
+            var candidates = timeline.EventsInRangeSpan(loop.StartTick, loop.EndTick);
 
             for (long n = 0; n < MaxLoopIterationsPerCall; n++)
             {
@@ -108,7 +118,7 @@ namespace NAudio.Sequencing
                 long iterStartFrame = (long)(tempoMap.SecondsFromTicks(iterAbsStart) * sampleRate);
                 if (iterStartFrame >= endFrameExcl) break;
 
-                for (int i = 0; i < candidates.Count; i++)
+                for (int i = 0; i < candidates.Length; i++)
                 {
                     var ev = candidates[i];
                     long effective = transform.Transform(ev.Tick);

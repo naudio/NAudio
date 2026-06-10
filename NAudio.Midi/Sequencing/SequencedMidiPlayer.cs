@@ -15,6 +15,12 @@ namespace NAudio.Midi
     /// instrument in segments between events so timing is sample-accurate within
     /// the block.
     /// </summary>
+    /// <remarks>
+    /// The steady-state <see cref="Read"/> path performs no heap allocations and
+    /// takes no lock on the timeline: event queries run over
+    /// <see cref="EventTimeline{T}"/>'s lock-free immutable snapshot, and the
+    /// per-buffer event list and dispatch delegate are allocated once up front.
+    /// </remarks>
     public sealed class SequencedMidiPlayer : ISampleProvider
     {
         private readonly Transport transport;

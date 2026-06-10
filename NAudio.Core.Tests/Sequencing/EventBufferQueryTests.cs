@@ -139,6 +139,54 @@ namespace NAudio.Core.Tests.Sequencing
         }
 
         [Test]
+        public void Looped_Query_Covers_PreRoll_Before_The_Loop_Region()
+        {
+            // Loop over bar 2 only (ticks [bar, 2*bar)). An event in bar 1 is pre-roll: it fires
+            // exactly once on the way in; the event at the loop start then fires every iteration.
+            long bar = MusicalTime.CanonicalPpq * 4L; // 1 bar = 2 s = 96000 frames at 120 bpm / 48 kHz
+            var timeline = new EventTimeline<int>();
+            timeline.Add(bar / 2, 1);                 // pre-roll event -> frame 48000
+            timeline.Add(bar, 2);                     // loop-start event -> frames 96000, 192000, ...
+            var (log, dispatch) = NewLog();
+
+            EventBufferQuery.Query(timeline, new StaticTempoMap(120), Identity, new LoopRegion(bar, bar * 2),
+                                   0, 288000, SampleRate, dispatch);
+
+            Assert.That(log, Is.EqualTo(new[] { (1, 48000), (2, 96000), (2, 192000) }));
+        }
+
+        [Test]
+        public void Query_Does_Not_Allocate_In_Steady_State()
+        {
+            // The audio-thread contract: per-buffer queries (looped and unlooped) run over the
+            // timeline's immutable snapshot with zero heap allocations once warmed up.
+            var timeline = new EventTimeline<int>();
+            for (int i = 0; i < 64; i++) timeline.Add(i * 60, i); // ticks 0..3780, inside the loop below
+            var tempoMap = new StaticTempoMap(120);
+            var loop = new LoopRegion(0, MusicalTime.CanonicalPpq * 4L);
+            long dispatched = 0;
+            Action<SequencerEvent<int>, int> dispatch = (_, _) => dispatched++;
+
+            void RunBlocks(int blocks)
+            {
+                for (int b = 0; b < blocks; b++)
+                {
+                    long start = b * 1024L;
+                    EventBufferQuery.Query(timeline, tempoMap, Identity, null, start, start + 1024, SampleRate, dispatch);
+                    EventBufferQuery.Query(timeline, tempoMap, Identity, loop, start, start + 1024, SampleRate, dispatch);
+                }
+            }
+
+            RunBlocks(100); // warm-up (JIT)
+            long before = GC.GetAllocatedBytesForCurrentThread();
+            RunBlocks(200); // ~4.3 s of audio: crosses the loop seam twice on the looped query
+            long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+
+            Assert.That(allocated, Is.Zero, "EventBufferQuery.Query must not allocate in steady state");
+            Assert.That(dispatched, Is.GreaterThan(0), "the measured queries really dispatched events");
+        }
+
+        [Test]
         public void Throws_On_Null_Args()
         {
             var t = new EventTimeline<int>();

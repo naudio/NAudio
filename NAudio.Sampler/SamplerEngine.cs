@@ -216,9 +216,11 @@ namespace NAudio.Sampler
                 // exclusive class terminates *other* notes, not sibling layers of
                 // the note being started (e.g. stereo-linked drum zones)
                 long dispatch = startOrder;
-                foreach (var region in regions)
+                // the key-bucketed candidates (original list order, so layer
+                // dispatch and round-robin advancement are unchanged) replace a
+                // linear scan of every region
+                foreach (var region in RegionIndex.For(regions).NoteOnCandidates(note))
                 {
-                    if (region.IsCcTriggered) continue; // CC-triggered, not key-triggered
                     if (!region.Matches(note, velocity)) continue;
                     if (!PlaysOnNoteOn(region.Trigger, legato)) continue;
                     if (!KeyswitchActive(region, channel)) continue;
@@ -313,10 +315,14 @@ namespace NAudio.Sampler
             var regions = GetRegionsForNoteOn(channel, state);
             if (regions == null) return;
 
+            // the precomputed release sublist makes the common no-release-samples
+            // case (every SF2 instrument) an O(1) empty check per note-off
+            var releases = RegionIndex.For(regions).ReleaseTriggered;
+            if (releases.Length == 0) return;
+
             long dispatch = startOrder; // this dispatch's voices are exempt from its chokes
-            foreach (var region in regions)
+            foreach (var region in releases)
             {
-                if (region.Trigger != SamplerTrigger.Release) continue;
                 if (!region.Matches(note, velocity)) continue;
 
                 StartVoice(region, state, channel, note, velocity, dispatch, region.ReleaseDecayGain(heldSeconds));
@@ -330,10 +336,14 @@ namespace NAudio.Sampler
             var regions = GetRegionsForNoteOn(channel, state);
             if (regions == null) return;
 
+            // the precomputed CC-trigger sublist makes the common case (no
+            // CC-triggered regions) an O(1) empty check per controller change
+            var ccTriggered = RegionIndex.For(regions).CcTriggered;
+            if (ccTriggered.Length == 0) return;
+
             long dispatch = startOrder; // this dispatch's voices are exempt from its chokes
-            foreach (var region in regions)
+            foreach (var region in ccTriggered)
             {
-                if (!region.IsCcTriggered) continue;
                 if (!region.TriggeredByCcChange(cc, oldValue, newValue)) continue;
 
                 int note = region.Sample.RootKey;

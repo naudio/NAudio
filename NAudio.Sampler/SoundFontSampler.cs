@@ -37,7 +37,39 @@ namespace NAudio.Sampler
         {
             this.soundFont = soundFont ?? throw new ArgumentNullException(nameof(soundFont));
             samplePool = ConvertSampleData(soundFont);
+            PrewarmPresets();
         }
+
+        /// <summary>
+        /// Resolves and projects every preset in the font at construction, so the
+        /// first note-on per program doesn't run a burst of resolution/projection
+        /// work (and its allocations) inside <see cref="SamplerEngine.Read"/> —
+        /// which matters for multi-timbral playback. <see cref="GetRegionsForNoteOn"/>
+        /// stays lazy-capable for lookups the prewarm cannot anticipate (missing
+        /// programs resolving through the bank-fallback rules).
+        /// </summary>
+        private void PrewarmPresets()
+        {
+            foreach (var preset in soundFont.Presets)
+            {
+                if (preset == null) continue;
+                // a bank-128 preset is only reachable through the forced-percussion
+                // path (CC0 is 7-bit, so bank 128 is never selected for a melodic
+                // lookup); every other preset is reachable at its own (bank, program)
+                int key = preset.Bank == PercussionBank
+                    ? (1 << 24) | (PercussionBank << 16) | preset.PatchNumber
+                    : (preset.Bank << 16) | preset.PatchNumber;
+                // first preset with a given (bank, program) wins, matching the
+                // FindPreset/FindPercussionPreset iteration order
+                if (regionCache.ContainsKey(key)) continue;
+
+                var resolved = preset.ResolveRegions();
+                regionCache[key] = resolved == null ? null : Project(resolved);
+            }
+        }
+
+        /// <summary>The number of cached preset projections (for tests).</summary>
+        internal int CachedPresetCount => regionCache.Count;
 
         /// <summary>The SoundFont bank holding GM percussion kits.</summary>
         public const int PercussionBank = 128;

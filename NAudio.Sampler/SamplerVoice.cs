@@ -40,6 +40,14 @@ namespace NAudio.Sampler
         private readonly int outputSampleRate;
         private readonly double nyquist;
 
+        // SFZ defines at most three EQ bands (eq1/eq2/eq3) per region, so the
+        // per-voice EQ pool is sized for that maximum and reused across notes
+        private const int MaxEqBands = 3;
+
+        // Readers, filters and EQ bands are persistent per voice and re-seated /
+        // retuned at Start rather than re-allocated, so note-on is allocation-free
+        // in steady state. The readers are created lazily on the first Start
+        // (they need a SampleSource); the filters are created up front.
         private InterpolatingSampleReader reader;       // mono / left channel
         private InterpolatingSampleReader readerRight;  // right channel (stereo only), advanced in lockstep
         private bool stereo;
@@ -47,10 +55,11 @@ namespace NAudio.Sampler
         private readonly DahdsrEnvelope modEnvelope;
         private readonly Lfo modLfo;
         private readonly Lfo vibratoLfo;
-        private BiQuadFilter filter;        // mono / left channel
-        private BiQuadFilter filterRight;   // right channel (stereo only)
-        private BiQuadFilter[] eqLeft;      // per-region peaking-EQ bands (null = flat)
-        private BiQuadFilter[] eqRight;     // EQ bands for the right channel (stereo only)
+        private readonly BiQuadFilter filter;        // mono / left channel (used only while filterActive)
+        private readonly BiQuadFilter filterRight;   // right channel (stereo only)
+        private readonly BiQuadFilter[] eqLeft = new BiQuadFilter[MaxEqBands];
+        private readonly BiQuadFilter[] eqRight = new BiQuadFilter[MaxEqBands];
+        private int eqBandCount;            // active EQ bands this note (0 = flat)
 
         private double baseIncrement;   // sourceRate / outputRate
         private double pitchRatio;      // from key vs root + tuning
@@ -125,6 +134,15 @@ namespace NAudio.Sampler
             modLfo = new Lfo(outputSampleRate) { Waveform = LfoWaveform.Triangle, StartPhase = TriangleZeroRisingPhase };
             vibratoLfo = new Lfo(outputSampleRate) { Waveform = LfoWaveform.Triangle, StartPhase = TriangleZeroRisingPhase };
             declickStep = 1f / Math.Max(1, (int)(outputSampleRate * 0.005)); // ~5 ms de-click
+
+            // placeholder tunings; every Start retunes (and state-resets) before use
+            filter = BiQuadFilter.LowPassFilter(outputSampleRate, 1000f, 0.7071f);
+            filterRight = BiQuadFilter.LowPassFilter(outputSampleRate, 1000f, 0.7071f);
+            for (int i = 0; i < MaxEqBands; i++)
+            {
+                eqLeft[i] = BiQuadFilter.PeakingEQ(outputSampleRate, 1000f, 1f, 0f);
+                eqRight[i] = BiQuadFilter.PeakingEQ(outputSampleRate, 1000f, 1f, 0f);
+            }
         }
 
         /// <summary>Whether this voice is currently producing sound.</summary>
@@ -177,12 +195,9 @@ namespace NAudio.Sampler
             var gen = region.Generators;
             var sample = region.Sample;
 
-            int start = sample.Start + gen.StartAddressOffset;
-            int end = sample.End + gen.EndAddressOffset;
-            int loopStart = sample.LoopStart + gen.StartLoopAddressOffset;
-            int loopEnd = sample.LoopEnd + gen.EndLoopAddressOffset;
-
-            if (start < 0 || end > sample.Data.Length || start >= end) return false;
+            // the region caches its SampleSource pair (the addressing is immutable
+            // after projection), so steady-state note-on allocates nothing
+            if (!region.TryGetSampleSources(out var sourceLeft, out var sourceRight)) return false;
 
             // Stealing a voice that is still sounding: capture its current output
             // and ramp it to zero over the de-click time (~5 ms), summed on top of
@@ -198,26 +213,18 @@ namespace NAudio.Sampler
                 stealFadeGain = 1f - declickStep;
             }
 
-            var loopMode = MapLoopMode(gen.SampleModes);
-            if (loopMode != LoopMode.None &&
-                (loopStart < start || loopEnd > end || loopStart >= loopEnd))
-            {
-                loopMode = LoopMode.None; // malformed loop points — play as one-shot
-            }
-
-            int? loopStartOrNull = loopMode == LoopMode.None ? null : loopStart;
-            int? loopEndOrNull = loopMode == LoopMode.None ? null : loopEnd;
-            int crossfade = loopMode == LoopMode.None ? 0 : sample.CrossfadeSamples;
-            reader = new InterpolatingSampleReader(
-                new SampleSource(sample.Data, sample.SampleRate, loopMode, start, end, loopStartOrNull, loopEndOrNull, crossfade));
+            if (reader == null) reader = new InterpolatingSampleReader(sourceLeft);
+            else reader.Reset(sourceLeft);
 
             // a stereo sample runs a second reader over the right channel in
-            // lockstep (same bounds, loop and increment), so the core reader stays mono
-            stereo = sample.IsStereo && sample.DataRight.Length >= end;
-            readerRight = stereo
-                ? new InterpolatingSampleReader(
-                    new SampleSource(sample.DataRight, sample.SampleRate, loopMode, start, end, loopStartOrNull, loopEndOrNull, crossfade))
-                : null;
+            // lockstep (same bounds, loop and increment), so the core reader stays
+            // mono; for a mono note the right reader (if any) is simply unused
+            stereo = sourceRight != null;
+            if (stereo)
+            {
+                if (readerRight == null) readerRight = new InterpolatingSampleReader(sourceRight);
+                else readerRight.Reset(sourceRight);
+            }
 
             // pitch: cents from played key vs root, plus tuning generators
             int effectiveKey = gen.KeyNumberOverride >= 0 ? gen.KeyNumberOverride : note;
@@ -284,7 +291,7 @@ namespace NAudio.Sampler
             ampEnvelope.Gate(false);
             modEnvelope.Gate(false);
             reader.Release();
-            readerRight?.Release();
+            if (stereo) readerRight.Release();
         }
 
         /// <summary>
@@ -299,7 +306,7 @@ namespace NAudio.Sampler
             ampEnvelope.Gate(false);
             modEnvelope.Gate(false);
             reader.Release();
-            readerRight?.Release();
+            if (stereo) readerRight.Release();
         }
 
         /// <summary>
@@ -393,8 +400,7 @@ namespace NAudio.Sampler
                         {
                             float sL = reader.Read(increment);
                             if (filterActive) sL = filter.Transform(sL);
-                            if (eqLeft != null)
-                                for (int b = 0; b < eqLeft.Length; b++) sL = eqLeft[b].Transform(sL);
+                            for (int b = 0; b < eqBandCount; b++) sL = eqLeft[b].Transform(sL);
 
                             float sR;
                             if (stereo)
@@ -403,8 +409,7 @@ namespace NAudio.Sampler
                                 // reader ends on the same sample as the left
                                 sR = readerRight.Read(increment);
                                 if (filterActive) sR = filterRight.Transform(sR);
-                                if (eqRight != null)
-                                    for (int b = 0; b < eqRight.Length; b++) sR = eqRight[b].Transform(sR);
+                                for (int b = 0; b < eqBandCount; b++) sR = eqRight[b].Transform(sR);
                             }
                             else sR = sL;
 
@@ -629,42 +634,43 @@ namespace NAudio.Sampler
                 // into the static gain (UpdateModulation re-reads it each block).
                 filterGainComp = (float)Math.Pow(10.0, -(resonanceCb / 10.0) / 2.0 / 20.0);
                 double hz = Math.Clamp(effectiveHz, 20.0, nyquist * 0.95);
-                // fresh filter resets state (safe at note start); a stereo voice
-                // filters each channel with its own state
-                filter = CreateFilter((float)hz);
-                filterRight = stereo ? CreateFilter((float)hz) : null;
+                // retune the persistent filters and clear their sample history so
+                // the note starts from a fresh filter state (no inherited ringing
+                // or latched NaN from a previous note); a stereo voice filters
+                // each channel with its own state
+                RetuneFilter(filter, (float)hz);
+                filter.ResetState();
+                if (stereo)
+                {
+                    RetuneFilter(filterRight, (float)hz);
+                    filterRight.ResetState();
+                }
             }
             else
             {
                 filterGainComp = 1f;
-                filter = null;
-                filterRight = null;
             }
         }
 
         private void ConfigureEq(System.Collections.Generic.IReadOnlyList<SamplerEqBand> bands)
         {
-            if (bands == null || bands.Count == 0) { eqLeft = null; eqRight = null; return; }
+            if (bands == null || bands.Count == 0) { eqBandCount = 0; return; }
 
-            eqLeft = new BiQuadFilter[bands.Count];
-            eqRight = stereo ? new BiQuadFilter[bands.Count] : null;
-            for (int i = 0; i < bands.Count; i++)
+            // SetPeakingEq resets the band's sample history, so each note's EQ
+            // starts clean even though the filter objects persist across notes
+            eqBandCount = Math.Min(bands.Count, MaxEqBands);
+            for (int i = 0; i < eqBandCount; i++)
             {
                 var band = bands[i];
                 float hz = (float)Math.Clamp(band.FrequencyHz, 20.0, nyquist * 0.95);
-                eqLeft[i] = BiQuadFilter.PeakingEQ(outputSampleRate, hz, band.Q, band.GainDb);
-                if (stereo) eqRight[i] = BiQuadFilter.PeakingEQ(outputSampleRate, hz, band.Q, band.GainDb);
+                eqLeft[i].SetPeakingEq(outputSampleRate, hz, band.Q, band.GainDb);
+                if (stereo) eqRight[i].SetPeakingEq(outputSampleRate, hz, band.Q, band.GainDb);
             }
         }
 
-        private BiQuadFilter CreateFilter(float hz) => filterType switch
-        {
-            SamplerFilterType.HighPass => BiQuadFilter.HighPassFilter(outputSampleRate, hz, filterQ),
-            SamplerFilterType.BandPass => BiQuadFilter.BandPassFilterConstantPeakGain(outputSampleRate, hz, filterQ),
-            SamplerFilterType.BandReject => BiQuadFilter.NotchFilter(outputSampleRate, hz, filterQ),
-            _ => BiQuadFilter.LowPassFilter(outputSampleRate, hz, filterQ)
-        };
-
+        // state-preserving coefficient retune for the active filter shape; the
+        // coefficient arithmetic matches the Set*/factory methods exactly, so a
+        // retune+ResetState at Start is equivalent to constructing a fresh filter
         private void RetuneFilter(BiQuadFilter f, float hz)
         {
             switch (filterType)
@@ -675,12 +681,5 @@ namespace NAudio.Sampler
                 default: f.UpdateLowPassFilter(outputSampleRate, hz, filterQ); break;
             }
         }
-
-        private static LoopMode MapLoopMode(SampleMode mode) => mode switch
-        {
-            SampleMode.LoopContinuously => LoopMode.Continuous,
-            SampleMode.LoopAndContinue => LoopMode.UntilRelease,
-            _ => LoopMode.None
-        };
     }
 }

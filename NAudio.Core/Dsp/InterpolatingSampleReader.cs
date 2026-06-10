@@ -128,15 +128,16 @@ namespace NAudio.Dsp
     /// </summary>
     public sealed class InterpolatingSampleReader
     {
-        private readonly SampleSource source;
+        private SampleSource source;
         // the source is immutable, so its data and bounds are cached as fields to
-        // keep the per-sample paths free of repeated property reads
-        private readonly float[] data;
-        private readonly int start;
-        private readonly int end;
-        private readonly int loopStart;
-        private readonly int loopEnd;
-        private readonly int crossfadeSamples;
+        // keep the per-sample paths free of repeated property reads; they change
+        // only when the reader is re-seated via Reset
+        private float[] data;
+        private int start;
+        private int end;
+        private int loopStart;
+        private int loopEnd;
+        private int crossfadeSamples;
         private double position;
         private bool ended;
         private bool hasLooped; // true once the read position has wrapped at least once
@@ -149,6 +150,19 @@ namespace NAudio.Dsp
         /// </summary>
         public InterpolatingSampleReader(SampleSource source)
         {
+            Reset(source);
+        }
+
+        /// <summary>
+        /// Re-seats the reader on a (possibly different) source and rewinds it to
+        /// the source's start, clearing the ended/looped/release state — leaving
+        /// the reader exactly as a newly constructed one, but without allocating.
+        /// <see cref="Quality"/> is preserved. Intended for pooled consumers
+        /// (e.g. sampler voices) that reuse one reader across many notes.
+        /// </summary>
+        /// <param name="source">The sample source to read from.</param>
+        public void Reset(SampleSource source)
+        {
             this.source = source ?? throw new ArgumentNullException(nameof(source));
             data = source.Data;
             start = source.Start;
@@ -158,6 +172,8 @@ namespace NAudio.Dsp
             crossfadeSamples = source.CrossfadeSamples;
             loopActive = source.LoopMode != LoopMode.None;
             position = start;
+            ended = false;
+            hasLooped = false;
         }
 
         /// <summary>

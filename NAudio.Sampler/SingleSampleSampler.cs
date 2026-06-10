@@ -13,7 +13,12 @@ namespace NAudio.Sampler
     /// </summary>
     public sealed class SingleSampleSampler : SamplerEngine
     {
-        private readonly SamplerRegion[] region = new SamplerRegion[1];
+        // the current projection of the instrument, rebuilt only when the
+        // instrument's edit stamp changes; a fresh array per rebuild keeps the
+        // region-list identity in step with its contents (the engine's region
+        // index is cached by list identity)
+        private SamplerRegion[] regions;
+        private int builtVersion = -1;
 
         /// <summary>Creates a sampler for a single-sample instrument.</summary>
         public SingleSampleSampler(SingleSampleInstrument instrument,
@@ -41,10 +46,15 @@ namespace NAudio.Sampler
         /// <inheritdoc />
         private protected override IReadOnlyList<SamplerRegion> GetRegionsForNoteOn(int channel, MidiChannelState state)
         {
-            // rebuild from the (possibly just-edited) instrument so live changes
-            // to loop points, tuning, gain etc. take effect on the next note
-            region[0] = Instrument.BuildRegion();
-            return region;
+            // rebuild from the instrument only when it was edited, so live changes
+            // to loop points, tuning, gain etc. take effect on the next note while
+            // steady-state note-on does no re-projection (and no allocation)
+            if (regions == null || builtVersion != Instrument.Version)
+            {
+                builtVersion = Instrument.Version;
+                regions = new[] { Instrument.BuildRegion() };
+            }
+            return regions;
         }
     }
 }

@@ -20,6 +20,38 @@ namespace NAudio.Sampler
         private readonly float[] dataRight;
         private readonly int sampleRate;
 
+        // backing fields for the editable settings; every write bumps Version so
+        // the sampler re-projects the region only when something actually changed
+        private int rootKey;
+        private int loKey;
+        private int hiKey = 127;
+        private int loVelocity;
+        private int hiVelocity = 127;
+        private double tuneCents;
+        private float volumeDb;
+        private float pan;
+        private float velocityTrackingPercent = 100f;
+        private int start;
+        private int end;
+        private LoopMode loopMode = LoopMode.None;
+        private int loopStart;
+        private int loopEnd;
+        private float loopCrossfadeSeconds;
+        private float delaySeconds;
+        private float attackSeconds;
+        private float holdSeconds;
+        private float decaySeconds;
+        private float sustainLevel = 1f;
+        private float releaseSeconds = 0.01f;
+        private int version;
+
+        /// <summary>
+        /// A monotonic edit stamp, bumped by every property write. The sampler
+        /// rebuilds its projected region only when this changes, so steady-state
+        /// note-on does not re-project (or allocate) per note.
+        /// </summary>
+        internal int Version => version;
+
         /// <summary>
         /// Creates an instrument from a sample buffer, mapped across the whole
         /// keyboard at the given root key.
@@ -53,55 +85,55 @@ namespace NAudio.Sampler
         public int Length => data.Length;
 
         /// <summary>The MIDI key that plays the sample at its recorded pitch (default 60).</summary>
-        public int RootKey { get; set; }
+        public int RootKey { get => rootKey; set { rootKey = value; version++; } }
 
         /// <summary>Lowest mapped MIDI key, inclusive (default 0).</summary>
-        public int LoKey { get; set; } = 0;
+        public int LoKey { get => loKey; set { loKey = value; version++; } }
         /// <summary>Highest mapped MIDI key, inclusive (default 127).</summary>
-        public int HiKey { get; set; } = 127;
+        public int HiKey { get => hiKey; set { hiKey = value; version++; } }
         /// <summary>Lowest mapped velocity, inclusive (default 0).</summary>
-        public int LoVelocity { get; set; } = 0;
+        public int LoVelocity { get => loVelocity; set { loVelocity = value; version++; } }
         /// <summary>Highest mapped velocity, inclusive (default 127).</summary>
-        public int HiVelocity { get; set; } = 127;
+        public int HiVelocity { get => hiVelocity; set { hiVelocity = value; version++; } }
 
         /// <summary>Fixed detune in cents (default 0).</summary>
-        public double TuneCents { get; set; }
+        public double TuneCents { get => tuneCents; set { tuneCents = value; version++; } }
         /// <summary>Gain in decibels (default 0).</summary>
-        public float VolumeDb { get; set; }
+        public float VolumeDb { get => volumeDb; set { volumeDb = value; version++; } }
         /// <summary>Pan, −1 (left) … +1 (right) (default 0, centre).</summary>
-        public float Pan { get; set; }
+        public float Pan { get => pan; set { pan = value; version++; } }
         /// <summary>Velocity-to-amplitude tracking percent (default 100; 0 = velocity ignored).</summary>
-        public float VelocityTrackingPercent { get; set; } = 100f;
+        public float VelocityTrackingPercent { get => velocityTrackingPercent; set { velocityTrackingPercent = value; version++; } }
 
         /// <summary>Playback start in frames (default 0).</summary>
-        public int Start { get; set; }
+        public int Start { get => start; set { start = value; version++; } }
         /// <summary>Playback end in frames (default the sample length).</summary>
-        public int End { get; set; }
+        public int End { get => end; set { end = value; version++; } }
         /// <summary>Loop behaviour (default none).</summary>
-        public LoopMode LoopMode { get; set; } = LoopMode.None;
+        public LoopMode LoopMode { get => loopMode; set { loopMode = value; version++; } }
         /// <summary>Loop start in frames (default 0).</summary>
-        public int LoopStart { get; set; }
+        public int LoopStart { get => loopStart; set { loopStart = value; version++; } }
         /// <summary>Loop end in frames (default the sample length).</summary>
-        public int LoopEnd { get; set; }
+        public int LoopEnd { get => loopEnd; set { loopEnd = value; version++; } }
         /// <summary>
         /// Loop-seam crossfade length in seconds (default 0). Smooths the loop wrap
         /// when the loop points don't fall on matching samples. Limited by the audio
         /// before <see cref="LoopStart"/>, so set a loop start that has some lead-in.
         /// </summary>
-        public float LoopCrossfadeSeconds { get; set; }
+        public float LoopCrossfadeSeconds { get => loopCrossfadeSeconds; set { loopCrossfadeSeconds = value; version++; } }
 
         /// <summary>Amplitude-envelope delay in seconds (default 0).</summary>
-        public float DelaySeconds { get; set; }
+        public float DelaySeconds { get => delaySeconds; set { delaySeconds = value; version++; } }
         /// <summary>Amplitude-envelope attack in seconds (default 0, instant).</summary>
-        public float AttackSeconds { get; set; }
+        public float AttackSeconds { get => attackSeconds; set { attackSeconds = value; version++; } }
         /// <summary>Amplitude-envelope hold in seconds (default 0).</summary>
-        public float HoldSeconds { get; set; }
+        public float HoldSeconds { get => holdSeconds; set { holdSeconds = value; version++; } }
         /// <summary>Amplitude-envelope decay in seconds (default 0).</summary>
-        public float DecaySeconds { get; set; }
+        public float DecaySeconds { get => decaySeconds; set { decaySeconds = value; version++; } }
         /// <summary>Amplitude-envelope sustain level, 0..1 (default 1).</summary>
-        public float SustainLevel { get; set; } = 1f;
+        public float SustainLevel { get => sustainLevel; set { sustainLevel = value; version++; } }
         /// <summary>Amplitude-envelope release in seconds (default 0.01, an anti-click tail).</summary>
-        public float ReleaseSeconds { get; set; } = 0.01f;
+        public float ReleaseSeconds { get => releaseSeconds; set { releaseSeconds = value; version++; } }
 
         /// <summary>Projects the current settings onto the neutral region the voice plays.</summary>
         internal SamplerRegion BuildRegion()

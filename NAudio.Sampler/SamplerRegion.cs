@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using NAudio.Dsp;
 using NAudio.SoundFont;
 
 namespace NAudio.Sampler
@@ -150,6 +151,72 @@ namespace NAudio.Sampler
         // rotating counter for round-robin; advanced each time the region is an
         // otherwise-eligible candidate
         private int sequenceCounter;
+
+        // The region's sample addressing (sample header + generator offsets) is
+        // immutable after projection, so the SampleSource pair every voice needs
+        // is built once and cached — note-on stays allocation-free in steady
+        // state. null sourceLeft after building means the addressing is unusable
+        // (e.g. a ROM-based SoundFont region) and the region plays nothing.
+        private bool sourcesBuilt;
+        private SampleSource sourceLeft;
+        private SampleSource sourceRight; // null for mono
+
+        /// <summary>
+        /// The cached <see cref="SampleSource"/>s for this region (left/mono and,
+        /// for a stereo sample, right), built lazily on first use. Returns false
+        /// when the region's sample addressing is unusable.
+        /// </summary>
+        internal bool TryGetSampleSources(out SampleSource left, out SampleSource right)
+        {
+            if (!sourcesBuilt)
+            {
+                BuildSampleSources();
+                sourcesBuilt = true;
+            }
+            left = sourceLeft;
+            right = sourceRight;
+            return left != null;
+        }
+
+        private void BuildSampleSources()
+        {
+            var gen = Generators;
+            var sample = Sample;
+
+            int start = sample.Start + gen.StartAddressOffset;
+            int end = sample.End + gen.EndAddressOffset;
+            int loopStart = sample.LoopStart + gen.StartLoopAddressOffset;
+            int loopEnd = sample.LoopEnd + gen.EndLoopAddressOffset;
+
+            if (start < 0 || end > sample.Data.Length || start >= end) return; // unusable
+
+            var loopMode = MapLoopMode(gen.SampleModes);
+            if (loopMode != LoopMode.None &&
+                (loopStart < start || loopEnd > end || loopStart >= loopEnd))
+            {
+                loopMode = LoopMode.None; // malformed loop points — play as one-shot
+            }
+
+            int? loopStartOrNull = loopMode == LoopMode.None ? null : loopStart;
+            int? loopEndOrNull = loopMode == LoopMode.None ? null : loopEnd;
+            int crossfade = loopMode == LoopMode.None ? 0 : sample.CrossfadeSamples;
+            sourceLeft = new SampleSource(sample.Data, sample.SampleRate, loopMode,
+                start, end, loopStartOrNull, loopEndOrNull, crossfade);
+
+            // a stereo sample gets a second source over the right channel with the
+            // same bounds and loop, read in lockstep by the voice
+            sourceRight = sample.IsStereo && sample.DataRight.Length >= end
+                ? new SampleSource(sample.DataRight, sample.SampleRate, loopMode,
+                    start, end, loopStartOrNull, loopEndOrNull, crossfade)
+                : null;
+        }
+
+        private static LoopMode MapLoopMode(SampleMode mode) => mode switch
+        {
+            SampleMode.LoopContinuously => LoopMode.Continuous,
+            SampleMode.LoopAndContinue => LoopMode.UntilRelease,
+            _ => LoopMode.None
+        };
 
         /// <summary>Whether this region should sound for the given key and velocity.</summary>
         public bool Matches(int key, int velocity) =>

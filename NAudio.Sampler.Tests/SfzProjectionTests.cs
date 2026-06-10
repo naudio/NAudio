@@ -382,5 +382,80 @@ namespace NAudio.Sampler.Tests
             float low = RenderPeak(r, 60, 1);
             Assert.That(low / full, Is.EqualTo(2f).Within(0.05f));
         }
+
+        // ---- amp_velcurve_N velocity curves ----
+
+        [Test]
+        public void AmpVelcurveScalesFullVelocityOutput()
+        {
+            // amp_velcurve_127=0.5 makes the curve top out at half level: with
+            // the default amp_veltrack=100 the velocity gain IS the curve value,
+            // so full velocity plays at half the no-curve level
+            var plain = ProjectFirst("<region> sample=a.wav key=60 loop_mode=loop_continuous",
+                ConstantSample(0.5f));
+            var curved = ProjectFirst("<region> sample=a.wav key=60 loop_mode=loop_continuous amp_velcurve_127=0.5",
+                ConstantSample(0.5f));
+            float full = RenderPeak(plain, 60, 127);
+            float halved = RenderPeak(curved, 60, 127);
+            Assert.That(halved / full, Is.EqualTo(0.5f).Within(0.02f));
+        }
+
+        [Test]
+        public void AmpVelcurveLiftsALowVelocityAboveTheSquareLaw()
+        {
+            // the Salamander-style normalisation case: amp_velcurve_31=0.5 plays
+            // velocity 31 at half level, far above the default square law's
+            // (31/127)^2 ~= 0.06
+            var plain = ProjectFirst("<region> sample=a.wav key=60 loop_mode=loop_continuous",
+                ConstantSample(0.5f));
+            var curved = ProjectFirst("<region> sample=a.wav key=60 loop_mode=loop_continuous amp_velcurve_31=0.5",
+                ConstantSample(0.5f));
+            float squareLaw = RenderPeak(plain, 60, 31);
+            float lifted = RenderPeak(curved, 60, 31);
+            Assert.That(lifted, Is.GreaterThan(squareLaw * 4f),
+                "the defined curve point must beat the default square law");
+            // above the highest defined point the curve interpolates to (127, 1)
+            float full = RenderPeak(curved, 60, 127);
+            Assert.That(lifted / full, Is.EqualTo(0.5f).Within(0.02f),
+                "velocity 31 plays at exactly the defined half level");
+        }
+
+        [Test]
+        public void AmpVelcurveBlendsWithPartialVeltrack()
+        {
+            // amp_veltrack=50 halves the tracking: g = 1 - 0.5*(1 - curve(v));
+            // with curve(64)=0.5 that is 0.75 of the full-velocity level
+            var r = ProjectFirst(
+                "<region> sample=a.wav key=60 loop_mode=loop_continuous amp_veltrack=50 amp_velcurve_64=0.5",
+                ConstantSample(0.5f));
+            float full = RenderPeak(r, 60, 127);
+            float mid = RenderPeak(r, 60, 64);
+            Assert.That(mid / full, Is.EqualTo(0.75f).Within(0.02f));
+        }
+
+        [Test]
+        public void AmpVeltrackZeroDisablesVelocityRegardlessOfCurve()
+        {
+            // amp_veltrack=0 means velocity does not affect gain, curve or not
+            // (sfizz behaviour)
+            var r = ProjectFirst(
+                "<region> sample=a.wav key=60 loop_mode=loop_continuous amp_veltrack=0 amp_velcurve_64=0.1",
+                ConstantSample(0.5f));
+            Assert.That(RenderPeak(r, 60, 64), Is.EqualTo(RenderPeak(r, 60, 127)).Within(1e-3f));
+        }
+
+        [Test]
+        public void GroupLevelAmpVelcurveReachesTheRegion()
+        {
+            // indexed opcodes inherit through the parser's section merging like
+            // any other opcode key
+            var instrument = SfzParser.Parse(
+                "<group> amp_velcurve_127=0.5\n<region> sample=a.wav key=60 loop_mode=loop_continuous");
+            var inherited = SfzRegionProjector.Project(instrument.MapRegions()[0], ConstantSample(0.5f));
+            var plain = ProjectFirst("<region> sample=a.wav key=60 loop_mode=loop_continuous",
+                ConstantSample(0.5f));
+            Assert.That(RenderPeak(inherited, 60, 127) / RenderPeak(plain, 60, 127),
+                Is.EqualTo(0.5f).Within(0.02f));
+        }
     }
 }

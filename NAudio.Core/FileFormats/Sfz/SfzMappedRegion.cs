@@ -130,6 +130,14 @@ namespace NAudio.Sfz
         public float Pan { get; private set; }
         /// <summary>Velocity-to-amplitude tracking percentage (<c>amp_veltrack</c>, default 100).</summary>
         public float AmpVelTrack { get; private set; }
+        /// <summary>
+        /// The region's velocity-curve points (<c>amp_velcurve_N</c>): the
+        /// normalised amplitude (0…1) at velocity N (1…127), sorted by velocity;
+        /// null when the region defines none. Points whose N is outside 1…127 or
+        /// whose value does not parse are ignored; levels are clamped to 0…1.
+        /// Resolve the full per-velocity curve with <see cref="BuildVelocityCurve"/>.
+        /// </summary>
+        public IReadOnlyList<(int Velocity, float Level)> VelocityCurvePoints { get; private set; }
 
         /// <summary>Amplitude-envelope delay in seconds (<c>ampeg_delay</c>).</summary>
         public float AmpegDelay { get; private set; }
@@ -301,6 +309,7 @@ namespace NAudio.Sfz
             r.VolumeDb = region.GetFloat("volume", 0);
             r.Pan = Clamp(region.GetFloat("pan", 0) / 100f, -1f, 1f);
             r.AmpVelTrack = region.GetFloat("amp_veltrack", 100);
+            r.VelocityCurvePoints = BuildVelocityCurvePoints(region);
 
             r.AmpegDelay = region.GetFloat("ampeg_delay", 0);
             r.AmpegAttack = region.GetFloat("ampeg_attack", 0);
@@ -430,6 +439,67 @@ namespace NAudio.Sfz
             var result = new List<(int, int, int)>(triggers.Count);
             foreach (var pair in triggers) result.Add((pair.Key, pair.Value.Low, pair.Value.High));
             return result;
+        }
+
+        // Collects amp_velcurve_N opcodes into sorted (velocity, level) points;
+        // points with N outside 1..127 or an unparseable value are ignored, and
+        // levels are clamped to the spec's 0..1.
+        private static IReadOnlyList<(int Velocity, float Level)> BuildVelocityCurvePoints(SfzRegion region)
+        {
+            const string prefix = "amp_velcurve_";
+            List<(int Velocity, float Level)> points = null;
+            foreach (var pair in region.Opcodes)
+            {
+                if (!pair.Key.StartsWith(prefix)) continue;
+                if (!int.TryParse(pair.Key.Substring(prefix.Length), NumberStyles.Integer, CultureInfo.InvariantCulture, out int velocity))
+                    continue;
+                if (velocity < 1 || velocity > 127) continue;
+                if (!float.TryParse(pair.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out float level))
+                    continue;
+
+                points ??= new List<(int, float)>();
+                points.Add((velocity, Clamp(level, 0f, 1f)));
+            }
+
+            points?.Sort((a, b) => a.Velocity.CompareTo(b.Velocity));
+            return points;
+        }
+
+        /// <summary>
+        /// Resolves <see cref="VelocityCurvePoints"/> into a full 128-entry curve
+        /// indexed by MIDI velocity: defined points give their level, undefined
+        /// velocities are linearly interpolated between the nearest defined
+        /// neighbours — from (0, 0) below the lowest defined point and to (127, 1)
+        /// above the highest, unless velocity 127 is itself defined. Returns null
+        /// when the region defines no points; the resolved curve replaces the
+        /// default velocity-squared term inside the <c>amp_veltrack</c> law.
+        /// </summary>
+        public float[] BuildVelocityCurve()
+        {
+            var points = VelocityCurvePoints;
+            if (points == null) return null;
+
+            var curve = new float[128];
+            int previousVelocity = 0;
+            float previousLevel = 0f;
+            foreach (var (velocity, level) in points)
+            {
+                for (int v = previousVelocity; v <= velocity; v++)
+                {
+                    curve[v] = previousLevel
+                        + (level - previousLevel) * (v - previousVelocity) / (velocity - previousVelocity);
+                }
+                previousVelocity = velocity;
+                previousLevel = level;
+            }
+            // above the highest defined point the curve rises to (127, 1); a
+            // defined velocity 127 is already in place and wins
+            for (int v = previousVelocity + 1; v < 128; v++)
+            {
+                curve[v] = previousLevel
+                    + (1f - previousLevel) * (v - previousVelocity) / (127 - previousVelocity);
+            }
+            return curve;
         }
 
         // Collects loccN/hiccN opcodes into per-controller [low, high] windows.

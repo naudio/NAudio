@@ -193,7 +193,7 @@ The sampler targets a documented, useful subset of each format: SFZ v1 plus comm
 
 * **Mapping and selection:** `sample`, `lokey`/`hikey`/`key`, `lovel`/`hivel` — with note names (`c#4`, c4 = 60) accepted wherever a key is expected; `<control>` `default_path`, `note_offset`, `octave_offset`
 * **Pitch:** `pitch_keycenter`, `tune` (alias `pitch`), `transpose`, `pitch_keytrack`
-* **Amplitude:** `volume` (boosts above 0 dB included), `pan`, `amp_veltrack` (including negative values), `ampeg_delay`/`ampeg_attack`/`ampeg_hold`/`ampeg_decay`/`ampeg_sustain`/`ampeg_release`
+* **Amplitude:** `volume` (boosts above 0 dB included), `pan`, `amp_veltrack` (including negative values), `amp_velcurve_N` velocity-curve points (undefined velocities are linearly interpolated; the curve replaces the default velocity-squared term inside the `amp_veltrack` law), `ampeg_delay`/`ampeg_attack`/`ampeg_hold`/`ampeg_decay`/`ampeg_sustain`/`ampeg_release`
 * **Filter:** `cutoff`, `resonance`, `fil_type` — all four families: low-pass (`lpf_*`), high-pass (`hpf_*`), band-pass (`bpf_*`) and band-reject (`brf_*`). The filter is always **2-pole**: the 1-pole/4-pole/6-pole variants (`lpf_1p`, `lpf_4p`, …) are accepted but play with the 2-pole shape
 * **Sample playback:** `offset`, `end` (inclusive, per the spec; an explicit `end=-1` disables the region), `loop_mode`/`loopmode` (`no_loop`, `one_shot`, `loop_continuous`, `loop_sustain`), `loop_start`/`loop_end` (inclusive; aliases `loopstart`/`loopend`), WAV `smpl`-chunk loop points as the default loop
 * **Triggers and groups:** `trigger` (`attack`/`release`/`first`/`legato`), `rt_decay` (release samples attenuated by held time), `group`/`off_by` (directional choke groups), `off_mode` (`fast` cuts a choked voice with a ~5 ms fade; `normal` releases it through its own `ampeg_release`; ARIA's `off_mode=time`+`off_time` is not supported and is treated as `fast`), `polyphony` (per-region voice cap — striking beyond it silences the region's oldest voice, honouring its `off_mode`)
@@ -208,7 +208,6 @@ One engine limitation to know about: the modulation LFO and modulation envelope 
 
 **Not supported** (parsed where noted, but not honoured):
 
-* `amp_velcurve_N` velocity-curve points
 * ARIA/SFZ v2 flex EGs (`eg01_*`, …) and `<curve>` tables
 * `set_ccN` initial controller values
 * loop-crossfade opcodes

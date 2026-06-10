@@ -53,6 +53,15 @@ namespace NAudio.Sampler
         public float VelocityTrackingPercent { get; init; }
 
         /// <summary>
+        /// The resolved velocity-to-amplitude curve (SFZ <c>amp_velcurve_N</c>):
+        /// 128 normalised levels (0..1) indexed by MIDI velocity, or null to use
+        /// the default velocity-squared curve. Replaces the squared term inside
+        /// the <see cref="VelocityTrackingPercent"/> law; baked once at
+        /// projection time so note-on stays allocation-free.
+        /// </summary>
+        public float[] VelocityCurve { get; init; }
+
+        /// <summary>
         /// A static linear gain multiplied into every voice this region starts
         /// (default 1). Carries the boost part of SFZ <c>volume</c> (a positive
         /// dB value): the SF2 attenuation slot cannot express a boost because the

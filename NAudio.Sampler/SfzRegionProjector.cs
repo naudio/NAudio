@@ -21,8 +21,9 @@ namespace NAudio.Sampler
     /// <c>release</c>/<c>first</c>/<c>legato</c> triggers, all four
     /// <c>fil_type</c> shapes, cross-group <c>off_by</c> chokes (with
     /// <c>off_mode</c>), per-region <c>polyphony</c> caps, note-on selection
-    /// (keyswitches, round-robin, random, CC gates), crossfades, per-region
-    /// EGs/LFOs, EQ bands and effect sends.
+    /// (keyswitches, round-robin, random, CC gates), crossfades,
+    /// <c>amp_velcurve_N</c> velocity curves (baked to a per-velocity table at
+    /// projection time), per-region EGs/LFOs, EQ bands and effect sends.
     /// </summary>
     internal static class SfzRegionProjector
     {
@@ -83,6 +84,7 @@ namespace NAudio.Sampler
                 Generators = BuildGenerators(region, loopMode),
                 Modulators = null, // SFZ Tier 1 has no SF2-style modulators
                 VelocityTrackingPercent = region.AmpVelTrack,
+                VelocityCurve = region.BuildVelocityCurve(),
                 // a volume boost is carried as linear gain (see BuildGenerators)
                 GainLinear = region.VolumeDb > 0 ? (float)Math.Pow(10.0, region.VolumeDb / 20.0) : 1f,
                 FilterType = MapFilterType(region.FilterType),

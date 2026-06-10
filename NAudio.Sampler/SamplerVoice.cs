@@ -302,7 +302,7 @@ namespace NAudio.Sampler
             this.velocity = effectiveVelocity;
             this.key = effectiveKey;
             this.filterType = region.FilterType;
-            velocityGain = VelocityGain(region.VelocityTrackingPercent, effectiveVelocity);
+            velocityGain = VelocityGain(region.VelocityTrackingPercent, effectiveVelocity, region.VelocityCurve);
 
             // base (generator) values; the SF2 modulators add to these. The
             // velocity->attenuation and velocity->filter default modulators
@@ -718,21 +718,26 @@ namespace NAudio.Sampler
         /// <summary>
         /// The velocity-to-amplitude gain factor for an SFZ <c>amp_veltrack</c>
         /// percentage. SFZ interpolates in the GAIN domain between no tracking
-        /// and the full velocity-squared curve:
-        /// <c>gain = 1 − p·(1 − (v/127)²)</c> with <c>p = percent/100</c> in
-        /// [−1, 1]. At p=1 this is exactly the (v/127)² law; a partial p tracks
+        /// and the full velocity curve:
+        /// <c>gain = 1 − p·(1 − curve(v))</c> with <c>p = percent/100</c> in
+        /// [−1, 1], where <c>curve(v)</c> is the region's resolved
+        /// <c>amp_velcurve_N</c> curve when defined and the default <c>(v/127)²</c>
+        /// otherwise. At p=1 this is exactly the curve; a partial p tracks
         /// proportionally in gain (p=0.5, v=1 ≈ −6 dB, not −42 dB); a negative p
         /// boosts low velocities above unity (quieter the harder you play) —
         /// which is why this is a multiplicative factor rather than part of the
-        /// clamped attenuation sum. Returns 1 when tracking is disabled (the
-        /// SoundFont path: velocity rides the modulator list instead).
+        /// clamped attenuation sum. Returns 1 when tracking is disabled
+        /// (<c>amp_veltrack=0</c> means velocity has no effect, curve or not —
+        /// also the SoundFont path, where velocity rides the modulator list
+        /// instead).
         /// </summary>
-        private static float VelocityGain(float percent, int velocity)
+        private static float VelocityGain(float percent, int velocity, float[] curve)
         {
             if (percent == 0f) return 1f;
             double p = Math.Clamp(percent / 100.0, -1.0, 1.0);
-            double x = Math.Clamp(velocity, 0, 127) / 127.0;
-            double gain = 1.0 - p * (1.0 - x * x);
+            int v = Math.Clamp(velocity, 0, 127);
+            double c = curve != null ? curve[v] : (v / 127.0) * (v / 127.0);
+            double gain = 1.0 - p * (1.0 - c);
             return gain < 0.0 ? 0f : (float)gain;
         }
 

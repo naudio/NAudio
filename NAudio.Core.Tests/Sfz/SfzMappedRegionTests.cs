@@ -321,6 +321,59 @@ namespace NAudio.Core.Tests.Sfz
         }
 
         [Test]
+        public void VelocityCurvePointsAreCollectedSortedAndValidated()
+        {
+            var r = MapFirst("<region> sample=a.wav amp_velcurve_64=0.7 amp_velcurve_32=0.4");
+            Assert.That(r.VelocityCurvePoints, Is.EqualTo(new[] { (32, 0.4f), (64, 0.7f) }));
+
+            Assert.That(MapFirst("<region> sample=a.wav").VelocityCurvePoints, Is.Null);
+
+            // N outside 1..127, a malformed N and a malformed value are all ignored
+            var malformed = MapFirst(
+                "<region> sample=a.wav amp_velcurve_0=0.5 amp_velcurve_128=0.5 amp_velcurve_abc=0.5 amp_velcurve_64=xyz");
+            Assert.That(malformed.VelocityCurvePoints, Is.Null);
+
+            // levels are clamped to the spec's 0..1
+            var clamped = MapFirst("<region> sample=a.wav amp_velcurve_64=1.5 amp_velcurve_32=-0.5");
+            Assert.That(clamped.VelocityCurvePoints, Is.EqualTo(new[] { (32, 0f), (64, 1f) }));
+        }
+
+        [Test]
+        public void GroupLevelVelocityCurvePointsMergeIntoTheRegion()
+        {
+            // indexed opcodes inherit through <group> -> <region> merging like any
+            // other opcode key
+            var instrument = SfzParser.Parse("<group> amp_velcurve_31=0.5\n<region> sample=a.wav");
+            var r = SfzMappedRegion.Map(instrument.Regions[0]);
+            Assert.That(r.VelocityCurvePoints, Is.EqualTo(new[] { (31, 0.5f) }));
+        }
+
+        [Test]
+        public void BuildVelocityCurveInterpolatesBetweenDefinedPoints()
+        {
+            var curve = MapFirst("<region> sample=a.wav amp_velcurve_32=0.5 amp_velcurve_96=0.6").BuildVelocityCurve();
+            Assert.That(curve, Has.Length.EqualTo(128));
+            Assert.That(curve[32], Is.EqualTo(0.5f));
+            Assert.That(curve[96], Is.EqualTo(0.6f));
+            Assert.That(curve[64], Is.EqualTo(0.55f).Within(1e-3f), "midway between the defined points");
+            Assert.That(curve[0], Is.EqualTo(0f), "below the lowest point interpolates from (0, 0)");
+            Assert.That(curve[16], Is.EqualTo(0.25f).Within(1e-3f));
+            Assert.That(curve[127], Is.EqualTo(1f), "above the highest point interpolates to (127, 1)");
+            Assert.That(curve[111], Is.EqualTo(0.7935f).Within(1e-3f), "midway up the (96, 0.6) -> (127, 1) tail");
+        }
+
+        [Test]
+        public void BuildVelocityCurveHonoursADefined127AndReturnsNullWithoutPoints()
+        {
+            Assert.That(MapFirst("<region> sample=a.wav").BuildVelocityCurve(), Is.Null);
+
+            var capped = MapFirst("<region> sample=a.wav amp_velcurve_127=0.5").BuildVelocityCurve();
+            Assert.That(capped[127], Is.EqualTo(0.5f), "a defined 127 overrides the implicit (127, 1)");
+            Assert.That(capped[0], Is.EqualTo(0f));
+            Assert.That(capped[64], Is.EqualTo(0.5f * 64 / 127).Within(1e-3f), "rises linearly from (0, 0)");
+        }
+
+        [Test]
         public void ModulationEnvelopeOpcodesMapToTypedSettings()
         {
             var r = MapFirst("<region> sample=a.wav fileg_depth=1200 fileg_attack=0.1 fileg_sustain=50 pitcheg_depth=200");

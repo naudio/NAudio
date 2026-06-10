@@ -64,26 +64,26 @@ namespace NAudio.Sampler.Tests
         [Test]
         public void VibratoLfoModulatesPitchPeriodically()
         {
-            // Strong vibrato on a constant 0.5 sample: the constant sample itself
-            // is unaffected by pitch (it's flat), so instead use a ramp sample so
-            // that pitch changes show up as amplitude changes over time. Simpler:
-            // assert the vibrato LFO produces a non-static signal envelope by
-            // comparing against the same instrument with no vibrato — they should
-            // diverge once the LFO is running. We use a ramp so pitch maps to value.
-            var withVibrato = BuildRampMod(
+            // A ramp sample so pitch maps to value: with vibrato the read position
+            // speeds up and slows down, so the render must diverge from the same
+            // instrument rendered with no vibrato generators.
+            var withVibrato = new SoundFontSampler(BuildRampMod(
                 (GenVibLfoToPitch, unchecked((ushort)(short)600)), // +/-600 cents
-                (GenFreqVibLfo, AbsoluteCents(8.0)));               // 8 Hz
-            var sampler = new SoundFontSampler(withVibrato, SampleRate, 8);
-            sampler.NoteOn(0, 60, 127);
-            var output = Render(sampler, SampleRate / 4); // 0.25 s
+                (GenFreqVibLfo, AbsoluteCents(8.0))),               // 8 Hz
+                SampleRate, 8);
+            var noVibrato = new SoundFontSampler(BuildRampMod(), SampleRate, 8);
 
-            // With vibrato the read position speeds up and slows down, so the
-            // per-frame difference (a proxy for read rate) should vary over time.
-            // Compare the signal's variance across two windows: a vibrato signal
-            // is non-stationary at the LFO period, so just assert it is not silent
-            // and not constant.
-            Assert.That(Peak(output), Is.GreaterThan(0.05f));
-            Assert.That(IsConstant(output), Is.False);
+            withVibrato.NoteOn(0, 60, 127);
+            noVibrato.NoteOn(0, 60, 127);
+            var modulated = Render(withVibrato, SampleRate / 4); // 0.25 s ≈ two LFO cycles
+            var reference = Render(noVibrato, SampleRate / 4);
+
+            Assert.That(Peak(modulated), Is.GreaterThan(0.05f));
+            float divergence = 0;
+            for (int i = 0; i < modulated.Length; i++)
+                divergence = Math.Max(divergence, Math.Abs(modulated[i] - reference[i]));
+            Assert.That(divergence, Is.GreaterThan(0.1f),
+                "vibrato should bend the pitch away from the unmodulated render");
         }
 
         [Test]
@@ -98,17 +98,18 @@ namespace NAudio.Sampler.Tests
             sampler.NoteOn(0, 60, 127);
             var output = Render(sampler, SampleRate / 2); // 0.5 s
 
-            // amplitude should vary over the run (tremolo), so min and max of the
-            // rectified left channel differ substantially
+            // amplitude should vary over the run (tremolo). Skip the attack
+            // transient: including the initial ramp from silence would let the
+            // assertion pass even with the LFO ignored.
             float min = float.MaxValue, max = 0;
-            for (int i = 0; i < output.Length; i += 2)
+            for (int f = 1000; f < SampleRate / 2; f++)
             {
-                float a = Math.Abs(output[i]);
+                float a = Math.Abs(output[f * 2]);
                 if (a > max) max = a;
                 if (a < min) min = a;
             }
             Assert.That(max, Is.GreaterThan(0.05f));
-            Assert.That(max - min, Is.GreaterThan(0.02f), "tremolo should vary amplitude");
+            Assert.That(max, Is.GreaterThan(min * 2f), "tremolo should swing the level");
         }
 
         [Test]

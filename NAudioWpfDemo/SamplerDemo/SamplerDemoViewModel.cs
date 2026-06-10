@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
 using Microsoft.Win32;
+using NAudio.Midi;
 using NAudio.Sampler;
 using NAudio.Sequencing;
 using NAudio.Wave;
@@ -15,7 +16,7 @@ namespace NAudioWpfDemo.SamplerDemo
     /// <summary>
     /// Loads a SoundFont (.sf2) and a MIDI file (.mid) and plays the MIDI through
     /// the SoundFont via <see cref="SoundFontSampler"/>, either live
-    /// (<see cref="SequencedMidiInstrument"/> → <see cref="WaveOut"/>) or rendered
+    /// (<see cref="SequencedMidiPlayer"/> → <see cref="WaveOut"/>) or rendered
     /// offline to a WAV (<see cref="OfflineMidiRenderer"/>). A volume slider and a
     /// draggable position bar (seeking via the <see cref="Transport"/>) are wired in
     /// during live playback.
@@ -132,7 +133,7 @@ namespace NAudioWpfDemo.SamplerDemo
                 sampler = CreateSampler();
                 sampler.MasterGain = (float)volume;
                 transport = new Transport(sequence.TempoMap, sampler.WaveFormat.SampleRate);
-                var instrument = new SequencedMidiInstrument(transport, sequence.Timeline, sampler);
+                var instrument = new SequencedMidiPlayer(transport, sequence.Timeline, sampler);
 
                 DurationSeconds = sequence.DurationFrames(SampleRate, tailSeconds: 1.0) / (double)SampleRate;
                 suppressSeek = true;

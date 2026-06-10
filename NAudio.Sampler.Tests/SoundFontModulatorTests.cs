@@ -182,14 +182,15 @@ namespace NAudio.Sampler.Tests
         [Test]
         public void ReverbSendAddsWetSignalToTheOutput()
         {
-            // a sustained looped note: with a full reverb send the shared reverb's
-            // wet return adds energy on top of the dry mix
-            float withSend = TotalEnergy(reverbSend: 1000);
-            float noSend = TotalEnergy(reverbSend: 0);
+            // the shared reverb bus is fully wet, so after the dry voice is choked
+            // the only remaining energy is the wet return fed by the send
+            float withSend = TailEnergy(reverbSend: 1000);
+            float noSend = TailEnergy(reverbSend: 0);
 
-            Assert.That(noSend, Is.GreaterThan(0f), "the dry voice should produce sound");
-            Assert.That(withSend, Is.GreaterThan(noSend * 1.05f),
+            Assert.That(withSend, Is.GreaterThan(1e-3f),
                 "a full reverb send should add audible wet energy");
+            Assert.That(withSend, Is.GreaterThan(noSend * 10f),
+                "the wet tail should come from the send, not the dry path");
         }
 
         [Test]
@@ -221,14 +222,19 @@ namespace NAudio.Sampler.Tests
             return SoundFontTestBuilder.BuildSingleRegion(data, igen, 0, 4, 0, 4, SampleRate, 60);
         }
 
-        private static float TotalEnergy(int reverbSend)
+        private static float TailEnergy(int reverbSend)
         {
             var sampler = new SoundFontSampler(MakeLoopedReverbFont(reverbSend), SampleRate);
             sampler.NoteOn(0, 60, 127);
-            var buffer = new float[4096 * 2];
-            sampler.Read(buffer);
+            var warm = new float[4096 * 2];
+            sampler.Read(warm);          // let the send buffer feed the reverb
+            sampler.AllSoundOff();       // choke the dry voice (short fade)
+
+            // render past the choke fade; remaining energy is the wet return only
+            var tail = new float[8192 * 2];
+            sampler.Read(tail);
             float energy = 0;
-            foreach (var s in buffer) energy += Math.Abs(s);
+            for (int i = tail.Length / 2; i < tail.Length; i++) energy += Math.Abs(tail[i]);
             return energy;
         }
 

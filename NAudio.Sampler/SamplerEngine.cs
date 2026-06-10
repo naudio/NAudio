@@ -16,7 +16,20 @@ namespace NAudio.Sampler
     /// regions a note should play; everything else lives here so both formats run
     /// through one engine.
     /// </summary>
-    public abstract class SamplerEngine : ISampleProvider
+    /// <remarks>
+    /// The engine is single-threaded by design: <see cref="Read"/> and every MIDI
+    /// entry point (<see cref="ProcessMidiEvent"/>, <see cref="NoteOn"/>,
+    /// <see cref="NoteOff"/>, …) must be called from one thread — normally the
+    /// audio thread. To drive it from asynchronous sources (a MIDI input
+    /// callback, a UI), wrap it in <see cref="Midi.LiveMidiInstrument"/>, which
+    /// queues events lock-free and applies them on the audio thread.
+    ///
+    /// Subclassing is deliberately internal for v1: the abstract region supply is
+    /// <c>private protected</c> and the format-neutral region model is internal,
+    /// so new instrument formats are added inside NAudio.Sampler. Widening this
+    /// later is non-breaking; see <c>Docs/Architecture/SamplerDesign.md</c> §11.
+    /// </remarks>
+    public abstract class SamplerEngine : IMidiInstrument
     {
         /// <summary>Maximum frames rendered per internal block.</summary>
         protected const int MaxFramesPerBlock = 1024;
@@ -25,7 +38,12 @@ namespace NAudio.Sampler
         private readonly float[] mixBuffer;
         private readonly SendBus reverbBus;
         private readonly SendBus chorusBus;
-        private readonly HashSet<(int channel, int note)> sustainedNotes = new();
+        // notes released while the sustain pedal was down, parked until pedal-up;
+        // the note-on velocity and frame are kept so the pedal-up release can fire
+        // release-triggered regions with the right rt_decay held-time
+        private readonly Dictionary<(int channel, int note), (int Velocity, long OnFrame)> sustainedNotes = new();
+        // reusable scratch for releasing parked notes without allocating per pedal-up
+        private readonly List<KeyValuePair<(int channel, int note), (int Velocity, long OnFrame)>> sustainedScratch = new();
         // keys currently held down per channel (note -> note-on velocity and the
         // frame it started), for legato/first triggers and release rt_decay
         private readonly Dictionary<int, (int Velocity, long OnFrame)>[] heldNotes;
@@ -64,6 +82,12 @@ namespace NAudio.Sampler
 
             Reverb = new ReverbEffect();
             Chorus = new ChorusEffect();
+            // The buses carry only the send portion of each voice, so the effects
+            // must return fully wet: their default part-dry Mix would add the raw
+            // send signal back into the output as a level error (and cost an
+            // extra dry/wet blend pass per block).
+            Reverb.Mix = 1f;
+            Chorus.Mix = 1f;
             reverbBus = new SendBus(Reverb);
             chorusBus = new SendBus(Chorus);
             reverbBus.Configure(WaveFormat, MaxFramesPerBlock);
@@ -173,8 +197,21 @@ namespace NAudio.Sampler
             bool legato = heldNotes[channel].Count > 0;
             double random = rng.NextDouble(); // one draw per note-on, so layers select consistently
 
+            // Re-striking a sounding key supersedes its previous voices: release
+            // them into their tails and forget any pedal-parked note-off, so a
+            // later pedal-up can't kill the new note and pedalled repeats don't
+            // accumulate held voices without bound.
+            sustainedNotes.Remove((channel, note));
+            foreach (var v in voices)
+                if (v.IsActive && v.IsHeld && !v.IgnoreNoteOff && v.Channel == channel && v.Note == note)
+                    v.Release();
+
             if (regions != null)
             {
+                // voices started by this note-on are exempt from its own chokes: an
+                // exclusive class terminates *other* notes, not sibling layers of
+                // the note being started (e.g. stereo-linked drum zones)
+                long dispatch = startOrder;
                 foreach (var region in regions)
                 {
                     if (region.IsCcTriggered) continue; // CC-triggered, not key-triggered
@@ -185,7 +222,7 @@ namespace NAudio.Sampler
                     if (!region.PassesRandom(random)) continue;
                     if (!region.PassesSequence()) continue; // advances the round-robin counter
 
-                    StartVoice(region, state, channel, note, velocity);
+                    StartVoice(region, state, channel, note, velocity, dispatch);
                 }
             }
 
@@ -193,14 +230,15 @@ namespace NAudio.Sampler
         }
 
         // gates on the key/velocity crossfade gain (silent layers don't spawn a
-        // voice), chokes the off_by group, and starts a voice scaled by the
-        // crossfade and any extra (e.g. release rt_decay) gain
-        private void StartVoice(SamplerRegion region, MidiChannelState state, int channel, int note, int velocity, float extraGain = 1f)
+        // voice), chokes the off_by group (sparing voices started by the same
+        // dispatch), and starts a voice scaled by the crossfade and any extra
+        // (e.g. release rt_decay) gain
+        private void StartVoice(SamplerRegion region, MidiChannelState state, int channel, int note, int velocity, long dispatchOrder, float extraGain = 1f)
         {
             float gain = region.CrossfadeGain(note, velocity) * extraGain;
             if (gain <= 0f) return;
 
-            if (region.OffByGroup != 0) ChokeGroup(region.OffByGroup, channel);
+            if (region.OffByGroup != 0) ChokeGroup(region.OffByGroup, channel, dispatchOrder);
 
             var voice = AcquireVoice();
             voice.Start(region, state, channel, note, velocity, startOrder++, gain);
@@ -244,7 +282,9 @@ namespace NAudio.Sampler
 
             if (Channels[channel].SustainPedal)
             {
-                sustainedNotes.Add((channel, note));
+                // park the note-off until pedal-up, keeping the note-on data so the
+                // eventual release can fire release triggers with the right held-time
+                sustainedNotes[(channel, note)] = tracked ? held : (64, framesRendered);
                 return;
             }
 
@@ -269,12 +309,13 @@ namespace NAudio.Sampler
             var regions = GetRegionsForNoteOn(channel, state);
             if (regions == null) return;
 
+            long dispatch = startOrder; // this dispatch's voices are exempt from its chokes
             foreach (var region in regions)
             {
                 if (region.Trigger != SamplerTrigger.Release) continue;
                 if (!region.Matches(note, velocity)) continue;
 
-                StartVoice(region, state, channel, note, velocity, region.ReleaseDecayGain(heldSeconds));
+                StartVoice(region, state, channel, note, velocity, dispatch, region.ReleaseDecayGain(heldSeconds));
             }
         }
 
@@ -285,13 +326,14 @@ namespace NAudio.Sampler
             var regions = GetRegionsForNoteOn(channel, state);
             if (regions == null) return;
 
+            long dispatch = startOrder; // this dispatch's voices are exempt from its chokes
             foreach (var region in regions)
             {
                 if (!region.IsCcTriggered) continue;
                 if (!region.TriggeredByCcChange(cc, oldValue, newValue)) continue;
 
                 int note = region.Sample.RootKey;
-                StartVoice(region, state, channel, note, Math.Clamp(newValue, 1, 127));
+                StartVoice(region, state, channel, note, Math.Clamp(newValue, 1, 127), dispatch);
             }
         }
 
@@ -373,28 +415,46 @@ namespace NAudio.Sampler
                     state.ResetControllers();
                     break;
                 case MidiController.BankSelect:
-                    state.Bank = (state.Bank & 0x7F) | (value << 7);
+                    // SF2 wBank (0-127) corresponds to the bank-select MSB; the LSB
+                    // is kept separately for GS/XG-style variation selection
+                    state.Bank = value;
                     break;
                 case MidiController.BankSelectLsb:
-                    state.Bank = (state.Bank & ~0x7F) | value;
+                    state.BankLsb = value;
                     break;
             }
         }
 
         private void ReleaseSustainedNotes(int channel)
         {
-            foreach (var v in voices)
-                if (v.IsActive && v.IsHeld && !v.IgnoreNoteOff && v.Channel == channel &&
-                    sustainedNotes.Contains((channel, v.Note)))
-                    v.Release();
-            sustainedNotes.RemoveWhere(k => k.channel == channel);
+            sustainedScratch.Clear();
+            foreach (var entry in sustainedNotes)
+                if (entry.Key.channel == channel)
+                    sustainedScratch.Add(entry);
+
+            foreach (var entry in sustainedScratch)
+            {
+                sustainedNotes.Remove(entry.Key);
+                int note = entry.Key.note;
+
+                foreach (var v in voices)
+                    if (v.IsActive && v.IsHeld && !v.IgnoreNoteOff && v.Channel == channel && v.Note == note)
+                        v.Release();
+
+                // the pedal, not the key, ends these notes — so release triggers
+                // (and their rt_decay held-time) fire now, like a damper falling
+                double heldSeconds = (framesRendered - entry.Value.OnFrame) / (double)WaveFormat.SampleRate;
+                FireReleaseTriggers(channel, note, entry.Value.Velocity, heldSeconds);
+            }
         }
 
-        // silence sounding voices belonging to the given choke group on a channel
-        private void ChokeGroup(int group, int channel)
+        // silence sounding voices belonging to the given choke group on a channel,
+        // sparing voices started at or after startedSince (a note-on must not choke
+        // the sibling layers it is itself starting)
+        private void ChokeGroup(int group, int channel, long startedSince)
         {
             foreach (var v in voices)
-                if (v.IsActive && v.Group == group && v.Channel == channel)
+                if (v.IsActive && v.Group == group && v.Channel == channel && v.StartOrder < startedSince)
                     v.Choke();
         }
 

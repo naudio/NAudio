@@ -43,62 +43,67 @@ namespace NAudio.Sampler.Tests
         [Test]
         public void QueuedNoteIsAppliedOnNextRead()
         {
-            var instrument = new LiveMidiInstrument(Sampler());
+            var engine = Sampler();
+            var instrument = new LiveMidiInstrument(engine);
 
             // before any Read, nothing has reached the sampler
-            Assert.That(instrument.Sampler.ActiveVoiceCount, Is.EqualTo(0));
+            Assert.That(engine.ActiveVoiceCount, Is.EqualTo(0));
 
             instrument.NoteOn(0, 60, 100);
             // still queued — not applied until the audio thread pulls
-            Assert.That(instrument.Sampler.ActiveVoiceCount, Is.EqualTo(0));
+            Assert.That(engine.ActiveVoiceCount, Is.EqualTo(0));
 
             float peak = Peak(instrument, 256);
-            Assert.That(instrument.Sampler.ActiveVoiceCount, Is.EqualTo(1));
+            Assert.That(engine.ActiveVoiceCount, Is.EqualTo(1));
             Assert.That(peak, Is.GreaterThan(0.1f));
         }
 
         [Test]
         public void NoteOffStopsTheVoice()
         {
-            var instrument = new LiveMidiInstrument(Sampler());
+            var engine = Sampler();
+            var instrument = new LiveMidiInstrument(engine);
             instrument.NoteOn(0, 60, 100);
             Peak(instrument, 64);
-            Assert.That(instrument.Sampler.ActiveVoiceCount, Is.EqualTo(1));
+            Assert.That(engine.ActiveVoiceCount, Is.EqualTo(1));
 
             instrument.NoteOff(0, 60);
             // pull enough for the amplitude envelope's release to complete
-            for (int i = 0; i < 2000 && instrument.Sampler.ActiveVoiceCount > 0; i++)
+            for (int i = 0; i < 2000 && engine.ActiveVoiceCount > 0; i++)
                 Peak(instrument, 256);
-            Assert.That(instrument.Sampler.ActiveVoiceCount, Is.EqualTo(0));
+            Assert.That(engine.ActiveVoiceCount, Is.EqualTo(0));
         }
 
         [Test]
         public void AcceptsRawMidiEvents()
         {
-            var instrument = new LiveMidiInstrument(Sampler());
+            var engine = Sampler();
+            var instrument = new LiveMidiInstrument(engine);
             instrument.Send(new NoteOnEvent(0, 1, 60, 100, 0));
             Peak(instrument, 64);
-            Assert.That(instrument.Sampler.ActiveVoiceCount, Is.EqualTo(1));
+            Assert.That(engine.ActiveVoiceCount, Is.EqualTo(1));
         }
 
         [Test]
         public void NullEventIsIgnored()
         {
-            var instrument = new LiveMidiInstrument(Sampler());
+            var engine = Sampler();
+            var instrument = new LiveMidiInstrument(engine);
             Assert.DoesNotThrow(() => instrument.Send(null));
             Peak(instrument, 64);
-            Assert.That(instrument.Sampler.ActiveVoiceCount, Is.EqualTo(0));
+            Assert.That(engine.ActiveVoiceCount, Is.EqualTo(0));
         }
 
         [Test]
         public void ConcurrentSendsAreNotLost()
         {
-            var instrument = new LiveMidiInstrument(Sampler());
+            var engine = Sampler();
+            var instrument = new LiveMidiInstrument(engine);
             // many notes pushed from several threads, mirroring a MIDI callback
             // racing the UI thread; the lock-free queue must lose none of them
             Parallel.For(0, 32, n => instrument.NoteOn(0, 36 + n, 100));
             for (int i = 0; i < 4; i++) Peak(instrument, 256);
-            Assert.That(instrument.Sampler.ActiveVoiceCount, Is.EqualTo(32));
+            Assert.That(engine.ActiveVoiceCount, Is.EqualTo(32));
         }
     }
 }

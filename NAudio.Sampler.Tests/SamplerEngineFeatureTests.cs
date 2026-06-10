@@ -52,6 +52,43 @@ namespace NAudio.Sampler.Tests
         }
 
         [Test]
+        public void PedalUpReleasesParkedNotesAndFiresReleaseTriggers()
+        {
+            // with the sustain pedal down a note-off is parked; the *pedal-up* is
+            // the real release, so that's when the release sample must fire
+            var sampler = Build(
+                "<region> sample=a.wav key=60 loop_mode=loop_continuous\n" +
+                "<region> sample=a.wav key=60 trigger=release loop_mode=loop_continuous");
+
+            sampler.ProcessMidiEvent(new ControlChangeEvent(0, 1, MidiController.Sustain, 127));
+            sampler.NoteOn(0, 60, 100);
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(1));
+
+            sampler.NoteOff(0, 60);
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(1), "the pedal defers both the note-off and its release trigger");
+
+            sampler.ProcessMidiEvent(new ControlChangeEvent(0, 1, MidiController.Sustain, 0));
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(2), "pedal-up releases the note and fires its release trigger");
+        }
+
+        [Test]
+        public void PedalUpDoesNotKillARestruckHeldKey()
+        {
+            // pedal down, play-release-replay the same key, pedal up: the second
+            // strike's key is still physically down, so it must keep sounding
+            var sampler = Build("<region> sample=a.wav key=60 loop_mode=loop_continuous");
+
+            sampler.ProcessMidiEvent(new ControlChangeEvent(0, 1, MidiController.Sustain, 127));
+            sampler.NoteOn(0, 60, 100);
+            sampler.NoteOff(0, 60);     // parked by the pedal
+            sampler.NoteOn(0, 60, 100); // re-strike supersedes the parked note
+
+            sampler.ProcessMidiEvent(new ControlChangeEvent(0, 1, MidiController.Sustain, 0));
+            Render(sampler, 4096); // let the superseded first voice release fully
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(1), "the re-struck key is still held and must keep sounding");
+        }
+
+        [Test]
         public void OneShotIgnoresNoteOff()
         {
             // long, non-looped one-shot: note-off must not stop it
@@ -188,23 +225,29 @@ namespace NAudio.Sampler.Tests
         [Test]
         public void Effect1SendAddsReverbWet()
         {
-            // a full effect1 send routes through the shared reverb bus, adding wet
-            // energy the dry-only render doesn't have
-            float withSend = TotalEnergy("<region> sample=a.wav key=60 loop_mode=loop_continuous effect1=100");
-            float noSend = TotalEnergy("<region> sample=a.wav key=60 loop_mode=loop_continuous");
+            // a full effect1 send routes through the shared (fully wet) reverb bus:
+            // after the dry voice is choked, only the wet tail remains — so the
+            // send, and nothing else, produces post-note energy
+            float withSend = TailEnergy("<region> sample=a.wav key=60 loop_mode=loop_continuous effect1=100");
+            float noSend = TailEnergy("<region> sample=a.wav key=60 loop_mode=loop_continuous");
 
-            Assert.That(noSend, Is.GreaterThan(0f));
-            Assert.That(withSend, Is.GreaterThan(noSend * 1.05f), "the reverb send should add wet energy");
+            Assert.That(withSend, Is.GreaterThan(1e-3f), "the reverb send should add a wet tail");
+            Assert.That(withSend, Is.GreaterThan(noSend * 10f), "the tail should come from the send, not the dry path");
         }
 
-        private static float TotalEnergy(string sfz)
+        private static float TailEnergy(string sfz)
         {
             var sampler = Build(sfz);
             sampler.NoteOn(0, 60, 127);
-            var buffer = new float[4096 * 2];
-            sampler.Read(buffer);
+            var warm = new float[4096 * 2];
+            sampler.Read(warm);          // let the send buffer feed the reverb
+            sampler.AllSoundOff();       // choke the dry voice (short fade)
+
+            // render past the choke fade; remaining energy is the wet return only
+            var tail = new float[8192 * 2];
+            sampler.Read(tail);
             float energy = 0;
-            foreach (var s in buffer) energy += Math.Abs(s);
+            for (int i = tail.Length / 2; i < tail.Length; i++) energy += Math.Abs(tail[i]);
             return energy;
         }
 

@@ -95,6 +95,24 @@ namespace NAudio.Core.Tests.SoundFont
         }
 
         [Test]
+        public void LocalPresetZoneGeneratorSupersedesGlobalPresetZone()
+        {
+            // §9.4: a generator in the local preset zone replaces the global
+            // preset zone's value — they must not be summed
+            var sf = LoadWithGlobalPresetZone(globalPan: 150, localPan: 40);
+            var region = sf.Presets[0].ResolveRegions()[0];
+            Assert.That(region.Generators[GeneratorEnum.Pan], Is.EqualTo(40));
+        }
+
+        [Test]
+        public void GlobalPresetZoneGeneratorAppliesWhereLocalZoneOmitsIt()
+        {
+            var sf = LoadWithGlobalPresetZone(globalPan: 150, localPan: null);
+            var region = sf.Presets[0].ResolveRegions()[0];
+            Assert.That(region.Generators[GeneratorEnum.Pan], Is.EqualTo(150));
+        }
+
+        [Test]
         public void AddressOffsetsCombineCoarseAndFine()
         {
             var gens = SoundFontGenerators.CreateWithDefaults();
@@ -151,6 +169,56 @@ namespace NAudio.Core.Tests.SoundFont
         /// generator at the instrument level and an additive Pan at the preset
         /// level, to exercise the absolute-vs-additive accumulation rule.
         /// </summary>
+        // a preset with a global zone (no Instrument generator) carrying Pan, and a
+        // local zone optionally carrying its own Pan, over an instrument with Pan 0
+        private static NAudio.SoundFont.SoundFont LoadWithGlobalPresetZone(short globalPan, short? localPan)
+        {
+            const ushort PanGen = 17;
+            const ushort InstrumentGen = 41;
+            const ushort SampleIdGen = 53;
+
+            var phdr = SoundFontTestHelper.Chunk("phdr", SoundFontTestHelper.Concat(
+                SoundFontTestHelper.PresetHeaderRecord("P", 0, 0, 0),
+                SoundFontTestHelper.PresetHeaderRecord("EOP", 0, 0, 2)));
+
+            // local preset zone: optional Pan, then the Instrument index generator
+            var localGens = localPan is short pan
+                ? SoundFontTestHelper.Concat(
+                    SoundFontTestHelper.GeneratorRecord(PanGen, unchecked((ushort)pan)),
+                    SoundFontTestHelper.GeneratorRecord(InstrumentGen, 0))
+                : SoundFontTestHelper.GeneratorRecord(InstrumentGen, 0);
+            ushort localGenCount = (ushort)(localGens.Length / 4);
+
+            var pbag = SoundFontTestHelper.Chunk("pbag", SoundFontTestHelper.Concat(
+                SoundFontTestHelper.BagRecord(0, 0),                       // global zone: Pan only
+                SoundFontTestHelper.BagRecord(1, 0),                       // local zone
+                SoundFontTestHelper.BagRecord((ushort)(1 + localGenCount), 0)));
+            var pmod = SoundFontTestHelper.Chunk("pmod", SoundFontTestHelper.ModulatorRecord());
+            var pgen = SoundFontTestHelper.Chunk("pgen", SoundFontTestHelper.Concat(
+                SoundFontTestHelper.GeneratorRecord(PanGen, unchecked((ushort)globalPan)),
+                localGens));
+
+            var inst = SoundFontTestHelper.Chunk("inst", SoundFontTestHelper.Concat(
+                SoundFontTestHelper.InstrumentRecord("I", 0),
+                SoundFontTestHelper.InstrumentRecord("EOI", 1)));
+            var ibag = SoundFontTestHelper.Chunk("ibag", SoundFontTestHelper.Concat(
+                SoundFontTestHelper.BagRecord(0, 0),
+                SoundFontTestHelper.BagRecord(1, 0)));
+            var imod = SoundFontTestHelper.Chunk("imod", SoundFontTestHelper.ModulatorRecord());
+            var igen = SoundFontTestHelper.Chunk("igen",
+                SoundFontTestHelper.GeneratorRecord(SampleIdGen, 0));
+            var shdr = SoundFontTestHelper.Chunk("shdr", SoundFontTestHelper.Concat(
+                SoundFontTestHelper.SampleHeaderRecord("S", 0, 3, 0, 3, 44100, 60, 0, 0, 1),
+                new byte[46]));
+
+            var pdta = SoundFontTestHelper.ListChunk("pdta", phdr, pbag, pmod, pgen, inst, ibag, imod, igen, shdr);
+            var sf2 = SoundFontTestHelper.BuildSoundFont(
+                SoundFontTestHelper.BuildInfoList(),
+                SoundFontTestHelper.BuildSdtaList(new byte[8]),
+                pdta);
+            return new NAudio.SoundFont.SoundFont(new MemoryStream(sf2));
+        }
+
         private static NAudio.SoundFont.SoundFont LoadCustom(short instrumentPan, short presetPan)
         {
             const ushort PanGen = 17;

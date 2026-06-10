@@ -221,6 +221,87 @@ namespace NAudio.Sampler.Tests
             return new NAudio.SoundFont.SoundFont(new MemoryStream(sf2));
         }
 
+        /// <summary>
+        /// Builds an instrument with two zones on the *same* key range (40-50)
+        /// sharing exclusiveClass 1 — the stereo-linked / layered-drum shape where
+        /// one note-on legitimately starts both zones.
+        /// </summary>
+        public static NAudio.SoundFont.SoundFont BuildTwoLayerExclusiveClass(byte[] sampleData, uint sampleRate)
+        {
+            // each zone: KeyRange 40-50 (lo byte, hi byte), exclusiveClass 1, loop
+            var zone0 = Concat(
+                Gen(43, (ushort)(40 | (50 << 8))), // KeyRange
+                Gen(57, 1),                         // ExclusiveClass
+                Gen(54, 1),                         // loop
+                Gen(58, 60),                        // root key
+                Gen(53, 0));                        // sampleID
+            var zone1 = Concat(
+                Gen(43, (ushort)(40 | (50 << 8))),
+                Gen(57, 1),
+                Gen(54, 1),
+                Gen(58, 60),
+                Gen(53, 0));
+            var igen = Chunk("igen", Concat(zone0, zone1));
+
+            var phdr = Chunk("phdr", Concat(
+                PresetHeader("P", 0, 0, 0),
+                PresetHeader("EOP", 0, 0, 1)));
+            var pbag = Chunk("pbag", Concat(Bag(0, 0), Bag(1, 0)));
+            var pmod = Chunk("pmod", Modulator());
+            var pgen = Chunk("pgen", Gen(41, 0));
+            var inst = Chunk("inst", Concat(
+                InstrumentRecord("I", 0),
+                InstrumentRecord("EOI", 2)));
+            var ibag = Chunk("ibag", Concat(Bag(0, 0), Bag(5, 0), Bag(10, 0)));
+            var imod = Chunk("imod", Modulator());
+            var shdr = Chunk("shdr", Concat(
+                SampleHeader("S", 0, 4, 0, 4, sampleRate, 60),
+                new byte[46]));
+
+            var pdta = ListChunk("pdta", phdr, pbag, pmod, pgen, inst, ibag, imod, igen, shdr);
+            var sdta = ListChunk("sdta", Chunk("smpl", sampleData));
+            var sf2 = WrapSoundFont(InfoList(), sdta, pdta);
+            return new NAudio.SoundFont.SoundFont(new MemoryStream(sf2));
+        }
+
+        /// <summary>
+        /// Builds a font where the same single-zone instrument is reachable from
+        /// two presets: program 0 in bank 0 (full level) and program 0 in bank 8,
+        /// attenuated at the preset level — so a test can hear which bank a note
+        /// resolved against.
+        /// </summary>
+        public static NAudio.SoundFont.SoundFont BuildTwoBankFont(byte[] sampleData, uint sampleRate,
+            ushort bank8AttenuationCb)
+        {
+            var phdr = Chunk("phdr", Concat(
+                PresetHeader("P0", 0, 0, 0),
+                PresetHeader("P8", 0, 8, 1),
+                PresetHeader("EOP", 0, 0, 2)));
+            var pbag = Chunk("pbag", Concat(Bag(0, 0), Bag(1, 0), Bag(3, 0)));
+            var pmod = Chunk("pmod", Modulator());
+            var pgen = Chunk("pgen", Concat(
+                Gen(41, 0),                  // bank-0 preset -> instrument 0
+                Gen(48, bank8AttenuationCb), // bank-8 preset: attenuation offset...
+                Gen(41, 0)));                //   ...onto the same instrument
+            var inst = Chunk("inst", Concat(
+                InstrumentRecord("I", 0),
+                InstrumentRecord("EOI", 1)));
+            var igen = Chunk("igen", Concat(
+                Gen(54, 1),   // loop
+                Gen(58, 60),  // root key
+                Gen(53, 0))); // sampleID
+            var ibag = Chunk("ibag", Concat(Bag(0, 0), Bag(3, 0)));
+            var imod = Chunk("imod", Modulator());
+            var shdr = Chunk("shdr", Concat(
+                SampleHeader("S", 0, 4, 0, 4, sampleRate, 60),
+                new byte[46]));
+
+            var pdta = ListChunk("pdta", phdr, pbag, pmod, pgen, inst, ibag, imod, igen, shdr);
+            var sdta = ListChunk("sdta", Chunk("smpl", sampleData));
+            var sf2 = WrapSoundFont(InfoList(), sdta, pdta);
+            return new NAudio.SoundFont.SoundFont(new MemoryStream(sf2));
+        }
+
         private static ushort GenCount(byte[] igenChunk)
         {
             // igenChunk = "igen" + uint32 size + records (4 bytes each)

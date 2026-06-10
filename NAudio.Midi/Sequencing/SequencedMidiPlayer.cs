@@ -1,36 +1,36 @@
 using System;
 using System.Collections.Generic;
-using NAudio.Midi;
 using NAudio.Sequencing;
 using NAudio.Wave;
 
-namespace NAudio.Sampler
+namespace NAudio.Midi
 {
     /// <summary>
-    /// Plays an <see cref="EventTimeline{T}"/> of MIDI events on a
-    /// <see cref="SamplerEngine"/>, driven by a <see cref="Transport"/>. Unlike
+    /// Plays an <see cref="EventTimeline{T}"/> of MIDI events on an
+    /// <see cref="IMidiInstrument"/>, driven by a <see cref="Transport"/>. Unlike
     /// <see cref="SequencedSampleProvider{T}"/> (which spawns a sample provider
     /// per event into a mixer), this drives a single stateful polyphonic
     /// instrument: on each <see cref="Read"/> it dispatches the buffer's MIDI
-    /// events to the sampler at their exact frame offset, rendering the sampler in
-    /// segments between events so timing is sample-accurate within the block.
+    /// events to the instrument at their exact frame offset, rendering the
+    /// instrument in segments between events so timing is sample-accurate within
+    /// the block.
     /// </summary>
-    public sealed class SequencedMidiInstrument : ISampleProvider
+    public sealed class SequencedMidiPlayer : ISampleProvider
     {
         private readonly Transport transport;
         private readonly EventTimeline<MidiEvent> timeline;
-        private readonly SamplerEngine sampler;
+        private readonly IMidiInstrument instrument;
         private readonly List<(int Offset, MidiEvent Event)> pending = new();
         private readonly Action<SequencerEvent<MidiEvent>, int> collect;
 
-        /// <summary>Creates the bridge. The sampler's sample rate must match the transport's.</summary>
-        public SequencedMidiInstrument(Transport transport, EventTimeline<MidiEvent> timeline, SamplerEngine sampler)
+        /// <summary>Creates the bridge. The instrument's sample rate must match the transport's.</summary>
+        public SequencedMidiPlayer(Transport transport, EventTimeline<MidiEvent> timeline, IMidiInstrument instrument)
         {
             this.transport = transport ?? throw new ArgumentNullException(nameof(transport));
             this.timeline = timeline ?? throw new ArgumentNullException(nameof(timeline));
-            this.sampler = sampler ?? throw new ArgumentNullException(nameof(sampler));
-            if (sampler.WaveFormat.SampleRate != transport.SampleRate)
-                throw new ArgumentException("Sampler sample rate must match the transport's sample rate.", nameof(sampler));
+            this.instrument = instrument ?? throw new ArgumentNullException(nameof(instrument));
+            if (instrument.WaveFormat.SampleRate != transport.SampleRate)
+                throw new ArgumentException("Instrument sample rate must match the transport's sample rate.", nameof(instrument));
 
             collect = (ev, frameOffset) => pending.Add((frameOffset, ev.Payload));
         }
@@ -38,8 +38,11 @@ namespace NAudio.Sampler
         /// <summary>The transport driving playback position.</summary>
         public Transport Transport => transport;
 
+        /// <summary>The instrument the timeline plays.</summary>
+        public IMidiInstrument Instrument => instrument;
+
         /// <inheritdoc/>
-        public WaveFormat WaveFormat => sampler.WaveFormat;
+        public WaveFormat WaveFormat => instrument.WaveFormat;
 
         /// <inheritdoc/>
         public int Read(Span<float> buffer)
@@ -48,9 +51,9 @@ namespace NAudio.Sampler
             int frames = buffer.Length / channels;
             if (frames == 0) return 0;
 
-            // when stopped, still pull the sampler so envelope tails ring out
+            // when stopped, still pull the instrument so envelope tails ring out
             if (!transport.IsPlaying)
-                return sampler.Read(buffer);
+                return instrument.Read(buffer);
 
             pending.Clear();
             long startFrame = transport.CurrentFrames;
@@ -63,14 +66,14 @@ namespace NAudio.Sampler
                 int at = offset < 0 ? 0 : offset > frames ? frames : offset;
                 if (at > framePos)
                 {
-                    sampler.Read(buffer.Slice(framePos * channels, (at - framePos) * channels));
+                    instrument.Read(buffer.Slice(framePos * channels, (at - framePos) * channels));
                     framePos = at;
                 }
-                sampler.ProcessMidiEvent(midiEvent);
+                instrument.ProcessMidiEvent(midiEvent);
             }
 
             if (framePos < frames)
-                sampler.Read(buffer.Slice(framePos * channels, (frames - framePos) * channels));
+                instrument.Read(buffer.Slice(framePos * channels, (frames - framePos) * channels));
 
             transport.AdvanceByFrames(frames);
             return buffer.Length;

@@ -1,16 +1,17 @@
 using System;
 using System.Collections.Generic;
-using NAudio.Midi;
 using NAudio.Sequencing;
 
-namespace NAudio.Sampler
+namespace NAudio.Midi
 {
     /// <summary>
     /// A MIDI file loaded into the sequencing core: its channel events placed on
     /// an <see cref="EventTimeline{T}"/> at the canonical PPQ
     /// (<see cref="MusicalTime.CanonicalPpq"/>), and its tempo changes built into
-    /// an <see cref="ITempoMap"/>. Feed it through a <see cref="SequencedMidiInstrument"/>
-    /// (or <see cref="OfflineMidiRenderer"/>) to play it on a sampler.
+    /// an <see cref="ITempoMap"/>. Feed it through a <see cref="SequencedMidiPlayer"/>
+    /// (or <see cref="OfflineMidiRenderer"/>) to play it on any
+    /// <see cref="IMidiInstrument"/> — the NAudio.Sampler engine, a synthesiser,
+    /// a hosted VST instrument.
     ///
     /// Note/CC/pitch-bend/aftertouch/program events are kept; meta and sysex
     /// events are dropped except <c>SetTempo</c>, which builds the tempo map.

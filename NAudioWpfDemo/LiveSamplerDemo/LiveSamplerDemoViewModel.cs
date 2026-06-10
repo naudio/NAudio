@@ -25,6 +25,7 @@ namespace NAudioWpfDemo.LiveSamplerDemo
         private const int SampleRate = 44100;
 
         private IWavePlayer waveOut;
+        private SamplerEngine sampler;
         private LiveMidiInstrument instrument;
         private IMidiInput midiIn;
         private readonly DispatcherTimer voiceTimer;
@@ -65,7 +66,7 @@ namespace NAudioWpfDemo.LiveSamplerDemo
             PanicCommand = new DelegateCommand(Panic);
 
             voiceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
-            voiceTimer.Tick += (_, _) => ActiveVoiceCount = instrument?.Sampler.ActiveVoiceCount ?? 0;
+            voiceTimer.Tick += (_, _) => ActiveVoiceCount = sampler?.ActiveVoiceCount ?? 0;
 
             _ = RefreshDevicesAsync();
         }
@@ -104,7 +105,7 @@ namespace NAudioWpfDemo.LiveSamplerDemo
             {
                 masterVolume = value;
                 OnPropertyChanged(nameof(MasterVolume));
-                if (instrument != null) instrument.Sampler.MasterGain = (float)value;
+                if (sampler != null) sampler.MasterGain = (float)value;
             }
         }
 
@@ -150,7 +151,7 @@ namespace NAudioWpfDemo.LiveSamplerDemo
 
             try
             {
-                var sampler = CreateSampler(instrumentPath);
+                sampler = CreateSampler(instrumentPath);
                 sampler.MasterGain = (float)masterVolume;
                 instrument = new LiveMidiInstrument(sampler);
 
@@ -197,6 +198,7 @@ namespace NAudioWpfDemo.LiveSamplerDemo
                 waveOut = null;
             }
             instrument = null;
+            sampler = null;
             ActiveVoiceCount = 0;
             if (isRunning) Status = "Stopped.";
             IsRunning = false;

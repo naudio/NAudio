@@ -59,7 +59,9 @@ namespace NAudio.Sampler
             bool percussion = channel == PercussionChannel;
             int bank = percussion ? PercussionBank : state.Bank;
 
-            int key = (bank << 16) | state.Program;
+            // the forced-percussion path resolves differently from a melodic lookup,
+            // so it gets its own cache slot even if the bank number coincides
+            int key = (percussion ? 1 << 24 : 0) | (bank << 16) | state.Program;
             if (regionCache.TryGetValue(key, out var cached)) return cached;
 
             var preset = percussion ? FindPercussionPreset(state.Program) : FindPreset(bank, state.Program);
@@ -127,18 +129,20 @@ namespace NAudio.Sampler
             return result;
         }
 
+        // a melodic program in a missing bank falls back to bank 0 (GS-style
+        // capital tone), else any other melodic bank — never to a percussion kit
         private Preset FindPreset(int bank, int program)
         {
+            Preset bankZero = null;
             Preset fallback = null;
             foreach (var p in soundFont.Presets)
             {
-                if (p.PatchNumber == program)
-                {
-                    if (p.Bank == bank) return p;
-                    fallback ??= p; // same program, any bank
-                }
+                if (p.PatchNumber != program) continue;
+                if (p.Bank == bank) return p;
+                if (p.Bank == 0) bankZero ??= p;
+                else if (p.Bank != PercussionBank) fallback ??= p;
             }
-            return fallback;
+            return bankZero ?? fallback;
         }
 
         private static float[] ConvertSampleData(SoundFont.SoundFont soundFont)

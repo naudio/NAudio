@@ -4,7 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <IsAotCompatible>true</IsAotCompatible>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Description>A cross-platform software sampler for NAudio that plays MIDI through SoundFont (.sf2) instruments. Polyphonic voice engine with pitch, looping, ADSR amplitude envelopes and per-voice filtering, exposed as an ISampleProvider.</Description>
+    <Description>A cross-platform software sampler for NAudio that plays MIDI through SoundFont (.sf2) and SFZ instruments, or a single sample mapped across the keyboard. Polyphonic voice engine with DAHDSR envelopes, LFOs, modulated filters, the SF2 modulator engine and reverb/chorus sends, exposed as an ISampleProvider.</Description>
   </PropertyGroup>
 
   <ItemGroup>

@@ -26,8 +26,15 @@ namespace NAudio.Sampler
             ResetControllers();
         }
 
-        /// <summary>Selected bank number (CC0/CC32 combined; 128 = percussion).</summary>
+        /// <summary>
+        /// Selected bank number: the bank-select MSB (CC0, 0-127), which is what
+        /// SF2 wBank stores. 128 (the percussion bank) is never selected via CC —
+        /// the engine forces it for the percussion channel.
+        /// </summary>
         public int Bank { get; set; }
+
+        /// <summary>The bank-select LSB (CC32), kept for GS/XG-style variation use.</summary>
+        public int BankLsb { get; set; }
 
         /// <summary>Selected program (patch) number.</summary>
         public int Program { get; set; }

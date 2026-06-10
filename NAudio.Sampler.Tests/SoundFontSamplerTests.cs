@@ -278,6 +278,73 @@ namespace NAudio.Sampler.Tests
         }
 
         [Test]
+        public void ExclusiveClassDoesNotChokeSiblingLayersOfTheSameNoteOn()
+        {
+            // two zones on the same key range in the same exclusive class — the
+            // stereo-linked / layered-drum shape. One note-on starts both layers
+            // and must not choke its own siblings; the next note chokes them all.
+            var data = new byte[8];
+            for (int i = 0; i < 4; i++) { data[i * 2] = 0x00; data[i * 2 + 1] = 0x40; } // ~0.5
+            var sf = SoundFontTestBuilder.BuildTwoLayerExclusiveClass(data, SampleRate);
+            var sampler = NewSampler(sf);
+
+            sampler.NoteOn(0, 44, 127);
+            Render(sampler, 512); // past the choke fade, had a sibling been wrongly choked
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(2), "both layers of one note-on should sound");
+
+            sampler.NoteOn(0, 46, 127);
+            Render(sampler, 512);
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(2), "the previous note's layers should both be choked");
+        }
+
+        [Test]
+        public void BankSelectMsbSelectsTheSf2Bank()
+        {
+            // SF2 wBank is the bank-select MSB: CC0=8 must reach the bank-8
+            // preset (attenuated in this font), not be shifted to an out-of-range
+            // bank number that falls back to bank 0
+            var data = new byte[8];
+            for (int i = 0; i < 4; i++) { data[i * 2] = 0x00; data[i * 2 + 1] = 0x40; } // ~0.5
+            var sf = SoundFontTestBuilder.BuildTwoBankFont(data, SampleRate, bank8AttenuationCb: 200);
+
+            var bank0 = NewSampler(sf);
+            bank0.NoteOn(0, 60, 127);
+            float loud = Peak(Render(bank0, 256));
+
+            var bank8 = NewSampler(sf);
+            bank8.ProcessMidiEvent(new ControlChangeEvent(0, 1, MidiController.BankSelect, 8));
+            bank8.NoteOn(0, 60, 127);
+            float quiet = Peak(Render(bank8, 256));
+
+            Assert.That(loud, Is.GreaterThan(0.1f));
+            Assert.That(quiet, Is.LessThan(loud * 0.5f), "CC0=8 should select the attenuated bank-8 preset");
+        }
+
+        [Test]
+        public void MelodicProgramDoesNotFallBackToThePercussionBank()
+        {
+            // a font whose only preset is a bank-128 drum kit: a melodic channel
+            // must stay silent rather than play the kit, while the percussion
+            // channel still resolves it
+            var igen = SoundFontTestBuilder.Chunk("igen", SoundFontTestBuilder.Concat(
+                SoundFontTestBuilder.Gen(54, 1),
+                SoundFontTestBuilder.Gen(58, 60),
+                SoundFontTestBuilder.Gen(53, 0)));
+            var data = new byte[8];
+            for (int i = 0; i < 4; i++) { data[i * 2] = 0x00; data[i * 2 + 1] = 0x40; }
+            var sf = SoundFontTestBuilder.BuildSingleRegion(data, igen,
+                sampleStart: 0, sampleEnd: 4, loopStart: 0, loopEnd: 4,
+                sampleRate: SampleRate, originalPitch: 60, bank: 128);
+            var sampler = NewSampler(sf);
+
+            sampler.NoteOn(0, 60, 127); // melodic channel: no melodic preset exists
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(0), "a melodic program must not fall back to a drum kit");
+
+            sampler.NoteOn(9, 60, 127); // percussion channel resolves the kit
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(1));
+        }
+
+        [Test]
         public void NoteOnVelocityZeroIsNoteOff()
         {
             var sampler = NewSampler(BuildReleasingInstrument(releaseTimecents: -7200));

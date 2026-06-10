@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Input;
 using Microsoft.Win32;
 using NAudio.Dsp;
+using NAudio.Midi;
 using NAudio.Sampler;
 using NAudio.SoundFile;
 using NAudio.Wave;

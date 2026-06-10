@@ -39,7 +39,9 @@ namespace NAudio.SoundFont
                 var instrument = FindInstrument(presetZone);
                 if (instrument?.Zones == null) continue; // global or empty zone
 
-                // preset-level additive offsets: global zone first, then this zone
+                // preset-level offsets: the global zone supplies defaults that a
+                // local zone's generator supersedes (the offsets are then *added*
+                // to the instrument level, per §9.4)
                 var presetOffsets = SoundFontGenerators.CreateZeroed();
                 if (globalPreset != null) ApplyPresetOffsets(globalPreset, presetOffsets);
                 ApplyPresetOffsets(presetZone, presetOffsets);
@@ -161,7 +163,11 @@ namespace NAudio.SoundFont
             foreach (var g in zone.Generators)
             {
                 if (!IsAllowedAtPresetLevel(g.GeneratorType)) continue;
-                target[g.GeneratorType] += g.Int16Amount;
+                // assignment, not addition: a generator in the local preset zone
+                // supersedes the global preset zone's value (§9.4) — the *additive*
+                // step is applying these offsets to the instrument level, which
+                // happens once in AddOffsets
+                target[g.GeneratorType] = g.Int16Amount;
             }
         }
 

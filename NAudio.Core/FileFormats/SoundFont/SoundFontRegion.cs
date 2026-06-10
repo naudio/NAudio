@@ -10,8 +10,8 @@ namespace NAudio.SoundFont
     /// instrument values, per SoundFont 2.04 §9.4). Produced by
     /// <see cref="SoundFontInstrumentResolver"/>.
     ///
-    /// A region is the SoundFont equivalent of an SFZ <c>&lt;region&gt;</c>; the
-    /// forthcoming format-neutral sampler model is a projection of this.
+    /// A region is the SoundFont equivalent of an SFZ <c>&lt;region&gt;</c>;
+    /// NAudio.Sampler's format-neutral region model is a projection of this.
     /// </summary>
     public sealed class SoundFontRegion
     {

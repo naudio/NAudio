@@ -6,8 +6,8 @@ namespace NAudio.Dsp
     /// Conversions between the musical / MIDI domain and the DSP domain that a
     /// sampler or synthesiser needs: note numbers, frequencies, cents, timecents
     /// and centibels. These are the units SoundFont generators and SFZ opcodes
-    /// are expressed in, but the helpers are deliberately format-neutral so the
-    /// future synth can share them.
+    /// are expressed in, but the helpers are deliberately format-neutral so any
+    /// instrument can share them.
     /// </summary>
     public static class SynthMath
     {

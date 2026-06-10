@@ -63,6 +63,62 @@ namespace NAudio.Core.Tests.SoundFont
             Assert.That(sf.SampleData24, Is.Null);
         }
 
+        // ---- ReadSampleDataFloat: the canonical 16/24-bit decode ----
+
+        private static NAudio.SoundFont.SoundFont Load(byte[] smpl, byte[] sm24 = null)
+        {
+            var info = SoundFontTestHelper.BuildInfoList();
+            var sdta = sm24 == null
+                ? SoundFontTestHelper.BuildSdtaList(smpl)
+                : SoundFontTestHelper.BuildSdta24List(smpl, sm24);
+            var pdta = SoundFontTestHelper.BuildMinimalPdtaList(sampleEnd: (uint)(smpl.Length / 2 - 1));
+            return new NAudio.SoundFont.SoundFont(
+                new MemoryStream(SoundFontTestHelper.BuildSoundFont(info, sdta, pdta)));
+        }
+
+        [Test]
+        public void ReadSampleDataFloatDecodes16BitSamples()
+        {
+            // 16384 (0x4000) and -16384 (0xC000), little-endian
+            var smpl = new byte[] { 0x00, 0x40, 0x00, 0xC0 };
+            var samples = Load(smpl).ReadSampleDataFloat();
+
+            Assert.That(samples, Has.Length.EqualTo(2));
+            Assert.That(samples[0], Is.EqualTo(0.5f));
+            Assert.That(samples[1], Is.EqualTo(-0.5f));
+        }
+
+        [Test]
+        public void ReadSampleDataFloatCombinesTheSm24LowBytes()
+        {
+            // per SF2.04: sample = (smpl16 << 8) | sm24, scaled by 2^23
+            var smpl = new byte[]
+            {
+                0x01, 0x00, // 1      -> (1 << 8) | 0xFF = 511
+                0xFF, 0xFF, // -1     -> (-1 << 8) | 0x00 = -256
+                0x00, 0x80, // -32768 -> (-32768 << 8) | 0x00 = -8388608 (full scale)
+            };
+            var sm24 = new byte[] { 0xFF, 0x00, 0x00, 0x00 }; // padded to even length
+            var samples = Load(smpl, sm24).ReadSampleDataFloat();
+
+            const float scale = 1f / 8388608f;
+            Assert.That(samples, Has.Length.EqualTo(3));
+            Assert.That(samples[0], Is.EqualTo(511 * scale));
+            Assert.That(samples[1], Is.EqualTo(-256 * scale));
+            Assert.That(samples[2], Is.EqualTo(-1f));
+        }
+
+        [Test]
+        public void ReadSampleDataFloatFallsBackTo16BitWhenSm24IsInvalid()
+        {
+            var smpl = new byte[] { 0x00, 0x40, 0x00, 0x40 };
+            var sm24 = new byte[] { 0xAA }; // too short for 2 samples -> ignored
+            var samples = Load(smpl, sm24).ReadSampleDataFloat();
+
+            Assert.That(samples[0], Is.EqualTo(0.5f));
+            Assert.That(samples[1], Is.EqualTo(0.5f));
+        }
+
         #region Spec violation tests (HIGH severity)
 
         [Test]

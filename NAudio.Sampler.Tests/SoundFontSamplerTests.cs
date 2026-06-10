@@ -117,6 +117,36 @@ namespace NAudio.Sampler.Tests
         }
 
         [Test]
+        public void TwentyFourBitSamplesRenderWithTheLowByteApplied()
+        {
+            // A constant sample whose 16-bit word is tiny (1) and whose sm24 low
+            // byte is 0xFF: the 24-bit value ((1 << 8) | 255 = 511) is nearly
+            // double the 16-bit-only interpretation (256), so the rendered level
+            // audibly reflects the low byte end-to-end through the sampler.
+            var igen = SoundFontTestBuilder.Chunk("igen", SoundFontTestBuilder.Concat(
+                SoundFontTestBuilder.Gen(54, 1),   // loop
+                SoundFontTestBuilder.Gen(58, 60),  // root key
+                SoundFontTestBuilder.Gen(53, 0))); // sampleID
+            var data = new byte[8];
+            for (int i = 0; i < 4; i++) { data[i * 2] = 0x01; data[i * 2 + 1] = 0x00; } // 16-bit word = 1
+            var sm24 = new byte[] { 0xFF, 0xFF, 0xFF, 0xFF };
+
+            var with24 = NewSampler(SoundFontTestBuilder.BuildSingleRegion(
+                data, igen, 0, 4, 0, 4, SampleRate, 60, sm24: sm24));
+            var only16 = NewSampler(SoundFontTestBuilder.BuildSingleRegion(
+                data, igen, 0, 4, 0, 4, SampleRate, 60));
+
+            with24.NoteOn(0, 60, 127);
+            only16.NoteOn(0, 60, 127);
+            float peak24 = Peak(Render(with24, 512));
+            float peak16 = Peak(Render(only16, 512));
+
+            Assert.That(peak16, Is.GreaterThan(0f));
+            Assert.That(peak24 / peak16, Is.EqualTo(511f / 256f).Within(0.02),
+                "the sm24 low byte should raise the rendered level by its exact contribution");
+        }
+
+        [Test]
         public void PercussionChannelResolvesAgainstBank128EvenAfterBankSelect()
         {
             // GM channel 10 (index 9) is percussion: a kit lives in bank 128, and

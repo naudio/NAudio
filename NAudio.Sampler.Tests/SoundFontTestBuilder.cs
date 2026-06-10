@@ -172,7 +172,7 @@ namespace NAudio.Sampler.Tests
         /// </summary>
         public static NAudio.SoundFont.SoundFont BuildSingleRegion(byte[] sampleData, byte[] igen,
             uint sampleStart, uint sampleEnd, uint loopStart, uint loopEnd, uint sampleRate, byte originalPitch,
-            ushort bank = 0, byte[] instrumentModulators = null)
+            ushort bank = 0, byte[] instrumentModulators = null, byte[] sm24 = null)
         {
             ushort modCount = (ushort)((instrumentModulators?.Length ?? 0) / 10);
             var phdr = Chunk("phdr", Concat(
@@ -191,7 +191,9 @@ namespace NAudio.Sampler.Tests
                 new byte[46]));
 
             var pdta = ListChunk("pdta", phdr, pbag, pmod, pgen, inst, ibag, imod, igen, shdr);
-            var sdta = ListChunk("sdta", Chunk("smpl", sampleData));
+            var sdta = sm24 == null
+                ? ListChunk("sdta", Chunk("smpl", sampleData))
+                : ListChunk("sdta", Chunk("smpl", sampleData), Chunk("sm24", sm24));
             var sf2 = WrapSoundFont(InfoList(), sdta, pdta);
             return new NAudio.SoundFont.SoundFont(new MemoryStream(sf2));
         }

@@ -36,7 +36,7 @@ namespace NAudio.Sampler
             : base(sampleRate, maxVoices)
         {
             this.soundFont = soundFont ?? throw new ArgumentNullException(nameof(soundFont));
-            samplePool = ConvertSampleData(soundFont);
+            samplePool = soundFont.ReadSampleDataFloat();
             PrewarmPresets();
         }
 
@@ -203,34 +203,5 @@ namespace NAudio.Sampler
             return bankZero ?? fallback;
         }
 
-        private static float[] ConvertSampleData(SoundFont.SoundFont soundFont)
-        {
-            byte[] data = soundFont.SampleData;
-            byte[] low = soundFont.SampleData24;
-            int count = data.Length / 2;
-            var samples = new float[count];
-
-            if (low != null && low.Length >= count)
-            {
-                // 24-bit: combine the 16-bit high word with the 8-bit low byte
-                const float scale = 1f / 8388608f; // 2^23
-                for (int i = 0; i < count; i++)
-                {
-                    short high = (short)(data[i * 2] | (data[i * 2 + 1] << 8));
-                    int value = (high << 8) | low[i];
-                    samples[i] = value * scale;
-                }
-            }
-            else
-            {
-                const float scale = 1f / 32768f;
-                for (int i = 0; i < count; i++)
-                {
-                    short value = (short)(data[i * 2] | (data[i * 2 + 1] << 8));
-                    samples[i] = value * scale;
-                }
-            }
-            return samples;
-        }
     }
 }

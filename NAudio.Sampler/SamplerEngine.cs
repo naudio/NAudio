@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Numerics.Tensors;
 using NAudio.Effects;
 using NAudio.Midi;
 using NAudio.Wave;
@@ -403,9 +404,9 @@ namespace NAudio.Sampler
                 reverbBus.ProcessReturn(block, frames, (sends & VoiceSendActivity.Reverb) != 0);
                 chorusBus.ProcessReturn(block, frames, (sends & VoiceSendActivity.Chorus) != 0);
 
-                float g = masterGain;
-                for (int i = 0; i < frames * 2; i++)
-                    buffer[written + i] = block[i] * g;
+                // vectorised scalar multiply (same IEEE results as the scalar
+                // loop — multiplication is an exact, element-independent op)
+                TensorPrimitives.Multiply(block, masterGain, buffer.Slice(written, frames * 2));
 
                 written += frames * 2;
                 framesRemaining -= frames;

@@ -120,6 +120,11 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * Added `Lfo.Advance(samples)` — skips n samples in one call (delay consumed in O(1), single waveform evaluation), bit-identical to n `Process()` calls, for control-rate consumers
  * Added `DahdsrEnvelope.Advance(samples)` — skips n samples in one call (delay/hold counters in O(1), ramps stepped with state in locals), bit-identical to n `Process()` calls
  * `InterpolatingSampleReader.Read(Span<float>, increment)` now renders through tight per-quality loops while inside the "safe window" away from the loop seam/crossfade/ends (raw interpolation taps, wrap/clamp/crossfade checks hoisted out), bit-identical to the per-sample path; the per-sample path also drops repeated property reads and `Math.Floor` calls
+ * Sampler note-on is allocation-free in steady state: voices keep their readers (re-seated via the new `InterpolatingSampleReader.Reset(SampleSource)`), filters and EQ bands across notes, and regions cache their `SampleSource` pair
+ * `SoundFontSampler` resolves and projects every preset at construction, so the first note-on per program no longer runs resolution (and its allocations) on the audio thread
+ * Sampler voices block-advance their LFOs/modulation envelope at control rate (`Advance(n)` instead of ~8.5M per-sample `Process` calls/sec at 64 voices), render through the block reader/filter fast paths, and skip modulator/pan/filter/pitch recomputation while the channel state is unchanged; the control phase now carries across `Read` segments, making event-dense segmented renders bit-identical to monolithic ones
+ * Sampler region lookup is indexed (per-key note-on buckets, release/CC-trigger sublists), so note-off and CC changes no longer scan every region; an open-cutoff (13500-cent) filter is bypassed instead of running a do-nothing biquad — and a CC-driven filter modulator on an open-cutoff region now correctly engages the filter (bug fix)
+ * `SendBus` can idle-skip its effect once nothing has been sent for a tail window (`IdleTimeoutFrames`/`IsIdle`); the sampler uses a 5 s window, so unused reverb/chorus no longer process silence forever, and voices whose volume envelope decayed to silence in sustain are reaped instead of rendering inaudibly until note-off
 
 #### Reliability and bug fixes
 

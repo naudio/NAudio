@@ -94,5 +94,84 @@ namespace NAudio.Core.Tests
             Assert.That(next, Is.GreaterThan(0f), "then the upward ramp begins");
             Assert.That(lfo.Process(), Is.GreaterThan(next));
         }
+
+        private static void AssertBitEqual(float expected, float actual, string context)
+        {
+            if (BitConverter.SingleToInt32Bits(expected) != BitConverter.SingleToInt32Bits(actual))
+                Assert.Fail($"{context}: expected {expected:R} but was {actual:R}");
+        }
+
+        [Test]
+        public void AdvanceMatchesRepeatedProcessForRandomizedConfigs()
+        {
+            // seeded sweep: every waveform x random frequency/StartPhase/delay,
+            // with n values that land inside the delay, span the delay boundary
+            // and span many phase wraps (including sample-and-hold re-rolls).
+            // Bit-exactness is required: the sampler voice substitutes Advance
+            // for per-sample Process loops and must not change a rendered sample.
+            var rng = new Random(0x5EED);
+            int[] counts = { 0, 1, 2, 7, 64, 1000 };
+            foreach (LfoWaveform waveform in Enum.GetValues<LfoWaveform>())
+            {
+                for (int cfg = 0; cfg < 6; cfg++)
+                {
+                    float frequency = 0.2f + (float)rng.NextDouble() * 1500f;
+                    float startPhase = (float)rng.NextDouble();
+                    float delay = rng.Next(3) == 0 ? 0f : (float)rng.NextDouble() * 0.002f; // 0..~88 samples
+                    Lfo Create() => new Lfo(44100)
+                    {
+                        Waveform = waveform,
+                        FrequencyHz = frequency,
+                        StartPhase = startPhase,
+                        DelaySeconds = delay
+                    };
+                    foreach (int n in counts)
+                    {
+                        var reference = Create();
+                        var fast = Create();
+                        string context = $"{waveform} f={frequency} sp={startPhase} d={delay} n={n}";
+                        float expected = 0f;
+                        for (int i = 0; i < n; i++) expected = reference.Process();
+                        float actual = fast.Advance(n);
+                        if (n > 0) AssertBitEqual(expected, actual, context);
+                        // the post-advance state (phase, delay countdown, S&H
+                        // generator) must also be identical: the next samples,
+                        // crossing further wraps, must match bit for bit
+                        for (int i = 0; i < 16; i++)
+                            AssertBitEqual(reference.Process(), fast.Process(), $"{context} follow-up {i}");
+                    }
+                }
+            }
+        }
+
+        [Test]
+        public void AdvanceZeroReportsNextValueWithoutChangingState()
+        {
+            var reference = new Lfo(1000) { Waveform = LfoWaveform.Sine, FrequencyHz = 35, StartPhase = 0.4f };
+            var fast = new Lfo(1000) { Waveform = LfoWaveform.Sine, FrequencyHz = 35, StartPhase = 0.4f };
+            float reported = fast.Advance(0);
+            for (int i = 0; i < 8; i++)
+            {
+                float expected = reference.Process();
+                if (i == 0) AssertBitEqual(expected, reported, "Advance(0) reports the next value");
+                AssertBitEqual(expected, fast.Process(), $"sample {i} after Advance(0)");
+            }
+        }
+
+        [Test]
+        public void AdvanceWithinDelayReturnsZeroAndConsumesIt()
+        {
+            var lfo = new Lfo(1000) { Waveform = LfoWaveform.Square, FrequencyHz = 10, DelaySeconds = 0.01f };
+            Assert.That(lfo.Advance(4), Is.EqualTo(0f), "still inside the 10-sample delay");
+            Assert.That(lfo.Advance(6), Is.EqualTo(0f), "the call that exhausts the delay still returns 0");
+            Assert.That(lfo.Process(), Is.EqualTo(1f).Within(1e-5f), "the next sample oscillates");
+        }
+
+        [Test]
+        public void AdvanceRejectsNegativeCounts()
+        {
+            var lfo = new Lfo(1000);
+            Assert.Throws<ArgumentOutOfRangeException>(() => lfo.Advance(-1));
+        }
     }
 }

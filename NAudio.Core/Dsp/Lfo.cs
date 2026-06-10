@@ -130,25 +130,7 @@ namespace NAudio.Dsp
                 delayCounter--;
                 return 0f;
             }
-            float value;
-            switch (Waveform)
-            {
-                case LfoWaveform.Triangle:
-                    value = 4f * MathF.Abs(phase - 0.5f) - 1f;
-                    break;
-                case LfoWaveform.Sawtooth:
-                    value = 2f * phase - 1f;
-                    break;
-                case LfoWaveform.Square:
-                    value = phase < 0.5f ? 1f : -1f;
-                    break;
-                case LfoWaveform.SampleAndHold:
-                    value = sampleHoldValue;
-                    break;
-                default:
-                    value = MathF.Sin(2f * MathF.PI * phase);
-                    break;
-            }
+            float value = WaveformValue();
 
             phase += increment;
             if (phase >= 1f)
@@ -157,6 +139,80 @@ namespace NAudio.Dsp
                 sampleHoldValue = NextRandom();
             }
             return value;
+        }
+
+        /// <summary>
+        /// Advances the oscillator by <paramref name="samples"/> samples in one
+        /// call, returning the value the last of that many <see cref="Process"/>
+        /// calls would have returned (0 while the delay is still running; for
+        /// <paramref name="samples"/> = 0 the state is untouched and the value
+        /// the next call will return is reported). The resulting state is
+        /// bit-identical to repeated <see cref="Process"/> calls: the delay
+        /// countdown is consumed in O(1), and the phase accumulator is stepped
+        /// with the same per-sample additions Process performs (a closed-form
+        /// phase + n x increment would round differently), but the waveform —
+        /// the dominant per-sample cost — is evaluated only once. Intended for
+        /// control-rate consumers that read the LFO once per block.
+        /// </summary>
+        /// <param name="samples">Number of samples to advance by. Must not be negative.</param>
+        public float Advance(int samples)
+        {
+            if (samples < 0)
+                throw new ArgumentOutOfRangeException(nameof(samples), "Sample count must not be negative");
+            if (delayCounter > 0)
+            {
+                if (samples <= delayCounter)
+                {
+                    delayCounter -= samples;
+                    return 0f;
+                }
+                samples -= delayCounter;
+                delayCounter = 0;
+            }
+            if (samples == 0) return WaveformValue();
+
+            // advance to where the final Process call would evaluate, wrapping
+            // (and re-rolling sample-and-hold) exactly as the per-sample path does
+            float ph = phase;
+            float inc = increment;
+            for (int i = 1; i < samples; i++)
+            {
+                ph += inc;
+                if (ph >= 1f)
+                {
+                    ph -= 1f;
+                    sampleHoldValue = NextRandom();
+                }
+            }
+            phase = ph;
+            float value = WaveformValue();
+            ph += inc;
+            if (ph >= 1f)
+            {
+                ph -= 1f;
+                sampleHoldValue = NextRandom();
+            }
+            phase = ph;
+            return value;
+        }
+
+        // the waveform evaluated at the current phase (shared by Process and Advance
+        // so the two paths cannot diverge)
+        private float WaveformValue()
+        {
+            switch (Waveform)
+            {
+                case LfoWaveform.Triangle:
+                    return 4f * MathF.Abs(phase - 0.5f) - 1f;
+                case LfoWaveform.Sawtooth:
+                    return 2f * phase - 1f;
+                case LfoWaveform.Square:
+                    return phase < 0.5f ? 1f : -1f;
+                case LfoWaveform.SampleAndHold:
+                    return sampleHoldValue;
+                default:
+                    return MathF.Sin(2f * MathF.PI * phase);
+            }
         }
 
         /// <summary>

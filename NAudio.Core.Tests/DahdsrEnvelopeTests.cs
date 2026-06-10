@@ -1,3 +1,4 @@
+using System;
 using NUnit.Framework;
 using NAudio.Dsp;
 
@@ -229,6 +230,133 @@ namespace NAudio.Core.Tests
             Assert.That(fromFullScale, Is.EqualTo(22050).Within(700), "release from full scale runs the whole 100 dB");
             Assert.That((double)fromLowSustain / fromFullScale, Is.EqualTo(0.8).Within(0.02),
                 "release from -20 dB covers 80 of the 100 dB travel");
+        }
+
+        private static void AssertBitEqual(float expected, float actual, string context)
+        {
+            if (BitConverter.SingleToInt32Bits(expected) != BitConverter.SingleToInt32Bits(actual))
+                Assert.Fail($"{context}: expected {expected:R} but was {actual:R}");
+        }
+
+        [Test]
+        public void AdvanceMatchesRepeatedProcessForRandomizedConfigs()
+        {
+            // seeded sweep over stage times (including zero-length stages),
+            // sustain levels near 1, near 0 and below the -100 dB floor, both
+            // ramp shapes, and a gate-off injected at a random point so the
+            // release is entered from every stage. Each step compares Advance(n)
+            // against n Process() calls: Output must be bit-identical (the
+            // sampler's rendered-output regression tests assert exact waveforms)
+            // and Stage/IsFinished must agree.
+            var rng = new Random(0xD0E5);
+            // at 44.1 kHz the longest stages span thousands of samples, so the
+            // n values below frequently stop mid-ramp — where an approximate
+            // skip (e.g. Math.Pow) would drift from the repeated multiplies
+            float[] times = { 0f, 0.0005f, 0.01f, 0.08f };
+            float[] sustains = { 0f, 0.000005f, 0.4f, 0.97f, 1f };
+            int[] counts = { 0, 1, 3, 17, 64, 350, 1700 };
+            for (int iter = 0; iter < 50; iter++)
+            {
+                var shape = rng.Next(2) == 0
+                    ? DahdsrEnvelope.RampShape.Exponential
+                    : DahdsrEnvelope.RampShape.Linear;
+                float delay = times[rng.Next(times.Length)];
+                float attack = times[rng.Next(times.Length)];
+                float hold = times[rng.Next(times.Length)];
+                float decay = times[rng.Next(times.Length)];
+                float sustain = sustains[rng.Next(sustains.Length)];
+                float release = times[rng.Next(times.Length)];
+                DahdsrEnvelope Create() => new DahdsrEnvelope(44100)
+                {
+                    DelaySeconds = delay,
+                    AttackSeconds = attack,
+                    HoldSeconds = hold,
+                    DecaySeconds = decay,
+                    SustainLevel = sustain,
+                    ReleaseSeconds = release,
+                    DecayReleaseShape = shape
+                };
+                var reference = Create();
+                var fast = Create();
+                reference.Gate(true);
+                fast.Gate(true);
+                int gateOffStep = rng.Next(0, 10);
+                for (int step = 0; step < 12; step++)
+                {
+                    if (step == gateOffStep)
+                    {
+                        reference.Gate(false);
+                        fast.Gate(false);
+                    }
+                    int n = counts[rng.Next(counts.Length)];
+                    string context = $"iter={iter} shape={shape} step={step} n={n} stage={reference.Stage}";
+                    float expected = reference.Output;
+                    for (int i = 0; i < n; i++) expected = reference.Process();
+                    float actual = fast.Advance(n);
+                    AssertBitEqual(expected, actual, context);
+                    AssertBitEqual(reference.Output, fast.Output, context + " (Output)");
+                    Assert.That(fast.Stage, Is.EqualTo(reference.Stage), context);
+                    Assert.That(fast.IsFinished, Is.EqualTo(reference.IsFinished), context);
+                }
+            }
+        }
+
+        [Test]
+        public void AdvanceSpanningEveryStageBoundaryMatchesProcess()
+        {
+            // one Advance call that crosses delay -> attack -> hold -> decay into
+            // sustain, then one that crosses gate-off release into finished
+            DahdsrEnvelope Create() => new DahdsrEnvelope(1000)
+            {
+                DelaySeconds = 0.005f,
+                AttackSeconds = 0.01f,
+                HoldSeconds = 0.004f,
+                DecaySeconds = 0.03f,
+                SustainLevel = 0.6f,
+                ReleaseSeconds = 0.02f
+            };
+            var reference = Create();
+            var fast = Create();
+            reference.Gate(true);
+            fast.Gate(true);
+            float expected = 0f;
+            for (int i = 0; i < 200; i++) expected = reference.Process();
+            AssertBitEqual(expected, fast.Advance(200), "after spanning all gate-on stages");
+            Assert.That(fast.Stage, Is.EqualTo(DahdsrEnvelope.EnvelopeStage.Sustain));
+            reference.Gate(false);
+            fast.Gate(false);
+            for (int i = 0; i < 400; i++) expected = reference.Process();
+            AssertBitEqual(expected, fast.Advance(400), "after spanning the release");
+            Assert.That(fast.Stage, Is.EqualTo(reference.Stage));
+            Assert.That(fast.IsFinished, Is.True);
+        }
+
+        [Test]
+        public void AdvanceFromIdleReturnsZeroAndStaysIdle()
+        {
+            var env = new DahdsrEnvelope(1000);
+            Assert.That(env.Advance(100), Is.EqualTo(0f));
+            Assert.That(env.Stage, Is.EqualTo(DahdsrEnvelope.EnvelopeStage.Idle));
+        }
+
+        [Test]
+        public void AdvanceZeroChangesNothing()
+        {
+            var env = new DahdsrEnvelope(1000) { AttackSeconds = 0.01f };
+            env.Gate(true);
+            for (int i = 0; i < 3; i++) env.Process();
+            float before = env.Output;
+            var stageBefore = env.Stage;
+            Assert.That(env.Advance(0), Is.EqualTo(before));
+            Assert.That(env.Output, Is.EqualTo(before));
+            Assert.That(env.Stage, Is.EqualTo(stageBefore));
+        }
+
+        [Test]
+        public void AdvanceRejectsNegativeCounts()
+        {
+            var env = new DahdsrEnvelope(1000);
+            Assert.Throws<ArgumentOutOfRangeException>(() => env.Advance(-1));
         }
     }
 }

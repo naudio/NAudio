@@ -117,6 +117,9 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * `BiQuadFilter` state and coefficient fields hoisted to locals in batch loops for register retention
  * `Mp3FileReader` now builds its table-of-contents lazily on first seek instead of eagerly during construction; the `Position` setter no longer blocks; rapid scrub seeks debounce and silence output
  * Eliminated per-`Read` allocations in `ResamplerDmoStream` and `DmoMp3FrameDecompressor` (cached input buffer and output-buffer array) (#971)
+ * Added `Lfo.Advance(samples)` — skips n samples in one call (delay consumed in O(1), single waveform evaluation), bit-identical to n `Process()` calls, for control-rate consumers
+ * Added `DahdsrEnvelope.Advance(samples)` — skips n samples in one call (delay/hold counters in O(1), ramps stepped with state in locals), bit-identical to n `Process()` calls
+ * `InterpolatingSampleReader.Read(Span<float>, increment)` now renders through tight per-quality loops while inside the "safe window" away from the loop seam/crossfade/ends (raw interpolation taps, wrap/clamp/crossfade checks hoisted out), bit-identical to the per-sample path; the per-sample path also drops repeated property reads and `Math.Floor` calls
 
 #### Reliability and bug fixes
 

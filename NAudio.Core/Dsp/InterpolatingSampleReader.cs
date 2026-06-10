@@ -129,10 +129,20 @@ namespace NAudio.Dsp
     public sealed class InterpolatingSampleReader
     {
         private readonly SampleSource source;
+        // the source is immutable, so its data and bounds are cached as fields to
+        // keep the per-sample paths free of repeated property reads
+        private readonly float[] data;
+        private readonly int start;
+        private readonly int end;
+        private readonly int loopStart;
+        private readonly int loopEnd;
+        private readonly int crossfadeSamples;
         private double position;
-        private bool released;
         private bool ended;
         private bool hasLooped; // true once the read position has wrapped at least once
+        // whether the loop is currently active given the loop mode and release
+        // state; recomputed only when the release state changes
+        private bool loopActive;
 
         /// <summary>
         /// Creates a reader positioned at the start of the source.
@@ -140,7 +150,14 @@ namespace NAudio.Dsp
         public InterpolatingSampleReader(SampleSource source)
         {
             this.source = source ?? throw new ArgumentNullException(nameof(source));
-            position = source.Start;
+            data = source.Data;
+            start = source.Start;
+            end = source.End;
+            loopStart = source.LoopStart;
+            loopEnd = source.LoopEnd;
+            crossfadeSamples = source.CrossfadeSamples;
+            loopActive = source.LoopMode != LoopMode.None;
+            position = start;
         }
 
         /// <summary>
@@ -160,14 +177,7 @@ namespace NAudio.Dsp
         /// stops looping and plays through to the end; for other modes it has no
         /// effect on looping.
         /// </summary>
-        public void Release() => released = true;
-
-        /// <summary>
-        /// Whether the loop is currently active given the loop mode and release state.
-        /// </summary>
-        private bool LoopActive =>
-            source.LoopMode == LoopMode.Continuous ||
-            (source.LoopMode == LoopMode.UntilRelease && !released);
+        public void Release() => loopActive = source.LoopMode == LoopMode.Continuous;
 
         /// <summary>
         /// Reads one output sample at the given playback increment and advances
@@ -188,14 +198,14 @@ namespace NAudio.Dsp
         // when enabled and within the crossfade zone before LoopEnd
         private float CurrentSample()
         {
-            int xfade = source.CrossfadeSamples;
-            if (xfade > 0 && LoopActive)
+            int xfade = crossfadeSamples;
+            if (xfade > 0 && loopActive)
             {
-                double zoneStart = source.LoopEnd - xfade;
+                double zoneStart = loopEnd - xfade;
                 if (position >= zoneStart)
                 {
                     double t = (position - zoneStart) / xfade; // 0 at zone start, ->1 at LoopEnd
-                    double loopLength = source.LoopEnd - source.LoopStart;
+                    double loopLength = loopEnd - loopStart;
                     // outgoing: the tail of the loop (uses the normal loop-wrapping read).
                     // incoming: the lead-in just before LoopStart, read raw (no loop wrap,
                     // which would otherwise fold it back onto the outgoing tail).
@@ -210,37 +220,122 @@ namespace NAudio.Dsp
         /// <summary>
         /// Renders a block of output samples at a constant increment, returning
         /// the number of samples written before the reader ended (the remainder
-        /// of the buffer is left untouched).
+        /// of the buffer is left untouched). While the read position stays inside
+        /// the contiguous "safe window" — away from the loop seam, the crossfade
+        /// zone and the ends — the samples are produced by tight per-quality
+        /// loops; output is bit-identical to repeated <see cref="Read(double)"/>
+        /// calls at the same increment.
         /// </summary>
         /// <param name="buffer">Destination buffer.</param>
         /// <param name="increment">Source samples to advance per output sample.</param>
         public int Read(Span<float> buffer, double increment)
         {
             int written = 0;
-            for (int i = 0; i < buffer.Length; i++)
+            while (written < buffer.Length)
             {
                 if (ended) break;
-                buffer[i] = CurrentSample();
+                written += ReadContiguous(buffer.Slice(written), increment);
+                if (written == buffer.Length || ended) break;
+                // outside the safe window (near Start, the loop seam, the
+                // crossfade zone or End): take one sample through the careful
+                // per-sample path, then retry the window
+                buffer[written++] = CurrentSample();
                 position += increment;
                 WrapOrEnd();
-                written++;
             }
             return written;
         }
 
+        // Renders output samples while the read position stays inside the current
+        // "safe window": the contiguous span of positions whose interpolation taps
+        // are all plain in-range array reads — at least one sample above Start (or
+        // LoopStart once looping) for the look-back tap, below the crossfade zone,
+        // and at least two samples below LoopEnd/End for the look-ahead taps — so
+        // the per-sample wrap/clamp/crossfade logic provably no-ops and is hoisted
+        // out of the loop. The float operations match Interpolate/CurrentSample
+        // exactly, keeping the output bit-identical to the per-sample path.
+        // Returns 0 when the current position is outside the window.
+        private int ReadContiguous(Span<float> buffer, double increment)
+        {
+            if (increment <= 0.0) return 0; // non-advancing reads take the per-sample path
+            double posMin, posMax;
+            if (loopActive)
+            {
+                posMin = (hasLooped ? loopStart : start) + 1;
+                posMax = loopEnd - 2;
+                if (crossfadeSamples > 0 && loopEnd - crossfadeSamples < posMax)
+                    posMax = loopEnd - crossfadeSamples;
+            }
+            else
+            {
+                posMin = start + 1;
+                posMax = end - 2;
+            }
+            double pos = position;
+            if (!(pos >= posMin && pos < posMax)) return 0;
+
+            float[] samples = data;
+            int count = 0;
+            switch (Quality)
+            {
+                case InterpolationQuality.None:
+                    while (count < buffer.Length && pos < posMax)
+                    {
+                        buffer[count++] = samples[(int)pos];
+                        pos += increment;
+                    }
+                    break;
+                case InterpolationQuality.Linear:
+                    while (count < buffer.Length && pos < posMax)
+                    {
+                        int i = (int)pos;
+                        float frac = (float)(pos - i);
+                        float a = samples[i];
+                        float b = samples[i + 1];
+                        buffer[count++] = a + (b - a) * frac;
+                        pos += increment;
+                    }
+                    break;
+                default: // Hermite (4-point, 3rd-order) — same arithmetic as Interpolate
+                    while (count < buffer.Length && pos < posMax)
+                    {
+                        int i = (int)pos;
+                        float frac = (float)(pos - i);
+                        float xm1 = samples[i - 1];
+                        float x0 = samples[i];
+                        float x1 = samples[i + 1];
+                        float x2 = samples[i + 2];
+
+                        float c = (x1 - xm1) * 0.5f;
+                        float v = x0 - x1;
+                        float w = c + v;
+                        float a = w + v + (x2 - x0) * 0.5f;
+                        float bNeg = w + a;
+                        buffer[count++] = ((a * frac - bNeg) * frac + c) * frac + x0;
+                        pos += increment;
+                    }
+                    break;
+            }
+            position = pos;
+            // only the final advance can have crossed the loop seam or End (every
+            // sample was read below posMax), so one wrap/end check covers the run
+            WrapOrEnd();
+            return count;
+        }
+
         private void WrapOrEnd()
         {
-            if (LoopActive)
+            if (loopActive)
             {
-                double loopLength = source.LoopEnd - source.LoopStart;
+                double loopLength = loopEnd - loopStart;
                 // a large increment could overshoot multiple loop lengths
-                while (position >= source.LoopEnd)
+                while (position >= loopEnd)
                 {
                     position -= loopLength;
                     hasLooped = true;
                 }
             }
-            else if (position >= source.End)
+            else if (position >= end)
             {
                 ended = true;
             }
@@ -248,7 +343,11 @@ namespace NAudio.Dsp
 
         private float Interpolate(double pos, bool loopWrap = true)
         {
-            int i = (int)Math.Floor(pos);
+            // truncation plus a compare-and-decrement is floor for every input
+            // (positions only go negative under a negative increment) and avoids
+            // the Math.Floor call on the hot path
+            int i = (int)pos;
+            if (pos < i) i--;
             float frac = (float)(pos - i);
 
             switch (Quality)
@@ -286,29 +385,29 @@ namespace NAudio.Dsp
         /// </summary>
         private float SampleAt(int index, bool loopWrap = true)
         {
-            if (loopWrap && LoopActive)
+            if (loopWrap && loopActive)
             {
-                int loopLength = source.LoopEnd - source.LoopStart;
-                if (index >= source.LoopEnd)
+                int loopLength = loopEnd - loopStart;
+                if (index >= loopEnd)
                 {
                     // lookahead past the loop end wraps to the loop start for seam continuity
-                    index = source.LoopStart + (index - source.LoopStart) % loopLength;
+                    index = loopStart + (index - loopStart) % loopLength;
                 }
-                else if (index < source.LoopStart && hasLooped)
+                else if (index < loopStart && hasLooped)
                 {
                     // wrap a look-back before the loop start to the loop end — but only
                     // once we're actually looping. On the first pass, indices in
                     // [Start, LoopStart) are the real lead-in/attack and must read raw.
-                    int offset = (source.LoopStart - index) % loopLength;
-                    index = offset == 0 ? source.LoopStart : source.LoopEnd - offset;
+                    int offset = (loopStart - index) % loopLength;
+                    index = offset == 0 ? loopStart : loopEnd - offset;
                 }
             }
 
             // clamp to the playable extent (covers non-looping reads, the pre-loop
             // lead-in, and the raw crossfade incoming read)
-            if (index < source.Start) index = source.Start;
-            else if (index >= source.End) index = source.End - 1;
-            return source.Data[index];
+            if (index < start) index = start;
+            else if (index >= end) index = end - 1;
+            return data[index];
         }
     }
 }

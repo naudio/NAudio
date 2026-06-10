@@ -302,6 +302,176 @@ namespace NAudio.Dsp
             }
         }
 
+        /// <summary>
+        /// Advances the envelope by <paramref name="samples"/> samples in one
+        /// call and returns the new output value, leaving <see cref="Output"/>,
+        /// <see cref="Stage"/> and <see cref="IsFinished"/> bit-identical to
+        /// calling <see cref="Process"/> that many times. The delay and hold
+        /// counters are consumed in O(1); the attack/decay/release ramps are
+        /// stepped per sample <i>within</i> the active stage with the state
+        /// hoisted to locals — a closed-form Math.Pow skip would drift from the
+        /// repeated per-sample float multiplies by more than 1 ulp, so exact
+        /// per-stage stepping is used instead, which still removes the per-sample
+        /// call and field-traffic overhead. Intended for control-rate consumers
+        /// that read the envelope once per block.
+        /// </summary>
+        /// <param name="samples">Number of samples to advance by. Must not be negative.</param>
+        public float Advance(int samples)
+        {
+            if (samples < 0)
+                throw new ArgumentOutOfRangeException(nameof(samples), "Sample count must not be negative");
+            while (samples > 0)
+            {
+                switch (stage)
+                {
+                    case EnvelopeStage.Idle:
+                    case EnvelopeStage.Finished:
+                        return output;
+                    case EnvelopeStage.Delay:
+                        if (stageSampleCounter > 0)
+                        {
+                            int take = Math.Min(samples, stageSampleCounter);
+                            stageSampleCounter -= take;
+                            samples -= take;
+                            output = 0f;
+                            if (samples == 0) return output;
+                        }
+                        stage = EnvelopeStage.Attack;
+                        break;
+                    case EnvelopeStage.Attack:
+                        if (attackSeconds <= 0f)
+                        {
+                            output = 1f;
+                            EnterHold();
+                            samples--;
+                        }
+                        else
+                        {
+                            float o = output;
+                            float coef = attackCoef;
+                            float bas = attackBase;
+                            while (samples > 0)
+                            {
+                                o = bas + o * coef;
+                                samples--;
+                                if (o >= 1f)
+                                {
+                                    o = 1f;
+                                    EnterHold();
+                                    break;
+                                }
+                            }
+                            output = o;
+                        }
+                        break;
+                    case EnvelopeStage.Hold:
+                        if (stageSampleCounter > 0)
+                        {
+                            int take = Math.Min(samples, stageSampleCounter);
+                            stageSampleCounter -= take;
+                            samples -= take;
+                            output = 1f;
+                            if (samples == 0) return output;
+                        }
+                        stage = EnvelopeStage.Decay;
+                        break;
+                    case EnvelopeStage.Decay:
+                        if (decaySeconds <= 0f)
+                        {
+                            output = sustainLevel;
+                            stage = EnvelopeStage.Sustain;
+                            samples--;
+                        }
+                        else
+                        {
+                            float o = output;
+                            float sus = sustainLevel;
+                            if (DecayReleaseShape == RampShape.Linear)
+                            {
+                                float step = decayStep;
+                                while (samples > 0)
+                                {
+                                    o -= step;
+                                    samples--;
+                                    if (o <= sus || o <= SilenceFloor)
+                                    {
+                                        o = sus;
+                                        stage = EnvelopeStage.Sustain;
+                                        break;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                float factor = decayFactor;
+                                while (samples > 0)
+                                {
+                                    o *= factor;
+                                    samples--;
+                                    if (o <= sus || o <= SilenceFloor)
+                                    {
+                                        o = sus;
+                                        stage = EnvelopeStage.Sustain;
+                                        break;
+                                    }
+                                }
+                            }
+                            output = o;
+                        }
+                        break;
+                    case EnvelopeStage.Sustain:
+                        // every remaining sample produces the sustain level with
+                        // no state change, so the rest of the skip is free
+                        output = sustainLevel;
+                        return output;
+                    default: // Release
+                        if (releaseSeconds <= 0f)
+                        {
+                            output = 0f;
+                            stage = EnvelopeStage.Finished;
+                            samples--;
+                        }
+                        else
+                        {
+                            float o = output;
+                            if (DecayReleaseShape == RampShape.Linear)
+                            {
+                                float step = releaseStep;
+                                while (samples > 0)
+                                {
+                                    o -= step;
+                                    samples--;
+                                    if (o <= SilenceFloor)
+                                    {
+                                        o = 0f;
+                                        stage = EnvelopeStage.Finished;
+                                        break;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                float factor = releaseFactor;
+                                while (samples > 0)
+                                {
+                                    o *= factor;
+                                    samples--;
+                                    if (o <= SilenceFloor)
+                                    {
+                                        o = 0f;
+                                        stage = EnvelopeStage.Finished;
+                                        break;
+                                    }
+                                }
+                            }
+                            output = o;
+                        }
+                        break;
+                }
+            }
+            return output;
+        }
+
         private void EnterHold()
         {
             stage = EnvelopeStage.Hold;

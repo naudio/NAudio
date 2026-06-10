@@ -15,9 +15,12 @@ namespace NAudio.Sampler
     ///
     /// Continuous modulation (LFO/mod-env → pitch, filter cutoff and volume) is
     /// computed at a control rate (every <see cref="ControlBlock"/> samples) so
-    /// the per-sample loop stays cheap; the modulation sources themselves advance
-    /// every sample so their phase stays accurate. The SF2 modulator list is
-    /// evaluated here too (against the region's <see cref="ModulatorSet"/>).
+    /// the per-sample loop stays cheap; the modulation sources are advanced to
+    /// the block boundary in one <c>Advance(n)</c> call per source (bit-identical
+    /// to per-sample stepping). The control phase carries across <see cref="Mix"/>
+    /// calls, so segmented (event-dense) and monolithic renders are identical.
+    /// The SF2 modulator list is evaluated here too (against the region's
+    /// <see cref="ModulatorSet"/>).
     /// </summary>
     internal sealed class SamplerVoice
     {
@@ -98,6 +101,25 @@ namespace NAudio.Sampler
         private float modLfoValue;
         private float vibratoLfoValue;
         private float modEnvValue;
+
+        // Control-rate phase, carried across Mix calls: parameters re-evaluate
+        // every ControlBlock *voice* samples regardless of how the engine
+        // segmented its reads, so an event-dense (segmented) render is
+        // bit-identical to a monolithic one. samplesSinceEval counts rendered
+        // samples since the modulation sources last advanced (<= ControlBlock).
+        private int controlCountdown;   // samples until the next evaluation (0 = evaluate now)
+        private int samplesSinceEval;
+        // the modulation-derived parameters from the last evaluation, valid for
+        // the rest of the current control block (fields because a block can span
+        // Mix calls)
+        private double currentIncrement;
+        private float currentVolGain;
+        private float currentReverbSendGain;
+        private float currentChorusSendGain;
+
+        // scratch for the block reader/filter fast path (one control block per channel)
+        private readonly float[] blockLeft = new float[ControlBlock];
+        private readonly float[] blockRight = new float[ControlBlock];
 
         // when a one-shot sample reaches its end mid-signal, ramp the last output
         // down to zero over a few ms rather than hard-cutting (which clicks if the
@@ -276,6 +298,8 @@ namespace NAudio.Sampler
             declicking = false;
             declickL = 0f;
             declickR = 0f;
+            controlCountdown = 0;  // the first sample of a fresh note evaluates immediately
+            samplesSinceEval = 0;
 
             IsActive = true;
             ampEnvelope.Gate(true);
@@ -322,157 +346,239 @@ namespace NAudio.Sampler
         {
             if (!IsActive) return;
 
-            double pitchBendRatio = channel.PitchBendRatio;
             int pos = 0;
             int remaining = frames;
             while (remaining > 0)
             {
-                int sub = Math.Min(ControlBlock, remaining);
+                if (controlCountdown == 0) EvaluateControl(channel);
 
-                // re-evaluate the SF2 modulators and recompute modulation-derived
-                // parameters at control rate
-                UpdateModulation(channel);
+                int sub = Math.Min(controlCountdown, remaining);
+                bool alive = RenderSpan(buffer, reverbSend, chorusSend, ref pos, sub);
+                controlCountdown -= sub;
+                samplesSinceEval += sub;
+                remaining -= sub;
+                if (!alive) { IsActive = false; return; }
+            }
+        }
 
-                // reverb/chorus send levels: 0.1% units (0..1000) -> 0..1 gain
-                float reverbSendGain = SendGain(baseReverbSend + modulation[(int)GeneratorEnum.ReverbEffectsSend]);
-                float chorusSendGain = SendGain(baseChorusSend + modulation[(int)GeneratorEnum.ChorusEffectsSend]);
+        /// <summary>
+        /// The control-rate evaluation, run every <see cref="ControlBlock"/> voice
+        /// samples: advances the modulation sources to "now", re-evaluates the SF2
+        /// modulators against the channel's live controllers, and recomputes the
+        /// modulation-derived parameters (pitch increment, tremolo gain, send
+        /// gains, filter tuning) used until the next evaluation.
+        /// </summary>
+        private void EvaluateControl(MidiChannelState channel)
+        {
+            // one Advance(n) per source replaces n Process() calls; P1 guarantees
+            // the resulting value and state are bit-identical to per-sample
+            // stepping, so the values read below match the old per-sample path.
+            // The sources advance for every rendered sample — including the
+            // volume-envelope delay, during which the readers stay untouched —
+            // preserving their wall-clock phase.
+            if (samplesSinceEval > 0)
+            {
+                modLfoValue = modLfo.Advance(samplesSinceEval);
+                vibratoLfoValue = vibratoLfo.Advance(samplesSinceEval);
+                modEnvValue = modEnvelope.Advance(samplesSinceEval);
+                samplesSinceEval = 0;
+            }
 
-                double vibToPitch = baseVibLfoToPitch + modulation[(int)GeneratorEnum.VibratoLFOToPitch];
-                double modLfoPitch = baseModLfoToPitch + modulation[(int)GeneratorEnum.ModulationLFOToPitch];
-                double modEnvPitch = baseModEnvToPitch + modulation[(int)GeneratorEnum.ModulationEnvelopeToPitch];
-                double pitchCents = modLfoPitch * modLfoValue
-                    + vibToPitch * vibratoLfoValue
-                    + modEnvPitch * modEnvValue;
-                double increment = baseIncrement * pitchRatio * pitchBendRatio
-                    * SynthMath.CentsToRatio(pitchCents);
+            UpdateModulation(channel);
 
-                double volCb = (baseModLfoToVolume + modulation[(int)GeneratorEnum.ModulationLFOToVolume]) * modLfoValue;
-                float volGain = volCb != 0.0 ? (float)SynthMath.CentibelsToGain(volCb) : 1f;
+            // reverb/chorus send levels: 0.1% units (0..1000) -> 0..1 gain
+            currentReverbSendGain = SendGain(baseReverbSend + modulation[(int)GeneratorEnum.ReverbEffectsSend]);
+            currentChorusSendGain = SendGain(baseChorusSend + modulation[(int)GeneratorEnum.ChorusEffectsSend]);
+
+            double vibToPitch = baseVibLfoToPitch + modulation[(int)GeneratorEnum.VibratoLFOToPitch];
+            double modLfoPitch = baseModLfoToPitch + modulation[(int)GeneratorEnum.ModulationLFOToPitch];
+            double modEnvPitch = baseModEnvToPitch + modulation[(int)GeneratorEnum.ModulationEnvelopeToPitch];
+            double pitchCents = modLfoPitch * modLfoValue
+                + vibToPitch * vibratoLfoValue
+                + modEnvPitch * modEnvValue;
+            currentIncrement = baseIncrement * pitchRatio * channel.PitchBendRatio
+                * SynthMath.CentsToRatio(pitchCents);
+
+            double volCb = (baseModLfoToVolume + modulation[(int)GeneratorEnum.ModulationLFOToVolume]) * modLfoValue;
+            currentVolGain = volCb != 0.0 ? (float)SynthMath.CentibelsToGain(volCb) : 1f;
+
+            if (filterActive)
+            {
+                double modLfoFilter = baseModLfoToFilter + modulation[(int)GeneratorEnum.ModulationLFOToFilterCutoffFrequency];
+                double modEnvFilter = baseModEnvToFilter + modulation[(int)GeneratorEnum.ModulationEnvelopeToFilterCutoffFrequency];
+                double fc = baseFilterCents
+                    + modulation[(int)GeneratorEnum.InitialFilterCutoffFrequency]
+                    + modEnvFilter * modEnvValue
+                    + modLfoFilter * modLfoValue;
+                double hz = Math.Clamp(SynthMath.AbsoluteCentsToHertz(fc), 20.0, nyquist * 0.95);
+                RetuneFilter(filter, (float)hz);
+                if (stereo) RetuneFilter(filterRight, (float)hz);
+            }
+
+            controlCountdown = ControlBlock;
+        }
+
+        /// <summary>
+        /// Renders <paramref name="count"/> voice samples (all within one control
+        /// block, so the evaluated parameters are constant) into the mix and send
+        /// buffers. Returns false when the voice's note fully ended within the
+        /// span. The audio portion runs through the block reader/filter fast
+        /// paths, which are bit-identical to the per-sample equivalents.
+        /// </summary>
+        private bool RenderSpan(Span<float> buffer, Span<float> reverbSend, Span<float> chorusSend,
+            ref int pos, int count)
+        {
+            double increment = currentIncrement;
+            float volGain = currentVolGain;
+            float reverbSendGain = currentReverbSendGain;
+            float chorusSendGain = currentChorusSendGain;
+
+            int i = 0;
+            while (i < count)
+            {
+                if (declicking)
+                {
+                    // fading the last output to zero after a one-shot reached End
+                    float left, right;
+                    bool finished = false;
+                    if (declickGain > 0f)
+                    {
+                        left = declickL * declickGain;
+                        right = declickR * declickGain;
+                        declickGain -= declickStep;
+                    }
+                    else { left = 0f; right = 0f; }
+                    if (declickGain <= 0f) finished = true;
+                    if (Emit(buffer, reverbSend, chorusSend, ref pos, left, right,
+                        reverbSendGain, chorusSendGain, finished)) return false;
+                    i++;
+                    continue;
+                }
+
+                float env = ampEnvelope.Process();
+                if (ampEnvelope.Stage == DahdsrEnvelope.EnvelopeStage.Delay)
+                {
+                    // SF2.04 §8.1.2 gen 33: the volume-envelope delay postpones the
+                    // sample, it must not consume it — output silence and leave the
+                    // readers untouched so the attack transient still starts from
+                    // the waveform's first sample (FluidSynth behaves the same
+                    // way). The modulation sources still keep time: every rendered
+                    // sample, including these, counts toward samplesSinceEval.
+                    if (Emit(buffer, reverbSend, chorusSend, ref pos, 0f, 0f,
+                        reverbSendGain, chorusSendGain, false)) return false;
+                    i++;
+                    continue;
+                }
+
+                // Audio path. The envelope has left Delay and the gate cannot
+                // change inside a Mix call, so the rest of the span reads through
+                // the block fast paths: the reader's block Read and the biquad's
+                // block Transform are bit-identical to their per-sample forms, and
+                // the envelope/gain arithmetic below is unchanged.
+                int n = count - i;
+                int got = reader.Read(blockLeft.AsSpan(0, n), increment);
+                if (got == 0)
+                {
+                    // unreachable in practice (Ended is discovered on the call that
+                    // returns the final sample, which starts the de-click); treat a
+                    // pre-ended reader as an immediate silent stop
+                    declicking = true;
+                    declickGain = 0f;
+                    continue;
+                }
+                if (stereo)
+                {
+                    // lockstep: same bounds, loop and increment => same count; the
+                    // defensive clear keeps any (impossible) shortfall identical to
+                    // the per-sample path, where an ended reader reads as 0
+                    int gotR = readerRight.Read(blockRight.AsSpan(0, got), increment);
+                    if (gotR < got) blockRight.AsSpan(gotR, got - gotR).Clear();
+                }
 
                 if (filterActive)
                 {
-                    double modLfoFilter = baseModLfoToFilter + modulation[(int)GeneratorEnum.ModulationLFOToFilterCutoffFrequency];
-                    double modEnvFilter = baseModEnvToFilter + modulation[(int)GeneratorEnum.ModulationEnvelopeToFilterCutoffFrequency];
-                    double fc = baseFilterCents
-                        + modulation[(int)GeneratorEnum.InitialFilterCutoffFrequency]
-                        + modEnvFilter * modEnvValue
-                        + modLfoFilter * modLfoValue;
-                    double hz = Math.Clamp(SynthMath.AbsoluteCentsToHertz(fc), 20.0, nyquist * 0.95);
-                    RetuneFilter(filter, (float)hz);
-                    if (stereo) RetuneFilter(filterRight, (float)hz);
+                    filter.Transform(blockLeft.AsSpan(0, got), blockLeft.AsSpan(0, got));
+                    if (stereo) filterRight.Transform(blockRight.AsSpan(0, got), blockRight.AsSpan(0, got));
                 }
-
-                for (int i = 0; i < sub; i++)
+                for (int b = 0; b < eqBandCount; b++)
                 {
-                    float left, right;
-                    bool finished = false; // this voice's own note has fully ended
-
-                    if (declicking)
-                    {
-                        // fading the last output to zero after a one-shot reached End
-                        if (declickGain > 0f)
-                        {
-                            left = declickL * declickGain;
-                            right = declickR * declickGain;
-                            declickGain -= declickStep;
-                        }
-                        else { left = 0f; right = 0f; }
-                        if (declickGain <= 0f) finished = true;
-                    }
-                    else
-                    {
-                        float env = ampEnvelope.Process();
-                        if (ampEnvelope.Stage == DahdsrEnvelope.EnvelopeStage.Delay)
-                        {
-                            // SF2.04 §8.1.2 gen 33: the volume-envelope delay
-                            // postpones the sample, it must not consume it — output
-                            // silence and leave the readers untouched so the attack
-                            // transient still starts from the waveform's first
-                            // sample (FluidSynth behaves the same way). The
-                            // modulation sources still advance to keep time.
-                            left = 0f;
-                            right = 0f;
-                            modLfoValue = modLfo.Process();
-                            vibratoLfoValue = vibratoLfo.Process();
-                            modEnvValue = modEnvelope.Process();
-                        }
-                        else
-                        {
-                            float sL = reader.Read(increment);
-                            if (filterActive) sL = filter.Transform(sL);
-                            for (int b = 0; b < eqBandCount; b++) sL = eqLeft[b].Transform(sL);
-
-                            float sR;
-                            if (stereo)
-                            {
-                                // lockstep: same bounds and increment, so the right
-                                // reader ends on the same sample as the left
-                                sR = readerRight.Read(increment);
-                                if (filterActive) sR = filterRight.Transform(sR);
-                                for (int b = 0; b < eqBandCount; b++) sR = eqRight[b].Transform(sR);
-                            }
-                            else sR = sL;
-
-                            float envGain = env * staticGain * volGain;
-                            left = sL * envGain * leftGain;
-                            right = sR * envGain * rightGain;
-                            declickL = left;   // remember the last output for a future de-click
-                            declickR = right;
-
-                            // advance the modulation sources every sample (keeps phase accurate)
-                            modLfoValue = modLfo.Process();
-                            vibratoLfoValue = vibratoLfo.Process();
-                            modEnvValue = modEnvelope.Process();
-
-                            if (reader.Ended)
-                            {
-                                // One-shot reached End: the value just read is the
-                                // last real sample and is emitted this iteration
-                                // (discarding it would drop the final sample of
-                                // every one-shot). If the note ends on a
-                                // non-trivial value (e.g. an edited End
-                                // mid-waveform), ramp the last output down over a
-                                // few ms instead of cutting hard (which clicks); a
-                                // sample that already ends near zero (most
-                                // well-formed content) just stops, with no added tail.
-                                declicking = true;
-                                bool nearZero = Math.Abs(left) <= DeclickThreshold && Math.Abs(right) <= DeclickThreshold;
-                                declickGain = nearZero ? 0f : 1f - declickStep;
-                                if (nearZero) finished = true;
-                            }
-                            else if (ampEnvelope.IsFinished) finished = true;
-                        }
-                    }
-
-                    // a stolen voice's previous output rides on top of the new
-                    // note while it fades out (see Start)
-                    if (stealFadeGain > 0f)
-                    {
-                        left += stealFadeL * stealFadeGain;
-                        right += stealFadeR * stealFadeGain;
-                        stealFadeGain -= declickStep;
-                        if (stealFadeGain > 0f) finished = false; // the fade keeps the voice alive
-                    }
-
-                    buffer[pos * 2] += left;
-                    buffer[pos * 2 + 1] += right;
-                    if (reverbSendGain > 0f)
-                    {
-                        reverbSend[pos * 2] += left * reverbSendGain;
-                        reverbSend[pos * 2 + 1] += right * reverbSendGain;
-                    }
-                    if (chorusSendGain > 0f)
-                    {
-                        chorusSend[pos * 2] += left * chorusSendGain;
-                        chorusSend[pos * 2 + 1] += right * chorusSendGain;
-                    }
-                    pos++;
-
-                    if (finished) { IsActive = false; return; }
+                    eqLeft[b].Transform(blockLeft.AsSpan(0, got), blockLeft.AsSpan(0, got));
+                    if (stereo) eqRight[b].Transform(blockRight.AsSpan(0, got), blockRight.AsSpan(0, got));
                 }
 
-                remaining -= sub;
+                // a block read can only have ended at its final sample (an earlier
+                // end would have cut the block short)
+                bool endedInBlock = reader.Ended;
+
+                for (int j = 0; j < got; j++)
+                {
+                    float e = j == 0 ? env : ampEnvelope.Process();
+                    float sL = blockLeft[j];
+                    float sR = stereo ? blockRight[j] : sL;
+                    float envGain = e * staticGain * volGain;
+                    float left = sL * envGain * leftGain;
+                    float right = sR * envGain * rightGain;
+                    declickL = left;   // remember the last output for a future de-click
+                    declickR = right;
+
+                    bool finished = false;
+                    if (endedInBlock && j == got - 1)
+                    {
+                        // One-shot reached End: the value just read is the last
+                        // real sample and is emitted this iteration (discarding it
+                        // would drop the final sample of every one-shot). If the
+                        // note ends on a non-trivial value (e.g. an edited End
+                        // mid-waveform), ramp the last output down over a few ms
+                        // instead of cutting hard (which clicks); a sample that
+                        // already ends near zero (most well-formed content) just
+                        // stops, with no added tail.
+                        declicking = true;
+                        bool nearZero = Math.Abs(left) <= DeclickThreshold && Math.Abs(right) <= DeclickThreshold;
+                        declickGain = nearZero ? 0f : 1f - declickStep;
+                        if (nearZero) finished = true;
+                    }
+                    else if (ampEnvelope.IsFinished) finished = true;
+
+                    if (Emit(buffer, reverbSend, chorusSend, ref pos, left, right,
+                        reverbSendGain, chorusSendGain, finished)) return false;
+                }
+                i += got;
             }
+            return true;
+        }
+
+        /// <summary>
+        /// Adds one output sample (plus any steal-fade remnant) into the mix and
+        /// send buffers. Returns true when the voice has fully finished at this
+        /// sample (a live steal fade keeps it alive).
+        /// </summary>
+        private bool Emit(Span<float> buffer, Span<float> reverbSend, Span<float> chorusSend,
+            ref int pos, float left, float right, float reverbSendGain, float chorusSendGain, bool finished)
+        {
+            // a stolen voice's previous output rides on top of the new note while
+            // it fades out (see Start)
+            if (stealFadeGain > 0f)
+            {
+                left += stealFadeL * stealFadeGain;
+                right += stealFadeR * stealFadeGain;
+                stealFadeGain -= declickStep;
+                if (stealFadeGain > 0f) finished = false; // the fade keeps the voice alive
+            }
+
+            buffer[pos * 2] += left;
+            buffer[pos * 2 + 1] += right;
+            if (reverbSendGain > 0f)
+            {
+                reverbSend[pos * 2] += left * reverbSendGain;
+                reverbSend[pos * 2 + 1] += right * reverbSendGain;
+            }
+            if (chorusSendGain > 0f)
+            {
+                chorusSend[pos * 2] += left * chorusSendGain;
+                chorusSend[pos * 2 + 1] += right * chorusSendGain;
+            }
+            pos++;
+            return finished;
         }
 
         /// <summary>

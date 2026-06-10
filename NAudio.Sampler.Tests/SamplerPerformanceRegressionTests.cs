@@ -116,6 +116,62 @@ namespace NAudio.Sampler.Tests
                 "a percussion note-on for a present kit must not grow the cache");
         }
 
+        [Test]
+        public void SegmentedRenderIsBitIdenticalToMonolithic()
+        {
+            // The voice carries its control-rate phase across Mix calls, so
+            // rendering the same MIDI scene in odd-sized chunks (event-dense
+            // sequenced playback) must be bit-identical to rendering it in large
+            // uniform blocks. Events are applied at the same absolute frame in
+            // both engines (chunks are clamped to the event boundary).
+            SoundFontSampler Make()
+            {
+                var s = new SoundFontSampler(BuildBusyFont(), SampleRate, 16) { PercussionChannel = -1 };
+                s.NoteOn(0, 60, 100);
+                s.NoteOn(1, 67, 80); // stays held: keeps the sends active throughout
+                return s;
+            }
+            var segmented = Make();
+            var monolithic = Make();
+
+            const int total = SampleRate;          // 1 s
+            const int noteOffAt = SampleRate / 2;  // a mid-stream event both engines see at the same frame
+            var bufA = new float[total * 2];
+            var bufB = new float[total * 2];
+
+            int[] chunks = { 1, 7, 64, 113, 1000 };
+            int posA = 0, rotation = 0;
+            void RenderSegmentedTo(int target)
+            {
+                while (posA < target)
+                {
+                    int frames = Math.Min(chunks[rotation++ % chunks.Length], target - posA);
+                    segmented.Read(bufA.AsSpan(posA * 2, frames * 2));
+                    posA += frames;
+                }
+            }
+            int posB = 0;
+            void RenderMonolithicTo(int target)
+            {
+                while (posB < target)
+                {
+                    int frames = Math.Min(4096, target - posB);
+                    monolithic.Read(bufB.AsSpan(posB * 2, frames * 2));
+                    posB += frames;
+                }
+            }
+
+            RenderSegmentedTo(noteOffAt);
+            RenderMonolithicTo(noteOffAt);
+            segmented.NoteOff(0, 60);
+            monolithic.NoteOff(0, 60);
+            RenderSegmentedTo(total);
+            RenderMonolithicTo(total);
+
+            Assert.That(bufA, Is.EqualTo(bufB),
+                "segmented and monolithic renders of the same scene must be bit-identical");
+        }
+
         private sealed class ConstantLoader : ISfzSampleLoader
         {
             public bool TryLoad(string path, out float[] left, out float[] right, out int sampleRate,

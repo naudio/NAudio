@@ -21,6 +21,18 @@ namespace NAudio.Sampler
 
         private readonly byte[] controllers = new byte[128];
 
+        // ---- RPN/NRPN data-entry state ----
+        // CC101/100 select a registered parameter (MSB/LSB), CC6/38 write to it.
+        // Power-on state is RPN null (127,127) = nothing selected, so data entry
+        // arriving before any selection is ignored.
+        private const int RpnPitchBendRange = 0; // RPN (0,0) = pitch-bend sensitivity
+        private const int RpnNull = (127 << 7) | 127;
+        private int rpnMsb = 127;
+        private int rpnLsb = 127;
+        private bool nrpnSelected; // an NRPN selection routes data entry away from RPNs
+        private int bendRangeSemitones = 2; // the data-entry MSB part of RPN 0
+        private int bendRangeCents;         // the data-entry LSB part (cents)
+
         public MidiChannelState()
         {
             ResetControllers();
@@ -39,7 +51,11 @@ namespace NAudio.Sampler
         /// <summary>Selected program (patch) number.</summary>
         public int Program { get; set; }
 
-        /// <summary>Pitch-bend range in semitones (RPN 0). Default 2.</summary>
+        /// <summary>
+        /// Pitch-bend range in semitones (RPN 0: data MSB semitones + data LSB
+        /// cents/100). Default 2. Set via the RPN data-entry methods below; not
+        /// reset by Reset All Controllers (RP-015).
+        /// </summary>
         public double PitchBendRangeSemitones { get; set; } = 2.0;
 
         /// <summary>Raw 14-bit pitch-bend value, centred at 8192.</summary>
@@ -64,11 +80,70 @@ namespace NAudio.Sampler
         public double PitchBendRatio =>
             SynthMath.CentsToRatio((PitchBend - 8192) / 8192.0 * PitchBendRangeSemitones * 100.0);
 
+        /// <summary>Selects the RPN MSB (CC101), clearing any NRPN selection.</summary>
+        public void SelectRpnMsb(int value)
+        {
+            rpnMsb = value & 0x7F;
+            nrpnSelected = false;
+        }
+
+        /// <summary>Selects the RPN LSB (CC100), clearing any NRPN selection.</summary>
+        public void SelectRpnLsb(int value)
+        {
+            rpnLsb = value & 0x7F;
+            nrpnSelected = false;
+        }
+
+        /// <summary>
+        /// Notes that an NRPN (CC98/CC99) was selected: until an RPN is selected
+        /// again, data entry belongs to the NRPN and must not change RPN state.
+        /// (NRPNs themselves are not decoded.)
+        /// </summary>
+        public void SelectNrpn() => nrpnSelected = true;
+
+        // the currently addressed RPN, or -1 when none is (RPN null 127,127
+        // deselects, and an NRPN selection routes data entry elsewhere)
+        private int SelectedRpn
+        {
+            get
+            {
+                if (nrpnSelected) return -1;
+                int rpn = (rpnMsb << 7) | rpnLsb;
+                return rpn == RpnNull ? -1 : rpn;
+            }
+        }
+
+        /// <summary>
+        /// Data Entry MSB (CC6) for the selected RPN. RPN 0 (pitch-bend range):
+        /// the MSB is the range in semitones; a new MSB resets the cents part,
+        /// matching common device practice. Ignored when no RPN is selected.
+        /// </summary>
+        public void DataEntryMsb(int value)
+        {
+            if (SelectedRpn != RpnPitchBendRange) return;
+            bendRangeSemitones = value & 0x7F;
+            bendRangeCents = 0;
+            PitchBendRangeSemitones = bendRangeSemitones + bendRangeCents / 100.0;
+        }
+
+        /// <summary>
+        /// Data Entry LSB (CC38) for the selected RPN. RPN 0 (pitch-bend range):
+        /// the LSB adds cents (range = MSB + LSB/100). Ignored when no RPN is
+        /// selected.
+        /// </summary>
+        public void DataEntryLsb(int value)
+        {
+            if (SelectedRpn != RpnPitchBendRange) return;
+            bendRangeCents = value & 0x7F;
+            PitchBendRangeSemitones = bendRangeSemitones + bendRangeCents / 100.0;
+        }
+
         /// <summary>
         /// Resets controllers to their default values (e.g. on Reset All
         /// Controllers): volume and expression full (so a channel with no volume
         /// sent plays at unity), pan centred, everything else 0, pitch-bend
-        /// centred and the sustain pedal up.
+        /// centred and the sustain pedal up. Per RP-015 the pitch-bend range and
+        /// the RPN/NRPN selection are deliberately left untouched.
         /// </summary>
         public void ResetControllers()
         {

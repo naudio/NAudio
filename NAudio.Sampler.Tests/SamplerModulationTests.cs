@@ -172,6 +172,102 @@ namespace NAudio.Sampler.Tests
         }
 
         [Test]
+        public void KeynumToVolEnvDecayLengthensDecayForLowKeys()
+        {
+            // SF2.04 §8.1.2 gen 40 (keynumToVolEnvDecay): the decay time scales
+            // by 2^(amount x (60 - key) / 1200), key 60 neutral. At 50 tc/key,
+            // key 36 decays over twice the base time and key 84 over half — the
+            // piano "bass notes ring longer" behaviour — so in a fixed window
+            // after note-on the low key's tail still sounds when the high key's
+            // is gone. (Constant looped sample: pitch does not affect level.)
+            float low = DecayTailEnergy(36);
+            float high = DecayTailEnergy(84);
+            Assert.That(low, Is.GreaterThan(high * 5f),
+                "a low key must decay audibly longer than a high key under keynumToVolEnvDecay");
+        }
+
+        private static float DecayTailEnergy(int note)
+        {
+            // a decay-only voice: sustain fully attenuated, base decay 0.2 s,
+            // keynumToVolEnvDecay = 50 timecents per key number
+            var sf = BuildModInstrument(
+                (36, Timecents(0.2)), // decayVolEnv
+                (37, 1440),           // sustainVolEnv: silence
+                (40, 50));            // keynumToVolEnvDecay
+            var sampler = new SoundFontSampler(sf, SampleRate, 8);
+            sampler.NoteOn(0, note, 127);
+            int frames = SampleRate / 4; // 0.25 s
+            var output = Render(sampler, frames);
+
+            float energy = 0;
+            for (int f = (int)(0.15 * SampleRate); f < frames; f++)
+                energy += Math.Abs(output[f * 2]);
+            return energy;
+        }
+
+        [Test]
+        public void KeynumToVolEnvHoldLengthensHoldForLowKeys()
+        {
+            // SF2.04 §8.1.2 gen 39 (keynumToVolEnvHold): the hold time scales by
+            // 2^(50 x (60 - key) / 1200). With a fast decay to a silent sustain,
+            // the audible note length is essentially the hold time: ~0.1 s for
+            // key 36 against ~0.025 s for key 84.
+            int low = FramesAboveHalfLevel(36);
+            int high = FramesAboveHalfLevel(84);
+            Assert.That(low, Is.GreaterThan(high * 2),
+                "a low key must hold longer than a high key under keynumToVolEnvHold");
+        }
+
+        private static int FramesAboveHalfLevel(int note)
+        {
+            var sf = BuildModInstrument(
+                (35, Timecents(0.05)),                  // holdVolEnv: 50 ms base
+                (36, unchecked((ushort)(short)-7200)),  // decayVolEnv ~16 ms
+                (37, 1440),                             // sustainVolEnv: silence
+                (39, 50));                              // keynumToVolEnvHold
+            var sampler = new SoundFontSampler(sf, SampleRate, 8);
+            sampler.NoteOn(0, note, 127);
+            var output = Render(sampler, SampleRate / 5); // 0.2 s
+
+            int frames = 0;
+            for (int f = 0; f < output.Length / 2; f++)
+                if (Math.Abs(output[f * 2]) > 0.17f) frames++; // ~half the 0.35 steady level
+            return frames;
+        }
+
+        [Test]
+        public void KeynumToModEnvHoldScalesTheFilterEnvelope()
+        {
+            // SF2.04 §8.1.2 gen 31 (keynumToModEnvHold), observed through the
+            // filter: the mod envelope holds the cutoff open (+6000 cents over a
+            // 50 Hz base) for a hold time scaled by key number; scaleTuning=0
+            // keeps the rendered tone identical across keys. In the 0.10-0.15 s
+            // window key 36 (hold x2 = 0.2 s) is still bright while key 84's
+            // envelope (hold /2 = 0.05 s, then a 0.05 s decay to zero) has fully
+            // closed the filter onto the tone.
+            float low = LateToneRms(36);
+            float high = LateToneRms(84);
+            Assert.That(low, Is.GreaterThan(high * 3f),
+                "a low key must hold the filter open longer under keynumToModEnvHold");
+        }
+
+        private static float LateToneRms(int note)
+        {
+            var sf = BuildSineMod(
+                (GenInitialFilterFc, AbsoluteCents(50.0)),          // low base cutoff
+                (GenModEnvToFilter, unchecked((ushort)(short)6000)),// +6000 cents at full env
+                (27, Timecents(0.1)),                               // holdModEnv: 100 ms base
+                (28, Timecents(0.05)),                              // decayModEnv: 50 ms
+                (29, 1000),                                         // sustainModEnv -> 0
+                (31, 50),                                           // keynumToModEnvHold
+                (56, 0));                                           // scaleTuning 0: same tone per key
+            var sampler = new SoundFontSampler(sf, SampleRate, 8);
+            sampler.NoteOn(0, note, 127);
+            var output = Render(sampler, (int)(0.15 * SampleRate));
+            return Rms(output, (int)(0.10 * SampleRate) * 2, output.Length);
+        }
+
+        [Test]
         public void NoModulationGeneratorsMatchesStaticVoice()
         {
             // an instrument with no modulation generators should still play

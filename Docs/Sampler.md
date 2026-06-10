@@ -224,7 +224,7 @@ One engine limitation to know about: the modulation LFO and modulation envelope 
 * **Loop modes:** no-loop, continuous, and loop-until-release-then-tail (`sampleModes`), with the start/end/start-loop/end-loop address offset generators, fine and coarse
 * **Pitch:** `overridingRootKey`, `coarseTune`, `fineTune`, `scaleTuning`, and the sample header's pitch correction
 * **Filter:** `initialFilterFc`, `initialFilterQ`, `modEnvToFilterFc`, `modLfoToFilterFc`
-* **Envelopes:** the full six-stage DAHDSR volume and modulation envelopes (delay/attack/hold/decay/sustain/release, with the spec's timecent times and centibel/permille sustain levels)
+* **Envelopes:** the full six-stage DAHDSR volume and modulation envelopes (delay/attack/hold/decay/sustain/release, with the spec's timecent times and centibel/permille sustain levels), including `keynumToVolEnvHold`/`keynumToVolEnvDecay` and the modulation-envelope equivalents (hold/decay times scale by key number, so bass notes can ring longer)
 * **LFOs:** both LFOs with frequency and start delay; `modLfoToPitch`, `vibLfoToPitch`, `modEnvToPitch`, `modLfoToVolume`
 * **Amplitude:** `initialAttenuation`, `pan` (equal-power), `keynum` and `velocity` overrides
 * `exclusiveClass` (choke groups, click-free fade, sparing sibling layers of the same note-on)
@@ -236,7 +236,6 @@ One engine limitation to know about: the modulation LFO and modulation envelope 
 
 * The filter is a single 2-pole biquad low-pass. This matches the spec's intent but is not bit-compatible with any particular hardware or reference synth.
 * Attenuation is **spec-literal**: `initialAttenuation` centibels are applied exactly as written. FluidSynth (and synths that copy it) scales attenuation by 0.4× to emulate EMU hardware, so banks voiced against FluidSynth may play quieter here than you are used to. Compensate with `MasterGain` if needed.
-* `keynumToVolEnvHold`/`keynumToVolEnvDecay` (and the modulation-envelope equivalents) are parsed but not applied — envelope times do not track key number.
 * Pitch-wheel handling is realised by the channel pitch-bend path rather than the modulator list, so a *file-defined* modulator whose destination is initial pitch is ignored.
 * Poly (per-note key) pressure and NRPN modulator sources are not tracked — they evaluate as zero. Channel pressure, velocity, key number, CC and pitch wheel sources all work.
 * GS/XG-style drum-bank selection (selecting a percussion kit on a channel other than the percussion channel via bank select) is not supported; percussion is fixed to `PercussionChannel`.
@@ -258,6 +257,7 @@ The engine understands these channel messages (anything else is ignored):
   * CC10 — pan
   * CC11 — expression
   * CC64 — sustain pedal (released notes are held until pedal-up; release triggers fire when the pedal rises)
+  * CC101/CC100 + CC6/CC38 — RPN select and data entry (RPN 0 sets the pitch-bend range in semitones + cents; RPN null or an NRPN selection via CC99/CC98 deselects, so stray data entry is ignored)
   * CC91 / CC93 — reverb / chorus send level
   * CC120 — all sound off (immediate, with a short anti-click fade)
   * CC121 — reset all controllers

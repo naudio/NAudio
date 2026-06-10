@@ -54,8 +54,12 @@ namespace NAudio.Sampler
         private long framesRendered; // a sample clock for rt_decay held-time
         private float masterGain = 1f;
 
-        /// <summary>The live controller state for each of the 16 MIDI channels.</summary>
-        private protected MidiChannelState[] Channels { get; }
+        /// <summary>
+        /// The live controller state for each of the 16 MIDI channels. Internal
+        /// (rather than private protected) so the test assembly can assert on
+        /// decoded channel state such as the RPN 0 pitch-bend range.
+        /// </summary>
+        internal MidiChannelState[] Channels { get; }
 
         /// <summary>Creates the engine with a voice pool and the shared send buses.</summary>
         protected SamplerEngine(int sampleRate, int maxVoices)
@@ -405,6 +409,26 @@ namespace NAudio.Sampler
                     state.SustainPedal = down;
                     if (!down) ReleaseSustainedNotes(channel);
                     break;
+                // RPN/NRPN data entry (none of these have MidiController enum
+                // names): CC101/100 select a registered parameter, CC6/38 write
+                // to it, CC99/98 select a non-registered parameter (so stray
+                // data entry can't hit an RPN). RPN 0 is pitch-bend range.
+                case (MidiController)6: // Data Entry MSB
+                    state.DataEntryMsb(value);
+                    break;
+                case (MidiController)38: // Data Entry LSB
+                    state.DataEntryLsb(value);
+                    break;
+                case (MidiController)98: // NRPN LSB
+                case (MidiController)99: // NRPN MSB
+                    state.SelectNrpn();
+                    break;
+                case (MidiController)100: // RPN LSB
+                    state.SelectRpnLsb(value);
+                    break;
+                case (MidiController)101: // RPN MSB
+                    state.SelectRpnMsb(value);
+                    break;
                 case MidiController.AllNotesOff:
                     AllNotesOff();
                     break;
@@ -463,7 +487,9 @@ namespace NAudio.Sampler
             foreach (var v in voices)
                 if (!v.IsActive) return v;
 
-            // steal: prefer a released voice, else the quietest, breaking ties by age
+            // steal: prefer a released voice, else the least audible (envelope
+            // output x static gain — see SamplerVoice.Level), breaking ties by
+            // age; the stolen voice fades its old output out inside Start
             SamplerVoice best = voices[0];
             foreach (var v in voices)
             {

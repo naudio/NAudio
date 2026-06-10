@@ -100,6 +100,15 @@ namespace NAudio.Sampler
         private float declickL;
         private float declickR;
 
+        // when a still-sounding voice is stolen (Start on an active voice), its
+        // last output is captured here and faded out over the de-click time,
+        // summed on top of the new note — re-seating instantly would step the
+        // output from the victim's current value to the new note's envelope-zero
+        // start, an audible pop under polyphony pressure
+        private float stealFadeL;
+        private float stealFadeR;
+        private float stealFadeGain;
+
         /// <summary>Creates a voice for the given output rate.</summary>
         public SamplerVoice(int outputSampleRate)
         {
@@ -146,8 +155,14 @@ namespace NAudio.Sampler
         /// <summary>A monotonically increasing trigger order, used for voice stealing.</summary>
         public long StartOrder { get; private set; }
 
-        /// <summary>The current envelope output level (0..1), used to pick the quietest voice to steal.</summary>
-        public float Level => ampEnvelope.Output;
+        /// <summary>
+        /// The voice's current audible level — the envelope output scaled by the
+        /// static gain (attenuation, region/crossfade gain, velocity tracking) —
+        /// used to pick the quietest voice to steal. Ranking by envelope output
+        /// alone would let a heavily attenuated voice survive a steal while an
+        /// audible one is cut.
+        /// </summary>
+        public float Level => ampEnvelope.Output * staticGain;
 
         /// <summary>
         /// Starts this voice playing a region for a given key and velocity.
@@ -168,6 +183,20 @@ namespace NAudio.Sampler
             int loopEnd = sample.LoopEnd + gen.EndLoopAddressOffset;
 
             if (start < 0 || end > sample.Data.Length || start >= end) return false;
+
+            // Stealing a voice that is still sounding: capture its current output
+            // and ramp it to zero over the de-click time (~5 ms), summed on top of
+            // the new note in Mix. The new note starts at envelope zero, so the
+            // sum stays bounded. An in-progress steal fade is folded in so a
+            // rapid double-steal cannot pop either.
+            if (IsActive)
+            {
+                float current = declicking ? Math.Max(0f, declickGain) : 1f;
+                float prior = Math.Max(0f, stealFadeGain);
+                stealFadeL = declickL * current + stealFadeL * prior;
+                stealFadeR = declickR * current + stealFadeR * prior;
+                stealFadeGain = 1f - declickStep;
+            }
 
             var loopMode = MapLoopMode(gen.SampleModes);
             if (loopMode != LoopMode.None &&
@@ -329,36 +358,40 @@ namespace NAudio.Sampler
                 for (int i = 0; i < sub; i++)
                 {
                     float left, right;
+                    bool finished = false; // this voice's own note has fully ended
 
                     if (declicking)
                     {
                         // fading the last output to zero after a one-shot reached End
-                        left = declickL * declickGain;
-                        right = declickR * declickGain;
-                        declickGain -= declickStep;
+                        if (declickGain > 0f)
+                        {
+                            left = declickL * declickGain;
+                            right = declickR * declickGain;
+                            declickGain -= declickStep;
+                        }
+                        else { left = 0f; right = 0f; }
+                        if (declickGain <= 0f) finished = true;
                     }
                     else
                     {
-                        float sL = reader.Read(increment);
-                        if (reader.Ended)
+                        float env = ampEnvelope.Process();
+                        if (ampEnvelope.Stage == DahdsrEnvelope.EnvelopeStage.Delay)
                         {
-                            // one-shot reached End. If it ends on a non-trivial value
-                            // (e.g. an edited End mid-waveform), ramp the last output
-                            // down over a few ms instead of cutting hard (which
-                            // clicks); a sample that already ends near zero (most
-                            // well-formed content) just stops, with no added tail.
-                            if (Math.Abs(declickL) <= DeclickThreshold && Math.Abs(declickR) <= DeclickThreshold)
-                            {
-                                IsActive = false;
-                                return;
-                            }
-                            declicking = true;
-                            declickGain = 1f - declickStep;
-                            left = declickL * declickGain;
-                            right = declickR * declickGain;
+                            // SF2.04 §8.1.2 gen 33: the volume-envelope delay
+                            // postpones the sample, it must not consume it — output
+                            // silence and leave the readers untouched so the attack
+                            // transient still starts from the waveform's first
+                            // sample (FluidSynth behaves the same way). The
+                            // modulation sources still advance to keep time.
+                            left = 0f;
+                            right = 0f;
+                            modLfoValue = modLfo.Process();
+                            vibratoLfoValue = vibratoLfo.Process();
+                            modEnvValue = modEnvelope.Process();
                         }
                         else
                         {
+                            float sL = reader.Read(increment);
                             if (filterActive) sL = filter.Transform(sL);
                             if (eqLeft != null)
                                 for (int b = 0; b < eqLeft.Length; b++) sL = eqLeft[b].Transform(sL);
@@ -366,6 +399,8 @@ namespace NAudio.Sampler
                             float sR;
                             if (stereo)
                             {
+                                // lockstep: same bounds and increment, so the right
+                                // reader ends on the same sample as the left
                                 sR = readerRight.Read(increment);
                                 if (filterActive) sR = filterRight.Transform(sR);
                                 if (eqRight != null)
@@ -373,7 +408,7 @@ namespace NAudio.Sampler
                             }
                             else sR = sL;
 
-                            float envGain = ampEnvelope.Process() * staticGain * volGain;
+                            float envGain = env * staticGain * volGain;
                             left = sL * envGain * leftGain;
                             right = sR * envGain * rightGain;
                             declickL = left;   // remember the last output for a future de-click
@@ -383,7 +418,35 @@ namespace NAudio.Sampler
                             modLfoValue = modLfo.Process();
                             vibratoLfoValue = vibratoLfo.Process();
                             modEnvValue = modEnvelope.Process();
+
+                            if (reader.Ended)
+                            {
+                                // One-shot reached End: the value just read is the
+                                // last real sample and is emitted this iteration
+                                // (discarding it would drop the final sample of
+                                // every one-shot). If the note ends on a
+                                // non-trivial value (e.g. an edited End
+                                // mid-waveform), ramp the last output down over a
+                                // few ms instead of cutting hard (which clicks); a
+                                // sample that already ends near zero (most
+                                // well-formed content) just stops, with no added tail.
+                                declicking = true;
+                                bool nearZero = Math.Abs(left) <= DeclickThreshold && Math.Abs(right) <= DeclickThreshold;
+                                declickGain = nearZero ? 0f : 1f - declickStep;
+                                if (nearZero) finished = true;
+                            }
+                            else if (ampEnvelope.IsFinished) finished = true;
                         }
+                    }
+
+                    // a stolen voice's previous output rides on top of the new
+                    // note while it fades out (see Start)
+                    if (stealFadeGain > 0f)
+                    {
+                        left += stealFadeL * stealFadeGain;
+                        right += stealFadeR * stealFadeGain;
+                        stealFadeGain -= declickStep;
+                        if (stealFadeGain > 0f) finished = false; // the fade keeps the voice alive
                     }
 
                     buffer[pos * 2] += left;
@@ -400,11 +463,7 @@ namespace NAudio.Sampler
                     }
                     pos++;
 
-                    if (declicking)
-                    {
-                        if (declickGain <= 0f) { IsActive = false; return; }
-                    }
-                    else if (ampEnvelope.IsFinished) { IsActive = false; return; }
+                    if (finished) { IsActive = false; return; }
                 }
 
                 remaining -= sub;
@@ -478,8 +537,10 @@ namespace NAudio.Sampler
             ampEnvelope.Reset();
             ampEnvelope.DelaySeconds = (float)SynthMath.TimecentsToSeconds(gen[GeneratorEnum.DelayVolumeEnvelope]);
             ampEnvelope.AttackSeconds = (float)SynthMath.TimecentsToSeconds(gen[GeneratorEnum.AttackVolumeEnvelope]);
-            ampEnvelope.HoldSeconds = (float)SynthMath.TimecentsToSeconds(gen[GeneratorEnum.HoldVolumeEnvelope]);
-            ampEnvelope.DecaySeconds = (float)SynthMath.TimecentsToSeconds(gen[GeneratorEnum.DecayVolumeEnvelope]);
+            ampEnvelope.HoldSeconds = (float)(SynthMath.TimecentsToSeconds(gen[GeneratorEnum.HoldVolumeEnvelope])
+                * KeyNumberTimeFactor(gen[GeneratorEnum.KeyNumberToVolumeEnvelopeHold]));
+            ampEnvelope.DecaySeconds = (float)(SynthMath.TimecentsToSeconds(gen[GeneratorEnum.DecayVolumeEnvelope])
+                * KeyNumberTimeFactor(gen[GeneratorEnum.KeyNumberToVolumeEnvelopeDecay]));
             ampEnvelope.ReleaseSeconds = (float)SynthMath.TimecentsToSeconds(gen[GeneratorEnum.ReleaseVolumeEnvelope]);
             // sustainVolEnv is attenuation in centibels (0 = full level)
             double sustain = SynthMath.AttenuationCentibelsToGain(gen[GeneratorEnum.SustainVolumeEnvelope]);
@@ -491,13 +552,28 @@ namespace NAudio.Sampler
             modEnvelope.Reset();
             modEnvelope.DelaySeconds = (float)SynthMath.TimecentsToSeconds(gen[GeneratorEnum.DelayModulationEnvelope]);
             modEnvelope.AttackSeconds = (float)SynthMath.TimecentsToSeconds(gen[GeneratorEnum.AttackModulationEnvelope]);
-            modEnvelope.HoldSeconds = (float)SynthMath.TimecentsToSeconds(gen[GeneratorEnum.HoldModulationEnvelope]);
-            modEnvelope.DecaySeconds = (float)SynthMath.TimecentsToSeconds(gen[GeneratorEnum.DecayModulationEnvelope]);
+            modEnvelope.HoldSeconds = (float)(SynthMath.TimecentsToSeconds(gen[GeneratorEnum.HoldModulationEnvelope])
+                * KeyNumberTimeFactor(gen[GeneratorEnum.KeyNumberToModulationEnvelopeHold]));
+            modEnvelope.DecaySeconds = (float)(SynthMath.TimecentsToSeconds(gen[GeneratorEnum.DecayModulationEnvelope])
+                * KeyNumberTimeFactor(gen[GeneratorEnum.KeyNumberToModulationEnvelopeDecay]));
             modEnvelope.ReleaseSeconds = (float)SynthMath.TimecentsToSeconds(gen[GeneratorEnum.ReleaseModulationEnvelope]);
             // sustainModEnv is in 0.1% units of full scale, decreasing from full
             double permille = gen[GeneratorEnum.SustainModulationEnvelope];
             modEnvelope.SustainLevel = (float)Math.Clamp(1.0 - permille / 1000.0, 0.0, 1.0);
         }
+
+        /// <summary>
+        /// The hold/decay time scale factor for a keynumTo*Env Hold/Decay
+        /// generator (SF2.04 §8.1.2 gens 31/32/39/40):
+        /// 2^(amount × (60 − keynum) / 1200). The amount is in timecents per key
+        /// number with key 60 neutral, so a positive amount lengthens hold/decay
+        /// for lower keys (the piano "bass notes ring longer" behaviour). Uses
+        /// the effective key (the keynum generator override if set, else the
+        /// played note), which <see cref="Start"/> stores before configuring the
+        /// envelopes.
+        /// </summary>
+        private double KeyNumberTimeFactor(double timecentsPerKey) =>
+            timecentsPerKey == 0.0 ? 1.0 : SynthMath.CentsToRatio(timecentsPerKey * (60 - key));
 
         private void ConfigureLfos(SoundFontGenerators gen)
         {

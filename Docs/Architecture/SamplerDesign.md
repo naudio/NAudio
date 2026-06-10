@@ -493,21 +493,24 @@ Small, deliberate shortcuts taken in shipped steps, tracked here so they are not
 forgotten:
 
 - **Pitch-wheel modulation (§8.4.10)** is realised by the channel pitch-bend
-  path (`MidiChannelState.PitchBendRatio`), *not* the modulator list. Two
-  consequences: a *file-defined* modulator whose destination is initial pitch is
-  ignored, and pitch-bend range is the channel default rather than driven by the
-  pitch-wheel-sensitivity RPN as a modulator amount source. Revisit if a bank
-  relies on a custom pitch modulator.
+  path (`MidiChannelState.PitchBendRatio`), *not* the modulator list, so a
+  *file-defined* modulator whose destination is initial pitch is ignored.
+  Revisit if a bank relies on a custom pitch modulator. The bend *range* part
+  is now implemented: RPN 0 (pitch-bend sensitivity) is decoded per channel —
+  CC101/CC100 select, CC6/CC38 set semitones + cents, RPN null and an NRPN
+  selection deselect — feeding `PitchBendRangeSemitones` (untouched by Reset
+  All Controllers per RP-015).
 - **Poly (per-note) pressure** as a modulator source is not tracked — it
   evaluates as 0. Channel pressure, velocity, key, CC and pitch-wheel sources
   all work. **NRPN** is likewise not yet decoded.
 - **Modulator destinations outside `GeneratorEnum`** (e.g. the SF2 "initial
   pitch" virtual destination) are ignored by the engine — only real generator
   destinations are summed.
-- **Very short one-shot samples** (a handful of frames, non-looped) can fail to
-  feed audio through `InterpolatingSampleReader` (found via a reverb-send test
-  that used a 4-frame one-shot). Normal-length and looped samples are
-  unaffected; the reader's end/guard handling for tiny one-shots wants a look.
+- **(Closed)** ~~Very short one-shot samples failing to sound~~ — the reader
+  was correct all along; the voice was consuming the waveform during the
+  volume-envelope delay and dropping the final read sample. The delay now
+  postpones the sample (silence, readers untouched) and the last sample is
+  emitted before the de-click ramp.
 - **SFZ Tier 1 — complete.** Includes release/first/legato triggers, one-shot
   note-off, directional `off_by` choke groups, all four `fil_type` shapes
   (low/high/band-pass and band-reject), **stereo samples** (the voice runs a

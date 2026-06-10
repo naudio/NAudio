@@ -301,6 +301,62 @@ namespace NAudio.Sampler.Tests
         }
 
         [Test]
+        public void VoiceStealingFadesTheStolenVoiceInsteadOfHardCutting()
+        {
+            // A 1-voice pool playing a loud constant looped note: striking a
+            // second note steals the voice. The victim's output must ramp out
+            // (~5 ms), summed on top of the new note — not jump from the steady
+            // level to the new note's envelope-zero start between two samples,
+            // which pops audibly under polyphony pressure.
+            var sampler = new SfzSampler(
+                SfzParser.Parse("<region> sample=a.wav lokey=0 hikey=127 loop_mode=loop_continuous"),
+                new ConstantLoader(64), SampleRate, maxVoices: 1);
+            sampler.NoteOn(0, 60, 127);
+            var warm = new float[4096 * 2];
+            sampler.Read(warm);
+            float prev = warm[warm.Length - 2]; // last left-channel sample before the steal
+            Assert.That(Math.Abs(prev), Is.GreaterThan(0.2f), "the first note should be at a steady level");
+
+            sampler.NoteOn(0, 64, 127); // pool exhausted: steals the sounding voice
+            var after = new float[1024 * 2];
+            sampler.Read(after);
+
+            float maxStep = 0f;
+            for (int f = 0; f < 1024; f++)
+            {
+                float current = after[f * 2];
+                maxStep = Math.Max(maxStep, Math.Abs(current - prev));
+                prev = current;
+            }
+            Assert.That(maxStep, Is.LessThan(0.05f),
+                "stealing a sounding voice must not step the output sample-to-sample");
+        }
+
+        [Test]
+        public void VoiceStealingPrefersTheLessAudibleVoice()
+        {
+            // The steal ranking must reflect audibility (envelope output x static
+            // gain): with a full pool holding one loud and one heavily attenuated
+            // voice, the quiet voice is stolen and the loud note keeps sounding.
+            // Ranking by envelope output alone ties the two sustained voices and
+            // steals the older — the loud — note instead.
+            var sfz =
+                "<region> sample=a.wav lokey=60 hikey=60 loop_mode=loop_continuous\n" +
+                "<region> sample=a.wav lokey=62 hikey=62 loop_mode=loop_continuous volume=-40\n" +
+                "<region> sample=a.wav lokey=64 hikey=64 loop_mode=loop_continuous volume=-40";
+            var sampler = new SfzSampler(SfzParser.Parse(sfz), new ConstantLoader(64), SampleRate, maxVoices: 2);
+            sampler.NoteOn(0, 60, 127); // loud
+            sampler.NoteOn(0, 62, 127); // quiet (-40 dB)
+            Render(sampler, 2048);      // both at sustain
+
+            sampler.NoteOn(0, 64, 127); // pool full: must steal the quiet voice
+            var output = new float[2048 * 2];
+            sampler.Read(output);
+            float tail = Math.Abs(output[output.Length - 2]);
+            Assert.That(tail, Is.GreaterThan(0.2f), "the loud voice must survive the steal");
+        }
+
+        [Test]
         public void ResonanceBoostIsGainCompensated()
         {
             // SF2.04 §8.1.2 gen 8: the voice attenuates its output by half the

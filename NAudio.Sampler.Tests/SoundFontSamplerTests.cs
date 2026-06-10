@@ -197,6 +197,62 @@ namespace NAudio.Sampler.Tests
         }
 
         [Test]
+        public void VeryShortOneShotIsAudible()
+        {
+            // Regression for SamplerDesign §11.1 "very short one-shot samples": a
+            // 4-frame non-looped one-shot rendered as pure silence because the
+            // volume-envelope delay (the SF2 default -12000 tc ≈ 1 ms ≈ 43
+            // samples) consumed the whole waveform and the final read sample was
+            // dropped. The delay must postpone the waveform, not eat it.
+            var sampler = NewSampler(BuildConstantInstrument(loop: false));
+            sampler.NoteOn(0, 60, 127);
+            var output = Render(sampler, 512);
+            Assert.That(Peak(output), Is.GreaterThan(0.01f), "a 4-frame one-shot must produce audio");
+        }
+
+        [Test]
+        public void EnvelopeDelayPostponesTheWaveformInsteadOfConsumingIt()
+        {
+            // SF2.04 §8.1.2 gen 33: during the volume-envelope delay the voice is
+            // silent but the waveform must not advance, so an N-frame one-shot at
+            // unity pitch still yields ~N non-silent frames (just shifted by the
+            // delay). Consuming the delay from the waveform loses the first ~43
+            // samples — the attack transient — of every note.
+            const int points = 500;
+            var sampler = NewSampler(BuildDescendingRampInstrument(points));
+            sampler.NoteOn(0, 60, 127);
+            var output = Render(sampler, 2048);
+
+            int nonSilent = 0;
+            for (int f = 0; f < 2048; f++)
+                if (Math.Abs(output[f * 2]) > 0.002f) nonSilent++;
+            Assert.That(nonSilent, Is.EqualTo(points).Within(10),
+                "the rendered body of a one-shot must be the whole waveform");
+        }
+
+        [Test]
+        public void OneShotEmitsItsFinalSample()
+        {
+            // The Read that discovers a one-shot's end returns the last real
+            // sample; it must be emitted, not discarded (the voice was dropping
+            // the final output sample of every one-shot). This waveform's only
+            // non-zero value IS its final sample, so dropping it renders silence.
+            var data = new byte[6]; // 3 points: 0, 0, ~0.49
+            data[4] = 16000 & 0xFF;
+            data[5] = 16000 >> 8;
+            var igen = SoundFontTestBuilder.Chunk("igen", SoundFontTestBuilder.Concat(
+                SoundFontTestBuilder.Gen(58, 60), // overridingRootKey (no loop)
+                SoundFontTestBuilder.Gen(53, 0))); // SampleID
+            var sf = SoundFontTestBuilder.BuildSingleRegion(data, igen,
+                sampleStart: 0, sampleEnd: 3, loopStart: 0, loopEnd: 3,
+                sampleRate: SampleRate, originalPitch: 60);
+            var sampler = NewSampler(sf);
+            sampler.NoteOn(0, 60, 127);
+            Assert.That(Peak(Render(sampler, 512)), Is.GreaterThan(0.01f),
+                "the final sample of a one-shot must be emitted");
+        }
+
+        [Test]
         public void NonLoopedNoteStopsAtSampleEnd()
         {
             var sampler = NewSampler(BuildConstantInstrument(loop: false));
@@ -414,6 +470,24 @@ namespace NAudio.Sampler.Tests
                 SoundFontTestBuilder.Gen(53, 0)));
             return SoundFontTestBuilder.BuildSingleRegion(data, igen,
                 0, (uint)points, 0, (uint)points, SampleRate, rootKey);
+        }
+
+        // a non-looped one-shot whose value falls linearly to zero at the end, so
+        // the rendered body length is measurable and no de-click tail is added
+        private static NAudio.SoundFont.SoundFont BuildDescendingRampInstrument(int points)
+        {
+            var data = new byte[points * 2];
+            for (int i = 0; i < points; i++)
+            {
+                short v = (short)((points - 1 - i) * 60);
+                data[i * 2] = (byte)(v & 0xFF);
+                data[i * 2 + 1] = (byte)((v >> 8) & 0xFF);
+            }
+            var igen = SoundFontTestBuilder.Chunk("igen", SoundFontTestBuilder.Concat(
+                SoundFontTestBuilder.Gen(58, 60),
+                SoundFontTestBuilder.Gen(53, 0)));
+            return SoundFontTestBuilder.BuildSingleRegion(data, igen,
+                0, (uint)points, 0, (uint)points, SampleRate, 60);
         }
 
         private static NAudio.SoundFont.SoundFont BuildReleasingInstrument(short releaseTimecents)

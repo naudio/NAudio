@@ -15,9 +15,14 @@ namespace NAudio.Sampler
         /// Loads the sample at <paramref name="path"/> (as written in the SFZ) into
         /// channel buffers: <paramref name="left"/> is the left/mono channel and
         /// <paramref name="right"/> is the right channel, or null for a mono sample.
-        /// Returns false if it cannot be found or decoded.
+        /// <paramref name="embeddedLoop"/> carries loop points authored in the
+        /// sample file itself (a WAV <c>smpl</c> chunk), or null if there are none —
+        /// per the SFZ spec these are the region's default loop points and make
+        /// <c>loop_mode</c> default to <c>loop_continuous</c>.
+        /// Returns false if the sample cannot be found or decoded.
         /// </summary>
-        bool TryLoad(string path, out float[] left, out float[] right, out int sampleRate);
+        bool TryLoad(string path, out float[] left, out float[] right, out int sampleRate,
+            out SampleLoop? embeddedLoop);
     }
 
     /// <summary>
@@ -38,11 +43,13 @@ namespace NAudio.Sampler
         }
 
         /// <inheritdoc />
-        public bool TryLoad(string path, out float[] left, out float[] right, out int sampleRate)
+        public bool TryLoad(string path, out float[] left, out float[] right, out int sampleRate,
+            out SampleLoop? embeddedLoop)
         {
             left = null;
             right = null;
             sampleRate = 0;
+            embeddedLoop = null;
             if (string.IsNullOrEmpty(path)) return false;
 
             var normalised = path.Replace('\\', Path.DirectorySeparatorChar)
@@ -50,9 +57,11 @@ namespace NAudio.Sampler
             var full = Path.IsPathRooted(normalised) ? normalised : Path.Combine(baseDirectory, normalised);
             if (!File.Exists(full)) return false;
 
-            // WAV reads directly; FLAC/Ogg/Opus/etc. go through libsndfile
+            // WAV reads directly, including smpl-chunk loop points; FLAC/Ogg/Opus/
+            // etc. go through libsndfile, which doesn't surface loop instrument
+            // data on this path — embedded loops are WAV-only for now
             if (full.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
-                return WaveSampleLoader.TryLoad(full, out left, out right, out sampleRate);
+                return WaveSampleLoader.TryLoad(full, out left, out right, out sampleRate, out embeddedLoop);
 
             try
             {

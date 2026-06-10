@@ -17,21 +17,25 @@ namespace NAudio.Sampler.Tests
 
         private sealed class StubLoader : ISfzSampleLoader
         {
-            public bool TryLoad(string path, out float[] left, out float[] right, out int sampleRate)
+            private readonly SampleLoop? loop;
+            public StubLoader(SampleLoop? loop = null) => this.loop = loop;
+            public bool TryLoad(string path, out float[] left, out float[] right, out int sampleRate,
+                out SampleLoop? embeddedLoop)
             {
                 // a half-scale, 8-sample mono buffer for every requested path
                 left = new float[8];
                 for (int i = 0; i < left.Length; i++) left[i] = 0.5f;
                 right = null;
                 sampleRate = SampleRate;
+                embeddedLoop = loop;
                 return true;
             }
         }
 
-        private static SfzSampler Build(string sfz, int maxVoices = 16)
+        private static SfzSampler Build(string sfz, int maxVoices = 16, SampleLoop? loop = null)
         {
             var instrument = SfzParser.Parse(sfz);
-            return new SfzSampler(instrument, new StubLoader(), SampleRate, maxVoices);
+            return new SfzSampler(instrument, new StubLoader(loop), SampleRate, maxVoices);
         }
 
         private static float Peak(float[] buffer)
@@ -82,6 +86,23 @@ namespace NAudio.Sampler.Tests
             sampler.NoteOn(5, 64, 100);
             Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(1));
             Assert.That(Peak(Render(sampler, 256)), Is.GreaterThan(0.1f));
+        }
+
+        [Test]
+        public void EmbeddedWavLoopMakesTheRegionLoopByDefault()
+        {
+            // no loop opcodes at all: with a loop embedded in the sample file the
+            // spec default is loop_continuous, so the 8-frame sample sustains far
+            // past its length; without one the default is no_loop and it ends
+            var looping = Build("<region> sample=a.wav key=60", loop: new SampleLoop(0, 8));
+            looping.NoteOn(0, 60, 127);
+            Render(looping, 2048);
+            Assert.That(looping.ActiveVoiceCount, Is.EqualTo(1), "embedded loop should sustain the note");
+
+            var oneShot = Build("<region> sample=a.wav key=60");
+            oneShot.NoteOn(0, 60, 127);
+            Render(oneShot, 2048);
+            Assert.That(oneShot.ActiveVoiceCount, Is.EqualTo(0), "no embedded loop: sample plays out and ends");
         }
 
         [Test]

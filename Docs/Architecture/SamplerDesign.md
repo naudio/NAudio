@@ -516,7 +516,11 @@ forgotten:
   Opus sample loading** — every sample is decoded fully into memory (the
   random-access form the voice plays); WAV is read directly and other formats
   through `NAudio.SoundFile` (libsndfile), failing gracefully (region skipped)
-  when libsndfile is absent. **Note:** FLAC/Ogg decoding has only been
+  when libsndfile is absent. Loop points authored in a WAV's `smpl` chunk are
+  read and used as the region's default loop (driving the spec's `loop_mode`
+  default of `loop_continuous`); the libsndfile path does not surface embedded
+  loops, so FLAC/Ogg samples need explicit `loop_start`/`loop_end` opcodes.
+  **Note:** FLAC/Ogg decoding has only been
   validated against the in-memory read path with a stub provider in this
   environment (no system libsndfile here); exercise it on a libsndfile box.
   *Future:* disk streaming for very large libraries (§11) — decode fully into

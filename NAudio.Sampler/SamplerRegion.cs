@@ -36,6 +36,14 @@ namespace NAudio.Sampler
         /// </summary>
         public float VelocityTrackingPercent { get; init; }
 
+        /// <summary>
+        /// A static linear gain multiplied into every voice this region starts
+        /// (default 1). Carries the boost part of SFZ <c>volume</c> (a positive
+        /// dB value): the SF2 attenuation slot cannot express a boost because the
+        /// voice clamps total attenuation at ≥ 0 per the SF2 spec.
+        /// </summary>
+        public float GainLinear { get; init; } = 1f;
+
         /// <summary>The resonant filter shape (default low-pass).</summary>
         public SamplerFilterType FilterType { get; init; }
 

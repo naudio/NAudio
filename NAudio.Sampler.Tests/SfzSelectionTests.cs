@@ -18,12 +18,14 @@ namespace NAudio.Sampler.Tests
 
         private sealed class ConstantLoader : ISfzSampleLoader
         {
-            public bool TryLoad(string path, out float[] left, out float[] right, out int sampleRate)
+            public bool TryLoad(string path, out float[] left, out float[] right, out int sampleRate,
+                out SampleLoop? embeddedLoop)
             {
                 left = new float[64];
                 for (int i = 0; i < left.Length; i++) left[i] = 0.5f;
                 right = null;
                 sampleRate = SampleRate;
+                embeddedLoop = null;
                 return true;
             }
         }

@@ -21,12 +21,14 @@ namespace NAudio.Sampler.Tests
         {
             private readonly int length;
             public ConstantLoader(int length) => this.length = length;
-            public bool TryLoad(string path, out float[] left, out float[] right, out int sampleRate)
+            public bool TryLoad(string path, out float[] left, out float[] right, out int sampleRate,
+                out SampleLoop? embeddedLoop)
             {
                 left = new float[length];
                 for (int i = 0; i < length; i++) left[i] = 0.5f;
                 right = null;
                 sampleRate = SampleRate;
+                embeddedLoop = null;
                 return true;
             }
         }
@@ -136,13 +138,15 @@ namespace NAudio.Sampler.Tests
             private readonly double frequency;
             private readonly int length;
             public SineLoader(double frequency, int length) { this.frequency = frequency; this.length = length; }
-            public bool TryLoad(string path, out float[] left, out float[] right, out int sampleRate)
+            public bool TryLoad(string path, out float[] left, out float[] right, out int sampleRate,
+                out SampleLoop? embeddedLoop)
             {
                 left = new float[length];
                 for (int i = 0; i < length; i++)
                     left[i] = 0.5f * (float)Math.Sin(2 * Math.PI * frequency * i / SampleRate);
                 right = null;
                 sampleRate = SampleRate;
+                embeddedLoop = null;
                 return true;
             }
         }

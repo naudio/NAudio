@@ -17,19 +17,23 @@ namespace NAudio.Sampler.Tests
     {
         private const int SampleRate = 44100;
 
-        // a loader that hands back fixed buffers for any path
+        // a loader that hands back fixed buffers (and optional embedded loop
+        // points, standing in for a WAV smpl chunk) for any path
         private sealed class StubLoader : ISfzSampleLoader
         {
             private readonly float[] data;
             private readonly float[] dataRight;
             private readonly int rate;
-            public StubLoader(float[] data, int rate, float[] dataRight = null)
+            private readonly SampleLoop? loop;
+            public StubLoader(float[] data, int rate, float[] dataRight = null, SampleLoop? loop = null)
             {
-                this.data = data; this.rate = rate; this.dataRight = dataRight;
+                this.data = data; this.rate = rate; this.dataRight = dataRight; this.loop = loop;
             }
-            public bool TryLoad(string path, out float[] left, out float[] right, out int sampleRate)
+            public bool TryLoad(string path, out float[] left, out float[] right, out int sampleRate,
+                out SampleLoop? embeddedLoop)
             {
-                left = data; right = dataRight; sampleRate = rate; return data != null;
+                left = data; right = dataRight; sampleRate = rate; embeddedLoop = loop;
+                return data != null;
             }
         }
 
@@ -114,6 +118,82 @@ namespace NAudio.Sampler.Tests
             var r = ProjectFirst("<region> sample=a.wav offset=3", ConstantSample(length: 8));
             Assert.That(r.Sample.Start, Is.EqualTo(3));
             Assert.That(r.Sample.End, Is.EqualTo(8));
+        }
+
+        [Test]
+        public void EndOpcodeIsInclusive()
+        {
+            // SFZ `end` plays up to AND INCLUDING that sample; SampleData.End is
+            // exclusive, so end=3 projects to End=4
+            var r = ProjectFirst("<region> sample=a.wav end=3", ConstantSample(length: 8));
+            Assert.That(r.Sample.End, Is.EqualTo(4));
+        }
+
+        [Test]
+        public void EndMinusOneDisablesTheRegion()
+        {
+            // an explicit end=-1 means "this region is not played" per the spec
+            // (distinct from an absent `end`, which plays the whole sample)
+            Assert.That(ProjectFirst("<region> sample=a.wav end=-1", ConstantSample(length: 8)), Is.Null);
+        }
+
+        [Test]
+        public void LoopOpcodesAreInclusiveEnd()
+        {
+            var r = ProjectFirst("<region> sample=a.wav loop_mode=loop_continuous loop_start=1 loop_end=4",
+                ConstantSample(length: 8));
+            Assert.That(r.Sample.LoopStart, Is.EqualTo(1));
+            Assert.That(r.Sample.LoopEnd, Is.EqualTo(5), "loop_end=4 is inclusive -> exclusive 5");
+        }
+
+        [Test]
+        public void EmbeddedWavLoopSuppliesDefaultLoopPointsAndLoopMode()
+        {
+            // a loop authored in the WAV's smpl chunk supplies the loop points,
+            // and per the spec an absent loop_mode then defaults to loop_continuous
+            var loader = new StubLoader(Filled(0.5f, 8), SampleRate, loop: new SampleLoop(2, 6));
+            var r = ProjectFirst("<region> sample=a.wav", loader);
+            Assert.That(r.Sample.LoopStart, Is.EqualTo(2));
+            Assert.That(r.Sample.LoopEnd, Is.EqualTo(6));
+            Assert.That(r.Generators[GeneratorEnum.SampleModes], Is.EqualTo((short)SampleMode.LoopContinuously));
+        }
+
+        [Test]
+        public void LoopModeDefaultsToNoLoopWithoutAnEmbeddedLoop()
+        {
+            var r = ProjectFirst("<region> sample=a.wav", ConstantSample(length: 8));
+            Assert.That(r.Generators[GeneratorEnum.SampleModes], Is.EqualTo((short)SampleMode.NoLoop));
+        }
+
+        [Test]
+        public void ExplicitNoLoopOverridesAnEmbeddedLoop()
+        {
+            var loader = new StubLoader(Filled(0.5f, 8), SampleRate, loop: new SampleLoop(2, 6));
+            var r = ProjectFirst("<region> sample=a.wav loop_mode=no_loop", loader);
+            Assert.That(r.Generators[GeneratorEnum.SampleModes], Is.EqualTo((short)SampleMode.NoLoop));
+        }
+
+        [Test]
+        public void LoopOpcodesOverrideTheEmbeddedLoop()
+        {
+            var loader = new StubLoader(Filled(0.5f, 8), SampleRate, loop: new SampleLoop(2, 6));
+            var r = ProjectFirst("<region> sample=a.wav loop_start=1 loop_end=4", loader);
+            Assert.That(r.Sample.LoopStart, Is.EqualTo(1));
+            Assert.That(r.Sample.LoopEnd, Is.EqualTo(5), "inclusive loop_end=4 beats the embedded loop");
+        }
+
+        [Test]
+        public void ControlNoteOffsetTransposesIncomingNotes()
+        {
+            // note_offset transposes incoming MIDI notes UP, so the projected
+            // region's key range and root key shift DOWN: with note_offset=12 a
+            // played key 48 matches this region and sounds at the recording's
+            // pitch (i.e. the instrument sounds an octave higher)
+            var instrument = SfzParser.Parse("<control> note_offset=12\n<region> sample=a.wav key=c4");
+            var r = SfzRegionProjector.Project(instrument.MapRegions()[0], ConstantSample());
+            Assert.That(r.LoKey, Is.EqualTo(48));
+            Assert.That(r.HiKey, Is.EqualTo(48));
+            Assert.That(r.Sample.RootKey, Is.EqualTo(48));
         }
 
 
@@ -246,6 +326,61 @@ namespace NAudio.Sampler.Tests
             float loud = RenderPeak(r, 60, 127);
             float soft = RenderPeak(r, 60, 40);
             Assert.That(loud, Is.GreaterThan(soft * 2f));
+        }
+
+        [Test]
+        public void PositiveVolumeActuallyBoostsTheOutput()
+        {
+            // volume=+6 dB must raise the rendered peak by ~2x over volume=0. It
+            // cannot ride the SF2 attenuation slot (the voice clamps attenuation
+            // at >= 0), so it is carried as the region's linear gain.
+            var flat = ProjectFirst("<region> sample=a.wav key=60 loop_mode=loop_continuous volume=0",
+                ConstantSample(0.25f));
+            var boosted = ProjectFirst("<region> sample=a.wav key=60 loop_mode=loop_continuous volume=6",
+                ConstantSample(0.25f));
+
+            float basePeak = RenderPeak(flat, 60, 127);
+            float boostPeak = RenderPeak(boosted, 60, 127);
+            Assert.That(boostPeak, Is.EqualTo(basePeak * 1.995f).Within(basePeak * 0.05f),
+                "+6 dB should be ~2x the linear level");
+        }
+
+        [Test]
+        public void NegativeVolumeStillAttenuates()
+        {
+            var flat = ProjectFirst("<region> sample=a.wav key=60 loop_mode=loop_continuous",
+                ConstantSample(0.5f));
+            var quiet = ProjectFirst("<region> sample=a.wav key=60 loop_mode=loop_continuous volume=-12",
+                ConstantSample(0.5f));
+            Assert.That(quiet.Generators[GeneratorEnum.InitialAttenuation], Is.EqualTo(120));
+            Assert.That(RenderPeak(quiet, 60, 127),
+                Is.EqualTo(RenderPeak(flat, 60, 127) * 0.251f).Within(0.02f));
+        }
+
+        [Test]
+        public void PartialAmpVelTrackInterpolatesInTheGainDomain()
+        {
+            // SFZ amp_veltrack interpolates gain = 1 - p*(1 - (v/127)^2): at
+            // p=0.5, v=1 that is ~0.5 (-6 dB). The old law scaled the dB curve
+            // linearly instead, giving ~-42 dB — wildly too quiet.
+            var r = ProjectFirst("<region> sample=a.wav key=60 loop_mode=loop_continuous amp_veltrack=50",
+                ConstantSample(0.5f));
+            float full = RenderPeak(r, 60, 127);
+            float low = RenderPeak(r, 60, 1);
+            Assert.That(low / full, Is.EqualTo(0.5f).Within(0.02f));
+        }
+
+        [Test]
+        public void NegativeAmpVelTrackBoostsLowVelocities()
+        {
+            // negative tracking inverts the curve: gain = 1 + |p|*(1 - (v/127)^2)
+            // exceeds unity at low velocity (~2x at v=1, p=-1) and is 1 at v=127.
+            // A boost cannot pass through the clamped attenuation path.
+            var r = ProjectFirst("<region> sample=a.wav key=60 loop_mode=loop_continuous amp_veltrack=-100",
+                ConstantSample(0.25f));
+            float full = RenderPeak(r, 60, 127);
+            float low = RenderPeak(r, 60, 1);
+            Assert.That(low / full, Is.EqualTo(2f).Within(0.05f));
         }
     }
 }

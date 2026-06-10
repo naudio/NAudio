@@ -115,6 +115,26 @@ namespace NAudio.Sampler.Tests
         }
 
         [Test]
+        public void PositiveVolumeDbBoostsTheNextNote()
+        {
+            // a +6 dB VolumeDb must raise the peak ~2x — it is carried as linear
+            // gain because the voice clamps SF2 attenuation at >= 0
+            var sampler = Looping(out var instrument, value: 0.25f);
+
+            sampler.NoteOn(0, 60, 127);
+            float baseline = Peak(sampler, 256);
+            sampler.NoteOff(0, 60);
+            Peak(sampler, 2048); // let the release finish so the voice frees
+            Assert.That(sampler.ActiveVoiceCount, Is.EqualTo(0));
+
+            instrument.VolumeDb = 6f;
+            sampler.NoteOn(0, 60, 127);
+            float boosted = Peak(sampler, 256);
+
+            Assert.That(boosted, Is.EqualTo(baseline * 1.995f).Within(baseline * 0.05f));
+        }
+
+        [Test]
         public void HigherKeyPlaysBackFaster()
         {
             // a one-shot: a note an octave above the root consumes the sample

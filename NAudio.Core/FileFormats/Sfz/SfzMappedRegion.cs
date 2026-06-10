@@ -129,16 +129,37 @@ namespace NAudio.Sfz
         /// <summary>The filter family (<c>fil_type</c>, default low-pass).</summary>
         public SfzFilterType FilterType { get; private set; }
 
-        /// <summary>Loop behaviour (<c>loop_mode</c>, default no loop).</summary>
+        /// <summary>
+        /// Loop behaviour (<c>loop_mode</c>). Only meaningful when
+        /// <see cref="HasLoopMode"/> is true: per the SFZ spec an absent opcode
+        /// defaults to <c>loop_continuous</c> when the sample file defines a loop
+        /// (e.g. a WAV <c>smpl</c> chunk) and <c>no_loop</c> otherwise, which only
+        /// the sample loader can decide.
+        /// </summary>
         public SfzLoopMode LoopMode { get; private set; }
+        /// <summary>Whether a <c>loop_mode</c>/<c>loopmode</c> opcode was specified.</summary>
+        public bool HasLoopMode { get; private set; }
         /// <summary>Sample start offset in frames (<c>offset</c>, default 0).</summary>
         public int Offset { get; private set; }
-        /// <summary>Sample end in frames, or −1 for the whole sample (<c>end</c>).</summary>
+        /// <summary>
+        /// Sample end in frames (<c>end</c>, an <em>inclusive</em> index per the SFZ
+        /// spec), meaningful when <see cref="HasEnd"/> is true. An explicit −1 means
+        /// the region is disabled (not played) per the spec.
+        /// </summary>
         public int End { get; private set; }
-        /// <summary>Loop start in frames, or −1 if unset (<c>loop_start</c>).</summary>
+        /// <summary>Whether an <c>end</c> opcode was specified.</summary>
+        public bool HasEnd { get; private set; }
+        /// <summary>Loop start in frames (<c>loop_start</c>), meaningful when
+        /// <see cref="HasLoopStart"/> is true; overrides any loop start embedded in the sample file.</summary>
         public int LoopStart { get; private set; }
-        /// <summary>Loop end in frames, or −1 if unset (<c>loop_end</c>).</summary>
+        /// <summary>Whether a <c>loop_start</c>/<c>loopstart</c> opcode was specified.</summary>
+        public bool HasLoopStart { get; private set; }
+        /// <summary>Loop end in frames (<c>loop_end</c>, an <em>inclusive</em> index per the
+        /// SFZ spec), meaningful when <see cref="HasLoopEnd"/> is true; overrides any loop
+        /// end embedded in the sample file.</summary>
         public int LoopEnd { get; private set; }
+        /// <summary>Whether a <c>loop_end</c>/<c>loopend</c> opcode was specified.</summary>
+        public bool HasLoopEnd { get; private set; }
 
         /// <summary>When the region plays (<c>trigger</c>, default attack).</summary>
         public SfzTrigger Trigger { get; private set; }
@@ -194,13 +215,18 @@ namespace NAudio.Sfz
         /// <summary>
         /// Interprets a parsed <see cref="SfzRegion"/>'s opcodes. The
         /// <paramref name="noteOffset"/> and <paramref name="octaveOffset"/> (from
-        /// the instrument's <c>&lt;control&gt;</c> section) shift the key values
-        /// that were explicitly specified.
+        /// the instrument's <c>&lt;control&gt;</c> section) transpose incoming MIDI
+        /// notes; here that is realised by shifting the explicitly specified
+        /// key-valued opcodes the opposite way.
         /// </summary>
         public static SfzMappedRegion Map(SfzRegion region, int noteOffset = 0, int octaveOffset = 0)
         {
             var r = new SfzMappedRegion(region);
-            int keyShift = noteOffset + 12 * octaveOffset;
+            // note_offset/octave_offset transpose *incoming MIDI notes* upward
+            // (note_offset=12: played key 48 behaves as 60, so the instrument
+            // sounds an octave HIGHER). The mapping-side equivalent is shifting
+            // every key-valued opcode *down* by the offset — hence the negation.
+            int keyShift = -(noteOffset + 12 * octaveOffset);
 
             // key range: `key` sets all three; otherwise lokey/hikey/pitch_keycenter
             if (region.Has("key"))
@@ -238,10 +264,14 @@ namespace NAudio.Sfz
             r.ResonanceDb = region.GetFloat("resonance", 0);
             r.FilterType = ParseFilterType(region.GetString("fil_type"));
 
+            r.HasLoopMode = region.Has("loop_mode") || region.Has("loopmode");
             r.LoopMode = ParseLoopMode(region.GetString("loop_mode", region.GetString("loopmode")));
             r.Offset = region.GetInt("offset", 0);
+            r.HasEnd = region.Has("end");
             r.End = region.GetInt("end", -1);
+            r.HasLoopStart = region.Has("loop_start") || region.Has("loopstart");
             r.LoopStart = region.GetInt("loop_start", region.GetInt("loopstart", -1));
+            r.HasLoopEnd = region.Has("loop_end") || region.Has("loopend");
             r.LoopEnd = region.GetInt("loop_end", region.GetInt("loopend", -1));
 
             r.Trigger = ParseTrigger(region.GetString("trigger"));

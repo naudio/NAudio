@@ -113,7 +113,10 @@ namespace NAudio.Sampler
             int loopEnd = Clamp(LoopEnd <= 0 ? end : LoopEnd, start, end);
 
             var gen = SoundFontGenerators.CreateWithDefaults();
-            gen[GeneratorEnum.InitialAttenuation] = (short)Math.Round(-VolumeDb * 10.0);
+            // negative gain -> SF2 attenuation cB; a positive (boost) gain can't
+            // ride the attenuation slot (the voice clamps it at >= 0), so it is
+            // carried as the region's linear gain instead
+            gen[GeneratorEnum.InitialAttenuation] = (short)Math.Round(Math.Max(0f, -VolumeDb) * 10.0);
             gen[GeneratorEnum.Pan] = (short)Math.Round(Math.Clamp(Pan, -1f, 1f) * 500.0);
 
             int coarse = (int)Math.Round(TuneCents / 100.0);
@@ -147,6 +150,7 @@ namespace NAudio.Sampler
                 Generators = gen,
                 Modulators = null,
                 VelocityTrackingPercent = VelocityTrackingPercent,
+                GainLinear = VolumeDb > 0 ? (float)Math.Pow(10.0, VolumeDb / 20.0) : 1f,
                 LoKey = (byte)Clamp(LoKey, 0, 127),
                 HiKey = (byte)Clamp(HiKey, 0, 127),
                 LoVelocity = (byte)Clamp(LoVelocity, 0, 127),

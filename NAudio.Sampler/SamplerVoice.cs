@@ -57,8 +57,8 @@ namespace NAudio.Sampler
         private SamplerFilterType filterType; // low/high/band pass
         private double baseFilterCents;     // initial filter cutoff (absolute cents)
         private double baseAttenuationCb;   // initial attenuation (centibels)
-        private double velocityAttenuationCb; // velocity->amplitude tracking (centibels, SFZ amp_veltrack)
-        private float regionGain = 1f;        // static per-note gain (SFZ key/velocity crossfade)
+        private float velocityGain = 1f;    // velocity->amplitude tracking gain (SFZ amp_veltrack)
+        private float regionGain = 1f;      // static per-note gain (SFZ key/velocity crossfade, region volume boost)
         private double basePan;             // pan generator (0.1% units, ±500)
         private double baseReverbSend;      // reverb send (0.1% units, 0..1000)
         private double baseChorusSend;      // chorus send (0.1% units, 0..1000)
@@ -137,7 +137,9 @@ namespace NAudio.Sampler
         public bool Start(SamplerRegion region, MidiChannelState channelState,
             int channel, int note, int velocity, long order, float regionGain = 1f)
         {
-            this.regionGain = regionGain;
+            // the engine's per-note gain (crossfades, rt_decay) times the region's
+            // static gain (e.g. an SFZ volume boost, which can exceed unity)
+            this.regionGain = regionGain * region.GainLinear;
             var gen = region.Generators;
             var sample = region.Sample;
 
@@ -186,7 +188,7 @@ namespace NAudio.Sampler
             this.velocity = effectiveVelocity;
             this.key = effectiveKey;
             this.filterType = region.FilterType;
-            velocityAttenuationCb = VelocityAttenuation(region.VelocityTrackingPercent, effectiveVelocity);
+            velocityGain = VelocityGain(region.VelocityTrackingPercent, effectiveVelocity);
 
             // base (generator) values; the SF2 modulators add to these. The
             // velocity->attenuation and velocity->filter default modulators
@@ -403,27 +405,37 @@ namespace NAudio.Sampler
             modulators?.Accumulate(channel, velocity, key, modulation);
 
             // attenuation only attenuates: clamp so a modulator can't push the
-            // voice above unity gain. velocityAttenuationCb is the SFZ velocity
-            // tracking; for SoundFont it is 0 (velocity drives the modulator instead).
-            double attenuation = baseAttenuationCb + velocityAttenuationCb
+            // voice above unity gain (SF2 spec). Gains that may legitimately
+            // exceed unity — the SFZ velocity tracking (negative amp_veltrack
+            // boosts low velocities) and the region/crossfade gain (volume
+            // boost) — are multiplied in outside the clamp.
+            double attenuation = baseAttenuationCb
                 + modulation[(int)GeneratorEnum.InitialAttenuation];
             if (attenuation < 0.0) attenuation = 0.0;
-            staticGain = (float)SynthMath.AttenuationCentibelsToGain(attenuation) * regionGain;
+            staticGain = (float)SynthMath.AttenuationCentibelsToGain(attenuation) * regionGain * velocityGain;
 
             SetPan(basePan + modulation[(int)GeneratorEnum.Pan]);
         }
 
         /// <summary>
-        /// Velocity-to-amplitude attenuation in centibels for an SFZ
-        /// <c>amp_veltrack</c> percentage: 0 at full velocity, increasing as
-        /// velocity drops (the same ~40·log10 law SoundFont's velocity→attenuation
-        /// default modulator uses). Returns 0 when tracking is disabled.
+        /// The velocity-to-amplitude gain factor for an SFZ <c>amp_veltrack</c>
+        /// percentage. SFZ interpolates in the GAIN domain between no tracking
+        /// and the full velocity-squared curve:
+        /// <c>gain = 1 − p·(1 − (v/127)²)</c> with <c>p = percent/100</c> in
+        /// [−1, 1]. At p=1 this is exactly the (v/127)² law; a partial p tracks
+        /// proportionally in gain (p=0.5, v=1 ≈ −6 dB, not −42 dB); a negative p
+        /// boosts low velocities above unity (quieter the harder you play) —
+        /// which is why this is a multiplicative factor rather than part of the
+        /// clamped attenuation sum. Returns 1 when tracking is disabled (the
+        /// SoundFont path: velocity rides the modulator list instead).
         /// </summary>
-        private static double VelocityAttenuation(float percent, int velocity)
+        private static float VelocityGain(float percent, int velocity)
         {
-            if (percent == 0f) return 0.0;
-            int v = velocity < 1 ? 1 : velocity;
-            return 4.0 * percent * Math.Log10(127.0 / v);
+            if (percent == 0f) return 1f;
+            double p = Math.Clamp(percent / 100.0, -1.0, 1.0);
+            double x = Math.Clamp(velocity, 0, 127) / 127.0;
+            double gain = 1.0 - p * (1.0 - x * x);
+            return gain < 0.0 ? 0f : (float)gain;
         }
 
         private static float SendGain(double tenthsOfPercent)

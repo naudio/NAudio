@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 using NAudio.Sampler;
 using NAudio.Wave;
 using NUnit.Framework;
@@ -8,8 +9,9 @@ namespace NAudio.Sampler.Tests
 {
     /// <summary>
     /// Tests for sample loading: the generalised decode-into-memory path that
-    /// backs both WAV and (via NAudio.SoundFile) FLAC/Ogg, and the graceful
-    /// failure of the file loader when a file can't be decoded.
+    /// backs both WAV and (via NAudio.SoundFile) FLAC/Ogg, the reading of loop
+    /// points authored in a WAV's <c>smpl</c> chunk, and the graceful failure of
+    /// the file loader when a file can't be decoded.
     /// </summary>
     [TestFixture]
     [Category("UnitTest")]
@@ -30,6 +32,50 @@ namespace NAudio.Sampler.Tests
             }
         }
 
+        private static string WriteWav(int frames = 100, int channels = 1)
+        {
+            string path = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".wav");
+            using var writer = new WaveFileWriter(path, new WaveFormat(44100, 16, channels));
+            var block = new short[frames * channels];
+            for (int i = 0; i < block.Length; i++) block[i] = 16384;
+            writer.WriteSamples(block, 0, block.Length);
+            return path;
+        }
+
+        // Appends a standard `smpl` chunk (or arbitrary raw bytes) after the data
+        // chunk and patches the RIFF size so chunk discovery finds it.
+        private static void AppendSmplChunk(string path, params (uint Start, uint End)[] loops)
+        {
+            var body = new MemoryStream();
+            var w = new BinaryWriter(body);
+            for (int i = 0; i < 7; i++) w.Write(0u); // manufacturer..smpteOffset
+            w.Write((uint)loops.Length);             // numSampleLoops
+            w.Write(0u);                             // samplerData
+            foreach (var loop in loops)
+            {
+                w.Write(0u);         // cuePointId
+                w.Write(0u);         // type (forward)
+                w.Write(loop.Start); // dwStart (frame, inclusive)
+                w.Write(loop.End);   // dwEnd (frame, INCLUSIVE per the smpl spec)
+                w.Write(0u);         // fraction
+                w.Write(0u);         // playCount
+            }
+            AppendChunk(path, "smpl", body.ToArray());
+        }
+
+        private static void AppendChunk(string path, string id, byte[] body)
+        {
+            using var fs = new FileStream(path, FileMode.Open, FileAccess.ReadWrite);
+            var w = new BinaryWriter(fs);
+            fs.Seek(0, SeekOrigin.End);
+            w.Write(Encoding.ASCII.GetBytes(id));
+            w.Write(body.Length);
+            w.Write(body);
+            if (body.Length % 2 != 0) w.Write((byte)0); // word-align
+            fs.Seek(4, SeekOrigin.Begin);               // patch the RIFF size
+            w.Write((uint)(fs.Length - 8));
+        }
+
         [Test]
         public void DecodesAnySampleProviderIntoChannels()
         {
@@ -45,22 +91,99 @@ namespace NAudio.Sampler.Tests
         [Test]
         public void FileLoaderReadsWav()
         {
-            string path = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".wav");
+            string path = WriteWav();
             try
             {
-                using (var writer = new WaveFileWriter(path, new WaveFormat(44100, 16, 1)))
-                {
-                    var block = new short[100];
-                    for (int i = 0; i < block.Length; i++) block[i] = 16384;
-                    writer.WriteSamples(block, 0, block.Length);
-                }
-
                 var loader = new FileSfzSampleLoader(Path.GetDirectoryName(path));
-                Assert.That(loader.TryLoad(Path.GetFileName(path), out var left, out _, out var rate), Is.True);
+                Assert.That(loader.TryLoad(Path.GetFileName(path), out var left, out _, out var rate, out _), Is.True);
                 Assert.That(rate, Is.EqualTo(44100));
                 Assert.That(left.Length, Is.EqualTo(100));
             }
             finally { if (File.Exists(path)) File.Delete(path); }
+        }
+
+        [Test]
+        public void WavWithoutSmplChunkHasNoEmbeddedLoop()
+        {
+            string path = WriteWav();
+            try
+            {
+                Assert.That(WaveSampleLoader.TryLoad(path, out _, out _, out _, out var loop), Is.True);
+                Assert.That(loop, Is.Null);
+            }
+            finally { if (File.Exists(path)) File.Delete(path); }
+        }
+
+        [Test]
+        public void SmplChunkLoopIsReadWithInclusiveEndConverted()
+        {
+            // smpl dwStart/dwEnd are sample frames with dwEnd INCLUSIVE; the
+            // loader converts to the engine's exclusive end (dwEnd + 1)
+            string path = WriteWav();
+            try
+            {
+                AppendSmplChunk(path, (10u, 49u));
+                Assert.That(WaveSampleLoader.TryLoad(path, out _, out _, out _, out var loop), Is.True);
+                Assert.That(loop, Is.Not.Null);
+                Assert.That(loop.Value.Start, Is.EqualTo(10));
+                Assert.That(loop.Value.End, Is.EqualTo(50), "dwEnd=49 is inclusive -> exclusive End 50");
+            }
+            finally { if (File.Exists(path)) File.Delete(path); }
+        }
+
+        [Test]
+        public void SmplChunkFirstLoopWins()
+        {
+            string path = WriteWav();
+            try
+            {
+                AppendSmplChunk(path, (20u, 79u), (0u, 99u));
+                Assert.That(WaveSampleLoader.TryLoad(path, out _, out _, out _, out var loop), Is.True);
+                Assert.That(loop.Value.Start, Is.EqualTo(20));
+                Assert.That(loop.Value.End, Is.EqualTo(80));
+            }
+            finally { if (File.Exists(path)) File.Delete(path); }
+        }
+
+        [Test]
+        public void FileLoaderSurfacesTheEmbeddedWavLoop()
+        {
+            string path = WriteWav();
+            try
+            {
+                AppendSmplChunk(path, (5u, 89u));
+                var loader = new FileSfzSampleLoader(Path.GetDirectoryName(path));
+                Assert.That(loader.TryLoad(Path.GetFileName(path), out _, out _, out _, out var loop), Is.True);
+                Assert.That(loop, Is.Not.Null);
+                Assert.That(loop.Value.Start, Is.EqualTo(5));
+                Assert.That(loop.Value.End, Is.EqualTo(90));
+            }
+            finally { if (File.Exists(path)) File.Delete(path); }
+        }
+
+        [Test]
+        public void MalformedSmplChunksAreIgnoredNotFatal()
+        {
+            // a truncated chunk (too short for a header + one loop), a chunk
+            // declaring zero loops, and an inverted loop must all load fine
+            // with no embedded loop reported
+            foreach (var corrupt in new Action<string>[]
+            {
+                p => AppendChunk(p, "smpl", new byte[10]),       // truncated
+                p => AppendSmplChunk(p),                         // numSampleLoops = 0
+                p => AppendSmplChunk(p, (50u, 10u)),             // end before start
+            })
+            {
+                string path = WriteWav();
+                try
+                {
+                    corrupt(path);
+                    Assert.That(WaveSampleLoader.TryLoad(path, out var left, out _, out _, out var loop), Is.True);
+                    Assert.That(left.Length, Is.EqualTo(100), "audio still decodes");
+                    Assert.That(loop, Is.Null, "the malformed smpl chunk is ignored");
+                }
+                finally { if (File.Exists(path)) File.Delete(path); }
+            }
         }
 
         [Test]
@@ -73,7 +196,7 @@ namespace NAudio.Sampler.Tests
             {
                 File.WriteAllBytes(path, new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
                 var loader = new FileSfzSampleLoader(Path.GetDirectoryName(path));
-                Assert.That(loader.TryLoad(Path.GetFileName(path), out _, out _, out _), Is.False);
+                Assert.That(loader.TryLoad(Path.GetFileName(path), out _, out _, out _, out _), Is.False);
             }
             finally { if (File.Exists(path)) File.Delete(path); }
         }
@@ -82,7 +205,7 @@ namespace NAudio.Sampler.Tests
         public void FileLoaderReturnsFalseForMissingFile()
         {
             var loader = new FileSfzSampleLoader("/nonexistent");
-            Assert.That(loader.TryLoad("nope.flac", out _, out _, out _), Is.False);
+            Assert.That(loader.TryLoad("nope.flac", out _, out _, out _, out _), Is.False);
         }
     }
 }

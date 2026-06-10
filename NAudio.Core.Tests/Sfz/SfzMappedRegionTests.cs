@@ -142,16 +142,38 @@ namespace NAudio.Core.Tests.Sfz
         }
 
         [Test]
-        public void OctaveOffsetShiftsSpecifiedKeys()
+        public void OctaveOffsetShiftsSpecifiedKeysDown()
         {
-            // direct offset
+            // note_offset/octave_offset transpose *incoming MIDI notes* upward
+            // (octave_offset=1: played key 48 behaves as 60, the instrument
+            // sounds an octave higher). The mapping-side equivalent is shifting
+            // the specified key opcodes DOWN by the offset — a previous version
+            // of this test wrongly expected them shifted up.
             var instrument = SfzParser.Parse("<region> sample=a.wav key=c4");
             var shifted = SfzMappedRegion.Map(instrument.Regions[0], noteOffset: 0, octaveOffset: 1);
-            Assert.That(shifted.PitchKeycenter, Is.EqualTo(72));
+            Assert.That(shifted.PitchKeycenter, Is.EqualTo(48));
+            Assert.That(shifted.LoKey, Is.EqualTo(48));
+            Assert.That(shifted.HiKey, Is.EqualTo(48));
 
             // via <control> offsets through MapRegions
             var withControl = SfzParser.Parse("<control> octave_offset=1\n<region> sample=a.wav key=c4");
-            Assert.That(withControl.MapRegions()[0].PitchKeycenter, Is.EqualTo(72));
+            Assert.That(withControl.MapRegions()[0].PitchKeycenter, Is.EqualTo(48));
+        }
+
+        [Test]
+        public void NoteOffsetShiftsKeyValuedOpcodesDown()
+        {
+            // same incoming-note-transposition semantic as octave_offset: every
+            // key-valued opcode (range, keyswitches, key crossfades) moves down
+            var instrument = SfzParser.Parse(
+                "<region> sample=a.wav lokey=c4 hikey=c5 pitch_keycenter=c4 sw_last=c2 xfout_lokey=c4 xfout_hikey=c5");
+            var r = SfzMappedRegion.Map(instrument.Regions[0], noteOffset: 2);
+            Assert.That(r.LoKey, Is.EqualTo(58));
+            Assert.That(r.HiKey, Is.EqualTo(70));
+            Assert.That(r.PitchKeycenter, Is.EqualTo(58));
+            Assert.That(r.KeyswitchLast, Is.EqualTo(34)); // c2 = 36
+            Assert.That(r.KeyFadeOutLow, Is.EqualTo(58));
+            Assert.That(r.KeyFadeOutHigh, Is.EqualTo(70));
         }
 
         [Test]
@@ -193,6 +215,29 @@ namespace NAudio.Core.Tests.Sfz
             Assert.That(r.KeyFadeOutHigh, Is.EqualTo(72)); // c5
             Assert.That(r.VelocityFadeCurve, Is.EqualTo(SfzCrossfadeCurve.Linear)); // "gain"
             Assert.That(r.KeyFadeCurve, Is.EqualTo(SfzCrossfadeCurve.Power));        // default
+        }
+
+        [Test]
+        public void SampleBoundsOpcodePresenceIsTracked()
+        {
+            // absent end/loop opcodes must be distinguishable from explicit
+            // values: an absent loop_mode defaults from the sample file's
+            // embedded loop, and end=-1 explicitly disables the region
+            var absent = MapFirst("<region> sample=a.wav");
+            Assert.That(absent.HasEnd, Is.False);
+            Assert.That(absent.HasLoopMode, Is.False);
+            Assert.That(absent.HasLoopStart, Is.False);
+            Assert.That(absent.HasLoopEnd, Is.False);
+
+            var set = MapFirst("<region> sample=a.wav end=-1 loop_mode=no_loop loop_start=2 loop_end=5");
+            Assert.That(set.HasEnd, Is.True);
+            Assert.That(set.End, Is.EqualTo(-1));
+            Assert.That(set.HasLoopMode, Is.True);
+            Assert.That(set.LoopMode, Is.EqualTo(SfzLoopMode.NoLoop));
+            Assert.That(set.HasLoopStart, Is.True);
+            Assert.That(set.LoopStart, Is.EqualTo(2));
+            Assert.That(set.HasLoopEnd, Is.True);
+            Assert.That(set.LoopEnd, Is.EqualTo(5));
         }
 
         [Test]

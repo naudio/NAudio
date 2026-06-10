@@ -8,33 +8,60 @@ namespace NAudio.Sampler
 {
     /// <summary>
     /// Projects SFZ regions onto the format-neutral <see cref="SamplerRegion"/>
-    /// the voice engine plays: loads the sample, and expresses the SFZ opcodes as
-    /// SoundFont generators in engine units (tuning in cents, attenuation in
-    /// centibels, pan in 0.1% units, envelopes in timecents, cutoff in absolute
-    /// cents). SFZ velocity tracking rides on
-    /// <see cref="SamplerRegion.VelocityTrackingPercent"/>; SFZ has no SF2
+    /// the voice engine plays: loads the sample (honouring loop points embedded
+    /// in a WAV's <c>smpl</c> chunk), and expresses the SFZ opcodes as SoundFont
+    /// generators in engine units (tuning in cents, attenuation in centibels,
+    /// pan in 0.1% units, envelopes in timecents, cutoff in absolute cents).
+    /// A positive <c>volume</c> boost rides <see cref="SamplerRegion.GainLinear"/>
+    /// because SF2 attenuation cannot go below zero. SFZ velocity tracking rides
+    /// on <see cref="SamplerRegion.VelocityTrackingPercent"/>; SFZ has no SF2
     /// modulators, so <see cref="SamplerRegion.Modulators"/> is left null.
     ///
-    /// Tier-1 coverage: <c>release</c>/<c>first</c>/<c>legato</c> triggers, true
-    /// stereo samples, high/band-pass filters and cross-group <c>off_by</c> are
-    /// not yet honoured (see <see cref="Project"/>).
+    /// Tier 1 and Tier 2 are fully honoured by the engine: stereo samples,
+    /// <c>release</c>/<c>first</c>/<c>legato</c> triggers, all four
+    /// <c>fil_type</c> shapes, cross-group <c>off_by</c> chokes, note-on
+    /// selection (keyswitches, round-robin, random, CC gates), crossfades,
+    /// per-region EGs/LFOs, EQ bands and effect sends.
     /// </summary>
     internal static class SfzRegionProjector
     {
         /// <summary>
-        /// Projects one mapped region, or returns null if it has no sample or the
-        /// sample cannot be loaded.
+        /// Projects one mapped region, or returns null if it has no sample, the
+        /// sample cannot be loaded, or the region is disabled (<c>end=-1</c>).
         /// </summary>
         public static SamplerRegion Project(SfzMappedRegion region, ISfzSampleLoader loader)
         {
             if (region.Sample == null) return null;
-            if (!loader.TryLoad(region.Sample, out var data, out var dataRight, out var sampleRate)) return null;
+            // an explicit end=-1 means "this region is not played" per the SFZ spec
+            if (region.HasEnd && region.End < 0) return null;
+            if (!loader.TryLoad(region.Sample, out var data, out var dataRight, out var sampleRate,
+                out var embeddedLoop)) return null;
 
             int length = data.Length;
             int start = Clamp(region.Offset, 0, length);
-            int end = region.End >= 0 ? Clamp(region.End, start, length) : length;
-            int loopStart = region.LoopStart >= 0 ? Clamp(region.LoopStart, start, end) : start;
-            int loopEnd = region.LoopEnd >= 0 ? Clamp(region.LoopEnd, start, end) : end;
+            // SFZ `end` is INCLUSIVE ("will play up to and including this
+            // sample"); SampleData.End is exclusive, hence +1
+            int end = region.HasEnd ? Clamp(region.End + 1, start, length) : length;
+
+            // loop_start/loop_end opcodes (also inclusive ends) override loop
+            // points embedded in the sample file (a WAV smpl chunk — the
+            // FLAC/Ogg path doesn't surface loops); with neither, the loop
+            // spans the playable region. SampleLoop.End is already exclusive.
+            int loopStart = region.HasLoopStart && region.LoopStart >= 0
+                ? region.LoopStart
+                : embeddedLoop?.Start ?? -1;
+            int loopEnd = region.HasLoopEnd && region.LoopEnd >= 0
+                ? region.LoopEnd + 1
+                : embeddedLoop?.End ?? -1;
+            loopStart = loopStart >= 0 ? Clamp(loopStart, start, end) : start;
+            loopEnd = loopEnd >= 0 ? Clamp(loopEnd, start, end) : end;
+
+            // per the spec an absent loop_mode defaults to loop_continuous for
+            // samples whose file defines a loop, and no_loop otherwise; an
+            // explicit opcode (including no_loop) always wins
+            var loopMode = region.HasLoopMode
+                ? region.LoopMode
+                : embeddedLoop != null ? SfzLoopMode.LoopContinuous : SfzLoopMode.NoLoop;
 
             var sample = new SampleData
             {
@@ -52,12 +79,14 @@ namespace NAudio.Sampler
             return new SamplerRegion
             {
                 Sample = sample,
-                Generators = BuildGenerators(region),
+                Generators = BuildGenerators(region, loopMode),
                 Modulators = null, // SFZ Tier 1 has no SF2-style modulators
                 VelocityTrackingPercent = region.AmpVelTrack,
+                // a volume boost is carried as linear gain (see BuildGenerators)
+                GainLinear = region.VolumeDb > 0 ? (float)Math.Pow(10.0, region.VolumeDb / 20.0) : 1f,
                 FilterType = MapFilterType(region.FilterType),
                 Trigger = MapTrigger(region.Trigger),
-                IgnoreNoteOff = region.LoopMode == SfzLoopMode.OneShot,
+                IgnoreNoteOff = loopMode == SfzLoopMode.OneShot,
                 Group = region.Group,
                 OffByGroup = region.OffBy,
                 KeyswitchLast = region.KeyswitchLast,
@@ -165,7 +194,7 @@ namespace NAudio.Sampler
             }
         }
 
-        private static SoundFontGenerators BuildGenerators(SfzMappedRegion region)
+        private static SoundFontGenerators BuildGenerators(SfzMappedRegion region, SfzLoopMode loopMode)
         {
             var gen = SoundFontGenerators.CreateWithDefaults();
 
@@ -175,8 +204,12 @@ namespace NAudio.Sampler
             gen[GeneratorEnum.CoarseTune] = (short)coarse;
             gen[GeneratorEnum.FineTune] = (short)Math.Round(region.TuneCents - coarse * 100.0);
 
-            // amplitude: SFZ volume (dB, +louder) -> SF2 attenuation (cB, +quieter)
-            gen[GeneratorEnum.InitialAttenuation] = (short)Math.Round(-region.VolumeDb * 10.0);
+            // amplitude: a negative SFZ volume (dB, +louder) maps to SF2
+            // attenuation (cB, +quieter) so it still sums with the modulators; a
+            // positive volume (a boost, spec range up to +6 dB and beyond) cannot
+            // ride this slot — the voice clamps total attenuation at >= 0 per the
+            // SF2 spec — so it is carried as SamplerRegion.GainLinear instead
+            gen[GeneratorEnum.InitialAttenuation] = (short)Math.Round(Math.Max(0f, -region.VolumeDb) * 10.0);
             gen[GeneratorEnum.Pan] = (short)Math.Round(region.Pan * 500.0);
 
             // amplitude envelope (seconds -> timecents; sustain fraction -> attenuation cB)
@@ -195,7 +228,7 @@ namespace NAudio.Sampler
                 gen[GeneratorEnum.InitialFilterQ] = (short)Math.Round(region.ResonanceDb * 10.0);
             }
 
-            gen[GeneratorEnum.SampleModes] = (short)MapLoopMode(region.LoopMode);
+            gen[GeneratorEnum.SampleModes] = (short)MapLoopMode(loopMode);
 
             // effect sends: effect1 -> reverb bus, effect2 -> chorus bus (0..100% -> 0.1% units)
             gen[GeneratorEnum.ReverbEffectsSend] = GeneratorUnits.Clamp16(region.Region.GetFloat("effect1", 0) * 10.0);

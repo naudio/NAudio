@@ -9,6 +9,7 @@ using NAudio.Midi;
 using NAudio.Sampler;
 using NAudio.Sequencing;
 using NAudio.Wave;
+using NAudioWpfDemo.Utils;
 using NAudioWpfDemo.ViewModel;
 
 namespace NAudioWpfDemo.SamplerDemo
@@ -16,7 +17,8 @@ namespace NAudioWpfDemo.SamplerDemo
     /// <summary>
     /// Loads a SoundFont (.sf2) and a MIDI file (.mid) and plays the MIDI through
     /// the SoundFont via <see cref="SoundFontSampler"/>, either live
-    /// (<see cref="SequencedMidiPlayer"/> → <see cref="WaveOut"/>) or rendered
+    /// (<see cref="SequencedMidiPlayer"/> → <see cref="WasapiPlayer"/>, falling
+    /// back to <see cref="WaveOut"/> if WASAPI is unavailable) or rendered
     /// offline to a WAV (<see cref="OfflineMidiRenderer"/>). A volume slider and a
     /// draggable position bar (seeking via the <see cref="Transport"/>) are wired in
     /// during live playback.
@@ -25,7 +27,7 @@ namespace NAudioWpfDemo.SamplerDemo
     {
         private const int SampleRate = 44100;
 
-        private IWavePlayer waveOut;
+        private IWavePlayer player;
         private Transport transport;
         private SoundFontSampler sampler;
         private readonly DispatcherTimer positionTimer;
@@ -141,9 +143,8 @@ namespace NAudioWpfDemo.SamplerDemo
                 suppressSeek = false;
 
                 transport.Play();
-                waveOut = new WaveOut();
-                waveOut.Init(instrument);
-                waveOut.Play();
+                player = SamplerPlayback.Create(instrument, OnPlaybackError);
+                player.Play();
                 positionTimer.Start();
                 Status = $"Playing {Path.GetFileName(midiFilePath)} through {Path.GetFileName(soundFontPath)}";
             }
@@ -158,14 +159,20 @@ namespace NAudioWpfDemo.SamplerDemo
         private void Stop()
         {
             positionTimer.Stop();
-            if (waveOut != null)
+            if (player != null)
             {
-                waveOut.Dispose();
-                waveOut = null;
+                player.Dispose();
+                player = null;
                 Status = "Stopped.";
             }
             transport = null;
             sampler = null;
+        }
+
+        private void OnPlaybackError(Exception ex)
+        {
+            Stop();
+            Status = $"Playback stopped: {ex.Message}";
         }
 
         // moves the transport to a new position; silences sounding voices so a

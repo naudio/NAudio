@@ -1,6 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -33,6 +34,8 @@ namespace NAudioWpfDemo.LiveSamplerDemo
         private string instrumentPath;
         private string status = "Choose a SoundFont (.sf2) or SFZ (.sfz) instrument, optionally pick a MIDI input, then Start.";
         private bool isRunning;
+        private bool isStarting;   // a load is in flight (Start re-entry guard)
+        private int loadVersion;   // bumped by Stop so a load finishing afterwards is discarded
         private double masterVolumeDb; // dB attenuation for the volume slider; 0 = unity
         private int activeVoiceCount;
         private MidiDeviceItem selectedDevice;
@@ -155,16 +158,26 @@ namespace NAudioWpfDemo.LiveSamplerDemo
 
         private async void Start()
         {
-            if (isRunning) return;
+            if (isRunning || isStarting) return;
             if (string.IsNullOrEmpty(instrumentPath) || !File.Exists(instrumentPath))
             {
                 Status = "Please choose a SoundFont (.sf2) or SFZ (.sfz) instrument.";
                 return;
             }
 
+            // parsing an SF2 (or decoding every sample of an SFZ) is heavy, so
+            // load off the UI thread; a Stop during the load just discards the
+            // result (the version stamp), and isStarting blocks double-starts
+            string path = instrumentPath;
+            int version = loadVersion;
+            isStarting = true;
+            Status = $"Loading {Path.GetFileName(path)}...";
             try
             {
-                sampler = CreateSampler(instrumentPath);
+                var loaded = await Task.Run(() => CreateSampler(path));
+                if (version != loadVersion) return; // stopped while loading
+
+                sampler = loaded;
                 sampler.MasterGain = GainFromDb(masterVolumeDb);
                 instrument = new LiveMidiInstrument(sampler);
 
@@ -193,10 +206,15 @@ namespace NAudioWpfDemo.LiveSamplerDemo
                 Status = $"Could not start: {ex.Message}";
                 MessageBox.Show(ex.ToString(), "Sampler error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+            finally
+            {
+                isStarting = false;
+            }
         }
 
         private void Stop()
         {
+            loadVersion++; // discard any load still in flight
             voiceTimer.Stop();
             if (midiIn != null)
             {

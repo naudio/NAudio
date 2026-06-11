@@ -39,6 +39,7 @@ namespace NAudioWpfDemo.SamplerDemo
         private double positionSeconds;
         private double durationSeconds;
         private bool suppressSeek; // true while the timer updates the position (so it doesn't seek)
+        private int loadVersion;   // bumped by Stop so a load finishing afterwards is discarded
 
         public ICommand BrowseSoundFontCommand { get; }
         public ICommand BrowseMidiCommand { get; }
@@ -137,14 +138,33 @@ namespace NAudioWpfDemo.SamplerDemo
             if (dialog.ShowDialog() == true) MidiFilePath = dialog.FileName;
         }
 
-        private void Play()
+        private async void Play()
         {
             if (!FilesReady()) return;
             Stop();
+
+            // capture the paths so the background thread doesn't touch UI-bound
+            // state, and a version stamp so pressing Stop while loading discards
+            // the result instead of starting playback the user no longer wants
+            string sf = soundFontPath, mid = midiFilePath;
+            int version = loadVersion;
+
+            // SoundFont parsing, the sample-pool float conversion and the preset
+            // pre-warm are heavy for big GM banks (and MIDI parsing reads the
+            // whole file) — keep them off the UI thread so the window stays live
+            SetCommandsEnabled(false);
+            Status = $"Loading {Path.GetFileName(sf)}...";
             try
             {
-                var sequence = MidiFileSequence.FromFile(midiFilePath);
-                sampler = CreateSampler();
+                var (sequence, loaded) = await Task.Run(() =>
+                {
+                    var seq = MidiFileSequence.FromFile(mid);
+                    var smp = new SoundFontSampler(new NAudio.SoundFont.SoundFont(sf), SampleRate);
+                    return (seq, smp);
+                });
+                if (version != loadVersion) return; // stopped while loading
+
+                sampler = loaded;
                 sampler.MasterGain = GainFromDb(volumeDb);
                 transport = new Transport(sequence.TempoMap, sampler.WaveFormat.SampleRate);
                 var instrument = new SequencedMidiPlayer(transport, sequence.Timeline, sampler);
@@ -158,7 +178,7 @@ namespace NAudioWpfDemo.SamplerDemo
                 player = SamplerPlayback.Create(instrument, OnPlaybackError);
                 player.Play();
                 positionTimer.Start();
-                Status = $"Playing {Path.GetFileName(midiFilePath)} through {Path.GetFileName(soundFontPath)}";
+                Status = $"Playing {Path.GetFileName(mid)} through {Path.GetFileName(sf)}";
             }
             catch (Exception ex)
             {
@@ -166,10 +186,15 @@ namespace NAudioWpfDemo.SamplerDemo
                 Status = $"Playback failed: {ex.Message}";
                 MessageBox.Show(ex.ToString(), "Playback error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+            finally
+            {
+                SetCommandsEnabled(true);
+            }
         }
 
         private void Stop()
         {
+            loadVersion++; // discard any load still in flight
             positionTimer.Stop();
             if (player != null)
             {
@@ -252,9 +277,6 @@ namespace NAudioWpfDemo.SamplerDemo
             ((DelegateCommand)PlayCommand).IsEnabled = enabled;
             ((DelegateCommand)RenderToWavCommand).IsEnabled = enabled;
         }
-
-        private SoundFontSampler CreateSampler() =>
-            new SoundFontSampler(new NAudio.SoundFont.SoundFont(soundFontPath), SampleRate);
 
         private bool FilesReady()
         {

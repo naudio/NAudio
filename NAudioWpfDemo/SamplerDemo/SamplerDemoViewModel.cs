@@ -35,7 +35,7 @@ namespace NAudioWpfDemo.SamplerDemo
         private string soundFontPath;
         private string midiFilePath;
         private string status = "Choose a SoundFont (.sf2) and a MIDI file (.mid), then Play or Render.";
-        private double volume = 1.0;
+        private double volumeDb; // dB attenuation for the volume slider; 0 = unity
         private double positionSeconds;
         private double durationSeconds;
         private bool suppressSeek; // true while the timer updates the position (so it doesn't seek)
@@ -76,17 +76,29 @@ namespace NAudioWpfDemo.SamplerDemo
             set { status = value; OnPropertyChanged(nameof(Status)); }
         }
 
-        /// <summary>Output volume, 0..1, applied live to the playing sampler.</summary>
-        public double Volume
+        // perceived loudness is logarithmic, so the slider works in dB: equal
+        // slider travel then means equal audible change. The bottom of the
+        // range is treated as mute.
+        private const double MinVolumeDb = -60;
+
+        private static float GainFromDb(double db) =>
+            db <= MinVolumeDb ? 0f : (float)Math.Pow(10.0, db / 20.0);
+
+        /// <summary>Output volume in dB (-60 = mute .. 0 = unity), applied live to the playing sampler.</summary>
+        public double VolumeDb
         {
-            get => volume;
+            get => volumeDb;
             set
             {
-                volume = value;
-                OnPropertyChanged(nameof(Volume));
-                if (sampler != null) sampler.MasterGain = (float)value;
+                volumeDb = value;
+                OnPropertyChanged(nameof(VolumeDb));
+                OnPropertyChanged(nameof(VolumeText));
+                if (sampler != null) sampler.MasterGain = GainFromDb(value);
             }
         }
+
+        /// <summary>The volume readout ("-12.0 dB", or "Mute" at the bottom of the range).</summary>
+        public string VolumeText => volumeDb <= MinVolumeDb ? "Mute" : $"{volumeDb:F1} dB";
 
         /// <summary>Current playback position in seconds. Setting it (e.g. dragging the bar) seeks.</summary>
         public double PositionSeconds
@@ -133,7 +145,7 @@ namespace NAudioWpfDemo.SamplerDemo
             {
                 var sequence = MidiFileSequence.FromFile(midiFilePath);
                 sampler = CreateSampler();
-                sampler.MasterGain = (float)volume;
+                sampler.MasterGain = GainFromDb(volumeDb);
                 transport = new Transport(sequence.TempoMap, sampler.WaveFormat.SampleRate);
                 var instrument = new SequencedMidiPlayer(transport, sequence.Timeline, sampler);
 

@@ -33,7 +33,7 @@ namespace NAudioWpfDemo.LiveSamplerDemo
         private string instrumentPath;
         private string status = "Choose a SoundFont (.sf2) or SFZ (.sfz) instrument, optionally pick a MIDI input, then Start.";
         private bool isRunning;
-        private double masterVolume = 1.0;
+        private double masterVolumeDb; // dB attenuation for the volume slider; 0 = unity
         private int activeVoiceCount;
         private MidiDeviceItem selectedDevice;
 
@@ -98,16 +98,29 @@ namespace NAudioWpfDemo.LiveSamplerDemo
             set { selectedDevice = value; OnPropertyChanged(nameof(SelectedDevice)); }
         }
 
-        public double MasterVolume
+        // perceived loudness is logarithmic, so the slider works in dB: equal
+        // slider travel then means equal audible change. The bottom of the
+        // range is treated as mute.
+        private const double MinVolumeDb = -60;
+
+        private static float GainFromDb(double db) =>
+            db <= MinVolumeDb ? 0f : (float)Math.Pow(10.0, db / 20.0);
+
+        /// <summary>Master volume in dB (-60 = mute .. 0 = unity), applied live.</summary>
+        public double MasterVolumeDb
         {
-            get => masterVolume;
+            get => masterVolumeDb;
             set
             {
-                masterVolume = value;
-                OnPropertyChanged(nameof(MasterVolume));
-                if (sampler != null) sampler.MasterGain = (float)value;
+                masterVolumeDb = value;
+                OnPropertyChanged(nameof(MasterVolumeDb));
+                OnPropertyChanged(nameof(MasterVolumeText));
+                if (sampler != null) sampler.MasterGain = GainFromDb(value);
             }
         }
+
+        /// <summary>The volume readout ("-12.0 dB", or "Mute" at the bottom of the range).</summary>
+        public string MasterVolumeText => masterVolumeDb <= MinVolumeDb ? "Mute" : $"{masterVolumeDb:F1} dB";
 
         public int ActiveVoiceCount
         {
@@ -152,7 +165,7 @@ namespace NAudioWpfDemo.LiveSamplerDemo
             try
             {
                 sampler = CreateSampler(instrumentPath);
-                sampler.MasterGain = (float)masterVolume;
+                sampler.MasterGain = GainFromDb(masterVolumeDb);
                 instrument = new LiveMidiInstrument(sampler);
 
                 // prefer the modern WASAPI player (auto-converts the sampler's

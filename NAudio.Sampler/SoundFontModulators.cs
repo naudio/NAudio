@@ -16,7 +16,8 @@ namespace NAudio.Sampler
     /// curve spans the SoundFont peak-attenuation range, which makes the implicit
     /// velocity&#8594;attenuation default modulator (§8.4.1) reproduce the
     /// familiar near-square-law velocity response. The bar is musical fidelity to
-    /// the spec, not sample-identity with any particular synth (SamplerDesign §12).
+    /// the spec, not sample-identity with any particular synth (the fidelity bar
+    /// stated in Docs/Architecture/SamplerDesign.md).
     /// Public and static so the transforms can be unit-tested directly.
     /// </summary>
     public static class SoundFontModulatorMath

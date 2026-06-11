@@ -287,7 +287,7 @@ namespace NAudio.Sampler.Tests
         [Test]
         public void VeryShortOneShotIsAudible()
         {
-            // Regression for SamplerDesign §11.1 "very short one-shot samples": a
+            // Regression for the "very short one-shot samples" bug: a
             // 4-frame non-looped one-shot rendered as pure silence because the
             // volume-envelope delay (the SF2 default -12000 tc ≈ 1 ms ≈ 43
             // samples) consumed the whole waveform and the final read sample was

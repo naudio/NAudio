@@ -111,7 +111,7 @@ namespace NAudio.Dsp
         /// Four-point cubic Hermite interpolation — the recommended default,
         /// transparent for downward and moderate pitch shifts. A higher-quality
         /// windowed-sinc option may be added later for extreme upward shifts
-        /// (see Docs/Architecture/SamplerDesign.md §11).
+        /// (a tracked future enhancement in Docs/Architecture/SamplerDesign.md).
         /// </summary>
         Hermite
     }

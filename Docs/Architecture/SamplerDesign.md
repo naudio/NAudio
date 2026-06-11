@@ -1,548 +1,203 @@
-# NAudio 3 — Sampler: design notes
+# NAudio 3 — Sampler: architecture and design
 
-This document captures the **plan and architectural decisions** for the NAudio 3
-sampler: a pure-C#, cross-platform instrument that plays MIDI through SoundFont
-(`.sf2`) and SFZ (`.sfz`) files, plus a "drop a sample on the keyboard"
-instrument built from the same engine.
+How the NAudio 3 sampler is put together and why. For how to *use* it — loading
+instruments, playing MIDI live or offline, and the definitive list of supported
+and unsupported SF2/SFZ features — see [Sampler.md](../Sampler.md), which is
+published on the docs site (this document is internal).
 
-It is a planning document — written before the bulk of the code exists — so it
-records *intent* and *sequencing* as much as finished decisions. It will be
-revised as PRs land. User-facing documentation (how to load an instrument, play
-it, render a MIDI file) will live in `Docs/Sampler.md` once the API stabilises.
-
-Related reading: [`EffectsDesign.md`](EffectsDesign.md) (the effects suite is an
-explicit sampler building block), [`Sequencing.md`](Sequencing.md) (the
-scheduling core the offline-render demo rides on — PR #1324),
-[`NAudio3AssemblyLayoutPlan.md`](NAudio3AssemblyLayoutPlan.md) (packaging
+Related reading: [EffectsDesign.md](EffectsDesign.md) (the effects suite the
+send buses reuse), [Sequencing.md](Sequencing.md) (the scheduling core that
+MIDI-file playback rides on), and
+[NAudio3AssemblyLayoutPlan.md](NAudio3AssemblyLayoutPlan.md) (packaging
 principles).
 
 ## 1. Goal
 
-A first-class software sampler for NAudio 3 that:
+A first-class software sampler for NAudio 3:
 
 - **Plays SoundFont 2 and SFZ instruments** — from one-shot drum hits through
-  multisampled melodic instruments to a full multi-timbral General MIDI bank.
-- **Is driven by MIDI** — both live (`MidiIn`) and offline (a `MidiFile`
-  rendered to WAV through the sequencing core).
-- **Maps a single sample across the keyboard** — open or record a snippet,
-  auto-map it, edit start/end/loop points against a waveform view, play it
-  polyphonically. This is the sampler's "hello world" and a genuinely useful
-  instrument in its own right.
-- **Is pure managed, cross-platform, AOT-safe** — same bar as `NAudio.Core` and
-  `NAudio.Effects`. No Windows dependency in the engine; live MIDI in / audio
-  out are supplied by the host app via the existing backends.
-
-The engine reuses the DSP and effects primitives NAudio 3 already shipped, and
-deliberately shares its lower-level building blocks (envelopes, LFOs, filters,
-interpolation) with the **future NAudio synthesiser**, so those pieces are
-designed to be instrument-agnostic from day one.
+  multisampled melodic instruments to a full multi-timbral General MIDI bank —
+  plus a third front-end that maps a **single sample** across the keyboard with
+  editable loop points (the sampler's "hello world", and a useful instrument in
+  its own right).
+- **Is driven by MIDI**, live (`MidiIn`, an on-screen keyboard) and offline (a
+  `MidiFile` rendered to WAV faster than real time).
+- **Is pure managed, cross-platform and AOT-safe** — no Windows dependency in
+  the engine; audio out and MIDI in are supplied by the host through the
+  existing backends.
+- **Fidelity bar:** musically faithful to the SF2.04 spec and the SFZ opcode
+  reference — not sample-identical to any particular reference synth
+  (FluidSynth, sfizz). Known deviations are documented in
+  [Sampler.md](../Sampler.md).
 
 ## 2. Where things live
 
 The guiding rule: **`NAudio.Sampler` contains only the pieces that are
-sampler-specific.** Anything reusable in a wider context goes into
-`NAudio.Core`, in the namespace that already owns its category.
+sampler-specific**; anything reusable in a wider context lives in the package
+that already owns its category.
 
-| Piece | Home | Rationale |
+| Piece | Home | Why |
 |---|---|---|
-| Variable-rate interpolating sample/wavetable reader (cubic/Hermite/sinc) | `NAudio.Core` → `NAudio.Dsp` | A general primitive — a wavetable synth, a varispeed player, and the sampler all want it. |
-| DAHDSR envelope (6-stage, cB/timecent aware) | `NAudio.Core` → `NAudio.Dsp` | Shared with the future synth. Generalises the existing 4-stage `EnvelopeGenerator`. |
-| LFO improvements (delay/fade-in, key-sync, additional shapes) | `NAudio.Core` → `NAudio.Dsp` (extend `Lfo`) | Shared with the synth; `Lfo` already exists and is close. |
-| Resonant low-pass filter + correct cB-Q / cents-Fc parameter mapping | `NAudio.Core` → `NAudio.Dsp` (build on `BiQuadFilter` / `CrossfadingBiQuadFilter`) | Shared with the synth and any filter-based effect. |
-| MIDI-note / cents / timecent / centibel math helpers | `NAudio.Core` → `NAudio.Dsp` (or a small `NAudio.Midi` math helper) | Useful anywhere MIDI meets DSP. |
-| Reverb / chorus send-bus plumbing | `NAudio.Core` → `NAudio.Effects` if generic; otherwise `NAudio.Sampler` | The effects already exist; only the *send/return routing* is new. Put the generic bus in Effects, the SF2/SFZ send-amount wiring in the sampler. |
-| SoundFont **parser** | stays in `NAudio.Core` → `NAudio.SoundFont` | Already there; it's format I/O. |
-| SFZ **parser** | `NAudio.Core` → new `NAudio.SoundFont`-sibling (e.g. `FileFormats/Sfz`) | Consistent with SoundFont living in Core as format I/O. |
-| Resolved instrument model, voice, voice manager, modulator engine, MIDI channel state, the `ISampleProvider` front-end | **`NAudio.Sampler`** | This *is* the sampler. |
-| Single-sample auto-mapper / loop-point editor model | **`NAudio.Sampler`** | Sampler-specific instrument authoring. |
+| DSP kernels: `InterpolatingSampleReader`, `DahdsrEnvelope`, `Lfo`, `BiQuadFilter` extensions, `SynthMath` | `NAudio.Core` (`NAudio.Dsp`) | Instrument-agnostic primitives, shared with any future synth |
+| `SendBus` (aux send/return plumbing) | `NAudio.Core` (`NAudio.Effects`) | Generic effect routing; the effects themselves already existed |
+| SoundFont parser + resolved-instrument layer (`SoundFontInstrumentResolver`, `SoundFontRegion`, `SoundFontGenerators`, `SoundFont.ReadSampleDataFloat`) | `NAudio.Core` (`NAudio.SoundFont`) | Format I/O plus pure SF2 interpretation — useful to anyone reading or converting fonts, no synthesis dependency |
+| SFZ parser + semantic layer (`SfzParser`, `SfzMappedRegion`) | `NAudio.Core` (`NAudio.Sfz`) | Same principle: text/structure and typed opcode semantics are format I/O |
+| MIDI playback hosts: `IMidiInstrument`, `MidiFileSequence`, `SequencedMidiPlayer`, `OfflineMidiRenderer`, `LiveMidiInstrument` | `NAudio.Midi` | `NAudio.Core` stays MIDI-agnostic; the hosts are *instrument*-agnostic so other `IMidiInstrument` implementations (e.g. a hosted VSTi) reuse them unchanged |
+| The engine: `SamplerEngine`, `SamplerVoice`, the region model, the modulator engine, the three front-ends | **`NAudio.Sampler`** | This *is* the sampler |
+| Demo panels (SoundFont/MIDI player, live sampler, single-sample editor) | `NAudioWpfDemo` | Hosts composing the engine with the output/input stack |
 
-**`NAudio.Sampler`** is a new portable package: `net9.0`,
-`<IsAotCompatible>true</IsAotCompatible>`, depending on `NAudio.Core` +
-`NAudio.Midi` + the sequencing core. It follows the package conventions in the
-assembly-layout plan and ships from the same `release.yml` as the rest. A future
-`NAudio.Synth` package would depend on the same shared `NAudio.Core` primitives;
-the two instruments are siblings over a common DSP floor, not one built on the
-other.
+`NAudio.Sampler` is a portable package: `net9.0`, AOT-compatible, depending on
+`NAudio.Core` + `NAudio.Midi` + `NAudio.SoundFile` (the libsndfile wrapper that
+decodes FLAC/Ogg SFZ samples; absent at runtime, those regions are skipped
+gracefully). It versions in lockstep with the other NAudio packages.
 
 ## 3. Architecture — three layers
 
-Mirrors the effects framework's "kernels vs streaming adapter" split.
+Mirrors the effects framework's "kernels vs streaming adapter" split:
 
-- **Layer 1 — DSP kernels (`NAudio.Core`).** The interpolating reader, DAHDSR,
-  LFO, resonant filter, envelope follower. Plain classes, process their own
-  buffers, no MIDI/format awareness. Reused by sampler and synth.
-- **Layer 2 — the synthesis engine (`NAudio.Sampler`).** A `Voice` wires the
-  kernels together; a `VoiceManager` allocates/steals voices and tracks MIDI
-  channel state; a format-neutral *resolved instrument model* feeds them. The
-  engine exposes itself as a single `ISampleProvider` (one per MIDI channel set,
-  or one multi-timbral provider) so it drops straight into the existing graph.
-- **Layer 3 — hosts/demos.** Live-MIDI player, offline MIDI-file renderer,
-  single-sample instrument editor. These compose Layer 2 with the existing
-  output (`WasapiPlayer`, `WaveFileWriter`) and input (`MidiIn`) stack.
+1. **DSP kernels** (`NAudio.Core`) — plain classes that process their own
+   buffers with no MIDI or format awareness.
+2. **The synthesis engine** (`NAudio.Sampler`) — a `SamplerVoice` wires the
+   kernels together; `SamplerEngine` owns the voice pool and MIDI dispatch; a
+   format-neutral *region model* feeds them. The engine is one
+   `ISampleProvider` (stereo float), so it drops straight into the existing
+   graph, and one `IMidiInstrument`, so the `NAudio.Midi` hosts can drive it.
+3. **Hosts and demos** — live playback, offline render, the waveform editor.
 
-### 3.1 The format-neutral instrument model
+## 4. The format-neutral region model
 
-The key design decision. Both SF2 and SFZ normalise onto **one internal model**
-so the voice engine never sees a format:
+The key design decision. Both formats normalise onto one internal model so the
+voice engine never sees a format:
 
-- An **instrument** is a set of **regions**.
-- A **region** has an absolute key range, velocity range, a sample reference
-  (data + sample rate + root key + loop points + loop mode), and a fully
-  resolved parameter set: tuning, volume/pan, filter cutoff/resonance, two
-  envelopes (amp + mod), two LFOs (mod + vibrato), effect sends, exclusive/choke
-  group, plus a list of **modulation routings** (source → destination → amount →
-  curve).
-- A single note may trigger **several regions at once** (layers/velocity
-  splits), each becoming a voice.
+- An **instrument** is a set of **regions**. A region has a sample reference
+  (shared data + addressing + loop points + root key), a key/velocity
+  rectangle, a fully resolved parameter set, and a list of modulator routings.
+  One note-on may start **several regions at once** (layers, stereo pairs,
+  velocity splits) — each becomes a voice.
+- **SF2 generator units are the neutral currency**: `SamplerRegion` carries its
+  parameters as `SoundFontGenerators` (cents, timecents, centibels), because
+  they are the most precisely specified unit system and the voice can be
+  written once against them. SFZ concepts with no SF2 slot get dedicated
+  fields on `SamplerRegion` instead (linear gain boost, velocity curves,
+  key/velocity crossfades, triggers, choke groups with `off_mode`, per-region
+  polyphony, CC gates, keyswitches, EQ bands, embedded WAV loops).
+- **Three producers project onto it:**
+  - **SF2**: `Preset.ResolveRegions()` (in `NAudio.Core`) applies the §9.4
+    generator model — instrument-zone values absolute over spec defaults,
+    preset-zone values additive, global zones, range intersection — and
+    `SoundFontSampler` projects the result, slicing one shared `float[]`
+    sample pool (no per-region copies).
+  - **SFZ**: `SfzParser` flattens the section hierarchy; `SfzMappedRegion`
+    (in `NAudio.Core`) interprets opcodes into typed values in natural SFZ
+    units; `SfzRegionProjector` (in `NAudio.Sampler`) translates them to
+    engine units and loads samples via `ISfzSampleLoader`.
+  - **Single sample**: `SingleSampleInstrument` is the simplest producer — one
+    buffer, editable start/end/loop/envelope, re-projected when edited.
+- **Deliberate simplification:** the voice has two LFOs and one modulation
+  envelope; SFZ's per-target EGs/LFOs (`fileg_*`, `pitchlfo_*`, …) share those
+  slots, so a region using several with different rates shares the rate with
+  independent depths. Dedicated per-target sources are the upgrade path if a
+  real bank needs them.
 
-SF2 generators and SFZ opcodes are two *front-ends* that both populate this
-model. The voice engine is written once, against the model.
+## 5. The voice and the engine
 
-## 4. File-format support
+Per-voice signal chain: interpolating reader (Hermite by default, double
+phase accumulator, the three SF2 loop modes, optional loop-seam crossfade;
+stereo samples run a second reader in lockstep) → per-channel resonant biquad
+(low/high/band-pass/band-reject, Q gain-compensated per §8.1.2) → up to three
+peaking-EQ bands → per-sample amplitude envelope × control-rate gains →
+equal-power pan → dry mix plus reverb/chorus sends.
 
-### 4.1 SoundFont 2 — modernise, do not rewrite
+**Control-rate modulation.** Pitch, filter, volume and modulator evaluation run
+on 64-sample control blocks; the modulation sources advance by bit-exact block
+`Advance` calls. The control phase is carried across `Read` segment boundaries,
+so a render chopped into arbitrary segments (as event-dense sequenced playback
+does) is bit-identical to a monolithic one.
 
-The parser in `NAudio.Core/FileFormats/SoundFont/` (~24 files) is structurally
-complete and correct: it reads INFO / sdta / pdta, the full
-PHDR→PBAG→PGEN/PMOD and INST→IBAG→IGEN/IMOD hierarchies, SHDR sample headers,
-all 61 generators (`GeneratorEnum`), and modulators. **A rewrite is not
-warranted.** Targeted work only:
+**The modulator engine** implements the ten §8.4 default modulators and
+file-defined modulators merged per §9.5, with the four source curves and both
+transforms. Routings are split at build time into static sources (velocity,
+key — evaluated once at note-on) and dynamic sources (CC, pitch wheel, channel
+pressure — re-evaluated only when the channel state's version stamp changes).
+Modulators with unknown, unsupported or spec-prohibited sources are disabled
+entirely, per §7.4.
 
-- **24-bit samples (`sm24`)** are silently skipped today
-  (`SampleDataChunk.cs`). Add 24-bit support — common in modern banks.
-- **Finish modulator-field parsing** (`ModulatorType.cs` carries a
-  `// TODO: map this to fields`). The modulator engine cannot exist without
-  this.
-- **Opportunistic modernisation** to match NAudio 3 (`#nullable enable`, string
-  interpolation, `record`/`init` data models, span-based reads). Low priority;
-  not a blocker.
-- **Writing** stays out of scope (`SoundFont.cs` — `// TODO: save`) — a separate
-  feature, not needed to *play* anything.
+**The engine** owns everything cross-voice: the note-on gate chain (per-key
+region buckets, trigger type, keyswitches, CC gates, random layers,
+round-robin, crossfade gain), exclusive/choke groups (sparing same-dispatch
+siblings, honouring `off_mode`), the sustain pedal (re-strike supersedes a
+parked note; pedal-up fires release triggers with correct `rt_decay` timing),
+audibility-ranked voice stealing with a short fade summed over the new note,
+RPN 0 bend-range decoding, and the percussion rules (forced channel 10, the
+GS/XG bank-MSB heuristic, melodic bank fallback that never lands on a drum
+kit).
 
-The parser exposes the file's *structure*; on top of it sits a **resolved
-instrument** layer (`SoundFontInstrumentResolver` / `SoundFontRegion` /
-`SoundFontGenerators`) that flattens preset-zone + instrument-zone generators
-(with correct absolute-vs-additive accumulation per SF2.04 §9.4, global zones,
-default generator values, and key/velocity-range intersection) into a flat list
-of playable regions. `Preset.ResolveRegions()` is the entry point.
+## 6. Performance invariants
 
-**This resolution layer lives in `NAudio.Core` (`NAudio.SoundFont`), not
-`NAudio.Sampler`** — an earlier draft placed it in the sampler package, but it
-is pure SoundFont interpretation with no synthesis dependency, useful to anyone
-reading/inspecting/converting SF2 files, so by the "generally-useful code goes
-in Core" principle it belongs beside the parser. The format-neutral sampler
-model (§3.1) becomes a thin projection of `SoundFontRegion`; modulator
-*resolution* (the default + file modulator routings) stays with the synth engine
-since it is synthesis-facing.
+These are design constraints, not incidental optimisations — they are guarded
+by tests and should be preserved by future changes:
 
-### 4.2 SFZ — build from scratch
+- **Zero heap allocation on the audio thread in steady state** (a CI test
+  asserts exactly zero bytes across warm note-on/render/note-off cycles).
+  Voices are pooled with persistent readers, filters and EQ; presets are
+  resolved and projected at construction; region lookups go through cached
+  per-key indexes with O(1) empty checks for release/CC triggers; sequenced
+  playback queries the `EventTimeline` through lock-free immutable snapshots.
+- **Per-sample work is minimal**: transcendentals only at control rate,
+  multiply-per-sample envelopes, a block fast path in the reader over the
+  contiguous safe window (per-sample code only near loop seams and ends),
+  filter retunes skipped when nothing changed, idle send buses skipping their
+  effects, and silent-sustain voices reaped.
+- **Fast paths must be provably equivalent**: every block-processing path has
+  a seeded equivalence test asserting bit-identical output against its
+  per-sample reference, and the engine suite asserts exact rendered
+  waveforms — so an optimisation cannot silently change the sound.
+- Manual `[Explicit]` benchmarks live in `NAudio.Sampler.Tests`
+  (`SamplerBenchmarks`): throughput for 64 busy voices and note-churn
+  allocations. Run them in Release before and after engine work.
 
-No SFZ code exists and none is in git history. From-scratch build:
+## 7. Testing approach
 
-- **Tokenizer/parser** for `<global>` / `<master>` / `<group>` / `<region>` /
-  `<control>` headers, `#define` / `#include`, `$variable` substitution,
-  `default_path`.
-- **External sample loading** — SFZ references WAV/FLAC/OGG by relative path.
-  **`NAudio.SoundFile`** (libsndfile, #1291) already decodes FLAC/Ogg/Opus
-  cross-platform, so the loader is mostly plumbing over existing readers.
-- **Opcode coverage in tiers** (§6) — SFZ has hundreds of opcodes; we target a
-  documented useful subset (SFZ v1 + common ARIA extensions) and state clearly
-  what is unsupported.
+Everything is deterministic and hardware-free: SF2 binaries are built in
+memory by test builders, SFZ samples come from stub loaders, and behaviour is
+asserted on rendered output (pitch ratios, envelope timing, choke fades,
+modulation depth). Spec-sensitive math (generator accumulation, modulator
+curves, unit conversions, the 16/24-bit sample decode) has direct unit tests
+with SF2 section citations. The full suite runs on Linux CI in seconds; only
+the benchmarks are excluded (`[Explicit]`).
 
-### 4.3 Single sample / recorded snippet
+## 8. Deliberate v1 constraints
 
-The third instrument front-end: take one audio buffer (loaded WAV or a live
-recording), synthesise a one-region instrument mapped across the whole keyboard
-with a chosen root key, and let the user adjust start / end / loop-start /
-loop-end and loop mode. This populates the *same* resolved instrument model —
-it's the simplest possible producer for it. See §8.3 for the demo.
+- **Engine subclassing is internal.** `SamplerEngine` is `public abstract`,
+  but the region supply is `private protected` and the region model is
+  `internal`: the model's shape (SF2-unit currency plus SFZ side-fields) is
+  not frozen yet, and publishing it would freeze it prematurely. Widening
+  later is non-breaking; narrowing back would not be. External composition
+  happens at the `IMidiInstrument` seam, and new formats are added inside
+  `NAudio.Sampler` as new producers of the region model.
+- **The engine is single-threaded.** `Read` and all MIDI entry points must be
+  called from one thread; `LiveMidiInstrument` is the lock-free cross-thread
+  bridge.
+- **Samples decode fully into RAM** (float, so ~2× the 16-bit footprint) —
+  glitch-free and simple; no disk streaming.
+- **Spec-literal levels**: SF2 attenuation is applied at full spec value (no
+  FluidSynth-style 0.4× "EMU" scaling), and all filter shapes are single
+  2-pole biquads. These and the other known deviations are listed in
+  [Sampler.md](../Sampler.md).
 
-## 5. DSP building blocks — have vs. build
+## 9. Future enhancements (not in this first round)
 
-| Block | Status | Action |
-|---|---|---|
-| **Variable-rate interpolating sample reader** | ❌ missing — **critical path** | Build in `NAudio.Dsp`. Phase-accumulator reader at arbitrary, per-sample-varying rate; cubic/Hermite interpolation (sinc option); start/end offsets; the three loop modes. `WdlResampler` is fixed-ratio and block-based — wrong tool for per-voice pitch that moves under vibrato/bend/envelope. |
-| **DAHDSR envelope** | ⚠️ partial | Build in `NAudio.Dsp`, generalising `EnvelopeGenerator`. SF2 wants 6 stages (Delay/Attack/Hold/Decay/Sustain/Release), convex attack, decay/release in **centibels**, plus key-to-hold/decay scaling. The current analog 4-stage ADSR doesn't match the spec. |
-| **LFO** | ✅ close | Extend `Dsp/Lfo.cs` with delay/fade-in and key-sync if not already present. Two LFOs per voice (mod → pitch/filter/volume; vibrato → pitch). Tempo-sync (`NoteDivision`/`TempoTime`) already exists. |
-| **Resonant low-pass filter** | ⚠️ adapt | `BiQuadFilter` is the right 2-pole shape; add correct **cB→Q** and **cents→Fc** mapping and per-sample coefficient updates for filter-envelope/LFO modulation. `CrossfadingBiQuadFilter` covers click-free retune. |
-| **Note/cents/timecent/centibel math** | ❌ missing | Small helper set in `NAudio.Dsp` / `NAudio.Midi`. Pervasive. |
-| **Polyphonic mix core** | ✅ reuse | `MixingSampleProvider` (vectorised via `TensorPrimitives`, 1024 inputs, lock-free read) is the voice-summing bus. |
-| **Effects (reverb/chorus/EQ/dynamics…)** | ✅ reuse | `NAudio.Effects` (#1310) is far beyond what a sampler needs. Only the **send-bus routing** is new. |
-| **Fixed-ratio resampler** | ✅ reuse | `WdlResampler` for output-rate matching and offline render, **not** per-voice pitch. |
-| Phase-vocoder pitch shifter | ✅ (not used) | `SmbPitchShifter` is time-preserving — wrong tool here; sampler pitch comes from playback rate. |
-
-## 6. The synthesis engine (`NAudio.Sampler`) — the real work
-
-None of this exists anywhere in NAudio today; it is the heart of the feature.
-
-1. **Voice** — one region playing one note: interpolating reader + resonant
-   filter + amp envelope + mod envelope + two LFOs + amp/pan, all driven by the
-   resolved region parameters and live modulation.
-2. **Voice manager** — polyphony cap, allocation, **voice stealing**
-   (oldest/quietest), note-on/note-off, **sustain pedal (CC64) hold**, and
-   **exclusive/choke groups** (SF2 `exclusiveClass`, SFZ `group`/`off_by`). The
-   sequencing PR's drum demo already prototypes a `ChokeableVoice` with deferred
-   per-frame fade-out — a good reference for click-free choking.
-3. **Generator accumulation (SF2)** — correct layering of instrument-zone
-   (additive) and preset-zone generators, additive-vs-absolute distinction per
-   generator, global zones.
-4. **Modulator engine** — the part that makes SF2 sound *right*: the **10 SF2
-   default modulators** (velocity→attenuation, velocity→filter, pitch-wheel→
-   pitch, etc.) plus file-defined ones, with sources (CC/NRPN/velocity/key/
-   pressure/pitch-wheel), transform curves (linear/concave/convex/switch),
-   bipolar/unipolar polarity. SFZ's modulation (`*_oncc`, `*lfo_*`, EG-to-target)
-   maps onto the same routing list. Depends on §4.1's modulator-field fix.
-5. **MIDI channel state** — program/bank select, pitch-bend + RPN 0 bend range,
-   CC1 mod, CC7 volume, CC10 pan, CC11 expression, CC64 sustain, all-notes-off,
-   reset-all-controllers, NRPN.
-6. **Multi-timbral routing** — 16 channels, **channel 10 = drums** (GM/GS),
-   bank-select semantics distinguishing drum vs. melodic banks.
-7. **`ISampleProvider` front-end** — the engine is a standard sample provider so
-   it composes with the existing output stack and effect chains.
-
-## 7. Complex features / format semantics to honour
-
-**SF2 generators that must be *honoured*, not just parsed:**
-
-- Loop modes: no-loop / continuous / **loop-until-release-then-tail**
-  (`sampleModes`), with loop points plus the start/end/startloop/endloop address
-  offset generators (coarse & fine).
-- Pitch: `overridingRootKey`, `coarseTune`, `fineTune`, `scaleTuning`.
-- Filter: `initialFilterFc`, `initialFilterQ`, mod-env→filter, mod-LFO→filter.
-- Envelopes: full DAHDSR for amp & mod, plus `keynumTo{Vol,Mod}Env{Hold,Decay}`
-  key tracking.
-- Amp: `initialAttenuation` (cB), `pan`, velocity/keynum overrides,
-  `chorusEffectsSend`, `reverbEffectsSend`.
-- `exclusiveClass` (drum choke).
-
-**SFZ opcodes — tiered scope:**
-
-- **Tier 1 (must-have):** `sample`, `lokey`/`hikey`/`key`, `lovel`/`hivel`,
-  `pitch_keycenter`, `tune`, `transpose`, `volume`, `pan`, `offset`/`end`,
-  `loop_mode`/`loop_start`/`loop_end`, `trigger`
-  (attack/release/first/legato), `group`/`off_by`/`off_mode`, `ampeg_*`,
-  `pitch_keytrack`, `cutoff`/`resonance`/`fil_type`, `amp_veltrack`,
-  `polyphony`.
-- **Tier 2 (expected by real libraries):** keyswitches
-  (`sw_lokey`/`sw_hikey`/`sw_last`/`sw_default`), round-robin
-  (`seq_position`/`seq_length`), random layers (`lorand`/`hirand`), CC gating
-  (`locc`/`hicc`, `on_loccN`/`on_hiccN`), `rt_decay`, key/velocity crossfades
-  (`xfin_*`/`xfout_*`/`xf_keycurve`), `fileg_*`/`pitcheg_*`,
-  `amplfo_*`/`fillfo_*`/`pitchlfo_*`, `eq1/2/3_*`, `effect1`/`effect2` sends,
-  velocity curves.
-- **Out of scope (document explicitly):** full ARIA/v2 flex EGs, `<curve>`
-  tables, advanced loop-crossfades. Pick a line and state it in `Docs/Sampler.md`.
-
-## 8. Demos (Layer 3)
-
-### 8.1 Live MIDI player
-`WinRTMidiIn` (the modern `Windows.Devices.Midi` backend, from `NAudio.Wasapi`) →
-sampler engine → `WasapiPlayer` (the modern WASAPI playback path, low-latency
-where the device supports `IAudioClient3`). Load an SF2 or SFZ, pick a MIDI input
-device, play from an attached keyboard. Subjective-quality and latency
-evaluation tool.
-**DONE.** The reusable bridge is `NAudio.Midi.LiveMidiInstrument`: it wraps any
-`IMidiInstrument` (the sampler engine implements it) as an `ISampleProvider` and
-exposes a thread-safe `Send` (plus `NoteOn`/`NoteOff`) that queues events
-lock-free and drains them on the audio thread, so the (single-threaded) engine
-is never touched from the MIDI callback thread. The "Live MIDI Sampler" panel in `NAudioWpfDemo`
-(`LiveSamplerDemo/`) wraps it with an SF2/SFZ instrument picker, a `WinRTMidiIn`
-device dropdown, master volume, a panic (all-sound-off) button and a clickable
-on-screen `PianoControl` — so it plays even with no hardware MIDI device, and
-hardware input lights the on-screen keys. The bridge is unit-tested headless;
-the WPF panel needs Windows + an audio device.
-
-### 8.2 Offline MIDI-file → WAV render
-`MidiFile` → `EventTimeline` → sampler engine → `WaveFileWriter`, driven
-sample-accurately by the sequencing core. **Dependency:** the sequencing PR
-(#1324) deliberately *defers MIDI-file ingestion* — so this needs a new
-`MidiFile`→`EventTimeline` loader (using the `MusicalTime.RescaleFromPpq`
-boundary helper they added for exactly this). Discrete, well-bounded task.
-
-**Decision (scheduling): build this on the sequencer, not a standalone
-tick-walk.** A self-contained offline renderer is tempting (it would be
-independently mergeable and give audible output sooner), but offline render is
-the one consumer that doesn't exercise the sequencer's real-time value
-(`Transport`, `EventBufferQuery`, `SequencedSampleProvider`), so a standalone
-version would duplicate the tick→time math only to be superseded. We instead
-**wait for #1324 to merge to `main`**, then build the `MidiFile`→`EventTimeline`
-ingestion (step 6) on top of it, giving offline render, live playback and the
-VST3 host one canonical timing model. The cost is no audible output from the
-sampler until the sequencer lands.
-
-### 8.3 Single-sample / recording keyboard instrument
-Open a WAV (or record a snippet via the capture stack), auto-map it across the
-keyboard at a chosen root key, **display the waveform**, and adjust
-**start / end / loop-start / loop-end** and loop mode interactively — hearing the
-change immediately because edits flow into the live resolved instrument. The
-simplest producer of the format-neutral model, and a useful instrument by
-itself. WPF demo, consistent with the existing demo suite. **DONE.** The
-`Single-Sample Editor` panel (`NAudioWpfDemo/SampleEditorDemo/`) loads a
-WAV/FLAC/Ogg into a `SingleSampleSampler`, draws it in a reusable
-`WaveformControl` with four draggable markers (start/end/loop-start/loop-end)
-over a shaded loop region, and exposes root key, tune, volume, pan, loop mode and
-the amplitude envelope (A/H/D/S/R). It auditions through the same
-`PianoControl` → `LiveMidiInstrument` → `WasapiPlayer` path as §8.1, so every
-edit is heard on the next note (the engine rebuilds the region per note-on).
-
-## 9. Port vs. build, and licence policy
-
-Same policy as the effects suite (see [`EffectsDesign.md`](EffectsDesign.md) §5).
-**Default: build.** Voice management, envelopes, interpolation, generator/opcode
-resolution, and modulation routing are well-understood and best written as
-idiomatic, allocation-free, AOT-safe C# — and double as synth building blocks.
-**Port selectively** only where an algorithm is genuinely hard and a strong
-permissive reference exists, "as algorithm, not transliteration." NAudio is
-**MIT**: only MIT/BSD/Zlib/public-domain sources may be ingested, attributed
-in-file and in `THIRD-PARTY-NOTICES.txt`. GPL/LGPL/proprietary synth/sampler
-code (FluidSynth is **LGPL**, sfizz is **BSD-2** — usable as a *spec/behaviour
-reference* only, never copied) stays out. The SF2.04 spec and the SFZ opcode
-reference are the primary sources.
-
-## 10. Suggested PR sequence (all on `feature/naudio3-sampler`)
-
-Critical-path risks are concentrated in two places — the per-voice interpolating
-oscillator (small but exacting) and the SF2 modulator engine (spec-heavy).
-Sequenced cheapest-useful-first:
-
-1. **DSP primitives → `NAudio.Core`:** interpolating sample reader, DAHDSR,
-   LFO/filter extensions, note/cents/cB/timecent math. Pure, unit-testable.
-   **DONE.**
-2. **SF2 resolved-instrument model** + finish `sm24` and modulator-field parsing
-   in the parser. **DONE** (resolved model in `NAudio.Core/FileFormats/SoundFont`).
-3. **`NAudio.Sampler` engine v1:** voice, voice manager, generator accumulation,
-   channel state, loop modes — *no modulators yet* (default attenuation/pan/
-   filter only). Drum one-shots + GM melodic playable as an `ISampleProvider`.
-   **DONE.** New `NAudio.Sampler` package: `SoundFontSampler` (`ISampleProvider`),
-   internal `SamplerVoice` (pitch from root-key/tune, the three loop modes,
-   DAHDSR amp envelope, static per-voice low-pass, velocity/attenuation gain,
-   equal-power pan), `MidiChannelState` (program/bank, pitch-bend, sustain
-   pedal, volume/expression), voice stealing and exclusive-class choke. Verified
-   by deterministic offline-render tests (pitch ratio, looping, release decay,
-   sustain pedal, choke, pan, key-range, polyphony).
-4. **Modulator engine** (default + file modulators) — the "sounds correct" PR.
-   **Part A DONE:** continuous *generator-driven* modulation — the two per-voice
-   LFOs (modulation + vibrato, using `Lfo`'s start-delay) and a second
-   `DahdsrEnvelope` as the modulation envelope, routed to pitch
-   (`modLfoToPitch`, `vibLfoToPitch`, `modEnvToPitch`), filter cutoff
-   (`modLfoToFilterFc`, `modEnvToFilterFc`) and volume (`modLfoToVolume`).
-   Modulation runs at a control rate (64-sample sub-blocks) while the sources
-   advance per sample; the filter is retuned per block via the new
-   state-preserving `BiQuadFilter.UpdateLowPassFilter` (added to `NAudio.Core`
-   so it serves any modulated filter). Verified by render tests (vibrato,
-   tremolo, mod-env filter sweep). **Part B DONE:** the SF2 modulator *list* —
-   the resolver now carries zone modulators onto `SoundFontRegion`
-   (`InstrumentModulators`/`PresetModulators`, global+local concatenated for the
-   §9.5 combination), the parser's `ModulatorType` ctor is public and exposes
-   `RawValue`, and `NAudio.Sampler` adds the engine: the implicit default
-   modulators (§8.4), file-defined modulators merged per §9.5 (local supersedes
-   global by identical routing; instrument modulators are absolute and replace
-   defaults, preset modulators are additive), the four source curves
-   (`SoundFontModulatorMath`, linear/concave/convex/switch with direction +
-   polarity) and the `Linear`/`AbsoluteValue` transforms. Modulators are
-   evaluated at control rate against live MIDI controllers (velocity, key,
-   CC1/7/10/11/91/93, channel pressure, pitch wheel) and summed per destination
-   onto the generator values for attenuation, filter cutoff, pan and the
-   pitch/filter/volume routings. The provisional `v*v` velocity curve is gone,
-   replaced by the §8.4.1 velocity→attenuation default modulator (whose concave
-   shape, by construction, reproduces the old near-square-law response).
-   **Deferred within Part B:** the pitch-wheel default modulator (§8.4.10) is
-   realised by the channel pitch-bend path rather than the modulator list (one
-   source of truth for bend); reverb/chorus send destinations are evaluated but
-   not yet rendered (await the §5 send-bus); poly-pressure and NRPN sources are
-   not yet tracked.
-5. **Effects send-bus** (reverb/chorus sends) reusing `NAudio.Effects`.
-   **DONE.** New generic `NAudio.Effects.SendBus` (shared effect with a send
-   buffer and wet return); `SoundFontSampler` owns one reverb (`ReverbEffect`)
-   and one chorus (`ChorusEffect`) bus, each voice mixes a portion of its panned
-   signal into them per the SF2 `reverbEffectsSend`/`chorusEffectsSend`
-   generators (and the CC91/CC93 default modulators, now consumed), and the wet
-   return is summed into the mix each block so tails outlast the notes. The
-   effects are exposed (`SoundFontSampler.Reverb`/`Chorus`) for tuning or bypass.
-   Verified by `SendBus` unit tests and reverb-send/tail render tests.
-6. **MIDI-file → `EventTimeline` ingestion** (closes the sequencer gap) →
-   enables the offline render demo. **DONE.** Now that the sequencer (#1324) is
-   on `main`: `MidiFileSequence` loads a `MidiFile` onto an
-   `EventTimeline<MidiEvent>` at the canonical PPQ (`MusicalTime.RescaleFromPpq`)
-   and builds a `StaticTempoMap` from its `SetTempo` events;
-   `SequencedMidiPlayer` drives an instrument from a `Transport`,
-   dispatching each block's MIDI events to the instrument at their exact frame
-   offset (rendering the instrument in segments between events, so timing is
-   sample-accurate within the block — not block-quantised like the
-   dispatcher-spawns-a-provider model). `OfflineMidiRenderer` renders a sequence
-   to a float buffer or a WAV file, faster than real time and with no audio
-   hardware. This is the first end-to-end "MIDI in → audio out", verified by a
-   deterministic timing test (silence before the note, sound during).
-   **Shared with the VST3 host:** these pieces live in `NAudio.Midi` (not
-   `NAudio.Sampler`) behind the `IMidiInstrument` seam — an `ISampleProvider`
-   that consumes MIDI via `ProcessMidiEvent` plus `AllSoundOff`. `SamplerEngine`
-   implements it, and a hosted VST instrument adapter can implement the same
-   interface to reuse `MidiFileSequence`, `SequencedMidiPlayer`,
-   `OfflineMidiRenderer` and `LiveMidiInstrument` unchanged (`NAudio.Core`
-   stays MIDI-agnostic, so `NAudio.Midi` is the natural shared home).
-7. **SFZ parser + mapping** (Tier 1, then Tier 2). **DONE** — full Tier 1 and
-   Tier 2, WAV + FLAC/Ogg loading (FLAC/Ogg via `NAudio.SoundFile`).
-   **7a DONE — text/structure layer** (`NAudio.Core/FileFormats/Sfz`,
-   namespace `NAudio.Sfz`): `SfzParser` handles `//` and `/* */` comments, the
-   `#define`/`$variable` preprocessor, `#include` (via a pluggable
-   `ISfzIncludeResolver`, default `FileSfzIncludeResolver`), the section grammar
-   (including sample paths with spaces and multiple opcodes per line), and
-   flattens the `<global>`/`<master>`/`<group>`/`<region>` hierarchy into
-   `SfzRegion`s with merged opcodes and typed accessors. `<control>`
-   `default_path` (applied in document order), `note_offset` and `octave_offset`
-   are surfaced on `SfzInstrument`. Pure text, no engine dependency, unit-tested.
-   **7b DONE — opcode semantics** (`SfzMappedRegion`, `SfzNoteName`): the
-   Tier-1 opcodes interpreted into typed, engine-ready values — key/velocity
-   ranges (note names like `c#4` resolved with the c4=60 convention and the
-   `note_offset`/`octave_offset` shifts applied), `pitch_keycenter`/`tune`/
-   `transpose`/`pitch_keytrack`, `volume` (dB), `pan` (±1), `ampeg_*` (seconds,
-   sustain 0–1), `cutoff`/`resonance`/`fil_type`, `loop_mode`/offsets,
-   `trigger`, `group`/`off_by`/`off_mode`, `amp_veltrack`, `polyphony`. Pure and
-   unit-tested; the SFZ counterpart to the SoundFont generator model.
-   **7c DONE — neutral model, sample loading, engine integration:**
-   `SampleData` + `SamplerRegion` are the format-neutral region the voice plays
-   (parameters carried as `SoundFontGenerators` in engine units); `SamplerVoice`
-   reads only that, with an SFZ `amp_veltrack` velocity term. SoundFont and SFZ
-   both project onto it: `SoundFontSampler` slices the shared sample pool;
-   `SfzRegionProjector` + `ISfzSampleLoader`/`FileSfzSampleLoader` load each SFZ
-   sample (WAV, mono-downmixed) and translate the opcodes to generators. The
-   shared voice management (pool, stealing, choke, sustain, channel state,
-   reverb/chorus sends, the `Read`/MIDI loop) lives in a `SamplerEngine` base;
-   `SoundFontSampler` and the new `SfzSampler` subclass it and only supply the
-   regions for a note. SFZ plays end-to-end as an `ISampleProvider`
-   (`SfzSampler.FromFile`).
-   The Tier-1 finish, FLAC/Ogg loading and all Tier-2 opcodes followed on this
-   base (see §11.1 and the Tier-2 notes); SFZ is now complete.
-8. **Single-sample instrument + auto-mapper** model. **DONE (model).**
-   `SingleSampleInstrument` takes one mono buffer (loaded WAV or a recorded
-   snippet), auto-maps it across the keyboard at a chosen root key, and exposes
-   editable start/end, loop start/end and mode, tuning, gain, pan, velocity
-   tracking and an amplitude envelope — projecting onto the same neutral
-   `SamplerRegion`. `SingleSampleSampler` plays it through the shared
-   `SamplerEngine` and rebuilds the region per note so edits are heard on the
-   next note; `SingleSampleSampler.FromWaveFile` is the one-liner entry point.
-   The shared `WaveSampleLoader` (mono down-mix) now backs both this and the SFZ
-   WAV loader. The interactive waveform/loop editor UI is the step-9 demo.
-9. **Demos:** live MIDI, offline render, single-sample/recording editor.
-   **DONE.** Three `NAudioWpfDemo` panels: a `SoundFont / MIDI Player`
-   (`SamplerDemo/`) loads a `.sf2` + `.mid` and either plays them
-   (`SequencedMidiPlayer` → `WaveOut`) or renders to a WAV
-   (`OfflineMidiRenderer`); a `Live MIDI Sampler` (`LiveSamplerDemo/`) plays
-   an SF2 or SFZ live from a `WinRTMidiIn` device and/or an on-screen keyboard
-   via the new `LiveMidiInstrument` bridge (see §8.1); and a `Single-Sample
-   Editor` (`SampleEditorDemo/`) with a draggable-marker waveform editor (see
-   §8.3). The only remaining demo idea is optional recording-into-the-editor via
-   the capture stack.
-
-**Testing.** Lean on deterministic offline render → golden-WAV comparisons (the
-drum demo's "render matches live playback" path in #1324 is the model), plus
-pure unit tests on interpolation, envelopes, generator accumulation, and
-modulator transforms. Mark anything needing real hardware
-`TestCategory=IntegrationTest`.
-
-## 11. Deferred / open work
-
-- **Engine subclassing is internal for v1 (deliberate).** `SamplerEngine` is
-  `public abstract`, but its abstract region supply is `private protected` and
-  the format-neutral region model (`SamplerRegion`/`SampleData`) is `internal`,
-  so external code cannot add instrument formats by subclassing yet. The neutral
-  model's shape is still settling (it currently carries parameters in SF2
-  generator units); publishing it would freeze that prematurely. Widening to
-  `protected` + public model later is non-breaking — narrowing back would not
-  be. External composition happens at the `IMidiInstrument` seam instead.
-- **DLS, Kontakt, EXS, Decent Sampler and other formats** — out of scope; SF2 +
-  SFZ cover the open-format need. A new front-end onto the resolved model is the
-  extension point if demand appears (inside `NAudio.Sampler` for now — see the
-  subclassing note above).
-- **SoundFont *writing*** and SFZ export — separate authoring feature.
-- **Disk streaming for large libraries** — v1 loads samples into memory
-  (`CachedSound`-style). Streamed voices are a later optimisation.
-- **Windowed-sinc interpolation tier** for `InterpolatingSampleReader`. The
-  shipped reader offers None/Linear/Hermite, with Hermite as the transparent
-  default. A table-driven windowed-sinc (e.g. Lanczos/Blackman, 8–32 taps) is a
-  higher-quality option worth adding *if* demand appears — it mainly helps
-  extreme *upward* pitch shifts (imaging near Nyquist) and offline rendering,
-  where the extra taps per sample are affordable. Cost: more CPU and a wider
-  read window, so the loop-boundary wrap needs more guard samples either side of
-  the loop points. `WdlResampler` already has a windowed-sinc kernel that can
-  serve as the math reference (it is fixed-ratio/block-based, so it can't be
-  dropped into the per-sample varying-rate reader directly).
-- **Advanced SFZ (flex EGs, `<curve>`, full ARIA set)** — Tier 3, demand-driven.
-- **SFZ Tier 2** — **selection, crossfades and per-region EGs/LFOs done**:
-  keyswitches, round-robin, random layers, CC gating, key/velocity crossfades,
-  and the modulation EGs/LFOs (`pitchlfo_*` → vibrato, `amplfo_*`/`fillfo_*` →
-  the mod LFO, `fileg_*`/`pitcheg_*` → the mod envelope) projected onto the
-  voice's existing modulation slots — no voice change. The mod LFO and mod
-  envelope are each one source, so a region using both amp+filter LFOs (or both
-  filter+pitch EGs) with different rates/shapes shares the rate/shape (amp LFO /
-  filter EG wins) with independent depths — a dedicated source per SFZ EG/LFO is
-  the upgrade if a bank needs it. `effect1`/`effect2` sends route to the shared
-  reverb/chorus buses (the same path as SF2's reverb/chorus sends).
-  `rt_decay` attenuates release samples by held time, and `on_loccN`/`on_hiccN`
-  trigger a region when the controller rises into range (played at its root key,
-  excluded from key triggering). Per-region `eq1/2/3_*` add up to three
-  peaking-EQ bands in the voice's signal chain (per channel, bandwidth→Q).
-  **SFZ Tier 1 and Tier 2 are complete** (see §11.1 for the Tier-1 summary,
-  including WAV + FLAC/Ogg sample loading).
-- **Built-in algorithmic-reverb send default** — start by routing to the
-  existing `ReverbEffect`/`FdnReverbEffect`; a sampler-tuned default is polish.
-
-### 11.1 Carried-forward implementation gaps
-
-Small, deliberate shortcuts taken in shipped steps, tracked here so they are not
-forgotten:
-
-- **Pitch-wheel modulation (§8.4.10)** is realised by the channel pitch-bend
-  path (`MidiChannelState.PitchBendRatio`), *not* the modulator list, so a
-  *file-defined* modulator whose destination is initial pitch is ignored.
-  Revisit if a bank relies on a custom pitch modulator. The bend *range* part
-  is now implemented: RPN 0 (pitch-bend sensitivity) is decoded per channel —
-  CC101/CC100 select, CC6/CC38 set semitones + cents, RPN null and an NRPN
-  selection deselect — feeding `PitchBendRangeSemitones` (untouched by Reset
-  All Controllers per RP-015).
-- **Poly (per-note) pressure** as a modulator source is not tracked — a
-  modulator naming it is now *disabled entirely* per SF2.04 §7.4 (the same
-  treatment as unknown source enumerations and the §8.2.2-prohibited CC
-  numbers), rather than evaluating as a bogus constant 0 (which made a
-  *bipolar* poly-pressure source contribute −1 × amount forever). Revisit by
-  tracking per-note pressure if a bank needs it. Channel pressure, velocity,
-  key, CC, pitch-wheel and pitch-wheel-sensitivity (RPN 0) sources all work.
-  **NRPN** is likewise not yet decoded.
-- **Modulator destinations outside `GeneratorEnum`** (e.g. the SF2 "initial
-  pitch" virtual destination) are ignored by the engine — only real generator
-  destinations are summed.
-- **(Closed)** ~~Very short one-shot samples failing to sound~~ — the reader
-  was correct all along; the voice was consuming the waveform during the
-  volume-envelope delay and dropping the final read sample. The delay now
-  postpones the sample (silence, readers untouched) and the last sample is
-  emitted before the de-click ramp.
-- **SFZ Tier 1 — complete.** Includes release/first/legato triggers, one-shot
-  note-off, directional `off_by` choke groups, all four `fil_type` shapes
-  (low/high/band-pass and band-reject), **stereo samples** (the voice runs a
-  second interpolating reader over the right channel in lockstep, with an
-  independent per-channel filter, and pans as a balance), and **WAV + FLAC/Ogg/
-  Opus sample loading** — every sample is decoded fully into memory (the
-  random-access form the voice plays); WAV is read directly and other formats
-  through `NAudio.SoundFile` (libsndfile), failing gracefully (region skipped)
-  when libsndfile is absent. Loop points authored in a WAV's `smpl` chunk are
-  read and used as the region's default loop (driving the spec's `loop_mode`
-  default of `loop_continuous`); the libsndfile path does not surface embedded
-  loops, so FLAC/Ogg samples need explicit `loop_start`/`loop_end` opcodes.
-  **Note:** FLAC/Ogg decoding has only been
-  validated against the in-memory read path with a stub provider in this
-  environment (no system libsndfile here); exercise it on a libsndfile box.
-  *Future:* disk streaming for very large libraries (§11) — decode fully into
-  RAM is the v1 choice (glitch-free; ~2× the 16-bit footprint in float).
-- **(Closed)** ~~Reverb/chorus sends evaluated but not rendered~~ — done in
-  step 5 (the send-bus).
-
-## 12. Non-goals for NAudio 3
-
-- A full DAW / arrangement layer — the sequencing core schedules; the sampler
-  plays. Composition tooling is out.
-- A plugin host or VST3 sampler shell — the engine is designed to *be hostable*
-  (the VST3 POC consumes the same sequencing/effects APIs), but the host is a
-  separate concern.
-- Bit-exact reproduction of any specific reference synth — the bar is
-  "musically faithful to the SF2/SFZ spec," not "sample-identical to
-  FluidSynth/sfizz."
+- **Windowed-sinc interpolation tier** — mainly helps extreme upward pitch
+  shifts and offline rendering; needs wider guard handling around loop seams.
+- **Disk streaming** for multi-gigabyte libraries (changes the
+  everything-in-RAM contract above).
+- **NRPN decoding and SF2 §9.6 real-time generator control** (NRPN selection
+  currently only blocks RPN data entry).
+- **Full GS/XG SysEx mode detection** (the bank-MSB 120/127 heuristic ships
+  now; SysEx is currently dropped by `MidiFileSequence`).
+- **Dedicated per-SFZ-EG/LFO modulation sources**, and **poly (per-note)
+  pressure** as a modulator source.
+- **SoundFont writing / SFZ export** — a separate authoring feature.
+- **Further formats** (DLS, Decent Sampler, …) as new front-ends onto the
+  region model, and a **`NAudio.Synth`** sibling built on the same
+  `NAudio.Core` primitives.

@@ -28,7 +28,8 @@ namespace NAudio.Sampler
     /// Subclassing is deliberately internal for v1: the abstract region supply is
     /// <c>private protected</c> and the format-neutral region model is internal,
     /// so new instrument formats are added inside NAudio.Sampler. Widening this
-    /// later is non-breaking; see <c>Docs/Architecture/SamplerDesign.md</c> §11.
+    /// later is non-breaking; see the "Deliberate v1 constraints" section of
+    /// <c>Docs/Architecture/SamplerDesign.md</c>.
     /// </remarks>
     public abstract class SamplerEngine : IMidiInstrument
     {

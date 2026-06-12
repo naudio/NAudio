@@ -169,6 +169,103 @@ namespace NAudio.Dsp
         }
 
         /// <summary>
+        /// Retunes this filter to a new low-pass cutoff and Q <em>without</em>
+        /// clearing its sample history, so a running filter can be modulated
+        /// every sample/block (e.g. a synth filter envelope or LFO, an auto-wah)
+        /// without the click that <see cref="SetLowPassFilter"/> causes by
+        /// resetting state. Use only on an already-running, non-divergent filter;
+        /// for a fresh filter or after a seek use <see cref="SetLowPassFilter"/>
+        /// (or <see cref="ResetState"/>) so latched NaN/Infinity can't survive.
+        /// </summary>
+        /// <param name="sampleRate">Sample rate.</param>
+        /// <param name="cutoffFrequency">New cut-off frequency.</param>
+        /// <param name="q">New Q (quality factor).</param>
+        public void UpdateLowPassFilter(float sampleRate, float cutoffFrequency, float q)
+        {
+            ValidateParameters(sampleRate, cutoffFrequency, nameof(cutoffFrequency), q, nameof(q));
+            var w0 = 2 * Math.PI * cutoffFrequency / sampleRate;
+            var cosw0 = Math.Cos(w0);
+            var alpha = Math.Sin(w0) / (2 * q);
+
+            var b0 = (1 - cosw0) / 2;
+            var b1 = 1 - cosw0;
+            var b2 = (1 - cosw0) / 2;
+            var aa0 = 1 + alpha;
+            var aa1 = -2 * cosw0;
+            var aa2 = 1 - alpha;
+
+            // recompute coefficients only — preserve x1/x2/y1/y2
+            a0 = b0 / aa0;
+            a1 = b1 / aa0;
+            a2 = b2 / aa0;
+            a3 = aa1 / aa0;
+            a4 = aa2 / aa0;
+        }
+
+        /// <summary>
+        /// Retunes this filter as a high-pass without clearing its delay state, so it can be
+        /// modulated per block/sample without the click <see cref="SetHighPassFilter"/> causes.
+        /// </summary>
+        /// <param name="sampleRate">Sample rate.</param>
+        /// <param name="cutoffFrequency">New cut-off frequency.</param>
+        /// <param name="q">New Q (quality factor).</param>
+        public void UpdateHighPassFilter(float sampleRate, float cutoffFrequency, float q)
+        {
+            ValidateParameters(sampleRate, cutoffFrequency, nameof(cutoffFrequency), q, nameof(q));
+            var w0 = 2 * Math.PI * cutoffFrequency / sampleRate;
+            var cosw0 = Math.Cos(w0);
+            var alpha = Math.Sin(w0) / (2 * q);
+
+            UpdateNormalisedCoefficients(1 + alpha, -2 * cosw0, 1 - alpha,
+                (1 + cosw0) / 2, -(1 + cosw0), (1 + cosw0) / 2);
+        }
+
+        /// <summary>
+        /// Retunes this filter as a band-pass (constant 0 dB peak gain) without clearing its
+        /// delay state, so it can be modulated per block/sample without a click.
+        /// </summary>
+        /// <param name="sampleRate">Sample rate.</param>
+        /// <param name="centreFrequency">New centre frequency.</param>
+        /// <param name="q">New Q (quality factor).</param>
+        public void UpdateBandPassFilter(float sampleRate, float centreFrequency, float q)
+        {
+            ValidateParameters(sampleRate, centreFrequency, nameof(centreFrequency), q, nameof(q));
+            var w0 = 2 * Math.PI * centreFrequency / sampleRate;
+            var cosw0 = Math.Cos(w0);
+            var alpha = Math.Sin(w0) / (2 * q);
+
+            UpdateNormalisedCoefficients(1 + alpha, -2 * cosw0, 1 - alpha, alpha, 0, -alpha);
+        }
+
+        /// <summary>
+        /// Retunes this filter as a notch (band-reject) without clearing its delay state, so it
+        /// can be modulated per block/sample without a click.
+        /// </summary>
+        /// <param name="sampleRate">Sample rate.</param>
+        /// <param name="centreFrequency">New centre frequency.</param>
+        /// <param name="q">New Q (quality factor).</param>
+        public void UpdateNotchFilter(float sampleRate, float centreFrequency, float q)
+        {
+            ValidateParameters(sampleRate, centreFrequency, nameof(centreFrequency), q, nameof(q));
+            var w0 = 2 * Math.PI * centreFrequency / sampleRate;
+            var cosw0 = Math.Cos(w0);
+            var alpha = Math.Sin(w0) / (2 * q);
+
+            UpdateNormalisedCoefficients(1 + alpha, -2 * cosw0, 1 - alpha, 1, -2 * cosw0, 1);
+        }
+
+        // recompute coefficients only — preserve x1/x2/y1/y2 (state-preserving retune)
+        private void UpdateNormalisedCoefficients(double aa0, double aa1, double aa2,
+            double b0, double b1, double b2)
+        {
+            a0 = b0 / aa0;
+            a1 = b1 / aa0;
+            a2 = b2 / aa0;
+            a3 = aa1 / aa0;
+            a4 = aa2 / aa0;
+        }
+
+        /// <summary>
         /// Set this up as a peaking EQ
         /// </summary>
         /// <param name="sampleRate">Sample Rate</param>

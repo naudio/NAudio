@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace NAudio.SoundFont
 {
@@ -33,6 +34,14 @@ namespace NAudio.SoundFont
         /// Zones
         /// </summary>
         public Zone[] Zones { get; set; }
+
+        /// <summary>
+        /// Flattens this preset into its fully-resolved, playable regions,
+        /// applying the SoundFont generator-accumulation model. See
+        /// <see cref="SoundFontInstrumentResolver"/>.
+        /// </summary>
+        public IReadOnlyList<SoundFontRegion> ResolveRegions() =>
+            SoundFontInstrumentResolver.Resolve(this);
 
         /// <summary>
         /// <see cref="Object.ToString"/>

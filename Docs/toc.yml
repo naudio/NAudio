@@ -88,6 +88,10 @@
       href: MidiFile.md
     - name: MIDI event types
       href: MidiEvent.md
+- name: Sampler
+  items:
+    - name: Play SoundFont, SFZ and single-sample instruments
+      href: Sampler.md
 - name: Cross-platform & Linux
   items:
     - name: Cross-platform audio files with SoundFile

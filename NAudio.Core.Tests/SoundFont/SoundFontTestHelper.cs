@@ -55,7 +55,9 @@ namespace NAudio.Core.Tests.SoundFont
         }
 
         /// <summary>
-        /// Writes a RIFF chunk: 4-byte ID + uint32 size + data.
+        /// Writes a RIFF chunk: 4-byte ID + uint32 size + data, word-aligned with a
+        /// trailing pad byte if the data length is odd (the pad is not counted in
+        /// the size). This matches real RIFF/SF2 files, which the reader relies on.
         /// </summary>
         public static byte[] Chunk(string id, byte[] data)
         {
@@ -64,11 +66,13 @@ namespace NAudio.Core.Tests.SoundFont
             bw.Write(Encoding.ASCII.GetBytes(id));
             bw.Write((uint)data.Length);
             bw.Write(data);
+            if ((data.Length & 1) != 0) bw.Write((byte)0); // RIFF word-alignment pad
             return ms.ToArray();
         }
 
         /// <summary>
-        /// Writes a LIST chunk: "LIST" + uint32 size + 4-byte type + sub-chunk data.
+        /// Writes a LIST chunk: "LIST" + uint32 size + 4-byte type + sub-chunk data,
+        /// word-aligned with a trailing pad byte if the payload length is odd.
         /// </summary>
         public static byte[] ListChunk(string type, params byte[][] subChunks)
         {
@@ -80,6 +84,7 @@ namespace NAudio.Core.Tests.SoundFont
             bw.Write(Encoding.ASCII.GetBytes("LIST"));
             bw.Write((uint)listData.Length);
             bw.Write(listData);
+            if ((listData.Length & 1) != 0) bw.Write((byte)0); // RIFF word-alignment pad
             return ms.ToArray();
         }
 
@@ -166,6 +171,15 @@ namespace NAudio.Core.Tests.SoundFont
         public static byte[] BuildSdtaList(byte[] rawSampleData)
         {
             return ListChunk("sdta", Chunk("smpl", rawSampleData));
+        }
+
+        /// <summary>
+        /// Builds an sdta LIST chunk containing both a smpl sub-chunk (16-bit high
+        /// bytes) and an sm24 sub-chunk (the low 8 bits of each 24-bit sample).
+        /// </summary>
+        public static byte[] BuildSdta24List(byte[] rawSampleData, byte[] sm24Data)
+        {
+            return ListChunk("sdta", Chunk("smpl", rawSampleData), Chunk("sm24", sm24Data));
         }
 
         #endregion

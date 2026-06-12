@@ -154,6 +154,55 @@ namespace NAudio.Core.Tests.SoundFont
         }
 
         [Test]
+        public void LoadsSoundFontWithOddSizedChunkRequiringRiffPadding()
+        {
+            // A real-world SF2 had an odd-length INFO chunk followed by a RIFF pad
+            // byte (not counted in the chunk size). The reader must skip that pad
+            // byte or every subsequent chunk misaligns ("Not a presets data chunk
+            // (LIST)"). Place the odd chunk *before* INAM so a missed pad byte
+            // corrupts the bank-name read too. Chunk() now emits the pad byte, so
+            // "odd" (3 bytes) produces an odd-sized, word-aligned chunk.
+            var infoList = SoundFontTestHelper.ListChunk("INFO",
+                SoundFontTestHelper.IfilChunk(),
+                SoundFontTestHelper.StringInfoChunk("isng", "EMU8000"),
+                SoundFontTestHelper.Chunk("ICMT", Encoding.ASCII.GetBytes("odd")), // 3 bytes + pad
+                SoundFontTestHelper.StringInfoChunk("INAM", "TestBnk"));
+            var sdta = SoundFontTestHelper.BuildSdtaList(new byte[8]);
+            var pdta = SoundFontTestHelper.BuildMinimalPdtaList();
+            var sf2 = SoundFontTestHelper.BuildSoundFont(infoList, sdta, pdta);
+
+            var sf = new NAudio.SoundFont.SoundFont(new MemoryStream(sf2));
+
+            Assert.That(sf.FileInfo.BankName, Is.EqualTo("TestBnk"));
+            Assert.That(sf.FileInfo.Comments, Is.EqualTo("odd"));
+            Assert.That(sf.Presets.Length, Is.GreaterThan(0));
+            Assert.That(sf.SampleHeaders.Length, Is.GreaterThan(0));
+        }
+
+        [Test]
+        public void LoadsRomBasedSoundFontWithEmptySmpl()
+        {
+            // ROM-based SoundFonts (samples in an EMU8000/AWE32 wavetable ROM, not
+            // embedded) carry an empty smpl chunk, so the sdta LIST is just
+            // "sdta" + an 8-byte zero-length smpl header (size 12). The empty smpl
+            // sits exactly at the list boundary; the reader must still consume it,
+            // or the stream misaligns and pdta loading fails with
+            // "Not a presets data chunk (LIST)".
+            var info = SoundFontTestHelper.BuildInfoList();
+            var sdta = SoundFontTestHelper.BuildSdtaList(new byte[0]); // empty smpl
+            var pdta = SoundFontTestHelper.BuildMinimalPdtaList();
+            var sf2 = SoundFontTestHelper.BuildSoundFont(info, sdta, pdta);
+
+            var sf = new NAudio.SoundFont.SoundFont(new MemoryStream(sf2));
+
+            Assert.That(sf.SampleData, Is.Not.Null);
+            Assert.That(sf.SampleData.Length, Is.EqualTo(0));
+            Assert.That(sf.Presets.Length, Is.GreaterThan(0));
+            Assert.That(sf.Instruments.Length, Is.GreaterThan(0));
+            Assert.That(sf.SampleHeaders.Length, Is.GreaterThan(0));
+        }
+
+        [Test]
         public void ToStringIncludesInfoAndPresets()
         {
             var sf2 = SoundFontTestHelper.BuildMinimalSoundFont();

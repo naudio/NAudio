@@ -161,6 +161,7 @@ jobs:
             'NAudio.Dmo',
             'NAudio.Alsa',
             'NAudio.SoundFile',
+            'NAudio.Sampler',
             'NAudio',
             'NAudio.Extras'
           )

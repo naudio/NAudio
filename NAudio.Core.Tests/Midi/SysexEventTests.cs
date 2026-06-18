@@ -140,6 +140,30 @@ namespace NAudio.Core.Tests.Midi
             Assert.DoesNotThrow(() => sysex.ToString());
         }
 
+        [Test]
+        public void Data_ReturnsPayloadExcludingFraming()
+        {
+            var sysex = ReadViaMidiEvent(new byte[] { 0x10, 0x20, 0x30 });
+
+            Assert.That(sysex.Data, Is.EqualTo(new byte[] { 0x10, 0x20, 0x30 }));
+        }
+
+        [Test]
+        public void Data_ReturnsCopy()
+        {
+            var sysex = new SysexEvent(0, new byte[] { 0x01, 0x02 });
+
+            sysex.Data[0] = 0x7F; // mutating the returned array must not affect the event
+
+            Assert.That(sysex.Data, Is.EqualTo(new byte[] { 0x01, 0x02 }));
+        }
+
+        [Test]
+        public void Data_EmptyEvent_ReturnsEmpty()
+        {
+            Assert.That(new SysexEvent().Data, Is.Empty);
+        }
+
         private static SysexEvent ReadViaMidiEvent(byte[] data)
         {
             var bytes = new byte[2 + data.Length + 1];

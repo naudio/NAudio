@@ -1,0 +1,113 @@
+<UserControl x:Class="NAudioWpfDemo.Vst3RealtimeEffectDemo.Vst3RealtimeEffectView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:rt="clr-namespace:NAudioWpfDemo.Vst3RealtimeEffectDemo"
+             mc:Ignorable="d"
+             d:DesignHeight="640" d:DesignWidth="640">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+        <DataTemplate DataType="{x:Type rt:Vst3PluginSlotViewModel}">
+            <Border BorderBrush="#CCCCCC" BorderThickness="1" CornerRadius="3"
+                    Margin="0,4" Padding="6">
+                <DockPanel LastChildFill="True">
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                        <Button Content="Editor" Padding="8,2" Margin="2,0"
+                                Command="{Binding ShowEditorCommand}"
+                                ToolTip="Open the plug-in's native editor in a separate window" />
+                        <CheckBox Content="Bypass" Margin="8,0" VerticalAlignment="Center"
+                                  IsChecked="{Binding Bypass, Mode=TwoWay}" />
+                        <Button Content="▲" Width="26" Margin="2,0"
+                                Command="{Binding MoveUpCommand}" ToolTip="Move up" />
+                        <Button Content="▼" Width="26" Margin="2,0"
+                                Command="{Binding MoveDownCommand}" ToolTip="Move down" />
+                        <Button Content="✕" Width="26" Margin="2,0"
+                                Command="{Binding RemoveCommand}" ToolTip="Remove" />
+                    </StackPanel>
+                    <StackPanel>
+                        <TextBlock Text="{Binding Name}" FontWeight="Bold" />
+                        <TextBlock Text="{Binding ModuleName}" Foreground="#666" FontSize="11" />
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,6">
+            <TextBlock Text="ASIO driver:" VerticalAlignment="Center" Width="80" />
+            <ComboBox Width="200" ItemsSource="{Binding Drivers}"
+                      SelectedItem="{Binding SelectedDriver, Mode=TwoWay}" />
+            <ComboBox Width="120" Margin="8,0,0,0"
+                      SelectedIndex="{Binding InputChannelsIndex, Mode=TwoWay}">
+                <ComboBoxItem Content="Mono in" />
+                <ComboBoxItem Content="Stereo in" />
+            </ComboBox>
+            <TextBlock Text="from ch" VerticalAlignment="Center" Margin="8,0,4,0" />
+            <TextBox Width="40" VerticalAlignment="Center"
+                     Text="{Binding InputChannelOffset, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                     ToolTip="First ASIO input channel (1-based)." />
+            <Button Content="Start" Width="64" Margin="8,0,4,0" Command="{Binding StartCommand}" />
+            <Button Content="Stop" Width="64" Command="{Binding StopCommand}" />
+        </StackPanel>
+
+        <CheckBox Grid.Row="1" Content="Enable monitoring (pass audio through to output)"
+                  IsChecked="{Binding Monitoring, Mode=TwoWay}" />
+        <TextBlock Grid.Row="2" Margin="0,2,0,6" TextWrapping="Wrap" Foreground="#B00020"
+                   Text="⚠ Use headphones. Monitoring a mic through speakers will feed back. Output starts muted and auto-mutes on a runaway level." />
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,0,0,6">
+            <Button Content="Choose file…" Command="{Binding ChooseInputFileCommand}" />
+            <TextBlock Text="{Binding InputFilePath}" VerticalAlignment="Center" Margin="8,0"
+                       TextTrimming="CharacterEllipsis" MaxWidth="320" />
+            <Button Content="Render…" Margin="8,0,0,0" Command="{Binding RenderCommand}"
+                    ToolTip="Render the file through the current chain (stop ASIO first)." />
+        </StackPanel>
+
+        <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,0,0,6">
+            <TextBlock Text="Add effect:" VerticalAlignment="Center" Width="80" />
+            <ComboBox Width="320" ItemsSource="{Binding AvailableEffects}"
+                      SelectedIndex="{Binding SelectedEffectIndex, Mode=TwoWay}"
+                      DisplayMemberPath="Display" />
+            <Button Content="Add" Width="64" Margin="8,0,0,0" Command="{Binding AddEffectCommand}" />
+            <Button Content="Rescan" Padding="8,2" Margin="6,0,0,0" Command="{Binding RescanCommand}"
+                    ToolTip="Re-scan installed VST 3 plug-ins (use after installing new ones)" />
+        </StackPanel>
+
+        <TextBlock Grid.Row="5" Text="Effect chain (top → bottom = signal order)"
+                   FontWeight="Bold" Margin="0,4" />
+
+        <ScrollViewer Grid.Row="6" VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding Chain}" />
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="7" Margin="0,8,0,0">
+            <DockPanel LastChildFill="True" Margin="0,0,0,4">
+                <TextBlock DockPanel.Dock="Left" Text="Master" VerticalAlignment="Center" Width="60" />
+                <TextBlock DockPanel.Dock="Right" Width="55" TextAlignment="Right"
+                           VerticalAlignment="Center"
+                           Text="{Binding MasterVolumeDb, StringFormat={}{0:0.0} dB}" />
+                <Slider VerticalAlignment="Center" Margin="4,0"
+                        Minimum="-60" Maximum="0" SmallChange="0.5" LargeChange="3"
+                        TickFrequency="6" TickPlacement="BottomRight"
+                        Value="{Binding MasterVolumeDb, Mode=TwoWay}" />
+            </DockPanel>
+            <TextBlock Text="Output level" Margin="0,0,0,2" />
+            <ProgressBar Height="16" Minimum="0" Maximum="1" Value="{Binding OutputLevel, Mode=OneWay}" />
+            <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" Text="{Binding Status}" />
+        </StackPanel>
+    </Grid>
+</UserControl>

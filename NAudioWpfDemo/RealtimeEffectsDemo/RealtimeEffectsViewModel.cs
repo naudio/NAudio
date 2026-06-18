@@ -13,8 +13,8 @@ namespace NAudioWpfDemo.RealtimeEffectsDemo
         private readonly RealtimeAudioEngine engine = new RealtimeAudioEngine();
         private readonly DispatcherTimer timer;
         private string selectedDriver;
-        private int inputChannelsIndex = 1;
-        private int inputChannelOffset = 1;
+        private int inputChannelsIndex = DemoSettings.LastInputChannelsIndex;
+        private int inputChannelOffset = DemoSettings.LastInputChannelOffset;
         private int selectedEffectIndex;
         private bool monitoring;
         private double outputLevel;
@@ -29,9 +29,15 @@ namespace NAudioWpfDemo.RealtimeEffectsDemo
         {
             Drivers = new ObservableCollection<string>(AsioDevice.GetDriverNames());
             if (Drivers.Count > 0)
-                selectedDriver = Drivers[0];
+            {
+                var remembered = DemoSettings.LastAsioDriver;
+                selectedDriver = !string.IsNullOrEmpty(remembered) && Drivers.Contains(remembered)
+                    ? remembered : Drivers[0];
+            }
             else
+            {
                 status = "No ASIO drivers found (file render still works).";
+            }
 
             AvailableEffects = new ObservableCollection<string>();
             foreach (var entry in EffectCatalog.Entries)
@@ -64,13 +70,23 @@ namespace NAudioWpfDemo.RealtimeEffectsDemo
         public string SelectedDriver
         {
             get => selectedDriver;
-            set { selectedDriver = value; OnPropertyChanged(nameof(SelectedDriver)); }
+            set
+            {
+                selectedDriver = value;
+                if (!string.IsNullOrEmpty(value)) DemoSettings.LastAsioDriver = value;
+                OnPropertyChanged(nameof(SelectedDriver));
+            }
         }
 
         public int InputChannelsIndex
         {
             get => inputChannelsIndex;
-            set { inputChannelsIndex = value; OnPropertyChanged(nameof(InputChannelsIndex)); }
+            set
+            {
+                inputChannelsIndex = value;
+                DemoSettings.LastInputChannelsIndex = value;
+                OnPropertyChanged(nameof(InputChannelsIndex));
+            }
         }
 
         /// <summary>First ASIO input channel to use (1-based; e.g. 2 for a guitar
@@ -81,6 +97,7 @@ namespace NAudioWpfDemo.RealtimeEffectsDemo
             set
             {
                 inputChannelOffset = value < 1 ? 1 : value;
+                DemoSettings.LastInputChannelOffset = inputChannelOffset;
                 OnPropertyChanged(nameof(InputChannelOffset));
             }
         }

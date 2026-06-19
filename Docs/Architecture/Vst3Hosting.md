@@ -4,8 +4,6 @@
 
 The package is **strictly opt-in**: it is not part of the `NAudio` meta-package's dependency closure, and `NAudio.Core` / `NAudio.Wasapi` / `NAudio.WinMM` have no reference to it. Consumers who don't host plug-ins pay no size or load-time cost.
 
-There is no established C# library that does this — VST.NET is mature but VST2-focused, and the various partial VST3 bindings are not complete, maintained, idiomatic .NET hosts. That's the opportunity.
-
 ---
 
 ## What's delivered

@@ -71,10 +71,18 @@ namespace NAudio.Extras
                 int readThisTime = sourceStream.Read(buffer.Slice(read, required));
                 if (readThisTime == 0)
                 {
-                    // Source produced nothing even from the start of the stream
-                    // (e.g. an empty/zero-length source). Stop rather than spin
-                    // forever rewinding and re-reading the same empty stream.
-                    break;
+                    // The source returned nothing. If we're not already at the
+                    // start it has simply reached the end of this pass, so rewind
+                    // and read again to continue the loop. If we're already at the
+                    // start, the source has no data it can return (an empty stream,
+                    // or a request smaller than its block alignment), so stop rather
+                    // than spin forever re-reading it.
+                    if (sourceStream.Position == 0)
+                    {
+                        break;
+                    }
+                    sourceStream.Position = 0;
+                    continue;
                 }
 
                 if (readThisTime < required)

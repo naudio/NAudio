@@ -204,7 +204,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * `MediaFoundationTransform`: cleanup `finally` blocks no longer leak COM objects when `Unlock`/`RemoveAllBuffers` fails — hresults are captured and thrown only after every buffer/sample has been released (#1293)
  * `ResamplerDmoStream`: fixed infinite loop on `Read` after setting `Position`, and the loss of the resampler kernel's tail samples (~32 at the default quality of 30) when the input reaches end-of-stream. The DMO is now drained via `ProcessOutput` after `Discontinuity` — on seek the drained bytes are discarded so playback resumes from the new position, on EOS they're returned to the caller and subsequent reads return 0 cleanly (#607, #608)
  * Named the background threads created by `DirectSoundOut`, `WasapiOut`, `WasapiCapture`, `WasapiPlayer`, and `WasapiRecorder` so they show meaningful names in debuggers and profilers (#557)
- * `LoopStream.Read`: no longer spins forever at 100% CPU when the wrapped source is empty (`Length == 0` / decodes to zero frames) — it now returns `0` instead of endlessly rewinding and re-reading an empty stream (#1338)
+ * `LoopStream.Read`: no longer spins forever at 100% CPU when the wrapped source can't satisfy a read (an empty source with `Length == 0` / zero frames, or a block-aligned reader asked for less than one block). A zero-byte read now rewinds and retries once to continue the loop, and returns whatever has been read so far if the source is still empty from its start, instead of looping endlessly (#1338)
 
 #### Modernisation (Native AOT, source-generated COM)
 

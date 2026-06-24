@@ -1,10 +1,9 @@
-﻿using NAudio.MediaFoundation;
-using NAudio.Wave;
+﻿using NAudio.Wave;
 using NAudioConsoleTest.Shared.Testing;
 
 namespace NAudioConsoleTest.MediaFoundation.Tests;
 
-sealed class MediaFoundationEncodeToMp3Test : IConsoleTest
+internal sealed class MediaFoundationEncodeToMp3Test : IConsoleTest
 {
     public string Id => "MediaFoundation.EncodeToMp3";
     public string Description => "Encode an audio file to MP3 (Media Foundation)";

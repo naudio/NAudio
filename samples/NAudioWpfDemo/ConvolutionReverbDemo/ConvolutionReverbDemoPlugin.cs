@@ -2,7 +2,7 @@
 
 namespace NAudioWpfDemo.ConvolutionReverbDemo;
 
-class ConvolutionReverbDemoPlugin : IModule
+internal class ConvolutionReverbDemoPlugin : IModule
 {
     private ConvolutionReverbDemoView view;
     private ConvolutionReverbDemoViewModel viewModel;

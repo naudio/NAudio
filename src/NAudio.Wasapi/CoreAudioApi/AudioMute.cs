@@ -8,7 +8,7 @@ namespace NAudio.CoreAudioApi;
 /// </summary>
 public class AudioMute
 {
-    private IAudioMute audioMuteInterface;
+    private readonly IAudioMute audioMuteInterface;
     internal AudioMute(IAudioMute audioMute)
     {
         audioMuteInterface = audioMute;

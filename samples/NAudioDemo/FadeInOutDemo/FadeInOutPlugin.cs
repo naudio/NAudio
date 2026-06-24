@@ -1,9 +1,6 @@
-﻿using System;
-using System.Linq;
+﻿namespace NAudioDemo.FadeInOutDemo;
 
-namespace NAudioDemo.FadeInOutDemo;
-
-class FadeInOutPlugin : INAudioDemoPlugin
+internal class FadeInOutPlugin : INAudioDemoPlugin
 {
     public string Name
     {

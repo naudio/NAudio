@@ -9,7 +9,7 @@ namespace NAudioConsoleTest.Asio.Tests;
 /// Verifies the same <see cref="AsioDevice"/> instance can recover the way
 /// <c>DriverResetRequest</c> expects (Phase 0 F6 regression).
 /// </summary>
-sealed class AsioReinitializeRoundTripTest : IConsoleTest
+internal sealed class AsioReinitializeRoundTripTest : IConsoleTest
 {
     public string Id => "Asio.ReinitializeRoundTrip";
     public string Description => "Verify AsioDevice.Reinitialize() restores recording on the same instance";

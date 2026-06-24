@@ -148,7 +148,7 @@ public partial class MidiInPanel : UserControl
         }
     }
 
-    void OnMidiInErrorReceived(object sender, MidiInMessageEventArgs e)
+    private void OnMidiInErrorReceived(object sender, MidiInMessageEventArgs e)
     {
         progressLog1.LogMessage(Color.Red, $"Time {e.Timestamp} Message 0x{e.RawMessage:X8} Event {e.MidiEvent}");
     }
@@ -180,7 +180,7 @@ public partial class MidiInPanel : UserControl
         }
     }
 
-    void OnMidiInMessageReceived(object sender, MidiInMessageEventArgs e)
+    private void OnMidiInMessageReceived(object sender, MidiInMessageEventArgs e)
     {
         if (checkBoxFilterAutoSensing.Checked && e.MidiEvent != null && e.MidiEvent.CommandCode == MidiCommandCode.AutoSensing)
         {
@@ -189,7 +189,7 @@ public partial class MidiInPanel : UserControl
         progressLog1.LogMessage(Color.Blue, $"Time {e.Timestamp} Message 0x{e.RawMessage:X8} Event {e.MidiEvent}");
     }
 
-    void OnMidiInSysexMessageReceived(object sender, MidiInSysexMessageEventArgs e)
+    private void OnMidiInSysexMessageReceived(object sender, MidiInSysexMessageEventArgs e)
     {
         progressLog1.LogMessage(Color.DarkBlue, $"Time {e.Timestamp} Sysex {e.SysexBytes.Length} bytes");
     }

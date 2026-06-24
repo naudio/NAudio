@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 namespace NAudio.Wave;
 
@@ -12,12 +9,12 @@ namespace NAudio.Wave;
 [StructLayout(LayoutKind.Sequential, Pack = 2)]
 public class ImaAdpcmWaveFormat : WaveFormat
 {
-    short samplesPerBlock;
+    private readonly short samplesPerBlock;
 
     /// <summary>
     /// parameterless constructor for Marshalling
     /// </summary>
-    ImaAdpcmWaveFormat()
+    private ImaAdpcmWaveFormat()
     {
     }
 

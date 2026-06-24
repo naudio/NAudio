@@ -10,9 +10,9 @@ namespace NAudioWpfDemo.DrumMachineDemo;
 /// </summary>
 public partial class DrumPatternEditor : UserControl
 {
-    private DrumPattern pattern;
-    private double gridSquareWidth = 20;
-    private double namesColumnWidth = 100;
+    private readonly DrumPattern pattern;
+    private readonly double gridSquareWidth = 20;
+    private readonly double namesColumnWidth = 100;
 
     public DrumPatternEditor()
     {
@@ -98,7 +98,7 @@ public partial class DrumPatternEditor : UserControl
         //drumGridCanvas.MouseLeftButtonDown += r_MouseLeftButtonUp;
     }
 
-    void r_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    private void r_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
         Rectangle r = (Rectangle)sender;
         PatternIndex p = (PatternIndex)r.Tag;
@@ -112,7 +112,7 @@ public partial class DrumPatternEditor : UserControl
         return pattern[note, step] == 0 ? Brushes.White : Brushes.LightSalmon;
     }
 
-    class PatternIndex
+    private class PatternIndex
     {
         public PatternIndex(int note, int step)
         {

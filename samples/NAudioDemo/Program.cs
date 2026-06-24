@@ -3,13 +3,13 @@ using System.Windows.Forms;
 
 namespace NAudioDemo;
 
-static class Program
+internal static class Program
 {
     /// <summary>
     /// The main entry point for the application.
     /// </summary>
     [STAThread]
-    static void Main()
+    private static void Main()
     {
         Application.ThreadException += (_, e) => ShowError(e.Exception);
         AppDomain.CurrentDomain.UnhandledException += (_, e) => ShowError(e.ExceptionObject as Exception);

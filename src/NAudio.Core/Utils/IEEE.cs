@@ -12,7 +12,7 @@ public static class IEEE
     #region Helper Methods
     private static double UnsignedToFloat(ulong u)
     {
-        return (((double)((long)(u - 2147483647L - 1))) + 2147483648.0);
+        return ((long)(u - 2147483647L - 1) + 2147483648.0);
     }
 
     private static double ldexp(double x, int exp)

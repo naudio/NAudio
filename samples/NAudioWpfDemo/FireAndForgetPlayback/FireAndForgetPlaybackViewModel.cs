@@ -1,13 +1,12 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using System.Windows.Input;
 using NAudio.Extras;
 using NAudioWpfDemo.ViewModel;
 
 namespace NAudioWpfDemo.FireAndForgetPlayback;
 
-class FireAndForgetPlaybackViewModel : ViewModelBase, IDisposable
+internal class FireAndForgetPlaybackViewModel : ViewModelBase, IDisposable
 {
     public ICommand KickCommand { get; }
     public ICommand CrashCommand { get; }
@@ -18,8 +17,8 @@ class FireAndForgetPlaybackViewModel : ViewModelBase, IDisposable
     private static readonly string SamplesDir = Path.Combine(AppContext.BaseDirectory, "Samples");
 
     private AudioPlaybackEngine engine;
-    readonly CachedSound kick = new(Path.Combine(SamplesDir, "kick-trimmed.wav"));
-    readonly CachedSound crash = new(Path.Combine(SamplesDir, "crash-trimmed.wav"));
+    private readonly CachedSound kick = new(Path.Combine(SamplesDir, "kick-trimmed.wav"));
+    private readonly CachedSound crash = new(Path.Combine(SamplesDir, "crash-trimmed.wav"));
 
 
     public FireAndForgetPlaybackViewModel()

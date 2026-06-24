@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using NAudio.Wave;
 using System.Diagnostics;
 
@@ -12,10 +10,10 @@ namespace NAudio.Dmo;
 public class DmoMp3FrameDecompressor : IMp3FrameDecompressor
 {
     private WindowsMediaMp3Decoder mp3Decoder;
-    private WaveFormat pcmFormat;
+    private readonly WaveFormat pcmFormat;
     private MediaBuffer inputMediaBuffer;
     private DmoOutputDataBuffer outputBuffer;
-    private DmoOutputDataBuffer[] outputBufferArray;
+    private readonly DmoOutputDataBuffer[] outputBufferArray;
     private bool reposition;
 
     /// <summary>

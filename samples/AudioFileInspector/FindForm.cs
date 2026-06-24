@@ -1,16 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
 
 namespace AudioFileInspector;
 
 public partial class FindForm : Form
 {
-    RichTextBox richTextBox;
+    private readonly RichTextBox richTextBox;
     public FindForm(RichTextBox richTextBox)
     {
         InitializeComponent();

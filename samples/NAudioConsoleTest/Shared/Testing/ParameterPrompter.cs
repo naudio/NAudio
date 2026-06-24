@@ -9,7 +9,7 @@ namespace NAudioConsoleTest.Shared.Testing;
 /// dictionary is the same shape both code paths produce, so the test body never has to know
 /// which one filled it in.
 /// </summary>
-static class ParameterPrompter
+internal static class ParameterPrompter
 {
     public static IReadOnlyDictionary<string, object?> Prompt(IConsoleTest test,
         IReadOnlyDictionary<string, object?>? seed = null)

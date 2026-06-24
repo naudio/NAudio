@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Windows.Forms;
 using NAudio.Wave;
 
@@ -107,7 +106,7 @@ public partial class MediaFoundationDemoPanel : UserControl
     }
 }
 
-class MediaFoundationDemoPlugin : INAudioDemoPlugin
+internal class MediaFoundationDemoPlugin : INAudioDemoPlugin
 {
     public string Name
     {

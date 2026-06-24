@@ -8,7 +8,7 @@ namespace NAudioConsoleTest.Asio.Tests;
 /// Routes ASIO input channels through a fixed gain straight to output channels (one-to-one).
 /// Reports per-channel peak amplitude at the end.
 /// </summary>
-sealed class AsioDuplexPassthroughTest : IConsoleTest
+internal sealed class AsioDuplexPassthroughTest : IConsoleTest
 {
     public string Id => "Asio.DuplexPassthrough";
     public string Description => "Run duplex passthrough (input → gain → output) for a fixed duration";

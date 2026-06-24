@@ -1,16 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Xml;
 
 namespace MarkHeath.MidiUtils;
 
-class NamingRules
+internal class NamingRules
 {
-    string filenameRegex;
-    int contextDepth;
-    string contextSeparator;
-    List<NamingRule> rules;
+    private string filenameRegex;
+    private int contextDepth;
+    private string contextSeparator;
+    private List<NamingRule> rules;
 
     public static NamingRules LoadRules(string xmlPath)
     {
@@ -84,10 +83,10 @@ class NamingRules
     }
 }
 
-class NamingRule
+internal class NamingRule
 {
-    string regex;
-    string replacement;
+    private readonly string regex;
+    private readonly string replacement;
 
     public NamingRule(string regex, string replacement)
     {

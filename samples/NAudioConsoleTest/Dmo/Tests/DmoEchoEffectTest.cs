@@ -6,7 +6,7 @@ using Spectre.Console;
 
 namespace NAudioConsoleTest.Dmo.Tests;
 
-sealed class DmoEchoEffectTest : IConsoleTest
+internal sealed class DmoEchoEffectTest : IConsoleTest
 {
     public string Id => "Dmo.EchoEffect";
     public string Description => "Apply DMO echo effect to an audio file";

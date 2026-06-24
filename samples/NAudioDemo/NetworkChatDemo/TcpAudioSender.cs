@@ -1,10 +1,9 @@
-﻿using System;
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
 
 namespace NAudioDemo.NetworkChatDemo;
 
-class TcpAudioSender : IAudioSender
+internal class TcpAudioSender : IAudioSender
 {
     private readonly TcpClient tcpSender;
     public TcpAudioSender(IPEndPoint endPoint)

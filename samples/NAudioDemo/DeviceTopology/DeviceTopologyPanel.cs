@@ -1,22 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Diagnostics;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 using NAudio.CoreAudioApi;
-using NAudio.CoreAudioApi.Interfaces;
 
 namespace NAudioDemo.DeviceTopology;
 
 public partial class DeviceTopologyPanel : UserControl
 {
-    class AudioVolumeWrapper
+    private class AudioVolumeWrapper
     {
         public uint Channel { get; set; }
         public AudioVolumeLevel AudioVolumeLevel { get; set; }

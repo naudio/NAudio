@@ -6,7 +6,7 @@ namespace NAudio.Dmo;
 /// <summary>
 /// MP_PARAMINFO
 /// </summary>
-struct MediaParamInfo
+internal struct MediaParamInfo
 {
 #pragma warning disable 0649
     public MediaParamType mpType;
@@ -24,7 +24,7 @@ struct MediaParamInfo
 /// <summary>
 /// MP_TYPE
 /// </summary>
-enum MediaParamType
+internal enum MediaParamType
 {
     /// <summary>
     /// MPT_INT

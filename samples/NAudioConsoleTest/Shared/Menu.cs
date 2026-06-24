@@ -8,7 +8,7 @@ namespace NAudioConsoleTest.Shared;
 /// <c>SelectionPrompt</c>, this one returns <c>null</c> when the user presses Escape — letting
 /// each submenu treat Escape as "go back" and the main menu treat it as "exit".
 /// </summary>
-static class Menu
+internal static class Menu
 {
     public sealed class Group
     {

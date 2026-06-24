@@ -9,7 +9,7 @@ namespace NAudio.Wave;
 public class WaveRecorder : IWaveProvider, IDisposable
 {
     private WaveFileWriter writer;
-    private IWaveProvider source;
+    private readonly IWaveProvider source;
 
     /// <summary>
     /// Constructs a new WaveRecorder

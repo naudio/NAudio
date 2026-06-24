@@ -110,7 +110,7 @@ internal sealed class AlsaPcm : IDisposable
                     AlsaInterop.PcmHwParamsSetPeriodsNear(Pcm, hw, ref periods, ref dir),
                     "snd_pcm_hw_params_set_periods_near");
 
-                nuint bufferFrames = (nuint)(PeriodFrames * Periods);
+                nuint bufferFrames = PeriodFrames * Periods;
                 AlsaException.ThrowIfError(
                     AlsaInterop.PcmHwParamsSetBufferSizeNear(Pcm, hw, ref bufferFrames),
                     "snd_pcm_hw_params_set_buffer_size_near");

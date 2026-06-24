@@ -15,13 +15,13 @@ namespace NAudioWpfDemo;
 /// access and written synchronously on every setter (the inputs are user-driven dropdowns,
 /// not hot paths). Corrupt or missing files fall back to defaults silently.
 /// </remarks>
-static class DemoSettings
+internal static class DemoSettings
 {
     private static readonly string FilePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "NAudioWpfDemo", "Settings.json");
 
-    private static SettingsData data = Load();
+    private static readonly SettingsData data = Load();
 
     public static string LastAsioDriver
     {

@@ -11,7 +11,7 @@
 /// </list>
 /// Exit codes: 0 = pass, 1 = fail, 2 = usage/parse error, 3 = unknown test.
 /// </summary>
-static class CliDispatcher
+internal static class CliDispatcher
 {
     public static bool TryHandle(string[] args, out int exitCode)
     {

@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using NUnit.Framework;
 using NAudio.Dmo;
-using System.Runtime.InteropServices;
-using NAudio.Wave;
 using System.Diagnostics;
 
 namespace NAudio.Windows.Tests.Dmo;

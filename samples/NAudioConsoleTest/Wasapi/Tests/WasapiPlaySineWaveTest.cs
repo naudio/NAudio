@@ -1,12 +1,11 @@
-﻿using NAudio.CoreAudioApi;
-using NAudio.Wave;
+﻿using NAudio.Wave;
 using NAudioConsoleTest.Shared;
 using NAudioConsoleTest.Shared.Testing;
 using Spectre.Console;
 
 namespace NAudioConsoleTest.Wasapi.Tests;
 
-sealed class WasapiPlaySineWaveTest : IConsoleTest
+internal sealed class WasapiPlaySineWaveTest : IConsoleTest
 {
     public string Id => "Wasapi.PlaySineWave";
     public string Description => "Play a generated sine wave through WasapiPlayer (shared mode)";

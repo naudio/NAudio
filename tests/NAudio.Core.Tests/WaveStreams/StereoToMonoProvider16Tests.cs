@@ -30,13 +30,13 @@ public class StereoToMonoProvider16Tests
     }
 }
 
-class TestStereoProvider : WaveProvider16
+internal class TestStereoProvider : WaveProvider16
 {
     public TestStereoProvider()
         : base(44100, 2)
     { }
 
-    short current;
+    private short current;
 
     public override int Read(Span<short> buffer)
     {

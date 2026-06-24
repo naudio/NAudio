@@ -54,17 +54,17 @@ namespace NAudio.Dsp;
 public class SmbPitchShifter
 {
 
-    private static int MAX_FRAME_LENGTH = 16000;
-    private float[] gInFIFO = new float[MAX_FRAME_LENGTH];
-    private float[] gOutFIFO = new float[MAX_FRAME_LENGTH];
-    private float[] gFFTworksp = new float[2 * MAX_FRAME_LENGTH];
-    private float[] gLastPhase = new float[MAX_FRAME_LENGTH / 2 + 1];
-    private float[] gSumPhase = new float[MAX_FRAME_LENGTH / 2 + 1];
-    private float[] gOutputAccum = new float[2 * MAX_FRAME_LENGTH];
-    private float[] gAnaFreq = new float[MAX_FRAME_LENGTH];
-    private float[] gAnaMagn = new float[MAX_FRAME_LENGTH];
-    private float[] gSynFreq = new float[MAX_FRAME_LENGTH];
-    private float[] gSynMagn = new float[MAX_FRAME_LENGTH];
+    private static readonly int MAX_FRAME_LENGTH = 16000;
+    private readonly float[] gInFIFO = new float[MAX_FRAME_LENGTH];
+    private readonly float[] gOutFIFO = new float[MAX_FRAME_LENGTH];
+    private readonly float[] gFFTworksp = new float[2 * MAX_FRAME_LENGTH];
+    private readonly float[] gLastPhase = new float[MAX_FRAME_LENGTH / 2 + 1];
+    private readonly float[] gSumPhase = new float[MAX_FRAME_LENGTH / 2 + 1];
+    private readonly float[] gOutputAccum = new float[2 * MAX_FRAME_LENGTH];
+    private readonly float[] gAnaFreq = new float[MAX_FRAME_LENGTH];
+    private readonly float[] gAnaMagn = new float[MAX_FRAME_LENGTH];
+    private readonly float[] gSynFreq = new float[MAX_FRAME_LENGTH];
+    private readonly float[] gSynMagn = new float[MAX_FRAME_LENGTH];
     private long gRover;
 
     /// <summary>
@@ -104,7 +104,7 @@ public class SmbPitchShifter
         fftFrameSize2 = nFft / 2;
         stepSize = nFft / nOsamp;
         freqPerBin = sampleRate / (double)nFft;
-        expct = 2.0 * Math.PI * (double)stepSize / (double)nFft;
+        expct = 2.0 * Math.PI * stepSize / nFft;
         inFifoLatency = nFft - stepSize;
         if (gRover == 0) gRover = inFifoLatency;
 
@@ -126,7 +126,7 @@ public class SmbPitchShifter
                 /* do windowing and re,im interleave */
                 for (k = 0; k < nFft; k++)
                 {
-                    window = -.5 * Math.Cos(2.0 * Math.PI * (double)k / (double)nFft) + .5;
+                    window = -.5 * Math.Cos(2.0 * Math.PI * k / nFft) + .5;
                     gFFTworksp[2 * k] = (float)(gInFIFO[k] * window);
                     gFFTworksp[2 * k + 1] = 0.0F;
                 }
@@ -153,19 +153,19 @@ public class SmbPitchShifter
                     gLastPhase[k] = (float)phase;
 
                     /* subtract expected phase difference */
-                    tmp -= (double)k * expct;
+                    tmp -= k * expct;
 
                     /* map delta phase into +/- Pi interval */
                     qpd = (int)(tmp / Math.PI);
                     if (qpd >= 0) qpd += qpd & 1;
                     else qpd -= qpd & 1;
-                    tmp -= Math.PI * (double)qpd;
+                    tmp -= Math.PI * qpd;
 
                     /* get deviation from bin frequency from the +/- Pi interval */
                     tmp = nOsamp * tmp / (2.0 * Math.PI);
 
                     /* compute the k-th partials' true frequency */
-                    tmp = (double)k * freqPerBin + tmp * freqPerBin;
+                    tmp = k * freqPerBin + tmp * freqPerBin;
 
                     /* store magnitude and true frequency in analysis arrays */
                     gAnaMagn[k] = (float)magn;
@@ -201,7 +201,7 @@ public class SmbPitchShifter
                     tmp = gSynFreq[k];
 
                     /* subtract bin mid frequency */
-                    tmp -= (double)k * freqPerBin;
+                    tmp -= k * freqPerBin;
 
                     /* get bin deviation from freq deviation */
                     tmp /= freqPerBin;
@@ -210,7 +210,7 @@ public class SmbPitchShifter
                     tmp = 2.0 * Math.PI * tmp / nOsamp;
 
                     /* add the overlap phase advance back in */
-                    tmp += (double)k * expct;
+                    tmp += k * expct;
 
                     /* accumulate delta phase to get bin phase */
                     gSumPhase[k] += (float)tmp;
@@ -230,7 +230,7 @@ public class SmbPitchShifter
                 /* do windowing and add to output accumulator */
                 for (k = 0; k < nFft; k++)
                 {
-                    window = -.5 * Math.Cos(2.0 * Math.PI * (double)k / (double)nFft) + .5;
+                    window = -.5 * Math.Cos(2.0 * Math.PI * k / nFft) + .5;
                     gOutputAccum[k] += (float)(2.0 * window * gFFTworksp[2 * k] / (fftFrameSize2 * nOsamp));
                 }
                 for (k = 0; k < stepSize; k++) gOutFIFO[k] = gOutputAccum[k];

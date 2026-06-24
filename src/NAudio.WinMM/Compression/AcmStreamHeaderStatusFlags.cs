@@ -3,7 +3,7 @@
 namespace NAudio.Wave.Compression;
 
 [Flags]
-enum AcmStreamHeaderStatusFlags
+internal enum AcmStreamHeaderStatusFlags
 {
     /// <summary>
     /// ACMSTREAMHEADER_STATUSF_DONE

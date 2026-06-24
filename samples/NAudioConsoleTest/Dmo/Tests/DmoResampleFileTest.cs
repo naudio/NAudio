@@ -5,7 +5,7 @@ using Spectre.Console;
 
 namespace NAudioConsoleTest.Dmo.Tests;
 
-sealed class DmoResampleFileTest : IConsoleTest
+internal sealed class DmoResampleFileTest : IConsoleTest
 {
     public string Id => "Dmo.ResampleFile";
     public string Description => "Resample an audio file via ResamplerDmoStream";

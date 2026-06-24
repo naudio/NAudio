@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using NAudio.MediaFoundation;
 using NAudio.Wave;
 
 namespace MfStressTest.Phases;

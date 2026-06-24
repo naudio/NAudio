@@ -2,7 +2,7 @@
 
 namespace NAudioWpfDemo.Vst3RealtimeEffectDemo;
 
-class Vst3RealtimeEffectDemoPlugin : IModule
+internal class Vst3RealtimeEffectDemoPlugin : IModule
 {
     private Vst3RealtimeEffectView view;
     private Vst3RealtimeEffectViewModel viewModel;

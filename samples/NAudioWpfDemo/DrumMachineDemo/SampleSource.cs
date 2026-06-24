@@ -3,7 +3,7 @@ using NAudio.Wave;
 
 namespace NAudioWpfDemo.DrumMachineDemo;
 
-class SampleSource
+internal class SampleSource
 {
     public static SampleSource CreateFromWaveFile(string fileName)
     {

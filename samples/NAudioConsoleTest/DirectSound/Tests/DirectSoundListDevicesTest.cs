@@ -4,7 +4,7 @@ using Spectre.Console;
 
 namespace NAudioConsoleTest.DirectSound.Tests;
 
-sealed class DirectSoundListDevicesTest : IConsoleTest
+internal sealed class DirectSoundListDevicesTest : IConsoleTest
 {
     public string Id => "DirectSound.ListDevices";
     public string Description => "List DirectSound playback devices";

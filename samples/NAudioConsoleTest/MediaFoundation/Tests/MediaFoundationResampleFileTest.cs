@@ -9,7 +9,7 @@ namespace NAudioConsoleTest.MediaFoundation.Tests;
 /// Resamples an audio file to a target sample rate via <see cref="MediaFoundationResampler"/>
 /// and writes the result to a WAV file.
 /// </summary>
-sealed class MediaFoundationResampleFileTest : IConsoleTest
+internal sealed class MediaFoundationResampleFileTest : IConsoleTest
 {
     public string Id => "MediaFoundation.ResampleFile";
     public string Description => "Resample an audio file to a target sample rate (WAV output)";

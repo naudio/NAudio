@@ -2,7 +2,7 @@
 
 namespace NAudio.SoundFont;
 
-class ModulatorBuilder : StructureBuilder<Modulator>
+internal class ModulatorBuilder : StructureBuilder<Modulator>
 {
     public override Modulator Read(BinaryReader br)
     {

@@ -2,7 +2,7 @@
 
 namespace NAudioWpfDemo.EqualizationDemo;
 
-class EqualizationPlaybackDemoPlugin : IModule
+internal class EqualizationPlaybackDemoPlugin : IModule
 {
     private EqualizationDemoView view;
     private EqualizationDemoViewModel viewModel;

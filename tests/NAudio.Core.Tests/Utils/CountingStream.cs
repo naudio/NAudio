@@ -8,7 +8,7 @@ namespace NAudio.Core.Tests.Utils;
 /// Used by tests that need to assert bounded I/O (e.g. that a constructor doesn't
 /// scan an entire file).
 /// </summary>
-sealed class CountingStream : Stream
+internal sealed class CountingStream : Stream
 {
     private readonly Stream inner;
 

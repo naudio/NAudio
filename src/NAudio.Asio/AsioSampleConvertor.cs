@@ -28,16 +28,16 @@ internal class AsioSampleConvertor
                 switch (waveFormat.BitsPerSample)
                 {
                     case 16:
-                        convertor = (is2Channels) ? ConvertorShortToInt2Channels : (SampleConvertor)ConvertorShortToIntGeneric;
+                        convertor = (is2Channels) ? ConvertorShortToInt2Channels : ConvertorShortToIntGeneric;
                         break;
                     case 24:
                         convertor = Convertor24ToIntGeneric;
                         break;
                     case 32:
                         if (waveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
-                            convertor = (is2Channels) ? ConvertorFloatToInt2Channels : (SampleConvertor)ConvertorFloatToIntGeneric;
+                            convertor = (is2Channels) ? ConvertorFloatToInt2Channels : ConvertorFloatToIntGeneric;
                         else
-                            convertor = (is2Channels) ? ConvertorIntToInt2Channels : (SampleConvertor)ConvertorIntToIntGeneric;
+                            convertor = (is2Channels) ? ConvertorIntToInt2Channels : ConvertorIntToIntGeneric;
                         break;
                 }
                 break;
@@ -45,16 +45,16 @@ internal class AsioSampleConvertor
                 switch (waveFormat.BitsPerSample)
                 {
                     case 16:
-                        convertor = (is2Channels) ? ConvertorShortToShort2Channels : (SampleConvertor)ConvertorShortToShortGeneric;
+                        convertor = (is2Channels) ? ConvertorShortToShort2Channels : ConvertorShortToShortGeneric;
                         break;
                     case 24:
                         convertor = Convertor24ToShortGeneric;
                         break;
                     case 32:
                         if (waveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
-                            convertor = (is2Channels) ? ConvertorFloatToShort2Channels : (SampleConvertor)ConvertorFloatToShortGeneric;
+                            convertor = (is2Channels) ? ConvertorFloatToShort2Channels : ConvertorFloatToShortGeneric;
                         else
-                            convertor = (is2Channels) ? ConvertorIntToShort2Channels : (SampleConvertor)ConvertorIntToShortGeneric;
+                            convertor = (is2Channels) ? ConvertorIntToShort2Channels : ConvertorIntToShortGeneric;
                         break;
                 }
                 break;

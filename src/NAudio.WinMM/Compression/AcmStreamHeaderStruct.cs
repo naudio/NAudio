@@ -9,7 +9,7 @@ namespace NAudio.Wave.Compression;
 /// http://msdn.microsoft.com/en-us/library/dd742926%28VS.85%29.aspx
 /// </summary>    
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Size = 128)] // explicit size to make it work for x64
-class AcmStreamHeaderStruct
+internal class AcmStreamHeaderStruct
 {
     public int cbStruct;
     public AcmStreamHeaderStatusFlags fdwStatus = 0;

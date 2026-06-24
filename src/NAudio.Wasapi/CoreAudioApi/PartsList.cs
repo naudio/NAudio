@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.Marshalling;
 using NAudio.CoreAudioApi.Interfaces;
 
 namespace NAudio.CoreAudioApi;
@@ -10,7 +9,7 @@ namespace NAudio.CoreAudioApi;
 /// </summary>
 public class PartsList
 {
-    private IPartsList partsListInterface;
+    private readonly IPartsList partsListInterface;
 
     internal PartsList(IPartsList partsList)
     {

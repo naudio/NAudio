@@ -2,7 +2,6 @@
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
-using NAudio.Utils;
 
 namespace NAudio.Wave;
 
@@ -284,11 +283,11 @@ public class WaveFormat
     public override int GetHashCode()
     {
         return (int)waveFormatTag ^
-            (int)channels ^
+            channels ^
             sampleRate ^
             averageBytesPerSecond ^
-            (int)blockAlign ^
-            (int)bitsPerSample;
+            blockAlign ^
+            bitsPerSample;
     }
 
     /// <summary>
@@ -306,16 +305,16 @@ public class WaveFormat
         // The cbSize field only belongs to WAVEFORMATEX (non-PCM). We still guard on
         // extraSize so a PCM-tagged subclass that carries extra data stays well-formed.
         bool writeExtraSize = !(Encoding == WaveFormatEncoding.Pcm && extraSize == 0);
-        writer.Write((int)(writeExtraSize ? 18 + extraSize : 16)); // wave format length
+        writer.Write(writeExtraSize ? 18 + extraSize : 16); // wave format length
         writer.Write((short)Encoding);
         writer.Write((short)Channels);
-        writer.Write((int)SampleRate);
-        writer.Write((int)AverageBytesPerSecond);
+        writer.Write(SampleRate);
+        writer.Write(AverageBytesPerSecond);
         writer.Write((short)BlockAlign);
         writer.Write((short)BitsPerSample);
         if (writeExtraSize)
         {
-            writer.Write((short)extraSize);
+            writer.Write(extraSize);
         }
     }
 

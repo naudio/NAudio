@@ -2,7 +2,7 @@
 
 namespace NAudioWpfDemo.Vst3MidiFileDemo;
 
-class Vst3MidiFileDemoPlugin : ModuleBase
+internal class Vst3MidiFileDemoPlugin : ModuleBase
 {
     public override string Name => "VST3 MIDI File Player";
 

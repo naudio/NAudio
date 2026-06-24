@@ -1,6 +1,6 @@
 ﻿namespace NAudio.Wave.Compression;
 
-enum AcmStreamSizeFlags
+internal enum AcmStreamSizeFlags
 {
     /// <summary>
     /// ACM_STREAMSIZEF_SOURCE

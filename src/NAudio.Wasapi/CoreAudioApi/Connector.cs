@@ -1,6 +1,5 @@
 ﻿using NAudio.CoreAudioApi.Interfaces;
 using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.Marshalling;
 
 namespace NAudio.CoreAudioApi;
 

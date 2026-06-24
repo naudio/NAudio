@@ -62,7 +62,7 @@ internal static class StaSoak
         Console.WriteLine();
     }
 
-    static void DecodeOneSta(EncodedClip clip)
+    private static void DecodeOneSta(EncodedClip clip)
     {
         // STA-mode decode: SingleReaderObject = true per the docs.
         var settings = new MediaFoundationReader.MediaFoundationReaderSettings { SingleReaderObject = true };

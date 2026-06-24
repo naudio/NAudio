@@ -113,11 +113,11 @@ public sealed class BroadcastExtension
         w.Write(FixedAscii(UniqueMaterialIdentifier, 64));
         if (version >= 2)
         {
-            w.Write(LoudnessValue ?? (short)0);
-            w.Write(LoudnessRange ?? (short)0);
-            w.Write(MaxTruePeakLevel ?? (short)0);
-            w.Write(MaxMomentaryLoudness ?? (short)0);
-            w.Write(MaxShortTermLoudness ?? (short)0);
+            w.Write(LoudnessValue ?? 0);
+            w.Write(LoudnessRange ?? 0);
+            w.Write(MaxTruePeakLevel ?? 0);
+            w.Write(MaxMomentaryLoudness ?? 0);
+            w.Write(MaxShortTermLoudness ?? 0);
             w.Write(new byte[180]); // reserved (v2)
         }
         else

@@ -1,6 +1,6 @@
 ﻿namespace NAudioWpfDemo.DrumMachineDemo;
 
-class DrumMachineDemoPlugin : IModule
+internal class DrumMachineDemoPlugin : IModule
 {
     private DrumMachineDemoView view;
     private DrumMachineDemoViewModel viewModel;

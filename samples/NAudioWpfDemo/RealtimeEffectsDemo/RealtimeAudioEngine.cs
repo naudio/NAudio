@@ -10,7 +10,7 @@ namespace NAudioWpfDemo.RealtimeEffectsDemo;
 /// callback keeps running. Includes feedback protection (starts muted; auto-mutes on
 /// sustained near-full-scale output).
 /// </summary>
-class RealtimeAudioEngine : IDisposable
+internal class RealtimeAudioEngine : IDisposable
 {
     private AsioDevice device;
     private float[] scratch = Array.Empty<float>();

@@ -17,7 +17,7 @@ namespace NAudioWpfDemo.Vst3HostDemo;
 /// running even while the effect is active, so a later bypass is already aligned. For zero-latency
 /// plug-ins (the common case) this is a straight passthrough.
 /// </remarks>
-class BypassableVst3SampleProvider : ISampleProvider
+internal class BypassableVst3SampleProvider : ISampleProvider
 {
     private readonly ISampleProvider source;
     private readonly Vst3Plugin plugin;

@@ -1,15 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using NAudio.Wave;
 
 namespace NAudio.Core.Tests.Utils;
 
-class BlockAlignedWaveStream : WaveStream
+internal class BlockAlignedWaveStream : WaveStream
 {
-    long position;
-    long length;
-    WaveFormat waveFormat;
+    private long position;
+    private readonly long length;
+    private readonly WaveFormat waveFormat;
     public BlockAlignedWaveStream(int blockAlignment, long length)
     {
         waveFormat = WaveFormat.CreateCustomFormat(WaveFormatEncoding.Pcm, 8000, 1, 16000, blockAlignment, 16);

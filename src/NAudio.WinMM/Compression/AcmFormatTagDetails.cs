@@ -3,7 +3,7 @@
 namespace NAudio.Wave.Compression;
 
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-struct AcmFormatTagDetails
+internal struct AcmFormatTagDetails
 {
     /// <summary>
     /// DWORD cbStruct; 

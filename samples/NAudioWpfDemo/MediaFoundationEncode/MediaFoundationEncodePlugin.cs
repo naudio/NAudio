@@ -2,7 +2,7 @@
 
 namespace NAudioWpfDemo.MediaFoundationEncode;
 
-class MediaFoundationEncodePlugin : ModuleBase
+internal class MediaFoundationEncodePlugin : ModuleBase
 {
     protected override UserControl CreateViewAndViewModel()
     {

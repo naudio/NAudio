@@ -31,11 +31,11 @@ public class WaveBuffer : IWaveBuffer
     [FieldOffset(8)]
     private byte[] byteBuffer;
     [FieldOffset(8)]
-    private float[] floatBuffer;
+    private readonly float[] floatBuffer;
     [FieldOffset(8)]
-    private short[] shortBuffer;
+    private readonly short[] shortBuffer;
     [FieldOffset(8)]
-    private int[] intBuffer;
+    private readonly int[] intBuffer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WaveBuffer"/> class.

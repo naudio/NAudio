@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
 
 namespace NAudio.Gui;
@@ -13,7 +10,7 @@ namespace NAudio.Gui;
 /// </summary>
 public partial class VolumeMeter : Control
 {
-    Brush foregroundBrush;
+    private Brush foregroundBrush;
 
     /// <summary>
     /// Basic volume meter

@@ -314,7 +314,7 @@ public partial class RecordingPanel : UserControl
         return $"{api.FileNamePrefix} {rate} {channels}{eventSuffix} {DateTime.Now:yyyy-MM-dd HH-mm-ss}.wav";
     }
 
-    void OnRecordingStopped(object sender, StoppedEventArgs e)
+    private void OnRecordingStopped(object sender, StoppedEventArgs e)
     {
         if (InvokeRequired)
         {
@@ -393,7 +393,7 @@ public partial class RecordingPanel : UserControl
         writer = null;
     }
 
-    void OnDataAvailable(object sender, WaveInEventArgs e)
+    private void OnDataAvailable(object sender, WaveInEventArgs e)
     {
         if (InvokeRequired)
         {
@@ -414,7 +414,7 @@ public partial class RecordingPanel : UserControl
         }
     }
 
-    void StopRecording()
+    private void StopRecording()
     {
         Debug.WriteLine("StopRecording");
         captureDevice?.StopRecording();

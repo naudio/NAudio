@@ -20,7 +20,7 @@ namespace NAudioWpfDemo.SampleEditorDemo;
 /// an on-screen keyboard. Because the sampler rebuilds the region from the
 /// instrument on each note-on, every edit is heard on the next key pressed.
 /// </summary>
-class SampleEditorViewModel : ViewModelBase, IDisposable
+internal class SampleEditorViewModel : ViewModelBase, IDisposable
 {
     private const int SampleRate = 44100;
 

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 
 namespace NAudio.Dsp;
 
@@ -141,7 +140,7 @@ public class EnvelopeGenerator
     /// <summary>
     /// Sets the attack curve
     /// </summary>
-    void SetTargetRatioAttack(float targetRatio)
+    private void SetTargetRatioAttack(float targetRatio)
     {
         if (targetRatio < 0.000000001f)
             targetRatio = 0.000000001f;  // -180 dB
@@ -152,7 +151,7 @@ public class EnvelopeGenerator
     /// <summary>
     /// Sets the decay release curve
     /// </summary>
-    void SetTargetRatioDecayRelease(float targetRatio)
+    private void SetTargetRatioDecayRelease(float targetRatio)
     {
         if (targetRatio < 0.000000001f)
             targetRatio = 0.000000001f;  // -180 dB

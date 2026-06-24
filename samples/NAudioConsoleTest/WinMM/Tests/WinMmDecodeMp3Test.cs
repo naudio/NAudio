@@ -1,11 +1,10 @@
-﻿using NAudio.Dmo;
-using NAudio.Wave;
+﻿using NAudio.Wave;
 using NAudioConsoleTest.Shared.Testing;
 using Spectre.Console;
 
 namespace NAudioConsoleTest.WinMM.Tests;
 
-sealed class WinMmDecodeMp3Test : IConsoleTest
+internal sealed class WinMmDecodeMp3Test : IConsoleTest
 {
     public string Id => "WinMm.DecodeMp3";
     public string Description => "Decode an MP3 file via AcmMp3FrameDecompressor and write the PCM to WAV";

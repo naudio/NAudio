@@ -9,7 +9,7 @@ namespace NAudioConsoleTest.MediaFoundation.Tests;
 /// Enumerates audio decoders, encoders, and effects registered with Media Foundation on this
 /// machine. Useful for diagnosing missing codecs (e.g. AAC encoder on N-edition Windows).
 /// </summary>
-sealed class MediaFoundationEnumerateTransformsTest : IConsoleTest
+internal sealed class MediaFoundationEnumerateTransformsTest : IConsoleTest
 {
     public string Id => "MediaFoundation.EnumerateTransforms";
     public string Description => "Enumerate audio decoders, encoders, and effects registered with Media Foundation";

@@ -2,7 +2,7 @@
 
 namespace NAudioWpfDemo.MediaFoundationResample;
 
-class MediaFoundationResamplePlugin : ModuleBase
+internal class MediaFoundationResamplePlugin : ModuleBase
 {
     protected override UserControl CreateViewAndViewModel()
     {

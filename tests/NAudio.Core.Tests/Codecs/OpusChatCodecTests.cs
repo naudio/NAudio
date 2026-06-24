@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using NAudioDemo.NetworkChatDemo;
 using NUnit.Framework;
 

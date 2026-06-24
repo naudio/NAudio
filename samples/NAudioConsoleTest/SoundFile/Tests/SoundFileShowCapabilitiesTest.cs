@@ -9,7 +9,7 @@ namespace NAudioConsoleTest.SoundFile.Tests;
 /// and a FLAC/Vorbis/Opus/MP3 support matrix. Doubles as the canonical
 /// "is libsndfile installed and which codecs does this build have?" probe.
 /// </summary>
-sealed class SoundFileShowCapabilitiesTest : IConsoleTest
+internal sealed class SoundFileShowCapabilitiesTest : IConsoleTest
 {
     public string Id => "SoundFile.ShowCapabilities";
     public string Description => "Show libsndfile version and supported formats/codecs";

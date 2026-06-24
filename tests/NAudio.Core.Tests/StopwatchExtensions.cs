@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Diagnostics;
-
-namespace System.Diagnostics;
+﻿namespace System.Diagnostics;
 
 public static class StopwatchExtensions
 {

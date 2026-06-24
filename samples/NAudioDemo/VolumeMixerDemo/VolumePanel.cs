@@ -1,10 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Drawing;
-using System.Data;
-using System.Linq;
-using System.Text;
 using System.Windows.Forms;
 using NAudio.CoreAudioApi;
 using System.Diagnostics;
@@ -125,11 +120,9 @@ public partial class VolumePanel : UserControl, IAudioSessionEventsHandler
             Device.AudioEndpointVolume.MasterVolumeLevelScalar = volume;
         }
         Device.AudioEndpointVolume.Mute = false;
-        if (VolumeChanged != null)
-            VolumeChanged(sender, new VolumeEventArgs(volume));
+        VolumeChanged?.Invoke(sender, new VolumeEventArgs(volume));
         UpdateMuted();
-        if (MuteChanged != null)
-            MuteChanged(sender, new MuteEventArgs(false));
+        MuteChanged?.Invoke(sender, new MuteEventArgs(false));
     }
 
     private void btnMuteUnmute_Click(object sender, EventArgs e)
@@ -148,15 +141,13 @@ public partial class VolumePanel : UserControl, IAudioSessionEventsHandler
             Device.AudioEndpointVolume.Mute = muted;
         }
         UpdateMuted();
-        if (MuteChanged != null)
-            MuteChanged(sender, new MuteEventArgs(muted));
+        MuteChanged?.Invoke(sender, new MuteEventArgs(muted));
     }
 
     private void cmbDevice_SelectedIndexChanged(object sender, EventArgs e)
     {
         device = (MMDevice)cmbDevice.SelectedItem;
-        if (DeviceChanged != null)
-            DeviceChanged(sender, e);
+        DeviceChanged?.Invoke(sender, e);
         var tooltipText = cmbDevice.SelectedItem.ToString();
         tooltip.SetToolTip(cmbDevice, tooltipText);
         tooltip.SetToolTip(btnSoundProperties, tooltipText);
@@ -188,8 +179,7 @@ public partial class VolumePanel : UserControl, IAudioSessionEventsHandler
         else
         {
             tbVolume.Value = (int)(Math.Round(Device.AudioEndpointVolume.MasterVolumeLevelScalar * 100));
-            if (VolumeChanged != null)
-                VolumeChanged(null, new VolumeEventArgs(Device.AudioEndpointVolume.MasterVolumeLevelScalar));
+            VolumeChanged?.Invoke(null, new VolumeEventArgs(Device.AudioEndpointVolume.MasterVolumeLevelScalar));
         }
     }
 
@@ -205,13 +195,12 @@ public partial class VolumePanel : UserControl, IAudioSessionEventsHandler
         else
         {
             mute = device.AudioEndpointVolume.Mute;
-            if (MuteChanged != null)
-                MuteChanged(null, new MuteEventArgs(Device.AudioEndpointVolume.Mute));
+            MuteChanged?.Invoke(null, new MuteEventArgs(Device.AudioEndpointVolume.Mute));
         }
         btnMuteUnmute.Image = mute ? Properties.Resources.Mute : Properties.Resources.Unmute;
     }
 
-    void AudioEndpointVolume_OnVolumeNotification(AudioVolumeNotificationData data)
+    private void AudioEndpointVolume_OnVolumeNotification(AudioVolumeNotificationData data)
     {
         try
         {

@@ -12,7 +12,7 @@ namespace NAudioWpfDemo.Vst3RealtimeEffectDemo;
 /// state preserved) on stop. The slot surfaces Bypass, Show-Editor and Remove commands
 /// to the UI.
 /// </summary>
-class Vst3PluginSlotViewModel : ViewModelBase, IDisposable
+internal class Vst3PluginSlotViewModel : ViewModelBase, IDisposable
 {
     private bool bypass;
     private Vst3ChainSlot liveSlot;

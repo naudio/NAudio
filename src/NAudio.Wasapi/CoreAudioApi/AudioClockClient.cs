@@ -11,7 +11,7 @@ namespace NAudio.CoreAudioApi;
 /// </summary>
 public class AudioClockClient : IDisposable
 {
-    IAudioClock audioClockClientInterface;
+    private IAudioClock audioClockClientInterface;
 
     internal AudioClockClient(IntPtr nativePointer)
     {

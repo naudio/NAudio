@@ -3,7 +3,7 @@ using System.IO;
 
 namespace NAudio.SoundFont;
 
-class ZoneBuilder : StructureBuilder<Zone>
+internal class ZoneBuilder : StructureBuilder<Zone>
 {
     private Zone lastZone = null;
 
@@ -32,7 +32,7 @@ class ZoneBuilder : StructureBuilder<Zone>
         // don't do the last zone, which is simply EOZ
         for (int zone = 0; zone < data.Count - 1; zone++)
         {
-            Zone z = (Zone)data[zone];
+            Zone z = data[zone];
             z.Generators = new Generator[z.generatorCount];
             Array.Copy(generators, z.generatorIndex, z.Generators, 0, z.generatorCount);
             z.Modulators = new Modulator[z.modulatorCount];

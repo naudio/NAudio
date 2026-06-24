@@ -9,7 +9,7 @@ namespace NAudioWpfDemo.Vst3RealtimeEffectDemo;
 /// volatile bypass flag. The audio thread reads <see cref="Bypass"/> per block; the UI
 /// thread sets it.
 /// </summary>
-sealed class Vst3ChainSlot
+internal sealed class Vst3ChainSlot
 {
     public Vst3ChainSlot(Vst3Plugin plugin)
     {
@@ -40,7 +40,7 @@ sealed class Vst3ChainSlot
 /// <para>Phase 1 of this demo hardcodes stereo I/O end-to-end. A mono ASIO input is
 /// duplicated to right; a mono ASIO output gets only the left channel.</para>
 /// </remarks>
-sealed class Vst3RealtimeAudioEngine : IDisposable
+internal sealed class Vst3RealtimeAudioEngine : IDisposable
 {
     private AsioDevice device;
     private float[] bufA = Array.Empty<float>();

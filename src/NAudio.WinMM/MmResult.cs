@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace NAudio;
+﻿namespace NAudio;
 
 /// <summary>
 /// Windows multimedia error codes from mmsystem.h.

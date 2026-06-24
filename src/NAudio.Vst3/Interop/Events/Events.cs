@@ -122,7 +122,7 @@ internal unsafe struct Event
     /// Padding so the union below lands at offset 24 — matching natural 8-byte alignment of the
     /// largest union member.
     /// </summary>
-    private int _padding;
+    private readonly int _padding;
 
     /// <summary>
     /// Opaque storage for the variant payload. Reinterpret as <see cref="NoteOnEvent"/>,

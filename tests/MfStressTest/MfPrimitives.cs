@@ -96,7 +96,7 @@ internal static class MfPrimitives
         }
     }
 
-    static void EncodeToFile(CodecSpec codec, IWaveProvider pcm, string path, int bitRate)
+    private static void EncodeToFile(CodecSpec codec, IWaveProvider pcm, string path, int bitRate)
     {
         if (codec.Name == "MP3") MediaFoundationEncoder.EncodeToMp3(pcm, path, bitRate);
         else if (codec.Name == "WMA") MediaFoundationEncoder.EncodeToWma(pcm, path, bitRate);
@@ -105,7 +105,7 @@ internal static class MfPrimitives
         else throw new InvalidOperationException($"file encoding not wired for {codec.Name}");
     }
 
-    static void EncodeToStream(CodecSpec codec, IWaveProvider pcm, Stream stream, int bitRate)
+    private static void EncodeToStream(CodecSpec codec, IWaveProvider pcm, Stream stream, int bitRate)
     {
         if (codec.Name == "MP3") MediaFoundationEncoder.EncodeToMp3(pcm, stream, bitRate);
         else if (codec.Name == "WMA") MediaFoundationEncoder.EncodeToWma(pcm, stream, bitRate);
@@ -118,7 +118,7 @@ internal static class MfPrimitives
     /// for FLAC/ALAC. Prefers 16-bit when offered; otherwise returns the lowest available
     /// bps so the harness can build a matching PCM source.
     /// </summary>
-    static int PickRawTargetBps(Guid subtype, int sampleRate, int channels)
+    private static int PickRawTargetBps(Guid subtype, int sampleRate, int channels)
     {
         var allTypes = MediaFoundationEncoder.GetOutputMediaTypes(subtype);
         try

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Controls;
 
@@ -7,7 +6,7 @@ using NAudioWpfDemo.ViewModel;
 
 namespace NAudioWpfDemo;
 
-class MainWindowViewModel : ViewModelBase
+internal class MainWindowViewModel : ViewModelBase
 {
     private IModule selectedModule;
 

@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using NAudio.SoundFile;
 using NUnit.Framework;
 
 namespace NAudio.SoundFile.Tests;

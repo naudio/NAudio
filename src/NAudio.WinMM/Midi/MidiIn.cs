@@ -14,10 +14,10 @@ public class MidiIn : IMidiInput
     /// <summary>Default number of sysex receive buffers allocated when sysex is first needed.</summary>
     private const int DefaultSysexBufferCount = 4;
 
-    private IntPtr hMidiIn = IntPtr.Zero;
+    private readonly IntPtr hMidiIn = IntPtr.Zero;
     private bool disposeIsRunning = false; // true while the Dispose() method run.
     private bool disposed = false;
-    private MidiInterop.MidiInCallback callback;
+    private readonly MidiInterop.MidiInCallback callback;
 
     //  Buffer headers created and marshalled to recive incoming Sysex mesages
     private IntPtr[] SysexBufferHeaders = new IntPtr[0];
@@ -59,7 +59,7 @@ public class MidiIn : IMidiInput
     public MidiIn(int deviceNo)
     {
         this.callback = new MidiInterop.MidiInCallback(Callback);
-        MmException.Try(MidiInterop.midiInOpen(out hMidiIn, (IntPtr)deviceNo, this.callback, IntPtr.Zero, MidiInterop.CALLBACK_FUNCTION), "midiInOpen");
+        MmException.Try(MidiInterop.midiInOpen(out hMidiIn, deviceNo, this.callback, IntPtr.Zero, MidiInterop.CALLBACK_FUNCTION), "midiInOpen");
     }
 
     /// <summary>
@@ -142,17 +142,11 @@ public class MidiIn : IMidiInput
             case MidiInterop.MidiInMessage.Data:
                 // parameter 1 is packed MIDI message
                 // parameter 2 is milliseconds since MidiInStart
-                if (MessageReceived != null)
-                {
-                    MessageReceived(this, new MidiInMessageEventArgs(messageParameter1.ToInt32(), TimeSpan.FromMilliseconds(messageParameter2.ToInt32())));
-                }
+                MessageReceived?.Invoke(this, new MidiInMessageEventArgs(messageParameter1.ToInt32(), TimeSpan.FromMilliseconds(messageParameter2.ToInt32())));
                 break;
             case MidiInterop.MidiInMessage.Error:
                 // parameter 1 is invalid MIDI message
-                if (ErrorReceived != null)
-                {
-                    ErrorReceived(this, new MidiInMessageEventArgs(messageParameter1.ToInt32(), TimeSpan.FromMilliseconds(messageParameter2.ToInt32())));
-                }
+                ErrorReceived?.Invoke(this, new MidiInMessageEventArgs(messageParameter1.ToInt32(), TimeSpan.FromMilliseconds(messageParameter2.ToInt32())));
                 break;
             case MidiInterop.MidiInMessage.Close:
                 // message Parameter 1 & 2 are not used
@@ -196,7 +190,7 @@ public class MidiIn : IMidiInput
     {
         MidiInCapabilities caps = new MidiInCapabilities();
         int structSize = Marshal.SizeOf(caps);
-        MmException.Try(MidiInterop.midiInGetDevCaps((IntPtr)midiInDeviceNumber, out caps, structSize), "midiInGetDevCaps");
+        MmException.Try(MidiInterop.midiInGetDevCaps(midiInDeviceNumber, out caps, structSize), "midiInGetDevCaps");
         return caps;
     }
 

@@ -7,7 +7,7 @@ namespace NAudio.CoreAudioApi.Interfaces;
 /// is defined in WTypes.h
 /// </summary>
 [Flags]
-enum ClsCtx
+internal enum ClsCtx
 {
     INPROC_SERVER = 0x1,
     INPROC_HANDLER = 0x2,

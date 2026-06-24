@@ -1,10 +1,8 @@
-﻿using System;
-using System.Linq;
-using NAudio.Dsp;
+﻿using NAudio.Dsp;
 
 namespace NAudioWpfDemo.AudioPlaybackDemo;
 
-interface IVisualizationPlugin
+internal interface IVisualizationPlugin
 {
     string Name { get; }
     object Content { get; }

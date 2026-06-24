@@ -1,6 +1,5 @@
 ﻿using System;
 using NAudio.Dsp;
-using NAudio.Sampler;
 using NAudio.Sfz;
 using NAudio.SoundFont;
 using NUnit.Framework;

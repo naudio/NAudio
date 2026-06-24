@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace NAudio.Vst3;
+﻿namespace NAudio.Vst3;
 
 /// <summary>
 /// A single VST 3® parameter exposed by the plug-in's <see cref="Vst3Plugin.Parameters"/>

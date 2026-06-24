@@ -1,7 +1,4 @@
-﻿using System;
-using System.IO;
-
-namespace NAudio.SoundFont;
+﻿namespace NAudio.SoundFont;
 
 /// <summary>
 /// SoundFont Version Structure

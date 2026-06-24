@@ -5,7 +5,7 @@ using Spectre.Console;
 
 namespace NAudioConsoleTest.Dmo.Tests;
 
-sealed class DmoDecodeMp3Test : IConsoleTest
+internal sealed class DmoDecodeMp3Test : IConsoleTest
 {
     public string Id => "Dmo.DecodeMp3";
     public string Description => "Decode an MP3 file via DmoMp3FrameDecompressor and write the PCM to WAV";

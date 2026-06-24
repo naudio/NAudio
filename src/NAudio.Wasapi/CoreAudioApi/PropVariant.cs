@@ -24,7 +24,6 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
-using NAudio.Utils;
 
 namespace NAudio.CoreAudioApi.Interfaces;
 

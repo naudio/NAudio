@@ -277,7 +277,7 @@ public class AsioOut : IWavePlayer
     /// </summary>
     /// <param name="inputChannels">The input channels.</param>
     /// <param name="outputChannels">The output channels.</param>
-    void driver_BufferUpdate(IntPtr[] inputChannels, IntPtr[] outputChannels)
+    private void driver_BufferUpdate(IntPtr[] inputChannels, IntPtr[] outputChannels)
     {
         if (this.NumberOfInputChannels > 0)
         {

@@ -6,7 +6,7 @@ namespace NAudio.Dmo;
 /// DMO Guids for use with DMOEnum
 /// dmoreg.h
 /// </summary>
-static class DmoGuids
+internal static class DmoGuids
 {
     public static readonly Guid DMOCATEGORY_AUDIO_DECODER = new("57f2db8b-e6bb-4513-9d43-dcd2a6593125");
     public static readonly Guid DMOCATEGORY_AUDIO_ENCODER = new("33D9A761-90C8-11d0-BD43-00A0C911CE86");
@@ -17,7 +17,7 @@ static class DmoGuids
     public static readonly Guid DMOCATEGORY_AUDIO_CAPTURE_EFFECT = new("f665aaba-3e09-4920-aa5f-219811148f09");
 }
 
-static class DmoMediaTypeGuids
+internal static class DmoMediaTypeGuids
 {
     public static readonly Guid FORMAT_None = new("0F6417D6-C318-11D0-A43F-00A0C9223196");
     public static readonly Guid FORMAT_VideoInfo = new("05589f80-c356-11ce-bf01-00aa0055595a");

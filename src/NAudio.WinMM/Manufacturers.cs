@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace NAudio;
+﻿namespace NAudio;
 
 /// <summary>
 /// Manufacturer codes from mmreg.h

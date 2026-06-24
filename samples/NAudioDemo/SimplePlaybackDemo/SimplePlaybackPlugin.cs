@@ -1,10 +1,8 @@
-﻿using System;
-using System.Linq;
-using System.Windows.Forms;
+﻿using System.Windows.Forms;
 
 namespace NAudioDemo.SimplePlaybackDemo;
 
-class SimplePlaybackPlugin : INAudioDemoPlugin
+internal class SimplePlaybackPlugin : INAudioDemoPlugin
 {
     public string Name
     {

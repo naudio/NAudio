@@ -1,9 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
 using NAudio.Wave;
 using MarkHeath.AudioUtils.Properties;
@@ -50,10 +45,10 @@ public partial class SettingsForm : Form
     }
 }
 
-class WaveOutComboItem
+internal class WaveOutComboItem
 {
-    string deviceName;
-    int deviceNumber;
+    private readonly string deviceName;
+    private readonly int deviceNumber;
 
     public WaveOutComboItem(string deviceName, int deviceNumber)
     {

@@ -10,7 +10,7 @@ namespace NAudioConsoleTest.SoundFile.Tests;
 /// output to verify it. The cross-platform analogue of the
 /// <c>MediaFoundation.EncodeToXxx</c> / resample file-in-file-out tests.
 /// </summary>
-sealed class SoundFileTranscodeTest : IConsoleTest
+internal sealed class SoundFileTranscodeTest : IConsoleTest
 {
     public string Id => "SoundFile.Transcode";
     public string Description => "Transcode an audio file to another format via libsndfile";

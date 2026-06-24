@@ -3,12 +3,12 @@ using System.Collections.Generic;
 
 namespace NAudio.Utils;
 
-class MergeSort
+internal class MergeSort
 {
     /// <summary>
     /// In-place and stable implementation of MergeSort
     /// </summary>
-    static void Sort<T>(IList<T> list, int lowIndex, int highIndex, IComparer<T> comparer)
+    private static void Sort<T>(IList<T> list, int lowIndex, int highIndex, IComparer<T> comparer)
     {
         if (lowIndex >= highIndex)
         {

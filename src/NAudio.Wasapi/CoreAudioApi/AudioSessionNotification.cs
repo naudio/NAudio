@@ -7,7 +7,7 @@ namespace NAudio.CoreAudioApi;
 [GeneratedComClass]
 internal partial class AudioSessionNotification : IAudioSessionNotification
 {
-    private AudioSessionManager parent;
+    private readonly AudioSessionManager parent;
 
     internal AudioSessionNotification(AudioSessionManager parent)
     {

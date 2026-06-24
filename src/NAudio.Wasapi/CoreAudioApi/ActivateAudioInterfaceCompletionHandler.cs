@@ -11,8 +11,8 @@ namespace NAudio.CoreAudioApi;
 internal partial class ActivateAudioInterfaceCompletionHandler :
 IActivateAudioInterfaceCompletionHandler, IAgileObject
 {
-    private Action<IAudioClient2> initializeAction;
-    private TaskCompletionSource<IAudioClient2> tcs = new();
+    private readonly Action<IAudioClient2> initializeAction;
+    private readonly TaskCompletionSource<IAudioClient2> tcs = new();
 
     public ActivateAudioInterfaceCompletionHandler(
         Action<IAudioClient2> initializeAction)

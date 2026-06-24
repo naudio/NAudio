@@ -2,7 +2,7 @@
 
 namespace NAudioWpfDemo.Vst3HostDemo;
 
-class Vst3HostDemoPlugin : IModule
+internal class Vst3HostDemoPlugin : IModule
 {
     private Vst3HostDemoView view;
     private Vst3HostDemoViewModel viewModel;

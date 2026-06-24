@@ -8,7 +8,7 @@ using NAudioWpfDemo.ViewModel;
 
 namespace NAudioWpfDemo.EqualizationDemo;
 
-class EqualizationDemoViewModel : ViewModelBase, IDisposable
+internal class EqualizationDemoViewModel : ViewModelBase, IDisposable
 {
     private AudioFileReader reader;
     private IWavePlayer player;

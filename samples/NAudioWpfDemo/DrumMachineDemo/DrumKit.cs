@@ -5,7 +5,7 @@ using NAudio.Wave;
 
 namespace NAudioWpfDemo.DrumMachineDemo;
 
-class DrumKit
+internal class DrumKit
 {
     private readonly List<SampleSource> sampleSources;
 

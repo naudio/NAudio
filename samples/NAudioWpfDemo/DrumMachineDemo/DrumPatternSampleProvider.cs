@@ -10,7 +10,7 @@ namespace NAudioWpfDemo.DrumMachineDemo;
 /// swing knobs, supports a hi-hat choke group, and serves as both the live-playback source
 /// and the offline render source (driven by either <c>WaveOut</c> or a render loop).
 /// </summary>
-class DrumPatternSampleProvider : ISampleProvider
+internal class DrumPatternSampleProvider : ISampleProvider
 {
     private static readonly long Sixteenth = MusicalTime.TicksPerDivision(16);
     private const double ChokeFadeMs = 10.0;

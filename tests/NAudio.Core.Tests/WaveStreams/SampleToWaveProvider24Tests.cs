@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using NUnit.Framework;

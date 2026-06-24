@@ -11,7 +11,7 @@ namespace NAudioConsoleTest.SoundFile.Tests;
 /// asserts the frame count is about right and the signal is non-silent.
 /// Good for batch/CI-style runs.
 /// </summary>
-sealed class SoundFileRoundTripTest : IConsoleTest
+internal sealed class SoundFileRoundTripTest : IConsoleTest
 {
     public string Id => "SoundFile.RoundTrip";
     public string Description => "Encode a generated sine then decode it back (no input file needed)";

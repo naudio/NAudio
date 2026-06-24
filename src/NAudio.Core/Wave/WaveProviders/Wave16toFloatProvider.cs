@@ -9,7 +9,7 @@ namespace NAudio.Wave;
 /// </summary>
 public class Wave16ToFloatProvider : IWaveProvider
 {
-    private IWaveProvider sourceProvider;
+    private readonly IWaveProvider sourceProvider;
     private readonly WaveFormat waveFormat;
     private volatile float volume;
     private byte[] sourceBuffer;

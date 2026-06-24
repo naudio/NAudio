@@ -61,6 +61,6 @@ public class DelayLineTests
         Assert.Throws<ArgumentOutOfRangeException>(() => line.Read(0));
         Assert.Throws<ArgumentOutOfRangeException>(() => line.Read(line.MaxDelaySamples + 1));
         Assert.Throws<ArgumentOutOfRangeException>(() => line.Read(0.5f));
-        Assert.Throws<ArgumentOutOfRangeException>(() => line.Read((float)line.MaxDelaySamples + 0.01f));
+        Assert.Throws<ArgumentOutOfRangeException>(() => line.Read(line.MaxDelaySamples + 0.01f));
     }
 }

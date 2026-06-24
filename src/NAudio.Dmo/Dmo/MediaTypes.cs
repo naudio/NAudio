@@ -5,7 +5,7 @@ namespace NAudio.Dmo;
 /// <summary>
 /// uuids.h, ksuuids.h
 /// </summary>
-static class MediaTypes
+internal static class MediaTypes
 {
     public static readonly Guid MEDIATYPE_AnalogAudio = new("0482DEE1-7817-11cf-8a03-00aa006ecb65"); // Analog audio. 
     public static readonly Guid MEDIATYPE_AnalogVideo = new("0482DDE1-7817-11cf-8A03-00AA006ECB65"); // Analog video. 

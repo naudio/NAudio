@@ -10,7 +10,7 @@ using NAudioWpfDemo.ViewModel;
 
 namespace NAudioWpfDemo.EnumMediaFoundationTransforms;
 
-class EnumMftViewModel : ViewModelBase
+internal class EnumMftViewModel : ViewModelBase
 {
     public EnumMftViewModel()
     {

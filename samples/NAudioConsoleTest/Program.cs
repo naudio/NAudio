@@ -4,12 +4,12 @@ using Spectre.Console;
 
 namespace NAudioConsoleTest;
 
-static class Program
+internal static class Program
 {
     // ASIO drivers are COM objects that require the calling thread to be in an STA apartment.
     // Without [STAThread] the first AsioDevice.Open call fails on most native drivers.
     [STAThread]
-    static int Main(string[] args)
+    private static int Main(string[] args)
     {
         // The menu uses Unicode glyphs (▶ ↑ ↓ •). Without UTF-8 output the default OEM code page
         // (e.g. CP437) mangles them — ▶ becomes "?" and • encodes to byte 0x07 (BEL), beeping on

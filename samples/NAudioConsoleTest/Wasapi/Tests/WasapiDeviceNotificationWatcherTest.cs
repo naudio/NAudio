@@ -12,7 +12,7 @@ namespace NAudioConsoleTest.Wasapi.Tests;
 /// device, changes the default endpoint, mutes via the tray, etc., confirming each notification
 /// kind dispatches through the new <c>[GeneratedComInterface]</c> CCW.
 /// </summary>
-sealed partial class WasapiDeviceNotificationWatcherTest : IConsoleTest
+internal sealed partial class WasapiDeviceNotificationWatcherTest : IConsoleTest
 {
     public string Id => "Wasapi.DeviceNotificationWatcher";
     public string Description => "Watch for device notifications (plug/unplug, default change, etc.)";

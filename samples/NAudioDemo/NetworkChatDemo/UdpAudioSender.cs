@@ -3,7 +3,7 @@ using System.Net.Sockets;
 
 namespace NAudioDemo.NetworkChatDemo;
 
-class UdpAudioSender : IAudioSender
+internal class UdpAudioSender : IAudioSender
 {
     private readonly UdpClient udpSender;
     public UdpAudioSender(IPEndPoint endPoint)

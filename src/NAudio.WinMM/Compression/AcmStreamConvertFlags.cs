@@ -3,7 +3,7 @@
 namespace NAudio.Wave;
 
 [Flags]
-enum AcmStreamConvertFlags
+internal enum AcmStreamConvertFlags
 {
     /// <summary>
     /// ACM_STREAMCONVERTF_BLOCKALIGN

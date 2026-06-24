@@ -1,9 +1,6 @@
-﻿using System;
-using System.Linq;
+﻿namespace NAudioWpfDemo.AudioPlaybackDemo;
 
-namespace NAudioWpfDemo.AudioPlaybackDemo;
-
-class SpectrumAnalyzerVisualization : IVisualizationPlugin
+internal class SpectrumAnalyzerVisualization : IVisualizationPlugin
 {
     private readonly SpectrumAnalyser spectrumAnalyser = new();
 

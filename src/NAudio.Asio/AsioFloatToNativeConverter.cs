@@ -75,7 +75,7 @@ public static class AsioFloatToNativeConverter
             if (s > 1f) s = 1f; else if (s < -1f) s = -1f;
             // float can't represent int.MaxValue exactly (rounds up to 2^31), so 1f*MaxValue and -1f*MaxValue
             // both produce values that overflow a signed 32-bit cast. Stage through long and clamp symmetrically.
-            long scaled = (long)(s * (float)int.MaxValue);
+            long scaled = (long)(s * int.MaxValue);
             if (scaled > int.MaxValue) scaled = int.MaxValue;
             else if (scaled < -int.MaxValue) scaled = -int.MaxValue;
             dst[i] = (int)scaled;

@@ -20,7 +20,7 @@ namespace NAudioWpfDemo.Vst3HostDemo;
 /// currently crashes the host on .NET 9</b> — a known, unresolved issue documented in
 /// <c>Docs/Architecture/Vst3Hosting.md</c> (Phase 6). Treat the editor as display-only for now.
 /// </summary>
-class Vst3HostDemoViewModel : ViewModelBase, IDisposable
+internal class Vst3HostDemoViewModel : ViewModelBase, IDisposable
 {
     private const int MaxBlockSize = 512;
     // Bundled samples in SampleData/Drums are all 44.1 kHz, so the plug-in is created at

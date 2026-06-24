@@ -7,7 +7,7 @@ namespace NAudioConsoleTest.Wasapi.Tests;
 /// outside world (CLI args, menu prompts) by their friendly name. The special value
 /// <see cref="DefaultMarker"/> resolves to the OS default endpoint for the requested data flow.
 /// </summary>
-static class WasapiDevices
+internal static class WasapiDevices
 {
     public const string DefaultMarker = "default";
 

@@ -10,7 +10,7 @@ namespace NAudioConsoleTest.SoundFile.Tests;
 /// decodes it back from the same stream — exercising libsndfile's virtual
 /// I/O (<c>sf_open_virtual</c>) on both the write and read legs.
 /// </summary>
-sealed class SoundFileStreamRoundTripTest : IConsoleTest
+internal sealed class SoundFileStreamRoundTripTest : IConsoleTest
 {
     public string Id => "SoundFile.StreamRoundTrip";
     public string Description => "Round-trip a generated tone through a MemoryStream (virtual I/O)";

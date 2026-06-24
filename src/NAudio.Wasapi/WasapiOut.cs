@@ -86,7 +86,7 @@ public class WasapiOut : IWavePlayer, IWavePosition
         OutputWaveFormat = audioClient.MixFormat; // allow the user to query the default format for shared mode streams
     }
 
-    static MMDevice GetDefaultAudioEndpoint()
+    private static MMDevice GetDefaultAudioEndpoint()
     {
         if (Environment.OSVersion.Version.Major < 6)
         {

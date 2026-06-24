@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using NAudio.Dsp;
-using NAudio.Sampler;
 using NAudio.Wave;
 using NUnit.Framework;
 

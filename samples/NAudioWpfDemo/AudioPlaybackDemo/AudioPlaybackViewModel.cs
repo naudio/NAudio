@@ -9,7 +9,7 @@ using NAudioWpfDemo.ViewModel;
 
 namespace NAudioWpfDemo.AudioPlaybackDemo;
 
-class AudioPlaybackViewModel : ViewModelBase, IDisposable
+internal class AudioPlaybackViewModel : ViewModelBase, IDisposable
 {
     private readonly AudioPlayback audioPlayback;
     private readonly List<IVisualizationPlugin> visualizations;
@@ -74,7 +74,7 @@ class AudioPlaybackViewModel : ViewModelBase, IDisposable
         }
     }
 
-    void audioGraph_FftCalculated(object sender, FftEventArgs e)
+    private void audioGraph_FftCalculated(object sender, FftEventArgs e)
     {
         if (this.SelectedVisualization != null)
         {
@@ -83,7 +83,7 @@ class AudioPlaybackViewModel : ViewModelBase, IDisposable
         }
     }
 
-    void audioGraph_MaximumCalculated(object sender, MaxSampleEventArgs e)
+    private void audioGraph_MaximumCalculated(object sender, MaxSampleEventArgs e)
     {
         if (this.SelectedVisualization != null)
         {

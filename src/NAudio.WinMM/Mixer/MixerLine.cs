@@ -1,7 +1,6 @@
 ﻿// created on 10/12/2002 at 20:37
 using System;
 using System.Runtime.InteropServices;
-using NAudio.Wave;
 using System.Collections.Generic;
 
 namespace NAudio.Mixer;
@@ -12,8 +11,8 @@ namespace NAudio.Mixer;
 public class MixerLine
 {
     private MixerInterop.MIXERLINE mixerLine;
-    private IntPtr mixerHandle;
-    private MixerFlags mixerHandleType;
+    private readonly IntPtr mixerHandle;
+    private readonly MixerFlags mixerHandleType;
 
     /// <summary>
     /// Creates a new mixer destination
@@ -56,7 +55,7 @@ public class MixerLine
     public static int GetMixerIdForWaveIn(int waveInDevice)
     {
         int mixerId = -1;
-        MmException.Try(MixerInterop.mixerGetID((IntPtr)waveInDevice, out mixerId, MixerFlags.WaveIn), "mixerGetID");
+        MmException.Try(MixerInterop.mixerGetID(waveInDevice, out mixerId, MixerFlags.WaveIn), "mixerGetID");
         return mixerId;
     }
 

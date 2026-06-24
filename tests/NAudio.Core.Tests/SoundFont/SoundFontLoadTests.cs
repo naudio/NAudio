@@ -1,7 +1,5 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Text;
-using NAudio.SoundFont;
 using NUnit.Framework;
 
 namespace NAudio.Core.Tests.SoundFont;

@@ -8,9 +8,9 @@ namespace NAudio.SoundFont;
 /// </summary>
 public class SoundFont
 {
-    private InfoChunk info;
-    private PresetsChunk presetsChunk;
-    private SampleDataChunk sampleData;
+    private readonly InfoChunk info;
+    private readonly PresetsChunk presetsChunk;
+    private readonly SampleDataChunk sampleData;
 
     /// <summary>
     /// Loads a SoundFont from a file

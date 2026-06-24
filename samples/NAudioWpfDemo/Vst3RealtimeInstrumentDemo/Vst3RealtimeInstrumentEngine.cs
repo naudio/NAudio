@@ -20,7 +20,7 @@ namespace NAudioWpfDemo.Vst3RealtimeInstrumentDemo;
 /// <c>AsioDevice</c>-backed WPF panel for lower latency than the CLI's
 /// shared-mode <c>WasapiPlayer</c> path.
 /// </remarks>
-sealed class Vst3RealtimeInstrumentEngine : IDisposable
+internal sealed class Vst3RealtimeInstrumentEngine : IDisposable
 {
     private const int MaxBlockSize = 2048;
 

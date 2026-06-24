@@ -3,7 +3,7 @@
 /// <summary>
 /// Flags for use with acmDriverAdd
 /// </summary>
-enum AcmDriverAddFlags
+internal enum AcmDriverAddFlags
 {
     // also ACM_DRIVERADDF_TYPEMASK   = 0x00000007;
 

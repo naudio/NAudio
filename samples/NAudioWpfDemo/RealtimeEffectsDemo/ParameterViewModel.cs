@@ -8,7 +8,7 @@ namespace NAudioWpfDemo.RealtimeEffectsDemo;
 /// Binds a single <see cref="EffectParameter"/> to the generic editor. One control
 /// per kind is shown in the DataTemplate; the <c>Show*</c> flags pick which.
 /// </summary>
-class ParameterViewModel : ViewModelBase
+internal class ParameterViewModel : ViewModelBase
 {
     private readonly EffectParameter parameter;
 

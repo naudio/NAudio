@@ -7,7 +7,7 @@ namespace NAudio.Midi;
 /// </summary>
 public class MidiMessage
 {
-    private int rawData;
+    private readonly int rawData;
 
     /// <summary>
     /// Creates a new MIDI message

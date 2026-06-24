@@ -15,7 +15,7 @@ namespace NAudioWpfDemo.RealtimeEffectsDemo;
 /// fixed-parameter effects that the auto-panel can render — and double as a smoke
 /// test of their underlying DSP.
 /// </summary>
-static class EffectCatalog
+internal static class EffectCatalog
 {
     public sealed record Entry(string Name, Func<IAudioEffect> Create);
 

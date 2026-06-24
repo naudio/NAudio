@@ -7,7 +7,7 @@ namespace NAudio.SoundFont;
 internal class RiffChunk
 {
     private string chunkID;
-    private BinaryReader riffFile;
+    private readonly BinaryReader riffFile;
 
     public static RiffChunk GetTopLevelChunk(BinaryReader file)
     {

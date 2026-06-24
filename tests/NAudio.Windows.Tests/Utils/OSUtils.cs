@@ -3,7 +3,7 @@ using NUnit.Framework;
 
 namespace NAudio.Windows.Tests.Utils;
 
-static class OSUtils
+internal static class OSUtils
 {
     public static void RequireVista()
     {

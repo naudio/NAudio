@@ -43,7 +43,7 @@ internal class MediaFoundationPlaybackViewModel : ViewModelBase, IDisposable
 
     public IEnumerable<string> InputPathHistory => inputPathHistory;
 
-    const double SliderMax = 10.0;
+    private const double SliderMax = 10.0;
 
     private void TimerOnTick(object sender, EventArgs eventArgs)
     {

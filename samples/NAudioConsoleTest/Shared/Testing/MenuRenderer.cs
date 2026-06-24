@@ -1,5 +1,4 @@
-﻿using NAudioConsoleTest.Shared;
-using Spectre.Console;
+﻿using Spectre.Console;
 
 namespace NAudioConsoleTest.Shared.Testing;
 
@@ -15,7 +14,7 @@ namespace NAudioConsoleTest.Shared.Testing;
 /// earliest test in group A a lower <c>Order</c> than any test in group B places A above B.
 /// Tests with a null <c>Group</c> render flat (no group header) and appear above all named groups.
 /// </remarks>
-static class MenuRenderer
+internal static class MenuRenderer
 {
     public static void Show(string category)
     {

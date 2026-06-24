@@ -32,7 +32,7 @@ public partial class AsioRecordingPanel : UserControl
         Load += (_, _) => RefreshChannelList();
     }
 
-    void OnAsioDirectPanelDisposed(object sender, EventArgs e)
+    private void OnAsioDirectPanelDisposed(object sender, EventArgs e)
     {
         Cleanup();
     }

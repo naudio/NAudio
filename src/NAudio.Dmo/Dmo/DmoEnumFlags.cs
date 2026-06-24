@@ -10,7 +10,7 @@ namespace NAudio.Dmo;
 /// See https://learn.microsoft.com/windows/win32/api/dmoreg/ne-dmoreg-dmo_enum_flags
 /// </remarks>
 [Flags]
-enum DmoEnumFlags
+internal enum DmoEnumFlags
 {
     /// <summary>
     /// No flags set.

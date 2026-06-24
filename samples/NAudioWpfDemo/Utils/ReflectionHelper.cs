@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace NAudioWpfDemo.Utils;
 
-static class ReflectionHelper
+internal static class ReflectionHelper
 {
     public static IEnumerable<T> CreateAllInstancesOf<T>()
     {

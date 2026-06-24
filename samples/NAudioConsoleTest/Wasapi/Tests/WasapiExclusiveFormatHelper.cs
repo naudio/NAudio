@@ -10,7 +10,7 @@ namespace NAudioConsoleTest.Wasapi.Tests;
 /// <c>ExclusiveFormatExplorer</c>; the per-mode parameter shapes are different enough that the
 /// IConsoleTest split worked out cleaner than carrying a <c>subMode</c> parameter.
 /// </summary>
-static class WasapiExclusiveFormatHelper
+internal static class WasapiExclusiveFormatHelper
 {
     public static readonly int[] SampleRates = [44100, 48000, 88200, 96000, 176400, 192000];
     public static readonly int[] ChannelCounts = [1, 2, 4, 6, 8];

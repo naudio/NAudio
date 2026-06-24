@@ -11,7 +11,7 @@ namespace NAudioWpfDemo.Vst3Shared;
 /// size and tracks plug-in-initiated resizes. Closing the window detaches the editor
 /// (which is mandatory before the plug-in is torn down).
 /// </summary>
-partial class Vst3EditorWindow : Window
+public partial class Vst3EditorWindow : Window
 {
     private readonly Vst3EditorHost editorHost;
 

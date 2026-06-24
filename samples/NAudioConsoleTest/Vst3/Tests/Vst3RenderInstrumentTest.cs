@@ -12,7 +12,7 @@ namespace NAudioConsoleTest.Vst3.Tests;
 /// involved. The plug-in is resolved by case-insensitive substring match against installed modules
 /// and must expose an instrument ("Instrument" sub-category) class.
 /// </summary>
-sealed class Vst3RenderInstrumentTest : IConsoleTest
+internal sealed class Vst3RenderInstrumentTest : IConsoleTest
 {
     public string Id => "Vst3.RenderInstrument";
     public string Description => "Render a scripted note sequence through a VST 3 instrument (VSTi)";

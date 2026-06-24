@@ -4,7 +4,7 @@ using NAudio.Utils;
 
 namespace NAudio.Wave.SampleProviders;
 
-class Stereo16SampleChunkConverter : ISampleChunkConverter
+internal class Stereo16SampleChunkConverter : ISampleChunkConverter
 {
     private int sourceSample;
     private byte[] sourceBuffer;

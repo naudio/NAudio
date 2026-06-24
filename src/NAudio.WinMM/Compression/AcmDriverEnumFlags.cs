@@ -3,7 +3,7 @@
 namespace NAudio.Wave.Compression;
 
 [Flags]
-enum AcmDriverEnumFlags
+internal enum AcmDriverEnumFlags
 {
     /// <summary>
     /// ACM_DRIVERENUMF_NOLOCAL, Only global drivers should be included in the enumeration

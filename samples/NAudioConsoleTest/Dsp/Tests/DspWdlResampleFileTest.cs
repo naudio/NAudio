@@ -6,7 +6,7 @@ using Spectre.Console;
 
 namespace NAudioConsoleTest.Dsp.Tests;
 
-sealed class DspWdlResampleFileTest : IConsoleTest
+internal sealed class DspWdlResampleFileTest : IConsoleTest
 {
     public string Id => "Dsp.WdlResampleFile";
     public string Description => "Resample an audio file via WdlResamplingSampleProvider (managed WDL resampler)";

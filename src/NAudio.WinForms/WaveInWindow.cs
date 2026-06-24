@@ -80,7 +80,7 @@ public class WaveInWindow : IWaveIn
     {
         var caps = new WaveInCapabilities();
         int structSize = Marshal.SizeOf(caps);
-        MmException.Try(WaveInterop.waveInGetDevCaps((IntPtr)devNumber, out caps, structSize), "waveInGetDevCaps");
+        MmException.Try(WaveInterop.waveInGetDevCaps(devNumber, out caps, structSize), "waveInGetDevCaps");
         return caps;
     }
 
@@ -124,7 +124,7 @@ public class WaveInWindow : IWaveIn
         CloseWaveInDevice();
         MmResult result = WaveInterop.waveInOpenWindow(
             out waveInHandle,
-            (IntPtr)DeviceNumber,
+            DeviceNumber,
             WaveFormat,
             callbackHost.Handle,
             IntPtr.Zero,
@@ -209,7 +209,7 @@ public class WaveInWindow : IWaveIn
         {
             return new MixerLine(waveInHandle, 0, MixerFlags.WaveInHandle);
         }
-        return new MixerLine((IntPtr)DeviceNumber, 0, MixerFlags.WaveIn);
+        return new MixerLine(DeviceNumber, 0, MixerFlags.WaveIn);
     }
 
     private void Callback(IntPtr hWaveIn, WaveInterop.WaveMessage message, IntPtr userData, WaveHeader waveHeader, IntPtr reserved)

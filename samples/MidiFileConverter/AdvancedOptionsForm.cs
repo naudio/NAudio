@@ -1,16 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
 
 namespace MarkHeath.MidiUtils;
 
 public partial class AdvancedOptionsForm : Form
 {
-    private Properties.Settings settings;
+    private readonly Properties.Settings settings;
     public AdvancedOptionsForm()
     {
         InitializeComponent();

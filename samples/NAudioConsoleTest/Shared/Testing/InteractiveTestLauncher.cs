@@ -9,7 +9,7 @@ namespace NAudioConsoleTest.Shared.Testing;
 /// the user-visible label to a test id (and eventually that mapping disappears too when the
 /// menus are auto-built from <see cref="TestRegistry"/>).
 /// </summary>
-static class InteractiveTestLauncher
+internal static class InteractiveTestLauncher
 {
     public static void Launch(string id, IReadOnlyDictionary<string, object?>? seed = null)
     {

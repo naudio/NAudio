@@ -1,10 +1,9 @@
-﻿using NAudio.MediaFoundation;
-using NAudio.Wave;
+﻿using NAudio.Wave;
 using NAudioConsoleTest.Shared.Testing;
 
 namespace NAudioConsoleTest.MediaFoundation.Tests;
 
-sealed class MediaFoundationEncodeToWmaTest : IConsoleTest
+internal sealed class MediaFoundationEncodeToWmaTest : IConsoleTest
 {
     public string Id => "MediaFoundation.EncodeToWma";
     public string Description => "Encode an audio file to WMA (Media Foundation)";

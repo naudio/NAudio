@@ -10,12 +10,12 @@ namespace NAudio.Wave;
 public class AiffFileWriter : Stream
 {
     private Stream outStream;
-    private BinaryWriter writer;
+    private readonly BinaryWriter writer;
     private long dataSizePos;
     private long commSampleCountPos;
     private long dataChunkSize = 8;
-    private WaveFormat format;
-    private string filename;
+    private readonly WaveFormat format;
+    private readonly string filename;
 
     /// <summary>
     /// Creates an Aiff file by reading all the data from a WaveProvider
@@ -55,7 +55,7 @@ public class AiffFileWriter : Stream
         this.format = format;
         this.writer = new BinaryWriter(outStream, System.Text.Encoding.UTF8);
         this.writer.Write(System.Text.Encoding.UTF8.GetBytes("FORM"));
-        this.writer.Write((int)0); // placeholder
+        this.writer.Write(0); // placeholder
         this.writer.Write(System.Text.Encoding.UTF8.GetBytes("AIFF"));
 
         CreateCommChunk();
@@ -77,9 +77,9 @@ public class AiffFileWriter : Stream
     {
         this.writer.Write(System.Text.Encoding.UTF8.GetBytes("SSND"));
         dataSizePos = this.outStream.Position;
-        this.writer.Write((int)0);  // placeholder
-        this.writer.Write((int)0);  // zero offset
-        this.writer.Write(SwapEndian((int)format.BlockAlign));
+        this.writer.Write(0);  // placeholder
+        this.writer.Write(0);  // zero offset
+        this.writer.Write(SwapEndian(format.BlockAlign));
     }
 
     private byte[] SwapEndian(short n)
@@ -95,10 +95,10 @@ public class AiffFileWriter : Stream
     private void CreateCommChunk()
     {
         this.writer.Write(System.Text.Encoding.UTF8.GetBytes("COMM"));
-        this.writer.Write(SwapEndian((int)18));
+        this.writer.Write(SwapEndian(18));
         this.writer.Write(SwapEndian((short)format.Channels));
         commSampleCountPos = this.outStream.Position; ;
-        this.writer.Write((int)0);  // placeholder for total number of samples
+        this.writer.Write(0);  // placeholder for total number of samples
         this.writer.Write(SwapEndian((short)format.BitsPerSample));
         this.writer.Write(IEEE.ConvertToIeeeExtended(format.SampleRate));
     }
@@ -223,7 +223,7 @@ public class AiffFileWriter : Stream
         dataChunkSize += count;
     }
 
-    private byte[] value24 = new byte[3]; // keep this around to save us creating it every time
+    private readonly byte[] value24 = new byte[3]; // keep this around to save us creating it every time
 
     /// <summary>
     /// Writes a single sample to the Aiff file

@@ -2,7 +2,7 @@
 
 namespace NAudioDemo.NetworkChatDemo;
 
-interface IAudioReceiver : IDisposable
+internal interface IAudioReceiver : IDisposable
 {
     void OnReceived(Action<byte[]> handler);
 }

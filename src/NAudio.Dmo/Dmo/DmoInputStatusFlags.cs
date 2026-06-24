@@ -10,7 +10,7 @@ namespace NAudio.Dmo;
 /// See https://learn.microsoft.com/windows/win32/api/mediaobj/ne-mediaobj-_dmo_input_status_flags
 /// </remarks>
 [Flags]
-enum DmoInputStatusFlags
+internal enum DmoInputStatusFlags
 {
     /// <summary>
     /// No flags set.

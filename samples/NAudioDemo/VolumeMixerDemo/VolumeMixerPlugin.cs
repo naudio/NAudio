@@ -1,13 +1,11 @@
-﻿using System;
-using System.Linq;
-using System.Windows.Forms;
+﻿using System.Windows.Forms;
 
 namespace NAudioDemo.VolumeMixerDemo;
 
 /// <summary>
 /// Volume mixer with functionality of Win Vista and higher Volume Mixer.
 /// </summary>
-class VolumeMixerPlugin : INAudioDemoPlugin
+internal class VolumeMixerPlugin : INAudioDemoPlugin
 {
     public string Name
     {

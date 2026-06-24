@@ -4,7 +4,7 @@ using NAudio.Codecs;
 
 namespace NAudioDemo.NetworkChatDemo;
 
-class AcmALawChatCodec : AcmChatCodec
+internal class AcmALawChatCodec : AcmChatCodec
 {
     public AcmALawChatCodec()
         : base(new WaveFormat(8000, 16, 1), WaveFormat.CreateALawFormat(8000, 1))
@@ -15,7 +15,7 @@ class AcmALawChatCodec : AcmChatCodec
 }
 
 
-class ALawChatCodec : INetworkChatCodec
+internal class ALawChatCodec : INetworkChatCodec
 {
     public string Name => "G.711 a-law";
 

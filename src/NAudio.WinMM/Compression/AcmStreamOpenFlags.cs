@@ -3,7 +3,7 @@
 namespace NAudio.Wave.Compression;
 
 [Flags]
-enum AcmStreamOpenFlags
+internal enum AcmStreamOpenFlags
 {
     /// <summary>
     /// ACM_STREAMOPENF_QUERY, ACM will be queried to determine whether it supports the given conversion. A conversion stream will not be opened, and no handle will be returned in the phas parameter. 

@@ -3,7 +3,7 @@ using NAudio.Utils;
 
 namespace NAudio.Wave.SampleProviders;
 
-class Mono8SampleChunkConverter : ISampleChunkConverter
+internal class Mono8SampleChunkConverter : ISampleChunkConverter
 {
     private int offset;
     private byte[] sourceBuffer;

@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.IO;
 using System.Linq;
 using System.Windows.Threading;
 using Microsoft.Win32;
 using NAudio.Vst3;
 using NAudio.Wave;
-using NAudio.Wave.SampleProviders;
 using NAudioWpfDemo.ViewModel;
 using NAudioWpfDemo.Vst3Shared;
 
@@ -21,7 +19,7 @@ namespace NAudioWpfDemo.Vst3RealtimeEffectDemo;
 /// slot keeps its native editor, state, and parameter automation queues. Per the
 /// Phase 8 plan in <c>Docs/Architecture/Vst3Hosting.md</c>.
 /// </summary>
-class Vst3RealtimeEffectViewModel : ViewModelBase, IDisposable
+internal class Vst3RealtimeEffectViewModel : ViewModelBase, IDisposable
 {
     // Match the existing Vst3HostDemo: leave enough headroom for ASIO buffers up to 2048
     // frames; plug-ins that need more will block-loop internally.

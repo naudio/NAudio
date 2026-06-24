@@ -1,7 +1,5 @@
 ﻿using NAudio.CoreAudioApi;
-using NAudio.CoreAudioApi.Interfaces;
 using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -28,7 +26,7 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
 
     private AudioClient audioClient;
     private int bytesPerFrame;
-    private WaveFormat waveFormat;
+    private readonly WaveFormat waveFormat;
     private volatile CaptureState captureState;
     private Thread captureThread;
     private EventWaitHandle frameEvent;

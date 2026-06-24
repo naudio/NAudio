@@ -1,10 +1,9 @@
-﻿using NAudio.MediaFoundation;
-using NAudio.Wave;
+﻿using NAudio.Wave;
 using NAudioConsoleTest.Shared.Testing;
 
 namespace NAudioConsoleTest.MediaFoundation.Tests;
 
-sealed class MediaFoundationEncodeToAacTest : IConsoleTest
+internal sealed class MediaFoundationEncodeToAacTest : IConsoleTest
 {
     public string Id => "MediaFoundation.EncodeToAac";
     public string Description => "Encode an audio file to AAC (Media Foundation)";

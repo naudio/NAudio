@@ -10,9 +10,9 @@ namespace NAudioDemo.AudioPlaybackDemo;
 /// <see cref="WasapiPlayerBuilder"/>). Listed alongside the legacy
 /// <see cref="WasapiOutPlugin"/> so users can A/B the two code paths.
 /// </summary>
-class WasapiPlayerPlugin : IOutputDevicePlugin
+internal class WasapiPlayerPlugin : IOutputDevicePlugin
 {
-    WasapiOutSettingsPanel settingsPanel;
+    private WasapiOutSettingsPanel settingsPanel;
 
     public IWavePlayer CreateDevice(int latency)
     {

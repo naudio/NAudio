@@ -441,7 +441,6 @@ public class MediaFoundationReader : WaveStream
 
     private void OnWaveFormatChanged()
     {
-        var handler = WaveFormatChanged;
-        if (handler != null) handler(this, EventArgs.Empty);
+        WaveFormatChanged?.Invoke(this, EventArgs.Empty);
     }
 }

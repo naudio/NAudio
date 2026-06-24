@@ -12,7 +12,7 @@ namespace NAudioConsoleTest.Asio.Tests;
 /// playback convertor. Mirrors <see cref="AsioDuplexPassthroughTest"/> but exercises the
 /// legacy API surface.
 /// </summary>
-sealed class AsioLegacyDuplexPassthroughTest : IConsoleTest
+internal sealed class AsioLegacyDuplexPassthroughTest : IConsoleTest
 {
     public string Id => "Asio.LegacyDuplexPassthrough";
     public string Description => "Legacy AsioOut duplex (AudioAvailable + WrittenToOutputBuffers)";

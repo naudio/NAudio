@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using NAudio.SoundFile;
 using NAudio.Wave;
 using NUnit.Framework;
 
@@ -56,7 +55,7 @@ public class SoundFileReviewTests : SoundFileTestBase
         var buf = new float[r.WaveFormat.Channels * 4096];
         var all = new List<float>();
         int n;
-        while ((n = ((ISampleProvider)r).Read(buf)) > 0)
+        while ((n = r.Read(buf)) > 0)
         {
             all.AddRange(new ReadOnlySpan<float>(buf, 0, n).ToArray());
         }
@@ -150,12 +149,12 @@ public class SoundFileReviewTests : SoundFileTestBase
         Assert.That(r.Length, Is.GreaterThan(0));
 
         var first = new float[2000];
-        int n1 = ((ISampleProvider)r).Read(first);
+        int n1 = r.Read(first);
 
         r.Position = 0;
         Assert.That(r.Position, Is.EqualTo(0));
         var again = new float[2000];
-        int n2 = ((ISampleProvider)r).Read(again);
+        int n2 = r.Read(again);
 
         Assert.Multiple(() =>
         {
@@ -231,7 +230,7 @@ public class SoundFileReviewTests : SoundFileTestBase
         {
             using var r = new SoundFileReader(failing);
             var buf = new float[r.WaveFormat.Channels * 4096];
-            while (((ISampleProvider)r).Read(buf) > 0) { }
+            while (r.Read(buf) > 0) { }
         });
         Assert.That(ex.InnerException, Is.TypeOf<IOException>());
     }

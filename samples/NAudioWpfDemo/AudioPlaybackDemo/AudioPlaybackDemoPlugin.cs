@@ -1,12 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Windows.Controls;
 using NAudioWpfDemo.Utils;
 
 namespace NAudioWpfDemo.AudioPlaybackDemo;
 
-class AudioPlaybackDemoPlugin : IModule
+internal class AudioPlaybackDemoPlugin : IModule
 {
     private AudioPlaybackDemoView view;
     private AudioPlaybackViewModel viewModel;

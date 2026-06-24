@@ -4,7 +4,7 @@ using Spectre.Console;
 
 namespace NAudioConsoleTest.WinMM.Tests;
 
-sealed class WinMmConvertWithProviderTest : IConsoleTest
+internal sealed class WinMmConvertWithProviderTest : IConsoleTest
 {
     public string Id => "WinMm.ConvertWithProvider";
     public string Description => "Convert a WAV file's sample rate via WaveFormatConversionProvider (ACM)";

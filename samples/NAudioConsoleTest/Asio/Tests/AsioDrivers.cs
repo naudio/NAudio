@@ -7,7 +7,7 @@ namespace NAudioConsoleTest.Asio.Tests;
 /// Shared driver enumeration and channel-list parsing for ASIO tests. Drivers are identified
 /// by their installed friendly name; channel lists are comma-separated integers like <c>"0,1"</c>.
 /// </summary>
-static class AsioDrivers
+internal static class AsioDrivers
 {
     public static IReadOnlyList<string> DriverNames() => AsioDevice.GetDriverNames();
 

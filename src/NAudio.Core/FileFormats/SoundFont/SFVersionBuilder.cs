@@ -5,7 +5,7 @@ namespace NAudio.SoundFont;
 /// <summary>
 /// Builds a SoundFont version
 /// </summary>
-class SFVersionBuilder : StructureBuilder<SFVersion>
+internal class SFVersionBuilder : StructureBuilder<SFVersion>
 {
     /// <summary>
     /// Reads a SoundFont Version structure

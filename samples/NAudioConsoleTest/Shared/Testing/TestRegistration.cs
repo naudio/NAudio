@@ -14,7 +14,7 @@ namespace NAudioConsoleTest.Shared.Testing;
 /// Single hand-maintained list of every test registered with <see cref="TestRegistry"/>.
 /// Add new <see cref="IConsoleTest"/> implementations here as they're written.
 /// </summary>
-static class TestRegistration
+internal static class TestRegistration
 {
     public static void RegisterAll()
     {

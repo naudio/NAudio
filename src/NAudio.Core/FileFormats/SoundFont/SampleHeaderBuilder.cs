@@ -3,7 +3,7 @@ using NAudio.Utils;
 
 namespace NAudio.SoundFont;
 
-class SampleHeaderBuilder : StructureBuilder<SampleHeader>
+internal class SampleHeaderBuilder : StructureBuilder<SampleHeader>
 {
     public override SampleHeader Read(BinaryReader br)
     {

@@ -10,21 +10,21 @@ namespace NAudio.Midi;
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
 public struct MidiOutCapabilities
 {
-    Int16 manufacturerId;
-    Int16 productId;
-    int driverVersion;
+    private readonly Int16 manufacturerId;
+    private readonly Int16 productId;
+    private readonly int driverVersion;
     [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MaxProductNameLength)]
-    string productName;
-    Int16 wTechnology;
-    Int16 wVoices;
-    Int16 wNotes;
-    UInt16 wChannelMask;
-    MidiOutCapabilityFlags dwSupport;
+    private readonly string productName;
+    private readonly Int16 wTechnology;
+    private readonly Int16 wVoices;
+    private readonly Int16 wNotes;
+    private readonly UInt16 wChannelMask;
+    private readonly MidiOutCapabilityFlags dwSupport;
 
-    const int MaxProductNameLength = 32; // max product name length (including NULL)
+    private const int MaxProductNameLength = 32; // max product name length (including NULL)
 
     [Flags]
-    enum MidiOutCapabilityFlags
+    private enum MidiOutCapabilityFlags
     {
         /// <summary>
         /// MIDICAPS_VOLUME

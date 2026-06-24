@@ -1,8 +1,4 @@
-﻿using System;
-using System.ComponentModel;
-using System.Collections;
-using System.Diagnostics;
-using System.Windows.Forms;
+﻿using System.Windows.Forms;
 using System.Drawing;
 
 namespace NAudio.Gui;
@@ -127,7 +123,7 @@ public class Fader : System.Windows.Forms.Control
             }
             else
             {
-                percent = (float)sliderTop / (float)(this.Height - SliderHeight);
+                percent = sliderTop / (float)(this.Height - SliderHeight);
             }
             this.Invalidate();
         }

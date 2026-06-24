@@ -18,15 +18,15 @@ namespace NAudio.Dmo;
 [StructLayout(LayoutKind.Sequential)]
 public struct DmoMediaType
 {
-    Guid majortype;
-    Guid subtype;
-    int bFixedSizeSamples;
-    int bTemporalCompression;
-    int lSampleSize;
-    Guid formattype;
-    IntPtr pUnk; // not used
-    int cbFormat;
-    IntPtr pbFormat;
+    private Guid majortype;
+    private Guid subtype;
+    private int bFixedSizeSamples;
+    private readonly int bTemporalCompression;
+    private readonly int lSampleSize;
+    private Guid formattype;
+    private readonly IntPtr pUnk; // not used
+    private readonly int cbFormat;
+    private readonly IntPtr pbFormat;
 
     /// <summary>
     /// Major type

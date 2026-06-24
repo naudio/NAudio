@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave;
 
-class Mp3Index
+internal class Mp3Index
 {
     public long FilePosition { get; set; }
     public long SamplePosition { get; set; }
@@ -200,7 +200,7 @@ public class Mp3FileReaderBase : WaveStream
             // duration_seconds = mp3DataLength * 8 / firstFrame.BitRate
             // total_samples    = duration_seconds * sampleRate
             // Exact for CBR, approximate for headerless VBR.
-            totalSamples = (long)((double)mp3DataLength * 8.0 * firstFrame.SampleRate / firstFrame.BitRate);
+            totalSamples = (long)(mp3DataLength * 8.0 * firstFrame.SampleRate / firstFrame.BitRate);
             isLengthExact = false;
         }
     }

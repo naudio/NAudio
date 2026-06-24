@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace NAudio.Dmo.Effect;
@@ -17,7 +16,7 @@ internal struct DsFxDistortion
  System.Security.SuppressUnmanagedCodeSecurity,
  Guid("8ecf4326-455f-4d8b-bda9-8d5d3e9e3e0b"),
  InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-interface IDirectSoundFXDistortion
+internal interface IDirectSoundFXDistortion
 {
     [PreserveSig]
     int SetAllParameters([In] ref DsFxDistortion param);

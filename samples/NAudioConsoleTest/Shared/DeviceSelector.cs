@@ -3,7 +3,7 @@ using Spectre.Console;
 
 namespace NAudioConsoleTest.Shared;
 
-static class DeviceSelector
+internal static class DeviceSelector
 {
     public static MMDevice? SelectRenderDevice()
     {

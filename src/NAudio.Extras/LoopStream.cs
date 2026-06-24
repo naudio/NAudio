@@ -8,7 +8,7 @@ namespace NAudio.Extras;
 /// </summary>
 public class LoopStream : WaveStream
 {
-    readonly WaveStream sourceStream;
+    private readonly WaveStream sourceStream;
 
     /// <summary>
     /// Creates a new Loop stream

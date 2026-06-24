@@ -3,7 +3,7 @@ using NAudio.Wave;
 
 namespace NAudioDemo.NetworkChatDemo;
 
-class NetworkAudioPlayer : IDisposable
+internal class NetworkAudioPlayer : IDisposable
 {
     private readonly INetworkChatCodec codec;
     private readonly IAudioReceiver receiver;
@@ -22,7 +22,7 @@ class NetworkAudioPlayer : IDisposable
         waveOut.Play();
     }
 
-    void OnDataReceived(byte[] compressed)
+    private void OnDataReceived(byte[] compressed)
     {
         byte[] decoded = codec.Decode(compressed, 0, compressed.Length);
         waveProvider.AddSamples(decoded, 0, decoded.Length);

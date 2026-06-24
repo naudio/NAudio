@@ -1,8 +1,6 @@
 ﻿// created on 13/12/2002 at 22:01
 using System;
 using System.Runtime.InteropServices;
-using NAudio.Utils;
-using NAudio.Wave;
 
 namespace NAudio.Mixer;
 
@@ -86,7 +84,7 @@ public class SignedMixerControl : MixerControl
     {
         get
         {
-            return 100.0 * (Value - MinValue) / (double)(MaxValue - MinValue);
+            return 100.0 * (Value - MinValue) / (MaxValue - MinValue);
         }
         set
         {

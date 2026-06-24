@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Runtime.CompilerServices;
 
 #pragma warning disable CS0659 // AudioFileFormat is not overriding GetHashCode
 

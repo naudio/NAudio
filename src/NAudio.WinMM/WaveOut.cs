@@ -39,7 +39,7 @@ public class WaveOut : IWavePlayer, IWavePosition
     {
         var caps = new WaveOutCapabilities();
         int structSize = Marshal.SizeOf(caps);
-        MmException.Try(WaveInterop.waveOutGetDevCaps((IntPtr)devNumber, out caps, structSize), "waveOutGetDevCaps");
+        MmException.Try(WaveInterop.waveOutGetDevCaps(devNumber, out caps, structSize), "waveOutGetDevCaps");
         return caps;
     }
 
@@ -101,7 +101,7 @@ public class WaveOut : IWavePlayer, IWavePosition
         MmResult result;
         lock (waveOutLock)
         {
-            result = WaveInterop.waveOutOpenWindow(out hWaveOut, (IntPtr)DeviceNumber, waveStream.WaveFormat, callbackEvent.SafeWaitHandle.DangerousGetHandle(), IntPtr.Zero, WaveInterop.WaveInOutOpenFlags.CallbackEvent);
+            result = WaveInterop.waveOutOpenWindow(out hWaveOut, DeviceNumber, waveStream.WaveFormat, callbackEvent.SafeWaitHandle.DangerousGetHandle(), IntPtr.Zero, WaveInterop.WaveInOutOpenFlags.CallbackEvent);
         }
         MmException.Try(result, "waveOutOpen");
 

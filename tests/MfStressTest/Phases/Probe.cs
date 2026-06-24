@@ -90,7 +90,7 @@ internal static class Probe
         return combos;
     }
 
-    static bool TryBreadthRound(string tempDir, Combo combo, out string? skipReason)
+    private static bool TryBreadthRound(string tempDir, Combo combo, out string? skipReason)
     {
         try
         {

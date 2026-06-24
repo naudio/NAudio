@@ -3,8 +3,6 @@ using System.Runtime.Versioning;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 
-using NAudio.Utils;
-
 namespace NAudio.MediaFoundation.Interfaces;
 
 /// <summary>

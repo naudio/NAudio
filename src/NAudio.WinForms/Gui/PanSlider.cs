@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections;
-using System.ComponentModel;
 using System.Drawing;
-using System.Data;
 using System.Windows.Forms;
 
 namespace NAudio.Gui;
@@ -15,7 +12,7 @@ public class PanSlider : System.Windows.Forms.UserControl
     /// <summary>
     /// Required designer variable.
     /// </summary>
-    private System.ComponentModel.Container components = null;
+    private readonly System.ComponentModel.Container components = null;
     private float pan;
 
     /// <summary>
@@ -139,8 +136,7 @@ public class PanSlider : System.Windows.Forms.UserControl
             if (value != pan)
             {
                 pan = value;
-                if (PanChanged != null)
-                    PanChanged(this, EventArgs.Empty);
+                PanChanged?.Invoke(this, EventArgs.Empty);
                 Invalidate();
             }
 

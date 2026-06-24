@@ -8,7 +8,7 @@ using NAudioWpfDemo.ViewModel;
 
 namespace NAudioWpfDemo.DrumMachineDemo;
 
-class DrumMachineDemoViewModel : ViewModelBase, IDisposable
+internal class DrumMachineDemoViewModel : ViewModelBase, IDisposable
 {
     private const int OfflineRenderSeconds = 8;
 

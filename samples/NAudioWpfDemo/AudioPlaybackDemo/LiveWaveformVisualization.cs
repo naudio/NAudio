@@ -9,7 +9,7 @@ namespace NAudioWpfDemo.AudioPlaybackDemo;
 /// Visualization plugin that wraps <see cref="LiveWaveformControl"/> with a small options panel
 /// so the user can flip through render styles and scales live.
 /// </summary>
-class LiveWaveformVisualization : IVisualizationPlugin
+internal class LiveWaveformVisualization : IVisualizationPlugin
 {
     private readonly LiveWaveformControl waveform = new();
     private readonly DockPanel content;

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Windows.Forms;
-using NAudio.CoreAudioApi;
 using NAudio.Wave;
 
 namespace NAudioDemo.AudioPlaybackDemo;
@@ -9,9 +8,9 @@ namespace NAudioDemo.AudioPlaybackDemo;
 /// Plugin exposing the legacy <see cref="WasapiOut"/> API. Listed alongside
 /// <see cref="WasapiPlayerPlugin"/> so users can A/B the two code paths.
 /// </summary>
-class WasapiOutPlugin : IOutputDevicePlugin
+internal class WasapiOutPlugin : IOutputDevicePlugin
 {
-    WasapiOutSettingsPanel settingsPanel;
+    private WasapiOutSettingsPanel settingsPanel;
 
     public IWavePlayer CreateDevice(int latency)
     {

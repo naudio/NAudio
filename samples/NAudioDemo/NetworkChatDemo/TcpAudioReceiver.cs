@@ -5,7 +5,7 @@ using System.Threading;
 
 namespace NAudioDemo.NetworkChatDemo;
 
-class TcpAudioReceiver : IAudioReceiver
+internal class TcpAudioReceiver : IAudioReceiver
 {
     private readonly TcpListener listener;
     private Action<byte[]> handler;

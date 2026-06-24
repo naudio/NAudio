@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 using System.IO;
@@ -15,10 +13,10 @@ public partial class AudioFileInspectorForm : Form
 {
 
     public ICollection<IAudioFileInspector> Inspectors { get; private set; }
-    string filterString;
-    int filterIndex;
-    string currentFile;
-    FindForm findForm;
+    private string filterString;
+    private int filterIndex;
+    private string currentFile;
+    private FindForm findForm;
 
     public string[] CommandLineArguments { get; set; }
 
@@ -210,7 +208,7 @@ public partial class AudioFileInspectorForm : Form
         findForm.Show(this);
     }
 
-    void findForm_Disposed(object sender, EventArgs e)
+    private void findForm_Disposed(object sender, EventArgs e)
     {
         findForm = null;
     }

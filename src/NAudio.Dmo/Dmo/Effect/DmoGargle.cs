@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace NAudio.Dmo.Effect;
@@ -14,7 +13,7 @@ internal struct DsFxGargle
  System.Security.SuppressUnmanagedCodeSecurity,
  Guid("d616f352-d622-11ce-aac5-0020af0b99a3"),
  InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-interface IDirectSoundFXGargle
+internal interface IDirectSoundFXGargle
 {
     [PreserveSig]
     int SetAllParameters([In] ref DsFxGargle param);

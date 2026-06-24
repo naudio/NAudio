@@ -1,5 +1,4 @@
-﻿using NAudio.Dmo;
-using NAudio.Wave;
+﻿using NAudio.Wave;
 using NAudioConsoleTest.Shared.Testing;
 using Spectre.Console;
 
@@ -10,7 +9,7 @@ namespace NAudioConsoleTest.WinMM.Tests;
 /// toggles pause/resume. Non-interactive: runs until end-of-stream or until
 /// <c>maxDuration</c> elapses, with Ctrl+C as the abort path.
 /// </summary>
-sealed class WinMmPlayFileTest : IConsoleTest
+internal sealed class WinMmPlayFileTest : IConsoleTest
 {
     public string Id => "WinMm.PlayFile";
     public string Description => "Play an audio file via WaveOut";

@@ -24,7 +24,7 @@ public class PresetsChunk
         string header = chunk.ReadChunkID();
         if (header != "pdta")
         {
-            throw new InvalidDataException(String.Format("Not a presets data chunk ({0})", header));
+            throw new InvalidDataException($"Not a presets data chunk ({header})");
         }
 
         RiffChunk c;
@@ -69,7 +69,7 @@ public class PresetsChunk
                     c.GetDataAsStructureArray(sampleHeaders);
                     break;
                 default:
-                    throw new InvalidDataException(String.Format("Unknown chunk type {0}", c.ChunkID));
+                    throw new InvalidDataException($"Unknown chunk type {c.ChunkID}");
             }
         }
 

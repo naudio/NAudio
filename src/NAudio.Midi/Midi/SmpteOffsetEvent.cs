@@ -35,7 +35,7 @@ public class SmpteOffsetEvent : MetaEvent
     {
         if (length != 5)
         {
-            throw new FormatException(String.Format("Invalid SMPTE Offset length: Got {0}, expected 5", length));
+            throw new FormatException($"Invalid SMPTE Offset length: Got {length}, expected 5");
         }
         hours = br.ReadByte();
         minutes = br.ReadByte();
@@ -81,8 +81,7 @@ public class SmpteOffsetEvent : MetaEvent
     /// <returns>A string describing this event</returns>
     public override string ToString()
     {
-        return String.Format("{0} {1}:{2}:{3}:{4}:{5}",
-            base.ToString(), hours, minutes, seconds, frames, subFrames);
+        return $"{base.ToString()} {hours}:{minutes}:{seconds}:{frames}:{subFrames}";
     }
 
     /// <summary>

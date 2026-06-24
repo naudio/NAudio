@@ -74,7 +74,7 @@ public class VolumeSlider : System.Windows.Forms.UserControl
         float percent = 1 - (db / MinDb);
 
         pe.Graphics.FillRectangle(Brushes.LightGreen, 1, 1, (int)((this.Width - 2) * percent), this.Height - 2);
-        string dbValue = String.Format("{0:F2} dB", db);
+        string dbValue = $"{db:F2} dB";
         /*if(Double.IsNegativeInfinity(db))
         {
             dbValue = "-\x221e db"; // -8 dB

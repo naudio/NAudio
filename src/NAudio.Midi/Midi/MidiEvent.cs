@@ -78,7 +78,7 @@ public class MidiEvent
             //case MidiCommandCode.MetaEvent:
             //case MidiCommandCode.Sysex:
             default:
-                throw new FormatException(String.Format("Unsupported MIDI Command Code for Raw Message {0}", commandCode));
+                throw new FormatException($"Unsupported MIDI Command Code for Raw Message {commandCode}");
         }
         return me;
 
@@ -154,7 +154,7 @@ public class MidiEvent
                 me = MetaEvent.ReadMetaEvent(br);
                 break;
             default:
-                throw new FormatException(String.Format("Unsupported MIDI Command Code {0:X2}", (byte)commandCode));
+                throw new FormatException($"Unsupported MIDI Command Code {(byte)commandCode:X2}");
         }
         me.channel = channel;
         me.deltaTime = deltaTime;
@@ -211,7 +211,7 @@ public class MidiEvent
             if ((value < 1) || (value > 16))
             {
                 throw new ArgumentOutOfRangeException("value", value,
-                    String.Format("Channel must be 1-16 (Got {0})", value));
+                    $"Channel must be 1-16 (Got {value})");
             }
             channel = value;
         }
@@ -311,9 +311,9 @@ public class MidiEvent
     public override string ToString()
     {
         if (commandCode >= MidiCommandCode.Sysex)
-            return String.Format("{0} {1}", absoluteTime, commandCode);
+            return $"{absoluteTime} {commandCode}";
         else
-            return String.Format("{0} {1} Ch: {2}", absoluteTime, commandCode, channel);
+            return $"{absoluteTime} {commandCode} Ch: {channel}";
     }
 
     /// <summary>

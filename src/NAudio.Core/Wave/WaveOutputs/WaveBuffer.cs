@@ -236,12 +236,12 @@ public class WaveBuffer : IWaveBuffer
         int newNumberOfBytes = value * sizeOfValue;
         if ((newNumberOfBytes % 4) != 0)
         {
-            throw new ArgumentOutOfRangeException(argName, String.Format("{0} cannot set a count ({1}) that is not 4 bytes aligned ", argName, newNumberOfBytes));
+            throw new ArgumentOutOfRangeException(argName, $"{argName} cannot set a count ({newNumberOfBytes}) that is not 4 bytes aligned ");
         }
 
         if (value < 0 || value > (byteBuffer.Length / sizeOfValue))
         {
-            throw new ArgumentOutOfRangeException(argName, String.Format("{0} cannot set a count that exceed max count {1}", argName, byteBuffer.Length / sizeOfValue));
+            throw new ArgumentOutOfRangeException(argName, $"{argName} cannot set a count that exceed max count {byteBuffer.Length / sizeOfValue}");
         }
         return newNumberOfBytes;
     }

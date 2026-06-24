@@ -60,7 +60,7 @@ public class MidiMessage
         if ((channel < 1) || (channel > 16))
         {
             throw new ArgumentOutOfRangeException("channel", channel,
-                String.Format("Channel must be 1-16 (Got {0})", channel));
+                $"Channel must be 1-16 (Got {channel})");
         }
     }
 

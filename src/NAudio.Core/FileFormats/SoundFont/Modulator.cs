@@ -71,9 +71,7 @@ public class Modulator
     /// </summary>
     public override string ToString()
     {
-        return String.Format("Modulator {0} {1} {2} {3} {4}",
-            SourceModulationData, DestinationGenerator,
-            Amount, SourceModulationAmount, SourceTransform);
+        return $"Modulator {SourceModulationData} {DestinationGenerator} {Amount} {SourceModulationAmount} {SourceTransform}";
     }
 
 }

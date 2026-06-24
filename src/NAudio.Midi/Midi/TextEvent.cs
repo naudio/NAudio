@@ -79,7 +79,7 @@ public class TextEvent : MetaEvent
     /// <returns>A string describing this event</returns>
     public override string ToString()
     {
-        return String.Format("{0} {1}", base.ToString(), Text);
+        return $"{base.ToString()} {Text}";
     }
 
     /// <summary>

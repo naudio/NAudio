@@ -86,7 +86,7 @@ public class AsioOut : IWavePlayer
         }
         if (driverIndex < 0 || driverIndex >= names.Length)
         {
-            throw new ArgumentException(string.Format("Invalid device number. Must be in the range [0,{0}]", names.Length - 1));
+            throw new ArgumentException($"Invalid device number. Must be in the range [0,{names.Length - 1}]");
         }
         device = AsioDevice.Open(names[driverIndex]);
         WireDeviceEvents();

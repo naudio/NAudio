@@ -93,8 +93,7 @@ internal class AsioSampleConvertor
 
             default:
                 throw new ArgumentException(
-                    String.Format("ASIO Buffer Type {0} is not yet supported.",
-                                  Enum.GetName(typeof(AsioSampleType), asioType)));
+                    $"ASIO Buffer Type {Enum.GetName(typeof(AsioSampleType), asioType)} is not yet supported.");
         }
         if (convertor == null)
             throw new ArgumentException(

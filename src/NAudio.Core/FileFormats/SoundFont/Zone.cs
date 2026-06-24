@@ -17,8 +17,7 @@ public class Zone
     /// </summary>
     public override string ToString()
     {
-        return String.Format("Zone {0} Gens:{1} {2} Mods:{3}", generatorCount, generatorIndex,
-            modulatorCount, modulatorIndex);
+        return $"Zone {generatorCount} Gens:{generatorIndex} {modulatorCount} Mods:{modulatorIndex}";
     }
 
     /// <summary>

@@ -76,7 +76,7 @@ internal class WaveFileChunkReader
             else if (chunkIdentifier == formatChunkId)
             {
                 if (chunkLength > Int32.MaxValue)
-                    throw new InvalidDataException(string.Format("Format chunk length must be between 0 and {0}.", Int32.MaxValue));
+                    throw new InvalidDataException($"Format chunk length must be between 0 and {Int32.MaxValue}.");
                 waveFormat = WaveFormat.FromFormatChunk(br, (int)chunkLength);
             }
             else
@@ -86,8 +86,7 @@ internal class WaveFileChunkReader
                 {
                     if (strictMode)
                     {
-                        Debug.Assert(false, String.Format("Invalid chunk length {0}, pos: {1}. length: {2}",
-                            chunkLength, stream.Position, stream.Length));
+                        Debug.Assert(false, $"Invalid chunk length {chunkLength}, pos: {stream.Position}. length: {stream.Length}");
                     }
                     // an exception will be thrown further down if we haven't got a format and data chunk yet,
                     // otherwise we will tolerate this file despite it having corrupt data at the end
@@ -96,7 +95,7 @@ internal class WaveFileChunkReader
                 if (storeAllChunks)
                 {
                     if (chunkLength > Int32.MaxValue)
-                        throw new InvalidDataException(string.Format("RiffChunk chunk length must be between 0 and {0}.", Int32.MaxValue));
+                        throw new InvalidDataException($"RiffChunk chunk length must be between 0 and {Int32.MaxValue}.");
                     riffChunks.Add(GetRiffChunk(stream, chunkIdentifier, (int)chunkLength));
                 }
                 stream.Position += chunkLength;

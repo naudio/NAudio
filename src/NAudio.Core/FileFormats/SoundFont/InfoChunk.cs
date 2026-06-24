@@ -138,17 +138,6 @@ public class InfoChunk
     /// </summary>
     public override string ToString()
     {
-        return string.Format("Bank Name: {0}\r\nAuthor: {1}\r\nCopyright: {2}\r\nCreation Date: {3}\r\nTools: {4}\r\nComments: {5}\r\nSound Engine: {6}\r\nSoundFont Version: {7}\r\nTarget Product: {8}\r\nData ROM: {9}\r\nROM Version: {10}",
-            BankName,
-            Author,
-            Copyright,
-            CreationDate,
-            Tools,
-            Comments,
-            WaveTableSoundEngine,
-            SoundFontVersion,
-            TargetProduct,
-            DataROM,
-            ROMVersion);
+        return $"Bank Name: {BankName}\r\nAuthor: {Author}\r\nCopyright: {Copyright}\r\nCreation Date: {CreationDate}\r\nTools: {Tools}\r\nComments: {Comments}\r\nSound Engine: {WaveTableSoundEngine}\r\nSoundFont Version: {SoundFontVersion}\r\nTarget Product: {TargetProduct}\r\nData ROM: {DataROM}\r\nROM Version: {ROMVersion}";
     }
 }

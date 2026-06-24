@@ -108,6 +108,6 @@ public class UnsignedMixerControl : MixerControl
     /// </summary>
     public override string ToString()
     {
-        return String.Format("{0} {1}%", base.ToString(), Percent);
+        return $"{base.ToString()} {Percent}%";
     }
 }

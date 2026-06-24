@@ -239,7 +239,7 @@ public class WasapiOut : IWavePlayer, IWavePosition
             int actualFrameCount = read / bytesPerFrame;
             /*if (actualFrameCount != frameCount)
             {
-                Debug.WriteLine(String.Format("WASAPI wanted {0} frames, supplied {1}", frameCount, actualFrameCount ));
+                Debug.WriteLine($"WASAPI wanted {frameCount} frames, supplied {actualFrameCount}");
             }*/
             renderClient.ReleaseBuffer(actualFrameCount, AudioClientBufferFlags.None);
         }

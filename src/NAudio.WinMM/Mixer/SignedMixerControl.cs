@@ -98,6 +98,6 @@ public class SignedMixerControl : MixerControl
     /// <returns></returns>
     public override string ToString()
     {
-        return String.Format("{0} {1}%", base.ToString(), Percent);
+        return $"{base.ToString()} {Percent}%";
     }
 }

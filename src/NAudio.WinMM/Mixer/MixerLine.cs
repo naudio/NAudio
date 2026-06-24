@@ -279,8 +279,7 @@ public class MixerLine
     /// </summary>
     public override string ToString()
     {
-        return String.Format("{0} {1} ({2} controls, ID={3})",
-            Name, TypeDescription, ControlsCount, mixerLine.dwLineID);
+        return $"{Name} {TypeDescription} ({ControlsCount} controls, ID={mixerLine.dwLineID})";
     }
 }
 

@@ -160,6 +160,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
 
 #### Reliability and bug fixes
 
+ * `WaveOut`: fixed a race where stopping/disposing playback faster than the buffer latency could throw a `NullReferenceException` (surfaced via `PlaybackStopped`) when the playback thread dereferenced `callbackEvent` after `CloseWaveOut()` had nulled it; the playback loop now caches the event reference locally (#804)
  * `WaveFileWriter`: removed the finalizer, which fired a `Debug.Assert(false, "WaveFileWriter was not disposed")` unconditionally on every finalization. A writer whose construction threw (e.g. a denied output path) was left finalizable but unreferenced, so the GC later crashed the process on a finalizer thread with a misleading assert, long after the originating call. The finalizer never finalized the WAV header anyway (unsafe during GC) and `WaveFileWriter` owns no unmanaged resources directly — the underlying `FileStream` releases its own handle
  * `SfzParser`: a `<` now starts a header wherever it appears, not only after whitespace — `<region>sample=a.wav` previously became a junk opcode key (silently dropping the region) and `<group><region>` parsed as one unknown header; real players treat `<` as a hard delimiter, so a sample path may contain spaces but never `<`
  * `SfzMappedRegion`: explicit `lokey`/`hikey`/`pitch_keycenter` now beat `key=` regardless of where they are written — `<group> key=36 <region> lokey=35 hikey=37` no longer collapses the region's range and `key=36 pitch_keycenter=48` keeps the keycenter; `key` supplies defaults only for the parts not explicitly set (a deliberate, documented deviation from strict document-order semantics, which the merged opcode set cannot express)
@@ -230,6 +231,7 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * `MediaFoundationTransform`: cleanup `finally` blocks no longer leak COM objects when `Unlock`/`RemoveAllBuffers` fails — hresults are captured and thrown only after every buffer/sample has been released (#1293)
  * `ResamplerDmoStream`: fixed infinite loop on `Read` after setting `Position`, and the loss of the resampler kernel's tail samples (~32 at the default quality of 30) when the input reaches end-of-stream. The DMO is now drained via `ProcessOutput` after `Discontinuity` — on seek the drained bytes are discarded so playback resumes from the new position, on EOS they're returned to the caller and subsequent reads return 0 cleanly (#607, #608)
  * Named the background threads created by `DirectSoundOut`, `WasapiOut`, `WasapiCapture`, `WasapiPlayer`, and `WasapiRecorder` so they show meaningful names in debuggers and profilers (#557)
+ * `LoopStream.Read`: no longer spins forever at 100% CPU when the wrapped source can't satisfy a read (an empty source with `Length == 0` / zero frames, or a block-aligned reader asked for less than one block). A zero-byte read now rewinds and retries once to continue the loop, and returns whatever has been read so far if the source is still empty from its start, instead of looping endlessly (#1338)
 
 #### Modernisation (Native AOT, source-generated COM)
 

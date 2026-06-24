@@ -69,6 +69,16 @@ namespace NAudio.Extras
             {
                 int required = count - read;
                 int readThisTime = sourceStream.Read(buffer.Slice(read, required));
+                if (readThisTime == 0 && sourceStream.Position == 0)
+                {
+                    // Nothing read from the very start of the source: it's empty
+                    // (or can't satisfy a request smaller than its block alignment),
+                    // so stop rather than spin forever. A zero read when we're not
+                    // at the start just means end-of-pass - the rewind below loops
+                    // us back to the start to keep filling the buffer.
+                    break;
+                }
+
                 if (readThisTime < required)
                 {
                     sourceStream.Position = 0;

@@ -55,7 +55,7 @@ public partial class AboutForm : Form
 
     /// <summary>
     /// The copyright info
-    /// e.g. Copyright � 2007 Mark Heath
+    /// e.g. Copyright © 2007 Mark Heath
     /// </summary>
     public string Copyright
     {

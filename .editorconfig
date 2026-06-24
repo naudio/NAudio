@@ -11,3 +11,30 @@ insert_final_newline = true
 # C# files
 [*.cs]
 indent_size = 4
+
+# =============================================================================
+# C# code style preferences
+#
+# These document the conventions NAudio actually follows so the IDE steers
+# contributors the same way. Severities here are kept light (suggestion);
+# the rules that are *enforced* (promoted to warning) are listed in
+# .globalconfig. See CLAUDE.md / Docs/Architecture for the rationale.
+# =============================================================================
+
+# --- Namespaces ---
+# File-scoped namespaces: one less level of indentation, and the modern
+# default for new C#. The codebase is converted to this style wholesale.
+csharp_style_namespace_declarations = file_scoped:suggestion
+
+# --- 'var' is the house style ---
+# NAudio uses 'var' pervasively. Prefer it everywhere so the analyzer steers
+# contributors towards the existing style instead of fighting it.
+csharp_style_var_for_built_in_types = true:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = true:suggestion
+
+# --- Primary constructors ---
+# NAudio does not use primary constructors: many types are interop/POCO
+# shapes where explicit fields and constructors read more clearly. Don't
+# nudge contributors towards them.
+csharp_style_prefer_primary_constructors = false:suggestion

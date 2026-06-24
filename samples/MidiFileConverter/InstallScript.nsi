@@ -1,4 +1,4 @@
-; MIDI File Converter install script
+﻿; MIDI File Converter install script
 ; originally based on example2 that comes with nsis
 ;
 ; This script is based on example1.nsi, but it remember the directory, 
@@ -34,7 +34,7 @@ InstallDirRegKey HKLM "Software\${PRODUCT_NAME}" "Install_Dir"
 VIAddVersionKey /LANG=1033-English "ProductName" "${PRODUCT_NAME}"
 VIAddVersionKey /LANG=1033-English "Comments" ""
 VIAddVersionKey /LANG=1033-English "CompanyName" "Mark Heath"
-VIAddVersionKey /LANG=1033-English "LegalCopyright" "� 2007 Mark Heath"
+VIAddVersionKey /LANG=1033-English "LegalCopyright" "© 2007 Mark Heath"
 VIAddVersionKey /LANG=1033-English "FileDescription" "${PRODUCT_NAME} Installer"
 VIAddVersionKey /LANG=1033-English "FileVersion" "${VERSION}"
 VIProductVersion "${FULLVERSION}"

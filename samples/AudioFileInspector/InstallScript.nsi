@@ -1,4 +1,4 @@
-; Audio File Inspector install script
+﻿; Audio File Inspector install script
 ; originally based on example2 that comes with nsis
 ;
 ; This script is based on example1.nsi, but it remember the directory, 
@@ -34,7 +34,7 @@ InstallDirRegKey HKLM "Software\${PRODUCT_NAME}" "Install_Dir"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductName" "${PRODUCT_NAME}"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "Comments" ""
 VIAddVersionKey /LANG=${LANG_ENGLISH} "CompanyName" "Mark Heath"
-VIAddVersionKey /LANG=${LANG_ENGLISH} "LegalCopyright" "� 2006-2009 Mark Heath"
+VIAddVersionKey /LANG=${LANG_ENGLISH} "LegalCopyright" "© 2006-2009 Mark Heath"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "FileDescription" "${PRODUCT_NAME} Installer"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "FileVersion" "${VERSION}"
 VIProductVersion "${FULLVERSION}"

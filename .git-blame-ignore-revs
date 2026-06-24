@@ -1,0 +1,13 @@
+# Revisions that `git blame` should skip — large, purely mechanical, no-logic
+# changes that would otherwise obscure real authorship. GitHub honours this
+# file automatically. For local use:
+#
+#     git config blame.ignoreRevsFile .git-blame-ignore-revs
+#
+# Only add commits here that change formatting/style with NO behavioural change.
+
+# Reformat: file-scoped namespaces and whitespace normalization (dotnet format)
+07fc2a073feb69c4201cdd7bcbc3a3e12a54e6e6
+
+# Modernize: target-typed new, using declarations, null propagation (dotnet format)
+b4bc7f4bf0e17e5035270d75f2da00ad33eadef2

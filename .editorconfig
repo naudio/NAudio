@@ -38,3 +38,10 @@ csharp_style_var_elsewhere = true:suggestion
 # shapes where explicit fields and constructors read more clearly. Don't
 # nudge contributors towards them.
 csharp_style_prefer_primary_constructors = false:suggestion
+
+# Library source: enforce removal of unnecessary usings. IDE0005 only runs on
+# build when GenerateDocumentationFile=true, which the packaged libraries under
+# src/ set but the sample/tool projects don't — so it's scoped here rather than
+# in the global config (which would error out the samples' build).
+[src/**.cs]
+dotnet_diagnostic.IDE0005.severity = warning

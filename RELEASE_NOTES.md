@@ -241,6 +241,10 @@ Docs/Architecture/ReleaseStrategy.md for the release-notes process.
  * DirectSound P/Invokes migrated to `[LibraryImport]` with `[UnmanagedCallersOnly]` thunks; `BufferDescription` and `BufferCaps` converted from class to struct
  * `AcmDriver` ported from legacy `NativeMethods` to `NativeLibrary`
  * Most `MediaFoundationInterop` blittable P/Invokes migrated to `[LibraryImport]`
+ * Codebase-wide code-style sweep: converted all namespaces to file-scoped, normalized whitespace, adopted target-typed `new`, simple `using` declarations and null propagation, and replaced `String.Format` with string interpolation in the libraries
+ * Code style is now enforced at build time. `.editorconfig` documents the house style (file-scoped namespaces, `var`, no primary constructors) and a curated set of rules (formatting, file-scoped namespaces, unnecessary usings/casts, accessibility modifiers, `readonly`, `?.Invoke`, target-typed `new`, simple `using`, null propagation) are promoted to build-breaking warnings in `.globalconfig`
+ * Annotated the `GetBlobAsArrayOf<T>` helpers with `[DynamicallyAccessedMembers]`, clearing the last IL2087/IL2091 trim/AOT analyzer warnings in `NAudio.Wasapi`
+ * Added `.git-blame-ignore-revs` so the one-off mechanical reformat/modernization commits don't obscure `git blame`
 
 #### Packaging and dependencies
 

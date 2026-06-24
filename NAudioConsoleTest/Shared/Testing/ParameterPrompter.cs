@@ -39,7 +39,9 @@ static class ParameterPrompter
 
     private static object? PromptOne(TestParameter p)
     {
-        var label = p.Help is null ? p.Name : $"{p.Name} ([dim]{p.Help}[/])";
+        // Help text is author-supplied free text and may contain '[' / ']' (e.g. "velocity [0,1]"),
+        // which Spectre would otherwise try to parse as markup — escape it before interpolation.
+        var label = p.Help is null ? p.Name : $"{p.Name} ([dim]{Markup.Escape(p.Help)}[/])";
 
         var effectiveChoices = p.GetEffectiveChoices();
         if (effectiveChoices is { Count: > 0 } choices)

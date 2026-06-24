@@ -1,0 +1,52 @@
+<UserControl x:Class="NAudioWpfDemo.Vst3HostDemo.Vst3HostDemoView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="500" d:DesignWidth="700">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </UserControl.Resources>
+    <DockPanel LastChildFill="True">
+        <StackPanel DockPanel.Dock="Top" Margin="6">
+            <StackPanel Orientation="Horizontal" Margin="0,2">
+                <Label Width="60" VerticalAlignment="Center">Effect:</Label>
+                <ComboBox Width="280" ItemsSource="{Binding Effects}"
+                          SelectedItem="{Binding SelectedEffect}"
+                          DisplayMemberPath="Display" />
+                <Button Margin="6,0,0,0" Padding="8,2" Command="{Binding RescanCommand}"
+                        ToolTip="Re-scan installed VST 3 plug-ins (use after installing new ones)">Rescan</Button>
+                <Label Margin="12,0,0,0" VerticalAlignment="Center">Sample:</Label>
+                <ComboBox Width="110" ItemsSource="{Binding Samples}" SelectedItem="{Binding SelectedSample}" />
+                <Button Margin="12,0,0,0" Padding="10,2" Command="{Binding LoadCommand}">Load</Button>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,4">
+                <Button Padding="12,2" Command="{Binding PlayCommand}">Play</Button>
+                <Button Margin="6,0,0,0" Padding="12,2" Command="{Binding StopCommand}">Stop</Button>
+                <CheckBox Margin="20,0,0,0" VerticalAlignment="Center" IsChecked="{Binding Bypass}">Bypass</CheckBox>
+                <Label Margin="20,0,0,0" VerticalAlignment="Center">Gain:</Label>
+                <Slider Width="150" VerticalAlignment="Center" Minimum="-24" Maximum="12"
+                        Value="{Binding GainDb}" TickFrequency="6" TickPlacement="BottomRight" />
+                <TextBlock VerticalAlignment="Center" Margin="6,0,0,0" Width="55"
+                           Text="{Binding GainDb, StringFormat={}{0:0.0} dB}" />
+                <Button Margin="20,0,0,0" Padding="8,2" Command="{Binding SavePresetCommand}"
+                        ToolTip="Save the plug-in's current state to a .vstpreset file">Save Preset…</Button>
+                <Button Margin="6,0,0,0" Padding="8,2" Command="{Binding LoadPresetCommand}"
+                        ToolTip="Load a .vstpreset file into the plug-in">Load Preset…</Button>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,4"
+                        Visibility="{Binding HasPrograms, Converter={StaticResource BoolToVis}}">
+                <Label VerticalAlignment="Center">Program:</Label>
+                <ComboBox Width="240" ItemsSource="{Binding Programs}"
+                          SelectedIndex="{Binding SelectedProgramIndex}"
+                          ToolTip="Factory programs from the plug-in's IUnitInfo program list (takes effect while playing)" />
+            </StackPanel>
+            <TextBlock Margin="0,4,0,0" TextWrapping="Wrap" Foreground="#444" Text="{Binding Status}" />
+        </StackPanel>
+        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Background="#DDDDDD">
+            <ContentControl HorizontalAlignment="Left" VerticalAlignment="Top"
+                            Margin="6" Content="{Binding EditorHost}" />
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

@@ -4,6 +4,7 @@ using NAudioConsoleTest.Dmo.Tests;
 using NAudioConsoleTest.Dsp.Tests;
 using NAudioConsoleTest.MediaFoundation.Tests;
 using NAudioConsoleTest.SoundFile.Tests;
+using NAudioConsoleTest.Vst3.Tests;
 using NAudioConsoleTest.Wasapi.Tests;
 using NAudioConsoleTest.WinMM.Tests;
 
@@ -73,5 +74,16 @@ static class TestRegistration
         TestRegistry.Register(new WinMmConvertWithStreamTest());
         TestRegistry.Register(new WinMmPlayFileTest());
         TestRegistry.Register(new WinMmRecordToFileTest());
+
+        TestRegistry.Register(new Vst3ListPluginsTest());
+        TestRegistry.Register(new Vst3RenderEffectTest());
+        TestRegistry.Register(new Vst3RenderInstrumentTest());
+        TestRegistry.Register(new Vst3RenderMidiFileTest());
+        TestRegistry.Register(new Vst3LiveSynthTest());
+        TestRegistry.Register(new Vst3ParamSweepTest());
+        TestRegistry.Register(new Vst3StateRoundtripTest());
+        TestRegistry.Register(new Vst3SelfRoundtripTest());
+        TestRegistry.Register(new Vst3ShowEditorTest());
+        TestRegistry.Register(new Vst3ListProgramsTest());
     }
 }

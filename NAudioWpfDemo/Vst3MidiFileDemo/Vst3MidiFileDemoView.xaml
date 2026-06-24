@@ -1,0 +1,58 @@
+<UserControl x:Class="NAudioWpfDemo.Vst3MidiFileDemo.Vst3MidiFileDemoView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="240" d:DesignWidth="640">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <TextBlock Grid.Row="0" Grid.Column="0" Text="Instrument:" VerticalAlignment="Center" Margin="6" />
+        <ComboBox Grid.Row="0" Grid.Column="1" ItemsSource="{Binding Instruments}"
+                  SelectedItem="{Binding SelectedInstrument}" Margin="6" VerticalAlignment="Center" />
+        <Button Grid.Row="0" Grid.Column="2" Content="Rescan" Command="{Binding RescanInstrumentsCommand}" Width="90" Margin="6" />
+
+        <TextBlock Grid.Row="1" Grid.Column="0" Text="MIDI file:" VerticalAlignment="Center" Margin="6" />
+        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding MidiFilePath}" IsReadOnly="True" Margin="6" VerticalAlignment="Center" />
+        <Button Grid.Row="1" Grid.Column="2" Content="Browse..." Command="{Binding BrowseMidiCommand}" Width="90" Margin="6" />
+
+        <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Orientation="Horizontal" Margin="0,6,0,0">
+            <Button Content="Play" Command="{Binding PlayCommand}" Width="80" Margin="6" />
+            <Button Content="Stop" Command="{Binding StopCommand}" Width="80" Margin="6" />
+            <Button Content="Render to WAV..." Command="{Binding RenderToWavCommand}" Width="120" Margin="6"
+                    ToolTip="Renders the whole MIDI file through the instrument to a WAV via the offline path." />
+            <Button Content="Show Editor" Command="{Binding ShowEditorCommand}" Width="100" Margin="6"
+                    ToolTip="Pops out the instrument's native editor GUI while it plays." />
+        </StackPanel>
+
+        <TextBlock Grid.Row="3" Grid.Column="0" Text="Volume:" VerticalAlignment="Center" Margin="6" />
+        <Slider Grid.Row="3" Grid.Column="1" Minimum="-60" Maximum="0" Value="{Binding VolumeDb}"
+                IsMoveToPointEnabled="True" VerticalAlignment="Center" Margin="6" />
+        <TextBlock Grid.Row="3" Grid.Column="2" VerticalAlignment="Center" Margin="6" Width="90"
+                   Text="{Binding VolumeText}" />
+
+        <TextBlock Grid.Row="4" Grid.Column="0" Text="Position:" VerticalAlignment="Center" Margin="6" />
+        <Slider Grid.Row="4" Grid.Column="1" Minimum="0" Maximum="{Binding DurationSeconds}"
+                Value="{Binding PositionSeconds}" IsMoveToPointEnabled="True"
+                VerticalAlignment="Center" Margin="6"
+                ToolTip="Drag or click to seek — exercises Transport.SeekFrames; the instrument's ProcessContext follows." />
+        <TextBlock Grid.Row="4" Grid.Column="2" VerticalAlignment="Center" Margin="6" Width="90"
+                   Text="{Binding PositionText}" />
+
+        <TextBlock Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="3" Text="{Binding Status}"
+                   TextWrapping="Wrap" Margin="6,12,6,6" VerticalAlignment="Top" Foreground="#555" />
+    </Grid>
+</UserControl>

@@ -39,6 +39,13 @@ namespace NAudio.Midi
         }
 
         /// <summary>
+        /// The sysex payload bytes, excluding the leading 0xF0 status byte and the 0xF7 terminator
+        /// (the same form the constructor accepts). Returns a copy, so mutating it does not affect
+        /// this event.
+        /// </summary>
+        public byte[] Data => (byte[])(data ?? Array.Empty<byte>()).Clone();
+
+        /// <summary>
         /// Reads a sysex message from a MIDI stream
         /// </summary>
         /// <param name="br">Stream of MIDI data</param>

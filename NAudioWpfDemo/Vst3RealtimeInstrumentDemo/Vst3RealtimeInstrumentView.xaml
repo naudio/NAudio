@@ -1,0 +1,78 @@
+<UserControl x:Class="NAudioWpfDemo.Vst3RealtimeInstrumentDemo.Vst3RealtimeInstrumentView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="380" d:DesignWidth="640">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,6">
+            <TextBlock Text="ASIO driver:" VerticalAlignment="Center" Width="90" />
+            <ComboBox Width="240" ItemsSource="{Binding Drivers}"
+                      SelectedItem="{Binding SelectedDriver, Mode=TwoWay}"
+                      IsEnabled="{Binding IsStopped}" />
+            <Button Content="Start" Width="64" Margin="12,0,4,0" Command="{Binding StartCommand}" />
+            <Button Content="Stop" Width="64" Command="{Binding StopCommand}" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,6">
+            <TextBlock Text="MIDI input:" VerticalAlignment="Center" Width="90" />
+            <ComboBox Width="240" ItemsSource="{Binding MidiInputs}"
+                      SelectedItem="{Binding SelectedMidi, Mode=TwoWay}"
+                      DisplayMemberPath="Name"
+                      IsEnabled="{Binding IsStopped}" />
+            <Button Content="Refresh" Padding="8,2" Margin="6,0,0,0"
+                    Command="{Binding RefreshMidiCommand}"
+                    ToolTip="Re-enumerate WinRT MIDI input devices" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,6">
+            <TextBlock Text="Instrument:" VerticalAlignment="Center" Width="90" />
+            <ComboBox Width="320" ItemsSource="{Binding Instruments}"
+                      SelectedItem="{Binding SelectedInstrument, Mode=TwoWay}"
+                      DisplayMemberPath="Display"
+                      IsEnabled="{Binding IsStopped}" />
+            <Button Content="Rescan" Padding="8,2" Margin="6,0,0,0"
+                    Command="{Binding RescanInstrumentsCommand}"
+                    ToolTip="Re-scan installed VST 3 plug-ins (use after installing new ones)" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,0,0,6">
+            <Button Content="Editor" Padding="10,2" Margin="0,0,8,0"
+                    Command="{Binding ShowEditorCommand}"
+                    ToolTip="Open the instrument's native editor in a separate window" />
+            <Button Content="Panic" Padding="10,2"
+                    Command="{Binding PanicCommand}"
+                    ToolTip="Release all currently sounding notes (all-notes-off)" />
+        </StackPanel>
+
+        <!-- Spacer + status fills remaining vertical space -->
+        <TextBlock Grid.Row="6" Margin="0,12,0,8" TextWrapping="Wrap" Text="{Binding Status}" />
+
+        <StackPanel Grid.Row="7" Margin="0,0,0,0">
+            <DockPanel LastChildFill="True" Margin="0,0,0,4">
+                <TextBlock DockPanel.Dock="Left" Text="Master" VerticalAlignment="Center" Width="60" />
+                <TextBlock DockPanel.Dock="Right" Width="55" TextAlignment="Right"
+                           VerticalAlignment="Center"
+                           Text="{Binding MasterVolumeDb, StringFormat={}{0:0.0} dB}" />
+                <Slider VerticalAlignment="Center" Margin="4,0"
+                        Minimum="-60" Maximum="0" SmallChange="0.5" LargeChange="3"
+                        TickFrequency="6" TickPlacement="BottomRight"
+                        Value="{Binding MasterVolumeDb, Mode=TwoWay}" />
+            </DockPanel>
+            <TextBlock Text="Output level" Margin="0,0,0,2" />
+            <ProgressBar Height="16" Minimum="0" Maximum="1" Value="{Binding OutputLevel, Mode=OneWay}" />
+        </StackPanel>
+    </Grid>
+</UserControl>

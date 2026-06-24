@@ -656,15 +656,6 @@ namespace NAudio.Wave
             if (isDisposed) throw new ObjectDisposedException(nameof(WaveFileWriter));
         }
 
-        /// <summary>
-        /// Finaliser - should only be called if the user forgot to close this WaveFileWriter
-        /// </summary>
-        ~WaveFileWriter()
-        {
-            System.Diagnostics.Debug.Assert(false, "WaveFileWriter was not disposed");
-            Dispose(false);
-        }
-
         #endregion
     }
 }

@@ -31,6 +31,7 @@
   <Project Path="NAudio.Sampler.Tests/NAudio.Sampler.Tests.csproj" />
   <Project Path="NAudio.SoundFile/NAudio.SoundFile.csproj" />
   <Project Path="NAudio.SoundFile.Tests/NAudio.SoundFile.Tests.csproj" />
+  <Project Path="NAudio.Vst3/NAudio.Vst3.csproj" />
   <Project Path="NAudio.Wasapi/NAudio.Wasapi.csproj" />
   <Project Path="NAudio.Windows.Tests/NAudio.Windows.Tests.csproj" />
   <Project Path="NAudio.WinForms/NAudio.WinForms.csproj" />

@@ -11,6 +11,11 @@ static class Program
     [STAThread]
     static int Main(string[] args)
     {
+        // The menu uses Unicode glyphs (▶ ↑ ↓ •). Without UTF-8 output the default OEM code page
+        // (e.g. CP437) mangles them — ▶ becomes "?" and • encodes to byte 0x07 (BEL), beeping on
+        // every redraw. Force UTF-8 so they render correctly and silently.
+        try { Console.OutputEncoding = System.Text.Encoding.UTF8; } catch { /* e.g. output redirected */ }
+
         TestRegistration.RegisterAll();
 
         if (CliDispatcher.TryHandle(args, out var cliExitCode))
@@ -23,7 +28,7 @@ static class Program
         while (true)
         {
             var choice = Menu.Show("Main Menu", banner,
-                new Menu.Group("", "WASAPI", "ASIO", "WinMM", "DirectSound", "Media Foundation", "Sound File", "DMO", "DSP", "Exit"));
+                new Menu.Group("", "WASAPI", "ASIO", "WinMM", "DirectSound", "Media Foundation", "Sound File", "DMO", "DSP", "VST 3", "Exit"));
 
             // Escape at the top level exits the app.
             if (choice is null) return 0;
@@ -53,6 +58,9 @@ static class Program
                     break;
                 case "DSP":
                     MenuRenderer.Show("DSP");
+                    break;
+                case "VST 3":
+                    MenuRenderer.Show("VST 3");
                     break;
                 case "Exit":
                     return 0;

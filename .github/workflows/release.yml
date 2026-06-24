@@ -159,6 +159,7 @@ jobs:
             'NAudio.WinMM',
             'NAudio.Wasapi',
             'NAudio.Dmo',
+            'NAudio.Vst3',
             'NAudio.Alsa',
             'NAudio.SoundFile',
             'NAudio.Sampler',

@@ -14,6 +14,7 @@
             "src/NAudio.Asio/NAudio.Asio.csproj",
             "src/NAudio.WinMM/NAudio.WinMM.csproj",
             "src/NAudio.Dmo/NAudio.Dmo.csproj",
+            "src/NAudio.Vst3/NAudio.Vst3.csproj",
             "src/NAudio.WinForms/NAudio.WinForms.csproj",
             "src/NAudio.Wasapi/NAudio.Wasapi.csproj"
           ]

@@ -162,9 +162,13 @@ namespace NAudio.Wave
 
         private void DoPlayback()
         {
+            // Cache the callback event in a local so a concurrent CloseWaveOut()
+            // (which nulls out the field) can't turn our dereferences into a
+            // NullReferenceException mid-playback. See issue #804.
+            var callback = callbackEvent;
             while (playbackState != PlaybackState.Stopped)
             {
-                if (!callbackEvent.WaitOne(BufferMilliseconds * NumberOfBuffers))
+                if (!callback.WaitOne(BufferMilliseconds * NumberOfBuffers))
                 {
                     if (playbackState == PlaybackState.Playing)
                     {
@@ -188,7 +192,7 @@ namespace NAudio.Wave
                     {
                         // we got to the end
                         playbackState = PlaybackState.Stopped;
-                        callbackEvent.Set();
+                        callback.Set();
                     }
                 }
             }

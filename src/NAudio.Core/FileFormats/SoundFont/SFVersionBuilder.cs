@@ -1,36 +1,35 @@
-using System.IO;
+﻿using System.IO;
 
-namespace NAudio.SoundFont
+namespace NAudio.SoundFont;
+
+/// <summary>
+/// Builds a SoundFont version
+/// </summary>
+class SFVersionBuilder : StructureBuilder<SFVersion>
 {
     /// <summary>
-    /// Builds a SoundFont version
+    /// Reads a SoundFont Version structure
     /// </summary>
-    class SFVersionBuilder : StructureBuilder<SFVersion>
+    public override SFVersion Read(BinaryReader br)
     {
-        /// <summary>
-        /// Reads a SoundFont Version structure
-        /// </summary>
-        public override SFVersion Read(BinaryReader br)
-        {
-            SFVersion v = new SFVersion();
-            v.Major = br.ReadUInt16();
-            v.Minor = br.ReadUInt16();
-            data.Add(v);
-            return v;
-        }
-
-        /// <summary>
-        /// Writes a SoundFont Version structure
-        /// </summary>
-        public override void Write(BinaryWriter bw, SFVersion v)
-        {
-            bw.Write(v.Major);
-            bw.Write(v.Minor);
-        }
-
-        /// <summary>
-        /// Gets the length of this structure
-        /// </summary>
-        public override int Length => 4;
+        SFVersion v = new SFVersion();
+        v.Major = br.ReadUInt16();
+        v.Minor = br.ReadUInt16();
+        data.Add(v);
+        return v;
     }
+
+    /// <summary>
+    /// Writes a SoundFont Version structure
+    /// </summary>
+    public override void Write(BinaryWriter bw, SFVersion v)
+    {
+        bw.Write(v.Major);
+        bw.Write(v.Minor);
+    }
+
+    /// <summary>
+    /// Gets the length of this structure
+    /// </summary>
+    public override int Length => 4;
 }

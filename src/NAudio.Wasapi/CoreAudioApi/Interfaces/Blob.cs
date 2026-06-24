@@ -22,20 +22,19 @@
 // Adapted for NAudio
 using System;
 
-namespace NAudio.CoreAudioApi.Interfaces
+namespace NAudio.CoreAudioApi.Interfaces;
+
+/// <summary>
+/// Representation of binary large object container.
+/// </summary>
+public struct Blob
 {
     /// <summary>
-    /// Representation of binary large object container.
+    /// Length of binary object.
     /// </summary>
-    public struct Blob
-    {
-        /// <summary>
-        /// Length of binary object.
-        /// </summary>
-        public int Length;
-        /// <summary>
-        /// Pointer to buffer storing data.
-        /// </summary>
-        public IntPtr Data;
-    }
+    public int Length;
+    /// <summary>
+    /// Pointer to buffer storing data.
+    /// </summary>
+    public IntPtr Data;
 }

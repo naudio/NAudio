@@ -1,42 +1,41 @@
-using System;
+﻿using System;
 using System.Windows.Forms;
 using NAudio.Wave;
 
-namespace NAudioDemo.AudioPlaybackDemo
+namespace NAudioDemo.AudioPlaybackDemo;
+
+public partial class AsioDeviceSettingsPanel : UserControl
 {
-    public partial class AsioDeviceSettingsPanel : UserControl
+    public AsioDeviceSettingsPanel()
     {
-        public AsioDeviceSettingsPanel()
+        InitializeComponent();
+        foreach (var driverName in AsioDevice.GetDriverNames())
         {
-            InitializeComponent();
-            foreach (var driverName in AsioDevice.GetDriverNames())
-            {
-                comboBoxAsioDriver.Items.Add(driverName);
-            }
-            if (comboBoxAsioDriver.Items.Count > 0)
-            {
-                comboBoxAsioDriver.SelectedIndex = 0;
-            }
+            comboBoxAsioDriver.Items.Add(driverName);
         }
-
-        public string SelectedDeviceName => (string)comboBoxAsioDriver.SelectedItem;
-
-        public int OutputChannelOffset
+        if (comboBoxAsioDriver.Items.Count > 0)
         {
-            get => int.TryParse(textBoxChannelOffset.Text, out int offset) ? offset : 0;
+            comboBoxAsioDriver.SelectedIndex = 0;
         }
+    }
 
-        private void OnButtonControlPanelClick(object sender, EventArgs args)
+    public string SelectedDeviceName => (string)comboBoxAsioDriver.SelectedItem;
+
+    public int OutputChannelOffset
+    {
+        get => int.TryParse(textBoxChannelOffset.Text, out int offset) ? offset : 0;
+    }
+
+    private void OnButtonControlPanelClick(object sender, EventArgs args)
+    {
+        try
         {
-            try
-            {
-                using var device = AsioDevice.Open(SelectedDeviceName);
-                device.ShowControlPanel();
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.Message);
-            }
+            using var device = AsioDevice.Open(SelectedDeviceName);
+            device.ShowControlPanel();
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show(e.Message);
         }
     }
 }

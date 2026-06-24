@@ -1,17 +1,16 @@
 ﻿using System.Diagnostics;
 
-namespace NAudioDemo.Utils
+namespace NAudioDemo.Utils;
+
+static class ProcessHelper
 {
-    static class ProcessHelper
+    public static void ShellExecute(string file)
     {
-        public static void ShellExecute(string file)
+        var process = new Process();
+        process.StartInfo = new ProcessStartInfo(file)
         {
-            var process = new Process();
-            process.StartInfo = new ProcessStartInfo(file)
-            {
-                UseShellExecute = true
-            };
-            process.Start();
-        }
+            UseShellExecute = true
+        };
+        process.Start();
     }
 }

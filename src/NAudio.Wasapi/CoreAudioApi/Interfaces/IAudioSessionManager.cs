@@ -1,4 +1,4 @@
-// -----------------------------------------
+﻿// -----------------------------------------
 // SoundScribe (TM) and related software.
 //
 // Copyright (C) 2007-2011 Vannatech
@@ -23,89 +23,88 @@ using System;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 
-namespace NAudio.CoreAudioApi.Interfaces
+namespace NAudio.CoreAudioApi.Interfaces;
+
+/// <summary>
+/// Windows CoreAudio IAudioSessionManager interface
+/// Defined in AudioPolicy.h
+/// </summary>
+[Guid("BFA971F1-4D5E-40BB-935E-967039BFBEE4"),
+ InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
+ GeneratedComInterface]
+internal partial interface IAudioSessionManager
 {
     /// <summary>
-    /// Windows CoreAudio IAudioSessionManager interface
-    /// Defined in AudioPolicy.h
+    /// Retrieves an audio session control.
     /// </summary>
-    [Guid("BFA971F1-4D5E-40BB-935E-967039BFBEE4"),
-     InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
-     GeneratedComInterface]
-    internal partial interface IAudioSessionManager
-    {
-        /// <summary>
-        /// Retrieves an audio session control.
-        /// </summary>
-        /// <param name="sessionId">A new or existing session ID.</param>
-        /// <param name="streamFlags">Audio session flags.</param>
-        /// <param name="sessionControl">Receives an <see cref="IAudioSessionControl"/> interface for the audio session.</param>
-        /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
-        [PreserveSig]
-        int GetAudioSessionControl(
-            in Guid sessionId,
-            uint streamFlags,
-            out IntPtr sessionControl);
+    /// <param name="sessionId">A new or existing session ID.</param>
+    /// <param name="streamFlags">Audio session flags.</param>
+    /// <param name="sessionControl">Receives an <see cref="IAudioSessionControl"/> interface for the audio session.</param>
+    /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+    [PreserveSig]
+    int GetAudioSessionControl(
+        in Guid sessionId,
+        uint streamFlags,
+        out IntPtr sessionControl);
 
-        /// <summary>
-        /// Retrieves a simple audio volume control.
-        /// </summary>
-        /// <param name="sessionId">A new or existing session ID.</param>
-        /// <param name="streamFlags">Audio session flags.</param>
-        /// <param name="audioVolume">Receives an <see cref="ISimpleAudioVolume"/> interface for the audio session.</param>
-        /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
-        [PreserveSig]
-        int GetSimpleAudioVolume(
-            in Guid sessionId,
-            uint streamFlags,
-            out IntPtr audioVolume);
-    }
+    /// <summary>
+    /// Retrieves a simple audio volume control.
+    /// </summary>
+    /// <param name="sessionId">A new or existing session ID.</param>
+    /// <param name="streamFlags">Audio session flags.</param>
+    /// <param name="audioVolume">Receives an <see cref="ISimpleAudioVolume"/> interface for the audio session.</param>
+    /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+    [PreserveSig]
+    int GetSimpleAudioVolume(
+        in Guid sessionId,
+        uint streamFlags,
+        out IntPtr audioVolume);
+}
 
 
-    [Guid("77AA99A0-1BD6-484F-8BC7-2C654C9A9B6F"),
-     InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
-     GeneratedComInterface]
-    internal partial interface IAudioSessionManager2
-    {
-        /// <summary>
-        /// Retrieves an audio session control.
-        /// </summary>
-        /// <param name="sessionId">A new or existing session ID.</param>
-        /// <param name="streamFlags">Audio session flags.</param>
-        /// <param name="sessionControl">Receives an <see cref="IAudioSessionControl"/> interface for the audio session.</param>
-        /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
-        [PreserveSig]
-        int GetAudioSessionControl(
-            in Guid sessionId,
-            uint streamFlags,
-            out IntPtr sessionControl);
+[Guid("77AA99A0-1BD6-484F-8BC7-2C654C9A9B6F"),
+ InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
+ GeneratedComInterface]
+internal partial interface IAudioSessionManager2
+{
+    /// <summary>
+    /// Retrieves an audio session control.
+    /// </summary>
+    /// <param name="sessionId">A new or existing session ID.</param>
+    /// <param name="streamFlags">Audio session flags.</param>
+    /// <param name="sessionControl">Receives an <see cref="IAudioSessionControl"/> interface for the audio session.</param>
+    /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+    [PreserveSig]
+    int GetAudioSessionControl(
+        in Guid sessionId,
+        uint streamFlags,
+        out IntPtr sessionControl);
 
-        /// <summary>
-        /// Retrieves a simple audio volume control.
-        /// </summary>
-        /// <param name="sessionId">A new or existing session ID.</param>
-        /// <param name="streamFlags">Audio session flags.</param>
-        /// <param name="audioVolume">Receives an <see cref="ISimpleAudioVolume"/> interface for the audio session.</param>
-        /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
-        [PreserveSig]
-        int GetSimpleAudioVolume(
-            in Guid sessionId,
-            uint streamFlags,
-            out IntPtr audioVolume);
+    /// <summary>
+    /// Retrieves a simple audio volume control.
+    /// </summary>
+    /// <param name="sessionId">A new or existing session ID.</param>
+    /// <param name="streamFlags">Audio session flags.</param>
+    /// <param name="audioVolume">Receives an <see cref="ISimpleAudioVolume"/> interface for the audio session.</param>
+    /// <returns>An HRESULT code indicating whether the operation succeeded of failed.</returns>
+    [PreserveSig]
+    int GetSimpleAudioVolume(
+        in Guid sessionId,
+        uint streamFlags,
+        out IntPtr audioVolume);
 
-        [PreserveSig]
-        int GetSessionEnumerator(out IntPtr sessionEnum);
+    [PreserveSig]
+    int GetSessionEnumerator(out IntPtr sessionEnum);
 
-        [PreserveSig]
-        int RegisterSessionNotification(IntPtr sessionNotification);
+    [PreserveSig]
+    int RegisterSessionNotification(IntPtr sessionNotification);
 
-        [PreserveSig]
-        int UnregisterSessionNotification(IntPtr sessionNotification);
+    [PreserveSig]
+    int UnregisterSessionNotification(IntPtr sessionNotification);
 
-        [PreserveSig]
-        int RegisterDuckNotification([MarshalAs(UnmanagedType.LPWStr)] string sessionId, IntPtr audioVolumeDuckNotification);
+    [PreserveSig]
+    int RegisterDuckNotification([MarshalAs(UnmanagedType.LPWStr)] string sessionId, IntPtr audioVolumeDuckNotification);
 
-        [PreserveSig]
-        int UnregisterDuckNotification(IntPtr audioVolumeDuckNotification);
-    }
+    [PreserveSig]
+    int UnregisterDuckNotification(IntPtr audioVolumeDuckNotification);
 }

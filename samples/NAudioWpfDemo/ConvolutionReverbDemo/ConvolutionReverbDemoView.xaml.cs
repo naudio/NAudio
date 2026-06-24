@@ -1,12 +1,11 @@
-using System.Windows.Controls;
+﻿using System.Windows.Controls;
 
-namespace NAudioWpfDemo.ConvolutionReverbDemo
+namespace NAudioWpfDemo.ConvolutionReverbDemo;
+
+public partial class ConvolutionReverbDemoView : UserControl
 {
-    public partial class ConvolutionReverbDemoView : UserControl
+    public ConvolutionReverbDemoView()
     {
-        public ConvolutionReverbDemoView()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

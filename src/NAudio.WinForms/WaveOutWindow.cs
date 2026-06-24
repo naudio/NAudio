@@ -1,348 +1,347 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
 
 // ReSharper disable once CheckNamespace
-namespace NAudio.Wave
+namespace NAudio.Wave;
+
+/// <summary>
+/// Plays audio using the winmm <c>waveOut</c> API with CALLBACK_WINDOW, so that buffer-done
+/// notifications are delivered on the UI thread's message pump. Useful when you want
+/// <see cref="PlaybackStopped"/> and internal buffer recycling to happen on the UI thread
+/// without any manual marshaling. For background-thread playback use
+/// <see cref="WaveOut"/> in the NAudio.WinMM package instead.
+/// </summary>
+public class WaveOutWindow : IWavePlayer, IWavePosition
 {
+    private readonly object waveOutLock = new object();
+    private readonly SynchronizationContext syncContext;
+    private readonly WaveInterop.WaveCallback callback;
+    private readonly WaveCallbackHost callbackHost;
+    private IntPtr hWaveOut;
+    private WaveOutBuffer[] buffers;
+    private IWaveProvider waveStream;
+    private volatile PlaybackState playbackState;
+    private int queuedBuffers;
+    private int nextBufferIndex;
+    private bool isDisposed;
+
     /// <summary>
-    /// Plays audio using the winmm <c>waveOut</c> API with CALLBACK_WINDOW, so that buffer-done
-    /// notifications are delivered on the UI thread's message pump. Useful when you want
-    /// <see cref="PlaybackStopped"/> and internal buffer recycling to happen on the UI thread
-    /// without any manual marshaling. For background-thread playback use
-    /// <see cref="WaveOut"/> in the NAudio.WinMM package instead.
+    /// Indicates playback has stopped automatically (end of stream or an error).
     /// </summary>
-    public class WaveOutWindow : IWavePlayer, IWavePosition
+    public event EventHandler<StoppedEventArgs> PlaybackStopped;
+
+    /// <summary>
+    /// Returns the number of waveOut devices available on the system.
+    /// </summary>
+    public static int DeviceCount => WaveInterop.waveOutGetNumDevs();
+
+    /// <summary>
+    /// Retrieves the capabilities of a waveOut device.
+    /// </summary>
+    public static WaveOutCapabilities GetCapabilities(int devNumber)
     {
-        private readonly object waveOutLock = new object();
-        private readonly SynchronizationContext syncContext;
-        private readonly WaveInterop.WaveCallback callback;
-        private readonly WaveCallbackHost callbackHost;
-        private IntPtr hWaveOut;
-        private WaveOutBuffer[] buffers;
-        private IWaveProvider waveStream;
-        private volatile PlaybackState playbackState;
-        private int queuedBuffers;
-        private int nextBufferIndex;
-        private bool isDisposed;
+        var caps = new WaveOutCapabilities();
+        int structSize = Marshal.SizeOf(caps);
+        MmException.Try(WaveInterop.waveOutGetDevCaps((IntPtr)devNumber, out caps, structSize), "waveOutGetDevCaps");
+        return caps;
+    }
 
-        /// <summary>
-        /// Indicates playback has stopped automatically (end of stream or an error).
-        /// </summary>
-        public event EventHandler<StoppedEventArgs> PlaybackStopped;
+    /// <summary>
+    /// Desired latency in milliseconds. Must be set before <see cref="Init"/>.
+    /// </summary>
+    public int DesiredLatency { get; set; } = 300;
 
-        /// <summary>
-        /// Returns the number of waveOut devices available on the system.
-        /// </summary>
-        public static int DeviceCount => WaveInterop.waveOutGetNumDevs();
+    /// <summary>
+    /// Number of buffers used. Must be set before <see cref="Init"/>.
+    /// </summary>
+    public int NumberOfBuffers { get; set; } = 2;
 
-        /// <summary>
-        /// Retrieves the capabilities of a waveOut device.
-        /// </summary>
-        public static WaveOutCapabilities GetCapabilities(int devNumber)
+    /// <summary>
+    /// Device number. -1 (default) tracks the current default device.
+    /// </summary>
+    public int DeviceNumber { get; set; } = -1;
+
+    /// <summary>
+    /// Creates a <see cref="WaveOutWindow"/> that owns a hidden callback window.
+    /// Must be constructed on a thread with a running Windows Forms message loop.
+    /// </summary>
+    public WaveOutWindow()
+    {
+        syncContext = SynchronizationContext.Current
+            ?? throw new InvalidOperationException(
+                "WaveOutWindow requires a SynchronizationContext. Use WaveOut for background-thread playback.");
+        callback = Callback;
+        callbackHost = new WaveCallbackHost(callback);
+    }
+
+    /// <summary>
+    /// Creates a <see cref="WaveOutWindow"/> that subclasses an existing window so its
+    /// HWND receives waveOut callbacks. The handle must belong to a window whose message
+    /// loop is running on the thread that constructs this instance.
+    /// </summary>
+    public WaveOutWindow(IntPtr windowHandle)
+    {
+        syncContext = SynchronizationContext.Current
+            ?? throw new InvalidOperationException(
+                "WaveOutWindow requires a SynchronizationContext. Use WaveOut for background-thread playback.");
+        callback = Callback;
+        callbackHost = new WaveCallbackHost(callback, windowHandle);
+    }
+
+    /// <summary>
+    /// Initialises the device with the provider to be played.
+    /// </summary>
+    public void Init(IWaveProvider waveProvider)
+    {
+        waveStream = waveProvider;
+        int bufferSize = waveProvider.WaveFormat.ConvertLatencyToByteSize((DesiredLatency + NumberOfBuffers - 1) / NumberOfBuffers);
+
+        MmResult result;
+        lock (waveOutLock)
         {
-            var caps = new WaveOutCapabilities();
-            int structSize = Marshal.SizeOf(caps);
-            MmException.Try(WaveInterop.waveOutGetDevCaps((IntPtr)devNumber, out caps, structSize), "waveOutGetDevCaps");
-            return caps;
+            result = WaveInterop.waveOutOpenWindow(
+                out hWaveOut,
+                (IntPtr)DeviceNumber,
+                waveStream.WaveFormat,
+                callbackHost.Handle,
+                IntPtr.Zero,
+                WaveInterop.WaveInOutOpenFlags.CallbackWindow);
         }
+        MmException.Try(result, "waveOutOpen");
 
-        /// <summary>
-        /// Desired latency in milliseconds. Must be set before <see cref="Init"/>.
-        /// </summary>
-        public int DesiredLatency { get; set; } = 300;
-
-        /// <summary>
-        /// Number of buffers used. Must be set before <see cref="Init"/>.
-        /// </summary>
-        public int NumberOfBuffers { get; set; } = 2;
-
-        /// <summary>
-        /// Device number. -1 (default) tracks the current default device.
-        /// </summary>
-        public int DeviceNumber { get; set; } = -1;
-
-        /// <summary>
-        /// Creates a <see cref="WaveOutWindow"/> that owns a hidden callback window.
-        /// Must be constructed on a thread with a running Windows Forms message loop.
-        /// </summary>
-        public WaveOutWindow()
+        buffers = new WaveOutBuffer[NumberOfBuffers];
+        playbackState = PlaybackState.Stopped;
+        nextBufferIndex = 0;
+        for (int n = 0; n < NumberOfBuffers; n++)
         {
-            syncContext = SynchronizationContext.Current
-                ?? throw new InvalidOperationException(
-                    "WaveOutWindow requires a SynchronizationContext. Use WaveOut for background-thread playback.");
-            callback = Callback;
-            callbackHost = new WaveCallbackHost(callback);
+            buffers[n] = new WaveOutBuffer(hWaveOut, bufferSize, waveStream, waveOutLock);
         }
+    }
 
-        /// <summary>
-        /// Creates a <see cref="WaveOutWindow"/> that subclasses an existing window so its
-        /// HWND receives waveOut callbacks. The handle must belong to a window whose message
-        /// loop is running on the thread that constructs this instance.
-        /// </summary>
-        public WaveOutWindow(IntPtr windowHandle)
+    /// <summary>
+    /// Start playing.
+    /// </summary>
+    public void Play()
+    {
+        if (playbackState == PlaybackState.Stopped)
         {
-            syncContext = SynchronizationContext.Current
-                ?? throw new InvalidOperationException(
-                    "WaveOutWindow requires a SynchronizationContext. Use WaveOut for background-thread playback.");
-            callback = Callback;
-            callbackHost = new WaveCallbackHost(callback, windowHandle);
+            playbackState = PlaybackState.Playing;
+            Debug.Assert(queuedBuffers == 0, "Buffers already queued on play");
+            nextBufferIndex = 0;
+            EnqueueBuffers();
         }
-
-        /// <summary>
-        /// Initialises the device with the provider to be played.
-        /// </summary>
-        public void Init(IWaveProvider waveProvider)
+        else if (playbackState == PlaybackState.Paused)
         {
-            waveStream = waveProvider;
-            int bufferSize = waveProvider.WaveFormat.ConvertLatencyToByteSize((DesiredLatency + NumberOfBuffers - 1) / NumberOfBuffers);
+            EnqueueBuffers();
+            Resume();
+            playbackState = PlaybackState.Playing;
+        }
+    }
 
+    private void EnqueueBuffers()
+    {
+        for (int n = 0; n < NumberOfBuffers; n++)
+        {
+            if (!buffers[n].InQueue)
+            {
+                if (buffers[n].OnDone())
+                {
+                    Interlocked.Increment(ref queuedBuffers);
+                }
+                else
+                {
+                    playbackState = PlaybackState.Stopped;
+                    break;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Pause playback.
+    /// </summary>
+    public void Pause()
+    {
+        if (playbackState == PlaybackState.Playing)
+        {
+            playbackState = PlaybackState.Paused;
             MmResult result;
             lock (waveOutLock)
             {
-                result = WaveInterop.waveOutOpenWindow(
-                    out hWaveOut,
-                    (IntPtr)DeviceNumber,
-                    waveStream.WaveFormat,
-                    callbackHost.Handle,
-                    IntPtr.Zero,
-                    WaveInterop.WaveInOutOpenFlags.CallbackWindow);
+                result = WaveInterop.waveOutPause(hWaveOut);
             }
-            MmException.Try(result, "waveOutOpen");
+            if (result != MmResult.NoError)
+            {
+                throw new MmException(result, "waveOutPause");
+            }
+        }
+    }
 
-            buffers = new WaveOutBuffer[NumberOfBuffers];
+    /// <summary>
+    /// Resume playback from a paused state.
+    /// </summary>
+    public void Resume()
+    {
+        if (playbackState == PlaybackState.Paused)
+        {
+            MmResult result;
+            lock (waveOutLock)
+            {
+                result = WaveInterop.waveOutRestart(hWaveOut);
+            }
+            if (result != MmResult.NoError)
+            {
+                throw new MmException(result, "waveOutRestart");
+            }
+            playbackState = PlaybackState.Playing;
+        }
+    }
+
+    /// <summary>
+    /// Stop and reset the device. <see cref="PlaybackStopped"/> is raised from the
+    /// buffer-done callback once all outstanding buffers have been returned.
+    /// </summary>
+    public void Stop()
+    {
+        if (playbackState != PlaybackState.Stopped)
+        {
             playbackState = PlaybackState.Stopped;
-            nextBufferIndex = 0;
-            for (int n = 0; n < NumberOfBuffers; n++)
+            MmResult result;
+            lock (waveOutLock)
             {
-                buffers[n] = new WaveOutBuffer(hWaveOut, bufferSize, waveStream, waveOutLock);
+                result = WaveInterop.waveOutReset(hWaveOut);
+            }
+            if (result != MmResult.NoError)
+            {
+                throw new MmException(result, "waveOutReset");
             }
         }
+    }
 
-        /// <summary>
-        /// Start playing.
-        /// </summary>
-        public void Play()
+    /// <summary>
+    /// Current byte position as reported by waveOutGetPosition.
+    /// </summary>
+    public long GetPosition() => WaveOutUtils.GetPositionBytes(hWaveOut, waveOutLock);
+
+    /// <summary>
+    /// The format the hardware is using.
+    /// </summary>
+    public WaveFormat OutputWaveFormat => waveStream.WaveFormat;
+
+    /// <summary>
+    /// Playback state.
+    /// </summary>
+    public PlaybackState PlaybackState => playbackState;
+
+    /// <summary>
+    /// Volume for this device. 1.0 is full scale.
+    /// </summary>
+    public float Volume
+    {
+        get => WaveOutUtils.GetWaveOutVolume(hWaveOut, waveOutLock);
+        set => WaveOutUtils.SetWaveOutVolume(value, hWaveOut, waveOutLock);
+    }
+
+    /// <summary>
+    /// Closes this device.
+    /// </summary>
+    public void Dispose()
+    {
+        GC.SuppressFinalize(this);
+        Dispose(true);
+    }
+
+    /// <summary>
+    /// Closes the device and disposes of buffers.
+    /// </summary>
+    protected virtual void Dispose(bool disposing)
+    {
+        if (isDisposed) return;
+        isDisposed = true;
+
+        Stop();
+
+        if (disposing && buffers != null)
         {
-            if (playbackState == PlaybackState.Stopped)
+            foreach (var buffer in buffers)
             {
-                playbackState = PlaybackState.Playing;
-                Debug.Assert(queuedBuffers == 0, "Buffers already queued on play");
-                nextBufferIndex = 0;
-                EnqueueBuffers();
+                buffer?.Dispose();
             }
-            else if (playbackState == PlaybackState.Paused)
-            {
-                EnqueueBuffers();
-                Resume();
-                playbackState = PlaybackState.Playing;
-            }
+            buffers = null;
         }
 
-        private void EnqueueBuffers()
+        lock (waveOutLock)
         {
-            for (int n = 0; n < NumberOfBuffers; n++)
+            if (hWaveOut != IntPtr.Zero)
             {
-                if (!buffers[n].InQueue)
+                WaveInterop.waveOutClose(hWaveOut);
+                hWaveOut = IntPtr.Zero;
+            }
+        }
+        if (disposing)
+        {
+            callbackHost.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// Finaliser, called only if the user forgets to call <see cref="Dispose()"/>.
+    /// </summary>
+    ~WaveOutWindow()
+    {
+        Debug.Assert(false, "WaveOutWindow device was not closed");
+        Dispose(false);
+    }
+
+    private void Callback(IntPtr hWaveOut, WaveInterop.WaveMessage uMsg, IntPtr dwInstance, WaveHeader wavhdr, IntPtr dwReserved)
+    {
+        if (uMsg != WaveInterop.WaveMessage.WaveOutDone) return;
+        if (buffers == null) return;
+
+        // Buffers always return in the order they were enqueued, so a cyclic index is enough
+        // to identify which one just completed — no need to track buffers via WaveHeader.userData.
+        var buffer = buffers[nextBufferIndex];
+        nextBufferIndex = (nextBufferIndex + 1) % buffers.Length;
+        Interlocked.Decrement(ref queuedBuffers);
+
+        Exception exception = null;
+        if (playbackState == PlaybackState.Playing)
+        {
+            lock (waveOutLock)
+            {
+                try
                 {
-                    if (buffers[n].OnDone())
+                    if (buffer.OnDone())
                     {
                         Interlocked.Increment(ref queuedBuffers);
                     }
-                    else
-                    {
-                        playbackState = PlaybackState.Stopped;
-                        break;
-                    }
+                }
+                catch (Exception e)
+                {
+                    exception = e;
                 }
             }
         }
-
-        /// <summary>
-        /// Pause playback.
-        /// </summary>
-        public void Pause()
+        if (queuedBuffers == 0)
         {
-            if (playbackState == PlaybackState.Playing)
-            {
-                playbackState = PlaybackState.Paused;
-                MmResult result;
-                lock (waveOutLock)
-                {
-                    result = WaveInterop.waveOutPause(hWaveOut);
-                }
-                if (result != MmResult.NoError)
-                {
-                    throw new MmException(result, "waveOutPause");
-                }
-            }
+            playbackState = PlaybackState.Stopped;
+            RaisePlaybackStoppedEvent(exception);
         }
+    }
 
-        /// <summary>
-        /// Resume playback from a paused state.
-        /// </summary>
-        public void Resume()
+    private void RaisePlaybackStoppedEvent(Exception e)
+    {
+        var handler = PlaybackStopped;
+        if (handler == null) return;
+        if (syncContext == null)
         {
-            if (playbackState == PlaybackState.Paused)
-            {
-                MmResult result;
-                lock (waveOutLock)
-                {
-                    result = WaveInterop.waveOutRestart(hWaveOut);
-                }
-                if (result != MmResult.NoError)
-                {
-                    throw new MmException(result, "waveOutRestart");
-                }
-                playbackState = PlaybackState.Playing;
-            }
+            handler(this, new StoppedEventArgs(e));
         }
-
-        /// <summary>
-        /// Stop and reset the device. <see cref="PlaybackStopped"/> is raised from the
-        /// buffer-done callback once all outstanding buffers have been returned.
-        /// </summary>
-        public void Stop()
+        else
         {
-            if (playbackState != PlaybackState.Stopped)
-            {
-                playbackState = PlaybackState.Stopped;
-                MmResult result;
-                lock (waveOutLock)
-                {
-                    result = WaveInterop.waveOutReset(hWaveOut);
-                }
-                if (result != MmResult.NoError)
-                {
-                    throw new MmException(result, "waveOutReset");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Current byte position as reported by waveOutGetPosition.
-        /// </summary>
-        public long GetPosition() => WaveOutUtils.GetPositionBytes(hWaveOut, waveOutLock);
-
-        /// <summary>
-        /// The format the hardware is using.
-        /// </summary>
-        public WaveFormat OutputWaveFormat => waveStream.WaveFormat;
-
-        /// <summary>
-        /// Playback state.
-        /// </summary>
-        public PlaybackState PlaybackState => playbackState;
-
-        /// <summary>
-        /// Volume for this device. 1.0 is full scale.
-        /// </summary>
-        public float Volume
-        {
-            get => WaveOutUtils.GetWaveOutVolume(hWaveOut, waveOutLock);
-            set => WaveOutUtils.SetWaveOutVolume(value, hWaveOut, waveOutLock);
-        }
-
-        /// <summary>
-        /// Closes this device.
-        /// </summary>
-        public void Dispose()
-        {
-            GC.SuppressFinalize(this);
-            Dispose(true);
-        }
-
-        /// <summary>
-        /// Closes the device and disposes of buffers.
-        /// </summary>
-        protected virtual void Dispose(bool disposing)
-        {
-            if (isDisposed) return;
-            isDisposed = true;
-
-            Stop();
-
-            if (disposing && buffers != null)
-            {
-                foreach (var buffer in buffers)
-                {
-                    buffer?.Dispose();
-                }
-                buffers = null;
-            }
-
-            lock (waveOutLock)
-            {
-                if (hWaveOut != IntPtr.Zero)
-                {
-                    WaveInterop.waveOutClose(hWaveOut);
-                    hWaveOut = IntPtr.Zero;
-                }
-            }
-            if (disposing)
-            {
-                callbackHost.Dispose();
-            }
-        }
-
-        /// <summary>
-        /// Finaliser, called only if the user forgets to call <see cref="Dispose()"/>.
-        /// </summary>
-        ~WaveOutWindow()
-        {
-            Debug.Assert(false, "WaveOutWindow device was not closed");
-            Dispose(false);
-        }
-
-        private void Callback(IntPtr hWaveOut, WaveInterop.WaveMessage uMsg, IntPtr dwInstance, WaveHeader wavhdr, IntPtr dwReserved)
-        {
-            if (uMsg != WaveInterop.WaveMessage.WaveOutDone) return;
-            if (buffers == null) return;
-
-            // Buffers always return in the order they were enqueued, so a cyclic index is enough
-            // to identify which one just completed — no need to track buffers via WaveHeader.userData.
-            var buffer = buffers[nextBufferIndex];
-            nextBufferIndex = (nextBufferIndex + 1) % buffers.Length;
-            Interlocked.Decrement(ref queuedBuffers);
-
-            Exception exception = null;
-            if (playbackState == PlaybackState.Playing)
-            {
-                lock (waveOutLock)
-                {
-                    try
-                    {
-                        if (buffer.OnDone())
-                        {
-                            Interlocked.Increment(ref queuedBuffers);
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        exception = e;
-                    }
-                }
-            }
-            if (queuedBuffers == 0)
-            {
-                playbackState = PlaybackState.Stopped;
-                RaisePlaybackStoppedEvent(exception);
-            }
-        }
-
-        private void RaisePlaybackStoppedEvent(Exception e)
-        {
-            var handler = PlaybackStopped;
-            if (handler == null) return;
-            if (syncContext == null)
-            {
-                handler(this, new StoppedEventArgs(e));
-            }
-            else
-            {
-                syncContext.Post(_ => handler(this, new StoppedEventArgs(e)), null);
-            }
+            syncContext.Post(_ => handler(this, new StoppedEventArgs(e)), null);
         }
     }
 }

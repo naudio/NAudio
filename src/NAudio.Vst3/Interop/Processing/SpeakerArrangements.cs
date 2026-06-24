@@ -1,4 +1,4 @@
-namespace NAudio.Vst3.Interop;
+﻿namespace NAudio.Vst3.Interop;
 
 /// <summary>
 /// VST 3 speaker arrangement bitmasks (<c>Vst::SpeakerArrangement</c> = <c>uint64</c>). Each bit

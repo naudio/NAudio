@@ -1,210 +1,209 @@
-using System;
+﻿using System;
 using NAudio.Dsp;
 using NUnit.Framework;
 
-namespace NAudio.Core.Tests.Dsp
+namespace NAudio.Core.Tests.Dsp;
+
+/// <summary>
+/// Covers the batch <see cref="BiQuadFilter.Transform(ReadOnlySpan{float}, Span{float})"/>
+/// overload — specifically that it produces byte-identical output to the single-sample
+/// <see cref="BiQuadFilter.Transform(float)"/> form, survives being split across calls,
+/// and supports in-place operation.
+/// </summary>
+[TestFixture]
+[Category("UnitTest")]
+public class BiQuadFilterTests
 {
-    /// <summary>
-    /// Covers the batch <see cref="BiQuadFilter.Transform(ReadOnlySpan{float}, Span{float})"/>
-    /// overload — specifically that it produces byte-identical output to the single-sample
-    /// <see cref="BiQuadFilter.Transform(float)"/> form, survives being split across calls,
-    /// and supports in-place operation.
-    /// </summary>
-    [TestFixture]
-    [Category("UnitTest")]
-    public class BiQuadFilterTests
+    private static float[] GenerateTestSignal(int length, int seed = 42)
     {
-        private static float[] GenerateTestSignal(int length, int seed = 42)
+        var rng = new Random(seed);
+        var signal = new float[length];
+        for (int i = 0; i < length; i++)
+            signal[i] = (float)(rng.NextDouble() * 2 - 1);
+        return signal;
+    }
+
+    [Test]
+    public void UpdateLowPassFilterPreservesState()
+    {
+        // SetLowPassFilter resets state; UpdateLowPassFilter must not. Run a
+        // filter, then retune by each method to the SAME coefficients: the
+        // updated filter keeps its history (output continues smoothly), the
+        // re-set filter clears it (output jumps).
+        var input = GenerateTestSignal(512);
+
+        var updated = BiQuadFilter.LowPassFilter(44100f, 1000f, 0.707f);
+        var reset = BiQuadFilter.LowPassFilter(44100f, 1000f, 0.707f);
+        for (int i = 0; i < 256; i++)
         {
-            var rng = new Random(seed);
-            var signal = new float[length];
-            for (int i = 0; i < length; i++)
-                signal[i] = (float)(rng.NextDouble() * 2 - 1);
-            return signal;
+            updated.Transform(input[i]);
+            reset.Transform(input[i]);
         }
 
-        [Test]
-        public void UpdateLowPassFilterPreservesState()
-        {
-            // SetLowPassFilter resets state; UpdateLowPassFilter must not. Run a
-            // filter, then retune by each method to the SAME coefficients: the
-            // updated filter keeps its history (output continues smoothly), the
-            // re-set filter clears it (output jumps).
-            var input = GenerateTestSignal(512);
+        // retune both to a new cutoff (same target for both)
+        updated.UpdateLowPassFilter(44100f, 2000f, 0.707f);
+        reset.SetLowPassFilter(44100f, 2000f, 0.707f);
 
-            var updated = BiQuadFilter.LowPassFilter(44100f, 1000f, 0.707f);
-            var reset = BiQuadFilter.LowPassFilter(44100f, 1000f, 0.707f);
-            for (int i = 0; i < 256; i++)
-            {
-                updated.Transform(input[i]);
-                reset.Transform(input[i]);
-            }
+        float updatedNext = updated.Transform(input[256]);
+        float resetNext = reset.Transform(input[256]);
 
-            // retune both to a new cutoff (same target for both)
-            updated.UpdateLowPassFilter(44100f, 2000f, 0.707f);
-            reset.SetLowPassFilter(44100f, 2000f, 0.707f);
+        // the reset filter starts from zero state, the updated one carries
+        // history, so the immediate outputs differ
+        Assert.That(updatedNext, Is.Not.EqualTo(resetNext));
+    }
 
-            float updatedNext = updated.Transform(input[256]);
-            float resetNext = reset.Transform(input[256]);
+    [Test]
+    public void UpdateLowPassFilterMatchesFreshFilterWhenStateIsZero()
+    {
+        // from a clean state, Update and Set must produce identical output
+        var input = GenerateTestSignal(256);
+        var updated = BiQuadFilter.LowPassFilter(44100f, 1000f, 0.707f);
+        updated.ResetState();
+        updated.UpdateLowPassFilter(44100f, 3000f, 1.0f);
 
-            // the reset filter starts from zero state, the updated one carries
-            // history, so the immediate outputs differ
-            Assert.That(updatedNext, Is.Not.EqualTo(resetNext));
-        }
+        var fresh = BiQuadFilter.LowPassFilter(44100f, 3000f, 1.0f);
 
-        [Test]
-        public void UpdateLowPassFilterMatchesFreshFilterWhenStateIsZero()
-        {
-            // from a clean state, Update and Set must produce identical output
-            var input = GenerateTestSignal(256);
-            var updated = BiQuadFilter.LowPassFilter(44100f, 1000f, 0.707f);
-            updated.ResetState();
-            updated.UpdateLowPassFilter(44100f, 3000f, 1.0f);
+        for (int i = 0; i < input.Length; i++)
+            Assert.That(updated.Transform(input[i]), Is.EqualTo(fresh.Transform(input[i])).Within(1e-6f));
+    }
 
-            var fresh = BiQuadFilter.LowPassFilter(44100f, 3000f, 1.0f);
+    [Test]
+    public void UpdateHighPassFilterMatchesFreshFilterWhenStateIsZero()
+    {
+        var input = GenerateTestSignal(256);
+        var updated = BiQuadFilter.LowPassFilter(44100f, 1000f, 0.707f);
+        updated.ResetState();
+        updated.UpdateHighPassFilter(44100f, 800f, 0.707f);
 
-            for (int i = 0; i < input.Length; i++)
-                Assert.That(updated.Transform(input[i]), Is.EqualTo(fresh.Transform(input[i])).Within(1e-6f));
-        }
+        var fresh = BiQuadFilter.HighPassFilter(44100f, 800f, 0.707f);
 
-        [Test]
-        public void UpdateHighPassFilterMatchesFreshFilterWhenStateIsZero()
-        {
-            var input = GenerateTestSignal(256);
-            var updated = BiQuadFilter.LowPassFilter(44100f, 1000f, 0.707f);
-            updated.ResetState();
-            updated.UpdateHighPassFilter(44100f, 800f, 0.707f);
+        for (int i = 0; i < input.Length; i++)
+            Assert.That(updated.Transform(input[i]), Is.EqualTo(fresh.Transform(input[i])).Within(1e-6f));
+    }
 
-            var fresh = BiQuadFilter.HighPassFilter(44100f, 800f, 0.707f);
+    [Test]
+    public void UpdateBandPassFilterMatchesFreshFilterWhenStateIsZero()
+    {
+        var input = GenerateTestSignal(256);
+        var updated = BiQuadFilter.LowPassFilter(44100f, 1000f, 0.707f);
+        updated.ResetState();
+        updated.UpdateBandPassFilter(44100f, 1500f, 1.0f);
 
-            for (int i = 0; i < input.Length; i++)
-                Assert.That(updated.Transform(input[i]), Is.EqualTo(fresh.Transform(input[i])).Within(1e-6f));
-        }
+        var fresh = BiQuadFilter.BandPassFilterConstantPeakGain(44100f, 1500f, 1.0f);
 
-        [Test]
-        public void UpdateBandPassFilterMatchesFreshFilterWhenStateIsZero()
-        {
-            var input = GenerateTestSignal(256);
-            var updated = BiQuadFilter.LowPassFilter(44100f, 1000f, 0.707f);
-            updated.ResetState();
-            updated.UpdateBandPassFilter(44100f, 1500f, 1.0f);
+        for (int i = 0; i < input.Length; i++)
+            Assert.That(updated.Transform(input[i]), Is.EqualTo(fresh.Transform(input[i])).Within(1e-6f));
+    }
 
-            var fresh = BiQuadFilter.BandPassFilterConstantPeakGain(44100f, 1500f, 1.0f);
+    [Test]
+    public void UpdateNotchFilterMatchesFreshFilterWhenStateIsZero()
+    {
+        var input = GenerateTestSignal(256);
+        var updated = BiQuadFilter.LowPassFilter(44100f, 1000f, 0.707f);
+        updated.ResetState();
+        updated.UpdateNotchFilter(44100f, 2000f, 1.0f);
 
-            for (int i = 0; i < input.Length; i++)
-                Assert.That(updated.Transform(input[i]), Is.EqualTo(fresh.Transform(input[i])).Within(1e-6f));
-        }
+        var fresh = BiQuadFilter.NotchFilter(44100f, 2000f, 1.0f);
 
-        [Test]
-        public void UpdateNotchFilterMatchesFreshFilterWhenStateIsZero()
-        {
-            var input = GenerateTestSignal(256);
-            var updated = BiQuadFilter.LowPassFilter(44100f, 1000f, 0.707f);
-            updated.ResetState();
-            updated.UpdateNotchFilter(44100f, 2000f, 1.0f);
+        for (int i = 0; i < input.Length; i++)
+            Assert.That(updated.Transform(input[i]), Is.EqualTo(fresh.Transform(input[i])).Within(1e-6f));
+    }
 
-            var fresh = BiQuadFilter.NotchFilter(44100f, 2000f, 1.0f);
+    [Test]
+    public void BatchTransformMatchesSingleSampleTransform()
+    {
+        var input = GenerateTestSignal(1024);
+        var batchFilter = BiQuadFilter.LowPassFilter(44100f, 1000f, 0.707f);
+        var singleFilter = BiQuadFilter.LowPassFilter(44100f, 1000f, 0.707f);
 
-            for (int i = 0; i < input.Length; i++)
-                Assert.That(updated.Transform(input[i]), Is.EqualTo(fresh.Transform(input[i])).Within(1e-6f));
-        }
+        var batchOutput = new float[input.Length];
+        batchFilter.Transform(input, batchOutput);
 
-        [Test]
-        public void BatchTransformMatchesSingleSampleTransform()
-        {
-            var input = GenerateTestSignal(1024);
-            var batchFilter = BiQuadFilter.LowPassFilter(44100f, 1000f, 0.707f);
-            var singleFilter = BiQuadFilter.LowPassFilter(44100f, 1000f, 0.707f);
+        var singleOutput = new float[input.Length];
+        for (int i = 0; i < input.Length; i++)
+            singleOutput[i] = singleFilter.Transform(input[i]);
 
-            var batchOutput = new float[input.Length];
-            batchFilter.Transform(input, batchOutput);
+        Assert.That(batchOutput, Is.EqualTo(singleOutput),
+            "batch Transform must produce byte-identical output to sample-by-sample Transform");
+    }
 
-            var singleOutput = new float[input.Length];
-            for (int i = 0; i < input.Length; i++)
-                singleOutput[i] = singleFilter.Transform(input[i]);
+    [Test]
+    public void SplitBatchPreservesState()
+    {
+        // Filtering [A..B..C] in one batch must equal filtering A, then B, then C in sequence.
+        // This verifies state flushes correctly between calls.
+        var input = GenerateTestSignal(300);
+        var singleShot = BiQuadFilter.HighPassFilter(44100f, 500f, 1.2f);
+        var splitShot = BiQuadFilter.HighPassFilter(44100f, 500f, 1.2f);
 
-            Assert.That(batchOutput, Is.EqualTo(singleOutput),
-                "batch Transform must produce byte-identical output to sample-by-sample Transform");
-        }
+        var singleShotOut = new float[input.Length];
+        singleShot.Transform(input, singleShotOut);
 
-        [Test]
-        public void SplitBatchPreservesState()
-        {
-            // Filtering [A..B..C] in one batch must equal filtering A, then B, then C in sequence.
-            // This verifies state flushes correctly between calls.
-            var input = GenerateTestSignal(300);
-            var singleShot = BiQuadFilter.HighPassFilter(44100f, 500f, 1.2f);
-            var splitShot = BiQuadFilter.HighPassFilter(44100f, 500f, 1.2f);
+        var splitShotOut = new float[input.Length];
+        splitShot.Transform(input.AsSpan(0, 100), splitShotOut.AsSpan(0, 100));
+        splitShot.Transform(input.AsSpan(100, 50), splitShotOut.AsSpan(100, 50));
+        splitShot.Transform(input.AsSpan(150, 150), splitShotOut.AsSpan(150, 150));
 
-            var singleShotOut = new float[input.Length];
-            singleShot.Transform(input, singleShotOut);
+        Assert.That(splitShotOut, Is.EqualTo(singleShotOut),
+            "splitting a batch across multiple Transform calls must preserve filter state");
+    }
 
-            var splitShotOut = new float[input.Length];
-            splitShot.Transform(input.AsSpan(0, 100), splitShotOut.AsSpan(0, 100));
-            splitShot.Transform(input.AsSpan(100, 50), splitShotOut.AsSpan(100, 50));
-            splitShot.Transform(input.AsSpan(150, 150), splitShotOut.AsSpan(150, 150));
+    [Test]
+    public void InPlaceTransformMatchesOutOfPlace()
+    {
+        // source and destination being the same span is a common usage — applying a filter in
+        // place. A biquad reads source[i] before writing destination[i] on each iteration so
+        // this is safe.
+        var input = GenerateTestSignal(512);
+        var filterA = BiQuadFilter.PeakingEQ(44100f, 2000f, 1.0f, 6f);
+        var filterB = BiQuadFilter.PeakingEQ(44100f, 2000f, 1.0f, 6f);
 
-            Assert.That(splitShotOut, Is.EqualTo(singleShotOut),
-                "splitting a batch across multiple Transform calls must preserve filter state");
-        }
+        var outOfPlace = new float[input.Length];
+        filterA.Transform(input, outOfPlace);
 
-        [Test]
-        public void InPlaceTransformMatchesOutOfPlace()
-        {
-            // source and destination being the same span is a common usage — applying a filter in
-            // place. A biquad reads source[i] before writing destination[i] on each iteration so
-            // this is safe.
-            var input = GenerateTestSignal(512);
-            var filterA = BiQuadFilter.PeakingEQ(44100f, 2000f, 1.0f, 6f);
-            var filterB = BiQuadFilter.PeakingEQ(44100f, 2000f, 1.0f, 6f);
+        var inPlace = (float[])input.Clone();
+        filterB.Transform(inPlace, inPlace);
 
-            var outOfPlace = new float[input.Length];
-            filterA.Transform(input, outOfPlace);
+        Assert.That(inPlace, Is.EqualTo(outOfPlace),
+            "in-place Transform must produce the same output as the out-of-place form");
+    }
 
-            var inPlace = (float[])input.Clone();
-            filterB.Transform(inPlace, inPlace);
+    [Test]
+    public void DestinationShorterThanSourceThrows()
+    {
+        var filter = BiQuadFilter.LowPassFilter(44100f, 1000f, 0.707f);
+        var input = new float[100];
+        var destination = new float[50];
 
-            Assert.That(inPlace, Is.EqualTo(outOfPlace),
-                "in-place Transform must produce the same output as the out-of-place form");
-        }
+        Assert.Throws<ArgumentException>(() => filter.Transform(input, destination));
+    }
 
-        [Test]
-        public void DestinationShorterThanSourceThrows()
-        {
-            var filter = BiQuadFilter.LowPassFilter(44100f, 1000f, 0.707f);
-            var input = new float[100];
-            var destination = new float[50];
+    [Test]
+    public void DestinationEqualToSourceLengthIsAllowed()
+    {
+        var filter = BiQuadFilter.LowPassFilter(44100f, 1000f, 0.707f);
+        var input = new float[100];
+        var destination = new float[100];
 
-            Assert.Throws<ArgumentException>(() => filter.Transform(input, destination));
-        }
+        Assert.DoesNotThrow(() => filter.Transform(input, destination));
+    }
 
-        [Test]
-        public void DestinationEqualToSourceLengthIsAllowed()
-        {
-            var filter = BiQuadFilter.LowPassFilter(44100f, 1000f, 0.707f);
-            var input = new float[100];
-            var destination = new float[100];
+    [Test]
+    public void EmptyInputIsNoOp()
+    {
+        // State must survive an empty call unchanged — if a consumer calls with zero samples
+        // it should not perturb subsequent output.
+        var filterA = BiQuadFilter.LowPassFilter(44100f, 500f, 0.9f);
+        var filterB = BiQuadFilter.LowPassFilter(44100f, 500f, 0.9f);
 
-            Assert.DoesNotThrow(() => filter.Transform(input, destination));
-        }
+        var input = GenerateTestSignal(64);
+        var outputA = new float[input.Length];
+        var outputB = new float[input.Length];
 
-        [Test]
-        public void EmptyInputIsNoOp()
-        {
-            // State must survive an empty call unchanged — if a consumer calls with zero samples
-            // it should not perturb subsequent output.
-            var filterA = BiQuadFilter.LowPassFilter(44100f, 500f, 0.9f);
-            var filterB = BiQuadFilter.LowPassFilter(44100f, 500f, 0.9f);
+        filterA.Transform(ReadOnlySpan<float>.Empty, Span<float>.Empty);
+        filterA.Transform(input, outputA);
+        filterB.Transform(input, outputB);
 
-            var input = GenerateTestSignal(64);
-            var outputA = new float[input.Length];
-            var outputB = new float[input.Length];
-
-            filterA.Transform(ReadOnlySpan<float>.Empty, Span<float>.Empty);
-            filterA.Transform(input, outputA);
-            filterB.Transform(input, outputB);
-
-            Assert.That(outputA, Is.EqualTo(outputB));
-        }
+        Assert.That(outputA, Is.EqualTo(outputB));
     }
 }

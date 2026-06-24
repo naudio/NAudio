@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using NAudio.Vst3;
 using NAudioConsoleTest.Shared.Testing;
 

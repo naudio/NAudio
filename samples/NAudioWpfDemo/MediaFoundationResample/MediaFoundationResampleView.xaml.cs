@@ -2,16 +2,15 @@
 using System.Linq;
 using System.Windows.Controls;
 
-namespace NAudioWpfDemo.MediaFoundationResample
+namespace NAudioWpfDemo.MediaFoundationResample;
+
+/// <summary>
+/// Interaction logic for MediaFoundationResampleView.xaml
+/// </summary>
+public partial class MediaFoundationResampleView : UserControl
 {
-    /// <summary>
-    /// Interaction logic for MediaFoundationResampleView.xaml
-    /// </summary>
-    public partial class MediaFoundationResampleView : UserControl
+    public MediaFoundationResampleView()
     {
-        public MediaFoundationResampleView()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

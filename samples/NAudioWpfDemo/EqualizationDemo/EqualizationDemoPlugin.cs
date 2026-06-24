@@ -1,30 +1,29 @@
 ﻿using System.Windows.Controls;
 
-namespace NAudioWpfDemo.EqualizationDemo
+namespace NAudioWpfDemo.EqualizationDemo;
+
+class EqualizationPlaybackDemoPlugin : IModule
 {
-    class EqualizationPlaybackDemoPlugin : IModule
+    private EqualizationDemoView view;
+    private EqualizationDemoViewModel viewModel;
+
+    public string Name => "Graphic EQ";
+
+    public UserControl UserInterface
     {
-        private EqualizationDemoView view;
-        private EqualizationDemoViewModel viewModel;
+        get { if (view == null) CreateView(); return view; }
+    }
 
-        public string Name => "Graphic EQ";
+    private void CreateView()
+    {
+        view = new EqualizationDemoView();
+        viewModel = new EqualizationDemoViewModel();
+        view.DataContext = viewModel;
+    }
 
-        public UserControl UserInterface
-        {
-            get { if (view == null) CreateView(); return view; }
-        }
-
-        private void CreateView()
-        {
-            view = new EqualizationDemoView();
-            viewModel = new EqualizationDemoViewModel();
-            view.DataContext = viewModel;
-        }
-
-        public void Deactivate()
-        {
-            viewModel.Dispose();
-            view = null;
-        }
+    public void Deactivate()
+    {
+        viewModel.Dispose();
+        view = null;
     }
 }

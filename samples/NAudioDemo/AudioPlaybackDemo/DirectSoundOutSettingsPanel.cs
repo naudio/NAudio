@@ -3,26 +3,25 @@ using System.Linq;
 using System.Windows.Forms;
 using NAudio.Wave;
 
-namespace NAudioDemo.AudioPlaybackDemo
+namespace NAudioDemo.AudioPlaybackDemo;
+
+public partial class DirectSoundOutSettingsPanel : UserControl
 {
-    public partial class DirectSoundOutSettingsPanel : UserControl
+    public DirectSoundOutSettingsPanel()
     {
-        public DirectSoundOutSettingsPanel()
-        {
-            InitializeComponent();
-            InitialiseDirectSoundControls();
-        }
+        InitializeComponent();
+        InitialiseDirectSoundControls();
+    }
 
-        private void InitialiseDirectSoundControls()
-        {
-            comboBoxDirectSound.DisplayMember = "Description";
-            comboBoxDirectSound.ValueMember = "Guid";
-            comboBoxDirectSound.DataSource = DirectSoundOut.Devices;
-        }
+    private void InitialiseDirectSoundControls()
+    {
+        comboBoxDirectSound.DisplayMember = "Description";
+        comboBoxDirectSound.ValueMember = "Guid";
+        comboBoxDirectSound.DataSource = DirectSoundOut.Devices;
+    }
 
-        public Guid SelectedDevice 
-        {
-            get { return (Guid)comboBoxDirectSound.SelectedValue; }
-        }
+    public Guid SelectedDevice
+    {
+        get { return (Guid)comboBoxDirectSound.SelectedValue; }
     }
 }

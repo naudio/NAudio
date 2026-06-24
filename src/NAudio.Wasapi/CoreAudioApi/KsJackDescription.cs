@@ -1,41 +1,40 @@
 ﻿using NAudio.CoreAudioApi.Interfaces;
 
-namespace NAudio.CoreAudioApi
+namespace NAudio.CoreAudioApi;
+
+/// <summary>
+/// KS Jack Description
+/// </summary>
+public class KsJackDescription
 {
-    /// <summary>
-    /// KS Jack Description
-    /// </summary>
-    public class KsJackDescription
+    private readonly IKsJackDescription ksJackDescriptionInterface;
+
+    internal KsJackDescription(IKsJackDescription ksJackDescription)
     {
-        private readonly IKsJackDescription ksJackDescriptionInterface;
+        ksJackDescriptionInterface = ksJackDescription;
+    }
 
-        internal KsJackDescription(IKsJackDescription ksJackDescription)
+    /// <summary>
+    /// Jack count
+    /// </summary>
+    public uint Count
+    {
+        get
         {
-            ksJackDescriptionInterface = ksJackDescription;
+            ksJackDescriptionInterface.GetJackCount(out var result);
+            return result;
         }
+    }
 
-        /// <summary>
-        /// Jack count
-        /// </summary>
-        public uint Count
+    /// <summary>
+    /// Get Jack Description by index
+    /// </summary>
+    public string this[uint index]
+    {
+        get
         {
-            get
-            {
-                ksJackDescriptionInterface.GetJackCount(out var result);
-                return result;
-            }
-        }
-
-        /// <summary>
-        /// Get Jack Description by index
-        /// </summary>
-        public string this[uint index]
-        {
-            get
-            {
-                ksJackDescriptionInterface.GetJackDescription(index, out var result);
-                return result;
-            }
+            ksJackDescriptionInterface.GetJackDescription(index, out var result);
+            return result;
         }
     }
 }

@@ -1,4 +1,4 @@
-namespace NAudioConsoleTest.Shared.Testing;
+﻿namespace NAudioConsoleTest.Shared.Testing;
 
 /// <summary>
 /// Per-invocation state passed to <see cref="IConsoleTest.Run"/>. Tests read parameter values

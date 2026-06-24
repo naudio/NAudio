@@ -1,29 +1,28 @@
 ﻿using System;
 using System.Linq;
 
-namespace NAudioWpfDemo.AudioPlaybackDemo
+namespace NAudioWpfDemo.AudioPlaybackDemo;
+
+class SpectrumAnalyzerVisualization : IVisualizationPlugin
 {
-    class SpectrumAnalyzerVisualization : IVisualizationPlugin
+    private readonly SpectrumAnalyser spectrumAnalyser = new SpectrumAnalyser();
+
+    public string Name => "Spectrum Analyser";
+
+    public object Content => spectrumAnalyser;
+
+    public void OnMaxCalculated(float min, float max)
     {
-        private readonly SpectrumAnalyser spectrumAnalyser = new SpectrumAnalyser();
+        // nothing to do
+    }
 
-        public string Name => "Spectrum Analyser";
+    public void OnFftCalculated(NAudio.Dsp.Complex[] result)
+    {
+        spectrumAnalyser.Update(result);
+    }
 
-        public object Content => spectrumAnalyser;
-
-        public void OnMaxCalculated(float min, float max)
-        {
-            // nothing to do
-        }
-
-        public void OnFftCalculated(NAudio.Dsp.Complex[] result)
-        {
-            spectrumAnalyser.Update(result);
-        }
-
-        public void OnSourceChanged(int sampleRate)
-        {
-            spectrumAnalyser.SampleRate = sampleRate;
-        }
+    public void OnSourceChanged(int sampleRate)
+    {
+        spectrumAnalyser.SampleRate = sampleRate;
     }
 }

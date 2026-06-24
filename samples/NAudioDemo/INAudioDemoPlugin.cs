@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Windows.Forms;
 
-namespace NAudioDemo
+namespace NAudioDemo;
+
+public interface INAudioDemoPlugin
 {
-    public interface INAudioDemoPlugin
-    {
-        string Name { get; }
-        Control CreatePanel();
-    }
+    string Name { get; }
+    Control CreatePanel();
 }

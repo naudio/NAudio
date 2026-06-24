@@ -23,33 +23,32 @@
 // updated to be in line with http://msdn.microsoft.com/en-us/library/dd370823%28v=vs.85%29.aspx
 using System;
 
-namespace NAudio.CoreAudioApi
+namespace NAudio.CoreAudioApi;
+
+/// <summary>
+/// Device State
+/// </summary>
+[Flags]
+public enum DeviceState
 {
     /// <summary>
-    /// Device State
+    /// DEVICE_STATE_ACTIVE
     /// </summary>
-    [Flags]
-    public enum DeviceState
-    {
-        /// <summary>
-        /// DEVICE_STATE_ACTIVE
-        /// </summary>
-        Active = 0x00000001,
-        /// <summary>
-        /// DEVICE_STATE_DISABLED
-        /// </summary>
-        Disabled = 0x00000002,
-        /// <summary>
-        /// DEVICE_STATE_NOTPRESENT 
-        /// </summary>
-        NotPresent = 0x00000004,
-        /// <summary>
-        /// DEVICE_STATE_UNPLUGGED
-        /// </summary>
-        Unplugged = 0x00000008,
-        /// <summary>
-        /// DEVICE_STATEMASK_ALL
-        /// </summary>
-        All = 0x0000000F
-    }
+    Active = 0x00000001,
+    /// <summary>
+    /// DEVICE_STATE_DISABLED
+    /// </summary>
+    Disabled = 0x00000002,
+    /// <summary>
+    /// DEVICE_STATE_NOTPRESENT 
+    /// </summary>
+    NotPresent = 0x00000004,
+    /// <summary>
+    /// DEVICE_STATE_UNPLUGGED
+    /// </summary>
+    Unplugged = 0x00000008,
+    /// <summary>
+    /// DEVICE_STATEMASK_ALL
+    /// </summary>
+    All = 0x0000000F
 }

@@ -1,31 +1,30 @@
 ﻿using System;
 using NAudio.Wave;
 
-namespace NAudioWpfDemo.FireAndForgetPlayback
+namespace NAudioWpfDemo.FireAndForgetPlayback;
+
+class AutoDisposeFileReader : ISampleProvider
 {
-    class AutoDisposeFileReader : ISampleProvider
+    private readonly AudioFileReader reader;
+    private bool isDisposed;
+    public AutoDisposeFileReader(AudioFileReader reader)
     {
-        private readonly AudioFileReader reader;
-        private bool isDisposed;
-        public AutoDisposeFileReader(AudioFileReader reader)
-        {
-            this.reader = reader;
-            WaveFormat = reader.WaveFormat;
-        }
-
-        public int Read(Span<float> buffer)
-        {
-            if (isDisposed)
-                return 0;
-            int read = reader.Read(buffer);
-            if (read == 0)
-            {
-                reader.Dispose();
-                isDisposed = true;
-            }
-            return read;
-        }
-
-        public WaveFormat WaveFormat { get; }
+        this.reader = reader;
+        WaveFormat = reader.WaveFormat;
     }
+
+    public int Read(Span<float> buffer)
+    {
+        if (isDisposed)
+            return 0;
+        int read = reader.Read(buffer);
+        if (read == 0)
+        {
+            reader.Dispose();
+            isDisposed = true;
+        }
+        return read;
+    }
+
+    public WaveFormat WaveFormat { get; }
 }

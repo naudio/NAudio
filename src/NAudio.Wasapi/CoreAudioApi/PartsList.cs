@@ -3,59 +3,58 @@ using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 using NAudio.CoreAudioApi.Interfaces;
 
-namespace NAudio.CoreAudioApi
+namespace NAudio.CoreAudioApi;
+
+/// <summary>
+/// Parts List
+/// </summary>
+public class PartsList
 {
-    /// <summary>
-    /// Parts List
-    /// </summary>
-    public class PartsList
+    private IPartsList partsListInterface;
+
+    internal PartsList(IPartsList partsList)
     {
-        private IPartsList partsListInterface;
+        partsListInterface = partsList;
+    }
 
-        internal PartsList(IPartsList partsList)
+    /// <summary>
+    /// Part count
+    /// </summary>
+    public uint Count
+    {
+        get
         {
-            partsListInterface = partsList;
-        }
-
-        /// <summary>
-        /// Part count
-        /// </summary>
-        public uint Count
-        {
-            get
+            uint result = 0;
+            if (partsListInterface != null)
             {
-                uint result = 0;
-                if (partsListInterface != null)
-                {
-                    partsListInterface.GetCount(out result);
-                }
-
-                return result;
+                partsListInterface.GetCount(out result);
             }
+
+            return result;
         }
+    }
 
-        /// <summary>
-        /// Get part by index
-        /// </summary>
-        public Part this[uint index]
+    /// <summary>
+    /// Get part by index
+    /// </summary>
+    public Part this[uint index]
+    {
+        get
         {
-            get
+            if (partsListInterface == null)
             {
-                if (partsListInterface == null)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(index));
-                }
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
 
-                partsListInterface.GetPart(index, out var ptr);
-                try
-                {
-                    return new Part((IPart)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
-                        ptr, CreateObjectFlags.UniqueInstance));
-                }
-                finally
-                {
-                    Marshal.Release(ptr);
-                }
+            partsListInterface.GetPart(index, out var ptr);
+            try
+            {
+                return new Part((IPart)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    ptr, CreateObjectFlags.UniqueInstance));
+            }
+            finally
+            {
+                Marshal.Release(ptr);
             }
         }
     }

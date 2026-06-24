@@ -8,97 +8,96 @@ using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 using NAudio.CoreAudioApi.Interfaces;
 
-namespace NAudio.CoreAudioApi
+namespace NAudio.CoreAudioApi;
+
+/// <summary>
+/// Windows CoreAudio SimpleAudioVolume
+/// </summary>
+public class SimpleAudioVolume : IDisposable
 {
+    private ISimpleAudioVolume simpleAudioVolume;
+    private readonly bool ownsInterface;
+
     /// <summary>
-    /// Windows CoreAudio SimpleAudioVolume
+    /// Creates a new SimpleAudioVolume wrapper — ownership of the COM pointer is transferred.
     /// </summary>
-    public class SimpleAudioVolume : IDisposable
+    /// <param name="nativePointer">Raw COM pointer — ownership is transferred to this instance</param>
+    internal SimpleAudioVolume(IntPtr nativePointer)
     {
-        private ISimpleAudioVolume simpleAudioVolume;
-        private readonly bool ownsInterface;
-
-        /// <summary>
-        /// Creates a new SimpleAudioVolume wrapper — ownership of the COM pointer is transferred.
-        /// </summary>
-        /// <param name="nativePointer">Raw COM pointer — ownership is transferred to this instance</param>
-        internal SimpleAudioVolume(IntPtr nativePointer)
+        try
         {
-            try
-            {
-                simpleAudioVolume = (ISimpleAudioVolume)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
-                    nativePointer, CreateObjectFlags.UniqueInstance);
-            }
-            finally
-            {
-                Marshal.Release(nativePointer);
-            }
-            ownsInterface = true;
+            simpleAudioVolume = (ISimpleAudioVolume)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                nativePointer, CreateObjectFlags.UniqueInstance);
         }
-
-        /// <summary>
-        /// Creates a new SimpleAudioVolume wrapper from a borrowed interface (e.g. QI from AudioSessionControl).
-        /// This instance does not own the COM pointer.
-        /// </summary>
-        /// <param name="borrowed">ISimpleAudioVolume obtained via QI on an existing RCW</param>
-        internal SimpleAudioVolume(ISimpleAudioVolume borrowed)
+        finally
         {
-            simpleAudioVolume = borrowed;
-            ownsInterface = false;
+            Marshal.Release(nativePointer);
         }
+        ownsInterface = true;
+    }
 
-        /// <summary>
-        /// Releases the underlying COM reference when this wrapper owns it.
-        /// Borrowed wrappers (constructed from a parent's RCW) do not release.
-        /// </summary>
-        public void Dispose()
+    /// <summary>
+    /// Creates a new SimpleAudioVolume wrapper from a borrowed interface (e.g. QI from AudioSessionControl).
+    /// This instance does not own the COM pointer.
+    /// </summary>
+    /// <param name="borrowed">ISimpleAudioVolume obtained via QI on an existing RCW</param>
+    internal SimpleAudioVolume(ISimpleAudioVolume borrowed)
+    {
+        simpleAudioVolume = borrowed;
+        ownsInterface = false;
+    }
+
+    /// <summary>
+    /// Releases the underlying COM reference when this wrapper owns it.
+    /// Borrowed wrappers (constructed from a parent's RCW) do not release.
+    /// </summary>
+    public void Dispose()
+    {
+        if (simpleAudioVolume != null)
         {
-            if (simpleAudioVolume != null)
+            if (ownsInterface && (object)simpleAudioVolume is ComObject co)
             {
-                if (ownsInterface && (object)simpleAudioVolume is ComObject co)
-                {
-                    co.FinalRelease();
-                }
-                simpleAudioVolume = null;
+                co.FinalRelease();
             }
-            GC.SuppressFinalize(this);
+            simpleAudioVolume = null;
         }
+        GC.SuppressFinalize(this);
+    }
 
-        /// <summary>
-        /// Allows the user to adjust the volume from
-        /// 0.0 to 1.0
-        /// </summary>
-        public float Volume
+    /// <summary>
+    /// Allows the user to adjust the volume from
+    /// 0.0 to 1.0
+    /// </summary>
+    public float Volume
+    {
+        get
         {
-            get
-            {
-                CoreAudioException.ThrowIfFailed(simpleAudioVolume.GetMasterVolume(out var result));
-                return result;
-            }
-            set
-            {
-                if ((value >= 0.0) && (value <= 1.0))
-                {
-                    CoreAudioException.ThrowIfFailed(simpleAudioVolume.SetMasterVolume(value, Guid.Empty));
-                }
-                // should throw something if out of range
-            }
+            CoreAudioException.ThrowIfFailed(simpleAudioVolume.GetMasterVolume(out var result));
+            return result;
         }
-
-        /// <summary>
-        /// Mute
-        /// </summary>
-        public bool Mute
+        set
         {
-            get
+            if ((value >= 0.0) && (value <= 1.0))
             {
-                CoreAudioException.ThrowIfFailed(simpleAudioVolume.GetMute(out var result));
-                return result;
+                CoreAudioException.ThrowIfFailed(simpleAudioVolume.SetMasterVolume(value, Guid.Empty));
             }
-            set
-            {
-                CoreAudioException.ThrowIfFailed(simpleAudioVolume.SetMute(value, Guid.Empty));
-            }
+            // should throw something if out of range
+        }
+    }
+
+    /// <summary>
+    /// Mute
+    /// </summary>
+    public bool Mute
+    {
+        get
+        {
+            CoreAudioException.ThrowIfFailed(simpleAudioVolume.GetMute(out var result));
+            return result;
+        }
+        set
+        {
+            CoreAudioException.ThrowIfFailed(simpleAudioVolume.SetMute(value, Guid.Empty));
         }
     }
 }

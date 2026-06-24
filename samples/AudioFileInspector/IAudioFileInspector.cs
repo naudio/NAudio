@@ -1,13 +1,12 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace AudioFileInspector
+namespace AudioFileInspector;
+
+public interface IAudioFileInspector
 {
-    public interface IAudioFileInspector
-    {
-        string FileExtension { get; }
-        string FileTypeDescription { get; }
-        string Describe(string fileName);
-    }
+    string FileExtension { get; }
+    string FileTypeDescription { get; }
+    string Describe(string fileName);
 }

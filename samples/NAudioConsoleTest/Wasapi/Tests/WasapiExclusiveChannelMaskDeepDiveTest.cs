@@ -1,4 +1,4 @@
-using NAudio.CoreAudioApi;
+﻿using NAudio.CoreAudioApi;
 using NAudio.Wave;
 using NAudioConsoleTest.Shared.Testing;
 using Spectre.Console;
@@ -41,16 +41,16 @@ sealed class WasapiExclusiveChannelMaskDeepDiveTest : IConsoleTest
         var supportedCount = 0;
         var totalProbed = 0;
         foreach (var rate in WasapiExclusiveFormatHelper.SampleRates)
-        foreach (var (bits, encoding) in WasapiExclusiveFormatHelper.BitDepthEncodings)
-        foreach (var (mask, name) in masks)
-        {
-            totalProbed++;
-            var format = WasapiExclusiveFormatHelper.CreateFormat(rate, bits, channelCount, encoding, mask);
-            var supported = client.IsFormatSupported(AudioClientShareMode.Exclusive, format);
-            if (supported) supportedCount++;
-            table.AddRow($"{rate}", $"{bits}", encoding, $"0x{mask:X4}", name,
-                supported ? "[green]YES[/]" : "[dim]no[/]");
-        }
+            foreach (var (bits, encoding) in WasapiExclusiveFormatHelper.BitDepthEncodings)
+                foreach (var (mask, name) in masks)
+                {
+                    totalProbed++;
+                    var format = WasapiExclusiveFormatHelper.CreateFormat(rate, bits, channelCount, encoding, mask);
+                    var supported = client.IsFormatSupported(AudioClientShareMode.Exclusive, format);
+                    if (supported) supportedCount++;
+                    table.AddRow($"{rate}", $"{bits}", encoding, $"0x{mask:X4}", name,
+                        supported ? "[green]YES[/]" : "[dim]no[/]");
+                }
 
         AnsiConsole.Write(table);
 

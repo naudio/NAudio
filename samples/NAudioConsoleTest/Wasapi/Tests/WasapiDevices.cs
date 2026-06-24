@@ -1,4 +1,4 @@
-using NAudio.CoreAudioApi;
+﻿using NAudio.CoreAudioApi;
 
 namespace NAudioConsoleTest.Wasapi.Tests;
 

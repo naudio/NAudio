@@ -1,15 +1,14 @@
-using System.Windows.Controls;
+﻿using System.Windows.Controls;
 
-namespace NAudioWpfDemo.RealtimeEffectsDemo
+namespace NAudioWpfDemo.RealtimeEffectsDemo;
+
+/// <summary>
+/// Interaction logic for RealtimeEffectsView.xaml
+/// </summary>
+public partial class RealtimeEffectsView : UserControl
 {
-    /// <summary>
-    /// Interaction logic for RealtimeEffectsView.xaml
-    /// </summary>
-    public partial class RealtimeEffectsView : UserControl
+    public RealtimeEffectsView()
     {
-        public RealtimeEffectsView()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

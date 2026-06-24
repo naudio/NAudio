@@ -1,4 +1,4 @@
-using System.Numerics.Tensors;
+﻿using System.Numerics.Tensors;
 using BenchmarkDotNet.Attributes;
 
 namespace NAudio.Benchmarks;

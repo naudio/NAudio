@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using NAudio.Wave;
 
 namespace MfStressTest;
@@ -18,24 +18,24 @@ internal static class Cli
                     o.Mode = args[++i].ToLowerInvariant() switch
                     {
                         "breadth" => RunMode.Breadth,
-                        "soak"    => RunMode.Soak,
-                        "enum"    => RunMode.Enum,
+                        "soak" => RunMode.Soak,
+                        "enum" => RunMode.Enum,
                         "abandon" => RunMode.Abandon,
-                        "sta"     => RunMode.Sta,
-                        "all"     => RunMode.All,
-                        var s     => throw new ArgumentException($"unknown mode '{s}'"),
+                        "sta" => RunMode.Sta,
+                        "all" => RunMode.All,
+                        var s => throw new ArgumentException($"unknown mode '{s}'"),
                     };
                     break;
-                case "--threads":       o.Threads = int.Parse(args[++i]); break;
-                case "--gc-every":      o.GcEvery = int.Parse(args[++i]); break;
-                case "--seed":          o.Seed = int.Parse(args[++i]); o.SeedExplicit = true; break;
-                case "--temp":          o.TempDir = args[++i]; break;
-                case "--verbose":       o.Verbose = true; break;
-                case "--keep":          o.Keep = true; break;
-                case "--watchdog":      o.WatchdogSeconds = int.Parse(args[++i]); break;
-                case "--procdump":      o.ProcdumpPath = args[++i]; break;
+                case "--threads": o.Threads = int.Parse(args[++i]); break;
+                case "--gc-every": o.GcEvery = int.Parse(args[++i]); break;
+                case "--seed": o.Seed = int.Parse(args[++i]); o.SeedExplicit = true; break;
+                case "--temp": o.TempDir = args[++i]; break;
+                case "--verbose": o.Verbose = true; break;
+                case "--keep": o.Keep = true; break;
+                case "--watchdog": o.WatchdogSeconds = int.Parse(args[++i]); break;
+                case "--procdump": o.ProcdumpPath = args[++i]; break;
                 case "--soft-watchdog": o.SoftWatchdog = true; break;
-                case "--max-dumps":     o.MaxDumps = int.Parse(args[++i]); break;
+                case "--max-dumps": o.MaxDumps = int.Parse(args[++i]); break;
                 case "-h":
                 case "--help":
                     PrintUsage();

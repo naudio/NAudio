@@ -5,60 +5,59 @@ using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 using System.Text;
 
-namespace NAudio.CoreAudioApi
+namespace NAudio.CoreAudioApi;
+
+/// <summary>
+/// Windows CoreAudio DeviceTopology
+/// </summary>
+public class DeviceTopology
 {
-    /// <summary>
-    /// Windows CoreAudio DeviceTopology
-    /// </summary>
-    public class DeviceTopology
+    private readonly IDeviceTopology deviceTopologyInterface;
+
+    internal DeviceTopology(IDeviceTopology deviceTopology)
     {
-        private readonly IDeviceTopology deviceTopologyInterface;
-
-        internal DeviceTopology(IDeviceTopology deviceTopology)
-        {
-            deviceTopologyInterface = deviceTopology;
-        }
-
-        /// <summary>
-        /// Retrieves the number of connections associated with this device-topology object
-        /// </summary>
-        public uint ConnectorCount
-        {
-            get
-            {
-                deviceTopologyInterface.GetConnectorCount(out var count);
-                return count;
-            }
-        }
-
-        /// <summary>
-        /// Retrieves the connector at the supplied index
-        /// </summary>
-        public Connector GetConnector(uint index)
-        {
-            deviceTopologyInterface.GetConnector(index, out var ptr);
-            try
-            {
-                return new Connector((IConnector)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
-                    ptr, CreateObjectFlags.UniqueInstance));
-            }
-            finally
-            {
-                Marshal.Release(ptr);
-            }
-        }
-
-        /// <summary>
-        /// Retrieves the device id of the device represented by this device-topology object
-        /// </summary>
-        public string DeviceId
-        {
-            get
-            {
-                deviceTopologyInterface.GetDeviceId(out var result);
-                return result;
-            }
-        }
-
+        deviceTopologyInterface = deviceTopology;
     }
+
+    /// <summary>
+    /// Retrieves the number of connections associated with this device-topology object
+    /// </summary>
+    public uint ConnectorCount
+    {
+        get
+        {
+            deviceTopologyInterface.GetConnectorCount(out var count);
+            return count;
+        }
+    }
+
+    /// <summary>
+    /// Retrieves the connector at the supplied index
+    /// </summary>
+    public Connector GetConnector(uint index)
+    {
+        deviceTopologyInterface.GetConnector(index, out var ptr);
+        try
+        {
+            return new Connector((IConnector)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                ptr, CreateObjectFlags.UniqueInstance));
+        }
+        finally
+        {
+            Marshal.Release(ptr);
+        }
+    }
+
+    /// <summary>
+    /// Retrieves the device id of the device represented by this device-topology object
+    /// </summary>
+    public string DeviceId
+    {
+        get
+        {
+            deviceTopologyInterface.GetDeviceId(out var result);
+            return result;
+        }
+    }
+
 }

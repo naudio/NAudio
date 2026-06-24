@@ -1,4 +1,4 @@
-namespace NAudioConsoleTest.Shared.Testing;
+﻿namespace NAudioConsoleTest.Shared.Testing;
 
 /// <summary>
 /// In-place per-channel bar meter for interactive tests (RMS or peak level monitoring). Reserves

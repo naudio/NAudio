@@ -1,147 +1,146 @@
-using System;
+﻿using System;
 using System.Runtime.InteropServices;
 
 // ReSharper disable once CheckNamespace
-namespace NAudio.Wave
+namespace NAudio.Wave;
+
+/// <summary>
+/// A buffer of Wave samples
+/// </summary>
+internal class WaveInBuffer : IDisposable
 {
+    private readonly WaveHeader header;
+    private readonly Int32 bufferSize; // allocated bytes, may not be the same as bytes read
+    private readonly byte[] buffer;
+    private GCHandle hBuffer;
+    private IntPtr waveInHandle;
+    private GCHandle hHeader; // we need to pin the header structure
+
     /// <summary>
-    /// A buffer of Wave samples
+    /// creates a new wavebuffer
     /// </summary>
-    internal class WaveInBuffer : IDisposable
+    /// <param name="waveInHandle">WaveIn device to write to</param>
+    /// <param name="bufferSize">Buffer size in bytes</param>
+    public WaveInBuffer(IntPtr waveInHandle, Int32 bufferSize)
     {
-        private readonly WaveHeader header;
-        private readonly Int32 bufferSize; // allocated bytes, may not be the same as bytes read
-        private readonly byte[] buffer;
-        private GCHandle hBuffer;
-        private IntPtr waveInHandle;
-        private GCHandle hHeader; // we need to pin the header structure
+        this.bufferSize = bufferSize;
+        this.buffer = new byte[bufferSize];
+        this.hBuffer = GCHandle.Alloc(buffer, GCHandleType.Pinned);
+        this.waveInHandle = waveInHandle;
 
-        /// <summary>
-        /// creates a new wavebuffer
-        /// </summary>
-        /// <param name="waveInHandle">WaveIn device to write to</param>
-        /// <param name="bufferSize">Buffer size in bytes</param>
-        public WaveInBuffer(IntPtr waveInHandle, Int32 bufferSize)
+        header = new WaveHeader();
+        hHeader = GCHandle.Alloc(header, GCHandleType.Pinned);
+        header.dataBuffer = hBuffer.AddrOfPinnedObject();
+        header.bufferLength = bufferSize;
+        header.loops = 1;
+
+        MmException.Try(WaveInterop.waveInPrepareHeader(waveInHandle, header, Marshal.SizeOf(header)), "waveInPrepareHeader");
+    }
+
+    /// <summary>
+    /// Place this buffer back to record more audio
+    /// </summary>
+    public void Reuse()
+    {
+        MmException.Try(WaveInterop.waveInAddBuffer(waveInHandle, header, Marshal.SizeOf(header)), "waveInAddBuffer");
+    }
+
+    #region Dispose Pattern
+
+    /// <summary>
+    /// Finalizer for this wave buffer
+    /// </summary>
+    ~WaveInBuffer()
+    {
+        Dispose(false);
+    }
+
+    /// <summary>
+    /// Releases resources held by this WaveBuffer
+    /// </summary>
+    public void Dispose()
+    {
+        GC.SuppressFinalize(this);
+        Dispose(true);
+    }
+
+    /// <summary>
+    /// Releases resources held by this WaveBuffer
+    /// </summary>
+    protected void Dispose(bool disposing)
+    {
+        if (disposing)
         {
-            this.bufferSize = bufferSize;
-            this.buffer = new byte[bufferSize];
-            this.hBuffer = GCHandle.Alloc(buffer, GCHandleType.Pinned);
-            this.waveInHandle = waveInHandle;
-
-            header = new WaveHeader();
-            hHeader = GCHandle.Alloc(header, GCHandleType.Pinned);
-            header.dataBuffer = hBuffer.AddrOfPinnedObject();
-            header.bufferLength = bufferSize;
-            header.loops = 1;
-
-            MmException.Try(WaveInterop.waveInPrepareHeader(waveInHandle, header, Marshal.SizeOf(header)), "waveInPrepareHeader");
+            // free managed resources
         }
-
-        /// <summary>
-        /// Place this buffer back to record more audio
-        /// </summary>
-        public void Reuse()
+        // free unmanaged resources
+        if (waveInHandle != IntPtr.Zero)
         {
-            MmException.Try(WaveInterop.waveInAddBuffer(waveInHandle, header, Marshal.SizeOf(header)), "waveInAddBuffer");
+            WaveInterop.waveInUnprepareHeader(waveInHandle, header, Marshal.SizeOf(header));
+            waveInHandle = IntPtr.Zero;
         }
+        if (hHeader.IsAllocated)
+            hHeader.Free();
+        if (hBuffer.IsAllocated)
+            hBuffer.Free();
 
-        #region Dispose Pattern
+    }
 
-        /// <summary>
-        /// Finalizer for this wave buffer
-        /// </summary>
-        ~WaveInBuffer()
+    #endregion
+
+    /// <summary>
+    /// Provides access to the actual record buffer (for reading only)
+    /// </summary>
+    public byte[] Data
+    {
+        get
         {
-            Dispose(false);
+            return buffer;
         }
+    }
 
-        /// <summary>
-        /// Releases resources held by this WaveBuffer
-        /// </summary>
-        public void Dispose()
+    /// <summary>
+    /// Indicates whether the Done flag is set on this buffer
+    /// </summary>
+    public bool Done
+    {
+        get
         {
-            GC.SuppressFinalize(this);
-            Dispose(true);
+            return (header.flags & WaveHeaderFlags.Done) == WaveHeaderFlags.Done;
         }
+    }
 
-        /// <summary>
-        /// Releases resources held by this WaveBuffer
-        /// </summary>
-        protected void Dispose(bool disposing)
+
+    /// <summary>
+    /// Indicates whether the InQueue flag is set on this buffer
+    /// </summary>
+    public bool InQueue
+    {
+        get
         {
-            if (disposing)
-            {
-                // free managed resources
-            }
-            // free unmanaged resources
-            if (waveInHandle != IntPtr.Zero)
-            {
-                WaveInterop.waveInUnprepareHeader(waveInHandle, header, Marshal.SizeOf(header));
-                waveInHandle = IntPtr.Zero;
-            }
-            if (hHeader.IsAllocated)
-                hHeader.Free();
-            if (hBuffer.IsAllocated)
-                hBuffer.Free();
-
+            return (header.flags & WaveHeaderFlags.InQueue) == WaveHeaderFlags.InQueue;
         }
+    }
 
-        #endregion
-
-        /// <summary>
-        /// Provides access to the actual record buffer (for reading only)
-        /// </summary>
-        public byte[] Data
+    /// <summary>
+    /// Number of bytes recorded
+    /// </summary>
+    public int BytesRecorded
+    {
+        get
         {
-            get
-            {
-                return buffer;
-            }
+            return header.bytesRecorded;
         }
+    }
 
-        /// <summary>
-        /// Indicates whether the Done flag is set on this buffer
-        /// </summary>
-        public bool Done
+    /// <summary>
+    /// The buffer size in bytes
+    /// </summary>
+    public Int32 BufferSize
+    {
+        get
         {
-            get
-            {
-                return (header.flags & WaveHeaderFlags.Done) == WaveHeaderFlags.Done;
-            }
-        }
-
-
-        /// <summary>
-        /// Indicates whether the InQueue flag is set on this buffer
-        /// </summary>
-        public bool InQueue
-        {
-            get
-            {
-                return (header.flags & WaveHeaderFlags.InQueue) == WaveHeaderFlags.InQueue;
-            }
-        }
-
-        /// <summary>
-        /// Number of bytes recorded
-        /// </summary>
-        public int BytesRecorded
-        {
-            get
-            {
-                return header.bytesRecorded;
-            }
-        }
-
-        /// <summary>
-        /// The buffer size in bytes
-        /// </summary>
-        public Int32 BufferSize
-        {
-            get
-            {
-                return bufferSize;
-            }
+            return bufferSize;
         }
     }
 }

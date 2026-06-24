@@ -7,126 +7,125 @@ using Microsoft.Win32;
 using NAudio.Extras;
 using NAudioWpfDemo.ViewModel;
 
-namespace NAudioWpfDemo.AudioPlaybackDemo
+namespace NAudioWpfDemo.AudioPlaybackDemo;
+
+class AudioPlaybackViewModel : ViewModelBase, IDisposable
 {
-    class AudioPlaybackViewModel : ViewModelBase, IDisposable
+    private readonly AudioPlayback audioPlayback;
+    private readonly List<IVisualizationPlugin> visualizations;
+    private IVisualizationPlugin selectedVisualization;
+    private string selectedFile;
+
+    public ICommand OpenFileCommand { get; }
+    public ICommand PlayCommand { get; }
+    public ICommand PauseCommand { get; }
+    public ICommand StopCommand { get; }
+
+    public AudioPlaybackViewModel(IEnumerable<IVisualizationPlugin> visualizations)
     {
-        private readonly AudioPlayback audioPlayback;
-        private readonly List<IVisualizationPlugin> visualizations;
-        private IVisualizationPlugin selectedVisualization;
-        private string selectedFile;
+        this.visualizations = new List<IVisualizationPlugin>(visualizations);
+        this.selectedVisualization = this.visualizations.FirstOrDefault();
 
-        public ICommand OpenFileCommand { get; }
-        public ICommand PlayCommand { get; }
-        public ICommand PauseCommand { get; }
-        public ICommand StopCommand { get; }
+        this.audioPlayback = new AudioPlayback();
+        audioPlayback.MaximumCalculated += audioGraph_MaximumCalculated;
+        audioPlayback.FftCalculated += audioGraph_FftCalculated;
 
-        public AudioPlaybackViewModel(IEnumerable<IVisualizationPlugin> visualizations)
+        PlayCommand = new DelegateCommand(Play);
+        OpenFileCommand = new DelegateCommand(OpenFile);
+        StopCommand = new DelegateCommand(Stop);
+        PauseCommand = new DelegateCommand(Pause);
+    }
+
+    private void Pause()
+    {
+        audioPlayback.Pause();
+    }
+
+    public IList<IVisualizationPlugin> Visualizations { get { return this.visualizations; } }
+
+    public IVisualizationPlugin SelectedVisualization
+    {
+        get
         {
-            this.visualizations = new List<IVisualizationPlugin>(visualizations);
-            this.selectedVisualization = this.visualizations.FirstOrDefault();
-
-            this.audioPlayback = new AudioPlayback();
-            audioPlayback.MaximumCalculated += audioGraph_MaximumCalculated;
-            audioPlayback.FftCalculated += audioGraph_FftCalculated;
-
-            PlayCommand = new DelegateCommand(Play);
-            OpenFileCommand = new DelegateCommand(OpenFile);
-            StopCommand = new DelegateCommand(Stop);
-            PauseCommand = new DelegateCommand(Pause);
+            return this.selectedVisualization;
         }
-
-        private void Pause()
+        set
         {
-            audioPlayback.Pause();
-        }
-
-        public IList<IVisualizationPlugin> Visualizations { get { return this.visualizations; } }
-
-        public IVisualizationPlugin SelectedVisualization
-        {
-            get
+            if (this.selectedVisualization != value)
             {
-                return this.selectedVisualization;
-            }
-            set
-            {
-                if (this.selectedVisualization != value)
+                this.selectedVisualization = value;
+                OnPropertyChanged("SelectedVisualization");
+                OnPropertyChanged("Visualization");
+                // If a file is already loaded when the user switches visualization, make sure
+                // the newly-selected one gets the sample rate too.
+                if (this.selectedVisualization != null && audioPlayback.SampleRate > 0)
                 {
-                    this.selectedVisualization = value;
-                    OnPropertyChanged("SelectedVisualization");
-                    OnPropertyChanged("Visualization");
-                    // If a file is already loaded when the user switches visualization, make sure
-                    // the newly-selected one gets the sample rate too.
-                    if (this.selectedVisualization != null && audioPlayback.SampleRate > 0)
-                    {
-                        this.selectedVisualization.OnSourceChanged(audioPlayback.SampleRate);
-                    }
+                    this.selectedVisualization.OnSourceChanged(audioPlayback.SampleRate);
                 }
             }
         }
+    }
 
-        public object Visualization
+    public object Visualization
+    {
+        get
         {
-            get
-            {
-                return this.selectedVisualization.Content;
-            }
+            return this.selectedVisualization.Content;
         }
+    }
 
-        void audioGraph_FftCalculated(object sender, FftEventArgs e)
+    void audioGraph_FftCalculated(object sender, FftEventArgs e)
+    {
+        if (this.SelectedVisualization != null)
         {
-            if (this.SelectedVisualization != null)
-            {
-                Application.Current?.Dispatcher?.BeginInvoke(() =>
-                    this.SelectedVisualization?.OnFftCalculated(e.Result));
-            }
+            Application.Current?.Dispatcher?.BeginInvoke(() =>
+                this.SelectedVisualization?.OnFftCalculated(e.Result));
         }
+    }
 
-        void audioGraph_MaximumCalculated(object sender, MaxSampleEventArgs e)
+    void audioGraph_MaximumCalculated(object sender, MaxSampleEventArgs e)
+    {
+        if (this.SelectedVisualization != null)
         {
-            if (this.SelectedVisualization != null)
-            {
-                Application.Current?.Dispatcher?.BeginInvoke(() =>
-                    this.SelectedVisualization?.OnMaxCalculated(e.MinSample, e.MaxSample));
-            }
+            Application.Current?.Dispatcher?.BeginInvoke(() =>
+                this.SelectedVisualization?.OnMaxCalculated(e.MinSample, e.MaxSample));
         }
+    }
 
-        private void OpenFile()
+    private void OpenFile()
+    {
+        OpenFileDialog openFileDialog = new OpenFileDialog();
+        openFileDialog.Filter = "All Supported Files|*.wav;*.aiff;*.mp3;*.wma;*.aac;*.mp4;*.m4a;*.flac;*.opus;*.ogg;*.mka;*.webm|All Files (*.*)|*.*";
+        bool? result = openFileDialog.ShowDialog();
+        if (result.HasValue && result.Value)
         {
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "All Supported Files|*.wav;*.aiff;*.mp3;*.wma;*.aac;*.mp4;*.m4a;*.flac;*.opus;*.ogg;*.mka;*.webm|All Files (*.*)|*.*";
-            bool? result = openFileDialog.ShowDialog();
-            if (result.HasValue && result.Value)
-            {
-                this.selectedFile = openFileDialog.FileName;
-                audioPlayback.Load(this.selectedFile);
-                // Now that we know the sample rate, let the visualization configure itself
-                // (e.g. the spectrum analyser uses it for the frequency x-axis).
-                this.selectedVisualization?.OnSourceChanged(audioPlayback.SampleRate);
-            }
+            this.selectedFile = openFileDialog.FileName;
+            audioPlayback.Load(this.selectedFile);
+            // Now that we know the sample rate, let the visualization configure itself
+            // (e.g. the spectrum analyser uses it for the frequency x-axis).
+            this.selectedVisualization?.OnSourceChanged(audioPlayback.SampleRate);
         }
+    }
 
-        private void Play()
+    private void Play()
+    {
+        if (this.selectedFile == null)
         {
-            if (this.selectedFile == null)
-            {
-                OpenFile();
-            }
-            if (this.selectedFile != null)
-            {
-                audioPlayback.Play();
-            }
+            OpenFile();
         }
+        if (this.selectedFile != null)
+        {
+            audioPlayback.Play();
+        }
+    }
 
-        private void Stop()
-        {
-            audioPlayback.Stop();
-        }
+    private void Stop()
+    {
+        audioPlayback.Stop();
+    }
 
-        public void Dispose()
-        {
-            audioPlayback.Dispose();
-        }
+    public void Dispose()
+    {
+        audioPlayback.Dispose();
     }
 }

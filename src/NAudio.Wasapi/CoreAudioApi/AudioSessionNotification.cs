@@ -2,23 +2,22 @@
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 
-namespace NAudio.CoreAudioApi
+namespace NAudio.CoreAudioApi;
+
+[GeneratedComClass]
+internal partial class AudioSessionNotification : IAudioSessionNotification
 {
-    [GeneratedComClass]
-    internal partial class AudioSessionNotification : IAudioSessionNotification
+    private AudioSessionManager parent;
+
+    internal AudioSessionNotification(AudioSessionManager parent)
     {
-        private AudioSessionManager parent;
+        this.parent = parent;
+    }
 
-        internal AudioSessionNotification(AudioSessionManager parent)
-        {
-            this.parent = parent;
-        }
-
-        [PreserveSig]
-        public int OnSessionCreated(IAudioSessionControl newSession)
-        {
-            parent.FireSessionCreated(newSession);
-            return 0;
-        }
+    [PreserveSig]
+    public int OnSessionCreated(IAudioSessionControl newSession)
+    {
+        parent.FireSessionCreated(newSession);
+        return 0;
     }
 }

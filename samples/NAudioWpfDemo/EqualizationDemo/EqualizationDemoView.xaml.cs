@@ -2,16 +2,15 @@
 using System.Linq;
 using System.Windows.Controls;
 
-namespace NAudioWpfDemo.EqualizationDemo
+namespace NAudioWpfDemo.EqualizationDemo;
+
+/// <summary>
+/// Interaction logic for EqualizationDemoView.xaml
+/// </summary>
+public partial class EqualizationDemoView : UserControl
 {
-    /// <summary>
-    /// Interaction logic for EqualizationDemoView.xaml
-    /// </summary>
-    public partial class EqualizationDemoView : UserControl
+    public EqualizationDemoView()
     {
-        public EqualizationDemoView()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

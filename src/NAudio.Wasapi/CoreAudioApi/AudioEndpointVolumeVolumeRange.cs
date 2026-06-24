@@ -1,4 +1,4 @@
-/*
+﻿/*
   LICENSE
   -------
   Copyright (C) 2007 Ray Molenkamp
@@ -23,35 +23,34 @@
 using NAudio.CoreAudioApi.Interfaces;
 using System.Runtime.InteropServices;
 
-namespace NAudio.CoreAudioApi
+namespace NAudio.CoreAudioApi;
+
+/// <summary>
+/// Audio Endpoint Volume Volume Range
+/// </summary>
+public class AudioEndpointVolumeVolumeRange
 {
-    /// <summary>
-    /// Audio Endpoint Volume Volume Range
-    /// </summary>
-    public class AudioEndpointVolumeVolumeRange
+    readonly float volumeMinDecibels;
+    readonly float volumeMaxDecibels;
+    readonly float volumeIncrementDecibels;
+
+    internal AudioEndpointVolumeVolumeRange(IAudioEndpointVolume parent)
     {
-        readonly float volumeMinDecibels;
-        readonly float volumeMaxDecibels;
-        readonly float volumeIncrementDecibels;
-
-        internal AudioEndpointVolumeVolumeRange(IAudioEndpointVolume parent)
-        {
-            CoreAudioException.ThrowIfFailed(parent.GetVolumeRange(out volumeMinDecibels,out volumeMaxDecibels,out volumeIncrementDecibels));
-        }
-
-        /// <summary>
-        /// Minimum Decibels
-        /// </summary>
-        public float MinDecibels => volumeMinDecibels;
-
-        /// <summary>
-        /// Maximum Decibels
-        /// </summary>
-        public float MaxDecibels => volumeMaxDecibels;
-
-        /// <summary>
-        /// Increment Decibels
-        /// </summary>
-        public float IncrementDecibels => volumeIncrementDecibels;
+        CoreAudioException.ThrowIfFailed(parent.GetVolumeRange(out volumeMinDecibels, out volumeMaxDecibels, out volumeIncrementDecibels));
     }
+
+    /// <summary>
+    /// Minimum Decibels
+    /// </summary>
+    public float MinDecibels => volumeMinDecibels;
+
+    /// <summary>
+    /// Maximum Decibels
+    /// </summary>
+    public float MaxDecibels => volumeMaxDecibels;
+
+    /// <summary>
+    /// Increment Decibels
+    /// </summary>
+    public float IncrementDecibels => volumeIncrementDecibels;
 }

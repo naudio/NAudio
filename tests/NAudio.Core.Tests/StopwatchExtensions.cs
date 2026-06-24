@@ -4,26 +4,25 @@ using System.Linq;
 using System.Text;
 using System.Diagnostics;
 
-namespace System.Diagnostics
+namespace System.Diagnostics;
+
+public static class StopwatchExtensions
 {
-    public static class StopwatchExtensions
+    public static long Time(this Stopwatch sw, Action action, int iterations)
     {
-        public static long Time(this Stopwatch sw, Action action, int iterations)
+        sw.Reset();
+        sw.Start();
+        for (int i = 0; i < iterations; i++)
         {
-            sw.Reset();
-            sw.Start();
-            for (int i = 0; i < iterations; i++)
-            {
-                action();
-            }
-            sw.Stop();
-
-            return sw.ElapsedMilliseconds;
+            action();
         }
+        sw.Stop();
 
-        public static long Time(this Stopwatch sw, Action action)
-        {
-            return Time(sw, action, 1);
-        }
+        return sw.ElapsedMilliseconds;
+    }
+
+    public static long Time(this Stopwatch sw, Action action)
+    {
+        return Time(sw, action, 1);
     }
 }

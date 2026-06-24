@@ -1,17 +1,16 @@
 ﻿using System.Windows.Forms;
 
-namespace NAudioDemo.SignalGeneratorDemo
-{
-    internal class GeneratorPlugin : INAudioDemoPlugin
-    {
-        public string Name
-        {
-            get { return "Signal Generator"; }
-        }
+namespace NAudioDemo.SignalGeneratorDemo;
 
-        public Control CreatePanel()
-        {
-            return new GeneratorPanel();
-        }
+internal class GeneratorPlugin : INAudioDemoPlugin
+{
+    public string Name
+    {
+        get { return "Signal Generator"; }
+    }
+
+    public Control CreatePanel()
+    {
+        return new GeneratorPanel();
     }
 }

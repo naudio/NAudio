@@ -1,4 +1,4 @@
-/*
+﻿/*
   LICENSE
   -------
   Copyright (C) 2007 Ray Molenkamp
@@ -21,59 +21,58 @@
 */
 using System;
 
-namespace NAudio.CoreAudioApi
+namespace NAudio.CoreAudioApi;
+
+/// <summary>
+/// Audio Volume Notification Data
+/// </summary>
+public class AudioVolumeNotificationData
 {
+    /// <summary>
+    /// Event Context
+    /// </summary>
+    public Guid EventContext { get; }
+
+    /// <summary>
+    /// Muted
+    /// </summary>
+    public bool Muted { get; }
+
+    /// <summary>
+    /// Guid that raised the event
+    /// </summary>
+    public Guid Guid { get; }
+
+    /// <summary>
+    /// Master Volume
+    /// </summary>
+    public float MasterVolume { get; }
+
+    /// <summary>
+    /// Channels
+    /// </summary>
+    public int Channels { get; }
+
+    /// <summary>
+    /// Channel Volume
+    /// </summary>
+    public float[] ChannelVolume { get; }
+
     /// <summary>
     /// Audio Volume Notification Data
     /// </summary>
-    public class AudioVolumeNotificationData
+    /// <param name="eventContext"></param>
+    /// <param name="muted"></param>
+    /// <param name="masterVolume"></param>
+    /// <param name="channelVolume"></param>
+    /// <param name="guid"></param>
+    public AudioVolumeNotificationData(Guid eventContext, bool muted, float masterVolume, float[] channelVolume, Guid guid)
     {
-        /// <summary>
-        /// Event Context
-        /// </summary>
-        public Guid EventContext { get; }
-
-        /// <summary>
-        /// Muted
-        /// </summary>
-        public bool Muted { get; }
-
-        /// <summary>
-        /// Guid that raised the event
-        /// </summary>
-        public Guid Guid { get; }
-
-        /// <summary>
-        /// Master Volume
-        /// </summary>
-        public float MasterVolume { get; }
-
-        /// <summary>
-        /// Channels
-        /// </summary>
-        public int Channels { get; }
-
-        /// <summary>
-        /// Channel Volume
-        /// </summary>
-        public float[] ChannelVolume { get; }
-
-        /// <summary>
-        /// Audio Volume Notification Data
-        /// </summary>
-        /// <param name="eventContext"></param>
-        /// <param name="muted"></param>
-        /// <param name="masterVolume"></param>
-        /// <param name="channelVolume"></param>
-        /// <param name="guid"></param>
-        public AudioVolumeNotificationData(Guid eventContext, bool muted, float masterVolume, float[] channelVolume, Guid guid)
-        {
-            EventContext = eventContext;
-            Muted = muted;
-            MasterVolume = masterVolume;
-            Channels = channelVolume.Length;
-            ChannelVolume = channelVolume;
-            Guid = guid;
-        }
+        EventContext = eventContext;
+        Muted = muted;
+        MasterVolume = masterVolume;
+        Channels = channelVolume.Length;
+        ChannelVolume = channelVolume;
+        Guid = guid;
     }
 }

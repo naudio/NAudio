@@ -1,33 +1,32 @@
 ﻿using System;
 
-namespace NAudio.Utils
+namespace NAudio.Utils;
+
+/// <summary>
+/// Allows us to add descriptions to interop members
+/// </summary>
+[AttributeUsage(AttributeTargets.Field)]
+public class FieldDescriptionAttribute : Attribute
 {
     /// <summary>
-    /// Allows us to add descriptions to interop members
+    /// The description
     /// </summary>
-    [AttributeUsage(AttributeTargets.Field)]
-    public class FieldDescriptionAttribute : Attribute
+    public string Description { get; }
+
+    /// <summary>
+    /// Field description
+    /// </summary>
+    public FieldDescriptionAttribute(string description)
     {
-        /// <summary>
-        /// The description
-        /// </summary>
-        public string Description { get; }
+        Description = description;
+    }
 
-        /// <summary>
-        /// Field description
-        /// </summary>
-        public FieldDescriptionAttribute(string description)
-        {
-            Description = description;
-        }
-
-        /// <summary>
-        /// String representation
-        /// </summary>
-        /// <returns></returns>
-        public override string ToString()
-        {
-            return Description;
-        }
+    /// <summary>
+    /// String representation
+    /// </summary>
+    /// <returns></returns>
+    public override string ToString()
+    {
+        return Description;
     }
 }

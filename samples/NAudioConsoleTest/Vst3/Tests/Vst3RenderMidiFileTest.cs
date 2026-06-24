@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using NAudio.Midi;
 using NAudio.Vst3;
 using NAudio.Wave;

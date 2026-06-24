@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
@@ -200,7 +200,7 @@ public static class Vst3Preset
                 case ComponentChunkId: component = data; break;
                 case ControllerChunkId: controller = data; break;
                 case MetaInfoChunkId: metaInfo = Encoding.UTF8.GetString(data); break;
-                // Other chunk ids (e.g. "Prog" program data) are ignored.
+                    // Other chunk ids (e.g. "Prog" program data) are ignored.
             }
         }
 

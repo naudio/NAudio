@@ -1,4 +1,4 @@
-using NAudio.Dmo.Effect;
+﻿using NAudio.Dmo.Effect;
 using NAudio.MediaFoundation;
 using NAudio.Wave;
 using NAudioConsoleTest.Shared.Testing;

@@ -1,12 +1,11 @@
 ﻿using System;
 
-namespace NAudio.Dmo
+namespace NAudio.Dmo;
+
+[Flags]
+enum DmoSetTypeFlags
 {
-    [Flags]
-    enum DmoSetTypeFlags
-    {
-        None,
-        DMO_SET_TYPEF_TEST_ONLY = 0x00000001,
-        DMO_SET_TYPEF_CLEAR = 0x00000002
-    }
+    None,
+    DMO_SET_TYPEF_TEST_ONLY = 0x00000001,
+    DMO_SET_TYPEF_CLEAR = 0x00000002
 }

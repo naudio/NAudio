@@ -1,9 +1,8 @@
 ﻿using System;
 
-namespace NAudioDemo.NetworkChatDemo
+namespace NAudioDemo.NetworkChatDemo;
+
+interface IAudioSender : IDisposable
 {
-    interface IAudioSender : IDisposable
-    {
-        void Send(byte[] payload);
-    }
+    void Send(byte[] payload);
 }

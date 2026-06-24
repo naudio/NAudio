@@ -1,4 +1,4 @@
-// Primitive type aliases used by the VST 3 interop layer.
+﻿// Primitive type aliases used by the VST 3 interop layer.
 // Source: pluginterfaces/base/ftypes.h and pluginterfaces/vst/vsttypes.h
 // (https://github.com/steinbergmedia/vst3_pluginterfaces).
 

@@ -1,4 +1,4 @@
-using NAudio.SoundFile;
+﻿using NAudio.SoundFile;
 using NAudioConsoleTest.Shared;
 using NAudioConsoleTest.Shared.Testing;
 using Spectre.Console;

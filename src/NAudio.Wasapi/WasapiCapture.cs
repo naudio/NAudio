@@ -6,336 +6,335 @@ using NAudio.Wave;
 
 // for consistency this should be in NAudio.Wave namespace, but left as it is for backwards compatibility
 // ReSharper disable once CheckNamespace
-namespace NAudio.CoreAudioApi
+namespace NAudio.CoreAudioApi;
+
+/// <summary>
+/// Audio Capture using Wasapi
+/// See http://msdn.microsoft.com/en-us/library/dd370800%28VS.85%29.aspx
+/// </summary>
+[Obsolete("Use WasapiRecorderBuilder to create a WasapiRecorder instead. WasapiRecorder provides zero-copy buffers, MMCSS thread priority, IAsyncEnumerable capture, and process-specific loopback.")]
+public class WasapiCapture : IWaveIn
 {
+    private const long ReftimesPerSec = 10000000;
+    private const long ReftimesPerMillisec = 10000;
+    private volatile CaptureState captureState;
+    private Thread captureThread;
+    private AudioClient audioClient;
+    private int bytesPerFrame;
+    private WaveFormat waveFormat;
+    private bool initialized;
+    private readonly SynchronizationContext syncContext;
+    private readonly bool isUsingEventSync;
+    private EventWaitHandle frameEventWaitHandle;
+    private readonly int audioBufferMillisecondsLength;
+
     /// <summary>
-    /// Audio Capture using Wasapi
-    /// See http://msdn.microsoft.com/en-us/library/dd370800%28VS.85%29.aspx
+    /// Indicates recorded data is available 
     /// </summary>
-    [Obsolete("Use WasapiRecorderBuilder to create a WasapiRecorder instead. WasapiRecorder provides zero-copy buffers, MMCSS thread priority, IAsyncEnumerable capture, and process-specific loopback.")]
-    public class WasapiCapture : IWaveIn
+    public event EventHandler<WaveInEventArgs> DataAvailable;
+
+    /// <summary>
+    /// Indicates that all recorded data has now been received.
+    /// </summary>
+    public event EventHandler<StoppedEventArgs> RecordingStopped;
+
+    /// <summary>
+    /// Initialises a new instance of the WASAPI capture class
+    /// </summary>
+    public WasapiCapture() :
+        this(GetDefaultCaptureDevice())
     {
-        private const long ReftimesPerSec = 10000000;
-        private const long ReftimesPerMillisec = 10000;
-        private volatile CaptureState captureState;
-        private Thread captureThread;
-        private AudioClient audioClient;
-        private int bytesPerFrame;
-        private WaveFormat waveFormat;
-        private bool initialized;
-        private readonly SynchronizationContext syncContext;
-        private readonly bool isUsingEventSync;
-        private EventWaitHandle frameEventWaitHandle;
-        private readonly int audioBufferMillisecondsLength;
+    }
 
-        /// <summary>
-        /// Indicates recorded data is available 
-        /// </summary>
-        public event EventHandler<WaveInEventArgs> DataAvailable;
+    /// <summary>
+    /// Initialises a new instance of the WASAPI capture class
+    /// </summary>
+    /// <param name="captureDevice">Capture device to use</param>
+    public WasapiCapture(MMDevice captureDevice)
+        : this(captureDevice, false)
+    {
 
-        /// <summary>
-        /// Indicates that all recorded data has now been received.
-        /// </summary>
-        public event EventHandler<StoppedEventArgs> RecordingStopped;
+    }
 
-        /// <summary>
-        /// Initialises a new instance of the WASAPI capture class
-        /// </summary>
-        public WasapiCapture() : 
-            this(GetDefaultCaptureDevice())
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WasapiCapture"/> class.
+    /// </summary>
+    /// <param name="captureDevice">The capture device.</param>
+    /// <param name="useEventSync">true if sync is done with event. false use sleep.</param>
+    public WasapiCapture(MMDevice captureDevice, bool useEventSync)
+        : this(captureDevice, useEventSync, 100)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WasapiCapture" /> class.
+    /// </summary>
+    /// <param name="captureDevice">The capture device.</param>
+    /// <param name="useEventSync">true if sync is done with event. false use sleep.</param>
+    /// <param name="audioBufferMillisecondsLength">Length of the audio buffer in milliseconds. A lower value means lower latency but increased CPU usage.</param>
+    public WasapiCapture(MMDevice captureDevice, bool useEventSync, int audioBufferMillisecondsLength)
+    {
+        syncContext = SynchronizationContext.Current;
+        audioClient = captureDevice.CreateAudioClient();
+        ShareMode = AudioClientShareMode.Shared;
+        isUsingEventSync = useEventSync;
+        this.audioBufferMillisecondsLength = audioBufferMillisecondsLength;
+
+        waveFormat = audioClient.MixFormat;
+
+    }
+
+    /// <summary>
+    /// Share Mode - set before calling StartRecording
+    /// </summary>
+    public AudioClientShareMode ShareMode { get; set; }
+
+    /// <summary>
+    /// Current Capturing State
+    /// </summary>
+    public CaptureState CaptureState { get { return captureState; } }
+
+    /// <summary>
+    /// Capturing wave format
+    /// </summary>
+    public virtual WaveFormat WaveFormat
+    {
+        get
         {
+            // for convenience, return a WAVEFORMATEX, instead of the real
+            // WAVEFORMATEXTENSIBLE being used
+            return waveFormat.AsStandardWaveFormat();
+        }
+        set { waveFormat = value; }
+    }
+
+    /// <summary>
+    /// Gets the default audio capture device
+    /// </summary>
+    /// <returns>The default audio capture device</returns>
+    public static MMDevice GetDefaultCaptureDevice()
+    {
+        var devices = new MMDeviceEnumerator();
+        return devices.GetDefaultAudioEndpoint(DataFlow.Capture, Role.Console);
+    }
+
+    private void InitializeCaptureDevice()
+    {
+        if (initialized)
+            return;
+
+        long requestedDuration = ReftimesPerMillisec * audioBufferMillisecondsLength;
+
+        if ((ShareMode == AudioClientShareMode.Exclusive) && !audioClient.IsFormatSupported(ShareMode, waveFormat))
+        {
+            throw new ArgumentException("Unsupported Wave Format");
         }
 
-        /// <summary>
-        /// Initialises a new instance of the WASAPI capture class
-        /// </summary>
-        /// <param name="captureDevice">Capture device to use</param>
-        public WasapiCapture(MMDevice captureDevice)
-            : this(captureDevice, false)
+        var streamFlags = GetAudioClientStreamFlags();
+
+        // If using EventSync, setup is specific with shareMode
+        if (isUsingEventSync)
         {
-
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="WasapiCapture"/> class.
-        /// </summary>
-        /// <param name="captureDevice">The capture device.</param>
-        /// <param name="useEventSync">true if sync is done with event. false use sleep.</param>
-        public WasapiCapture(MMDevice captureDevice, bool useEventSync) 
-            : this(captureDevice, useEventSync, 100)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="WasapiCapture" /> class.
-        /// </summary>
-        /// <param name="captureDevice">The capture device.</param>
-        /// <param name="useEventSync">true if sync is done with event. false use sleep.</param>
-        /// <param name="audioBufferMillisecondsLength">Length of the audio buffer in milliseconds. A lower value means lower latency but increased CPU usage.</param>
-        public WasapiCapture(MMDevice captureDevice, bool useEventSync, int audioBufferMillisecondsLength)
-        {
-            syncContext = SynchronizationContext.Current;
-            audioClient = captureDevice.CreateAudioClient();
-            ShareMode = AudioClientShareMode.Shared;
-            isUsingEventSync = useEventSync;
-            this.audioBufferMillisecondsLength = audioBufferMillisecondsLength;
-
-            waveFormat = audioClient.MixFormat;
-
-        }
-
-        /// <summary>
-        /// Share Mode - set before calling StartRecording
-        /// </summary>
-        public AudioClientShareMode ShareMode { get; set; }
-
-        /// <summary>
-        /// Current Capturing State
-        /// </summary>
-        public CaptureState CaptureState {  get { return captureState; } }
-
-        /// <summary>
-        /// Capturing wave format
-        /// </summary>
-        public virtual WaveFormat WaveFormat 
-        {
-            get
-            {
-                // for convenience, return a WAVEFORMATEX, instead of the real
-                // WAVEFORMATEXTENSIBLE being used
-                return waveFormat.AsStandardWaveFormat();
-            }
-            set { waveFormat = value; }
-        }
-
-        /// <summary>
-        /// Gets the default audio capture device
-        /// </summary>
-        /// <returns>The default audio capture device</returns>
-        public static MMDevice GetDefaultCaptureDevice()
-        {
-            var devices = new MMDeviceEnumerator();
-            return devices.GetDefaultAudioEndpoint(DataFlow.Capture, Role.Console);
-        }
-
-        private void InitializeCaptureDevice()
-        {
-            if (initialized)
-                return;
-
-            long requestedDuration = ReftimesPerMillisec * audioBufferMillisecondsLength;
-
-            if ((ShareMode == AudioClientShareMode.Exclusive) && !audioClient.IsFormatSupported(ShareMode, waveFormat))
-            {
-                throw new ArgumentException("Unsupported Wave Format");
-            }
-
-            var streamFlags = GetAudioClientStreamFlags();
-
-            // If using EventSync, setup is specific with shareMode
-            if (isUsingEventSync)
-            {
-                // Init Shared or Exclusive
-                if (ShareMode == AudioClientShareMode.Shared)
-                {
-                    // With EventCallBack and Shared, both latencies must be set to 0
-                    audioClient.Initialize(ShareMode, AudioClientStreamFlags.EventCallback | streamFlags, requestedDuration, 0,
-                        waveFormat, Guid.Empty);
-                }
-                else
-                {
-                    // With EventCallBack and Exclusive, both latencies must equals
-                    audioClient.Initialize(ShareMode, AudioClientStreamFlags.EventCallback | streamFlags, requestedDuration, requestedDuration,
-                                        waveFormat, Guid.Empty);
-                }
-
-                // Create the Wait Event Handle
-                frameEventWaitHandle = new EventWaitHandle(false, EventResetMode.AutoReset);
-                audioClient.SetEventHandle(frameEventWaitHandle.SafeWaitHandle.DangerousGetHandle());
-            }
-            else
-            {
-                // Normal setup for both sharedMode
-                audioClient.Initialize(ShareMode,
-                streamFlags,
-                requestedDuration,
-                0,
-                waveFormat,
-                Guid.Empty);
-            }
-
-            bytesPerFrame = waveFormat.Channels * waveFormat.BitsPerSample / 8;
-
-            initialized = true;
-        }
-
-        /// <summary>
-        /// To allow overrides to specify different flags (e.g. loopback)
-        /// </summary>
-        protected virtual AudioClientStreamFlags GetAudioClientStreamFlags()
-        {
+            // Init Shared or Exclusive
             if (ShareMode == AudioClientShareMode.Shared)
             {
-                // enable auto-convert PCM
-                return AudioClientStreamFlags.AutoConvertPcm | AudioClientStreamFlags.SrcDefaultQuality;
+                // With EventCallBack and Shared, both latencies must be set to 0
+                audioClient.Initialize(ShareMode, AudioClientStreamFlags.EventCallback | streamFlags, requestedDuration, 0,
+                    waveFormat, Guid.Empty);
             }
             else
             {
-                return 0;
+                // With EventCallBack and Exclusive, both latencies must equals
+                audioClient.Initialize(ShareMode, AudioClientStreamFlags.EventCallback | streamFlags, requestedDuration, requestedDuration,
+                                    waveFormat, Guid.Empty);
             }
+
+            // Create the Wait Event Handle
+            frameEventWaitHandle = new EventWaitHandle(false, EventResetMode.AutoReset);
+            audioClient.SetEventHandle(frameEventWaitHandle.SafeWaitHandle.DangerousGetHandle());
+        }
+        else
+        {
+            // Normal setup for both sharedMode
+            audioClient.Initialize(ShareMode,
+            streamFlags,
+            requestedDuration,
+            0,
+            waveFormat,
+            Guid.Empty);
         }
 
-        /// <summary>
-        /// Start Capturing
-        /// </summary>
-        public void StartRecording()
+        bytesPerFrame = waveFormat.Channels * waveFormat.BitsPerSample / 8;
+
+        initialized = true;
+    }
+
+    /// <summary>
+    /// To allow overrides to specify different flags (e.g. loopback)
+    /// </summary>
+    protected virtual AudioClientStreamFlags GetAudioClientStreamFlags()
+    {
+        if (ShareMode == AudioClientShareMode.Shared)
         {
-            if (captureState != CaptureState.Stopped)
+            // enable auto-convert PCM
+            return AudioClientStreamFlags.AutoConvertPcm | AudioClientStreamFlags.SrcDefaultQuality;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+
+    /// <summary>
+    /// Start Capturing
+    /// </summary>
+    public void StartRecording()
+    {
+        if (captureState != CaptureState.Stopped)
+        {
+            throw new InvalidOperationException("Previous recording still in progress");
+        }
+        captureState = CaptureState.Starting;
+        InitializeCaptureDevice();
+        captureThread = new Thread(() => CaptureThread(audioClient))
+        {
+            IsBackground = true,
+            Name = "NAudio WasapiCapture Recording",
+        };
+        captureThread.Start();
+    }
+
+    /// <summary>
+    /// Stop Capturing (requests a stop, wait for RecordingStopped event to know it has finished)
+    /// </summary>
+    public void StopRecording()
+    {
+        if (captureState != CaptureState.Stopped)
+            captureState = CaptureState.Stopping;
+    }
+
+    private void CaptureThread(AudioClient client)
+    {
+        Exception exception = null;
+        try
+        {
+            DoRecording(client);
+        }
+        catch (Exception e)
+        {
+            exception = e;
+        }
+        finally
+        {
+            client.Stop();
+            // don't dispose - the AudioClient only gets disposed when WasapiCapture is disposed
+        }
+        captureThread = null;
+        captureState = CaptureState.Stopped;
+        RaiseRecordingStopped(exception);
+    }
+
+    private void DoRecording(AudioClient client)
+    {
+        //Debug.WriteLine(String.Format("Client buffer frame count: {0}", client.BufferSize));
+        int bufferFrameCount = client.BufferSize;
+
+        // Calculate the actual duration of the allocated buffer.
+        long actualDuration = (long)((double)ReftimesPerSec *
+                         bufferFrameCount / waveFormat.SampleRate);
+        int sleepMilliseconds = (int)(actualDuration / ReftimesPerMillisec / 2);
+        int waitMilliseconds = (int)(3 * actualDuration / ReftimesPerMillisec);
+
+        var capture = client.AudioCaptureClient;
+        client.Start();
+        // avoid race condition where we stop immediately after starting
+        if (captureState == CaptureState.Starting)
+        {
+            captureState = CaptureState.Capturing;
+        }
+        while (captureState == CaptureState.Capturing)
+        {
+            if (isUsingEventSync)
             {
-                throw new InvalidOperationException("Previous recording still in progress");
+                frameEventWaitHandle.WaitOne(waitMilliseconds, false);
             }
-            captureState = CaptureState.Starting;
-            InitializeCaptureDevice();
-            captureThread = new Thread(() => CaptureThread(audioClient))
+            else
             {
-                IsBackground = true,
-                Name = "NAudio WasapiCapture Recording",
-            };
-            captureThread.Start();
-        }
+                Thread.Sleep(sleepMilliseconds);
+            }
+            if (captureState != CaptureState.Capturing)
+                break;
 
-        /// <summary>
-        /// Stop Capturing (requests a stop, wait for RecordingStopped event to know it has finished)
-        /// </summary>
-        public void StopRecording()
-        {
-            if (captureState != CaptureState.Stopped)
-                captureState = CaptureState.Stopping;
+            // If still recording
+            ReadNextPacket(capture);
         }
+    }
 
-        private void CaptureThread(AudioClient client)
+    private void RaiseRecordingStopped(Exception e)
+    {
+        var handler = RecordingStopped;
+        if (handler == null) return;
+        if (syncContext == null)
         {
-            Exception exception = null;
+            handler(this, new StoppedEventArgs(e));
+        }
+        else
+        {
+            syncContext.Post(state => handler(this, new StoppedEventArgs(e)), null);
+        }
+    }
+
+    private void ReadNextPacket(AudioCaptureClient capture)
+    {
+        // Fires one DataAvailable event per WASAPI packet, each with its own fresh
+        // managed byte[]. Reusing a single buffer across packets is unsafe: loopback
+        // capture commonly drains several packets per wake-up (the render engine
+        // bursts), and a consumer that defers handling (Control.BeginInvoke,
+        // queueing to another thread) would read whichever packet happened to be in
+        // the shared buffer when the handler eventually ran. Per-packet allocations
+        // are a few hundred bytes each and collect in gen0 — a lot cheaper than
+        // garbled audio. Zero-copy capture is available via WasapiRecorder.
+        int packetSize = capture.GetNextPacketSize();
+        while (packetSize != 0)
+        {
+            IntPtr buffer = capture.GetBuffer(out int framesAvailable, out AudioClientBufferFlags flags);
+            int bytesAvailable = framesAvailable * bytesPerFrame;
+
             try
             {
-                DoRecording(client);
-            }
-            catch (Exception e)
-            {
-                exception = e;
+                var packetBuffer = new byte[bytesAvailable];
+                if ((flags & AudioClientBufferFlags.Silent) != AudioClientBufferFlags.Silent)
+                {
+                    Marshal.Copy(buffer, packetBuffer, 0, bytesAvailable);
+                }
+                // Silent packets: packetBuffer is already zero-initialised.
+                DataAvailable?.Invoke(this, new WaveInEventArgs(packetBuffer, bytesAvailable));
             }
             finally
             {
-                client.Stop();
-                // don't dispose - the AudioClient only gets disposed when WasapiCapture is disposed
+                capture.ReleaseBuffer(framesAvailable);
             }
+
+            packetSize = capture.GetNextPacketSize();
+        }
+    }
+
+    /// <summary>
+    /// Dispose
+    /// </summary>
+    public void Dispose()
+    {
+        GC.SuppressFinalize(this);
+        StopRecording();
+        if (captureThread != null)
+        {
+            captureThread.Join();
             captureThread = null;
-            captureState = CaptureState.Stopped;
-            RaiseRecordingStopped(exception);
         }
-
-        private void DoRecording(AudioClient client)
+        if (audioClient != null)
         {
-            //Debug.WriteLine(String.Format("Client buffer frame count: {0}", client.BufferSize));
-            int bufferFrameCount = client.BufferSize;
-
-            // Calculate the actual duration of the allocated buffer.
-            long actualDuration = (long)((double)ReftimesPerSec *
-                             bufferFrameCount / waveFormat.SampleRate);
-            int sleepMilliseconds = (int)(actualDuration / ReftimesPerMillisec / 2);
-            int waitMilliseconds = (int)(3 * actualDuration / ReftimesPerMillisec);
-
-            var capture = client.AudioCaptureClient;
-            client.Start();
-            // avoid race condition where we stop immediately after starting
-            if (captureState == CaptureState.Starting)
-            {
-                captureState = CaptureState.Capturing;
-            }
-            while (captureState == CaptureState.Capturing)
-            {
-                if (isUsingEventSync)
-                {
-                    frameEventWaitHandle.WaitOne(waitMilliseconds, false);
-                }
-                else
-                {
-                    Thread.Sleep(sleepMilliseconds);
-                }
-                if (captureState != CaptureState.Capturing)
-                    break;
-
-                // If still recording
-                ReadNextPacket(capture);
-            }
-        }
-
-        private void RaiseRecordingStopped(Exception e)
-        {
-            var handler = RecordingStopped;
-            if (handler == null) return;
-            if (syncContext == null)
-            {
-                handler(this, new StoppedEventArgs(e));
-            }
-            else
-            {
-                syncContext.Post(state => handler(this, new StoppedEventArgs(e)), null);
-            }
-        }
-
-        private void ReadNextPacket(AudioCaptureClient capture)
-        {
-            // Fires one DataAvailable event per WASAPI packet, each with its own fresh
-            // managed byte[]. Reusing a single buffer across packets is unsafe: loopback
-            // capture commonly drains several packets per wake-up (the render engine
-            // bursts), and a consumer that defers handling (Control.BeginInvoke,
-            // queueing to another thread) would read whichever packet happened to be in
-            // the shared buffer when the handler eventually ran. Per-packet allocations
-            // are a few hundred bytes each and collect in gen0 — a lot cheaper than
-            // garbled audio. Zero-copy capture is available via WasapiRecorder.
-            int packetSize = capture.GetNextPacketSize();
-            while (packetSize != 0)
-            {
-                IntPtr buffer = capture.GetBuffer(out int framesAvailable, out AudioClientBufferFlags flags);
-                int bytesAvailable = framesAvailable * bytesPerFrame;
-
-                try
-                {
-                    var packetBuffer = new byte[bytesAvailable];
-                    if ((flags & AudioClientBufferFlags.Silent) != AudioClientBufferFlags.Silent)
-                    {
-                        Marshal.Copy(buffer, packetBuffer, 0, bytesAvailable);
-                    }
-                    // Silent packets: packetBuffer is already zero-initialised.
-                    DataAvailable?.Invoke(this, new WaveInEventArgs(packetBuffer, bytesAvailable));
-                }
-                finally
-                {
-                    capture.ReleaseBuffer(framesAvailable);
-                }
-
-                packetSize = capture.GetNextPacketSize();
-            }
-        }
-
-        /// <summary>
-        /// Dispose
-        /// </summary>
-        public void Dispose()
-        {
-            GC.SuppressFinalize(this);
-            StopRecording();
-            if (captureThread != null)
-            {
-                captureThread.Join();
-                captureThread = null;
-            }
-            if (audioClient != null)
-            {
-                audioClient.Dispose();
-                audioClient = null;
-            }
+            audioClient.Dispose();
+            audioClient = null;
         }
     }
 }

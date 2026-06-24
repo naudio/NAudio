@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using MfStressTest;
 using MfStressTest.Phases;
 using NAudio.MediaFoundation;
@@ -16,10 +16,10 @@ using NAudio.MediaFoundation;
 //   3  = no encodable codecs detected on this machine (probe phase failed)
 //   35 = Environment.FailFast (hard watchdog mode hit a hang) - .NET runtime
 //   <other non-zero> = native crash (e.g. 0xC0000005 access violation) - OS-determined
-const int ExitClean            = 0;
+const int ExitClean = 0;
 const int ExitManagedException = 1;
-const int ExitHangsObserved    = 2;
-const int ExitNoCodecs         = 3;
+const int ExitHangsObserved = 2;
+const int ExitNoCodecs = 3;
 
 var options = Cli.ParseArgs(args);
 // Resolve seed before printing the header so the chosen seed is in the run log
@@ -72,14 +72,14 @@ try
                 break;
             case RunMode.All:
                 var totalBudget = Remaining();
-                var soakBudget    = Math.Max(0, totalBudget * 0.70);
-                var enumBudget    = Math.Max(0, Math.Min(30, totalBudget * 0.10));
+                var soakBudget = Math.Max(0, totalBudget * 0.70);
+                var enumBudget = Math.Max(0, Math.Min(30, totalBudget * 0.10));
                 var abandonBudget = Math.Max(0, Math.Min(30, totalBudget * 0.10));
-                var staBudget     = Math.Max(0, Math.Min(30, totalBudget * 0.10));
-                if (soakBudget > 5)    Soak.Run(options, tempDir, workingCombos, soakBudget);
-                if (enumBudget > 1)    EnumStress.Run(enumBudget, options.GcEvery);
+                var staBudget = Math.Max(0, Math.Min(30, totalBudget * 0.10));
+                if (soakBudget > 5) Soak.Run(options, tempDir, workingCombos, soakBudget);
+                if (enumBudget > 1) EnumStress.Run(enumBudget, options.GcEvery);
                 if (abandonBudget > 1) Abandon.Run(options, workingCombos, abandonBudget);
-                if (staBudget > 5)     StaSoak.Run(options, tempDir, workingCombos, staBudget);
+                if (staBudget > 5) StaSoak.Run(options, tempDir, workingCombos, staBudget);
                 break;
         }
     }

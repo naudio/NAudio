@@ -1,4 +1,4 @@
-namespace NAudio.Vst3;
+﻿namespace NAudio.Vst3;
 
 /// <summary>
 /// A VST 3® unit — a node in the plug-in's unit hierarchy, enumerated from its <c>IUnitInfo</c>.

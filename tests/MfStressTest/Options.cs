@@ -1,4 +1,4 @@
-namespace MfStressTest;
+﻿namespace MfStressTest;
 
 /// <summary>Run mode selected via <c>--mode</c>.</summary>
 internal enum RunMode { Breadth, Soak, Enum, Abandon, Sta, All }

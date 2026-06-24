@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 using NAudio.MediaFoundation;
 using NAudio.Wave;
@@ -68,22 +68,22 @@ internal static class Probe
         var sw = Stopwatch.StartNew();
 
         foreach (var codec in available)
-        foreach (var rate in sampleRates)
-        foreach (var ch in channels)
-        foreach (var sink in sinks)
-        {
-            if (sink == Sink.Stream && !codec.StreamCapable) continue;
-            attempted++;
-            var combo = new Combo(codec, rate, ch, sink);
-            string? skipReason = null;
-            if (TryBreadthRound(tempDir, combo, out skipReason))
-            {
-                combos.Add(combo);
-                succeeded++;
-                if (o.Verbose) Console.WriteLine($"  OK   {combo}");
-            }
-            else if (o.Verbose) Console.WriteLine($"  skip {combo}: {skipReason}");
-        }
+            foreach (var rate in sampleRates)
+                foreach (var ch in channels)
+                    foreach (var sink in sinks)
+                    {
+                        if (sink == Sink.Stream && !codec.StreamCapable) continue;
+                        attempted++;
+                        var combo = new Combo(codec, rate, ch, sink);
+                        string? skipReason = null;
+                        if (TryBreadthRound(tempDir, combo, out skipReason))
+                        {
+                            combos.Add(combo);
+                            succeeded++;
+                            if (o.Verbose) Console.WriteLine($"  OK   {combo}");
+                        }
+                        else if (o.Verbose) Console.WriteLine($"  skip {combo}: {skipReason}");
+                    }
 
         Console.WriteLine($"  breadth: {succeeded}/{attempted} combos OK in {sw.Elapsed.TotalSeconds:F1}s");
         Console.WriteLine();

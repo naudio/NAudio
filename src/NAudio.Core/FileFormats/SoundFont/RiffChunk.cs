@@ -1,165 +1,163 @@
-using System;
+﻿using System;
 using System.IO;
 using NAudio.Utils;
 
-namespace NAudio.SoundFont
+namespace NAudio.SoundFont;
+
+internal class RiffChunk
 {
-    internal class RiffChunk
+    private string chunkID;
+    private BinaryReader riffFile;
+
+    public static RiffChunk GetTopLevelChunk(BinaryReader file)
     {
-        private string chunkID;
-        private BinaryReader riffFile;
+        RiffChunk r = new RiffChunk(file);
+        r.ReadChunk();
+        return r;
+    }
 
-        public static RiffChunk GetTopLevelChunk(BinaryReader file)
+    private RiffChunk(BinaryReader file)
+    {
+        riffFile = file;
+        chunkID = "????";
+        ChunkSize = 0;
+        DataOffset = 0;
+    }
+
+    /// <summary>
+    /// just reads a chunk ID at the current position
+    /// </summary>
+    /// <returns>chunk ID</returns>
+    public string ReadChunkID()
+    {
+        byte[] cid = riffFile.ReadBytes(4);
+        if (cid.Length != 4)
         {
-            RiffChunk r = new RiffChunk(file);
-            r.ReadChunk();
-            return r;
+            throw new InvalidDataException("Couldn't read Chunk ID");
+        }
+        return ByteEncoding.Instance.GetString(cid, 0, cid.Length);
+    }
+
+    /// <summary>
+    /// reads a chunk at the current position
+    /// </summary>
+    private void ReadChunk()
+    {
+        this.chunkID = ReadChunkID();
+        this.ChunkSize = riffFile.ReadUInt32(); //(uint) IPAddress.NetworkToHostOrder(riffFile.ReadUInt32());
+        this.DataOffset = riffFile.BaseStream.Position;
+    }
+
+    /// <summary>
+    /// creates a new riffchunk from current position checking that we're not
+    /// at the end of this chunk first
+    /// </summary>
+    /// <returns>the new chunk</returns>
+    public RiffChunk GetNextSubChunk()
+    {
+        // RIFF chunks are word-aligned: a chunk with an odd size is followed
+        // by a pad byte that is NOT counted in its size. Skip it so the next
+        // sub-chunk header is read at its true (even) boundary — otherwise a
+        // single odd-sized chunk (e.g. an odd-length INFO string, or sm24)
+        // misaligns every subsequent chunk. Skipping it here on the call that
+        // returns null also leaves the parent stream aligned for its next read.
+        if ((riffFile.BaseStream.Position & 1) != 0)
+        {
+            riffFile.BaseStream.Position++;
         }
 
-        private RiffChunk(BinaryReader file)
+        // A sub-chunk needs at least its 8-byte header to be readable; an empty
+        // (zero-data) chunk fills exactly to the parent's end, so this must be
+        // "<=", not "<". With "<" an empty trailing chunk — e.g. the empty smpl
+        // of a ROM-based SoundFont (sdta = "sdta" + an 8-byte, zero-length smpl
+        // header) — is skipped, leaving the stream 8 bytes short and misaligning
+        // every following chunk ("Not a presets data chunk (LIST)").
+        if (riffFile.BaseStream.Position + 8 <= DataOffset + ChunkSize)
         {
-            riffFile = file;
-            chunkID = "????";
-            ChunkSize = 0;
-            DataOffset = 0;
+            RiffChunk chunk = new RiffChunk(riffFile);
+            chunk.ReadChunk();
+            return chunk;
         }
+        //Console.WriteLine("DEBUG Failed to GetNextSubChunk because Position is {0}, dataOffset{1}, chunkSize {2}",riffFile.BaseStream.Position,dataOffset,chunkSize);
+        return null;
+    }
 
-        /// <summary>
-        /// just reads a chunk ID at the current position
-        /// </summary>
-        /// <returns>chunk ID</returns>
-        public string ReadChunkID()
+    public byte[] GetData()
+    {
+        riffFile.BaseStream.Position = DataOffset;
+        byte[] data = riffFile.ReadBytes((int)ChunkSize);
+        if (data.Length != ChunkSize)
         {
-            byte[] cid = riffFile.ReadBytes(4);
-            if (cid.Length != 4)
-            {
-                throw new InvalidDataException("Couldn't read Chunk ID");
-            }
-            return ByteEncoding.Instance.GetString(cid, 0, cid.Length);
+            throw new InvalidDataException(String.Format("Couldn't read chunk's data Chunk: {0}, read {1} bytes", this, data.Length));
         }
+        return data;
+    }
 
-        /// <summary>
-        /// reads a chunk at the current position
-        /// </summary>
-        private void ReadChunk()
-        {
-            this.chunkID = ReadChunkID();
-            this.ChunkSize = riffFile.ReadUInt32(); //(uint) IPAddress.NetworkToHostOrder(riffFile.ReadUInt32());
-            this.DataOffset = riffFile.BaseStream.Position;
-        }
-
-        /// <summary>
-        /// creates a new riffchunk from current position checking that we're not
-        /// at the end of this chunk first
-        /// </summary>
-        /// <returns>the new chunk</returns>
-        public RiffChunk GetNextSubChunk()
-        {
-            // RIFF chunks are word-aligned: a chunk with an odd size is followed
-            // by a pad byte that is NOT counted in its size. Skip it so the next
-            // sub-chunk header is read at its true (even) boundary — otherwise a
-            // single odd-sized chunk (e.g. an odd-length INFO string, or sm24)
-            // misaligns every subsequent chunk. Skipping it here on the call that
-            // returns null also leaves the parent stream aligned for its next read.
-            if ((riffFile.BaseStream.Position & 1) != 0)
-            {
-                riffFile.BaseStream.Position++;
-            }
-
-            // A sub-chunk needs at least its 8-byte header to be readable; an empty
-            // (zero-data) chunk fills exactly to the parent's end, so this must be
-            // "<=", not "<". With "<" an empty trailing chunk — e.g. the empty smpl
-            // of a ROM-based SoundFont (sdta = "sdta" + an 8-byte, zero-length smpl
-            // header) — is skipped, leaving the stream 8 bytes short and misaligning
-            // every following chunk ("Not a presets data chunk (LIST)").
-            if (riffFile.BaseStream.Position + 8 <= DataOffset + ChunkSize)
-            {
-                RiffChunk chunk = new RiffChunk(riffFile);
-                chunk.ReadChunk();
-                return chunk;
-            }
-            //Console.WriteLine("DEBUG Failed to GetNextSubChunk because Position is {0}, dataOffset{1}, chunkSize {2}",riffFile.BaseStream.Position,dataOffset,chunkSize);
+    /// <summary>
+    /// useful for chunks that just contain a string
+    /// </summary>
+    /// <returns>chunk as string</returns>
+    public string GetDataAsString()
+    {
+        byte[] data = GetData();
+        if (data == null)
             return null;
-        }
+        return ByteEncoding.Instance.GetString(data, 0, data.Length);
+    }
 
-        public byte[] GetData()
+    public T GetDataAsStructure<T>(StructureBuilder<T> s)
+    {
+        riffFile.BaseStream.Position = DataOffset;
+        if (s.Length != ChunkSize)
         {
-            riffFile.BaseStream.Position = DataOffset;
-            byte[] data = riffFile.ReadBytes((int)ChunkSize);
-            if (data.Length != ChunkSize)
-            {
-                throw new InvalidDataException(String.Format("Couldn't read chunk's data Chunk: {0}, read {1} bytes", this, data.Length));
-            }
-            return data;
+            throw new InvalidDataException(String.Format("Chunk size is: {0} so can't read structure of: {1}", ChunkSize, s.Length));
         }
+        return s.Read(riffFile);
+    }
 
-        /// <summary>
-        /// useful for chunks that just contain a string
-        /// </summary>
-        /// <returns>chunk as string</returns>
-        public string GetDataAsString()
+    public T[] GetDataAsStructureArray<T>(StructureBuilder<T> s)
+    {
+        riffFile.BaseStream.Position = DataOffset;
+        if (ChunkSize % s.Length != 0)
         {
-            byte[] data = GetData();
-            if (data == null)
-                return null;
-            return ByteEncoding.Instance.GetString(data, 0, data.Length);
+            throw new InvalidDataException(String.Format("Chunk size is: {0} not a multiple of structure size: {1}", ChunkSize, s.Length));
         }
-
-        public T GetDataAsStructure<T>(StructureBuilder<T> s)
+        int structuresToRead = (int)(ChunkSize / s.Length);
+        T[] a = new T[structuresToRead];
+        for (int n = 0; n < structuresToRead; n++)
         {
-            riffFile.BaseStream.Position = DataOffset;
-            if (s.Length != ChunkSize)
-            {
-                throw new InvalidDataException(String.Format("Chunk size is: {0} so can't read structure of: {1}", ChunkSize, s.Length));
-            }
-            return s.Read(riffFile);
+            a[n] = s.Read(riffFile);
         }
+        return a;
+    }
 
-        public T[] GetDataAsStructureArray<T>(StructureBuilder<T> s)
+    public string ChunkID
+    {
+        get
         {
-            riffFile.BaseStream.Position = DataOffset;
-            if (ChunkSize % s.Length != 0)
-            {
-                throw new InvalidDataException(String.Format("Chunk size is: {0} not a multiple of structure size: {1}", ChunkSize, s.Length));
-            }
-            int structuresToRead = (int)(ChunkSize / s.Length);
-            T[] a = new T[structuresToRead];
-            for (int n = 0; n < structuresToRead; n++)
-            {
-                a[n] = s.Read(riffFile);
-            }
-            return a;
+            return chunkID;
         }
-
-        public string ChunkID
+        set
         {
-            get
+            if (value == null)
             {
-                return chunkID;
+                throw new ArgumentNullException(nameof(value), "ChunkID may not be null");
             }
-            set
+            if (value.Length != 4)
             {
-                if (value == null)
-                {
-                    throw new ArgumentNullException(nameof(value), "ChunkID may not be null");
-                }
-                if (value.Length != 4)
-                {
-                    throw new ArgumentException("ChunkID must be four characters");
-                }
-                chunkID = value;
+                throw new ArgumentException("ChunkID must be four characters");
             }
+            chunkID = value;
         }
+    }
 
-        public uint ChunkSize { get; private set; }
+    public uint ChunkSize { get; private set; }
 
-        public long DataOffset { get; private set; }
+    public long DataOffset { get; private set; }
 
-        public override string ToString()
-        {
-            return String.Format("RiffChunk ID: {0} Size: {1} Data Offset: {2}", ChunkID, ChunkSize, DataOffset);
-        }
-
+    public override string ToString()
+    {
+        return String.Format("RiffChunk ID: {0} Size: {1} Data Offset: {2}", ChunkID, ChunkSize, DataOffset);
     }
 
 }

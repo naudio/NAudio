@@ -1,76 +1,75 @@
-using System;
+﻿using System;
 using System.Runtime.InteropServices;
 using NAudio.Utils;
 
-namespace NAudio.Wave.SampleProviders
+namespace NAudio.Wave.SampleProviders;
+
+/// <summary>
+/// Converts a sample source to 16 bit PCM, optionally clipping and adjusting volume along the way
+/// </summary>
+public class SampleToWaveProvider16 : IWaveProvider
 {
+    private readonly ISampleProvider sourceProvider;
+    private readonly WaveFormat waveFormat;
+    private volatile float volume;
+    private float[] sourceBuffer;
+
     /// <summary>
-    /// Converts a sample source to 16 bit PCM, optionally clipping and adjusting volume along the way
+    /// Converts from an ISampleProvider (IEEE float) to a 16 bit PCM IWaveProvider.
+    /// Number of channels and sample rate remain unchanged.
     /// </summary>
-    public class SampleToWaveProvider16 : IWaveProvider
+    /// <param name="sourceProvider">The input source provider</param>
+    public SampleToWaveProvider16(ISampleProvider sourceProvider)
     {
-        private readonly ISampleProvider sourceProvider;
-        private readonly WaveFormat waveFormat;
-        private volatile float volume;
-        private float[] sourceBuffer;
+        if (sourceProvider.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
+            throw new ArgumentException("Input source provider must be IEEE float", nameof(sourceProvider));
+        if (sourceProvider.WaveFormat.BitsPerSample != 32)
+            throw new ArgumentException("Input source provider must be 32 bit", nameof(sourceProvider));
 
-        /// <summary>
-        /// Converts from an ISampleProvider (IEEE float) to a 16 bit PCM IWaveProvider.
-        /// Number of channels and sample rate remain unchanged.
-        /// </summary>
-        /// <param name="sourceProvider">The input source provider</param>
-        public SampleToWaveProvider16(ISampleProvider sourceProvider)
+        waveFormat = new WaveFormat(sourceProvider.WaveFormat.SampleRate, 16, sourceProvider.WaveFormat.Channels);
+
+        this.sourceProvider = sourceProvider;
+        volume = 1.0f;
+    }
+
+    /// <summary>
+    /// Reads bytes from this wave stream
+    /// </summary>
+    /// <param name="buffer">The destination buffer</param>
+    /// <returns>Number of bytes read.</returns>
+    public int Read(Span<byte> buffer)
+    {
+        int samplesRequired = buffer.Length / 2;
+        sourceBuffer = BufferHelpers.Ensure(sourceBuffer, samplesRequired);
+        int sourceSamples = sourceProvider.Read(sourceBuffer.AsSpan(0, samplesRequired));
+        var destShortSpan = MemoryMarshal.Cast<byte, short>(buffer);
+
+        for (int sample = 0; sample < sourceSamples; sample++)
         {
-            if (sourceProvider.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
-                throw new ArgumentException("Input source provider must be IEEE float", nameof(sourceProvider));
-            if (sourceProvider.WaveFormat.BitsPerSample != 32)
-                throw new ArgumentException("Input source provider must be 32 bit", nameof(sourceProvider));
-
-            waveFormat = new WaveFormat(sourceProvider.WaveFormat.SampleRate, 16, sourceProvider.WaveFormat.Channels);
-
-            this.sourceProvider = sourceProvider;
-            volume = 1.0f;
+            // adjust volume
+            float sample32 = sourceBuffer[sample] * volume;
+            // clip
+            if (sample32 > 1.0f)
+                sample32 = 1.0f;
+            if (sample32 < -1.0f)
+                sample32 = -1.0f;
+            destShortSpan[sample] = (short)(sample32 * 32767);
         }
 
-        /// <summary>
-        /// Reads bytes from this wave stream
-        /// </summary>
-        /// <param name="buffer">The destination buffer</param>
-        /// <returns>Number of bytes read.</returns>
-        public int Read(Span<byte> buffer)
-        {
-            int samplesRequired = buffer.Length / 2;
-            sourceBuffer = BufferHelpers.Ensure(sourceBuffer, samplesRequired);
-            int sourceSamples = sourceProvider.Read(sourceBuffer.AsSpan(0, samplesRequired));
-            var destShortSpan = MemoryMarshal.Cast<byte, short>(buffer);
+        return sourceSamples * 2;
+    }
 
-            for (int sample = 0; sample < sourceSamples; sample++)
-            {
-                // adjust volume
-                float sample32 = sourceBuffer[sample] * volume;
-                // clip
-                if (sample32 > 1.0f)
-                    sample32 = 1.0f;
-                if (sample32 < -1.0f)
-                    sample32 = -1.0f;
-                destShortSpan[sample] = (short)(sample32 * 32767);
-            }
+    /// <summary>
+    /// <see cref="IWaveProvider.WaveFormat"/>
+    /// </summary>
+    public WaveFormat WaveFormat => waveFormat;
 
-            return sourceSamples * 2;
-        }
-
-        /// <summary>
-        /// <see cref="IWaveProvider.WaveFormat"/>
-        /// </summary>
-        public WaveFormat WaveFormat => waveFormat;
-
-        /// <summary>
-        /// Volume of this channel. 1.0 = full scale
-        /// </summary>
-        public float Volume
-        {
-            get { return volume; }
-            set { volume = value; }
-        }
+    /// <summary>
+    /// Volume of this channel. 1.0 = full scale
+    /// </summary>
+    public float Volume
+    {
+        get { return volume; }
+        set { volume = value; }
     }
 }

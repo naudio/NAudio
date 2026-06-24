@@ -1,14 +1,13 @@
-using System.Windows.Controls;
+﻿using System.Windows.Controls;
 
-namespace NAudioWpfDemo.SampleEditorDemo
+namespace NAudioWpfDemo.SampleEditorDemo;
+
+class SampleEditorPlugin : ModuleBase
 {
-    class SampleEditorPlugin : ModuleBase
-    {
-        public override string Name => "Single-Sample Editor";
+    public override string Name => "Single-Sample Editor";
 
-        protected override UserControl CreateViewAndViewModel()
-        {
-            return new SampleEditorView { DataContext = new SampleEditorViewModel() };
-        }
+    protected override UserControl CreateViewAndViewModel()
+    {
+        return new SampleEditorView { DataContext = new SampleEditorViewModel() };
     }
 }

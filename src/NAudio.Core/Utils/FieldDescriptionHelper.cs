@@ -2,39 +2,38 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
-namespace NAudio.Utils
+namespace NAudio.Utils;
+
+/// <summary>
+/// Helper to get descriptions
+/// </summary>
+public static class FieldDescriptionHelper
 {
     /// <summary>
-    /// Helper to get descriptions
+    /// Describes the Guid  by looking for a FieldDescription attribute on the specified class
     /// </summary>
-    public static class FieldDescriptionHelper
+    public static string Describe(
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] Type t,
+        Guid guid)
     {
-        /// <summary>
-        /// Describes the Guid  by looking for a FieldDescription attribute on the specified class
-        /// </summary>
-        public static string Describe(
-            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] Type t,
-            Guid guid)
+        // when we go to .NET 3.5, use LINQ for this
+        foreach (var f in t
+            .GetFields(BindingFlags.Static | BindingFlags.Public))
         {
-            // when we go to .NET 3.5, use LINQ for this
-            foreach (var f in t
-                .GetFields(BindingFlags.Static | BindingFlags.Public))
+            if (f.IsPublic && f.IsStatic && f.FieldType == typeof(Guid) && (Guid)f.GetValue(null) == guid)
             {
-                if (f.IsPublic && f.IsStatic && f.FieldType == typeof (Guid) && (Guid) f.GetValue(null) == guid)
+                foreach (var a in f.GetCustomAttributes(false))
                 {
-                    foreach (var a in f.GetCustomAttributes(false))
+                    var d = a as FieldDescriptionAttribute;
+                    if (d != null)
                     {
-                        var d = a as FieldDescriptionAttribute;
-                        if (d != null)
-                        {
-                            return d.Description;
-                        }
+                        return d.Description;
                     }
-                    // no attribute, return the name
-                    return f.Name;
                 }
+                // no attribute, return the name
+                return f.Name;
             }
-            return guid.ToString();
         }
+        return guid.ToString();
     }
 }

@@ -1,4 +1,4 @@
-/*
+﻿/*
   LICENSE
   -------
   Copyright (C) 2007 Ray Molenkamp
@@ -29,46 +29,45 @@ using System.Runtime.InteropServices.Marshalling;
 using NAudio.CoreAudioApi.Interfaces;
 using NAudio.Utils;
 
-namespace NAudio.CoreAudioApi
+namespace NAudio.CoreAudioApi;
+
+// This class implements the IAudioEndpointVolumeCallback interface,
+// it is implemented in this class because implementing it on AudioEndpointVolume
+// (where the functionality is really wanted, would cause the OnNotify function
+// to show up in the public API.
+[GeneratedComClass]
+internal partial class AudioEndpointVolumeCallback : IAudioEndpointVolumeCallback
 {
-    // This class implements the IAudioEndpointVolumeCallback interface,
-    // it is implemented in this class because implementing it on AudioEndpointVolume
-    // (where the functionality is really wanted, would cause the OnNotify function
-    // to show up in the public API.
-    [GeneratedComClass]
-    internal partial class AudioEndpointVolumeCallback : IAudioEndpointVolumeCallback
+    private readonly AudioEndpointVolume parent;
+
+    internal AudioEndpointVolumeCallback(AudioEndpointVolume parent)
     {
-        private readonly AudioEndpointVolume parent;
-        
-        internal AudioEndpointVolumeCallback(AudioEndpointVolume parent)
-        {
-            this.parent = parent;
-        }
-        
-        public void OnNotify(IntPtr notifyData)
-        {
-            //Since AUDIO_VOLUME_NOTIFICATION_DATA is dynamic in length based on the
-            //number of audio channels available we cannot just call PtrToStructure
-            //to get all data, thats why it is split up into two steps, first the static
-            //data is marshalled into the data structure, then with some IntPtr math the
-            //remaining floats are read from memory.
-            //
-            var data = Marshal.PtrToStructure<AudioVolumeNotificationDataStruct>(notifyData);
+        this.parent = parent;
+    }
 
-            //Determine offset in structure of the first float
-            var offset = Marshal.OffsetOf<AudioVolumeNotificationDataStruct>("ChannelVolume");
-            //Determine offset in memory of the first float
-            var firstFloatPtr = notifyData + (int)offset;
+    public void OnNotify(IntPtr notifyData)
+    {
+        //Since AUDIO_VOLUME_NOTIFICATION_DATA is dynamic in length based on the
+        //number of audio channels available we cannot just call PtrToStructure
+        //to get all data, thats why it is split up into two steps, first the static
+        //data is marshalled into the data structure, then with some IntPtr math the
+        //remaining floats are read from memory.
+        //
+        var data = Marshal.PtrToStructure<AudioVolumeNotificationDataStruct>(notifyData);
 
-            var voldata = new float[data.nChannels];
+        //Determine offset in structure of the first float
+        var offset = Marshal.OffsetOf<AudioVolumeNotificationDataStruct>("ChannelVolume");
+        //Determine offset in memory of the first float
+        var firstFloatPtr = notifyData + (int)offset;
 
-            //Read all floats from memory. The per-channel volumes are laid out
-            //contiguously starting at firstFloatPtr.
-            Marshal.Copy(firstFloatPtr, voldata, 0, (int)data.nChannels);
+        var voldata = new float[data.nChannels];
 
-            //Create combined structure and Fire Event in parent class.
-            var notificationData = new AudioVolumeNotificationData(data.guidEventContext, data.bMuted, data.fMasterVolume, voldata, data.guidEventContext);
-            parent.FireNotification(notificationData);
-        }
+        //Read all floats from memory. The per-channel volumes are laid out
+        //contiguously starting at firstFloatPtr.
+        Marshal.Copy(firstFloatPtr, voldata, 0, (int)data.nChannels);
+
+        //Create combined structure and Fire Event in parent class.
+        var notificationData = new AudioVolumeNotificationData(data.guidEventContext, data.bMuted, data.fMasterVolume, voldata, data.guidEventContext);
+        parent.FireNotification(notificationData);
     }
 }

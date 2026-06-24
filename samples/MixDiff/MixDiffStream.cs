@@ -1,123 +1,122 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 using NAudio.Wave;
 
-namespace MarkHeath.AudioUtils
+namespace MarkHeath.AudioUtils;
+
+public class MixDiffStream : WaveStream
 {
-    public class MixDiffStream : WaveStream
+    WaveOffsetStream offsetStream;
+    WaveChannel32 channelSteam;
+    bool muted;
+    float volume;
+
+    public MixDiffStream(string fileName)
     {
-        WaveOffsetStream offsetStream;
-        WaveChannel32 channelSteam;
-        bool muted;
-        float volume;
+        WaveFileReader reader = new WaveFileReader(fileName);
+        offsetStream = new WaveOffsetStream(reader);
+        channelSteam = new WaveChannel32(offsetStream);
+        muted = false;
+        volume = 1.0f;
+    }
 
-        public MixDiffStream(string fileName)
+    public override int BlockAlign
+    {
+        get
         {
-            WaveFileReader reader = new WaveFileReader(fileName);
-            offsetStream = new WaveOffsetStream(reader);
-            channelSteam = new WaveChannel32(offsetStream);
-            muted = false;
-            volume = 1.0f;
+            return channelSteam.BlockAlign;
         }
+    }
 
-        public override int BlockAlign
+    public override WaveFormat WaveFormat
+    {
+        get { return channelSteam.WaveFormat; }
+    }
+
+    public override long Length
+    {
+        get { return channelSteam.Length; }
+    }
+
+    public override long Position
+    {
+        get
         {
-            get
+            return channelSteam.Position;
+        }
+        set
+        {
+            channelSteam.Position = value;
+        }
+    }
+
+    public bool Mute
+    {
+        get
+        {
+            return muted;
+        }
+        set
+        {
+            muted = value;
+            if (muted)
             {
-                return channelSteam.BlockAlign;
+                channelSteam.Volume = 0.0f;
             }
-        }
-
-        public override WaveFormat WaveFormat
-        {
-            get { return channelSteam.WaveFormat; }
-        }
-
-        public override long Length
-        {
-            get { return channelSteam.Length; }
-        }
-
-        public override long Position
-        {
-            get
+            else
             {
-                return channelSteam.Position;
+                // reset the volume
+                channelSteam.Volume = volume;
             }
-            set
+        }
+    }
+
+    public override int Read(byte[] buffer, int offset, int count)
+    {
+        return channelSteam.Read(buffer, offset, count);
+    }
+
+    public override bool HasData(int count)
+    {
+        return channelSteam.HasData(count);
+    }
+
+    public float Volume
+    {
+        get
+        {
+            return volume;
+        }
+        set
+        {
+            volume = value;
+            if (!Mute)
             {
-                channelSteam.Position = value;
+                channelSteam.Volume = volume;
             }
         }
+    }
 
-        public bool Mute
+    public TimeSpan PreDelay
+    {
+        get { return offsetStream.StartTime; }
+        set { offsetStream.StartTime = value; }
+    }
+
+    public TimeSpan Offset
+    {
+        get { return offsetStream.SourceOffset; }
+        set { offsetStream.SourceOffset = value; }
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (channelSteam != null)
         {
-            get
-            {
-                return muted;
-            }
-            set
-            {
-                muted = value;
-                if (muted)
-                {
-                    channelSteam.Volume = 0.0f;
-                }
-                else
-                {
-                    // reset the volume
-                    channelSteam.Volume = volume;
-                }
-            }
+            channelSteam.Dispose();
         }
 
-        public override int Read(byte[] buffer, int offset, int count)
-        {
-            return channelSteam.Read(buffer, offset, count);
-        }
-
-        public override bool HasData(int count)
-        {
-            return channelSteam.HasData(count);
-        }
-
-        public float Volume
-        {
-            get 
-            { 
-                return volume; 
-            }
-            set 
-            {
-                volume = value;
-                if (!Mute)
-                {
-                    channelSteam.Volume = volume;
-                }
-            }
-        }
-
-        public TimeSpan PreDelay
-        {
-            get { return offsetStream.StartTime; }
-            set { offsetStream.StartTime = value; }
-        }
-
-        public TimeSpan Offset
-        {
-            get { return offsetStream.SourceOffset; }
-            set { offsetStream.SourceOffset = value; }
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (channelSteam != null)
-            {
-                channelSteam.Dispose();
-            }
-
-            base.Dispose(disposing);
-        }
+        base.Dispose(disposing);
     }
 }

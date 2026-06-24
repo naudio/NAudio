@@ -1,22 +1,21 @@
-using System;
+﻿using System;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 
-namespace NAudio.CoreAudioApi.Interfaces
+namespace NAudio.CoreAudioApi.Interfaces;
+
+/// <summary>
+/// Represents an asynchronous operation activating a WASAPI interface and provides a method to retrieve the results of the activation.
+/// </summary>
+[GeneratedComInterface, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("72A22D78-CDE4-431D-B8CC-843A71199B6D")]
+internal partial interface IActivateAudioInterfaceAsyncOperation
 {
+    //virtual HRESULT STDMETHODCALLTYPE GetActivateResult(/*[out]*/ _Out_
+    //  HRESULT *activateResult, /*[out]*/ _Outptr_result_maybenull_  IUnknown **activatedInterface) = 0;
     /// <summary>
-    /// Represents an asynchronous operation activating a WASAPI interface and provides a method to retrieve the results of the activation.
+    /// Gets the results of an asynchronous activation of a WASAPI interface initiated by an application calling the ActivateAudioInterfaceAsync function
     /// </summary>
-    [GeneratedComInterface, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("72A22D78-CDE4-431D-B8CC-843A71199B6D")]
-    internal partial interface IActivateAudioInterfaceAsyncOperation
-    {
-        //virtual HRESULT STDMETHODCALLTYPE GetActivateResult(/*[out]*/ _Out_
-        //  HRESULT *activateResult, /*[out]*/ _Outptr_result_maybenull_  IUnknown **activatedInterface) = 0;
-        /// <summary>
-        /// Gets the results of an asynchronous activation of a WASAPI interface initiated by an application calling the ActivateAudioInterfaceAsync function
-        /// </summary>
-        [PreserveSig]
-        int GetActivateResult(out int activateResult,
-                               out IntPtr activateInterface);
-    }
+    [PreserveSig]
+    int GetActivateResult(out int activateResult,
+                           out IntPtr activateInterface);
 }

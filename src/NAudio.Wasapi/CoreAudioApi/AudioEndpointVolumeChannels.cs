@@ -1,4 +1,4 @@
-/*
+﻿/*
   LICENSE
   -------
   Copyright (C) 2007 Ray Molenkamp
@@ -24,45 +24,44 @@ using System;
 using NAudio.CoreAudioApi.Interfaces;
 using System.Runtime.InteropServices;
 
-namespace NAudio.CoreAudioApi
+namespace NAudio.CoreAudioApi;
+
+/// <summary>
+/// Audio Endpoint Volume Channels
+/// </summary>
+public class AudioEndpointVolumeChannels
 {
+    readonly IAudioEndpointVolume audioEndPointVolume;
+    readonly AudioEndpointVolumeChannel[] channels;
+
     /// <summary>
-    /// Audio Endpoint Volume Channels
+    /// Channel Count
     /// </summary>
-    public class AudioEndpointVolumeChannels
+    public int Count
     {
-        readonly IAudioEndpointVolume audioEndPointVolume;
-        readonly AudioEndpointVolumeChannel[] channels;
-
-        /// <summary>
-        /// Channel Count
-        /// </summary>
-        public int Count
+        get
         {
-            get
-            {
-                CoreAudioException.ThrowIfFailed(audioEndPointVolume.GetChannelCount(out var result));
-                return result;
-            }
+            CoreAudioException.ThrowIfFailed(audioEndPointVolume.GetChannelCount(out var result));
+            return result;
         }
-
-        /// <summary>
-        /// Indexer - get a specific channel
-        /// </summary>
-        public AudioEndpointVolumeChannel this[int index] => channels[index];
-
-        internal AudioEndpointVolumeChannels(IAudioEndpointVolume parent)
-        {
-            audioEndPointVolume = parent;
-
-            var channelCount = Count;
-            channels = new AudioEndpointVolumeChannel[channelCount];
-            for (int i = 0; i < channelCount; i++)
-            {
-                channels[i] = new AudioEndpointVolumeChannel(audioEndPointVolume, i);
-            }
-        }
-
-
     }
+
+    /// <summary>
+    /// Indexer - get a specific channel
+    /// </summary>
+    public AudioEndpointVolumeChannel this[int index] => channels[index];
+
+    internal AudioEndpointVolumeChannels(IAudioEndpointVolume parent)
+    {
+        audioEndPointVolume = parent;
+
+        var channelCount = Count;
+        channels = new AudioEndpointVolumeChannel[channelCount];
+        for (int i = 0; i < channelCount; i++)
+        {
+            channels[i] = new AudioEndpointVolumeChannel(audioEndPointVolume, i);
+        }
+    }
+
+
 }

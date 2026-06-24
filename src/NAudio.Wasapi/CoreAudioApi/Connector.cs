@@ -2,134 +2,133 @@
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 
-namespace NAudio.CoreAudioApi
+namespace NAudio.CoreAudioApi;
+
+/// <summary>
+/// Connector
+/// </summary>
+public class Connector
 {
-    /// <summary>
-    /// Connector
-    /// </summary>
-    public class Connector
+    private readonly IConnector connectorInterface;
+
+    internal Connector(IConnector connector)
     {
-        private readonly IConnector connectorInterface;
+        connectorInterface = connector;
+    }
 
-        internal Connector(IConnector connector)
+    /// <summary>
+    /// Connects this connector to a connector in another device-topology object
+    /// </summary>
+    public void ConnectTo(Connector other)
+    {
+        var ptr = ComActivation.ComWrappers.GetOrCreateComInterfaceForObject(
+            other.connectorInterface, CreateComInterfaceFlags.None);
+        try
         {
-            connectorInterface = connector;
+            connectorInterface.ConnectTo(ptr);
         }
-
-        /// <summary>
-        /// Connects this connector to a connector in another device-topology object
-        /// </summary>
-        public void ConnectTo(Connector other)
+        finally
         {
-            var ptr = ComActivation.ComWrappers.GetOrCreateComInterfaceForObject(
-                other.connectorInterface, CreateComInterfaceFlags.None);
+            Marshal.Release(ptr);
+        }
+    }
+
+    /// <summary>
+    /// Retreives the type of this connector
+    /// </summary>
+    public ConnectorType Type
+    {
+        get
+        {
+            connectorInterface.GetType(out var result);
+            return result;
+        }
+    }
+
+    /// <summary>
+    /// Retreives the data flow of this connector
+    /// </summary>
+    public DataFlow DataFlow
+    {
+        get
+        {
+            connectorInterface.GetDataFlow(out var result);
+            return result;
+        }
+    }
+
+    /// <summary>
+    /// Disconnects this connector from it's connected connector (if connected)
+    /// </summary>
+    public void Disconnect()
+    {
+        connectorInterface.Disconnect();
+    }
+
+    /// <summary>
+    /// Indicates whether this connector is connected to another connector
+    /// </summary>
+    public bool IsConnected
+    {
+        get
+        {
+            connectorInterface.IsConnected(out var result);
+            return result;
+        }
+    }
+
+    /// <summary>
+    /// Retreives the connector this connector is connected to (if connected)
+    /// </summary>
+    public Connector ConnectedTo
+    {
+        get
+        {
+            connectorInterface.GetConnectedTo(out var ptr);
             try
             {
-                connectorInterface.ConnectTo(ptr);
+                return new Connector((IConnector)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    ptr, CreateObjectFlags.UniqueInstance));
             }
             finally
             {
                 Marshal.Release(ptr);
             }
         }
+    }
 
-        /// <summary>
-        /// Retreives the type of this connector
-        /// </summary>
-        public ConnectorType Type
+    /// <summary>
+    /// Retreives the global ID of the connector this connector is connected to (if connected)
+    /// </summary>
+    public string ConnectedToConnectorId
+    {
+        get
         {
-            get
-            {
-                connectorInterface.GetType(out var result);
-                return result;
-            }
+            connectorInterface.GetConnectorIdConnectedTo(out var result);
+            return result;
         }
+    }
 
-        /// <summary>
-        /// Retreives the data flow of this connector
-        /// </summary>
-        public DataFlow DataFlow
+    /// <summary>
+    /// Retreives the device ID of the audio device this connector is connected to (if connected)
+    /// </summary>
+    public string ConnectedToDeviceId
+    {
+        get
         {
-            get
-            {
-                connectorInterface.GetDataFlow(out var result);
-                return result;
-            }
+            connectorInterface.GetDeviceIdConnectedTo(out var result);
+            return result;
         }
+    }
 
-        /// <summary>
-        /// Disconnects this connector from it's connected connector (if connected)
-        /// </summary>
-        public void Disconnect()
+    /// <summary>
+    /// Part
+    /// </summary>
+    public Part Part
+    {
+        get
         {
-            connectorInterface.Disconnect();
-        }
-
-        /// <summary>
-        /// Indicates whether this connector is connected to another connector
-        /// </summary>
-        public bool IsConnected
-        {
-            get
-            {
-                connectorInterface.IsConnected(out var result);
-                return result;
-            }
-        }
-
-        /// <summary>
-        /// Retreives the connector this connector is connected to (if connected)
-        /// </summary>
-        public Connector ConnectedTo
-        {
-            get
-            {
-                connectorInterface.GetConnectedTo(out var ptr);
-                try
-                {
-                    return new Connector((IConnector)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
-                        ptr, CreateObjectFlags.UniqueInstance));
-                }
-                finally
-                {
-                    Marshal.Release(ptr);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Retreives the global ID of the connector this connector is connected to (if connected)
-        /// </summary>
-        public string ConnectedToConnectorId
-        {
-            get
-            {
-                connectorInterface.GetConnectorIdConnectedTo(out var result);
-                return result;
-            }
-        }
-
-        /// <summary>
-        /// Retreives the device ID of the audio device this connector is connected to (if connected)
-        /// </summary>
-        public string ConnectedToDeviceId
-        {
-            get
-            {
-                connectorInterface.GetDeviceIdConnectedTo(out var result);
-                return result;
-            }
-        }
-
-        /// <summary>
-        /// Part
-        /// </summary>
-        public Part Part
-        {
-            get
-            {
-                return new Part(connectorInterface as IPart);
-            }
+            return new Part(connectorInterface as IPart);
         }
     }
 }

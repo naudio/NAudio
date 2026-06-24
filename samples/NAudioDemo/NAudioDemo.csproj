@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net9.0-windows10.0.19041.0</TargetFrameworks>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>NAudioDemo</RootNamespace>
+    <AssemblyName>NAudioDemo</AssemblyName>
+    <Product>NAudioDemo</Product>
+    <NoWarn>$(NoWarn);CA1001</NoWarn> <!-- Demo app: disposal handled by UI lifecycle -->
+    <Title>NAudioDemo</Title>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <UseWindowsForms>true</UseWindowsForms>
+    <!-- [GeneratedComClass] in DeviceNotificationsPanel requires unsafe code support. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\NAudio.Asio\NAudio.Asio.csproj" />
+    <ProjectReference Include="..\..\src\NAudio.Midi\NAudio.Midi.csproj" />
+    <ProjectReference Include="..\..\src\NAudio.WinForms\NAudio.WinForms.csproj" />
+    <ProjectReference Include="..\..\src\NAudio\NAudio.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Back.png" />
+    <None Include="Resources\Forward.png" />
+    <None Include="Resources\Loop.png" />
+    <None Include="Resources\Pause.png" />
+    <None Include="Resources\Play.png" />
+    <None Include="Resources\Rewind.png" />
+    <None Include="Resources\Shuffle.png" />
+    <None Include="Resources\Stop.png" />
+    <None Include="Resources\Audiosrv.png" />
+    <None Include="Resources\Mute.png" />
+    <Content Include="Resources\Open.png" />
+    <None Include="Resources\Unmute.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Concentus" Version="2.2.2" />
+  </ItemGroup>
+</Project>

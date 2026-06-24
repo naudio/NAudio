@@ -1,0 +1,42 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>NAudioWpfDemo</RootNamespace>
+    <AssemblyName>NAudioWpfDemo</AssemblyName>
+    <UseWpf>true</UseWpf>
+    <NoWarn>$(NoWarn);CA1001</NoWarn> <!-- Demo app: disposal handled by Deactivate/UI lifecycle -->
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\NAudio.Extras\NAudio.Extras.csproj" />
+    <ProjectReference Include="..\..\src\NAudio.Sampler\NAudio.Sampler.csproj" />
+    <ProjectReference Include="..\..\src\NAudio.WinForms\NAudio.WinForms.csproj" />
+    <ProjectReference Include="..\..\src\NAudio\NAudio.csproj" />
+    <ProjectReference Include="..\..\src\NAudio.Vst3\NAudio.Vst3.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\SampleData\Drums\closed-hat-trimmed.wav">
+      <Link>Samples\closed-hat-trimmed.wav</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\SampleData\Drums\crash-trimmed.wav">
+      <Link>Samples\crash-trimmed.wav</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\SampleData\Drums\kick-trimmed.wav">
+      <Link>Samples\kick-trimmed.wav</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\SampleData\Drums\open-hat-trimmed.wav">
+      <Link>Samples\open-hat-trimmed.wav</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\SampleData\Drums\snare-trimmed.wav">
+      <Link>Samples\snare-trimmed.wav</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="NUnit" Version="4.5.1" />
+  </ItemGroup>
+</Project>

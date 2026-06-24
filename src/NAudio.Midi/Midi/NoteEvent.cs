@@ -45,7 +45,7 @@ public class NoteEvent : MidiEvent
 
     private static readonly string[] NoteNames = new string[] { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
 
-    private static readonly Dictionary<int, string> DrumNoteNames = new Dictionary<int, string>
+    private static readonly Dictionary<int, string> DrumNoteNames = new()
     {
         { 35, "Acoustic Bass Drum" },
         { 36, "Bass Drum 1" },

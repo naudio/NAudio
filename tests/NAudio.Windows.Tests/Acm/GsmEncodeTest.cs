@@ -44,13 +44,9 @@ public class GsmEncodeTest
     [Test]
     public void CanEncodeGsm()
     {
-        using (var reader = CreatePcmTestStream())
-        {
-            using (var gsm = new WaveFormatConversionStream(new Gsm610WaveFormat(), reader))
-            {
-                WaveFileWriter.CreateWaveFile(Path.Combine(tempFolder, "gsm.wav"), gsm);
-            }
-        }
+        using var reader = CreatePcmTestStream();
+        using var gsm = new WaveFormatConversionStream(new Gsm610WaveFormat(), reader);
+        WaveFileWriter.CreateWaveFile(Path.Combine(tempFolder, "gsm.wav"), gsm);
     }
 
     [Test]
@@ -61,12 +57,8 @@ public class GsmEncodeTest
         {
             Assert.Ignore("Missing test file (created by the another test)");
         }
-        using (var reader = new WaveFileReader(testFile))
-        {
-            using (var pcm = WaveFormatConversionStream.CreatePcmStream(reader))
-            {
-                WaveFileWriter.CreateWaveFile(Path.Combine(tempFolder, "gsm-decoded.wav"), pcm);
-            }
-        }
+        using var reader = new WaveFileReader(testFile);
+        using var pcm = WaveFormatConversionStream.CreatePcmStream(reader);
+        WaveFileWriter.CreateWaveFile(Path.Combine(tempFolder, "gsm-decoded.wav"), pcm);
     }
 }

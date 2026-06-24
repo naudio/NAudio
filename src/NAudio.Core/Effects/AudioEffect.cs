@@ -19,7 +19,7 @@ namespace NAudio.Effects;
 /// </remarks>
 public abstract class AudioEffect : IAudioEffect
 {
-    private readonly ParameterSmoother mixSmoother = new ParameterSmoother();
+    private readonly ParameterSmoother mixSmoother = new();
     private WaveFormat waveFormat;
     private float[] dryBuffer = Array.Empty<float>();
     private float mix = 1f;

@@ -41,8 +41,7 @@ public class VolumeSlider : System.Windows.Forms.UserControl
     {
         if (disposing)
         {
-            if (components != null)
-                components.Dispose();
+            components?.Dispose();
         }
         base.Dispose(disposing);
     }

@@ -42,17 +42,14 @@ public class Fader : System.Windows.Forms.Control
     {
         if (disposing)
         {
-            if (components != null)
-            {
-                components.Dispose();
-            }
+            components?.Dispose();
         }
         base.Dispose(disposing);
     }
 
     private readonly int SliderHeight = 30;
     private readonly int SliderWidth = 15;
-    private Rectangle sliderRectangle = new Rectangle();
+    private Rectangle sliderRectangle = new();
 
     private void DrawSlider(Graphics g)
     {

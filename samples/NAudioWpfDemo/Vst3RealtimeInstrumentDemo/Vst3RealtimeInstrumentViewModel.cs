@@ -21,7 +21,7 @@ namespace NAudioWpfDemo.Vst3RealtimeInstrumentDemo;
 /// </summary>
 class Vst3RealtimeInstrumentViewModel : ViewModelBase, IDisposable
 {
-    private readonly Vst3RealtimeInstrumentEngine engine = new Vst3RealtimeInstrumentEngine();
+    private readonly Vst3RealtimeInstrumentEngine engine = new();
     private readonly DispatcherTimer timer;
 
     private string selectedDriver;

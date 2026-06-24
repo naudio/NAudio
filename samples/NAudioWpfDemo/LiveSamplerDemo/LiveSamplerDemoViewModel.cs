@@ -223,11 +223,9 @@ class LiveSamplerDemoViewModel : ViewModelBase, IDisposable
             midiIn.Dispose();
             midiIn = null;
         }
-        if (waveOut != null)
-        {
-            waveOut.Dispose();
-            waveOut = null;
-        }
+
+        waveOut?.Dispose();
+        waveOut = null;
         instrument = null;
         sampler = null;
         ActiveVoiceCount = 0;

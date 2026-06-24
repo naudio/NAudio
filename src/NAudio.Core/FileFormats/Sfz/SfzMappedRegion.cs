@@ -390,13 +390,13 @@ public sealed class SfzMappedRegion
     }
 
     private static SfzLfo BuildLfo(SfzRegion region, string prefix) =>
-        new SfzLfo(
+        new(
             region.GetFloat(prefix + "_freq", 0),
             region.GetFloat(prefix + "_depth", 0),
             region.GetFloat(prefix + "_delay", 0));
 
     private static SfzModulationEnvelope BuildModulationEnvelope(SfzRegion region, string prefix) =>
-        new SfzModulationEnvelope(
+        new(
             region.GetFloat(prefix + "_delay", 0),
             region.GetFloat(prefix + "_attack", 0),
             region.GetFloat(prefix + "_hold", 0),

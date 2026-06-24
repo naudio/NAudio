@@ -24,7 +24,7 @@ public class SignalGenerator : ISampleProvider
     private readonly WaveFormat waveFormat;
 
     // Random Number for the White Noise & Pink Noise Generator
-    private readonly Random random = new Random();
+    private readonly Random random = new();
 
     private readonly double[] pinkNoiseBuffer = new double[7];
 

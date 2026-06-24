@@ -54,48 +54,42 @@ public class TimeSignatureEventTests
     [Test]
     public void BinaryReaderConstructorRejectsInvalidLength()
     {
-        using (var ms = new MemoryStream(new byte[] { 0x04, 0x02, 0x18, 0x08 }))
-        using (var br = new BinaryReader(ms))
-        {
-            Assert.Throws<FormatException>(() => new TimeSignatureEvent(br, 3));
-        }
+        using var ms = new MemoryStream(new byte[] { 0x04, 0x02, 0x18, 0x08 });
+        using var br = new BinaryReader(ms);
+        Assert.Throws<FormatException>(() => new TimeSignatureEvent(br, 3));
     }
 
     [Test]
     public void BinaryReaderConstructorReadsAllFields()
     {
-        using (var ms = new MemoryStream(new byte[] { 0x04, 0x02, 0x18, 0x08 }))
-        using (var br = new BinaryReader(ms))
-        {
-            var timeSignatureEvent = new TimeSignatureEvent(br, 4);
+        using var ms = new MemoryStream(new byte[] { 0x04, 0x02, 0x18, 0x08 });
+        using var br = new BinaryReader(ms);
+        var timeSignatureEvent = new TimeSignatureEvent(br, 4);
 
-            Assert.That(timeSignatureEvent.Numerator, Is.EqualTo(4));
-            Assert.That(timeSignatureEvent.Denominator, Is.EqualTo(2));
-            Assert.That(timeSignatureEvent.TicksInMetronomeClick, Is.EqualTo(24));
-            Assert.That(timeSignatureEvent.No32ndNotesInQuarterNote, Is.EqualTo(8));
-        }
+        Assert.That(timeSignatureEvent.Numerator, Is.EqualTo(4));
+        Assert.That(timeSignatureEvent.Denominator, Is.EqualTo(2));
+        Assert.That(timeSignatureEvent.TicksInMetronomeClick, Is.EqualTo(24));
+        Assert.That(timeSignatureEvent.No32ndNotesInQuarterNote, Is.EqualTo(8));
     }
 
     [Test]
     public void ReadNextEventParsesTimeSignatureMetaEvent()
     {
         var bytes = new byte[] { 0x00, 0xFF, 0x58, 0x04, 0x03, 0x02, 0x18, 0x08 };
-        using (var ms = new MemoryStream(bytes))
-        using (var br = new BinaryReader(ms))
-        {
-            var midiEvent = MidiEvent.ReadNextEvent(br, null);
+        using var ms = new MemoryStream(bytes);
+        using var br = new BinaryReader(ms);
+        var midiEvent = MidiEvent.ReadNextEvent(br, null);
 
-            Assert.That(midiEvent, Is.TypeOf<TimeSignatureEvent>());
-            var timeSignatureEvent = (TimeSignatureEvent)midiEvent;
-            Assert.That(timeSignatureEvent.DeltaTime, Is.EqualTo(0));
-            Assert.That(timeSignatureEvent.Channel, Is.EqualTo(1));
-            Assert.That(timeSignatureEvent.CommandCode, Is.EqualTo(MidiCommandCode.MetaEvent));
-            Assert.That(timeSignatureEvent.MetaEventType, Is.EqualTo(MetaEventType.TimeSignature));
-            Assert.That(timeSignatureEvent.Numerator, Is.EqualTo(3));
-            Assert.That(timeSignatureEvent.Denominator, Is.EqualTo(2));
-            Assert.That(timeSignatureEvent.TicksInMetronomeClick, Is.EqualTo(24));
-            Assert.That(timeSignatureEvent.No32ndNotesInQuarterNote, Is.EqualTo(8));
-        }
+        Assert.That(midiEvent, Is.TypeOf<TimeSignatureEvent>());
+        var timeSignatureEvent = (TimeSignatureEvent)midiEvent;
+        Assert.That(timeSignatureEvent.DeltaTime, Is.EqualTo(0));
+        Assert.That(timeSignatureEvent.Channel, Is.EqualTo(1));
+        Assert.That(timeSignatureEvent.CommandCode, Is.EqualTo(MidiCommandCode.MetaEvent));
+        Assert.That(timeSignatureEvent.MetaEventType, Is.EqualTo(MetaEventType.TimeSignature));
+        Assert.That(timeSignatureEvent.Numerator, Is.EqualTo(3));
+        Assert.That(timeSignatureEvent.Denominator, Is.EqualTo(2));
+        Assert.That(timeSignatureEvent.TicksInMetronomeClick, Is.EqualTo(24));
+        Assert.That(timeSignatureEvent.No32ndNotesInQuarterNote, Is.EqualTo(8));
     }
 
     [TestCase(0, "3/1")]
@@ -125,15 +119,13 @@ public class TimeSignatureEventTests
     {
         var timeSignatureEvent = new TimeSignatureEvent(10, 4, 2, 24, 8);
 
-        using (var ms = new MemoryStream())
-        using (var writer = new BinaryWriter(ms))
-        {
-            long absoluteTime = 0;
-            timeSignatureEvent.Export(ref absoluteTime, writer);
+        using var ms = new MemoryStream();
+        using var writer = new BinaryWriter(ms);
+        long absoluteTime = 0;
+        timeSignatureEvent.Export(ref absoluteTime, writer);
 
-            Assert.That(absoluteTime, Is.EqualTo(10));
-            Assert.That(ms.ToArray(), Is.EqualTo(new byte[] { 0x0A, 0xFF, 0x58, 0x04, 0x04, 0x02, 0x18, 0x08 }));
-        }
+        Assert.That(absoluteTime, Is.EqualTo(10));
+        Assert.That(ms.ToArray(), Is.EqualTo(new byte[] { 0x0A, 0xFF, 0x58, 0x04, 0x04, 0x02, 0x18, 0x08 }));
     }
 
     [Test]

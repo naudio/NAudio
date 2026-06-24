@@ -349,15 +349,13 @@ public partial class MainForm : Form
                 try
                 {
 
-                    using (StreamWriter writer = new StreamWriter(saveFileDialog.FileName))
+                    using StreamWriter writer = new StreamWriter(saveFileDialog.FileName);
+                    string text = progressLog1.Text;
+                    if (!text.Contains("\r"))
                     {
-                        string text = progressLog1.Text;
-                        if (!text.Contains("\r"))
-                        {
-                            text = text.Replace("\n", "\r\n");
-                        }
-                        writer.Write(text);
+                        text = text.Replace("\n", "\r\n");
                     }
+                    writer.Write(text);
                 }
                 catch (Exception e)
                 {

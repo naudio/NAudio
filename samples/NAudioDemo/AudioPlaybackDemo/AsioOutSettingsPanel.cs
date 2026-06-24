@@ -30,10 +30,8 @@ public partial class AsioOutSettingsPanel : UserControl
     {
         try
         {
-            using (var asio = new AsioOut(SelectedDeviceName))
-            {
-                asio.ShowControlPanel();
-            }
+            using var asio = new AsioOut(SelectedDeviceName);
+            asio.ShowControlPanel();
         }
         catch (Exception e)
         {

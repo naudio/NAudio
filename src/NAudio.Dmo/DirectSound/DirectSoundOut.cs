@@ -42,7 +42,7 @@ public partial class DirectSoundOut : IWavePlayer
     private long bytesPlayed;
 
     // Used purely for locking
-    private Object m_LockObject = new Object();
+    private Object m_LockObject = new();
 
     /// <summary>
     /// Gets the DirectSound output devices in the system
@@ -761,22 +761,22 @@ public partial class DirectSoundOut : IWavePlayer
     /// <summary>
     /// DirectSound default playback device GUID
     /// </summary>
-    public static readonly Guid DSDEVID_DefaultPlayback = new Guid("DEF00000-9C6D-47ED-AAF1-4DDA8F2B5C03");
+    public static readonly Guid DSDEVID_DefaultPlayback = new("DEF00000-9C6D-47ED-AAF1-4DDA8F2B5C03");
 
     /// <summary>
     /// DirectSound default capture device GUID
     /// </summary>
-    public static readonly Guid DSDEVID_DefaultCapture = new Guid("DEF00001-9C6D-47ED-AAF1-4DDA8F2B5C03");
+    public static readonly Guid DSDEVID_DefaultCapture = new("DEF00001-9C6D-47ED-AAF1-4DDA8F2B5C03");
 
     /// <summary>
     /// DirectSound default device for voice playback
     /// </summary>
-    public static readonly Guid DSDEVID_DefaultVoicePlayback = new Guid("DEF00002-9C6D-47ED-AAF1-4DDA8F2B5C03");
+    public static readonly Guid DSDEVID_DefaultVoicePlayback = new("DEF00002-9C6D-47ED-AAF1-4DDA8F2B5C03");
 
     /// <summary>
     /// DirectSound default device for voice capture
     /// </summary>
-    public static readonly Guid DSDEVID_DefaultVoiceCapture = new Guid("DEF00003-9C6D-47ED-AAF1-4DDA8F2B5C03");
+    public static readonly Guid DSDEVID_DefaultVoiceCapture = new("DEF00003-9C6D-47ED-AAF1-4DDA8F2B5C03");
 
     /// <summary>
     /// The DirectSoundEnumerate function enumerates the DirectSound drivers installed in the system.

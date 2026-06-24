@@ -29,7 +29,7 @@ interface IDirectSoundFxParamEq
 /// </summary>
 public class DmoParamEq : IDmoEffector<DmoParamEq.Params>
 {
-    private static readonly Guid Id_ParamEq = new Guid("120CED89-3BF4-4173-A132-3CB406CF3231");
+    private static readonly Guid Id_ParamEq = new("120CED89-3BF4-4173-A132-3CB406CF3231");
 
     /// <summary>
     /// DMO ParamEq Params

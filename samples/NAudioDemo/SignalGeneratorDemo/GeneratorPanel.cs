@@ -330,15 +330,11 @@ public partial class GeneratorPanel : UserControl
     // Clean DriverOut
     private void Cleanup()
     {
-        if (driverOut != null)
-            driverOut.Stop();
+        driverOut?.Stop();
 
         wg = null;
 
-        if (driverOut != null)
-        {
-            driverOut.Dispose();
-        }
+        driverOut?.Dispose();
     }
 
     private void OnButtonSaveClick(object sender, EventArgs e)

@@ -21,7 +21,7 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
     private readonly string mmcssTaskName;
     private readonly bool preferLowLatency;
     private readonly SynchronizationContext syncContext;
-    private readonly EventWaitHandle stopEvent = new EventWaitHandle(false, EventResetMode.ManualReset);
+    private readonly EventWaitHandle stopEvent = new(false, EventResetMode.ManualReset);
 
     private AudioClient audioClient;
     private AudioRenderClient renderClient;

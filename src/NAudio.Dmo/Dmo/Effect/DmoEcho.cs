@@ -31,7 +31,7 @@ interface IDirectSoundFXEcho
 /// </summary>
 public class DmoEcho : IDmoEffector<DmoEcho.Params>
 {
-    private static readonly Guid Id_Echo = new Guid("EF3E932C-D40B-4F51-8CCF-3F98F1B29D5D");
+    private static readonly Guid Id_Echo = new("EF3E932C-D40B-4F51-8CCF-3F98F1B29D5D");
 
     /// <summary>
     /// DMO Echo Params

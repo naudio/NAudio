@@ -83,14 +83,12 @@ public class MediaFoundationEncoderTests
             var mediaType = MediaFoundationEncoder.SelectMediaType(AudioSubtypes.MFAudioFormat_MP3, converter.WaveFormat, 0);
             if (mediaType == null) throw new InvalidOperationException("No suitable MP3 encoders available");
             Console.WriteLine($"MediaType = {(mediaType.AverageBytesPerSecond * 8) / 1000}kbps, Sample rate {mediaType.SampleRate}, Channels: {mediaType.ChannelCount}");
-            using (var encoder = new MediaFoundationEncoder(mediaType))
-            {
-                // do a whole minute at a time - makes it faster on long files
-                // n.b. tried 10 minutes, didn't result in any noticable improvement
-                // limitation is now mostly the ACM GSM610 decoder
-                encoder.DefaultReadBufferSize = converter.WaveFormat.AverageBytesPerSecond * 60;
-                encoder.Encode(fileOutPath, converter);
-            }
+            using var encoder = new MediaFoundationEncoder(mediaType);
+            // do a whole minute at a time - makes it faster on long files
+            // n.b. tried 10 minutes, didn't result in any noticable improvement
+            // limitation is now mostly the ACM GSM610 decoder
+            encoder.DefaultReadBufferSize = converter.WaveFormat.AverageBytesPerSecond * 60;
+            encoder.Encode(fileOutPath, converter);
             //MediaFoundationEncoder.EncodeToMp3(converter, fileOutPath, 2250*8);
         }
         Console.WriteLine($"Converted in {sw.Elapsed}");

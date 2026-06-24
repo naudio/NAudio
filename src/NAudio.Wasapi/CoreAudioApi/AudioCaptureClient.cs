@@ -155,11 +155,8 @@ public ref struct CaptureBufferLease
     /// </summary>
     public void Release()
     {
-        if (owner != null)
-        {
-            owner.ReleaseBuffer(frameCount);
-            owner = null;
-        }
+        owner?.ReleaseBuffer(frameCount);
+        owner = null;
     }
 
     /// <summary>

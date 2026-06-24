@@ -38,17 +38,20 @@ public sealed class EqualizerBand
     /// Creates a peaking band.
     /// </summary>
     public static EqualizerBand Peaking(float frequency, float q, float gainDb)
-        => new EqualizerBand { Type = EqualizerBandType.Peaking, Frequency = frequency, Q = q, GainDb = gainDb };
+        => new()
+        { Type = EqualizerBandType.Peaking, Frequency = frequency, Q = q, GainDb = gainDb };
 
     /// <summary>
     /// Creates a low-shelf band.
     /// </summary>
     public static EqualizerBand LowShelf(float frequency, float gainDb, float shelfSlope = 1f)
-        => new EqualizerBand { Type = EqualizerBandType.LowShelf, Frequency = frequency, GainDb = gainDb, ShelfSlope = shelfSlope };
+        => new()
+        { Type = EqualizerBandType.LowShelf, Frequency = frequency, GainDb = gainDb, ShelfSlope = shelfSlope };
 
     /// <summary>
     /// Creates a high-shelf band.
     /// </summary>
     public static EqualizerBand HighShelf(float frequency, float gainDb, float shelfSlope = 1f)
-        => new EqualizerBand { Type = EqualizerBandType.HighShelf, Frequency = frequency, GainDb = gainDb, ShelfSlope = shelfSlope };
+        => new()
+        { Type = EqualizerBandType.HighShelf, Frequency = frequency, GainDb = gainDb, ShelfSlope = shelfSlope };
 }

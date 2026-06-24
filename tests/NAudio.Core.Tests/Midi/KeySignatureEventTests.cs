@@ -38,65 +38,55 @@ public class KeySignatureEventTests
     [Test]
     public void BinaryReaderConstructorRejectsInvalidLength()
     {
-        using (var ms = new MemoryStream(new byte[] { 0x00, 0x00 }))
-        using (var br = new BinaryReader(ms))
-        {
-            Assert.Throws<FormatException>(() => new KeySignatureEvent(br, 1));
-        }
+        using var ms = new MemoryStream(new byte[] { 0x00, 0x00 });
+        using var br = new BinaryReader(ms);
+        Assert.Throws<FormatException>(() => new KeySignatureEvent(br, 1));
     }
 
     [Test]
     public void BinaryReaderConstructorRejectsSharpsFlatsOutOfRange()
     {
-        using (var ms = new MemoryStream(new byte[] { 0x08, 0x00 }))
-        using (var br = new BinaryReader(ms))
-        {
-            Assert.Throws<FormatException>(() => new KeySignatureEvent(br, 2));
-        }
+        using var ms = new MemoryStream(new byte[] { 0x08, 0x00 });
+        using var br = new BinaryReader(ms);
+        Assert.Throws<FormatException>(() => new KeySignatureEvent(br, 2));
     }
 
     [Test]
     public void BinaryReaderConstructorRejectsMajorMinorOutOfRange()
     {
-        using (var ms = new MemoryStream(new byte[] { 0x00, 0x02 }))
-        using (var br = new BinaryReader(ms))
-        {
-            Assert.Throws<FormatException>(() => new KeySignatureEvent(br, 2));
-        }
+        using var ms = new MemoryStream(new byte[] { 0x00, 0x02 });
+        using var br = new BinaryReader(ms);
+        Assert.Throws<FormatException>(() => new KeySignatureEvent(br, 2));
     }
 
     [Test]
     public void ReadNextEventParsesKeySignatureMetaEvent()
     {
         var bytes = new byte[] { 0x00, 0xFF, 0x59, 0x02, 0x00, 0x00 };
-        using (var ms = new MemoryStream(bytes))
-        using (var br = new BinaryReader(ms))
-        {
-            var midiEvent = MidiEvent.ReadNextEvent(br, null);
+        using var ms = new MemoryStream(bytes);
+        using var br = new BinaryReader(ms);
+        var midiEvent = MidiEvent.ReadNextEvent(br, null);
 
-            Assert.That(midiEvent, Is.TypeOf<KeySignatureEvent>());
-            var keySignatureEvent = (KeySignatureEvent)midiEvent;
-            Assert.That(keySignatureEvent.DeltaTime, Is.EqualTo(0));
-            Assert.That(keySignatureEvent.Channel, Is.EqualTo(1));
-            Assert.That(keySignatureEvent.CommandCode, Is.EqualTo(MidiCommandCode.MetaEvent));
-            Assert.That(keySignatureEvent.MetaEventType, Is.EqualTo(MetaEventType.KeySignature));
-            Assert.That(keySignatureEvent.SharpsFlats, Is.EqualTo(0));
-            Assert.That(keySignatureEvent.MajorMinor, Is.EqualTo(0));
-        }
+        Assert.That(midiEvent, Is.TypeOf<KeySignatureEvent>());
+        var keySignatureEvent = (KeySignatureEvent)midiEvent;
+        Assert.That(keySignatureEvent.DeltaTime, Is.EqualTo(0));
+        Assert.That(keySignatureEvent.Channel, Is.EqualTo(1));
+        Assert.That(keySignatureEvent.CommandCode, Is.EqualTo(MidiCommandCode.MetaEvent));
+        Assert.That(keySignatureEvent.MetaEventType, Is.EqualTo(MetaEventType.KeySignature));
+        Assert.That(keySignatureEvent.SharpsFlats, Is.EqualTo(0));
+        Assert.That(keySignatureEvent.MajorMinor, Is.EqualTo(0));
     }
 
     [Test]
     public void SharpsFlatsInterpretsSignedValueFromStream()
     {
         var bytes = new byte[] { 0x00, 0xFF, 0x59, 0x02, 0xF9, 0x01 };
-        using (var ms = new MemoryStream(bytes))
-        using (var br = new BinaryReader(ms))
-        {
-            var keySignatureEvent = (KeySignatureEvent)MidiEvent.ReadNextEvent(br, null);
+        using var ms = new MemoryStream(bytes);
+        using var br = new BinaryReader(ms);
+        var keySignatureEvent = (KeySignatureEvent)MidiEvent.ReadNextEvent(br, null);
 
-            Assert.That(keySignatureEvent.SharpsFlats, Is.EqualTo(-7));
-            Assert.That(keySignatureEvent.MajorMinor, Is.EqualTo(1));
-        }
+        Assert.That(keySignatureEvent.SharpsFlats, Is.EqualTo(-7));
+        Assert.That(keySignatureEvent.MajorMinor, Is.EqualTo(1));
     }
 
     [TestCase(-2, 0, "Bb major")]
@@ -114,15 +104,13 @@ public class KeySignatureEventTests
     {
         var keySignatureEvent = new KeySignatureEvent(-1, 1, 10);
 
-        using (var ms = new MemoryStream())
-        using (var writer = new BinaryWriter(ms))
-        {
-            long absoluteTime = 0;
-            keySignatureEvent.Export(ref absoluteTime, writer);
+        using var ms = new MemoryStream();
+        using var writer = new BinaryWriter(ms);
+        long absoluteTime = 0;
+        keySignatureEvent.Export(ref absoluteTime, writer);
 
-            Assert.That(absoluteTime, Is.EqualTo(10));
-            Assert.That(ms.ToArray(), Is.EqualTo(new byte[] { 0x0A, 0xFF, 0x59, 0x02, 0xFF, 0x01 }));
-        }
+        Assert.That(absoluteTime, Is.EqualTo(10));
+        Assert.That(ms.ToArray(), Is.EqualTo(new byte[] { 0x0A, 0xFF, 0x59, 0x02, 0xFF, 0x01 }));
     }
 
     [Test]

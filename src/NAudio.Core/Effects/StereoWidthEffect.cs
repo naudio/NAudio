@@ -21,7 +21,7 @@ public sealed class StereoWidthEffect : AudioEffect, IParameterized
         EffectParameter.Continuous("Width", "", 0f, 2f, () => Width, v => Width = v)
     };
 
-    private readonly ParameterSmoother width = new ParameterSmoother();
+    private readonly ParameterSmoother width = new();
     private float widthValue = 1f;
 
     /// <summary>

@@ -107,11 +107,8 @@ public class AsioOut : IWavePlayer
     public void Dispose()
     {
         GC.SuppressFinalize(this);
-        if (device != null)
-        {
-            device.Dispose();
-            device = null;
-        }
+        device?.Dispose();
+        device = null;
     }
 
     /// <summary>

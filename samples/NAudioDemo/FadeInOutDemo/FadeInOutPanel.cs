@@ -106,16 +106,10 @@ public partial class FadeInOutPanel : UserControl
 
     private void CleanUp()
     {
-        if (this.file != null)
-        {
-            this.file.Dispose();
-            this.file = null;
-        }
-        if (this.wavePlayer != null)
-        {
-            this.wavePlayer.Dispose();
-            this.wavePlayer = null;
-        }
+        this.file?.Dispose();
+        this.file = null;
+        this.wavePlayer?.Dispose();
+        this.wavePlayer = null;
         this.fadeInOut = null;
     }
 
@@ -147,17 +141,11 @@ public partial class FadeInOutPanel : UserControl
 
     private void buttonBeginFadeIn_Click(object sender, EventArgs e)
     {
-        if (this.fadeInOut != null)
-        {
-            this.fadeInOut.BeginFadeIn(GetFadeDuration());
-        }
+        this.fadeInOut?.BeginFadeIn(GetFadeDuration());
     }
 
     private void buttonBeginFadeOut_Click(object sender, EventArgs e)
     {
-        if (this.fadeInOut != null)
-        {
-            this.fadeInOut.BeginFadeOut(GetFadeDuration());
-        }
+        this.fadeInOut?.BeginFadeOut(GetFadeDuration());
     }
 }

@@ -33,7 +33,7 @@ interface IDirectSoundFXFlanger
 /// </summary>
 public class DmoFlanger : IDmoEffector<DmoFlanger.Params>
 {
-    private static readonly Guid Id_Flanger = new Guid("EFCA3D92-DFD8-4672-A603-7420894BAD98");
+    private static readonly Guid Id_Flanger = new("EFCA3D92-DFD8-4672-A603-7420894BAD98");
 
     /// <summary>
     /// DMO Flanger Params

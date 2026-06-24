@@ -21,7 +21,7 @@ public class WaveChannel32 : WaveStream, ISampleNotifier
     private volatile float pan;
     private long position;
     private readonly ISampleChunkConverter sampleProvider;
-    private readonly object lockObject = new object();
+    private readonly object lockObject = new();
 
     /// <summary>
     /// Creates a new WaveChannel32
@@ -240,11 +240,8 @@ public class WaveChannel32 : WaveStream, ISampleNotifier
     {
         if (disposing)
         {
-            if (sourceStream != null)
-            {
-                sourceStream.Dispose();
-                sourceStream = null;
-            }
+            sourceStream?.Dispose();
+            sourceStream = null;
         }
         else
         {
@@ -259,7 +256,7 @@ public class WaveChannel32 : WaveStream, ISampleNotifier
     public event EventHandler<SampleEventArgs> Sample;
 
     // reuse the same object every time to avoid making lots of work for the garbage collector
-    private SampleEventArgs sampleEventArgs = new SampleEventArgs(0, 0);
+    private SampleEventArgs sampleEventArgs = new(0, 0);
 
     /// <summary>
     /// Raise the sample event (no check for null because it has already been done)

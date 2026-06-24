@@ -27,7 +27,7 @@ namespace NAudio.Dmo.Effect;
 internal static class DmoEffectActivation
 {
     // IID_IMediaObject — mediaobj.h
-    private static readonly Guid IID_IMediaObject = new Guid("d8ad0f58-5494-4102-97c5-ec798e59bcf4");
+    private static readonly Guid IID_IMediaObject = new("d8ad0f58-5494-4102-97c5-ec798e59bcf4");
 
     public static (MediaObject MediaObject, MediaObjectInPlace MediaObjectInPlace, TFx EffectParams) Activate<TFx>(Guid clsid)
         where TFx : class

@@ -9,7 +9,7 @@ public class NotifyingSampleProvider : ISampleProvider, ISampleNotifier
 {
     private readonly ISampleProvider source;
     // try not to give the garbage collector anything to deal with when playing live audio
-    private readonly SampleEventArgs sampleArgs = new SampleEventArgs(0, 0);
+    private readonly SampleEventArgs sampleArgs = new(0, 0);
     private readonly int channels;
 
     /// <summary>

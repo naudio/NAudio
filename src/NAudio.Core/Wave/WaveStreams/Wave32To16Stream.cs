@@ -16,7 +16,7 @@ public class Wave32To16Stream : WaveStream
     private long position;
     private bool clip;
     private float volume;
-    private readonly object lockObject = new object();
+    private readonly object lockObject = new();
 
     /// <summary>
     /// Reused between <c>Read</c> calls to avoid per-read allocations.
@@ -166,11 +166,8 @@ public class Wave32To16Stream : WaveStream
     {
         if (disposing)
         {
-            if (sourceStream != null)
-            {
-                sourceStream.Dispose();
-                sourceStream = null;
-            }
+            sourceStream?.Dispose();
+            sourceStream = null;
         }
         base.Dispose(disposing);
     }

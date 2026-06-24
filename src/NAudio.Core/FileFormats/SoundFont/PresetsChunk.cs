@@ -9,15 +9,15 @@ namespace NAudio.SoundFont;
 /// </summary>
 public class PresetsChunk
 {
-    private PresetBuilder presetHeaders = new PresetBuilder();
-    private ZoneBuilder presetZones = new ZoneBuilder();
-    private ModulatorBuilder presetZoneModulators = new ModulatorBuilder();
-    private GeneratorBuilder presetZoneGenerators = new GeneratorBuilder();
-    private InstrumentBuilder instruments = new InstrumentBuilder();
-    private ZoneBuilder instrumentZones = new ZoneBuilder();
-    private ModulatorBuilder instrumentZoneModulators = new ModulatorBuilder();
-    private GeneratorBuilder instrumentZoneGenerators = new GeneratorBuilder();
-    private SampleHeaderBuilder sampleHeaders = new SampleHeaderBuilder();
+    private PresetBuilder presetHeaders = new();
+    private ZoneBuilder presetZones = new();
+    private ModulatorBuilder presetZoneModulators = new();
+    private GeneratorBuilder presetZoneGenerators = new();
+    private InstrumentBuilder instruments = new();
+    private ZoneBuilder instrumentZones = new();
+    private ModulatorBuilder instrumentZoneModulators = new();
+    private GeneratorBuilder instrumentZoneGenerators = new();
+    private SampleHeaderBuilder sampleHeaders = new();
 
     internal PresetsChunk(RiffChunk chunk)
     {

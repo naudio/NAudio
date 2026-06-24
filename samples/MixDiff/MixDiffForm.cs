@@ -15,8 +15,8 @@ public partial class MixDiffForm : Form
 {
     private PlaybackStatus playbackStatus;
     private IWavePlayer wavePlayer;
-    readonly Font BigFont = new Font("Verdana", 36, FontStyle.Bold);
-    readonly Font EmptyFont = new Font("Verdana", 16, FontStyle.Bold);
+    readonly Font BigFont = new("Verdana", 36, FontStyle.Bold);
+    readonly Font EmptyFont = new("Verdana", 16, FontStyle.Bold);
     private WaveMixerStream32 mixer;
     private int skipSeconds;
     private Button selectedButton;
@@ -246,16 +246,11 @@ public partial class MixDiffForm : Form
         {
             Stop();
         }
-        if (wavePlayer != null)
-        {
-            wavePlayer.Dispose();
-            wavePlayer = null;
-        }
-        if (mixer != null)
-        {
-            mixer.Dispose();
-            mixer = null;
-        }
+
+        wavePlayer?.Dispose();
+        wavePlayer = null;
+        mixer?.Dispose();
+        mixer = null;
     }
 
     private void toolStripButtonStop_Click(object sender, EventArgs e)
@@ -382,18 +377,16 @@ public partial class MixDiffForm : Form
         settings.Indent = true;
         settings.NewLineOnAttributes = true;
 
-        using (XmlWriter writer = XmlWriter.Create(fileName, settings))
+        using XmlWriter writer = XmlWriter.Create(fileName, settings);
+        writer.WriteStartElement("MixDiff");
+        writer.WriteStartElement("Settings");
+        writer.WriteAttributeString("CompareMode", compareMode.ToString());
+        writer.WriteEndElement();
+        foreach (Button button in fileButtons)
         {
-            writer.WriteStartElement("MixDiff");
-            writer.WriteStartElement("Settings");
-            writer.WriteAttributeString("CompareMode", compareMode.ToString());
-            writer.WriteEndElement();
-            foreach (Button button in fileButtons)
-            {
-                WriteMixdownInfo(writer, button.Tag as MixdownInfo);
-            }
-            writer.WriteEndElement();
+            WriteMixdownInfo(writer, button.Tag as MixdownInfo);
         }
+        writer.WriteEndElement();
     }
 
     private void LoadComparison(string fileName)

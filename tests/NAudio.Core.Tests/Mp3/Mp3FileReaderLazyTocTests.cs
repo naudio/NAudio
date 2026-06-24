@@ -23,7 +23,7 @@ public class Mp3FileReaderLazyTocTests
     }
 
     private static Mp3FileReaderBase OpenFromBytes(byte[] mp3) =>
-        new Mp3FileReaderBase(new MemoryStream(mp3), fmt => new FakeMp3FrameDecompressor(fmt));
+        new(new MemoryStream(mp3), fmt => new FakeMp3FrameDecompressor(fmt));
 
     private static long ExactLengthOf(byte[] mp3)
     {

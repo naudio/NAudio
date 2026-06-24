@@ -398,7 +398,7 @@ public class MediaObject : IDisposable
     }
 
     // IID_IMediaBuffer (mediaobj.h)
-    private static readonly Guid IID_IMediaBuffer = new Guid("59eff8b9-938c-4a26-82f2-95cb84cdc837");
+    private static readonly Guid IID_IMediaBuffer = new("59eff8b9-938c-4a26-82f2-95cb84cdc837");
 
     /// <summary>
     /// Process Output

@@ -73,31 +73,29 @@ public partial class AcmPanel : UserControl
         string inputFileName = GetInputFileName("Select PCM WAV File to Encode");
         if (inputFileName == null)
             return;
-        using (var reader = new WaveFileReader(inputFileName))
+        using var reader = new WaveFileReader(inputFileName);
+        if (reader.WaveFormat.Encoding != WaveFormatEncoding.Pcm)
         {
-            if (reader.WaveFormat.Encoding != WaveFormatEncoding.Pcm)
-            {
-                MessageBox.Show("Please select a PCM WAV file to encode");
-                return;
-            }
-            WaveFormat targetFormat = GetTargetFormat(reader.WaveFormat);
-            if (targetFormat == null)
-            {
-                return;
-            }
-            string outputFileName = GetOutputFileName("Select Ouput File Name");
-            if (outputFileName == null)
-            {
-                return;
-            }
-            using (WaveStream convertedStream = new WaveFormatConversionStream(targetFormat, reader))
-            {
-                WaveFileWriter.CreateWaveFile(outputFileName, convertedStream);
-            }
-            if (checkBoxAutoLaunchConvertedFile.Checked)
-            {
-                ProcessHelper.ShellExecute(outputFileName);
-            }
+            MessageBox.Show("Please select a PCM WAV file to encode");
+            return;
+        }
+        WaveFormat targetFormat = GetTargetFormat(reader.WaveFormat);
+        if (targetFormat == null)
+        {
+            return;
+        }
+        string outputFileName = GetOutputFileName("Select Ouput File Name");
+        if (outputFileName == null)
+        {
+            return;
+        }
+        using (WaveStream convertedStream = new WaveFormatConversionStream(targetFormat, reader))
+        {
+            WaveFileWriter.CreateWaveFile(outputFileName, convertedStream);
+        }
+        if (checkBoxAutoLaunchConvertedFile.Checked)
+        {
+            ProcessHelper.ShellExecute(outputFileName);
         }
     }
     private void DecodeFile()
@@ -105,26 +103,24 @@ public partial class AcmPanel : UserControl
         string inputFileName = GetInputFileName("Select a compressed WAV File to decode");
         if (inputFileName == null)
             return;
-        using (var reader = new WaveFileReader(inputFileName))
+        using var reader = new WaveFileReader(inputFileName);
+        if (reader.WaveFormat.Encoding == WaveFormatEncoding.Pcm)
         {
-            if (reader.WaveFormat.Encoding == WaveFormatEncoding.Pcm)
-            {
-                MessageBox.Show("Please select a compressed WAV file to decode");
-                return;
-            }
-            string outputFileName = GetOutputFileName("Select Output File Name");
-            if (outputFileName == null)
-            {
-                return;
-            }
-            using (var convertedStream = WaveFormatConversionStream.CreatePcmStream(reader))
-            {
-                WaveFileWriter.CreateWaveFile(outputFileName, convertedStream);
-            }
-            if (checkBoxAutoLaunchConvertedFile.Checked)
-            {
-                ProcessHelper.ShellExecute(outputFileName);
-            }
+            MessageBox.Show("Please select a compressed WAV file to decode");
+            return;
+        }
+        string outputFileName = GetOutputFileName("Select Output File Name");
+        if (outputFileName == null)
+        {
+            return;
+        }
+        using (var convertedStream = WaveFormatConversionStream.CreatePcmStream(reader))
+        {
+            WaveFileWriter.CreateWaveFile(outputFileName, convertedStream);
+        }
+        if (checkBoxAutoLaunchConvertedFile.Checked)
+        {
+            ProcessHelper.ShellExecute(outputFileName);
         }
     }
 

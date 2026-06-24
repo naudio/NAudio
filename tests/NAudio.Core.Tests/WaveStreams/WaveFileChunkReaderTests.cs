@@ -15,7 +15,7 @@ namespace NAudio.Core.Tests.WaveStreams;
 [Category("UnitTest")]
 public class WaveFileChunkReaderTests
 {
-    private static WaveFormat DefaultFormat => new WaveFormat(8000, 16, 1);
+    private static WaveFormat DefaultFormat => new(8000, 16, 1);
 
     [Test]
     public void OddLengthChunkFollowedByNonUtf8ByteDoesNotThrow()
@@ -336,5 +336,5 @@ public class WaveFileChunkReaderTests
     }
 
     private static WaveFileReader OpenReader(byte[] bytes)
-        => new WaveFileReader(new MemoryStream(bytes));
+        => new(new MemoryStream(bytes));
 }

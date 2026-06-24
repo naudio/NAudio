@@ -10,9 +10,9 @@ namespace NAudio.Dmo;
 public class DmoResampler : IDisposable
 {
     // CLSID_CResamplerMediaObject — wmcodecdsp.h
-    private static readonly Guid ResamplerClsid = new Guid("f447b69e-1884-4a7e-8055-346f74d6edb3");
+    private static readonly Guid ResamplerClsid = new("f447b69e-1884-4a7e-8055-346f74d6edb3");
     // IID_IMediaObject — mediaobj.h
-    private static readonly Guid IID_IMediaObject = new Guid("d8ad0f58-5494-4102-97c5-ec798e59bcf4");
+    private static readonly Guid IID_IMediaObject = new("d8ad0f58-5494-4102-97c5-ec798e59bcf4");
 
     MediaObject mediaObject;
 
@@ -44,11 +44,8 @@ public class DmoResampler : IDisposable
     public void Dispose()
     {
         GC.SuppressFinalize(this);
-        if (mediaObject != null)
-        {
-            mediaObject.Dispose();
-            mediaObject = null;
-        }
+        mediaObject?.Dispose();
+        mediaObject = null;
     }
 
     #endregion

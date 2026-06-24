@@ -21,7 +21,7 @@ namespace NAudio.Effects;
 public sealed class EffectChain : ISampleProvider
 {
     private readonly ISampleProvider source;
-    private readonly object gate = new object(); // serializes edits; never held during Read
+    private readonly object gate = new(); // serializes edits; never held during Read
     private volatile IAudioEffect[] effects = Array.Empty<IAudioEffect>();
 
     /// <summary>

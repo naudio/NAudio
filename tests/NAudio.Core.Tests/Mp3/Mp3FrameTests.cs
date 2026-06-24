@@ -84,59 +84,51 @@ public class Mp3FrameTests
     [Test]
     public void ParsesExpectedPropertiesFromValidFrame()
     {
-        using (var ms = new MemoryStream(ConstructConsecutiveValidMp3Frames(3)))
-        {
-            Mp3Frame frame = Mp3Frame.LoadFromStream(ms);
-            Assert.That(frame, Is.Not.Null);
-            Assert.That(frame.MpegVersion, Is.EqualTo(MpegVersion.Version2));
-            Assert.That(frame.MpegLayer, Is.EqualTo(MpegLayer.Layer3));
-            Assert.That(frame.CrcPresent, Is.False);
-            Assert.That(frame.BitRateIndex, Is.EqualTo(BitRateIndex));
-            Assert.That(frame.BitRate, Is.EqualTo(8000));
-            Assert.That(frame.SampleRate, Is.EqualTo(22050));
-            Assert.That(frame.SampleCount, Is.EqualTo(576));
-            Assert.That(frame.FrameLength, Is.EqualTo(ValidFrameLength));
-            Assert.That(frame.ChannelMode, Is.EqualTo(ChannelMode.Stereo));
-            Assert.That(frame.ChannelExtension, Is.EqualTo(0));
-            Assert.That(frame.Copyright, Is.False);
-            Assert.That(frame.FileOffset, Is.EqualTo(0));
-            Assert.That(frame.RawData, Is.Not.Null);
-            Assert.That(frame.RawData.Length, Is.EqualTo(ValidFrameLength));
-            Assert.That(frame.RawData[0], Is.EqualTo(validMp3FrameHeader[0]));
-            Assert.That(frame.RawData[1], Is.EqualTo(validMp3FrameHeader[1]));
-            Assert.That(frame.RawData[2], Is.EqualTo(validMp3FrameHeader[2]));
-            Assert.That(frame.RawData[3], Is.EqualTo(validMp3FrameHeader[3]));
-        }
+        using var ms = new MemoryStream(ConstructConsecutiveValidMp3Frames(3));
+        Mp3Frame frame = Mp3Frame.LoadFromStream(ms);
+        Assert.That(frame, Is.Not.Null);
+        Assert.That(frame.MpegVersion, Is.EqualTo(MpegVersion.Version2));
+        Assert.That(frame.MpegLayer, Is.EqualTo(MpegLayer.Layer3));
+        Assert.That(frame.CrcPresent, Is.False);
+        Assert.That(frame.BitRateIndex, Is.EqualTo(BitRateIndex));
+        Assert.That(frame.BitRate, Is.EqualTo(8000));
+        Assert.That(frame.SampleRate, Is.EqualTo(22050));
+        Assert.That(frame.SampleCount, Is.EqualTo(576));
+        Assert.That(frame.FrameLength, Is.EqualTo(ValidFrameLength));
+        Assert.That(frame.ChannelMode, Is.EqualTo(ChannelMode.Stereo));
+        Assert.That(frame.ChannelExtension, Is.EqualTo(0));
+        Assert.That(frame.Copyright, Is.False);
+        Assert.That(frame.FileOffset, Is.EqualTo(0));
+        Assert.That(frame.RawData, Is.Not.Null);
+        Assert.That(frame.RawData.Length, Is.EqualTo(ValidFrameLength));
+        Assert.That(frame.RawData[0], Is.EqualTo(validMp3FrameHeader[0]));
+        Assert.That(frame.RawData[1], Is.EqualTo(validMp3FrameHeader[1]));
+        Assert.That(frame.RawData[2], Is.EqualTo(validMp3FrameHeader[2]));
+        Assert.That(frame.RawData[3], Is.EqualTo(validMp3FrameHeader[3]));
     }
 
     [Test]
     public void ReadDataFalseSkipsBodyAndLeavesRawDataNull()
     {
-        using (var ms = new MemoryStream(ConstructConsecutiveValidMp3Frames(1)))
-        {
-            Mp3Frame frame = Mp3Frame.LoadFromStream(ms, false);
-            Assert.That(frame, Is.Not.Null);
-            Assert.That(frame.RawData, Is.Null);
-            Assert.That(ms.Position, Is.EqualTo(frame.FileOffset + frame.FrameLength));
-        }
+        using var ms = new MemoryStream(ConstructConsecutiveValidMp3Frames(1));
+        Mp3Frame frame = Mp3Frame.LoadFromStream(ms, false);
+        Assert.That(frame, Is.Not.Null);
+        Assert.That(frame.RawData, Is.Null);
+        Assert.That(ms.Position, Is.EqualTo(frame.FileOffset + frame.FrameLength));
     }
 
     [Test]
     public void ReadDataFalseOnNonSeekableStreamThrows()
     {
-        using (var stream = new NonSeekableReadStream(ConstructConsecutiveValidMp3Frames(3)))
-        {
-            Assert.Throws<NotSupportedException>(() => Mp3Frame.LoadFromStream(stream, false));
-        }
+        using var stream = new NonSeekableReadStream(ConstructConsecutiveValidMp3Frames(3));
+        Assert.Throws<NotSupportedException>(() => Mp3Frame.LoadFromStream(stream, false));
     }
 
     [Test]
     public void TruncatedFrameThrowsEndOfStreamException()
     {
-        using (var ms = new MemoryStream(validMp3FrameHeader))
-        {
-            Assert.Throws<EndOfStreamException>(() => Mp3Frame.LoadFromStream(ms));
-        }
+        using var ms = new MemoryStream(validMp3FrameHeader);
+        Assert.Throws<EndOfStreamException>(() => Mp3Frame.LoadFromStream(ms));
     }
 
     [TestCase(0)]
@@ -155,73 +147,59 @@ public class Mp3FrameTests
     public void RejectsFrameWithReservedMpegVersion()
     {
         byte[] header = ConstructMp3Header(MpegVersion.Reserved, MpegLayer.Layer3, 1, 0, false, ChannelMode.Stereo, 0, 0);
-        using (var ms = new MemoryStream(header))
-        {
-            Assert.That(Mp3Frame.LoadFromStream(ms), Is.Null);
-        }
+        using var ms = new MemoryStream(header);
+        Assert.That(Mp3Frame.LoadFromStream(ms), Is.Null);
     }
 
     [Test]
     public void RejectsFrameWithReservedLayer()
     {
         byte[] header = ConstructMp3Header(MpegVersion.Version2, MpegLayer.Reserved, 1, 0, false, ChannelMode.Stereo, 0, 0);
-        using (var ms = new MemoryStream(header))
-        {
-            Assert.That(Mp3Frame.LoadFromStream(ms), Is.Null);
-        }
+        using var ms = new MemoryStream(header);
+        Assert.That(Mp3Frame.LoadFromStream(ms), Is.Null);
     }
 
     [Test]
     public void RejectsFrameWithInvalidBitRateIndex()
     {
         byte[] header = ConstructMp3Header(MpegVersion.Version2, MpegLayer.Layer3, 15, 0, false, ChannelMode.Stereo, 0, 0);
-        using (var ms = new MemoryStream(header))
-        {
-            Assert.That(Mp3Frame.LoadFromStream(ms), Is.Null);
-        }
+        using var ms = new MemoryStream(header);
+        Assert.That(Mp3Frame.LoadFromStream(ms), Is.Null);
     }
 
     [Test]
     public void RejectsFrameWithReservedSampleRateIndex()
     {
         byte[] header = ConstructMp3Header(MpegVersion.Version2, MpegLayer.Layer3, 1, 3, false, ChannelMode.Stereo, 0, 0);
-        using (var ms = new MemoryStream(header))
-        {
-            Assert.That(Mp3Frame.LoadFromStream(ms), Is.Null);
-        }
+        using var ms = new MemoryStream(header);
+        Assert.That(Mp3Frame.LoadFromStream(ms), Is.Null);
     }
 
     [Test]
     public void RejectsFrameWithInvalidEmphasis()
     {
         byte[] header = ConstructMp3Header(MpegVersion.Version2, MpegLayer.Layer3, 1, 0, false, ChannelMode.Stereo, 0, 2);
-        using (var ms = new MemoryStream(header))
-        {
-            Assert.That(Mp3Frame.LoadFromStream(ms), Is.Null);
-        }
+        using var ms = new MemoryStream(header);
+        Assert.That(Mp3Frame.LoadFromStream(ms), Is.Null);
     }
 
     [Test]
     public void RejectsFrameWithChannelExtensionOutsideJointStereo()
     {
         byte[] header = ConstructMp3Header(MpegVersion.Version2, MpegLayer.Layer3, 1, 0, false, ChannelMode.Stereo, 1, 0);
-        using (var ms = new MemoryStream(header))
-        {
-            Assert.That(Mp3Frame.LoadFromStream(ms), Is.Null);
-        }
+        using var ms = new MemoryStream(header);
+        Assert.That(Mp3Frame.LoadFromStream(ms), Is.Null);
     }
 
     [Test]
     public void AcceptsFrameWithChannelExtensionInJointStereo()
     {
         byte[] header = ConstructMp3Header(MpegVersion.Version2, MpegLayer.Layer3, 1, 0, false, ChannelMode.JointStereo, 2, 0);
-        using (var ms = new MemoryStream(header))
-        {
-            Mp3Frame frame = Mp3Frame.LoadFromStream(ms, false);
-            Assert.That(frame, Is.Not.Null);
-            Assert.That(frame.ChannelMode, Is.EqualTo(ChannelMode.JointStereo));
-            Assert.That(frame.ChannelExtension, Is.EqualTo(2));
-        }
+        using var ms = new MemoryStream(header);
+        Mp3Frame frame = Mp3Frame.LoadFromStream(ms, false);
+        Assert.That(frame, Is.Not.Null);
+        Assert.That(frame.ChannelMode, Is.EqualTo(ChannelMode.JointStereo));
+        Assert.That(frame.ChannelExtension, Is.EqualTo(2));
     }
 
     [TestCase(1)]
@@ -252,12 +230,10 @@ public class Mp3FrameTests
         Array.Copy(fakeArtworkData, 0, data, id3Header.Length, fakeArtworkData.Length);
         Array.Copy(audioFrames, 0, data, id3Header.Length + fakeArtworkData.Length, audioFrames.Length);
 
-        using (var ms = new MemoryStream(data))
-        {
-            Mp3Frame frame = Mp3Frame.LoadFromStream(ms);
-            Assert.That(frame, Is.Not.Null);
-            Assert.That(frame.FileOffset, Is.EqualTo(id3Header.Length + fakeArtworkData.Length));
-        }
+        using var ms = new MemoryStream(data);
+        Mp3Frame frame = Mp3Frame.LoadFromStream(ms);
+        Assert.That(frame, Is.Not.Null);
+        Assert.That(frame.FileOffset, Is.EqualTo(id3Header.Length + fakeArtworkData.Length));
     }
 
     [Test]
@@ -274,12 +250,10 @@ public class Mp3FrameTests
         Array.Copy(id3Footer, 0, data, id3Header.Length + fakeId3Payload.Length, id3Footer.Length);
         Array.Copy(audioFrames, 0, data, id3Header.Length + fakeId3Payload.Length + id3Footer.Length, audioFrames.Length);
 
-        using (var ms = new MemoryStream(data))
-        {
-            Mp3Frame frame = Mp3Frame.LoadFromStream(ms);
-            Assert.That(frame, Is.Not.Null);
-            Assert.That(frame.FileOffset, Is.EqualTo(id3Header.Length + fakeId3Payload.Length + id3Footer.Length));
-        }
+        using var ms = new MemoryStream(data);
+        Mp3Frame frame = Mp3Frame.LoadFromStream(ms);
+        Assert.That(frame, Is.Not.Null);
+        Assert.That(frame.FileOffset, Is.EqualTo(id3Header.Length + fakeId3Payload.Length + id3Footer.Length));
     }
 
     [Test]
@@ -292,12 +266,10 @@ public class Mp3FrameTests
         Array.Copy(invalidId3Header, 0, data, 0, invalidId3Header.Length);
         Array.Copy(audioFrames, 0, data, invalidId3Header.Length, audioFrames.Length);
 
-        using (var ms = new MemoryStream(data))
-        {
-            Mp3Frame frame = Mp3Frame.LoadFromStream(ms);
-            Assert.That(frame, Is.Not.Null);
-            Assert.That(frame.FileOffset, Is.EqualTo(invalidId3Header.Length));
-        }
+        using var ms = new MemoryStream(data);
+        Mp3Frame frame = Mp3Frame.LoadFromStream(ms);
+        Assert.That(frame, Is.Not.Null);
+        Assert.That(frame.FileOffset, Is.EqualTo(invalidId3Header.Length));
     }
 
     [Test]
@@ -313,12 +285,10 @@ public class Mp3FrameTests
         Array.Copy(filler, 0, data, falsePositive.Length, filler.Length);
         Array.Copy(realFrames, 0, data, falsePositive.Length + filler.Length, realFrames.Length);
 
-        using (var ms = new MemoryStream(data))
-        {
-            Mp3Frame frame = Mp3Frame.LoadFromStream(ms);
-            Assert.That(frame, Is.Not.Null);
-            Assert.That(frame.FileOffset, Is.EqualTo(falsePositive.Length + filler.Length));
-        }
+        using var ms = new MemoryStream(data);
+        Mp3Frame frame = Mp3Frame.LoadFromStream(ms);
+        Assert.That(frame, Is.Not.Null);
+        Assert.That(frame.FileOffset, Is.EqualTo(falsePositive.Length + filler.Length));
     }
 
     [Test]
@@ -334,12 +304,10 @@ public class Mp3FrameTests
         Array.Copy(filler, 0, data, falsePositive.Length, filler.Length);
         Array.Copy(realFrames, 0, data, falsePositive.Length + filler.Length, realFrames.Length);
 
-        using (var stream = new NonSeekableReadStream(data))
-        {
-            Mp3Frame frame = Mp3Frame.LoadFromStream(stream);
-            Assert.That(frame, Is.Not.Null);
-            Assert.That(frame.FileOffset, Is.EqualTo(0));
-        }
+        using var stream = new NonSeekableReadStream(data);
+        Mp3Frame frame = Mp3Frame.LoadFromStream(stream);
+        Assert.That(frame, Is.Not.Null);
+        Assert.That(frame.FileOffset, Is.EqualTo(0));
     }
 
     private sealed class NonSeekableReadStream : Stream

@@ -13,10 +13,10 @@ public class Part
     private const int E_NOTFOUND = unchecked((int)0x80070490);
     private readonly IPart partInterface;
     private DeviceTopology deviceTopology;
-    private static Guid IID_IAudioVolumeLevel = new Guid("7FB7B48F-531D-44A2-BCB3-5AD5A134B3DC");
-    private static Guid IID_IAudioMute = new Guid("DF45AEEA-B74A-4B6B-AFAD-2366B6AA012E");
-    private static Guid IID_IAudioEndpointVolume = new Guid("5CDF2C82-841E-4546-9722-0CF74078229A");
-    private static Guid IID_IKsJackDescription = new Guid("4509F757-2D46-4637-8E62-CE7DB944F57B");
+    private static Guid IID_IAudioVolumeLevel = new("7FB7B48F-531D-44A2-BCB3-5AD5A134B3DC");
+    private static Guid IID_IAudioMute = new("DF45AEEA-B74A-4B6B-AFAD-2366B6AA012E");
+    private static Guid IID_IAudioEndpointVolume = new("5CDF2C82-841E-4546-9722-0CF74078229A");
+    private static Guid IID_IKsJackDescription = new("4509F757-2D46-4637-8E62-CE7DB944F57B");
 
     internal Part(IPart part)
     {

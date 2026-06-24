@@ -26,23 +26,21 @@ public class AiffFileWriter : Stream
     /// <param name="sourceProvider">The source WaveProvider</param>
     public static void CreateAiffFile(string filename, WaveStream sourceProvider)
     {
-        using (var writer = new AiffFileWriter(filename, sourceProvider.WaveFormat))
+        using var writer = new AiffFileWriter(filename, sourceProvider.WaveFormat);
+        byte[] buffer = new byte[16384];
+
+        while (sourceProvider.Position < sourceProvider.Length)
         {
-            byte[] buffer = new byte[16384];
+            int count = Math.Min((int)(sourceProvider.Length - sourceProvider.Position), buffer.Length);
+            int bytesRead = sourceProvider.Read(buffer, 0, count);
 
-            while (sourceProvider.Position < sourceProvider.Length)
+            if (bytesRead == 0)
             {
-                int count = Math.Min((int)(sourceProvider.Length - sourceProvider.Position), buffer.Length);
-                int bytesRead = sourceProvider.Read(buffer, 0, count);
-
-                if (bytesRead == 0)
-                {
-                    // end of source provider
-                    break;
-                }
-
-                writer.Write(buffer, 0, bytesRead);
+                // end of source provider
+                break;
             }
+
+            writer.Write(buffer, 0, bytesRead);
         }
     }
 

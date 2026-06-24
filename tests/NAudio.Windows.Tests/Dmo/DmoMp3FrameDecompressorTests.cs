@@ -33,16 +33,14 @@ public class DmoMp3FrameDecompressorTests
         var testFile = TestFileBuilder.CreateMp3File(20);
         try
         {
-            using (var reader = new Mp3FileReader(testFile))
+            using var reader = new Mp3FileReader(testFile);
+            var frameDecompressor = new DmoMp3FrameDecompressor(reader.Mp3WaveFormat);
+            Mp3Frame frame;
+            var buffer = new byte[reader.WaveFormat.AverageBytesPerSecond];
+            while ((frame = reader.ReadNextFrame()) != null)
             {
-                var frameDecompressor = new DmoMp3FrameDecompressor(reader.Mp3WaveFormat);
-                Mp3Frame frame;
-                var buffer = new byte[reader.WaveFormat.AverageBytesPerSecond];
-                while ((frame = reader.ReadNextFrame()) != null)
-                {
-                    int decompressed = frameDecompressor.DecompressFrame(frame, buffer.AsSpan());
-                    Debug.WriteLine($"Decompressed {frame.FrameLength} bytes to {decompressed}");
-                }
+                int decompressed = frameDecompressor.DecompressFrame(frame, buffer.AsSpan());
+                Debug.WriteLine($"Decompressed {frame.FrameLength} bytes to {decompressed}");
             }
         }
         finally

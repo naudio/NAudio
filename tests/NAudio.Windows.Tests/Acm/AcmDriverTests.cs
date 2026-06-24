@@ -79,24 +79,22 @@ public class AcmDriverTests
     [Test]
     public void CanEnumerateFormats()
     {
-        using (AcmDriver driver = AcmDriver.FindByShortName("MS-ADPCM"))
+        using AcmDriver driver = AcmDriver.FindByShortName("MS-ADPCM");
+        driver.Open();
+        IEnumerable<AcmFormatTag> formatTags = driver.FormatTags;
+        Assert.That(formatTags, Is.Not.Null, "FormatTags");
+        foreach (AcmFormatTag formatTag in formatTags)
         {
-            driver.Open();
-            IEnumerable<AcmFormatTag> formatTags = driver.FormatTags;
-            Assert.That(formatTags, Is.Not.Null, "FormatTags");
-            foreach (AcmFormatTag formatTag in formatTags)
+            IEnumerable<AcmFormat> formats = driver.GetFormats(formatTag);
+            Assert.That(formats, Is.Not.Null);
+            foreach (AcmFormat format in formats)
             {
-                IEnumerable<AcmFormat> formats = driver.GetFormats(formatTag);
-                Assert.That(formats, Is.Not.Null);
-                foreach (AcmFormat format in formats)
-                {
-                    Debug.WriteLine(String.Format("{0} {1} {2} {3} {4}",
-                        format.FormatIndex,
-                        format.FormatTag,
-                        format.FormatDescription,
-                        format.WaveFormat,
-                        format.SupportFlags));
-                }
+                Debug.WriteLine(String.Format("{0} {1} {2} {3} {4}",
+                    format.FormatIndex,
+                    format.FormatTag,
+                    format.FormatDescription,
+                    format.WaveFormat,
+                    format.SupportFlags));
             }
         }
     }

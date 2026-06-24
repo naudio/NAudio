@@ -71,11 +71,9 @@ public class MixerApiTests
     [Test]
     public void CanGetWaveInMixerLine()
     {
-        using (var waveIn = new WaveIn())
-        {
-            MixerLine line = waveIn.GetMixerLine();
-            //Debug.WriteLine(String.Format("Mic Level {0}", level));
-        }
+        using var waveIn = new WaveIn();
+        MixerLine line = waveIn.GetMixerLine();
+        //Debug.WriteLine(String.Format("Mic Level {0}", level));
     }
 
     private static void ExploreMixerDevice(int deviceIndex)

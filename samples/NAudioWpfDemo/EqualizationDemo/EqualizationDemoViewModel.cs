@@ -29,14 +29,14 @@ class EqualizationDemoViewModel : ViewModelBase, IDisposable
         PauseCommand = new DelegateCommand(Pause);
         bands = new EqualizerBand[]
                 {
-                    new EqualizerBand {Q = 0.8f, Frequency = 100, GainDb = 0},
-                    new EqualizerBand {Q = 0.8f, Frequency = 200, GainDb = 0},
-                    new EqualizerBand {Q = 0.8f, Frequency = 400, GainDb = 0},
-                    new EqualizerBand {Q = 0.8f, Frequency = 800, GainDb = 0},
-                    new EqualizerBand {Q = 0.8f, Frequency = 1200, GainDb = 0},
-                    new EqualizerBand {Q = 0.8f, Frequency = 2400, GainDb = 0},
-                    new EqualizerBand {Q = 0.8f, Frequency = 4800, GainDb = 0},
-                    new EqualizerBand {Q = 0.8f, Frequency = 9600, GainDb = 0},
+                    new() {Q = 0.8f, Frequency = 100, GainDb = 0},
+                    new() {Q = 0.8f, Frequency = 200, GainDb = 0},
+                    new() {Q = 0.8f, Frequency = 400, GainDb = 0},
+                    new() {Q = 0.8f, Frequency = 800, GainDb = 0},
+                    new() {Q = 0.8f, Frequency = 1200, GainDb = 0},
+                    new() {Q = 0.8f, Frequency = 2400, GainDb = 0},
+                    new() {Q = 0.8f, Frequency = 4800, GainDb = 0},
+                    new() {Q = 0.8f, Frequency = 9600, GainDb = 0},
                 };
         this.PropertyChanged += OnPropertyChanged;
     }

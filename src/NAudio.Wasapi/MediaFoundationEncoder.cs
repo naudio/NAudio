@@ -100,10 +100,8 @@ public class MediaFoundationEncoder : IDisposable
     {
         var mediaType = SelectMediaType(AudioSubtypes.MFAudioFormat_WMAudioV8, inputSource.WaveFormat, desiredBitRate);
         if (mediaType == null) throw new InvalidOperationException("No suitable WMA encoders available");
-        using (var encoder = new MediaFoundationEncoder(mediaType))
-        {
-            encoder.Encode(outputFile, inputSource);
-        }
+        using var encoder = new MediaFoundationEncoder(mediaType);
+        encoder.Encode(outputFile, inputSource);
     }
 
     /// <summary>
@@ -117,10 +115,8 @@ public class MediaFoundationEncoder : IDisposable
     {
         var mediaType = SelectMediaType(AudioSubtypes.MFAudioFormat_WMAudioV8, inputSource.WaveFormat, desiredBitRate);
         if (mediaType == null) throw new InvalidOperationException("No suitable WMA encoders available");
-        using (var encoder = new MediaFoundationEncoder(mediaType))
-        {
-            encoder.Encode(outputStream, inputSource, TranscodeContainerTypes.MFTranscodeContainerType_ASF);
-        }
+        using var encoder = new MediaFoundationEncoder(mediaType);
+        encoder.Encode(outputStream, inputSource, TranscodeContainerTypes.MFTranscodeContainerType_ASF);
     }
 
     /// <summary>
@@ -134,10 +130,8 @@ public class MediaFoundationEncoder : IDisposable
     {
         var mediaType = SelectMediaType(AudioSubtypes.MFAudioFormat_MP3, inputSource.WaveFormat, desiredBitRate);
         if (mediaType == null) throw new InvalidOperationException("No suitable MP3 encoders available");
-        using (var encoder = new MediaFoundationEncoder(mediaType))
-        {
-            encoder.Encode(outputFile, inputSource);
-        }
+        using var encoder = new MediaFoundationEncoder(mediaType);
+        encoder.Encode(outputFile, inputSource);
     }
 
     /// <summary>
@@ -151,10 +145,8 @@ public class MediaFoundationEncoder : IDisposable
     {
         var mediaType = SelectMediaType(AudioSubtypes.MFAudioFormat_MP3, inputSource.WaveFormat, desiredBitRate);
         if (mediaType == null) throw new InvalidOperationException("No suitable MP3 encoders available");
-        using (var encoder = new MediaFoundationEncoder(mediaType))
-        {
-            encoder.Encode(outputStream, inputSource, TranscodeContainerTypes.MFTranscodeContainerType_MP3);
-        }
+        using var encoder = new MediaFoundationEncoder(mediaType);
+        encoder.Encode(outputStream, inputSource, TranscodeContainerTypes.MFTranscodeContainerType_MP3);
     }
 
     /// <summary>
@@ -168,10 +160,8 @@ public class MediaFoundationEncoder : IDisposable
     {
         var mediaType = SelectMediaType(AudioSubtypes.MFAudioFormat_AAC, inputSource.WaveFormat, desiredBitRate);
         if (mediaType == null) throw new InvalidOperationException("No suitable AAC encoders available");
-        using (var encoder = new MediaFoundationEncoder(mediaType))
-        {
-            encoder.Encode(outputFile, inputSource);
-        }
+        using var encoder = new MediaFoundationEncoder(mediaType);
+        encoder.Encode(outputFile, inputSource);
     }
 
     /// <summary>
@@ -185,10 +175,8 @@ public class MediaFoundationEncoder : IDisposable
     {
         var mediaType = SelectMediaType(AudioSubtypes.MFAudioFormat_AAC, inputSource.WaveFormat, desiredBitRate);
         if (mediaType == null) throw new InvalidOperationException("No suitable AAC encoders available");
-        using (var encoder = new MediaFoundationEncoder(mediaType))
-        {
-            encoder.Encode(outputStream, inputSource, TranscodeContainerTypes.MFTranscodeContainerType_MPEG4);
-        }
+        using var encoder = new MediaFoundationEncoder(mediaType);
+        encoder.Encode(outputStream, inputSource, TranscodeContainerTypes.MFTranscodeContainerType_MPEG4);
     }
 
     /// <summary>

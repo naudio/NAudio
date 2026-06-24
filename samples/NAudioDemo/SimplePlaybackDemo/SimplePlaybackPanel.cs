@@ -111,16 +111,10 @@ public partial class SimplePlaybackPanel : UserControl
 
     private void CleanUp()
     {
-        if (audioFileReader != null)
-        {
-            audioFileReader.Dispose();
-            audioFileReader = null;
-        }
-        if (wavePlayer != null)
-        {
-            wavePlayer.Dispose();
-            wavePlayer = null;
-        }
+        audioFileReader?.Dispose();
+        audioFileReader = null;
+        wavePlayer?.Dispose();
+        wavePlayer = null;
     }
 
     private void OnButtonStopClick(object sender, EventArgs e)

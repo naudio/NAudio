@@ -77,8 +77,7 @@ public class AcmMp3FrameDecompressor : IMp3FrameDecompressor
         if (!disposed)
         {
             disposed = true;
-            if (conversionStream != null)
-                conversionStream.Dispose();
+            conversionStream?.Dispose();
             GC.SuppressFinalize(this);
         }
     }

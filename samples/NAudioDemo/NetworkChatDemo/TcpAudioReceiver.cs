@@ -32,15 +32,13 @@ class TcpAudioReceiver : IAudioReceiver
         {
             while (listening)
             {
-                using (var client = listener.AcceptTcpClient())
+                using var client = listener.AcceptTcpClient();
+                while (listening)
                 {
-                    while (listening)
-                    {
-                        int received = client.Client.Receive(incomingBuffer);
-                        var b = new byte[received];
-                        Buffer.BlockCopy(incomingBuffer, 0, b, 0, received);
-                        handler?.Invoke(b);
-                    }
+                    int received = client.Client.Receive(incomingBuffer);
+                    var b = new byte[received];
+                    Buffer.BlockCopy(incomingBuffer, 0, b, 0, received);
+                    handler?.Invoke(b);
                 }
             }
         }

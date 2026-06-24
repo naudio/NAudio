@@ -19,16 +19,10 @@ public partial class MediaFoundationDemoPanel : UserControl
 
     private void OnDisposed(object sender, EventArgs eventArgs)
     {
-        if (wavePlayer != null)
-        {
-            wavePlayer.Dispose();
-            wavePlayer = null;
-        }
-        if (reader != null)
-        {
-            reader.Dispose();
-            reader = null;
-        }
+        wavePlayer?.Dispose();
+        wavePlayer = null;
+        reader?.Dispose();
+        reader = null;
     }
 
     private void OnTrackBarScroll(object sender, EventArgs e)
@@ -41,21 +35,14 @@ public partial class MediaFoundationDemoPanel : UserControl
 
     private void OnButtonLoadFileClick(object sender, EventArgs e)
     {
-
-        if (wavePlayer != null)
-        {
-            wavePlayer.Dispose();
-            wavePlayer = null;
-        }
+        wavePlayer?.Dispose();
+        wavePlayer = null;
 
         var ofd = new OpenFileDialog();
         ofd.Filter = "Audio Files|*.mp3;*.wav;*.aiff;*.wma;*.aac;*.mp4;*.m4a;*.flac;*.opus;*.ogg;*.mka;*.webm|All Files|*.*";
         if (ofd.ShowDialog() != DialogResult.OK) return;
 
-        if (reader != null)
-        {
-            reader.Dispose();
-        }
+        reader?.Dispose();
         reader = new MediaFoundationReader(ofd.FileName, new MediaFoundationReader.MediaFoundationReaderSettings() { SingleReaderObject = true });
     }
 
@@ -110,19 +97,13 @@ public partial class MediaFoundationDemoPanel : UserControl
 
     private void OnButtonStopClick(object sender, EventArgs e)
     {
-        if (wavePlayer != null)
-        {
-            wavePlayer.Stop();
-        }
+        wavePlayer?.Stop();
     }
 
     private void OnRadioButtonWaveOutCheckedChanged(object sender, EventArgs e)
     {
-        if (wavePlayer != null)
-        {
-            wavePlayer.Dispose();
-            wavePlayer = null;
-        }
+        wavePlayer?.Dispose();
+        wavePlayer = null;
     }
 }
 

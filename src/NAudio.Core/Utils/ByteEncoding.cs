@@ -15,7 +15,7 @@ public class ByteEncoding : Encoding
     /// <summary>
     /// The one and only instance of this class
     /// </summary>
-    public static readonly ByteEncoding Instance = new ByteEncoding();
+    public static readonly ByteEncoding Instance = new();
 
     /// <summary>
     /// <see cref="Encoding.GetByteCount(char[],int,int)"/>

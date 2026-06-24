@@ -65,7 +65,7 @@ public class Mp3FileReaderBase : WaveStream
     private const int ScrubDetectionWindowMs = 30;
     private const int SettleWindowMs = 50;
 
-    private readonly object repositionLock = new object();
+    private readonly object repositionLock = new();
 
 
     /// <summary>Supports opening a MP3 file</summary>
@@ -610,11 +610,9 @@ public class Mp3FileReaderBase : WaveStream
                 }
                 mp3Stream = null;
             }
-            if (decompressor != null)
-            {
-                decompressor.Dispose();
-                decompressor = null;
-            }
+
+            decompressor?.Dispose();
+            decompressor = null;
         }
         base.Dispose(disposing);
     }

@@ -28,7 +28,7 @@ interface IDirectSoundFXGargle
 /// </summary>
 public class DmoGargle : IDmoEffector<DmoGargle.Params>
 {
-    private static readonly Guid Id_Gargle = new Guid("DAFD8210-5711-4B91-9FE3-F75B7AE279BF");
+    private static readonly Guid Id_Gargle = new("DAFD8210-5711-4B91-9FE3-F75B7AE279BF");
 
     /// <summary>
     /// DMO Gargle Params

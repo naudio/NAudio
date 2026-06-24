@@ -38,7 +38,7 @@ public class SfzProjectionTests
     }
 
     private static StubLoader ConstantSample(float value = 0.5f, int length = 8) =>
-        new StubLoader(Filled(value, length), SampleRate);
+        new(Filled(value, length), SampleRate);
 
     private static float[] Filled(float value, int length)
     {

@@ -254,11 +254,8 @@ public class ResamplerDmoStream : WaveStream
     /// <param name="disposing">True if disposing (not from finalizer)</param>
     protected override void Dispose(bool disposing)
     {
-        if (inputMediaBuffer != null)
-        {
-            inputMediaBuffer.Dispose();
-            inputMediaBuffer = null;
-        }
+        inputMediaBuffer?.Dispose();
+        inputMediaBuffer = null;
         outputBuffer.Dispose();
         if (dmoResampler != null)
         {

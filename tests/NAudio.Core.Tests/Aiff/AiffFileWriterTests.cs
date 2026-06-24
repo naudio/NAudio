@@ -111,13 +111,11 @@ public class AiffFileWriterTests
         {
             AiffFileWriter.CreateAiffFile(tempFile, new NullWaveStream(format, expectedLength));
 
-            using (var reader = new AiffFileReader(tempFile))
-            {
-                Assert.That(reader.WaveFormat.SampleRate, Is.EqualTo(format.SampleRate));
-                Assert.That(reader.WaveFormat.BitsPerSample, Is.EqualTo(format.BitsPerSample));
-                Assert.That(reader.WaveFormat.Channels, Is.EqualTo(format.Channels));
-                Assert.That(reader.Length, Is.EqualTo(expectedLength));
-            }
+            using var reader = new AiffFileReader(tempFile);
+            Assert.That(reader.WaveFormat.SampleRate, Is.EqualTo(format.SampleRate));
+            Assert.That(reader.WaveFormat.BitsPerSample, Is.EqualTo(format.BitsPerSample));
+            Assert.That(reader.WaveFormat.Channels, Is.EqualTo(format.Channels));
+            Assert.That(reader.Length, Is.EqualTo(expectedLength));
         }
         finally
         {
@@ -135,12 +133,10 @@ public class AiffFileWriterTests
         }
 
         ms.Position = 0;
-        using (var reader = new AiffFileReader(ms))
-        {
-            var buffer = new byte[(int)reader.Length];
-            var read = reader.Read(buffer, 0, buffer.Length);
-            Assert.That(read, Is.EqualTo(buffer.Length));
-            return buffer;
-        }
+        using var reader = new AiffFileReader(ms);
+        var buffer = new byte[(int)reader.Length];
+        var read = reader.Read(buffer, 0, buffer.Length);
+        Assert.That(read, Is.EqualTo(buffer.Length));
+        return buffer;
     }
 }

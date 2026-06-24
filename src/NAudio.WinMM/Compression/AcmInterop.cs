@@ -35,7 +35,7 @@ class AcmInterop
     /// Process-wide lock guarding every msacm32 P/Invoke. See the class
     /// remarks on <see cref="AcmInterop"/> for why this exists.
     /// </summary>
-    internal static readonly object AcmLock = new object();
+    internal static readonly object AcmLock = new();
 
     // http://msdn.microsoft.com/en-us/library/dd742891%28VS.85%29.aspx
     public delegate bool AcmDriverEnumCallback(IntPtr hAcmDriverId, IntPtr instance, AcmDriverDetailsSupportFlags flags);

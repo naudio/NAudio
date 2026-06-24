@@ -112,10 +112,7 @@ public class MixDiffStream : WaveStream
 
     protected override void Dispose(bool disposing)
     {
-        if (channelSteam != null)
-        {
-            channelSteam.Dispose();
-        }
+        channelSteam?.Dispose();
 
         base.Dispose(disposing);
     }

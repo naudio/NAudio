@@ -16,9 +16,9 @@ public class AiffFileReader : WaveStream
     private readonly bool ownInput;
     private readonly long dataPosition;
     private readonly int dataChunkLength;
-    private readonly List<AiffChunk> chunks = new List<AiffChunk>();
+    private readonly List<AiffChunk> chunks = new();
     private Stream waveStream;
-    private readonly object lockObject = new object();
+    private readonly object lockObject = new();
 
     /// <summary>Supports opening a AIF file</summary>
     /// <remarks>The AIF is of similar nastiness to the WAV format.
@@ -111,10 +111,7 @@ public class AiffFileReader : WaveStream
             }
             else
             {
-                if (chunks != null)
-                {
-                    chunks.Add(nextChunk);
-                }
+                chunks?.Add(nextChunk);
                 br.BaseStream.Position += nextChunk.ChunkLength;
             }
 

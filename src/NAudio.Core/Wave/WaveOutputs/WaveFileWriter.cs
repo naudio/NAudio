@@ -53,8 +53,8 @@ public class WaveFileWriter : Stream
     private long junkChunkPos = -1;
     private bool headerFinalized;
     private bool isDisposed;
-    private readonly List<BufferedChunk> beforeDataChunks = new List<BufferedChunk>();
-    private readonly List<BufferedChunk> afterDataChunks = new List<BufferedChunk>();
+    private readonly List<BufferedChunk> beforeDataChunks = new();
+    private readonly List<BufferedChunk> afterDataChunks = new();
     private CueList bufferedCues;
 
     private readonly struct BufferedChunk
@@ -84,18 +84,16 @@ public class WaveFileWriter : Stream
     /// <param name="source">The source audio</param>
     public static void CreateWaveFile(string filename, IWaveProvider source)
     {
-        using (var writer = new WaveFileWriter(filename, source.WaveFormat))
+        using var writer = new WaveFileWriter(filename, source.WaveFormat);
+        var buffer = new byte[source.WaveFormat.AverageBytesPerSecond * 4];
+        while (true)
         {
-            var buffer = new byte[source.WaveFormat.AverageBytesPerSecond * 4];
-            while (true)
+            int bytesRead = source.Read(buffer.AsSpan());
+            if (bytesRead == 0)
             {
-                int bytesRead = source.Read(buffer.AsSpan());
-                if (bytesRead == 0)
-                {
-                    break;
-                }
-                writer.Write(buffer.AsSpan(0, bytesRead));
+                break;
             }
+            writer.Write(buffer.AsSpan(0, bytesRead));
         }
     }
 
@@ -108,19 +106,17 @@ public class WaveFileWriter : Stream
     /// <param name="source">The source audio</param>
     public static void WriteWavFileToStream(Stream outStream, IWaveProvider source)
     {
-        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(outStream), source.WaveFormat))
+        using var writer = new WaveFileWriter(new IgnoreDisposeStream(outStream), source.WaveFormat);
+        var buffer = new byte[source.WaveFormat.AverageBytesPerSecond * 4];
+        while (true)
         {
-            var buffer = new byte[source.WaveFormat.AverageBytesPerSecond * 4];
-            while (true)
+            var bytesRead = source.Read(buffer.AsSpan());
+            if (bytesRead == 0)
             {
-                var bytesRead = source.Read(buffer.AsSpan());
-                if (bytesRead == 0)
-                {
-                    outStream.Flush();
-                    break;
-                }
-                writer.Write(buffer.AsSpan(0, bytesRead));
+                outStream.Flush();
+                break;
             }
+            writer.Write(buffer.AsSpan(0, bytesRead));
         }
     }
 

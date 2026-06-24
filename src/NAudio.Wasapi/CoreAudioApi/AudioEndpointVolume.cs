@@ -14,7 +14,7 @@ namespace NAudio.CoreAudioApi;
 /// </summary>
 public class AudioEndpointVolume : IDisposable
 {
-    private static readonly Guid IID_IAudioEndpointVolumeCallback = new Guid("657804FA-D6AD-4496-8A60-352752AF4F89");
+    private static readonly Guid IID_IAudioEndpointVolumeCallback = new("657804FA-D6AD-4496-8A60-352752AF4F89");
 
     private IAudioEndpointVolume audioEndPointVolume;
     private readonly SynchronizationContext syncContext;

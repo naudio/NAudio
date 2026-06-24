@@ -141,50 +141,42 @@ public class NoteOnEventTests
     [Test]
     public void ToStringIncludesNoteOffMarkerWhenVelocityZeroAndNoOffEvent()
     {
-        using (var ms = new MemoryStream(new byte[] { 60, 0 }))
-        using (var reader = new BinaryReader(ms))
-        {
-            var noteOn = new NoteOnEvent(reader);
-            var text = noteOn.ToString();
+        using var ms = new MemoryStream(new byte[] { 60, 0 });
+        using var reader = new BinaryReader(ms);
+        var noteOn = new NoteOnEvent(reader);
+        var text = noteOn.ToString();
 
-            Assert.That(text, Does.Contain("(Note Off)"));
-        }
+        Assert.That(text, Does.Contain("(Note Off)"));
     }
 
     [Test]
     public void ToStringIncludesUnknownLengthWhenOffEventMissing()
     {
-        using (var ms = new MemoryStream(new byte[] { 60, 100 }))
-        using (var reader = new BinaryReader(ms))
-        {
-            var noteOn = new NoteOnEvent(reader);
-            var text = noteOn.ToString();
+        using var ms = new MemoryStream(new byte[] { 60, 100 });
+        using var reader = new BinaryReader(ms);
+        var noteOn = new NoteOnEvent(reader);
+        var text = noteOn.ToString();
 
-            Assert.That(text, Does.Contain("Len: ?"));
-        }
+        Assert.That(text, Does.Contain("Len: ?"));
     }
 
     [Test]
     public void NoteLengthGetterThrowsInvalidOperationExceptionWhenOffEventMissing()
     {
-        using (var ms = new MemoryStream(new byte[] { 60, 100 }))
-        using (var reader = new BinaryReader(ms))
-        {
-            var noteOn = new NoteOnEvent(reader);
-            var ex = Assert.Throws<InvalidOperationException>(() => _ = noteOn.NoteLength);
-            Assert.That(ex.Message, Is.EqualTo("Cannot get NoteLength when OffEvent is null"));
-        }
+        using var ms = new MemoryStream(new byte[] { 60, 100 });
+        using var reader = new BinaryReader(ms);
+        var noteOn = new NoteOnEvent(reader);
+        var ex = Assert.Throws<InvalidOperationException>(() => _ = noteOn.NoteLength);
+        Assert.That(ex.Message, Is.EqualTo("Cannot get NoteLength when OffEvent is null"));
     }
 
     [Test]
     public void NoteLengthSetterThrowsInvalidOperationExceptionWhenOffEventMissing()
     {
-        using (var ms = new MemoryStream(new byte[] { 60, 100 }))
-        using (var reader = new BinaryReader(ms))
-        {
-            var noteOn = new NoteOnEvent(reader);
-            var ex = Assert.Throws<InvalidOperationException>(() => noteOn.NoteLength = 10);
-            Assert.That(ex.Message, Is.EqualTo("Cannot set NoteLength when OffEvent is null"));
-        }
+        using var ms = new MemoryStream(new byte[] { 60, 100 });
+        using var reader = new BinaryReader(ms);
+        var noteOn = new NoteOnEvent(reader);
+        var ex = Assert.Throws<InvalidOperationException>(() => noteOn.NoteLength = 10);
+        Assert.That(ex.Message, Is.EqualTo("Cannot set NoteLength when OffEvent is null"));
     }
 }

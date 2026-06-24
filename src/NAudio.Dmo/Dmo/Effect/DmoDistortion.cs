@@ -31,7 +31,7 @@ interface IDirectSoundFXDistortion
 /// </summary>
 public class DmoDistortion : IDmoEffector<DmoDistortion.Params>
 {
-    private static readonly Guid Id_Distortion = new Guid("EF114C90-CD1D-484E-96E5-09CFAF912A21");
+    private static readonly Guid Id_Distortion = new("EF114C90-CD1D-484E-96E5-09CFAF912A21");
 
     /// <summary>
     /// DMO Distortion Params

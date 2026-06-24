@@ -32,7 +32,7 @@ interface IDirectSoundFXCompressor
 /// </summary>
 public class DmoCompressor : IDmoEffector<DmoCompressor.Params>
 {
-    private static readonly Guid Id_Compressor = new Guid("EF011F79-4000-406D-87AF-BFFB3FC39D57");
+    private static readonly Guid Id_Compressor = new("EF011F79-4000-406D-87AF-BFFB3FC39D57");
 
     /// <summary>
     /// DMO Compressor Params

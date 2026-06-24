@@ -40,7 +40,7 @@ public class SoundFontSamplerTests
     }
 
     private static SoundFontSampler NewSampler(NAudio.SoundFont.SoundFont sf, int maxVoices = 16)
-        => new SoundFontSampler(sf, SampleRate, maxVoices);
+        => new(sf, SampleRate, maxVoices);
 
     /// <summary>Renders a block of stereo frames and returns the interleaved buffer.</summary>
     private static float[] Render(SoundFontSampler sampler, int frames)

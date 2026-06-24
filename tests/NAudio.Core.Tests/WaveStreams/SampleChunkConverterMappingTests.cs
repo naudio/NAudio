@@ -93,13 +93,11 @@ public class SampleChunkConverterMappingTests
     private static (int bytesRead, float left, float right) ReadStereoFrame(byte[] sourceBytes, WaveFormat waveFormat)
     {
         var source = new RawSourceWaveStream(sourceBytes, 0, sourceBytes.Length, waveFormat);
-        using (var waveChannel = new WaveChannel32(source) { PadWithZeroes = false })
-        {
-            var dest = new byte[8];
-            var bytesRead = waveChannel.Read(dest, 0, dest.Length);
-            var floats = MemoryMarshal.Cast<byte, float>(dest);
-            return (bytesRead, floats[0], floats[1]);
-        }
+        using var waveChannel = new WaveChannel32(source) { PadWithZeroes = false };
+        var dest = new byte[8];
+        var bytesRead = waveChannel.Read(dest, 0, dest.Length);
+        var floats = MemoryMarshal.Cast<byte, float>(dest);
+        return (bytesRead, floats[0], floats[1]);
     }
 
     private static byte[] Pcm16(params short[] samples)

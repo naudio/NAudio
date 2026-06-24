@@ -11,7 +11,7 @@ namespace NAudio.Core.Tests.WaveStreams;
 [Category("UnitTest")]
 public class InfoListInterpreterTests
 {
-    private static WaveFormat Format => new WaveFormat(8000, 16, 1);
+    private static WaveFormat Format => new(8000, 16, 1);
     private static byte[] Audio => new byte[16];
 
     private static WaveFileReader OpenWithInfo(InfoMetadata info)

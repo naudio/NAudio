@@ -9,7 +9,7 @@ namespace NAudioDemo.AudioPlaybackDemo;
 
 public partial class WasapiOutSettingsPanel : UserControl
 {
-    private readonly MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
+    private readonly MMDeviceEnumerator enumerator = new();
     private readonly DeviceChangeNotifier deviceChangeNotifier;
 
     public WasapiOutSettingsPanel()

@@ -120,7 +120,7 @@ public sealed class SoundFontGenerators
     /// <summary>
     /// Returns a copy of this generator set.
     /// </summary>
-    public SoundFontGenerators Clone() => new SoundFontGenerators((short[])values.Clone());
+    public SoundFontGenerators Clone() => new((short[])values.Clone());
 
     private static short[] BuildDefaults()
     {

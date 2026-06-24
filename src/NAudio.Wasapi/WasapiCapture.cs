@@ -326,15 +326,9 @@ public class WasapiCapture : IWaveIn
     {
         GC.SuppressFinalize(this);
         StopRecording();
-        if (captureThread != null)
-        {
-            captureThread.Join();
-            captureThread = null;
-        }
-        if (audioClient != null)
-        {
-            audioClient.Dispose();
-            audioClient = null;
-        }
+        captureThread?.Join();
+        captureThread = null;
+        audioClient?.Dispose();
+        audioClient = null;
     }
 }

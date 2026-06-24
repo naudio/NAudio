@@ -167,11 +167,8 @@ public class AudioFileReader : WaveStream, ISampleProvider
     {
         if (disposing)
         {
-            if (readerStream != null)
-            {
-                readerStream.Dispose();
-                readerStream = null;
-            }
+            readerStream?.Dispose();
+            readerStream = null;
         }
         base.Dispose(disposing);
     }

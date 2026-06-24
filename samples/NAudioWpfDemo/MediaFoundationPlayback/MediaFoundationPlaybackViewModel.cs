@@ -20,7 +20,7 @@ internal class MediaFoundationPlaybackViewModel : ViewModelBase, IDisposable
     public RelayCommand PlayCommand { get; }
     public RelayCommand PauseCommand { get; }
     public RelayCommand StopCommand { get; }
-    private readonly DispatcherTimer timer = new DispatcherTimer();
+    private readonly DispatcherTimer timer = new();
     private double sliderPosition;
     private readonly ObservableCollection<string> inputPathHistory;
     private string lastPlayed;
@@ -102,12 +102,10 @@ internal class MediaFoundationPlaybackViewModel : ViewModelBase, IDisposable
         bool isValid = false;
         try
         {
-            using (var tempReader = new MediaFoundationReader(file))
-            {
-                DefaultDecompressionFormat = tempReader.WaveFormat.ToString();
-                InputPath = file;
-                isValid = true;
-            }
+            using var tempReader = new MediaFoundationReader(file);
+            DefaultDecompressionFormat = tempReader.WaveFormat.ToString();
+            InputPath = file;
+            isValid = true;
         }
         catch (Exception e)
         {
@@ -150,10 +148,7 @@ internal class MediaFoundationPlaybackViewModel : ViewModelBase, IDisposable
 
     private void Stop()
     {
-        if (wavePlayer != null)
-        {
-            wavePlayer.Stop();
-        }
+        wavePlayer?.Stop();
     }
 
     private void Pause()
@@ -219,11 +214,8 @@ internal class MediaFoundationPlaybackViewModel : ViewModelBase, IDisposable
 
     private void Load()
     {
-        if (reader != null)
-        {
-            reader.Dispose();
-            reader = null;
-        }
+        reader?.Dispose();
+        reader = null;
         SelectInputFile();
     }
 

@@ -22,7 +22,7 @@ public sealed class PanEffect : AudioEffect, IParameterized
 
     private const float QuarterPi = MathF.PI / 4f;
 
-    private readonly ParameterSmoother pan = new ParameterSmoother();
+    private readonly ParameterSmoother pan = new();
     private float panValue;
 
     /// <summary>

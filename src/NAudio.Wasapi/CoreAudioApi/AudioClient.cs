@@ -13,12 +13,12 @@ namespace NAudio.CoreAudioApi;
 /// </summary>
 public class AudioClient : IDisposable
 {
-    private static readonly Guid ID_AudioStreamVolume = new Guid("93014887-242D-4068-8A15-CF5E93B90FE3");
-    private static readonly Guid ID_AudioClockClient = new Guid("CD63314F-3FBA-4a1b-812C-EF96358728E7");
-    private static readonly Guid ID_AudioRenderClient = new Guid("F294ACFC-3146-4483-A7BF-ADDCA7C260E2");
-    private static readonly Guid ID_AudioCaptureClient = new Guid("c8adbd64-e71e-48a0-a4de-185c395cd317");
-    private static readonly Guid IID_IAudioClient2 = new Guid("726778CD-F60A-4eda-82DE-E47610CD78AA");
-    private static readonly Guid IID_IActivateAudioInterfaceCompletionHandler = new Guid("41D949AB-9862-444A-80F6-C261334DA5EB");
+    private static readonly Guid ID_AudioStreamVolume = new("93014887-242D-4068-8A15-CF5E93B90FE3");
+    private static readonly Guid ID_AudioClockClient = new("CD63314F-3FBA-4a1b-812C-EF96358728E7");
+    private static readonly Guid ID_AudioRenderClient = new("F294ACFC-3146-4483-A7BF-ADDCA7C260E2");
+    private static readonly Guid ID_AudioCaptureClient = new("c8adbd64-e71e-48a0-a4de-185c395cd317");
+    private static readonly Guid IID_IAudioClient2 = new("726778CD-F60A-4eda-82DE-E47610CD78AA");
+    private static readonly Guid IID_IActivateAudioInterfaceCompletionHandler = new("41D949AB-9862-444A-80F6-C261334DA5EB");
     private IAudioClient audioClientInterface;
     private readonly IAudioClient2 audioClientInterface2;
     private readonly IAudioClient3 audioClientInterface3;
@@ -445,26 +445,14 @@ public class AudioClient : IDisposable
         }
         if (audioClientInterface != null)
         {
-            if (audioClockClient != null)
-            {
-                audioClockClient.Dispose();
-                audioClockClient = null;
-            }
-            if (audioRenderClient != null)
-            {
-                audioRenderClient.Dispose();
-                audioRenderClient = null;
-            }
-            if (audioCaptureClient != null)
-            {
-                audioCaptureClient.Dispose();
-                audioCaptureClient = null;
-            }
-            if (audioStreamVolume != null)
-            {
-                audioStreamVolume.Dispose();
-                audioStreamVolume = null;
-            }
+            audioClockClient?.Dispose();
+            audioClockClient = null;
+            audioRenderClient?.Dispose();
+            audioRenderClient = null;
+            audioCaptureClient?.Dispose();
+            audioCaptureClient = null;
+            audioStreamVolume?.Dispose();
+            audioStreamVolume = null;
             // audioClientInterface2 / audioClientInterface3 are the same ComObject
             // as audioClientInterface (DICASTABLE returns the same wrapper for
             // cross-casts), so a single FinalRelease releases all three views.

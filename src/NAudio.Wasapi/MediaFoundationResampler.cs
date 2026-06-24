@@ -13,7 +13,7 @@ namespace NAudio.Wave;
 public class MediaFoundationResampler : MediaFoundationTransform
 {
     // CLSID_CResamplerMediaObject — wmcodecdsp.h
-    private static readonly Guid ResamplerClsid = new Guid("f447b69e-1884-4a7e-8055-346f74d6edb3");
+    private static readonly Guid ResamplerClsid = new("f447b69e-1884-4a7e-8055-346f74d6edb3");
 
     private int resamplerQuality;
 

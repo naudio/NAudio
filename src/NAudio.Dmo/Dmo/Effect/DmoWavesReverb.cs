@@ -30,7 +30,7 @@ interface IDirectSoundFXWavesReverb
 /// </summary>
 public class DmoWavesReverb : IDmoEffector<DmoWavesReverb.Params>
 {
-    private static readonly Guid Id_WavesReverb = new Guid("87FC0268-9A55-4360-95AA-004A1D9DE26C");
+    private static readonly Guid Id_WavesReverb = new("87FC0268-9A55-4360-95AA-004A1D9DE26C");
 
     /// <summary>
     /// DMO Reverb Params

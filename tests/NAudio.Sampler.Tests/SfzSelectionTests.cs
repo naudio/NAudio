@@ -32,7 +32,7 @@ public class SfzSelectionTests
     }
 
     private static SfzSampler Build(string sfz) =>
-        new SfzSampler(SfzParser.Parse(sfz), new ConstantLoader(), SampleRate, maxVoices: 32);
+        new(SfzParser.Parse(sfz), new ConstantLoader(), SampleRate, maxVoices: 32);
 
     private static void Render(SfzSampler sampler, int frames) =>
         sampler.Read(new float[frames * 2]);

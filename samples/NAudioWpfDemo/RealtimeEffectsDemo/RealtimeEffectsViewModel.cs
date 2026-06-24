@@ -10,7 +10,7 @@ namespace NAudioWpfDemo.RealtimeEffectsDemo;
 
 class RealtimeEffectsViewModel : ViewModelBase, IDisposable
 {
-    private readonly RealtimeAudioEngine engine = new RealtimeAudioEngine();
+    private readonly RealtimeAudioEngine engine = new();
     private readonly DispatcherTimer timer;
     private string selectedDriver;
     private int inputChannelsIndex = DemoSettings.LastInputChannelsIndex;

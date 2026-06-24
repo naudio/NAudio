@@ -117,11 +117,9 @@ internal class MediaFoundationResampleViewModel : ViewModelBase
         bool isValid = false;
         try
         {
-            using (var reader = new MediaFoundationReader(file))
-            {
-                InputFileFormat = reader.WaveFormat.ToString();
-                isValid = true;
-            }
+            using var reader = new MediaFoundationReader(file);
+            InputFileFormat = reader.WaveFormat.ToString();
+            isValid = true;
         }
         catch (Exception e)
         {
@@ -205,30 +203,28 @@ internal class MediaFoundationResampleViewModel : ViewModelBase
 
     private void CreateRepositionTestFile(string saveFile, IWaveProvider source, Action reposition)
     {
-        using (var writer = new WaveFileWriter(saveFile, source.WaveFormat))
+        using var writer = new WaveFileWriter(saveFile, source.WaveFormat);
+        // half-second buffer
+        var buffer = new byte[writer.WaveFormat.AverageBytesPerSecond / 2];
+        // read three and a half seconds (half a second is to ensure Resampler has some leftovers to drain)
+        for (int n = 0; n < 7; n++)
         {
-            // half-second buffer
-            var buffer = new byte[writer.WaveFormat.AverageBytesPerSecond / 2];
-            // read three and a half seconds (half a second is to ensure Resampler has some leftovers to drain)
-            for (int n = 0; n < 7; n++)
-            {
-                var read = source.Read(buffer.AsSpan());
-                writer.Write(buffer, 0, read);
-            }
-            Array.Clear(buffer, 0, buffer.Length);
-            // two seconds of absolute silence
-            for (int n = 0; n < 4; n++)
-            {
-                writer.Write(buffer, 0, buffer.Length);
-            }
-            // do the reposition
-            reposition();
-            // now read some more out
-            for (int n = 0; n < 6; n++)
-            {
-                var read = source.Read(buffer.AsSpan());
-                writer.Write(buffer, 0, read);
-            }
+            var read = source.Read(buffer.AsSpan());
+            writer.Write(buffer, 0, read);
+        }
+        Array.Clear(buffer, 0, buffer.Length);
+        // two seconds of absolute silence
+        for (int n = 0; n < 4; n++)
+        {
+            writer.Write(buffer, 0, buffer.Length);
+        }
+        // do the reposition
+        reposition();
+        // now read some more out
+        for (int n = 0; n < 6; n++)
+        {
+            var read = source.Read(buffer.AsSpan());
+            writer.Write(buffer, 0, read);
         }
     }
 

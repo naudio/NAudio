@@ -24,25 +24,21 @@ public class NoteEventTests
     [Test]
     public void BinaryReaderConstructorSetsNoteAndVelocity()
     {
-        using (var ms = new MemoryStream(new byte[] { 60, 100 }))
-        using (var reader = new BinaryReader(ms))
-        {
-            var noteEvent = new NoteEvent(reader);
+        using var ms = new MemoryStream(new byte[] { 60, 100 });
+        using var reader = new BinaryReader(ms);
+        var noteEvent = new NoteEvent(reader);
 
-            Assert.That(noteEvent.NoteNumber, Is.EqualTo(60));
-            Assert.That(noteEvent.Velocity, Is.EqualTo(100));
-        }
+        Assert.That(noteEvent.NoteNumber, Is.EqualTo(60));
+        Assert.That(noteEvent.Velocity, Is.EqualTo(100));
     }
 
     [Test]
     public void BinaryReaderConstructorClampsVelocityAbove127()
     {
-        using (var ms = new MemoryStream(new byte[] { 60, 200 }))
-        using (var reader = new BinaryReader(ms))
-        {
-            var noteEvent = new NoteEvent(reader);
-            Assert.That(noteEvent.Velocity, Is.EqualTo(127));
-        }
+        using var ms = new MemoryStream(new byte[] { 60, 200 });
+        using var reader = new BinaryReader(ms);
+        var noteEvent = new NoteEvent(reader);
+        Assert.That(noteEvent.Velocity, Is.EqualTo(127));
     }
 
     [TestCase(-1)]
@@ -95,18 +91,16 @@ public class NoteEventTests
     public void ExportWritesDeltaStatusNoteAndVelocity()
     {
         var noteEvent = new NoteEvent(0, 2, MidiCommandCode.NoteOn, 60, 100);
-        using (var ms = new MemoryStream())
-        using (var writer = new BinaryWriter(ms))
-        {
-            long absoluteTime = 0;
-            noteEvent.Export(ref absoluteTime, writer);
+        using var ms = new MemoryStream();
+        using var writer = new BinaryWriter(ms);
+        long absoluteTime = 0;
+        noteEvent.Export(ref absoluteTime, writer);
 
-            var bytes = ms.ToArray();
-            Assert.That(bytes.Length, Is.EqualTo(4));
-            Assert.That(bytes[0], Is.EqualTo(0x00));
-            Assert.That(bytes[1], Is.EqualTo(0x91));
-            Assert.That(bytes[2], Is.EqualTo(0x3C));
-            Assert.That(bytes[3], Is.EqualTo(0x64));
-        }
+        var bytes = ms.ToArray();
+        Assert.That(bytes.Length, Is.EqualTo(4));
+        Assert.That(bytes[0], Is.EqualTo(0x00));
+        Assert.That(bytes[1], Is.EqualTo(0x91));
+        Assert.That(bytes[2], Is.EqualTo(0x3C));
+        Assert.That(bytes[3], Is.EqualTo(0x64));
     }
 }

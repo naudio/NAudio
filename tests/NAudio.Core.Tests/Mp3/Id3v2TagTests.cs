@@ -56,41 +56,35 @@ public class Id3v2TagTests
     public void ReadTagReturnsNullForNonId3DataAndRestoresPosition()
     {
         var bytes = new byte[] { 0x10, 0x20, 0x30, 0x40, 0x50 };
-        using (var stream = new MemoryStream(bytes))
-        {
-            stream.Position = 2;
-            var start = stream.Position;
+        using var stream = new MemoryStream(bytes);
+        stream.Position = 2;
+        var start = stream.Position;
 
-            Id3v2Tag tag = Id3v2Tag.ReadTag(stream);
+        Id3v2Tag tag = Id3v2Tag.ReadTag(stream);
 
-            Assert.That(tag, Is.Null);
-            Assert.That(stream.Position, Is.EqualTo(start));
-        }
+        Assert.That(tag, Is.Null);
+        Assert.That(stream.Position, Is.EqualTo(start));
     }
 
     [Test]
     public void ReadTagDoesNotThrowForNonId3Data()
     {
         var bytes = new byte[] { 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xA0, 0xB0 };
-        using (var stream = new MemoryStream(bytes))
-        {
-            Assert.That(() => Id3v2Tag.ReadTag(stream), Throws.Nothing);
-        }
+        using var stream = new MemoryStream(bytes);
+        Assert.That(() => Id3v2Tag.ReadTag(stream), Throws.Nothing);
     }
 
     [Test]
     public void ReadTagParsesHeaderOnlyTag()
     {
         var data = BuildTag(new byte[0]);
-        using (var stream = new MemoryStream(data))
-        {
-            Id3v2Tag tag = Id3v2Tag.ReadTag(stream);
+        using var stream = new MemoryStream(data);
+        Id3v2Tag tag = Id3v2Tag.ReadTag(stream);
 
-            Assert.That(tag, Is.Not.Null);
-            Assert.That(tag.RawData.Length, Is.EqualTo(10));
-            Assert.That(tag.RawData, Is.EqualTo(data));
-            Assert.That(stream.Position, Is.EqualTo(10));
-        }
+        Assert.That(tag, Is.Not.Null);
+        Assert.That(tag.RawData.Length, Is.EqualTo(10));
+        Assert.That(tag.RawData, Is.EqualTo(data));
+        Assert.That(stream.Position, Is.EqualTo(10));
     }
 
     [Test]
@@ -98,16 +92,14 @@ public class Id3v2TagTests
     {
         byte[] payload = { 1, 2, 3, 4, 5, 6, 7 };
         var data = BuildTag(payload);
-        using (var stream = new MemoryStream(data))
-        {
-            var start = stream.Position;
-            Id3v2Tag tag = Id3v2Tag.ReadTag(stream);
+        using var stream = new MemoryStream(data);
+        var start = stream.Position;
+        Id3v2Tag tag = Id3v2Tag.ReadTag(stream);
 
-            Assert.That(tag, Is.Not.Null);
-            Assert.That(tag.RawData.Length, Is.EqualTo(10 + payload.Length));
-            Assert.That(tag.RawData, Is.EqualTo(data));
-            Assert.That(stream.Position, Is.EqualTo(start + data.Length));
-        }
+        Assert.That(tag, Is.Not.Null);
+        Assert.That(tag.RawData.Length, Is.EqualTo(10 + payload.Length));
+        Assert.That(tag.RawData, Is.EqualTo(data));
+        Assert.That(stream.Position, Is.EqualTo(start + data.Length));
     }
 
     [Test]
@@ -120,15 +112,13 @@ public class Id3v2TagTests
         Array.Copy(prefix, 0, buffer, 0, prefix.Length);
         Array.Copy(tag, 0, buffer, prefix.Length, tag.Length);
 
-        using (var stream = new MemoryStream(buffer))
-        {
-            stream.Position = prefix.Length;
-            Id3v2Tag parsed = Id3v2Tag.ReadTag(stream);
+        using var stream = new MemoryStream(buffer);
+        stream.Position = prefix.Length;
+        Id3v2Tag parsed = Id3v2Tag.ReadTag(stream);
 
-            Assert.That(parsed, Is.Not.Null);
-            Assert.That(parsed.RawData, Is.EqualTo(tag));
-            Assert.That(stream.Position, Is.EqualTo(prefix.Length + tag.Length));
-        }
+        Assert.That(parsed, Is.Not.Null);
+        Assert.That(parsed.RawData, Is.EqualTo(tag));
+        Assert.That(stream.Position, Is.EqualTo(prefix.Length + tag.Length));
     }
 
     [Test]
@@ -138,14 +128,12 @@ public class Id3v2TagTests
         const byte FooterFlag = 0x10;
         var data = BuildTag(payload, FooterFlag, includeFooter: true);
 
-        using (var stream = new MemoryStream(data))
-        {
-            Id3v2Tag tag = Id3v2Tag.ReadTag(stream);
+        using var stream = new MemoryStream(data);
+        Id3v2Tag tag = Id3v2Tag.ReadTag(stream);
 
-            Assert.That(tag, Is.Not.Null);
-            Assert.That(tag.RawData.Length, Is.EqualTo(data.Length));
-            Assert.That(tag.RawData, Is.EqualTo(data));
-        }
+        Assert.That(tag, Is.Not.Null);
+        Assert.That(tag.RawData.Length, Is.EqualTo(data.Length));
+        Assert.That(tag.RawData, Is.EqualTo(data));
     }
 
     [Test]
@@ -157,14 +145,12 @@ public class Id3v2TagTests
         Array.Copy(header, 0, data, 0, header.Length);
         Array.Copy(availablePayload, 0, data, header.Length, availablePayload.Length);
 
-        using (var stream = new MemoryStream(data))
-        {
-            Id3v2Tag tag = Id3v2Tag.ReadTag(stream);
+        using var stream = new MemoryStream(data);
+        Id3v2Tag tag = Id3v2Tag.ReadTag(stream);
 
-            Assert.That(tag, Is.Not.Null);
-            Assert.That(tag.RawData.Length, Is.EqualTo(data.Length));
-            Assert.That(tag.RawData, Is.EqualTo(data));
-        }
+        Assert.That(tag, Is.Not.Null);
+        Assert.That(tag.RawData.Length, Is.EqualTo(data.Length));
+        Assert.That(tag.RawData, Is.EqualTo(data));
     }
 
     [Test]
@@ -178,22 +164,18 @@ public class Id3v2TagTests
         Array.Copy(tag, 0, data, 0, tag.Length);
         Array.Copy(trailing, 0, data, tag.Length, trailing.Length);
 
-        using (var stream = new MemoryStream(data))
-        {
-            Id3v2Tag parsed = Id3v2Tag.ReadTag(stream);
+        using var stream = new MemoryStream(data);
+        Id3v2Tag parsed = Id3v2Tag.ReadTag(stream);
 
-            Assert.That(parsed, Is.Not.Null);
-            Assert.That(stream.Position, Is.EqualTo(tag.Length));
-        }
+        Assert.That(parsed, Is.Not.Null);
+        Assert.That(stream.Position, Is.EqualTo(tag.Length));
     }
 
     [Test]
     public void ReadTagOnNonSeekableStreamThrowsNotSupportedException()
     {
-        using (var stream = new NonSeekableReadStream(BuildTag(new byte[0])))
-        {
-            Assert.Throws<NotSupportedException>(() => Id3v2Tag.ReadTag(stream));
-        }
+        using var stream = new NonSeekableReadStream(BuildTag(new byte[0]));
+        Assert.Throws<NotSupportedException>(() => Id3v2Tag.ReadTag(stream));
     }
 
     [Test]
@@ -333,15 +315,13 @@ public class Id3v2TagTests
     {
         byte[] invalidHeader = BuildId3v2Header(0);
         invalidHeader[6] = 0x80;
-        using (var stream = new MemoryStream(invalidHeader))
-        {
-            var start = stream.Position;
+        using var stream = new MemoryStream(invalidHeader);
+        var start = stream.Position;
 
-            Id3v2Tag tag = Id3v2Tag.ReadTag(stream);
+        Id3v2Tag tag = Id3v2Tag.ReadTag(stream);
 
-            Assert.That(tag, Is.Null);
-            Assert.That(stream.Position, Is.EqualTo(start));
-        }
+        Assert.That(tag, Is.Null);
+        Assert.That(stream.Position, Is.EqualTo(start));
     }
 
     [Test]
@@ -354,29 +334,25 @@ public class Id3v2TagTests
         Array.Copy(tag, 0, data, 0, tag.Length);
         Array.Copy(trailing, 0, data, tag.Length, trailing.Length);
 
-        using (var stream = new MemoryStream(data))
-        {
-            bool skipped = Id3v2Tag.TrySkipTag(stream);
+        using var stream = new MemoryStream(data);
+        bool skipped = Id3v2Tag.TrySkipTag(stream);
 
-            Assert.That(skipped, Is.True);
-            Assert.That(stream.Position, Is.EqualTo(tag.Length));
-        }
+        Assert.That(skipped, Is.True);
+        Assert.That(stream.Position, Is.EqualTo(tag.Length));
     }
 
     [Test]
     public void TrySkipTagReturnsFalseForNonTagAndRestoresPosition()
     {
         byte[] data = { 0x12, 0x34, 0x56, 0x78, 0x90 };
-        using (var stream = new MemoryStream(data))
-        {
-            stream.Position = 1;
-            long start = stream.Position;
+        using var stream = new MemoryStream(data);
+        stream.Position = 1;
+        long start = stream.Position;
 
-            bool skipped = Id3v2Tag.TrySkipTag(stream);
+        bool skipped = Id3v2Tag.TrySkipTag(stream);
 
-            Assert.That(skipped, Is.False);
-            Assert.That(stream.Position, Is.EqualTo(start));
-        }
+        Assert.That(skipped, Is.False);
+        Assert.That(stream.Position, Is.EqualTo(start));
     }
 
     [Test]
@@ -384,14 +360,12 @@ public class Id3v2TagTests
     {
         byte[] invalidHeader = BuildId3v2Header(0);
         invalidHeader[9] = 0x80;
-        using (var stream = new MemoryStream(invalidHeader))
-        {
-            long start = stream.Position;
+        using var stream = new MemoryStream(invalidHeader);
+        long start = stream.Position;
 
-            bool skipped = Id3v2Tag.TrySkipTag(stream);
+        bool skipped = Id3v2Tag.TrySkipTag(stream);
 
-            Assert.That(skipped, Is.False);
-            Assert.That(stream.Position, Is.EqualTo(start));
-        }
+        Assert.That(skipped, Is.False);
+        Assert.That(stream.Position, Is.EqualTo(start));
     }
 }

@@ -140,20 +140,18 @@ public class WaveFormatConversionStreamTests
     private void CanCreateConversionStream(WaveFormat inputFormat, WaveFormat outputFormat)
     {
         var inputStream = new NullWaveStream(inputFormat, 10000);
-        using (var stream = new WaveFormatConversionStream(
-            outputFormat, inputStream))
+        using var stream = new WaveFormatConversionStream(
+            outputFormat, inputStream);
+        byte[] buffer = new byte[stream.WaveFormat.AverageBytesPerSecond];
+        int totalRead = 0;
+        int bytesRead;
+        do
         {
-            byte[] buffer = new byte[stream.WaveFormat.AverageBytesPerSecond];
-            int totalRead = 0;
-            int bytesRead;
-            do
-            {
-                bytesRead = stream.Read(buffer, 0, buffer.Length);
-                totalRead += bytesRead;
-            } while (bytesRead > 0);
-            Debug.WriteLine(String.Format("Converted {0}", totalRead));
-            Assert.That(inputStream.Position, Is.EqualTo(inputStream.Length));
-        }
+            bytesRead = stream.Read(buffer, 0, buffer.Length);
+            totalRead += bytesRead;
+        } while (bytesRead > 0);
+        Debug.WriteLine(String.Format("Converted {0}", totalRead));
+        Assert.That(inputStream.Position, Is.EqualTo(inputStream.Length));
     }
 }
 

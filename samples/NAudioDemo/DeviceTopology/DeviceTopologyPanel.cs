@@ -44,27 +44,23 @@ public partial class DeviceTopologyPanel : UserControl
 
     public IEnumerable<MMDevice> GetCaptureDevices()
     {
-        using (var enumerator = new MMDeviceEnumerator())
-        {
-            var audioEndPoints = enumerator.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active);
+        using var enumerator = new MMDeviceEnumerator();
+        var audioEndPoints = enumerator.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active);
 
-            foreach (var device in audioEndPoints)
-            {
-                yield return device;
-            }
+        foreach (var device in audioEndPoints)
+        {
+            yield return device;
         }
     }
 
     public IEnumerable<MMDevice> GetRenderDevices()
     {
-        using (var enumerator = new MMDeviceEnumerator())
-        {
-            var audioEndPoints = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
+        using var enumerator = new MMDeviceEnumerator();
+        var audioEndPoints = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
 
-            foreach (var device in audioEndPoints)
-            {
-                yield return device;
-            }
+        foreach (var device in audioEndPoints)
+        {
+            yield return device;
         }
     }
 

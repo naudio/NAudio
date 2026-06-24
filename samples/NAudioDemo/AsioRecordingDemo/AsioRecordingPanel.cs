@@ -39,16 +39,10 @@ public partial class AsioRecordingPanel : UserControl
 
     private void Cleanup()
     {
-        if (device != null)
-        {
-            device.Dispose();
-            device = null;
-        }
-        if (writer != null)
-        {
-            writer.Dispose();
-            writer = null;
-        }
+        device?.Dispose();
+        device = null;
+        writer?.Dispose();
+        writer = null;
     }
 
     private void OnDeviceChanged(object sender, EventArgs e)
@@ -200,11 +194,9 @@ public partial class AsioRecordingPanel : UserControl
         {
             device.Stop();
         }
-        if (writer != null)
-        {
-            writer.Dispose();
-            writer = null;
-        }
+
+        writer?.Dispose();
+        writer = null;
         timer1.Enabled = false;
         SetButtonStates();
 

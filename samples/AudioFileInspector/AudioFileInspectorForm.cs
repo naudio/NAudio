@@ -161,15 +161,13 @@ public partial class AudioFileInspectorForm : Form
             try
             {
 
-                using (StreamWriter writer = new StreamWriter(saveFileDialog.FileName))
+                using StreamWriter writer = new StreamWriter(saveFileDialog.FileName);
+                string text = textLog.Text;
+                if (!text.Contains("\r"))
                 {
-                    string text = textLog.Text;
-                    if (!text.Contains("\r"))
-                    {
-                        text = text.Replace("\n", "\r\n");
-                    }
-                    writer.Write(text);
+                    text = text.Replace("\n", "\r\n");
                 }
+                writer.Write(text);
             }
             catch (Exception e)
             {
@@ -219,10 +217,7 @@ public partial class AudioFileInspectorForm : Form
 
     private void AudioFileInspectorForm_FormClosed(object sender, FormClosedEventArgs e)
     {
-        if (findForm != null)
-        {
-            findForm.Close();
-        }
+        findForm?.Close();
     }
 
 }

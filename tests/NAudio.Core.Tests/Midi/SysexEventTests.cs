@@ -42,31 +42,27 @@ public class SysexEventTests
     [Test]
     public void ReadSysexEvent_ReadsDataUntilF7Terminator()
     {
-        using (var ms = new MemoryStream(new byte[] { 0x01, 0x02, 0x03, 0xF7 }))
-        using (var br = new BinaryReader(ms))
-        {
-            var sysex = SysexEvent.ReadSysexEvent(br);
+        using var ms = new MemoryStream(new byte[] { 0x01, 0x02, 0x03, 0xF7 });
+        using var br = new BinaryReader(ms);
+        var sysex = SysexEvent.ReadSysexEvent(br);
 
-            var data = GetData(sysex);
-            Assert.That(data, Is.EqualTo(new byte[] { 0x01, 0x02, 0x03 }));
-            Assert.That(ms.Position, Is.EqualTo(4));
-        }
+        var data = GetData(sysex);
+        Assert.That(data, Is.EqualTo(new byte[] { 0x01, 0x02, 0x03 }));
+        Assert.That(ms.Position, Is.EqualTo(4));
     }
 
     [Test]
     public void ReadNextEvent_ParsesSysexEventAndAssignsBaseFields()
     {
-        using (var ms = new MemoryStream(new byte[] { 0x05, 0xF0, 0x10, 0x20, 0xF7 }))
-        using (var br = new BinaryReader(ms))
-        {
-            var midiEvent = MidiEvent.ReadNextEvent(br, null);
+        using var ms = new MemoryStream(new byte[] { 0x05, 0xF0, 0x10, 0x20, 0xF7 });
+        using var br = new BinaryReader(ms);
+        var midiEvent = MidiEvent.ReadNextEvent(br, null);
 
-            Assert.That(midiEvent, Is.TypeOf<SysexEvent>());
-            Assert.That(midiEvent.DeltaTime, Is.EqualTo(5));
-            Assert.That(midiEvent.Channel, Is.EqualTo(1));
-            Assert.That(midiEvent.CommandCode, Is.EqualTo(MidiCommandCode.Sysex));
-            Assert.That(GetData((SysexEvent)midiEvent), Is.EqualTo(new byte[] { 0x10, 0x20 }));
-        }
+        Assert.That(midiEvent, Is.TypeOf<SysexEvent>());
+        Assert.That(midiEvent.DeltaTime, Is.EqualTo(5));
+        Assert.That(midiEvent.Channel, Is.EqualTo(1));
+        Assert.That(midiEvent.CommandCode, Is.EqualTo(MidiCommandCode.Sysex));
+        Assert.That(GetData((SysexEvent)midiEvent), Is.EqualTo(new byte[] { 0x10, 0x20 }));
     }
 
     [Test]
@@ -75,15 +71,13 @@ public class SysexEventTests
         var sysex = ReadViaMidiEvent(new byte[] { 0x01, 0x02 });
         sysex.AbsoluteTime = 10;
 
-        using (var ms = new MemoryStream())
-        using (var writer = new BinaryWriter(ms))
-        {
-            long absoluteTime = 0;
-            sysex.Export(ref absoluteTime, writer);
+        using var ms = new MemoryStream();
+        using var writer = new BinaryWriter(ms);
+        long absoluteTime = 0;
+        sysex.Export(ref absoluteTime, writer);
 
-            Assert.That(absoluteTime, Is.EqualTo(10));
-            Assert.That(ms.ToArray(), Is.EqualTo(new byte[] { 0x0A, 0xF0, 0x01, 0x02, 0xF7 }));
-        }
+        Assert.That(absoluteTime, Is.EqualTo(10));
+        Assert.That(ms.ToArray(), Is.EqualTo(new byte[] { 0x0A, 0xF0, 0x01, 0x02, 0xF7 }));
     }
 
     [Test]
@@ -121,15 +115,13 @@ public class SysexEventTests
         var sysex = ReadViaMidiEvent(new byte[] { 0x55 });
         sysex.Channel = 6;
 
-        using (var ms = new MemoryStream())
-        using (var writer = new BinaryWriter(ms))
-        {
-            long absoluteTime = 0;
-            sysex.Export(ref absoluteTime, writer);
+        using var ms = new MemoryStream();
+        using var writer = new BinaryWriter(ms);
+        long absoluteTime = 0;
+        sysex.Export(ref absoluteTime, writer);
 
-            var bytes = ms.ToArray();
-            Assert.That(bytes[1], Is.EqualTo(0xF0));
-        }
+        var bytes = ms.ToArray();
+        Assert.That(bytes[1], Is.EqualTo(0xF0));
     }
 
     [Test]
@@ -172,11 +164,9 @@ public class SysexEventTests
         Array.Copy(data, 0, bytes, 2, data.Length);
         bytes[bytes.Length - 1] = 0xF7;
 
-        using (var ms = new MemoryStream(bytes))
-        using (var br = new BinaryReader(ms))
-        {
-            return (SysexEvent)MidiEvent.ReadNextEvent(br, null);
-        }
+        using var ms = new MemoryStream(bytes);
+        using var br = new BinaryReader(ms);
+        return (SysexEvent)MidiEvent.ReadNextEvent(br, null);
     }
 
     private static byte[] GetData(SysexEvent sysex)

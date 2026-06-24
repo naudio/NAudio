@@ -20,7 +20,7 @@ public sealed class GainEffect : AudioEffect, IParameterized
         EffectParameter.Continuous("Gain", "dB", -60f, 24f, () => GainDb, v => GainDb = v)
     };
 
-    private readonly ParameterSmoother gain = new ParameterSmoother();
+    private readonly ParameterSmoother gain = new();
     private float linearGain = 1f;
 
     /// <summary>

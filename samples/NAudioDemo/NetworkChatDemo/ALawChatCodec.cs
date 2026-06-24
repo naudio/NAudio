@@ -21,7 +21,7 @@ class ALawChatCodec : INetworkChatCodec
 
     public int BitsPerSecond => RecordFormat.SampleRate * 8;
 
-    public WaveFormat RecordFormat => new WaveFormat(8000, 16, 1);
+    public WaveFormat RecordFormat => new(8000, 16, 1);
 
     public byte[] Encode(byte[] data, int offset, int length)
     {

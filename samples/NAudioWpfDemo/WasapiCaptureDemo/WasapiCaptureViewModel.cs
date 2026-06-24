@@ -145,14 +145,12 @@ internal class WasapiCaptureViewModel : ViewModelBase, IDisposable
 
     private void GetDefaultRecordingFormat(MMDevice value)
     {
-        using (var c = new WasapiCapture(value))
-        {
-            SampleTypeIndex = c.WaveFormat.Encoding == WaveFormatEncoding.IeeeFloat ? 0 : 1;
-            SampleRate = c.WaveFormat.SampleRate;
-            BitDepth = c.WaveFormat.BitsPerSample;
-            ChannelCount = c.WaveFormat.Channels;
-            Message = "";
-        }
+        using var c = new WasapiCapture(value);
+        SampleTypeIndex = c.WaveFormat.Encoding == WaveFormatEncoding.IeeeFloat ? 0 : 1;
+        SampleRate = c.WaveFormat.SampleRate;
+        BitDepth = c.WaveFormat.BitsPerSample;
+        ChannelCount = c.WaveFormat.Channels;
+        Message = "";
     }
 
     public int SampleRate

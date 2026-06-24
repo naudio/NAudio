@@ -27,8 +27,8 @@ public class SmbPitchShiftingSampleProvider : ISampleProvider
     private float pitch = 1f;
     private readonly int fftSize;
     private readonly long osamp;
-    private readonly SmbPitchShifter shifterLeft = new SmbPitchShifter();
-    private readonly SmbPitchShifter shifterRight = new SmbPitchShifter();
+    private readonly SmbPitchShifter shifterLeft = new();
+    private readonly SmbPitchShifter shifterRight = new();
 
     // Reused across Read calls on the stereo path to avoid per-Read allocations.
     private float[] leftChannelBuffer;

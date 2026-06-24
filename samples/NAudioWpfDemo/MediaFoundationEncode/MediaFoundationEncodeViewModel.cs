@@ -36,15 +36,15 @@ internal class MediaFoundationEncodeViewModel : ViewModelBase
         // TODO: fill this by asking the encoders what they can do
         OutputFormats = new List<EncoderViewModel>
         {
-            new EncoderViewModel() { Name = "AAC", Guid = AudioSubtypes.MFAudioFormat_AAC, Extension = ".mp4" }, // Windows 8 can do a .aac extension as well
-            new EncoderViewModel() { Name = "Windows Media Audio", Guid = AudioSubtypes.MFAudioFormat_WMAudioV8, Extension = ".wma" },
-            new EncoderViewModel() { Name = "Windows Media Audio Professional", Guid = AudioSubtypes.MFAudioFormat_WMAudioV9, Extension = ".wma" },
-            new EncoderViewModel() { Name = "MP3", Guid = AudioSubtypes.MFAudioFormat_MP3, Extension = ".mp3" },
-            new EncoderViewModel() { Name = "Windows Media Audio Voice", Guid = AudioSubtypes.MFAudioFormat_MSP1, Extension = ".wma" },
-            new EncoderViewModel() { Name = "Windows Media Audio Lossless", Guid = AudioSubtypes.MFAudioFormat_WMAudio_Lossless, Extension = ".wma" },
-            new EncoderViewModel() { Name = "FLAC", Guid = AudioSubtypes.MFAudioFormat_FLAC, Extension = ".flac" },
-            new EncoderViewModel() { Name = "Apple Lossless (ALAC)", Guid = AudioSubtypes.MFAudioFormat_ALAC, Extension = ".m4a" },
-            new EncoderViewModel() { Name = "Fake for testing", Guid = Guid.NewGuid(), Extension = ".xyz" }
+            new() { Name = "AAC", Guid = AudioSubtypes.MFAudioFormat_AAC, Extension = ".mp4" }, // Windows 8 can do a .aac extension as well
+            new() { Name = "Windows Media Audio", Guid = AudioSubtypes.MFAudioFormat_WMAudioV8, Extension = ".wma" },
+            new() { Name = "Windows Media Audio Professional", Guid = AudioSubtypes.MFAudioFormat_WMAudioV9, Extension = ".wma" },
+            new() { Name = "MP3", Guid = AudioSubtypes.MFAudioFormat_MP3, Extension = ".mp3" },
+            new() { Name = "Windows Media Audio Voice", Guid = AudioSubtypes.MFAudioFormat_MSP1, Extension = ".wma" },
+            new() { Name = "Windows Media Audio Lossless", Guid = AudioSubtypes.MFAudioFormat_WMAudio_Lossless, Extension = ".wma" },
+            new() { Name = "FLAC", Guid = AudioSubtypes.MFAudioFormat_FLAC, Extension = ".flac" },
+            new() { Name = "Apple Lossless (ALAC)", Guid = AudioSubtypes.MFAudioFormat_ALAC, Extension = ".m4a" },
+            new() { Name = "Fake for testing", Guid = Guid.NewGuid(), Extension = ".xyz" }
         };
         SelectedOutputFormat = OutputFormats[0];
     }
@@ -187,22 +187,18 @@ internal class MediaFoundationEncodeViewModel : ViewModelBase
             return;
         }
 
-        using (var reader = new MediaFoundationReader(InputFile))
+        using var reader = new MediaFoundationReader(InputFile);
+        string outputUrl = SelectSaveFile(SelectedOutputFormat.Name, SelectedOutputFormat.Extension);
+        if (outputUrl == null) return;
+        using var encoder = new MediaFoundationEncoder(SelectedMediaType.MediaType);
+        try
         {
-            string outputUrl = SelectSaveFile(SelectedOutputFormat.Name, SelectedOutputFormat.Extension);
-            if (outputUrl == null) return;
-            using (var encoder = new MediaFoundationEncoder(SelectedMediaType.MediaType))
-            {
-                try
-                {
 
-                    encoder.Encode(outputUrl, reader);
-                }
-                catch (Exception e)
-                {
-                    MessageBox.Show(e.Message, "Failed to encode");
-                }
-            }
+            encoder.Encode(outputUrl, reader);
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show(e.Message, "Failed to encode");
         }
     }
 

@@ -68,16 +68,10 @@ abstract class AcmChatCodec : INetworkChatCodec
 
     public void Dispose()
     {
-        if (encodeStream != null)
-        {
-            encodeStream.Dispose();
-            encodeStream = null;
-        }
-        if (decodeStream != null)
-        {
-            decodeStream.Dispose();
-            decodeStream = null;
-        }
+        encodeStream?.Dispose();
+        encodeStream = null;
+        decodeStream?.Dispose();
+        decodeStream = null;
     }
 
     public bool IsAvailable

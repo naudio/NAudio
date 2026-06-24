@@ -14,11 +14,9 @@ public class SampleToWaveProvider24Tests
     {
         const string input = @"C:\Users\Mark\Downloads\Region-1.wav";
         if (!File.Exists(input)) Assert.Ignore("Test file not found");
-        using (var reader = new WaveFileReader(input))
-        {
-            var sp = reader.ToSampleProvider();
-            var wp24 = new SampleToWaveProvider24(sp);
-            WaveFileWriter.CreateWaveFile(@"C:\Users\Mark\Downloads\Region1-24.wav", wp24);
-        }
+        using var reader = new WaveFileReader(input);
+        var sp = reader.ToSampleProvider();
+        var wp24 = new SampleToWaveProvider24(sp);
+        WaveFileWriter.CreateWaveFile(@"C:\Users\Mark\Downloads\Region1-24.wav", wp24);
     }
 }

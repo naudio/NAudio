@@ -20,46 +20,36 @@ public class MidiEventTests
     [TestCase(0x0FFFFFFF)]
     public void VarIntRoundTrip(int value)
     {
-        using (var ms = new MemoryStream())
-        using (var writer = new BinaryWriter(ms))
-        {
-            MidiEvent.WriteVarInt(writer, value);
-            ms.Position = 0;
-            using (var reader = new BinaryReader(ms))
-            {
-                Assert.That(MidiEvent.ReadVarInt(reader), Is.EqualTo(value));
-            }
-        }
+        using var ms = new MemoryStream();
+        using var writer = new BinaryWriter(ms);
+        MidiEvent.WriteVarInt(writer, value);
+        ms.Position = 0;
+        using var reader = new BinaryReader(ms);
+        Assert.That(MidiEvent.ReadVarInt(reader), Is.EqualTo(value));
     }
 
     [Test]
     public void WriteVarIntRejectsNegativeValues()
     {
-        using (var ms = new MemoryStream())
-        using (var writer = new BinaryWriter(ms))
-        {
-            Assert.Throws<ArgumentOutOfRangeException>(() => MidiEvent.WriteVarInt(writer, -1));
-        }
+        using var ms = new MemoryStream();
+        using var writer = new BinaryWriter(ms);
+        Assert.Throws<ArgumentOutOfRangeException>(() => MidiEvent.WriteVarInt(writer, -1));
     }
 
     [Test]
     public void WriteVarIntRejectsTooLargeValues()
     {
-        using (var ms = new MemoryStream())
-        using (var writer = new BinaryWriter(ms))
-        {
-            Assert.Throws<ArgumentOutOfRangeException>(() => MidiEvent.WriteVarInt(writer, 0x10000000));
-        }
+        using var ms = new MemoryStream();
+        using var writer = new BinaryWriter(ms);
+        Assert.Throws<ArgumentOutOfRangeException>(() => MidiEvent.WriteVarInt(writer, 0x10000000));
     }
 
     [Test]
     public void ReadVarIntRejectsInvalidEncoding()
     {
-        using (var ms = new MemoryStream(new byte[] { 0x80, 0x80, 0x80, 0x80 }))
-        using (var reader = new BinaryReader(ms))
-        {
-            Assert.Throws<FormatException>(() => MidiEvent.ReadVarInt(reader));
-        }
+        using var ms = new MemoryStream(new byte[] { 0x80, 0x80, 0x80, 0x80 });
+        using var reader = new BinaryReader(ms);
+        Assert.Throws<FormatException>(() => MidiEvent.ReadVarInt(reader));
     }
 
     [Test]
@@ -220,18 +210,16 @@ public class MidiEventTests
     public void ReadNextEventParsesStatusByteEvent()
     {
         var bytes = new byte[] { 0x00, 0x91, 0x3C, 0x64 };
-        using (var ms = new MemoryStream(bytes))
-        using (var br = new BinaryReader(ms))
-        {
-            var midiEvent = MidiEvent.ReadNextEvent(br, null);
+        using var ms = new MemoryStream(bytes);
+        using var br = new BinaryReader(ms);
+        var midiEvent = MidiEvent.ReadNextEvent(br, null);
 
-            Assert.That(midiEvent, Is.TypeOf<NoteOnEvent>());
-            var noteOn = (NoteOnEvent)midiEvent;
-            Assert.That(noteOn.DeltaTime, Is.EqualTo(0));
-            Assert.That(noteOn.Channel, Is.EqualTo(2));
-            Assert.That(noteOn.NoteNumber, Is.EqualTo(60));
-            Assert.That(noteOn.Velocity, Is.EqualTo(100));
-        }
+        Assert.That(midiEvent, Is.TypeOf<NoteOnEvent>());
+        var noteOn = (NoteOnEvent)midiEvent;
+        Assert.That(noteOn.DeltaTime, Is.EqualTo(0));
+        Assert.That(noteOn.Channel, Is.EqualTo(2));
+        Assert.That(noteOn.NoteNumber, Is.EqualTo(60));
+        Assert.That(noteOn.Velocity, Is.EqualTo(100));
     }
 
     [Test]
@@ -239,97 +227,83 @@ public class MidiEventTests
     {
         var previous = new NoteOnEvent(0, 2, 1, 1, 0);
         var bytes = new byte[] { 0x00, 0x3D, 0x40 };
-        using (var ms = new MemoryStream(bytes))
-        using (var br = new BinaryReader(ms))
-        {
-            var midiEvent = MidiEvent.ReadNextEvent(br, previous);
+        using var ms = new MemoryStream(bytes);
+        using var br = new BinaryReader(ms);
+        var midiEvent = MidiEvent.ReadNextEvent(br, previous);
 
-            Assert.That(midiEvent, Is.TypeOf<NoteOnEvent>());
-            var noteOn = (NoteOnEvent)midiEvent;
-            Assert.That(noteOn.Channel, Is.EqualTo(2));
-            Assert.That(noteOn.NoteNumber, Is.EqualTo(61));
-            Assert.That(noteOn.Velocity, Is.EqualTo(64));
-            Assert.That(noteOn.CommandCode, Is.EqualTo(MidiCommandCode.NoteOn));
-        }
+        Assert.That(midiEvent, Is.TypeOf<NoteOnEvent>());
+        var noteOn = (NoteOnEvent)midiEvent;
+        Assert.That(noteOn.Channel, Is.EqualTo(2));
+        Assert.That(noteOn.NoteNumber, Is.EqualTo(61));
+        Assert.That(noteOn.Velocity, Is.EqualTo(64));
+        Assert.That(noteOn.CommandCode, Is.EqualTo(MidiCommandCode.NoteOn));
     }
 
     [Test]
     public void ReadNextEventWithRunningStatusAndNoPreviousThrows()
     {
         var bytes = new byte[] { 0x00, 0x3C, 0x40 };
-        using (var ms = new MemoryStream(bytes))
-        using (var br = new BinaryReader(ms))
-        {
-            Assert.Throws<NullReferenceException>(() => MidiEvent.ReadNextEvent(br, null));
-        }
+        using var ms = new MemoryStream(bytes);
+        using var br = new BinaryReader(ms);
+        Assert.Throws<NullReferenceException>(() => MidiEvent.ReadNextEvent(br, null));
     }
 
     [Test]
     public void ReadNextEventParsesMetaEvent()
     {
         var bytes = new byte[] { 0x00, 0xFF, (byte)MetaEventType.EndTrack, 0x00 };
-        using (var ms = new MemoryStream(bytes))
-        using (var br = new BinaryReader(ms))
-        {
-            var midiEvent = MidiEvent.ReadNextEvent(br, null);
+        using var ms = new MemoryStream(bytes);
+        using var br = new BinaryReader(ms);
+        var midiEvent = MidiEvent.ReadNextEvent(br, null);
 
-            Assert.That(midiEvent, Is.TypeOf<MetaEvent>());
-            Assert.That(MidiEvent.IsEndTrack(midiEvent), Is.True);
-            Assert.That(midiEvent.CommandCode, Is.EqualTo(MidiCommandCode.MetaEvent));
-        }
+        Assert.That(midiEvent, Is.TypeOf<MetaEvent>());
+        Assert.That(MidiEvent.IsEndTrack(midiEvent), Is.True);
+        Assert.That(midiEvent.CommandCode, Is.EqualTo(MidiCommandCode.MetaEvent));
     }
 
     [Test]
     public void ReadNextEventParsesSysexEvent()
     {
         var bytes = new byte[] { 0x00, 0xF0, 0x01, 0x02, 0xF7 };
-        using (var ms = new MemoryStream(bytes))
-        using (var br = new BinaryReader(ms))
-        {
-            var midiEvent = MidiEvent.ReadNextEvent(br, null);
+        using var ms = new MemoryStream(bytes);
+        using var br = new BinaryReader(ms);
+        var midiEvent = MidiEvent.ReadNextEvent(br, null);
 
-            Assert.That(midiEvent, Is.TypeOf<SysexEvent>());
-            Assert.That(midiEvent.CommandCode, Is.EqualTo(MidiCommandCode.Sysex));
-        }
+        Assert.That(midiEvent, Is.TypeOf<SysexEvent>());
+        Assert.That(midiEvent.CommandCode, Is.EqualTo(MidiCommandCode.Sysex));
     }
 
     [Test]
     public void ReadNextEventRejectsUnsupportedCommandCode()
     {
         var bytes = new byte[] { 0x00, 0xF1 };
-        using (var ms = new MemoryStream(bytes))
-        using (var br = new BinaryReader(ms))
-        {
-            Assert.Throws<FormatException>(() => MidiEvent.ReadNextEvent(br, null));
-        }
+        using var ms = new MemoryStream(bytes);
+        using var br = new BinaryReader(ms);
+        Assert.Throws<FormatException>(() => MidiEvent.ReadNextEvent(br, null));
     }
 
     [Test]
     public void ExportWritesDeltaAndStatusByte()
     {
         var midiEvent = new MidiEvent(240, 2, MidiCommandCode.NoteOn);
-        using (var ms = new MemoryStream())
-        using (var writer = new BinaryWriter(ms))
-        {
-            long currentAbsolute = 120;
-            midiEvent.Export(ref currentAbsolute, writer);
+        using var ms = new MemoryStream();
+        using var writer = new BinaryWriter(ms);
+        long currentAbsolute = 120;
+        midiEvent.Export(ref currentAbsolute, writer);
 
-            Assert.That(currentAbsolute, Is.EqualTo(240));
-            var bytes = ms.ToArray();
-            Assert.That(bytes, Is.EqualTo(new byte[] { 0x78, 0x91 }));
-        }
+        Assert.That(currentAbsolute, Is.EqualTo(240));
+        var bytes = ms.ToArray();
+        Assert.That(bytes, Is.EqualTo(new byte[] { 0x78, 0x91 }));
     }
 
     [Test]
     public void ExportRejectsUnsortedEvents()
     {
         var midiEvent = new MidiEvent(10, 1, MidiCommandCode.NoteOn);
-        using (var ms = new MemoryStream())
-        using (var writer = new BinaryWriter(ms))
-        {
-            long currentAbsolute = 11;
-            Assert.Throws<FormatException>(() => midiEvent.Export(ref currentAbsolute, writer));
-        }
+        using var ms = new MemoryStream();
+        using var writer = new BinaryWriter(ms);
+        long currentAbsolute = 11;
+        Assert.Throws<FormatException>(() => midiEvent.Export(ref currentAbsolute, writer));
     }
 
     [Test]

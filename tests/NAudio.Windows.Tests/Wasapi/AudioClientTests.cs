@@ -37,23 +37,21 @@ public class AudioClientTests
     [Test]
     public void CanInitializeInExclusiveMode()
     {
-        using (AudioClient audioClient = GetAudioClient())
+        using AudioClient audioClient = GetAudioClient();
+        WaveFormat waveFormat = new WaveFormat(48000, 16, 2); //audioClient.MixFormat;
+        long refTimesPerSecond = 10000000;
+        try
         {
-            WaveFormat waveFormat = new WaveFormat(48000, 16, 2); //audioClient.MixFormat;
-            long refTimesPerSecond = 10000000;
-            try
-            {
-                audioClient.Initialize(AudioClientShareMode.Exclusive,
-                    AudioClientStreamFlags.None,
-                    refTimesPerSecond / 10,
-                    0,
-                    waveFormat,
-                    Guid.Empty);
-            }
-            catch (COMException ex) when (ex.ErrorCode == unchecked((int)0x8889000A)) // AUDCLNT_E_DEVICE_IN_USE
-            {
-                Assert.Ignore("Can't open exclusive mode at the moment as device is in use");
-            }
+            audioClient.Initialize(AudioClientShareMode.Exclusive,
+                AudioClientStreamFlags.None,
+                refTimesPerSecond / 10,
+                0,
+                waveFormat,
+                Guid.Empty);
+        }
+        catch (COMException ex) when (ex.ErrorCode == unchecked((int)0x8889000A)) // AUDCLNT_E_DEVICE_IN_USE
+        {
+            Assert.Ignore("Can't open exclusive mode at the moment as device is in use");
         }
     }
 
@@ -187,26 +185,22 @@ public class AudioClientTests
     [Test, MaxTime(2000)]
     public void CanCaptureDefaultDeviceInDefaultFormatUsingWasapiCapture()
     {
-        using (var wasapiClient = new WasapiCapture())
-        {
-            wasapiClient.StartRecording();
-            Thread.Sleep(1000);
-            wasapiClient.StopRecording();
-        }
+        using var wasapiClient = new WasapiCapture();
+        wasapiClient.StartRecording();
+        Thread.Sleep(1000);
+        wasapiClient.StopRecording();
     }
 
     [Test, MaxTime(3000)]
     public void CanReuseWasapiCapture()
     {
-        using (var wasapiClient = new WasapiCapture())
-        {
-            wasapiClient.StartRecording();
-            Thread.Sleep(1000);
-            wasapiClient.StopRecording();
-            Thread.Sleep(1000);
-            wasapiClient.StartRecording();
-            Console.WriteLine("Disposing");
-        }
+        using var wasapiClient = new WasapiCapture();
+        wasapiClient.StartRecording();
+        Thread.Sleep(1000);
+        wasapiClient.StopRecording();
+        Thread.Sleep(1000);
+        wasapiClient.StartRecording();
+        Console.WriteLine("Disposing");
     }
 
     private AudioClient InitializeClient(AudioClientShareMode shareMode)

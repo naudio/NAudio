@@ -128,10 +128,7 @@ public partial class Mp3StreamingPanel : UserControl
         }
         finally
         {
-            if (decompressor != null)
-            {
-                decompressor.Dispose();
-            }
+            decompressor?.Dispose();
         }
     }
 

@@ -25,10 +25,7 @@ public class PartsList
         get
         {
             uint result = 0;
-            if (partsListInterface != null)
-            {
-                partsListInterface.GetCount(out result);
-            }
+            partsListInterface?.GetCount(out result);
 
             return result;
         }

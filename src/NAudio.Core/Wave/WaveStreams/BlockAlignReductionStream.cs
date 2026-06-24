@@ -15,7 +15,7 @@ public class BlockAlignReductionStream : WaveStream
     private readonly CircularBuffer circularBuffer;
     private long bufferStartPosition;
     private byte[] sourceBuffer;
-    private readonly object lockObject = new object();
+    private readonly object lockObject = new();
 
     /// <summary>
     /// Creates a new BlockAlignReductionStream
@@ -111,11 +111,8 @@ public class BlockAlignReductionStream : WaveStream
     {
         if (disposing)
         {
-            if (sourceStream != null)
-            {
-                sourceStream.Dispose();
-                sourceStream = null;
-            }
+            sourceStream?.Dispose();
+            sourceStream = null;
         }
         else
         {

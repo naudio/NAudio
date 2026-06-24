@@ -24,34 +24,28 @@ public class ControlChangeEventTests
     [Test]
     public void BinaryReaderConstructorSetsControllerAndValue()
     {
-        using (var ms = new MemoryStream(new byte[] { (byte)MidiController.MainVolume, 127 }))
-        using (var reader = new BinaryReader(ms))
-        {
-            var controlChangeEvent = new ControlChangeEvent(reader);
+        using var ms = new MemoryStream(new byte[] { (byte)MidiController.MainVolume, 127 });
+        using var reader = new BinaryReader(ms);
+        var controlChangeEvent = new ControlChangeEvent(reader);
 
-            Assert.That(controlChangeEvent.Controller, Is.EqualTo(MidiController.MainVolume));
-            Assert.That(controlChangeEvent.ControllerValue, Is.EqualTo(127));
-        }
+        Assert.That(controlChangeEvent.Controller, Is.EqualTo(MidiController.MainVolume));
+        Assert.That(controlChangeEvent.ControllerValue, Is.EqualTo(127));
     }
 
     [Test]
     public void BinaryReaderConstructorRejectsControllerWithMsbSet()
     {
-        using (var ms = new MemoryStream(new byte[] { 0x80, 0x00 }))
-        using (var reader = new BinaryReader(ms))
-        {
-            Assert.Throws<InvalidDataException>(() => new ControlChangeEvent(reader));
-        }
+        using var ms = new MemoryStream(new byte[] { 0x80, 0x00 });
+        using var reader = new BinaryReader(ms);
+        Assert.Throws<InvalidDataException>(() => new ControlChangeEvent(reader));
     }
 
     [Test]
     public void BinaryReaderConstructorRejectsControllerValueWithMsbSet()
     {
-        using (var ms = new MemoryStream(new byte[] { 0x07, 0x80 }))
-        using (var reader = new BinaryReader(ms))
-        {
-            Assert.Throws<InvalidDataException>(() => new ControlChangeEvent(reader));
-        }
+        using var ms = new MemoryStream(new byte[] { 0x07, 0x80 });
+        using var reader = new BinaryReader(ms);
+        Assert.Throws<InvalidDataException>(() => new ControlChangeEvent(reader));
     }
 
     [TestCase(128)]
@@ -85,18 +79,16 @@ public class ControlChangeEventTests
     public void ExportWritesDeltaStatusControllerAndValue()
     {
         var controlChangeEvent = new ControlChangeEvent(0, 2, MidiController.Expression, 127);
-        using (var ms = new MemoryStream())
-        using (var writer = new BinaryWriter(ms))
-        {
-            long absoluteTime = 0;
-            controlChangeEvent.Export(ref absoluteTime, writer);
+        using var ms = new MemoryStream();
+        using var writer = new BinaryWriter(ms);
+        long absoluteTime = 0;
+        controlChangeEvent.Export(ref absoluteTime, writer);
 
-            var bytes = ms.ToArray();
-            Assert.That(bytes.Length, Is.EqualTo(4));
-            Assert.That(bytes[0], Is.EqualTo(0x00));
-            Assert.That(bytes[1], Is.EqualTo(0xB1));
-            Assert.That(bytes[2], Is.EqualTo((byte)MidiController.Expression));
-            Assert.That(bytes[3], Is.EqualTo(0x7F));
-        }
+        var bytes = ms.ToArray();
+        Assert.That(bytes.Length, Is.EqualTo(4));
+        Assert.That(bytes[0], Is.EqualTo(0x00));
+        Assert.That(bytes[1], Is.EqualTo(0xB1));
+        Assert.That(bytes[2], Is.EqualTo((byte)MidiController.Expression));
+        Assert.That(bytes[3], Is.EqualTo(0x7F));
     }
 }

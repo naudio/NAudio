@@ -14,9 +14,9 @@ namespace NAudio.Dmo;
 public class WindowsMediaMp3Decoder : IDisposable
 {
     // CLSID_CMP3DecMediaObject
-    private static readonly Guid Mp3DecoderClsid = new Guid("bbeea841-0a63-4f52-a7ab-a9b3a84ed38a");
+    private static readonly Guid Mp3DecoderClsid = new("bbeea841-0a63-4f52-a7ab-a9b3a84ed38a");
     // IID_IMediaObject — mediaobj.h
-    private static readonly Guid IID_IMediaObject = new Guid("d8ad0f58-5494-4102-97c5-ec798e59bcf4");
+    private static readonly Guid IID_IMediaObject = new("d8ad0f58-5494-4102-97c5-ec798e59bcf4");
 
     MediaObject mediaObject;
 
@@ -48,11 +48,8 @@ public class WindowsMediaMp3Decoder : IDisposable
     public void Dispose()
     {
         GC.SuppressFinalize(this);
-        if (mediaObject != null)
-        {
-            mediaObject.Dispose();
-            mediaObject = null;
-        }
+        mediaObject?.Dispose();
+        mediaObject = null;
     }
 
     #endregion

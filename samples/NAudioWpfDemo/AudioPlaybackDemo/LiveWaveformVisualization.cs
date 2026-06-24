@@ -11,7 +11,7 @@ namespace NAudioWpfDemo.AudioPlaybackDemo;
 /// </summary>
 class LiveWaveformVisualization : IVisualizationPlugin
 {
-    private readonly LiveWaveformControl waveform = new LiveWaveformControl();
+    private readonly LiveWaveformControl waveform = new();
     private readonly DockPanel content;
 
     public LiveWaveformVisualization()
@@ -113,7 +113,7 @@ class LiveWaveformVisualization : IVisualizationPlugin
         return group;
     }
 
-    private static StackPanel NewInlineGroup() => new StackPanel
+    private static StackPanel NewInlineGroup() => new()
     {
         Orientation = Orientation.Horizontal,
         Margin = new Thickness(0, 2, 10, 2)

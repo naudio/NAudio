@@ -11,7 +11,7 @@ namespace NAudio.Core.Tests.WaveStreams;
 [Category("UnitTest")]
 public class CueListInterpreterTests
 {
-    private static WaveFormat Format => new WaveFormat(8000, 16, 1);
+    private static WaveFormat Format => new(8000, 16, 1);
 
     // Writes a WAV with the given cue+label pairs via the real writer, then opens it for read.
     private static WaveFileReader OpenWithCues(params (int pos, string label)[] cues)

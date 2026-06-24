@@ -28,7 +28,7 @@ public sealed class TremoloEffect : AudioEffect, IParameterized
     // Rounds the step edges of the Square / Sample-and-Hold LFO so amplitude
     // modulation doesn't click; ~3 ms barely touches the smooth waveforms at
     // LFO rates (corner ≈ 50 Hz, well above the 20 Hz max rate).
-    private readonly ParameterSmoother modSmoother = new ParameterSmoother();
+    private readonly ParameterSmoother modSmoother = new();
 
     /// <summary>Modulation depth, 0 (no effect) to 1 (full). Default 0.5.</summary>
     public float Depth { get; set; } = 0.5f;

@@ -12,7 +12,7 @@ namespace NAudio.Core.Tests.WaveStreams;
 [Category("UnitTest")]
 public class WaveChunksTests
 {
-    private static WaveFormat DefaultFormat => new WaveFormat(8000, 16, 1);
+    private static WaveFormat DefaultFormat => new(8000, 16, 1);
     private static byte[] SampleAudio => new byte[] { 0, 0, 10, 0, 20, 0, 30, 0 };
 
     private static WaveFileReader Open(params WaveFileBuilder.Chunk[] extras)

@@ -11,7 +11,7 @@ namespace NAudio.Core.Tests.WaveStreams;
 [Category("UnitTest")]
 public class WaveFileWriterRf64Tests
 {
-    private static WaveFormat Format => new WaveFormat(8000, 16, 1);
+    private static WaveFormat Format => new(8000, 16, 1);
 
     private static string ReadFourCc(byte[] bytes, int offset)
         => Encoding.ASCII.GetString(bytes, offset, 4);

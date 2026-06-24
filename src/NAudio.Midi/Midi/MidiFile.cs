@@ -316,41 +316,39 @@ public class MidiFile
         {
             throw new ArgumentException("Can't export more than one track to a type 0 file");
         }
-        using (var writer = new BinaryWriter(File.Create(filename)))
+        using var writer = new BinaryWriter(File.Create(filename));
+        writer.Write(Encoding.UTF8.GetBytes("MThd"));
+        writer.Write(SwapUInt32(6)); // chunk size
+        writer.Write(SwapUInt16((ushort)events.MidiFileType));
+        writer.Write(SwapUInt16((ushort)events.Tracks));
+        writer.Write(SwapUInt16((ushort)events.DeltaTicksPerQuarterNote));
+
+        for (int track = 0; track < events.Tracks; track++)
         {
-            writer.Write(Encoding.UTF8.GetBytes("MThd"));
-            writer.Write(SwapUInt32(6)); // chunk size
-            writer.Write(SwapUInt16((ushort)events.MidiFileType));
-            writer.Write(SwapUInt16((ushort)events.Tracks));
-            writer.Write(SwapUInt16((ushort)events.DeltaTicksPerQuarterNote));
+            IList<MidiEvent> eventList = events[track];
 
-            for (int track = 0; track < events.Tracks; track++)
+            writer.Write(Encoding.UTF8.GetBytes("MTrk"));
+            long trackSizePosition = writer.BaseStream.Position;
+            writer.Write(SwapUInt32(0));
+
+            long absoluteTime = events.StartAbsoluteTime;
+
+            // use a stable sort to preserve ordering of MIDI events whose 
+            // absolute times are the same
+            MergeSort.Sort(eventList, new MidiEventComparer());
+            if (eventList.Count > 0)
             {
-                IList<MidiEvent> eventList = events[track];
-
-                writer.Write(Encoding.UTF8.GetBytes("MTrk"));
-                long trackSizePosition = writer.BaseStream.Position;
-                writer.Write(SwapUInt32(0));
-
-                long absoluteTime = events.StartAbsoluteTime;
-
-                // use a stable sort to preserve ordering of MIDI events whose 
-                // absolute times are the same
-                MergeSort.Sort(eventList, new MidiEventComparer());
-                if (eventList.Count > 0)
-                {
-                    System.Diagnostics.Debug.Assert(MidiEvent.IsEndTrack(eventList[eventList.Count - 1]), "Exporting a track with a missing end track");
-                }
-                foreach (var midiEvent in eventList)
-                {
-                    midiEvent.Export(ref absoluteTime, writer);
-                }
-
-                uint trackChunkLength = (uint)(writer.BaseStream.Position - trackSizePosition) - 4;
-                writer.BaseStream.Position = trackSizePosition;
-                writer.Write(SwapUInt32(trackChunkLength));
-                writer.BaseStream.Position += trackChunkLength;
+                System.Diagnostics.Debug.Assert(MidiEvent.IsEndTrack(eventList[eventList.Count - 1]), "Exporting a track with a missing end track");
             }
+            foreach (var midiEvent in eventList)
+            {
+                midiEvent.Export(ref absoluteTime, writer);
+            }
+
+            uint trackChunkLength = (uint)(writer.BaseStream.Position - trackSizePosition) - 4;
+            writer.BaseStream.Position = trackSizePosition;
+            writer.Write(SwapUInt32(trackChunkLength));
+            writer.BaseStream.Position += trackChunkLength;
         }
     }
 }

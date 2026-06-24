@@ -20,7 +20,7 @@ public class WaveOffsetStream : WaveStream
     private TimeSpan startTime;
     private TimeSpan sourceOffset;
     private TimeSpan sourceLength;
-    private readonly object lockObject = new object();
+    private readonly object lockObject = new();
 
     /// <summary>
     /// Creates a new WaveOffsetStream
@@ -236,11 +236,8 @@ public class WaveOffsetStream : WaveStream
     {
         if (disposing)
         {
-            if (sourceStream != null)
-            {
-                sourceStream.Dispose();
-                sourceStream = null;
-            }
+            sourceStream?.Dispose();
+            sourceStream = null;
         }
         else
         {

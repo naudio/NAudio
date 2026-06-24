@@ -16,7 +16,7 @@ namespace NAudioDemo.DeviceNotificationsDemo;
 // panel goes quiet.
 public partial class DeviceNotificationsPanel : UserControl
 {
-    private readonly MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
+    private readonly MMDeviceEnumerator enumerator = new();
     private readonly NotificationClient client;
 
     public DeviceNotificationsPanel()

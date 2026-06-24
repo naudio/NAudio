@@ -32,18 +32,16 @@ public class WaveFileReaderTests
             0x64, 0x61, 0x74, 0x61, // "data"
             0x00, 0x00, 0x00, 0x00, // Subchunk2Size = 0
         };
-        using (var inputStream = new MemoryStream(fileContents))
-        using (var reader = new WaveFileReader(inputStream))
-        {
-            Assert.That(reader.WaveFormat.AverageBytesPerSecond, Is.EqualTo(16000));
-            Assert.That(reader.WaveFormat.BitsPerSample, Is.EqualTo(8));
-            Assert.That(reader.WaveFormat.Channels, Is.EqualTo(2));
-            Assert.That(reader.WaveFormat.SampleRate, Is.EqualTo(8000));
+        using var inputStream = new MemoryStream(fileContents);
+        using var reader = new WaveFileReader(inputStream);
+        Assert.That(reader.WaveFormat.AverageBytesPerSecond, Is.EqualTo(16000));
+        Assert.That(reader.WaveFormat.BitsPerSample, Is.EqualTo(8));
+        Assert.That(reader.WaveFormat.Channels, Is.EqualTo(2));
+        Assert.That(reader.WaveFormat.SampleRate, Is.EqualTo(8000));
 
-            // empty-but-valid WAV: no audio samples and no extra chunks
-            Assert.That(reader.Length, Is.EqualTo(0));
-            Assert.That(reader.Chunks.Count, Is.EqualTo(0));
-        }
+        // empty-but-valid WAV: no audio samples and no extra chunks
+        Assert.That(reader.Length, Is.EqualTo(0));
+        Assert.That(reader.Chunks.Count, Is.EqualTo(0));
     }
 
     [Test]
@@ -59,14 +57,12 @@ public class WaveFileReaderTests
             writer.WriteSample(0.4f);
         }
         ms.Position = 0;
-        using (var reader = new WaveFileReader(ms))
-        {
-            Assert.That(reader.ReadNextSampleFrame()[0], Is.EqualTo(0.1f).Within(0.001f));
-            Assert.That(reader.ReadNextSampleFrame()[0], Is.EqualTo(0.2f).Within(0.001f));
-            Assert.That(reader.ReadNextSampleFrame()[0], Is.EqualTo(0.3f).Within(0.001f));
-            Assert.That(reader.ReadNextSampleFrame()[0], Is.EqualTo(0.4f).Within(0.001f));
-            Assert.That(reader.ReadNextSampleFrame(), Is.Null);
-        }
+        using var reader = new WaveFileReader(ms);
+        Assert.That(reader.ReadNextSampleFrame()[0], Is.EqualTo(0.1f).Within(0.001f));
+        Assert.That(reader.ReadNextSampleFrame()[0], Is.EqualTo(0.2f).Within(0.001f));
+        Assert.That(reader.ReadNextSampleFrame()[0], Is.EqualTo(0.3f).Within(0.001f));
+        Assert.That(reader.ReadNextSampleFrame()[0], Is.EqualTo(0.4f).Within(0.001f));
+        Assert.That(reader.ReadNextSampleFrame(), Is.Null);
     }
 
     [Test]
@@ -83,16 +79,14 @@ public class WaveFileReaderTests
 
         }
         ms.Position = 0;
-        using (var reader = new WaveFileReader(ms))
-        {
-            var f1 = reader.ReadNextSampleFrame();
-            Assert.That(f1[0], Is.EqualTo(0.1f).Within(0.0001f));
-            Assert.That(f1[1], Is.EqualTo(0.2f).Within(0.0001f));
-            var f2 = reader.ReadNextSampleFrame();
-            Assert.That(f2[0], Is.EqualTo(0.3f).Within(0.0001f));
-            Assert.That(f2[1], Is.EqualTo(0.4f).Within(0.0001f));
-            Assert.That(reader.ReadNextSampleFrame(), Is.Null);
-        }
+        using var reader = new WaveFileReader(ms);
+        var f1 = reader.ReadNextSampleFrame();
+        Assert.That(f1[0], Is.EqualTo(0.1f).Within(0.0001f));
+        Assert.That(f1[1], Is.EqualTo(0.2f).Within(0.0001f));
+        var f2 = reader.ReadNextSampleFrame();
+        Assert.That(f2[0], Is.EqualTo(0.3f).Within(0.0001f));
+        Assert.That(f2[1], Is.EqualTo(0.4f).Within(0.0001f));
+        Assert.That(reader.ReadNextSampleFrame(), Is.Null);
     }
 
     [Test]
@@ -109,16 +103,14 @@ public class WaveFileReaderTests
 
         }
         ms.Position = 0;
-        using (var reader = new WaveFileReader(ms))
-        {
-            var f1 = reader.ReadNextSampleFrame();
-            Assert.That(f1[0], Is.EqualTo(0.1f).Within(0.0001f));
-            Assert.That(f1[1], Is.EqualTo(0.2f).Within(0.0001f));
-            var f2 = reader.ReadNextSampleFrame();
-            Assert.That(f2[0], Is.EqualTo(0.3f).Within(0.0001f));
-            Assert.That(f2[1], Is.EqualTo(0.4f).Within(0.0001f));
-            Assert.That(reader.ReadNextSampleFrame(), Is.Null);
-        }
+        using var reader = new WaveFileReader(ms);
+        var f1 = reader.ReadNextSampleFrame();
+        Assert.That(f1[0], Is.EqualTo(0.1f).Within(0.0001f));
+        Assert.That(f1[1], Is.EqualTo(0.2f).Within(0.0001f));
+        var f2 = reader.ReadNextSampleFrame();
+        Assert.That(f2[0], Is.EqualTo(0.3f).Within(0.0001f));
+        Assert.That(f2[1], Is.EqualTo(0.4f).Within(0.0001f));
+        Assert.That(reader.ReadNextSampleFrame(), Is.Null);
     }
 
     [Test]
@@ -134,18 +126,16 @@ public class WaveFileReaderTests
         {
             string wavFile = Path.Combine(testDataFolder, file);
             Debug.WriteLine(String.Format("Opening {0}", wavFile));
-            using (var reader = new WaveFileReader(wavFile))
+            using var reader = new WaveFileReader(wavFile);
+            byte[] buffer = new byte[reader.WaveFormat.AverageBytesPerSecond];
+            int bytesRead;
+            int total = 0;
+            do
             {
-                byte[] buffer = new byte[reader.WaveFormat.AverageBytesPerSecond];
-                int bytesRead;
-                int total = 0;
-                do
-                {
-                    bytesRead = reader.Read(buffer, 0, buffer.Length);
-                    total += bytesRead;
-                } while (bytesRead > 0);
-                Debug.WriteLine(String.Format("Read {0} bytes", total));
-            }
+                bytesRead = reader.Read(buffer, 0, buffer.Length);
+                total += bytesRead;
+            } while (bytesRead > 0);
+            Debug.WriteLine(String.Format("Read {0} bytes", total));
         }
     }
 

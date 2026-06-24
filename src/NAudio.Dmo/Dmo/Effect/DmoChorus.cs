@@ -33,7 +33,7 @@ internal interface IDirectSoundFXChorus
 /// </summary>
 public class DmoChorus : IDmoEffector<DmoChorus.Params>
 {
-    private static readonly Guid Id_Chorus = new Guid("EFE6629C-81F7-4281-BD91-C9D604A95AF6");
+    private static readonly Guid Id_Chorus = new("EFE6629C-81F7-4281-BD91-C9D604A95AF6");
 
     /// <summary>
     /// DMO Chorus Params

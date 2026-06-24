@@ -137,11 +137,9 @@ public class ResamplerDmoTests
         DmoResampler dmoResampler = new DmoResampler();
         dmoResampler.MediaObject.SetInputWaveFormat(0, WaveFormat.CreateIeeeFloatWaveFormat(44100, 2));
         dmoResampler.MediaObject.SetOutputWaveFormat(0, WaveFormat.CreateIeeeFloatWaveFormat(48000, 2));
-        using (MediaBuffer buffer = new MediaBuffer(44100 * 2 * 4))
-        {
-            buffer.Length = 8000;
-            dmoResampler.MediaObject.ProcessInput(0, buffer, DmoInputDataBufferFlags.None, 0, 0);
-        }
+        using MediaBuffer buffer = new MediaBuffer(44100 * 2 * 4);
+        buffer.Length = 8000;
+        dmoResampler.MediaObject.ProcessInput(0, buffer, DmoInputDataBufferFlags.None, 0, 0);
     }
 
     [Test]

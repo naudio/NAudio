@@ -140,7 +140,7 @@ public class SingleSampleSamplerTests
         // a one-shot: a note an octave above the root consumes the sample
         // twice as fast, so it finishes sooner
         SingleSampleInstrument MakeOneShot() =>
-            new SingleSampleInstrument(Constant(0.5f, 4410), SampleRate, rootKey: 60); // ~100ms one-shot
+            new(Constant(0.5f, 4410), SampleRate, rootKey: 60); // ~100ms one-shot
 
         var atRoot = new SingleSampleSampler(MakeOneShot(), SampleRate);
         var octaveUp = new SingleSampleSampler(MakeOneShot(), SampleRate);

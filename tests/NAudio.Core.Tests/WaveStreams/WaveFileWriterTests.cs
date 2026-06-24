@@ -22,19 +22,17 @@ public class WaveFileWriterTests
         }
         // check the Reader can read it
         ms.Position = 0;
-        using (var reader = new WaveFileReader(ms))
+        using var reader = new WaveFileReader(ms);
+        Assert.That(reader.WaveFormat.SampleRate, Is.EqualTo(16000), "Sample Rate");
+        Assert.That(reader.WaveFormat.BitsPerSample, Is.EqualTo(24), "Bits Per Sample");
+        Assert.That(reader.WaveFormat.Channels, Is.EqualTo(1), "Channels");
+        Assert.That(reader.Length, Is.EqualTo(testSequence.Length), "File Length");
+        var buffer = new byte[600]; // 24 bit audio, block align is 3
+        int read = reader.Read(buffer, 0, buffer.Length);
+        Assert.That(read, Is.EqualTo(testSequence.Length), "Data Length");
+        for (int n = 0; n < read; n++)
         {
-            Assert.That(reader.WaveFormat.SampleRate, Is.EqualTo(16000), "Sample Rate");
-            Assert.That(reader.WaveFormat.BitsPerSample, Is.EqualTo(24), "Bits Per Sample");
-            Assert.That(reader.WaveFormat.Channels, Is.EqualTo(1), "Channels");
-            Assert.That(reader.Length, Is.EqualTo(testSequence.Length), "File Length");
-            var buffer = new byte[600]; // 24 bit audio, block align is 3
-            int read = reader.Read(buffer, 0, buffer.Length);
-            Assert.That(read, Is.EqualTo(testSequence.Length), "Data Length");
-            for (int n = 0; n < read; n++)
-            {
-                Assert.That(buffer[n], Is.EqualTo(testSequence[n]), $"Byte {n}");
-            }
+            Assert.That(buffer[n], Is.EqualTo(testSequence[n]), $"Byte {n}");
         }
     }
 
@@ -82,14 +80,12 @@ public class WaveFileWriterTests
             long length = 4200;
             var waveFormat = new WaveFormat(8000, 8, 2);
             WaveFileWriter.CreateWaveFile(tempFile, new NullWaveStream(waveFormat, length));
-            using (var reader = new WaveFileReader(tempFile))
-            {
-                Assert.That(reader.WaveFormat, Is.EqualTo(waveFormat), "WaveFormat");
-                Assert.That(reader.Length, Is.EqualTo(length), "Length");
-                var buffer = new byte[length + 20];
-                int read = reader.Read(buffer, 0, buffer.Length);
-                Assert.That(read, Is.EqualTo(length), "Read");
-            }
+            using var reader = new WaveFileReader(tempFile);
+            Assert.That(reader.WaveFormat, Is.EqualTo(waveFormat), "WaveFormat");
+            Assert.That(reader.Length, Is.EqualTo(length), "Length");
+            var buffer = new byte[length + 20];
+            int read = reader.Read(buffer, 0, buffer.Length);
+            Assert.That(read, Is.EqualTo(length), "Read");
         }
         finally
         {
@@ -102,13 +98,11 @@ public class WaveFileWriterTests
     {
         float amplitude = 0.25f;
         float frequency = 1000;
-        using (var writer = new WaveFileWriter(new MemoryStream(), new WaveFormat(16000, 16, 1)))
+        using var writer = new WaveFileWriter(new MemoryStream(), new WaveFormat(16000, 16, 1));
+        for (int n = 0; n < 1000; n++)
         {
-            for (int n = 0; n < 1000; n++)
-            {
-                var sample = (float)(amplitude * Math.Sin((2 * Math.PI * n * frequency) / writer.WaveFormat.SampleRate));
-                writer.WriteSample(sample);
-            }
+            var sample = (float)(amplitude * Math.Sin((2 * Math.PI * n * frequency) / writer.WaveFormat.SampleRate));
+            writer.WriteSample(sample);
         }
     }
 

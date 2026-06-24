@@ -153,7 +153,7 @@ public sealed class BextInterpreter : IWaveChunkInterpreter<BroadcastExtension>
     /// <summary>
     /// Shared stateless instance.
     /// </summary>
-    public static readonly BextInterpreter Instance = new BextInterpreter();
+    public static readonly BextInterpreter Instance = new();
 
     /// <inheritdoc />
     public BroadcastExtension Interpret(WaveChunks chunks)

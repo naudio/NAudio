@@ -43,7 +43,7 @@ public partial class SpectrumAnalyser : UserControl
     private const double SmoothingReleaseFactor = 0.85;
     private const double PeakDecayDbPerSecond = 30.0;
 
-    private readonly Typeface labelTypeface = new Typeface("Segoe UI");
+    private readonly Typeface labelTypeface = new("Segoe UI");
     private readonly Brush backgroundBrush = Brushes.Black;
     private readonly Brush barBrush;
     private readonly Pen gridPen;

@@ -548,7 +548,7 @@ public class G722CodecState
     /// <param name="options">Special options</param>
     public G722CodecState(int rate, G722Flags options)
     {
-        this.Band = new Band[2] { new Band(), new Band() };
+        this.Band = new Band[2] { new(), new() };
         this.QmfSignalHistory = new int[24];
         this.ItuTestMode = false;
 

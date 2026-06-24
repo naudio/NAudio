@@ -109,11 +109,8 @@ public ref struct RenderBufferLease
     /// <param name="flags">Buffer flags (default: None)</param>
     public void Release(int? framesWritten = null, AudioClientBufferFlags flags = AudioClientBufferFlags.None)
     {
-        if (owner != null)
-        {
-            owner.ReleaseBuffer(framesWritten ?? frameCount, flags);
-            owner = null;
-        }
+        owner?.ReleaseBuffer(framesWritten ?? frameCount, flags);
+        owner = null;
     }
 
     /// <summary>

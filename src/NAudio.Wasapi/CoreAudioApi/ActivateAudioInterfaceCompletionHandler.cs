@@ -12,7 +12,7 @@ internal partial class ActivateAudioInterfaceCompletionHandler :
 IActivateAudioInterfaceCompletionHandler, IAgileObject
 {
     private Action<IAudioClient2> initializeAction;
-    private TaskCompletionSource<IAudioClient2> tcs = new TaskCompletionSource<IAudioClient2>();
+    private TaskCompletionSource<IAudioClient2> tcs = new();
 
     public ActivateAudioInterfaceCompletionHandler(
         Action<IAudioClient2> initializeAction)

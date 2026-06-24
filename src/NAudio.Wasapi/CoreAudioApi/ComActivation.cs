@@ -31,7 +31,7 @@ internal static class ComActivation
     /// <summary>
     /// IID_IUnknown.
     /// </summary>
-    public static readonly Guid IID_IUnknown = new Guid("00000000-0000-0000-C000-000000000046");
+    public static readonly Guid IID_IUnknown = new("00000000-0000-0000-C000-000000000046");
 
     /// <summary>
     /// The shared <see cref="StrategyBasedComWrappers"/> used for both managed-to-native

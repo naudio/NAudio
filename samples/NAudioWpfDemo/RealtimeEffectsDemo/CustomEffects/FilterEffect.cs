@@ -100,7 +100,7 @@ public sealed class FilterEffect : AudioEffect, IParameterized
 
     private CrossfadingBiQuadFilter MakeStage(
         Func<float, float, float, BiQuadFilter> factory, int sr, float cutoff, float q)
-        => new CrossfadingBiQuadFilter(factory(sr, cutoff, q), factory(sr, cutoff, q), crossfadeSamples);
+        => new(factory(sr, cutoff, q), factory(sr, cutoff, q), crossfadeSamples);
 
     private (float Stage1, float Stage2) SlopeQs() => slopeIndex == 1
         ? (ButterworthQ24Stage1, ButterworthQ24Stage2)

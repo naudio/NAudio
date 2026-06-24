@@ -236,11 +236,8 @@ public class AcmStream : IDisposable
         if (disposing)
         {
             // Free other state (managed objects).
-            if (streamHeader != null)
-            {
-                streamHeader.Dispose();
-                streamHeader = null;
-            }
+            streamHeader?.Dispose();
+            streamHeader = null;
         }
 
         // Free your own state (unmanaged objects).

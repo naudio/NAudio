@@ -119,7 +119,7 @@ public class WdlResampler
         m_filtlatency = 0;
         m_fracpos = fracpos;
         m_samples_in_rsinbuf = 0;
-        if (m_iirfilter != null) m_iirfilter.Reset();
+        m_iirfilter?.Reset();
     }
 
     /// <summary>

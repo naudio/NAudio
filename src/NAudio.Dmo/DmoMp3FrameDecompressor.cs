@@ -107,16 +107,10 @@ public class DmoMp3FrameDecompressor : IMp3FrameDecompressor
     public void Dispose()
     {
         GC.SuppressFinalize(this);
-        if (inputMediaBuffer != null)
-        {
-            inputMediaBuffer.Dispose();
-            inputMediaBuffer = null;
-        }
+        inputMediaBuffer?.Dispose();
+        inputMediaBuffer = null;
         outputBuffer.Dispose();
-        if (mp3Decoder != null)
-        {
-            mp3Decoder.Dispose();
-            mp3Decoder = null;
-        }
+        mp3Decoder?.Dispose();
+        mp3Decoder = null;
     }
 }

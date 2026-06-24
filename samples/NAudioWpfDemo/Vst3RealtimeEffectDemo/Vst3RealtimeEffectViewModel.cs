@@ -27,7 +27,7 @@ class Vst3RealtimeEffectViewModel : ViewModelBase, IDisposable
     // frames; plug-ins that need more will block-loop internally.
     private const int MaxBlockSize = 2048;
 
-    private readonly Vst3RealtimeAudioEngine engine = new Vst3RealtimeAudioEngine();
+    private readonly Vst3RealtimeAudioEngine engine = new();
     private readonly DispatcherTimer timer;
     private readonly Dictionary<string, Vst3Module> loadedModules = new(StringComparer.Ordinal);
 

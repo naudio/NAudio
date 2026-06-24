@@ -14,11 +14,11 @@ namespace NAudio.CoreAudioApi;
 public class MMDeviceEnumerator : IDisposable
 {
     // CLSID_MMDeviceEnumerator — mmdeviceapi.h
-    private static readonly Guid CLSID_MMDeviceEnumerator = new Guid("BCDE0395-E52F-467C-8E3D-C4579291692E");
+    private static readonly Guid CLSID_MMDeviceEnumerator = new("BCDE0395-E52F-467C-8E3D-C4579291692E");
     // IID_IMMDeviceEnumerator — mmdeviceapi.h
-    private static readonly Guid IID_IMMDeviceEnumerator = new Guid("A95664D2-9614-4F35-A746-DE8DB63617E6");
+    private static readonly Guid IID_IMMDeviceEnumerator = new("A95664D2-9614-4F35-A746-DE8DB63617E6");
     // IID_IMMNotificationClient — mmdeviceapi.h
-    private static readonly Guid IID_IMMNotificationClient = new Guid("7991EEC9-7E89-4D85-8390-6C703CEC60C0");
+    private static readonly Guid IID_IMMNotificationClient = new("7991EEC9-7E89-4D85-8390-6C703CEC60C0");
 
     private IMMDeviceEnumerator realEnumerator;
 

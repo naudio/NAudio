@@ -25,18 +25,16 @@ public class CachedSound
     /// </summary>
     public CachedSound(string audioFileName)
     {
-        using (var audioFileReader = new AudioFileReader(audioFileName))
+        using var audioFileReader = new AudioFileReader(audioFileName);
+        // TODO: could add resampling in here if required
+        WaveFormat = audioFileReader.WaveFormat;
+        var wholeFile = new List<float>((int)(audioFileReader.Length / 4));
+        var readBuffer = new float[audioFileReader.WaveFormat.SampleRate * audioFileReader.WaveFormat.Channels];
+        int samplesRead;
+        while ((samplesRead = audioFileReader.Read(readBuffer.AsSpan())) > 0)
         {
-            // TODO: could add resampling in here if required
-            WaveFormat = audioFileReader.WaveFormat;
-            var wholeFile = new List<float>((int)(audioFileReader.Length / 4));
-            var readBuffer = new float[audioFileReader.WaveFormat.SampleRate * audioFileReader.WaveFormat.Channels];
-            int samplesRead;
-            while ((samplesRead = audioFileReader.Read(readBuffer.AsSpan())) > 0)
-            {
-                wholeFile.AddRange(readBuffer.Take(samplesRead));
-            }
-            AudioData = wholeFile.ToArray();
+            wholeFile.AddRange(readBuffer.Take(samplesRead));
         }
+        AudioData = wholeFile.ToArray();
     }
 }

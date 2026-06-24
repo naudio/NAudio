@@ -149,7 +149,7 @@ public sealed class InfoListInterpreter : IWaveChunkInterpreter<InfoMetadata>
     /// <summary>
     /// Shared stateless instance.
     /// </summary>
-    public static readonly InfoListInterpreter Instance = new InfoListInterpreter();
+    public static readonly InfoListInterpreter Instance = new();
 
     /// <inheritdoc />
     public InfoMetadata Interpret(WaveChunks chunks)

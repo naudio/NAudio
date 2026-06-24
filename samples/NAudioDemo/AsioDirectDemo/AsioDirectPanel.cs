@@ -31,16 +31,10 @@ public partial class AsioDirectPanel : UserControl
 
     private void Cleanup()
     {
-        if (asioOut != null)
-        {
-            asioOut.Dispose();
-            asioOut = null;
-        }
-        if (reader != null)
-        {
-            reader.Dispose();
-            reader = null;
-        }
+        asioOut?.Dispose();
+        asioOut = null;
+        reader?.Dispose();
+        reader = null;
     }
 
     private void OnButtonSelectFileClick(object sender, EventArgs e)

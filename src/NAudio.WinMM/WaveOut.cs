@@ -317,11 +317,8 @@ public class WaveOut : IWavePlayer, IWavePosition
 
     private void CloseWaveOut()
     {
-        if (callbackEvent != null)
-        {
-            callbackEvent.Close();
-            callbackEvent = null;
-        }
+        callbackEvent?.Close();
+        callbackEvent = null;
         lock (waveOutLock)
         {
             if (hWaveOut != IntPtr.Zero)

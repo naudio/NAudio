@@ -266,7 +266,7 @@ public class DahdsrEnvelopeTests
             float decay = times[rng.Next(times.Length)];
             float sustain = sustains[rng.Next(sustains.Length)];
             float release = times[rng.Next(times.Length)];
-            DahdsrEnvelope Create() => new DahdsrEnvelope(44100)
+            DahdsrEnvelope Create() => new(44100)
             {
                 DelaySeconds = delay,
                 AttackSeconds = attack,
@@ -306,7 +306,7 @@ public class DahdsrEnvelopeTests
     {
         // one Advance call that crosses delay -> attack -> hold -> decay into
         // sustain, then one that crosses gate-off release into finished
-        DahdsrEnvelope Create() => new DahdsrEnvelope(1000)
+        DahdsrEnvelope Create() => new(1000)
         {
             DelaySeconds = 0.005f,
             AttackSeconds = 0.01f,

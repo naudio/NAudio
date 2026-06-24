@@ -118,7 +118,7 @@ public class LfoTests
                 float frequency = 0.2f + (float)rng.NextDouble() * 1500f;
                 float startPhase = (float)rng.NextDouble();
                 float delay = rng.Next(3) == 0 ? 0f : (float)rng.NextDouble() * 0.002f; // 0..~88 samples
-                Lfo Create() => new Lfo(44100)
+                Lfo Create() => new(44100)
                 {
                     Waveform = waveform,
                     FrequencyHz = frequency,

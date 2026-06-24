@@ -185,10 +185,7 @@ public partial class AudioPlaybackPanel : UserControl
 
     private void CloseWaveOut()
     {
-        if (wavePlayer != null)
-        {
-            wavePlayer.Stop();
-        }
+        wavePlayer?.Stop();
         if (audioFileReader != null)
         {
             // this one really closes the file and ACM conversion
@@ -196,11 +193,9 @@ public partial class AudioPlaybackPanel : UserControl
             setVolumeDelegate = null;
             audioFileReader = null;
         }
-        if (wavePlayer != null)
-        {
-            wavePlayer.Dispose();
-            wavePlayer = null;
-        }
+
+        wavePlayer?.Dispose();
+        wavePlayer = null;
     }
 
     private void OnFormLoad(object sender, EventArgs e)

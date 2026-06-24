@@ -5,7 +5,7 @@ namespace NAudioWpfDemo.AudioPlaybackDemo;
 
 class SpectrumAnalyzerVisualization : IVisualizationPlugin
 {
-    private readonly SpectrumAnalyser spectrumAnalyser = new SpectrumAnalyser();
+    private readonly SpectrumAnalyser spectrumAnalyser = new();
 
     public string Name => "Spectrum Analyser";
 

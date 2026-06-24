@@ -17,7 +17,7 @@ namespace NAudio.CoreAudioApi;
 /// </summary>
 public class AudioSessionControl : IDisposable
 {
-    private static readonly Guid IID_IAudioSessionEvents = new Guid("24918ACC-64B3-37C1-8CA9-74A66E9957A8");
+    private static readonly Guid IID_IAudioSessionEvents = new("24918ACC-64B3-37C1-8CA9-74A66E9957A8");
 
     private IAudioSessionControl audioSessionControlInterface;
     private IAudioSessionControl2 audioSessionControlInterface2;

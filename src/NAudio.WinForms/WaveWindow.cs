@@ -124,10 +124,8 @@ internal sealed class WaveCallbackHost : IDisposable
             ownedWindow.Dispose();
             ownedWindow = null;
         }
-        if (subclassedWindow != null)
-        {
-            subclassedWindow.ReleaseHandle();
-            subclassedWindow = null;
-        }
+
+        subclassedWindow?.ReleaseHandle();
+        subclassedWindow = null;
     }
 }

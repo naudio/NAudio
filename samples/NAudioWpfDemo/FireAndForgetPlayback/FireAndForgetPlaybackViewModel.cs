@@ -18,8 +18,8 @@ class FireAndForgetPlaybackViewModel : ViewModelBase, IDisposable
     private static readonly string SamplesDir = Path.Combine(AppContext.BaseDirectory, "Samples");
 
     private AudioPlaybackEngine engine;
-    readonly CachedSound kick = new CachedSound(Path.Combine(SamplesDir, "kick-trimmed.wav"));
-    readonly CachedSound crash = new CachedSound(Path.Combine(SamplesDir, "crash-trimmed.wav"));
+    readonly CachedSound kick = new(Path.Combine(SamplesDir, "kick-trimmed.wav"));
+    readonly CachedSound crash = new(Path.Combine(SamplesDir, "crash-trimmed.wav"));
 
 
     public FireAndForgetPlaybackViewModel()

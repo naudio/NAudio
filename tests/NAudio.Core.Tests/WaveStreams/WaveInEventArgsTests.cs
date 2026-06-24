@@ -144,10 +144,10 @@ public class WaveInEventArgsTests
             this.length = length;
         }
 
-        public override Span<byte> GetSpan() => new Span<byte>(pointer, length);
+        public override Span<byte> GetSpan() => new(pointer, length);
 
         public override System.Buffers.MemoryHandle Pin(int elementIndex = 0)
-            => new System.Buffers.MemoryHandle(pointer + elementIndex);
+            => new(pointer + elementIndex);
 
         public override void Unpin() { }
         protected override void Dispose(bool disposing) { }

@@ -79,7 +79,7 @@ public class Cue
 /// </remarks>
 public class CueList
 {
-    private readonly List<Cue> cues = new List<Cue>();
+    private readonly List<Cue> cues = new();
     /// <summary>
     /// Creates an empty cue list
     /// </summary>
@@ -266,7 +266,7 @@ public sealed class CueListInterpreter : IWaveChunkInterpreter<CueList>
     /// <summary>
     /// Shared stateless instance.
     /// </summary>
-    public static readonly CueListInterpreter Instance = new CueListInterpreter();
+    public static readonly CueListInterpreter Instance = new();
 
     /// <inheritdoc />
     public CueList Interpret(WaveChunks chunks)

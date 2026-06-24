@@ -9,7 +9,7 @@ namespace NAudioDemo.VolumeMixerDemo;
 public partial class VolumeMixerPanel : UserControl
 {
     VolumePanel DeviceVolumePanel;
-    List<VolumePanel> AppVolumePanels = new List<VolumePanel>();
+    List<VolumePanel> AppVolumePanels = new();
     AudioSessionManager subscribedSessionManager;
 
     public VolumeMixerPanel()

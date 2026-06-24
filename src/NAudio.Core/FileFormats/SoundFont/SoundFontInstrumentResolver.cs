@@ -270,7 +270,7 @@ public static class SoundFontInstrumentResolver
         public bool IsEmpty => Low > High;
 
         public Range Intersect(Range other) =>
-            new Range(Low > other.Low ? Low : other.Low,
+            new(Low > other.Low ? Low : other.Low,
                       High < other.High ? High : other.High);
     }
 }

@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>MarkHeath.AudioUtils</RootNamespace>
+    <Version>0.1.8</Version>
+    <UseWindowsForms>true</UseWindowsForms>
+    <NoWarn>$(NoWarn);CA1001</NoWarn> <!-- Demo app: disposal handled by UI lifecycle -->
+    <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\NAudio.Core\NAudio.Core.csproj" />
+    <ProjectReference Include="..\..\src\NAudio.WinForms\NAudio.WinForms.csproj" />
+    <ProjectReference Include="..\..\src\NAudio.WinMM\NAudio.WinMM.csproj" />
+    <ProjectReference Include="..\..\src\NAudio\NAudio.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.DotNet.UpgradeAssistant.Extensions.Default.Analyzers" Version="0.3.310801">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+</Project>

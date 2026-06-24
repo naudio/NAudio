@@ -16,21 +16,19 @@ _ReSharper*/
 *.idea
 .vs/
 .fake/
-# cake:
-Tools/
 *.DotSettings
 .claude/worktrees/
 .claude/settings.local.json
 .claude/scheduled_tasks.lock
 .claude/scheduled_tasks/
 BenchmarkDotNet.Artifacts/
-MfStressTest/dumps/
+tests/MfStressTest/dumps/
 # NAudioConsoleTest run-batch output (default location: Reports/<timestamp>/)
 [rR]eports/
 # procdump.exe (used by MfStressTest watchdog) writes a 0-byte log to the
 # target process's working directory each time it captures a dump.
 myeasylog.log
 # DocFX generated output
-_site/
-api/*.yml
-api/.manifest
+docfx/_site/
+docfx/api/*.yml
+docfx/api/.manifest

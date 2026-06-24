@@ -4,6 +4,7 @@ This file gives AI agents (Claude, etc.) the conventions for contributing to NAu
 
 ## Orientation
 
+- **Repository layout.** Projects are grouped by role: `src/` holds the shipping libraries (the NuGet packages), `tests/` holds the test, benchmark and diagnostic projects (including `NAudio.Benchmarks`, `NAudioAotSmokeTest`, `MfStressTest`), and `samples/` holds the runnable demo/tool apps (`NAudioDemo`, `NAudioWpfDemo`, `NAudioConsoleTest`, `AudioFileInspector`, `MidiFileConverter`, `MixDiff`) plus their `SampleData/`. DocFX lives entirely under `docfx/` (`docfx.json`, `index.md`, `toc.yml`, `templates/`, generated `api/`); tutorial Markdown stays in `Docs/`.
 - **NAudio 3 development happens on `main`.** NAudio 2 maintenance happens on `release/2.x`. Default to targeting `main` unless explicitly told otherwise. `main` and `release/*` are protected — all changes go through PRs.
 - **Use descriptive branch names.** Cloud agents are often started on an auto-generated branch (e.g. `claude/loving-galileo-Wpz4o`). Do not push that name to the NAudio repo. Before the first push, rename the branch to something that describes the work, referencing an issue or PR number where relevant — e.g. `feature/channel-mixer-sample-provider`, `fix/1234-wasapi-leak`, `docs/release-strategy`. Keep your existing commits; just move them with `git branch -m <new-name>` before `git push -u origin <new-name>`.
 - **Architecture docs** in [Docs/Architecture/](Docs/Architecture/) are the source of truth for cross-cutting decisions:
@@ -40,8 +41,8 @@ Some cloud and CI environments start without a .NET SDK on the PATH — this isn
 `NAudio.Core.Tests` only references the cross-platform projects (`NAudio.Core`, `NAudio.Midi`), so it builds and runs on Linux/macOS without any extra flags. Build and run the cross-platform tests with:
 
 ```
-dotnet build NAudio.Core.Tests/NAudio.Core.Tests.csproj
-dotnet test --project NAudio.Core.Tests/NAudio.Core.Tests.csproj --filter "TestCategory!=IntegrationTest"
+dotnet build tests/NAudio.Core.Tests/NAudio.Core.Tests.csproj
+dotnet test --project tests/NAudio.Core.Tests/NAudio.Core.Tests.csproj --filter "TestCategory!=IntegrationTest"
 ```
 
 (`NAudio.Windows.Tests` references the `NAudio` meta-package and the Windows backends, so it targets a Windows TFM — building it on Linux still needs `-p:EnableWindowsTargeting=true`, and it can only run on Windows. Tests that exercise the meta-package's `AudioFileReader` live there for this reason.)

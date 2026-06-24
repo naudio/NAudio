@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- net10.0 so `dotnet test` runs it on Linux too; compiles as part of
+         NAudio.slnx and runs in the Windows CI job. -->
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <EnableNUnitRunner>true</EnableNUnitRunner>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NUnit" Version="4.5.1" />
+    <PackageReference Include="NUnit3TestAdapter" Version="6.1.0" />
+    <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" Version="2.2.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\NAudio.Sampler\NAudio.Sampler.csproj" />
+    <ProjectReference Include="..\..\src\NAudio.Core\NAudio.Core.csproj" />
+    <ProjectReference Include="..\..\src\NAudio.Midi\NAudio.Midi.csproj" />
+  </ItemGroup>
+
+</Project>

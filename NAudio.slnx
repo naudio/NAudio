@@ -1,45 +1,47 @@
 <Solution>
-  <Folder Name="/Samples/">
-    <Project Path="AudioFileInspector/AudioFileInspector.csproj" />
-    <Project Path="MidiFileConverter/MidiFileConverter.csproj" />
-    <Project Path="MixDiff/MixDiff.csproj" />
-    <Project Path="NAudioDemo/NAudioDemo.csproj" />
-    <Project Path="NAudioWpfDemo/NAudioWpfDemo.csproj" />
-  </Folder>
   <Folder Name="/Solution Items/">
-    <File Path="azure-pipelines.yml" />
     <File Path="LICENSE" />
-    <File Path="MODERNIZATION.md" />
-    <File Path="naudio-logo.png" />
-    <File Path="publish.ps1" />
     <File Path="README.md" />
-    <File Path="readme.txt" />
     <File Path="RELEASE_NOTES.md" />
+    <File Path="ReleaseInstructions.md" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Build.targets" />
   </Folder>
-  <Project Path="NAudio.Alsa/NAudio.Alsa.csproj" />
-  <Project Path="NAudio.Alsa.Tests/NAudio.Alsa.Tests.csproj" />
-  <Project Path="NAudio.Asio/NAudio.Asio.csproj" />
-  <Project Path="NAudio.Benchmarks/NAudio.Benchmarks.csproj">
-    <BuildType Project="Release" />
-  </Project>
-  <Project Path="NAudio.Core/NAudio.Core.csproj" />
-  <Project Path="NAudio.Core.Tests/NAudio.Core.Tests.csproj" />
-  <Project Path="NAudio.Dmo/NAudio.Dmo.csproj" />
-  <Project Path="NAudio.Extras/NAudio.Extras.csproj" />
-  <Project Path="NAudio.Midi/NAudio.Midi.csproj" />
-  <Project Path="NAudio.Sampler/NAudio.Sampler.csproj" />
-  <Project Path="NAudio.Sampler.Tests/NAudio.Sampler.Tests.csproj" />
-  <Project Path="NAudio.SoundFile/NAudio.SoundFile.csproj" />
-  <Project Path="NAudio.SoundFile.Tests/NAudio.SoundFile.Tests.csproj" />
-  <Project Path="NAudio.Vst3/NAudio.Vst3.csproj" />
-  <Project Path="NAudio.Wasapi/NAudio.Wasapi.csproj" />
-  <Project Path="NAudio.Windows.Tests/NAudio.Windows.Tests.csproj" />
-  <Project Path="NAudio.WinForms/NAudio.WinForms.csproj" />
-  <Project Path="NAudio.WinMM/NAudio.WinMM.csproj" />
-  <Project Path="NAudio/NAudio.csproj" />
-  <Project Path="NAudioAotSmokeTest/NAudioAotSmokeTest.csproj" />
-  <Project Path="NAudioConsoleTest/NAudioConsoleTest.csproj" />
-  <Project Path="MfStressTest/MfStressTest.csproj">
-    <BuildType Project="Release" />
-  </Project>
+  <Folder Name="/src/">
+    <Project Path="src/NAudio/NAudio.csproj" />
+    <Project Path="src/NAudio.Core/NAudio.Core.csproj" />
+    <Project Path="src/NAudio.Midi/NAudio.Midi.csproj" />
+    <Project Path="src/NAudio.Wasapi/NAudio.Wasapi.csproj" />
+    <Project Path="src/NAudio.WinMM/NAudio.WinMM.csproj" />
+    <Project Path="src/NAudio.Asio/NAudio.Asio.csproj" />
+    <Project Path="src/NAudio.Dmo/NAudio.Dmo.csproj" />
+    <Project Path="src/NAudio.WinForms/NAudio.WinForms.csproj" />
+    <Project Path="src/NAudio.Alsa/NAudio.Alsa.csproj" />
+    <Project Path="src/NAudio.SoundFile/NAudio.SoundFile.csproj" />
+    <Project Path="src/NAudio.Extras/NAudio.Extras.csproj" />
+    <Project Path="src/NAudio.Sampler/NAudio.Sampler.csproj" />
+    <Project Path="src/NAudio.Vst3/NAudio.Vst3.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/NAudio.Core.Tests/NAudio.Core.Tests.csproj" />
+    <Project Path="tests/NAudio.Windows.Tests/NAudio.Windows.Tests.csproj" />
+    <Project Path="tests/NAudio.Alsa.Tests/NAudio.Alsa.Tests.csproj" />
+    <Project Path="tests/NAudio.SoundFile.Tests/NAudio.SoundFile.Tests.csproj" />
+    <Project Path="tests/NAudio.Sampler.Tests/NAudio.Sampler.Tests.csproj" />
+    <Project Path="tests/NAudio.Benchmarks/NAudio.Benchmarks.csproj">
+      <BuildType Project="Release" />
+    </Project>
+    <Project Path="tests/NAudioAotSmokeTest/NAudioAotSmokeTest.csproj" />
+    <Project Path="tests/MfStressTest/MfStressTest.csproj">
+      <BuildType Project="Release" />
+    </Project>
+  </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/NAudioDemo/NAudioDemo.csproj" />
+    <Project Path="samples/NAudioWpfDemo/NAudioWpfDemo.csproj" />
+    <Project Path="samples/NAudioConsoleTest/NAudioConsoleTest.csproj" />
+    <Project Path="samples/AudioFileInspector/AudioFileInspector.csproj" />
+    <Project Path="samples/MidiFileConverter/MidiFileConverter.csproj" />
+    <Project Path="samples/MixDiff/MixDiff.csproj" />
+  </Folder>
 </Solution>

@@ -22,6 +22,7 @@
 // adapted for use in NAudio
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.InteropServices;
 
@@ -198,7 +199,7 @@ public struct PropVariant
     /// <summary>
     /// Interprets a blob as an array of structs
     /// </summary>
-    public T[] GetBlobAsArrayOf<T>()
+    public T[] GetBlobAsArrayOf<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>()
     {
         var blobByteLength = blobVal.Length;
         var singleInstance = (T)Activator.CreateInstance(typeof(T));

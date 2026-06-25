@@ -1,4 +1,4 @@
-/*
+﻿/*
   LICENSE
   -------
   Copyright (C) 2007 Ray Molenkamp
@@ -23,29 +23,28 @@ using System;
 using NAudio.CoreAudioApi.Interfaces;
 using System.Runtime.InteropServices;
 
-namespace NAudio.CoreAudioApi
+namespace NAudio.CoreAudioApi;
+
+/// <summary>
+/// Audio Endpoint Volume Step Information
+/// </summary>
+public class AudioEndpointVolumeStepInformation
 {
-    /// <summary>
-    /// Audio Endpoint Volume Step Information
-    /// </summary>
-    public class AudioEndpointVolumeStepInformation
+    private readonly uint step;
+    private readonly uint stepCount;
+
+    internal AudioEndpointVolumeStepInformation(IAudioEndpointVolume parent)
     {
-        private readonly uint step;
-        private readonly uint stepCount;
-
-        internal AudioEndpointVolumeStepInformation(IAudioEndpointVolume parent)
-        {
-            CoreAudioException.ThrowIfFailed(parent.GetVolumeStepInfo(out step, out stepCount));
-        }
-
-        /// <summary>
-        /// Step
-        /// </summary>
-        public uint Step => step;
-
-        /// <summary>
-        /// StepCount
-        /// </summary>
-        public uint StepCount => stepCount;
+        CoreAudioException.ThrowIfFailed(parent.GetVolumeStepInfo(out step, out stepCount));
     }
+
+    /// <summary>
+    /// Step
+    /// </summary>
+    public uint Step => step;
+
+    /// <summary>
+    /// StepCount
+    /// </summary>
+    public uint StepCount => stepCount;
 }

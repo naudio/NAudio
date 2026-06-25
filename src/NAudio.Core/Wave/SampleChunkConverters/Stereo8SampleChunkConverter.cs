@@ -1,43 +1,42 @@
 ﻿using System;
 using NAudio.Utils;
 
-namespace NAudio.Wave.SampleProviders
+namespace NAudio.Wave.SampleProviders;
+
+class Stereo8SampleChunkConverter : ISampleChunkConverter
 {
-    class Stereo8SampleChunkConverter : ISampleChunkConverter
+    private int offset;
+    private byte[] sourceBuffer;
+    private int sourceBytes;
+
+    public bool Supports(WaveFormat waveFormat)
     {
-        private int offset;
-        private byte[] sourceBuffer;
-        private int sourceBytes;
+        return waveFormat.Encoding == WaveFormatEncoding.Pcm &&
+            waveFormat.BitsPerSample == 8 &&
+            waveFormat.Channels == 2;
+    }
 
-        public bool Supports(WaveFormat waveFormat)
+    public void LoadNextChunk(IWaveProvider source, int samplePairsRequired)
+    {
+        int sourceBytesRequired = samplePairsRequired * 2;
+        sourceBuffer = BufferHelpers.Ensure(sourceBuffer, sourceBytesRequired);
+        sourceBytes = source.Read(sourceBuffer.AsSpan(0, sourceBytesRequired));
+        offset = 0;
+    }
+
+    public bool GetNextSample(out float sampleLeft, out float sampleRight)
+    {
+        if (offset < sourceBytes)
         {
-            return waveFormat.Encoding == WaveFormatEncoding.Pcm &&
-                waveFormat.BitsPerSample == 8 &&
-                waveFormat.Channels == 2;
+            sampleLeft = sourceBuffer[offset++] / 128f - 1.0f;
+            sampleRight = sourceBuffer[offset++] / 128f - 1.0f;
+            return true;
         }
-
-        public void LoadNextChunk(IWaveProvider source, int samplePairsRequired)
+        else
         {
-            int sourceBytesRequired = samplePairsRequired * 2;
-            sourceBuffer = BufferHelpers.Ensure(sourceBuffer, sourceBytesRequired);
-            sourceBytes = source.Read(sourceBuffer.AsSpan(0, sourceBytesRequired));
-            offset = 0;
-        }
-
-        public bool GetNextSample(out float sampleLeft, out float sampleRight)
-        {
-            if (offset < sourceBytes)
-            {
-                sampleLeft = sourceBuffer[offset++] / 128f - 1.0f;
-                sampleRight = sourceBuffer[offset++] / 128f - 1.0f;
-                return true;
-            }
-            else
-            {
-                sampleLeft = 0.0f;
-                sampleRight = 0.0f;
-                return false;
-            }
+            sampleLeft = 0.0f;
+            sampleRight = 0.0f;
+            return false;
         }
     }
 }

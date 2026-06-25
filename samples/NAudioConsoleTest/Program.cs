@@ -1,4 +1,4 @@
-using NAudioConsoleTest.Shared;
+﻿using NAudioConsoleTest.Shared;
 using NAudioConsoleTest.Shared.Testing;
 using Spectre.Console;
 

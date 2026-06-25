@@ -1,24 +1,23 @@
-using System;
+﻿using System;
 using NUnit.Framework;
 
-namespace NAudio.Windows.Tests.Utils
-{
-    static class OSUtils
-    {
-        public static void RequireVista()
-        {
-            if (Environment.OSVersion.Version.Major < 6)
-            {
-                Assert.Ignore("This test requires Windows Vista or newer");
-            }
-        }
+namespace NAudio.Windows.Tests.Utils;
 
-        public static void RequireXP()
+static class OSUtils
+{
+    public static void RequireVista()
+    {
+        if (Environment.OSVersion.Version.Major < 6)
         {
-            if (Environment.OSVersion.Version.Major >= 6)
-            {
-                Assert.Ignore("This test requires Windows XP");
-            }
+            Assert.Ignore("This test requires Windows Vista or newer");
+        }
+    }
+
+    public static void RequireXP()
+    {
+        if (Environment.OSVersion.Version.Major >= 6)
+        {
+            Assert.Ignore("This test requires Windows XP");
         }
     }
 }

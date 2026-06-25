@@ -1,4 +1,4 @@
-using NAudio.CoreAudioApi;
+﻿using NAudio.CoreAudioApi;
 using NAudio.Wave;
 using NAudioConsoleTest.Shared.Testing;
 using Spectre.Console;
@@ -31,16 +31,16 @@ sealed class WasapiExclusiveQuickScanTest : IConsoleTest
         var table = new Table().Border(TableBorder.Rounded).AddColumn("Format").AddColumn("Supported");
         var supportedCount = 0;
         foreach (var rate in WasapiExclusiveFormatHelper.SampleRates)
-        foreach (var (bits, encoding) in WasapiExclusiveFormatHelper.BitDepthEncodings)
-        foreach (var ch in WasapiExclusiveFormatHelper.ChannelCounts)
-        {
-            var format = WasapiExclusiveFormatHelper.CreateFormat(rate, bits, ch, encoding);
-            if (client.IsFormatSupported(AudioClientShareMode.Exclusive, format))
-            {
-                table.AddRow($"{rate}Hz {bits}bit {encoding} {ch}ch", "[green]YES[/]");
-                supportedCount++;
-            }
-        }
+            foreach (var (bits, encoding) in WasapiExclusiveFormatHelper.BitDepthEncodings)
+                foreach (var ch in WasapiExclusiveFormatHelper.ChannelCounts)
+                {
+                    var format = WasapiExclusiveFormatHelper.CreateFormat(rate, bits, ch, encoding);
+                    if (client.IsFormatSupported(AudioClientShareMode.Exclusive, format))
+                    {
+                        table.AddRow($"{rate}Hz {bits}bit {encoding} {ch}ch", "[green]YES[/]");
+                        supportedCount++;
+                    }
+                }
 
         if (supportedCount == 0)
             AnsiConsole.MarkupLine("[yellow]No formats supported with default channel masks. " +

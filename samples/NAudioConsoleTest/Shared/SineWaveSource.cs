@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using NAudio.Wave;
 
 namespace NAudioConsoleTest.Shared;

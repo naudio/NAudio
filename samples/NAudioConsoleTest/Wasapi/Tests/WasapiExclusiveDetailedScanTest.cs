@@ -1,4 +1,4 @@
-using NAudio.CoreAudioApi;
+﻿using NAudio.CoreAudioApi;
 using NAudio.Wave;
 using NAudioConsoleTest.Shared.Testing;
 using Spectre.Console;
@@ -34,16 +34,16 @@ sealed class WasapiExclusiveDetailedScanTest : IConsoleTest
         void Scan()
         {
             foreach (var rate in WasapiExclusiveFormatHelper.SampleRates)
-            foreach (var (bits, encoding) in WasapiExclusiveFormatHelper.BitDepthEncodings)
-            foreach (var ch in WasapiExclusiveFormatHelper.ChannelCounts)
-            foreach (var (mask, maskName) in WasapiExclusiveFormatHelper.GetMasksForChannelCount(ch))
-            {
-                if (ctx.Cancellation.IsCancellationRequested) return;
-                tested++;
-                var format = WasapiExclusiveFormatHelper.CreateFormat(rate, bits, ch, encoding, mask);
-                if (client.IsFormatSupported(AudioClientShareMode.Exclusive, format))
-                    supported.Add($"{rate}Hz {bits}bit {encoding} {ch}ch mask={maskName}");
-            }
+                foreach (var (bits, encoding) in WasapiExclusiveFormatHelper.BitDepthEncodings)
+                    foreach (var ch in WasapiExclusiveFormatHelper.ChannelCounts)
+                        foreach (var (mask, maskName) in WasapiExclusiveFormatHelper.GetMasksForChannelCount(ch))
+                        {
+                            if (ctx.Cancellation.IsCancellationRequested) return;
+                            tested++;
+                            var format = WasapiExclusiveFormatHelper.CreateFormat(rate, bits, ch, encoding, mask);
+                            if (client.IsFormatSupported(AudioClientShareMode.Exclusive, format))
+                                supported.Add($"{rate}Hz {bits}bit {encoding} {ch}ch mask={maskName}");
+                        }
         }
 
         if (ctx.Interactive)

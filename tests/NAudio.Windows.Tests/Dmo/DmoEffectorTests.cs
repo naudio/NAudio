@@ -1,4 +1,4 @@
-using NAudio.Dmo;
+﻿using NAudio.Dmo;
 using NAudio.Dmo.Effect;
 using NAudio.Tests.Shared;
 using NAudio.Windows.Tests.Utils;
@@ -8,296 +8,270 @@ using System.Diagnostics;
 using System.Linq;
 using NAudio.Wave;
 
-namespace NAudio.Windows.Tests.Dmo
+namespace NAudio.Windows.Tests.Dmo;
+
+[TestFixture]
+public class DmoEffectorTests
 {
-    [TestFixture]
-    public class DmoEffectorTests
+    [SetUp]
+    public void SetUp()
     {
-        [SetUp]
-        public void SetUp()
+        OSUtils.RequireVista();
+    }
+
+    [Test]
+    [Category("IntegrationTest")]
+    public void CanCreateDmoGargle()
+    {
+        var guid = new Guid("DAFD8210-5711-4B91-9FE3-F75B7AE279BF");
+        var targetDescriptor = DmoEnumerator.GetAudioEffectNames().First(descriptor =>
+            Equals(descriptor.Clsid, guid));
+
+        using var dmoGargle = new DmoGargle();
+        if (targetDescriptor == null)
         {
-            OSUtils.RequireVista();
+            // is not support
+            Assert.That(dmoGargle.MediaObject, Is.Null);
+            Assert.That(dmoGargle.MediaObjectInPlace, Is.Null);
+            Assert.That(dmoGargle.EffectParams, Is.Null);
+        }
+        else
+        {
+            Assert.That(dmoGargle.MediaObject, Is.Not.Null);
+            Assert.That(dmoGargle.MediaObjectInPlace, Is.Not.Null);
+            Assert.That(dmoGargle.EffectParams, Is.Not.Null);
+        }
+    }
+
+    [Test]
+    [Category("IntegrationTest")]
+    public void CanCreateDmoChorus()
+    {
+        var guid = new Guid("EFE6629C-81F7-4281-BD91-C9D604A95AF6");
+        var targetDescriptor = DmoEnumerator.GetAudioEffectNames().First(descriptor =>
+            Equals(descriptor.Clsid, guid));
+
+        using var dmoGargle = new DmoChorus();
+        if (targetDescriptor == null)
+        {
+            // is not support
+            Assert.That(dmoGargle.MediaObject, Is.Null);
+            Assert.That(dmoGargle.MediaObjectInPlace, Is.Null);
+            Assert.That(dmoGargle.EffectParams, Is.Null);
+        }
+        else
+        {
+            Assert.That(dmoGargle.MediaObject, Is.Not.Null);
+            Assert.That(dmoGargle.MediaObjectInPlace, Is.Not.Null);
+            Assert.That(dmoGargle.EffectParams, Is.Not.Null);
+        }
+    }
+
+    [Test]
+    [Category("IntegrationTest")]
+    public void CanCreateDmoFlanger()
+    {
+        var guid = new Guid("EFCA3D92-DFD8-4672-A603-7420894BAD98");
+        var targetDescriptor = DmoEnumerator.GetAudioEffectNames().First(descriptor =>
+            Equals(descriptor.Clsid, guid));
+
+        using var dmoGargle = new DmoFlanger();
+        if (targetDescriptor == null)
+        {
+            // is not support
+            Assert.That(dmoGargle.MediaObject, Is.Null);
+            Assert.That(dmoGargle.MediaObjectInPlace, Is.Null);
+            Assert.That(dmoGargle.EffectParams, Is.Null);
+        }
+        else
+        {
+            Assert.That(dmoGargle.MediaObject, Is.Not.Null);
+            Assert.That(dmoGargle.MediaObjectInPlace, Is.Not.Null);
+            Assert.That(dmoGargle.EffectParams, Is.Not.Null);
+        }
+    }
+
+    [Test]
+    [Category("IntegrationTest")]
+    public void CanCreateDmoEcho()
+    {
+        var guid = new Guid("EF3E932C-D40B-4F51-8CCF-3F98F1B29D5D");
+        var targetDescriptor = DmoEnumerator.GetAudioEffectNames().First(descriptor =>
+            Equals(descriptor.Clsid, guid));
+
+        using var dmoGargle = new DmoEcho();
+        if (targetDescriptor == null)
+        {
+            // is not support
+            Assert.That(dmoGargle.MediaObject, Is.Null);
+            Assert.That(dmoGargle.MediaObjectInPlace, Is.Null);
+            Assert.That(dmoGargle.EffectParams, Is.Null);
+        }
+        else
+        {
+            Assert.That(dmoGargle.MediaObject, Is.Not.Null);
+            Assert.That(dmoGargle.MediaObjectInPlace, Is.Not.Null);
+            Assert.That(dmoGargle.EffectParams, Is.Not.Null);
+        }
+    }
+
+    [Test]
+    [Category("IntegrationTest")]
+    public void CanCreateDmoDistortion()
+    {
+        var guid = new Guid("EF114C90-CD1D-484E-96E5-09CFAF912A21");
+        var targetDescriptor = DmoEnumerator.GetAudioEffectNames().First(descriptor =>
+            Equals(descriptor.Clsid, guid));
+
+        using var dmoGargle = new DmoDistortion();
+        if (targetDescriptor == null)
+        {
+            // is not support
+            Assert.That(dmoGargle.MediaObject, Is.Null);
+            Assert.That(dmoGargle.MediaObjectInPlace, Is.Null);
+            Assert.That(dmoGargle.EffectParams, Is.Null);
+        }
+        else
+        {
+            Assert.That(dmoGargle.MediaObject, Is.Not.Null);
+            Assert.That(dmoGargle.MediaObjectInPlace, Is.Not.Null);
+            Assert.That(dmoGargle.EffectParams, Is.Not.Null);
+        }
+    }
+
+    [Test]
+    [Category("IntegrationTest")]
+    public void CanCreateDmoCompressor()
+    {
+        var guid = new Guid("EF011F79-4000-406D-87AF-BFFB3FC39D57");
+        var targetDescriptor = DmoEnumerator.GetAudioEffectNames().First(descriptor =>
+            Equals(descriptor.Clsid, guid));
+
+        using var dmoGargle = new DmoCompressor();
+        if (targetDescriptor == null)
+        {
+            // is not support
+            Assert.That(dmoGargle.MediaObject, Is.Null);
+            Assert.That(dmoGargle.MediaObjectInPlace, Is.Null);
+            Assert.That(dmoGargle.EffectParams, Is.Null);
+        }
+        else
+        {
+            Assert.That(dmoGargle.MediaObject, Is.Not.Null);
+            Assert.That(dmoGargle.MediaObjectInPlace, Is.Not.Null);
+            Assert.That(dmoGargle.EffectParams, Is.Not.Null);
+        }
+    }
+
+    [Test]
+    [Category("IntegrationTest")]
+    public void CanCreateDmoParamEq()
+    {
+        var guid = new Guid("120CED89-3BF4-4173-A132-3CB406CF3231");
+        var targetDescriptor = DmoEnumerator.GetAudioEffectNames().First(descriptor =>
+            Equals(descriptor.Clsid, guid));
+
+        using var dmoGargle = new DmoParamEq();
+        if (targetDescriptor == null)
+        {
+            // is not support
+            Assert.That(dmoGargle.MediaObject, Is.Null);
+            Assert.That(dmoGargle.MediaObjectInPlace, Is.Null);
+            Assert.That(dmoGargle.EffectParams, Is.Null);
+        }
+        else
+        {
+            Assert.That(dmoGargle.MediaObject, Is.Not.Null);
+            Assert.That(dmoGargle.MediaObjectInPlace, Is.Not.Null);
+            Assert.That(dmoGargle.EffectParams, Is.Not.Null);
+        }
+    }
+
+    [Test]
+    [Category("IntegrationTest")]
+    public void CanCreateDmoI3DL2Reverb()
+    {
+        var guid = new Guid("EF985E71-D5C7-42D4-BA4D-2D073E2E96F4");
+        var targetDescriptor = DmoEnumerator.GetAudioEffectNames().FirstOrDefault(descriptor =>
+            Equals(descriptor.Clsid, guid));
+
+        if (targetDescriptor == null)
+        {
+            Assert.Ignore($"This machine does not have DmoI3DL2Reverb ({guid}) available");
+            return;
         }
 
-        [Test]
-        [Category("IntegrationTest")]
-        public void CanCreateDmoGargle()
+        using var dmoGargle = new DmoI3DL2Reverb();
+        if (targetDescriptor == null)
         {
-            var guid = new Guid("DAFD8210-5711-4B91-9FE3-F75B7AE279BF");
-            var targetDescriptor = DmoEnumerator.GetAudioEffectNames().First(descriptor =>
-                Equals(descriptor.Clsid, guid));
-
-            using (var dmoGargle = new DmoGargle())
-            {
-                if (targetDescriptor == null)
-                {
-                    // is not support
-                    Assert.That(dmoGargle.MediaObject, Is.Null);
-                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Null);
-                    Assert.That(dmoGargle.EffectParams, Is.Null);
-                }
-                else
-                {
-                    Assert.That(dmoGargle.MediaObject, Is.Not.Null);
-                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Not.Null);
-                    Assert.That(dmoGargle.EffectParams, Is.Not.Null);
-                }
-            }
+            // is not support
+            Assert.That(dmoGargle.MediaObject, Is.Null);
+            Assert.That(dmoGargle.MediaObjectInPlace, Is.Null);
+            Assert.That(dmoGargle.EffectParams, Is.Null);
         }
-
-        [Test]
-        [Category("IntegrationTest")]
-        public void CanCreateDmoChorus()
+        else
         {
-            var guid = new Guid("EFE6629C-81F7-4281-BD91-C9D604A95AF6");
-            var targetDescriptor = DmoEnumerator.GetAudioEffectNames().First(descriptor =>
-                Equals(descriptor.Clsid, guid));
-
-            using (var dmoGargle = new DmoChorus())
-            {
-                if (targetDescriptor == null)
-                {
-                    // is not support
-                    Assert.That(dmoGargle.MediaObject, Is.Null);
-                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Null);
-                    Assert.That(dmoGargle.EffectParams, Is.Null);
-                }
-                else
-                {
-                    Assert.That(dmoGargle.MediaObject, Is.Not.Null);
-                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Not.Null);
-                    Assert.That(dmoGargle.EffectParams, Is.Not.Null);
-                }
-            }
+            Assert.That(dmoGargle.MediaObject, Is.Not.Null);
+            Assert.That(dmoGargle.MediaObjectInPlace, Is.Not.Null);
+            Assert.That(dmoGargle.EffectParams, Is.Not.Null);
         }
+    }
 
-        [Test]
-        [Category("IntegrationTest")]
-        public void CanCreateDmoFlanger()
+    [Test]
+    [Category("IntegrationTest")]
+    public void CanCreateDmoWavesReverb()
+    {
+        var guid = new Guid("87FC0268-9A55-4360-95AA-004A1D9DE26C");
+        var targetDescriptor = DmoEnumerator.GetAudioEffectNames().First(descriptor =>
+            Equals(descriptor.Clsid, guid));
+
+        using var dmoGargle = new DmoWavesReverb();
+        if (targetDescriptor == null)
         {
-            var guid = new Guid("EFCA3D92-DFD8-4672-A603-7420894BAD98");
-            var targetDescriptor = DmoEnumerator.GetAudioEffectNames().First(descriptor =>
-                Equals(descriptor.Clsid, guid));
-
-            using (var dmoGargle = new DmoFlanger())
-            {
-                if (targetDescriptor == null)
-                {
-                    // is not support
-                    Assert.That(dmoGargle.MediaObject, Is.Null);
-                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Null);
-                    Assert.That(dmoGargle.EffectParams, Is.Null);
-                }
-                else
-                {
-                    Assert.That(dmoGargle.MediaObject, Is.Not.Null);
-                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Not.Null);
-                    Assert.That(dmoGargle.EffectParams, Is.Not.Null);
-                }
-            }
+            // is not support
+            Assert.That(dmoGargle.MediaObject, Is.Null);
+            Assert.That(dmoGargle.MediaObjectInPlace, Is.Null);
+            Assert.That(dmoGargle.EffectParams, Is.Null);
         }
-
-        [Test]
-        [Category("IntegrationTest")]
-        public void CanCreateDmoEcho()
+        else
         {
-            var guid = new Guid("EF3E932C-D40B-4F51-8CCF-3F98F1B29D5D");
-            var targetDescriptor = DmoEnumerator.GetAudioEffectNames().First(descriptor =>
-                Equals(descriptor.Clsid, guid));
-
-            using (var dmoGargle = new DmoEcho())
-            {
-                if (targetDescriptor == null)
-                {
-                    // is not support
-                    Assert.That(dmoGargle.MediaObject, Is.Null);
-                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Null);
-                    Assert.That(dmoGargle.EffectParams, Is.Null);
-                }
-                else
-                {
-                    Assert.That(dmoGargle.MediaObject, Is.Not.Null);
-                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Not.Null);
-                    Assert.That(dmoGargle.EffectParams, Is.Not.Null);
-                }
-            }
+            Assert.That(dmoGargle.MediaObject, Is.Not.Null);
+            Assert.That(dmoGargle.MediaObjectInPlace, Is.Not.Null);
+            Assert.That(dmoGargle.EffectParams, Is.Not.Null);
         }
+    }
 
-        [Test]
-        [Category("IntegrationTest")]
-        public void CanCreateDmoDistortion()
+    [Test]
+    [Category("IntegrationTest")]
+    public void CanCreateDmoEffectWaveProvider()
+    {
+        try
         {
-            var guid = new Guid("EF114C90-CD1D-484E-96E5-09CFAF912A21");
-            var targetDescriptor = DmoEnumerator.GetAudioEffectNames().First(descriptor =>
-                Equals(descriptor.Clsid, guid));
-
-            using (var dmoGargle = new DmoDistortion())
-            {
-                if (targetDescriptor == null)
-                {
-                    // is not support
-                    Assert.That(dmoGargle.MediaObject, Is.Null);
-                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Null);
-                    Assert.That(dmoGargle.EffectParams, Is.Null);
-                }
-                else
-                {
-                    Assert.That(dmoGargle.MediaObject, Is.Not.Null);
-                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Not.Null);
-                    Assert.That(dmoGargle.EffectParams, Is.Not.Null);
-                }
-            }
+            using WaveStream reader = new NullWaveStream(new WaveFormat(44100, 16, 1), 1000);
+            using var effector = new DmoEffectWaveProvider<DmoFlanger, DmoFlanger.Params>(reader);
+            Assert.That(effector.EffectParams, Is.Not.Null);
         }
-
-        [Test]
-        [Category("IntegrationTest")]
-        public void CanCreateDmoCompressor()
+        catch (NotSupportedException)
         {
-            var guid = new Guid("EF011F79-4000-406D-87AF-BFFB3FC39D57");
-            var targetDescriptor = DmoEnumerator.GetAudioEffectNames().First(descriptor =>
-                Equals(descriptor.Clsid, guid));
-
-            using (var dmoGargle = new DmoCompressor())
-            {
-                if (targetDescriptor == null)
-                {
-                    // is not support
-                    Assert.That(dmoGargle.MediaObject, Is.Null);
-                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Null);
-                    Assert.That(dmoGargle.EffectParams, Is.Null);
-                }
-                else
-                {
-                    Assert.That(dmoGargle.MediaObject, Is.Not.Null);
-                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Not.Null);
-                    Assert.That(dmoGargle.EffectParams, Is.Not.Null);
-                }
-            }
+            Debug.WriteLine("No support Dmo Effect type");
         }
+    }
 
-        [Test]
-        [Category("IntegrationTest")]
-        public void CanCreateDmoParamEq()
-        {
-            var guid = new Guid("120CED89-3BF4-4173-A132-3CB406CF3231");
-            var targetDescriptor = DmoEnumerator.GetAudioEffectNames().First(descriptor =>
-                Equals(descriptor.Clsid, guid));
+    [Test]
+    [Category("IntegrationTest")]
+    public void CanReadABlockFromDmoEffectWaveProvider()
+    {
+        WaveFormat inputFormat = new WaveFormat(44100, 16, 1);
+        using WaveStream reader = new NullWaveStream(inputFormat, inputFormat.AverageBytesPerSecond * 20);
+        using var effector = new DmoEffectWaveProvider<DmoFlanger, DmoFlanger.Params>(reader);
+        // try to read 10 ms;
+        int bytesToRead = effector.WaveFormat.AverageBytesPerSecond / 100;
+        byte[] buffer = new byte[bytesToRead];
+        int count = effector.Read(buffer.AsSpan(0, bytesToRead));
+        Assert.That(count, Is.GreaterThan(0), "Bytes Read");
+    }
 
-            using (var dmoGargle = new DmoParamEq())
-            {
-                if (targetDescriptor == null)
-                {
-                    // is not support
-                    Assert.That(dmoGargle.MediaObject, Is.Null);
-                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Null);
-                    Assert.That(dmoGargle.EffectParams, Is.Null);
-                }
-                else
-                {
-                    Assert.That(dmoGargle.MediaObject, Is.Not.Null);
-                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Not.Null);
-                    Assert.That(dmoGargle.EffectParams, Is.Not.Null);
-                }
-            }
-        }
-
-        [Test]
-        [Category("IntegrationTest")]
-        public void CanCreateDmoI3DL2Reverb()
-        {
-            var guid = new Guid("EF985E71-D5C7-42D4-BA4D-2D073E2E96F4");
-            var targetDescriptor = DmoEnumerator.GetAudioEffectNames().FirstOrDefault(descriptor =>
-                Equals(descriptor.Clsid, guid));
-
-            if (targetDescriptor == null)
-            {
-                Assert.Ignore($"This machine does not have DmoI3DL2Reverb ({guid}) available");
-                return;
-            }
-
-            using (var dmoGargle = new DmoI3DL2Reverb())
-            {
-                if (targetDescriptor == null)
-                {
-                    // is not support
-                    Assert.That(dmoGargle.MediaObject, Is.Null);
-                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Null);
-                    Assert.That(dmoGargle.EffectParams, Is.Null);
-                }
-                else
-                {
-                    Assert.That(dmoGargle.MediaObject, Is.Not.Null);
-                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Not.Null);
-                    Assert.That(dmoGargle.EffectParams, Is.Not.Null);
-                }
-            }
-        }
-
-        [Test]
-        [Category("IntegrationTest")]
-        public void CanCreateDmoWavesReverb()
-        {
-            var guid = new Guid("87FC0268-9A55-4360-95AA-004A1D9DE26C");
-            var targetDescriptor = DmoEnumerator.GetAudioEffectNames().First(descriptor =>
-                Equals(descriptor.Clsid, guid));
-
-            using (var dmoGargle = new DmoWavesReverb())
-            {
-                if (targetDescriptor == null)
-                {
-                    // is not support
-                    Assert.That(dmoGargle.MediaObject, Is.Null);
-                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Null);
-                    Assert.That(dmoGargle.EffectParams, Is.Null);
-                }
-                else
-                {
-                    Assert.That(dmoGargle.MediaObject, Is.Not.Null);
-                    Assert.That(dmoGargle.MediaObjectInPlace, Is.Not.Null);
-                    Assert.That(dmoGargle.EffectParams, Is.Not.Null);
-                }
-            }
-        }
-
-        [Test]
-        [Category("IntegrationTest")]
-        public void CanCreateDmoEffectWaveProvider()
-        {
-            try
-            {
-                using (WaveStream reader = new NullWaveStream(new WaveFormat(44100, 16, 1), 1000))
-                {
-                    using (var effector = new DmoEffectWaveProvider<DmoFlanger, DmoFlanger.Params>(reader))
-                    {
-                        Assert.That(effector.EffectParams, Is.Not.Null);
-                    }
-                }
-            }
-            catch (NotSupportedException)
-            {
-                Debug.WriteLine("No support Dmo Effect type");
-            }
-        }
-
-        [Test]
-        [Category("IntegrationTest")]
-        public void CanReadABlockFromDmoEffectWaveProvider()
-        {
-            WaveFormat inputFormat = new WaveFormat(44100, 16, 1);
-            using (WaveStream reader = new NullWaveStream(inputFormat, inputFormat.AverageBytesPerSecond * 20))
-            {
-                using (var effector = new DmoEffectWaveProvider<DmoFlanger, DmoFlanger.Params>(reader))
-                {
-                    // try to read 10 ms;
-                    int bytesToRead = effector.WaveFormat.AverageBytesPerSecond / 100;
-                    byte[] buffer = new byte[bytesToRead];
-                    int count = effector.Read(buffer.AsSpan(0, bytesToRead));
-                    Assert.That(count, Is.GreaterThan(0), "Bytes Read");
-                }
-            }
-        }
-
-/*
+    /*
         [Test]
         [Category("IntegrationTest")]
         public void CanCreateEffectedDataFromDmoEffectWaveProvider()
@@ -340,6 +314,5 @@ namespace NAudio.Windows.Tests.Dmo
 
             provider.Position = 0;
         }
-*/
-    }
+    */
 }

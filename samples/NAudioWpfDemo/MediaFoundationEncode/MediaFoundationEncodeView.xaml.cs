@@ -2,16 +2,15 @@
 using System.Linq;
 using System.Windows.Controls;
 
-namespace NAudioWpfDemo.MediaFoundationEncode
+namespace NAudioWpfDemo.MediaFoundationEncode;
+
+/// <summary>
+/// Interaction logic for MediaFoundationEncodeView.xaml
+/// </summary>
+public partial class MediaFoundationEncodeView : UserControl
 {
-    /// <summary>
-    /// Interaction logic for MediaFoundationEncodeView.xaml
-    /// </summary>
-    public partial class MediaFoundationEncodeView : UserControl
+    public MediaFoundationEncodeView()
     {
-        public MediaFoundationEncodeView()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

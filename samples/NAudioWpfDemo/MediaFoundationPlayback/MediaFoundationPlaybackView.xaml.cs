@@ -1,15 +1,14 @@
 ﻿using System.Windows.Controls;
 
-namespace NAudioWpfDemo.MediaFoundationPlayback
+namespace NAudioWpfDemo.MediaFoundationPlayback;
+
+/// <summary>
+/// Interaction logic for MediaFoundationPlaybackView.xaml
+/// </summary>
+public partial class MediaFoundationPlaybackView : UserControl
 {
-    /// <summary>
-    /// Interaction logic for MediaFoundationPlaybackView.xaml
-    /// </summary>
-    public partial class MediaFoundationPlaybackView : UserControl
+    public MediaFoundationPlaybackView()
     {
-        public MediaFoundationPlaybackView()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

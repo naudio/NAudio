@@ -1,76 +1,75 @@
-using System;
+﻿using System;
 using System.Runtime.InteropServices;
 using NAudio.Utils;
 
-namespace NAudio.Wave
+namespace NAudio.Wave;
+
+/// <summary>
+/// Converts from mono to stereo, allowing freedom to route all, some, or none of the incoming signal to left or right channels
+/// </summary>
+public class MonoToStereoProvider16 : IWaveProvider
 {
+    private readonly IWaveProvider sourceProvider;
+    private byte[] sourceBuffer;
+
     /// <summary>
-    /// Converts from mono to stereo, allowing freedom to route all, some, or none of the incoming signal to left or right channels
+    /// Creates a new stereo waveprovider based on a mono input
     /// </summary>
-    public class MonoToStereoProvider16 : IWaveProvider
+    /// <param name="sourceProvider">Mono 16 bit PCM input</param>
+    public MonoToStereoProvider16(IWaveProvider sourceProvider)
     {
-        private readonly IWaveProvider sourceProvider;
-        private byte[] sourceBuffer;
-
-        /// <summary>
-        /// Creates a new stereo waveprovider based on a mono input
-        /// </summary>
-        /// <param name="sourceProvider">Mono 16 bit PCM input</param>
-        public MonoToStereoProvider16(IWaveProvider sourceProvider)
+        if (sourceProvider.WaveFormat.Encoding != WaveFormatEncoding.Pcm)
         {
-            if (sourceProvider.WaveFormat.Encoding != WaveFormatEncoding.Pcm)
-            {
-                throw new ArgumentException("Source must be PCM");
-            }
-            if (sourceProvider.WaveFormat.Channels != 1)
-            {
-                throw new ArgumentException("Source must be Mono");
-            }
-            if (sourceProvider.WaveFormat.BitsPerSample != 16)
-            {
-                throw new ArgumentException("Source must be 16 bit");
-            }
-            this.sourceProvider = sourceProvider;
-            WaveFormat = new WaveFormat(sourceProvider.WaveFormat.SampleRate, 2);
-            RightVolume = 1.0f;
-            LeftVolume = 1.0f;
+            throw new ArgumentException("Source must be PCM");
         }
-
-        /// <summary>
-        /// 1.0 to copy the mono stream to the left channel without adjusting volume
-        /// </summary>
-        public float LeftVolume { get; set; }
-
-        /// <summary>
-        /// 1.0 to copy the mono stream to the right channel without adjusting volume
-        /// </summary>
-        public float RightVolume { get; set; }
-
-        /// <summary>
-        /// Output Wave Format
-        /// </summary>
-        public WaveFormat WaveFormat { get; }
-
-        /// <summary>
-        /// Reads bytes from this WaveProvider
-        /// </summary>
-        public int Read(Span<byte> buffer)
+        if (sourceProvider.WaveFormat.Channels != 1)
         {
-            var sourceBytesRequired = buffer.Length / 2;
-            sourceBuffer = BufferHelpers.Ensure(this.sourceBuffer, sourceBytesRequired);
-            var sourceShortSpan = MemoryMarshal.Cast<byte, short>(sourceBuffer.AsSpan());
-            var destShortSpan = MemoryMarshal.Cast<byte, short>(buffer);
-
-            var sourceBytesRead = sourceProvider.Read(sourceBuffer.AsSpan(0, sourceBytesRequired));
-            var samplesRead = sourceBytesRead / 2;
-            int destOffset = 0;
-            for (var sample = 0; sample < samplesRead; sample++)
-            {
-                short sampleVal = sourceShortSpan[sample];
-                destShortSpan[destOffset++] = (short)(LeftVolume * sampleVal);
-                destShortSpan[destOffset++] = (short)(RightVolume * sampleVal);
-            }
-            return samplesRead * 4;
+            throw new ArgumentException("Source must be Mono");
         }
+        if (sourceProvider.WaveFormat.BitsPerSample != 16)
+        {
+            throw new ArgumentException("Source must be 16 bit");
+        }
+        this.sourceProvider = sourceProvider;
+        WaveFormat = new WaveFormat(sourceProvider.WaveFormat.SampleRate, 2);
+        RightVolume = 1.0f;
+        LeftVolume = 1.0f;
+    }
+
+    /// <summary>
+    /// 1.0 to copy the mono stream to the left channel without adjusting volume
+    /// </summary>
+    public float LeftVolume { get; set; }
+
+    /// <summary>
+    /// 1.0 to copy the mono stream to the right channel without adjusting volume
+    /// </summary>
+    public float RightVolume { get; set; }
+
+    /// <summary>
+    /// Output Wave Format
+    /// </summary>
+    public WaveFormat WaveFormat { get; }
+
+    /// <summary>
+    /// Reads bytes from this WaveProvider
+    /// </summary>
+    public int Read(Span<byte> buffer)
+    {
+        var sourceBytesRequired = buffer.Length / 2;
+        sourceBuffer = BufferHelpers.Ensure(this.sourceBuffer, sourceBytesRequired);
+        var sourceShortSpan = MemoryMarshal.Cast<byte, short>(sourceBuffer.AsSpan());
+        var destShortSpan = MemoryMarshal.Cast<byte, short>(buffer);
+
+        var sourceBytesRead = sourceProvider.Read(sourceBuffer.AsSpan(0, sourceBytesRequired));
+        var samplesRead = sourceBytesRead / 2;
+        int destOffset = 0;
+        for (var sample = 0; sample < samplesRead; sample++)
+        {
+            short sampleVal = sourceShortSpan[sample];
+            destShortSpan[destOffset++] = (short)(LeftVolume * sampleVal);
+            destShortSpan[destOffset++] = (short)(RightVolume * sampleVal);
+        }
+        return samplesRead * 4;
     }
 }

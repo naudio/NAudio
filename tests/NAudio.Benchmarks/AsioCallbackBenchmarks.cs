@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using BenchmarkDotNet.Attributes;
 using NAudio.Wave.Asio;
 

@@ -1,4 +1,4 @@
-using NAudio.MediaFoundation;
+﻿using NAudio.MediaFoundation;
 using NAudio.Wave;
 using NAudioConsoleTest.Shared.Testing;
 

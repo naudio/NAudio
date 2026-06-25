@@ -1,22 +1,21 @@
-using System;
+﻿using System;
 using System.IO;
 
-namespace NAudio.SoundFont
+namespace NAudio.SoundFont;
+
+/// <summary>
+/// SoundFont Version Structure
+/// </summary>
+public class SFVersion
 {
+
     /// <summary>
-    /// SoundFont Version Structure
+    /// Major Version
     /// </summary>
-    public class SFVersion
-    {
+    public ushort Major { get; set; }
 
-        /// <summary>
-        /// Major Version
-        /// </summary>
-        public ushort Major { get; set; }
-
-        /// <summary>
-        /// Minor Version
-        /// </summary>
-        public ushort Minor { get; set; }
-    }
+    /// <summary>
+    /// Minor Version
+    /// </summary>
+    public ushort Minor { get; set; }
 }

@@ -13,6 +13,13 @@ dotnet_analyzer_diagnostic.severity = suggestion
 # CA1707: Identifiers should not contain underscores (test method naming convention)
 dotnet_diagnostic.CA1707.severity = none
 
+# IDE0130: Namespace does not match folder structure (intentional). NAudio's
+# public namespaces (NAudio.Wave, NAudio.Codecs, NAudio.Dsp, ...) are stable
+# API surface, deliberately decoupled from the src/ assembly-split folder
+# layout. A file under src/NAudio.Core/Codecs living in namespace NAudio.Codecs
+# is by design, not a mistake.
+dotnet_diagnostic.IDE0130.severity = none
+
 # CA1051: Do not declare visible instance fields (interop structs)
 dotnet_diagnostic.CA1051.severity = none
 

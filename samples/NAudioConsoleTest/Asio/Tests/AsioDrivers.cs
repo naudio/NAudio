@@ -1,4 +1,4 @@
-using NAudio.Wave;
+﻿using NAudio.Wave;
 using Spectre.Console;
 
 namespace NAudioConsoleTest.Asio.Tests;

@@ -1,4 +1,4 @@
-/*
+﻿/*
   LICENSE
   -------
   Copyright (C) 2007 Ray Molenkamp
@@ -20,11 +20,10 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 
-namespace NAudio.CoreAudioApi
-{
-    /// <summary>
-    /// Audio Endpoint Volume Notifiaction Delegate
-    /// </summary>
-    /// <param name="data">Audio Volume Notification Data</param>
-    public delegate void AudioEndpointVolumeNotificationDelegate(AudioVolumeNotificationData data);
-}
+namespace NAudio.CoreAudioApi;
+
+/// <summary>
+/// Audio Endpoint Volume Notifiaction Delegate
+/// </summary>
+/// <param name="data">Audio Volume Notification Data</param>
+public delegate void AudioEndpointVolumeNotificationDelegate(AudioVolumeNotificationData data);

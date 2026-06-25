@@ -6,91 +6,90 @@ using System.Linq;
 using System.Windows;
 using NAudioWpfDemo.ViewModel;
 
-namespace NAudioWpfDemo.WasapiCaptureDemo
+namespace NAudioWpfDemo.WasapiCaptureDemo;
+
+class RecordingsViewModel : ViewModelBase
 {
-    class RecordingsViewModel : ViewModelBase
+    public string OutputFolder { get; }
+    private string selectedRecording;
+    public ObservableCollection<string> Recordings { get; }
+    public DelegateCommand PlayCommand { get; }
+    public DelegateCommand DeleteCommand { get; }
+    public DelegateCommand OpenFolderCommand { get; }
+
+    public RecordingsViewModel()
     {
-        public string OutputFolder { get; }
-        private string selectedRecording;
-        public ObservableCollection<string> Recordings { get; }
-        public DelegateCommand PlayCommand { get; }
-        public DelegateCommand DeleteCommand { get; }
-        public DelegateCommand OpenFolderCommand { get; }
-
-        public RecordingsViewModel()
+        Recordings = new ObservableCollection<string>();
+        OutputFolder = Path.Combine(Path.GetTempPath(), "NAudioWpfDemo");
+        Directory.CreateDirectory(OutputFolder);
+        foreach (var file in Directory.GetFiles(OutputFolder))
         {
-            Recordings = new ObservableCollection<string>();
-            OutputFolder = Path.Combine(Path.GetTempPath(), "NAudioWpfDemo");
-            Directory.CreateDirectory(OutputFolder);
-            foreach (var file in Directory.GetFiles(OutputFolder))
+            Recordings.Add(file);
+        }
+
+        PlayCommand = new DelegateCommand(Play);
+        DeleteCommand = new DelegateCommand(Delete);
+        OpenFolderCommand = new DelegateCommand(OpenFolder);
+        EnableCommands();
+    }
+
+    private void OpenFolder()
+    {
+        ShellExecute(OutputFolder);
+    }
+
+    private static void ShellExecute(string file)
+    {
+        var process = new Process();
+        process.StartInfo = new ProcessStartInfo(file)
+        {
+            UseShellExecute = true
+        };
+        process.Start();
+    }
+
+    private void Delete()
+    {
+        if (SelectedRecording != null)
+        {
+            try
             {
-                Recordings.Add(file);
+                File.Delete(Path.Combine(OutputFolder, SelectedRecording));
+                Recordings.Remove(SelectedRecording);
+                SelectedRecording = Recordings.FirstOrDefault();
             }
-
-            PlayCommand = new DelegateCommand(Play);
-            DeleteCommand = new DelegateCommand(Delete);
-            OpenFolderCommand = new DelegateCommand(OpenFolder);
-            EnableCommands();
-        }
-
-        private void OpenFolder()
-        {
-            ShellExecute(OutputFolder);
-        }
-
-        private static void ShellExecute(string file)
-        {
-            var process = new Process();
-            process.StartInfo = new ProcessStartInfo(file)
+            catch (Exception)
             {
-                UseShellExecute = true
-            };
-            process.Start();
-        }
-
-        private void Delete()
-        {
-            if (SelectedRecording != null)
-            {
-                try
-                {
-                    File.Delete(Path.Combine(OutputFolder, SelectedRecording));
-                    Recordings.Remove(SelectedRecording);
-                    SelectedRecording = Recordings.FirstOrDefault();
-                }
-                catch (Exception)
-                {
-                    MessageBox.Show("Could not delete recording");
-                }
+                MessageBox.Show("Could not delete recording");
             }
         }
+    }
 
-        private void Play()
+    private void Play()
+    {
+        if (SelectedRecording != null)
         {
-            if (SelectedRecording != null)
+            ShellExecute(Path.Combine(OutputFolder, SelectedRecording));
+        }
+    }
+
+    public string SelectedRecording
+    {
+        get => selectedRecording;
+        set
+        {
+            if (selectedRecording != value)
             {
-                ShellExecute(Path.Combine(OutputFolder, SelectedRecording));
+                selectedRecording = value;
+                OnPropertyChanged("SelectedRecording");
+                EnableCommands();
             }
         }
+    }
 
-        public string SelectedRecording
-        {
-            get => selectedRecording;
-            set
-            {
-                if (selectedRecording != value)
-                {
-                    selectedRecording = value;
-                    OnPropertyChanged("SelectedRecording");
-                    EnableCommands();
-                }
-            }
-        }
-
-        private void EnableCommands()
-        {
-            PlayCommand.IsEnabled = SelectedRecording != null;
-            DeleteCommand.IsEnabled = SelectedRecording != null;
-        }
+    private void EnableCommands()
+    {
+        PlayCommand.IsEnabled = SelectedRecording != null;
+        DeleteCommand.IsEnabled = SelectedRecording != null;
     }
 }

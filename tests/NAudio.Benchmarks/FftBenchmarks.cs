@@ -1,4 +1,4 @@
-using BenchmarkDotNet.Attributes;
+﻿using BenchmarkDotNet.Attributes;
 using NAudio.Dsp;
 
 namespace NAudio.Benchmarks;

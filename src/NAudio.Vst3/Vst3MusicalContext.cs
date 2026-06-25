@@ -1,4 +1,4 @@
-namespace NAudio.Vst3;
+﻿namespace NAudio.Vst3;
 
 /// <summary>
 /// A per-block snapshot of musical/transport state for a hosted instrument's <c>ProcessContext</c> —

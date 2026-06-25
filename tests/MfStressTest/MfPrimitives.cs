@@ -1,4 +1,4 @@
-using NAudio.MediaFoundation;
+﻿using NAudio.MediaFoundation;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 
@@ -60,10 +60,10 @@ internal static class MfPrimitives
     {
         int bitRate = combo.Codec.Name switch
         {
-            "MP3"  => combo.Channels == 1 ? 64_000  : 128_000,
-            "WMA"  => combo.Channels == 1 ? 64_000  : 128_000,
-            "AAC"  => combo.Channels == 1 ? 96_000  : 128_000,
-            _      => 128_000,
+            "MP3" => combo.Channels == 1 ? 64_000 : 128_000,
+            "WMA" => combo.Channels == 1 ? 64_000 : 128_000,
+            "AAC" => combo.Channels == 1 ? 96_000 : 128_000,
+            _ => 128_000,
         };
 
         // FLAC sometimes only advertises 24-bit output media types for some
@@ -98,18 +98,18 @@ internal static class MfPrimitives
 
     static void EncodeToFile(CodecSpec codec, IWaveProvider pcm, string path, int bitRate)
     {
-        if (codec.Name == "MP3")        MediaFoundationEncoder.EncodeToMp3(pcm, path, bitRate);
-        else if (codec.Name == "WMA")   MediaFoundationEncoder.EncodeToWma(pcm, path, bitRate);
-        else if (codec.Name == "AAC")   MediaFoundationEncoder.EncodeToAac(pcm, path, bitRate);
-        else if (codec.Name == "FLAC")  MediaFoundationEncoder.EncodeToFlac(pcm, path);
+        if (codec.Name == "MP3") MediaFoundationEncoder.EncodeToMp3(pcm, path, bitRate);
+        else if (codec.Name == "WMA") MediaFoundationEncoder.EncodeToWma(pcm, path, bitRate);
+        else if (codec.Name == "AAC") MediaFoundationEncoder.EncodeToAac(pcm, path, bitRate);
+        else if (codec.Name == "FLAC") MediaFoundationEncoder.EncodeToFlac(pcm, path);
         else throw new InvalidOperationException($"file encoding not wired for {codec.Name}");
     }
 
     static void EncodeToStream(CodecSpec codec, IWaveProvider pcm, Stream stream, int bitRate)
     {
-        if (codec.Name == "MP3")        MediaFoundationEncoder.EncodeToMp3(pcm, stream, bitRate);
-        else if (codec.Name == "WMA")   MediaFoundationEncoder.EncodeToWma(pcm, stream, bitRate);
-        else if (codec.Name == "AAC")   MediaFoundationEncoder.EncodeToAac(pcm, stream, bitRate);
+        if (codec.Name == "MP3") MediaFoundationEncoder.EncodeToMp3(pcm, stream, bitRate);
+        else if (codec.Name == "WMA") MediaFoundationEncoder.EncodeToWma(pcm, stream, bitRate);
+        else if (codec.Name == "AAC") MediaFoundationEncoder.EncodeToAac(pcm, stream, bitRate);
         else throw new InvalidOperationException($"stream encoding not wired for {codec.Name}");
     }
 

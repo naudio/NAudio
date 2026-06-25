@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using NAudio.Wave;
 
 namespace MfStressTest.Phases;
@@ -50,7 +50,8 @@ internal static class StaSoak
                 }
             }
             catch (Exception ex) { error = ex; }
-        }) { IsBackground = false, Name = "MfStaWorker" };
+        })
+        { IsBackground = false, Name = "MfStaWorker" };
 
         staThread.SetApartmentState(ApartmentState.STA);
         staThread.Start();

@@ -2,16 +2,15 @@
 using System.Linq;
 using System.Windows.Controls;
 
-namespace NAudioWpfDemo.EnumMediaFoundationTransforms
+namespace NAudioWpfDemo.EnumMediaFoundationTransforms;
+
+/// <summary>
+/// Interaction logic for EnumMftView.xaml
+/// </summary>
+public partial class EnumMftView : UserControl
 {
-    /// <summary>
-    /// Interaction logic for EnumMftView.xaml
-    /// </summary>
-    public partial class EnumMftView : UserControl
+    public EnumMftView()
     {
-        public EnumMftView()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

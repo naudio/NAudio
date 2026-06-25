@@ -1,4 +1,4 @@
-using NAudioConsoleTest.Asio.Tests;
+﻿using NAudioConsoleTest.Asio.Tests;
 using NAudioConsoleTest.DirectSound.Tests;
 using NAudioConsoleTest.Dmo.Tests;
 using NAudioConsoleTest.Dsp.Tests;

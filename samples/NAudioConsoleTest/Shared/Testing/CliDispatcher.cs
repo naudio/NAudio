@@ -1,4 +1,4 @@
-namespace NAudioConsoleTest.Shared.Testing;
+﻿namespace NAudioConsoleTest.Shared.Testing;
 
 /// <summary>
 /// Command-line front door for the harness. Supports:

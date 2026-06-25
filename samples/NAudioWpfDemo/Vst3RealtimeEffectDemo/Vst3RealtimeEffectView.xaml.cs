@@ -1,12 +1,11 @@
-using System.Windows.Controls;
+﻿using System.Windows.Controls;
 
-namespace NAudioWpfDemo.Vst3RealtimeEffectDemo
+namespace NAudioWpfDemo.Vst3RealtimeEffectDemo;
+
+public partial class Vst3RealtimeEffectView : UserControl
 {
-    public partial class Vst3RealtimeEffectView : UserControl
+    public Vst3RealtimeEffectView()
     {
-        public Vst3RealtimeEffectView()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

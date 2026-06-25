@@ -3,42 +3,39 @@ using System.Linq;
 using System.Windows.Forms;
 using NAudio.Wave;
 
-namespace NAudioDemo.AudioPlaybackDemo
+namespace NAudioDemo.AudioPlaybackDemo;
+
+public partial class AsioOutSettingsPanel : UserControl
 {
-    public partial class AsioOutSettingsPanel : UserControl
+    public AsioOutSettingsPanel()
     {
-        public AsioOutSettingsPanel()
+        InitializeComponent();
+        InitialiseAsioControls();
+    }
+
+    private void InitialiseAsioControls()
+    {
+        // Just fill the comboBox AsioDriver with available driver names
+        var asioDriverNames = AsioOut.GetDriverNames();
+        foreach (string driverName in asioDriverNames)
         {
-            InitializeComponent();
-            InitialiseAsioControls();
+            comboBoxAsioDriver.Items.Add(driverName);
         }
+        comboBoxAsioDriver.SelectedIndex = 0;
+    }
 
-        private void InitialiseAsioControls()
+    public string SelectedDeviceName { get { return (string)comboBoxAsioDriver.SelectedItem; } }
+
+    private void OnButtonControlPanelClick(object sender, EventArgs args)
+    {
+        try
         {
-            // Just fill the comboBox AsioDriver with available driver names
-            var asioDriverNames = AsioOut.GetDriverNames();
-            foreach (string driverName in asioDriverNames)
-            {
-                comboBoxAsioDriver.Items.Add(driverName);
-            }
-            comboBoxAsioDriver.SelectedIndex = 0;
+            using var asio = new AsioOut(SelectedDeviceName);
+            asio.ShowControlPanel();
         }
-
-        public string SelectedDeviceName { get { return (string)comboBoxAsioDriver.SelectedItem; } }
-
-        private void OnButtonControlPanelClick(object sender, EventArgs args)
+        catch (Exception e)
         {
-            try
-            {
-                using (var asio = new AsioOut(SelectedDeviceName))
-                {
-                    asio.ShowControlPanel();
-                }
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.Message);
-            }
+            MessageBox.Show(e.Message);
         }
     }
 }

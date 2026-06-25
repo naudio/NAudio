@@ -1,12 +1,11 @@
-using System.Windows.Controls;
+﻿using System.Windows.Controls;
 
-namespace NAudioWpfDemo.Vst3HostDemo
+namespace NAudioWpfDemo.Vst3HostDemo;
+
+public partial class Vst3HostDemoView : UserControl
 {
-    public partial class Vst3HostDemoView : UserControl
+    public Vst3HostDemoView()
     {
-        public Vst3HostDemoView()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

@@ -1,50 +1,49 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Text;
 using System.Collections.Generic;
 
-namespace NAudio.Midi
+namespace NAudio.Midi;
+
+/// <summary>
+/// Utility class for comparing MidiEvent objects
+/// </summary>
+public class MidiEventComparer : IComparer<MidiEvent>
 {
+    #region IComparer<MidiEvent> Members
+
     /// <summary>
-    /// Utility class for comparing MidiEvent objects
+    /// Compares two MidiEvents
+    /// Sorts by time, with EndTrack always sorted to the end
     /// </summary>
-    public class MidiEventComparer : IComparer<MidiEvent>
+    public int Compare(MidiEvent x, MidiEvent y)
     {
-        #region IComparer<MidiEvent> Members
+        long xTime = x.AbsoluteTime;
+        long yTime = y.AbsoluteTime;
 
-        /// <summary>
-        /// Compares two MidiEvents
-        /// Sorts by time, with EndTrack always sorted to the end
-        /// </summary>
-        public int Compare(MidiEvent x, MidiEvent y)
+        if (xTime == yTime)
         {
-            long xTime = x.AbsoluteTime;
-            long yTime = y.AbsoluteTime;
+            // sort meta events before note events, except end track
+            MetaEvent xMeta = x as MetaEvent;
+            MetaEvent yMeta = y as MetaEvent;
 
-            if (xTime == yTime)
+            if (xMeta != null)
             {
-                // sort meta events before note events, except end track
-                MetaEvent xMeta = x as MetaEvent;
-                MetaEvent yMeta = y as MetaEvent;
-
-                if (xMeta != null)
-                {
-                    if (xMeta.MetaEventType == MetaEventType.EndTrack)
-                        xTime = Int64.MaxValue;
-                    else
-                        xTime = Int64.MinValue;
-                }
-                if (yMeta != null)
-                {
-                    if (yMeta.MetaEventType == MetaEventType.EndTrack)
-                        yTime = Int64.MaxValue;
-                    else
-                        yTime = Int64.MinValue;
-                }
+                if (xMeta.MetaEventType == MetaEventType.EndTrack)
+                    xTime = Int64.MaxValue;
+                else
+                    xTime = Int64.MinValue;
             }
-            return xTime.CompareTo(yTime);
+            if (yMeta != null)
+            {
+                if (yMeta.MetaEventType == MetaEventType.EndTrack)
+                    yTime = Int64.MaxValue;
+                else
+                    yTime = Int64.MinValue;
+            }
         }
-
-        #endregion
+        return xTime.CompareTo(yTime);
     }
+
+    #endregion
 }

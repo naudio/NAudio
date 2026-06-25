@@ -1,33 +1,32 @@
-using System.Windows.Controls;
+﻿using System.Windows.Controls;
 
-namespace NAudioWpfDemo.Vst3HostDemo
+namespace NAudioWpfDemo.Vst3HostDemo;
+
+class Vst3HostDemoPlugin : IModule
 {
-    class Vst3HostDemoPlugin : IModule
+    private Vst3HostDemoView view;
+    private Vst3HostDemoViewModel viewModel;
+
+    public string Name => "VST3 Effect Host";
+
+    public UserControl UserInterface
     {
-        private Vst3HostDemoView view;
-        private Vst3HostDemoViewModel viewModel;
-
-        public string Name => "VST3 Effect Host";
-
-        public UserControl UserInterface
+        get
         {
-            get
+            if (view == null)
             {
-                if (view == null)
-                {
-                    view = new Vst3HostDemoView();
-                    viewModel = new Vst3HostDemoViewModel();
-                    view.DataContext = viewModel;
-                }
-                return view;
+                view = new Vst3HostDemoView();
+                viewModel = new Vst3HostDemoViewModel();
+                view.DataContext = viewModel;
             }
+            return view;
         }
+    }
 
-        public void Deactivate()
-        {
-            viewModel?.Dispose();
-            view = null;
-            viewModel = null;
-        }
+    public void Deactivate()
+    {
+        viewModel?.Dispose();
+        view = null;
+        viewModel = null;
     }
 }

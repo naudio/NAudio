@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using NAudio.Dmo;
 using NAudio.Wave;
 

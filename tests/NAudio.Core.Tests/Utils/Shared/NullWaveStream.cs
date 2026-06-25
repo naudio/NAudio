@@ -1,39 +1,38 @@
-using System;
+﻿using System;
 using NAudio.Wave;
 
-namespace NAudio.Tests.Shared
+namespace NAudio.Tests.Shared;
+
+class NullWaveStream : WaveStream
 {
-    class NullWaveStream : WaveStream
+    private readonly long length;
+    private long position;
+
+    public NullWaveStream(WaveFormat format, long length)
     {
-        private readonly long length;
-        private long position;
-        
-        public NullWaveStream(WaveFormat format, long length)
+        WaveFormat = format;
+        this.length = length;
+    }
+
+    public override WaveFormat WaveFormat { get; }
+
+    public override long Length => length;
+
+    public override long Position
+    {
+        get { return position; }
+        set { position = value; }
+    }
+
+    public override int Read(byte[] buffer, int offset, int count)
+    {
+        if (position > length)
         {
-            WaveFormat = format;
-            this.length = length;
+            return 0;
         }
-
-        public override WaveFormat WaveFormat { get; }
-
-        public override long Length => length;
-
-        public override long Position
-        {
-            get { return position; }
-            set { position = value; }
-        }
-
-        public override int Read(byte[] buffer, int offset, int count)
-        {
-            if (position > length)
-            {
-                return 0;
-            }
-            count = (int)Math.Min(count, length - position);
-            Array.Clear(buffer, offset, count);
-            position += count;
-            return count;
-        }
+        count = (int)Math.Min(count, length - position);
+        Array.Clear(buffer, offset, count);
+        position += count;
+        return count;
     }
 }

@@ -26,14 +26,12 @@ using System;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 
-namespace NAudio.CoreAudioApi.Interfaces
-{
-    [GeneratedComInterface,
-     Guid("657804FA-D6AD-4496-8A60-352752AF4F89"),
-     InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    internal partial interface IAudioEndpointVolumeCallback
-    {
-        void OnNotify(IntPtr notifyData);
-    };
+namespace NAudio.CoreAudioApi.Interfaces;
 
-}
+[GeneratedComInterface,
+ Guid("657804FA-D6AD-4496-8A60-352752AF4F89"),
+ InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+internal partial interface IAudioEndpointVolumeCallback
+{
+    void OnNotify(IntPtr notifyData);
+};

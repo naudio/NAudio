@@ -1,20 +1,19 @@
 ﻿using System;
 
-namespace NAudio.Dmo
+namespace NAudio.Dmo;
+
+/// <summary>
+/// DMO Inplace Process Flags
+/// </summary>
+[Flags]
+public enum DmoInPlaceProcessFlags
 {
     /// <summary>
-    /// DMO Inplace Process Flags
+    /// DMO_INPLACE_NORMAL 
     /// </summary>
-    [Flags]
-    public enum DmoInPlaceProcessFlags
-    {
-        /// <summary>
-        /// DMO_INPLACE_NORMAL 
-        /// </summary>
-        Normal = 0,
-        /// <summary>
-        /// DMO_INPLACE_ZERO
-        /// </summary>
-        Zero = 0x1
-    }
+    Normal = 0,
+    /// <summary>
+    /// DMO_INPLACE_ZERO
+    /// </summary>
+    Zero = 0x1
 }

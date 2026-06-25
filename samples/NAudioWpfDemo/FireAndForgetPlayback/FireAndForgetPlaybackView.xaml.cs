@@ -1,15 +1,14 @@
 ﻿using System.Windows.Controls;
 
-namespace NAudioWpfDemo.FireAndForgetPlayback
+namespace NAudioWpfDemo.FireAndForgetPlayback;
+
+/// <summary>
+/// Interaction logic for FireAndForgetPlaybackView.xaml
+/// </summary>
+public partial class FireAndForgetPlaybackView : UserControl
 {
-    /// <summary>
-    /// Interaction logic for FireAndForgetPlaybackView.xaml
-    /// </summary>
-    public partial class FireAndForgetPlaybackView : UserControl
+    public FireAndForgetPlaybackView()
     {
-        public FireAndForgetPlaybackView()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

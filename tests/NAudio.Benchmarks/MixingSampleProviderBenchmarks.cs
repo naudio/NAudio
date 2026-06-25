@@ -1,4 +1,4 @@
-using BenchmarkDotNet.Attributes;
+﻿using BenchmarkDotNet.Attributes;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 

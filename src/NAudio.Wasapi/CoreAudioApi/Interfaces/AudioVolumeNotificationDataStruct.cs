@@ -23,16 +23,15 @@
 using System;
 // ReSharper disable InconsistentNaming
 
-namespace NAudio.CoreAudioApi.Interfaces
-{
+namespace NAudio.CoreAudioApi.Interfaces;
+
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value 0
 
-    internal struct AudioVolumeNotificationDataStruct
-    {
-        public Guid guidEventContext;
-        public bool bMuted;
-        public float fMasterVolume;
-        public uint nChannels;
-        public float ChannelVolume;
-    }
+internal struct AudioVolumeNotificationDataStruct
+{
+    public Guid guidEventContext;
+    public bool bMuted;
+    public float fMasterVolume;
+    public uint nChannels;
+    public float ChannelVolume;
 }

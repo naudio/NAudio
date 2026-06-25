@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using NUnit.Framework;
 using NAudio.Wave;
 using NAudio.Dmo;
@@ -6,89 +6,86 @@ using System.Diagnostics;
 using System.IO;
 using NAudio.Windows.Tests.Utils;
 
-namespace NAudio.Windows.Tests.Dmo
+namespace NAudio.Windows.Tests.Dmo;
+
+[TestFixture]
+public class DmoMp3FrameDecompressorTests
 {
-    [TestFixture]
-    public class DmoMp3FrameDecompressorTests
+    [SetUp]
+    public void SetUp()
     {
-        [SetUp]
-        public void SetUp()
-        {
-            OSUtils.RequireVista();
-        }
+        OSUtils.RequireVista();
+    }
 
-        [Test]
-        [Category("IntegrationTest")]
-        public void CanCreateDmoMp3FrameDecompressor()
-        {
-            var mp3Format = new Mp3WaveFormat(44100, 2, 215, 32000);
-            var frameDecompressor = new DmoMp3FrameDecompressor(mp3Format);
-            Assert.That(frameDecompressor, Is.Not.Null);
-        }
+    [Test]
+    [Category("IntegrationTest")]
+    public void CanCreateDmoMp3FrameDecompressor()
+    {
+        var mp3Format = new Mp3WaveFormat(44100, 2, 215, 32000);
+        var frameDecompressor = new DmoMp3FrameDecompressor(mp3Format);
+        Assert.That(frameDecompressor, Is.Not.Null);
+    }
 
-        [Test]
-        [Category("IntegrationTest")]
-        public void CanDecompressAnMp3()
+    [Test]
+    [Category("IntegrationTest")]
+    public void CanDecompressAnMp3()
+    {
+        var testFile = TestFileBuilder.CreateMp3File(20);
+        try
         {
-            var testFile = TestFileBuilder.CreateMp3File(20);
-            try
+            using var reader = new Mp3FileReader(testFile);
+            var frameDecompressor = new DmoMp3FrameDecompressor(reader.Mp3WaveFormat);
+            Mp3Frame frame;
+            var buffer = new byte[reader.WaveFormat.AverageBytesPerSecond];
+            while ((frame = reader.ReadNextFrame()) != null)
             {
-                using (var reader = new Mp3FileReader(testFile))
-                {
-                    var frameDecompressor = new DmoMp3FrameDecompressor(reader.Mp3WaveFormat);
-                    Mp3Frame frame;
-                    var buffer = new byte[reader.WaveFormat.AverageBytesPerSecond];
-                    while ((frame = reader.ReadNextFrame()) != null)
-                    {
-                        int decompressed = frameDecompressor.DecompressFrame(frame, buffer.AsSpan());
-                        Debug.WriteLine($"Decompressed {frame.FrameLength} bytes to {decompressed}");
-                    }
-                }
-            }
-            finally 
-            {
-                File.Delete(testFile);
+                int decompressed = frameDecompressor.DecompressFrame(frame, buffer.AsSpan());
+                Debug.WriteLine($"Decompressed {frame.FrameLength} bytes to {decompressed}");
             }
         }
-
-        [Test]
-        [Category("IntegrationTest")]
-        public void CanExamineInputTypesOnMp3Decoder()
+        finally
         {
-            var decoder = new WindowsMediaMp3Decoder();
-            Assert.That(decoder.MediaObject.InputStreamCount, Is.EqualTo(1));
-            foreach (DmoMediaType mediaType in decoder.MediaObject.GetInputTypes(0))
-            {
-                Debug.WriteLine($"{mediaType.MajorTypeName}:{mediaType.SubTypeName}:{mediaType.FormatTypeName}");
-            }
+            File.Delete(testFile);
         }
+    }
 
-        [Test]
-        [Category("IntegrationTest")]
-        public void CanExamineOutputTypesOnDecoder()
+    [Test]
+    [Category("IntegrationTest")]
+    public void CanExamineInputTypesOnMp3Decoder()
+    {
+        var decoder = new WindowsMediaMp3Decoder();
+        Assert.That(decoder.MediaObject.InputStreamCount, Is.EqualTo(1));
+        foreach (DmoMediaType mediaType in decoder.MediaObject.GetInputTypes(0))
         {
-            var decoder = new WindowsMediaMp3Decoder();
-            decoder.MediaObject.SetInputWaveFormat(0,new Mp3WaveFormat(44100, 2, 200, 32000));
-            Assert.That(decoder.MediaObject.OutputStreamCount, Is.EqualTo(1));
-
-            foreach (DmoMediaType mediaType in decoder.MediaObject.GetOutputTypes(0))
-            {
-                Debug.WriteLine($"{mediaType.MajorTypeName}:{mediaType.SubTypeName}:{mediaType.FormatTypeName}");
-            }
+            Debug.WriteLine($"{mediaType.MajorTypeName}:{mediaType.SubTypeName}:{mediaType.FormatTypeName}");
         }
+    }
 
-        [Test]
-        [Category("IntegrationTest")]
-        public void WindowsMediaMp3DecoderSupportsStereoMp3()
+    [Test]
+    [Category("IntegrationTest")]
+    public void CanExamineOutputTypesOnDecoder()
+    {
+        var decoder = new WindowsMediaMp3Decoder();
+        decoder.MediaObject.SetInputWaveFormat(0, new Mp3WaveFormat(44100, 2, 200, 32000));
+        Assert.That(decoder.MediaObject.OutputStreamCount, Is.EqualTo(1));
+
+        foreach (DmoMediaType mediaType in decoder.MediaObject.GetOutputTypes(0))
         {
-            WaveFormat waveFormat = new Mp3WaveFormat(44100, 2, 0, 32000);
-            Assert.That(IsInputFormatSupported(waveFormat), Is.True);
+            Debug.WriteLine($"{mediaType.MajorTypeName}:{mediaType.SubTypeName}:{mediaType.FormatTypeName}");
         }
+    }
 
-        private bool IsInputFormatSupported(WaveFormat waveFormat)
-        {
-            var decoder = new WindowsMediaMp3Decoder();
-            return decoder.MediaObject.SupportsInputWaveFormat(0, waveFormat);
-        }
+    [Test]
+    [Category("IntegrationTest")]
+    public void WindowsMediaMp3DecoderSupportsStereoMp3()
+    {
+        WaveFormat waveFormat = new Mp3WaveFormat(44100, 2, 0, 32000);
+        Assert.That(IsInputFormatSupported(waveFormat), Is.True);
+    }
+
+    private bool IsInputFormatSupported(WaveFormat waveFormat)
+    {
+        var decoder = new WindowsMediaMp3Decoder();
+        return decoder.MediaObject.SupportsInputWaveFormat(0, waveFormat);
     }
 }

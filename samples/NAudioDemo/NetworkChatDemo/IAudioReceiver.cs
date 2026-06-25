@@ -1,9 +1,8 @@
 ﻿using System;
 
-namespace NAudioDemo.NetworkChatDemo
+namespace NAudioDemo.NetworkChatDemo;
+
+interface IAudioReceiver : IDisposable
 {
-    interface IAudioReceiver : IDisposable
-    {
-        void OnReceived(Action<byte[]> handler);
-    }
+    void OnReceived(Action<byte[]> handler);
 }

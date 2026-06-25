@@ -1,4 +1,4 @@
-namespace NAudioConsoleTest.Shared.Testing;
+﻿namespace NAudioConsoleTest.Shared.Testing;
 
 /// <summary>
 /// Contract every interactive/automatable test in the harness implements. Both the Spectre

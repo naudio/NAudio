@@ -1,4 +1,4 @@
-/*
+﻿/*
   LICENSE
   -------
   Copyright (C) 2007 Ray Molenkamp
@@ -24,64 +24,63 @@ using System;
 using NAudio.CoreAudioApi.Interfaces;
 using System.Runtime.InteropServices;
 
-namespace NAudio.CoreAudioApi
+namespace NAudio.CoreAudioApi;
+
+/// <summary>
+/// Audio Endpoint Volume Channel
+/// </summary>
+public class AudioEndpointVolumeChannel
 {
+    private readonly uint channel;
+    private readonly IAudioEndpointVolume audioEndpointVolume;
+
+    private Guid notificationGuid = Guid.Empty;
+
     /// <summary>
-    /// Audio Endpoint Volume Channel
+    /// GUID to pass to AudioEndpointVolumeCallback
     /// </summary>
-    public class AudioEndpointVolumeChannel
+    public Guid NotificationGuid
     {
-        private readonly uint channel;
-        private readonly IAudioEndpointVolume audioEndpointVolume;
-
-        private Guid notificationGuid = Guid.Empty;
-
-        /// <summary>
-        /// GUID to pass to AudioEndpointVolumeCallback
-        /// </summary>
-        public Guid NotificationGuid
-        {
-            get => notificationGuid;
-            set => notificationGuid = value;
-        }
-
-        internal AudioEndpointVolumeChannel(IAudioEndpointVolume parent, int channel)
-        {
-            this.channel = (uint)channel;
-            audioEndpointVolume = parent;
-        }
-
-        /// <summary>
-        /// Volume Level
-        /// </summary>
-        public float VolumeLevel
-        {
-            get
-            {
-                CoreAudioException.ThrowIfFailed(audioEndpointVolume.GetChannelVolumeLevel(channel,out var result));
-                return result;
-            }
-            set
-            {
-                CoreAudioException.ThrowIfFailed(audioEndpointVolume.SetChannelVolumeLevel(channel, value, ref notificationGuid));
-            }
-        }
-
-        /// <summary>
-        /// Volume Level Scalar
-        /// </summary>
-        public float VolumeLevelScalar
-        {
-            get
-            {
-                CoreAudioException.ThrowIfFailed(audioEndpointVolume.GetChannelVolumeLevelScalar(channel, out var result));
-                return result;
-            }
-            set
-            {
-                CoreAudioException.ThrowIfFailed(audioEndpointVolume.SetChannelVolumeLevelScalar(channel, value, ref notificationGuid));
-            }
-        }
-
+        get => notificationGuid;
+        set => notificationGuid = value;
     }
+
+    internal AudioEndpointVolumeChannel(IAudioEndpointVolume parent, int channel)
+    {
+        this.channel = (uint)channel;
+        audioEndpointVolume = parent;
+    }
+
+    /// <summary>
+    /// Volume Level
+    /// </summary>
+    public float VolumeLevel
+    {
+        get
+        {
+            CoreAudioException.ThrowIfFailed(audioEndpointVolume.GetChannelVolumeLevel(channel, out var result));
+            return result;
+        }
+        set
+        {
+            CoreAudioException.ThrowIfFailed(audioEndpointVolume.SetChannelVolumeLevel(channel, value, ref notificationGuid));
+        }
+    }
+
+    /// <summary>
+    /// Volume Level Scalar
+    /// </summary>
+    public float VolumeLevelScalar
+    {
+        get
+        {
+            CoreAudioException.ThrowIfFailed(audioEndpointVolume.GetChannelVolumeLevelScalar(channel, out var result));
+            return result;
+        }
+        set
+        {
+            CoreAudioException.ThrowIfFailed(audioEndpointVolume.SetChannelVolumeLevelScalar(channel, value, ref notificationGuid));
+        }
+    }
+
 }

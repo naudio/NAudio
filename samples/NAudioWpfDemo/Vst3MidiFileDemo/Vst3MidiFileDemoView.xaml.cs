@@ -1,15 +1,14 @@
-using System.Windows.Controls;
+﻿using System.Windows.Controls;
 
-namespace NAudioWpfDemo.Vst3MidiFileDemo
+namespace NAudioWpfDemo.Vst3MidiFileDemo;
+
+/// <summary>
+/// Interaction logic for Vst3MidiFileDemoView.xaml
+/// </summary>
+public partial class Vst3MidiFileDemoView : UserControl
 {
-    /// <summary>
-    /// Interaction logic for Vst3MidiFileDemoView.xaml
-    /// </summary>
-    public partial class Vst3MidiFileDemoView : UserControl
+    public Vst3MidiFileDemoView()
     {
-        public Vst3MidiFileDemoView()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

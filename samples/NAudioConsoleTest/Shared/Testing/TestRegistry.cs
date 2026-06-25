@@ -1,4 +1,4 @@
-namespace NAudioConsoleTest.Shared.Testing;
+﻿namespace NAudioConsoleTest.Shared.Testing;
 
 /// <summary>
 /// Central registry of every <see cref="IConsoleTest"/> in the harness. Tests are hand-registered

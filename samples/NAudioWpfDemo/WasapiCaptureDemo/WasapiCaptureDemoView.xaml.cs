@@ -1,15 +1,14 @@
 ﻿using System.Windows.Controls;
 
-namespace NAudioWpfDemo.WasapiCaptureDemo
+namespace NAudioWpfDemo.WasapiCaptureDemo;
+
+/// <summary>
+/// Interaction logic for WasapiCaptureDemoView.xaml
+/// </summary>
+public partial class WasapiCaptureDemoView : UserControl
 {
-    /// <summary>
-    /// Interaction logic for WasapiCaptureDemoView.xaml
-    /// </summary>
-    public partial class WasapiCaptureDemoView : UserControl
+    public WasapiCaptureDemoView()
     {
-        public WasapiCaptureDemoView()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

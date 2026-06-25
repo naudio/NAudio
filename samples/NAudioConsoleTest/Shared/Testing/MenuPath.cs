@@ -1,4 +1,4 @@
-namespace NAudioConsoleTest.Shared.Testing;
+﻿namespace NAudioConsoleTest.Shared.Testing;
 
 /// <summary>
 /// Where a test appears in the interactive menu. <see cref="Group"/> is optional — categories

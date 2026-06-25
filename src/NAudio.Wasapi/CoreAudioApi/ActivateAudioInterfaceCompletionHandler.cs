@@ -1,76 +1,75 @@
-using NAudio.CoreAudioApi.Interfaces;
+﻿using NAudio.CoreAudioApi.Interfaces;
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 using System.Threading.Tasks;
 
-namespace NAudio.CoreAudioApi
+namespace NAudio.CoreAudioApi;
+
+[GeneratedComClass]
+internal partial class ActivateAudioInterfaceCompletionHandler :
+IActivateAudioInterfaceCompletionHandler, IAgileObject
 {
-    [GeneratedComClass]
-    internal partial class ActivateAudioInterfaceCompletionHandler :
-    IActivateAudioInterfaceCompletionHandler, IAgileObject
+    private Action<IAudioClient2> initializeAction;
+    private TaskCompletionSource<IAudioClient2> tcs = new();
+
+    public ActivateAudioInterfaceCompletionHandler(
+        Action<IAudioClient2> initializeAction)
     {
-        private Action<IAudioClient2> initializeAction;
-        private TaskCompletionSource<IAudioClient2> tcs = new TaskCompletionSource<IAudioClient2>();
+        this.initializeAction = initializeAction;
+    }
 
-        public ActivateAudioInterfaceCompletionHandler(
-            Action<IAudioClient2> initializeAction)
+    public void ActivateCompleted(IntPtr activateOperationPtr)
+    {
+        // activateOperationPtr is a borrowed callback parameter — we don't own it.
+        // GetOrCreateObjectForComInstance (UniqueInstance) takes its own QI'd ref,
+        // which we must FinalRelease before returning to keep ref counts balanced.
+        var activateOperation = (IActivateAudioInterfaceAsyncOperation)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+            activateOperationPtr, CreateObjectFlags.UniqueInstance);
+        try
         {
-            this.initializeAction = initializeAction;
-        }
+            // First get the activation results, and see if anything bad happened then
+            activateOperation.GetActivateResult(out int hr, out var unkPtr);
+            if (hr != 0)
+            {
+                tcs.TrySetException(Marshal.GetExceptionForHR(hr, new IntPtr(-1)));
+                return;
+            }
 
-        public void ActivateCompleted(IntPtr activateOperationPtr)
-        {
-            // activateOperationPtr is a borrowed callback parameter — we don't own it.
-            // GetOrCreateObjectForComInstance (UniqueInstance) takes its own QI'd ref,
-            // which we must FinalRelease before returning to keep ref counts balanced.
-            var activateOperation = (IActivateAudioInterfaceAsyncOperation)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
-                activateOperationPtr, CreateObjectFlags.UniqueInstance);
+            IAudioClient2 pAudioClient;
             try
             {
-                // First get the activation results, and see if anything bad happened then
-                activateOperation.GetActivateResult(out int hr, out var unkPtr);
-                if (hr != 0)
-                {
-                    tcs.TrySetException(Marshal.GetExceptionForHR(hr, new IntPtr(-1)));
-                    return;
-                }
-
-                IAudioClient2 pAudioClient;
-                try
-                {
-                    pAudioClient = (IAudioClient2)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
-                        unkPtr, CreateObjectFlags.UniqueInstance);
-                }
-                finally
-                {
-                    Marshal.Release(unkPtr);
-                }
-
-                // Next try to call the client's (synchronous, blocking) initialization method.
-                try
-                {
-                    initializeAction(pAudioClient);
-                    tcs.SetResult(pAudioClient);
-                }
-                catch (Exception ex)
-                {
-                    tcs.TrySetException(ex);
-                }
+                pAudioClient = (IAudioClient2)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    unkPtr, CreateObjectFlags.UniqueInstance);
             }
             finally
             {
-                if ((object)activateOperation is ComObject co)
-                {
-                    co.FinalRelease();
-                }
+                Marshal.Release(unkPtr);
+            }
+
+            // Next try to call the client's (synchronous, blocking) initialization method.
+            try
+            {
+                initializeAction(pAudioClient);
+                tcs.SetResult(pAudioClient);
+            }
+            catch (Exception ex)
+            {
+                tcs.TrySetException(ex);
             }
         }
-
-        public TaskAwaiter<IAudioClient2> GetAwaiter()
+        finally
         {
-            return tcs.Task.GetAwaiter();
+            if ((object)activateOperation is ComObject co)
+            {
+                co.FinalRelease();
+            }
         }
+    }
+
+    public TaskAwaiter<IAudioClient2> GetAwaiter()
+    {
+        return tcs.Task.GetAwaiter();
     }
 }

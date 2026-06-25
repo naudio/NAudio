@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using NAudio.Midi;
 using NAudio.Sequencing;
 using NAudio.Wave;
@@ -142,7 +142,7 @@ public sealed class Vst3MidiInstrument : IMidiInstrument
             case SysexEvent sysex:
                 _plugin.EnqueueSysEx(FrameSysEx(sysex));
                 break;
-            // Any other message (remaining meta events) is ignored, per the IMidiInstrument contract.
+                // Any other message (remaining meta events) is ignored, per the IMidiInstrument contract.
         }
     }
 

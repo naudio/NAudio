@@ -1,4 +1,4 @@
-using NAudio.Wave;
+﻿using NAudio.Wave;
 using NAudio.Wave.Asio;
 using NAudioConsoleTest.Shared.Testing;
 using Spectre.Console;
@@ -167,70 +167,70 @@ sealed class AsioLegacyDuplexPassthroughTest : IConsoleTest
         switch (type)
         {
             case AsioSampleType.Int16LSB:
-            {
-                var src = (short*)input;
-                var dst = (short*)output;
-                for (var n = 0; n < frames; n++)
                 {
-                    var s = (int)(src[n] * gain);
-                    if (s > short.MaxValue) s = short.MaxValue;
-                    else if (s < short.MinValue) s = short.MinValue;
-                    dst[n] = (short)s;
-                    var a = src[n] / (float)short.MaxValue;
-                    a = a < 0 ? -a : a;
-                    if (a > peak) peak = a;
+                    var src = (short*)input;
+                    var dst = (short*)output;
+                    for (var n = 0; n < frames; n++)
+                    {
+                        var s = (int)(src[n] * gain);
+                        if (s > short.MaxValue) s = short.MaxValue;
+                        else if (s < short.MinValue) s = short.MinValue;
+                        dst[n] = (short)s;
+                        var a = src[n] / (float)short.MaxValue;
+                        a = a < 0 ? -a : a;
+                        if (a > peak) peak = a;
+                    }
+                    break;
                 }
-                break;
-            }
             case AsioSampleType.Int24LSB:
-            {
-                var src = (byte*)input;
-                var dst = (byte*)output;
-                for (var n = 0; n < frames; n++)
                 {
-                    var s = src[0] | (src[1] << 8) | ((sbyte)src[2] << 16);
-                    var o = (int)(s * gain);
-                    if (o > 0x7FFFFF) o = 0x7FFFFF;
-                    else if (o < -0x800000) o = -0x800000;
-                    dst[0] = (byte)o;
-                    dst[1] = (byte)(o >> 8);
-                    dst[2] = (byte)(o >> 16);
-                    var a = s / 8388608f;
-                    a = a < 0 ? -a : a;
-                    if (a > peak) peak = a;
-                    src += 3; dst += 3;
+                    var src = (byte*)input;
+                    var dst = (byte*)output;
+                    for (var n = 0; n < frames; n++)
+                    {
+                        var s = src[0] | (src[1] << 8) | ((sbyte)src[2] << 16);
+                        var o = (int)(s * gain);
+                        if (o > 0x7FFFFF) o = 0x7FFFFF;
+                        else if (o < -0x800000) o = -0x800000;
+                        dst[0] = (byte)o;
+                        dst[1] = (byte)(o >> 8);
+                        dst[2] = (byte)(o >> 16);
+                        var a = s / 8388608f;
+                        a = a < 0 ? -a : a;
+                        if (a > peak) peak = a;
+                        src += 3; dst += 3;
+                    }
+                    break;
                 }
-                break;
-            }
             case AsioSampleType.Int32LSB:
-            {
-                var src = (int*)input;
-                var dst = (int*)output;
-                for (var n = 0; n < frames; n++)
                 {
-                    var s = (long)(src[n] * gain);
-                    if (s > int.MaxValue) s = int.MaxValue;
-                    else if (s < -int.MaxValue) s = -int.MaxValue;
-                    dst[n] = (int)s;
-                    var a = src[n] / (float)int.MaxValue;
-                    a = a < 0 ? -a : a;
-                    if (a > peak) peak = a;
+                    var src = (int*)input;
+                    var dst = (int*)output;
+                    for (var n = 0; n < frames; n++)
+                    {
+                        var s = (long)(src[n] * gain);
+                        if (s > int.MaxValue) s = int.MaxValue;
+                        else if (s < -int.MaxValue) s = -int.MaxValue;
+                        dst[n] = (int)s;
+                        var a = src[n] / (float)int.MaxValue;
+                        a = a < 0 ? -a : a;
+                        if (a > peak) peak = a;
+                    }
+                    break;
                 }
-                break;
-            }
             case AsioSampleType.Float32LSB:
-            {
-                var src = (float*)input;
-                var dst = (float*)output;
-                for (var n = 0; n < frames; n++)
                 {
-                    var s = src[n];
-                    dst[n] = s * gain;
-                    var a = s < 0 ? -s : s;
-                    if (a > peak) peak = a;
+                    var src = (float*)input;
+                    var dst = (float*)output;
+                    for (var n = 0; n < frames; n++)
+                    {
+                        var s = src[n];
+                        dst[n] = s * gain;
+                        var a = s < 0 ? -s : s;
+                        if (a > peak) peak = a;
+                    }
+                    break;
                 }
-                break;
-            }
             default:
                 Buffer.MemoryCopy((void*)input, (void*)output, frames * 4, frames * 4);
                 break;

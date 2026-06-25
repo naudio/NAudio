@@ -3,55 +3,54 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 
-namespace NAudioDemo.NetworkChatDemo
+namespace NAudioDemo.NetworkChatDemo;
+
+class UdpAudioReceiver : IAudioReceiver
 {
-    class UdpAudioReceiver : IAudioReceiver
+    private Action<byte[]> handler;
+    private readonly UdpClient udpListener;
+    private bool listening;
+
+    public UdpAudioReceiver(int portNumber)
     {
-        private Action<byte[]> handler;
-        private readonly UdpClient udpListener;
-        private bool listening;
+        var endPoint = new IPEndPoint(IPAddress.Loopback, portNumber);
 
-        public UdpAudioReceiver(int portNumber)
+        udpListener = new UdpClient();
+
+        // To allow us to talk to ourselves for test purposes:
+        // http://stackoverflow.com/questions/687868/sending-and-receiving-udp-packets-between-two-programs-on-the-same-computer
+        udpListener.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+        udpListener.Client.Bind(endPoint);
+
+        ThreadPool.QueueUserWorkItem(ListenerThread, endPoint);
+        listening = true;
+    }
+
+    private void ListenerThread(object state)
+    {
+        var endPoint = (IPEndPoint)state;
+        try
         {
-            var endPoint = new IPEndPoint(IPAddress.Loopback, portNumber);
-
-            udpListener = new UdpClient();
-
-            // To allow us to talk to ourselves for test purposes:
-            // http://stackoverflow.com/questions/687868/sending-and-receiving-udp-packets-between-two-programs-on-the-same-computer
-            udpListener.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-            udpListener.Client.Bind(endPoint);
-
-            ThreadPool.QueueUserWorkItem(ListenerThread, endPoint);
-            listening = true;
-        }
-
-        private void ListenerThread(object state)
-        {
-            var endPoint = (IPEndPoint)state;
-            try
+            while (listening)
             {
-                while (listening)
-                {
-                    byte[] b = udpListener.Receive(ref endPoint);
-                    handler?.Invoke(b);
-                }
-            }
-            catch (SocketException)
-            {
-                // usually not a problem - just means we have disconnected
+                byte[] b = udpListener.Receive(ref endPoint);
+                handler?.Invoke(b);
             }
         }
-
-        public void Dispose()
+        catch (SocketException)
         {
-            listening = false;
-            udpListener?.Close();
+            // usually not a problem - just means we have disconnected
         }
+    }
 
-        public void OnReceived(Action<byte[]> onAudioReceivedAction)
-        {
-            handler = onAudioReceivedAction;
-        }
+    public void Dispose()
+    {
+        listening = false;
+        udpListener?.Close();
+    }
+
+    public void OnReceived(Action<byte[]> onAudioReceivedAction)
+    {
+        handler = onAudioReceivedAction;
     }
 }

@@ -1,73 +1,72 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Runtime.InteropServices;
 
-namespace NAudio.Midi
+namespace NAudio.Midi;
+
+/// <summary>
+/// MIDI In Device Capabilities
+/// </summary>
+[StructLayout(LayoutKind.Sequential
+    , CharSet = CharSet.Auto
+)]
+public struct MidiInCapabilities
 {
     /// <summary>
-    /// MIDI In Device Capabilities
+    /// wMid
     /// </summary>
-    [StructLayout(LayoutKind.Sequential
-        , CharSet = CharSet.Auto
-    )]
-    public struct MidiInCapabilities
+    UInt16 manufacturerId;
+    /// <summary>
+    /// wPid
+    /// </summary>
+    UInt16 productId;
+    /// <summary>
+    /// vDriverVersion
+    /// </summary>
+    UInt32 driverVersion;
+    /// <summary>
+    /// Product Name
+    /// </summary>
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MaxProductNameLength)]
+    string productName;
+    /// <summary>
+    /// Support - Reserved
+    /// </summary>
+    Int32 support;
+
+    private const int MaxProductNameLength = 32;
+
+    /// <summary>
+    /// Gets the manufacturer of this device
+    /// </summary>
+    public Manufacturers Manufacturer
     {
-        /// <summary>
-        /// wMid
-        /// </summary>
-        UInt16 manufacturerId;
-        /// <summary>
-        /// wPid
-        /// </summary>
-        UInt16 productId;
-        /// <summary>
-        /// vDriverVersion
-        /// </summary>
-        UInt32 driverVersion;
-        /// <summary>
-        /// Product Name
-        /// </summary>
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MaxProductNameLength)]
-        string productName;
-        /// <summary>
-        /// Support - Reserved
-        /// </summary>
-        Int32 support;
-
-        private const int MaxProductNameLength = 32;
-
-        /// <summary>
-        /// Gets the manufacturer of this device
-        /// </summary>
-        public Manufacturers Manufacturer
+        get
         {
-            get 
-            {
-                return (Manufacturers)manufacturerId;
-            }
+            return (Manufacturers)manufacturerId;
         }
-        
-        /// <summary>
-        /// Gets the product identifier (manufacturer specific)
-        /// </summary>
-        public int ProductId 
+    }
+
+    /// <summary>
+    /// Gets the product identifier (manufacturer specific)
+    /// </summary>
+    public int ProductId
+    {
+        get
         {
-            get 
-            {
-                return productId;
-            }
+            return productId;
         }
-        
-        /// <summary>
-        /// Gets the product name
-        /// </summary>
-        public string ProductName 
+    }
+
+    /// <summary>
+    /// Gets the product name
+    /// </summary>
+    public string ProductName
+    {
+        get
         {
-            get 
-            {
-                return productName;
-            }
+            return productName;
         }
     }
 }

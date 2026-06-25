@@ -1,4 +1,4 @@
-using NAudio.Vst3;
+﻿using NAudio.Vst3;
 using NAudioConsoleTest.Shared.Testing;
 
 namespace NAudioConsoleTest.Vst3.Tests;

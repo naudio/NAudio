@@ -1,18 +1,17 @@
-﻿namespace NAudio.Dmo.Effect
+﻿namespace NAudio.Dmo.Effect;
+
+/// <summary>
+/// Gargle Wave Shape
+/// </summary>
+public enum GargleWaveShape : uint
 {
     /// <summary>
-    /// Gargle Wave Shape
+    /// DSFXGARGLE_WAVE_TRIANGLE
     /// </summary>
-    public enum GargleWaveShape : uint
-    {
-        /// <summary>
-        /// DSFXGARGLE_WAVE_TRIANGLE
-        /// </summary>
-        Triangle = 0,
+    Triangle = 0,
 
-        /// <summary>
-        /// DSFXGARGLE_WAVE_SQUARE
-        /// </summary>
-        Square = 1
-    }
+    /// <summary>
+    /// DSFXGARGLE_WAVE_SQUARE
+    /// </summary>
+    Square = 1
 }

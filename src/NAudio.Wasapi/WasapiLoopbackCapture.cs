@@ -2,48 +2,47 @@
 using NAudio.CoreAudioApi;
 
 // ReSharper disable once CheckNamespace
-namespace NAudio.Wave
+namespace NAudio.Wave;
+
+/// <summary>
+/// WASAPI Loopback Capture
+/// based on a contribution from "Pygmy"
+/// </summary>
+[Obsolete("Use WasapiRecorderBuilder.WithProcessLoopback() for process-specific loopback, or configure a WasapiRecorder with a render device for system-wide loopback.")]
+public class WasapiLoopbackCapture : WasapiCapture
 {
     /// <summary>
-    /// WASAPI Loopback Capture
-    /// based on a contribution from "Pygmy"
+    /// Initialises a new instance of the WASAPI capture class
     /// </summary>
-    [Obsolete("Use WasapiRecorderBuilder.WithProcessLoopback() for process-specific loopback, or configure a WasapiRecorder with a render device for system-wide loopback.")]
-    public class WasapiLoopbackCapture : WasapiCapture
+    public WasapiLoopbackCapture() :
+        this(GetDefaultLoopbackCaptureDevice())
     {
-        /// <summary>
-        /// Initialises a new instance of the WASAPI capture class
-        /// </summary>
-        public WasapiLoopbackCapture() :
-            this(GetDefaultLoopbackCaptureDevice())
-        {
-        }
+    }
 
-        /// <summary>
-        /// Initialises a new instance of the WASAPI capture class
-        /// </summary>
-        /// <param name="captureDevice">Capture device to use</param>
-        public WasapiLoopbackCapture(MMDevice captureDevice) :
-            base(captureDevice)
-        {
-        }
+    /// <summary>
+    /// Initialises a new instance of the WASAPI capture class
+    /// </summary>
+    /// <param name="captureDevice">Capture device to use</param>
+    public WasapiLoopbackCapture(MMDevice captureDevice) :
+        base(captureDevice)
+    {
+    }
 
-        /// <summary>
-        /// Gets the default audio loopback capture device
-        /// </summary>
-        /// <returns>The default audio loopback capture device</returns>
-        public static MMDevice GetDefaultLoopbackCaptureDevice()
-        {
-            MMDeviceEnumerator devices = new MMDeviceEnumerator();
-            return devices.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
-        }
-        
-        /// <summary>
-        /// Specify loopback
-        /// </summary>
-        protected override AudioClientStreamFlags GetAudioClientStreamFlags()
-        {
-            return AudioClientStreamFlags.Loopback | base.GetAudioClientStreamFlags();
-        }        
+    /// <summary>
+    /// Gets the default audio loopback capture device
+    /// </summary>
+    /// <returns>The default audio loopback capture device</returns>
+    public static MMDevice GetDefaultLoopbackCaptureDevice()
+    {
+        MMDeviceEnumerator devices = new MMDeviceEnumerator();
+        return devices.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+    }
+
+    /// <summary>
+    /// Specify loopback
+    /// </summary>
+    protected override AudioClientStreamFlags GetAudioClientStreamFlags()
+    {
+        return AudioClientStreamFlags.Loopback | base.GetAudioClientStreamFlags();
     }
 }

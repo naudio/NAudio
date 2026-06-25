@@ -2,12 +2,11 @@
 using System.Linq;
 using System.Windows.Controls;
 
-namespace NAudioWpfDemo
+namespace NAudioWpfDemo;
+
+public interface IModule
 {
-    public interface IModule
-    {
-        string Name { get; }
-        UserControl UserInterface { get; }
-        void Deactivate();
-    }
+    string Name { get; }
+    UserControl UserInterface { get; }
+    void Deactivate();
 }

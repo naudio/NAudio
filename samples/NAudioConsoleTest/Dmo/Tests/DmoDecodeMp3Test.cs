@@ -1,4 +1,4 @@
-using NAudio.Dmo;
+﻿using NAudio.Dmo;
 using NAudio.Wave;
 using NAudioConsoleTest.Shared.Testing;
 using Spectre.Console;

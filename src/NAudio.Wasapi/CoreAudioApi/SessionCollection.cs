@@ -4,72 +4,71 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 
-namespace NAudio.CoreAudioApi
+namespace NAudio.CoreAudioApi;
+
+/// <summary>
+/// Collection of sessions.
+/// </summary>
+public class SessionCollection : IDisposable
 {
+    private IAudioSessionEnumerator audioSessionEnumerator;
+
     /// <summary>
-    /// Collection of sessions.
+    /// Creates a new SessionCollection — ownership of the COM pointer is transferred.
     /// </summary>
-    public class SessionCollection : IDisposable
+    /// <param name="nativePointer">Raw COM pointer — ownership is transferred to this instance</param>
+    internal SessionCollection(IntPtr nativePointer)
     {
-        private IAudioSessionEnumerator audioSessionEnumerator;
-
-        /// <summary>
-        /// Creates a new SessionCollection — ownership of the COM pointer is transferred.
-        /// </summary>
-        /// <param name="nativePointer">Raw COM pointer — ownership is transferred to this instance</param>
-        internal SessionCollection(IntPtr nativePointer)
+        try
         {
-            try
-            {
-                audioSessionEnumerator = (IAudioSessionEnumerator)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
-                    nativePointer, CreateObjectFlags.UniqueInstance);
-            }
-            finally
-            {
-                Marshal.Release(nativePointer);
-            }
+            audioSessionEnumerator = (IAudioSessionEnumerator)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                nativePointer, CreateObjectFlags.UniqueInstance);
         }
-
-        /// <summary>
-        /// Returns session at index.
-        /// </summary>
-        /// <param name="index"></param>
-        /// <returns></returns>
-        public AudioSessionControl this[int index]
+        finally
         {
-            get
-            {
-                CoreAudioException.ThrowIfFailed(audioSessionEnumerator.GetSession(index, out var ptr));
-                return new AudioSessionControl(ptr);
-            }
+            Marshal.Release(nativePointer);
         }
+    }
 
-        /// <summary>
-        /// Number of current sessions.
-        /// </summary>
-        public int Count
+    /// <summary>
+    /// Returns session at index.
+    /// </summary>
+    /// <param name="index"></param>
+    /// <returns></returns>
+    public AudioSessionControl this[int index]
+    {
+        get
         {
-            get
-            {
-                CoreAudioException.ThrowIfFailed(audioSessionEnumerator.GetCount(out var result));
-                return result;
-            }
+            CoreAudioException.ThrowIfFailed(audioSessionEnumerator.GetSession(index, out var ptr));
+            return new AudioSessionControl(ptr);
         }
+    }
 
-        /// <summary>
-        /// Dispose
-        /// </summary>
-        public void Dispose()
+    /// <summary>
+    /// Number of current sessions.
+    /// </summary>
+    public int Count
+    {
+        get
         {
-            if (audioSessionEnumerator != null)
-            {
-                if ((object)audioSessionEnumerator is ComObject co)
-                {
-                    co.FinalRelease();
-                }
-                audioSessionEnumerator = null;
-            }
-            GC.SuppressFinalize(this);
+            CoreAudioException.ThrowIfFailed(audioSessionEnumerator.GetCount(out var result));
+            return result;
         }
+    }
+
+    /// <summary>
+    /// Dispose
+    /// </summary>
+    public void Dispose()
+    {
+        if (audioSessionEnumerator != null)
+        {
+            if ((object)audioSessionEnumerator is ComObject co)
+            {
+                co.FinalRelease();
+            }
+            audioSessionEnumerator = null;
+        }
+        GC.SuppressFinalize(this);
     }
 }

@@ -1,13 +1,12 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace MarkHeath.MidiUtils
+namespace MarkHeath.MidiUtils;
+
+enum OutputMidiType
 {
-    enum OutputMidiType
-    {
-        LeaveUnchanged,
-        Type0,
-        Type1
-    }
+    LeaveUnchanged,
+    Type0,
+    Type1
 }

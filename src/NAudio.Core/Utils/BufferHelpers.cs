@@ -1,38 +1,37 @@
-﻿namespace NAudio.Utils
+﻿namespace NAudio.Utils;
+
+/// <summary>
+/// Helper methods for working with audio buffers
+/// </summary>
+public static class BufferHelpers
 {
     /// <summary>
-    /// Helper methods for working with audio buffers
+    /// Ensures the buffer is big enough
     /// </summary>
-    public static class BufferHelpers
+    /// <param name="buffer"></param>
+    /// <param name="bytesRequired"></param>
+    /// <returns></returns>
+    public static byte[] Ensure(byte[] buffer, int bytesRequired)
     {
-        /// <summary>
-        /// Ensures the buffer is big enough
-        /// </summary>
-        /// <param name="buffer"></param>
-        /// <param name="bytesRequired"></param>
-        /// <returns></returns>
-        public static byte[] Ensure(byte[] buffer, int bytesRequired)
+        if (buffer == null || buffer.Length < bytesRequired)
         {
-            if (buffer == null || buffer.Length < bytesRequired)
-            {
-                buffer = new byte[bytesRequired];
-            }
-            return buffer;
+            buffer = new byte[bytesRequired];
         }
+        return buffer;
+    }
 
-        /// <summary>
-        /// Ensures the buffer is big enough
-        /// </summary>
-        /// <param name="buffer"></param>
-        /// <param name="samplesRequired"></param>
-        /// <returns></returns>
-        public static float[] Ensure(float[] buffer, int samplesRequired)
+    /// <summary>
+    /// Ensures the buffer is big enough
+    /// </summary>
+    /// <param name="buffer"></param>
+    /// <param name="samplesRequired"></param>
+    /// <returns></returns>
+    public static float[] Ensure(float[] buffer, int samplesRequired)
+    {
+        if (buffer == null || buffer.Length < samplesRequired)
         {
-            if (buffer == null || buffer.Length < samplesRequired)
-            {
-                buffer = new float[samplesRequired];
-            }
-            return buffer;
+            buffer = new float[samplesRequired];
         }
+        return buffer;
     }
 }

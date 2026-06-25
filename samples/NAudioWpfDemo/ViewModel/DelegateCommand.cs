@@ -2,51 +2,50 @@
 using System.Linq;
 using System.Windows.Input;
 
-namespace NAudioWpfDemo.ViewModel
+namespace NAudioWpfDemo.ViewModel;
+
+class DelegateCommand : ICommand
 {
-    class DelegateCommand : ICommand
+    private readonly Action action;
+    private bool isEnabled;
+
+    public DelegateCommand(Action action)
     {
-        private readonly Action action;
-        private bool isEnabled;
+        this.action = action;
+        isEnabled = true;
+    }
 
-        public DelegateCommand(Action action)
-        {
-            this.action = action;
-            isEnabled = true;
-        }
+    public void Execute(object parameter)
+    {
+        action();
+    }
 
-        public void Execute(object parameter)
-        {
-            action();
-        }
+    public bool CanExecute(object parameter)
+    {
+        return isEnabled;
+    }
 
-        public bool CanExecute(object parameter)
+    public bool IsEnabled
+    {
+        get
         {
             return isEnabled;
         }
-
-        public bool IsEnabled
+        set
         {
-            get
+            if (isEnabled != value)
             {
-                return isEnabled;
-            }
-            set
-            {
-                if (isEnabled != value)
-                {
-                    isEnabled = value;
-                    OnCanExecuteChanged();
-                }
+                isEnabled = value;
+                OnCanExecuteChanged();
             }
         }
+    }
 
-        public event EventHandler CanExecuteChanged;
+    public event EventHandler CanExecuteChanged;
 
-        protected virtual void OnCanExecuteChanged()
-        {
-            EventHandler handler = CanExecuteChanged;
-            if (handler != null) handler(this, EventArgs.Empty);
-        }
+    protected virtual void OnCanExecuteChanged()
+    {
+        EventHandler handler = CanExecuteChanged;
+        if (handler != null) handler(this, EventArgs.Empty);
     }
 }

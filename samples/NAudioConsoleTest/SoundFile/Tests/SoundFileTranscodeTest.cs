@@ -1,4 +1,4 @@
-using NAudio.SoundFile;
+﻿using NAudio.SoundFile;
 using NAudioConsoleTest.Shared.Testing;
 using Spectre.Console;
 
@@ -58,25 +58,23 @@ sealed class SoundFileTranscodeTest : IConsoleTest
 
         try
         {
-            using (var reader = new SoundFileReader(inputPath))
-            {
-                AnsiConsole.MarkupLine($"[grey]Input:[/]    {Markup.Escape(Path.GetFileName(inputPath))}");
-                AnsiConsole.MarkupLine($"[grey]Format:[/]   {reader.WaveFormat}");
-                AnsiConsole.MarkupLine($"[grey]Duration:[/] {reader.TotalTime:hh\\:mm\\:ss\\.fff}");
-                AnsiConsole.MarkupLine($"[grey]Target:[/]   {major}{(quality is { } qq ? $" @ {qq:0.0#}" : "")}");
-                AnsiConsole.MarkupLine($"[grey]Output:[/]   {Markup.Escape(outputPath)}");
-                AnsiConsole.WriteLine();
+            using var reader = new SoundFileReader(inputPath);
+            AnsiConsole.MarkupLine($"[grey]Input:[/]    {Markup.Escape(Path.GetFileName(inputPath))}");
+            AnsiConsole.MarkupLine($"[grey]Format:[/]   {reader.WaveFormat}");
+            AnsiConsole.MarkupLine($"[grey]Duration:[/] {reader.TotalTime:hh\\:mm\\:ss\\.fff}");
+            AnsiConsole.MarkupLine($"[grey]Target:[/]   {major}{(quality is { } qq ? $" @ {qq:0.0#}" : "")}");
+            AnsiConsole.MarkupLine($"[grey]Output:[/]   {Markup.Escape(outputPath)}");
+            AnsiConsole.WriteLine();
 
-                void DoEncode() => SoundFileWriter.CreateSoundFile(outputPath, reader, major, options);
-                if (ctx.Interactive)
-                {
-                    AnsiConsole.Status().Spinner(Spinner.Known.Dots)
-                        .Start($"Transcoding to {major}...", _ => DoEncode());
-                }
-                else
-                {
-                    DoEncode();
-                }
+            void DoEncode() => SoundFileWriter.CreateSoundFile(outputPath, reader, major, options);
+            if (ctx.Interactive)
+            {
+                AnsiConsole.Status().Spinner(Spinner.Known.Dots)
+                    .Start($"Transcoding to {major}...", _ => DoEncode());
+            }
+            else
+            {
+                DoEncode();
             }
         }
         catch (ArgumentException ex)

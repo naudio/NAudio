@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using NAudio.Wave;
 
 namespace NAudio.Vst3;

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
@@ -6,71 +6,70 @@ using System.Data;
 using System.Text;
 using System.Windows.Forms;
 
-namespace NAudio.Utils
+namespace NAudio.Utils;
+
+/// <summary>
+/// A thread-safe Progress Log Control
+/// </summary>
+public partial class ProgressLog : UserControl
 {
     /// <summary>
-    /// A thread-safe Progress Log Control
+    /// Creates a new progress log control
     /// </summary>
-    public partial class ProgressLog : UserControl
+    public ProgressLog()
     {
-        /// <summary>
-        /// Creates a new progress log control
-        /// </summary>
-        public ProgressLog()
+        InitializeComponent();
+    }
+
+
+
+    /// <summary>
+    /// The contents of the log as text
+    /// </summary>
+    public new string Text
+    {
+        get
         {
-            InitializeComponent();
+            return richTextBoxLog.Text;
         }
+    }
 
 
 
-        /// <summary>
-        /// The contents of the log as text
-        /// </summary>
-        public new string Text
+    delegate void LogMessageDelegate(Color color, string message);
+
+    /// <summary>
+    /// Log a message
+    /// </summary>
+    public void LogMessage(Color color, string message)
+    {
+        if (richTextBoxLog.InvokeRequired)
         {
-            get
-            {
-                return richTextBoxLog.Text;
-            }
+            this.Invoke(new LogMessageDelegate(LogMessage), new object[] { color, message });
         }
-
-
-
-        delegate void LogMessageDelegate(Color color, string message);
-
-        /// <summary>
-        /// Log a message
-        /// </summary>
-        public void LogMessage(Color color, string message)
+        else
         {
-            if (richTextBoxLog.InvokeRequired)
-            {
-                this.Invoke(new LogMessageDelegate(LogMessage), new object[] { color, message });
-            }
-            else
-            {
-                richTextBoxLog.SelectionStart = richTextBoxLog.TextLength;
-                richTextBoxLog.SelectionColor = color;
-                richTextBoxLog.AppendText(message);
-                richTextBoxLog.AppendText(System.Environment.NewLine);
-            }
+            richTextBoxLog.SelectionStart = richTextBoxLog.TextLength;
+            richTextBoxLog.SelectionColor = color;
+            richTextBoxLog.AppendText(message);
+            richTextBoxLog.AppendText(System.Environment.NewLine);
         }
+    }
 
-        delegate void ClearLogDelegate();
+    delegate void ClearLogDelegate();
 
-        /// <summary>
-        /// Clear the log
-        /// </summary>
-        public void ClearLog()
+    /// <summary>
+    /// Clear the log
+    /// </summary>
+    public void ClearLog()
+    {
+        if (richTextBoxLog.InvokeRequired)
         {
-            if (richTextBoxLog.InvokeRequired)
-            {
-                this.Invoke(new ClearLogDelegate(ClearLog), new object[] { });
-            }
-            else
-            {
-                richTextBoxLog.Clear();
-            }
-        }        
+            this.Invoke(new ClearLogDelegate(ClearLog), new object[] { });
+        }
+        else
+        {
+            richTextBoxLog.Clear();
+        }
     }
 }

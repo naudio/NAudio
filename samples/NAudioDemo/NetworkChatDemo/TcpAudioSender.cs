@@ -2,25 +2,24 @@
 using System.Net;
 using System.Net.Sockets;
 
-namespace NAudioDemo.NetworkChatDemo
+namespace NAudioDemo.NetworkChatDemo;
+
+class TcpAudioSender : IAudioSender
 {
-    class TcpAudioSender : IAudioSender
+    private readonly TcpClient tcpSender;
+    public TcpAudioSender(IPEndPoint endPoint)
     {
-        private readonly TcpClient tcpSender;
-        public TcpAudioSender(IPEndPoint endPoint)
-        {
-            tcpSender = new TcpClient();
-            tcpSender.Connect(endPoint);
-        }
+        tcpSender = new TcpClient();
+        tcpSender.Connect(endPoint);
+    }
 
-        public void Send(byte[] payload)
-        {
-            tcpSender.Client.Send(payload);
-        }
+    public void Send(byte[] payload)
+    {
+        tcpSender.Client.Send(payload);
+    }
 
-        public void Dispose()
-        {
-            tcpSender?.Close();
-        }
+    public void Dispose()
+    {
+        tcpSender?.Close();
     }
 }

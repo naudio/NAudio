@@ -1,34 +1,33 @@
 ﻿using System;
 using NAudio.CoreAudioApi.Interfaces;
 
-namespace NAudio.CoreAudioApi
-{
-    /// <summary>
-    /// Audio Mute
-    /// </summary>
-    public class AudioMute
-    {
-        private IAudioMute audioMuteInterface;
-        internal AudioMute(IAudioMute audioMute)
-        {
-            audioMuteInterface = audioMute;
-        }
+namespace NAudio.CoreAudioApi;
 
-        /// <summary>
-        /// Is Muted
-        /// </summary>
-        public bool IsMuted
+/// <summary>
+/// Audio Mute
+/// </summary>
+public class AudioMute
+{
+    private IAudioMute audioMuteInterface;
+    internal AudioMute(IAudioMute audioMute)
+    {
+        audioMuteInterface = audioMute;
+    }
+
+    /// <summary>
+    /// Is Muted
+    /// </summary>
+    public bool IsMuted
+    {
+        get
         {
-            get
-            {
-                audioMuteInterface.GetMute(out var result);
-                return result;
-            }
-            set
-            {
-                var guid = Guid.Empty;
-                audioMuteInterface.SetMute(value, ref guid);
-            }
+            audioMuteInterface.GetMute(out var result);
+            return result;
+        }
+        set
+        {
+            var guid = Guid.Empty;
+            audioMuteInterface.SetMute(value, ref guid);
         }
     }
 }

@@ -2,16 +2,15 @@
 using System.Linq;
 using System.Windows.Controls;
 
-namespace NAudioWpfDemo.DrumMachineDemo
+namespace NAudioWpfDemo.DrumMachineDemo;
+
+/// <summary>
+/// Interaction logic for DrumMachineDemoView.xaml
+/// </summary>
+public partial class DrumMachineDemoView : UserControl
 {
-    /// <summary>
-    /// Interaction logic for DrumMachineDemoView.xaml
-    /// </summary>
-    public partial class DrumMachineDemoView : UserControl
+    public DrumMachineDemoView()
     {
-        public DrumMachineDemoView()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

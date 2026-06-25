@@ -1,4 +1,4 @@
-using NAudio.Midi;
+﻿using NAudio.Midi;
 using NAudio.Vst3;
 using NAudio.Wave;
 using NAudioConsoleTest.Shared.Testing;

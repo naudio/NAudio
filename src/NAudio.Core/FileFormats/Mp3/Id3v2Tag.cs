@@ -11,9 +11,9 @@ namespace NAudio.Wave;
 /// </summary>
 public class Id3v2Tag
 {
-    private long tagStartPosition;
-    private long tagEndPosition;
-    private byte[] rawData;
+    private readonly long tagStartPosition;
+    private readonly long tagEndPosition;
+    private readonly byte[] rawData;
 
     /// <summary>
     /// Reads an ID3v2 tag from a stream
@@ -50,7 +50,7 @@ public class Id3v2Tag
     /// </summary>
     /// <param name="n">The frame body size.</param>
     /// <returns></returns>
-    static byte[] FrameSizeToBytes(int n)
+    private static byte[] FrameSizeToBytes(int n)
     {
         byte[] result = BitConverter.GetBytes(n);
         Array.Reverse(result);
@@ -63,7 +63,7 @@ public class Id3v2Tag
     /// <param name="key"></param>
     /// <param name="value"></param>
     /// <returns></returns>
-    static byte[] CreateId3v2Frame(string key, string value)
+    private static byte[] CreateId3v2Frame(string key, string value)
     {
         if (string.IsNullOrEmpty(key))
         {
@@ -117,7 +117,7 @@ public class Id3v2Tag
     /// </summary>
     /// <param name="size"></param>
     /// <returns></returns>
-    static byte[] GetId3TagHeaderSize(int size)
+    private static byte[] GetId3TagHeaderSize(int size)
     {
         byte[] result = new byte[4];
         for (int idx = result.Length - 1; idx >= 0; idx--)
@@ -134,7 +134,7 @@ public class Id3v2Tag
     /// </summary>
     /// <param name="size">The sum of all frame sizes included in the tag.</param>
     /// <returns></returns>
-    static byte[] CreateId3v2TagHeader(int size)
+    private static byte[] CreateId3v2TagHeader(int size)
     {
         byte[] tagHeader = ByteArrayExtensions.Concat(
             Encoding.UTF8.GetBytes("ID3"),
@@ -149,7 +149,7 @@ public class Id3v2Tag
     /// </summary>
     /// <param name="tags"></param>
     /// <returns></returns>
-    static Stream CreateId3v2TagStream(IEnumerable<KeyValuePair<string, string>> tags)
+    private static Stream CreateId3v2TagStream(IEnumerable<KeyValuePair<string, string>> tags)
     {
         List<byte[]> frames = new List<byte[]>();
         int framesSize = 0;

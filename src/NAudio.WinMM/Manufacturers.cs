@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace NAudio;
+﻿namespace NAudio;
 
 /// <summary>
 /// Manufacturer codes from mmreg.h
@@ -368,7 +366,7 @@ public enum Manufacturers
         case Winnov:			return "Winnov, LP";
         case Xebec:				return "Xebec Multimedia Solutions Limited";
         case Yamaha:			return "Yamaha Corporation of America";
-        default:				return String.Format("Unknown Manufacturer ({0})",manufacturerId);
+        default:				return $"Unknown Manufacturer ({manufacturerId})";
         }			
     }
     **/

@@ -2,7 +2,7 @@
 
 namespace NAudioWpfDemo.LiveSamplerDemo;
 
-class LiveSamplerDemoPlugin : ModuleBase
+internal class LiveSamplerDemoPlugin : ModuleBase
 {
     public override string Name => "Live MIDI Sampler";
 

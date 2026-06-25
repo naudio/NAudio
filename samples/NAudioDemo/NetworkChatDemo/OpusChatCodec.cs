@@ -7,28 +7,28 @@ using NAudio.Wave;
 
 namespace NAudioDemo.NetworkChatDemo;
 
-class NarrowBandOpusCodec : OpusChatCodec
+internal class NarrowBandOpusCodec : OpusChatCodec
 {
     public NarrowBandOpusCodec() : base(8000, 16000, "Opus Narrow Band (8kHz)")
     {
     }
 }
 
-class WideBandOpusCodec : OpusChatCodec
+internal class WideBandOpusCodec : OpusChatCodec
 {
     public WideBandOpusCodec() : base(16000, 24000, "Opus Wide Band (16kHz)")
     {
     }
 }
 
-class FullBandOpusCodec : OpusChatCodec
+internal class FullBandOpusCodec : OpusChatCodec
 {
     public FullBandOpusCodec() : base(48000, 48000, "Opus Full Band (48kHz)")
     {
     }
 }
 
-abstract class OpusChatCodec : INetworkChatCodec
+internal abstract class OpusChatCodec : INetworkChatCodec
 {
     // 20ms frames are the de-facto standard for VoIP and supported by all valid Opus sample rates.
     private const int FrameDurationMs = 20;

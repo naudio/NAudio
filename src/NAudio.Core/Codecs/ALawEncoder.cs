@@ -46,7 +46,7 @@ public static class ALawEncoder
             sample = cClip;
         if (sample >= 256)
         {
-            exponent = (int)ALawCompressTable[(sample >> 8) & 0x7F];
+            exponent = ALawCompressTable[(sample >> 8) & 0x7F];
             mantissa = (sample >> (exponent + 3)) & 0x0F;
             compressedByte = (byte)((exponent << 4) | mantissa);
         }

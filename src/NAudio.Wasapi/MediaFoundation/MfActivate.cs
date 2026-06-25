@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 using NAudio.CoreAudioApi;
@@ -132,7 +133,7 @@ public class MfActivate : IDisposable
     /// <summary>
     /// Gets a blob attribute as an array of structs.
     /// </summary>
-    public T[] GetBlobAsArrayOf<T>(Guid key) where T : new()
+    public T[] GetBlobAsArrayOf<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)] T>(Guid key) where T : new()
     {
         MediaFoundationException.ThrowIfFailed(activateInterface.GetAllocatedBlob(key, out var ppBuf, out var cbSize));
         try

@@ -90,14 +90,14 @@ internal class WasapiCaptureViewModel : ViewModelBase, IDisposable
         UpdatePeakMeter();
     }
 
-    void UpdatePeakMeter()
+    private void UpdatePeakMeter()
     {
         // can't access this on a different thread from the one it was created on, so get back to GUI thread
         synchronizationContext.Post(s => Peak = SelectedDevice.AudioMeterInformation
             .MasterPeakValue, null);
     }
 
-    void OnRecordingStopped(object sender, StoppedEventArgs e)
+    private void OnRecordingStopped(object sender, StoppedEventArgs e)
     {
         writer.Dispose();
         writer = null;

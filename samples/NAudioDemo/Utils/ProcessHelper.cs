@@ -2,7 +2,7 @@
 
 namespace NAudioDemo.Utils;
 
-static class ProcessHelper
+internal static class ProcessHelper
 {
     public static void ShellExecute(string file)
     {

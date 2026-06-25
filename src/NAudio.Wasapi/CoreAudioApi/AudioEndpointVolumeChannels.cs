@@ -20,9 +20,7 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 
-using System;
 using NAudio.CoreAudioApi.Interfaces;
-using System.Runtime.InteropServices;
 
 namespace NAudio.CoreAudioApi;
 
@@ -31,8 +29,8 @@ namespace NAudio.CoreAudioApi;
 /// </summary>
 public class AudioEndpointVolumeChannels
 {
-    readonly IAudioEndpointVolume audioEndPointVolume;
-    readonly AudioEndpointVolumeChannel[] channels;
+    private readonly IAudioEndpointVolume audioEndPointVolume;
+    private readonly AudioEndpointVolumeChannel[] channels;
 
     /// <summary>
     /// Channel Count

@@ -10,7 +10,7 @@ namespace NAudioConsoleTest.Asio.Tests;
 /// to a safe level — ASIO bypasses the Windows mixer so the driver's panel volume is the only
 /// other attenuation.
 /// </summary>
-sealed class AsioPlayAudioFileTest : IConsoleTest
+internal sealed class AsioPlayAudioFileTest : IConsoleTest
 {
     private const float SafetyVolume = 0.25f;
 

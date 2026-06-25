@@ -1,11 +1,9 @@
-﻿using System;
-using System.Linq;
-using NAudio.Wave;
+﻿using NAudio.Wave;
 using System.Windows.Forms;
 
 namespace NAudioDemo.AudioPlaybackDemo;
 
-class WaveOutPlugin : IOutputDevicePlugin
+internal class WaveOutPlugin : IOutputDevicePlugin
 {
     private WaveOutSettingsPanel waveOutSettingsPanel;
 

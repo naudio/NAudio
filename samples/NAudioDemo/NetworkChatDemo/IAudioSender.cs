@@ -2,7 +2,7 @@
 
 namespace NAudioDemo.NetworkChatDemo;
 
-interface IAudioSender : IDisposable
+internal interface IAudioSender : IDisposable
 {
     void Send(byte[] payload);
 }

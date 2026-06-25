@@ -1,10 +1,9 @@
-﻿using NAudio.MediaFoundation;
-using NAudio.Wave;
+﻿using NAudio.Wave;
 using NAudioConsoleTest.Shared.Testing;
 
 namespace NAudioConsoleTest.MediaFoundation.Tests;
 
-sealed class MediaFoundationEncodeToFlacTest : IConsoleTest
+internal sealed class MediaFoundationEncodeToFlacTest : IConsoleTest
 {
     public string Id => "MediaFoundation.EncodeToFlac";
     public string Description => "Encode an audio file to FLAC (Media Foundation, lossless)";

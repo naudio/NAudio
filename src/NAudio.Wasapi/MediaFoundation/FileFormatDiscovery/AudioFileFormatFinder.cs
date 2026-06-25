@@ -2,7 +2,6 @@
 using System.IO;
 using System.Threading;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System.Diagnostics.CodeAnalysis;
 
 namespace NAudio.MediaFoundation.FileFormatDiscovery;
@@ -167,7 +166,7 @@ internal sealed class AudioFileFormatFinder
 #if DEBUG
                     // COM (external) exceptions may be also critical.
                     // On Debug builds, throw them too to verify whether they are critical errors or not.
-                    catch (ExternalException) { throw; }
+                    catch (System.Runtime.InteropServices.ExternalException) { throw; }
 #endif
                     catch { }
                 }

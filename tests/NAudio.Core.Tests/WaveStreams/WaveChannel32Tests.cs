@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using NAudio.Wave;
-using NAudio.Core.Tests.Utils;
 using System.IO;
 
 namespace NAudio.Core.Tests.WaveStreams;

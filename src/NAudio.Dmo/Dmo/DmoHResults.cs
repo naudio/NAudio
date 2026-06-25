@@ -1,11 +1,9 @@
-﻿using System;
-
-namespace NAudio.Dmo;
+﻿namespace NAudio.Dmo;
 
 /// <summary>
 /// MediaErr.h
 /// </summary>
-enum DmoHResults
+internal enum DmoHResults
 {
     DMO_E_INVALIDSTREAMINDEX = unchecked((int)0x80040201),
     DMO_E_INVALIDTYPE = unchecked((int)0x80040202),

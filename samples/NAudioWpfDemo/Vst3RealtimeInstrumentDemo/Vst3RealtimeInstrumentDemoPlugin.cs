@@ -2,7 +2,7 @@
 
 namespace NAudioWpfDemo.Vst3RealtimeInstrumentDemo;
 
-class Vst3RealtimeInstrumentDemoPlugin : IModule
+internal class Vst3RealtimeInstrumentDemoPlugin : IModule
 {
     private Vst3RealtimeInstrumentView view;
     private Vst3RealtimeInstrumentViewModel viewModel;

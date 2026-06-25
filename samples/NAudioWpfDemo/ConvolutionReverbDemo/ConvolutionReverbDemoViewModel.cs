@@ -20,7 +20,7 @@ namespace NAudioWpfDemo.ConvolutionReverbDemo;
 /// rate and peak-normalisation to -3 dBFS. Reports Nx-real-time and added tail
 /// duration. Output WAVs land in a temp folder browsable from the panel.
 /// </summary>
-class ConvolutionReverbDemoViewModel : ViewModelBase
+internal class ConvolutionReverbDemoViewModel : ViewModelBase
 {
     private const float TargetPeakDbFs = -3f;
     private static readonly float TargetPeakLinear = MathF.Pow(10f, TargetPeakDbFs / 20f);

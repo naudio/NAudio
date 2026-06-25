@@ -12,7 +12,7 @@ namespace NAudioConsoleTest.Vst3.Tests;
 /// modules; mono inputs are upmixed to stereo automatically. Output peak / head-RMS / tail-RMS
 /// are emitted as diagnostics so the numbers can be diffed between runs.
 /// </summary>
-sealed class Vst3RenderEffectTest : IConsoleTest
+internal sealed class Vst3RenderEffectTest : IConsoleTest
 {
     public string Id => "Vst3.RenderEffect";
     public string Description => "Render a WAV through a VST 3 effect plug-in";

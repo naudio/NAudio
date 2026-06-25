@@ -7,7 +7,7 @@ namespace NAudio.SoundFont;
 internal class RiffChunk
 {
     private string chunkID;
-    private BinaryReader riffFile;
+    private readonly BinaryReader riffFile;
 
     public static RiffChunk GetTopLevelChunk(BinaryReader file)
     {
@@ -88,7 +88,7 @@ internal class RiffChunk
         byte[] data = riffFile.ReadBytes((int)ChunkSize);
         if (data.Length != ChunkSize)
         {
-            throw new InvalidDataException(String.Format("Couldn't read chunk's data Chunk: {0}, read {1} bytes", this, data.Length));
+            throw new InvalidDataException($"Couldn't read chunk's data Chunk: {this}, read {data.Length} bytes");
         }
         return data;
     }
@@ -110,7 +110,7 @@ internal class RiffChunk
         riffFile.BaseStream.Position = DataOffset;
         if (s.Length != ChunkSize)
         {
-            throw new InvalidDataException(String.Format("Chunk size is: {0} so can't read structure of: {1}", ChunkSize, s.Length));
+            throw new InvalidDataException($"Chunk size is: {ChunkSize} so can't read structure of: {s.Length}");
         }
         return s.Read(riffFile);
     }
@@ -120,7 +120,7 @@ internal class RiffChunk
         riffFile.BaseStream.Position = DataOffset;
         if (ChunkSize % s.Length != 0)
         {
-            throw new InvalidDataException(String.Format("Chunk size is: {0} not a multiple of structure size: {1}", ChunkSize, s.Length));
+            throw new InvalidDataException($"Chunk size is: {ChunkSize} not a multiple of structure size: {s.Length}");
         }
         int structuresToRead = (int)(ChunkSize / s.Length);
         T[] a = new T[structuresToRead];
@@ -157,7 +157,7 @@ internal class RiffChunk
 
     public override string ToString()
     {
-        return String.Format("RiffChunk ID: {0} Size: {1} Data Offset: {2}", ChunkID, ChunkSize, DataOffset);
+        return $"RiffChunk ID: {ChunkID} Size: {ChunkSize} Data Offset: {DataOffset}";
     }
 
 }

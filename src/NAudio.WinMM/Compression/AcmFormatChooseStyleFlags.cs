@@ -3,7 +3,7 @@
 namespace NAudio.Wave.Compression;
 
 [Flags]
-enum AcmFormatChooseStyleFlags
+internal enum AcmFormatChooseStyleFlags
 {
     /// <summary>
     /// None

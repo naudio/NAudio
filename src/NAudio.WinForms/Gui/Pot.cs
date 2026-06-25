@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Drawing;
-using System.Data;
-using System.Text;
 using System.Windows.Forms;
 
 namespace NAudio.Gui;
@@ -105,8 +101,7 @@ public partial class Pot : UserControl
             this.value = newValue;
             if (raiseEvents)
             {
-                if (ValueChanged != null)
-                    ValueChanged(this, EventArgs.Empty);
+                ValueChanged?.Invoke(this, EventArgs.Empty);
             }
             Invalidate();
         }

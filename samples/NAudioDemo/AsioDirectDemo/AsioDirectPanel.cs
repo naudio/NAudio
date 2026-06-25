@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Windows.Forms;
 using NAudio.Wave;
 
@@ -24,7 +23,7 @@ public partial class AsioDirectPanel : UserControl
         }
     }
 
-    void OnAsioDirectPanelDisposed(object sender, EventArgs e)
+    private void OnAsioDirectPanelDisposed(object sender, EventArgs e)
     {
         Cleanup();
     }

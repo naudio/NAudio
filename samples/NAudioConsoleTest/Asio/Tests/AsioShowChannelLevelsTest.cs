@@ -12,7 +12,7 @@ namespace NAudioConsoleTest.Asio.Tests;
 /// The legacy version had a live in-place dBFS bar UI. That's been dropped in favour of a single
 /// peak-RMS summary at the end — same diagnostic value, works identically in CLI and menu modes.
 /// </remarks>
-sealed class AsioShowChannelLevelsTest : IConsoleTest
+internal sealed class AsioShowChannelLevelsTest : IConsoleTest
 {
     public string Id => "Asio.ShowChannelLevels";
     public string Description => "Measure per-channel peak RMS over a fixed duration (no WAV saved)";

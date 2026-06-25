@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using NAudio.Utils;
+﻿using NAudio.Utils;
 using NUnit.Framework;
 
 namespace NAudio.Core.Tests.Utils;

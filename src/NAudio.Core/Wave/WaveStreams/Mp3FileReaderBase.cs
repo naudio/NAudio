@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave;
 
-class Mp3Index
+internal class Mp3Index
 {
     public long FilePosition { get; set; }
     public long SamplePosition { get; set; }
@@ -200,7 +200,7 @@ public class Mp3FileReaderBase : WaveStream
             // duration_seconds = mp3DataLength * 8 / firstFrame.BitRate
             // total_samples    = duration_seconds * sampleRate
             // Exact for CBR, approximate for headerless VBR.
-            totalSamples = (long)((double)mp3DataLength * 8.0 * firstFrame.SampleRate / firstFrame.BitRate);
+            totalSamples = (long)(mp3DataLength * 8.0 * firstFrame.SampleRate / firstFrame.BitRate);
             isLengthExact = false;
         }
     }
@@ -268,18 +268,14 @@ public class Mp3FileReaderBase : WaveStream
         if (frame.SampleRate != Mp3WaveFormat.SampleRate)
         {
             string message =
-                String.Format(
-                    "Got a frame at sample rate {0}, in an MP3 with sample rate {1}. Mp3FileReader does not support sample rate changes.",
-                    frame.SampleRate, Mp3WaveFormat.SampleRate);
+                $"Got a frame at sample rate {frame.SampleRate}, in an MP3 with sample rate {Mp3WaveFormat.SampleRate}. Mp3FileReader does not support sample rate changes.";
             throw new InvalidOperationException(message);
         }
         int channels = frame.ChannelMode == ChannelMode.Mono ? 1 : 2;
         if (channels != Mp3WaveFormat.Channels)
         {
             string message =
-                String.Format(
-                    "Got a frame with channel mode {0}, in an MP3 with {1} channels. Mp3FileReader does not support changes to channel count.",
-                    frame.ChannelMode, Mp3WaveFormat.Channels);
+                $"Got a frame with channel mode {frame.ChannelMode}, in an MP3 with {Mp3WaveFormat.Channels} channels. Mp3FileReader does not support changes to channel count.";
             throw new InvalidOperationException(message);
         }
     }

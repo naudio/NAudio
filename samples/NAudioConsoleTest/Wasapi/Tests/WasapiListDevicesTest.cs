@@ -4,7 +4,7 @@ using Spectre.Console;
 
 namespace NAudioConsoleTest.Wasapi.Tests;
 
-sealed class WasapiListDevicesTest : IConsoleTest
+internal sealed class WasapiListDevicesTest : IConsoleTest
 {
     public string Id => "Wasapi.ListDevices";
     public string Description => "List active WASAPI render + capture endpoints with default-format probe";

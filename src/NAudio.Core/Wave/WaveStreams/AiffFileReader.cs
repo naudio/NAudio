@@ -90,7 +90,7 @@ public class AiffFileReader : WaveStream
                 short sampleSize = ConvertShort(br.ReadBytes(2));
                 double sampleRate = IEEE.ConvertFromIeeeExtended(br.ReadBytes(10));
 
-                format = new WaveFormat((int)sampleRate, (int)sampleSize, (int)numChannels);
+                format = new WaveFormat((int)sampleRate, sampleSize, numChannels);
 
                 if (nextChunk.ChunkLength > 18 && formType == "AIFC")
                 {

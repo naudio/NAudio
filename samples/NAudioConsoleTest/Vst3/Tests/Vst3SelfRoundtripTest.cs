@@ -15,7 +15,7 @@ namespace NAudioConsoleTest.Vst3.Tests;
 /// crashes here too, the failure is symmetric and reproduces with a single live instance, narrowing
 /// the surface for further investigation (or pointing at a genuine plug-in defect).
 /// </remarks>
-sealed class Vst3SelfRoundtripTest : IConsoleTest
+internal sealed class Vst3SelfRoundtripTest : IConsoleTest
 {
     public string Id => "Vst3.SelfRoundtrip";
     public string Description => "Save state, then immediately load it back into the same plug-in instance";

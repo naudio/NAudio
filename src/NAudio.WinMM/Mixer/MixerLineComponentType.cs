@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace NAudio.Mixer;
+﻿namespace NAudio.Mixer;
 
 /// <summary>
 /// Mixer Line Component type enumeration

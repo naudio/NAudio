@@ -14,7 +14,7 @@ namespace NAudioConsoleTest.Vst3.Tests;
 /// plug-in with <see cref="Vst3Plugin.SendNoteOn"/> / <c>SendNoteOff</c>, and renders the synth's
 /// output to the speakers through <c>WasapiPlayer</c> (shared mode).
 /// </summary>
-sealed class Vst3LiveSynthTest : IConsoleTest
+internal sealed class Vst3LiveSynthTest : IConsoleTest
 {
     public string Id => "Vst3.LiveSynth";
     public string Description => "Play a VST 3 instrument live from a MIDI keyboard";

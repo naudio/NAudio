@@ -503,9 +503,9 @@ public class WdlResampler
                 int hsz = sz / 2;
                 double filtpower = 0.0;
                 double windowpos = 0.0;
-                double dwindowpos = 2.0 * PI / (double)(sz);
+                double dwindowpos = 2.0 * PI / sz;
                 double dsincpos = PI / m_lp_oversize * filtpos; // filtpos is outrate/inrate, i.e. 0.5 is going to half rate
-                double sincpos = dsincpos * (double)(-hsz);
+                double sincpos = dsincpos * -hsz;
 
                 int x;
                 for (x = -hsz; x < hsz + m_lp_oversize; x++)
@@ -637,7 +637,7 @@ public class WdlResampler
 
 
 
-    class WDL_Resampler_IIRFilter
+    private class WDL_Resampler_IIRFilter
     {
         public WDL_Resampler_IIRFilter()
         {
@@ -688,12 +688,12 @@ public class WdlResampler
             }
         }
 
-        double denormal_filter(float x)
+        private double denormal_filter(float x)
         {
             // TODO: implement denormalisation
             return x;
         }
-        double denormal_filter(double x)
+        private double denormal_filter(double x)
         {
             // TODO: implement denormalisation
             return x;

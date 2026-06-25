@@ -17,7 +17,7 @@ namespace NAudioConsoleTest.Vst3.Tests;
 /// the WPF demo's job. The plug-in is created, its view attached, but <c>process()</c> is never
 /// called, so knobs won't make sound — they should still move and redraw.
 /// </remarks>
-sealed class Vst3ShowEditorTest : IConsoleTest
+internal sealed class Vst3ShowEditorTest : IConsoleTest
 {
     public string Id => "Vst3.ShowEditor";
     public string Description => "Embed a VST 3 plug-in editor in a bare Win32 window (no audio)";
@@ -176,7 +176,7 @@ sealed class Vst3ShowEditorTest : IConsoleTest
                 hCursor = LoadCursor(IntPtr.Zero, IDC_ARROW),
                 // Paint the chrome around the editor with the standard button-face grey, so the
                 // area exposed when the host window is larger than the editor isn't left unpainted.
-                hbrBackground = (IntPtr)(COLOR_BTNFACE + 1),
+                hbrBackground = COLOR_BTNFACE + 1,
                 lpszClassName = className,
             };
             if (RegisterClassEx(ref wndClass) == 0)

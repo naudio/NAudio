@@ -2,7 +2,7 @@
 
 namespace NAudioWpfDemo.SampleEditorDemo;
 
-class SampleEditorPlugin : ModuleBase
+internal class SampleEditorPlugin : ModuleBase
 {
     public override string Name => "Single-Sample Editor";
 

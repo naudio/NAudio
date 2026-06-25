@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Runtime.InteropServices.Marshalling;
-using System.Windows.Forms;
 using NAudio.CoreAudioApi;
 using NAudio.CoreAudioApi.Interfaces;
 
@@ -16,7 +15,7 @@ namespace NAudioDemo.Utils;
 // to auto-repopulate their device combos. Also exercises the public
 // [GeneratedComInterface] IMMNotificationClient CCW path during normal
 // demo usage — if that path silently regresses, the combos go stale.
-sealed partial class DeviceChangeNotifier : IDisposable
+internal sealed partial class DeviceChangeNotifier : IDisposable
 {
     private readonly MMDeviceEnumerator enumerator;
     private readonly Client client;

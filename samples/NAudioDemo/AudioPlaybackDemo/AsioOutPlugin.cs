@@ -1,13 +1,11 @@
-﻿using System;
-using System.Linq;
-using NAudio.Wave;
+﻿using NAudio.Wave;
 using System.Windows.Forms;
 
 namespace NAudioDemo.AudioPlaybackDemo;
 
-class AsioOutPlugin : IOutputDevicePlugin
+internal class AsioOutPlugin : IOutputDevicePlugin
 {
-    AsioOutSettingsPanel settingsPanel;
+    private AsioOutSettingsPanel settingsPanel;
 
     public IWavePlayer CreateDevice(int latency)
     {

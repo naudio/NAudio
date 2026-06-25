@@ -21,7 +21,7 @@ namespace NAudioWpfDemo.LiveSamplerDemo;
 /// marshals them onto the audio thread) and rendered straight to the speakers
 /// via <see cref="WasapiPlayer"/>.
 /// </summary>
-class LiveSamplerDemoViewModel : ViewModelBase, IDisposable
+internal class LiveSamplerDemoViewModel : ViewModelBase, IDisposable
 {
     private const int SampleRate = 44100;
 

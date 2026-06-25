@@ -7,7 +7,7 @@ namespace NAudio.Wave.SampleProviders;
 /// </summary>
 public class FadeInOutSampleProvider : ISampleProvider
 {
-    enum FadeState
+    private enum FadeState
     {
         Silence,
         FadingIn,

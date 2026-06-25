@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections;
 using System.ComponentModel;
 using System.Drawing;
-using System.Data;
 using System.Windows.Forms;
 
 namespace NAudio.Gui;
@@ -15,9 +13,9 @@ public class VolumeSlider : System.Windows.Forms.UserControl
     /// <summary>
     /// Required designer variable.
     /// </summary>
-    private System.ComponentModel.Container components = null;
+    private readonly System.ComponentModel.Container components = null;
     private float volume = 1.0f;
-    private float MinDb = -48;
+    private readonly float MinDb = -48;
     /// <summary>
     /// Volume changed event
     /// </summary>
@@ -76,7 +74,7 @@ public class VolumeSlider : System.Windows.Forms.UserControl
         float percent = 1 - (db / MinDb);
 
         pe.Graphics.FillRectangle(Brushes.LightGreen, 1, 1, (int)((this.Width - 2) * percent), this.Height - 2);
-        string dbValue = String.Format("{0:F2} dB", db);
+        string dbValue = $"{db:F2} dB";
         /*if(Double.IsNegativeInfinity(db))
         {
             dbValue = "-\x221e db"; // -8 dB
@@ -139,8 +137,7 @@ public class VolumeSlider : System.Windows.Forms.UserControl
             if (volume != value)
             {
                 volume = value;
-                if (VolumeChanged != null)
-                    VolumeChanged(this, EventArgs.Empty);
+                VolumeChanged?.Invoke(this, EventArgs.Empty);
                 Invalidate();
             }
         }

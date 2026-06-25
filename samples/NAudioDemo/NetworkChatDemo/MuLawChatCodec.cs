@@ -1,11 +1,10 @@
 ﻿using System;
-using System.Linq;
 using NAudio.Wave;
 using NAudio.Codecs;
 
 namespace NAudioDemo.NetworkChatDemo;
 
-class AcmMuLawChatCodec : AcmChatCodec
+internal class AcmMuLawChatCodec : AcmChatCodec
 {
     public AcmMuLawChatCodec()
         : base(new WaveFormat(8000, 16, 1), WaveFormat.CreateMuLawFormat(8000, 1))
@@ -16,7 +15,7 @@ class AcmMuLawChatCodec : AcmChatCodec
 }
 
 
-class MuLawChatCodec : INetworkChatCodec
+internal class MuLawChatCodec : INetworkChatCodec
 {
     public string Name => "G.711 mu-law";
 

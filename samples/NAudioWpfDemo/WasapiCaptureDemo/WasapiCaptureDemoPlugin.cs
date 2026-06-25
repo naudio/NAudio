@@ -2,7 +2,7 @@
 
 namespace NAudioWpfDemo.WasapiCaptureDemo;
 
-class WasapiCaptureDemoPlugin : IModule
+internal class WasapiCaptureDemoPlugin : IModule
 {
     private WasapiCaptureViewModel viewModel;
     private WasapiCaptureDemoView view;

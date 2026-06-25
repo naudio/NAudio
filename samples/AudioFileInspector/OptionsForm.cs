@@ -1,17 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
-using NAudio.Utils;
 
 namespace AudioFileInspector;
 
-partial class OptionsForm : Form
+internal partial class OptionsForm : Form
 {
-    IEnumerable<IAudioFileInspector> inspectors;
+    private readonly IEnumerable<IAudioFileInspector> inspectors;
 
     public OptionsForm(IEnumerable<IAudioFileInspector> inspectors)
     {

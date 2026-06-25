@@ -11,7 +11,7 @@ namespace NAudioConsoleTest.Vst3.Tests;
 /// fresh plug-in from the same module, load the state, and assert that the render bit-for-bit
 /// matches the original. Proves both halves of the state round-trip (component + controller).
 /// </summary>
-sealed class Vst3StateRoundtripTest : IConsoleTest
+internal sealed class Vst3StateRoundtripTest : IConsoleTest
 {
     public string Id => "Vst3.StateRoundtrip";
     public string Description => "Save plug-in state and re-load it into a fresh instance, confirming identical render";

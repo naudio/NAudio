@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.IO;
 
 namespace NAudio.Midi;
@@ -10,7 +8,7 @@ namespace NAudio.Midi;
 /// </summary>
 public class TrackSequenceNumberEvent : MetaEvent
 {
-    private ushort sequenceNumber;
+    private readonly ushort sequenceNumber;
 
     /// <summary>
     /// Creates a new track sequence number event
@@ -47,7 +45,7 @@ public class TrackSequenceNumberEvent : MetaEvent
     /// <returns>String describing the event</returns>
     public override string ToString()
     {
-        return String.Format("{0} {1}", base.ToString(), sequenceNumber);
+        return $"{base.ToString()} {sequenceNumber}";
     }
 
     /// <summary>

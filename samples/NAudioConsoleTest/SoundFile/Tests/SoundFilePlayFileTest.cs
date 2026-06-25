@@ -11,7 +11,7 @@ namespace NAudioConsoleTest.SoundFile.Tests;
 /// pause/resume, ESC stop. Non-interactive: runs to end-of-stream or until
 /// <c>maxDuration</c>.
 /// </summary>
-sealed class SoundFilePlayFileTest : IConsoleTest
+internal sealed class SoundFilePlayFileTest : IConsoleTest
 {
     public string Id => "SoundFile.PlayFile";
     public string Description => "Play an audio file decoded via libsndfile (FLAC/Ogg/Opus/MP3/WAV/…)";

@@ -206,7 +206,7 @@ public class WaveFileWriterRf64Tests
         // Passing null for options is allowed and equivalent to passing a default-constructed
         // WaveFileWriterOptions.
         var ms = new MemoryStream();
-        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format, (WaveFileWriterOptions)null))
+        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format, null))
         {
             w.Write(new byte[100], 0, 100);
         }

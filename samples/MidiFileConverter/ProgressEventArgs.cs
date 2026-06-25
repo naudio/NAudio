@@ -7,8 +7,8 @@ namespace MarkHeath.MidiUtils;
 /// </summary>
 public class ProgressEventArgs : EventArgs
 {
-    private string message;
-    private ProgressMessageType messageType;
+    private readonly string message;
+    private readonly ProgressMessageType messageType;
 
     /// <summary>
     /// New progress event arguments

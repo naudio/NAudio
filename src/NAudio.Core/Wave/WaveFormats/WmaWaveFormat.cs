@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 namespace NAudio.Wave;
 
@@ -10,14 +7,14 @@ namespace NAudio.Wave;
 /// May not be much use because WMA codec is a DirectShow DMO not an ACM
 /// </summary>
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 2)]
-class WmaWaveFormat : WaveFormat
+internal class WmaWaveFormat : WaveFormat
 {
-    short wValidBitsPerSample; // bits of precision 
-    int dwChannelMask;       // which channels are present in stream 
-    int dwReserved1;
-    int dwReserved2;
-    short wEncodeOptions;
-    short wReserved3;
+    private readonly short wValidBitsPerSample; // bits of precision 
+    private readonly int dwChannelMask;       // which channels are present in stream 
+    private readonly int dwReserved1;
+    private readonly int dwReserved2;
+    private readonly short wEncodeOptions;
+    private readonly short wReserved3;
 
     public WmaWaveFormat(int sampleRate, int bitsPerSample, int channels)
         : base(sampleRate, bitsPerSample, channels)

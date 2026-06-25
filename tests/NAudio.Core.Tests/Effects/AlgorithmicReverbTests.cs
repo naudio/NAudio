@@ -1,5 +1,4 @@
-﻿using System;
-using NAudio.Effects;
+﻿using NAudio.Effects;
 using NAudio.Wave;
 using NUnit.Framework;
 

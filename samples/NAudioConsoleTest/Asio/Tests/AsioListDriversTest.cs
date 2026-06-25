@@ -7,7 +7,7 @@ namespace NAudioConsoleTest.Asio.Tests;
 /// <summary>
 /// Enumerates installed ASIO drivers. Zero parameters; safe to run unattended.
 /// </summary>
-sealed class AsioListDriversTest : IConsoleTest
+internal sealed class AsioListDriversTest : IConsoleTest
 {
     public string Id => "Asio.ListDrivers";
     public string Description => "List installed ASIO drivers";

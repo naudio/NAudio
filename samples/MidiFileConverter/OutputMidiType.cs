@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿namespace MarkHeath.MidiUtils;
 
-namespace MarkHeath.MidiUtils;
-
-enum OutputMidiType
+internal enum OutputMidiType
 {
     LeaveUnchanged,
     Type0,

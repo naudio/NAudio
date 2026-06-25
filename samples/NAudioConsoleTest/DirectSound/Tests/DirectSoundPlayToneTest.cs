@@ -11,7 +11,7 @@ namespace NAudioConsoleTest.DirectSound.Tests;
 /// <c>DirectSoundCreate</c>, the primary + secondary buffer pair, the IDirectSoundNotify QI
 /// cascade, the playback notification thread, and the Feed loop.
 /// </summary>
-sealed class DirectSoundPlayToneTest : IConsoleTest
+internal sealed class DirectSoundPlayToneTest : IConsoleTest
 {
     public string Id => "DirectSound.PlayTone";
     public string Description => "Play a sine tone through DirectSoundOut (low volume)";

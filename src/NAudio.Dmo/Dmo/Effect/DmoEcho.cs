@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace NAudio.Dmo.Effect;
@@ -17,7 +16,7 @@ internal struct DsFxEcho
  System.Security.SuppressUnmanagedCodeSecurity,
  Guid("8bd28edf-50db-4e92-a2bd-445488d1ed42"),
  InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-interface IDirectSoundFXEcho
+internal interface IDirectSoundFXEcho
 {
     [PreserveSig]
     int SetAllParameters([In] ref DsFxEcho param);

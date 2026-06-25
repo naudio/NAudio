@@ -1,6 +1,5 @@
 ﻿using System;
 using NAudio.Effects;
-using NAudio.Sampler;
 using NAudio.Sfz;
 using NAudio.Wave;
 using NUnit.Framework;

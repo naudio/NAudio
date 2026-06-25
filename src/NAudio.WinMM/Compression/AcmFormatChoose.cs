@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Runtime.InteropServices;
 
 namespace NAudio.Wave.Compression;
@@ -10,7 +8,7 @@ namespace NAudio.Wave.Compression;
 /// http://msdn.microsoft.com/en-us/library/dd742911%28VS.85%29.aspx
 /// </summary>
 [StructLayout(LayoutKind.Sequential, Pack = 4, CharSet = CharSet.Auto)]
-struct AcmFormatChoose
+internal struct AcmFormatChoose
 {
     /// <summary>
     /// DWORD cbStruct; 

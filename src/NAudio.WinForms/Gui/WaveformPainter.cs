@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
 
 namespace NAudio.Gui;
@@ -13,10 +10,10 @@ namespace NAudio.Gui;
 /// </summary>
 public partial class WaveformPainter : Control
 {
-    Pen foregroundPen;
-    List<float> samples = new(1000);
-    int maxSamples;
-    int insertPos;
+    private Pen foregroundPen;
+    private readonly List<float> samples = new(1000);
+    private int maxSamples;
+    private int insertPos;
 
     /// <summary>
     /// Constructs a new instance of the WaveFormPainter class
@@ -89,7 +86,7 @@ public partial class WaveformPainter : Control
         }
     }
 
-    float GetSample(int index)
+    private float GetSample(int index)
     {
         if (index < 0)
             index += maxSamples;

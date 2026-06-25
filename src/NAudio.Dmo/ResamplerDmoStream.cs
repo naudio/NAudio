@@ -14,7 +14,7 @@ public class ResamplerDmoStream : WaveStream
     private readonly WaveStream inputStream;
     private readonly WaveFormat outputFormat;
     private DmoOutputDataBuffer outputBuffer;
-    private DmoOutputDataBuffer[] outputBufferArray;
+    private readonly DmoOutputDataBuffer[] outputBufferArray;
     private DmoResampler dmoResampler;
     private MediaBuffer inputMediaBuffer;
     private byte[] inputBuffer;

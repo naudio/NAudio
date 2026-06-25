@@ -2,7 +2,7 @@
 
 namespace NAudioWpfDemo.MediaFoundationPlayback;
 
-class MediaFoundationPlaybackPlugin : ModuleBase
+internal class MediaFoundationPlaybackPlugin : ModuleBase
 {
     protected override UserControl CreateViewAndViewModel()
     {

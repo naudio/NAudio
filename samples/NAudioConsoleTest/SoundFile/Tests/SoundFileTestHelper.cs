@@ -1,5 +1,4 @@
 ﻿using NAudio.SoundFile;
-using NAudio.Wave;
 using NAudioConsoleTest.Shared;
 using NAudioConsoleTest.Shared.Testing;
 
@@ -12,7 +11,7 @@ namespace NAudioConsoleTest.SoundFile.Tests;
 /// gating, the format/extension maps, and a finite sine pump for the
 /// self-contained round-trip tests.
 /// </summary>
-static class SoundFileTestHelper
+internal static class SoundFileTestHelper
 {
     public static IReadOnlyList<string> FormatChoices { get; } =
         ["Wav", "Aiff", "Flac", "OggVorbis", "Opus", "Mp3"];
@@ -117,7 +116,7 @@ static class SoundFileTestHelper
         long count = 0;
         double sumSquares = 0;
         int n;
-        while ((n = ((ISampleProvider)reader).Read(buffer)) > 0)
+        while ((n = reader.Read(buffer)) > 0)
         {
             for (int i = 0; i < n; i++)
             {

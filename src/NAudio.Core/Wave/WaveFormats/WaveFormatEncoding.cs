@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace NAudio.Wave;
+﻿namespace NAudio.Wave;
 
 /// <summary>
 /// Summary description for WaveFormatEncoding.

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace NAudio.Dmo.Effect;
@@ -18,7 +17,7 @@ internal struct DsFxCompressor
  System.Security.SuppressUnmanagedCodeSecurity,
  Guid("4bbd1154-62f6-4e2c-a15c-d3b6c417f7a0"),
  InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-interface IDirectSoundFXCompressor
+internal interface IDirectSoundFXCompressor
 {
     [PreserveSig]
     int SetAllParameters([In] ref DsFxCompressor param);

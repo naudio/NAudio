@@ -1,19 +1,17 @@
 ﻿using System;
 using System.Linq;
-using System.Collections.Generic;
 using System.Windows.Forms;
-using System.ComponentModel.Composition;
 using System.ComponentModel.Composition.Hosting;
 
 namespace AudioFileInspector;
 
-static class Program
+internal static class Program
 {
     /// <summary>
     /// The main entry point for the application.
     /// </summary>
     [STAThread]
-    static int Main(string[] args)
+    private static int Main(string[] args)
     {
         Application.EnableVisualStyles();
         Application.SetHighDpiMode(HighDpiMode.SystemAware);

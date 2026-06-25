@@ -19,9 +19,7 @@
      misrepresented as being the original source code.
   3. This notice may not be removed or altered from any source distribution.
 */
-using System;
 using NAudio.CoreAudioApi.Interfaces;
-using System.Runtime.InteropServices;
 
 namespace NAudio.CoreAudioApi;
 

@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Linq;
 using System.Windows.Input;
 
 namespace NAudioWpfDemo.ViewModel;
 
-class DelegateCommand : ICommand
+internal class DelegateCommand : ICommand
 {
     private readonly Action action;
     private bool isEnabled;
@@ -45,7 +44,6 @@ class DelegateCommand : ICommand
 
     protected virtual void OnCanExecuteChanged()
     {
-        EventHandler handler = CanExecuteChanged;
-        if (handler != null) handler(this, EventArgs.Empty);
+        CanExecuteChanged?.Invoke(this, EventArgs.Empty);
     }
 }

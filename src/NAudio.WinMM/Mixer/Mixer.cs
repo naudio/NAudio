@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
-using NAudio.Wave;
 
 namespace NAudio.Mixer;
 
@@ -9,8 +8,8 @@ namespace NAudio.Mixer;
 public class Mixer
 {
     private MixerInterop.MIXERCAPS caps;
-    private IntPtr mixerHandle;
-    private MixerFlags mixerHandleType;
+    private readonly IntPtr mixerHandle;
+    private readonly MixerFlags mixerHandleType;
 
     /// <summary>The number of mixer devices available</summary>	
     public static int NumberOfDevices
@@ -31,8 +30,8 @@ public class Mixer
             throw new ArgumentOutOfRangeException(nameof(mixerIndex));
         }
         caps = new MixerInterop.MIXERCAPS();
-        MmException.Try(MixerInterop.mixerGetDevCaps((IntPtr)mixerIndex, ref caps, Marshal.SizeOf(caps)), "mixerGetDevCaps");
-        this.mixerHandle = (IntPtr)mixerIndex;
+        MmException.Try(MixerInterop.mixerGetDevCaps(mixerIndex, ref caps, Marshal.SizeOf(caps)), "mixerGetDevCaps");
+        this.mixerHandle = mixerIndex;
         this.mixerHandleType = MixerFlags.Mixer;
 
         // TODO: optionally support really opening the mixer device

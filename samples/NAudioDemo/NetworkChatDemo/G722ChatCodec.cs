@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Runtime.InteropServices;
 using NAudio.Wave;
 using NAudio.Codecs;
@@ -7,7 +6,7 @@ using System.Diagnostics;
 
 namespace NAudioDemo.NetworkChatDemo;
 
-class G722ChatCodec : INetworkChatCodec
+internal class G722ChatCodec : INetworkChatCodec
 {
     private readonly int bitrate;
     private readonly G722CodecState encoderState;

@@ -180,7 +180,7 @@ public class AcmStream : IDisposable
     {
         if (bytesToConvert % sourceFormat.BlockAlign != 0)
         {
-            System.Diagnostics.Debug.WriteLine(String.Format("Not a whole number of blocks: {0} ({1})", bytesToConvert, sourceFormat.BlockAlign));
+            System.Diagnostics.Debug.WriteLine($"Not a whole number of blocks: {bytesToConvert} ({sourceFormat.BlockAlign})");
             bytesToConvert -= (bytesToConvert % sourceFormat.BlockAlign);
         }
 

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using NAudio.Wave;
 using NAudio.Wave.Compression;
 using NAudio;
@@ -9,7 +8,7 @@ namespace NAudioDemo.NetworkChatDemo;
 /// <summary>
 /// useful base class for deriving any chat codecs that will use ACM for decode and encode
 /// </summary>
-abstract class AcmChatCodec : INetworkChatCodec
+internal abstract class AcmChatCodec : INetworkChatCodec
 {
     private readonly WaveFormat encodeFormat;
     private AcmStream encodeStream;

@@ -2,7 +2,6 @@
 using NAudio.Dsp;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
-using NAudio.Core.Tests.WaveStreams;
 using NUnit.Framework;
 
 namespace NAudio.Core.Tests.Dsp;

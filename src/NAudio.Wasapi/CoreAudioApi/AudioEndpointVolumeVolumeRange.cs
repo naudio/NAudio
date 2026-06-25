@@ -21,7 +21,6 @@
 */
 // modified for NAudio
 using NAudio.CoreAudioApi.Interfaces;
-using System.Runtime.InteropServices;
 
 namespace NAudio.CoreAudioApi;
 
@@ -30,9 +29,9 @@ namespace NAudio.CoreAudioApi;
 /// </summary>
 public class AudioEndpointVolumeVolumeRange
 {
-    readonly float volumeMinDecibels;
-    readonly float volumeMaxDecibels;
-    readonly float volumeIncrementDecibels;
+    private readonly float volumeMinDecibels;
+    private readonly float volumeMaxDecibels;
+    private readonly float volumeIncrementDecibels;
 
     internal AudioEndpointVolumeVolumeRange(IAudioEndpointVolume parent)
     {

@@ -1,11 +1,10 @@
 ﻿using NAudio.CoreAudioApi;
-using NAudio.Wave;
 using NAudioConsoleTest.Shared.Testing;
 using Spectre.Console;
 
 namespace NAudioConsoleTest.Wasapi.Tests;
 
-sealed class WasapiExclusiveQuickScanTest : IConsoleTest
+internal sealed class WasapiExclusiveQuickScanTest : IConsoleTest
 {
     public string Id => "Wasapi.ExclusiveQuickScan";
     public string Description => "Probe common (rate × bits × channels) combos for exclusive-mode support";

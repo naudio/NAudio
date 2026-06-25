@@ -9,7 +9,7 @@ namespace NAudioConsoleTest.MediaFoundation.Tests;
 /// Decodes an audio file via <see cref="StreamMediaFoundationReader"/>, which wraps the input
 /// as an <c>IStream</c> CCW rather than letting MF open the file directly.
 /// </summary>
-sealed class MediaFoundationReadFromStreamTest : IConsoleTest
+internal sealed class MediaFoundationReadFromStreamTest : IConsoleTest
 {
     public string Id => "MediaFoundation.ReadFromStream";
     public string Description => "Decode an audio file via StreamMediaFoundationReader (IStream CCW)";

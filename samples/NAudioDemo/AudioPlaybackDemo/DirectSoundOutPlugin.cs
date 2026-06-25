@@ -1,11 +1,10 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using NAudio.Wave;
 using System.Windows.Forms;
 
 namespace NAudioDemo.AudioPlaybackDemo;
 
-class DirectSoundOutPlugin : IOutputDevicePlugin
+internal class DirectSoundOutPlugin : IOutputDevicePlugin
 {
     private DirectSoundOutSettingsPanel settingsPanel;
     private readonly bool isAvailable;

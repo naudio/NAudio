@@ -21,19 +21,19 @@ internal static class Watchdog
     // Slot 0 is the "main / single-thread / one-off" slot used by all single-threaded
     // phases (breadth, enum, abandon, sta) and by .Beat() with no slot. Soak workers
     // claim slots 0..N-1 dynamically via RegisterSlot.
-    const int MaxSlots = 64;
-    static readonly long[] beatTicks = new long[MaxSlots];
-    static readonly string[] phases = new string[MaxSlots];
-    static readonly int[] iters = new int[MaxSlots];
-    static readonly Combo?[] combos = new Combo?[MaxSlots];
-    static readonly bool[] slotActive = new bool[MaxSlots];
-    static int timeoutSec;
-    static string procdumpExe = "";
-    static string dumpDir = "";
-    static Thread? thread;
-    static bool failFastOnHang = true;
-    static int maxDumps = 3;
-    static int dumpsCaptured;
+    private const int MaxSlots = 64;
+    private static readonly long[] beatTicks = new long[MaxSlots];
+    private static readonly string[] phases = new string[MaxSlots];
+    private static readonly int[] iters = new int[MaxSlots];
+    private static readonly Combo?[] combos = new Combo?[MaxSlots];
+    private static readonly bool[] slotActive = new bool[MaxSlots];
+    private static int timeoutSec;
+    private static string procdumpExe = "";
+    private static string dumpDir = "";
+    private static Thread? thread;
+    private static bool failFastOnHang = true;
+    private static int maxDumps = 3;
+    private static int dumpsCaptured;
 
     public static int FileHangs;
     public static int StreamHangs;
@@ -105,7 +105,7 @@ internal static class Watchdog
         }
     }
 
-    static void Run()
+    private static void Run()
     {
         while (true)
         {
@@ -129,7 +129,7 @@ internal static class Watchdog
         }
     }
 
-    static void TriggerHang(int slot, double idleSeconds)
+    private static void TriggerHang(int slot, double idleSeconds)
     {
         var combo = combos[slot];
         var sink = combo?.Sink ?? Sink.File;

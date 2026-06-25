@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Windows.Forms;
 using NAudio.CoreAudioApi;
 using NAudioDemo.Utils;
@@ -21,7 +19,7 @@ public partial class WasapiOutSettingsPanel : UserControl
         Disposed += (_, _) => { deviceChangeNotifier.Dispose(); enumerator.Dispose(); };
     }
 
-    class WasapiDeviceComboItem
+    private class WasapiDeviceComboItem
     {
         public string Description { get; set; }
         public MMDevice Device { get; set; }

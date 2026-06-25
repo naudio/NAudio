@@ -9,22 +9,22 @@ namespace NAudio.SoundFont;
 /// </summary>
 public class PresetsChunk
 {
-    private PresetBuilder presetHeaders = new();
-    private ZoneBuilder presetZones = new();
-    private ModulatorBuilder presetZoneModulators = new();
-    private GeneratorBuilder presetZoneGenerators = new();
-    private InstrumentBuilder instruments = new();
-    private ZoneBuilder instrumentZones = new();
-    private ModulatorBuilder instrumentZoneModulators = new();
-    private GeneratorBuilder instrumentZoneGenerators = new();
-    private SampleHeaderBuilder sampleHeaders = new();
+    private readonly PresetBuilder presetHeaders = new();
+    private readonly ZoneBuilder presetZones = new();
+    private readonly ModulatorBuilder presetZoneModulators = new();
+    private readonly GeneratorBuilder presetZoneGenerators = new();
+    private readonly InstrumentBuilder instruments = new();
+    private readonly ZoneBuilder instrumentZones = new();
+    private readonly ModulatorBuilder instrumentZoneModulators = new();
+    private readonly GeneratorBuilder instrumentZoneGenerators = new();
+    private readonly SampleHeaderBuilder sampleHeaders = new();
 
     internal PresetsChunk(RiffChunk chunk)
     {
         string header = chunk.ReadChunkID();
         if (header != "pdta")
         {
-            throw new InvalidDataException(String.Format("Not a presets data chunk ({0})", header));
+            throw new InvalidDataException($"Not a presets data chunk ({header})");
         }
 
         RiffChunk c;
@@ -69,7 +69,7 @@ public class PresetsChunk
                     c.GetDataAsStructureArray(sampleHeaders);
                     break;
                 default:
-                    throw new InvalidDataException(String.Format("Unknown chunk type {0}", c.ChunkID));
+                    throw new InvalidDataException($"Unknown chunk type {c.ChunkID}");
             }
         }
 

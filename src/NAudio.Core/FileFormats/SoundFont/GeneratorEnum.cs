@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace NAudio.SoundFont;
+﻿namespace NAudio.SoundFont;
 
 /// <summary>
 /// Generator types

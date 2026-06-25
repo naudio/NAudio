@@ -14,7 +14,7 @@ namespace NAudioWpfDemo.Vst3HostDemo;
 /// All members run on the WPF UI (STA) thread — the same thread the <see cref="Vst3PluginView"/>
 /// was created on, satisfying the VST 3 UI-thread contract.
 /// </remarks>
-class Vst3EditorHost : HwndHost
+internal class Vst3EditorHost : HwndHost
 {
     // Single registered class for every editor-host container window in this process. Using
     // a registered class rather than reusing the built-in "STATIC" is what makes NI Raum (and
@@ -49,7 +49,7 @@ class Vst3EditorHost : HwndHost
                 lpfnWndProc = Marshal.GetFunctionPointerForDelegate(containerWndProc),
                 hInstance = GetModuleHandle(null),
                 hCursor = LoadCursor(IntPtr.Zero, IDC_ARROW),
-                hbrBackground = (IntPtr)(COLOR_BTNFACE + 1),
+                hbrBackground = COLOR_BTNFACE + 1,
                 lpszClassName = ContainerClassName,
             };
             if (RegisterClassEx(ref wndClass) == 0)
@@ -128,7 +128,7 @@ class Vst3EditorHost : HwndHost
     private const uint WS_VISIBLE = 0x10000000;
     private const uint WS_CLIPCHILDREN = 0x02000000;
     private const int COLOR_BTNFACE = 15;
-    private static readonly IntPtr IDC_ARROW = (IntPtr)32512;
+    private static readonly IntPtr IDC_ARROW = 32512;
 
     private delegate IntPtr WndProcDelegate(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
 

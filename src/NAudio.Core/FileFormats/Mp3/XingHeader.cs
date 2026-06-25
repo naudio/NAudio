@@ -8,7 +8,7 @@ namespace NAudio.Wave;
 public class XingHeader
 {
     [Flags]
-    enum XingHeaderOptions
+    private enum XingHeaderOptions
     {
         Frames = 1,
         Bytes = 2,
@@ -16,7 +16,7 @@ public class XingHeader
         VbrScale = 8
     }
 
-    private static int[] sr_table = { 44100, 48000, 32000, 99999 };
+    private static readonly int[] sr_table = { 44100, 48000, 32000, 99999 };
     private int vbrScale = -1;
     private int startOffset;
     private int endOffset;

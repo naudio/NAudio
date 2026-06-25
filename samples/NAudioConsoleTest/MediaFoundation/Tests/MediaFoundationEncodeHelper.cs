@@ -10,7 +10,7 @@ namespace NAudioConsoleTest.MediaFoundation.Tests;
 /// Each format-specific test class is a thin wrapper that supplies its container extension
 /// and the appropriate <see cref="MediaFoundationEncoder"/> entry point.
 /// </summary>
-static class MediaFoundationEncodeHelper
+internal static class MediaFoundationEncodeHelper
 {
     public static IReadOnlyList<TestParameter> LossyParameters { get; } =
     [

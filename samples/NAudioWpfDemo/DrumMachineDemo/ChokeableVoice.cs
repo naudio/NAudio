@@ -15,7 +15,7 @@ namespace NAudioWpfDemo.DrumMachineDemo;
 /// triggering the choke fires mid-buffer (small playback buffers tend to hide this;
 /// the larger render buffer exposes it as the previous voice being cut entirely).
 /// </remarks>
-class ChokeableVoice : ISampleProvider
+internal class ChokeableVoice : ISampleProvider
 {
     private readonly ISampleProvider source;
     private long readFrames;

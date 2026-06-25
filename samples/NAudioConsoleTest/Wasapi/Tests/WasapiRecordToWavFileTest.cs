@@ -5,7 +5,7 @@ using Spectre.Console;
 
 namespace NAudioConsoleTest.Wasapi.Tests;
 
-sealed class WasapiRecordToWavFileTest : IConsoleTest
+internal sealed class WasapiRecordToWavFileTest : IConsoleTest
 {
     public string Id => "Wasapi.RecordToWavFile";
     public string Description => "Record from capture endpoint into a WAV file for a fixed duration";

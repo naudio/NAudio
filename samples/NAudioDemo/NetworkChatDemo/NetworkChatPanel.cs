@@ -29,7 +29,7 @@ public partial class NetworkChatPanel : UserControl
         Disposed += OnPanelDisposed;
     }
 
-    void OnPanelDisposed(object sender, EventArgs e)
+    private void OnPanelDisposed(object sender, EventArgs e)
     {
         Disconnect();
     }
@@ -50,7 +50,7 @@ public partial class NetworkChatPanel : UserControl
         comboBoxCodecs.SelectedIndex = 0;
     }
 
-    class CodecComboItem
+    private class CodecComboItem
     {
         public string Text { get; set; }
         public INetworkChatCodec Codec { get; set; }

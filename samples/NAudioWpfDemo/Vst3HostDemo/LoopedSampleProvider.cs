@@ -9,7 +9,7 @@ namespace NAudioWpfDemo.Vst3HostDemo;
 /// drum hit) from "machine-gunning" when looped — it fires once per period with silence in
 /// between, which also lets an effect's tail (reverb / delay) ring out between hits.
 /// </summary>
-class LoopedSampleProvider : ISampleProvider
+internal class LoopedSampleProvider : ISampleProvider
 {
     private readonly float[] sample;
     private readonly int loopLengthSamples;

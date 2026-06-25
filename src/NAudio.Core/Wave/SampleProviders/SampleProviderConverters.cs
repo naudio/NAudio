@@ -5,7 +5,7 @@ namespace NAudio.Wave.SampleProviders;
 /// <summary>
 /// Utility class for converting to SampleProvider
 /// </summary>
-static class SampleProviderConverters
+internal static class SampleProviderConverters
 {
     /// <summary>
     /// Helper function to go from IWaveProvider to a SampleProvider

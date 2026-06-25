@@ -1,11 +1,10 @@
 ﻿using NAudio.CoreAudioApi;
-using NAudio.Wave;
 using NAudioConsoleTest.Shared.Testing;
 using Spectre.Console;
 
 namespace NAudioConsoleTest.Wasapi.Tests;
 
-sealed class WasapiExclusiveChannelMaskDeepDiveTest : IConsoleTest
+internal sealed class WasapiExclusiveChannelMaskDeepDiveTest : IConsoleTest
 {
     public string Id => "Wasapi.ExclusiveChannelMaskDeepDive";
     public string Description => "Show every (rate × bits × mask) probe result for a fixed channel count";

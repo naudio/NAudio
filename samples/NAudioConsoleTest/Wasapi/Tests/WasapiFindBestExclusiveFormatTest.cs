@@ -1,11 +1,10 @@
-﻿using NAudio.CoreAudioApi;
-using NAudio.Wave;
+﻿using NAudio.Wave;
 using NAudioConsoleTest.Shared.Testing;
 using Spectre.Console;
 
 namespace NAudioConsoleTest.Wasapi.Tests;
 
-sealed class WasapiFindBestExclusiveFormatTest : IConsoleTest
+internal sealed class WasapiFindBestExclusiveFormatTest : IConsoleTest
 {
     public string Id => "Wasapi.FindBestExclusiveFormat";
     public string Description => "Ask GetSupportedExclusiveFormat for the best match to a preferred format";

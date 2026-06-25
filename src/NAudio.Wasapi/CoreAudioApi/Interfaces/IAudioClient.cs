@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
-using NAudio.Wave;
 
 namespace NAudio.CoreAudioApi.Interfaces;
 

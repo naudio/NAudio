@@ -14,7 +14,7 @@ namespace NAudioConsoleTest.Vst3.Tests;
 /// VSTi with sample-accurate event timing, no realtime/audio-hardware involved. The plug-in is resolved
 /// by case-insensitive substring match against installed modules and must expose an instrument class.
 /// </summary>
-sealed class Vst3RenderMidiFileTest : IConsoleTest
+internal sealed class Vst3RenderMidiFileTest : IConsoleTest
 {
     public string Id => "Vst3.RenderMidiFile";
     public string Description => "Render a MIDI file through a VST 3 instrument (VSTi) to WAV";

@@ -157,7 +157,7 @@ internal sealed class SamplerVoice
     private const float DeclickThreshold = 0.001f; // ~-60 dBFS: below this a hard stop is inaudible
     private bool declicking;
     private float declickGain;
-    private float declickStep;
+    private readonly float declickStep;
     private float declickL;
     private float declickR;
 
@@ -851,7 +851,7 @@ internal sealed class SamplerVoice
         // value would otherwise reach float infinity, making alpha = 0 and a
         // filter that rings forever); 0 cB maps to the flat Butterworth
         // response (Q ~0.707) — see SynthMath.ResonanceCentibelsToQ
-        double resonanceCb = Math.Clamp((double)gen[GeneratorEnum.InitialFilterQ], 0.0, 960.0);
+        double resonanceCb = Math.Clamp(gen[GeneratorEnum.InitialFilterQ], 0.0, 960.0);
         filterQ = (float)SynthMath.ResonanceCentibelsToQ(resonanceCb);
 
         // effective cutoff includes the modulators evaluated at note-on — most

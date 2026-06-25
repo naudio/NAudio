@@ -11,7 +11,7 @@
 /// redirected output. CLI/non-interactive tests should fall back to a summary table after the
 /// measurement loop finishes.
 /// </remarks>
-sealed class LiveMeterRenderer : IDisposable
+internal sealed class LiveMeterRenderer : IDisposable
 {
     private const int BarWidth = 16;
 

@@ -12,7 +12,7 @@ namespace NAudioWpfDemo.Vst3Shared;
 /// One picker entry: a specific class inside a discovered VST 3 module. Use
 /// <see cref="Class"/>.<c>IsEffect</c> / <c>IsInstrument</c> / <c>Kind</c> to filter.
 /// </summary>
-sealed class Vst3InstalledPlugin
+internal sealed class Vst3InstalledPlugin
 {
     public Vst3InstalledPlugin(Vst3ModuleInfo module, Vst3ClassInfo classInfo)
     {
@@ -46,7 +46,7 @@ sealed class Vst3InstalledPlugin
 /// dropped at load time, so an uninstall plus restart leaves a tidy list without
 /// requiring an explicit rescan; a new install does still need one.
 /// </remarks>
-static class Vst3InstalledPlugins
+internal static class Vst3InstalledPlugins
 {
     private const int CacheVersion = 1;
 

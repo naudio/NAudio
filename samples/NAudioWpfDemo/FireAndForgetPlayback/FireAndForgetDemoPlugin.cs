@@ -1,6 +1,6 @@
 ﻿namespace NAudioWpfDemo.FireAndForgetPlayback;
 
-class FireAndForgetPlaybackDemoPlugin : IModule
+internal class FireAndForgetPlaybackDemoPlugin : IModule
 {
     private FireAndForgetPlaybackView view;
     private FireAndForgetPlaybackViewModel viewModel;

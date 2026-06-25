@@ -9,7 +9,7 @@ namespace NAudioWpfDemo.RealtimeEffectsDemo;
 /// One effect in the chain: its generic parameters plus the Bypass/Mix that every
 /// <see cref="AudioEffect"/> provides, with reorder/remove commands.
 /// </summary>
-class EffectSlotViewModel : ViewModelBase
+internal class EffectSlotViewModel : ViewModelBase
 {
     private readonly AudioEffect effect;
 

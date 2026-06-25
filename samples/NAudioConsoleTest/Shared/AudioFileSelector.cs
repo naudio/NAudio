@@ -2,7 +2,7 @@
 
 namespace NAudioConsoleTest.Shared;
 
-static class AudioFileSelector
+internal static class AudioFileSelector
 {
     private static string? lastPath;
 

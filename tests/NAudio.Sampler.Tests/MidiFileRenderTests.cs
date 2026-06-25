@@ -2,7 +2,6 @@
 using System.IO;
 using NAudio.Dsp;
 using NAudio.Midi;
-using NAudio.Sampler;
 using NAudio.Sequencing;
 using NUnit.Framework;
 

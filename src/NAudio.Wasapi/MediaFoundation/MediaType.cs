@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
-using NAudio.Utils;
-using NAudio.CoreAudioApi;
 using NAudio.Wave;
 
 namespace NAudio.MediaFoundation;

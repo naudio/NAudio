@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace NAudio.CoreAudioApi.Interfaces;
+﻿namespace NAudio.CoreAudioApi.Interfaces;
 
 /// <summary>
 /// Audio Client WASAPI Error Codes (HResult)

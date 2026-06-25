@@ -1,10 +1,9 @@
-﻿using NAudio.CoreAudioApi.Interfaces;
-using System;
+﻿using System;
 using System.Runtime.InteropServices;
 
 namespace NAudio.CoreAudioApi;
 
-static partial class NativeMethods
+internal static partial class NativeMethods
 {
     public const int CLSCTX_INPROC_SERVER = 0x1;
 

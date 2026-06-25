@@ -1,16 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Windows.Forms;
 
 namespace MarkHeath.MidiUtils;
 
-static class Program
+internal static class Program
 {
     /// <summary>
     /// The main entry point for the application.
     /// </summary>
     [STAThread]
-    static void Main()
+    private static void Main()
     {
         Application.EnableVisualStyles();
         Application.SetHighDpiMode(HighDpiMode.SystemAware);

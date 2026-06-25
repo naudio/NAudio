@@ -48,8 +48,7 @@ public class AcmMp3FrameDecompressor : IMp3FrameDecompressor
         int converted = conversionStream.Convert(frame.FrameLength, out int sourceBytesConverted);
         if (sourceBytesConverted != frame.FrameLength)
         {
-            throw new InvalidOperationException(String.Format("Couldn't convert the whole MP3 frame (converted {0}/{1})",
-                sourceBytesConverted, frame.FrameLength));
+            throw new InvalidOperationException($"Couldn't convert the whole MP3 frame (converted {sourceBytesConverted}/{frame.FrameLength})");
         }
         conversionStream.DestBuffer.AsSpan(0, converted).CopyTo(dest);
         return converted;

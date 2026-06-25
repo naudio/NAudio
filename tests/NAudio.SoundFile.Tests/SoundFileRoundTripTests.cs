@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using NAudio.SoundFile;
 using NAudio.Wave;
 using NUnit.Framework;
 

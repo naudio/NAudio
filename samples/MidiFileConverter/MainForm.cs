@@ -1,26 +1,21 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
 using System.IO;
 using System.Threading;
-using System.Xml;
 using System.Configuration;
 using MarkHeath.MidiUtils.Properties;
-using NAudio.Utils;
 
 namespace MarkHeath.MidiUtils;
 
 public partial class MainForm : Form
 {
-    bool workQueued;
-    NamingRules namingRules;
-    MidiConverter midiConverter;
+    private bool workQueued;
+    private NamingRules namingRules;
+    private MidiConverter midiConverter;
 
-    Properties.Settings settings;
+    private readonly Properties.Settings settings;
 
     public MainForm()
     {
@@ -193,7 +188,7 @@ public partial class MainForm : Form
         }
     }
 
-    void midiConverter_Progress(object sender, ProgressEventArgs e)
+    private void midiConverter_Progress(object sender, ProgressEventArgs e)
     {
         var color = Color.Black;
         if (e.MessageType == ProgressMessageType.Warning)
@@ -212,9 +207,9 @@ public partial class MainForm : Form
         progressLog1.LogMessage(color, e.Message);
     }
 
-    delegate void FinishedDelegate();
+    private delegate void FinishedDelegate();
 
-    void ShowFinishedMessage()
+    private void ShowFinishedMessage()
     {
         this.Cursor = Cursors.Default;
         saveLogToolStripMenuItem.Enabled = true;

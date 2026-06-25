@@ -3,7 +3,7 @@ using NAudio.Wave;
 
 namespace NAudioDemo.NetworkChatDemo;
 
-class NetworkAudioSender : IDisposable
+internal class NetworkAudioSender : IDisposable
 {
     private readonly INetworkChatCodec codec;
     private readonly IAudioSender audioSender;
@@ -21,7 +21,7 @@ class NetworkAudioSender : IDisposable
         waveIn.StartRecording();
     }
 
-    void OnAudioCaptured(object sender, WaveInEventArgs e)
+    private void OnAudioCaptured(object sender, WaveInEventArgs e)
     {
         byte[] encoded = codec.Encode(e.Buffer, 0, e.BytesRecorded);
         audioSender.Send(encoded);

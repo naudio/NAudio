@@ -35,9 +35,9 @@ public class SmbPitchShiftingSampleProvider : ISampleProvider
     private float[] rightChannelBuffer;
 
     //Limiter constants
-    const float LIM_THRESH = 0.95f;
-    const float LIM_RANGE = (1f - LIM_THRESH);
-    const float M_PI_2 = (float)(Math.PI / 2);
+    private const float LIM_THRESH = 0.95f;
+    private const float LIM_RANGE = (1f - LIM_THRESH);
+    private const float M_PI_2 = (float)(Math.PI / 2);
 
     /// <summary>
     /// Creates a new SMB Pitch Shifting Sample Provider with default settings

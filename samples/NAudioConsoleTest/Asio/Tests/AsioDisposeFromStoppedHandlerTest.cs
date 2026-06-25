@@ -9,7 +9,7 @@ namespace NAudioConsoleTest.Asio.Tests;
 /// Plays a 1s silent stream, then <c>Dispose()</c>s the device from inside the
 /// <c>Stopped</c> handler. Phase 0 F1 bug: would self-deadlock or crash. Must complete cleanly.
 /// </summary>
-sealed class AsioDisposeFromStoppedHandlerTest : IConsoleTest
+internal sealed class AsioDisposeFromStoppedHandlerTest : IConsoleTest
 {
     public string Id => "Asio.DisposeFromStoppedHandler";
     public string Description => "Regression: Dispose() from inside the Stopped handler must complete cleanly";

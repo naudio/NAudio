@@ -20,7 +20,7 @@ public class SampleAggregator : ISampleProvider
     /// Notification count, number of samples between MaximumCalculated events
     /// </summary>
     public int NotificationCount { get; set; }
-    int count;
+    private int count;
 
     /// <summary>
     /// Raised to indicate that a block of samples has had an FFT performed on it
@@ -64,7 +64,7 @@ public class SampleAggregator : ISampleProvider
         this.source = source;
     }
 
-    static bool IsPowerOfTwo(int x)
+    private static bool IsPowerOfTwo(int x)
     {
         return (x & (x - 1)) == 0;
     }

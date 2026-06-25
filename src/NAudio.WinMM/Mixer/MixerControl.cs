@@ -2,7 +2,6 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
-using NAudio.Utils;
 
 namespace NAudio.Mixer;
 

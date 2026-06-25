@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using NAudio.Wave;
 using System.Diagnostics;
 
@@ -12,10 +10,10 @@ namespace NAudio.Dmo;
 public class DmoMp3FrameDecompressor : IMp3FrameDecompressor
 {
     private WindowsMediaMp3Decoder mp3Decoder;
-    private WaveFormat pcmFormat;
+    private readonly WaveFormat pcmFormat;
     private MediaBuffer inputMediaBuffer;
     private DmoOutputDataBuffer outputBuffer;
-    private DmoOutputDataBuffer[] outputBufferArray;
+    private readonly DmoOutputDataBuffer[] outputBufferArray;
     private bool reposition;
 
     /// <summary>
@@ -33,7 +31,7 @@ public class DmoMp3FrameDecompressor : IMp3FrameDecompressor
         pcmFormat = new WaveFormat(sourceFormat.SampleRate, sourceFormat.Channels); // 16 bit
         if (!mp3Decoder.MediaObject.SupportsOutputWaveFormat(0, pcmFormat))
         {
-            throw new ArgumentException(String.Format("Unsupported output format {0}", pcmFormat));
+            throw new ArgumentException($"Unsupported output format {pcmFormat}");
         }
         mp3Decoder.MediaObject.SetOutputWaveFormat(0, pcmFormat);
 

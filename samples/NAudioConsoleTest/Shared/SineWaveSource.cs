@@ -7,7 +7,7 @@ namespace NAudioConsoleTest.Shared;
 /// Generates a sine wave. Implements ISampleProvider (primary) and IWaveProvider
 /// for direct use with WASAPI playback.
 /// </summary>
-class SineWaveSource : ISampleProvider, IWaveProvider
+internal class SineWaveSource : ISampleProvider, IWaveProvider
 {
     private readonly float frequency;
     private readonly float amplitude;

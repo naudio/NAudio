@@ -56,7 +56,7 @@ public class WaveIn : IWaveIn
     {
         WaveInCapabilities caps = new WaveInCapabilities();
         int structSize = Marshal.SizeOf(caps);
-        MmException.Try(WaveInterop.waveInGetDevCaps((IntPtr)devNumber, out caps, structSize), "waveInGetDevCaps");
+        MmException.Try(WaveInterop.waveInGetDevCaps(devNumber, out caps, structSize), "waveInGetDevCaps");
         return caps;
     }
 
@@ -93,7 +93,7 @@ public class WaveIn : IWaveIn
     private void OpenWaveInDevice()
     {
         CloseWaveInDevice();
-        MmResult result = WaveInterop.waveInOpenWindow(out waveInHandle, (IntPtr)DeviceNumber, WaveFormat,
+        MmResult result = WaveInterop.waveInOpenWindow(out waveInHandle, DeviceNumber, WaveFormat,
             callbackEvent.SafeWaitHandle.DangerousGetHandle(),
             IntPtr.Zero, WaveInterop.WaveInOutOpenFlags.CallbackEvent);
         MmException.Try(result, "waveInOpen");
@@ -216,7 +216,7 @@ public class WaveIn : IWaveIn
         MmException.Try(WaveInterop.waveInGetPosition(waveInHandle, out mmTime, Marshal.SizeOf(mmTime)), "waveInGetPosition");
 
         if (mmTime.wType != MmTime.TIME_BYTES)
-            throw new InvalidOperationException(string.Format("waveInGetPosition: wType -> Expected {0}, Received {1}", MmTime.TIME_BYTES, mmTime.wType));
+            throw new InvalidOperationException($"waveInGetPosition: wType -> Expected {MmTime.TIME_BYTES}, Received {mmTime.wType}");
 
         return mmTime.cb;
     }
@@ -272,7 +272,7 @@ public class WaveIn : IWaveIn
         }
         else
         {
-            mixerLine = new MixerLine((IntPtr)DeviceNumber, 0, MixerFlags.WaveIn);
+            mixerLine = new MixerLine(DeviceNumber, 0, MixerFlags.WaveIn);
         }
         return mixerLine;
     }

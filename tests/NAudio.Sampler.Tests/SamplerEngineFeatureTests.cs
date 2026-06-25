@@ -1,6 +1,5 @@
 ﻿using System;
 using NAudio.Midi;
-using NAudio.Sampler;
 using NAudio.Sfz;
 using NUnit.Framework;
 

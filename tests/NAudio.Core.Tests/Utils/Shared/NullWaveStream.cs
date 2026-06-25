@@ -3,7 +3,7 @@ using NAudio.Wave;
 
 namespace NAudio.Tests.Shared;
 
-class NullWaveStream : WaveStream
+internal class NullWaveStream : WaveStream
 {
     private readonly long length;
     private long position;

@@ -9,7 +9,7 @@ namespace NAudio.Core.Tests.SoundFont;
 /// Helper class for building binary SF2 test data.
 /// Constructs valid RIFF/sfbk structures that can be loaded by NAudio.SoundFont.SoundFont.
 /// </summary>
-static class SoundFontTestHelper
+internal static class SoundFontTestHelper
 {
     #region Low-level helpers
 

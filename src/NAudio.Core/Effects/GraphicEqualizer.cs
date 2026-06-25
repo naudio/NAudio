@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace NAudio.Effects;
+﻿namespace NAudio.Effects;
 
 /// <summary>
 /// Standard graphic-equaliser band layouts.

@@ -5,7 +5,7 @@ using NAudio.Wave;
 
 namespace NAudioWpfDemo.AudioPlaybackDemo;
 
-class AudioPlayback : IDisposable
+internal class AudioPlayback : IDisposable
 {
     private IWavePlayer playbackDevice;
     private WaveStream fileStream;

@@ -1,4 +1,4 @@
-namespace NAudio.Utils
+﻿namespace NAudio.Utils
 {
     partial class AboutForm
     {
@@ -75,7 +75,7 @@ namespace NAudio.Utils
             this.labelCopyright.Name = "labelCopyright";
             this.labelCopyright.Size = new System.Drawing.Size(149, 13);
             this.labelCopyright.TabIndex = 2;
-            this.labelCopyright.Text = "Copyright � Mark Heath 2016";
+            this.labelCopyright.Text = "Copyright © Mark Heath 2016";
             // 
             // linkLabelFeedback
             // 

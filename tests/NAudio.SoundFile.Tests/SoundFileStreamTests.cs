@@ -1,7 +1,5 @@
 ﻿using System;
 using System.IO;
-using NAudio.SoundFile;
-using NAudio.Wave;
 using NUnit.Framework;
 
 namespace NAudio.SoundFile.Tests;
@@ -51,7 +49,7 @@ public class SoundFileStreamTests : SoundFileTestBase
         var buf = new float[reader.WaveFormat.Channels * 2048];
         long total = 0;
         int n;
-        while ((n = ((ISampleProvider)reader).Read(buf)) > 0)
+        while ((n = reader.Read(buf)) > 0)
         {
             total += n;
         }
@@ -70,7 +68,7 @@ public class SoundFileStreamTests : SoundFileTestBase
 
         using (var reader = new SoundFileReader(ms))
         {
-            _ = ((ISampleProvider)reader).Read(new float[256]);
+            _ = reader.Read(new float[256]);
         }
 
         // If the reader had disposed the stream this would throw.

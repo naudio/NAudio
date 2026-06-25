@@ -34,7 +34,7 @@ public partial class AudioPlaybackPanel : UserControl
         comboBoxOutputDevice.SelectedIndex = 0;
     }
 
-    void OnComboBoxOutputDeviceSelectedIndexChanged(object sender, EventArgs e)
+    private void OnComboBoxOutputDeviceSelectedIndexChanged(object sender, EventArgs e)
     {
         panelOutputDeviceSettings.Controls.Clear();
         Control settingsPanel;
@@ -148,14 +148,14 @@ public partial class AudioPlaybackPanel : UserControl
         return postVolumeMeter;
     }
 
-    void OnPreVolumeMeter(object sender, StreamVolumeEventArgs e)
+    private void OnPreVolumeMeter(object sender, StreamVolumeEventArgs e)
     {
         // we know it is stereo
         waveformPainter1.AddMax(e.MaxSampleValues[0]);
         waveformPainter2.AddMax(e.MaxSampleValues[1]);
     }
 
-    void OnPostVolumeMeter(object sender, StreamVolumeEventArgs e)
+    private void OnPostVolumeMeter(object sender, StreamVolumeEventArgs e)
     {
         // we know it is stereo
         volumeMeter1.Amplitude = e.MaxSampleValues[0];
@@ -170,7 +170,7 @@ public partial class AudioPlaybackPanel : UserControl
         wavePlayer.PlaybackStopped += OnPlaybackStopped;
     }
 
-    void OnPlaybackStopped(object sender, StoppedEventArgs e)
+    private void OnPlaybackStopped(object sender, StoppedEventArgs e)
     {
         groupBoxDriverModel.Enabled = true;
         if (e.Exception != null)

@@ -14,7 +14,7 @@ public class DmoResampler : IDisposable
     // IID_IMediaObject — mediaobj.h
     private static readonly Guid IID_IMediaObject = new("d8ad0f58-5494-4102-97c5-ec798e59bcf4");
 
-    MediaObject mediaObject;
+    private MediaObject mediaObject;
 
     /// <summary>
     /// Creates a new Resampler based on the DMO Resampler.

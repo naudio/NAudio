@@ -1,10 +1,9 @@
-﻿using NAudio.Wave;
-using NAudioConsoleTest.Shared.Testing;
+﻿using NAudioConsoleTest.Shared.Testing;
 using Spectre.Console;
 
 namespace NAudioConsoleTest.Asio.Tests;
 
-sealed class AsioShowCapabilitiesTest : IConsoleTest
+internal sealed class AsioShowCapabilitiesTest : IConsoleTest
 {
     public string Id => "Asio.ShowCapabilities";
     public string Description => "Print an ASIO driver's channel counts, latencies, supported rates, and clock sources";

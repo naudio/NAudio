@@ -201,7 +201,7 @@ using (var dsoundOut = new DirectSoundOut(40))
 Console.WriteLine("  DirectSound playback under PublishAot: OK");
 
 [GeneratedComClass]
-partial class SmokeNotificationClient : IMMNotificationClient
+internal partial class SmokeNotificationClient : IMMNotificationClient
 {
     public void OnDeviceStateChanged(string deviceId, DeviceState newState) =>
         Console.WriteLine($"    [IMMNotificationClient] OnDeviceStateChanged {newState} {deviceId}");

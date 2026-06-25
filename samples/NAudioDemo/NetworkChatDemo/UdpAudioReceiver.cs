@@ -5,7 +5,7 @@ using System.Threading;
 
 namespace NAudioDemo.NetworkChatDemo;
 
-class UdpAudioReceiver : IAudioReceiver
+internal class UdpAudioReceiver : IAudioReceiver
 {
     private Action<byte[]> handler;
     private readonly UdpClient udpListener;

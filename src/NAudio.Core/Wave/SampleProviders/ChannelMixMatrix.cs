@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace NAudio.Wave.SampleProviders;
+﻿namespace NAudio.Wave.SampleProviders;
 
 /// <summary>
 /// Defines common channel mixing matrices for use with <see cref="ChannelMixerSampleProvider"/>.

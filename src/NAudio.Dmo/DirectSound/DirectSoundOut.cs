@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
-using System.Security;
 using System.Threading;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -27,8 +26,8 @@ public partial class DirectSoundOut : IWavePlayer
     private int samplesTotalSize;
     private int samplesFrameSize;
     private int nextSamplesWriteIndex;
-    private int desiredLatency;
-    private Guid device;
+    private readonly int desiredLatency;
+    private readonly Guid device;
     private byte[] samples;
     private IWaveProvider waveStream = null;
     private IDirectSound directSound = null;
@@ -38,11 +37,11 @@ public partial class DirectSoundOut : IWavePlayer
     private EventWaitHandle frameEventWaitHandle2;
     private EventWaitHandle endEventWaitHandle;
     private Thread notifyThread;
-    private SynchronizationContext syncContext;
+    private readonly SynchronizationContext syncContext;
     private long bytesPlayed;
 
     // Used purely for locking
-    private Object m_LockObject = new();
+    private readonly Object m_LockObject = new();
 
     /// <summary>
     /// Gets the DirectSound output devices in the system

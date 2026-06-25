@@ -10,7 +10,7 @@ namespace NAudioConsoleTest.Wasapi.Tests;
 /// captured audio back through the render endpoint. End-to-end smoke test for
 /// <see cref="WasapiRecorder"/> + <see cref="WasapiPlayer"/>.
 /// </summary>
-sealed class WasapiRecordAndPlaybackTest : IConsoleTest
+internal sealed class WasapiRecordAndPlaybackTest : IConsoleTest
 {
     public string Id => "Wasapi.RecordAndPlayback";
     public string Description => "Record from capture endpoint to memory, then play back through render endpoint";

@@ -8,7 +8,7 @@ using NAudioWpfDemo.ViewModel;
 
 namespace NAudioWpfDemo.RealtimeEffectsDemo;
 
-class RealtimeEffectsViewModel : ViewModelBase, IDisposable
+internal class RealtimeEffectsViewModel : ViewModelBase, IDisposable
 {
     private readonly RealtimeAudioEngine engine = new();
     private readonly DispatcherTimer timer;

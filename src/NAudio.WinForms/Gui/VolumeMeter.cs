@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
 
 namespace NAudio.Gui;
@@ -13,7 +10,7 @@ namespace NAudio.Gui;
 /// </summary>
 public partial class VolumeMeter : Control
 {
-    Brush foregroundBrush;
+    private Brush foregroundBrush;
 
     /// <summary>
     /// Basic volume meter
@@ -108,7 +105,7 @@ public partial class VolumeMeter : Control
         StringFormat format = new StringFormat();
         format.LineAlignment = StringAlignment.Center;
         format.Alignment = StringAlignment.Center;
-        string dbValue = String.Format("{0:F2} dB", db);
+        string dbValue = $"{db:F2} dB";
         if(Double.IsNegativeInfinity(db))
         {
             dbValue = "-\x221e db"; // -8 dB

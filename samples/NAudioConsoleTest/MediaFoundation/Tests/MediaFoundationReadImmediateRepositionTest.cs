@@ -13,7 +13,7 @@ namespace NAudioConsoleTest.MediaFoundation.Tests;
 /// <c>repositionTo</c> field instead of the <c>desiredPosition</c> parameter, so seeks
 /// silently went to position 0).
 /// </summary>
-sealed class MediaFoundationReadImmediateRepositionTest : IConsoleTest
+internal sealed class MediaFoundationReadImmediateRepositionTest : IConsoleTest
 {
     public string Id => "MediaFoundation.ReadImmediateReposition";
     public string Description => "Read with RepositionInRead=false — seek-to-midpoint regression check";

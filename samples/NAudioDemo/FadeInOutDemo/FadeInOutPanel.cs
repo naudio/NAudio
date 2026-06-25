@@ -1,10 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Drawing;
-using System.Data;
-using System.Linq;
-using System.Text;
 using System.Windows.Forms;
 using NAudio.Wave;
 using System.Diagnostics;
@@ -33,7 +27,7 @@ public partial class FadeInOutPanel : UserControl
         return string.Format("{0:D2}:{1:D2}", (int)ts.TotalMinutes, ts.Seconds);
     }
 
-    void timer1_Tick(object sender, EventArgs e)
+    private void timer1_Tick(object sender, EventArgs e)
     {
         if (file != null)
         {
@@ -42,7 +36,7 @@ public partial class FadeInOutPanel : UserControl
         }
     }
 
-    void SimplePlaybackPanel_Disposed(object sender, EventArgs e)
+    private void SimplePlaybackPanel_Disposed(object sender, EventArgs e)
     {
         CleanUp();
     }
@@ -93,7 +87,7 @@ public partial class FadeInOutPanel : UserControl
         buttonBeginFadeOut.Enabled = playing;
     }
 
-    void wavePlayer_PlaybackStopped(object sender, StoppedEventArgs e)
+    private void wavePlayer_PlaybackStopped(object sender, StoppedEventArgs e)
     {
         // we want to be always on the GUI thread and be able to change GUI components
         Debug.Assert(!this.InvokeRequired, "PlaybackStopped on wrong thread");

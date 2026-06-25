@@ -10,7 +10,7 @@ namespace NAudioConsoleTest.Asio.Tests;
 /// <c>SystemTimeNanoseconds</c> advance correctly. The audio-vs-host-clock drift check would
 /// be astronomical if byte order were wrong — that's the killer test for the timing path.
 /// </summary>
-sealed class AsioValidateSamplePositionTest : IConsoleTest
+internal sealed class AsioValidateSamplePositionTest : IConsoleTest
 {
     public string Id => "Asio.ValidateSamplePosition";
     public string Description => "Validate ASIO SamplePosition + SystemTimeNanoseconds monotonicity and audio↔host drift";

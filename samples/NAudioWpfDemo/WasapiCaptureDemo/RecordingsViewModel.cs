@@ -8,7 +8,7 @@ using NAudioWpfDemo.ViewModel;
 
 namespace NAudioWpfDemo.WasapiCaptureDemo;
 
-class RecordingsViewModel : ViewModelBase
+internal class RecordingsViewModel : ViewModelBase
 {
     public string OutputFolder { get; }
     private string selectedRecording;

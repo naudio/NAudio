@@ -3,9 +3,9 @@ using NAudio.Wave;
 
 namespace NAudio.Core.Tests.WaveStreams;
 
-class TestWaveProvider : IWaveProvider
+internal class TestWaveProvider : IWaveProvider
 {
-    private int length;
+    private readonly int length;
     public int ConstValue { get; set; }
 
     public TestWaveProvider(WaveFormat format, int lengthInBytes = Int32.MaxValue)

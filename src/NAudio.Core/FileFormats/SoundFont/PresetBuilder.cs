@@ -4,7 +4,7 @@ using System.Text;
 
 namespace NAudio.SoundFont;
 
-class PresetBuilder : StructureBuilder<Preset>
+internal class PresetBuilder : StructureBuilder<Preset>
 {
     private Preset lastPreset = null;
 

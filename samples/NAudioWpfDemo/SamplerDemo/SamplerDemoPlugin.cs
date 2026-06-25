@@ -2,7 +2,7 @@
 
 namespace NAudioWpfDemo.SamplerDemo;
 
-class SamplerDemoPlugin : ModuleBase
+internal class SamplerDemoPlugin : ModuleBase
 {
     public override string Name => "SoundFont / MIDI Player";
 

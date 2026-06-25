@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Windows.Forms;
 using NAudio.Wave;
 using System.Diagnostics;
@@ -27,7 +26,7 @@ public partial class SimplePlaybackPanel : UserControl
         return string.Format("{0:D2}:{1:D2}", (int)ts.TotalMinutes, ts.Seconds);
     }
 
-    void OnTimerTick(object sender, EventArgs e)
+    private void OnTimerTick(object sender, EventArgs e)
     {
         if (audioFileReader != null)
         {
@@ -36,7 +35,7 @@ public partial class SimplePlaybackPanel : UserControl
         }
     }
 
-    void SimplePlaybackPanel_Disposed(object sender, EventArgs e)
+    private void SimplePlaybackPanel_Disposed(object sender, EventArgs e)
     {
         CleanUp();
     }
@@ -94,7 +93,7 @@ public partial class SimplePlaybackPanel : UserControl
         buttonOpen.Enabled = !playing;
     }
 
-    void OnPlaybackStopped(object sender, StoppedEventArgs e)
+    private void OnPlaybackStopped(object sender, StoppedEventArgs e)
     {
         // we want to be always on the GUI thread and be able to change GUI components
         Debug.Assert(!InvokeRequired, "PlaybackStopped on wrong thread");

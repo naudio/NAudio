@@ -10,10 +10,10 @@ namespace NAudio.Dmo;
 public struct DmoOutputDataBuffer : IDisposable
 {
     [MarshalAs(UnmanagedType.Interface)]
-    IMediaBuffer pBuffer;
-    DmoOutputDataBufferFlags dwStatus;
-    long rtTimestamp;
-    long referenceTimeDuration;
+    private IMediaBuffer pBuffer;
+    private DmoOutputDataBufferFlags dwStatus;
+    private long rtTimestamp;
+    private long referenceTimeDuration;
 
     /// <summary>
     /// Creates a new DMO Output Data Buffer structure

@@ -2,11 +2,10 @@
 using NAudio.Wave.SampleProviders;
 using NAudioConsoleTest.Shared;
 using NAudioConsoleTest.Shared.Testing;
-using Spectre.Console;
 
 namespace NAudioConsoleTest.Asio.Tests;
 
-sealed class AsioPlayShortTestToneTest : IConsoleTest
+internal sealed class AsioPlayShortTestToneTest : IConsoleTest
 {
     public string Id => "Asio.PlayShortTestTone";
     public string Description => "Play a low-amplitude sine tone through selected ASIO output channels";

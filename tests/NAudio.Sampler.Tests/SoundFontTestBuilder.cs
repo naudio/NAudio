@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
@@ -206,14 +205,14 @@ internal static class SoundFontTestBuilder
     {
         // zone 0: keyRange 42-42, exclusiveClass 1, loop, sampleID 0
         var zone0 = Concat(
-            Gen(43, (ushort)((42 << 8) | 42)), // KeyRange
+            Gen(43, (42 << 8) | 42), // KeyRange
             Gen(57, 1),                         // ExclusiveClass
             Gen(54, 1),                         // loop
             Gen(58, 60),
             Gen(53, 0));
         // zone 1: keyRange 46-46, exclusiveClass 1, loop, sampleID 0
         var zone1 = Concat(
-            Gen(43, (ushort)((46 << 8) | 46)),
+            Gen(43, (46 << 8) | 46),
             Gen(57, 1),
             Gen(54, 1),
             Gen(58, 60),
@@ -253,13 +252,13 @@ internal static class SoundFontTestBuilder
     {
         // each zone: KeyRange 40-50 (lo byte, hi byte), exclusiveClass 1, loop
         var zone0 = Concat(
-            Gen(43, (ushort)(40 | (50 << 8))), // KeyRange
+            Gen(43, 40 | (50 << 8)), // KeyRange
             Gen(57, 1),                         // ExclusiveClass
             Gen(54, 1),                         // loop
             Gen(58, 60),                        // root key
             Gen(53, 0));                        // sampleID
         var zone1 = Concat(
-            Gen(43, (ushort)(40 | (50 << 8))),
+            Gen(43, 40 | (50 << 8)),
             Gen(57, 1),
             Gen(54, 1),
             Gen(58, 60),

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave;
@@ -11,16 +10,16 @@ namespace NAudio.Wave;
 [StructLayout(LayoutKind.Sequential, Pack = 2)]
 public class AdpcmWaveFormat : WaveFormat
 {
-    short samplesPerBlock;
-    short numCoeff;
+    private readonly short samplesPerBlock;
+    private readonly short numCoeff;
     // 7 pairs of coefficients
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 14)]
-    short[] coefficients;
+    private readonly short[] coefficients;
 
     /// <summary>
     /// Empty constructor needed for marshalling from a pointer
     /// </summary>
-    AdpcmWaveFormat() : this(8000, 1)
+    private AdpcmWaveFormat() : this(8000, 1)
     {
     }
 
@@ -100,7 +99,6 @@ public class AdpcmWaveFormat : WaveFormat
     /// </summary>
     public override string ToString()
     {
-        return String.Format("Microsoft ADPCM {0} Hz {1} channels {2} bits per sample {3} samples per block",
-            this.SampleRate, this.channels, this.bitsPerSample, this.samplesPerBlock);
+        return $"Microsoft ADPCM {this.SampleRate} Hz {this.channels} channels {this.bitsPerSample} bits per sample {this.samplesPerBlock} samples per block";
     }
 }

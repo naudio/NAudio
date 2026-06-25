@@ -10,7 +10,7 @@ namespace NAudio.CoreAudioApi;
 /// </summary>
 public class AudioCaptureClient : IDisposable
 {
-    IAudioCaptureClient audioCaptureClientInterface;
+    private IAudioCaptureClient audioCaptureClientInterface;
 
     internal AudioCaptureClient(IntPtr nativePointer)
     {

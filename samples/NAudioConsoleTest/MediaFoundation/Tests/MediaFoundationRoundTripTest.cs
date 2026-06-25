@@ -13,7 +13,7 @@ namespace NAudioConsoleTest.MediaFoundation.Tests;
 /// on the IStream CCW) and the read leg
 /// (<c>CreateByteStream</c> + <c>CreateSourceReaderFromByteStream</c>).
 /// </summary>
-sealed class MediaFoundationRoundTripTest : IConsoleTest
+internal sealed class MediaFoundationRoundTripTest : IConsoleTest
 {
     public string Id => "MediaFoundation.RoundTripMemoryStream";
     public string Description => "Round-trip encode/decode through MemoryStream (MP3 + AAC + WMA)";

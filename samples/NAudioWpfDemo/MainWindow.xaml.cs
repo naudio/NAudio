@@ -1,11 +1,9 @@
-﻿using System;
-using System.Windows;
+﻿using System.Windows;
 
 namespace NAudioWpfDemo;
 
 using System;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
 /// <summary>

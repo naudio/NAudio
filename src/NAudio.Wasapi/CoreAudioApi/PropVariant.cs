@@ -22,9 +22,9 @@
 // adapted for use in NAudio
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.InteropServices;
-using NAudio.Utils;
 
 namespace NAudio.CoreAudioApi.Interfaces;
 
@@ -199,14 +199,14 @@ public struct PropVariant
     /// <summary>
     /// Interprets a blob as an array of structs
     /// </summary>
-    public T[] GetBlobAsArrayOf<T>()
+    public T[] GetBlobAsArrayOf<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>()
     {
         var blobByteLength = blobVal.Length;
         var singleInstance = (T)Activator.CreateInstance(typeof(T));
         var structSize = Marshal.SizeOf(singleInstance);
         if (blobByteLength % structSize != 0)
         {
-            throw new InvalidDataException(String.Format("Blob size {0} not a multiple of struct size {1}", blobByteLength, structSize));
+            throw new InvalidDataException($"Blob size {blobByteLength} not a multiple of struct size {structSize}");
         }
         var items = blobByteLength / structSize;
         var array = new T[items];

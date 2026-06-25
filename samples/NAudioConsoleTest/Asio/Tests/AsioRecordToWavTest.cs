@@ -4,7 +4,7 @@ using Spectre.Console;
 
 namespace NAudioConsoleTest.Asio.Tests;
 
-sealed class AsioRecordToWavTest : IConsoleTest
+internal sealed class AsioRecordToWavTest : IConsoleTest
 {
     public string Id => "Asio.RecordToWav";
     public string Description => "Record from ASIO input channels into a WAV file";

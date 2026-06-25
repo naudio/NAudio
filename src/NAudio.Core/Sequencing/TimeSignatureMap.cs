@@ -74,9 +74,9 @@ public sealed class TimeSignatureMap
         var ticksPerBar = seg.Signature.TicksPerBar;
         var ticksPerBeat = seg.Signature.TicksPerBeat;
         var barsIn = (int)(rel / ticksPerBar);
-        var tickInBar = rel - (long)barsIn * ticksPerBar;
+        var tickInBar = rel - barsIn * ticksPerBar;
         var beatIn = (int)(tickInBar / ticksPerBeat);
-        var tickInBeat = (int)(tickInBar - (long)beatIn * ticksPerBeat);
+        var tickInBeat = (int)(tickInBar - beatIn * ticksPerBeat);
         return new BarBeatTick(seg.StartBar + barsIn, beatIn + 1, tickInBeat);
     }
 
@@ -99,8 +99,8 @@ public sealed class TimeSignatureMap
                 throw new ArgumentOutOfRangeException(nameof(position),
                     $"TickInBeat {position.TickInBeat} is out of range for the {seg.Signature.Numerator}/{seg.Signature.Denominator} signature.");
             return seg.StartTick
-                   + (long)barOffset * seg.Signature.TicksPerBar
-                   + (long)(position.Beat - 1) * seg.Signature.TicksPerBeat
+                   + barOffset * seg.Signature.TicksPerBar
+                   + (position.Beat - 1) * seg.Signature.TicksPerBeat
                    + position.TickInBeat;
         }
         throw new ArgumentOutOfRangeException(nameof(position), "Position falls before the start of the map.");

@@ -2,7 +2,7 @@
 
 namespace NAudioWpfDemo.RealtimeEffectsDemo;
 
-class RealtimeEffectsDemoPlugin : IModule
+internal class RealtimeEffectsDemoPlugin : IModule
 {
     private RealtimeEffectsView view;
     private RealtimeEffectsViewModel viewModel;

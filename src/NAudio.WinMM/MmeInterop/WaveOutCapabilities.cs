@@ -13,42 +13,42 @@ public struct WaveOutCapabilities
     /// <summary>
     /// wMid
     /// </summary>
-    private short manufacturerId;
+    private readonly short manufacturerId;
     /// <summary>
     /// wPid
     /// </summary>
-    private short productId;
+    private readonly short productId;
     /// <summary>
     /// vDriverVersion
     /// </summary>
-    private int driverVersion;
+    private readonly int driverVersion;
     /// <summary>
     /// Product Name (szPname)
     /// </summary>
     [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MaxProductNameLength)]
-    private string productName;
+    private readonly string productName;
     /// <summary>
     /// Supported formats (bit flags) dwFormats 
     /// </summary>
-    private SupportedWaveFormat supportedFormats;
+    private readonly SupportedWaveFormat supportedFormats;
     /// <summary>
     /// Supported channels (1 for mono 2 for stereo) (wChannels)
     /// Seems to be set to -1 on a lot of devices
     /// </summary>
-    private short channels;
+    private readonly short channels;
     /// <summary>
     /// wReserved1
     /// </summary>
-    private short reserved;
+    private readonly short reserved;
     /// <summary>
     /// Optional functionality supported by the device
     /// </summary>
-    private WaveOutSupport support; // = new WaveOutSupport();
+    private readonly WaveOutSupport support; // = new WaveOutSupport();
 
     // extra WAVEOUTCAPS2 members
-    private Guid manufacturerGuid;
-    private Guid productGuid;
-    private Guid nameGuid;
+    private readonly Guid manufacturerGuid;
+    private readonly Guid productGuid;
+    private readonly Guid nameGuid;
 
     private const int MaxProductNameLength = 32;
 

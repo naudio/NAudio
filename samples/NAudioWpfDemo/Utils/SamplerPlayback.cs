@@ -12,7 +12,7 @@ namespace NAudioWpfDemo.Utils;
 /// Playback-thread errors are surfaced to <paramref name="onError"/> on the UI
 /// thread, so a backend failure shows a message instead of vanishing silently.
 /// </summary>
-static class SamplerPlayback
+internal static class SamplerPlayback
 {
     public static IWavePlayer Create(ISampleProvider source, Action<Exception> onError)
     {

@@ -133,7 +133,7 @@ public class MixingWaveProvider32 : IWaveProvider
     /// <summary>
     /// Actually performs the mixing
     /// </summary>
-    static void Sum32BitAudio(Span<byte> destBuffer, byte[] sourceBuffer, int bytesRead)
+    private static void Sum32BitAudio(Span<byte> destBuffer, byte[] sourceBuffer, int bytesRead)
     {
         var destFloats = MemoryMarshal.Cast<byte, float>(destBuffer);
         var sourceFloats = MemoryMarshal.Cast<byte, float>(sourceBuffer.AsSpan(0, bytesRead));

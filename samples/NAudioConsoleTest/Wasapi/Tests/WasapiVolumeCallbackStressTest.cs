@@ -20,7 +20,7 @@ namespace NAudioConsoleTest.Wasapi.Tests;
 /// (and matches the device read-back) rather than collapsing to a single repeated value.
 /// </para>
 /// </summary>
-sealed class WasapiVolumeCallbackStressTest : IConsoleTest
+internal sealed class WasapiVolumeCallbackStressTest : IConsoleTest
 {
     public string Id => "Wasapi.VolumeCallbackStress";
     public string Description => "Stress IAudioEndpointVolumeCallback dispatch and verify per-channel volumes (#351)";
@@ -207,7 +207,7 @@ sealed class WasapiVolumeCallbackStressTest : IConsoleTest
 
     // True when every element is within tolerance of the first — i.e. the array carries no
     // meaningful per-channel variation.
-    static bool AllApproximatelyEqual(float[] values, float tolerance = 0.01f)
+    private static bool AllApproximatelyEqual(float[] values, float tolerance = 0.01f)
     {
         for (var i = 1; i < values.Length; i++)
             if (Math.Abs(values[i] - values[0]) > tolerance)

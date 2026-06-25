@@ -3,7 +3,7 @@ using System.Windows.Forms;
 
 namespace NAudioDemo.AudioPlaybackDemo;
 
-class WaveOutWindowPlugin : IOutputDevicePlugin
+internal class WaveOutWindowPlugin : IOutputDevicePlugin
 {
     private WaveOutSettingsPanel waveOutSettingsPanel;
 

@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using NAudio.Dsp;
 using NAudio.Midi;
-using NAudio.Sampler;
 using NAudio.Wave;
 using NUnit.Framework;
 

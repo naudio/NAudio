@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace NAudio.Dmo.Effect;
@@ -16,7 +15,7 @@ internal struct DsFxWavesReverb
  System.Security.SuppressUnmanagedCodeSecurity,
  Guid("46858c3a-0dc6-45e3-b760-d4eef16cb325"),
  InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-interface IDirectSoundFXWavesReverb
+internal interface IDirectSoundFXWavesReverb
 {
     [PreserveSig]
     int SetAllParameters([In] ref DsFxWavesReverb param);

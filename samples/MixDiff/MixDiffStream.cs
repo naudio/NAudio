@@ -1,16 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using NAudio.Wave;
 
 namespace MarkHeath.AudioUtils;
 
 public class MixDiffStream : WaveStream
 {
-    WaveOffsetStream offsetStream;
-    WaveChannel32 channelSteam;
-    bool muted;
-    float volume;
+    private readonly WaveOffsetStream offsetStream;
+    private readonly WaveChannel32 channelSteam;
+    private bool muted;
+    private float volume;
 
     public MixDiffStream(string fileName)
     {

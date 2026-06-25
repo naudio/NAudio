@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Drawing;
-using System.Data;
-using System.Text;
+﻿using System.Drawing;
 using System.Windows.Forms;
 
 namespace NAudio.Utils;
@@ -36,7 +31,7 @@ public partial class ProgressLog : UserControl
 
 
 
-    delegate void LogMessageDelegate(Color color, string message);
+    private delegate void LogMessageDelegate(Color color, string message);
 
     /// <summary>
     /// Log a message
@@ -56,7 +51,7 @@ public partial class ProgressLog : UserControl
         }
     }
 
-    delegate void ClearLogDelegate();
+    private delegate void ClearLogDelegate();
 
     /// <summary>
     /// Clear the log

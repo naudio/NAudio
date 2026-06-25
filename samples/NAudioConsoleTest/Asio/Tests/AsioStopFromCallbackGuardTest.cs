@@ -1,6 +1,5 @@
 ﻿using NAudio.Wave;
 using NAudioConsoleTest.Shared.Testing;
-using Spectre.Console;
 
 namespace NAudioConsoleTest.Asio.Tests;
 
@@ -9,7 +8,7 @@ namespace NAudioConsoleTest.Asio.Tests;
 /// The new <see cref="AsioDevice"/> must throw <see cref="InvalidOperationException"/> loudly
 /// from inside the audio callback instead.
 /// </summary>
-sealed class AsioStopFromCallbackGuardTest : IConsoleTest
+internal sealed class AsioStopFromCallbackGuardTest : IConsoleTest
 {
     public string Id => "Asio.StopFromCallbackGuard";
     public string Description => "Regression: Stop() inside AudioCaptured must throw InvalidOperationException, not deadlock";

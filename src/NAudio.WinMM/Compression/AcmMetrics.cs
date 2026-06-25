@@ -1,6 +1,6 @@
 ﻿namespace NAudio.Wave;
 
-enum AcmMetrics
+internal enum AcmMetrics
 {
     /// <summary>ACM_METRIC_COUNT_DRIVERS</summary>
     CountDrivers = 1,

@@ -2,7 +2,7 @@
 
 namespace NAudioWpfDemo.EnumMediaFoundationTransforms;
 
-class EnumMftModule : ModuleBase
+internal class EnumMftModule : ModuleBase
 {
     protected override UserControl CreateViewAndViewModel()
     {

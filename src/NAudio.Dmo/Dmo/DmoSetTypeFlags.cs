@@ -3,7 +3,7 @@
 namespace NAudio.Dmo;
 
 [Flags]
-enum DmoSetTypeFlags
+internal enum DmoSetTypeFlags
 {
     None,
     DMO_SET_TYPEF_TEST_ONLY = 0x00000001,

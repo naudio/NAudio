@@ -11,7 +11,7 @@ namespace NAudioDemo.Mp3StreamingDemo;
 
 public partial class Mp3StreamingPanel : UserControl
 {
-    enum StreamingPlaybackState
+    private enum StreamingPlaybackState
     {
         Stopped,
         Playing,
@@ -26,7 +26,7 @@ public partial class Mp3StreamingPanel : UserControl
         Disposed += MP3StreamingPanel_Disposing;
     }
 
-    void OnVolumeSliderChanged(object sender, EventArgs e)
+    private void OnVolumeSliderChanged(object sender, EventArgs e)
     {
         if (volumeProvider != null)
         {
@@ -41,7 +41,7 @@ public partial class Mp3StreamingPanel : UserControl
     private static HttpClient httpClient;
     private VolumeWaveProvider16 volumeProvider;
 
-    delegate void ShowErrorDelegate(string message);
+    private delegate void ShowErrorDelegate(string message);
 
     private void ShowError(string message)
     {

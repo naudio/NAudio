@@ -12,7 +12,7 @@ namespace NAudioConsoleTest.Vst3.Tests;
 /// renders is compared; a working parameter set produces audibly different output (large dB
 /// delta), a no-op or broken set produces near-identical RMS.
 /// </summary>
-sealed class Vst3ParamSweepTest : IConsoleTest
+internal sealed class Vst3ParamSweepTest : IConsoleTest
 {
     public string Id => "Vst3.ParamSweep";
     public string Description => "Render a WAV through a VST 3 effect at two parameter values and compare";

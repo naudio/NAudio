@@ -3,7 +3,7 @@ using System.Windows.Controls;
 
 namespace NAudioWpfDemo;
 
-abstract class ModuleBase : IModule
+internal abstract class ModuleBase : IModule
 {
     private UserControl view;
 

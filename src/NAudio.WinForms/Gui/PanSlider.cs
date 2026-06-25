@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections;
-using System.ComponentModel;
 using System.Drawing;
-using System.Data;
 using System.Windows.Forms;
 
 namespace NAudio.Gui;
@@ -15,7 +12,7 @@ public class PanSlider : System.Windows.Forms.UserControl
     /// <summary>
     /// Required designer variable.
     /// </summary>
-    private System.ComponentModel.Container components = null;
+    private readonly System.ComponentModel.Container components = null;
     private float pan;
 
     /// <summary>
@@ -79,12 +76,12 @@ public class PanSlider : System.Windows.Forms.UserControl
         else if (pan > 0)
         {
             pe.Graphics.FillRectangle(Brushes.Orange, (this.Width / 2), 1, (int)((this.Width / 2) * pan), this.Height - 2);
-            panValue = String.Format("{0:F0}%R", pan * 100);
+            panValue = $"{pan * 100:F0}%R";
         }
         else
         {
             pe.Graphics.FillRectangle(Brushes.Orange, (int)((this.Width / 2) * (pan + 1)), 1, (int)((this.Width / 2) * (0 - pan)), this.Height - 2);
-            panValue = String.Format("{0:F0}%L", pan * -100);
+            panValue = $"{pan * -100:F0}%L";
         }
         pe.Graphics.DrawRectangle(Pens.Black, 0, 0, this.Width - 1, this.Height - 1);
 
@@ -139,8 +136,7 @@ public class PanSlider : System.Windows.Forms.UserControl
             if (value != pan)
             {
                 pan = value;
-                if (PanChanged != null)
-                    PanChanged(this, EventArgs.Empty);
+                PanChanged?.Invoke(this, EventArgs.Empty);
                 Invalidate();
             }
 

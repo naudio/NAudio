@@ -90,7 +90,7 @@ public class WasapiPlayerGuiThread : IWavePlayer
         PlaybackStopped?.Invoke(this, new StoppedEventArgs(e));
     }
 
-    static MMDevice GetDefaultAudioEndpoint()
+    private static MMDevice GetDefaultAudioEndpoint()
     {
         var enumerator = new MMDeviceEnumerator();
         return enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Console);

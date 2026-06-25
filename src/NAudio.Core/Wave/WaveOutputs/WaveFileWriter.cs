@@ -50,7 +50,7 @@ public class WaveFileWriter : Stream
     private readonly string filename;
     private readonly bool enableRf64;
     private readonly long rf64PromotionThreshold;
-    private long junkChunkPos = -1;
+    private readonly long junkChunkPos = -1;
     private bool headerFinalized;
     private bool isDisposed;
     private readonly List<BufferedChunk> beforeDataChunks = new();
@@ -146,7 +146,7 @@ public class WaveFileWriter : Stream
         writer = new BinaryWriter(outStream, System.Text.Encoding.UTF8);
 
         writer.Write(System.Text.Encoding.UTF8.GetBytes("RIFF"));
-        writer.Write((int)0); // placeholder
+        writer.Write(0); // placeholder
         writer.Write(System.Text.Encoding.UTF8.GetBytes("WAVE"));
 
         if (this.enableRf64)
@@ -156,7 +156,7 @@ public class WaveFileWriter : Stream
             // the RF64 promotion threshold, this slot is overwritten with a real ds64 chunk.
             junkChunkPos = outStream.Position;
             writer.Write(System.Text.Encoding.UTF8.GetBytes("JUNK"));
-            writer.Write((int)28);
+            writer.Write(28);
             writer.Write(new byte[28]);
         }
 
@@ -258,14 +258,14 @@ public class WaveFileWriter : Stream
         if (HasFactChunk())
         {
             writer.Write(System.Text.Encoding.UTF8.GetBytes("fact"));
-            writer.Write((int)4);
+            writer.Write(4);
             factSampleCountPos = outStream.Position;
-            writer.Write((int)0);
+            writer.Write(0);
         }
 
         writer.Write(System.Text.Encoding.UTF8.GetBytes("data"));
         dataSizePos = outStream.Position;
-        writer.Write((int)0);
+        writer.Write(0);
         headerFinalized = true;
     }
 
@@ -359,7 +359,7 @@ public class WaveFileWriter : Stream
     {
         ThrowIfDisposed();
         EnsureHeaderFinalized();
-        if (!enableRf64 && (long)dataChunkSize + count > UInt32.MaxValue)
+        if (!enableRf64 && dataChunkSize + count > UInt32.MaxValue)
             throw new ArgumentException("WAV file too large - enable RF64 for files larger than 4 GB", nameof(count));
         outStream.Write(data, offset, count);
         dataChunkSize += count;
@@ -373,7 +373,7 @@ public class WaveFileWriter : Stream
     {
         ThrowIfDisposed();
         EnsureHeaderFinalized();
-        if (!enableRf64 && (long)dataChunkSize + data.Length > UInt32.MaxValue)
+        if (!enableRf64 && dataChunkSize + data.Length > UInt32.MaxValue)
             throw new ArgumentException("WAV file too large - enable RF64 for files larger than 4 GB");
         outStream.Write(data);
         dataChunkSize += data.Length;
@@ -470,7 +470,7 @@ public class WaveFileWriter : Stream
         {
             for (int sample = 0; sample < count; sample++)
             {
-                var value = BitConverter.GetBytes(UInt16.MaxValue * (Int32)samples[sample + offset]);
+                var value = BitConverter.GetBytes(UInt16.MaxValue * samples[sample + offset]);
                 value24[0] = value[1];
                 value24[1] = value[2];
                 value24[2] = value[3];
@@ -483,7 +483,7 @@ public class WaveFileWriter : Stream
         {
             for (int sample = 0; sample < count; sample++)
             {
-                writer.Write(UInt16.MaxValue * (Int32)samples[sample + offset]);
+                writer.Write(UInt16.MaxValue * samples[sample + offset]);
             }
             dataChunkSize += (count * 4);
         }
@@ -492,7 +492,7 @@ public class WaveFileWriter : Stream
         {
             for (int sample = 0; sample < count; sample++)
             {
-                writer.Write((float)samples[sample + offset] / (float)(Int16.MaxValue + 1));
+                writer.Write(samples[sample + offset] / (float)(Int16.MaxValue + 1));
             }
             dataChunkSize += (count * 4);
         }
@@ -610,12 +610,12 @@ public class WaveFileWriter : Stream
         // overwrite JUNK placeholder with ds64 chunk
         outStream.Position = junkChunkPos;
         writer.Write(System.Text.Encoding.UTF8.GetBytes("ds64"));
-        writer.Write((int)28);
-        writer.Write((long)(totalLength - 8));  // RIFF size (64-bit)
-        writer.Write((long)dataChunkSize);      // data chunk size (64-bit)
+        writer.Write(28);
+        writer.Write(totalLength - 8);  // RIFF size (64-bit)
+        writer.Write(dataChunkSize);      // data chunk size (64-bit)
         long sampleCount = format.BlockAlign > 0 ? dataChunkSize / format.BlockAlign : 0;
         writer.Write(sampleCount);              // sample count (64-bit)
-        writer.Write((int)0);                   // table length
+        writer.Write(0);                   // table length
 
         // data chunk size field stays 0xFFFFFFFF per RF64 convention
         outStream.Position = dataSizePos;

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.InteropServices;
-using NAudio.Utils;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 

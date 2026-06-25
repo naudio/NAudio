@@ -4,22 +4,21 @@ using System.Text;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using NAudio.Utils;
 using NAudio.Midi;
 
 namespace MarkHeath.MidiUtils;
 
-class MidiConverter
+internal class MidiConverter
 {
     public event EventHandler<ProgressEventArgs> Progress;
-    int filesConverted;
-    int filesCopied;
-    int directoriesCreated;
-    int errors;
-    DateTime startTime;
-    Properties.Settings settings;
-    Regex ezdFileName;
-    NamingRules namingRules;
+    private int filesConverted;
+    private int filesCopied;
+    private int directoriesCreated;
+    private int errors;
+    private DateTime startTime;
+    private readonly Properties.Settings settings;
+    private readonly Regex ezdFileName;
+    private readonly NamingRules namingRules;
 
     public MidiConverter(NamingRules namingRules)
     {
@@ -468,10 +467,7 @@ class MidiConverter
 
     protected void OnProgress(object sender, ProgressEventArgs args)
     {
-        if (Progress != null)
-        {
-            Progress(sender, args);
-        }
+        Progress?.Invoke(sender, args);
     }
 
     public string Summary

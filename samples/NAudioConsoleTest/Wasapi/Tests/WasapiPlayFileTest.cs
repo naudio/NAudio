@@ -1,5 +1,4 @@
-﻿using NAudio.CoreAudioApi;
-using NAudio.Wave;
+﻿using NAudio.Wave;
 using NAudioConsoleTest.Shared.Testing;
 using Spectre.Console;
 
@@ -10,7 +9,7 @@ namespace NAudioConsoleTest.Wasapi.Tests;
 /// shared, exclusive, and low-latency (shared + IAudioClient3) — the three previously
 /// separate menu entries collapse to one parameterised test.
 /// </summary>
-sealed class WasapiPlayFileTest : IConsoleTest
+internal sealed class WasapiPlayFileTest : IConsoleTest
 {
     public string Id => "Wasapi.PlayFile";
     public string Description => "Play an audio file via WasapiPlayer (shared / exclusive / low-latency)";

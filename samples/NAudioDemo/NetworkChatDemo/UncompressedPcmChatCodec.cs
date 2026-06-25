@@ -3,7 +3,7 @@ using NAudio.Wave;
 
 namespace NAudioDemo.NetworkChatDemo;
 
-class UncompressedPcmChatCodec : INetworkChatCodec
+internal class UncompressedPcmChatCodec : INetworkChatCodec
 {
     public UncompressedPcmChatCodec()
     {

@@ -9,7 +9,7 @@ namespace NAudioConsoleTest.Vst3.Tests;
 /// to verify the factory bindings succeed. In interactive mode renders a Spectre table; in CLI
 /// mode prints one flat line per module so the output is greppable in batch logs.
 /// </summary>
-sealed class Vst3ListPluginsTest : IConsoleTest
+internal sealed class Vst3ListPluginsTest : IConsoleTest
 {
     public string Id => "Vst3.ListPlugins";
     public string Description => "Enumerate installed VST 3 plug-ins and load each to verify factory bindings";

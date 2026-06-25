@@ -29,7 +29,7 @@ namespace NAudioWpfDemo.Vst3MidiFileDemo;
 /// reads to keep its <c>ProcessContext</c> in step) are wired in during live playback, and the plug-in's
 /// native editor can be popped out.
 /// </summary>
-class Vst3MidiFileDemoViewModel : ViewModelBase, IDisposable
+internal class Vst3MidiFileDemoViewModel : ViewModelBase, IDisposable
 {
     private const int SampleRate = 44100;
     private const int MaxBlockSize = 1024;

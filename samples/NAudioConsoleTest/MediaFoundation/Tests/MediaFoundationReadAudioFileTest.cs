@@ -9,7 +9,7 @@ namespace NAudioConsoleTest.MediaFoundation.Tests;
 /// Reads an audio file end-to-end via <see cref="MediaFoundationReader"/>, then seeks to the
 /// midpoint and reads more to verify repositioning works.
 /// </summary>
-sealed class MediaFoundationReadAudioFileTest : IConsoleTest
+internal sealed class MediaFoundationReadAudioFileTest : IConsoleTest
 {
     public string Id => "MediaFoundation.ReadAudioFile";
     public string Description => "Read an audio file via MediaFoundationReader (full decode + midpoint seek)";

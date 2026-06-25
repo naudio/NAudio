@@ -11,7 +11,7 @@ namespace NAudioConsoleTest.Vst3.Tests;
 /// program-change parameter (if any) is tied to the right list. The plug-in is resolved by
 /// case-insensitive substring match against installed modules.
 /// </summary>
-sealed class Vst3ListProgramsTest : IConsoleTest
+internal sealed class Vst3ListProgramsTest : IConsoleTest
 {
     public string Id => "Vst3.ListPrograms";
     public string Description => "List a VST 3 plug-in's units and program lists (factory presets)";

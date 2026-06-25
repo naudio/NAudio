@@ -3,7 +3,7 @@
 namespace NAudio.Wave.Compression;
 
 [Flags]
-enum AcmFormatSuggestFlags
+internal enum AcmFormatSuggestFlags
 {
     /// <summary>
     /// ACM_FORMATSUGGESTF_WFORMATTAG

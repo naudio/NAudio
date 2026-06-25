@@ -10,7 +10,7 @@ public class FileAssociations
 {
 
     [System.Runtime.InteropServices.DllImport("shell32.dll")]
-    static extern void SHChangeNotify(HChangeNotifyEventID wEventId,
+    private static extern void SHChangeNotify(HChangeNotifyEventID wEventId,
                                        HChangeNotifyFlags uFlags,
                                        IntPtr dwItem1,
                                        IntPtr dwItem2);
@@ -139,7 +139,7 @@ public class FileAssociations
 /// <i>dwItem2</i> is not used and should be <see langword="null"/>.</para>
 /// </remarks>
 [Flags]
-enum HChangeNotifyEventID
+internal enum HChangeNotifyEventID
 {
     /// <summary>
     /// All events have occurred.

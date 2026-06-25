@@ -1,5 +1,4 @@
 ﻿using System;
-using NAudio.Sampler;
 using NUnit.Framework;
 
 namespace NAudio.Sampler.Tests;

@@ -8,9 +8,9 @@ namespace NAudioDemo.VolumeMixerDemo;
 
 public partial class VolumeMixerPanel : UserControl
 {
-    VolumePanel DeviceVolumePanel;
-    List<VolumePanel> AppVolumePanels = new();
-    AudioSessionManager subscribedSessionManager;
+    private VolumePanel DeviceVolumePanel;
+    private List<VolumePanel> AppVolumePanels = new();
+    private AudioSessionManager subscribedSessionManager;
 
     public VolumeMixerPanel()
     {
@@ -30,23 +30,23 @@ public partial class VolumeMixerPanel : UserControl
         flowLayoutPanelDevice.Controls.Add(DeviceVolumePanel);
     }
 
-    void DeviceVolumePanel_VolumeChanged(object sender, VolumeEventArgs e)
+    private void DeviceVolumePanel_VolumeChanged(object sender, VolumeEventArgs e)
     {
         foreach (var appVolumePanel in AppVolumePanels)
             appVolumePanel.UpdateVolume();
     }
 
-    void DeviceVolumePanel_MuteChanged(object sender, MuteEventArgs e)
+    private void DeviceVolumePanel_MuteChanged(object sender, MuteEventArgs e)
     {
         foreach (var appVolumePanel in AppVolumePanels)
             appVolumePanel.UpdateMuted();
     }
 
-    void DeviceVolumePanel_DeviceChanged(object sender, object e)
+    private void DeviceVolumePanel_DeviceChanged(object sender, object e)
     {
         UnsubscribeFromSessionManager();
         flowLayoutPanelApps.Controls.Clear();
-        var device = (MMDevice)DeviceVolumePanel.Device;
+        var device = DeviceVolumePanel.Device;
         DeviceVolumePanel.UpdateVolume();
 
         var sessionManager = device.AudioSessionManager;
@@ -77,7 +77,7 @@ public partial class VolumeMixerPanel : UserControl
         }
     }
 
-    void OnSessionCreated(object sender, AudioSessionControl newSession)
+    private void OnSessionCreated(object sender, AudioSessionControl newSession)
     {
         string display;
         try { display = newSession.IsSystemSoundsSession ? "System Sounds" : $"PID {newSession.GetProcessID}"; }
@@ -95,7 +95,7 @@ public partial class VolumeMixerPanel : UserControl
         }
     }
 
-    void UnsubscribeFromSessionManager()
+    private void UnsubscribeFromSessionManager()
     {
         if (subscribedSessionManager != null)
         {
@@ -104,7 +104,7 @@ public partial class VolumeMixerPanel : UserControl
         }
     }
 
-    bool ProcessExists(uint processId)
+    private bool ProcessExists(uint processId)
     {
         try
         {
@@ -117,7 +117,7 @@ public partial class VolumeMixerPanel : UserControl
         }
     }
 
-    void AddVolumePanel(AudioSessionControl session)
+    private void AddVolumePanel(AudioSessionControl session)
     {
         var panel = new VolumePanel(DeviceVolumePanel.Device, session);
         AppVolumePanels.Add(panel);

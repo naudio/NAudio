@@ -8,7 +8,7 @@ namespace NAudioConsoleTest.WinMM.Tests;
 /// Records from a <see cref="WaveIn"/> device into a WAV file. Records for <c>duration</c>
 /// or until cancelled — whichever comes first.
 /// </summary>
-sealed class WinMmRecordToFileTest : IConsoleTest
+internal sealed class WinMmRecordToFileTest : IConsoleTest
 {
     public string Id => "WinMm.RecordToFile";
     public string Description => "Record audio via WaveIn for a fixed duration";

@@ -3,7 +3,7 @@
 namespace NAudio.Dmo;
 
 [Flags]
-enum OutputStreamInfoFlags
+internal enum OutputStreamInfoFlags
 {
     DMO_OUTPUT_STREAMF_WHOLE_SAMPLES = 0x00000001,
     DMO_OUTPUT_STREAMF_SINGLE_SAMPLE_PER_BUFFER = 0x00000002,

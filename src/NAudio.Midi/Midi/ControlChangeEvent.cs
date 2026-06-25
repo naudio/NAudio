@@ -72,7 +72,7 @@ public class ControlChangeEvent : MidiEvent
     {
         base.Export(ref absoluteTime, writer);
         writer.Write((byte)controller);
-        writer.Write((byte)controllerValue);
+        writer.Write(controllerValue);
     }
 
     /// <summary>

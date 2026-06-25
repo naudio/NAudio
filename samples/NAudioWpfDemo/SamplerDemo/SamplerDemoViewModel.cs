@@ -23,7 +23,7 @@ namespace NAudioWpfDemo.SamplerDemo;
 /// draggable position bar (seeking via the <see cref="Transport"/>) are wired in
 /// during live playback.
 /// </summary>
-class SamplerDemoViewModel : ViewModelBase, IDisposable
+internal class SamplerDemoViewModel : ViewModelBase, IDisposable
 {
     private const int SampleRate = 44100;
 

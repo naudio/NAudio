@@ -5,10 +5,10 @@ namespace NAudio.Dmo;
 /// <summary>
 /// DMO_PARTIAL_MEDIATYPE
 /// </summary>
-struct DmoPartialMediaType
+internal struct DmoPartialMediaType
 {
-    Guid type;
-    Guid subtype;
+    private Guid type;
+    private Guid subtype;
 
     public Guid Type
     {

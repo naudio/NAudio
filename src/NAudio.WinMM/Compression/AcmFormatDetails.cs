@@ -8,7 +8,7 @@ namespace NAudio.Wave.Compression;
 /// http://msdn.microsoft.com/en-us/library/dd742913%28VS.85%29.aspx
 /// </summary>
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 4)]
-struct AcmFormatDetails
+internal struct AcmFormatDetails
 {
     /// <summary>
     /// DWORD cbStruct; 

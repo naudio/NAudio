@@ -1,7 +1,5 @@
 ﻿using System;
-using System.IO;
 using NAudio.Midi;
-using NAudio.Sampler;
 using NUnit.Framework;
 
 namespace NAudio.Sampler.Tests;

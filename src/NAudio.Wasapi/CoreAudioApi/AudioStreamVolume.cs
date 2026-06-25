@@ -11,7 +11,7 @@ namespace NAudio.CoreAudioApi;
 /// </summary>
 public class AudioStreamVolume : IDisposable
 {
-    IAudioStreamVolume audioStreamVolumeInterface;
+    private IAudioStreamVolume audioStreamVolumeInterface;
 
     internal AudioStreamVolume(IntPtr nativePointer)
     {

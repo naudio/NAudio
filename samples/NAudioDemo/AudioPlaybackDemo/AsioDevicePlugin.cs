@@ -7,7 +7,7 @@ namespace NAudioDemo.AudioPlaybackDemo;
 /// Plugin exposing the new NAudio 3 <see cref="AsioDevice"/> API through the demo's <see cref="IOutputDevicePlugin"/>
 /// contract. Listed alongside the legacy <c>AsioOut</c> plugin so users can A/B the two code paths.
 /// </summary>
-class AsioDevicePlugin : IOutputDevicePlugin
+internal class AsioDevicePlugin : IOutputDevicePlugin
 {
     private AsioDeviceSettingsPanel settingsPanel;
 

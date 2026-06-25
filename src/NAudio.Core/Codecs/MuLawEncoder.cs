@@ -43,7 +43,7 @@ public static class MuLawEncoder
         if (sample > cClip)
             sample = cClip;
         sample = (short)(sample + cBias);
-        int exponent = (int)MuLawCompressTable[(sample >> 7) & 0xFF];
+        int exponent = MuLawCompressTable[(sample >> 7) & 0xFF];
         int mantissa = (sample >> (exponent + 3)) & 0x0F;
         int compressedByte = ~(sign | (exponent << 4) | mantissa);
 

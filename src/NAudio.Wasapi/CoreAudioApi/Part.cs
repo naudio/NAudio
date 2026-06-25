@@ -1,7 +1,6 @@
 ﻿using NAudio.CoreAudioApi.Interfaces;
 using System;
 using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.Marshalling;
 
 namespace NAudio.CoreAudioApi;
 
@@ -15,7 +14,7 @@ public class Part
     private DeviceTopology deviceTopology;
     private static Guid IID_IAudioVolumeLevel = new("7FB7B48F-531D-44A2-BCB3-5AD5A134B3DC");
     private static Guid IID_IAudioMute = new("DF45AEEA-B74A-4B6B-AFAD-2366B6AA012E");
-    private static Guid IID_IAudioEndpointVolume = new("5CDF2C82-841E-4546-9722-0CF74078229A");
+    private static readonly Guid IID_IAudioEndpointVolume = new("5CDF2C82-841E-4546-9722-0CF74078229A");
     private static Guid IID_IKsJackDescription = new("4509F757-2D46-4637-8E62-CE7DB944F57B");
 
     internal Part(IPart part)

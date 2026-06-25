@@ -10,7 +10,7 @@ namespace NAudio.CoreAudioApi;
 /// </summary>
 public class AudioRenderClient : IDisposable
 {
-    IAudioRenderClient audioRenderClientInterface;
+    private IAudioRenderClient audioRenderClientInterface;
 
     internal AudioRenderClient(IntPtr nativePointer)
     {

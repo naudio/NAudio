@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading;
 using System.Runtime.InteropServices;
-using NAudio.Utils;
 using NAudio.Wave;
 
 // for consistency this should be in NAudio.Wave namespace, but left as it is for backwards compatibility

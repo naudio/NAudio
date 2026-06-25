@@ -6,7 +6,7 @@ using NAudio.Wave.SampleProviders;
 
 namespace NAudio.Windows.Tests.Utils;
 
-static class TestFileBuilder
+internal static class TestFileBuilder
 {
     public static string CreateMp3File(int durationSeconds, int sampleRate = 44100, int channels = 2)
     {

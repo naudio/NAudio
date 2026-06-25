@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Threading;
 using NAudio.Midi;
-using NAudio.Vst3;
 using NAudioWpfDemo.ViewModel;
 using NAudioWpfDemo.Vst3Shared;
 using Windows.Devices.Enumeration;
@@ -19,7 +18,7 @@ namespace NAudioWpfDemo.Vst3RealtimeInstrumentDemo;
 /// <see cref="Vst3EditorWindow"/>. Master volume and a Panic button (all-notes-off) cover
 /// the live-comfort essentials.
 /// </summary>
-class Vst3RealtimeInstrumentViewModel : ViewModelBase, IDisposable
+internal class Vst3RealtimeInstrumentViewModel : ViewModelBase, IDisposable
 {
     private readonly Vst3RealtimeInstrumentEngine engine = new();
     private readonly DispatcherTimer timer;
@@ -311,7 +310,7 @@ class Vst3RealtimeInstrumentViewModel : ViewModelBase, IDisposable
 }
 
 /// <summary>One WinRT MIDI input device, surfaced to the picker.</summary>
-sealed class MidiInputItem
+internal sealed class MidiInputItem
 {
     public MidiInputItem(string id, string name) { Id = id; Name = name; }
     public string Id { get; }

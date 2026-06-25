@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Runtime.InteropServices;
 
 namespace NAudio.Midi;
@@ -16,24 +14,24 @@ public struct MidiInCapabilities
     /// <summary>
     /// wMid
     /// </summary>
-    UInt16 manufacturerId;
+    private readonly UInt16 manufacturerId;
     /// <summary>
     /// wPid
     /// </summary>
-    UInt16 productId;
+    private readonly UInt16 productId;
     /// <summary>
     /// vDriverVersion
     /// </summary>
-    UInt32 driverVersion;
+    private readonly UInt32 driverVersion;
     /// <summary>
     /// Product Name
     /// </summary>
     [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MaxProductNameLength)]
-    string productName;
+    private readonly string productName;
     /// <summary>
     /// Support - Reserved
     /// </summary>
-    Int32 support;
+    private readonly Int32 support;
 
     private const int MaxProductNameLength = 32;
 

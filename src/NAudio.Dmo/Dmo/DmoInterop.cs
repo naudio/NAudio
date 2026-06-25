@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace NAudio.Dmo;
 
-static class DmoInterop
+internal static class DmoInterop
 {
     [DllImport("msdmo.dll")]
     public static extern int DMOEnum(

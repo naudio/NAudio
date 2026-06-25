@@ -86,7 +86,7 @@ public class WasapiOut : IWavePlayer, IWavePosition
         OutputWaveFormat = audioClient.MixFormat; // allow the user to query the default format for shared mode streams
     }
 
-    static MMDevice GetDefaultAudioEndpoint()
+    private static MMDevice GetDefaultAudioEndpoint()
     {
         if (Environment.OSVersion.Version.Major < 6)
         {
@@ -239,7 +239,7 @@ public class WasapiOut : IWavePlayer, IWavePosition
             int actualFrameCount = read / bytesPerFrame;
             /*if (actualFrameCount != frameCount)
             {
-                Debug.WriteLine(String.Format("WASAPI wanted {0} frames, supplied {1}", frameCount, actualFrameCount ));
+                Debug.WriteLine($"WASAPI wanted {frameCount} frames, supplied {actualFrameCount}");
             }*/
             renderClient.ReleaseBuffer(actualFrameCount, AudioClientBufferFlags.None);
         }

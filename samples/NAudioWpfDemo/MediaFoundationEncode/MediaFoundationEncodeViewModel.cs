@@ -213,7 +213,7 @@ internal class MediaFoundationEncodeViewModel : ViewModelBase
 
 }
 
-enum AacPayloadType
+internal enum AacPayloadType
 {
     /// <summary>
     /// The stream contains raw_data_block elements only.

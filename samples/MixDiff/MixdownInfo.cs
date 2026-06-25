@@ -1,19 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NAudio.Wave;
 using NAudio.Utils;
 
 namespace MarkHeath.AudioUtils;
 
 public class MixdownInfo
 {
-    string fileName;
-    string letter;
-    MixDiffStream stream;
-    int offsetMilliseconds;
-    int delayMilliseconds;
-    int volumeDecibels;
+    private readonly string fileName;
+    private string letter;
+    private readonly MixDiffStream stream;
+    private int offsetMilliseconds;
+    private int delayMilliseconds;
+    private int volumeDecibels;
 
     public MixdownInfo(string fileName)
     {

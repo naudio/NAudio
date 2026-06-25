@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
 using System.Xml;
 using NAudio.Wave;
@@ -15,13 +12,13 @@ public partial class MixDiffForm : Form
 {
     private PlaybackStatus playbackStatus;
     private IWavePlayer wavePlayer;
-    readonly Font BigFont = new("Verdana", 36, FontStyle.Bold);
-    readonly Font EmptyFont = new("Verdana", 16, FontStyle.Bold);
+    private readonly Font BigFont = new("Verdana", 36, FontStyle.Bold);
+    private readonly Font EmptyFont = new("Verdana", 16, FontStyle.Bold);
     private WaveMixerStream32 mixer;
-    private int skipSeconds;
+    private readonly int skipSeconds;
     private Button selectedButton;
     private CompareMode compareMode;
-    private List<Button> fileButtons;
+    private readonly List<Button> fileButtons;
     private bool shuffled;
 
     public MixDiffForm()
@@ -596,7 +593,7 @@ public enum CompareMode
     Restart,
 }
 
-enum PlaybackStatus
+internal enum PlaybackStatus
 {
     Stopped,
     Playing,

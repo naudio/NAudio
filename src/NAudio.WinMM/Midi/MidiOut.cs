@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using NAudio.Wave;
 
 namespace NAudio.Midi;
 
@@ -9,9 +8,9 @@ namespace NAudio.Midi;
 /// </summary>
 public class MidiOut : IMidiOutput
 {
-    private IntPtr hMidiOut = IntPtr.Zero;
+    private readonly IntPtr hMidiOut = IntPtr.Zero;
     private bool disposed = false;
-    MidiInterop.MidiOutCallback callback;
+    private readonly MidiInterop.MidiOutCallback callback;
 
     /// <summary>
     /// Gets the number of MIDI devices available in the system
@@ -31,7 +30,7 @@ public class MidiOut : IMidiOutput
     {
         MidiOutCapabilities caps = new MidiOutCapabilities();
         int structSize = Marshal.SizeOf(caps);
-        MmException.Try(MidiInterop.midiOutGetDevCaps((IntPtr)midiOutDeviceNumber, out caps, structSize), "midiOutGetDevCaps");
+        MmException.Try(MidiInterop.midiOutGetDevCaps(midiOutDeviceNumber, out caps, structSize), "midiOutGetDevCaps");
         return caps;
     }
 
@@ -43,7 +42,7 @@ public class MidiOut : IMidiOutput
     public MidiOut(int deviceNo)
     {
         this.callback = new MidiInterop.MidiOutCallback(Callback);
-        MmException.Try(MidiInterop.midiOutOpen(out hMidiOut, (IntPtr)deviceNo, callback, IntPtr.Zero, MidiInterop.CALLBACK_FUNCTION), "midiOutOpen");
+        MmException.Try(MidiInterop.midiOutOpen(out hMidiOut, deviceNo, callback, IntPtr.Zero, MidiInterop.CALLBACK_FUNCTION), "midiOutOpen");
     }
 
     /// <summary>
@@ -98,7 +97,7 @@ public class MidiOut : IMidiOutput
     /// <param name="param2">Parameter 2</param>
     public void SendDriverMessage(int message, int param1, int param2)
     {
-        MmException.Try(MidiInterop.midiOutMessage(hMidiOut, message, (IntPtr)param1, (IntPtr)param2), "midiOutMessage");
+        MmException.Try(MidiInterop.midiOutMessage(hMidiOut, message, param1, param2), "midiOutMessage");
     }
 
     /// <summary>

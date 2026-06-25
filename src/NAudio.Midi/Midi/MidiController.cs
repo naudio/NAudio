@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace NAudio.Midi;
+﻿namespace NAudio.Midi;
 
 /// <summary>
 /// MidiController enumeration

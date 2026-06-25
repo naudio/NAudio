@@ -1,9 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
 
 namespace NAudio.Utils;
@@ -60,7 +55,7 @@ public partial class AboutForm : Form
 
     /// <summary>
     /// The copyright info
-    /// e.g. Copyright � 2007 Mark Heath
+    /// e.g. Copyright © 2007 Mark Heath
     /// </summary>
     public string Copyright
     {

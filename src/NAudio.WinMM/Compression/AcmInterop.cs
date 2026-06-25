@@ -29,7 +29,7 @@ namespace NAudio.Wave.Compression;
 /// class from inside the user-supplied callback without deadlocking.
 /// </para>
 /// </remarks>
-class AcmInterop
+internal class AcmInterop
 {
     /// <summary>
     /// Process-wide lock guarding every msacm32 P/Invoke. See the class

@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using System;
 using System.IO;
 using NAudio.Wave;
 using System.Diagnostics;
@@ -13,14 +14,14 @@ public class Mp3FileReaderTests
     [Category("IntegrationTest")]
     public void CanLoadAndReadVariousProblemMp3Files()
     {
-        string testDataFolder = @"C:\Users\Mark\Downloads\NAudio";
+        string testDataFolder = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", "NAudio");
         if (!Directory.Exists(testDataFolder))
         {
             Assert.Ignore($"{testDataFolder} not found");
         }
-        foreach (string file in Directory.GetFiles(testDataFolder, "*.mp3"))
+        foreach (string mp3File in Directory.GetFiles(testDataFolder, "*.mp3", SearchOption.AllDirectories))
         {
-            string mp3File = Path.Combine(testDataFolder, file);
             Debug.WriteLine($"Opening {mp3File}");
             using var reader = new Mp3FileReader(mp3File);
             byte[] buffer = new byte[4096];

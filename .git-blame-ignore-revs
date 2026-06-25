@@ -6,8 +6,7 @@
 #
 # Only add commits here that change formatting/style with NO behavioural change.
 
-# Reformat: file-scoped namespaces and whitespace normalization (dotnet format)
-07fc2a073feb69c4201cdd7bcbc3a3e12a54e6e6
-
-# Modernize: target-typed new, using declarations, null propagation (dotnet format)
-b4bc7f4bf0e17e5035270d75f2da00ad33eadef2
+# Code style, part 1/2 (#1344): file-scoped namespaces, whitespace normalization,
+# target-typed new, using declarations, null propagation — all `dotnet format`,
+# squash-merged as a single mechanical commit.
+cb7e79d3bf44251a2d74528dad67b02d2fb5ea9a

@@ -27,7 +27,7 @@ re-targeting to `net9.0` and adjusting any custom `IWaveProvider` /
   together, so if you reference `NAudio` you generally don't need to change your
   package references. If you reference individual packages, you may need to add
   one or two (see the type moves below). See
-  [the assembly layout plan](Architecture/NAudio3AssemblyLayoutPlan.md).
+  [the assembly layout plan](https://github.com/naudio/NAudio/blob/main/Docs/Architecture/NAudio3AssemblyLayoutPlan.md).
 
 ## The `Read` signature change (`Span<T>`)
 
@@ -175,7 +175,7 @@ The old ad-hoc effect types were removed in favour of the new
 
 ## See also
 
-- [Release notes](../RELEASE_NOTES.md) — the full list of what's new in NAudio 3.
+- [Release notes](https://github.com/naudio/NAudio/blob/main/RELEASE_NOTES.md) — the full list of what's new in NAudio 3.
 - [Migrating from `AsioOut` to `AsioDevice`](AsioMigration.md) — the ASIO API is
   redesigned; `AsioOut` is preserved as a facade, so this is optional.
 - [Audio effects](AudioEffects.md), [the sampler](Sampler.md),

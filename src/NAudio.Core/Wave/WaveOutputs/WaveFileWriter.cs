@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using NAudio.Wave.SampleProviders;
 using NAudio.Utils;
-using NAudio.Dmo;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave;
@@ -407,10 +406,10 @@ public class WaveFileWriter : Stream
         else if (WaveFormat.BitsPerSample == 32 && WaveFormat.Encoding == WaveFormatEncoding.Extensible)
         {
             // A 32-bit WAVE_FORMAT_EXTENSIBLE can be either integer PCM or IEEE float,
-            // distinguished by its SubFormat GUID (NAudio's WaveFormatExtensible defaults
-            // 32-bit to IEEE float). Honour the declared subformat rather than assuming PCM.
-            if (WaveFormat is WaveFormatExtensible { SubFormat: var subFormat } &&
-                subFormat == AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT)
+            // distinguished by its SubFormat GUID (NAudio defaults 32-bit extensible to IEEE
+            // float). AsStandardWaveFormat resolves the subformat for both WaveFormatExtensible
+            // and WaveFormatExtraData, so honour it rather than assuming PCM.
+            if (WaveFormat.AsStandardWaveFormat().Encoding == WaveFormatEncoding.IeeeFloat)
             {
                 writer.Write(sample);
             }

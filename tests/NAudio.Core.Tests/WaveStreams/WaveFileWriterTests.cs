@@ -145,6 +145,44 @@ public class WaveFileWriterTests
     }
 
     [Test]
+    public void WriteSampleResolvesSubFormatFromReadBackExtensibleFormat()
+    {
+        // When an extensible format is read back from a stream it materialises as a
+        // WaveFormatExtraData (not a WaveFormatExtensible), so WriteSample must still be able to
+        // resolve the IEEE-float subformat when that format is reused to write a new file.
+        var samples = new[] { 0.0f, 0.5f, -0.5f, 1.0f, -1.0f };
+
+        var firstPass = new MemoryStream();
+        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(firstPass), new WaveFormatExtensible(44100, 32, 1)))
+        {
+            foreach (var sample in samples) writer.WriteSample(sample);
+        }
+
+        firstPass.Position = 0;
+        using var reader = new WaveFileReader(firstPass);
+        var readBackFormat = reader.WaveFormat;
+        Assert.That(readBackFormat, Is.InstanceOf<WaveFormatExtraData>(), "Read-back format type");
+        Assert.That(readBackFormat.AsStandardWaveFormat().Encoding, Is.EqualTo(WaveFormatEncoding.IeeeFloat), "Resolved subformat");
+
+        // Reuse the read-back (WaveFormatExtraData) format to write a fresh file.
+        var secondPass = new MemoryStream();
+        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(secondPass), readBackFormat))
+        {
+            foreach (var sample in samples) writer.WriteSample(sample);
+        }
+
+        secondPass.Position = 0;
+        using var reader2 = new WaveFileReader(secondPass);
+        var buffer = new byte[samples.Length * 4];
+        int read = reader2.Read(buffer, 0, buffer.Length);
+        Assert.That(read, Is.EqualTo(buffer.Length), "Bytes read");
+        for (int n = 0; n < samples.Length; n++)
+        {
+            Assert.That(BitConverter.ToSingle(buffer, n * 4), Is.EqualTo(samples[n]), $"Sample {n} ({samples[n]})");
+        }
+    }
+
+    [Test]
     [Explicit]
     public void CanCreateWaveFileGreaterThan2Gb()
     {

@@ -1,3 +1,7 @@
+- name: Upgrading
+  items:
+    - name: Migrating from NAudio 2 to NAudio 3
+      href: MigratingFromNAudio2.md
 - name: Playback
   items:
     - name: Play an audio file (console)

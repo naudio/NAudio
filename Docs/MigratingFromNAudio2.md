@@ -1,0 +1,183 @@
+# Migrating from NAudio 2 to NAudio 3
+
+NAudio 3 is a major release. The single `NAudio` assembly has been split into
+focused packages, the minimum target framework is now `net9.0`, the core is
+cross-platform and Native-AOT compatible, and several APIs have been modernised.
+This guide walks through the breaking changes and how to update your code.
+
+Most applications that reference the `NAudio` meta-package and use the common
+playback/recording/file APIs will need only small changes — usually just
+re-targeting to `net9.0` and adjusting any custom `IWaveProvider` /
+`ISampleProvider` implementations to the new `Span<T>` `Read` signature.
+
+> Tip: build with warnings visible. Removed members fail to compile, and almost
+> everything that is *deprecated* rather than removed produces an `[Obsolete]`
+> warning that points you at the replacement.
+
+## Target framework and packages
+
+- **Minimum target framework is now `net9.0`.** Legacy .NET Framework and .NET
+  Standard 2.0 are no longer supported. Re-target your project to `net9.0` (or
+  later) before upgrading the package.
+- **`NAudio` is now a set of focused packages.** The shipping libraries are
+  `NAudio.Core`, `NAudio.Midi`, `NAudio.WinMM`, `NAudio.Wasapi`, `NAudio.Asio`,
+  `NAudio.WinForms` and `NAudio.Dmo`, alongside the new `NAudio.Effects` (in
+  `NAudio.Core`), `NAudio.Sampler`, `NAudio.Vst3`, `NAudio.Alsa` and
+  `NAudio.SoundFile`. The `NAudio` meta-package still pulls the Windows stack
+  together, so if you reference `NAudio` you generally don't need to change your
+  package references. If you reference individual packages, you may need to add
+  one or two (see the type moves below). See
+  [the assembly layout plan](Architecture/NAudio3AssemblyLayoutPlan.md).
+
+## The `Read` signature change (`Span<T>`)
+
+This is the change most likely to affect custom code.
+
+- `IWaveProvider.Read(byte[] buffer, int offset, int count)` is now
+  `Read(Span<byte> buffer)`.
+- `ISampleProvider.Read(float[] buffer, int offset, int count)` is now
+  `Read(Span<float> buffer)`.
+
+**Calling** a provider:
+
+```csharp
+// before
+int read = source.Read(buffer, offset, count);
+// after
+int read = source.Read(buffer.AsSpan(offset, count));
+```
+
+**Implementing** a provider — change the override and index from the start of
+the span:
+
+```csharp
+// before
+public int Read(byte[] buffer, int offset, int count) { ... buffer[offset + i] ... }
+// after
+public int Read(Span<byte> buffer) { ... buffer[i] ... }
+```
+
+The same pattern applies to the new `Span<T>` overloads added on
+`BiQuadFilter.Transform`, `ALawDecoder.Decode`, `MuLawDecoder.Decode` and
+`IMp3FrameDecompressor.DecompressFrame` (the last has a default interface method
+so existing third-party decoders such as NLayer keep working).
+
+## WASAPI
+
+- **`WasapiOut`, `WasapiCapture` and `WasapiLoopbackCapture` are now
+  `[Obsolete]`** in favour of the new `WasapiPlayer` / `WasapiRecorder` APIs
+  (built via `WasapiPlayerBuilder` / `WasapiRecorderBuilder`). The legacy types
+  still ship and continue to work, so this is a warning, not a break. See the
+  [WasapiPlayer](WasapiPlayer.md) and [WasapiRecorder](WasapiRecorder.md)
+  tutorials.
+- **`WasapiOut`'s embedded DMO resampler was removed.** In exclusive mode, if
+  your source format is not natively supported by the device you now get a
+  `NotSupportedException` from `Init` instead of silent on-the-fly resampling.
+  Resample upstream (for example with `MediaFoundationResampler`), use shared
+  mode (which still auto-converts via `AutoConvertPcm`), or switch to
+  `WasapiPlayerBuilder`.
+- **`WaveInEventArgs` now fires one event per WASAPI packet** (previously
+  batched). A new `BufferSpan` property exposes the data without copying through
+  the `Buffer` byte array.
+- **`MMDevice.AudioClient` is `[Obsolete]`** because it created a new instance
+  per access — use `MMDevice.CreateAudioClient()`.
+- **`PropertyStore`'s raw-`PropVariant` indexer is `[Obsolete]`.** The
+  `PropertyStore[int]` indexer now resolves `PropVariant` values safely.
+- Several `Mf*` Media Foundation wrapper types are now `internal`; only
+  `MfActivate` and `MediaType` remain public.
+
+## WaveOut / WaveIn
+
+- **`WaveOut` and `WaveIn` now default to event-driven callbacks.** The legacy
+  window-based variants are renamed `WaveOutWindow` / `WaveInWindow` and live in
+  `NAudio.WinForms`. If you relied on the window-callback behaviour (for example
+  pumping a UI message loop), reference `NAudio.WinForms` and use the `*Window`
+  types.
+- **`BufferedWaveProvider` buffer duration is now set in the constructor**
+  (default 5 seconds); `BufferLength` and `BufferDuration` are read-only.
+
+## MIDI and WinMM
+
+- **`MidiIn`, `MidiOut`, `MidiInCapabilities` and `MidiOutCapabilities` moved
+  from `NAudio.Midi` to `NAudio.WinMM`.** `NAudio.Midi` is now cross-platform —
+  its `net9.0` target no longer P/Invokes `winmm.dll`. If you use the classic
+  Windows MIDI I/O classes, add a reference to `NAudio.WinMM` (the `NAudio`
+  meta-package already includes it).
+- **`MmResult`, `MmException` and `Manufacturers` moved from `NAudio.Core` to
+  `NAudio.WinMM`.**
+- **`MidiInMessageEventArgs.Timestamp` / `MidiInSysexMessageEventArgs.Timestamp`
+  are now `TimeSpan`** (previously `int` milliseconds), preserving the WinRT
+  100 ns resolution.
+- **`MidiIn.CreateSysexBuffers` was removed** — `MidiIn` now allocates sysex
+  receive buffers automatically inside `Start()`.
+
+New (non-breaking) additions worth knowing about: WinRT `WinRTMidiIn` /
+`WinRTMidiOut` in `NAudio.Wasapi`, the backend-agnostic `IMidiInput` /
+`IMidiOutput` interfaces, and the `IMidiInstrument` MIDI-file → audio pipeline.
+
+## DMO and DirectSound
+
+- **New `NAudio.Dmo` package.** The DMO effects, the DMO MP3 decoder
+  (`DmoMp3FrameDecompressor`), the DMO resampler (`ResamplerDmoStream`) and
+  `DirectSoundOut` have been carved out of `NAudio.Wasapi` / `NAudio.Core`.
+  Namespaces are preserved (`NAudio.Dmo`, `NAudio.Dmo.Effect`, and `NAudio.Wave`
+  for `DirectSoundOut`). Meta-package consumers see no change — `NAudio.Dmo`
+  comes in transitively. **Direct `NAudio.Wasapi` consumers** who use the
+  DMO/DirectSound types now need an explicit
+  `<PackageReference Include="NAudio.Dmo" />`.
+- `DmoMp3FrameDecompressor` moved from `NAudio.FileFormats.Mp3` to `NAudio.Dmo`
+  (update your `using`).
+- For new code, prefer `MediaFoundationResampler` over `ResamplerDmoStream`, and
+  `WasapiPlayerBuilder` over `DirectSoundOut`.
+
+## Effects (removed types and replacements)
+
+The old ad-hoc effect types were removed in favour of the new
+[`NAudio.Effects`](AudioEffects.md) framework:
+
+- **`SimpleCompressorStream` (now `SimpleCompressorEffect`) was removed** along
+  with the internal ChunkWare DSP — use the new `CompressorEffect` (and the
+  wider dynamics suite: `LimiterEffect`, `GateEffect`, `MultibandCompressorEffect`,
+  etc.).
+- **`ImpulseResponseConvolution` was removed** (it was an unusable O(n²) stub) —
+  use `ConvolutionReverbEffect` (partitioned FFT convolution).
+- **`NAudio.Extras.Equalizer` and `NAudio.Extras.EqualizerBand` were removed** —
+  use `NAudio.Effects.Equalizer` / `EqualizerBand` (in `NAudio.Core`). The new
+  EQ is per-channel and click-free when retuned, and adds shelf/pass/notch/
+  band-pass/all-pass shapes. The band API changed: `Bandwidth` / `Gain` became
+  `Q` / `GainDb` (or `ShelfSlope`), and the equaliser is now an `IAudioEffect`
+  (wrap it with `EffectSampleProvider` instead of passing a source to the
+  constructor).
+
+## Other type moves and API changes
+
+- `AudioVolumeLevel` moved from `NAudio.Wasapi.CoreAudioApi` to
+  `NAudio.CoreAudioApi` (alongside `MMDevice`, `Part`, `DeviceTopology`, …).
+- `CaptureState` moved from `NAudio.CoreAudioApi` to `NAudio.Wave` (it is a
+  backend-agnostic capture state used by `WaveIn`, `WasapiCapture` and
+  `WasapiRecorder`). Code that named it via `using NAudio.CoreAudioApi;` now
+  needs `using NAudio.Wave;`.
+- **`WaveFileChunkReader` is now `internal`** (moved to `NAudio.Wave`). Read
+  custom RIFF chunks via `WaveFileReader.Chunks` (`WaveChunks` / `RiffChunk` /
+  `IWaveChunkInterpreter<T>`, with built-in interpreters for cue lists, BWF
+  `bext` and LIST/INFO).
+- **`CueWaveFileReader` was removed** — use
+  `new WaveFileReader(...).Chunks.ReadCueList()` to get a `CueList`.
+- `SoundFont.SampleHeader`'s public fields are now properties. This is
+  source-compatible for normal reads/writes but binary-breaking for compiled
+  consumers and source-breaking for `ref`/`out` access to the old fields.
+- `WaveBuffer` is deprecated — use `MemoryMarshal.Cast` to reinterpret buffers.
+- `StreamMediaFoundationReader` now throws `ArgumentException` for non-readable
+  or non-seekable streams instead of failing later (#1288).
+- `HResult.E_INVALIDARG` was corrected to `0x80070057` (it was the legacy
+  `0x80000003`), and `HResult.MAKE_HRESULT` is deprecated in favour of
+  `MakeHResult` (#1288).
+
+## See also
+
+- [Release notes](../RELEASE_NOTES.md) — the full list of what's new in NAudio 3.
+- [Migrating from `AsioOut` to `AsioDevice`](AsioMigration.md) — the ASIO API is
+  redesigned; `AsioOut` is preserved as a facade, so this is optional.
+- [Audio effects](AudioEffects.md), [the sampler](Sampler.md),
+  [cross-platform audio files](CrossPlatformAudioFilesWithSoundFile.md) — guides
+  to the major new subsystems.

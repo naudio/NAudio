@@ -62,6 +62,12 @@ internal sealed class WasapiPlayFileTest : IConsoleTest
         AnsiConsole.MarkupLine($"[bold green]Playing[/] [grey]via {Markup.Escape(device.FriendlyName)}[/]");
         AnsiConsole.MarkupLine($"[grey]File:[/]   {Markup.Escape(Path.GetFileName(inputPath))}");
         AnsiConsole.MarkupLine($"[grey]Mode:[/]   {mode}");
+        if (mode.Equals("LowLatency", StringComparison.OrdinalIgnoreCase))
+        {
+            AnsiConsole.MarkupLine(player.LowLatencyActive
+                ? $"[green]Low latency:[/] active ({player.LatencyMilliseconds} ms)"
+                : $"[yellow]Low latency:[/] not available — fell back to standard shared mode ({Markup.Escape(player.LowLatencyUnavailableReason ?? "unknown reason")})");
+        }
         AnsiConsole.MarkupLine($"[grey]Format:[/] {player.OutputWaveFormat}");
         AnsiConsole.MarkupLine($"[grey]Length:[/] {reader.TotalTime:hh\\:mm\\:ss\\.fff}");
         AnsiConsole.MarkupLine(ctx.Interactive
@@ -103,6 +109,8 @@ internal sealed class WasapiPlayFileTest : IConsoleTest
         {
             ["device"] = device.FriendlyName,
             ["mode"] = mode,
+            ["lowLatencyActive"] = player.LowLatencyActive.ToString(),
+            ["latencyMs"] = player.LatencyMilliseconds.ToString(),
             ["elapsedMs"] = elapsed.TotalMilliseconds.ToString("F0"),
             ["fileDurationMs"] = reader.TotalTime.TotalMilliseconds.ToString("F0"),
         };

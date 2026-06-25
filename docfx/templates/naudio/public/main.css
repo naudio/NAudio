@@ -1,0 +1,9 @@
+/* NAudio DocFX customizations. */
+
+/* Constrain the navbar logo so it fits within the header bar, with a small
+   gap before the "NAudio" wordmark. Interim sizing until an SVG logo lands. */
+#logo {
+  max-height: 1.75rem;
+  width: auto;
+  margin-right: 0.5rem;
+}

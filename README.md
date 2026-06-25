@@ -67,7 +67,7 @@ NAudio 2 remains the stable channel and will receive critical bug fixes if neces
 
 The easiest way to install NAudio into your project is to install the latest [NAudio NuGet package](https://www.nuget.org/packages/NAudio/). Prerelease versions of NAudio are also often made available on NuGet.
 
-NAudio comes with several demo applications which are the quickest way to see how to use the various features of NAudio. You can explore the source code [here](https://github.com/naudio/NAudio/tree/main/NAudioDemo).
+NAudio comes with several demo applications which are the quickest way to see how to use the various features of NAudio. You can explore the source code [here](https://github.com/naudio/NAudio/tree/main/samples/NAudioDemo).
 
 ## Tutorials
 
@@ -118,6 +118,7 @@ NAudio comes with several demo applications which are the quickest way to see ho
 * [Adjust the pitch of audio using SmbPitchShiftingSampleProvider](Docs/SmbPitchShiftingSampleProvider.md)
 * [Varispeed playback with NAudio using SoundTouch](http://markheath.net/post/varispeed-naudio-soundtouch)
 * [Fade audio in and out](Docs/FadeInOutSampleProvider.md)
+* [Apply audio effects with NAudio.Effects](Docs/AudioEffects.md)
 
 ### Generating audio
 
@@ -165,7 +166,7 @@ To be successful developing applications that process digital audio, there are s
 
 ## How do I...?
 
-The best way to learn how to use NAudio is to download the source code and look at the two demo applications - [NAudioDemo](https://github.com/naudio/NAudio/tree/main/NAudioDemo) and [NAudioWpfDemo](https://github.com/naudio/NAudio/tree/main/NAudioWpfDemo). These demonstrate several of the key capabilities of the NAudio framework. They also have the advantage of being kept up to date, whilst some of the tutorials you will find on the internet refer to old versions of NAudio.
+The best way to learn how to use NAudio is to download the source code and look at the two demo applications - [NAudioDemo](https://github.com/naudio/NAudio/tree/main/samples/NAudioDemo) and [NAudioWpfDemo](https://github.com/naudio/NAudio/tree/main/samples/NAudioWpfDemo). These demonstrate several of the key capabilities of the NAudio framework. They also have the advantage of being kept up to date, whilst some of the tutorials you will find on the internet refer to old versions of NAudio.
 
 ## FAQ
 

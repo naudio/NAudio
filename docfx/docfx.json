@@ -1,0 +1,87 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dotnet/docfx/main/schemas/docfx.schema.json",
+  "metadata": [
+    {
+      "src": [
+        {
+          "src": "..",
+          "files": [
+            "src/NAudio.Core/NAudio.Core.csproj",
+            "src/NAudio.Midi/NAudio.Midi.csproj",
+            "src/NAudio.SoundFile/NAudio.SoundFile.csproj",
+            "src/NAudio.Alsa/NAudio.Alsa.csproj",
+            "src/NAudio.Extras/NAudio.Extras.csproj",
+            "src/NAudio.Asio/NAudio.Asio.csproj",
+            "src/NAudio.WinMM/NAudio.WinMM.csproj",
+            "src/NAudio.Dmo/NAudio.Dmo.csproj",
+            "src/NAudio.Vst3/NAudio.Vst3.csproj",
+            "src/NAudio.WinForms/NAudio.WinForms.csproj",
+            "src/NAudio.Wasapi/NAudio.Wasapi.csproj"
+          ]
+        }
+      ],
+      "dest": "api",
+      "namespaceLayout": "nested",
+      "memberLayout": "samePage",
+      "properties": {
+        "EnableWindowsTargeting": "true",
+        "DocsBuild": "true"
+      }
+    }
+  ],
+  "build": {
+    "content": [
+      {
+        "files": [
+          "**/*.{md,yml}"
+        ],
+        "src": "api",
+        "dest": "api"
+      },
+      {
+        "files": [
+          "toc.yml",
+          "index.md"
+        ]
+      },
+      {
+        "files": [
+          "**/*.md",
+          "**/toc.yml"
+        ],
+        "exclude": [
+          "Architecture/**"
+        ],
+        "src": "../Docs",
+        "dest": "docs"
+      }
+    ],
+    "resource": [
+      {
+        "src": "..",
+        "files": [
+          "naudio-logo.png",
+          "naudio-icon.png"
+        ]
+      }
+    ],
+    "output": "_site",
+    "template": [
+      "default",
+      "modern",
+      "templates/naudio"
+    ],
+    "globalMetadata": {
+      "_appName": "NAudio",
+      "_appTitle": "NAudio",
+      "_appLogoPath": "naudio-icon.png",
+      "_appFaviconPath": "naudio-icon.png",
+      "_enableSearch": true,
+      "_disableContribution": false,
+      "_gitContribute": {
+        "repo": "https://github.com/naudio/NAudio",
+        "branch": "main"
+      }
+    }
+  }
+}

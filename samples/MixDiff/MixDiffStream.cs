@@ -1,0 +1,117 @@
+﻿using System;
+using NAudio.Wave;
+
+namespace MarkHeath.AudioUtils;
+
+public class MixDiffStream : WaveStream
+{
+    private readonly WaveOffsetStream offsetStream;
+    private readonly WaveChannel32 channelSteam;
+    private bool muted;
+    private float volume;
+
+    public MixDiffStream(string fileName)
+    {
+        WaveFileReader reader = new WaveFileReader(fileName);
+        offsetStream = new WaveOffsetStream(reader);
+        channelSteam = new WaveChannel32(offsetStream);
+        muted = false;
+        volume = 1.0f;
+    }
+
+    public override int BlockAlign
+    {
+        get
+        {
+            return channelSteam.BlockAlign;
+        }
+    }
+
+    public override WaveFormat WaveFormat
+    {
+        get { return channelSteam.WaveFormat; }
+    }
+
+    public override long Length
+    {
+        get { return channelSteam.Length; }
+    }
+
+    public override long Position
+    {
+        get
+        {
+            return channelSteam.Position;
+        }
+        set
+        {
+            channelSteam.Position = value;
+        }
+    }
+
+    public bool Mute
+    {
+        get
+        {
+            return muted;
+        }
+        set
+        {
+            muted = value;
+            if (muted)
+            {
+                channelSteam.Volume = 0.0f;
+            }
+            else
+            {
+                // reset the volume
+                channelSteam.Volume = volume;
+            }
+        }
+    }
+
+    public override int Read(byte[] buffer, int offset, int count)
+    {
+        return channelSteam.Read(buffer, offset, count);
+    }
+
+    public override bool HasData(int count)
+    {
+        return channelSteam.HasData(count);
+    }
+
+    public float Volume
+    {
+        get
+        {
+            return volume;
+        }
+        set
+        {
+            volume = value;
+            if (!Mute)
+            {
+                channelSteam.Volume = volume;
+            }
+        }
+    }
+
+    public TimeSpan PreDelay
+    {
+        get { return offsetStream.StartTime; }
+        set { offsetStream.StartTime = value; }
+    }
+
+    public TimeSpan Offset
+    {
+        get { return offsetStream.SourceOffset; }
+        set { offsetStream.SourceOffset = value; }
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        channelSteam?.Dispose();
+
+        base.Dispose(disposing);
+    }
+}

@@ -4,127 +4,105 @@
 Bullets land here as PRs merge. The maintainer renames this section to
 "### 3.0.0 (date)" at release time. See CLAUDE.md and
 Docs/Architecture/ReleaseStrategy.md for the release-notes process.
+
+These notes are deliberately a curated summary — NAudio 3 landed a very
+large amount of work and the full bullet-by-bullet history lives in the
+git log and the merged PRs. Keep this section a high-level overview that
+points at the per-feature tutorials and READMEs; the NuGet
+`PackageReleaseNotes` field has a 35,000-character limit.
 -->
+
+NAudio 3 is a major release. The single `NAudio` assembly is now split into
+focused, independently usable packages; the minimum target framework moves to
+`net9.0`; the core is cross-platform and Native-AOT compatible; and several
+large new subsystems — a cross-platform effects suite, a software sampler, VST 3
+hosting, and ALSA and libsndfile backends — join the library. The headline
+changes are below; see the linked tutorials and the per-package READMEs for the
+detail.
+
+#### Packages and platform
+
+ * Minimum target framework is now `net9.0` — legacy .NET Framework and .NET Standard 2.0 support is dropped
+ * `NAudio` is now a set of focused packages: `NAudio.Core`, `NAudio.Midi`, `NAudio.WinMM`, `NAudio.Wasapi`, `NAudio.Asio`, `NAudio.WinForms`, `NAudio.Dmo`, plus the new `NAudio.Effects` (in `NAudio.Core`), `NAudio.Sampler`, `NAudio.Vst3`, `NAudio.Alsa` and `NAudio.SoundFile`. The `NAudio` meta-package still pulls the Windows stack together so existing consumers see no change. See `Docs/Architecture/NAudio3AssemblyLayoutPlan.md`
+ * `NAudio.Core`, `NAudio.Midi` and `NAudio.Wasapi` are Native-AOT compatible (`IsAotCompatible=true`), enforced in CI by `NAudioAotSmokeTest`. `NAudio.Midi`, `NAudio.Effects`, `NAudio.Sampler` and `NAudio.SoundFile` are cross-platform
+
+#### New capabilities
+
+Each new subsystem has its own tutorial/README; only the headline is listed here.
+
+ * **Audio effects** — a cross-platform `NAudio.Effects` framework: `IAudioEffect` / `EffectSampleProvider` / `EffectChain` with click-free bypass, dry/wet mix and an optional parameter model, plus a broad effect set (EQ and filtering, dynamics, saturation/lo-fi, delay and modulation, reverb including FFT convolution, pitch shifting, and voice-comms AGC/noise-suppression). See [Docs/AudioEffects.md](Docs/AudioEffects.md)
+ * **Software sampler** — new `NAudio.Sampler` package: polyphonic, cross-platform playback of SoundFont (`.sf2`) and SFZ instruments and single-sample instruments, rendered as an `ISampleProvider` (SF2 modulator engine, DAHDSR envelopes, LFOs, modulated filters, reverb/chorus sends, voice stealing, choke groups). See [Docs/Sampler.md](Docs/Sampler.md)
+ * **VST 3 hosting (preview)** — new `NAudio.Vst3` package (Windows-only): discover, load and host VST 3 effects and instruments, with parameters, state and `.vstpreset` presets, native editor windows, program lists/units, latency compensation, and live/offline MIDI-file playback through the shared MIDI pipeline. See the `NAudio.Vst3` README and `Docs/Architecture/Vst3Hosting.md`. VST is a registered trademark of Steinberg Media Technologies GmbH
+ * **Cross-platform audio files** — new `NAudio.SoundFile` package: read and write WAV/AIFF/FLAC/Ogg-Vorbis/Opus/MP3 via a system libsndfile on Windows, Linux and macOS (the first cross-platform FLAC/Vorbis/Opus *encoder* in NAudio). See [Docs/CrossPlatformAudioFilesWithSoundFile.md](Docs/CrossPlatformAudioFilesWithSoundFile.md) (#1289)
+ * **Linux audio** — new `NAudio.Alsa` package: `AlsaOut` (`IWavePlayer`) and `AlsaIn` (`IWaveIn`) plus `AlsaDeviceEnumerator`, backed by `libasound`. See [Docs/PlayAudioFileLinuxAlsa.md](Docs/PlayAudioFileLinuxAlsa.md) and [Docs/RecordAudioFileLinuxAlsa.md](Docs/RecordAudioFileLinuxAlsa.md) (#1182)
+ * **Sequencing** — a portable `NAudio.Sequencing` namespace in `NAudio.Core` (tempo and time-signature maps, transport, `EventTimeline`, swing, and a sample-accurate per-buffer dispatcher) underpinning MIDI-file playback and the sampler. See `Docs/Architecture/Sequencing.md`
+ * **Modern WASAPI and ASIO** — high-level `WasapiPlayer` / `WasapiRecorder` (built via `WasapiPlayerBuilder` / `WasapiRecorderBuilder`: `IAudioClient3` low-latency, MMCSS, `IAsyncDisposable`, zero-copy buffers, process-loopback capture, automatic resample-free format adaptation — bit depth and channels — in exclusive and low-latency modes, `WasapiPlayer.GetPlaybackCapability` to validate options up front, and `LowLatencyActive` / `WithLowLatency(required)` to control and inspect low-latency fallback), and a new `AsioDevice` replacing `AsioOut` (explicit playback/recording/duplex modes, non-contiguous channels, per-channel `Span<float>` callbacks, driver-reset recovery, per-buffer timing). See [Docs/WasapiPlayer.md](Docs/WasapiPlayer.md), [Docs/WasapiRecorder.md](Docs/WasapiRecorder.md) and [Docs/AsioMigration.md](Docs/AsioMigration.md)
+ * **MIDI** — `NAudio.Midi` is now cross-platform; new WinRT `WinRTMidiIn` / `WinRTMidiOut` (in `NAudio.Wasapi`) and backend-agnostic `IMidiInput` / `IMidiOutput`; a new `IMidiInstrument` seam with `MidiFileSequence` / `SequencedMidiPlayer` / `OfflineMidiRenderer` / `LiveMidiInstrument` gives an end-to-end MIDI-file → audio pipeline that drives the sampler or a hosted VST 3 instrument. `MidiFile` now also reads RIFF-RMID (`.rmi`) files (#1236)
+ * **Sample providers / DSP** — new `ChannelMixerSampleProvider` with ready-made `ChannelMixMatrix` routings (mono↔stereo, stereo→5.1, …), thanks to @antiduh (#982); a new `FftProcessor`, an `IWaveChunkInterpreter<T>` extension point (cue lists, BWF `bext`, LIST/INFO), `Span<T>` overloads across the codec/DSP surface, and reusable building blocks (`EnvelopeFollower`, `DelayLine`, `Lfo`, `Oversampler`, `LinkwitzRileyCrossover`, `PartitionedConvolver`, …) underpinning the effects and sampler
+ * **Latency reporting** — new `IWaveLatency` interface in `NAudio.Core` exposes `AverageLatency` and `CurrentLatency` for A/V sync, drift detection and visualisation scheduling. Implemented on all the playback and capture classes: `WaveOut` / `WaveIn`, `WaveOutWindow` / `WaveInWindow`, `WasapiOut` / `WasapiPlayer` / `WasapiCapture` / `WasapiRecorder`, `AsioOut`, and `AlsaOut` / `AlsaIn` (#601)
 
 #### Breaking changes
 
- * `IWaveProvider.Read` signature changed from `Read(byte[], int, int)` to `Read(Span<byte>)`. Existing callers with `byte[]` migrate via `source.Read(buffer.AsSpan(offset, count))`; implementations override `Read(Span<byte>)`
- * `ISampleProvider.Read` signature changed from `Read(float[], int, int)` to `Read(Span<float>)` (same migration pattern)
- * `MidiIn`, `MidiOut`, `MidiInCapabilities`, and `MidiOutCapabilities` moved from `NAudio.Midi` to `NAudio.WinMM` — all `winmm.dll` interop now lives in one assembly
- * `MmResult`, `MmException`, and `Manufacturers` moved from `NAudio.Core` to `NAudio.WinMM`
- * `DirectSoundOut` moved from `NAudio.Core` to `NAudio.Dmo` (DirectSound has always been Windows-only)
- * **New `NAudio.Dmo` package.** DMO effects (echo, chorus, reverb, etc.), the DMO MP3 decoder (`DmoMp3FrameDecompressor`), the DMO resampler (`ResamplerDmoStream`), and `DirectSoundOut` carved out of `NAudio.Wasapi`. Namespaces preserved (`NAudio.Dmo`, `NAudio.Dmo.Effect`, `NAudio.Wave` for `DirectSoundOut`). Meta-package consumers see no change — `NAudio.Dmo` comes in transitively. Direct `NAudio.Wasapi` consumers who use the DMO/DirectSound types now need an explicit `<PackageReference Include="NAudio.Dmo" />`.
- * `NAudio.Midi` is now cross-platform — its `net9.0` target no longer P/Invokes `winmm.dll`
- * `MidiInMessageEventArgs.Timestamp` and `MidiInSysexMessageEventArgs.Timestamp` are now `TimeSpan` (previously `int` milliseconds) — preserves full WinRT 100 ns resolution on the WinRT backend
- * `MidiIn.CreateSysexBuffers` removed — `MidiIn` now allocates sysex receive buffers automatically inside `Start()`
- * `WasapiOut`, `WasapiCapture`, and `WasapiLoopbackCapture` are now `[Obsolete]` in favour of the new `WasapiPlayer` / `WasapiRecorder` APIs (the legacy types still ship and continue to work)
- * `WasapiOut`'s embedded DMO resampler removed. Exclusive-mode callers whose source format is not natively supported now get a `NotSupportedException` from `Init` instead of silent on-the-fly resampling. Resample upstream (e.g. with `MediaFoundationResampler`), use shared mode (which still auto-converts via `AutoConvertPcm`), or switch to `WasapiPlayerBuilder`. Removes `NAudio.Wasapi`'s only intra-assembly dependency on DMO.
- * `WaveOut` and `WaveIn` now default to event-driven callbacks; the legacy window-based variants are renamed `WaveOutWindow` / `WaveInWindow` and live in `NAudio.WinForms`
- * `WaveInEventArgs` now fires one event per WASAPI packet (previously batched). A new `BufferSpan` property exposes the data without copying through the existing `Buffer` byte array
- * Several `Mf*` Media Foundation wrapper types are now `internal` — only `MfActivate` and `MediaType` remain public
- * `BufferedWaveProvider` buffer duration is now set in the constructor (default 5 seconds); `BufferLength` and `BufferDuration` are read-only
- * `WaveBuffer` is deprecated — use `MemoryMarshal.Cast` instead
- * `MMDevice.AudioClient` is `[Obsolete]` because it created a new instance per access; use `MMDevice.CreateAudioClient()`
- * `PropertyStore[int]` now resolves `PropVariant` values safely; the indexer that returned the raw `PropVariant` is `[Obsolete]`
- * Minimum target framework is now `net9.0` (previously supported legacy .NET Framework and .NET Standard 2.0)
- * `CueWaveFileReader` removed - use `new WaveFileReader(...).Chunks.ReadCueList()` to get a `CueList`
- * `StreamMediaFoundationReader` now throws `ArgumentException` for non-readable or non-seekable streams instead of failing later (#1288)
- * Corrected `HResult.E_INVALIDARG` to `0x80070057` (was the legacy `0x80000003`) and deprecated `HResult.MAKE_HRESULT` in favour of `MakeHResult` (#1288)
+The full upgrade walkthrough — every breaking change with before/after code — is
+in **[Migrating from NAudio 2 to NAudio 3](Docs/MigratingFromNAudio2.md)**. Most
+apps need only re-target to `net9.0` and adjust custom providers to the new
+`Span<T>` `Read` signature. The highest-impact changes:
 
-#### New features
+ * Minimum target framework is now `net9.0` (legacy .NET Framework / .NET Standard 2.0 dropped)
+ * `IWaveProvider.Read` / `ISampleProvider.Read` now take a single `Span<byte>` / `Span<float>` (was buffer/offset/count) — callers migrate via `source.Read(buffer.AsSpan(offset, count))`; implementations override the span method
+ * `WasapiOut`, `WasapiCapture` and `WasapiLoopbackCapture` are `[Obsolete]` in favour of `WasapiPlayer` / `WasapiRecorder` (the legacy types still ship and work); `WasapiOut`'s embedded exclusive-mode resampler was removed, but it now adapts bit depth and channels (PCM↔float, mono↔stereo) in exclusive mode, so only a sample-rate mismatch requires upstream resampling
+ * `WasapiRecorderBuilder.WithProcessLoopback(processId, mode)` now captures audio rendered by a specific process (and optionally its child processes) via `ActivateAudioInterfaceAsync` — build it with the new `BuildAsync()` (Windows 10 2004 / build 19041+)
+ * `WaveOut` / `WaveIn` now default to event-driven callbacks; the window-based variants are renamed `WaveOutWindow` / `WaveInWindow` in `NAudio.WinForms`
+ * Some types moved package/namespace as part of the split — classic Windows MIDI I/O and `winmm` types to `NAudio.WinMM`; the DMO/DirectSound types into the new `NAudio.Dmo` package; plus smaller moves (`AudioVolumeLevel`, `CaptureState`, `DmoMp3FrameDecompressor`). Meta-package consumers are unaffected
+ * `SimpleCompressorStream`, `ImpulseResponseConvolution` and `NAudio.Extras.Equalizer` were removed — superseded by `NAudio.Effects` (`CompressorEffect`, `ConvolutionReverbEffect`, `Equalizer`)
 
- * **NAudio.SoundFile:** new cross-platform `SoundFileReader` / `SoundFileWriter` wrapping libsndfile — reads and writes WAV/AIFF/FLAC/Ogg-Vorbis/Opus/MP3 on Linux, macOS and Windows (the first cross-platform FLAC/Vorbis/Opus *encoder* in NAudio). `SoundFileReader` is a `WaveStream` and `ISampleProvider`; both reader and writer also work over a `System.IO.Stream`. Requires a system libsndfile; `SoundFileCapabilities` reports which codecs the build supports (#1289)
- * **WASAPI:** new high-level `WasapiPlayer` and `WasapiRecorder` classes, built via `WasapiPlayerBuilder` / `WasapiRecorderBuilder`. Adds `IAudioClient3` low-latency support, MMCSS thread priority, `IAsyncDisposable`, zero-copy buffer access, and process-specific loopback via `WasapiRecorderBuilder.WithProcessLoopback()`
- * **ASIO:** new `AsioDevice` class replacing `AsioOut` as the primary ASIO interface. Adds explicit `InitPlayback` / `InitRecording` / `InitDuplex` modes, non-contiguous channel selection, per-channel `Span<float>` callbacks, `Reinitialize()` for driver-reset recovery, and per-buffer timing fields (`SamplePosition`, `SystemTimeNanoseconds`, `Speed`, SMPTE `TimeCode`)
- * **ASIO events:** `LatenciesChanged` and `ResyncOccurred` surfaced separately; buffer-size changes routed through `DriverResetRequest`
- * **Media Foundation:** `MediaFoundationEncoder.EncodeToFlac` for lossless FLAC output. The FLAC/ALAC selector now falls back correctly on rate + channels
- * **WinForms:** `WaveOutWindow` and `WaveInWindow` available as window-callback variants of the modernised event-driven `WaveOut` / `WaveIn`
- * **DSP:** new `FftProcessor` with real-input specialisation and precomputed windowing
- * **WAV chunks:** new `IWaveChunkInterpreter<T>` extension point, with built-in interpreters for cue lists, BWF `bext` (v1 and v2), and LIST/INFO metadata. RF64 promotion is now an explicit `WaveFileWriterOption`
- * **`Span<T>` overloads:** added on `BiQuadFilter.Transform`, `ALawDecoder.Decode`, `MuLawDecoder.Decode`, and `IMp3FrameDecompressor.DecompressFrame` (default interface method preserves backward compatibility with `NLayer` and other third-party decoders)
- * **MIDI:** new `WinRTMidiIn` / `WinRTMidiOut` classes in `NAudio.Wasapi` backed by `Windows.Devices.Midi`, with `MidiMessageConverter` for interop with the WinRT MIDI types. New `IMidiInput` / `IMidiOutput` interfaces (with a `Send(MidiEvent)` extension) let callers write backend-agnostic code; legacy `MidiIn` / `MidiOut` also implement them
- * **MIDI:** `MidiFile` now reads RIFF-RMID (`.rmi`) files by unwrapping the RIFF container and parsing the embedded standard MIDI file (#1236)
- * **ALSA (Linux):** new `NAudio.Alsa` package — `AlsaOut` (`IWavePlayer`) and `AlsaIn` (`IWaveIn`) backed by `libasound`, plus `AlsaDeviceEnumerator`. Linux-only (`[SupportedOSPlatform("linux")]`, AOT-compatible `[LibraryImport]`); reference it explicitly, it is not part of the `NAudio` meta-package (#1182)
- * **Docs:** added `WasapiPlayer` and `WasapiRecorder` tutorials; the legacy `WasapiOut` and `WasapiLoopbackCapture` docs now point to them
- * **Core:** `NAudio.Utils.HResult` gained constants for common COM/storage HRESULTs plus an `IsError` helper (#1288)
- * **Sample providers:** new `ChannelMixerSampleProvider` remixes a source's channels through an arbitrary mixing matrix (downmix, upmix, weighted routing), with ready-made matrices in `ChannelMixMatrix` (mono↔stereo, stereo→5.1, etc.). Thanks to @antiduh (#982)
- * **Latency reporting:** new `IWaveLatency` interface exposes `AverageLatency` and `CurrentLatency` for downstream A/V sync. Implemented on the output side by `WaveOut`, `WaveOutWindow`, `WasapiOut`, `WasapiPlayer`, `AsioOut`, and `AlsaOut`; on the input side by `WaveIn`, `WaveInWindow`, `WasapiCapture`, `WasapiRecorder`, and `AlsaIn` (#601)
+#### Notable bug fixes
 
-#### Demo apps and Test Harnesses
+In addition to the fixes below, the new sampler/SFZ/SoundFont subsystem saw
+extensive correctness work during development — see [Docs/Sampler.md](Docs/Sampler.md).
 
- * **NAudioConsoleTest:** new CLI test harness for driving various NAudio features without the need for GUI. Includes `run-batch` for JSON-driven test plans and `diagnose` for capturing a structured host audio snapshot (OS, ASIO drivers, WASAPI/WinMM/DirectSound devices, NAudio assembly versions).
- * **WPF demos:** spectrum analyser rewritten with corrected dB formula (20·log₁₀), log-frequency mapping, real-input full-scale calibration, bars instead of polylines, peak-decay markers, and per-band smoothing. New `LiveWaveformControl` with configurable render styles, vertical scaling, and fill-between rendering
- * **WAV recording demo:** added loopback support and a multi-API device combo with provenance embedding
- * **MIDI In demo:** Refresh button for hot-plugged devices, device combos disabled while in use, test MIDI Out plays on channel 1 (was 2), Filter Auto-Sensing on by default, stopping test output now sends note-off so notes don't hang, and cleaner panel disposal
- * **MfStressTest:** Reliability tests for the new Media Foundation interop implementation in NAudio 3.
- * Replaced vendored NSpeex (deprecated) with Opus (Concentus) in the network chat demo; added round-trip unit tests
- 
+ * `WaveOut`: fixed a race where stopping/disposing faster than the buffer latency could throw a `NullReferenceException` via `PlaybackStopped` (#804)
+ * `WaveFileWriter`: removed the finalizer that fired an unconditional `Debug.Assert` and could crash the process on the finalizer thread when construction had thrown
+ * `AudioClient.Dispose` is now idempotent and safe against concurrent/re-entrant disposal, fixing an intermittent interop `NullReferenceException` (#1183)
+ * `AcmInterop`: serialised all `msacm32` P/Invokes process-wide, fixing process-killing access violations under concurrent ACM use
+ * `WaveFileReader` / `AiffFileReader`: malformed headers declaring `BlockAlign=0` now throw `InvalidDataException` from the constructor instead of `DivideByZeroException` later (#1254); `WaveFileReader` no longer throws on an oversized `fmt` `cbSize` (#482)
+ * `WaveFormat.Serialize`: PCM formats now write the canonical 16-byte `fmt ` chunk (#934, #1098)
+ * `WaveViewer`: fixed rendering upside-down (#801, #818) and now renders any source format correctly via `ToSampleProvider()` (#564)
+ * `AudioSessionControl`: now supports multiple registered event clients without leaking, and `UnRegisterEventClient` honours its argument (#1263)
+ * `AudioEndpointVolume.OnVolumeNotification`: fixed per-channel notifications all returning channel 0's volume (#351)
+ * `CueListInterpreter`: WAV files with cue points but no labels now return cues with empty labels instead of null (#549)
+ * `ResamplerDmoStream`: fixed an infinite loop on `Read` after seeking and the loss of the resampler tail at end-of-stream (#607, #608)
+ * `LoopStream.Read`: no longer spins at 100% CPU when the wrapped source can't satisfy a read (#1338)
+ * `Mp3FileReader`: fixed false sample-rate-change errors near end of file, and more robust MP3 frame parsing against album art / trailing metadata
+ * `MidiFile`: preserve running-status across meta events (fixes "Read too far")
+ * `BlockAlignReductionStream.Position`: validates the incoming value, so a block-aligned seek after an arbitrary read no longer wrongly throws (#368)
+ * `MmException` messages now append a human-readable `MmResult` description (#1192); `Id3v2Tag.ReadTag` no longer throws/catches for tagless MP3 streams (#265)
+ * ASIO: implemented missing `Asio64Bit` Int24LSB/Float32LSB conversions and fixed a byte-order bug in `GetSamplePosition`; `WdlResampler` backported three upstream Cockos WDL fixes
+ * Hardened Media Foundation and DMO interop against COM ref leaks on error paths (`MediaFoundationReader`, `MediaFoundationEncoder`, `MediaFoundationTransform`, `MediaBuffer`, `Mf*` wrappers) (#1293)
+ * Removed dead `naudio.codeplex.com` links from the README, MixDiff and source comments (#985)
+
 #### Performance
 
- * Vectorised mix-add and volume kernels via `System.Numerics.Tensors` — significantly faster on AVX2 hardware for typical buffer sizes
- * Eliminated per-`Read` allocations in `SmbPitchShiftingSampleProvider`
- * `WaveStream.Read(Span<byte>)` overridden directly on every concrete reader (no intermediate byte-array copy)
- * `WasapiCapture` capture path is now zero-copy via the native WASAPI buffer span
- * `BiQuadFilter` state and coefficient fields hoisted to locals in batch loops for register retention
- * `Mp3FileReader` now builds its table-of-contents lazily on first seek instead of eagerly during construction; the `Position` setter no longer blocks; rapid scrub seeks debounce and silence output
- * Eliminated per-`Read` allocations in `ResamplerDmoStream` and `DmoMp3FrameDecompressor` (cached input buffer and output-buffer array) (#971)
+ * Vectorised mix-add and volume kernels via `System.Numerics.Tensors` (significantly faster on AVX2)
+ * `WaveStream.Read(Span<byte>)` is overridden directly on every concrete reader (no intermediate byte-array copy); `WasapiCapture`'s path is now zero-copy via the native WASAPI buffer span
+ * Eliminated per-`Read` allocations in `SmbPitchShiftingSampleProvider`, `ResamplerDmoStream` and `DmoMp3FrameDecompressor` (#971)
+ * `Mp3FileReader` builds its table-of-contents lazily on first seek; the `Position` setter no longer blocks and rapid scrub seeks debounce
+ * The sampler and sequencer render allocation-free and lock-free on the audio thread (control-rate envelope/LFO advancement, indexed region lookup, copy-on-write event timelines)
 
-#### Reliability and bug fixes
+#### Tooling, packaging and modernisation
 
- * `AudioSessionControl`: now supports multiple registered event clients. `RegisterEventClient` no longer leaks a prior registration, and `UnRegisterEventClient` now honours its `eventClient` argument instead of unregistering whichever handler happened to be stored (#1263)
- * `CueListInterpreter`: fixed returning null for WAV files with cue points but no labels (e.g. unnamed Wavosaur markers); cues are now returned with empty labels (#549)
- * `WaveViewer`: fixed waveform rendering upside-down (#801, #818)
- * `WaveViewer`: now renders correctly for any source format — the legacy renderer hard-coded a 16-bit PCM byte walk, so feeding it an `AudioFileReader` (or any non-16-bit `WaveStream`) produced a garbled waveform. Rendering now goes through `ToSampleProvider()` and operates on floats (#564)
- * `AcmInterop`: serialised all `msacm32` P/Invokes process-wide via a reentrant lock — fixes process-killing access violations under concurrent ACM access
- * `AcmStream`: fixed double-close in finalizer by zeroing the handle field before close
- * `MediaFoundationReader`: informational source-reader flags (`STREAMTICK`, `NEWSTREAM`, `NativeMediaTypeChanged`, `AllEffectsRemoved`) are now non-fatal instead of aborting reads
- * `MediaFoundationReader.Reposition`: fixed using a stale field instead of the parameter (seeks would default to stream start)
- * `MediaFoundationEncoder`: unselected `MediaType` instances are now disposed to prevent finalizer-thread COM ref leaks
- * `StreamMediaFoundationReader` and stream-based `MediaFoundationEncoder` encoding now use a direct managed `IMFByteStream` wrapper instead of the `IStream`→`IMFByteStream` shim, improving reliability of reading and encoding audio through .NET streams (#1288)
- * `Mp3FileReader`: fixed false sample-rate-change errors near end of file
- * `WaveFormat.Serialize`: PCM formats now write the canonical 16-byte `fmt ` chunk (no `cbSize` field) instead of 18 bytes, matching the `PCMWAVEFORMAT` layout (#934, #1098)
- * MP3 frame parsing: more robust against false frame detections from album art and trailing metadata
- * `MidiFile`: preserved running-status across meta events (fixes "Read too far" errors when meta events interrupt running-status sequences)
- * `WaveStream.CurrentTime` setter: now lands on a block boundary, preventing garbage audio on seek in custom readers
- * `BlockAlignReductionStream.Position` setter: now validates the incoming value instead of the stale current position, so a block-aligned seek after an arbitrary-length read no longer wrongly throws "Position must be block aligned" (#368)
- * `IconExtractor.Extract`: now guards against null icon handles from `ExtractIconEx`
- * `DirectSoundOut.InitializeDirectSound`: wrapped notification setup in try/finally to prevent COM ref leak on `SetNotificationPositions` failure
- * ASIO: implemented missing `Asio64Bit` conversions (Int24LSB and Float32LSB output sample types)
- * ASIO: fixed byte-order bug in `AsioDriver.GetSamplePosition` for `Asio64Bit` reassembly
- * `WdlResampler`: backported three upstream Cockos WDL bug fixes (latency calculation, `ResampleOut` clamping, Blackman-Harris window correction)
- * `MediaBufferLease`: hardened against out-of-order disposal
- * Added finalizers to DMO `MediaBuffer` and the `Mf*` wrappers that hold (RCW, IntPtr) pairs to prevent COM ref leaks
- * `WaveFileChunkReader`: fixed `ArgumentException` parsing WAV files whose odd-length chunks are followed by non-UTF-8 bytes — the word-alignment pad-byte check no longer decodes via `BinaryReader.PeekChar()`, and is now guarded against end-of-stream (#959)
- * Clarified `BiQuadFilter` `q` parameter docs (#1264)
- * Removed dead `naudio.codeplex.com` links from README, MixDiff Help menu, and source comments (CodePlex was shut down by Microsoft in 2017) (#985)
- * `AudioClient.Dispose`: made idempotent and safe against concurrent/re-entrant disposal — fixes an intermittent `NullReferenceException` from the COM interop layer when a WASAPI capture or playback wrapper is disposed more than once (#1183)
- * `WaveFileReader` / `AiffFileReader`: malformed headers that declared `BlockAlign=0` now throw `InvalidDataException` from the constructor instead of `DivideByZeroException` from the `Position` setter (#1254)
- * `AiffFileReader.Read`: truncated `SSND` chunks no longer trigger `IndexOutOfRangeException` in the byte-swap loop — the read count is rounded down to a whole block (#1254)
- * `AudioEndpointVolume.OnVolumeNotification`: fixed per-channel volume notification returning channel 0's volume for every channel — the read pointer was not advanced per channel (#351)
- * `MmException`: error messages now append a human-readable description of the `MmResult` via `waveOutGetErrorText`, e.g. `NoDriver calling waveOutSetVolume: No device driver is present` (#1192)
- * `Id3v2Tag.ReadTag`: no longer throws and catches a `FormatException` for MP3 streams without an ID3v2 tag — the header check now returns `null` directly (#265)
- * `WaveFileReader`: fixed `ArgumentException` reading WAV files whose `fmt` chunk declares more extra (`cbSize`) bytes than the fixed 100-byte buffer holds — the surplus is now discarded instead of throwing (#482)
- * `MediaFoundationTransform`: cleanup `finally` blocks no longer leak COM objects when `Unlock`/`RemoveAllBuffers` fails — hresults are captured and thrown only after every buffer/sample has been released (#1293)
- * Named the background threads created by `DirectSoundOut`, `WasapiOut`, `WasapiCapture`, `WasapiPlayer`, and `WasapiRecorder` so they show meaningful names in debuggers and profilers (#557)
+ * Most COM interop migrated from `[ComImport]` to `[GeneratedComInterface]` / `ComWrappers`, and many P/Invokes to `[LibraryImport]`, across the WASAPI/Core Audio activation chain, Media Foundation, the DMO interfaces, DirectSound and the `ComStream` CCW
+ * Codebase-wide code-style sweep (file-scoped namespaces, target-typed `new`, string interpolation, …) now enforced at build time via `.editorconfig` / `.globalconfig`; added `.git-blame-ignore-revs` so the mechanical commits don't obscure `git blame`
+ * Each NAudio package now ships its own README and embeds an SPDX 2.2 SBOM under `/_manifest/spdx_2.2/` in its `.nupkg`, and carries per-package `<Description>` metadata
+ * Tests migrated from VSTest to `Microsoft.Testing.Platform`, and `NAudioTests` split into cross-platform `NAudio.Core.Tests` and Windows-only `NAudio.Windows.Tests`; migrated to the `.slnx` solution format; renamed `license.txt` to `LICENSE`
+ * Added a DocFX documentation site (tutorials + API reference) published to GitHub Pages, built from `Docs/` and the source XML comments
 
-#### Modernisation (Native AOT, source-generated COM)
+#### Demos and test harnesses
 
- * `NAudio.Core`, `NAudio.Midi`, and `NAudio.Wasapi` are now `IsAotCompatible=true`. AOT compatibility is enforced at build-time by `NAudioAotSmokeTest`, which fails CI on any new trim or AOT analyzer warning
- * Most COM interop migrated from `[ComImport]` to `[GeneratedComInterface]` / `ComWrappers`. Affected interfaces include the WASAPI / Core Audio activation chain (`IActivateAudioInterfaceCompletionHandler`, `IMMNotificationClient`, `IAudioSessionNotification`, `IAudioSessionEvents`, `IAudioEndpointVolumeCallback`, `IAgileObject`, `IPropertyStore`), the Media Foundation cascade, the DMO interfaces, DirectSound, and the `ComStream` CCW (now source-generated `IStream`)
- * `Connector.ConnectTo`: fixed a source-generated COM leftover — it now projects the target connector via `ComWrappers` instead of `Marshal.GetComInterfaceForObject`, which is unsupported for `[GeneratedComInterface]` types and would fail at runtime (SYSLIB1099) (#1311)
- * DirectSound P/Invokes migrated to `[LibraryImport]` with `[UnmanagedCallersOnly]` thunks; `BufferDescription` and `BufferCaps` converted from class to struct
- * `AcmDriver` ported from legacy `NativeMethods` to `NativeLibrary`
- * Most `MediaFoundationInterop` blittable P/Invokes migrated to `[LibraryImport]`
-
-#### Packaging and dependencies
-
- * Each NAudio package now ships its own README in the NuGet payload
- * Test project migrated from VSTest to `Microsoft.Testing.Platform`
- * `NAudioTests` split into `NAudio.Core.Tests` (cross-platform, `net10.0`) and `NAudio.Windows.Tests` (Windows-only, `net10.0-windows`) — eliminates the dual-TFM double-run on Windows CI and lets non-Windows devs run just the cross-platform suite
- * `NAudio.Alsa.Tests` and `NAudio.SoundFile.Tests` now ignore MTP exit codes 8/9 so `dotnet test` succeeds on machines where the suite legitimately runs zero tests (ALSA off-Linux) or self-skips (libsndfile absent)
- * Migrated to the modern `.slnx` solution format
- * Renamed `license.txt` to `LICENSE` for GitHub license detection; refreshed copyright year to 2008–2026
- * Added per-package `<Description>` metadata to every shipping NAudio NuGet package so each clearly identifies itself as part of the NAudio family
+ * New WPF demo modules for the new subsystems: Convolution Reverb, managed Realtime Effects, VST3 Realtime Effects, VST3 Realtime Instrument, VST3 MIDI File Player, a Live MIDI Sampler and a Single-Sample Editor
+ * New `NAudioConsoleTest` CLI harness (`run-batch` for JSON test plans, `diagnose` for a structured host-audio snapshot) and `MfStressTest` for the new Media Foundation interop
+ * WPF demos: spectrum analyser rewritten (correct dB/log-frequency/calibration), new `LiveWaveformControl`, loopback + multi-API device selection in the WAV recording demo, and a drum machine rebuilt on the new `NAudio.Sequencing` primitives
+ * Replaced the deprecated vendored NSpeex with Opus (Concentus) in the network chat demo
 
 ### 2.3.0 (12 Mar 2026)
 

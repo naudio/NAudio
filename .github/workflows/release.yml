@@ -159,15 +159,17 @@ jobs:
             'NAudio.WinMM',
             'NAudio.Wasapi',
             'NAudio.Dmo',
+            'NAudio.Vst3',
             'NAudio.Alsa',
             'NAudio.SoundFile',
+            'NAudio.Sampler',
             'NAudio',
             'NAudio.Extras'
           )
           $notesPath = Join-Path $env:GITHUB_WORKSPACE "release-body.md"
           New-Item -ItemType Directory -Force -Path artifacts | Out-Null
           foreach ($pkg in $packages) {
-            dotnet pack "$pkg/$pkg.csproj" `
+            dotnet pack "src/$pkg/$pkg.csproj" `
               --configuration Release `
               --no-build `
               --output artifacts `

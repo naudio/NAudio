@@ -380,10 +380,10 @@ Existing `WasapiOut` and `WasapiCapture` are kept with `[Obsolete]` attributes p
 - [x] `IAsyncEnumerable<AudioBuffer>` via `CaptureAsync()` for async consumption (uses `Marshal.Copy` since Span can't cross yield boundaries)
 - [x] MMCSS thread priority in capture thread
 
-**3c: Process-specific loopback capture — PARTIAL**
+**3c: Process-specific loopback capture — DONE**
 - [x] `WasapiRecorderBuilder.WithProcessLoopback(uint processId, ProcessLoopbackMode mode)` — builder API defined
 - [x] `AudioClientActivationParams` and `AudioClientProcessLoopbackParams` structs are public and ready
-- [ ] Actual activation via `ActivateAudioInterfaceAsync` with marshaled activation params — not yet implemented (throws `NotImplementedException`)
+- [x] Actual activation via `ActivateAudioInterfaceAsync` with marshaled `VT_BLOB` activation params (`AudioClient.ActivateProcessLoopbackAsync`), surfaced as `WasapiRecorderBuilder.BuildAsync()`. The `VAD\Process_Loopback` virtual device returns a bare `IAudioClient` (no `IAudioClient2`), and Initialize requires `LOOPBACK | EVENTCALLBACK` with an explicit format (no `GetMixFormat`/`AutoConvertPcm`). Exercised by `NAudioConsoleTest`'s `Wasapi.ProcessLoopback` test
 
 **3d: Deprecate old APIs — DONE**
 - [x] `WasapiOut` marked `[Obsolete]` pointing to `WasapiPlayerBuilder`

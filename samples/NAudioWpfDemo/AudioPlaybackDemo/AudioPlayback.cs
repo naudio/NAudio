@@ -1,0 +1,102 @@
+﻿using System;
+using System.Windows;
+using NAudio.Extras;
+using NAudio.Wave;
+
+namespace NAudioWpfDemo.AudioPlaybackDemo;
+
+internal class AudioPlayback : IDisposable
+{
+    private IWavePlayer playbackDevice;
+    private WaveStream fileStream;
+
+    public event EventHandler<FftEventArgs> FftCalculated;
+
+    public event EventHandler<MaxSampleEventArgs> MaximumCalculated;
+
+    /// <summary>Sample rate of the most recently opened file, in Hz. Zero until a file is loaded.</summary>
+    public int SampleRate { get; private set; }
+
+    public void Load(string fileName)
+    {
+        Stop();
+        CloseFile();
+        EnsureDeviceCreated();
+        OpenFile(fileName);
+    }
+
+    private void CloseFile()
+    {
+        fileStream?.Dispose();
+        fileStream = null;
+    }
+
+    private void OpenFile(string fileName)
+    {
+        try
+        {
+            var inputStream = new AudioFileReader(fileName);
+            fileStream = inputStream;
+            SampleRate = inputStream.WaveFormat.SampleRate;
+            // 4096 gives ~10.8 Hz bin spacing at 44.1 kHz. This halves the "stairstep" region
+            // at the bass end of a log-frequency spectrum display (the crossover where each
+            // display band spans one FFT bin moves from ~283 Hz down to ~142 Hz). Trade-off
+            // is a ~93 ms analysis window vs 46 ms at 2048 — fine for a visualiser, music
+            // transients still look lively.
+            var aggregator = new SampleAggregator(inputStream, 4096);
+            aggregator.NotificationCount = inputStream.WaveFormat.SampleRate / 100;
+            aggregator.PerformFFT = true;
+            aggregator.FftCalculated += (s, a) => FftCalculated?.Invoke(this, a);
+            aggregator.MaximumCalculated += (s, a) => MaximumCalculated?.Invoke(this, a);
+            playbackDevice.Init(aggregator);
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show(e.Message, "Problem opening file");
+            CloseFile();
+        }
+    }
+
+    private void EnsureDeviceCreated()
+    {
+        if (playbackDevice == null)
+        {
+            CreateDevice();
+        }
+    }
+
+    private void CreateDevice()
+    {
+        playbackDevice = new WaveOut { BufferMilliseconds = 200 };
+    }
+
+    public void Play()
+    {
+        if (playbackDevice != null && fileStream != null && playbackDevice.PlaybackState != PlaybackState.Playing)
+        {
+            playbackDevice.Play();
+        }
+    }
+
+    public void Pause()
+    {
+        playbackDevice?.Pause();
+    }
+
+    public void Stop()
+    {
+        playbackDevice?.Stop();
+        if (fileStream != null)
+        {
+            fileStream.Position = 0;
+        }
+    }
+
+    public void Dispose()
+    {
+        Stop();
+        CloseFile();
+        playbackDevice?.Dispose();
+        playbackDevice = null;
+    }
+}

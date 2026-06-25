@@ -1,0 +1,147 @@
+﻿using Spectre.Console;
+using Spectre.Console.Rendering;
+
+namespace NAudioConsoleTest.Shared;
+
+/// <summary>
+/// Minimal interactive menu renderer with keyboard navigation. Unlike Spectre.Console's
+/// <c>SelectionPrompt</c>, this one returns <c>null</c> when the user presses Escape — letting
+/// each submenu treat Escape as "go back" and the main menu treat it as "exit".
+/// </summary>
+internal static class Menu
+{
+    public sealed class Group
+    {
+        public string Title { get; }
+        public string[] Items { get; }
+
+        public Group(string title, params string[] items)
+        {
+            Title = title;
+            Items = items;
+        }
+    }
+
+    /// <summary>
+    /// Renders a menu with a Rule header, grouped choices, and a hint line. Returns the selected
+    /// item string or <c>null</c> if the user pressed Escape.
+    /// </summary>
+    public static string? Show(string title, params Group[] groups)
+        => Show(title, header: null, groups);
+
+    public static string? Show(string title, IRenderable? header, params Group[] groups)
+    {
+        // Flatten into (text, isSelectable, groupTitleOrNull) entries.
+        // Group titles are headers (not selectable); items are selectable.
+        var entries = new List<(string Text, bool IsItem)>();
+        foreach (var g in groups)
+        {
+            if (!string.IsNullOrEmpty(g.Title))
+                entries.Add((g.Title, false));
+            foreach (var item in g.Items)
+                entries.Add((item, true));
+        }
+
+        int selected = entries.FindIndex(e => e.IsItem);
+        if (selected < 0) return null;
+
+        Console.CursorVisible = false;
+        AnsiConsole.Clear();
+        string? result = null;
+        bool done = false;
+        try
+        {
+            AnsiConsole.Live(Build(title, header, entries, selected))
+                .AutoClear(false)
+                .Overflow(VerticalOverflow.Ellipsis)
+                .Start(ctx =>
+                {
+                    ctx.Refresh();
+                    while (!done)
+                    {
+                        var key = Console.ReadKey(intercept: true);
+                        switch (key.Key)
+                        {
+                            case ConsoleKey.UpArrow:
+                                selected = FindPrev(entries, selected);
+                                break;
+                            case ConsoleKey.DownArrow:
+                                selected = FindNext(entries, selected);
+                                break;
+                            case ConsoleKey.Home:
+                                selected = FindFirst(entries);
+                                break;
+                            case ConsoleKey.End:
+                                selected = FindLast(entries);
+                                break;
+                            case ConsoleKey.Enter:
+                                result = entries[selected].Text;
+                                done = true;
+                                continue;
+                            case ConsoleKey.Escape:
+                                result = null;
+                                done = true;
+                                continue;
+                        }
+                        ctx.UpdateTarget(Build(title, header, entries, selected));
+                    }
+                });
+            return result;
+        }
+        finally
+        {
+            Console.CursorVisible = true;
+        }
+    }
+
+    private static IRenderable Build(string title, IRenderable? header, List<(string Text, bool IsItem)> entries, int selected)
+    {
+        var rows = new List<IRenderable>();
+        if (header is not null)
+        {
+            rows.Add(header);
+            rows.Add(new Markup(""));
+        }
+        rows.Add(new Rule($"[bold blue]{Markup.Escape(title)}[/]").LeftJustified());
+        rows.Add(new Markup(""));
+        rows.Add(new Markup("[dim]↑/↓ navigate  •  Enter select  •  Esc back[/]"));
+        rows.Add(new Markup(""));
+
+        for (int i = 0; i < entries.Count; i++)
+        {
+            var (text, isItem) = entries[i];
+            if (!isItem)
+                rows.Add(new Markup($"  [yellow]{Markup.Escape(text)}[/]"));
+            else if (i == selected)
+                rows.Add(new Markup($"  [black on cyan]▶ {Markup.Escape(text)}[/]"));
+            else
+                rows.Add(new Markup($"    {Markup.Escape(text)}"));
+        }
+
+        return new Rows(rows);
+    }
+
+    private static int FindPrev(List<(string Text, bool IsItem)> entries, int from)
+    {
+        for (int i = from - 1; i >= 0; i--)
+            if (entries[i].IsItem) return i;
+        for (int i = entries.Count - 1; i > from; i--)
+            if (entries[i].IsItem) return i;
+        return from;
+    }
+
+    private static int FindNext(List<(string Text, bool IsItem)> entries, int from)
+    {
+        for (int i = from + 1; i < entries.Count; i++)
+            if (entries[i].IsItem) return i;
+        for (int i = 0; i < from; i++)
+            if (entries[i].IsItem) return i;
+        return from;
+    }
+
+    private static int FindFirst(List<(string Text, bool IsItem)> entries)
+        => entries.FindIndex(e => e.IsItem);
+
+    private static int FindLast(List<(string Text, bool IsItem)> entries)
+        => entries.FindLastIndex(e => e.IsItem);
+}

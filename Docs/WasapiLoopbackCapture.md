@@ -45,7 +45,7 @@ All that remains is for us to start recording with `StartRecording` and wait for
 
 ```c#
 capture.StartRecording();
-while (capture.CaptureState != NAudio.CoreAudioApi.CaptureState.Stopped)
+while (capture.CaptureState != NAudio.Wave.CaptureState.Stopped)
 {
     Thread.Sleep(500);
 }

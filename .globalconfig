@@ -13,6 +13,13 @@ dotnet_analyzer_diagnostic.severity = suggestion
 # CA1707: Identifiers should not contain underscores (test method naming convention)
 dotnet_diagnostic.CA1707.severity = none
 
+# IDE0130: Namespace does not match folder structure (intentional). NAudio's
+# public namespaces (NAudio.Wave, NAudio.Codecs, NAudio.Dsp, ...) are stable
+# API surface, deliberately decoupled from the src/ assembly-split folder
+# layout. A file under src/NAudio.Core/Codecs living in namespace NAudio.Codecs
+# is by design, not a mistake.
+dotnet_diagnostic.IDE0130.severity = none
+
 # CA1051: Do not declare visible instance fields (interop structs)
 dotnet_diagnostic.CA1051.severity = none
 
@@ -56,6 +63,47 @@ dotnet_diagnostic.CA1001.severity = warning
 
 # CA2020: Prevent behavioral change from IntPtr/UIntPtr
 dotnet_diagnostic.CA2020.severity = warning
+
+# --- Code-style rules ENFORCED (the codebase is conformant; keep it that way) ---
+# These were brought to zero violations in a one-off sweep, so they're promoted
+# from the suggestion default to warning. With TreatWarningsAsErrors they fail
+# the build, steering contributors to the house style automatically. The bulk
+# reformat/modernization commits are listed in .git-blame-ignore-revs.
+# Deliberately NOT enforced (left at the suggestion default, IDE-only): 'var'
+# preference (IDE0007/0008), expression bodies, parentheses (IDE0047/0048),
+# IDE0058, IDE0059 and the dead-member rules (IDE0051/0052) — these are either
+# stylistically contentious or flag intentional interop/ported/breadcrumb code.
+
+# IDE0055: Fix formatting (whitespace normalised via 'dotnet format')
+dotnet_diagnostic.IDE0055.severity = warning
+
+# IDE0161: Use file-scoped namespaces
+dotnet_diagnostic.IDE0161.severity = warning
+
+# IDE0005 (remove unnecessary usings) is enforced per-path in .editorconfig:
+# it requires GenerateDocumentationFile=true, which the library projects set
+# but the sample/tool projects don't, so it's scoped to src/ there.
+
+# IDE0004: Remove unnecessary casts
+dotnet_diagnostic.IDE0004.severity = warning
+
+# IDE0040: Add accessibility modifiers
+dotnet_diagnostic.IDE0040.severity = warning
+
+# IDE0044: Make field readonly where never reassigned
+dotnet_diagnostic.IDE0044.severity = warning
+
+# IDE1005: Use conditional delegate invocation (?.Invoke)
+dotnet_diagnostic.IDE1005.severity = warning
+
+# IDE0090: Simplify 'new' expression (target-typed new)
+dotnet_diagnostic.IDE0090.severity = warning
+
+# IDE0063: Use simple 'using' statement
+dotnet_diagnostic.IDE0063.severity = warning
+
+# IDE0031: Use null propagation
+dotnet_diagnostic.IDE0031.severity = warning
 
 # --- Rules promoted to ERROR (genuine breakage, not style) ---
 # Source-generated COM interop diagnostics that mean the code is actually

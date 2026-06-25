@@ -1,0 +1,57 @@
+﻿using System;
+using System.Runtime.InteropServices;
+using NAudio.CoreAudioApi.Interfaces;
+
+namespace NAudio.CoreAudioApi;
+
+/// <summary>
+/// Parts List
+/// </summary>
+public class PartsList
+{
+    private readonly IPartsList partsListInterface;
+
+    internal PartsList(IPartsList partsList)
+    {
+        partsListInterface = partsList;
+    }
+
+    /// <summary>
+    /// Part count
+    /// </summary>
+    public uint Count
+    {
+        get
+        {
+            uint result = 0;
+            partsListInterface?.GetCount(out result);
+
+            return result;
+        }
+    }
+
+    /// <summary>
+    /// Get part by index
+    /// </summary>
+    public Part this[uint index]
+    {
+        get
+        {
+            if (partsListInterface == null)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+
+            partsListInterface.GetPart(index, out var ptr);
+            try
+            {
+                return new Part((IPart)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                    ptr, CreateObjectFlags.UniqueInstance));
+            }
+            finally
+            {
+                Marshal.Release(ptr);
+            }
+        }
+    }
+}

@@ -3,6 +3,7 @@ using NUnit.Framework;
 using NAudio.Wave;
 using System.IO;
 using NAudio.Utils;
+using NAudio.Dmo;
 using NAudio.Tests.Shared;
 
 namespace NAudio.Core.Tests.WaveStreams;
@@ -103,6 +104,106 @@ public class WaveFileWriterTests
         {
             var sample = (float)(amplitude * Math.Sin((2 * Math.PI * n * frequency) / writer.WaveFormat.SampleRate));
             writer.WriteSample(sample);
+        }
+    }
+
+    [Test]
+    public void WriteSampleTo32BitExtensibleFloatRoundTripsCorrectly()
+    {
+        // Regression test for https://github.com/naudio/NAudio/issues/651
+        // A 32-bit WaveFormatExtensible defaults to an IEEE-float subformat, so WriteSample
+        // must write the float verbatim. Previously it truncated the normalised float to an
+        // Int32 before scaling, so almost every sample was written as zero.
+        var samples = new[] { 0.0f, 0.5f, -0.5f, 0.25f, -0.25f, 1.0f, -1.0f };
+        var format = new WaveFormatExtensible(44100, 32, 1);
+        Assert.That(format.SubFormat, Is.EqualTo(AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT), "Sanity: default 32-bit extensible is IEEE float");
+
+        var ms = new MemoryStream();
+        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), format))
+        {
+            foreach (var sample in samples)
+            {
+                writer.WriteSample(sample);
+            }
+        }
+
+        ms.Position = 0;
+        using var reader = new WaveFileReader(ms);
+        Assert.That(reader.WaveFormat.BitsPerSample, Is.EqualTo(32), "Bits Per Sample");
+        Assert.That(reader.WaveFormat.Encoding, Is.EqualTo(WaveFormatEncoding.Extensible), "Encoding");
+        Assert.That(reader.Length, Is.EqualTo(samples.Length * 4), "Data length");
+
+        var buffer = new byte[samples.Length * 4];
+        int read = reader.Read(buffer, 0, buffer.Length);
+        Assert.That(read, Is.EqualTo(buffer.Length), "Bytes read");
+
+        for (int n = 0; n < samples.Length; n++)
+        {
+            float actual = BitConverter.ToSingle(buffer, n * 4);
+            Assert.That(actual, Is.EqualTo(samples[n]), $"Sample {n} ({samples[n]})");
+        }
+    }
+
+    [Test]
+    public void WriteSampleResolvesSubFormatFromReadBackExtensibleFormat()
+    {
+        // When an extensible format is read back from a stream it materialises as a
+        // WaveFormatExtraData (not a WaveFormatExtensible), so WriteSample must still be able to
+        // resolve the IEEE-float subformat when that format is reused to write a new file.
+        var samples = new[] { 0.0f, 0.5f, -0.5f, 1.0f, -1.0f };
+
+        var firstPass = new MemoryStream();
+        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(firstPass), new WaveFormatExtensible(44100, 32, 1)))
+        {
+            foreach (var sample in samples) writer.WriteSample(sample);
+        }
+
+        firstPass.Position = 0;
+        using var reader = new WaveFileReader(firstPass);
+        var readBackFormat = reader.WaveFormat;
+        Assert.That(readBackFormat, Is.InstanceOf<WaveFormatExtraData>(), "Read-back format type");
+        Assert.That(readBackFormat.AsStandardWaveFormat().Encoding, Is.EqualTo(WaveFormatEncoding.IeeeFloat), "Resolved subformat");
+
+        // Reuse the read-back (WaveFormatExtraData) format to write a fresh file.
+        var secondPass = new MemoryStream();
+        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(secondPass), readBackFormat))
+        {
+            foreach (var sample in samples) writer.WriteSample(sample);
+        }
+
+        secondPass.Position = 0;
+        using var reader2 = new WaveFileReader(secondPass);
+        var buffer = new byte[samples.Length * 4];
+        int read = reader2.Read(buffer, 0, buffer.Length);
+        Assert.That(read, Is.EqualTo(buffer.Length), "Bytes read");
+        for (int n = 0; n < samples.Length; n++)
+        {
+            Assert.That(BitConverter.ToSingle(buffer, n * 4), Is.EqualTo(samples[n]), $"Sample {n} ({samples[n]})");
+        }
+    }
+
+    [Test]
+    public void WriteShortSamplesTo32BitExtensibleFloatRoundTripsCorrectly()
+    {
+        // The WriteSamples(short[]) path shared the WriteSample bug: it wrote integer PCM into a
+        // 32-bit extensible format even when that format's subformat is IEEE float.
+        var samples = new short[] { 0, 16384, -16384, short.MaxValue, short.MinValue };
+        var ms = new MemoryStream();
+        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), new WaveFormatExtensible(44100, 32, 1)))
+        {
+            writer.WriteSamples(samples, 0, samples.Length);
+        }
+
+        ms.Position = 0;
+        using var reader = new WaveFileReader(ms);
+        Assert.That(reader.Length, Is.EqualTo(samples.Length * 4), "Data length");
+        var buffer = new byte[samples.Length * 4];
+        int read = reader.Read(buffer, 0, buffer.Length);
+        Assert.That(read, Is.EqualTo(buffer.Length), "Bytes read");
+        for (int n = 0; n < samples.Length; n++)
+        {
+            float expected = samples[n] / (float)(short.MaxValue + 1);
+            Assert.That(BitConverter.ToSingle(buffer, n * 4), Is.EqualTo(expected), $"Sample {n} ({samples[n]})");
         }
     }
 

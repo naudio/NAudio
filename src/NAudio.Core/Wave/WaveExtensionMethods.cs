@@ -28,14 +28,31 @@ public static class WaveExtensionMethods
     }
 
     /// <summary>
-    /// Turns WaveFormatExtensible into a standard waveformat if possible
+    /// Turns a WAVE_FORMAT_EXTENSIBLE into a standard waveformat if possible. Copes with
+    /// both <see cref="WaveFormatExtensible"/> (e.g. one you constructed) and
+    /// <see cref="WaveFormatExtraData"/> (how an extensible format read from a file or stream
+    /// is materialised), unpacking the SubFormat GUID from the raw extra data in the latter case.
     /// </summary>
     /// <param name="waveFormat">Input wave format</param>
     /// <returns>A standard PCM or IEEE waveformat, or the original waveformat</returns>
     public static WaveFormat AsStandardWaveFormat(this WaveFormat waveFormat)
     {
-        var wfe = waveFormat as WaveFormatExtensible;
-        return wfe != null ? wfe.ToStandardWaveFormat() : waveFormat;
+        if (waveFormat is WaveFormatExtensible wfe)
+        {
+            return wfe.ToStandardWaveFormat();
+        }
+        // A WaveFormatExtensible read back from a stream arrives as a WaveFormatExtraData whose
+        // SubFormat GUID lives in the extra data (after the 2-byte wValidBitsPerSample and
+        // 4-byte dwChannelMask fields).
+        if (waveFormat is WaveFormatExtraData { Encoding: WaveFormatEncoding.Extensible } extra && extra.ExtraSize >= 22)
+        {
+            var subFormat = new Guid(extra.ExtraData.AsSpan(6, 16));
+            if (subFormat == NAudio.Dmo.AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT && waveFormat.BitsPerSample == 32)
+                return WaveFormat.CreateIeeeFloatWaveFormat(waveFormat.SampleRate, waveFormat.Channels);
+            if (subFormat == NAudio.Dmo.AudioMediaSubtypes.MEDIASUBTYPE_PCM)
+                return new WaveFormat(waveFormat.SampleRate, waveFormat.BitsPerSample, waveFormat.Channels);
+        }
+        return waveFormat;
     }
 
     /// <summary>

@@ -405,7 +405,18 @@ public class WaveFileWriter : Stream
         }
         else if (WaveFormat.BitsPerSample == 32 && WaveFormat.Encoding == WaveFormatEncoding.Extensible)
         {
-            writer.Write(UInt16.MaxValue * (Int32)sample);
+            // A 32-bit WAVE_FORMAT_EXTENSIBLE can be either integer PCM or IEEE float,
+            // distinguished by its SubFormat GUID (NAudio defaults 32-bit extensible to IEEE
+            // float). AsStandardWaveFormat resolves the subformat for both WaveFormatExtensible
+            // and WaveFormatExtraData, so honour it rather than assuming PCM.
+            if (WaveFormat.AsStandardWaveFormat().Encoding == WaveFormatEncoding.IeeeFloat)
+            {
+                writer.Write(sample);
+            }
+            else
+            {
+                writer.Write((Int32)(Int32.MaxValue * sample));
+            }
             dataChunkSize += 4;
         }
         else if (WaveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
@@ -478,12 +489,25 @@ public class WaveFileWriter : Stream
             }
             dataChunkSize += (count * 3);
         }
-        // 32 bit PCM data
+        // 32 bit PCM or IEEE float data
         else if (WaveFormat.BitsPerSample == 32 && WaveFormat.Encoding == WaveFormatEncoding.Extensible)
         {
-            for (int sample = 0; sample < count; sample++)
+            // As in WriteSample, a 32-bit extensible format may carry an IEEE-float subformat,
+            // in which case the 16-bit samples must be normalised to float rather than written
+            // as integer PCM (which would leave float-declared data unreadable).
+            if (WaveFormat.AsStandardWaveFormat().Encoding == WaveFormatEncoding.IeeeFloat)
             {
-                writer.Write(UInt16.MaxValue * samples[sample + offset]);
+                for (int sample = 0; sample < count; sample++)
+                {
+                    writer.Write(samples[sample + offset] / (float)(Int16.MaxValue + 1));
+                }
+            }
+            else
+            {
+                for (int sample = 0; sample < count; sample++)
+                {
+                    writer.Write(UInt16.MaxValue * samples[sample + offset]);
+                }
             }
             dataChunkSize += (count * 4);
         }

@@ -49,7 +49,7 @@ apps need only re-target to `net9.0` and adjust custom providers to the new
 
  * Minimum target framework is now `net9.0` (legacy .NET Framework / .NET Standard 2.0 dropped)
  * `IWaveProvider.Read` / `ISampleProvider.Read` now take a single `Span<byte>` / `Span<float>` (was buffer/offset/count) — callers migrate via `source.Read(buffer.AsSpan(offset, count))`; implementations override the span method
- * `WasapiOut`, `WasapiCapture` and `WasapiLoopbackCapture` are `[Obsolete]` in favour of `WasapiPlayer` / `WasapiRecorder` (the legacy types still ship and work); `WasapiOut`'s embedded exclusive-mode resampler was removed
+ * `WasapiOut`, `WasapiCapture` and `WasapiLoopbackCapture` are `[Obsolete]` in favour of `WasapiPlayer` / `WasapiRecorder` (the legacy types still ship and work); `WasapiOut`'s embedded exclusive-mode resampler was removed, but it now adapts bit depth and channels (PCM↔float, mono↔stereo) in exclusive mode, so only a sample-rate mismatch requires upstream resampling
  * `WaveOut` / `WaveIn` now default to event-driven callbacks; the window-based variants are renamed `WaveOutWindow` / `WaveInWindow` in `NAudio.WinForms`
  * Some types moved package/namespace as part of the split — classic Windows MIDI I/O and `winmm` types to `NAudio.WinMM`; the DMO/DirectSound types into the new `NAudio.Dmo` package; plus smaller moves (`AudioVolumeLevel`, `CaptureState`, `DmoMp3FrameDecompressor`). Meta-package consumers are unaffected
  * `SimpleCompressorStream`, `ImpulseResponseConvolution` and `NAudio.Extras.Equalizer` were removed — superseded by `NAudio.Effects` (`CompressorEffect`, `ConvolutionReverbEffect`, `Equalizer`)

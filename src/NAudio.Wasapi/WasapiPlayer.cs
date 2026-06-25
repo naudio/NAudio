@@ -12,7 +12,7 @@ namespace NAudio.Wave;
 /// Modern WASAPI audio player with zero-copy buffer access, MMCSS thread priority,
 /// and IAudioClient3 low-latency support. Created via <see cref="WasapiPlayerBuilder"/>.
 /// </summary>
-public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
+public class WasapiPlayer : IWavePlayer, IWavePosition, IWaveLatency, IAsyncDisposable
 {
     private readonly MMDevice mmDevice;
     private readonly AudioClientShareMode shareMode;
@@ -175,6 +175,38 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
 
         return (long)pos * OutputWaveFormat.AverageBytesPerSecond
              / (long)audioClient.AudioClockClient.Frequency;
+    }
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Uses the latency negotiated with the audio engine at <see cref="Init"/> time. For the
+    /// <c>IAudioClient3</c> low-latency path this is the actual engine period selected by the
+    /// driver, not the value originally requested.
+    /// </remarks>
+    public TimeSpan AverageLatency => TimeSpan.FromMilliseconds(latencyMilliseconds);
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Derived from <c>IAudioClient::GetCurrentPadding</c>, which reports frames still in the
+    /// endpoint buffer waiting to be rendered. Falls back to <see cref="AverageLatency"/> when
+    /// not playing or when the audio client has not yet been initialised.
+    /// </remarks>
+    public TimeSpan CurrentLatency
+    {
+        get
+        {
+            if (playbackState == PlaybackState.Stopped || OutputWaveFormat == null)
+                return AverageLatency;
+            try
+            {
+                int padding = audioClient.CurrentPadding;
+                return TimeSpan.FromSeconds(padding / (double)OutputWaveFormat.SampleRate);
+            }
+            catch
+            {
+                return AverageLatency;
+            }
+        }
     }
 
     /// <summary>

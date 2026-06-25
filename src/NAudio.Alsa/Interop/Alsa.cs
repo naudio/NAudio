@@ -96,6 +96,13 @@ internal static partial class AlsaInterop
     [LibraryImport(AlsaLibrary, EntryPoint = "snd_pcm_recover")]
     internal static partial int PcmRecover(IntPtr pcm, int err, int silent);
 
+    // snd_pcm_delay returns, via the out param, how many frames the
+    // application is "ahead" of the audio card (playback) or "behind"
+    // it (capture). This is exactly the data needed for IWaveLatency
+    // CurrentLatency.
+    [LibraryImport(AlsaLibrary, EntryPoint = "snd_pcm_delay")]
+    internal static partial int PcmDelay(IntPtr pcm, out nint delay);
+
     // snd_pcm_avail_update / writei / readi return snd_pcm_sframes_t
     // (ssize_t, pointer-sized signed). Declaring them as int/ulong (as the
     // PoC did) loses the sign on xrun and truncates on 64-bit.

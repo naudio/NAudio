@@ -9,7 +9,7 @@ namespace NAudio.Wave;
 /// <summary>
 /// WaveOut playback device using event callbacks
 /// </summary>
-public class WaveOut : IWavePlayer, IWavePosition
+public class WaveOut : IWavePlayer, IWavePosition, IWaveLatency
 {
     private readonly object waveOutLock;
     private readonly SynchronizationContext syncContext;
@@ -271,6 +271,42 @@ public class WaveOut : IWavePlayer, IWavePosition
     /// Gets a <see cref="Wave.WaveFormat"/> instance indicating the format the hardware is using.
     /// </summary>
     public WaveFormat OutputWaveFormat => waveStream.WaveFormat;
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Computed from the buffer configuration as <c>(NumberOfBuffers - 0.5) * BufferMilliseconds</c>:
+    /// in steady state every queued buffer plus half of the one currently playing sits between
+    /// the application and the speaker.
+    /// </remarks>
+    public TimeSpan AverageLatency =>
+        TimeSpan.FromMilliseconds(BufferMilliseconds * (NumberOfBuffers - 0.5));
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Returns the elapsed time since the oldest in-queue buffer was filled — that is the
+    /// buffer the hardware is currently draining. Falls back to <see cref="AverageLatency"/>
+    /// when no buffer timestamps are available (e.g. immediately after <see cref="Init"/>).
+    /// </remarks>
+    public TimeSpan CurrentLatency
+    {
+        get
+        {
+            var current = buffers;
+            if (current == null) return AverageLatency;
+
+            long oldest = long.MaxValue;
+            foreach (var buffer in current)
+            {
+                if (!buffer.InQueue) continue;
+                long ts = buffer.FilledTimestamp;
+                if (ts != long.MinValue && ts < oldest) oldest = ts;
+            }
+            if (oldest == long.MaxValue) return AverageLatency;
+
+            long elapsed = Stopwatch.GetTimestamp() - oldest;
+            return TimeSpan.FromSeconds(elapsed / (double)Stopwatch.Frequency);
+        }
+    }
 
     /// <summary>
     /// Playback State

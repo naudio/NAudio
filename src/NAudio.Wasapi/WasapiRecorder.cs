@@ -13,7 +13,7 @@ namespace NAudio.Wave;
 /// process-specific loopback capture, and IAsyncEnumerable support.
 /// Created via <see cref="WasapiRecorderBuilder"/>.
 /// </summary>
-public class WasapiRecorder : IDisposable, IAsyncDisposable
+public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
 {
     private const long ReftimesPerMillisec = 10000;
 
@@ -52,6 +52,38 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
     /// Current capture state.
     /// </summary>
     public CaptureState CaptureState => captureState;
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// The capture buffer length requested at <see cref="WasapiRecorderBuilder"/> time. The
+    /// audio engine may have rounded it to the nearest supported period; for an exact value
+    /// query the underlying audio client after <see cref="StartRecording"/>.
+    /// </remarks>
+    public TimeSpan AverageLatency => TimeSpan.FromMilliseconds(bufferMilliseconds);
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Derived from <c>IAudioClient::GetCurrentPadding</c>: on a capture stream this is the
+    /// count of frames already captured but not yet read by the host. Falls back to
+    /// <see cref="AverageLatency"/> when not recording or before the audio client is up.
+    /// </remarks>
+    public TimeSpan CurrentLatency
+    {
+        get
+        {
+            if (captureState != CaptureState.Capturing || audioClient == null)
+                return AverageLatency;
+            try
+            {
+                int padding = audioClient.CurrentPadding;
+                return TimeSpan.FromSeconds(padding / (double)waveFormat.SampleRate);
+            }
+            catch
+            {
+                return AverageLatency;
+            }
+        }
+    }
 
     internal WasapiRecorder(MMDevice device, AudioClientShareMode shareMode, bool useEventSync,
         int bufferMilliseconds, WaveFormat requestedFormat, string mmcssTaskName, bool useLoopback = false)

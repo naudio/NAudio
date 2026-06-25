@@ -11,7 +11,7 @@ namespace NAudio.Wave.Alsa;
 /// for each captured period. The thread is always joined before the
 /// device handle is closed.
 /// </remarks>
-public sealed class AlsaIn : IWaveIn
+public sealed class AlsaIn : IWaveIn, IWaveLatency
 {
     private readonly AlsaPcm pcm;
     private WaveFormat waveFormat = new(44100, 16, 2);
@@ -44,6 +44,33 @@ public sealed class AlsaIn : IWaveIn
             }
 
             waveFormat = value;
+        }
+    }
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// The ring buffer is configured at <see cref="StartRecording"/> time as
+    /// <c>PeriodFrames × Periods</c>, so the steady-state delay between a sample hitting the
+    /// hardware and being delivered to <see cref="DataAvailable"/> subscribers is the full
+    /// buffer's worth of frames.
+    /// </remarks>
+    public TimeSpan AverageLatency =>
+        TimeSpan.FromSeconds((long)AlsaPcm.PeriodFrames * AlsaPcm.Periods / (double)waveFormat.SampleRate);
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Uses <c>snd_pcm_delay</c>, which on a capture stream returns the number of frames
+    /// already captured and waiting to be read — exactly the age of the oldest unread sample.
+    /// Falls back to <see cref="AverageLatency"/> when not running or the call fails.
+    /// </remarks>
+    public TimeSpan CurrentLatency
+    {
+        get
+        {
+            if (!pcm.Running) return AverageLatency;
+            if (AlsaInterop.PcmDelay(pcm.Pcm, out nint delayFrames) < 0 || delayFrames < 0)
+                return AverageLatency;
+            return TimeSpan.FromSeconds(delayFrames / (double)waveFormat.SampleRate);
         }
     }
 

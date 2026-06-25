@@ -57,6 +57,8 @@ internal static class TestRegistration
         TestRegistry.Register(new WasapiPlaySineWaveTest());
         TestRegistry.Register(new WasapiRecordAndPlaybackTest());
         TestRegistry.Register(new WasapiRecordToWavFileTest());
+        TestRegistry.Register(new WasapiLoopbackCaptureTest());
+        TestRegistry.Register(new WasapiProcessLoopbackTest());
         TestRegistry.Register(new WasapiDeviceNotificationWatcherTest());
         TestRegistry.Register(new WasapiVolumeCallbackStressTest());
 

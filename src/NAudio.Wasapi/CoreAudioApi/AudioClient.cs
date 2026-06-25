@@ -17,6 +17,7 @@ public class AudioClient : IDisposable
     private static readonly Guid ID_AudioClockClient = new("CD63314F-3FBA-4a1b-812C-EF96358728E7");
     private static readonly Guid ID_AudioRenderClient = new("F294ACFC-3146-4483-A7BF-ADDCA7C260E2");
     private static readonly Guid ID_AudioCaptureClient = new("c8adbd64-e71e-48a0-a4de-185c395cd317");
+    private static readonly Guid IID_IAudioClient = new("1CB9AD4C-DBFA-4c32-B178-C2F568A703B2");
     private static readonly Guid IID_IAudioClient2 = new("726778CD-F60A-4eda-82DE-E47610CD78AA");
     private static readonly Guid IID_IActivateAudioInterfaceCompletionHandler = new("41D949AB-9862-444A-80F6-C261334DA5EB");
     private IAudioClient audioClientInterface;
@@ -31,12 +32,18 @@ public class AudioClient : IDisposable
     private int disposed;
 
     /// <summary>
+    /// The special device interface path passed to ActivateAudioInterfaceAsync to request a
+    /// per-process loopback capture client. See the Windows ApplicationLoopback sample.
+    /// </summary>
+    private const string VirtualAudioDeviceProcessLoopback = "VAD\\Process_Loopback";
+
+    /// <summary>
     /// Activate Async
     /// </summary>
-    public static async Task<AudioClient> ActivateAsync(string deviceInterfacePath, AudioClientProperties? audioClientProperties)
+    public static Task<AudioClient> ActivateAsync(string deviceInterfacePath, AudioClientProperties? audioClientProperties)
     {
-        var icbh = new ActivateAudioInterfaceCompletionHandler(
-            ac2 =>
+        return ActivateAudioInterfaceAsync(deviceInterfacePath, IID_IAudioClient2, IntPtr.Zero,
+            client =>
             {
                 if (audioClientProperties != null)
                 {
@@ -44,7 +51,7 @@ public class AudioClient : IDisposable
                     try
                     {
                         Marshal.StructureToPtr(audioClientProperties.Value, p, false);
-                        ac2.SetClientProperties(p);
+                        ((IAudioClient2)client).SetClientProperties(p);
                     }
                     finally
                     {
@@ -52,6 +59,60 @@ public class AudioClient : IDisposable
                     }
                 }
             });
+    }
+
+    /// <summary>
+    /// Activates an AudioClient for process-specific loopback capture, capturing the audio
+    /// rendered by the specified process (and optionally its child processes).
+    /// Requires Windows 10 version 2004 (build 19041) or later.
+    /// </summary>
+    /// <param name="processId">The target process id.</param>
+    /// <param name="mode">Whether to include or exclude the target process tree.</param>
+    public static async Task<AudioClient> ActivateProcessLoopbackAsync(uint processId,
+        ProcessLoopbackMode mode = ProcessLoopbackMode.IncludeTargetProcessTree)
+    {
+        var activationParams = new AudioClientActivationParams
+        {
+            ActivationType = AudioClientActivationType.ProcessLoopback,
+            ProcessLoopbackParams = new AudioClientProcessLoopbackParams
+            {
+                TargetProcessId = processId,
+                ProcessLoopbackMode = mode,
+            },
+        };
+
+        // Both the activation params and the PROPVARIANT wrapping them must stay alive until the
+        // native activation call has consumed them, so allocate on the unmanaged heap rather than
+        // pinning locals across the await.
+        int paramsSize = Marshal.SizeOf<AudioClientActivationParams>();
+        IntPtr paramsPtr = Marshal.AllocHGlobal(paramsSize);
+        IntPtr pvPtr = Marshal.AllocHGlobal(Marshal.SizeOf<PropVariantBlobHeader>());
+        try
+        {
+            Marshal.StructureToPtr(activationParams, paramsPtr, false);
+            var pv = new PropVariantBlobHeader
+            {
+                Vt = (ushort)VarType.VT_BLOB,
+                BlobSize = (uint)paramsSize,
+                BlobData = paramsPtr,
+            };
+            Marshal.StructureToPtr(pv, pvPtr, false);
+
+            // The process-loopback virtual device only supports the base IAudioClient interface.
+            return await ActivateAudioInterfaceAsync(VirtualAudioDeviceProcessLoopback, IID_IAudioClient, pvPtr, _ => { })
+                .ConfigureAwait(false);
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(pvPtr);
+            Marshal.FreeHGlobal(paramsPtr);
+        }
+    }
+
+    private static async Task<AudioClient> ActivateAudioInterfaceAsync(string deviceInterfacePath,
+        Guid riid, IntPtr activationParams, Action<IAudioClient> initializeAction)
+    {
+        var icbh = new ActivateAudioInterfaceCompletionHandler(initializeAction);
         // Multi-vtable CCW hazard: GetOrCreateComInterfaceForObject returns the IUnknown
         // vtable pointer; the WASAPI runtime expects an IActivateAudioInterfaceCompletionHandler
         // pointer. QI for the specific IID before handing the pointer to native, otherwise
@@ -62,7 +123,7 @@ public class AudioClient : IDisposable
             Marshal.ThrowExceptionForHR(Marshal.QueryInterface(unknownPtr, in IID_IActivateAudioInterfaceCompletionHandler, out var handlerPtr));
             try
             {
-                Marshal.ThrowExceptionForHR(NativeMethods.ActivateAudioInterfaceAsync(deviceInterfacePath, IID_IAudioClient2, IntPtr.Zero, handlerPtr, out var operationPtr));
+                Marshal.ThrowExceptionForHR(NativeMethods.ActivateAudioInterfaceAsync(deviceInterfacePath, riid, activationParams, handlerPtr, out var operationPtr));
                 Marshal.Release(operationPtr);
             }
             finally
@@ -74,8 +135,24 @@ public class AudioClient : IDisposable
         {
             Marshal.Release(unknownPtr);
         }
-        var audioClient2 = await icbh;
-        return new AudioClient((IAudioClient)audioClient2);
+        var audioClientInterface = await icbh.Completion.ConfigureAwait(false);
+        return new AudioClient(audioClientInterface);
+    }
+
+    /// <summary>
+    /// Sequential-layout view of the head of a PROPVARIANT carrying a VT_BLOB payload. The CLR
+    /// lays out the trailing pointer with native alignment, so this matches the real BLOB layout
+    /// on both x86 (pointer at offset 12) and x64 (offset 16) without manual padding.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    private struct PropVariantBlobHeader
+    {
+        public ushort Vt;
+        public ushort Reserved1;
+        public ushort Reserved2;
+        public ushort Reserved3;
+        public uint BlobSize;
+        public IntPtr BlobData;
     }
 
     /// <summary>

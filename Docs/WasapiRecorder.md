@@ -115,3 +115,42 @@ recorder.StartRecording();
 The virtual loopback device does not expose a mix format, so the recorder captures at the format you request via `WithFormat(...)`, defaulting to 44.1 kHz stereo IEEE float. Use `ProcessLoopbackMode.ExcludeTargetProcessTree` to capture everything *except* the target process. As with all WASAPI loopback, no buffers are delivered while the target renders no audio.
 
 For system-wide loopback (everything the device is playing) use `WithLoopbackCapture()` instead.
+
+## Acoustic echo cancellation reference
+
+On a microphone capture stream, Windows can run acoustic echo cancellation (AEC) to subtract the
+audio coming out of your speakers from the captured signal — useful for calling and conferencing
+apps. The cancellation itself is performed by an audio processing object (APO) in the capture
+pipeline supplied by the device/driver or by Windows; NAudio does not implement echo cancellation.
+What it exposes is control over **which render endpoint** provides the loopback *reference* signal
+that the AEC effect cancels out.
+
+Configure the reference endpoint up front with `WithEchoCancellationReferenceEndpoint`. Pass the
+render device whose output should be cancelled, or call it with no argument to let Windows pick the
+reference automatically:
+
+```c#
+await using var recorder = new WasapiRecorderBuilder()
+    .WithDevice(microphone)                              // a capture endpoint
+    .WithEchoCancellationReferenceEndpoint(speakers)     // the render endpoint to cancel out
+    .Build();
+
+recorder.StartRecording();
+```
+
+This requires **Windows 11 build 22621 or later** and a capture endpoint whose AEC effect supports
+controlling the reference endpoint. If it does not, `StartRecording` throws `NotSupportedException`.
+Note that an endpoint may apply AEC but not allow choosing the reference — in that case the control
+is unavailable and Windows uses its own reference selection.
+
+You can also change the reference endpoint while recording via the
+`AcousticEchoCancellationControl` property (available once recording has started, otherwise null):
+
+```c#
+recorder.StartRecording();
+recorder.AcousticEchoCancellationControl?.SetReferenceEndpoint(otherSpeakers);
+recorder.AcousticEchoCancellationControl?.UseDefaultReferenceEndpoint(); // let Windows choose
+```
+
+At the lower level, `AudioClient.TryGetAcousticEchoCancellationControl()` returns the same control
+(or null when unsupported) for an initialized capture client.

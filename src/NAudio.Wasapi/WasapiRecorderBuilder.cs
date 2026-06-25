@@ -18,6 +18,8 @@ public class WasapiRecorderBuilder
     private string mmcssTaskName;
     private uint? processLoopbackId;
     private ProcessLoopbackMode processLoopbackMode = ProcessLoopbackMode.IncludeTargetProcessTree;
+    private bool configureEchoCancellationReference;
+    private string echoCancellationReferenceEndpointId;
 
     /// <summary>
     /// Use the specified audio device for capture.
@@ -106,6 +108,26 @@ public class WasapiRecorderBuilder
     }
 
     /// <summary>
+    /// Sets the render endpoint used as the reference stream for acoustic echo cancellation (AEC)
+    /// on the capture stream. Pass the render device whose output should be cancelled out of the
+    /// microphone signal, or null (the default) to let Windows pick the loopback reference itself.
+    /// </summary>
+    /// <remarks>
+    /// AEC is performed by an audio processing object in the capture pipeline; this only selects the
+    /// loopback reference endpoint. <see cref="WasapiRecorder.StartRecording"/> throws
+    /// <see cref="NotSupportedException"/> if the capture endpoint does not support controlling the
+    /// AEC reference endpoint. Requires Windows 11 build 22621 or later.
+    /// </remarks>
+    /// <param name="referenceRenderDevice">The render device to use as the reference stream, or null
+    /// to let Windows choose automatically.</param>
+    public WasapiRecorderBuilder WithEchoCancellationReferenceEndpoint(MMDevice referenceRenderDevice = null)
+    {
+        configureEchoCancellationReference = true;
+        echoCancellationReferenceEndpointId = referenceRenderDevice?.ID;
+        return this;
+    }
+
+    /// <summary>
     /// Capture audio from a specific process (and optionally its child processes).
     /// Requires Windows 10 2004 (build 19041) or later.
     /// This uses ActivateAudioInterfaceAsync with AUDIOCLIENT_PROCESS_LOOPBACK_PARAMS.
@@ -137,7 +159,8 @@ public class WasapiRecorderBuilder
 
         var actualDevice = device ?? GetDefaultDevice(useLoopback);
         return new WasapiRecorder(actualDevice, shareMode, useEventSync,
-            bufferMilliseconds, requestedFormat, mmcssTaskName, useLoopback);
+            bufferMilliseconds, requestedFormat, mmcssTaskName, useLoopback,
+            configureEchoCancellationReference, echoCancellationReferenceEndpointId);
     }
 
     /// <summary>

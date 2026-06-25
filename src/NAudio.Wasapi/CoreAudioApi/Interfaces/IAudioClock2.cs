@@ -25,20 +25,17 @@ internal partial interface IAudioClock
 /// <summary>
 /// Defined in AudioClient.h
 /// </summary>
+/// <remarks>
+/// IAudioClock2 inherits from IUnknown (NOT from <see cref="IAudioClock"/>), so its vtable holds a
+/// single method, GetDevicePosition, right after the IUnknown slots. Do not redeclare IAudioClock's
+/// methods here: they belong to a different interface, and prepending them would push GetDevicePosition
+/// to the wrong vtable slot, dispatching the call to the wrong native function (access violation).
+/// </remarks>
 [Guid("6f49ff73-6727-49AC-A008-D98CF5E70048"),
     InterfaceType(ComInterfaceType.InterfaceIsIUnknown),
     GeneratedComInterface]
 internal partial interface IAudioClock2
 {
-    [PreserveSig]
-    int GetFrequency(out ulong frequency);
-
-    [PreserveSig]
-    int GetPosition(out ulong devicePosition, out ulong qpcPosition);
-
-    [PreserveSig]
-    int GetCharacteristics(out uint characteristics);
-
     [PreserveSig]
     int GetDevicePosition(out ulong devicePosition, out ulong qpcPosition);
 }

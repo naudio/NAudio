@@ -86,6 +86,21 @@ internal partial interface IAudioClient3
         out uint pMaxPeriodInFrames);
 
     /// <summary>
+    /// Returns the current period of the audio engine.
+    /// </summary>
+    /// <remarks>
+    /// IMPORTANT: this method must precede <see cref="InitializeSharedAudioStream"/> — that is the
+    /// order they appear in the native IAudioClient3 vtable (audioclient.h). Declaring them in the
+    /// wrong order makes a call to one dispatch to the other; because their signatures differ, calling
+    /// InitializeSharedAudioStream then runs GetCurrentSharedModeEnginePeriod, which dereferences the
+    /// first argument as an output pointer and access-violates (0xC0000005).
+    /// </remarks>
+    [PreserveSig]
+    int GetCurrentSharedModeEnginePeriod(
+        out IntPtr ppFormat,
+        out uint pCurrentPeriodInFrames);
+
+    /// <summary>
     /// Initializes a shared audio stream with the specified periodicity.
     /// </summary>
     [PreserveSig]
@@ -94,12 +109,4 @@ internal partial interface IAudioClient3
         uint periodInFrames,
         IntPtr pFormat,
         in Guid audioSessionGuid);
-
-    /// <summary>
-    /// Returns the current period of the audio engine.
-    /// </summary>
-    [PreserveSig]
-    int GetCurrentSharedModeEnginePeriod(
-        out IntPtr ppFormat,
-        out uint pCurrentPeriodInFrames);
 }

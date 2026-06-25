@@ -14,14 +14,14 @@ internal static class MediaFoundationEncodeHelper
 {
     public static IReadOnlyList<TestParameter> LossyParameters { get; } =
     [
-        new("input", typeof(string), Required: true, Help: "input audio file path"),
+        new("input", typeof(string), Required: true, Help: "input audio file path", IsFilePath: true, FileCategory: "audio"),
         new("output", typeof(string), Required: false, Help: "output file path (auto if blank)"),
         new("bitrate", typeof(int), Required: false, Default: 192000, Help: "encoder bitrate in bps"),
     ];
 
     public static IReadOnlyList<TestParameter> LosslessParameters { get; } =
     [
-        new("input", typeof(string), Required: true, Help: "input audio file path"),
+        new("input", typeof(string), Required: true, Help: "input audio file path", IsFilePath: true, FileCategory: "audio"),
         new("output", typeof(string), Required: false, Help: "output file path (auto if blank)"),
     ];
 

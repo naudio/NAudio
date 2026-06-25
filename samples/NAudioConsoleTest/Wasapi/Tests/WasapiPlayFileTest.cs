@@ -17,7 +17,7 @@ internal sealed class WasapiPlayFileTest : IConsoleTest
 
     public IReadOnlyList<TestParameter> Parameters =>
     [
-        new("input", typeof(string), Required: true, Help: "audio file path"),
+        new("input", typeof(string), Required: true, Help: "audio file path", IsFilePath: true, FileCategory: "audio"),
         new("renderDevice", typeof(string), Required: false, Default: WasapiDevices.DefaultMarker,
             Help: "render endpoint friendly name (or 'default')",
             ChoiceProvider: WasapiDevices.RenderDeviceNames),
@@ -56,13 +56,27 @@ internal sealed class WasapiPlayFileTest : IConsoleTest
         using var player = builder.Build();
         using var reader = new MediaFoundationReader(inputPath);
 
+        // Validate the chosen options up front (non-destructive) before opening the stream.
+        var capability = player.GetPlaybackCapability(reader.WaveFormat);
+        if (!capability.Supported)
+            return TestResult.Fail($"Format not supported: {capability.Reason}");
+
         try { player.Init(reader); }
         catch (Exception ex) { return TestResult.Fail($"Init failed: {ex.Message}"); }
 
         AnsiConsole.MarkupLine($"[bold green]Playing[/] [grey]via {Markup.Escape(device.FriendlyName)}[/]");
         AnsiConsole.MarkupLine($"[grey]File:[/]   {Markup.Escape(Path.GetFileName(inputPath))}");
         AnsiConsole.MarkupLine($"[grey]Mode:[/]   {mode}");
+        if (mode.Equals("LowLatency", StringComparison.OrdinalIgnoreCase))
+        {
+            AnsiConsole.MarkupLine(player.LowLatencyActive
+                ? $"[green]Low latency:[/] active ({player.LatencyMilliseconds} ms)"
+                : $"[yellow]Low latency:[/] not available — fell back to standard shared mode ({Markup.Escape(player.LowLatencyUnavailableReason ?? "unknown reason")})");
+        }
+        AnsiConsole.MarkupLine($"[grey]Source:[/] {reader.WaveFormat}");
         AnsiConsole.MarkupLine($"[grey]Format:[/] {player.OutputWaveFormat}");
+        if (capability.Conversions.Count > 0)
+            AnsiConsole.MarkupLine($"[grey]Convert:[/] {Markup.Escape(string.Join(", ", capability.Conversions))}");
         AnsiConsole.MarkupLine($"[grey]Length:[/] {reader.TotalTime:hh\\:mm\\:ss\\.fff}");
         AnsiConsole.MarkupLine(ctx.Interactive
             ? "[dim]SPACE pause/resume, ESC stop[/]\n"
@@ -103,6 +117,8 @@ internal sealed class WasapiPlayFileTest : IConsoleTest
         {
             ["device"] = device.FriendlyName,
             ["mode"] = mode,
+            ["lowLatencyActive"] = player.LowLatencyActive.ToString(),
+            ["latencyMs"] = player.LatencyMilliseconds.ToString(),
             ["elapsedMs"] = elapsed.TotalMilliseconds.ToString("F0"),
             ["fileDurationMs"] = reader.TotalTime.TotalMilliseconds.ToString("F0"),
         };

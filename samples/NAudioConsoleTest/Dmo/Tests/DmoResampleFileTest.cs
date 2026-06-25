@@ -13,7 +13,7 @@ internal sealed class DmoResampleFileTest : IConsoleTest
 
     public IReadOnlyList<TestParameter> Parameters =>
     [
-        new("input", typeof(string), Required: true, Help: "input audio file path"),
+        new("input", typeof(string), Required: true, Help: "input audio file path", IsFilePath: true, FileCategory: "audio"),
         new("output", typeof(string), Required: false, Help: "output WAV path (auto if blank)"),
         new("targetRate", typeof(int), Required: false, Default: 44100, Help: "target sample rate in Hz",
             Choices: ["8000", "16000", "22050", "44100", "48000"]),

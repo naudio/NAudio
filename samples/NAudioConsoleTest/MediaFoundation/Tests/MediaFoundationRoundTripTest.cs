@@ -23,7 +23,7 @@ internal sealed class MediaFoundationRoundTripTest : IConsoleTest
 
     public IReadOnlyList<TestParameter> Parameters =>
     [
-        new("input", typeof(string), Required: true, Help: "input audio file path"),
+        new("input", typeof(string), Required: true, Help: "input audio file path", IsFilePath: true, FileCategory: "audio"),
         new("bitrate", typeof(int), Required: false, Default: 96000, Help: "encoder bitrate in bps"),
     ];
 

@@ -344,11 +344,23 @@ public class WasapiOut : IWavePlayer, IWavePosition
             flags = AudioClientStreamFlags.None;
             if (!audioClient.IsFormatSupported(shareMode, OutputWaveFormat, out WaveFormatExtensible closestSampleRateFormat))
             {
-                throw new NotSupportedException(
-                    $"Exclusive-mode WasapiOut requires a natively-supported format. The source format " +
-                    $"({OutputWaveFormat}) is not supported by the device" +
-                    (closestSampleRateFormat != null ? $"; closest match: {closestSampleRateFormat}." : ".") +
-                    " Resample upstream (e.g. with MediaFoundationResampler), use shared mode, or use WasapiPlayerBuilder.");
+                // The device won't take the source format natively. Adapt bit depth/channels (never the
+                // sample rate) to a supported format if we can — this restores the most common NAudio 2
+                // exclusive-mode case (e.g. a 32-bit float source on a 16/24-bit device) without the
+                // resampler that NAudio 3 removed. A sample-rate mismatch still can't be handled here.
+                var target = WasapiFormatAdaptation.FindSupportedExclusiveFormatAtSampleRate(audioClient, OutputWaveFormat);
+                var adapted = target != null ? WasapiFormatAdaptation.AdaptProvider(waveProvider, target) : null;
+                if (adapted == null)
+                {
+                    throw new NotSupportedException(
+                        $"Exclusive-mode WasapiOut requires a natively-supported format. The source format " +
+                        $"({OutputWaveFormat}) is not supported by the device and cannot be adapted without resampling" +
+                        (closestSampleRateFormat != null ? $"; closest match: {closestSampleRateFormat}." : ".") +
+                        " Resample upstream (e.g. with MediaFoundationResampler), use shared mode, or use WasapiPlayerBuilder.");
+                }
+
+                sourceProvider = adapted;
+                OutputWaveFormat = target;
             }
         }
 

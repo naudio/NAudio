@@ -14,7 +14,7 @@ internal sealed class WinMmConvertWithStreamTest : IConsoleTest
 
     public IReadOnlyList<TestParameter> Parameters =>
     [
-        new("input", typeof(string), Required: true, Help: "input WAV file path"),
+        new("input", typeof(string), Required: true, Help: "input WAV file path", IsFilePath: true, FileCategory: "audio"),
         new("output", typeof(string), Required: false, Help: "output WAV path (auto if blank)"),
         new("targetRate", typeof(int), Required: false, Default: 0,
             Help: "target sample rate in Hz (0 = swap between 44.1/22.05k based on input)"),

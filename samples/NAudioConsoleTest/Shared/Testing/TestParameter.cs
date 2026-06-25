@@ -19,6 +19,12 @@
 /// values already prompted for earlier parameters (so a channel picker can read the chosen
 /// driver) and returns the value in the same shape the CLI parser would produce (typically a
 /// string), so the test body doesn't have to branch on origin.</para>
+/// <para><see cref="IsFilePath"/> marks a string parameter as a path to an existing file. In menu
+/// mode the prompter then offers a most-recently-used picker (see
+/// <c>FilePathPrompter</c> / <c>RecentFilesStore</c>) so the user can re-select a previous file
+/// instead of pasting a path each time. <see cref="FileCategory"/> groups the remembered files —
+/// tests that consume the same kind of file (e.g. <c>"audio"</c>) share one recent list. The CLI
+/// path is unaffected (it still takes the literal <c>--name=value</c>).</para>
 /// </remarks>
 public sealed record TestParameter(
     string Name,
@@ -29,7 +35,9 @@ public sealed record TestParameter(
     IReadOnlyList<string>? Choices = null,
     Func<IReadOnlyList<string>>? ChoiceProvider = null,
     bool CliOnly = false,
-    Func<IReadOnlyDictionary<string, object?>, object?>? InteractivePrompter = null)
+    Func<IReadOnlyDictionary<string, object?>, object?>? InteractivePrompter = null,
+    bool IsFilePath = false,
+    string? FileCategory = null)
 {
     /// <summary>Returns the static <see cref="Choices"/> if set, otherwise invokes the
     /// <see cref="ChoiceProvider"/>. Returns null when neither is supplied.</summary>

@@ -19,7 +19,7 @@ internal sealed class SoundFileTranscodeTest : IConsoleTest
 
     public IReadOnlyList<TestParameter> Parameters =>
     [
-        new("input", typeof(string), Required: true, Help: "input audio file path"),
+        new("input", typeof(string), Required: true, Help: "input audio file path", IsFilePath: true, FileCategory: "audio"),
         new("output", typeof(string), Required: false, Help: "output path (auto if blank)"),
         new("format", typeof(string), Required: false, Default: "Flac",
             Help: "output container/codec", Choices: SoundFileTestHelper.FormatChoices),

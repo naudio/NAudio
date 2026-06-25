@@ -1,0 +1,66 @@
+﻿using Spectre.Console;
+
+namespace NAudioConsoleTest.Shared.Testing;
+
+/// <summary>
+/// Interactive prompt for file-path parameters (<see cref="TestParameter.IsFilePath"/>). Offers a
+/// most-recently-used picker so the user can re-select a previous file with one keystroke, falling
+/// back to free-text entry (paste a path) for anything new. Chosen files that exist are remembered
+/// via <see cref="RecentFilesStore"/>.
+/// </summary>
+internal static class FilePathPrompter
+{
+    // Sentinel choice that drops the user into free-text entry. Not a valid path, so it can't clash.
+    private const string EnterNewPath = "__naudio_enter_new_path__";
+
+    public static string Prompt(TestParameter p, string label)
+    {
+        var category = p.FileCategory ?? p.Name;
+        var recent = RecentFilesStore.Get(category);
+
+        string? chosen = null;
+        if (recent.Count > 0)
+        {
+            var choices = new List<string>(recent) { EnterNewPath };
+            var selection = new SelectionPrompt<string>()
+                .Title(label)
+                .AddChoices(choices)
+                .UseConverter(FormatChoice);
+            var picked = AnsiConsole.Prompt(selection);
+            if (picked != EnterNewPath)
+                chosen = picked;
+        }
+
+        chosen ??= PromptForNewPath(p, label);
+
+        if (!string.IsNullOrWhiteSpace(chosen) && File.Exists(chosen))
+            RecentFilesStore.Add(category, chosen);
+
+        return chosen;
+    }
+
+    private static string PromptForNewPath(TestParameter p, string label)
+    {
+        var prompt = new TextPrompt<string>($"{label}:").AllowEmpty();
+        if (p.Default is string s) prompt.DefaultValue(s);
+        if (p.Required && p.Default is null)
+            prompt.Validate(v => !string.IsNullOrWhiteSpace(v)
+                ? ValidationResult.Success()
+                : ValidationResult.Error("required"));
+
+        var value = AnsiConsole.Prompt(prompt);
+        return string.IsNullOrEmpty(value) ? (p.Default as string ?? value) : value;
+    }
+
+    private static string FormatChoice(string choice)
+    {
+        if (choice == EnterNewPath)
+            return "[green]Enter a new path…[/]";
+
+        var name = Path.GetFileName(choice);
+        var dir = Path.GetDirectoryName(choice);
+        return string.IsNullOrEmpty(dir)
+            ? Markup.Escape(choice)
+            : $"{Markup.Escape(name)}  [dim]{Markup.Escape(dir)}[/]";
+    }
+}

@@ -22,7 +22,7 @@ internal sealed class AsioPlayAudioFileTest : IConsoleTest
     [
         new("driver", typeof(string), Required: true, Help: "installed ASIO driver name",
             ChoiceProvider: AsioDrivers.DriverNames),
-        new("input", typeof(string), Required: true, Help: "audio file path"),
+        new("input", typeof(string), Required: true, Help: "audio file path", IsFilePath: true, FileCategory: "audio"),
         new("outputChannels", typeof(string), Required: true,
             Help: "comma-separated output channel indices (e.g. '0,1') — count must match source",
             InteractivePrompter: AsioDrivers.PickOutputChannels),

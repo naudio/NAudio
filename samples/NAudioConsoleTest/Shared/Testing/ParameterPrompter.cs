@@ -43,6 +43,10 @@ internal static class ParameterPrompter
         // which Spectre would otherwise try to parse as markup — escape it before interpolation.
         var label = p.Help is null ? p.Name : $"{p.Name} ([dim]{Markup.Escape(p.Help)}[/])";
 
+        // File-path params get the most-recently-used picker (with free-text fallback).
+        if (p.IsFilePath && p.Type == typeof(string))
+            return FilePathPrompter.Prompt(p, label);
+
         var effectiveChoices = p.GetEffectiveChoices();
         if (effectiveChoices is { Count: > 0 } choices)
         {

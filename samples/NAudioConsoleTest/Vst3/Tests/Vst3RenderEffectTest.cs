@@ -23,7 +23,7 @@ internal sealed class Vst3RenderEffectTest : IConsoleTest
         new("plugin", typeof(string), Required: true,
             Help: "plug-in name (case-insensitive substring match against installed modules)",
             ChoiceProvider: () => Vst3PluginScanner.EnumerateInstalled().Select(m => m.Name).ToList()),
-        new("input", typeof(string), Required: true, Help: "input WAV path"),
+        new("input", typeof(string), Required: true, Help: "input WAV path", IsFilePath: true, FileCategory: "audio"),
         new("output", typeof(string), Required: true, Help: "output WAV path"),
         new("tailSeconds", typeof(double), Required: false, Default: -1.0,
             Help: "safety cap on the tail-render phase (seconds); -1 = use the provider default (30 s). Tail is detected automatically; this only bounds the wait for plug-ins that never settle"),

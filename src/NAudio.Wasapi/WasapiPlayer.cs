@@ -20,6 +20,7 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
     private readonly AudioStreamCategory? audioCategory;
     private readonly string mmcssTaskName;
     private readonly bool preferLowLatency;
+    private readonly bool requireLowLatency;
     private readonly SynchronizationContext syncContext;
     private readonly EventWaitHandle stopEvent = new(false, EventResetMode.ManualReset);
 
@@ -49,6 +50,29 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
     /// The output format being sent to the audio device.
     /// </summary>
     public WaveFormat OutputWaveFormat { get; private set; }
+
+    /// <summary>
+    /// Whether IAudioClient3 low-latency shared mode is actually in use after <see cref="Init"/>.
+    /// This is only ever true when <see cref="WasapiPlayerBuilder.WithLowLatency"/> was requested
+    /// <em>and</em> the device, share mode, and source format allowed it. When low latency was
+    /// requested but could not be honoured, playback silently falls back to standard shared mode
+    /// and this remains false — check it to find out what you actually got.
+    /// </summary>
+    public bool LowLatencyActive { get; private set; }
+
+    /// <summary>
+    /// The latency in milliseconds actually in use after <see cref="Init"/>. In low-latency mode
+    /// this is derived from the engine period the device granted, so it may differ from the value
+    /// requested via <see cref="WasapiPlayerBuilder.WithLatency"/>.
+    /// </summary>
+    public int LatencyMilliseconds => latencyMilliseconds;
+
+    /// <summary>
+    /// When low latency was requested via <see cref="WasapiPlayerBuilder.WithLowLatency"/> but could
+    /// not be honoured, a short human-readable explanation of why (e.g. a sample-rate mismatch that
+    /// would require resampling). Null when low latency is active or was never requested.
+    /// </summary>
+    public string LowLatencyUnavailableReason { get; private set; }
 
     #region Volume
 
@@ -117,7 +141,8 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
     #endregion
 
     internal WasapiPlayer(MMDevice device, AudioClientShareMode shareMode, bool useEventSync,
-        int latencyMilliseconds, AudioStreamCategory? audioCategory, string mmcssTaskName, bool preferLowLatency)
+        int latencyMilliseconds, AudioStreamCategory? audioCategory, string mmcssTaskName,
+        bool preferLowLatency, bool requireLowLatency)
     {
         mmDevice = device;
         this.shareMode = shareMode;
@@ -126,6 +151,7 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
         this.audioCategory = audioCategory;
         this.mmcssTaskName = mmcssTaskName;
         this.preferLowLatency = preferLowLatency;
+        this.requireLowLatency = requireLowLatency;
         syncContext = SynchronizationContext.Current;
 
         audioClient = device.CreateAudioClient();
@@ -173,6 +199,73 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
     public bool IsFormatSupported(WaveFormat format)
     {
         return audioClient.IsFormatSupported(shareMode, format);
+    }
+
+    /// <summary>
+    /// Reports, without opening the stream, what <see cref="Init"/> would do for a source of the given
+    /// format: whether playback is possible at all, whether low latency would actually engage, the
+    /// format the device would receive, and any latency-free conversions (bit depth / channels) that
+    /// would be inserted. Call this before <see cref="Init"/> to validate the chosen options.
+    /// </summary>
+    /// <param name="sourceFormat">The format of the source you intend to play.</param>
+    public WasapiPlaybackCapability GetPlaybackCapability(WaveFormat sourceFormat)
+    {
+        if (shareMode == AudioClientShareMode.Exclusive)
+        {
+            if (audioClient.IsFormatSupported(AudioClientShareMode.Exclusive, sourceFormat))
+                return new WasapiPlaybackCapability(true, AudioClientShareMode.Exclusive, false,
+                    sourceFormat, Array.Empty<string>(), latencyMilliseconds, null);
+
+            var target = WasapiFormatAdaptation.FindSupportedExclusiveFormatAtSampleRate(audioClient, sourceFormat);
+            if (target != null)
+            {
+                var conversions = new List<string>();
+                WasapiFormatAdaptation.TryDescribeAdaptation(sourceFormat, target, conversions);
+                return new WasapiPlaybackCapability(true, AudioClientShareMode.Exclusive, false,
+                    target, conversions, latencyMilliseconds, null);
+            }
+
+            return new WasapiPlaybackCapability(false, AudioClientShareMode.Exclusive, false,
+                sourceFormat, Array.Empty<string>(), 0,
+                $"The device supports no exclusive-mode format at {sourceFormat.SampleRate} Hz; playback would require resampling.");
+        }
+
+        // Shared mode. Attempt the low-latency plan first.
+        if (preferLowLatency && audioClient.SupportsAudioClient3)
+        {
+            var mixFormat = audioClient.MixFormat;
+            var conversions = new List<string>();
+            if (WasapiFormatAdaptation.TryDescribeAdaptation(sourceFormat, mixFormat, conversions))
+                return new WasapiPlaybackCapability(true, AudioClientShareMode.Shared, true,
+                    mixFormat, conversions, EstimateLowLatencyMilliseconds(mixFormat), null);
+
+            var reason = sourceFormat.SampleRate != mixFormat.SampleRate
+                ? $"source sample rate {sourceFormat.SampleRate} Hz does not match the engine mix rate {mixFormat.SampleRate} Hz (would require resampling)"
+                : $"source format could not be adapted to the engine mix format ({mixFormat}) without resampling";
+            return new WasapiPlaybackCapability(true, AudioClientShareMode.Shared, false,
+                sourceFormat, Array.Empty<string>(), latencyMilliseconds, reason);
+        }
+
+        // Standard shared mode — the engine converts everything (including sample rate) via AutoConvertPcm.
+        return new WasapiPlaybackCapability(true, AudioClientShareMode.Shared, false,
+            sourceFormat, Array.Empty<string>(), latencyMilliseconds, null);
+    }
+
+    /// <summary>
+    /// Estimates the latency the IAudioClient3 low-latency path would achieve for the given format,
+    /// from the engine's minimum supported period. Falls back to the configured latency on error.
+    /// </summary>
+    private int EstimateLowLatencyMilliseconds(WaveFormat mixFormat)
+    {
+        try
+        {
+            var period = ChooseLowLatencyPeriod(audioClient.GetSharedModeEnginePeriod(mixFormat));
+            return Math.Max(1, (int)(period * 1000L / mixFormat.SampleRate));
+        }
+        catch (COMException)
+        {
+            return latencyMilliseconds;
+        }
     }
 
     /// <summary>
@@ -238,11 +331,18 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
     }
 
     /// <summary>
-    /// Initialize for playing the specified audio source (zero-copy path).
-    /// In exclusive mode, the source format must be natively supported by the device —
-    /// use <see cref="IsFormatSupported(WaveFormat)"/> or <see cref="GetSupportedExclusiveFormat"/>
-    /// to check before calling Init.
+    /// Initialize for playing the specified audio source.
     /// </summary>
+    /// <remarks>
+    /// The source's bit depth and channel count are adapted automatically (without resampling) to a
+    /// format the device supports: in standard shared mode the audio engine does this for you; in
+    /// exclusive and IAudioClient3 low-latency modes <see cref="WasapiPlayer"/> inserts the necessary
+    /// conversion (PCM↔float, mono↔stereo). Sample rate is never changed — converting it would add
+    /// latency — so exclusive mode throws if the device cannot accept the source's sample rate, and
+    /// low latency silently falls back to standard shared mode (see <see cref="LowLatencyActive"/> and
+    /// <see cref="LowLatencyUnavailableReason"/>). When the source already matches the device format,
+    /// playback is zero-copy with no conversion inserted.
+    /// </remarks>
     public void Init(IWaveProvider source)
     {
         waveProvider = source;
@@ -278,55 +378,193 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
             }
         }
 
-        var flags = shareMode == AudioClientShareMode.Shared
-            ? AudioClientStreamFlags.AutoConvertPcm | AudioClientStreamFlags.SrcDefaultQuality
-            : AudioClientStreamFlags.None;
-
-        // Try IAudioClient3 low-latency path for shared mode
-        if (preferLowLatency && shareMode == AudioClientShareMode.Shared && audioClient.SupportsAudioClient3)
+        if (shareMode == AudioClientShareMode.Exclusive)
         {
-            if (TryInitializeLowLatency(flags))
+            // Exclusive mode does no conversion in the engine: pick a device-supported format at the
+            // source's sample rate and adapt bit depth/channels to it (throwing if that's impossible).
+            ConfigureExclusiveFormat(sourceFormat);
+            if (isUsingEventSync)
+                InitializeWithEventSync(AudioClientStreamFlags.None, latencyRefTimes);
+            else
+                audioClient.Initialize(shareMode, AudioClientStreamFlags.None, latencyRefTimes, 0, OutputWaveFormat, Guid.Empty);
+            renderClient = audioClient.AudioRenderClient;
+            return;
+        }
+
+        // Shared mode. Try the IAudioClient3 low-latency path first, adapting bit depth/channels to
+        // the engine mix format if the sample rate already matches.
+        if (preferLowLatency)
+        {
+            if (audioClient.SupportsAudioClient3 && TryConfigureLowLatency(sourceFormat))
+            {
+                LowLatencyActive = true;
                 return;
+            }
+
+            // Not honoured. Record why (TryConfigureLowLatency sets the reason when it was tried).
+            if (!audioClient.SupportsAudioClient3)
+                LowLatencyUnavailableReason = "IAudioClient3 is not supported on this device (requires Windows 10 version 1607 or later)";
+
+            if (requireLowLatency)
+                throw new InvalidOperationException(
+                    $"Low latency was required but could not be honoured: {LowLatencyUnavailableReason}. " +
+                    "Call GetPlaybackCapability before Init to check, request WithLowLatency() without required, or use standard shared mode.");
         }
 
-        // Standard initialization
+        // Standard shared mode. AutoConvertPcm lets the audio engine handle ALL adaptation, including
+        // sample-rate conversion, so the source is passed through unchanged.
+        OutputWaveFormat = sourceFormat;
+        var flags = AudioClientStreamFlags.AutoConvertPcm | AudioClientStreamFlags.SrcDefaultQuality;
         if (isUsingEventSync)
-        {
             InitializeWithEventSync(flags, latencyRefTimes);
-        }
         else
-        {
             audioClient.Initialize(shareMode, flags, latencyRefTimes, 0, OutputWaveFormat, Guid.Empty);
-        }
 
         renderClient = audioClient.AudioRenderClient;
     }
 
-    private bool TryInitializeLowLatency(AudioClientStreamFlags flags)
+    /// <summary>
+    /// Configures the IAudioClient3 low-latency shared stream, adapting the source to the engine mix
+    /// format (bit depth/channels only — never sample rate). Returns false, restoring the original
+    /// source provider and recording <see cref="LowLatencyUnavailableReason"/>, when low latency
+    /// can't be honoured; the caller then falls back to standard shared mode.
+    /// </summary>
+    private bool TryConfigureLowLatency(WaveFormat sourceFormat)
     {
+        var mixFormat = audioClient.MixFormat;
+        var adapted = WasapiFormatAdaptation.AdaptProvider(waveProvider, mixFormat);
+        if (adapted == null)
+        {
+            LowLatencyUnavailableReason = sourceFormat.SampleRate != mixFormat.SampleRate
+                ? $"source sample rate {sourceFormat.SampleRate} Hz does not match the engine mix rate {mixFormat.SampleRate} Hz (would require resampling)"
+                : $"source format could not be adapted to the engine mix format ({mixFormat}) without resampling";
+            return false;
+        }
+
+        var originalProvider = waveProvider;
+        waveProvider = adapted;
+        OutputWaveFormat = mixFormat;
+        if (TryInitializeLowLatency())
+            return true;
+
+        // The engine declined; revert so the standard shared path runs against the original source.
+        waveProvider = originalProvider;
+        LowLatencyUnavailableReason = "the audio engine declined the low-latency request";
+        return false;
+    }
+
+    /// <summary>
+    /// Resolves and applies a device-supported exclusive-mode format for the source, adapting bit
+    /// depth and channels (never sample rate) where needed.
+    /// </summary>
+    /// <exception cref="NotSupportedException">
+    /// Thrown when the device cannot accept the source's sample rate in exclusive mode, which would
+    /// require resampling.
+    /// </exception>
+    private void ConfigureExclusiveFormat(WaveFormat sourceFormat)
+    {
+        // Native, zero-copy match?
+        if (audioClient.IsFormatSupported(AudioClientShareMode.Exclusive, sourceFormat))
+        {
+            OutputWaveFormat = sourceFormat;
+            return;
+        }
+
+        // A supported format at the SAME sample rate that we can reach by bit-depth/channel conversion.
+        var target = WasapiFormatAdaptation.FindSupportedExclusiveFormatAtSampleRate(audioClient, sourceFormat);
+        if (target != null)
+        {
+            var adapted = WasapiFormatAdaptation.AdaptProvider(waveProvider, target);
+            if (adapted != null)
+            {
+                waveProvider = adapted;
+                OutputWaveFormat = target;
+                return;
+            }
+        }
+
+        throw new NotSupportedException(
+            $"The device does not support the source format ({sourceFormat}) in exclusive mode, and it " +
+            "cannot be adapted without resampling (the device requires a different sample rate). " +
+            "Resample to a supported sample rate first, or use shared mode.");
+    }
+
+    /// <summary>
+    /// Performs the IAudioClient3 low-latency COM initialization against <see cref="OutputWaveFormat"/>,
+    /// which the caller (<see cref="TryConfigureLowLatency"/>) has already resolved to the engine mix
+    /// format. Returns false (leaving a fresh <see cref="audioClient"/> ready for the standard path)
+    /// if the engine declines.
+    /// </summary>
+    /// <remarks>
+    /// IAudioClient3 shared low-latency does <em>no</em> format conversion: per the API contract the
+    /// only supported stream flag is <see cref="AudioClientStreamFlags.EventCallback"/>, and the only
+    /// format the engine accepts is its own current mix format — which is why
+    /// <see cref="TryConfigureLowLatency"/> resolves the source to the mix format before calling here.
+    /// <para>
+    /// Note that shared-mode <see cref="AudioClient.IsFormatSupported(AudioClientShareMode, WaveFormat)"/>
+    /// is <em>not</em> a usable gate: it reports success for any format the shared-mode converter can
+    /// handle (i.e. almost anything), but InitializeSharedAudioStream bypasses that converter.
+    /// </para>
+    /// </remarks>
+    private bool TryInitializeLowLatency()
+    {
+        // Defensive assertion: TryConfigureLowLatency has already resolved OutputWaveFormat to the
+        // mix format, which is the only format InitializeSharedAudioStream accepts.
+        if (!OutputWaveFormat.Equals(audioClient.MixFormat))
+            return false;
+
+        AudioClientPeriodInfo periodInfo;
         try
         {
-            var periodInfo = audioClient.GetSharedModeEnginePeriod(OutputWaveFormat);
-            var periodInFrames = Math.Max(periodInfo.MinPeriodInFrames, periodInfo.FundamentalPeriodInFrames);
-            audioClient.InitializeSharedAudioStream(
-                flags | AudioClientStreamFlags.EventCallback,
-                periodInFrames, OutputWaveFormat, Guid.Empty);
-
-            latencyMilliseconds = (int)(periodInFrames * 1000 / OutputWaveFormat.SampleRate);
-            if (latencyMilliseconds < 1) latencyMilliseconds = 1;
-
-            frameEvent = new EventWaitHandle(false, EventResetMode.AutoReset);
-            audioClient.SetEventHandle(frameEvent.SafeWaitHandle.DangerousGetHandle());
-            renderClient = audioClient.AudioRenderClient;
-            return true;
+            periodInfo = audioClient.GetSharedModeEnginePeriod(OutputWaveFormat);
         }
-        catch
+        catch (COMException)
         {
-            // Fall back to standard initialization
+            return false;
+        }
+
+        var periodInFrames = ChooseLowLatencyPeriod(periodInfo);
+
+        try
+        {
+            audioClient.InitializeSharedAudioStream(
+                AudioClientStreamFlags.EventCallback,
+                periodInFrames, OutputWaveFormat, Guid.Empty);
+        }
+        catch (COMException)
+        {
+            // The engine declined this period/format combination. The client may be in a partially
+            // initialized state, so recreate it before the standard path runs.
             audioClient.Dispose();
             audioClient = mmDevice.CreateAudioClient();
             return false;
         }
+
+        latencyMilliseconds = (int)(periodInFrames * 1000L / OutputWaveFormat.SampleRate);
+        if (latencyMilliseconds < 1) latencyMilliseconds = 1;
+
+        frameEvent = new EventWaitHandle(false, EventResetMode.AutoReset);
+        audioClient.SetEventHandle(frameEvent.SafeWaitHandle.DangerousGetHandle());
+        renderClient = audioClient.AudioRenderClient;
+        return true;
+    }
+
+    /// <summary>
+    /// Picks the lowest engine period that satisfies the IAudioClient3 constraints: an integral
+    /// multiple of the fundamental period, no smaller than the minimum and no larger than the maximum.
+    /// </summary>
+    private static uint ChooseLowLatencyPeriod(AudioClientPeriodInfo periodInfo)
+    {
+        var period = periodInfo.MinPeriodInFrames;
+        var fundamental = periodInfo.FundamentalPeriodInFrames;
+        if (fundamental > 0 && period % fundamental != 0)
+        {
+            // Round up to the next multiple of the fundamental period.
+            period = (period / fundamental + 1) * fundamental;
+            if (period > periodInfo.MaxPeriodInFrames)
+                period = periodInfo.MaxPeriodInFrames;
+        }
+        return period;
     }
 
     private void InitializeWithEventSync(AudioClientStreamFlags flags, long latencyRefTimes)

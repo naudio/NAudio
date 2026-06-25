@@ -18,7 +18,7 @@ internal sealed class WinMmPlayFileTest : IConsoleTest
 
     public IReadOnlyList<TestParameter> Parameters =>
     [
-        new("input", typeof(string), Required: true, Help: "input audio file path (MP3/WAV)"),
+        new("input", typeof(string), Required: true, Help: "input audio file path (MP3/WAV)", IsFilePath: true, FileCategory: "audio"),
         new("deviceNumber", typeof(int), Required: false, Default: -1,
             Help: "WaveOut device index (-1 = WAVE_MAPPER / default)"),
         new("volume", typeof(float), Required: false, Default: 0.5f, Help: "output volume (0..1)"),

@@ -22,7 +22,7 @@ internal sealed class Vst3StateRoundtripTest : IConsoleTest
         new("plugin", typeof(string), Required: true,
             Help: "plug-in name (case-insensitive substring match against installed modules)",
             ChoiceProvider: () => Vst3PluginScanner.EnumerateInstalled().Select(m => m.Name).ToList()),
-        new("input", typeof(string), Required: true, Help: "input WAV path"),
+        new("input", typeof(string), Required: true, Help: "input WAV path", IsFilePath: true, FileCategory: "audio"),
         new("parameter", typeof(string), Required: false, Default: "Mix",
             Help: "name of the parameter to set before saving state"),
         new("value", typeof(double), Required: false, Default: 0.42,

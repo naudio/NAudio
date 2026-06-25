@@ -25,7 +25,7 @@ internal sealed class Vst3RenderMidiFileTest : IConsoleTest
         new("plugin", typeof(string), Required: true,
             Help: "instrument name (case-insensitive substring match against installed modules)",
             ChoiceProvider: () => Vst3PluginScanner.EnumerateInstalled().Select(m => m.Name).ToList()),
-        new("midi", typeof(string), Required: true, Help: "input MIDI (.mid) path"),
+        new("midi", typeof(string), Required: true, Help: "input MIDI (.mid) path", IsFilePath: true, FileCategory: "midi"),
         new("output", typeof(string), Required: true, Help: "output WAV path"),
         new("sampleRate", typeof(int), Required: false, Default: 44100, Help: "render sample rate"),
         new("tailSeconds", typeof(double), Required: false, Default: 2.0, Help: "release-tail margin after the last event (seconds)"),

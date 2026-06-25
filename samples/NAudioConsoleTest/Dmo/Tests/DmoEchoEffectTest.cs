@@ -14,7 +14,7 @@ internal sealed class DmoEchoEffectTest : IConsoleTest
 
     public IReadOnlyList<TestParameter> Parameters =>
     [
-        new("input", typeof(string), Required: true, Help: "input audio file path"),
+        new("input", typeof(string), Required: true, Help: "input audio file path", IsFilePath: true, FileCategory: "audio"),
         new("output", typeof(string), Required: false, Help: "output WAV path (auto if blank)"),
     ];
 

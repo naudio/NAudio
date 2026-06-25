@@ -20,7 +20,7 @@ internal sealed class SoundFilePlayFileTest : IConsoleTest
 
     public IReadOnlyList<TestParameter> Parameters =>
     [
-        new("input", typeof(string), Required: true, Help: "input audio file path"),
+        new("input", typeof(string), Required: true, Help: "input audio file path", IsFilePath: true, FileCategory: "audio"),
         new("volume", typeof(float), Required: false, Default: 0.5f, Help: "output volume (0..1)"),
         new("maxDuration", typeof(TimeSpan), Required: false, Default: TimeSpan.FromMinutes(2),
             Help: "playback cap (interactive mode uses ESC instead)", CliOnly: true),

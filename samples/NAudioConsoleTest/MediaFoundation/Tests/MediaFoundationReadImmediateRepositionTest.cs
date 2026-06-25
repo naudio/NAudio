@@ -24,7 +24,7 @@ internal sealed class MediaFoundationReadImmediateRepositionTest : IConsoleTest
 
     public IReadOnlyList<TestParameter> Parameters =>
     [
-        new("input", typeof(string), Required: true, Help: "input audio file path"),
+        new("input", typeof(string), Required: true, Help: "input audio file path", IsFilePath: true, FileCategory: "audio"),
     ];
 
     public TestResult Run(TestContext ctx)

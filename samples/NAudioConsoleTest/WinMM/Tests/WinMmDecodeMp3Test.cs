@@ -13,7 +13,7 @@ internal sealed class WinMmDecodeMp3Test : IConsoleTest
 
     public IReadOnlyList<TestParameter> Parameters =>
     [
-        new("input", typeof(string), Required: true, Help: "input MP3 file path"),
+        new("input", typeof(string), Required: true, Help: "input MP3 file path", IsFilePath: true, FileCategory: "audio"),
         new("output", typeof(string), Required: false, Help: "output WAV path (auto if blank)"),
     ];
 

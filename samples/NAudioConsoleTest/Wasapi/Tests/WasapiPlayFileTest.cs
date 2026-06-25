@@ -17,7 +17,7 @@ internal sealed class WasapiPlayFileTest : IConsoleTest
 
     public IReadOnlyList<TestParameter> Parameters =>
     [
-        new("input", typeof(string), Required: true, Help: "audio file path"),
+        new("input", typeof(string), Required: true, Help: "audio file path", IsFilePath: true, FileCategory: "audio"),
         new("renderDevice", typeof(string), Required: false, Default: WasapiDevices.DefaultMarker,
             Help: "render endpoint friendly name (or 'default')",
             ChoiceProvider: WasapiDevices.RenderDeviceNames),

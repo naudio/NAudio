@@ -67,6 +67,7 @@ extensive correctness work during development — see [Docs/Sampler.md](Docs/Sam
  * `WaveFileReader` / `AiffFileReader`: malformed headers declaring `BlockAlign=0` now throw `InvalidDataException` from the constructor instead of `DivideByZeroException` later (#1254); `WaveFileReader` no longer throws on an oversized `fmt` `cbSize` (#482)
  * `WaveFormat.Serialize`: PCM formats now write the canonical 16-byte `fmt ` chunk (#934, #1098)
  * `WaveViewer`: fixed rendering upside-down (#801, #818) and now renders any source format correctly via `ToSampleProvider()` (#564)
+ * `ToSampleProvider()` now handles `WAVE_FORMAT_EXTENSIBLE` PCM and IEEE float sources (e.g. multichannel / >16-bit WAV files) instead of throwing `Unsupported source encoding` (#639)
  * `AudioSessionControl`: now supports multiple registered event clients without leaking, and `UnRegisterEventClient` honours its argument (#1263)
  * `AudioEndpointVolume.OnVolumeNotification`: fixed per-channel notifications all returning channel 0's volume (#351)
  * `CueListInterpreter`: WAV files with cue points but no labels now return cues with empty labels instead of null (#549)

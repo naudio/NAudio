@@ -1,11 +1,11 @@
-﻿using System;
-using System.Threading;
-using NUnit.Framework;
-using NAudio.CoreAudioApi;
+﻿using NAudio.CoreAudioApi;
 using NAudio.Wave;
-using System.Diagnostics;
 using NAudio.Windows.Tests.Utils;
+using NUnit.Framework;
+using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 #pragma warning disable CS0618 // Type or member is obsolete
 
@@ -38,7 +38,7 @@ public class AudioClientTests
     public void CanInitializeInExclusiveMode()
     {
         using AudioClient audioClient = GetAudioClient();
-        WaveFormat waveFormat = new WaveFormat(48000, 16, 2); //audioClient.MixFormat;
+        var waveFormat = new WaveFormat(audioClient.MixFormat.SampleRate, 16, 2);
         long refTimesPerSecond = 10000000;
         try
         {

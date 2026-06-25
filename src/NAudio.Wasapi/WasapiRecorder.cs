@@ -20,6 +20,7 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
     private readonly AudioClientShareMode shareMode;
     private readonly bool isUsingEventSync;
     private readonly bool useLoopback;
+    private readonly bool isProcessLoopback;
     private readonly int bufferMilliseconds;
     private readonly string mmcssTaskName;
     private readonly SynchronizationContext syncContext;
@@ -72,24 +73,24 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
     {
         syncContext = SynchronizationContext.Current;
         shareMode = AudioClientShareMode.Shared;
-        isUsingEventSync = useEventSync;
+        // The process-loopback virtual device is always event-driven (LOOPBACK | EVENTCALLBACK).
+        isUsingEventSync = true;
+        isProcessLoopback = true;
         this.bufferMilliseconds = bufferMilliseconds;
         this.mmcssTaskName = mmcssTaskName;
         this.audioClient = audioClient;
-        waveFormat = requestedFormat ?? audioClient.MixFormat;
+        // GetMixFormat is not supported on the process-loopback virtual device, so a format must
+        // be supplied. Default to 44.1kHz stereo IEEE float (widely compatible).
+        waveFormat = requestedFormat ?? WaveFormat.CreateIeeeFloatWaveFormat(44100, 2);
     }
 
-    internal static WasapiRecorder CreateProcessLoopback(uint processId, ProcessLoopbackMode mode,
+    internal static async Task<WasapiRecorder> CreateProcessLoopbackAsync(uint processId, ProcessLoopbackMode mode,
         bool useEventSync, int bufferMilliseconds, WaveFormat requestedFormat, string mmcssTaskName)
     {
-        // Process loopback uses ActivateAudioInterfaceAsync with special activation params.
-        // For now, create a placeholder that uses the default render device in loopback mode.
-        // Full implementation requires marshaling AudioClientActivationParams to ActivateAudioInterfaceAsync.
-        // TODO: implement full process loopback activation via ActivateAudioInterfaceAsync
-        throw new NotImplementedException(
-            "Process-specific loopback capture requires ActivateAudioInterfaceAsync with " +
-            "AUDIOCLIENT_ACTIVATION_PARAMS, which is not yet fully implemented. " +
-            "Use WasapiLoopbackCapture for system-wide loopback in the meantime.");
+        // Process loopback uses ActivateAudioInterfaceAsync with AUDIOCLIENT_ACTIVATION_PARAMS —
+        // an inherently asynchronous activation, hence the async factory.
+        var audioClient = await AudioClient.ActivateProcessLoopbackAsync(processId, mode).ConfigureAwait(false);
+        return new WasapiRecorder(audioClient, useEventSync, bufferMilliseconds, requestedFormat, mmcssTaskName);
     }
 
     /// <summary>
@@ -194,12 +195,22 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
     {
         long bufferDuration = bufferMilliseconds * ReftimesPerMillisec;
 
-        var flags = shareMode == AudioClientShareMode.Shared
-            ? AudioClientStreamFlags.AutoConvertPcm | AudioClientStreamFlags.SrcDefaultQuality
-            : AudioClientStreamFlags.None;
+        AudioClientStreamFlags flags;
+        if (isProcessLoopback)
+        {
+            // The process-loopback virtual device only accepts LOOPBACK (+ EVENTCALLBACK below)
+            // with an explicit PCM format; AutoConvertPcm/SrcDefaultQuality are not supported.
+            flags = AudioClientStreamFlags.Loopback;
+        }
+        else
+        {
+            flags = shareMode == AudioClientShareMode.Shared
+                ? AudioClientStreamFlags.AutoConvertPcm | AudioClientStreamFlags.SrcDefaultQuality
+                : AudioClientStreamFlags.None;
 
-        if (useLoopback)
-            flags |= AudioClientStreamFlags.Loopback;
+            if (useLoopback)
+                flags |= AudioClientStreamFlags.Loopback;
+        }
 
         if (isUsingEventSync)
             flags |= AudioClientStreamFlags.EventCallback;

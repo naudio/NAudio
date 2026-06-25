@@ -99,4 +99,19 @@ In async or UI code, prefer `DisposeAsync` so the calling thread isn't blocked w
 await using var recorder = new WasapiRecorderBuilder().Build();
 ```
 
-> **Note:** per-process loopback capture (`WithProcessLoopback`) is not yet implemented and currently throws `NotImplementedException`. Use `WithLoopbackCapture()` for system-wide loopback for now.
+## Per-process loopback capture
+
+`WithProcessLoopback` captures only the audio rendered by a specific process (and, with `ProcessLoopbackMode.IncludeTargetProcessTree`, its child processes), rather than the whole device. It uses `ActivateAudioInterfaceAsync`, so it is activated asynchronously — build it with `BuildAsync()` rather than `Build()` (calling `Build()` throws). Requires Windows 10 version 2004 (build 19041) or later.
+
+```c#
+await using var recorder = await new WasapiRecorderBuilder()
+    .WithProcessLoopback((uint)targetProcessId, ProcessLoopbackMode.IncludeTargetProcessTree)
+    .BuildAsync();
+
+recorder.DataAvailable += (buffer, flags) => { /* buffer is the process's rendered audio */ };
+recorder.StartRecording();
+```
+
+The virtual loopback device does not expose a mix format, so the recorder captures at the format you request via `WithFormat(...)`, defaulting to 44.1 kHz stereo IEEE float. Use `ProcessLoopbackMode.ExcludeTargetProcessTree` to capture everything *except* the target process. As with all WASAPI loopback, no buffers are delivered while the target renders no audio.
+
+For system-wide loopback (everything the device is playing) use `WithLoopbackCapture()` instead.

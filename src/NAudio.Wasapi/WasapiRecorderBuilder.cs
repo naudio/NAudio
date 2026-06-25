@@ -1,4 +1,6 @@
 ﻿using NAudio.CoreAudioApi;
+using System;
+using System.Threading.Tasks;
 
 namespace NAudio.Wave;
 
@@ -121,18 +123,38 @@ public class WasapiRecorderBuilder
     /// <summary>
     /// Builds the <see cref="WasapiRecorder"/> with the configured settings.
     /// </summary>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when <see cref="WithProcessLoopback"/> was configured — process loopback is
+    /// activated asynchronously, so <see cref="BuildAsync"/> must be used instead.
+    /// </exception>
     public WasapiRecorder Build()
     {
         if (processLoopbackId.HasValue)
         {
-            return WasapiRecorder.CreateProcessLoopback(
-                processLoopbackId.Value, processLoopbackMode,
-                useEventSync, bufferMilliseconds, requestedFormat, mmcssTaskName);
+            throw new InvalidOperationException(
+                "Process loopback capture is activated asynchronously — call BuildAsync() instead of Build().");
         }
 
         var actualDevice = device ?? GetDefaultDevice(useLoopback);
         return new WasapiRecorder(actualDevice, shareMode, useEventSync,
             bufferMilliseconds, requestedFormat, mmcssTaskName, useLoopback);
+    }
+
+    /// <summary>
+    /// Builds the <see cref="WasapiRecorder"/> with the configured settings. Required when
+    /// <see cref="WithProcessLoopback"/> is used, since that activation path is asynchronous;
+    /// for all other configurations this simply wraps <see cref="Build"/>.
+    /// </summary>
+    public Task<WasapiRecorder> BuildAsync()
+    {
+        if (processLoopbackId.HasValue)
+        {
+            return WasapiRecorder.CreateProcessLoopbackAsync(
+                processLoopbackId.Value, processLoopbackMode,
+                useEventSync, bufferMilliseconds, requestedFormat, mmcssTaskName);
+        }
+
+        return Task.FromResult(Build());
     }
 
     private static MMDevice GetDefaultDevice(bool loopback)

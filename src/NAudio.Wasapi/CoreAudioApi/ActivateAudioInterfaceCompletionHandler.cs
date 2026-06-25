@@ -11,11 +11,11 @@ namespace NAudio.CoreAudioApi;
 internal partial class ActivateAudioInterfaceCompletionHandler :
 IActivateAudioInterfaceCompletionHandler, IAgileObject
 {
-    private readonly Action<IAudioClient2> initializeAction;
-    private readonly TaskCompletionSource<IAudioClient2> tcs = new();
+    private readonly Action<IAudioClient> initializeAction;
+    private readonly TaskCompletionSource<IAudioClient> tcs = new();
 
     public ActivateAudioInterfaceCompletionHandler(
-        Action<IAudioClient2> initializeAction)
+        Action<IAudioClient> initializeAction)
     {
         this.initializeAction = initializeAction;
     }
@@ -37,10 +37,13 @@ IActivateAudioInterfaceCompletionHandler, IAgileObject
                 return;
             }
 
-            IAudioClient2 pAudioClient;
+            // Wrap as the base IAudioClient: the process-loopback virtual device returns a client
+            // that does NOT support IAudioClient2, so casting to IAudioClient2 here would throw.
+            // Callers that need IAudioClient2 features QI for it from the returned client.
+            IAudioClient pAudioClient;
             try
             {
-                pAudioClient = (IAudioClient2)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
+                pAudioClient = (IAudioClient)ComActivation.ComWrappers.GetOrCreateObjectForComInstance(
                     unkPtr, CreateObjectFlags.UniqueInstance);
             }
             finally
@@ -68,8 +71,15 @@ IActivateAudioInterfaceCompletionHandler, IAgileObject
         }
     }
 
-    public TaskAwaiter<IAudioClient2> GetAwaiter()
+    public TaskAwaiter<IAudioClient> GetAwaiter()
     {
         return tcs.Task.GetAwaiter();
     }
+
+    /// <summary>
+    /// The underlying activation task. Await this with <c>ConfigureAwait(false)</c> when the
+    /// caller may be on a thread with a synchronization context (e.g. WPF/WinForms) to avoid
+    /// marshalling the continuation back onto a thread that might be blocked.
+    /// </summary>
+    public Task<IAudioClient> Completion => tcs.Task;
 }

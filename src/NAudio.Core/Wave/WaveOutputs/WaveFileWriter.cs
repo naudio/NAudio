@@ -405,7 +405,7 @@ public class WaveFileWriter : Stream
         }
         else if (WaveFormat.BitsPerSample == 32 && WaveFormat.Encoding == WaveFormatEncoding.Extensible)
         {
-            writer.Write(UInt16.MaxValue * (Int32)sample);
+            writer.Write((Int32)(Int32.MaxValue * sample));
             dataChunkSize += 4;
         }
         else if (WaveFormat.Encoding == WaveFormatEncoding.IeeeFloat)

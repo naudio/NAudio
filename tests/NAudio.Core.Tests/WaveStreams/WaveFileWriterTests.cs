@@ -107,6 +107,39 @@ public class WaveFileWriterTests
     }
 
     [Test]
+    public void WriteSampleTo32BitPcmRoundTripsCorrectly()
+    {
+        // Regression test for https://github.com/naudio/NAudio/issues/651
+        // Previously WriteSample truncated the normalised float to an Int32 before
+        // scaling, so almost every sample was written as zero.
+        var samples = new[] { 0.0f, 0.5f, -0.5f, 0.25f, -0.25f, 1.0f, -1.0f };
+        var ms = new MemoryStream();
+        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), new WaveFormatExtensible(44100, 32, 1)))
+        {
+            foreach (var sample in samples)
+            {
+                writer.WriteSample(sample);
+            }
+        }
+
+        ms.Position = 0;
+        using var reader = new WaveFileReader(ms);
+        Assert.That(reader.WaveFormat.BitsPerSample, Is.EqualTo(32), "Bits Per Sample");
+        Assert.That(reader.Length, Is.EqualTo(samples.Length * 4), "Data length");
+
+        var buffer = new byte[samples.Length * 4];
+        int read = reader.Read(buffer, 0, buffer.Length);
+        Assert.That(read, Is.EqualTo(buffer.Length), "Bytes read");
+
+        for (int n = 0; n < samples.Length; n++)
+        {
+            int actual = BitConverter.ToInt32(buffer, n * 4);
+            int expected = (int)(int.MaxValue * samples[n]);
+            Assert.That(actual, Is.EqualTo(expected), $"Sample {n} ({samples[n]})");
+        }
+    }
+
+    [Test]
     [Explicit]
     public void CanCreateWaveFileGreaterThan2Gb()
     {

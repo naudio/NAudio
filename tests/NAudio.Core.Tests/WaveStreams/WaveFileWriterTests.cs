@@ -183,6 +183,31 @@ public class WaveFileWriterTests
     }
 
     [Test]
+    public void WriteShortSamplesTo32BitExtensibleFloatRoundTripsCorrectly()
+    {
+        // The WriteSamples(short[]) path shared the WriteSample bug: it wrote integer PCM into a
+        // 32-bit extensible format even when that format's subformat is IEEE float.
+        var samples = new short[] { 0, 16384, -16384, short.MaxValue, short.MinValue };
+        var ms = new MemoryStream();
+        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), new WaveFormatExtensible(44100, 32, 1)))
+        {
+            writer.WriteSamples(samples, 0, samples.Length);
+        }
+
+        ms.Position = 0;
+        using var reader = new WaveFileReader(ms);
+        Assert.That(reader.Length, Is.EqualTo(samples.Length * 4), "Data length");
+        var buffer = new byte[samples.Length * 4];
+        int read = reader.Read(buffer, 0, buffer.Length);
+        Assert.That(read, Is.EqualTo(buffer.Length), "Bytes read");
+        for (int n = 0; n < samples.Length; n++)
+        {
+            float expected = samples[n] / (float)(short.MaxValue + 1);
+            Assert.That(BitConverter.ToSingle(buffer, n * 4), Is.EqualTo(expected), $"Sample {n} ({samples[n]})");
+        }
+    }
+
+    [Test]
     [Explicit]
     public void CanCreateWaveFileGreaterThan2Gb()
     {

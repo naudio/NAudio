@@ -489,12 +489,25 @@ public class WaveFileWriter : Stream
             }
             dataChunkSize += (count * 3);
         }
-        // 32 bit PCM data
+        // 32 bit PCM or IEEE float data
         else if (WaveFormat.BitsPerSample == 32 && WaveFormat.Encoding == WaveFormatEncoding.Extensible)
         {
-            for (int sample = 0; sample < count; sample++)
+            // As in WriteSample, a 32-bit extensible format may carry an IEEE-float subformat,
+            // in which case the 16-bit samples must be normalised to float rather than written
+            // as integer PCM (which would leave float-declared data unreadable).
+            if (WaveFormat.AsStandardWaveFormat().Encoding == WaveFormatEncoding.IeeeFloat)
             {
-                writer.Write(UInt16.MaxValue * samples[sample + offset]);
+                for (int sample = 0; sample < count; sample++)
+                {
+                    writer.Write(samples[sample + offset] / (float)(Int16.MaxValue + 1));
+                }
+            }
+            else
+            {
+                for (int sample = 0; sample < count; sample++)
+                {
+                    writer.Write(UInt16.MaxValue * samples[sample + offset]);
+                }
             }
             dataChunkSize += (count * 4);
         }

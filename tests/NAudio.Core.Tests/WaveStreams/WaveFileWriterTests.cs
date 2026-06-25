@@ -3,6 +3,7 @@ using NUnit.Framework;
 using NAudio.Wave;
 using System.IO;
 using NAudio.Utils;
+using NAudio.Dmo;
 using NAudio.Tests.Shared;
 
 namespace NAudio.Core.Tests.WaveStreams;
@@ -107,14 +108,18 @@ public class WaveFileWriterTests
     }
 
     [Test]
-    public void WriteSampleTo32BitPcmRoundTripsCorrectly()
+    public void WriteSampleTo32BitExtensibleFloatRoundTripsCorrectly()
     {
         // Regression test for https://github.com/naudio/NAudio/issues/651
-        // Previously WriteSample truncated the normalised float to an Int32 before
-        // scaling, so almost every sample was written as zero.
+        // A 32-bit WaveFormatExtensible defaults to an IEEE-float subformat, so WriteSample
+        // must write the float verbatim. Previously it truncated the normalised float to an
+        // Int32 before scaling, so almost every sample was written as zero.
         var samples = new[] { 0.0f, 0.5f, -0.5f, 0.25f, -0.25f, 1.0f, -1.0f };
+        var format = new WaveFormatExtensible(44100, 32, 1);
+        Assert.That(format.SubFormat, Is.EqualTo(AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT), "Sanity: default 32-bit extensible is IEEE float");
+
         var ms = new MemoryStream();
-        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), new WaveFormatExtensible(44100, 32, 1)))
+        using (var writer = new WaveFileWriter(new IgnoreDisposeStream(ms), format))
         {
             foreach (var sample in samples)
             {
@@ -125,6 +130,7 @@ public class WaveFileWriterTests
         ms.Position = 0;
         using var reader = new WaveFileReader(ms);
         Assert.That(reader.WaveFormat.BitsPerSample, Is.EqualTo(32), "Bits Per Sample");
+        Assert.That(reader.WaveFormat.Encoding, Is.EqualTo(WaveFormatEncoding.Extensible), "Encoding");
         Assert.That(reader.Length, Is.EqualTo(samples.Length * 4), "Data length");
 
         var buffer = new byte[samples.Length * 4];
@@ -133,9 +139,8 @@ public class WaveFileWriterTests
 
         for (int n = 0; n < samples.Length; n++)
         {
-            int actual = BitConverter.ToInt32(buffer, n * 4);
-            int expected = (int)(int.MaxValue * samples[n]);
-            Assert.That(actual, Is.EqualTo(expected), $"Sample {n} ({samples[n]})");
+            float actual = BitConverter.ToSingle(buffer, n * 4);
+            Assert.That(actual, Is.EqualTo(samples[n]), $"Sample {n} ({samples[n]})");
         }
     }
 

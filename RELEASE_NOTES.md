@@ -62,7 +62,7 @@ extensive correctness work during development — see [Docs/Sampler.md](Docs/Sam
 
  * `WaveOut`: fixed a race where stopping/disposing faster than the buffer latency could throw a `NullReferenceException` via `PlaybackStopped` (#804)
  * `WaveFileWriter`: removed the finalizer that fired an unconditional `Debug.Assert` and could crash the process on the finalizer thread when construction had thrown
- * `WaveFileWriter.WriteSample`: fixed 32-bit PCM output writing near-silence — the normalised float was truncated to an `Int32` before scaling, so almost every sample was written as zero (#651)
+ * `WaveFileWriter.WriteSample`: fixed 32-bit `WaveFormatExtensible` output writing near-silence — the normalised float was truncated to an `Int32` before scaling (writing zero for almost every sample), and the branch ignored the format's SubFormat; it now writes IEEE-float or integer-PCM samples according to the declared subformat (#651)
  * `AudioClient.Dispose` is now idempotent and safe against concurrent/re-entrant disposal, fixing an intermittent interop `NullReferenceException` (#1183)
  * `AcmInterop`: serialised all `msacm32` P/Invokes process-wide, fixing process-killing access violations under concurrent ACM use
  * `WaveFileReader` / `AiffFileReader`: malformed headers declaring `BlockAlign=0` now throw `InvalidDataException` from the constructor instead of `DivideByZeroException` later (#1254); `WaveFileReader` no longer throws on an oversized `fmt` `cbSize` (#482)

@@ -56,6 +56,11 @@ internal sealed class WasapiPlayFileTest : IConsoleTest
         using var player = builder.Build();
         using var reader = new MediaFoundationReader(inputPath);
 
+        // Validate the chosen options up front (non-destructive) before opening the stream.
+        var capability = player.GetPlaybackCapability(reader.WaveFormat);
+        if (!capability.Supported)
+            return TestResult.Fail($"Format not supported: {capability.Reason}");
+
         try { player.Init(reader); }
         catch (Exception ex) { return TestResult.Fail($"Init failed: {ex.Message}"); }
 
@@ -68,7 +73,10 @@ internal sealed class WasapiPlayFileTest : IConsoleTest
                 ? $"[green]Low latency:[/] active ({player.LatencyMilliseconds} ms)"
                 : $"[yellow]Low latency:[/] not available — fell back to standard shared mode ({Markup.Escape(player.LowLatencyUnavailableReason ?? "unknown reason")})");
         }
+        AnsiConsole.MarkupLine($"[grey]Source:[/] {reader.WaveFormat}");
         AnsiConsole.MarkupLine($"[grey]Format:[/] {player.OutputWaveFormat}");
+        if (capability.Conversions.Count > 0)
+            AnsiConsole.MarkupLine($"[grey]Convert:[/] {Markup.Escape(string.Join(", ", capability.Conversions))}");
         AnsiConsole.MarkupLine($"[grey]Length:[/] {reader.TotalTime:hh\\:mm\\:ss\\.fff}");
         AnsiConsole.MarkupLine(ctx.Interactive
             ? "[dim]SPACE pause/resume, ESC stop[/]\n"

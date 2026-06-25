@@ -14,6 +14,7 @@ public class WasapiPlayerBuilder
     private AudioStreamCategory? audioCategory;
     private string mmcssTaskName;
     private bool preferLowLatency;
+    private bool requireLowLatency;
 
     /// <summary>
     /// Use the specified audio device for playback.
@@ -94,11 +95,18 @@ public class WasapiPlayerBuilder
 
     /// <summary>
     /// Request low-latency shared mode via IAudioClient3 if available.
-    /// Falls back to standard initialization if IAudioClient3 is not supported.
     /// </summary>
-    public WasapiPlayerBuilder WithLowLatency()
+    /// <param name="required">
+    /// When false (the default), playback silently falls back to standard shared mode if low latency
+    /// can't be honoured (e.g. the source sample rate doesn't match the engine, or IAudioClient3 isn't
+    /// supported) — inspect <see cref="WasapiPlayer.LowLatencyActive"/> afterwards to see what you got.
+    /// When true, <see cref="WasapiPlayer.Init"/> instead throws an
+    /// <see cref="System.InvalidOperationException"/> if low latency can't be achieved.
+    /// </param>
+    public WasapiPlayerBuilder WithLowLatency(bool required = false)
     {
         preferLowLatency = true;
+        requireLowLatency = required;
         return this;
     }
 
@@ -109,7 +117,7 @@ public class WasapiPlayerBuilder
     {
         var actualDevice = device ?? GetDefaultRenderDevice();
         return new WasapiPlayer(actualDevice, shareMode, useEventSync, latencyMilliseconds,
-            audioCategory, mmcssTaskName, preferLowLatency);
+            audioCategory, mmcssTaskName, preferLowLatency, requireLowLatency);
     }
 
     private static MMDevice GetDefaultRenderDevice()

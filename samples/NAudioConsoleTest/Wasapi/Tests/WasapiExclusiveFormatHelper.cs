@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Numerics;
 using NAudio.Dmo;
 using NAudio.Wave;
 
@@ -16,8 +16,8 @@ internal static class WasapiExclusiveFormatHelper
     public static readonly int[] ChannelCounts = [1, 2, 4, 6, 8];
 
     /// <summary>
-    /// Bit-depth + encoding combos to probe. <see cref="WaveFormatExtensible"/>'s constructor
-    /// pins 32-bit to IEEE float, so 32-bit PCM has to be patched separately.
+    /// Bit-depth + encoding combos to probe. 32-bit PCM and 32-bit float are distinct
+    /// formats, so both are listed and <see cref="CreateFormat"/> picks the SubFormat.
     /// </summary>
     public static readonly (int bits, string encoding)[] BitDepthEncodings =
     [
@@ -27,35 +27,30 @@ internal static class WasapiExclusiveFormatHelper
     public static readonly (int mask, string name)[] ChannelMasks =
     [
         (0, "(default)"),
-        (0x0004, "1.0 Mono (FC)"),
-        (0x0003, "2.0 Stereo (FL|FR)"),
-        (0x000C, "1.1 (FC|LFE)"),
-        (0x000B, "2.1 (FL|FR|LFE)"),
-        (0x0033, "4.0 Quad (FL|FR|BL|BR)"),
-        (0x0107, "4.0 Surround (FL|FR|FC|BC)"),
-        (0x0607, "5.0 (FL|FR|FC|SL|SR)"),
-        (0x003F, "5.1 Back (FL|FR|FC|LFE|BL|BR)"),
-        (0x060F, "5.1 Surround (FL|FR|FC|LFE|SL|SR)"),
-        (0x0637, "7.0 (FL|FR|FC|BL|BR|SL|SR)"),
-        (0x00FF, "7.1 Wide (FL|FR|FC|LFE|BL|BR|FLC|FRC)"),
-        (0x063F, "7.1 Surround (FL|FR|FC|LFE|BL|BR|SL|SR)"),
+        ((int)Speakers.Mono, "1.0 Mono (FC)"),
+        ((int)Speakers.Stereo, "2.0 Stereo (FL|FR)"),
+        ((int)(Speakers.FrontCenter | Speakers.LowFrequency), "1.1 (FC|LFE)"),
+        ((int)(Speakers.Stereo | Speakers.LowFrequency), "2.1 (FL|FR|LFE)"),
+        ((int)Speakers.Quad, "4.0 Quad (FL|FR|BL|BR)"),
+        ((int)(Speakers.Stereo | Speakers.FrontCenter | Speakers.BackCenter), "4.0 Surround (FL|FR|FC|BC)"),
+        ((int)(Speakers.Stereo | Speakers.FrontCenter | Speakers.SideLeft | Speakers.SideRight), "5.0 (FL|FR|FC|SL|SR)"),
+        ((int)(Speakers.Quad | Speakers.FrontCenter | Speakers.LowFrequency), "5.1 Back (FL|FR|FC|LFE|BL|BR)"),
+        ((int)Speakers.Surround51, "5.1 Surround (FL|FR|FC|LFE|SL|SR)"),
+        ((int)(Speakers.Quad | Speakers.FrontCenter | Speakers.SideLeft | Speakers.SideRight), "7.0 (FL|FR|FC|BL|BR|SL|SR)"),
+        ((int)(Speakers.Quad | Speakers.FrontCenter | Speakers.LowFrequency | Speakers.FrontLeftOfCenter | Speakers.FrontRightOfCenter), "7.1 Wide (FL|FR|FC|LFE|BL|BR|FLC|FRC)"),
+        ((int)Speakers.Surround71, "7.1 Surround (FL|FR|FC|LFE|BL|BR|SL|SR)"),
     ];
 
     /// <summary>
-    /// Builds a <see cref="WaveFormatExtensible"/> with the requested encoding. The standard
-    /// constructor hardcodes 32-bit to IEEE float — we patch <c>SubFormat</c> by reflection
-    /// when 32-bit PCM is requested.
+    /// Builds a <see cref="WaveFormatExtensible"/> with the requested encoding, choosing the
+    /// PCM or IEEE-float SubFormat explicitly so 32-bit PCM and 32-bit float are both reachable.
     /// </summary>
     public static WaveFormatExtensible CreateFormat(int rate, int bits, int channels, string encoding, int channelMask = 0)
     {
-        var format = new WaveFormatExtensible(rate, bits, channels, channelMask);
-        if (bits == 32 && encoding == "PCM")
-        {
-            var subFormatField = typeof(WaveFormatExtensible)
-                .GetField("subFormat", BindingFlags.NonPublic | BindingFlags.Instance)!;
-            subFormatField.SetValue(format, AudioMediaSubtypes.MEDIASUBTYPE_PCM);
-        }
-        return format;
+        var subFormat = encoding == "Float"
+            ? AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT
+            : AudioMediaSubtypes.MEDIASUBTYPE_PCM;
+        return new WaveFormatExtensible(rate, bits, channels, subFormat, bits, channelMask);
     }
 
     public static List<(int mask, string name)> GetMasksForChannelCount(int channelCount)
@@ -64,15 +59,8 @@ internal static class WasapiExclusiveFormatHelper
         foreach (var (mask, name) in ChannelMasks)
         {
             if (mask == 0) continue;
-            if (BitCount(mask) == channelCount) masks.Add((mask, name));
+            if (BitOperations.PopCount((uint)mask) == channelCount) masks.Add((mask, name));
         }
         return masks;
-    }
-
-    public static int BitCount(int value)
-    {
-        var count = 0;
-        while (value != 0) { count += value & 1; value >>= 1; }
-        return count;
     }
 }

@@ -315,6 +315,8 @@ public class MMDevice : IDisposable
         audioEndpointVolume = null;
         audioSessionManager?.Dispose();
         audioSessionManager = null;
+        propertyStore?.Dispose();
+        propertyStore = null;
         if (deviceInterface != null)
         {
             if ((object)deviceInterface is ComObject co)

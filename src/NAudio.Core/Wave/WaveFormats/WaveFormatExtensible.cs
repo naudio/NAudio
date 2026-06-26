@@ -96,6 +96,42 @@ public class WaveFormatExtensible : WaveFormat
     }
 
     /// <summary>
+    /// Creates a new linear PCM or IEEE float WaveFormatExtensible, choosing the SubFormat
+    /// from <paramref name="useIeeeFloat"/>. Use this convenience overload when you don't need
+    /// an arbitrary SubFormat GUID but still want control over valid bits and channel mask —
+    /// in particular it can create 32-bit integer PCM (<paramref name="useIeeeFloat"/> false),
+    /// which the bit-depth-based constructor cannot.
+    /// </summary>
+    /// <param name="rate">Sample rate</param>
+    /// <param name="bits">Container bits per sample (block alignment is derived from this)</param>
+    /// <param name="channels">Number of channels</param>
+    /// <param name="useIeeeFloat">True for IEEE float samples, false for integer PCM</param>
+    /// <param name="validBitsPerSample">Number of valid bits per sample (may be less than <paramref name="bits"/>)</param>
+    /// <param name="channelMask">Channel mask describing the speaker layout, or 0 if unspecified</param>
+    public WaveFormatExtensible(int rate, int bits, int channels, bool useIeeeFloat, int validBitsPerSample, int channelMask)
+        : this(rate, bits, channels,
+            useIeeeFloat ? AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT : AudioMediaSubtypes.MEDIASUBTYPE_PCM,
+            validBitsPerSample, channelMask)
+    {
+    }
+
+    /// <summary>
+    /// Creates a new linear PCM or IEEE float WaveFormatExtensible with a strongly typed
+    /// channel layout. See <see cref="WaveFormatExtensible(int, int, int, bool, int, int)"/>
+    /// for details.
+    /// </summary>
+    /// <param name="rate">Sample rate</param>
+    /// <param name="bits">Container bits per sample (block alignment is derived from this)</param>
+    /// <param name="channels">Number of channels</param>
+    /// <param name="useIeeeFloat">True for IEEE float samples, false for integer PCM</param>
+    /// <param name="validBitsPerSample">Number of valid bits per sample (may be less than <paramref name="bits"/>)</param>
+    /// <param name="channelMask">Speaker positions present in the stream</param>
+    public WaveFormatExtensible(int rate, int bits, int channels, bool useIeeeFloat, int validBitsPerSample, Speakers channelMask)
+        : this(rate, bits, channels, useIeeeFloat, validBitsPerSample, (int)channelMask)
+    {
+    }
+
+    /// <summary>
     /// WaveFormatExtensible for PCM or floating point can be awkward to work with
     /// This creates a regular WaveFormat structure representing the same audio format
     /// Returns the WaveFormat unchanged for non PCM or IEEE float

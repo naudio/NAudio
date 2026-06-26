@@ -1,5 +1,4 @@
 using System.Numerics;
-using NAudio.Dmo;
 using NAudio.Wave;
 
 namespace NAudioConsoleTest.Wasapi.Tests;
@@ -43,15 +42,10 @@ internal static class WasapiExclusiveFormatHelper
 
     /// <summary>
     /// Builds a <see cref="WaveFormatExtensible"/> with the requested encoding, choosing the
-    /// PCM or IEEE-float SubFormat explicitly so 32-bit PCM and 32-bit float are both reachable.
+    /// PCM or IEEE-float SubFormat so 32-bit PCM and 32-bit float are both reachable.
     /// </summary>
     public static WaveFormatExtensible CreateFormat(int rate, int bits, int channels, string encoding, int channelMask = 0)
-    {
-        var subFormat = encoding == "Float"
-            ? AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT
-            : AudioMediaSubtypes.MEDIASUBTYPE_PCM;
-        return new WaveFormatExtensible(rate, bits, channels, subFormat, bits, channelMask);
-    }
+        => new(rate, bits, channels, useIeeeFloat: encoding == "Float", validBitsPerSample: bits, channelMask);
 
     public static List<(int mask, string name)> GetMasksForChannelCount(int channelCount)
     {

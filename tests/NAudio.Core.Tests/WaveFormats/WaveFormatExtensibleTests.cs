@@ -75,6 +75,29 @@ public class WaveFormatExtensibleTests
     }
 
     [Test]
+    public void UseIeeeFloatConstructorPicksPcmSubFormat()
+    {
+        // The headline case the bit-depth constructor can't reach: 32-bit integer PCM
+        var format = new WaveFormatExtensible(48000, 32, 2,
+            useIeeeFloat: false, validBitsPerSample: 24, channelMask: (int)Speakers.Stereo);
+
+        Assert.That(format.SubFormat, Is.EqualTo(AudioMediaSubtypes.MEDIASUBTYPE_PCM));
+        Assert.That(format.BitsPerSample, Is.EqualTo(32));
+        Assert.That(format.ValidBitsPerSample, Is.EqualTo(24));
+        Assert.That(format.ChannelMask, Is.EqualTo((int)Speakers.Stereo));
+    }
+
+    [Test]
+    public void UseIeeeFloatConstructorPicksFloatSubFormat()
+    {
+        var format = new WaveFormatExtensible(48000, 32, 6,
+            useIeeeFloat: true, validBitsPerSample: 32, channelMask: Speakers.Surround51);
+
+        Assert.That(format.SubFormat, Is.EqualTo(AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT));
+        Assert.That(format.ChannelMask, Is.EqualTo((int)Speakers.Surround51));
+    }
+
+    [Test]
     public void RoundTripsThroughSerialize()
     {
         var format = new WaveFormatExtensible(48000, 32, 2,

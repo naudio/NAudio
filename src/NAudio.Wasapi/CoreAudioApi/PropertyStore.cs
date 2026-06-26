@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices.Marshalling;
 using NAudio.CoreAudioApi.Interfaces;
 
 namespace NAudio.CoreAudioApi;
@@ -6,9 +7,9 @@ namespace NAudio.CoreAudioApi;
 /// <summary>
 /// Property Store class, only supports reading properties at the moment.
 /// </summary>
-public class PropertyStore
+public class PropertyStore : IDisposable
 {
-    private readonly IPropertyStore storeInterface;
+    private IPropertyStore storeInterface;
 
     /// <summary>
     /// Property Count
@@ -131,6 +132,22 @@ public class PropertyStore
     internal PropertyStore(IPropertyStore store)
     {
         storeInterface = store;
+    }
+
+    /// <summary>
+    /// Releases the underlying <c>IPropertyStore</c> COM reference.
+    /// </summary>
+    public void Dispose()
+    {
+        if (storeInterface != null)
+        {
+            if ((object)storeInterface is ComObject co)
+            {
+                co.FinalRelease();
+            }
+            storeInterface = null;
+        }
+        GC.SuppressFinalize(this);
     }
 
     private delegate T PropVariantProjection<T>(in PropertyKey key, in PropVariant value);

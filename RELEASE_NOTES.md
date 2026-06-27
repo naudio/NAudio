@@ -108,6 +108,7 @@ extensive correctness work during development — see [Docs/Sampler.md](Docs/Sam
  * New `NAudioConsoleTest` CLI harness (`run-batch` for JSON test plans, `diagnose` for a structured host-audio snapshot) and `MfStressTest` for the new Media Foundation interop
  * WPF demos: spectrum analyser rewritten (correct dB/log-frequency/calibration), new `LiveWaveformControl`, loopback + multi-API device selection in the WAV recording demo, and a drum machine rebuilt on the new `NAudio.Sequencing` primitives
  * Replaced the deprecated vendored NSpeex with Opus (Concentus) in the network chat demo
+ * Modernised the network chat demo: receivers now bind to `IPAddress.Any` so it works across machines (not just loopback — #821), separate listen/remote ports for one-PC experiments, length-prefixed TCP framing, async cancellable sockets, a bounded jitter buffer, capture/playback moved to `WasapiRecorder`/`WasapiPlayer`, and a new [tutorial](Docs/NetworkChatDemo.md)
 
 ### 2.3.0 (12 Mar 2026)
 

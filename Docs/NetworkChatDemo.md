@@ -14,13 +14,13 @@ Launch `NAudioDemo`, choose **Network Chat** from the demo list, then fill in:
 | Field | Meaning |
 | --- | --- |
 | **Remote host** | The machine to send your audio to – an IP address (`192.168.1.50`) or a host name. |
-| **Remote port** | The UDP/TCP port the remote machine is listening on. |
+| **Remote port** | The UDP port the remote machine is listening on. |
 | **Listen port** | The port *this* instance listens on for incoming audio. |
 | **Input device** | The microphone to capture from. |
 | **Codec** | How the audio is compressed before sending (see below). |
-| **Protocol** | UDP (recommended) or TCP. |
 
-Press **Start Streaming** to begin and **Stop** to end.
+Press **Start Streaming** to begin and **Stop** to end. Audio is sent over UDP (see
+[Why UDP](#why-udp) below).
 
 ### Two machines
 
@@ -30,8 +30,8 @@ Run the demo on both PCs. On each one, set **Remote host** to the *other* machin
 * PC A (`192.168.1.10`): Remote host `192.168.1.20`, Remote port `7080`, Listen port `7080`
 * PC B (`192.168.1.20`): Remote host `192.168.1.10`, Remote port `7080`, Listen port `7080`
 
-Make sure any firewall allows the chosen port, and (for TCP) start both ends so the listener is
-up before the other side connects. UDP has no such ordering requirement.
+Make sure any firewall allows the chosen UDP port. Because there is no connection to establish,
+the two ends can be started in any order.
 
 ### One machine (two instances)
 
@@ -79,16 +79,26 @@ microphone ─▶ WasapiRecorder ─▶ codec.Encode ─▶ IAudioSender ──n
   a `BufferedWaveProvider` (acting as a small jitter buffer) that a [`WasapiPlayer`](WasapiPlayer.md)
   plays. The buffer is capped at ~500 ms with `DiscardOnBufferOverflow = true`, so latency stays
   bounded if packets arrive in bursts.
-* **Transports** implement `IAudioSender` / `IAudioReceiver`:
-  * `UdpAudioSender` / `UdpAudioReceiver` – one datagram per encoded chunk. Lost packets cause a
-    small glitch rather than stalling the stream, which is exactly what you want for live audio.
-  * `TcpAudioSender` / `TcpAudioReceiver` – a reliable byte stream with a 4-byte length prefix per
-    chunk so the receiver can reassemble message boundaries. Useful across links that block UDP,
-    but a single lost packet stalls everything behind it.
+* **Transport** is behind `IAudioSender` / `IAudioReceiver` (a seam you can swap out):
+  `UdpAudioSender` / `UdpAudioReceiver` send one datagram per encoded chunk.
 
-The receivers bind to `IPAddress.Any`, so audio from other machines is received – not just
+The receiver binds to `IPAddress.Any`, so audio from other machines is received – not just
 loopback traffic. (An earlier version of this demo bound to `IPAddress.Loopback`, which is why it
 only ever worked between two instances on the same PC.)
+
+### Why UDP
+
+This demo streams over UDP only, because UDP is the right transport for real-time audio:
+
+* A lost or late datagram produces a brief glitch; playback simply carries on with the next packet.
+* There is no connection to establish, so peers can start in any order.
+
+TCP, by contrast, guarantees delivery and ordering – which sounds appealing but is the wrong
+trade-off here. A single lost segment causes *head-of-line blocking*: every packet behind it waits
+for a retransmit, adding latency that keeps growing and never recovers. That is why real voice/video
+systems build on UDP (RTP, WebRTC, SRT, QUIC) rather than raw TCP. If you genuinely need to traverse
+a network that blocks UDP, reach for one of those protocols rather than streaming audio down a TCP
+socket.
 
 ## Building your own
 

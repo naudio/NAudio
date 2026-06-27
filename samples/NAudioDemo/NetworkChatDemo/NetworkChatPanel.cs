@@ -23,9 +23,6 @@ public partial class NetworkChatPanel : UserControl
         InitializeComponent();
         PopulateInputDevicesCombo();
         PopulateCodecsCombo(codecs);
-        comboBoxProtocol.Items.Add("UDP");
-        comboBoxProtocol.Items.Add("TCP");
-        comboBoxProtocol.SelectedIndex = 0;
         Disposed += OnPanelDisposed;
     }
 
@@ -147,7 +144,7 @@ public partial class NetworkChatPanel : UserControl
         }
         catch (Exception ex)
         {
-            // Clean up anything that started before the failure (e.g. TCP could not reach the peer).
+            // Clean up anything that started before the failure (e.g. the listen port was in use).
             Disconnect();
             MessageBox.Show($"Could not start streaming: {ex.Message}", "Network Chat");
             return false;
@@ -156,17 +153,13 @@ public partial class NetworkChatPanel : UserControl
 
     private void Connect(string remoteHost, int remotePort, int listenPort, MMDevice inputDevice, INetworkChatCodec codec)
     {
-        var useUdp = comboBoxProtocol.SelectedIndex == 0;
-
-        // Start the receiver (listener) first so a TCP peer can connect to us, then open the sender.
-        var receiver = useUdp
-            ? (IAudioReceiver)new UdpAudioReceiver(listenPort)
-            : new TcpAudioReceiver(listenPort);
+        // Audio in, audio out: we listen on our own port and send to the remote endpoint. UDP is
+        // the right transport for real-time audio - a lost datagram is a brief glitch rather than a
+        // stall, and there is no connection to set up so peers can start in any order.
+        var receiver = new UdpAudioReceiver(listenPort);
         player = new NetworkAudioPlayer(codec, receiver);
 
-        var sender = useUdp
-            ? (IAudioSender)new UdpAudioSender(remoteHost, remotePort)
-            : new TcpAudioSender(remoteHost, remotePort);
+        var sender = new UdpAudioSender(remoteHost, remotePort);
         audioSender = new NetworkAudioSender(codec, inputDevice, sender);
 
         connected = true;

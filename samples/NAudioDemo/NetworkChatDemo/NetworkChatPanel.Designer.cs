@@ -33,14 +33,12 @@
             this.textBoxListenPort = new System.Windows.Forms.TextBox();
             this.comboBoxInputDevices = new System.Windows.Forms.ComboBox();
             this.comboBoxCodecs = new System.Windows.Forms.ComboBox();
-            this.comboBoxProtocol = new System.Windows.Forms.ComboBox();
             this.buttonStartStreaming = new System.Windows.Forms.Button();
             this.labelRemoteHost = new System.Windows.Forms.Label();
             this.labelRemotePort = new System.Windows.Forms.Label();
             this.labelListenPort = new System.Windows.Forms.Label();
             this.labelInputDevice = new System.Windows.Forms.Label();
             this.labelCodec = new System.Windows.Forms.Label();
-            this.labelProtocol = new System.Windows.Forms.Label();
             this.labelHelp = new System.Windows.Forms.Label();
             this.SuspendLayout();
             //
@@ -91,23 +89,13 @@
             this.comboBoxCodecs.Size = new System.Drawing.Size(321, 24);
             this.comboBoxCodecs.TabIndex = 4;
             //
-            // comboBoxProtocol
-            //
-            this.comboBoxProtocol.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.comboBoxProtocol.FormattingEnabled = true;
-            this.comboBoxProtocol.Location = new System.Drawing.Point(130, 169);
-            this.comboBoxProtocol.Margin = new System.Windows.Forms.Padding(4);
-            this.comboBoxProtocol.Name = "comboBoxProtocol";
-            this.comboBoxProtocol.Size = new System.Drawing.Size(321, 24);
-            this.comboBoxProtocol.TabIndex = 5;
-            //
             // buttonStartStreaming
             //
-            this.buttonStartStreaming.Location = new System.Drawing.Point(130, 205);
+            this.buttonStartStreaming.Location = new System.Drawing.Point(130, 172);
             this.buttonStartStreaming.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.buttonStartStreaming.Name = "buttonStartStreaming";
             this.buttonStartStreaming.Size = new System.Drawing.Size(172, 28);
-            this.buttonStartStreaming.TabIndex = 6;
+            this.buttonStartStreaming.TabIndex = 5;
             this.buttonStartStreaming.Text = "Start Streaming";
             this.buttonStartStreaming.UseVisualStyleBackColor = true;
             this.buttonStartStreaming.Click += new System.EventHandler(this.buttonStartStreaming_Click);
@@ -162,42 +150,30 @@
             this.labelCodec.TabIndex = 11;
             this.labelCodec.Text = "Codec:";
             //
-            // labelProtocol
-            //
-            this.labelProtocol.AutoSize = true;
-            this.labelProtocol.Location = new System.Drawing.Point(4, 173);
-            this.labelProtocol.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.labelProtocol.Name = "labelProtocol";
-            this.labelProtocol.Size = new System.Drawing.Size(60, 17);
-            this.labelProtocol.TabIndex = 12;
-            this.labelProtocol.Text = "Protocol:";
-            //
             // labelHelp
             //
             this.labelHelp.AutoSize = true;
             this.labelHelp.ForeColor = System.Drawing.SystemColors.GrayText;
-            this.labelHelp.Location = new System.Drawing.Point(4, 245);
+            this.labelHelp.Location = new System.Drawing.Point(4, 212);
             this.labelHelp.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.labelHelp.Name = "labelHelp";
             this.labelHelp.Size = new System.Drawing.Size(0, 17);
-            this.labelHelp.TabIndex = 13;
-            this.labelHelp.Text = "Two PCs: set Remote host to the other machine and use the same port on both.\r\n" +
-                "One PC: run two instances and swap the ports (e.g. A listens 7080 / sends 7081, B listens 7081 / sends 7080).\r\n" +
-                "UDP is recommended for live audio; you will hear your own voice if you point Remote host back at yourself.";
+            this.labelHelp.TabIndex = 12;
+            this.labelHelp.Text = "Audio streams over UDP. You will hear your own voice if you point Remote host back at yourself.\r\n" +
+                "Two PCs: set Remote host to the other machine and use the same port on both.\r\n" +
+                "One PC: run two instances and swap the ports (e.g. A listens 7080 / sends 7081, B listens 7081 / sends 7080).";
             //
             // NetworkChatPanel
             //
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.labelHelp);
-            this.Controls.Add(this.labelProtocol);
             this.Controls.Add(this.labelCodec);
             this.Controls.Add(this.labelInputDevice);
             this.Controls.Add(this.labelListenPort);
             this.Controls.Add(this.labelRemotePort);
             this.Controls.Add(this.labelRemoteHost);
             this.Controls.Add(this.buttonStartStreaming);
-            this.Controls.Add(this.comboBoxProtocol);
             this.Controls.Add(this.comboBoxCodecs);
             this.Controls.Add(this.comboBoxInputDevices);
             this.Controls.Add(this.textBoxListenPort);
@@ -205,7 +181,7 @@
             this.Controls.Add(this.textBoxRemoteHost);
             this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.Name = "NetworkChatPanel";
-            this.Size = new System.Drawing.Size(791, 320);
+            this.Size = new System.Drawing.Size(791, 285);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -218,14 +194,12 @@
         private System.Windows.Forms.TextBox textBoxListenPort;
         private System.Windows.Forms.ComboBox comboBoxInputDevices;
         private System.Windows.Forms.ComboBox comboBoxCodecs;
-        private System.Windows.Forms.ComboBox comboBoxProtocol;
         private System.Windows.Forms.Button buttonStartStreaming;
         private System.Windows.Forms.Label labelRemoteHost;
         private System.Windows.Forms.Label labelRemotePort;
         private System.Windows.Forms.Label labelListenPort;
         private System.Windows.Forms.Label labelInputDevice;
         private System.Windows.Forms.Label labelCodec;
-        private System.Windows.Forms.Label labelProtocol;
         private System.Windows.Forms.Label labelHelp;
     }
 }

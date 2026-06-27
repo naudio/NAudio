@@ -26,6 +26,9 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
     private readonly bool configureEchoCancellationReference;
     private readonly string echoCancellationReferenceEndpointId;
     private readonly bool useCommunicationsMode;
+    private readonly bool preferLowLatency;
+    private readonly bool requireLowLatency;
+    private readonly MMDevice mmDevice;
     private readonly SynchronizationContext syncContext;
 
     private AudioClient audioClient;
@@ -56,10 +59,34 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
     /// </summary>
     public CaptureState CaptureState => captureState;
 
+    /// <summary>
+    /// Whether IAudioClient3 low-latency shared mode is actually in use after recording has been
+    /// initialized. This is only ever true when <see cref="WasapiRecorderBuilder.WithLowLatency"/> was
+    /// requested <em>and</em> the device, share mode, and capture format allowed it. When low latency
+    /// was requested but could not be honoured, capture silently falls back to standard shared mode and
+    /// this remains false — check it to find out what you actually got.
+    /// </summary>
+    public bool LowLatencyActive { get; private set; }
+
+    /// <summary>
+    /// When low latency was requested via <see cref="WasapiRecorderBuilder.WithLowLatency"/> but could
+    /// not be honoured, a short human-readable explanation of why (e.g. the requested capture format did
+    /// not match the device mix format). Null when low latency is active or was never requested.
+    /// </summary>
+    public string LowLatencyUnavailableReason { get; private set; }
+
+    /// <summary>
+    /// The effective latency in milliseconds in use after recording has been initialized. In standard
+    /// mode this is the configured buffer length; in IAudioClient3 low-latency mode it is derived from
+    /// the engine period the device granted, so it is typically much smaller. Zero before
+    /// <see cref="StartRecording"/> (or <see cref="CaptureAsync"/>) has initialized the audio client.
+    /// </summary>
+    public int LatencyMilliseconds { get; private set; }
+
     internal WasapiRecorder(MMDevice device, AudioClientShareMode shareMode, bool useEventSync,
         int bufferMilliseconds, WaveFormat requestedFormat, string mmcssTaskName, bool useLoopback = false,
         bool configureEchoCancellationReference = false, string echoCancellationReferenceEndpointId = null,
-        bool useCommunicationsMode = false)
+        bool useCommunicationsMode = false, bool preferLowLatency = false, bool requireLowLatency = false)
     {
         syncContext = SynchronizationContext.Current;
         this.shareMode = shareMode;
@@ -70,7 +97,10 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
         this.configureEchoCancellationReference = configureEchoCancellationReference;
         this.echoCancellationReferenceEndpointId = echoCancellationReferenceEndpointId;
         this.useCommunicationsMode = useCommunicationsMode;
+        this.preferLowLatency = preferLowLatency;
+        this.requireLowLatency = requireLowLatency;
 
+        mmDevice = device;
         audioClient = device.CreateAudioClient();
         waveFormat = requestedFormat ?? audioClient.MixFormat;
     }
@@ -201,6 +231,57 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
 
     private void InitializeAudioClient()
     {
+        LatencyMilliseconds = bufferMilliseconds;
+
+        // Try the IAudioClient3 low-latency shared path first when requested. It uses a much smaller
+        // engine period than the configured buffer length, at the cost of higher wake-up frequency.
+        if (preferLowLatency)
+        {
+            var precondition = LowLatencyPreconditionReason();
+            if (precondition == null && TryInitializeLowLatency())
+            {
+                LowLatencyActive = true;
+            }
+            else
+            {
+                if (precondition != null)
+                    LowLatencyUnavailableReason = precondition;
+                if (requireLowLatency)
+                    throw new InvalidOperationException(
+                        $"Low latency was required but could not be honoured: {LowLatencyUnavailableReason}. " +
+                        "Low-latency capture needs shared mode, event-driven sync, no loopback, IAudioClient3 " +
+                        "support, and a capture format matching the device mix format (omit WithFormat). " +
+                        "Request WithLowLatency() without required to fall back to standard shared mode instead.");
+                InitializeStandard();
+            }
+        }
+        else
+        {
+            InitializeStandard();
+        }
+
+        if (configureEchoCancellationReference)
+        {
+            // GetService for the AEC control is only valid once the stream is initialized.
+            var aecControl = audioClient.TryGetAcousticEchoCancellationControl();
+            if (aecControl == null)
+            {
+                throw new NotSupportedException(
+                    "The capture endpoint does not support controlling the acoustic echo cancellation " +
+                    "reference endpoint. This requires Windows 11 build 22621 or later and a capture " +
+                    "endpoint whose AEC effect supports loopback reference control.");
+            }
+            // A null endpoint id lets Windows pick the loopback reference device itself.
+            aecControl.SetReferenceEndpoint(echoCancellationReferenceEndpointId);
+        }
+    }
+
+    /// <summary>
+    /// Standard (non-low-latency) initialization. The audio engine handles any format conversion in
+    /// shared mode via AutoConvertPcm, so the configured buffer length is honoured as requested.
+    /// </summary>
+    private void InitializeStandard()
+    {
         long bufferDuration = bufferMilliseconds * ReftimesPerMillisec;
 
         AudioClientStreamFlags flags;
@@ -236,21 +317,79 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
             frameEvent = new EventWaitHandle(false, EventResetMode.AutoReset);
             audioClient.SetEventHandle(frameEvent.SafeWaitHandle.DangerousGetHandle());
         }
+    }
 
-        if (configureEchoCancellationReference)
+    /// <summary>
+    /// Returns a human-readable reason why IAudioClient3 low-latency capture cannot be attempted for the
+    /// current configuration, or null if all preconditions are satisfied. IAudioClient3's
+    /// InitializeSharedAudioStream only supports a shared, event-driven stream in the device mix format —
+    /// it does no format conversion and the loopback flag is not permitted.
+    /// </summary>
+    private string LowLatencyPreconditionReason()
+    {
+        if (isProcessLoopback)
+            return "process-loopback capture cannot use IAudioClient3 low-latency mode";
+        if (useLoopback)
+            return "loopback capture cannot use IAudioClient3 low-latency mode (the loopback stream flag is incompatible with a shared low-latency stream)";
+        if (shareMode != AudioClientShareMode.Shared)
+            return "low latency is only available in shared mode";
+        if (!isUsingEventSync)
+            return "low latency requires event-driven synchronization; use WithEventSync()";
+        if (!audioClient.SupportsAudioClient3)
+            return "IAudioClient3 is not supported on this device (requires Windows 10 version 1607 or later)";
+        if (!waveFormat.Equals(audioClient.MixFormat))
+            return $"the requested capture format ({waveFormat}) does not match the device mix format ({audioClient.MixFormat}); " +
+                   "low-latency shared capture cannot convert formats — omit WithFormat to capture at the device mix format";
+        return null;
+    }
+
+    /// <summary>
+    /// Performs the IAudioClient3 low-latency COM initialization against the device mix format (which
+    /// <see cref="LowLatencyPreconditionReason"/> has already confirmed matches <see cref="waveFormat"/>).
+    /// Returns false — leaving a fresh <see cref="audioClient"/> ready for the standard path and
+    /// recording <see cref="LowLatencyUnavailableReason"/> — if the engine declines.
+    /// </summary>
+    private bool TryInitializeLowLatency()
+    {
+        AudioClientPeriodInfo periodInfo;
+        try
         {
-            // GetService for the AEC control is only valid once the stream is initialized.
-            var aecControl = audioClient.TryGetAcousticEchoCancellationControl();
-            if (aecControl == null)
-            {
-                throw new NotSupportedException(
-                    "The capture endpoint does not support controlling the acoustic echo cancellation " +
-                    "reference endpoint. This requires Windows 11 build 22621 or later and a capture " +
-                    "endpoint whose AEC effect supports loopback reference control.");
-            }
-            // A null endpoint id lets Windows pick the loopback reference device itself.
-            aecControl.SetReferenceEndpoint(echoCancellationReferenceEndpointId);
+            periodInfo = audioClient.GetSharedModeEnginePeriod(waveFormat);
         }
+        catch (COMException)
+        {
+            LowLatencyUnavailableReason = "the audio engine did not report a low-latency period for this format";
+            return false;
+        }
+
+        var periodInFrames = periodInfo.ChooseLowestLatencyPeriod();
+
+        // The communications signal-processing mode (if requested) must be set before initialization;
+        // it is independent of the low-latency periodicity.
+        if (useCommunicationsMode)
+            audioClient.SetClientProperties(AudioStreamCategory.Communications);
+
+        try
+        {
+            // InitializeSharedAudioStream's only supported flag is EventCallback.
+            audioClient.InitializeSharedAudioStream(
+                AudioClientStreamFlags.EventCallback, periodInFrames, waveFormat, Guid.Empty);
+        }
+        catch (COMException)
+        {
+            // The engine declined this period/format combination. The client may be in a partially
+            // initialized state, so recreate it before the standard path runs.
+            audioClient.Dispose();
+            audioClient = mmDevice.CreateAudioClient();
+            LowLatencyUnavailableReason = "the audio engine declined the low-latency request";
+            return false;
+        }
+
+        LatencyMilliseconds = Math.Max(1, (int)(periodInFrames * 1000L / waveFormat.SampleRate));
+
+        frameEvent = new EventWaitHandle(false, EventResetMode.AutoReset);
+        audioClient.SetEventHandle(frameEvent.SafeWaitHandle.DangerousGetHandle());
+        return true;
     }
 
     /// <summary>

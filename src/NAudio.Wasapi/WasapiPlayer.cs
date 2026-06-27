@@ -259,7 +259,7 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
     {
         try
         {
-            var period = ChooseLowLatencyPeriod(audioClient.GetSharedModeEnginePeriod(mixFormat));
+            var period = audioClient.GetSharedModeEnginePeriod(mixFormat).ChooseLowestLatencyPeriod();
             return Math.Max(1, (int)(period * 1000L / mixFormat.SampleRate));
         }
         catch (COMException)
@@ -506,7 +506,7 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
             return false;
         }
 
-        var periodInFrames = ChooseLowLatencyPeriod(periodInfo);
+        var periodInFrames = periodInfo.ChooseLowestLatencyPeriod();
 
         try
         {
@@ -530,24 +530,6 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
         audioClient.SetEventHandle(frameEvent.SafeWaitHandle.DangerousGetHandle());
         renderClient = audioClient.AudioRenderClient;
         return true;
-    }
-
-    /// <summary>
-    /// Picks the lowest engine period that satisfies the IAudioClient3 constraints: an integral
-    /// multiple of the fundamental period, no smaller than the minimum and no larger than the maximum.
-    /// </summary>
-    private static uint ChooseLowLatencyPeriod(AudioClientPeriodInfo periodInfo)
-    {
-        var period = periodInfo.MinPeriodInFrames;
-        var fundamental = periodInfo.FundamentalPeriodInFrames;
-        if (fundamental > 0 && period % fundamental != 0)
-        {
-            // Round up to the next multiple of the fundamental period.
-            period = (period / fundamental + 1) * fundamental;
-            if (period > periodInfo.MaxPeriodInFrames)
-                period = periodInfo.MaxPeriodInFrames;
-        }
-        return period;
     }
 
     private void InitializeWithEventSync(AudioClientStreamFlags flags, long latencyRefTimes)

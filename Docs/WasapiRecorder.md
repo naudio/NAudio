@@ -5,6 +5,7 @@
 - **Zero-copy capture** — the `DataAvailable` event hands you a `ReadOnlySpan<byte>` directly over the WASAPI buffer.
 - **MMCSS thread priority** — register the capture thread with the Multimedia Class Scheduler Service.
 - **`IAsyncEnumerable` support** — consume captured audio with `await foreach` via `CaptureAsync`.
+- **`IAudioClient3` low-latency capture** — open the stream at the engine's minimum period via `WithLowLatency()`.
 - **A fluent builder** (`WasapiRecorderBuilder`) covering microphone capture and loopback capture.
 - **`IAsyncDisposable`** for non-blocking teardown.
 
@@ -61,6 +62,36 @@ recorder.StopRecording();
 ```
 
 As with the playback device, if a `SynchronizationContext` was present when the recorder was constructed, `RecordingStopped` is raised on that context.
+
+## Low-latency capture
+
+For real-time scenarios — live visualization, level metering, monitoring — `WithLowLatency()` opens
+the capture stream through `IAudioClient3` at the audio engine's *minimum* supported period instead of
+the configured buffer length. This typically drops capture latency to a few milliseconds at the cost
+of a higher wake-up frequency (more, smaller `DataAvailable` callbacks).
+
+```c#
+var recorder = new WasapiRecorderBuilder()
+    .WithLowLatency()
+    .Build();
+
+recorder.StartRecording();
+// recorder.LowLatencyActive    -> true when low latency actually engaged
+// recorder.LatencyMilliseconds -> the period the engine granted (e.g. 10ms)
+```
+
+Low-latency shared capture does **no** format conversion, so it has preconditions: shared mode,
+event-driven sync (both defaults), no loopback, `IAudioClient3` support (Windows 10 version 1607 or
+later), and a capture format matching the device mix format — so don't combine it with `WithFormat`
+requesting a different format, `WithLoopbackCapture`, `WithExclusiveMode`, `WithPollingSync`, or
+`WithProcessLoopback`.
+
+By default, if any precondition isn't met capture **silently falls back** to standard shared mode;
+inspect `LowLatencyActive` to see what you got, and `LowLatencyUnavailableReason` for a short
+explanation of why low latency was declined. Pass `WithLowLatency(required: true)` to instead throw an
+`InvalidOperationException` from `StartRecording`/`CaptureAsync` when low latency can't be honoured.
+
+This mirrors `WasapiPlayer`'s low-latency support — see [WasapiPlayer.md](WasapiPlayer.md).
 
 ## Loopback capture
 

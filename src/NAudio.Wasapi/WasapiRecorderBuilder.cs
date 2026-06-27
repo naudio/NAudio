@@ -21,6 +21,8 @@ public class WasapiRecorderBuilder
     private bool configureEchoCancellationReference;
     private string echoCancellationReferenceEndpointId;
     private bool useCommunicationsMode;
+    private bool preferLowLatency;
+    private bool requireLowLatency;
 
     /// <summary>
     /// Use the specified audio device for capture.
@@ -152,6 +154,32 @@ public class WasapiRecorderBuilder
     }
 
     /// <summary>
+    /// Request low-latency shared-mode capture via IAudioClient3 if available. This opens the capture
+    /// stream at the engine's minimum supported period rather than the configured buffer length, which
+    /// is useful for real-time scenarios such as live visualization or monitoring.
+    /// </summary>
+    /// <remarks>
+    /// Low latency requires shared mode, event-driven synchronization (the default), no loopback, and a
+    /// capture format matching the device mix format — so do not combine it with <see cref="WithFormat"/>
+    /// requesting a different format, <see cref="WithLoopbackCapture"/>, <see cref="WithExclusiveMode"/>,
+    /// <see cref="WithPollingSync"/>, or <see cref="WithProcessLoopback"/>. It also needs IAudioClient3
+    /// (Windows 10 version 1607 or later).
+    /// </remarks>
+    /// <param name="required">
+    /// When false (the default), capture silently falls back to standard shared mode if low latency
+    /// can't be honoured — inspect <see cref="WasapiRecorder.LowLatencyActive"/> and
+    /// <see cref="WasapiRecorder.LowLatencyUnavailableReason"/> afterwards to see what you got. When
+    /// true, <see cref="WasapiRecorder.StartRecording"/> (or <see cref="WasapiRecorder.CaptureAsync"/>)
+    /// instead throws an <see cref="InvalidOperationException"/> if low latency can't be achieved.
+    /// </param>
+    public WasapiRecorderBuilder WithLowLatency(bool required = false)
+    {
+        preferLowLatency = true;
+        requireLowLatency = required;
+        return this;
+    }
+
+    /// <summary>
     /// Capture audio from a specific process (and optionally its child processes).
     /// Requires Windows 10 2004 (build 19041) or later.
     /// This uses ActivateAudioInterfaceAsync with AUDIOCLIENT_PROCESS_LOOPBACK_PARAMS.
@@ -184,7 +212,8 @@ public class WasapiRecorderBuilder
         var actualDevice = device ?? GetDefaultDevice(useLoopback);
         return new WasapiRecorder(actualDevice, shareMode, useEventSync,
             bufferMilliseconds, requestedFormat, mmcssTaskName, useLoopback,
-            configureEchoCancellationReference, echoCancellationReferenceEndpointId, useCommunicationsMode);
+            configureEchoCancellationReference, echoCancellationReferenceEndpointId, useCommunicationsMode,
+            preferLowLatency, requireLowLatency);
     }
 
     /// <summary>
@@ -200,6 +229,11 @@ public class WasapiRecorderBuilder
             {
                 throw new InvalidOperationException(
                     "Communications mode and acoustic echo cancellation are not supported with process-loopback capture.");
+            }
+            if (preferLowLatency)
+            {
+                throw new InvalidOperationException(
+                    "IAudioClient3 low latency is not supported with process-loopback capture.");
             }
             return WasapiRecorder.CreateProcessLoopbackAsync(
                 processLoopbackId.Value, processLoopbackMode,

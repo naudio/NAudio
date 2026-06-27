@@ -637,4 +637,23 @@ public readonly struct AudioClientPeriodInfo
         MinPeriodInFrames = minPeriod;
         MaxPeriodInFrames = maxPeriod;
     }
+
+    /// <summary>
+    /// Picks the lowest engine period that satisfies the IAudioClient3 constraints: an integral
+    /// multiple of the fundamental period, no smaller than the minimum and no larger than the maximum.
+    /// This is the period to pass to <see cref="AudioClient.InitializeSharedAudioStream"/> for the
+    /// lowest achievable shared-mode latency.
+    /// </summary>
+    public uint ChooseLowestLatencyPeriod()
+    {
+        var period = MinPeriodInFrames;
+        if (FundamentalPeriodInFrames > 0 && period % FundamentalPeriodInFrames != 0)
+        {
+            // Round up to the next multiple of the fundamental period.
+            period = (period / FundamentalPeriodInFrames + 1) * FundamentalPeriodInFrames;
+            if (period > MaxPeriodInFrames)
+                period = MaxPeriodInFrames;
+        }
+        return period;
+    }
 }

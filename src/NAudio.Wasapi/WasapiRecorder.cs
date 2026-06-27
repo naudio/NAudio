@@ -25,6 +25,7 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
     private readonly string mmcssTaskName;
     private readonly bool configureEchoCancellationReference;
     private readonly string echoCancellationReferenceEndpointId;
+    private readonly bool useCommunicationsMode;
     private readonly SynchronizationContext syncContext;
 
     private AudioClient audioClient;
@@ -57,7 +58,8 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
 
     internal WasapiRecorder(MMDevice device, AudioClientShareMode shareMode, bool useEventSync,
         int bufferMilliseconds, WaveFormat requestedFormat, string mmcssTaskName, bool useLoopback = false,
-        bool configureEchoCancellationReference = false, string echoCancellationReferenceEndpointId = null)
+        bool configureEchoCancellationReference = false, string echoCancellationReferenceEndpointId = null,
+        bool useCommunicationsMode = false)
     {
         syncContext = SynchronizationContext.Current;
         this.shareMode = shareMode;
@@ -67,6 +69,7 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
         this.mmcssTaskName = mmcssTaskName;
         this.configureEchoCancellationReference = configureEchoCancellationReference;
         this.echoCancellationReferenceEndpointId = echoCancellationReferenceEndpointId;
+        this.useCommunicationsMode = useCommunicationsMode;
 
         audioClient = device.CreateAudioClient();
         waveFormat = requestedFormat ?? audioClient.MixFormat;
@@ -219,6 +222,12 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
 
         if (isUsingEventSync)
             flags |= AudioClientStreamFlags.EventCallback;
+
+        // The communications signal-processing mode must be requested before Initialize. It is what
+        // engages the system's AEC/NS/AGC capture pipeline (and exposes the AEC reference control) on
+        // most endpoints. Process-loopback clients have no IAudioClient2 and are excluded by the builder.
+        if (useCommunicationsMode)
+            audioClient.SetClientProperties(AudioStreamCategory.Communications);
 
         audioClient.Initialize(shareMode, flags, bufferDuration, 0, waveFormat, Guid.Empty);
 

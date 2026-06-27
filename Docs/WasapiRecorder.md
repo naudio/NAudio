@@ -143,6 +143,24 @@ controlling the reference endpoint. If it does not, `StartRecording` throws `Not
 Note that an endpoint may apply AEC but not allow choosing the reference — in that case the control
 is unavailable and Windows uses its own reference selection.
 
+The AEC effect is only inserted into the capture pipeline when the stream is opened in the
+**communications signal-processing mode**, so `WithEchoCancellationReferenceEndpoint` enables that
+mode automatically. On most microphones (laptop built-in mics, USB webcams) the AEC control is
+*absent* in the default mode and only appears in communications mode — this is why selecting a
+reference endpoint implies it. If you want the system's communications audio pipeline (AEC, noise
+suppression, automatic gain control) **without** selecting a specific reference endpoint, call
+`WithCommunicationsMode()` on its own:
+
+```c#
+var recorder = new WasapiRecorderBuilder()
+    .WithDevice(microphone)
+    .WithCommunicationsMode()   // request the AEC/NS/AGC capture pipeline
+    .Build();
+```
+
+Communications mode requires `IAudioClient2` (Windows 8+) and is not available for process-loopback
+capture. The exact effects applied depend on the capture endpoint and its audio processing objects.
+
 You can also change the reference endpoint while recording via the
 `AcousticEchoCancellationControl` property (available once recording has started, otherwise null):
 

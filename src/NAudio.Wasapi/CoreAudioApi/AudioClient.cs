@@ -394,6 +394,39 @@ public class AudioClient : IDisposable
     }
 
     /// <summary>
+    /// Sets the audio stream category for this client via IAudioClient2. Must be called before
+    /// <see cref="Initialize"/>. The category influences stream routing, ducking and — for capture
+    /// streams opened as <see cref="AudioStreamCategory.Communications"/> — which audio processing
+    /// (such as acoustic echo cancellation) the system applies.
+    /// </summary>
+    /// <param name="category">The audio stream category to request.</param>
+    /// <exception cref="InvalidOperationException">Thrown when the underlying device does not
+    /// support IAudioClient2 (for example the process-loopback virtual device).</exception>
+    public void SetClientProperties(AudioStreamCategory category)
+    {
+        if (audioClientInterface2 == null)
+            throw new InvalidOperationException("Setting the audio stream category requires IAudioClient2, which this device does not support.");
+
+        var properties = new AudioClientProperties
+        {
+            cbSize = (uint)Marshal.SizeOf<AudioClientProperties>(),
+            bIsOffload = 0,
+            eCategory = category,
+            Options = AudioClientStreamOptions.None
+        };
+        var propertiesPointer = Marshal.AllocHGlobal(Marshal.SizeOf<AudioClientProperties>());
+        try
+        {
+            Marshal.StructureToPtr(properties, propertiesPointer, false);
+            CoreAudioException.ThrowIfFailed(audioClientInterface2.SetClientProperties(propertiesPointer));
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(propertiesPointer);
+        }
+    }
+
+    /// <summary>
     /// Determines whether if the specified output format is supported
     /// </summary>
     /// <param name="shareMode">The share mode.</param>

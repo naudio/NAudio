@@ -20,6 +20,7 @@ public class WasapiRecorderBuilder
     private ProcessLoopbackMode processLoopbackMode = ProcessLoopbackMode.IncludeTargetProcessTree;
     private bool configureEchoCancellationReference;
     private string echoCancellationReferenceEndpointId;
+    private bool useCommunicationsMode;
 
     /// <summary>
     /// Use the specified audio device for capture.
@@ -124,6 +125,29 @@ public class WasapiRecorderBuilder
     {
         configureEchoCancellationReference = true;
         echoCancellationReferenceEndpointId = referenceRenderDevice?.ID;
+        // The AEC effect (and therefore the reference-endpoint control) is only inserted into the
+        // capture pipeline when the stream is opened in the communications signal-processing mode.
+        // Most endpoints (laptop mics, webcams) expose no AEC control in the default mode, so opt in
+        // automatically here. Call WithCommunicationsMode() explicitly for AEC without selecting a
+        // reference endpoint.
+        useCommunicationsMode = true;
+        return this;
+    }
+
+    /// <summary>
+    /// Opens the capture stream in the communications signal-processing mode
+    /// (<see cref="AudioStreamCategory.Communications"/>). This requests the system's communications
+    /// audio pipeline — acoustic echo cancellation, noise suppression and automatic gain control —
+    /// where the endpoint and OS provide it, and is what makes the
+    /// <see cref="WithEchoCancellationReferenceEndpoint"/> control available on most devices.
+    /// </summary>
+    /// <remarks>
+    /// Requires IAudioClient2 (Windows 8+); it is not applied to process-loopback capture. The exact
+    /// effects applied depend on the capture endpoint and the installed audio processing objects.
+    /// </remarks>
+    public WasapiRecorderBuilder WithCommunicationsMode()
+    {
+        useCommunicationsMode = true;
         return this;
     }
 
@@ -160,7 +184,7 @@ public class WasapiRecorderBuilder
         var actualDevice = device ?? GetDefaultDevice(useLoopback);
         return new WasapiRecorder(actualDevice, shareMode, useEventSync,
             bufferMilliseconds, requestedFormat, mmcssTaskName, useLoopback,
-            configureEchoCancellationReference, echoCancellationReferenceEndpointId);
+            configureEchoCancellationReference, echoCancellationReferenceEndpointId, useCommunicationsMode);
     }
 
     /// <summary>
@@ -172,6 +196,11 @@ public class WasapiRecorderBuilder
     {
         if (processLoopbackId.HasValue)
         {
+            if (configureEchoCancellationReference || useCommunicationsMode)
+            {
+                throw new InvalidOperationException(
+                    "Communications mode and acoustic echo cancellation are not supported with process-loopback capture.");
+            }
             return WasapiRecorder.CreateProcessLoopbackAsync(
                 processLoopbackId.Value, processLoopbackMode,
                 useEventSync, bufferMilliseconds, requestedFormat, mmcssTaskName);

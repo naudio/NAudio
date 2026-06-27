@@ -355,27 +355,10 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
         long latencyRefTimes = latencyMilliseconds * 10000L;
         OutputWaveFormat = sourceFormat;
 
-        // Set audio category via IAudioClient2 if requested
+        // Set audio category via IAudioClient2 if requested. Must happen before Initialize.
         if (audioCategory.HasValue && audioClient.SupportsAudioClient2)
         {
-            var props = new AudioClientProperties
-            {
-                cbSize = (uint)Marshal.SizeOf<AudioClientProperties>(),
-                bIsOffload = 0,
-                eCategory = audioCategory.Value,
-                Options = AudioClientStreamOptions.None
-            };
-            var propsPtr = Marshal.AllocHGlobal(Marshal.SizeOf<AudioClientProperties>());
-            try
-            {
-                Marshal.StructureToPtr(props, propsPtr, false);
-                // Call SetClientProperties on the underlying IAudioClient2
-                // For now, use the v1 path since SetClientProperties is not yet exposed on the wrapper
-            }
-            finally
-            {
-                Marshal.FreeHGlobal(propsPtr);
-            }
+            audioClient.SetClientProperties(audioCategory.Value);
         }
 
         if (shareMode == AudioClientShareMode.Exclusive)

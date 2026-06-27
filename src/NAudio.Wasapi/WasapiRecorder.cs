@@ -23,6 +23,9 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
     private readonly bool isProcessLoopback;
     private readonly int bufferMilliseconds;
     private readonly string mmcssTaskName;
+    private readonly bool configureEchoCancellationReference;
+    private readonly string echoCancellationReferenceEndpointId;
+    private readonly bool useCommunicationsMode;
     private readonly SynchronizationContext syncContext;
 
     private AudioClient audioClient;
@@ -54,7 +57,9 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
     public CaptureState CaptureState => captureState;
 
     internal WasapiRecorder(MMDevice device, AudioClientShareMode shareMode, bool useEventSync,
-        int bufferMilliseconds, WaveFormat requestedFormat, string mmcssTaskName, bool useLoopback = false)
+        int bufferMilliseconds, WaveFormat requestedFormat, string mmcssTaskName, bool useLoopback = false,
+        bool configureEchoCancellationReference = false, string echoCancellationReferenceEndpointId = null,
+        bool useCommunicationsMode = false)
     {
         syncContext = SynchronizationContext.Current;
         this.shareMode = shareMode;
@@ -62,6 +67,9 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
         this.useLoopback = useLoopback;
         this.bufferMilliseconds = bufferMilliseconds;
         this.mmcssTaskName = mmcssTaskName;
+        this.configureEchoCancellationReference = configureEchoCancellationReference;
+        this.echoCancellationReferenceEndpointId = echoCancellationReferenceEndpointId;
+        this.useCommunicationsMode = useCommunicationsMode;
 
         audioClient = device.CreateAudioClient();
         waveFormat = requestedFormat ?? audioClient.MixFormat;
@@ -215,6 +223,12 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
         if (isUsingEventSync)
             flags |= AudioClientStreamFlags.EventCallback;
 
+        // The communications signal-processing mode must be requested before Initialize. It is what
+        // engages the system's AEC/NS/AGC capture pipeline (and exposes the AEC reference control) on
+        // most endpoints. Process-loopback clients have no IAudioClient2 and are excluded by the builder.
+        if (useCommunicationsMode)
+            audioClient.SetClientProperties(AudioStreamCategory.Communications);
+
         audioClient.Initialize(shareMode, flags, bufferDuration, 0, waveFormat, Guid.Empty);
 
         if (isUsingEventSync)
@@ -222,7 +236,34 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
             frameEvent = new EventWaitHandle(false, EventResetMode.AutoReset);
             audioClient.SetEventHandle(frameEvent.SafeWaitHandle.DangerousGetHandle());
         }
+
+        if (configureEchoCancellationReference)
+        {
+            // GetService for the AEC control is only valid once the stream is initialized.
+            var aecControl = audioClient.TryGetAcousticEchoCancellationControl();
+            if (aecControl == null)
+            {
+                throw new NotSupportedException(
+                    "The capture endpoint does not support controlling the acoustic echo cancellation " +
+                    "reference endpoint. This requires Windows 11 build 22621 or later and a capture " +
+                    "endpoint whose AEC effect supports loopback reference control.");
+            }
+            // A null endpoint id lets Windows pick the loopback reference device itself.
+            aecControl.SetReferenceEndpoint(echoCancellationReferenceEndpointId);
+        }
     }
+
+    /// <summary>
+    /// Gets the acoustic echo cancellation (AEC) reference control for this capture stream, or null
+    /// if the endpoint does not support controlling the AEC reference endpoint. Use it to change the
+    /// render endpoint used as the echo cancellation reference stream while recording.
+    /// </summary>
+    /// <remarks>
+    /// Only available after <see cref="StartRecording"/> (or <see cref="CaptureAsync"/>) has
+    /// initialized the audio client. Returns null before then. Requires Windows 11 build 22621 or later.
+    /// </remarks>
+    public AcousticEchoCancellationControl AcousticEchoCancellationControl =>
+        captureState == CaptureState.Stopped ? null : audioClient?.TryGetAcousticEchoCancellationControl();
 
     private void CaptureThread()
     {

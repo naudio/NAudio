@@ -17,6 +17,8 @@ public class AudioClient : IDisposable
     private static readonly Guid ID_AudioClockClient = new("CD63314F-3FBA-4a1b-812C-EF96358728E7");
     private static readonly Guid ID_AudioRenderClient = new("F294ACFC-3146-4483-A7BF-ADDCA7C260E2");
     private static readonly Guid ID_AudioCaptureClient = new("c8adbd64-e71e-48a0-a4de-185c395cd317");
+    private static readonly Guid ID_AcousticEchoCancellationControl = new("f4ae25b5-aaa3-437d-b6b3-dbbe2d0e9549");
+    private const int E_NOINTERFACE = unchecked((int)0x80004002);
     private static readonly Guid IID_IAudioClient = new("1CB9AD4C-DBFA-4c32-B178-C2F568A703B2");
     private static readonly Guid IID_IAudioClient2 = new("726778CD-F60A-4eda-82DE-E47610CD78AA");
     private static readonly Guid IID_IActivateAudioInterfaceCompletionHandler = new("41D949AB-9862-444A-80F6-C261334DA5EB");
@@ -28,6 +30,7 @@ public class AudioClient : IDisposable
     private AudioCaptureClient audioCaptureClient;
     private AudioClockClient audioClockClient;
     private AudioStreamVolume audioStreamVolume;
+    private AcousticEchoCancellationControl acousticEchoCancellationControl;
     private AudioClientShareMode shareMode;
     private int disposed;
 
@@ -362,6 +365,68 @@ public class AudioClient : IDisposable
     }
 
     /// <summary>
+    /// Attempts to get the acoustic echo cancellation (AEC) control for this capture stream,
+    /// which lets you set the render endpoint used as the reference stream for echo cancellation.
+    /// </summary>
+    /// <remarks>
+    /// The audio client must be initialized before calling this. AEC itself is performed by an
+    /// audio processing object in the capture pipeline; this control only chooses the loopback
+    /// reference endpoint. It is available only on Windows 11 build 22621 or later, and only when
+    /// the capture endpoint's AEC effect supports controlling the reference endpoint.
+    /// </remarks>
+    /// <returns>
+    /// The <see cref="AcousticEchoCancellationControl"/>, or null if the endpoint does not support
+    /// controlling the AEC reference endpoint (GetService returns E_NOINTERFACE).
+    /// </returns>
+    public AcousticEchoCancellationControl TryGetAcousticEchoCancellationControl()
+    {
+        if (acousticEchoCancellationControl == null)
+        {
+            int hr = audioClientInterface.GetService(ID_AcousticEchoCancellationControl, out var ptr);
+            if (hr == E_NOINTERFACE)
+            {
+                return null;
+            }
+            CoreAudioException.ThrowIfFailed(hr);
+            acousticEchoCancellationControl = new AcousticEchoCancellationControl(ptr);
+        }
+        return acousticEchoCancellationControl;
+    }
+
+    /// <summary>
+    /// Sets the audio stream category for this client via IAudioClient2. Must be called before
+    /// <see cref="Initialize"/>. The category influences stream routing, ducking and — for capture
+    /// streams opened as <see cref="AudioStreamCategory.Communications"/> — which audio processing
+    /// (such as acoustic echo cancellation) the system applies.
+    /// </summary>
+    /// <param name="category">The audio stream category to request.</param>
+    /// <exception cref="InvalidOperationException">Thrown when the underlying device does not
+    /// support IAudioClient2 (for example the process-loopback virtual device).</exception>
+    public void SetClientProperties(AudioStreamCategory category)
+    {
+        if (audioClientInterface2 == null)
+            throw new InvalidOperationException("Setting the audio stream category requires IAudioClient2, which this device does not support.");
+
+        var properties = new AudioClientProperties
+        {
+            cbSize = (uint)Marshal.SizeOf<AudioClientProperties>(),
+            bIsOffload = 0,
+            eCategory = category,
+            Options = AudioClientStreamOptions.None
+        };
+        var propertiesPointer = Marshal.AllocHGlobal(Marshal.SizeOf<AudioClientProperties>());
+        try
+        {
+            Marshal.StructureToPtr(properties, propertiesPointer, false);
+            CoreAudioException.ThrowIfFailed(audioClientInterface2.SetClientProperties(propertiesPointer));
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(propertiesPointer);
+        }
+    }
+
+    /// <summary>
     /// Determines whether if the specified output format is supported
     /// </summary>
     /// <param name="shareMode">The share mode.</param>
@@ -530,6 +595,8 @@ public class AudioClient : IDisposable
             audioCaptureClient = null;
             audioStreamVolume?.Dispose();
             audioStreamVolume = null;
+            acousticEchoCancellationControl?.Dispose();
+            acousticEchoCancellationControl = null;
             // audioClientInterface2 / audioClientInterface3 are the same ComObject
             // as audioClientInterface (DICASTABLE returns the same wrapper for
             // cross-casts), so a single FinalRelease releases all three views.

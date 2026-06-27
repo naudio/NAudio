@@ -20,6 +20,8 @@ internal sealed class WasapiRecordToWavFileTest : IConsoleTest
             Help: "output WAV path (auto-named on Desktop if blank)"),
         new("duration", typeof(TimeSpan), Required: false, Default: TimeSpan.FromSeconds(10),
             Help: "recording duration"),
+        new("lowLatency", typeof(bool), Required: false, Default: false,
+            Help: "request IAudioClient3 low-latency shared capture"),
     ];
 
     public TestResult Run(TestContext ctx)
@@ -29,6 +31,7 @@ internal sealed class WasapiRecordToWavFileTest : IConsoleTest
         if (captureDevice is null) return TestResult.Fail($"Capture device not found: {captureName}");
 
         var duration = ctx.Get<TimeSpan>("duration");
+        var lowLatency = ctx.Get<bool>("lowLatency");
         ctx.TryGet<string>("output", out var filePath);
         if (string.IsNullOrWhiteSpace(filePath))
         {
@@ -47,11 +50,19 @@ internal sealed class WasapiRecordToWavFileTest : IConsoleTest
         AnsiConsole.MarkupLine($"[grey]Duration:[/] {duration.TotalSeconds:F0}s");
         AnsiConsole.WriteLine();
 
-        using var recorder = new WasapiRecorderBuilder()
+        var builder = new WasapiRecorderBuilder()
             .WithDevice(captureDevice)
             .WithSharedMode()
-            .WithEventSync()
-            .Build();
+            .WithEventSync();
+        if (lowLatency) builder.WithLowLatency();
+        using var recorder = builder.Build();
+
+        if (lowLatency)
+        {
+            // LowLatencyActive is only known after the stream is initialized in StartRecording, so this
+            // reports the request here; the actual outcome is captured in the diagnostics below.
+            AnsiConsole.MarkupLine("[grey]LowLatency:[/] requested");
+        }
 
         var writer = new WaveFileWriter(filePath, recorder.WaveFormat);
         long pcmBytes = 0;
@@ -91,7 +102,12 @@ internal sealed class WasapiRecordToWavFileTest : IConsoleTest
             ["outputBytes"] = outputInfo.Length.ToString(),
             ["pcmBytes"] = pcmBytes.ToString(),
             ["recordedDurationMs"] = recordedDuration.TotalMilliseconds.ToString("F0"),
+            ["lowLatencyRequested"] = lowLatency.ToString(),
+            ["lowLatencyActive"] = recorder.LowLatencyActive.ToString(),
+            ["latencyMs"] = recorder.LatencyMilliseconds.ToString(),
         };
+        if (recorder.LowLatencyUnavailableReason != null)
+            diagnostics["lowLatencyUnavailableReason"] = recorder.LowLatencyUnavailableReason;
 
         AnsiConsole.MarkupLine($"\n[grey]Saved {outputInfo.Length / 1024}KB to {Markup.Escape(filePath)}[/]");
         AnsiConsole.MarkupLine($"[grey]Recorded: {recordedDuration:mm\\:ss\\.f}[/]");

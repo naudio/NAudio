@@ -78,6 +78,23 @@ public class MMDeviceEnumeratorTests
     }
 
     [Test]
+    public void DisposingDeviceAfterReadingPropertiesIsIdempotent()
+    {
+        // Reading a property-backed value (DeviceFriendlyName) lazily opens the
+        // device's property store. Dispose must release it, and be safe to call
+        // more than once. Regression cover for #1145.
+        OSUtils.RequireVista();
+        var enumerator = new MMDeviceEnumerator();
+        foreach (var device in enumerator.EnumerateAudioEndPoints(DataFlow.All, DeviceState.Active))
+        {
+            var name = device.DeviceFriendlyName;
+            Assert.That(name, Is.Not.Null);
+            device.Dispose();
+            Assert.DoesNotThrow(() => device.Dispose());
+        }
+    }
+
+    [Test]
     public void ThrowsNotSupportedExceptionInXP()
     {
         OSUtils.RequireXP();

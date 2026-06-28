@@ -120,6 +120,35 @@ public class SmbPitchShiftingSampleProvider : ISampleProvider
     public WaveFormat WaveFormat => waveFormat;
 
     /// <summary>
+    /// The latency (group delay) introduced by the underlying STFT phase vocoder, expressed
+    /// as a number of samples per channel. The shifted output is delayed by this many samples
+    /// relative to the input, and the equivalent number of samples is lost from the tail when
+    /// the source ends. The value is <c>fftSize - fftSize / osamp</c> and depends only on the
+    /// FFT size and oversampling factor passed to the constructor (not on the pitch factor).
+    /// </summary>
+    /// <remarks>
+    /// Use this to time-align pitch-shifted material with unshifted material, e.g. by skipping
+    /// this many samples per channel from the start of the shifted output (see
+    /// <see cref="LatencySamples"/> for the interleaved count to pass to an
+    /// <see cref="OffsetSampleProvider"/>).
+    /// </remarks>
+    public int LatencySamplesPerChannel => fftSize - (int)(fftSize / osamp);
+
+    /// <summary>
+    /// The latency (group delay) introduced by the underlying STFT phase vocoder, expressed as
+    /// an interleaved sample count (latency per channel multiplied by the channel count). This
+    /// is the value to use for <see cref="OffsetSampleProvider.SkipOverSamples"/> when realigning
+    /// pitch-shifted audio with unshifted audio.
+    /// </summary>
+    public int LatencySamples => LatencySamplesPerChannel * waveFormat.Channels;
+
+    /// <summary>
+    /// The latency (group delay) introduced by the underlying STFT phase vocoder, expressed as a
+    /// <see cref="TimeSpan"/>.
+    /// </summary>
+    public TimeSpan Latency => TimeSpan.FromSeconds(LatencySamplesPerChannel / (double)waveFormat.SampleRate);
+
+    /// <summary>
     /// Pitch Factor (0.5f = octave down, 1.0f = normal, 2.0f = octave up)
     /// </summary>
     public float PitchFactor

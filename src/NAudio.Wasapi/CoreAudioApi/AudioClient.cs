@@ -18,6 +18,7 @@ public class AudioClient : IDisposable
     private static readonly Guid ID_AudioRenderClient = new("F294ACFC-3146-4483-A7BF-ADDCA7C260E2");
     private static readonly Guid ID_AudioCaptureClient = new("c8adbd64-e71e-48a0-a4de-185c395cd317");
     private static readonly Guid ID_AcousticEchoCancellationControl = new("f4ae25b5-aaa3-437d-b6b3-dbbe2d0e9549");
+    private static readonly Guid ID_SimpleAudioVolume = new("87CE5498-68D6-44E5-9215-6DA47EF883D8");
     private const int E_NOINTERFACE = unchecked((int)0x80004002);
     private static readonly Guid IID_IAudioClient = new("1CB9AD4C-DBFA-4c32-B178-C2F568A703B2");
     private static readonly Guid IID_IAudioClient2 = new("726778CD-F60A-4eda-82DE-E47610CD78AA");
@@ -30,6 +31,7 @@ public class AudioClient : IDisposable
     private AudioCaptureClient audioCaptureClient;
     private AudioClockClient audioClockClient;
     private AudioStreamVolume audioStreamVolume;
+    private SimpleAudioVolume simpleAudioVolume;
     private AcousticEchoCancellationControl acousticEchoCancellationControl;
     private AudioClientShareMode shareMode;
     private int disposed;
@@ -39,6 +41,42 @@ public class AudioClient : IDisposable
     /// per-process loopback capture client. See the Windows ApplicationLoopback sample.
     /// </summary>
     private const string VirtualAudioDeviceProcessLoopback = "VAD\\Process_Loopback";
+
+    /// <summary>
+    /// Device-interface GUID representing the default render device for automatic stream routing.
+    /// </summary>
+    private static readonly Guid DEVINTERFACE_AUDIO_RENDER = new("E6327CAD-DCEC-4949-AE8A-991E976A79D2");
+
+    /// <summary>
+    /// Device-interface GUID representing the default capture device for automatic stream routing.
+    /// </summary>
+    private static readonly Guid DEVINTERFACE_AUDIO_CAPTURE = new("2EEF81BE-33FA-4800-9670-1CD474972C3F");
+
+    /// <summary>
+    /// Activates an AudioClient that follows the current default endpoint with automatic stream
+    /// routing: when the user changes (or unplugs) the default device, Windows seamlessly transfers
+    /// the stream to the new default device with no application code. Requires Windows 10 version
+    /// 1607 or later.
+    /// </summary>
+    /// <param name="dataFlow">Whether to follow the default render or capture device.</param>
+    /// <remarks>
+    /// This activates the special <c>DEVINTERFACE_AUDIO_RENDER</c> / <c>DEVINTERFACE_AUDIO_CAPTURE</c>
+    /// virtual endpoint via <c>ActivateAudioInterfaceAsync</c>. Unlike the process-loopback virtual
+    /// device, the returned client is backed by the current default endpoint and behaves like a normal
+    /// shared-mode client, including <see cref="MixFormat"/>.
+    /// </remarks>
+    public static Task<AudioClient> ActivateDefaultDeviceAsync(DataFlow dataFlow)
+    {
+        var deviceInterface = dataFlow == DataFlow.Capture ? DEVINTERFACE_AUDIO_CAPTURE : DEVINTERFACE_AUDIO_RENDER;
+        // StringFromIID yields the registry-format braced GUID (e.g. "{E6327CAD-...}"); Guid's "B"
+        // format produces the same string the API expects (device-interface paths are case-insensitive).
+        var deviceInterfacePath = deviceInterface.ToString("B").ToUpperInvariant();
+
+        // Activate against the base IAudioClient (with null activation params): render+IAudioClient
+        // is one of the activations Windows documents as not requiring the UI thread, and the
+        // AudioClient constructor still cross-casts to IAudioClient2/3 where the device supports them.
+        return ActivateAudioInterfaceAsync(deviceInterfacePath, IID_IAudioClient, IntPtr.Zero, _ => { });
+    }
 
     /// <summary>
     /// Activate Async
@@ -313,6 +351,25 @@ public class AudioClient : IDisposable
                 audioStreamVolume = new AudioStreamVolume(ptr);
             }
             return audioStreamVolume;
+        }
+    }
+
+    /// <summary>
+    /// Returns the SimpleAudioVolume service for this AudioClient — per-session volume and mute, as
+    /// shown for the application in the Windows volume mixer. Unlike <see cref="MMDevice"/>-derived
+    /// session volume, this is obtained from the client itself, so it works for clients activated
+    /// without a concrete endpoint (e.g. automatic stream routing).
+    /// </summary>
+    public SimpleAudioVolume SimpleAudioVolume
+    {
+        get
+        {
+            if (simpleAudioVolume == null)
+            {
+                CoreAudioException.ThrowIfFailed(audioClientInterface.GetService(ID_SimpleAudioVolume, out var ptr));
+                simpleAudioVolume = new SimpleAudioVolume(ptr);
+            }
+            return simpleAudioVolume;
         }
     }
 
@@ -595,6 +652,8 @@ public class AudioClient : IDisposable
             audioCaptureClient = null;
             audioStreamVolume?.Dispose();
             audioStreamVolume = null;
+            simpleAudioVolume?.Dispose();
+            simpleAudioVolume = null;
             acousticEchoCancellationControl?.Dispose();
             acousticEchoCancellationControl = null;
             // audioClientInterface2 / audioClientInterface3 are the same ComObject

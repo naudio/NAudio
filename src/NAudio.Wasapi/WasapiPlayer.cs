@@ -106,8 +106,14 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
     /// application in the Windows volume mixer. Use this for simple volume/mute control
     /// that only affects your application.
     /// </summary>
+    /// <remarks>
+    /// When following the default device with automatic stream routing (no fixed endpoint) this is
+    /// obtained from the audio client itself, so it is only available after <see cref="Init"/>.
+    /// </remarks>
     public SimpleAudioVolume SessionVolume =>
-        mmDevice.AudioSessionManager.SimpleAudioVolume;
+        mmDevice != null
+            ? mmDevice.AudioSessionManager.SimpleAudioVolume
+            : audioClient.SimpleAudioVolume;
 
     /// <summary>
     /// Per-stream, per-channel volume control (0.0 to 1.0 per channel).
@@ -136,7 +142,17 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
     /// Use with care: changes are system-wide and visible to the user.
     /// Available in both shared and exclusive modes.
     /// </summary>
-    public AudioEndpointVolume DeviceVolume => mmDevice.AudioEndpointVolume;
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when following the default device with automatic stream routing: there is no fixed
+    /// endpoint, so endpoint-wide volume has no meaning. Use <see cref="Volume"/>/<see cref="SessionVolume"/>
+    /// for per-application volume instead.
+    /// </exception>
+    public AudioEndpointVolume DeviceVolume => mmDevice != null
+        ? mmDevice.AudioEndpointVolume
+        : throw new InvalidOperationException(
+            "DeviceVolume (endpoint-wide volume) is not available when following the default device " +
+            "with automatic stream routing, because there is no fixed endpoint. Use Volume or " +
+            "SessionVolume for per-application volume instead.");
 
     #endregion
 
@@ -156,6 +172,36 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
 
         audioClient = device.CreateAudioClient();
         OutputWaveFormat = audioClient.MixFormat;
+    }
+
+    // Private constructor for automatic stream routing. The audio client is activated externally via
+    // ActivateAudioInterfaceAsync against the default-render virtual endpoint, so there is no MMDevice.
+    // Routing is standard shared mode only (exclusive and IAudioClient3 low latency are rejected by the
+    // builder), which keeps every MMDevice.CreateAudioClient() recovery path out of the routed flow.
+    private WasapiPlayer(AudioClient activatedClient, bool useEventSync, int latencyMilliseconds,
+        AudioStreamCategory? audioCategory, string mmcssTaskName)
+    {
+        mmDevice = null;
+        shareMode = AudioClientShareMode.Shared;
+        isUsingEventSync = useEventSync;
+        this.latencyMilliseconds = latencyMilliseconds;
+        this.audioCategory = audioCategory;
+        this.mmcssTaskName = mmcssTaskName;
+        preferLowLatency = false;
+        requireLowLatency = false;
+        syncContext = SynchronizationContext.Current;
+
+        audioClient = activatedClient;
+        OutputWaveFormat = audioClient.MixFormat;
+    }
+
+    internal static async Task<WasapiPlayer> CreateDefaultDeviceRoutingAsync(bool useEventSync,
+        int latencyMilliseconds, AudioStreamCategory? audioCategory, string mmcssTaskName)
+    {
+        // Automatic stream routing follows the default render device, re-routing transparently when
+        // the default changes. Activation is asynchronous, hence the async factory.
+        var activatedClient = await AudioClient.ActivateDefaultDeviceAsync(DataFlow.Render).ConfigureAwait(false);
+        return new WasapiPlayer(activatedClient, useEventSync, latencyMilliseconds, audioCategory, mmcssTaskName);
     }
 
     /// <summary>

@@ -130,6 +130,23 @@ In async or UI code, prefer `DisposeAsync` so the calling thread isn't blocked w
 await using var recorder = new WasapiRecorderBuilder().Build();
 ```
 
+## Following the default device (automatic stream routing)
+
+By default a recorder is bound to one endpoint: if the user switches the default recording device (or unplugs the current one) mid-capture, the stream stops. `WithDefaultDeviceStreamRouting()` opts into Windows' *automatic stream routing* instead — capture follows whatever the default capture device currently is, and Windows transfers the stream to the new default seamlessly with no application code. Requires Windows 10 version 1607 or later.
+
+Activation is asynchronous (it uses `ActivateAudioInterfaceAsync` under the hood), so build with `BuildAsync()` rather than `Build()` — calling `Build()` throws:
+
+```c#
+await using var recorder = await new WasapiRecorderBuilder()
+    .WithDefaultDeviceStreamRouting()
+    .BuildAsync();
+
+recorder.DataAvailable += (buffer, flags) => { /* captured from the current default device */ };
+recorder.StartRecording();
+```
+
+Routing is standard shared mode only, so don't combine it with `WithDevice`, `WithExclusiveMode`, `WithLowLatency`, `WithLoopbackCapture`, or `WithProcessLoopback` (each throws from `BuildAsync`). Unlike the process-loopback virtual device, the routing endpoint exposes a mix format, so capture defaults to the current default device's mix format (or use `WithFormat(...)`).
+
 ## Per-process loopback capture
 
 `WithProcessLoopback` captures only the audio rendered by a specific process (and, with `ProcessLoopbackMode.IncludeTargetProcessTree`, its child processes), rather than the whole device. It uses `ActivateAudioInterfaceAsync`, so it is activated asynchronously — build it with `BuildAsync()` rather than `Build()` (calling `Build()` throws). Requires Windows 10 version 2004 (build 19041) or later.

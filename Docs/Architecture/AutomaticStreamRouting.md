@@ -1,6 +1,11 @@
 # Automatic Stream Routing for WasapiPlayer / WasapiRecorder
 
-> **Status: INVESTIGATION / DESIGN** — not yet implemented. Tracking issue #942.
+> **Status: IMPLEMENTED.** Tracking issue #942. Surfaced as
+> `WasapiPlayerBuilder.WithDefaultDeviceStreamRouting()` +
+> `WasapiPlayerBuilder.BuildAsync()` and
+> `WasapiRecorderBuilder.WithDefaultDeviceStreamRouting()` (recorder already had `BuildAsync()`),
+> backed by `AudioClient.ActivateDefaultDeviceAsync(DataFlow)`. The recommended end-state design
+> below (option (b): session volume from the client, standard shared mode only) is what shipped.
 
 ## What it is
 

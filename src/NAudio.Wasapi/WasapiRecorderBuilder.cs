@@ -23,6 +23,7 @@ public class WasapiRecorderBuilder
     private bool useCommunicationsMode;
     private bool preferLowLatency;
     private bool requireLowLatency;
+    private bool useDefaultDeviceRouting;
 
     /// <summary>
     /// Use the specified audio device for capture.
@@ -30,6 +31,23 @@ public class WasapiRecorderBuilder
     public WasapiRecorderBuilder WithDevice(MMDevice device)
     {
         this.device = device;
+        return this;
+    }
+
+    /// <summary>
+    /// Follow the default capture device with automatic stream routing (Windows 10 version 1607 or
+    /// later). When the user changes the default recording device — or unplugs the current one — Windows
+    /// seamlessly transfers capture to the new default device with no application code.
+    /// </summary>
+    /// <remarks>
+    /// Activation is asynchronous, so the recorder must be created via <see cref="BuildAsync"/> rather
+    /// than <see cref="Build"/>. Routing is standard shared mode only: do not combine it with
+    /// <see cref="WithDevice"/>, <see cref="WithExclusiveMode"/>, <see cref="WithLowLatency"/>,
+    /// <see cref="WithLoopbackCapture"/>, or <see cref="WithProcessLoopback"/>.
+    /// </remarks>
+    public WasapiRecorderBuilder WithDefaultDeviceStreamRouting()
+    {
+        useDefaultDeviceRouting = true;
         return this;
     }
 
@@ -209,6 +227,12 @@ public class WasapiRecorderBuilder
                 "Process loopback capture is activated asynchronously — call BuildAsync() instead of Build().");
         }
 
+        if (useDefaultDeviceRouting)
+        {
+            throw new InvalidOperationException(
+                "Automatic stream routing is activated asynchronously — call BuildAsync() instead of Build().");
+        }
+
         var actualDevice = device ?? GetDefaultDevice(useLoopback);
         return new WasapiRecorder(actualDevice, shareMode, useEventSync,
             bufferMilliseconds, requestedFormat, mmcssTaskName, useLoopback,
@@ -237,6 +261,25 @@ public class WasapiRecorderBuilder
             }
             return WasapiRecorder.CreateProcessLoopbackAsync(
                 processLoopbackId.Value, processLoopbackMode,
+                useEventSync, bufferMilliseconds, requestedFormat, mmcssTaskName);
+        }
+
+        if (useDefaultDeviceRouting)
+        {
+            if (device != null)
+                throw new InvalidOperationException(
+                    "Automatic stream routing follows the default device, so it cannot be combined with WithDevice().");
+            if (shareMode == AudioClientShareMode.Exclusive)
+                throw new InvalidOperationException(
+                    "Automatic stream routing is only available in shared mode — it cannot be combined with WithExclusiveMode().");
+            if (useLoopback)
+                throw new InvalidOperationException(
+                    "Automatic stream routing follows the default capture device — it cannot be combined with WithLoopbackCapture().");
+            if (preferLowLatency)
+                throw new InvalidOperationException(
+                    "IAudioClient3 low latency is not supported with automatic stream routing.");
+
+            return WasapiRecorder.CreateDefaultDeviceRoutingAsync(
                 useEventSync, bufferMilliseconds, requestedFormat, mmcssTaskName);
         }
 

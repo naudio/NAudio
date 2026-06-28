@@ -131,6 +131,33 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
         return new WasapiRecorder(audioClient, useEventSync, bufferMilliseconds, requestedFormat, mmcssTaskName);
     }
 
+    // Private constructor for automatic stream routing. The audio client is activated externally via
+    // ActivateAudioInterfaceAsync against the default-capture virtual endpoint, so there is no MMDevice.
+    // Unlike the process-loopback device, the routing endpoint behaves like a normal shared-mode capture
+    // client (GetMixFormat and AutoConvertPcm work), so this uses the standard shared path — not the
+    // loopback flag. Low latency is rejected by the builder, keeping CreateAudioClient() recovery out.
+    private WasapiRecorder(AudioClient audioClient, bool useEventSync, int bufferMilliseconds,
+        WaveFormat requestedFormat, string mmcssTaskName, bool isDefaultDeviceRouting)
+    {
+        syncContext = SynchronizationContext.Current;
+        shareMode = AudioClientShareMode.Shared;
+        isUsingEventSync = useEventSync;
+        this.bufferMilliseconds = bufferMilliseconds;
+        this.mmcssTaskName = mmcssTaskName;
+        this.audioClient = audioClient;
+        waveFormat = requestedFormat ?? audioClient.MixFormat;
+    }
+
+    internal static async Task<WasapiRecorder> CreateDefaultDeviceRoutingAsync(
+        bool useEventSync, int bufferMilliseconds, WaveFormat requestedFormat, string mmcssTaskName)
+    {
+        // Automatic stream routing follows the default capture device, re-routing transparently when
+        // the default changes. Activation is asynchronous, hence the async factory.
+        var audioClient = await AudioClient.ActivateDefaultDeviceAsync(DataFlow.Capture).ConfigureAwait(false);
+        return new WasapiRecorder(audioClient, useEventSync, bufferMilliseconds, requestedFormat, mmcssTaskName,
+            isDefaultDeviceRouting: true);
+    }
+
     /// <summary>
     /// Start recording.
     /// </summary>

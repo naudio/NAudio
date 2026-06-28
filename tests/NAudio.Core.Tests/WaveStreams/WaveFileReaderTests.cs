@@ -340,4 +340,47 @@ public class WaveFileReaderTests
         Assert.That(BitConverter.ToInt32(data, 0), Is.EqualTo(2));
     }
 
+
+    // Regression: some encoders (e.g. FFmpeg writing WAV to a non-seekable pipe) leave a
+    // placeholder data chunk size that is far larger than the bytes actually present
+    // (such as 0xFFFF1000). Reading from a FileStream tolerated this (seeking past EOF is
+    // allowed) but a MemoryStream threw because the position exceeded the stream length.
+    // The reader must clamp to the available bytes and expose the real length. See issue #1090.
+    [Test]
+    [Category("UnitTest")]
+    public void OversizedDataChunkLengthIsClampedToAvailableBytes()
+    {
+        var audio = new byte[] { 1, 0, 2, 0, 3, 0, 4, 0 }; // 4 mono 16-bit samples
+
+        using var ms = new MemoryStream();
+        using (var w = new BinaryWriter(ms, Encoding.ASCII, leaveOpen: true))
+        {
+            w.Write(Encoding.ASCII.GetBytes("RIFF"));
+            w.Write(0); // RIFF size placeholder, patched below
+            w.Write(Encoding.ASCII.GetBytes("WAVE"));
+
+            w.Write(Encoding.ASCII.GetBytes("fmt "));
+            new WaveFormat(8000, 16, 1).Serialize(w);
+
+            w.Write(Encoding.ASCII.GetBytes("data"));
+            w.Write(0xFFFF1000u); // bogus placeholder size, much larger than the actual data
+            w.Write(audio);
+
+            long fileLength = ms.Length;
+            ms.Position = 4;
+            w.Write((uint)(fileLength - 8));
+        }
+        ms.Position = 0;
+
+        using var reader = new WaveFileReader(ms);
+
+        // length is clamped to what's actually present, not the bogus declared size
+        Assert.That(reader.Length, Is.EqualTo(audio.Length));
+
+        var buffer = new byte[audio.Length];
+        int read = reader.Read(buffer, 0, buffer.Length);
+        Assert.That(read, Is.EqualTo(audio.Length));
+        Assert.That(buffer, Is.EqualTo(audio));
+        Assert.That(reader.Read(buffer, 0, buffer.Length), Is.EqualTo(0));
+    }
 }

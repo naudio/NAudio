@@ -68,6 +68,7 @@ extensive correctness work during development — see [Docs/Sampler.md](Docs/Sam
  * `AudioClient.Dispose` is now idempotent and safe against concurrent/re-entrant disposal, fixing an intermittent interop `NullReferenceException` (#1183)
  * `AcmInterop`: serialised all `msacm32` P/Invokes process-wide, fixing process-killing access violations under concurrent ACM use
  * `WaveFileReader` / `AiffFileReader`: malformed headers declaring `BlockAlign=0` now throw `InvalidDataException` from the constructor instead of `DivideByZeroException` later (#1254); `WaveFileReader` no longer throws on an oversized `fmt` `cbSize` (#482)
+ * `WaveFileReader`: a `data` chunk declaring a bogus/oversized length (e.g. FFmpeg's `0xFFFF1000` placeholder when writing to a non-seekable pipe) is now clamped to the bytes actually present, so reading from a `MemoryStream` no longer throws and the reported length reflects the available audio (#1090)
  * `WaveFormat.Serialize`: PCM formats now write the canonical 16-byte `fmt ` chunk (#934, #1098)
  * `WaveViewer`: fixed rendering upside-down (#801, #818) and now renders any source format correctly via `ToSampleProvider()` (#564)
  * `ToSampleProvider()` now handles `WAVE_FORMAT_EXTENSIBLE` PCM and IEEE float sources (e.g. multichannel / >16-bit WAV files) instead of throwing `Unsupported source encoding` (#639)

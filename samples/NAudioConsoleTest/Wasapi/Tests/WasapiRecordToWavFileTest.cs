@@ -14,7 +14,7 @@ internal sealed class WasapiRecordToWavFileTest : IConsoleTest
     public IReadOnlyList<TestParameter> Parameters =>
     [
         new("captureDevice", typeof(string), Required: false, Default: WasapiDevices.DefaultMarker,
-            Help: "capture endpoint friendly name (or 'default')",
+            Help: "capture endpoint friendly name, 'default', or auto stream routing",
             ChoiceProvider: WasapiDevices.CaptureDeviceNames),
         new("output", typeof(string), Required: false,
             Help: "output WAV path (auto-named on Desktop if blank)"),
@@ -27,11 +27,24 @@ internal sealed class WasapiRecordToWavFileTest : IConsoleTest
     public TestResult Run(TestContext ctx)
     {
         var captureName = ctx.Get<string>("captureDevice");
-        var captureDevice = WasapiDevices.ResolveCapture(captureName);
-        if (captureDevice is null) return TestResult.Fail($"Capture device not found: {captureName}");
+        var useRouting = WasapiDevices.IsRoutingMarker(captureName);
+
+        MMDevice? captureDevice = null;
+        if (!useRouting)
+        {
+            captureDevice = WasapiDevices.ResolveCapture(captureName);
+            if (captureDevice is null) return TestResult.Fail($"Capture device not found: {captureName}");
+        }
+        var deviceDisplay = captureDevice?.FriendlyName ?? "default device (auto stream routing)";
 
         var duration = ctx.Get<TimeSpan>("duration");
         var lowLatency = ctx.Get<bool>("lowLatency");
+        // Automatic stream routing is standard shared mode only; low latency is not supported with it.
+        if (useRouting && lowLatency)
+        {
+            AnsiConsole.MarkupLine("[yellow]Stream routing does not support low latency — ignoring.[/]");
+            lowLatency = false;
+        }
         ctx.TryGet<string>("output", out var filePath);
         if (string.IsNullOrWhiteSpace(filePath))
         {
@@ -45,17 +58,29 @@ internal sealed class WasapiRecordToWavFileTest : IConsoleTest
             if (!string.IsNullOrEmpty(parent)) Directory.CreateDirectory(parent);
         }
 
-        AnsiConsole.MarkupLine($"[grey]Device:[/]   {Markup.Escape(captureDevice.FriendlyName)}");
+        AnsiConsole.MarkupLine($"[grey]Device:[/]   {Markup.Escape(deviceDisplay)}");
         AnsiConsole.MarkupLine($"[grey]Output:[/]   {Markup.Escape(filePath)}");
         AnsiConsole.MarkupLine($"[grey]Duration:[/] {duration.TotalSeconds:F0}s");
         AnsiConsole.WriteLine();
 
-        var builder = new WasapiRecorderBuilder()
-            .WithDevice(captureDevice)
-            .WithSharedMode()
-            .WithEventSync();
-        if (lowLatency) builder.WithLowLatency();
-        using var recorder = builder.Build();
+        WasapiRecorder recorder;
+        if (useRouting)
+        {
+            recorder = new WasapiRecorderBuilder()
+                .WithDefaultDeviceStreamRouting()
+                .WithEventSync()
+                .BuildAsync().GetAwaiter().GetResult();
+        }
+        else
+        {
+            var builder = new WasapiRecorderBuilder()
+                .WithDevice(captureDevice!)
+                .WithSharedMode()
+                .WithEventSync();
+            if (lowLatency) builder.WithLowLatency();
+            recorder = builder.Build();
+        }
+        using var _recorder = recorder;
 
         if (lowLatency)
         {
@@ -97,7 +122,7 @@ internal sealed class WasapiRecordToWavFileTest : IConsoleTest
 
         var diagnostics = new Dictionary<string, string>
         {
-            ["captureDevice"] = captureDevice.FriendlyName,
+            ["captureDevice"] = deviceDisplay,
             ["outputPath"] = filePath,
             ["outputBytes"] = outputInfo.Length.ToString(),
             ["pcmBytes"] = pcmBytes.ToString(),

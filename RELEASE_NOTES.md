@@ -91,6 +91,7 @@ extensive correctness work during development — see [Docs/Sampler.md](Docs/Sam
  * ASIO: implemented missing `Asio64Bit` Int24LSB/Float32LSB conversions and fixed a byte-order bug in `GetSamplePosition`; `WdlResampler` backported three upstream Cockos WDL fixes
  * `WdlResampler`: reinterleave buffered samples when the channel count changes between calls, and flush denormals in the IIR feedback path (further upstream Cockos WDL backports) (#800)
  * Hardened Media Foundation and DMO interop against COM ref leaks on error paths (`MediaFoundationReader`, `MediaFoundationEncoder`, `MediaFoundationTransform`, `MediaBuffer`, `Mf*` wrappers) (#1293)
+ * `MediaFoundationReader`: seeking is now sample-accurate — since `IMFSourceReader.SetCurrentPosition` only seeks to the nearest container keyframe, the reader now reads forward and skips into the decoded buffer to reach the exact requested position, instead of restarting playback from the keyframe (audible on audio extracted from video, e.g. Vorbis/AAC). `Position` now reflects the byte position actually reached (#628)
  * Removed dead `naudio.codeplex.com` links from the README, MixDiff and source comments (#985)
 
 #### Performance

@@ -284,14 +284,35 @@ public class MediaFoundationReader : WaveStream
 
         while (bytesWritten < buffer.Length)
         {
+            if (!ReadNextDecoderBuffer(out _))
+            {
+                break; // end of stream
+            }
+            bytesWritten += ReadFromDecoderBuffer(buffer.Slice(bytesWritten));
+        }
+        position += bytesWritten;
+        return bytesWritten;
+    }
+
+    /// <summary>
+    /// Pulls the next decoded sample from the source reader into <see cref="decoderOutputBuffer"/>,
+    /// resetting <see cref="decoderOutputOffset"/> to 0 and <see cref="decoderOutputCount"/> to the
+    /// number of decoded bytes. Returns false at end of stream (leaving the decoder buffer empty).
+    /// <paramref name="timestamp"/> is the presentation time of the sample in 100-nanosecond units.
+    /// </summary>
+    private bool ReadNextDecoderBuffer(out long timestamp)
+    {
+        timestamp = 0;
+        while (true)
+        {
             MediaFoundationException.ThrowIfFailed(
                 pReader.ReadSample(MediaFoundationInterop.MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0,
-                    out int actualStreamIndex, out int dwFlagsInt, out long timestamp, out IntPtr pSamplePtr));
+                    out int actualStreamIndex, out int dwFlagsInt, out long sampleTimestamp, out IntPtr pSamplePtr));
             var dwFlags = (SourceReaderFlags)dwFlagsInt;
             if ((dwFlags & SourceReaderFlags.EndOfStream) != 0)
             {
                 if (pSamplePtr != IntPtr.Zero) Marshal.Release(pSamplePtr);
-                break;
+                return false;
             }
             else if ((dwFlags & SourceReaderFlags.CurrentMediaTypeChanged) != 0)
             {
@@ -334,8 +355,8 @@ public class MediaFoundationReader : WaveStream
                 Marshal.Copy(pAudioData, decoderOutputBuffer, 0, cbBuffer);
                 decoderOutputOffset = 0;
                 decoderOutputCount = cbBuffer;
-
-                bytesWritten += ReadFromDecoderBuffer(buffer.Slice(bytesWritten));
+                timestamp = sampleTimestamp;
+                return true;
             }
             finally
             {
@@ -351,8 +372,6 @@ public class MediaFoundationReader : WaveStream
                 MediaFoundationException.ThrowIfFailed(unlockHr);
             }
         }
-        position += bytesWritten;
-        return bytesWritten;
     }
 
     /// <summary>
@@ -400,7 +419,15 @@ public class MediaFoundationReader : WaveStream
 
     private void Reposition(long desiredPosition)
     {
-        long nsPosition = (10000000L * desiredPosition) / waveFormat.AverageBytesPerSecond;
+        if (pReader == null)
+        {
+            pReader = CreateReader(settings);
+        }
+
+        int averageBytesPerSecond = waveFormat.AverageBytesPerSecond;
+        long nsPosition = averageBytesPerSecond > 0
+            ? (10000000L * desiredPosition) / averageBytesPerSecond
+            : 0;
         var pv = PropVariant.FromLong(nsPosition);
         var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(pv));
         try
@@ -416,8 +443,63 @@ public class MediaFoundationReader : WaveStream
         }
         decoderOutputCount = 0;
         decoderOutputOffset = 0;
-        position = desiredPosition;
         repositionTo = -1;// clear the flag
+
+        // IMFSourceReader.SetCurrentPosition is documented as inexact: it seeks to the nearest
+        // container keyframe at or before the requested time, so the next decoded sample can begin
+        // earlier than desiredPosition. Per MS guidance we must read forward and skip into the
+        // decoded buffer to land on the exact byte position; without this, playback audibly
+        // restarts from the keyframe (very visible on audio extracted from video - Vorbis/AAC).
+        // (We can only do this when the byte rate is known; streaming sources report 0.)
+        long achievedPosition = desiredPosition;
+        if (averageBytesPerSecond > 0)
+        {
+            while (true)
+            {
+                if (!ReadNextDecoderBuffer(out long timestamp))
+                {
+                    // Ran past the end of the stream while seeking; leave the decoder buffer empty
+                    // so the next Read reports end-of-stream, and snap position to the known length.
+                    decoderOutputCount = 0;
+                    decoderOutputOffset = 0;
+                    achievedPosition = length > 0 ? length : desiredPosition;
+                    break;
+                }
+
+                // The decoder output is PCM (constant bit rate), so the sample timestamp maps to an
+                // exact byte position. MF can return several buffers carrying the same timestamp, so
+                // we gate on the end of the buffer rather than its start.
+                long decoderPosition = (long)((ulong)timestamp * (ulong)averageBytesPerSecond / 10000000UL);
+                long bufferEnd = decoderPosition + decoderOutputCount;
+
+                if (bufferEnd <= desiredPosition)
+                {
+                    // Entire buffer is still before the target; discard it and keep reading.
+                    decoderOutputCount = 0;
+                    decoderOutputOffset = 0;
+                    continue;
+                }
+
+                if (decoderPosition < desiredPosition)
+                {
+                    int skip = (int)(desiredPosition - decoderPosition);
+                    // Round the skip down to a frame boundary; starting mid-sample produces loud
+                    // static. This lands us at most BlockAlign-1 bytes before the requested position.
+                    skip -= skip % BlockAlign;
+                    decoderOutputOffset = skip;
+                    decoderOutputCount -= skip;
+                    achievedPosition = decoderPosition + skip;
+                }
+                else
+                {
+                    // Keyframe landed at or after the request; deliver the buffer from its start.
+                    achievedPosition = decoderPosition;
+                }
+                break;
+            }
+        }
+
+        position = achievedPosition;
     }
 
     /// <summary>

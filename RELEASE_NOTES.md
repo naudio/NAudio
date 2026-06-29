@@ -56,6 +56,7 @@ apps need only re-target to `net9.0` and adjust custom providers to the new
  * `WaveOut` / `WaveIn` now default to event-driven callbacks; the window-based variants are renamed `WaveOutWindow` / `WaveInWindow` in `NAudio.WinForms`
  * Some types moved package/namespace as part of the split — classic Windows MIDI I/O and `winmm` types to `NAudio.WinMM`; the DMO/DirectSound types into the new `NAudio.Dmo` package; plus smaller moves (`AudioVolumeLevel`, `CaptureState`, `DmoMp3FrameDecompressor`). Meta-package consumers are unaffected
  * `SimpleCompressorStream`, `ImpulseResponseConvolution` and `NAudio.Extras.Equalizer` were removed — superseded by `NAudio.Effects` (`CompressorEffect`, `ConvolutionReverbEffect`, `Equalizer`)
+ * `WaveFileWriter` / `AiffFileWriter` no longer dispose a caller-supplied stream — the stream constructor now leaves the stream open (it still flushes/finalizes the header on `Dispose`), matching the readers' ownership rule; only the filename constructor owns and closes the file. The `IgnoreDisposeStream` wrapper is no longer needed when writing to a stream you want to keep. If you passed a throwaway stream and relied on the writer closing it, dispose it yourself or use the filename overload (#1040)
 
 #### Notable bug fixes
 
@@ -79,6 +80,7 @@ extensive correctness work during development — see [Docs/Sampler.md](Docs/Sam
  * `CueListInterpreter`: WAV files with cue points but no labels now return cues with empty labels instead of null (#549)
  * `ResamplerDmoStream`: fixed an infinite loop on `Read` after seeking and the loss of the resampler tail at end-of-stream (#607, #608)
  * `LoopStream.Read`: no longer spins at 100% CPU when the wrapped source can't satisfy a read (#1338)
+ * `RawSourceWaveStream`: the `byte[]` constructor now disposes the `MemoryStream` it creates internally when the stream is disposed (it previously leaked); a caller-supplied source stream is still left open
  * `Mp3FileReader`: fixed false sample-rate-change errors near end of file, and more robust MP3 frame parsing against album art / trailing metadata
  * `MidiFile`: preserve running-status across meta events (fixes "Read too far")
  * `BlockAlignReductionStream.Position`: validates the incoming value, so a block-aligned seek after an arbitrary read no longer wrongly throws (#368)

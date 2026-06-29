@@ -37,6 +37,8 @@ public class AiffFileReader : WaveStream
     /// <param name="inputStream">The input stream containing a AIF file including header</param>
     public AiffFileReader(Stream inputStream)
     {
+        // The caller owns a stream they passed in; only the filename constructor sets ownInput = true.
+        ownInput = false;
         waveStream = inputStream;
         ReadAiffHeader(waveStream, out waveFormat, out dataPosition, out dataChunkLength, chunks);
         if (waveFormat.BlockAlign <= 0)

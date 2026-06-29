@@ -123,6 +123,28 @@ public class AiffFileWriterTests
         }
     }
 
+    [Test]
+    public void StreamConstructorLeavesCallerSuppliedStreamOpen()
+    {
+        // The stream constructor must not dispose a stream the caller handed in. Disposing
+        // the writer still finalizes the header, but leaves the MemoryStream usable.
+        var ms = new MemoryStream();
+        var sourceData = new byte[] { 0x10, 0x20, 0x30, 0x40, 0x50, 0x60 };
+        using (var writer = new AiffFileWriter(ms, new WaveFormat(16000, 24, 1)))
+        {
+            writer.Write(sourceData, 0, sourceData.Length);
+        }
+
+        // If the writer had disposed ms, accessing it would throw ObjectDisposedException.
+        Assert.That(ms.CanRead, Is.True, "Caller's stream should still be open");
+        ms.Position = 0;
+        using var reader = new AiffFileReader(ms);
+        var buffer = new byte[(int)reader.Length];
+        var read = reader.Read(buffer, 0, buffer.Length);
+        Assert.That(read, Is.EqualTo(buffer.Length));
+        Assert.That(buffer, Is.EqualTo(sourceData));
+    }
+
     private static byte[] WriteAndRead(WaveFormat format, Action<AiffFileWriter> writeAction)
     {
         var ms = new MemoryStream();

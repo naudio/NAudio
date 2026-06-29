@@ -149,6 +149,49 @@ The old ad-hoc effect types were removed in favour of the new
   (wrap it with `EffectSampleProvider` instead of passing a source to the
   constructor).
 
+## Stream ownership in file writers (`WaveFileWriter` / `AiffFileWriter`)
+
+`WaveFileWriter` and `AiffFileWriter` now follow the same stream-ownership rule the
+readers (`WaveFileReader`, `AiffFileReader`, `Mp3FileReader`) already use, and which the
+.NET BCL follows: **you dispose what you own.**
+
+- The **filename** constructors (`new WaveFileWriter("out.wav", format)`) open the
+  underlying `FileStream` themselves, so they still own and close it on `Dispose` —
+  unchanged behaviour.
+- The **stream** constructors (`new WaveFileWriter(stream, format)`) now treat the stream
+  as caller-owned. Disposing the writer still **finalizes the header and flushes** so the
+  file is valid, but it **no longer disposes the stream you passed in** — that is left for
+  you to dispose.
+
+Previously the stream constructor disposed the caller's stream unconditionally, which is
+why `IgnoreDisposeStream` was needed to write to a `MemoryStream` you wanted to keep
+(`new WaveFileWriter(new IgnoreDisposeStream(ms), format)`). That wrapper is no longer
+necessary — passing the stream directly leaves it open. (`IgnoreDisposeStream` still
+exists and existing code that uses it keeps working.)
+
+**What to check when upgrading.** The one case that changes behaviour is passing a
+*throwaway* stream you didn't keep a reference to and relying on the writer to close it,
+classically:
+
+```csharp
+// before: the writer closed this FileStream for you
+new WaveFileWriter(File.Create(path), format);   // <-- handle now leaks
+```
+
+After the upgrade that `FileStream` handle is left open. Either use the filename overload
+(which owns the file), or dispose the stream yourself:
+
+```csharp
+// preferred - the writer owns the file
+using var writer = new WaveFileWriter(path, format);
+
+// or keep and dispose the stream yourself
+using var stream = File.Create(path);
+using var writer = new WaveFileWriter(stream, format);
+```
+
+The common `new WaveFileWriter(path, format)` filename usage is unaffected.
+
 ## Other type moves and API changes
 
 - `AudioVolumeLevel` moved from `NAudio.Wasapi.CoreAudioApi` to

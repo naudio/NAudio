@@ -88,6 +88,7 @@ extensive correctness work during development — see [Docs/Sampler.md](Docs/Sam
  * `BlockAlignReductionStream.Read`: a single read (or `Stream.CopyTo` chunk) larger than the 4-second internal buffer no longer silently discards the rest of the source and truncates the stream — e.g. converting a non-PCM WAV via `AudioFileReader` on .NET Core (#1022)
  * `MmException` messages now append a human-readable `MmResult` description (#1192); `Id3v2Tag.ReadTag` no longer throws/catches for tagless MP3 streams (#265)
  * ASIO: implemented missing `Asio64Bit` Int24LSB/Float32LSB conversions and fixed a byte-order bug in `GetSamplePosition`; `WdlResampler` backported three upstream Cockos WDL fixes
+ * `WdlResampler`: reinterleave buffered samples when the channel count changes between calls, and flush denormals in the IIR feedback path (further upstream Cockos WDL backports) (#800)
  * Hardened Media Foundation and DMO interop against COM ref leaks on error paths (`MediaFoundationReader`, `MediaFoundationEncoder`, `MediaFoundationTransform`, `MediaBuffer`, `Mf*` wrappers) (#1293)
  * Removed dead `naudio.codeplex.com` links from the README, MixDiff and source comments (#985)
 

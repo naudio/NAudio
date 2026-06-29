@@ -190,6 +190,10 @@ public class WdlResampler
 
         if (sreq < 0) sreq = 0;
 
+        // if decreasing channel count, reinterleave before realloc
+        if (nch < m_rsinbuf_nch && m_rsinbuf_nch > 0 && m_samples_in_rsinbuf > 0)
+            ReinterleaveBuffer(m_rsinbuf, m_rsinbuf_nch, nch, m_samples_in_rsinbuf);
+
         again:
         Array.Resize(ref m_rsinbuf, (m_samples_in_rsinbuf + sreq) * nch);
 
@@ -204,6 +208,12 @@ public class WdlResampler
             // todo: notify of error?
             sreq = sz;
         }
+
+        // if increasing channel count, reinterleave after realloc
+        if (m_rsinbuf_nch < nch && m_rsinbuf_nch > 0 && m_samples_in_rsinbuf > 0)
+            ReinterleaveBuffer(m_rsinbuf, m_rsinbuf_nch, nch, m_samples_in_rsinbuf);
+
+        m_rsinbuf_nch = nch;
 
         inbuffer = m_rsinbuf.AsSpan(m_samples_in_rsinbuf * nch, sreq * nch);
 
@@ -478,6 +488,42 @@ public class WdlResampler
         return ret;
     }
 
+    // When the channel count changes between calls while samples are still buffered,
+    // re-pack the interleaved buffer from the old channel count to the new one so the
+    // retained samples stay correctly aligned. Ported from WDL's
+    // wdl_rs_reinterleave_buffer (added upstream 2022).
+    private static void ReinterleaveBuffer(WDL_ResampleSample[] buf, int in_nch, int out_nch, int len)
+    {
+        if (len < 1 || buf == null) return;
+
+        int x = len - 1;
+        int rd = 0;
+        int wr = 0;
+        if (out_nch < in_nch)
+        {
+            if (len * in_nch > buf.Length) return; // source layout doesn't fit the buffer; nothing valid to move
+            while (x-- != 0)
+            {
+                rd += in_nch;
+                wr += out_nch;
+                Array.Copy(buf, rd, buf, wr, out_nch);
+            }
+        }
+        else if (out_nch > in_nch)
+        {
+            rd += in_nch * x;
+            wr += out_nch * x;
+            while (x-- != 0)
+            {
+                Array.Copy(buf, rd, buf, wr, in_nch);
+                Array.Clear(buf, wr + in_nch, out_nch - in_nch);
+                rd -= in_nch;
+                wr -= out_nch;
+            }
+            Array.Clear(buf, wr + in_nch, out_nch - in_nch);
+        }
+    }
+
     // only called in sinc modes
     private void BuildLowPass(double filtpos)
     {
@@ -627,6 +673,7 @@ public class WdlResampler
     private int m_last_requested;
     private int m_filtlatency;
     private int m_samples_in_rsinbuf;
+    private int m_rsinbuf_nch; // channel count the buffered samples are interleaved at
     private int m_lp_oversize;
 
     private int m_sincsize;
@@ -688,15 +735,16 @@ public class WdlResampler
             }
         }
 
-        private double denormal_filter(float x)
+        // Flush denormals (zero-exponent floats) to zero so they can't stall the IIR
+        // feedback path. Mirrors WDL's denormal_filter in denormal.h: if the exponent
+        // field is all zeros the value is zero or subnormal, so return 0.0.
+        private static double denormal_filter(float x)
         {
-            // TODO: implement denormalisation
-            return x;
+            return (BitConverter.SingleToInt32Bits(x) & 0x7f800000) != 0 ? x : 0.0;
         }
-        private double denormal_filter(double x)
+        private static double denormal_filter(double x)
         {
-            // TODO: implement denormalisation
-            return x;
+            return (BitConverter.DoubleToInt64Bits(x) & 0x7ff0000000000000L) != 0 ? x : 0.0;
         }
 
         private double m_fpos;

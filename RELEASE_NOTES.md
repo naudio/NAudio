@@ -1,3 +1,7 @@
+### Unreleased
+
+ * Added `DeviceCount` and `GetCapabilities` static methods to `WaveOutEvent` so output devices can be enumerated without referencing `NAudio.WinForms` (#1331, #777)
+
 ### 2.3.0 (12 Mar 2026)
 
  * Performance improvements for `PropertyStore` and Core Audio property access (#1206)

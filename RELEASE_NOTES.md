@@ -64,6 +64,7 @@ In addition to the fixes below, the new sampler/SFZ/SoundFont subsystem saw
 extensive correctness work during development — see [Docs/Sampler.md](Docs/Sampler.md).
 
  * `WaveOut`: fixed a race where stopping/disposing faster than the buffer latency could throw a `NullReferenceException` via `PlaybackStopped` (#804)
+ * `DirectSoundOut`: fixed a startup race where the secondary buffer could begin LOOPING playback before it was primed (the priming `Feed` was gated on `PlaybackState`, which `Play()` flips to `Playing` on the calling thread), so playback could collapse immediately — most visibly when a caller spun on `PlaybackState` (#759)
  * `WaveFileWriter`: removed the finalizer that fired an unconditional `Debug.Assert` and could crash the process on the finalizer thread when construction had thrown
  * `WaveFileWriter.WriteSample` / `WriteSamples`: fixed 32-bit `WaveFormatExtensible` output writing near-silence or corrupt data — `WriteSample(float)` truncated the normalised float to an `Int32` before scaling (writing zero for almost every sample), and both paths ignored the format's SubFormat; they now write IEEE-float or integer-PCM samples according to the declared subformat (#651)
  * `WaveExtensionMethods.AsStandardWaveFormat`: now also resolves the SubFormat of a `WaveFormatExtraData` (how an extensible format read from a file/stream is materialised), not just a `WaveFormatExtensible`

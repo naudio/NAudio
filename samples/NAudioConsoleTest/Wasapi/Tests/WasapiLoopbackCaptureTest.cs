@@ -71,7 +71,7 @@ internal sealed class WasapiLoopbackCaptureTest : IConsoleTest
         var writer = new WaveFileWriter(filePath, recorder.WaveFormat);
         long pcmBytes = 0;
         long silentPackets = 0;
-        recorder.DataAvailable += (buffer, flags) =>
+        recorder.DataAvailable += (buffer, flags, devicePosition, qpcPosition) =>
         {
             if ((flags & AudioClientBufferFlags.Silent) != 0)
             {

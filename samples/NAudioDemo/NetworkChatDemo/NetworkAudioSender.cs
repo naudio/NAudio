@@ -34,7 +34,7 @@ internal class NetworkAudioSender : IDisposable
         waveIn.StartRecording();
     }
 
-    private void OnAudioCaptured(ReadOnlySpan<byte> buffer, AudioClientBufferFlags flags)
+    private void OnAudioCaptured(ReadOnlySpan<byte> buffer, AudioClientBufferFlags flags, long devicePosition, long qpcPosition)
     {
         // The span is only valid for the duration of this callback and the codec API works on a
         // byte[], so copy into a reusable buffer (grown on demand) before encoding.

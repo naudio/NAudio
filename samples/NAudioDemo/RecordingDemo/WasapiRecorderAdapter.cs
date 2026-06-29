@@ -34,7 +34,7 @@ internal sealed class WasapiRecorderAdapter : IWaveIn
     public void StartRecording() => recorder.StartRecording();
     public void StopRecording() => recorder.StopRecording();
 
-    private void OnDataAvailable(ReadOnlySpan<byte> buffer, AudioClientBufferFlags flags)
+    private void OnDataAvailable(ReadOnlySpan<byte> buffer, AudioClientBufferFlags flags, long devicePosition, long qpcPosition)
     {
         var handler = DataAvailable;
         if (handler == null) return;

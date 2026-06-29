@@ -102,7 +102,7 @@ internal sealed class WasapiProcessLoopbackTest : IConsoleTest
             {
                 writer = new WaveFileWriter(filePath, recorder.WaveFormat);
 
-                recorder.DataAvailable += (buffer, flags) =>
+                recorder.DataAvailable += (buffer, flags, devicePosition, qpcPosition) =>
                 {
                     Interlocked.Increment(ref packetCount);
                     if ((flags & AudioClientBufferFlags.Silent) != 0)

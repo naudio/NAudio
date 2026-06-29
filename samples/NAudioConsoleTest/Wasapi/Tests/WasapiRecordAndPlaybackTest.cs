@@ -53,7 +53,7 @@ internal sealed class WasapiRecordAndPlaybackTest : IConsoleTest
 
         var captured = new MemoryStream();
         var waveFormat = recorder.WaveFormat;
-        recorder.DataAvailable += (buffer, flags) =>
+        recorder.DataAvailable += (buffer, flags, devicePosition, qpcPosition) =>
         {
             if ((flags & AudioClientBufferFlags.Silent) == 0)
             {

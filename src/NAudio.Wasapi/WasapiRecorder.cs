@@ -40,7 +40,8 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
 
     /// <summary>
     /// Fired when captured audio data is available. The buffer span is only valid
-    /// for the duration of the callback — copy it if you need to keep it.
+    /// for the duration of the callback — copy it if you need to keep it. The handler
+    /// also receives the packet's WASAPI device and QPC positions for timestamping.
     /// </summary>
     public event CaptureDataAvailableHandler DataAvailable;
 
@@ -487,7 +488,7 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
         while (packetSize > 0)
         {
             using var lease = capture.GetBufferLease(bytesPerFrame);
-            DataAvailable?.Invoke(lease.Buffer, lease.Flags);
+            DataAvailable?.Invoke(lease.Buffer, lease.Flags, lease.DevicePosition, lease.QPCPosition);
             packetSize = capture.GetNextPacketSize();
         }
     }
@@ -538,7 +539,15 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
 /// </summary>
 /// <param name="buffer">The captured audio data. Copy it if you need to keep it.</param>
 /// <param name="flags">Buffer flags from WASAPI (e.g. Silent).</param>
-public delegate void CaptureDataAvailableHandler(ReadOnlySpan<byte> buffer, AudioClientBufferFlags flags);
+/// <param name="devicePosition">
+/// The device position (in frames) at the start of this packet, as reported by
+/// <c>IAudioCaptureClient::GetBuffer</c>. Useful for detecting gaps and aligning packets.
+/// </param>
+/// <param name="qpcPosition">
+/// The QPC (QueryPerformanceCounter) value at the time the packet was captured, in
+/// 100-nanosecond units. Use it to time-align captured audio against a wall clock.
+/// </param>
+public delegate void CaptureDataAvailableHandler(ReadOnlySpan<byte> buffer, AudioClientBufferFlags flags, long devicePosition, long qpcPosition);
 
 /// <summary>
 /// A captured audio buffer suitable for async consumption (heap-allocated copy).

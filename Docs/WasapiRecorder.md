@@ -36,7 +36,7 @@ In shared mode the engine converts to the format you request via `WithFormat`. I
 
 ## Recording with the DataAvailable event
 
-The zero-copy path uses the `DataAvailable` event. The span is **only valid for the duration of the callback** — if you need to keep the data (e.g. to write to a file), copy it out. Here we record to a WAV file:
+The zero-copy path uses the `DataAvailable` event. The span is **only valid for the duration of the callback** — if you need to keep the data (e.g. to write to a file), copy it out. The callback also receives the WASAPI `devicePosition` (frame count at the start of the packet) and `qpcPosition` (QueryPerformanceCounter value in 100-nanosecond units) for that packet, which you can use to detect gaps or time-align the audio against a wall clock; ignore them with discards (`_`) if you don't need them. Here we record to a WAV file:
 
 ```c#
 using NAudio.Wave;
@@ -44,7 +44,7 @@ using NAudio.Wave;
 var recorder = new WasapiRecorderBuilder().Build();
 var writer = new WaveFileWriter("recorded.wav", recorder.WaveFormat);
 
-recorder.DataAvailable += (buffer, flags) =>
+recorder.DataAvailable += (buffer, flags, devicePosition, qpcPosition) =>
 {
     writer.Write(buffer);   // WaveFileWriter has a ReadOnlySpan<byte> overload
 };
@@ -141,7 +141,7 @@ await using var recorder = await new WasapiRecorderBuilder()
     .WithDefaultDeviceStreamRouting()
     .BuildAsync();
 
-recorder.DataAvailable += (buffer, flags) => { /* captured from the current default device */ };
+recorder.DataAvailable += (buffer, flags, _, _) => { /* captured from the current default device */ };
 recorder.StartRecording();
 ```
 
@@ -156,7 +156,7 @@ await using var recorder = await new WasapiRecorderBuilder()
     .WithProcessLoopback((uint)targetProcessId, ProcessLoopbackMode.IncludeTargetProcessTree)
     .BuildAsync();
 
-recorder.DataAvailable += (buffer, flags) => { /* buffer is the process's rendered audio */ };
+recorder.DataAvailable += (buffer, flags, _, _) => { /* buffer is the process's rendered audio */ };
 recorder.StartRecording();
 ```
 

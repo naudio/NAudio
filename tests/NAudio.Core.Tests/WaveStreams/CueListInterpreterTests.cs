@@ -174,7 +174,84 @@ public class CueListInterpreterTests
         Assert.That(cues[1].Label, Is.EqualTo("Beta"));
     }
 
+    [Test]
+    public void ReadsSoundForgeRegionLabelsWhenLtxtChunksPrecedeLablChunks()
+    {
+        // Regression for #744: WAVs exported from Sound Forge using Regions write the adtl
+        // LIST with every region's "ltxt" (labeled-text) chunk FIRST, then all the "labl"
+        // chunks. The old reader treated every adtl sub-chunk as a labl and lost the labels;
+        // the labels must now be read by cue id regardless of the ltxt chunks that precede them.
+        var labels = new[] { "codes", "discovered", "escape" };
+
+        var cueMs = new MemoryStream();
+        using (var cw = new BinaryWriter(cueMs))
+        {
+            cw.Write(labels.Length);                            // point count
+            for (int i = 0; i < labels.Length; i++)
+            {
+                cw.Write(i + 1);                                // dwIdentifier (1-based, as Sound Forge does)
+                cw.Write((i + 1) * 1000);                       // dwPosition
+                cw.Write(ChunkIdentifier.ChunkIdentifierToInt32("data")); // fccChunk
+                cw.Write(0);                                    // dwChunkStart
+                cw.Write(0);                                    // dwBlockStart
+                cw.Write((i + 1) * 1000);                       // dwSampleOffset
+            }
+        }
+
+        var listMs = new MemoryStream();
+        using (var lw = new BinaryWriter(listMs))
+        {
+            lw.Write(System.Text.Encoding.ASCII.GetBytes("adtl"));
+            // All the region "ltxt" chunks come first (20-byte bodies, like Sound Forge).
+            for (int i = 0; i < labels.Length; i++)
+            {
+                lw.Write(ChunkIdentifier.ChunkIdentifierToInt32("ltxt"));
+                lw.Write(20);                                   // chunk size
+                lw.Write(i + 1);                                // dwIdentifier (cue id)
+                lw.Write(500);                                  // dwSampleLength
+                lw.Write(ChunkIdentifier.ChunkIdentifierToInt32("rgn ")); // dwPurposeID
+                lw.Write((short)0); lw.Write((short)0);         // country / language
+                lw.Write((short)0); lw.Write((short)0);         // dialect / codepage
+            }
+            // ...then the "labl" chunks carrying the actual region names.
+            foreach (var (label, i) in WithIndex(labels))
+            {
+                var text = System.Text.Encoding.UTF8.GetBytes(label);
+                lw.Write(ChunkIdentifier.ChunkIdentifierToInt32("labl"));
+                lw.Write(text.Length + 1 + 4);                  // dwIdentifier + text + null terminator
+                lw.Write(i + 1);                                // dwIdentifier (cue id)
+                lw.Write(text);
+                lw.Write((byte)0);                              // null terminator
+                if ((text.Length + 1) % 2 == 1) lw.Write((byte)0); // word-alignment padding
+            }
+        }
+
+        var ms = new MemoryStream();
+        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format))
+        {
+            w.AddChunk("cue ", cueMs.ToArray(), ChunkPosition.AfterData);
+            w.AddChunk("LIST", listMs.ToArray(), ChunkPosition.AfterData);
+            w.WriteSamples(new short[] { 1, 2 }, 0, 2);
+        }
+        ms.Position = 0;
+        using var reader = new WaveFileReader(ms);
+        var cues = reader.Chunks.Read(CueListInterpreter.Instance);
+
+        Assert.That(cues, Is.Not.Null);
+        Assert.That(cues.Count, Is.EqualTo(labels.Length));
+        for (int i = 0; i < labels.Length; i++)
+        {
+            Assert.That(cues[i].Position, Is.EqualTo((i + 1) * 1000));
+            Assert.That(cues[i].Label, Is.EqualTo(labels[i]));
+        }
+    }
+
     // ---- helpers ------------------------------------------------------------
+
+    private static System.Collections.Generic.IEnumerable<(string value, int index)> WithIndex(string[] items)
+    {
+        for (int i = 0; i < items.Length; i++) yield return (items[i], i);
+    }
 
     /// <summary>
     /// Minimal "cue " chunk body: 1 cue point, no label. Used to exercise the "no adtl"

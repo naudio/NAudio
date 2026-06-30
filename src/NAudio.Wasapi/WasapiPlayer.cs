@@ -106,8 +106,14 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IWaveLatency, IAsyncDisp
     /// application in the Windows volume mixer. Use this for simple volume/mute control
     /// that only affects your application.
     /// </summary>
+    /// <remarks>
+    /// When following the default device with automatic stream routing (no fixed endpoint) this is
+    /// obtained from the audio client itself, so it is only available after <see cref="Init"/>.
+    /// </remarks>
     public SimpleAudioVolume SessionVolume =>
-        mmDevice.AudioSessionManager.SimpleAudioVolume;
+        mmDevice != null
+            ? mmDevice.AudioSessionManager.SimpleAudioVolume
+            : audioClient.SimpleAudioVolume;
 
     /// <summary>
     /// Per-stream, per-channel volume control (0.0 to 1.0 per channel).
@@ -136,7 +142,17 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IWaveLatency, IAsyncDisp
     /// Use with care: changes are system-wide and visible to the user.
     /// Available in both shared and exclusive modes.
     /// </summary>
-    public AudioEndpointVolume DeviceVolume => mmDevice.AudioEndpointVolume;
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when following the default device with automatic stream routing: there is no fixed
+    /// endpoint, so endpoint-wide volume has no meaning. Use <see cref="Volume"/>/<see cref="SessionVolume"/>
+    /// for per-application volume instead.
+    /// </exception>
+    public AudioEndpointVolume DeviceVolume => mmDevice != null
+        ? mmDevice.AudioEndpointVolume
+        : throw new InvalidOperationException(
+            "DeviceVolume (endpoint-wide volume) is not available when following the default device " +
+            "with automatic stream routing, because there is no fixed endpoint. Use Volume or " +
+            "SessionVolume for per-application volume instead.");
 
     #endregion
 
@@ -156,6 +172,36 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IWaveLatency, IAsyncDisp
 
         audioClient = device.CreateAudioClient();
         OutputWaveFormat = audioClient.MixFormat;
+    }
+
+    // Private constructor for automatic stream routing. The audio client is activated externally via
+    // ActivateAudioInterfaceAsync against the default-render virtual endpoint, so there is no MMDevice.
+    // Routing is standard shared mode only (exclusive and IAudioClient3 low latency are rejected by the
+    // builder), which keeps every MMDevice.CreateAudioClient() recovery path out of the routed flow.
+    private WasapiPlayer(AudioClient activatedClient, bool useEventSync, int latencyMilliseconds,
+        AudioStreamCategory? audioCategory, string mmcssTaskName)
+    {
+        mmDevice = null;
+        shareMode = AudioClientShareMode.Shared;
+        isUsingEventSync = useEventSync;
+        this.latencyMilliseconds = latencyMilliseconds;
+        this.audioCategory = audioCategory;
+        this.mmcssTaskName = mmcssTaskName;
+        preferLowLatency = false;
+        requireLowLatency = false;
+        syncContext = SynchronizationContext.Current;
+
+        audioClient = activatedClient;
+        OutputWaveFormat = audioClient.MixFormat;
+    }
+
+    internal static async Task<WasapiPlayer> CreateDefaultDeviceRoutingAsync(bool useEventSync,
+        int latencyMilliseconds, AudioStreamCategory? audioCategory, string mmcssTaskName)
+    {
+        // Automatic stream routing follows the default render device, re-routing transparently when
+        // the default changes. Activation is asynchronous, hence the async factory.
+        var activatedClient = await AudioClient.ActivateDefaultDeviceAsync(DataFlow.Render).ConfigureAwait(false);
+        return new WasapiPlayer(activatedClient, useEventSync, latencyMilliseconds, audioCategory, mmcssTaskName);
     }
 
     /// <summary>
@@ -291,7 +337,7 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IWaveLatency, IAsyncDisp
     {
         try
         {
-            var period = ChooseLowLatencyPeriod(audioClient.GetSharedModeEnginePeriod(mixFormat));
+            var period = audioClient.GetSharedModeEnginePeriod(mixFormat).ChooseLowestLatencyPeriod();
             return Math.Max(1, (int)(period * 1000L / mixFormat.SampleRate));
         }
         catch (COMException)
@@ -387,27 +433,10 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IWaveLatency, IAsyncDisp
         long latencyRefTimes = latencyMilliseconds * 10000L;
         OutputWaveFormat = sourceFormat;
 
-        // Set audio category via IAudioClient2 if requested
+        // Set audio category via IAudioClient2 if requested. Must happen before Initialize.
         if (audioCategory.HasValue && audioClient.SupportsAudioClient2)
         {
-            var props = new AudioClientProperties
-            {
-                cbSize = (uint)Marshal.SizeOf<AudioClientProperties>(),
-                bIsOffload = 0,
-                eCategory = audioCategory.Value,
-                Options = AudioClientStreamOptions.None
-            };
-            var propsPtr = Marshal.AllocHGlobal(Marshal.SizeOf<AudioClientProperties>());
-            try
-            {
-                Marshal.StructureToPtr(props, propsPtr, false);
-                // Call SetClientProperties on the underlying IAudioClient2
-                // For now, use the v1 path since SetClientProperties is not yet exposed on the wrapper
-            }
-            finally
-            {
-                Marshal.FreeHGlobal(propsPtr);
-            }
+            audioClient.SetClientProperties(audioCategory.Value);
         }
 
         if (shareMode == AudioClientShareMode.Exclusive)
@@ -555,7 +584,7 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IWaveLatency, IAsyncDisp
             return false;
         }
 
-        var periodInFrames = ChooseLowLatencyPeriod(periodInfo);
+        var periodInFrames = periodInfo.ChooseLowestLatencyPeriod();
 
         try
         {
@@ -579,24 +608,6 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IWaveLatency, IAsyncDisp
         audioClient.SetEventHandle(frameEvent.SafeWaitHandle.DangerousGetHandle());
         renderClient = audioClient.AudioRenderClient;
         return true;
-    }
-
-    /// <summary>
-    /// Picks the lowest engine period that satisfies the IAudioClient3 constraints: an integral
-    /// multiple of the fundamental period, no smaller than the minimum and no larger than the maximum.
-    /// </summary>
-    private static uint ChooseLowLatencyPeriod(AudioClientPeriodInfo periodInfo)
-    {
-        var period = periodInfo.MinPeriodInFrames;
-        var fundamental = periodInfo.FundamentalPeriodInFrames;
-        if (fundamental > 0 && period % fundamental != 0)
-        {
-            // Round up to the next multiple of the fundamental period.
-            period = (period / fundamental + 1) * fundamental;
-            if (period > periodInfo.MaxPeriodInFrames)
-                period = periodInfo.MaxPeriodInFrames;
-        }
-        return period;
     }
 
     private void InitializeWithEventSync(AudioClientStreamFlags flags, long latencyRefTimes)

@@ -129,13 +129,22 @@ public class BlockAlignReductionStream : WaveStream
         int count = buffer.Length;
         lock (lockObject)
         {
-            // 1. attempt to fill the circular buffer with enough data to meet our request
+            // 1. attempt to fill the circular buffer with enough data to meet our request.
+            // We must never ask the source for more than will fit in the free space: the
+            // circular buffer silently discards any overflow, so a request larger than the
+            // buffer would otherwise read and drop the rest of the source stream, truncating
+            // the output to the buffer's capacity (#1022). Each source read is rounded down to
+            // a whole number of source blocks; a request bigger than the buffer is satisfied
+            // across multiple passes / Read calls instead.
             while (BufferEndPosition < position + count)
             {
-                int sourceReadCount = count;
-                if (sourceReadCount % sourceStream.BlockAlign != 0)
+                int freeSpace = circularBuffer.MaxLength - circularBuffer.Count;
+                int sourceReadCount = freeSpace - (freeSpace % sourceStream.BlockAlign);
+                if (sourceReadCount == 0)
                 {
-                    sourceReadCount = (count + sourceStream.BlockAlign) - (count % sourceStream.BlockAlign);
+                    // buffer is full to within less than one source block - we have staged
+                    // as much as we can for now
+                    break;
                 }
 
                 byte[] sourceBuf = GetSourceBuffer(sourceReadCount);

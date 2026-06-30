@@ -16,6 +16,19 @@ internal class WasapiPlayerPlugin : IOutputDevicePlugin
 
     public IWavePlayer CreateDevice(int latency)
     {
+        // Automatic stream routing follows the default render device and re-routes when it changes.
+        // It is shared mode only and activated asynchronously, so build it via BuildAsync(). Blocking
+        // here is safe: the activation completes on an MTA worker thread, not this UI thread.
+        if (settingsPanel.UseStreamRouting)
+        {
+            var routingBuilder = new WasapiPlayerBuilder()
+                .WithDefaultDeviceStreamRouting()
+                .WithLatency(latency);
+            if (settingsPanel.UseEventCallback)
+                routingBuilder.WithEventSync();
+            return routingBuilder.BuildAsync().GetAwaiter().GetResult();
+        }
+
         var builder = new WasapiPlayerBuilder()
             .WithDevice(settingsPanel.SelectedDevice)
             .WithLatency(latency);

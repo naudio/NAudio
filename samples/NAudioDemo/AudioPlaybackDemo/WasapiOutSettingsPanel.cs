@@ -17,6 +17,15 @@ public partial class WasapiOutSettingsPanel : UserControl
         deviceChangeNotifier = new DeviceChangeNotifier(enumerator);
         deviceChangeNotifier.DevicesChanged += InitialiseWasapiControls;
         Disposed += (_, _) => { deviceChangeNotifier.Dispose(); enumerator.Dispose(); };
+
+        // Stream routing follows the default device in shared mode, so a specific device and
+        // exclusive mode don't apply — disable those controls while it is selected.
+        checkBoxWasapiStreamRouting.CheckedChanged += (_, _) =>
+        {
+            var routing = checkBoxWasapiStreamRouting.Checked;
+            comboBoxWaspai.Enabled = !routing;
+            checkBoxWasapiExclusiveMode.Enabled = !routing;
+        };
     }
 
     private class WasapiDeviceComboItem
@@ -67,4 +76,10 @@ public partial class WasapiOutSettingsPanel : UserControl
     }
 
     public bool UseEventCallback { get { return checkBoxWasapiEventCallback.Checked; } }
+
+    /// <summary>
+    /// When true, follow the default render device with automatic stream routing instead of binding
+    /// to <see cref="SelectedDevice"/> — the player must then be built via <c>BuildAsync()</c>.
+    /// </summary>
+    public bool UseStreamRouting { get { return checkBoxWasapiStreamRouting.Checked; } }
 }

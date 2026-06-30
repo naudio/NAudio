@@ -489,14 +489,17 @@ public partial class DirectSoundOut : IWavePlayer
         try
         {
             InitializeDirectSound();
-            int lResult = 1;
 
-            if (PlaybackState == PlaybackState.Stopped)
-            {
-                DirectSoundException.ThrowIfFailed(secondaryBuffer.SetCurrentPosition(0));
-                nextSamplesWriteIndex = 0;
-                lResult = Feed(samplesTotalSize);
-            }
+            // Prime the buffer before playback starts. This thread is only ever started from
+            // a Stopped state (see Play()), so a fresh start always needs priming. This used to
+            // be gated on PlaybackState == Stopped, but Play() sets PlaybackState = Playing on the
+            // calling thread immediately after starting this thread, so the check raced: if the
+            // calling thread won (made far more likely by a caller that spins on PlaybackState),
+            // priming was skipped and a LOOPING play started on an unprimed buffer, causing
+            // playback to collapse at startup.
+            DirectSoundException.ThrowIfFailed(secondaryBuffer.SetCurrentPosition(0));
+            nextSamplesWriteIndex = 0;
+            int lResult = Feed(samplesTotalSize);
 
             // Incase the previous Feed method returns 0
             if (lResult > 0)

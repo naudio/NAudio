@@ -2,55 +2,65 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace NAudioDemo.NetworkChatDemo;
 
+/// <summary>
+/// Listens for incoming audio datagrams on a UDP port. Binds to <see cref="IPAddress.Any"/>
+/// so packets arriving from other machines on the network are received, not just loopback
+/// traffic (the original demo bound to <see cref="IPAddress.Loopback"/>, which is why audio
+/// only ever worked between two instances on the same PC - see GitHub issue #821).
+/// </summary>
 internal class UdpAudioReceiver : IAudioReceiver
 {
-    private Action<byte[]> handler;
     private readonly UdpClient udpListener;
-    private bool listening;
+    private readonly CancellationTokenSource cancellation = new();
+    private Action<byte[]> handler;
 
-    public UdpAudioReceiver(int portNumber)
+    public UdpAudioReceiver(int listenPort)
     {
-        var endPoint = new IPEndPoint(IPAddress.Loopback, portNumber);
-
         udpListener = new UdpClient();
-
-        // To allow us to talk to ourselves for test purposes:
-        // http://stackoverflow.com/questions/687868/sending-and-receiving-udp-packets-between-two-programs-on-the-same-computer
+        // ReuseAddress lets two instances on one machine bind the same port for quick
+        // loopback experiments, and avoids "address already in use" when restarting fast.
         udpListener.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-        udpListener.Client.Bind(endPoint);
-
-        ThreadPool.QueueUserWorkItem(ListenerThread, endPoint);
-        listening = true;
-    }
-
-    private void ListenerThread(object state)
-    {
-        var endPoint = (IPEndPoint)state;
-        try
-        {
-            while (listening)
-            {
-                byte[] b = udpListener.Receive(ref endPoint);
-                handler?.Invoke(b);
-            }
-        }
-        catch (SocketException)
-        {
-            // usually not a problem - just means we have disconnected
-        }
-    }
-
-    public void Dispose()
-    {
-        listening = false;
-        udpListener?.Close();
+        udpListener.Client.Bind(new IPEndPoint(IPAddress.Any, listenPort));
+        _ = ReceiveLoopAsync(cancellation.Token);
     }
 
     public void OnReceived(Action<byte[]> onAudioReceivedAction)
     {
         handler = onAudioReceivedAction;
+    }
+
+    private async Task ReceiveLoopAsync(CancellationToken token)
+    {
+        try
+        {
+            while (!token.IsCancellationRequested)
+            {
+                var result = await udpListener.ReceiveAsync(token);
+                handler?.Invoke(result.Buffer);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // expected when we are disposed
+        }
+        catch (SocketException)
+        {
+            // usually not a problem - just means we have disconnected
+        }
+        catch (ObjectDisposedException)
+        {
+            // socket closed from under us during shutdown
+        }
+    }
+
+    public void Dispose()
+    {
+        cancellation.Cancel();
+        udpListener.Dispose();
+        cancellation.Dispose();
     }
 }

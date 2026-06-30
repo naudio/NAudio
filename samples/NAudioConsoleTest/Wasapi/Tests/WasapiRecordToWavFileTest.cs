@@ -14,21 +14,37 @@ internal sealed class WasapiRecordToWavFileTest : IConsoleTest
     public IReadOnlyList<TestParameter> Parameters =>
     [
         new("captureDevice", typeof(string), Required: false, Default: WasapiDevices.DefaultMarker,
-            Help: "capture endpoint friendly name (or 'default')",
+            Help: "capture endpoint friendly name, 'default', or auto stream routing",
             ChoiceProvider: WasapiDevices.CaptureDeviceNames),
         new("output", typeof(string), Required: false,
             Help: "output WAV path (auto-named on Desktop if blank)"),
         new("duration", typeof(TimeSpan), Required: false, Default: TimeSpan.FromSeconds(10),
             Help: "recording duration"),
+        new("lowLatency", typeof(bool), Required: false, Default: false,
+            Help: "request IAudioClient3 low-latency shared capture"),
     ];
 
     public TestResult Run(TestContext ctx)
     {
         var captureName = ctx.Get<string>("captureDevice");
-        var captureDevice = WasapiDevices.ResolveCapture(captureName);
-        if (captureDevice is null) return TestResult.Fail($"Capture device not found: {captureName}");
+        var useRouting = WasapiDevices.IsRoutingMarker(captureName);
+
+        MMDevice? captureDevice = null;
+        if (!useRouting)
+        {
+            captureDevice = WasapiDevices.ResolveCapture(captureName);
+            if (captureDevice is null) return TestResult.Fail($"Capture device not found: {captureName}");
+        }
+        var deviceDisplay = captureDevice?.FriendlyName ?? "default device (auto stream routing)";
 
         var duration = ctx.Get<TimeSpan>("duration");
+        var lowLatency = ctx.Get<bool>("lowLatency");
+        // Automatic stream routing is standard shared mode only; low latency is not supported with it.
+        if (useRouting && lowLatency)
+        {
+            AnsiConsole.MarkupLine("[yellow]Stream routing does not support low latency — ignoring.[/]");
+            lowLatency = false;
+        }
         ctx.TryGet<string>("output", out var filePath);
         if (string.IsNullOrWhiteSpace(filePath))
         {
@@ -42,20 +58,40 @@ internal sealed class WasapiRecordToWavFileTest : IConsoleTest
             if (!string.IsNullOrEmpty(parent)) Directory.CreateDirectory(parent);
         }
 
-        AnsiConsole.MarkupLine($"[grey]Device:[/]   {Markup.Escape(captureDevice.FriendlyName)}");
+        AnsiConsole.MarkupLine($"[grey]Device:[/]   {Markup.Escape(deviceDisplay)}");
         AnsiConsole.MarkupLine($"[grey]Output:[/]   {Markup.Escape(filePath)}");
         AnsiConsole.MarkupLine($"[grey]Duration:[/] {duration.TotalSeconds:F0}s");
         AnsiConsole.WriteLine();
 
-        using var recorder = new WasapiRecorderBuilder()
-            .WithDevice(captureDevice)
-            .WithSharedMode()
-            .WithEventSync()
-            .Build();
+        WasapiRecorder recorder;
+        if (useRouting)
+        {
+            recorder = new WasapiRecorderBuilder()
+                .WithDefaultDeviceStreamRouting()
+                .WithEventSync()
+                .BuildAsync().GetAwaiter().GetResult();
+        }
+        else
+        {
+            var builder = new WasapiRecorderBuilder()
+                .WithDevice(captureDevice!)
+                .WithSharedMode()
+                .WithEventSync();
+            if (lowLatency) builder.WithLowLatency();
+            recorder = builder.Build();
+        }
+        using var _recorder = recorder;
+
+        if (lowLatency)
+        {
+            // LowLatencyActive is only known after the stream is initialized in StartRecording, so this
+            // reports the request here; the actual outcome is captured in the diagnostics below.
+            AnsiConsole.MarkupLine("[grey]LowLatency:[/] requested");
+        }
 
         var writer = new WaveFileWriter(filePath, recorder.WaveFormat);
         long pcmBytes = 0;
-        recorder.DataAvailable += (buffer, flags) =>
+        recorder.DataAvailable += (buffer, flags, devicePosition, qpcPosition) =>
         {
             if ((flags & AudioClientBufferFlags.Silent) == 0)
             {
@@ -86,12 +122,17 @@ internal sealed class WasapiRecordToWavFileTest : IConsoleTest
 
         var diagnostics = new Dictionary<string, string>
         {
-            ["captureDevice"] = captureDevice.FriendlyName,
+            ["captureDevice"] = deviceDisplay,
             ["outputPath"] = filePath,
             ["outputBytes"] = outputInfo.Length.ToString(),
             ["pcmBytes"] = pcmBytes.ToString(),
             ["recordedDurationMs"] = recordedDuration.TotalMilliseconds.ToString("F0"),
+            ["lowLatencyRequested"] = lowLatency.ToString(),
+            ["lowLatencyActive"] = recorder.LowLatencyActive.ToString(),
+            ["latencyMs"] = recorder.LatencyMilliseconds.ToString(),
         };
+        if (recorder.LowLatencyUnavailableReason != null)
+            diagnostics["lowLatencyUnavailableReason"] = recorder.LowLatencyUnavailableReason;
 
         AnsiConsole.MarkupLine($"\n[grey]Saved {outputInfo.Length / 1024}KB to {Markup.Escape(filePath)}[/]");
         AnsiConsole.MarkupLine($"[grey]Recorded: {recordedDuration:mm\\:ss\\.f}[/]");

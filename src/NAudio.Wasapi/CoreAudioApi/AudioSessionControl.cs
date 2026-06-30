@@ -232,6 +232,23 @@ public class AudioSessionControl : IDisposable
     }
 
     /// <summary>
+    /// Enables or disables the default stream attenuation (auto-ducking) that the system
+    /// applies to other audio streams when this is a communications session. By default
+    /// Windows ducks other streams while a communications session is active; pass
+    /// <c>true</c> to opt out so that other streams (for example separate communication
+    /// devices) are not attenuated.
+    /// </summary>
+    /// <param name="optOut"><c>true</c> to disable the system ducking experience for this
+    /// session; <c>false</c> to use the default system ducking behaviour.</param>
+    /// <remarks>Requires <c>IAudioSessionControl2</c> (Windows 7 and later). Per the
+    /// Windows SDK, this should be called before the session is made active.</remarks>
+    public void SetDuckingPreference(bool optOut)
+    {
+        if (audioSessionControlInterface2 == null) throw new InvalidOperationException("Not supported on this version of Windows");
+        CoreAudioException.ThrowIfFailed(audioSessionControlInterface2.SetDuckingPreference(optOut));
+    }
+
+    /// <summary>
     /// the grouping param for an audio session grouping
     /// </summary>
     /// <returns></returns>

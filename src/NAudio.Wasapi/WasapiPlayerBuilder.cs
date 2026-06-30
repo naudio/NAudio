@@ -1,4 +1,6 @@
 ﻿using NAudio.CoreAudioApi;
+using System;
+using System.Threading.Tasks;
 
 namespace NAudio.Wave;
 
@@ -15,6 +17,7 @@ public class WasapiPlayerBuilder
     private string mmcssTaskName;
     private bool preferLowLatency;
     private bool requireLowLatency;
+    private bool useDefaultDeviceRouting;
 
     /// <summary>
     /// Use the specified audio device for playback.
@@ -22,6 +25,24 @@ public class WasapiPlayerBuilder
     public WasapiPlayerBuilder WithDevice(MMDevice device)
     {
         this.device = device;
+        return this;
+    }
+
+    /// <summary>
+    /// Follow the default render device with automatic stream routing (Windows 10 version 1607 or
+    /// later). When the user changes the default playback device — or unplugs the current one — Windows
+    /// seamlessly transfers playback to the new default device with no application code.
+    /// </summary>
+    /// <remarks>
+    /// Activation is asynchronous, so the player must be created via <see cref="BuildAsync"/> rather
+    /// than <see cref="Build"/>. Routing is standard shared mode only: do not combine it with
+    /// <see cref="WithDevice"/>, <see cref="WithExclusiveMode"/>, or <see cref="WithLowLatency"/>.
+    /// Because there is no fixed endpoint, <see cref="WasapiPlayer.DeviceVolume"/> is unavailable
+    /// (use <see cref="WasapiPlayer.Volume"/>/<see cref="WasapiPlayer.SessionVolume"/> instead).
+    /// </remarks>
+    public WasapiPlayerBuilder WithDefaultDeviceStreamRouting()
+    {
+        useDefaultDeviceRouting = true;
         return this;
     }
 
@@ -113,11 +134,47 @@ public class WasapiPlayerBuilder
     /// <summary>
     /// Builds the <see cref="WasapiPlayer"/> with the configured settings.
     /// </summary>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when <see cref="WithDefaultDeviceStreamRouting"/> was configured — automatic stream
+    /// routing is activated asynchronously, so <see cref="BuildAsync"/> must be used instead.
+    /// </exception>
     public WasapiPlayer Build()
     {
+        if (useDefaultDeviceRouting)
+        {
+            throw new InvalidOperationException(
+                "Automatic stream routing is activated asynchronously — call BuildAsync() instead of Build().");
+        }
+
         var actualDevice = device ?? GetDefaultRenderDevice();
         return new WasapiPlayer(actualDevice, shareMode, useEventSync, latencyMilliseconds,
             audioCategory, mmcssTaskName, preferLowLatency, requireLowLatency);
+    }
+
+    /// <summary>
+    /// Builds the <see cref="WasapiPlayer"/> with the configured settings. Required when
+    /// <see cref="WithDefaultDeviceStreamRouting"/> is used, since that activation path is asynchronous;
+    /// for all other configurations this simply wraps <see cref="Build"/>.
+    /// </summary>
+    public Task<WasapiPlayer> BuildAsync()
+    {
+        if (useDefaultDeviceRouting)
+        {
+            if (device != null)
+                throw new InvalidOperationException(
+                    "Automatic stream routing follows the default device, so it cannot be combined with WithDevice().");
+            if (shareMode == AudioClientShareMode.Exclusive)
+                throw new InvalidOperationException(
+                    "Automatic stream routing is only available in shared mode — it cannot be combined with WithExclusiveMode().");
+            if (preferLowLatency)
+                throw new InvalidOperationException(
+                    "IAudioClient3 low latency is not supported with automatic stream routing.");
+
+            return WasapiPlayer.CreateDefaultDeviceRoutingAsync(
+                useEventSync, latencyMilliseconds, audioCategory, mmcssTaskName);
+        }
+
+        return Task.FromResult(Build());
     }
 
     private static MMDevice GetDefaultRenderDevice()

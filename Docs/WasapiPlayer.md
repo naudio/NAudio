@@ -49,6 +49,23 @@ if (format == null)
 }
 ```
 
+## Following the default device (automatic stream routing)
+
+By default a player is bound to one endpoint: if the user switches the default playback device (or unplugs the current one) mid-playback, the stream stops. `WithDefaultDeviceStreamRouting()` opts into Windows' *automatic stream routing* instead — playback follows whatever the default render device currently is, and Windows transfers the stream to the new default seamlessly with no application code. Requires Windows 10 version 1607 or later.
+
+Activation is asynchronous (it uses `ActivateAudioInterfaceAsync` under the hood), so build with `BuildAsync()` rather than `Build()` — calling `Build()` throws:
+
+```c#
+await using var player = await new WasapiPlayerBuilder()
+    .WithDefaultDeviceStreamRouting()
+    .BuildAsync();
+
+player.Init(audioFile);
+player.Play();
+```
+
+Routing is standard shared mode only, so don't combine it with `WithDevice`, `WithExclusiveMode`, or `WithLowLatency` (each throws from `BuildAsync`). Because there is no fixed endpoint, `DeviceVolume` (endpoint-wide volume) is unavailable — use `Volume`/`SessionVolume` for per-application volume instead.
+
 ## Playing audio
 
 Usage mirrors any other `IWavePlayer`: call `Init` with your source, `Play` to start, `Stop` to stop, and subscribe to `PlaybackStopped` to know when playback ends. If a `SynchronizationContext` is present when the player is constructed (e.g. on a UI thread), `PlaybackStopped` is raised on that context.

@@ -91,6 +91,39 @@ public class BlockAlignmentReductionStreamTests
     }
 
     [Test]
+    public void ReadLargerThanBufferReturnsAllData()
+    {
+        // Reproduces #1022: a single read (or CopyTo chunk) larger than the
+        // internal circular buffer - sized at WaveFormat.AverageBytesPerSecond * 4 -
+        // used to truncate the stream. The fill loop asked the source for the whole
+        // request at once; CircularBuffer.Write silently dropped everything past its
+        // capacity and the loop then drained and discarded the rest of the source.
+        // The whole stream must come back regardless of read size.
+        const int streamLength = 80000;
+        BlockAlignedWaveStream inputStream = new BlockAlignedWaveStream(726, streamLength);
+        BlockAlignReductionStream blockStream = new BlockAlignReductionStream(inputStream);
+
+        // 8000 Hz * 2 bytes = 16000 AverageBytesPerSecond -> 64000 byte buffer.
+        // Read more than that in one call to exercise the overflow path.
+        Assert.That(blockStream.WaveFormat.AverageBytesPerSecond * 4, Is.LessThan(streamLength),
+            "test must request more than one buffer's worth in a single read");
+
+        byte[] readBuffer = new byte[streamLength];
+        int total = 0;
+        int read;
+        // Read may legitimately return a partial buffer (capacity-limited); keep
+        // reading until the stream is exhausted, exactly as Stream.CopyTo does.
+        while (total < streamLength && (read = blockStream.Read(readBuffer, total, streamLength - total)) > 0)
+        {
+            total += read;
+        }
+
+        Assert.That(total, Is.EqualTo(streamLength), "total bytes read");
+        Assert.That(blockStream.Position, Is.EqualTo(streamLength), "final position");
+        CheckReadBuffer(readBuffer, streamLength, 0);
+    }
+
+    [Test]
     public void RepositionToNonBlockAlignedPositionThrows()
     {
         // The setter must reject a non-block-aligned target value.

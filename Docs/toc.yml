@@ -96,6 +96,10 @@
   items:
     - name: Play SoundFont, SFZ and single-sample instruments
       href: Sampler.md
+- name: Networking
+  items:
+    - name: Stream live audio over the network (Network Chat)
+      href: NetworkChatDemo.md
 - name: Cross-platform & Linux
   items:
     - name: Cross-platform audio files with SoundFile

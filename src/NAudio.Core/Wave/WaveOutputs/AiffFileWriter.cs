@@ -16,6 +16,7 @@ public class AiffFileWriter : Stream
     private long dataChunkSize = 8;
     private readonly WaveFormat format;
     private readonly string filename;
+    private readonly bool ownsStream;
 
     /// <summary>
     /// Creates an Aiff file by reading all the data from a WaveProvider
@@ -49,9 +50,20 @@ public class AiffFileWriter : Stream
     /// </summary>
     /// <param name="outStream">Stream to be written to</param>
     /// <param name="format">Wave format to use</param>
+    /// <remarks>
+    /// The supplied stream is <b>not</b> owned by the writer: disposing the writer finalizes
+    /// the AIFF header and flushes the stream, but leaves it open for the caller to dispose.
+    /// Use the filename constructor if you want the writer to own and close the underlying file.
+    /// </remarks>
     public AiffFileWriter(Stream outStream, WaveFormat format)
+        : this(outStream, format, ownsStream: false)
+    {
+    }
+
+    private AiffFileWriter(Stream outStream, WaveFormat format, bool ownsStream)
     {
         this.outStream = outStream;
+        this.ownsStream = ownsStream;
         this.format = format;
         this.writer = new BinaryWriter(outStream, System.Text.Encoding.UTF8);
         this.writer.Write(System.Text.Encoding.UTF8.GetBytes("FORM"));
@@ -68,7 +80,7 @@ public class AiffFileWriter : Stream
     /// <param name="filename">The filename to write to</param>
     /// <param name="format">The Wave Format of the output data</param>
     public AiffFileWriter(string filename, WaveFormat format)
-        : this(new FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.Read), format)
+        : this(new FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.Read), format, ownsStream: true)
     {
         this.filename = filename;
     }
@@ -374,7 +386,17 @@ public class AiffFileWriter : Stream
                 {
                     // in a finally block as we don't want the FileStream to run its disposer in
                     // the GC thread if the code above caused an IOException (e.g. due to disk full)
-                    outStream.Dispose(); // will close the underlying base stream
+                    if (ownsStream)
+                    {
+                        // We opened the file (filename constructor), so we close it.
+                        outStream.Dispose(); // will close the underlying base stream
+                    }
+                    else
+                    {
+                        // The caller handed us the stream; finalize the file by flushing,
+                        // but leave the stream open for them to dispose.
+                        outStream.Flush();
+                    }
                     outStream = null;
                 }
             }

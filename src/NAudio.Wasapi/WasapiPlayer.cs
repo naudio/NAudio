@@ -621,21 +621,29 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
     /// </summary>
     public void Play()
     {
-        if (playbackState != PlaybackState.Playing)
+        // Already actively playing and not in the middle of an async Stop()? Nothing to do.
+        if (playbackState == PlaybackState.Playing && !stopRequested)
+            return;
+
+        // Resume from pause without restarting the playback thread.
+        if (playbackState == PlaybackState.Paused && !stopRequested)
         {
-            if (playbackState == PlaybackState.Stopped)
-            {
-                stopRequested = false;
-                stopEvent.Reset();
-                playThread = new Thread(PlayThread) { IsBackground = true, Name = "NAudio WasapiPlayer Playback" };
-                playbackState = PlaybackState.Playing;
-                playThread.Start();
-            }
-            else
-            {
-                playbackState = PlaybackState.Playing;
-            }
+            playbackState = PlaybackState.Playing;
+            return;
         }
+
+        // Either fully stopped, or a Stop() is still in flight (stopRequested) from a recent call —
+        // the common Stop()+Play() "restart" idiom. A new playback thread cannot start until the
+        // previous one has finished and released the audio device, so wait for it here. stopRequested
+        // is still set, so the outgoing thread sees the stop and exits; only then do we rearm and
+        // start fresh. This blocks briefly *only* during such a restart — a normal Play() from a
+        // stopped state does not wait.
+        JoinPlayThread();
+        stopRequested = false;
+        stopEvent.Reset();
+        playThread = new Thread(PlayThread) { IsBackground = true, Name = "NAudio WasapiPlayer Playback" };
+        playbackState = PlaybackState.Playing;
+        playThread.Start();
     }
 
     /// <summary>
@@ -650,6 +658,15 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
     /// latency-sensitive context. If you need to wait until the device has actually been released —
     /// for example before re-initializing with a different format or device — use
     /// <see cref="StopAsync"/>, or handle <see cref="PlaybackStopped"/>.
+    /// <para>
+    /// Calling <see cref="Play"/> immediately after <see cref="Stop"/> restarts playback correctly:
+    /// <see cref="Play"/> waits for the outgoing playback thread to release the device before
+    /// starting a new one. Because the stop is asynchronous, the stopped session still raises
+    /// <see cref="PlaybackStopped"/> (after the restart) — so a <see cref="PlaybackStopped"/> handler
+    /// that tears things down should check <see cref="PlaybackState"/> rather than assume playback is
+    /// finished. To restart with no stale event, await <see cref="StopAsync"/> before
+    /// <see cref="Play"/>.
+    /// </para>
     /// </remarks>
     public void Stop()
     {

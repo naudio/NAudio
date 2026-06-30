@@ -249,8 +249,9 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
         }
         finally
         {
-            audioClient.Stop();
-            audioClient.Reset();
+            // See SafeStopAndReset: the device may have gone away mid-capture, so cleanup must not
+            // throw and mask the real exception flowing out of the iterator to the caller.
+            SafeStopAndReset();
             captureState = CaptureState.Stopped;
             if (mmcssHandle != IntPtr.Zero)
                 NativeMethods.AvRevertMmThreadCharacteristics(mmcssHandle);
@@ -473,13 +474,27 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
         }
         finally
         {
-            audioClient.Stop();
-            audioClient.Reset();
+            // The device may already be gone (e.g. unplugged, or the default device changed),
+            // in which case Stop/Reset themselves fail. Never let cleanup mask the real exception
+            // or, worse, throw an unhandled exception on the capture thread and tear down the whole
+            // process — RecordingStopped must always fire so callers can recover (issue #672).
+            SafeStopAndReset();
             captureState = CaptureState.Stopped;
             if (mmcssHandle != IntPtr.Zero)
                 NativeMethods.AvRevertMmThreadCharacteristics(mmcssHandle);
             RaiseRecordingStopped(exception);
         }
+    }
+
+    /// <summary>
+    /// Best-effort stop and reset of the audio client during teardown. A device that has been
+    /// removed mid-capture fails these calls (AUDCLNT_E_DEVICE_INVALIDATED); the failure is not
+    /// actionable here, and must not be allowed to escape and crash the capture thread.
+    /// </summary>
+    private void SafeStopAndReset()
+    {
+        try { audioClient?.Stop(); } catch { /* device already gone */ }
+        try { audioClient?.Reset(); } catch { /* device already gone */ }
     }
 
     private void ReadAvailablePackets(AudioCaptureClient capture)

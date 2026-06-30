@@ -18,6 +18,7 @@ public class WasapiPlayerBuilder
     private bool preferLowLatency;
     private bool requireLowLatency;
     private bool useDefaultDeviceRouting;
+    private bool useRawMode;
 
     /// <summary>
     /// Use the specified audio device for playback.
@@ -132,6 +133,26 @@ public class WasapiPlayerBuilder
     }
 
     /// <summary>
+    /// Open a 'raw' audio stream that bypasses the system signal-processing pipeline — the audio
+    /// enhancements / APO effects (loudness equalization, bass boost, virtual surround, downmixing,
+    /// etc.) that Windows applies by default. Only endpoint-specific, always-on processing in the APO,
+    /// driver and hardware remains. Use this when you need the device to receive your samples
+    /// unaltered, for example to keep stereo channels isolated rather than mixed toward mono.
+    /// </summary>
+    /// <remarks>
+    /// Requires IAudioClient2 (Windows 8.1+); <see cref="WasapiPlayer.Init"/> throws
+    /// <see cref="InvalidOperationException"/> if the device does not support it. Compatible with shared
+    /// and exclusive mode, low latency, event/polling sync, a stream category and default-device stream
+    /// routing. In exclusive mode the engine is already bypassed, so raw mode mainly affects any
+    /// remaining driver/APO processing.
+    /// </remarks>
+    public WasapiPlayerBuilder WithRawMode()
+    {
+        useRawMode = true;
+        return this;
+    }
+
+    /// <summary>
     /// Builds the <see cref="WasapiPlayer"/> with the configured settings.
     /// </summary>
     /// <exception cref="InvalidOperationException">
@@ -148,7 +169,7 @@ public class WasapiPlayerBuilder
 
         var actualDevice = device ?? GetDefaultRenderDevice();
         return new WasapiPlayer(actualDevice, shareMode, useEventSync, latencyMilliseconds,
-            audioCategory, mmcssTaskName, preferLowLatency, requireLowLatency);
+            audioCategory, mmcssTaskName, preferLowLatency, requireLowLatency, useRawMode);
     }
 
     /// <summary>
@@ -171,7 +192,7 @@ public class WasapiPlayerBuilder
                     "IAudioClient3 low latency is not supported with automatic stream routing.");
 
             return WasapiPlayer.CreateDefaultDeviceRoutingAsync(
-                useEventSync, latencyMilliseconds, audioCategory, mmcssTaskName);
+                useEventSync, latencyMilliseconds, audioCategory, mmcssTaskName, useRawMode);
         }
 
         return Task.FromResult(Build());

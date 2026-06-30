@@ -21,6 +21,7 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
     private readonly string mmcssTaskName;
     private readonly bool preferLowLatency;
     private readonly bool requireLowLatency;
+    private readonly bool useRawMode;
     private readonly SynchronizationContext syncContext;
     private readonly EventWaitHandle stopEvent = new(false, EventResetMode.ManualReset);
 
@@ -158,7 +159,7 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
 
     internal WasapiPlayer(MMDevice device, AudioClientShareMode shareMode, bool useEventSync,
         int latencyMilliseconds, AudioStreamCategory? audioCategory, string mmcssTaskName,
-        bool preferLowLatency, bool requireLowLatency)
+        bool preferLowLatency, bool requireLowLatency, bool useRawMode = false)
     {
         mmDevice = device;
         this.shareMode = shareMode;
@@ -168,6 +169,7 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
         this.mmcssTaskName = mmcssTaskName;
         this.preferLowLatency = preferLowLatency;
         this.requireLowLatency = requireLowLatency;
+        this.useRawMode = useRawMode;
         syncContext = SynchronizationContext.Current;
 
         audioClient = device.CreateAudioClient();
@@ -179,7 +181,7 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
     // Routing is standard shared mode only (exclusive and IAudioClient3 low latency are rejected by the
     // builder), which keeps every MMDevice.CreateAudioClient() recovery path out of the routed flow.
     private WasapiPlayer(AudioClient activatedClient, bool useEventSync, int latencyMilliseconds,
-        AudioStreamCategory? audioCategory, string mmcssTaskName)
+        AudioStreamCategory? audioCategory, string mmcssTaskName, bool useRawMode)
     {
         mmDevice = null;
         shareMode = AudioClientShareMode.Shared;
@@ -189,6 +191,7 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
         this.mmcssTaskName = mmcssTaskName;
         preferLowLatency = false;
         requireLowLatency = false;
+        this.useRawMode = useRawMode;
         syncContext = SynchronizationContext.Current;
 
         audioClient = activatedClient;
@@ -196,12 +199,12 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
     }
 
     internal static async Task<WasapiPlayer> CreateDefaultDeviceRoutingAsync(bool useEventSync,
-        int latencyMilliseconds, AudioStreamCategory? audioCategory, string mmcssTaskName)
+        int latencyMilliseconds, AudioStreamCategory? audioCategory, string mmcssTaskName, bool useRawMode)
     {
         // Automatic stream routing follows the default render device, re-routing transparently when
         // the default changes. Activation is asynchronous, hence the async factory.
         var activatedClient = await AudioClient.ActivateDefaultDeviceAsync(DataFlow.Render).ConfigureAwait(false);
-        return new WasapiPlayer(activatedClient, useEventSync, latencyMilliseconds, audioCategory, mmcssTaskName);
+        return new WasapiPlayer(activatedClient, useEventSync, latencyMilliseconds, audioCategory, mmcssTaskName, useRawMode);
     }
 
     /// <summary>
@@ -396,16 +399,34 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
     }
 
 
+    /// <summary>
+    /// Applies the requested audio category and/or raw stream option via IAudioClient2. Must be called
+    /// before <see cref="AudioClient.Initialize"/> — and again after any <see cref="audioClient"/>
+    /// recreation, since a fresh client starts with default (processed) properties. Raw mode bypasses the
+    /// system signal-processing (audio enhancements) pipeline; unlike a bare category request a silent
+    /// no-op would defeat the purpose, so it is an error if the device has no IAudioClient2 (the routed
+    /// and exclusive endpoints used here do, so this only bites genuinely legacy devices).
+    /// </summary>
+    private void ApplyClientProperties()
+    {
+        if (useRawMode && !audioClient.SupportsAudioClient2)
+            throw new InvalidOperationException(
+                "Raw mode requires IAudioClient2, which this device does not support.");
+
+        if ((audioCategory.HasValue || useRawMode) && audioClient.SupportsAudioClient2)
+        {
+            audioClient.SetClientProperties(
+                audioCategory ?? AudioStreamCategory.Other,
+                useRawMode ? AudioClientStreamOptions.Raw : AudioClientStreamOptions.None);
+        }
+    }
+
     private void InitializeAudioClient(WaveFormat sourceFormat)
     {
         long latencyRefTimes = latencyMilliseconds * 10000L;
         OutputWaveFormat = sourceFormat;
 
-        // Set audio category via IAudioClient2 if requested. Must happen before Initialize.
-        if (audioCategory.HasValue && audioClient.SupportsAudioClient2)
-        {
-            audioClient.SetClientProperties(audioCategory.Value);
-        }
+        ApplyClientProperties();
 
         if (shareMode == AudioClientShareMode.Exclusive)
         {
@@ -563,9 +584,11 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
         catch (COMException)
         {
             // The engine declined this period/format combination. The client may be in a partially
-            // initialized state, so recreate it before the standard path runs.
+            // initialized state, so recreate it before the standard path runs — re-applying the client
+            // properties (e.g. raw mode) the fresh client would otherwise have lost.
             audioClient.Dispose();
             audioClient = mmDevice.CreateAudioClient();
+            ApplyClientProperties();
             return false;
         }
 
@@ -601,6 +624,7 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
                 long newLatencyRefTimes = (long)(10000000.0 / OutputWaveFormat.SampleRate * audioClient.BufferSize + 0.5);
                 audioClient.Dispose();
                 audioClient = mmDevice.CreateAudioClient();
+                ApplyClientProperties();
                 audioClient.Initialize(shareMode, AudioClientStreamFlags.EventCallback | flags,
                     newLatencyRefTimes, newLatencyRefTimes, OutputWaveFormat, Guid.Empty);
             }

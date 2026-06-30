@@ -32,6 +32,11 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
     private EventWaitHandle frameEvent;
     private Thread playThread;
     private volatile PlaybackState playbackState;
+    // Termination is driven by this flag (and stopEvent), not by publishing PlaybackState.Stopped.
+    // That lets the play thread keep PlaybackState.Stopped as its final act — set only after the
+    // device has been stopped and reset — so an observer that polls PlaybackState and disposes can
+    // never race the thread's last COM access (see Stop/PlayThread and issue #970).
+    private volatile bool stopRequested;
     private IWaveProvider waveProvider;
 
     /// <summary>
@@ -620,6 +625,7 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
         {
             if (playbackState == PlaybackState.Stopped)
             {
+                stopRequested = false;
                 stopEvent.Reset();
                 playThread = new Thread(PlayThread) { IsBackground = true, Name = "NAudio WasapiPlayer Playback" };
                 playbackState = PlaybackState.Playing;
@@ -633,17 +639,42 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
     }
 
     /// <summary>
-    /// Stop playback and flush buffers.
+    /// Requests that playback stop, and returns immediately without waiting for the playback thread
+    /// to finish. The device is stopped and flushed on the playback thread; completion is signalled
+    /// by the <see cref="PlaybackStopped"/> event. <see cref="PlaybackState"/> therefore remains
+    /// <see cref="PlaybackState.Playing"/> (or <see cref="PlaybackState.Paused"/>) until that event
+    /// fires.
     /// </summary>
+    /// <remarks>
+    /// This is the everyday "stop playback" call and is safe to use from a UI thread or other
+    /// latency-sensitive context. If you need to wait until the device has actually been released —
+    /// for example before re-initializing with a different format or device — use
+    /// <see cref="StopAsync"/>, or handle <see cref="PlaybackStopped"/>.
+    /// </remarks>
     public void Stop()
     {
         if (playbackState != PlaybackState.Stopped)
         {
-            playbackState = PlaybackState.Stopped;
+            stopRequested = true;
             stopEvent.Set();
-            playThread?.Join();
-            playThread = null;
         }
+    }
+
+    /// <summary>
+    /// Requests that playback stop and returns a task that completes once the playback thread has
+    /// fully stopped — the audio device has been stopped, reset and is free to be reused, and
+    /// <see cref="PlaybackState"/> has reached <see cref="PlaybackState.Stopped"/>. The returned
+    /// task does not block the calling thread while it waits.
+    /// </summary>
+    /// <remarks>
+    /// Use this when the next step depends on the device being released (e.g. re-<see cref="Init"/>
+    /// with a different source or endpoint, or deterministic teardown inside an async method). For a
+    /// plain "stop now, don't wait" call use <see cref="Stop"/> instead.
+    /// </remarks>
+    public Task StopAsync()
+    {
+        Stop();
+        return JoinPlayThreadAsync();
     }
 
     /// <summary>
@@ -671,52 +702,55 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
             bufferFrameCount = audioClient.BufferSize;
             bytesPerFrame = OutputWaveFormat.BlockAlign;
 
-            // Fill the initial buffer
-            if (FillBuffer(bufferFrameCount))
-                return;
-
-            var waitHandles = (isUsingEventSync || frameEvent != null)
-                ? new WaitHandle[] { frameEvent, stopEvent }
-                : null;
-
-            audioClient.Start();
-
-            var reachedEndOfStream = false;
-            while (playbackState != PlaybackState.Stopped)
+            // Fill the initial buffer. A zero-length source ends immediately, before the device is
+            // ever started; the finally block still publishes Stopped and raises PlaybackStopped.
+            if (!FillBuffer(bufferFrameCount))
             {
-                if (waitHandles != null)
-                {
-                    WaitHandle.WaitAny(waitHandles, 3 * latencyMilliseconds, false);
-                }
-                else
-                {
-                    stopEvent.WaitOne(latencyMilliseconds / 2, false);
-                }
+                var waitHandles = (isUsingEventSync || frameEvent != null)
+                    ? new WaitHandle[] { frameEvent, stopEvent }
+                    : null;
 
-                if (playbackState == PlaybackState.Playing)
+                audioClient.Start();
+
+                var reachedEndOfStream = false;
+                while (!stopRequested)
                 {
-                    if (reachedEndOfStream)
+                    if (waitHandles != null)
                     {
-                        if (shareMode == AudioClientShareMode.Exclusive || audioClient.CurrentPadding == 0)
-                            break;
-                        continue;
+                        WaitHandle.WaitAny(waitHandles, 3 * latencyMilliseconds, false);
+                    }
+                    else
+                    {
+                        stopEvent.WaitOne(latencyMilliseconds / 2, false);
                     }
 
-                    int numFramesPadding = (isUsingEventSync && shareMode == AudioClientShareMode.Exclusive)
-                        ? 0
-                        : audioClient.CurrentPadding;
-                    int numFramesAvailable = bufferFrameCount - numFramesPadding;
-                    if (numFramesAvailable > 10)
+                    if (stopRequested)
+                        break;
+
+                    if (playbackState == PlaybackState.Playing)
                     {
-                        if (FillBuffer(numFramesAvailable))
-                            reachedEndOfStream = true;
+                        if (reachedEndOfStream)
+                        {
+                            if (shareMode == AudioClientShareMode.Exclusive || audioClient.CurrentPadding == 0)
+                                break;
+                            continue;
+                        }
+
+                        int numFramesPadding = (isUsingEventSync && shareMode == AudioClientShareMode.Exclusive)
+                            ? 0
+                            : audioClient.CurrentPadding;
+                        int numFramesAvailable = bufferFrameCount - numFramesPadding;
+                        if (numFramesAvailable > 10)
+                        {
+                            if (FillBuffer(numFramesAvailable))
+                                reachedEndOfStream = true;
+                        }
                     }
                 }
+
+                audioClient.Stop();
+                audioClient.Reset();
             }
-
-            audioClient.Stop();
-            playbackState = PlaybackState.Stopped;
-            audioClient.Reset();
         }
         catch (Exception e)
         {
@@ -724,6 +758,11 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
         }
         finally
         {
+            // Publish Stopped only now — after the device has been stopped and reset — so a caller
+            // that observes PlaybackState.Stopped (or handles PlaybackStopped) and then disposes
+            // cannot race the play thread's final COM access. Dispose/StopAsync additionally join
+            // this thread before releasing the audio client (#970).
+            playbackState = PlaybackState.Stopped;
             if (mmcssHandle != IntPtr.Zero)
                 NativeMethods.AvRevertMmThreadCharacteristics(mmcssHandle);
             RaisePlaybackStopped(exception);
@@ -772,33 +811,64 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IAsyncDisposable
     }
 
     /// <summary>
-    /// Stops playback (blocking) and releases all resources.
+    /// Stops playback, waits for the playback thread to finish (blocking), and releases all resources.
     /// </summary>
     public void Dispose()
     {
         Stop();
+        JoinPlayThread();
         DisposeCore();
         GC.SuppressFinalize(this);
     }
 
     /// <summary>
-    /// Stops playback without blocking the calling thread, then releases all resources.
-    /// Prefer this over <see cref="Dispose()"/> in async or UI contexts where blocking is undesirable.
+    /// Stops playback and releases all resources without blocking the calling thread while it waits
+    /// for the playback thread to finish. Prefer this over <see cref="Dispose()"/> in async or UI
+    /// contexts where blocking is undesirable.
     /// </summary>
     public async ValueTask DisposeAsync()
     {
-        if (playbackState != PlaybackState.Stopped)
-        {
-            playbackState = PlaybackState.Stopped;
-            stopEvent.Set();
-            if (playThread != null)
-            {
-                await Task.Run(() => playThread.Join());
-            }
-            playThread = null;
-        }
+        Stop();
+        await JoinPlayThreadAsync().ConfigureAwait(false);
         DisposeCore();
         GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Waits for the playback thread to finish, then clears the reference. The play thread does all
+    /// its COM cleanup before exiting, so joining here guarantees the audio client is idle before
+    /// <see cref="DisposeCore"/> releases it. Skips the join if called on the play thread itself
+    /// (e.g. from a PlaybackStopped handler raised with no SynchronizationContext) to avoid a
+    /// self-join deadlock.
+    /// </summary>
+    private void JoinPlayThread()
+    {
+        var thread = playThread;
+        if (thread != null && thread.ManagedThreadId != Environment.CurrentManagedThreadId)
+        {
+            thread.Join();
+            playThread = null;
+        }
+    }
+
+    /// <summary>
+    /// Asynchronous counterpart to <see cref="JoinPlayThread"/>: completes once the playback thread
+    /// has finished, without blocking the caller. Returns a completed task when there is nothing to
+    /// wait for, or when called on the play thread itself (avoiding a self-join deadlock).
+    /// </summary>
+    private Task JoinPlayThreadAsync()
+    {
+        var thread = playThread;
+        if (thread == null || thread.ManagedThreadId == Environment.CurrentManagedThreadId)
+        {
+            playThread = null;
+            return Task.CompletedTask;
+        }
+        return Task.Run(() =>
+        {
+            thread.Join();
+            playThread = null;
+        });
     }
 
     private void DisposeCore()

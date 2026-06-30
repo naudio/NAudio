@@ -310,7 +310,17 @@ public class WasapiOut : IWavePlayer, IWavePosition
         {
             playbackState = PlaybackState.Stopped;
             stopEventWaitHandle.Set();
-            playThread.Join();
+        }
+        // Wait for the playback thread to finish its COM cleanup (audioClient.Stop/Reset) before
+        // returning — even when playback has already ended on its own. On the natural end-of-stream
+        // path the thread publishes Stopped *before* calling Reset(), so a caller that observes
+        // Stopped (e.g. by polling PlaybackState) and then disposes could otherwise race the thread's
+        // final access to the audio client (RaceOnRCWCleanup, #970). Guard against a self-join in
+        // case Stop() is reentered from a PlaybackStopped handler raised with no SynchronizationContext.
+        var thread = playThread;
+        if (thread != null && thread.ManagedThreadId != Environment.CurrentManagedThreadId)
+        {
+            thread.Join();
             playThread = null;
         }
     }

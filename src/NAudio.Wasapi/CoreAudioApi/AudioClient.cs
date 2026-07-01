@@ -460,16 +460,29 @@ public class AudioClient : IDisposable
     /// <exception cref="InvalidOperationException">Thrown when the underlying device does not
     /// support IAudioClient2 (for example the process-loopback virtual device).</exception>
     public void SetClientProperties(AudioStreamCategory category)
+        => SetClientProperties(category, AudioClientStreamOptions.None);
+
+    /// <summary>
+    /// Sets the audio stream category and stream options for this client via IAudioClient2. Must be
+    /// called before <see cref="Initialize"/>. Use <see cref="AudioClientStreamOptions.Raw"/> to open a
+    /// 'raw' stream that bypasses signal processing (audio enhancements / APO effects) applied by the
+    /// system, leaving only endpoint-specific always-on processing in the APO, driver, and hardware.
+    /// </summary>
+    /// <param name="category">The audio stream category to request.</param>
+    /// <param name="options">The stream options to request (e.g. <see cref="AudioClientStreamOptions.Raw"/>).</param>
+    /// <exception cref="InvalidOperationException">Thrown when the underlying device does not
+    /// support IAudioClient2 (for example the process-loopback virtual device).</exception>
+    public void SetClientProperties(AudioStreamCategory category, AudioClientStreamOptions options)
     {
         if (audioClientInterface2 == null)
-            throw new InvalidOperationException("Setting the audio stream category requires IAudioClient2, which this device does not support.");
+            throw new InvalidOperationException("Setting client properties requires IAudioClient2, which this device does not support.");
 
         var properties = new AudioClientProperties
         {
             cbSize = (uint)Marshal.SizeOf<AudioClientProperties>(),
             bIsOffload = 0,
             eCategory = category,
-            Options = AudioClientStreamOptions.None
+            Options = options
         };
         var propertiesPointer = Marshal.AllocHGlobal(Marshal.SizeOf<AudioClientProperties>());
         try

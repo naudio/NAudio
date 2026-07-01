@@ -225,7 +225,11 @@ public class WasapiCapture : IWaveIn
         }
         finally
         {
-            client.Stop();
+            // The device may already be gone (e.g. unplugged, or the default device changed),
+            // in which case Stop itself fails with AUDCLNT_E_DEVICE_INVALIDATED. Swallow it so
+            // RecordingStopped still fires and the capture thread never terminates with an
+            // unhandled exception that tears down the whole process (issue #672).
+            try { client.Stop(); } catch { /* device already gone */ }
             // don't dispose - the AudioClient only gets disposed when WasapiCapture is disposed
         }
         captureThread = null;

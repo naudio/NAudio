@@ -21,6 +21,7 @@ public class WasapiRecorderBuilder
     private bool configureEchoCancellationReference;
     private string echoCancellationReferenceEndpointId;
     private bool useCommunicationsMode;
+    private bool useRawMode;
     private bool preferLowLatency;
     private bool requireLowLatency;
     private bool useDefaultDeviceRouting;
@@ -198,6 +199,27 @@ public class WasapiRecorderBuilder
     }
 
     /// <summary>
+    /// Open a 'raw' capture stream that bypasses the system signal-processing pipeline — the capture
+    /// audio enhancements / APO effects Windows applies by default. Only endpoint-specific, always-on
+    /// processing in the APO, driver and hardware remains. Use this when you want the microphone signal
+    /// unaltered by system effects.
+    /// </summary>
+    /// <remarks>
+    /// Requires IAudioClient2 (Windows 8.1+); <see cref="WasapiRecorder.StartRecording"/> throws
+    /// <see cref="InvalidOperationException"/> if the device does not support it. Compatible with shared
+    /// and exclusive mode, low latency, loopback capture, event/polling sync and default-device stream
+    /// routing. It is the opposite of <see cref="WithCommunicationsMode"/> /
+    /// <see cref="WithEchoCancellationReferenceEndpoint"/> (which request signal processing), so it cannot
+    /// be combined with them, nor with <see cref="WithProcessLoopback"/> (whose virtual device has no
+    /// IAudioClient2).
+    /// </remarks>
+    public WasapiRecorderBuilder WithRawMode()
+    {
+        useRawMode = true;
+        return this;
+    }
+
+    /// <summary>
     /// Capture audio from a specific process (and optionally its child processes).
     /// Requires Windows 10 2004 (build 19041) or later.
     /// This uses ActivateAudioInterfaceAsync with AUDIOCLIENT_PROCESS_LOOPBACK_PARAMS.
@@ -233,11 +255,26 @@ public class WasapiRecorderBuilder
                 "Automatic stream routing is activated asynchronously — call BuildAsync() instead of Build().");
         }
 
+        ValidateRawMode();
+
         var actualDevice = device ?? GetDefaultDevice(useLoopback);
         return new WasapiRecorder(actualDevice, shareMode, useEventSync,
             bufferMilliseconds, requestedFormat, mmcssTaskName, useLoopback,
             configureEchoCancellationReference, echoCancellationReferenceEndpointId, useCommunicationsMode,
-            preferLowLatency, requireLowLatency);
+            preferLowLatency, requireLowLatency, useRawMode);
+    }
+
+    /// <summary>
+    /// Raw mode bypasses the capture signal-processing pipeline, so it is mutually exclusive with the
+    /// communications mode and the acoustic-echo-cancellation reference endpoint, which exist to request
+    /// that processing.
+    /// </summary>
+    private void ValidateRawMode()
+    {
+        if (useRawMode && (useCommunicationsMode || configureEchoCancellationReference))
+            throw new InvalidOperationException(
+                "Raw mode cannot be combined with WithCommunicationsMode() or WithEchoCancellationReferenceEndpoint(): " +
+                "raw mode bypasses the signal-processing pipeline that those options enable.");
     }
 
     /// <summary>
@@ -259,6 +296,11 @@ public class WasapiRecorderBuilder
                 throw new InvalidOperationException(
                     "IAudioClient3 low latency is not supported with process-loopback capture.");
             }
+            if (useRawMode)
+            {
+                throw new InvalidOperationException(
+                    "Raw mode is not supported with process-loopback capture: the process-loopback virtual device has no IAudioClient2.");
+            }
             return WasapiRecorder.CreateProcessLoopbackAsync(
                 processLoopbackId.Value, processLoopbackMode,
                 useEventSync, bufferMilliseconds, requestedFormat, mmcssTaskName);
@@ -279,8 +321,10 @@ public class WasapiRecorderBuilder
                 throw new InvalidOperationException(
                     "IAudioClient3 low latency is not supported with automatic stream routing.");
 
+            ValidateRawMode();
+
             return WasapiRecorder.CreateDefaultDeviceRoutingAsync(
-                useEventSync, bufferMilliseconds, requestedFormat, mmcssTaskName);
+                useEventSync, bufferMilliseconds, requestedFormat, mmcssTaskName, useRawMode);
         }
 
         return Task.FromResult(Build());

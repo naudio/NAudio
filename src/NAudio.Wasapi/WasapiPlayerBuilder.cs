@@ -179,7 +179,7 @@ public class WasapiPlayerBuilder
 
     private static MMDevice GetDefaultRenderDevice()
     {
-        var enumerator = new MMDeviceEnumerator();
+        using var enumerator = new MMDeviceEnumerator();
         return enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Console);
     }
 }

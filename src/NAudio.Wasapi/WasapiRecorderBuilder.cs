@@ -288,7 +288,7 @@ public class WasapiRecorderBuilder
 
     private static MMDevice GetDefaultDevice(bool loopback)
     {
-        var enumerator = new MMDeviceEnumerator();
+        using var enumerator = new MMDeviceEnumerator();
         var flow = loopback ? DataFlow.Render : DataFlow.Capture;
         return enumerator.GetDefaultAudioEndpoint(flow, Role.Console);
     }

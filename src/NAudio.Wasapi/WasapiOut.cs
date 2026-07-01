@@ -92,7 +92,7 @@ public class WasapiOut : IWavePlayer, IWavePosition
         {
             throw new NotSupportedException("WASAPI supported only on Windows Vista and above");
         }
-        var enumerator = new MMDeviceEnumerator();
+        using var enumerator = new MMDeviceEnumerator();
         return enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Console);
     }
 

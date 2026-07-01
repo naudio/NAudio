@@ -113,7 +113,7 @@ public class WasapiCapture : IWaveIn
     /// <returns>The default audio capture device</returns>
     public static MMDevice GetDefaultCaptureDevice()
     {
-        var devices = new MMDeviceEnumerator();
+        using var devices = new MMDeviceEnumerator();
         return devices.GetDefaultAudioEndpoint(DataFlow.Capture, Role.Console);
     }
 

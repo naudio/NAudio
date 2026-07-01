@@ -29,6 +29,8 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
     private readonly bool preferLowLatency;
     private readonly bool requireLowLatency;
     private readonly MMDevice mmDevice;
+    private readonly string deviceId;
+    private readonly string deviceFriendlyName;
     private readonly SynchronizationContext syncContext;
 
     private AudioClient audioClient;
@@ -84,6 +86,29 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
     /// </summary>
     public int LatencyMilliseconds { get; private set; }
 
+    /// <summary>
+    /// The endpoint ID of the device this recorder was created on, captured at construction — the same
+    /// string accepted by <see cref="MMDeviceEnumerator.GetDevice"/>. Persist it to reopen the same
+    /// physical device later (for example after the endpoint is disabled and re-enabled).
+    /// </summary>
+    /// <remarks>
+    /// Null when there is no fixed capture endpoint — that is, process-loopback capture
+    /// (<see cref="WasapiRecorderBuilder.WithProcessLoopback"/>) or when following the default device
+    /// with automatic stream routing (<see cref="WasapiRecorderBuilder.WithDefaultDeviceStreamRouting"/>),
+    /// where Windows may transparently reroute the stream at any time. To discover the current default
+    /// endpoint in the routing case, resolve it yourself via
+    /// <see cref="MMDeviceEnumerator.GetDefaultAudioEndpoint"/> and track changes with an
+    /// <see cref="NAudio.CoreAudioApi.Interfaces.IMMNotificationClient"/>.
+    /// </remarks>
+    public string DeviceId => deviceId;
+
+    /// <summary>
+    /// The friendly name of the device this recorder was created on (e.g. "Microphone (USB Audio
+    /// Device)"), captured at construction. Useful for display and logging. Null when there is no
+    /// fixed capture endpoint — see <see cref="DeviceId"/>.
+    /// </summary>
+    public string DeviceFriendlyName => deviceFriendlyName;
+
     internal WasapiRecorder(MMDevice device, AudioClientShareMode shareMode, bool useEventSync,
         int bufferMilliseconds, WaveFormat requestedFormat, string mmcssTaskName, bool useLoopback = false,
         bool configureEchoCancellationReference = false, string echoCancellationReferenceEndpointId = null,
@@ -102,6 +127,8 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
         this.requireLowLatency = requireLowLatency;
 
         mmDevice = device;
+        deviceId = device.ID;
+        deviceFriendlyName = device.FriendlyName;
         audioClient = device.CreateAudioClient();
         waveFormat = requestedFormat ?? audioClient.MixFormat;
     }

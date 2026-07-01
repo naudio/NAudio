@@ -85,7 +85,7 @@ extensive correctness work during development — see [Docs/Sampler.md](Docs/Sam
  * `MMDevice.Dispose` now releases the device's property store deterministically (`PropertyStore` is now `IDisposable`), instead of leaving it to be reclaimed by COM finalization (#1145)
  * `AudioEndpointVolume.OnVolumeNotification`: fixed per-channel notifications all returning channel 0's volume (#351)
  * `CueListInterpreter`: WAV files with cue points but no labels now return cues with empty labels instead of null (#549)
- * `CueListInterpreter`: cue region lengths from `ltxt` sub-chunks are now surfaced via a new `Cue.Length` / `CueList.CueLengths` property (#1013)
+ * Cue region lengths (`ltxt` sub-chunks) are now read and written by `CueListInterpreter` / `WaveFileWriter` — new `Cue.Length` / `CueList.CueLengths` and a `WaveFileWriter.AddCue(position, label, length)` overload (#1013)
  * `ResamplerDmoStream`: fixed an infinite loop on `Read` after seeking and the loss of the resampler tail at end-of-stream (#607, #608)
  * `LoopStream.Read`: no longer spins at 100% CPU when the wrapped source can't satisfy a read (#1338)
  * `RawSourceWaveStream`: the `byte[]` constructor now disposes the `MemoryStream` it creates internally when the stream is disposed (it previously leaked); a caller-supplied source stream is still left open

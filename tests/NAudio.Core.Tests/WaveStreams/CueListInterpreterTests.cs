@@ -209,6 +209,29 @@ public class CueListInterpreterTests
     }
 
     [Test]
+    public void RoundTripsCueLengthViaWaveFileWriter()
+    {
+        var ms = new MemoryStream();
+        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format))
+        {
+            w.AddCue(100, "Point");
+            w.AddCue(200, "Region", 50);
+            w.WriteSamples(new short[] { 1, 2 }, 0, 2);
+        }
+        ms.Position = 0;
+        using var reader = new WaveFileReader(ms);
+        var cues = reader.Chunks.ReadCueList();
+        Assert.That(cues, Is.Not.Null);
+        Assert.That(cues.Count, Is.EqualTo(2));
+        Assert.That(cues[0].Position, Is.EqualTo(100));
+        Assert.That(cues[0].Label, Is.EqualTo("Point"));
+        Assert.That(cues[0].Length, Is.Null);
+        Assert.That(cues[1].Position, Is.EqualTo(200));
+        Assert.That(cues[1].Label, Is.EqualTo("Region"));
+        Assert.That(cues[1].Length, Is.EqualTo(50));
+    }
+
+    [Test]
     public void IgnoresLtxtChunkReferencingUnknownCueId()
     {
         // An ltxt referring to a cue id that isn't in the cue chunk should be silently

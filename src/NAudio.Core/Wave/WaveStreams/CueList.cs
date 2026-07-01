@@ -278,12 +278,15 @@ public class CueList
     }
 
     /// <summary>
-    /// Serialises the cue labels into the body of a <c>LIST</c> chunk of type <c>adtl</c>
-    /// (no chunk id / size header — starts with the <c>adtl</c> type marker).
+    /// Serialises the cue labels (and optional region lengths) into the body of a <c>LIST</c>
+    /// chunk of type <c>adtl</c> (no chunk id / size header — starts with the <c>adtl</c>
+    /// type marker). A cue whose <see cref="Cue.Length"/> is non-null gets a companion
+    /// <c>ltxt</c> sub-chunk emitted alongside its <c>labl</c>.
     /// </summary>
     internal byte[] SerializeAdtlListChunkData()
     {
         int labelChunkId = ChunkIdentifier.ChunkIdentifierToInt32("labl");
+        int ltxtChunkId = ChunkIdentifier.ChunkIdentifierToInt32("ltxt");
         using var ms = new MemoryStream();
         using var w = new BinaryWriter(ms);
         w.Write(Encoding.UTF8.GetBytes("adtl"));
@@ -298,6 +301,22 @@ public class CueList
             if ((labelArray.Length + 1) % 2 == 1)
             {
                 w.Write((byte)0);               // word-alignment padding
+            }
+
+            if (this[i].Length.HasValue)
+            {
+                // ltxt minimum payload: dwIdentifier + dwSampleLength + dwPurpose + 4x Int16 = 20 bytes.
+                // dwPurpose and the four language fields are left at 0 — consumers that only care
+                // about region length ignore them, and there's no widely-honoured semantic default.
+                w.Write(ltxtChunkId);
+                w.Write(20);
+                w.Write(i);                     // dwIdentifier (cue id)
+                w.Write(this[i].Length.Value);  // dwSampleLength
+                w.Write(0);                     // dwPurpose
+                w.Write((short)0);              // wCountry
+                w.Write((short)0);              // wLanguage
+                w.Write((short)0);              // wDialect
+                w.Write((short)0);              // wCodePage
             }
         }
         return ms.ToArray();

@@ -258,6 +258,24 @@ public class WaveFileWriter : Stream
         bufferedCues.Add(new Cue(position, label));
     }
 
+    /// <summary>
+    /// Adds a cue point with a label and a region length in samples. An <c>ltxt</c>
+    /// sub-chunk is emitted alongside the label so the cue reads back as a region rather
+    /// than a point marker.
+    /// </summary>
+    /// <param name="position">Sample position of the cue point.</param>
+    /// <param name="label">Text label (stored as UTF-8).</param>
+    /// <param name="length">Length in samples of the region starting at <paramref name="position"/>.</param>
+    public void AddCue(int position, string label, int length)
+    {
+        ThrowIfDisposed();
+        if (bufferedCues == null)
+        {
+            bufferedCues = new CueList();
+        }
+        bufferedCues.Add(new Cue(position, label, length));
+    }
+
     private void EnsureHeaderFinalized()
     {
         if (headerFinalized) return;

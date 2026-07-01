@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using NAudio.Wave;
 
@@ -26,8 +27,27 @@ public class CachedSound
     public CachedSound(string audioFileName)
     {
         using var audioFileReader = new AudioFileReader(audioFileName);
-        // TODO: could add resampling in here if required
         WaveFormat = audioFileReader.WaveFormat;
+        AudioData = ReadAllSamples(audioFileReader);
+    }
+
+    /// <summary>
+    /// Creates a new CachedSound from a stream (e.g. an embedded resource or in-memory byte
+    /// array). The stream must be readable and seekable; the caller retains ownership of it.
+    /// </summary>
+    public CachedSound(Stream audioStream)
+    {
+        using var audioFileReader = new AudioFileReader(audioStream);
+        WaveFormat = audioFileReader.WaveFormat;
+        AudioData = ReadAllSamples(audioFileReader);
+    }
+
+    /// <summary>
+    /// Reads an entire AudioFileReader into a float array
+    /// </summary>
+    private static float[] ReadAllSamples(AudioFileReader audioFileReader)
+    {
+        // TODO: could add resampling in here if required
         var wholeFile = new List<float>((int)(audioFileReader.Length / 4));
         var readBuffer = new float[audioFileReader.WaveFormat.SampleRate * audioFileReader.WaveFormat.Channels];
         int samplesRead;
@@ -35,6 +55,6 @@ public class CachedSound
         {
             wholeFile.AddRange(readBuffer.Take(samplesRead));
         }
-        AudioData = wholeFile.ToArray();
+        return wholeFile.ToArray();
     }
 }

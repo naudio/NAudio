@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using NAudio.Wave.SampleProviders;
 
@@ -17,10 +18,10 @@ namespace NAudio.Wave;
 public class AudioFileReader : WaveStream, ISampleProvider
 {
     private WaveStream readerStream; // the waveStream which we will use for all positioning
-    private readonly SampleChannel sampleChannel; // sample provider that gives us most stuff we need
-    private readonly int destBytesPerSample;
-    private readonly int sourceBytesPerSample;
-    private readonly long length;
+    private SampleChannel sampleChannel; // sample provider that gives us most stuff we need
+    private int destBytesPerSample;
+    private int sourceBytesPerSample;
+    private long length;
     private readonly object lockObject;
 
     /// <summary>
@@ -32,6 +33,33 @@ public class AudioFileReader : WaveStream, ISampleProvider
         lockObject = new object();
         FileName = fileName;
         CreateReaderStream(fileName);
+        Init();
+    }
+
+    /// <summary>
+    /// Initializes a new instance of AudioFileReader from a stream. The audio format is
+    /// detected from the stream contents, so no file name is required. WAV and AIFF streams
+    /// are handled by the cross-platform readers; any other format is passed to Media
+    /// Foundation (which requires the NAudio.Wasapi package and Windows).
+    /// </summary>
+    /// <param name="inputStream">The stream to read from. It must be readable and seekable, and
+    /// the caller retains ownership of it — disposing the AudioFileReader does not dispose the
+    /// underlying stream.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="inputStream"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException"><paramref name="inputStream"/> is unreadable or unseekable.</exception>
+    public AudioFileReader(Stream inputStream)
+    {
+        ArgumentNullException.ThrowIfNull(inputStream);
+        lockObject = new object();
+        CreateReaderStream(inputStream);
+        Init();
+    }
+
+    /// <summary>
+    /// Sets up the sample channel and cached metrics once <see cref="readerStream"/> is created
+    /// </summary>
+    private void Init()
+    {
         sourceBytesPerSample = (readerStream.WaveFormat.BitsPerSample / 8) * readerStream.WaveFormat.Channels;
         sampleChannel = new SampleChannel(readerStream, false);
         destBytesPerSample = 4 * sampleChannel.WaveFormat.Channels;
@@ -83,8 +111,82 @@ public class AudioFileReader : WaveStream, ISampleProvider
 #endif
         }
     }
+
     /// <summary>
-    /// File Name
+    /// Creates the reader stream from an already-open stream, detecting the format from the
+    /// stream contents and ensuring we end up in PCM/IEEE float.
+    /// </summary>
+    /// <param name="inputStream">The input stream</param>
+    private void CreateReaderStream(Stream inputStream)
+    {
+        if (!inputStream.CanRead)
+            throw new ArgumentException("Stream must be readable.", nameof(inputStream));
+        if (!inputStream.CanSeek)
+            throw new ArgumentException("Stream must be seekable.", nameof(inputStream));
+
+        switch (DetectStreamFormat(inputStream))
+        {
+            case StreamAudioFormat.Wave:
+                readerStream = new WaveFileReader(inputStream);
+                if (readerStream.WaveFormat.Encoding != WaveFormatEncoding.Pcm && readerStream.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
+                {
+#if !WINDOWS
+                    throw new InvalidOperationException("WAV files with non-PCM encoding require Windows for ACM codec conversion");
+#else
+                    readerStream = WaveFormatConversionStream.CreatePcmStream(readerStream);
+                    readerStream = new BlockAlignReductionStream(readerStream);
+#endif
+                }
+                break;
+            case StreamAudioFormat.Aiff:
+                readerStream = new AiffFileReader(inputStream);
+                break;
+            default:
+#if WASAPI
+                // fall back to Media Foundation, which detects the format itself and handles
+                // MP3, WMA, AAC/MP4, FLAC and more. Media Foundation is the default MP3 path in
+                // NAudio 3, so no Mp3FileReader fallback is needed here.
+                readerStream = new StreamMediaFoundationReader(inputStream);
+                break;
+#else
+                throw new InvalidOperationException("Unsupported stream format. Only WAV and AIFF streams are supported without the NAudio.Wasapi package (which provides Media Foundation).");
+#endif
+        }
+    }
+
+    private enum StreamAudioFormat
+    {
+        Wave,
+        Aiff,
+        Other
+    }
+
+    /// <summary>
+    /// Peeks at the first few bytes of a stream to identify WAV and AIFF containers by their
+    /// magic bytes, restoring the stream position afterwards. Anything else is reported as
+    /// <see cref="StreamAudioFormat.Other"/> so it can be handed to Media Foundation.
+    /// </summary>
+    private static StreamAudioFormat DetectStreamFormat(Stream stream)
+    {
+        long position = stream.Position;
+        Span<byte> header = stackalloc byte[12];
+        int read = stream.ReadAtLeast(header, header.Length, throwOnEndOfStream: false);
+        stream.Position = position;
+
+        if (read >= 12)
+        {
+            ReadOnlySpan<byte> h = header;
+            if (h.Slice(0, 4).SequenceEqual("RIFF"u8) && h.Slice(8, 4).SequenceEqual("WAVE"u8))
+                return StreamAudioFormat.Wave;
+            if (h.Slice(0, 4).SequenceEqual("FORM"u8) &&
+                (h.Slice(8, 4).SequenceEqual("AIFF"u8) || h.Slice(8, 4).SequenceEqual("AIFC"u8)))
+                return StreamAudioFormat.Aiff;
+        }
+        return StreamAudioFormat.Other;
+    }
+
+    /// <summary>
+    /// File Name (null when this reader was created from a stream)
     /// </summary>
     public string FileName { get; }
 

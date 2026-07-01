@@ -20,16 +20,33 @@ public class Cue
     /// Label of the cue
     /// </summary>
     public string Label { get; }
+    /// <summary>
+    /// Cue length in samples, or <c>null</c> if the cue is a point marker rather than
+    /// a region. Populated from the <c>ltxt</c> sub-chunk of a WAV <c>LIST/adtl</c> chunk.
+    /// </summary>
+    public int? Length { get; }
 
     /// <summary>
-    /// Creates a Cue based on a sample position and label 
+    /// Creates a Cue based on a sample position and label
     /// </summary>
     /// <param name="position"></param>
     /// <param name="label"></param>
-    public Cue(int position, string label)
+    public Cue(int position, string label) : this(position, label, null)
+    {
+    }
+
+    /// <summary>
+    /// Creates a Cue based on a sample position, label and region length in samples.
+    /// </summary>
+    /// <param name="position">Sample position of the cue point.</param>
+    /// <param name="label">Text label, or <c>null</c> for an empty label.</param>
+    /// <param name="length">Length in samples of the region starting at <paramref name="position"/>,
+    /// or <c>null</c> for a point marker with no length.</param>
+    public Cue(int position, string label, int? length)
     {
         Position = position;
         Label = label ?? string.Empty;
+        Length = length;
     }
 }
 
@@ -69,13 +86,27 @@ public class Cue
 ///   Int32 typeID;      /* 'adtl' */
 /// } 
 ///
-/// struct LabelChunk 
+/// struct LabelChunk
 /// {
 ///   Int32 chunkID;
 ///   Int32 chunkSize;
 ///   Int32 dwIdentifier;
 ///   Char[] dwText;  /* null-terminated; RIFF does not mandate an encoding — NAudio uses UTF-8 */
 /// } LabelChunk;
+///
+/// struct TextWithDataLengthChunk
+/// {
+///   Int32 chunkID;         /* 'ltxt' */
+///   Int32 chunkSize;
+///   Int32 dwIdentifier;
+///   Int32 dwSampleLength;
+///   Int32 dwPurpose;
+///   Int16 wCountry;
+///   Int16 wLanguage;
+///   Int16 wDialect;
+///   Int16 wCodePage;
+///   /* optional trailing text may follow */
+/// } TextWithDataLengthChunk;
 /// </remarks>
 public class CueList
 {
@@ -132,6 +163,24 @@ public class CueList
     }
 
     /// <summary>
+    /// Gets region lengths in samples for the embedded cues. Entries are <c>null</c>
+    /// for cues that are point markers rather than regions.
+    /// </summary>
+    /// <returns>Array containing the cue lengths.</returns>
+    public int?[] CueLengths
+    {
+        get
+        {
+            int?[] lengths = new int?[cues.Count];
+            for (int i = 0; i < cues.Count; i++)
+            {
+                lengths[i] = cues[i].Length;
+            }
+            return lengths;
+        }
+    }
+
+    /// <summary>
     /// Creates a cue list from the cue RIFF chunk and the list RIFF chunk
     /// </summary>
     /// <param name="cueChunkData">The data contained in the cue chunk</param>
@@ -150,7 +199,9 @@ public class CueList
         }
 
         string[] labels = new string[cueCount];
+        int?[] lengths = new int?[cueCount];
         var labelChunkId = ChunkIdentifier.ChunkIdentifierToInt32("labl");
+        var ltxtChunkId = ChunkIdentifier.ChunkIdentifierToInt32("ltxt");
 
         // Parse list chunk - properly handle all chunk types.
         // listChunkData may be null when the file has cue points but no adtl labels
@@ -175,6 +226,16 @@ public class CueList
                     }
                 }
             }
+            else if (chunkId == ltxtChunkId && chunkSize >= 20 && listChunkData.Length - p >= chunkSize + 8)
+            {
+                // Text-with-data-length: carries a region length (dwSampleLength) for a cue point.
+                // Minimum payload is 20 bytes: dwIdentifier + dwSampleLength + dwPurpose + 4x Int16.
+                var cueId = BitConverter.ToInt32(listChunkData, p + 8);
+                if (cueIndex.TryGetValue(cueId, out var cueIndex_value))
+                {
+                    lengths[cueIndex_value] = BitConverter.ToInt32(listChunkData, p + 12);
+                }
+            }
 
             // Move to next chunk: account for proper word-alignment padding
             // chunkSize is the size of the chunk data, add 8 for chunk ID and size fields
@@ -189,7 +250,7 @@ public class CueList
 
         for (int i = 0; i < cueCount; i++)
         {
-            cues.Add(new Cue(positions[i], labels[i]));
+            cues.Add(new Cue(positions[i], labels[i], lengths[i]));
         }
     }
 
@@ -217,12 +278,15 @@ public class CueList
     }
 
     /// <summary>
-    /// Serialises the cue labels into the body of a <c>LIST</c> chunk of type <c>adtl</c>
-    /// (no chunk id / size header — starts with the <c>adtl</c> type marker).
+    /// Serialises the cue labels (and optional region lengths) into the body of a <c>LIST</c>
+    /// chunk of type <c>adtl</c> (no chunk id / size header — starts with the <c>adtl</c>
+    /// type marker). A cue whose <see cref="Cue.Length"/> is non-null gets a companion
+    /// <c>ltxt</c> sub-chunk emitted alongside its <c>labl</c>.
     /// </summary>
     internal byte[] SerializeAdtlListChunkData()
     {
         int labelChunkId = ChunkIdentifier.ChunkIdentifierToInt32("labl");
+        int ltxtChunkId = ChunkIdentifier.ChunkIdentifierToInt32("ltxt");
         using var ms = new MemoryStream();
         using var w = new BinaryWriter(ms);
         w.Write(Encoding.UTF8.GetBytes("adtl"));
@@ -237,6 +301,22 @@ public class CueList
             if ((labelArray.Length + 1) % 2 == 1)
             {
                 w.Write((byte)0);               // word-alignment padding
+            }
+
+            if (this[i].Length.HasValue)
+            {
+                // ltxt minimum payload: dwIdentifier + dwSampleLength + dwPurpose + 4x Int16 = 20 bytes.
+                // dwPurpose and the four language fields are left at 0 — consumers that only care
+                // about region length ignore them, and there's no widely-honoured semantic default.
+                w.Write(ltxtChunkId);
+                w.Write(20);
+                w.Write(i);                     // dwIdentifier (cue id)
+                w.Write(this[i].Length.Value);  // dwSampleLength
+                w.Write(0);                     // dwPurpose
+                w.Write((short)0);              // wCountry
+                w.Write((short)0);              // wLanguage
+                w.Write((short)0);              // wDialect
+                w.Write((short)0);              // wCodePage
             }
         }
         return ms.ToArray();

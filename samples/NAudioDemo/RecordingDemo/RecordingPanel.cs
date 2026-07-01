@@ -79,6 +79,8 @@ public partial class RecordingPanel : UserControl
     private readonly MMDeviceEnumerator deviceEnumerator = new();
     private readonly DeviceChangeNotifier deviceChangeNotifier;
     private bool populating;
+    private bool isRecording;
+    private bool devicesChangedWhileRecording;
 
     public RecordingPanel()
     {
@@ -100,6 +102,7 @@ public partial class RecordingPanel : UserControl
 
         outputFolder = Path.Combine(Path.GetTempPath(), "NAudioDemo");
         Directory.CreateDirectory(outputFolder);
+        PopulateExistingRecordings();
 
         comboRecordingApi.SelectedIndexChanged += (s, a) => OnApiChanged();
         comboDevice.SelectedIndexChanged += (s, a) => OnDeviceChanged();
@@ -107,7 +110,29 @@ public partial class RecordingPanel : UserControl
         comboBoxSampleRate.SelectedIndexChanged += (s, a) => Cleanup();
         comboBoxChannels.SelectedIndexChanged += (s, a) => Cleanup();
 
-        comboRecordingApi.SelectedIndex = 0; // triggers OnApiChanged -> populates devices
+        // Default to the modern WasapiRecorder; setting the index triggers OnApiChanged -> populates devices.
+        comboRecordingApi.SelectedIndex = Array.FindIndex(ApiOptions, o => o.Api == RecordingApi.WasapiRecorderCapture);
+    }
+
+    /// <summary>
+    /// Lists any .wav files already in the output folder (e.g. from previous sessions) so old
+    /// recordings can be played back or deleted without leaving the demo.
+    /// </summary>
+    private void PopulateExistingRecordings()
+    {
+        listBoxRecordings.Items.Clear();
+        var existing = new DirectoryInfo(outputFolder)
+            .GetFiles("*.wav")
+            .OrderBy(f => f.LastWriteTimeUtc)
+            .Select(f => f.Name);
+        foreach (var name in existing)
+        {
+            listBoxRecordings.Items.Add(name);
+        }
+        if (listBoxRecordings.Items.Count > 0)
+        {
+            listBoxRecordings.SelectedIndex = listBoxRecordings.Items.Count - 1;
+        }
     }
 
     private ApiOption SelectedApi => (ApiOption)comboRecordingApi.SelectedItem;
@@ -223,10 +248,21 @@ public partial class RecordingPanel : UserControl
             try { captureMmDevice.AudioEndpointVolume.Mute = false; } catch { /* best effort */ }
         }
 
-        outputFilename = BuildFileName(api);
-        writer = new WaveFileWriter(Path.Combine(outputFolder, outputFilename), captureDevice.WaveFormat);
-        captureDevice.StartRecording();
-        SetControlStates(true);
+        try
+        {
+            outputFilename = BuildFileName(api);
+            writer = new WaveFileWriter(Path.Combine(outputFolder, outputFilename), captureDevice.WaveFormat);
+            captureDevice.StartRecording();
+            SetControlStates(true);
+        }
+        catch (Exception ex)
+        {
+            // Initializing/starting the device can fail (e.g. it was unplugged after selection).
+            // Tear the half-started recording down so the UI returns to a clean, restartable state.
+            Cleanup();
+            SetControlStates(false);
+            MessageBox.Show(ex.Message, "Unable to start recording");
+        }
     }
 
     private IWaveIn CreateCaptureDevice()
@@ -326,6 +362,10 @@ public partial class RecordingPanel : UserControl
         progressBar1.Value = 0;
         if (e.Exception != null)
         {
+            // The capture errored mid-recording (e.g. the device was unplugged or the default
+            // device changed). Dispose the capture device so the next Start Recording builds a
+            // fresh one instead of reusing a recorder whose audio client is now invalidated.
+            Cleanup();
             MessageBox.Show(
                 $"A problem was encountered during recording: {e.Exception.Message}",
                 "Recording Error");
@@ -340,6 +380,18 @@ public partial class RecordingPanel : UserControl
 
     private void OnDevicesChanged()
     {
+        // A device add/remove/default-change notification can arrive while a recording is in
+        // progress (e.g. the user unplugs the active device, or the default device changes).
+        // Re-populating the combos here calls Cleanup() — which unsubscribes RecordingStopped and
+        // disposes the recorder (Joining the capture thread on the UI thread) — tearing down the
+        // live recording from a notification callback and leaving the UI stuck in the recording
+        // state with Stop doing nothing. Defer the refresh until the recording has stopped.
+        if (isRecording)
+        {
+            devicesChangedWhileRecording = true;
+            return;
+        }
+
         // Preserve the current selection by ID (WASAPI path) or device number (WaveIn path)
         // across re-enumeration. If the selected device has been removed, fall back to the default.
         var api = SelectedApi;
@@ -435,9 +487,18 @@ public partial class RecordingPanel : UserControl
 
     private void SetControlStates(bool isRecording)
     {
+        this.isRecording = isRecording;
         groupBoxRecordingApi.Enabled = !isRecording;
         buttonStartRecording.Enabled = !isRecording;
         buttonStopRecording.Enabled = isRecording;
+
+        // Apply any device-list refresh that was deferred because a device-change notification
+        // arrived mid-recording (see OnDevicesChanged).
+        if (!isRecording && devicesChangedWhileRecording)
+        {
+            devicesChangedWhileRecording = false;
+            OnDevicesChanged();
+        }
     }
 
     private void OnButtonDeleteClick(object sender, EventArgs e)

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Text;
 using NAudio.Utils;
 using NAudio.Wave;
 using NUnit.Framework;
@@ -174,6 +175,88 @@ public class CueListInterpreterTests
         Assert.That(cues[1].Label, Is.EqualTo("Beta"));
     }
 
+    [Test]
+    public void ReadsCueLengthFromLtxtChunk()
+    {
+        // Hand-built WAV: two cue points, one carrying a region length via an ltxt sub-chunk
+        // in the LIST/adtl. The writer doesn't emit ltxt itself, so we compose the chunks
+        // and let the interpreter parse them back.
+        var cueBytes = BuildCueChunkBody(
+            (cueId: 1, samplePosition: 100),
+            (cueId: 2, samplePosition: 200));
+        var adtlBytes = BuildAdtlListChunkBody(
+            (cueId: 1, label: "Point", sampleLength: null),
+            (cueId: 2, label: "Region", sampleLength: 50));
+
+        var ms = new MemoryStream();
+        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format))
+        {
+            w.AddChunk("cue ", cueBytes, ChunkPosition.AfterData);
+            w.AddChunk("LIST", adtlBytes, ChunkPosition.AfterData);
+            w.WriteSamples(new short[] { 1, 2 }, 0, 2);
+        }
+        ms.Position = 0;
+        using var reader = new WaveFileReader(ms);
+        var cues = reader.Chunks.Read(CueListInterpreter.Instance);
+        Assert.That(cues, Is.Not.Null);
+        Assert.That(cues.Count, Is.EqualTo(2));
+        Assert.That(cues[0].Position, Is.EqualTo(100));
+        Assert.That(cues[0].Label, Is.EqualTo("Point"));
+        Assert.That(cues[0].Length, Is.Null);
+        Assert.That(cues[1].Position, Is.EqualTo(200));
+        Assert.That(cues[1].Label, Is.EqualTo("Region"));
+        Assert.That(cues[1].Length, Is.EqualTo(50));
+    }
+
+    [Test]
+    public void RoundTripsCueLengthViaWaveFileWriter()
+    {
+        var ms = new MemoryStream();
+        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format))
+        {
+            w.AddCue(100, "Point");
+            w.AddCue(200, "Region", 50);
+            w.WriteSamples(new short[] { 1, 2 }, 0, 2);
+        }
+        ms.Position = 0;
+        using var reader = new WaveFileReader(ms);
+        var cues = reader.Chunks.ReadCueList();
+        Assert.That(cues, Is.Not.Null);
+        Assert.That(cues.Count, Is.EqualTo(2));
+        Assert.That(cues[0].Position, Is.EqualTo(100));
+        Assert.That(cues[0].Label, Is.EqualTo("Point"));
+        Assert.That(cues[0].Length, Is.Null);
+        Assert.That(cues[1].Position, Is.EqualTo(200));
+        Assert.That(cues[1].Label, Is.EqualTo("Region"));
+        Assert.That(cues[1].Length, Is.EqualTo(50));
+    }
+
+    [Test]
+    public void IgnoresLtxtChunkReferencingUnknownCueId()
+    {
+        // An ltxt referring to a cue id that isn't in the cue chunk should be silently
+        // dropped rather than throwing or corrupting a neighbouring cue.
+        var cueBytes = BuildCueChunkBody((cueId: 1, samplePosition: 100));
+        var adtlBytes = BuildAdtlListChunkBody(
+            (cueId: 1, label: "Real", sampleLength: null),
+            (cueId: 999, label: null, sampleLength: 12345));
+
+        var ms = new MemoryStream();
+        using (var w = new WaveFileWriter(new IgnoreDisposeStream(ms), Format))
+        {
+            w.AddChunk("cue ", cueBytes, ChunkPosition.AfterData);
+            w.AddChunk("LIST", adtlBytes, ChunkPosition.AfterData);
+            w.WriteSamples(new short[] { 1, 2 }, 0, 2);
+        }
+        ms.Position = 0;
+        using var reader = new WaveFileReader(ms);
+        var cues = reader.Chunks.Read(CueListInterpreter.Instance);
+        Assert.That(cues, Is.Not.Null);
+        Assert.That(cues.Count, Is.EqualTo(1));
+        Assert.That(cues[0].Label, Is.EqualTo("Real"));
+        Assert.That(cues[0].Length, Is.Null);
+    }
+
     // ---- helpers ------------------------------------------------------------
 
     /// <summary>
@@ -191,6 +274,66 @@ public class CueListInterpreterTests
         w.Write(0);                                 // dwChunkStart
         w.Write(0);                                 // dwBlockStart
         w.Write(samplePosition);                    // dwSampleOffset
+        return ms.ToArray();
+    }
+
+    /// <summary>
+    /// Builds a <c>cue </c> chunk body with the given cue points. Uses the sample position
+    /// as both <c>dwPosition</c> and <c>dwSampleOffset</c>, and points at the <c>data</c> chunk.
+    /// </summary>
+    private static byte[] BuildCueChunkBody(params (int cueId, int samplePosition)[] points)
+    {
+        using var ms = new MemoryStream();
+        using var w = new BinaryWriter(ms);
+        w.Write(points.Length);
+        foreach (var (cueId, samplePosition) in points)
+        {
+            w.Write(cueId);
+            w.Write(samplePosition);
+            w.Write(ChunkIdentifier.ChunkIdentifierToInt32("data"));
+            w.Write(0);
+            w.Write(0);
+            w.Write(samplePosition);
+        }
+        return ms.ToArray();
+    }
+
+    /// <summary>
+    /// Builds a <c>LIST</c> chunk body of type <c>adtl</c> containing a <c>labl</c> sub-chunk
+    /// for each entry, and an <c>ltxt</c> sub-chunk when <paramref name="entries"/> supplies
+    /// a <c>sampleLength</c>. The writer only emits <c>labl</c>, so we build these by hand
+    /// to exercise the reader's <c>ltxt</c> path.
+    /// </summary>
+    private static byte[] BuildAdtlListChunkBody(params (int cueId, string label, int? sampleLength)[] entries)
+    {
+        using var ms = new MemoryStream();
+        using var w = new BinaryWriter(ms);
+        w.Write(Encoding.UTF8.GetBytes("adtl"));
+        foreach (var (cueId, label, sampleLength) in entries)
+        {
+            if (label != null)
+            {
+                var labelBytes = Encoding.UTF8.GetBytes(label);
+                w.Write(ChunkIdentifier.ChunkIdentifierToInt32("labl"));
+                w.Write(labelBytes.Length + 1 + 4); // dwIdentifier + text + NUL
+                w.Write(cueId);
+                w.Write(labelBytes);
+                w.Write((byte)0);
+                if ((labelBytes.Length + 1) % 2 == 1) w.Write((byte)0); // word-align
+            }
+            if (sampleLength.HasValue)
+            {
+                w.Write(ChunkIdentifier.ChunkIdentifierToInt32("ltxt"));
+                w.Write(20); // dwIdentifier + dwSampleLength + dwPurpose + 4x Int16
+                w.Write(cueId);
+                w.Write(sampleLength.Value);
+                w.Write(0);       // dwPurpose
+                w.Write((short)0); // wCountry
+                w.Write((short)0); // wLanguage
+                w.Write((short)0); // wDialect
+                w.Write((short)0); // wCodePage
+            }
+        }
         return ms.ToArray();
     }
 

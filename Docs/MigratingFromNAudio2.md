@@ -209,6 +209,23 @@ The common `new WaveFileWriter(path, format)` filename usage is unaffected.
 - `SoundFont.SampleHeader`'s public fields are now properties. This is
   source-compatible for normal reads/writes but binary-breaking for compiled
   consumers and source-breaking for `ref`/`out` access to the old fields.
+- **`MixingWaveProvider32` was removed** — use `MixingSampleProvider` instead. It
+  was an untested work-in-progress that accepted only 32-bit IEEE-float inputs, so
+  it offered nothing over `MixingSampleProvider`, which mixes in float, converts
+  PCM inputs for you (`waveProvider.ToSampleProvider()`), and adds dynamic
+  add/remove, an input-ended event and `ReadFully`. If you need an `IWaveProvider`
+  out of it, call `.ToWaveProvider()`:
+
+  ```csharp
+  // before
+  var mixer = new MixingWaveProvider32();
+  mixer.AddInputStream(floatWaveProvider);
+
+  // after
+  var mixer = new MixingSampleProvider(new[] { waveProvider.ToSampleProvider() });
+  mixer.AddMixerInput(anotherProvider.ToSampleProvider());
+  IWaveProvider output = mixer.ToWaveProvider();   // if you need IWaveProvider
+  ```
 - `WaveBuffer` is deprecated — use `MemoryMarshal.Cast` to reinterpret buffers.
 - `StreamMediaFoundationReader` now throws `ArgumentException` for non-readable
   or non-seekable streams instead of failing later (#1288).

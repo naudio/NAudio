@@ -58,6 +58,7 @@ apps need only re-target to `net9.0` and adjust custom providers to the new
  * `WaveOut` / `WaveIn` now default to event-driven callbacks; the window-based variants are renamed `WaveOutWindow` / `WaveInWindow` in `NAudio.WinForms`
  * Some types moved package/namespace as part of the split — classic Windows MIDI I/O and `winmm` types to `NAudio.WinMM`; the DMO/DirectSound types into the new `NAudio.Dmo` package; plus smaller moves (`AudioVolumeLevel`, `CaptureState`, `DmoMp3FrameDecompressor`). Meta-package consumers are unaffected
  * `SimpleCompressorStream`, `ImpulseResponseConvolution` and `NAudio.Extras.Equalizer` were removed — superseded by `NAudio.Effects` (`CompressorEffect`, `ConvolutionReverbEffect`, `Equalizer`)
+ * `MixingWaveProvider32` was removed — it was an untested float-only mixer that offered nothing over `MixingSampleProvider` (use `waveProvider.ToSampleProvider()` for inputs and `.ToWaveProvider()` if you need an `IWaveProvider` out)
  * `WaveFileWriter` / `AiffFileWriter` no longer dispose a caller-supplied stream — the stream constructor now leaves the stream open (it still flushes/finalizes the header on `Dispose`), matching the readers' ownership rule; only the filename constructor owns and closes the file. The `IgnoreDisposeStream` wrapper is no longer needed when writing to a stream you want to keep. If you passed a throwaway stream and relied on the writer closing it, dispose it yourself or use the filename overload (#1040)
 
 #### Notable bug fixes

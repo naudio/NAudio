@@ -422,7 +422,7 @@ Existing `WasapiOut` and `WasapiCapture` are kept with `[Obsolete]` attributes p
 - [x] `DmoEffectWaveProvider` — reads directly into span and processes in-place via pinned `MediaObjectInPlace.Process(Span<byte>)`
 - [x] `BufferedWaveProvider` — `Read(Span<byte>)` backed by `CircularBuffer`
 - [x] `VolumeWaveProvider16`, `MonoToStereoProvider16`, `StereoToMonoProvider16`, `Wave16toFloatProvider`, `WaveFloatTo16Provider`
-- [x] `MixingWaveProvider32`, `MultiplexingWaveProvider`, `SilenceWaveProvider`, `WaveRecorder`, `WaveInProvider`
+- [x] `MultiplexingWaveProvider`, `SilenceWaveProvider`, `WaveRecorder`, `WaveInProvider`
 - [x] `WaveFormatConversionProvider` (NAudio.WinMM)
 
 **Sample-level producers (`ISampleProvider`):**

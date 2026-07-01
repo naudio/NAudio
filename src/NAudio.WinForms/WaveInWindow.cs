@@ -116,6 +116,11 @@ public class WaveInWindow : IWaveIn, IWaveLatency
         TimeSpan.FromMilliseconds(BufferMilliseconds * (NumberOfBuffers - 0.5));
 
     /// <inheritdoc/>
+    /// <remarks>
+    /// Mirrors <see cref="WaveIn.CurrentLatency"/>: returns the elapsed time since the most
+    /// recent buffer was delivered, which is a sawtooth reading ~0 at delivery and rising to
+    /// ~<see cref="BufferMilliseconds"/> just before the next one arrives.
+    /// </remarks>
     public TimeSpan CurrentLatency
     {
         get
@@ -123,8 +128,7 @@ public class WaveInWindow : IWaveIn, IWaveLatency
             long last = Volatile.Read(ref lastBufferDeliveredTimestamp);
             if (last == long.MinValue) return AverageLatency;
             long elapsed = Stopwatch.GetTimestamp() - last;
-            var sinceDelivery = TimeSpan.FromSeconds(elapsed / (double)Stopwatch.Frequency);
-            return sinceDelivery + TimeSpan.FromMilliseconds(BufferMilliseconds / 2.0);
+            return TimeSpan.FromSeconds(elapsed / (double)Stopwatch.Frequency);
         }
     }
 

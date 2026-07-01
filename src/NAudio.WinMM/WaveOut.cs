@@ -294,17 +294,13 @@ public class WaveOut : IWavePlayer, IWavePosition, IWaveLatency
             var current = buffers;
             if (current == null) return AverageLatency;
 
-            long oldest = long.MaxValue;
-            foreach (var buffer in current)
+            Span<long> stamps = stackalloc long[current.Length];
+            for (int i = 0; i < current.Length; i++)
             {
-                if (!buffer.InQueue) continue;
-                long ts = buffer.FilledTimestamp;
-                if (ts != long.MinValue && ts < oldest) oldest = ts;
+                stamps[i] = current[i].InQueue ? current[i].FilledTimestamp : long.MinValue;
             }
-            if (oldest == long.MaxValue) return AverageLatency;
-
-            long elapsed = Stopwatch.GetTimestamp() - oldest;
-            return TimeSpan.FromSeconds(elapsed / (double)Stopwatch.Frequency);
+            return WaveOutLatencyHelper.CurrentLatencyFromOldestFilledTimestamp(
+                stamps, AverageLatency, Stopwatch.GetTimestamp(), Stopwatch.Frequency);
         }
     }
 

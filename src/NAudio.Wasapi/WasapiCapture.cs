@@ -113,8 +113,9 @@ public class WasapiCapture : IWaveIn, IWaveLatency
                 int padding = audioClient.CurrentPadding;
                 return TimeSpan.FromSeconds(padding / (double)waveFormat.SampleRate);
             }
-            catch
+            catch (COMException)
             {
+                // Racing with Stop / device removal; fall back to the steady-state estimate.
                 return AverageLatency;
             }
         }

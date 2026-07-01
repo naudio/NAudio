@@ -113,8 +113,11 @@ internal class WaveOutBuffer : IDisposable
         {
             Array.Clear(buffer, bytes, buffer.Length - bytes);
         }
-        WriteToWaveOut();
+        // Stamp BEFORE handing the buffer to the driver: WriteToWaveOut sets InQueue via the
+        // driver, and a concurrent reader of CurrentLatency must never see the pair
+        // (InQueue = true, stale filledTimestamp from a previous cycle).
         Volatile.Write(ref filledTimestamp, Stopwatch.GetTimestamp());
+        WriteToWaveOut();
         return true;
     }
 

@@ -251,8 +251,9 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IWaveLatency, IAsyncDisp
                 int padding = audioClient.CurrentPadding;
                 return TimeSpan.FromSeconds(padding / (double)OutputWaveFormat.SampleRate);
             }
-            catch
+            catch (COMException)
             {
+                // Racing with Stop / device removal; fall back to the steady-state estimate.
                 return AverageLatency;
             }
         }

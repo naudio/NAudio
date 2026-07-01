@@ -241,9 +241,11 @@ public class WaveIn : IWaveIn, IWaveLatency
 
     /// <inheritdoc/>
     /// <remarks>
-    /// Returns the wall-clock time since the most recent buffer was delivered to the host,
-    /// plus an estimate of the buffer-fill time (half a buffer in steady state). Falls back
-    /// to <see cref="AverageLatency"/> before the first buffer is delivered.
+    /// Returns the wall-clock age of the freshest sample the application has received: the
+    /// elapsed time since the most recent buffer was delivered. This is a sawtooth that reads
+    /// ~0 at the moment of delivery and rises to ~<see cref="BufferMilliseconds"/> just before
+    /// the next one arrives, averaging half a buffer over the cycle. Falls back to
+    /// <see cref="AverageLatency"/> before the first buffer is delivered.
     /// </remarks>
     public TimeSpan CurrentLatency
     {
@@ -252,8 +254,7 @@ public class WaveIn : IWaveIn, IWaveLatency
             long last = Volatile.Read(ref lastBufferDeliveredTimestamp);
             if (last == long.MinValue) return AverageLatency;
             long elapsed = Stopwatch.GetTimestamp() - last;
-            var sinceDelivery = TimeSpan.FromSeconds(elapsed / (double)Stopwatch.Frequency);
-            return sinceDelivery + TimeSpan.FromMilliseconds(BufferMilliseconds / 2.0);
+            return TimeSpan.FromSeconds(elapsed / (double)Stopwatch.Frequency);
         }
     }
 

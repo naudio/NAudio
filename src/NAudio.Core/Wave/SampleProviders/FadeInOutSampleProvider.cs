@@ -61,26 +61,50 @@ public class FadeInOutSampleProvider : ISampleProvider
     }
 
     /// <summary>
+    /// Raised once when a fade-in started via <see cref="BeginFadeIn"/> reaches full volume.
+    /// Fires from the <see cref="Read"/> call on which the transition happens, after the
+    /// internal lock has been released, so handlers may safely call back into
+    /// <see cref="BeginFadeIn"/> / <see cref="BeginFadeOut"/> (e.g. to schedule a fade-out).
+    /// </summary>
+    public event EventHandler FadeInComplete;
+
+    /// <summary>
+    /// Raised once when a fade-out started via <see cref="BeginFadeOut"/> reaches silence.
+    /// Fires from the <see cref="Read"/> call on which the transition happens, after the
+    /// internal lock has been released, so handlers may safely call back into
+    /// <see cref="BeginFadeIn"/> / <see cref="BeginFadeOut"/> (e.g. to signal stop, or start
+    /// a cross-fade into the next source).
+    /// </summary>
+    public event EventHandler FadeOutComplete;
+
+    /// <summary>
     /// Reads samples from this sample provider into a span
     /// </summary>
     public int Read(Span<float> buffer)
     {
         int sourceSamplesRead = source.Read(buffer);
+        bool fadeInCompleted = false;
+        bool fadeOutCompleted = false;
         lock (lockObject)
         {
             if (fadeState == FadeState.FadingIn)
             {
                 FadeIn(buffer, sourceSamplesRead);
+                fadeInCompleted = fadeState == FadeState.FullVolume;
             }
             else if (fadeState == FadeState.FadingOut)
             {
                 FadeOut(buffer, sourceSamplesRead);
+                fadeOutCompleted = fadeState == FadeState.Silence;
             }
             else if (fadeState == FadeState.Silence)
             {
                 buffer.Clear();
             }
         }
+        // Fire outside the lock so a handler that calls BeginFadeIn/BeginFadeOut doesn't deadlock.
+        if (fadeInCompleted) FadeInComplete?.Invoke(this, EventArgs.Empty);
+        if (fadeOutCompleted) FadeOutComplete?.Invoke(this, EventArgs.Empty);
         return sourceSamplesRead;
     }
 

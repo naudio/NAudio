@@ -226,6 +226,13 @@ The common `new WaveFileWriter(path, format)` filename usage is unaffected.
   mixer.AddMixerInput(anotherProvider.ToSampleProvider());
   IWaveProvider output = mixer.ToWaveProvider();   // if you need IWaveProvider
   ```
+- **`ImaAdpcmWaveFormat` was removed** — it was a non-functional "work in progress"
+  stub (it left block align, average bytes per second and samples-per-block at zero
+  and never serialized its `samplesPerBlock` extension field, so it produced an
+  invalid header on every path) and was referenced nowhere. The
+  `WaveFormatEncoding.ImaAdpcm` / `DviAdpcm` constants are unchanged; if you need an
+  IMA/DVI ADPCM header, declare your own `WaveFormat` subclass that sets the fields
+  and overrides `Serialize` (see `AdpcmWaveFormat` for the pattern).
 - `WaveBuffer` is deprecated — use `MemoryMarshal.Cast` to reinterpret buffers.
 - `StreamMediaFoundationReader` now throws `ArgumentException` for non-readable
   or non-seekable streams instead of failing later (#1288).

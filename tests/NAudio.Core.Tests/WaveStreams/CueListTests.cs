@@ -102,6 +102,41 @@ public class CueListTests
 
     [Test]
     [Category("UnitTest")]
+    public void CueLengthDefaultsToNull()
+    {
+        var cue = new Cue(1000, "Label");
+        Assert.That(cue.Length, Is.Null);
+    }
+
+    [Test]
+    [Category("UnitTest")]
+    public void CueLengthConstructorRoundTrips()
+    {
+        var cue = new Cue(1000, "Region", 500);
+        Assert.That(cue.Position, Is.EqualTo(1000));
+        Assert.That(cue.Label, Is.EqualTo("Region"));
+        Assert.That(cue.Length, Is.EqualTo(500));
+    }
+
+    [Test]
+    [Category("UnitTest")]
+    public void CueLengthsReturnsCorrectArray()
+    {
+        var cueList = new CueList();
+        cueList.Add(new Cue(100, "Point"));
+        cueList.Add(new Cue(200, "Region", 50));
+        cueList.Add(new Cue(300, "AnotherRegion", 25));
+
+        var lengths = cueList.CueLengths;
+
+        Assert.That(lengths, Has.Length.EqualTo(3));
+        Assert.That(lengths[0], Is.Null);
+        Assert.That(lengths[1], Is.EqualTo(50));
+        Assert.That(lengths[2], Is.EqualTo(25));
+    }
+
+    [Test]
+    [Category("UnitTest")]
     public void CueLabelIsReadOnly()
     {
         // arrange

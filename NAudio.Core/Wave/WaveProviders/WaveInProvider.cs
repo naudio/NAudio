@@ -26,6 +26,17 @@
         }
 
         /// <summary>
+        /// Buffer provider that is storing buffers added by the source
+        /// </summary>
+        public BufferedWaveProvider BufferedWaveProvider
+        {
+            get
+            {
+                return this.bufferedWaveProvider;
+            }
+        }
+        
+        /// <summary>
         /// Reads data from the WaveInProvider
         /// </summary>
         public int Read(byte[] buffer, int offset, int count)

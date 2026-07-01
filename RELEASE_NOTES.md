@@ -98,6 +98,7 @@ extensive correctness work during development — see [Docs/Sampler.md](Docs/Sam
  * Hardened Media Foundation and DMO interop against COM ref leaks on error paths (`MediaFoundationReader`, `MediaFoundationEncoder`, `MediaFoundationTransform`, `MediaBuffer`, `Mf*` wrappers) (#1293)
  * `MediaFoundationReader`: seeking is now sample-accurate — since `IMFSourceReader.SetCurrentPosition` only seeks to the nearest container keyframe, the reader now reads forward and skips into the decoded buffer to reach the exact requested position, instead of restarting playback from the keyframe (audible on audio extracted from video, e.g. Vorbis/AAC). `Position` now reflects the byte position actually reached (#628)
  * Removed dead `naudio.codeplex.com` links from the README, MixDiff and source comments (#985)
+ * `MixingSampleProvider.AddMixerInput` now throws `ArgumentException` if the same source is added twice, instead of silently consuming it at 2× rate and aliasing it against itself (#662)
 
 #### Performance
 

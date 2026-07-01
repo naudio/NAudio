@@ -74,6 +74,12 @@ public class MixingSampleProvider : ISampleProvider
             {
                 throw new InvalidOperationException("Too many mixer inputs");
             }
+            // Adding the same source twice would consume it at 2× its natural rate and alias
+            // it against itself — almost always a caller bug. Reject rather than silently mix.
+            if (sources.Contains(mixerInput))
+            {
+                throw new ArgumentException("Mixer input has already been added", nameof(mixerInput));
+            }
             sources.Add(mixerInput);
         }
         if (WaveFormat == null)

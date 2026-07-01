@@ -329,6 +329,114 @@ public class MidiFileTests
         }
     }
 
+    [Test]
+    public void ExportRoundTripsType1FileViaStream()
+    {
+        var events = new MidiEventCollection(1, 480);
+        events.AddTrack();
+        events.AddTrack();
+
+        events[0].Add(new TextEvent("Conductor", MetaEventType.SequenceTrackName, 0));
+        events[0].Add(new MetaEvent(MetaEventType.EndTrack, 0, 0));
+
+        events[1].Add(new NoteOnEvent(0, 1, 60, 100, 10));
+        events[1].Add(new NoteEvent(10, 1, MidiCommandCode.NoteOff, 60, 64));
+        events[1].Add(new MetaEvent(MetaEventType.EndTrack, 0, 11));
+
+        using var stream = new MemoryStream();
+        MidiFile.Export(stream, events);
+
+        // Byte-for-byte match with the file overload for the same events, so we can be
+        // confident the stream path isn't quietly diverging (padding, encoding, etc.).
+        var fileName = Path.Combine(Path.GetTempPath(), $"naudio-midifiletests-{Guid.NewGuid():N}.mid");
+        try
+        {
+            MidiFile.Export(fileName, events);
+            var fileBytes = File.ReadAllBytes(fileName);
+            Assert.That(stream.ToArray(), Is.EqualTo(fileBytes));
+        }
+        finally
+        {
+            if (File.Exists(fileName)) File.Delete(fileName);
+        }
+
+        stream.Position = 0;
+        var midiFile = new MidiFile(stream, true);
+        Assert.That(midiFile.FileFormat, Is.EqualTo(1));
+        Assert.That(midiFile.DeltaTicksPerQuarterNote, Is.EqualTo(480));
+        Assert.That(midiFile.Tracks, Is.EqualTo(2));
+        Assert.That(midiFile.Events[1].OfType<NoteOnEvent>().Count(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public void ExportLeavesCallerStreamOpen()
+    {
+        var events = new MidiEventCollection(0, 120);
+        events.AddTrack();
+        events[0].Add(new MetaEvent(MetaEventType.EndTrack, 0, 0));
+
+        var stream = new MemoryStream();
+        MidiFile.Export(stream, events);
+
+        // Verify by using the stream after Export returns.
+        Assert.That(stream.CanRead, Is.True);
+        Assert.That(stream.CanWrite, Is.True);
+        Assert.DoesNotThrow(() => stream.WriteByte(0));
+        stream.Dispose();
+    }
+
+    [Test]
+    public void ExportRejectsNonSeekableStream()
+    {
+        var events = new MidiEventCollection(0, 120);
+        events.AddTrack();
+        events[0].Add(new MetaEvent(MetaEventType.EndTrack, 0, 0));
+
+        using var inner = new MemoryStream();
+        using var stream = new NonSeekableWriteStream(inner);
+        Assert.Throws<ArgumentException>(() => MidiFile.Export(stream, events));
+    }
+
+    [Test]
+    public void ExportRejectsNonWritableStream()
+    {
+        var events = new MidiEventCollection(0, 120);
+        events.AddTrack();
+        events[0].Add(new MetaEvent(MetaEventType.EndTrack, 0, 0));
+
+        using var stream = new MemoryStream(new byte[16], writable: false);
+        Assert.Throws<ArgumentException>(() => MidiFile.Export(stream, events));
+    }
+
+    [Test]
+    public void ExportRejectsNullArguments()
+    {
+        var events = new MidiEventCollection(0, 120);
+        events.AddTrack();
+        events[0].Add(new MetaEvent(MetaEventType.EndTrack, 0, 0));
+
+        Assert.Throws<ArgumentNullException>(() => MidiFile.Export((Stream)null, events));
+        using var stream = new MemoryStream();
+        Assert.Throws<ArgumentNullException>(() => MidiFile.Export(stream, null));
+    }
+
+    // Minimal write-only, non-seekable Stream wrapper used to exercise the CanSeek check.
+    private sealed class NonSeekableWriteStream : Stream
+    {
+        private readonly Stream inner;
+        public NonSeekableWriteStream(Stream inner) { this.inner = inner; }
+        public override bool CanRead => false;
+        public override bool CanSeek => false;
+        public override bool CanWrite => true;
+        public override long Length => throw new NotSupportedException();
+        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+        public override void Flush() => inner.Flush();
+        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => inner.Write(buffer, offset, count);
+    }
+
     private static byte[] CreateMidiFileBytes(ushort format, ushort division, params byte[][] tracks)
     {
         using var stream = new MemoryStream();

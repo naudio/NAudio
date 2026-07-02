@@ -8,7 +8,7 @@ namespace NAudioDemo.MixingCaptureDemo;
 /// </summary>
 public class MixingCaptureDemoPlugin : INAudioDemoPlugin
 {
-    public string Name => "Mixing Capture (mic + system audio)";
+    public string Name => "Mixing Capture";
 
     public Control CreatePanel() => new MixingCapturePanel();
 }

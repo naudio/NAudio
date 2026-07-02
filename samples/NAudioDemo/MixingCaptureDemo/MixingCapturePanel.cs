@@ -41,6 +41,7 @@ public class MixingCapturePanel : UserControl
 
     private readonly SourceRow[] rows = new SourceRow[SourceCount];
     private readonly MMDeviceEnumerator enumerator = new();
+    private int availableDevices;
     private NumericUpDown maxSecondsInput;
     private Button startButton;
     private Button stopButton;
@@ -89,7 +90,7 @@ public class MixingCapturePanel : UserControl
         {
             Text = "Select up to three WASAPI sources to capture and mix together. " +
                    "[System] entries are loopback (what a device is playing); [Mic] entries are capture devices. " +
-                   $"Output is 48 kHz stereo. Sources are aligned using each packet's high-resolution timestamp.",
+                   "Output is 48 kHz stereo, paced to the wall clock to keep the sources aligned.",
             AutoSize = true,
             Margin = new Padding(3, 3, 3, 8),
             MaximumSize = new Size(600, 0),
@@ -231,10 +232,36 @@ public class MixingCapturePanel : UserControl
         rows[1].Enabled.Checked = firstMic >= 0;
         rows[2].Enabled.Checked = false;
 
+        // A row can only be a distinct source if there's a device to fill it; grey out any
+        // rows beyond the number of available endpoints so they can't be selected or checked.
+        availableDevices = items.Count;
+        for (var i = 0; i < SourceCount; i++)
+        {
+            if (i >= availableDevices)
+            {
+                rows[i].Enabled.Checked = false;
+            }
+        }
+        ApplyRowAvailability(running: false);
+
         if (items.Count == 0)
         {
             statusLabel.Text = "No active audio endpoints found.";
             startButton.Enabled = false;
+        }
+    }
+
+    /// <summary>
+    /// Enables each source row's controls only when a device exists to back it and we're not
+    /// currently recording. Rows beyond <see cref="availableDevices"/> stay greyed out.
+    /// </summary>
+    private void ApplyRowAvailability(bool running)
+    {
+        for (var i = 0; i < rows.Length; i++)
+        {
+            var usable = i < availableDevices && !running;
+            rows[i].Devices.Enabled = usable;
+            rows[i].Enabled.Enabled = usable;
         }
     }
 
@@ -522,10 +549,6 @@ public class MixingCapturePanel : UserControl
         startButton.Enabled = !running;
         stopButton.Enabled = running;
         maxSecondsInput.Enabled = !running;
-        foreach (var row in rows)
-        {
-            row.Devices.Enabled = !running;
-            row.Enabled.Enabled = !running;
-        }
+        ApplyRowAvailability(running);
     }
 }

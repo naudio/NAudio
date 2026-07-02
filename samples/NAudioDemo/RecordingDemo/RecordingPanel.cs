@@ -199,16 +199,16 @@ public partial class RecordingPanel : UserControl
 
     private void OnButtonStartRecordingClick(object sender, EventArgs e)
     {
-        // winmm-based devices do not always cope with being re-used across recordings.
+        // Always create a fresh capture device for each recording. Reusing one across
+        // recordings is unreliable: winmm devices don't always cope, and a WasapiRecorder
+        // re-initializes its audio client on StartRecording, which WASAPI rejects with
+        // "already initialized" the second time round.
         var api = SelectedApi;
-        if (!api.IsWasapi)
-        {
-            Cleanup();
-        }
+        Cleanup();
 
         try
         {
-            captureDevice ??= CreateCaptureDevice();
+            captureDevice = CreateCaptureDevice();
         }
         catch (Exception ex)
         {

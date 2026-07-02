@@ -115,6 +115,7 @@ extensive correctness work during development — see [Docs/Sampler.md](Docs/Sam
  * New `NAudioConsoleTest` CLI harness (`run-batch` for JSON test plans, `diagnose` for a structured host-audio snapshot) and `MfStressTest` for the new Media Foundation interop
  * WPF demos: spectrum analyser rewritten (correct dB/log-frequency/calibration), new `LiveWaveformControl`, loopback + multi-API device selection in the WAV recording demo, and a drum machine rebuilt on the new `NAudio.Sequencing` primitives
  * New "Mixing Capture" panel in `NAudioDemo`: capture two or three WASAPI sources (microphone and/or loopback) at once and live-mix them to a WAV file with a per-source level meter and a recordings list (play/delete), demonstrating the new `RealtimeCaptureMixer`
+ * Fixed the WAV recording demo throwing "already initialized"/"already recording" when starting a second recording with the same settings — it now creates a fresh capture device for every recording instead of reusing a `WasapiRecorder`
  * Replaced the deprecated vendored NSpeex with Opus (Concentus) in the network chat demo
  * Modernised the network chat demo: now UDP-only (dropped the unsuitable TCP transport), receivers bind to `IPAddress.Any` so it works across machines (not just loopback — #821), separate listen/remote ports for one-PC experiments, async cancellable sockets, a bounded jitter buffer, capture/playback moved to `WasapiRecorder`/`WasapiPlayer`, and a new [tutorial](Docs/NetworkChatDemo.md)
 

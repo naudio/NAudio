@@ -15,6 +15,8 @@ namespace NAudio.Wave;
 public class WasapiPlayer : IWavePlayer, IWavePosition, IWaveLatency, IAsyncDisposable
 {
     private readonly MMDevice mmDevice;
+    private readonly string deviceId;
+    private readonly string deviceFriendlyName;
     private readonly AudioClientShareMode shareMode;
     private readonly bool isUsingEventSync;
     private readonly AudioStreamCategory? audioCategory;
@@ -74,6 +76,29 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IWaveLatency, IAsyncDisp
     /// would require resampling). Null when low latency is active or was never requested.
     /// </summary>
     public string LowLatencyUnavailableReason { get; private set; }
+
+    /// <summary>
+    /// The endpoint ID of the device this player was created on, captured at construction — the same
+    /// string accepted by <see cref="MMDeviceEnumerator.GetDevice"/>. Persist it to reopen the same
+    /// physical device later (for example after the endpoint is disabled and re-enabled, such as an
+    /// HDMI display returning from standby).
+    /// </summary>
+    /// <remarks>
+    /// Null when following the default device with automatic stream routing
+    /// (<see cref="WasapiPlayerBuilder.WithDefaultDeviceStreamRouting"/>): there is no fixed endpoint,
+    /// and Windows may transparently reroute the stream at any time. To discover the current default
+    /// endpoint in that mode, resolve it yourself via
+    /// <see cref="MMDeviceEnumerator.GetDefaultAudioEndpoint"/> and track changes with an
+    /// <see cref="NAudio.CoreAudioApi.Interfaces.IMMNotificationClient"/>.
+    /// </remarks>
+    public string DeviceId => deviceId;
+
+    /// <summary>
+    /// The friendly name of the device this player was created on (e.g. "Speakers (Realtek High
+    /// Definition Audio)"), captured at construction. Useful for display and logging. Null when
+    /// following the default device with automatic stream routing — see <see cref="DeviceId"/>.
+    /// </summary>
+    public string DeviceFriendlyName => deviceFriendlyName;
 
     #region Volume
 
@@ -162,6 +187,8 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IWaveLatency, IAsyncDisp
         bool preferLowLatency, bool requireLowLatency, bool useRawMode = false)
     {
         mmDevice = device;
+        deviceId = device.ID;
+        deviceFriendlyName = device.FriendlyName;
         this.shareMode = shareMode;
         isUsingEventSync = useEventSync;
         this.latencyMilliseconds = latencyMilliseconds;

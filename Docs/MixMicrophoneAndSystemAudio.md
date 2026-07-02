@@ -24,93 +24,44 @@ So before mixing you have to bring both sources to a **common format**. The pipe
 
 Then add both adapted sources to a single `MixingSampleProvider` and read from it.
 
-## A reusable capture-to-mixer adapter
+## Use the packaged helper (NAudio.Extras)
 
-This helper takes a `WasapiRecorder` and exposes it as an `ISampleProvider` in a target format, ready to drop into a mixer. `WasapiRecorder.DataAvailable` is the zero‑copy callback — it hands you a `ReadOnlySpan<byte>` that is only valid for the duration of the callback, so we copy it straight into the buffer:
+You don't have to write any of this yourself. **`NAudio.Extras` ships `CaptureMixerInput` and `RealtimeCaptureMixer`**, which implement exactly this pipeline — including timestamp-based alignment so independently-clocked sources don't drift apart (see [Keeping the sources aligned](#keeping-the-sources-aligned)). The runnable **"Mixing Capture" panel in `NAudioDemo`** wires them to two or three WASAPI sources at once (microphone and/or loopback), with a level meter per source and a maximum recording length.
+
+`CaptureMixerInput` adapts one source to the common format; `RealtimeCaptureMixer` bundles the inputs, their shared timeline, and a wall-clock-paced output:
 
 ```c#
+using NAudio.Extras;
 using NAudio.Wave;
-using NAudio.Wave.SampleProviders;
 
-/// Buffers a WasapiRecorder capture source and resamples/rechannels it to a target format.
-class CaptureMixerInput
-{
-    private readonly BufferedWaveProvider buffer;
+var mixer = new RealtimeCaptureMixer(WaveFormat.CreateIeeeFloatWaveFormat(48000, 2));
 
-    public ISampleProvider SampleProvider { get; }
+// system audio (loopback) and the microphone, each captured with WasapiRecorder
+var systemRecorder = new WasapiRecorderBuilder().WithLoopbackCapture().WithPollingSync().Build();
+var micRecorder = new WasapiRecorderBuilder().Build();
 
-    public CaptureMixerInput(WasapiRecorder recorder, WaveFormat targetFormat)
-    {
-        buffer = new BufferedWaveProvider(recorder.WaveFormat)
-        {
-            // capture callbacks may briefly outrun the mixer; drop rather than throw
-            DiscardOnBufferOverflow = true,
-            // hand back silence when empty so the mixer never starves
-            ReadFully = true,
-        };
-        // copy the span out of the zero-copy callback into our buffer
-        recorder.DataAvailable += (data, flags, devicePosition, qpcPosition) => buffer.AddSamples(data);
+// add each source in its native format; the input resamples/rechannels to the mixer format
+var systemInput = mixer.AddInput(systemRecorder.WaveFormat);
+var micInput = mixer.AddInput(micRecorder.WaveFormat);
 
-        // normalise bit depth -> float, then channels, then sample rate
-        ISampleProvider provider = buffer.ToSampleProvider();
-        provider = MatchChannels(provider, targetFormat.Channels);
-        if (provider.WaveFormat.SampleRate != targetFormat.SampleRate)
-            provider = new WdlResamplingSampleProvider(provider, targetFormat.SampleRate);
+// feed each recorder's zero-copy packets — with their QPC and device timestamps — into its input
+systemRecorder.DataAvailable += (data, flags, dev, qpc) => systemInput.AddSamples(data, qpc, dev);
+micRecorder.DataAvailable += (data, flags, dev, qpc) => micInput.AddSamples(data, qpc, dev);
 
-        SampleProvider = provider;
-    }
-
-    private static ISampleProvider MatchChannels(ISampleProvider provider, int channels)
-    {
-        if (provider.WaveFormat.Channels == channels) return provider;
-        if (provider.WaveFormat.Channels == 1 && channels == 2)
-            return new MonoToStereoSampleProvider(provider);
-        if (provider.WaveFormat.Channels == 2 && channels == 1)
-            return new StereoToMonoSampleProvider(provider);
-        throw new NotSupportedException(
-            $"No channel conversion from {provider.WaveFormat.Channels} to {channels} channels");
-    }
-}
-```
-
-## Wiring it up
-
-Pick a target mix format (IEEE float is required by the mixer), build the two capture devices with `WasapiRecorderBuilder`, wrap each in the adapter, and add them to a `MixingSampleProvider`. Use `WithLoopbackCapture()` for the system audio; the default builder captures the default microphone:
-
-```c#
-// the format everything is mixed into
-var mixFormat = WaveFormat.CreateIeeeFloatWaveFormat(44100, 2);
-
-// system audio — loopback off the default render device (its mix format, e.g. 48k stereo float)
-var systemRecorder = new WasapiRecorderBuilder()
-    .WithLoopbackCapture()
-    .Build();
-
-// microphone — default capture device (its mix format)
-var micRecorder = new WasapiRecorderBuilder()
-    .Build();
-
-var system = new CaptureMixerInput(systemRecorder, mixFormat);
-var mic = new CaptureMixerInput(micRecorder, mixFormat);
-
-var mixer = new MixingSampleProvider(new[] { system.SampleProvider, mic.SampleProvider })
-{
-    // keep producing audio (silence) even when one source has no data,
-    // e.g. loopback delivers nothing while no system audio is playing
-    ReadFully = true,
-};
-
+mixer.Start();
 systemRecorder.StartRecording();
 micRecorder.StartRecording();
 ```
 
+> A plain `AddSamples(data)` overload (no timestamps) also exists for sources that don't provide them — e.g. a legacy `IWaveIn` device: `waveIn.DataAvailable += (s, a) => input.AddSamples(a.Buffer.AsSpan(0, a.BytesRecorded));`.
+
 ### Writing the mix to a WAV file
 
-The mixer is just an `ISampleProvider`, so you pull from it on a background thread and write to a `WaveFileWriter`. Reading from the mixer is what *drives* the whole pipeline:
+`RealtimeCaptureMixer.Read` returns only as much audio as the wall clock says should exist by now, so a background pump stays real-time:
 
 ```c#
 var writer = new WaveFileWriter("mixed.wav", mixer.WaveFormat);
-var buffer = new float[mixFormat.SampleRate * mixFormat.Channels]; // ~1 second
+var buffer = new float[mixer.WaveFormat.SampleRate * mixer.WaveFormat.Channels / 5]; // ~200ms
 var stop = false;
 
 var pump = Task.Run(() =>
@@ -119,7 +70,7 @@ var pump = Task.Run(() =>
     {
         int read = mixer.Read(buffer, 0, buffer.Length);
         if (read > 0) writer.WriteSamples(buffer, 0, read);
-        else Thread.Sleep(5); // shouldn't happen with ReadFully, but be safe
+        else Thread.Sleep(5); // caught up with the wall clock (or still in pre-roll) — wait
     }
 });
 
@@ -134,27 +85,42 @@ micRecorder.Dispose();
 writer.Dispose();
 ```
 
+> **Why the paced `Read`, and not a plain `MixingSampleProvider`?** A mixer with `ReadFully = true` never blocks — it zero-fills any input that has no data yet. Read it flat out and you race ahead of real time, producing a file padded with silence that is *longer* than the actual recording. `RealtimeCaptureMixer.Read` throttles the output to the wall clock so the file length matches elapsed time (which also absorbs the tiny clock-rate differences between devices). If you assemble the mixer by hand, pace the output yourself — don't free-run a `ReadFully` mixer.
+
 ### Getting the mixed bytes instead of a file
 
-If you're feeding a video muxer (the AVI scenario in [#761](https://github.com/naudio/NAudio/issues/761)) you want raw bytes rather than a WAV file. Wrap the mixer in a `SampleToWaveProvider16` (16‑bit PCM) or `SampleToWaveProvider` (32‑bit float) and read into a `byte[]`:
+If you're feeding a video muxer (the AVI scenario in [#761](https://github.com/naudio/NAudio/issues/761)) you want raw bytes rather than a WAV file. Read paced float samples from the mixer and convert each chunk to 16‑bit PCM:
 
 ```c#
-IWaveProvider output = new SampleToWaveProvider16(mixer); // mixer.WaveFormat -> 16-bit PCM
-var bytes = new byte[output.WaveFormat.AverageBytesPerSecond / 10]; // 100ms chunk
+var floats = new float[mixer.WaveFormat.SampleRate * mixer.WaveFormat.Channels / 10]; // 100ms
+var pcm = new byte[floats.Length * 2];
 
-int bytesRead = output.Read(bytes, 0, bytes.Length);
-// hand bytes[0..bytesRead] to your encoder / muxer
+int samples = mixer.Read(floats, 0, floats.Length);
+for (int i = 0; i < samples; i++)
+{
+    short s = (short)(Math.Clamp(floats[i], -1f, 1f) * short.MaxValue);
+    pcm[i * 2] = (byte)(s & 0xFF);
+    pcm[i * 2 + 1] = (byte)(s >> 8);
+}
+// hand pcm[0 .. samples * 2] to your encoder / muxer
 ```
 
-`output.WaveFormat` is the format your muxer should be told about.
+## Keeping the sources aligned
+
+Two capture devices run off independent clocks and start delivering at slightly different moments, so naively appending their packets lets them drift apart over a long recording. `WasapiRecorder.DataAvailable` tags every packet with two timestamps that `CaptureMixerInput.AddSamples(data, qpc, devicePosition)` uses to counter this:
+
+- **`qpcPosition`** — a system-wide QueryPerformanceCounter value (100‑nanosecond units) marking when the packet was captured. All inputs on one `RealtimeCaptureMixer` share a single origin (the first packet seen), so each source is placed at its true capture time relative to that origin. A source that starts later — or a loopback that only begins delivering once audio plays — is offset with leading silence so it lines up instead of being pulled to the front.
+- **`devicePosition`** — the device's own running frame count. If it jumps further than the previous packet's length, the device counted frames it never delivered (a glitch); the hole is back-filled with exactly that many silence frames so everything downstream keeps its timing.
+
+This is best-effort alignment aimed at stopping sources drifting apart, not a sample-accurate resampling clock; the residual per-device clock-rate difference is absorbed by pacing the output to the wall clock (above).
 
 ## Things to watch out for
 
 - **Clipping.** Summing two loud sources can exceed `±1.0f`. Reduce the inputs before mixing — `MonoToStereoSampleProvider` exposes `LeftVolume`/`RightVolume`, or insert a `VolumeSampleProvider` per source.
-- **Loopback silence.** WASAPI loopback capture only raises `DataAvailable` while audio is actually playing. `ReadFully = true` on both the `BufferedWaveProvider` and the `MixingSampleProvider` keeps the output flowing (as silence) through those gaps so the two sources stay roughly aligned.
-- **Clock drift.** The microphone and the soundcard are driven by independent clocks, so over long recordings they drift apart by fractions of a percent. `WdlResamplingSampleProvider` does a fixed‑ratio resample; it doesn't dynamically track drift. For short clips this is inaudible, but for long sessions where A/V sync matters you may need to monitor each `BufferedWaveProvider`'s `BufferedDuration` and adjust.
+- **Loopback silence.** WASAPI loopback capture only raises `DataAvailable` while audio is actually playing, so `RealtimeCaptureMixer` fills those gaps with silence (the output stays paced to the wall clock) — a loopback source with nothing playing simply contributes silence.
+- **Clock drift.** The microphone and the soundcard are driven by independent clocks. Start offsets and glitches are handled by the timestamp alignment above, and the residual clock-*rate* difference is absorbed by the wall-clock-paced output. This keeps sources from drifting apart but is not sample-accurate; if you need tighter long-run A/V sync you'd add per-source adaptive resampling driven by the measured QPC-vs-samples error.
 - **Disposal order.** Stop both captures, let the pump loop finish, *then* dispose the recorders and the writer. `WasapiRecorder` also implements `IAsyncDisposable`, so prefer `await recorder.DisposeAsync()` (or `await using`) off a UI thread. Disposing a capture device while another thread is still touching it has caused crashes (see [#1183](https://github.com/naudio/NAudio/issues/1183) and [#1184](https://github.com/naudio/NAudio/issues/1184)).
-- **Legacy capture devices.** If you need the classic `IWaveIn` devices (`WaveInEvent`, `WasapiLoopbackCapture`), the pipeline is identical — only the adapter's event wiring changes. Take an `IWaveIn` instead of a `WasapiRecorder` and subscribe to its `DataAvailable` with `buffer.AddSamples(a.Buffer, 0, a.BytesRecorded)`.
+- **Legacy capture devices.** `CaptureMixerInput` is device-agnostic: to mix a classic `IWaveIn` device (`WaveInEvent`, `WasapiLoopbackCapture`) add it with `mixer.AddInput(waveIn.WaveFormat)` and feed it via the untimestamped overload, `waveIn.DataAvailable += (s, a) => input.AddSamples(a.Buffer.AsSpan(0, a.BytesRecorded));`. Those devices don't provide QPC/device timestamps, so such a source is appended in arrival order rather than timeline-aligned.
 
 ## Mixing vs. separate channels
 

@@ -10,6 +10,7 @@ using NAudio.Extras;
 using NAudio.Gui;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
+using NAudioDemo.Utils;
 
 namespace NAudioDemo.MixingCaptureDemo;
 
@@ -44,6 +45,7 @@ public class MixingCapturePanel : UserControl
     private Button startButton;
     private Button stopButton;
     private Label statusLabel;
+    private ListBox recordingsList;
     private readonly string outputFolder;
 
     // capture state (only touched on the UI thread except where noted)
@@ -61,12 +63,13 @@ public class MixingCapturePanel : UserControl
         Directory.CreateDirectory(outputFolder);
         BuildUi();
         PopulateDevices();
+        RefreshRecordings();
         Disposed += (s, e) => StopCapture();
     }
 
     private void BuildUi()
     {
-        Size = new Size(640, 320);
+        Size = new Size(640, 470);
 
         var layout = new TableLayoutPanel
         {
@@ -145,6 +148,36 @@ public class MixingCapturePanel : UserControl
         statusLabel = new Label { Text = "Ready.", AutoSize = true, Margin = new Padding(3, 8, 3, 3) };
         layout.Controls.Add(statusLabel, 0, SourceCount + 2);
         layout.SetColumnSpan(statusLabel, 3);
+
+        var recordings = new GroupBox
+        {
+            Text = "Recordings",
+            Dock = DockStyle.Fill,
+            MinimumSize = new Size(0, 150),
+            Margin = new Padding(3, 8, 3, 3),
+        };
+        recordingsList = new ListBox { Dock = DockStyle.Fill, IntegralHeight = false };
+        recordingsList.DoubleClick += (s, e) => PlaySelectedRecording();
+        var recordingButtons = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Right,
+            FlowDirection = FlowDirection.TopDown,
+            Width = 110,
+            WrapContents = false,
+        };
+        var playButton = new Button { Text = "Play", Width = 95, Margin = new Padding(3) };
+        var deleteButton = new Button { Text = "Delete", Width = 95, Margin = new Padding(3) };
+        var openFolderButton = new Button { Text = "Open folder", Width = 95, Margin = new Padding(3) };
+        playButton.Click += (s, e) => PlaySelectedRecording();
+        deleteButton.Click += (s, e) => DeleteSelectedRecording();
+        openFolderButton.Click += (s, e) => ProcessHelper.ShellExecute(outputFolder);
+        recordingButtons.Controls.Add(playButton);
+        recordingButtons.Controls.Add(deleteButton);
+        recordingButtons.Controls.Add(openFolderButton);
+        recordings.Controls.Add(recordingsList);
+        recordings.Controls.Add(recordingButtons);
+        layout.Controls.Add(recordings, 0, SourceCount + 3);
+        layout.SetColumnSpan(recordings, 3);
 
         Controls.Add(layout);
     }
@@ -360,6 +393,64 @@ public class MixingCapturePanel : UserControl
             statusLabel.Text = reachedLimit
                 ? $"Reached {captureMaxSeconds}s limit. Saved {outputPath}"
                 : $"Stopped. Saved {outputPath}";
+            if (File.Exists(outputPath))
+            {
+                AddRecording(outputPath);
+            }
+        }
+    }
+
+    private void RefreshRecordings()
+    {
+        recordingsList.Items.Clear();
+        foreach (var file in Directory.EnumerateFiles(outputFolder, "mixed-capture-*.wav").OrderBy(f => f))
+        {
+            recordingsList.Items.Add(Path.GetFileName(file));
+        }
+        if (recordingsList.Items.Count > 0)
+        {
+            recordingsList.SelectedIndex = recordingsList.Items.Count - 1;
+        }
+    }
+
+    private void AddRecording(string path)
+    {
+        var name = Path.GetFileName(path);
+        var index = recordingsList.Items.IndexOf(name);
+        if (index < 0)
+        {
+            index = recordingsList.Items.Add(name);
+        }
+        recordingsList.SelectedIndex = index;
+    }
+
+    private void PlaySelectedRecording()
+    {
+        if (recordingsList.SelectedItem is string name)
+        {
+            ProcessHelper.ShellExecute(Path.Combine(outputFolder, name));
+        }
+    }
+
+    private void DeleteSelectedRecording()
+    {
+        if (recordingsList.SelectedItem is not string name)
+        {
+            return;
+        }
+        try
+        {
+            File.Delete(Path.Combine(outputFolder, name));
+            recordingsList.Items.Remove(name);
+            if (recordingsList.Items.Count > 0)
+            {
+                recordingsList.SelectedIndex = recordingsList.Items.Count - 1;
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"Could not delete recording:\r\n{ex.Message}", "Mixing Capture",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 

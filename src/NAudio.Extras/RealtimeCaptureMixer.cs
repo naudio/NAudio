@@ -9,17 +9,18 @@ namespace NAudio.Extras;
 /// <summary>
 /// Live-mixes several capture sources (microphones, WASAPI loopback, etc.) that may each have
 /// a different sample rate and channel count into a single stream in a common target format.
-/// Each source is wrapped in a <see cref="CaptureMixerInput"/>, the inputs share a
-/// <see cref="CaptureTimeline"/> so they stay aligned, and the mixed output is paced to the
-/// wall clock so its length matches real elapsed time (which also absorbs the small clock-rate
-/// differences between independent capture devices).
+/// Each source is wrapped in a <see cref="CaptureMixerInput"/>, and the mixed output is paced to
+/// the wall clock (anchored to the first captured sample) so its length matches real elapsed
+/// time. That pacing is what keeps independently-clocked sources in sync: a source running
+/// slightly slow is padded and one running slightly fast is drained, and a loopback source that
+/// stops delivering while nothing is playing simply contributes silence until it resumes.
 /// </summary>
 /// <remarks>
 /// <para>Typical use with <c>WasapiRecorder</c>:</para>
 /// <code>
 /// var mixer = new RealtimeCaptureMixer(WaveFormat.CreateIeeeFloatWaveFormat(48000, 2));
 /// var micInput = mixer.AddInput(micRecorder.WaveFormat);
-/// micRecorder.DataAvailable += (data, flags, dev, qpc) => micInput.AddSamples(data, qpc, dev);
+/// micRecorder.DataAvailable += (data, flags, dev, qpc) => micInput.AddSamples(data);
 /// // ...repeat for a loopback recorder...
 /// mixer.Start();
 /// micRecorder.StartRecording();
@@ -38,7 +39,6 @@ namespace NAudio.Extras;
 /// </remarks>
 public class RealtimeCaptureMixer
 {
-    private readonly CaptureTimeline timeline = new();
     private readonly MixingSampleProvider mixer;
     private readonly List<CaptureMixerInput> inputs = new();
     private readonly Stopwatch clock = new();
@@ -96,7 +96,7 @@ public class RealtimeCaptureMixer
     public CaptureMixerInput AddInput(WaveFormat sourceFormat,
         Func<ISampleProvider, ISampleProvider> tap = null, TimeSpan? bufferDuration = null)
     {
-        var input = new CaptureMixerInput(sourceFormat, WaveFormat, timeline, bufferDuration);
+        var input = new CaptureMixerInput(sourceFormat, WaveFormat, bufferDuration);
         inputs.Add(input);
         mixer.AddMixerInput(tap == null ? input.SampleProvider : tap(input.SampleProvider));
         return input;

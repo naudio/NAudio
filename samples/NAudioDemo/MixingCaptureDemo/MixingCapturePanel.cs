@@ -42,7 +42,6 @@ public class MixingCapturePanel : UserControl
     private readonly SourceRow[] rows = new SourceRow[SourceCount];
     private readonly MMDeviceEnumerator enumerator = new();
     private NumericUpDown maxSecondsInput;
-    private CheckBox alignCheckbox;
     private Button startButton;
     private Button stopButton;
     private Label statusLabel;
@@ -140,8 +139,6 @@ public class MixingCapturePanel : UserControl
         controls.Controls.Add(new Label { Text = "Max length (seconds):", AutoSize = true, Anchor = AnchorStyles.Left, Margin = new Padding(3, 8, 3, 3) });
         maxSecondsInput = new NumericUpDown { Minimum = 1, Maximum = 3600, Value = 20, Width = 70, Margin = new Padding(3, 4, 12, 3) };
         controls.Controls.Add(maxSecondsInput);
-        alignCheckbox = new CheckBox { Text = "Align sources (experimental)", Checked = false, AutoSize = true, Anchor = AnchorStyles.Left, Margin = new Padding(3, 6, 12, 3) };
-        controls.Controls.Add(alignCheckbox);
         startButton = new Button { Text = "Start", Width = 80, Margin = new Padding(3) };
         stopButton = new Button { Text = "Stop", Width = 80, Enabled = false, Margin = new Padding(3) };
         startButton.Click += (s, e) => StartCapture();
@@ -253,7 +250,6 @@ public class MixingCapturePanel : UserControl
 
         stopRequested = false;
         captureMaxSeconds = (int)maxSecondsInput.Value;
-        var align = alignCheckbox.Checked;
         outputPath = Path.Combine(outputFolder, $"mixed-capture-{DateTime.Now:yyyyMMdd-HHmmss}.wav");
         mixer = new RealtimeCaptureMixer(TargetFormat);
         recorders.Clear();
@@ -287,17 +283,7 @@ public class MixingCapturePanel : UserControl
                     return metering;
                 });
                 rowInputs[rowIndex] = input;
-                if (align)
-                {
-                    recorder.DataAvailable += (data, flags, devicePosition, qpcPosition) =>
-                        input.AddSamples(data, qpcPosition, devicePosition);
-                }
-                else
-                {
-                    // No timestamp correction — append every packet in arrival order for comparison.
-                    recorder.DataAvailable += (data, flags, devicePosition, qpcPosition) =>
-                        input.AddSamples(data);
-                }
+                recorder.DataAvailable += (data, flags, devicePosition, qpcPosition) => input.AddSamples(data);
                 recorders.Add(recorder);
             }
 
@@ -322,8 +308,7 @@ public class MixingCapturePanel : UserControl
 
         diagnosticsTimer.Start();
         SetRunningState(true);
-        statusLabel.Text = $"Recording {recorders.Count} source(s) to {Path.GetFileName(outputPath)} " +
-                           $"(alignment {(align ? "on" : "off")}) ...";
+        statusLabel.Text = $"Recording {recorders.Count} source(s) to {Path.GetFileName(outputPath)} ...";
     }
 
     private void UpdateDiagnostics()
@@ -342,17 +327,11 @@ public class MixingCapturePanel : UserControl
                 continue;
             }
             var fmt = input.SourceFormat;
-            var devSpan = input.LastDevicePosition - input.FirstDevicePosition;
-            var qpcSpan = input.LastQpcPosition - input.FirstQpcPosition;
             sb.AppendLine(
                 $"src {i + 1}: {fmt.SampleRate / 1000}kHz/{fmt.Channels}ch  " +
                 $"packets {input.PacketsReceived:n0}  " +
                 $"audio {input.FramesReceived:n0}  " +
-                $"silence {input.SilenceFramesInserted:n0}  " +
                 $"buffered {input.BufferedFrames:n0}");
-            sb.AppendLine(
-                $"       devPos {input.FirstDevicePosition:n0} -> {input.LastDevicePosition:n0} (span {devSpan:n0})  " +
-                $"qpc span {qpcSpan:n0} (100ns)");
         }
         diagnosticsLabel.Text = sb.ToString().TrimEnd();
     }
@@ -543,7 +522,6 @@ public class MixingCapturePanel : UserControl
         startButton.Enabled = !running;
         stopButton.Enabled = running;
         maxSecondsInput.Enabled = !running;
-        alignCheckbox.Enabled = !running;
         foreach (var row in rows)
         {
             row.Devices.Enabled = !running;

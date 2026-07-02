@@ -11,45 +11,20 @@ namespace NAudio.Extras;
 /// 32-bit IEEE float, and matches the channel count and sample rate of the target format.
 /// </summary>
 /// <remarks>
-/// <para>
-/// The source is device-agnostic: feed it from any capture callback via one of the
-/// <c>AddSamples</c> overloads. For a <c>WasapiRecorder</c> the zero-copy
-/// <c>DataAvailable</c> callback provides a <see cref="ReadOnlySpan{T}"/> plus the packet's
-/// device position and QPC timestamp; for a legacy <see cref="IWaveIn"/> device use the
-/// plain <see cref="AddSamples(ReadOnlySpan{byte})"/> overload.
-/// </para>
-/// <para>
-/// When the timestamped overload is used, the input keeps itself aligned on a shared
-/// <see cref="CaptureTimeline"/>: the first packet is offset by its QPC distance from the
-/// shared origin (so a device that starts later, or a loopback that only begins delivering
-/// once audio plays, lines up in time), and mid-stream <c>devicePosition</c> gaps caused by
-/// glitches are back-filled with silence (so a dropout does not permanently shift the source
-/// earlier relative to the others). This is best-effort alignment intended to stop
-/// independently-clocked sources drifting apart over a recording; it is not a sample-accurate
-/// resampling clock. Slow/fast device-clock differences are absorbed by pacing the mixer
-/// output to the wall clock — see <see cref="RealtimeCaptureMixer"/>.
-/// </para>
+/// The source is device-agnostic: feed captured bytes in via <see cref="AddSamples"/> from any
+/// capture callback — a <c>WasapiRecorder</c>'s zero-copy <c>DataAvailable</c>
+/// (<c>input.AddSamples(data)</c>) or a legacy <see cref="IWaveIn"/>
+/// (<c>input.AddSamples(a.Buffer.AsSpan(0, a.BytesRecorded))</c>). Packets are appended in
+/// arrival order; keeping independently-clocked sources in sync is handled downstream by
+/// <see cref="RealtimeCaptureMixer"/>, which paces its output to the wall clock.
 /// </remarks>
 public class CaptureMixerInput
 {
-    private const long HundredNanosecondsPerSecond = 10_000_000L;
-
     private readonly BufferedWaveProvider buffer;
-    private readonly CaptureTimeline timeline;
     private readonly int sourceBytesPerFrame;
-    private readonly int sourceSampleRate;
-    private readonly int maxStartLeadFrames;
 
-    private bool firstPacket = true;
-    private long timelineFrames;
     private long packetsReceived;
     private long framesReceived;
-    private long silenceFramesInserted;
-    private long firstDevicePosition;
-    private long firstQpcPosition;
-    private long lastDevicePosition;
-    private long lastQpcPosition;
-    private readonly byte[] silence = new byte[16 * 1024]; // reusable all-zero chunk
 
     /// <summary>
     /// The adapted provider, already in the target format, to add to a mixer.
@@ -59,35 +34,14 @@ public class CaptureMixerInput
     /// <summary>The native (capture) format of the source.</summary>
     public WaveFormat SourceFormat => buffer.WaveFormat;
 
-    /// <summary>
-    /// Total number of source frames placed on the timeline so far, including any silence
-    /// inserted for alignment. Exposed for diagnostics.
-    /// </summary>
-    public long TimelineFrames => timelineFrames;
-
-    /// <summary>Number of packets handed to <c>AddSamples</c>. Diagnostics.</summary>
+    /// <summary>Number of packets handed to <see cref="AddSamples"/>. Diagnostics.</summary>
     public long PacketsReceived => packetsReceived;
 
-    /// <summary>Number of real (non-silence) source frames added. Diagnostics.</summary>
+    /// <summary>Number of source frames added so far. Diagnostics.</summary>
     public long FramesReceived => framesReceived;
-
-    /// <summary>Number of silence frames inserted for alignment. Diagnostics.</summary>
-    public long SilenceFramesInserted => silenceFramesInserted;
 
     /// <summary>Source frames currently buffered and waiting to be mixed. Diagnostics.</summary>
     public int BufferedFrames => buffer.BufferedBytes / sourceBytesPerFrame;
-
-    /// <summary>The first packet's device position, as reported by the source. Diagnostics.</summary>
-    public long FirstDevicePosition => firstDevicePosition;
-
-    /// <summary>The first packet's QPC timestamp (100ns units). Diagnostics.</summary>
-    public long FirstQpcPosition => firstQpcPosition;
-
-    /// <summary>The most recent packet's device position, as reported by the source. Diagnostics.</summary>
-    public long LastDevicePosition => lastDevicePosition;
-
-    /// <summary>The most recent packet's QPC timestamp (100ns units). Diagnostics.</summary>
-    public long LastQpcPosition => lastQpcPosition;
 
     /// <summary>
     /// Creates a new capture input.
@@ -97,20 +51,13 @@ public class CaptureMixerInput
     /// The common mixer format. Must be 32-bit IEEE float. The input is resampled and
     /// channel-converted to this format.
     /// </param>
-    /// <param name="timeline">
-    /// Optional shared timeline for cross-source alignment. Pass the same instance to every
-    /// input you want mutually aligned. If null, the input still aligns to its own first
-    /// packet but cannot align to other sources.
-    /// </param>
     /// <param name="bufferDuration">How much audio the internal buffer holds (default 2s).</param>
-    public CaptureMixerInput(WaveFormat sourceFormat, WaveFormat targetFormat,
-        CaptureTimeline timeline = null, TimeSpan? bufferDuration = null)
+    public CaptureMixerInput(WaveFormat sourceFormat, WaveFormat targetFormat, TimeSpan? bufferDuration = null)
     {
         if (targetFormat.Encoding != WaveFormatEncoding.IeeeFloat)
         {
             throw new ArgumentException("Target format must be 32-bit IEEE float", nameof(targetFormat));
         }
-        this.timeline = timeline;
         buffer = new BufferedWaveProvider(sourceFormat, bufferDuration ?? TimeSpan.FromSeconds(2))
         {
             // The capture callback and the mixer read run on different threads, and a capture
@@ -120,12 +67,6 @@ public class CaptureMixerInput
             ReadFully = true,
         };
         sourceBytesPerFrame = sourceFormat.BlockAlign;
-        sourceSampleRate = sourceFormat.SampleRate;
-        // The start nudge only corrects a small (<=100ms) skew between sources. A larger offset
-        // means a source genuinely started later (e.g. a loopback that only begins delivering
-        // once audio plays); the mixer's silence padding already covers that, so we must not add
-        // more. This cap also means an implausible timestamp can never flood the stream.
-        maxStartLeadFrames = sourceSampleRate / 10;
 
         // normalise bit depth -> float, then channels, then sample rate
         ISampleProvider provider = buffer.ToSampleProvider();
@@ -138,71 +79,13 @@ public class CaptureMixerInput
     }
 
     /// <summary>
-    /// Adds captured bytes with no timeline alignment (appended in arrival order). Use this
-    /// for sources that do not provide timestamps, e.g. a legacy <see cref="IWaveIn"/> device.
+    /// Adds captured bytes, appended in arrival order. Safe to call from the capture thread.
     /// </summary>
     public void AddSamples(ReadOnlySpan<byte> data)
     {
-        var frames = data.Length / sourceBytesPerFrame;
         packetsReceived++;
         buffer.AddSamples(data);
-        framesReceived += frames;
-        timelineFrames += frames;
-    }
-
-    /// <summary>
-    /// Adds captured bytes tagged with the packet's QPC capture time and device position, both
-    /// as delivered by <c>WasapiRecorder.DataAvailable</c>. The QPC timestamp aligns the start
-    /// of the source against the shared <see cref="CaptureTimeline"/>; the device position is
-    /// used to detect and back-fill mid-stream glitches so the source stays aligned.
-    /// </summary>
-    /// <param name="data">The captured audio for this packet.</param>
-    /// <param name="qpcPosition">Packet capture time (QPC value, 100-nanosecond units).</param>
-    /// <param name="devicePosition">Device frame position of the first frame in this packet.</param>
-    public void AddSamples(ReadOnlySpan<byte> data, long qpcPosition, long devicePosition)
-    {
-        var frames = data.Length / sourceBytesPerFrame;
-        packetsReceived++;
-        lastQpcPosition = qpcPosition;
-        lastDevicePosition = devicePosition;
-
-        if (firstPacket)
-        {
-            firstPacket = false;
-            firstQpcPosition = qpcPosition;
-            firstDevicePosition = devicePosition;
-            var origin = timeline?.GetOrSetOrigin(qpcPosition) ?? qpcPosition;
-            // Nudge the start so this source lines up with the earliest source. Only a small,
-            // sub-100ms skew is corrected (see maxStartLeadFrames); a larger apparent offset is
-            // left to the mixer's silence padding. If the driver reports a zero/garbage QPC the
-            // lead is 0 and nothing is inserted.
-            var lead = (qpcPosition - origin) * sourceSampleRate / HundredNanosecondsPerSecond;
-            if (lead > 0 && lead <= maxStartLeadFrames)
-            {
-                InsertSilence(lead);
-            }
-        }
-
-        // After the start, packets are appended in arrival order. Mid-stream drift is left to
-        // the mixer's wall-clock-paced output rather than per-packet silence insertion, which
-        // proved unreliable across real capture drivers (device-position semantics vary and are
-        // often not usable). Captured audio is never dropped.
-        buffer.AddSamples(data);
-        framesReceived += frames;
-        timelineFrames += frames;
-    }
-
-    private void InsertSilence(long frames)
-    {
-        var remaining = (int)frames * sourceBytesPerFrame;
-        while (remaining > 0)
-        {
-            var chunk = Math.Min(remaining, silence.Length);
-            buffer.AddSamples(silence, 0, chunk);
-            remaining -= chunk;
-        }
-        silenceFramesInserted += frames;
-        timelineFrames += frames;
+        framesReceived += data.Length / sourceBytesPerFrame;
     }
 
     private static ISampleProvider MatchChannels(ISampleProvider provider, int channels)

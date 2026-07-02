@@ -44,16 +44,16 @@ var micRecorder = new WasapiRecorderBuilder().Build();
 var systemInput = mixer.AddInput(systemRecorder.WaveFormat);
 var micInput = mixer.AddInput(micRecorder.WaveFormat);
 
-// feed each recorder's zero-copy packets — with their QPC and device timestamps — into its input
-systemRecorder.DataAvailable += (data, flags, dev, qpc) => systemInput.AddSamples(data, qpc, dev);
-micRecorder.DataAvailable += (data, flags, dev, qpc) => micInput.AddSamples(data, qpc, dev);
+// feed each recorder's zero-copy packets into its input (append in arrival order)
+systemRecorder.DataAvailable += (data, flags, dev, qpc) => systemInput.AddSamples(data);
+micRecorder.DataAvailable += (data, flags, dev, qpc) => micInput.AddSamples(data);
 
 mixer.Start();
 systemRecorder.StartRecording();
 micRecorder.StartRecording();
 ```
 
-> A plain `AddSamples(data)` overload (no timestamps) also exists for sources that don't provide them — e.g. a legacy `IWaveIn` device: `waveIn.DataAvailable += (s, a) => input.AddSamples(a.Buffer.AsSpan(0, a.BytesRecorded));`.
+> `AddSamples` takes a `ReadOnlySpan<byte>`, so it works just as well with a legacy `IWaveIn` device: `waveIn.DataAvailable += (s, a) => input.AddSamples(a.Buffer.AsSpan(0, a.BytesRecorded));`.
 
 ### Writing the mix to a WAV file
 
@@ -109,14 +109,14 @@ for (int i = 0; i < samples; i++)
 
 The heavy lifting is done by **pacing the output to the wall clock**, not by per-packet correction. `RealtimeCaptureMixer.Read` hands back only as much audio as real time says should exist, and the mixer zero-fills any input whose buffer is momentarily empty. That single mechanism handles the two things that would otherwise pull sources apart:
 
-- **Loopback gaps.** WASAPI loopback only raises `DataAvailable` while audio is actually playing. While the system is quiet that input's buffer simply drains and the mixer pads silence for it; when playback resumes the buffered audio plays at the right moment. No `devicePosition` gap-filling is needed — and, crucially, none is done, because real capture drivers report device positions inconsistently (many report a static or zero value) and acting on them corrupts the stream.
+- **Loopback gaps.** WASAPI loopback only raises `DataAvailable` while audio is actually playing. While the system is quiet that input's buffer simply drains and the mixer pads silence for it; when playback resumes the buffered audio plays at the right moment.
 - **Clock-rate drift.** The microphone and the soundcard run off independent clocks, so one delivers marginally more or fewer frames per second than the other. Because output is clocked to the wall clock, a slightly slow source is padded and a slightly fast one is drained, keeping both locked to real time.
 
 The output is anchored to the **first captured sample** (not to when you called `Start`), so a recording begins at the first real audio with only a small pre-roll cushion of latency — a device that is slow to spin up doesn't add a long leading gap or swallow the start.
 
-On top of this, `CaptureMixerInput` applies one *optional* refinement when you feed it the timestamped overload, `AddSamples(data, qpcPosition, devicePosition)`: it uses the shared-origin **`qpcPosition`** to nudge a source's start so sources that began within ~100ms of each other line up precisely. The nudge is bounded (≤100ms) and non-destructive — a larger apparent offset is left to the pacing above, captured audio is never dropped, and if the driver reports a zero/garbage QPC nothing happens. `devicePosition` is captured for diagnostics only.
+> **Why not use the packet timestamps?** `WasapiRecorder.DataAvailable` also hands you each packet's `qpcPosition` and `devicePosition`, and an earlier version of this helper used them to align source start times and back-fill glitches. In practice, WASAPI shared-mode drivers populate those positions inconsistently — commonly a real value on the first packet and then zero — so acting on them inserted large amounts of spurious silence and made things *worse* than a plain append. The wall-clock pacing above needs no timestamps and works regardless, so the timestamp path was removed.
 
-For diagnostics, `CaptureMixerInput` exposes `PacketsReceived` / `FramesReceived` / `SilenceFramesInserted` / `BufferedFrames` and the raw `FirstQpcPosition` / `FirstDevicePosition` / `LastQpcPosition` / `LastDevicePosition` (plus `RealtimeCaptureMixer.OutputFrames`). The demo's **Align sources** toggle switches the timestamped overload on and off so you can compare — on most hardware the two sound identical, which tells you the timestamps aren't adding anything.
+For diagnostics, `CaptureMixerInput` exposes `PacketsReceived` / `FramesReceived` / `BufferedFrames`, and `RealtimeCaptureMixer` exposes `OutputFrames`. The demo shows these live per source, which is handy for confirming audio is actually flowing and how much latency is buffered.
 
 ## Things to watch out for
 
@@ -124,7 +124,7 @@ For diagnostics, `CaptureMixerInput` exposes `PacketsReceived` / `FramesReceived
 - **Loopback silence.** WASAPI loopback capture only raises `DataAvailable` while audio is actually playing, so `RealtimeCaptureMixer` fills those gaps with silence (the output stays paced to the wall clock) — a loopback source with nothing playing simply contributes silence.
 - **Clock drift.** The microphone and the soundcard are driven by independent clocks, but the wall-clock-paced output keeps both locked to real time (see above). This isn't sample-accurate; if you need tighter long-run A/V sync you'd add per-source adaptive resampling driven by the measured QPC-vs-samples error.
 - **Disposal order.** Stop both captures, let the pump loop finish, *then* dispose the recorders and the writer. `WasapiRecorder` also implements `IAsyncDisposable`, so prefer `await recorder.DisposeAsync()` (or `await using`) off a UI thread. Disposing a capture device while another thread is still touching it has caused crashes (see [#1183](https://github.com/naudio/NAudio/issues/1183) and [#1184](https://github.com/naudio/NAudio/issues/1184)).
-- **Legacy capture devices.** `CaptureMixerInput` is device-agnostic: to mix a classic `IWaveIn` device (`WaveInEvent`, `WasapiLoopbackCapture`) add it with `mixer.AddInput(waveIn.WaveFormat)` and feed it via the untimestamped overload, `waveIn.DataAvailable += (s, a) => input.AddSamples(a.Buffer.AsSpan(0, a.BytesRecorded));`. Those devices don't provide QPC/device timestamps, so such a source is appended in arrival order rather than timeline-aligned.
+- **Legacy capture devices.** `CaptureMixerInput` is device-agnostic: to mix a classic `IWaveIn` device (`WaveInEvent`, `WasapiLoopbackCapture`) add it with `mixer.AddInput(waveIn.WaveFormat)` and feed it the same way — `waveIn.DataAvailable += (s, a) => input.AddSamples(a.Buffer.AsSpan(0, a.BytesRecorded));`.
 
 ## Mixing vs. separate channels
 

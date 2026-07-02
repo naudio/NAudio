@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using NAudio.Mixer;
 using System.Threading;
@@ -9,7 +10,7 @@ namespace NAudio.Wave;
 /// <summary>
 /// WaveIn recording device using event callbacks
 /// </summary>
-public class WaveIn : IWaveIn
+public class WaveIn : IWaveIn, IWaveLatency
 {
     private readonly AutoResetEvent callbackEvent;
     private readonly SynchronizationContext syncContext;
@@ -17,6 +18,8 @@ public class WaveIn : IWaveIn
     private volatile CaptureState captureState;
     private WaveInBuffer[] buffers;
     private bool isDisposed;
+    // Stopwatch ticks of the most recently delivered buffer. long.MinValue = none yet.
+    private long lastBufferDeliveredTimestamp = long.MinValue;
 
     /// <summary>
     /// Indicates recorded data is available
@@ -156,6 +159,7 @@ public class WaveIn : IWaveIn
                 {
                     if (buffer.Done)
                     {
+                        Volatile.Write(ref lastBufferDeliveredTimestamp, Stopwatch.GetTimestamp());
                         if (buffer.BytesRecorded > 0)
                         {
                             DataAvailable?.Invoke(this, new WaveInEventArgs(buffer.Data, buffer.BytesRecorded));
@@ -225,6 +229,34 @@ public class WaveIn : IWaveIn
     /// WaveFormat we are recording in
     /// </summary>
     public WaveFormat WaveFormat { get; set; }
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Computed as <c>(NumberOfBuffers - 0.5) × BufferMilliseconds</c>: in steady state every
+    /// queued buffer plus half of the one currently being filled by the driver sits between
+    /// the microphone and the application.
+    /// </remarks>
+    public TimeSpan AverageLatency =>
+        TimeSpan.FromMilliseconds(BufferMilliseconds * (NumberOfBuffers - 0.5));
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Returns the wall-clock age of the freshest sample the application has received: the
+    /// elapsed time since the most recent buffer was delivered. This is a sawtooth that reads
+    /// ~0 at the moment of delivery and rises to ~<see cref="BufferMilliseconds"/> just before
+    /// the next one arrives, averaging half a buffer over the cycle. Falls back to
+    /// <see cref="AverageLatency"/> before the first buffer is delivered.
+    /// </remarks>
+    public TimeSpan CurrentLatency
+    {
+        get
+        {
+            long last = Volatile.Read(ref lastBufferDeliveredTimestamp);
+            if (last == long.MinValue) return AverageLatency;
+            long elapsed = Stopwatch.GetTimestamp() - last;
+            return TimeSpan.FromSeconds(elapsed / (double)Stopwatch.Frequency);
+        }
+    }
 
     /// <summary>
     /// Dispose pattern

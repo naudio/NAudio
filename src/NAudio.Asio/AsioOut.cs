@@ -26,7 +26,7 @@ namespace NAudio.Wave;
 /// </list>
 /// </para>
 /// </remarks>
-public class AsioOut : IWavePlayer
+public class AsioOut : IWavePlayer, IWaveLatency
 {
     private AsioDevice device;
     private IWaveProvider sourceStream;
@@ -427,6 +427,31 @@ public class AsioOut : IWavePlayer
 
     /// <inheritdoc/>
     public WaveFormat OutputWaveFormat { get; private set; }
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Derived from the driver's reported output latency in samples (<c>ASIOgetLatencies</c>).
+    /// Computed lazily from cached values — no work is done on the ASIO callback thread.
+    /// </remarks>
+    public TimeSpan AverageLatency
+    {
+        get
+        {
+            if (!isInitialized) return TimeSpan.Zero;
+            return TimeSpan.FromSeconds(
+                device.OutputLatencySamples / (double)device.CurrentSampleRate);
+        }
+    }
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Returns <see cref="AverageLatency"/>. ASIO swaps fixed-size buffers at perfectly
+    /// regular intervals, so the live latency is always equal to the steady-state latency
+    /// to within half a buffer. Reporting an instrumented value would require timestamping
+    /// the buffer-switch callback, which we deliberately avoid to keep the real-time path
+    /// free of extra work.
+    /// </remarks>
+    public TimeSpan CurrentLatency => AverageLatency;
 
     /// <summary>
     /// Get the input channel name

@@ -312,11 +312,28 @@ public class MidiFile
     /// <param name="events">Events to export</param>
     public static void Export(string filename, MidiEventCollection events)
     {
+        using var stream = File.Create(filename);
+        Export(stream, events);
+    }
+
+    /// <summary>
+    /// Exports a MIDI event collection to a stream.
+    /// </summary>
+    /// <param name="stream">Stream to write the MIDI data to. Must be writable and
+    /// seekable — track chunk sizes are patched in after each track is written. The
+    /// stream is left open on completion; the caller is responsible for disposing it.</param>
+    /// <param name="events">Events to export.</param>
+    public static void Export(Stream stream, MidiEventCollection events)
+    {
+        if (stream == null) throw new ArgumentNullException(nameof(stream));
+        if (events == null) throw new ArgumentNullException(nameof(events));
+        if (!stream.CanWrite) throw new ArgumentException("Stream is not writable", nameof(stream));
+        if (!stream.CanSeek) throw new ArgumentException("Stream must be seekable — track chunk sizes are patched after each track is written", nameof(stream));
         if (events.MidiFileType == 0 && events.Tracks > 1)
         {
             throw new ArgumentException("Can't export more than one track to a type 0 file");
         }
-        using var writer = new BinaryWriter(File.Create(filename));
+        using var writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: true);
         writer.Write(Encoding.UTF8.GetBytes("MThd"));
         writer.Write(SwapUInt32(6)); // chunk size
         writer.Write(SwapUInt16((ushort)events.MidiFileType));
@@ -333,7 +350,7 @@ public class MidiFile
 
             long absoluteTime = events.StartAbsoluteTime;
 
-            // use a stable sort to preserve ordering of MIDI events whose 
+            // use a stable sort to preserve ordering of MIDI events whose
             // absolute times are the same
             MergeSort.Sort(eventList, new MidiEventComparer());
             if (eventList.Count > 0)

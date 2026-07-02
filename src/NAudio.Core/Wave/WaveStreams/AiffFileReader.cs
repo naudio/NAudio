@@ -245,7 +245,14 @@ public class AiffFileReader : WaveStream
             switch (WaveFormat.BitsPerSample)
             {
                 case 8:
-                    // no swap required
+                    // AIFF 8-bit PCM is signed two's-complement, whereas the shared
+                    // Pcm8BitToSampleProvider (and WAV) treat 8-bit as unsigned. There is no
+                    // endianness to swap, but flipping the sign bit converts the signed source
+                    // byte to the unsigned value the downstream converter expects. See issue #1178.
+                    for (int i = 0; i < read.Length; i++)
+                    {
+                        read[i] ^= 0x80;
+                    }
                     break;
                 case 16:
                     for (int i = 0; i < read.Length; i += bytesPerSample)

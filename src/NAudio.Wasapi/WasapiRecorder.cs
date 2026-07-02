@@ -13,7 +13,7 @@ namespace NAudio.Wave;
 /// process-specific loopback capture, and IAsyncEnumerable support.
 /// Created via <see cref="WasapiRecorderBuilder"/>.
 /// </summary>
-public class WasapiRecorder : IDisposable, IAsyncDisposable
+public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
 {
     private const long ReftimesPerMillisec = 10000;
 
@@ -26,9 +26,12 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
     private readonly bool configureEchoCancellationReference;
     private readonly string echoCancellationReferenceEndpointId;
     private readonly bool useCommunicationsMode;
+    private readonly bool useRawMode;
     private readonly bool preferLowLatency;
     private readonly bool requireLowLatency;
     private readonly MMDevice mmDevice;
+    private readonly string deviceId;
+    private readonly string deviceFriendlyName;
     private readonly SynchronizationContext syncContext;
 
     private AudioClient audioClient;
@@ -85,10 +88,68 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
     /// </summary>
     public int LatencyMilliseconds { get; private set; }
 
+    /// <summary>
+    /// The endpoint ID of the device this recorder was created on, captured at construction — the same
+    /// string accepted by <see cref="MMDeviceEnumerator.GetDevice"/>. Persist it to reopen the same
+    /// physical device later (for example after the endpoint is disabled and re-enabled).
+    /// </summary>
+    /// <remarks>
+    /// Null when there is no fixed capture endpoint — that is, process-loopback capture
+    /// (<see cref="WasapiRecorderBuilder.WithProcessLoopback"/>) or when following the default device
+    /// with automatic stream routing (<see cref="WasapiRecorderBuilder.WithDefaultDeviceStreamRouting"/>),
+    /// where Windows may transparently reroute the stream at any time. To discover the current default
+    /// endpoint in the routing case, resolve it yourself via
+    /// <see cref="MMDeviceEnumerator.GetDefaultAudioEndpoint"/> and track changes with an
+    /// <see cref="NAudio.CoreAudioApi.Interfaces.IMMNotificationClient"/>.
+    /// </remarks>
+    public string DeviceId => deviceId;
+
+    /// <summary>
+    /// The friendly name of the device this recorder was created on (e.g. "Microphone (USB Audio
+    /// Device)"), captured at construction. Useful for display and logging. Null when there is no
+    /// fixed capture endpoint — see <see cref="DeviceId"/>.
+    /// </summary>
+    public string DeviceFriendlyName => deviceFriendlyName;
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Uses <see cref="LatencyMilliseconds"/> once the audio client has been initialised (so it
+    /// reflects the actual engine period — including any reduction from IAudioClient3 low-latency
+    /// mode), falling back to the requested buffer length before then.
+    /// </remarks>
+    public TimeSpan AverageLatency =>
+        TimeSpan.FromMilliseconds(LatencyMilliseconds > 0 ? LatencyMilliseconds : bufferMilliseconds);
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Derived from <c>IAudioClient::GetCurrentPadding</c>: on a capture stream this is the
+    /// count of frames already captured but not yet read by the host. Falls back to
+    /// <see cref="AverageLatency"/> when not recording or before the audio client is up.
+    /// </remarks>
+    public TimeSpan CurrentLatency
+    {
+        get
+        {
+            if (captureState != CaptureState.Capturing || audioClient == null)
+                return AverageLatency;
+            try
+            {
+                int padding = audioClient.CurrentPadding;
+                return TimeSpan.FromSeconds(padding / (double)waveFormat.SampleRate);
+            }
+            catch (COMException)
+            {
+                // Racing with Stop / device removal; fall back to the steady-state estimate.
+                return AverageLatency;
+            }
+        }
+    }
+
     internal WasapiRecorder(MMDevice device, AudioClientShareMode shareMode, bool useEventSync,
         int bufferMilliseconds, WaveFormat requestedFormat, string mmcssTaskName, bool useLoopback = false,
         bool configureEchoCancellationReference = false, string echoCancellationReferenceEndpointId = null,
-        bool useCommunicationsMode = false, bool preferLowLatency = false, bool requireLowLatency = false)
+        bool useCommunicationsMode = false, bool preferLowLatency = false, bool requireLowLatency = false,
+        bool useRawMode = false)
     {
         syncContext = SynchronizationContext.Current;
         this.shareMode = shareMode;
@@ -99,10 +160,13 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
         this.configureEchoCancellationReference = configureEchoCancellationReference;
         this.echoCancellationReferenceEndpointId = echoCancellationReferenceEndpointId;
         this.useCommunicationsMode = useCommunicationsMode;
+        this.useRawMode = useRawMode;
         this.preferLowLatency = preferLowLatency;
         this.requireLowLatency = requireLowLatency;
 
         mmDevice = device;
+        deviceId = device.ID;
+        deviceFriendlyName = device.FriendlyName;
         audioClient = device.CreateAudioClient();
         waveFormat = requestedFormat ?? audioClient.MixFormat;
     }
@@ -139,7 +203,7 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
     // client (GetMixFormat and AutoConvertPcm work), so this uses the standard shared path — not the
     // loopback flag. Low latency is rejected by the builder, keeping CreateAudioClient() recovery out.
     private WasapiRecorder(AudioClient audioClient, bool useEventSync, int bufferMilliseconds,
-        WaveFormat requestedFormat, string mmcssTaskName, bool isDefaultDeviceRouting)
+        WaveFormat requestedFormat, string mmcssTaskName, bool isDefaultDeviceRouting, bool useRawMode)
     {
         syncContext = SynchronizationContext.Current;
         shareMode = AudioClientShareMode.Shared;
@@ -147,17 +211,18 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
         this.bufferMilliseconds = bufferMilliseconds;
         this.mmcssTaskName = mmcssTaskName;
         this.audioClient = audioClient;
+        this.useRawMode = useRawMode;
         waveFormat = requestedFormat ?? audioClient.MixFormat;
     }
 
     internal static async Task<WasapiRecorder> CreateDefaultDeviceRoutingAsync(
-        bool useEventSync, int bufferMilliseconds, WaveFormat requestedFormat, string mmcssTaskName)
+        bool useEventSync, int bufferMilliseconds, WaveFormat requestedFormat, string mmcssTaskName, bool useRawMode)
     {
         // Automatic stream routing follows the default capture device, re-routing transparently when
         // the default changes. Activation is asynchronous, hence the async factory.
         var audioClient = await AudioClient.ActivateDefaultDeviceAsync(DataFlow.Capture).ConfigureAwait(false);
         return new WasapiRecorder(audioClient, useEventSync, bufferMilliseconds, requestedFormat, mmcssTaskName,
-            isDefaultDeviceRouting: true);
+            isDefaultDeviceRouting: true, useRawMode: useRawMode);
     }
 
     /// <summary>
@@ -250,8 +315,9 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
         }
         finally
         {
-            audioClient.Stop();
-            audioClient.Reset();
+            // See SafeStopAndReset: the device may have gone away mid-capture, so cleanup must not
+            // throw and mask the real exception flowing out of the iterator to the caller.
+            SafeStopAndReset();
             captureState = CaptureState.Stopped;
             if (mmcssHandle != IntPtr.Zero)
                 NativeMethods.AvRevertMmThreadCharacteristics(mmcssHandle);
@@ -335,9 +401,12 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
 
         // The communications signal-processing mode must be requested before Initialize. It is what
         // engages the system's AEC/NS/AGC capture pipeline (and exposes the AEC reference control) on
-        // most endpoints. Process-loopback clients have no IAudioClient2 and are excluded by the builder.
+        // most endpoints. Raw mode is the opposite — it bypasses that processing — so the builder rejects
+        // combining the two. Process-loopback clients have no IAudioClient2 and are excluded by the builder.
         if (useCommunicationsMode)
             audioClient.SetClientProperties(AudioStreamCategory.Communications);
+        else if (useRawMode)
+            audioClient.SetClientProperties(AudioStreamCategory.Other, AudioClientStreamOptions.Raw);
 
         audioClient.Initialize(shareMode, flags, bufferDuration, 0, waveFormat, Guid.Empty);
 
@@ -394,9 +463,11 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
         var periodInFrames = periodInfo.ChooseLowestLatencyPeriod();
 
         // The communications signal-processing mode (if requested) must be set before initialization;
-        // it is independent of the low-latency periodicity.
+        // it is independent of the low-latency periodicity. Raw mode is mutually exclusive with it.
         if (useCommunicationsMode)
             audioClient.SetClientProperties(AudioStreamCategory.Communications);
+        else if (useRawMode)
+            audioClient.SetClientProperties(AudioStreamCategory.Other, AudioClientStreamOptions.Raw);
 
         try
         {
@@ -474,13 +545,27 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable
         }
         finally
         {
-            audioClient.Stop();
-            audioClient.Reset();
+            // The device may already be gone (e.g. unplugged, or the default device changed),
+            // in which case Stop/Reset themselves fail. Never let cleanup mask the real exception
+            // or, worse, throw an unhandled exception on the capture thread and tear down the whole
+            // process — RecordingStopped must always fire so callers can recover (issue #672).
+            SafeStopAndReset();
             captureState = CaptureState.Stopped;
             if (mmcssHandle != IntPtr.Zero)
                 NativeMethods.AvRevertMmThreadCharacteristics(mmcssHandle);
             RaiseRecordingStopped(exception);
         }
+    }
+
+    /// <summary>
+    /// Best-effort stop and reset of the audio client during teardown. A device that has been
+    /// removed mid-capture fails these calls (AUDCLNT_E_DEVICE_INVALIDATED); the failure is not
+    /// actionable here, and must not be allowed to escape and crash the capture thread.
+    /// </summary>
+    private void SafeStopAndReset()
+    {
+        try { audioClient?.Stop(); } catch { /* device already gone */ }
+        try { audioClient?.Reset(); } catch { /* device already gone */ }
     }
 
     private void ReadAvailablePackets(AudioCaptureClient capture)

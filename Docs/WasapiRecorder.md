@@ -220,3 +220,25 @@ recorder.AcousticEchoCancellationControl?.UseDefaultReferenceEndpoint(); // let 
 
 At the lower level, `AudioClient.TryGetAcousticEchoCancellationControl()` returns the same control
 (or null when unsupported) for an initialized capture client.
+
+## Raw mode (bypassing capture enhancements)
+
+Raw mode is the opposite of communications mode. Where communications mode *requests* the system
+capture pipeline, `WithRawMode()` opens a *raw* stream (`AUDCLNT_STREAMOPTIONS_RAW`) that *bypasses*
+it — the capture audio enhancements / APO effects Windows applies by default — leaving only
+endpoint-specific, always-on processing in the APO, driver, and hardware. Use it when you want the
+microphone signal unaltered by system effects:
+
+```c#
+var recorder = new WasapiRecorderBuilder()
+    .WithDevice(microphone)
+    .WithRawMode()
+    .Build();
+```
+
+Raw mode requires `IAudioClient2` (Windows 8.1+); `StartRecording` throws `InvalidOperationException`
+if the device doesn't support it. It composes with shared or exclusive mode, low latency, loopback
+capture, and default-device stream routing. Because it bypasses the very processing that
+`WithCommunicationsMode()` and `WithEchoCancellationReferenceEndpoint()` request, it cannot be
+combined with either (the builder throws), nor with `WithProcessLoopback()` (whose virtual device has
+no `IAudioClient2`).

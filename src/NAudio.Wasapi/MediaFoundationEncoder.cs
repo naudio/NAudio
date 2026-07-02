@@ -91,7 +91,6 @@ public class MediaFoundationEncoder : IDisposable
 
     /// <summary>
     /// Helper function to simplify encoding Window Media Audio
-    /// Should be supported on Vista and above (not tested)
     /// </summary>
     /// <param name="inputSource">Input audio source, must be PCM</param>
     /// <param name="outputFile">Output file path, should end with .wma</param>
@@ -106,7 +105,6 @@ public class MediaFoundationEncoder : IDisposable
 
     /// <summary>
     /// Helper function to simplify encoding Window Media Audio
-    /// Should be supported on Vista and above (not tested)
     /// </summary>
     /// <param name="inputSource">Input audio source, must be PCM</param>
     /// <param name="outputStream">Output stream</param>

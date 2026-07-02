@@ -209,7 +209,16 @@ public class AiffFileWriter : Stream
 
         if (bytesPerSample <= 1)
         {
-            outStream.Write(data, offset, count);
+            // AIFF 8-bit PCM is signed two's-complement, but the incoming bytes are unsigned
+            // (WAV-style, like every other path through Write, which converts WAV layout to
+            // AIFF layout). Flip the sign bit on the way out so the file is valid signed AIFF.
+            // Copy into a scratch buffer so the caller's array is not mutated. See issue #1178.
+            byte[] signedData = new byte[count];
+            for (int i = 0; i < count; i++)
+            {
+                signedData[i] = (byte)(data[offset + i] ^ 0x80);
+            }
+            outStream.Write(signedData, 0, count);
         }
         else
         {

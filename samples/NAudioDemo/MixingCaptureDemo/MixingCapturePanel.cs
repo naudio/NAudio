@@ -140,7 +140,7 @@ public class MixingCapturePanel : UserControl
         controls.Controls.Add(new Label { Text = "Max length (seconds):", AutoSize = true, Anchor = AnchorStyles.Left, Margin = new Padding(3, 8, 3, 3) });
         maxSecondsInput = new NumericUpDown { Minimum = 1, Maximum = 3600, Value = 20, Width = 70, Margin = new Padding(3, 4, 12, 3) };
         controls.Controls.Add(maxSecondsInput);
-        alignCheckbox = new CheckBox { Text = "Align sources (timestamps)", Checked = true, AutoSize = true, Anchor = AnchorStyles.Left, Margin = new Padding(3, 6, 12, 3) };
+        alignCheckbox = new CheckBox { Text = "Align sources (experimental)", Checked = false, AutoSize = true, Anchor = AnchorStyles.Left, Margin = new Padding(3, 6, 12, 3) };
         controls.Controls.Add(alignCheckbox);
         startButton = new Button { Text = "Start", Width = 80, Margin = new Padding(3) };
         stopButton = new Button { Text = "Stop", Width = 80, Enabled = false, Margin = new Padding(3) };
@@ -257,7 +257,8 @@ public class MixingCapturePanel : UserControl
         outputPath = Path.Combine(outputFolder, $"mixed-capture-{DateTime.Now:yyyyMMdd-HHmmss}.wav");
         mixer = new RealtimeCaptureMixer(TargetFormat);
         recorders.Clear();
-        Array.Clear(rowInputs);
+        Array.Clear(rowInputs); // fresh inputs (and fresh diagnostic counters) per recording
+        diagnosticsLabel.Text = string.Empty;
 
         try
         {
@@ -341,13 +342,17 @@ public class MixingCapturePanel : UserControl
                 continue;
             }
             var fmt = input.SourceFormat;
+            var devSpan = input.LastDevicePosition - input.FirstDevicePosition;
+            var qpcSpan = input.LastQpcPosition - input.FirstQpcPosition;
             sb.AppendLine(
                 $"src {i + 1}: {fmt.SampleRate / 1000}kHz/{fmt.Channels}ch  " +
                 $"packets {input.PacketsReceived:n0}  " +
                 $"audio {input.FramesReceived:n0}  " +
                 $"silence {input.SilenceFramesInserted:n0}  " +
-                $"buffered {input.BufferedFrames:n0}  " +
-                $"devPos {input.LastDevicePosition:n0}  qpc {input.LastQpcPosition:n0}");
+                $"buffered {input.BufferedFrames:n0}");
+            sb.AppendLine(
+                $"       devPos {input.FirstDevicePosition:n0} -> {input.LastDevicePosition:n0} (span {devSpan:n0})  " +
+                $"qpc span {qpcSpan:n0} (100ns)");
         }
         diagnosticsLabel.Text = sb.ToString().TrimEnd();
     }

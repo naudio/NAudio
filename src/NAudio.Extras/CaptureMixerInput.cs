@@ -38,15 +38,15 @@ public class CaptureMixerInput
     private readonly CaptureTimeline timeline;
     private readonly int sourceBytesPerFrame;
     private readonly int sourceSampleRate;
-    private readonly int maxAlignmentFrames;
+    private readonly int maxStartLeadFrames;
 
     private bool firstPacket = true;
-    private bool haveDeviceEnd;
-    private long lastDeviceEnd;
     private long timelineFrames;
     private long packetsReceived;
     private long framesReceived;
     private long silenceFramesInserted;
+    private long firstDevicePosition;
+    private long firstQpcPosition;
     private long lastDevicePosition;
     private long lastQpcPosition;
     private readonly byte[] silence = new byte[16 * 1024]; // reusable all-zero chunk
@@ -76,6 +76,12 @@ public class CaptureMixerInput
 
     /// <summary>Source frames currently buffered and waiting to be mixed. Diagnostics.</summary>
     public int BufferedFrames => buffer.BufferedBytes / sourceBytesPerFrame;
+
+    /// <summary>The first packet's device position, as reported by the source. Diagnostics.</summary>
+    public long FirstDevicePosition => firstDevicePosition;
+
+    /// <summary>The first packet's QPC timestamp (100ns units). Diagnostics.</summary>
+    public long FirstQpcPosition => firstQpcPosition;
 
     /// <summary>The most recent packet's device position, as reported by the source. Diagnostics.</summary>
     public long LastDevicePosition => lastDevicePosition;
@@ -115,10 +121,11 @@ public class CaptureMixerInput
         };
         sourceBytesPerFrame = sourceFormat.BlockAlign;
         sourceSampleRate = sourceFormat.SampleRate;
-        // Cap any single alignment correction (start lead or gap fill) to one second. This
-        // bounds the effect of an implausible timestamp so a misbehaving driver can never flood
-        // the stream with silence.
-        maxAlignmentFrames = sourceSampleRate;
+        // The start nudge only corrects a small (<=100ms) skew between sources. A larger offset
+        // means a source genuinely started later (e.g. a loopback that only begins delivering
+        // once audio plays); the mixer's silence padding already covers that, so we must not add
+        // more. This cap also means an implausible timestamp can never flood the stream.
+        maxStartLeadFrames = sourceSampleRate / 10;
 
         // normalise bit depth -> float, then channels, then sample rate
         ISampleProvider provider = buffer.ToSampleProvider();
@@ -162,34 +169,24 @@ public class CaptureMixerInput
         if (firstPacket)
         {
             firstPacket = false;
+            firstQpcPosition = qpcPosition;
+            firstDevicePosition = devicePosition;
             var origin = timeline?.GetOrSetOrigin(qpcPosition) ?? qpcPosition;
-            // Offset the first real audio so it sits at its true capture time relative to the
-            // shared origin. A source that started earliest (origin) gets no lead; later
-            // starters get a silence lead equal to their QPC distance from the origin. Only a
-            // sane, bounded lead is applied — see the note on alignment below.
+            // Nudge the start so this source lines up with the earliest source. Only a small,
+            // sub-100ms skew is corrected (see maxStartLeadFrames); a larger apparent offset is
+            // left to the mixer's silence padding. If the driver reports a zero/garbage QPC the
+            // lead is 0 and nothing is inserted.
             var lead = (qpcPosition - origin) * sourceSampleRate / HundredNanosecondsPerSecond;
-            if (lead > 0 && lead <= maxAlignmentFrames)
+            if (lead > 0 && lead <= maxStartLeadFrames)
             {
                 InsertSilence(lead);
             }
         }
-        else if (haveDeviceEnd)
-        {
-            // A continuous stream reports devicePosition == end of the previous packet. A jump
-            // ahead means the device counted frames it never delivered (a glitch): fill the hole
-            // with silence so downstream audio keeps its timing. We deliberately only correct a
-            // small, plausible *forward* gap. A backwards or overlapping position, an
-            // implausibly large jump, or a driver that reports a static/zero device position is
-            // ignored and the packet is simply appended — captured audio is never dropped.
-            var gap = devicePosition - lastDeviceEnd;
-            if (gap > 0 && gap <= maxAlignmentFrames)
-            {
-                InsertSilence(gap);
-            }
-        }
 
-        lastDeviceEnd = devicePosition + frames;
-        haveDeviceEnd = true;
+        // After the start, packets are appended in arrival order. Mid-stream drift is left to
+        // the mixer's wall-clock-paced output rather than per-packet silence insertion, which
+        // proved unreliable across real capture drivers (device-position semantics vary and are
+        // often not usable). Captured audio is never dropped.
         buffer.AddSamples(data);
         framesReceived += frames;
         timelineFrames += frames;

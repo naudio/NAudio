@@ -44,6 +44,7 @@ public class RealtimeCaptureMixer
     private readonly Stopwatch clock = new();
     private readonly double preRollMs;
     private long framesRead;
+    private bool started;
 
     /// <summary>The common target format everything is mixed into (32-bit IEEE float).</summary>
     public WaveFormat WaveFormat { get; }
@@ -65,9 +66,9 @@ public class RealtimeCaptureMixer
     /// </summary>
     /// <param name="targetFormat">The mixed output format. Must be 32-bit IEEE float.</param>
     /// <param name="preRoll">
-    /// How long to buffer before output begins. During this window inputs establish their
-    /// shared origin and insert their start-alignment silence, so their first real samples are
-    /// already in place when reading starts. Default 200ms.
+    /// A small cushion of audio to build up (measured from the first captured sample, not from
+    /// <see cref="Start"/>) before output begins, so the mixer doesn't immediately underrun.
+    /// Default 50ms.
     /// </param>
     public RealtimeCaptureMixer(WaveFormat targetFormat, TimeSpan? preRoll = null)
     {
@@ -77,7 +78,7 @@ public class RealtimeCaptureMixer
         }
         WaveFormat = targetFormat;
         mixer = new MixingSampleProvider(targetFormat) { ReadFully = true };
-        preRollMs = (preRoll ?? TimeSpan.FromMilliseconds(200)).TotalMilliseconds;
+        preRollMs = (preRoll ?? TimeSpan.FromMilliseconds(50)).TotalMilliseconds;
     }
 
     /// <summary>
@@ -101,21 +102,44 @@ public class RealtimeCaptureMixer
         return input;
     }
 
-    /// <summary>Starts (or restarts) the output clock. Call just before starting the recorders.</summary>
+    /// <summary>Arms (or re-arms) the mixer for a new capture. Call just before starting the recorders.</summary>
     public void Start()
     {
         framesRead = 0;
-        clock.Restart();
+        started = false;
     }
 
     /// <summary>
     /// Reads mixed audio, paced to the wall clock: returns at most as many samples as should
-    /// have been produced by now, and 0 during the pre-roll window or when the caller has
-    /// already caught up. Write whatever it returns and sleep briefly on 0.
+    /// have been produced by now, and 0 before the first audio arrives, during the pre-roll
+    /// window, or when the caller has already caught up. Write whatever it returns and sleep
+    /// briefly on 0.
     /// </summary>
     /// <returns>The number of samples (floats, i.e. frames × channels) written.</returns>
     public int Read(float[] buffer, int offset, int maxSamples)
     {
+        if (!started)
+        {
+            // Anchor the output clock to the first captured audio rather than to Start(), so the
+            // file begins at the first real sample with only a small cushion of latency — no long
+            // leading gap while a device spins up, and no initial audio skipped.
+            var hasData = false;
+            foreach (var input in inputs)
+            {
+                if (input.FramesReceived > 0)
+                {
+                    hasData = true;
+                    break;
+                }
+            }
+            if (!hasData)
+            {
+                return 0;
+            }
+            clock.Restart();
+            started = true;
+        }
+
         var elapsedMs = clock.Elapsed.TotalMilliseconds;
         if (elapsedMs < preRollMs)
         {

@@ -88,10 +88,6 @@ public class WasapiOut : IWavePlayer, IWavePosition, IWaveLatency
 
     private static MMDevice GetDefaultAudioEndpoint()
     {
-        if (Environment.OSVersion.Version.Major < 6)
-        {
-            throw new NotSupportedException("WASAPI supported only on Windows Vista and above");
-        }
         using var enumerator = new MMDeviceEnumerator();
         return enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Console);
     }

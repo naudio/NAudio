@@ -115,7 +115,7 @@ public partial class DirectSoundOut : IWavePlayer
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DirectSoundOut"/> class.
-    /// (40ms seems to work under Vista).
+    /// (40ms is a reasonable default latency).
     /// </summary>
     /// <param name="latency">The latency.</param>
     /// <param name="device">Selected device</param>

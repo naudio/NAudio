@@ -25,15 +25,8 @@ public class MMDeviceEnumerator : IDisposable
     /// <summary>
     /// Activates the system <c>MMDeviceEnumerator</c> COM object.
     /// </summary>
-    /// <exception cref="NotSupportedException">
-    /// Thrown on Windows versions earlier than Vista, where Core Audio is not available.
-    /// </exception>
     public MMDeviceEnumerator()
     {
-        if (Environment.OSVersion.Version.Major < 6)
-        {
-            throw new NotSupportedException("Core Audio device enumeration requires Windows Vista or newer.");
-        }
         realEnumerator = ComActivation.CreateInstance<IMMDeviceEnumerator>(
             CLSID_MMDeviceEnumerator, IID_IMMDeviceEnumerator);
     }

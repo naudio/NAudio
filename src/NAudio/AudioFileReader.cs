@@ -89,10 +89,8 @@ public class AudioFileReader : WaveStream, ISampleProvider
         else if (fileName.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase))
         {
 #if WASAPI
-            if (Environment.OSVersion.Version.Major < 6)
-                readerStream = new Mp3FileReader(fileName);
-            else // make MediaFoundationReader the default for MP3 going forwards
-                readerStream = new MediaFoundationReader(fileName);
+            // Media Foundation is the default MP3 path in NAudio 3 (no Mp3FileReader fallback needed)
+            readerStream = new MediaFoundationReader(fileName);
 #else
             throw new InvalidOperationException("MP3 file reading requires the NAudio.Wasapi package for Media Foundation codecs");
 #endif

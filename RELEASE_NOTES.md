@@ -119,6 +119,7 @@ extensive correctness work during development — see [Docs/Sampler.md](Docs/Sam
  * Each NAudio package now ships its own README and embeds an SPDX 2.2 SBOM under `/_manifest/spdx_2.2/` in its `.nupkg`, and carries per-package `<Description>` metadata
  * Tests migrated from VSTest to `Microsoft.Testing.Platform`, and `NAudioTests` split into cross-platform `NAudio.Core.Tests` and Windows-only `NAudio.Windows.Tests`; migrated to the `.slnx` solution format; renamed `license.txt` to `LICENSE`
  * Added a DocFX documentation site (tutorials + API reference) published to GitHub Pages, built from `Docs/` and the source XML comments
+ * Removed dead pre-Vista `Environment.OSVersion.Version.Major < 6` guards (in `AudioFileReader`, `MMDeviceEnumerator` and `WasapiOut`) that could never fire on the Windows 10+ baseline, dropped the never-reachable `Mp3FileReader` fallback in `AudioFileReader` (Media Foundation is the sole MP3 path), deleted the unused internal `ISubunit` COM stub, and refreshed stale "Vista and above" doc comments
 
 #### Demos and test harnesses
 

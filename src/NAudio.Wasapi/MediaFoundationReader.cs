@@ -14,7 +14,6 @@ namespace NAudio.Wave;
 
 /// <summary>
 /// Class for reading any file that Media Foundation can play
-/// Will only work in Windows Vista and above
 /// Automatically converts to PCM
 /// If it is a video file with multiple audio streams, it will pick out the first audio stream
 /// </summary>

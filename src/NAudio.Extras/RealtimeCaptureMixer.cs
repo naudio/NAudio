@@ -57,6 +57,9 @@ public class RealtimeCaptureMixer
     /// <summary>The inputs added so far.</summary>
     public IReadOnlyList<CaptureMixerInput> Inputs => inputs;
 
+    /// <summary>Total frames read from the mixer (paced output) since <see cref="Start"/>. Diagnostics.</summary>
+    public long OutputFrames => framesRead;
+
     /// <summary>
     /// Creates a new mixer.
     /// </summary>

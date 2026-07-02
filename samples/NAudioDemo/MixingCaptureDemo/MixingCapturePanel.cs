@@ -42,10 +42,14 @@ public class MixingCapturePanel : UserControl
     private readonly SourceRow[] rows = new SourceRow[SourceCount];
     private readonly MMDeviceEnumerator enumerator = new();
     private NumericUpDown maxSecondsInput;
+    private CheckBox alignCheckbox;
     private Button startButton;
     private Button stopButton;
     private Label statusLabel;
+    private Label diagnosticsLabel;
     private ListBox recordingsList;
+    private readonly System.Windows.Forms.Timer diagnosticsTimer = new() { Interval = 250 };
+    private readonly CaptureMixerInput[] rowInputs = new CaptureMixerInput[SourceCount];
     private readonly string outputFolder;
 
     // capture state (only touched on the UI thread except where noted)
@@ -136,6 +140,8 @@ public class MixingCapturePanel : UserControl
         controls.Controls.Add(new Label { Text = "Max length (seconds):", AutoSize = true, Anchor = AnchorStyles.Left, Margin = new Padding(3, 8, 3, 3) });
         maxSecondsInput = new NumericUpDown { Minimum = 1, Maximum = 3600, Value = 20, Width = 70, Margin = new Padding(3, 4, 12, 3) };
         controls.Controls.Add(maxSecondsInput);
+        alignCheckbox = new CheckBox { Text = "Align sources (timestamps)", Checked = true, AutoSize = true, Anchor = AnchorStyles.Left, Margin = new Padding(3, 6, 12, 3) };
+        controls.Controls.Add(alignCheckbox);
         startButton = new Button { Text = "Start", Width = 80, Margin = new Padding(3) };
         stopButton = new Button { Text = "Stop", Width = 80, Enabled = false, Margin = new Padding(3) };
         startButton.Click += (s, e) => StartCapture();
@@ -148,6 +154,18 @@ public class MixingCapturePanel : UserControl
         statusLabel = new Label { Text = "Ready.", AutoSize = true, Margin = new Padding(3, 8, 3, 3) };
         layout.Controls.Add(statusLabel, 0, SourceCount + 2);
         layout.SetColumnSpan(statusLabel, 3);
+
+        diagnosticsLabel = new Label
+        {
+            AutoSize = true,
+            Font = new Font(FontFamily.GenericMonospace, 8f),
+            Margin = new Padding(3, 2, 3, 3),
+            Text = string.Empty,
+        };
+        layout.Controls.Add(diagnosticsLabel, 0, SourceCount + 3);
+        layout.SetColumnSpan(diagnosticsLabel, 3);
+
+        diagnosticsTimer.Tick += (s, e) => UpdateDiagnostics();
 
         var recordings = new GroupBox
         {
@@ -176,7 +194,7 @@ public class MixingCapturePanel : UserControl
         recordingButtons.Controls.Add(openFolderButton);
         recordings.Controls.Add(recordingsList);
         recordings.Controls.Add(recordingButtons);
-        layout.Controls.Add(recordings, 0, SourceCount + 3);
+        layout.Controls.Add(recordings, 0, SourceCount + 4);
         layout.SetColumnSpan(recordings, 3);
 
         Controls.Add(layout);
@@ -235,9 +253,11 @@ public class MixingCapturePanel : UserControl
 
         stopRequested = false;
         captureMaxSeconds = (int)maxSecondsInput.Value;
+        var align = alignCheckbox.Checked;
         outputPath = Path.Combine(outputFolder, $"mixed-capture-{DateTime.Now:yyyyMMdd-HHmmss}.wav");
         mixer = new RealtimeCaptureMixer(TargetFormat);
         recorders.Clear();
+        Array.Clear(rowInputs);
 
         try
         {
@@ -265,8 +285,18 @@ public class MixingCapturePanel : UserControl
                     metering.StreamVolume += (s, e) => UpdateMeter(rowIndex, e.MaxSampleValues);
                     return metering;
                 });
-                recorder.DataAvailable += (data, flags, devicePosition, qpcPosition) =>
-                    input.AddSamples(data, qpcPosition, devicePosition);
+                rowInputs[rowIndex] = input;
+                if (align)
+                {
+                    recorder.DataAvailable += (data, flags, devicePosition, qpcPosition) =>
+                        input.AddSamples(data, qpcPosition, devicePosition);
+                }
+                else
+                {
+                    // No timestamp correction — append every packet in arrival order for comparison.
+                    recorder.DataAvailable += (data, flags, devicePosition, qpcPosition) =>
+                        input.AddSamples(data);
+                }
                 recorders.Add(recorder);
             }
 
@@ -289,8 +319,37 @@ public class MixingCapturePanel : UserControl
         pumpThread = new Thread(PumpLoop) { IsBackground = true, Name = "MixingCapturePump" };
         pumpThread.Start();
 
+        diagnosticsTimer.Start();
         SetRunningState(true);
-        statusLabel.Text = $"Recording {recorders.Count} source(s) to {Path.GetFileName(outputPath)} ...";
+        statusLabel.Text = $"Recording {recorders.Count} source(s) to {Path.GetFileName(outputPath)} " +
+                           $"(alignment {(align ? "on" : "off")}) ...";
+    }
+
+    private void UpdateDiagnostics()
+    {
+        if (mixer == null)
+        {
+            return;
+        }
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"output frames: {mixer.OutputFrames:n0}  ({mixer.OutputFrames / (double)TargetFormat.SampleRate:0.0}s)");
+        for (var i = 0; i < rowInputs.Length; i++)
+        {
+            var input = rowInputs[i];
+            if (input == null)
+            {
+                continue;
+            }
+            var fmt = input.SourceFormat;
+            sb.AppendLine(
+                $"src {i + 1}: {fmt.SampleRate / 1000}kHz/{fmt.Channels}ch  " +
+                $"packets {input.PacketsReceived:n0}  " +
+                $"audio {input.FramesReceived:n0}  " +
+                $"silence {input.SilenceFramesInserted:n0}  " +
+                $"buffered {input.BufferedFrames:n0}  " +
+                $"devPos {input.LastDevicePosition:n0}  qpc {input.LastQpcPosition:n0}");
+        }
+        diagnosticsLabel.Text = sb.ToString().TrimEnd();
     }
 
     private void PumpLoop()
@@ -373,6 +432,7 @@ public class MixingCapturePanel : UserControl
         }
 
         stopRequested = true;
+        diagnosticsTimer.Stop();
         var thread = pumpThread;
         pumpThread = null;
         if (thread != null && thread.ManagedThreadId != Environment.CurrentManagedThreadId)
@@ -380,7 +440,9 @@ public class MixingCapturePanel : UserControl
             thread.Join(2000);
         }
 
+        UpdateDiagnostics(); // capture final counts before tearing the mixer down
         CleanupResources();
+        Array.Clear(rowInputs);
 
         foreach (var row in rows)
         {
@@ -476,6 +538,7 @@ public class MixingCapturePanel : UserControl
         startButton.Enabled = !running;
         stopButton.Enabled = running;
         maxSecondsInput.Enabled = !running;
+        alignCheckbox.Enabled = !running;
         foreach (var row in rows)
         {
             row.Devices.Enabled = !running;

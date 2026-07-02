@@ -38,12 +38,17 @@ public class CaptureMixerInput
     private readonly CaptureTimeline timeline;
     private readonly int sourceBytesPerFrame;
     private readonly int sourceSampleRate;
-    private readonly int maxSilenceFrames;
+    private readonly int maxAlignmentFrames;
 
     private bool firstPacket = true;
     private bool haveDeviceEnd;
     private long lastDeviceEnd;
     private long timelineFrames;
+    private long packetsReceived;
+    private long framesReceived;
+    private long silenceFramesInserted;
+    private long lastDevicePosition;
+    private long lastQpcPosition;
     private readonly byte[] silence = new byte[16 * 1024]; // reusable all-zero chunk
 
     /// <summary>
@@ -59,6 +64,24 @@ public class CaptureMixerInput
     /// inserted for alignment. Exposed for diagnostics.
     /// </summary>
     public long TimelineFrames => timelineFrames;
+
+    /// <summary>Number of packets handed to <c>AddSamples</c>. Diagnostics.</summary>
+    public long PacketsReceived => packetsReceived;
+
+    /// <summary>Number of real (non-silence) source frames added. Diagnostics.</summary>
+    public long FramesReceived => framesReceived;
+
+    /// <summary>Number of silence frames inserted for alignment. Diagnostics.</summary>
+    public long SilenceFramesInserted => silenceFramesInserted;
+
+    /// <summary>Source frames currently buffered and waiting to be mixed. Diagnostics.</summary>
+    public int BufferedFrames => buffer.BufferedBytes / sourceBytesPerFrame;
+
+    /// <summary>The most recent packet's device position, as reported by the source. Diagnostics.</summary>
+    public long LastDevicePosition => lastDevicePosition;
+
+    /// <summary>The most recent packet's QPC timestamp (100ns units). Diagnostics.</summary>
+    public long LastQpcPosition => lastQpcPosition;
 
     /// <summary>
     /// Creates a new capture input.
@@ -92,7 +115,10 @@ public class CaptureMixerInput
         };
         sourceBytesPerFrame = sourceFormat.BlockAlign;
         sourceSampleRate = sourceFormat.SampleRate;
-        maxSilenceFrames = buffer.BufferLength / sourceBytesPerFrame;
+        // Cap any single alignment correction (start lead or gap fill) to one second. This
+        // bounds the effect of an implausible timestamp so a misbehaving driver can never flood
+        // the stream with silence.
+        maxAlignmentFrames = sourceSampleRate;
 
         // normalise bit depth -> float, then channels, then sample rate
         ISampleProvider provider = buffer.ToSampleProvider();
@@ -110,8 +136,11 @@ public class CaptureMixerInput
     /// </summary>
     public void AddSamples(ReadOnlySpan<byte> data)
     {
+        var frames = data.Length / sourceBytesPerFrame;
+        packetsReceived++;
         buffer.AddSamples(data);
-        timelineFrames += data.Length / sourceBytesPerFrame;
+        framesReceived += frames;
+        timelineFrames += frames;
     }
 
     /// <summary>
@@ -126,15 +155,20 @@ public class CaptureMixerInput
     public void AddSamples(ReadOnlySpan<byte> data, long qpcPosition, long devicePosition)
     {
         var frames = data.Length / sourceBytesPerFrame;
+        packetsReceived++;
+        lastQpcPosition = qpcPosition;
+        lastDevicePosition = devicePosition;
+
         if (firstPacket)
         {
             firstPacket = false;
             var origin = timeline?.GetOrSetOrigin(qpcPosition) ?? qpcPosition;
             // Offset the first real audio so it sits at its true capture time relative to the
             // shared origin. A source that started earliest (origin) gets no lead; later
-            // starters get a silence lead equal to their QPC distance from the origin.
+            // starters get a silence lead equal to their QPC distance from the origin. Only a
+            // sane, bounded lead is applied — see the note on alignment below.
             var lead = (qpcPosition - origin) * sourceSampleRate / HundredNanosecondsPerSecond;
-            if (lead > 0)
+            if (lead > 0 && lead <= maxAlignmentFrames)
             {
                 InsertSilence(lead);
             }
@@ -142,43 +176,36 @@ public class CaptureMixerInput
         else if (haveDeviceEnd)
         {
             // A continuous stream reports devicePosition == end of the previous packet. A jump
-            // ahead means the device counted frames it never delivered (a glitch): fill the
-            // hole with silence so downstream audio keeps its timing.
+            // ahead means the device counted frames it never delivered (a glitch): fill the hole
+            // with silence so downstream audio keeps its timing. We deliberately only correct a
+            // small, plausible *forward* gap. A backwards or overlapping position, an
+            // implausibly large jump, or a driver that reports a static/zero device position is
+            // ignored and the packet is simply appended — captured audio is never dropped.
             var gap = devicePosition - lastDeviceEnd;
-            if (gap > 0)
+            if (gap > 0 && gap <= maxAlignmentFrames)
             {
                 InsertSilence(gap);
-            }
-            else if (gap < 0)
-            {
-                // Overlap (unexpected): drop the overlapping front of this packet.
-                var drop = (int)Math.Min(-gap, frames);
-                data = data.Slice(drop * sourceBytesPerFrame);
             }
         }
 
         lastDeviceEnd = devicePosition + frames;
         haveDeviceEnd = true;
-        if (!data.IsEmpty)
-        {
-            buffer.AddSamples(data);
-            timelineFrames += data.Length / sourceBytesPerFrame;
-        }
+        buffer.AddSamples(data);
+        framesReceived += frames;
+        timelineFrames += frames;
     }
 
     private void InsertSilence(long frames)
     {
-        // Never insert more than the buffer can hold; a huge gap (e.g. a device reset) would
-        // otherwise be pointless churn since the excess would be discarded anyway.
-        var toWrite = (int)Math.Min(frames, maxSilenceFrames);
-        var remaining = toWrite * sourceBytesPerFrame;
+        var remaining = (int)frames * sourceBytesPerFrame;
         while (remaining > 0)
         {
             var chunk = Math.Min(remaining, silence.Length);
             buffer.AddSamples(silence, 0, chunk);
             remaining -= chunk;
         }
-        timelineFrames += toWrite;
+        silenceFramesInserted += frames;
+        timelineFrames += frames;
     }
 
     private static ISampleProvider MatchChannels(ISampleProvider provider, int channels)

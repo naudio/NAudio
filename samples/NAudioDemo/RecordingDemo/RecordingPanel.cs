@@ -50,12 +50,12 @@ public partial class RecordingPanel : UserControl
 
     private static readonly ApiOption[] ApiOptions =
     {
+        new(RecordingApi.WasapiRecorderCapture,  "WasapiRecorder",                   "WasapiRecorder",        true,  false, true),
+        new(RecordingApi.WasapiRecorderLoopback, "WasapiRecorder (Loopback)",        "WasapiRecorderLoopback",true,  true,  false),
         new(RecordingApi.WaveIn,                 "waveIn (event callback)",          "WaveIn",                false, false, false),
         new(RecordingApi.WaveInWindow,           "waveIn (window callback)",         "WaveInWindow",          false, false, false),
         new(RecordingApi.WasapiCaptureLegacy,    "WasapiCapture (legacy)",           "WasapiCapture",         true,  false, true),
         new(RecordingApi.WasapiLoopbackLegacy,   "WasapiLoopbackCapture (legacy)",   "WasapiLoopbackCapture", true,  true,  false),
-        new(RecordingApi.WasapiRecorderCapture,  "WasapiRecorder",                   "WasapiRecorder",        true,  false, true),
-        new(RecordingApi.WasapiRecorderLoopback, "WasapiRecorder (Loopback)",        "WasapiRecorderLoopback",true,  true,  false),
     };
 
     private sealed class WaveInDeviceItem

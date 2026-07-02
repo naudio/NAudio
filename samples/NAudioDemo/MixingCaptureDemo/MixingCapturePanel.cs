@@ -356,9 +356,7 @@ public class MixingCapturePanel : UserControl
             var fmt = input.SourceFormat;
             sb.AppendLine(
                 $"src {i + 1}: {fmt.SampleRate / 1000}kHz/{fmt.Channels}ch  " +
-                $"packets {input.PacketsReceived:n0}  " +
-                $"audio {input.FramesReceived:n0}  " +
-                $"buffered {input.BufferedFrames:n0}");
+                $"buffered {input.BufferedFrames:n0} frames");
         }
         diagnosticsLabel.Text = sb.ToString().TrimEnd();
     }

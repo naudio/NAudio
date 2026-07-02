@@ -116,7 +116,7 @@ The output is anchored to the **first captured sample** (not to when you called 
 
 > **Why not use the packet timestamps?** `WasapiRecorder.DataAvailable` also hands you each packet's `qpcPosition` and `devicePosition`, and an earlier version of this helper used them to align source start times and back-fill glitches. In practice, WASAPI shared-mode drivers populate those positions inconsistently — commonly a real value on the first packet and then zero — so acting on them inserted large amounts of spurious silence and made things *worse* than a plain append. The wall-clock pacing above needs no timestamps and works regardless, so the timestamp path was removed.
 
-For diagnostics, `CaptureMixerInput` exposes `PacketsReceived` / `FramesReceived` / `BufferedFrames`, and `RealtimeCaptureMixer` exposes `OutputFrames`. The demo shows these live per source, which is handy for confirming audio is actually flowing and how much latency is buffered.
+For diagnostics, `CaptureMixerInput` exposes `BufferedFrames` (and `HasReceivedData`), and `RealtimeCaptureMixer` exposes `OutputFrames`. The demo shows the buffered frames live per source, which is handy for confirming audio is actually flowing and how much latency is buffered.
 
 ## Things to watch out for
 

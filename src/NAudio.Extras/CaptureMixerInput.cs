@@ -23,9 +23,6 @@ public class CaptureMixerInput
     private readonly BufferedWaveProvider buffer;
     private readonly int sourceBytesPerFrame;
 
-    private long packetsReceived;
-    private long framesReceived;
-
     /// <summary>
     /// The adapted provider, already in the target format, to add to a mixer.
     /// </summary>
@@ -34,11 +31,11 @@ public class CaptureMixerInput
     /// <summary>The native (capture) format of the source.</summary>
     public WaveFormat SourceFormat => buffer.WaveFormat;
 
-    /// <summary>Number of packets handed to <see cref="AddSamples"/>. Diagnostics.</summary>
-    public long PacketsReceived => packetsReceived;
-
-    /// <summary>Number of source frames added so far. Diagnostics.</summary>
-    public long FramesReceived => framesReceived;
+    /// <summary>
+    /// Whether any audio has been received yet. <see cref="RealtimeCaptureMixer"/> uses this to
+    /// anchor its output clock to the first captured sample.
+    /// </summary>
+    public bool HasReceivedData { get; private set; }
 
     /// <summary>Source frames currently buffered and waiting to be mixed. Diagnostics.</summary>
     public int BufferedFrames => buffer.BufferedBytes / sourceBytesPerFrame;
@@ -83,9 +80,8 @@ public class CaptureMixerInput
     /// </summary>
     public void AddSamples(ReadOnlySpan<byte> data)
     {
-        packetsReceived++;
+        HasReceivedData = true;
         buffer.AddSamples(data);
-        framesReceived += data.Length / sourceBytesPerFrame;
     }
 
     private static ISampleProvider MatchChannels(ISampleProvider provider, int channels)

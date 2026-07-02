@@ -126,7 +126,7 @@ public class RealtimeCaptureMixer
             var hasData = false;
             foreach (var input in inputs)
             {
-                if (input.FramesReceived > 0)
+                if (input.HasReceivedData)
                 {
                     hasData = true;
                     break;

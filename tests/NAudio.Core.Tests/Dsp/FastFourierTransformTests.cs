@@ -139,6 +139,57 @@ public class FastFourierTransformTests
     }
 
     [Test]
+    public void ForwardFft_LargeSize_MatchesDoublePrecisionReference()
+    {
+        // Regression test for issue #520. At large sizes the old single-precision
+        // twiddle-factor recurrence drifted enough to distort the high-frequency
+        // bins. Compare the whole spectrum against a naive double-precision DFT and
+        // require agreement well beyond the drift that was previously observed.
+        const int m = 13;
+        const int n = 1 << m; // 8192
+
+        var signal = new double[n];
+        // A signal with meaningful high-frequency content so drift near the top of
+        // the spectrum would show up: a couple of tones plus a decaying alternator.
+        for (int i = 0; i < n; i++)
+        {
+            signal[i] = Math.Cos(2.0 * Math.PI * 5.0 * i / n)
+                        + 0.5 * Math.Cos(2.0 * Math.PI * (n / 2 - 3) * i / n)
+                        + 0.25 * (i % 2 == 0 ? 1.0 : -1.0) * Math.Exp(-3.0 * i / n);
+        }
+
+        var data = new Complex[n];
+        for (int i = 0; i < n; i++)
+        {
+            data[i].X = (float)signal[i];
+        }
+
+        FastFourierTransform.FFT(true, m, data);
+
+        double maxError = 0.0;
+        double scale = 1.0 / n;
+        for (int bin = 0; bin < n; bin++)
+        {
+            double re = 0.0, im = 0.0;
+            for (int i = 0; i < n; i++)
+            {
+                double angle = -2.0 * Math.PI * bin * i / n;
+                re += signal[i] * Math.Cos(angle);
+                im += signal[i] * Math.Sin(angle);
+            }
+
+            double refX = re * scale;
+            double refY = im * scale;
+
+            maxError = Math.Max(maxError, Math.Abs(data[bin].X - refX));
+            maxError = Math.Max(maxError, Math.Abs(data[bin].Y - refY));
+        }
+
+        Assert.That(maxError, Is.LessThan(1e-4),
+            $"Large-N FFT diverged from the double-precision reference (max error {maxError:E}).");
+    }
+
+    [Test]
     public void HannWindow_HasExpectedEndpointsAndSymmetry()
     {
         const int frameSize = 1024;

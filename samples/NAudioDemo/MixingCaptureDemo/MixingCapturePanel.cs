@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -141,7 +141,7 @@ public class MixingCapturePanel : UserControl
             WrapContents = false,
         };
         controls.Controls.Add(new Label { Text = "Max length (seconds):", AutoSize = true, Anchor = AnchorStyles.Left, Margin = new Padding(3, 8, 3, 3) });
-        maxSecondsInput = new NumericUpDown { Minimum = 1, Maximum = 3600, Value = 20, Width = 70, Margin = new Padding(3, 4, 12, 3) };
+        maxSecondsInput = new NumericUpDown { Minimum = 1, Maximum = 3600, Value = 30, Width = 70, Margin = new Padding(3, 4, 12, 3) };
         controls.Controls.Add(maxSecondsInput);
         startButton = new Button { Text = "Start", Width = 80, Margin = new Padding(3) };
         stopButton = new Button { Text = "Stop", Width = 80, Enabled = false, Margin = new Padding(3) };

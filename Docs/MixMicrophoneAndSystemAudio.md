@@ -1,14 +1,8 @@
 # Mix the Microphone and System Audio into One Stream
 
-One of the most frequently asked NAudio questions is some variant of *"how do I record (or live‑mix) the microphone and the system/loopback audio at the same time into a single stream?"* — usually to save a single WAV file, or to feed the mixed bytes into a video muxer. People reach for `MixingSampleProvider`, wire up `WasapiLoopbackCapture` and `WaveInEvent`, and hit an exception like:
+In this tutorial we will show how to capture audio from multiple devices (e.g. recording two microphones, or mixing a microphone with the system loopback audio) and mix them into a single stream. For example, if you want to produce a single WAV file, or to feed the mixed audio into a video muxer. 
 
-```
-ArgumentException: All mixer inputs must have the same WaveFormat
-```
-
-This tutorial explains *why* that happens and shows a complete, modern (NAudio 3) recipe that works.
-
-## Why you can't just mix the two capture devices
+## Finding a common format
 
 `MixingSampleProvider` sums its inputs sample‑for‑sample. For that to be meaningful, **every input must have the same wave format**: the same sample rate, the same channel count, and 32‑bit IEEE float samples. Two capture devices almost never agree on this:
 
@@ -91,7 +85,7 @@ writer.Dispose();
 
 ### Getting the mixed bytes instead of a file
 
-If you're feeding a video muxer (the AVI scenario in [#761](https://github.com/naudio/NAudio/issues/761)) you want raw bytes rather than a WAV file. Read paced float samples from the mixer and convert each chunk to 16‑bit PCM:
+If you're feeding a video muxer (e.g. the AVI scenario in [#761](https://github.com/naudio/NAudio/issues/761)) you want raw bytes rather than a WAV file. Read paced float samples from the mixer and convert each chunk to 16‑bit PCM:
 
 ```c#
 var floats = new float[mixer.WaveFormat.SampleRate * mixer.WaveFormat.Channels / 10]; // 100ms
@@ -116,7 +110,7 @@ The heavy lifting is done by **pacing the output to the wall clock**, not by per
 
 The output is anchored to the **first captured sample** (not to when you called `Start`), so a recording begins at the first real audio with only a small pre-roll cushion of latency — a device that is slow to spin up doesn't add a long leading gap or swallow the start.
 
-> **Why not use the packet timestamps?** `WasapiRecorder.DataAvailable` also hands you each packet's `qpcPosition` and `devicePosition`, and an earlier version of this helper used them to align source start times and back-fill glitches. In practice, WASAPI shared-mode drivers populate those positions inconsistently — commonly a real value on the first packet and then zero — so acting on them inserted large amounts of spurious silence and made things *worse* than a plain append. The wall-clock pacing above needs no timestamps and works regardless, so the timestamp path was removed.
+> **Why not use the packet timestamps?** `WasapiRecorder.DataAvailable` also hands you each packet's `qpcPosition` and `devicePosition`, and an earlier version of this helper used them to align source start times and back-fill glitches. In practice, some WASAPI shared-mode drivers populate those positions inconsistently — commonly a real value on the first packet and then zero — so acting on them inserted large amounts of spurious silence and made things *worse* than a plain append. The wall-clock pacing above needs no timestamps and works regardless, so the timestamp path was removed.
 
 For diagnostics, `CaptureMixerInput` exposes `BufferedFrames` (and `HasReceivedData`), and `RealtimeCaptureMixer` exposes `OutputFrames`. The demo shows the buffered frames live per source, which is handy for confirming audio is actually flowing and how much latency is buffered.
 
@@ -125,18 +119,9 @@ For diagnostics, `CaptureMixerInput` exposes `BufferedFrames` (and `HasReceivedD
 - **Clipping.** Summing two loud sources can exceed `±1.0f`. Reduce the inputs before mixing — `MonoToStereoSampleProvider` exposes `LeftVolume`/`RightVolume`, or insert a `VolumeSampleProvider` per source.
 - **Loopback silence.** WASAPI loopback capture only raises `DataAvailable` while audio is actually playing, so `RealtimeCaptureMixer` fills those gaps with silence (the output stays paced to the wall clock) — a loopback source with nothing playing simply contributes silence.
 - **Clock drift.** The microphone and the soundcard are driven by independent clocks, but the wall-clock-paced output keeps both locked to real time (see above). This isn't sample-accurate; if you need tighter long-run A/V sync you'd add per-source adaptive resampling driven by the measured QPC-vs-samples error.
-- **Disposal order.** Stop both captures, let the pump loop finish, *then* dispose the recorders and the writer. `WasapiRecorder` also implements `IAsyncDisposable`, so prefer `await recorder.DisposeAsync()` (or `await using`) off a UI thread. Disposing a capture device while another thread is still touching it has caused crashes (see [#1183](https://github.com/naudio/NAudio/issues/1183) and [#1184](https://github.com/naudio/NAudio/issues/1184)).
+- **Disposal order.** Stop both captures, let the pump loop finish, *then* dispose the recorders and the writer. `WasapiRecorder` also implements `IAsyncDisposable`, so prefer `await recorder.DisposeAsync()` (or `await using`) off a UI thread.
 - **Legacy capture devices.** `CaptureMixerInput` is device-agnostic: to mix a classic `IWaveIn` device (`WaveInEvent`, `WasapiLoopbackCapture`) add it with `mixer.AddInput(waveIn.WaveFormat)` and feed it the same way — `waveIn.DataAvailable += (s, a) => input.AddSamples(a.Buffer.AsSpan(0, a.BytesRecorded));`.
 
 ## Mixing vs. separate channels
 
 If your goal is not to *sum* the two sources but to keep them **separate** — for example microphone on the left channel and system audio on the right ([#1220](https://github.com/naudio/NAudio/issues/1220)) — use `MultiplexingSampleProvider` (or `MultiplexingWaveProvider`) instead of `MixingSampleProvider`. You still bring both sources to a common sample rate first, but you map input channels to output channels rather than adding them together.
-
-## Related questions
-
-This question comes up regularly:
-
-- [#761 – Get mixed byte-stream from WasapiLoopbackCapture and microphone](https://github.com/naudio/NAudio/issues/761)
-- [#405 – How to record system sound and microphone input sound at the same time?](https://github.com/naudio/NAudio/issues/405)
-- [#1169 – Can this library record the microphone and computer audio at the same time?](https://github.com/naudio/NAudio/issues/1169)
-- [#1220 – Record microphone and system sound into the left/right channels of one WAV](https://github.com/naudio/NAudio/issues/1220) (use multiplexing rather than mixing)

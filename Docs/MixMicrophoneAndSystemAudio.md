@@ -24,6 +24,8 @@ So before mixing you have to bring both sources to a **common format**. The pipe
 
 Then add both adapted sources to a single `MixingSampleProvider` and read from it.
 
+> **Skip the resampler when you can.** Step 4 is only inserted when a source's rate differs from the mixer's — `CaptureMixerInput` compares the two and adds `WdlResamplingSampleProvider` only if needed. So if all your devices already run at the same rate, capture at that rate and no resampling happens at all. When they differ, pick the highest device rate as the mixer rate and pass it to each source's `WasapiRecorderBuilder.WithFormat(...)`: WASAPI's own engine converts the slower ones during capture, and `CaptureMixerInput` again adds no resampler. (The "Mixing Capture" demo does exactly this — it reads each device's mix format, mixes at the highest rate, and only requests conversion for sources below it.)
+
 ## Use the packaged helper (NAudio.Extras)
 
 You don't have to write any of this yourself. **`NAudio.Extras` ships `CaptureMixerInput` and `RealtimeCaptureMixer`**, which implement exactly this pipeline — including timestamp-based alignment so independently-clocked sources don't drift apart (see [Keeping the sources aligned](#keeping-the-sources-aligned)). The runnable **"Mixing Capture" panel in `NAudioDemo`** wires them to two or three WASAPI sources at once (microphone and/or loopback), with a level meter per source and a maximum recording length.

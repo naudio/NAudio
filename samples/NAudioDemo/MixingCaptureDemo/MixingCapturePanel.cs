@@ -22,7 +22,10 @@ namespace NAudioDemo.MixingCaptureDemo;
 public class MixingCapturePanel : UserControl
 {
     private const int SourceCount = 3;
-    private static readonly WaveFormat TargetFormat = WaveFormat.CreateIeeeFloatWaveFormat(48000, 2);
+
+    // The mixed output format. The sample rate is chosen per recording to match the selected
+    // devices (see StartCapture) so the resampler can usually be skipped; always stereo float.
+    private WaveFormat TargetFormat { get; set; } = WaveFormat.CreateIeeeFloatWaveFormat(48000, 2);
 
     private sealed class DeviceItem
     {
@@ -278,28 +281,47 @@ public class MixingCapturePanel : UserControl
         stopRequested = false;
         captureMaxSeconds = (int)maxSecondsInput.Value;
         outputPath = Path.Combine(outputFolder, $"mixed-capture-{DateTime.Now:yyyyMMdd-HHmmss}.wav");
-        mixer = new RealtimeCaptureMixer(TargetFormat);
         recorders.Clear();
-        Array.Clear(rowInputs); // fresh inputs (and fresh diagnostic counters) per recording
+        Array.Clear(rowInputs); // fresh inputs per recording
         diagnosticsLabel.Text = string.Empty;
+
+        // Gather the enabled sources with each device's native mix format. Mixing everything at one
+        // sample rate lets CaptureMixerInput skip its resampler when the rates already match — the
+        // common case where every device runs at, say, 44.1kHz. When they differ we take the highest
+        // rate and ask WASAPI to convert the slower sources up to it (its engine does the resampling),
+        // so the resampler stays out of the path either way.
+        var sources = new List<(int RowIndex, DeviceItem Item, int NativeRate, int NativeChannels)>();
+        for (var i = 0; i < rows.Length; i++)
+        {
+            var row = rows[i];
+            if (!(row.Enabled.Checked && row.Devices.SelectedItem is DeviceItem item))
+            {
+                row.Meter.Amplitude = 0f;
+                continue;
+            }
+            var (nativeRate, nativeChannels) = GetNativeFormat(item.Device);
+            sources.Add((i, item, nativeRate, nativeChannels));
+        }
+
+        var unifiedRate = sources.Max(s => s.NativeRate);
+        TargetFormat = WaveFormat.CreateIeeeFloatWaveFormat(unifiedRate, 2);
+        mixer = new RealtimeCaptureMixer(TargetFormat);
 
         try
         {
-            for (var i = 0; i < rows.Length; i++)
+            foreach (var (rowIndex, item, nativeRate, nativeChannels) in sources)
             {
-                var row = rows[i];
-                if (!(row.Enabled.Checked && row.Devices.SelectedItem is DeviceItem item))
-                {
-                    row.Meter.Amplitude = 0f;
-                    continue;
-                }
-
-                var rowIndex = i;
                 var builder = new WasapiRecorderBuilder().WithDevice(item.Device);
                 if (item.IsLoopback)
                 {
                     // Shared-mode loopback does not reliably support event sync — use polling.
                     builder = builder.WithLoopbackCapture().WithPollingSync();
+                }
+                if (nativeRate != unifiedRate)
+                {
+                    // Have WASAPI deliver this source already at the unified rate (keeping its native
+                    // channel count) so CaptureMixerInput doesn't need to resample it.
+                    builder = builder.WithFormat(WaveFormat.CreateIeeeFloatWaveFormat(unifiedRate, nativeChannels));
                 }
 
                 var recorder = builder.Build();
@@ -336,6 +358,24 @@ public class MixingCapturePanel : UserControl
         diagnosticsTimer.Start();
         SetRunningState(true);
         statusLabel.Text = $"Recording {recorders.Count} source(s) to {Path.GetFileName(outputPath)} ...";
+    }
+
+    /// <summary>
+    /// Returns the device's native mix sample rate and channel count, falling back to 48 kHz stereo
+    /// if the device can't be queried (any real activation problem resurfaces at StartRecording).
+    /// </summary>
+    private static (int SampleRate, int Channels) GetNativeFormat(MMDevice device)
+    {
+        try
+        {
+            using var audioClient = device.CreateAudioClient();
+            var mix = audioClient.MixFormat;
+            return (mix.SampleRate, mix.Channels);
+        }
+        catch
+        {
+            return (48000, 2);
+        }
     }
 
     private void UpdateDiagnostics()

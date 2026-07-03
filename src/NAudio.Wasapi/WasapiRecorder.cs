@@ -40,6 +40,7 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
     private volatile CaptureState captureState;
     private Thread captureThread;
     private EventWaitHandle frameEvent;
+    private byte[] silenceBuffer = Array.Empty<byte>();
 
     /// <summary>
     /// Fired when captured audio data is available. The buffer span is only valid
@@ -573,7 +574,22 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
         while (packetSize > 0)
         {
             using var lease = capture.GetBufferLease(bytesPerFrame);
-            DataAvailable?.Invoke(lease.Buffer, lease.Flags, lease.DevicePosition, lease.QPCPosition);
+            if ((lease.Flags & AudioClientBufferFlags.Silent) != 0)
+            {
+                // WASAPI does not guarantee the buffer memory is zeroed for a silent packet — its
+                // contents are undefined and can be stale audio left over from a previous stream,
+                // which surfaces as a short tone/noise burst (typically on the first packet after
+                // Start, which is commonly flagged silent while capture ramps up). Deliver real
+                // silence of the same length instead of the raw buffer so listeners never see it.
+                var length = lease.Buffer.Length;
+                if (silenceBuffer.Length < length)
+                    silenceBuffer = new byte[length];
+                DataAvailable?.Invoke(silenceBuffer.AsSpan(0, length), lease.Flags, lease.DevicePosition, lease.QPCPosition);
+            }
+            else
+            {
+                DataAvailable?.Invoke(lease.Buffer, lease.Flags, lease.DevicePosition, lease.QPCPosition);
+            }
             packetSize = capture.GetNextPacketSize();
         }
     }

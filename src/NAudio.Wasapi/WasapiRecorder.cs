@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -188,6 +189,7 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
         waveFormat = requestedFormat ?? WaveFormat.CreateIeeeFloatWaveFormat(44100, 2);
     }
 
+    [SupportedOSPlatform("windows10.0.19041.0")]
     internal static async Task<WasapiRecorder> CreateProcessLoopbackAsync(uint processId, ProcessLoopbackMode mode,
         bool useEventSync, int bufferMilliseconds, WaveFormat requestedFormat, string mmcssTaskName)
     {

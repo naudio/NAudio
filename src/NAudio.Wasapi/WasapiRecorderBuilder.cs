@@ -1,5 +1,7 @@
 ﻿using NAudio.CoreAudioApi;
 using System;
+using System.Diagnostics;
+using System.Runtime.Versioning;
 using System.Threading.Tasks;
 
 namespace NAudio.Wave;
@@ -226,6 +228,7 @@ public class WasapiRecorderBuilder
     /// </summary>
     /// <param name="processId">The process ID to capture audio from.</param>
     /// <param name="mode">Whether to include or exclude the target process tree.</param>
+    [SupportedOSPlatform("windows10.0.19041.0")]
     public WasapiRecorderBuilder WithProcessLoopback(uint processId,
         ProcessLoopbackMode mode = ProcessLoopbackMode.IncludeTargetProcessTree)
     {
@@ -301,6 +304,12 @@ public class WasapiRecorderBuilder
                 throw new InvalidOperationException(
                     "Raw mode is not supported with process-loopback capture: the process-loopback virtual device has no IAudioClient2.");
             }
+            // This branch only runs when WithProcessLoopback (attributed
+            // [SupportedOSPlatform("windows10.0.19041.0")]) was called, so the caller was
+            // already warned of the floor. The assert satisfies the platform-compatibility
+            // analyzer (CA1416) for this call with no release-build overhead.
+            Debug.Assert(OperatingSystem.IsWindowsVersionAtLeast(10, 0, 19041),
+                "Process loopback requires Windows 10 2004 (build 19041) or later.");
             return WasapiRecorder.CreateProcessLoopbackAsync(
                 processLoopbackId.Value, processLoopbackMode,
                 useEventSync, bufferMilliseconds, requestedFormat, mmcssTaskName);

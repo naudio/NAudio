@@ -1,5 +1,8 @@
 ### Unreleased
 
+- Changed `NAudio.Wasapi` to target `net9.0` instead of `net9.0-windows10.0.19041.0`; it stays Windows-only at runtime via `[SupportedOSPlatform("windows")]`, so cross-platform apps can now reference it and build on Linux/macOS without `EnableWindowsTargeting` (#1384)
+- Moved the WinRT MIDI backend (`WinRTMidiIn`, `WinRTMidiOut`, `MidiMessageConverter`) from `NAudio.Wasapi` into `NAudio.Midi`, which now dual-targets `net9.0;net9.0-windows10.0.19041.0`. The types keep the `NAudio.Midi` namespace; they ship only in the Windows build (#1384)
+
 <!--
 Bullets land here as PRs merge. The maintainer renames this section to
 "### 3.0.0 (date)" at release time. See CLAUDE.md and

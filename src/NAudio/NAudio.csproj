@@ -25,13 +25,18 @@
     <ProjectReference Include="..\NAudio.Dmo\NAudio.Dmo.csproj" />
     <ProjectReference Include="..\NAudio.WinMM\NAudio.WinMM.csproj" />
     <ProjectReference Include="..\NAudio.WinForms\NAudio.WinForms.csproj" />
-  </ItemGroup>
-  <PropertyGroup Condition=" $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net9.0-windows10.0.19041.0')) ">
-    <DefineConstants>$(DefineConstants);WASAPI</DefineConstants>
-  </PropertyGroup>
-  <ItemGroup Condition=" $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net9.0-windows10.0.19041.0')) ">
+    <!-- NAudio.Wasapi is now plain net9.0 (Windows-only at runtime via
+         [SupportedOSPlatform]), so it no longer imposes the 19041 floor and just
+         joins the other Windows backends. It's still gated to the Windows leg so
+         the cross-platform surface doesn't expose Windows-only WASAPI/MF types. -->
     <ProjectReference Include="..\NAudio.Wasapi\NAudio.Wasapi.csproj" />
   </ItemGroup>
+  <!-- WASAPI marks "Media Foundation codecs available" for AudioFileReader. It now
+       lights up with the Windows leg (same as WINDOWS). The 19041 floor on the
+       Windows TFM is retained because NAudio.Midi's WinRT MIDI asset requires it. -->
+  <PropertyGroup Condition=" '$(TargetPlatformIdentifier)' == 'windows' ">
+    <DefineConstants>$(DefineConstants);WASAPI</DefineConstants>
+  </PropertyGroup>
 
 
 </Project>

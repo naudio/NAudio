@@ -1,11 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
+    <!-- Plain net9.0: the WASAPI/CoreAudio and Media Foundation layers are all
+         COM interop ([GeneratedComInterface]) and P/Invoke, which compile on any
+         platform. Windows-only usage is enforced at runtime/analysis time by the
+         assembly-level [SupportedOSPlatform("windows")] attribute below (the same
+         model as NAudio.Alsa). This lets cross-platform apps reference the package
+         and build on Linux/macOS without EnableWindowsTargeting. The WinRT MIDI
+         backend, which needed the versioned Windows TFM, now lives in NAudio.Midi. -->
+    <TargetFramework>net9.0</TargetFramework>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <IsAotCompatible>true</IsAotCompatible>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Description>WASAPI playback and capture (including loopback and process loopback) and WinRT MIDI for the NAudio audio library.</Description>
+    <Description>WASAPI playback and capture (including loopback and process loopback) and Media Foundation codecs for the NAudio audio library. Windows-only at runtime.</Description>
   </PropertyGroup>
 
   <!-- needed for perfomance profiling unit tests -->
@@ -16,7 +23,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NAudio.Core\NAudio.Core.csproj" />
-    <ProjectReference Include="..\NAudio.Midi\NAudio.Midi.csproj" />
+    <!-- NAudio.Midi reference dropped: WinRT MIDI (its only consumer here) moved
+         to NAudio.Midi. Keeping Wasapi off Midi avoids transitively pulling Midi's
+         multi-target (Windows) graph into cross-platform Wasapi consumers. -->
   </ItemGroup>
 
   <ItemGroup>

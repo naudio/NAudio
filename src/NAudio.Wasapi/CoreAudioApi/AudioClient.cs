@@ -3,6 +3,7 @@ using NAudio.Wave;
 using System;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
+using System.Runtime.Versioning;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -109,6 +110,7 @@ public class AudioClient : IDisposable
     /// </summary>
     /// <param name="processId">The target process id.</param>
     /// <param name="mode">Whether to include or exclude the target process tree.</param>
+    [SupportedOSPlatform("windows10.0.19041.0")]
     public static async Task<AudioClient> ActivateProcessLoopbackAsync(uint processId,
         ProcessLoopbackMode mode = ProcessLoopbackMode.IncludeTargetProcessTree)
     {

@@ -112,7 +112,7 @@ so existing third-party decoders such as NLayer keep working).
   receive buffers automatically inside `Start()`.
 
 New (non-breaking) additions worth knowing about: WinRT `WinRTMidiIn` /
-`WinRTMidiOut` in `NAudio.Wasapi`, the backend-agnostic `IMidiInput` /
+`WinRTMidiOut` in `NAudio.Midi` (Windows build), the backend-agnostic `IMidiInput` /
 `IMidiOutput` interfaces, and the `IMidiInstrument` MIDI-file → audio pipeline.
 
 ## DMO and DirectSound

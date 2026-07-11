@@ -4,7 +4,7 @@ NAudio ships two MIDI backends on Windows. Both implement the same `IMidiInput` 
 
 | Backend | Package | Class | Notes |
 | --- | --- | --- | --- |
-| WinRT (`Windows.Devices.Midi`) | `NAudio.Wasapi` | `WinRTMidiIn`, `WinRTMidiOut` | Recommended. Async device enumeration, full `TimeSpan` timestamp resolution. Requires `net9.0-windows10.0.19041.0` or later. |
+| WinRT (`Windows.Devices.Midi`) | `NAudio.Midi` (Windows build) | `WinRTMidiIn`, `WinRTMidiOut` | Recommended. Async device enumeration, full `TimeSpan` timestamp resolution. Ships in `NAudio.Midi`'s `net9.0-windows10.0.19041.0` target, so requires that TFM or later. |
 | Legacy winmm (`midiIn*` / `midiOut*`) | `NAudio.WinMM` | `MidiIn`, `MidiOut` | Synchronous, index-based device enumeration. Timestamps are millisecond-resolution. Also fires an `ErrorReceived` event for malformed messages. |
 
 Application code can be backend-agnostic by referencing only the interfaces:
@@ -149,7 +149,7 @@ midiIn.SysexMessageReceived += (s, e) =>
 
 ## Converting between NAudio and WinRT MIDI types
 
-`MidiMessageConverter` (in `NAudio.Wasapi`) provides bidirectional conversion between NAudio `MidiEvent` types and the WinRT `IMidiMessage` types from `Windows.Devices.Midi`. This is useful if you want to drop down to `Windows.Devices.Midi` directly (e.g. to use a WinRT-only feature) while keeping the rest of your code in NAudio:
+`MidiMessageConverter` (in `NAudio.Midi`, Windows build) provides bidirectional conversion between NAudio `MidiEvent` types and the WinRT `IMidiMessage` types from `Windows.Devices.Midi`. This is useful if you want to drop down to `Windows.Devices.Midi` directly (e.g. to use a WinRT-only feature) while keeping the rest of your code in NAudio:
 
 ```c#
 // NAudio event → WinRT message

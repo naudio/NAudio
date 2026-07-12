@@ -1,5 +1,7 @@
 ﻿using NAudio.CoreAudioApi;
 using System;
+using System.Diagnostics;
+using System.Runtime.Versioning;
 using System.Threading.Tasks;
 
 namespace NAudio.Wave;
@@ -18,6 +20,13 @@ public class WasapiRecorderBuilder
     private string mmcssTaskName;
     private uint? processLoopbackId;
     private ProcessLoopbackMode processLoopbackMode = ProcessLoopbackMode.IncludeTargetProcessTree;
+    private bool configureEchoCancellationReference;
+    private string echoCancellationReferenceEndpointId;
+    private bool useCommunicationsMode;
+    private bool useRawMode;
+    private bool preferLowLatency;
+    private bool requireLowLatency;
+    private bool useDefaultDeviceRouting;
 
     /// <summary>
     /// Use the specified audio device for capture.
@@ -25,6 +34,23 @@ public class WasapiRecorderBuilder
     public WasapiRecorderBuilder WithDevice(MMDevice device)
     {
         this.device = device;
+        return this;
+    }
+
+    /// <summary>
+    /// Follow the default capture device with automatic stream routing (Windows 10 version 1607 or
+    /// later). When the user changes the default recording device — or unplugs the current one — Windows
+    /// seamlessly transfers capture to the new default device with no application code.
+    /// </summary>
+    /// <remarks>
+    /// Activation is asynchronous, so the recorder must be created via <see cref="BuildAsync"/> rather
+    /// than <see cref="Build"/>. Routing is standard shared mode only: do not combine it with
+    /// <see cref="WithDevice"/>, <see cref="WithExclusiveMode"/>, <see cref="WithLowLatency"/>,
+    /// <see cref="WithLoopbackCapture"/>, or <see cref="WithProcessLoopback"/>.
+    /// </remarks>
+    public WasapiRecorderBuilder WithDefaultDeviceStreamRouting()
+    {
+        useDefaultDeviceRouting = true;
         return this;
     }
 
@@ -106,12 +132,103 @@ public class WasapiRecorderBuilder
     }
 
     /// <summary>
+    /// Sets the render endpoint used as the reference stream for acoustic echo cancellation (AEC)
+    /// on the capture stream. Pass the render device whose output should be cancelled out of the
+    /// microphone signal, or null (the default) to let Windows pick the loopback reference itself.
+    /// </summary>
+    /// <remarks>
+    /// AEC is performed by an audio processing object in the capture pipeline; this only selects the
+    /// loopback reference endpoint. <see cref="WasapiRecorder.StartRecording"/> throws
+    /// <see cref="NotSupportedException"/> if the capture endpoint does not support controlling the
+    /// AEC reference endpoint. Requires Windows 11 build 22621 or later.
+    /// </remarks>
+    /// <param name="referenceRenderDevice">The render device to use as the reference stream, or null
+    /// to let Windows choose automatically.</param>
+    public WasapiRecorderBuilder WithEchoCancellationReferenceEndpoint(MMDevice referenceRenderDevice = null)
+    {
+        configureEchoCancellationReference = true;
+        echoCancellationReferenceEndpointId = referenceRenderDevice?.ID;
+        // The AEC effect (and therefore the reference-endpoint control) is only inserted into the
+        // capture pipeline when the stream is opened in the communications signal-processing mode.
+        // Most endpoints (laptop mics, webcams) expose no AEC control in the default mode, so opt in
+        // automatically here. Call WithCommunicationsMode() explicitly for AEC without selecting a
+        // reference endpoint.
+        useCommunicationsMode = true;
+        return this;
+    }
+
+    /// <summary>
+    /// Opens the capture stream in the communications signal-processing mode
+    /// (<see cref="AudioStreamCategory.Communications"/>). This requests the system's communications
+    /// audio pipeline — acoustic echo cancellation, noise suppression and automatic gain control —
+    /// where the endpoint and OS provide it, and is what makes the
+    /// <see cref="WithEchoCancellationReferenceEndpoint"/> control available on most devices.
+    /// </summary>
+    /// <remarks>
+    /// Requires IAudioClient2 (Windows 8+); it is not applied to process-loopback capture. The exact
+    /// effects applied depend on the capture endpoint and the installed audio processing objects.
+    /// </remarks>
+    public WasapiRecorderBuilder WithCommunicationsMode()
+    {
+        useCommunicationsMode = true;
+        return this;
+    }
+
+    /// <summary>
+    /// Request low-latency shared-mode capture via IAudioClient3 if available. This opens the capture
+    /// stream at the engine's minimum supported period rather than the configured buffer length, which
+    /// is useful for real-time scenarios such as live visualization or monitoring.
+    /// </summary>
+    /// <remarks>
+    /// Low latency requires shared mode, event-driven synchronization (the default), no loopback, and a
+    /// capture format matching the device mix format — so do not combine it with <see cref="WithFormat"/>
+    /// requesting a different format, <see cref="WithLoopbackCapture"/>, <see cref="WithExclusiveMode"/>,
+    /// <see cref="WithPollingSync"/>, or <see cref="WithProcessLoopback"/>. It also needs IAudioClient3
+    /// (Windows 10 version 1607 or later).
+    /// </remarks>
+    /// <param name="required">
+    /// When false (the default), capture silently falls back to standard shared mode if low latency
+    /// can't be honoured — inspect <see cref="WasapiRecorder.LowLatencyActive"/> and
+    /// <see cref="WasapiRecorder.LowLatencyUnavailableReason"/> afterwards to see what you got. When
+    /// true, <see cref="WasapiRecorder.StartRecording"/> (or <see cref="WasapiRecorder.CaptureAsync"/>)
+    /// instead throws an <see cref="InvalidOperationException"/> if low latency can't be achieved.
+    /// </param>
+    public WasapiRecorderBuilder WithLowLatency(bool required = false)
+    {
+        preferLowLatency = true;
+        requireLowLatency = required;
+        return this;
+    }
+
+    /// <summary>
+    /// Open a 'raw' capture stream that bypasses the system signal-processing pipeline — the capture
+    /// audio enhancements / APO effects Windows applies by default. Only endpoint-specific, always-on
+    /// processing in the APO, driver and hardware remains. Use this when you want the microphone signal
+    /// unaltered by system effects.
+    /// </summary>
+    /// <remarks>
+    /// Requires IAudioClient2 (Windows 8.1+); <see cref="WasapiRecorder.StartRecording"/> throws
+    /// <see cref="InvalidOperationException"/> if the device does not support it. Compatible with shared
+    /// and exclusive mode, low latency, loopback capture, event/polling sync and default-device stream
+    /// routing. It is the opposite of <see cref="WithCommunicationsMode"/> /
+    /// <see cref="WithEchoCancellationReferenceEndpoint"/> (which request signal processing), so it cannot
+    /// be combined with them, nor with <see cref="WithProcessLoopback"/> (whose virtual device has no
+    /// IAudioClient2).
+    /// </remarks>
+    public WasapiRecorderBuilder WithRawMode()
+    {
+        useRawMode = true;
+        return this;
+    }
+
+    /// <summary>
     /// Capture audio from a specific process (and optionally its child processes).
     /// Requires Windows 10 2004 (build 19041) or later.
     /// This uses ActivateAudioInterfaceAsync with AUDIOCLIENT_PROCESS_LOOPBACK_PARAMS.
     /// </summary>
     /// <param name="processId">The process ID to capture audio from.</param>
     /// <param name="mode">Whether to include or exclude the target process tree.</param>
+    [SupportedOSPlatform("windows10.0.19041.0")]
     public WasapiRecorderBuilder WithProcessLoopback(uint processId,
         ProcessLoopbackMode mode = ProcessLoopbackMode.IncludeTargetProcessTree)
     {
@@ -135,9 +252,32 @@ public class WasapiRecorderBuilder
                 "Process loopback capture is activated asynchronously — call BuildAsync() instead of Build().");
         }
 
+        if (useDefaultDeviceRouting)
+        {
+            throw new InvalidOperationException(
+                "Automatic stream routing is activated asynchronously — call BuildAsync() instead of Build().");
+        }
+
+        ValidateRawMode();
+
         var actualDevice = device ?? GetDefaultDevice(useLoopback);
         return new WasapiRecorder(actualDevice, shareMode, useEventSync,
-            bufferMilliseconds, requestedFormat, mmcssTaskName, useLoopback);
+            bufferMilliseconds, requestedFormat, mmcssTaskName, useLoopback,
+            configureEchoCancellationReference, echoCancellationReferenceEndpointId, useCommunicationsMode,
+            preferLowLatency, requireLowLatency, useRawMode);
+    }
+
+    /// <summary>
+    /// Raw mode bypasses the capture signal-processing pipeline, so it is mutually exclusive with the
+    /// communications mode and the acoustic-echo-cancellation reference endpoint, which exist to request
+    /// that processing.
+    /// </summary>
+    private void ValidateRawMode()
+    {
+        if (useRawMode && (useCommunicationsMode || configureEchoCancellationReference))
+            throw new InvalidOperationException(
+                "Raw mode cannot be combined with WithCommunicationsMode() or WithEchoCancellationReferenceEndpoint(): " +
+                "raw mode bypasses the signal-processing pipeline that those options enable.");
     }
 
     /// <summary>
@@ -149,9 +289,51 @@ public class WasapiRecorderBuilder
     {
         if (processLoopbackId.HasValue)
         {
+            if (configureEchoCancellationReference || useCommunicationsMode)
+            {
+                throw new InvalidOperationException(
+                    "Communications mode and acoustic echo cancellation are not supported with process-loopback capture.");
+            }
+            if (preferLowLatency)
+            {
+                throw new InvalidOperationException(
+                    "IAudioClient3 low latency is not supported with process-loopback capture.");
+            }
+            if (useRawMode)
+            {
+                throw new InvalidOperationException(
+                    "Raw mode is not supported with process-loopback capture: the process-loopback virtual device has no IAudioClient2.");
+            }
+            // This branch only runs when WithProcessLoopback (attributed
+            // [SupportedOSPlatform("windows10.0.19041.0")]) was called, so the caller was
+            // already warned of the floor. The assert satisfies the platform-compatibility
+            // analyzer (CA1416) for this call with no release-build overhead.
+            Debug.Assert(OperatingSystem.IsWindowsVersionAtLeast(10, 0, 19041),
+                "Process loopback requires Windows 10 2004 (build 19041) or later.");
             return WasapiRecorder.CreateProcessLoopbackAsync(
                 processLoopbackId.Value, processLoopbackMode,
                 useEventSync, bufferMilliseconds, requestedFormat, mmcssTaskName);
+        }
+
+        if (useDefaultDeviceRouting)
+        {
+            if (device != null)
+                throw new InvalidOperationException(
+                    "Automatic stream routing follows the default device, so it cannot be combined with WithDevice().");
+            if (shareMode == AudioClientShareMode.Exclusive)
+                throw new InvalidOperationException(
+                    "Automatic stream routing is only available in shared mode — it cannot be combined with WithExclusiveMode().");
+            if (useLoopback)
+                throw new InvalidOperationException(
+                    "Automatic stream routing follows the default capture device — it cannot be combined with WithLoopbackCapture().");
+            if (preferLowLatency)
+                throw new InvalidOperationException(
+                    "IAudioClient3 low latency is not supported with automatic stream routing.");
+
+            ValidateRawMode();
+
+            return WasapiRecorder.CreateDefaultDeviceRoutingAsync(
+                useEventSync, bufferMilliseconds, requestedFormat, mmcssTaskName, useRawMode);
         }
 
         return Task.FromResult(Build());
@@ -159,7 +341,7 @@ public class WasapiRecorderBuilder
 
     private static MMDevice GetDefaultDevice(bool loopback)
     {
-        var enumerator = new MMDeviceEnumerator();
+        using var enumerator = new MMDeviceEnumerator();
         var flow = loopback ? DataFlow.Render : DataFlow.Capture;
         return enumerator.GetDefaultAudioEndpoint(flow, Role.Console);
     }

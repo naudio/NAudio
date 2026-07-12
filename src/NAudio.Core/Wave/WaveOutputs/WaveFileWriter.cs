@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using NAudio.Wave.SampleProviders;
-using NAudio.Utils;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave;
@@ -48,6 +47,7 @@ public class WaveFileWriter : Stream
     private long dataChunkSize;
     private readonly WaveFormat format;
     private readonly string filename;
+    private readonly bool ownsStream;
     private readonly bool enableRf64;
     private readonly long rf64PromotionThreshold;
     private readonly long junkChunkPos = -1;
@@ -106,14 +106,15 @@ public class WaveFileWriter : Stream
     /// <param name="source">The source audio</param>
     public static void WriteWavFileToStream(Stream outStream, IWaveProvider source)
     {
-        using var writer = new WaveFileWriter(new IgnoreDisposeStream(outStream), source.WaveFormat);
+        // The stream constructor leaves the caller's stream open; disposing the writer
+        // finalizes the header and flushes, so no IgnoreDisposeStream wrapper is needed.
+        using var writer = new WaveFileWriter(outStream, source.WaveFormat);
         var buffer = new byte[source.WaveFormat.AverageBytesPerSecond * 4];
         while (true)
         {
             var bytesRead = source.Read(buffer.AsSpan());
             if (bytesRead == 0)
             {
-                outStream.Flush();
                 break;
             }
             writer.Write(buffer.AsSpan(0, bytesRead));
@@ -136,10 +137,21 @@ public class WaveFileWriter : Stream
     /// <param name="outStream">Stream to be written to</param>
     /// <param name="format">Wave format to use</param>
     /// <param name="options">Writer configuration; <c>null</c> uses defaults.</param>
+    /// <remarks>
+    /// The supplied stream is <b>not</b> owned by the writer: disposing the writer finalizes
+    /// the WAV header and flushes the stream, but leaves it open for the caller to dispose.
+    /// Use the filename constructor if you want the writer to own and close the underlying file.
+    /// </remarks>
     public WaveFileWriter(Stream outStream, WaveFormat format, WaveFileWriterOptions options)
+        : this(outStream, format, options, ownsStream: false)
+    {
+    }
+
+    private WaveFileWriter(Stream outStream, WaveFormat format, WaveFileWriterOptions options, bool ownsStream)
     {
         options ??= new WaveFileWriterOptions();
         this.outStream = outStream;
+        this.ownsStream = ownsStream;
         this.format = format;
         this.enableRf64 = options.EnableRf64;
         this.rf64PromotionThreshold = options.Rf64PromotionThreshold;
@@ -170,7 +182,7 @@ public class WaveFileWriter : Stream
     /// <param name="filename">The filename to write to</param>
     /// <param name="format">The Wave Format of the output data</param>
     public WaveFileWriter(string filename, WaveFormat format)
-        : this(new FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.Read), format)
+        : this(new FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.Read), format, options: null, ownsStream: true)
     {
         this.filename = filename;
     }
@@ -182,7 +194,7 @@ public class WaveFileWriter : Stream
     /// <param name="format">The Wave Format of the output data</param>
     /// <param name="options">Writer configuration; <c>null</c> uses defaults.</param>
     public WaveFileWriter(string filename, WaveFormat format, WaveFileWriterOptions options)
-        : this(new FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.Read), format, options)
+        : this(new FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.Read), format, options, ownsStream: true)
     {
         this.filename = filename;
     }
@@ -244,6 +256,24 @@ public class WaveFileWriter : Stream
             bufferedCues = new CueList();
         }
         bufferedCues.Add(new Cue(position, label));
+    }
+
+    /// <summary>
+    /// Adds a cue point with a label and a region length in samples. An <c>ltxt</c>
+    /// sub-chunk is emitted alongside the label so the cue reads back as a region rather
+    /// than a point marker.
+    /// </summary>
+    /// <param name="position">Sample position of the cue point.</param>
+    /// <param name="label">Text label (stored as UTF-8).</param>
+    /// <param name="length">Length in samples of the region starting at <paramref name="position"/>.</param>
+    public void AddCue(int position, string label, int length)
+    {
+        ThrowIfDisposed();
+        if (bufferedCues == null)
+        {
+            bufferedCues = new CueList();
+        }
+        bufferedCues.Add(new Cue(position, label, length));
     }
 
     private void EnsureHeaderFinalized()
@@ -569,7 +599,17 @@ public class WaveFileWriter : Stream
                 }
                 finally
                 {
-                    outStream.Dispose();
+                    if (ownsStream)
+                    {
+                        // We opened the file (filename constructor), so we close it.
+                        outStream.Dispose();
+                    }
+                    else
+                    {
+                        // The caller handed us the stream; finalize the file by flushing,
+                        // but leave the stream open for them to dispose.
+                        outStream.Flush();
+                    }
                     outStream = null;
                     isDisposed = true;
                 }

@@ -37,6 +37,8 @@ public class AiffFileReader : WaveStream
     /// <param name="inputStream">The input stream containing a AIF file including header</param>
     public AiffFileReader(Stream inputStream)
     {
+        // The caller owns a stream they passed in; only the filename constructor sets ownInput = true.
+        ownInput = false;
         waveStream = inputStream;
         ReadAiffHeader(waveStream, out waveFormat, out dataPosition, out dataChunkLength, chunks);
         if (waveFormat.BlockAlign <= 0)
@@ -243,7 +245,14 @@ public class AiffFileReader : WaveStream
             switch (WaveFormat.BitsPerSample)
             {
                 case 8:
-                    // no swap required
+                    // AIFF 8-bit PCM is signed two's-complement, whereas the shared
+                    // Pcm8BitToSampleProvider (and WAV) treat 8-bit as unsigned. There is no
+                    // endianness to swap, but flipping the sign bit converts the signed source
+                    // byte to the unsigned value the downstream converter expects. See issue #1178.
+                    for (int i = 0; i < read.Length; i++)
+                    {
+                        read[i] ^= 0x80;
+                    }
                     break;
                 case 16:
                     for (int i = 0; i < read.Length; i += bytesPerSample)

@@ -29,6 +29,7 @@ var player = new WasapiPlayerBuilder()
     .WithLowLatency()                // try IAudioClient3 shared-mode low latency
     .WithMmcssThreadPriority("Pro Audio")
     .WithCategory(AudioStreamCategory.Media)
+    .WithRawMode()                   // bypass system audio enhancements
     .Build();
 ```
 
@@ -48,6 +49,37 @@ if (format == null)
     // no supported exclusive format found for this device
 }
 ```
+
+### Raw mode (bypassing audio enhancements)
+
+By default Windows runs your audio through a signal-processing pipeline — the "audio enhancements" / APO effects configured for the endpoint (loudness equalization, bass boost, virtual surround, downmixing, and so on). These can alter your signal in ways you don't want; a common surprise is stereo content being mixed toward mono so the left and right channels are no longer isolated.
+
+`WithRawMode()` opens a *raw* stream (`AUDCLNT_STREAMOPTIONS_RAW`) that bypasses that processing, leaving only endpoint-specific, always-on processing in the APO, driver, and hardware. Your samples reach the device essentially unaltered:
+
+```c#
+var player = new WasapiPlayerBuilder()
+    .WithRawMode()
+    .Build();
+```
+
+Raw mode requires `IAudioClient2` (Windows 8.1+); `Init` throws `InvalidOperationException` if the device doesn't support it. It composes with the other options — shared or exclusive mode, low latency, event/polling sync, a stream category, and default-device stream routing. In exclusive mode the audio engine is already bypassed, so raw mode there only affects any remaining driver/APO processing.
+
+## Following the default device (automatic stream routing)
+
+By default a player is bound to one endpoint: if the user switches the default playback device (or unplugs the current one) mid-playback, the stream stops. `WithDefaultDeviceStreamRouting()` opts into Windows' *automatic stream routing* instead — playback follows whatever the default render device currently is, and Windows transfers the stream to the new default seamlessly with no application code. Requires Windows 10 version 1607 or later.
+
+Activation is asynchronous (it uses `ActivateAudioInterfaceAsync` under the hood), so build with `BuildAsync()` rather than `Build()` — calling `Build()` throws:
+
+```c#
+await using var player = await new WasapiPlayerBuilder()
+    .WithDefaultDeviceStreamRouting()
+    .BuildAsync();
+
+player.Init(audioFile);
+player.Play();
+```
+
+Routing is standard shared mode only, so don't combine it with `WithDevice`, `WithExclusiveMode`, or `WithLowLatency` (each throws from `BuildAsync`). Because there is no fixed endpoint, `DeviceVolume` (endpoint-wide volume) is unavailable — use `Volume`/`SessionVolume` for per-application volume instead.
 
 ## Playing audio
 

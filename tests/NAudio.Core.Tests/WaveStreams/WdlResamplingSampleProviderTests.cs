@@ -282,7 +282,75 @@ public class WdlResamplingSampleProviderTests
             $"Latency unexpectedly large: {maxLatencySeconds * 1000:F1} ms");
     }
 
+    [Test]
+    public void ChannelCountChangeMidStreamKeepsChannelsAligned()
+    {
+        // 2022 upstream fix (wdl_rs_reinterleave_buffer): when the channel count changes
+        // while input samples are still buffered, the retained samples must be reinterleaved
+        // from the old layout to the new one. We use point-sampling mode (no interpolation or
+        // anti-alias filtering, so output is a direct copy of input) and constant per-channel
+        // DC, so any mis-reinterleaved buffered sample shows up directly in the output. Then
+        // we switch channel counts mid-stream, decreasing then increasing.
+        const int from = 8000;
+        const int to = 48000; // upsample so a few input frames stay buffered between calls
+
+        var resampler = new WdlResampler();
+        resampler.SetMode(false, 0, false); // point sampling
+        resampler.SetFeedMode(false);
+        resampler.SetRates(from, to);
+
+        // Phase 1: stereo, L = +0.5 DC, R = -0.5 DC. Leaves a few stereo frames buffered.
+        PumpDc(resampler, nch: 2, dc: new[] { 0.5f, -0.5f }, cycles: 6, outFramesPerCycle: 256);
+
+        // Phase 2: switch to mono (decreasing). The buffered stereo frames must be repacked
+        // to channel 0 (+0.5). With the fix, every mono sample is the buffered L level or the
+        // fed level (both >= 0.25); without it, the buffered right channel (-0.5) leaks out.
+        var mono = PumpDc(resampler, nch: 1, dc: new[] { 0.25f }, cycles: 6, outFramesPerCycle: 256);
+        foreach (var v in mono)
+        {
+            Assert.That(float.IsFinite(v), Is.True, "non-finite mono output");
+            Assert.That(v, Is.GreaterThanOrEqualTo(0.2f),
+                $"mono output dipped to {v}: the buffered right channel (-0.5) leaked through a missing reinterleave");
+        }
+        AssertTailDc(mono, 1, new[] { 0.25f });
+
+        // Phase 3: switch to 3 channels (increasing). The buffered mono frames must be
+        // repacked into channel 0, with the two new channels zero-filled.
+        var three = PumpDc(resampler, nch: 3, dc: new[] { 0.1f, 0.2f, 0.3f }, cycles: 6, outFramesPerCycle: 256);
+        AssertTailDc(three, 3, new[] { 0.1f, 0.2f, 0.3f });
+    }
+
     // ---- helpers ----
+
+    private static float[] PumpDc(WdlResampler resampler, int nch, float[] dc, int cycles, int outFramesPerCycle)
+    {
+        var outAll = new System.Collections.Generic.List<float>();
+        for (int c = 0; c < cycles; c++)
+        {
+            int needed = resampler.ResamplePrepare(outFramesPerCycle, nch, out Span<float> inSpan);
+            for (int f = 0; f < needed; f++)
+                for (int ch = 0; ch < nch; ch++)
+                    inSpan[f * nch + ch] = dc[ch];
+            var outBuf = new float[outFramesPerCycle * nch];
+            int produced = resampler.ResampleOut(outBuf, needed, outFramesPerCycle, nch);
+            for (int i = 0; i < produced * nch; i++) outAll.Add(outBuf[i]);
+        }
+        return outAll.ToArray();
+    }
+
+    private static void AssertTailDc(float[] data, int nch, float[] dc)
+    {
+        int frames = data.Length / nch;
+        Assert.That(frames, Is.GreaterThan(200), "not enough output produced to assess steady state");
+        int start = frames * 3 / 4; // assess the settled tail, past any filter warmup/transition
+        for (int f = start; f < frames; f++)
+            for (int ch = 0; ch < nch; ch++)
+            {
+                float v = data[f * nch + ch];
+                Assert.That(float.IsNaN(v) || float.IsInfinity(v), Is.False, $"non-finite output at frame {f} ch {ch}");
+                Assert.That(v, Is.EqualTo(dc[ch]).Within(0.02f), $"ch {ch} DC drift at frame {f}: got {v}");
+            }
+    }
 
     private static float[] ResampleSawtooth(int from, int to, int channels, int seconds)
     {

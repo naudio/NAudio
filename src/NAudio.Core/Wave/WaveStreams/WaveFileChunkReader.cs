@@ -69,7 +69,13 @@ internal class WaveFileChunkReader
                 dataChunkPosition = stream.Position;
                 if (!isRf64) // we already know the dataChunkLength if this is an RF64 file
                 {
-                    dataChunkLength = chunkLength;
+                    // Some encoders (e.g. FFmpeg writing WAV to a non-seekable pipe) leave a
+                    // placeholder data chunk size such as 0xFFFF1000 that is larger than the
+                    // bytes actually present. Clamp to what the stream really contains so a
+                    // MemoryStream (which cannot seek past its end) doesn't throw, and so the
+                    // reported length reflects the available samples. See issue #1090.
+                    long availableBytes = stream.Length - dataChunkPosition;
+                    dataChunkLength = chunkLength > availableBytes ? availableBytes : chunkLength;
                 }
                 stream.Position += dataChunkLength;
             }

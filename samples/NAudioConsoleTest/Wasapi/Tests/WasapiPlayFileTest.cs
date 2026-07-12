@@ -1,4 +1,5 @@
-﻿using NAudio.Wave;
+﻿using NAudio.CoreAudioApi;
+using NAudio.Wave;
 using NAudioConsoleTest.Shared.Testing;
 using Spectre.Console;
 
@@ -19,7 +20,7 @@ internal sealed class WasapiPlayFileTest : IConsoleTest
     [
         new("input", typeof(string), Required: true, Help: "audio file path", IsFilePath: true, FileCategory: "audio"),
         new("renderDevice", typeof(string), Required: false, Default: WasapiDevices.DefaultMarker,
-            Help: "render endpoint friendly name (or 'default')",
+            Help: "render endpoint friendly name, 'default', or auto stream routing",
             ChoiceProvider: WasapiDevices.RenderDeviceNames),
         new("mode", typeof(string), Required: false, Default: "Shared",
             Help: "playback mode",
@@ -34,26 +35,51 @@ internal sealed class WasapiPlayFileTest : IConsoleTest
         if (!File.Exists(inputPath)) return TestResult.Fail($"Input not found: {inputPath}");
 
         var deviceName = ctx.Get<string>("renderDevice");
-        var device = WasapiDevices.ResolveRender(deviceName);
-        if (device is null) return TestResult.Fail($"Render device not found: {deviceName}");
+        var useRouting = WasapiDevices.IsRoutingMarker(deviceName);
+
+        MMDevice? device = null;
+        if (!useRouting)
+        {
+            device = WasapiDevices.ResolveRender(deviceName);
+            if (device is null) return TestResult.Fail($"Render device not found: {deviceName}");
+            WasapiVolumeSafety.CapAt(device);
+        }
 
         var mode = ctx.Get<string>("mode");
         var maxDuration = ctx.Get<TimeSpan>("maxDuration");
 
-        WasapiVolumeSafety.CapAt(device);
-
-        var builder = new WasapiPlayerBuilder()
-            .WithDevice(device)
-            .WithEventSync()
-            .WithMmcssThreadPriority("Pro Audio");
-        builder = mode.ToLowerInvariant() switch
+        // Automatic stream routing is standard shared mode only, so override any other requested mode.
+        if (useRouting && !mode.Equals("Shared", StringComparison.OrdinalIgnoreCase))
         {
-            "exclusive" => builder.WithExclusiveMode(),
-            "lowlatency" => builder.WithSharedMode().WithLowLatency(),
-            _ => builder.WithSharedMode(),
-        };
+            AnsiConsole.MarkupLine($"[yellow]Stream routing is shared-mode only — ignoring '{mode}' mode.[/]");
+            mode = "Shared";
+        }
 
-        using var player = builder.Build();
+        WasapiPlayer player;
+        if (useRouting)
+        {
+            player = new WasapiPlayerBuilder()
+                .WithDefaultDeviceStreamRouting()
+                .WithEventSync()
+                .WithMmcssThreadPriority("Pro Audio")
+                .BuildAsync().GetAwaiter().GetResult();
+        }
+        else
+        {
+            var builder = new WasapiPlayerBuilder()
+                .WithDevice(device!)
+                .WithEventSync()
+                .WithMmcssThreadPriority("Pro Audio");
+            builder = mode.ToLowerInvariant() switch
+            {
+                "exclusive" => builder.WithExclusiveMode(),
+                "lowlatency" => builder.WithSharedMode().WithLowLatency(),
+                _ => builder.WithSharedMode(),
+            };
+            player = builder.Build();
+        }
+
+        using var _player = player;
         using var reader = new MediaFoundationReader(inputPath);
 
         // Validate the chosen options up front (non-destructive) before opening the stream.
@@ -64,7 +90,8 @@ internal sealed class WasapiPlayFileTest : IConsoleTest
         try { player.Init(reader); }
         catch (Exception ex) { return TestResult.Fail($"Init failed: {ex.Message}"); }
 
-        AnsiConsole.MarkupLine($"[bold green]Playing[/] [grey]via {Markup.Escape(device.FriendlyName)}[/]");
+        var deviceDisplay = device?.FriendlyName ?? "default device (auto stream routing)";
+        AnsiConsole.MarkupLine($"[bold green]Playing[/] [grey]via {Markup.Escape(deviceDisplay)}[/]");
         AnsiConsole.MarkupLine($"[grey]File:[/]   {Markup.Escape(Path.GetFileName(inputPath))}");
         AnsiConsole.MarkupLine($"[grey]Mode:[/]   {mode}");
         if (mode.Equals("LowLatency", StringComparison.OrdinalIgnoreCase))
@@ -115,7 +142,7 @@ internal sealed class WasapiPlayFileTest : IConsoleTest
 
         var diagnostics = new Dictionary<string, string>
         {
-            ["device"] = device.FriendlyName,
+            ["device"] = deviceDisplay,
             ["mode"] = mode,
             ["lowLatencyActive"] = player.LowLatencyActive.ToString(),
             ["latencyMs"] = player.LatencyMilliseconds.ToString(),

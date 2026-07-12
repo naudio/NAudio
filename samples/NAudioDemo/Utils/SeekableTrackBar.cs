@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows.Forms;
 
 namespace NAudioDemo.Utils;
@@ -16,6 +16,11 @@ public class SeekableTrackBar : TrackBar
     // Good enough for the seek-to-click feel; perfect pixel accuracy would require P/Invoking TBM_GETTHUMBLENGTH.
     private const int ThumbInset = 13;
 
+    // The last value we raised Scroll for, so a single click (MouseDown + MouseUp both want to
+    // commit) or a drag that pauses on one value doesn't fire two seeks to the same position.
+    // Two seeks to the same point queue the post-seek audio twice and play it back doubled.
+    private int? lastCommittedValue;
+
     /// <summary>
     /// True while the user is mid-drag with the left mouse button down. External code
     /// (e.g. a position-update timer) should skip writing <see cref="TrackBar.Value"/> while this is true.
@@ -28,6 +33,7 @@ public class SeekableTrackBar : TrackBar
         {
             IsScrubbing = true;
             Capture = true;
+            lastCommittedValue = null; // start a fresh interaction
             SeekToMouseX(e.X);
             Focus();
             return; // suppress default LargeChange-jump behaviour
@@ -52,7 +58,7 @@ public class SeekableTrackBar : TrackBar
             IsScrubbing = false;
             Capture = false;
             base.OnMouseUp(e);
-            OnScroll(EventArgs.Empty); // give Scroll handlers a final position to commit on release
+            Commit(); // commit the final position on release (no-op if MouseDown/Move already did)
             return;
         }
         base.OnMouseUp(e);
@@ -62,13 +68,20 @@ public class SeekableTrackBar : TrackBar
     {
         int track = Math.Max(1, Width - 2 * ThumbInset);
         int clamped = Math.Max(0, Math.Min(track, x - ThumbInset));
-        int newValue = Minimum + (int)((double)clamped / track * (Maximum - Minimum));
-        if (newValue < Minimum) newValue = Minimum;
-        else if (newValue > Maximum) newValue = Maximum;
+        int newValue = Math.Clamp(Minimum + (int)((double)clamped / track * (Maximum - Minimum)), Minimum, Maximum);
         if (newValue != Value)
         {
             Value = newValue;
-            OnScroll(EventArgs.Empty); // programmatic Value writes don't fire Scroll, so do it explicitly
         }
+        Commit();
+    }
+
+    private void Commit()
+    {
+        // Programmatic Value writes don't raise Scroll, so we raise it explicitly - but only once
+        // per distinct position, so a single click doesn't seek twice to the same place.
+        if (lastCommittedValue == Value) return;
+        lastCommittedValue = Value;
+        OnScroll(EventArgs.Empty);
     }
 }

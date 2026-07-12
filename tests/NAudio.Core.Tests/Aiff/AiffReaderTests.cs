@@ -1,6 +1,8 @@
 ﻿using System;
 using NUnit.Framework;
 using System.IO;
+using System.Text;
+using NAudio.Utils;
 using NAudio.Wave;
 using System.Diagnostics;
 
@@ -88,5 +90,67 @@ public class AiffReaderTests
         {
             while (reader.Read(buffer, 0, buffer.Length) > 0) { }
         });
+    }
+
+    // Regression: AIFF stores 8-bit PCM as signed two's-complement (unlike WAV's unsigned
+    // 8-bit), so the reader must convert it for the shared unsigned 8-bit sample converter.
+    // The on-disk bytes and expected float values below are from the issue report. See #1178.
+    [Test]
+    [Category("UnitTest")]
+    public void Read8BitPcmTreatsSamplesAsSigned()
+    {
+        byte[] signedSoundData =
+        {
+            0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
+            0x80, 0x83, 0x85, 0x88, 0x8A, 0x8D, 0x8F, 0x92
+        };
+        float[] expected =
+        {
+            0.078125f, 0.078125f, 0.078125f, 0.078125f, 0.078125f, 0.078125f, 0.078125f, 0.078125f,
+            -1f, -0.9765625f, -0.9609375f, -0.9375f, -0.921875f, -0.8984375f, -0.8828125f, -0.859375f
+        };
+
+        var aiff = BuildAiff(44100, channels: 1, bitsPerSample: 8, soundData: signedSoundData);
+
+        using var reader = new AiffFileReader(new MemoryStream(aiff));
+        var samples = reader.ToSampleProvider();
+        var actual = new float[signedSoundData.Length];
+        int read = samples.Read(actual);
+
+        Assert.That(read, Is.EqualTo(expected.Length));
+        for (int i = 0; i < expected.Length; i++)
+        {
+            Assert.That(actual[i], Is.EqualTo(expected[i]).Within(1e-6f), $"sample {i}");
+        }
+    }
+
+    // Builds a minimal uncompressed AIFF (FORM/COMM/SSND) with the supplied sound data
+    // placed verbatim, so a test can control the exact on-disk bytes.
+    private static byte[] BuildAiff(int sampleRate, short channels, short bitsPerSample, byte[] soundData)
+    {
+        int numSampleFrames = soundData.Length / (channels * (bitsPerSample / 8));
+        using var ms = new MemoryStream();
+        var bw = new BinaryWriter(ms);
+
+        void Tag(string s) => bw.Write(Encoding.ASCII.GetBytes(s));
+        void WriteBE16(short v) { bw.Write((byte)(v >> 8)); bw.Write((byte)v); }
+        void WriteBE32(int v)
+        {
+            bw.Write((byte)(v >> 24)); bw.Write((byte)(v >> 16)); bw.Write((byte)(v >> 8)); bw.Write((byte)v);
+        }
+
+        const int commSize = 18;                 // channels(2) + frames(4) + sampleSize(2) + rate(10)
+        int ssndSize = 8 + soundData.Length;     // offset(4) + blockSize(4) + data
+        int formSize = 4 + (8 + commSize) + (8 + ssndSize);
+
+        Tag("FORM"); WriteBE32(formSize); Tag("AIFF");
+        Tag("COMM"); WriteBE32(commSize);
+        WriteBE16(channels); WriteBE32(numSampleFrames); WriteBE16(bitsPerSample);
+        bw.Write(IEEE.ConvertToIeeeExtended(sampleRate));   // 10-byte 80-bit extended
+        Tag("SSND"); WriteBE32(ssndSize); WriteBE32(0); WriteBE32(0);
+        bw.Write(soundData);
+        bw.Flush();
+
+        return ms.ToArray();
     }
 }

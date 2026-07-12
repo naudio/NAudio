@@ -31,6 +31,7 @@
             this.comboBoxWaspai = new System.Windows.Forms.ComboBox();
             this.checkBoxWasapiEventCallback = new System.Windows.Forms.CheckBox();
             this.checkBoxWasapiExclusiveMode = new System.Windows.Forms.CheckBox();
+            this.checkBoxWasapiStreamRouting = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // comboBoxWaspai
@@ -61,16 +62,27 @@
             this.checkBoxWasapiExclusiveMode.TabIndex = 18;
             this.checkBoxWasapiExclusiveMode.Text = "Exclusive Mode";
             this.checkBoxWasapiExclusiveMode.UseVisualStyleBackColor = true;
-            // 
+            //
+            // checkBoxWasapiStreamRouting
+            //
+            this.checkBoxWasapiStreamRouting.AutoSize = true;
+            this.checkBoxWasapiStreamRouting.Location = new System.Drawing.Point(3, 53);
+            this.checkBoxWasapiStreamRouting.Name = "checkBoxWasapiStreamRouting";
+            this.checkBoxWasapiStreamRouting.Size = new System.Drawing.Size(232, 17);
+            this.checkBoxWasapiStreamRouting.TabIndex = 21;
+            this.checkBoxWasapiStreamRouting.Text = "Default device (auto stream routing)";
+            this.checkBoxWasapiStreamRouting.UseVisualStyleBackColor = true;
+            //
             // WasapiOutSettingsPanel
-            // 
+            //
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.comboBoxWaspai);
             this.Controls.Add(this.checkBoxWasapiEventCallback);
             this.Controls.Add(this.checkBoxWasapiExclusiveMode);
+            this.Controls.Add(this.checkBoxWasapiStreamRouting);
             this.Name = "WasapiOutSettingsPanel";
-            this.Size = new System.Drawing.Size(245, 57);
+            this.Size = new System.Drawing.Size(245, 76);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -81,5 +93,6 @@
         private System.Windows.Forms.ComboBox comboBoxWaspai;
         private System.Windows.Forms.CheckBox checkBoxWasapiEventCallback;
         private System.Windows.Forms.CheckBox checkBoxWasapiExclusiveMode;
+        private System.Windows.Forms.CheckBox checkBoxWasapiStreamRouting;
     }
 }

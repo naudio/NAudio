@@ -1,14 +1,31 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <!-- Dual target: the cross-platform net9.0 leg carries the MIDI event model
+         and file reader/writer (builds and runs everywhere). The Windows leg
+         additionally exposes WinRT (Windows.Devices.Midi) live MIDI I/O, which
+         needs the Windows SDK projections and therefore the versioned TFM. -->
+    <TargetFrameworks>net9.0;net9.0-windows10.0.19041.0</TargetFrameworks>
+    <!-- Now that this package has a Windows leg, allow its source to build on
+         non-Windows hosts (the SDK NuGet-restores the Windows reference packs).
+         This keeps the documented Linux/macOS dev+test workflow working — e.g.
+         NAudio.Core.Tests project-references this package. It affects source
+         builds only; NuGet consumers resolve the net9.0 asset and never build
+         the Windows leg, so cross-platform apps still need no such flag. -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <IsAotCompatible>true</IsAotCompatible>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Description>Cross-platform MIDI file reading and writing, MIDI message types, and SMPTE timing for the NAudio audio library.</Description>
+    <Description>Cross-platform MIDI file reading and writing, MIDI message types, and SMPTE timing for the NAudio audio library. On Windows, also provides WinRT (Windows.Devices.Midi) live MIDI input and output.</Description>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\NAudio.Core\NAudio.Core.csproj" />
+  </ItemGroup>
+
+  <!-- WinRT MIDI (Windows.Devices.Midi) only compiles against the Windows leg's
+       SDK projections; exclude it from the cross-platform net9.0 leg. -->
+  <ItemGroup Condition=" '$(TargetPlatformIdentifier)' != 'windows' ">
+    <Compile Remove="Midi\WinRT\**\*.cs" />
   </ItemGroup>
 
 </Project>

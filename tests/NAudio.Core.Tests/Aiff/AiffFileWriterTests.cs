@@ -123,6 +123,90 @@ public class AiffFileWriterTests
         }
     }
 
+    [Test]
+    public void StreamConstructorLeavesCallerSuppliedStreamOpen()
+    {
+        // The stream constructor must not dispose a stream the caller handed in. Disposing
+        // the writer still finalizes the header, but leaves the MemoryStream usable.
+        var ms = new MemoryStream();
+        var sourceData = new byte[] { 0x10, 0x20, 0x30, 0x40, 0x50, 0x60 };
+        using (var writer = new AiffFileWriter(ms, new WaveFormat(16000, 24, 1)))
+        {
+            writer.Write(sourceData, 0, sourceData.Length);
+        }
+
+        // If the writer had disposed ms, accessing it would throw ObjectDisposedException.
+        Assert.That(ms.CanRead, Is.True, "Caller's stream should still be open");
+        ms.Position = 0;
+        using var reader = new AiffFileReader(ms);
+        var buffer = new byte[(int)reader.Length];
+        var read = reader.Read(buffer, 0, buffer.Length);
+        Assert.That(read, Is.EqualTo(buffer.Length));
+        Assert.That(buffer, Is.EqualTo(sourceData));
+    }
+
+    // AIFF 8-bit PCM is signed; the bytes handed to Write are unsigned (WAV-style), so the
+    // writer must flip the sign bit. Asserting on the raw on-disk SSND bytes (rather than a
+    // round-trip, where the reader's matching flip would cancel the bug out). See #1178.
+    [Test]
+    public void Write8BitStoresSignedSamplesOnDisk()
+    {
+        var ms = new MemoryStream();
+        var format = new WaveFormat(8000, 8, 1);
+        var unsignedInput = new byte[] { 0x80, 0x8A, 0x00, 0xFF }; // 128 (silence), 138, 0, 255
+
+        using (var writer = new AiffFileWriter(new IgnoreDisposeStream(ms), format))
+        {
+            writer.Write(unsignedInput, 0, unsignedInput.Length);
+        }
+
+        var onDisk = ExtractSsndSoundData(ms.ToArray());
+        Assert.That(onDisk, Is.EqualTo(new byte[] { 0x00, 0x0A, 0x80, 0x7F })); // unsigned ^ 0x80
+    }
+
+    [Test]
+    public void Write8BitDoesNotMutateCallerBuffer()
+    {
+        var ms = new MemoryStream();
+        var format = new WaveFormat(8000, 8, 1);
+        var input = new byte[] { 0x80, 0x8A, 0x00, 0xFF };
+        var original = (byte[])input.Clone();
+
+        using (var writer = new AiffFileWriter(new IgnoreDisposeStream(ms), format))
+        {
+            writer.Write(input, 0, input.Length);
+        }
+
+        Assert.That(input, Is.EqualTo(original));
+    }
+
+    [Test]
+    public void EightBitRoundTripsThroughWriterAndReader()
+    {
+        var format = new WaveFormat(8000, 8, 1);
+        var unsigned = new byte[] { 0x00, 0x40, 0x80, 0xC0, 0xFF, 0x8A };
+
+        var roundTripped = WriteAndRead(format, writer => writer.Write(unsigned, 0, unsigned.Length));
+
+        Assert.That(roundTripped, Is.EqualTo(unsigned));
+    }
+
+    // Locates the SSND chunk's sound data within a written AIFF file.
+    private static byte[] ExtractSsndSoundData(byte[] aiff)
+    {
+        for (int i = 0; i + 16 <= aiff.Length; i++)
+        {
+            if (aiff[i] == (byte)'S' && aiff[i + 1] == (byte)'S' &&
+                aiff[i + 2] == (byte)'N' && aiff[i + 3] == (byte)'D')
+            {
+                int ckSize = (aiff[i + 4] << 24) | (aiff[i + 5] << 16) | (aiff[i + 6] << 8) | aiff[i + 7];
+                int dataLength = ckSize - 8; // minus the offset(4) + blockSize(4) fields
+                return aiff.AsSpan(i + 16, dataLength).ToArray();
+            }
+        }
+        throw new InvalidOperationException("SSND chunk not found");
+    }
+
     private static byte[] WriteAndRead(WaveFormat format, Action<AiffFileWriter> writeAction)
     {
         var ms = new MemoryStream();

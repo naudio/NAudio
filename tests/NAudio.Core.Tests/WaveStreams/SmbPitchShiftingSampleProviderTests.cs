@@ -136,6 +136,24 @@ public class SmbPitchShiftingSampleProviderTests
     }
 
     [Test]
+    public void SmbProvider_Latency_MatchesFftAndOversamplingSettings()
+    {
+        // Default settings used by the parameterless-ish constructor: fftSize 4096, osamp 4.
+        var mono = new LoopingSampleSource(MakeSineMono(1024), 44100, 1);
+        var defaultShifter = new SmbPitchShiftingSampleProvider(mono);
+        // latency per channel = fftSize - fftSize/osamp = 4096 - 1024 = 3072
+        Assert.That(defaultShifter.LatencySamplesPerChannel, Is.EqualTo(3072));
+        Assert.That(defaultShifter.LatencySamples, Is.EqualTo(3072)); // mono => same as per-channel
+        Assert.That(defaultShifter.Latency.TotalSeconds, Is.EqualTo(3072 / 44100.0).Within(1e-6));
+
+        // Stereo doubles the interleaved sample count but not the per-channel latency or the time.
+        var stereoSrc = new LoopingSampleSource(MakeSineMono(2048), 44100, 2);
+        var stereoShifter = new SmbPitchShiftingSampleProvider(stereoSrc, 1024, 4L, 1f);
+        Assert.That(stereoShifter.LatencySamplesPerChannel, Is.EqualTo(768)); // 1024 - 256
+        Assert.That(stereoShifter.LatencySamples, Is.EqualTo(1536));          // 768 * 2 channels
+    }
+
+    [Test]
     public void SmbProvider_Mono_SteadyStateReadsDoNotAllocate()
     {
         var source = new LoopingSampleSource(MakeSineMono(16384), 44100, 1);

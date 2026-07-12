@@ -12,12 +12,15 @@ public class RawSourceWaveStream : WaveStream
 {
     private readonly Stream sourceStream;
     private readonly WaveFormat waveFormat;
+    private readonly bool ownsStream;
 
     /// <summary>
     /// Initialises a new instance of RawSourceWaveStream
     /// </summary>
     /// <param name="sourceStream">The source stream containing raw audio</param>
     /// <param name="waveFormat">The waveformat of the audio in the source stream</param>
+    /// <remarks>The caller retains ownership of <paramref name="sourceStream"/>; it is not
+    /// disposed when this <see cref="RawSourceWaveStream"/> is disposed.</remarks>
     public RawSourceWaveStream(Stream sourceStream, WaveFormat waveFormat)
     {
         this.sourceStream = sourceStream;
@@ -33,7 +36,9 @@ public class RawSourceWaveStream : WaveStream
     /// <param name="waveFormat">The waveformat of the audio in the source stream</param>
     public RawSourceWaveStream(byte[] byteStream, int offset, int count, WaveFormat waveFormat)
     {
+        // We create this MemoryStream ourselves, so we own it and dispose it.
         sourceStream = new MemoryStream(byteStream, offset, count);
+        ownsStream = true;
         this.waveFormat = waveFormat;
     }
 
@@ -82,5 +87,19 @@ public class RawSourceWaveStream : WaveStream
     /// </summary>
     public override int Read(byte[] buffer, int offset, int count)
         => Read(buffer.AsSpan(offset, count));
+
+    /// <summary>
+    /// Disposes this RawSourceWaveStream, disposing the internally-created MemoryStream
+    /// when the <c>byte[]</c> constructor was used. A caller-supplied source stream is
+    /// left open.
+    /// </summary>
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing && ownsStream)
+        {
+            sourceStream.Dispose();
+        }
+        base.Dispose(disposing);
+    }
 }
 

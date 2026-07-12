@@ -12,7 +12,7 @@ namespace NAudio.CoreAudioApi;
 /// See http://msdn.microsoft.com/en-us/library/dd370800%28VS.85%29.aspx
 /// </summary>
 [Obsolete("Use WasapiRecorderBuilder to create a WasapiRecorder instead. WasapiRecorder provides zero-copy buffers, MMCSS thread priority, IAsyncEnumerable capture, and process-specific loopback.")]
-public class WasapiCapture : IWaveIn
+public class WasapiCapture : IWaveIn, IWaveLatency
 {
     private const long ReftimesPerSec = 10000000;
     private const long ReftimesPerMillisec = 10000;
@@ -88,6 +88,39 @@ public class WasapiCapture : IWaveIn
     /// </summary>
     public AudioClientShareMode ShareMode { get; set; }
 
+    /// <inheritdoc/>
+    /// <remarks>
+    /// The requested capture buffer length. Read at <see cref="StartRecording"/> time, so
+    /// reflects what the engine actually negotiated for the period.
+    /// </remarks>
+    public TimeSpan AverageLatency => TimeSpan.FromMilliseconds(audioBufferMillisecondsLength);
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Derived from <c>IAudioClient::GetCurrentPadding</c>, which on a capture stream reports
+    /// the number of frames available to read — i.e. the age of the oldest captured sample
+    /// still in the endpoint buffer. Returns <see cref="AverageLatency"/> when not recording
+    /// or if the audio client has not yet been initialised.
+    /// </remarks>
+    public TimeSpan CurrentLatency
+    {
+        get
+        {
+            if (captureState != CaptureState.Capturing || !initialized || audioClient == null)
+                return AverageLatency;
+            try
+            {
+                int padding = audioClient.CurrentPadding;
+                return TimeSpan.FromSeconds(padding / (double)waveFormat.SampleRate);
+            }
+            catch (COMException)
+            {
+                // Racing with Stop / device removal; fall back to the steady-state estimate.
+                return AverageLatency;
+            }
+        }
+    }
+
     /// <summary>
     /// Current Capturing State
     /// </summary>
@@ -113,7 +146,7 @@ public class WasapiCapture : IWaveIn
     /// <returns>The default audio capture device</returns>
     public static MMDevice GetDefaultCaptureDevice()
     {
-        var devices = new MMDeviceEnumerator();
+        using var devices = new MMDeviceEnumerator();
         return devices.GetDefaultAudioEndpoint(DataFlow.Capture, Role.Console);
     }
 
@@ -225,7 +258,11 @@ public class WasapiCapture : IWaveIn
         }
         finally
         {
-            client.Stop();
+            // The device may already be gone (e.g. unplugged, or the default device changed),
+            // in which case Stop itself fails with AUDCLNT_E_DEVICE_INVALIDATED. Swallow it so
+            // RecordingStopped still fires and the capture thread never terminates with an
+            // unhandled exception that tears down the whole process (issue #672).
+            try { client.Stop(); } catch { /* device already gone */ }
             // don't dispose - the AudioClient only gets disposed when WasapiCapture is disposed
         }
         captureThread = null;

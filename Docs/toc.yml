@@ -70,6 +70,8 @@
       href: WasapiRecorder.md
     - name: Capture system audio with WasapiLoopbackCapture (legacy)
       href: WasapiLoopbackCapture.md
+    - name: Mix the microphone and system audio
+      href: MixMicrophoneAndSystemAudio.md
     - name: Record audio with ASIO
       href: AsioRecording.md
     - name: Duplex processing with ASIO
@@ -96,6 +98,10 @@
   items:
     - name: Play SoundFont, SFZ and single-sample instruments
       href: Sampler.md
+- name: Networking
+  items:
+    - name: Stream live audio over the network (Network Chat)
+      href: NetworkChatDemo.md
 - name: Cross-platform & Linux
   items:
     - name: Cross-platform audio files with SoundFile

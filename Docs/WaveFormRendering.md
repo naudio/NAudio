@@ -8,9 +8,7 @@
 
  ## WaveFormRendererLib
 
- The `WaveFormRendererLib` project contains a customizable waveform rendering algorithm, allowing you to 
-
- The waveform rendering algorithm is customizable:
+ The `WaveFormRendererLib` project contains a customizable waveform rendering algorithm:
 
  - Supports several peak calculation strategies (max, average, sampled, RMS, decibels)
  - Supports different colors or gradients for the top and bottom half
@@ -67,10 +65,10 @@ var image = renderer.Render(audioFileReader, myPeakProvider, myRendererSettings)
 ```
 
 Note: `AudioFileReader` is able to use one of the following audio filetypes `.mp3`, `.wav`, `aiff` and `aif`. If the audio filetype doesn't match on one of the listed befor, `AudioFileReader` will use the class `MediaFoundationReader` which mostly will end in a exception of `WaveFormRenderer` when try to render the wave.
-Its recommended to convert the audio filetype to one of the listed types befor first.
+Its recommended to convert the audio filetype to one of the listed types before first.
 
 
-With that image we could render it to a WinForms picturebox:
+With that image we could render it to a WinForms PictureBox:
 ```c#
 pictureBox1.Image = image;
 ```

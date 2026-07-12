@@ -25,15 +25,8 @@ public class MMDeviceEnumerator : IDisposable
     /// <summary>
     /// Activates the system <c>MMDeviceEnumerator</c> COM object.
     /// </summary>
-    /// <exception cref="NotSupportedException">
-    /// Thrown on Windows versions earlier than Vista, where Core Audio is not available.
-    /// </exception>
     public MMDeviceEnumerator()
     {
-        if (Environment.OSVersion.Version.Major < 6)
-        {
-            throw new NotSupportedException("Core Audio device enumeration requires Windows Vista or newer.");
-        }
         realEnumerator = ComActivation.CreateInstance<IMMDeviceEnumerator>(
             CLSID_MMDeviceEnumerator, IID_IMMDeviceEnumerator);
     }
@@ -146,6 +139,13 @@ public class MMDeviceEnumerator : IDisposable
     /// Subscribes <paramref name="client"/> to endpoint change notifications
     /// (device added / removed / state change / default changed / property value change).
     /// </summary>
+    /// <remarks>
+    /// The client's callbacks run on a Windows audio system worker thread that holds an
+    /// internal lock for the duration of the call. Handlers must not block, wait on another
+    /// thread, or call back into the audio stack (e.g. disposing a player/recorder); doing so
+    /// risks a deadlock. Marshal any reaction to your own thread asynchronously
+    /// (<c>BeginInvoke</c>, a queued <c>Task.Run</c>, etc.). See <see cref="IMMNotificationClient"/>.
+    /// </remarks>
     /// <returns>The HRESULT from the underlying COM call.</returns>
     public int RegisterEndpointNotificationCallback(IMMNotificationClient client)
     {

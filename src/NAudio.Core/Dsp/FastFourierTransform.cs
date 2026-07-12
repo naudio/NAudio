@@ -20,7 +20,16 @@ public static class FastFourierTransform
     public static void FFT(bool forward, int m, Span<Complex> data)
     {
         int n, i, i1, j, k, i2, l, l1, l2;
-        float c1, c2, tx, ty, t1, t2, u1, u2, z;
+        // The twiddle-factor recurrence (c1/c2 across stages, u1/u2 within a stage) is
+        // kept in double precision. In single precision the rounding error compounded
+        // across the O(N) within-stage recurrence and drifted the high-frequency bins
+        // at large sizes (see issue #520). The butterfly arithmetic itself stays in
+        // float: it only ever incurs one rounding step per stage, so it does not drift,
+        // and keeping it in float avoids the float<->double conversions that would
+        // otherwise slow the kernel several-fold. The double twiddle is narrowed to
+        // float (fu1/fu2) once per column and reused across every butterfly in it.
+        double c1, c2, u1, u2, z;
+        float tx, ty, t1, t2, fu1, fu2;
 
         // Calculate the number of points
         n = 1 << m;
@@ -50,22 +59,24 @@ public static class FastFourierTransform
         }
 
         // Compute the FFT
-        c1 = -1.0f;
-        c2 = 0.0f;
+        c1 = -1.0;
+        c2 = 0.0;
         l2 = 1;
         for (l = 0; l < m; l++)
         {
             l1 = l2;
             l2 <<= 1;
-            u1 = 1.0f;
-            u2 = 0.0f;
+            u1 = 1.0;
+            u2 = 0.0;
             for (j = 0; j < l1; j++)
             {
+                fu1 = (float)u1;
+                fu2 = (float)u2;
                 for (i = j; i < n; i += l2)
                 {
                     i1 = i + l1;
-                    t1 = u1 * data[i1].X - u2 * data[i1].Y;
-                    t2 = u1 * data[i1].Y + u2 * data[i1].X;
+                    t1 = fu1 * data[i1].X - fu2 * data[i1].Y;
+                    t2 = fu1 * data[i1].Y + fu2 * data[i1].X;
                     data[i1].X = data[i].X - t1;
                     data[i1].Y = data[i].Y - t2;
                     data[i].X += t1;
@@ -75,10 +86,10 @@ public static class FastFourierTransform
                 u2 = u1 * c2 + u2 * c1;
                 u1 = z;
             }
-            c2 = (float)Math.Sqrt((1.0f - c1) / 2.0f);
+            c2 = Math.Sqrt((1.0 - c1) / 2.0);
             if (forward)
                 c2 = -c2;
-            c1 = (float)Math.Sqrt((1.0f + c1) / 2.0f);
+            c1 = Math.Sqrt((1.0 + c1) / 2.0);
         }
 
         // Scaling for forward transform

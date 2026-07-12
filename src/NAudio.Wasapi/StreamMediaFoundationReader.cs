@@ -9,7 +9,6 @@ namespace NAudio.Wave;
 
 /// <summary>
 /// MediaFoundationReader supporting reading from a stream <br />
-/// Will only work in Windows Vista and above. <br />
 /// Automatically converts to PCM. <br />
 /// If it is a video file with multiple audio streams, it will pick out the first audio stream.
 /// </summary>

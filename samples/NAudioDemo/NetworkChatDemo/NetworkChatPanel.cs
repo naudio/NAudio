@@ -2,14 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
-using NAudio.Wave;
-using System.Net;
+using NAudio.CoreAudioApi;
 using NAudioDemo.Utils;
 
 namespace NAudioDemo.NetworkChatDemo;
 
 public partial class NetworkChatPanel : UserControl
 {
+    private readonly MMDeviceEnumerator deviceEnumerator = new();
     private INetworkChatCodec selectedCodec;
     private volatile bool connected;
     private NetworkAudioPlayer player;
@@ -23,15 +23,13 @@ public partial class NetworkChatPanel : UserControl
         InitializeComponent();
         PopulateInputDevicesCombo();
         PopulateCodecsCombo(codecs);
-        comboBoxProtocol.Items.Add("UDP");
-        comboBoxProtocol.Items.Add("TCP");
-        comboBoxProtocol.SelectedIndex = 0;
         Disposed += OnPanelDisposed;
     }
 
     private void OnPanelDisposed(object sender, EventArgs e)
     {
         Disconnect();
+        deviceEnumerator.Dispose();
     }
 
     private void PopulateCodecsCombo(IEnumerable<INetworkChatCodec> codecs)
@@ -47,7 +45,23 @@ public partial class NetworkChatPanel : UserControl
             var text = $"{codec.Name} ({bitRate})";
             comboBoxCodecs.Items.Add(new CodecComboItem { Text = text, Codec = codec });
         }
-        comboBoxCodecs.SelectedIndex = 0;
+
+        // Default to Opus wide-band if present: it sounds dramatically better than the legacy
+        // telephony codecs at a comparable bitrate and works the same on every platform.
+        var defaultIndex = FindCodecIndex("Opus Wide");
+        comboBoxCodecs.SelectedIndex = defaultIndex >= 0 ? defaultIndex : 0;
+    }
+
+    private int FindCodecIndex(string namePrefix)
+    {
+        for (int i = 0; i < comboBoxCodecs.Items.Count; i++)
+        {
+            if (((CodecComboItem)comboBoxCodecs.Items[i]).Codec.Name.StartsWith(namePrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                return i;
+            }
+        }
+        return -1;
     }
 
     private class CodecComboItem
@@ -62,12 +76,21 @@ public partial class NetworkChatPanel : UserControl
 
     private void PopulateInputDevicesCombo()
     {
-        for (int n = 0; n < WaveIn.DeviceCount; n++)
+        var captureDevices = deviceEnumerator.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active).ToArray();
+        comboBoxInputDevices.DisplayMember = nameof(MMDevice.FriendlyName);
+        comboBoxInputDevices.DataSource = captureDevices;
+        if (captureDevices.Length == 0)
         {
-            var capabilities = WaveIn.GetCapabilities(n);
-            comboBoxInputDevices.Items.Add(capabilities.ProductName);
+            return;
         }
-        if (comboBoxInputDevices.Items.Count > 0)
+        try
+        {
+            // Pre-select the user's default communications microphone where there is one.
+            var defaultDevice = deviceEnumerator.GetDefaultAudioEndpoint(DataFlow.Capture, Role.Communications);
+            var index = Array.FindIndex(captureDevices, d => d.ID == defaultDevice.ID);
+            comboBoxInputDevices.SelectedIndex = Math.Max(0, index);
+        }
+        catch
         {
             comboBoxInputDevices.SelectedIndex = 0;
         }
@@ -77,46 +100,83 @@ public partial class NetworkChatPanel : UserControl
     {
         if (!connected)
         {
-            IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(textBoxIPAddress.Text), int.Parse(textBoxPort.Text));
-            int inputDeviceNumber = comboBoxInputDevices.SelectedIndex;
-            selectedCodec = ((CodecComboItem)comboBoxCodecs.SelectedItem).Codec;
-            Connect(endPoint, inputDeviceNumber, selectedCodec);
-            buttonStartStreaming.Text = "Disconnect";
+            if (TryConnect())
+            {
+                buttonStartStreaming.Text = "Stop";
+            }
         }
         else
         {
             Disconnect();
-            buttonStartStreaming.Text = "Connect";
+            buttonStartStreaming.Text = "Start Streaming";
         }
     }
 
-    private void Connect(IPEndPoint endPoint, int inputDeviceNumber, INetworkChatCodec codec)
+    private bool TryConnect()
     {
-        var receiver = (comboBoxProtocol.SelectedIndex == 0)
-            ? (IAudioReceiver)new UdpAudioReceiver(endPoint.Port)
-            : new TcpAudioReceiver(endPoint.Port);
-        var sender = (comboBoxProtocol.SelectedIndex == 0)
-            ? (IAudioSender)new UdpAudioSender(endPoint)
-            : new TcpAudioSender(endPoint);
+        var remoteHost = textBoxRemoteHost.Text.Trim();
+        if (remoteHost.Length == 0)
+        {
+            MessageBox.Show("Please enter the remote host name or IP address.", "Network Chat");
+            return false;
+        }
+        if (!int.TryParse(textBoxRemotePort.Text, out var remotePort) || remotePort is < 1 or > 65535)
+        {
+            MessageBox.Show("Please enter a valid remote port (1-65535).", "Network Chat");
+            return false;
+        }
+        if (!int.TryParse(textBoxListenPort.Text, out var listenPort) || listenPort is < 1 or > 65535)
+        {
+            MessageBox.Show("Please enter a valid listen port (1-65535).", "Network Chat");
+            return false;
+        }
+        if (comboBoxInputDevices.SelectedItem is not MMDevice inputDevice)
+        {
+            MessageBox.Show("No audio input device is available.", "Network Chat");
+            return false;
+        }
 
+        selectedCodec = ((CodecComboItem)comboBoxCodecs.SelectedItem).Codec;
+        try
+        {
+            Connect(remoteHost, remotePort, listenPort, inputDevice, selectedCodec);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            // Clean up anything that started before the failure (e.g. the listen port was in use).
+            Disconnect();
+            MessageBox.Show($"Could not start streaming: {ex.Message}", "Network Chat");
+            return false;
+        }
+    }
+
+    private void Connect(string remoteHost, int remotePort, int listenPort, MMDevice inputDevice, INetworkChatCodec codec)
+    {
+        // Audio in, audio out: we listen on our own port and send to the remote endpoint. UDP is
+        // the right transport for real-time audio - a lost datagram is a brief glitch rather than a
+        // stall, and there is no connection to set up so peers can start in any order.
+        var receiver = new UdpAudioReceiver(listenPort);
         player = new NetworkAudioPlayer(codec, receiver);
-        audioSender = new NetworkAudioSender(codec, inputDeviceNumber, sender);
+
+        var sender = new UdpAudioSender(remoteHost, remotePort);
+        audioSender = new NetworkAudioSender(codec, inputDevice, sender);
+
         connected = true;
     }
 
     private void Disconnect()
     {
-        if (connected)
-        {
-            connected = false;
+        connected = false;
 
-            player.Dispose();
-            audioSender.Dispose();
+        player?.Dispose();
+        player = null;
+        audioSender?.Dispose();
+        audioSender = null;
 
-            // a bit naughty but we have designed the codecs to support multiple calls to Dispose, 
-            // recreating their resources if Encode/Decode called again
-            selectedCodec.Dispose();
-        }
+        // a bit naughty but we have designed the codecs to support multiple calls to Dispose,
+        // recreating their resources if Encode/Decode called again
+        selectedCodec?.Dispose();
     }
 }
 

@@ -47,6 +47,90 @@ public class AudioFileReaderTests
         }
     }
 
+    [Test]
+    public void AudioFileReader_StreamConstructor_ReadsWavFromMemoryStream()
+    {
+        var wav = Build16BitMonoPcmWav();
+        using var ms = new MemoryStream(wav);
+        using var reader = new AudioFileReader(ms);
+
+        Assert.That(reader.WaveFormat.Encoding, Is.EqualTo(WaveFormatEncoding.IeeeFloat));
+        Assert.That(reader.Length, Is.GreaterThan(0));
+        AssertReadParity(reader, chunkSize: 2048);
+        Assert.That(reader.FileName, Is.Null);
+    }
+
+    [Test]
+    public void AudioFileReader_StreamConstructor_ProducesSameSamplesAsFile()
+    {
+        var wav = Build16BitMonoPcmWav();
+        var tmp = Path.Combine(Path.GetTempPath(), "naudio-stream-parity-" + Guid.NewGuid() + ".wav");
+        File.WriteAllBytes(tmp, wav);
+        try
+        {
+            byte[] fromFile;
+            using (var fileReader = new AudioFileReader(tmp))
+                fromFile = ReadAllViaSpan(fileReader, 2048);
+
+            using var ms = new MemoryStream(wav);
+            using var streamReader = new AudioFileReader(ms);
+            var fromStream = ReadAllViaSpan(streamReader, 2048);
+
+            Assert.That(fromStream, Is.EqualTo(fromFile));
+        }
+        finally
+        {
+            File.Delete(tmp);
+        }
+    }
+
+    [Test]
+    public void AudioFileReader_StreamConstructor_DoesNotDisposeCallerStream()
+    {
+        var wav = Build16BitMonoPcmWav();
+        var ms = new MemoryStream(wav);
+        using (var reader = new AudioFileReader(ms))
+        {
+            _ = ReadAllViaSpan(reader, 2048);
+        }
+        // The reader does not own the stream, so it must still be usable after disposal.
+        Assert.DoesNotThrow(() => { _ = ms.Length; });
+        ms.Dispose();
+    }
+
+    [Test]
+    public void AudioFileReader_StreamConstructor_NullStream_Throws()
+    {
+        Assert.Throws<ArgumentNullException>(() => new AudioFileReader((Stream)null));
+    }
+
+    [Test]
+    public void AudioFileReader_StreamConstructor_UnseekableStream_Throws()
+    {
+        using var unseekable = new UnseekableStream(new MemoryStream(Build16BitMonoPcmWav()));
+        Assert.Throws<ArgumentException>(() => new AudioFileReader(unseekable));
+    }
+
+    /// <summary>
+    /// A read-only wrapper that reports CanSeek == false, to exercise the stream-constructor guard.
+    /// </summary>
+    private sealed class UnseekableStream : Stream
+    {
+        private readonly Stream inner;
+        public UnseekableStream(Stream inner) => this.inner = inner;
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => inner.Length;
+        public override long Position { get => inner.Position; set => throw new NotSupportedException(); }
+        public override int Read(byte[] buffer, int offset, int count) => inner.Read(buffer, offset, count);
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        public override void Flush() { }
+        protected override void Dispose(bool disposing) { if (disposing) inner.Dispose(); base.Dispose(disposing); }
+    }
+
     /// <summary>
     /// Build a 1kHz sine-in-WAV byte array we can feed to the reader.
     /// </summary>

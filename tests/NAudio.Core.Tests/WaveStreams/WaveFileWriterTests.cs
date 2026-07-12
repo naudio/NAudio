@@ -73,6 +73,53 @@ public class WaveFileWriterTests
 
 
     [Test]
+    public void StreamConstructorLeavesCallerSuppliedStreamOpen()
+    {
+        // Regression test for https://github.com/naudio/NAudio/issues/1040
+        // The stream constructor must not dispose a stream the caller handed in.
+        // Disposing the writer still finalizes the header (flush), but leaves the
+        // MemoryStream usable - no IgnoreDisposeStream wrapper required.
+        var ms = new MemoryStream();
+        var testSequence = new byte[] { 0x1, 0x2, 0xFF, 0xFE }; // 2 samples of 16-bit mono (block align 2)
+        using (var writer = new WaveFileWriter(ms, new WaveFormat(16000, 16, 1)))
+        {
+            writer.Write(testSequence, 0, testSequence.Length);
+        }
+
+        // If the writer had disposed ms, accessing it would throw ObjectDisposedException.
+        Assert.That(ms.CanRead, Is.True, "Caller's stream should still be open");
+        ms.Position = 0;
+        using var reader = new WaveFileReader(ms);
+        Assert.That(reader.Length, Is.EqualTo(testSequence.Length), "Header finalized / data flushed");
+        var buffer = new byte[testSequence.Length];
+        int read = reader.Read(buffer, 0, buffer.Length);
+        Assert.That(read, Is.EqualTo(testSequence.Length), "Data length");
+        Assert.That(buffer, Is.EqualTo(testSequence));
+    }
+
+    [Test]
+    public void FilenameConstructorClosesTheUnderlyingFile()
+    {
+        // The filename constructor owns the FileStream it opened, so disposing the writer
+        // must release the file handle (otherwise the file cannot be reopened/deleted).
+        string tempFile = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".wav");
+        try
+        {
+            using (var writer = new WaveFileWriter(tempFile, new WaveFormat(16000, 16, 1)))
+            {
+                writer.WriteSample(0.5f);
+            }
+            // Re-opening for read+write share would fail if the writer still held the handle.
+            using var reopened = new FileStream(tempFile, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+            Assert.That(reopened.Length, Is.GreaterThan(0));
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Test]
     public void CreateWaveFileCreatesFileOfCorrectLength()
     {
         string tempFile = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".wav");

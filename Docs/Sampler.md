@@ -126,7 +126,7 @@ using var device = new WaveOutEvent();
 device.Init(live);
 device.Play();
 
-// on Windows, forward a hardware keyboard via WinRTMidiIn (NAudio.Wasapi);
+// on Windows, forward a hardware keyboard via WinRTMidiIn (NAudio.Midi);
 // any IMidiInput works the same way
 var midiIn = await WinRTMidiIn.CreateAsync(deviceId);
 midiIn.MessageReceived += (s, e) => live.Send(e.MidiEvent);

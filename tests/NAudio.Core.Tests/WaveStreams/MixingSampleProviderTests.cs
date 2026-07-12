@@ -66,6 +66,16 @@ public class MixingSampleProviderTests
     }
 
     [Test]
+    public void AddingSameMixerInputTwiceThrows()
+    {
+        var input = new TestSampleProvider(44100, 2, 2000);
+        var msp = new MixingSampleProvider(WaveFormat.CreateIeeeFloatWaveFormat(44100, 2));
+        msp.AddMixerInput(input);
+        Assert.Throws<ArgumentException>(() => msp.AddMixerInput(input));
+        Assert.That(msp.MixerInputs.Count(), Is.EqualTo(1));
+    }
+
+    [Test]
     public void MixerInputEndedInvoked()
     {
         var input1 = new TestSampleProvider(44100, 2, 8000);

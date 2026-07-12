@@ -1,0 +1,58 @@
+/*==================================================================================================
+     File:       CoreAudio/AudioHardware.h
+
+     Copyright:  (c) 1985-2011 by Apple, Inc., all rights reserved.
+
+     Bugs?:      For bug reports, consult the following page on
+                 the World Wide Web:
+
+                     http://developer.apple.com/bugreporter/
+
+==================================================================================================*/
+
+#pragma warning disable IDE0055 // We want the properties to have a consistent view.
+
+using NAudio.Utils;
+
+namespace NAudio.MacOS.CoreAudio.Interop;
+
+/// <summary>
+/// Process Properties <br />
+/// Processes AudioObjectPropertySelector values provided by the Process class.
+/// </summary>
+internal static class ProcessProperties
+{
+    /// <summary>A pid_t indicating the process ID associated with the process.</summary>
+    public static readonly AudioObjectPropertySelector kAudioProcessPropertyPID        	  = (AudioObjectPropertySelector)MacUtils.ConstructUIntConstantValueFromString("ppid"u8); // 'ppid'
+    /// <summary>
+    /// A CFString that contains the bundle ID of the process. 
+    /// The caller is responsible for releasing the returned CFObject.
+    /// </summary>
+    public static readonly AudioObjectPropertySelector kAudioProcessPropertyBundleID   	  = (AudioObjectPropertySelector)MacUtils.ConstructUIntConstantValueFromString("pbid"u8); // 'pbid'
+    /// <summary>
+    /// An array of AudioObjectIDs that represent the devices currently used by the
+    /// process for input or used by the process for output. The scope will select
+    /// the input or output device list.
+    /// </summary>
+    public static readonly AudioObjectPropertySelector kAudioProcessPropertyDevices    	  = (AudioObjectPropertySelector)MacUtils.ConstructUIntConstantValueFromString("pdv#"u8); // 'pdv#'
+    /// <summary>
+    /// A UInt32 where a value of 0 indicates that there is not audio IO in progress
+    /// in the process, and a value of 1 indicates that there is audio IO in progress
+    /// in the process. Note that audio IO may in progress even if no input or output
+    /// streams are active.
+    /// </summary>
+    public static readonly AudioObjectPropertySelector kAudioProcessPropertyIsRunning  	  = (AudioObjectPropertySelector)MacUtils.ConstructUIntConstantValueFromString("pir?"u8); // 'pir?'
+	/// <summary>
+    /// A UInt32 where a value of 0 indicates that the process is not running any
+    /// IO or there is not any active input streams, and a value of 1 indicates that
+    /// the process is running IO and there is at least one active input stream.
+    /// </summary>
+    public static readonly AudioObjectPropertySelector kAudioProcessPropertyIsRunningInput  = (AudioObjectPropertySelector)MacUtils.ConstructUIntConstantValueFromString("piri"u8); // 'piri'
+	/// <summary>
+    /// A UInt32 where a value of 0 indicates that the process is not running any
+    /// IO or there is not any active output streams, and a value of 1 indicates that
+    /// the process is running IO and there is at least one active output stream.
+    /// </summary>
+    public static readonly AudioObjectPropertySelector kAudioProcessPropertyIsRunningOutput = (AudioObjectPropertySelector)MacUtils.ConstructUIntConstantValueFromString("piro"u8); // 'piro'
+}
+

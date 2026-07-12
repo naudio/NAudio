@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+
+    <IsAotCompatible>true</IsAotCompatible>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <Authors>Mark Heath &amp; mdcdi1315 (N.A.)</Authors>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Copyright>© Mark Heath &amp; mdcdi1315 (N.A.) 2026</Copyright>
+    <Description>macOS playback and recording support types for the NAudio audio library.</Description>
+  </PropertyGroup>
+
+  <!-- needed for perfomance profiling unit tests -->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+	  <DebugType>full</DebugType>
+	  <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.Versioning.SupportedOSPlatformAttribute">
+      <_Parameter1>macos</_Parameter1>
+    </AssemblyAttribute>
+    <ProjectReference Include="../NAudio.Core/NAudio.Core.csproj" />
+  </ItemGroup>
+
+</Project>

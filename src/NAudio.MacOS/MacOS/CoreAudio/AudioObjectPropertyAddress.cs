@@ -1,0 +1,50 @@
+/*==================================================================================================
+     File:       CoreAudio/AudioHardwareBase.h
+
+     Copyright:  (c) 1985-2011 by Apple, Inc., all rights reserved.
+
+     Bugs?:      For bug reports, consult the following page on
+                 the World Wide Web:
+
+                     http://developer.apple.com/bugreporter/
+
+==================================================================================================*/
+
+using System;
+using System.Runtime.InteropServices;
+
+namespace NAudio.MacOS.CoreAudio;
+
+/*!
+    @struct         AudioObjectPropertyAddress
+    @abstract       An AudioObjectPropertyAddress collects the three parts that identify a specific
+                    property together in a struct for easy transmission.
+    @field          mSelector
+                        The AudioObjectPropertySelector for the property.
+    @field          mScope
+                        The AudioObjectPropertyScope for the property.
+    @field          mElement
+                        The AudioObjectPropertyElement for the property.
+*/
+[StructLayout(LayoutKind.Sequential)]
+internal readonly struct AudioObjectPropertyAddress
+{
+    public readonly AudioObjectPropertySelector mSelector;
+    public readonly AudioObjectPropertyScope mScope;
+    public readonly AudioObjectPropertyElement mElement;
+
+    public AudioObjectPropertyAddress(AudioObjectPropertySelector selector, AudioObjectPropertyScope scope, AudioObjectPropertyElement element)
+    {
+        mScope = scope;
+        mElement = element;
+        mSelector = selector;
+    }
+
+    public static AudioObjectPropertyAddress CreateWithGlobalScopeAndMainElement(AudioObjectPropertySelector selector)
+        => CreateWithScopeAndMainElement(selector, AudioObjectPropertyScopeConstants.Global);
+
+    public static AudioObjectPropertyAddress CreateWithScopeAndMainElement(AudioObjectPropertySelector selector, AudioObjectPropertyScope scope)
+        => new(selector, scope, AudioObjectPropertyElement.Main);
+
+    public override int GetHashCode() => HashCode.Combine(mSelector, mScope, mElement);
+}

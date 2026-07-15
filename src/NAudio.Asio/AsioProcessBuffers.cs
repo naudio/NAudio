@@ -75,7 +75,10 @@ public readonly ref struct AsioProcessBuffers
     public ReadOnlySpan<float> GetInput(int channelIndex)
     {
         if ((uint)channelIndex >= (uint)context.InputChannelCount)
-            throw new ArgumentOutOfRangeException(nameof(channelIndex), $"Expected index in [0, {context.InputChannelCount - 1}].");
+            throw new ArgumentOutOfRangeException(nameof(channelIndex),
+                context.InputChannelCount == 0
+                    ? "This is an output-only session (no input channels were selected), so there is no input to read."
+                    : $"Expected index in [0, {context.InputChannelCount - 1}].");
         return context.InputFloatBuffers[channelIndex].AsSpan(0, context.Frames);
     }
 

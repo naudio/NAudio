@@ -55,6 +55,8 @@ OutputChannels = device.Capabilities.AllOutputChannels
 
 See [AsioChannelMapping](AsioChannelMapping.md) for more channel-routing patterns.
 
+> Need to write each output channel independently — a different source per channel, rather than one interleaved `IWaveProvider` fanned out — for example to route separate channel pairs to separate speakers? Use [duplex mode with no input channels](AsioDuplex.md#output-only-no-input-channels).
+
 ## Start and stop
 
 ```c#

@@ -126,6 +126,36 @@ device.InitDuplex(new AsioDuplexOptions
 
 (Note that `mix` starts zeroed — the library zeros output buffers before each call.)
 
+## Output-only (no input channels)
+
+Leaving `InputChannels` empty (or null) configures an **output-only** session: the same processor callback runs, but there's no capture side. This is the way to drive each output channel *independently* — writing a separate `Span<float>` per channel — without collapsing everything into a single interleaved `IWaveProvider` the way playback mode requires. It's the natural fit for routing different channel pairs to different speakers.
+
+```c#
+device.InitDuplex(new AsioDuplexOptions
+{
+    OutputChannels = [0, 1, 2, 3],   // two independent speaker pairs
+    SampleRate     = 48000,
+    Processor      = (in AsioProcessBuffers b) =>
+    {
+        var frontL = b.GetOutput(0);
+        var frontR = b.GetOutput(1);
+        var rearL  = b.GetOutput(2);
+        var rearR  = b.GetOutput(3);
+        for (int i = 0; i < b.Frames; i++)
+        {
+            // fill each channel from whatever source you like — no interleaving
+        }
+    }
+});
+device.Start();
+```
+
+In this mode `b.InputChannelCount` is `0` and calling `b.GetInput(i)` / `b.RawInput(i)` throws — there's nothing to capture. Everything else works exactly as in full duplex: outputs are zero-filled before your callback, and unwritten channels stay silent.
+
+`OutputChannels` and `Processor` are still required; only the input side is optional.
+
+> Duplex is the general "processor callback over per-channel `Span<float>`" mode; output-only is simply that mode with the input side empty, rather than a separate API to learn.
+
 ## The raw escape hatch
 
 For zero-copy passthrough — say you want to memcpy native bytes from one channel to another without the float round-trip — call `RawInput` / `RawOutput`:

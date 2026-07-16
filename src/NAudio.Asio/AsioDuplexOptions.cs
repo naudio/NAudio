@@ -10,6 +10,8 @@ public sealed class AsioDuplexOptions
     /// <summary>
     /// Physical input channel indices. May be non-contiguous. The processor callback addresses them via
     /// <see cref="AsioProcessBuffers.GetInput"/> using zero-based indices into this array.
+    /// Optional — leave null or empty for an output-only session, where the callback writes per-channel output
+    /// via <see cref="AsioProcessBuffers.GetOutput"/> with no capture side and <see cref="AsioProcessBuffers.InputChannelCount"/> is 0.
     /// </summary>
     public int[] InputChannels { get; init; }
 

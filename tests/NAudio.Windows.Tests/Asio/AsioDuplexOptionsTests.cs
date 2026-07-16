@@ -43,4 +43,19 @@ public class AsioDuplexOptionsTests
         Assert.That(options.BufferSize, Is.EqualTo(256));
         Assert.That(options.Processor, Is.SameAs(processor));
     }
+
+    [Test]
+    public void OutputOnly_LeavesInputChannelsUnset()
+    {
+        // Output-only configuration: no input channels, just outputs and a processor.
+        var options = new AsioDuplexOptions
+        {
+            OutputChannels = [0, 1, 2, 3],
+            Processor = (in AsioProcessBuffers _) => { }
+        };
+
+        Assert.That(options.InputChannels, Is.Null, "output-only leaves InputChannels null");
+        Assert.That(options.OutputChannels, Has.Length.EqualTo(4));
+        Assert.That(options.Processor, Is.Not.Null);
+    }
 }

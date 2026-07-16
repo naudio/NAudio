@@ -1,4 +1,4 @@
-﻿<Project>
+<Project>
   <PropertyGroup>
     <!-- Lockstep version for all NAudio NuGet packages. CI overrides
          <VersionSuffix> on pre-release builds (e.g. preview.NN). Sample/tool

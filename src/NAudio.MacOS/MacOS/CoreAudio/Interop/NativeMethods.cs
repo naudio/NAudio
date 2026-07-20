@@ -468,22 +468,11 @@ internal static partial class NativeMethods
     public static partial int AudioDeviceStop(AudioObjectID inDevice, [AllowNull] IntPtr inProcID);
 
     /*!
-            @function       AudioDeviceGetCurrentTime
-            @abstract       Retrieves the current time from an AudioDevice. Note that the device has to be
-                            running.
-            @param          inDevice
-                                The AudioDevice to from which to get the time.
-            @param          outTime
-                                An AudioTimeStamp into which the current time is put. On entry, the
-                                mFlags field specifies which representations to provide. Because not every
-                                device supports all time representations, on exit, the mFlags field will
-                                indicate what values are actually valid.
-            @result         An OSStatus indicating success or failure. kAudioHardwareNotRunningError will be
-                            returned if the AudioDevice isn't running.
         extern OSStatus
         AudioDeviceGetCurrentTime(  AudioObjectID   inDevice,
                                     AudioTimeStamp* outTime)                                                __OSX_AVAILABLE_STARTING(__MAC_10_0, __IPHONE_2_0);
     */
+
     /// <summary>
     /// Retrieves the current time from an AudioDevice. 
     /// Note that the device has to be running.
@@ -500,5 +489,41 @@ internal static partial class NativeMethods
     [SupportedOSPlatform("ios2.0")]
     [SupportedOSPlatform("macos10.0")]
     [LibraryImport(MacLibraries.CoreAudio)]
-    public static partial int AudioDeviceGetCurrentTime(AudioObjectID inDevice, out AudioTimeStamp outTime);
+    public static partial int AudioDeviceGetCurrentTime(AudioObjectID inDevice, ref AudioTimeStamp outTime);
+
+    /*
+        extern UInt64
+        AudioGetCurrentHostTime(void)                                                                       __OSX_AVAILABLE_STARTING(__MAC_10_0, __IPHONE_2_0);
+    */
+
+    /// <summary>Gets the current host time.</summary>
+    /// <returns>A <see cref="ulong"/> containing the current host time.</returns>
+    [SupportedOSPlatform("ios2.0")]
+    [SupportedOSPlatform("macos10.0")]
+    [LibraryImport(MacLibraries.CoreAudio)]
+    public static partial ulong AudioGetCurrentHostTime();
+
+    /*
+        extern Float64
+        AudioGetHostClockFrequency(void)                                                                    __OSX_AVAILABLE_STARTING(__MAC_10_0, __IPHONE_2_0);
+    */
+
+    /// <summary>Gets the number of ticks per second in the host time base.</summary>
+    /// <returns>A Float64 containing the number of ticks per second in the host time base.</returns>
+    [SupportedOSPlatform("ios2.0")]
+    [SupportedOSPlatform("macos10.0")]
+    [LibraryImport(MacLibraries.CoreAudio)]
+    public static partial double AudioGetHostClockFrequency();
+
+    /*
+        extern UInt32
+        AudioGetHostClockMinimumTimeDelta(void)                                                             __OSX_AVAILABLE_STARTING(__MAC_10_0, __IPHONE_2_0);
+    */
+    
+    /// <summary>Gets the smallest number of ticks that two succeeding values will ever differ by.</summary>
+    /// <returns>A UInt32 containing the smallest number of ticks that two succeeding values will ever differ.</returns>
+    [SupportedOSPlatform("ios2.0")]
+    [SupportedOSPlatform("macos10.0")]
+    [LibraryImport(MacLibraries.CoreAudio)]
+    public static partial uint AudioGetHostClockMinimumTimeDelta();
 }

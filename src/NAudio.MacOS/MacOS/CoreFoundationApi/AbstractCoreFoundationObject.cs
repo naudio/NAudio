@@ -103,10 +103,10 @@ internal abstract class AbstractCoreFoundationObject
     /// </summary>
     public void AddReference()
     {
-        ThrowIfInvalidOrDisposed();
         Monitor.Enter(this);
         try
         {
+            ThrowIfInvalidOrDisposed();
             _ = NativeMethods.CFRetain(handle);
         }
         finally
@@ -120,10 +120,10 @@ internal abstract class AbstractCoreFoundationObject
     /// </summary>
     public void RemoveReference()
     {
-        ThrowIfInvalidOrDisposed();
         Monitor.Enter(this);
         try
         {
+            ThrowIfInvalidOrDisposed();
             nint handle_value = this.handle;
             if (ReferenceCount == 1L)
             {

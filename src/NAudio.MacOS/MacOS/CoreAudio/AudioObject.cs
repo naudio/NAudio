@@ -14,10 +14,8 @@
 
 using System;
 using System.Diagnostics;
-using System.Collections.Generic;
 using NAudio.MacOS.CoreAudioTypes;
 using NAudio.MacOS.CoreAudio.Interop;
-using System.Runtime.InteropServices;
 
 namespace NAudio.MacOS.CoreAudio;
 
@@ -80,9 +78,7 @@ public abstract class AudioObject : IEquatable<AudioObject>
 {
     #region Private definitions
 
-    private readonly GCHandle selfGcHandle;
-    private readonly AudioObjectID objectId;
-    private readonly Dictionary<AudioObjectPropertyAddress, IntPtr> listeners;
+    internal readonly AudioObjectID objectId;
 
     internal AudioObject(AudioObjectID objectId)
     {
@@ -92,52 +88,13 @@ public abstract class AudioObject : IEquatable<AudioObject>
         }
         else
         {
-            this.listeners = new(0);
             this.objectId = objectId;
-            this.selfGcHandle = GCHandle.Alloc(this, GCHandleType.Normal);
         }
     }
 
     #region Interop definitions
 
-    private protected unsafe void RegisterNotificationHandler(AudioObjectPropertyAddress address, AudioObjectPropertyListenerProc listener)
-    {
-        listeners.Add(address, new(listener));
-        try
-        {
-            ThrowOnStatusError(
-                address,
-                NativeMethods.AudioObjectAddPropertyListener(
-                    objectId,
-                    address,
-                    listener,
-                    GCHandle.ToIntPtr(selfGcHandle)
-                )
-            );
-        }
-        catch
-        {
-            _ = listeners.Remove(address);
-            throw;
-        }
-    }
-
-    private protected unsafe void UnregisterNotificationHandler(AudioObjectPropertyAddress address)
-    {
-        if (listeners.TryGetValue(address, out var value))
-        {
-            ThrowOnStatusError(
-                address,
-                NativeMethods.AudioObjectRemovePropertyListener(
-                    objectId,
-                    address,
-                    (AudioObjectPropertyListenerProc)value,
-                    GCHandle.ToIntPtr(selfGcHandle)
-                )
-            );
-            _ = listeners.Remove(address);
-        }
-    }
+    private protected PropertyListenerHandle CreateNotificationHandler(AudioObjectPropertyAddress address) => new(this, address);
 
     private protected unsafe string GetStringPropertyValue(AudioObjectPropertyAddress address)
     {
@@ -151,13 +108,26 @@ public abstract class AudioObject : IEquatable<AudioObject>
         return cfs.ToString();
     }
 
-    private protected unsafe string GetStringPropertyValue(AudioObjectPropertyAddress address, uint input)
+    private protected string GetStringPropertyValueOrEmptyIfNotExisting(AudioObjectPropertyAddress address)
+    {
+        try
+        {
+            return GetStringPropertyValue(address);
+        }
+        catch (CoreAudioPropertyNotFoundException)
+        {
+            return string.Empty;
+        }
+    }
+
+    private protected unsafe string GetStringPropertyValue<TQ>(AudioObjectPropertyAddress address, Span<TQ> qualifierData)
+        where TQ : unmanaged
     {
         IntPtr ptr;
         uint size = (uint)sizeof(nint);
         ThrowOnStatusError(
             address,
-            NativeMethods.AudioObjectGetPropertyData(objectId, address, [input], ref size, new(&ptr))
+            NativeMethods.AudioObjectGetPropertyData(objectId, address, qualifierData, ref size, new(&ptr))
         );
         using CoreFoundationApi.CFString cfs = new(ptr);
         return cfs.ToString();
@@ -219,11 +189,40 @@ public abstract class AudioObject : IEquatable<AudioObject>
         return returnValue;
     }
 
+    private protected unsafe AudioValueRange[] GetAudioValueRangesPropertyValue(AudioObjectPropertyAddress address)
+    {
+        uint nativeSize = QueryPropertySize(address);
+        var returnValue = new AudioValueRange[nativeSize / sizeof(AudioValueRange)];
+        fixed (AudioValueRange* memBlock = returnValue)
+        {
+            ThrowOnStatusError(
+                address,
+                NativeMethods.AudioObjectGetPropertyData(objectId, address, ref nativeSize, new(memBlock))
+            );
+        }
+        return returnValue;
+    }
+
     private protected unsafe T[] GetArrayOfTPropertyValue<T>(AudioObjectPropertyAddress address, int size)
         where T : unmanaged
     {
         var returnValue = new T[size];
         uint nativeSize = (uint)(sizeof(T) * returnValue.LongLength);
+        fixed (T* memBlock = returnValue)
+        {
+            ThrowOnStatusError(
+                address,
+                NativeMethods.AudioObjectGetPropertyData(objectId, address, ref nativeSize, new(memBlock))
+            );
+        }
+        return returnValue;
+    }
+
+    private protected unsafe T[] GetArrayOfTPropertyValue<T>(AudioObjectPropertyAddress address)
+        where T : unmanaged
+    {
+        uint nativeSize = QueryPropertySize(address);
+        var returnValue = new T[nativeSize / sizeof(T)];
         fixed (T* memBlock = returnValue)
         {
             ThrowOnStatusError(
@@ -272,7 +271,10 @@ public abstract class AudioObject : IEquatable<AudioObject>
             );
         }
         AudioObjectID id;
-        T[] values = new T[ids.Length];
+        // Make sure to recompute the buffer's size, an update could happen 
+        // after querying the property's size and before getting 
+        // the actual data.
+        var values = new T[size / sizeof(AudioObjectID)];
         for (int I = 0; I < values.Length; I++)
         {
             id = ids[I];
@@ -350,7 +352,7 @@ public abstract class AudioObject : IEquatable<AudioObject>
 
     [StackTraceHidden]
     [DebuggerStepThrough]
-    private void ThrowOnStatusError(AudioObjectPropertyAddress address, int status)
+    internal static void ThrowOnStatusError(AudioObjectPropertyAddress address, int status)
     {
         if (status == Interop.ErrorConstants.kAudioHardwareUnknownPropertyError)
         {
@@ -362,24 +364,6 @@ public abstract class AudioObject : IEquatable<AudioObject>
         }
     }
 
-    /// <summary>
-    /// Finalizer that removes any added notification handlers from the HAL.
-    /// </summary>
-    unsafe ~AudioObject()
-    {
-        nint handle = GCHandle.ToIntPtr(selfGcHandle);
-        foreach (var kvp in listeners)
-        {
-            _ = NativeMethods.AudioObjectRemovePropertyListener(
-                    objectId,
-                    kvp.Key,
-                    (AudioObjectPropertyListenerProc)kvp.Value,
-                    handle
-            );
-        }
-        selfGcHandle.Free();
-    }
-
     #endregion
 
     /// <summary>Gets the actual ID of this class, as reported by the native code.</summary>
@@ -389,21 +373,21 @@ public abstract class AudioObject : IEquatable<AudioObject>
     public uint BaseClassID => GetUIntPropertyValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioObjectProperties.kAudioObjectPropertyBaseClass));
 
     /// <summary>Gets the name of this audio object.</summary>
-    public string Name => GetStringPropertyValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioObjectProperties.kAudioObjectPropertyName));
+    public string Name => GetStringPropertyValueOrEmptyIfNotExisting(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioObjectProperties.kAudioObjectPropertyName));
 
     /// <summary>Gets the manufacturer's model name of this audio object.</summary>
-    public string ModelName => GetStringPropertyValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioObjectProperties.kAudioObjectPropertyModelName));
+    public string ModelName => GetStringPropertyValueOrEmptyIfNotExisting(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioObjectProperties.kAudioObjectPropertyModelName));
 
     /// <summary>Gets the manufacturer of this audio object.</summary>
-    public string Manufacturer => GetStringPropertyValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioObjectProperties.kAudioObjectPropertyManufacturer));
+    public string Manufacturer => GetStringPropertyValueOrEmptyIfNotExisting(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioObjectProperties.kAudioObjectPropertyManufacturer));
 
     /// <summary>Gets the manufacturer's serial number of this audio object.</summary>
     /// <remarks>This is purely an informational value.</remarks>
-    public string SerialNumber => GetStringPropertyValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioObjectProperties.kAudioObjectPropertySerialNumber));
+    public string SerialNumber => GetStringPropertyValueOrEmptyIfNotExisting(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioObjectProperties.kAudioObjectPropertySerialNumber));
 
     /// <summary>Gets the manufacturer's firmware version of this audio object.</summary>
     /// <remarks>This is purely an informational value.</remarks>
-    public string FirmwareVersion => GetStringPropertyValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioObjectProperties.kAudioObjectPropertyFirmwareVersion));
+    public string FirmwareVersion => GetStringPropertyValueOrEmptyIfNotExisting(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioObjectProperties.kAudioObjectPropertyFirmwareVersion));
 
     /// <summary>
     /// An <see cref="AudioObject"/> that identifies the <see cref="AudioObject"/> that owns this <see cref="AudioObject"/>. 
@@ -423,7 +407,11 @@ public abstract class AudioObject : IEquatable<AudioObject>
     /// <param name="object1">The first object.</param>
     /// <param name="object2">The second object.</param>
     /// <returns>A value whether the two objects are both non-null and are pointing to the same Core Audio object.</returns>
-    public static bool operator ==(AudioObject object1, AudioObject object2) => object1 is not null && object1.Equals(object2);
+    public static bool operator ==(AudioObject object1, AudioObject object2)
+    {
+        bool object2IsNull = object2 is null;
+        return object1 is null ? object2IsNull : !object2IsNull && object1.objectId == object2.objectId;
+    }
 
     /// <summary>
     /// Determines whether two <see cref="AudioObject"/> instances are pointing to a different Core Audio object.
@@ -431,7 +419,11 @@ public abstract class AudioObject : IEquatable<AudioObject>
     /// <param name="object1">The first object.</param>
     /// <param name="object2">The second object.</param>
     /// <returns>A value whether the two objects are both non-null and are pointing to a different Core Audio object.</returns>
-    public static bool operator !=(AudioObject object1, AudioObject object2) => object1 is not null && object2 is not null && object1.objectId != object2.objectId;
+    public static bool operator !=(AudioObject object1, AudioObject object2)
+    {
+        bool object2IsNull = object2 is null;
+        return object1 is null ? object2IsNull : !object2IsNull && object1.objectId != object2.objectId;
+    }
 
     /// <summary>Retrieves a hash code for this Core Audio object instance.</summary>
     /// <returns>A hash code.</returns>

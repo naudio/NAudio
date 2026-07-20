@@ -90,7 +90,7 @@ public class AudioSelectorControl : AudioControl
         AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
             AudioSelectorControlProperties.kAudioSelectorControlPropertyItemName
         ),
-        id
+        [id]
     );
 
     /// <inheritdoc />

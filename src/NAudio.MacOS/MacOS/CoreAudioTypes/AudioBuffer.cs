@@ -31,6 +31,13 @@ internal readonly struct AudioBuffer
     [AllowNull]
     public readonly IntPtr mData;
 
+    public AudioBuffer(IntPtr data, uint dataSize, uint numberOfChannels)
+    {
+        mData = data;
+        mDataByteSize = dataSize;
+        mNumberChannels = numberOfChannels;
+    }
+
     /// <summary>
     /// Convenience method for reading/writing data directly to the buffer.
     /// </summary>

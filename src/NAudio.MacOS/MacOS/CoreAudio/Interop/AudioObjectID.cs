@@ -28,12 +28,12 @@ internal readonly struct AudioObjectID : IEqualityOperators<AudioObjectID, Audio
     /// <summary>
     /// This is the sentinel value. No object will have an ID whose value is 0.
     /// </summary>
-    public static AudioObjectID Unknown => new(kAudioObjectUnknown);
+    public static readonly AudioObjectID Unknown = new(kAudioObjectUnknown);
 
     /// <summary>
     /// The <see cref="AudioObjectID"/> that always refers to the one and only instance of the AudioSystemObject class.
     /// </summary>
-    public static AudioObjectID SystemObject => new(kAudioObjectSystemObject);
+    public static readonly AudioObjectID SystemObject = new(kAudioObjectSystemObject);
 
     private readonly uint Value;
 

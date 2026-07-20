@@ -13,10 +13,8 @@
 ==================================================================================================*/
 
 using System;
-using System.Runtime.InteropServices;
 using NAudio.MacOS.CoreAudio.Interop;
 using NAudio.MacOS.CoreFoundationApi;
-using System.Runtime.CompilerServices;
 
 namespace NAudio.MacOS.CoreAudio;
 
@@ -28,20 +26,75 @@ namespace NAudio.MacOS.CoreAudio;
 /// </summary>
 public sealed class AudioSystemObject : AudioObject
 {
-    private unsafe AudioSystemObject(AudioObjectID id) : base(id)
+    private PropertyListenerHandle devicesListChanged;
+    private PropertyListenerHandle defaultInputDeviceChanged;
+    private PropertyListenerHandle defaultOutputDeviceChanged;
+    private PropertyListenerHandle defaultSystemOutputDeviceChanged;
+
+    private AudioSystemObject(AudioObjectID id)
+        : base(id)
     {
-        RegisterNotificationHandler(
-            AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioSystemObjectProperties.kAudioHardwarePropertyServiceRestarted),
-            &ServiceRestartedNativeEvent
+        devicesListChanged = null;
+        defaultInputDeviceChanged = null;
+        defaultOutputDeviceChanged = null;
+        defaultSystemOutputDeviceChanged = null;
+        // The below listener does never itself invalidate - 
+        // all the others will need a re-initialization, which will happen
+        // below.
+        var serviceRestartedHandle = CreateNotificationHandler(
+            AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
+                AudioSystemObjectProperties.kAudioHardwarePropertyServiceRestarted
+            )
         );
+        OnServiceRestarted(this);
+        serviceRestartedHandle.Event += OnServiceRestarted;
+        // By default, the HAL assigns exclusive audio sessions to all the IO procedures - 
+        // but because we are a lib, let the user decide what to do,
+        // but if they want to, they can enable this global flag again.
+        try { HogModeIsAllowed = false; } catch (CoreAudioException) { }
     }
 
-    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvMemberFunction)])]
-    private static int ServiceRestartedNativeEvent(AudioObjectID id, uint naddresses, IntPtr addresses, IntPtr clientData)
+    private void OnServiceRestarted(AudioObject thisObj)
     {
-        var target = (AudioSystemObject)GCHandle.FromIntPtr(clientData).Target;
-        target.ServiceRestarted.Invoke(target, EventArgs.Empty);
-        return 0;
+        // Keep these try/catch clauses to ensure that all the previous
+        // listener handles are safely freed
+        try { devicesListChanged?.Dispose(); } catch { }
+        devicesListChanged = null;
+        try { defaultInputDeviceChanged?.Dispose(); } catch { }
+        defaultInputDeviceChanged = null;
+        try { defaultOutputDeviceChanged?.Dispose(); } catch { }
+        defaultOutputDeviceChanged = null;
+        try { defaultSystemOutputDeviceChanged?.Dispose(); } catch { }
+        defaultSystemOutputDeviceChanged = null;
+        devicesListChanged = CreateNotificationHandler(
+            AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
+                AudioSystemObjectProperties.kAudioHardwarePropertyDevices
+            )
+        );
+        devicesListChanged.Event += InvokeDeviceListChanged;
+        defaultInputDeviceChanged = CreateNotificationHandler(
+            AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
+                AudioSystemObjectProperties.kAudioHardwarePropertyDefaultInputDevice
+            )
+        );
+        defaultInputDeviceChanged.Event += InvokeDefaultInputDeviceChanged;
+        defaultOutputDeviceChanged = CreateNotificationHandler(
+            AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
+                AudioSystemObjectProperties.kAudioHardwarePropertyDefaultOutputDevice
+            )
+        );
+        defaultOutputDeviceChanged.Event += InvokeDefaultOutputDeviceChanged;
+        defaultSystemOutputDeviceChanged = CreateNotificationHandler(
+            AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
+                AudioSystemObjectProperties.kAudioHardwarePropertyDefaultSystemOutputDevice
+            )
+        );
+        defaultSystemOutputDeviceChanged.Event += InvokeDefaultSystemOutputDeviceChanged;
+        // Finally, invoke the service restarted event. 
+        // We do not care whether this invocation throws exception,
+        // because all the critical code that was needed to be executed
+        // it was executed.
+        ServiceRestarted?.Invoke(thisObj);
     }
 
     /// <summary>
@@ -288,9 +341,42 @@ public sealed class AudioSystemObject : AudioObject
     /// <param name="pid">The PID of the audio process object to query.</param>
     public Process ConvertPIDToProcessObject(int pid) => GetAudioObjectValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioSystemObjectProperties.kAudioHardwarePropertyTranslatePIDToProcessObject), AudioObjectsConstructors.ConstructProcess, [pid]);
 
+    #region Events
+
     /// <summary>
     /// Event that clients can be informed when the service has been reset for some reason.
     /// When a reset happens, any state the client has, such as cached data or added listeners, must be re-established by the client.
     /// </summary>
-    public event EventHandler ServiceRestarted;
+    public event AudioObjectPropertyListenerDelegate ServiceRestarted;
+
+    private void InvokeDeviceListChanged(AudioObject o) => DeviceListChanged?.Invoke(o);
+
+    private void InvokeDefaultInputDeviceChanged(AudioObject o) => DefaultInputDeviceChanged?.Invoke(o);
+
+    private void InvokeDefaultOutputDeviceChanged(AudioObject o) => DefaultOutputDeviceChanged?.Invoke(o);
+
+    private void InvokeDefaultSystemOutputDeviceChanged(AudioObject o) => DefaultSystemOutputDeviceChanged?.Invoke(o);
+
+    /// <summary>
+    /// Event that clients can be informed when the list of devices has been changed. <br />
+    /// This particular list changes when a device is added or removed from the HAL.
+    /// </summary>
+    public event AudioObjectPropertyListenerDelegate DeviceListChanged;
+
+    /// <summary>
+    /// Event that clients can be informed when the default input device is changed.
+    /// </summary>
+    public event AudioObjectPropertyListenerDelegate DefaultInputDeviceChanged;
+
+    /// <summary>
+    /// Event that clients can be informed when the default output device is changed.
+    /// </summary>
+    public event AudioObjectPropertyListenerDelegate DefaultOutputDeviceChanged;
+
+    /// <summary>
+    /// Event that clients can be informed when the default system output device is changed.
+    /// </summary>
+    public event AudioObjectPropertyListenerDelegate DefaultSystemOutputDeviceChanged;
+
+    #endregion
 }

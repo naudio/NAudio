@@ -13,7 +13,6 @@
 using System;
 using NAudio.Wave;
 using NAudio.Utils;
-using NAudio.MacOS.CoreAudioTypes;
 using NAudio.MacOS.CoreAudio.Interop;
 
 namespace NAudio.MacOS.CoreAudio;
@@ -205,12 +204,15 @@ public class AudioDevice : AudioObject
     /// <summary>
     /// An array of pairs that indicates the valid ranges for the nominal sample rate of the <see cref="AudioClockDevice"/>.
     /// </summary>
-    public unsafe (double min, double max)[] AvailableNomimalSampleRates
+    public (double min, double max)[] AvailableNomimalSampleRates
     {
         get
         {
-            var address = AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioDeviceProperties.kAudioDevicePropertyAvailableNominalSampleRates);
-            var t = GetArrayOfTPropertyValue<AudioValueRange>(address, (int)(QueryPropertySize(address) / sizeof(AudioValueRange)));
+            var t = GetAudioValueRangesPropertyValue(
+                AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
+                    AudioDeviceProperties.kAudioDevicePropertyAvailableNominalSampleRates
+                )
+            );
             var result = new (double min, double max)[t.Length];
             for (int I = 0; I < result.Length; I++)
             {

@@ -46,6 +46,10 @@ public class CoreAudioException : MacException
         {
             throw new UnauthorizedAccessException("The requested operation could not be completed because the process does not have permission.");
         }
+        else if (osStatus == ErrorConstants.kAudioHardwareNotRunningError)
+        {
+            throw new InvalidOperationException("The call requires the hardware to be running but it is not currently running.");
+        }
         else if (osStatus == CoreAudioTypes.ErrorConstants.kAudio_MemFullError)
         {
             throw new InsufficientMemoryException("Not enough room in heap zone.");

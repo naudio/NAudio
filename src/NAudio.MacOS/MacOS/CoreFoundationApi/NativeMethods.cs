@@ -2,8 +2,6 @@
 using System;
 using System.Runtime.InteropServices;
 
-using CFIndex = System.Runtime.InteropServices.CLong;
-
 namespace NAudio.MacOS.CoreFoundationApi;
 
 /// <summary>
@@ -30,7 +28,7 @@ internal static partial class NativeMethods
     // CF_EXPORT CFHashCode CFHash(CFTypeRef cf);
     // CFHashCode is a unsigned long in 32 bit or a unsigned long long value on 64-bit.
     [LibraryImport(MacLibraries.CoreFoundation)]
-    public static partial CULong CFHash(IntPtr cfObject);
+    public static partial CFHashCode CFHash(IntPtr cfObject);
 
     // CF_EXPORT CFStringRef CFCopyDescription(CFTypeRef cf);
     [LibraryImport(MacLibraries.CoreFoundation)]

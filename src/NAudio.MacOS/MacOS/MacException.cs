@@ -1,8 +1,6 @@
 
-using System;
 using System.Runtime.InteropServices;
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
 
 using NAudio.MacOS.CoreFoundationApi;
 
@@ -18,43 +16,13 @@ namespace NAudio.MacOS;
 /// will provide exception classes derived 
 /// from this exception class.
 /// </summary>
-public partial class MacException : ExternalException
+public class MacException : ExternalException
 {
-    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    [LibraryImport("/usr/lib/system/libsystem_c.dylib", EntryPoint = "strerror_r")]
-    private static partial int ErrorStringFunction(int errorcode, ReadOnlySpan<byte> pString, nuint size);
-
-    private unsafe static string RetrieveDescriptionIfPossible(int osStatus)
+    private static string RetrieveDescriptionIfPossible(int osStatus)
     {
-        byte[] stringData = new byte[1024];
-
-        byte tries = 5;
-        int errnostatus;
-        do
-        {
-            errnostatus = ErrorStringFunction(osStatus, stringData, new((uint)stringData.Length));
-            if (errnostatus == 34) // ERANGE
-            {
-                stringData = new byte[stringData.Length + 1024];
-            }
-        } while (errnostatus != 0 && --tries > 0);
-        if (tries == 0)
-        {
-            if (errnostatus == 16) // EBYSY
-            {
-                using var error = CFError.Create(new(osStatus), CFError.OSStatusDomain);
-                string desc = error.Description;
-                return string.IsNullOrWhiteSpace(desc) ? "An error was occurred." : desc;
-            }
-            else
-            {
-                return $"Unknown error retrieveing message {osStatus:x2}: {errnostatus:x2}";
-            }
-        }
-        else
-        {
-            fixed (byte* d = stringData) { return new((sbyte*)d); }
-        }
+        using var error = CFError.Create(new(osStatus), CFError.OSStatusDomain);
+        string desc = error.Description;
+        return string.IsNullOrWhiteSpace(desc) ? "An error was occurred." : desc;
     }
 
     /// <summary>

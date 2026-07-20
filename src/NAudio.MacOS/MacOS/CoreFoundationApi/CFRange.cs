@@ -10,8 +10,6 @@
 	See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 */
 
-using CFIndex = System.Runtime.InteropServices.CLong;
-
 namespace NAudio.MacOS.CoreFoundationApi;
 
 /// <summary>

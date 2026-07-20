@@ -20,11 +20,17 @@ internal readonly struct AudioBufferList
     /// </summary>
     public readonly AudioBuffer mBuffers; // this is a variable length array of mNumberBuffers elements
 
+    public AudioBufferList(AudioBuffer buffer)
+    {
+        mNumberBuffers = 1U;
+        mBuffers = buffer;
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe UInt32 GetNumberOfBuffersFromPointer(IntPtr ptr)
+    public static unsafe uint GetNumberOfBuffersFromPointer(IntPtr ptr)
         => ((AudioBufferList*)ptr)->mNumberBuffers;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe AudioBuffer GetAudioBufferFromPointer(IntPtr ptr, int index)
+    public static unsafe AudioBuffer GetAudioBufferFromPointer(IntPtr ptr, uint index)
         => (&((AudioBufferList*)ptr)->mBuffers)[index];
 }

@@ -496,4 +496,51 @@ internal static class MacUtils
             }
         }
     }
+
+    private static double ConvertFramesToSeconds(SMPTETimeType type, short frames) => frames / (type switch
+    {
+        SMPTETimeType.kSMPTETimeType24 => 24d,
+        SMPTETimeType.kSMPTETimeType25 => 25d,
+        SMPTETimeType.kSMPTETimeType30 or
+        SMPTETimeType.kSMPTETimeType30Drop => 30d,
+        SMPTETimeType.kSMPTETimeType2997 or
+            SMPTETimeType.kSMPTETimeType2997Drop => 29.97d,
+        SMPTETimeType.kSMPTETimeType60 or
+            SMPTETimeType.kSMPTETimeType60Drop => 60d,
+        SMPTETimeType.kSMPTETimeType5994 or
+            SMPTETimeType.kSMPTETimeType5994Drop => 59.94d,
+        SMPTETimeType.kSMPTETimeType50 => 50d,
+        SMPTETimeType.kSMPTETimeType2398 => 23.98d,
+        _ => throw new ArgumentException("Invalid time type: " + type)
+    });
+
+    public static double TimeStampToSeconds(AudioTimeStamp stamp, WaveFormat format)
+    {
+        if (stamp.mFlags.HasFlag(AudioTimeStampFlags.kAudioTimeStampSampleTimeValid))
+        {
+            return stamp.mSampleTime / format.AverageBytesPerSecond;
+        }
+        else if (stamp.mFlags.HasFlag(AudioTimeStampFlags.kAudioTimeStampHostTimeValid))
+        {
+            return stamp.mHostTime / MacOS.CoreAudio.CoreAudioFunctions.HostClockFrequency;
+        }
+        else if (stamp.mFlags.HasFlag(AudioTimeStampFlags.kAudioTimeStampSMPTETimeValid))
+        {
+            var smpteTime = stamp.mSMPTETime;
+            return (smpteTime.mHours * TimeSpan.SecondsPerHour) +
+                    (smpteTime.mMinutes * TimeSpan.SecondsPerMinute) +
+                    smpteTime.mSeconds +
+                    ConvertFramesToSeconds(smpteTime.mType, smpteTime.mFrames);
+        }
+        else
+        {
+            throw new ArgumentException("Invalid time stamp flags: " + stamp.mFlags);
+        }
+    }
+
+    public static int GetNumberOfPacketsFromBytesAndFormat(int bytes, WaveFormat format) => bytes / format.BlockAlign;
+
+    public static uint GetNumberOfPacketsFromBytesAndFormat(uint bytes, WaveFormat format) => (uint)(bytes / format.BlockAlign);
+
+    public static uint GetNumberOfBytesFromPacketsAndFormat(uint numberOfPackets, WaveFormat format) => (uint)(numberOfPackets * format.BlockAlign);
 }

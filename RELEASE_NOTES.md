@@ -1,5 +1,6 @@
 ### Unreleased
 
+- Added Ogg (`OggS`) container detection to the Media Foundation byte-stream content-type sniffer, so `StreamMediaFoundationReader` can hint `audio/ogg` and let Media Foundation resolve `.ogg` streams on Windows installs that have the Ogg codec (previously failed with `MF_E_UNSUPPORTED_BYTESTREAM_TYPE` where the file-based `MediaFoundationReader` succeeded) (#952)
 - Allowed `AsioDevice.InitDuplex` to be called with no input channels (empty or null `AsioDuplexOptions.InputChannels`), configuring an output-only processor session — the way to write each ASIO output channel independently without feeding a single interleaved `IWaveProvider` (#1389)
 - Changed `NAudio.Wasapi` to target `net9.0` instead of `net9.0-windows10.0.19041.0`; it stays Windows-only at runtime via `[SupportedOSPlatform("windows")]`, so cross-platform apps can now reference it and build on Linux/macOS without `EnableWindowsTargeting` (#1384)
 - Moved the WinRT MIDI backend (`WinRTMidiIn`, `WinRTMidiOut`, `MidiMessageConverter`) from `NAudio.Wasapi` into `NAudio.Midi`, which now dual-targets `net9.0;net9.0-windows10.0.19041.0`. The types keep the `NAudio.Midi` namespace; they ship only in the Windows build (#1384)

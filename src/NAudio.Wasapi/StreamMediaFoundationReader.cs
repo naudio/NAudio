@@ -22,9 +22,28 @@ public class StreamMediaFoundationReader : MediaFoundationReader
     /// </summary>
     /// <param name="stream">The data stream to initialize the reader from.</param>
     /// <param name="settings">Optional. Additional options that affect how the reader reads data.</param>
+    /// <param name="contentType">
+    /// Optional. A MIME type hint (e.g. <c>"audio/ogg"</c>) for the byte stream, passed to Media
+    /// Foundation as <c>MF_BYTESTREAM_CONTENT_TYPE</c> to help its source resolver select a
+    /// byte-stream handler. Because a stream carries no file name, the resolver otherwise has only
+    /// the content sniffer's guess to go on; supplying a hint here is the reliable way to decode
+    /// formats the sniffer does not recognise. When supplied, automatic content sniffing is skipped.
+    /// </param>
+    /// <param name="originName">
+    /// Optional. A file name or URL whose extension identifies the format (e.g. <c>"track.ogg"</c>),
+    /// passed to Media Foundation as <c>MF_BYTESTREAM_ORIGIN_NAME</c>. This gives the byte-stream
+    /// path the same extension-based resolution the file-based <see cref="MediaFoundationReader"/>
+    /// gets via <c>MFCreateSourceReaderFromURL</c>, and is generally the most reliable hint. When
+    /// supplied, automatic content sniffing is skipped.
+    /// </param>
     /// <exception cref="ArgumentNullException"><paramref name="stream"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentException"><paramref name="stream"/> is unreadable, or unseekable.</exception>
-    public StreamMediaFoundationReader(Stream stream, MediaFoundationReaderSettings settings = null)
+    /// <remarks>
+    /// A supplied hint only helps Media Foundation locate a decoder that is already installed on the
+    /// machine; it does not add codec support. If both hints are supplied they are both applied.
+    /// </remarks>
+    public StreamMediaFoundationReader(Stream stream, MediaFoundationReaderSettings settings = null,
+        string contentType = null, string originName = null)
     {
         ArgumentNullException.ThrowIfNull(stream);
         if (!stream.CanRead)
@@ -37,7 +56,7 @@ public class StreamMediaFoundationReader : MediaFoundationReader
         }
         else
         {
-            wrapper = new MfByteStreamFromStream(this.stream = stream);
+            wrapper = new MfByteStreamFromStream(this.stream = stream, contentType: contentType, originName: originName);
             Init(settings);
         }
     }

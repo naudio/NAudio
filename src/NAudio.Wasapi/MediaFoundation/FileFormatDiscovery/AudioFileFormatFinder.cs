@@ -22,7 +22,13 @@ internal sealed class AudioFileFormatFinder
 
     static AudioFileFormatFinder()
     {
-        defaultFileFormatsRegistry = new(3);
+        defaultFileFormatsRegistry = new(4);
+        // Ogg is checked before MP3: it is identified by a strict four-byte "OggS"
+        // magic at offset 0, whereas Mp3FileFormat scans the whole stream for a valid
+        // frame-header sequence and can therefore false-positive on the compressed Ogg
+        // payload. Running the strict detector first keeps a genuine Ogg from being
+        // mislabelled as audio/mp3.
+        defaultFileFormatsRegistry.Add(OggFileFormat.Instance);
         defaultFileFormatsRegistry.Add(Mp3FileFormat.Instance);
         defaultFileFormatsRegistry.Add(Mp4FileFormat.Instance);
         defaultFileFormatsRegistry.Add(FlacFileFormat.Instance);

@@ -7,6 +7,8 @@
 
 #pragma warning disable IDE0055 // We want the values to have a consistent view.
 
+using System;
+
 namespace NAudio.MacOS.CoreAudioTypes;
 
 /// <summary>
@@ -14,6 +16,7 @@ namespace NAudio.MacOS.CoreAudioTypes;
 /// These constants are for use in the mChannelBitmap
 /// field of an AudioChannelLayout structure.
 /// </summary>
+[Flags]
 internal enum AudioChannelBitmap : uint
 {
     kAudioChannelBit_Left                       = (1U<<0),

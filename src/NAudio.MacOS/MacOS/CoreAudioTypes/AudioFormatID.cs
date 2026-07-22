@@ -116,9 +116,9 @@ internal static class AudioFormatIDs
     /// <summary>The iLBC narrow band speech codec. It has no flags.</summary>
     public static readonly AudioFormatID kAudioFormatiLBC                    = (AudioFormatID)MacUtils.ConstructUIntConstantValueFromString("ilbc"u8);
     /// <summary>DVI/Intel IMA ADPCM - ACM code 17.</summary>
-    public static readonly AudioFormatID kAudioFormatDVIIntelIMA             = (AudioFormatID)0x6D730011;
+    public const AudioFormatID kAudioFormatDVIIntelIMA             = (AudioFormatID)0x6D730011;
     /// <summary>Microsoft GSM 6.10 - ACM code 49.</summary>
-    public static readonly AudioFormatID kAudioFormatMicrosoftGSM            = (AudioFormatID)0x6D730031;
+    public const AudioFormatID kAudioFormatMicrosoftGSM            = (AudioFormatID)0x6D730031;
     /// <summary>
     /// This format is defined by AES3-2003, and adopted into MXF and MPEG-2
     /// containers and SDTI transport streams with SMPTE specs 302M-2002 and

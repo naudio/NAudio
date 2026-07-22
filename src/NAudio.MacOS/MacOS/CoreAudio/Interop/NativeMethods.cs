@@ -325,15 +325,6 @@ internal static partial class NativeMethods
                                     AudioObjectPropertyListenerProc     inListener,
                                     void* __nullable                    inClientData)                   __OSX_AVAILABLE_STARTING(__MAC_10_4, __IPHONE_2_0);
     */
-    [SupportedOSPlatform("ios2.0")]
-    [SupportedOSPlatform("macos10.4")]
-    [LibraryImport(MacLibraries.CoreAudio, EntryPoint = "AudioObjectAddPropertyListener")]
-    private static unsafe partial int AudioObjectAddPropertyListener_Native(
-        AudioObjectID                   inObjectID,
-        in AudioObjectPropertyAddress   inAddress,
-        AudioObjectPropertyListenerProc inListener,
-        [AllowNull] IntPtr              inClientData
-    );
 
     /// <summary>
     /// Registers the given AudioObjectPropertyListenerProc to 
@@ -346,12 +337,13 @@ internal static partial class NativeMethods
     /// <returns>An OSStatus indicating success or failure.</returns>
     [SupportedOSPlatform("ios2.0")]
     [SupportedOSPlatform("macos10.4")]
-    public static unsafe int AudioObjectAddPropertyListener(
+    [LibraryImport(MacLibraries.CoreAudio)]
+    public static unsafe partial int AudioObjectAddPropertyListener(
         AudioObjectID                   inObjectID,
-        AudioObjectPropertyAddress      inAddress,
+        in AudioObjectPropertyAddress   inAddress,
         AudioObjectPropertyListenerProc inListener,
         [AllowNull] IntPtr              inClientData
-    ) => AudioObjectAddPropertyListener_Native(inObjectID, in inAddress, inListener, inClientData);
+    );
 
     /*
     extern OSStatus
@@ -360,15 +352,6 @@ internal static partial class NativeMethods
                                     AudioObjectPropertyListenerProc     inListener,
                                     void* __nullable                    inClientData)                   __OSX_AVAILABLE_STARTING(__MAC_10_4, __IPHONE_2_0);
     */
-    [SupportedOSPlatform("ios2.0")]
-    [SupportedOSPlatform("macos10.4")]
-    [LibraryImport(MacLibraries.CoreAudio, EntryPoint = "AudioObjectRemovePropertyListener")]
-    private static unsafe partial int AudioObjectRemovePropertyListener_Native(
-        AudioObjectID                   inObjectID,
-        in AudioObjectPropertyAddress   inAddress,
-        AudioObjectPropertyListenerProc inListener,
-        [AllowNull] IntPtr              inClientData
-    );
 
     /// <summary>
     /// Unregisters the given AudioObjectPropertyListenerProc from 
@@ -381,12 +364,13 @@ internal static partial class NativeMethods
     /// <returns>An OSStatus indicating success or failure.</returns>
     [SupportedOSPlatform("ios2.0")]
     [SupportedOSPlatform("macos10.4")]
-    public static unsafe int AudioObjectRemovePropertyListener(
+    [LibraryImport(MacLibraries.CoreAudio)]
+    public static unsafe partial int AudioObjectRemovePropertyListener(
         AudioObjectID                   inObjectID,
-        AudioObjectPropertyAddress      inAddress,
+        in AudioObjectPropertyAddress   inAddress,
         AudioObjectPropertyListenerProc inListener,
         [AllowNull] IntPtr              inClientData
-    ) => AudioObjectAddPropertyListener_Native(inObjectID, in inAddress, inListener, inClientData);
+    );
 
     /*
         extern OSStatus

@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using NAudio.MacOS.CoreAudio.Interop;
 using NAudio.MacOS.CoreAudioTypes;
 using NAudio.Utils;
+using NAudio.Wave;
 
 namespace NAudio.MacOS.CoreAudio;
 
@@ -45,7 +46,7 @@ public static class CoreAudioFunctions
     /// <param name="device">The audio device to get it's time.</param>
     /// <param name="scope">The the audio device time to query for (Input/Output).</param>
     /// <returns>The current time of the audio device, in seconds</returns>
-    /// <exception cref="InvalidOperationException">The specified audio does not have at least one I/O procedure running.</exception>
+    /// <exception cref="InvalidOperationException">The specified audio device does not have at least one I/O procedure running.</exception>
     public static double GetCurrentDeviceTime(AudioDevice device, AudioObjectPropertyScope scope)
     {
         ArgumentNullException.ThrowIfNull(device);
@@ -65,5 +66,24 @@ public static class CoreAudioFunctions
             // We're not lucky - we need to get the device's physical format.
             return MacUtils.TimeStampToSeconds(stamp, device.GetStreams(scope)[0].PhysicalFormat);
         }
+    }
+
+    /// <summary>
+    /// Gets the current time of the specified audio device, if running.
+    /// </summary>
+    /// <param name="device">The audio device to get it's time.</param>
+    /// <param name="intermediateFormat">The currently used virtual format of the audio device.</param>
+    /// <returns>The current time of the audio device, in seconds</returns>
+    /// <exception cref="InvalidOperationException">The specified audio device does not have at least one I/O procedure running.</exception>
+    public static double GetCurrentDeviceTime(AudioDevice device, WaveFormat intermediateFormat)
+    {
+        ArgumentNullException.ThrowIfNull(device);
+        AudioTimeStamp stamp = new();
+        // If possible, query only the sample time.
+        stamp.mFlags |= AudioTimeStampFlags.kAudioTimeStampSampleTimeValid;
+        CoreAudioException.ThrowIfError(
+            NativeMethods.AudioDeviceGetCurrentTime(device.objectId, ref stamp)
+        );
+        return MacUtils.TimeStampToSeconds(stamp, intermediateFormat);
     }
 }

@@ -13,7 +13,6 @@
 using System;
 using NAudio.Wave;
 using NAudio.Utils;
-using NAudio.MacOS.CoreAudioTypes;
 using NAudio.MacOS.CoreAudio.Interop;
 
 namespace NAudio.MacOS.CoreAudio;
@@ -33,11 +32,11 @@ public sealed class AudioStream : AudioObject
     public bool IsActive => GetUIntPropertyValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioStreamProperties.kAudioStreamPropertyIsActive)) == 1U;
 
     /// <summary>
-    /// A <see cref="bool"/> where a value of <see langword="false"/> means that this AudioStream is an 
-    /// output stream and a value of <see langword="true"/> means that it is an input stream.
+    /// Returns a <see cref="AudioStreamDirection"/> value indicating whether this 
+    /// <see cref="AudioStream"/> is an output or input stream.
     /// </summary>
-    // mdcdi1315: Maybe put an enumeration with two single cases (Input, Output) for it?
-    public bool Direction => GetUIntPropertyValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioStreamProperties.kAudioStreamPropertyDirection)) == 1U;
+    /// <seealso cref="AudioStreamDirection"/>
+    public AudioStreamDirection Direction => (AudioStreamDirection)GetUIntPropertyValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioStreamProperties.kAudioStreamPropertyDirection));
 
     /// <summary>
     /// A <see cref="uint"/> that specifies the first element in the owning 
@@ -48,6 +47,7 @@ public sealed class AudioStream : AudioObject
     /// <summary>
     /// A <see cref="AudioStreamTerminalType"/> whose value describes the general kind of functionality attached to the AudioStream.
     /// </summary>
+    /// <seealso cref="AudioStreamTerminalType"/>
     public AudioStreamTerminalType TerminalType => (AudioStreamTerminalType)GetUIntPropertyValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioStreamProperties.kAudioStreamPropertyTerminalType));
 
     /// <summary>
@@ -62,43 +62,57 @@ public sealed class AudioStream : AudioObject
     /// <summary>
     /// A <see cref="WaveFormat"/> that describes the current data format for
     /// the <see cref="AudioStream"/>. The virtual format refers to the data format in which all
-    /// IOProcs for the owning <see cref="AudioDevice"/> will perform IO transactions.
+    /// I/O procedures for the owning <see cref="AudioDevice"/> will perform I/O transactions.
     /// </summary>
     public WaveFormat VirtualFormat
     {
-        get
-        {
-            var asbd = GetArrayOfTPropertyValue<AudioStreamBasicDescription>(
-                AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
-                    AudioStreamProperties.kAudioStreamPropertyVirtualFormat
-                ), 1
-            );
-            return MacUtils.ConstructWaveFormatFromASBD(asbd[0]);
-        }
+        get => MacUtils.ConstructWaveFormatFromASBD(GetAudioStreamBasicDescriptionValue(
+            AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
+                AudioStreamProperties.kAudioStreamPropertyVirtualFormat
+            )
+        ));
         set
         {
             ArgumentNullException.ThrowIfNull(value);
-            SetArrayOfTPropertyValue(
+            SetAudioStreamBasicDescriptionValue(
                 AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
                     AudioStreamProperties.kAudioStreamPropertyVirtualFormat
-                ), [MacUtils.ConstructASBDFromWaveFormat(value)]
+                ),
+                MacUtils.ConstructASBDFromWaveFormat(value)
             );
         }
     }
+
+    /// <summary>
+    /// Provides the way for creating an event handle when the contents 
+    /// of the <see cref="VirtualFormat"/> property do change.
+    /// </summary>
+    /// <returns>
+    /// A new <see cref="PropertyListenerHandle"/> that can be used to
+    /// listen to changes of the <see cref="VirtualFormat"/> property. <br />
+    /// It's <see cref="PropertyListenerHandle.OriginatingObject"/> property value is this <see cref="AudioStream" /> instance.
+    /// </returns>
+    public PropertyListenerHandle ConstructVirtualFormatChangedEvent() => new(
+        this,
+        AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
+            AudioStreamProperties.kAudioStreamPropertyVirtualFormat
+        )
+    );
 
     /// <summary>
     /// An array of <see cref="WaveFormat"/> that describe the available data
     /// formats for the <see cref="AudioStream"/>. The virtual format refers to the data format in
     /// which all IOProcs for the owning <see cref="AudioDevice"/> will perform IO transactions.
     /// </summary>
-    public unsafe RangedWaveFormat[] VirtualFormats
+    public RangedWaveFormat[] VirtualFormats
     {
         get
         {
-            var address = AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
-                AudioStreamProperties.kAudioStreamPropertyAvailableVirtualFormats
+            var asbd = GetArrayOfTPropertyValue<AudioStreamRangedDescription>(
+                AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
+                    AudioStreamProperties.kAudioStreamPropertyAvailableVirtualFormats
+                )
             );
-            var asbd = GetArrayOfTPropertyValue<AudioStreamRangedDescription>(address, (int)(QueryPropertySize(address) / sizeof(AudioStreamRangedDescription)));
             RangedWaveFormat[] translated = new RangedWaveFormat[asbd.Length];
             for (int I = 0; I < asbd.Length; I++)
             {
@@ -113,18 +127,11 @@ public sealed class AudioStream : AudioObject
     /// the <see cref="AudioStream"/>. The physical format refers to the data format in which the
     /// hardware for the owning <see cref="AudioDevice"/> performs its IO transactions.
     /// </summary>
-    public WaveFormat PhysicalFormat
-    {
-        get
-        {
-            var asbd = GetArrayOfTPropertyValue<AudioStreamBasicDescription>(
-                AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
-                    AudioStreamProperties.kAudioStreamPropertyPhysicalFormat
-                ), 1
-            );
-            return MacUtils.ConstructWaveFormatFromASBD(asbd[0]);
-        }
-    }
+    public WaveFormat PhysicalFormat => MacUtils.ConstructWaveFormatFromASBD(GetAudioStreamBasicDescriptionValue(
+        AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
+            AudioStreamProperties.kAudioStreamPropertyPhysicalFormat
+        )
+    ));
 
     /// <summary>
     /// An array of <see cref="WaveFormat"/> that describe the available data
@@ -132,14 +139,15 @@ public sealed class AudioStream : AudioObject
     /// in which the hardware for the owning <see cref="AudioDevice"/> performs its IO
     /// transactions.
     /// </summary>
-    public unsafe RangedWaveFormat[] PhysicalFormats
+    public RangedWaveFormat[] PhysicalFormats
     {
         get
         {
-            var address = AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
-                AudioStreamProperties.kAudioStreamPropertyAvailablePhysicalFormats
+            var asbd = GetArrayOfTPropertyValue<AudioStreamRangedDescription>(
+                AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
+                    AudioStreamProperties.kAudioStreamPropertyAvailablePhysicalFormats
+                )
             );
-            var asbd = GetArrayOfTPropertyValue<AudioStreamRangedDescription>(address, (int)(QueryPropertySize(address) / sizeof(AudioStreamRangedDescription)));
             RangedWaveFormat[] translated = new RangedWaveFormat[asbd.Length];
             for (int I = 0; I < asbd.Length; I++)
             {

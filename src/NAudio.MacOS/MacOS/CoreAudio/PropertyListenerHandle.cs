@@ -112,11 +112,7 @@ public sealed unsafe class PropertyListenerHandle : IDisposable
     public AudioObject OriginatingObject => audioObject;
 
     /// <summary>
-    /// Event that fires when the property attached to this event changes state. <br />
-    /// Note however that the HAL does not guarantee that the value of the property
-    /// that this event is associated with will have been actually changed. HAL
-    /// explicitly mentions that the actual property value update will happen after
-    /// all property listeners have been invoked and completed execution.
+    /// Event that fires when the property attached to this event changes state.
     /// </summary>
     public event AudioObjectPropertyListenerDelegate Event;
 

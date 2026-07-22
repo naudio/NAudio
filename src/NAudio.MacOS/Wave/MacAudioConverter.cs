@@ -2,6 +2,7 @@
 using System;
 using System.Threading;
 using System.Diagnostics;
+using System.Runtime.Versioning;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 
@@ -15,23 +16,32 @@ namespace NAudio.Wave;
 
 /// <summary>
 /// Provides the platform's resampler. <br />
-/// Has almost the same strengths as the Windows Media Resampler, and even provides more
-/// options compared to that one, allowing to modify resampling algorithm, quality and dithering.
+/// Has almost the same strengths as the Windows Media Resampler (excluding changing the input provider's audio format details on the fly), 
+/// and even provides more options compared to that one, allowing to modify resampling algorithm, quality and dithering.
 /// </summary>
 // mdcdi1315: TODO: This work is primitive but for now it works.
 // Things I want to do:
-// 1. The native callback be allocated as a private static field in the class - safe change.
-// 2. Verify whether the converter is able to change the input stream format on the fly 
-// - very important but also hard to test.
-// 3. Check whether this does not leak any native objects, we are doing a lot of unsafe things in
+// 1. Probably we cannot change the input stream properties once the converter is initialized,
+// there are some properties that somehow allow to modify sample rate, but are a bit misleading on
+// which end they are applied to - worth checking, especially if will be able to support providers 
+// that do change audio formats.
+// 2. Check whether this does not leak any native objects, we are doing a lot of unsafe things in
 // here - so this needs a verification.
-public unsafe sealed class MacAudioConverter : IWaveProvider, IDisposable
+[SupportedOSPlatform("ios2.0")]
+[SupportedOSPlatform("macos10.2")]
+public sealed unsafe class MacAudioConverter : IWaveProvider, IDisposable
 {
-    private WaveFormat sourceFormat;
+    // Allocate a single function pointer for all convert complex buffer calls - 
+    // the same things are done to all the audio converter wrapper objects.
+    private static readonly AudioConverterComplexInputDataProc procedureInstance = &ConvertComplexBufferCb;
+
+    private bool disposed;
     private readonly GCHandle selfGcHandle;
+    private readonly WaveFormat sourceFormat;
     private readonly WaveFormat outputFormat;
     private readonly IntPtr audioConverterHandle;
     private readonly IWaveProvider sourceProvider;
+    private readonly byte[] directConversionBuffer;
 
     [StackTraceHidden]
     [DebuggerStepThrough]
@@ -64,24 +74,46 @@ public unsafe sealed class MacAudioConverter : IWaveProvider, IDisposable
         ArgumentNullException.ThrowIfNull(outputFormat);
         ArgumentNullException.ThrowIfNull(providerToResample);
 
+        disposed = false;
+
+        // Although that the converter can also work with compressed formats,
+        // it will probably return the encoded data only and not any useful headers
+        // that are required to read those specific formats.
+        // Also, we just provide this for the resampling algorithm,
+        // so it is probably OK to allow only PCM and IEEE floating-point formats.
         VerifyFormatIsIeeeFloatOrPCM(this.outputFormat = outputFormat);
 
-        var sourceAsbd = MacUtils.ConstructASBDFromWaveFormat(sourceFormat = (sourceProvider = providerToResample).WaveFormat);
-        var destAsbd = MacUtils.ConstructASBDFromWaveFormat(outputFormat);
+        // Construct the converter - translate the audio formats as needed.
 
         AudioConverterException.ThrowIfError(
             NativeMethods.AudioConverterNew(
-                sourceAsbd,
-                destAsbd,
+                MacUtils.ConstructASBDFromWaveFormat(sourceFormat = (sourceProvider = providerToResample).WaveFormat),
+                MacUtils.ConstructASBDFromWaveFormat(outputFormat),
                 out audioConverterHandle
             )
         );
 
-        // Setup not complete yet - assign channel layouts as appropriate.
+        // Setup not complete yet - assign channel layouts on both ends, if so required by each of them.
 
-        if (outputFormat is WaveFormatExtensible ext)
+        AudioChannelLayout l;
+
+        if (outputFormat is WaveFormatExtensible outExt && outExt.ChannelMask != 0)
         {
-            AudioChannelLayout l = MacUtils.ConstructAudioChannelLayoutFromSpeakers((Speakers)ext.ChannelMask);
+            l = MacUtils.ConstructAudioChannelLayoutFromSpeakers((Speakers)outExt.ChannelMask);
+
+            AudioConverterException.ThrowIfError(
+                NativeMethods.AudioConverterSetProperty(
+                    audioConverterHandle,
+                    AudioConverterProperties.kAudioConverterOutputChannelLayout,
+                    (uint)sizeof(AudioChannelLayout),
+                    new(&l)
+                )
+            );
+        }
+
+        if (sourceFormat is WaveFormatExtensible inExt && inExt.ChannelMask != 0)
+        {
+            l = MacUtils.ConstructAudioChannelLayoutFromSpeakers((Speakers)inExt.ChannelMask);
 
             AudioConverterException.ThrowIfError(
                 NativeMethods.AudioConverterSetProperty(
@@ -93,43 +125,39 @@ public unsafe sealed class MacAudioConverter : IWaveProvider, IDisposable
             );
         }
 
-        UpdateSourceChannelLayout();
-
-        selfGcHandle = GCHandle.Alloc(this, GCHandleType.Normal);
-    }
-
-    private void UpdateSourceChannelLayout()
-    {
-        if (sourceFormat is WaveFormatExtensible ext)
+        // We need to change the conversion function we use
+        // when no sample rate conversion is used.
+        if (sourceFormat.SampleRate == outputFormat.SampleRate)
         {
-            AudioChannelLayout l = MacUtils.ConstructAudioChannelLayoutFromSpeakers((Speakers)ext.ChannelMask);
-
+            // Query the input mimimum buffer size, and use that.
+            // Seems that using ConvertLatencyToByteSize does not produce a buffer whose size is appropriate.
+            uint value;
+            uint size = sizeof(uint);
             AudioConverterException.ThrowIfError(
-                NativeMethods.AudioConverterSetProperty(
+                NativeMethods.AudioConverterGetProperty(
                     audioConverterHandle,
-                    AudioConverterProperties.kAudioConverterOutputChannelLayout,
-                    (uint)sizeof(AudioChannelLayout),
-                    new(&l)
+                    AudioConverterProperties.kAudioConverterPropertyMinimumInputBufferSize,
+                    ref size,
+                    new(&value)
                 )
             );
+            directConversionBuffer = new byte[value];
+            // We do not need the GC handle, assign default value to it
+            selfGcHandle = default;
         }
-    }
-
-    private void UpdateSourceFormat()
-    {
-        var provFormat = sourceProvider.WaveFormat;
-        if (!provFormat.Equals(sourceFormat))
+        else
         {
-            var asbd = MacUtils.ConstructASBDFromWaveFormat(sourceFormat = provFormat);
-            AudioConverterException.ThrowIfError(
-                NativeMethods.AudioConverterSetProperty(
-                    audioConverterHandle,
-                    AudioConverterProperties.kAudioConverterCurrentInputStreamDescription,
-                    (uint)sizeof(AudioStreamBasicDescription),
-                    new(&asbd)
-                )
-            );
-            UpdateSourceChannelLayout();
+            // We do not need the conversion buffer, pass null to use the complex function
+            directConversionBuffer = null;
+
+            // Now allocate the GC handle. Allocating this earlier could
+            // leak this handle. So, do whatever setup we intend to do first,
+            // then we can initialize this safely. The only case for this to throw
+            // is if we are out of memory, which may terminate the process,
+            // so we might be safe. However, it is useful to verify that in the future,
+            // because there are also recoverable out of memory situations, if the runtime
+            // somehow manages to free memory.
+            selfGcHandle = GCHandle.Alloc(this, GCHandleType.Normal);
         }
     }
 
@@ -147,8 +175,7 @@ public unsafe sealed class MacAudioConverter : IWaveProvider, IDisposable
         uint bytesRead = 0U;
         bool updateSpan = true;
         Span<byte> currentSpan = Span<byte>.Empty;
-        uint I = 0U, cBuffers = AudioBufferList.GetNumberOfBuffersFromPointer(ioData);
-        do
+        for (uint I = 0U, cBuffers = AudioBufferList.GetNumberOfBuffersFromPointer(ioData); I < cBuffers;) // We might have zero buffers to process
         {
             if (updateSpan)
             {
@@ -159,6 +186,12 @@ public unsafe sealed class MacAudioConverter : IWaveProvider, IDisposable
 
             if (dataRead == 0)
             {
+                // Exit the loop - do not fill any additional data.
+                // This will force assigning the number of packets
+                // that we did actually read from the stream, 
+                // which if it is zero, it will assign zero,
+                // and that will flag our converter that we 
+                // do not have any further data to process.
                 break;
             }
             else if (dataRead == currentSpan.Length)
@@ -174,7 +207,7 @@ public unsafe sealed class MacAudioConverter : IWaveProvider, IDisposable
             }
 
             bytesRead += (uint)dataRead;
-        } while (I < cBuffers);
+        }
 
         *ioNumberDataPackets = MacUtils.GetNumberOfPacketsFromBytesAndFormat(bytesRead, wrapper.sourceFormat);
 
@@ -194,23 +227,44 @@ public unsafe sealed class MacAudioConverter : IWaveProvider, IDisposable
     /// <returns>Number of bytes actually read into <paramref name="buffer"/>, 0 if end of stream.</returns>
     public int Read(Span<byte> buffer)
     {
-        UpdateSourceFormat();
-        uint readPackets = MacUtils.GetNumberOfPacketsFromBytesAndFormat((uint)buffer.Length, outputFormat);
-        fixed (byte* pPlaceDataTo = buffer)
+        if (directConversionBuffer is null)
         {
-            AudioBufferList list = new(new(new(pPlaceDataTo), (uint)buffer.Length, (uint)outputFormat.Channels));
-            AudioConverterException.ThrowIfError(
-                NativeMethods.AudioConverterFillComplexBuffer(
-                    audioConverterHandle,
-                    &ConvertComplexBufferCb,
-                    GCHandle.ToIntPtr(selfGcHandle),
-                    ref readPackets,
-                    ref list,
-                    IntPtr.Zero
-                )
-            );
+            uint readPackets = MacUtils.GetNumberOfPacketsFromBytesAndFormat((uint)buffer.Length, outputFormat);
+            fixed (byte* pPlaceDataTo = buffer)
+            {
+                var list = AudioBufferList.FromSingleBuffer(new(pPlaceDataTo), (uint)buffer.Length, (uint)outputFormat.Channels);
+                AudioConverterException.ThrowIfError(
+                    NativeMethods.AudioConverterFillComplexBuffer(
+                        audioConverterHandle,
+                        procedureInstance,
+                        GCHandle.ToIntPtr(selfGcHandle),
+                        ref readPackets,
+                        ref list,
+                        IntPtr.Zero
+                    )
+                );
+            }
+            return (int)MacUtils.GetNumberOfBytesFromPacketsAndFormat(readPackets, outputFormat);
         }
-        return (int)MacUtils.GetNumberOfBytesFromPacketsAndFormat(readPackets, outputFormat);
+        else
+        {
+            uint outSize = (uint)buffer.Length;
+            int readBytes = sourceProvider.Read(directConversionBuffer);
+            fixed (byte* pSrcBuffer = directConversionBuffer)
+            fixed (byte* pDstBuffer = buffer)
+            {
+                AudioConverterException.ThrowIfError(
+                    NativeMethods.AudioConverterConvertBuffer(
+                        audioConverterHandle,
+                        (uint)readBytes,
+                        new(pSrcBuffer),
+                        ref outSize,
+                        new(pDstBuffer)
+                    )
+                );
+            }
+            return (int)outSize;
+        }
     }
 
     /// <summary>
@@ -274,7 +328,80 @@ public unsafe sealed class MacAudioConverter : IWaveProvider, IDisposable
                 NativeMethods.AudioConverterSetProperty(
                     audioConverterHandle,
                     AudioConverterProperties.kAudioConverterSampleRateConverterComplexity,
-                    sizeof(AudioConverterQuality),
+                    sizeof(AudioConverterSampleRateComplexity),
+                    new(&value)
+                )
+            );
+        }
+    }
+
+    /// <summary>
+    /// Gets/sets the dithering algorithm to apply to the audio converter. <br />
+    /// The constant <see cref="AudioConverterDitheringAlgorithm.None"/> can be used disable dithering. <br />
+    /// This is only supported in macOS.
+    /// </summary>
+    [UnsupportedOSPlatform("ios")]
+    public AudioConverterDitheringAlgorithm Dithering
+    {
+        get
+        {
+            ObjectDisposedException.ThrowIf(audioConverterHandle == IntPtr.Zero, this);
+            AudioConverterDitheringAlgorithm c;
+            uint size = sizeof(AudioConverterDitheringAlgorithm);
+            AudioConverterException.ThrowIfError(
+                NativeMethods.AudioConverterGetProperty(
+                    audioConverterHandle,
+                    AudioConverterProperties.kAudioConverterPropertyDithering,
+                    ref size,
+                    new(&c)
+                )
+            );
+            return c;
+        }
+        set
+        {
+            ObjectDisposedException.ThrowIf(audioConverterHandle == IntPtr.Zero, this);
+            AudioConverterException.ThrowIfError(
+                NativeMethods.AudioConverterSetProperty(
+                    audioConverterHandle,
+                    AudioConverterProperties.kAudioConverterPropertyDithering,
+                    sizeof(AudioConverterDitheringAlgorithm),
+                    new(&value)
+                )
+            );
+        }
+    }
+
+    /// <summary>
+    /// The pre-specified dithering algorithm is applied to the bit length denoted by the value of this property. <br />
+    /// This is only supported in macOS.
+    /// </summary>
+    [UnsupportedOSPlatform("ios")]
+    public uint DitheringBitLength
+    {
+        get
+        {
+            ObjectDisposedException.ThrowIf(audioConverterHandle == IntPtr.Zero, this);
+            uint c;
+            uint size = sizeof(uint);
+            AudioConverterException.ThrowIfError(
+                NativeMethods.AudioConverterGetProperty(
+                    audioConverterHandle,
+                    AudioConverterProperties.kAudioConverterPropertyDitherBitDepth,
+                    ref size,
+                    new(&c)
+                )
+            );
+            return c;
+        }
+        set
+        {
+            ObjectDisposedException.ThrowIf(audioConverterHandle == IntPtr.Zero, this);
+            AudioConverterException.ThrowIfError(
+                NativeMethods.AudioConverterSetProperty(
+                    audioConverterHandle,
+                    AudioConverterProperties.kAudioConverterPropertyDitherBitDepth,
+                    sizeof(AudioConverterDitheringAlgorithm),
                     new(&value)
                 )
             );
@@ -302,8 +429,9 @@ public unsafe sealed class MacAudioConverter : IWaveProvider, IDisposable
         Monitor.Enter(this);
         try
         {
-            if (selfGcHandle.IsAllocated)
+            if (!disposed)
             {
+                disposed = true;
                 try
                 {
                     AudioConverterException.ThrowIfError(
@@ -312,7 +440,7 @@ public unsafe sealed class MacAudioConverter : IWaveProvider, IDisposable
                 }
                 finally
                 {
-                    selfGcHandle.Free();
+                    if (selfGcHandle.IsAllocated) { selfGcHandle.Free(); }
                 }
             }
         }

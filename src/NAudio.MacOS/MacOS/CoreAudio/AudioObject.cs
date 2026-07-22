@@ -16,6 +16,7 @@ using System;
 using System.Diagnostics;
 using NAudio.MacOS.CoreAudioTypes;
 using NAudio.MacOS.CoreAudio.Interop;
+using System.Numerics;
 
 namespace NAudio.MacOS.CoreAudio;
 
@@ -74,7 +75,9 @@ namespace NAudio.MacOS.CoreAudio;
 /// the object such as gain, mute, data source selection, etc. Many common controls are also
 /// also available as properties on the AudioDevice or AudioStream.
 /// </summary>
-public abstract class AudioObject : IEquatable<AudioObject>
+public abstract class AudioObject :
+    IEquatable<AudioObject>,
+    IEqualityOperators<AudioObject, AudioObject, bool>
 {
     #region Private definitions
 
@@ -295,6 +298,22 @@ public abstract class AudioObject : IEquatable<AudioObject>
         return url.ToUri();
     }
 
+    private protected unsafe AudioStreamBasicDescription GetAudioStreamBasicDescriptionValue(AudioObjectPropertyAddress address)
+    {
+        AudioStreamBasicDescription retDesc;
+        uint size = (uint)sizeof(AudioStreamBasicDescription);
+        ThrowOnStatusError(
+            address,
+            NativeMethods.AudioObjectGetPropertyData(
+                objectId,
+                address,
+                ref size,
+                new(&retDesc)
+            )
+        );
+        return retDesc;
+    }
+
     private protected unsafe void SetFloatPropertyValue(AudioObjectPropertyAddress address, float value)
     {
         ThrowOnStatusError(
@@ -321,6 +340,30 @@ public abstract class AudioObject : IEquatable<AudioObject>
                 NativeMethods.AudioObjectSetPropertyData(objectId, address, (uint)(sizeof(T) * value.LongLength), new(memBlock))
             );
         }
+    }
+
+    private protected unsafe void SetAudioStreamBasicDescriptionValue(AudioObjectPropertyAddress address, AudioStreamBasicDescription asbd)
+    {
+        ThrowOnStatusError(
+            address,
+            NativeMethods.AudioObjectSetPropertyData(objectId, address, (uint)sizeof(AudioStreamBasicDescription), new(&asbd))
+        );
+    }
+
+    private protected void GetPropertyValueCustom(AudioObjectPropertyAddress address, ref uint size, IntPtr value)
+    {
+        ThrowOnStatusError(
+            address,
+            NativeMethods.AudioObjectGetPropertyData(objectId, address, ref size, value)
+        );
+    }
+
+    private protected void SetPropertyCustom(AudioObjectPropertyAddress address, uint size, IntPtr value)
+    {
+        ThrowOnStatusError(
+            address,
+            NativeMethods.AudioObjectSetPropertyData(objectId, address, size, value)
+        );
     }
 
     /// <summary>
@@ -422,7 +465,7 @@ public abstract class AudioObject : IEquatable<AudioObject>
     public static bool operator !=(AudioObject object1, AudioObject object2)
     {
         bool object2IsNull = object2 is null;
-        return object1 is null ? object2IsNull : !object2IsNull && object1.objectId != object2.objectId;
+        return object1 is null ? !object2IsNull : object2IsNull || object1.objectId != object2.objectId;
     }
 
     /// <summary>Retrieves a hash code for this Core Audio object instance.</summary>

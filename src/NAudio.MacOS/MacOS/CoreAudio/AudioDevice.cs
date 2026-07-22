@@ -93,6 +93,22 @@ public class AudioDevice : AudioObject
     public bool IsAlive => GetUIntPropertyValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioDeviceProperties.kAudioDevicePropertyDeviceIsAlive)) == 1U;
 
     /// <summary>
+    /// Provides the way for creating an event handle when the value 
+    /// of the <see cref="IsAlive"/> property do change.
+    /// </summary>
+    /// <returns>
+    /// A new <see cref="PropertyListenerHandle"/> that can be used to
+    /// listen to changes of the <see cref="IsAlive"/> property. <br />
+    /// It's <see cref="PropertyListenerHandle.OriginatingObject"/> property value is this <see cref="AudioDevice" /> instance.
+    /// </returns>
+    public PropertyListenerHandle ConstructIsAliveChangedEvent() => new(
+        this,
+        AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
+            AudioDeviceProperties.kAudioDevicePropertyDeviceIsAlive
+        )
+    );
+
+    /// <summary>
     /// A <see cref="bool"/> where a value of <see langword="false"/> means the <see cref="AudioDevice"/> is not performing IO and
     /// a value of <see langword="true"/> means that it is. Note that the device can be running even if
     /// there are no active IOProcs such as by calling AudioDeviceStart() and
@@ -160,6 +176,24 @@ public class AudioDevice : AudioObject
     );
 
     /// <summary>
+    /// Provides the way for creating an event handle when the contents 
+    /// of the <see cref="GetStreams"/> method do change.
+    /// </summary>
+    /// <param name="scope">The <see cref="AudioObjectPropertyScope"/> of the device's scope to query</param>
+    /// <returns>
+    /// A new <see cref="PropertyListenerHandle"/> that can be used to
+    /// listen to changes of the <see cref="GetStreams"/> method. <br />
+    /// It's <see cref="PropertyListenerHandle.OriginatingObject"/> property value is this <see cref="AudioDevice" /> instance.
+    /// </returns>
+    public PropertyListenerHandle ConstructStreamsChangedEvent(AudioObjectPropertyScope scope) => new(
+        this,
+        AudioObjectPropertyAddress.CreateWithScopeAndMainElement(
+            AudioDeviceProperties.kAudioDevicePropertyStreams,
+            scope
+        )
+    );
+
+    /// <summary>
     /// An array of <see cref="AudioControl"/> that represent the audio controls of the <see cref="AudioDevice"/>.
     /// Note that if a notification is received for this property, any cached 
     /// <see cref="AudioControl"/>s for the device become invalid and need to be re-fetched.
@@ -169,6 +203,22 @@ public class AudioDevice : AudioObject
             AudioDeviceProperties.kAudioObjectPropertyControlList
         ),
         AudioObjectsConstructors.ConstructAudioControl
+    );
+
+    /// <summary>
+    /// Provides the way for creating an event handle when the contents 
+    /// of the <see cref="ControlList"/> property do change.
+    /// </summary>
+    /// <returns>
+    /// A new <see cref="PropertyListenerHandle"/> that can be used to
+    /// listen to changes of the <see cref="ControlList"/> property. <br />
+    /// It's <see cref="PropertyListenerHandle.OriginatingObject"/> property value is this <see cref="AudioDevice" /> instance.
+    /// </returns>
+    public PropertyListenerHandle ConstructControlListChangedEvent() => new(
+        this,
+        AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
+            AudioDeviceProperties.kAudioObjectPropertyControlList
+        )
     );
 
     /// <summary>
@@ -280,7 +330,7 @@ public class AudioDevice : AudioObject
         }
     }
 
-    internal IntPtr GetPreferredChannelLayout(AudioObjectPropertyScope scope)
+    internal unsafe IntPtr GetPreferredChannelLayout(AudioObjectPropertyScope scope)
     {
         if (scope != AudioObjectPropertyScopeConstants.Input &&
             scope != AudioObjectPropertyScopeConstants.Output)
@@ -289,14 +339,249 @@ public class AudioDevice : AudioObject
         }
         else
         {
-            return GetArrayOfTPropertyValue<IntPtr>(
+            IntPtr ret;
+            uint size = (uint)IntPtr.Size;
+            GetPropertyValueCustom(
                 AudioObjectPropertyAddress.CreateWithScopeAndMainElement(
                     AudioDeviceProperties.kAudioDevicePropertyPreferredChannelLayout,
                     scope
                 ),
-                1
-            )[0];
+                ref size,
+                new(&ret)
+            );
+            return ret;
         }
+    }
+
+    /// <summary>
+    /// Provides the way for creating an event handle when the audio
+    /// device has been changed.
+    /// </summary>
+    /// <returns>
+    /// A new <see cref="PropertyListenerHandle"/> that can be used to
+    /// listen to an event that is fired when the device configuration has been altered. <br />
+    /// It's <see cref="PropertyListenerHandle.OriginatingObject"/> property value is this <see cref="AudioDevice" /> instance.
+    /// </returns>
+    public PropertyListenerHandle GetDeviceHasChangedEvent() => new(
+        this,
+        AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
+            AudioDeviceProperties.kAudioDevicePropertyDeviceHasChanged
+        )
+    );
+
+    /// <summary>
+    /// A <see cref="bool"/> where <see langword="true"/> means that the AudioDevice is running in at least one
+    /// process on the system and <see langword="false"/> means that it isn't running at all.
+    /// </summary>
+    public bool IsRunningSomewhere => GetUIntPropertyValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioDeviceProperties.kAudioDevicePropertyDeviceIsRunningSomewhere)) != 0U;
+
+    /// <summary>
+    /// Provides the way for creating an event handle when an I/O 
+    /// procedure in this audio device has been run past it's deadline.
+    /// </summary>
+    /// <returns>
+    /// A new <see cref="PropertyListenerHandle"/> that can be used to
+    /// listen to an event that is fired when the <see cref="AudioDevice"/> is having a <see cref="CoreAudioIOProcedure"/> that has run past it's deadline. <br />
+    /// It's <see cref="PropertyListenerHandle.OriginatingObject"/> property value is this <see cref="AudioDevice" /> instance.
+    /// </returns>
+    public PropertyListenerHandle ConstructProcessorOverloadedEvent() => new(
+        this,
+        AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
+            AudioDeviceProperties.kAudioDeviceProcessorOverload
+        )
+    );
+
+    /// <summary>
+    /// Provides the way for creating an event handle when I/O has been abnormally stopped.
+    /// </summary>
+    /// <returns>
+    /// A new <see cref="PropertyListenerHandle"/> that can be used to
+    /// listen to an event that is fired when the <see cref="AudioDevice"/> has it's I/O abnormally stopped. <br />
+    /// It's <see cref="PropertyListenerHandle.OriginatingObject"/> property value is this <see cref="AudioDevice" /> instance.
+    /// </returns>
+    public PropertyListenerHandle ConstructIOStoppedAbnormallyEvent() => new(
+        this,
+        AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
+            AudioDeviceProperties.kAudioDevicePropertyIOStoppedAbnormally
+        )
+    );
+
+    /// <summary>
+    /// A <see cref="bool"/> indicating the process that currently owns exclusive access to the
+    /// AudioDevice or a value of <see langword="false"/> indicating that the device is currently
+    /// available to all processes. If the <see cref="AudioDevice"/> is in a non-mixable mode,
+    /// the HAL will automatically take hog mode on behalf of the first process to
+    /// start an <see cref="CoreAudioIOProcedure"/>. <br /> <br />
+    /// Note that when setting this property, the value passed in is ignored. If
+    /// another process owns exclusive access, that remains unchanged. If the
+    /// current process owns exclusive access, it is released and made available to
+    /// all processes again. If no process has exclusive access (meaning the current
+    /// value is -1), this process gains ownership of exclusive access.
+    /// </summary>
+    public bool HogMode
+    {
+        get => unchecked((int)GetUIntPropertyValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioDeviceProperties.kAudioDevicePropertyHogMode))) != -1;
+        set => SetUIntPropertyValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioDeviceProperties.kAudioDevicePropertyHogMode), 0U);
+    }
+
+    /// <summary>
+    /// A <see cref="uint"/> whose value indicates the number of frames in the IO buffers.
+    /// </summary>
+    public uint BufferFrameSize => GetUIntPropertyValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioDeviceProperties.kAudioDevicePropertyBufferFrameSize));
+
+    /// <summary>
+    /// A pair indicating the minimum and maximum values, inclusive, for <see cref="BufferFrameSize"/>.
+    /// </summary>
+    public (double min, double max) BufferFrameSizeRange
+    {
+        get
+        {
+            var avr = GetAudioValueRangePropertyValue(
+                AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
+                    AudioDeviceProperties.kAudioDevicePropertyBufferFrameSizeRange
+                )
+            );
+            return (avr.mMinimum, avr.mMaximum);
+        }
+    }
+
+    /// <summary>
+    /// A <see cref="uint"/> that, if implemented by a device, indicates that the sizes of the
+    /// buffers passed to an IOProc will vary by a small amount. The value of this
+    /// property will indicate the largest buffer that will be passed and
+    /// <see cref="BufferFrameSize"/> will indicate the smallest buffer that
+    /// will get passed to the IOProc. The usage of this property is narrowed to
+    /// only allow for devices whose buffer sizes vary by small amounts greater than
+    /// <see cref="BufferFrameSize"/>. It is not intended to be a license for
+    /// devices to be able to send buffers however they please. Rather, it is
+    /// intended to allow for hardware whose natural rhythms lead to this necessity.
+    /// </summary>
+    public uint UsesVariableBufferFrameSizes => GetUIntPropertyValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioDeviceProperties.kAudioDevicePropertyUsesVariableBufferFrameSizes));
+
+    /// <summary>
+    /// A <see cref="float"/> whose range is from 0 to 1. This value indicates how much of the
+    /// client portion of the IO cycle the process will use. The client portion of
+    /// the IO cycle is the portion of the cycle in which the device calls the
+    /// IOProcs so this property does not the apply to the duration of the entire
+    /// cycle.
+    /// </summary>
+    public float IOCycleUsage
+    {
+        get => GetFloatPropertyValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioDeviceProperties.kAudioDevicePropertyIOCycleUsage));
+        set => SetFloatPropertyValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioDeviceProperties.kAudioDevicePropertyIOCycleUsage), value);
+    }
+
+    /// <summary>
+    /// A <see cref="bool"/> array which details the stream usage of a given I/O procedure. 
+    /// If a stream is marked as not being used (which the value of each array element will be <see langword="false"/>), the given <see cref="CoreAudioIOProcedure"/> 
+    /// will see a corresponding NULL buffer pointer in the AudioBufferList
+    /// passed to its IO proc. Note that the number of streams detailed in the
+    /// <see cref="bool"/> array must include all the streams of that
+    /// direction on the device.
+    /// </summary>
+    /// <param name="procedure">The Core Audio I/O procedure to query the usage for.</param>
+    /// <param name="scope">The scope that the stream usage is to be retrieved for.</param>
+    /// <returns>A <see cref="bool"/> array that indicates which streams are enabled and which are not. Use the <see cref="GetStreams"/> method to map each index to an <see cref="AudioStream"/> object.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="procedure"/> is <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException">The specified <paramref name="procedure"/> is invalid.</exception>
+    public unsafe bool[] GetStreamUsage(CoreAudioIOProcedure procedure, AudioObjectPropertyScope scope)
+    {
+        ArgumentNullException.ThrowIfNull(procedure);
+        if (procedure.IsClosed || procedure.IsInvalid)
+        {
+            throw new InvalidOperationException("The specified IO procedure has been disposed of.");
+        }
+        else
+        {
+            var address = AudioObjectPropertyAddress.CreateWithScopeAndMainElement(
+                AudioDeviceProperties.kAudioDevicePropertyIOProcStreamUsage,
+                scope
+            );
+            var size = QueryPropertySize(address);
+            var memBlock = AudioHardwareIOProcStreamUsage.CreateStreamUsage((AudioDeviceIOProc)procedure.DangerousGetHandle(), size);
+            try
+            {
+                GetPropertyValueCustom(address, ref size, memBlock);
+                var cBuffers = AudioHardwareIOProcStreamUsage.GetNumberOfStreams(memBlock);
+                var data = new bool[cBuffers];
+                for (var I = 0U; I < cBuffers; I++)
+                {
+                    data[I] = AudioHardwareIOProcStreamUsage.GetStream(memBlock, I);
+                }
+                return data;
+            }
+            finally
+            {
+                AudioHardwareIOProcStreamUsage.DeleteStreamUsage(memBlock);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Set a <see cref="bool"/> array which details the stream usage of a given I/O procedure. 
+    /// If a stream is marked as not being used (which the value of each array element will be <see langword="false"/>), the given <see cref="CoreAudioIOProcedure"/> 
+    /// will see a corresponding NULL buffer pointer in the AudioBufferList
+    /// passed to its IO proc. Note that the number of streams detailed in the
+    /// <see cref="bool"/> array must include all the streams of that
+    /// direction on the device.
+    /// </summary>
+    /// <param name="procedure">The Core Audio I/O procedure to assign the usage for.</param>
+    /// <param name="scope">The scope that the stream usage is to be retrieved for.</param>
+    /// <param name="streamsToEnableOrDisable">The streams to enable/disable.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="procedure"/> and/or <paramref name="streamsToEnableOrDisable"/> are <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException">The specified <paramref name="procedure"/> is invalid.</exception>
+    public unsafe void SetStreamUsage(CoreAudioIOProcedure procedure, AudioObjectPropertyScope scope, bool[] streamsToEnableOrDisable)
+    {
+        ArgumentNullException.ThrowIfNull(procedure);
+        ArgumentNullException.ThrowIfNull(streamsToEnableOrDisable);
+        if (procedure.IsClosed || procedure.IsInvalid)
+        {
+            throw new InvalidOperationException("The specified IO procedure has been disposed of.");
+        }
+        else
+        {
+            var address = AudioObjectPropertyAddress.CreateWithScopeAndMainElement(
+                AudioDeviceProperties.kAudioDevicePropertyIOProcStreamUsage,
+                scope
+            );
+            var memBlock = AudioHardwareIOProcStreamUsage.CreateStreamUsage((AudioDeviceIOProc)procedure.DangerousGetHandle(), (uint)streamsToEnableOrDisable.LongLength, out var size);
+            for (uint I = 0; I < AudioHardwareIOProcStreamUsage.GetNumberOfStreams(memBlock); I++)
+            {
+                AudioHardwareIOProcStreamUsage.SetStream(memBlock, I, streamsToEnableOrDisable[I]);
+            }
+            try
+            {
+                SetPropertyCustom(address, size, memBlock);
+            }
+            finally
+            {
+                AudioHardwareIOProcStreamUsage.DeleteStreamUsage(memBlock);
+            }
+        }
+    }
+
+    /// <summary>
+    /// A <see cref="double"/> that indicates the current actual sample rate of the AudioDevice
+    /// as measured by its time stamps.
+    /// </summary>
+    public double ActualSampleRate => GetDoublePropertyValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioDeviceProperties.kAudioDevicePropertyActualSampleRate));
+
+    /// <summary>
+    /// A string that contains the UID for the AudioClockDevice that is currently
+    /// serving as the main time base of the device.
+    /// </summary>
+    public string ClockDevice => GetStringPropertyValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioDeviceProperties.kAudioDevicePropertyClockDevice));
+
+    /// <summary>
+    /// A <see cref="bool"/> where a <see langword="true"/> value indicates 
+    /// that the current process's audio will be zeroed out by the system. 
+    /// Note that this property does not apply to aggregate devices, 
+    /// just real, physical devices.
+    /// </summary>
+    public bool ProcessMute
+    {
+        get => GetUIntPropertyValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioDeviceProperties.kAudioDevicePropertyProcessMute)) != 0;
+        set => SetUIntPropertyValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioDeviceProperties.kAudioDevicePropertyProcessMute), value ? 1U : 0U);
     }
 }
 

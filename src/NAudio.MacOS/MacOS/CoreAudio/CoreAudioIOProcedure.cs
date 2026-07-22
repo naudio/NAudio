@@ -10,13 +10,19 @@ namespace NAudio.MacOS.CoreAudio;
 /// <summary>
 /// Provides the base type for creating I/O procedures and registering them to the HAL. <br />
 /// From this, an input source and an output sink of audio data can be created. <br />
-/// This is the type that the CoreAudioOut and CoreAudioCapture classes will use to provide audio data.
+/// This is the type that the CoreAudioPlayer and CoreAudioCapture classes will use to provide audio data.
 /// </summary>
-public abstract class CoreAudioIOProcedure : CriticalHandle
+public abstract class CoreAudioIOProcedure : SafeHandle
 {
+    private static readonly unsafe AudioDeviceIOProc procedureInstance = &IOProcedureNative;
+
+    private bool isRunning;
     private readonly AudioDevice device;
     private readonly GCHandle delegateGcHandle;
 
+    // Provide a custom signature for the IO procedure handle,
+    // to avoid generics usage. Sure this can be pulled off with
+    // generics, but let's make the runtime's life a bit easier.
     private delegate void IOProcedureSignature(
         IntPtr inNow,
         IntPtr inInputData,
@@ -31,13 +37,14 @@ public abstract class CoreAudioIOProcedure : CriticalHandle
     /// <param name="dev">The <see cref="AudioDevice"/> to create the I/O procedure for.</param>
     /// <exception cref="ArgumentNullException">The provided audio device was <see langword="null"/>.</exception>
     protected unsafe CoreAudioIOProcedure(AudioDevice dev)
-        : base(IntPtr.Zero)
+        : base(IntPtr.Zero, true)
     {
         ArgumentNullException.ThrowIfNull(device = dev);
+        isRunning = false;
         delegateGcHandle = GCHandle.Alloc(new IOProcedureSignature(IOProcedure), GCHandleType.Normal);
         int osStatus = NativeMethods.AudioDeviceCreateIOProcID(
             dev.objectId,
-            &IOProcedureNative,
+            procedureInstance,
             GCHandle.ToIntPtr(delegateGcHandle),
             out handle
         );
@@ -120,15 +127,29 @@ public abstract class CoreAudioIOProcedure : CriticalHandle
     public void Stop()
     {
         ObjectDisposedException.ThrowIf(IsClosed || IsInvalid, this);
-        CoreAudioException.ThrowIfError(NativeMethods.AudioDeviceStop(device.objectId, handle));
+        if (isRunning)
+        {
+            isRunning = false;
+            CoreAudioException.ThrowIfError(NativeMethods.AudioDeviceStop(device.objectId, handle));
+        }
     }
 
     /// <summary>Starts IO.</summary>
     public void Start()
     {
         ObjectDisposedException.ThrowIf(IsClosed || IsInvalid, this);
-        CoreAudioException.ThrowIfError(NativeMethods.AudioDeviceStart(device.objectId, handle));
+        if (!isRunning)
+        {
+            isRunning = true;
+            CoreAudioException.ThrowIfError(NativeMethods.AudioDeviceStart(device.objectId, handle));
+        }
     }
+
+    /// <summary>
+    /// Gets a value whether I/O transactions are performed 
+    /// between the <see cref="IOProcedure"/> and the physical audio device.
+    /// </summary>
+    public bool IsRunning => isRunning;
 
     /// <summary>
     /// Gets a value whether this IO procedure is invalid.
@@ -142,6 +163,8 @@ public abstract class CoreAudioIOProcedure : CriticalHandle
     protected sealed override bool ReleaseHandle()
     {
         bool value = NativeMethods.AudioDeviceDestroyIOProcID(device.objectId, handle) == ErrorConstants.kAudioHardwareNoError;
+        // We want the below to leak when the IO procedure ID cannot be freed - 
+        // in this way, we will know that something is very wrong.
         if (value && delegateGcHandle.IsAllocated) { delegateGcHandle.Free(); }
         return value;
     }

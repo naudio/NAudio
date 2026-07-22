@@ -518,7 +518,7 @@ internal static class MacUtils
     {
         if (stamp.mFlags.HasFlag(AudioTimeStampFlags.kAudioTimeStampSampleTimeValid))
         {
-            return stamp.mSampleTime / format.AverageBytesPerSecond;
+            return (stamp.mSampleTime * format.BlockAlign) / format.AverageBytesPerSecond;
         }
         else if (stamp.mFlags.HasFlag(AudioTimeStampFlags.kAudioTimeStampHostTimeValid))
         {
@@ -537,6 +537,9 @@ internal static class MacUtils
             throw new ArgumentException("Invalid time stamp flags: " + stamp.mFlags);
         }
     }
+
+    // Note: The below three methods are only valid for PCM, because
+    // 1 packet = 1 frame / sample. For other VBR or compressed data, it needs different calculations.
 
     public static int GetNumberOfPacketsFromBytesAndFormat(int bytes, WaveFormat format) => bytes / format.BlockAlign;
 

@@ -225,6 +225,41 @@ internal static partial class NativeMethods
         IntPtr outPacketDescription
     );
 
+    /*
+    extern OSStatus
+    AudioConverterConvertBuffer(    AudioConverterRef               inAudioConverter,
+                                    UInt32                          inInputDataSize,
+                                    const void *                    inInputData,
+                                    UInt32 *                        ioOutputDataSize,
+                                    void *                          outOutputData)  API_AVAILABLE(macos(10.1), ios(2.0), watchos(2.0), tvos(9.0));
+    */
 
+    /// <summary>Converts data from an input buffer to an output buffer.</summary>
+    /// <param name="inAudioConverter">The AudioConverter to use.</param>
+    /// <param name="inInputDataSize">The size of the buffer inInputData.</param>
+    /// <param name="inInputData">The input audio data buffer.</param>
+    /// <param name="ioOutputDataSize">
+    /// On entry, the size of the buffer outOutputData. 
+    /// On exit, the number of bytes written to outOutputData.
+    /// </param>
+    /// <param name="outOutputData">The output data buffer.</param>
+    /// <returns>Produces a buffer of output data from an AudioConverter, using the supplied input buffer.</returns>
+    /// <remarks>
+    /// WARNING: this function will fail for any conversion where there is a
+    /// variable relationship between the input and output data buffer sizes. This
+    /// includes sample rate conversions and most compressed formats. In these cases,
+    /// use AudioConverterFillComplexBuffer. Generally this function is only appropriate for
+    /// PCM-to-PCM conversions where there is no sample rate conversion.
+    /// </remarks>
+    [SupportedOSPlatform("ios2.0")]
+    [SupportedOSPlatform("macos10.1")]
+    [LibraryImport(MacLibraries.AudioToolbox)]
+    public static partial int AudioConverterConvertBuffer(
+        IntPtr inAudioConverter,
+        uint inInputDataSize,
+        IntPtr inInputData,
+        ref uint ioOutputDataSize,
+        IntPtr outOutputData
+    );
 
 }

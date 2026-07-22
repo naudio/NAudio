@@ -27,6 +27,9 @@ internal readonly struct AudioBufferList
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static AudioBufferList FromSingleBuffer(IntPtr data, uint dataSize, uint numberOfChannels) => new(new(data, dataSize, numberOfChannels));
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe uint GetNumberOfBuffersFromPointer(IntPtr ptr)
         => ((AudioBufferList*)ptr)->mNumberBuffers;
 

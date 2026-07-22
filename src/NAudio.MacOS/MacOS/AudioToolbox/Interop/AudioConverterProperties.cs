@@ -17,8 +17,9 @@
 	of the above transformations.
 */
 
-using System.Runtime.Versioning;
 using NAudio.Utils;
+
+using System.Runtime.Versioning;
 
 namespace NAudio.MacOS.AudioToolbox.Interop;
 
@@ -102,7 +103,7 @@ internal static class AudioConverterProperties
     /// </summary>
     public static readonly AudioConverterPropertyID kAudioConverterPrimeMethod                          = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("prmm"u8);
     /// <summary>
-    /// A pointer to AudioConverterPrimeInfo (see explanation for struct udioConverterPrimeInfo below)
+    /// A pointer to AudioConverterPrimeInfo (see explanation for struct AudioConverterPrimeInfo)
     /// </summary>
     public static readonly AudioConverterPropertyID kAudioConverterPrimeInfo                            = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("prim"u8);
     /// <summary>
@@ -128,7 +129,7 @@ internal static class AudioConverterProperties
     public static readonly AudioConverterPropertyID kAudioConverterChannelMap                           = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("chmp"u8);
     /// <summary>
     /// A <c>void*</c> pointing to memory set up by the caller. 
-    /// Required by some formats n order to decompress the input data.
+    /// Required by some formats izn order to decompress the input data.
     /// </summary>
     public static readonly AudioConverterPropertyID kAudioConverterDecompressionMagicCookie             = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("dmgc"u8);
     /// <summary>
@@ -214,7 +215,8 @@ internal static class AudioConverterProperties
     /// </summary>
     public static readonly AudioConverterPropertyID kAudioConverterPropertyFormatList                   = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("flst"u8);
     /// <summary>
-    /// A UInt32. Set to a value from the enum of dithering algorithms below. 
+    /// A UInt32. 
+    /// Set to a value from the <see cref="AudioConverterDitheringAlgorithm"/> enum.
 	/// Zero means no dithering and is the default. (macOS only.)
     /// </summary>
     [UnsupportedOSPlatform("ios")]

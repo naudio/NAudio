@@ -28,42 +28,28 @@ public class AudioSelectorControl : AudioControl
     /// </summary>
     public uint[] CurrentItem
     {
-        get
-        {
-            var address = AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
+        get => GetArrayOfTPropertyValue<uint>(
+            AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
                 AudioSelectorControlProperties.kAudioSelectorControlPropertyCurrentItem
-            );
-            return GetArrayOfTPropertyValue<uint>(
-                address,
-                (int)(QueryPropertySize(address) / sizeof(uint))
-            );
-        }
+            )
+        );
         set
         {
             ArgumentNullException.ThrowIfNull(value);
-            var address = AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
+            SetArrayOfTPropertyValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
                 AudioSelectorControlProperties.kAudioSelectorControlPropertyCurrentItem
-            );
-            SetArrayOfTPropertyValue(address, value);
+            ), value);
         }
     }
 
     /// <summary>
     /// An array of <see cref="uint"/>s that represent the IDs of all the items available.
     /// </summary>
-    public uint[] AvailableItems
-    {
-        get
-        {
-            var address = AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
-                AudioSelectorControlProperties.kAudioSelectorControlPropertyAvailableItems
-            );
-            return GetArrayOfTPropertyValue<uint>(
-                address,
-                (int)(QueryPropertySize(address) / sizeof(uint))
-            );
-        }
-    }
+    public uint[] AvailableItems => GetArrayOfTPropertyValue<uint>(
+        AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
+            AudioSelectorControlProperties.kAudioSelectorControlPropertyAvailableItems
+        )
+    );
 
     /// <summary>
     /// This method returns a <see cref="uint"/> that identifies the 

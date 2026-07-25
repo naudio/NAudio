@@ -11,7 +11,10 @@
     <Description>Optional extras (extra demo/sample providers and helpers) for the NAudio audio library.</Description>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(TargetPlatformIdentifier)' == 'windows' ">
+  <!-- Use $(TargetFramework), not $(TargetPlatformIdentifier): the latter isn't set
+       until an SDK import that runs after this body, so it would drop WINDOWS from the
+       Windows build. See the matching note in NAudio.csproj. -->
+  <PropertyGroup Condition=" $(TargetFramework.Contains('-windows')) ">
     <DefineConstants>$(DefineConstants);WINDOWS</DefineConstants>
   </PropertyGroup>
 

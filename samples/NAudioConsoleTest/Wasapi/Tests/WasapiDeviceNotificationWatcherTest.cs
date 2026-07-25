@@ -1,18 +1,15 @@
-﻿using System.Runtime.InteropServices.Marshalling;
 using NAudio.CoreAudioApi;
-using NAudio.CoreAudioApi.Interfaces;
 using NAudioConsoleTest.Shared.Testing;
 using Spectre.Console;
 
 namespace NAudioConsoleTest.Wasapi.Tests;
 
 /// <summary>
-/// Exercises <c>IMMNotificationClient</c> — the only Phase 2f callback interface that's public
-/// and user-implemented. Watches for <c>duration</c> while the operator plugs/unplugs a USB
-/// device, changes the default endpoint, mutes via the tray, etc., confirming each notification
-/// kind dispatches through the new <c>[GeneratedComInterface]</c> CCW.
+/// Exercises <c>MMDeviceNotificationClient</c> — the high-level, event-based way to observe endpoint
+/// changes. Watches for <c>duration</c> while the operator plugs/unplugs a USB device, changes the
+/// default endpoint, mutes via the tray, etc., confirming each notification kind is dispatched.
 /// </summary>
-internal sealed partial class WasapiDeviceNotificationWatcherTest : IConsoleTest
+internal sealed class WasapiDeviceNotificationWatcherTest : IConsoleTest
 {
     public string Id => "Wasapi.DeviceNotificationWatcher";
     public string Description => "Watch for device notifications (plug/unplug, default change, etc.)";
@@ -31,25 +28,42 @@ internal sealed partial class WasapiDeviceNotificationWatcherTest : IConsoleTest
 
         using var enumerator = new MMDeviceEnumerator();
         var notifyCount = 0;
-        var client = new ConsoleNotificationClient(_ => Interlocked.Increment(ref notifyCount));
 
-        var hr = enumerator.RegisterEndpointNotificationCallback(client);
-        if (hr != 0)
-            return TestResult.Fail($"RegisterEndpointNotificationCallback failed: 0x{hr:X8}");
-
-        try
+        // Notifications run on a WASAPI worker thread; keep events off the SynchronizationContext so we
+        // log directly from the worker (this is a console app with no UI thread to marshal to).
+        using var notifications = enumerator.CreateNotificationClient(useSynchronizationContext: false);
+        notifications.DeviceStateChanged += (_, e) =>
         {
-            AnsiConsole.MarkupLine(
-                $"[green]Watching for {duration.TotalSeconds:F0}s.[/] " +
-                "[dim]Plug/unplug a USB device, or change the default in Sound Settings. Ctrl+C to stop early.[/]\n");
-
-            // Notifications run on a WASAPI worker thread; we just block until the duration or cancellation.
-            ctx.Cancellation.WaitHandle.WaitOne(duration);
-        }
-        finally
+            Interlocked.Increment(ref notifyCount);
+            Log("DeviceStateChanged", $"[grey]{Markup.Escape(e.DeviceId)}[/] → [yellow]{e.NewState}[/]");
+        };
+        notifications.DeviceAdded += (_, e) =>
         {
-            enumerator.UnregisterEndpointNotificationCallback(client);
-        }
+            Interlocked.Increment(ref notifyCount);
+            Log("DeviceAdded", $"[grey]{Markup.Escape(e.DeviceId)}[/]");
+        };
+        notifications.DeviceRemoved += (_, e) =>
+        {
+            Interlocked.Increment(ref notifyCount);
+            Log("DeviceRemoved", $"[grey]{Markup.Escape(e.DeviceId)}[/]");
+        };
+        notifications.DefaultDeviceChanged += (_, e) =>
+        {
+            Interlocked.Increment(ref notifyCount);
+            Log("DefaultDeviceChanged", $"[yellow]{e.Flow}/{e.Role}[/] → [grey]{Markup.Escape(e.DeviceId ?? "<none>")}[/]");
+        };
+        notifications.PropertyValueChanged += (_, e) =>
+        {
+            Interlocked.Increment(ref notifyCount);
+            Log("PropertyValueChanged", $"[grey]{Markup.Escape(e.DeviceId)}[/] {e.PropertyKey.formatId}/{e.PropertyKey.propertyId}");
+        };
+
+        AnsiConsole.MarkupLine(
+            $"[green]Watching for {duration.TotalSeconds:F0}s.[/] " +
+            "[dim]Plug/unplug a USB device, or change the default in Sound Settings. Ctrl+C to stop early.[/]\n");
+
+        // Block until the duration elapses or the user cancels.
+        ctx.Cancellation.WaitHandle.WaitOne(duration);
 
         var diagnostics = new Dictionary<string, string>
         {
@@ -64,43 +78,6 @@ internal sealed partial class WasapiDeviceNotificationWatcherTest : IConsoleTest
             diagnostics);
     }
 
-    [GeneratedComClass]
-    private partial class ConsoleNotificationClient : IMMNotificationClient
-    {
-        private readonly Action<string> onAny;
-        public ConsoleNotificationClient(Action<string> onAny) => this.onAny = onAny;
-
-        public void OnDeviceStateChanged(string deviceId, DeviceState newState)
-        {
-            onAny("OnDeviceStateChanged");
-            Log("OnDeviceStateChanged", $"[grey]{Markup.Escape(deviceId)}[/] → [yellow]{newState}[/]");
-        }
-
-        public void OnDeviceAdded(string pwstrDeviceId)
-        {
-            onAny("OnDeviceAdded");
-            Log("OnDeviceAdded", $"[grey]{Markup.Escape(pwstrDeviceId)}[/]");
-        }
-
-        public void OnDeviceRemoved(string deviceId)
-        {
-            onAny("OnDeviceRemoved");
-            Log("OnDeviceRemoved", $"[grey]{Markup.Escape(deviceId)}[/]");
-        }
-
-        public void OnDefaultDeviceChanged(DataFlow flow, Role role, string defaultDeviceId)
-        {
-            onAny("OnDefaultDeviceChanged");
-            Log("OnDefaultDeviceChanged", $"[yellow]{flow}/{role}[/] → [grey]{Markup.Escape(defaultDeviceId ?? "<none>")}[/]");
-        }
-
-        public void OnPropertyValueChanged(string pwstrDeviceId, PropertyKey key)
-        {
-            onAny("OnPropertyValueChanged");
-            Log("OnPropertyValueChanged", $"[grey]{Markup.Escape(pwstrDeviceId)}[/] {key.formatId}/{key.propertyId}");
-        }
-
-        private static void Log(string method, string body) =>
-            AnsiConsole.MarkupLine($"[blue]{DateTime.Now:HH:mm:ss.fff}[/] [bold]{method}[/] {body}");
-    }
+    private static void Log(string method, string body) =>
+        AnsiConsole.MarkupLine($"[blue]{DateTime.Now:HH:mm:ss.fff}[/] [bold]{method}[/] {body}");
 }

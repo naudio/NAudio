@@ -146,19 +146,11 @@ public class MMDeviceEnumerator : IDisposable
         }
     }
 
-    /// <summary>
-    /// Subscribes <paramref name="client"/> to endpoint change notifications
-    /// (device added / removed / state change / default changed / property value change).
-    /// </summary>
-    /// <remarks>
-    /// The client's callbacks run on a Windows audio system worker thread that holds an
-    /// internal lock for the duration of the call. Handlers must not block, wait on another
-    /// thread, or call back into the audio stack (e.g. disposing a player/recorder); doing so
-    /// risks a deadlock. Marshal any reaction to your own thread asynchronously
-    /// (<c>BeginInvoke</c>, a queued <c>Task.Run</c>, etc.). See <see cref="IMMNotificationClient"/>.
-    /// </remarks>
+    // Internal low-level registration used by MMDeviceNotificationClient. Windows does not AddRef the
+    // client (see registeredClients), so this retains the CCW reference for the registration's lifetime.
+    // Consumers use CreateNotificationClient instead of touching the raw IMMNotificationClient surface.
     /// <returns>The HRESULT from the underlying COM call.</returns>
-    public int RegisterEndpointNotificationCallback(IMMNotificationClient client)
+    internal int RegisterEndpointNotificationCallback(IMMNotificationClient client)
     {
         if (client is null) throw new ArgumentNullException(nameof(client));
         var ptr = QueryNotificationClientInterface(client);
@@ -181,11 +173,9 @@ public class MMDeviceEnumerator : IDisposable
         return hresult;
     }
 
-    /// <summary>
-    /// Removes a previously registered notification subscription.
-    /// </summary>
+    // Internal counterpart to RegisterEndpointNotificationCallback; releases the retained CCW reference.
     /// <returns>The HRESULT from the underlying COM call.</returns>
-    public int UnregisterEndpointNotificationCallback(IMMNotificationClient client)
+    internal int UnregisterEndpointNotificationCallback(IMMNotificationClient client)
     {
         if (client is null) throw new ArgumentNullException(nameof(client));
         var ptr = QueryNotificationClientInterface(client);
@@ -204,6 +194,27 @@ public class MMDeviceEnumerator : IDisposable
         {
             Marshal.Release(ptr);
         }
+    }
+
+    /// <summary>
+    /// Creates an event-based subscription to endpoint change notifications — subscribe to the events on
+    /// the returned <see cref="MMDeviceNotificationClient"/> and dispose it when done. This is the
+    /// supported way to observe device add/remove, state changes, default-device changes, and property
+    /// changes; the underlying COM callback interface is handled internally.
+    /// </summary>
+    /// <param name="useSynchronizationContext">
+    /// When <c>true</c> (the default), events are marshalled to the <see cref="System.Threading.SynchronizationContext"/>
+    /// captured on the calling thread (e.g. the UI thread), so handlers can update UI directly. When
+    /// <c>false</c>, events are raised synchronously on the Windows audio worker thread and handlers must
+    /// be nonblocking.
+    /// </param>
+    /// <remarks>
+    /// The returned client keeps this enumerator alive for its lifetime; disposing either the client or
+    /// this enumerator ends the subscription.
+    /// </remarks>
+    public MMDeviceNotificationClient CreateNotificationClient(bool useSynchronizationContext = true)
+    {
+        return new MMDeviceNotificationClient(this, useSynchronizationContext);
     }
 
     // ComWrappers CCWs return a distinct IntPtr per interface (and a separate vtable

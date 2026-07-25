@@ -16,7 +16,8 @@ using NAudio.Wave.SampleProviders;
 //     VT_BLOB properties.
 //
 // (2) CCW direction — the [GeneratedComClass] callback dispatch reworked in
-//     Phase 2f. Registers an IMMNotificationClient and an
+//     Phase 2f. Subscribes via MMDeviceNotificationClient (which wraps the
+//     IMMNotificationClient CCW internally) and an
 //     IAudioEndpointVolumeCallback (via AudioEndpointVolume.OnVolumeNotification),
 //     drives the master volume a few times, and counts firings. The Phase 2f
 //     QI-for-IID fix is tested here under genuine NativeAOT — pure trim wasn't
@@ -84,12 +85,16 @@ foreach (MMDevice device in devices)
 Console.WriteLine();
 Console.WriteLine("=== Phase 2f: CCW direction (callback dispatch) ===\n");
 
-// IMMNotificationClient — no easy automated trigger, just confirm registration
-// + unregistration round-trip without throwing. Plug/unplug a USB device while
-// this runs to see live notifications.
-var notificationClient = new SmokeNotificationClient();
-int regHr = enumerator.RegisterEndpointNotificationCallback(notificationClient);
-Console.WriteLine($"  RegisterEndpointNotificationCallback HRESULT: 0x{regHr:X8} ({(regHr == 0 ? "OK" : "FAIL")})");
+// Endpoint notifications — exercise the high-level MMDeviceNotificationClient (which wraps the
+// [GeneratedComClass] CCW internally) under PublishAot. No easy automated trigger for device add/remove;
+// just confirm the subscribe/dispose round-trip works. Plug/unplug a USB device while this runs to see
+// live notifications. (A worker thread raises these, so keep events off the SynchronizationContext.)
+var notifications = enumerator.CreateNotificationClient(useSynchronizationContext: false);
+notifications.DeviceStateChanged += (_, e) => Console.WriteLine($"    [notification] DeviceStateChanged {e.NewState} {e.DeviceId}");
+notifications.DeviceAdded += (_, e) => Console.WriteLine($"    [notification] DeviceAdded {e.DeviceId}");
+notifications.DeviceRemoved += (_, e) => Console.WriteLine($"    [notification] DeviceRemoved {e.DeviceId}");
+notifications.DefaultDeviceChanged += (_, e) => Console.WriteLine($"    [notification] DefaultDeviceChanged {e.Flow}/{e.Role} → {e.DeviceId}");
+Console.WriteLine("  CreateNotificationClient: OK");
 
 // IAudioEndpointVolumeCallback — drive the default render endpoint and count callbacks.
 var defaultDevice = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
@@ -118,7 +123,7 @@ finally
 {
     try { endpointVolume.MasterVolumeLevelScalar = originalLevel; } catch { }
     Thread.Sleep(150);
-    enumerator.UnregisterEndpointNotificationCallback(notificationClient);
+    notifications.Dispose();
     endpointVolume.Dispose();
     defaultDevice.Dispose();
 }
@@ -199,17 +204,3 @@ using (var dsoundOut = new DirectSoundOut(40))
     Console.WriteLine($"  DirectSoundOut PlaybackState after Stop:    {dsoundOut.PlaybackState}");
 }
 Console.WriteLine("  DirectSound playback under PublishAot: OK");
-
-[GeneratedComClass]
-internal partial class SmokeNotificationClient : IMMNotificationClient
-{
-    public void OnDeviceStateChanged(string deviceId, DeviceState newState) =>
-        Console.WriteLine($"    [IMMNotificationClient] OnDeviceStateChanged {newState} {deviceId}");
-    public void OnDeviceAdded(string pwstrDeviceId) =>
-        Console.WriteLine($"    [IMMNotificationClient] OnDeviceAdded {pwstrDeviceId}");
-    public void OnDeviceRemoved(string deviceId) =>
-        Console.WriteLine($"    [IMMNotificationClient] OnDeviceRemoved {deviceId}");
-    public void OnDefaultDeviceChanged(DataFlow flow, Role role, string defaultDeviceId) =>
-        Console.WriteLine($"    [IMMNotificationClient] OnDefaultDeviceChanged {flow}/{role} → {defaultDeviceId}");
-    public void OnPropertyValueChanged(string pwstrDeviceId, PropertyKey key) { }
-}

@@ -89,7 +89,7 @@ public class WasapiPlayer : IWavePlayer, IWavePosition, IWaveLatency, IAsyncDisp
     /// and Windows may transparently reroute the stream at any time. To discover the current default
     /// endpoint in that mode, resolve it yourself via
     /// <see cref="MMDeviceEnumerator.GetDefaultAudioEndpoint"/> and track changes with an
-    /// <see cref="NAudio.CoreAudioApi.Interfaces.IMMNotificationClient"/>.
+    /// <see cref="NAudio.CoreAudioApi.MMDeviceNotificationClient"/>.
     /// </remarks>
     public string DeviceId => deviceId;
 

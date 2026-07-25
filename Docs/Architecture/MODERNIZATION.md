@@ -220,7 +220,7 @@ Specific exception types for common failure modes:
 
 **Breaking changes:**
 
-- `IMMNotificationClient` is now `[GeneratedComInterface]`. User implementations should add `[GeneratedComClass]` and `partial` to their classes for AOT/trim cleanliness; the runtime fallback in `StrategyBasedComWrappers` handles un-decorated implementations but with reflective vtable computation (no AOT guarantee).
+- `IMMNotificationClient` is now `[GeneratedComInterface]`. User implementations should add `[GeneratedComClass]` and `partial` to their classes for AOT/trim cleanliness; the runtime fallback in `StrategyBasedComWrappers` handles un-decorated implementations but with reflective vtable computation (no AOT guarantee). *(Superseded: `IMMNotificationClient` and `MMDeviceEnumerator.RegisterEndpointNotificationCallback`/`UnregisterEndpointNotificationCallback` were later made `internal`; consumers use `MMDeviceEnumerator.CreateNotificationClient()` and the events on `MMDeviceNotificationClient`, so no user implementation of the COM interface is required.)*
 - `IAudioSessionEvents` shape: `[MarshalAs(UnmanagedType.Bool)] bool isMuted` → `int isMuted` on `OnSimpleVolumeChanged` (the new source generator does not project `UnmanagedType.Bool` for CCWs; `AudioSessionEventsCallback` converts `isMuted != 0` before delegating to the managed `IAudioSessionEventsHandler`, so the user-facing handler interface is unchanged). Per-method `[MarshalAs(UnmanagedType.LPWStr)]` removed in favour of interface-level `StringMarshalling.Utf16`.
 
 **Out of scope, deferred to follow-up phases:**

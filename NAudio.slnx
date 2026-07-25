@@ -23,7 +23,6 @@
     <Project Path="src/NAudio/NAudio.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/AsioStressTest/AsioStressTest.csproj" />
     <Project Path="tests/MfStressTest/MfStressTest.csproj">
       <BuildType Project="Release" />
     </Project>

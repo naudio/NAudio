@@ -101,7 +101,7 @@ public class WasapiRecorder : IDisposable, IAsyncDisposable, IWaveLatency
     /// where Windows may transparently reroute the stream at any time. To discover the current default
     /// endpoint in the routing case, resolve it yourself via
     /// <see cref="MMDeviceEnumerator.GetDefaultAudioEndpoint"/> and track changes with an
-    /// <see cref="NAudio.CoreAudioApi.Interfaces.IMMNotificationClient"/>.
+    /// <see cref="NAudio.CoreAudioApi.MMDeviceNotificationClient"/>.
     /// </remarks>
     public string DeviceId => deviceId;
 

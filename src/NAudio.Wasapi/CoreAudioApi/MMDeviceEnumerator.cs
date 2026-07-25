@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 using NAudio.CoreAudioApi.Interfaces;
@@ -21,6 +22,16 @@ public class MMDeviceEnumerator : IDisposable
     private static readonly Guid IID_IMMNotificationClient = new("7991EEC9-7E89-4D85-8390-6C703CEC60C0");
 
     private IMMDeviceEnumerator realEnumerator;
+
+    // Registered notification clients, keyed by the managed client (reference identity) with the
+    // retained CCW interface pointer as the value. Windows does NOT AddRef the client passed to
+    // RegisterEndpointNotificationCallback (see that method's remarks), so if we released the CCW
+    // reference we handed to native, the CCW's ref count would hit zero, ComWrappers would demote
+    // its handle to the managed client to weak, and the next GC would collect the client. Native
+    // would then dispatch a notification into a dead object -> AccessViolationException in
+    // ComInterfaceDispatch.GetInstance. Holding the CCW reference here keeps the ref count > 0
+    // (which keeps the managed client strongly rooted) until the client is unregistered/disposed.
+    private readonly Dictionary<IMMNotificationClient, IntPtr> registeredClients = new(ReferenceEqualityComparer.Instance);
 
     /// <summary>
     /// Activates the system <c>MMDeviceEnumerator</c> COM object.
@@ -149,15 +160,25 @@ public class MMDeviceEnumerator : IDisposable
     /// <returns>The HRESULT from the underlying COM call.</returns>
     public int RegisterEndpointNotificationCallback(IMMNotificationClient client)
     {
+        if (client is null) throw new ArgumentNullException(nameof(client));
         var ptr = QueryNotificationClientInterface(client);
-        try
+        int hresult = realEnumerator.RegisterEndpointNotificationCallback(ptr);
+        if (hresult >= 0)
         {
-            return realEnumerator.RegisterEndpointNotificationCallback(ptr);
+            // Success: retain the CCW reference for the whole registration (see registeredClients).
+            // A re-registration of the same client replaces the retained reference; drop the stale one.
+            if (registeredClients.Remove(client, out var stale))
+            {
+                Marshal.Release(stale);
+            }
+            registeredClients[client] = ptr;
         }
-        finally
+        else
         {
+            // Failed to register: nothing to keep alive, release the reference we created.
             Marshal.Release(ptr);
         }
+        return hresult;
     }
 
     /// <summary>
@@ -166,10 +187,18 @@ public class MMDeviceEnumerator : IDisposable
     /// <returns>The HRESULT from the underlying COM call.</returns>
     public int UnregisterEndpointNotificationCallback(IMMNotificationClient client)
     {
+        if (client is null) throw new ArgumentNullException(nameof(client));
         var ptr = QueryNotificationClientInterface(client);
         try
         {
-            return realEnumerator.UnregisterEndpointNotificationCallback(ptr);
+            int hresult = realEnumerator.UnregisterEndpointNotificationCallback(ptr);
+            // Release the reference we retained at registration so the CCW ref count can fall to
+            // zero and the managed client become collectable again.
+            if (registeredClients.Remove(client, out var retained))
+            {
+                Marshal.Release(retained);
+            }
+            return hresult;
         }
         finally
         {
@@ -209,6 +238,8 @@ public class MMDeviceEnumerator : IDisposable
     {
         if (disposing)
         {
+            // Release the enumerator first so it can no longer dispatch notifications, then drop any
+            // CCW references we retained for clients that were never explicitly unregistered.
             if (realEnumerator != null)
             {
                 if ((object)realEnumerator is ComObject co)
@@ -216,6 +247,14 @@ public class MMDeviceEnumerator : IDisposable
                     co.FinalRelease();
                 }
                 realEnumerator = null;
+            }
+            if (registeredClients.Count > 0)
+            {
+                foreach (var ptr in registeredClients.Values)
+                {
+                    Marshal.Release(ptr);
+                }
+                registeredClients.Clear();
             }
         }
     }

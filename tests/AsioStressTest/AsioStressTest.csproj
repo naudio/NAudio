@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
+    <RootNamespace>AsioStressTest</RootNamespace>
+    <AssemblyName>AsioStressTest</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <!-- ASIO CoCreateInstance requires the calling thread to be STA (see AsioDriver.InitFromGuid). -->
+    <ApplicationDefaultThreadingModel>STA</ApplicationDefaultThreadingModel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <!--
+    Reproduction harness for the ASIO "access violation after stop + GC + master-volume
+    change" fault. References the ASIO backend directly, plus Wasapi so the harness can
+    programmatically wiggle the Windows master volume to provoke the driver's
+    kAsioResetRequest callback (the same stimulus the user hits by hand). See README.md.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\NAudio.Core\NAudio.Core.csproj" />
+    <ProjectReference Include="..\..\src\NAudio.Asio\NAudio.Asio.csproj" />
+    <ProjectReference Include="..\..\src\NAudio.Wasapi\NAudio.Wasapi.csproj" />
+  </ItemGroup>
+
+</Project>

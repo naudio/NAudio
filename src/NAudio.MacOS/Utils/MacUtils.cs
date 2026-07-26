@@ -1,5 +1,7 @@
 
 using System;
+using System.Diagnostics;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 using NAudio.Dmo;
@@ -23,19 +25,25 @@ internal static class MacUtils
     /// <param name="str">The 4 character code to convert to an integer value.</param>
     /// <returns>The converted integer value.</returns>
     /// <exception cref="ArgumentOutOfRangeException">The length <paramref name="str"/> is not 4 characters.</exception>
-    public static int ConstructIntConstantValueFromString(ReadOnlySpan<byte> str)
+    public static int ConstructIntConstantValueFromString(string str)
     {
-        if (str.Length != sizeof(int))
+        int intLength = sizeof(int);
+        if (str is null)
         {
-            throw new ArgumentOutOfRangeException(nameof(str), "String cannot be less or more than 4 bytes");
+            throw new ArgumentNullException(nameof(str), "String cannot be null.");
+        }
+        else if (str.Length != intLength)
+        {
+            throw new ArgumentOutOfRangeException(nameof(str), str, $"String cannot be less or more than {intLength} bytes");
         }
         else
         {
+            Span<byte> dest = stackalloc byte[intLength];
+            // Copy the string contents to the span, converting the characters to bytes.
+            for (int I = 0; I < intLength; I++) { dest[I] = unchecked((byte)str[I]); }
+            if (BitConverter.IsLittleEndian) { dest.Reverse(); }
             // GetPinnableReference is faster than ref dest[0]. 
             // If deemed necessary in the future however, this should be changed.
-            Span<byte> dest = stackalloc byte[sizeof(int)];
-            str.CopyTo(dest);
-            if (BitConverter.IsLittleEndian) { dest.Reverse(); }
             return Unsafe.ReadUnaligned<int>(ref dest.GetPinnableReference());
         }
     }
@@ -49,18 +57,24 @@ internal static class MacUtils
     /// <param name="str">The 4 character code to convert to an unsigned integer value.</param>
     /// <returns>The converted unsigned integer value.</returns>
     /// <exception cref="ArgumentOutOfRangeException">The length <paramref name="str"/> is not 4 characters.</exception>
-    public static uint ConstructUIntConstantValueFromString(ReadOnlySpan<byte> str)
+    public static uint ConstructUIntConstantValueFromString(string str)
     {
-        if (str.Length != sizeof(uint))
+        int uintLength = sizeof(uint);
+        if (str is null)
         {
-            throw new ArgumentOutOfRangeException(nameof(str), "String cannot be less or more than 4 bytes");
+            throw new ArgumentNullException(nameof(str), "String cannot be null.");
+        }
+        else if (str.Length != uintLength)
+        {
+            throw new ArgumentOutOfRangeException(nameof(str), str, $"String cannot be less or more than {uintLength} bytes");
         }
         else
         {
             // GetPinnableReference is faster than ref dest[0]. 
             // If deemed necessary in the future however, this should be changed.
-            Span<byte> dest = stackalloc byte[sizeof(uint)];
-            str.CopyTo(dest);
+            Span<byte> dest = stackalloc byte[uintLength];
+            // Copy the string contents to the span, converting the characters to bytes.
+            for (int I = 0; I < uintLength; I++) { dest[I] = unchecked((byte)str[I]); }
             if (BitConverter.IsLittleEndian) { dest.Reverse(); }
             return Unsafe.ReadUnaligned<uint>(ref dest.GetPinnableReference());
         }
@@ -243,7 +257,7 @@ internal static class MacUtils
         // translation WaveFormatExtensible -> macOS API's is happening,
         // but the reverse is even harder.
         // TODOs:
-        // 1. Not all tags are defined today. Define them all and flag translation as needed.
+        // 1. Not all tags are defined today. Define them all and do flag translation as needed.
         // 2. There many tags that are duplicate of others and each one needs to be found out,
         // to avoid repeating if statements. This has already have a lot of them, let's not
         // make it worse if possible.
@@ -546,4 +560,26 @@ internal static class MacUtils
     public static uint GetNumberOfPacketsFromBytesAndFormat(uint bytes, WaveFormat format) => (uint)(bytes / format.BlockAlign);
 
     public static uint GetNumberOfBytesFromPacketsAndFormat(uint numberOfPackets, WaveFormat format) => (uint)(numberOfPackets * format.BlockAlign);
+
+    [StackTraceHidden]
+    [DebuggerStepThrough]
+    public static void EnsureDisposableObjectsDisposed(params IDisposable[] disposables)
+    {
+        List<Exception> exceptions = new(10);
+        foreach (var i in disposables)
+        {
+            try
+            {
+                i?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                exceptions.Add(ex);
+            }
+        }
+        if (exceptions.Count > 0)
+        {
+            throw new AggregateException(exceptions);
+        }
+    }
 }

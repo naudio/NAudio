@@ -30,9 +30,9 @@ internal static class AudioControlProperties
     /// <summary>
     /// An AudioServerPlugIn_PropertyScope that indicates which part of a device the control applies to.
     /// </summary>
-    public static readonly AudioObjectPropertySelector kAudioControlPropertyScope      = (AudioObjectPropertySelector)MacUtils.ConstructUIntConstantValueFromString("cscp"u8);
+    public static readonly AudioObjectPropertySelector kAudioControlPropertyScope      = (AudioObjectPropertySelector)MacUtils.ConstructUIntConstantValueFromString("cscp");
     /// <summary>
     /// An AudioServerPlugIn_PropertyElement that indicates which element of the device the control applies to.
     /// </summary>
-    public static readonly AudioObjectPropertySelector kAudioControlPropertyElement    = (AudioObjectPropertySelector)MacUtils.ConstructUIntConstantValueFromString("celm"u8);
+    public static readonly AudioObjectPropertySelector kAudioControlPropertyElement    = (AudioObjectPropertySelector)MacUtils.ConstructUIntConstantValueFromString("celm");
 }

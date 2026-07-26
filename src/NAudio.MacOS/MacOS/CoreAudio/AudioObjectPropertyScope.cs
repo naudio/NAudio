@@ -44,17 +44,17 @@ public static class AudioObjectPropertyScopeConstants
     /// The AudioObjectPropertyScope for properties that apply to the object as a whole. 
     /// All objects have a global scope and for most it is their only scope.
     /// </summary>
-    public static readonly AudioObjectPropertyScope Global = (AudioObjectPropertyScope)MacUtils.ConstructUIntConstantValueFromString("glob"u8);
+    public static readonly AudioObjectPropertyScope Global = (AudioObjectPropertyScope)MacUtils.ConstructUIntConstantValueFromString("glob");
     /// <summary>
     /// The AudioObjectPropertyScope for properties that apply to the input side of an object.
     /// </summary>
-    public static readonly AudioObjectPropertyScope Input = (AudioObjectPropertyScope)MacUtils.ConstructUIntConstantValueFromString("inpt"u8);
+    public static readonly AudioObjectPropertyScope Input = (AudioObjectPropertyScope)MacUtils.ConstructUIntConstantValueFromString("inpt");
     /// <summary>
     /// The AudioObjectPropertyScope for properties that apply to the output side of an object.
     /// </summary>
-    public static readonly AudioObjectPropertyScope Output = (AudioObjectPropertyScope)MacUtils.ConstructUIntConstantValueFromString("outp"u8);
+    public static readonly AudioObjectPropertyScope Output = (AudioObjectPropertyScope)MacUtils.ConstructUIntConstantValueFromString("outp");
     /// <summary>
     /// The AudioObjectPropertyScope for properties that apply to the play through side of an object.
     /// </summary>
-    public static readonly AudioObjectPropertyScope PlayThrough = (AudioObjectPropertyScope)MacUtils.ConstructUIntConstantValueFromString("ptru"u8);
+    public static readonly AudioObjectPropertyScope PlayThrough = (AudioObjectPropertyScope)MacUtils.ConstructUIntConstantValueFromString("ptru");
 }

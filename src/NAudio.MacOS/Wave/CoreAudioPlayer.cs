@@ -2,10 +2,9 @@
 using System;
 using System.Threading;
 using System.Diagnostics;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
-using NAudio.Dmo;
+using NAudio.Utils;
 using NAudio.MacOS.CoreAudio;
 
 namespace NAudio.Wave;
@@ -76,6 +75,10 @@ public sealed class CoreAudioPlayer : IWavePlayer, IWavePosition, IWaveLatency
     public CoreAudioPlayer(AudioDevice dev, [MaybeNull] Func<AudioStream[], int> streamSelector)
     {
         ArgumentNullException.ThrowIfNull(dev);
+        if (!dev.IsAlive)
+        {
+            throw new InvalidOperationException("This device will be shortly removed, and as such cannot be used as a capture device.");
+        }
         device = dev;
         isInvalid = false;
         ioProcedure = null;
@@ -90,6 +93,7 @@ public sealed class CoreAudioPlayer : IWavePlayer, IWavePosition, IWaveLatency
 
     private (IWaveProvider initProvider, int streamCount, int selectedStreamIndex) InitializePlayback()
     {
+        MacUtils.EnsureDisposableObjectsDisposed(virtFormatChanged);
         IWaveProvider retProvider;
         AudioStream[] streams = device.GetStreams(AudioObjectPropertyScopeConstants.Output);
         if (streams.Length == 0)
@@ -154,26 +158,12 @@ public sealed class CoreAudioPlayer : IWavePlayer, IWavePosition, IWaveLatency
         }
         // OK, pick now the selected stream, register it to this instance
         selectedStream = streams[selectedStreamIndex];
-        virtFormatChanged?.Dispose();
         virtFormatChanged = selectedStream.ConstructVirtualFormatChangedEvent();
         virtFormatChanged.Event += OnStreamVirtualFormatChanged;
         if (resamplerAttached)
         {
             // We need to attach the resampler.
-            WaveFormat vf = selectedStream.VirtualFormat;
-            if (requiredChannelMask != Speakers.None)
-            {
-                var vfAsExtensible = vf as WaveFormatExtensible;
-                vf = new WaveFormatExtensible(
-                    vf.SampleRate,
-                    vf.BitsPerSample,
-                    vf.Channels,
-                    vfAsExtensible is null ? vf.Encoding == WaveFormatEncoding.IeeeFloat : vfAsExtensible.SubFormat == AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT,
-                    vfAsExtensible is null ? vf.BitsPerSample : vfAsExtensible.ValidBitsPerSample,
-                    requiredChannelMask
-                );
-            }
-            retProvider = new MacAudioConverter(originalProvider, vf);
+            retProvider = new MacAudioConverter(originalProvider, ConstructOutputFormat(out _));
         }
         else
         {
@@ -278,29 +268,34 @@ public sealed class CoreAudioPlayer : IWavePlayer, IWavePosition, IWaveLatency
         }
     }
 
-    private void FirePlaybackStopped(object sender, StoppedEventArgs e) => PlaybackStopped?.Invoke(this, e);
-
-    [StackTraceHidden]
-    [DebuggerStepThrough]
-    private static void EnsureDisposableObjectsDisposed(params IDisposable[] disposables)
+    private WaveFormat ConstructOutputFormat(out bool needsResampling)
     {
-        List<Exception> exceptions = new(10);
-        foreach (var i in disposables)
+        var vf = selectedStream.VirtualFormat;
+        Speakers spk = device.GetPreferredChannelLayout(AudioObjectPropertyScopeConstants.Output, out needsResampling, out var needsExtensible);
+        if (needsExtensible)
         {
-            try
-            {
-                i?.Dispose();
-            }
-            catch (Exception ex)
-            {
-                exceptions.Add(ex);
-            }
+            return vf is WaveFormatExtensible ext
+                ? new WaveFormatExtensible(
+                    ext.SampleRate,
+                    ext.BitsPerSample,
+                    ext.Channels,
+                    ext.SubFormat,
+                    ext.ValidBitsPerSample,
+                    spk
+                )
+                : new WaveFormatExtensible(
+                    vf.SampleRate,
+                    vf.BitsPerSample,
+                    vf.Channels,
+                    vf.Encoding == WaveFormatEncoding.IeeeFloat,
+                    vf.BitsPerSample,
+                    spk
+                );
         }
-        if (exceptions.Count > 0)
-        {
-            throw new AggregateException(exceptions);
-        }
+        return vf;
     }
+
+    private void FirePlaybackStopped(object sender, StoppedEventArgs e) => PlaybackStopped?.Invoke(this, e);
 
     [StackTraceHidden]
     [DebuggerStepThrough]
@@ -371,7 +366,7 @@ public sealed class CoreAudioPlayer : IWavePlayer, IWavePosition, IWaveLatency
         get
         {
             ThrowIfInvalid();
-            return selectedStream.VirtualFormat;
+            return ConstructOutputFormat(out _);
         }
     }
 
@@ -387,12 +382,28 @@ public sealed class CoreAudioPlayer : IWavePlayer, IWavePosition, IWaveLatency
         }
     }
 
-    // mdcdi1315: While we can get the time stamp 
-    // from the I/O procedure, it does incur additional
-    // cost on the procedure. If we find a way that could skip
-    // going through the procedure, that would be very useful.
     /// <inheritdoc />
-    public TimeSpan CurrentLatency => AverageLatency;
+    public TimeSpan CurrentLatency
+    {
+        get
+        {
+            ThrowIfInvalid();
+            var vf = selectedStream.VirtualFormat;
+            double timeInSeconds = ioProcedure.CurrentLatencyInSeconds(vf);
+            if (timeInSeconds == -1d)
+            {
+                timeInSeconds =
+                    ((device.GetDeviceLatency(AudioObjectPropertyScopeConstants.Output)
+                        + selectedStream.Latency) * vf.BlockAlign) / (double)vf.AverageBytesPerSecond;
+            }
+            return TimeSpan.FromSeconds(timeInSeconds);
+        }
+    }
+
+    /// <summary>
+    /// Gets the selected audio device where the player renders data to.
+    /// </summary>
+    public AudioDevice Device => device;
 
     /// <inheritdoc />
     public long GetPosition()
@@ -478,7 +489,7 @@ public sealed class CoreAudioPlayer : IWavePlayer, IWavePosition, IWaveLatency
             if (isInvalid) { return; }
             isInvalid = true;
             ioProcedure.Stop();
-            EnsureDisposableObjectsDisposed(
+            MacUtils.EnsureDisposableObjectsDisposed(
                 ioProcedure,
                 streamsChanged,
                 deviceWillGoAway,

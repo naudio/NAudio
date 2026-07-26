@@ -17,7 +17,7 @@ namespace NAudio.Wave;
 /// <summary>
 /// Provides the platform's resampler. <br />
 /// Has almost the same strengths as the Windows Media Resampler (excluding changing the input provider's audio format details on the fly), 
-/// and even provides more options compared to that one, allowing to modify resampling algorithm, quality and dithering.
+/// and even provides more options compared to that one, allowing to select resampling algorithm, quality and dithering.
 /// </summary>
 // mdcdi1315: TODO: This work is primitive but for now it works.
 // Things I want to do:
@@ -227,12 +227,13 @@ public sealed unsafe class MacAudioConverter : IWaveProvider, IDisposable
     /// <returns>Number of bytes actually read into <paramref name="buffer"/>, 0 if end of stream.</returns>
     public int Read(Span<byte> buffer)
     {
+        uint bufferLength = (uint)buffer.Length;
         if (directConversionBuffer is null)
         {
-            uint readPackets = MacUtils.GetNumberOfPacketsFromBytesAndFormat((uint)buffer.Length, outputFormat);
+            uint readPackets = MacUtils.GetNumberOfPacketsFromBytesAndFormat(bufferLength, outputFormat);
             fixed (byte* pPlaceDataTo = buffer)
             {
-                var list = AudioBufferList.FromSingleBuffer(new(pPlaceDataTo), (uint)buffer.Length, (uint)outputFormat.Channels);
+                var list = AudioBufferList.FromSingleBuffer(new(pPlaceDataTo), bufferLength, (uint)outputFormat.Channels);
                 AudioConverterException.ThrowIfError(
                     NativeMethods.AudioConverterFillComplexBuffer(
                         audioConverterHandle,
@@ -248,7 +249,6 @@ public sealed unsafe class MacAudioConverter : IWaveProvider, IDisposable
         }
         else
         {
-            uint outSize = (uint)buffer.Length;
             int readBytes = sourceProvider.Read(directConversionBuffer);
             fixed (byte* pSrcBuffer = directConversionBuffer)
             fixed (byte* pDstBuffer = buffer)
@@ -258,12 +258,12 @@ public sealed unsafe class MacAudioConverter : IWaveProvider, IDisposable
                         audioConverterHandle,
                         (uint)readBytes,
                         new(pSrcBuffer),
-                        ref outSize,
+                        ref bufferLength,
                         new(pDstBuffer)
                     )
                 );
             }
-            return (int)outSize;
+            return (int)bufferLength;
         }
     }
 

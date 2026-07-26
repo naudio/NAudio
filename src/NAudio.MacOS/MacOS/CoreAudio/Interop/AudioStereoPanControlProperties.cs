@@ -29,9 +29,9 @@ internal static class AudioStereoPanControlProperties
     /// <summary>
     /// A Float32 where 0.0 is full left, 1.0 is full right, and 0.5 is center.
     /// </summary>
-    public static readonly AudioObjectPropertySelector kAudioStereoPanControlPropertyValue             = (AudioObjectPropertySelector)MacUtils.ConstructUIntConstantValueFromString("spcv"u8);
+    public static readonly AudioObjectPropertySelector kAudioStereoPanControlPropertyValue             = (AudioObjectPropertySelector)MacUtils.ConstructUIntConstantValueFromString("spcv");
     /// <summary>
     /// An array of two UInt32s that indicate which elements of the device the signal is being panned between.
     /// </summary>
-    public static readonly AudioObjectPropertySelector kAudioStereoPanControlPropertyPanningChannels   = (AudioObjectPropertySelector)MacUtils.ConstructUIntConstantValueFromString("spcc"u8);
+    public static readonly AudioObjectPropertySelector kAudioStereoPanControlPropertyPanningChannels   = (AudioObjectPropertySelector)MacUtils.ConstructUIntConstantValueFromString("spcc");
 }

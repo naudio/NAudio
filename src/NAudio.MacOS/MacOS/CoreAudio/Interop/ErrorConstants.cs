@@ -28,29 +28,29 @@ internal static class ErrorConstants /* OSStatus */
     /// <summary>The function call completed successfully.</summary>
     public const int kAudioHardwareNoError                             = 0;
     /// <summary>The function call requires that the hardware be running but it isn't.</summary>
-    public static readonly int kAudioHardwareNotRunningError           = MacUtils.ConstructIntConstantValueFromString("stop"u8);
+    public static readonly int kAudioHardwareNotRunningError           = MacUtils.ConstructIntConstantValueFromString("stop");
     /// <summary>The function call failed while doing something that doesn't provide any error messages.</summary>
-    public static readonly int kAudioHardwareUnspecifiedError          = MacUtils.ConstructIntConstantValueFromString("what"u8);
+    public static readonly int kAudioHardwareUnspecifiedError          = MacUtils.ConstructIntConstantValueFromString("what");
     /// <summary>The AudioObject doesn't know about the property at the given address.</summary>
-    public static readonly int kAudioHardwareUnknownPropertyError      = MacUtils.ConstructIntConstantValueFromString("who?"u8);
+    public static readonly int kAudioHardwareUnknownPropertyError      = MacUtils.ConstructIntConstantValueFromString("who?");
     /// <summary>An improperly sized buffer was provided when accessing the data of a property.</summary>
-    public static readonly int kAudioHardwareBadPropertySizeError      = MacUtils.ConstructIntConstantValueFromString("!siz"u8);
+    public static readonly int kAudioHardwareBadPropertySizeError      = MacUtils.ConstructIntConstantValueFromString("!siz");
     /// <summary>The requested operation couldn't be completed.</summary>
-    public static readonly int kAudioHardwareIllegalOperationError     = MacUtils.ConstructIntConstantValueFromString("nope"u8);
+    public static readonly int kAudioHardwareIllegalOperationError     = MacUtils.ConstructIntConstantValueFromString("nope");
     /// <summary>The AudioObjectID passed to the function doesn't map to a valid AudioObject.</summary>
-    public static readonly int kAudioHardwareBadObjectError            = MacUtils.ConstructIntConstantValueFromString("!obj"u8);
+    public static readonly int kAudioHardwareBadObjectError            = MacUtils.ConstructIntConstantValueFromString("!obj");
     /// <summary>The AudioObjectID passed to the function doesn't map to a valid AudioDevice.</summary>
-    public static readonly int kAudioHardwareBadDeviceError            = MacUtils.ConstructIntConstantValueFromString("!dev"u8);
+    public static readonly int kAudioHardwareBadDeviceError            = MacUtils.ConstructIntConstantValueFromString("!dev");
     /// <summary>The AudioObjectID passed to the function doesn't map to a valid AudioStream.</summary>
-    public static readonly int kAudioHardwareBadStreamError            = MacUtils.ConstructIntConstantValueFromString("!str"u8);
+    public static readonly int kAudioHardwareBadStreamError            = MacUtils.ConstructIntConstantValueFromString("!str");
     /// <summary>The AudioObject doesn't support the requested operation.</summary>
-    public static readonly int kAudioHardwareUnsupportedOperationError = MacUtils.ConstructIntConstantValueFromString("unop"u8);
+    public static readonly int kAudioHardwareUnsupportedOperationError = MacUtils.ConstructIntConstantValueFromString("unop");
     /// <summary>The AudioObject isn't ready to do the requested operation.</summary>
-    public static readonly int kAudioHardwareNotReadyError             = MacUtils.ConstructIntConstantValueFromString("nrdy"u8);
+    public static readonly int kAudioHardwareNotReadyError             = MacUtils.ConstructIntConstantValueFromString("nrdy");
     /// <summary>The AudioStream doesn't support the requested format.</summary>
-    public static readonly int kAudioDeviceUnsupportedFormatError      = MacUtils.ConstructIntConstantValueFromString("!dat"u8);
+    public static readonly int kAudioDeviceUnsupportedFormatError      = MacUtils.ConstructIntConstantValueFromString("!dat");
     /// <summary>The requested operation can't be completed because the process doesn't have permission.</summary>
-    public static readonly int kAudioDevicePermissionsError            = MacUtils.ConstructIntConstantValueFromString("!hog"u8);
+    public static readonly int kAudioDevicePermissionsError            = MacUtils.ConstructIntConstantValueFromString("!hog");
 
     /// <summary>
     /// Provides the error message of the specified error code. <br />

@@ -34,7 +34,7 @@ internal static class ErrorConstants /* OSStatus */
     /// <summary>
     /// File cannot be opened because the specified path is malformed.
     /// </summary>
-    public static readonly int kAudio_BadFilePathError = MacUtils.ConstructIntConstantValueFromString("!pth"u8); // '!pth', 561017960
+    public static readonly int kAudio_BadFilePathError = MacUtils.ConstructIntConstantValueFromString("!pth"); // '!pth', 561017960
     /// <summary>
     /// Error in user parameter list.
     /// </summary>
@@ -55,7 +55,7 @@ internal static class ErrorConstants /* OSStatus */
     {
         if (errorCode == kAudio_NoError)
         {
-            return "Returned on success.";
+            return "Success.";
         }
         else if (errorCode == kAudio_UnimplementedError)
         {

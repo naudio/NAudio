@@ -7,6 +7,8 @@
 
 using System;
 
+namespace NAudio.MacOS.AudioToolbox.Interop;
+
 /// <summary>These are flags that can be used with the CreateURL API call</summary>
 [Flags]
 internal enum AudioFileFlags : uint
@@ -17,7 +19,7 @@ internal enum AudioFileFlags : uint
     /// If set, then the CreateURL call will erase the contents of an existing file
 	/// If not set, then the CreateURL call will fail if the file already exists
     /// </summary>
-    kAudioFileFlags_EraseFile = 1,
+    EraseFile = 1,
     /// <summary>
     /// Normally, newly created and optimized files will have padding added in order to page align 
 	/// the data to 4KB boundaries. This makes reading the data more efficient. 

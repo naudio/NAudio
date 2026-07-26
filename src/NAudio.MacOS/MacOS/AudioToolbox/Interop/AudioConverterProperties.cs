@@ -37,75 +37,75 @@ internal static class AudioConverterProperties
     /// data that can be supplied via the AudioConverterInputProc or as the input to
     /// AudioConverterConvertBuffer
     /// </summary>
-    public static readonly AudioConverterPropertyID kAudioConverterPropertyMinimumInputBufferSize       = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("mibs"u8);
+    public static readonly AudioConverterPropertyID kAudioConverterPropertyMinimumInputBufferSize       = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("mibs");
     /// <summary>
     /// a UInt32 that indicates the size in bytes of the smallest buffer of output
     /// data that can be supplied to AudioConverterFillComplexBuffer or as the output to
     /// AudioConverterConvertBuffer
     /// </summary>
-    public static readonly AudioConverterPropertyID kAudioConverterPropertyMinimumOutputBufferSize      = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("mobs"u8);
+    public static readonly AudioConverterPropertyID kAudioConverterPropertyMinimumOutputBufferSize      = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("mobs");
     /// <summary>
     /// a UInt32 that indicates the size in bytes of the largest single packet of
     /// data in the input format. This is mostly useful for variable bit rate
     /// compressed data (decoders).
     /// </summary>
-    public static readonly AudioConverterPropertyID kAudioConverterPropertyMaximumInputPacketSize       = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("xips"u8);
+    public static readonly AudioConverterPropertyID kAudioConverterPropertyMaximumInputPacketSize       = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("xips");
     /// <summary>
     /// a UInt32 that indicates the size in bytes of the largest single packet of
     /// data in the output format. This is mostly useful for variable bit rate
     /// compressed data (encoders).
     /// </summary>
-    public static readonly AudioConverterPropertyID kAudioConverterPropertyMaximumOutputPacketSize      = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("xops"u8);
+    public static readonly AudioConverterPropertyID kAudioConverterPropertyMaximumOutputPacketSize      = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("xops");
     /// <summary>
     /// a UInt32 that on input holds a size in bytes that is desired for the output
     /// data. On output, it will hold the size in bytes of the input buffer required
     /// to generate that much output data. Note that some converters cannot do this
     /// calculation.
     /// </summary>
-    public static readonly AudioConverterPropertyID kAudioConverterPropertyCalculateInputBufferSize     = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("cibs"u8);
+    public static readonly AudioConverterPropertyID kAudioConverterPropertyCalculateInputBufferSize     = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("cibs");
     /// <summary>
     /// a UInt32 that on input holds a size in bytes that is desired for the input
     /// data. On output, it will hold the size in bytes of the output buffer
     /// required to hold the output data that will be generated. Note that some
     /// converters cannot do this calculation.
     /// </summary>
-    public static readonly AudioConverterPropertyID kAudioConverterPropertyCalculateOutputBufferSize    = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("cobs"u8);
+    public static readonly AudioConverterPropertyID kAudioConverterPropertyCalculateOutputBufferSize    = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("cobs");
     /// <summary>
     /// The value of this property varies from format to format and is considered
     /// private to the format. It is treated as a buffer of untyped data.
     /// </summary>
-    public static readonly AudioConverterPropertyID kAudioConverterPropertyInputCodecParameters         = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("icdp"u8);
+    public static readonly AudioConverterPropertyID kAudioConverterPropertyInputCodecParameters         = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("icdp");
     /// <summary>
     /// The value of this property varies from format to format and is considered
     /// private to the format. It is treated as a buffer of untyped data.
     /// </summary>
-    public static readonly AudioConverterPropertyID kAudioConverterPropertyOutputCodecParameters        = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("ocdp"u8);
+    public static readonly AudioConverterPropertyID kAudioConverterPropertyOutputCodecParameters        = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("ocdp");
     /// <summary>
     /// An OSType that specifies the sample rate converter algorithm to use (as defined in AudioToolbox/AudioUnitProperties.h)
     /// </summary>
-    public static readonly AudioConverterPropertyID kAudioConverterSampleRateConverterComplexity        = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("srca"u8);
+    public static readonly AudioConverterPropertyID kAudioConverterSampleRateConverterComplexity        = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("srca");
     /// <summary>
     /// A UInt32 that specifies rendering quality of the sample rate converter (see enum constants below)
     /// </summary>
-    public static readonly AudioConverterPropertyID kAudioConverterSampleRateConverterQuality           = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("srcq"u8);
+    public static readonly AudioConverterPropertyID kAudioConverterSampleRateConverterQuality           = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("srcq");
     /// <summary>
     /// A Float64 with value 0.0 &lt;= x &lt; 1.0 giving the initial subsample position of the sample rate converter.
     /// </summary>
-    public static readonly AudioConverterPropertyID kAudioConverterSampleRateConverterInitialPhase      = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("srcp"u8);
+    public static readonly AudioConverterPropertyID kAudioConverterSampleRateConverterInitialPhase      = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("srcp");
     /// <summary>
     /// A UInt32 that specifies rendering quality of a codec (see enum constants below)
     /// </summary>
-    public static readonly AudioConverterPropertyID kAudioConverterCodecQuality                         = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("cdqu"u8);
+    public static readonly AudioConverterPropertyID kAudioConverterCodecQuality                         = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("cdqu");
     /// <summary>
     /// a UInt32 specifying priming method (usually for sample-rate converter) see
     /// explanation for struct AudioConverterPrimeInfo below along with enum
     /// constants
     /// </summary>
-    public static readonly AudioConverterPropertyID kAudioConverterPrimeMethod                          = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("prmm"u8);
+    public static readonly AudioConverterPropertyID kAudioConverterPrimeMethod                          = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("prmm");
     /// <summary>
     /// A pointer to AudioConverterPrimeInfo (see explanation for struct AudioConverterPrimeInfo)
     /// </summary>
-    public static readonly AudioConverterPropertyID kAudioConverterPrimeInfo                            = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("prim"u8);
+    public static readonly AudioConverterPropertyID kAudioConverterPrimeInfo                            = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("prim");
     /// <summary>
     /// An array of SInt32's.  The size of the array is the number of output
     /// channels, and each element specifies which input channel's data is routed to
@@ -126,77 +126,77 @@ internal static class AudioConverterProperties
 	/// sizeof(channelMap), channelMap);
 	/// </code>
     /// </summary>
-    public static readonly AudioConverterPropertyID kAudioConverterChannelMap                           = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("chmp"u8);
+    public static readonly AudioConverterPropertyID kAudioConverterChannelMap                           = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("chmp");
     /// <summary>
     /// A <c>void*</c> pointing to memory set up by the caller. 
     /// Required by some formats izn order to decompress the input data.
     /// </summary>
-    public static readonly AudioConverterPropertyID kAudioConverterDecompressionMagicCookie             = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("dmgc"u8);
+    public static readonly AudioConverterPropertyID kAudioConverterDecompressionMagicCookie             = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("dmgc");
     /// <summary>
     /// A <c>void*</c> pointing to memory set up by the caller. Returned by the converter
     /// so that it may be stored along with the output data. It can then be passed
     /// back to the converter for decompression at a later time.
     /// </summary>
-    public static readonly AudioConverterPropertyID kAudioConverterCompressionMagicCookie               = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("cmgc"u8);
+    public static readonly AudioConverterPropertyID kAudioConverterCompressionMagicCookie               = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("cmgc");
     /// <summary>
     /// A UInt32 containing the number of bits per second to aim for when encoding
     /// data. Some decoders will also allow you to get this property to discover the bit rate.
     /// </summary>
-    public static readonly AudioConverterPropertyID kAudioConverterEncodeBitRate                        = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("brat"u8);
+    public static readonly AudioConverterPropertyID kAudioConverterEncodeBitRate                        = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("brat");
     /// <summary>
     /// For encoders where the AudioConverter was created with an output sample rate
     /// of zero, and the codec can do rate conversion on its input, this provides a
     /// way to set the output sample rate. The property value is a <see cref="double"/>.
     /// </summary>
-    public static readonly AudioConverterPropertyID kAudioConverterEncodeAdjustableSampleRate           = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("ajsr"u8);
+    public static readonly AudioConverterPropertyID kAudioConverterEncodeAdjustableSampleRate           = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("ajsr");
     /// <summary>
     /// The property value is an <see cref="CoreAudioTypes.AudioChannelLayout"/>.
     /// </summary>
-    public static readonly AudioConverterPropertyID kAudioConverterInputChannelLayout                   = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("icl "u8);
+    public static readonly AudioConverterPropertyID kAudioConverterInputChannelLayout                   = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("icl ");
     /// <summary>
     /// The property value is an <see cref="CoreAudioTypes.AudioChannelLayout"/>.
     /// </summary>
-    public static readonly AudioConverterPropertyID kAudioConverterOutputChannelLayout                  = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("ocl "u8);
+    public static readonly AudioConverterPropertyID kAudioConverterOutputChannelLayout                  = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("ocl ");
     /// <summary>
     /// The property value is an array of AudioValueRange describing applicable bit
     /// rates based on current settings.
     /// </summary>
-    public static readonly AudioConverterPropertyID kAudioConverterApplicableEncodeBitRates             = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("aebr"u8);
+    public static readonly AudioConverterPropertyID kAudioConverterApplicableEncodeBitRates             = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("aebr");
     /// <summary>
     /// The property value is an array of AudioValueRange describing available bit
     /// rates based on the input format. You can get all available bit rates from
     /// the AudioFormat API.
     /// </summary>
-    public static readonly AudioConverterPropertyID kAudioConverterAvailableEncodeBitRates              = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("vebr"u8);
+    public static readonly AudioConverterPropertyID kAudioConverterAvailableEncodeBitRates              = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("vebr");
     /// <summary>
     /// The property value is an array of AudioValueRange describing applicable
     /// sample rates based on current settings.
     /// </summary>
-    public static readonly AudioConverterPropertyID kAudioConverterApplicableEncodeSampleRates          = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("aesr"u8);
+    public static readonly AudioConverterPropertyID kAudioConverterApplicableEncodeSampleRates          = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("aesr");
     /// <summary>
     /// The property value is an array of AudioChannelLayoutTags for the format and
     /// number of channels specified in the input format going to the encoder.
     /// </summary>
-    public static readonly AudioConverterPropertyID kAudioConverterAvailableEncodeSampleRates           = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("vesr"u8);
+    public static readonly AudioConverterPropertyID kAudioConverterAvailableEncodeSampleRates           = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("vesr");
     /// <summary>
     /// The property value is an array of AudioChannelLayoutTags for the format and
     /// number of channels specified in the input format going to the encoder.
     /// </summary>
-    public static readonly AudioConverterPropertyID kAudioConverterAvailableEncodeChannelLayoutTags     = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("aecl"u8);
+    public static readonly AudioConverterPropertyID kAudioConverterAvailableEncodeChannelLayoutTags     = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("aecl");
     /// <summary>
     /// Returns the current completely specified output AudioStreamBasicDescription.
     /// For example when encoding to AAC, your original output stream description
     /// will not have been completely filled out.
     /// </summary>
-    public static readonly AudioConverterPropertyID kAudioConverterCurrentOutputStreamDescription       = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("acod"u8);
+    public static readonly AudioConverterPropertyID kAudioConverterCurrentOutputStreamDescription       = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("acod");
     /// <summary>
     /// Returns the current completely specified input AudioStreamBasicDescription.
     /// </summary>
-    public static readonly AudioConverterPropertyID kAudioConverterCurrentInputStreamDescription        = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("acid"u8);
+    public static readonly AudioConverterPropertyID kAudioConverterCurrentInputStreamDescription        = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("acid");
     /// <summary>
     /// Returns the a CFArray of property settings for converters.
     /// </summary>
-    public static readonly AudioConverterPropertyID kAudioConverterPropertySettings                     = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("acps"u8);
+    public static readonly AudioConverterPropertyID kAudioConverterPropertySettings                     = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("acps");
     /// <summary>
     /// An SInt32 of the source bit depth to preserve. This is a hint to some
     /// encoders like lossless about how many bits to preserve in the input. The
@@ -205,7 +205,7 @@ internal static class AudioConverterProperties
     /// output. The bit depth is expressed as a negative number if the source was floating point,
     /// e.g. -32 for float, -64 for double.
     /// </summary>
-    public static readonly AudioConverterPropertyID kAudioConverterPropertyBitDepthHint                 = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("acbd"u8);
+    public static readonly AudioConverterPropertyID kAudioConverterPropertyBitDepthHint                 = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("acbd");
     /// <summary>
     /// An array of AudioFormatListItem structs describing all the data formats produced by the
     /// encoder end of the AudioConverter. If the ioPropertyDataSize parameter indicates that
@@ -213,17 +213,17 @@ internal static class AudioConverterProperties
     /// This property may be used for example to discover all the data formats produced by the AAC_HE2
     /// (AAC High Efficiency vers. 2) encoder.
     /// </summary>
-    public static readonly AudioConverterPropertyID kAudioConverterPropertyFormatList                   = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("flst"u8);
+    public static readonly AudioConverterPropertyID kAudioConverterPropertyFormatList                   = (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("flst");
     /// <summary>
     /// A UInt32. 
     /// Set to a value from the <see cref="AudioConverterDitheringAlgorithm"/> enum.
 	/// Zero means no dithering and is the default. (macOS only.)
     /// </summary>
     [UnsupportedOSPlatform("ios")]
-    public static readonly AudioConverterPropertyID kAudioConverterPropertyDithering					= (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("dith"u8);
+    public static readonly AudioConverterPropertyID kAudioConverterPropertyDithering					= (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("dith");
 	/// <summary>
     /// A UInt32. Dither is applied at this bit depth.  (macOS only.)
     /// </summary>
     [UnsupportedOSPlatform("ios")]
-    public static readonly AudioConverterPropertyID kAudioConverterPropertyDitherBitDepth				= (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("dbit"u8);
+    public static readonly AudioConverterPropertyID kAudioConverterPropertyDitherBitDepth				= (AudioConverterPropertyID)MacUtils.ConstructUIntConstantValueFromString("dbit");
 }

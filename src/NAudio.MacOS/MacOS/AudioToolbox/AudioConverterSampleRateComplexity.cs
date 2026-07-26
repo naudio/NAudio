@@ -35,15 +35,15 @@ public static class AudioConverterSampleRateComplexityConstants
     /// Linear interpolation. lowest quality, cheapest.
 	/// InitialPhase and PrimeMethod properties are not operative with this mode.
     /// </summary>
-    public static readonly AudioConverterSampleRateComplexity Linear             = (AudioConverterSampleRateComplexity)MacUtils.ConstructUIntConstantValueFromString("line"u8);  // linear interpolation
+    public static readonly AudioConverterSampleRateComplexity Linear             = (AudioConverterSampleRateComplexity)MacUtils.ConstructUIntConstantValueFromString("line");  // linear interpolation
     /// <summary>
     /// Normal quality sample rate conversion.
     /// </summary>
-    public static readonly AudioConverterSampleRateComplexity Normal             = (AudioConverterSampleRateComplexity)MacUtils.ConstructUIntConstantValueFromString("norm"u8);  // normal quality range, the default
+    public static readonly AudioConverterSampleRateComplexity Normal             = (AudioConverterSampleRateComplexity)MacUtils.ConstructUIntConstantValueFromString("norm");  // normal quality range, the default
     /// <summary>
     /// Mastering quality sample rate conversion. More expensive.
     /// </summary>
-    public static readonly AudioConverterSampleRateComplexity Mastering          = (AudioConverterSampleRateComplexity)MacUtils.ConstructUIntConstantValueFromString("bats"u8);  // higher quality range, more expensive
+    public static readonly AudioConverterSampleRateComplexity Mastering          = (AudioConverterSampleRateComplexity)MacUtils.ConstructUIntConstantValueFromString("bats");  // higher quality range, more expensive
     /// <summary>
     /// Minimum phase impulse response. 
     /// Stopband attenuation varies with quality setting. <br />
@@ -62,5 +62,5 @@ public static class AudioConverterSampleRateComplexityConstants
 	/// In general, MinimumPhase performs better than Normal and Mastering for the equivalent qualities listed above.
 	/// MinimumPhase High is several times faster than Mastering Low.
     /// </summary>
-    public static readonly AudioConverterSampleRateComplexity MinimumPhase       = (AudioConverterSampleRateComplexity)MacUtils.ConstructUIntConstantValueFromString("minp"u8);	// minimum phase impulse response.
+    public static readonly AudioConverterSampleRateComplexity MinimumPhase       = (AudioConverterSampleRateComplexity)MacUtils.ConstructUIntConstantValueFromString("minp");	// minimum phase impulse response.
 }

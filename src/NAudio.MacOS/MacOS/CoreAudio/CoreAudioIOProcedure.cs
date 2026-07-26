@@ -163,9 +163,7 @@ public abstract class CoreAudioIOProcedure : SafeHandle
     protected sealed override bool ReleaseHandle()
     {
         bool value = NativeMethods.AudioDeviceDestroyIOProcID(device.objectId, handle) == ErrorConstants.kAudioHardwareNoError;
-        // We want the below to leak when the IO procedure ID cannot be freed - 
-        // in this way, we will know that something is very wrong.
-        if (value && delegateGcHandle.IsAllocated) { delegateGcHandle.Free(); }
+        if (delegateGcHandle.IsAllocated) { delegateGcHandle.Free(); }
         return value;
     }
 }

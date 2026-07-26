@@ -35,7 +35,7 @@ internal static class AudioLevelControlProperties
     /// scalar value will result in the control taking on the value nearest to what
     /// was set.
     /// </summary>
-    public static readonly AudioObjectPropertySelector kAudioLevelControlPropertyScalarValue               = (AudioObjectPropertySelector)MacUtils.ConstructUIntConstantValueFromString("lcsv"u8);
+    public static readonly AudioObjectPropertySelector kAudioLevelControlPropertyScalarValue               = (AudioObjectPropertySelector)MacUtils.ConstructUIntConstantValueFromString("lcsv");
     /// <summary>
     /// A Float32 that represents the value of the volume control in dB. Note that
     /// the set of all Float32 values in the dB range for the control is much larger
@@ -44,17 +44,17 @@ internal static class AudioLevelControlProperties
     /// values. As such, setting a dB value will result in the control taking on the
     /// value nearest to what was set.
     /// </summary>
-    public static readonly AudioObjectPropertySelector kAudioLevelControlPropertyDecibelValue              = (AudioObjectPropertySelector)MacUtils.ConstructUIntConstantValueFromString("lcdv"u8);
+    public static readonly AudioObjectPropertySelector kAudioLevelControlPropertyDecibelValue              = (AudioObjectPropertySelector)MacUtils.ConstructUIntConstantValueFromString("lcdv");
     /// <summary>
     /// An AudioValueRange that contains the minimum and maximum dB values the control can have.
     /// </summary>
-    public static readonly AudioObjectPropertySelector kAudioLevelControlPropertyDecibelRange              = (AudioObjectPropertySelector)MacUtils.ConstructUIntConstantValueFromString("lcdr"u8);
+    public static readonly AudioObjectPropertySelector kAudioLevelControlPropertyDecibelRange              = (AudioObjectPropertySelector)MacUtils.ConstructUIntConstantValueFromString("lcdr");
     /// <summary>
     /// A Float32 that on input contains a scalar volume value for the and on exit contains the equivalent dB value.
     /// </summary>
-    public static readonly AudioObjectPropertySelector kAudioLevelControlPropertyConvertScalarToDecibels   = (AudioObjectPropertySelector)MacUtils.ConstructUIntConstantValueFromString("lcsd"u8);
+    public static readonly AudioObjectPropertySelector kAudioLevelControlPropertyConvertScalarToDecibels   = (AudioObjectPropertySelector)MacUtils.ConstructUIntConstantValueFromString("lcsd");
     /// <summary>
     /// A Float32 that on input contains a dB volume value for the and on exit contains the equivalent scalar value.
     /// </summary>
-    public static readonly AudioObjectPropertySelector kAudioLevelControlPropertyConvertDecibelsToScalar   = (AudioObjectPropertySelector)MacUtils.ConstructUIntConstantValueFromString("lcds"u8);
+    public static readonly AudioObjectPropertySelector kAudioLevelControlPropertyConvertDecibelsToScalar   = (AudioObjectPropertySelector)MacUtils.ConstructUIntConstantValueFromString("lcds");
 }

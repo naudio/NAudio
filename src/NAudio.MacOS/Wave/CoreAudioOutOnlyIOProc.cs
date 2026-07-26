@@ -1,6 +1,8 @@
 
 using System;
 using System.Threading;
+
+using NAudio.Utils;
 using NAudio.MacOS.CoreAudio;
 using NAudio.MacOS.CoreAudioTypes;
 
@@ -13,16 +15,19 @@ internal sealed class CoreAudioOutOnlyIOProc : CoreAudioIOProcedure
     private Exception exception;
     private IWaveProvider provider;
     private bool shouldStopInNextCall;
+    private AudioTimeStamp nowStamp, outTimeStamp;
 
     public CoreAudioOutOnlyIOProc(AudioDevice dev)
         : base(dev)
     {
         provider = null;
         exception = null;
+        nowStamp = default;
+        outTimeStamp = default;
         shouldStopInNextCall = false;
     }
 
-    protected override void IOProcedure(nint inNow, nint inInputData, nint inInputTime, nint outOutputData, nint inOutputTime)
+    protected unsafe override void IOProcedure(nint inNow, nint inInputData, nint inInputTime, nint outOutputData, nint inOutputTime)
     {
         if (shouldStopInNextCall)
         {
@@ -87,6 +92,8 @@ internal sealed class CoreAudioOutOnlyIOProc : CoreAudioIOProcedure
                 }
             }
         }
+        nowStamp = *(AudioTimeStamp*)inNow.ToPointer();
+        outTimeStamp = *(AudioTimeStamp*)inOutputTime.ToPointer();
     }
 
     // Make sure that the dispatch of the stopped event does not cause the HAL I/O
@@ -104,6 +111,37 @@ internal sealed class CoreAudioOutOnlyIOProc : CoreAudioIOProcedure
     {
         get => provider;
         set => provider = value;
+    }
+
+    public double CurrentLatencyInSeconds(WaveFormat fmt)
+    {
+        if (
+            nowStamp.mFlags == AudioTimeStampFlags.kAudioTimeStampNothingValid ||
+            outTimeStamp.mFlags == AudioTimeStampFlags.kAudioTimeStampNothingValid
+        )
+        {
+            // We will return -1 here. The actual call in CurrentLatency will handle this special case.
+            return -1d;
+        }
+        else if (
+            nowStamp.mFlags.HasFlag(AudioTimeStampFlags.kAudioTimeStampSampleTimeValid) &&
+            outTimeStamp.mFlags.HasFlag(AudioTimeStampFlags.kAudioTimeStampSampleTimeValid)
+        )
+        {
+            return ((outTimeStamp.mSampleTime - nowStamp.mSampleTime) * fmt.BlockAlign) / fmt.AverageBytesPerSecond;
+        }
+        else if (
+            nowStamp.mFlags.HasFlag(AudioTimeStampFlags.kAudioTimeStampHostTimeValid) &&
+            outTimeStamp.mFlags.HasFlag(AudioTimeStampFlags.kAudioTimeStampHostTimeValid)
+        )
+        {
+            return CoreAudioFunctions.ConvertHostTimeToSeconds(outTimeStamp.mHostTime - nowStamp.mHostTime);
+        }
+        else
+        {
+            return MacUtils.TimeStampToSeconds(outTimeStamp, fmt) -
+                    MacUtils.TimeStampToSeconds(nowStamp, fmt);
+        }
     }
 
     public event EventHandler<StoppedEventArgs> PlaybackStopped;

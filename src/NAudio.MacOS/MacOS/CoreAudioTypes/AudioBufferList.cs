@@ -31,7 +31,7 @@ internal readonly struct AudioBufferList
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe uint GetNumberOfBuffersFromPointer(IntPtr ptr)
-        => ((AudioBufferList*)ptr)->mNumberBuffers;
+        => ptr == IntPtr.Zero ? 0U : ((AudioBufferList*)ptr)->mNumberBuffers;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe AudioBuffer GetAudioBufferFromPointer(IntPtr ptr, uint index)

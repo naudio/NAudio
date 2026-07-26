@@ -32,7 +32,7 @@ internal static class ExtendedAudioFileProperties
     /// Represents the file's actual data format. 
     /// Read-only.
     /// </summary>
-    public static readonly ExtAudioFilePropertyID kExtAudioFileProperty_FileDataFormat		    = (ExtAudioFilePropertyID)MacUtils.ConstructUIntConstantValueFromString("ffmt"u8);   // AudioStreamBasicDescription
+    public static readonly ExtAudioFilePropertyID kExtAudioFileProperty_FileDataFormat		    = (ExtAudioFilePropertyID)MacUtils.ConstructUIntConstantValueFromString("ffmt");   // AudioStreamBasicDescription
 	/// <summary>
     /// An AudioChannelLayout. <br /> <br />
     ///
@@ -47,7 +47,7 @@ internal static class ExtendedAudioFileProperties
 	///	When setting this, it must be set before the client format or channel
 	///	layout.
     /// </summary>
-    public static readonly ExtAudioFilePropertyID kExtAudioFileProperty_FileChannelLayout		= (ExtAudioFilePropertyID)MacUtils.ConstructUIntConstantValueFromString("fclo"u8);   // AudioChannelLayout
+    public static readonly ExtAudioFilePropertyID kExtAudioFileProperty_FileChannelLayout		= (ExtAudioFilePropertyID)MacUtils.ConstructUIntConstantValueFromString("fclo");   // AudioChannelLayout
 	/// <summary>
     /// An AudioStreamBasicDescription. <br /> <br />
     /// 
@@ -57,7 +57,7 @@ internal static class ExtendedAudioFileProperties
 	///	You may set this on PCM files to specify the data format used in your calls
 	///	to read/write.
     /// </summary>
-    public static readonly ExtAudioFilePropertyID kExtAudioFileProperty_ClientDataFormat		= (ExtAudioFilePropertyID)MacUtils.ConstructUIntConstantValueFromString("cfmt"u8);   // AudioStreamBasicDescription
+    public static readonly ExtAudioFilePropertyID kExtAudioFileProperty_ClientDataFormat		= (ExtAudioFilePropertyID)MacUtils.ConstructUIntConstantValueFromString("cfmt");   // AudioStreamBasicDescription
 	/// <summary>
     /// An AudioChannelLayout. Specifies the channel layout of the
 	///	AudioBufferList's passed to ExtAudioFileRead() and
@@ -66,7 +66,7 @@ internal static class ExtendedAudioFileProperties
 	///	performs the remapping. This must be set after ClientDataFormat, and the
 	///	number of channels in the layout must match.
     /// </summary>
-    public static readonly ExtAudioFilePropertyID kExtAudioFileProperty_ClientChannelLayout	    = (ExtAudioFilePropertyID)MacUtils.ConstructUIntConstantValueFromString("cclo"u8);   // AudioChannelLayout
+    public static readonly ExtAudioFilePropertyID kExtAudioFileProperty_ClientChannelLayout	    = (ExtAudioFilePropertyID)MacUtils.ConstructUIntConstantValueFromString("cclo");   // AudioChannelLayout
 	/// <summary>
     /// A UInt32 specifying the manufacturer of the codec to be used. This must be 
 	///	specified before setting kExtAudioFileProperty_ClientDataFormat, which
@@ -78,7 +78,7 @@ internal static class ExtendedAudioFileProperties
     /// </summary>
     [SupportedOSPlatform("ios4.0")]
     [SupportedOSPlatform("macos10.7")]
-    public static readonly ExtAudioFilePropertyID kExtAudioFileProperty_CodecManufacturer		= (ExtAudioFilePropertyID)MacUtils.ConstructUIntConstantValueFromString("cman"u8);	// UInt32
+    public static readonly ExtAudioFilePropertyID kExtAudioFileProperty_CodecManufacturer		= (ExtAudioFilePropertyID)MacUtils.ConstructUIntConstantValueFromString("cman");	// UInt32
 
     /// <summary>
     /// AudioConverterRef. The underlying AudioConverterRef, if any. Read-only.
@@ -96,26 +96,26 @@ internal static class ExtendedAudioFileProperties
     /// </code>
     /// </summary>
 	// read-only:
-	public static readonly ExtAudioFilePropertyID kExtAudioFileProperty_AudioConverter		    = (ExtAudioFilePropertyID)MacUtils.ConstructUIntConstantValueFromString("acnv"u8);	// AudioConverterRef
+	public static readonly ExtAudioFilePropertyID kExtAudioFileProperty_AudioConverter		    = (ExtAudioFilePropertyID)MacUtils.ConstructUIntConstantValueFromString("acnv");	// AudioConverterRef
 	/// <summary>
     /// The underlying AudioFileID. Read-only.
     /// </summary>
-    public static readonly ExtAudioFilePropertyID kExtAudioFileProperty_AudioFile				= (ExtAudioFilePropertyID)MacUtils.ConstructUIntConstantValueFromString("afil"u8);	// AudioFileID
+    public static readonly ExtAudioFilePropertyID kExtAudioFileProperty_AudioFile				= (ExtAudioFilePropertyID)MacUtils.ConstructUIntConstantValueFromString("afil");	// AudioFileID
 	/// <summary>
     /// UInt32 representing the file data format's maximum packet size in bytes.
 	/// Read-only.
     /// </summary>
-    public static readonly ExtAudioFilePropertyID kExtAudioFileProperty_FileMaxPacketSize		= (ExtAudioFilePropertyID)MacUtils.ConstructUIntConstantValueFromString("fmps"u8);	// UInt32
+    public static readonly ExtAudioFilePropertyID kExtAudioFileProperty_FileMaxPacketSize		= (ExtAudioFilePropertyID)MacUtils.ConstructUIntConstantValueFromString("fmps");	// UInt32
 	/// <summary>
     /// UInt32 representing the client data format's maximum packet size in bytes.
 	/// Read-only.
     /// </summary>
-    public static readonly ExtAudioFilePropertyID kExtAudioFileProperty_ClientMaxPacketSize	    = (ExtAudioFilePropertyID)MacUtils.ConstructUIntConstantValueFromString("cmps"u8);	// UInt32
+    public static readonly ExtAudioFilePropertyID kExtAudioFileProperty_ClientMaxPacketSize	    = (ExtAudioFilePropertyID)MacUtils.ConstructUIntConstantValueFromString("cmps");	// UInt32
 	/// <summary>
     /// SInt64 representing the file's length in sample frames. Read-only on 
 	/// non-PCM formats; writable for files in PCM formats.
     /// </summary>
-    public static readonly ExtAudioFilePropertyID kExtAudioFileProperty_FileLengthFrames		= (ExtAudioFilePropertyID)MacUtils.ConstructUIntConstantValueFromString("#frm"u8);	// SInt64
+    public static readonly ExtAudioFilePropertyID kExtAudioFileProperty_FileLengthFrames		= (ExtAudioFilePropertyID)MacUtils.ConstructUIntConstantValueFromString("#frm");	// SInt64
 	
     /// <summary>
     /// CFArrayRef representing the underlying AudioConverter's configuration, as
@@ -125,12 +125,12 @@ internal static class ExtendedAudioFileProperties
 	/// with the file's data format.
     /// </summary>
 	// writable:
-	public static readonly ExtAudioFilePropertyID kExtAudioFileProperty_ConverterConfig         = (ExtAudioFilePropertyID)MacUtils.ConstructUIntConstantValueFromString("accf"u8);   // CFPropertyListRef
+	public static readonly ExtAudioFilePropertyID kExtAudioFileProperty_ConverterConfig         = (ExtAudioFilePropertyID)MacUtils.ConstructUIntConstantValueFromString("accf");   // CFPropertyListRef
 	/// <summary>
     /// UInt32 representing the size of the buffer through which the converter
 	/// reads/writes the audio file (when there is an AudioConverter).
     /// </summary>
-    public static readonly ExtAudioFilePropertyID kExtAudioFileProperty_IOBufferSizeBytes       = (ExtAudioFilePropertyID)MacUtils.ConstructUIntConstantValueFromString("iobs"u8);	// UInt32
+    public static readonly ExtAudioFilePropertyID kExtAudioFileProperty_IOBufferSizeBytes       = (ExtAudioFilePropertyID)MacUtils.ConstructUIntConstantValueFromString("iobs");	// UInt32
 	/// <summary>
     /// void *. This is the memory buffer which the ExtAudioFileRef will use for
 	/// disk I/O when there is a conversion between the client and file data
@@ -140,7 +140,7 @@ internal static class ExtendedAudioFileProperties
 	/// subsequently set the kExtAudioFileProperty_IOBufferSizeBytes property. Note
 	/// that a pointer to a pointer should be passed to ExtAudioFileSetProperty.
     /// </summary>
-    public static readonly ExtAudioFilePropertyID kExtAudioFileProperty_IOBuffer                = (ExtAudioFilePropertyID)MacUtils.ConstructUIntConstantValueFromString("iobf"u8);	// void *
+    public static readonly ExtAudioFilePropertyID kExtAudioFileProperty_IOBuffer                = (ExtAudioFilePropertyID)MacUtils.ConstructUIntConstantValueFromString("iobf");	// void *
 	/// <summary>
     /// This AudioFilePacketTableInfo can be used both to override the priming and
 	/// remainder information in an audio file and to retrieve the current priming
@@ -184,5 +184,5 @@ internal static class ExtendedAudioFileProperties
     /// that causes the total frames accounted for by the overriding packet table
     /// info to match the count of frames produced by the file.
     /// </summary>
-    public static readonly ExtAudioFilePropertyID kExtAudioFileProperty_PacketTable             = (ExtAudioFilePropertyID)MacUtils.ConstructUIntConstantValueFromString("xpti"u8);	// AudioFilePacketTableInfo
+    public static readonly ExtAudioFilePropertyID kExtAudioFileProperty_PacketTable             = (ExtAudioFilePropertyID)MacUtils.ConstructUIntConstantValueFromString("xpti");	// AudioFilePacketTableInfo
 }

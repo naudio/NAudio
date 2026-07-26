@@ -27,5 +27,5 @@ internal static class AudioBooleanControlProperties
     /// <summary>
     /// A UInt32 where 0 means off/false and non-zero means on/true.
     /// </summary>
-    public static readonly AudioObjectPropertySelector kAudioBooleanControlPropertyValue = (AudioObjectPropertySelector)MacUtils.ConstructUIntConstantValueFromString("bcvl"u8);
+    public static readonly AudioObjectPropertySelector kAudioBooleanControlPropertyValue = (AudioObjectPropertySelector)MacUtils.ConstructUIntConstantValueFromString("bcvl");
 }

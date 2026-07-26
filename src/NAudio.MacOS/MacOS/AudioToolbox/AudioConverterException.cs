@@ -1,6 +1,7 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+
 using NAudio.MacOS.AudioToolbox.Interop;
 
 namespace NAudio.MacOS.AudioToolbox;
@@ -18,7 +19,7 @@ public sealed class AudioConverterException : AudioToolboxException
     public AudioConverterException(int osStatus) : base(osStatus) { }
 
     /// <summary>
-    /// Constructs a new instance of the <see cref="MacException"/> class with the specified 
+    /// Constructs a new instance of the <see cref="AudioConverterException"/> class with the specified 
     /// <c>OSStatus</c> error code, as well as the custom error message to provide.
     /// </summary>
     /// <param name="message">The custom error message to provide. Can be <see langword="null"/>.</param>

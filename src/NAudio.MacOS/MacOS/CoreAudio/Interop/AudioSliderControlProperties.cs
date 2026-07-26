@@ -23,9 +23,9 @@ internal static class AudioSliderControlProperties
     /// <summary>
     /// A UInt32 that represents the value of the slider control.
     /// </summary>
-    public static readonly AudioObjectPropertySelector kAudioSliderControlPropertyValue = (AudioObjectPropertySelector)MacUtils.ConstructUIntConstantValueFromString("sdrv"u8);
+    public static readonly AudioObjectPropertySelector kAudioSliderControlPropertyValue = (AudioObjectPropertySelector)MacUtils.ConstructUIntConstantValueFromString("sdrv");
     /// <summary>
     /// An array of two UInt32s that represents the inclusive range of values the slider control can take.
     /// </summary>
-    public static readonly AudioObjectPropertySelector kAudioSliderControlPropertyRange = (AudioObjectPropertySelector)MacUtils.ConstructUIntConstantValueFromString("sdrr"u8);
+    public static readonly AudioObjectPropertySelector kAudioSliderControlPropertyRange = (AudioObjectPropertySelector)MacUtils.ConstructUIntConstantValueFromString("sdrr");
 }

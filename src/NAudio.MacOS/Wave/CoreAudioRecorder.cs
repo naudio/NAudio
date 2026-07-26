@@ -361,7 +361,6 @@ public sealed class CoreAudioRecorder : IAsyncDisposable, IDisposable, IWaveLate
         // and defer it's execution to the async path instead.
         await InitializeRecordingAsync();
 
-        WaveFormat outputFormat = selectedStream.VirtualFormat;
         // Compute the latency of the device and the stream.
         // Use half of that latency to perform buffer dequeue checks more frequent.
         int averageLatency = (int)(GetLatencyInSeconds() * TimeSpan.MillisecondsPerSecond) / 2;

@@ -12,7 +12,11 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(TargetPlatformIdentifier)' == 'windows' ">
+  <!-- Derive the platform from $(TargetFramework) rather than $(TargetPlatformIdentifier):
+       the latter is set by an SDK import that runs *after* this project body, so a
+       PropertyGroup condition on it silently sees an empty value and drops the constant
+       from the Windows build. (ItemGroup conditions below evaluate later and are safe.) -->
+  <PropertyGroup Condition=" $(TargetFramework.Contains('-windows')) ">
     <DefineConstants>$(DefineConstants);WINDOWS</DefineConstants>
   </PropertyGroup>
 
@@ -34,7 +38,7 @@
   <!-- WASAPI marks "Media Foundation codecs available" for AudioFileReader. It now
        lights up with the Windows leg (same as WINDOWS). The 19041 floor on the
        Windows TFM is retained because NAudio.Midi's WinRT MIDI asset requires it. -->
-  <PropertyGroup Condition=" '$(TargetPlatformIdentifier)' == 'windows' ">
+  <PropertyGroup Condition=" $(TargetFramework.Contains('-windows')) ">
     <DefineConstants>$(DefineConstants);WASAPI</DefineConstants>
   </PropertyGroup>
 

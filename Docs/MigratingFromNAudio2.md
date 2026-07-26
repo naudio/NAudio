@@ -83,6 +83,27 @@ so existing third-party decoders such as NLayer keep working).
   per access — use `MMDevice.CreateAudioClient()`.
 - **`PropertyStore`'s raw-`PropVariant` indexer is `[Obsolete]`.** The
   `PropertyStore[int]` indexer now resolves `PropVariant` values safely.
+- **Device notifications are now event-based.** Implementing `IMMNotificationClient`
+  and calling `MMDeviceEnumerator.RegisterEndpointNotificationCallback` /
+  `UnregisterEndpointNotificationCallback` is no longer the way — the interface and
+  those methods are now `internal`. Call `MMDeviceEnumerator.CreateNotificationClient()`
+  and subscribe to the events on the returned `MMDeviceNotificationClient` instead. This
+  removes the need to implement a COM interface (and, under NAudio 3, a `[GeneratedComClass]`
+  and `<AllowUnsafeBlocks>`), and the enumerator manages the callback lifetime for you.
+  Events marshal to the `SynchronizationContext` captured when the client is created (pass
+  `useSynchronizationContext: false` to receive them on the audio worker thread instead).
+
+  ```csharp
+  // before
+  class MyClient : IMMNotificationClient { /* implement all five methods */ }
+  enumerator.RegisterEndpointNotificationCallback(new MyClient());
+
+  // after
+  var notifications = enumerator.CreateNotificationClient();
+  notifications.DefaultDeviceChanged += (s, e) => Console.WriteLine(e.DeviceId);
+  notifications.DeviceStateChanged   += (s, e) => Console.WriteLine($"{e.DeviceId} {e.NewState}");
+  // ... dispose notifications (or the enumerator) to unsubscribe
+  ```
 - Several `Mf*` Media Foundation wrapper types are now `internal`; only
   `MfActivate` and `MediaType` remain public.
 

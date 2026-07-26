@@ -391,15 +391,23 @@ public sealed class AsioDevice : IDisposable
     /// Configures the device for duplex operation: a single user-supplied callback receives input and writes output
     /// in the same buffer-switch. Used for low-latency real-time DSP (passthrough monitoring, effects, level metering with playback).
     /// </summary>
+    /// <remarks>
+    /// <see cref="AsioDuplexOptions.InputChannels"/> may be empty (or null), which configures an <em>output-only</em>
+    /// processor session: the callback writes independent per-channel <see cref="Span{Single}"/> output via
+    /// <see cref="AsioProcessBuffers.GetOutput"/> with no capture side. This is the route to driving each output channel
+    /// individually (e.g. routing different channel pairs to different speakers) without feeding a single interleaved
+    /// <see cref="IWaveProvider"/> as <see cref="InitPlayback"/> requires. <see cref="AsioDuplexOptions.OutputChannels"/>
+    /// and <see cref="AsioDuplexOptions.Processor"/> are always required.
+    /// </remarks>
     /// <exception cref="InvalidOperationException">Thrown if the device has already been configured.</exception>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="options"/> is null.</exception>
-    /// <exception cref="ArgumentException">Thrown if the input or output channel selection is invalid, or the processor is missing.</exception>
+    /// <exception cref="ArgumentException">Thrown if the output channel selection is invalid or empty, the (optional) input channel selection is invalid, or the processor is missing.</exception>
     /// <exception cref="NotSupportedException">Thrown if the selected channels use a native format outside Int16LSB/Int24LSB/Int32LSB/Float32LSB, or mix formats.</exception>
     public void InitDuplex(AsioDuplexOptions options)
     {
         if (options is null) throw new ArgumentNullException(nameof(options));
-        if (options.InputChannels is null || options.InputChannels.Length == 0)
-            throw new ArgumentException($"{nameof(AsioDuplexOptions)}.{nameof(options.InputChannels)} is required and must contain at least one channel.", nameof(options));
+        // Input channels are optional: an empty/null selection configures an output-only processor session
+        // (independent per-channel Span<float> writes with no capture). Outputs and a processor are always required.
         if (options.OutputChannels is null || options.OutputChannels.Length == 0)
             throw new ArgumentException($"{nameof(AsioDuplexOptions)}.{nameof(options.OutputChannels)} is required and must contain at least one channel.", nameof(options));
         if (options.Processor is null)
@@ -407,15 +415,22 @@ public sealed class AsioDevice : IDisposable
         ThrowIfDisposed();
         ThrowIfNotUnconfigured();
 
-        int[] inputChannels = options.InputChannels;
+        int[] inputChannels = options.InputChannels ?? Array.Empty<int>();
         int[] outputChannels = options.OutputChannels;
-        ValidateChannelIndices(inputChannels, driver.Capabilities.NbInputChannels, nameof(options) + "." + nameof(options.InputChannels), isInput: true);
+        bool hasInputs = inputChannels.Length > 0;
+        if (hasInputs)
+            ValidateChannelIndices(inputChannels, driver.Capabilities.NbInputChannels, nameof(options) + "." + nameof(options.InputChannels), isInput: true);
         ValidateChannelIndices(outputChannels, driver.Capabilities.NbOutputChannels, nameof(options) + "." + nameof(options.OutputChannels), isInput: false);
 
         // Phase 0 finding F3 — every selected channel on each side must share a single supported native format.
-        var inputFormat = ValidateUniformInputFormat(inputChannels);
+        // With no inputs there is nothing to validate or convert on the capture side.
+        var inputFormat = default(AsioSampleType);
+        if (hasInputs)
+        {
+            inputFormat = ValidateUniformInputFormat(inputChannels);
+            duplexInputConverter = AsioNativeToFloatConverter.Select(inputFormat);
+        }
         var outputFormat = ValidateUniformOutputFormat(outputChannels);
-        duplexInputConverter = AsioNativeToFloatConverter.Select(inputFormat);
         duplexOutputConverter = AsioFloatToNativeConverter.Select(outputFormat);
 
         int sampleRate = options.SampleRate ?? (int)driver.Capabilities.SampleRate;
@@ -451,7 +466,8 @@ public sealed class AsioDevice : IDisposable
             OutputFloatBuffers = outputFloatBuffers,
             InputNativeBuffers = new IntPtr[inputChannels.Length],
             OutputNativeBuffers = new IntPtr[outputChannels.Length],
-            InputNativeBytesPerChannel = framesPerBuffer * AsioNativeToFloatConverter.BytesPerSample(inputFormat),
+            // BytesPerSample throws on the default (unset) format, so only compute it when there are inputs.
+            InputNativeBytesPerChannel = hasInputs ? framesPerBuffer * AsioNativeToFloatConverter.BytesPerSample(inputFormat) : 0,
             OutputNativeBytesPerChannel = framesPerBuffer * AsioNativeToFloatConverter.BytesPerSample(outputFormat),
             OutputRawAccessed = new bool[outputChannels.Length],
             Valid = false
@@ -856,7 +872,7 @@ public sealed class AsioDevice : IDisposable
 
     private static AsioDuplexOptions Snapshot(AsioDuplexOptions o) => new()
     {
-        InputChannels = (int[])o.InputChannels.Clone(),
+        InputChannels = o.InputChannels is null ? null : (int[])o.InputChannels.Clone(),
         OutputChannels = (int[])o.OutputChannels.Clone(),
         SampleRate = o.SampleRate,
         BufferSize = o.BufferSize,

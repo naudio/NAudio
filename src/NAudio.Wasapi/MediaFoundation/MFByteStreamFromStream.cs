@@ -26,20 +26,50 @@ internal sealed partial class MfByteStreamFromStream : IMFByteStream, IMFAttribu
     private IntPtr nativeAttributesPtr;
     private IMFAttributes nativeAttributesRcw;
 
-    public MfByteStreamFromStream(Stream stream, bool detectContentType = true)
+    /// <param name="stream">The stream to wrap.</param>
+    /// <param name="detectContentType">
+    /// When <see langword="true"/> and no explicit <paramref name="contentType"/> or
+    /// <paramref name="originName"/> hint is supplied, the leading bytes of the stream are
+    /// sniffed to set a content-type hint automatically.
+    /// </param>
+    /// <param name="contentType">
+    /// Optional MIME type hint (e.g. <c>"audio/ogg"</c>) exposed to the source resolver as
+    /// <c>MF_BYTESTREAM_CONTENT_TYPE</c>. When supplied it takes precedence over sniffing.
+    /// </param>
+    /// <param name="originName">
+    /// Optional file name or URL whose extension identifies the format (e.g. <c>"track.ogg"</c>),
+    /// exposed to the source resolver as <c>MF_BYTESTREAM_ORIGIN_NAME</c>. This is the same
+    /// extension-based route the file-based reader uses via <c>MFCreateSourceReaderFromURL</c>.
+    /// </param>
+    public MfByteStreamFromStream(Stream stream, bool detectContentType = true, string contentType = null, string originName = null)
     {
         this.stream = stream;
         try { wrapperInitialPosition = stream.Position; } catch { wrapperInitialPosition = 0; }
-        (nativeAttributesPtr, nativeAttributesRcw) = MediaFoundationApi.CreateAttributes(1);
-        if (detectContentType)
+        // Room for up to two byte-stream hints (content type + origin name).
+        (nativeAttributesPtr, nativeAttributesRcw) = MediaFoundationApi.CreateAttributes(2);
+
+        // A caller-supplied origin name lets Media Foundation's source resolver pick a
+        // byte-stream handler by file extension - the same route the file-based
+        // MediaFoundationReader uses via MFCreateSourceReaderFromURL.
+        if (!string.IsNullOrEmpty(originName))
         {
+            nativeAttributesRcw.SetString(MfByteStreamAttributes.OriginName, originName);
+        }
+
+        if (!string.IsNullOrEmpty(contentType))
+        {
+            // An explicit MIME hint wins over content sniffing.
+            nativeAttributesRcw.SetString(MfByteStreamAttributes.ContentType, contentType);
+        }
+        else if (string.IsNullOrEmpty(originName) && detectContentType)
+        {
+            // No explicit hint supplied: fall back to sniffing the leading bytes.
             // The only way for the below to throw an exception is a critical one,
             // which eitherwise will terminate soon the process, so we are OK and we do not need EH for this.
             AudioFileFormat fmt = new AudioFileFormatFinder().AddDefaultFileFormats().FindFormat(this.stream);
             if (fmt is not null)
             {
-                Guid t = MfByteStreamAttributes.ContentType;
-                nativeAttributesRcw.SetString(t, fmt.MimeType);
+                nativeAttributesRcw.SetString(MfByteStreamAttributes.ContentType, fmt.MimeType);
             }
         }
     }

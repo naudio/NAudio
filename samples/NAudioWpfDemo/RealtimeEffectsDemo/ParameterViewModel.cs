@@ -25,6 +25,14 @@ internal class ParameterViewModel : ViewModelBase
 
     public double Maximum => parameter.Maximum;
 
+    // Slider's default SmallChange/LargeChange are absolute (0.1 and 1), which makes no sense
+    // for data-driven ranges: on a 0..1 Mix a single Page-Up crosses the whole range, while on
+    // a 20..20000 Hz cutoff it moves the thumb imperceptibly. Scale them to the range instead —
+    // 1% per arrow key, 10% per page.
+    public double SmallChange => (Maximum - Minimum) / 100.0;
+
+    public double LargeChange => (Maximum - Minimum) / 10.0;
+
     public bool ShowSlider => parameter.Kind == EffectParameterKind.Continuous;
 
     public bool ShowToggle => parameter.Kind == EffectParameterKind.Toggle;

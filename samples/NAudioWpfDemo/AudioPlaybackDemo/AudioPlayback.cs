@@ -1,21 +1,55 @@
-﻿using System;
+using System;
 using System.Windows;
 using NAudio.Extras;
 using NAudio.Wave;
+using NAudio.Wave.SampleProviders;
 
 namespace NAudioWpfDemo.AudioPlaybackDemo;
 
 internal class AudioPlayback : IDisposable
 {
     private IWavePlayer playbackDevice;
-    private WaveStream fileStream;
+    private AudioFileReader fileStream;
+    private VolumeSampleProvider volumeProvider;
+    private float volume = 1.0f;
 
     public event EventHandler<FftEventArgs> FftCalculated;
 
     public event EventHandler<MaxSampleEventArgs> MaximumCalculated;
 
+    /// <summary>Raised when the output device stops, including when the file plays to its end.</summary>
+    public event EventHandler<StoppedEventArgs> PlaybackStopped;
+
     /// <summary>Sample rate of the most recently opened file, in Hz. Zero until a file is loaded.</summary>
     public int SampleRate { get; private set; }
+
+    /// <summary>
+    /// Linear output gain. Applied after the <see cref="SampleAggregator"/> so that turning the
+    /// monitoring volume down doesn't flatten the visualisation — what you see stays the file's
+    /// own level.
+    /// </summary>
+    public float Volume
+    {
+        get => volume;
+        set
+        {
+            volume = value;
+            if (volumeProvider != null) volumeProvider.Volume = value;
+        }
+    }
+
+    public TimeSpan CurrentTime
+    {
+        get => fileStream?.CurrentTime ?? TimeSpan.Zero;
+        set
+        {
+            if (fileStream != null) fileStream.CurrentTime = value;
+        }
+    }
+
+    public TimeSpan TotalTime => fileStream?.TotalTime ?? TimeSpan.Zero;
+
+    public bool HasFile => fileStream != null;
 
     public void Load(string fileName)
     {
@@ -29,6 +63,7 @@ internal class AudioPlayback : IDisposable
     {
         fileStream?.Dispose();
         fileStream = null;
+        volumeProvider = null;
     }
 
     private void OpenFile(string fileName)
@@ -48,7 +83,8 @@ internal class AudioPlayback : IDisposable
             aggregator.PerformFFT = true;
             aggregator.FftCalculated += (s, a) => FftCalculated?.Invoke(this, a);
             aggregator.MaximumCalculated += (s, a) => MaximumCalculated?.Invoke(this, a);
-            playbackDevice.Init(aggregator);
+            volumeProvider = new VolumeSampleProvider(aggregator) { Volume = volume };
+            playbackDevice.Init(volumeProvider);
         }
         catch (Exception e)
         {
@@ -68,6 +104,7 @@ internal class AudioPlayback : IDisposable
     private void CreateDevice()
     {
         playbackDevice = new WaveOut { BufferMilliseconds = 200 };
+        playbackDevice.PlaybackStopped += (s, a) => PlaybackStopped?.Invoke(this, a);
     }
 
     public void Play()

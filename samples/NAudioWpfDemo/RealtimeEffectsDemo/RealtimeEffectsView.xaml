@@ -20,6 +20,8 @@
 
                 <Slider Grid.Column="1" VerticalAlignment="Center" Margin="4,0"
                         Minimum="{Binding Minimum}" Maximum="{Binding Maximum}"
+                        SmallChange="{Binding SmallChange}" LargeChange="{Binding LargeChange}"
+                        IsMoveToPointEnabled="True"
                         Value="{Binding Value, Mode=TwoWay}"
                         Visibility="{Binding ShowSlider, Converter={StaticResource BoolToVis}}" />
                 <CheckBox Grid.Column="1" VerticalAlignment="Center" Margin="4,0"
@@ -65,6 +67,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="Mix" VerticalAlignment="Center" />
                         <Slider Grid.Column="1" Minimum="0" Maximum="1" Margin="4,0"
+                                SmallChange="0.01" LargeChange="0.1" IsMoveToPointEnabled="True"
                                 VerticalAlignment="Center" Value="{Binding Mix, Mode=TwoWay}" />
                     </Grid>
                     <ItemsControl ItemsSource="{Binding Parameters}" />

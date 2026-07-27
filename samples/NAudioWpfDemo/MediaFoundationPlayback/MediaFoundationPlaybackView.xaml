@@ -17,9 +17,10 @@
         <Button Grid.Row="1" Content="Stop" Command="{Binding StopCommand}" HorizontalAlignment="Left" Margin="171,73.08,0,0" VerticalAlignment="Top" Width="75" />
         <Label Grid.Row="1" Content="Default PCM decompression format:" HorizontalAlignment="Left" Margin="11,34.08,0,0" VerticalAlignment="Top" />
         <Label Grid.Row="1" Content="{Binding DefaultDecompressionFormat}" HorizontalAlignment="Left" Margin="211,34.08,0,0" VerticalAlignment="Top" />
-        <Canvas Grid.Row="1" Name="waveFormCanvas" Background="Black" HorizontalAlignment="Left" Height="48" Margin="11,127.08,0,0" VerticalAlignment="Top" Width="480"  />
 
-        <Slider Grid.Row="1" Margin="11,100.08,19,0" VerticalAlignment="Top" Value="{Binding SliderPosition, Mode=TwoWay}"  />
+        <!-- Maximum must match MediaFoundationPlaybackViewModel.SliderMax -->
+        <Slider Grid.Row="1" Margin="11,100.08,19,0" VerticalAlignment="Top" Value="{Binding SliderPosition, Mode=TwoWay}"
+                Minimum="0" Maximum="10" IsMoveToPointEnabled="True" SmallChange="0.1" LargeChange="1" />
         <CheckBox Grid.Row="1" IsEnabled="{Binding IsStopped}" Content="Request IEEE Float" IsChecked="{Binding RequestFloatOutput, Mode=TwoWay}" HorizontalAlignment="Left" Margin="367,76.08,0,0" VerticalAlignment="Top" />
         <TextBlock HorizontalAlignment="Left" Margin="11,11.08,0,0" Grid.Row="1" TextWrapping="Wrap" Text="Selected File or URL:" VerticalAlignment="Top"/>
         <ComboBox Text="{Binding InputPath, Mode=TwoWay}" ItemsSource="{Binding InputPathHistory}" Margin="126,10.08,49,0" Grid.Row="1" VerticalAlignment="Top" IsEditable="True"/>

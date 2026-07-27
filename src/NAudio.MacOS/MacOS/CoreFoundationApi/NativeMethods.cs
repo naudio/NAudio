@@ -102,6 +102,10 @@ internal static partial class NativeMethods
     [LibraryImport(MacLibraries.CoreFoundation)]
     public static partial IntPtr CFURLCreateWithString(IntPtr allocator, IntPtr URLString, IntPtr baseURL);
 
+    // CF_EXPORT CFURLRef CFURLCreateWithFileSystemPath(CFAllocatorRef allocator, CFStringRef filePath, CFURLPathStyle pathStyle, Boolean isDirectory);
+    [LibraryImport(MacLibraries.CoreFoundation)]
+    public static partial IntPtr CFURLCreateWithFileSystemPath(IntPtr allocator, IntPtr filePath, CFURLPathStyle pathStyle, MacBoolean isDirectory);
+
     // CF_EXPORT CFStringRef CFURLGetString(CFURLRef anURL);
     [LibraryImport(MacLibraries.CoreFoundation)]
     public static partial IntPtr CFURLGetString(IntPtr anURL);
@@ -140,4 +144,23 @@ internal static partial class NativeMethods
 
     #endregion
 
+    #region CFArray native methods
+
+    // CF_EXPORT CFIndex CFArrayGetCount(CFArrayRef theArray);
+    [LibraryImport(MacLibraries.CoreFoundation)]
+    public static partial CFIndex CFArrayGetCount(IntPtr theArray);
+
+    // CF_EXPORT const void *CFArrayGetValueAtIndex(CFArrayRef theArray, CFIndex idx);
+    [LibraryImport(MacLibraries.CoreFoundation)]
+    public static partial IntPtr CFArrayGetValueAtIndex(IntPtr theArray, CFIndex idx);
+
+    // CF_EXPORT void CFArrayGetValues(CFArrayRef theArray, CFRange range, const void **values);
+    [LibraryImport(MacLibraries.CoreFoundation)]
+    public static partial void CFArrayGetValues(IntPtr theArray, CFRange range, IntPtr values);
+
+    // CF_EXPORT CFArrayRef CFArrayCreateCopy(CFAllocatorRef allocator, CFArrayRef theArray);
+    [LibraryImport(MacLibraries.CoreFoundation)]
+    public static partial IntPtr CFArrayCreateCopy(IntPtr allocator, IntPtr theArray);
+
+    #endregion
 }

@@ -222,11 +222,10 @@ public sealed class CoreAudioRecorder : IAsyncDisposable, IDisposable, IWaveLate
     private double GetLatencyInSeconds()
     {
         // Here, the direct virtual format from the stream suffices.
-        var cf = selectedStream.VirtualFormat;
-        return ((
+        return (
             selectedDevice.GetDeviceLatency(AudioObjectPropertyScopeConstants.Input) +
             selectedStream.Latency
-        ) * cf.BlockAlign) / (double)cf.AverageBytesPerSecond;
+        ) / selectedStream.VirtualFormat.SampleRate;
     }
 
     private WaveFormat ConstructCaptureFormat()

@@ -39,4 +39,16 @@ public readonly struct CFRange
         this.length = new CFIndex(length);
         this.location = new CFIndex(location);
     }
+
+    /// <summary>
+    /// Initializes a CFRange structure. <br />
+    /// This corresponds to the <c>CFRangeMake</c> function in native code.
+    /// </summary>
+    /// <param name="location">The starting location of the range.</param>
+    /// <param name="length">The length of the range.</param>
+    public CFRange(long location, long length)
+    {
+        this.length = new CFIndex(new nint(length));
+        this.location = new CFIndex(new nint(location));
+    }
 }

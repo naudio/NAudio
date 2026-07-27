@@ -61,6 +61,19 @@ internal sealed class CFURL : AbstractCoreFoundationObject
         ));
     }
 
+    public static CFURL CreateFromFilePath(string filePath, bool isDir)
+    {
+        ArgumentNullException.ThrowIfNull(filePath);
+        using CFString c = CFString.CreateFromString(filePath);
+        using CFAllocator allc = CFAllocator.GetDefault();
+        return new(NativeMethods.CFURLCreateWithFileSystemPath(
+            allc.DangerousGetObject(),
+            c.DangerousGetObject(),
+            CFURLPathStyle.kCFURLPOSIXPathStyle,
+            isDir ? MacBoolean.True : MacBoolean.False
+        ));
+    }
+
     /// <summary>Gets the base URL of this URL object, if any.</summary>
     /// <returns>A new <see cref="CFURL"/> instance containing the base URL.</returns>
     [return: MaybeNull]

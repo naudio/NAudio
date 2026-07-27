@@ -10,7 +10,7 @@ using NAudio.MacOS.CoreAudio;
 namespace NAudio.Wave;
 
 /// <summary>
-/// Provides an audio player based on the Apple's HAL framework library, 
+/// Provides an audio player based on the Apple's Audio HAL framework library, 
 /// namely the Core Audio Framework. <br />
 /// The user provides the audio device to perform playback upon, 
 /// the audio provider to do playback for, and the rest are managed by this class.
@@ -377,8 +377,7 @@ public sealed class CoreAudioPlayer : IWavePlayer, IWavePosition, IWaveLatency
         {
             ThrowIfInvalid();
             double latencyFrames = device.GetDeviceLatency(AudioObjectPropertyScopeConstants.Output) + selectedStream.Latency;
-            var vf = selectedStream.VirtualFormat;
-            return TimeSpan.FromSeconds((latencyFrames * vf.BlockAlign) / vf.AverageBytesPerSecond);
+            return TimeSpan.FromSeconds(latencyFrames / selectedStream.VirtualFormat.SampleRate);
         }
     }
 
@@ -393,8 +392,8 @@ public sealed class CoreAudioPlayer : IWavePlayer, IWavePosition, IWaveLatency
             if (timeInSeconds == -1d)
             {
                 timeInSeconds =
-                    ((device.GetDeviceLatency(AudioObjectPropertyScopeConstants.Output)
-                        + selectedStream.Latency) * vf.BlockAlign) / (double)vf.AverageBytesPerSecond;
+                    (device.GetDeviceLatency(AudioObjectPropertyScopeConstants.Output)
+                        + selectedStream.Latency) / (double)vf.SampleRate;
             }
             return TimeSpan.FromSeconds(timeInSeconds);
         }

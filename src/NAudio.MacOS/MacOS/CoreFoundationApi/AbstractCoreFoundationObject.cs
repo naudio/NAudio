@@ -124,14 +124,14 @@ internal abstract class AbstractCoreFoundationObject
         try
         {
             ThrowIfInvalidOrDisposed();
-            nint handle_value = this.handle;
+            nint handleValue = this.handle;
             if (ReferenceCount == 1L)
             {
                 // This means that the object is going to be released. 
                 // As such, set the object as invalid.
                 SetHandleAsInvalid();
             }
-            NativeMethods.CFRelease(handle_value);
+            NativeMethods.CFRelease(handleValue);
         }
         finally
         {

@@ -25,5 +25,5 @@ internal enum AudioFileFlags : uint
 	/// the data to 4KB boundaries. This makes reading the data more efficient. 
 	/// When disk space is a concern, this flag can be set so that the padding will not be added.
     /// </summary>
-	kAudioFileFlags_DontPageAlignAudioData = 2
+	DontPageAlignAudioData = 2
 }

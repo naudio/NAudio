@@ -128,7 +128,7 @@ internal sealed class CoreAudioOutOnlyIOProc : CoreAudioIOProcedure
             outTimeStamp.mFlags.HasFlag(AudioTimeStampFlags.kAudioTimeStampSampleTimeValid)
         )
         {
-            return ((outTimeStamp.mSampleTime - nowStamp.mSampleTime) * fmt.BlockAlign) / fmt.AverageBytesPerSecond;
+            return (outTimeStamp.mSampleTime - nowStamp.mSampleTime) / fmt.SampleRate;
         }
         else if (
             nowStamp.mFlags.HasFlag(AudioTimeStampFlags.kAudioTimeStampHostTimeValid) &&

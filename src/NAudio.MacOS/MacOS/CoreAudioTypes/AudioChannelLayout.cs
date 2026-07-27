@@ -38,12 +38,12 @@ internal struct AudioChannelLayout
     public AudioChannelDescription mChannelDescriptions; // this is a variable length array of mNumberChannelDescriptions elements
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe AudioChannelDescription GetChannelDescription(IntPtr layout, uint description_index)
-        => (&((AudioChannelLayout*)layout)->mChannelDescriptions)[description_index];
+    public static unsafe AudioChannelDescription GetChannelDescription(IntPtr layout, uint descriptionIndex)
+        => (&((AudioChannelLayout*)layout)->mChannelDescriptions)[descriptionIndex];
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe void SetChannelDescription(IntPtr layout, uint description_index, AudioChannelDescription desc)
-        => (&((AudioChannelLayout*)layout)->mChannelDescriptions)[description_index] = desc;
+    public static unsafe void SetChannelDescription(IntPtr layout, uint descriptionIndex, AudioChannelDescription desc)
+        => (&((AudioChannelLayout*)layout)->mChannelDescriptions)[descriptionIndex] = desc;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe AudioChannelLayoutTag GetAudioChannelLayoutTag(IntPtr layout)

@@ -2,6 +2,7 @@
 using System;
 using System.Runtime.Versioning;
 using System.Runtime.InteropServices;
+using System.Diagnostics.CodeAnalysis;
 
 using NAudio.MacOS.CoreAudioTypes;
 
@@ -579,7 +580,7 @@ internal static partial class NativeMethods
 
     /// <summary>
     /// Wipe clean an existing file. 
-    /// ou provide callbacks that the AudioFile API will use to get the data.
+    /// You provide callbacks that the AudioFile API will use to get the data.
     /// </summary>
     /// <param name="inClientData">a constant that will be passed to your callbacks.</param>
     /// <param name="inReadFunc">a function that will be called when AudioFile needs to read data.</param>
@@ -661,6 +662,57 @@ internal static partial class NativeMethods
     [SupportedOSPlatform("macos10.2")]
     [LibraryImport(MacLibraries.AudioToolbox)]
     public static partial int AudioFileClose(IntPtr inAudioFile);
+
+    /*
+    extern OSStatus
+    AudioFileGetGlobalInfoSize(		AudioFilePropertyID		inPropertyID,
+                                    UInt32					inSpecifierSize,
+                                    void * __nullable		inSpecifier,
+                                    UInt32					*outDataSize)		API_AVAILABLE(macos(10.3), ios(2.0), watchos(2.0), tvos(9.0));
+    */
+
+    /// <summary>Get the size of a global property.</summary>
+    /// <param name="inPropertyID">an AudioFileGlobalInfo property constant.</param>
+    /// <param name="inSpecifierSize">The size of the specifier data.</param>
+    /// <param name="inSpecifier">A specifier is a buffer of data used as an input argument to some of the global info properties.</param>
+    /// <param name="outDataSize">the size in bytes of the current value of the property. In order to get the property value, you will need a buffer of this size.</param>
+    /// <returns>returns noErr if successful.</returns>
+    [SupportedOSPlatform("ios2.0")]
+    [SupportedOSPlatform("macos10.3")]
+    [LibraryImport(MacLibraries.AudioToolbox)]
+    public static partial int AudioFileGetGlobalInfoSize(
+        AudioFilePropertyID inPropertyID,
+        uint inSpecifierSize,
+        [AllowNull] IntPtr inSpecifier,
+        out uint outDataSize
+    );
+
+    /*
+    extern OSStatus
+    AudioFileGetGlobalInfo(			AudioFilePropertyID		inPropertyID,
+                                    UInt32					inSpecifierSize,
+                                    void * __nullable		inSpecifier,
+                                    UInt32					*ioDataSize,
+                                    void					*outPropertyData)	API_AVAILABLE(macos(10.3), ios(2.0), watchos(2.0), tvos(9.0));
+    */
+
+    /// <summary>Copies the value for a global property into a buffer.</summary>
+    /// <param name="inPropertyID">an AudioFileGlobalInfo property constant.</param>
+    /// <param name="inSpecifierSize">The size of the specifier data.</param>
+    /// <param name="inSpecifier">A specifier is a buffer of data used as an input argument to some of the global info properties.</param>
+    /// <param name="ioDataSize">on input the size of the outPropertyData buffer. On output the number of bytes written to the buffer.</param>
+    /// <param name="outPropertyData">the buffer in which to write the property data.</param>
+    /// <returns>returns noErr if successful.</returns>
+    [SupportedOSPlatform("ios2.0")]
+    [SupportedOSPlatform("macos10.3")]
+    [LibraryImport(MacLibraries.AudioToolbox)]
+    public static partial int AudioFileGetGlobalInfo(
+        AudioFilePropertyID inPropertyID,
+        uint inSpecifierSize,
+        [AllowNull] IntPtr inSpecifier,
+        ref uint ioDataSize,
+        IntPtr outPropertyData
+    );
 
     #endregion
 }

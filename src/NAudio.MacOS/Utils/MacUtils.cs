@@ -147,12 +147,12 @@ internal static class MacUtils
                 throw new NotSupportedException("Unsigned integer formats are not supported by NAudio.");
             }
             int blkAlign = (int)description.mBytesPerFrame;
-            int total_sample_bits = (blkAlign / channels) * 8;
-            if (total_sample_bits != description.mBitsPerChannel || channelMaskIfNeeded != Speakers.None)
+            int totalSampleBits = (blkAlign / channels) * 8;
+            if (totalSampleBits != description.mBitsPerChannel || channelMaskIfNeeded != Speakers.None)
             {
                 return new WaveFormatExtensible(
                     sampleRate,
-                    total_sample_bits,
+                    totalSampleBits,
                     channels,
                     IeeeFloat,
                     (int)description.mBitsPerChannel,
@@ -235,7 +235,7 @@ internal static class MacUtils
         return layout;
     }
 
-    public static Speakers ConstructSpeakersValue(IntPtr layout, out bool needs_translation, out bool needs_extensible)
+    public static Speakers ConstructSpeakersValue(IntPtr layout, out bool needsTranslation, out bool needsExtensible)
     {
         // mdcdi1315: This method tries at the best effort to decode the AudioChannelLayout and 
         // convert it into a valid Speakers combination, but there are technical challenges around it:
@@ -264,26 +264,28 @@ internal static class MacUtils
         // 3. Several channels in tags are misleading; for example, how does "rear left surround" 
         // translate to Speakers enum, and most important, if there is a 1-1 mapping for it we use 
         // that, or we must manufacture it.
-        needs_extensible = false;
-        needs_translation = false;
+        needsExtensible = false;
+        needsTranslation = false;
         AudioChannelLayoutTag tag = AudioChannelLayout.GetAudioChannelLayoutTag(layout);
         if (tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_UseChannelBitmap))
         {
-            needs_extensible = true;
-            return (Speakers)AudioChannelLayout.GetAudioChannelBitmap(layout);
+            var sp = (Speakers)AudioChannelLayout.GetAudioChannelBitmap(layout);
+            needsExtensible = sp != Speakers.None;
+            return sp;
         }
         else if (tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_UseChannelDescriptions))
         {
-            Speakers returnValue = 0;
+            var returnValue = Speakers.None;
             uint nDescriptions = AudioChannelLayout.GetNumberOfChannelDescriptions(layout);
             for (uint I = 0; I < nDescriptions; I++)
             {
-                AudioChannelDescription desc = AudioChannelLayout.GetChannelDescription(layout, I);
-                returnValue |= DecodeAudioChannelLabel(desc.mChannelLabel);
+                returnValue |= DecodeAudioChannelLabel(
+                    AudioChannelLayout.GetChannelDescription(layout, I).mChannelLabel
+                );
             }
             // Probably it needs translation, because the channels can be in any possible order.
-            needs_translation = true;
-            needs_extensible = true; // And we also need a WaveFormatExtensible.
+            needsTranslation = returnValue != Speakers.None;
+            needsExtensible = returnValue != Speakers.None; // And we also need a WaveFormatExtensible.
             return returnValue;
         }
         else if (tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_Mono))
@@ -300,33 +302,33 @@ internal static class MacUtils
         else
         {
             // All of the below formats are complex; WaveFormatExtensible needs to get in.
-            needs_extensible = true;
+            needsExtensible = true;
             if (tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_Quadraphonic))
             {
                 return Speakers.Quad;
             }
             else if (tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_Pentagonal))
             {
-                needs_translation = true;
+                needsTranslation = true;
                 return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter | Speakers.SideLeft | Speakers.SideRight;
             }
             else if (tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_Hexagonal))
             {
-                needs_translation = true;
+                needsTranslation = true;
                 return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter |
                 Speakers.SideLeft | Speakers.SideRight | Speakers.BackCenter;
             }
             else if (
                 tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_3_0_A) ||
                 // Same thing, but in different order.
-                (needs_translation = tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_3_0_B))
+                (needsTranslation = tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_3_0_B))
             )
             {
                 return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter;
             }
             else if (
                 tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_4_0_A) ||
-                (needs_translation =
+                (needsTranslation =
                     // Same thing, but in different orders.
                     tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_4_0_B) ||
                     tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_Logic_4_0_C)
@@ -337,7 +339,7 @@ internal static class MacUtils
             }
             else if (
                 tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_5_0_A) ||
-                (needs_translation = (
+                (needsTranslation = (
                     // Same thing, but in different orders.
                     tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_5_0_B) ||
                     tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_5_0_C) ||
@@ -349,7 +351,7 @@ internal static class MacUtils
             }
             else if (
                 tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_5_1_A) ||
-                (needs_translation = (
+                (needsTranslation = (
                     // Same thing, but in different orders.
                     tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_5_1_B) ||
                     tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_5_1_C) ||
@@ -370,7 +372,7 @@ internal static class MacUtils
             }
             else if (
                 tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_7_1_A) ||
-                (needs_translation = (
+                (needsTranslation = (
                     // Same thing, but in different orders.
                     tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_7_1_B) ||
                     tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_MPEG_7_1_C) ||
@@ -409,7 +411,7 @@ internal static class MacUtils
                 tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_AC3_3_0_1)
             )
             {
-                needs_translation = true;
+                needsTranslation = true;
                 return Speakers.FrontLeft | Speakers.FrontRight | Speakers.LowFrequency | Speakers.FrontCenter;
             }
             else if (
@@ -417,23 +419,23 @@ internal static class MacUtils
                 tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_AC3_3_1_1)
             )
             {
-                needs_translation = true;
+                needsTranslation = true;
                 return Speakers.FrontLeft | Speakers.FrontRight | Speakers.LowFrequency | Speakers.FrontCenter | Speakers.BackCenter;
             }
             else if (tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_DVD_18))
             {
-                needs_translation = true;
+                needsTranslation = true;
                 return Speakers.FrontLeft | Speakers.FrontRight | Speakers.LowFrequency | Speakers.BackLeft | Speakers.BackRight;
             }
             else if (tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_AudioUnit_6_0))
             {
-                needs_translation = true;
+                needsTranslation = true;
                 return Speakers.FrontLeft | Speakers.FrontRight | Speakers.BackLeft |
                 Speakers.BackRight | Speakers.FrontCenter | Speakers.BackCenter;
             }
             else if (tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_AudioUnit_7_0))
             {
-                needs_translation = true;
+                needsTranslation = true;
                 return Speakers.FrontLeft | Speakers.FrontRight | Speakers.BackLeft |
                 Speakers.BackRight | Speakers.FrontCenter
                 // mdcdi1315: TODO: Find whether these two below are correct.
@@ -441,7 +443,7 @@ internal static class MacUtils
             }
             else if (tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_AudioUnit_7_0_Front))
             {
-                needs_translation = true;
+                needsTranslation = true;
                 return Speakers.FrontLeft | Speakers.FrontRight | Speakers.BackLeft |
                 Speakers.BackRight | Speakers.FrontCenter | Speakers.FrontLeftOfCenter |
                 Speakers.FrontRightOfCenter;
@@ -452,22 +454,22 @@ internal static class MacUtils
             }
             else if (tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_AC3_3_0))
             {
-                needs_translation = true;
+                needsTranslation = true;
                 return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter;
             }
             else if (tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_AC3_3_1))
             {
-                needs_translation = true;
+                needsTranslation = true;
                 return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter | Speakers.BackCenter;
             }
             else if (tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_AC3_2_1_1))
             {
-                needs_translation = true;
+                needsTranslation = true;
                 return Speakers.FrontLeft | Speakers.FrontRight | Speakers.BackCenter | Speakers.LowFrequency;
             }
             else if (tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_AC3_3_1_1))
             {
-                needs_translation = true;
+                needsTranslation = true;
                 return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter | Speakers.BackCenter | Speakers.LowFrequency;
             }
             else if (tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_WAVE_4_0_B))
@@ -496,12 +498,12 @@ internal static class MacUtils
             }
             else if (tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_WAVE_6_1))
             {
-                needs_translation = true;
+                needsTranslation = true;
                 return Speakers.FrontLeft | Speakers.FrontRight | Speakers.FrontCenter | Speakers.LowFrequency | Speakers.BackCenter | Speakers.BackLeft | Speakers.BackRight;
             }
             else if (tag.HasFlag(AudioChannelLayoutTag.kAudioChannelLayoutTag_WAVE_7_1))
             {
-                needs_translation = true;
+                needsTranslation = true;
                 return Speakers.Surround71;
             }
             else
@@ -532,7 +534,7 @@ internal static class MacUtils
     {
         if (stamp.mFlags.HasFlag(AudioTimeStampFlags.kAudioTimeStampSampleTimeValid))
         {
-            return (stamp.mSampleTime * format.BlockAlign) / format.AverageBytesPerSecond;
+            return stamp.mSampleTime / format.SampleRate;
         }
         else if (stamp.mFlags.HasFlag(AudioTimeStampFlags.kAudioTimeStampHostTimeValid))
         {
@@ -553,7 +555,7 @@ internal static class MacUtils
     }
 
     // Note: The below three methods are only valid for PCM, because
-    // 1 packet = 1 frame / sample. For other VBR or compressed data, it needs different calculations.
+    // 1 packet = 1 frame (sample). For other VBR or compressed data, it needs different calculations.
 
     public static int GetNumberOfPacketsFromBytesAndFormat(int bytes, WaveFormat format) => bytes / format.BlockAlign;
 

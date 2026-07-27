@@ -76,7 +76,8 @@ public class AudioFileReader : WaveStream, ISampleProvider
         if (fileName.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
         {
             readerStream = new WaveFileReader(fileName);
-            if (readerStream.WaveFormat.Encoding != WaveFormatEncoding.Pcm && readerStream.WaveFormat.Encoding != WaveFormatEncoding.IeeeFloat)
+            var wf = readerStream.WaveFormat.AsStandardWaveFormat(); // might have been a WaveFormatExtensible, in which case ACM conversion might not be necessary
+            if (wf.Encoding != WaveFormatEncoding.Pcm && wf.Encoding != WaveFormatEncoding.IeeeFloat)
             {
 #if !WINDOWS
                 throw new InvalidOperationException("WAV files with non-PCM encoding require Windows for ACM codec conversion");

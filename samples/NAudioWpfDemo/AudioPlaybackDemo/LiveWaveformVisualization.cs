@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using NAudioWpfDemo.Utils;
 
 namespace NAudioWpfDemo.AudioPlaybackDemo;
 
@@ -52,23 +53,47 @@ internal class LiveWaveformVisualization : IVisualizationPlugin
         // control across a wrap boundary.
         var panel = new WrapPanel { Margin = new Thickness(4) };
 
+        // Style, scale, top-half and samples/column apply to every render style, so they're
+        // always shown. The remaining two only affect one style each, and are collapsed when
+        // that style isn't selected rather than sitting there doing nothing.
         panel.Children.Add(BuildComboGroup("Style:", 110, typeof(WaveformRenderStyle),
             target, nameof(LiveWaveformControl.RenderStyle)));
         panel.Children.Add(BuildComboGroup("Scale:", 90, typeof(WaveformVerticalScale),
             target, nameof(LiveWaveformControl.VerticalScale)));
         panel.Children.Add(BuildCheckboxGroup("Top half only", null,
             target, nameof(LiveWaveformControl.TopHalfOnly)));
-        panel.Children.Add(BuildCheckboxGroup("Fill between lines", "Only applies to the MinMaxLines style",
-            target, nameof(LiveWaveformControl.FillBetweenLines)));
         panel.Children.Add(BuildSliderGroup("Samples/col:", 1, 8,
             target, nameof(LiveWaveformControl.SamplesPerColumn)));
-        panel.Children.Add(BuildSliderGroup("Bar width:", 1, 8,
-            target, nameof(LiveWaveformControl.BarWidth)));
+
+        panel.Children.Add(ShowOnlyForStyle(
+            BuildCheckboxGroup("Fill between lines", "Fills the region between the min and max curves",
+                target, nameof(LiveWaveformControl.FillBetweenLines)),
+            target, WaveformRenderStyle.MinMaxLines));
+        panel.Children.Add(ShowOnlyForStyle(
+            BuildSliderGroup("Bar width:", 1, 8,
+                target, nameof(LiveWaveformControl.BarWidth)),
+            target, WaveformRenderStyle.Bars));
 
         return panel;
     }
 
-    private static UIElement BuildComboGroup(string label, double comboWidth, Type enumType, object source, string propertyName)
+    /// <summary>
+    /// Collapses <paramref name="element"/> whenever the control's render style isn't
+    /// <paramref name="style"/>, so only the options that actually do something are on screen.
+    /// </summary>
+    private static FrameworkElement ShowOnlyForStyle(FrameworkElement element, LiveWaveformControl target, WaveformRenderStyle style)
+    {
+        element.SetBinding(UIElement.VisibilityProperty,
+            new Binding(nameof(LiveWaveformControl.RenderStyle))
+            {
+                Source = target,
+                Converter = new EnumToVisibilityConverter(),
+                ConverterParameter = style
+            });
+        return element;
+    }
+
+    private static FrameworkElement BuildComboGroup(string label, double comboWidth, Type enumType, object source, string propertyName)
     {
         var group = NewInlineGroup();
         group.Children.Add(new Label { Content = label, VerticalAlignment = VerticalAlignment.Center });
@@ -80,7 +105,7 @@ internal class LiveWaveformVisualization : IVisualizationPlugin
         return group;
     }
 
-    private static UIElement BuildCheckboxGroup(string label, string toolTip, object source, string propertyName)
+    private static FrameworkElement BuildCheckboxGroup(string label, string toolTip, object source, string propertyName)
     {
         var group = NewInlineGroup();
         var check = new CheckBox
@@ -95,7 +120,7 @@ internal class LiveWaveformVisualization : IVisualizationPlugin
         return group;
     }
 
-    private static UIElement BuildSliderGroup(string label, double min, double max, object source, string propertyName)
+    private static FrameworkElement BuildSliderGroup(string label, double min, double max, object source, string propertyName)
     {
         var group = NewInlineGroup();
         group.Children.Add(new Label { Content = label, VerticalAlignment = VerticalAlignment.Center });

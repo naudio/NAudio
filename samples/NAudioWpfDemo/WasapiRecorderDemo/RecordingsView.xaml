@@ -1,0 +1,18 @@
+<UserControl x:Class="NAudioWpfDemo.WasapiRecorderDemo.RecordingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="150" d:DesignWidth="500">
+    <!-- Buttons sit in a row under the list rather than a column beside it, so the whole thing
+         still fits when the panel above it is tall. -->
+    <DockPanel>
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,4,0,0">
+            <Button Content="Play" Command="{Binding PlayCommand}" Width="75" Margin="0,0,6,0" />
+            <Button Content="Delete" Command="{Binding DeleteCommand}" Width="75" Margin="0,0,6,0" />
+            <Button Content="Open folder" Command="{Binding OpenFolderCommand}" Width="90" />
+        </StackPanel>
+        <ListBox ItemsSource="{Binding Recordings}" SelectedItem="{Binding SelectedRecording, Mode=TwoWay}" />
+    </DockPanel>
+</UserControl>

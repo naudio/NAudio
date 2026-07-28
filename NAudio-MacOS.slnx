@@ -20,5 +20,6 @@
     <Project Path="src/NAudio.SoundFile/NAudio.SoundFile.csproj" />
     <!-- Test projects should be after this line -->
     <Project Path="tests/NAudio.Core.Tests/NAudio.Core.Tests.csproj" />
+    <Project Path="tests/NAudio.MacOS.Tests/NAudio.MacOS.Tests.csproj" />
     <Project Path="tests/NAudio.SoundFile.Tests/NAudio.SoundFile.Tests.csproj" />
 </Solution>

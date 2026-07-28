@@ -317,16 +317,25 @@ public class AudioDevice : AudioObject
     /// </summary>
     public Speakers GetPreferredChannelLayout(AudioObjectPropertyScope scope, out bool needs_resampling, out bool needs_extensible)
     {
-        var acl = GetPreferredChannelLayout(scope);
-        if (acl == IntPtr.Zero)
+        try
+        {
+            var acl = GetPreferredChannelLayout(scope);
+            if (acl == IntPtr.Zero)
+            {
+                needs_resampling = false;
+                needs_extensible = false;
+                return Speakers.None;
+            }
+            else
+            {
+                return MacUtils.ConstructSpeakersValue(acl, out needs_resampling, out needs_extensible);
+            }
+        }
+        catch (CoreAudioPropertyNotFoundException)
         {
             needs_resampling = false;
             needs_extensible = false;
             return Speakers.None;
-        }
-        else
-        {
-            return MacUtils.ConstructSpeakersValue(acl, out needs_resampling, out needs_extensible);
         }
     }
 

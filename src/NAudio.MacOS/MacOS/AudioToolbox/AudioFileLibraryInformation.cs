@@ -121,6 +121,12 @@ public static class AudioFileLibraryInformation
 
     internal static string[] GetMimeTypesForFileTypeID(AudioFileTypeID id) => GetStringArrayAsResult(GlobalAudioFileProperties.kAudioFileGlobalInfo_MIMETypesForType, [id]);
 
+    internal static AudioFileTypeID[] GetTypesForExtension(string value)
+    {
+        using CoreFoundationApi.CFString cFString = CoreFoundationApi.CFString.CreateFromString(value);
+        return GetAudioFileTypeIDArrayAsResult(GlobalAudioFileProperties.kAudioFileGlobalInfo_TypesForExtension, [cFString.NativeObject]);
+    }
+
     internal static AudioFileTypeID[] GetFileTypeIDsForMimeType(string value)
     {
         using CoreFoundationApi.CFString cFString = CoreFoundationApi.CFString.CreateFromString(value);

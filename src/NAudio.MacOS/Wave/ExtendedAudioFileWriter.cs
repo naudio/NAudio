@@ -226,13 +226,15 @@ public static class ExtendedAudioFileWriter
     }
 
     /// <summary>
-    /// 
+    /// Constructs a new instance of the <see cref="AbstractExtendedFileWriter" />
+    /// class, providing the URL where the new produced file will be located to.
     /// </summary>
-    /// <param name="url"></param>
-    /// <param name="settings"></param>
-    /// <param name="overwriteIfExists"></param>
-    /// <returns></returns>
-    /// <exception cref="ArgumentException"></exception>
+    /// <param name="url">The URL of the file to write</param>
+    /// <param name="settings">Settings for the writer to use.</param>
+    /// <param name="overwriteIfExists">If the file is existing, when specified to <see langword="true"/>, it overwrites the file instead of throwing an exception.</param>
+    /// <returns>A new instance of the <see cref="AbstractExtendedFileWriter" /> class.</returns>
+    /// <exception cref="ArgumentException">The specified settings object does not define the minimal requirements for writing a file.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="url"/> and/or <paramref name="settings"/> are <see langword="null"/>.</exception>
     public static AbstractExtendedFileWriter CreateFromURL(
         Uri url,
         ExtendedFileWriterSettings settings,
@@ -255,13 +257,15 @@ public static class ExtendedAudioFileWriter
     }
 
     /// <summary>
-    /// 
+    /// Constructs a new instance of the <see cref="AbstractExtendedFileWriter" />
+    /// class, providing the file path where the new produced file will be located to.
     /// </summary>
-    /// <param name="filePath"></param>
-    /// <param name="settings"></param>
-    /// <param name="overwriteIfExists"></param>
-    /// <returns></returns>
-    /// <exception cref="ArgumentException"></exception>
+    /// <param name="filePath">The path of the file to write</param>
+    /// <param name="settings">Settings for the writer to use.</param>
+    /// <param name="overwriteIfExists">If the file is existing, when specified to <see langword="true"/>, it overwrites the file instead of throwing an exception.</param>
+    /// <returns>A new instance of the <see cref="AbstractExtendedFileWriter" /> class.</returns>
+    /// <exception cref="ArgumentException">The specified settings object does not define the minimal requirements for writing a file.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="filePath"/> and/or <paramref name="settings"/> are <see langword="null"/>.</exception>
     public static AbstractExtendedFileWriter CreateFromFilePath(
         string filePath,
         ExtendedFileWriterSettings settings,
@@ -284,12 +288,14 @@ public static class ExtendedAudioFileWriter
     }
 
     /// <summary>
-    /// 
+    /// Constructs a new instance of the <see cref="AbstractExtendedFileWriter" />
+    /// class, providing the data stream path where the encoded data will be placed to.
     /// </summary>
-    /// <param name="writeableStream"></param>
-    /// <param name="settings"></param>
-    /// <returns></returns>
-    /// <exception cref="ArgumentException"></exception>
+    /// <param name="writeableStream">The data stream where to write data to</param>
+    /// <param name="settings">Settings for the writer to use.</param>
+    /// <returns>A new instance of the <see cref="AbstractExtendedFileWriter" /> class.</returns>
+    /// <exception cref="ArgumentException">The specified settings object does not define the minimal requirements for writing a file.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="writeableStream"/> and/or <paramref name="settings"/> are <see langword="null"/>.</exception>
     public static AbstractExtendedFileWriter CreateFromStream(
         Stream writeableStream,
         ExtendedFileWriterSettings settings

@@ -46,17 +46,23 @@ internal static unsafe class AudioFileCallbacks
         long inPosition,
         uint requestCount,
         nint buffer,
-        uint* actualCount)
+        uint* actualCount
+    )
     {
         CallbacksUserData ud = (CallbacksUserData)GCHandle.FromIntPtr(inClientData).Target;
 
+        /*
+            Note: In these callbacks implementations, we allow the AudioFile subsystem
+            to request more than int.MaxValue bytes, but we automatically 
+            cap it to int.MaxValue so that the .NET call does not fail but it will
+            return less than requested bytes, which is not a problem because
+            the AudioFile can request again if it needs more data.
+            The same does apply for writing.
+        */
+
         try
         {
-            if (!ud.Stream.CanRead)
-            {
-                return AudioFileErrors.kAudioFileOperationNotSupportedError;
-            }
-            else if (inPosition > ud.Stream.Length || inPosition < 0L)
+            if (inPosition > ud.Stream.Length || inPosition < 0L)
             {
                 return AudioFileErrors.kAudioFilePositionError;
             }
@@ -67,9 +73,10 @@ internal static unsafe class AudioFileCallbacks
 
             int bytesRead = ud.Stream.Read(new Span<byte>(
                 buffer.ToPointer(),
-                (int)*actualCount
+                requestCount > int.MaxValue ? int.MaxValue : (int)requestCount
             ));
 
+            // Safe cast; Will always be in [0..int.MaxValue].
             *actualCount = (uint)bytesRead;
         }
         catch (Exception ex)
@@ -105,11 +112,7 @@ internal static unsafe class AudioFileCallbacks
 
         try
         {
-            if (!ud.Stream.CanWrite)
-            {
-                return AudioFileErrors.kAudioFileOperationNotSupportedError;
-            }
-            else if (inPosition > ud.Stream.Length || inPosition < 0L)
+            if (inPosition > ud.Stream.Length || inPosition < 0L)
             {
                 return AudioFileErrors.kAudioFilePositionError;
             }
@@ -118,10 +121,15 @@ internal static unsafe class AudioFileCallbacks
                 ud.Stream.Position = inPosition;
             }
 
+            var actualWriteCount = requestCount > int.MaxValue ? int.MaxValue : (int)requestCount;
+
             ud.Stream.Write(new ReadOnlySpan<byte>(
                 buffer.ToPointer(),
-                (int)*actualCount
+                actualWriteCount
             ));
+
+            // Safe cast; Will always be in [0..int.MaxValue].
+            *actualCount = (uint)actualWriteCount;
         }
         catch (Exception ex)
         {

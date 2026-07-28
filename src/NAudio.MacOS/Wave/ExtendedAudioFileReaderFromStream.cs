@@ -1,6 +1,7 @@
 
 using System;
 using System.IO;
+using System.Runtime.Versioning;
 using System.Runtime.InteropServices;
 using System.Diagnostics.CodeAnalysis;
 
@@ -17,6 +18,8 @@ namespace NAudio.Wave;
 /// it requires to set up either a MIME type or a file extension to
 /// be able to better recognize the data stream.
 /// </summary>
+[SupportedOSPlatform("ios2.0")]
+[SupportedOSPlatform("macos10.3.1")]
 public sealed class ExtendedAudioFileReaderFromStream : AbstractExtendedFileReader
 {
     private IntPtr handleToAudioFile;
@@ -63,6 +66,7 @@ public sealed class ExtendedAudioFileReaderFromStream : AbstractExtendedFileRead
         }
         else
         {
+            handleToAudioFile = IntPtr.Zero;
             streamGcHandle = GCHandle.Alloc(
                 new AudioFileCallbacks.CallbacksUserData(stream),
                 GCHandleType.Normal
@@ -80,8 +84,8 @@ public sealed class ExtendedAudioFileReaderFromStream : AbstractExtendedFileRead
         // because the MIME type is a more formal description 
         // than the file name.
         AudioFileTypeID[] ids = [0];
+        var sets = (ExtendedAudioFileReaderFromStreamSettings)Settings;
         Stream streamObject = ((AudioFileCallbacks.CallbacksUserData)streamGcHandle.Target).Stream;
-        ExtendedAudioFileReaderFromStreamSettings sets = (ExtendedAudioFileReaderFromStreamSettings)Settings;
         if (sets is not null)
         {
             if (!string.IsNullOrWhiteSpace(sets.MimeType))
@@ -101,64 +105,81 @@ public sealed class ExtendedAudioFileReaderFromStream : AbstractExtendedFileRead
         long initPosition = 0L;
         try { initPosition = streamObject.Position; } catch { }
         int osStatus;
-        foreach (var id in ids)
+        Exception exception = null;
+        try
         {
-            try { streamObject.Position = initPosition; } catch { }
-            osStatus = NativeMethods.AudioFileOpenWithCallbacks(
-                GCHandle.ToIntPtr(streamGcHandle),
-                AudioFileCallbacks.ReadProcedure,
-                AudioFileCallbacks.WriteProcedure,
-                AudioFileCallbacks.GetSizeProcedure,
-                AudioFileCallbacks.SetSizeProcedure,
-                id,
-                out handleToAudioFile
-            );
-            if (osStatus == 0)
+            foreach (var id in ids)
             {
-                osStatus = NativeMethods.ExtAudioFileWrapAudioFileID(
-                    handleToAudioFile,
-                    MacOS.MacBoolean.False,
-                    out var outExtAudioFile
+                osStatus = NativeMethods.AudioFileOpenWithCallbacks(
+                    GCHandle.ToIntPtr(streamGcHandle),
+                    AudioFileCallbacks.ReadProcedure,
+                    AudioFileCallbacks.WriteProcedure,
+                    AudioFileCallbacks.GetSizeProcedure,
+                    AudioFileCallbacks.SetSizeProcedure,
+                    id,
+                    out handleToAudioFile
                 );
-                if (osStatus == 0)
-                {
-                    return outExtAudioFile;
-                }
-            }
-            if (osStatus != 0)
-            {
                 if (osStatus == AudioFileErrors.kAudioFileInvalidFileError)
                 {
                     // The reader did not manage to appropriately find the format now, 
                     // it may be the the case that it is a format closely resemblant
                     // to two standard audio formats - so move to the next type ID
                     // to see if the reader will finally manage to read the stream.
+                    try { streamObject.Position = initPosition; } catch { }
                     continue;
                 }
-                DisposeAudioFileAndGCHandle();
-                if (osStatus == AudioFileCallbacks.CallbacksUserData.CustomErrorConst)
+                else if (osStatus == AudioFileCallbacks.CallbacksUserData.CustomErrorConst)
                 {
                     throw ((AudioFileCallbacks.CallbacksUserData)streamGcHandle.Target).Exception;
                 }
+                else
+                {
+                    AudioFileException.ThrowIfError(osStatus);
+                }
+                ExtendedAudioFileException.ThrowIfError(
+                    NativeMethods.ExtAudioFileWrapAudioFileID(
+                        handleToAudioFile,
+                        MacOS.MacBoolean.False,
+                        out var outExtAudioFile
+                    )
+                );
+                return outExtAudioFile;
             }
-            ExtendedAudioFileException.ThrowIfError(osStatus);
+        }
+        catch (Exception ex)
+        {
+            exception = ex;
         }
         DisposeAudioFileAndGCHandle();
-        throw new ArgumentException("Could not initialize stream for reading: Cannot find a suitable format to use.");
+        throw new ArgumentException("Could not initialize stream for reading: Cannot find a suitable format to use.", exception);
     }
 
     private void DisposeAudioFileAndGCHandle()
     {
-        if (handleToAudioFile != IntPtr.Zero)
+        try
         {
-            AudioFileException.ThrowIfError(
-                NativeMethods.AudioFileClose(handleToAudioFile)
-            );
-            handleToAudioFile = IntPtr.Zero;
+            if (handleToAudioFile != IntPtr.Zero)
+            {
+                // mdcdi1315: TODO: Verify whether the extended audio file closes this for us.
+                // This currently causes a dispose exception to be thrown.
+                //
+                // Specifically, it returns kAudioFileOperationNotSupportedError,
+                // which means that the close operation cannot be performed.
+                // How is that possible since we freed the extended file object?
+                //
+                // I have verified all the possible code paths, I cannot find what is going on.
+                AudioFileException.ThrowIfError(
+                    NativeMethods.AudioFileClose(handleToAudioFile)
+                );
+                handleToAudioFile = IntPtr.Zero;
+            }
         }
-        if (streamGcHandle.IsAllocated)
+        finally
         {
-            streamGcHandle.Free();
+            if (streamGcHandle.IsAllocated)
+            {
+                streamGcHandle.Free();
+            }
         }
     }
 
@@ -166,9 +187,6 @@ public sealed class ExtendedAudioFileReaderFromStream : AbstractExtendedFileRead
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
-        if (disposing)
-        {
-            DisposeAudioFileAndGCHandle();
-        }
+        if (disposing) { DisposeAudioFileAndGCHandle(); }
     }
 }

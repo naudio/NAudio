@@ -1,5 +1,6 @@
 
 using System;
+using System.Runtime.Versioning;
 
 using NAudio.MacOS.AudioToolbox;
 using NAudio.MacOS.AudioToolbox.Interop;
@@ -11,6 +12,8 @@ namespace NAudio.Wave;
 /// The reader does the best effort to decode to PCM - as such, all the audio
 /// file data that you will recieve will not ever be compressed formats.
 /// </summary>
+[SupportedOSPlatform("ios2.0")]
+[SupportedOSPlatform("macos10.3.1")]
 public sealed class ExtendedAudioFileReaderFromURL : AbstractExtendedFileReader
 {
     private readonly object url;

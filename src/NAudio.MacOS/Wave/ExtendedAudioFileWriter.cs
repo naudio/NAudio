@@ -80,13 +80,22 @@ public static class ExtendedAudioFileWriter
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
-            if (disposing && streamFileID != IntPtr.Zero)
+            if (disposing)
             {
-                AudioFileException.ThrowIfError(
-                    NativeMethods.AudioFileClose(streamFileID)
-                );
+                try
+                {
+                    if (streamFileID != IntPtr.Zero)
+                    {
+                        AudioFileException.ThrowIfError(
+                            NativeMethods.AudioFileClose(streamFileID)
+                        );
+                    }
+                }
+                finally
+                {
+                    if (streamGcHandle.IsAllocated) { streamGcHandle.Free(); }
+                }
             }
-            if (disposing && streamGcHandle.IsAllocated) { streamGcHandle.Free(); }
         }
 
         public static FileWriterImpl FromURL(

@@ -3,8 +3,10 @@
   <PropertyGroup>
     <!-- 
         Tests for the macOS wrappers - they need macOS 26 (Tahoe) to run,
-        although that they should run even back to 10.3.1, but we do not
+        although that they should run even back to 10.5, but we do not
         have such device to test the API's.
+        Also, specifying macOS 26 in the TFM needs XCode installed, which we do not
+        need for our tests.
     -->
     <TargetFramework>net10.0</TargetFramework>
     <OutputType>Exe</OutputType>

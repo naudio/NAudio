@@ -5,6 +5,8 @@ using NAudio.MacOS.CoreAudio;
 
 using NUnit.Framework;
 
+namespace NAudio.MacOS.Tests.AudioHALTests;
+
 [TestFixture]
 public class VerifyPropertyListenerHandles
 {

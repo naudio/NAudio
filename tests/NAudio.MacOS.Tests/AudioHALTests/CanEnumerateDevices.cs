@@ -65,11 +65,15 @@ public class CanEnumerateDevices
         System.Console.WriteLine($"Actual sample rate: {dev.ActualSampleRate}");
         System.Console.WriteLine($"Buffer frame size: {dev.BufferFrameSize}");
         System.Console.WriteLine($"Buffer frame size range: {dev.BufferFrameSizeRange}");
-        // System.Console.WriteLine($"Can be default system device: {dev.CanBeDefaultSystemDevice}");
-        // System.Console.WriteLine($"Icon URI: {dev.Icon}");
-        System.Console.WriteLine("====== Related Devices ======");
-        foreach (var d2 in dev.RelatedDevices) { System.Console.WriteLine(d2.Name); }
-        System.Console.WriteLine("=============================");
+        System.Console.WriteLine($"Can be default system device: {dev.CanBeDefaultSystemDevice}");
+        System.Console.WriteLine($"Icon URI: {dev.Icon}");
+        System.Console.WriteLine();
+        var devs = dev.RelatedDevices;
+        System.Console.WriteLine("====== Related Devices ({0,2} devices) ========", devs.Length);
+        foreach (var d2 in devs) { System.Console.WriteLine(d2.Name); }
+        System.Console.WriteLine("============================================");
+        System.Console.WriteLine();
         System.Console.WriteLine("====================================================");
+        System.Console.WriteLine();
     }
 }

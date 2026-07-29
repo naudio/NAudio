@@ -337,7 +337,7 @@ public sealed unsafe class MacAudioConverter : IWaveProvider, IDisposable
 
     /// <summary>
     /// Gets/sets the dithering algorithm to apply to the audio converter. <br />
-    /// The constant <see cref="AudioConverterDitheringAlgorithm.None"/> can be used disable dithering. <br />
+    /// The constant <see cref="AudioConverterDitheringAlgorithm.None"/> can be used to disable dithering. <br />
     /// This is only supported in macOS.
     /// </summary>
     [UnsupportedOSPlatform("ios")]

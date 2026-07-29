@@ -1,6 +1,7 @@
 
 using System;
 using System.Diagnostics;
+
 using NAudio.MacOS.CoreAudio.Interop;
 
 namespace NAudio.MacOS.CoreAudio;
@@ -26,11 +27,21 @@ public class CoreAudioException : MacException
     /// <param name="osStatus">The <c>OSStatus</c> error code to provide.</param>
     public CoreAudioException(string message, int osStatus) : base(message, osStatus) { }
 
-    // Throws a more appropriate exception for the specified native status code.
-    // Internal utility method.
+    /// <summary>
+    /// Throws a more appropriate exception for the specified status code.
+    /// </summary>
+    /// <param name="osStatus">The status code to create and throw an exception for.</param>
+    /// <exception cref="InvalidOperationException"/>
+    /// <exception cref="NotSupportedException"/>
+    /// <exception cref="UnauthorizedAccessException"/>
+    /// <exception cref="InsufficientMemoryException"/>
+    /// <exception cref="ArgumentException"/>
+    /// <exception cref="NotImplementedException"/>
+    /// <exception cref="System.IO.FileNotFoundException"/>
+    /// <exception cref="CoreAudioException"/>
     [StackTraceHidden]
     [DebuggerStepThrough]
-    internal static void ThrowIfError(int osStatus)
+    public static void ThrowIfError(int osStatus)
     {
         if (osStatus == ErrorConstants.kAudioHardwareNoError) { return; }
 

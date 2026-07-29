@@ -2,9 +2,12 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+
 using NAudio.Wave;
 
 using NUnit.Framework;
+
+namespace NAudio.MacOS.Tests.AudioHALTests;
 
 [TestFixture]
 [Category("IntegrationTest")]
@@ -45,17 +48,14 @@ public class CoreAudioRecorderTests
         recorder.Dispose();
     }
 
-    // Async code path seems to block, pending verification of the bug and
-    // proposing a fix for it.
-    // [Test]
-    [CancelAfter(2000)]
-    public async Task RecordFromDefaultDevice_TryWithAsyncModel(CancellationToken token)
+    [Test]
+    public async Task RecordFromDefaultDevice_TryWithAsyncModel()
     {
         CoreAudioRecorder recorder = new();
 
         Assert.Throws<InvalidOperationException>(recorder.StartRecording);
 
-        int recordedBytes = 0;
+        int recordedBytes = 0, I = 0;
 
         recorder.DataAvailable += (o, _, _) =>
         {
@@ -70,13 +70,12 @@ public class CoreAudioRecorderTests
             }
         };
 
-        int i = 0;
-
-        await foreach (CaptureBuffer buffer in recorder.CaptureAsync(token))
+        // Attempt to capture 15 buffers.
+        await foreach (CaptureBuffer buffer in recorder.CaptureAsync())
         {
             recordedBytes += buffer.Buffer.Length;
-            if (i == 15) { break; }
-            i++;
+            if (I == 15) { break; }
+            I++;
         }
 
         Assert.DoesNotThrow(() => Assert.IsNotNull(recorder.CaptureFormat));
@@ -85,6 +84,6 @@ public class CoreAudioRecorderTests
 
         Assert.DoesNotThrow(recorder.StopRecording);
 
-        recorder.Dispose();
+        await recorder.DisposeAsync();
     }
 }

@@ -294,10 +294,10 @@ public sealed class CoreAudioRecorder : IAsyncDisposable, IDisposable, IWaveLate
     }
 
     /// <summary>
-    /// Call this method once per instance to set up the recorder for recording asyncronously.
+    /// Call this method once per instance to set up the recorder for recording asynchronously.
     /// </summary>
     /// <returns>A new <see cref="ValueTask"/> that represents the code to execute for initializing the recoder.</returns>
-    public ValueTask InitializeRecordingAsync() => new(new(InitializeRecording));
+    public ValueTask InitializeRecordingAsync() => new(Task.Run(InitializeRecording));
 
     /// <summary>
     /// Starts the recording. 
@@ -411,6 +411,8 @@ public sealed class CoreAudioRecorder : IAsyncDisposable, IDisposable, IWaveLate
         // If we have an exception, make sure to throw it
         var ex = ioProcedure.Exception;
         if (ex is not null) { throw ex; }
+        // Flag to the enumerator that we won't return additional buffers
+        yield break;
     }
 
     /// <summary>
@@ -507,7 +509,7 @@ public sealed class CoreAudioRecorder : IAsyncDisposable, IDisposable, IWaveLate
     /// </returns>
     // No special implementation required;
     // just route to the Dispose method implementation and execute it asynchronously.
-    public ValueTask DisposeAsync() => new(new(Dispose));
+    public ValueTask DisposeAsync() => new(Task.Run(Dispose));
 
     #endregion
 }

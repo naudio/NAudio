@@ -11,9 +11,12 @@
 ==================================================================================================*/
 
 using System;
+
 using NAudio.Wave;
 using NAudio.Utils;
+
 using NAudio.MacOS.CoreAudio.Interop;
+using System.Diagnostics.CodeAnalysis;
 
 namespace NAudio.MacOS.CoreAudio;
 
@@ -146,7 +149,23 @@ public class AudioDevice : AudioObject
     /// A <see cref="bool"/> where <see langword="true"/> means that the <see cref="AudioDevice"/> is a possible selection for
     /// kAudioHardwarePropertyDefaultSystemOutputDevice.
     /// </summary>
-    public bool CanBeDefaultSystemDevice => GetUIntPropertyValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioDeviceProperties.kAudioDevicePropertyDeviceCanBeDefaultSystemDevice)) == 1U;
+    public bool CanBeDefaultSystemDevice
+    {
+        get
+        {
+            try
+            {
+                return GetUIntPropertyValue(
+                    AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
+                        AudioDeviceProperties.kAudioDevicePropertyDeviceCanBeDefaultSystemDevice
+                )) == 1U;
+            }
+            catch (CoreAudioPropertyNotFoundException)
+            {
+                return false;
+            }
+        }
+    }
 
     /// <summary>
     /// A <see cref="uint"/> containing the number of frames of latency in the AudioDevice. Note
@@ -274,9 +293,27 @@ public class AudioDevice : AudioObject
     }
 
     /// <summary>
-    /// A <see cref="Uri"/> that indicates an image file that can be used to represent the device visually. 
+    /// A <see cref="Uri"/> that indicates an image file that can be used to represent the device visually. <br />
+    /// If no such image file is assigned for the device, this returns <see langword="null"/>.
     /// </summary>
-    public Uri Icon => GetUriObjectValue(AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(AudioDeviceProperties.kAudioDevicePropertyIcon));
+    [MaybeNull]
+    public Uri Icon
+    {
+        get
+        {
+            try
+            {
+                return GetUriObjectValue(
+                    AudioObjectPropertyAddress.CreateWithGlobalScopeAndMainElement(
+                        AudioDeviceProperties.kAudioDevicePropertyIcon
+                ));
+            }
+            catch (CoreAudioPropertyNotFoundException)
+            {
+                return null;
+            }
+        }
+    }
 
     /// <summary>
     /// A UInt32 where a non-zero value indicates that the device is not included 

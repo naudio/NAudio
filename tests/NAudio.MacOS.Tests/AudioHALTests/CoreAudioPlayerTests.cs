@@ -24,6 +24,8 @@ public class CoreAudioPlayerTests
     public void CanPlayTenSecondSignal(int sampleRate, int channels, bool useIeeeFloat)
     {
         var sg = new SignalGenerator(sampleRate, channels);
+        sg.Frequency = 100;
+        sg.Type = SignalGeneratorType.White;
 
         IWaveProvider provider = useIeeeFloat ? sg.Take(TimeSpan.FromSeconds(10)).ToWaveProvider() : sg.Take(TimeSpan.FromSeconds(10)).ToWaveProvider16();
 
@@ -56,7 +58,7 @@ public class CoreAudioPlayerTests
     {
         var sg = new SignalGenerator(48000, 2);
 
-        IWaveProvider provider = sg.Take(TimeSpan.FromSeconds(10)).ToWaveProvider();
+        IWaveProvider provider = sg.Take(TimeSpan.FromSeconds(5)).ToWaveProvider();
 
         CoreAudioPlayer player = new();
 
@@ -64,7 +66,7 @@ public class CoreAudioPlayerTests
 
         player.Play();
 
-        new Thread(() => PerformArbitraryChanges(player.OutputWaveFormat)).Start();
+        new Thread(() => PerformArbitraryChanges(player)).Start();
 
         while (player.PlaybackState == PlaybackState.Playing)
         {
@@ -76,15 +78,17 @@ public class CoreAudioPlayerTests
         player.Dispose();
     }
 
-    private static void PerformArbitraryChanges(WaveFormat outFormat)
+    private static void PerformArbitraryChanges(CoreAudioPlayer instance)
     {
-        foreach (var s in AudioSystemObject.Instance.DefaultOutputDevice.GetStreams(AudioObjectPropertyScopeConstants.Output))
+        WaveFormat outFormat = instance.OutputWaveFormat;
+        foreach (var s in instance.Device.GetStreams(AudioObjectPropertyScopeConstants.Output))
         {
             var vf = s.VirtualFormat;
             if (vf.Equals(outFormat))
             {
                 s.VirtualFormat = new(18000, vf.BitsPerSample, vf.Channels);
-                s.VirtualFormat = new(vf.SampleRate, vf.BitsPerSample, vf.Channels);
+                Thread.Sleep(500);
+                s.VirtualFormat = vf;
                 break;
             }
         }

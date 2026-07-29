@@ -1,5 +1,6 @@
 
 using System;
+using System.Runtime.Versioning;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 
@@ -10,8 +11,10 @@ namespace NAudio.MacOS.CoreAudio;
 /// <summary>
 /// Provides the base type for creating I/O procedures and registering them to the HAL. <br />
 /// From this, an input source and an output sink of audio data can be created. <br />
-/// This is the type that the CoreAudioPlayer and CoreAudioCapture classes will use to provide audio data.
+/// This is the type that the <see cref="Wave.CoreAudioPlayer"/> and <see cref="Wave.CoreAudioRecorder"/> classes will use to provide audio data.
 /// </summary>
+[SupportedOSPlatform("ios2.0")]
+[SupportedOSPlatform("macos10.5")]
 public abstract class CoreAudioIOProcedure : SafeHandle
 {
     private static readonly unsafe AudioDeviceIOProc procedureInstance = &IOProcedureNative;

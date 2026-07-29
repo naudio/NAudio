@@ -41,16 +41,15 @@ public class AsioAudioCapturedEventArgsTests
     public void GetChannel_ReturnsBufferContents()
     {
         using var ctx = MakeValidContext(channels: 2, frames: 4);
-        // Fill channel 1 with a known pattern so the test can assert on it.
-        ctx.Context.InputFloatBuffers[1][0] = 0.1f;
-        ctx.Context.InputFloatBuffers[1][1] = 0.2f;
-        ctx.Context.InputFloatBuffers[1][2] = 0.3f;
-        ctx.Context.InputFloatBuffers[1][3] = 0.4f;
+        // The context is Float32LSB, so GetChannel aliases the driver's native buffer directly — write the
+        // known pattern there, which is what a real driver would have filled in before the callback.
+        var pattern = new[] { 0.1f, 0.2f, 0.3f, 0.4f };
+        Marshal.Copy(pattern, 0, ctx.Context.InputNativeBuffers[1], pattern.Length);
 
         var args = new AsioAudioCapturedEventArgs(ctx.Context);
         var span = args.GetChannel(1);
 
-        Assert.That(span.ToArray(), Is.EqualTo(new[] { 0.1f, 0.2f, 0.3f, 0.4f }));
+        Assert.That(span.ToArray(), Is.EqualTo(pattern));
     }
 
     [TestCase(-1)]
